@@ -17,7 +17,7 @@ module.exports = {
     leave: { key: 'text' },
     record: { relay: 'text', from: 'number?', to: 'number?' },
   },
-  // HIS RELAYS AS A SCREEN WANTS THEM (puppets/G2), moved here from kernel.js (goal/G40.8: no kernel on a face).
+  // HIS RELAYS AS A SCREEN WANTS THEM (puppets/G2), moved here from the old kernel (goal/G40.8: no kernel on a face).
   // status(name): the relays this node keeps, listed by contact.search (goal/G40.11: relay.search went, a relay is a
   // row of the one table), then each relay got, put back into the shape the screens were written against,
   // { status, text, body: { name, rows, ownedUrls, claimedUrls, mustPick, relayStatus, more } }; a refused search

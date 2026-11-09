@@ -490,7 +490,7 @@ test.startTest('desk.js: the desk server (goal/G41.11)');
     if (askS) {
       await profiles(askS);
       // What the List's cells, its presses and its filters read (spirit/app/desk/element/desk/desk.js deskRowCells, deskRowPresses, deskRowShown;
-      // shell/shared/js/deskRunStatus.js), and nothing else.
+      // spirit/app/desk/element/deskRunStatus/deskRunStatus.js), and nothing else.
       const LIST_FIELDS = ['id', 'goal', 'title', 'status', 'statusTone', 'buttons', 'verified', 'verifyFailures', 'verifyRed', 'verifyRunning', 'asks', 'alert', 'with', 'names', 'blocking', 'blocked'];
       const search = async function (ask, o) { const r = await ask('items.search', Object.assign({ text: '', currentGoalOnly: true, goalsOnly: false, includeClosed: false }, o || {}), ANDY); return { more: r.more === true, rows: (r.items || []).map(function (x) { try { return JSON.parse(x.label); } catch (e) { return {}; } }), keys: (r.items || []).map(function (x) { return x.key; }) }; };
       const first = await search(askS);

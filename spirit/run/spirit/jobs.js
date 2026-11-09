@@ -312,8 +312,8 @@ module.exports = function installJobs(port) {
       }),
       // The IPC channel closes when this node dies however it dies, and a
       // server's appServer.serve ends its process then: no orphan ("who wants
-      // dangeling processes"). (kernel.js did it for every process; no node
-      // process loads kernel.js any more.)
+      // dangeling processes"). (The old kernel did it for every process; it is
+      // gone.)
       // ITS CONSOLE GOES TO NULL AT THE SOURCE (goal/G41.33, the box: "Console output goes to null by default, at the source,
       // for every process, except node and relay. Only DEBUG turns it on. A crash is no exception"). Read as it starts, so a
       // process started with DEBUG off stays silent until it is started again. Its published lines and exit code stay.

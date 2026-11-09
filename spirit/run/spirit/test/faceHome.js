@@ -94,7 +94,7 @@ test.startTest('faceHome.js: a relay runs nothing on this node it was not given 
     ok(!a.reached.length, 'from a relay with no face of mine, ' + c[0] + ' never reaches the door', 'from a relay with no face of mine, ' + c[0] + ': ' + said(a));
     ok(refused(a), 'and is answered a refusal with a code', c[0] + ' from a relay with no face of mine was not refused with a code: ' + said(a));
   }
-  const file = await send(w, OTHER, { get: 'index.html' });
+  const file = await send(w, OTHER, { get: 'face.html' });
   ok(!w.files.length && refused(file), 'a file asked by it is not served, and refused', 'a file was served to a relay with no face of mine: files ' + short(w.files) + ', ' + said(file));
   const keys = await send(w, OTHER, { keys: 1 });
   ok(refused(keys), 'the keys asked by it are refused', 'the keys were answered to a relay with no face of mine: ' + said(keys));
@@ -115,8 +115,8 @@ test.startTest('faceHome.js: a relay runs nothing on this node it was not given 
   ok(card.reached.indexOf('node.card') !== -1 && card.status === 200, 'node.card reaches the door', 'node.card from my face\'s relay: ' + said(card));
   const cardSealed = await send(m, MINE, sealed(CARD));
   ok(cardSealed.reached.indexOf('node.card') !== -1 && cardSealed.status === 200, 'sealed too', 'sealed node.card from my face\'s relay: ' + said(cardSealed));
-  const f = await send(m, MINE, { get: 'index.html' });
-  ok(m.files.indexOf('index.html') !== -1 && f.status === 200, 'a file it asks is served (the face loads its parts so)', 'a file from my face\'s relay: files ' + short(m.files) + ', ' + said(f));
+  const f = await send(m, MINE, { get: 'face.html' });
+  ok(m.files.indexOf('face.html') !== -1 && f.status === 200, 'a file it asks is served (the face loads its parts so)', 'a file from my face\'s relay: files ' + short(m.files) + ', ' + said(f));
   const k = await send(m, MINE, { keys: 1 });
   ok(k.status === 200 && k.body && k.body.publicKey === ME.publicKey, 'the keys are answered', 'keys from my face\'s relay: ' + said(k));
   let streaming = false;
@@ -138,7 +138,7 @@ test.startTest('faceHome.js: a relay runs nothing on this node it was not given 
   const plain = world(onlyMine, function () { return false; });
   const asks = [['node.card', CARD], ['node.card, sealed', sealed(CARD)], ['fs.stat', { call: 'fs.stat', args: { path: 'x' } }],
     ['owner.command', { call: 'owner.command', args: { key: 'x' } }], ['jobs.create with a shell', SHELL], ['the same, in pieces', pieced(SHELL)],
-    ['a file', { get: 'index.html' }], ['the keys', { keys: 1 }], ['a save in parts', { upload: { id: 'abcdefgh', n: 0, of: 1, size: 1, path: 'x.txt', bytes: 'eA==' } }]];
+    ['a file', { get: 'face.html' }], ['the keys', { keys: 1 }], ['a save in parts', { upload: { id: 'abcdefgh', n: 0, of: 1, size: 1, path: 'x.txt', bytes: 'eA==' } }]];
   for (const c of asks) {
     const a = await send(plain, MINE, c[1]);
     ok(!a.reached.length && refused(a), 'no star: ' + c[0] + ' is refused and never reaches the door', 'no star: ' + c[0] + ': ' + said(a));

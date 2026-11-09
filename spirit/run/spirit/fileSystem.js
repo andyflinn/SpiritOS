@@ -3,10 +3,10 @@
 // spirit/run/spirit/fileSystem.js
 // THE NODE'S FILE SYSTEM (goal/G40.6): the files of the run folder, read, written, stated, annotated and listed, and
 // the two rules of what may ever be served or written. Andy, 2026-10-25: "lift the node version of those function from
-// kernel.js and put them in spirit/fileSystem.js, then have both the node and relay use those." Lifted whole from the
-// kernel's node half; kernel.js keeps its names pointing here until it is deleted.
+// the old kernel and put them in spirit/fileSystem.js, then have both the node and relay use those." Lifted whole from the
+// old kernel's node half, which is gone (goal/G43.30).
 //
-// Node only: never served to a page (UNSERVABLE_FILES below names it, as it names kernel.js).
+// Node only: never served to a page (UNSERVABLE_FILES below names it).
 
 // The spirit object first, as the global spirit (goal/G40.1).
 require('./spirit.js');
@@ -82,15 +82,15 @@ function isCoreFile(canonical) {
 const SIDECAR_SUFFIX = '.sidecar.json';
 
 // These never reach a browser at all — jobs.js/server.js have no
-// isBrowser() half to justify it, and kernel.js's is served only via
+// isBrowser() half to justify it, and a boot asset is served only via
 // the boot-asset allowlist in server.js's static route (a separate,
 // narrower exception), never through the generic fileServable-gated
 // path loadFile/scanFolder/the rest of the static route all share.
 // relayServer.js and serveCommon.js joined the list with cycle 0, when
 // the relay got its own startup module: same kind of file as server.js.
-// fileSystem.js, this file, joined it when it was lifted out of kernel.js (goal/G40.6).
+// fileSystem.js, this file, joined it when it was lifted out of the old kernel (goal/G40.6).
 // DEBUG.js and its generators joined it with goal/G41.19: server code, never a page's (spirit/test/DEBUG.md).
-const UNSERVABLE_FILES = ['spirit/kernel.js', 'spirit/fileSystem.js', 'spirit/jobs.js', 'spirit/server.js', 'spirit/relayServer.js', 'spirit/serveCommon.js', 'spirit/relayConfig.js', 'spirit/relay.js', 'spirit/hub.js', 'spirit/relayAuth.js', 'spirit/DEBUG.js'].map(function (p) { return p.toLowerCase(); });
+const UNSERVABLE_FILES = ['spirit/fileSystem.js', 'spirit/jobs.js', 'spirit/server.js', 'spirit/relayServer.js', 'spirit/serveCommon.js', 'spirit/relayConfig.js', 'spirit/relay.js', 'spirit/hub.js', 'spirit/relayAuth.js', 'spirit/DEBUG.js'].map(function (p) { return p.toLowerCase(); });
 // goal/G43.9, Andy's box: "spirit/state/ is not servable, so a page cannot read other apps' state through a plain GET."
 const UNSERVABLE_FOLDERS = ['spirit/DEBUG/', 'spirit/state/'].map(function (p) { return p.toLowerCase(); });
 
@@ -264,7 +264,7 @@ function writeBucket(bucket, filePath, payload) {
   }
   if (!stat || !stat.isFile()) return { ok: false, reason: 'file-not-found' };
   const sidecar = readSidecar(filePath);
-  // INTRINSIC IS NO NODE'S TO WRITE: the coded list says it (spirit/coreFiles.js), so it is never kept in a sidecar.
+  // INTRINSIC IS NO NODE'S TO WRITE: an app's own <name>.json says it (spirit/coreFiles.js), so it is never kept in a sidecar.
   const part = Object.assign({}, payload || {});
   if (bucket === 'face') delete part.intrinsic;
   sidecar[bucket] = part;
@@ -280,12 +280,11 @@ function annotateFace(filePath, payload) {
   return writeBucket('face', filePath, payload);
 }
 
-// The node's sidecar, all its parts ({} if none), its face part carrying intrinsic from the coded list.
+// The node's sidecar, all its parts ({} if none). Its face part no longer carries intrinsic: the coded list that said it
+// went with shell/ (goal/G43.30).
 function getAnnotations(filePath) {
   if (!fileServable(filePath)) return {};
-  const sidecar = readSidecar(filePath);
-  const face = Object.assign({}, sidecar.face || {}, { intrinsic: require('./coreFiles').intrinsic(canonicalPath(filePath) || '') });
-  return Object.assign({}, sidecar, { face: face });
+  return readSidecar(filePath);
 }
 
 // Directories no tool should ever need to see: VCS internals. Skipped

@@ -108,7 +108,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const KINDS = { 'web/a.txt': '📜', 'web/a.png': '🌇', 'web/a.mp4': '📹', 'web/a.mp3': '🔊', 'web/a.zzq': '❔' };
   const wrong = Object.keys(KINDS).filter(function (p) { const k = {}; E.search.file.rowElement.create({ path: p }).cells().forEach(function (c) { k[c.name] = c.html; }); return k.name.indexOf(KINDS[p]) === -1 || /📄/.test(k.name); });
   ok(!wrong.length, 'a file\'s icon by its kind: text 📜, image 🌇, video 📹, audio 🔊, any other ❔, none 📄', 'wrong: ' + short(wrong));
-  const core = E.search.file.rowElement.create({ path: 'spirit/kernel.js', core: true });
+  const core = E.search.file.rowElement.create({ path: 'spirit/spirit.js', core: true });
   const cc = {}; core.cells().forEach(function (c) { cc[c.name] = c.html; });
   ok(/spirit-core/.test(cc.name) && /core: write-protected/.test(cc.name), 'a core file\'s name in yellow, said core: write-protected', 'core: ' + short(cc.name));
 

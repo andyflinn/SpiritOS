@@ -5,7 +5,7 @@
 //   so one file per element, each adding itself to window.spirit.element,
 //   which the shell hands to apps at mount as api.ui.element.
 //
-// Loaded by the old shell's page (spirit/shell/index.html) before the shell, and through spirit.require
+// Loaded through spirit.require
 // by whatever draws with it, on the globals every shell script
 // has (spirit, document, window.spirit.apiTreeIndex)
 // and nothing inside shell.js. Its root element is the control: it carries

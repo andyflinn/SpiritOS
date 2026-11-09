@@ -10,7 +10,7 @@
 // hub passes the one that speaks HTTPS, tests pass one that answers from a
 // relay object in the same process.
 
-// Isomorphic, the way kernel.js is: the rules are shared, the filesystem
+// Isomorphic: the rules are shared, the filesystem
 // and the signing are node-only. The relay panel runs in the browser and has to
 // obey the same "how few mailboxes may this node be left with" rule the
 // node side knows, and a rule copied into a second file is a rule that

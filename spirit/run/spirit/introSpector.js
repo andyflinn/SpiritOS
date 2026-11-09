@@ -17,7 +17,7 @@
 // WHICH .json FILES ARE VERB FILES: one whose name is a verb name, that is not the server's manifest, and that
 // parses to an object with a string description. A verb file naming a verb nobody declared is said at boot.
 
-// The spirit object first, as the global spirit (goal/G40.1): app servers load this file too, so it takes from spirit what it took from kernel.js.
+// The spirit object first, as the global spirit (goal/G40.1): app servers load this file too, so it takes what it needs from spirit.
 require('./spirit.js');
 const fs = require('fs');
 const path = require('path');
@@ -74,7 +74,7 @@ function readFolder(dir, declared, manifest) {
 //
 //   Andy, 2026-10-20: "introSpector will ALWAYS supply the following owner-VERB: FS: it will be a spirit.fs object,
 //   scoped to the introSpectors folder", "it will allow any introSpector consumer to place it's on remarks into that
-//   folder, for example verb.design.md, README.md for the family", "the exact names that kernel.js has in the fs
+//   folder, for example verb.design.md, README.md for the family", "the exact names that the kernel has in the fs
 //   section, scoped to the family folder in the same way that the kernel equivalents are scoped to spirit/run/", and
 //   on listing, "then put a search in there."
 //

@@ -279,7 +279,7 @@ on WSL. Functionally everything worked — two nodes on two operating
 systems added each other through spirit-3, instantly — but the icons did
 not render.
 
-**All 162 of them are Unicode emoji** (`kernel.js`, `ICON`): `🟢`, `✅`,
+**All 162 of them are Unicode emoji** (the old kernel's `ICON`): `🟢`, `✅`,
 `⚠️`. Windows and macOS ship a colour emoji font; a fresh Ubuntu, and
 most minimal Linux installs, do not.
 

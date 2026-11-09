@@ -10,4 +10,5 @@ The box: *"plugin leftovers (G43.22): deskChat.js and deskElement.js in shell/sh
 
 - `spirit/run/shell/shared/js/deskChat.js` and `deskElement.js` are gone.
 - Their tests are gone: `shell/shared/js/test/deskChat.js`, `deskChat.md`, `deskElement.js`, `deskElement.md`, and no other test or spec in a `test/` folder reads or names `deskChat.js`, `deskElement.js`, `createDeskChat` or `createDeskElement`. A spec that quotes the box's line is no use of them and is not counted.
-- The world: the folder read holds `deskRunStatus.js`, `deskDetails.js` is beside this test, and the tracked files and tests read are many, so an empty read is red.
+- The world: `deskRunStatus.js` moved into Desk (`spirit/app/desk/element/deskRunStatus/`) and the folder the leftovers stood in,
+  `shell/shared/js/`, is gone with all of `shell/` (goal/G43.30); `deskDetails.js` is beside this test, and the tracked files and tests read are many, so an empty read is red.

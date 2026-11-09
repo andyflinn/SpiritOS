@@ -12,8 +12,8 @@ that core files depend on, are core-files, too."*).
   - a script's `require` of a file beside it;
   - `spirit.require` of a literal path.
   Each such file that exists must be core, or the test is red naming it and the core files that load it.
-- **shell/shared/ holds no core file** (Andy, Q2: *"no \"core\" files should reside in shell/shared/ since that folder
-  was meant to be a place where non-intrinsic apps could share modules."*): so no core file loads from it either.
+- **run://shell/ is gone** (goal/G43.30; Andy: *"can we delete run://shell/"*), shell/shared/ with it: the rule that it held
+  no core file (goal/G41.30) has nothing left to hold, and the test finds no tracked file under it.
 - It must have judged something: over 50 core files read and over 50 loaded files asked.
 
 ## What its test must try to break

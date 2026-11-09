@@ -1,4 +1,4 @@
-// spirit/run/shell/ruleDetails/ruleDetails.js
+// spirit/run/spirit/app/desk/element/ruleDetails/ruleDetails.js (moved from shell/ruleDetails/ with goal/G43.30)
 // ONE RULE OF THE DESK, AS A DIALOG — goal/G6.4, beside deskDetails.
 //
 //   Andy, FACE.md (ruleDetails): the header area "it's upper edge sticks to the the lower edge of the shell's titlebar,

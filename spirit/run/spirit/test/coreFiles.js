@@ -22,25 +22,20 @@ test.startTest('coreFiles.js: which files are core');
 test.subHeading('what was core before goal/G41.29');
 each(['spirit/run/spirit/shell/face.html', 'spirit/run/spirit/shell/boot.js', 'spirit/run/spirit/shell/seal.js', 'spirit/run/spirit/shell/face.css', 'spirit/run/spirit/shell/favicon.svg'], true, 'the face\'s boot');
 each(['spirit/run/spirit/app/join/join.js', 'spirit/run/spirit/app/join/join.json'], true, 'join, whole, an intrinsic app since goal/G43.26 moved it to spirit/app/join/ (the login app went, goal/G43.18)');
-each(['spirit/run/shell/apps/apps.json', 'spirit/run/spirit/app/desk/element/desk/desk.json'], false, 'a manifest is never core');
-each(['spirit/run/spirit/relay.js', 'spirit/run/spirit/test/relayServer.js', 'spirit/run/spirit/element/search/contact.js', 'spirit/run/shell/json/x.json', 'spirit/run/test/testReport.js'], true, 'the core folders');
-// goal/G41.30, the review's H5: what index.html loads on every boot.
-each(['spirit/run/spirit/element/codeMirror/lib/codemirror.js', 'spirit/run/spirit/element/codeMirror/lib/codemirror.css', 'spirit/run/spirit/element/progressBar.js'], true, 'loaded by index.html on every boot');
-// Andy: "no \"core\" files should reside in shell/shared/ since that folder was meant to be a place where non-intrinsic
-// apps could share modules".
-each(['spirit/run/shell/shared/ask.js', 'spirit/run/shell/shared/js/deskRunStatus.js', 'spirit/run/shell/shared/js/test/deskRunStatus.js'], false, 'shell/shared, where apps share modules');
-each(['spirit/run/spirit/shell/index.html', 'spirit/run/spirit/spirit.js', 'spirit/run/spirit/shell/elements.css', 'spirit/run/spirit/shell/tokens.css', 'spirit/run/spirit/shell/shell.css', 'spirit/run/spirit/shell/ghost.svg'], true, 'the frame, in spirit/ since goal/G43.18');
-// goal/G41.30, Andy: "make the nav wrapper \"core\"": it moved out of spirit/element/ in G41.19, and no rule named it there.
-each(['spirit/run/shell/navigationWrapper.js', 'spirit/run/shell/test/navigationWrapper.js', 'spirit/run/shell/test/navigationWrapper.md'], true, 'the navigation wrapper, and its tests');
-each(['spirit/run/shell/apps/apps.js', 'spirit/run/spirit/app/grants/grants.js'], true, 'an intrinsic app\'s code');
-each(['spirit/run/shell/apps/notes.txt', 'spirit/run/spirit/app/desk/element/desk/desk.js', 'spirit/run/shell/chatter/chatter.js'], false, 'an intrinsic app\'s data, or an app not intrinsic');
-ok(core.intrinsic('shell/apps') && core.intrinsic('spirit/run/shell/apps/apps.js') && !core.intrinsic('spirit/app/desk/element/desk'),
-  'intrinsic answers for a folder or a path inside one, with or without spirit/run/', 'intrinsic answered wrongly for shell/apps or spirit/app/desk/element/desk');
+each(['spirit/run/spirit/app/desk/element/desk/desk.json'], false, 'a manifest is never core');
+each(['spirit/run/spirit/relay.js', 'spirit/run/spirit/test/relayServer.js', 'spirit/run/spirit/element/search/contact.js', 'spirit/run/test/testReport.js'], true, 'the core folders');
+// goal/G41.30, the review's H5: what the page loads on every boot.
+each(['spirit/run/spirit/element/codeMirror/lib/codemirror.js', 'spirit/run/spirit/element/codeMirror/lib/codemirror.css', 'spirit/run/spirit/element/progressBar.js'], true, 'loaded on every boot');
+each(['spirit/run/spirit/spirit.js', 'spirit/run/spirit/shell/elements.css', 'spirit/run/spirit/shell/tokens.css', 'spirit/run/spirit/shell/shell.css', 'spirit/run/spirit/shell/ghost.svg'], true, 'the frame, in spirit/ since goal/G43.18');
+each(['spirit/run/spirit/app/grants/grants.js'], true, 'an intrinsic app\'s code');
+each(['spirit/run/spirit/app/desk/element/desk/desk.js'], false, 'an app not intrinsic');
+// goal/G43.30: THE CODED LIST WENT WITH shell/ (Andy: "can we delete run://shell/"): coreFiles answers no list and no intrinsic().
+ok(!('INTRINSIC' in core) && !('intrinsic' in core), 'coreFiles.js holds no coded intrinsic list any more', 'coreFiles.js still answers ' + Object.keys(core).join(', '));
 
 test.subHeading('goal/G41.29: a core file\'s companion test files are core');
 each(['spirit/run/spirit/shell/test/boot.js', 'spirit/run/spirit/shell/test/boot.md', 'spirit/run/spirit/shell/test/seal.js', 'spirit/run/spirit/shell/test/seal.md'], true, 'the boot\'s companions');
-each(['spirit/run/shell/apps/test/apps.js', 'spirit/run/shell/apps/test/apps.md', 'spirit/run/spirit/app/grants/test/grants.md'], true, 'an intrinsic app\'s companions');
-each(['spirit/run/spirit/app/desk/element/desk/test/desk.js', 'spirit/run/spirit/app/desk/element/desk/test/desk.md', 'spirit/run/shell/chatter/test/chatter.md'], false, 'a test named after no core file');
+each(['spirit/run/spirit/app/grants/test/grants.md'], true, 'an intrinsic app\'s companions');
+each(['spirit/run/spirit/app/desk/element/desk/test/desk.js', 'spirit/run/spirit/app/desk/element/desk/test/desk.md'], false, 'a test named after no core file');
 
 
 // goal/G43.14: INTRINSIC FOR THE NEW APPS, in spirit/app/<name>/<name>.json (Andy: "i think in spirit/app/<name>/<name>.json
@@ -87,14 +82,12 @@ test.subHeading('goal/G43.14: <name>.json says whether an app of spirit/app/ is 
   fsx.rmSync(root, { recursive: true, force: true });
 }
 
-test.subHeading('goal/G43.14: Contacts moved, so it comes off the coded list ("an app that moves comes off it in the same commit")');
-ok(core.intrinsic('shell/contacts') === false, 'shell/contacts is not on the coded list', 'shell/contacts is still on it');
+test.subHeading('goal/G43.14: Contacts moved to spirit/app/contact/ and says intrinsic in its own json');
 ok(core.isCore('spirit/run/spirit/app/contact/contact.json') === true && core.isCore('spirit/run/spirit/app/contact/contact.js') === true,
   'in this tree spirit/app/contact/ is core, its json saying intrinsic true', 'contact.json ' + core.isCore('spirit/run/spirit/app/contact/contact.json') + ', contact.js ' + core.isCore('spirit/run/spirit/app/contact/contact.js'));
 
-test.subHeading('goal/G43.24: Info and Grants moved to spirit/app/, so they come off the coded list and say it in their own json');
+test.subHeading('goal/G43.24: Info and Grants moved to spirit/app/ and say it in their own json');
 ['info', 'grants'].forEach(function (name) {
-  ok(core.intrinsic('shell/' + name) === false, 'shell/' + name + ' is not on the coded list', 'shell/' + name + ' is still on it');
   ok(core.appIntrinsic(path.resolve(RUN, '..', '..'), name) === true, 'spirit/app/' + name + '/' + name + '.json says intrinsic true',
     'spirit/app/' + name + '/' + name + '.json says intrinsic ' + core.appIntrinsic(path.resolve(RUN, '..', '..'), name));
 });

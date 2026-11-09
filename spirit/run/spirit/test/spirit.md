@@ -13,7 +13,7 @@ first and does everything through it. A module whose first require is not spirit
 The one door. It is the only place that tells a page from node, it reaches the node by one post and one get, it puts
 the node's families on itself, and it loads every other component. Everything is a client of the core and gets in
 through this file, the node server and the relay server too, for the version, the MIME table, the debug switch and the
-default port; they still take the body reader from `spirit/kernel.js` until it goes. spirit.js itself loads no kernel.
+default port.
 
 ## One instance
 
@@ -209,9 +209,9 @@ making a call, since the elements will trigger the necessary calls?"*, and *"wsl
 well!"*). On that same page, desk, off at load, is switched on (`app.active`); once its server answers, the Desk element
 is opened: it asks `desk.items.search` itself and draws its list, never *"the desk server did not answer"*.
 
-### In node only: `node`, `jobs`, `events.publish`, and no kernel
+### In node only: `node`, `jobs`, `events.publish`
 
-spirit.js requires no `kernel.js`, and hands out no `spirit.core`: what a server took from the kernel is spirit.js's own.
+spirit.js hands out no `spirit.core`: what a server needs is spirit.js's own.
 
 - **`spirit.node`**: `{ port, name, key, ownerKey }`. The port is the one read from `environment.json`; the name, key and
   owner key are what the node hands every server it starts as `--node`, all public, `''` when not given.

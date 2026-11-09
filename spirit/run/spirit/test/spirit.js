@@ -104,7 +104,6 @@ function scratchRoot(port) {
 const OBSERVE = `
 const s = require(process.argv[2] + '/spirit/spirit.js');
 const out = {};
-out.kernelLoaded = Object.keys(require.cache).some(function (k) { return /kernel\\.js$/.test(k); });
 out.facts = s.node;
 async function code(p) { try { await p; return 'answered'; } catch (e) { return e && e.code; } }
 (async function () {
@@ -268,12 +267,12 @@ test.startTest('spirit/run/spirit.js: the one spirit object, in node and on a pa
     test.check('one post and one get reach the node, post(verb, args) and get(path); the other three are the relay\'s face routes, the login and the link');
   else test.fail('spirit.js reaches the network in ' + fetches + ' places, ' + toFace + ' of them the face routes, or has no post(verb, args) and get(path)');
 
-  // ── 2. IN NODE: NO KERNEL, spirit.js's OWN ───────────────────────────
-  test.subHeading('2. in node: no kernel; the node\'s facts, the job and the tables are spirit.js\'s own');
+  // ── 2. IN NODE: spirit.js's OWN ──────────────────────────────────────
+  test.subHeading('2. in node: the node\'s facts, the job and the tables are spirit.js\'s own');
   const mime = s.MIME_TYPES;
-  if (!('core' in s) && !/require\('\.\/spirit\/kernel\.js'\)/.test(code) && mime && /javascript/.test(mime['.js']) && /json/.test(mime['.json']))
-    test.check('spirit.js requires no kernel and hands out no spirit.core; spirit.MIME_TYPES is its own table');
-  else test.fail('spirit.js still holds or loads the kernel: ' + short(Object.keys(s)));
+  if (!('core' in s) && mime && /javascript/.test(mime['.js']) && /json/.test(mime['.json']))
+    test.check('spirit.js hands out no spirit.core; spirit.MIME_TYPES is its own table');
+  else test.fail('spirit.js still holds spirit.core, or no MIME table of its own: ' + short(Object.keys(s)));
   if (s.VERSION === '0.0.1' && s.DEFAULT_SPIRIT_PORT === 65432) test.check('spirit.VERSION is ' + s.VERSION + ' and spirit.DEFAULT_SPIRIT_PORT ' + s.DEFAULT_SPIRIT_PORT);
   else test.fail('the version and the default port: ' + short([s.VERSION, s.DEFAULT_SPIRIT_PORT]));
   const dbg = [s.debug(), s.debug(true), s.debug(), s.debug('yes'), s.debug(false), s.debug()];
@@ -342,8 +341,6 @@ test.startTest('spirit/run/spirit.js: the one spirit object, in node and on a pa
       if (oc[0] && oc[0][0] === 200 && oc[0][1] === 'hello eve' && oc[1][0] === 400 && oc[1][1] === 'no-such-argument' && oc[2][0] === 409 && oc[3][0] === 0)
         test.check('spirit.outcome: 200 and the body; 400 for a call the check refused; the node\'s own status; 0 when nothing answered');
       else test.fail('spirit.outcome: ' + short(oc));
-      if (o.kernelLoaded === false) test.check('a process that requires spirit.js loads no kernel.js');
-      else test.fail('requiring spirit.js loaded kernel.js');
       const f = o.facts || {};
       if (f.port === node.port && f.name === 'nodey' && f.key === 'K1' && f.ownerKey === 'O1') test.check('spirit.node: its port from environment.json, and the name, key and owner the node handed it as --node');
       else test.fail('spirit.node: ' + short(f));

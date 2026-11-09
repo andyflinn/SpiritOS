@@ -3,13 +3,13 @@
 The face's boot (goal/G41.3): face/shell.js moved into shell/ as shell/boot.js, and the rest of face/ with it, under the
 same names; since goal/G43.18 they are in spirit/shell/, served at the addresses they always had (spirit/serveCommon.js,
 PAGE_FILES). spirit.js loads it on a face page. It boots only itself, the stream, its parts and the shell the node names
-(goal/G43.18); every face app loads its own components, as a tree, through spirit.require.
+(goal/G43.18). The old shell's face apps it once loaded alone went with `shell/` (goal/G43.30).
 
 ## Where it lives, and what moved with it
 
 - `spirit/shell/boot.js` is there; `face/shell.js` is gone, and so is every other file of face/: `spirit/shell/seal.js`,
-  `spirit/shell/face.css` and `spirit/shell/favicon.svg` are there instead, with face.html, index.html, shell.css and
-  ghost.svg, and spirit.js is in spirit/; none of them is left at the run root or in shell/.
+  `spirit/shell/face.css` and `spirit/shell/favicon.svg` are there instead, with face.html, shell.css and
+  ghost.svg (index.html went with the old shell, goal/G43.30), and spirit.js is in spirit/; none of them is left at the run root or in shell/.
 - `shell/login/` is gone (goal/G43.18, box v29: *"The login is spirit.login, in spirit.js, no app ... shell/login/ and its
   login.json go."*).
 - spirit.js loads `shell/boot.js` on a face page (its FACE list): at home from the node; on a face, logged in, over the
@@ -22,9 +22,10 @@ PAGE_FILES). spirit.js loads it on a face page. It boots only itself, the stream
 ## What it loads
 
 - Only what it runs itself: the paths of components in its code are spirit.js's own libraries, the sheets (`shell.css`,
-  `shell/face.css` last), Join, the navigation, and the file tree's row element (goal/G41.19). No other spirit/element element.
-- Join is hard-coded by path; boot reads no sidecar of it.
-- boot, the seal, the sheet, the icon and the Join app whole are core.
+  `shell/face.css` last) and the file tree's row element (goal/G41.19). No other spirit/element element. The navigation
+  wrapper is gone (goal/G43.30): nothing opens as a page any more.
+- Join is an app (goal/G43.26): boot does not load it.
+- boot, the seal, the sheet, the icon and the Join app (`spirit/app/join/`) whole are core.
 
 ## The shell the node names, and no desktop of its own (goal/G43.18, box v29)
 
@@ -42,19 +43,7 @@ PAGE_FILES). spirit.js loads it on a face page. It boots only itself, the stream
 - boot loads neither and names no icon table: a step's icon and a manifest's icon are drawn as the glyph they are.
 - Every app manifest names its icon as the glyph itself, never a key.
 
-## Every face app loads alone
-
-- Every face app shipped to date (agent, apps, contacts, files, icons, info, mediaViewer: named by the test, since a face
-  mark is each node's own state) mounts with nothing on the page but a `spirit.require` that
-  serves files from the run tree, de-duped, and an empty set of elements: what it needs it asks for, and what it asks
-  for loads what it needs. The loader is spirit.js's: what a component requires while it runs is waited for before its
-  own require answers, so an app that awaits its components has their whole tree. Mounting it throws nothing, and nothing it starts fails for a component it did not load.
-- The test looks for these under `shell/<name>/<name>.js`, where only info still stands (the others were deleted, or moved
-  under spirit/app/ as Files and Icons did); the check that all of them are there fails until the test's list is brought
-  up to date.
-
 ## What its test must try to break
 
-- A component an app uses without asking for it.
 - A desktop, a link or a join step of boot's own.
 - An old face/ path left in boot, spirit.js or face.html.

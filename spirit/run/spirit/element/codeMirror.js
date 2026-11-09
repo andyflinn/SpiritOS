@@ -8,7 +8,7 @@
 //
 // THE ONLY DOOR TO THE LIBRARY (goal/G43.5; Andy: "only access to codeMirror library is through the element!"): no page loads it
 // beside this. IT LOADS THE LIBRARY ITSELF, once, from its local copy (spirit/element/codeMirror/), never by reading
-// index.html (goal/G40.7: the face never reads it): the library, its two stylesheets and the mode files of the path's
+// any page (goal/G40.7: the face never reads one): the library, its two stylesheets and the mode files of the path's
 // syntax, each through spirit.require.
 //
 // codeMirror.create(host, { mode, text, words, line, path }) -> Promise of { mode, cm, value(), mark(words) }

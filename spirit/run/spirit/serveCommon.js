@@ -133,7 +133,7 @@ const BODY_BYTES = Symbol('bodyBytes');
 //   Andy, 2026-10-10: "in a max_BYTE environment, BYTES must be copied.
 //   BYTES must be counted. that's a rule." And on where it belongs:
 //   "one single piece of shared code must ensure that raw bytes are
-//   copied. precisely", "ideally through a shared kernel.js utility or
+//   copied. precisely", "ideally through a shared kernel utility or
 //   similar."
 //
 // WHAT WAS WRONG. Every reader did `body += chunk`, which decodes each
@@ -148,7 +148,7 @@ const BODY_BYTES = Symbol('bodyBytes');
 // So the chunks are kept as Buffers and decoded ONCE over the whole
 // body, which cannot split a character because there is nothing left to
 // split it against. It is in serveCommon.js, the code the node and the relay share (goal/G40.6; it stood in
-// kernel.js until then).
+// the old kernel until then).
 //
 // `max` refuses by name at the first chunk that passes it and STOPS
 // READING — a body refused for its size must not go on arriving, or the
@@ -484,7 +484,6 @@ function writeEnvironment(rootDir, port) {
 // same."). The browser asks the addresses it always asked; the node and the relay serve each from its file under spirit/.
 // address (run-relative, no leading slash) -> the file, run-relative.
 const PAGE_FILES = {
-  'index.html': 'spirit/shell/index.html',
   'face.html': 'spirit/shell/face.html',
   'spirit.js': 'spirit/spirit.js',
   'shell.css': 'spirit/shell/shell.css',

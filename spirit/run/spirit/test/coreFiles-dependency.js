@@ -74,12 +74,9 @@ Object.keys(byDep).sort().forEach(function (d) {
 });
 if (!loose.length) test.check('every file a core file loads is core');
 
-// SHELL/SHARED HOLDS NO CORE FILE (goal/G41.30, Andy, Q2: "no \"core\" files should reside in shell/shared/ since that
-// folder was meant to be a place where non-intrinsic apps could share modules."). So a core file never loads from it
-// (the rule above), and nothing in it is core.
-const shared = tracked.map(function (f) { return f.replace(/^spirit\/run\//, ''); }).filter(function (f) { return f.indexOf('shell/shared/') === 0 && !/(^|\/)test\//.test(f); });
-ok(shared.length > 0, 'shell/shared/ holds ' + shared.length + ' files to ask', 'shell/shared/ holds no file: nothing to judge');
-const coreShared = shared.filter(isCore);
-ok(!coreShared.length, 'no file in shell/shared/ is core', coreShared.length + ' file(s) in shell/shared/ are core: ' + coreShared.join(', '));
+// SHELL/SHARED IS GONE (goal/G43.30, with all of shell/; Andy: "can we delete run://shell/"): its rule, that it held no
+// core file (goal/G41.30), has nothing left to hold.
+const shellLeft = tracked.filter(function (f) { return f.indexOf('spirit/run/shell/') === 0; });
+ok(!shellLeft.length, 'run://shell/ holds no tracked file', 'run://shell/ still holds ' + shellLeft.length + ': ' + shellLeft.slice(0, 5).join(', '));
 
 test.reportSuccessFailureCount();

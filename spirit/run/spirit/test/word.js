@@ -229,7 +229,7 @@ test.startTest('word.js: the reserved words, and the tree held against them (goa
       page = chrome && node.up ? await H.chromePage(chrome) : null;
       if (!page || page.error) test.fail('no browser to ask: ' + short(page ? page.error : 'no Chrome, or the scratch node did not come up'));
       else {
-        await page.send('Page.navigate', { url: node.base + '/index.html' });
+        await page.send('Page.navigate', { url: node.base + '/' });
         await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.ready)').then(Boolean); }, H.WAIT);
         await page.evaluate('window.spirit.ready.then(function () { return true; })').catch(function () { return false; });
         await H.sleep(2500);

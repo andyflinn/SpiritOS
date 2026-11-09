@@ -1,5 +1,5 @@
 'use strict';
-// The spirit object first, as the global spirit (goal/G40.1): what this file took from kernel.js it now takes from spirit.
+// The spirit object first, as the global spirit (goal/G40.1): it takes what it needs from spirit.
 require('./spirit.js');
 
 // spirit/run/spirit/appServer.js

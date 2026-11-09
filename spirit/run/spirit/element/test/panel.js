@@ -99,9 +99,8 @@ test.startTest('panel.js: what mounts covers its mounter (goal/G43.17)');
   // goal/G43.18, Andy: "contact details and relay details should be proper panels in the newest shell style.", and "add it to a
   // general test that panels must be panels....": what opens over its mounter opens as a layer of this element, so no code pushes
   // a page on the navigation for it.
-  // The shell itself (shell/) opens an app as a page on the navigation: that is the shell's top container (navigationWrapper.js,
-  // Andy 2026-10-25: "an app is only a mountable icon in shell, conceptually, and it simply uses the navigation wrapper as it's
-  // top container"), not an element over its mounter. The apps and elements are spirit/.
+  // The navigation wrapper itself is gone with shell/ (goal/G43.30): nothing opens a page on it any more. The apps and elements
+  // are spirit/.
   test.subHeading('Andy: "panels must be panels": no app or element opens a page on the navigation, what it opens over itself is a panel');
   const pushing = codeNaming(/navigation\.push\s*\(/).filter(function (f) { return f.split(path.sep)[0] === 'spirit'; });
   ok(!pushing.length, 'no app or element under spirit/ calls navigation.push', pushing.length + ' still do: ' + short(pushing));

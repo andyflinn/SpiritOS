@@ -5,7 +5,7 @@
 //   so one file per element, each adding itself to window.spirit.element,
 //   which the shell hands to apps at mount as api.ui.element.
 //
-// Loaded by the old shell's page (spirit/shell/index.html) before the shell, and through spirit.require
+// Loaded through spirit.require
 // by whatever draws with it, on the globals every shell script
 // has (spirit, document, window.spirit.apiTreeIndex)
 // and nothing inside shell.js. Its root element is the control: it carries
@@ -43,7 +43,7 @@
   // an alias that is not even at the head of its line. The cost is that
   // arrow keys, Enter, Escape and click-outside are ours now.
   //
-  // The value is the GLYPH, not the key: setAppOverride (spirit/client/shell.js)
+  // The value is the GLYPH, not the key: setAppOverride (the old shell's)
   // stores a literal glyph in preferences.appOverrides, and the agent table's
   // icon field (spirit/app/agent/table/rowElement.js) keeps one in its row. A manifest names its icon as the glyph too
   // (goal/G41.1: no icon table on the face).

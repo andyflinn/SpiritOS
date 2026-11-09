@@ -95,7 +95,7 @@ var deskVia = {
   onPublished: function (fn) { return deskHear(fn); },
   callDialog: function (target, params) {
     if (/deskDetails$/.test(target)) return deskDialog('item', String(params && params.id), 'spirit/app/desk/element/deskDetails/deskDetails.js', 'deskDetails', params);
-    return deskDialog('rule', String(params && params.key), 'shell/ruleDetails/ruleDetails.js', 'ruleDetails', params);
+    return deskDialog('rule', String(params && params.key), 'spirit/app/desk/element/ruleDetails/ruleDetails.js', 'ruleDetails', params);
   },
 };
 // THE LIST IS THE DESK SERVER'S (desk/G2.6). Andy: "The server determines all the
@@ -536,7 +536,7 @@ function deskForgetKept() {
 }
 // THE RUN IN THE STATUS COLUMN (goal/G33.6): the shared rendering the dialog uses too, loaded once by the app; a page
 // without it draws the status word alone.
-var DESK_RUN_STATUS = '/shell/shared/js/deskRunStatus.js';
+var DESK_RUN_STATUS = '/spirit/app/desk/element/deskRunStatus/deskRunStatus.js';
 function deskLoadRunStatus() {
   var have = typeof window !== 'undefined' && window.spirit && window.spirit.elements && window.spirit.elements.deskRunStatus;
   if (typeof have === 'function') return;
@@ -584,7 +584,8 @@ var DESK_SWORD = deskGlyph('⚔️', 'There is a battle to be fought: make it th
 // CLOSE BEFORE HIS GO IS THE DIALOG'S ALONE (goal/G3.9). Andy, 2026-10-03: "the close-with arm is only visible on
 // the item detail". A done row keeps its Close.
 // THE GOAL ROW KEEPS ITS CLOSE (goal/G6.6): the goal's Close appears in the List too. It shows only once nothing under
-// the goal is open (deskNextPress), so it presses at once (goal/G41.9): an are-you-sure there could never fire.
+// the goal is open (deskNextPress). It arms first all the same, as a done row's Close does (goal/G43.30; Andy: "make sure
+// that all delete and close buttons are armingButton's"), which reverses goal/G41.9's press at once.
 function deskInRow(row, what) {
   if (DESK_NOT_IN_ROW.indexOf(what) !== -1) return false;
   if (what === 'close' && row.status !== 'done' && !(row.goal === '')) return false;
@@ -621,6 +622,8 @@ function deskRowPresses(row) {
       label = 'Done ' + DESK_WARN;
       arming = 'Done anyway? ' + title;
     }
+    // EVERY CLOSE ARMS (goal/G43.30): the first press arms it, the second closes.
+    if (what === 'close') arming = 'Close: sure?';
     // goal/G33.6: no Verify shows the verifier's busy state (Andy: "please don't show verifier-busy an any verify
     // button, i can check that for myself").
     // data-action: the List (probabilitySearch) leaves a press inside a row to its owner, this page, and opens nothing.
@@ -659,7 +662,7 @@ function deskRowCells(row, presses) {
 // THE STATUS BOX (goal/G18.5, back with goal/G33.6): while the verifier runs this item, its run; otherwise the server's
 // status word, green when it says passed, red when rejected or red. Andy: "why do i no longer see the verifier run in
 // the items status column?" deskVerify knows no item, so the row joins the desk's fact (verifyRunning) with the
-// verifier's own publish (deskVerifyRun), through the one rendering the dialog uses too (shell/shared/js/deskRunStatus.js).
+// verifier's own publish (deskVerifyRun), through the one rendering the dialog uses too (spirit/app/desk/element/deskRunStatus/deskRunStatus.js).
 function deskStatusCell(row) {
   var els = typeof window !== 'undefined' && window.spirit && window.spirit.elements;
   var run = els && typeof els.deskRunStatus === 'function' ? els.deskRunStatus(row, deskVerifyRun, deskEsc) : '';
@@ -950,7 +953,7 @@ function deskRuleAdd() {
     deskRulesSearch();
   }, function (e) { deskRulesNote = 'Not added: ' + e.message; deskDrawRules(); });
 }
-function deskOpenRule(key) { deskVia.callDialog('shell/ruleDetails', { key: key }).then(function () { deskRulesSearch(); }, function () {}); }
+function deskOpenRule(key) { deskVia.callDialog('spirit/app/desk/element/ruleDetails', { key: key }).then(function () { deskRulesSearch(); }, function () {}); }
 
 // ONE ROW'S DIALOG, from the List.
 function deskOpenRow(id) {

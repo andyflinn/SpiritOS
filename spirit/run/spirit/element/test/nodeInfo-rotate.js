@@ -84,8 +84,8 @@ test.startTest('nodeInfo-rotate.js: the rotate key dialog, an element opened ove
   ok(!fs.existsSync(path.join(RUN, 'shell', 'rotateKey')), 'shell/rotateKey/ is gone', 'shell/rotateKey/ is still there');
   let core = null;
   try { core = require(path.join(RUN, 'spirit', 'coreFiles.js')); } catch (e) { core = null; }
-  ok(!!core && Array.isArray(core.INTRINSIC) && core.INTRINSIC.length > 0, 'the world: coreFiles.js answers its INTRINSIC list (' + (core && core.INTRINSIC ? core.INTRINSIC.length : 0) + ')', 'coreFiles.js answers no INTRINSIC list: nothing judged');
-  if (core && Array.isArray(core.INTRINSIC)) ok(core.INTRINSIC.map(function (x) { return String(x).toLowerCase(); }).indexOf('shell/rotatekey') === -1, 'coreFiles.js\'s INTRINSIC list has no shell/rotateKey', 'INTRINSIC still lists shell/rotateKey');
+  // Since goal/G43.30 there is no coded INTRINSIC list at all, so none can list shell/rotateKey.
+  ok(!!core && !('INTRINSIC' in core), 'no coded INTRINSIC list lists shell/rotateKey: coreFiles.js holds none (goal/G43.30)', 'coreFiles.js ' + (core ? 'still answers an INTRINSIC list' : 'did not load'));
   ok(fs.existsSync(path.join(RUN, 'spirit', 'element', 'test', 'rotateKey.js')) && fs.existsSync(path.join(RUN, 'spirit', 'element', 'test', 'rotateKey.md')), 'its test is in the element\'s test folder: spirit/element/test/rotateKey.js and .md', 'no spirit/element/test/rotateKey.js and .md');
   // What runs, its comments out and its tests out: nothing opens the old dialog any more.
   const opening = treeFiles().filter(function (f) { return /\.(js|html)$/.test(f) && f.split('/').indexOf('test') === -1; })

@@ -549,7 +549,7 @@
 
   // ── THE ONE STREAM OF THIS VM: spirit.events.subscribe(handlers) (goal/G40.6) ──────────────────────────────────────
   // Andy: "two verbs on events - publish - subscribe". The node's events family is its one dispatcher; this is its
-  // subscribe, moved here from kernel.js's page stream. ONE STREAM PER PAGE (goal/G30.16; Andy: "the home page should
+  // subscribe, moved here from the old kernel's page stream. ONE STREAM PER PAGE (goal/G30.16; Andy: "the home page should
   // need one stream only."): every subscriber shares it, and one that comes later is handed the jobs as they stand and
   // told the stream is up. It comes back by itself (Andy, 2026-09-30: "this should work without a hickup."): an end or an
   // error is said (onConnection false), it opens again, and the first open after being down is said (onReconnect).
@@ -655,7 +655,7 @@
   self.events = { subscribe: subscribeEvents };
 
   // IN NODE, spirit.js's OWN, AND NO KERNEL (goal/G40.6). Andy: "WHY THE FUCK WOULD we pass spirit.js if not for the
-  // fucking servers to use it?", and "Fix that SHIT. in this item, here. NOW." What a server process took from kernel.js
+  // fucking servers to use it?", and "Fix that SHIT. in this item, here. NOW." What a server process took from the old kernel
   // through spirit.core is spirit.js's own now, on its one post: the node's facts, this process's job, peerPost.
   if (isNode()) {
     // THE NODE'S FACTS (goal/G19.10; Andy: "they should have that stuff passed with the spirit object"): its port, and what
@@ -722,7 +722,7 @@
     };
 
     // ASK A PEER AND AWAIT THE ANSWER (fileTransfer goal/G1.3), as it has always worked (Andy: "peer post will work the way
-    // they ALWAY WORKED"), moved here from kernel.js unchanged in what it does: the node's events subscribed as a server
+    // they ALWAY WORKED"), moved here from the old kernel unchanged in what it does: the node's events subscribed as a server
     // (it is handed no backlog and marks nothing taken), then one post of peer.post, then the answer-post whose re
     // matches that post's hash. The stream opens BEFORE the post, so an answer quicker than the post's own reply is kept.
     // how: waitMs (30 s by default), patienceMs, kind. Resolves the answer's body; {ok: false, code: 'not-posted'} for a

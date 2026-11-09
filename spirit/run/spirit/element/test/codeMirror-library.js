@@ -43,7 +43,7 @@ test.startTest('codeMirror-library.js: CodeMirror inside spirit/element/codeMirr
   try {
     page = node.up ? await H.chromePage(chrome) : null;
     if (!page || page.error) { test.fail(page ? page.error : 'the scratch node did not come up'); return; }
-    await page.send('Page.navigate', { url: node.base + '/index.html' });
+    await page.send('Page.navigate', { url: node.base + '/' });
     await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.ready)').then(Boolean); }, H.WAIT);
     await H.sleep(2500);
     let at = {};

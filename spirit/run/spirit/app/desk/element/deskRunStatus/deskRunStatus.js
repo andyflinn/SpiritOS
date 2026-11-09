@@ -1,4 +1,4 @@
-// spirit/run/shell/shared/js/deskRunStatus.js
+// spirit/run/spirit/app/desk/element/deskRunStatus/deskRunStatus.js (moved from shell/shared/js/ with goal/G43.30)
 // THE VERIFIER'S RUN IN AN ITEM'S STATUS — goal/G33.6, bringing back goal/G18.5's status box.
 //
 //   Andy, 2026-10-12 (goal/G18.5): "when a search is run agains the goal or an item, it takes the status box in the

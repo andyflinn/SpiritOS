@@ -225,9 +225,9 @@ function ddMakeBench(n) {
 var DD_LABELS = { 'start-design': 'Start design', 'end-design': 'End design', go: 'Go!', done: 'Done', close: 'Close', reopen: 'Reopen' };
 
 // THE VERIFIER'S RUN OF THIS ITEM (goal/G33.6), as the List's status column shows it: the desk's fact (verifyRunning)
-// joined with deskVerify's own publish (ddRun), through the one shared rendering (shell/shared/js/deskRunStatus.js).
+// joined with deskVerify's own publish (ddRun), through the one shared rendering (spirit/app/desk/element/deskRunStatus/deskRunStatus.js).
 var ddRun = null;
-var DD_RUN_STATUS = '/shell/shared/js/deskRunStatus.js';
+var DD_RUN_STATUS = '/spirit/app/desk/element/deskRunStatus/deskRunStatus.js';
 function ddRunHtml() {
   var els = typeof window !== 'undefined' && window.spirit && window.spirit.elements;
   return els && typeof els.deskRunStatus === 'function' ? els.deskRunStatus(ddFacts || {}, ddRun, ddEsc) : '';
@@ -263,7 +263,8 @@ function ddVerifyHtml(f) {
 
 // CLOSE BEFORE HIS GO IS ARMED, AT THE RIGHT EDGE (goal/G3.9). Andy, 2026-10-03: "A close - with arm-button is
 // available on the right edge of the button bar, before an item has received a 'go' or a 'done'", "the close-with
-// arm is only visible on the item detail". On a done item Close presses at once, as desk/G3.8 built it.
+// arm is only visible on the item detail". EVERY CLOSE ARMS NOW (goal/G43.30; Andy: "make sure that all delete and close
+// buttons are armingButton's"): a done item's Close too, which desk/G3.8 had press at once.
 function ddEarlyClose(f) { return f.status !== 'done' && f.status !== 'closed' && (f.buttons || []).indexOf('close') !== -1; }
 function ddButtonsHtml() {
   var f = ddFacts || {};
@@ -274,7 +275,8 @@ function ddButtonsHtml() {
     var label = b === 'done' && Number(f.claims) > 0 ? 'Done (' + Number(f.claims) + ')' : DD_LABELS[b];
     // START AND END DESIGN ASK ARE-YOU-SURE (goal/G41.11). Andy: "the start-design and end-design buttons in an item
     // must ask: are-you-sure". Armed like Waive (ddArming); the second press is ddSecondPress's.
-    var design = b === 'start-design' || b === 'end-design';
+    // AND CLOSE (goal/G43.30): every Close arms first.
+    var design = b === 'start-design' || b === 'end-design' || b === 'close';
     if (b !== 'done') return '<button type="button" id="dd-' + b + '"' + (design ? ' data-arming="' + label + ': sure?"' : '') + '>' + label + '</button>';
     var warned = ddDoneWarned(f);
     var done = '<button type="button" id="dd-done"' + (warned ? ' data-arming="Done anyway: sure?" title="' + ddEsc(ddDoneWhy(f)) + '"' : '') + '>' +
@@ -324,12 +326,10 @@ function ddButtonsHtml() {
       ' style="margin-left:auto;background:#b00020;color:#fff">Abandon</button>';
   }
   if (early) {
-    // goal/G6.6: a goal's Close asks "are you sure? N open" while any of its items is open; nothing open presses at
-    // once. On a non-goal item (an open code item) the "Close: sure?" arm stands (desk/G3.9).
+    // goal/G6.6: a goal's Close asks "are you sure? N open" while any of its items is open. With nothing open it arms
+    // too (goal/G43.30: every Close is an armingButton), as a non-goal item's "Close: sure?" does (desk/G3.9).
     var goalOpen = f.goal === '' && (f.blocked || []).length;
-    var asks = f.goal !== '' || goalOpen > 0;
-    html += '<button type="button" id="dd-close"' +
-      (asks ? ' data-arming="' + (goalOpen ? 'are you sure? ' + goalOpen + ' open' : 'Close: sure?') + '"' : '') +
+    html += '<button type="button" id="dd-close" data-arming="' + (goalOpen ? 'are you sure? ' + goalOpen + ' open' : 'Close: sure?') + '"' +
       ' style="margin-left:auto">Close</button>';
   }
   return html;
@@ -1051,9 +1051,6 @@ var ddApp = {
       // goal/G41.9: an are-you-sure is its armingButton's (ddArming), never this listener's.
       if (t && t.closest && t.closest('[data-arming]')) return;
       var id = t && t.id;
-      // CLOSE LEAVES THE DIALOG TOO (desk/G3.8). Andy: "when i click on Close in the Detail dialog, the Dialog
-      // should close, since it doesn't exist in the list anymore either." Only once the server took it.
-      if (id === 'dd-close') { ddPress('close').then(function (taken) { if (taken) ddApi.closeDialog({}); }); return; }
       if (id === 'dd-go' || id === 'dd-done' || id === 'dd-reopen') { ddPress(id.slice(3)); return; }
       // goal/G2.19: Make current goal presses at once, like Go and Reopen; it closes nothing and takes nothing back.
       if (id === 'dd-make-current') { ddPress('make-current'); return; }

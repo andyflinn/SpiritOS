@@ -26,7 +26,9 @@ function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x))
 test.startTest('deskDetails-noSharedLeftovers.js: deskChat.js and deskElement.js, and their tests, gone from shell/shared (goal/G43.23 item 10)');
 
 test.subHeading('the world');
-ok(fs.existsSync(path.join(SHARED, 'deskRunStatus.js')), 'the world: spirit/run/shell/shared/js is the folder read (deskRunStatus.js is in it)', 'no deskRunStatus.js in ' + path.relative(REPO, SHARED) + ': the wrong folder, nothing judged');
+// Since goal/G43.30 shell/shared/ is gone with all of shell/, deskRunStatus.js moved into Desk: the folder read is the one the
+// two leftovers stood in, and it no longer exists.
+ok(fs.existsSync(path.join(RUN, 'spirit', 'app', 'desk', 'element', 'deskRunStatus', 'deskRunStatus.js')) && !fs.existsSync(SHARED), 'the world: deskRunStatus.js moved into Desk, and spirit/run/shell/shared/js, where the leftovers stood, is gone (goal/G43.30)', 'deskRunStatus.js not in Desk, or ' + path.relative(REPO, SHARED) + ' still there: nothing judged');
 ok(fs.existsSync(path.join(RUN, 'spirit', 'app', 'desk', 'element', 'deskDetails', 'deskDetails.js')), 'the world: deskDetails.js, which draws an item\'s chat, is beside this test', 'no deskDetails.js beside this test: nothing judged');
 const tracked = execSync('git ls-files', { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(Boolean)
   .filter(function (f) { return fs.existsSync(path.join(REPO, f)); });

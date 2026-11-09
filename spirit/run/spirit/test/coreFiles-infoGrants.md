@@ -6,5 +6,5 @@ Andy: *"i just moved them, didn't fix the manifest."*, *"no i want those apps to
 
 ## Requirements
 
-- `shell/info` and `shell/grants` leave coreFiles.js's INTRINSIC list.
+- `shell/info` and `shell/grants` leave coreFiles.js's INTRINSIC list; since goal/G43.30 there is no such list at all.
 - `coreFiles.appIntrinsic` reads `info` and `grants` intrinsic from each one's own json.

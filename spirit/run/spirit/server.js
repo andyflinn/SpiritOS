@@ -81,9 +81,9 @@ if (process.argv.includes('--help') || process.argv.includes('-h')) {
   process.exit(0);
 }
 
-// The node spawns jobs from process/ and serves the shell from shell/, so
-// it alone demands them (goal/G16.9: the relay's check asks for neither).
-common.verifyStartupCwd('spirit/server.js', ['shell', 'spirit']);
+// The node starts from spirit/run, which holds spirit/. shell/ is no longer
+// asked for: it is gone (goal/G43.30; Andy: "can we delete run://shell/").
+common.verifyStartupCwd('spirit/server.js', ['spirit']);
 
 const ROOT_DIR = fileSystem.ROOT_DIR;
 
@@ -94,9 +94,9 @@ const port = common.portFromArgs(process.argv.slice(2)) || process.env.PORT || s
 // it, nothing else).
 common.writeEnvironment(ROOT_DIR, port);
 
-// The desktop shell. (A relay's brochure, relay.html, is gone with the
-// relay's public door: Andy's decision, goal/G22.6.)
-const HOME_PAGE = 'index.html';
+// "/" IS face.html (goal/G43.30; Andy: "make face.html the default for \"/\""): the old shell's index.html is gone.
+// (A relay's brochure, relay.html, is gone with the relay's public door: Andy's decision, goal/G22.6.)
+const HOME_PAGE = 'face.html';
 
 // THE LOG, read as a table. One store for both directions, keyed by hash
 // and ordered by arrival — and the thing the arrivals seam hands rows to,
@@ -135,13 +135,10 @@ const arrivals = require('./arrivals').createArrivals({
 // before this file listens (goal/G22.5, Andy 2026-10-13).
 
 // The small, fixed set of paths the page needs to boot at all, served
-// unconditionally by the static route below, checked before fileServable —
-// this is what lets spirit/kernel.js sit in fileSystem.js's UNSERVABLE_FILES
-// (blocking the *generic* read/list capability: loadFile, scanFolder, the
-// Files app, the spirit.fs job) while still working as the page's own boot
-// script. relay.html stood beside index.html here until the brochure was
-// killed with the relay's public door (goal/G22.6).
-const BOOT_ASSETS = ['index.html', 'spirit/kernel.js', 'spirit/client/shell.js', 'favicon.svg'];
+// unconditionally by the static route below, checked before fileServable.
+// index.html, the old kernel and spirit/client/shell.js left it with the old
+// shell (goal/G43.30).
+const BOOT_ASSETS = ['favicon.svg'];
 
 const jobs = require('./jobs')(port);
 jobs.startFsWatcherJob(ROOT_DIR);
@@ -288,7 +285,7 @@ const events = require('./events/events.js').createEvents({
 // A FILE, AS THE BROWSER'S GET IS SERVED IT. One function, so the face asking its home node for a file (faceHome,
 // goal/G30.13) passes the same gate as the browser on loopback.
 function serveGet(pathname, res) {
-  const isHomeRequest = pathname === '/' || pathname === '/index.html';
+  const isHomeRequest = pathname === '/';
   // THE ADDRESS STAYS, THE FILE MOVED (goal/G43.18, Q25, Andy: "the browser should see them the same."): serveCommon.pageFile.
   const address = isHomeRequest ? HOME_PAGE : pathname.replace(/^\/+/, '');
   const relativePath = common.pageFile(address);
@@ -300,11 +297,9 @@ function serveGet(pathname, res) {
     return;
   }
 
-  // This route is a completely independent path to the filesystem from
-  // kernel.js's own loadFile — it's the raw route the browser's
-  // synchronous loadFile XHR hits directly. Boot assets bypass the
-  // generic gate unconditionally; everything else goes through the same
-  // fileServable check loadFile/scanFolder use.
+  // The raw route a browser's GET hits. Boot assets bypass the generic gate
+  // unconditionally; everything else goes through the same fileServable
+  // check every other read uses.
   if (BOOT_ASSETS.indexOf(address) === -1 && !fileSystem.fileServable(relativePath)) {
     res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
     res.end('Not found');
@@ -1816,7 +1811,7 @@ catch (e) {
     'card': { request: {}, reply: { ok: true, name: '', description: '', publicKey: '', descriptionMax: 0 }, handler: function (rq, rs) { hub.handleNodeCard(rq, rs); } },
     // THE NODE'S OWN DEBUG (desk/G2.5), shaped like relay.debug: {debug: {}} reads,
     // {debug: {on}} sets; both answer the state that resulted. "node.debug: yes."
-    // RAM only, off at every start (kernel.js).
+    // RAM only, off at every start.
     'debug': { request: { debug: { on: false } }, reply: { ok: true, debug: false }, handler: proxyVerb(function (b) {
       const d = b && b.debug;
       return { ok: true, debug: spirit.debug(d && typeof d.on === 'boolean' ? d.on : undefined) };

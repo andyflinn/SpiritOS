@@ -125,7 +125,7 @@ object"*. The run of this item (goal/G33.6) is the verifier's own publish, kept 
 
 - **It loads the verifier's cache manager itself**, `spirit/app/deskVerify/data.js`, through
   `spirit.require`, and draws the run from `spirit.data.deskVerify.data`, through the shared run status
-  (`shell/shared/js/deskRunStatus.js`), on the page's real data set.
+  (`spirit/app/desk/element/deskRunStatus/deskRunStatus.js`), on the page's real data set.
 - With an item open whose facts say `verifyRunning`, a verifier publish taken into spirit.data (a job of module
   `spirit.app.deskVerify`, its app `{ doing: 'run', suite, index, of, ... }`) redraws `#dd-run`: its progress, its suite
   and how far (`verifying <suite>, suite <index> of <of>`); the next publish redraws it again.

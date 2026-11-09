@@ -169,7 +169,7 @@ test.startTest('spirit-elementMove.js: shell/js into spirit/element, its element
   try {
     page = node.up ? await H.chromePage(chrome) : null;
     if (!page || page.error) { test.fail(page ? page.error : 'the scratch node did not come up'); return; }
-    await page.send('Page.navigate', { url: node.base + '/index.html' });
+    await page.send('Page.navigate', { url: node.base + '/' });
     await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.ready)').then(Boolean); }, H.WAIT);
     await H.sleep(2500);
     let at = {};
@@ -185,7 +185,7 @@ test.startTest('spirit-elementMove.js: shell/js into spirit/element, its element
     ok(Array.isArray(r.absent) && !r.absent.length, 'all ' + MOVED_NAMES.length + ' elements stand on spirit.element under their names', 'not on spirit.element: ' + short(r.threw || r.absent));
     ok(Array.isArray(r.onOld) && !r.onOld.length, 'and none of them on spirit.elements', 'still on spirit.elements: ' + short(r.onOld));
     // The element drawing from spirit/element/codeMirror/ is spirit/element/test/codeMirror-library.js; deskRunStatus staying on
-    // spirit.elements is shell/shared/js/test/deskRunStatus-home.js.
+    // spirit.elements is judged in Desk's spirit/app/desk/element/deskRunStatus/test/deskRunStatus.js (goal/G43.30).
   } finally {
     if (page && page.kid) page.kid.kill();
     if (node.child) node.child.kill();

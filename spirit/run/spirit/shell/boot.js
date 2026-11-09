@@ -17,14 +17,11 @@
 //   - JOIN IS AN APP (goal/G43.26; Andy: "the join icon sits next to all other icons on a shell (SO IT's A FCUKING APP,
 //     LIKE IT ALWAYS WAS)"): spirit/app/join/, a tile beside the others; boot does not load it. Boot keeps only the mailed
 //     join link's code, which it hands to relay.join.
-//   - THE NAVIGATION FRAME, for what still opens as a page (a contact's or a relay's details): its title bar and the api a
-//     page is handed.
+//   - NO NAVIGATION FRAME (goal/G43.30): nothing opens as a page any more, every detail is a panel over its app, so
+//     shell/navigationWrapper.js and its title bar with Back and Home are gone.
 
 (function () {
   var desktop = document.getElementById('desktop');
-  var container = document.getElementById('app-container');
-  var content = document.getElementById('app-content');
-  var title = document.getElementById('app-title');
   var offline = document.getElementById('app-offline');
   var banner = document.getElementById('face-banner');
   // WHERE THE PAGE STANDS, AS spirit.js FOUND IT (goal/G43.18, box v29: the login is spirit.login, the link spirit.link).
@@ -205,21 +202,6 @@
     }, Promise.resolve());
   }
 
-  // ── THE NAVIGATION FRAME (goal/G40.8) ───────────────────────────────────────────────────────────────────────────
-  // shell/navigationWrapper.js, one of the parts from home: what still opens as a page, a contact's or a relay's details,
-  // is pushed on it, under the title bar with Back and Home; with no page up, the shell's area shows.
-  function navigation() { return (window.spirit.elements && window.spirit.elements.navigation) || null; }
-  // NO API IS HANDED TO A PAGE (goal/G43.24; Andy: "every element that accesses ANY api must require them themselves"):
-  // what opens on the navigation reaches its verbs through the spirit object, and an arming button disarms itself.
-  function shownFrame() { desktop.hidden = true; container.hidden = false; }
-  function showShell() { container.hidden = true; desktop.hidden = false; }
-  function attachNavigation() {
-    var n = navigation();
-    if (n) n.attach({ title: title, content: content, shown: shownFrame, empty: showShell });
-  }
-  document.getElementById('app-close').addEventListener('click', function () { if (navigation()) navigation().back(); });
-  document.getElementById('app-home').addEventListener('click', function () { if (navigation()) navigation().home(); showShell(); });
-
   // ── THE SHELL THE NODE NAMES (goal/G43.18, box v29) ────────────────────────────────────────────────────────────
   // node.shell({ at }) names it, spirit/app/<name>/<name>.js; it is loaded and handed the page's area, the shell's
   // element made there when it has one (spirit.elements.<name>.create). No shell named, or no answer: the shell app; one that does not load is said
@@ -258,10 +240,10 @@
       window.spirit.transport.events = events;
     }
     // The spirit object is started once the node can be reached (goal/G32.1; since goal/G43.27 it asks no api, each family binding when first called), and the sheets load once they are
-    // there; then what boot.js draws with, each required by it: the navigation frame, the file tree's row element, and the
-    // jobs family's cache manager (goal/G41.28).
+    // there; then what boot.js draws with, each required by it: the file tree's row element and the jobs family's cache
+    // manager (goal/G41.28).
     var parts = function () {
-      return loadParts().then(function () { return Promise.all([window.spirit.require('shell/navigationWrapper.js'), window.spirit.require('spirit/element/search/file/rowElement.js'), window.spirit.cacheManager('jobs')]); })
+      return loadParts().then(function () { return Promise.all([window.spirit.require('spirit/element/search/file/rowElement.js'), window.spirit.cacheManager('jobs')]); })
         .then(null, function () { /* a part missing is said by what needs it */ });
     };
     return Promise.resolve(window.spirit.start()).then(parts, parts).then(function () {
@@ -272,7 +254,6 @@
         waiting.forEach(function (h) { spirit.events.subscribe(h); });
       }
       Object.assign(window.spirit.shell = window.spirit.shell || {}, { factRow: factRow });
-      attachNavigation();
       link.loaded = true;
       openStream(false);
       joinFromLink();
@@ -283,7 +264,7 @@
     });
   }
 
-  // The old shell's fact row (spirit/client/shell.js factRow), the same markup, for the dialogs that draw with it
+  // The old shell's fact row (its factRow), the same markup, for the dialogs that draw with it
   // (Relay Details, Contact): pairs of [label, value], escaped.
   function factRow(pairs) {
     var esc = spirit.escapeHtml;

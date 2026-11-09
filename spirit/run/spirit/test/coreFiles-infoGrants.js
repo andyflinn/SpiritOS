@@ -18,11 +18,10 @@ test.startTest('coreFiles-infoGrants.js: Info and Grants are intrinsic by their 
 test.subHeading('the box, 2: "both are intrinsic by their own <name>.json, as spirit/app apps say it"');
 let core = null;
 try { core = require(path.join(RUN, 'spirit', 'coreFiles.js')); } catch (e) { core = null; }
-ok(!!core && Array.isArray(core.INTRINSIC) && core.INTRINSIC.length > 0 && typeof core.appIntrinsic === 'function', 'the world: coreFiles.js answers its INTRINSIC list (' + (core && core.INTRINSIC ? core.INTRINSIC.length : 0) + ') and appIntrinsic', 'coreFiles.js: no INTRINSIC list or no appIntrinsic: nothing judged');
-if (core && Array.isArray(core.INTRINSIC)) {
-  ['shell/info', 'shell/grants'].forEach(function (f) {
-    ok(core.INTRINSIC.map(function (x) { return String(x).toLowerCase(); }).indexOf(f) === -1, f + ' leaves coreFiles.js\'s INTRINSIC list', 'coreFiles.js INTRINSIC still lists ' + f + ': ' + short(core.INTRINSIC));
-  });
+ok(!!core && typeof core.appIntrinsic === 'function', 'the world: coreFiles.js answers appIntrinsic', 'coreFiles.js: no appIntrinsic: nothing judged');
+if (core && typeof core.appIntrinsic === 'function') {
+  // No coded list names them: since goal/G43.30 there is none at all.
+  ok(!('INTRINSIC' in core), 'no coded INTRINSIC list names shell/info or shell/grants: there is none (goal/G43.30)', 'coreFiles.js still answers an INTRINSIC list: ' + short(core.INTRINSIC));
   ['info', 'grants'].forEach(function (name) {
     ok(core.appIntrinsic(REPO, name) === true, 'coreFiles.appIntrinsic reads ' + name + ' intrinsic from its own ' + name + '.json', 'appIntrinsic(' + name + '): ' + short(core.appIntrinsic(REPO, name)));
   });

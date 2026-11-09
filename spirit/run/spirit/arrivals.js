@@ -89,7 +89,7 @@
 // ONE FILE IS MEANT TO DECODE WITH client/packet, and it is this one: the
 // file that already witnesses and holds every arrival. server.js
 // requires packet.js to encode only; hub.js opens a relay's answer through
-// envelopeOf here (goal/G43.23, the box's item 8). kernel.js keeps its
+// envelopeOf here (goal/G43.23, the box's item 8). The old page kept its
 // own, which is a different thing — the shared decode every loopback
 // client uses (Andy, 2026-10-02).
 //

@@ -32,15 +32,15 @@
 // limits.js IS dual target — the relay and server.js read it too, which is
 // why it stays up in spirit/ while this file sits in spirit/client/. Required
 // from one directory up on the node, read off `window.spirit.limits` in the
-// page. index.html, and the face's boot.js, load limits.js before packet.js
-// for exactly that reason.
+// page. spirit.js requires limits.js before packet.js for exactly that
+// reason (spirit.peerPost).
 var limits = (typeof process !== 'undefined' && process.versions && process.versions.node)
   ? require('../limits.js')
   : (typeof window !== 'undefined' ? window.spirit.limits : null);
 
 // SAY WHICH SCRIPT IS MISSING, rather than dying on `undefined.PAYLOAD_MAX`.
 //
-// A page holding a cached index.html from before limits.js existed loads
+// A page holding a cached copy from before limits.js existed loads
 // this file with no global to read, and the bare property access throws a
 // TypeError at parse-adjacent time — which kills packet.js, and with it
 // every app that sends anything, with a message naming neither file.
@@ -50,8 +50,8 @@ var limits = (typeof process !== 'undefined' && process.versions && process.vers
 if (!limits || typeof limits.PAYLOAD_MAX !== 'number') {
   throw new Error(
     'packet.js needs js/limits.js loaded first — ' +
-    'index.html must have <script src="/spirit/limits.js"> before this file. ' +
-    'A hard reload usually fixes it: the page is running a cached index.html.'
+    'spirit/limits.js must be loaded before this file. ' +
+    'A hard reload usually fixes it: the page is running a cached copy.'
   );
 }
 

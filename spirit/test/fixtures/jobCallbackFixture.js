@@ -3,7 +3,7 @@
 // spirit/test/fixtures/jobCallbackFixture.js
 // A PROCESS AS TODAY'S PROCESSES ARE WRITTEN, for launcherChecks.js (goal/G43.23, restored from 885f1ab5^ and rewritten
 // on today's API). It loads the one spirit object, spirit.js, and reports on its own job through spirit.jobs (log,
-// report, complete, fail: the events family's publish with its SPIRIT_JOB_ID, goal/G40.6), as kernel.js's
+// report, complete, fail: the events family's publish with its SPIRIT_JOB_ID, goal/G40.6), as the old kernel's
 // spirit.core.jobs did before. Spawned by the real jobs module as a real child, never a mock of the contract.
 //
 // RUN ONLY FROM A SCRATCH COPY of the run tree (launcherChecks.js makes it): spirit.js posts to the port in its run

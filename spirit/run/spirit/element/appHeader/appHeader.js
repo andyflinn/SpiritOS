@@ -9,7 +9,7 @@
 // app's own pane, opaque in the shell's background and above the content. SINCE goal/G41.22 the pane is what scrolls
 // (shell.css: "EVERYTHING IS CONSTRAINED, TOP DOWN"), and it starts under the shell's titlebar, so the header sticks at
 // 0; it measured the titlebar while the whole window scrolled, and that height left a gap of its own size above it.
-// Loaded by index.html before the shell; the shell hands it to apps as api.ui.elements.appHeader.create(container).
+// Loaded through spirit.require by what draws with it.create(container).
 
 (function () {
   function createAppHeader() {

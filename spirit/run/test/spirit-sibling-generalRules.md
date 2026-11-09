@@ -29,7 +29,7 @@ is an app (from the path pattern), why the fuck would would it need manifests fo
   none of them is counted as an element;
 - also an element: `spirit/app/appSelector.js` and the files of `spirit/app/appSelector/` (goal/G43.2), and an app of
   the new folder, `spirit/app/<name>/<name>.js` (goal/G43.2);
-- anything else in its reach (`shell/shared/js/`, and any other module) is neither, is not mounted, and its run says
+- anything else in its reach (any other module) is neither, is not mounted, and its run says
   so.
 
 **Given no file, it judges every app and element in its reach** (goal/G41.19): an item's suite row names no file, so a
