@@ -31,6 +31,10 @@ test.startTest('jobDetail.js: one job, the Job Monitor\'s detail, an element of 
     fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(path.join(dir, 'zzSleep.json'), JSON.stringify({ identity: { icon: '🧪', label: 'zzSleep', intrinsic: false }, node: { run: true } }));
     fs.writeFileSync(path.join(dir, 'zzSleep.js'), 'setTimeout(function () {}, 60000);\n');
+    const failDir = path.join(run, 'spirit', 'app', 'zzFail');
+    fs.mkdirSync(failDir, { recursive: true });
+    fs.writeFileSync(path.join(failDir, 'zzFail.json'), JSON.stringify({ identity: { icon: '🧪', label: 'zzFail', intrinsic: false }, node: { run: true } }));
+    fs.writeFileSync(path.join(failDir, 'zzFail.js'), 'process.exit(3);\n');
     const call = async function (name, args) {
       const r = await fetch(node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: name, args: args || {} }) });
       const t = await r.text(); let b = null; try { b = JSON.parse(t); } catch (e) { b = null; }
@@ -59,7 +63,10 @@ test.startTest('jobDetail.js: one job, the Job Monitor\'s detail, an element of 
     test.subHeading('"A live monitor of what the job publishes": an event of spirit.fs, and the Extract box');
     ok(/Events/.test(t1), 'its events box', 'no events box: ' + short(t1));
     const before = await chrome.evaluate('document.querySelectorAll("#box [data-event]").length');
-    fs.writeFileSync(path.join(run, 'zz-touched-' + Date.now() + '.txt'), 'a change for spirit.fs to report\n');
+    // Through spirit.fs, as an agent changes a file ("an agent's file changes through spirit.fs"): spirit.fs reports what
+    // it was asked, never a file written past it.
+    const saved = await call('fs.save', { path: 'zz-touched-' + Date.now() + '.txt', content: 'a change for spirit.fs to report\n' });
+    ok(saved.status >= 200 && saved.status < 300, 'the world: a file saved through fs.save', 'fs.save: ' + short(saved.text));
     const heard = await until(function () { return chrome.evaluate('document.querySelectorAll("#box [data-event]").length').then(function (n) { return n > before; }); }, 15000);
     ok(heard, 'a file change on the node shows as a new event line, no reload', 'no new event line; the box: ' + short(await text()));
     if (heard) {
@@ -68,18 +75,26 @@ test.startTest('jobDetail.js: one job, the Job Monitor\'s detail, an element of 
       ok(pretty, 'a click puts it into the Extract box, written out as JSON.stringify(object, null, 2)', 'the Extract box: ' + short(await chrome.evaluate('(function () { var cm = document.querySelector("#box .CodeMirror"); return cm && cm.CodeMirror ? cm.CodeMirror.getValue() : "no CodeMirror"; }())')));
     }
 
-    test.subHeading('a process: Cancel, then Delete once it is terminal, the screen going with the job');
+    test.subHeading('a running process: Cancel; the node then removes it (G29.16), and the screen stays and says so');
     const started = await call('jobs.create', { command: 'node', args: ['spirit/app/zzSleep/zzSleep.js'] });
     ok(started.status >= 200 && started.status < 300, 'the world: zzSleep started', 'jobs.create zzSleep: ' + short(started.text));
     await until(function () { return jobOf('spirit.app.zzSleep').then(function (j) { return !!j && j.status === 'running'; }); }, 10000);
     await mount('spirit.app.zzSleep');
     ok(await until(function () { return buttons().then(function (b) { return b.indexOf('Cancel') !== -1 && b.indexOf('Delete') === -1; }); }, 10000), 'running, it offers Cancel and no Delete', 'its buttons: ' + short(await buttons()));
     await press('Cancel');
-    ok(await until(function () { return jobOf('spirit.app.zzSleep').then(function (j) { return !!j && /cancelled|stopped/.test(String(j.status)); }); }, 10000), 'Cancel cancels the job on the node', 'after Cancel the job is ' + short(await jobOf('spirit.app.zzSleep')));
-    ok(await until(function () { return text().then(function (t) { return /cancelled|stopped/.test(t); }); }, 10000), 'and the screen stays and shows it stop, no reload', 'after Cancel the screen: ' + short(await text()));
-    ok(await until(function () { return buttons().then(function (b) { return b.indexOf('Delete') !== -1 && b.indexOf('Cancel') === -1; }); }, 10000), 'terminal now, it offers Delete instead', 'its buttons: ' + short(await buttons()));
+    // spirit/jobs.js: a process the owner cancels removes itself (goal/G29.16, "jobs cancelled by me are also removed").
+    ok(await until(function () { return jobOf('spirit.app.zzSleep').then(function (j) { return !j; }); }, 10000), 'Cancel ends the job on the node, which then removes it', 'after Cancel the job is ' + short(await jobOf('spirit.app.zzSleep')));
+    ok(await until(function () { return text().then(function (t) { return /no longer listed/i.test(t); }); }, 10000), 'and the screen stays and says it is no longer listed, no reload', 'after Cancel the screen: ' + short(await text()));
+    ok(await chrome.evaluate('window.closed.length === 0'), 'Cancel does not close the screen', 'Cancel called close');
+
+    test.subHeading('a failed process stays (G29.16): Delete and no Cancel; Delete, and the screen goes with the job');
+    const failed = await call('jobs.create', { command: 'node', args: ['spirit/app/zzFail/zzFail.js'] });
+    ok(failed.status >= 200 && failed.status < 300, 'the world: zzFail started', 'jobs.create zzFail: ' + short(failed.text));
+    ok(await until(function () { return jobOf('spirit.app.zzFail').then(function (j) { return !!j && j.status === 'failed'; }); }, 10000), 'the world: zzFail failed and stays listed', 'zzFail is ' + short(await jobOf('spirit.app.zzFail')));
+    await mount('spirit.app.zzFail');
+    ok(await until(function () { return buttons().then(function (b) { return b.indexOf('Delete') !== -1 && b.indexOf('Cancel') === -1; }); }, 10000), 'terminal, it offers Delete and no Cancel', 'its buttons: ' + short(await buttons()));
     await press('Delete');
-    ok(await until(function () { return jobOf('spirit.app.zzSleep').then(function (j) { return !j; }); }, 10000), 'Delete deletes the job on the node', 'after Delete the job is ' + short(await jobOf('spirit.app.zzSleep')));
+    ok(await until(function () { return jobOf('spirit.app.zzFail').then(function (j) { return !j; }); }, 10000), 'Delete deletes the job on the node', 'after Delete the job is ' + short(await jobOf('spirit.app.zzFail')));
     ok(await until(function () { return chrome.evaluate('window.closed.length >= 1'); }, 5000), 'and the screen goes with it: close is called', 'close was not called after Delete');
 
     test.subHeading('"Deleted or never there: say so"');

@@ -7,7 +7,7 @@ Its test is `./jobs.js`. The box (goal/G43.29, v3): *"Each works exactly as the 
 ## Requirements
 
 - Every job of the node is a row, `spirit.fs` among them; its columns Status, Name, Kind, Progress, Updated; `spirit.fs` of kind node, running; a failed job shows ❌ failed.
-- The kind filter, in order: all, node, servers, transient, failed (G29.16). failed lists the failed jobs only, node the node's own only, all every one again.
+- The kind filter, in order: all, node, servers, transient, failed (G29.16). failed lists the failed jobs only, node the node's own only, all every one again. A header row is no job and is never judged as one.
 - One green dot, on the job that changed last (G29.14).
 - A job cancelled on the node repaints its row with no reload.
 - A row press hands its key and a fill to the mounter's `open`; with no `open` handed, a panel of its own over the whole list, the job on it, its close bringing the list back.
