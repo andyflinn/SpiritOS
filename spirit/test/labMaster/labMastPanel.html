@@ -82,7 +82,7 @@
              One button that says Stop IS the running column, and a
              column repeating what the control beside it already shows is
              a column read on every pass to learn nothing. -->
-        <th>Name</th><th>Type</th><th>Port</th><th>Connected to</th><th>Commit</th><th>Home</th><th></th>
+        <th>Name</th><th>Type</th><th>Port</th><th>Commit</th><th>Home</th><th></th>
       </tr>
     </thead>
     <tbody id="tbody"></tbody>
@@ -112,14 +112,17 @@
     // AND A REPAINT MUST NOT ARM ANYTHING. The table redraws every three
     // seconds, so the armed id is deliberately the ONLY thing outside the
     // server's answer that the row is drawn from.
-    var armedDelete = '';
+    //
+    // ONE ARMED BUTTON AT A TIME, Delete or Stop: armed is '<act>:<id>'
+    // (goal/G43.29; Andy: "give me a stop-button with are-you-sure.....").
+    var armed = '';
     var armedEvent = null;
     var currentClick = null;
 
     document.addEventListener('click', function (ev) { currentClick = ev; }, true);
     document.addEventListener('click', function (ev) {
-      if (!armedDelete || armedEvent === ev) return;
-      armedDelete = '';
+      if (!armed || armedEvent === ev) return;
+      armed = '';
       armedEvent = null;
       // REPAINTED HERE AND NOW, from what is already on screen. Calling
       // refresh() alone would leave the button hot until a fetch came
@@ -185,9 +188,10 @@
         // doing. WHETHER A NODE IS UP is still on the screen: a running
         // node's name is a link to it, a stopped one's is plain text.
         //
-        // NOTHING STOPS A NODE WITHOUT DELETING IT any more. That is the
-        // cost of three buttons and it was asked for; the verb is still on
-        // the server for labWorld, which stops nodes between suites.
+        // STOP CAME BACK, ARMED (goal/G43.29; Andy: "give me a stop-button
+        // with are-you-sure....."): on every row, the work node's too, two
+        // presses as Delete takes, the same stop verb labWorld calls
+        // between suites.
         //
         // THE WORK NODE GETS THIS ONE AND ONLY THIS ONE. It is Andy's own
         // checkout, so Update would fetch and hard-reset the tree he is
@@ -205,10 +209,13 @@
         var restart = '<button data-act="restart" data-id="' + n.id + '" ' +
           'title="Stop it if it is up, then start it on its port. ' +
           'No fetch \\u2014 same code it is running now.">(Re)start</button>';
+        var stop = '<button data-act="stop" data-id="' + n.id + '"' +
+          (armed === 'stop:' + n.id ? ' class="armed"' : '') + '>' +
+          (armed === 'stop:' + n.id ? 'Really stop?' : 'Stop') + '</button>';
 
         var actions = n.permanent
-          ? restart
-          : restart +
+          ? restart + stop
+          : restart + stop +
             '<button data-act="refresh" data-id="' + n.id + '" ' +
               'title="git fetch + reset --hard origin/master, then start it. ' +
               'Same node, same key, same relay rows \u2014 git never had them.">' +
@@ -218,8 +225,8 @@
             // cannot use api.armUntilElsewhere and keeps the same
             // discipline by hand below.
             '<button data-act="delete" data-id="' + n.id + '"' +
-              (armedDelete === n.id ? ' class="armed"' : '') + '>' +
-              (armedDelete === n.id ? 'Really delete?' : 'Delete') + '</button>';
+              (armed === 'delete:' + n.id ? ' class="armed"' : '') + '>' +
+              (armed === 'delete:' + n.id ? 'Really delete?' : 'Delete') + '</button>';
 
             // WHAT WENT WRONG rides the name now that the Running column
             // is gone. It was the only other thing in that cell, and it is
@@ -231,23 +238,15 @@
             var nameCell = n.running
             ? '<a href="http://127.0.0.1:' + n.port + '" target="_blank" rel="noopener">' + label + '</a>'
             : label;
-        // Seven cells for seven headings. Count them against the <th>
+        // Six cells for six headings. Count them against the <th>
         // row above before adding one: an earlier version drew `label`
         // twice and every column after it sat under the wrong heading.
-        var link = links[n.id];
-        var linkCell = '<small>—</small>';
-        if (link && link.relays && link.relays.length) {
-          linkCell = '<small>' + link.relays.map(function (r) {
-            var host = r.url.replace(/^https?:\/\//, '');
-            return (r.up ? '\u25CF ' : '\u25CB ') + host;
-          }).join('<br>') +
-            '<br>' + link.reachable + ' of ' + link.known + ' reachable</small>';
-        }
+        // THE CONNECTED TO COLUMN IS GONE (goal/G43.29; Andy: "get rid of
+        // the connected to column"), and the /api/links route it drew from.
         return '<tr>' +
           '<td>' + nameCell + '</td>' +
           '<td>' + n.type + '</td>' +
           '<td>' + n.port + '</td>' +
-          '<td>' + linkCell + '</td>' +
           // WHICH COMMIT IT IS ON, which only became a real question when
           // lab nodes started running published code rather than a copy
           // of the checkout. '—' for the work node, which is the checkout
@@ -265,11 +264,6 @@
       }).join('');
     }
 
-    // What each node says about its own connections. Asked alongside the
-    // node list rather than folded into it, so a slow or wedged node
-    // delays one cell instead of the whole table.
-    var links = {};
-
     // The last thing drawn, so arming Delete can repaint without a round
     // trip — and so the three-second poll and a button press draw from
     // the same thing. Written by render(), not by the fetch: see there.
@@ -279,10 +273,6 @@
       return api('GET', '/api/nodes').then(function (r) {
         var rows = (r.body && r.body.nodes) || [];
         render(rows);
-        return api('GET', '/api/links').then(function (l) {
-          links = (l.body && l.body.links) || {};
-          render(rows);
-        }).catch(function () { /* the column stays blank, the table does not */ });
       }).catch(function (e) { setStatus('refresh failed: ' + e.message); });
     }
 
@@ -389,14 +379,17 @@
       // key that may have a seat on a public relay. One press is not
       // enough for that, and the arming is recorded so the listeners
       // above can take it back the moment attention moves.
-      if (act === 'delete' && armedDelete !== id) {
-        armedDelete = id;
+      // STOP ASKS FIRST TOO (Andy: "give me a stop-button with
+      // are-you-sure....."), by the same arming.
+      if ((act === 'delete' || act === 'stop') && armed !== act + ':' + id) {
+        armed = act + ':' + id;
         armedEvent = currentClick;
-        setStatus('delete ' + id + ': press again to confirm — its home and key go with it');
+        setStatus(act === 'delete' ? 'delete ' + id + ': press again to confirm — its home and key go with it'
+          : 'stop ' + id + ': press again to confirm — it stays down until (Re)start');
         render(lastRows);
         return;
       }
-      armedDelete = '';
+      armed = '';
       armedEvent = null;
 
       api('POST', '/api/nodes/' + id + '/' + act, {}).then(function (r) {

@@ -1380,67 +1380,6 @@ const server = http.createServer(function (req, res) {
     return;
   }
 
-  // WHICH RELAYS IS EACH NODE ACTUALLY HOLDING OPEN.
-  //
-  // The question the panel is usually being asked: is my little network
-  // actually talking to anything?
-  //
-  // Read from each node's own relay-presence job over loopback. A node
-  // that is not running, or is running older code, simply reports
-  // nothing; this is a convenience, never a source of truth about
-  // anything but itself.
-  if (req.method === 'GET' && pathname === '/api/links') {
-    Promise.all(nodes.map(function (n) {
-      // The same test publicNode uses for `running`: a child we spawned,
-    // or a listener on the port.
-    const child = children[n.id];
-    const alive = !!(child && child.exitCode == null) || portHasListener(n.port);
-    if (!alive) return Promise.resolve([n.id, null]);
-      // Find the presence job by jobs.search, then read it whole with
-      // jobs.get (puppets/G2).
-      const ask = function (body) {
-        return fetch('http://127.0.0.1:' + n.port + '/api/spirit', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
-        }).then(function (res) { return res.json(); });
-      };
-      return ask({ call: 'jobs.search', args: { q: 'relay-presence' } })
-        .then(function (found) {
-          const hit = ((found && found.items) || []).filter(function (i) { return i.label.split(' (')[0] === 'relay-presence'; })[0];
-          return hit ? ask({ call: 'jobs.get', args: { key: hit.key } }).then(function (g) { return (g && g.job) || null; }) : null;
-        })
-        .then(function (job) {
-          if (!job) return [n.id, null];
-          // The log is the record of what happened; the last line about
-          // each URL is its current state.
-          const state = Object.create(null);
-          (job.log || []).forEach(function (line) {
-            const connected = /^connected to (.+)$/.exec(line.message || '');
-            const lost = /^lost (.+?): /.exec(line.message || '');
-            if (connected) state[connected[1]] = true;
-            else if (lost) state[lost[1]] = false;
-          });
-          const presence = (job.data && job.data.presence) || {};
-          return [n.id, {
-            relays: Object.keys(state).map(function (url) {
-              return { url: url, up: state[url] };
-            }),
-            reachable: Object.keys(presence).filter(function (k) { return presence[k]; }).length,
-            known: Object.keys(presence).length,
-          }];
-        })
-        .catch(function () { return [n.id, null]; });
-    })).then(function (pairs) {
-      const out = Object.create(null);
-      pairs.forEach(function (pair) { out[pair[0]] = pair[1]; });
-      sendJson(res, 200, { links: out });
-    }).catch(function () {
-      sendJson(res, 200, { links: {} });
-    });
-    return;
-  }
-
   if (req.method === 'GET' && pathname === '/api/live-world') {
     const peerName = slugName(url.searchParams.get('peer') || 'jazz') || 'jazz';
     liveWorldReport(findNode(peerName), peerName)
