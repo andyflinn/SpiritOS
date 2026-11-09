@@ -241,3 +241,14 @@ Andy, goal/G43.20: *"that whole run://process folder NEEDS killing with ALL refe
 ## What its test must try to break (goal/G43.30)
 
 - A mention in a comment, or written `run:/process`; a module the scan skips because it is neither an app nor an element.
+
+## Requirements (goal/G43.31): every branch is named as its folder
+
+Andy: *"The BRANCH name (FUCK THE TERM "Family"!!!!!!!!!!!!) is motherfucking <name> in spirit/app/<name>...."*, and *"make sure, IN THIS ITEM that family names MATCH folder names"*.
+
+- **A data.js judged** that stands in `spirit/<name>/` or `spirit/app/<name>/` and makes a branch (`makeFamily('<branch>')`) makes the branch `<name>`.
+- **Run with no file**: every tracked such data.js is read the same way; the count read is said, and none read is red.
+
+## What its test must try to break (goal/G43.31)
+
+- A branch named otherwise than its folder, as chatClerver in spirit/app/chat/.
