@@ -144,3 +144,17 @@ object"*. The run of this item (goal/G33.6) is the verifier's own publish, kept 
 - *"red Q's should indicate who posted them."* The Qs panel shows the question and who placed it.
 - *"when i add a rule to an item or goal, it will not immediately display in the rule-list."* With the rules panel open on an item or a goal, a row naming a new rule shows it at once, with no read asked.
 - *"when i manually add rules to an item, the rule-picker should default to all filters off. Now i always have to turn of all but one search filter to actually find the rule I'm looking for."* In a real browser: the picker opens with no type filter on, and one type pressed is the only one on, the search asking for that type.
+
+## Requirements (goal/G43.30)
+
+Andy: *"while your mucking with desk, can you make sure that all delete and close buttons are armingButton's? box."* The box: every Delete and every Close press in Desk (its rows, the item detail, the rule dialog) is an armingButton, and *"A test presses each one once on the real page and finds that nothing happened."* The run status: *"Desk and its detail load it from there"*, `spirit/app/desk/element/deskRunStatus/`.
+
+- **Every Close is an armingButton**: a done item's (desk/G3.8 pressed it at once) and a goal's with nothing open (goal/G6.6 pressed it at once), as the early Close and a goal's with items open already were. The first press arms it and writes nothing, the second presses `close`.
+- **On the real page**: a scratch node with desk on, a goal, an item pressed done and an item in design mode; each detail opened from Desk's List. The done item's Close pressed once leaves it done and stands armed; the design item's Delete pressed once leaves it there, its status as before and still offering Delete, and stands armed.
+- **The run status** is loaded from `spirit/app/desk/element/deskRunStatus/deskRunStatus.js`, never from `shell/shared/`.
+
+## What its test must try to break (goal/G43.30)
+
+- A Close or a Delete that writes on its first press, in the stand-in or on the real page.
+- "Nothing deleted" judged on an item that is gone, or on a status that reads empty for both.
+- A run status still loaded from shell/shared/.

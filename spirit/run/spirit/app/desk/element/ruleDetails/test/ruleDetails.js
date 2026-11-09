@@ -1,7 +1,11 @@
 'use strict';
 
-// spirit/run/shell/ruleDetails/test/ruleDetails.js
-// The tests of shell/ruleDetails/ruleDetails.js, and of no other module (spec: ./ruleDetails.md; goal/G41.9, goal/G41.28). The browser file runs in node
+// spirit/run/spirit/app/desk/element/ruleDetails/test/ruleDetails.js
+// The tests of spirit/app/desk/element/ruleDetails/ruleDetails.js, and of no other module (spec: ./ruleDetails.md; goal/G41.9,
+// goal/G41.28, goal/G43.30). goal/G43.30 moved it out of shell/ruleDetails/ into Desk's own elements (Andy: "I'm fucking
+// disappointed that you didn't put ruleDetail into run://spirit/app/desk/element/ when we moved desk!!!!!!!!!!!!!!"); the
+// box: "Desk opens it from there", and "every Delete and every Close press in Desk ... the rule dialog" is an armingButton,
+// pressed once on the real page with nothing happening. The browser file runs in node
 // on a window of its own: the app's api records every verb; armingButton is a stub that keeps every button made or
 // attached with what it was handed, so each two-press button's run is driven here as its second press would. The page's
 // one data set and the desk family's cache manager are the real ones (spirit/run/spirit/data.js, spirit/app/desk/data.js).
@@ -10,9 +14,11 @@ const FILE = require('path').join(__dirname, '..', 'ruleDetails.js');
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
-const RUN = path.resolve(__dirname, '../../..');
+const RUN = path.resolve(__dirname, '../../../../../..');
+const PLACE = 'spirit/app/desk/element/ruleDetails/ruleDetails.js';
 const test = require(path.join(RUN, 'test', 'testReport.js'));
-const SRC = fs.readFileSync(FILE, 'utf8');
+let SRC = '';
+try { SRC = fs.readFileSync(FILE, 'utf8'); } catch (e) { SRC = ''; }
 const CODE = SRC.replace(/\/\/.*$/gm, '');
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
@@ -126,6 +132,9 @@ function answer(name) {
 }
 
 (async function () {
+  test.subHeading(PLACE + ': Desk\'s rule dialog, in Desk\'s own elements (goal/G43.30)');
+  ok(SRC !== '', 'it is at ' + PLACE, PLACE + ' is not there');
+  if (SRC === '') return;
   test.subHeading('nothing hand-rolled is left (goal/G41.9)');
   nothingHandRolled('rdArmed');
 
@@ -207,5 +216,54 @@ function answer(name) {
   K.published({ verb: 'rule.chat', rule: 'rule/7' }); await settle();
   ok(v.calls.filter(function (x) { return x.name === 'desk.item.chat'; }).length === chats + 1, 'the rule.chat publish, come into the cache, has it read the chat again', 'item.chat asked ' + chats + ', then ' + v.calls.filter(function (x) { return x.name === 'desk.item.chat'; }).length);
   ok(/second line/.test(byId['rd-chat'] ? byId['rd-chat'].innerHTML : ''), 'and the chat drawn holds the new line', 'chat: ' + short(byId['rd-chat'] && byId['rd-chat'].innerHTML));
-}()).then(function () { test.reportSuccessFailureCount(); },
-  function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); });
+
+  // ── ON THE REAL PAGE (goal/G43.30) ─────────────────────────────────────────────────────────────────────────────────
+  // The box: "Desk opens it from there", and "A test presses each one once on the real page and finds that nothing
+  // happened." A scratch node with desk switched on and one rule; the Desk element on its face page; the rule opened from
+  // the Rules list as he opens it; its Delete pressed once.
+  test.subHeading(PLACE + ': opened from Desk on a real page; its Delete, pressed once, deletes nothing');
+  const H = require(path.join(RUN, 'test', 'headLessChrome.js'));
+  const chrome = H.findChrome();
+  if (!chrome) { test.fail('no Chrome on this machine: SPIRIT_CHROME names none, and none is found by its name'); return; }
+  const scratch = await H.scratchNode();
+  let page = null;
+  try {
+    page = scratch.up ? await H.chromePage(chrome) : null;
+    if (!page || page.error) { test.fail(page ? page.error : 'the scratch node did not come up'); return; }
+    await page.send('Page.navigate', { url: scratch.base + '/face.html' });
+    await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.require)').then(Boolean); }, H.WAIT);
+    const call = function (verb, args) {
+      return page.evaluate("fetch('/api/spirit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(" + JSON.stringify({ call: verb, args: args }) + ") }).then(function (r) { return r.text(); })")
+        .then(function (t) { try { return JSON.parse(t); } catch (e) { return {}; } });
+    };
+    await call('app.active', { key: 'desk', active: true });
+    await H.until(function () { return call('desk.items.search', { text: '' }).then(function (r) { return r.ok !== false; }); }, 40000);
+    const added = await call('desk.rule.add', { type: 'desk', label: 'zz rule to keep', text: 'a rule pressed once' });
+    const key = added.key || added.id;
+    ok(!!key, 'the world: a rule on the scratch desk', 'rule.add answered ' + short(added));
+    if (!key) return;
+    const before = await call('desk.rule.get', { key: key });
+    await page.evaluate("(function () { var d = document.createElement('div'); d.id = 'zzDesk'; d.style.height = '800px'; document.body.appendChild(d); return Promise.resolve(window.spirit.require('spirit/app/desk/desk.js')).then(function () { window.spirit.elements.desk.create(d, {}); return true; }); })()");
+    await H.until(function () { return page.evaluate("!!document.querySelector('#zzDesk [data-tab=\"rules\"]')"); }, H.WAIT);
+    await page.evaluate("document.querySelector('#zzDesk [data-tab=\"rules\"]').click()");
+    const row = "Array.prototype.slice.call(document.querySelectorAll('#zzDesk *')).filter(function (x) { return x.textContent.indexOf('zz rule to keep') !== -1 && !x.closest('.app-container') && !x.children.length; }).pop()";
+    ok(await H.until(function () { return page.evaluate('!!' + row); }, H.WAIT), 'the world: the rule\'s row is in Desk\'s Rules list', 'no row for the rule');
+    await page.evaluate('(function () { var r = ' + row + '; if (r) r.click(); return !!r; })()');
+    const DEL = "Array.prototype.slice.call(document.querySelectorAll('#zzDesk .app-container #rd-delete, #zzDesk .app-container button')).filter(function (b) { return b.getClientRects().length && (b.id === 'rd-delete' || /^Delete/.test(String(b.textContent).trim())); })[0]";
+    ok(await H.until(function () { return page.evaluate('!!' + DEL); }, H.WAIT), 'pressing it opens the rule dialog, its Delete there', 'no rule dialog with a Delete: ' + short(await page.evaluate("String(document.getElementById('zzDesk').innerText).slice(0, 300)")));
+    const from = JSON.parse(await page.evaluate('JSON.stringify(performance.getEntriesByType("resource").map(function (e) { return e.name; }).filter(function (n) { return /ruleDetails/.test(n); }))'));
+    ok(from.some(function (n) { return n.indexOf('/' + PLACE) !== -1; }) && !from.some(function (n) { return /\/shell\/ruleDetails\//.test(n); }), 'Desk opens it from ' + PLACE + ', never from shell/ruleDetails/', 'the page loaded ' + short(from));
+    await page.evaluate('(function () { var b = ' + DEL + '; if (b) b.click(); return !!b; })()');
+    await new Promise(function (r) { setTimeout(r, 1500); });
+    const after = await call('desk.rule.get', { key: key });
+    ok(!!after && after.status === before.status && after.status !== 'deleted', 'Delete pressed once deletes nothing: the rule is ' + short(after && after.status) + ' as before',
+      'after one press the rule is ' + short(after && after.status) + ', before ' + short(before && before.status));
+    ok(await page.evaluate('(function () { var b = ' + DEL + '; return !!b && b.hasAttribute("data-armed"); })()'), 'and it stands armed, waiting for the second press', 'after one press its Delete is not armed');
+  } finally {
+    if (page && page.kid) page.kid.kill();
+    if (scratch.child) scratch.child.kill();
+    try { if (page && page.profile) fs.rmSync(page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
+    try { if (scratch.root) fs.rmSync(scratch.root, { recursive: true, force: true }); } catch (e) { /* left */ }
+  }
+}()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
+  function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });

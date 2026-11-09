@@ -27,8 +27,7 @@ the arming desk.js hand-rolled.
   - Start design mode → `Start design mode: sure?`, then `press start-design`;
   - Go all → `Go all: sure?`, then `press go-all` on the goal;
   - a row's Done not verified green (`Done ⚠`) → `Done anyway? <why>`, then `press done` on that row.
-- **A goal's Close in the List presses at once**: it shows only once nothing under the goal is open
-  (`deskNextPress`), so the "are you sure? N open" arming it carried could never fire, and goes with the rest.
+- A goal's Close in the List pressing at once (goal/G41.9) is ended by goal/G43.30, below.
 
 ## What its test must try to break (goal/G41.9)
 
@@ -67,6 +66,19 @@ Andy: *"on the list search item.search, these two filters: [Current Goal Only] a
 - At open, [Current Goal Only] alone is on, the first search asks for the current goal, and the current goal and its item show. No push from the stream is needed for that: a search answer asked with `currentGoalOnly` holds the current goal.
 - [Goals Only] pressed turns [Current Goal Only] off, and the other way round. The search and the rows follow.
 - Pressed again, both are off, and every goal's items show.
+
+## Requirements (goal/G43.30)
+
+Andy: *"while your mucking with desk, can you make sure that all delete and close buttons are armingButton's? box."* The box: every Delete and every Close press in Desk (its rows, the item detail, the rule dialog) is an armingButton, and *"A test presses each one once on the real page and finds that nothing happened."* Desk's run status: *"Desk and its detail load it from there"*, `spirit/app/desk/element/deskRunStatus/`.
+
+- **Every Close in the List is an armingButton**: a goal's with nothing under it open, and a done item's in its row. The first press arms it and presses nothing, the second presses `close`.
+- **On the real page**: a scratch node with desk on, a goal and its item pressed done; the Desk element on the face page; each Close the List draws pressed once leaves the item done, and each stands armed.
+- **The run status** is loaded from `spirit/app/desk/element/deskRunStatus/deskRunStatus.js`, never from `shell/shared/`.
+
+## What its test must try to break (goal/G43.30)
+
+- A Close that closes on its first press, in the stand-in or on the real page; a check of armed buttons that passes on none drawn.
+- A run status still loaded from shell/shared/.
 
 ## Requirements: an item's details open every time
 

@@ -1,4 +1,4 @@
-# shell/ruleDetails/ruleDetails.js
+# spirit/app/desk/element/ruleDetails/ruleDetails.js
 
 One rule of the desk, as a dialog (goal/G6.4): its text, his draft, its chat, and the buttons that version it.
 Activate and Delete are each one version of the rule with that status, both two-press. Since goal/G41.9 they are the
@@ -27,7 +27,12 @@ shell element armingButton (`spirit/element/armingButton.js`); the dialog keeps 
 - **A line said under the rule** (`chat.add`) is not read back by the dialog itself: the `rule.chat` publish drops the
   chat kept, and the dropped chat is read again (`item.chat`) and drawn.
 
+- **Its place** (goal/G43.30; Andy: "I'm fucking disappointed that you didn't put ruleDetail into run://spirit/app/desk/element/ when we moved desk!!!!!!!!!!!!!!"): `spirit/app/desk/element/ruleDetails/ruleDetails.js`, and Desk opens it from there, never from `shell/ruleDetails/`.
+- **On the real page** (the box: "A test presses each one once on the real page and finds that nothing happened"): on a scratch node with desk on, a rule opened from Desk's Rules list opens this dialog; its Delete pressed once leaves the rule's status as it was, and stands armed.
+
 ## What its test must try to break
+
+- A dialog loaded from shell/ruleDetails/; a Delete that deletes on its first press on the real page.
 
 - Activate or Delete not an arming button, or with the wrong armed wording.
 - Activate sending deleted, Delete sending active, or another rule's key.

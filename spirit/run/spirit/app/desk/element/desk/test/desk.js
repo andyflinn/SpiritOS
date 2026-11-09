@@ -282,14 +282,18 @@ async function twoPress(w, find, armedSays, wantPress, what) {
   await ws.mount();
   await twoPress(ws, function () { return ws.document.getElementById('desk-start-design'); }, function (t) { return t === 'Start design mode: sure?'; }, { id: 'goal/G9', what: 'start-design' }, 'Start design mode');
 
-  test.subHeading('goal/G41.9: a goal\'s Close in the List presses at once');
-  // A goal's Close shows in the List only once nothing under it is open (deskNextPress), so it never asks.
+  // goal/G43.30, the box: "every Delete and every Close press in Desk (its rows, the item detail, the rule dialog) is an
+  // armingButton" (Andy: "while your mucking with desk, can you make sure that all delete and close buttons are
+  // armingButton's? box."). It ends goal/G41.9's one press for a goal with nothing open, and a done row's.
+  test.subHeading('goal/G43.30: every Close in the List is an armingButton, a goal\'s with nothing open and a done item\'s');
+  const armedNotClose = function (t) { return !!t && t !== 'Close'; };
   const wc = deskWorld({ id: 'goal/G8', title: 'Done goal', goal: '', status: 'open', buttons: ['close'], design: false, blocked: [] }, []);
   await wc.mount();
-  const close = wc.document.querySelector('[data-press="close"]');
-  if (close) { wc.document.click(close); await settle(); }
-  const sentClose = wc.presses();
-  ok(!!close && sentClose.length === 1 && sentClose[0].args.what === 'close' && sentClose[0].args.id === 'goal/G8', 'one press closes a goal with nothing open', 'close button ' + !!close + ', sent ' + JSON.stringify(sentClose.map(function (s) { return s.args; })));
+  await twoPress(wc, function () { return wc.document.querySelector('[data-press="close"]'); }, armedNotClose, { id: 'goal/G8', what: 'close' }, 'a goal\'s Close, nothing under it open');
+  const wi = deskWorld({ id: 'goal/G8', title: 'A goal', goal: '', status: 'open', buttons: [], design: false, blocked: [] },
+    [{ id: 'goal/G8.1', title: 'A done item', goal: 'goal/G8', status: 'done', buttons: ['close'], verified: 'green', claims: 1 }]);
+  await wi.mount();
+  await twoPress(wi, function () { return wi.document.querySelector('[data-key="goal/G8.1"] [data-press="close"]') || wi.document.querySelector('[data-press="close"]'); }, armedNotClose, { id: 'goal/G8.1', what: 'close' }, 'a done item\'s Close, in its row');
 
   // ── goal/G41.11: ARMED IS RED, ALSO ON THE DESIGN BUTTONS ─────────────────────────────────────────────────────────────
   // An inline colour on Start or End design mode would beat the shell's armed red (shell.css, #app-content
@@ -406,6 +410,60 @@ async function twoPress(w, find, armedSays, wantPress, what) {
           const second = await shown();
           ok(second.drawn && second.text.indexOf(two.id) !== -1, 'after it was closed, the second item opens with its own details, not its title bar alone', 'the second: ' + JSON.stringify(second).slice(0, 200));
           ok(second.layers === 1, 'every item opens in the one details layer', second.layers + ' layers');
+        }
+      } finally {
+        if (page && page.kid) page.kid.kill();
+        if (node.child) node.child.kill();
+        try { if (page && page.profile) fs.rmSync(page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
+        try { if (node.root) fs.rmSync(node.root, { recursive: true, force: true }); } catch (e) { /* left */ }
+      }
+    }
+  }
+
+  // ── goal/G43.30: ON THE REAL PAGE, A CLOSE PRESSED ONCE CLOSES NOTHING ─────────────────────────────────────────
+  // The box: "A test presses each one once on the real page and finds that nothing happened", and the run status: "Desk
+  // and its detail load it from there", spirit/app/desk/element/deskRunStatus/. A scratch node with desk switched on, a
+  // goal and an item pressed done; the Desk element on its face page; every Close the List draws pressed once.
+  test.subHeading('goal/G43.30: on a real page, every Close in the List pressed once closes nothing; the run status from Desk\'s own elements');
+  {
+    const H = require(path.join(RUN, 'test', 'headLessChrome.js'));
+    const chrome = H.findChrome();
+    if (!chrome) test.fail('no Chrome on this machine: SPIRIT_CHROME names none, and none is found by its name');
+    else {
+      const node = await H.scratchNode();
+      let page = null;
+      try {
+        page = node.up ? await H.chromePage(chrome) : null;
+        if (!page || page.error) test.fail(page ? page.error : 'the scratch node did not come up');
+        else {
+          await page.send('Page.navigate', { url: node.base + '/face.html' });
+          await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.require)').then(Boolean); }, H.WAIT);
+          const call = function (verb, args) {
+            return page.evaluate("fetch('/api/spirit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(" + JSON.stringify({ call: verb, args: args }) + ") }).then(function (r) { return r.text(); })")
+              .then(function (t) { try { return JSON.parse(t); } catch (e) { return {}; } });
+          };
+          await call('app.active', { key: 'desk', active: true });
+          await H.until(function () { return call('desk.items.search', { text: '' }).then(function (r) { return r.ok !== false; }); }, 40000);
+          const g = await call('desk.goal.add', { title: 'Closing goal' });
+          await call('desk.press', { id: g.id, what: 'make-current' });
+          const it = await call('desk.item.add', { goal: g.id, title: 'An item to close', blocks: '' });
+          await call('desk.press', { id: it.id, what: 'done' });
+          const state = async function () { const r = await call('desk.item.get', { id: it.id }); let i = r.item; if (typeof i === 'string') { try { i = JSON.parse(i); } catch (e) { i = null; } } return i || {}; };
+          const before = await state();
+          ok(!!g.id && !!it.id && before.status === 'done', 'the world: a goal and its item, done, on the scratch desk', 'the world: ' + JSON.stringify({ goal: g.id, item: it.id, status: before.status }));
+          await page.evaluate("(function () { var d = document.createElement('div'); d.id = 'zzDesk'; d.style.height = '800px'; document.body.appendChild(d); return Promise.resolve(window.spirit.require('spirit/app/desk/desk.js')).then(function () { window.spirit.elements.desk.create(d, {}); return true; }); })()");
+          const CLOSES = "Array.prototype.filter.call(document.querySelectorAll('#zzDesk [data-press=\"close\"]'), function (b) { return b.getClientRects().length && !b.closest('.app-container'); })";
+          ok(await H.until(function () { return page.evaluate(CLOSES + '.length > 0'); }, H.WAIT), 'the world: the List draws the done item\'s Close', 'no Close in the List: ' + String(await page.evaluate("String(document.getElementById('zzDesk').innerText).slice(0, 300)")));
+          const n = await page.evaluate(CLOSES + '.length');
+          for (let i = 0; i < n; i++) await page.evaluate('(function () { var b = ' + CLOSES + '[' + i + ']; if (b) b.click(); return !!b; })()');
+          await new Promise(function (r) { setTimeout(r, 1500); });
+          const after = await state();
+          ok(after.status === 'done', 'each Close in the List pressed once: the item is still done, nothing closed', 'after one press each the item is ' + after.status);
+          const armed = JSON.parse(await page.evaluate('JSON.stringify(' + CLOSES + '.map(function (b) { return b.hasAttribute("data-armed"); }))'));
+          ok(armed.length === n && armed.every(Boolean), 'and each of the ' + n + ' stands armed, waiting for the second press', 'after one press each, the List\'s Closes armed: ' + JSON.stringify(armed) + ' of ' + n);
+          const from = JSON.parse(await page.evaluate('JSON.stringify(performance.getEntriesByType("resource").map(function (e) { return e.name; }).filter(function (x) { return /deskRunStatus/.test(x); }))'));
+          ok(from.some(function (x) { return x.indexOf('/spirit/app/desk/element/deskRunStatus/deskRunStatus.js') !== -1; }) && !from.some(function (x) { return /\/shell\/shared\//.test(x); }),
+            'Desk loads its run status from spirit/app/desk/element/deskRunStatus/, never from shell/shared/', 'the page loaded ' + JSON.stringify(from));
         }
       } finally {
         if (page && page.kid) page.kid.kill();

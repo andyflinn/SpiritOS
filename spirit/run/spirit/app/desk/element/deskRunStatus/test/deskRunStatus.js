@@ -1,15 +1,20 @@
 'use strict';
 
-// spirit/run/shell/shared/js/test/deskRunStatus.js
-// The tests of shell/shared/js/deskRunStatus.js, and of no other module (spec: ./deskRunStatus.md; goal/G41.11). The
-// browser file runs in node on a window of its own; it is a pure function of an item's facts and deskVerify's run.
+// spirit/run/spirit/app/desk/element/deskRunStatus/test/deskRunStatus.js
+// The tests of spirit/app/desk/element/deskRunStatus/deskRunStatus.js, and of no other module (spec: ./deskRunStatus.md;
+// goal/G41.11, goal/G43.30). goal/G43.30 moved it out of shell/shared/js/ into Desk's own elements (the box: "deskRunStatus.js
+// moves to spirit/app/desk/element/deskRunStatus/ ... Desk and its detail load it from there"). The browser file runs in node
+// on a window of its own: a pure function of an item's facts and deskVerify's run. Then on a real page of a scratch node,
+// required from its place, it stands on spirit.elements, where Desk and its detail look for it.
 
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
-const RUN = path.resolve(__dirname, '../../../..');
+const RUN = path.resolve(__dirname, '../../../../../..');
 const test = require(path.join(RUN, 'test', 'testReport.js'));
+const H = require(path.join(RUN, 'test', 'headLessChrome.js'));
 const FILE = path.join(__dirname, '..', 'deskRunStatus.js');
+const PLACE = 'spirit/app/desk/element/deskRunStatus/deskRunStatus.js';
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
@@ -17,15 +22,19 @@ function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x))
 const win = { Math: Math, Number: Number, String: String, Array: Array, Object: Object };
 win.window = win;
 vm.createContext(win);
-vm.runInContext(fs.readFileSync(FILE, 'utf8'), win, { filename: FILE });
+let loaded = '';
+try { vm.runInContext(fs.readFileSync(FILE, 'utf8'), win, { filename: FILE }); } catch (e) { loaded = String(e && e.message || e); }
 const S = win.spirit && win.spirit.elements && win.spirit.elements.deskRunStatus;
 const esc = function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); };
 const pct = function (h) { const m = /value="(\d+)"/.exec(h); return m ? Number(m[1]) : null; };
 
 test.startTest('deskRunStatus.js: the verifier\'s run in an item\'s status');
 
-test.subHeading('it adds deskRunStatus to window.spirit.elements');
+(async function () {
+test.subHeading(PLACE + ': it adds deskRunStatus to window.spirit.elements');
+ok(!loaded, 'it is at ' + PLACE, PLACE + ' did not load: ' + short(loaded));
 ok(typeof S === 'function', 'window.spirit.elements.deskRunStatus is a function', 'elements: ' + short(win.spirit && Object.keys(win.spirit.elements || {})));
+if (typeof S !== 'function') return;
 
 test.subHeading('a run of this item: a progress bar and the suite it is in');
 const running = { verifyRunning: true };
@@ -55,4 +64,26 @@ ok(old === '<span style="color:#c00">red: 2 suites</span>', 'a row from before t
 ok(S({ verified: 'red' }) === '<span style="color:#c00">red: 0 suites</span>', 'red with no count and no failures says 0 suites', S({ verified: 'red' }));
 ok(S({ verified: 'none' }) === '' && S({}) === '', 'neither green nor red: nothing', short(S({ verified: 'none' })));
 
-test.reportSuccessFailureCount();
+// ON A REAL PAGE, FROM ITS PLACE: what Desk and its detail do with it, spirit.require of its path, then
+// spirit.elements.deskRunStatus (goal/G43.5: "those elements do NOT belong in spirit.element").
+test.subHeading(PLACE + ': required on a real page, it stands on spirit.elements');
+const chrome = H.findChrome();
+if (!chrome) { test.fail('no Chrome on this machine: SPIRIT_CHROME names none, and none is found by its name'); return; }
+const node = await H.scratchNode();
+let page = null;
+try {
+  page = node.up ? await H.chromePage(chrome) : null;
+  if (!page || page.error) { test.fail(page ? page.error : 'the scratch node did not come up'); return; }
+  await page.send('Page.navigate', { url: node.base + '/face.html' });
+  await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.ready)').then(Boolean); }, H.WAIT);
+  const got = JSON.parse(await page.evaluate('window.spirit.ready.then(function () { return spirit.require(' + JSON.stringify(PLACE) + '); }).then(function () { var e = spirit.elements && spirit.elements.deskRunStatus; return JSON.stringify({ fn: typeof e, html: typeof e === "function" ? e({ verified: "green" }, null) : null, onElement: !!(spirit.element && spirit.element.deskRunStatus) }); }, function (e) { return JSON.stringify({ error: String(e && e.message || e) }); })'));
+  ok(got.fn === 'function' && /verified green/.test(String(got.html)), 'spirit.require of its path puts it on spirit.elements.deskRunStatus, drawing an item\'s outcome', 'on the page: ' + short(got));
+  ok(got.onElement === false, 'and not on spirit.element', 'on spirit.element, or not judged: ' + short(got));
+} finally {
+  if (page && page.kid) page.kid.kill();
+  if (node.child) node.child.kill();
+  try { if (page && page.profile) fs.rmSync(page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
+  try { if (node.root) fs.rmSync(node.root, { recursive: true, force: true }); } catch (e) { /* left */ }
+}
+}()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
+  function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });

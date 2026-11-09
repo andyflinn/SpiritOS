@@ -311,6 +311,28 @@ const byId = function (w, id) { return function () { return w.document.getElemen
   const ITEM = { id: 'goal/G9.1', title: 'An item', goal: 'goal/G9', status: 'open', buttons: ['close'], verified: 'none', blocked: [] };
   w = ddWorld(ITEM, []); await w.open();
   await twoPress(w, byId(w, 'dd-close'), 'Close: sure?', { name: 'desk.press', args: { id: 'goal/G9.1', what: 'close' } }, 'Close on an open item');
+  // goal/G43.30, the box: "every Delete and every Close press in Desk (its rows, the item detail, the rule dialog) is an
+  // armingButton". It ends the one press of a done item's Close (desk/G3.8) and of a goal's with nothing open (goal/G6.6).
+  test.subHeading('goal/G43.30: every Close is an armingButton, a done item\'s and a goal\'s with nothing open');
+  async function twoPressArmed(g, find, want, what) {
+    const before = g.writes().length;
+    const b = find();
+    if (!b) { test.fail(what + ': no such button in the dialog'); return; }
+    const byElement = g.made.some(function (m) { return m.button === b && m.opts && !('api' in m.opts); });
+    g.document.click(b); await settle();
+    const b1 = find();
+    const armedText = b1 ? b1.textContent : '';
+    const firstWrote = g.writes().length - before;
+    g.document.click(b1 || b); await settle();
+    const sent = g.writes().slice(before);
+    const good = byElement && !!armedText && armedText !== 'Close' && firstWrote === 0 && sent.length === 1 && sent[0].name === want.name && JSON.stringify(sent[0].args) === JSON.stringify(want.args);
+    ok(good, what + ': an armingButton saying "' + armedText + '" on the first press, ' + want.name + ' on the second',
+      what + ': ' + JSON.stringify({ madeByArmingButton: byElement, armed: armedText, wroteOnFirst: firstWrote, sent: sent }));
+  }
+  w = ddWorld(Object.assign({}, ITEM, { status: 'done', verified: 'green' }), []); await w.open();
+  await twoPressArmed(w, byId(w, 'dd-close'), { name: 'desk.press', args: { id: 'goal/G9.1', what: 'close' } }, 'Close on a done item');
+  w = ddWorld({ id: 'goal/G8', title: 'A goal', goal: '', status: 'open', buttons: ['close'], verified: 'none', blocked: [] }, []); await w.open();
+  await twoPressArmed(w, byId(w, 'dd-close'), { name: 'desk.press', args: { id: 'goal/G8', what: 'close' } }, 'Close on a goal with nothing open');
   const CHECKS = [{ number: 'G1', kind: 'G', state: 'open', words: 'core grant' }, { number: 'G2', kind: 'G', state: 'open', words: 'another' }];
   const grants = async function () { const g = ddWorld(ITEM, CHECKS); await g.open(); g.document.click(panelIcon(g, 'files')); await settle(); return g; };
   w = await grants();
@@ -619,6 +641,72 @@ const byId = function (w, id) { return function () { return w.document.getElemen
       if (node.child) node.child.kill();
       try { if (page && page.profile) fs.rmSync(page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
       try { if (node.root) fs.rmSync(node.root, { recursive: true, force: true }); } catch (e) { /* left */ }
+    }
+  }
+
+  // ── goal/G43.30: ON THE REAL PAGE, A DELETE OR A CLOSE PRESSED ONCE DOES NOTHING ─────────────────────────────────
+  // The box: "A test presses each one once on the real page and finds that nothing happened", and the run status: "Desk
+  // and its detail load it from there". A scratch node with desk on, a goal and two items: one pressed done, whose detail
+  // offers Close; one in design mode, whose detail offers Delete (goal/G9.7). Each detail opened from Desk's List.
+  test.subHeading('goal/G43.30: on a real page, the detail\'s Close and Delete pressed once do nothing; the run status from Desk\'s own elements');
+  if (chrome) {
+    const scratch = await H.scratchNode();
+    let page = null;
+    try {
+      page = scratch.up ? await H.chromePage(chrome) : null;
+      if (!page || page.error) test.fail(page ? page.error : 'the scratch node did not come up');
+      else {
+        await page.send('Page.navigate', { url: scratch.base + '/face.html' });
+        await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.require)').then(Boolean); }, H.WAIT);
+        const call = function (verb, args) {
+          return page.evaluate("fetch('/api/spirit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(" + JSON.stringify({ call: verb, args: args }) + ") }).then(function (r) { return r.text(); })")
+            .then(function (t) { try { return JSON.parse(t); } catch (e) { return {}; } });
+        };
+        const state = async function (id) { const r = await call('desk.item.get', { id: id }); let i = r.item; if (typeof i === 'string') { try { i = JSON.parse(i); } catch (e) { i = null; } } return i || {}; };
+        await call('app.active', { key: 'desk', active: true });
+        await H.until(function () { return call('desk.items.search', { text: '' }).then(function (r) { return r.ok !== false; }); }, 40000);
+        const g = await call('desk.goal.add', { title: 'Pressing goal' });
+        await call('desk.press', { id: g.id, what: 'make-current' });
+        const done = await call('desk.item.add', { goal: g.id, title: 'A done item to close', blocks: '' });
+        await call('desk.press', { id: done.id, what: 'done' });
+        const design = await call('desk.item.add', { goal: g.id, title: 'A design item to delete', blocks: '' });
+        await call('desk.press', { id: design.id, what: 'start-design' });
+        const before = { done: await state(done.id), design: await state(design.id) };
+        ok(before.done.status === 'done' && (before.design.buttons || []).indexOf('delete') !== -1, 'the world: an item done, and an item in design mode offering Delete', 'the world: ' + JSON.stringify({ done: before.done.status, designButtons: before.design.buttons }));
+        await page.evaluate("(function () { var d = document.createElement('div'); d.id = 'zzDesk'; d.style.height = '800px'; document.body.appendChild(d); return Promise.resolve(window.spirit.require('spirit/app/desk/desk.js')).then(function () { window.spirit.elements.desk.create(d, {}); return true; }); })()");
+        const open = function (title) { return page.evaluate("(function () { var all = Array.prototype.slice.call(document.querySelectorAll('#zzDesk *')).filter(function (x) { return x.tagName === 'TD' && x.textContent.indexOf(" + JSON.stringify(title) + ") !== -1 && !x.closest('.app-container'); }); if (!all.length) return false; all[all.length - 1].click(); return true; })()"); };
+        const btn = function (id) { return "Array.prototype.filter.call(document.querySelectorAll('#zzDesk .app-container #" + id + "'), function (b) { return b.getClientRects().length; })[0]"; };
+        const shut = function () { return page.evaluate("(function () { var c = Array.prototype.filter.call(document.querySelectorAll('#zzDesk .app-container-close'), function (x) { return x.getClientRects().length; }).pop(); if (c) c.click(); return !!c; })()"); };
+        const pressOnce = async function (title, id, what) {
+          await H.until(function () { return open(title); }, H.WAIT);
+          const there = await H.until(function () { return page.evaluate('!!' + btn(id)); }, H.WAIT);
+          ok(there, 'the world: the detail of "' + title + '" offers ' + what, 'no ' + what + ' in the detail of "' + title + '": ' + String(await page.evaluate("String(document.getElementById('zzDesk').innerText).slice(0, 300)")));
+          if (!there) return false;
+          await page.evaluate('(function () { var b = ' + btn(id) + '; if (b) b.click(); return !!b; })()');
+          await new Promise(function (r) { setTimeout(r, 1500); });
+          return page.evaluate('(function () { var b = ' + btn(id) + '; return !!b && b.hasAttribute("data-armed"); })()');
+        };
+        const closeArmed = await pressOnce('A done item to close', 'dd-close', 'Close');
+        const afterClose = await state(done.id);
+        ok(afterClose.status === 'done', 'its Close pressed once: the item is still done, nothing closed', 'after one press of Close the item is ' + afterClose.status);
+        ok(closeArmed === true, 'and its Close stands armed, waiting for the second press', 'after one press its Close is not armed');
+        await shut();
+        const deleteArmed = await pressOnce('A design item to delete', 'dd-delete', 'Delete');
+        const afterDelete = await state(design.id);
+        // Delete closes rather than erases (goal/G9.7): nothing deleted is the same item, its status and its Delete as before.
+        ok(afterDelete.id === design.id && afterDelete.status === before.design.status && afterDelete.status !== 'closed' && (afterDelete.buttons || []).indexOf('delete') !== -1,
+          'its Delete pressed once: the item is there, its status "' + afterDelete.status + '" as before and still offering Delete, nothing deleted',
+          'after one press of Delete the item is ' + JSON.stringify({ id: afterDelete.id, status: afterDelete.status, buttons: afterDelete.buttons }) + ', before ' + JSON.stringify(before.design.status));
+        ok(deleteArmed === true, 'and its Delete stands armed, waiting for the second press', 'after one press its Delete is not armed');
+        const from = JSON.parse(await page.evaluate('JSON.stringify(performance.getEntriesByType("resource").map(function (e) { return e.name; }).filter(function (x) { return /deskRunStatus/.test(x); }))'));
+        ok(from.some(function (x) { return x.indexOf('/spirit/app/desk/element/deskRunStatus/deskRunStatus.js') !== -1; }) && !from.some(function (x) { return /\/shell\/shared\//.test(x); }),
+          'the run status is loaded from spirit/app/desk/element/deskRunStatus/, never from shell/shared/', 'the page loaded ' + JSON.stringify(from));
+      }
+    } finally {
+      if (page && page.kid) page.kid.kill();
+      if (scratch.child) scratch.child.kill();
+      try { if (page && page.profile) fs.rmSync(page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
+      try { if (scratch.root) fs.rmSync(scratch.root, { recursive: true, force: true }); } catch (e) { /* left */ }
     }
   }
   test.reportSuccessFailureCount();
