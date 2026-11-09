@@ -252,3 +252,31 @@ Andy: *"The BRANCH name (FUCK THE TERM "Family"!!!!!!!!!!!!) is motherfucking <n
 ## What its test must try to break (goal/G43.31)
 
 - A branch named otherwise than its folder, as chatClerver in spirit/app/chat/.
+
+## Requirements (goal/G43.32): run://test/ is moved into run://spirit/test/
+
+Andy: *"we'll move the contents of run://test/   into run://spirit/test/ first."*; on Q2: *"We need special rules for
+run://spirit/test/  it will be where run://spirit/app/test/ finds it's main tools."*; and his concluding point: *"this move
+will free the run:// folder namespace and SpiritOS will only take up 1 name ("spirit") in it. .gitignore will be updated
+to ignore the run:/ folder except for run://spirit/"*.
+
+Judged in the run with no file:
+
+- **The old folder is empty**: git tracks no file in `run://test/`.
+- **The new folder holds the move**: the 19 files `run://test/` held on 2026-11-10, `test/test/` included, stand in
+  `run://spirit/test/`.
+- **Nothing names the old folder**: no tracked `.js`, `.md`, `.html` or `.json` under spirit/run/, tests and documents
+  included and the vendored folders left out, names it as a path or as `run://test/`, in code, comment or text. This suite's
+  own `.js` and `.md` are the only files left out, since they must name it to judge it; the `.js` builds the name.
+- **The tools are not tests**: `testModule.js`, wherever it stands, lists none of `testReport.js`, `testModule.js` and
+  `headLessChrome.js` as a test. Their own tests stay in `test/test/`.
+- **Git ignores run:// except run://spirit/**: `.gitignore` holds `/spirit/run/*` and `!/spirit/run/spirit/`, and no other
+  line naming a path under run:// outside run://spirit/; a new file in run:// outside spirit/ is ignored, and a new file in
+  run://spirit/ is not (`git check-ignore --no-index`).
+
+## What its test must try to break (goal/G43.32)
+
+- A file left behind in the old folder, or one of the 19 that did not arrive.
+- A mention in a comment or a document, or written `run://test/`.
+- A tool listed as a test, so `noFuckingGarbage` judges it as a test named after no module.
+- A `.gitignore` line for a path under run:// that `/spirit/run/*` already covers; `run://spirit/` ignored by mistake.

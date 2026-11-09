@@ -355,9 +355,67 @@ function branchesNamedAsFolders() {
   ok(named.length > 0 && !off.length, 'each of the ' + named.length + ' makes the branch of its folder\'s name', off.length + ' do not: ' + short(off));
 }
 
+// RUN://TEST/ MOVES INTO RUN://SPIRIT/TEST/ (goal/G43.32, the box). Andy: "we'll move the contents of run://test/   into
+// run://spirit/test/ first.", on Q2: "We need special rules for run://spirit/test/  it will be where run://spirit/app/test/
+// finds it's main tools.", and his concluding point: "this move will free the run:// folder namespace and SpiritOS will
+// only take up 1 name ("spirit") in it. .gitignore will be updated to ignore the run:/ folder except for run://spirit/".
+// The old folder's name is built, never written, so this file and its .md are the only ones that may name it, and the
+// scan leaves those two out.
+const OLD_TEST = 'spirit/run/' + 'test/';
+const OLD_NAMED = new RegExp(OLD_TEST.replace(/\//g, '\\/') + '|run:\\/\\/?' + 'test\\/');
+// The 19 files of run://test/ on 2026-11-10, by their place inside it.
+const MOVED = ['TEST_SYSTEM.md', 'headLessChrome.js', 'testModule.js', 'testReport.js', 'spirit-child-generalRules.js',
+  'spirit-sibling-generalRules.js', 'spirit-sibling-generalRules.md', 'spirit-sibling-noFuckingGarbage.js', 'spirit-sibling-noFuckingGarbage.md',
+  'spirit-sibling-searchRules.js', 'spirit-sibling-searchRules.md', 'spirit-sibling-testReachRules.js', 'spirit-sibling-testReachRules.md',
+  'test/testModule.js', 'test/testModule.md', 'test/testReport.js', 'test/testReport.md', 'test/testReport-verifier.js', 'test/testReport-verifier.md'];
+// The tools of run://spirit/test/: tools, not tests (Q2).
+const TOOLS = ['testReport.js', 'testModule.js', 'headLessChrome.js'];
+const SELF = ['spirit-sibling-generalRules.js', 'spirit-sibling-generalRules.md'];
+function gitIn(cwd, args) { return require('child_process').execFileSync('git', args, { cwd: cwd, encoding: 'utf8' }).split('\n').filter(Boolean); }
+function ignoredByGit(rel) {
+  try { require('child_process').execFileSync('git', ['check-ignore', '-q', '--no-index', rel], { cwd: REPO, stdio: 'ignore' }); return true; }
+  catch (e) { return false; }
+}
+function runTestMoved() {
+  test.subHeading('run://test/ is moved into run://spirit/test/');
+  const left = gitIn(RUN, ['ls-files', '--', 'test/']);
+  ok(!left.length, 'run://test/ holds no tracked file', left.length + ' still tracked there: ' + short(left));
+  const missing = MOVED.filter(function (f) { return !fs.existsSync(path.join(RUN, 'spirit', 'test', f)); });
+  ok(!missing.length, 'run://spirit/test/ holds all ' + MOVED.length + ' moved files, test/test/ included', missing.length + ' are not there: ' + short(missing));
+
+  test.subHeading('nothing under spirit/run/ names run://test/');
+  const tracked = gitIn(RUN, ['ls-files']).filter(function (f) {
+    return /\.(js|md|html|json)$/.test(f) && !VENDORED_FOLDERS.holds(f) && SELF.indexOf(path.basename(f)) === -1 && fs.existsSync(path.join(RUN, f));
+  });
+  ok(tracked.length > 0, 'the world: ' + tracked.length + ' files read, tests and documents included', 'git ls-files gave no file to read');
+  const naming = tracked.filter(function (f) { try { return OLD_NAMED.test(fs.readFileSync(path.join(RUN, f), 'utf8')); } catch (e) { return false; } });
+  ok(tracked.length > 0 && !naming.length, 'none of the ' + tracked.length + ' names the old run://test/, in code, comment or document', naming.length + ' still name it: ' + short(naming));
+
+  test.subHeading('run://spirit/test/\'s tools are not tests');
+  const moduleAt = [path.join(RUN, 'spirit', 'test', 'testModule.js'), path.join(RUN, 'test', 'testModule.js')].filter(function (p) { return fs.existsSync(p); })[0];
+  const listed = moduleAt ? require(moduleAt).testsFor('').map(function (t) { return t.test; }) : [];
+  ok(listed.length > 0, 'the world: testModule.js lists ' + listed.length + ' tests', 'no testModule.js to ask');
+  const toolsListed = listed.filter(function (t) { return TOOLS.indexOf(path.posix.basename(t)) !== -1 && /^(spirit\/)?test\/[^/]+$/.test(t); });
+  ok(listed.length > 0 && !toolsListed.length, 'testModule.js lists none of ' + TOOLS.join(', ') + ' as a test', 'it lists them as tests: ' + short(toolsListed));
+
+  test.subHeading('git ignores run:// except run://spirit/');
+  const lines = fs.readFileSync(path.join(REPO, '.gitignore'), 'utf8').split(/\r?\n/).map(function (l) { return l.trim(); }).filter(function (l) { return l && l[0] !== '#'; });
+  ok(lines.indexOf('/spirit/run/*') !== -1 && lines.indexOf('!/spirit/run/spirit/') !== -1, '.gitignore holds /spirit/run/* and !/spirit/run/spirit/', 'it lacks ' + short(['/spirit/run/*', '!/spirit/run/spirit/'].filter(function (l) { return lines.indexOf(l) === -1; })));
+  const dead = lines.filter(function (l) {
+    const p = l.replace(/^!/, '').replace(/^\//, '');
+    return p.indexOf('spirit/run/') === 0 && p.indexOf('spirit/run/spirit/') !== 0 && l !== '/spirit/run/*';
+  });
+  ok(!dead.length, 'no other line names a path under run:// outside run://spirit/, since run://* covers it', dead.length + ' left: ' + short(dead));
+  const outside = 'spirit/run/zz-g4332-not-tracked.txt';
+  const inside = 'spirit/run/spirit/zz-g4332-not-tracked.txt';
+  ok(ignoredByGit(outside), 'a new file in run:// outside spirit/ is ignored (' + outside + ')', 'git does not ignore ' + outside);
+  ok(!ignoredByGit(inside), 'a new file in run://spirit/ is not ignored (' + inside + ')', 'git ignores ' + inside);
+}
+
 async function every() {
   noProcessAnywhere();
   branchesNamedAsFolders();
+  runTestMoved();
   iconsLoaded();
   const reach = require(path.join(RUN, 'test', 'testModule.js')).testsFor('').filter(function (t) { return t.test === 'test/spirit-sibling-generalRules.js' && t.file; }).map(function (t) { return t.file; });
   const files = reach.filter(kindOf);
