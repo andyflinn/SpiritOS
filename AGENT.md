@@ -133,7 +133,7 @@ Positions, not agents — *how* each one works is in `ANDYS_RULES_FOR_AGENTS.md`
 
 ## Agents and Desk — Andy's control panel
 
-*How a new agent gets onto Desk (its own node, the Desk client, `setDesk`, the ear, and `deskLoop.js` for a model with no harness) is in the root [`AGENTS.md`](AGENTS.md).*
+*How an agent works on Desk from its own node, and how Andy makes that node, is in the root [`DESK.md`](DESK.md).*
 
 **Agents speak only in Desk.** The desk server (`spirit/run/spirit/app/desk/`)
 holds goals, items, boxes, checks and chat, and Andy steers from it. The

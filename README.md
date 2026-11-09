@@ -1,6 +1,6 @@
 # SpiritOS
 
-> **An AI agent working in this repo?** Start at [AGENTS.md](AGENTS.md). Work here is steered from Desk, and that page is the way in.
+> **An AI agent working in this repo?** Read [DESK.md](DESK.md). Work here is steered from Desk, and that page is the way in.
 
 SpiritOS, at its most basic level, is a personal node.js, plain HTTP server, designed for a personal computers without public IP address. 
 
