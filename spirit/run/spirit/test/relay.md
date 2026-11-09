@@ -38,3 +38,19 @@ stand-in; nothing is sent.
 - The node's own link, with its port, refused.
 - A login mail holding a link or the face's address, or without the words saying where to paste the token.
 - A token that no longer logs in when pasted.
+
+## Requirements (goal/G43.30): the face comes back by itself
+
+Andy: *"ALL, I had to, several times, refresh my new face, because it doesn't seem to auto-reconnect."*, and *"all, FIX IT, IN THIS ITEM, then we tag."* The face retries only once its stream ends (spirit/shell/boot.js, every 5 seconds), so the relay ends a face's stream when the home node's feed into it goes.
+
+On a real scratch relay (test/headLessChrome.js `scratchFaceRelay`), a member seated with a face, its node present and its face logged in; the face's stream (`GET /face/stream`, its `spirit_face` cookie, its own host) and the home node's feed (`POST /api/relay/face/stream`, signed for this relay and `stream`) over HTTP:
+
+- The face opens its stream and the home node hears `face-open`; the feed's lines reach the face.
+- **A feed replaced by a newer one** goes, and the face's stream stays open: the newer feed still reaches it.
+- **The feed into the face goes** (as when the home node goes away): the relay ends the face's stream.
+- The face opens its stream again: the home node hears `face-open` once more, and a new feed reaches the face, no reload.
+
+## What its test must try to break (goal/G43.30)
+
+- A face's stream left open and silent after its node's feed went.
+- A face's stream ended by an old feed that a newer one already replaced.

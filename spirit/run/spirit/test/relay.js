@@ -20,7 +20,7 @@ function scratchRelay() {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-relay-'));
   const js = path.join(home, 'spirit');
   fs.mkdirSync(js, { recursive: true });
-  ['relayAuth.js', 'fieldRules.js', 'shellMove.js'].forEach(function (f) { fs.copyFileSync(path.join(RUN, 'spirit', f), path.join(js, f)); });
+  ['relayAuth.js', 'fieldRules.js'].forEach(function (f) { fs.copyFileSync(path.join(RUN, 'spirit', f), path.join(js, f)); });
   const planted = require(path.join(js, 'relayAuth.js'));
   planted.nameIdentity(home, 'relay');
   // Its owner, written at install as a relay's is: a relay with none seats nobody.
@@ -173,5 +173,83 @@ async function longSearch() {
   try { fs.rmSync(home, { recursive: true, force: true }); } catch (e) { /* scratch */ }
 }
 
-longSearch().then(function () { test.reportSuccessFailureCount(); process.exit(0); },
+// THE FACE COMES BACK BY ITSELF (goal/G43.30; Andy: "ALL, I had to, several times, refresh my new face, because it
+// doesn't seem to auto-reconnect.", "all, FIX IT, IN THIS ITEM, then we tag."). The face retries only once its stream ends
+// (spirit/shell/boot.js), so when the home node's feed into it goes, the relay ends the face's stream: the face opens it
+// again, and the node hears face-open once more and feeds it. A real relay on a scratch copy (test/headLessChrome.js
+// scratchFaceRelay), a member seated with a face, its node present and its face logged in; the face's stream and the
+// home node's feed over HTTP, as the face and the node send them.
+const http = require('http');
+async function faceReconnect() {
+  const H = require(path.join(RUN, 'test', 'headLessChrome.js'));
+  const R = await H.scratchFaceRelay({ members: ['harbour'] });
+  const opened = [];
+  try {
+    test.subHeading('a home node\'s feed gone: the relay ends its face\'s stream, so the face opens it again');
+    ok(R.up, 'the world: a scratch relay, harbour seated with a face, its node present and its face logged in', 'the scratch relay did not come up');
+    if (!R.up) return;
+    const M = R.members.harbour;
+    // The face's own stream, as its page opens it: GET /face/stream, its login cookie, on its own host.
+    const openFace = function () {
+      return new Promise(function (resolve) {
+        const f = { lines: [], ended: false, status: 0 };
+        const req = http.get({ host: '127.0.0.1', port: R.port, path: '/face/stream', headers: { host: M.host, cookie: 'spirit_face=' + M.sid } }, function (res) {
+          f.status = res.statusCode;
+          res.setEncoding('utf8');
+          res.on('data', function (d) { f.lines.push(d); });
+          res.on('end', function () { f.ended = true; });
+          res.on('close', function () { f.ended = true; });
+        });
+        req.on('error', function () { f.ended = true; });
+        f.req = req;
+        opened.push(f);
+        // Its headers come with its first line, face-open answered or a refusal: the face is handed back at once.
+        resolve(f);
+      });
+    };
+    // The home node's long upload of the face's updates: POST /api/relay/face/stream, signed for this relay and 'stream'.
+    const feed = function () {
+      const req = http.request({ host: '127.0.0.1', port: R.port, path: '/api/relay/face/stream', method: 'POST',
+        headers: { 'x-spirit-from': M.publicKey, 'x-spirit-sig': R.auth.sign(M.privateKey, R.auth.faceMessage(M.publicKey, R.relayKey, 'stream')), 'transfer-encoding': 'chunked' } });
+      req.on('error', function () { /* cut */ });
+      req.flushHeaders();
+      return req;
+    };
+    const faceOpens = function () { return R.lines.filter(function (l) { return l.stream === 'harbour' && /face-open/.test(l.line); }).length; };
+    const wait = function (fn, ms) { return H.until(function () { return Promise.resolve(fn()); }, ms || 5000); };
+
+    const opensBefore = faceOpens();
+    const face = await openFace();
+    ok(await wait(function () { return faceOpens() > opensBefore; }) && !face.ended, 'the face opens its stream, and the home node hears face-open', 'the face stream: ' + face.status + ', face-open heard ' + (faceOpens() - opensBefore) + ' times');
+    const one = feed();
+    one.write(JSON.stringify({ event: 'zz-first', data: {} }) + '\n');
+    ok(await wait(function () { return face.lines.join('').indexOf('zz-first') !== -1; }), 'the world: the home node\'s feed reaches the face', 'the face heard ' + short(face.lines.join('')));
+
+    test.subHeading('the attacker: a feed replaced by a newer one goes, and the face\'s stream stays');
+    const two = feed();
+    two.write(JSON.stringify({ event: 'zz-second', data: {} }) + '\n');
+    await wait(function () { return face.lines.join('').indexOf('zz-second') !== -1; });
+    one.destroy();
+    await new Promise(function (r) { setTimeout(r, 1500); });
+    two.write(JSON.stringify({ event: 'zz-third', data: {} }) + '\n');
+    ok(!face.ended && await wait(function () { return face.lines.join('').indexOf('zz-third') !== -1; }), 'the old feed cut, the face\'s stream stays open and the newer feed still reaches it',
+      'after the replaced feed went: ' + JSON.stringify({ ended: face.ended, heard: face.lines.join('').slice(-200) }));
+
+    test.subHeading('the feed into the face goes, as when the home node goes away');
+    two.destroy();
+    ok(await wait(function () { return face.ended; }, 8000), 'the relay ends the face\'s stream: the face sees it end, and retries', 'the face\'s stream stayed open, silent, after its node\'s feed went: the face never retries');
+    const opensNow = faceOpens();
+    const again = await openFace();
+    ok(await wait(function () { return faceOpens() > opensNow; }) && !again.ended, 'the face opens its stream again, and the home node hears face-open once more', 'the face\'s new stream: ' + again.status + ', face-open heard ' + (faceOpens() - opensNow) + ' times');
+    const three = feed();
+    three.write(JSON.stringify({ event: 'zz-back', data: {} }) + '\n');
+    ok(await wait(function () { return again.lines.join('').indexOf('zz-back') !== -1; }), 'and its updates reach the face again, no reload', 'the face heard ' + short(again.lines.join('')));
+    three.destroy();
+  } finally {
+    opened.forEach(function (f) { try { f.req.destroy(); } catch (e) { /* gone */ } });
+    if (R && R.stop) R.stop();
+  }
+}
+
+longSearch().then(faceReconnect).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });
