@@ -558,10 +558,67 @@ module.exports = function installJobs(port) {
       ownerKey: owner && owner !== String(me.publicKey) ? owner : '',
     })];
   }
+  // ── ONE-SHOT APPS (goal/G43.19, box v16) ─────────────────────────────
+  //
+  // Andy: "for apps with only shell:mount:true and node:mount:false or missing, BUT with a api.js and data.js, the node must
+  // execute spirit/app/<name>/<name>.js with the request, instead of routing it to a server, like a cgi-script, and that
+  // process lives only as long as the request.", "there will simply be two kinds, permanent or one-shot processes."
+  // 2: a one-shot app has api.js and data.js at its top, node mount false or missing, and is switched on. 4: it is
+  // registered with the permanent ones, here; switched off it is remembered and not served (Andy: "the appClient is supposed
+  // to fucking remember the icons app, because it will find it when it scans for appServers."): a call to it answers
+  // app-not-served, and the scan at boot remembers one that is off too. 10: the node keeps one job for it,
+  // spirit.app.<name>, open while it is on, and hands that id to every run, so a run publishes on it before it ends.
+  const oneShots = new Map();   // name -> its job
+  // Whether the app is a one-shot app, by its folder and its <name>.json; switched on as well unless anyState.
+  function appOneShot(root, name, anyState) {
+    let own = null;
+    try { own = JSON.parse(fs.readFileSync(path.join(root, 'spirit', 'app', name, name + '.json'), 'utf8')); } catch (e) { return false; }
+    if (own && own.node && own.node.mount === true) return false;
+    const dir = path.join(root, 'spirit', 'app', name);
+    if (!fs.existsSync(path.join(dir, name + '.js')) || !fs.existsSync(path.join(dir, 'api.js')) || !fs.existsSync(path.join(dir, 'data.js'))) return false;
+    return anyState === true || appActive(root, name);
+  }
+  function startOneShot(rootDir, client, name) {
+    if (!client || typeof client.registerOneShot !== 'function') return null;
+    const script = path.join(rootDir, 'spirit', 'app', name, name + '.js');
+    const route = 'spirit.app.' + name;
+    const old = getJob(route);
+    const job = old && !TERMINAL_STATUSES.has(old.status) ? old : createJob('server', route, { oneShot: true, command: process.execPath, args: [script] }, route);
+    updateJob(job.id, { status: 'running' });
+    const state = path.join(rootDir, 'spirit', 'state', name, 'data');
+    try { fs.mkdirSync(state, { recursive: true }); } catch (e) { /* the run says why */ }
+    const pipe = require('./appClient').pipePathFor(rootDir, name, process.platform);
+    // One run of the script, handed what a permanent server is handed: its pipe, its state folder, the node's facts and its
+    // DEBUG; launch() gives it its job's id. A socket left by the run before is cleared first (off Windows a pipe is a file).
+    const start = function () {
+      if (process.platform !== 'win32') { try { fs.rmSync(pipe, { force: true }); } catch (e) { /* none */ } }
+      const args = [script, '{}', '--pipe', pipe, '--state', state].concat(nodeArgOf(rootDir), ['--debug', String(appDebug(rootDir, name))]);
+      return launch(job, process.execPath, args, rootDir);
+    };
+    if (!client.registerOneShot(name, pipe, start)) { cancelJob(job.id); return null; }
+    oneShots.set(name, job);
+    return job;
+  }
+  function stopOneShot(client, name) {
+    const job = oneShots.get(name);
+    oneShots.delete(name);
+    if (client && typeof client.serve === 'function') client.serve(name, false);
+    if (job) cancelJob(job.id);
+  }
+  // An app found off at boot: remembered, its row marked not served, no job.
+  function rememberOneShot(rootDir, client, name) {
+    if (!client || typeof client.registerOneShot !== 'function') return;
+    const pipe = require('./appClient').pipePathFor(rootDir, name, process.platform);
+    if (client.registerOneShot(name, pipe, function () { return null; })) client.serve(name, false);
+  }
+
   function startNodeServers(rootDir, client) {
     serverHost = { rootDir: rootDir, client: client };
     let apps = [];
     try { apps = fs.readdirSync(path.join(rootDir, 'spirit', 'app')); } catch (e) { apps = []; }
+    apps.filter(function (name) { return appOneShot(rootDir, name, true); }).forEach(function (name) {
+      if (appActive(rootDir, name)) startOneShot(rootDir, client, name); else rememberOneShot(rootDir, client, name);
+    });
     return apps.filter(function (name) { return appServes(rootDir, name); })
       .map(function (name) { return startAppServer(rootDir, client, name); })
       .filter(Boolean);
@@ -588,6 +645,10 @@ module.exports = function installJobs(port) {
   }
   function followApp(rootDir, name) {
     if (!serverHost || path.resolve(serverHost.rootDir) !== path.resolve(rootDir)) return;
+    // A ONE-SHOT APP SWITCHED ON OR OFF (goal/G43.19, box v16, 4): registered or its row gone, no restart of the node.
+    const oneShot = appOneShot(rootDir, name);
+    if (oneShot && !oneShots.has(name)) startOneShot(rootDir, serverHost.client, name);
+    else if (!oneShot && oneShots.has(name)) stopOneShot(serverHost.client, name);
     const job = nodeServers.get(name);
     const now = job && getJob(job.id);
     const live = !!now && !TERMINAL_STATUSES.has(now.status);

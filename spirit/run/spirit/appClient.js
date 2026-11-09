@@ -119,6 +119,7 @@ function createAppClient(opts) {
     return Object.keys(h).length ? h : undefined;
   }
   function knock(row, request_, caller) {
+    if (row.oneShot) return oneShot(row, request_, caller);
     return Promise.resolve(request(row.pipe, 'POST', '/', JSON.stringify(request_), {
       type: 'application/json', timeoutMs: DOOR_WAIT_MS, answerMax: caller && caller.owner === true && caller.loopback === true ? Infinity : ANSWER_MAX,
       headers: callerHeaders(caller),
@@ -138,12 +139,68 @@ function createAppClient(opts) {
       return out;
     }, function () { return error('app-not-running', { app: row.app }); });
   }
+
+  // ── A ONE-SHOT ROW (goal/G43.19, box v16, 3, 6, 9) ─────────────────
+  //
+  // Andy: "there will simply be two kinds, permanent or one-shot processes.", "the node must execute
+  // spirit/app/<name>/<name>.js with the request, instead of routing it to a server, like a cgi-script, and that process
+  // lives only as long as the request." A one-shot row holds no pipe of a running process but the way to start one
+  // (row.start, handed over by jobs.js, which names its arguments): each knock starts the app's script, knocks its pipe
+  // as soon as it listens, and ends it once it has answered. ONE RUN PER APP AT A TIME (9): a knock waits for the run
+  // before it to have ended, so two saves never write the app's state at once.
+  const START_POLL_MS = 25;
+  function oneShot(row, request_, caller) {
+    const turn = row.queue.then(function () { return runOnce(row, request_, caller); });
+    row.queue = turn.then(function () {}, function () {});
+    return turn;
+  }
+  function runOnce(row, request_, caller) {
+    let child = null;
+    try { child = row.start(row.pipe); } catch (e) { return Promise.resolve(error('app-not-running', { app: row.app })); }
+    if (!child) return Promise.resolve(error('app-not-running', { app: row.app }));
+    const ended = new Promise(function (resolve) {
+      if (child.exitCode !== null || child.signalCode !== null) { resolve(); return; }
+      child.once('exit', function () { resolve(); });
+    });
+    let gone = false;
+    ended.then(function () { gone = true; });
+    const deadline = Date.now() + DOOR_WAIT_MS;
+    // Knocked until it listens: a refusal of the connection is a script still starting, any other answer is its own.
+    function attempt() {
+      return Promise.resolve(request(row.pipe, 'POST', '/', JSON.stringify(request_), {
+        type: 'application/json', timeoutMs: Math.max(1, deadline - Date.now()), answerMax: caller && caller.owner === true && caller.loopback === true ? Infinity : ANSWER_MAX,
+        headers: callerHeaders(caller),
+      })).then(function (a) {
+        if (a && a.refused === 'app-not-running' && !gone && Date.now() < deadline) {
+          return new Promise(function (r) { setTimeout(r, START_POLL_MS); }).then(attempt);
+        }
+        return a;
+      }, function () { return { refused: 'app-not-running' }; });
+    }
+    return attempt().then(function (a) {
+      try { child.kill(); } catch (e) { /* gone already */ }
+      return ended.then(function () { return a; });
+    }).then(function (a) {
+      if (!a || a.refused) {
+        const code = a && errors.byCode(a.refused) ? a.refused : 'app-not-running';
+        const extra = { app: row.app };
+        if (a && typeof a.bytes === 'number') { extra.bytes = a.bytes; extra.max = a.max; }
+        return error(code, extra);
+      }
+      let body;
+      try { body = JSON.parse(a.text); } catch (e) { return error('handler-failed', { app: row.app, why: 'not JSON' }); }
+      const out = { status: a.status, body: body };
+      if (a.kind === 'background') out.kind = 'background';
+      return out;
+    });
+  }
   function isPlain(v) { return v !== null && typeof v === 'object' && !Array.isArray(v); }
 
   // `caller` (apiAuth/G1.13): forwarded to every server this ask knocks on.
   function ask(body, caller) {
     if (body === 'api') {
-      const names = Object.keys(table);
+      // A one-shot app switched off is remembered and not served (register's serve, below): no branch of the tree.
+      const names = Object.keys(table).filter(function (n) { return !table[n].off; });
       return Promise.all(names.map(function (app) {
         // A branch is what that server answered, or its error (D14).
         return knock(table[app], 'api', caller).then(function (r) { return r.body; });
@@ -156,7 +213,7 @@ function createAppClient(opts) {
     if (!isPlain(body) || Object.keys(body).length !== 1) return Promise.resolve(error('bad-request', { why: "'api', or one app as {app: {verb: {args}}}" }));
     const app = Object.keys(body)[0];
     if (!APP_RE.test(app) || !isPlain(body[app])) return Promise.resolve(error('bad-request', { why: 'an app name, then {verb: {args}}' }));
-    if (!Object.prototype.hasOwnProperty.call(table, app)) return Promise.resolve(error('app-not-served', { app: app }));
+    if (!Object.prototype.hasOwnProperty.call(table, app) || table[app].off) return Promise.resolve(error('app-not-served', { app: app }));
     return knock(table[app], body[app], caller);
   }
 
@@ -175,6 +232,28 @@ function createAppClient(opts) {
       if (taken.indexOf(n) !== -1) { log('server process: ' + n + ' refused, the name is a node family'); return false; }
       table[n] = { app: n, pipe: String(pipe), job: null };
       log('server process: ' + n);
+      return true;
+    },
+    // A ONE-SHOT APP (goal/G43.19, box v16, 3 and 4): its row is its pipe and start(pipe), which jobs.js hands over and
+    // which starts spirit/app/<name>/<name>.js once, answering the child process. The same name rule as register.
+    registerOneShot: function (name, pipe, start) {
+      const n = String(name || '');
+      if (!APP_RE.test(n) || !pipe || typeof start !== 'function') return false;
+      const taken = typeof o.reserved === 'function' ? (o.reserved() || []) : [];
+      if (taken.indexOf(n) !== -1) { log('one-shot app: ' + n + ' refused, the name is a node family'); return false; }
+      table[n] = { app: n, pipe: String(pipe), job: null, oneShot: true, start: start, queue: Promise.resolve() };
+      log('one-shot app: ' + n);
+      return true;
+    },
+    // SWITCHED OFF, IT IS REMEMBERED AND NOT SERVED (goal/G43.19, box v16, 4; Andy: "the appClient is supposed to fucking
+    // remember the icons app, because it will find it when it scans for appServers."): its row stays, marked off, so the
+    // door still routes a call to it and the answer is app-not-served; the api tree leaves it out. On again, it is served.
+    serve: function (name, on) {
+      const n = String(name || '');
+      const row = Object.prototype.hasOwnProperty.call(table, n) ? table[n] : null;
+      if (!row || !row.oneShot) return false;
+      row.off = on === false;
+      log((row.off ? 'not served: ' : 'one-shot app: ') + n);
       return true;
     },
   };
