@@ -45,7 +45,7 @@ re-arm it, your window says `listener stopped`.
 Reads and writes go through the same script, one verb at a time:
 
 ```
-node spirit/run/spirit/app/desk/deskAgentEar.js <port> items.search '{"text":"","currentGoalOnly":true,"goalsOnly":false}'
+node spirit/run/spirit/app/desk/deskAgentEar.js <port> items.search '{"text":"","currentGoalOnly":true,"goalsOnly":false,"includeClosed":false}'
 node spirit/run/spirit/app/desk/deskAgentEar.js <port> item.get '{"id":"<area/G1.2>"}'
 node spirit/run/spirit/app/desk/deskAgentEar.js <port> line.take '{"id":"<item>"}'
 node spirit/run/spirit/app/desk/deskAgentEar.js <port> chat.add '{"id":"<item>","text":"..."}'
