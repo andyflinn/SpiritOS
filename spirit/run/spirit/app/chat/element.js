@@ -1,9 +1,13 @@
-// spirit/run/shell/chatter/chatter.js
-// CHATTER: the face of this node's chatClerver (spirit/run/spirit/app/chat/chatClerver.js), goal/G4.9 to G4.11.
+// spirit/run/spirit/app/chat/element.js
+// THE CHAT APP'S ELEMENT (goal/G43.31; Andy: "the app-element must be spirit/app/chat/element.js", "all it's custom (app
+// specific) elements go into spirit/app/chat/element/"), what was chatter.js, the face of this node's chat server
+// (./nodeChat.js), goal/G4.9 to G4.11. Its contract and its test: ./test/element.md and ./test/element.js.
 //
-// The chatClerver is faceless and knows keys only; chatter is everything a person sees. It asks its server by the
-// verb's name on the flat apiDoor (chatClerver.<verb>, args), and hears every kept line through the chatClerver
-// family's cache (spirit.data.chatClerver.data). It builds with the shell's elements: the peer pane is the contact
+//   spirit.elements.chat.create(container, { open }) -> { destroy() }
+//
+// The chat server is faceless and knows keys only; this element is everything a person sees. It asks its server through
+// the chat branch spirit.require binds (spirit.chat.<verb>), and hears every kept line through the chat branch's cache
+// (spirit.data.chat.data); nothing is handed to it (goal/G43.24). It builds with the shell's elements: the peer pane is the contact
 // search (spirit/element/search/contact.js) in pane face, every name a contactLabel.
 //
 // THREE PANES (the objects pane on the right is empty until file transfer, goal/G4.12):
@@ -16,9 +20,9 @@
 //   arrow, Home and End keys move; a reply answers the current line and quotes it; the popular marks, ⏳ travelling,
 //   ✓ kept by the peer, ❗ refused, no read mark (Andy: "we won't support \"read\""); Enter sends, Shift+Enter a new
 //   line; older lines by before on a scroll to the top, no paging; plain or speech bubbles, chosen in the title bar
-//   and kept in this app's own folder (Andy: "looks like the preferences belon in shell/chatter").
+//   and kept for the open of the page only (goal/G43.31, Q1: "drop them, we'll find a better, more general way soon. oos.").
 
-var chApi = null;
+var chRoot = null;        // the app's root element, its look a class on it
 var chPane = null;        // the peer pane (contactSelector, face pane)
 var chPeer = '';          // the key of the chat shown
 var chSearch = null;      // the open chat's search, the shared list (goal/G29.18)
@@ -31,8 +35,7 @@ var chMore = false;       // the server cut the chat: older lines exist
 var chLoadingOlder = false;
 var chStyle = 'plain';
 var chOpenSeq = 0;        // the newest openChat wins
-var chSeen = {};          // per peer, the newest line time already shown here (kept in shell/chatter)
-var CH_PREFS = 'prefs.json';
+var chSeen = {};          // per peer, the newest line time already shown here, for this open of the page only
 var CH_STYLES = ['plain', 'bubbles'];
 
 // The app's own elements, built once at mount and held here.
@@ -43,22 +46,21 @@ var chIconPart = window.spirit && typeof window.spirit.require === 'function'
   ? Promise.resolve(window.spirit.require('spirit/element/icon.js')).then(null, function () { /* the arrows stay text */ })
   : Promise.resolve();
 
-// THE LINES ARE THE chatClerver FAMILY'S CACHE (goal/G41.28; Andy: "anything not using the new spiritData.js and it's
+// THE LINES ARE THE chat BRANCH'S CACHE (goal/G41.28; Andy: "anything not using the new spiritData.js and it's
 // buddies clientCacheManager.js must do so in this item. no exceptions."): every line a read, a search or a send brings is
-// kept by the family's cache manager (spirit.data.chatClerver.data.keep), and every line the server publishes too; the window places
+// kept by the family's cache manager (spirit.data.chat.data.keep), and every line the server publishes too; the window places
 // a line of the open chat from there (its watch), and an arrival (its published) is read, made current and scrolled to.
 // chLines holds the window's own elements, each with the line it paints.
-function chData() { return (window.spirit && ((window.spirit.data || {}).chatClerver || {}).data) || null; }
+function chData() { return (window.spirit && ((window.spirit.data || {}).chat || {}).data) || null; }
 function chKeep(peer, lines) { var C = chData(); if (C && peer) C.keep(peer, lines); }
 
+// ITS SERVER THROUGH THE SPIRIT OBJECT (goal/G43.24): the chat branch, bound by the one loader; a refusal throws its code.
 function chAsk(verb, args) {
-  return Promise.resolve(chApi.verb('chatClerver.' + verb, args || {})).then(function (r) {
-    var body = r && r.body;
-    if (!r || r.status !== 200 || !body || body.ok === false) {
-      throw new Error((body && (body.code || body.error)) || 'the chatClerver did not answer');
-    }
+  var S = window.spirit;
+  return Promise.resolve(S.require(S.familyPath('chat'))).then(function (b) { return b[verb](args || {}); }).then(function (body) {
+    if (!body || body.ok === false) throw new Error((body && (body.code || body.error)) || 'the chat server did not answer');
     return body;
-  });
+  }, function (e) { throw new Error((e && (e.code || e.message)) || 'the chat server did not answer'); });
 }
 
 function chSay(text) {
@@ -77,7 +79,7 @@ function chSay(text) {
 // starts from any of them.
 var CH_OFFERED = { name: 'offered', when: function () { return false; },
   test: function (row) { return row && row.key !== chSelf && row.blocked !== true ? 1 : 0; } };
-// THE ⌛ MARKS: the chats (chats.search, the record {peer, at, sent, seq, unanswered}), kept in the chatClerver family's
+// THE ⌛ MARKS: the chats (chats.search, the record {peer, at, sent, seq, unanswered}), kept in the chat branch's
 // cache, decide which contact has a line waiting. Exactly the verb's keys: the app server refuses any other shape
 // (appServer.js, no-such-argument).
 function chMarkChats() {
@@ -88,7 +90,7 @@ function chMarkChats() {
 }
 
 // READING RESETS THE COUNT (Andy, goal/G4.10: "it's the fact that they're now reading that should reset the counter,
-// and make the hourglass disappear"; "keep the waiting count"). The count is the chatClerver's unanswered; ⌛ shows
+// and make the hourglass disappear"; "keep the waiting count"). The count is the chat server's unanswered; ⌛ shows
 // while it is above zero and a line newer than the newest one shown here exists. Kept in this app's folder on the
 // node, never sent: there is still no read mark (Andy: "we won't support \"read\"").
 function chWaiting(key) {
@@ -101,7 +103,6 @@ function chMarkSeen(key, at) {
   if (!key || !at || (chSeen[key] && chSeen[key] >= at)) return;
   chSeen[key] = String(at);
   if (chPane) chPane.mark(key, chWaiting(key) ? 'unanswered' : 'none');
-  chSavePrefs();
 }
 
 function chShowCount(n) {
@@ -318,7 +319,7 @@ function chSend() {
   });
 }
 
-// A LINE THE SERVER PUBLISHED, once the family's cache keeps it (spirit.data.chatClerver.data.published): every kept line, written or
+// A LINE THE SERVER PUBLISHED, once the family's cache keeps it (spirit.data.chat.data.published): every kept line, written or
 // received. The window has placed it already (its watch); another chat's line marks the peer list again only, and a new
 // line of the open chat is read, made current and scrolled to.
 function chArrived(peer, l, fresh) {
@@ -334,33 +335,22 @@ function chArrived(peer, l, fresh) {
   }
 }
 
-// ── THE LOOK, KEPT IN shell/chatter (G4.11) ──────────────────────────
+// ── THE LOOK (G4.11) ─────────────────────────────────────────────────
 
-// The look and the two side panes' widths, one file in this app's own folder (goal/G4.10: Andy, "possibly change
-// theirs size by dragging the pane boundary"; the widths kept beside the look so they survive a reload).
+// The look and the two side panes' widths (goal/G4.10: Andy, "possibly change theirs size by dragging the pane boundary").
+// NOTHING OF THEM IS KEPT (goal/G43.31, Q1, Andy: "drop them, we'll find a better, more general way soon. oos."): the old
+// shell's file store that kept them, with the seen marks, is gone; each open starts plain, at the default widths.
 var CH_WIDTH = { peers: 280, objects: 220 };
 var CH_WIDTH_MIN = 160;
 var CH_WIDTH_MAX = 640;
-function chLoadPrefs() {
-  var raw = null;
-  try { raw = chApi.fs && chApi.fs.loadFile(CH_PREFS); } catch (e) { raw = null; }
-  var prefs = {};
-  try { prefs = raw ? JSON.parse(raw) : {}; } catch (e) { prefs = {}; }
-  return prefs && typeof prefs === 'object' ? prefs : {};
-}
 function chClampWidth(n, fallback) {
   var v = Math.round(Number(n));
   if (!(v > 0)) return fallback;
   return Math.max(CH_WIDTH_MIN, Math.min(CH_WIDTH_MAX, v));
 }
-function chSavePrefs() {
-  if (!chApi || !chApi.fs) return;
-  var body = JSON.stringify({ style: chStyle, peersWidth: CH_WIDTH.peers, objectsWidth: CH_WIDTH.objects, seen: chSeen });
-  Promise.resolve(chApi.fs.saveFile(CH_PREFS, body)).catch(function () { chSay('the look could not be kept'); });
-}
 
 function chApplyStyle() {
-  var root = chApi && chApi._root;
+  var root = chRoot;
   if (!root) return;
   root.className = 'ch-app ch-style-' + chStyle;
 }
@@ -371,24 +361,21 @@ function chApplyStyle() {
 // mounts, so no shell has to have put them on the page.
 var chElements = Promise.all(['spirit/element/search/contact.js', 'spirit/element/contactLabel.js'].map(function (p) { return spirit.require(p); }));
 
-spirit.shell.activateApp({
-  mount: function (container, api) {
-    return chElements.then(function () { chMount(container, api); }, function () { container.textContent = 'Chatter could not be loaded.'; });
-  },
-});
+// AN ELEMENT (goal/G43.31): made in the pane the app selector's tile hands it; no old shell's activateApp.
+function chCreate(container) {
+  var gone = false;
+  chElements.then(function () { if (!gone) chMount(container); }, function () { container.textContent = 'Chat could not be loaded.'; });
+  return { destroy: function () { gone = true; if (chOffReconnect) chOffReconnect(); chOffReconnect = null; chRoot = null; container.innerHTML = ''; } };
+}
+var chOffReconnect = null;
 
-function chMount(container, api) {
-    chApi = api;
-    var prefs = chLoadPrefs();
-    chStyle = CH_STYLES.indexOf(prefs.style) !== -1 ? prefs.style : 'plain';
-    CH_WIDTH.peers = chClampWidth(prefs.peersWidth, 280);
-    CH_WIDTH.objects = chClampWidth(prefs.objectsWidth, 220);
+function chMount(container) {
+    chStyle = 'plain';
+    CH_WIDTH.peers = 280;
+    CH_WIDTH.objects = 220;
     chSeen = {};
-    if (prefs.seen && typeof prefs.seen === 'object') {
-      Object.keys(prefs.seen).forEach(function (k) { if (typeof prefs.seen[k] === 'string') chSeen[k] = prefs.seen[k]; });
-    }
     var root = document.createElement('div');
-    api._root = root;
+    chRoot = root;
     container.appendChild(root);
     function make(tag, id, cls, attrs) {
       var e = document.createElement(tag);
@@ -512,7 +499,6 @@ function chMount(container, api) {
           move(e);
           document.removeEventListener('pointermove', move);
           document.removeEventListener('pointerup', up);
-          chSavePrefs();
         }
         document.addEventListener('pointermove', move);
         document.addEventListener('pointerup', up);
@@ -536,13 +522,13 @@ function chMount(container, api) {
     chMarkChats();
 
     // THIS CHAT, SEARCHED (goal/G29.18; Andy, 2026-10-18: "the chat window itself can then have a search", and "the
-    // chat-history-search should have filters me, other person or both"). The shared list, asking chatClerver's
+    // chat-history-search should have filters me, other person or both"). The shared list, asking the chat server's
     // chat.search for the open chat's lines; nothing is asked until words are typed. A row is keyed by its chat as
     // well, so a line of another chat held from an earlier search never stands for this one; a press puts the line
     // in view when the window holds it.
-    // A VIEW OF THE CHATS' LINES IN spirit.data (goal/G41.28): the probability search over the lines the chatClerver
-    // family's cache keeps (spirit.data.chatClerver.data.branch), each line the shared row element; the open chat's alone, by the
-    // who filter. Asked of chatClerver's chat.search once words are typed; every line found is seated in the branch and
+    // A VIEW OF THE CHATS' LINES IN spirit.data (goal/G41.28): the probability search over the lines the chat
+    // branch's cache keeps (spirit.data.chat.data.branch), each line the shared row element; the open chat's alone, by the
+    // who filter. Asked of the chat server's chat.search once words are typed; every line found is seated in the branch and
     // so joins the history (Andy, 2026-10-18: "all found lines are added to the chat, if they're missing, that won't
     // hurt"), each by its time.
     var chSearchRows = null;
@@ -560,7 +546,7 @@ function chMount(container, api) {
         actions: [],
       });
     }
-    Promise.all([spirit.require('spirit/element/search.js'), spirit.require('spirit/element/rowElement.js'), spirit.cacheManager('chatClerver')]).then(function () {
+    Promise.all([spirit.require('spirit/element/search.js'), spirit.require('spirit/element/rowElement.js'), spirit.cacheManager('chat')]).then(function () {
       var C = chData();
       if (!C) return;
       chSearch = window.spirit.element.search.create(chEl('ch-search'), {
@@ -578,7 +564,7 @@ function chMount(container, api) {
             return { status: 200, body: { items: items, more: !!(b && b.more) } };
           });
         },
-        server: 'chatClerver',
+        server: 'chat',
         verb: 'chat.search',
         args: function (text, filters) { return { text: text, who: filters.who === 'both' ? '' : filters.who }; },
         columns: [{ field: 'at', label: 'When', sort: 'date' }, { field: 'who', label: '' }, { field: 'text', label: 'Line' }],
@@ -640,7 +626,6 @@ function chMount(container, api) {
     style.addEventListener('change', function () {
       chStyle = CH_STYLES.indexOf(style.value) !== -1 ? style.value : 'plain';
       chApplyStyle();
-      chSavePrefs();
     });
 
     // PRESENCE, as Contacts shows it (goal/G4.10: "same green and white dots i see in contacts"): each contact's present
@@ -655,16 +640,25 @@ function chMount(container, api) {
       C.watch(function (key, row) { if (key) dot(key, row); });
     }, function () { /* the dots stay white */ });
 
-    // The lines as the chatClerver family's cache keeps them: placed in the open chat as they change, an arrival read.
-    Promise.resolve(spirit.cacheManager('chatClerver')).then(function () {
+    // The lines as the chat branch's cache keeps them: placed in the open chat as they change, an arrival read.
+    Promise.resolve(spirit.cacheManager('chat')).then(function () {
       var C = chData();
       if (!C) return;
       C.watch(function (peer, line) { if (peer && peer === chPeer) chUpsert(line); });
       C.published(chArrived);
     }, function () { /* no lines are kept: the chat says so as it is read */ });
-    if (api.onReconnect) api.onReconnect(function () { if (chPane) chPane.refresh(); chMarkChats(); if (chPeer) chOpen(chPeer); });
+    // THE STREAM BACK AFTER A DROP (Andy: "this should work without a hickup"): spirit.data forgets what it kept on a
+    // reconnect, and the chat branch's cache says so (forgot), so the chats and the open chat are asked again. The element
+    // takes no stream of its own (only spirit.data does).
+    Promise.resolve(spirit.cacheManager('chat')).then(function () {
+      var C = chData();
+      if (C && typeof C.forgot === 'function') chOffReconnect = C.forgot(function () { if (chPane) chPane.refresh(); chMarkChats(); if (chPeer) chOpen(chPeer); });
+    }, function () { /* nothing kept, nothing forgotten */ });
     // This node's key, for a reply to one of its own lines.
-    Promise.resolve(api.verb('node.card', {})).then(function (r) {
-      chSelf = String((r && r.body && (r.body.publicKey || (r.body.card && r.body.card.publicKey))) || '');
+    Promise.resolve(window.spirit.ready).then(function (s) { return s.node.card({}); }).then(function (b) {
+      chSelf = String((b && (b.publicKey || (b.card && b.card.publicKey))) || '');
     }, function () { /* a reply to its own line then names no writer */ });
 }
+
+window.spirit.elements = window.spirit.elements || {};
+window.spirit.elements.chat = { create: chCreate };

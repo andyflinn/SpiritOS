@@ -1,0 +1,18 @@
+{
+  "identity": {
+    "icon": "💬",
+    "label": "Chat",
+    "intrinsic": false
+  },
+  "mount": {
+    "chat.js": true
+  },
+  "shell": {
+    "true": false,
+    "mount": true,
+    "tile": true
+  },
+  "node": {
+    "mount": true
+  }
+}

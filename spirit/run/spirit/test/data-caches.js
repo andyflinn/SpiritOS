@@ -161,7 +161,7 @@ ok(!writers.length, 'no other module writes a cache file of its own', 'a cache f
 // ── 5. ONE CONTRACT ─────────────────────────────────────────────────────────────────────────────────────────────────
 test.subHeading('5. every family\'s data.js is the same: required, it stands at spirit.data.<name>');
 managers.forEach(function (m) {
-  // The family a manager makes is the name it hands makeFamily (spirit/app/chat/data.js makes chatClerver, spirit/app/data.js
+  // The family a manager makes is the name it hands makeFamily (spirit/app/chat/data.js makes chat, spirit/app/data.js
   // makes app): never guessed from its folder.
   const named = /makeFamily\(\s*['"]([^'"]+)['"]/.exec(code(path.join(RUN, m)));
   const name = named ? named[1] : '';

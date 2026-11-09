@@ -15,14 +15,13 @@ const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fileSystem.js')).VEND
 // Andy on Q2: "yes, of course all 19". Q1: each under the family's own name.
 const NODE_FAMILIES = ['app', 'auth', 'config', 'contact', 'events', 'fs', 'jobs', 'net', 'node', 'owner', 'peer', 'relay'];
 // fileServer went with run://process (goal/G43.20), so 18 are left.
-const SERVER_FAMILIES = ['agent', 'backup', 'chatClerver', 'desk', 'deskClient', 'deskVerify'];
+const SERVER_FAMILIES = ['agent', 'backup', 'chat', 'desk', 'deskClient', 'deskVerify'];
 const FAMILIES = NODE_FAMILIES.concat(SERVER_FAMILIES);
-// A server's family is in its app's folder, spirit/app/<name>/ (goal/G43.20); chatClerver's app is chat.
-const APP_OF = { chatClerver: 'chat' };
-const folderOf = function (name) { return NODE_FAMILIES.indexOf(name) !== -1 ? path.join(RUN, 'spirit', name) : path.join(RUN, 'spirit', 'app', APP_OF[name] || name); };
+// A server's branch is its app's folder, spirit/app/<name>/ (goal/G43.20), named as the folder (goal/G43.31: chat, once chatClerver).
+const folderOf = function (name) { return NODE_FAMILIES.indexOf(name) !== -1 ? path.join(RUN, 'spirit', name) : path.join(RUN, 'spirit', 'app', name); };
 // A scratch node does not offer these three to a page, so a page cannot load them; all 18 are judged in node as well.
-const NOT_ON_SCRATCH = ['agent', 'chatClerver', 'deskClient'];
-// The old spirit.<name>Data: chatData was chatClerver's, verifyData deskVerify's.
+const NOT_ON_SCRATCH = ['agent', 'chat', 'deskClient'];
+// The old spirit.<name>Data: chatData was the chat server's, verifyData deskVerify's.
 const OLD_READER = /(?:\b|\.)(?:agent|app|auth|backup|chat|chatClerver|config|contact|desk|deskClient|deskVerify|events|fileServer|fs|jobs|net|node|owner|peer|relay|verify)Data\b/;
 // A retired name's parts, so this file does not hold it whole.
 const OLD_MANAGER = 'clientCache' + 'Manager';

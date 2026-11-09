@@ -1,11 +1,11 @@
 // spirit/run/spirit/app/chat/data.js
-// WHAT A CLIENT KNOWS OF THE CHATS, IN THE chatClerver FAMILY'S OWN FOLDER (goal/G41.28). Andy: "anything not using the
+// WHAT A CLIENT KNOWS OF THE CHATS, IN THE chat BRANCH'S OWN FOLDER (goal/G41.28; the branch is chat since goal/G43.31). Andy: "anything not using the
 // new spiritData.js and it's buddies clientCacheManager.js must do so in this item. no exceptions." A page loads it
-// through spirit.cacheManager('chatClerver'); it keeps the chats' lines in that page's spirit.data, under the node that
+// through spirit.cacheManager('chat'); it keeps the chats' lines in that page's spirit.data, under the node that
 // served them.
 //
 // THE BRANCH IS THIS FILE'S, AND ONLY THIS FILE NAMES IT: every reader (Chatter's window and its search) asks
-// spirit.data.chatClerver.data (below), never a branch by name.
+// spirit.data.chat.data (below), never a branch by name.
 //   lines   peer + newline + sent + ':' + seq -> the line { peer, sent, seq, at, text, receivedAt, re, refused }
 //   chats   peer -> that chat's row as chats.search answers it { at, sent, seq, unanswered }
 // Every line the server publishes ({ line }, goal/G4.2: each kept line, written or received, and each change of a
@@ -19,8 +19,8 @@
       receivedAt: String(l.receivedAt || ''), re: l.re || { writer: '', seq: 0 }, refused: String(l.refused || '') };
   }
   var D = typeof window !== 'undefined' ? window.spirit.data : require('../../../spirit/data.js');
-  D.makeFamily('chatClerver', function () {
-    var HOME = D.viewAt(null, 'chatClerver');
+  D.makeFamily('chat', function () {
+    var HOME = D.viewAt(null, 'chat');
     function put(V, peer, l) {
       if (!peer || !l || l.seq === undefined || l.sent === undefined) return;
       V.set(LINES + '/' + keyOf(peer, l.sent, l.seq), lineOf(peer, l));
@@ -30,7 +30,7 @@
       onJob: function (job) {
         var l = job && job.module === 'spirit.app.chat' && job.app && job.app.line;
         if (!l || !l.peer) return;
-        var V = D.viewAt(job.fromNode || null, 'chatClerver');
+        var V = D.viewAt(job.fromNode || null, 'chat');
         var fresh = !V.get(LINES + '/' + keyOf(l.peer, l.sent, l.seq));
         put(V, l.peer, l);
         var kept = lineOf(l.peer, l);
@@ -43,6 +43,8 @@
     //   watch(fn)           fn(peer, line) on every line kept or changed; answers its release
     //   published(fn)       fn(peer, line, fresh) for a line the server published, once kept (an arrival, not a read);
     //                       fresh when it was not kept before (a new line, not a mark changed); answers its release
+    //   forgot(fn)          fn() when the cache forgot every line (the stream came back: spirit.data forgets on a reconnect,
+    //                       goal/G41.3), so a reader asks again what it shows; answers its release
     //   branch              the lines' whole path, for a list that is a view of it (probabilitySearch's data)
     var chatReads = {
       keep: function (peer, lines) { (lines || []).forEach(function (l) { put(HOME, peer, l); }); },
@@ -63,6 +65,7 @@
           .sort(function (a, b) { return a.at < b.at ? -1 : a.at > b.at ? 1 : a.seq - b.seq; });
       },
       watch: function (fn) { return HOME.watch(LINES, function (whole, v) { if (v && typeof fn === 'function') fn(v.peer, v); }); },
+      forgot: function (fn) { return HOME.watch(LINES, function (whole, v) { if (v === undefined && String(whole) === String(HOME.path(LINES)) && typeof fn === 'function') fn(); }); },
       published: function (fn) {
         if (typeof fn !== 'function') return function () {};
         heard.push(fn);

@@ -9,7 +9,7 @@ passing: the server MUST not CRASH or HANG."*
 ## How
 
 - A scratch copy of `spirit/run` on a node of its own (`test/headLessChrome.js`), its app servers turned on at home
-  by a `face.home` sidecar each (desk, deskVerify, backup, chatClerver; the file server, intrinsic, runs on every node).
+  by a `face.home` sidecar each (desk, deskVerify, backup, chat; the file server, intrinsic, runs on every node).
   The list names agent too, but agent is an app of `spirit/app/` now, started by `active` in its `node.json`, which a
   sidecar does not set. Neither Andy's node nor an agent's is touched.
 - **Introspect** (the box: *"introspect: each server's own api answer says its verbs and the shape of their

@@ -21,7 +21,7 @@ const { sleep, scratchNode } = require(path.join(RUN, 'test', 'headLessChrome.js
 
 // The app servers turned on on the scratch node, by active in spirit/state/<name>/node.json, which scratchNode writes for
 // each (goal/G43.12, G43.20).
-const SERVERS = ['agent', 'desk', 'deskVerify', 'backup', 'chatClerver'];
+const SERVERS = ['agent', 'desk', 'deskVerify', 'backup', 'chat'];
 // A throw is answered within this, or it hung; the plain call after a batch within PLAIN_MS.
 const ASK_MS = 10000;
 const PLAIN_MS = 3000;

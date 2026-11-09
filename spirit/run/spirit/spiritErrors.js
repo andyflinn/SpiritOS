@@ -809,7 +809,7 @@ define('name-reserved', { status: 409, texts: ['name reserved by a live invite']
 // ── NINE APP CODES STOOD HERE, AND LEFT (goal/G16.11) ───────────────
 //
 // box-moved, not-offered and no-such-item (the desk's), unblocked
-// (deskClient's) and peer-blocked (the chatClerver's) were defined in this
+// (deskClient's) and peer-blocked (the chat server's) were defined in this
 // register, which the node and the relay both load. A3 of the review of
 // 2026-10-10 named it, and Andy, 2026-10-11: "yes. get the bloody app error
 // codes out of the core." Each app now declares its own codes to appServer,

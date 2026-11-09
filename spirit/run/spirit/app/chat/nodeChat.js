@@ -1,15 +1,19 @@
 'use strict';
 
-// spirit/run/spirit/app/chat/chatClerver.js
+// spirit/run/spirit/app/chat/nodeChat.js (was chatClerver.js; goal/G43.31: the branch is chat, as its folder, Andy: "The BRANCH
+// name ... is motherfucking <name> in spirit/app/<name>...."). Loaded by ./chat.js in a node. Its contract and its test:
+// ./test/nodeChat.md and ./test/nodeChat.js.
 // THE CHAT SERVER — goal/G4. Faceless and p2p: every node that takes part runs one, and each holds its own record of
 // the chats it is a party to. No server in the middle; no core module.
 //
 //   Andy, 2026-10-03: "this time, we design the faceless chatClerver only, with no regard to any user interface
 //   design. the chatClerver is an appServer and absolutely p2p."; "the every node's database is referred to as that
 //   users "memory", it is called memory.db and holds only truth."; and, the design ended, "i meant: build it now."
+//   THE FILE IS chat.db SINCE goal/G43.31 (Andy: "how about calling the db chat.db ??????", and "that ruling is replaced."),
+//   begun empty: no old chat data is rescued (Andy: "don't even THINK of rescuing any old chat data, that an ABSOLUTE NO.").
 //
 // DECIDED in Desk (goal/G4.1, G4.5, G4.8), not this file's to undo:
-//   - memory.db is this node's memory of what it witnessed: the lines it wrote, the sealed lines it received, and
+//   - chat.db is this node's memory of what it witnessed: the lines it wrote, the sealed lines it received, and
 //     nothing it did not witness. Nothing cached or derived is kept; a search answers from the rows.
 //   - A line is named by (peer, sent, seq): the other party's key, the direction, the writer's own number. The two
 //     copies of a chat are equals; a difference between them is a gap, never a conflict.
@@ -37,12 +41,12 @@ const argv = process.argv;
 function arg(name) { const i = argv.indexOf(name); return i !== -1 ? String(argv[i + 1] || '') : ''; }
 const STATE = arg('--state');
 if (!STATE) {
-  console.error('chatClerver: no --state; the node that starts this names its state folder');
+  console.error('chat: no --state; the node that starts this names its state folder');
   process.exit(2);
 }
 fs.mkdirSync(STATE, { recursive: true });
 
-const db = new DatabaseSync(path.join(STATE, 'memory.db'));
+const db = new DatabaseSync(path.join(STATE, 'chat.db'));
 // In WAL a reader never blocks the writer, so a backup can copy this file while it is written.
 db.exec('PRAGMA busy_timeout=5000');
 db.exec('PRAGMA journal_mode=WAL');
@@ -118,9 +122,9 @@ function answered(peer, re) {
   return sent === -1 ? undefined : oneLine.get(peer, sent, re.seq) || undefined;
 }
 
-// One line as it travels: the peer's chatClerver takes it with line.receive (goal/G4.2).
+// One line as it travels: the peer's chat server takes it with line.receive (goal/G4.2), on its chat branch.
 function bodyOf(l) {
-  return { chatClerver: { 'line.receive': { seq: l.seq, at: l.at, text: l.text, re: { writer: l.reWriter, seq: l.reSeq } } } };
+  return { chat: { 'line.receive': { seq: l.seq, at: l.at, text: l.text, re: { writer: l.reWriter, seq: l.reSeq } } } };
 }
 // One post of one line, and what came back: kept, or the peer's refusal (its door's, sealed) kept as proof that
 // contact was attempted (goal/G4.6, Andy: "the writers keeps refusals, they are proof that contact was attempted.").
@@ -198,7 +202,7 @@ const allReceived = db.prepare('SELECT COUNT(*) AS n FROM lines WHERE peer = ? A
 // A row is {peer, at, sent, seq, unanswered}: the newest line between this node and the peer by the writer's time,
 // and how many of the peer's lines arrived after the newest line this node sent, by this node's own clock
 // (receivedAt against the sent line's at, both written here), all of them when none was sent. A peer with no line
-// is no row: a record is born by a line (G4.6). Newest first. Derived on each ask, nothing stored: memory.db holds
+// is no row: a record is born by a line (G4.6). Newest first. Derived on each ask, nothing stored: chat.db holds
 // only what was witnessed (G4.8). NO FILTERS (goal/G29.18): the text matched part of a key, and keys are never
 // searched; since and before went with it. A chat is revived by finding the person by name and opening it.
 function peerRows() {
@@ -215,7 +219,7 @@ function peerRows() {
 
 appServer.serve({
   // THE OWNER WRITES A LINE TO A PEER (goal/G4.6, G4.7, made sound by G4.2). Decided in Desk, not this file's to undo:
-  //   - A peer is named by its key; the chatClerver matches no label (Andy: "matching labels to keys is the UI's
+  //   - A peer is named by its key; the chat server matches no label (Andy: "matching labels to keys is the UI's
   //     problem").
   //   - The node's block is the one truth and outranks: a blocked key is refused peer-blocked, nothing granted or
   //     posted ("a node-level-block supersedes app level blocks"). A node that cannot say refuses the write too.
@@ -245,7 +249,7 @@ appServer.serve({
         if (person.blocked === true) throw refused('peer-blocked');
         return null;
       }).then(function () {
-        return onNode('auth', function (s) { return s.auth.grant({ key: to, path: 'chatClerver.line.receive' }); });
+        return onNode('auth', function (s) { return s.auth.grant({ key: to, path: 'chat.line.receive' }); });
       }).then(function (g) {
         const already = g.status === 409 && g.body && g.body.code === 'already-granted';
         if (g.status !== 200 && !already) throw refused('store-unavailable');
@@ -368,7 +372,7 @@ appServer.serve({
     },
   },
 // ITS OWN REFUSAL (goal/G16.11): declared here rather than in the shared
-// register the node and the relay load. appServer puts "chatClerver: " in
+// register the node and the relay load. appServer puts "chat: " in
 // front of the text.
 }, { codes: {
   // goal/G4.6: a line to a key the node's contact book marks blocked; the node's block outranks.

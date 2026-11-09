@@ -13,7 +13,7 @@
 //     its family folder, familyPath(name)), written to this file's standard: module.exports = { verbs: { <verb>:
 //     { <argument>: '<rule>' } }, functions: { <verb>: '<its function>' }, names(call, tools) }. One member per family: spirit.fs.load({path}),
 //     spirit.contact.label({...}) ..., every verb an async function answering the reply's body; a dotted verb is also
-//     there in camel case (spirit.chatClerver.lineWrite for line.write).
+//     there in camel case (spirit.chat.lineWrite for line.write).
 //   - WHERE A MEMBER COMES FROM (goal/G32.3). Andy, 2026-10-22: "the api.js files should not assume the namespace they
 //     will occupy in the spirit object, that mapping belongs to the node". The names are the families the verb api
 //     answers; each family's interface is api {family}, the text of its api.js as the node reads it, run here as a
@@ -250,7 +250,7 @@
       var named = def.functions && def.functions[verb];
       if (named) { out[named] = function (args) { return call(verb, args); }; return; }
       out[verb] = function (args) { return call(verb, args); };
-      // line.write is spirit.chatClerver.lineWrite as well.
+      // line.write is spirit.chat.lineWrite as well.
       var camel = verb.replace(/\.([a-zA-Z0-9])/g, function (m, c) { return c.toUpperCase(); });
       if (camel !== verb && !(camel in out)) out[camel] = out[verb];
     });
