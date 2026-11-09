@@ -4422,7 +4422,18 @@ function createRelay(rootDir, deps) {
     entry.source = source;
     // Counted in the one stream ceiling while it is open (goal/G30.15), one per member: a new upload replaces the last.
     faceFeeds.set(k, source);
-    var gone = function () { if (faceFeeds.get(k) === source) faceFeeds.delete(k); };
+    // THE FACE RECONNECTS WHEN ITS HOME NODE GOES (goal/G43.30; Andy: "FIX IT, IN THIS ITEM, then we tag."): the face's stream is
+    // piped with end false, so a new upload can take the old one's place; but when the upload that feeds it ends and none has
+    // replaced it (the home node went away), the face's stream ends too. The face then sees its stream end and asks again
+    // every 5 seconds (shell/boot.js), refused while the node is away, and the node that comes back hears face-open again.
+    var gone = function () {
+      if (faceFeeds.get(k) === source) faceFeeds.delete(k);
+      var now = faceStreams.get(k);
+      if (now && now.source === source) {
+        now.source = null;
+        try { now.sink.end(); } catch (e) { /* the face went */ }
+      }
+    };
     if (typeof source.on === 'function') { source.on('close', gone); source.on('end', gone); }
     try { source.pipe(entry.sink, { end: false }); } catch (e) { gone(); return { ok: false, status: 400, error: 'the feed could not be carried' }; }
     return { ok: true, status: 200 };
