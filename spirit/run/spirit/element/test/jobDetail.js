@@ -44,10 +44,10 @@ test.startTest('jobDetail.js: one job, the Job Monitor\'s detail, an element of 
 
     await chrome.send('Page.navigate', { url: node.base + '/face.html' });
     await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
-    const loaded = await chrome.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/element/jobDetail.js"); }).then(function () { window.pageErrors = []; window.addEventListener("error", function (e) { window.pageErrors.push(String(e.message)); }); window.closed = []; var J = spirit.element.jobDetail; return J && typeof J.create === "function" ? "loaded" : "spirit.element.jobDetail.create is " + typeof (J && J.create); }, function (e) { return String(e && e.message || e); })');
+    const loaded = await chrome.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/element/jobDetail.js"); }).then(function () { window.pageErrors = []; window.addEventListener("error", function (e) { window.pageErrors.push(String(e.message)); }); window.closes = []; var J = spirit.element.jobDetail; return J && typeof J.create === "function" ? "loaded" : "spirit.element.jobDetail.create is " + typeof (J && J.create); }, function (e) { return String(e && e.message || e); })');
     ok(loaded === 'loaded', 'it loads through spirit.require: spirit.element.jobDetail.create(host, { id, close })', 'it did not load: ' + short(loaded));
     if (loaded !== 'loaded') return;
-    const mount = function (id) { return chrome.evaluate('(function () { if (window.made) window.made.destroy(); var old = document.getElementById("box"); if (old) old.remove(); var c = document.createElement("div"); c.id = "box"; c.style.cssText = "position:fixed;left:0;top:0;width:1000px;height:760px;display:flex;flex-direction:column;background:#111;z-index:9"; document.body.appendChild(c); window.made = spirit.element.jobDetail.create(c, { id: ' + JSON.stringify(id) + ', close: function (w) { window.closed.push(w === undefined ? null : w); } }); return true; }())'); };
+    const mount = function (id) { return chrome.evaluate('(function () { if (window.made) window.made.destroy(); var old = document.getElementById("box"); if (old) old.remove(); var c = document.createElement("div"); c.id = "box"; c.style.cssText = "position:fixed;left:0;top:0;width:1000px;height:760px;display:flex;flex-direction:column;background:#111;z-index:9"; document.body.appendChild(c); window.made = spirit.element.jobDetail.create(c, { id: ' + JSON.stringify(id) + ', close: function (w) { window.closes.push(w === undefined ? null : w); } }); return true; }())'); };
     const text = function () { return chrome.evaluate('String((document.getElementById("box") || {}).innerText || "")'); };
     const buttons = function () { return chrome.evaluate('Array.prototype.filter.call(document.querySelectorAll("#box button"), function (b) { return b.getClientRects().length; }).map(function (b) { return String(b.textContent).trim(); })'); };
     const press = function (w) { return chrome.evaluate('(function () { var b = Array.prototype.filter.call(document.querySelectorAll("#box button"), function (x) { return x.getClientRects().length && String(x.textContent).trim() === ' + JSON.stringify(w) + '; })[0]; if (b) b.click(); return !!b; }())'); };
@@ -62,12 +62,13 @@ test.startTest('jobDetail.js: one job, the Job Monitor\'s detail, an element of 
 
     test.subHeading('"A live monitor of what the job publishes": an event of spirit.fs, and the Extract box');
     ok(/Events/.test(t1), 'its events box', 'no events box: ' + short(t1));
-    const before = await chrome.evaluate('document.querySelectorAll("#box [data-event]").length');
-    // Through spirit.fs, as an agent changes a file ("an agent's file changes through spirit.fs"): spirit.fs reports what
-    // it was asked, never a file written past it.
-    const saved = await call('fs.save', { path: 'zz-touched-' + Date.now() + '.txt', content: 'a change for spirit.fs to report\n' });
+    // Through spirit.fs, as an agent changes a file ("an agent's file changes through spirit.fs"), in a folder of its own:
+    // fs.save refuses a file at the run folder's top. Judged by a line naming the file, never by the count: the window is
+    // full at 256 from the boot scan, so a new line pushes one off the top.
+    const touched = 'zzTouched/zz-touched-' + Date.now() + '.txt';
+    const saved = await call('fs.save', { path: touched, content: 'a change for spirit.fs to report\n' });
     ok(saved.status >= 200 && saved.status < 300, 'the world: a file saved through fs.save', 'fs.save: ' + short(saved.text));
-    const heard = await until(function () { return chrome.evaluate('document.querySelectorAll("#box [data-event]").length').then(function (n) { return n > before; }); }, 15000);
+    const heard = await until(function () { return chrome.evaluate('Array.prototype.some.call(document.querySelectorAll("#box [data-event]"), function (l) { return String(l.textContent).indexOf(' + JSON.stringify(path.basename(touched)) + ') !== -1; })'); }, 15000);
     ok(heard, 'a file change on the node shows as a new event line, no reload', 'no new event line; the box: ' + short(await text()));
     if (heard) {
       await chrome.evaluate('(function () { var l = document.querySelectorAll("#box [data-event]"); l[l.length - 1].click(); return true; }())');
@@ -85,7 +86,7 @@ test.startTest('jobDetail.js: one job, the Job Monitor\'s detail, an element of 
     // spirit/jobs.js: a process the owner cancels removes itself (goal/G29.16, "jobs cancelled by me are also removed").
     ok(await until(function () { return jobOf('spirit.app.zzSleep').then(function (j) { return !j; }); }, 10000), 'Cancel ends the job on the node, which then removes it', 'after Cancel the job is ' + short(await jobOf('spirit.app.zzSleep')));
     ok(await until(function () { return text().then(function (t) { return /no longer listed/i.test(t); }); }, 10000), 'and the screen stays and says it is no longer listed, no reload', 'after Cancel the screen: ' + short(await text()));
-    ok(await chrome.evaluate('window.closed.length === 0'), 'Cancel does not close the screen', 'Cancel called close');
+    ok(await chrome.evaluate('window.closes.length === 0'), 'Cancel does not close the screen', 'Cancel called close');
 
     test.subHeading('a failed process stays (G29.16): Delete and no Cancel; Delete, and the screen goes with the job');
     const failed = await call('jobs.create', { command: 'node', args: ['spirit/app/zzFail/zzFail.js'] });
@@ -95,7 +96,7 @@ test.startTest('jobDetail.js: one job, the Job Monitor\'s detail, an element of 
     ok(await until(function () { return buttons().then(function (b) { return b.indexOf('Delete') !== -1 && b.indexOf('Cancel') === -1; }); }, 10000), 'terminal, it offers Delete and no Cancel', 'its buttons: ' + short(await buttons()));
     await press('Delete');
     ok(await until(function () { return jobOf('spirit.app.zzFail').then(function (j) { return !j; }); }, 10000), 'Delete deletes the job on the node', 'after Delete the job is ' + short(await jobOf('spirit.app.zzFail')));
-    ok(await until(function () { return chrome.evaluate('window.closed.length >= 1'); }, 5000), 'and the screen goes with it: close is called', 'close was not called after Delete');
+    ok(await until(function () { return chrome.evaluate('window.closes.length >= 1'); }, 5000), 'and the screen goes with it: close is called', 'close was not called after Delete');
 
     test.subHeading('"Deleted or never there: say so"');
     await mount('spirit.app.zzNeverThere');
