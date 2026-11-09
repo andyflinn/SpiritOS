@@ -16,8 +16,6 @@ through `spirit.core.fs.createScopedFs('<name>')` (`kernel.js`).
 | `falloutHistory/` | the flips of one tested thing (its manifest runs nowhere) |
 | `grants/` | who may call which api |
 | `info/` | the name and the sentence this node says about itself |
-| `introSpector/` | call what a party lets you call |
-| `jobs/`, `jobsDetails/` | the Job Monitor and one job |
 | `join/` | the steps a new node takes; the face's boot (`spirit/run/spirit/shell/boot.js`) loads `join.js` at home itself |
 | `relayMonitor/` | the relays this node owns |
 | `rotateKey/` | replacing this node's key |
@@ -32,8 +30,10 @@ its other parts.
 
 `spirit/run/spirit/coreFiles.js` decides it. Here: `navigationWrapper.js`,
 all of `join/`, and the code files of the folders on its coded `INTRINSIC`
-list (`grants`, `info`, `introSpector`, `jobs`, `jobsDetails`, `join`,
-`relayMonitor`, `rotateKey`). A manifest is never core. `shared/` holds
+list (`grants`, `info`, `join`, `relayMonitor`, `rotateKey`). The Job
+Monitor and introSpector are `spirit/run/spirit/app/jobs/` and
+`spirit/run/spirit/app/introSpector/` since goal/G43.29. A manifest is
+never core. `shared/` holds
 no core file (Andy: *"no "core" files should reside in shell/shared/ since
 that folder was meant to be a place where non-intrinsic apps could share
 modules"*).

@@ -193,8 +193,9 @@
         // Hosts a sub-view of the machine-introspection apps — hidden from
         // the real desktop — using the same reusable icon-grid template
         // user-created groups also build on (registerGroupApp, shell.js).
-        // Of its fixed members only shell/jobs still exists (Stats and Apps
-        // were deleted); renderAppGroup skips an id with no app.
+        // Its fixed members are all gone (Stats and Apps were deleted, and
+        // the Job Monitor is spirit/app/jobs/ since goal/G43.29): it holds
+        // the intrinsic apps the old shell discovered.
         registerApp({
           id: 'spirit',
           name: 'Spirit',
@@ -205,17 +206,12 @@
           render: function () {
             var grid = document.getElementById('spirit-group');
             if (!grid) return;
-            // The fixed built-in members, plus every intrinsic app the
-            // shell discovered. Intrinsic apps are part of
-            // how the node works rather than something installed, so this
-            // is their launcher home and the only one — the Location
-            // picker cannot move them out (setAppOverride, shell.js).
-            //
-            // The two halves may overlap; renderAppGroup
-            // draws one tile per id, so this list does not have to know
-            // what is already in it.
-            renderAppGroup(grid, ['shell/stats', 'shell/jobs', 'shell/apps']
-              .concat(spirit.shell.listIntrinsicApps()));
+            // Every intrinsic app the shell discovered. Intrinsic apps are
+            // part of how the node works rather than something installed,
+            // so this is their launcher home and the only one — the
+            // Location picker cannot move them out (setAppOverride,
+            // shell.js).
+            renderAppGroup(grid, spirit.shell.listIntrinsicApps());
           },
         });
 

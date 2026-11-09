@@ -1,0 +1,18 @@
+{
+  "identity": {
+    "icon": "👓",
+    "label": "introSpector",
+    "intrinsic": true
+  },
+  "mount": {
+    "introSpector.js":true
+  },
+  "shell": {
+    "true":false,
+    "mount":true,
+    "tile":true
+  },
+  "node": {
+    "mount":false
+  }
+}

@@ -289,7 +289,6 @@ const ALONE = /(['"`]|>)\s*(?:\p{Extended_Pictographic}[\uFE0F\u200D\u{1F3FB}-\u
 // A glyph alone in a string that is drawn only among words, read by hand: a status or a mark put before a name
 // (Andy: "glyphs are legal in labels and description true").
 const TEXT_ONLY = {
-  'shell/jobsDetails/jobsDetails.js': 'its status glyph is drawn before the job\'s type and its status word',
   'spirit/element/search/contact/detailElement.js': 'its blocked mark is drawn before the person\'s name',
   'spirit/element/search/contact/listElement.js': 'its filter icons are drawn before their words by the search element\'s chips',
 };
@@ -614,7 +613,7 @@ test.startTest((full ? NAMED : 'every page module') + ': the general rules of an
     // ONE EXCEPTION, DEFERRED, AND STILL RED (Andy, the box: "the only exception is introspector, deferred for network-scope
     // design reasons."): the probability search keeps rows of its own for introSpector's selectors over another node, so
     // its own page, mounted bare, still makes one. The red names the deferral; it is not met, so it is not green.
-    const DEFERRED = rel === 'spirit/element/search.js' || rel === 'shell/introSpector/introSpector.js' ? ' (introSpector\'s deferral, the box: "the only exception is introspector, deferred for network-scope design reasons.")' : '';
+    const DEFERRED = rel === 'spirit/element/search.js' || rel === 'spirit/element/introSpector.js' || rel === 'spirit/app/introSpector/introSpector.js' ?' (introSpector\'s deferral, the box: "the only exception is introspector, deferred for network-scope design reasons.")' : '';
     if (!made.length) unjudged('it makes no search');
     else ok(!off.length, 'its ' + made.length + ' searches are each made with a spirit.data branch, no rows of their own', off.length + ' not from spirit.data: ' + short(off.map(function (x) { return (x.verb || 'a search') + (x.data ? '' : ' with no data branch') + (x.rows ? ' fed by its own rows()' : ''); })) + DEFERRED);
     // "and draws only rows that branch holds": every row a search shows, after its tools and buttons are pressed, is a

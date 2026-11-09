@@ -3,7 +3,7 @@
 The CodeMirror shell element (goal/G41.7; Andy, Q1: "make codeMirror a shell element by the same name. and make sure
 that it supports both read and edit-mode, and that the text viewer uses that new element as well."). One CodeMirror 5
 on a file's text, in one of two modes. The text element (`spirit/app/text/text.js`) edits with it; deskDetails,
-introSpector, jobsDetails and the agent tables' rows draw with it. The text viewer (`spirit/element/textViewer.js`) and the
+introSpector, jobDetail and the agent tables' rows draw with it. The text viewer (`spirit/element/textViewer.js`) and the
 TextEditor app are gone. It replaces `spirit/element/textView.js`, which is gone.
 
 ## API

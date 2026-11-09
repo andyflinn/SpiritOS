@@ -128,9 +128,9 @@ box is its own check, named by the element's path and the box's id chain."*
   code, whose code (comments left out) holds a pictograph alone in a string or alone between two tags, or that paints
   icons it is handed (`FROM_DATA`, named by hand: the shell frame, Apps, Icons, Contacts, the Icons list and row, the
   icon selector, the workBench), names `spirit/element/icon.js`, or hands them to the one-row form, `spirit/element/rowForm.js`,
-  which paints them through the icon element and loads it itself (goal/G41.27). Each is its own check, named by its path. Three files whose lone glyph strings are drawn only
-  before words are left out by hand (`TEXT_ONLY`, each with its reason): jobsDetails' status glyph, contactDetails'
-  blocked mark, and the contacts list's filter icons, drawn before their words. The files read are only those git
+  which paints them through the icon element and loads it itself (goal/G41.27). Each is its own check, named by its path. Two files whose lone glyph strings are drawn only
+  before words are left out by hand (`TEXT_ONLY`, each with its reason): contactDetails' blocked mark, and the contacts
+  list's filter icons, drawn before their words. The files read are only those git
   tracks under `shell/`: the `spirit/` entries of both lists are never read, and `shell/boot.js` (now
   `spirit/shell/boot.js`), `shell/apps/apps.js` and `shell/icons/icons.js` are no longer in the tree.
 - **Every field stops at its limit** (goal/G41.27; Andy: *"in the general UI tests (headless browser), any input field

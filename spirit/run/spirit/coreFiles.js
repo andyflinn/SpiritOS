@@ -23,11 +23,13 @@ const DEFAULT_ROOT = path.resolve(__dirname, '..', '..', '..');
 // i would agree on a \"coded\" intrinsic list."): the shell/ app folders whose code is core, which every
 // node runs and shows. Changed here only, under his grant; no sidecar or manifest says it for those (an app of spirit/app/
 // says it in its own <name>.json, appIntrinsic below). shell/apps and shell/stats name folders no longer in
-// the tree; shell/icons went from the list with goal/G43.19, icons being spirit/app/icons/ since 64e2d054. Every reader asks it: the commit check below, the node starting
-// servers (spirit/jobs.js), and every face part the node hands out (spirit/fileSystem.js).
+// the tree; shell/icons went from the list with goal/G43.19, icons being spirit/app/icons/ since 64e2d054. shell/jobs,
+// shell/jobsDetails and shell/introSpector went with goal/G43.29: they are spirit/app/jobs/ and spirit/app/introSpector/,
+// each intrinsic by its own <name>.json (Andy: "both apps will be intrinsic"). Every reader asks it: the commit check below,
+// the node starting servers (spirit/jobs.js), and every face part the node hands out (spirit/fileSystem.js).
 const INTRINSIC = [
   'shell/apps',
-  'shell/introSpector', 'shell/jobs', 'shell/jobsDetails', 'shell/relayMonitor', 'shell/stats',
+  'shell/relayMonitor', 'shell/stats',
 ];
 // An app folder of shell/ (shell/<name>), or a path inside one, is intrinsic.
 // Blind to case, as every gate (goal/G41.30): Shell/Apps is shell/apps on a disc that does not tell them apart.
