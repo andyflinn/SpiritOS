@@ -103,9 +103,24 @@ test.startTest('browserIcons.js: the Icons face, asking its own branch and writi
     test.subHeading('an icon opened: its keywords saved as they change, and Remove');
     await chrome.evaluate('(function () { var k = Array.prototype.filter.call(document.querySelectorAll("#box input"), function (i) { return i.getClientRects().length && !/icon|keyword/i.test(String(i.placeholder || "")); })[0]; k.value = "changed, again"; k.dispatchEvent(new Event("change", { bubbles: true })); return true; }())');
     ok(await until(function () { return Promise.resolve(JSON.stringify((json(SET) || {})[fresh[0]]) === '["changed","again"]'); }, 8000), 'a change of its keywords writes them', 'after the change the set holds ' + short((json(SET) || {})[fresh[0]]));
-    await chrome.evaluate('(function () { var b = ' + button('Remove this icon') + '; if (b) b.click(); return !!b; }())');
-    ok(await until(function () { return Promise.resolve(!(fresh[0] in (json(SET) || {}))); }, 8000), 'Remove takes it out of the set', 'after Remove the set still holds ' + fresh[0]);
-    ok(await until(function () { return chrome.evaluate('!' + button('Remove this icon')); }, 5000), 'and its dialog closes', 'its dialog stayed after Remove');
+    // REMOVE IS AN ARMING BUTTON (Andy: "icon detail, delete should be an armingButton."; spirit/element/armingButton.js):
+    // a first press only arms it, a click anywhere else disarms it, and only a second press removes.
+    const REMOVE = '(function () { return Array.prototype.filter.call(document.querySelectorAll("#box button"), function (b) { return b.getClientRects().length && /^Remove/.test(String(b.textContent).trim()); }).pop() || null; }())';
+    const armed = function () { return chrome.evaluate('(function () { var b = ' + REMOVE + '; return !!b && b.hasAttribute("data-armed"); }())'); };
+    await chrome.evaluate('(function () { var b = ' + REMOVE + '; if (b) b.click(); return !!b; }())');
+    await sleep(1200);
+    const wasArmed = await armed();
+    ok(wasArmed, 'Andy: "delete should be an armingButton": a first press arms Remove', 'a first press of Remove did not arm it: ' + short(await chrome.evaluate('(function () { var b = ' + REMOVE + '; return b ? b.outerHTML : "no Remove"; }())')));
+    ok(fresh[0] in (json(SET) || {}), 'and removes nothing', 'a single press of Remove took ' + fresh[0] + ' out of the set');
+    await chrome.evaluate('(function () { var b = ' + REMOVE + '; var l = b && b.closest(".app-container"); var t = (l && (l.querySelector(".panel-heading") || l.querySelector("label"))) || document.body; t.click(); return true; }())');
+    await sleep(500);
+    ok(wasArmed && !(await armed()), 'a click elsewhere disarms it ("the button must reset, back to its original state")', wasArmed ? 'after a click elsewhere Remove is still armed' : 'Remove never armed, so disarming judged nothing');
+    ok(fresh[0] in (json(SET) || {}), 'and still nothing is removed', 'disarming took ' + fresh[0] + ' out of the set');
+    await chrome.evaluate('(function () { var b = ' + REMOVE + '; if (b) b.click(); return !!b; }())');
+    await sleep(300);
+    await chrome.evaluate('(function () { var b = ' + REMOVE + '; if (b) b.click(); return !!b; }())');
+    ok(await until(function () { return Promise.resolve(!(fresh[0] in (json(SET) || {}))); }, 8000), 'a second press removes it from the set', 'after two presses the set still holds ' + fresh[0]);
+    ok(await until(function () { return chrome.evaluate('!' + REMOVE); }, 5000), 'and its dialog closes', 'its dialog stayed after Remove');
     ok(await until(function () { return rows(chrome).then(function (t) { return t.indexOf(fresh[0]) === -1; }); }, 8000), 'the list lets it go, no reload', 'the list still shows ' + fresh[0] + ': ' + short(await rows(chrome)));
 
     test.subHeading('the box, 10: "data.js on every open page follows that one job": a second page');
