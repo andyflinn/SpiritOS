@@ -27,6 +27,14 @@
 <body>
   <h1>labMaster</h1>
   <p>Fixed bookmark: <code>http://127.0.0.1:65420</code>. Work node is port 65432 and cannot be deleted.</p>
+  <!-- RESTART LABMASTER (goal/G43.29; Andy: "could it have a "restart-labmaster
+       button? that works both on linux AND windows?"): labMaster starts a fresh
+       copy of itself and goes; every node stays up, and this page's poll finds
+       the new one by itself. -->
+  <div class="bulk">
+    <button type="button" id="restart-master">Restart labMaster</button>
+    <small>picks up a pulled labMaster; every node keeps running.</small>
+  </div>
   <div>
     <label>Name <input id="new-name" placeholder="andy"></label>
     <label>Type
@@ -283,6 +291,16 @@
     // Every line it prints is something that happened, in order. A failure
     // stops at the step that failed and says which, because "it did not
     // work" is the least useful thing a control plane can tell you.
+    // RESTART LABMASTER: one press, nothing is lost by it. The answer comes
+    // before it goes; the three-second poll then reaches the new one, and a
+    // poll that fails meanwhile only says so in the status line.
+    document.getElementById('restart-master').addEventListener('click', function () {
+      setStatus('restarting labMaster…');
+      api('POST', '/api/restart-master', {}).then(function () {
+        setStatus('labMaster restarting: this page reconnects by itself');
+      }, function (e) { setStatus('restart failed: ' + e.message); });
+    });
+
     document.getElementById('live-world').addEventListener('click', function () {
       var button = this;
       var out = document.getElementById('live-out');

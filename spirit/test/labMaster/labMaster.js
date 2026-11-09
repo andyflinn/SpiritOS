@@ -1334,6 +1334,22 @@ const server = http.createServer(function (req, res) {
     return;
   }
 
+  // ── RESTART LABMASTER ITSELF ─────────────────────────────────────────
+  //
+  //   Andy (goal/G43.29): "could it have a "restart-labmaster button? that
+  //   works both on linux AND windows?", and "yes in this item".
+  //
+  // Node alone, so the same on both: it answers, lets go of 65420, starts a
+  // fresh labMaster on its own (detached, no window, its output nowhere) and
+  // exits. THE NODES STAY UP: a restart skips the exit handler's kill, and
+  // the fresh one reads the same table (STATE_FILE) and finds each running
+  // node by its port, as it already finds a work node started elsewhere.
+  if (req.method === 'POST' && pathname === '/api/restart-master') {
+    sendJson(res, 200, { ok: true, restarting: true });
+    restartSelf();
+    return;
+  }
+
   // WHICH CHECKOUT THIS labMaster COPIES FROM — asked by ensureMaster
   // before a harness reuses it, so a suite never tests another tree.
   if (req.method === 'GET' && pathname === '/api/root') {
@@ -1430,7 +1446,15 @@ const server = http.createServer(function (req, res) {
   res.end('Not found');
 });
 
+// A RESTARTING labMaster's successor may come up a moment before the port is
+// free: it asks again, for a few seconds, rather than dying on EADDRINUSE.
+let listenTries = process.env.LAB_MASTER_RESTARTED === '1' ? 40 : 0;
 server.on('error', function (err) {
+  if (err.code === 'EADDRINUSE' && listenTries > 0) {
+    listenTries -= 1;
+    setTimeout(function () { server.listen(MASTER_PORT, '127.0.0.1'); }, 250);
+    return;
+  }
   if (err.code === 'EADDRINUSE') {
     console.error('labMaster already running on 65420, or something else is.');
   } else {
@@ -1438,6 +1462,29 @@ server.on('error', function (err) {
   }
   process.exit(1);
 });
+
+// THE RESTART (POST /api/restart-master, above): close 65420, hand over to a
+// fresh labMaster, and go, leaving every node it started running.
+let restarting = false;
+function restartSelf() {
+  if (restarting) return;
+  restarting = true;
+  setTimeout(function () {
+    server.close(function () {
+      const next = spawn(process.execPath, process.argv.slice(1), {
+        cwd: process.cwd(),
+        env: Object.assign({}, process.env, { LAB_MASTER_RESTARTED: '1' }),
+        detached: true,
+        stdio: 'ignore',
+        windowsHide: true,
+      });
+      next.unref();
+      process.exit(0);
+    });
+    // Idle keep-alive connections (the panel's polls) would hold the close open.
+    if (typeof server.closeAllConnections === 'function') server.closeAllConnections();
+  }, 200);
+}
 
 // ── RUN IT, OR ASK IT ────────────────────────────────────────────────
 //
@@ -1461,6 +1508,8 @@ module.exports = {
 };
 
 process.on('exit', function () {
+  // A restart leaves its nodes to the labMaster it started (restartSelf).
+  if (restarting) return;
   Object.keys(children).forEach(function (id) {
     const node = findNode(id);
     if (node && node.permanent) return;
