@@ -230,3 +230,14 @@ editor's scroller still is.
   that its branch does not hold.
 
 **The app family's selector is an element too** (goal/G43.2): `spirit/app/appSelector.js` and the three files beside it in `spirit/app/appSelector/` are judged as the shell's elements are.
+
+## Requirements (goal/G43.30): run://process is named nowhere
+
+Andy, goal/G43.20: *"that whole run://process folder NEEDS killing with ALL references to it in code, test and documentation."*; goal/G43.30: *"WSL, your tests make sure that none of the affected modules even mention "spirit/run/process/""*.
+
+- **Every file it judges** names neither `spirit/run/process` nor `run://process`, in its code or its comments: the whole text is read.
+- **Run with no file** (every module): every tracked `.js`, `.html` and `.json` of spirit/run/ outside a test folder and the vendored folders is read the same way, and none may name it; the count read is said, and none read is red.
+
+## What its test must try to break (goal/G43.30)
+
+- A mention in a comment, or written `run:/process`; a module the scan skips because it is neither an app nor an element.

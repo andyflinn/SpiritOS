@@ -316,7 +316,27 @@ function iconsLoaded() {
   });
 }
 
+// RUN://PROCESS IS NAMED NOWHERE (goal/G43.20, goal/G43.30). Andy, G43.20: "that whole run://process folder NEEDS killing
+// with ALL references to it in code, test and documentation."; G43.30: "WSL, your tests make sure that none of the affected
+// modules even mention "spirit/run/process/"". Even mention: the module's whole text is read, its comments too.
+const PROCESS_NAMED = /spirit\/run\/process\b|run:\/\/?process\b/;
+function namesProcess(f) { try { return PROCESS_NAMED.test(fs.readFileSync(path.join(RUN, f), 'utf8')); } catch (e) { return false; } }
+function processNamers() {
+  const tracked = require('child_process').execFileSync('git', ['ls-files'], { cwd: RUN, encoding: 'utf8' }).split('\n');
+  return tracked.filter(function (f) {
+    return /\.(js|html|json)$/.test(f) && !/(^|\/)test\//.test(f) && !VENDORED_FOLDERS.holds(f) && fs.existsSync(path.join(RUN, f)) && namesProcess(f);
+  });
+}
+function noProcessAnywhere() {
+  test.subHeading('no module of spirit/run/ mentions spirit/run/process/');
+  const tracked = require('child_process').execFileSync('git', ['ls-files'], { cwd: RUN, encoding: 'utf8' }).split('\n').filter(function (f) { return /\.(js|html|json)$/.test(f) && !/(^|\/)test\//.test(f); });
+  ok(tracked.length > 0, 'the world: ' + tracked.length + ' modules read', 'git ls-files gave no module to read');
+  const named = processNamers();
+  ok(tracked.length > 0 && !named.length, 'none of the ' + tracked.length + ' names spirit/run/process or run://process, in code or comment', named.length + ' still name it: ' + short(named));
+}
+
 async function every() {
+  noProcessAnywhere();
   iconsLoaded();
   const reach = require(path.join(RUN, 'test', 'testModule.js')).testsFor('').filter(function (t) { return t.test === 'test/spirit-sibling-generalRules.js' && t.file; }).map(function (t) { return t.file; });
   const files = reach.filter(kindOf);
@@ -352,6 +372,9 @@ test.startTest((full ? NAMED : 'every page module') + ': the general rules of an
 (async function () {
   if (!arg) return every();
   if (!full) { test.fail('no shell app or element to judge: ' + JSON.stringify(arg)); return; }
+  // goal/G43.30: every file judged here, app, element or neither, mentions no spirit/run/process (noProcessAnywhere).
+  test.subHeading(NAMED + ': ' + 'it mentions no spirit/run/process');
+  ok(!namesProcess(rel), 'it names neither spirit/run/process nor run://process, in code or comment', 'it mentions spirit/run/process: ' + short((fs.readFileSync(full, 'utf8').match(PROCESS_NAMED) || [])[0]));
   if (!kindOf(rel)) { test.subHeading(NAMED); test.check(rel + ' is neither an app (shell/<app>/<app>.js) nor an element (under spirit/element/, or an agent table\'s page): not mounted'); return; }
   // THE WHOLE ROW, NEVER A FEW FIELDS (goal/G41.28; Andy, box v15: "All client side searches will be fixed, too, and
   // search the whole row, as cached in spirit.data."): no app or element hands a search a matched(row) of its own; the
