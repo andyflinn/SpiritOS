@@ -44,7 +44,7 @@ test.startTest('apiAuth.js: auth.bundle and auth.branch, the node\'s bundles');
     ok(d && typeof d.description === 'string' && d.description && d.request && 'op' in d.request, 'spirit/auth/' + v + '.json describes the verb and its request', v + '.json: ' + short(d));
   });
   const bj = readJson(path.join(RUN, 'spirit', 'auth', 'bundle.json'));
-  ok(bj && bj.request && 'owner' in bj.request && /owner/.test(String(bj.description || '')) && !/\bset\b/.test(String(bj.description || '')), 'spirit/auth/bundle.json names the owner in its request and its description, and no set (goal/G41.26)', 'bundle.json: ' + short(bj));
+  ok(bj && bj.request && 'owner' in bj.request && /owner/.test(String(bj.description || '')) && !/\bset \{/.test(String(bj.description || '')), 'spirit/auth/bundle.json names the owner in its request and its description, and offers no op set {...} (goal/G41.26; its words may say set is refused)', 'bundle.json: ' + short(bj));
 
   const { createApiAuth } = require(FILE);
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-apiAuth-'));

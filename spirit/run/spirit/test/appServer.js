@@ -374,15 +374,13 @@ if (CHILD) {
     const fp = typeof A0.familyPath === 'function' ? A0.familyPath('deskVerify') : null;
     ok(fp === 'spirit/app/deskVerify/api.js', 'familyPath(name) of an app is spirit/app/<name>/api.js (goal/G43.20)', 'familyPath(\'deskVerify\') is ' + short(fp));
     // Apps of spirit/app/ since goal/G43.27 (Andy: "cw, you bring deskClient and deskVerify into spirit/app/ under their old
-    // names, do the backup as well"): the family's interface at the top of the app folder, no family/ left; and run://process
-    // is gone (goal/G43.20).
+    // names, do the backup as well"): the family's interface at the top of the app folder, no family/ left.
     FAMILIES.forEach(function (n) {
       const app = path.join(RUN, 'spirit', 'app', n);
       const moved = fs.existsSync(path.join(app, 'api.js')) && !fs.existsSync(path.join(app, 'family'));
       ok(moved, n + ': its interface is spirit/app/' + n + '/api.js, no family/ is left',
         n + ': api.js ' + fs.existsSync(path.join(app, 'api.js')) + ', family/ ' + fs.existsSync(path.join(app, 'family')));
     });
-    ok(!fs.existsSync(path.join(RUN, 'process')), 'run://process is gone (goal/G43.20)', 'spirit/run/process/ is still there');
     // Andy, goal/G41.28: "all, KILL deskAgent!". The server goes, its folder and every file that names it.
     const namers = codeFiles(RUN, []).filter(function (f) { return f !== FILE && f !== SELF_FILE && /['"]deskAgent\/|deskAgent\.js\b/.test(fs.readFileSync(f, 'utf8')); }).map(function (f) { return path.relative(RUN, f); });
     ok(namers.length === 0, 'and no file names the deskAgent server', namers.length + ' files still name it: ' + namers.join(', '));

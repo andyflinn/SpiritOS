@@ -21,7 +21,7 @@ test.startTest('coreFiles.js: which files are core');
 
 test.subHeading('what was core before goal/G41.29');
 each(['spirit/run/spirit/shell/face.html', 'spirit/run/spirit/shell/boot.js', 'spirit/run/spirit/shell/seal.js', 'spirit/run/spirit/shell/face.css', 'spirit/run/spirit/shell/favicon.svg'], true, 'the face\'s boot');
-each(['spirit/run/shell/join/join.js', 'spirit/run/shell/join/join.json'], true, 'join, whole (the login app went, goal/G43.18)');
+each(['spirit/run/spirit/app/join/join.js', 'spirit/run/spirit/app/join/join.json'], true, 'join, whole, an intrinsic app since goal/G43.26 moved it to spirit/app/join/ (the login app went, goal/G43.18)');
 each(['spirit/run/shell/apps/apps.json', 'spirit/run/spirit/app/desk/element/desk/desk.json'], false, 'a manifest is never core');
 each(['spirit/run/spirit/relay.js', 'spirit/run/spirit/test/relayServer.js', 'spirit/run/spirit/element/search/contact.js', 'spirit/run/shell/json/x.json', 'spirit/run/test/testReport.js'], true, 'the core folders');
 // goal/G41.30, the review's H5: what index.html loads on every boot.
