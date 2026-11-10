@@ -23,6 +23,15 @@ already."*
     its pane, and makes no list of its own: no probabilitySearch, no rows (Andy: *"all, any search-unit has ONE list shared
     by popup and list modes."*).
 
+- A list's panels stand in its search (Andy: *"if a detail panel is used for a list it should reside in that lists
+  search-system"*, *"it means that grant and relay \"panels\" move to their spot in the search-element-tree."*):
+  - no list's panel or detail (`*Panel.js`, `*Detail.js`, `*Details.js`) stands in `spirit/element/` beside the searches;
+    `panel.js`, the generic stack, is no list's;
+  - the grants panel is `search/grant/grantsPanel.js`, placed by its path;
+  - one detail for every kind of contact (*"the contact list already knows the difference between contact types. so should
+    the detail panel."*): `search/contact/relayPanel.js` is gone into `contact/detailElement.js`, and a contact row opens
+    the contact detail alone.
+
 ## What its test must try to break
 
 - A search whose list is its selector file (`search/<name>.js` holding the list), or whose folder lacks a list, a row
@@ -30,5 +39,7 @@ already."*
 - A selector beside a list it does not draw.
 - The job list or its detail left in `spirit/element/`.
 - A part present but not placed by its own path.
+- A panel or detail of a list left in `spirit/element/`, the grants panel outside the grant search, or a second contact
+  detail beside the one.
 
 What each element does on a page is judged by `spirit/test/spirit-sibling-generalRules.js`.

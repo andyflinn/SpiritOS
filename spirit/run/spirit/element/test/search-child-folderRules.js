@@ -71,4 +71,20 @@ ok(NAMES.indexOf('job') !== -1, 'the job branch has its search, ' + SEARCH + '/j
 const astray = ['spirit/element/job.js', 'spirit/element/jobDetail.js'].filter(isFile);
 ok(!astray.length, 'the job list and its detail no longer stand in spirit/element/', short(astray) + ' still stand');
 TARGETS.forEach(rules);
+
+// A LIST'S PANELS STAND IN ITS SEARCH (Andy: "wsl, can you generalize the concept: if a detail panel is used for a list it
+// should reside in that lists search-system", "the contact list already knows the difference between contact types. so should
+// the detail panel.", and "wsl, assert this in the tests, it means that grant and relay \"panels\" move to their spot in the
+// search-element-tree."). Judged on every search, whatever file was asked.
+test.subHeading('a list\'s panels stand in its search');
+// Beside the searches, in spirit/element/ itself, no panel and no detail of a list: panel.js is the generic stack, no list's.
+const loose = TREE.filter(function (f) { return /^spirit\/element\/[^/]+\.js$/.test(f) && /(Panel|Detail|Details)\.js$/.test(f); });
+ok(!loose.length, 'no list\'s panel or detail stands beside the searches in spirit/element/', short(loose) + ' still stand in spirit/element/');
+const GRANTS = SEARCH + '/grant/grantsPanel.js';
+ok(isFile(GRANTS) && placesItself(GRANTS), 'the grants panel stands in the grant search: ' + GRANTS + ', placed by its path', GRANTS + ': ' + (isFile(GRANTS) ? 'places no create by its path' : 'is not there'));
+// One detail for every kind of contact: a relay's blocks are drawn by the contact detail, and the row opens nothing else.
+const RELAY = SEARCH + '/contact/relayPanel.js';
+ok(!isFile(RELAY), 'no second contact detail: ' + RELAY + ' is gone into ' + SEARCH + '/contact/detailElement.js', RELAY + ' still stands');
+ok(!/relayPanel/.test(code(SEARCH + '/contact/rowElement.js')) && /contact\/detailElement\.js/.test(code(SEARCH + '/contact/rowElement.js')),
+  'a contact row opens the contact detail alone, whatever the contact is', SEARCH + '/contact/rowElement.js still opens relayPanel, or not the contact detail');
 test.reportSuccessFailureCount();
