@@ -25,14 +25,19 @@ window.spirit.ready = Promise.resolve({ contact: { block: verb('contact.block'),
 window.spirit.fieldRules = { normalize: function (t) { return String(t || '').trim(); },
   problem: function (t) { return t ? '' : 'a name is needed'; }, MAX_BYTES: 64 };
 // The details, made in a panel's pane (goal/G43.18): each records what it was made with.
-window.spirit.element = { search: { contact: { detailElement: { create: function (pane, o) { asked.push({ verb: 'contactDetails', body: o }); return {}; } },
+// goal/G43.32: what the row opens stands where an element now finds it, spirit.element.spirit.element.
+(((window.spirit.element = window.spirit.element || {}).spirit = window.spirit.element.spirit || {})).element = { search: { contact: { detailElement: { create: function (pane, o) { asked.push({ verb: 'contactDetails', body: o }); return {}; } },
   relayPanel: { create: function (pane, o) { asked.push({ verb: 'relayPanel', body: o }); return {}; } } } } };
 // The mounter's panel stack's open (spirit/element/panel.js): it records the layer asked for and fills a pane at once.
 const layers = [];
 function openLayer(key, spec) { layers.push({ key: key, label: spec.label }); return Promise.resolve(spec.fill({})).then(function () { return { hide: function () {}, set: function () {}, shown: function () { return true; } }; }); }
 // The one loader, a recorder: what the row requires, answered at once (the pages above stand in for what it loads).
 const required = [];
-window.spirit.require = function (p) { required.push(p); return Promise.resolve({}); };
+// goal/G43.32: the helper an element places itself with comes from the page stand-in (headLessChrome.js pageSpirit).
+// packet.js above takes the real spirit.js, whose require is the node's; the page stand-in goes back on top of it.
+require(path.join(__dirname, '..', '..', '..', '..', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
+const pageRequire = window.spirit.require;
+window.spirit.require = function (p) { required.push(p); return /installSpiritElement\.js$/.test(p) ? pageRequire(p) : Promise.resolve({}); };
 load(path.join(JS, '..', '..', 'spirit', 'data.js'));
 // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.start asks node.card, keeps the key and hands it to the data set.
 const NODE_KEY = 'nOdE+key/one==';
@@ -99,8 +104,10 @@ function hostsFor(el) { const h = {}; el.fields.forEach(function (f) { h[f] = { 
   const pages = required.slice(-2).join(',');
   if (pages === 'spirit/element/search/contact/detailElement.js,spirit/element/search/contact/relayPanel.js') test.check('open loads the page it opens first, through spirit.require');
   else test.fail('open required: ' + pages);
-  if (required[0] === 'spirit/element/rowElement.js') test.check('the row loads the shared row element it is built on itself, through spirit.require');
-  else test.fail('as it loaded, the row required: ' + JSON.stringify(required.slice(0, 1)));
+  // goal/G43.32, decided 5: every element script also requires installSpiritElement, to place itself; that is no part it draws with.
+  const parts = required.filter(function (p) { return p !== 'spirit/element/installSpiritElement.js'; });
+  if (parts[0] === 'spirit/element/rowElement.js') test.check('the row loads the shared row element it is built on itself, through spirit.require');
+  else test.fail('as it loaded, the row required: ' + JSON.stringify(parts.slice(0, 1)));
   const before = asked.length;
   const none = await stranger.act('block');
   if (none === null && asked.length === before) test.check('an action the row does not offer asks nothing');

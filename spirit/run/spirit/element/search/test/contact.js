@@ -70,6 +70,8 @@ test.startTest('contactSelector.js: the configurable ID selector');
     return Promise.resolve(true);
   };
   vm.runInThisContext(SRC, { filename: FILE });
+  // goal/G43.32: it places itself once installSpiritElement is in hand.
+  await settle();
   const E = ((global.window.spirit.element || {}).spirit || {}).element || {};
   const made = E.search.contact;
   ok(made && typeof made.create === 'function' && !('createContactSelector' in E), 'it registers spirit.element.spirit.element.search.contact with a create, and createContactSelector no more', 'elements: ' + short(Object.keys(E)));

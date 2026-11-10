@@ -49,7 +49,8 @@ Object.assign(window.spirit, {
   },
 });
 let made = null;
-window.spirit.element = nestSearch({
+// goal/G43.32: what the list draws with stands where an element now finds it, spirit.element.spirit.element.
+(((window.spirit.element = window.spirit.element || {}).spirit = window.spirit.element.spirit || {})).element = nestSearch({
   'search': { create: function (host, o) {
     made = { host: host, opts: o, refreshes: 0, destroyed: false };
     return { refresh: function () { made.refreshes += 1; }, destroy: function () { made.destroyed = true; } };
@@ -60,7 +61,11 @@ window.spirit.element = nestSearch({
 });
 // The one loader, a recorder: what the list requires, answered at once (the elements above stand in for what it loads).
 const required = [];
-window.spirit.require = function (p) { required.push(p); return Promise.resolve({}); };
+// goal/G43.32: the helper an element places itself with comes from the page stand-in (headLessChrome.js pageSpirit).
+// packet.js above takes the real spirit.js, whose require is the node's; the page stand-in goes back on top of it.
+require(path.join(__dirname, '..', '..', '..', '..', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
+const pageRequire = window.spirit.require;
+window.spirit.require = function (p) { required.push(p); return /installSpiritElement\.js$/.test(p) ? pageRequire(p) : Promise.resolve({}); };
 // The page's stream, a recorder: who subscribes to it (goal/G41.28: no client but spirit.data takes it itself).
 const subscribers = [];
 window.spirit.events = { subscribe: function (h) { subscribers.push(h); return function () {}; } };

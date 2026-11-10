@@ -140,12 +140,14 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   // branch filtered and ranked by the real list's own heart, probabilitySearch.order, the state it is made with.
   const LIST = (function () {
     const win = { window: null, spirit: { element: {} }, console: console };
+    // goal/G43.32: search.js places itself by installSpiritElement (spirit/test/headLessChrome.js pageSpirit).
+    require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(win.spirit);
     win.window = win;
     vm.createContext(win);
     ['spirit/probabilityStringMatch.js', 'spirit/probabilityStringObjectMatch.js', 'spirit/probabilityBucket.js', 'spirit/element/search.js'].forEach(function (rel) {
       vm.runInContext(fs.readFileSync(path.join(RUN, rel), 'utf8'), win, { filename: rel });
     });
-    return win.spirit.element.search;
+    return ((win.spirit.element.spirit || {}).element || {}).search;
   }());
   V.set('bundles/21', { id: 21, label: 'Agent tools', owner: 'agent' });
   V.set('bundles/22', { id: 22, label: 'Node files', owner: 'node' });
