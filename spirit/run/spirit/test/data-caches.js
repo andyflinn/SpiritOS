@@ -41,7 +41,10 @@ function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x))
 // A file tracked but not on disk reads as empty, so a deletion not yet committed is judged and never crashes the report.
 function code(file) { let t = ''; try { t = fs.readFileSync(file, 'utf8'); } catch (e) { return ''; } return t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"\\])\/\/[^\n]*/g, '$1'); }
 const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
-const tracked = require('child_process').execFileSync('git', ['ls-files'], { cwd: RUN, encoding: 'utf8' }).split('\n').filter(Boolean);
+// NOBODY ADDS A FAMILY PAST THE RULES (goal/G43.32; Andy: "make sure nobody can add an app implementing a family, without
+// adhering to the rules, this means that a test outside of each branch must assert this."): the tree is every file git
+// keeps and every file not yet added that git does not ignore, so a new app's family is judged before it is committed.
+const tracked = require('child_process').execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard'], { cwd: RUN, encoding: 'utf8' }).split('\n').filter(Boolean);
 
 test.startTest('caches: every family has a data.js, one code in the browser and in node');
 

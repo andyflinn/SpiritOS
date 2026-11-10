@@ -63,6 +63,12 @@ is the appServer serializes the cache to disk."*
    - A watch is never told its branch, the object it sits on: it takes the function and at most the row it narrows to,
      `watch(fn)` or `watch(id, fn)`, so no more than two parameters.
 
+**Nobody adds a family past these rules** (Andy, goal/G43.32: *"make sure nobody can add an app implementing a family,
+without adhering to the rules, this means that a test outside of each branch must assert this."*): this test lives
+outside every branch, in `spirit/test/`, and finds the families itself. Its tree is every file git keeps and every file
+not yet added that git does not ignore, so a new app's `api.js` and `data.js` are judged by 1 to 8 before they are
+committed.
+
 ## What its test must try to break
 
 - A family without a data.js.
@@ -73,3 +79,5 @@ is the appServer serializes the cache to disk."*
 - A manager without the contract; a page that cannot find a family's manager by its name; a manager the node does not
   serve.
 - A branch whose watch has another name (`watchRow`), or a watch told its branch (`watch(table, id, fn)`).
+- A new app of `spirit/app/` with a family that breaks a rule, not yet committed: shown red with a planted
+  `spirit/app/zzplant/` whose cache names a `watchGlyph`.
