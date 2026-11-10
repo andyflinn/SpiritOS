@@ -164,8 +164,10 @@
         view = v;
         if (view && view.cm && typeof view.cm.setSize === 'function') view.cm.setSize('100%', '100%');
       }, function () { /* the Extract box stays empty */ });
-      // It repaints when its job changes in spirit.data, or when the whole set is read again.
-      if (J) off = J.watch(function (changed) { if (!changed || changed === id) render(); });
+      // It repaints when its job changes in spirit.data, or when the whole set is read again. With no job named it shows
+      // that none is listed and watches nothing: a watch it never redraws for is no listening (goal/G43.32, the general
+      // rules' "redraws for none"; Andy: "fix what needs fixing.").
+      if (J && id) off = J.watch(function (changed) { if (!changed || changed === id) render(); });
       render();
     }, function () { part('head').innerHTML = '<div class="job-log-empty">That job is no longer listed.</div>'; });
 
