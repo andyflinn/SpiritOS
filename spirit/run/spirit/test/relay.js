@@ -20,7 +20,11 @@ function scratchRelay() {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-relay-'));
   const js = path.join(home, 'spirit');
   fs.mkdirSync(js, { recursive: true });
-  ['relayAuth.js', 'fieldRules.js'].forEach(function (f) { fs.copyFileSync(path.join(RUN, 'spirit', f), path.join(js, f)); });
+  // goal/G43.32: relayAuth.js takes the spirit object first and loads the rest through it, so the relay's home holds the
+  // product's run://spirit/ (its tracked files) as a real install does, not two files of it.
+  require('child_process').execFileSync('git', ['ls-files', '--', 'spirit'], { cwd: RUN, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(Boolean)
+    .filter(function (f) { return fs.existsSync(path.join(RUN, f)); })
+    .forEach(function (f) { const d = path.join(home, f); fs.mkdirSync(path.dirname(d), { recursive: true }); fs.copyFileSync(path.join(RUN, f), d); });
   const planted = require(path.join(js, 'relayAuth.js'));
   planted.nameIdentity(home, 'relay');
   // Its owner, written at install as a relay's is: a relay with none seats nobody.

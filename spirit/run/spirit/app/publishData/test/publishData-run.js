@@ -44,7 +44,8 @@ const STUB = [
   "const familyPath = require(" + JSON.stringify(SPIRIT) + ").familyPath;",
   "globalThis.spirit = {",
   "  familyPath: familyPath,",
-  "  require: function (p) { log({ require: p }); return Promise.resolve(family); },",
+  // goal/G43.32, decided 3: on the node a script comes back at once, by its run-root path; a branch's api.js binds it.
+  "  require: function (p) { if (!/\\/api\\.js$/.test(p)) return require(require('path').join(" + JSON.stringify(RUN) + ", p)); log({ require: p }); return Promise.resolve(family); },",
   "  outcome: function (c) { return Promise.resolve(c).then(function (body) { return { status: 200, body: body }; }, function () { return { status: 0, body: null }; }); },",
   "};",
   "const realLoad = Module._load;",

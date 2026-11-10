@@ -35,7 +35,13 @@ test.startTest('pushOrigin.js: run with no repo, it pushes the repo it is in (go
     git(['add', '-A'], clone);
     git(['commit', '-q', '-m', 'on origin already'], clone);
     git(['push', '-q', 'origin', 'master'], clone);
+    // goal/G43.32: pushOrigin.js takes the spirit object first, so the clone holds the product's run://spirit/ as the
+    // repo does (its tracked files), pushOrigin.js among them, where the app keeps it.
     const copy = path.join(clone, 'spirit', 'run', 'spirit', 'app', 'pushOrigin', 'pushOrigin.js');
+    const repo = path.resolve(path.dirname(FILE), '..', '..', '..', '..', '..');
+    (spawnSync('git', ['ls-files', '--', 'spirit/run/spirit'], { cwd: repo, encoding: 'utf8', maxBuffer: 1 << 26 }).stdout || '').split('\n').filter(Boolean)
+      .filter(function (f) { return fs.existsSync(path.join(repo, f)); })
+      .forEach(function (f) { const d = path.join(clone, f); fs.mkdirSync(path.dirname(d), { recursive: true }); fs.copyFileSync(path.join(repo, f), d); });
     fs.mkdirSync(path.dirname(copy), { recursive: true });
     fs.copyFileSync(FILE, copy);
     fs.writeFileSync(path.join(clone, 'note.txt'), 'made by the test\n');

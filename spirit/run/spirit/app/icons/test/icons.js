@@ -59,7 +59,8 @@ test.startTest('icons: the Icons app, a face and an api, run by the node per req
   const own = json(path.join(APP, 'icons.json')) || {};
   ok(!(own.node && own.node.mount === true) && !!(own.shell && own.shell.mount === true), 'the box, 1: "icons.json keeps node mount false and shell mount true"', 'icons.json says ' + short({ node: own.node, shell: own.shell }));
   const main = code(read(path.join(APP, 'icons.js')) || '');
-  ok(/require\(\s*['"]\.\/nodeIcons\.js['"]\s*\)/.test(main), 'the box, 7: icons.js, run in node, does require(\'./nodeIcons.js\')', 'icons.js requires no ./nodeIcons.js');
+  // goal/G43.32: by spirit.require and its run-root path, as every script loads the tree.
+  ok(/\.require\(\s*['"]spirit\/app\/icons\/nodeIcons\.js['"]\s*\)/.test(main), 'the box, 7: icons.js, run in node, spirit.requires spirit/app/icons/nodeIcons.js', 'icons.js spirit.requires no spirit/app/icons/nodeIcons.js');
   ['icons.js', 'browserIcons.js'].forEach(function (f) {
     const c = code(read(path.join(APP, f)) || '');
     ok(c !== '' && !/activateApp/.test(c), f + ' mounts no longer through spirit.shell.activateApp', f + ' still calls activateApp, or is not there');
@@ -115,7 +116,7 @@ test.startTest('icons: the Icons app, a face and an api, run by the node per req
     await chrome.send('Page.navigate', { url: node.base + '/face.html' });
     await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
     const open = async function (page) {
-      const made = await page.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/app/appSelector.js"); }).then(function () { var old = document.getElementById("faces"); if (old) old.remove(); var c = document.createElement("div"); c.id = "faces"; c.style.cssText = "position:fixed;left:0;top:0;width:1200px;height:800px;display:flex;flex-direction:column;background:#111;z-index:9"; document.body.appendChild(c); window.fsel = spirit.elements.appSelector.create(c, { face: "tiles" }); if (window.fsel.parentNode !== c) c.appendChild(window.fsel); return "made"; }, function (e) { return String(e && e.message || e); })');
+      const made = await page.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/app/appSelector.js"); }).then(function () { var old = document.getElementById("faces"); if (old) old.remove(); var c = document.createElement("div"); c.id = "faces"; c.style.cssText = "position:fixed;left:0;top:0;width:1200px;height:800px;display:flex;flex-direction:column;background:#111;z-index:9"; document.body.appendChild(c); window.fsel = spirit.element.spirit.app.appSelector.create(c, { face: "tiles" }); if (window.fsel.parentNode !== c) c.appendChild(window.fsel); return "made"; }, function (e) { return String(e && e.message || e); })');
       if (made !== 'made') return 'appSelector: ' + made;
       const tile = 'Array.prototype.filter.call(document.querySelectorAll("#faces .app-icon"), function (t) { return t.offsetParent !== null && String(t.textContent).indexOf("Icons") !== -1; })[0]';
       if (!await until(function () { return page.evaluate('!!' + tile); }, 10000)) return 'no Icons tile';

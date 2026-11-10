@@ -68,7 +68,8 @@ const spiritJs = code(path.join(RUN, 'spirit', 'spirit.js'));
 const appServer = code(path.join(RUN, 'spirit', 'appServer.js'));
 // Andy: "we needed it so node.js based clients could share the exact same client code. please move the file to
 // repo:/spirit/run/spirit/spiritData.js". Every client's file, so it sits with spirit's own, not the shell's.
-ok(/['"]spirit\/data\.js['"]/.test(spiritJs) && /require\(\s*['"]\.\/data\.js['"]\s*\)/.test(appServer),
+// goal/G43.32: appServer loads it by spirit.require and its run-root path, as every script loads the tree.
+ok(/['"]spirit\/data\.js['"]/.test(spiritJs) && /\.require\(\s*['"]spirit\/data\.js['"]\s*\)/.test(appServer),
   'the data set is one file: spirit.js brings spirit/data.js to a page, and appServer requires the same file', 'spirit.js or appServer.js loads a data set from somewhere else than spirit/data.js');
 ok(tracked.indexOf('spirit/data.js') !== -1, 'the data set is spirit/data.js', 'spirit/data.js is not tracked');
 ok(/path\.dirname\(\s*spirit\.familyPath\([^;]{0,60}?\)\s*\)\s*,\s*['"]data\.js['"]/.test(appServer),
@@ -106,22 +107,18 @@ const ROWS = [
 const SERVER = Buffer.from('KEY-CACHES\xfb\xef\xbf\xfe', 'latin1').toString('base64');
 const SERVER_ID = Buffer.from(SERVER, 'base64').toString('base64url');
 // In node, as appServer runs them: the data set required, then the family's data.js, on the process's global.
+// goal/G43.32: the data set and the family's data.js are spirit.require()d, as appServer and the family's file load them,
+// so both hold the one instance at spirit.required.spirit.data.
 function inNode() {
-  const g = { spirit: {} };
-  const keep = {};
-  [DATA, DESK].forEach(function (f) { keep[f] = require.cache[require.resolve(f)]; delete require.cache[require.resolve(f)]; });
-  const saved = globalThis.spirit;
-  globalThis.spirit = g.spirit;
   let out = null;
   try {
-    const D = require(DATA);
-    require(DESK);
+    const S = require(path.join(RUN, 'spirit', 'spirit.js'));
+    const D = S.require('spirit/data.js');
+    S.require(path.relative(RUN, DESK).split(path.sep).join('/'));
     D.homeNode(SERVER);
     ROWS.forEach(function (r) { D.desk.data.published(JSON.parse(JSON.stringify(r))); });
     out = JSON.parse(JSON.stringify(D.desk.cache));
   } catch (e) { out = { threw: e.message }; }
-  globalThis.spirit = saved;
-  [DATA, DESK].forEach(function (f) { if (keep[f]) require.cache[require.resolve(f)] = keep[f]; else delete require.cache[require.resolve(f)]; });
   return out;
 }
 // In a page's window, as a page runs them: both files run as scripts, with no module and no require.
