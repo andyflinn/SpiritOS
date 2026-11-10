@@ -1,8 +1,9 @@
-# branchEditor.js
+# spirit/element/search/bundle/detailElement.js, the branch editor
 
-`spirit/run/spirit/element/branchEditor.js` edits one bundle's branches (goal/G41.14), inside the closable tab a row of the bundles pane
+`spirit/run/spirit/element/search/bundle/detailElement.js` (`spirit/element/branchEditor.js` until goal/G43.32, the bundle
+search's detail since) edits one bundle's branches (goal/G41.14), inside the closable tab a row of the bundles pane
 opens (goal/G41.32).
-Its test is `./branchEditor.js`.
+Its test is `./detailElement.js`.
 
 Andy, box: *"the branchEditor page is always configured with a bundle key"*, *"first row: Title: \"Edit
 <bundle-label-content>\""*, *"second row, add form: \"new\" [apiFamilySelector:dropdown] [apiVerbSelector:dropdown]
@@ -21,7 +22,7 @@ the code draws no title row (the tab's label, its mounter's, names the bundle), 
 - **Its Delete row** (goal/G41.32): a rowForm below the list, ❌, *"Delete <bundle-name> bundle and branches"*, an armingButton whose
   second press asks `auth.bundle { op: 'delete', id }`; a refusal is said below it, in the node's words. Hearing that bundle's row gone in `spirit.data.auth.data.bundles`, from any screen,
   it calls `options.gone`. A bundle whose `options.owner` is not `node` is shown only: no form, no Delete column.
-- It registers `branchEditor.create(container, options)`, and no page of its own, which draws the same editor into the container
+- It registers `spirit.element.spirit.element.search.bundle.detailElement.create(container, options)`, and no page of its own, which draws the same editor into the container
   and answers a handle with `destroy` (the shell's element shape, goal/G41.19).
 - Mounted, the page draws, each part made with its container (`<name>.create(container, options)`):
   - the add form, a rowForm (goal/G41.27; Andy: *"branchEditor:\n\n[➕] [choose a family… ▾] [Add]"*, then

@@ -67,7 +67,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     'spirit/element/rowElement.js': function () { load('spirit/element/rowElement.js'); },
     'spirit/element/fieldInput.js': function () { load('spirit/element/fieldInput.js'); },
     'spirit/element/armingButton.js': function (E) { E.armingButton = { attach: function (b, o) { armed.push({ button: b, o: o }); return b; } }; },
-    'spirit/element/branchEditor.js': function (E) { E.branchEditor = { open: function (o) { opened.push(o); return {}; } }; },
+    'spirit/element/search/bundle/detailElement.js': function (E) { (E.search = E.search || {}).bundle = Object.assign((E.search || {}).bundle || {}, {}); E.search.bundle.detailElement = { open: function (o) { opened.push(o); return {}; } }; },
   };
   global.Event = function (type, o) { this.type = type; this.bubbles = !!(o && o.bubbles); };
   global.document = { createElement: function (t) { return node(t); }, addEventListener: function () {}, removeEventListener: function () {} };

@@ -1,12 +1,16 @@
 'use strict';
-// spirit/run/spirit/element/branchEditor.js
+// spirit/run/spirit/element/search/bundle/detailElement.js
 // ONE BUNDLE'S BRANCHES, EDITED: what a closable tab holds (goal/G41.32; goal/G41.14). Andy, box: "the branchEditor page is
 // always configured with a bundle key", "second row, add form: "new" [apiFamilySelector:dropdown] [apiVerbSelector:dropdown]
 // [Add-button]" (a rowForm since goal/G41.27, ➕ for "new"), "branchSelector:pane, with table columns as follows: 1. Family
 // (duh?) 2. Verb 3. armingButton 'Delete'". The two dropdowns of the add form are the family selector's two halves (Andy:
 // "apiFamiliySelector.js will use apiVerbSelector as part of itself").
 //
-//   spirit.element.spirit.element.branchEditor.create(container, { bundle, label, owner, gone }) -> { destroy() }
+// THE BUNDLE SEARCH'S DETAIL since goal/G43.32 (Andy: "uniformity, in the search elements and their folders, contain list,
+// row an detail elements."), spirit/element/branchEditor.js before; the bundle selector (../bundle.js) opens it in a pane's
+// tab. Its contract and its test: ./test/detailElement.md and ./test/detailElement.js.
+//
+//   spirit.element.spirit.element.search.bundle.detailElement.create(container, { bundle, label, owner, gone }) -> { destroy() }
 //     bundle  the bundle's id; label its label; owner its owner (its Delete is an armingButton, which hears a click elsewhere itself)
 //     gone    called when this bundle's deletion is heard (Andy: "a bundle that hears its deletion, closes its branchEditor tab.")
 // A BUNDLE NOT THE NODE'S IS SHOWN ONLY (Andy: "A user can only create, change and delete node-owned bundles and branches, and
@@ -92,5 +96,5 @@
     parts.then(function () { if (!gone) mounted = mount(container, options || {}); });
     return { destroy: function () { gone = true; if (mounted) mounted.destroy(); mounted = null; container.innerHTML = ''; } };
   }
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/branchEditor.js', { create: create }); });
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/bundle/detailElement.js', { create: create }); });
 }());

@@ -1,7 +1,8 @@
 'use strict';
 
-// spirit/run/spirit/element/test/branchEditor.js
-// The tests of spirit/element/branchEditor.js, and of no other module (spec: ./branchEditor.md; goal/G41.14). The browser file
+// spirit/run/spirit/element/search/bundle/test/detailElement.js
+// The tests of spirit/element/search/bundle/detailElement.js, the branch editor (spirit/element/branchEditor.js until
+// goal/G43.32), and of no other module (spec: ./detailElement.md; goal/G41.14). The browser file
 // runs in node on a BARE window (rule/26): nothing is on the page until the editor requires it, but the shell's own
 // navigation, a recorder of the pages pushed. The family and branch selectors are stand-ins that keep what they
 // were handed; each is tested in its own file. The node's auth family is the spirit object's, each call recorded.
@@ -9,9 +10,9 @@
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
-const RUN = path.resolve(__dirname, '../../..');
+const RUN = path.resolve(__dirname, '../../../../..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-const FILE = path.join(__dirname, '..', 'branchEditor.js');
+const FILE = path.join(__dirname, '..', 'detailElement.js');
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
@@ -35,7 +36,7 @@ test.startTest('branchEditor.js: one bundle\'s branches, edited');
 process.on('unhandledRejection', function (e) { test.fail('it threw where nothing caught it: ' + (e && e.message || e)); });
 
 (async function () {
-  if (!fs.existsSync(FILE)) { test.fail('spirit/element/branchEditor.js is not there'); return; }
+  if (!fs.existsSync(FILE)) { test.fail('spirit/element/search/bundle/detailElement.js is not there'); return; }
   const asked = [];
   const required = [];
   const pages = [];
@@ -63,7 +64,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   global.window = { spirit: { escapeHtml: function (s) { return String(s).replace(/</g, '&lt;'); }, ready: Promise.resolve({ auth: auth }), auth: auth,
     element: { navigation: { push: function (page) { const p = { page: page, box: node('box'), nav: { close: function () {}, setTitle: function () {} } }; pages.push(p); return p.nav; } } } } };
   global.spirit = global.window.spirit;
-  // goal/G43.32: spirit.element is a plain place, no getter: branchEditor.js, now strict, sets spirit.element itself.
+  // goal/G43.32: spirit.element is a plain place, no getter: the branch editor, now strict, sets spirit.element itself.
   // goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(global.window.spirit);
   ((global.window.spirit.data = global.window.spirit.data || {}).auth = {}).data = { bundles: { watch: function (fn) { bundleWatches.push(fn); return function () {}; } }, branches: { watch: function () { return function () {}; } } };
@@ -72,18 +73,19 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
   const E = ((global.window.spirit.element || {}).spirit || {}).element || {};
+  const D = function () { return (E.search && E.search.bundle && E.search.bundle.detailElement) || null; };
 
   test.subHeading('it loads what it uses itself (rule/26)');
   ok(['spirit/element/search/api.js', 'spirit/element/search/branch.js'].every(function (p) { return required.indexOf(p) !== -1; }),
     'it requires the family selector and the branch selector through spirit.require', 'required: ' + short(required));
-  ok(E.branchEditor && typeof E.branchEditor.create === 'function' && E.branchEditor.open === undefined, 'it registers spirit.element.spirit.element.branchEditor.create, and no page of its own (goal/G41.32)', 'elements: ' + short(Object.keys(E.branchEditor || {})));
-  if (!E.branchEditor || typeof E.branchEditor.create !== 'function') return;
+  ok(D() && typeof D().create === 'function' && D().open === undefined, 'it registers spirit.element.spirit.element.search.bundle.detailElement.create, and no page of its own (goal/G41.32)', 'elements: ' + short(Object.keys(D() || {})));
+  if (!D() || typeof D().create !== 'function') return;
 
   test.subHeading('always on one bundle');
   // Andy, box: "the branchEditor page is always configured with a bundle key".
   const box = node('box');
   let closed = 0;
-  const tabbed = E.branchEditor.create(box, { bundle: 7, label: 'Reader', gone: function () { closed += 1; } });
+  const tabbed = D().create(box, { bundle: 7, label: 'Reader', gone: function () { closed += 1; } });
   await settle();
   const bs = branchSels[0];
   ok(!!bs && bs.container === box && bs.o.bundle === 7 && bs.o.face === 'pane' && JSON.stringify(bs.o.columns) === '["family","verb","delete"]' && all(box).indexOf(bs) !== -1,
@@ -140,7 +142,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   test.subHeading('goal/G41.32: a bundle not the node\'s is shown only');
   const ro = node('box');
   const formsBefore = forms.length;
-  E.branchEditor.create(ro, { bundle: 8, label: 'Theirs', owner: 'agent' });
+  D().create(ro, { bundle: 8, label: 'Theirs', owner: 'agent' });
   await settle();
   const rs = branchSels[branchSels.length - 1];
   ok(forms.length === formsBefore && !!rs && rs.container === ro && JSON.stringify(rs.o.columns) === '["family","verb"]', 'no form, and its branches with no Delete', 'forms ' + (forms.length - formsBefore) + ', columns ' + short(rs && rs.o.columns));
@@ -148,7 +150,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   test.subHeading('the shell\'s element shape: create(container, options) (goal/G41.19)');
   // Box v23: "every element gets a container and appends itself".
   const host = node('host');
-  const made = E.branchEditor.create(host, { bundle: 9 });
+  const made = D().create(host, { bundle: 9 });
   await settle();
   const last = branchSels[branchSels.length - 1];
   ok(!!last && last.o.bundle === 9 && all(host).indexOf(last) !== -1 && all(host).indexOf(families[families.length - 1]) !== -1,

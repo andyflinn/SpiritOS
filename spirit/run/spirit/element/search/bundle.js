@@ -15,7 +15,7 @@
 //     one bubbling `change` on a pick; refresh() asks again
 //     options.face       'pane' is the list itself; the default is the dropdown
 //     options.columns    the list's fields, of label and owner
-//     options.tabs       in a pane, the tabContainer a row pressed opens its branchEditor in (goal/G41.32; Andy: "when some
+//     options.tabs       in a pane, the tabContainer a row pressed opens its branchEditor (./bundle/detailElement.js) in (goal/G41.32; Andy: "when some
 //                        clicks on a (selects) a bundle row, a new closable tab opens in the tabContainer configured in the
 //                        bundleSelector:pane"; "if a bundle already has an branchEditor-tab in the configured tabContainer,
 //                        that tab will become the active tab"). None configured, a press opens nothing
@@ -43,11 +43,11 @@
     function openTab(row) {
       var tabs = options.tabs;
       var name = 'bundle-' + Number(row.id);
-      window.spirit.require('spirit/element/branchEditor.js').then(function () {
+      window.spirit.require('spirit/element/search/bundle/detailElement.js').then(function () {
         var said = typeof options.tabLabel === 'function' ? options.tabLabel(row) : String(row.label || '');
         var header = said && typeof said === 'object' ? said : { label: String(said || '') };
         tabs.add({ name: name, label: String(header.label || ''), italic: header.italic === true, closable: true, mount: function (box) {
-          return window.spirit.element.spirit.element.branchEditor.create(box, { bundle: Number(row.id), label: String(row.label || ''), owner: String(row.owner || 'node'), gone: function () { tabs.close(name); } });
+          return window.spirit.element.spirit.element.search.bundle.detailElement.create(box, { bundle: Number(row.id), label: String(row.label || ''), owner: String(row.owner || 'node'), gone: function () { tabs.close(name); } });
         } });
       });
     }
