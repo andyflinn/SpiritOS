@@ -261,8 +261,9 @@
     if (dropdown) { var p0 = el('popup'); if (p0) p0.hidden = true; }
     // THE SEARCH WORDS STOP AT THEIR LIMIT (goal/G41.27; Andy: "of course search words need a limit, search words must
     // follow the description rules."): fieldInput holds them to the description rule as they are typed.
-    var E0 = window.spirit.element || {};
-    if (E0.spirit.element.fieldInput && el('text')) E0.spirit.element.fieldInput.attach(el('text'), 'description');
+    // fieldInput is a helper, not an element: it stands at spirit.required.<its path> (goal/G43.32; Andy: "they live in require").
+    var FI = window.spirit.required && window.spirit.required.spirit && window.spirit.required.spirit.element && window.spirit.required.spirit.element.fieldInput;
+    if (FI && el('text')) FI.attach(el('text'), 'description');
     // The selectors mounted in their row; a pick in any of them redraws the list.
     function onSelector() { draw(); }
     selectors.forEach(function (s, i) {

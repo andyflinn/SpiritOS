@@ -496,6 +496,9 @@
   // exports; on a page, where a script installs itself as it runs, an empty object marks it loaded.
   var required = Object.create(null);
   self.required = required;
+  // Its first levels made here, so a reader asking spirit.required.spirit.element.<x> before any helper ran reads undefined
+  // instead of throwing (goal/G43.32).
+  required.spirit = { element: {}, app: {} };
   // THE ELEMENTS' TREE (goal/G43.32): every element stands at spirit.element.<its path>, put there by
   // spirit/element/installSpiritElement.js; this file makes the tree, so no element script assigns spirit.element itself.
   self.element = self.element && typeof self.element === 'object' ? self.element : {};
