@@ -67,8 +67,9 @@
     parts.then(function () {
       if (gone) return;
       list = S.element.spirit.element.search.valued.create(container, { rows: rows, columns: COLUMNS });
-      // WHO PAINTS, LISTENS (Andy, G41.32): each new reading repaints. A forgotten set or a job gone may be the reading's.
-      off = S.data.jobs.data.watch(function (id, job) { if (!id || !job || id === 'spirit') list.redraw(); });
+      // WHO PAINTS, LISTENS (Andy, G41.32): each new reading repaints. It shows the spirit job alone, so it watches that one
+      // row (goal/G43.32; Andy: "wsl, the clean fix, do it.").
+      off = S.data.jobs.data.watch('spirit', function () { list.redraw(); });
     });
     return {
       destroy: function () {

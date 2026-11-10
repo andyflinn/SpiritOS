@@ -59,6 +59,9 @@
     //   find(test)   the first job test(job) is true of, or null
     //   watch(fn)    fn(id, job) on every change, job undefined once it is gone, id '' when the set is forgotten; answers
     //                its release
+    //   watch(id, fn) fn(job) each time that one job is written, undefined once it is gone; answers its release. As agent's
+    //                tables have it (5aa68f95; Andy: "that's a decision: a BRANCHE's what is called \"watch\""); goal/G43.32,
+    //                for monitor, which shows the spirit job alone (Andy: "wsl, the clean fix, do it.").
     //   branch       the jobs' whole path, for a list that is a view of it (probabilitySearch's data)
     var jobsReads = {
       job: function (id) { return id ? HOME.get(JOBS + '/' + id) || null : null; },
@@ -70,7 +73,11 @@
         var k = Object.keys(all).filter(function (id) { return typeof test === 'function' && test(all[id]); })[0];
         return k ? all[k] : null;
       },
-      watch: function (fn) { return HOME.watch(JOBS, function (whole, v) { if (typeof fn === 'function') fn(HOME.row(whole, JOBS), v); }); },
+      watch: function (id, fn) {
+        if (typeof id === 'function') { var all = id; return HOME.watch(JOBS, function (whole, v) { all(HOME.row(whole, JOBS), v); }); }
+        if (!id) return function () {};
+        return HOME.watch(JOBS + '/' + id, function (whole, v) { if (typeof fn === 'function') fn(v); });
+      },
       get branch() { return HOME.path(JOBS); },
     };
     return jobsReads;
