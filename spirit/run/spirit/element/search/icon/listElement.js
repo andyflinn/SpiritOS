@@ -6,10 +6,16 @@
 // keywords. A
 // pick hands over the glyph itself, never a key into a table.
 //
-// No data.js: the set is one file, a constant, read once by the page (below).
+// THE SET IS THE FS FAMILY'S, AND FOLLOWED (goal/G43.32; Andy: "It obviously must require the fs interface so it can
+// listen to changes in the file it loads for it's icon list...."): the file is read through the fs family, kept in the fs
+// family's cache (spirit.data.fs.data.icons), and the list draws that branch. Each list watches the file's row and reads it
+// again when it changes, and the fs tree for it coming back whole after a reconnect forgot the set; lists read together
+// read once. This ends
+// the set as a constant held beside spirit.data (goal/G43.11, "we make it a constant"): his newer words.
 //
-//   set() -> the set, { glyph: [keywords] }, as the page holds it; the icon selector offers the same one
-//   create(host, opts) -> the list (value, row, words(), refresh(), redraw(), destroy(), reload())
+//   set() -> the set, { glyph: [keywords] }, as the fs cache holds it, read once when it holds none; the icon selector
+//            offers the same one
+//   create(host, opts) -> { value, row, refresh(), redraw(), reload(), destroy() }, the list made once the fs cache is in
 //     opts.face          'pane' or 'dropdown'
 //     opts.placeholder, opts.all, opts.empty
 //     opts.pick(row, glyph)   an icon chosen; row { glyph, keywords }
@@ -22,65 +28,86 @@
   // Andy, goal/G43.11: "run://spirit/iconSet.json IS the system set now."
   var SET = 'spirit/iconSet.json';
 
-  // Loaded with this element for the Icons app's panel, which follows spirit.data.fs.data.icons until its own item.
-  window.spirit.cacheManager('fs');
+  // The fs family's cache, where the set is kept and the file followed.
+  var cache = window.spirit.cacheManager('fs');
+  function F() { return ((window.spirit.data || {}).fs || {}).data || null; }
 
-  // THE SET IS A CONSTANT (goal/G43.11; Andy: "we make it a constant, that way i cannot change, and leave code that reads it
-  // hanging"). The page reads the file once and holds it here, where a stream connecting does not wipe it: an exception to
-  // goal/G41.28's "the shells one and only spirit.data object", for this constant. Andy's commit shows after a page reload.
-  // A read that is refused is not kept, so a face that gets its star can read it later.
-  var held = null;
+  // A read that is refused keeps nothing, so a face that gets its star can read it later. Lists read together read once.
   var reading = null;
-  function readSet() {
-    if (held) return Promise.resolve(held);
+  // The file's row as last read (modified and size): a row written again unchanged is read only if the set is gone (a
+  // reconnect empties spirit.data, and the push sets the row again).
+  var readStamp = '';
+  function stampOf(row) { return row ? String(row.modified) + ':' + String(row.size) : ''; }
+  function held() {
+    var I = F() && F().icons;
+    var rows = I && window.spirit.data.rowsOf ? window.spirit.data.rowsOf(I.branch) || [] : [];
+    if (!rows.length) return null;
+    var set = {};
+    rows.forEach(function (r) { set[r.glyph || r.key] = Array.isArray(r.keywords) ? r.keywords : []; });
+    return set;
+  }
+  function load() {
     if (reading) return reading;
     // Through the spirit object (goal/G32.2).
-    reading = spirit.ready.then(function (s) { return s.fs.loadFile(SET); }).then(function (text) {
+    var stamp = '';
+    reading = Promise.resolve(cache).then(function () { stamp = F() ? stampOf(F().file(SET)) : ''; return spirit.ready; }).then(function (s) { return s.fs.loadFile(SET); }).then(function (text) {
       reading = null;
+      readStamp = stamp;
       var set = JSON.parse(text);
       if (!set || typeof set !== 'object') return {};
-      held = set;
-      return held;
+      F().icons.keep(set);
+      return set;
     }).catch(function () { reading = null; return {}; });
     return reading;
   }
-  function rowsOf(set) {
-    return Object.keys(set).map(function (g) { return { key: g, glyph: g, keywords: Array.isArray(set[g]) ? set[g] : [] }; });
-  }
+  function readSet() { return Promise.resolve(cache).then(function () { return held() || load(); }, function () { return {}; }); }
 
   function create(host, opts) {
     var o = opts || {};
     var list = null;
-    var rows = [];
-    function reload() {
-      return readSet().then(function (set) {
-        rows = rowsOf(set);
-        if (list) list.redraw();
-        return set;
-      });
-    }
+    var off = null;
+    var gone = false;
+    var made = {
+      value: '', row: null,
+      refresh: function () { if (list) list.refresh(); },
+      redraw: function () { if (list) list.redraw(); },
+      // The file read again, into the fs cache, whose branch the list draws.
+      reload: function () { return load(); },
+      destroy: function () { gone = true; if (off) off(); off = null; if (list) list.destroy(); list = null; },
+    };
+    Promise.resolve(cache).then(function () {
+      if (gone || !F()) return;
+      // WHAT IT LOADS, IT LISTENS FOR: the file's row, read again as it changes; and the tree, only for it coming back whole
+      // after a reconnect (path ''), which forgot the set with everything else.
+      var offRow = F().watch(SET, function (row) { if (row && (stampOf(row) !== readStamp || !held())) load(); });
+      var offTree = F().watch(function (p) { if (p === '' && !held()) load(); });
+      off = function () { offRow(); offTree(); };
+      make();
+      if (!held()) load();
+    }, function () { if (!gone) host.textContent = 'The icons could not be loaded.'; });
+    function make() {
     list = E.spirit.element.search.create(host, {
-      // Its own data source (goal/G43.24), which finds nothing: the rows are its own.
+      // Its own data source (goal/G43.24), which finds nothing: the rows are the fs cache's icons branch.
       search: function () { return Promise.resolve({ status: 200, body: { ok: true, items: [], more: false } }); },
       server: 'fs',
       verb: 'search',
+      data: F().icons.branch,
       face: o.face,
       placeholder: o.placeholder || 'choose an icon…',
       all: o.all,
       name: function (row) { return String(row.glyph || '') + ' ' + String((row.keywords || [])[0] || ''); },
-      rows: function () { return rows; },
       columns: [
         { field: 'glyph', label: '' },
         { field: 'keywords', label: 'Keywords' },
       ],
       element: function (row, key) { return E.spirit.element.search.icon.rowElement.create(Object.assign({ glyph: key }, row)); },
-      pick: function (row, key) { if (typeof o.pick === 'function') o.pick(row, key); },
+      pick: function (row, key) { made.value = key; made.row = row; if (typeof o.pick === 'function') o.pick(row, key); },
       details: typeof o.details === 'function' ? function (row, key) { o.details(row, key); } : undefined,
       empty: o.empty || 'No icon matches.',
     });
-    list.reload = reload;
-    reload();
-    return list;
+    list.refresh();
+    }
+    return made;
   }
 
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.

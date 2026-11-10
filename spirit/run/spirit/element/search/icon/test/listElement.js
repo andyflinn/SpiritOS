@@ -1,8 +1,9 @@
 'use strict';
 
 // spirit/run/spirit/element/search/icon/test/listElement.js
-// The icons list reads one file (spec: ./listElement.md; goal/G43.11). Andy: "run://spirit/iconSet.json IS the system set now.",
-// "we make it a constant, that way i cannot change, and leave code that reads it hanging". A real Chrome on a scratch node's page, and on a real face through a real relay,
+// The icons list reads one file (spec: ./listElement.md; goal/G43.11). Andy: "run://spirit/iconSet.json IS the system set now.";
+// since goal/G43.32 the fs family's, followed: "It obviously must require the fs interface so it can listen to changes in the
+// file it loads for it's icon list....". A real Chrome on a scratch node's page, and on a real face through a real relay,
 // the file read as a page reads it; and the file itself, and every reader, from the tree.
 
 const fs = require('fs');
@@ -66,13 +67,16 @@ async function faceOf(N, R) {
 
 // A list made in a box of the page, every read and every watch of the set kept. Answers what the page has asked so far.
 const MAKE = '(function () {' +
-  ' return window.spirit.ready.then(function (s) { if (!window.__asks) { window.__asks = []; window.__watches = [];' +
-  '  var read = s.fs.loadFile; s.fs.loadFile = function (p) { window.__asks.push(String(p)); return read.apply(this, arguments); }; }' +
+  // The fs family bound first (a file of its own read, not counted): since goal/G43.27 a family binds when first called, and
+  // a wrapper put on it before then is bound in as its own loadFile, calling itself for ever.
+  ' return window.spirit.ready.then(function (s) { if (window.__asks) return null; window.__asks = []; window.__watches = [];' +
+  '  return Promise.resolve(s.fs.loadFile("spirit/fieldRules.js")).then(null, function () {}).then(function () {' +
+  '  var read = s.fs.loadFile; s.fs.loadFile = function (p) { window.__asks.push(String(p)); return read.apply(this, arguments); }; }); }).then(function () {' +
   '  return window.spirit.require("spirit/element/search/icon/listElement.js"); }).then(function () { var F = window.spirit.data.fs.data;' +
-  '   if (!F.__kept) { F.__kept = true; var watch = F.watch; F.watch = function (p) { if (typeof p === "string") window.__watches.push(p); return watch.apply(this, arguments); }; }' +
+  '   if (!F.__kept) { F.__kept = true; var watch = F.watch; F.watch = function (p) { window.__watches.push(typeof p === "function" ? "the tree" : String(p)); return watch.apply(this, arguments); }; }' +
   '   var box = document.body.appendChild(document.createElement("div")); box.style.cssText = "position:fixed;left:0;top:0;width:600px;height:400px;display:flex;flex-direction:column;background:#fff;z-index:99999";' +
   '   window.__list = window.spirit.element.spirit.element.search.icon.listElement.create(box, { face: "pane" }); window.__box = box; return "made"; }); })';
-const SEEN = 'JSON.stringify({ asks: (window.__asks || []).filter(function (p) { return /iconSet\\.json$/.test(p); }), watches: (window.__watches || []).filter(function (p) { return /iconSet\\.json$/.test(p); }), SET: window.spirit.element.spirit.element.search.icon.listElement.SET })';
+const SEEN = 'JSON.stringify({ asks: (window.__asks || []).filter(function (p) { return /iconSet\\.json$/.test(p); }), watches: (window.__watches || []).filter(function (p) { return /iconSet\\.json$/.test(p) || p === "the tree"; }), SET: window.spirit.element.spirit.element.search.icon.listElement.SET })';
 // What the newest list answers to a word, typed as the owner types it: the glyphs it draws.
 const FINDS = function (word) {
   return '(function () { var i = [].filter.call(window.__box.querySelectorAll("input"), function (x) { return x.getClientRects().length && x.type !== "checkbox"; })[0]; i.value = ' + JSON.stringify(word) + '; i.dispatchEvent(new Event("input", { bubbles: true })); return true; })()';
@@ -158,8 +162,10 @@ test.startTest('listElement.js: the icons list reads one file (goal/G43.11)');
     ok(atHome.SET === SET, 'its file is ' + SET, 'its SET is ' + short(atHome.SET));
     ok(JSON.stringify(atHome.asks) === JSON.stringify([SET]), 'it reads that file and no other, through spirit.fs.loadFile', 'it read: ' + short(atHome.asks));
 
-    test.subHeading('the box: "A constant", "A page reads the file once and holds it where a stream connecting does not wipe it"');
-    ok(atHome.watches.length === 0, 'nothing watches the file', 'it watches: ' + short(atHome.watches));
+    // goal/G43.32, Andy: "It obviously must require the fs interface so it can listen to changes in the file it loads for
+    // it's icon list....": no longer a constant.
+    test.subHeading('the fs family\'s: kept in its cache, the file followed, read once for every list');
+    ok(JSON.stringify(atHome.watches.slice().sort()) === JSON.stringify([SET, 'the tree']), 'the list watches the file\'s row, and the fs tree for a reconnect', 'it watches: ' + short(atHome.watches));
     await chrome.evaluate('window.__sameLoad = true; 1');
     await sleep(4000);
     ok(await shows(lastWord, lastOnly), 'the rows stay after the stream connects', 'after the stream connects the list no longer finds ' + lastOnly);
@@ -175,17 +181,18 @@ test.startTest('listElement.js: the icons list reads one file (goal/G43.11)');
     ok(!!back, 'the world: the node gone and back, the page open', 'the node did not come back: nothing judged');
     await sleep(6000);
     ok(await shows(lastWord, lastOnly), 'the rows are still there after the reconnect', 'after the reconnect the list no longer finds ' + lastOnly);
-    ok((await seen()).asks.length === 1, 'still the one read', 'reads: ' + short((await seen()).asks));
+    // spirit.data forgets on a reconnect, the set with it; the push sets the file's row again, and the two lists read it once.
+    ok((await seen()).asks.length === 2, 'read once more for the reconnect, once for both lists', 'reads: ' + short((await seen()).asks));
     ok((await chrome.evaluate('window.__sameLoad === true')) === true, 'all on the one load of the page', 'the page reloaded itself');
 
-    test.subHeading('the box: "Andy\'s commit shows after a page reload."');
+    test.subHeading('a changed file reaches the open page');
     const setFile = path.join(N.root, 'spirit', 'run', SET);
     fs.writeFileSync(setFile, JSON.stringify(Object.assign({}, set, { [PLANTED]: ['committedword'] })));
-    await sleep(3000);
-    ok(await lacks('committedword', PLANTED), 'an open page does not change', 'an open page took the changed file');
-    await open(N.base + '/face.html');
-    ok((await made()) === 'made' && await shows('committedword', PLANTED), 'after a reload the page has it', 'after a reload the page does not have the changed file');
+    ok(await shows('committedword', PLANTED), 'the open page has the changed file, no reload', 'the open page does not take the changed file');
+    ok((await chrome.evaluate('window.__sameLoad === true')) === true, 'on the same load of the page', 'the page reloaded itself');
     fs.writeFileSync(setFile, JSON.stringify(set));
+    await chrome.evaluate(FINDS('committedword'));
+    ok(!!(await until(function () { return chrome.evaluate('window.__box.innerText').then(function (x) { return String(x).indexOf(PLANTED) === -1; }); }, 6000)), 'and the file put back, it has it no more', 'the open page keeps a glyph the file no longer has');
 
     test.subHeading('on a real face');
     const F = await faceOf(N, R);

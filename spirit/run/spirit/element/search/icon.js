@@ -63,8 +63,8 @@
       return c.glyph === w || c.keys.some(function (k) { return String(k).toLowerCase().indexOf(w) !== -1; });
     }
     // WHAT IT OFFERS IS THE SYSTEM SET (goal/G43.11; Andy: "run://spirit/iconSet.json IS the system set now."): each glyph with
-    // the keywords it is found by, the constant the icons list holds (spirit/element/search/icon/listElement.js), so the page
-    // reads the file once. The rows drawn when it is there.
+    // the keywords it is found by, the set the icons list keeps in the fs family's cache (spirit/element/search/icon/listElement.js,
+    // set()), so the page reads the file once. The rows drawn when it is there.
     var choices = [];
     var excludedGlyph = Object.create(null);
     (excludeGlyphs || []).forEach(function (g) { if (g) excludedGlyph[g] = true; });
