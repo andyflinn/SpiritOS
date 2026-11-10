@@ -1,10 +1,12 @@
 'use strict';
-// spirit/run/spirit/element/jobDetail.js
+// spirit/run/spirit/element/search/job/detailElement.js
 // ONE JOB OF THE JOB MONITOR, AN ELEMENT (goal/G43.29; Andy: "a wrapper for separate spirit/element/ files"), moved here
 // from shell/jobsDetails/jobsDetails.js and working as it did, now a panel over Jobs (Q1: "a job row opens detail panel
-// overtop of jobs."). Its contract and its test: ./test/jobDetail.md and ./test/jobDetail.js.
+// overtop of jobs."). The job search's detail since goal/G43.32 (Andy: "uniformity, in the search elements and their
+// folders, contain list, row an detail elements."), spirit/element/jobDetail.js before. Its contract and its test:
+// ./test/detailElement.md and ./test/detailElement.js.
 //
-//   spirit.element.spirit.element.jobDetail.create(host, { id, title, close }) -> { destroy() }
+//   spirit.element.spirit.element.search.job.detailElement.create(host, { id, title, close }) -> { destroy() }
 //     id     the job it shows, and nothing else
 //     title  called with { icon, label } as the job's status changes (the layer's bar)
 //     close  called once the job is deleted: there is nobody left to show
@@ -31,7 +33,7 @@
 
   function esc(s) { return S.escapeHtml(String(s == null ? '' : s)); }
 
-  // The canonical set lives in spirit/run/spirit/job.js (TERMINAL_STATUSES), node-side; ./job.js keeps the same copy.
+  // The canonical set lives in spirit/run/spirit/job.js (TERMINAL_STATUSES), node-side; ./rowElement.js keeps the same copy.
   var TERMINAL = ['completed', 'failed', 'cancelled', 'stopped'];
   var STATUS_ICON = {
     pending: '⏳',
@@ -183,5 +185,5 @@
     };
   }
 
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/jobDetail.js', { create: create }); });
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/job/detailElement.js', { create: create }); });
 }());

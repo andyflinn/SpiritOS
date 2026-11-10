@@ -1,7 +1,7 @@
 'use strict';
 
-// spirit/run/spirit/element/test/job.js
-// The tests of spirit/element/job.js, and of no other module (spec: ./job.md; goal/G43.29, box v3): what the Job
+// spirit/run/spirit/element/search/job/test/listElement.js
+// The tests of spirit/element/search/job/listElement.js, spirit/element/job.js until goal/G43.32, and of no other module (spec: ./listElement.md; goal/G43.29, box v3): what the Job
 // Monitor draws, moved out of shell/job/job.js. The box: "Each works exactly as the old one, merely placed where it now
 // belongs", "What it draws is in separate files of spirit/element/, and the old apps' code moves there", and Q1: "a job row
 // opens detail panel overtop of jobs." Written from reading the old module: every job of the node a row, its columns the
@@ -11,7 +11,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const RUN = path.resolve(__dirname, '..', '..', '..');
+const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const { scratchNode, chromePage, findChrome, until } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 
@@ -29,7 +29,7 @@ function plant(run) {
   });
 }
 
-test.startTest('job.js: the Job Monitor\'s list, an element of spirit/element/ (goal/G43.29)');
+test.startTest('search/job/listElement.js: the Job Monitor\'s list, the job search\'s (goal/G43.29, G43.32)');
 
 (async function () {
   const node = await scratchNode();
@@ -49,8 +49,8 @@ test.startTest('job.js: the Job Monitor\'s list, an element of spirit/element/ (
 
     await chrome.send('Page.navigate', { url: node.base + '/face.html' });
     await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
-    const made = await chrome.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/element/job.js"); }).then(function () { window.pageErrors = []; window.addEventListener("error", function (e) { window.pageErrors.push(String(e.message)); }); var c = document.createElement("div"); c.id = "box"; c.style.cssText = "position:fixed;left:0;top:0;width:1100px;height:700px;display:flex;flex-direction:column;background:#111;z-index:9"; document.body.appendChild(c); window.opened = []; var J = spirit.element.spirit.element.job; if (!J || typeof J.create !== "function") return "spirit.element.spirit.element.job.create is " + typeof (J && J.create); window.made = J.create(c, { open: function (k, spec) { window.opened.push({ key: String(k), spec: spec ? Object.keys(spec) : [], fill: !!(spec && typeof spec.fill === "function") }); return Promise.resolve(null); } }); return "made"; }, function (e) { return String(e && e.message || e); })');
-    ok(made === 'made', 'it loads through spirit.require and mounts with spirit.element.spirit.element.job.create(container, { open })', 'it did not mount: ' + short(made));
+    const made = await chrome.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/element/search/job/listElement.js"); }).then(function () { window.pageErrors = []; window.addEventListener("error", function (e) { window.pageErrors.push(String(e.message)); }); var c = document.createElement("div"); c.id = "box"; c.style.cssText = "position:fixed;left:0;top:0;width:1100px;height:700px;display:flex;flex-direction:column;background:#111;z-index:9"; document.body.appendChild(c); window.opened = []; var J = spirit.element.spirit.element.search.job.listElement; if (!J || typeof J.create !== "function") return "spirit.element.spirit.element.search.job.listElement.create is " + typeof (J && J.create); window.made = J.create(c, { open: function (k, spec) { window.opened.push({ key: String(k), spec: spec ? Object.keys(spec) : [], fill: !!(spec && typeof spec.fill === "function") }); return Promise.resolve(null); } }); return "made"; }, function (e) { return String(e && e.message || e); })');
+    ok(made === 'made', 'it loads through spirit.require and mounts with spirit.element.spirit.element.search.job.listElement.create(container, { open })', 'it did not mount: ' + short(made));
     if (made !== 'made') return;
     // The job rows: a header row (th, or under thead) is no job and is never judged as one.
     const rows = function () { return chrome.evaluate('Array.prototype.map.call(document.querySelectorAll("#box tr, #box .list-row"), function (r) { return r.getClientRects().length && !r.querySelector("th") && !r.closest("thead") ? String(r.innerText || r.textContent || "") : ""; }).filter(Boolean)').then(function (x) { return Array.isArray(x) ? x : []; }); };
@@ -94,7 +94,7 @@ test.startTest('job.js: the Job Monitor\'s list, an element of spirit/element/ (
     ok(opened && o1[0].fill && /spirit\.fs/.test(o1[0].key), 'a press on spirit.fs calls open with its key and a fill', 'open was called with ' + short(o1));
 
     test.subHeading('with no open handed, its own panel over its box (as contact\'s)');
-    await chrome.evaluate('(function () { window.made.destroy(); var c = document.getElementById("box"); c.innerHTML = ""; window.made = spirit.element.spirit.element.job.create(c, {}); return true; }())');
+    await chrome.evaluate('(function () { window.made.destroy(); var c = document.getElementById("box"); c.innerHTML = ""; window.made = spirit.element.spirit.element.search.job.listElement.create(c, {}); return true; }())');
     await until(function () { return rows().then(function (r) { return r.some(function (t) { return t.indexOf('spirit.fs') !== -1; }); }); }, 10000);
     await chrome.evaluate('(function () { var r = Array.prototype.filter.call(document.querySelectorAll("#box tr, #box .list-row"), function (x) { return x.getClientRects().length && String(x.textContent).indexOf("spirit.fs") !== -1; })[0]; if (!r) return false; var leaf = Array.prototype.filter.call(r.querySelectorAll("*"), function (e) { return !e.children.length && e.getClientRects().length; })[0] || r; leaf.click(); return true; }())');
     const OVER = '(function () { var box = document.getElementById("box"); var b = box.getBoundingClientRect(); var l = Array.prototype.filter.call(box.querySelectorAll(".app-container"), function (c) { return c.offsetParent !== null; }).pop(); if (!l) return "no panel layer"; var r = l.getBoundingClientRect(); if (r.width < b.width - 4 || r.height < b.height - 4) return "a layer of " + Math.round(r.width) + "x" + Math.round(r.height); return String(l.textContent).indexOf("spirit.fs") !== -1 ? "over" : "the layer does not name spirit.fs"; }())';

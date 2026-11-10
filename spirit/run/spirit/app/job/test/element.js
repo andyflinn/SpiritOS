@@ -5,7 +5,7 @@
 // spirit/app/job/, "as Contacts and Icons did". Andy: "fill in the box, same icons, shell:mount only.", "a wrapper for
 // separate spirit/element/ files", "both apps will be intrinsic"; Q1: "a job row opens detail panel overtop of jobs." Its
 // json read from the disc; the app on a real Chrome on a scratch node's face page, through the app selector's tile as a
-// user opens it. What it draws is spirit/element/job.js's and jobDetail.js's, judged in their own tests.
+// user opens it. What it draws is the job search's, spirit/element/search/job.js and its folder (goal/G43.32), judged in their own tests.
 
 const fs = require('fs');
 const path = require('path');
@@ -36,7 +36,7 @@ test.startTest('job: the Job Monitor in spirit/app/job/, a wrapper of spirit/ele
 
   test.subHeading('"a wrapper for separate spirit/element/ files": job.js only mounts');
   const src = code(path.join(APP, 'element.js'));
-  ok(/spirit\/element\/job\.js/.test(src), 'job.js brings spirit/element/job.js', 'job.js names no spirit/element/job.js');
+  ok(/spirit\/element\/search\/job\.js/.test(src), 'element.js brings the job search, spirit/element/search/job.js', 'element.js names no spirit/element/search/job.js');
   ok(src !== '' && !/innerHTML|activateApp|callDialog|factRow/.test(src), 'and draws nothing itself: no innerHTML, no old shell helper', 'job.js draws or calls the old shell: ' + short((src.match(/innerHTML|activateApp|callDialog|factRow/g) || []).slice(0, 4)));
 
   const node = await scratchNode();
