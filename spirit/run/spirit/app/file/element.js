@@ -15,7 +15,7 @@
 (function () {
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
-  var parts = Promise.all([S.require('spirit/element/search/file.js'), S.require('spirit/element/fstat.js'), S.require('spirit/element/panel.js'), S.cacheManager('app')]);
+  var parts = Promise.all([S.require('spirit/element/search/file.js'), S.require('spirit/element/search/file/detailElement.js'), S.require('spirit/element/fstat.js'), S.require('spirit/element/panel.js'), S.cacheManager('app')]);
   var OPENERS = { code: 'text', image: 'media', audio: 'media', video: 'media' };
 
   function create(container, opts) {
@@ -49,8 +49,9 @@
       var look = opener ? barOf(opener, name, null) : { icon: FS.iconOf(key), label: name };
       var into = typeof o.open === 'function' ? o.open : function (k, spec) { return stack.open(k, spec); };
       Promise.resolve(into(key, { icon: look.icon, label: look.label, fill: function (pane, closed) {
-        // fstat only for a file neither opener takes (Andy: "let fstat pop up for unknows file types (❔) only").
-        if (!opener) { FS.create(pane, { path: key }); return { destroy: function () { pane.innerHTML = ''; } }; }
+        // fstat only for a file neither opener takes (Andy: "let fstat pop up for unknows file types (❔) only"), through the
+        // file search's detail, which draws it (goal/G43.32).
+        if (!opener) return S.element.spirit.element.search.file.detailElement.create(pane, { path: key });
         return S.require('spirit/app/' + opener + '/element.js').then(function () {
           if (closed()) return null;
           // The opener's main element at the place of the file just loaded (goal/G43.32, rule 4).
