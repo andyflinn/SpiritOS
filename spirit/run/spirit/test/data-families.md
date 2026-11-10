@@ -6,6 +6,11 @@ Andy, box: *"we rename it spirit/data.js and it IS the the spirit.data object."*
 
 ## Requirements
 
+Each family's own (its `data.js` there, the old file gone, none of it rolled by hand, `data` and `cache` in node and
+on a page) is judged on each branch folder by `./spirit-sibling-branchRules.js` since goal/G43.32. Here, what judges
+no one branch: one helper for all, no old names in the code, the shape of `spirit.data` and `spirit.app`, the cache by
+node, the reads moved.
+
 - `spirit/data.js` stands and the old module is gone.
 - All the families, Andy: *"yes, of course all 19"* (18 since fileServer went with run://process, goal/G43.20): each has a `data.js`, a node family at `spirit/<name>/data.js`, a server at `spirit/app/<name>/data.js` (chatClerver's in `spirit/app/chat/`), and the old file is gone.
 - *"with the SAME pattern"*: each `data.js` calls one and the same helper of `spirit.data` with the family's own name, and rolls no guard, no attach and no write on `spirit` of its own.

@@ -170,6 +170,12 @@ function cacheRules() {
       const others = readers.filter(function (f) { return pathOf.test(code(path.join(RUN, f))); });
       ok(!others.length, name + ': named by ' + m + ' alone; every other file asks it', name + ': its paths are named outside ' + m + ', by ' + short(others));
     });
+    // ONE PATTERN (goal/G43.7, the box: "ALL ... files will be converted to "data.js" files", "using the module
+    // spirit/data.js", "with the SAME pattern"; from ./data-families.js): the old file is gone, and the guard, the attach
+    // and the write on spirit are spirit/data.js's, none of it rolled by the family by hand.
+    const OLD_MANAGER = 'clientCache' + 'Manager';
+    ok(!has(b.dir + '/' + OLD_MANAGER + '.js'), b.dir + ': the old file is gone', b.dir + ': ' + b.dir + '/' + OLD_MANAGER + '.js still stands');
+    ok(!/Symbol\.for|function attach|\.spirit\s*=|spirit\.[A-Za-z]+Data\s*=/.test(src), m + ': rolls none of it by hand', m + ': data.js still rolls its own guard, attach or spirit write');
     // The one difference is the disk: no manager touches a file or the browser's storage.
     const disk = /require\(\s*['"](fs|node:fs|path)['"]\s*\)|\b(writeFile|readFile|appendFile|localStorage|sessionStorage|indexedDB)\b/.exec(src);
     ok(!disk, m + ': it touches no file and no browser storage', m + ': it keeps its cache itself (' + (disk && disk[0]) + '), where only appServer may');
@@ -177,11 +183,14 @@ function cacheRules() {
     // makeFamily, never guessed from its folder.
     const named = /makeFamily\(\s*['"]([^'"]+)['"]/.exec(src);
     const name = named ? named[1] : '';
+    // EVERY BRANCH IS NAMED AS ITS FOLDER (goal/G43.31; Andy: "The BRANCH name (FUCK THE TERM "Family"!!!!!!!!!!!!) is
+    // motherfucking <name> in spirit/app/<name>....", and "make sure, IN THIS ITEM that family names MATCH folder names").
+    ok(name === b.name, m + ': it makes the branch ' + b.name + ', its folder\'s name', m + ': it makes the branch ' + (name || 'none') + ' in the folder ' + b.name);
     let mod = null;
     try { mod = require(path.join(RUN, m)); } catch (e) { mod = { threw: e.message }; }
     ok(!!mod && !mod.threw && (mod.cache === undefined || (mod.cache && typeof mod.cache === 'object')), m + ': it loads' + (mod && mod.cache ? ', and exports its cache rules' : ''), m + ': it exports ' + short(mod && Object.keys(mod)));
     const f = name ? require(DATA)[name] : null;
-    ok(!!f && !!f.data && typeof f.data === 'object' && !!f.cache, m + ': it stands at spirit.data.' + name + ', for clients to ask', m + ': spirit.data.' + name + ' is ' + short(f));
+    ok(!!f && !!f.data && typeof f.data === 'object' && !!f.cache && typeof f.cache === 'object', m + ': in node it stands at spirit.data.' + name + ', its data and its cache, for clients to ask', m + ': spirit.data.' + name + ' is ' + short(f));
     // A BRANCH'S WATCH IS CALLED watch (Andy, goal/G43.32: "that's a decision: a BRANCHE's what is called "watch"", "the
     // branch is already implied in it's containing object.", "wsl, assert this in a test for branches."): every object
     // its reads hold is a branch, its watch the member named watch and no other (watchFile, watchApp, watchRow are the
@@ -329,16 +338,18 @@ async function nodeRules() {
     if (page && !page.error) {
       await page.send('Page.navigate', { url: node.base + '/' });
       await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.ready)'); }, 30000);
-      got = await page.evaluate('Promise.resolve(window.spirit.ready).then(function () { return Promise.all(' + JSON.stringify(withData.map(function (b) { return b.family; })) + '.map(function (n) { return window.spirit.cacheManager(n).then(function () { return [n, "ok"]; }, function (e) { return [n, String((e && e.message) || e)]; }); })); })');
+      got = await page.evaluate('Promise.resolve(window.spirit.ready).then(function () { return Promise.all(' + JSON.stringify(withData.map(function (b) { return b.family; })) + '.map(function (n) { return window.spirit.cacheManager(n).then(function () { var f = (window.spirit.data || {})[n]; return [n, "ok", !!f && typeof f.data === "object" && typeof f.cache === "object"]; }, function (e) { return [n, String((e && e.message) || e), false]; }); })); })');
     }
     const heard = page && page.heard ? page.heard.filter(function (m) { return m.method === 'Network.responseReceived'; }).map(function (m) { return { url: m.params.response.url.replace(node.base, '').replace(/^\//, ''), status: m.params.response.status }; }) : [];
-    const said = {}; (got || []).forEach(function (r) { said[r[0]] = r[1]; });
+    const said = {}; const both = {}; (got || []).forEach(function (r) { said[r[0]] = r[1]; both[r[0]] = r[2]; });
     withData.forEach(function (b) {
       test.subHeading(b.dir + ': found by its name');
       const fetched = heard.some(function (a) { return a.url === b.data && a.status === 200; });
       const missed = heard.filter(function (a) { return /(^|\/)data\.js$/.test(a.url) && a.status === 404 && a.url.split('/').slice(-2, -1)[0] === b.family; });
       ok(said[b.family] === 'ok' && fetched, b.dir + ': a page asking for ' + b.family + ' by its name gets ' + b.data, b.dir + ': ' + b.family + ' answered ' + short(said[b.family] || (page && page.error) || 'nothing') + ', ' + b.data + ' fetched ' + fetched);
       ok(!missed.length, b.dir + ': no data.js of ' + b.family + ' was asked that is not there (no 404)', b.dir + ': asked and missed: ' + short(missed));
+      // The box (goal/G43.7): "spirit.data.<name>.data" and "spirit.data.<name>.cache", on the page as in node.
+      ok(both[b.family] === true, b.dir + ': on the page spirit.data.' + b.family + ' has data and cache', b.dir + ': on the page spirit.data.' + b.family + ' lacks data or cache');
     });
     // The node serves each one as a script that calls spirit.data.makeFamily (was data-caches.js, 6: "the shell can
     // introspect to find and download their clientCacheManagers.").

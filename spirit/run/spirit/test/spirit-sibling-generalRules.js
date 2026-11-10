@@ -353,26 +353,6 @@ function noProcessAnywhere() {
   ok(tracked.length > 0 && !named.length, 'none of the ' + tracked.length + ' names spirit/run/process or run://process, in code or comment', named.length + ' still name it: ' + short(named));
 }
 
-// EVERY BRANCH IS NAMED AS ITS FOLDER (goal/G43.31). Andy: "The BRANCH name (FUCK THE TERM "Family"!!!!!!!!!!!!) is
-// motherfucking <name> in spirit/app/<name>....", and "make sure, IN THIS ITEM that family names MATCH folder names". The
-// branch a data.js makes (makeFamily('<name>')) is the name of the folder it stands in, spirit/<name>/ or spirit/app/<name>/.
-function branchOf(f) {
-  const m = /\bmakeFamily\(\s*['"]([^'"]+)['"]/.exec(fs.readFileSync(path.join(RUN, f), 'utf8'));
-  return m ? m[1] : null;
-}
-function branchFolders() {
-  const tracked = require('child_process').execFileSync('git', ['ls-files'], { cwd: RUN, encoding: 'utf8' }).split('\n');
-  return tracked.filter(function (f) { return /^spirit\/(app\/)?[^/]+\/data\.js$/.test(f) && fs.existsSync(path.join(RUN, f)); });
-}
-function branchesNamedAsFolders() {
-  test.subHeading('every branch is named as its folder: spirit/<name>/ and spirit/app/<name>/ make <name>');
-  const files = branchFolders();
-  const named = files.filter(function (f) { return branchOf(f) !== null; });
-  ok(named.length > 0, 'the world: ' + named.length + ' data.js files make a branch', 'no data.js makes a branch: nothing judged');
-  const off = named.filter(function (f) { return branchOf(f) !== path.basename(path.dirname(f)); }).map(function (f) { return f + ' makes ' + branchOf(f); });
-  ok(named.length > 0 && !off.length, 'each of the ' + named.length + ' makes the branch of its folder\'s name', off.length + ' do not: ' + short(off));
-}
-
 // RUN://TEST/ MOVES INTO RUN://SPIRIT/TEST/ (goal/G43.32, the box). Andy: "we'll move the contents of run://test/   into
 // run://spirit/test/ first.", on Q2: "We need special rules for run://spirit/test/  it will be where run://spirit/app/test/
 // finds it's main tools.", and his concluding point: "this move will free the run:// folder namespace and SpiritOS will
@@ -607,7 +587,6 @@ function oneHelper() {
 async function every() {
   noProcessAnywhere();
   oneHelper();
-  branchesNamedAsFolders();
   runTestMoved();
   everyScriptShaped();
   iconsLoaded();
@@ -646,11 +625,7 @@ test.startTest((full ? NAMED : 'every page module') + ': the general rules of an
 (async function () {
   if (!arg) return every();
   if (!full) { test.fail('no shell app or element to judge: ' + JSON.stringify(arg)); return; }
-  // goal/G43.31: a data.js of a branch folder makes the branch of the folder's name (branchesNamedAsFolders).
-  if (/^spirit\/(app\/)?[^/]+\/data\.js$/.test(rel) && branchOf(rel) !== null) {
-    test.subHeading(NAMED + ': ' + 'its branch is named as its folder');
-    ok(branchOf(rel) === path.basename(path.dirname(rel)), 'it makes the branch ' + path.basename(path.dirname(rel)) + ', its folder\'s name', 'it makes the branch ' + branchOf(rel) + ' in the folder ' + path.basename(path.dirname(rel)));
-  }
+  // goal/G43.31, a branch named as its folder, is judged on each branch folder by ./spirit-sibling-branchRules.js (goal/G43.32).
   // goal/G43.30: every file judged here, app, element or neither, mentions no spirit/run/process (noProcessAnywhere).
   test.subHeading(NAMED + ': ' + 'it mentions no spirit/run/process');
   ok(!namesProcess(rel), 'it names neither spirit/run/process nor run://process, in code or comment', 'it mentions spirit/run/process: ' + short((fs.readFileSync(full, 'utf8').match(PROCESS_NAMED) || [])[0]));

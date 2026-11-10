@@ -19,8 +19,6 @@ const SERVER_FAMILIES = ['agent', 'backup', 'chat', 'desk', 'deskClient', 'deskV
 const FAMILIES = NODE_FAMILIES.concat(SERVER_FAMILIES);
 // A server's branch is its app's folder, spirit/app/<name>/ (goal/G43.20), named as the folder (goal/G43.31: chat, once chatClerver).
 const folderOf = function (name) { return NODE_FAMILIES.indexOf(name) !== -1 ? path.join(RUN, 'spirit', name) : path.join(RUN, 'spirit', 'app', name); };
-// A scratch node does not offer these three to a page, so a page cannot load them; all 18 are judged in node as well.
-const NOT_ON_SCRATCH = ['agent', 'chat', 'deskClient'];
 // The old spirit.<name>Data: chatData was the chat server's, verifyData deskVerify's.
 const OLD_READER = /(?:\b|\.)(?:agent|app|auth|backup|chat|chatClerver|config|contact|desk|deskClient|deskVerify|events|fileServer|fs|jobs|net|node|owner|peer|relay|verify)Data\b/;
 // A retired name's parts, so this file does not hold it whole.
@@ -53,15 +51,12 @@ test.startTest('spirit.data: every family at spirit.data.<name>, through spirit/
 
   test.subHeading('the box: "ALL ... files will be converted to "data.js" files"');
   const pattern = {};
+  // Each family's own (its data.js there, the old file gone, none of it rolled by hand, data and cache in node and on a
+  // page) is judged on each branch folder by ./spirit-sibling-branchRules.js (goal/G43.32). Here, that they share one helper.
   FAMILIES.forEach(function (name) {
-    const folder = folderOf(name);
-    const file = path.join(folder, 'data.js');
-    ok(fs.existsSync(file), name + ': has its data.js', name + ': no ' + rel(file));
-    ok(!fs.existsSync(path.join(folder, OLD_MANAGER + '.js')), name + ': the old file is gone', name + ': ' + rel(path.join(folder, OLD_MANAGER + '.js')) + ' still stands');
+    const file = path.join(folderOf(name), 'data.js');
     if (!fs.existsSync(file)) return;
     const text = code(fs.readFileSync(file, 'utf8'));
-    // "using the module spirit/data.js": the guard, the attach and the write on spirit are its, not a family's.
-    ok(!/Symbol\.for|function attach|\.spirit\s*=|spirit\.[A-Za-z]+Data\s*=/.test(text), name + ': rolls none of it by hand', name + ': data.js still rolls its own guard, attach or spirit write');
     const called = new RegExp('\\.([A-Za-z]+)\\(\\s*[\'"]' + name + '[\'"]').exec(text);
     if (called) pattern[name] = called[1];
   });
@@ -82,17 +77,6 @@ test.startTest('spirit.data: every family at spirit.data.<name>, through spirit/
   ok(!offenders.reader.length, 'no code reads a spirit.<name>Data', 'code that reads a spirit.<name>Data, ' + say(offenders.reader));
   ok(!offenders.manager.length, 'no code names ' + OLD_MANAGER, 'code that names ' + OLD_MANAGER + ', ' + say(offenders.manager));
   ok(!offenders.module.length, 'no code names ' + OLD_MODULE, 'code that names ' + OLD_MODULE + ', ' + say(offenders.module));
-
-  test.subHeading('in node: each family\'s data.js stands at spirit.data.<name>, with data and cache');
-  const inNode = require('child_process').spawnSync(process.execPath, ['-e', 'const D = require(' + JSON.stringify(path.join(RUN, 'spirit', 'data.js')) + '); const out = {};' +
-    JSON.stringify(FAMILIES.map(function (n) { return [n, path.join(folderOf(n), 'data.js')]; })) + '.forEach(function (p) { try { require(p[1]); const f = D[p[0]]; out[p[0]] = { data: f && typeof f.data, cache: f && typeof f.cache }; } catch (e) { out[p[0]] = { threw: String(e).slice(0, 200) }; } });' +
-    'console.log("ANSWER" + JSON.stringify(out)); process.exit(0);'], { cwd: RUN, encoding: 'utf8', timeout: 30000 });
-  let nodeView = {};
-  try { nodeView = JSON.parse(String(inNode.stdout).split('\n').filter(function (l) { return l.indexOf('ANSWER') === 0; })[0].slice('ANSWER'.length)); } catch (e) { test.fail('node answered nothing: ' + short(inNode.stderr || inNode.stdout)); }
-  FAMILIES.forEach(function (n) {
-    const f = nodeView[n] || {};
-    ok(f.data === 'object' && f.cache === 'object', n + ': in node, data and cache', n + ': in node: ' + short(f));
-  });
 
   // ── ON A PAGE ───────────────────────────────────────────────────────────────────
   const chrome = H.findChrome();
@@ -117,12 +101,6 @@ test.startTest('spirit.data: every family at spirit.data.<name>, through spirit/
     test.subHeading('the box: "de-clutter": the first level of spirit holds no <name>Data');
     const left = got.first.filter(function (k) { return /Data$/.test(k); });
     ok(!left.length, 'none is left', 'still on spirit: ' + left.join(', '));
-
-    test.subHeading('the box: "spirit.data.<name>.data" and "spirit.data.<name>.cache"');
-    FAMILIES.filter(function (n) { return NOT_ON_SCRATCH.indexOf(n) === -1; }).forEach(function (n) {
-      const f = got.families[n] || {};
-      ok(f.data === 'object' && f.cache === 'object', 'spirit.data.' + n + ' has data and cache', 'spirit.data.' + n + ': ' + short(f));
-    });
 
     test.subHeading('the box: "this object has only helper functions and object <name> for every application"');
     const stray = Object.keys(got.keys).filter(function (k) { return got.keys[k] !== 'function' && FAMILIES.indexOf(k) === -1; });

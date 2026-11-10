@@ -60,6 +60,9 @@ is the appServer serializes the cache to disk."*
 - **Its branches are named by it alone**: the names it gives `var` constants (`var ITEMS = 'desk'`); no other file hands a
   path of them to a `spirit.data` reader or writer (`D.get('desk/' + id)`).
 - **It touches no file and no browser storage**: no `fs` or `path`, no file read or written, no browser storage.
+- **It makes the branch of its folder's name** (goal/G43.31; Andy: *"The BRANCH name (FUCK THE TERM "Family"!!!!!!!!!!!!) is
+  motherfucking <name> in spirit/app/<name>...."*, *"make sure, IN THIS ITEM that family names MATCH folder names"*):
+  `makeFamily('<name>')`, `<name>` its folder's (from `./spirit-sibling-generalRules.js`).
 - **One contract**: it loads, exports cache rules only as an object, and stands at `spirit.data.<name>` through
   `spirit.data.makeFamily`, the name it hands `makeFamily`.
 - **A branch's watch is called `watch`** (Andy: *"that's a decision: a BRANCHE's what is called "watch""*, *"the branch is
@@ -90,7 +93,7 @@ A scratch node; an app branch switched on first (`app.active`), as its server mu
 - An `api.js` that does not load or declares no verbs; one no finder reaches; a second of the name; one not placed at
   `spirit.required.<its path>` on the node, or a verb left unbound.
 - A description without its icon or label, with `kind` or `operated`, or an app named as a verb of the app family.
-- A branch with an interface and no `data.js`; a branch's path named outside its manager; a manager keeping its cache on
+- A branch named otherwise than its folder (`chatClerver` in `spirit/app/chat/`); a branch with an interface and no `data.js`; a branch's path named outside its manager; a manager keeping its cache on
   disk or in browser storage; a manager without the contract; a watch of another name, or told its branch.
 - A branch the node does not serve, serves from another file, serves with a verb more or less, or with an FS set.
 - A handler reached by a call its own declaration refuses.
