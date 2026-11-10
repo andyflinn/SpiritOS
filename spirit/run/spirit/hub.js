@@ -2141,7 +2141,7 @@ function createHub(rootDir) {
       var url = relay.url;
       var row = { url: url, label: relay.label, status: held[url] ? 200 : 0, owned: !!reports[url] };
       // WHAT THE RELAY OFFERS (goal/G30.2), as its last card said, on every row, seated or not: the relay panel
-      // (element/search/contact/relayPanel.js) shows the email field only where services.sendMail is true. Read from what peerPost already knows, never
+      // (element/search/contact/detailElement.js, a relay's details) shows the email field only where services.sendMail is true. Read from what peerPost already knows, never
       // asked here (goal/G22.4: the relay list asks no relay).
       row.services = router && typeof router.servicesOf === 'function' ? router.servicesOf(url) : { sendMail: false, face: false };
       row.claimed = row.owned || !!seated[url];

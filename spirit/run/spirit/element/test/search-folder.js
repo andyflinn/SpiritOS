@@ -42,6 +42,9 @@ const GONE = [
   'spirit/element/contactDetails',
   // Andy: "spirit/run/spirit/element/relayPanel.js really should be  spirit/run/spirit/element/search/contact/relayPanel.js"
   'spirit/element/relayPanel.js',
+  // goal/G43.32 (Andy: "the contact list already knows the difference between contact types. so should the detail panel."): one
+  // contact detail draws a relay too.
+  'spirit/element/search/contact/relayPanel.js',
   // app: its list and row, today in spirit/app/appSelector/.
   'spirit/app/appSelector/listElement.js', 'spirit/app/appSelector/rowElement.js',
 ];
@@ -50,7 +53,7 @@ const THERE = [
   'spirit/element/search/api.js', 'spirit/element/search/api/verb.js',
   'spirit/element/search/app.js', 'spirit/element/search/app/rowElement.js',
   'spirit/element/search/contact.js', 'spirit/element/search/contact/listElement.js', 'spirit/element/search/contact/rowElement.js',
-  'spirit/element/search/contact/detailElement.js', 'spirit/element/search/contact/relayPanel.js',
+  'spirit/element/search/contact/detailElement.js',
   // "files/ and grantSelector/ ...: their listElement becomes search/file.js and search/grant.js, their rowElement stays in the folder."
   'spirit/element/search/file.js', 'spirit/element/search/file/rowElement.js',
   'spirit/element/search/icon.js', 'spirit/element/search/icon/listElement.js', 'spirit/element/search/icon/rowElement.js',

@@ -343,27 +343,10 @@ test.startTest('detailElement.js: its are-you-sure buttons are armingButtons (go
   ok(!!b8 && /block failed: 403/.test(box8.innerHTML) && /not yours/.test(box8.innerHTML), 'a verb the node refuses says its status and words', 'said: ' + short(box8.innerHTML.slice(0, 400)));
 
   // GOAL/G43.32 (Andy: "the contact list already knows the difference between contact types. so should the detail panel."): told
-  // the row is a relay, or holding a relay's row in the contact family's cache, it draws that relay's panel, and asks nothing
-  // of a person's details.
-  test.subHeading('it knows the contact\'s type: a relay\'s panel for a relay');
-  const w9 = world({ key: 'R9', publicLabel: 'relay9' }, []);
-  const panels = [];
-  w9.win.spirit.element.spirit.element.search.contact.relayPanel = { create: function (c, o) { panels.push({ c: c, o: o }); return { destroy: function () { panels.push('gone'); } }; } };
-  const box9 = w9.document.createElement('div'); w9.document.body.appendChild(box9);
-  const made9 = w9.win.spirit.element.spirit.element.search.contact.detailElement.create(box9, { key: 'R9', layer: w9.layer, relay: true });
-  await settle();
-  ok(w9.required.indexOf('spirit/element/search/contact/relayPanel.js') !== -1 && panels.length === 1 && panels[0].c === box9 && panels[0].o.key === 'R9' && panels[0].o.layer === w9.layer,
-    'told relay: true, it loads the relay panel and draws it into its container, with the key and the layer', 'required ' + short(w9.required) + ', panels ' + panels.length);
-  ok(!w9.calls.some(function (c) { return c.name === 'contact.get'; }), 'and asks nothing a person\'s details ask (contact.get)', 'calls: ' + short(w9.calls));
-  made9.destroy();
-  ok(panels[panels.length - 1] === 'gone', 'its destroy lets the relay panel go', 'panels: ' + panels.length + ', last ' + String(panels[panels.length - 1] === 'gone'));
-  const w10 = world({ key: 'R10' }, []);
-  const panels10 = [];
-  w10.win.spirit.element.spirit.element.search.contact.relayPanel = { create: function (c, o) { panels10.push(o); return {}; } };
-  w10.win.spirit.data = { contact: { data: { contact: function (k) { return k === 'R10' ? { key: 'R10', relay: true } : null; } } } };
-  const box10 = w10.document.createElement('div'); w10.document.body.appendChild(box10);
-  w10.win.spirit.element.spirit.element.search.contact.detailElement.create(box10, { key: 'R10' });
-  await settle();
-  ok(panels10.length === 1 && panels10[0].key === 'R10', 'not told, a relay\'s row in the contact family\'s cache says so', 'panels: ' + short(panels10));
+  // the row is a relay, or holding a relay's row in the contact family's cache, it draws that relay's details itself (what
+  // relayPanel.js drew, in this file now: ./detailElement-relay.js judges them), and asks nothing of a person's details.
+  test.subHeading('it knows the contact\'s type: a relay\'s details for a relay');
+  ok(!w.required.some(function (p) { return /relayPanel\.js$/.test(p); }), 'it loads no relayPanel.js: a relay\'s details are its own', 'required: ' + short(w.required));
+  // What it draws for a relay, told or from the cache, is judged where a relay's world is: ./detailElement-relay.js.
 }()).then(function () { test.reportSuccessFailureCount(); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); });

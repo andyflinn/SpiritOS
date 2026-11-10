@@ -16,8 +16,8 @@ escapes with `spirit.escapeHtml`. It is handed no api: `layer` is only the layer
 
 - **It knows the contact's type** (goal/G43.32; Andy: *"the contact list already knows the difference between contact types.
   so should the detail panel."*): told `relay: true`, or holding a relay's row in the contact family's cache, it draws that
-  relay's panel (`./relayPanel.js`, loaded when first opened) into its container, and destroy lets the panel go; a person's
-  details are its own.
+  relay's details, what `relayPanel.js` drew until then and this file draws now (judged in `./detailElement-relay.md`); a
+  person's are the rest. It loads no `relayPanel.js`.
 
 - **It loads armingButton itself** (goal/G41.3), through `spirit.require('spirit/element/armingButton.js')`.
 - **Nothing hand-rolled is left**: no armed flags of its own (`cdBlockArmed`, `cdForgetArmed`), no `data-armed` in its

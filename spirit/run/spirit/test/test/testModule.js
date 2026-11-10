@@ -53,9 +53,9 @@ const byName = byNameRadius.filter(function (e) { return e.test === 'spirit/test
 ok(byName.length === 1, BY_NAME_OF + '\'s blast radius holds spirit/test/server-garbage.js, its test by name, once', 'its blast radius: ' + short(byNameRadius.map(function (e) { return e.test; })));
 ok(!byNameRadius.some(function (e) { return /\/test\/serverX|\/test\/serve-/.test(e.test); }) && !testsFor('spirit/apiAuth.js').some(function (e) { return e.test === 'spirit/test/server-garbage.js'; }),
   'a test by name runs with its own module only: spirit/apiAuth.js does not get server-garbage.js', 'server-garbage.js runs with spirit/apiAuth.js too');
-const below = testsFor('spirit/element/search/contact/relayPanel.js').map(function (e) { return e.test; });
-ok(below.indexOf('spirit/element/search/contact/test/relayPanel-rowStream.js') !== -1 && below.indexOf('spirit/element/test/search-bubble.js') !== -1,
-  'a module below runs its own tests by name and those of the module above it (search.js: search-bubble.js)', 'relayPanel.js\'s blast radius: ' + short(below));
+const below = testsFor('spirit/element/search/contact/detailElement.js').map(function (e) { return e.test; });
+ok(below.indexOf('spirit/element/search/contact/test/detailElement-relayRowStream.js') !== -1 && below.indexOf('spirit/element/test/search-bubble.js') !== -1,
+  'a module below runs its own tests by name and those of the module above it (search.js: search-bubble.js)', 'detailElement.js\'s blast radius: ' + short(below));
 
 test.subHeading('the whole list');
 const all = testsFor('');

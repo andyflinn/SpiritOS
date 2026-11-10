@@ -1,8 +1,10 @@
-# spirit/element/search/contact/relayPanel.js
+# spirit/element/search/contact/detailElement.js, a relay
 
-One relay, a shell element (goal/G41.32): `spirit.element.search.contact.relayPanel.create(container, { key, layer })`, a panel with no `open`
+One relay (goal/G41.32), drawn by the one contact detail since goal/G43.32 (Andy: *"the contact list already knows the difference
+between contact types. so should the detail panel."*); `spirit/element/search/contact/relayPanel.js` until then. Its test is
+`./detailElement-relay.js`. `spirit.element.spirit.element.search.contact.detailElement.create(container, { key, layer, relay: true })`, a panel with no `open`
 of its own (goal/G43.18; it was a page on the navigation, goal/G40.8). It reads that relay's row by `spirit.relay.status` as it is drawn, and listens after
-that: `spirit/element/search/contact/test/relayPanel-rowStream.md`. Its panels fold; the owner's panels (Memory and disc, Invites)
+that: `spirit/element/search/contact/test/detailElement-relayRowStream.md`. Its panels fold; the owner's panels (Memory and disc, Invites)
 sit in one more fold, "Managing my relay".
 
 This spec covers what goal/G41.9 asks of it: its four are-you-sure buttons are the shell element armingButton.

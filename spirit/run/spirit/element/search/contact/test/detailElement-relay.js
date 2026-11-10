@@ -1,7 +1,8 @@
 'use strict';
 
-// spirit/run/spirit/element/search/contact/test/relayPanel.js
-// The tests of spirit/element/search/contact/relayPanel.js, and of no other module (spec: ./relayPanel.md; goal/G41.9).
+// spirit/run/spirit/element/search/contact/test/detailElement-relay.js
+// The tests of spirit/element/search/contact/detailElement.js for a relay, what relayPanel.js drew until goal/G43.32, and of no
+// other module (spec: ./detailElement-relay.md; goal/G41.9).
 // The browser file runs in node on a window of its own, on a small DOM (markup parsed into a tree, selectors, clicks
 // that bubble); the navigation, the node behind the page's api, the relay family and the armingButton element are
 // recorders.
@@ -11,7 +12,7 @@ const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '../../../../..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-const FILE = path.join(__dirname, '..', 'relayPanel.js');
+const FILE = path.join(__dirname, '..', 'detailElement.js');
 const SRC = fs.readFileSync(FILE, 'utf8');
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
@@ -232,7 +233,7 @@ function world(rows, relayStatus) {
   win.spirit.require = function (p) { return /installSpiritElement\.js$/.test(p) ? pageRequire(p) : recorder(p); };
   // A PANEL'S MOUNT, NO NAVIGATION PAGE (goal/G43.18): the element made in a box of its own with its layer, as a layer's
   // fill makes it (spirit/element/search/contact/rowElement.js, openDetails).
-  w.open = function (key) { const box = document.createElement('div'); document.body.appendChild(box); w.box = box; return win.spirit.element.spirit.element.search.contact.relayPanel.create(box, { key: key, layer: layer }); };
+  w.open = function (key) { const box = document.createElement('div'); document.body.appendChild(box); w.box = box; return win.spirit.element.spirit.element.search.contact.detailElement.create(box, { key: key, layer: layer, relay: true }); };
   vm.createContext(win);
   vm.runInContext(SRC, win, { filename: FILE });
   w.win = win;
@@ -249,20 +250,20 @@ const OWNED_SAID = {};
 OWNED_SAID[OWNED_URL] = { key: 'RK', invites: [{ label: 'saint', expiresAt: '2099-01-01T00:00:00Z', invitedBy: 'andy' }] };
 const SEATED = [{ key: 'RK2', url: SEAT_URL, label: 'seat', status: 200, owned: false, claimed: true, claimedLabel: 'andy', roll: { relayKey: 'RK2', relayLabel: 'Seat' } }];
 
-test.startTest('relayPanel.js: its are-you-sure buttons are armingButtons (goal/G41.9)');
+test.startTest('detailElement.js, a relay: its are-you-sure buttons are armingButtons (goal/G41.9, G43.32)');
 
 (async function () {
   test.subHeading('nothing hand-rolled is left');
   const code = SRC.replace(/\/\/.*$/gm, '');
-  ok(!/data-armed/.test(code), 'no data-armed in its code', 'relayPanel.js still reads or writes data-armed');
-  ok(!/armUntilElsewhere/.test(code), 'no armUntilElsewhere of its own', 'relayPanel.js still calls armUntilElsewhere');
-  ok(!/classList\.(add|toggle)\(\s*['"]armed['"]/.test(code), 'no armed class', 'relayPanel.js still sets an armed class');
+  ok(!/data-armed/.test(code), 'no data-armed in its code', 'detailElement.js still reads or writes data-armed');
+  ok(!/armUntilElsewhere/.test(code), 'no armUntilElsewhere of its own', 'detailElement.js still calls armUntilElsewhere');
+  ok(!/classList\.(add|toggle)\(\s*['"]armed['"]/.test(code), 'no armed class', 'detailElement.js still sets an armed class');
 
   const w = world(OWNED, OWNED_SAID);
   test.subHeading('it loads armingButton itself (goal/G41.3)');
   ok(w.required.indexOf('spirit/element/armingButton.js') !== -1, 'it requires spirit/element/armingButton.js through spirit.require', 'required: ' + short(w.required));
-  const E = w.win.spirit.element.spirit.element.search.contact.relayPanel;
-  ok(!!E && typeof E.create === 'function' && E.open === undefined, 'it is window.spirit.element.spirit.element.search.contact.relayPanel, made by create; no open of its own: it opens as a panel (goal/G43.18)', 'relayPanel: create ' + typeof (E && E.create) + ', open ' + typeof (E && E.open));
+  const E = w.win.spirit.element.spirit.element.search.contact.detailElement;
+  ok(!!E && typeof E.create === 'function' && E.open === undefined, 'it is window.spirit.element.spirit.element.search.contact.detailElement, made by create, a relay told relay: true; no open of its own: it opens as a panel (goal/G43.18)', 'relayPanel: create ' + typeof (E && E.create) + ', open ' + typeof (E && E.open));
   if (!E) return;
   w.open('RK');
   await settle();
@@ -398,11 +399,28 @@ test.startTest('relayPanel.js: its are-you-sure buttons are armingButtons (goal/
   // needs...."): the node's verbs and its posts to the relay go through the spirit object; it is handed no api.
   test.subHeading('it asks through the spirit object, and is handed no api');
   ok(!/\bapi\b/.test(code) && !/ndApi/.test(code), 'its code names no api', 'its code still names an api');
-  const panelCode = fs.readFileSync(path.join(RUN, 'spirit', 'element', 'search', 'contact', 'relayPanel.js'), 'utf8').replace(/\/\/.*$/gm, '');
+  const panelCode = fs.readFileSync(path.join(RUN, 'spirit', 'element', 'search', 'contact', 'detailElement.js'), 'utf8').replace(/\/\/.*$/gm, '');
   const viaPeerPost = /spirit\.peerPost\(/.test(panelCode);
   const ownEncode = /packet\.encode\(/.test(panelCode);
   ok(viaPeerPost && !ownEncode, 'a post to the relay goes through spirit.peerPost, which puts it in its envelope; the panel encodes no packet of its own', 'its code: peerPost ' + viaPeerPost + ', its own encode ' + ownEncode);
   ok(w.posts.length > 0 && w.posts.every(function (p) { return p.app === 'relay' && p.key === 'RK'; }), 'each post to the relay is a packet for it through peer.post, in its envelope', 'posts: ' + short(w.posts.map(function (p) { return { app: p.app, key: p.key }; })));
   ok(typeof w.title === 'string' && /^Relay Details/.test(w.title), 'its title goes to the layer it is drawn in (options.layer.setTitle)', 'title: ' + short(w.title));
+
+  // ONE DETAIL FOR EVERY KIND OF CONTACT (goal/G43.32; Andy: "the contact list already knows the difference between contact
+  // types. so should the detail panel."): not told, the contact family's cache says what the row is.
+  test.subHeading('it knows the contact\'s type, from the contact family\'s cache when not told');
+  const held = function (wx, relay) { (wx.win.spirit.data = wx.win.spirit.data || {}).contact = { data: { contact: function (k) { return { key: k, relay: relay }; }, watch: function () { return function () {}; } } }; };
+  const wr = world(OWNED, OWNED_SAID);
+  held(wr, true);
+  const boxR = wr.document.createElement('div'); wr.document.body.appendChild(boxR);
+  wr.win.spirit.element.spirit.element.search.contact.detailElement.create(boxR, { key: 'RK', layer: wr.layer });
+  await settle();
+  ok(/nd-/.test(boxR.innerHTML) && !wr.calls.some(function (c) { return c.name === 'contact.get'; }), 'a relay\'s row in the cache: it draws the relay\'s details, and asks nothing a person\'s ask (contact.get)', 'calls: ' + short(wr.calls.map(function (c) { return c.name; })));
+  const wp = world(OWNED, OWNED_SAID);
+  held(wp, false);
+  const boxP = wp.document.createElement('div'); wp.document.body.appendChild(boxP);
+  wp.win.spirit.element.spirit.element.search.contact.detailElement.create(boxP, { key: 'KP', layer: wp.layer });
+  await settle();
+  ok(wp.calls.some(function (c) { return c.name === 'contact.get' && c.body && c.body.key === 'KP'; }), 'a person\'s row: it draws a person\'s details, reading the person (contact.get)', 'calls: ' + short(wp.calls.map(function (c) { return c.name; })));
 }()).then(function () { test.reportSuccessFailureCount(); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); });

@@ -459,7 +459,7 @@ function chooseUrl(urls, wanted) {
 
 // The node side gets everything. The browser gets the rules it has to
 // obey and nothing that would need a filesystem — the relay panel
-// (element/search/contact/relayPanel.js) reads window.spirit.ownerBadge,
+// (element/search/contact/detailElement.js, a relay's details) reads window.spirit.ownerBadge,
 // and if this script never loaded it finds no
 // helper and draws no Remove at all, which is the safe way to be wrong.
 if (isNode) {
