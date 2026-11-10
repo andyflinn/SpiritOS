@@ -496,9 +496,17 @@
   // exports; on a page, where a script installs itself as it runs, an empty object marks it loaded.
   var required = Object.create(null);
   self.required = required;
+  // A folder's place made before its file is required holds only what was placed under it; the file's answer takes the
+  // place and keeps those (no name collision: x.js and x/y.js both stand, whichever comes first).
+  var holders = typeof WeakSet === 'function' ? new WeakSet() : null;
+  function isHolder(o) { return !!(holders && o && typeof o === 'object' && holders.has(o)); }
+  function holder() { var h = {}; if (holders) holders.add(h); return h; }
   // Its first levels made here, so a reader asking spirit.required.spirit.element.<x> before any helper ran reads undefined
-  // instead of throwing (goal/G43.32).
-  required.spirit = { element: {}, app: {} };
+  // instead of throwing (goal/G43.32). Holders, as any folder's place: spirit/app.js takes spirit.required.spirit.app
+  // and keeps the spirit/app/ scripts placed under it.
+  required.spirit = holder();
+  required.spirit.element = holder();
+  required.spirit.app = holder();
   // THE ELEMENTS' TREE (goal/G43.32): every element stands at spirit.element.<its path>, put there by
   // spirit/element/installSpiritElement.js; this file makes the tree, so no element script assigns spirit.element itself.
   self.element = self.element && typeof self.element === 'object' ? self.element : {};
@@ -506,20 +514,12 @@
   // loaded reads undefined instead of throwing.
   self.element.spirit = self.element.spirit && typeof self.element.spirit === 'object' ? self.element.spirit : {};
   ['element', 'app'].forEach(function (k) { if (!self.element.spirit[k] || typeof self.element.spirit[k] !== 'object') self.element.spirit[k] = {}; });
-  // A folder's place made before its file is required holds only what was placed under it; the file's answer takes the
-  // place and keeps those (no name collision: x.js and x/y.js both stand, whichever comes first).
-  var holders = typeof WeakSet === 'function' ? new WeakSet() : null;
-  function isHolder(o) { return !!(holders && o && typeof o === 'object' && holders.has(o)); }
   function placeAt(rootObj, p, value) {
     var keys = String(p).replace(/\.js$/, '').split('/').filter(Boolean);
     var o = rootObj;
     for (var i = 0; i < keys.length - 1; i += 1) {
       var k = keys[i];
-      if (o[k] == null || (typeof o[k] !== 'object' && typeof o[k] !== 'function')) {
-        var h = {};
-        if (holders) holders.add(h);
-        o[k] = h;
-      }
+      if (o[k] == null || (typeof o[k] !== 'object' && typeof o[k] !== 'function')) o[k] = holder();
       o = o[k];
     }
     var last = keys[keys.length - 1];

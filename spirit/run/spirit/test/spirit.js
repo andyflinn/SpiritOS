@@ -576,6 +576,11 @@ test.startTest('spirit/run/spirit.js: the one spirit object, in node and on a pa
   else test.fail('on the node, asked again, spirit.require did not answer the same module at once');
   if (placeOf(s, COMPONENT) === real) test.check('on the node: it stands at spirit.required.' + COMPONENT.replace(/\.js$/, '').split('/').join('.'));
   else test.fail('on the node nothing stands at spirit.required.' + COMPONENT.replace(/\.js$/, '').split('/').join('.') + ': ' + short(s.required === undefined ? 'no spirit.required' : placeOf(s, COMPONENT)));
+  // A FILE AND ITS FOLDER BOTH STAND (goal/G43.32): spirit/app.js takes spirit.required.spirit.app, a first level spirit.js
+  // makes ahead, and keeps spirit/app/api.js placed under it; the verifier's general rules found it standing nowhere.
+  const appJs = s.require('spirit/app.js');
+  if (placeOf(s, 'spirit/app.js') === appJs && placeOf(s, 'spirit/app/api.js') === require(path.join(RUN, 'spirit/app/api.js'))) test.check('on the node: spirit/app.js stands at spirit.required.spirit.app, and spirit/app/api.js under it');
+  else test.fail('on the node spirit/app.js and its folder do not both stand: spirit.required.spirit.app is ' + short(placeOf(s, 'spirit/app.js') && Object.keys(placeOf(s, 'spirit/app.js'))));
   const iface = s.require(s.familyPath('demo'));
   if (iface && typeof iface.then === 'function') { test.check('on the node: an interface is still bound by asking a node, a promise'); iface.then(null, function () {}); }
   else test.fail('on the node an interface answered at once: ' + short(iface));
