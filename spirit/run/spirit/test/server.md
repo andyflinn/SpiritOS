@@ -1,6 +1,6 @@
 # spirit/server.js
 
-The node's HTTP server. This file is its own test's spec (`./server.js`); its garbage and its app family are judged in `./server-garbage.js` and `./server-appFamily.js`.
+The node's HTTP server. This file is its own test's spec (`./server.js`); its garbage is judged in `./server-garbage.js`, and its app family, with every rule of a branch, in `./spirit-branches.js`.
 
 ## Requirements (goal/G43.30)
 

@@ -12,4 +12,5 @@ The box: *"the general rules judge no module: testModule.js looks for ./spirit.j
 - **A module's tests by name** (goal/G43.27; Andy: *"every test must be directly (by name) or indirectly (by general
   rule) be associated with a production file"*): on its blast radius, `./test/<name>-<what>.js` runs once with
   `./<name>.js`, never with another module of the folder; a module below runs those of the module above it, as it runs
-  that module's own test.
+  that module's own test. Judged on `spirit/server.js` and `./server-garbage.js` (`spirit/apiDoor.js`'s test by name
+  went into `spirit-branches.js` in goal/G43.32).

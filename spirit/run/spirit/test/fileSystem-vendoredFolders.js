@@ -61,7 +61,7 @@ const walkers = grepped.filter(function (f) {
 // The old system's walkers under spirit/test/ went with it (e9c6cb8c, "KILL!"): what is left in the tree is judged, 16 today.
 ok(walkers.length > 10 && walkers.indexOf('spirit/run/spirit/fileSystem.js') !== -1 && walkers.indexOf('spirit/run/spirit/word.js') !== -1,
   'the world: ' + walkers.length + ' walkers skipped node_modules at ' + BASE + ', fileSystem.js and word.js among them', 'only ' + walkers.length + ' walkers found at ' + BASE + ': nothing judged');
-const CM_SKIPPERS = ['spirit/run/spirit/test/testModule.js', 'spirit/run/spirit/test/spirit-sibling-generalRules.js', 'spirit/run/spirit/test/spirit-sibling-testReachRules.js', 'spirit/run/spirit/test/data-caches.js', 'spirit/run/spirit/test/test/testReport-verifier.js'];
+const CM_SKIPPERS = ['spirit/run/spirit/test/testModule.js', 'spirit/run/spirit/test/spirit-sibling-generalRules.js', 'spirit/run/spirit/test/spirit-sibling-testReachRules.js', 'spirit/run/spirit/test/test/testReport-verifier.js'];
 walkers.forEach(function (f) {
   const c = code(fs.readFileSync(path.join(REPO, f), 'utf8'));
   const own = /node_modules/.test(c.replace(/shell\\?\/node_modules/g, '')) ? 'node_modules' : (CM_SKIPPERS.indexOf(f) !== -1 && /codeMirror|codemirror/.test(c) ? 'codeMirror' : '');

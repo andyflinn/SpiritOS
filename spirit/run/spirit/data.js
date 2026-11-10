@@ -399,7 +399,7 @@
     sp.events.subscribe({ onSnapshot: onSnapshot, onUpdate: onJob, onDelete: function (id) { onGone(id); }, onContactRename: onRename, onRelayEvent: relayEvent });
   }
   // A SERVER THAT NEEDS ITS OWN NODE'S EVENTS ASKS FOR THEM HERE (goal/G43.5; Andy: "the rule covers everything, apps,
-  // element"; spirit/test/data-caches.js: only data.js takes the node's stream). A server is otherwise fed by its streamListener
+  // element"; spirit/test/spirit-branches.js: only data.js takes the node's stream). A server is otherwise fed by its streamListener
   // (appServer) and opens nothing. follow({ onConnection(up) }): the one stream, opened at the first ask, into the same
   // translators. No snapshot: a connect forgets on a page, and here it would forget what the streamListener brought.
   var followers = [];
