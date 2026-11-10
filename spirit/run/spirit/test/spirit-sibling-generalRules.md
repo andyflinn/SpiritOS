@@ -310,6 +310,15 @@ vendored code left out; with no file, all of them in one check; with a file, tha
   an element on `spirit.element` or `spirit.elements` by hand (an assignment, or an `Object.assign` into them);
   `spirit/spirit.js`, which makes the spirit object, excepted.
 
+- **Every verb's arguments in its own `.json`** (Andy: *"one issue here is: same information in two places"*, *"ONE of
+  those places is a miserable, crappy hack, where a *.js fucking file is parsed for data??????"*, *"get ALL the
+  neccessary information info the fucking json files where it belongs!"*, *"IN THIS ITEM!!!!"*): the 132 verbs the
+  `api.js` files listed on 2026-11-10, kept with their arguments and rules in `./spirit-verbRules.json`, each have their
+  `<verb>.json` in their family's folder, whose `request` names exactly those arguments, each with that rule, a word of
+  spirit.js's check (`text`, `id`, `key`, ...; `?` when optional).
+- **No `api.js` lists verbs**, and **no product script reads an `api.js` as data** (`readFileSync`, `readFile`,
+  `createReadStream` or `require` naming one).
+
 ## What its test must try to break (goal/G43.32, the refactor)
 
 - A script with no `'use strict'`, or one that has it after its first statement.
@@ -319,3 +328,5 @@ vendored code left out; with no file, all of them in one check; with a file, tha
 - A script that loads but stands nowhere in `spirit.required`, or answers a promise on the node.
 - An element script that loads on a page with no factory at its place, or one that does not load there at all.
 - `spirit.element.x = ...` or `spirit.elements.x = ...` written by hand outside the helper.
+- A verb with no `.json`, a `request` missing an argument or holding one more, an argument given `""` or any word that is no rule.
+- An `api.js` still holding `verbs:`, or a script reading one with `readFileSync`.
