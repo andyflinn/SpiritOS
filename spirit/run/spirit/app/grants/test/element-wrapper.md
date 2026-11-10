@@ -32,7 +32,7 @@ Andy: *"i just moved them, didn't fix the manifest."* (4f01465b: shell/info is s
 ### 6. A wrapper of spirit/element/
 
 - `grants.js` loads only `spirit/element/` scripts, through `spirit.require`; asks no cacheManager; calls no verb (`.verb(`, `spirit.outcome`, `callDialog`, `fetch`, relay.status, node.card, auth.search/grant/revoke); draws no markup of its own.
-- (Grants' data source, in grantsPanel, is `spirit/element/test/grantsPanel-authSource.js`.)
+- (Grants' data source, in grantsPanel, is `spirit/element/search/grant/test/grantsPanel-authSource.js`.)
 
 ### 7. The new shell's way
 

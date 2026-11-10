@@ -1,7 +1,7 @@
 'use strict';
 
-// spirit/run/spirit/element/test/grantsPanel.js
-// The tests of spirit/element/grantsPanel.js, and of no other module (spec: ./grantsPanel.md; goal/G41.16). The browser file
+// spirit/run/spirit/element/search/grant/test/grantsPanel.js
+// The tests of spirit/element/search/grant/grantsPanel.js, and of no other module (spec: ./grantsPanel.md; goal/G41.16). The browser file
 // runs in node on a BARE window (rule/26): each element is put on the page only once the panel requires it, a stand-in
 // that keeps what the panel handed it: the selectors and the grant list (tested in their own folders). The panel knows no
 // table: its caller hands it the ID table and the grants table (Andy: "the callers (Grants and agent shell apps should
@@ -16,7 +16,7 @@
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
-const RUN = path.resolve(__dirname, '../../..');
+const RUN = path.resolve(__dirname, '../../../../..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const FILE = path.join(__dirname, '..', 'grantsPanel.js');
 const SRC = fs.existsSync(FILE) ? fs.readFileSync(FILE, 'utf8') : '';
@@ -179,12 +179,14 @@ test.startTest('grantsPanel.js: grants of whichever ID table its caller hands it
 process.on('unhandledRejection', function (e) { test.fail('it threw where nothing caught it: ' + (e && e.message || e)); });
 
 (async function () {
-  if (!SRC) { test.fail('spirit/element/grantsPanel.js is not there'); return; }
+  if (!SRC) { test.fail('spirit/element/search/grant/grantsPanel.js is not there'); return; }
   const code = SRC.replace(/\/\/.*$/gm, '');
   const w = world();
   await settle();
   // goal/G43.32: the elements stand at their paths, spirit.element.spirit.element.
   const E = ((w.page.spirit || {}).element || {});
+  // Since goal/G43.32 the panel stands in the grant search: spirit.element.spirit.element.search.grant.grantsPanel.
+  const GP = ((E.search || {}).grant || {}).grantsPanel;
 
   test.subHeading('a shell element that loads what it uses itself (rule/26), and knows no table');
   ['spirit/element/search/contact.js', 'spirit/element/search/bundle.js', 'spirit/element/search/api.js', 'spirit/element/search/grant.js'].forEach(function (p) {
@@ -200,14 +202,14 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   // Andy: "every fucking element gets the interfaces it needs".
   ok(!/\.verb\s*\(|\bapi\.(verb|escapeHtml)\b/.test(code), 'it asks its verbs through the spirit object: no api.verb, no api.escapeHtml (goal/G43.24)', 'grantsPanel.js still asks through the api it was handed');
   ok(w.managers.indexOf('job') !== -1 && w.managers.indexOf('auth') !== -1, 'it loads the jobs family\'s cache manager and the auth family\'s, with its parts', 'managers: ' + short(w.managers));
-  ok(E.grantsPanel && typeof E.grantsPanel.create === 'function', 'it registers spirit.element.spirit.element.grantsPanel.create', 'elements: ' + short(Object.keys(E)));
-  if (!E.grantsPanel || typeof E.grantsPanel.create !== 'function') return;
+  ok(GP && typeof GP.create === 'function', 'it registers spirit.element.spirit.element.search.grant.grantsPanel.create', 'elements: ' + short(Object.keys(E)));
+  if (!GP || typeof GP.create !== 'function') return;
   // Unconfigured, it mounts and says so, throwing nothing (goal/G41.19, box v23: "throws nothing even when unconfigured
   // (it says it is not configured)").
   const unset = [];
   [[{}, /ID table/], [{ ids: config(w).ids }, /grants table/], [{ grants: config(w).grants }, /ID table/]].forEach(function (c) {
     const host = node('x'); let threw = null; let made = null;
-    try { made = E.grantsPanel.create(host, Object.assign({}, c[0])); } catch (e) { threw = e && e.message; }
+    try { made = GP.create(host, Object.assign({}, c[0])); } catch (e) { threw = e && e.message; }
     const said = host.kids.map(function (k) { return String(k.textContent || ''); }).join(' ');
     unset.push({ threw: threw, said: said, fits: host.kids.length === 1 && /^not configured: /.test(said) && c[1].test(said) && /\bjob-manifest-note\b/.test(host.kids[0].className),
       empties: !!made && typeof made.destroy === 'function' && (made.destroy(), host.innerHTML === '') });
@@ -220,7 +222,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
 
   const box = node('panel');
   const cfg = config(w);
-  E.grantsPanel.create(box, Object.assign({}, cfg));
+  GP.create(box, Object.assign({}, cfg));
   await settle();
 
   test.subHeading('the grant form, a rowForm: ➕ [ID] [bundle] [Grant] (goal/G41.27)');
@@ -341,7 +343,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(read1.length === 0, 'Grant reads no <verb>.warning.txt', 'warnings read: ' + short(read1));
   ok(w.confirms.slice(conf0).length === 0, 'the owner is asked nothing before the grant', 'asked: ' + short(w.confirms.slice(conf0)));
   ok(w.calls.slice(at0).some(function (c) { return c.name === 'grants.grant'; }), 'the grant goes out at once', 'calls: ' + short(w.calls.slice(at0).map(function (c) { return c.name; })));
-  ok(!/warning\.txt|window\.confirm/.test(fs.readFileSync(path.join(RUN, 'spirit', 'element', 'grantsPanel.js'), 'utf8').replace(/\/\/[^\n]*/g, '')), 'grantsPanel.js holds no warning reading and no confirm', 'grantsPanel.js still reads warnings or confirms');
+  ok(!/warning\.txt|window\.confirm/.test(fs.readFileSync(path.join(RUN, 'spirit', 'element', 'search', 'grant', 'grantsPanel.js'), 'utf8').replace(/\/\/[^\n]*/g, '')), 'grantsPanel.js holds no warning reading and no confirm', 'grantsPanel.js still reads warnings or confirms');
   ok(!fs.existsSync(path.join(RUN, 'spirit', 'auth', 'grant.warning.txt')), 'spirit/auth/grant.warning.txt is gone', 'spirit/auth/grant.warning.txt is still there');
   w.warnings = {};
   w.bundles[0].value = 7; w.bundles[0].row = { id: 7, label: 'Reader' };
@@ -377,13 +379,13 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   test.subHeading('grantsPanel.nodeGrants: the node\'s own grants table, one a caller picks by name (goal/G43.24)');
   // goal/G43.24: "Still its own: the panel's data source, auth.search and auth.grant / auth.revoke over the auth cache
   // (GR_GRANTS). It moves into grantsPanel."
-  const g = E.grantsPanel.nodeGrants;
+  const g = GP.nodeGrants;
   const A = ((w.win.spirit.data || {}).auth || {}).data;
   ok(!!g && !!A && g.branch === A.grants.branch && g.key === 'key' && g.label === 'label', 'grantsPanel.nodeGrants: its branch the auth family\'s cache (spirit.data.auth.data.grants.branch), keyed key, labelled label', 'nodeGrants ' + short(g && { branch: g.branch, key: g.key, label: g.label }) + ', auth cache ' + !!A);
   if (!g || !A) return;
   ok(['search', 'grant', 'revoke', 'watch'].every(function (f) { return typeof g[f] === 'function'; }) && !('stream' in g), 'with search, grant, revoke and watch, and no stream of its own', 'nodeGrants: ' + short(Object.keys(g)));
   const panelOk = node('ok');
-  E.grantsPanel.create(panelOk, { ids: { table: 'loopback://api/contact/search' }, grants: g });
+  GP.create(panelOk, { ids: { table: 'loopback://api/contact/search' }, grants: g });
   await settle();
   ok(!/not configured/.test(panelOk.kids.map(function (k) { return k.textContent; }).join(' ')), 'the panel takes it as a grants table: configured with it, it says nothing is missing', 'said: ' + short(panelOk.kids.map(function (k) { return k.textContent; })));
   let at = w.calls.length;

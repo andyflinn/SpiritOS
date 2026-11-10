@@ -1,4 +1,4 @@
-# spirit/element/grantsPanel.js: Grants' data source
+# spirit/element/search/grant/grantsPanel.js: Grants' data source
 
 goal/G43.24, requirement 6. Its test is `./grantsPanel-authSource.js`: grantsPanel.js read as it is, comments stripped.
 

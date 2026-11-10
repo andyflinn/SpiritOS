@@ -1,6 +1,6 @@
 'use strict';
 
-// spirit/run/spirit/element/test/grantsPanel-noWarning.js
+// spirit/run/spirit/element/search/grant/test/grantsPanel-noWarning.js
 // NO WARNING ON A GRANT (goal/G43.27, requirement 7; spec: ./grantsPanel-noWarning.md). Andy: "compare that to giving a linux
 // user root authority, he then can fuck up the whole system, not our problem.": grantsPanel reads no <verb>.warning.txt, and
 // none is left, spirit/auth/grant.warning.txt among them. The tree read as it is, comments stripped.
@@ -24,7 +24,7 @@ test.subHeading('7. no warning on a grant');
 const tracked = execSync('git ls-files', { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(Boolean).filter(function (f) { return fs.existsSync(path.join(REPO, f)); });
 ok(tracked.length > 100, 'the world: ' + tracked.length + ' tracked files on disk are read', 'only ' + tracked.length + ' tracked files read: nothing judged');
 ok(!fs.existsSync(path.join(RUN, 'spirit', 'auth', 'grant.warning.txt')), 'spirit/auth/grant.warning.txt is gone', 'spirit/auth/grant.warning.txt is still there');
-const gp = code(read('spirit/element/grantsPanel.js'));
+const gp = code(read('spirit/element/search/grant/grantsPanel.js'));
 ok(gp.length > 1000, 'the world: grantsPanel.js is read', 'no grantsPanel.js: nothing judged');
 ok(!/warning\.txt|\.FS\.loadFile/.test(gp), 'grantsPanel reads no <verb>.warning.txt', 'grantsPanel still reads one');
 const warns = tracked.filter(function (f) { return /\.warning\.txt$/.test(f); });

@@ -1,4 +1,4 @@
-# spirit/element/grantsPanel.js: no warning on a grant
+# spirit/element/search/grant/grantsPanel.js: no warning on a grant
 
 goal/G43.27, requirement 7. Its test is `./grantsPanel-noWarning.js`: the tree read as it is, comments stripped.
 

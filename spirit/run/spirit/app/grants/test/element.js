@@ -3,8 +3,8 @@
 // spirit/run/spirit/app/grants/test/element.js
 // The tests of spirit/app/grants/element.js, and of no other module (spec: ./grants.md; goal/G41.5, G41.13, G41.14, G41.16,
 // G41.32, G43.24). Since G43.24 the app is a wrapper mounted the new shell's way: its Grants tab is the grants panel
-// (spirit/element/grantsPanel.js) configured with the contacts and the panel's own grantsPanel.nodeGrants, both tested in
-// spirit/element/test/grantsPanel.js; its Bundles tab is the bundle editor. The browser file runs in node on a BARE window
+// (spirit/element/search/grant/grantsPanel.js) configured with the contacts and the panel's own grantsPanel.nodeGrants, both tested in
+// spirit/element/search/grant/test/grantsPanel.js; its Bundles tab is the bundle editor. The browser file runs in node on a BARE window
 // (rule/26): each element is put on the page only once the app requires it, a stand-in that keeps what the app handed it.
 // Then the bundle lines of goal/G41.32, judged by real clicks in the Grants app as the shell app opens it, on /face.html of
 // a real node on a scratch copy of the tree's files. Neither Andy's node nor an agent's is touched.
@@ -46,7 +46,9 @@ function world(o) {
     bundleEditor: { create: function (host, x) { const e = { host: host, opts: x, args: arguments.length }; w.editors.push(e); return e; } },
     grantsPanel: { nodeGrants: NODE_GRANTS, create: function (host, cfg) { const p = { host: host, cfg: cfg || {}, args: arguments.length }; w.panels.push(p); return p; } },
   };
-  const FILES = { 'spirit/element/tabContainer.js': 'tabContainer', 'spirit/element/bundleEditor.js': 'bundleEditor', 'spirit/element/grantsPanel.js': 'grantsPanel' };
+  const FILES = { 'spirit/element/tabContainer.js': 'tabContainer', 'spirit/element/bundleEditor.js': 'bundleEditor', 'spirit/element/search/grant/grantsPanel.js': 'grantsPanel' };
+  // Where each stands under spirit.element.spirit.element, by its path: the grants panel in the grant search (goal/G43.32).
+  const AT = { grantsPanel: ['search', 'grant', 'grantsPanel'] };
   // goal/G43.32: the parts stand where grants.js reads them, at spirit.element.spirit.element.<name>; a page's spirit
   // (spirit/test/headLessChrome.js pageSpirit), so grants.js places itself at spirit.element.spirit.app.grants.element as it runs.
   const page = {};
@@ -61,7 +63,7 @@ function world(o) {
     require: function (p) {
       w.required.push(String(p));
       if (opt.refuse && opt.refuse.indexOf(p) !== -1) return Promise.reject(new Error('not-found ' + p));
-      const put = function () { if (FILES[p]) page[FILES[p]] = E[FILES[p]]; return {}; };
+      const put = function () { const n = FILES[p]; if (n) { const at = AT[n] || [n]; at.slice(0, -1).reduce(function (o, k) { return (o[k] = o[k] || {}); }, page)[at[at.length - 1]] = E[n]; } return {}; };
       return opt.held ? opt.held.then(put) : Promise.resolve(put());
     } };
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(win.spirit);
@@ -98,7 +100,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(!/shellCreateListSearch|api\.ui\.elements|apiBranchSelector/.test(CODE), 'nothing of the old shell: no shellCreateListSearch, no api.ui.elements, no apiBranchSelector', 'grants.js still names one');
 
   test.subHeading('a wrapper: it loads the panel, the tabs and the bundle editor, and nothing of its own (requirement 6)');
-  ['spirit/element/grantsPanel.js', 'spirit/element/tabContainer.js', 'spirit/element/bundleEditor.js'].forEach(function (p) {
+  ['spirit/element/search/grant/grantsPanel.js', 'spirit/element/tabContainer.js', 'spirit/element/bundleEditor.js'].forEach(function (p) {
     ok(w.required.indexOf(p) !== -1, 'it requires ' + p, 'required: ' + short(w.required));
   });
   ok(w.required.length === 3, 'and nothing else', 'required: ' + short(w.required));

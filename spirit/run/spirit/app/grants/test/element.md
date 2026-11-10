@@ -9,7 +9,7 @@ It is a wrapper (Andy: *"no i want those apps to basically be wrappers for spiri
 the grants panel, which knows no table of its own; this app configures it (*"the callers (Grants and agent shell apps
 should boody well know how to configure the damn grantsPanel element"*). The node's grants table, once this app's, is the
 panel's `grantsPanel.nodeGrants` since goal/G43.24, and what the panel draws and does is the panel's
-(`spirit/element/test/grantsPanel.md`).
+(`spirit/element/search/grant/test/grantsPanel.md`).
 
 ## Requirements
 
@@ -17,7 +17,7 @@ panel's `grantsPanel.nodeGrants` since goal/G43.24, and what the panel draws and
   `spirit/app/file/element.js` is: it sets `spirit.element.spirit.app.grants.element = { create(container, opts) -> { destroy() } }`. No
   `spirit.shell.activateApp`; nothing of the old shell (no `shellCreateListSearch`, no `api.ui.elements`, no
   `apiBranchSelector`).
-- **A wrapper**: it loads `spirit/element/grantsPanel.js`, `spirit/element/tabContainer.js` and
+- **A wrapper**: it loads `spirit/element/search/grant/grantsPanel.js`, `spirit/element/tabContainer.js` and
   `spirit/element/bundleEditor.js` through `spirit.require` (rule/26), and nothing else. It asks nothing itself (no verb,
   no api, no auth verb, no cache of its own) and draws nothing itself (no markup, no list, no selector).
 - `create(container)` empties the container and makes one `tabContainer` in it with two tabs: `grants` (*Grants*), then

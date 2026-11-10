@@ -11,7 +11,7 @@
 //   spirit.element.spirit.app.grants.element.create(container, opts) -> { destroy() }
 //
 // A WRAPPER, MOUNTED THE NEW SHELL'S WAY, as spirit/app/file/element.js is: it loads its elements and mounts them, nothing of
-// its own. Two tabs (goal/G41.13), in the tab container: Grants, the grants panel (spirit/element/grantsPanel.js) configured
+// its own. Two tabs (goal/G41.13), in the tab container: Grants, the grants panel (spirit/element/search/grant/grantsPanel.js) configured
 // with the contacts as its IDs and the node's own grants table, grantsPanel.nodeGrants (the callers configure the panel,
 // Andy, G41.16); Bundles, the bundle editor (spirit/element/bundleEditor.js), which opens each bundle's branchEditor as a
 // closable tab of this row (goal/G41.32; Andy: "in the Grants app, this will be the grant app's tabContainer."), each named
@@ -20,7 +20,7 @@
 (function () {
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
-  var parts = Promise.all(['spirit/element/grantsPanel.js', 'spirit/element/tabContainer.js', 'spirit/element/bundleEditor.js']
+  var parts = Promise.all(['spirit/element/search/grant/grantsPanel.js', 'spirit/element/tabContainer.js', 'spirit/element/bundleEditor.js']
     .map(function (p) { return S.require(p); }));
 
   function create(container) {
@@ -33,7 +33,7 @@
       tabs = E.spirit.element.tabContainer.create(container, {
         tabs: [
           { name: 'grants', label: 'Grants', mount: function (box) {
-            return E.spirit.element.grantsPanel.create(box, { ids: { table: 'loopback://api/contact/search' }, grants: E.spirit.element.grantsPanel.nodeGrants });
+            return E.spirit.element.search.grant.grantsPanel.create(box, { ids: { table: 'loopback://api/contact/search' }, grants: E.spirit.element.search.grant.grantsPanel.nodeGrants });
           } },
           { name: 'bundles', label: 'Bundles', mount: function (box) {
             return E.spirit.element.bundleEditor.create(box, { tabs: tabs, tabLabel: function (row) { return String(row.owner || 'node') + '-' + String(row.label || ''); } });

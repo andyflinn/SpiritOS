@@ -6,7 +6,7 @@
 // it. The shared row element and the page's data set are real; the arming button is a stand-in that records what it was
 // handed. The grants table is the caller's, handed in as a configuration (goal/G41.16), each call recorded; two are
 // tried, so nothing of either is the row's own: the node's auth grants as the Grants app configures them since
-// goal/G41.28 (spirit/element/grantsPanel.js, which spirit/app/grants/element.js mounts: the branch the auth family's cache manager keeps, spirit.data.auth.data.grants.branch,
+// goal/G41.28 (spirit/element/search/grant/grantsPanel.js, which spirit/app/grants/element.js mounts: the branch the auth family's cache manager keeps, spirit.data.auth.data.grants.branch,
 // and its watch), and a second table shaped as the agent's grants by job were, its branch a whole spirit.data path
 // (node/family/branch) and its watch that branch's. The auth family's data.js is loaded as a
 // page's spirit.cacheManager('auth') loads it, as the Grants app asks it, the page's node known as spirit.start makes it
@@ -43,7 +43,7 @@ function grantsTable(o) {
   Object.defineProperty(t, 'branch', Object.getOwnPropertyDescriptor(o, 'branch'));
   return t;
 }
-// As spirit/element/grantsPanel.js, in the Grants app, configures the node's grants (goal/G41.28): the auth family's branch and its watch.
+// As spirit/element/search/grant/grantsPanel.js, in the Grants app, configures the node's grants (goal/G41.28): the auth family's branch and its watch.
 const NODE = grantsTable({ get branch() { return ((global.window.spirit.data || {}).auth || {}).data ? global.window.spirit.data.auth.data.grants.branch : ''; }, key: 'key', label: 'label',
   watch: function (fn) { return global.window.spirit.data.auth.data.grants.watch(fn); } });
 // A second table, its branch a whole spirit.data path of the home node, its watch that branch's.
@@ -74,7 +74,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   global.window.spirit.node = { key: NODE_KEY };
   DATA.homeNode(NODE_KEY);
   // spirit.cacheManager(name), as a page's: the family's manager loaded once, attaching itself to the data set; the
-  // Grants app asks the auth family's as it loads (spirit/element/grantsPanel.js).
+  // Grants app asks the auth family's as it loads (spirit/element/search/grant/grantsPanel.js).
   const managers = [];
   global.window.spirit.cacheManager = function (name) {
     managers.push(String(name));

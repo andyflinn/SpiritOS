@@ -1,6 +1,6 @@
 # grantsPanel.js
 
-`spirit/run/spirit/element/grantsPanel.js` is the grants panel (goal/G41.16): grants of whichever ID table its caller hands it.
+`spirit/run/spirit/element/search/grant/grantsPanel.js` is the grants panel (goal/G41.16): grants of whichever ID table its caller hands it.
 The Grants app draws it for contacts and the node's grants (`grantsPanel.nodeGrants`, below); the agent app for its jobs
 and its grants by job. Its test is `./grantsPanel.js`.
 
