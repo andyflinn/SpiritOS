@@ -8,7 +8,7 @@
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
-const test = require(path.join(path.resolve(__dirname, '../../..'), 'test', 'testReport.js'));
+const test = require(path.join(path.resolve(__dirname, '../../..'), 'spirit', 'test', 'testReport.js'));
 
 const FILE = path.join(__dirname, '..', 'workBench.js');
 
@@ -208,7 +208,7 @@ ok(!threw, 'a press after destroy does nothing and throws nothing', 'press after
 // with its DEBUG on, puts one workBench in each container, every pane given 5000 pixels of content.
 (async function () {
   const fs = require('fs');
-  const H = require(path.join(path.resolve(__dirname, '../../..'), 'test', 'headLessChrome.js'));
+  const H = require(path.join(path.resolve(__dirname, '../../..'), 'spirit', 'test', 'headLessChrome.js'));
   const ADDRESS = '/DEBUG/spirit/element/test/workBench-contained.html';
   const CASES = [
     ['block', 'a box of 300 pixels, a plain block'],

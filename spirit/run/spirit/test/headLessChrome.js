@@ -1,9 +1,9 @@
 'use strict';
 
-// spirit/run/test/headLessChrome.js
+// spirit/run/spirit/test/headLessChrome.js
 // WHAT A TEST NEEDS TO DRIVE A REAL BROWSER (goal/G41.22): a scratch node with its DEBUG on, and headless Chrome on a
 // scratch profile, one page of it over the debugging protocol. Taken out of the shell's general rules
-// (test/spirit-sibling-generalRules.js), so an element's own test can open its own pages, /DEBUG/<path>/test/<page>.html
+// (spirit/test/spirit-sibling-generalRules.js), so an element's own test can open its own pages, /DEBUG/<path>/test/<page>.html
 // (spirit/test/DEBUG.md), in the same browser on the same kind of node. Never Andy's node nor an agent's.
 
 const fs = require('fs');
@@ -12,7 +12,7 @@ const net = require('net');
 const path = require('path');
 const { spawn, execSync } = require('child_process');
 
-const RUN = path.join(__dirname, '..');
+const RUN = path.join(__dirname, '..', '..');
 const REPO = path.join(RUN, '..', '..');
 const WAIT = 20000;
 

@@ -7,7 +7,7 @@
 // called outside a spirit object, and an attacker trying to crash our servers will throw ANYTHING at the api. Imitate
 // that attacker", and "what counts as passing: the server MUST not CRASH or HANG."
 //
-// HOW: a scratch copy of spirit/run on a node of its own (test/headLessChrome.js), its app servers turned on; neither
+// HOW: a scratch copy of spirit/run on a node of its own (spirit/test/headLessChrome.js), its app servers turned on; neither
 // Andy's node nor an agent's is touched. What the node says about itself (its api answer) names every family's verbs and
 // the shape of their arguments; then garbage goes in raw, over HTTP and over a bare socket, never through spirit.js.
 
@@ -15,9 +15,9 @@ const fs = require('fs');
 const net = require('net');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..','..');
-const test = require(path.join(RUN, 'test', 'testReport.js'));
+const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const limits = require(path.join(RUN, 'spirit', 'limits.js'));
-const { sleep, scratchNode } = require(path.join(RUN, 'test', 'headLessChrome.js'));
+const { sleep, scratchNode } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 
 // The app servers turned on on the scratch node, by active in spirit/state/<name>/node.json, which scratchNode writes for
 // each (goal/G43.12, G43.20).

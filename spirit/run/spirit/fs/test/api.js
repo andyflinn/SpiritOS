@@ -6,7 +6,7 @@
 
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..');
-const test = require(path.join(RUN, 'test', 'testReport.js'));
+const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const api = require(path.join(RUN, 'spirit', 'fs', 'api.js'));
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }

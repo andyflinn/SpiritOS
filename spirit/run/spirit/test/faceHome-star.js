@@ -18,8 +18,8 @@ const os = require('os');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..','..');
 const http = require('http');
-const test = require(path.join(RUN, 'test', 'testReport.js'));
-const { scratchNode, scratchFaceRelay, sleep, until } = require(path.join(RUN, 'test', 'headLessChrome.js'));
+const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+const { scratchNode, scratchFaceRelay, sleep, until } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 
 const WAIT_MS = 1500;
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }

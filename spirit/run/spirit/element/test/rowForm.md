@@ -32,7 +32,7 @@ refusal, a result) is the mounter's, below the bubble, not in it."*
 - **The press is the mounter's**: the button unwired, a press changes nothing in the form.
 
 Asked of a real browser, since widths, wrapping and places are layout: `./rowForm-laid.html`, opened at
-`/DEBUG/spirit/element/test/rowForm-laid.html` on a scratch node with its DEBUG on (`test/headLessChrome.js`), forms in
+`/DEBUG/spirit/element/test/rowForm-laid.html` on a scratch node with its DEBUG on (`spirit/test/headLessChrome.js`), forms in
 containers of 600px and 260px, and a probabilitySearch beside them.
 
 ## What its test must try to break

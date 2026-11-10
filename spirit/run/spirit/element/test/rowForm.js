@@ -8,8 +8,8 @@
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '../../..');
-const test = require(path.join(RUN, 'test', 'testReport.js'));
-const H = require(path.join(RUN, 'test', 'headLessChrome.js'));
+const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 const FILE = path.join(__dirname, '..', 'rowForm.js');
 const CSS = path.join(RUN, 'spirit', 'shell', 'shell.css');
 const SEARCH = path.join(__dirname, '..', 'probabilitySearch.js');

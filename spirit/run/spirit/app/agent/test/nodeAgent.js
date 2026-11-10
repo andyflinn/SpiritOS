@@ -11,7 +11,7 @@ const os = require('os');
 const path = require('path');
 const { spawn } = require('child_process');
 const RUN = path.resolve(__dirname, '../../../..');
-const test = require(path.join(RUN, 'test', 'testReport.js'));
+const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const appClient = require(path.join(RUN, 'spirit', 'appClient.js'));
 
 const DIR = path.join(__dirname, '..');

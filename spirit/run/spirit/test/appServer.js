@@ -19,7 +19,7 @@ const FILE = path.join(__dirname, '..', 'appServer.js');
 const SELF_FILE = __filename;
 const TRANSLATOR = path.join(RUN, 'spirit', 'app', 'desk', 'data.js');
 const CHILD = process.argv[2] === '--child' ? String(process.argv[3] || '') : '';
-const test = CHILD ? null : require(path.join(RUN, 'test', 'testReport.js'));
+const test = CHILD ? null : require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }

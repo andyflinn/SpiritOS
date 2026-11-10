@@ -16,8 +16,8 @@
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
-const test = require(path.join(RUN, 'test', 'testReport.js'));
-const { scratchNode, chromePage, findChrome, until, appRuns, watchRuns } = require(path.join(RUN, 'test', 'headLessChrome.js'));
+const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+const { scratchNode, chromePage, findChrome, until, appRuns, watchRuns } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
@@ -45,7 +45,7 @@ function code(src) {
 function read(f) { try { return fs.readFileSync(f, 'utf8'); } catch (e) { return null; } }
 function json(f) { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch (e) { return null; } }
 
-// The runs of an app's script on the scratch node: test/headLessChrome.js's, the one watch the tests share.
+// The runs of an app's script on the scratch node: spirit/test/headLessChrome.js's, the one watch the tests share.
 function iconsProcesses(root, name) { return appRuns(root, name || 'icons'); }
 
 test.startTest('icons: the Icons app, a face and an api, run by the node per request, with no process of its own (goal/G43.19)');

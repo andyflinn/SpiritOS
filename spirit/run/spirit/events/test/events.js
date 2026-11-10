@@ -9,7 +9,7 @@ const http = require('http');
 const path = require('path');
 const { EventEmitter } = require('events');
 const RUN = path.resolve(__dirname, '../../..');
-const test = require(path.join(RUN, 'test', 'testReport.js'));
+const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const { createEvents } = require(path.join(RUN, 'spirit', 'events', 'events.js'));
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }

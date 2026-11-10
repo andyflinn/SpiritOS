@@ -10,7 +10,7 @@ goal/G41.22 the app's own pane scrolls, and it starts under the shell's title ba
 bar's height as its sticking offset sat one title bar too low.
 
 Asked of a real browser: `./appHeader-pinned.html`, opened at `/DEBUG/spirit/element/appHeader/test/appHeader-pinned.html` on
-a scratch node with its DEBUG on (`test/headLessChrome.js`), puts a header with a row of buttons in the home page's app
+a scratch node with its DEBUG on (`spirit/test/headLessChrome.js`), puts a header with a row of buttons in the home page's app
 area (`#app-container` > `#app-header`, `#app-content` > `.app-pane`, under `/shell.css`), 3000 pixels of content
 under it.
 

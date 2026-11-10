@@ -8,7 +8,7 @@
 
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..');
-const test = require(path.join(RUN, 'test', 'testReport.js'));
+const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const fence = require(path.join(RUN, 'spirit', 'netFence.js'));
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }

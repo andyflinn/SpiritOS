@@ -11,8 +11,8 @@ const http = require('http');
 const { execSync, spawn } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..');
 const REPO = path.resolve(RUN, '..', '..');
-const test = require(path.join(RUN, 'test', 'testReport.js'));
-const { scratchNode, scratchFaceRelay, chromePage, findChrome, until, sleep } = require(path.join(RUN, 'test', 'headLessChrome.js'));
+const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+const { scratchNode, scratchFaceRelay, chromePage, findChrome, until, sleep } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 
 const SET = 'spirit/iconSet.json';
 const OLD = 'shell/json/iconSet.json';

@@ -3,7 +3,7 @@
 The general rules of a shell app or element (goal/G41.18), judged in a real browser. It runs once per file, the file its
 argument, as `./spirit-child-generalRules.js` does for a module:
 
-    node test/spirit-sibling-generalRules.js shell/agent/agent.js
+    node spirit/test/spirit-sibling-generalRules.js shell/agent/agent.js
 
 **Its name is its reach** (`./TEST_SYSTEM.md`; Andy: *"the NAME of the file should tell testModule.js which
 folder this it belongs to. there are some nameing standards that are supposed to tell the product test system, which
@@ -37,7 +37,7 @@ run of this test alone takes every shell module `testModule.js` gives it that is
 node, each file in a run of its own so each is recorded under its own module. That run records one line per file, named by the address
 it opened: green when the file's own run had no red.
 
-    node test/spirit-sibling-generalRules.js
+    node spirit/test/spirit-sibling-generalRules.js
 
 **Every test name starts with the path** (Andy: *"please start the test descriptions always with the exact URL to the
 server, without \"/DEBUG\" service"*; box v13: *"EVERY MOTHERFUCKING TEST NAME in the product three STARTS WITH THE

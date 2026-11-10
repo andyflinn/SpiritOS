@@ -12,8 +12,8 @@
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
-const test = require(path.join(RUN, 'test', 'testReport.js'));
-const H = require(path.join(RUN, 'test', 'headLessChrome.js'));
+const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 const FILE = path.join(__dirname, '..', 'element.js');
 const PLACE = 'spirit/app/chat/element.js';
 

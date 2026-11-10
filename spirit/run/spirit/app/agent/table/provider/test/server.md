@@ -82,7 +82,7 @@ and *"tests are not there to confirm what the fucking code does, they're there t
 wants"*. What he sees, asserted where he sees it: the real provider and model servers on a scratch agent.db, two
 providers, two models of one and one of the other; `./server-picker.html`, opened at
 `/DEBUG/spirit/app/agent/table/provider/test/server-picker.html` on a scratch node with its DEBUG on
-(`test/headLessChrome.js`), draws that provider's detail with the real row element, the real shared table element and
+(`spirit/test/headLessChrome.js`), draws that provider's detail with the real row element, the real shared table element and
 the real dropdown, the agent server a stand-in answering what the real tables answered for each call. The page starts as
 the Agent app's does (`spirit.start()`: the data set, its home node from `node.card`), and 
 `spirit.cacheManager('agent')` loads the family's real `data.js` (goal/G41.28).

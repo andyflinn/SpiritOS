@@ -11,7 +11,7 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..');
-const test = require(path.join(RUN, 'test', 'testReport.js'));
+const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const FILE = path.join(RUN, 'spirit', 'element', 'search', 'file', 'rowElement.js');
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
@@ -140,7 +140,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   // REPLACE RED WITH LIGHT PURPLE, KEEP THE BLUE!!!!!!!!!!!!!!!!": a word that holds is light blue, one that does not is light
   // purple, and no red is left.
   test.subHeading('goal/G43.4 and G43.18: a path element is light blue where word and spirit object agree, red where they disagree');
-  const H = require(path.join(RUN, 'test', 'headLessChrome.js'));
+  const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
   const chrome = H.findChrome();
   if (!chrome) { test.fail('no Chrome on this machine: SPIRIT_CHROME names none, and none is found by its name'); return; }
   const node = await H.scratchNode();

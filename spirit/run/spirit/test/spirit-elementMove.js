@@ -13,8 +13,8 @@ const path = require('path');
 const { execSync } = require('child_process');
 const RUN = path.resolve(__dirname, '../..');
 const REPO = path.resolve(RUN, '../..');
-const test = require(path.join(RUN, 'test', 'testReport.js'));
-const H = require(path.join(RUN, 'test', 'headLessChrome.js'));
+const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fileSystem.js')).VENDORED_FOLDERS;
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }

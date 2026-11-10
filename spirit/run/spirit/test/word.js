@@ -12,8 +12,8 @@ const os = require('os');
 const path = require('path');
 const { spawnSync } = require('child_process');
 const RUN = path.resolve(__dirname, '../..');
-const test = require(path.join(RUN, 'test', 'testReport.js'));
-const H = require(path.join(RUN, 'test', 'headLessChrome.js'));
+const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fileSystem.js')).VENDORED_FOLDERS;
 
 // The box: "word.js will have hardcoded intitialized set of keys", "(this may change)". When it does, so does this line.

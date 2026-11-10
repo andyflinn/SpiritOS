@@ -1,6 +1,6 @@
 'use strict';
 
-// spirit/run/test/spirit-child-generalRules.js <file>
+// spirit/run/spirit/test/spirit-child-generalRules.js <file>
 // THE GENERAL RULES OF A MODULE (goal/G40.6), run once per file it judges, the file its argument. Andy: "it will assert,
 // the require path rule it will assert that the spirit-object becomes a global at the top of all modules"; spirit.js
 // itself is judged too: "it must establish the global spirit object early in the code, it must follow the require-path
@@ -16,16 +16,15 @@
 // THE GLOBAL EARLY: a module's first require is spirit.js, so spirit is a plain global before anything else is loaded.
 // spirit.js itself makes the global: it sets it before its first require.
 //
-// DISCREPANCY WITH ANDY's RULES: the rule above judges every module once (goal/G40.6); since goal/G43.18 moved spirit.js
-// to spirit/run/spirit/spirit.js, testModule.js finds no ./spirit.js beside this test folder and lists this file once
-// with no argument, so it judges nothing and goes red with "no module to judge" (./TEST_SYSTEM.md).
+// It stands in spirit/test/ beside spirit/spirit.js since goal/G43.32, and testModule.js runs it once per module of
+// spirit/ with its own test, as it did from the run root's old test folder (./TEST_SYSTEM.md).
 
 const fs = require('fs');
 const path = require('path');
 // The product test system's own reporter (goal/G40.13): nothing of spirit/run/ reaches into the old test system.
 const test = require(path.join(__dirname, 'testReport.js'));
 
-const RUN = path.join(__dirname, '..');
+const RUN = path.join(__dirname, '..', '..');
 const REPO = path.join(RUN, '..', '..');
 const arg = String(process.argv[2] || '');
 let full = '';

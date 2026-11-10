@@ -9,7 +9,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..');
-const test = require(path.join(RUN, 'test', 'testReport.js'));
+const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
@@ -176,12 +176,12 @@ async function longSearch() {
 // THE FACE COMES BACK BY ITSELF (goal/G43.30; Andy: "ALL, I had to, several times, refresh my new face, because it
 // doesn't seem to auto-reconnect.", "all, FIX IT, IN THIS ITEM, then we tag."). The face retries only once its stream ends
 // (spirit/shell/boot.js), so when the home node's feed into it goes, the relay ends the face's stream: the face opens it
-// again, and the node hears face-open once more and feeds it. A real relay on a scratch copy (test/headLessChrome.js
+// again, and the node hears face-open once more and feeds it. A real relay on a scratch copy (spirit/test/headLessChrome.js
 // scratchFaceRelay), a member seated with a face, its node present and its face logged in; the face's stream and the
 // home node's feed over HTTP, as the face and the node send them.
 const http = require('http');
 async function faceReconnect() {
-  const H = require(path.join(RUN, 'test', 'headLessChrome.js'));
+  const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
   const R = await H.scratchFaceRelay({ members: ['harbour'] });
   const opened = [];
   try {

@@ -17,7 +17,7 @@ grant on the item. It needs nothing of the desk's.
 - The face's boot: `spirit/shell/face.html`, `spirit/shell/boot.js`, `spirit/shell/seal.js`, `spirit/shell/face.css`, `spirit/shell/favicon.svg`.
 - Join, whole: every file under `spirit/app/join/`, its `.json` included. The login app went (goal/G43.18, box v29: the login is spirit.login).
 - Never a manifest that is not an app's own `<name>.json` (Desk's element manifests).
-- Everything under `spirit/run/spirit/`, `spirit/run/spirit/element/` and `spirit/run/test/`.
+- Everything under `spirit/run/spirit/` and `spirit/run/spirit/element/`, the product's tests and their tools in `spirit/run/spirit/test/` among them (goal/G43.32).
 - CodeMirror in `spirit/run/spirit/element/codeMirror/`, which the page loads on every boot (goal/G41.30,
   the review's H5; Andy: *"shell/node_modules/codemirror/ MUST BE \"core\""*).
 - The frame: `spirit/spirit.js`, `spirit/shell/elements.css`, `spirit/shell/tokens.css`, `spirit/shell/shell.css`, `spirit/shell/ghost.svg`.

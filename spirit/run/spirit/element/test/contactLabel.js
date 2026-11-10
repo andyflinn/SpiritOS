@@ -8,7 +8,7 @@
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
-const test = require(path.join(path.resolve(__dirname, '../../..'), 'test', 'testReport.js'));
+const test = require(path.join(path.resolve(__dirname, '../../..'), 'spirit', 'test', 'testReport.js'));
 
 const FILE = path.join(__dirname, '..', 'contactLabel.js');
 

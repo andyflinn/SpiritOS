@@ -5,7 +5,7 @@
 // required, it answers its api and ranks with the spirit's own probability files.
 
 const path = require('path');
-const test = require(path.join(path.resolve(__dirname, '../..'), 'test', 'testReport.js'));
+const test = require(path.join(path.resolve(__dirname, '../..'), 'spirit', 'test', 'testReport.js'));
 
 const D = require(path.join(__dirname, '..', 'data.js'));
 

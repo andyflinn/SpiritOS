@@ -24,7 +24,7 @@
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
-const test = require(path.join(__dirname, '..', '..', 'test', 'testReport.js'));
+const test = require(path.join(__dirname, '..', '..', 'spirit', 'test', 'testReport.js'));
 
 const RUN = path.resolve(__dirname, '..', '..');
 const familyPath = require(path.join(RUN, 'spirit', 'spirit.js')).familyPath;
@@ -40,7 +40,7 @@ function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 // A file tracked but not on disk reads as empty, so a deletion not yet committed is judged and never crashes the report.
 function code(file) { let t = ''; try { t = fs.readFileSync(file, 'utf8'); } catch (e) { return ''; } return t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"\\])\/\/[^\n]*/g, '$1'); }
-const H = require(path.join(RUN, 'test', 'headLessChrome.js'));
+const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 const tracked = require('child_process').execFileSync('git', ['ls-files'], { cwd: RUN, encoding: 'utf8' }).split('\n').filter(Boolean);
 
 test.startTest('caches: every family has a data.js, one code in the browser and in node');

@@ -10,7 +10,7 @@ Andy, on G41.27: *"faceForm:\n\n[❓] [Relay▾][Face-name-input][Ask-button]"*.
 (a refusal, a result) is the mounter's, below the bubble, not in it."*
 
 Asked of a real browser, the real rowForm composed: `./faceForm-laid.html`, opened at
-`/DEBUG/spirit/element/test/faceForm-laid.html` on a scratch node with its DEBUG on (`test/headLessChrome.js`), three relays
+`/DEBUG/spirit/element/test/faceForm-laid.html` on a scratch node with its DEBUG on (`spirit/test/headLessChrome.js`), three relays
 (Alpha with no seat, Beta seated with a face name, Gamma owned), the form mounted on them, then fixed to Gamma.
 
 ## Requirements

@@ -6,7 +6,7 @@
 
 const path = require('path');
 const RUN = path.resolve(__dirname, '../..');
-const test = require(path.join(RUN, 'test', 'testReport.js'));
+const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const core = require(path.join(RUN, 'spirit', 'coreFiles.js'));
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
@@ -23,7 +23,7 @@ test.subHeading('what was core before goal/G41.29');
 each(['spirit/run/spirit/shell/face.html', 'spirit/run/spirit/shell/boot.js', 'spirit/run/spirit/shell/seal.js', 'spirit/run/spirit/shell/face.css', 'spirit/run/spirit/shell/favicon.svg'], true, 'the face\'s boot');
 each(['spirit/run/spirit/app/join/join.js', 'spirit/run/spirit/app/join/join.json'], true, 'join, whole, an intrinsic app since goal/G43.26 moved it to spirit/app/join/ (the login app went, goal/G43.18)');
 each(['spirit/run/spirit/app/desk/element/desk/desk.json'], false, 'a manifest is never core');
-each(['spirit/run/spirit/relay.js', 'spirit/run/spirit/test/relayServer.js', 'spirit/run/spirit/element/search/contact.js', 'spirit/run/test/testReport.js'], true, 'the core folders');
+each(['spirit/run/spirit/relay.js', 'spirit/run/spirit/test/relayServer.js', 'spirit/run/spirit/element/search/contact.js', 'spirit/run/spirit/test/testReport.js'], true, 'the core folders, the test tools in spirit/test/ among them (goal/G43.32)');
 // goal/G41.30, the review's H5: what the page loads on every boot.
 each(['spirit/run/spirit/element/codeMirror/lib/codemirror.js', 'spirit/run/spirit/element/codeMirror/lib/codemirror.css', 'spirit/run/spirit/element/progressBar.js'], true, 'loaded on every boot');
 each(['spirit/run/spirit/spirit.js', 'spirit/run/spirit/shell/elements.css', 'spirit/run/spirit/shell/tokens.css', 'spirit/run/spirit/shell/shell.css', 'spirit/run/spirit/shell/ghost.svg'], true, 'the frame, in spirit/ since goal/G43.18');

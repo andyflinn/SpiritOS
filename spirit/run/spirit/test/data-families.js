@@ -8,8 +8,8 @@
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '../..');
-const test = require(path.join(RUN, 'test', 'testReport.js'));
-const H = require(path.join(RUN, 'test', 'headLessChrome.js'));
+const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fileSystem.js')).VENDORED_FOLDERS;
 
 // Andy on Q2: "yes, of course all 19". Q1: each under the family's own name.

@@ -9,7 +9,7 @@ const path = require('path');
 const crypto = require('crypto');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '../../..');
-const test = require(path.join(RUN, 'test', 'testReport.js'));
+const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 
 const FILE = path.join(__dirname, '..', 'seal.js');
 

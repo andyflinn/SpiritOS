@@ -3,13 +3,13 @@
 // spirit/run/spirit/test/server.js
 // The tests of spirit/server.js (spec: ./server.md). goal/G43.30: "/" is the face. Andy: "can we delete run://shell/,
 // run://spirit/shell/index.html, and make face.html the default for "/" ???"; the box: "In spirit/server.js, the home page
-// is face.html." A scratch node of its own (test/headLessChrome.js); its "/" asked over HTTP and opened in a real Chrome.
+// is face.html." A scratch node of its own (spirit/test/headLessChrome.js); its "/" asked over HTTP and opened in a real Chrome.
 
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..');
-const test = require(path.join(RUN, 'test', 'testReport.js'));
-const H = require(path.join(RUN, 'test', 'headLessChrome.js'));
+const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 const FACE = path.join(RUN, 'spirit', 'shell', 'face.html');
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }

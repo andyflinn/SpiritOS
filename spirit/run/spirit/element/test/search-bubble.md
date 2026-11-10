@@ -8,7 +8,7 @@ element? I'd like it, if the controls in the search bubble look better aligned."
 
 Asked of a real browser, since widths and places are layout: `./search-bubble-laid.html`, opened at
 `/DEBUG/spirit/element/test/search-bubble-laid.html` on a scratch node with its DEBUG on
-(`test/headLessChrome.js`), a pane and a dropdown, each with a filter.
+(`spirit/test/headLessChrome.js`), a pane and a dropdown, each with a filter.
 
 ## Requirements
 

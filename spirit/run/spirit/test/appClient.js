@@ -12,14 +12,14 @@ const path = require('path');
 const { spawn, execSync } = require('child_process');
 const RUN = path.resolve(__dirname, '../..');
 const REPO = path.resolve(RUN, '..', '..');
-const test = require(path.join(RUN, 'test', 'testReport.js'));
-const H = require(path.join(RUN, 'test', 'headLessChrome.js'));
+const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 const limits = require(path.join(RUN, 'spirit', 'limits.js'));
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 
-// The runs of an app's script on the scratch node: test/headLessChrome.js's, the one watch the tests share.
+// The runs of an app's script on the scratch node: spirit/test/headLessChrome.js's, the one watch the tests share.
 const runsOf = H.appRuns;
 
 const NAME = 'zzbig';

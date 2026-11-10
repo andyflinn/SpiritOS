@@ -47,7 +47,7 @@ icon of the pane shown collapses it, another icon shows that tool's content. It 
 
 Andy: *"workBench if, contained, needs to be restreicted by its container, be that the shell app itself or another
 container."* Asked of a real browser, since the stubs have no layout: `./workBench-contained.html`, opened at
-`/DEBUG/spirit/element/test/workBench-contained.html` on a scratch node with its DEBUG on (`test/headLessChrome.js`), puts
+`/DEBUG/spirit/element/test/workBench-contained.html` on a scratch node with its DEBUG on (`spirit/test/headLessChrome.js`), puts
 one workBench in each container below, a tool on each side and every pane given 5000 pixels of content.
 
 - The containers: a box of 300 pixels that is a plain block; a box of 300 pixels that is a flex column; the shell's app

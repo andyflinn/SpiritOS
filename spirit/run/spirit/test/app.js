@@ -8,8 +8,8 @@
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..');
-const test = require(path.join(RUN, 'test', 'testReport.js'));
-const { scratchNode, until } = require(path.join(RUN, 'test', 'headLessChrome.js'));
+const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+const { scratchNode, until } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 // Up here, before the first result: under the verifier testReport.js loads spirit.js for its records with the global
 // put aside, and a server module required after that finds no global spirit.
 const { faceRefuses } = require(path.join(RUN, 'spirit', 'faceHome.js'));

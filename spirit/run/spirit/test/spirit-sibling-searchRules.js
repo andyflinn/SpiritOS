@@ -1,6 +1,6 @@
 'use strict';
 
-// spirit/run/test/spirit-sibling-searchRules.js <file>
+// spirit/run/spirit/test/spirit-sibling-searchRules.js <file>
 // THE SEARCH RULE OF A MODULE (goal/G41.28), run once per file it judges, the file its argument, as
 // ./spirit-child-generalRules.js is for a module (spec: ./spirit-sibling-searchRules.md). Its name is its reach
 // (./TEST_SYSTEM.md): a -sibling- test beside spirit.js judges every module in spirit/run/ and below that has its own
@@ -14,16 +14,15 @@
 // whose object is an object literal. Each call that breaks it is named by its line.
 //
 // Given no file, it judges every module testModule.js gives it, each its own check, named by its path.
-// DISCREPANCY WITH ANDY's RULES: since goal/G43.18 moved spirit.js off the run root, testModule.js no longer counts this
-// as a general test (./TEST_SYSTEM.md): it runs once with no file and testModule.js gives it none, so it judges no
-// module and goes red with "testModule.js gives it no file to judge".
+// It stands in spirit/test/ beside spirit/spirit.js since goal/G43.32, so testModule.js hands it every module in spirit/
+// and below with its own test (./TEST_SYSTEM.md).
 
 const fs = require('fs');
 const path = require('path');
 // The product test system's own reporter (goal/G40.13).
 const test = require(path.join(__dirname, 'testReport.js'));
 
-const RUN = path.join(__dirname, '..');
+const RUN = path.join(__dirname, '..', '..');
 const REPO = path.join(RUN, '..', '..');
 const ARGS = process.argv.slice(2).filter(function (a, i, all) { return a !== '--verify-port' && all[i - 1] !== '--verify-port'; });
 const arg = String(ARGS[0] || '');
@@ -72,7 +71,7 @@ else if (full) {
   test.subHeading(path.relative(RUN, full).split(path.sep).join('/') + ': its searches match the whole row');
   judge(path.relative(RUN, full).split(path.sep).join('/'), full);
 } else {
-  const reach = require(path.join(RUN, 'test', 'testModule.js')).testsFor('').filter(function (t) { return t.test === 'test/spirit-sibling-searchRules.js' && t.file; }).map(function (t) { return t.file; });
+  const reach = require(path.join(RUN, 'spirit', 'test', 'testModule.js')).testsFor('').filter(function (t) { return t.test === 'spirit/test/spirit-sibling-searchRules.js' && t.file; }).map(function (t) { return t.file; });
   test.comment('every module in its reach: ' + reach.length);
   if (!reach.length) test.fail('testModule.js gives it no file to judge');
   reach.forEach(function (f) { test.subHeading(f); judge(f, path.join(RUN, f)); });

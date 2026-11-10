@@ -10,7 +10,7 @@ const path = require('path');
 const vm = require('vm');
 // spirit/app/starter/test/ -> the run root, four up.
 const RUN = path.resolve(__dirname, '../../../..');
-const test = require(path.join(RUN, 'test', 'testReport.js'));
+const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const FILE = path.join(__dirname, '..', 'starter.js');
 const SRC = fs.existsSync(FILE) ? fs.readFileSync(FILE, 'utf8') : '';
 const MANIFEST = path.join(__dirname, '..', 'starter.json');

@@ -11,7 +11,7 @@ const path = require('path');
 const { spawnSync } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 const REPO = path.resolve(RUN, '..', '..');
-const test = require(path.join(RUN, 'test', 'testReport.js'));
+const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const NEW = 'spirit/run/spirit/jobs/';
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }

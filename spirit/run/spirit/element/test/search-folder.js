@@ -10,7 +10,7 @@ const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '../../..');
 const REPO = path.resolve(RUN, '..', '..');
-const test = require(path.join(RUN, 'test', 'testReport.js'));
+const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fileSystem.js')).VENDORED_FOLDERS;
 const E = path.join(RUN, 'spirit', 'element');
 const SEARCH = path.join(E, 'search');
@@ -98,7 +98,7 @@ ok(verbUsers.indexOf('spirit/element/search/api.js') !== -1 && verbUsers.some(fu
 // when i click on a bundle, no network activity, no console activity.").
 (async function () {
   test.subHeading('the box: "renaming only": every one of them loads on a page');
-  const { scratchNode, chromePage, findChrome, until } = require(path.join(RUN, 'test', 'headLessChrome.js'));
+  const { scratchNode, chromePage, findChrome, until } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
   const node = await scratchNode();
   const chrome = await chromePage(findChrome());
   try {

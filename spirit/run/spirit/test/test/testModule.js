@@ -1,32 +1,32 @@
 'use strict';
 
-// spirit/run/test/test/testModule.js
+// spirit/run/spirit/test/test/testModule.js
 // THE GENERAL RULES JUDGE THE PRODUCT MODULES (goal/G43.23, item 4; spec: ./testModule.md). The box: "the general rules
 // judge no module: testModule.js looks for ./spirit.js."
 //
-// testsFor() of ../testModule.js, on this tree as it stands, read only: the general rule tests of the run root's test
+// testsFor() of ../testModule.js, on this tree as it stands, read only: the general rule tests of spirit/test/
 // folder (spirit-<child|sibling>-<x>Rules.js, named after spirit.js, which is at spirit/spirit.js since goal/G43.18) are
 // handed a module under spirit/run/spirit/ as the file they judge, on the module's blast radius and on the whole list.
 
 const fs = require('fs');
 const path = require('path');
-const RUN = path.resolve(__dirname, '..', '..');
-const test = require(path.join(RUN, 'test', 'testReport.js'));
-const { testsFor } = require(path.join(RUN, 'test', 'testModule.js'));
+const RUN = path.resolve(__dirname, '..', '..', '..');
+const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+const { testsFor } = require(path.join(RUN, 'spirit', 'test', 'testModule.js'));
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 400); }
 
-// The general rule tests at the run root's test folder.
-const GENERAL = fs.readdirSync(path.join(RUN, 'test')).filter(function (n) { return /^spirit-(child|sibling)-\w+Rules\.js$/.test(n); })
-  .map(function (n) { return 'test/' + n; }).sort();
+// The general rule tests in spirit/test/, beside spirit/spirit.js (goal/G43.32).
+const GENERAL = fs.readdirSync(path.join(RUN, 'spirit', 'test')).filter(function (n) { return /^spirit-(child|sibling)-\w+Rules\.js$/.test(n); })
+  .map(function (n) { return 'spirit/test/' + n; }).sort();
 // The module judged: an opted-in product module under spirit/run/spirit/ (it has its own spirit/test/<name>.js).
 const MODULE = 'spirit/apiDoor.js';
 
-test.startTest('test/testModule.js: testsFor() gives a module under spirit/run/spirit/ the general rules that judge it (goal/G43.23 item 4)');
+test.startTest('spirit/test/testModule.js: testsFor() gives a module under spirit/run/spirit/ the general rules that judge it (goal/G43.23 item 4)');
 
 test.subHeading('the world');
-ok(GENERAL.length === 4, 'the world: the run root holds the general rule tests ' + GENERAL.join(', '), 'the general rule tests found: ' + short(GENERAL));
+ok(GENERAL.length === 4, 'the world: spirit/test/ holds the general rule tests ' + GENERAL.join(', '), 'the general rule tests found: ' + short(GENERAL));
 ok(fs.existsSync(path.join(RUN, 'spirit', 'spirit.js')) && !fs.existsSync(path.join(RUN, 'spirit.js')),
   'the world: spirit.js, the module they are named after, is spirit/spirit.js, and none is at the run root', 'spirit.js is not where goal/G43.18 put it');
 ok(fs.existsSync(path.join(RUN, MODULE)) && fs.existsSync(path.join(RUN, 'spirit', 'test', 'apiDoor.js')),
@@ -59,6 +59,17 @@ GENERAL.forEach(function (g) {
   ok(judged.some(function (e) { return e.file === MODULE; }), g + ' judges ' + judged.length + ' modules, ' + MODULE + ' among them',
     g + ' judges no module on the whole list; its entries: ' + short(all.filter(function (e) { return e.test === g; })));
 });
+
+// THE TOOLS OF spirit/test/ (goal/G43.32, Q2): tools, not tests, and judged as no module; their own tests are listed.
+test.subHeading('spirit/test/\'s tools are not tests');
+const TOOLS = ['spirit/test/testReport.js', 'spirit/test/testModule.js', 'spirit/test/headLessChrome.js'];
+ok(TOOLS.every(function (t) { return fs.existsSync(path.join(RUN, t)); }), 'the world: the three tools are in spirit/test/', 'a tool is missing from spirit/test/: ' + short(TOOLS.filter(function (t) { return !fs.existsSync(path.join(RUN, t)); })));
+const asTest = all.filter(function (e) { return TOOLS.indexOf(e.test) !== -1; });
+ok(all.length > 0 && !asTest.length, 'none of ' + TOOLS.join(', ') + ' is listed as a test', 'listed as tests: ' + short(asTest));
+const asModule = all.filter(function (e) { return TOOLS.indexOf(e.file) !== -1; });
+ok(all.length > 0 && !asModule.length, 'and none is handed to a general test as a module', 'judged as modules: ' + short(asModule));
+ok(all.some(function (e) { return e.test === 'spirit/test/test/testModule.js'; }) && all.some(function (e) { return e.test === 'spirit/test/test/testReport.js'; }),
+  'their own tests in spirit/test/test/ are listed', 'spirit/test/test/ is not listed: ' + short(all.filter(function (e) { return /^spirit\/test\/test\//.test(e.test); })));
 
 test.reportSuccessFailureCount();
 process.exit(0);

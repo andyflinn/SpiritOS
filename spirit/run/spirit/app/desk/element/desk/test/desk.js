@@ -10,7 +10,7 @@
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '../../../../../..');
-const test = require(path.join(RUN, 'test', 'testReport.js'));
+const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const FILE = path.join(__dirname, '..', 'desk.js');
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
@@ -329,7 +329,7 @@ async function twoPress(w, find, armedSays, wantPress, what) {
   // default, and it MUST show the current goal when the page opens."
   test.subHeading('goal/G43.3: /spirit/app/desk/element/desk/test/desk-opened.html: the page opened, with nothing on the stream');
   {
-    const H = require(path.join(RUN, 'test', 'headLessChrome.js'));
+    const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
     const chrome = H.findChrome();
     if (!chrome) test.fail('no Chrome on this machine: SPIRIT_CHROME names none, and none is found by its name');
     else {
@@ -373,7 +373,7 @@ async function twoPress(w, find, armedSays, wantPress, what) {
   // the first item opened and closed with its ✕, then the second opened, which must draw its own details in the one layer.
   test.subHeading('another item opens with its details after one was opened and closed');
   {
-    const H = require(path.join(RUN, 'test', 'headLessChrome.js'));
+    const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
     const chrome = H.findChrome();
     if (!chrome) test.fail('no Chrome on this machine: SPIRIT_CHROME names none, and none is found by its name');
     else {
@@ -426,7 +426,7 @@ async function twoPress(w, find, armedSays, wantPress, what) {
   // goal and an item pressed done; the Desk element on its face page; every Close the List draws pressed once.
   test.subHeading('goal/G43.30: on a real page, every Close in the List pressed once closes nothing; the run status from Desk\'s own elements');
   {
-    const H = require(path.join(RUN, 'test', 'headLessChrome.js'));
+    const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
     const chrome = H.findChrome();
     if (!chrome) test.fail('no Chrome on this machine: SPIRIT_CHROME names none, and none is found by its name');
     else {

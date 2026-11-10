@@ -10,12 +10,12 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..');
-const test = require(path.join(RUN, 'test', 'testReport.js'));
+const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const contacts = require(path.join(RUN, 'spirit', 'contacts.js'));
 const nodeStore = require(path.join(RUN, 'spirit', 'nodeStore.js'));
 const nodeCard = require(path.join(RUN, 'spirit', 'nodeCard.js'));
 const auth = require(path.join(RUN, 'spirit', 'relayAuth.js'));
-const { scratchNode } = require(path.join(RUN, 'test', 'headLessChrome.js'));
+const { scratchNode } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }

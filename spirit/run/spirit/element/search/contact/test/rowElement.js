@@ -10,7 +10,7 @@
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
-const test = require(path.join(path.resolve(__dirname, '..', '..', '..', '..', '..'), 'test', 'testReport.js'));
+const test = require(path.join(path.resolve(__dirname, '..', '..', '..', '..', '..'), 'spirit', 'test', 'testReport.js'));
 
 const JS = path.join(__dirname, '..', '..', '..');
 function load(file) { vm.runInThisContext(fs.readFileSync(file, 'utf8'), { filename: file }); }

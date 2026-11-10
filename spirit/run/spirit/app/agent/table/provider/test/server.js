@@ -14,7 +14,7 @@ const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '../../../../../..');
 require(path.join(RUN, 'spirit', 'spirit.js'));
-const test = require(path.join(RUN, 'test', 'testReport.js'));
+const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const { DatabaseSync } = require('node:sqlite');
 
 const TABLE = 'provider';
@@ -326,7 +326,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   {
     const ADDRESS = '/DEBUG/spirit/app/agent/table/provider/test/server-picker.html';
     test.subHeading(ADDRESS.slice('/DEBUG'.length) + ': the provider\'s Model field, opened');
-    const H = require(path.join(RUN, 'test', 'headLessChrome.js'));
+    const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
     const pdir = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-provider-picker-'));
     // The servers check their arguments through the one spirit object's rules, as in the agent process; the page section
     // above put a stand-in in its place.

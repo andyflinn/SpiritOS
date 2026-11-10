@@ -25,7 +25,7 @@ It carries a class of its own, by which the shell's other elements are seen to p
 - **It follows its container like a text character**: its colour is its container's.
 
 Asked of a real browser, since a square that follows the font size is layout: `./icon-sized.html`, opened at
-`/DEBUG/spirit/element/test/icon-sized.html` on a scratch node with its DEBUG on (`test/headLessChrome.js`).
+`/DEBUG/spirit/element/test/icon-sized.html` on a scratch node with its DEBUG on (`spirit/test/headLessChrome.js`).
 
 ## Its users
 

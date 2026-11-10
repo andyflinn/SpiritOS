@@ -8,7 +8,7 @@
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '../..');
-const test = require(path.join(RUN, 'test', 'testReport.js'));
+const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 200); }
 
 const FILE = path.join(__dirname, '..', 'relayServer.js');
@@ -87,7 +87,7 @@ Promise.all([sent(common.pageFile('face.html')), sent(map && map['/spirit.js'] |
 // member's stream; the face's own page still reaches its node.
 async function facePosts() {
   const http = require('http');
-  const { scratchFaceRelay, sleep } = require(path.join(RUN, 'test', 'headLessChrome.js'));
+  const { scratchFaceRelay, sleep } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
   const R = await scratchFaceRelay();
   try {
     test.subHeading('POST /face/call and /face/api: only the face\'s own page');

@@ -32,7 +32,7 @@ gets a container and appends itself"*).
   the app's, in its own request.
 
 Asked of a real browser, since an icon left of a label is layout and its turn an animation: `./busyButton-pressed.html`,
-opened at `/DEBUG/spirit/element/test/busyButton-pressed.html` on a scratch node with its DEBUG on (`test/headLessChrome.js`).
+opened at `/DEBUG/spirit/element/test/busyButton-pressed.html` on a scratch node with its DEBUG on (`spirit/test/headLessChrome.js`).
 
 ## First users
 

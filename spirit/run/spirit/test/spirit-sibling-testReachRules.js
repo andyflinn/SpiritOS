@@ -1,6 +1,6 @@
 'use strict';
 
-// spirit/run/test/spirit-sibling-testReachRules.js [file]
+// spirit/run/spirit/test/spirit-sibling-testReachRules.js [file]
 // NO PRODUCTION MODULE LOADS A TEST FILE (goal/G41.30, spec: ./spirit-sibling-testReachRules.md). The box: "1) no
 // production module loads or requires any test file, with the exception of DEBUG.js." Its name is its reach
 // (./TEST_SYSTEM.md): a -sibling- test beside spirit.js judges every production module in spirit/run/ and below.
@@ -12,9 +12,8 @@
 // DEBUG.js (spirit/DEBUG.js and spirit/DEBUG/) is the one exception. Each call that breaks it is its own check, named
 // by its file and line.
 //
-// Given a file, it judges that one; given none, every tracked production .js file under spirit/run. Since goal/G43.18
-// moved spirit.js off the run root, testModule.js lists this file once with no file (./TEST_SYSTEM.md), so the whole
-// tree is read in that one run.
+// Given a file, it judges that one; given none, every tracked production .js file under spirit/run. It stands in
+// spirit/test/ beside spirit/spirit.js since goal/G43.32 (./TEST_SYSTEM.md).
 
 const fs = require('fs');
 const path = require('path');
@@ -22,13 +21,13 @@ const { execFileSync } = require('child_process');
 // The product test system's own reporter (goal/G40.13).
 const test = require(path.join(__dirname, 'testReport.js'));
 
-const RUN = path.join(__dirname, '..');
+const RUN = path.join(__dirname, '..', '..');
 const REPO = path.join(RUN, '..', '..');
 const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fileSystem.js')).VENDORED_FOLDERS;
 const ARGS = process.argv.slice(2).filter(function (a, i, all) { return a !== '--verify-port' && all[i - 1] !== '--verify-port'; });
 const arg = String(ARGS[0] || '');
 
-// A production file: tracked, .js, not inside a test folder, not the run root's tests, no vendor code.
+// A production file: tracked, .js, not inside a test folder (spirit/test/'s tools included), no vendor code.
 function production(rel) {
   return /\.js$/.test(rel) && !/(^|\/)test\//.test(rel) && !VENDORED_FOLDERS.holds(rel);
 }

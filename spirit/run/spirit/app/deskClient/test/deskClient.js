@@ -11,7 +11,7 @@ const os = require('os');
 const path = require('path');
 const Module = require('module');
 const RUN = path.resolve(__dirname, '../../../..');
-const test = require(path.join(RUN, 'test', 'testReport.js'));
+const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const FILE = path.join(__dirname, '..', 'deskClient.js');
 // The family paths, as the one function names them (goal/G41.12).
 const familyPath = require(path.join(RUN, 'spirit', 'spirit.js')).familyPath;
@@ -184,7 +184,7 @@ test.startTest('deskClient.js: the desk client, its cache and its wakes (goal/G4
       const said = statusesOf(from)[0];
       return said && said.id === HELD ? said.tone : '(' + short(said) + ')';
     };
-    for (const rel of ['spirit/run/spirit/app/desk/element/desk/test/desk.js', 'spirit/run/spirit/test/relay.js', 'spirit/run/test/testModule.js']) {
+    for (const rel of ['spirit/run/spirit/app/desk/element/desk/test/desk.js', 'spirit/run/spirit/test/relay.js', 'spirit/run/spirit/test/testModule.js']) {
       const tone = await toneOf(rel);
       ok(tone === 'test', rel + ': tone test', rel + ': tone ' + short(tone));
     }

@@ -344,7 +344,7 @@ function ruleRowVerb(verb, adding) {
     },
   };
 }
-// A file's own product test (spirit/run/test/TEST_SYSTEM.md: ./test/<name>.js beside ./<name>.js), as a repository
+// A file's own product test (spirit/run/spirit/test/TEST_SYSTEM.md: ./test/<name>.js beside ./<name>.js), as a repository
 // path, or '' when the file is not in the product tree or has none: a module without its own test brings nothing.
 function ownProductTest(p) {
   const rel = String(p || '').replace(/\\/g, '/');

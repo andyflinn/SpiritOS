@@ -9,7 +9,7 @@
 //
 //   Andy, 2026-10-04: "the scope still has a grant-lock on core files.", and asked which: "basicall run/js and
 //   intrinsics". So a file is core when it lies under spirit/run/spirit/ (an app of spirit/app/ as its <name>.json says,
-//   below), is the shell's frame or the face's boot, or is a product test of spirit/run/test/. A
+//   below), or is the shell's frame or the face's boot. A
 //   commit touching one needs his grant on the item, inside an agent's scope or not. No git hook checks it any more
 //   (goal/G43.27; Andy: "all, just get rid of the fucking git hooks.").
 //
@@ -64,9 +64,9 @@ function isCore(repoPath, repoRoot) {
   if (p.indexOf('spirit/run/spirit/') === 0) return true;
   // WHAT THE PAGE LOADS ON EVERY BOOT IS CORE TOO (goal/G41.30; the review, H5): CodeMirror lives in spirit/element/codeMirror/
   // since goal/G43.5, so the line above holds it, and so with the progress bar.
-  // THE ROOT TEST FOLDER IS CORE (goal/G40.6; Andy: "also: additional \"core\" designation: spirit/run/test/"): the
-  // product's permanent tests need his grant like the code they judge.
-  if (p.indexOf('spirit/run/test/') === 0) return true;
+  // THE ROOT TEST FOLDER IS CORE (goal/G40.6; Andy: "also: additional \"core\" designation: [the root test folder]"): the
+  // product's permanent tests need his grant like the code they judge. Since goal/G43.32 it is spirit/run/spirit/test/,
+  // which the line above holds.
   return FRAME_LOWER.indexOf(p) !== -1;
 }
 

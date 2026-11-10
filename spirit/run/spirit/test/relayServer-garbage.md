@@ -6,7 +6,7 @@ dammit!"*
 
 ## Requirements
 
-- **A relay of its own** (`test/headLessChrome.js`, `scratchRelay`): a scratch copy of the tracked files of
+- **A relay of its own** (`spirit/test/headLessChrome.js`, `scratchRelay`): a scratch copy of the tracked files of
   `spirit/run`, a relay identity planted and an owner written as a relay is installed, a face domain
   (`spirit/state/face.json`), `relayServer.js` on a free port with DEBUG on. Never a live relay.
 - **Introspect, then throw garbage** (the box: *"1) introspect ... 2) then throw garbage"*): the relay's own api, as its

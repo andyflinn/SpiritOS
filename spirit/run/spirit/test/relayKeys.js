@@ -10,7 +10,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..');
-const test = require(path.join(RUN, 'test', 'testReport.js'));
+const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const relayKeys = require(path.join(RUN, 'spirit', 'relayKeys.js'));
 const nodeStore = require(path.join(RUN, 'spirit', 'nodeStore.js'));
 

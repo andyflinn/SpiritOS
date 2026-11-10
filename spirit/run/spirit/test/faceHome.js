@@ -10,7 +10,7 @@
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..');
-const test = require(path.join(RUN, 'test', 'testReport.js'));
+const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const auth = require(path.join(RUN, 'spirit', 'relayAuth.js'));
 const seal = require(path.join(RUN, 'spirit', 'seal.js'));
 const { createFaceHome } = require(path.join(RUN, 'spirit', 'faceHome.js'));

@@ -10,7 +10,7 @@ const os = require('os');
 const path = require('path');
 const RUN = path.resolve(__dirname, '../..');
 require(path.join(RUN, 'spirit', 'spirit.js'));
-const test = require(path.join(RUN, 'test', 'testReport.js'));
+const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const { DatabaseSync } = require('node:sqlite');
 
 const FILE = path.join(RUN, 'spirit', 'apiAuth.js');

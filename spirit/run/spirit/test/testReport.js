@@ -1,6 +1,6 @@
 'use strict';
 
-// spirit/run/test/testReport.js
+// spirit/run/spirit/test/testReport.js
 // THE PRODUCT TEST SYSTEM'S OWN REPORTER (goal/G40.13, box v22, point 1). Andy, 2026-10-26: "the new reporter prints the
 // same lines as today. the verifier reads it unchanged.", "BUT, i want the product test system to be independent and
 // not reach into repo:/spirit/test/ at all....".
@@ -40,7 +40,7 @@ const VERIFY_PORT = (function () {
 // i have an instant idea which thing failed"): <path>/test/<module>.js is /<path>/<module>, and a general test
 // (-child- or -sibling-) is sent by the file it judges, its argument. A file outside spirit/run keeps its bare name.
 const SUITE = (function () {
-  const run = path.join(__dirname, '..');
+  const run = path.join(__dirname, '..', '..');
   const runRel = function (f) {
     const r = path.relative(run, f);
     return r && r.indexOf('..') !== 0 && !path.isAbsolute(r) ? r.split(path.sep).join('/') : '';
@@ -105,7 +105,7 @@ function record(title, outcome, failure) {
     globalThis.spirit = undefined;
     globalThis.window = undefined;
     let real = null;
-    try { real = require(path.join(__dirname, '..', 'spirit', 'spirit.js')); } finally { globalThis.spirit = own; globalThis.window = ownWindow; }
+    try { real = require(path.join(__dirname, '..', 'spirit.js')); } finally { globalThis.spirit = own; globalThis.window = ownWindow; }
     family = family || real.require(real.familyPath(name));
     inTheAir++;
     family.then(function (f) { return f[verb](rec); }).catch(function () { /* the records are a record, not the verdict */ }).then(landed);

@@ -42,7 +42,7 @@ the module's name without extension; the generator script's name without `.js`, 
   - one script tag that loads a file, and it loads `/spirit.js`, before any other script;
   - it names the module it mounts (its run path), and mounts that one module alone.
   - What the page does when it runs is judged by the first user, the shell's general rules
-    (`spirit/run/test/spirit-sibling-generalRules.md`).
+    (`spirit/run/spirit/test/spirit-sibling-generalRules.md`).
 - **garbageArguments**, data: status 200, a JSON type, a list. Each entry is a body for the api door as it is, made
   from the verbs and argument shapes the server's api answers. For a module whose api the node serves (the deskVerify server, turned on in the scratch copy,
   `/DEBUG/spirit/app/deskVerify/deskVerify/garbageArguments.json`):

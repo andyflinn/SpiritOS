@@ -1,10 +1,10 @@
 'use strict';
 
-// spirit/run/test/test/testReport-verifier.js
+// spirit/run/spirit/test/test/testReport-verifier.js
 // A TEST'S RESULTS REACH THE VERIFIER (goal/G43.23, item 3; spec: ./testReport-verifier.md). The box: "no test result
 // reaches the verifier: testReport.js requires the gone spirit/run/spirit.js and swallows the error."
 //
-// A scratch run tree under /tmp holds a copy of this tree's test/testReport.js and spirit/ files, its
+// A scratch run tree under /tmp holds a copy of this tree's spirit/test/testReport.js and spirit/ files, its
 // spirit/state/environment.json naming the port of a fake verifier this suite stands up: it answers api {family:
 // deskVerify} with the real interface text and keeps every deskVerify.record it is sent. A probe test in the scratch tree
 // is run as the verifier runs a suite (--verify-port <port>), one green and one red. Neither Andy's node nor an agent's
@@ -15,19 +15,18 @@ const os = require('os');
 const path = require('path');
 const http = require('http');
 const { spawn } = require('child_process');
-const RUN = path.resolve(__dirname, '..', '..');
-const test = require(path.join(RUN, 'test', 'testReport.js'));
+const RUN = path.resolve(__dirname, '..', '..', '..');
+const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fileSystem.js')).VENDORED_FOLDERS;
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 
-// The scratch run tree: test/testReport.js and the spirit/ folder copied (its state left out), a port of our own.
+// The scratch run tree: the spirit/ folder copied (its state and test folders left out), then spirit/test/testReport.js,
+// a port of our own.
 function scratchTree(port) {
   const root = fs.mkdtempSync(path.join(process.platform === 'win32' ? os.tmpdir() : '/tmp', 'g4323v-'));
   const run = path.join(root, 'run');
-  fs.mkdirSync(path.join(run, 'test'), { recursive: true });
-  fs.copyFileSync(path.join(RUN, 'test', 'testReport.js'), path.join(run, 'test', 'testReport.js'));
   const SKIP = ['state', 'test'];
   (function copy(from, to) {
     fs.mkdirSync(to, { recursive: true });
@@ -38,13 +37,15 @@ function scratchTree(port) {
       else if (d.isFile() && /\.(js|json)$/.test(d.name)) fs.copyFileSync(f, path.join(to, d.name));
     });
   }(path.join(RUN, 'spirit'), path.join(run, 'spirit')));
+  fs.mkdirSync(path.join(run, 'spirit', 'test'), { recursive: true });
+  fs.copyFileSync(path.join(RUN, 'spirit', 'test', 'testReport.js'), path.join(run, 'spirit', 'test', 'testReport.js'));
   fs.mkdirSync(path.join(run, 'spirit', 'state'), { recursive: true });
   fs.writeFileSync(path.join(run, 'spirit', 'state', 'environment.json'), JSON.stringify({ PORT: port }));
   // The probe: a test of a module probe/probe.js, one green, one red.
   fs.mkdirSync(path.join(run, 'probe', 'test'), { recursive: true });
   fs.writeFileSync(path.join(run, 'probe', 'test', 'probe.js'), [
     "'use strict';",
-    "const t = require(require('path').join(__dirname, '..', '..', 'test', 'testReport.js'));",
+    "const t = require(require('path').join(__dirname, '..', '..', 'spirit', 'test', 'testReport.js'));",
     "t.startTest('a probe'); t.check('one green'); t.fail('one red', 'why it went red'); t.reportSuccessFailureCount();",
   ].join('\n'));
   return { root: root, run: run, probe: path.join(run, 'probe', 'test', 'probe.js') };
@@ -87,15 +88,15 @@ function runProbe(file, args) {
   });
 }
 
-test.startTest('test/testReport.js: a test run with --verify-port hands its results to the verifier (goal/G43.23 item 3)');
+test.startTest('spirit/test/testReport.js: a test run with --verify-port hands its results to the verifier (goal/G43.23 item 3)');
 
 (async function () {
   const v = await fakeVerifier();
   const tree = scratchTree(v.port);
   try {
     test.subHeading('the world');
-    ok(fs.existsSync(path.join(tree.run, 'spirit', 'spirit.js')) && fs.existsSync(path.join(tree.run, 'test', 'testReport.js')),
-      'the world: the scratch run tree holds test/testReport.js and spirit/spirit.js, as this tree does', 'the scratch tree is missing its files: ' + tree.run);
+    ok(fs.existsSync(path.join(tree.run, 'spirit', 'spirit.js')) && fs.existsSync(path.join(tree.run, 'spirit', 'test', 'testReport.js')),
+      'the world: the scratch run tree holds spirit/test/testReport.js and spirit/spirit.js, as this tree does', 'the scratch tree is missing its files: ' + tree.run);
     ok(JSON.parse(fs.readFileSync(path.join(tree.run, 'spirit', 'state', 'environment.json'), 'utf8')).PORT === v.port && v.port !== 45441 && v.port !== 65432,
       'the world: the scratch tree names the fake verifier\'s port ' + v.port + ', no live node', 'the scratch tree names another port');
     const r = await runProbe(tree.probe, ['--verify-port', String(v.port)]);

@@ -11,7 +11,7 @@
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..','..');
-const test = require(path.join(RUN, 'test', 'testReport.js'));
+const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const REPO = path.join(RUN, '..', '..');
 const core = require(path.join(RUN, 'spirit', 'coreFiles.js'));
 const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fileSystem.js')).VENDORED_FOLDERS;

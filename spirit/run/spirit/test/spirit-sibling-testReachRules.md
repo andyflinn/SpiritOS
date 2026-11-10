@@ -3,16 +3,16 @@
 No production module loads a test file (goal/G41.30). The box: *"1) no production module loads or requires any test
 file, with the exception of DEBUG.js."*
 
-    node test/spirit-sibling-testReachRules.js [file]
+    node spirit/test/spirit-sibling-testReachRules.js [file]
 
-**Its name is its reach** (`./TEST_SYSTEM.md`): a `-sibling-` test named after `spirit.js` (at `spirit/spirit.js`, found
-there for the run root's test folder) judges every production module in `spirit/run/` and below. Given a file it judges
+**Its name is its reach** (`./TEST_SYSTEM.md`): a `-sibling-` test named after `spirit.js` (at `spirit/spirit.js`, beside
+this test folder since goal/G43.32) judges every production module in `spirit/run/` and below. Given a file it judges
 that one; given none, every tracked production `.js` file.
 
 ## Requirements
 
-- **A production file** is a tracked `.js` file under `spirit/run/`, not inside a `test/` folder (the run root's
-  `test/` included), not vendor code (`node_modules`, CodeMirror).
+- **A production file** is a tracked `.js` file under `spirit/run/`, not inside a `test/` folder (`spirit/test/`'s
+  tools included), not vendor code (`node_modules`, CodeMirror).
 - **It loads no test file**: in its code, comments left out, no `require()`, `import()`, `spirit.require()`,
   `readFileSync()`, `readFile()` or `createReadStream()` names a path into a `test/` folder. The path is read from the
   call's own text, its string pieces joined as `path.join` joins them, so `path.join(__dirname, 'test', 'x.js')` is

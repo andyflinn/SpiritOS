@@ -17,8 +17,8 @@ const REPO = path.resolve(RUN, '..', '..');
 // put aside, and a server module required after that finds no global spirit.
 const { familyPath } = require(path.join(RUN, 'spirit', 'spirit.js'));
 const { answer } = require(path.join(RUN, 'spirit', 'apiDoor.js'));
-const test = require(path.join(RUN, 'test', 'testReport.js'));
-const { freePort, until, sleep, chromePage, findChrome } = require(path.join(RUN, 'test', 'headLessChrome.js'));
+const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+const { freePort, until, sleep, chromePage, findChrome } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }

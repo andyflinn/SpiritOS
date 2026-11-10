@@ -1,7 +1,7 @@
 'use strict';
 
-// spirit/run/test/testModule.js
-// WHICH PRODUCT TESTS TO RUN (goal/G40.6). Andy: "one file in spirit/run/test/testModule(path-name.js) can auto execute
+// spirit/run/spirit/test/testModule.js
+// WHICH PRODUCT TESTS TO RUN (goal/G40.6). Andy: "one file in [the run tree's test folder] testModule(path-name.js) can auto execute
 // the bast-radius tests for that one file, and then should be easy for desk or deskClient of deskVerify to automate the
 // testing of files named in an item...", and "test module must find all /test/files.js in the run tree."
 //
@@ -21,11 +21,15 @@
 const fs = require('fs');
 const path = require('path');
 
-const RUN = path.join(__dirname, '..');
+const RUN = path.join(__dirname, '..', '..');
 // Never walked: node state, git, and the vendored folders, the libraries we carry but did not write (fileSystem.js's
 // one list, goal/G43.25).
 const SKIP = ['state', 'app-state', '.git'];
 const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fileSystem.js')).VENDORED_FOLDERS;
+// THE TOOLS OF spirit/test/ (goal/G43.32, Q2; Andy: "We need special rules for run://spirit/test/  it will be where
+// run://spirit/app/test/ finds it's main tools."): tools, not tests, and no module either; their own tests stay in
+// spirit/test/test/.
+const TOOLS = ['spirit/test/testReport.js', 'spirit/test/testModule.js', 'spirit/test/headLessChrome.js'];
 
 function posix(p) { return String(p).split(path.sep).join('/'); }
 
@@ -42,6 +46,7 @@ function walk(root) {
       if (d.isDirectory()) { into(full); continue; }
       if (!d.isFile() || !/\.js$/.test(d.name)) continue;
       const rel = posix(path.relative(root, full));
+      if (TOOLS.indexOf(rel) !== -1) continue;
       if (path.basename(dir) === 'test') tests.push(rel); else modules.push(rel);
     }
   }(root));
@@ -61,19 +66,19 @@ function namedTests(m, tests) {
 function under(p, dir) { return dir === '' || p.indexOf(dir + '/') === 0; }
 
 // A general test's reach, or null when it is a plain test: the folder holding its test folder, the module it is named
-// after, and the files it judges. The module is beside the test folder; for the run root's own test folder it may be
-// one folder down, in the folder of its name: spirit.js is spirit/spirit.js since goal/G43.18, so the spirit-* general
-// tests of spirit/run/test/ are named after it (goal/G43.23, the box's item 4). -sibling- still judges the whole run
-// root; -child- judges spirit/spirit.js and spirit/ below.
+// after, beside the test folder, and the files it judges. The spirit-* general tests stand in spirit/test/ beside
+// spirit/spirit.js (goal/G43.32, box point 5: they "judge the same modules as today"): -sibling- judges spirit/ and
+// below; -child- of a module that is its folder's namesake, as spirit/spirit.js is, judges that folder too, so it
+// still judges spirit/spirit.js and spirit/ below.
 function generalOf(t, has) {
   const m = /^(.*?)-(child|sibling)-[^/]+\.js$/.exec(path.posix.basename(t));
   if (!m) return null;
   const folder = dirOf(dirOf(t));
-  let module = join(folder, m[1] + '.js');
-  if (!has(module) && folder === '' && has(join(m[1], m[1] + '.js'))) module = join(m[1], m[1] + '.js');
+  const module = join(folder, m[1] + '.js');
   if (!has(module)) return null;
+  const own = path.posix.basename(folder) === m[1] ? folder : join(folder, m[1]);
   const judges = m[2] === 'child'
-    ? function (f) { return f === module || under(f, join(folder, m[1])); }
+    ? function (f) { return f === module || under(f, own); }
     : function (f) { return under(f, folder); };
   return { judges: judges };
 }
@@ -132,7 +137,7 @@ function testsFor(file, opts) {
   return out;
 }
 
-module.exports = { testsFor: testsFor };
+module.exports = { testsFor: testsFor, TOOLS: TOOLS };
 
 if (require.main === module) {
   testsFor(process.argv[2] || '').forEach(function (t) { console.log(t.file ? t.test + ' ' + t.file : t.test); });

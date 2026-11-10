@@ -1,6 +1,6 @@
 'use strict';
 
-// spirit/run/test/spirit-sibling-noFuckingGarbage.js [file]
+// spirit/run/spirit/test/spirit-sibling-noFuckingGarbage.js [file]
 // NO GARBAGE IN A TEST FOLDER (goal/G43.27, spec: ./spirit-sibling-noFuckingGarbage.md). Andy: "fucking wsl now is
 // starting to motherfucking put tests into the run:/ folder that are NOT bound by the fucking product test system: A NEW
 // FUCKING WAY TO INTRODUCE GARBAGE AND STALE SHIT!!!!!!!!!!!!!!!!!", "wsl: add a general test:
@@ -8,9 +8,10 @@
 // after spirit.js judges every tracked file in a test/ folder of spirit/run/ and below.
 //
 // Every file in a test/ folder is bound by the product test system (./TEST_SYSTEM.md, "Where they live"), or it is red:
-//   1. a test/ folder belongs to a module: its parent folder holds a .js module, the run root excepted;
-//   2. the run root's test/ holds its general tests (spirit-child-*, spirit-sibling-*, of spirit/spirit.js, one folder
-//      down), its helpers (headLessChrome.js, testModule.js, testReport.js) and TEST_SYSTEM.md, nothing else;
+//   1. a test/ folder belongs to a module: its parent folder holds a .js module;
+//   2. spirit/test/ holds, beside the tests of spirit/'s modules, the test system's tools (testModule.js's TOOLS) and
+//      TEST_SYSTEM.md (goal/G43.32, Q2; Andy: "We need special rules for run://spirit/test/  it will be where
+//      run://spirit/app/test/ finds it's main tools."): tools, not tests named after no module;
 //   3. a test/ inside a test/ folder holds the tests of the files beside it, <name>.js or <name>-<what>.js and their .md;
 //   4. every other test MATCHES A PRODUCTION FILE: test/<name>.js, a test by name test/<name>-<what>.js, or a general test
 //      <name>-child-* or <name>-sibling-*, of a <name>.js beside the folder; a plain test named after no module is garbage (Andy, above);
@@ -29,12 +30,13 @@ const { execFileSync } = require('child_process');
 // The product test system's own reporter (goal/G40.13).
 const test = require(path.join(__dirname, 'testReport.js'));
 
-const RUN = path.join(__dirname, '..');
+const RUN = path.join(__dirname, '..', '..');
 const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fileSystem.js')).VENDORED_FOLDERS;
 const ARGS = process.argv.slice(2).filter(function (a, i, all) { return a !== '--verify-port' && all[i - 1] !== '--verify-port'; });
 const arg = String(ARGS[0] || '');
 const RULE = 'Andy: "every test in run:/ MUST MATCH a production file."';
-const RUN_ROOT_KEEPS = ['headLessChrome.js', 'testModule.js', 'testReport.js', 'TEST_SYSTEM.md'];
+// The tools of spirit/test/ are testModule.js's one list, and TEST_SYSTEM.md is their document.
+const SPIRIT_TEST_KEEPS = require(path.join(__dirname, 'testModule.js')).TOOLS.concat(['spirit/test/TEST_SYSTEM.md']);
 
 function inTestFolder(rel) { return /(^|\/)test\/[^/]+$/.test(rel) && !VENDORED_FOLDERS.holds(rel); }
 function exists(rel) { return fs.existsSync(path.join(RUN, rel)); }
@@ -55,12 +57,8 @@ function garbage(rel) {
   // test/<name>-<what>.js, a test of <name>.js by name (goal/G43.27; Andy: "directly (by name)"), which testModule.js runs
   // with <name>.js.
   const named = !general && stem.indexOf('-') > 0 ? stem.slice(0, stem.indexOf('-')) : '';
-  // 2. The run root's own test folder.
-  if (dir === '') {
-    if (RUN_ROOT_KEEPS.indexOf(file) !== -1) return '';
-    if (general && general[1] === 'spirit' && exists('spirit/spirit.js')) return m[2] === 'md' && !exists(twin) ? 'an .md with no general test beside it' : '';
-    return 'a test that matches no production file: the run root\'s test/ holds only its general tests and helpers';
-  }
+  // 2. spirit/test/'s tools and their document.
+  if (SPIRIT_TEST_KEEPS.indexOf(rel) !== -1) return '';
   // 3. A test folder inside a test folder: the tests of the files beside it, nothing else.
   if (/(^|\/)test$/.test(dir)) {
     if (!m) return 'not a test: no .js or .md';

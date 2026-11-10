@@ -16,7 +16,7 @@ const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '../../../../../..');
 const PLACE = 'spirit/app/desk/element/ruleDetails/ruleDetails.js';
-const test = require(path.join(RUN, 'test', 'testReport.js'));
+const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 let SRC = '';
 try { SRC = fs.readFileSync(FILE, 'utf8'); } catch (e) { SRC = ''; }
 const CODE = SRC.replace(/\/\/.*$/gm, '');
@@ -222,7 +222,7 @@ function answer(name) {
   // happened." A scratch node with desk switched on and one rule; the Desk element on its face page; the rule opened from
   // the Rules list as he opens it; its Delete pressed once.
   test.subHeading(PLACE + ': opened from Desk on a real page; its Delete, pressed once, deletes nothing');
-  const H = require(path.join(RUN, 'test', 'headLessChrome.js'));
+  const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
   const chrome = H.findChrome();
   if (!chrome) { test.fail('no Chrome on this machine: SPIRIT_CHROME names none, and none is found by its name'); return; }
   const scratch = await H.scratchNode();

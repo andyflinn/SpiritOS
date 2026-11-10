@@ -8,7 +8,7 @@
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
-const test = require(path.join(path.resolve(__dirname, '..', '..', '..'), 'test', 'testReport.js'));
+const test = require(path.join(path.resolve(__dirname, '..', '..', '..'), 'spirit', 'test', 'testReport.js'));
 
 const RUN = path.join(__dirname, '..', '..', '..');
 const FILE = path.join(__dirname, '..', 'search.js');
@@ -604,7 +604,7 @@ ok(M('anything', '').length === 0 && M('anything', '   ').length === 0 && M(null
   ok(/pick one/.test(c9.get('field').innerHTML), 'without all the field shows the placeholder', 'field: ' + c9.get('field').innerHTML);
 
   test.subHeading('it loads the spirit\'s probability files itself (rule/26; goal/G41.18)');
-  // Found by the shell's general rules on a bare page (test/spirit-sibling-generalRules.js): the Apps and Grants
+  // Found by the shell's general rules on a bare page (spirit/test/spirit-sibling-generalRules.js): the Apps and Grants
   // lists threw "createProbabilityBucket is not a function", since only boot loaded these files. rule/26: every element
   // loads its own parts via spirit.require; nothing is preloaded. This loader answers in the reverse of the order it was
   // asked, as a page's fetches may: whatever order the files land in, the list must work once they are in.

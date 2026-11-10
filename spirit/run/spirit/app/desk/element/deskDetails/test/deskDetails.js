@@ -9,7 +9,7 @@
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '../../../../../..');
-const test = require(path.join(RUN, 'test', 'testReport.js'));
+const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const FILE = path.join(__dirname, '..', 'deskDetails.js');
 const KEY = /^[A-Z_]+$/;
 
@@ -576,7 +576,7 @@ const byId = function (w, id) { return function () { return w.document.getElemen
   // with 200 chat lines and a long box.
   const OPENED = '/DEBUG/spirit/app/desk/element/deskDetails/test/deskDetails-opened.html';
   test.subHeading(OPENED.slice('/DEBUG'.length) + ': opened on an item, in the home page\'s app area');
-  const H = require(path.join(RUN, 'test', 'headLessChrome.js'));
+  const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
   const chrome = H.findChrome();
   if (!chrome) test.fail('no Chrome on this machine: SPIRIT_CHROME names none, and none is found by its name');
   else {

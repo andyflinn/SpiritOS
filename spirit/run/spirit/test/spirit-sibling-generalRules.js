@@ -1,6 +1,6 @@
 'use strict';
 
-// spirit/run/test/spirit-sibling-generalRules.js <file>
+// spirit/run/spirit/test/spirit-sibling-generalRules.js <file>
 // THE GENERAL RULES OF A SHELL APP OR ELEMENT (goal/G41.18), run once per file it judges, the file its argument, as
 // ./spirit-child-generalRules.js is for a module (spec: ./spirit-sibling-generalRules.md). ITS NAME IS ITS REACH
 // (./TEST_SYSTEM.md; Andy: "the NAME of the file should tell testModule.js which folder this it belongs to"): a -sibling-
@@ -31,7 +31,7 @@ const { spawn } = require('child_process');
 // The product test system's own reporter (goal/G40.13): nothing of spirit/run/ reaches into the old test system.
 const test = require(path.join(__dirname, 'testReport.js'));
 
-const RUN = path.join(__dirname, '..');
+const RUN = path.join(__dirname, '..', '..');
 const REPO = path.join(RUN, '..', '..');
 const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fileSystem.js')).VENDORED_FOLDERS;
 // Its arguments: the file it judges, if any; the verifier's --verify-port <n> is the reporter's, and passed on.
@@ -266,12 +266,12 @@ function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); 
 // can be: in the code, or on a page that gives it something.
 function unjudged(what) { test.comment('not judged on this page: ' + what); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
-// The scratch node and headless Chrome, shared with any test that opens a page (test/headLessChrome.js).
-const { sleep, until, findChrome, scratchNode, chromePage } = require(path.join(RUN, 'test', 'headLessChrome.js'));
+// The scratch node and headless Chrome, shared with any test that opens a page (spirit/test/headLessChrome.js).
+const { sleep, until, findChrome, scratchNode, chromePage } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 
 // GIVEN NO FILE, EVERY FILE IN ITS REACH (goal/G41.19): an item's suite row names no file, so a run of this test alone
 // judges every shell module testModule.js gives it, on one scratch node, each file in a run of its own, so each is
-// recorded under its own module (test/testReport.js). This run records one line per file, named by its address.
+// recorded under its own module (spirit/test/testReport.js). This run records one line per file, named by its address.
 // EVERY FILE THAT PAINTS AN ICON LOADS THE ICON ELEMENT (goal/G41.23; Q1, Andy: "plus the intrinsic apps, plus the
 // icons app. all apps that use icons."; "wsl, Go" on: a second rule reads the code, so that it misses none). A bare mount
 // draws no data, so most icons are seen only here. AN ICON STANDS ALONE (Andy: "isn't a glyph inside flowing text just
@@ -417,7 +417,7 @@ async function every() {
   branchesNamedAsFolders();
   runTestMoved();
   iconsLoaded();
-  const reach = require(path.join(RUN, 'test', 'testModule.js')).testsFor('').filter(function (t) { return t.test === 'test/spirit-sibling-generalRules.js' && t.file; }).map(function (t) { return t.file; });
+  const reach = require(path.join(RUN, 'spirit', 'test', 'testModule.js')).testsFor('').filter(function (t) { return t.test === 'spirit/test/spirit-sibling-generalRules.js' && t.file; }).map(function (t) { return t.file; });
   const files = reach.filter(kindOf);
   test.comment('every app and element in its reach: ' + files.length + ' of ' + reach.length + '; not mounted, being neither: ' + reach.filter(function (f) { return !kindOf(f); }).join(', '));
   if (!files.length) { test.fail('testModule.js gives it no file to judge'); return; }

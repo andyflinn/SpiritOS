@@ -1,15 +1,15 @@
 'use strict';
 
-// spirit/run/test/test/testReport.js
-// The tests of test/testReport.js, and of no other module (spec: ./testReport.md; goal/G41.19): the name a test is sent
+// spirit/run/spirit/test/test/testReport.js
+// The tests of spirit/test/testReport.js, and of no other module (spec: ./testReport.md; goal/G41.19): the name a test is sent
 // to the verifier by. Each case runs a child as if it were the test file named, under a stand-in spirit.js whose
 // deskVerify.record prints what it was given.
 
 const path = require('path');
 const { spawnSync } = require('child_process');
-const RUN = path.resolve(__dirname, '../..');
-const test = require(path.join(RUN, 'test', 'testReport.js'));
-const REPORTER = path.join(RUN, 'test', 'testReport.js');
+const RUN = path.resolve(__dirname, '../../..');
+const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+const REPORTER = path.join(RUN, 'spirit', 'test', 'testReport.js');
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 
@@ -35,7 +35,7 @@ function sent(file, args, verify) {
 function suitesOf(recs) { return recs.map(function (r) { return r.suite; }).filter(function (s, i, a) { return a.indexOf(s) === i; }); }
 function short(x) { return JSON.stringify(x).slice(0, 300); }
 
-test.startTest('test/testReport.js: a test is sent by the module it tests, /<path>/<module>');
+test.startTest('spirit/test/testReport.js: a test is sent by the module it tests, /<path>/<module>');
 
 test.subHeading('a test of a module');
 const CASES = [
@@ -54,7 +54,7 @@ const twins = CASES.slice(1, 3).map(function (c) { return suitesOf(sent(c[0], []
 ok(twins[0] && twins[1] && twins[0] !== twins[1], 'two test files of one name, rowElement.js, are two names', 'both rowElement.js tests went by ' + short(twins));
 
 test.subHeading('a general test, by the file it judges');
-const general = suitesOf(sent('test/spirit-sibling-generalRules.js', ['spirit/app/desk/element/desk/desk.js'], true));
+const general = suitesOf(sent('spirit/test/spirit-sibling-generalRules.js', ['spirit/app/desk/element/desk/desk.js'], true));
 ok(general.length === 1 && general[0] === '/spirit/app/desk/element/desk/desk', 'spirit-sibling-generalRules.js judging spirit/app/desk/element/desk/desk.js is sent as /spirit/app/desk/element/desk/desk', 'it was sent as ' + short(general));
 
 test.subHeading('the rest of a record as before');

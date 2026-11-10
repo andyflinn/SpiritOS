@@ -9,7 +9,7 @@ const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '../..');
 require(path.join(RUN, 'spirit', 'spirit.js'));
-const test = require(path.join(RUN, 'test', 'testReport.js'));
+const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const { answer } = require(path.join(RUN, 'spirit', 'apiDoor.js'));
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }

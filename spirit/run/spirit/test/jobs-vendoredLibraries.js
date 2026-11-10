@@ -13,7 +13,7 @@ const path = require('path');
 const { execSync, spawnSync } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..');
 const REPO = path.resolve(RUN, '..', '..');
-const test = require(path.join(RUN, 'test', 'testReport.js'));
+const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 // The tree before the move: the commit the red was written on, which holds spirit/run/node_modules/.
 const BASE = '2fb29140';
 const OLD = 'spirit/run/node_modules/';

@@ -30,15 +30,19 @@ A test that does not judge the one file it is handed is never a general test: a 
 module, 111 times (goal/G43.2; Andy: *"it looks to me like a lazy-funcking-ass placement of tests"*). A test that covers
 several modules end to end is a test of the module it is most about, `./test/<name>.js` or `./test/<name>-<what>.js`,
 and runs once. **Every test matches a production file** (goal/G43.27; Andy: *"wsl: every test in run:/ MUST MATCH a production
-file."*): a test named after no module is garbage, and `test/spirit-sibling-noFuckingGarbage.js` goes red on it.
+file."*): a test named after no module is garbage, and `spirit/test/spirit-sibling-noFuckingGarbage.js` goes red on it.
 
-The run root's general tests (`spirit/run/test/spirit-child-generalRules.js`, `spirit-sibling-generalRules.js`,
-`spirit-sibling-searchRules.js`, `spirit-sibling-testReachRules.js`) are named after `spirit.js`, which goal/G43.18 moved
-from the run root to `spirit/run/spirit/spirit.js`. For the run root's own `test/` folder, `testModule.js` looks for the
-module one folder down, in the folder of its name, so they are general tests still (goal/G43.23): `-sibling-` judges every
-module of the run root with its own test, `-child-` judges `spirit/spirit.js` and `spirit/` below. Plain helpers in that
-folder (`headLessChrome.js`, `testModule.js`, `testReport.js`) are listed as tests too, since every `.js` in a `test/`
-folder is one.
+The general tests of `spirit.js` (`spirit/run/spirit/test/spirit-child-generalRules.js`, `spirit-sibling-generalRules.js`,
+`spirit-sibling-searchRules.js`, `spirit-sibling-testReachRules.js`, `spirit-sibling-noFuckingGarbage.js`) stand in
+`spirit/run/spirit/test/` beside `spirit/run/spirit/spirit.js` (goal/G43.32): `-sibling-` judges every module in
+`spirit/` and below with its own test; `-child-` of `spirit.js`, its folder's namesake, judges `spirit/spirit.js` and
+`spirit/` below too.
+
+**The tools of `spirit/run/spirit/test/`** (goal/G43.32, Q2; Andy: *"We need special rules for run://spirit/test/  it will
+be where run://spirit/app/test/ finds it's main tools."*): `testReport.js`, `testModule.js` and `headLessChrome.js` are
+tools, not tests and no modules. `testModule.js` lists none of them, `spirit-sibling-noFuckingGarbage.js` does not
+judge them as tests named after no module, and their own tests stay in `spirit/run/spirit/test/test/`. Every product
+test requires them from there.
 
 ## Opting in
 
@@ -49,11 +53,11 @@ left alone, so the tree comes in one module at a time.
 
 `testModule.js` names them; it runs none.
 
-- `node spirit/run/test/testModule.js <file>`: the blast radius of one changed module. Its own test, every test under
+- `node spirit/run/spirit/test/testModule.js <file>`: the blast radius of one changed module. Its own test, every test under
   `./<name>/` (its components), and the own tests of the modules on its line upward (`../`, `../../`, up to the run
   root), never a sibling branch. General tests judge the changed file and the files below it. A module deep in the
   tree runs few tests; one near the root runs nearly all.
-- `node spirit/run/test/testModule.js`: every test file in any `test/` folder of the run tree, and each general test
+- `node spirit/run/spirit/test/testModule.js`: every test file in any `test/` folder of the run tree, and each general test
   once per module it judges.
 
 An item that names one file therefore gets the right tests without listing them.
@@ -62,7 +66,7 @@ An item that names one file therefore gets the right tests without listing them.
 
 - The harness (`node spirit/test/runAll.js`) reaches the run tree through `testModule.js` and runs each entry as its
   own suite, a general test with its file as the argument. No test of the run tree runs twice.
-- Every test reports through `spirit/run/test/testReport.js`, the product tree's own reporter (goal/G40.13), which
+- Every test reports through `spirit/run/spirit/test/testReport.js`, the product tree's own reporter (goal/G40.13), which
   prints the lines of the old one (`spirit/test/testSupport.js`) without requiring anything of `spirit/test/`, so the
   verifier records it as it records any suite.
 - A product test that finds a module breaking a rule fails that module's test, not the item that brought the test.

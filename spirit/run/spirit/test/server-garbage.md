@@ -8,7 +8,7 @@ passing: the server MUST not CRASH or HANG."*
 
 ## How
 
-- A scratch copy of `spirit/run` on a node of its own (`test/headLessChrome.js`), its app servers turned on at home
+- A scratch copy of `spirit/run` on a node of its own (`spirit/test/headLessChrome.js`), its app servers turned on at home
   by a `face.home` sidecar each (desk, deskVerify, backup, chat; the file server, intrinsic, runs on every node).
   The list names agent too, but agent is an app of `spirit/app/` now, started by `active` in its `node.json`, which a
   sidecar does not set. Neither Andy's node nor an agent's is touched.
@@ -60,7 +60,7 @@ What it reports without judging (not a crash, so not red by the box's words): ho
 
 ## Beside it
 
-- **The relay's door** is spirit/test/relayServer-garbage.js's, on a scratch relay (test/headLessChrome.js,
+- **The relay's door** is spirit/test/relayServer-garbage.js's, on a scratch relay (spirit/test/headLessChrome.js,
   scratchRelay).
 - **The shared gate in memory** (the box: *"Every permutation is thrown at that check directly, in memory"*) is
   `spirit/test/appServer.js`'s, not this file's.

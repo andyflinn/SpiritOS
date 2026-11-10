@@ -5,7 +5,7 @@
 // "nodeChat.js is today's chatClerver.js, working as it does, its verbs as api.js lists them. Its database is chat.db in
 // the node's state" (Andy: "how about calling the db chat.db ??????", and "that ruling is replaced."); "The branch name is
 // the folder's: chat"; "No old chat data is rescued" (Andy: "don't even THINK of rescuing any old chat data, that an
-// ABSOLUTE NO."). Written from reading chatClerver.js. A scratch node of its own (test/headLessChrome.js), the old
+// ABSOLUTE NO."). Written from reading chatClerver.js. A scratch node of its own (spirit/test/headLessChrome.js), the old
 // chatClerver's memory.db planted in the app's state folder with a line in it, the app switched on as he switches it
 // on, and every verb asked over HTTP as the owner asks it on loopback. A line written to a key nobody answers is kept and
 // stays unsent: one node judges all of it.
@@ -13,8 +13,8 @@
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
-const test = require(path.join(RUN, 'test', 'testReport.js'));
-const H = require(path.join(RUN, 'test', 'headLessChrome.js'));
+const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 const auth = require(path.join(RUN, 'spirit', 'relayAuth.js'));
 const limits = require(path.join(RUN, 'spirit', 'limits.js'));
 const FILE = path.join(__dirname, '..', 'nodeChat.js');

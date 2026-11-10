@@ -208,13 +208,13 @@ function leavesTests(rel) {
   return !(norm.indexOf('spirit/run/') === 0 && path.posix.basename(path.posix.dirname(norm)) === 'test');
 }
 // THE FULL PRODUCT TEST TREE (goal/G40.13, box v22, point 9): the suite 'spirit/run' in a run is every test the product
-// tree holds, as testModule.js names them (spirit/run/test/testModule.js, testsFor with no file); a general test is
+// tree holds, as testModule.js names them (spirit/run/spirit/test/testModule.js, testsFor with no file); a general test is
 // run once per module it judges, that module its argument ("<test> <module>").
 // RUN AS ITS OWN PROCESS, NEVER REQUIRED (goal/G41.30, the box: "no production module loads or requires any test file,
 // with the exception of DEBUG.js."): testModule.js prints one entry a line, "<test>" or "<test> <file>"; spawned and
 // awaited, as every call a run makes (no spawnSync, goal/G21.3).
 function productSuites() {
-  return sh(process.execPath, [path.join(REPO, 'spirit', 'run', 'test', 'testModule.js')]).then(function (r) {
+  return sh(process.execPath, [path.join(REPO, 'spirit', 'run', 'spirit', 'test', 'testModule.js')]).then(function (r) {
     if (r.status !== 0) throw refusedWhy('the product tree\'s tests could not be listed: ' + String(r.stderr || '').trim().slice(0, 200));
     return String(r.stdout || '').split(/\r?\n/).filter(Boolean).map(function (line) {
       const at = line.indexOf(' ');

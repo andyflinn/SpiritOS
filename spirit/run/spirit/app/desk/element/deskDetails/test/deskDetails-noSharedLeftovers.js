@@ -13,7 +13,7 @@ const path = require('path');
 const { execSync } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..', '..');
 const REPO = path.resolve(RUN, '..', '..');
-const test = require(path.join(RUN, 'test', 'testReport.js'));
+const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const SHARED = path.join(RUN, 'shell', 'shared', 'js');
 // This suite names the two files to say they are gone; a spec elsewhere that quotes the box's line names them too, and a
 // quote of the box is no use of them.

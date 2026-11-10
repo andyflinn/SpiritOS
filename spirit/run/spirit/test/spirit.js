@@ -20,7 +20,7 @@ const path = require('path');
 const { spawn, spawnSync } = require('child_process');
 // The product test system's own reporter (goal/G40.13): nothing of spirit/run/ reaches into the old test system.
 const RUN = path.join(__dirname, '..', '..');
-const test = require(path.join(RUN, 'test', 'testReport.js'));
+const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const SOURCE = fs.readFileSync(path.join(RUN, 'spirit', 'spirit.js'), 'utf8');
 const COMPONENT = 'spirit/relayUrl.js';
 const PAGE_COMPONENT = 'spirit/fieldRules.js';   // written for both node and a page, as the face's parts are
@@ -579,7 +579,7 @@ test.startTest('spirit/run/spirit.js: the one spirit object, in node and on a pa
   // tree....". A real page (headless Chrome) of a scratch node, the home page loaded as a user opens it, every call to the
   // node's door counted. Never a live node.
   test.subHeading('9. no api up front, on a real page');
-  const H = require(path.join(RUN, 'test', 'headLessChrome.js'));
+  const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
   const ok = function (cond, good, bad) { if (cond) test.check(good); else test.fail(bad); };
   const lazyNode = await H.scratchNode();
   const lazyPage = lazyNode.up ? await H.chromePage(H.findChrome()) : null;

@@ -6,15 +6,15 @@
 // appserver api can be called outside a spirit object, and an attacker trying to crash our servers will throw ANYTHING at
 // the api. Imitate that attacker", and "the server MUST not CRASH or HANG"; Andy, on the gap: "The relay's door is not
 // tested yet: there is no scratch relay helper. - close this gap, dammit!". The node's doors are
-// garbage.js; this file is the relay's, on a scratch relay of its own (test/headLessChrome.js
+// garbage.js; this file is the relay's, on a scratch relay of its own (spirit/test/headLessChrome.js
 // scratchRelay), never a live one. Everything goes raw over a bare socket, as an attacker sends it.
 
 const fs = require('fs');
 const net = require('net');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..','..');
-const test = require(path.join(RUN, 'test', 'testReport.js'));
-const { sleep, scratchRelay, scratchFaceRelay } = require(path.join(RUN, 'test', 'headLessChrome.js'));
+const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+const { sleep, scratchRelay, scratchFaceRelay } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 const limits = require(path.join(RUN, 'spirit', 'limits.js'));
 
 const ASK_MS = 10000;

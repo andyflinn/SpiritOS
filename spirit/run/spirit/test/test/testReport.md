@@ -1,4 +1,4 @@
-# test/testReport.js
+# spirit/test/testReport.js
 
 The product test system's reporter: every test in `spirit/run` prints its checks through it, and under the verifier
 sends each one on (`deskVerify.record`). This test holds one part of it: **the name a test is sent by** (goal/G41.19).
@@ -25,7 +25,7 @@ test's child plants its stand-in there.
     test moved beside it, goal/G43.27).
 - **A general test is sent by the file it judges.** A `-child-` or `-sibling-` test runs once per file, the file its
   argument (`TEST_SYSTEM.md`), so the module tested is that file:
-  `spirit/run/test/spirit-sibling-generalRules.js shell/agent/agent.js` is sent as `/shell/agent/agent`. The reporter
+  `spirit/run/spirit/test/spirit-sibling-generalRules.js shell/agent/agent.js` is sent as `/shell/agent/agent`. The reporter
   takes the judged file only when it exists, and `spirit/run/shell/agent/agent.js` is no longer in the tree, so this
   case would be red even with the load above fixed.
 - **Every test name starts with the path** (Andy, box v13: *"EVERY MOTHERFUCKING TEST NAME in the product three STARTS

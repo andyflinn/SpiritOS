@@ -20,7 +20,7 @@ output interleaves. To watch it bubble past in order:
 node spirit/test/runAll.js --serial
 ```
 
-The run takes every suite directly in `spirit/test/` and every product test folder under `spirit/run/` (`spirit/run/test/testModule.js`, `testsFor`); `--list` prints them and runs nothing.
+The run takes every suite directly in `spirit/test/` and every product test folder under `spirit/run/` (`spirit/run/spirit/test/testModule.js`, `testsFor`); `--list` prints them and runs nothing.
 
 To run only some of it, give a bare word — it is a substring match on the
 filename, no flag:

@@ -11,7 +11,7 @@ const path = require('path');
 const { spawnSync } = require('child_process');
 // spirit/app/deskVerify/test/ -> the run root, four up.
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
-const test = require(path.join(RUN, 'test', 'testReport.js'));
+const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const FILE = path.join(__dirname, '..', 'deskVerify.js');
 const MANIFEST = path.join(__dirname, '..', 'deskVerify.json');
 

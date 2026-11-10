@@ -11,7 +11,7 @@ const path = require('path');
 const EventEmitter = require('events');
 const childProcess = require('child_process');
 const RUN = path.resolve(__dirname, '../../../..');
-const test = require(path.join(RUN, 'test', 'testReport.js'));
+const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const FILE = path.join(__dirname, '..', 'deskLoop.js');
 const EAR = path.join(__dirname, '..', 'deskAgentEar.js');
 

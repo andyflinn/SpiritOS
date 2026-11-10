@@ -17,7 +17,7 @@ const { spawn, execSync } = require('child_process');
 // spirit/app/grants/test/ -> the run root, four up.
 const RUN = path.resolve(__dirname, '../../../..');
 const REPO = path.resolve(RUN, '..', '..');
-const test = require(path.join(RUN, 'test', 'testReport.js'));
+const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const FILE = path.join(__dirname, '..', 'grants.js');
 const SRC = fs.existsSync(FILE) ? fs.readFileSync(FILE, 'utf8') : '';
 const CODE = SRC.replace(/\/\/.*$/gm, '');
@@ -169,7 +169,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   // its deletion, closes its branchEditor tab."; "A user can only create, change and delete node-owned bundles and branches,
   // and sees the others read-only". What a person sees is judged: a press is a real click on what is drawn, in the Grants
   // app the shell app opens from its tile (goal/G43.24: "both show in the shell as before").
-  const H = require(path.join(RUN, 'test', 'headLessChrome.js'));
+  const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
   const s = scratch();
   let child = null;
   let chrome = null;

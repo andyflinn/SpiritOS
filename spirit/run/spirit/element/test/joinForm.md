@@ -18,7 +18,7 @@ Whether the form changes its icon and button in place or is drawn again when the
 test asks only what is seen after a pick.
 
 Asked of a real browser, the real rowForm composed: `./joinForm-laid.html`, opened at
-`/DEBUG/spirit/element/test/joinForm-laid.html` on a scratch node with its DEBUG on (`test/headLessChrome.js`), two relays
+`/DEBUG/spirit/element/test/joinForm-laid.html` on a scratch node with its DEBUG on (`spirit/test/headLessChrome.js`), two relays
 (Alpha with no seat, Beta seated), the form mounted on both, then on Beta fixed.
 
 ## Requirements

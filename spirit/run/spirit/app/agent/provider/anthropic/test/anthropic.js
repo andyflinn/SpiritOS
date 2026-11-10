@@ -9,7 +9,7 @@ const fs = require('fs');
 const http = require('http');
 const path = require('path');
 const RUN = path.resolve(__dirname, '../../../../../..');
-const test = require(path.join(RUN, 'test', 'testReport.js'));
+const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 
 const FILE = path.join(__dirname, '..', 'anthropic.js');
 const KEY = 'sk-ant-api03-test-0123456789';
