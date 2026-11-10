@@ -298,9 +298,24 @@ vendored code left out; with no file, all of them in one check; with a file, tha
   `spirit/spirit.js`, which is `spirit.require`, is not judged on this.
 - **No script name holds a dot of its own** besides `.js`.
 
+- **Placed where it is required** (testing point 3; Andy: *"a general test for any scriptFile.js is to spirit.require()
+  it."*, *"I'm NOT demanding that all scripts load in all environments, I'm demanding that they're placed in the spirit
+  object according to these rules IF they are required."*): every product script is `spirit.require()`d alone, on the
+  node (in the scratch copy beside the scratch node, a process of its own) and on a page (the scratch node's face
+  page, a fresh page each). Where it loads, it stands at `spirit.required.<its path>`, and on the node the answer came
+  at once, not a promise. Where it does not load nothing is judged; that some load on each side is itself checked.
+- **An element script**, one that calls `installSpiritElement`, has a factory with a `create` at
+  `spirit.element.<its path>` once required on a page.
+- **One helper places elements**: `spirit/element/installSpiritElement.js` is there, and no other product script puts
+  an element on `spirit.element` or `spirit.elements` by hand (an assignment, or an `Object.assign` into them);
+  `spirit/spirit.js`, which makes the spirit object, excepted.
+
 ## What its test must try to break (goal/G43.32, the refactor)
 
 - A script with no `'use strict'`, or one that has it after its first statement.
 - `require('./x.js')`, `require(path.join(...))`, or `require('fs')` before `spirit.js`.
 - A require written in a comment or a string is no require: the code is read with its comments blanked.
 - Too few scripts found (fewer than 100): nothing judged is red, never green.
+- A script that loads but stands nowhere in `spirit.required`, or answers a promise on the node.
+- An element script that loads on a page with no factory at its place, or one that does not load there at all.
+- `spirit.element.x = ...` or `spirit.elements.x = ...` written by hand outside the helper.

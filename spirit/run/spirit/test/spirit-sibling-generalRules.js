@@ -480,8 +480,107 @@ function everyScriptShaped() {
   ok(all.length > 100 && !broken.length, 'all ' + all.length + ' hold the shape', broken.length + ' of ' + all.length + ' do not; the first: ' + short(broken.slice(0, 5).map(function (x) { return x.f + ': ' + x.why[0]; })));
 }
 
+// EVERY PRODUCT SCRIPT, PLACED WHERE IT IS REQUIRED (goal/G43.32, the box, testing point 3; Andy: "a general test for
+// any scriptFile.js is to spirit.require() it.", Q5: "doesn't spirit.require() only load a script, store it at
+// spirit.required.<path>  and run it once.", "element scripts themselves are who installs the element factory at
+// spirit.element.<path-of-element-script>", and "I'm NOT demanding that all scripts load in all environments, I'm
+// demanding that they're placed in the spirit object according to these rules IF they are required."). Each script is
+// spirit.require()d alone on the node and on a page; where it loads, it stands at spirit.required.<its path>, and on
+// the node the answer came at once. Where it does not load (a page element on the node, a server on a page) nothing is
+// judged. An element script, one that calls installSpiritElement, has a factory with a create at spirit.element.<its
+// path> once required on a page. The node side runs in the scratch copy beside the scratch node, each script in a
+// process of its own; the page side on the scratch node's face page, a fresh page each. Never Andy's tree or node.
+function placeKeys(rel) { return rel.replace(/\.js$/, '').split('/'); }
+function isElementScript(rel) { return /\binstallSpiritElement\s*\(/.test(codeOf(fs.readFileSync(path.join(RUN, rel), 'utf8'), true)); }
+function requireOnNode(run, rel) {
+  return new Promise(function (resolve) {
+    const probe = 'const path = require("path"); const s = require(path.join(process.cwd(), "spirit", "spirit.js"));' +
+      'let at = null, err = ""; try { at = s.require(' + JSON.stringify(rel) + '); } catch (e) { err = String(e && e.message || e); }' +
+      'const keys = ' + JSON.stringify(placeKeys(rel)) + '; const place = keys.reduce(function (o, k) { return o == null ? undefined : o[k]; }, s.required);' +
+      'process.stdout.write("\\n@@" + JSON.stringify({ err: err, promise: !!(at && typeof at.then === "function"), placed: place !== undefined && place === at }) + "\\n"); process.exit(0);';
+    const kid = spawn(process.execPath, ['-e', probe], { cwd: run, stdio: ['ignore', 'pipe', 'pipe'] });
+    let out = '';
+    kid.stdout.on('data', function (d) { out += d; });
+    kid.stderr.on('data', function (d) { out += d; });
+    const t = setTimeout(function () { kid.kill('SIGKILL'); }, 20000);
+    kid.on('close', function () {
+      clearTimeout(t);
+      const m = /\n@@(.*)\n/.exec(out);
+      let r = null; try { r = m ? JSON.parse(m[1]) : null; } catch (e) { r = null; }
+      resolve(r || { err: 'it did not finish loading', promise: false, placed: false });
+    });
+  });
+}
+async function everyScriptRequired(node) {
+  test.subHeading('every product script, placed in spirit.required where it is required');
+  const all = productScripts().filter(function (f) { return f !== 'spirit/spirit.js'; });
+  ok(all.length > 100, 'the world: ' + all.length + ' product scripts, each required alone on the node and on a page', 'too few scripts to judge: ' + all.length);
+  const run = node.root ? path.join(node.root, 'spirit', 'run') : '';
+  if (!run) test.fail('no scratch copy to require the node\'s scripts in: nothing judged on the node');
+  else {
+    const loaded = [];
+    const bad = [];
+    for (const f of all) {
+      const r = await requireOnNode(run, f);
+      if (r.err) continue;
+      loaded.push(f);
+      if (r.promise) bad.push(f + ': spirit.require answered a promise, not the module at once');
+      else if (!r.placed) bad.push(f + ': nothing stands at spirit.required.' + placeKeys(f).join('.'));
+    }
+    ok(loaded.length > 0, 'the world: ' + loaded.length + ' of them load on the node', 'none loads on the node: nothing judged there');
+    ok(loaded.length > 0 && !bad.length, 'on the node: all ' + loaded.length + ' that load answer at once and stand at spirit.required.<path>', bad.length + ' of ' + loaded.length + ' do not; the first: ' + short(bad.slice(0, 5)));
+  }
+  const chrome = findChrome();
+  if (!chrome) { test.fail('no Chrome on this machine: nothing judged on a page'); return; }
+  const page = await chromePage(chrome);
+  if (!page || page.error) { test.fail('no Chrome page: ' + short(page && page.error)); return; }
+  try {
+    const loaded = [];
+    const bad = [];
+    const noFactory = [];
+    const elements = all.filter(isElementScript);
+    for (const f of all) {
+      await page.send('Page.navigate', { url: node.base + '/face.html' });
+      await until(function () { return page.evaluate('!!(window.spirit && window.spirit.ready)').then(Boolean); }, WAIT);
+      const keys = JSON.stringify(placeKeys(f));
+      const got = await page.evaluate('window.spirit.ready.then(function () { window.pageErrors = []; window.addEventListener("error", function (e) { window.pageErrors.push(String(e.message)); }); return spirit.require(' + JSON.stringify(f) + '); })' +
+        '.then(function () { var k = ' + keys + '; var at = function (root) { return k.reduce(function (o, x) { return o == null ? undefined : o[x]; }, root); };' +
+        ' var el = at(spirit.element); return JSON.stringify({ err: (window.pageErrors || []).join("; "), placed: at(spirit.required) !== undefined, factory: !!el && typeof el.create === "function" }); },' +
+        ' function (e) { return JSON.stringify({ err: String(e && e.message || e), placed: false, factory: false }); })');
+      let r = null; try { r = JSON.parse(got); } catch (e) { r = { err: 'the page answered ' + short(got), placed: false, factory: false }; }
+      if (r.err) { if (elements.indexOf(f) !== -1) noFactory.push(f + ' (it did not load: ' + r.err.slice(0, 80) + ')'); continue; }
+      loaded.push(f);
+      if (!r.placed) bad.push(f + ': nothing stands at spirit.required.' + placeKeys(f).join('.'));
+      if (elements.indexOf(f) !== -1 && !r.factory) noFactory.push(f);
+    }
+    ok(loaded.length > 0, 'the world: ' + loaded.length + ' of them load on a page', 'none loads on a page: nothing judged there');
+    ok(loaded.length > 0 && !bad.length, 'on a page: all ' + loaded.length + ' that load stand at spirit.required.<path>', bad.length + ' of ' + loaded.length + ' do not; the first: ' + short(bad.slice(0, 5)));
+    ok(elements.length > 0 && !noFactory.length, 'every element script (' + elements.length + ') has its factory at spirit.element.<its path>, by its own installSpiritElement', elements.length ? noFactory.length + ' of ' + elements.length + ' have none there: ' + short(noFactory.slice(0, 5)) : 'no script calls installSpiritElement: no element is placed by its path');
+  } finally {
+    try { if (page.kid) page.kid.kill(); } catch (e) { /* gone */ }
+    try { if (page.profile) fs.rmSync(page.profile, { recursive: true, force: true }); } catch (e) { /* scratch */ }
+  }
+}
+// THE ONE HELPER (goal/G43.32; Andy: "this can be done with ONE single helper function
+// spirit/element/installSpiritElement(spirit,elementPath)"): no element script puts itself on spirit.element or
+// spirit.elements by hand.
+function placedByHand() {
+  return productScripts().filter(function (f) {
+    if (f === 'spirit/element/installSpiritElement.js' || f === 'spirit/spirit.js') return false;
+    const code = codeOf(fs.readFileSync(path.join(RUN, f), 'utf8'), true);
+    return /\bspirit\.elements?\s*(\.\s*[\w$]+\s*)*=(?!=)|\bspirit\.elements?\s*(\.\s*[\w$]+\s*)*\[[^\]]*\]\s*=(?!=)|Object\.assign\s*\([^)]*\bspirit\.elements?\b/.test(code);
+  });
+}
+function oneHelper() {
+  test.subHeading('elements are placed by installSpiritElement alone');
+  ok(fs.existsSync(path.join(RUN, 'spirit', 'element', 'installSpiritElement.js')), 'spirit/element/installSpiritElement.js is there', 'there is no spirit/element/installSpiritElement.js');
+  const hand = placedByHand();
+  ok(!hand.length, 'no product script puts an element on spirit.element or spirit.elements by hand', hand.length + ' still do: ' + short(hand.slice(0, 8)));
+}
+
 async function every() {
   noProcessAnywhere();
+  oneHelper();
   branchesNamedAsFolders();
   runTestMoved();
   everyScriptShaped();
@@ -493,6 +592,7 @@ async function every() {
   const node = await scratchNode(SERVERS);
   try {
     if (!node.up || !node.debug) { test.fail('the scratch node did not come up with its DEBUG on: every file would blame the wrong thing'); return; }
+    await everyScriptRequired(node);
     for (const f of files) {
       const out = await new Promise(function (resolve) {
         const kid = spawn(process.execPath, [__filename, f].concat(VERIFY), { cwd: RUN, env: Object.assign({}, process.env, { SPIRIT_MOUNT_BASE: node.base }), stdio: ['ignore', 'pipe', 'pipe'] });
