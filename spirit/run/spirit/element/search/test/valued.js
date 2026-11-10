@@ -33,6 +33,15 @@ test.startTest('valued.js: rows of name and value, searchable, with no node verb
     let h = {}; try { h = JSON.parse(homes); } catch (e) { h = {}; }
     ok(h.now === 'function' && h.old === 'undefined', 'spirit.element.spirit.element.search.valued.create, and nothing on spirit.elements', 'homes: ' + short(h));
     if (h.now !== 'function') return;
+    // THE FACE SETTLES FIRST (cw traced it): the face page's own app selector is still loading its app cache as the page comes
+    // up, and those calls are the page's, not valued's. Counting starts once the page has asked nothing new for two seconds.
+    let seen = -1, still = 0;
+    const settled = await until(async function () {
+      const n = await js('performance.getEntriesByType("resource").length');
+      still = n === seen ? still + 1 : 0; seen = n;
+      return still >= 4;
+    }, 30000);
+    ok(settled, 'the world: the face page has settled before valued is mounted', 'the face page never settled: nothing judged');
     // Every call to the node, from here on, written down, but the face's own file reads (fs, shell/boot.js): it asks none for its rows.
     await js('(function () { window.__asks = []; var f = window.fetch; window.fetch = function (u, o) { var b = o && o.body ? String(o.body) : ""; if (/\\/api\\//.test(String(u)) && !/events\\.subscribe|\"call\":\"fs\\.|\"call\":\"jobs\\.FS\\./.test(b)) window.__asks.push(b.slice(0, 120)); return f.apply(this, arguments); }; window.__rows = []; for (var i = 0; i < 60; i++) window.__rows.push({ group: i % 2 ? "Odd" : "Even", name: "row" + i, value: String(i) }); var d = document.body.appendChild(document.createElement("div")); d.className = "fill"; d.style.cssText = "position:fixed;left:0;top:0;width:700px;height:220px;display:flex;flex-direction:column"; window.__box = d; window.__made = window.spirit.element.spirit.element.search.valued.create(d, { rows: function () { return window.__rows; }, columns: [{ field: "group", label: "group" }, { field: "name", label: "name" }, { field: "value", label: "value" }] }); return true; })()');
     const read = async function () {
