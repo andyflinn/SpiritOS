@@ -280,3 +280,27 @@ Judged in the run with no file:
 - A mention in a comment or a document, or written `run://test/`.
 - A tool listed as a test, so `noFuckingGarbage` judges it as a test named after no module.
 - A `.gitignore` line for a path under run:// that `/spirit/run/*` already covers; `run://spirit/` ignored by mistake.
+
+## Requirements (goal/G43.32, the refactor): every product script loads the tree through `spirit.require`
+
+Andy: *"every script (other than spirit/spirit.js) must start with ... 'use strict'; 'let spirit = require(spirit) or the
+html pages <script href=spirit/spirit.js> kind of thing; all other scripts should be loaded using spirit.require()"*,
+*"node modules designated to provide node.js functionality: require('http' | 'fs' etc.) are exempt"*, *"i see no reason
+codemirrors vendored scripts cannot be spirit.required...."*, *"just rename the bloody script"*, and *"this item deals
+with PRODUCT files, NOT tests."* Judged by reading every tracked `.js` under `spirit/run/spirit/`, test folders and
+vendored code left out; with no file, all of them in one check; with a file, that one, each reason its own red.
+
+- **It starts with `'use strict';`**, its first statement, comments aside. `spirit/spirit.js` too.
+- **It takes the spirit object first**: its first `require()` names `spirit.js`; a page script, which has none, finds
+  spirit on the page, which loaded `spirit/spirit.js` by its script tag.
+- **Nothing else of the tree is loaded but by `spirit.require`**: any other `require()` names one of node's own modules
+  (`fs`, `http`, `node:sqlite`, ...), as a plain string. A relative path, a computed path or another package is red.
+  `spirit/spirit.js`, which is `spirit.require`, is not judged on this.
+- **No script name holds a dot of its own** besides `.js`.
+
+## What its test must try to break (goal/G43.32, the refactor)
+
+- A script with no `'use strict'`, or one that has it after its first statement.
+- `require('./x.js')`, `require(path.join(...))`, or `require('fs')` before `spirit.js`.
+- A require written in a comment or a string is no require: the code is read with its comments blanked.
+- Too few scripts found (fewer than 100): nothing judged is red, never green.

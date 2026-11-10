@@ -539,6 +539,31 @@ test.startTest('spirit/run/spirit.js: the one spirit object, in node and on a pa
   if (injected.length === beforeBoot && !refusedAgain) test.check('on a face: requiring shell/boot.js after the boot loaded it runs nothing again, and answers');
   else test.fail('on a face: shell/boot.js, already booted, was run again or refused: ' + short([injected.length - beforeBoot, bootAgain && bootAgain.code]));
 
+  // ── 7c. spirit.required, AND THE NODE ANSWERS AT ONCE (goal/G43.32) ──
+  // Andy: "spirit.require() both on the node, AND on the browser should simply install every script required, at the
+  // following point: spirit.required.<path.of.fucking.script>. - no name collisions - easily checkable if script is
+  // already loaded.", and "box that spirit.require() on the node is just a path-translating wrapper": on the node it
+  // answers the module at once, as require does; an interface is still bound by asking a node.
+  test.subHeading('7c. spirit.required.<path>, and on the node spirit.require answers the module at once');
+  const placeOf = function (sp, p) { return String(p).replace(/\.js$/, '').split('/').reduce(function (o, k) { return o == null ? undefined : o[k]; }, sp && sp.required); };
+  const atOnce = s.require(COMPONENT);
+  const real = require(path.join(RUN, COMPONENT));
+  if (atOnce === real) test.check('on the node: spirit.require(' + COMPONENT + ') answers its module.exports at once, not a promise');
+  else test.fail('on the node spirit.require(' + COMPONENT + ') answered ' + (atOnce && typeof atOnce.then === 'function' ? 'a promise' : short(atOnce)) + ', not the module at once');
+  if (s.require(COMPONENT) === real) test.check('on the node: asked again, the same module at once');
+  else test.fail('on the node, asked again, spirit.require did not answer the same module at once');
+  if (placeOf(s, COMPONENT) === real) test.check('on the node: it stands at spirit.required.' + COMPONENT.replace(/\.js$/, '').split('/').join('.'));
+  else test.fail('on the node nothing stands at spirit.required.' + COMPONENT.replace(/\.js$/, '').split('/').join('.') + ': ' + short(s.required === undefined ? 'no spirit.required' : placeOf(s, COMPONENT)));
+  const iface = s.require(s.familyPath('demo'));
+  if (iface && typeof iface.then === 'function') { test.check('on the node: an interface is still bound by asking a node, a promise'); iface.then(null, function () {}); }
+  else test.fail('on the node an interface answered at once: ' + short(iface));
+  const rq = page();
+  await rq.spirit.require(PAGE_COMPONENT);
+  if (placeOf(rq.spirit, PAGE_COMPONENT)) test.check('on a page: once ' + PAGE_COMPONENT + ' is required it stands at spirit.required.' + PAGE_COMPONENT.replace(/\.js$/, '').split('/').join('.'));
+  else test.fail('on a page nothing stands at spirit.required.' + PAGE_COMPONENT.replace(/\.js$/, '').split('/').join('.') + ' once it is required');
+  if (rq.spirit.required && typeof rq.spirit.required === 'object' && !placeOf(rq.spirit, 'spirit/noSuchComponent.js')) test.check('on a page: a script never required has no place in spirit.required');
+  else test.fail('on a page ' + (rq.spirit.required ? 'spirit.required holds a script never required' : 'there is no spirit.required to look in'));
+
   // ── 7b. spirit.js LOADS THE CACHE ITSELF (goal/G41.3, Q2) ──────────────
   // Andy: spirit.js "on start of this client functionality ... AUTOMATICALLY caches ALL streamed datasets", "yes." The
   // cache is spirit/data.js (spirit.data); spirit.js loads it when its client part starts, page and process alike.

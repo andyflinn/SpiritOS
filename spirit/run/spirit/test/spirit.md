@@ -73,7 +73,8 @@ A caller that holds a verb's name in a variable writes `spirit[family][verb](arg
 
 ## The one loader: `spirit.require(path, key, how)`
 
-The one async function that loads every other component, the same on a page and in node.
+The one function that loads every other component: on a page it answers once the file has been fetched and run, on the
+node at once (below).
 
 - **path**: a run-root path, '/'-separated; a leading '/' is dropped.
 - **key**: left out or null for this VM's own node; a peer's public key for that peer's family (an interface path only).
@@ -84,6 +85,16 @@ The one async function that loads every other component, the same on a page and 
 | a component | required from the run root, its `module.exports` | got by `get` and run as a plain script, with no module box, so a file written for both node and a page takes its page branch and puts itself on the page (every shell element does; CodeMirror and its mode files too, goal/G41.7); a stylesheet is put on the page as a style; answers an empty object; `not-found` when it is not there |
 | an interface: `spirit/app/<name>/api.js` or `spirit/<name>/api.js` (`spirit.familyPath(name)`) | binds `spirit.<name>` from its node and answers it, asked once by any number of callers at once; `no-interface` for a family the node lacks, `no-node` with no port | the same |
 | an interface with `key` | the peer's family, through `spirit.peerPost` with `how`; held under the key, not on the instance | the peer's family, through the home node's `peer.post` |
+
+**`spirit.required.<path>`** (goal/G43.32; Andy: *"spirit.require() both on the node, AND on the browser should simply
+install every script required, at the following point: spirit.required.<path.of.fucking.script>. - no name collisions -
+easily checkable if script is already loaded."*): every script required stands at `spirit.required`, its run-root path
+one key per folder and its name without `.js` the last (`spirit/relayUrl.js` at `spirit.required.spirit.relayUrl`), on
+the node and on a page. A script never required has no place there.
+
+**On the node it answers at once** (Andy: *"box that spirit.require() on the node is just a path-translating
+wrapper."*): a script's `module.exports`, not a promise, the same answer every time it is asked. An interface is still
+bound by asking a node, so it stays a promise.
 
 ## Its other members
 

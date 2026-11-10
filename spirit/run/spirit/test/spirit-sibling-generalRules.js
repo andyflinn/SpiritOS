@@ -412,10 +412,79 @@ function runTestMoved() {
   ok(!ignoredByGit(inside), 'a new file in run://spirit/ is not ignored (' + inside + ')', 'git ignores ' + inside);
 }
 
+// EVERY PRODUCT SCRIPT LOADS THE TREE THROUGH spirit.require (goal/G43.32, the box, testing point 2). Andy: "every script
+// (other than spirit/spirit.js) must start with ... 'use strict'; 'let spirit = require(spirit) or the html pages <script
+// href=spirit/spirit.js> kind of thing; all other scripts should be loaded using spirit.require()", "node modules
+// designated to provide node.js functionality: require('http' | 'fs' etc.) are exempt", "i see no reason codemirrors
+// vendored scripts cannot be spirit.required....", and "just rename the bloody script" for a name with a dot of its own.
+// Judged by reading each product file (the box: "this item deals with PRODUCT files, NOT tests"); vendored code is
+// spirit.required by others and not judged as ours.
+const BUILTIN = require('module').builtinModules;
+// The code with its comments blanked, strings and line breaks kept; with bare, the strings' insides blanked too, every
+// offset the same, so a require written inside a string is found as none.
+function codeOf(src, bare) {
+  let out = '';
+  let i = 0;
+  while (i < src.length) {
+    const c = src[i];
+    const n = src[i + 1];
+    if (c === '/' && n === '/') { while (i < src.length && src[i] !== '\n') { out += ' '; i++; } continue; }
+    if (c === '/' && n === '*') { const end = src.indexOf('*/', i + 2); const stop = end === -1 ? src.length : end + 2; out += src.slice(i, stop).replace(/[^\n]/g, ' '); i = stop; continue; }
+    if (c === '\'' || c === '"' || c === '`') {
+      let j = i + 1;
+      while (j < src.length && src[j] !== c) { if (src[j] === '\\') j++; j++; }
+      out += bare ? c + src.slice(i + 1, j).replace(/[^\n]/g, ' ') + (j < src.length ? c : '') : src.slice(i, j + 1); i = j + 1; continue;
+    }
+    out += c; i++;
+  }
+  return out;
+}
+// Why a product script breaks the shape, one reason a break; [] when it holds.
+function shapeBreaks(rel) {
+  const why = [];
+  const stem = path.posix.basename(rel, '.js');
+  if (stem.indexOf('.') !== -1) why.push('its name holds a dot of its own (' + path.posix.basename(rel) + '): "just rename the bloody script"');
+  let src = '';
+  try { src = fs.readFileSync(path.join(RUN, rel), 'utf8'); } catch (e) { return ['it cannot be read']; }
+  const code = codeOf(src);
+  if (!/^\s*(['"])use strict\1\s*;/.test(code)) why.push('it does not start with \'use strict\';');
+  if (rel === 'spirit/spirit.js') return why;
+  // Every plain require: the first takes spirit.js; any other names one of node's own modules.
+  const bare = codeOf(src, true);
+  const re = /(^|[^.\w$])require\s*\(/g;
+  let m;
+  let first = true;
+  while ((m = re.exec(bare))) {
+    const open = m.index + m[0].length;
+    const arg = (/^\s*([^)]*)\)/.exec(code.slice(open)) || ['', ''])[1].trim();
+    const lit = /^(['"])([^'"]*)\1$/.exec(arg);
+    const named = lit ? lit[2] : '';
+    const spiritJs = /(^|\/)spirit\.js$/.test(named) || /['"]spirit\.js['"]\s*\)?$/.test(arg);
+    const line = code.slice(0, m.index).split('\n').length;
+    if (spiritJs) { first = false; continue; }
+    if (!first && lit && (BUILTIN.indexOf(named) !== -1 || BUILTIN.indexOf(named.replace(/^node:/, '')) !== -1)) continue;
+    why.push(first ? 'its first load is not spirit.js: require(' + arg.slice(0, 80) + ') at line ' + line : 'it loads require(' + arg.slice(0, 80) + ') at line ' + line + ', not through spirit.require');
+    first = false;
+  }
+  return why;
+}
+function productScripts() {
+  return require('child_process').execFileSync('git', ['ls-files'], { cwd: RUN, encoding: 'utf8' }).split('\n')
+    .filter(function (f) { return /^spirit\/.+\.js$/.test(f) && !/(^|\/)test\//.test(f) && !VENDORED_FOLDERS.holds(f) && fs.existsSync(path.join(RUN, f)); });
+}
+function everyScriptShaped() {
+  test.subHeading('every product script: use strict, spirit first, the tree only through spirit.require');
+  const all = productScripts();
+  ok(all.length > 100, 'the world: ' + all.length + ' product scripts read (tests and vendored code left out)', 'only ' + all.length + ' product scripts found: too few to judge');
+  const broken = all.map(function (f) { return { f: f, why: shapeBreaks(f) }; }).filter(function (x) { return x.why.length; });
+  ok(all.length > 100 && !broken.length, 'all ' + all.length + ' hold the shape', broken.length + ' of ' + all.length + ' do not; the first: ' + short(broken.slice(0, 5).map(function (x) { return x.f + ': ' + x.why[0]; })));
+}
+
 async function every() {
   noProcessAnywhere();
   branchesNamedAsFolders();
   runTestMoved();
+  everyScriptShaped();
   iconsLoaded();
   const reach = require(path.join(RUN, 'spirit', 'test', 'testModule.js')).testsFor('').filter(function (t) { return t.test === 'spirit/test/spirit-sibling-generalRules.js' && t.file; }).map(function (t) { return t.file; });
   const files = reach.filter(kindOf);
@@ -459,6 +528,13 @@ test.startTest((full ? NAMED : 'every page module') + ': the general rules of an
   // goal/G43.30: every file judged here, app, element or neither, mentions no spirit/run/process (noProcessAnywhere).
   test.subHeading(NAMED + ': ' + 'it mentions no spirit/run/process');
   ok(!namesProcess(rel), 'it names neither spirit/run/process nor run://process, in code or comment', 'it mentions spirit/run/process: ' + short((fs.readFileSync(full, 'utf8').match(PROCESS_NAMED) || [])[0]));
+  // goal/G43.32: a product script holds the shape (everyScriptShaped), each reason its own red.
+  if (/^spirit\/.+\.js$/.test(rel) && !/(^|\/)test\//.test(rel) && !VENDORED_FOLDERS.holds(rel)) {
+    test.subHeading(NAMED + ': ' + 'use strict, spirit first, the tree only through spirit.require');
+    const why = shapeBreaks(rel);
+    if (!why.length) test.check('it starts with \'use strict\', takes spirit first, and loads the tree only through spirit.require');
+    why.forEach(function (w) { test.fail(w); });
+  }
   if (!kindOf(rel)) { test.subHeading(NAMED); test.check(rel + ' is neither an app (shell/<app>/<app>.js) nor an element (under spirit/element/, or an agent table\'s page): not mounted'); return; }
   // THE WHOLE ROW, NEVER A FEW FIELDS (goal/G41.28; Andy, box v15: "All client side searches will be fixed, too, and
   // search the whole row, as cached in spirit.data."): no app or element hands a search a matched(row) of its own; the
