@@ -48,7 +48,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
       lists.push(l); return l;
     } }); },
     // The real row element loads the auth family's cache manager as it runs (goal/G41.28); its stand-in does the same.
-    'spirit/element/search/branch/rowElement.js': function (E) { global.window.spirit.cacheManager('auth'); ((E.search = E.search || {}).branch = E.search.branch || {}).rowElement = { create: function (row) { return { kind: 'branch', row: row }; } }; },
+    'spirit/element/search/branch/rowElement.js': function (E) { global.window.spirit.cacheManager('auth'); require(path.join(RUN, 'spirit', 'element', 'installSpiritElement.js'))(global.window.spirit, 'spirit/element/search/branch/rowElement.js', { create: function (row) { return { kind: 'branch', row: row }; } }); },
     // The shell's element shape (goal/G41.19): create(container, options) appends the control and answers it.
     'spirit/element/search/api.js': function (E) { (E.search = E.search || {}).api = { create: function (c, o) { const f = node('family'); f.o = o || {}; f.container = c; f.family = ''; f.verb = ''; families.push(f); c.appendChild(f); return f; } }; },
   };

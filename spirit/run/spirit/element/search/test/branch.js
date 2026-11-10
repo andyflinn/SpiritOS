@@ -39,10 +39,10 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const lists = [];
   const required = [];
   const STANDS = {
-    'spirit/element/search/branch/listElement.js': function (E) { ((E.search = E.search || {}).branch = E.search.branch || {}).listElement = { create: function (host, o) {
+    'spirit/element/search/branch/listElement.js': function (E) { require(path.join(RUN, 'spirit', 'element', 'installSpiritElement.js'))(global.window.spirit, 'spirit/element/search/branch/listElement.js', { create: function (host, o) {
       const l = { host: host, o: o, refreshed: 0, refresh: function () { l.refreshed += 1; }, destroy: function () {} };
       lists.push(l); return { list: l, refresh: l.refresh, destroy: l.destroy };
-    } }; },
+    } }); },
   };
   global.Event = function (type, o) { this.type = type; this.bubbles = !!(o && o.bubbles); };
   global.document = { createElement: element, addEventListener: function () {}, removeEventListener: function () {} };
@@ -56,6 +56,8 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     return Promise.resolve(true);
   };
   vm.runInThisContext(SRC, { filename: FILE });
+  // goal/G43.32: it places itself once installSpiritElement is in hand.
+  await settle();
   const E = ((global.window.spirit.element || {}).spirit || {}).element || {};
   const made = E.search.branch;
   ok(made && typeof made.create === 'function' && !('createBranchSelector' in E), 'it registers spirit.element.spirit.element.search.branch with a create, beside the shell\'s other selectors, and createBranchSelector no more', 'elements: ' + short(Object.keys(E)));

@@ -42,7 +42,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
         sort: function (f, d) { l.sorted = [f, d]; }, words: function () { return l.typed; } };
       lists.push(l); return l;
     } }); },
-    'spirit/element/search/file/rowElement.js': function (E) { ((E.search = E.search || {}).file = E.search.file || {}).rowElement = { create: function (row) { return { kind: 'file', row: row }; } }; },
+    'spirit/element/search/file/rowElement.js': function (E) { require(path.join(RUN, 'spirit', 'element', 'installSpiritElement.js'))(global.window.spirit, 'spirit/element/search/file/rowElement.js', { create: function (row) { return { kind: 'file', row: row }; } }); },
     'spirit/element/fstat.js': function (E) { E.fstat = { mimeOf: function (n) { return /\.png$/.test(n) ? 'image/png' : 'text/plain'; } }; },
   };
   global.window = { spirit: { escapeHtml: function (s) { return String(s); }, ready: Promise.resolve({ fs: fsFamily }), fs: fsFamily, element: {} } };
