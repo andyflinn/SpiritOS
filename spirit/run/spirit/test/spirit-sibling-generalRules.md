@@ -303,7 +303,7 @@ vendored code left out; with no file, all of them in one check; with a file, tha
   object according to these rules IF they are required."*): every product script is `spirit.require()`d alone, on the
   node (in the scratch copy beside the scratch node, a process of its own) and on a page (the scratch node's face
   page, a fresh page each). Where it loads, it stands at `spirit.required.<its path>`, and on the node the answer came
-  at once, not a promise. Where it does not load nothing is judged; that some load on each side is itself checked.
+  at once, not a promise; a branch's `api.js` binds its branch (decided 8), so it is waited on and judged by its place. Where it does not load nothing is judged; that some load on each side is itself checked.
 - **An element script**, one that calls `installSpiritElement`, has a factory with a `create` at
   `spirit.element.<its path>` once required on a page.
 - **One helper places elements**: `spirit/element/installSpiritElement.js` is there, and no other product script puts

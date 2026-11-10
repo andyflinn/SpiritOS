@@ -494,10 +494,13 @@ function placeKeys(rel) { return rel.replace(/\.js$/, '').split('/'); }
 function isElementScript(rel) { return /\binstallSpiritElement\s*\(/.test(codeOf(fs.readFileSync(path.join(RUN, rel), 'utf8'), true)); }
 function requireOnNode(run, rel) {
   return new Promise(function (resolve) {
+    // A branch's api.js (decided 8) binds the branch, so it is waited on and judged by its place alone; every other script
+    // answers at once and stands at its place as that answer.
+    const iface = /\/api\.js$/.test(rel);
     const probe = 'const path = require("path"); const s = require(path.join(process.cwd(), "spirit", "spirit.js"));' +
-      'let at = null, err = ""; try { at = s.require(' + JSON.stringify(rel) + '); } catch (e) { err = String(e && e.message || e); }' +
+      '(async function () { let at = null, err = "", promise = false; try { at = s.require(' + JSON.stringify(rel) + '); promise = !!(at && typeof at.then === "function"); if (' + iface + ' && promise) at = await at; } catch (e) { err = String(e && e.message || e); }' +
       'const keys = ' + JSON.stringify(placeKeys(rel)) + '; const place = keys.reduce(function (o, k) { return o == null ? undefined : o[k]; }, s.required);' +
-      'process.stdout.write("\\n@@" + JSON.stringify({ err: err, promise: !!(at && typeof at.then === "function"), placed: place !== undefined && place === at }) + "\\n"); process.exit(0);';
+      'process.stdout.write("\\n@@" + JSON.stringify({ err: err, promise: ' + iface + ' ? false : promise, placed: ' + iface + ' ? place !== undefined : place !== undefined && place === at }) + "\\n"); process.exit(0); }());';
     const kid = spawn(process.execPath, ['-e', probe], { cwd: run, stdio: ['ignore', 'pipe', 'pipe'] });
     let out = '';
     kid.stdout.on('data', function (d) { out += d; });
