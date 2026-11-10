@@ -290,10 +290,11 @@
         if (typeof container.dispatchEvent === 'function' && typeof CustomEvent === 'function') container.dispatchEvent(new CustomEvent('agent-row-added', { bubbles: true, detail: { table: o.table, id: o.id, row: a } }));
       });
     }
-    // THE ROW AS spirit.data HOLDS IT: what the stream writes there repaints this editor, a delete says so.
+    // THE ROW AS spirit.data HOLDS IT: what the stream writes there repaints this editor, a delete says so. Asked of the
+    // agent family's cache, which alone names its addresses (spirit/app/agent/data.js, watchRow).
     var unwatch = function () {};
     function attach() {
-    unwatch = D().watchPath(path, function (p, value) {
+    unwatch = window.spirit.data.agent.data.watchRow(o.table, o.id, function (value) {
       if (value === undefined) { row = null; note = 'Deleted.'; paint(); return; }
       row = value;
       paint();

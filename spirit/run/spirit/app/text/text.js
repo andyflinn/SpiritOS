@@ -62,7 +62,8 @@
         // WHAT IT SAVES, IT LISTENS FOR (goal/G41.27, as the old editor did): the file's row in the node's tree, as the fs
         // family's cache keeps it. Its own save is "saved" once the tree has it; any other change of the file is "changed on
         // disk".
-        off = S.data && S.data.fs && S.data.fs.data ? S.data.watchPath(S.data.fs.data.branch + '/' + path, function (whole, r) {
+        // Asked of the fs family's cache, which alone names its addresses (spirit/fs/data.js, watchFile).
+        off = S.data && S.data.fs && S.data.fs.data ? S.data.fs.data.watchFile(path, function (r) {
           if (!r || gone || shown !== mine) return;
           status.textContent = saving ? 'saved' : 'changed on disk';
           saving = false;

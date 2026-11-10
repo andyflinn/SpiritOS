@@ -75,9 +75,10 @@
       // WHO PAINTS, LISTENS (goal/G41.31; Andy: "any tab that hears (by listening) of it's own rows deletion will close itself."): the
       // tab follows its row where the stream writes it, its header as the label changes, closed when the row goes.
       function follow(spec, name) {
-        var A = agentAt('spirit.app.agent.table.tableElement');
-        if (!A || !window.spirit.data) return function () {};
-        return window.spirit.data.watchPath(A.branchOf(spec.table) + '/' + spec.id, function (p, value) {
+        // Asked of the agent family's cache, which alone names its addresses (spirit/app/agent/data.js, watchRow).
+        var C = ((window.spirit.data || {}).agent || {}).data;
+        if (!C) return function () {};
+        return C.watchRow(spec.table, spec.id, function (value) {
           if (value === undefined) { tabs.close(name); return; }
           if (value && value.label) tabs.rename(name, { label: header(spec, value) });
         });

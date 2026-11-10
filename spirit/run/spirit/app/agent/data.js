@@ -30,10 +30,16 @@
     //   branch(table)    a table's whole path, for a list that is a view of it (probabilitySearch's data) and for an
     //                    editor's row (branch + '/' + id); '' for a table the agent server has not
     //   row(table, id)   a row, or null
+    //   watchRow(table, id, fn)  fn(row) each time that row is written, undefined once it is gone; answers its release,
+    //                    a do-nothing one for a table the agent server has not (an editor, a tab following its row)
     var agentReads = {
       tables: TABLES.slice(),
       branch: function (table) { return TABLES.indexOf(String(table)) === -1 ? '' : HOME.path(String(table)); },
       row: function (table, id) { return TABLES.indexOf(String(table)) !== -1 && id ? HOME.get(String(table) + '/' + id) || null : null; },
+      watchRow: function (table, id, fn) {
+        if (TABLES.indexOf(String(table)) === -1 || !id) return function () {};
+        return HOME.watch(String(table) + '/' + id, function (whole, v) { if (typeof fn === 'function') fn(v); });
+      },
     };
     return agentReads;
   });
