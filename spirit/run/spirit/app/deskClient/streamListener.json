@@ -1,0 +1,6 @@
+{
+  "description": "The desk's stream: json is one bundle, a JSON array of rows as the desk publishes them, each taken into deskClient's data in order. appServer's verb for a server that follows a stream, heard from the key setDesk named alone; any other caller is refused not-granted. Answers {heard: true}.",
+  "request": {
+    "json": ""
+  }
+}

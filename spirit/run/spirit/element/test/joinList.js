@@ -2,7 +2,7 @@
 
 // spirit/run/spirit/element/test/joinList.js
 // The tests of spirit/element/joinList.js, and of no other module (spec: ./joinList.md). joinList holds all of Join
-// (spirit/app/join/join.js mounts it); its steps are join.json's, drawn from the join news on the node's spirit job as the
+// (spirit/app/join/element.js mounts it); its steps are join.json's, drawn from the join news on the node's spirit job as the
 // jobs family's cache keeps it. The browser file runs in node on a bare window: its container is a stand-in that keeps the
 // markup drawn, the jobs cache a stand-in holding the spirit job, and joinSteps the real helper. It is the proof the
 // general rules take for its redraw (Andy, goal/G43.32: "cw, yes", to "shall join's own test prove that it redraws, as you

@@ -64,14 +64,16 @@ function ownTest(m) { return join(join(dirOf(m), 'test'), path.posix.basename(m)
 // spirit/app/<name>/<name>.js, spirit/app/<name>/<name>.json", "and system branches by: spirit.<name>.api.js &&
 // spirit.<name>.data.js", and of the test that judges them, "branch test only needs to associate a failure with either
 // spirit/<name>/ or spirit/app/<name>/"): a system branch is spirit/<name>/ holding api.js and data.js, an app branch
-// spirit/app/<name>/ holding <name>.js and <name>.json. -> [{ dir, name, kind: 'system' | 'app' }], by dir.
+// spirit/app/<name>/ holding its manifest, <name>.json. -> [{ dir, name, kind: 'system' | 'app' }], by dir.
+// The manifest alone since goal/G43.32 (rule 2: "a manifest called run://spirit/app/[name]/[name].json must exists for
+// sub-folders"; rule 4 left an app with a face and no server no <name>.js).
 function branchesOf(root) {
   const at = root || RUN;
   const out = [];
   const has = function (rel) { try { return fs.statSync(path.join(at, rel)).isFile(); } catch (e) { return false; } };
   const dirs = function (rel) { try { return fs.readdirSync(path.join(at, rel), { withFileTypes: true }).filter(function (d) { return d.isDirectory() && SKIP.indexOf(d.name) === -1 && d.name !== 'test'; }).map(function (d) { return d.name; }); } catch (e) { return []; } };
   dirs('spirit').forEach(function (n) { if (has('spirit/' + n + '/api.js') && has('spirit/' + n + '/data.js')) out.push({ dir: 'spirit/' + n, name: n, kind: 'system' }); });
-  dirs('spirit/app').forEach(function (n) { if (has('spirit/app/' + n + '/' + n + '.js') && has('spirit/app/' + n + '/' + n + '.json')) out.push({ dir: 'spirit/app/' + n, name: n, kind: 'app' }); });
+  dirs('spirit/app').forEach(function (n) { if (has('spirit/app/' + n + '/' + n + '.json')) out.push({ dir: 'spirit/app/' + n, name: n, kind: 'app' }); });
   return out.sort(function (x, y) { return x.dir < y.dir ? -1 : 1; });
 }
 // A branch-rules test, ./test/<x>-sibling-branchRules.js: one entry per branch folder, not per module.

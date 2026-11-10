@@ -1,0 +1,7 @@
+{
+  "description": "Search the checks of an item by id, ranked by text against the whole check as item.checks serves it, newest first among equals; answers {items: [{key: the check's number, label}], more}. Refused no-such-item when there is none.",
+  "request": {
+    "id": "",
+    "text": ""
+  }
+}

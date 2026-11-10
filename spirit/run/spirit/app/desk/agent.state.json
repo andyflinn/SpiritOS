@@ -1,0 +1,6 @@
+{
+  "description": "Set the caller's word: listening when its ear arms, working when the ear hands a line over; any other word is refused bad-request. Who it is comes from the caller, never an argument. Answers {change}.",
+  "request": {
+    "word": ""
+  }
+}

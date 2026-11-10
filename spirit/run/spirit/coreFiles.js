@@ -58,8 +58,8 @@ function isCore(repoPath, repoRoot) {
   const companion = /^(.*)\/test\/([^/]+)\.(js|md)$/.exec(p);
   if (companion && ['.js', '.css', '.html'].some(function (ext) { return isCore(companion[1] + '/' + companion[2] + ext, repoRoot); })) return true;
   // A FILE OF AN APP IN spirit/app/<name>/ (goal/G43.14): its <name>.json is always core, whatever it says, so turning intrinsic
-  // off needs his grant; the rest of its folder is core unless that json says intrinsic false. A folder with no json, as
-  // appSelector/ and test/ are, stays core.
+  // off needs his grant; the rest of its folder is core unless that json says intrinsic false. Every json says intrinsic since
+  // goal/G43.32 (rule 2), so a missing value is no case left; the one folder with no json, the app branch's own test/, stays core.
   const own = /^spirit\/run\/spirit\/app\/([^/]+)\/(.+)$/.exec(String(repoPath || '').replace(/\\/g, '/').replace(/^\.\//, ''));
   if (own) return own[2].toLowerCase() === own[1].toLowerCase() + '.json' || appIntrinsic(repoRoot || DEFAULT_ROOT, own[1]) !== false;
   if (p.indexOf('spirit/run/spirit/') === 0) return true;

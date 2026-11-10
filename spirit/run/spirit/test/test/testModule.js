@@ -75,9 +75,9 @@ const { branchesOf } = require(path.join(RUN, 'spirit', 'test', 'testModule.js')
 const branches = branchesOf(RUN).map(function (b) { return b.dir; });
 const onDisc = [];
 fs.readdirSync(path.join(RUN, 'spirit'), { withFileTypes: true }).forEach(function (d) { if (d.isDirectory() && fs.existsSync(path.join(RUN, 'spirit', d.name, 'api.js')) && fs.existsSync(path.join(RUN, 'spirit', d.name, 'data.js'))) onDisc.push('spirit/' + d.name); });
-fs.readdirSync(path.join(RUN, 'spirit', 'app'), { withFileTypes: true }).forEach(function (d) { if (d.isDirectory() && fs.existsSync(path.join(RUN, 'spirit', 'app', d.name, d.name + '.js')) && fs.existsSync(path.join(RUN, 'spirit', 'app', d.name, d.name + '.json'))) onDisc.push('spirit/app/' + d.name); });
-ok(fs.existsSync(path.join(RUN, BRANCH_RULES)) && branches.length >= 20 && branches.slice().sort().join() === onDisc.sort().join() && branches.indexOf('spirit/app/appSelector') === -1 && branches.indexOf('spirit/test') === -1,
-  'the world: ' + branches.length + ' branch folders, read by both patterns (spirit/app/appSelector/ and spirit/test/ are none)', 'branchesOf: ' + short(branches) + ', the disc by both patterns: ' + short(onDisc));
+fs.readdirSync(path.join(RUN, 'spirit', 'app'), { withFileTypes: true }).forEach(function (d) { if (d.isDirectory() && fs.existsSync(path.join(RUN, 'spirit', 'app', d.name, d.name + '.json'))) onDisc.push('spirit/app/' + d.name); });
+ok(fs.existsSync(path.join(RUN, BRANCH_RULES)) && branches.length >= 20 && branches.slice().sort().join() === onDisc.sort().join() && branches.indexOf('spirit/app/test') === -1 && branches.indexOf('spirit/test') === -1,
+  'the world: ' + branches.length + ' branch folders, read by both patterns, an app by its manifest since goal/G43.32 (spirit/app/test/ and spirit/test/ are none)', 'branchesOf: ' + short(branches) + ', the disc by both patterns: ' + short(onDisc));
 const brAll = all.filter(function (e) { return e.test === BRANCH_RULES; }).map(function (e) { return e.file; });
 ok(brAll.length === branches.length && brAll.slice().sort().join() === branches.slice().sort().join(), 'on the whole list it has one entry per branch folder, ' + brAll.length, 'its entries: ' + short(brAll));
 const brDesk = testsFor('spirit/app/desk/desk.js').filter(function (e) { return e.test === BRANCH_RULES; }).map(function (e) { return e.file; });

@@ -204,19 +204,19 @@
   }
 
   // ── THE SHELL THE NODE NAMES (goal/G43.18, box v29) ────────────────────────────────────────────────────────────
-  // node.shell({ at }) names it, spirit/app/<name>/<name>.js; it is loaded and handed the page's area, the shell's
-  // element made there when it has one (spirit.elements.<name>.create). No shell named, or no answer: the shell app; one that does not load is said
-  // in the banner.
+  // node.shell({ at }) names it; its main element, spirit/app/<name>/element.js (goal/G43.32, rule 4), is loaded and made in
+  // the page's area. No shell named, or no answer: the app app (the box: "The node's default shell and every node's stored
+  // home and face shell are 'app'"); one that does not load is said in the banner.
   function loadShell() {
     var at = state.home ? 'home' : 'face';
     return Promise.resolve(spirit.ready).then(function (s) { return s.node.shell({ at: at }); }).then(function (r) {
-      return String((r && r.name) || 'shell');
-    }, function () { return 'shell'; }).then(function (name) {
-      if (!/^[A-Za-z0-9_-]+$/.test(name)) name = 'shell';
-      return spirit.require('spirit/app/' + name + '/' + name + '.js').then(function () {
+      return String((r && r.name) || 'app');
+    }, function () { return 'app'; }).then(function (name) {
+      if (!/^[A-Za-z0-9_-]+$/.test(name)) name = 'app';
+      return spirit.require('spirit/app/' + name + '/element.js').then(function () {
         // The shell's element at the place of the file just loaded, spirit.element.<its path> (goal/G43.32).
         var app = window.spirit.element && window.spirit.element.spirit && window.spirit.element.spirit.app;
-        var E = app && app[name] && app[name][name];
+        var E = app && app[name] && app[name].element;
         desktop.innerHTML = '';
         // THE SHELL'S AREA IS NO DESKTOP GRID (Andy, of his face.html: "all icons of the app.search are in a thin strip in the left
         // of my browser window"): a fill column the shell lays itself out in (face.css, #desktop.shell-area).

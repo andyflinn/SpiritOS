@@ -18,7 +18,7 @@ The box: *"the general rules judge no module: testModule.js looks for ./spirit.j
   patterns: spirit/app/<name>/<name>.js, spirit/app/<name>/<name>.json"*, *"and system branches by: spirit.<name>.api.js
   && spirit.<name>.data.js"*, to Q7: *"branch test only needs to associate a failure with either spirit/<name>/ or
   spirit/app/<name>/"*): `branchesOf()` reads the branch folders by both patterns, as the disc holds them
-  (`spirit/app/appSelector/` and `spirit/test/` are none); on the whole list `spirit-sibling-branchRules.js` has one entry
+  (`spirit/app/test/` and `spirit/test/` are none; an app branch by its manifest alone since goal/G43.32); on the whole list `spirit-sibling-branchRules.js` has one entry
   per branch folder; on `spirit/app/desk/desk.js`'s blast radius, the one branch holding it, `spirit/app/desk`, not
   `spirit/app`; a module in no branch (`spirit/apiAuth.js`) gets none. It is apart from the general rule tests above,
   which judge modules.

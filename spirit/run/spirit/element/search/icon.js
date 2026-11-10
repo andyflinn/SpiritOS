@@ -46,7 +46,7 @@
   //
   // The value is the GLYPH, not the key: setAppOverride (the old shell's)
   // stores a literal glyph in preferences.appOverrides, and the agent table's
-  // icon field (spirit/app/agent/table/rowElement.js) keeps one in its row. A manifest names its icon as the glyph too
+  // icon field (spirit/app/agent/element/table/rowElement.js) keeps one in its row. A manifest names its icon as the glyph too
   // (goal/G41.1: no icon table on the face).
   //
   // The root element is the control: it carries .value, it fires a

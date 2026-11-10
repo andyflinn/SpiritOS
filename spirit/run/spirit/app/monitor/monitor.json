@@ -3,16 +3,16 @@
     "icon": "🦻",
     "label": "Monitor",
     "intrinsic": true
- },
+  },
   "mount": {
-    "monitor.js":true
+    "element.js": true
   },
   "shell": {
-    "true":false,
-    "mount":true,
-    "tile":true
+    "true": false,
+    "mount": true,
+    "tile": true
   },
   "node": {
-    "mount":false
+    "mount": false
   }
 }

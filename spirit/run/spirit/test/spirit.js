@@ -676,7 +676,7 @@ test.startTest('spirit/run/spirit.js: the one spirit object, in node and on a pa
       ok(!listed.length, 'on a real page: every script is loaded by spirit.require when something requires it, none from a list up front',
         'on a real page: ' + listed.length + ' scripts loaded up front, not required: ' + short(listed.map(function (g) { return g.file + ' (by ' + g.by + ')'; })));
       // A dialog's parts come when it opens: the home page opens no app's detail, so none of its files is fetched.
-      const detail = gets.filter(function (g) { return /^spirit\/app\/appSelector\/detailElement\.js$|^spirit\/element\/appInstaller\.js$|^spirit\/app\/appSelector\/(serverDEBUG|changeAppIcon|changeAppLabel|rowFormSetShell)\.js$/.test(g.file); });
+      const detail = gets.filter(function (g) { return /^spirit\/element\/search\/app\/detailElement\.js$|^spirit\/element\/appInstaller\.js$|^spirit\/element\/search\/app\/(serverDEBUG|changeAppIcon|changeAppLabel|rowFormSetShell)\.js$/.test(g.file); });
       ok(!detail.length, 'on a real page: no detail is open, and none of an app detail\'s files is fetched', 'on a real page: an app detail\'s files fetched with no detail open: ' + short(detail.map(function (g) { return g.file; })));
       const twice = Array.from(new Set(asked)).filter(function (f) { return asked.filter(function (x) { return x === f; }).length > 1; });
       ok(!twice.length, 'on a real page: no family\'s api is asked twice', 'on a real page: asked more than once: ' + short(twice));
@@ -712,7 +712,7 @@ test.startTest('spirit/run/spirit.js: the one spirit object, in node and on a pa
       if (up === '200') {
         const mark = lazyPage.heard.length;
         const drawn = await lazyPage.evaluate("(function () { var d = document.createElement('div'); document.body.appendChild(d);" +
-          " return Promise.resolve(window.spirit.require('spirit/app/desk/desk.js')).then(function () { window.spirit.element.spirit.app.desk.browserDesk.create(d, {});" +
+          " return Promise.resolve(window.spirit.require('spirit/app/desk/element.js')).then(function () { window.spirit.element.spirit.app.desk.element.create(d, {});" +
           " return new Promise(function (r) { setTimeout(function () { r(JSON.stringify({ text: d.innerText, nodes: d.querySelectorAll('*').length })); }, 8000); }); }," +
           " function (e) { return JSON.stringify({ refused: String(e && e.message) }); }); })()");
         let got = {};

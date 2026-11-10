@@ -1,0 +1,7 @@
+{
+  "description": "Search the versions of an item's box by id, ranked by text against the whole row {version, by, at, text}, newest first among equals; answers {items: [{key: the version, label}], more}. Refused no-such-item when there is none.",
+  "request": {
+    "id": "",
+    "text": ""
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "description": "One ask of the desk: name the desk verb, json its arguments as a JSON object ('{}' when left out); answers the desk's answer itself, a desk refusal included. kept true answers from deskClient's cache alone, never asking the desk, or refuses not-kept. Refused signed-off while the agent is signed off, not-taken for a chat on an item it neither holds nor took a line on, no-answer when the desk does not answer in time. The owner's alone.",
+  "request": {
+    "name": "",
+    "json": "",
+    "kept": false
+  }
+}

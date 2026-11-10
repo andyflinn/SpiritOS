@@ -133,7 +133,7 @@ test.startTest('agent.js: the agent server');
     // goal/G41.26: the persona's provider is declared as the job's is, a key the call may leave out.
     ok(verbs.persona && verbs.job && verbs.persona.provider === verbs.job.provider && /^key\??$/.test(String(verbs.persona.provider || '')), 'the persona verb takes a provider, declared as the job\'s', 'persona: ' + short(verbs.persona) + ', job.provider ' + short(verbs.job && verbs.job.provider));
     const files = [];
-    TABLES.forEach(function (t) { ['server.js', 'elementTable.js', 'elementRow.js'].forEach(function (f) { files.push(path.join('spirit', 'app', 'agent', 'table', t, f)); }); });
+    TABLES.forEach(function (t) { files.push(path.join('spirit', 'app', 'agent', 'table', t, 'server.js')); ['elementTable.js', 'elementRow.js'].forEach(function (f) { files.push(path.join('spirit', 'app', 'agent', 'element', 'table', t, f)); }); });
     const absent = files.filter(function (f) { return !fs.existsSync(path.join(RUN, f)); });
     ok(!absent.length, 'each table has its folder spirit/app/agent/table/<name>/ with server.js, elementTable.js and elementRow.js', absent.length + ' of 12 missing: ' + absent.join(', '));
     // goal/G41.21: "With it go its folder (spirit/app/agent/table/grant)".

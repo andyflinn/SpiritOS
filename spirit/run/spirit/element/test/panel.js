@@ -29,7 +29,7 @@ function codeNaming(re) {
 }
 
 const PANEL = path.join(RUN, 'spirit', 'element', 'panel.js');
-const USERS = { appSelector: path.join(RUN, 'spirit', 'app', 'appSelector.js'), file: path.join(RUN, 'spirit', 'app', 'file', 'file.js') };
+const USERS = { appSelector: path.join(RUN, 'spirit', 'app', 'app', 'element.js'), file: path.join(RUN, 'spirit', 'app', 'file', 'element.js') };
 const PLANT = { 'zzFiles/notes.txt': 'alpha\nbeta\n' };
 
 function scratch() {
@@ -130,7 +130,7 @@ test.startTest('panel.js: what mounts covers its mounter (goal/G43.17)');
     // Every hand in expr is the page's, not only the first: "rows() ... && tiles()" asks both.
     const waitFor = function (expr, ms) { return until(function () { return c.evaluate('(function () { with (window.__t) { return !!(' + expr + '); } }())'); }, ms || 8000); };
     const selector = function (face) {
-      return c.evaluate('(function () { if (window.__sel) window.__sel.destroy(); var old = document.getElementById("zzBox"); if (old) old.remove(); var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.require("spirit/app/appSelector.js").then(function () { window.__sel = spirit.element.spirit.app.appSelector.create(b, { face: ' + JSON.stringify(face) + ' }); return "made"; }); }())');
+      return c.evaluate('(function () { if (window.__sel) window.__sel.destroy(); var old = document.getElementById("zzBox"); if (old) old.remove(); var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.require("spirit/app/app/element.js").then(function () { window.__sel = spirit.element.spirit.app.app.element.create(b, { face: ' + JSON.stringify(face) + ' }); return "made"; }); }())');
     };
 
     test.subHeading('the box: "An element mounts over ALL of the one that mounts it, its title bar too", under "its own title bar [icon] <label> [✕]"');

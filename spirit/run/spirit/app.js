@@ -17,12 +17,12 @@ require('./spirit.js');
 //                     Whether it may mount as shell is its <name>.json's alone (goal/G43.18, Q10: app.shell went).
 //
 // A PLUGIN IS A FOLDER WITH ITS OWN <name>/<name>.json (Andy, G43.1's box: "the new "default" pattern in that module is:
-// /<name>/<name>.json"), read from the disk at each search, so no list names one. appSelector/ and test/ are no plugins.
+// /<name>/<name>.json"), read from the disk at each search, so no list names one. test/, the app branch's own tests, is no plugin.
 //
 // WHO PAINTS, LISTENS (Andy, G41.32): the permanent job 'apps' holds every plugin's row, { apps: { key: row } }, published
 // whole as a plugin's file changes, so a connect's snapshot is the whole push a cache forgets for (spirit/data.js's forget).
 // The fs watcher hears the disk; nothing here watches it again. A face with no star keeps today's stream (goal/G41.33), so
-// it hears no such job: it asks again when a connect forgets (./app/appSelector/rowFormAppActive.js).
+// it hears no such job: it asks again when a connect forgets (./element/search/app/rowFormAppActive.js).
 
 const fs = require('fs');
 const path = require('path');

@@ -15,11 +15,11 @@ codeMirror-field for the persona-description i give it with every prompt)"*.
 - A persona deleted takes no grants: grants are a job's.
 - **A search answers the id, the icon and the label of a row, nothing else** (goal/G41.18; Andy: *"only the ID and
   the fields shown in a table, that's all it needs."*): what its list shows. The editor reads the rest by get.
-- `elementTable.js` registers `spirit.element.spirit.app.agent.table.persona.elementTable.create(container, detail)`, handed no api: its list asks `agent.<table>` through the spirit object itself (goal/G43.24):
+- `elementTable.js` registers `spirit.element.spirit.app.agent.element.table.persona.elementTable.create(container, detail)`, handed no api: its list asks `agent.<table>` through the spirit object itself (goal/G43.24):
   - It requires the shared element and its own `elementRow.js`.
   - It builds on `agentTable` for the persona table, with the shared Add.
   - A row it opens is a `personaRow`.
-- `elementRow.js` registers `spirit.element.spirit.app.agent.table.persona.elementRow.create(container, id, added, detail)`, handed no api:
+- `elementRow.js` registers `spirit.element.spirit.app.agent.element.table.persona.elementRow.create(container, id, added, detail)`, handed no api:
   - It builds on `agentRow` with the persona table's look.
   - Its fields are the label, the persona in a CodeMirror editor, then the bundle and the provider (below).
 

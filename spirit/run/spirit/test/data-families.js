@@ -113,13 +113,14 @@ test.startTest('spirit.data: every family at spirit.data.<name>, through spirit/
 
     // Andy: "the helpes must not be words there either, this goes for all spirit.app contained objects."
     test.subHeading('spirit.app: no helper is a word, on it or on an app it holds');
-    const onApp = await ask('(function () { var S = window.spirit; return Promise.all(["spirit/app/monitor/monitor.js"].map(function (p) { return Promise.resolve(S.require(p)).then(null, function () { return null; }); })).then(function () {' +
+    const onApp = await ask('(function () { var S = window.spirit; return Promise.all(["spirit/app/monitor/element.js"].map(function (p) { return Promise.resolve(S.require(p)).then(null, function () { return null; }); })).then(function () {' +
       ' var out = { keys: Object.keys(S.app || {}), words: [] };' +
       ' out.keys.forEach(function (k) { var v = S.app[k]; if (typeof v === "function" && !/[A-Z]/.test(k)) out.words.push(k);' +
       ' else if (k !== "FS" && v && typeof v === "object") Object.keys(v).forEach(function (h) { if (typeof v[h] === "function" && !/[A-Z]/.test(h)) out.words.push(k + "." + h); }); });' +
       ' out.apps = out.keys.filter(function (k) { return S.app[k] && typeof S.app[k].createApp === "function"; });' +
       ' return JSON.stringify(out); }); })()');
-    ok(Array.isArray(onApp.apps) && onApp.apps.indexOf('monitor') !== -1, 'monitor stand there, each with createApp', 'on spirit.app: ' + short(onApp));
+    // goal/G43.32, the box: "Monitor too: its createApp becomes its element.js, and appSelector's createApp path goes."
+    ok(Array.isArray(onApp.apps) && !onApp.apps.length && Array.isArray(onApp.keys) && onApp.keys.length > 0, 'the world: spirit.app holds ' + (onApp.keys || []).length + ' keys, and no app with a createApp (monitor\'s is its element.js)', 'on spirit.app: ' + short(onApp));
     ok(Array.isArray(onApp.words) && !onApp.words.length, 'and no helper there is a word', 'helpers on spirit.app that are words: ' + short(onApp.words || onApp));
 
     // Q5, "Does spirit.data.<name>.cache hold a level per node, as the tree does today?", Andy: "yes."

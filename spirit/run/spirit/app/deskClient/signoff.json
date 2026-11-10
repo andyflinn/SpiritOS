@@ -1,0 +1,6 @@
+{
+  "description": "The desk's signoff order: the agent is signed off, written to its status.json, whatever the agent or model thinks; while it is, desk and next are refused. agent names the persona; one state, whoever is named. Answers {signedOff: true, status}; refused not-saved when it cannot be written. The owner's alone.",
+  "request": {
+    "agent": ""
+  }
+}

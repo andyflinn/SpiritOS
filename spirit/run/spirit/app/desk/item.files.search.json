@@ -1,0 +1,7 @@
+{
+  "description": "Search the files touched for an item by id, each {path, by, core}, ranked by text against the whole row; answers {items: [{key: the path, label}], more}. Refused no-such-item when there is none.",
+  "request": {
+    "id": "",
+    "text": ""
+  }
+}

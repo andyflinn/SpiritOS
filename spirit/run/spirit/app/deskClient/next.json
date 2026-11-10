@@ -1,0 +1,6 @@
+{
+  "description": "The agent waits here: what is waiting for it (a line, a change, a JOB line for work open to it) is handed over at once, else the wait ends with nothing within the node's time; answers {lines}. read is the key of the wake the agent last read: deskClient drops that wake only then, else hands it again. Refused signed-off while the agent is signed off, unblocked while another agent's key is not blocked on this node. The owner's alone.",
+  "request": {
+    "read": ""
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "description": "One test's outcome, as a suite reports it: suite and title name the test, outcome is red or green (else refused), failure the text a red printed. Answers {written}: a repeat of the same outcome is not written, so the history is the flips.",
+  "request": {
+    "suite": "",
+    "title": "",
+    "outcome": "",
+    "failure": ""
+  }
+}

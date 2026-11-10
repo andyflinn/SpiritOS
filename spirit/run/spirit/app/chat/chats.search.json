@@ -1,0 +1,4 @@
+{
+  "description": "The chats, newest first; it takes nothing. One row per peer a line has crossed with, {peer, at, sent, seq, unanswered}: its newest line, and how many of the peer's lines arrived after the newest one this node sent. A peer the node's contact book marks blocked is left out, and a book that does not answer refuses the search (no-answer). Answers {items: [{key: the peer's key, label}], more}. The owner's alone.",
+  "request": {}
+}

@@ -1,0 +1,7 @@
+{
+  "description": "The files touched for an item by id, each {path, by, core}, core files first, then by path; under, when given, keeps the paths that start with it ('' keeps every path). Answers {files, filesMore}: as many as fit one answer, filesMore when some were left out. Refused no-such-item when there is none.",
+  "request": {
+    "id": "",
+    "under": ""
+  }
+}

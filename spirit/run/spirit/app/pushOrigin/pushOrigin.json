@@ -5,15 +5,15 @@
     "intrinsic": false
   },
   "mount": {
-    "pushOrigin.js":true
+    "pushOrigin.js": true
   },
   "shell": {
-    "true":false,
-    "mount":false,
-    "tile":false
+    "true": false,
+    "mount": false,
+    "tile": false
   },
   "node": {
-    "mount":false,
-    "run":true
+    "mount": false,
+    "run": true
   }
 }

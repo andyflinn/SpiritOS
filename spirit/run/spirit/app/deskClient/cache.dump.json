@@ -1,0 +1,4 @@
+{
+  "description": "The cache saved now, to appServer's cache file of the desk, spirit/state/deskClient/cache/<the desk's node id>.json; it takes no path, so a caller cannot name one. Answers {file, bytes}; refused not-saved when it cannot write, or when no desk is followed yet. The owner's alone.",
+  "request": {}
+}

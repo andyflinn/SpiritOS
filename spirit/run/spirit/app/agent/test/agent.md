@@ -1,6 +1,6 @@
 # spirit/app/agent/agent.js
 
-The Agent in `spirit/app/agent/`, as Andy sees it (goal/G43.13). Its test is `./agent.js`: a real node on a scratch copy of the tracked files, and real clicks in a real Chrome on the appSelector, made as the shell app (`spirit/app/shell/shell.js`) makes it.
+The Agent in `spirit/app/agent/`, as Andy sees it (goal/G43.13). Its test is `./agent.js`: a real node on a scratch copy of the tracked files, and real clicks in a real Chrome on the appSelector, made as the shell app (`spirit/app/app/element.js`) makes it.
 
 `agent.js` is a few lines: on a page it loads `browserAgent.js`, in a node `nodeAgent.js`. Their own suites are `./browserAgent.md` and `./nodeAgent.md`.
 

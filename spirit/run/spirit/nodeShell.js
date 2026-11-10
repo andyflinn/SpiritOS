@@ -10,7 +10,8 @@ require('./spirit.js');
 //   shell(rootDir, body) -> { ok, status, name } or { ok: false, status, code, error }
 //
 // KEPT IN A FILE OF ITS OWN, spirit/state/shell.json, { home, face } (box v29; wsl: config.json is the relay's limits file).
-// NO SHELL CHOSEN IS THE SHELL APP (Q12): no file, or no name in it for that place, is "shell", spirit/app/shell/.
+// NO SHELL CHOSEN IS THE APP APP (Q12; goal/G43.32, the box: "The node's default shell and every node's stored home and face
+// shell are 'app'"): no file, or no name in it for that place, is "app", spirit/app/app/.
 // A SHELL IS NAMED BY ITS OWN <name>.json ALONE (box v29: "<name>.json alone says whether an app may be a shell"; Andy: "the
 // allow row goes"): a name that is no app, or whose <name>.json does not say shell:true:true, is refused with the reason, and
 // the shell stays.
@@ -19,7 +20,7 @@ const fs = require('fs');
 const path = require('path');
 
 const PLACES = ['home', 'face'];
-const DEFAULT = 'shell';
+const DEFAULT = 'app';
 
 function fileOf(rootDir) { return path.join(rootDir, 'spirit', 'state', 'shell.json'); }
 function kept(rootDir) {

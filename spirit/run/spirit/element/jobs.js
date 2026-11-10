@@ -1,7 +1,7 @@
 'use strict';
 // spirit/run/spirit/element/jobs.js
 // THE JOB MONITOR'S LIST, AN ELEMENT (goal/G43.29; Andy: "a wrapper for separate spirit/element/ files"): what the Jobs app
-// (spirit/app/jobs/jobs.js) draws, moved here from shell/jobs/jobs.js and working as it did. Its contract and its test:
+// (spirit/app/jobs/element.js) draws, moved here from shell/jobs/jobs.js and working as it did. Its contract and its test:
 // ./test/jobs.md and ./test/jobs.js.
 //
 //   spirit.element.spirit.element.jobs.create(container, { open }) -> { destroy() }

@@ -24,7 +24,7 @@ asks that of the app as a whole, the way Desk's does (`spirit/app/desk/element/d
 - The app mounts into a `fill` box of the whole app area.
 - Shown by its strip button, the list pane of each tool stands in a `fill` box, and so does every box from it up to the
   app:
-  - provider, model, persona and job: the table's list (`spirit/app/agent/table/tableElement.js`).
+  - provider, model, persona and job: the table's list (`spirit/app/agent/element/table/tableElement.js`).
 - Every list pane the app drew, four at least, meets the same rule. A list drawn as a dropdown stands inline, as every
   picker in the tree does, and is not asked.
 

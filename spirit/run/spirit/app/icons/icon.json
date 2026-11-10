@@ -1,0 +1,9 @@
+{
+  "description": "The icon set, one table: op is one of search, get, add, set and delete; the glyph is the row's key and its keywords what it is found by. search takes text ('' every icon) and answers {items: [{key: the glyph, label: {glyph, keywords} as json}], more}; get answers {row}, null when unknown; add takes a glyph and its keywords, put first, and answers {added, row}, not added when the glyph is there already, naming it as known; set answers {changed, row}; delete answers {deleted, glyph}. A change is published to every open page. A get, add, set or delete without a glyph is refused bad-request.",
+  "request": {
+    "op": "",
+    "glyph": "",
+    "keywords": [],
+    "text": ""
+  }
+}

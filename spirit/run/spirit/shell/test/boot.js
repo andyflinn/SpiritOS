@@ -66,7 +66,7 @@ test.startTest('boot.js: the face\'s boot');
     ok(!/join[\w.]*\.sidecar\.json/.test(boot), 'boot reads no sidecar of Join', 'boot reads the sidecar of Join');
   }
   const core = require(path.join(RUN, 'spirit', 'coreFiles.js'));
-  const mustCore = ['spirit/shell/boot.js', 'spirit/shell/seal.js', 'spirit/shell/face.css', 'spirit/shell/favicon.svg', 'spirit/app/join/join.js', 'spirit/app/join/join.json'];
+  const mustCore = ['spirit/shell/boot.js', 'spirit/shell/seal.js', 'spirit/shell/face.css', 'spirit/shell/favicon.svg', 'spirit/app/join/element.js', 'spirit/app/join/join.json'];
   const notCore = mustCore.filter(function (p) { return core.isCore('spirit/run/' + p, REPO) !== true; });
   ok(!notCore.length, 'boot, the seal, the sheet, the icon and the Join app whole are core', 'not core: ' + notCore.join(', '));
 
@@ -74,7 +74,7 @@ test.startTest('boot.js: the face\'s boot');
   // names, spirit/app/<name>"; Q22: the link is spirit.js's; Q23: no desktop of boot's own; Q18: Join shows itself.
   test.subHeading('the shell the node names, and no desktop of its own (goal/G43.18)');
   if (boot) {
-    ok(/node\.shell\(\{ at: at \}\)/.test(boot) && /'spirit\/app\/' \+ name \+ '\/' \+ name \+ '\.js'/.test(boot), 'boot asks node.shell and loads spirit/app/<name>/<name>.js', 'boot does not load the shell the node names');
+    ok(/node\.shell\(\{ at: at \}\)/.test(boot) && /'spirit\/app\/' \+ name \+ '\/element\.js'/.test(boot), 'boot asks node.shell and loads spirit/app/<name>/element.js, the shell\'s main element (goal/G43.32, rule 4)', 'boot does not load the shell the node names');
     ok(!/function (drawDesktop|readFace|listApps|openApp|loadApp|serverUp)\(/.test(boot), 'no desktop of its own: no drawDesktop, readFace, listApps, openApp, loadApp or serverUp', 'boot still draws a desktop: ' + short((boot.match(/function (drawDesktop|readFace|listApps|openApp|loadApp|serverUp)\(/g) || [])));
     ok(!/function (postCall|uploadSave)\(/.test(boot) && !/'\/face\/api'/.test(boot), 'no link and no relay login of its own: spirit.link and spirit.login are spirit.js\'s', 'boot still holds the link or the login');
     ok(!/joinNow|joinOpenStep|handJoin/.test(boot), 'Join decides where it stands itself: boot works out no join step', 'boot still works out Join\'s steps');

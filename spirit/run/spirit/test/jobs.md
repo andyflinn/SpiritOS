@@ -15,7 +15,7 @@ node's door. Each thing asked to run would write a marker of its own, so whether
 - **An app's own script, its json saying `node.run` true, starts**, by this node's executable and its path; its job is its
   route, `spirit.app.<name>` (the refusal of a second start while one runs is `./jobs-routes.md`'s).
 - **Plain `node` with such a script starts**: the word `node` is read as this node's own executable; a page sends it so
-  (the app detail's Run, `spirit/app/appSelector/detailElement.js:68`).
+  (the app detail's Run, `spirit/element/search/app/detailElement.js:68`).
 
 ## What its test must try to break
 

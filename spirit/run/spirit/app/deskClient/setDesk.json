@@ -1,0 +1,6 @@
+{
+  "description": "The key of the node that runs the desk, told once by the node's owner and kept; deskClient then subscribes to that desk's stream. Answers {set: true}; refused bad-request without a key. The owner's alone.",
+  "request": {
+    "key": ""
+  }
+}

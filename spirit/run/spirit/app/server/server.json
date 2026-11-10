@@ -1,17 +1,18 @@
 {
   "identity": {
     "icon": "🧪",
-    "label": "Server"
+    "label": "Server",
+    "intrinsic": false
   },
   "mount": {
-    "server.js":true
+    "element.js": true
   },
   "shell": {
-    "true":false,
-    "mount":true,
-    "tile":true
+    "true": false,
+    "mount": true,
+    "tile": true
   },
   "node": {
-    "mount":false
+    "mount": false
   }
 }

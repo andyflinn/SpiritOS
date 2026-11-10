@@ -1,20 +1,19 @@
 {
   "identity": {
     "icon": "😄",
-    "label": "Icons"
+    "label": "Icons",
+    "intrinsic": false
   },
   "mount": {
-    "icons.js":true
+    "element.js": true,
+    "icons.js": true
   },
   "shell": {
-    "true":false,
-    "mount":true,
-    "tile":true
+    "true": false,
+    "mount": true,
+    "tile": true
   },
   "node": {
-    "mount":false
+    "mount": false
   }
 }
-
-
-

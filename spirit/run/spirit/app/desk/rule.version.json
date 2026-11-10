@@ -1,0 +1,8 @@
+{
+  "description": "A new version of a rule by its key, carrying its full text and its status (proposed, active or deleted): activating and deleting a rule are versions too. Refused no-such-item when there is none. His alone. Answers {key}.",
+  "request": {
+    "key": "",
+    "text": "",
+    "status": ""
+  }
+}

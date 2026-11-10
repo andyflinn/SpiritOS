@@ -4,7 +4,7 @@
 //
 //   Andy, Q1: "make codeMirror a shell element by the same name. and make sure that it supports both read and edit-mode,
 //   and that the text viewer uses that new element as well." It replaces spirit/element/textView.js, which is gone. The text
-//   viewer (spirit/element/textViewer.js) is gone too (faaf2b1b); the text element (spirit/app/text/text.js) edits with it,
+//   viewer (spirit/element/textViewer.js) is gone too (faaf2b1b); the text element (spirit/app/text/element.js) edits with it,
 //   and deskDetails, introSpector, jobDetail and the agent tables' rows draw with it.
 //
 // THE ONLY DOOR TO THE LIBRARY (goal/G43.5; Andy: "only access to codeMirror library is through the element!"): no page loads it

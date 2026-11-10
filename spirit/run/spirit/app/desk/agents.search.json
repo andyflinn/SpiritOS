@@ -1,0 +1,6 @@
+{
+  "description": "Search the agents the desk has seen, each {label, key, name, at, word}, ranked by text against the whole row, newest first among equals; answers {items: [{key: the agent's label, label}], more}. A list is a search: an empty text is everything the bucket holds.",
+  "request": {
+    "text": ""
+  }
+}

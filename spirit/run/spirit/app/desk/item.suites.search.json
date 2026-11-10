@@ -1,0 +1,7 @@
+{
+  "description": "Search the suites of an item by id, each {path, pos}, ranked by text, in their order among equals; answers {items: [{key: the path, label}], more}. Refused no-such-item when there is none.",
+  "request": {
+    "id": "",
+    "text": ""
+  }
+}

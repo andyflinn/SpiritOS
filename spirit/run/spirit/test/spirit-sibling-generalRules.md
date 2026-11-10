@@ -27,7 +27,7 @@ is an app (from the path pattern), why the fuck would would it need manifests fo
 - an **element** is any script under `spirit/element/`. The agent tables' pages (goal/G41.27; Andy, Q5: *"it covers
   them, too"*) have been in `spirit/app/agent/table/` since goal/G43.12, which no pattern of the test matches, so today
   none of them is counted as an element;
-- also an element: `spirit/app/appSelector.js` and the files of `spirit/app/appSelector/` (goal/G43.2), and an app of
+- also an element: `spirit/app/app/element.js` and the files of `spirit/app/appSelector/` (goal/G43.2), and an app of
   the new folder, `spirit/app/<name>/<name>.js` (goal/G43.2);
 - anything else in its reach (any other module) is neither, is not mounted, and its run says
   so.
@@ -193,7 +193,7 @@ box is its own check, named by the element's path and the box's id chain."*
     the verifier's run only for an item open, which a bare mount never has; its own test is run, and the check is green
     only when its check *"a verifier publish taken into spirit.data redraws the run"* passed. So for Join (Andy,
     goal/G43.32: *"cw, yes"*, to *"shall join's own test prove that it redraws, as you ruled for deskDetails in Q24?"*):
-    `spirit/element/joinList.js` and the Join app that mounts it, `spirit/app/join/join.js`, draw only the join news on
+    `spirit/element/joinList.js` and the Join app that mounts it, `spirit/app/join/element.js`, draw only the join news on
     the spirit job, which a marked row cannot change; `spirit/element/test/joinList.js` is run, and the check is green only
     when its check *"a new join on the spirit job, taken into spirit.data, redraws the steps"* passed;
   - in its code, since a bare mount seldom has a row to change: a module whose code sends a write (an op that changes a
@@ -233,7 +233,7 @@ editor's scroller still is.
 - A list that hands its search a matched(); a search made with no data branch, or fed by its own rows(); a row drawn
   that its branch does not hold.
 
-**The app family's selector is an element too** (goal/G43.2): `spirit/app/appSelector.js` and the three files beside it in `spirit/app/appSelector/` are judged as the shell's elements are.
+**The app family's selector is an element too** (goal/G43.2): `spirit/app/app/element.js` and the three files beside it in `spirit/app/appSelector/` are judged as the shell's elements are.
 
 ## Requirements (goal/G43.30): run://process is named nowhere
 

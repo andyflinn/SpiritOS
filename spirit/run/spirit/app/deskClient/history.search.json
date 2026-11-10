@@ -1,0 +1,6 @@
+{
+  "description": "Search the record of this deskClient's asks of the desk, each {at, verb, ms, outcome, bytes, port, count}, ranked by text against the whole row, newest first among equals ('' or left out: every record); answers {items: [{key, label}], more}.",
+  "request": {
+    "text": ""
+  }
+}

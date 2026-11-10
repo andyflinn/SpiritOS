@@ -1,0 +1,4 @@
+{
+  "description": "The backup's last check, copy and error; it takes nothing. Answers {lastCheck, lastCopy, lastError}: when spirit/state/ was last checked, when a run last wrote a copy ('' for never), and what went wrong in the last run ('' for nothing).",
+  "request": {}
+}

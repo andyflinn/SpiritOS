@@ -1,0 +1,7 @@
+{
+  "description": "Keep Andy's draft of a rule's next text, by the rule's key, beside the rule; refused no-such-item when there is none. His alone. Answers {key}.",
+  "request": {
+    "key": "",
+    "text": ""
+  }
+}

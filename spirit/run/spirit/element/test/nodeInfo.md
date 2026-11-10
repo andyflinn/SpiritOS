@@ -1,7 +1,7 @@
 # spirit/element/nodeInfo.js
 
 What this node says about itself, an element (goal/G43.24, requirement 6; Q2, Andy: *"nodeInfo is fine."*): all of Info.
-The Info app is its wrapper (`spirit/app/info/info.js`, Andy: *"no i want those apps to basically be wrappers for
+The Info app is its wrapper (`spirit/app/info/element.js`, Andy: *"no i want those apps to basically be wrappers for
 spirit/element/ things...."*). Its test is `./nodeInfo.js`; the rotate key dialog opening over Info on a real page is
 judged in `./nodeInfoRotate.js`.
 

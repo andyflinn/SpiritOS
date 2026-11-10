@@ -1,0 +1,6 @@
+{
+  "description": "The desk lifts a signoff it gave: the agent is connected again, and the cleared state is written to its status.json. agent names the persona; the handler keeps one state, whoever is named. Answers {cleared: true, status}; refused not-saved when it cannot be written. The owner's alone.",
+  "request": {
+    "agent": ""
+  }
+}

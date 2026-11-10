@@ -17,6 +17,8 @@ const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const { DatabaseSync } = require('node:sqlite');
 
 const DIR = path.join(__dirname, '..');
+// Its list and editor are the agent app's elements, in spirit/app/agent/element/table/model/ since goal/G43.32 (rule 5).
+const EL = path.join(__dirname, '..', '..', '..', 'element', 'table', 'model');
 // The page's own node, as node.card answers it: a public key in base64, its + and / kept, so the data set names it in
 // base64url (spirit.data.nodeId).
 const HOME_KEY = 'MCowBQYDK2VwAyEA+home/node+key/for+the+page/test0000000=';
@@ -62,9 +64,9 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
 
 (async function () {
   test.subHeading('its files');
-  const files = ['server.js', 'elementTable.js', 'elementRow.js'];
-  ok(files.every(function (f) { return fs.existsSync(path.join(DIR, f)); }), 'it has server.js, elementTable.js and elementRow.js',
-    'missing: ' + short(files.filter(function (f) { return !fs.existsSync(path.join(DIR, f)); })));
+  const files = [path.join(DIR, 'server.js'), path.join(EL, 'elementTable.js'), path.join(EL, 'elementRow.js')];
+  ok(files.every(function (f) { return fs.existsSync(f); }), 'it has server.js, and elementTable.js and elementRow.js in the app\'s element folder',
+    'missing: ' + short(files.filter(function (f) { return !fs.existsSync(f); })));
   if (!fs.existsSync(path.join(DIR, 'server.js'))) return;
 
   test.subHeading('server.js: the table in agent.db');
@@ -147,7 +149,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const STAND = global.window.spirit.elements;
   global.window = { spirit: { familyPath: familyPath, element: { spirit: {
     element: { search: STAND.search, rowForm: STAND.rowForm, busyButton: STAND.busyButton },
-    app: { agent: { table: { tableElement: Object.assign({}, STAND.agentDetail, STAND.agentTable), rowElement: STAND.agentRow } } } } } } };
+    app: { agent: { element: { table: { tableElement: Object.assign({}, STAND.agentDetail, STAND.agentTable), rowElement: STAND.agentRow } } } } } } } };
   global.spirit = global.window.spirit;
   global.window.spirit.require = function (p) { made.required.push(String(p)); return Promise.resolve(p === AGENT ? made.family : true); };
   // The page's spirit.require answers the helper, so each file places itself by installSpiritElement as it runs
@@ -160,18 +162,18 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   global.window.spirit.node = { key: HOME_KEY };
   global.window.spirit.data.homeNode(HOME_KEY);
   global.window.spirit.cacheManager = require(path.join(RUN, 'spirit', 'spirit.js')).cacheManager;
-  ['elementTable.js', 'elementRow.js'].forEach(function (f) { vm.runInThisContext(fs.readFileSync(path.join(DIR, f), 'utf8'), { filename: path.join(DIR, f) }); });
-  const T = global.window.spirit.element.spirit.app.agent.table.model || {};
+  ['elementTable.js', 'elementRow.js'].forEach(function (f) { vm.runInThisContext(fs.readFileSync(path.join(EL, f), 'utf8'), { filename: path.join(EL, f) }); });
+  const T = global.window.spirit.element.spirit.app.agent.element.table.model || {};
   const E = { modelTable: T.elementTable, modelRow: T.elementRow };
   ok(E.modelTable && typeof E.modelTable.create === 'function' && E.modelRow && typeof E.modelRow.create === 'function',
-    'they place spirit.element.spirit.app.agent.table.model.elementTable and elementRow', 'placed: ' + short(Object.keys(T)));
+    'they place spirit.element.spirit.app.agent.element.table.model.elementTable and elementRow', 'placed: ' + short(Object.keys(T)));
   if (!E.modelTable || !E.modelRow) return;
   const opened = [];
   const detail = { open: function (make) { opened.push(make); }, look: function (t2) { return { icon: '🧠', name: 'Model', title: 'Models', table: t2 }; } };
   const pane = box('models');
   const list = E.modelTable.create(pane, detail);
   await settle();
-  ok(made.required.indexOf('spirit/app/agent/table/tableElement.js') !== -1 && made.required.indexOf('spirit/app/agent/table/model/elementRow.js') !== -1,
+  ok(made.required.indexOf('spirit/app/agent/element/table/tableElement.js') !== -1 && made.required.indexOf('spirit/app/agent/element/table/model/elementRow.js') !== -1,
     'elementTable.js requires the shared element and its own row element', 'required: ' + short(made.required));
   const o = made.tables[0] && made.tables[0].o;
   ok(made.tables.length === 1 && !!made.tables[0].c && o.table === 'model' && !('api' in o) && o.detail === detail && o.add === false,

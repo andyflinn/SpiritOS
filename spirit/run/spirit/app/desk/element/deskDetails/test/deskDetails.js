@@ -555,18 +555,18 @@ const byId = function (w, id) { return function () { return w.document.getElemen
   test.subHeading('goal/G41.28: the verifier\'s run reaches the dialog through spirit.data');
   const RUNNING = { id: 'goal/G9.1', title: 'An item', goal: 'goal/G9', status: 'open', buttons: [], verified: 'none', verifyRunning: true, blocked: [] };
   const runJob = function (o2) { return Object.assign({ id: 'job_verify', type: 'publish', module: 'spirit.app.deskVerify' }, o2); };
-  const RUN1 = { doing: 'run', suite: 'spirit/run/spirit/app/info/test/info.js', index: 2, of: 4, tests: 0, expected: 0, line: '', since: '' };
+  const RUN1 = { doing: 'run', suite: 'spirit/run/spirit/app/info/test/element.js', index: 2, of: 4, tests: 0, expected: 0, line: '', since: '' };
   const runShown = function (g) { const el = g.document.getElementById('dd-run'); return el ? el.textContent : ''; };
   let v = ddWorld(RUNNING, [], { real: true }); await v.open();
   ok(v.required.indexOf(VERIFY_CCM) !== -1 && !!((v.win.spirit.data || {}).deskVerify || {}).data, 'it loads the verifier\'s cache manager itself, ' + VERIFY_CCM, 'required: ' + JSON.stringify(v.required));
   const runBefore = runShown(v);
   v.win.spirit.data.takeJob(runJob({ app: RUN1 })); await settle();
-  ok(/verifying info\.js, suite 2 of 4/.test(runShown(v)) && !!v.document.getElementById('dd-run') && !!v.document.getElementById('dd-run').querySelector('progress'), 'a verifier publish taken into spirit.data redraws the run: its progress, its suite and how far',
+  ok(/verifying element\.js, suite 2 of 4/.test(runShown(v)) && !!v.document.getElementById('dd-run') && !!v.document.getElementById('dd-run').querySelector('progress'), 'a verifier publish taken into spirit.data redraws the run: its progress, its suite and how far',
     'the run before: "' + runBefore + '", after the publish: "' + runShown(v) + '"');
   v.win.spirit.data.takeJob(runJob({ app: Object.assign({}, RUN1, { index: 3 }) })); await settle();
   ok(/suite 3 of 4/.test(runShown(v)), 'the next publish redraws it again', 'the run: "' + runShown(v) + '"');
   v = ddWorld(RUNNING, [], { real: true, kept: runJob({ app: RUN1 }) }); await v.open();
-  ok(/verifying info\.js, suite 2 of 4/.test(runShown(v)), 'a run already kept in spirit.data when it opens is drawn at once', 'the run at open: "' + runShown(v) + '"');
+  ok(/verifying element\.js, suite 2 of 4/.test(runShown(v)), 'a run already kept in spirit.data when it opens is drawn at once', 'the run at open: "' + runShown(v) + '"');
   v = ddWorld(RUNNING, [], { real: true }); await v.open();
   v.win.spirit.data.takeJob(runJob({ fromNode: 'KEY+ANOTHER/NODE==', app: RUN1 })); await settle();
   ok(!/verifying/.test(runShown(v)), 'a publish of another node\'s verifier draws nothing here', 'the run: "' + runShown(v) + '"');
@@ -678,7 +678,7 @@ const byId = function (w, id) { return function () { return w.document.getElemen
         await call('desk.press', { id: design.id, what: 'start-design' });
         const before = { done: await state(done.id), design: await state(design.id) };
         ok(before.done.status === 'done' && (before.design.buttons || []).indexOf('delete') !== -1, 'the world: an item done, and an item in design mode offering Delete', 'the world: ' + JSON.stringify({ done: before.done.status, designButtons: before.design.buttons }));
-        await page.evaluate("(function () { var d = document.createElement('div'); d.id = 'zzDesk'; d.style.height = '800px'; document.body.appendChild(d); return Promise.resolve(window.spirit.require('spirit/app/desk/desk.js')).then(function () { window.spirit.element.spirit.app.desk.browserDesk.create(d, {}); return true; }); })()");
+        await page.evaluate("(function () { var d = document.createElement('div'); d.id = 'zzDesk'; d.style.height = '800px'; document.body.appendChild(d); return Promise.resolve(window.spirit.require('spirit/app/desk/element.js')).then(function () { window.spirit.element.spirit.app.desk.element.create(d, {}); return true; }); })()");
         const open = function (title) { return page.evaluate("(function () { var all = Array.prototype.slice.call(document.querySelectorAll('#zzDesk *')).filter(function (x) { return x.tagName === 'TD' && x.textContent.indexOf(" + JSON.stringify(title) + ") !== -1 && !x.closest('.app-container'); }); if (!all.length) return false; all[all.length - 1].click(); return true; })()"); };
         const btn = function (id) { return "Array.prototype.filter.call(document.querySelectorAll('#zzDesk .app-container #" + id + "'), function (b) { return b.getClientRects().length; })[0]"; };
         const shut = function () { return page.evaluate("(function () { var c = Array.prototype.filter.call(document.querySelectorAll('#zzDesk .app-container-close'), function (x) { return x.getClientRects().length; }).pop(); if (c) c.click(); return !!c; })()"); };

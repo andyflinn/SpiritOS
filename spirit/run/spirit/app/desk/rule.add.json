@@ -1,0 +1,8 @@
+{
+  "description": "Add a desk rule, proposed: type one of ui, code, design, desk, test; label passes the label rule; text is a paragraph. Anyone included at the desk may; answers {key: rule/<number>}.",
+  "request": {
+    "type": "",
+    "label": "",
+    "text": ""
+  }
+}

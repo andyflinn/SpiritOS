@@ -23,7 +23,7 @@ gone. From `./app.js`: that an app's description names its icon and label. A scr
 - **By its folder** (`testModule.js` `branchesOf`; Andy: *"app-branches are easily identified using the patterns:
   spirit/app/<name>/<name>.js, spirit/app/<name>/<name>.json"*, *"and system branches by: spirit.<name>.api.js &&
   spirit.<name>.data.js"*): a system branch is `spirit/<name>/` holding `api.js` and `data.js`, `spirit/app/` among them
-  (the branch `app`); an app branch is `spirit/app/<name>/` holding `<name>.js` and `<name>.json`. A test folder is none.
+  (the branch `app`); an app branch is `spirit/app/<name>/` holding its manifest `<name>.json` (since goal/G43.32: rule 2; rule 4 left a face-only app no `<name>.js`). A test folder is none.
 - **`testModule.js` gives it one entry per branch folder**, and on a blast radius the deepest branch holding the file
   (`spirit/app/desk/desk.js` is `spirit/app/desk`'s, not `spirit/app`'s). A module in no branch gets none.
 - **Every check is named by its branch folder** or a file in it. A folder given that is no branch is red.

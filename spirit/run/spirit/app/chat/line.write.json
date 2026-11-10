@@ -1,0 +1,8 @@
+{
+  "description": "The owner writes to a peer, named by its key (the chat server matches no label); re {writer, seq} names the line answered, none when left out. Refused bad-request without a to, line-too-large when it cannot travel in one packet, peer-blocked when the node's contact book blocks the key. The line is also the grant to the peer to answer. Kept before it travels; answers {seq, outcome}, outcome sent, refused or pending, and an unsent line goes again before the next new one. The owner's alone.",
+  "request": {
+    "to": "",
+    "text": "",
+    "re": {}
+  }
+}

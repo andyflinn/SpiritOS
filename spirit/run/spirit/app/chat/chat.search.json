@@ -1,0 +1,8 @@
+{
+  "description": "One chat searched, by the peer's key: its lines ranked by text against the whole line as it is served ('' matches every line), newest first on a tie, a line that does not match left out; who 'me' keeps the lines this node wrote, 'them' the other person's, 'both' or '' both. Answers {items: [{key, label}], more}, cut to one answer. The owner's alone.",
+  "request": {
+    "peer": "",
+    "text": "",
+    "who": ""
+  }
+}

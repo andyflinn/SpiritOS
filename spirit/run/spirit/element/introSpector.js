@@ -1,7 +1,7 @@
 'use strict';
 // spirit/run/spirit/element/introSpector.js
 // INTROSPECTOR, AN ELEMENT (goal/G43.29; Andy: "a wrapper for separate spirit/element/ files"): what the introSpector app
-// (spirit/app/introSpector/introSpector.js) draws, moved here from shell/introSpector/introSpector.js (goal/G30.5) and
+// (spirit/app/introSpector/element.js) draws, moved here from shell/introSpector/introSpector.js (goal/G30.5) and
 // working as it did. Its contract and its test: ./test/introSpector.md and ./test/introSpector.js.
 //
 //   spirit.element.spirit.element.introSpector.create(container) -> { destroy() }

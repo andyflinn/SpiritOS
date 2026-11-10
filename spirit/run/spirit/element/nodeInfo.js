@@ -1,7 +1,7 @@
 'use strict';
 // spirit/run/spirit/element/nodeInfo.js
 // WHAT THIS NODE SAYS ABOUT ITSELF, AN ELEMENT (goal/G43.24, requirement 6; Q2, Andy: "nodeInfo is fine."). The Info app is
-// its wrapper (spirit/app/info/info.js). Its contract and its test: ./test/nodeInfo.md and ./test/nodeInfo.js.
+// its wrapper (spirit/app/info/element.js). Its contract and its test: ./test/nodeInfo.md and ./test/nodeInfo.js.
 //
 //   Andy: "i want an intrinsic app info, in which, for now the user can maintain both fields in this file, more to come."
 //

@@ -92,7 +92,7 @@ function interfaceRules() {
   });
   TARGETS.forEach(function (b) {
     test.subHeading(b.dir + ': its interface');
-    test.comment(b.dir + ': a ' + b.kind + ' branch, recognized by ' + (b.kind === 'system' ? 'its api.js and data.js' : 'its ' + b.name + '.js and ' + b.name + '.json'));
+    test.comment(b.dir + ': a ' + b.kind + ' branch, recognized by ' + (b.kind === 'system' ? 'its api.js and data.js' : 'its manifest, ' + b.name + '.json'));
     if (!b.api) { test.comment(b.dir + ': it holds no api.js, so it has no interface to judge'); return; }
     // Decided 7 (the box): "Verb rules live in api.js". Each verb a declaration of its arguments, each argument's rule.
     const odd = b.verbs ? Object.keys(b.verbs).filter(function (v) { const d = b.verbs[v]; return !d || typeof d !== 'object' || Array.isArray(d) || Object.keys(d).some(function (k) { return typeof d[k] !== 'string' && !(d[k] && typeof d[k] === 'object'); }); }) : [];

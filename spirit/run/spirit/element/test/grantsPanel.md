@@ -81,7 +81,7 @@ caller picks this one by name, `grants: grantsPanel.nodeGrants`, and the panel t
 ### Grant is a busyButton (goal/G41.23)
 
 Box: *"first users: Ask in the agent's Update model list, and Grant in the grants panel"* (the Update model list is now
-the agent's model table, `spirit/app/agent/table/model/elementTable.js`). The busyButton is tested in
+the agent's model table, `spirit/app/agent/element/table/model/elementTable.js`). The busyButton is tested in
 its own folder (`./busyButton.md`); here a stand-in keeps what it is handed.
 
 - The panel loads `spirit/element/busyButton.js` itself (rule/26).

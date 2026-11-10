@@ -6,7 +6,7 @@
 // it. The shared row element and the page's data set are real; the arming button is a stand-in that records what it was
 // handed. The grants table is the caller's, handed in as a configuration (goal/G41.16), each call recorded; two are
 // tried, so nothing of either is the row's own: the node's auth grants as the Grants app configures them since
-// goal/G41.28 (spirit/element/grantsPanel.js, which spirit/app/grants/grants.js mounts: the branch the auth family's cache manager keeps, spirit.data.auth.data.grants.branch,
+// goal/G41.28 (spirit/element/grantsPanel.js, which spirit/app/grants/element.js mounts: the branch the auth family's cache manager keeps, spirit.data.auth.data.grants.branch,
 // and its watch), and a second table shaped as the agent's grants by job were, its branch a whole spirit.data path
 // (node/family/branch) and its watch that branch's. The auth family's data.js is loaded as a
 // page's spirit.cacheManager('auth') loads it, as the Grants app asks it, the page's node known as spirit.start makes it

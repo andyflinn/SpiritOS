@@ -1,0 +1,4 @@
+{
+  "description": "The idle chores at once, as the idle hour runs them, and the hour's own run is then spent; it takes nothing. Answers {started: true} when they start, not when they end. Refused while a run or the chores are under way, or where the manifest names no chore.",
+  "request": {}
+}

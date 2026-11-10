@@ -67,7 +67,7 @@ test.startTest('jobs.js: jobs.create starts this node\'s processes, and no other
     const inc = await call({ command: process.execPath, args: ['spirit/app/zzRun/zzRun.js'] });
     await sleep(WAIT_MS);
     ok(inc.status === 201 && fs.existsSync(mark('run')), "an app's own spirit/app/<name>/<name>.js, its json saying node run true, starts", 'a node run app: answered ' + inc.status + ' ' + short(inc.text) + ', ran ' + fs.existsSync(mark('run')));
-    // A PAGE SENDS PLAIN node (the app detail's run, spirit/app/appSelector/detailElement.js:68): jobs.js reads it as this
+    // A PAGE SENDS PLAIN node (the app detail's run, spirit/element/search/app/detailElement.js:68): jobs.js reads it as this
     // node's own executable. The run before has ended, so the id is free again.
     const plainNode = await call({ command: 'node', args: ['spirit/app/zzRun/zzRun.js'] });
     ok(plainNode.status >= 200 && plainNode.status < 300, 'plain node with a node run app starts, as Run sends it', 'node with a node run app answered ' + plainNode.status + ' ' + String(plainNode.text || '').slice(0, 160));

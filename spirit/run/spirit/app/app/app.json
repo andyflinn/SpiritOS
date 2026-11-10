@@ -1,0 +1,18 @@
+{
+  "identity": {
+    "icon": "🐚",
+    "label": "Shell",
+    "intrinsic": true
+  },
+  "mount": {
+    "element.js": true
+  },
+  "shell": {
+    "true": true,
+    "mount": true,
+    "tile": false
+  },
+  "node": {
+    "mount": false
+  }
+}

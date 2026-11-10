@@ -56,11 +56,12 @@ test.startTest('nodeShell.js: the shell the node names (goal/G43.18)');
 
 (async function () {
   test.subHeading('the tree');
-  // "spirit/app/shell/, an app that wraps the app search (spirit/element/search/app.js) as the shell"
-  const own = readJson(path.join(RUN, 'spirit', 'app', 'shell', 'shell.json'));
-  ok(!!own && own.shell && own.shell.true === true, 'spirit/app/shell/shell.json is there and says shell:true:true', 'spirit/app/shell/shell.json: ' + short(own));
-  const code = fs.existsSync(path.join(RUN, 'spirit', 'app', 'shell', 'shell.js')) ? fs.readFileSync(path.join(RUN, 'spirit', 'app', 'shell', 'shell.js'), 'utf8').replace(/\/\/.*$/gm, '') : '';
-  ok(/spirit\/element\/search\/app\.js/.test(code), 'spirit/app/shell/shell.js loads the app search', 'spirit/app/shell/shell.js ' + (code ? 'does not load spirit/element/search/app.js' : 'is not there'));
+  // "spirit/app/shell/, an app that wraps the app search (spirit/element/search/app.js) as the shell"; since goal/G43.32 the app
+  // app, spirit/app/app/ (the box: "app.json is shell.json, renamed (shell true:true). The node's default shell ... "app"").
+  const own = readJson(path.join(RUN, 'spirit', 'app', 'app', 'app.json'));
+  ok(!!own && own.shell && own.shell.true === true, 'spirit/app/app/app.json is there and says shell:true:true', 'spirit/app/app/app.json: ' + short(own));
+  const code = fs.existsSync(path.join(RUN, 'spirit', 'app', 'app', 'element.js')) ? fs.readFileSync(path.join(RUN, 'spirit', 'app', 'app', 'element.js'), 'utf8').replace(/\/\/.*$/gm, '') : '';
+  ok(/spirit\/element\/search\/app\.js/.test(code), 'spirit/app/app/element.js loads the app search', 'spirit/app/app/element.js ' + (code ? 'does not load spirit/element/search/app.js' : 'is not there'));
   // "the Allow row of the app detail and its element, spirit/app/appSelector/rowFormAppShell.js, are deleted, and with them the
   // verb app.shell" (Q10)
   ok(!fs.existsSync(path.join(RUN, 'spirit', 'app', 'appSelector', 'rowFormAppShell.js')), 'rowFormAppShell.js is gone', 'spirit/app/appSelector/rowFormAppShell.js is still there');
@@ -82,14 +83,14 @@ test.startTest('nodeShell.js: the shell the node names (goal/G43.18)');
     ok(!fs.existsSync(FILE), 'the world: no spirit/state/shell.json', 'the scratch copy has a spirit/state/shell.json: nothing judged');
     for (const where of ['home', 'face']) {
       const a = await call(N.base, 'node.shell', { at: where });
-      ok(a.status === 200 && nameOf(a) === 'shell', 'node.shell({ at: ' + where + ' }) answers { name: "shell" }', 'node.shell at ' + where + ': ' + a.status + ' ' + short(a.text));
+      ok(a.status === 200 && nameOf(a) === 'app', 'node.shell({ at: ' + where + ' }) answers { name: "app" }', 'node.shell at ' + where + ': ' + a.status + ' ' + short(a.text));
     }
 
     test.subHeading('"A name that is no app, or whose <name>.json does not say shell:true:true, is refused with the reason, and the shell stays"');
     for (const bad of [['zzNoSuchApp', 'no app'], ['contact', 'an app whose contact.json says shell.true false']]) {
       const a = await call(N.base, 'node.shell', { at: 'home', name: bad[0] });
       ok(refused(a) && !!(a.body && (a.body.error || a.body.reason)), bad[1] + ' is refused, with the reason', 'node.shell home ' + bad[0] + ': ' + a.status + ' ' + short(a.text));
-      ok(nameOf(await call(N.base, 'node.shell', { at: 'home' })) === 'shell', 'and the home shell stays shell', 'after ' + bad[0] + ' the home shell is ' + short(await call(N.base, 'node.shell', { at: 'home' })));
+      ok(nameOf(await call(N.base, 'node.shell', { at: 'home' })) === 'app', 'and the home shell stays app', 'after ' + bad[0] + ' the home shell is ' + short(await call(N.base, 'node.shell', { at: 'home' })));
     }
     const at = await call(N.base, 'node.shell', { at: 'desk', name: 'zzshell' });
     ok(refused(at), 'at other than home or face is refused', 'node.shell at desk: ' + at.status + ' ' + short(at.text));
@@ -98,7 +99,7 @@ test.startTest('nodeShell.js: the shell the node names (goal/G43.18)');
     const set = await call(N.base, 'node.shell', { at: 'home', name: 'zzshell' });
     ok(set.status === 200 && nameOf(set) === 'zzshell', 'setting the home shell to zzshell answers { name: "zzshell" }', 'node.shell home zzshell: ' + set.status + ' ' + short(set.text));
     ok(nameOf(await call(N.base, 'node.shell', { at: 'home' })) === 'zzshell', 'asked again, home answers zzshell', 'home answers ' + short(await call(N.base, 'node.shell', { at: 'home' })));
-    ok(nameOf(await call(N.base, 'node.shell', { at: 'face' })) === 'shell', 'and face is its own: still shell', 'face answers ' + short(await call(N.base, 'node.shell', { at: 'face' })));
+    ok(nameOf(await call(N.base, 'node.shell', { at: 'face' })) === 'app', 'and face is its own: still app', 'face answers ' + short(await call(N.base, 'node.shell', { at: 'face' })));
     const kept = fs.existsSync(FILE) ? fs.readFileSync(FILE, 'utf8') : '';
     ok(/zzshell/.test(kept), 'spirit/state/shell.json holds it', 'spirit/state/shell.json: ' + short(kept || 'not there'));
     const cfg = readJson(path.join(s.run, 'spirit', 'state', 'config.json'));

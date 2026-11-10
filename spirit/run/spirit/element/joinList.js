@@ -1,7 +1,7 @@
 'use strict';
 // spirit/run/spirit/element/joinList.js
 // THE JOIN STEPS, AN ELEMENT (goal/G43.26; Andy: "JOIN IS A FUCKING APP and DOES NOT FUCKING DRAG HALF OF THE OLD SHIT INTO
-// THE NEW!"). The Join app (spirit/app/join/join.js) is its wrapper. It walks a new user through joining a relay and
+// THE NEW!"). The Join app (spirit/app/join/element.js) is its wrapper. It walks a new user through joining a relay and
 // finding someone, as one to-do list (goal/G30.1, box v39). No face steps (goal/G43.26; Andy: "now remove these two steps
 // from \"join\" - Configure your node's remote control - Open your face"): a face is named in Info.
 //

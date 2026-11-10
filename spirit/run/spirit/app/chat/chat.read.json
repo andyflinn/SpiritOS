@@ -1,0 +1,8 @@
+{
+  "description": "One chat, by the peer's key: its lines both ways, newest first by the writer's time, as many as fill one answer; before (a writer's time, '' for none) reads the lines older than it. after wins: with it, the lines newer than it, oldest first, so the first is the one right after. Answers {items: [{key: sent:seq, label: the line as json (sent, seq, at, text, receivedAt, re, refused)}], more}. The owner's alone.",
+  "request": {
+    "peer": "",
+    "before": "",
+    "after": ""
+  }
+}

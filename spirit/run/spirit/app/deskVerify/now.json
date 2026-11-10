@@ -1,0 +1,4 @@
+{
+  "description": "Busy or not, the suite running and since when, and whether a Stop was asked; it takes nothing. Answers {busy, running: {suite, since}, stopAsked}.",
+  "request": {}
+}

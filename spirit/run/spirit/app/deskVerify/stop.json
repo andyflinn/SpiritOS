@@ -1,0 +1,4 @@
+{
+  "description": "Stop the current run: it ends, and a stopped suite is never green; it takes nothing. Answers {stopped}, false when nothing was running.",
+  "request": {}
+}

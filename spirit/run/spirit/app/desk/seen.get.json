@@ -1,0 +1,6 @@
+{
+  "description": "Seen for an item by id: the arrival time of the newest thing Andy looked at under it ('' for none); answers {at}. Refused no-such-item when there is none.",
+  "request": {
+    "id": ""
+  }
+}

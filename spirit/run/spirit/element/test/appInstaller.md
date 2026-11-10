@@ -1,7 +1,7 @@
 # spirit/element/appInstaller.js
 
 The app installer (goal/G41.1, box v14): a standard shell element, one activate/deactivate button for one app, drawn
-the same wherever it is used (the app's details panel, `spirit/app/appSelector/detailElement.js`). Install and uninstall
+the same wherever it is used (the app's details panel, `spirit/element/search/app/detailElement.js`). Install and uninstall
 come later.
 
 ## API

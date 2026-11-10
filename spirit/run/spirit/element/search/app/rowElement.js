@@ -11,7 +11,7 @@
   // On spirit.element since goal/G43.18, as its file is in spirit/element/search/app/.
   var E = (window.spirit = window.spirit || {}).element = window.spirit.element || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.require.
-  ['spirit/element/rowElement.js', 'spirit/element/icon.js', 'spirit/app/appSelector/rowFormAppActive.js'].forEach(function (p) { window.spirit.require(p); });
+  ['spirit/element/rowElement.js', 'spirit/element/icon.js', 'spirit/element/search/app/rowFormAppActive.js'].forEach(function (p) { window.spirit.require(p); });
   var appReady = Promise.resolve(window.spirit.cacheManager('app')).then(function () { return ((window.spirit.data || {}).app || {}).data; });
 
   var apps = null;
@@ -71,9 +71,9 @@
         // A press on the switch is the switch's, never the row's pick (as the installer it replaced stopped it).
         cell.addEventListener('click', function (e) { if (e.target && e.target.closest && e.target.closest('button')) e.stopPropagation(); });
         // It may still be loading: made once it is in, unless the row was drawn again meanwhile.
-        var made = Promise.resolve(window.spirit.require('spirit/app/appSelector/rowFormAppActive.js')).then(function () {
+        var made = Promise.resolve(window.spirit.require('spirit/element/search/app/rowFormAppActive.js')).then(function () {
           if (installer !== made) return;
-          installer = window.spirit.element.spirit.app.appSelector.rowFormAppActive.create(cell, { key: key });
+          installer = window.spirit.element.spirit.element.search.app.rowFormAppActive.create(cell, { key: key });
         });
         installer = made;
       }

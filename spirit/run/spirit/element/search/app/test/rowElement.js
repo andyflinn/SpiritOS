@@ -15,7 +15,7 @@ function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x))
 const FILE = path.join(RUN, 'spirit', 'element', 'search', 'app', 'rowElement.js');
 const ROW = { key: 'zzapp', label: 'Zz App Label', icon: '🧩' };
 
-test.startTest('appSelector/rowElement.js: one app, as a row (goal/G43.2)');
+test.startTest('rowElement.js: one app, as a row (goal/G43.2)');
 
 (async function () {
   if (!fs.existsSync(FILE)) { test.fail('spirit/element/search/app/rowElement.js is not there'); return; }

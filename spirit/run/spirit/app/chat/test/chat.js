@@ -33,10 +33,11 @@ test.startTest('chat: the chat app in spirit/app/chat/, chat.json and chat.js (g
   ok(!!(own && own.shell && own.shell.mount === true && own.shell.tile === true), 'shell mount true, with a tile', 'its shell part: ' + short(own && own.shell));
   ok(!!(own && own.node && own.node.mount === true), 'node mount true: the server runs on the node', 'its node part: ' + short(own && own.node));
 
-  test.subHeading('chat.js: one file, split between node and page');
+  // Since goal/G43.32 a page loads the main element, element.js, itself (rule 4), and chat.js is the node's alone.
+  test.subHeading('chat.js: the node\'s script; element.js: the page\'s (goal/G43.32, rule 4)');
   const src = code(path.join(APP, 'chat.js'));
   ok(/nodeChat\.js/.test(src), 'it names nodeChat.js, for the node', 'chat.js names no nodeChat.js');
-  ok(/element\.js/.test(src), 'and element.js, for a page', 'chat.js names no element.js');
+  ok(fs.existsSync(path.join(APP, 'element.js')) && !/element\.js/.test(src), 'and element.js stands beside it, for a page, which chat.js does not load', 'chat.js still names element.js, or element.js is not there');
   ok(src !== '' && !/innerHTML|activateApp/.test(src), 'and draws nothing itself', 'chat.js draws or reaches the old shell: ' + short(src.match(/innerHTML|activateApp/g)));
 
   const chrome = H.findChrome();
@@ -67,7 +68,7 @@ test.startTest('chat: the chat app in spirit/app/chat/, chat.json and chat.js (g
     if (!page || page.error) { test.fail(page ? page.error : 'no Chrome page'); return; }
     await page.send('Page.navigate', { url: node.base + '/face.html' });
     await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.ready)').then(Boolean); }, H.WAIT);
-    const tiles = await page.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/app/appSelector.js"); }).then(function () { window.pageErrors = []; window.addEventListener("error", function (e) { window.pageErrors.push(String(e.message)); }); var c = document.createElement("div"); c.id = "faces"; c.style.cssText = "position:fixed;left:0;top:0;width:1200px;height:760px;display:flex;flex-direction:column;background:#111;z-index:9"; document.body.appendChild(c); window.fsel = spirit.element.spirit.app.appSelector.create(c, { face: "tiles" }); if (window.fsel.parentNode !== c) c.appendChild(window.fsel); return "made"; }, function (e) { return String(e && e.message || e); })');
+    const tiles = await page.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/app/app/element.js"); }).then(function () { window.pageErrors = []; window.addEventListener("error", function (e) { window.pageErrors.push(String(e.message)); }); var c = document.createElement("div"); c.id = "faces"; c.style.cssText = "position:fixed;left:0;top:0;width:1200px;height:760px;display:flex;flex-direction:column;background:#111;z-index:9"; document.body.appendChild(c); window.fsel = spirit.element.spirit.app.app.element.create(c, { face: "tiles" }); if (window.fsel.parentNode !== c) c.appendChild(window.fsel); return "made"; }, function (e) { return String(e && e.message || e); })');
     ok(tiles === 'made', 'the world: the app selector\'s tiles', 'the tiles: ' + short(tiles));
     const TILE = 'Array.prototype.filter.call(document.querySelectorAll("#faces .app-icon"), function (t) { return t.offsetParent !== null && String(t.textContent).indexOf("Chat") !== -1; })[0]';
     ok(await H.until(function () { return page.evaluate('!!' + TILE); }, 10000), 'Chat has a tile, switched on', 'no Chat tile: ' + short(await page.evaluate('String(document.getElementById("faces").innerText)')));

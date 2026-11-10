@@ -1,0 +1,9 @@
+{
+  "description": "A peer's line, posted by its chat server: the writer is the sealed caller, so no key travels, and it gets in only under the grant the owner's line.write gave. seq above 0, else refused bad-request; re {writer, seq} names the line answered, none when left out. Kept once, as received; the same line again is answered {kept: true} as well.",
+  "request": {
+    "seq": 0,
+    "at": "",
+    "text": "",
+    "re": {}
+  }
+}

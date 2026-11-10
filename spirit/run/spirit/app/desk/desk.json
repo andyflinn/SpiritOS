@@ -5,6 +5,7 @@
     "intrinsic": false
   },
   "mount": {
+    "element.js": true,
     "desk.js": true
   },
   "shell": {
