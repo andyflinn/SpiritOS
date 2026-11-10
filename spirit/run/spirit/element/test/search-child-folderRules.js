@@ -43,6 +43,8 @@ const TARGETS = askedName && EXEMPT.indexOf(askedName) === -1 && askedName !== '
 // An element: it places a create through installSpiritElement, by its own path.
 function placesItself(rel) { const c = code(rel); return /\binstallSpiritElement\s*\(/.test(c) && /\bcreate\b/.test(c) && c.indexOf("'" + rel + "'") !== -1; }
 const PARTS = ['listElement', 'rowElement', 'detailElement'];
+// NO DETAIL WHERE NONE OPENS (Andy: "branch and icon: if no details are ever openened, there needs to be now detail panel.").
+const NO_DETAIL = ['branch', 'icon'];
 
 function rules(n) {
   const sel = SEARCH + '/' + n + '.js';
@@ -51,6 +53,7 @@ function rules(n) {
   ok(isFile(sel) && placesItself(sel), sel + ': the selector, an element placed by its path', sel + ': ' + (isFile(sel) ? 'places no create by its path' : 'is not there'));
   PARTS.forEach(function (p) {
     const f = dir + '/' + p + '.js';
+    if (p === 'detailElement' && NO_DETAIL.indexOf(n) !== -1) { ok(!isFile(f), dir + ': no detail, since none is ever opened', f + ': stands, though no ' + n + ' row ever opens a detail'); return; }
     ok(isFile(f) && placesItself(f), f + ': its ' + p + ', placed by its path', f + ': ' + (isFile(f) ? 'places no create by its path' : 'is not there'));
   });
   // The selector draws its list: it requires its listElement, so a selector is never a second list.

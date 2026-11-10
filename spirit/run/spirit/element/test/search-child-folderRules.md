@@ -17,6 +17,8 @@ already."*
 - For each search `<name>`:
   - `search/<name>.js` is the selector, an element placing a create through installSpiritElement by its own path.
   - `search/<name>/listElement.js`, `rowElement.js` and `detailElement.js` are there, each an element placed by its path.
+    Branch and icon have no detail: none is ever opened (Andy: *"branch and icon: if no details are ever openened, there
+    needs to be now detail panel."*).
   - The selector requires its own `listElement.js`: it draws that list, and is never a second one.
 
 ## What its test must try to break
