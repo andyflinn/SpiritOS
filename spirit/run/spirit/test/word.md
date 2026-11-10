@@ -11,6 +11,11 @@ Andy, box: *"i will track nameSpace claims."*
 - A word an object inherits, like `constructor`, is not reserved. A missing `word.json` counts as empty. A `word.json` is an object of word to `true`.
 - A changed `word.json` is seen by the next `check`.
 - On a page `spirit.word.check` answers through a promise, since a page asks its node for each `word.json`, kept until the node's file stream says it changed; `spirit.word.changed(fn)` tells a listener when one does. `spirit/element/search/file/rowElement.js` paints from these; its test judges them.
+- **No ask for a `word.json` that is not there** (goal/G43.32; cw measured on Andy's node 1821 requests on opening Files,
+  1818 of them 404, all `fs.load` of a `word.json`; Andy: *"wsl, add a test to test/word.js to make sure this won't
+  happend again."*): on a page `word.js` asks only for a `word.json` the node's file list (`spirit.data.fs`) holds, and
+  each of those once until the stream says it changed. The test plants `spirit/app/word.json` on a scratch node and makes
+  80 checks along 8 paths: the planted word is found, no other `word.json` is asked for, and that one at most once.
 - `add('path.in.words', 'word')`, Andy: *"all, implement add()"*, answers a boolean. *"add('spirit.app', 'activate') would add the 'activate' to "run://spirit/app/word.json"."* The word goes in with the value `true`, the words already in the file stay, and a level with no `word.json` yet gets one.
 - `add` answers `false` and writes nothing on what is no word, on what `check` finds (*"no words can be added that already exists toward the root of the tree"*, and *"a boolean 'false' if the word already exists"*), and on a word a level below holds (Andy's yes to Q4). A word in another branch does not stop it. It also answers `false` on a path with no level `check` reads, such as `spirit`, on a path that is not in words, and on a `word.json` that is not an object of JSON, which it will not overwrite. No test holds these three yet.
 - `add` makes no folder. Andy: *"wince fucking when does add() add a MOTHERFUCKING FOLDER?"* A level with no folder answers `false`. A path holds words, a to z, so a capital in it answers `false` too.

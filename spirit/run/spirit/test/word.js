@@ -240,6 +240,35 @@ test.startTest('word.js: the reserved words, and the tree held against them (goa
           const inObject = held[w] === 'object' || held[w] === 'function';
           ok(onDisk && inObject, w + ': spirit/' + w + ' and spirit.' + w + ' both stand', w + ': on disk ' + onDisk + ', spirit.' + w + ' is ' + short(held[w]) + ': the word and the tree contradict');
         });
+
+        // NO ASK FOR A word.json THE PAGE KNOWS IS NOT THERE (goal/G43.32). cw, measured on Andy's node: opening Files
+        // made 1821 requests, 1818 of them 404, all fs.load of a word.json (spirit/app/word.json alone 712 times). Andy:
+        // "wsl, add a test to test/word.js to make sure this won't happend again." The page holds the node's file list
+        // (spirit.data.fs), so word.js asks only for a word.json the list holds, and each of those once until the stream
+        // says it changed. One word.json is planted on the scratch node (spirit/app/word.json, the word zzword); then many
+        // checks along many paths, every call the page sends recorded as it leaves.
+        test.subHeading('on a page: no word.json asked that the file list does not hold, each one held asked once');
+        fs.writeFileSync(path.join(node.root, 'spirit', 'run', 'spirit', 'app', 'word.json'), JSON.stringify({ zzword: true }));
+        await page.send('Page.navigate', { url: node.base + '/' });
+        await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.ready)').then(Boolean); }, H.WAIT);
+        const asked = await page.evaluate('window.spirit.ready.then(function () { return spirit.cacheManager("fs"); }).then(function () {' +
+          ' return new Promise(function (r) { setTimeout(r, 3000); }); }).then(function () {' +
+          ' window.sentWord = []; var keep = function (b) { try { var s = String(b || ""); if (/word\\.json/.test(s)) window.sentWord.push(s); } catch (e) {} };' +
+          ' var f = window.fetch; window.fetch = function (u, o) { keep(String(u) + " " + (o && o.body || "")); return f.apply(this, arguments); };' +
+          ' var x = XMLHttpRequest.prototype.send; XMLHttpRequest.prototype.send = function (b) { keep(b); return x.apply(this, arguments); };' +
+          ' return spirit.require("spirit/word.js"); }).then(function () {' +
+          ' var paths = ["spirit.app.zz", "spirit.app.table.zz", "spirit.app.table.rows.zz", "spirit.element.search.zz", "spirit.fs.zz", "spirit.contact.zz", "spirit.data.zz", "spirit.app.desk.element.zz"];' +
+          ' var asks = []; for (var n = 0; n < 5; n++) paths.forEach(function (p) { asks.push(spirit.word.check(p, "zzword")); asks.push(spirit.word.check(p, "other")); });' +
+          ' return Promise.all(asks); }).then(function (answers) { return new Promise(function (r) { setTimeout(function () { r(answers); }, 1500); }); })' +
+          '.then(function (answers) { return JSON.stringify({ sent: window.sentWord, appSees: answers[0], under: answers[2] }); }, function (e) { return JSON.stringify({ threw: String(e && e.message || e) }); })');
+        let got = null;
+        try { got = JSON.parse(asked); } catch (e) { got = { threw: short(asked) }; }
+        const sent = (got && got.sent) || [];
+        const other = sent.filter(function (b) { return !/spirit\/app\/word\.json/.test(b); });
+        const once = sent.filter(function (b) { return /spirit\/app\/word\.json/.test(b); });
+        ok(!!got && !got.threw && got.appSees === 'zzword' && got.under === 'zzword', 'the world: the planted spirit/app/word.json is read, its word found at spirit.app and below', 'the planted word.json was not read: ' + short(got));
+        ok(!!got && !got.threw && !other.length, 'of 80 checks along 8 paths, none asks for a word.json the file list does not hold', other.length + ' asks for a word.json that is not there: ' + short(other.slice(0, 4)));
+        ok(!!got && !got.threw && once.length <= 1, 'and the one it holds, spirit/app/word.json, is asked once at most', 'spirit/app/word.json was asked ' + once.length + ' times');
       }
     } finally {
       if (page && page.kid) page.kid.kill();
