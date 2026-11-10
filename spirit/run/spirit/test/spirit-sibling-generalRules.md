@@ -309,6 +309,8 @@ vendored code left out; with no file, all of them in one check; with a file, tha
 - **One helper places elements**: `spirit/element/installSpiritElement.js` is there, and no other product script puts
   an element on `spirit.element` or `spirit.elements` by hand (an assignment, or an `Object.assign` into them);
   `spirit/spirit.js`, which makes the spirit object, excepted.
+- **The old place is gone** (decided 6: an app's element is placed like every element, and *"the shell, the app selector,
+  the file opener and the desk find it there"*): no product script names `spirit.elements` (or any `.elements`) any more.
 
 ## What its test must try to break (goal/G43.32, the refactor)
 

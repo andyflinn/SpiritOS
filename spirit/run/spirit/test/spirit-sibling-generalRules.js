@@ -576,6 +576,10 @@ function oneHelper() {
   ok(fs.existsSync(path.join(RUN, 'spirit', 'element', 'installSpiritElement.js')), 'spirit/element/installSpiritElement.js is there', 'there is no spirit/element/installSpiritElement.js');
   const hand = placedByHand();
   ok(!hand.length, 'no product script puts an element on spirit.element or spirit.elements by hand', hand.length + ' still do: ' + short(hand.slice(0, 8)));
+  // Decided 6: an app's element is placed like every element, "the shell, the app selector, the file opener and the desk
+  // find it there"; so nothing reads an element at the old place, spirit.elements.<name>, any more.
+  const old = productScripts().filter(function (f) { return /\.elements\b/.test(codeOf(fs.readFileSync(path.join(RUN, f), 'utf8'), true)); });
+  ok(!old.length, 'no product script reads or writes the old spirit.elements: every element is found at spirit.element.<its path>', old.length + ' still name spirit.elements: ' + short(old.slice(0, 8)));
 }
 
 async function every() {

@@ -118,6 +118,8 @@ async function code(p) { try { await p; return 'answered'; } catch (e) { return 
     const two = await Promise.all([fams[0].hello({ name: 'bert' }), fams[1].hello({ name: 'carl' })]);
     out.two = two.map(function (r) { return r.said; });
     out.bound = fams[0] === fams[1] && fams[0] === s.demo && typeof s.demo.hello === 'function';
+    // goal/G43.32, decided 8: the api.js required stands at spirit.required.spirit.<branch-path>.api as well.
+    out.apiPlaced = !!(s.required && s.required.spirit && s.required.spirit.demo && s.required.spirit.demo.api !== undefined);
     out.hi = (await s.demo.hi('dave')).said;
     out.dotted = typeof s.demo.lineWrite === 'function' && s.demo.lineWrite === s.demo['line.write'] && (await s.demo.lineWrite({ text: 't' })).wrote;
     // No FS set on a family (goal/G43.20): its files are spirit.fs's, by the path its id names.
@@ -325,6 +327,9 @@ test.startTest('spirit/run/spirit.js: the one spirit object, in node and on a pa
       if (o.two && o.two[0] === 'hello bert' && o.two[1] === 'hello carl' && o.bound && node.asked.filter(function (b) { return b.call === 'api' && b.args && b.args.family === 'demo'; }).length === 1)
         test.check('spirit.require of the demo interface binds it on the one instance as spirit.demo, from 127.0.0.1:<its port>, asked once by two callers at once');
       else test.fail('binding demo: ' + short([o.two, o.bound, node.asked.filter(function (b) { return b.call === 'api'; }).length]));
+      // goal/G43.32, decided 8: "spirit.require of a branch's api.js places the api.js at spirit.required.spirit.<branch-path>.api and binds its verbs on spirit.<branch>.<verb>".
+      if (o.bound && o.apiPlaced) test.check('in node: the api.js required also stands at spirit.required.spirit.demo.api, the verbs bound on spirit.demo');
+      else test.fail('in node: spirit/demo/api.js, required, ' + (o.bound ? 'binds spirit.demo but stands nowhere at spirit.required.spirit.demo.api' : 'did not bind spirit.demo'));
       if (o.hi === 'hello dave' && o.dotted === 't' && o.fs === true) test.check('a bound family has its own names, a dotted verb in camel case too (line.write as lineWrite), and no FS set (goal/G43.20)');
       else test.fail('the bound family: ' + short([o.hi, o.dotted, o.fs]));
       const askedBefore = node.asked.length;
