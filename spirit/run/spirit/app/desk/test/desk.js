@@ -106,10 +106,10 @@ function familyOf(body) {
 }
 function entriesOf(got) { return Array.isArray(got) ? got : got && Array.isArray(got.rows) ? got.rows : got ? [got] : []; }
 // ANDY'S NODE AS THE DESK SEES IT, on its one door (POST /api/spirit {verb, ...}): his pages' publishes
-// (events.publish, the row as app) into pages; the event stream peerPost reads its answers on (events.subscribe); a
+// (event.publish, the row as app) into pages; the event stream peerPost reads its answers on (event.subscribe); a
 // family's interface (api {family}); each post to a deskClient's streamListener (peer.post) into posts as {to, json},
 // every row of it into sent as {to, row}.
-// A job (jobs.create {command, args}) is started for real, as a node starts it, and kept in jobs with its exit.
+// A job (job.create {command, args}) is started for real, as a node starts it, and kept in jobs with its exit.
 function pretendNode() {
   const pages = []; const posts = []; const sent = []; const streams = []; const deaf = new Set(); const jobs = [];
   // THE NODE'S GRANT TABLE (goal/G43.3), as auth.search answers it: every test agent holds the desk unless a case says otherwise.
@@ -121,13 +121,13 @@ function pretendNode() {
       let b = {}; try { b = JSON.parse(raw); } catch (e) { b = {}; }
       // ONE ENVELOPE (goal/G41.15): { call, args } at the door, read here as the verb and its arguments.
       if (b && typeof b.call === 'string') b = Object.assign({}, b.args || {}, { verb: b.call });
-      if (b.verb === 'events.subscribe') {
+      if (b.verb === 'event.subscribe') {
         res.writeHead(200, { 'Content-Type': 'text/event-stream' }); res.write(': open\n\n'); streams.push(res); return;
       }
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      if (b.verb === 'events.publish') { if (b.app) pages.push(b.app); res.end('{"ok":true}'); return; }
+      if (b.verb === 'event.publish') { if (b.app) pages.push(b.app); res.end('{"ok":true}'); return; }
       if (b.verb === 'auth.search') { res.end(JSON.stringify({ ok: true, more: false, items: grants.map(function (g) { return { key: g.key + '\n' + g.path, label: JSON.stringify(g) }; }) })); return; }
-      if (b.verb === 'jobs.create' && typeof b.command === 'string') {
+      if (b.verb === 'job.create' && typeof b.command === 'string') {
         const job = { command: b.command, args: Array.isArray(b.args) ? b.args.map(String) : [], exit: null };
         jobs.push(job);
         try { spawn(job.command, job.args, { stdio: 'ignore' }).on('exit', function (c) { job.exit = c; }).on('error', function () { job.exit = -1; }); } catch (e) { job.exit = -1; }

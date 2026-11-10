@@ -97,7 +97,7 @@ globalThis.spirit.data = D;
 let watchAll = null;
 // The verifier's publishes, as this client hears them: its subscribers on the node's event stream.
 const eventSubscribers = [];
-globalThis.spirit.events = { subscribe: function (h) { eventSubscribers.push(h); return function () {}; }, publish: function () { return Promise.resolve({}); } };
+globalThis.spirit.event = { subscribe: function (h) { eventSubscribers.push(h); return function () {}; }, publish: function () { return Promise.resolve({}); } };
 const verifierSays = function (run) {
   const job = { id: 'verify-job', module: 'spirit.app.deskVerify', data: {}, app: run };
   eventSubscribers.forEach(function (h) { if (h && typeof h.onUpdate === 'function') h.onUpdate(job); });
@@ -106,7 +106,7 @@ const realLoad = Module._load;
 Module._load = function (request, parent, isMain) {
   if (/(^|\/)spirit\.js$/.test(request) && parent && parent.filename === FILE) return globalThis.spirit;
   if (/(^|\/)appServer\.js$/.test(request)) return appServerStub;
-  // The node's own chokidar component (spirit/jobs/chokidar/), as deskClient.js requires it.
+  // The node's own chokidar component (spirit/job/chokidar/), as deskClient.js requires it.
   // goal/G43.32: spirit.require hands node the run-root path made whole, so on Windows its separators are backslashes.
   if (request === 'chokidar' || /(^|[\\/])chokidar[\\/]index\.js$/.test(request)) return { watch: function () { const w = { on: function (ev, fn) { if (ev === 'all') watchAll = fn; return w; } }; return w; } };
   return realLoad.apply(this, arguments);

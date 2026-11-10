@@ -71,8 +71,8 @@ test.startTest('nodeChat.js: the chat server, the branch chat, its chat.db start
     const up = await H.until(function () { return call('chat.chats.search', {}).then(function (r) { return r.status === 200; }); }, 40000);
     ok(up, 'switched on, the server answers chat.chats.search', 'chat.chats.search: ' + short((await call('chat.chats.search', {})).text));
     if (!up) return;
-    const job = await call('jobs.get', { key: 'spirit.app.chat' });
-    ok(!!job.body && !!job.body.job && job.body.job.status === 'running', 'its job spirit.app.chat is running', 'jobs.get spirit.app.chat: ' + short(job.body));
+    const job = await call('job.get', { key: 'spirit.app.chat' });
+    ok(!!job.body && !!job.body.job && job.body.job.status === 'running', 'its job spirit.app.chat is running', 'job.get spirit.app.chat: ' + short(job.body));
     const old = await call('chatClerver.chats.search', {});
     ok(old.status >= 400, 'chatClerver.<verb> is no verb of this node: the branch is chat', 'chatClerver.chats.search answered ' + old.status + ' ' + short(old.body));
 

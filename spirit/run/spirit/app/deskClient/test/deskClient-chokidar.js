@@ -1,10 +1,10 @@
 'use strict';
 
 // spirit/run/spirit/app/deskClient/test/deskClient-chokidar.js
-// deskClient WATCHES ITS CLONE WITH chokidar FROM spirit/jobs/ (goal/G43.25; spec: ./deskClient-chokidar.md). Andy: "can we hide
+// deskClient WATCHES ITS CLONE WITH chokidar FROM spirit/job/ (goal/G43.25; spec: ./deskClient-chokidar.md). Andy: "can we hide
 // those suckers in spirit/jobs/ for now? without the damn node_modules container?". deskClient.js requires chokidar by path, the
-// one in spirit/jobs/chokidar/, and what it requires, watching a folder, hears a file added. The move itself is
-// spirit/test/jobs-vendoredLibraries.js. The watcher run in a child process on a scratch folder inside spirit/run.
+// one in spirit/job/chokidar/, and what it requires, watching a folder, hears a file added. The move itself is
+// spirit/test/job-vendoredLibraries.js. The watcher run in a child process on a scratch folder inside spirit/run.
 
 const fs = require('fs');
 const path = require('path');
@@ -12,24 +12,24 @@ const { spawnSync } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 const REPO = path.resolve(RUN, '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-const NEW = 'spirit/run/spirit/jobs/';
+const NEW = 'spirit/run/spirit/job/';
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 400); }
 function code(text) { return String(text).replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1'); }
 
-test.startTest('deskClient-chokidar.js: deskClient requires chokidar from spirit/jobs/ by path, and its watcher hears (goal/G43.25)');
+test.startTest('deskClient-chokidar.js: deskClient requires chokidar from spirit/job/ by path, and its watcher hears (goal/G43.25)');
 
 const idxNew = path.join(REPO, NEW, 'chokidar', 'index.js');
 const users = ['spirit/run/spirit/app/deskClient/deskClient.js'];
-test.subHeading('3. the two users require it by path: deskClient.js here, jobs.js in spirit/test/jobs-vendoredLibraries.js');
+test.subHeading('3. the two users require it by path: deskClient.js here, job.js in spirit/test/job-vendoredLibraries.js');
 users.forEach(function (u) {
   const c = code(fs.readFileSync(path.join(REPO, u), 'utf8'));
   const specs = (c.match(/require\(\s*['"][^'"]*chokidar[^'"]*['"]\s*\)/g) || []).map(function (r) { return r.replace(/^require\(\s*['"]|['"]\s*\)$/g, ''); });
   let to = '';
   // goal/G43.32: loaded by spirit.require, by its run-root path ("spirit/jobs/chokidar/index.js"); a relative path is the old way.
   try { to = specs.length === 1 ? require.resolve(specs[0].charAt(0) === '.' ? path.resolve(path.dirname(path.join(REPO, u)), specs[0]) : path.join(RUN, specs[0])) : ''; } catch (e) { to = ''; }
-  ok(to === idxNew, u + ' requires ' + specs[0] + ', which is spirit/jobs/chokidar/index.js', u + ' requires ' + short(specs) + ' (resolves to ' + short(to || 'nothing') + ')');
+  ok(to === idxNew, u + ' requires ' + specs[0] + ', which is spirit/job/chokidar/index.js', u + ' requires ' + short(specs) + ' (resolves to ' + short(to || 'nothing') + ')');
 });
 
 test.subHeading('4. the file watcher works as before: deskClient\'s');

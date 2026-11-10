@@ -3,7 +3,7 @@
 // spirit/run/spirit/app/backup/test/backup-copies.js
 // THE BACKUP SERVER COPIES THE NODE'S STATE (goal/G43.23, item 5; spec: ./backup-copies.md). The box: "backup copies
 // nothing: it copies only its own state folder and reads a config path that does not exist". The real backup.js of this
-// tree, started as the node starts it (jobs.js runServer: --state spirit/state/backup/data, --node {name, publicKey}), on
+// tree, started as the node starts it (job.js runServer: --state spirit/state/backup/data, --node {name, publicKey}), on
 // a scratch tree under /tmp: another process's state and a node.db planted in its spirit/state/, and a config.json
 // naming a spiritHome. HOME points into the scratch too, so a fallback home never reaches a real one. No node runs.
 

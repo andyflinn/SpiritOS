@@ -42,22 +42,22 @@ test.startTest('introSpector.js: see what a party lets you call, an element of s
     ok(await until(function () { return text().then(function (t) { return /choose a family/.test(t); }); }, 10000), 'the form says choose a family', 'the form says: ' + short(await text()));
     ok(await until(function () { return reply().then(function (r) { return r !== null; }); }, 10000), 'the reply is a CodeMirror view', 'no CodeMirror for the reply');
     const tree = JSON.parse(await chrome.evaluate('(function () { var s = ' + SEL + '; return JSON.stringify((s && (s.tree || (s.families && s.families.tree))) || null); }())') || 'null');
-    ok(!!tree && !!tree.jobs && !!tree.jobs.search, 'self\'s tree is this node\'s, jobs.search in it', 'the tree: ' + short(tree && Object.keys(tree)));
-    if (!tree || !tree.jobs || !tree.jobs.search) return;
+    ok(!!tree && !!tree.job && !!tree.job.search, 'self\'s tree is this node\'s, job.search in it', 'the tree: ' + short(tree && Object.keys(tree)));
+    if (!tree || !tree.job || !tree.job.search) return;
 
     const pick = function (family, verb) {
       return chrome.evaluate('(function () { var s = ' + SEL + '; s.families.value = ' + JSON.stringify(family) + '; s.families.dispatchEvent(new Event("change", { bubbles: true })); ' + (verb ? 's.verbs.value = ' + JSON.stringify(verb) + '; s.verbs.dispatchEvent(new Event("change", { bubbles: true })); ' : '') + 'return s.value; }())');
     };
     test.subHeading('a family chosen, then a verb: its form, one field per key of its request, and call');
-    await pick('jobs');
+    await pick('job');
     ok(await until(function () { return text().then(function (t) { return /choose a verb/.test(t); }); }, 5000), 'a family chosen, the form says choose a verb', 'the form says: ' + short(await text()));
-    await pick('jobs', 'search');
-    const keys = Object.keys(tree.jobs.search.request || {});
-    ok(await until(function () { return chrome.evaluate('Array.prototype.some.call(document.querySelectorAll("#box button"), function (b) { return String(b.textContent).trim() === "call"; })'); }, 5000), 'jobs.search chosen: a call button', 'no call button: ' + short(await text()));
+    await pick('job', 'search');
+    const keys = Object.keys(tree.job.search.request || {});
+    ok(await until(function () { return chrome.evaluate('Array.prototype.some.call(document.querySelectorAll("#box button"), function (b) { return String(b.textContent).trim() === "call"; })'); }, 5000), 'job.search chosen: a call button', 'no call button: ' + short(await text()));
     const labels = await text();
     keys.forEach(function (k) { ok(labels.indexOf(k) !== -1, 'a field for its key ' + k, 'no field for ' + k + ': ' + short(labels)); });
     await chrome.evaluate('(function () { var b = Array.prototype.filter.call(document.querySelectorAll("#box button"), function (x) { return String(x.textContent).trim() === "call"; })[0]; b.click(); return true; }())');
-    ok(await until(function () { return reply().then(function (r) { return /"items"/.test(String(r)); }); }, 10000), 'call asks jobs.search of self and shows its reply, the jobs\' items', 'the reply: ' + short(await reply()));
+    ok(await until(function () { return reply().then(function (r) { return /"items"/.test(String(r)); }); }, 10000), 'call asks job.search of self and shows its reply, the jobs\' items', 'the reply: ' + short(await reply()));
     ok(/\n\s+"/.test(String(await reply())), 'written out as JSON.stringify(answer, null, 2)', 'the reply is not written out: ' + short(await reply()));
 
     test.subHeading('the attacker: JSON that does not parse is refused with the field\'s name');

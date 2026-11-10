@@ -158,7 +158,7 @@ test.startTest('info-wrapper.js: Info in spirit/app/, a wrapper mounted the new 
     c = await chromePage(where);
     if (c.error) { test.fail('Chrome: ' + c.error); return; }
     await c.send('Page.navigate', { url: N.base + '/face.html' });
-    ok(await until(function () { return c.evaluate('!!(window.spirit && window.spirit.ready && window.spirit.events)'); }, 20000), 'the world: the face page has its spirit', 'the page has no spirit: nothing judged');
+    ok(await until(function () { return c.evaluate('!!(window.spirit && window.spirit.ready && window.spirit.event)'); }, 20000), 'the world: the face page has its spirit', 'the page has no spirit: nothing judged');
     await c.evaluate(HANDS);
     const T = function (expr) { return c.evaluate('window.__t.' + expr); };
     const waitFor = function (expr, ms) { return until(function () { return c.evaluate('(function () { with (window.__t) { return !!(' + expr + '); } }())'); }, ms || 8000); };

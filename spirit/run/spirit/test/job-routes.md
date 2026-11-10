@@ -1,4 +1,4 @@
-# spirit/jobs.js: a job's id is a route
+# spirit/job.js: a job's id is a route
 
 goal/G43.20, its box. Andy: *"they're supposed to identify a "route" in the spirit-tree, NOT some invented number."*,
 *"ALL job id's will be routes to either a node supplied api (spirit.fs, etc...) or an app supplied id
@@ -15,7 +15,7 @@ app; `zzMount`, an app without node run) and a script in no app folder. Never a 
 - One job per family (Q1, Q2, the box): the node's own jobs (kind `permanent`) are exactly `spirit`, `spirit.app`,
   `spirit.auth`, `spirit.contact`, `spirit.fs`, each id of at most two parts.
 - A job carries no `type` field.
-- `jobs.create` refuses another script, an app's script whose json has no node run, and another command; it starts a run
+- `job.create` refuses another script, an app's script whose json has no node run, and another command; it starts a run
   app's own `spirit/app/<name>/<name>.js` under the route `spirit.app.<name>`.
 - A second start while one runs is refused, "already running"; two starts at once: one gets in (pending counts as
   running).
@@ -36,5 +36,5 @@ app; `zzMount`, an app without node run) and a script in no app folder. Never a 
   an app whose json says `"run": "true"`, a string; an app script with no json; a link elsewhere to the run app's
   script; the run app's script with a trailing slash; no script at all; the run app's script under `/bin/sh`.
 - Ids that are no route (`..`, `../spirit`, `__proto__`, `constructor`, `spirit.app.`, `spirit..fs`, `spirit.fs/../..`,
-  empty, `job_1`, `spirit.app.zzRun.extra`), asked of `jobs.get` and `jobs.cancel`: no job found, nothing crashes, the
+  empty, `job_1`, `spirit.app.zzRun.extra`), asked of `job.get` and `job.cancel`: no job found, nothing crashes, the
   node still answers.

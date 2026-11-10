@@ -101,7 +101,7 @@ async function facePosts() {
         const headers = { Host: H.host, Cookie: 'spirit_face=' + (o.sid || H.sid) };
         if (o.origin) headers.Origin = o.origin;
         if (o.type) headers['Content-Type'] = o.type;
-        const body = o.body || '{"call":"jobs.create","args":{"command":"sh","args":["-c","id"]}}';
+        const body = o.body || '{"call":"job.create","args":{"command":"sh","args":["-c","id"]}}';
         headers['Content-Length'] = Buffer.byteLength(body);
         const q = http.request({ host: '127.0.0.1', port: R.port, path: p, method: 'POST', headers: headers }, function (r) { r.resume(); clearTimeout(t); resolve({ status: r.statusCode }); });
         const t = setTimeout(function () { resolve({ status: 0 }); q.destroy(); }, 1200);

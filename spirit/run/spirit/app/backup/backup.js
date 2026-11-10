@@ -15,7 +15,7 @@ require('../../spirit.js');
 //     goal/G43.23, the box's item 5). Its own folder, spirit/state/backup/,
 //     is left out; so are a nested spirit/state/ and every
 //     identity.json. The node's name and public key are handed over as
-//     --node (jobs.js nodeArgOf); this process never opens identity.json,
+//     --node (job.js nodeArgOf); this process never opens identity.json,
 //     which holds the private keys.
 //   - the copy lands in <spiritHome>/backups/<12 hex of sha256(publicKey)>/
 //     spirit/state/, with node.json naming the node. spiritHome is

@@ -108,9 +108,9 @@ test.startTest('nodeIcons.js: the icon set, one table, written only here (goal/G
     ok(!!s8 && Object.keys(system).filter(function (g) { return g !== sys; }).every(function (g) { return g in s8; }), 'and the rest of the set stands, the file whole JSON', 'after eight at once the set is ' + short(read(SET)));
 
     test.subHeading('the box, 10: the change is published on the job spirit.app.icons before the answer');
-    const job = await fetch(node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'jobs.get', args: { key: 'spirit.app.icons' } }) }).then(function (r) { return r.json(); }, function () { return null; });
+    const job = await fetch(node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'job.get', args: { key: 'spirit.app.icons' } }) }).then(function (r) { return r.json(); }, function () { return null; });
     const j = (job && job.job) || null;
-    ok(!!j && j.module === 'spirit.app.icons', 'the world: the job spirit.app.icons is there', 'jobs.get: ' + short(job));
+    ok(!!j && j.module === 'spirit.app.icons', 'the world: the job spirit.app.icons is there', 'job.get: ' + short(job));
     const last = JSON.stringify(j && (j.app || j.data || {}));
     ok(!!j && last.indexOf(eight[eight.length - 1]) !== -1 || !!j && eight.some(function (g) { return last.indexOf(g) !== -1; }), 'the job holds a row a run published, the moment the add has answered', 'the job holds no published row: ' + short(j && { app: j.app, data: j.data }));
 

@@ -129,10 +129,10 @@
     Promise.resolve(S.ready).then(function (s) { return s.fs.loadFile(STEPS); }).then(function (text) {
       try { steps = (JSON.parse(text) || {}).steps || []; } catch (e) { steps = []; }
     }, function () { steps = []; }).then(function () { return parts; }).then(function () {
-      return S.cacheManager('jobs');
+      return S.cacheManager('job');
     }).then(function () {
       if (gone) return;
-      var J = ((S.data || {}).jobs || {}).data;
+      var J = ((S.data || {}).job || {}).data;
       if (!J) return;
       // THE JOIN STEPS, news of spirit (goal/G43.20): { join }.
       var take = function (j) { if (j && j.id === 'spirit' && j.data && j.data.join) { job = j.data.join; show(); } };

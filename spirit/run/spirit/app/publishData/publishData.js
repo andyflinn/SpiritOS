@@ -38,7 +38,7 @@ const DEFAULT_ASKS = 20;
 
 const argv = process.argv.slice(2);
 // THE PORT OF THE NODE THAT STARTS IT (goal/G43.21): Run in the app detail hands no argument, and the node hands every job it
-// starts its own address, SPIRIT_CALLBACK_URL (spirit/jobs.js). A port given first still wins.
+// starts its own address, SPIRIT_CALLBACK_URL (spirit/job.js). A port given first still wins.
 const fromNode = (/:(\d+)\//.exec(String(process.env.SPIRIT_CALLBACK_URL || '')) || [])[1];
 const port = /^\d+$/.test(String(argv[0] || '')) ? Number(argv[0]) : Number(fromNode);
 function flag(name) { const i = argv.indexOf(name); return i === -1 ? '' : String(argv[i + 1] || ''); }

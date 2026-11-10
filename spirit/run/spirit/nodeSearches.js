@@ -7,12 +7,12 @@ require('./spirit.js');
 //   Andy, 2026-09-27: "the verb changes changing list fetches to a
 //   search(labe) and geKey(key) pair are approved", and "get is fine".
 //
-// jobs.list answered every job whole, and one of them, the file watcher,
+// job.list answered every job whole, and one of them, the file watcher,
 // carried the node's entire file list: 42,570 bytes on a fresh node, too
 // big for a puppet to answer its owner with. So:
 //
-//   jobs.search { q }    key/label pairs, one per job
-//   jobs.get    { key }  one job, WITHOUT the watcher's file list, which is
+//   job.search { q }    key/label pairs, one per job
+//   job.get    { key }  one job, WITHOUT the watcher's file list, which is
 //                        a collection of its own and searched as one
 //   fs.search   { q }    the files the node will serve, by path
 //

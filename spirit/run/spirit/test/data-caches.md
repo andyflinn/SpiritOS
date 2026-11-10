@@ -30,7 +30,7 @@ what judges no branch. The numbers are those of the requirements before they mov
    must do so in this item. no exceptions."*, and *"any notion that there is an alternative approach must disappear
    from all documentation and all comments and all code and tests in the entire repo."*):
    - no client file (under `shell/`, `spirit/element/` or `spirit/app/`, but `shell/boot.js`, the face's own transport)
-     takes the node's stream itself (`events.subscribe`): only `spirit/data.js` takes it, for every client. Those paths
+     takes the node's stream itself (`event.subscribe`): only `spirit/data.js` takes it, for every client. Those paths
      are the test's; `boot.js` and `seal.js` have been in `spirit/shell/` since goal/G43.18, which the list does not
      reach, so `spirit/shell/seal.js` is not judged; the apps left in `shell/` are, and every app of `spirit/app/`,
      where the apps and the servers moved (goal/G43.20);

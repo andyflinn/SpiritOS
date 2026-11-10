@@ -66,7 +66,7 @@
       runBox.appendChild(said);
       form.button.addEventListener('click', function () {
         said.textContent = '';
-        S.ready.then(function (s) { return s.jobs.create({ command: 'node', args: ['spirit/app/' + key + '/' + key + '.js'], type: key }); }).then(function () {
+        S.ready.then(function (s) { return s.job.create({ command: 'node', args: ['spirit/app/' + key + '/' + key + '.js'], type: key }); }).then(function () {
           if (!runGone) said.textContent = 'started';
         }, function (e) { if (!runGone) said.textContent = String((e && e.message) || e); });
       });

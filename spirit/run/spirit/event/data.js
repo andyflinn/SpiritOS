@@ -1,5 +1,5 @@
 'use strict';
-// spirit/run/spirit/events/data.js
+// spirit/run/spirit/event/data.js
 // WHAT A CLIENT KNOWS OF THE events FAMILY, IN ITS OWN FOLDER (goal/G41.28). Andy: "WSL, make sure you assert that every
 // family in the api tree HAS a clientCacheManager"; a page finds it by the family's name (spirit.cacheManager).
 //
@@ -9,5 +9,5 @@
 (function () {
   // Its reads stand at spirit.data.events.data as every family's do, and it has none yet.
   var D = typeof window !== 'undefined' ? window.spirit.data : require('../spirit.js').require('spirit/data.js');
-  D.makeFamily('events');
+  D.makeFamily('event');
 }());

@@ -317,7 +317,7 @@ function shape(v) {
   return typeof v === 'string' ? "'" + v + "'" : String(v);
 }
 // PUBLISHING (desk/G2.3) is not here. It is shared by every spawned process, server or transient, so it lives in
-// spirit.js (spirit.events.publish, spirit.jobs) with its size check, beside the job cycle (goal/G40.6); this file
+// spirit.js (spirit.event.publish, spirit.job) with its size check, beside the job cycle (goal/G40.6); this file
 // keeps only what serving needs.
 
 // ── AGENTS: AN APP'S RULES FOR AGENTS, FROM A FILE (slim/G1.8) ────────
@@ -354,12 +354,12 @@ function withDebug(verbs) {
 }
 // DEBUG STREAMS (goal/G43.15; Andy: "the appServers API MUST STREAM changes, too for debug"): its state on this server's own job,
 // in the job's data, which the node merges, so the server's next publish leaves it; every page hears it, no peer does. The node
-// keeps it from there for an app of spirit/app/ (spirit/jobs.js, Q2, Q3).
+// keeps it from there for an app of spirit/app/ (spirit/job.js, Q2, Q3).
 function reportDebug() {
   // Quietly, when this process has no job to report on (a suite's stand-in, a server started by hand).
-  if (!spirit.jobs || typeof spirit.jobs.report !== 'function') return;
+  if (!spirit.job || typeof spirit.job.report !== 'function') return;
   try {
-    Promise.resolve(spirit.jobs.report({ data: { debug: spirit.debug() === true } })).catch(function () { /* not started by a node */ });
+    Promise.resolve(spirit.job.report({ data: { debug: spirit.debug() === true } })).catch(function () { /* not started by a node */ });
   } catch (e) { /* not started by a node */ }
 }
 
@@ -681,7 +681,7 @@ function sendTo(key, entry) {
 // THE ONE PUBLISH (goal/G33.4, box v43: "the desk server publishes its changes to the browser with the same function
 // that it publishes its changes to the deskClients"). Numbered, logged, and handed to every subscriber it is for.
 function publish(row) {
-  const out = spirit.events.publish(row);
+  const out = spirit.event.publish(row);
   if (!publisher) return out;
   published += 1;
   const entry = { run: RUN_ID, n: published, row: row };
@@ -853,7 +853,7 @@ function serve(verbs, opts) {
   // starting the listener, it should announce itself with its name, and a
   // nicely formatted overview of it's api." Published, not printed (desk/G2.3).
   const srv = s.listen(pipe, function () {
-    spirit.events.publish({ announce: { name: name, verbs: Object.keys(verbs).sort().map(function (n) {
+    spirit.event.publish({ announce: { name: name, verbs: Object.keys(verbs).sort().map(function (n) {
       return { verb: n, request: shape(verbs[n].request), reply: shape(verbs[n].reply) };
     }) } });
     subscribersFromGrants(name);

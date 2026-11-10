@@ -31,7 +31,7 @@ module.exports = function installJobs(port) {
 
   const jobsMap = new Map();
   const events = new EventEmitter();
-  // Every stream subscriber (the events family's subscribe, events/events.js) attaches two
+  // Every stream subscriber (the events family's subscribe, event/event.js) attaches two
   // listeners here — job-updated and job-deleted — and detaches them when
   // the client goes away. Node's default ceiling of 10 therefore starts
   // printing MaxListenersExceededWarning at the sixth open tab, which
@@ -77,7 +77,7 @@ module.exports = function installJobs(port) {
   }
   // EACH EVENT CARRIES ONLY ITS OWN NEWS (the box): what one kind of news says replaces the job's data whole, so no event
   // brings another kind along. The newest news of each kind is kept beside the job (news), never on it, so a page that
-  // connects is handed each kind once as its own event (newsOf, events.js and faceHome.js), as one that was there heard it.
+  // connects is handed each kind once as its own event (newsOf, event.js and faceHome.js), as one that was there heard it.
   const newsKept = new Map();      // id -> { kind: data }
   function ownNews(id, kind, data) {
     const job = ownJob(id);
@@ -198,12 +198,12 @@ module.exports = function installJobs(port) {
   //   Andy, 2026-10-02: "the current design is horrid. for lazy load the stream can send createDirectory run /
   //   createDirectory media / createFile index.html etc... just send \"commands up the stream to modify the tree.\"",
   //   "so that s our replacement then. quick and free and maintained by others....", "forget about batching"; and
-  //   2026-10-04, "local copy it is" (chokidar, now under spirit/jobs/chokidar/, goal/G43.25). His grant G1 on this file.
+  //   2026-10-04, "local copy it is" (chokidar, now under spirit/job/chokidar/, goal/G43.25). His grant G1 on this file.
   //
   // The watcher keeps the tree (path -> {kind, size, modified}) and sends what changed, one command per job-updated:
   // data.command {op, path, at}, op createDirectory, createFile, changeFile, deleteFile or deleteDirectory, path
   // relative to the watched root. The whole list never travels again: a page that connects gets the tree as create
-  // commands from fsTreeCommands (events/events.js, faceHome.js). The tree is seeded from scanFolder, so it skips what that skips
+  // commands from fsTreeCommands (event/event.js, faceHome.js). The tree is seeded from scanFolder, so it skips what that skips
   // (fileSystem.js's vendored folders, .git, anything fileServable refuses, the node's state among them); chokidar is asked to ignore the same,
   // and reports at startup what the seed already holds, which sends nothing.
   const FS_OPS = { add: 'createFile', addDir: 'createDirectory', change: 'changeFile', unlink: 'deleteFile', unlinkDir: 'deleteDirectory' };
@@ -261,7 +261,7 @@ module.exports = function installJobs(port) {
       if (rel.split('/').some(function (part) { return part === '.git'; }) || fileSystem.VENDORED_FOLDERS.holds(rel)) return true;
       return !fileSystem.fileServable(rel);
     };
-    const watcher = spirit.require('spirit/jobs/chokidar/index.js').watch(rootDir, { ignored: ignored, ignoreInitial: false, persistent: true });
+    const watcher = spirit.require('spirit/job/chokidar/index.js').watch(rootDir, { ignored: ignored, ignoreInitial: false, persistent: true });
     watcher.on('all', function (event, full) {
       const op = FS_OPS[event];
       const rel = full ? relOf(full) : '';
@@ -307,7 +307,7 @@ module.exports = function installJobs(port) {
       env: Object.assign({}, process.env, {
         SPIRIT_JOB_ID: job.id,
         // THE ONE DOOR, and the id travels beside the verb rather than
-        // baked into the path — spirit.js's spirit.jobs reads SPIRIT_JOB_ID,
+        // baked into the path — spirit.js's spirit.job reads SPIRIT_JOB_ID,
         // and a process that needs the node's port reads this URL.
         SPIRIT_CALLBACK_URL: 'http://localhost:' + port + '/api/spirit',
       }),
@@ -379,7 +379,7 @@ module.exports = function installJobs(port) {
   // while it keeps dying, and starts over once a run lasted a minute.
   //
   // Started by the node itself at boot (startNodeServers, below), never through the
-  // jobs.create verb: the loopback door gains nothing (Andy, 2026-09-27).
+  // job.create verb: the loopback door gains nothing (Andy, 2026-09-27).
   // cancelJob stops it for good.
   const RESTART_MIN_MS = 1000;
   const RESTART_MAX_MS = 60000;
@@ -452,7 +452,7 @@ module.exports = function installJobs(port) {
     return job;
   }
 
-  // ── WHAT jobs.create STARTS (goal/G43.20) ─────────────────────────────
+  // ── WHAT job.create STARTS (goal/G43.20) ─────────────────────────────
   //
   // Andy: "cw, box that only jobs in the app folder with node:run:true can be started with jobs.create". Its command is
   // this node's executable (the word node, all a page can say, is read as it), its script an app's own

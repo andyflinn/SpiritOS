@@ -1,9 +1,9 @@
 'use strict';
 
-// spirit/run/spirit/test/jobs-vendoredLibraries.js
-// NO run://node_modules/: chokidar and readdirp in spirit/jobs/ (goal/G43.25; spec: ./jobs-vendoredLibraries.md). Andy: "can we
-// hide those suckers in spirit/jobs/ for now? without the damn node_modules container?". The two libraries sit in spirit/jobs/,
-// jobs.js's own folder, and jobs.js is the user that brings them: they move whole, chokidar finds readdirp by path, jobs.js
+// spirit/run/spirit/test/job-vendoredLibraries.js
+// NO run://node_modules/: chokidar and readdirp in spirit/job/ (goal/G43.25; spec: ./job-vendoredLibraries.md). Andy: "can we
+// hide those suckers in spirit/jobs/ for now? without the damn node_modules container?". The two libraries sit in spirit/job/,
+// job.js's own folder, and job.js is the user that brings them: they move whole, chokidar finds readdirp by path, job.js
 // requires it by path, its fs-watcher job works as before, nothing names spirit/run/node_modules. deskClient's use is
 // spirit/app/deskClient/test/deskClient-chokidar.js; fileSystem.js's one list of vendored folders is
 // ./fileSystem-vendoredFolders.js. The tree read as it is; the watcher run in a child process on a scratch folder.
@@ -17,9 +17,9 @@ const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 // The tree before the move: the commit the red was written on, which holds spirit/run/node_modules/.
 const BASE = '2fb29140';
 const OLD = 'spirit/run/node_modules/';
-const NEW = 'spirit/run/spirit/jobs/';
-const VENDORED = ['spirit/jobs/chokidar', 'spirit/jobs/readdirp', 'spirit/element/codeMirror'];
-const SELF = /spirit\/run\/spirit\/test\/(jobs-vendoredLibraries|fileSystem-vendoredFolders)\.(js|md)$|spirit\/run\/spirit\/app\/deskClient\/test\/deskClient-chokidar\.(js|md)$/;
+const NEW = 'spirit/run/spirit/job/';
+const VENDORED = ['spirit/job/chokidar', 'spirit/job/readdirp', 'spirit/element/codeMirror'];
+const SELF = /spirit\/run\/spirit\/test\/(job-vendoredLibraries|fileSystem-vendoredFolders)\.(js|md)$|spirit\/run\/spirit\/app\/deskClient\/test\/deskClient-chokidar\.(js|md)$/;
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 400); }
@@ -27,7 +27,7 @@ function git(args) { return execSync('git ' + args, { cwd: REPO, encoding: 'utf8
 function code(text) { return String(text).replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1'); }
 function trim(p) { return String(p).replace(/\\/g, '/').replace(/^\.?\//, '').replace(/^spirit\/run\//, '').replace(/\/+$/, ''); }
 
-test.startTest('jobs-vendoredLibraries.js: chokidar and readdirp in spirit/jobs/, no run://node_modules (goal/G43.25)');
+test.startTest('job-vendoredLibraries.js: chokidar and readdirp in spirit/job/, no run://node_modules (goal/G43.25)');
 
 test.subHeading('the world');
 const before = git('ls-tree -r --name-only ' + BASE + ' -- ' + OLD).split('\n').filter(Boolean);
@@ -36,7 +36,7 @@ ok(before.length === 12 && before.indexOf(OLD + 'chokidar/index.js') !== -1 && b
 const tracked = git('ls-files').split('\n').filter(Boolean).filter(function (f) { return fs.existsSync(path.join(REPO, f)); });
 ok(tracked.length > 100, 'the world: ' + tracked.length + ' tracked files on disk are read', 'only ' + tracked.length + ' tracked files read: nothing judged');
 
-test.subHeading('1. both folders move whole to spirit/jobs/, spirit/run/node_modules/ is gone');
+test.subHeading('1. both folders move whole to spirit/job/, spirit/run/node_modules/ is gone');
 before.forEach(function (f) {
   const to = NEW + f.slice(OLD.length);
   const there = fs.existsSync(path.join(REPO, to)) && tracked.indexOf(to) !== -1;
@@ -49,7 +49,7 @@ before.forEach(function (f) {
 ['chokidar', 'readdirp'].forEach(function (n) {
   const dir = path.join(REPO, NEW, n);
   const files = fs.existsSync(dir) ? fs.readdirSync(dir) : [];
-  ok(files.indexOf('package.json') !== -1 && files.some(function (x) { return /^licen[cs]e/i.test(x); }), 'spirit/jobs/' + n + '/ keeps its package.json and licence', 'spirit/jobs/' + n + '/ holds ' + short(files));
+  ok(files.indexOf('package.json') !== -1 && files.some(function (x) { return /^licen[cs]e/i.test(x); }), 'spirit/job/' + n + '/ keeps its package.json and licence', 'spirit/job/' + n + '/ holds ' + short(files));
 });
 ok(!fs.existsSync(path.join(RUN, 'node_modules')), 'spirit/run/node_modules/ is gone from the disk', 'spirit/run/node_modules/ is still on the disk');
 const stillTracked = tracked.filter(function (f) { return f.indexOf(OLD) === 0; });
@@ -60,20 +60,20 @@ const idxNew = path.join(REPO, NEW, 'chokidar', 'index.js');
 const now = fs.existsSync(idxNew) ? fs.readFileSync(idxNew, 'utf8').split(/\r?\n/) : [];
 const was = execSync('git show ' + BASE + ':' + OLD + 'chokidar/index.js', { cwd: REPO, encoding: 'utf8' }).split(/\r?\n/);
 ok(/from\s+['"]readdirp['"]/.test(was[5] || ''), 'the world: index.js:6 at ' + BASE + ' imports readdirp by name', 'index.js:6 at ' + BASE + ' reads ' + short(was[5]));
-ok(/from\s+['"]\.\.\/readdirp\/index\.js['"]/.test(now[5] || ''), 'spirit/jobs/chokidar/index.js:6 imports from "../readdirp/index.js"', 'index.js:6 reads ' + short(now[5] || '(no file)'));
+ok(/from\s+['"]\.\.\/readdirp\/index\.js['"]/.test(now[5] || ''), 'spirit/job/chokidar/index.js:6 imports from "../readdirp/index.js"', 'index.js:6 reads ' + short(now[5] || '(no file)'));
 const differ = now.length ? was.map(function (l, i) { return l === now[i] ? -1 : i + 1; }).filter(function (i) { return i !== -1; }) : ['no file'];
 ok(now.length === was.length && differ.length === 1 && differ[0] === 6, 'no other line of index.js changed', 'lines changed: ' + short(differ) + ' (' + now.length + ' lines, were ' + was.length + ')');
-ok(now.length && !now.some(function (l) { return /from\s+['"]readdirp['"]|require\(\s*['"]readdirp['"]\s*\)/.test(l); }), 'index.js names readdirp by name nowhere', now.length ? 'index.js still imports readdirp by name' : 'no spirit/jobs/chokidar/index.js to judge');
+ok(now.length && !now.some(function (l) { return /from\s+['"]readdirp['"]|require\(\s*['"]readdirp['"]\s*\)/.test(l); }), 'index.js names readdirp by name nowhere', now.length ? 'index.js still imports readdirp by name' : 'no spirit/job/chokidar/index.js to judge');
 
-test.subHeading('3. the two users require it by path: jobs.js here, deskClient.js in its own test');
-const users = ['spirit/run/spirit/jobs.js'];
+test.subHeading('3. the two users require it by path: job.js here, deskClient.js in its own test');
+const users = ['spirit/run/spirit/job.js'];
 users.forEach(function (u) {
   const c = code(fs.readFileSync(path.join(REPO, u), 'utf8'));
   const specs = (c.match(/require\(\s*['"][^'"]*chokidar[^'"]*['"]\s*\)/g) || []).map(function (r) { return r.replace(/^require\(\s*['"]|['"]\s*\)$/g, ''); });
   let to = '';
   // goal/G43.32: loaded by spirit.require, by its run-root path ("spirit/jobs/chokidar/index.js"); a relative path is the old way.
   try { to = specs.length === 1 ? require.resolve(specs[0].charAt(0) === '.' ? path.resolve(path.dirname(path.join(REPO, u)), specs[0]) : path.join(RUN, specs[0])) : ''; } catch (e) { to = ''; }
-  ok(to === idxNew, u + ' requires ' + specs[0] + ', which is spirit/jobs/chokidar/index.js', u + ' requires ' + short(specs) + ' (resolves to ' + short(to || 'nothing') + ')');
+  ok(to === idxNew, u + ' requires ' + specs[0] + ', which is spirit/job/chokidar/index.js', u + ' requires ' + short(specs) + ' (resolves to ' + short(to || 'nothing') + ')');
 });
 const byName = tracked.filter(function (f) { return /\.(js|mjs|cjs|html)$/.test(f) && !SELF.test(f) && f.indexOf(NEW + 'chokidar/') !== 0; })
   .filter(function (f) { return /require\(\s*['"]chokidar['"]\s*\)|from\s+['"]chokidar['"]|import\(\s*['"]chokidar['"]\s*\)/.test(code(fs.readFileSync(path.join(REPO, f), 'utf8'))); });
@@ -91,7 +91,7 @@ function child(src, dir) {
 // The node's fs-watcher job (the Files tree and the spirit.fs events): a file made in its folder comes as a createFile.
 const jobsOut = child([
   "const fs = require('fs'), path = require('path'), dir = process.argv[1];",
-  "const jobs = require(" + JSON.stringify(path.join(RUN, 'spirit', 'jobs.js')) + ")(1);",
+  "const jobs = require(" + JSON.stringify(path.join(RUN, 'spirit', 'job.js')) + ")(1);",
   "let job = null; jobs.events.on('job-updated', function (u) {",
   "  if (job && u.id === job.id && u.data && u.data.command && u.data.command.op === 'createFile' && u.data.command.path === 'made.txt') { console.log('HEARD'); process.exit(0); } });",
   "job = jobs.startFsWatcherJob(dir);",

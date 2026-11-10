@@ -45,7 +45,7 @@ const createProbabilityBucket = spirit.require('spirit/probabilityBucket.js').cr
 const argv = process.argv;
 const at = argv.indexOf('--state');
 const STATE = at !== -1 ? argv[at + 1] : '';
-// THE MANIFEST'S VALUES, as the node hands them (jobs.js: one JSON object, name -> value, as the first argument).
+// THE MANIFEST'S VALUES, as the node hands them (job.js: one JSON object, name -> value, as the first argument).
 let values = {};
 try { values = JSON.parse(argv[2] || '{}') || {}; } catch (e) { values = {}; }
 // verify.db IN ITS STATE (goal/G43.27; Andy: "cw, it's supposed to be in run:/spirit/state/deskVerify/data/
@@ -324,7 +324,7 @@ function runSuite(file, port, onTests, env, args) {
 // WHAT IT IS DOING, PUBLISHED AS IT HAPPENS (goal/G8.12). Andy, 2026-10-09: "the new tab in desk should listen to real
 // events from verifier, and what now is displayed as a log.. should be an updated status message underneath a progress
 // bar", and "it should refresh by itself". So every change of the run is one object down the stream
-// (spirit.events.publish, which the page keeps through deskVerify's data.js and follows with
+// (spirit.event.publish, which the page keeps through deskVerify's data.js and follows with
 // spirit.data.deskVerify.data.watch) - never a log: the tab keeps the newest and replaces it. The page asks nothing, as
 // his no-pulling rule requires.
 //   doing     'run' a run of suites, 'idle' nothing running
@@ -354,10 +354,10 @@ function say(o) {
     consoleRun: consoleRun, consoleTo: consoleEnd, consoleEnded: consoleEnded,
   };
   lastSaid = one;
-  spirit.events.publish(one);
+  spirit.event.publish(one);
   // THE SUITE COUNT AS THE JOB'S PROGRESS (goal/G29.15): the one bar every page draws, beside the tab's own object.
   if (one.doing !== 'idle' && one.of > 0) {
-    spirit.jobs.progress(one.index, one.of, one.suite).catch(function () { /* not started by a node */ });
+    spirit.job.progress(one.index, one.of, one.suite).catch(function () { /* not started by a node */ });
   }
 }
 function sayIdle(line) {
@@ -446,7 +446,7 @@ function startRun(suites, commit) {
   running = { suite: '', since: idleState.since };
   (async function () {
     let outcome = 'broke';
-    await spirit.jobs.start('run of ' + suites.length + (suites.length === 1 ? ' suite' : ' suites')).catch(function () { /* not started by a node */ });
+    await spirit.job.start('run of ' + suites.length + (suites.length === 1 ? ' suite' : ' suites')).catch(function () { /* not started by a node */ });
     try { outcome = await runSuites(suites, commit, row); } catch (e) {
       runEnded.run('broke', new Date().toISOString(), '', 0, '[]', 'the run broke: ' + String((e && e.message) || e).slice(0, 300), row);
     } finally {
@@ -455,7 +455,7 @@ function startRun(suites, commit) {
       running = { suite: '', since: '' };
       consoleDone();
       sayIdle();
-      await spirit.jobs.end({ outcome: outcome }).catch(function () { /* not started by a node */ });
+      await spirit.job.end({ outcome: outcome }).catch(function () { /* not started by a node */ });
     }
   }());
   return { taken: true };

@@ -11,5 +11,5 @@ Andy: "spirit/app/<name>/ folders are now ALMOST the same shape as spirit/jobs/ 
   - `spirit/app/agent/api.js` is in git, with provider, model, persona and job, and the publisher's subscribe and
     unsubscribe (goal/G43.32; Andy: *"for now, it needs to declare them in api.js"*).
   - `spirit/app/agent/api/` is gone, and no app keeps an `./api/` folder.
-- **3. One `<verb>.json` per verb.** Each of the four verbs has its `<verb>.json`, with a description, as `spirit/jobs/get.json` has.
+- **3. One `<verb>.json` per verb.** Each of the four verbs has its `<verb>.json`, with a description, as `spirit/job/get.json` has.
 - **4. No file names `spirit/app/agent/api/`.**

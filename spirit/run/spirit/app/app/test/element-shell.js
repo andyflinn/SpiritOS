@@ -103,7 +103,7 @@ test.startTest('element-shell.js: the app app as the shell, and a shell that rep
 
     // Q18, Andy: "join. not the shells job.": zzshell knows nothing of Join, and Join still shows a new node its steps.
     test.subHeading('the box: "Join shows a new user its steps on its own ... neither boot.js nor any shell decides it"');
-    const steps = await call(N.base, 'jobs.list', {});
+    const steps = await call(N.base, 'job.list', {});
     test.comment('the scratch node is new: its join steps are open (' + short(steps.status) + ')');
     const joined = drawn.indexOf(MARK) !== -1 && await until(function () { return text().then(function (t) { return /\bJoin\b/.test(t); }); }, 10000);
     ok(joined, 'under a shell that knows nothing of it, Join shows itself', drawn.indexOf(MARK) !== -1 ? 'under zzshell no Join in 10 s: ' + short(await text()) : 'zzshell never drew: nothing judged');

@@ -1,8 +1,8 @@
 'use strict';
 
-// spirit/run/spirit/events/test/events.js
-// The tests of spirit/events/events.js (spec: ./events.md; goal/G43.3). Andy, the box: "no leftover timers after a stream
-// closes". events.subscribe runs on a real http server here, with stand-ins for what feeds it, and a real client opens
+// spirit/run/spirit/event/test/event.js
+// The tests of spirit/event/event.js (spec: ./event.md; goal/G43.3). Andy, the box: "no leftover timers after a stream
+// closes". event.subscribe runs on a real http server here, with stand-ins for what feeds it, and a real client opens
 // the stream and closes it, the way a process does when its one reply has come.
 
 const http = require('http');
@@ -10,7 +10,7 @@ const path = require('path');
 const { EventEmitter } = require('events');
 const RUN = path.resolve(__dirname, '../../..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-const { createEvents } = require(path.join(RUN, 'spirit', 'events', 'events.js'));
+const { createEvents } = require(path.join(RUN, 'spirit', 'event', 'event.js'));
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
@@ -23,7 +23,7 @@ const realClear = global.clearInterval;
 global.setInterval = function () { const t = realSet.apply(this, arguments); timers.add(t); return t; };
 global.clearInterval = function (t) { timers.delete(t); return realClear.call(this, t); };
 
-// What feeds events.js, each source counting the subscribers it holds.
+// What feeds event.js, each source counting the subscribers it holds.
 function source() {
   const subs = new Set();
   return { subs: subs, subscribe: function (fn) { subs.add(fn); return function () { subs.delete(fn); }; } };
@@ -58,13 +58,13 @@ function open(port, headers) {
       resolve({ heard: heard, req: req, res: res });
     });
     req.on('error', reject);
-    req.end(JSON.stringify({ call: 'events.subscribe', args: {} }));
+    req.end(JSON.stringify({ call: 'event.subscribe', args: {} }));
   }).then(function (s) { s.req.on('error', function () {}); return s; });
 }
 const nothingHeld = { timers: 0, jobUpdated: 0, jobDeleted: 0, relay: 0, renames: 0, packets: 0, pageStreams: 0 };
 const same = function (a, b) { return JSON.stringify(a) === JSON.stringify(b); };
 
-test.startTest('events.js: a stream that closed leaves nothing behind (goal/G43.3)');
+test.startTest('event.js: a stream that closed leaves nothing behind (goal/G43.3)');
 
 (async function () {
   const w = world();

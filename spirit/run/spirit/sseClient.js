@@ -10,7 +10,7 @@
 // protocol, so this is a parser and a reconnect loop and nothing else.
 //
 // WHY NOT `EventSource`. The browser has one (the page's own stream,
-// spirit.js's events.subscribe, reads a fetch response instead). Node 24
+// spirit.js's event.subscribe, reads a fetch response instead). Node 24
 // has one behind --experimental-eventsource.
 // Neither is usable here, and the reason is a rule rather than a taste:
 // **EventSource cannot set request headers**, and the proof for a relay

@@ -112,7 +112,7 @@ test.startTest('appClient.js: the node asks its app servers');
         'the permanent ' + NAME + ' runs as spirit/appServer.js with its path', 'the permanent ' + NAME + ' runs as ' + short(perm));
       // A run started for the call is a pid of the icons job's that was not its pid before the call; its command line is
       // read while it runs.
-      const pidNow = function () { return post('jobs.get', { key: 'spirit.app.icons' }).then(function (r) { return String((r.body && r.body.job && r.body.job.data && r.body.job.data.pid) || ''); }); };
+      const pidNow = function () { return post('job.get', { key: 'spirit.app.icons' }).then(function (r) { return String((r.body && r.body.job && r.body.job.data && r.body.job.data.pid) || ''); }); };
       const before = await pidNow();
       const fresh = [];
       const seenCmd = [];

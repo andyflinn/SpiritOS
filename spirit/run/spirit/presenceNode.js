@@ -13,7 +13,7 @@ require('./spirit.js');
 // NO NEW SHELL-FACING CHANNEL EXISTS AT ALL — which is the whole reason
 // for the shape (design/relay/PRESENCE.md §3).
 //
-// It lives here rather than in jobs.js because jobs.js is generic
+// It lives here rather than in job.js because job.js is generic
 // infrastructure and this knows about relays, keys and signatures.
 
 const path = require('path');

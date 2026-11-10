@@ -65,7 +65,7 @@ async function faceOf(N, R) {
 // The names on a desktop, as it reads: icon and name line by line, the name lines only.
 async function desktop(chrome, url) {
   await chrome.send('Page.navigate', { url: url });
-  await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.events)'); }, 20000);
+  await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.event)'); }, 20000);
   await sleep(DRAWN_MS);
   const text = String(await chrome.evaluate('document.body.innerText'));
   return text.split('\n').map(function (l) { return l.trim(); }).filter(function (l) { return /[A-Za-z]/.test(l); });

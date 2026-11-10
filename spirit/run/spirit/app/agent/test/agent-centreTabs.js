@@ -49,7 +49,7 @@ test.startTest('agent-centreTabs.js: the agent app\'s centre is closable tabs (g
     c = await chromePage(where);
     if (c.error) { test.fail('Chrome: ' + c.error); return; }
     await c.send('Page.navigate', { url: N.base + '/face.html' });
-    await until(function () { return c.evaluate('!!(window.spirit && window.spirit.events)'); }, 20000);
+    await until(function () { return c.evaluate('!!(window.spirit && window.spirit.event)'); }, 20000);
     const LEAF = 'function leaf(w, within) { var root = within ? document.querySelector(within) : document; if (!root) return null; return Array.prototype.slice.call(root.querySelectorAll("*")).filter(function (e) { return e.offsetParent !== null && e.textContent.trim() === w && !Array.prototype.some.call(e.children, function (k) { return k.textContent.trim() === w; }); })[0] || null; }';
     const press = function (words, within) { return c.evaluate('(function () { ' + LEAF + ' var e = leaf(' + JSON.stringify(words) + ', ' + JSON.stringify(within || '') + '); if (!e) return false; e.click(); return true; }())'); };
     // The Agent opens from the appSelector's tiles, as the shell app makes them (goal/G43.13).

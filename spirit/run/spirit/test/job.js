@@ -1,7 +1,7 @@
 'use strict';
 
-// spirit/run/spirit/test/jobs.js
-// The tests of spirit/jobs.js, and of no other module (spec: ./jobs.md). Since goal/G43.19 it holds the one-shot apps the node
+// spirit/run/spirit/test/job.js
+// The tests of spirit/job.js, and of no other module (spec: ./job.md). Since goal/G43.19 it holds the one-shot apps the node
 // registers (the box, 2 and 4). This file holds goal/G41.30, the review's RH1:
 // "jobs.create still spawns any program". Since goal/G43.20 (box: "jobs.create starts only an app's own script,
 // spirit/app/<name>/<name>.js, of an app whose <name>.json says node run true; anything else is refused"). Raw calls over http to a scratch node's door,
@@ -19,7 +19,7 @@ function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 200); }
 const WAIT_MS = 1500;
 
-test.startTest('jobs.js: jobs.create starts this node\'s processes, and no other program (goal/G41.30, RH1)');
+test.startTest('job.js: job.create starts this node\'s processes, and no other program (goal/G41.30, RH1)');
 
 (async function () {
   const marks = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-jobs-marks-'));
@@ -29,7 +29,7 @@ test.startTest('jobs.js: jobs.create starts this node\'s processes, and no other
     if (!node.up) { test.fail('the scratch node did not come up: nothing judged'); return; }
     const run = path.join(node.root, 'spirit', 'run');
     const call = async function (args) {
-      const r = await fetch(node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'jobs.create', args: args }) });
+      const r = await fetch(node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'job.create', args: args }) });
       const text = await r.text();
       let body = null; try { body = JSON.parse(text); } catch (e) { body = null; }
       return { status: r.status, code: body && body.code, text: text };
@@ -67,7 +67,7 @@ test.startTest('jobs.js: jobs.create starts this node\'s processes, and no other
     const inc = await call({ command: process.execPath, args: ['spirit/app/zzRun/zzRun.js'] });
     await sleep(WAIT_MS);
     ok(inc.status === 201 && fs.existsSync(mark('run')), "an app's own spirit/app/<name>/<name>.js, its json saying node run true, starts", 'a node run app: answered ' + inc.status + ' ' + short(inc.text) + ', ran ' + fs.existsSync(mark('run')));
-    // A PAGE SENDS PLAIN node (the app detail's run, spirit/element/search/app/detailElement.js:68): jobs.js reads it as this
+    // A PAGE SENDS PLAIN node (the app detail's run, spirit/element/search/app/detailElement.js:68): job.js reads it as this
     // node's own executable. The run before has ended, so the id is free again.
     const plainNode = await call({ command: 'node', args: ['spirit/app/zzRun/zzRun.js'] });
     ok(plainNode.status >= 200 && plainNode.status < 300, 'plain node with a node run app starts, as Run sends it', 'node with a node run app answered ' + plainNode.status + ' ' + String(plainNode.text || '').slice(0, 160));
@@ -96,17 +96,17 @@ test.startTest('jobs.js: jobs.create starts this node\'s processes, and no other
     };
     const finished = async function (id) {
       let job = null;
-      await until(function () { return door('jobs.get', { key: id }).then(function (a) { job = a.body && (a.body.job || a.body); return !!(job && job.status && job.status !== 'running' && job.status !== 'pending'); }); }, 15000);
+      await until(function () { return door('job.get', { key: id }).then(function (a) { job = a.body && (a.body.job || a.body); return !!(job && job.status && job.status !== 'running' && job.status !== 'pending'); }); }, 15000);
       return job;
     };
     const logText = function (job) { return JSON.stringify((job && job.log) || []); };
     const start = async function (name) {
-      const a = await door('jobs.create', { command: process.execPath, args: ['spirit/app/' + name + '/' + name + '.js'] });
+      const a = await door('job.create', { command: process.execPath, args: ['spirit/app/' + name + '/' + name + '.js'] });
       return a.status === 201 && a.body && a.body.id ? a.body.id : '';
     };
-    // A process job that completes deletes itself (jobs.js:120), so each here ends with an exit code of its own and stays to be read.
+    // A process job that completes deletes itself (job.js:120), so each here ends with an exit code of its own and stays to be read.
     const PUBLISH = 'const u = process.env.SPIRIT_CALLBACK_URL, id = process.env.SPIRIT_JOB_ID;'
-      + 'fetch(u, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ call: "events.publish", args: { id: id, logMessage: "zzPublishedLine" } }) })';
+      + 'fetch(u, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ call: "event.publish", args: { id: id, logMessage: "zzPublishedLine" } }) })';
     noisy('zzNoisy', 'console.log("zzOutLine"); console.error("zzErrLine"); process.stdout.write("zzRawOut\\n"); process.stderr.write("zzRawErr\\n");'
       + PUBLISH + '.then(function () { process.exit(5); }, function () { process.exit(3); });');
     noisy('zzCrash', 'console.log("zzBeforeCrash"); throw new Error("zzCrashLine");');

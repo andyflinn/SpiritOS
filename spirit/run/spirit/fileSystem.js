@@ -81,7 +81,7 @@ function isCoreFile(canonical) {
 // project also had, collides for any target that's already .json).
 const SIDECAR_SUFFIX = '.sidecar.json';
 
-// These never reach a browser at all — jobs.js/server.js have no
+// These never reach a browser at all — job.js/server.js have no
 // isBrowser() half to justify it, and a boot asset is served only via
 // the boot-asset allowlist in server.js's static route (a separate,
 // narrower exception), never through the generic fileServable-gated
@@ -90,7 +90,7 @@ const SIDECAR_SUFFIX = '.sidecar.json';
 // the relay got its own startup module: same kind of file as server.js.
 // fileSystem.js, this file, joined it when it was lifted out of the old kernel (goal/G40.6).
 // DEBUG.js and its generators joined it with goal/G41.19: server code, never a page's (spirit/test/DEBUG.md).
-const UNSERVABLE_FILES = ['spirit/fileSystem.js', 'spirit/jobs.js', 'spirit/server.js', 'spirit/relayServer.js', 'spirit/serveCommon.js', 'spirit/relayConfig.js', 'spirit/relay.js', 'spirit/hub.js', 'spirit/relayAuth.js', 'spirit/DEBUG.js'].map(function (p) { return p.toLowerCase(); });
+const UNSERVABLE_FILES = ['spirit/fileSystem.js', 'spirit/job.js', 'spirit/server.js', 'spirit/relayServer.js', 'spirit/serveCommon.js', 'spirit/relayConfig.js', 'spirit/relay.js', 'spirit/hub.js', 'spirit/relayAuth.js', 'spirit/DEBUG.js'].map(function (p) { return p.toLowerCase(); });
 // goal/G43.9, Andy's box: "spirit/state/ is not servable, so a page cannot read other apps' state through a plain GET."
 const UNSERVABLE_FOLDERS = ['spirit/DEBUG/', 'spirit/state/'].map(function (p) { return p.toLowerCase(); });
 
@@ -299,7 +299,7 @@ const SCAN_EXCLUDED_DIR_NAMES = new Set(['.git']);
 // rules nor listed in Files; the next library is one line here. Andy's Q1:
 // "servable but not writeable." A page still loads it (CodeMirror), and
 // fileWritable refuses every file inside.
-const VENDORED_FOLDERS = ['spirit/jobs/chokidar', 'spirit/jobs/readdirp', 'spirit/element/codeMirror'];
+const VENDORED_FOLDERS = ['spirit/job/chokidar', 'spirit/job/readdirp', 'spirit/element/codeMirror'];
 // VENDORED_FOLDERS.holds(p), the one question every walker asks of the
 // list: is p, absolute or relative to the checkout or to spirit/run, with
 // either slash, a vendored folder or inside one?
@@ -345,12 +345,12 @@ function scanFolder(dirPath, result = []) {
 
       } else if (entry.isFile()) {
         // fileServable expects a ROOT_DIR-relative, forward-slashed
-        // path — the same shape jobs.js's mapEntry later derives
+        // path — the same shape job.js's mapEntry later derives
         // independently for the same entry. path.resolve (not a
         // plain join) is kept deliberately: entry.parentPath
         // inherits whichever style the initial call used, so a
         // relative dirPath still resolves correctly even though
-        // every caller today (jobs.js's spirit.fs,
+        // every caller today (job.js's spirit.fs,
         // servableAssets.js) passes an absolute one.
         const fullPath = path.resolve(entry.parentPath, entry.name);
         const relativePath = path.relative(ROOT_DIR, fullPath).replace(/\\/g, '/');

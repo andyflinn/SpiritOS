@@ -7,7 +7,7 @@ Its test is `./introSpector.js`. The box (goal/G43.29, v3): *"Each works exactly
 ## Requirements
 
 - One line: the party, self (this node) until a pick, and the family and verb selector; the form says choose a family; the reply is a CodeMirror view. Self's tree is this node's.
-- A family chosen, the form says choose a verb; `jobs.search` chosen, a field for each key of its request and a call button; call asks it of self and shows the reply, written out as `JSON.stringify(answer, null, 2)`.
+- A family chosen, the form says choose a verb; `job.search` chosen, a field for each key of its request and a call button; call asks it of self and shows the reply, written out as `JSON.stringify(answer, null, 2)`.
 - destroy empties its container; the page throws nothing.
 
 ## What its test must try to break

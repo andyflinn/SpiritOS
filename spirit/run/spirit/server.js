@@ -141,7 +141,7 @@ const arrivals = spirit.require('spirit/arrivals.js').createArrivals({
 // shell (goal/G43.30).
 const BOOT_ASSETS = ['favicon.svg'];
 
-const jobs = spirit.require('spirit/jobs.js')(port);
+const jobs = spirit.require('spirit/job.js')(port);
 jobs.startFsWatcherJob(ROOT_DIR);
 // WHERE THE JOIN STEPS STAND (goal/G30.1, box v40): a permanent job the shell's Join tile and the Join app hear, so
 // they draw when a seat, a contact or a face changes and never ask. Refreshed at /api/spirit after a relay, contact or
@@ -278,7 +278,7 @@ const pageStreams = new Set();
 // THE NODE'S ONE DISPATCHER OF EVENTS (goal/G40.6; Andy: "two verbs on events - publish - subscribe"): the jobs, the
 // relay events, the packets and the contact renames feed it; the pages, the processes and the face subscribe. Mounted
 // below as the events family; /api/events, a door outside any api, is gone.
-const events = spirit.require('spirit/events/events.js').createEvents({
+const events = spirit.require('spirit/event/event.js').createEvents({
   jobs: jobs, relayEvents: relayEvents, arrivals: arrivals, renames: hub.contactRenames, pageStreams: pageStreams,
   readJsonBody: function (req) { return readJsonBody(req); }, bodyRefused: bodyRefused,
 });
@@ -310,7 +310,7 @@ function serveGet(pathname, res) {
   sendFile(res, filePath);
 }
 
-// THE EVENT STREAM (handleSseConnection) STOOD HERE: it is spirit/events/events.js, the events family's subscribe.
+// THE EVENT STREAM (handleSseConnection) STOOD HERE: it is spirit/event/event.js, the events family's subscribe.
 
 function handleCreateJob(req, res) {
   readJsonBody(req).then((body) => {
@@ -334,7 +334,7 @@ function handleCreateJob(req, res) {
   }).catch((e) => bodyRefused(req, res, e));
 }
 
-// jobs.update's handler (handleJobUpdate) STOOD HERE: it is events.publish now (spirit/events/events.js), the one path
+// job.update's handler (handleJobUpdate) STOOD HERE: it is event.publish now (spirit/event/event.js), the one path
 // to publish (Andy, 2026-10-25: "ONE path for everybody to publish events").
 
 // The id is a field, beside the verb. This one took no
@@ -358,7 +358,7 @@ function cancelJobById(res, id) {
 }
 
 // The fifth jobs verb, and the one my own route scan missed: it was
-// `DELETE /api/jobs/<id>`, matched by a regexp INSIDE a method guard, so
+// `DELETE /api/job/<id>`, matched by a regexp INSIDE a method guard, so
 // a scan looking for `pathname === '/api/...'` never saw it. Found by
 // grepping the callers instead of the routes — which is the better
 // direction, because a route with no caller is dead and a caller with no
@@ -785,7 +785,7 @@ const server = http.createServer((req, res) => {
   // owner's report. Deleted with the verb (R3).
 
 
-  // `GET /api/jobs` STOOD HERE and is `jobs.list` under the one door.
+  // `GET /api/jobs` STOOD HERE and is `job.list` under the one door.
   // A read folding into a POST costs nothing on loopback — there is no
   // cache to honour and no intermediary to be polite to — and it buys
   // the thing the whole fold is for: one place that knows what this node
@@ -958,9 +958,9 @@ const server = http.createServer((req, res) => {
     // ── STAGES 1 AND 2 STOOD HERE ───────────────────────────────────
     //
     // `POST /api/proxy` is `net.fetch`. `POST /api/jobs`,
-    // `POST /api/jobs/<id>` and `POST /api/jobs/<id>/cancel` are
-    // `jobs.create`, `jobs.update` and `jobs.cancel`, claimed by the
-    // jobs module at the foot of this file (jobs.update is events.publish
+    // `POST /api/job/<id>` and `POST /api/job/<id>/cancel` are
+    // `job.create`, `job.update` and `job.cancel`, claimed by the
+    // jobs module at the foot of this file (job.update is event.publish
     // since goal/G40.6).
     //
     // The last two were matched by REGEXPS that had to agree with two
@@ -980,7 +980,7 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // `DELETE /api/jobs/<id>` STOOD HERE and is `jobs.delete` under the one
+  // `DELETE /api/job/<id>` STOOD HERE and is `job.delete` under the one
   // door. It was the last method this server answered besides GET and
   // POST, so DELETE goes out of the Allow header with it.
 
@@ -1666,7 +1666,7 @@ catch (e) {
     };
   }
   const LIST = { ok: true, items: [{ key: '', label: '' }], more: false };
-  // jobs.list is gone: a list is a search (puppets/G2, nodeSearches.js).
+  // job.list is gone: a list is a search (puppets/G2, nodeSearches.js).
   // proxyVerb is the plain body-in, answer-out wrapper, whatever the group.
   const nodeSearches = spirit.require('spirit/nodeSearches.js').createNodeSearches({ jobs: jobs, rootDir: ROOT_DIR, mimeTypes: spirit.MIME_TYPES });
   // auth (apiAuth/G1.4, its own family since goal/G30.6): the owner's allow-table, loopback only. An answer is the verb's object as is; a refusal is the catalogue's, by name.
@@ -1732,7 +1732,7 @@ catch (e) {
     'bundle': { request: { op: '', id: 0, label: '', text: '', owner: '' }, reply: {}, handler: authVerb(apiAuth.bundle) },
     'branch': { request: { op: '', id: 0, bundle: 0, family: '', verb: '', text: '' }, reply: {}, handler: authVerb(apiAuth.branch) },
   }, { wire: false, by: 'server.js' });
-  loopbackVerbs.mount('jobs', path.join(__dirname, 'jobs'), {
+  loopbackVerbs.mount('job', path.join(__dirname, 'job'), {
     'search': { request: { q: '' }, reply: LIST, handler: proxyVerb(function (b) { return nodeSearches.jobsSearch(b); }) },
     'get': { request: { key: '' }, reply: { ok: true, key: '', job: JOB }, handler: proxyVerb(function (b) { return nodeSearches.jobsGet(b); }) },
     'create': { request: { command: '', args: [''], type: '' }, reply: JOB, handler: handleCreateJob },
@@ -1746,8 +1746,8 @@ catch (e) {
   }, { wire: false, by: 'server.js' });
 
   // THE EVENTS FAMILY (goal/G40.6): the node's one dispatcher, owner only like fs. subscribe is a stream (its handler
-  // keeps the response open); publish is a process's state or object on its own job, where jobs.update stood.
-  loopbackVerbs.mount('events', path.join(__dirname, 'events'), {
+  // keeps the response open); publish is a process's state or object on its own job, where job.update stood.
+  loopbackVerbs.mount('event', path.join(__dirname, 'event'), {
     'subscribe': { request: {}, reply: {}, handler: events.handleSubscribe },
     'publish': { request: { id: '', status: '', data: {}, logMessage: '', app: {} }, reply: JOB, handler: events.handlePublish },
   }, { wire: false, by: 'server.js' });

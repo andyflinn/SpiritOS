@@ -35,7 +35,7 @@ const limits = spirit.require('spirit/limits.js');
 const argv = process.argv;
 const at = argv.indexOf('--state');
 const STATE = at !== -1 ? argv[at + 1] : '';
-// THE MANIFEST'S VALUES, as the node hands them (jobs.js: one JSON object, name -> value, as the first argument).
+// THE MANIFEST'S VALUES, as the node hands them (job.js: one JSON object, name -> value, as the first argument).
 let values = {};
 try { values = JSON.parse(argv[2] || '{}') || {}; } catch (e) { values = {}; }
 // THE CHECKOUT THIS DESK SITS IN (goal/G43.28, box line 5): the first folder up from this file with a .git, the one a

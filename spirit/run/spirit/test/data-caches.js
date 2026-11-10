@@ -123,7 +123,7 @@ test.subHeading('7. nothing keeps node rows but spirit.data, and no file names a
 // stays out by its new place and spirit/shell/seal.js is not read; the apps left in shell/ still are, and every app of
 // spirit/app/, where the apps and the servers moved to (goal/G43.12, G43.17, G43.20).
 const clients = tracked.filter(function (f) { return /\.js$/.test(f) && !/\/test\//.test(f) && /^(shell|spirit\/element|spirit\/app)\//.test(f) && f !== 'shell/boot.js'; });
-const takers = clients.filter(function (f) { return /\bevents\.subscribe\(|\bev\.subscribe\(/.test(code(path.join(RUN, f))); });
+const takers = clients.filter(function (f) { return /\bevent\.subscribe\(|\bev\.subscribe\(/.test(code(path.join(RUN, f))); });
 ok(!takers.length, 'no client takes the node\'s stream itself: spirit/data.js takes it for all', 'clients taking the stream themselves, their rows outside spirit.data: ' + short(takers));
 // "any notion that there is an alternative approach must disappear from all documentation and all comments in the
 // entire repo." The ways replaced, by name: the data set's old places, the desk's old translator file, the two-level

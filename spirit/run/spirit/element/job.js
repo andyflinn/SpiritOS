@@ -1,10 +1,10 @@
 'use strict';
-// spirit/run/spirit/element/jobs.js
+// spirit/run/spirit/element/job.js
 // THE JOB MONITOR'S LIST, AN ELEMENT (goal/G43.29; Andy: "a wrapper for separate spirit/element/ files"): what the Jobs app
-// (spirit/app/jobs/element.js) draws, moved here from shell/jobs/jobs.js and working as it did. Its contract and its test:
-// ./test/jobs.md and ./test/jobs.js.
+// (spirit/app/job/element.js) draws, moved here from shell/job/job.js and working as it did. Its contract and its test:
+// ./test/job.md and ./test/job.js.
 //
-//   spirit.element.spirit.element.jobs.create(container, { open }) -> { destroy() }
+//   spirit.element.spirit.element.job.create(container, { open }) -> { destroy() }
 //     open   the mounter's panel stack's open (the app selector's); with none, a stack of its own over its page
 //
 // ROWS ONLY (goal/G2.11). Andy, 2026-10-02: "the job monitor shell component. the folded "consoles" need to go into
@@ -12,7 +12,7 @@
 // and icon detail do (goal/G43.29, Q1: "a job row opens detail panel overtop of jobs."), and that is all a row does.
 //
 // A VIEW OF THE NODE'S JOBS IN spirit.data (goal/G41.28): the probability search over the jobs branch the jobs family's cache
-// manager keeps (spirit.data.jobs.data, spirit/jobs/data.js), each row the shared row element. Words match the whole job; the
+// manager keeps (spirit.data.job.data, spirit/job/data.js), each row the shared row element. Words match the whole job; the
 // kind filter is one choice (all, node, servers, transient, and failed last: goal/G29.16). Columns: the green dot, status,
 // name (module, else type), kind, progress, updated.
 //
@@ -29,7 +29,7 @@
   // stack, the detail, and the jobs family's cache manager.
   var parts = Promise.all(['spirit/element/search.js', 'spirit/element/rowElement.js', 'spirit/element/icon.js',
     'spirit/element/progressBar.js', 'spirit/element/panel.js', 'spirit/element/jobDetail.js']
-    .map(function (p) { return S.require(p); }).concat([S.cacheManager('jobs')]));
+    .map(function (p) { return S.require(p); }).concat([S.cacheManager('job')]));
 
   function esc(s) { return S.escapeHtml(String(s == null ? '' : s)); }
 
@@ -42,13 +42,13 @@
     stopped: '🟠',
     error: '⚠️',
   };
-  // The canonical set lives in spirit/run/spirit/jobs.js (TERMINAL_STATUSES), node-side; ./jobDetail.js keeps the same copy.
+  // The canonical set lives in spirit/run/spirit/job.js (TERMINAL_STATUSES), node-side; ./jobDetail.js keeps the same copy.
   var TERMINAL = ['completed', 'failed', 'cancelled', 'stopped'];
 
   function nameOf(job) { return String(job.module || job.id); }
 
   // THE KIND (goal/G29.14; Andy: "server-stats, relay-presence and fs-watcher are neither appServers nor transient"): the
-  // node's own jobs (kind permanent in spirit/run/spirit/jobs.js) are node; appServers are servers; a process started for one
+  // node's own jobs (kind permanent in spirit/run/spirit/job.js) are node; appServers are servers; a process started for one
   // run is transient.
   function kindOf(job) { return job.kind === 'permanent' ? 'node' : job.kind === 'server' ? 'server' : 'transient'; }
 
@@ -128,7 +128,7 @@
       var box = container.firstElementChild;
       // ITS OWN STACK when the mounter hands none, over its page (as contact.js).
       if (typeof o.open !== 'function') stack = S.element.spirit.element.panel.create(container, box);
-      var J = S.data.jobs.data;
+      var J = S.data.job.data;
       list = S.element.spirit.element.search.create(box, {
         data: J.branch,
         columns: [
@@ -165,5 +165,5 @@
     };
   }
 
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/jobs.js', { create: create }); });
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/job.js', { create: create }); });
 }());

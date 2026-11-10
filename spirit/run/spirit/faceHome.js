@@ -362,7 +362,7 @@ function createFaceHome(opts) {
   }
 
   // The face opened: one long upload, and first what a loopback shell gets on connect, the tree as commands (the events
-  // family's subscribe, events/events.js), presence peer by peer, then every other job.
+  // family's subscribe, event/event.js), presence peer by peer, then every other job.
   // k is the face's key from face-open: given, every line is sealed to it; absent, the face could not seal.
   function open(url, k) {
     close(url);
@@ -398,7 +398,7 @@ function createFaceHome(opts) {
     Object.keys(now).forEach(function (key) {
       face.queue.push(FACE_PRIORITY.presence, { event: 'presence', data: { key: key, present: now[key].present === true, at: now[key].at } });
     });
-    // A FACE THAT OPENS GETS THE JOBS A LOOPBACK PAGE GETS ON CONNECT (goal/G41.33, the box's line 1; events.js, the
+    // A FACE THAT OPENS GETS THE JOBS A LOOPBACK PAGE GETS ON CONNECT (goal/G41.33, the box's line 1; event.js, the
     // snapshot), the tree and presence as above.
     // Each kind of the node's own news once, as its own event (goal/G43.20), the contact job's presence above and not its
     // rows: a contact row is the one row that changed last, not the table; a face opened reads its relays and contacts as it

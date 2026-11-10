@@ -68,7 +68,7 @@ const pageRequire = window.spirit.require;
 window.spirit.require = function (p) { required.push(p); return /installSpiritElement\.js$/.test(p) ? pageRequire(p) : Promise.resolve({}); };
 // The page's stream, a recorder: who subscribes to it (goal/G41.28: no client but spirit.data takes it itself).
 const subscribers = [];
-window.spirit.events = { subscribe: function (h) { subscribers.push(h); return function () {}; } };
+window.spirit.event = { subscribe: function (h) { subscribers.push(h); return function () {}; } };
 load(path.join(JS, '..', '..', 'spirit', 'data.js'));
 // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.start asks node.card, keeps the key and hands it to the data set.
 const NODE_KEY = 'nOdE+key/one==';

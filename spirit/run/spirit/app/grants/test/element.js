@@ -213,7 +213,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     ok(!!serverBundle, 'the world: and a server\'s bundle, ' + (serverBundle && serverBundle.label), 'no bundle of a server on the scratch node: read-only judges nothing');
 
     await chrome.send('Page.navigate', { url: base + '/face.html' });
-    ok(await H.until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready && window.spirit.events)'); }, 20000), 'the world: the face page has its spirit', 'the page has no spirit: nothing judged');
+    ok(await H.until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready && window.spirit.event)'); }, 20000), 'the world: the face page has its spirit', 'the page has no spirit: nothing judged');
     // The shell app, as boot.js hands it the page's app area, here in a box of its own over the page.
     const made = await chrome.evaluate('(function () { var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.require("spirit/app/app/element.js").then(function () { window.__shell = spirit.element.spirit.app.app.element.create(b); return "made"; }, function (e) { return "load: " + e; }); }())');
     ok(made === 'made', 'the world: the shell app is drawn', 'the shell: ' + short(made));

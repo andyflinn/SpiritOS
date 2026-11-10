@@ -167,8 +167,9 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     ok(contact.contact === 'lightblue', 'spirit/contact: a word (word.js), and the page holds spirit.contact: light blue', 'spirit/contact: ' + short(contact));
     const inside = await row('spirit/app/api.js', 'file');
     ok(inside.app === 'lightblue' && inside.spirit === 'lightblue' && inside['api.js'] === 'lightpurple', 'a file inside: its path elements carry the colours too, the file api.js, a word with no spirit.app.api, light purple', 'spirit/app/api.js: ' + short(inside));
-    const plain = await row('spirit/jobs');
-    ok(plain.jobs === 'none', 'spirit/jobs: not reserved: no colour', 'spirit/jobs: ' + short(plain));
+    // A folder no word names stays plain (goal/G43.32: spirit/jobs, plain before, is spirit/job, one of word.js's words, below).
+    const plain = await row('spirit/client');
+    ok(plain.client === 'none', 'spirit/client: not reserved: no colour', 'spirit/client: ' + short(plain));
     const hub = await row('spirit/hub.js', 'file');
     ok(hub['hub.js'] === 'none', 'spirit/hub.js: not reserved: no colour', 'spirit/hub.js: ' + short(hub));
     const elsewhere = await row('shell/app', 'folder');

@@ -1,4 +1,4 @@
-# spirit/jobs.js
+# spirit/job.js
 
 The node's jobs. This test holds goal/G41.30, the review's RH1: *"jobs.create still spawns any program"*, as goal/G43.20
 rules it: *"jobs.create starts only an app's own script, spirit/app/<name>/<name>.js, of an app whose <name>.json says node
@@ -13,13 +13,13 @@ node's door. Each thing asked to run would write a marker of its own, so whether
   `spirit/app/`, a path climbing out of it, an app whose json does not say `node.run` true, and a second script in a
   node run app's folder (the box: *"A second script in an app folder is therefore never started."*).
 - **An app's own script, its json saying `node.run` true, starts**, by this node's executable and its path; its job is its
-  route, `spirit.app.<name>` (the refusal of a second start while one runs is `./jobs-routes.md`'s).
+  route, `spirit.app.<name>` (the refusal of a second start while one runs is `./job-routes.md`'s).
 - **Plain `node` with such a script starts**: the word `node` is read as this node's own executable; a page sends it so
   (the app detail's Run, `spirit/element/search/app/detailElement.js:68`).
 
 ## What its test must try to break
 
-- A shell, or code on the node's own executable, run through jobs.create.
+- A shell, or code on the node's own executable, run through job.create.
 - A fix so narrow that an app's own node run script no longer starts.
 
 ## goal/G41.33: a process's console goes to null

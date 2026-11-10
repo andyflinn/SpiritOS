@@ -20,7 +20,7 @@ answers `true`. With no `faceSet` given it refuses: closed, not open.
 - **A face is whole, or there is none** (goal/G43.18, box v29; Andy: *"we remove ALL the star shit, like this,"*, *"on the
   home node, NO face is offered (faceForm hides itself) for a relay without star."*): *"The home node answers a face only
   from a starred relay, one check; a face it answers is a full face."* On a relay with this node's face and no star,
-  `node.card`, `fs.stat`, `owner.command`, `jobs.create`, a file, the keys and a save in parts are each refused, sealed
+  `node.card`, `fs.stat`, `owner.command`, `job.create`, a file, the keys and a save in parts are each refused, sealed
   or in pieces, and none reaches the door; no file is served or written. The half face of goal/G41.30 and G41.33, its
   lists of verbs off the face, is gone.
 - **Starring takes the node's own word, and a face there**: only `true` is a star; a starred relay where this node set no
@@ -51,7 +51,7 @@ stars."* Here `o.events` is a stand-in, and a relay event comes as `server.js` s
   face).
 - **Only `true` is a star, and it counts at each event**: pressed with the face open, the next event arrives; taken off, the
   next stays home. *"Pressing the star sends no catch-up."*
-- **A starred face that opens gets the jobs a loopback page gets on connect** (line 1 of the box; `events.js`, the
+- **A starred face that opens gets the jobs a loopback page gets on connect** (line 1 of the box; `event.js`, the
   snapshot). The envelope is the builder's: only that each job is on the stream is judged.
 - **The queue does not change**: its levels are as they were, one write at a time, and nothing new is lost while it waits.
 - **No restrictions on a star**: every verb of every family reaches the door, sealed and not, `relay.face` on the relay it

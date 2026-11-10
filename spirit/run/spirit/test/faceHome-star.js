@@ -114,7 +114,7 @@ test.startTest('faceHome-star.js: the star on a real node, a real relay and a re
     fs.writeFileSync(path.join(run, 'spirit/app/zzStar/zzStar.json'), JSON.stringify({ identity: { label: 'zz', intrinsic: false }, node: { run: true } }));
     const SAVED = 'spirit/app/zzStar/saved.txt';
     const savedAt = path.join(run, SAVED);
-    const JOB = { call: 'jobs.create', args: { command: process.execPath, args: ['spirit/app/zzStar/zzStar.js', 'fromTheFace'] } };
+    const JOB = { call: 'job.create', args: { command: process.execPath, args: ['spirit/app/zzStar/zzStar.js', 'fromTheFace'] } };
     const SAVE = { call: 'fs.save', args: { path: SAVED, content: 'from the face' } };
     const nobody = 'MCowBQYDK2VwAyEA' + 'zzStarNobodyzzStarNobodyzzStarNobodyzzStarNob'.slice(0, 43) + '=';
     const OWNER = { call: 'owner.command', args: { to: nobody, command: 'zzNothing' } };
@@ -141,7 +141,7 @@ test.startTest('faceHome-star.js: the star on a real node, a real relay and a re
       ok(refused(a), q.call + ' from the face is refused', q.call + ' from the face on a relay with no star: ' + a.status + ' ' + short(a.text));
     }
     await sleep(WAIT_MS);
-    ok(!fs.existsSync(mark), 'the job did not run', 'jobs.create from the face RAN, with no star');
+    ok(!fs.existsSync(mark), 'the job did not run', 'job.create from the face RAN, with no star');
     ok(!fs.existsSync(savedAt), 'the file was not written', 'fs.save from the face WROTE a file, with no star');
 
     test.subHeading('the star on, pressed at home: everything is back');
@@ -154,9 +154,9 @@ test.startTest('faceHome-star.js: the star on a real node, a real relay and a re
     ok(s1.status >= 200 && s1.status < 300 && fs.existsSync(savedAt), 'fs.save from the face writes the file', 'fs.save on a starred relay: ' + s1.status + ' ' + short(s1.text) + ', file ' + fs.existsSync(savedAt));
     const j1 = await face(JOB);
     await until(function () { return fs.existsSync(mark); }, 5000);
-    ok(j1.status === 201 && fs.existsSync(mark), 'jobs.create of an included process runs it', 'jobs.create on a starred relay: ' + j1.status + ' ' + short(j1.text) + ', ran ' + fs.existsSync(mark));
+    ok(j1.status === 201 && fs.existsSync(mark), 'job.create of an included process runs it', 'job.create on a starred relay: ' + j1.status + ' ' + short(j1.text) + ', ran ' + fs.existsSync(mark));
     const shMark = path.join(marks, 'sh');
-    const sh = await face({ call: 'jobs.create', args: { command: '/bin/sh', args: ['-c', 'echo x > ' + shMark] } });
+    const sh = await face({ call: 'job.create', args: { command: '/bin/sh', args: ['-c', 'echo x > ' + shMark] } });
     await sleep(WAIT_MS);
     ok(sh.status >= 400 && sh.status < 500 && !fs.existsSync(shMark), 'and /bin/sh is still refused, starred or not', '/bin/sh from a starred face: ' + sh.status + ' ' + short(sh.text) + ', ran ' + fs.existsSync(shMark));
     const self = await face({ call: 'contact.own', args: { key: R.relayKey, own: false } });
@@ -212,12 +212,12 @@ test.startTest('faceHome-star.js: the star on a real node, a real relay and a re
       fs.writeFileSync(script2, 'setTimeout(function () { process.exit(4); }, 300);\n');
       fs.writeFileSync(path.join(run, 'spirit/app/zzStream/zzStream.json'), JSON.stringify({ identity: { label: 'zz', intrinsic: false }, node: { run: true } }));
       const runOne = async function () {
-        const c = await home(N.base, 'jobs.create', { command: process.execPath, args: ['spirit/app/zzStream/zzStream.js'] });
+        const c = await home(N.base, 'job.create', { command: process.execPath, args: ['spirit/app/zzStream/zzStream.js'] });
         const id = c.body && c.body.id;
-        if (!id) return { why: 'jobs.create at home: ' + c.status + ' ' + short(c.text) };
-        await until(function () { return home(N.base, 'jobs.get', { key: id }).then(function (a) { const j = a.body && a.body.job; return !!j && j.status === 'failed'; }); }, 8000);
-        const d = await home(N.base, 'jobs.delete', { id: id });
-        return d.status < 300 ? { id: id } : { why: 'jobs.delete at home: ' + d.status + ' ' + short(d.text) };
+        if (!id) return { why: 'job.create at home: ' + c.status + ' ' + short(c.text) };
+        await until(function () { return home(N.base, 'job.get', { key: id }).then(function (a) { const j = a.body && a.body.job; return !!j && j.status === 'failed'; }); }, 8000);
+        const d = await home(N.base, 'job.delete', { id: id });
+        return d.status < 300 ? { id: id } : { why: 'job.delete at home: ' + d.status + ' ' + short(d.text) };
       };
       const bundle = function (label) { return home(N.base, 'auth.bundle', { op: 'add', label: label, text: 'zz' }); };
 

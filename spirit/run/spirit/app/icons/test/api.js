@@ -45,7 +45,7 @@ test.startTest('api.js: the icons branch\'s interface, which the node checks a c
       const t = await r.text(); let b = null; try { b = JSON.parse(t); } catch (e) { b = null; }
       return { status: r.status, body: b, text: t };
     };
-    const lastRun = async function () { const j = await call('jobs.get', { key: 'spirit.app.icons' }); return j.body && j.body.job && j.body.job.data ? String(j.body.job.data.pid || '') : ''; };
+    const lastRun = async function () { const j = await call('job.get', { key: 'spirit.app.icons' }); return j.body && j.body.job && j.body.job.data ? String(j.body.job.data.pid || '') : ''; };
     const v = verbs[0];
 
     test.subHeading('the node finds it at the app\'s top: api {family: icons} answers this file');

@@ -107,11 +107,11 @@ async function boot(run) {
 }
 function stop(c) { return new Promise(function (r) { if (!c || c.exitCode !== null) return r(); c.once('exit', function () { r(); }); c.kill(); setTimeout(r, 6000); }); }
 function alive(pid) { try { process.kill(pid, 0); return true; } catch (e) { return false; } }
-// Every job the node holds, as jobs.get answers it.
+// Every job the node holds, as job.get answers it.
 async function jobsOf(base) {
-  const found = await call(base, 'jobs.search', { q: '' });
+  const found = await call(base, 'job.search', { q: '' });
   const items = (found.body && found.body.items) || [];
-  const rows = await Promise.all(items.map(function (i) { return call(base, 'jobs.get', { key: i.key }); }));
+  const rows = await Promise.all(items.map(function (i) { return call(base, 'job.get', { key: i.key }); }));
   return rows.map(function (r) { return r.body && r.body.job; }).filter(Boolean);
 }
 async function liveJob(base, module) {
@@ -156,16 +156,16 @@ test.startTest('appServerMount: the node starts a server from spirit/app/<name>/
     await sleep(3000);
     ok(answers(await pingOf(N.base, 'always')) && alive(alwaysPid), 'app.active false does not stop it', 'after app.active false: ' + short((await pingOf(N.base, 'always')).text));
 
-    test.subHeading('goal/G43.20, the box: "jobs.create starts only an app\'s own script, spirit/app/<name>/<name>.js, of an app whose <name>.json says node run true; anything else is refused"');
+    test.subHeading('goal/G43.20, the box: "job.create starts only an app\'s own script, spirit/app/<name>/<name>.js, of an app whose <name>.json says node run true; anything else is refused"');
     const ranHelper = path.join(s.root, 'helper-ran.txt');
-    const startIt = function (script, arg) { return call(N.base, 'jobs.create', { command: 'node', args: [script].concat(arg ? [arg] : []), type: 'the red' }); };
+    const startIt = function (script, arg) { return call(N.base, 'job.create', { command: 'node', args: [script].concat(arg ? [arg] : []), type: 'the red' }); };
     const refused = function (r) { return r.status >= 400 && !!r.body && r.body.ok === false; };
     const inactive = await startIt('spirit/app/' + NAME + '/helper.js', ranHelper);
     await sleep(1500);
-    ok(refused(inactive) && !fs.existsSync(ranHelper), 'a helper of an app is refused, and does not run', 'jobs.create on an inactive app: ' + short(inactive.text) + ', ran: ' + fs.existsSync(ranHelper));
+    ok(refused(inactive) && !fs.existsSync(ranHelper), 'a helper of an app is refused, and does not run', 'job.create on an inactive app: ' + short(inactive.text) + ', ran: ' + fs.existsSync(ranHelper));
     const inactiveMain = await startIt('spirit/app/' + NAME + '/' + NAME + '.js');
     await sleep(1500);
-    ok(refused(inactiveMain) && !fs.existsSync(started), 'its server script, its json saying node mount, not node run, is refused too, and does not run', 'jobs.create on an inactive server: ' + short(inactiveMain.text) + ', ran: ' + fs.existsSync(started));
+    ok(refused(inactiveMain) && !fs.existsSync(started), 'its server script, its json saying node mount, not node run, is refused too, and does not run', 'job.create on an inactive server: ' + short(inactiveMain.text) + ', ran: ' + fs.existsSync(started));
     // Outside the two places: a script of the shell, a file at the top of spirit/app, the same path in another tree, and a way out by dots.
     const ranElsewhere = path.join(s.root, 'elsewhere-ran.txt');
     const elsewhere = path.join(s.root, 'other', 'spirit', 'app', NAME, NAME + '.js');
@@ -192,8 +192,8 @@ test.startTest('appServerMount: the node starts a server from spirit/app/<name>/
     ok(!(await liveJob(N.base, 'spirit.app.quiet')), 'active with node.mount false and no data.js: no server job', 'a server job for an app with node.mount false and no data.js');
     ok(!answers(await pingOf(N.base, 'quiet')), 'and its verb is not answered', 'an app with node.mount false and no data.js answered its verb');
 
-    const otherPlace = await call(N.base, 'jobs.create', { command: 'node', args: ['shell/planted.js'], type: 'the red' });
-    ok(otherPlace.status >= 400 && !!otherPlace.body && otherPlace.body.code === 'not-a-process', 'a script outside spirit/app is refused by name', 'jobs.create on shell/planted.js: ' + short(otherPlace.text));
+    const otherPlace = await call(N.base, 'job.create', { command: 'node', args: ['shell/planted.js'], type: 'the red' });
+    ok(otherPlace.status >= 400 && !!otherPlace.body && otherPlace.body.code === 'not-a-process', 'a script outside spirit/app is refused by name', 'job.create on shell/planted.js: ' + short(otherPlace.text));
 
     test.subHeading('the box: "No gate changes for a caller: once a server is registered, the door and the grants go by its name."');
     const reached = [];
@@ -280,7 +280,7 @@ test.startTest('appServerMount: the node starts a server from spirit/app/<name>/
     test.subHeading('goal/G43.20, the box: "A second script in an app folder is therefore never started."');
     const activeHelper = await startIt('spirit/app/' + NAME + '/helper.js', ranHelper);
     await sleep(1500);
-    ok(refused(activeHelper) && !fs.existsSync(ranHelper), 'a helper of an active app is refused, and does not run', 'jobs.create on a helper of an active app: ' + short(activeHelper.text) + ', ran: ' + fs.existsSync(ranHelper));
+    ok(refused(activeHelper) && !fs.existsSync(ranHelper), 'a helper of an active app is refused, and does not run', 'job.create on a helper of an active app: ' + short(activeHelper.text) + ', ran: ' + fs.existsSync(ranHelper));
 
     test.subHeading('a page and a process bind it by its name (the box: "A page changes nothing. It binds a family by its name, and the node finds the folder."; "data.js sits beside <name>.js ... and the lookups follow it")');
     const where = findChrome();

@@ -83,13 +83,13 @@ test.startTest('faceHome.js: a relay runs nothing on this node it was not given 
 
 (async function () {
   const CARD = { call: 'node.card', args: {} };
-  const SHELL = { call: 'jobs.create', args: { command: '/bin/sh', args: ['-c', 'id'] } };
+  const SHELL = { call: 'job.create', args: { command: '/bin/sh', args: ['-c', 'id'] } };
 
   test.subHeading('a relay where this node set no face gets nothing');
   // The review: "the node never checks that it set a face on that relay, that a face is open, or who asked."; its fix:
   // "accept face* events only from a relay where this node set a face".
   const w = world(onlyMine);
-  for (const c of [['an allowed verb', CARD], ['jobs.create with a shell', SHELL], ['the same, sealed', sealed(SHELL)], ['the same, in pieces', pieced(SHELL)]]) {
+  for (const c of [['an allowed verb', CARD], ['job.create with a shell', SHELL], ['the same, sealed', sealed(SHELL)], ['the same, in pieces', pieced(SHELL)]]) {
     const a = await send(w, OTHER, c[1]);
     ok(!a.reached.length, 'from a relay with no face of mine, ' + c[0] + ' never reaches the door', 'from a relay with no face of mine, ' + c[0] + ': ' + said(a));
     ok(refused(a), 'and is answered a refusal with a code', c[0] + ' from a relay with no face of mine was not refused with a code: ' + said(a));
@@ -137,7 +137,7 @@ test.startTest('faceHome.js: a relay runs nothing on this node it was not given 
   test.subHeading('box v29: a relay with my face and no star gets nothing at all');
   const plain = world(onlyMine, function () { return false; });
   const asks = [['node.card', CARD], ['node.card, sealed', sealed(CARD)], ['fs.stat', { call: 'fs.stat', args: { path: 'x' } }],
-    ['owner.command', { call: 'owner.command', args: { key: 'x' } }], ['jobs.create with a shell', SHELL], ['the same, in pieces', pieced(SHELL)],
+    ['owner.command', { call: 'owner.command', args: { key: 'x' } }], ['job.create with a shell', SHELL], ['the same, in pieces', pieced(SHELL)],
     ['a file', { get: 'face.html' }], ['the keys', { keys: 1 }], ['a save in parts', { upload: { id: 'abcdefgh', n: 0, of: 1, size: 1, path: 'x.txt', bytes: 'eA==' } }]];
   for (const c of asks) {
     const a = await send(plain, MINE, c[1]);
@@ -275,7 +275,7 @@ test.startTest('faceHome.js: a relay runs nothing on this node it was not given 
   ok(sw.got(STARRED, 'job-deleted', 'job_off') === 0, 'the star taken off: the next event stays home, at once', 'the star came off and a job deleted still reached the face');
 
   test.subHeading('goal/G41.33: a starred face that opens gets what a loopback page gets on connect');
-  // events.js handleSubscribe: "snapshot", { jobs: o.jobs.listJobs() }. The envelope is the builder's; the jobs are the box's.
+  // event.js handleSubscribe: "snapshot", { jobs: o.jobs.listJobs() }. The envelope is the builder's; the jobs are the box's.
   const sn = streams(starAt);
   sn.jobs = [jobEvents[0][2], jobEvents[4][2], jobEvents[5][2], jobEvents[6][2], jobEvents[8][2]];
   sn.home.open(STARRED, '');

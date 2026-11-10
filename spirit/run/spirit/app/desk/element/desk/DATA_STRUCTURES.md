@@ -12,7 +12,7 @@ governance. NOW."*
 ## Where it lives
 
 In `spirit/run/spirit/state/desk/data/desk.db`, the folder the node hands
-the desk server as `--state` (`spirit/run/spirit/jobs.js`, `runServer`).
+the desk server as `--state` (`spirit/run/spirit/job.js`, `runServer`).
 There is no log of writes: the keyed tables are the store (goal/G33.4).
 An id is two numbers, goal and item (0 for the goal itself), shown as
 `goal/G<n>` or `goal/G<n>.<m>`.

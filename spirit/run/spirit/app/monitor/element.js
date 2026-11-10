@@ -12,7 +12,7 @@
 (function () {
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
-  var parts = Promise.all([S.require('spirit/element/search/valued.js'), S.cacheManager('jobs')]);
+  var parts = Promise.all([S.require('spirit/element/search/valued.js'), S.cacheManager('job')]);
   var COLUMNS = [
     { field: 'group', label: 'Group', sort: 'text' },
     { field: 'name', label: 'Name', sort: 'text' },
@@ -25,7 +25,7 @@
   }
   function reading() {
     // THE NODE'S STATS, news of spirit (goal/G43.20): { stats }.
-    var job = S.data.jobs.data.job('spirit');
+    var job = S.data.job.data.job('spirit');
     return job && job.data && job.data.stats && job.data.stats.memory ? job.data.stats : null;
   }
   // A number the reading leaves out (null before its first sample) shows as a dash, never throws.
@@ -69,7 +69,7 @@
       list = S.element.spirit.element.search.valued.create(container, { rows: rows, columns: COLUMNS });
       // WHO PAINTS, LISTENS (Andy, G41.32): each new reading repaints. It shows the spirit job alone, so it watches that one
       // row (goal/G43.32; Andy: "wsl, the clean fix, do it.").
-      off = S.data.jobs.data.watch('spirit', function () { list.redraw(); });
+      off = S.data.job.data.watch('spirit', function () { list.redraw(); });
     });
     return {
       destroy: function () {

@@ -1,18 +1,18 @@
 'use strict';
 
-// spirit/run/spirit/app/jobs/test/element.js
-// The tests of spirit/app/jobs/element.js, and of no other module (spec: ./jobs.md; goal/G43.29, box v3): the Job Monitor in
-// spirit/app/jobs/, "as Contacts and Icons did". Andy: "fill in the box, same icons, shell:mount only.", "a wrapper for
+// spirit/run/spirit/app/job/test/element.js
+// The tests of spirit/app/job/element.js, and of no other module (spec: ./job.md; goal/G43.29, box v3): the Job Monitor in
+// spirit/app/job/, "as Contacts and Icons did". Andy: "fill in the box, same icons, shell:mount only.", "a wrapper for
 // separate spirit/element/ files", "both apps will be intrinsic"; Q1: "a job row opens detail panel overtop of jobs." Its
 // json read from the disc; the app on a real Chrome on a scratch node's face page, through the app selector's tile as a
-// user opens it. What it draws is spirit/element/jobs.js's and jobDetail.js's, judged in their own tests.
+// user opens it. What it draws is spirit/element/job.js's and jobDetail.js's, judged in their own tests.
 
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const { scratchNode, chromePage, findChrome, until } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
-const APP = path.join(RUN, 'spirit', 'app', 'jobs');
+const APP = path.join(RUN, 'spirit', 'app', 'job');
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
@@ -20,24 +20,24 @@ function json(f) { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch 
 // The code with its line comments blanked, so a word in a comment is no call.
 function code(f) { try { return fs.readFileSync(f, 'utf8').replace(/\/\/.*$/gm, ''); } catch (e) { return ''; } }
 
-test.startTest('jobs: the Job Monitor in spirit/app/jobs/, a wrapper of spirit/element/ files (goal/G43.29)');
+test.startTest('job: the Job Monitor in spirit/app/job/, a wrapper of spirit/element/ files (goal/G43.29)');
 
 (async function () {
   test.subHeading('the box: "same icons, shell:mount only", "both apps will be intrinsic", no api.js and no data.js');
-  const own = json(path.join(APP, 'jobs.json'));
-  ok(!!own, 'spirit/app/jobs/jobs.json is there', 'spirit/app/jobs/jobs.json is not there, or no JSON');
+  const own = json(path.join(APP, 'job.json'));
+  ok(!!own, 'spirit/app/job/job.json is there', 'spirit/app/job/job.json is not there, or no JSON');
   const id = (own && own.identity) || {};
   ok(id.icon === '📋', 'its icon is 📋', 'its icon is ' + short(id.icon));
   ok(id.label === 'Job Monitor', 'its name stays Job Monitor', 'its label is ' + short(id.label));
   ok(id.intrinsic === true, 'it is intrinsic', 'identity.intrinsic is ' + short(id.intrinsic));
   ok(!!(own && own.shell && own.shell.mount === true && own.shell.tile === true), 'shell mount true, tile true', 'its shell part: ' + short(own && own.shell));
   ok(!!own && !(own.node && own.node.mount === true) && !(own.node && own.node.run === true), 'node mount false: no server, nothing run', 'its node part: ' + short(own && own.node));
-  ok(fs.existsSync(path.join(APP, 'element.js')) && !fs.existsSync(path.join(APP, 'api.js')) && !fs.existsSync(path.join(APP, 'data.js')), 'no api.js and no data.js in its folder: the jobs family stays spirit/jobs/', 'spirit/app/jobs/ holds an api.js or a data.js');
+  ok(fs.existsSync(path.join(APP, 'element.js')) && !fs.existsSync(path.join(APP, 'api.js')) && !fs.existsSync(path.join(APP, 'data.js')), 'no api.js and no data.js in its folder: the jobs family stays spirit/job/', 'spirit/app/job/ holds an api.js or a data.js');
 
-  test.subHeading('"a wrapper for separate spirit/element/ files": jobs.js only mounts');
+  test.subHeading('"a wrapper for separate spirit/element/ files": job.js only mounts');
   const src = code(path.join(APP, 'element.js'));
-  ok(/spirit\/element\/jobs\.js/.test(src), 'jobs.js brings spirit/element/jobs.js', 'jobs.js names no spirit/element/jobs.js');
-  ok(src !== '' && !/innerHTML|activateApp|callDialog|factRow/.test(src), 'and draws nothing itself: no innerHTML, no old shell helper', 'jobs.js draws or calls the old shell: ' + short((src.match(/innerHTML|activateApp|callDialog|factRow/g) || []).slice(0, 4)));
+  ok(/spirit\/element\/job\.js/.test(src), 'job.js brings spirit/element/job.js', 'job.js names no spirit/element/job.js');
+  ok(src !== '' && !/innerHTML|activateApp|callDialog|factRow/.test(src), 'and draws nothing itself: no innerHTML, no old shell helper', 'job.js draws or calls the old shell: ' + short((src.match(/innerHTML|activateApp|callDialog|factRow/g) || []).slice(0, 4)));
 
   const node = await scratchNode();
   const chrome = await chromePage(findChrome());
@@ -46,15 +46,15 @@ test.startTest('jobs: the Job Monitor in spirit/app/jobs/, a wrapper of spirit/e
     await chrome.send('Page.navigate', { url: node.base + '/face.html' });
     await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
 
-    test.subHeading('spirit.element.spirit.app.jobs.element.create(container, { open }) -> { destroy }');
-    const made = await chrome.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/app/jobs/element.js"); }).then(function () { var J = spirit.element && spirit.element.spirit.app.jobs.element; if (!J || typeof J.create !== "function") return "spirit.element.spirit.app.jobs.element.create is " + typeof (J && J.create); var c = document.createElement("div"); c.id = "alone"; c.style.cssText = "position:fixed;left:0;top:0;width:900px;height:600px;display:flex;flex-direction:column"; document.body.appendChild(c); window.alone = J.create(c, {}); return window.alone && typeof window.alone.destroy === "function" ? "made" : "create answered " + typeof window.alone; }, function (e) { return String(e && e.message || e); })');
-    ok(made === 'made', 'it registers spirit.element.spirit.app.jobs.element, whose create answers { destroy }', 'it: ' + short(made));
+    test.subHeading('spirit.element.spirit.app.job.element.create(container, { open }) -> { destroy }');
+    const made = await chrome.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/app/job/element.js"); }).then(function () { var J = spirit.element && spirit.element.spirit.app.job.element; if (!J || typeof J.create !== "function") return "spirit.element.spirit.app.job.element.create is " + typeof (J && J.create); var c = document.createElement("div"); c.id = "alone"; c.style.cssText = "position:fixed;left:0;top:0;width:900px;height:600px;display:flex;flex-direction:column"; document.body.appendChild(c); window.alone = J.create(c, {}); return window.alone && typeof window.alone.destroy === "function" ? "made" : "create answered " + typeof window.alone; }, function (e) { return String(e && e.message || e); })');
+    ok(made === 'made', 'it registers spirit.element.spirit.app.job.element, whose create answers { destroy }', 'it: ' + short(made));
     if (made === 'made') {
       ok(await until(function () { return chrome.evaluate('String(document.getElementById("alone").innerText).indexOf("spirit.fs") !== -1'); }, 10000), 'mounted, it draws the node\'s jobs, spirit.fs among them', 'mounted, it shows: ' + short(await chrome.evaluate('String(document.getElementById("alone").innerText)')));
       ok(await chrome.evaluate('(function () { window.alone.destroy(); var c = document.getElementById("alone"); var n = c.children.length; c.remove(); return n === 0; }())'), 'destroy empties its container', 'destroy left its container holding something');
     }
     const asked = JSON.parse(await chrome.evaluate('JSON.stringify(performance.getEntriesByType("resource").map(function (e) { return e.name; }).filter(function (n) { return /\\/data\\.js/.test(n); }))'));
-    ok(made === 'made' && asked.some(function (n) { return /spirit\/jobs\/data\.js/.test(n); }) && !asked.some(function (n) { return /spirit\/app\/jobs\/data\.js/.test(n); }), 'the page finds the jobs cache at spirit/jobs/data.js, never spirit/app/jobs/data.js', 'the page asked ' + short(asked));
+    ok(made === 'made' && asked.some(function (n) { return /spirit\/job\/data\.js/.test(n); }) && !asked.some(function (n) { return /spirit\/app\/job\/data\.js/.test(n); }), 'the page finds the jobs cache at spirit/job/data.js, never spirit/app/job/data.js', 'the page asked ' + short(asked));
 
     test.subHeading('its tile, and Q1: "a job row opens detail panel overtop of jobs", in the same stack');
     const tiles = await chrome.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/app/app/element.js"); }).then(function () { var c = document.createElement("div"); c.id = "faces"; c.style.cssText = "position:fixed;left:0;top:0;width:1100px;height:760px;display:flex;flex-direction:column;background:#111;z-index:9"; document.body.appendChild(c); window.fsel = spirit.element.spirit.app.app.element.create(c, { face: "tiles" }); if (window.fsel.parentNode !== c) c.appendChild(window.fsel); return "made"; }, function (e) { return String(e && e.message || e); })');

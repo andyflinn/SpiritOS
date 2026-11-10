@@ -109,7 +109,7 @@ test.startTest('contact.js: Contacts in spirit/app/contact/, as Andy sees it (go
     if (c.error) { test.fail('Chrome: ' + c.error); return; }
     // The shell Andy uses, /face.html, where the shell app (spirit/app/app/element.js) runs the appSelector (boot.js loads what an app's pages open with).
     await c.send('Page.navigate', { url: N.base + '/face.html' });
-    ok(await until(function () { return c.evaluate('!!(window.spirit && window.spirit.ready && window.spirit.events)'); }, 20000), 'the world: the face shell has its spirit', 'the page has no spirit: nothing judged');
+    ok(await until(function () { return c.evaluate('!!(window.spirit && window.spirit.ready && window.spirit.event)'); }, 20000), 'the world: the face shell has its spirit', 'the page has no spirit: nothing judged');
     const selector = function (face) {
       return c.evaluate('(function () { if (window.__sel) window.__sel.destroy(); var old = document.getElementById("zzBox"); if (old) old.remove(); var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999"; document.body.appendChild(b); return spirit.require("spirit/app/app/element.js").then(function () { window.__sel = spirit.element.spirit.app.app.element.create(b, { face: ' + JSON.stringify(face) + ' }); return "made"; }); }())');
     };

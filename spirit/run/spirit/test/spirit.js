@@ -53,7 +53,7 @@ function answer(b) {
   if (c === 'demo.line.write') return [200, { ok: true, wrote: a.text }];
   return [400, { ok: false, code: 'no-such-verb', error: 'no verb ' + c }];
 }
-// It also serves the node's events family: events.subscribe is a stream, as the real node's (a snapshot and then a job
+// It also serves the node's events family: event.subscribe is a stream, as the real node's (a snapshot and then a job
 // update, for a page and for a server, which says X-Spirit-Reader: server and takes no packets); a peer.post is answered with its
 // hash, and the peer's answer arrives on the stream as a packet carrying re, as a real node hands it.
 const packet = require(path.join(RUN, 'spirit', 'client', 'packet.js'));
@@ -68,7 +68,7 @@ function fakeNode() {
       try { b = JSON.parse(body || '{}'); } catch (e) { b = {}; }
       asked.push(b);
       if (!isCall(b)) { res.writeHead(FLAT[0], { 'Content-Type': 'application/json' }); res.end(JSON.stringify(FLAT[1])); return; }
-      if (b.call === 'events.subscribe') {
+      if (b.call === 'event.subscribe') {
         const reader = req.headers['x-spirit-reader'] || '';
         res.writeHead(200, { 'Content-Type': 'text/event-stream' });
         res.write(': open\n\n');
@@ -85,7 +85,7 @@ function fakeNode() {
         setTimeout(function () { streams.forEach(function (st) { st.res.write('event: packet\ndata: ' + JSON.stringify({ from: b.args.to, text: reply.text }) + '\n\n'); }); }, 30);
         return;
       }
-      if (b.call === 'events.publish') { res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ ok: true })); return; }
+      if (b.call === 'event.publish') { res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ ok: true })); return; }
       const [status, out] = answer(b);
       res.writeHead(status, { 'Content-Type': typeof out === 'string' ? 'text/plain' : 'application/json' });
       res.end(typeof out === 'string' ? out : JSON.stringify(out));
@@ -139,24 +139,24 @@ async function code(p) { try { await p; return 'answered'; } catch (e) { return 
     out.viaRequire = (await s.require(s.familyPath('demo'))) === s.demo;
     out.outcome = [await s.outcome(s.demo.hello({ name: 'eve' })), await s.outcome(s.demo.hello({ nme: 1 })), await s.outcome(s.demo.hello({ name: 'held' })), await s.outcome(Promise.reject(new Error('gone')))]
       .map(function (o) { return [o.status, o.body && (o.body.said || o.body.code)]; });
-    // This process's job, published by events.publish with its own id, the one path.
-    out.publish = s.events.publish({ x: 1 });
-    out.tooBig = s.events.publish({ big: 'y'.repeat(30000) });
-    out.noJobsPublish = !('publish' in s.jobs);
+    // This process's job, published by event.publish with its own id, the one path.
+    out.publish = s.event.publish({ x: 1 });
+    out.tooBig = s.event.publish({ big: 'y'.repeat(30000) });
+    out.noJobsPublish = !('publish' in s.job);
     // The node's events, subscribed: the snapshot, then an update; unsubscribed, nothing more.
     out.heard = await new Promise(function (r) {
       const heard = [];
-      const off = s.events.subscribe({
+      const off = s.event.subscribe({
         onConnection: function (up) { heard.push('up:' + up); },
         onSnapshot: function (jobs) { heard.push('snapshot:' + jobs.map(function (j) { return j.id; }).join(',')); },
         onUpdate: function (job) { heard.push('update:' + job.id + ':' + job.status); off(); r(heard); },
       });
       setTimeout(function () { r(heard); }, 2000);
     });
-    await s.jobs.start('j1');
-    out.startAgain = await code(s.jobs.start('j2'));
-    await s.jobs.progress(1, 2, 'half');
-    await s.jobs.end({ done: true });
+    await s.job.start('j1');
+    out.startAgain = await code(s.job.start('j2'));
+    await s.job.progress(1, 2, 'half');
+    await s.job.end({ done: true });
     await new Promise(function (r) { setTimeout(r, 100); });
     // The peer's answer, through the node's event stream.
     out.peerAnswer = await s.peerPost('peerKey9', 'api', { demo: { hello: { name: 'p' } } }, { waitMs: 3000 });
@@ -260,8 +260,8 @@ test.startTest('spirit/run/spirit.js: the one spirit object, in node and on a pa
   // data: the cache, spirit.data (goal/G41.3); familyPath: the one family path function (goal/G41.12); cacheManager: a
   // family's data.js, found by the folder shape and loaded (goal/G43.27) (goal/G41.28, Andy: "the shell can introspect to find and
   // download their clientCacheManagers").
-  const MEMBERS = ['DEFAULT_SPIRIT_PORT', 'MIME_TYPES', 'VERSION', 'cacheManager', 'check', 'data', 'debug', 'error', 'escapeHtml', 'events', 'familyPath', 'formatBytes', 'isBrowser', 'isLoopback', 'isNode', 'jobs', 'node', 'outcome', 'peerPost', 'require', 'rules', 'tree'];
-  if (JSON.stringify(Object.keys(s).filter(function (k) { return typeof s[k] !== 'object' || ['MIME_TYPES', 'data', 'events', 'jobs', 'node'].indexOf(k) !== -1 || Array.isArray(s[k]); }).sort()) === JSON.stringify(MEMBERS))
+  const MEMBERS = ['DEFAULT_SPIRIT_PORT', 'MIME_TYPES', 'VERSION', 'cacheManager', 'check', 'data', 'debug', 'error', 'escapeHtml', 'event', 'familyPath', 'formatBytes', 'isBrowser', 'isLoopback', 'isNode', 'job', 'node', 'outcome', 'peerPost', 'require', 'rules', 'tree'];
+  if (JSON.stringify(Object.keys(s).filter(function (k) { return typeof s[k] !== 'object' || ['MIME_TYPES', 'data', 'event', 'job', 'node'].indexOf(k) !== -1 || Array.isArray(s[k]); }).sort()) === JSON.stringify(MEMBERS))
     test.check('in node the instance holds exactly its members: ' + MEMBERS.join(', ') + ' (and the families it binds)');
   else test.fail('in node the instance holds ' + short(Object.keys(s).sort()));
   const factories = ['createSpirit', 'assemble', 'forNode', 'forPeer', 'nodeTransport', 'pageTransport', 'peerTransport', 'loadInterface', 'spiritObject', 'call', 'port'];
@@ -358,24 +358,24 @@ test.startTest('spirit/run/spirit.js: the one spirit object, in node and on a pa
       const f = o.facts || {};
       if (f.port === node.port && f.name === 'nodey' && f.key === 'K1' && f.ownerKey === 'O1') test.check('spirit.node: its port from environment.json, and the name, key and owner the node handed it as --node');
       else test.fail('spirit.node: ' + short(f));
-      const updates = node.asked.filter(function (b) { return b.call === 'events.publish'; }).map(function (b) { return b.args; });
+      const updates = node.asked.filter(function (b) { return b.call === 'event.publish'; }).map(function (b) { return b.args; });
       const states = updates.map(function (u) { return u.app && u.app.job && u.app.job.state; }).filter(Boolean);
       const dropped = updates.filter(function (u) { return u.app && u.app.dropped; });
       if (o.publish === true && o.tooBig === false && updates.length && updates.every(function (u) { return u.id === 'job_7'; }) && updates.some(function (u) { return u.app && u.app.x === 1; })
           && dropped.length === 1 && dropped[0].app.dropped.max > 0 && JSON.stringify(states) === JSON.stringify(['start', 'progress', 'end']) && o.startAgain === 'job-open'
-          && o.noJobsPublish === true && !node.asked.some(function (b) { return b.call === 'jobs.update'; }))
-        test.check('spirit.events.publish and spirit.jobs start, progress and end publish by events.publish with the job\'s own id, the one path (no jobs.update, no spirit.jobs.publish); one over the payload cap is said as dropped; a second start while one is open refuses job-open');
+          && o.noJobsPublish === true && !node.asked.some(function (b) { return b.call === 'job.update'; }))
+        test.check('spirit.event.publish and spirit.job start, progress and end publish by event.publish with the job\'s own id, the one path (no job.update, no spirit.job.publish); one over the payload cap is said as dropped; a second start while one is open refuses job-open');
       else test.fail('publishing: ' + short([o.publish, o.tooBig, updates.length, states, dropped.length, o.startAgain, o.noJobsPublish]));
       if (JSON.stringify(o.heard) === JSON.stringify(['up:true', 'snapshot:j1', 'update:j1:done']))
-        test.check('spirit.events.subscribe: the node\'s events family as a stream, said up, then the snapshot, then each update, until unsubscribed');
-      else test.fail('spirit.events.subscribe heard ' + short(o.heard));
+        test.check('spirit.event.subscribe: the node\'s events family as a stream, said up, then the snapshot, then each update, until unsubscribed');
+      else test.fail('spirit.event.subscribe heard ' + short(o.heard));
       // goal/G43.3: a process that followed the stream as a page would take its node's owner's waiting lines.
-      const subscribes = node.asked.filter(function (b) { return b.call === 'events.subscribe'; });
-      if (subscribes.length && subscribes.every(function (b) { return b.reader === 'server'; })) test.check('in a process, every events.subscribe says it is a server, so it takes no packets');
-      else test.fail('in a process, events.subscribe said: ' + short(subscribes.map(function (b) { return b.reader; })));
+      const subscribes = node.asked.filter(function (b) { return b.call === 'event.subscribe'; });
+      if (subscribes.length && subscribes.every(function (b) { return b.reader === 'server'; })) test.check('in a process, every event.subscribe says it is a server, so it takes no packets');
+      else test.fail('in a process, event.subscribe said: ' + short(subscribes.map(function (b) { return b.reader; })));
       const viaStream = node.streams.some(function (st) { return st.reader === 'server'; });
       if (o.peerAnswer && o.peerAnswer.said === 'answered by peerKey9' && viaStream && node.asked.some(function (b) { return b.call === 'peer.post' && b.args && b.args.to === 'peerKey9'; }))
-        test.check('spirit.peerPost: one post of peer.post, the answer read off the node\'s events (events.subscribe) as a server, as it always worked');
+        test.check('spirit.peerPost: one post of peer.post, the answer read off the node\'s events (event.subscribe) as a server, as it always worked');
       else test.fail('spirit.peerPost: ' + short([o.peerAnswer, viaStream]));
       if (o.peer && o.peer[0] === true && o.peer[2] === 'hello from peerKey1' && o.peer[3] === true && o.peerHow === 777)
         test.check('spirit.require(path, key, how): the peer\'s family, its calls through spirit.peerPost with how, one for two callers at once, and not its own node\'s spirit.demo');
@@ -427,14 +427,14 @@ test.startTest('spirit/run/spirit.js: the one spirit object, in node and on a pa
   const viaLink = await wq.spirit.demo.hello({ name: 'x' });
   if (viaLink.said === 'via link' && linked[0] === 'demo.hello' && wq.fetched.length === before) test.check('on a page with window.spirit.transport set: every call goes through that link, nothing fetched');
   else test.fail('with a link: ' + short([viaLink, linked, wq.fetched.length - before]));
-  // A face's events come down its link: spirit.events.subscribe hands the handlers to the link's events, fetching nothing.
+  // A face's events come down its link: spirit.event.subscribe hands the handlers to the link's events, fetching nothing.
   const handed = [];
   wq.spirit.transport.events = function (h) { handed.push(h); return function () { handed.push('off'); }; };
   const mine = { onUpdate: function () {} };
-  const offLink = wq.spirit.events.subscribe(mine);
+  const offLink = wq.spirit.event.subscribe(mine);
   offLink();
-  if (handed[0] === mine && handed[1] === 'off' && wq.fetched.length === before) test.check('on a face: spirit.events.subscribe hands its handlers to the link\'s events, and its unsubscribe is the link\'s; nothing fetched');
-  else test.fail('spirit.events.subscribe on a face: ' + short([handed.length, wq.fetched.length - before]));
+  if (handed[0] === mine && handed[1] === 'off' && wq.fetched.length === before) test.check('on a face: spirit.event.subscribe hands its handlers to the link\'s events, and its unsubscribe is the link\'s; nothing fetched');
+  else test.fail('spirit.event.subscribe on a face: ' + short([handed.length, wq.fetched.length - before]));
   delete wq.spirit.transport;
   if (wq.spirit === wq.window.spirit && !('call' in wq.spirit)) test.check('on a page the one instance is window.spirit, and nothing else is made');
   else test.fail('on a page: ' + short(Object.keys(wq.spirit)));
@@ -682,7 +682,7 @@ test.startTest('spirit/run/spirit.js: the one spirit object, in node and on a pa
       ok(!twice.length, 'on a real page: no family\'s api is asked twice', 'on a real page: asked more than once: ' + short(twice));
       // A node family the page has not touched yet, called now through the spirit object: its api is asked once, at
       // first use, and not again on the second call.
-      const fresh = ['events', 'net', 'peer', 'owner', 'config'].filter(function (f) { return !used.has(f) && asked.indexOf(f) === -1; })[0] || '';
+      const fresh = ['event', 'net', 'peer', 'owner', 'config'].filter(function (f) { return !used.has(f) && asked.indexOf(f) === -1; })[0] || '';
       ok(!!fresh, 'the world: ' + (fresh || 'no family') + ' is a family the page has not used yet', 'every candidate family was already used: nothing judged');
       if (fresh) {
         const before = calls().length;

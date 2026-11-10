@@ -1,8 +1,8 @@
-# spirit/element/jobs.js, the Job Monitor's list
+# spirit/element/job.js, the Job Monitor's list
 
-Its test is `./jobs.js`. The box (goal/G43.29, v3): *"Each works exactly as the old one, merely placed where it now belongs"*, *"What it draws is in separate files of spirit/element/, and the old apps' code moves there"*; Q1: *"a job row opens detail panel overtop of jobs."* Written from reading the old `shell/jobs/jobs.js`.
+Its test is `./job.js`. The box (goal/G43.29, v3): *"Each works exactly as the old one, merely placed where it now belongs"*, *"What it draws is in separate files of spirit/element/, and the old apps' code moves there"*; Q1: *"a job row opens detail panel overtop of jobs."* Written from reading the old `shell/job/job.js`.
 
-`spirit.element.jobs.create(container, { open })`, mounted alone in a box of a real Chrome on a scratch node's face page. A failed job and a running one come from two planted `node.run` apps, started through `jobs.create` as Run starts one.
+`spirit.element.job.create(container, { open })`, mounted alone in a box of a real Chrome on a scratch node's face page. A failed job and a running one come from two planted `node.run` apps, started through `job.create` as Run starts one.
 
 ## Requirements
 

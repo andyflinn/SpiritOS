@@ -28,7 +28,7 @@ test.startTest('publishData.js: an app of its own, run by Andy with Run (goal/G4
   if (!fs.existsSync(FILE)) { test.fail('spirit/app/publishData/publishData.js is not there'); return; }
 
   test.subHeading('the node port comes from the node that starts it');
-  // A node that starts a job hands it SPIRIT_CALLBACK_URL, its own address (jobs.js); Run hands no argument. It is run from
+  // A node that starts a job hands it SPIRIT_CALLBACK_URL, its own address (job.js); Run hands no argument. It is run from
   // a folder that is no git clone, so past its arguments it stops at once, before it asks any node anything.
   const port = await freePort();
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-publishdata-'));

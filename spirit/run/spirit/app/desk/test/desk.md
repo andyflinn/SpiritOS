@@ -47,7 +47,7 @@ folders").
   - **What the build must provide** (the test's seam): the checkout it pulls is `GOAL_REPO`, the checkout the desk
     sits in, found by walking up to its `.git` (goal/G43.28, box line 9: no goalRepo is handed). The test runs each such
     desk from a copy of the run tree inside a scratch clone of a scratch bare origin, never this repo. A pull made as a node job
-    (`jobs.create`) or in the desk itself both work: the pretend node runs the jobs it is asked to.
+    (`job.create`) or in the desk itself both work: the pretend node runs the jobs it is asked to.
     "A run going on" is the run the desk can know of, deskVerify's, seeded as a `verify.answer` record before the desk
     starts; a test run the desk cannot see is no case of this test.
 

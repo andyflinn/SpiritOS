@@ -19,7 +19,7 @@
 //     answers within 10 s: the desk's answer, or no-answer with the id of its record. The wait goes on behind it;
 //     nothing is sent twice unless the agent decides it, and the record says how it ended.
 //   - Its state is spirit/state/deskClient/data/deskClient.db (goal/G43.10), named and handed over by the node as --state.
-//   - WHO IT IS, name and key, is what its node hands a server it starts (--node, jobs.js): no ask and no file.
+//   - WHO IT IS, name and key, is what its node hands a server it starts (--node, job.js): no ask and no file.
 //   - IT FOLLOWS THE DESK'S STREAM (goal/G33.4, goal/G33.8): it subscribes, and the desk publishes each changed row to
 //     every subscribed deskClient (appServer streamListener), so deskClient asks the desk nothing to learn what changed.
 //   - What is meant for its agent is selected and worded as the listener it replaces did (goal/G3.4, 5): Andy's
@@ -64,7 +64,7 @@ if (!STATE) {
 }
 fs.mkdirSync(STATE, { recursive: true });
 
-// Its manifest's args, as the node hands their values over (jobs.js): the first argument, a JSON object.
+// Its manifest's args, as the node hands their values over (job.js): the first argument, a JSON object.
 const values = parsed(argv[2], {});
 const HISTORY_MAX = Number(values.historyMax) > 0 ? Math.floor(Number(values.historyMax)) : 1000;
 // Who this agent is: its node's name and key, to tell what is its own from what is meant for it.
@@ -1059,7 +1059,7 @@ const server = appServer.serve({
   // THE DESK'S STREAM (goal/G33.4, box v40-41): appServer's streamListener takes each row into spirit.data through the
   // desk's translator, then hands it to streamed (above), which picks out what is meant for its agent.
   // cache (goal/G41.12, box v15): appServer's switch, at its default limit, 4 MB of the desk's rows.
-  // The node files an app's jobs under spirit.app.<name> (spirit/jobs.js moduleOf; goal/G43.27): the desk's is spirit.app.desk.
+  // The node files an app's jobs under spirit.app.<name> (spirit/job.js moduleOf; goal/G43.27): the desk's is spirit.app.desk.
   stream: { module: 'spirit.app.desk', translator: DESK_CCM, onRow: streamed, cache: true },
   codes: {
   // Rule 1 at this node (goal/G3.9): the agent's wait is refused while another agent's key is not blocked here.
@@ -1124,7 +1124,7 @@ function ignored(root, rel) {
 }
 // THE NODE'S OWN WATCHER COMPONENT (goal/G40.3). Andy: "you hand-rolled shit again!", "use that chokidar component then
 // on the whole repo.", and "you may as well add to the filename in the status (changed, deleted, added)". chokidar, as
-// the node's spirit.fs job uses it (spirit/jobs.js), on the whole checkout; the status word is the path and what happened
+// the node's spirit.fs job uses it (spirit/job.js), on the whole checkout; the status word is the path and what happened
 // to it, which the desk keeps as the file's name and that word.
 const WHAT = { add: 'added', change: 'changed', unlink: 'deleted' };
 // ONLY FILES OF THE PRODUCT TREE (goal/G41.2; Andy: "updates only for files in the product tree."): each status is a
@@ -1146,7 +1146,7 @@ function watchCheckout(root) {
       const rel = path.relative(root, String(full)).split(path.sep).join('/');
       return rel.split('/').some(function (part) { return part === '.git'; }) || VENDORED_FOLDERS.holds(rel);
     };
-    spirit.require('spirit/jobs/chokidar/index.js').watch(root, { ignored: skip, ignoreInitial: true, persistent: true }).on('all', function (event, full) {
+    spirit.require('spirit/job/chokidar/index.js').watch(root, { ignored: skip, ignoreInitial: true, persistent: true }).on('all', function (event, full) {
       if (!WHAT[event] || !full) return;
       const rel = path.relative(root, String(full)).split(path.sep).join('/');
       if (!statusWorthy(rel)) return;

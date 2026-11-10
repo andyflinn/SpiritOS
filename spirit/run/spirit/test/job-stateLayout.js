@@ -1,8 +1,8 @@
 'use strict';
 
-// spirit/run/spirit/test/jobs-stateLayout.js
-// The tests of spirit/jobs.js by name: WHAT spirit/state/<name>/ HOLDS (goal/G43.20, its box; spec: ./jobs-stateLayout.md).
-// jobs.js makes each app's folder and starts its server. Andy: "WSL, YOU BETTER MAKE FUCKING SURE YOU GUARD FUCKING
+// spirit/run/spirit/test/job-stateLayout.js
+// The tests of spirit/job.js by name: WHAT spirit/state/<name>/ HOLDS (goal/G43.20, its box; spec: ./job-stateLayout.md).
+// job.js makes each app's folder and starts its server. Andy: "WSL, YOU BETTER MAKE FUCKING SURE YOU GUARD FUCKING
 // spirit/state/<name>/ and the rules relating to where things belong in that folder, AND you better not fucking cheat with
 // the fucking tests!!!!!!!!!!!!!!!!!!!!", "put those in spirit/state/<name>/ since they belong to the node.", "cache, which is
 // written by spirit/appServer.js was ALWAYS supposed to go into spirit/state/<name>/cache/", "app data, which is written by
@@ -31,7 +31,7 @@ const SERVERS = fs.readdirSync(APPS).filter(function (n) {
   try { const j = JSON.parse(fs.readFileSync(path.join(APPS, n, n + '.json'), 'utf8')); return !!(j.node && j.node.mount === true); } catch (e) { return false; }
 });
 
-test.startTest('jobs-stateLayout.js: spirit/state/<name>/ holds node.json, cache/, data/ and door.sock, and nothing else; no relay-state, no process (goal/G43.20)');
+test.startTest('job-stateLayout.js: spirit/state/<name>/ holds node.json, cache/, data/ and door.sock, and nothing else; no relay-state, no process (goal/G43.20)');
 
 (async function () {
   // A scratch copy of the tracked files, its run:/process taken out before the node starts.
@@ -78,9 +78,9 @@ test.startTest('jobs-stateLayout.js: spirit/state/<name>/ holds node.json, cache
 
     test.subHeading('an app\'s data in spirit/state/<name>/data/: the folder the node hands it as --state');
     const handed = [];
-    const list = await ask('jobs.search', { q: '' });
+    const list = await ask('job.search', { q: '' });
     for (const it of ((list.body && list.body.items) || [])) {
-      const g = await ask('jobs.get', { key: it.key });
+      const g = await ask('job.get', { key: it.key });
       const job = (g.body && g.body.job) || {};
       const args = (job.data && job.data.args) || job.args || [];
       const i = args.indexOf('--state');

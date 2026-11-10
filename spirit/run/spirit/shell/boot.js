@@ -7,7 +7,7 @@
 // loads it: spirit.login draws the one field.
 //
 // WHAT IT DOES
-//   - THE STREAM. At home the node's own (spirit.events); on a face /face/stream, sealed to this page's key when it can
+//   - THE STREAM. At home the node's own (spirit.event); on a face /face/stream, sealed to this page's key when it can
 //     seal: the jobs as the loopback page gets them, presence peer by peer, rebuilt into the presence news of the spirit.contact job the apps
 //     read. Another device holding it is said, with Connect here; a face replaced by another device is told it was taken.
 //     The home node offline: the small red not connected mark shows.
@@ -73,8 +73,8 @@
   // ── THE STREAM, AND WHAT THE APPS SUBSCRIBE TO ──────────────────────────────────────────────────────────────────
   var subscribers = [];
   // THE FACE LINK'S SNAPSHOT: what this face's stream hands a subscriber that comes late, as spirit.js's own stream keeps
-  // its own (spirit.events). It is the stream, not a store: every reader reads the jobs from the jobs family's cache
-  // (spirit.data.jobs.data, goal/G41.28), which this stream feeds.
+  // its own (spirit.event). It is the stream, not a store: every reader reads the jobs from the jobs family's cache
+  // (spirit.data.job.data, goal/G41.28), which this stream feeds.
   var linkJobs = {};
   var presence = {};
   var streamStopped = false;
@@ -94,9 +94,9 @@
   // The kernel's jobs.subscribe on a face (window.spirit.transport.events): what is known now, then every update.
   function events(handlers) {
     var h = handlers || {};
-    // AT HOME THE EVENTS ARE THE NODE'S OWN STREAM, spirit.events (goal/G40.10): there is no face stream on loopback,
+    // AT HOME THE EVENTS ARE THE NODE'S OWN STREAM, spirit.event (goal/G40.10): there is no face stream on loopback,
     // and nothing is kept here.
-    if (state.home) return spirit.events.subscribe(h);
+    if (state.home) return spirit.event.subscribe(h);
     subscribers.push(h);
     if (h.onSnapshot) { try { h.onSnapshot(jobsList()); } catch (e) { /* one app's fault */ } }
     if (h.onConnection) { try { h.onConnection(link.up); } catch (e) { /* one app's fault */ } }
@@ -234,7 +234,7 @@
     // AT HOME THE STREAM WAITS FOR THE PARTS (goal/G40.10): the node hands the file tree once, as a stream opens, and a
     // part that subscribes as it loads (the data cache) would open it before the parts that read the tree (its
     // translators) are in, and lose it. So at home the subscriptions made while the parts load are held, and released
-    // onto spirit.events once they are all in. On a relay the face's own stream opens after the parts already.
+    // onto spirit.event once they are all in. On a relay the face's own stream opens after the parts already.
     var held = [];
     if (home) {
       setConnected(true);
@@ -246,7 +246,7 @@
     // there; then what boot.js draws with, each required by it: the file tree's row element and the jobs family's cache
     // manager (goal/G41.28).
     var parts = function () {
-      return loadParts().then(function () { return Promise.all([window.spirit.require('spirit/element/search/file/rowElement.js'), window.spirit.cacheManager('jobs')]); })
+      return loadParts().then(function () { return Promise.all([window.spirit.require('spirit/element/search/file/rowElement.js'), window.spirit.cacheManager('job')]); })
         .then(null, function () { /* a part missing is said by what needs it */ });
     };
     return Promise.resolve(window.spirit.start()).then(parts, parts).then(function () {
@@ -254,7 +254,7 @@
         var waiting = held;
         held = [];
         delete window.spirit.transport;
-        waiting.forEach(function (h) { spirit.events.subscribe(h); });
+        waiting.forEach(function (h) { spirit.event.subscribe(h); });
       }
       Object.assign(window.spirit.shell = window.spirit.shell || {}, { factRow: factRow });
       link.loaded = true;

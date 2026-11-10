@@ -22,16 +22,16 @@
 // log and the Extract box scroll inside themselves.
 //
 // LIVE THROUGH spirit.data (goal/G41.28): the job and its last events are the jobs family's cache manager's
-// (spirit.data.jobs.data, spirit/jobs/data.js), which keeps every job's events whatever is on screen, so a reopen shows what
+// (spirit.data.job.data, spirit/job/data.js), which keeps every job's events whatever is on screen, so a reopen shows what
 // came meanwhile. It repaints when its job changes there.
 (function () {
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the Extract box's codeMirror and the jobs family's cache manager.
-  var parts = Promise.all([S.require('spirit/element/codeMirror.js'), S.cacheManager('jobs')]);
+  var parts = Promise.all([S.require('spirit/element/codeMirror.js'), S.cacheManager('job')]);
 
   function esc(s) { return S.escapeHtml(String(s == null ? '' : s)); }
 
-  // The canonical set lives in spirit/run/spirit/jobs.js (TERMINAL_STATUSES), node-side; ./jobs.js keeps the same copy.
+  // The canonical set lives in spirit/run/spirit/job.js (TERMINAL_STATUSES), node-side; ./job.js keeps the same copy.
   var TERMINAL = ['completed', 'failed', 'cancelled', 'stopped'];
   var STATUS_ICON = {
     pending: '⏳',
@@ -43,7 +43,7 @@
     error: '⚠️',
   };
 
-  function data() { return ((S.data || {}).jobs || {}).data || null; }
+  function data() { return ((S.data || {}).job || {}).data || null; }
 
   // A facts bubble: the old shell's factRow markup and classes, drawn here (new code requires nothing of the old shell).
   function factRow(pairs) {
@@ -142,12 +142,12 @@
       function failed(word) { return function (e) { console.error(word + ' failed', e); }; }
       if (what === 'cancel') {
         // It stays open: the next event shows the job stop.
-        Promise.resolve(S.ready).then(function (s) { return s.jobs.cancel({ id: id }); }).then(null, failed('cancel'));
+        Promise.resolve(S.ready).then(function (s) { return s.job.cancel({ id: id }); }).then(null, failed('cancel'));
         return;
       }
       if (what === 'delete') {
         // IT GOES WITH THE JOB: once it is deleted there is nobody left to show, so back to the list.
-        Promise.resolve(S.ready).then(function (s) { return s.jobs.delete({ id: id }); }).then(function () {
+        Promise.resolve(S.ready).then(function (s) { return s.job.delete({ id: id }); }).then(function () {
           if (typeof o.close === 'function') o.close();
         }, failed('delete'));
       }

@@ -29,7 +29,7 @@ async function home(base, verb, args) {
 function stream(base) {
   const kept = [];
   const c = new AbortController();
-  const done = fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json', 'x-spirit-reader': 'server' }, body: JSON.stringify({ call: 'events.subscribe', args: {} }), signal: c.signal }).then(async function (r) {
+  const done = fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json', 'x-spirit-reader': 'server' }, body: JSON.stringify({ call: 'event.subscribe', args: {} }), signal: c.signal }).then(async function (r) {
     let held = '';
     const dec = new TextDecoder();
     for await (const chunk of r.body) {

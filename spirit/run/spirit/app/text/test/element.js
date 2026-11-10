@@ -63,7 +63,7 @@ test.startTest(NAME + '.js: with no file it shows the file picker (goal/G43.17)'
     c = await chromePage(where);
     if (c.error) { test.fail('Chrome: ' + c.error); return; }
     await c.send('Page.navigate', { url: N.base + '/face.html' });
-    ok(await until(function () { return c.evaluate('!!(window.spirit && window.spirit.ready && window.spirit.events)'); }, 20000), 'the world: the face shell has its spirit', 'the page has no spirit: nothing judged');
+    ok(await until(function () { return c.evaluate('!!(window.spirit && window.spirit.ready && window.spirit.event)'); }, 20000), 'the world: the face shell has its spirit', 'the page has no spirit: nothing judged');
 
     test.subHeading('the box: "without one they show it"');
     const made = await c.evaluate('(function () { var b = document.createElement("div"); b.id = "zzBox"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.require("spirit/app/' + NAME + '/element.js").then(function () { var E = ((spirit.element.spirit.app || {})[' + JSON.stringify(NAME) + '] || {}).element; if (!E || typeof E.create !== "function") return "no spirit.element.spirit.app.' + NAME + '.element.create"; window.__m = E.create(b); return window.__m && typeof window.__m.destroy === "function" ? "ok" : "create answered " + typeof window.__m; }, function (e) { return "load: " + e; }); }())');

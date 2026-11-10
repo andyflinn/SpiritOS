@@ -271,7 +271,7 @@ define('process-not-included', {
   status: 403, presence: NONE, retry: 'no', fault: 'caller',
   texts: ['process not included on this node'],
 });
-// jobs.create on another program, or on a script that is not one of this node's processes (goal/G41.30, RH1).
+// job.create on another program, or on a script that is not one of this node's processes (goal/G41.30, RH1).
 define('not-a-process', {
   status: 403, presence: NONE, retry: 'no', fault: 'caller',
   texts: ['only this node\'s own processes start'],
@@ -402,7 +402,7 @@ define('this-machine', {
 define('job-not-found', {
   status: 404, presence: NONE, retry: 'no', fault: 'caller',
   texts: ['job not found'],
-  note: 'jobs.get named a key no job has now: it may have been deleted since the search that found it (puppets/G2).',
+  note: 'job.get named a key no job has now: it may have been deleted since the search that found it (puppets/G2).',
 });
 define('no-such-relay', {
   status: 404, presence: NONE, retry: 'no', fault: 'caller',

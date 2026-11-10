@@ -1,11 +1,11 @@
 'use strict';
-// spirit/run/spirit/jobs/data.js
+// spirit/run/spirit/job/data.js
 // WHAT A CLIENT KNOWS OF A NODE'S JOBS, IN THE jobs FAMILY'S OWN FOLDER (goal/G41.28). Andy: "anything not using the new
 // spiritData.js and it's buddies clientCacheManager.js must do so in this item. no exceptions." A page loads it through
 // spirit.cacheManager('jobs'); it keeps the node's jobs in that page's spirit.data, under the node that served them.
 //
 // THE BRANCH IS THIS FILE'S, AND ONLY THIS FILE NAMES IT: every reader (the Jobs app and its details dialog, Stats, the
-// face's boot) asks spirit.data.jobs.data (below), never a branch by name.
+// face's boot) asks spirit.data.job.data (below), never a branch by name.
 //   jobs     id -> the job as the stream last handed it
 //   events   id -> { lines: [{ at, json }] }, the job's last EVENT_WINDOW events, oldest falling off the top (moved here
 //            from the job details dialog, goal/G29.14): an event is what a job publishes, its app object when it differs
@@ -23,12 +23,12 @@
     try { return JSON.stringify(obj); } catch (e) { return ''; }
   }
   var D = typeof window !== 'undefined' ? window.spirit.data : require('../spirit.js').require('spirit/data.js');
-  D.makeFamily('jobs', function () {
-    var HOME = D.viewAt(null, 'jobs');
+  D.makeFamily('job', function () {
+    var HOME = D.viewAt(null, 'job');
     D.addTranslator({
       onJob: function (job) {
         if (!job || !job.id) return;
-        var V = D.viewAt(job.fromNode || null, 'jobs');
+        var V = D.viewAt(job.fromNode || null, 'job');
         var id = String(job.id);
         var row = Object.assign({}, job);
         delete row.fromNode;
@@ -49,7 +49,7 @@
       },
       onDelete: function (gone) {
         if (!gone || !gone.id) return;
-        var V = D.viewAt(gone.fromNode || null, 'jobs');
+        var V = D.viewAt(gone.fromNode || null, 'job');
         V.del(EVENTS + '/' + String(gone.id));
         V.del(JOBS + '/' + String(gone.id));
       },

@@ -1,8 +1,8 @@
 'use strict';
 
-// spirit/run/spirit/element/test/jobs.js
-// The tests of spirit/element/jobs.js, and of no other module (spec: ./jobs.md; goal/G43.29, box v3): what the Job
-// Monitor draws, moved out of shell/jobs/jobs.js. The box: "Each works exactly as the old one, merely placed where it now
+// spirit/run/spirit/element/test/job.js
+// The tests of spirit/element/job.js, and of no other module (spec: ./job.md; goal/G43.29, box v3): what the Job
+// Monitor draws, moved out of shell/job/job.js. The box: "Each works exactly as the old one, merely placed where it now
 // belongs", "What it draws is in separate files of spirit/element/, and the old apps' code moves there", and Q1: "a job row
 // opens detail panel overtop of jobs." Written from reading the old module: every job of the node a row, its columns the
 // green dot, Status, Name, Kind, Progress and Updated; the kind filter all, node, servers, transient and failed; one green
@@ -29,7 +29,7 @@ function plant(run) {
   });
 }
 
-test.startTest('jobs.js: the Job Monitor\'s list, an element of spirit/element/ (goal/G43.29)');
+test.startTest('job.js: the Job Monitor\'s list, an element of spirit/element/ (goal/G43.29)');
 
 (async function () {
   const node = await scratchNode();
@@ -43,14 +43,14 @@ test.startTest('jobs.js: the Job Monitor\'s list, an element of spirit/element/ 
       const t = await r.text(); let b = null; try { b = JSON.parse(t); } catch (e) { b = null; }
       return { status: r.status, body: b, text: t };
     };
-    const failed = await call('jobs.create', { command: 'node', args: ['spirit/app/zzFail/zzFail.js'] });
-    ok(failed.status >= 200 && failed.status < 300, 'the world: zzFail started', 'jobs.create zzFail: ' + short(failed.text));
-    await until(function () { return call('jobs.get', { key: 'spirit.app.zzFail' }).then(function (j) { return !!(j.body && j.body.job && j.body.job.status === 'failed'); }); }, 15000);
+    const failed = await call('job.create', { command: 'node', args: ['spirit/app/zzFail/zzFail.js'] });
+    ok(failed.status >= 200 && failed.status < 300, 'the world: zzFail started', 'job.create zzFail: ' + short(failed.text));
+    await until(function () { return call('job.get', { key: 'spirit.app.zzFail' }).then(function (j) { return !!(j.body && j.body.job && j.body.job.status === 'failed'); }); }, 15000);
 
     await chrome.send('Page.navigate', { url: node.base + '/face.html' });
     await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
-    const made = await chrome.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/element/jobs.js"); }).then(function () { window.pageErrors = []; window.addEventListener("error", function (e) { window.pageErrors.push(String(e.message)); }); var c = document.createElement("div"); c.id = "box"; c.style.cssText = "position:fixed;left:0;top:0;width:1100px;height:700px;display:flex;flex-direction:column;background:#111;z-index:9"; document.body.appendChild(c); window.opened = []; var J = spirit.element.spirit.element.jobs; if (!J || typeof J.create !== "function") return "spirit.element.spirit.element.jobs.create is " + typeof (J && J.create); window.made = J.create(c, { open: function (k, spec) { window.opened.push({ key: String(k), spec: spec ? Object.keys(spec) : [], fill: !!(spec && typeof spec.fill === "function") }); return Promise.resolve(null); } }); return "made"; }, function (e) { return String(e && e.message || e); })');
-    ok(made === 'made', 'it loads through spirit.require and mounts with spirit.element.spirit.element.jobs.create(container, { open })', 'it did not mount: ' + short(made));
+    const made = await chrome.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/element/job.js"); }).then(function () { window.pageErrors = []; window.addEventListener("error", function (e) { window.pageErrors.push(String(e.message)); }); var c = document.createElement("div"); c.id = "box"; c.style.cssText = "position:fixed;left:0;top:0;width:1100px;height:700px;display:flex;flex-direction:column;background:#111;z-index:9"; document.body.appendChild(c); window.opened = []; var J = spirit.element.spirit.element.job; if (!J || typeof J.create !== "function") return "spirit.element.spirit.element.job.create is " + typeof (J && J.create); window.made = J.create(c, { open: function (k, spec) { window.opened.push({ key: String(k), spec: spec ? Object.keys(spec) : [], fill: !!(spec && typeof spec.fill === "function") }); return Promise.resolve(null); } }); return "made"; }, function (e) { return String(e && e.message || e); })');
+    ok(made === 'made', 'it loads through spirit.require and mounts with spirit.element.spirit.element.job.create(container, { open })', 'it did not mount: ' + short(made));
     if (made !== 'made') return;
     // The job rows: a header row (th, or under thead) is no job and is never judged as one.
     const rows = function () { return chrome.evaluate('Array.prototype.map.call(document.querySelectorAll("#box tr, #box .list-row"), function (r) { return r.getClientRects().length && !r.querySelector("th") && !r.closest("thead") ? String(r.innerText || r.textContent || "") : ""; }).filter(Boolean)').then(function (x) { return Array.isArray(x) ? x : []; }); };
@@ -80,11 +80,11 @@ test.startTest('jobs.js: the Job Monitor\'s list, an element of spirit/element/ 
     ok(await until(function () { return rows().then(function (r) { return r.some(function (t) { return t.indexOf('zzFail') !== -1; }) && r.some(function (t) { return t.indexOf('spirit.fs') !== -1; }); }); }, 5000), 'all lists them all again', 'with all: ' + short(await rows()));
 
     test.subHeading('"one green dot hops between rows, always showing the most recent update"');
-    const started = await call('jobs.create', { command: 'node', args: ['spirit/app/zzSleep/zzSleep.js'] });
-    ok(started.status >= 200 && started.status < 300, 'the world: zzSleep started', 'jobs.create zzSleep: ' + short(started.text));
+    const started = await call('job.create', { command: 'node', args: ['spirit/app/zzSleep/zzSleep.js'] });
+    ok(started.status >= 200 && started.status < 300, 'the world: zzSleep started', 'job.create zzSleep: ' + short(started.text));
     const dotted = function () { return chrome.evaluate('Array.prototype.map.call(document.querySelectorAll("#box tr, #box .list-row"), function (r) { return r.innerHTML.indexOf("●") !== -1 ? String(r.innerText || "") : ""; }).filter(Boolean)'); };
     ok(await until(function () { return dotted().then(function (d) { return d.length === 1 && d[0].indexOf('zzSleep') !== -1; }); }, 10000), 'the one dot is on zzSleep, the job that changed last', 'the dotted rows: ' + short(await dotted()));
-    await call('jobs.cancel', { id: 'spirit.app.zzSleep' });
+    await call('job.cancel', { id: 'spirit.app.zzSleep' });
     ok(await until(function () { return rowOf('zzSleep').then(function (r) { return /cancelled|stopped/.test(r) || r === ''; }); }, 10000), 'a job cancelled on the node repaints its row, no reload', 'the zzSleep row after its cancel: ' + short(await rowOf('zzSleep')));
 
     test.subHeading('Q1: "a job row opens detail panel overtop of jobs": a press hands the row to the mounter\'s open');
@@ -94,7 +94,7 @@ test.startTest('jobs.js: the Job Monitor\'s list, an element of spirit/element/ 
     ok(opened && o1[0].fill && /spirit\.fs/.test(o1[0].key), 'a press on spirit.fs calls open with its key and a fill', 'open was called with ' + short(o1));
 
     test.subHeading('with no open handed, its own panel over its box (as contact\'s)');
-    await chrome.evaluate('(function () { window.made.destroy(); var c = document.getElementById("box"); c.innerHTML = ""; window.made = spirit.element.spirit.element.jobs.create(c, {}); return true; }())');
+    await chrome.evaluate('(function () { window.made.destroy(); var c = document.getElementById("box"); c.innerHTML = ""; window.made = spirit.element.spirit.element.job.create(c, {}); return true; }())');
     await until(function () { return rows().then(function (r) { return r.some(function (t) { return t.indexOf('spirit.fs') !== -1; }); }); }, 10000);
     await chrome.evaluate('(function () { var r = Array.prototype.filter.call(document.querySelectorAll("#box tr, #box .list-row"), function (x) { return x.getClientRects().length && String(x.textContent).indexOf("spirit.fs") !== -1; })[0]; if (!r) return false; var leaf = Array.prototype.filter.call(r.querySelectorAll("*"), function (e) { return !e.children.length && e.getClientRects().length; })[0] || r; leaf.click(); return true; }())');
     const OVER = '(function () { var box = document.getElementById("box"); var b = box.getBoundingClientRect(); var l = Array.prototype.filter.call(box.querySelectorAll(".app-container"), function (c) { return c.offsetParent !== null; }).pop(); if (!l) return "no panel layer"; var r = l.getBoundingClientRect(); if (r.width < b.width - 4 || r.height < b.height - 4) return "a layer of " + Math.round(r.width) + "x" + Math.round(r.height); return String(l.textContent).indexOf("spirit.fs") !== -1 ? "over" : "the layer does not name spirit.fs"; }())';

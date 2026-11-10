@@ -68,7 +68,7 @@ function kindOf(file) {
 const WAIT = 20000;
 // THE SERVERS ITS PAGES STAND ON, TURNED ON (goal/G41.28): the agent tables' pages draw the agent family's cache, which
 // is there only while the agent server runs. Its owner turns it on; so does the scratch node, so its pages are judged
-// as they are used, not refused: scratchNode turns it on by active in spirit/state/agent/node.json (spirit/jobs.js).
+// as they are used, not refused: scratchNode turns it on by active in spirit/state/agent/node.json (spirit/job.js).
 const SERVERS = { servers: ['agent'] };
 // A REDRAW PROVED IN THE PAGE'S OWN TEST (Andy, Q24, "yes."): a page whose watch draws only for an item open, which a
 // bare mount never has; its own test's check, by its words, stands for it here.
@@ -89,7 +89,7 @@ const MOST_BYTES = Math.max.apply(null, Object.keys(FIELD_RULES).filter(function
 // (spirit/data.js); shell/boot.js, the face's own transport, is the one exception the network rule names
 // (Andy: "boot.js MUST be an exception to the rules.").
 //   net:   every fetch, XMLHttpRequest, WebSocket, EventSource and sendBeacon, with the file that made it;
-//   subs:  every spirit.events.subscribe and spirit.data.watchPath (a family view's, spirit.data.viewAt(node, family).watch, among them), live until let go, and whether a module made it;
+//   subs:  every spirit.event.subscribe and spirit.data.watchPath (a family view's, spirit.data.viewAt(node, family).watch, among them), live until let go, and whether a module made it;
 //   writes: every call to the node a module made that changes something (not the stream or an interface, no read op,
 //           no read verb);
 //   moved: what the box changed while a write was out, other than a busy mark, a button's disabled state or fine print.
@@ -105,8 +105,8 @@ const WATCH = String.raw`(function () {
   var READ_VERB = /\.(search|get|list|status|card|read|tree|history|load|loadFile|ls|stat)$/;
   function isWrite(body) {
     var b = null; try { b = JSON.parse(String(body || '')); } catch (e) { return null; }
-    // Spirit's own asks are no write: the stream (events.subscribe) and a family's interface (api).
-    if (!b || typeof b.call !== 'string' || b.call === 'events.subscribe' || b.call === 'api') return null;
+    // Spirit's own asks are no write: the stream (event.subscribe) and a family's interface (api).
+    if (!b || typeof b.call !== 'string' || b.call === 'event.subscribe' || b.call === 'api') return null;
     var op = b.args && b.args.op;
     if (op ? READ_OPS.indexOf(String(op)) !== -1 : READ_VERB.test(b.call)) return null;
     return b.call + (op ? ' ' + op : '');
@@ -240,7 +240,7 @@ const WATCH = String.raw`(function () {
     var els = o.element;
     Object.defineProperty(o, 'element', { configurable: true, enumerable: true, get: function () { return els; }, set: function (v) { els = v; searches(v); } });
     searches(els);
-    [['events', 'subscribe'], ['data', 'watch']].forEach(function (k) {
+    [['event', 'subscribe'], ['data', 'watch']].forEach(function (k) {
       var cur = o[k[0]];
       function wrap(v) {
         if (v && typeof v[k[1]] === 'function' && !v[k[1]].__kept) { var f = kept(k[0] + '.' + k[1], v[k[1]]); f.__kept = true; v[k[1]] = f; }

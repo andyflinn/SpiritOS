@@ -54,7 +54,7 @@ on a persona in the left hand \"💬 Select Persona\" pane, the chat pane shows 
 
 ## What its test must try to break
 
-- A DEBUG switch that does not follow the server's job in spirit.data.jobs.data, or follows the click instead.
+- A DEBUG switch that does not follow the server's job in spirit.data.job.data, or follows the click instead.
 - A state kept in the cache before the app opened, not shown at once.
 - A table handed an api, or an api made in its code.
 - A file saved at all.

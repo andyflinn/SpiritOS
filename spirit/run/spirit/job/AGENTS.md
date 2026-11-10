@@ -7,5 +7,5 @@ allow-table is the `auth` family. Local (`wire: false`).
 
 Described to agents (goal/G10.5): the reads (search, get). The writes (create,
 cancel, delete) have no file here and are closed to agents until a goal opens
-them. A process publishes on its own job through `events.publish` (goal/G40.6);
+them. A process publishes on its own job through `event.publish` (goal/G40.6);
 jobs has no update verb.

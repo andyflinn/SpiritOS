@@ -2,7 +2,7 @@
 
 All of Join (goal/G43.26): the Join app (`spirit/app/join/element.js`) only mounts it. Its steps are join.json's, read once;
 where the node stands is the join news on the node's spirit job, as the jobs family's cache keeps it
-(`spirit.data.jobs.data`), and the steps are drawn by `spirit.required.spirit.element.joinSteps`.
+(`spirit.data.job.data`), and the steps are drawn by `spirit.required.spirit.element.joinSteps`.
 
     spirit.element.spirit.element.joinList.create(container, {}) -> { destroy() }
 

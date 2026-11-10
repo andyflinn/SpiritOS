@@ -11,14 +11,14 @@
 //   serialized at their source? they are peerposts after all."
 //
 // THE ONE POINT. A server publishes by jobs.report {app}; the node keeps the object on the job record and emits
-// job-updated (jobs.js), which every open page gets. This listens to that same event and, on a puppet (owner.json
+// job-updated (job.js), which every open page gets. This listens to that same event and, on a puppet (owner.json
 // names another key, puppetMode.puppetIn), posts {module, app} to the owner as a packet named published, so the
 // master's pages get it as its own would (shell.js routes it to onPublished). No verb, no subscription, nothing
 // switched on: every server's objects, always.
 //
 // WHAT IS NOT POSTED: the same object again (a job-updated for a log line carries the same app), a job with no app,
 // anything that is no app's (spirit.app.<name>), anything from a node that is not a puppet. Over PAYLOAD_MAX never reaches the job
-// record (jobs.js refuses it), so never this.
+// record (job.js refuses it), so never this.
 //
 // ONLY WHILE THE MASTER IS REACHABLE: the same route check the owner door's sending end makes (hub.chooseRoute over
 // presence). Unreachable means no post, no log line and NOTHING QUEUED: what was waiting is dropped, and the next

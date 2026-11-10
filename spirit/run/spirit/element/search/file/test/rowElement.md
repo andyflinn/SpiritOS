@@ -46,5 +46,5 @@ goal/G43.18, Andy: *"file app: please change the green colored paths/files in li
 
 - `spirit` is light blue. `spirit/app`, `spirit/element` and `spirit/contact` are light blue, as a folder row and in the path of a file inside.
 - Light purple, where red was: the file `api.js` in `spirit/app` (no `spirit.app.api`), and `spirit/job` (a folder, no `spirit.job`).
-- A name not reserved has no colour (`spirit/jobs`, `spirit/hub.js`), and outside `spirit/` no word holds (`shell/app`).
+- A name not reserved has no colour (`spirit/client`, `spirit/hub.js`), and outside `spirit/` no word holds (`shell/app`).
 - A `word.json` gaining a word turns the open row light purple with no reload, an object at that path makes it light blue, and `word.json` gone takes the colour away.

@@ -120,11 +120,11 @@ function handle(a) {
   writeSet(set);
   return publish({ icons: { glyph: have, removed: true } }).then(function () { return { deleted: true, glyph: have }; });
 }
-// THE PUBLISH IS ON THE NODE BEFORE THE ANSWER: a one-shot run is ended once it has answered, and spirit.events.publish
-// posts without waiting, so its post would die with the run. The same post, events.publish with this job's id and the row
-// as its app (spirit.js), awaited: spirit.jobs.report({ app }). One that cannot reach the node leaves the answer standing:
+// THE PUBLISH IS ON THE NODE BEFORE THE ANSWER: a one-shot run is ended once it has answered, and spirit.event.publish
+// posts without waiting, so its post would die with the run. The same post, event.publish with this job's id and the row
+// as its app (spirit.js), awaited: spirit.job.report({ app }). One that cannot reach the node leaves the answer standing:
 // the file is written, the next search reads it.
-function publish(row) { return Promise.resolve(spirit.jobs.report({ app: row })).then(function () {}, function () {}); }
+function publish(row) { return Promise.resolve(spirit.job.report({ app: row })).then(function () {}, function () {}); }
 
 appServer.serve({
   icon: {

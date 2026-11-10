@@ -233,7 +233,7 @@ function createArrivals(opts) {
   }
 
   // Returns its own unsubscribe, so a caller cannot leak one by holding
-  // the wrong handle. The events family's subscribe (events/events.js)
+  // the wrong handle. The events family's subscribe (event/event.js)
   // takes this and calls it from its own teardown — a subscriber that outlives
   // its socket writes to a dead response for ever.
   function subscribe(fn) {

@@ -1,7 +1,7 @@
 # spirit/app/deskVerify/deskVerify.js
 
 The verifier's server (goal/G8.1, goal/G33.3). Its test is `./deskVerify.js`. It starts the file as the node does,
-`node deskVerify.js <values> --pipe <pipe> --state <folder>` (spirit/jobs.js, runServer), from a scratch folder.
+`node deskVerify.js <values> --pipe <pipe> --state <folder>` (spirit/job.js, runServer), from a scratch folder.
 It never touches a real verify.db.
 
 ## Where it keeps its records
@@ -10,7 +10,7 @@ Andy, goal/G43.27: "cw, it's supposed to be in run:/spirit/state/deskVerify/data
 
 1. **verify.db lives in its state**: started with `--state <folder>` and no `db`, it makes `<folder>/verify.db`
    and no file anywhere else.
-2. **The node hands it spirit/state/deskVerify/data/**: the folder `jobs.js` names for an app is
+2. **The node hands it spirit/state/deskVerify/data/**: the folder `job.js` names for an app is
    `spirit/state/<name>/data`, so on a node, verify.db is `spirit/state/deskVerify/data/verify.db`.
 3. **`db` names another file**: given `db`, it keeps its records there and makes nothing in its state.
 4. **With neither, it stops**: no `--state` and no `db`, it exits 2, says why and makes no verify.db.

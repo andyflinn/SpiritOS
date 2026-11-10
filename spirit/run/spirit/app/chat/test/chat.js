@@ -55,7 +55,7 @@ test.startTest('chat: the chat app in spirit/app/chat/, chat.json and chat.js (g
     await call('app.active', { key: 'chat', active: true });
     const up = await H.until(function () { return call('chat.chats.search', {}).then(function (r) { return r.status === 200; }); }, 40000);
     ok(up, 'its server answers chat.chats.search', 'chat.chats.search: ' + short((await call('chat.chats.search', {})).text));
-    const job = ((await call('jobs.get', { key: 'spirit.app.chat' })).body || {}).job || {};
+    const job = ((await call('job.get', { key: 'spirit.app.chat' })).body || {}).job || {};
     const pid = Number((job.data && job.data.pid) || job.pid || 0);
     let cmd = '';
     try { cmd = pid ? fs.readFileSync('/proc/' + pid + '/cmdline', 'utf8').split('\0').join(' ') : ''; } catch (e) { cmd = ''; }

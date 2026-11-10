@@ -154,7 +154,7 @@ function puppetDoor(opts) {
     // TOO BIG FOR A PACKET IS SAID, NEVER DROPPED (puppets/G1). packet.encode
     // refuses an answer that cannot travel, and this returned without a
     // word, so the owner waited out its wait for 'no reply from puppet'
-    // instead of the reason (wsl-claude: jobs.list on a puppet, 42,570
+    // instead of the reason (wsl-claude: job.list on a puppet, 42,570
     // bytes). The refusal names the verb and the size, and always fits.
     if (!made || !made.text) {
       const bytes = Buffer.byteLength(JSON.stringify(answer || {}), 'utf8');

@@ -104,10 +104,10 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     const n = lists.length;
     E.search.grant.create({}, { grants: GRANTS });
     await settle();
-    DATA.takeJob({ id: 'spirit.auth', data: { table: 'grant', row: { key: 'K7', path: 'jobs.list', label: 'First' } } });
+    DATA.takeJob({ id: 'spirit.auth', data: { table: 'grant', row: { key: 'K7', path: 'job.list', label: 'First' } } });
     await settle();
     const fresh = lists[n];
-    const kept = A.grants.row(A.grantKey('K7', 'jobs.list'));
+    const kept = A.grants.row(A.grantKey('K7', 'job.list'));
     ok(!!fresh && fresh.o.data === A.grants.branch && kept && kept.label === 'First', 'a list made with no row drawn is a view of the branch its first grant lands in', 'data ' + short(fresh && fresh.o.data) + ', kept ' + short(kept));
   }
 

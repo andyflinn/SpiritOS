@@ -48,7 +48,7 @@ function world(join) {
   w.publish = function (id, j) { w.fns.slice().forEach(function (fn) { fn(id, j); }); };
   win.spirit = {
     element: { spirit: { element: {}, app: {} } },
-    data: { jobs: { data: jobs } },
+    data: { job: { data: jobs } },
     escapeHtml: function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); },
     ready: Promise.resolve({
       fs: { loadFile: function () { return Promise.resolve(fs.readFileSync(STEPS, 'utf8')); } },

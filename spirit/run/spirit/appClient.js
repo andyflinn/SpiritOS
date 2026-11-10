@@ -146,7 +146,7 @@ function createAppClient(opts) {
   // Andy: "there will simply be two kinds, permanent or one-shot processes.", "the node must execute
   // spirit/app/<name>/<name>.js with the request, instead of routing it to a server, like a cgi-script, and that process
   // lives only as long as the request." A one-shot row holds no pipe of a running process but the way to start one
-  // (row.start, handed over by jobs.js, which names its arguments): each knock starts the app's script, knocks its pipe
+  // (row.start, handed over by job.js, which names its arguments): each knock starts the app's script, knocks its pipe
   // as soon as it listens, and ends it once it has answered. ONE RUN PER APP AT A TIME (9): a knock waits for the run
   // before it to have ended, so two saves never write the app's state at once.
   const START_POLL_MS = 25;
@@ -238,7 +238,7 @@ function createAppClient(opts) {
       log('server process: ' + n);
       return true;
     },
-    // A ONE-SHOT APP (goal/G43.19, box v16, 3 and 4): its row is its pipe and start(pipe), which jobs.js hands over and
+    // A ONE-SHOT APP (goal/G43.19, box v16, 3 and 4): its row is its pipe and start(pipe), which job.js hands over and
     // which starts the app once (appServer.js in front of spirit/app/<name>/<name>.js, which checks the call), answering the
     // child process. The same name rule as register.
     registerOneShot: function (name, pipe, start) {

@@ -58,7 +58,7 @@ Andy, on G41.18:
 - A scratch copy of the tracked files of `spirit/run`, on a node of its own, on a free port. Neither Andy's node nor an
   agent's is touched. A working-tree change to a tracked file is in the copy; a new file is in it once git knows it.
 - **The agent server is turned on there** (goal/G41.28), as its owner turns it on: `active` in
-  `spirit/state/agent/node.json` (`spirit/jobs.js`) is written before the node starts. The agent tables' pages draw the
+  `spirit/state/agent/node.json` (`spirit/job.js`) is written before the node starts. The agent tables' pages draw the
   agent family's cache, which is there only while that server runs, so they are judged as they are used, not refused.
 - Headless Chrome, found where the machine keeps it (by name on Linux, in its usual folders on Windows, or
   `SPIRIT_CHROME`). It is driven over its debugging port with node's own WebSocket: no package.
@@ -153,7 +153,7 @@ box is its own check, named by the element's path and the box's id chain."*
 - **What it changes, it listens for** (Andy: *"elements that change things, also subscribe to the changes they cause,
   since andy request an element generates would imply that it must listen for confirmation of the results"*): a module
   that sent a write (a call it made that is not the stream, not an interface, and carries no read op or read verb)
-  holds, while mounted, a `spirit.events.subscribe` or `spirit.data.watchPath` of its own making (a family view's watch, `spirit.data.viewAt(node, family).watch`, counts as one, under its whole path).
+  holds, while mounted, a `spirit.event.subscribe` or `spirit.data.watchPath` of its own making (a family view's watch, `spirit.data.viewAt(node, family).watch`, counts as one, under its whole path).
 - **While a write is out, it draws nothing of its own** (rule/19; the box: *"after a press, until the stream answers, an
   element may change only its busy spinner, its button's disabled state and its fine print; any other change it makes
   is red"*): from a press that sent a write until the node has answered it, the only changes in its box are a busy mark

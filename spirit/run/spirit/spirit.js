@@ -310,7 +310,7 @@
   }
   // This VM's node's family, on the instance as spirit.<family>. Two callers at once ask once; a refusal is asked
   // again next time.
-  // A family whose name is already on the instance (spirit.jobs, holding this process's job in node; spirit.events, the
+  // A family whose name is already on the instance (spirit.job, holding this process's job in node; spirit.event, the
   // one stream) is extended, not replaced, and what it holds stays: a verb of the same name does not overwrite it.
   var asking = {};
   var bound = {};
@@ -633,7 +633,7 @@
   self.DEFAULT_SPIRIT_PORT = DEFAULT_SPIRIT_PORT;
   self.debug = debug;
 
-  // ── THE ONE STREAM OF THIS VM: spirit.events.subscribe(handlers) (goal/G40.6) ──────────────────────────────────────
+  // ── THE ONE STREAM OF THIS VM: spirit.event.subscribe(handlers) (goal/G40.6) ──────────────────────────────────────
   // Andy: "two verbs on events - publish - subscribe". The node's events family is its one dispatcher; this is its
   // subscribe, moved here from the old kernel's page stream. ONE STREAM PER PAGE (goal/G30.16; Andy: "the home page should
   // need one stream only."): every subscriber shares it, and one that comes later is handed the jobs as they stand and
@@ -705,7 +705,7 @@
     };
     // A PROCESS IS NOT A PAGE (goal/G43.3, as peerPost says it below; goal/G16.9): it witnesses the packets and takes none, or
     // it would eat the waiting lines of its node's owner.
-    post('events.subscribe', {}, isNode() ? { stream: true, headers: { 'X-Spirit-Reader': 'server' } } : { stream: true }).then(function (r) {
+    post('event.subscribe', {}, isNode() ? { stream: true, headers: { 'X-Spirit-Reader': 'server' } } : { stream: true }).then(function (r) {
       if (!r || !r.ok || !r.body) throw refusal('no-stream', 'the node answered ' + (r && r.status));
       streamReader = r.body.getReader();
       streamOpening = false;
@@ -738,7 +738,7 @@
       if (!streamSubs.length && streamReader) { var r = streamReader; streamReader = null; r.cancel().catch(function () { /* gone */ }); }
     };
   }
-  self.events = { subscribe: subscribeEvents };
+  self.event = { subscribe: subscribeEvents };
 
   // IN NODE, spirit.js's OWN, AND NO KERNEL (goal/G40.6). Andy: "WHY THE FUCK WOULD we pass spirit.js if not for the
   // fucking servers to use it?", and "Fix that SHIT. in this item, here. NOW." What a server process took from the old kernel
@@ -752,26 +752,26 @@
     self.node = { port: PORT, name: str(facts.name), key: str(facts.publicKey), ownerKey: str(facts.ownerKey) };
 
     // THIS PROCESS'S JOB (goal/G29.15), REPORTED BY THE ONE PATH TO PUBLISH (goal/G40.6; Andy, 2026-10-25: "ONE path for
-    // everybody to publish events"): a process the node started as a job publishes on it by events.publish with its own id
+    // everybody to publish events"): a process the node started as a job publishes on it by event.publish with its own id
     // (SPIRIT_JOB_ID), one post; the node changes the job and every subscriber hears it.
-    //   spirit.events.publish(obj)   the object as the job's app, every page hears it; over PAYLOAD_MAX it is not sent,
+    //   spirit.event.publish(obj)   the object as the job's app, every page hears it; over PAYLOAD_MAX it is not sent,
     //                  and the pages hear that one was dropped, with its size (fileTransfer goal/G1.4)
-    //   spirit.jobs.start(name), progress(done, total, text), end(result)   one job at a time: a start while one is open
+    //   spirit.job.start(name), progress(done, total, text), end(result)   one job at a time: a start while one is open
     //                  refuses job-open; each resolves once the node has it, so awaited calls arrive in order
-    //   spirit.jobs.report(patch), log(text), complete(data), fail(error)   the job's own state, and its three common forms
+    //   spirit.job.report(patch), log(text), complete(data), fail(error)   the job's own state, and its three common forms
     var JOB = String(process.env.SPIRIT_JOB_ID || '');
     var PAYLOAD_MAX = require('./limits.js').PAYLOAD_MAX;
     var openJob = null;
-    var jobs = self.jobs = self.jobs && typeof self.jobs === 'object' ? self.jobs : {};
+    var jobs = self.job = self.job && typeof self.job === 'object' ? self.job : {};
     var bytesOf = function (o) { try { return new TextEncoder().encode(JSON.stringify(o)).length; } catch (e) { return -1; } };
     jobs.report = function (patch) {
       if (!JOB) return Promise.reject(refusal('no-job', 'this process was not started by a node as a job (SPIRIT_JOB_ID is unset)'));
-      return post('events.publish', Object.assign({ id: JOB }, patch)).then(function (r) { return r && r.body; });
+      return post('event.publish', Object.assign({ id: JOB }, patch)).then(function (r) { return r && r.body; });
     };
     jobs.log = function (message) { return jobs.report({ logMessage: message }); };
     jobs.complete = function (data) { return jobs.report({ status: 'completed', data: data }); };
     jobs.fail = function (e) { return jobs.report({ status: 'failed', data: { error: String(e) } }); };
-    self.events.publish = function (obj) {
+    self.event.publish = function (obj) {
       if (obj === null || typeof obj !== 'object' || Array.isArray(obj)) return false;
       var size = bytesOf(obj);
       if (size < 0) return false;
@@ -788,7 +788,7 @@
       var one = { job: job };
       var size = bytesOf(one);
       if (size < 0) return Promise.resolve(false);
-      if (size > PAYLOAD_MAX) return Promise.resolve(self.events.publish(one));
+      if (size > PAYLOAD_MAX) return Promise.resolve(self.event.publish(one));
       return jobs.report({ app: one }).then(function () { return true; }, function () { return false; });
     };
     jobs.start = function (name) {
@@ -824,7 +824,7 @@
       if (!packet) packet = requireOne('spirit/client/packet.js');
       var made = packet.encode(app, body);
       if (!made || !made.ok) return Promise.resolve({ ok: false, code: 'not-posted', error: (made && made.error) || 'the ask could not be encoded' });
-      return post('events.subscribe', {}, { stream: true, headers: { 'X-Spirit-Reader': 'server' } }).then(function (r) {
+      return post('event.subscribe', {}, { stream: true, headers: { 'X-Spirit-Reader': 'server' } }).then(function (r) {
         var reader = r.body.getReader();
         var dec = new TextDecoder();
         var buf = '';
@@ -919,7 +919,7 @@
   };
   var started = null;
   // A FAMILY THAT BINDS WHEN FIRST CALLED (goal/G43.27). spirit.<family> stands as an object at once: what it already holds
-  // (spirit.events' stream, spirit.jobs in node) answers as it is, and any other name is a call waiting for the family: called,
+  // (spirit.event' stream, spirit.job in node) answers as it is, and any other name is a call waiting for the family: called,
   // it binds the family once (bindOwn: one api call), then calls the bound function of that name, a dotted path included
   // (spirit.<family>.a.b). Once bound, the bound functions are on the object itself. Nothing is then-able, so a
   // family handed to Promise.resolve stays a family.

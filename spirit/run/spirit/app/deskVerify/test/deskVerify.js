@@ -2,7 +2,7 @@
 
 // spirit/run/spirit/app/deskVerify/test/deskVerify.js
 // The tests of spirit/app/deskVerify/deskVerify.js (spec: ./deskVerify.md; goal/G43.27). Andy: "cw, it's supposed to be in
-// run:/spirit/state/deskVerify/data/ !!!!!!!!!!!!!!!!!". The file is started as the node starts it (spirit/jobs.js,
+// run:/spirit/state/deskVerify/data/ !!!!!!!!!!!!!!!!!". The file is started as the node starts it (spirit/job.js,
 // runServer), from a scratch folder, with a pipe nobody serves: it stops at the pipe, after it has opened its db.
 
 const fs = require('fs');
@@ -55,13 +55,13 @@ try {
     ok(!beside.length, 'it makes no verify.db beside the script', 'beside the script: ' + short(beside));
 
     test.subHeading('2. the node hands it spirit/state/deskVerify/data/');
-    // The node's own line (spirit/jobs.js, runServer): the folder it names for an app's state.
-    const jobs = fs.readFileSync(path.join(RUN, 'spirit', 'jobs.js'), 'utf8');
+    // The node's own line (spirit/job.js, runServer): the folder it names for an app's state.
+    const jobs = fs.readFileSync(path.join(RUN, 'spirit', 'job.js'), 'utf8');
     const line = (/const\s+state\s*=\s*(path\.join\(rootDir,[^;]+\));/.exec(jobs) || [])[1];
     let named = '';
     try { named = line ? new Function('path', 'rootDir', 'name', 'return ' + line)(path, RUN, 'deskVerify') : ''; } catch (e) { named = 'threw ' + e.message; }
     ok(path.resolve(String(named)) === path.join(RUN, 'spirit', 'state', 'deskVerify', 'data'),
-      'the node names its state spirit/state/deskVerify/data/, so verify.db is kept there', 'jobs.js names its state ' + short(named));
+      'the node names its state spirit/state/deskVerify/data/, so verify.db is kept there', 'job.js names its state ' + short(named));
 
     test.subHeading('3. db names another file');
     const two = path.join(scratch, 'two');

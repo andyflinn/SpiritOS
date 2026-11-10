@@ -64,7 +64,7 @@ test.startTest('app.js: the app family, a core api beside the others (goal/G43.2
     // IT GIVES THE NODE ITS API (Andy, box: "sit nicely beside all other families").
     const tree = await ask(node.base, 'api', {});
     const inTree = function (name) { const b = tree.body || {}; return !!(b[name] || (b.api && b.api[name]) || (b.families && b.families[name])); };
-    ok(inTree('jobs'), 'the node\'s api names jobs, so this question can answer', 'the node\'s api does not name jobs: ' + short(tree.text));
+    ok(inTree('job'), 'the node\'s api names jobs, so this question can answer', 'the node\'s api does not name jobs: ' + short(tree.text));
     ok(inTree('app'), 'the node\'s api names the app family beside the others', 'the node\'s api does not name app');
 
     // THE SEARCH (Andy, box: "styled like other probability searches"; "It is JUST there to be found").

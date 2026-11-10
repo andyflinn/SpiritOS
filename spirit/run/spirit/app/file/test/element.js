@@ -161,7 +161,7 @@ test.startTest('file.js: Files in spirit/app/file/, as Andy sees it (goal/G43.17
     c = await chromePage(where);
     if (c.error) { test.fail('Chrome: ' + c.error); return; }
     await c.send('Page.navigate', { url: N.base + '/face.html' });
-    ok(await until(function () { return c.evaluate('!!(window.spirit && window.spirit.ready && window.spirit.events)'); }, 20000), 'the world: the face shell has its spirit', 'the page has no spirit: nothing judged');
+    ok(await until(function () { return c.evaluate('!!(window.spirit && window.spirit.ready && window.spirit.event)'); }, 20000), 'the world: the face shell has its spirit', 'the page has no spirit: nothing judged');
     await c.evaluate(HANDS);
     const T = function (expr) { return c.evaluate('window.__t.' + expr); };
     // Every hand in expr is the page's, not only the first: "rows() ... && tiles()" asks both.

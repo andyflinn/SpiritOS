@@ -191,7 +191,7 @@ told.off();
 function pageCopy() {
   const vm = require('vm');
   const h = {};
-  const win = { spirit: { node: { key: NODE }, isBrowser: function () { return true; }, events: { subscribe: function (x) { Object.assign(h, x); return function () {}; } } } };
+  const win = { spirit: { node: { key: NODE }, isBrowser: function () { return true; }, event: { subscribe: function (x) { Object.assign(h, x); return function () {}; } } } };
   win.window = win;
   vm.runInNewContext(require('fs').readFileSync(path.join(__dirname, '..', 'data.js'), 'utf8'), win, { filename: 'data.js' });
   // P is the page's view of the family, as its manager addresses it; P.whole the page's data set itself.
@@ -199,10 +199,10 @@ function pageCopy() {
   view.whole = win.spirit.data;
   return { P: view, stream: h };
 }
-// A translator writing each job it is handed to jobs/<id>, and recording what it got.
+// A translator writing each job it is handed to job/<id>, and recording what it got.
 function recorder() {
   const got = { jobs: [], renames: [] };
-  return { got: got, t: { onJob: function (job, d) { got.jobs.push(job); d.viewAt(job.fromNode, FAMILY).set('jobs/' + job.id, job.data); }, onRename: function (r) { got.renames.push(r); } } };
+  return { got: got, t: { onJob: function (job, d) { got.jobs.push(job); d.viewAt(job.fromNode, FAMILY).set('job/' + job.id, job.data); }, onRename: function (r) { got.renames.push(r); } } };
 }
 
 test.subHeading('forget: everything kept goes, and each type is told once');
@@ -228,7 +228,7 @@ test.subHeading('on a page a snapshot is a connect: the cache forgets, and takes
   stream.onSnapshot([{ id: 'a', data: { n: 1 } }, { id: 'b', data: { n: 1 } }]);
   P.seat('contacts', [{ key: 'K', label: JSON.stringify({ name: 'k' }) }]);
   stream.onSnapshot([{ id: 'a', data: { n: 2 } }]);
-  ok(P.get('jobs/a') && P.get('jobs/a').n === 2 && P.get('jobs/b') === undefined && P.get('contacts/K') === undefined,
+  ok(P.get('job/a') && P.get('job/a').n === 2 && P.get('job/b') === undefined && P.get('contacts/K') === undefined,
     'what the first connect brought or a search seated is gone, what the second pushed is there',
     'after a second snapshot: ' + JSON.stringify(P.whole.data));
 }
@@ -245,7 +245,7 @@ test.subHeading('on a page a type loaded late is handed its data whole');
   const ids = r.got.jobs.map(function (j) { return j.id + ':' + j.data.n; }).sort().join(',');
   ok(ids === 'a:2,c:1', 'its translator is handed every job as it now stands, each once', 'the late translator got ' + ids);
   ok(r.got.renames.length === 1 && r.got.renames[0].label === 'kay', 'and the renames heard', 'renames: ' + JSON.stringify(r.got.renames));
-  ok((P.get('jobs/a') || {}).n === 2 && (P.get('jobs/c') || {}).n === 1, 'so its branch is whole at once', 'jobs: ' + JSON.stringify(P.branch('jobs')));
+  ok((P.get('job/a') || {}).n === 2 && (P.get('job/c') || {}).n === 1, 'so its branch is whole at once', 'jobs: ' + JSON.stringify(P.branch('job')));
 }
 
 test.subHeading('in a process the cache sheds oldest first past a byte cap; a page keeps everything');

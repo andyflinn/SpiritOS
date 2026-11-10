@@ -45,8 +45,8 @@ async function boot(run) {
 }
 function stop(c) { return new Promise(function (r) { if (!c || c.exitCode !== null) return r(); c.once('exit', function () { r(); }); c.kill(); setTimeout(r, 6000); }); }
 async function liveJob(base) {
-  const found = await call(base, 'jobs.search', { q: '' });
-  const rows = await Promise.all(((found.body && found.body.items) || []).map(function (i) { return call(base, 'jobs.get', { key: i.key }); }));
+  const found = await call(base, 'job.search', { q: '' });
+  const rows = await Promise.all(((found.body && found.body.items) || []).map(function (i) { return call(base, 'job.get', { key: i.key }); }));
   return rows.map(function (r) { return r.body && r.body.job; }).filter(function (j) { return !!j && j.kind === 'server' && j.module === MODULE && (j.status === 'running' || j.status === 'pending'); })[0] || null;
 }
 function answers(r) { return r.status === 200 && !!r.body && typeof r.body.debug === 'boolean'; }

@@ -307,7 +307,7 @@
     if (onPage) Array.from(seenJobs.keys()).forEach(function (k) { if (k === String(id) || k.indexOf(String(id) + '\n') === 0) seenJobs.delete(k); });
     if (handing()) each('onDelete', stamped({ id: String(id) }, from));
   }
-  // A SNAPSHOT IS A CONNECT (spirit.events hands one on every open of the stream, the first and each reconnect): what
+  // A SNAPSHOT IS A CONNECT (spirit.event hands one on every open of the stream, the first and each reconnect): what
   // was kept is forgotten, and the snapshot is the partner's whole push.
   function onSnapshot(jobs) {
     forget();
@@ -391,12 +391,12 @@
     // For a suite: the stream's events fed by hand.
     takeJob: onJob, takeRename: onRename };
 
-  // FED BY THE PAGE'S ONE STREAM, spirit.events.subscribe (goal/G40.6). A relay's own events go to whichever translator
+  // FED BY THE PAGE'S ONE STREAM, spirit.event.subscribe (goal/G40.6). A relay's own events go to whichever translator
   // keeps them (onRelay), as everything else on that stream does.
   var sp = root.spirit;
   function relayEvent(ev) { each('onRelay', ev); }
-  if (onPage && sp.events && typeof sp.events.subscribe === 'function') {
-    sp.events.subscribe({ onSnapshot: onSnapshot, onUpdate: onJob, onDelete: function (id) { onGone(id); }, onContactRename: onRename, onRelayEvent: relayEvent });
+  if (onPage && sp.event && typeof sp.event.subscribe === 'function') {
+    sp.event.subscribe({ onSnapshot: onSnapshot, onUpdate: onJob, onDelete: function (id) { onGone(id); }, onContactRename: onRename, onRelayEvent: relayEvent });
   }
   // A SERVER THAT NEEDS ITS OWN NODE'S EVENTS ASKS FOR THEM HERE (goal/G43.5; Andy: "the rule covers everything, apps,
   // element"; spirit/test/spirit-branches.js: only data.js takes the node's stream). A server is otherwise fed by its streamListener
@@ -409,11 +409,11 @@
     if (o && typeof o.onConnection === 'function') followers.push(o.onConnection);
     // Asked now, not at load: this file may be required before the spirit object has its events.
     var s = root.spirit;
-    if (following || !s || !s.events || typeof s.events.subscribe !== 'function') return;
+    if (following || !s || !s.event || typeof s.event.subscribe !== 'function') return;
     following = true;
     // A process its node did not name still keeps its rows somewhere: a level of the tree needs a name.
     if (!home()) homeNode = 'local';
-    s.events.subscribe({ onUpdate: onJob, onDelete: function (id) { onGone(id); }, onContactRename: onRename, onRelayEvent: relayEvent,
+    s.event.subscribe({ onUpdate: onJob, onDelete: function (id) { onGone(id); }, onContactRename: onRename, onRelayEvent: relayEvent,
       onConnection: function (up) { followers.slice().forEach(function (fn) { try { fn(up); } catch (e) { /* one reader's fault */ } }); } });
   }
   api.followStream = follow;

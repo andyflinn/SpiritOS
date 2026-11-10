@@ -40,7 +40,7 @@ test.startTest('jobDetail.js: one job, the Job Monitor\'s detail, an element of 
       const t = await r.text(); let b = null; try { b = JSON.parse(t); } catch (e) { b = null; }
       return { status: r.status, body: b, text: t };
     };
-    const jobOf = function (id) { return call('jobs.get', { key: id }).then(function (j) { return (j.body && j.body.job) || null; }); };
+    const jobOf = function (id) { return call('job.get', { key: id }).then(function (j) { return (j.body && j.body.job) || null; }); };
 
     await chrome.send('Page.navigate', { url: node.base + '/face.html' });
     await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
@@ -77,20 +77,20 @@ test.startTest('jobDetail.js: one job, the Job Monitor\'s detail, an element of 
     }
 
     test.subHeading('a running process: Cancel; the node then removes it (G29.16), and the screen stays and says so');
-    const started = await call('jobs.create', { command: 'node', args: ['spirit/app/zzSleep/zzSleep.js'] });
-    ok(started.status >= 200 && started.status < 300, 'the world: zzSleep started', 'jobs.create zzSleep: ' + short(started.text));
+    const started = await call('job.create', { command: 'node', args: ['spirit/app/zzSleep/zzSleep.js'] });
+    ok(started.status >= 200 && started.status < 300, 'the world: zzSleep started', 'job.create zzSleep: ' + short(started.text));
     await until(function () { return jobOf('spirit.app.zzSleep').then(function (j) { return !!j && j.status === 'running'; }); }, 10000);
     await mount('spirit.app.zzSleep');
     ok(await until(function () { return buttons().then(function (b) { return b.indexOf('Cancel') !== -1 && b.indexOf('Delete') === -1; }); }, 10000), 'running, it offers Cancel and no Delete', 'its buttons: ' + short(await buttons()));
     await press('Cancel');
-    // spirit/jobs.js: a process the owner cancels removes itself (goal/G29.16, "jobs cancelled by me are also removed").
+    // spirit/job.js: a process the owner cancels removes itself (goal/G29.16, "jobs cancelled by me are also removed").
     ok(await until(function () { return jobOf('spirit.app.zzSleep').then(function (j) { return !j; }); }, 10000), 'Cancel ends the job on the node, which then removes it', 'after Cancel the job is ' + short(await jobOf('spirit.app.zzSleep')));
     ok(await until(function () { return text().then(function (t) { return /no longer listed/i.test(t); }); }, 10000), 'and the screen stays and says it is no longer listed, no reload', 'after Cancel the screen: ' + short(await text()));
     ok(await chrome.evaluate('window.closes.length === 0'), 'Cancel does not close the screen', 'Cancel called close');
 
     test.subHeading('a failed process stays (G29.16): Delete and no Cancel; Delete, and the screen goes with the job');
-    const failed = await call('jobs.create', { command: 'node', args: ['spirit/app/zzFail/zzFail.js'] });
-    ok(failed.status >= 200 && failed.status < 300, 'the world: zzFail started', 'jobs.create zzFail: ' + short(failed.text));
+    const failed = await call('job.create', { command: 'node', args: ['spirit/app/zzFail/zzFail.js'] });
+    ok(failed.status >= 200 && failed.status < 300, 'the world: zzFail started', 'job.create zzFail: ' + short(failed.text));
     ok(await until(function () { return jobOf('spirit.app.zzFail').then(function (j) { return !!j && j.status === 'failed'; }); }, 10000), 'the world: zzFail failed and stays listed', 'zzFail is ' + short(await jobOf('spirit.app.zzFail')));
     await mount('spirit.app.zzFail');
     ok(await until(function () { return buttons().then(function (b) { return b.indexOf('Delete') !== -1 && b.indexOf('Cancel') === -1; }); }, 10000), 'terminal, it offers Delete and no Cancel', 'its buttons: ' + short(await buttons()));

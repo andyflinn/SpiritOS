@@ -121,7 +121,7 @@ test.startTest('panel.js: what mounts covers its mounter (goal/G43.17)');
     const open = async function () {
       await c.evaluate('window.__zzOld = true').catch(function () {});
       await c.send('Page.navigate', { url: N.base + '/face.html' });
-      const up = await until(function () { return c.evaluate('!window.__zzOld && !!(window.spirit && window.spirit.ready && window.spirit.events)'); }, 20000);
+      const up = await until(function () { return c.evaluate('!window.__zzOld && !!(window.spirit && window.spirit.ready && window.spirit.event)'); }, 20000);
       await c.evaluate(HANDS);
       return up;
     };

@@ -53,8 +53,8 @@ async function boot(run) {
 function stop(c) { return new Promise(function (r) { if (!c || c.exitCode !== null) return r(); c.once('exit', function () { r(); }); c.kill(); setTimeout(r, 6000); }); }
 function alive(pid) { try { process.kill(pid, 0); return true; } catch (e) { return false; } }
 async function jobOf(base, module) {
-  const found = await call(base, 'jobs.search', { q: '' });
-  const rows = await Promise.all(((found.body && found.body.items) || []).map(function (i) { return call(base, 'jobs.get', { key: i.key }); }));
+  const found = await call(base, 'job.search', { q: '' });
+  const rows = await Promise.all(((found.body && found.body.items) || []).map(function (i) { return call(base, 'job.get', { key: i.key }); }));
   return rows.map(function (r) { return r.body && r.body.job; }).filter(function (j) { return !!j && j.kind === 'server' && j.module === module && (j.status === 'running' || j.status === 'pending'); })[0] || null;
 }
 
@@ -109,7 +109,7 @@ test.startTest('serverDEBUG.js: a server\'s DEBUG, switched and streamed (goal/G
     if (c.error) { test.fail('Chrome: ' + c.error); return; }
     const open = async function () {
       await c.send('Page.navigate', { url: N.base + '/face.html' });
-      return until(function () { return c.evaluate('!!(window.spirit && window.spirit.ready && window.spirit.events)'); }, 20000);
+      return until(function () { return c.evaluate('!!(window.spirit && window.spirit.ready && window.spirit.event)'); }, 20000);
     };
     ok(await open(), 'the world: the face shell has its spirit', 'the page has no spirit: nothing judged');
     const loaded = await c.evaluate('spirit.ready.then(function () { return spirit.require("spirit/element/search/app/serverDEBUG.js"); }).then(function () { return !!(spirit.element.spirit.element.search.app.serverDEBUG && spirit.element.spirit.element.search.app.serverDEBUG.create); }, function (e) { return String(e); })');

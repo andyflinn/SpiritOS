@@ -113,7 +113,7 @@ test.startTest('nodeInfo-rotate.js: the rotate key dialog, an element opened ove
     c = await chromePage(where);
     if (c.error) { test.fail('Chrome: ' + c.error); return; }
     await c.send('Page.navigate', { url: N.base + '/face.html' });
-    ok(await until(function () { return c.evaluate('!!(window.spirit && window.spirit.ready && window.spirit.events)'); }, 20000), 'the world: the face page has its spirit', 'the page has no spirit: nothing judged');
+    ok(await until(function () { return c.evaluate('!!(window.spirit && window.spirit.ready && window.spirit.event)'); }, 20000), 'the world: the face page has its spirit', 'the page has no spirit: nothing judged');
     // NO KEY IS ROTATED: the page's node.rotateCipher records the ask and refuses it.
     const spy = await c.evaluate('window.spirit.ready.then(function () { var S = window.spirit; window.__rotations = 0; if (!S.node || typeof S.node.rotateCipher !== "function") return "no spirit.node.rotateCipher"; S.node.rotateCipher = function () { window.__rotations += 1; return Promise.resolve({ status: 403, body: { ok: false, error: "refused by the test" } }); }; return "spied"; })');
     ok(spy === 'spied', 'the world: the page\'s node.rotateCipher is a recorder that refuses', 'the spy: ' + short(spy));

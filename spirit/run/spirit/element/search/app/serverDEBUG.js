@@ -11,7 +11,7 @@
 (function () {
   window.spirit.require('spirit/element/search/app/rowFormToggle.js');
   window.spirit.cacheManager('app');
-  window.spirit.cacheManager('jobs');
+  window.spirit.cacheManager('job');
 
   var LIVE = { running: true, pending: true };
 
@@ -24,7 +24,7 @@
     var offJobs = function () {};
     function label() { var A = S.data.app && S.data.app.data; var r = A ? A.rows()[key] : null; return (r && r.label) || key; }
     function job() {
-      var J = S.data.jobs && S.data.jobs.data;
+      var J = S.data.job && S.data.job.data;
       return J ? J.find(function (j) { return !!j && j.kind === 'server' && j.module === module && LIVE[j.status] === true; }) : null;
     }
     // WHAT THE SERVER SAID WHEN ASKED (its DEBUG {}): a page opened after the server started finds no job in its cache, since the
@@ -44,9 +44,9 @@
       t.set(now, 'turn ' + (now ? 'off' : 'on') + ' DEBUG ' + label());
       t.root.hidden = false;
     }
-    Promise.resolve(S.cacheManager('jobs')).then(function () {
+    Promise.resolve(S.cacheManager('job')).then(function () {
       if (gone) return;
-      offJobs = S.data.jobs.data.watch(function (id, j) { if (j && j.module === module) asked = null; paint(); });
+      offJobs = S.data.job.data.watch(function (id, j) { if (j && j.module === module) asked = null; paint(); });
       paint();
     }, function () { /* no jobs, no server to show */ });
     var offRow = S.data.app.data.watch(key, paint);

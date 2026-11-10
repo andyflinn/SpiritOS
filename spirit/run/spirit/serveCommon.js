@@ -22,7 +22,7 @@ const DEBUG = spirit.require('spirit/DEBUG.js');
 
 const MIME_TYPES = spirit.MIME_TYPES;
 
-// Job spawning (jobs.js's startProcessJob) passes relative script paths
+// Job spawning (job.js's startProcessJob) passes relative script paths
 // like "spirit/app/pushOrigin/pushOrigin.js" straight to
 // child_process.spawn with no cwd unless its caller passes one, so it
 // inherits whatever directory THIS process was started from. Every other

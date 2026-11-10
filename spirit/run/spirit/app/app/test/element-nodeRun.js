@@ -108,7 +108,7 @@ test.startTest('element-nodeRun.js: an app that says node.run is listed in pane 
     test.subHeading('a press runs it, active or not');
     if (!PUSH || !PUSH.run) { test.fail('pushOrigin says no node.run: nothing to press'); return; }
     // Every job the node holds, each read whole, its module with it.
-    const jobsOf = async function () { const got = await ask('jobs.search', { q: '' }); const out = []; for (const i of ((got && got.items) || [])) out.push(await ask('jobs.get', { key: i.key })); return JSON.stringify(out); };
+    const jobsOf = async function () { const got = await ask('job.search', { q: '' }); const out = []; for (const i of ((got && got.items) || [])) out.push(await ask('job.get', { key: i.key })); return JSON.stringify(out); };
     const before = await jobsOf();
     ok(before.indexOf('spirit.app.pushOrigin') === -1, 'the world: no job of pushOrigin before the press', 'a job of pushOrigin is there already: nothing judged');
     const activeNow = await ask('app.search', { q: '' });

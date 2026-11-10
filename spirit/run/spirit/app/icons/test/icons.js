@@ -108,9 +108,9 @@ test.startTest('icons: the Icons app, a face and an api, run by the node per req
     ok(await until(function () { return Promise.resolve(none()); }, 3000), 'and once the tree is answered no icons.js runs', 'icons.js still runs after the tree: ' + short(iconsProcesses(node.root)));
 
     test.subHeading('the box, 10: "The node keeps one job for the app, module spirit.app.icons, open while the app is switched on"');
-    const job = await ask('jobs.get', { key: 'spirit.app.icons' });
+    const job = await ask('job.get', { key: 'spirit.app.icons' });
     const j0 = (job.body && job.body.job) || null;
-    ok(!!j0 && !/end|exit|stop|cancel|fail/i.test(String(j0.status || '')), 'spirit.app.icons is a job, open', 'jobs.get spirit.app.icons: ' + short(job.body));
+    ok(!!j0 && !/end|exit|stop|cancel|fail/i.test(String(j0.status || '')), 'spirit.app.icons is a job, open', 'job.get spirit.app.icons: ' + short(job.body));
 
     test.subHeading('the face, by its tile (the box: "its tile opens no face"), and Andy\'s add row: "[➕] [an icon:paste] [keywords, comma separated][Add]"');
     await chrome.send('Page.navigate', { url: node.base + '/face.html' });
@@ -143,9 +143,9 @@ test.startTest('icons: the Icons app, a face and an api, run by the node per req
     ok(await until(function () { return Promise.resolve(none()); }, 3000), 'and its run ended: no icons.js runs', 'icons.js still runs after the Add: ' + short(iconsProcesses(node.root)));
     await add(chrome, G2, 'giraffe');
     await until(function () { return Promise.resolve(G2 in (json(SET) || {})); }, 10000);
-    const job2 = await ask('jobs.get', { key: 'spirit.app.icons' });
+    const job2 = await ask('job.get', { key: 'spirit.app.icons' });
     const j2 = (job2.body && job2.body.job) || null;
-    ok(!!j2 && !/end|exit|stop|cancel|fail/i.test(String(j2.status || '')), 'after the runs it is the same job, spirit.app.icons, still open', 'jobs.get spirit.app.icons after the runs: ' + short(job2.body));
+    ok(!!j2 && !/end|exit|stop|cancel|fail/i.test(String(j2.status || '')), 'after the runs it is the same job, spirit.app.icons, still open', 'job.get spirit.app.icons after the runs: ' + short(job2.body));
 
     test.subHeading('the attacker: five Adds at once, a page writing the table itself');
     // The box, 9: "one run per app at a time: calls to the same one-shot app wait their turn, so two saves never write iconSet.json at once."
@@ -172,7 +172,7 @@ test.startTest('icons: the Icons app, a face and an api, run by the node per req
     ok(/app-not-served/.test(asked.text), 'icons.' + (verbs[0] || '<verb>') + ' answers app-not-served', 'switched off, icons.' + (verbs[0] || '<verb>') + ' answered ' + asked.status + ' ' + short(asked.text));
     const tOff = await ask('api', {});
     ok(tOff.status === 200 && !(tOff.body && tOff.body.icons), 'the api tree holds no icons branch', 'switched off, the tree still holds icons: ' + short(tOff.body && tOff.body.icons));
-    const jOff = await ask('jobs.get', { key: 'spirit.app.icons' });
+    const jOff = await ask('job.get', { key: 'spirit.app.icons' });
     const jo = (jOff.body && jOff.body.job) || null;
     ok(!jo || /end|exit|stop|cancel|off/i.test(String(jo.status || '')), 'its job is no longer open', 'switched off, spirit.app.icons is ' + short(jOff.body));
     ok(none(), 'and nothing runs icons.js', 'switched off, icons.js runs: ' + short(iconsProcesses(node.root)));

@@ -13,7 +13,7 @@ const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fileSystem.js')).VENDORED_FOLDERS;
 
 // Andy on Q2: "yes, of course all 19". Q1: each under the family's own name.
-const NODE_FAMILIES = ['app', 'auth', 'config', 'contact', 'events', 'fs', 'jobs', 'net', 'node', 'owner', 'peer', 'relay'];
+const NODE_FAMILIES = ['app', 'auth', 'config', 'contact', 'event', 'fs', 'job', 'net', 'node', 'owner', 'peer', 'relay'];
 // fileServer went with run://process (goal/G43.20), so 18 are left.
 const SERVER_FAMILIES = ['agent', 'backup', 'chat', 'desk', 'deskClient', 'deskVerify'];
 const FAMILIES = NODE_FAMILIES.concat(SERVER_FAMILIES);

@@ -59,7 +59,7 @@ function watchRuns(root, name, opts) {
   const asked = (async function () {
     while (asking) {
       try {
-        const r = await fetch(opts.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'jobs.get', args: { key: 'spirit.app.' + name } }) });
+        const r = await fetch(opts.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'job.get', args: { key: 'spirit.app.' + name } }) });
         const b = await r.json();
         const pid = b && b.job && b.job.data && b.job.data.pid;
         if (pid) pids.add(String(pid));
@@ -97,7 +97,7 @@ function findChrome() {
 
 // A scratch copy of the tracked files of spirit/run, its node started on a free port. o.servers names app servers turned
 // on before it starts, as their owner turns one on: an app of spirit/app/<name>/ runs by active in
-// spirit/state/<name>/node.json (goal/G43.12, spirit/jobs.js), every server being one since goal/G43.20.
+// spirit/state/<name>/node.json (goal/G43.12, spirit/job.js), every server being one since goal/G43.20.
 async function scratchNode(o) {
   // One node for a whole run of every file (below): the run that started this one hands its address on.
   if (process.env.SPIRIT_MOUNT_BASE) return { base: process.env.SPIRIT_MOUNT_BASE, child: null, root: '', up: true, debug: true, shared: true };

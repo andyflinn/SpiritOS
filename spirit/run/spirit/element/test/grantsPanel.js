@@ -199,7 +199,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(made.length > 0 && !/auth\.(grant|revoke|search)\b|nodeGrants|data\.auth|agent\.|loopback:\/\/|contact\.search|job_id|'grants'|"grants"/.test(made), 'the panel names no grants table and no ID table: no auth grant verb, not nodeGrants, no agent verb, no loopback location, no branch (goal/G41.16)', made.length ? 'create() names a table of its own' : 'no function create( in grantsPanel.js: nothing judged');
   // Andy: "every fucking element gets the interfaces it needs".
   ok(!/\.verb\s*\(|\bapi\.(verb|escapeHtml)\b/.test(code), 'it asks its verbs through the spirit object: no api.verb, no api.escapeHtml (goal/G43.24)', 'grantsPanel.js still asks through the api it was handed');
-  ok(w.managers.indexOf('jobs') !== -1 && w.managers.indexOf('auth') !== -1, 'it loads the jobs family\'s cache manager and the auth family\'s, with its parts', 'managers: ' + short(w.managers));
+  ok(w.managers.indexOf('job') !== -1 && w.managers.indexOf('auth') !== -1, 'it loads the jobs family\'s cache manager and the auth family\'s, with its parts', 'managers: ' + short(w.managers));
   ok(E.grantsPanel && typeof E.grantsPanel.create === 'function', 'it registers spirit.element.spirit.element.grantsPanel.create', 'elements: ' + short(Object.keys(E)));
   if (!E.grantsPanel || typeof E.grantsPanel.create !== 'function') return;
   // Unconfigured, it mounts and says so, throwing nothing (goal/G41.19, box v23: "throws nothing even when unconfigured

@@ -42,8 +42,8 @@ ok(!fs.existsSync(path.join(RUN, 'spirit', 'app', 'agent', 'api')), 'spirit/app/
 const sub = tracked.filter(function (f) { return /^spirit\/run\/spirit\/app\/[^/]+\/api\//.test(f); });
 ok(!sub.length, 'no app keeps an ./api/ folder', sub.length + ' files still sit in one: ' + short(sub));
 
-test.subHeading('3. one <verb>.json for each of the agent\'s verbs, as spirit/jobs/ has');
-ok(fs.existsSync(path.join(RUN, 'spirit', 'jobs', 'get.json')), 'the world: spirit/jobs/get.json is the shape', 'no spirit/jobs/get.json to compare with');
+test.subHeading('3. one <verb>.json for each of the agent\'s verbs, as spirit/job/ has');
+ok(fs.existsSync(path.join(RUN, 'spirit', 'job', 'get.json')), 'the world: spirit/job/get.json is the shape', 'no spirit/job/get.json to compare with');
 VERBS.forEach(function (v) {
   let d = null;
   try { d = JSON.parse(read('spirit/app/agent/' + v + '.json')); } catch (e) { d = null; }

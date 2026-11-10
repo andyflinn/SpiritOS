@@ -126,7 +126,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   test.subHeading('it translates no stream: a table\'s rows are its cache manager\'s (goal/G41.28)');
   // Andy, the box: "anything not using the new spiritData.js and it's buddies clientCacheManager.js must do so in this
   // item. no exceptions."
-  ok(!/\.translate\s*\(|onJob|\bstream\b|events\.subscribe/.test(SRC), 'its code registers no translator and takes no stream', 'rowElement.js still translates or takes a stream');
+  ok(!/\.translate\s*\(|onJob|\bstream\b|event\.subscribe/.test(SRC), 'its code registers no translator and takes no stream', 'rowElement.js still translates or takes a stream');
   const unwatched = grantsTable({ branch: NODE.branch, key: 'key', label: 'label' });
   const nw = E.search.grant.rowElement.create({ key: 'K5', path: 'fs.search', label: 'Eve' }, { grants: unwatched });
   const nwCells = {}; (nw.cells() || []).forEach(function (c) { nwCells[c.name] = c.html; });
