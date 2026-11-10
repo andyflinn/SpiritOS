@@ -27,7 +27,8 @@ users.forEach(function (u) {
   const c = code(fs.readFileSync(path.join(REPO, u), 'utf8'));
   const specs = (c.match(/require\(\s*['"][^'"]*chokidar[^'"]*['"]\s*\)/g) || []).map(function (r) { return r.replace(/^require\(\s*['"]|['"]\s*\)$/g, ''); });
   let to = '';
-  try { to = specs.length === 1 && specs[0].charAt(0) === '.' ? require.resolve(path.resolve(path.dirname(path.join(REPO, u)), specs[0])) : ''; } catch (e) { to = ''; }
+  // goal/G43.32: loaded by spirit.require, by its run-root path ("spirit/jobs/chokidar/index.js"); a relative path is the old way.
+  try { to = specs.length === 1 ? require.resolve(specs[0].charAt(0) === '.' ? path.resolve(path.dirname(path.join(REPO, u)), specs[0]) : path.join(RUN, specs[0])) : ''; } catch (e) { to = ''; }
   ok(to === idxNew, u + ' requires ' + specs[0] + ', which is spirit/jobs/chokidar/index.js', u + ' requires ' + short(specs) + ' (resolves to ' + short(to || 'nothing') + ')');
 });
 
@@ -42,7 +43,7 @@ function child(src, dir) {
 }
 // deskClient's watch of its clone: what deskClient requires, watching a folder, hears a file added.
 const dcSpec = (code(fs.readFileSync(path.join(REPO, users[0]), 'utf8')).match(/require\(\s*['"]([^'"]*chokidar[^'"]*)['"]\s*\)/) || [])[1] || '';
-const dcFrom = dcSpec.charAt(0) === '.' ? path.resolve(path.dirname(path.join(REPO, users[0])), dcSpec) : dcSpec;
+const dcFrom = dcSpec.charAt(0) === '.' ? path.resolve(path.dirname(path.join(REPO, users[0])), dcSpec) : path.join(RUN, dcSpec);
 const dcOut = child([
   "const fs = require('fs'), path = require('path'), dir = process.argv[1];",
   "let w = null; try { w = require(require.resolve(" + JSON.stringify(dcFrom) + ", { paths: [" + JSON.stringify(path.dirname(path.join(REPO, users[0]))) + "] })); } catch (e) { console.log('NOT LOADED ' + e.message); process.exit(0); }",

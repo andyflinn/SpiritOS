@@ -86,6 +86,8 @@ const fake = {
         streamListener: function (a) { return deliver(a.json); },
       });
     }
+    // goal/G43.32, decided 3: on the node spirit.require is a path-translating wrapper, a script's module at once.
+    if (!/\/api\.js$/.test(q)) return require(path.join(RUN, q));
     return Promise.resolve({});
   },
   outcome: function (p) { return Promise.resolve(p).then(function (b) { return { status: 200, body: b }; }, function (e) { return { status: 500, body: { ok: false, error: String(e && e.message || e) } }; }); },

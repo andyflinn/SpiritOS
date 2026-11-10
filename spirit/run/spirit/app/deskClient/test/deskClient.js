@@ -83,6 +83,10 @@ globalThis.spirit = {
   require: function (p) {
     if (p === 'spirit/app/desk/api.js') return Promise.resolve(deskFamily);
     if (/spirit\/contact\/api\.js$/.test(p)) return Promise.resolve({ get: function () { return Promise.resolve({ person: { blocked: true } }); } });
+    // goal/G43.32, decided 3: on the node spirit.require is a path-translating wrapper, a script's module at once;
+    // appServer is the stand-in above.
+    if (/(^|\/)appServer\.js$/.test(p)) return appServerStub;
+    if (!/\/api\.js$/.test(p)) return require(path.join(RUN, p));
     return Promise.resolve({});
   },
   outcome: function (p) { return Promise.resolve(p).then(function (b) { return { status: 200, body: b }; }, function () { return { status: 0, body: null }; }); },

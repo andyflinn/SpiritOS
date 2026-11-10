@@ -71,7 +71,8 @@ users.forEach(function (u) {
   const c = code(fs.readFileSync(path.join(REPO, u), 'utf8'));
   const specs = (c.match(/require\(\s*['"][^'"]*chokidar[^'"]*['"]\s*\)/g) || []).map(function (r) { return r.replace(/^require\(\s*['"]|['"]\s*\)$/g, ''); });
   let to = '';
-  try { to = specs.length === 1 && specs[0].charAt(0) === '.' ? require.resolve(path.resolve(path.dirname(path.join(REPO, u)), specs[0])) : ''; } catch (e) { to = ''; }
+  // goal/G43.32: loaded by spirit.require, by its run-root path ("spirit/jobs/chokidar/index.js"); a relative path is the old way.
+  try { to = specs.length === 1 ? require.resolve(specs[0].charAt(0) === '.' ? path.resolve(path.dirname(path.join(REPO, u)), specs[0]) : path.join(RUN, specs[0])) : ''; } catch (e) { to = ''; }
   ok(to === idxNew, u + ' requires ' + specs[0] + ', which is spirit/jobs/chokidar/index.js', u + ' requires ' + short(specs) + ' (resolves to ' + short(to || 'nothing') + ')');
 });
 const byName = tracked.filter(function (f) { return /\.(js|mjs|cjs|html)$/.test(f) && !SELF.test(f) && f.indexOf(NEW + 'chokidar/') !== 0; })
