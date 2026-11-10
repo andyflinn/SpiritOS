@@ -123,12 +123,9 @@ html, body {
 #app-container.is-dialog .cancel-btn { background: #343434; }
 
 #app-container.is-dialog #app-content button:hover,
-#app-container.is-dialog .cancel-btn:hover,
-#app-container.is-dialog .icon-selector-field:hover { background: #464646; }
+#app-container.is-dialog .cancel-btn:hover { background: #464646; }
 
 #app-container.is-dialog select option { background: #222222; }
-#app-container.is-dialog .icon-selector-rows { background: #222222; }
-#app-container.is-dialog .icon-selector-row.is-active { background: #343434; }
 
 #app-container.is-dialog input[type="radio"],
 #app-container.is-dialog input[type="checkbox"] { accent-color: #c3c3c3; }
@@ -590,88 +587,6 @@ select option { background: var(--shell-pane); color: #eee; }
    row that cannot fit this at its minimum drops it onto its own
    line, and nothing has to count how many fields are in the row. */
 .icon-selector { position: relative; min-width: 260px; }
-
-/* Reads at the size the titlebar does — this is the row's content,
-   not its fine print. */
-.icon-selector-field {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  padding: 6px 12px;
-  border: none;
-  border-radius: 8px;
-  background: var(--shell-accent);
-  color: inherit;
-  font: inherit;
-  font-size: 16px;
-  cursor: pointer;
-  text-align: left;
-}
-
-.icon-selector-field:hover { background: var(--shell-accent-strong); }
-
-/* One fixed column for the picture, so 129 of them line up down the
-   left edge and the eye can run the list without reading it. */
-.icon-selector-glyph {
-  flex: 0 0 auto;
-  width: 24px;
-  font-size: 20px;
-  line-height: 1;
-  text-align: center;
-}
-
-.icon-selector-name { flex: 1; min-width: 0; }
-
-.icon-selector-caret { flex: 0 0 auto; opacity: 0.6; font-size: 12px; }
-
-/* Over the panel, not in it: opening the list must not push the
-   rest of the row down the page. */
-/* Its own floor as well as the field's. The list is pinned to the
-   field's edges, so it would otherwise inherit any squeeze — and a
-   line of names that has to scroll sideways is a line nobody
-   reads. */
-.icon-selector-list {
-  min-width: 260px;
-  position: absolute;
-  z-index: 20;
-  left: 0;
-  right: 0;
-  margin-top: 12px;
-  padding: 12px;
-  border-radius: 8px;
-  background: var(--shell-pane);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
-}
-
-.icon-selector-filter {
-  width: 100%;
-  margin-bottom: 12px;
-  font-size: 16px;
-}
-
-.icon-selector-rows { max-height: 40vh; overflow-y: auto; }
-
-/* One row type, one voice: the same shape as the closed field, so
-   picking a line and then reading it back says the same thing. */
-.icon-selector-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  padding: 6px 12px;
-  border: none;
-  border-radius: 8px;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  font-size: 16px;
-  cursor: pointer;
-  text-align: left;
-}
-
-.icon-selector-row:hover,
-.icon-selector-row.is-active { background: var(--shell-accent); }
 
 /* The contact selector (spirit/element/search/contact.js) draws through the
    shared list (shell/shared/js/listSearch.js), which lays out its own

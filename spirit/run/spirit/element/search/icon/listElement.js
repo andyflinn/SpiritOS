@@ -17,7 +17,7 @@
 //            offers the same one
 //   create(host, opts) -> { value, row, refresh(), redraw(), reload(), destroy() }, the list made once the fs cache is in
 //     opts.face          'pane' or 'dropdown'
-//     opts.placeholder, opts.all, opts.empty
+//     opts.placeholder, opts.all, opts.empty, opts.visible(row)   false holds a row back (the selector's exclude)
 //     opts.pick(row, glyph)   an icon chosen; row { glyph, keywords }
 //     opts.details(row, glyph)   a pane's press, when the app opens the icon itself
 (function () {
@@ -93,6 +93,7 @@
       verb: 'search',
       data: F().icons.branch,
       face: o.face,
+      visible: typeof o.visible === 'function' ? o.visible : undefined,
       placeholder: o.placeholder || 'choose an icon…',
       all: o.all,
       name: function (row) { return String(row.glyph || '') + ' ' + String((row.keywords || [])[0] || ''); },
