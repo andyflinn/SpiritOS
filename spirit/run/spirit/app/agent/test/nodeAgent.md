@@ -10,7 +10,7 @@ No agents talk to each other through it: each agent sees itself as the only agen
 
 - `spirit/app/agent/nodeAgent.js`, the server. The node starts `agent.js` (`./agent.md`), which loads it.
 - `spirit/app/agent/agent.json`, its manifest, in the new shape: `node.mount` true, no `kind`, no `operated`.
-- `spirit/app/agent/api.js`, its interface, and one `<verb>.json` per verb beside it: one verb per table, provider, model, persona and job; no `debug`
+- `spirit/app/agent/api.js`, its interface, and one `<verb>.json` per verb beside it: one verb per table, provider, model, persona and job, and the publisher's subscribe and unsubscribe; no `debug`
   (goal/G43.15, below).
 
 ## Its state
@@ -23,9 +23,9 @@ No agents talk to each other through it: each agent sees itself as the only agen
 
 - It starts on the node's pipe (`--pipe`) and its `--state` folder, and answers there.
 - Its DEBUG is appServer's own `DEBUG`, as every server's, kept by the node across restarts (goal/G43.15, below).
-- It streams its state on the node's job stream: it serves with no publisher, since nobody subscribes to agent, so it
-  serves no `subscribe` or `unsubscribe` its `api.js` does not declare (goal/G43.32, the branch rules; Andy: *"get it
-  done!"*); each table publishes a row as it changes, `{ agent: { table, row } }` or `{ agent: { table, id, removed } }`. There is no read
+- It streams its state: it serves with a publisher (family `agent`, its bootstrap an empty list), whose `subscribe` and
+  `unsubscribe` its `api.js` declares (goal/G43.32; Andy: *"for now, it needs to declare them in api.js"*), and each table
+  publishes a row as it changes, `{ agent: { table, row } }` or `{ agent: { table, id, removed } }`. There is no read
   verb: the page reads the rows from the stream.
 
 ## Requirements (goal/G41.21, box v17)

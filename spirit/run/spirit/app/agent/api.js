@@ -19,5 +19,11 @@ module.exports = {
     job: { op: 'id', id: 'key?', icon: 'text?', label: 'name?', loop: 'bool?', job: 'text?', bundle: 'text?', provider: 'key?', persona: 'key?', text: 'text?' },
     // A search may name one of the table's fields, narrowed to the rows holding it (goal/G41.21: providerId above).
     // No grant verb since goal/G41.21 (box v17: "agent.grant is removed altogether").
+    // appServer's streamPublisher (spirit/appServer.js), as desk's: the caller's key subscribes to agent's rows, sent to its
+    // family of that name from its position (run, since); unsubscribe stops it. Who may is the node's grant. Declared here
+    // for now (Andy, goal/G43.32: "for now, it needs to declare them in api.js", for agent as a client or a server; "later
+    // they'll move into appServer.js, as auto-verbs for appServers ... oos for now.").
+    subscribe: { family: 'id', run: 'text?', since: 'number?' },
+    unsubscribe: {},
   },
 };

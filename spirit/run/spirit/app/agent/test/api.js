@@ -34,7 +34,10 @@ test.subHeading('1. the agent\'s family at the app\'s top');
 const top = path.join(RUN, 'spirit', 'app', 'agent', 'api.js');
 let verbs = [];
 try { delete require.cache[top]; verbs = Object.keys(require(top).verbs || {}); } catch (e) { verbs = []; }
-ok(tracked.indexOf('spirit/run/spirit/app/agent/api.js') !== -1 && JSON.stringify(verbs) === JSON.stringify(VERBS), 'spirit/app/agent/api.js is there, in git, with provider, model, persona and job', 'spirit/app/agent/api.js: in git ' + (tracked.indexOf('spirit/run/spirit/app/agent/api.js') !== -1) + ', verbs ' + short(verbs));
+// The four tables' verbs, and the publisher's subscribe and unsubscribe (goal/G43.32; Andy: "for now, it needs to declare
+// them in api.js").
+const NOW = VERBS.concat(['subscribe', 'unsubscribe']);
+ok(tracked.indexOf('spirit/run/spirit/app/agent/api.js') !== -1 && JSON.stringify(verbs) === JSON.stringify(NOW), 'spirit/app/agent/api.js is there, in git, with provider, model, persona and job, subscribe and unsubscribe', 'spirit/app/agent/api.js: in git ' + (tracked.indexOf('spirit/run/spirit/app/agent/api.js') !== -1) + ', verbs ' + short(verbs));
 ok(!fs.existsSync(path.join(RUN, 'spirit', 'app', 'agent', 'api')), 'spirit/app/agent/api/ is gone', 'spirit/app/agent/api/ is still there');
 const sub = tracked.filter(function (f) { return /^spirit\/run\/spirit\/app\/[^/]+\/api\//.test(f); });
 ok(!sub.length, 'no app keeps an ./api/ folder', sub.length + ' files still sit in one: ' + short(sub));
