@@ -17,6 +17,9 @@
     var E = S.element;
     var key = String((options && options.key) || '');
     var gone = false;
+    // NO APP NAMED, NOTHING TO FOLLOW (goal/G41.19, box v23: an element missing its options "mounts and says it is not
+    // configured"): it watches no row and asks nothing.
+    if (!key) { host.textContent = 'No app named: not configured.'; return { destroy: function () { host.innerHTML = ''; } }; }
     function row() { var A = S.data.app && S.data.app.data; return A ? A.rows()[key] || null : null; }
     var form = E.spirit.element.rowForm.create(host, { icon: '✏️', button: 'Change' });
     var input = document.createElement('input');

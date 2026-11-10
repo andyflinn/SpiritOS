@@ -87,17 +87,44 @@
     return;
   }
 
-  // ON A PAGE: a file that is not there is empty. While someone listens, the node's file stream is watched, and each word.json
-  // is asked once and kept until the stream says it changed. With nobody listening nothing is watched, nor kept.
+  // ON A PAGE: a file that is not there is empty. Each word.json is asked once and kept until the stream says it changed
+  // (read, below). While someone listens, the node's file stream is watched to tell them; with nobody listening nothing is.
   var kept = Object.create(null);
   var told = [];
   var unwatch = null;
   var watching = 0;
   function ask(rel) { return window.spirit.ready.then(function (s) { return s.fs.loadFile(rel); }).then(null, function () { return null; }); }
+  // A word.json IS ASKED ONLY WHEN THE PAGE'S FILE LIST HOLDS IT (goal/G43.32; Andy: "it there WAS a word.json anywhere, it
+  // would already be in the damn file list?", and "yes cw, change it so"): the fs family's mirror, spirit.data.fs.data, is the
+  // node's whole tree; a word.json it does not list is not there, and is not asked for. Until the whole tree has come, a
+  // missing row says nothing: it waits for the tree. Each answer is kept with the row it was read at (wsl's red: "ask no
+  // other word.json and that one at most once"), and asked again only once the stream-fed row differs: nothing is watched
+  // for it.
+  function rowOf(rel) {
+    return Promise.resolve(window.spirit.cacheManager('fs')).then(function () {
+      var F = window.spirit.data && window.spirit.data.fs && window.spirit.data.fs.data;
+      if (!F) return null;
+      if (F.ready()) return F.file(rel);
+      return new Promise(function (resolve) {
+        var done = false;
+        var off = F.watch(function () {
+          if (done || !F.ready()) return;
+          done = true;
+          if (off) off();
+          resolve(F.file(rel));
+        });
+        if (done) off();
+      });
+    }, function () { return null; });
+  }
   function read(rel) {
-    if (!unwatch) return ask(rel);
-    if (!kept[rel]) kept[rel] = ask(rel);
-    return kept[rel];
+    return rowOf(rel).then(function (row) {
+      var stamp = row ? String(row.modified) + ':' + String(row.size) : '';
+      if (kept[rel] && kept[rel].stamp === stamp) return kept[rel].text;
+      var text = row ? ask(rel) : Promise.resolve(null);
+      kept[rel] = { stamp: stamp, text: text };
+      return text;
+    });
   }
   function watch() {
     var turn = ++watching;
@@ -105,7 +132,6 @@
       if (turn !== watching || !told.length) return;
       unwatch = window.spirit.data.fs.data.watch(function (p) {
         if (!/(^|\/)word\.json$/.test(String(p || ''))) return;
-        delete kept[p];
         told.slice().forEach(function (fn) { try { fn(); } catch (e) { /* one listener's fault */ } });
       });
     });
@@ -127,7 +153,6 @@
         if (told.length) return;
         watching++;
         if (unwatch) { unwatch(); unwatch = null; }
-        kept = Object.create(null);
       };
     },
   };
