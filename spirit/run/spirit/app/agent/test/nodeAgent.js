@@ -201,8 +201,10 @@ test.startTest('agent.js: the agent server');
 
   test.subHeading('it streams its state');
   const code = fs.readFileSync(CODE, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
-  ok(/serve\([^]*publisher\s*:/.test(code) && /bootstrap/.test(code), 'it serves with a publisher whose bootstrap hands a subscriber its state',
-    'no publisher with a bootstrap in agent.js');
+  // goal/G43.32: nobody subscribes to agent, so it serves no subscribe or unsubscribe its api.js does not declare (the
+  // branch rules: "each branch serves exactly the verbs its own api.js declares"; Andy: "get it done!").
+  ok(!/\bpublisher\s*:/.test(code), 'it serves with no publisher: its rows go on the node\'s job stream, and it serves no subscribe',
+    'nodeAgent.js still serves with a publisher, and so subscribe and unsubscribe its api.js does not declare');
   ok(!/['"]state['"]\s*:\s*\{|\bstate\s*:\s*\{\s*request/.test(code), 'there is no read verb: the page reads the state from the stream', 'agent.js serves a state verb');
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });

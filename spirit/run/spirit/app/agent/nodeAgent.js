@@ -3,7 +3,7 @@
 // spirit/run/spirit/app/agent/nodeAgent.js
 // THE AGENT SERVER (goal/G41.1): the server process behind the agent face app. It keeps all of the app's state, in
 // agent.db, an SQLite database in the folder the node hands it as --state (spirit/state/agent/data/ on a node, goal/G43.10,
-// never in git), and streams that state to its clients. Its contract and its test: ./test/nodeAgent.md and ./test/nodeAgent.js.
+// never in git), and publishes each change of it on the node's job stream, which its pages follow. Its contract and its test: ./test/nodeAgent.md and ./test/nodeAgent.js.
 //
 // NO AGENTS TALK TO EACH OTHER THROUGH IT (goal/G41.1, Q1, Andy: "the rules of this app will have no agents talking to
 // each other either, each agent will see itself as the only agent/user of the node"; the ruling of 2026-10-02, goal/G3.1,
@@ -45,5 +45,7 @@ appServer.serve(verbs, {
   // provider-failed: a provider's ask that got no model list (goal/G41.18); its extra.why says what the provider did. A
   // code the server does not declare reaches the page as "the handler failed", the reason lost (found live).
   codes: { 'no-such-row': { status: 404, text: 'no such row' }, 'provider-failed': { status: 502, text: 'the provider gave no model list' } },
-  publisher: { family: 'agent', bootstrap: function () { return []; } },
+  // NO PUBLISHER (goal/G43.32, the branch rules: "each branch serves exactly the verbs its own api.js declares"; Andy:
+  // "get it done!"): nobody subscribes to agent, so it serves no subscribe or unsubscribe. Its rows reach its pages on the
+  // node's job stream, appServer.publish's, as they always have.
 });
