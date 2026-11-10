@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/element/bundleEditor.js
 // THE BUNDLES, MADE AND KEPT: a simple panel-type shell element (goal/G41.14). Andy, box: the "bundleEditor", "at the
 // top of the page: a one-row add form: "new" [fieldInput.js/fieldRules:Label input field] [Add-Button]" (a rowForm since
@@ -35,19 +36,19 @@
       box.innerHTML = '';
       // AT THE TOP, A ROWFORM (goal/G41.27; Andy: "bundleEditor:\n[➕] [label] [Add]"): ➕, the label input in its span,
       // Add its button. What Add did is said below it.
-      var form = E.rowForm.create(box, { icon: '➕', button: 'Add' });
+      var form = E.spirit.element.rowForm.create(box, { icon: '➕', button: 'Add' });
       form.root.className += ' bundle-editor-add';
       var input = document.createElement('input');
       input.type = 'text';
       input.placeholder = 'label';
-      E.fieldInput.attach(input, 'name');
+      window.spirit.required.spirit.element.fieldInput.attach(input, 'name');
       form.span.appendChild(input);
       var add = form.button;
       var said = document.createElement('div');
       said.className = 'job-manifest-note';
       box.appendChild(said);
       // FILLING THE REST: the bundles, a pane whose labels are shown only.
-      bundles = E.search.bundle.create(box, { face: 'pane', columns: ['label', 'owner'], tabs: o.tabs, tabLabel: o.tabLabel });
+      bundles = E.spirit.element.search.bundle.create(box, { face: 'pane', columns: ['label', 'owner'], tabs: o.tabs, tabLabel: o.tabLabel });
       bundles.className += ' fill';
 
       function say(text) { said.textContent = String(text || ''); }
@@ -78,5 +79,5 @@
   }
 
   (window.spirit = window.spirit || {}).element = window.spirit.element || {};
-  window.spirit.element.bundleEditor = { create: create };
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/bundleEditor.js', { create: create }); });
 }());

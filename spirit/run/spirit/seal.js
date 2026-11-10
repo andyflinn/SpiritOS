@@ -1,4 +1,5 @@
 'use strict';
+require('./spirit.js');
 
 // spirit/run/spirit/seal.js
 // WHAT THE RELAY CARRIES AND CANNOT READ — cycle 10, R4.

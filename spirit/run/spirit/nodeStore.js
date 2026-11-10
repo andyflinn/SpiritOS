@@ -64,6 +64,8 @@
 // refuses to start and says why, rather than degrading to a second
 // in-memory code path that nothing exercises.
 
+// The spirit object first (goal/G43.32): every other part of the tree through spirit.require.
+require('./spirit.js');
 const fs = require('fs');
 const path = require('path');
 

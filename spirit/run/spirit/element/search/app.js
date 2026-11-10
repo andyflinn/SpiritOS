@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/element/search/app.js
 // THE APP LIST, A DROP-IN ELEMENT (goal/G43.2), as spirit/element/search/bundle/listElement.js is the bundle list: the
 // probabilitySearch the selector draws. Its contract and its test: ./app/test/listElement.md and ./app/test/listElement.js.
@@ -23,7 +24,7 @@
         return { status: 200, body: { ok: true, items: (got && got.items) || [], more: !!(got && got.more) } };
       });
     }
-    var list = window.spirit.element.search.create(host, {
+    var list = window.spirit.element.spirit.element.search.create(host, {
       // Its own data source (goal/G43.24): the search asks it, and is handed no api.
       search: search,
       data: window.spirit.data.app.data.branch,
@@ -63,7 +64,7 @@
       // Andy, box: "the appSelector will only show icon and label in the list."
       // Andy, box: "with the (de)activate buttons at the end of each row", which a dropdown has no room for.
       columns: [{ field: 'icon', label: '' }, { field: 'label', label: 'App', sort: 'text' }].concat(o.face === 'dropdown' ? [] : [{ field: 'active', label: '' }]),
-      element: function (row) { return window.spirit.element.search.app.rowElement.create(row); },
+      element: function (row) { return window.spirit.element.spirit.element.search.app.rowElement.create(row); },
       name: function (row) { return String((row && row.label) || ''); },
       empty: 'No app matches.',
     });
@@ -79,7 +80,6 @@
     };
   }
 
-  (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
-  Object.assign(['search', 'app'].reduce(function (o, k) { return (o[k] = o[k] || {}); }, (window.spirit.element = window.spirit.element || {})), { create: create });
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/app.js', { create: create }); });
 }());

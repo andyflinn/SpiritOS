@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/element/tabContainer.js
 // THE TAB CONTAINER (goal/G41.1): one row of tabs at the top, the selected tab's content in the vertical space left
 // below it. Other apps with tabs catch up with it later. Its contract and its test: ./test/tabContainer.md and
@@ -127,6 +128,5 @@
 
   var root = typeof window !== 'undefined' ? window : globalThis;
   root.spirit = root.spirit || {};
-  root.spirit.element = root.spirit.element || {};
-  root.spirit.element.tabContainer = { create: create };
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/tabContainer.js', { create: create }); });
 }());

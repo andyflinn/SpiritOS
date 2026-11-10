@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/app/join/join.js
 // THE JOIN APP, an app of spirit/app/ (goal/G43.26). Andy: "JOIN IS A FUCKING APP and DOES NOT FUCKING DRAG HALF OF THE OLD
 // SHIT INTO THE NEW!", and "the join icon sits next to all other icons on a shell (SO IT's A FCUKING APP, LIKE IT ALWAYS
@@ -18,7 +19,7 @@
     container.innerHTML = '';
     parts.then(function () {
       if (gone) return;
-      made = S.elements.joinList.create(container, {});
+      made = S.element.spirit.element.joinList.create(container, {});
     }, function () { if (!gone) container.textContent = 'Join could not be loaded.'; });
     return {
       destroy: function () {
@@ -30,6 +31,5 @@
     };
   }
 
-  S.elements = S.elements || {};
-  S.elements.join = { create: create };
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/join/join.js', { create: create }); });
 }());

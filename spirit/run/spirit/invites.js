@@ -1,4 +1,5 @@
 'use strict';
+require('./spirit.js');
 
 // The relay's invites — the `invites` table in spirit/state/relay.db since
 // cycle 3 (relayStore.js). It was spirit/state/invites.json until then; a
@@ -37,7 +38,7 @@
 const crypto = require('crypto');
 // On disc, and read by query (cycle 3). The same store relay.js holds, so
 // both see one connection.
-const relayStore = require('./relayStore');
+const relayStore = spirit.require('spirit/relayStore.js');
 
 function load(rootDir) {
   return relayStore.open(rootDir).invites.all();

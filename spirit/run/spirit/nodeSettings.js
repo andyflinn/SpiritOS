@@ -1,4 +1,5 @@
 'use strict';
+require('./spirit.js');
 
 // spirit/run/spirit/nodeSettings.js
 // WHAT THE OWNER HAS DECIDED ABOUT THEIR OWN NODE.

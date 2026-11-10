@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/element/search/valued.js
 // LABEL AND VALUE ROWS, SEARCHABLE (goal/G43.6). Andy, box: "It will be spirit.element.valued, on disc and in spirit", "a list of
 // a name and a value, one per line, with an optional group", "It is searchable (probabilitySearch), over rows it already holds,
@@ -28,7 +29,7 @@
     container.appendChild(root);
     parts.then(function () {
       if (gone) return;
-      list = E.search.create(root, {
+      list = E.spirit.element.search.create(root, {
         columns: o.columns,
         rows: function () { return (typeof o.rows === 'function' ? o.rows() : []).map(keyed); },
       });
@@ -52,5 +53,5 @@
   }
 
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
-  Object.assign(['search', 'valued'].reduce(function (o, k) { return (o[k] = o[k] || {}); }, E), { create: create });
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/valued.js', { create: create }); });
 }());

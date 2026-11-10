@@ -1,3 +1,4 @@
+'use strict';
 // ── A RELAY IS NOT BOOTED HERE ANY MORE ──────────────────────────────
 //
 // Cycle 0 (design/principles/NODE-AND-RELAY.md, decided by Andy
@@ -13,7 +14,7 @@
 // The spirit object first, as the global spirit (goal/G40.1): the relay loads it too, so it comes before the branch.
 require('./spirit.js');
 if (process.argv.slice(2).includes('--relay')) {
-  require('./relayServer');
+  spirit.require('spirit/relayServer.js');
   return;
 }
 
@@ -30,29 +31,29 @@ const https = require('https');
 const path = require('path');
 
 // The node's file system: the files of the run folder and what may be served or written (goal/G40.6).
-const fileSystem = require('./fileSystem');
+const fileSystem = spirit.require('spirit/fileSystem.js');
 // The helpers this node shares with the relay's startup module — body
 // reading, file sending, the 413 and malformed-path guards, /api/version.
-const common = require('./serveCommon');
+const common = spirit.require('spirit/serveCommon.js');
 // What this node answers about itself, and the one thing it writes there
 // unasked — see the boot call in the personal-node block.
-const nodeCard = require('./nodeCard');
+const nodeCard = spirit.require('spirit/nodeCard.js');
 // The address book, for one narrow purpose here: stashing a route a relay
 // has PROVEN onto a contact row that already exists. Everything else that
 // touches the book goes through hub; this does not, because it is a
 // stream event with no request behind it and no response to build.
-const contactBook = require('./contacts');
+const contactBook = spirit.require('spirit/contacts.js');
 // The keys this node has accepted for the relays it uses. Turning the URL
 // a packet arrived on into the relay KEY a route is made of.
-const relayKeys = require('./relayKeys');
+const relayKeys = spirit.require('spirit/relayKeys.js');
 // The owner badge (ownerBadge.js). Required here for one call at boot:
 // a node with no relay is given the kept one (ensureRelays, a relay row
 // of node.db's one table through relayKeys).
-const ownerBadge = require('./ownerBadge');
+const ownerBadge = spirit.require('spirit/ownerBadge.js');
 // Resolved ONCE, here, as the process loads — see buildStamp.js. Asking
 // again later would report whatever is on disk now, which is the lie
 // this is meant to catch.
-const buildStamp = require('./buildStamp');
+const buildStamp = spirit.require('spirit/buildStamp.js');
 const BUILD = buildStamp.resolve(fileSystem.ROOT_DIR);
 const STARTED_AT = new Date().toISOString();
 
@@ -87,7 +88,7 @@ common.verifyStartupCwd('spirit/server.js', ['spirit']);
 
 const ROOT_DIR = fileSystem.ROOT_DIR;
 
-const hub =require('./hub').createHub(ROOT_DIR);
+const hub =spirit.require('spirit/hub.js').createHub(ROOT_DIR);
 
 const port = common.portFromArgs(process.argv.slice(2)) || process.env.PORT || spirit.DEFAULT_SPIRIT_PORT;
 // This node's port into spirit/state/environment.json, before any server process starts (goal/G40.6: serveCommon writes
@@ -106,7 +107,7 @@ const HOME_PAGE = 'face.html';
 // `relayMode: false` always, now: a relay no longer loads this module at
 // all (cycle 0), which turns trafficLog's own relay gate from a runtime
 // promise into an absence.
-const trafficLog = require('./trafficLog').createTrafficLog({
+const trafficLog = spirit.require('spirit/trafficLog.js').createTrafficLog({
   rootDir: fileSystem.ROOT_DIR,
   relayMode: false,
 });
@@ -119,9 +120,9 @@ const trafficLog = require('./trafficLog').createTrafficLog({
 // A RELAY'S OWN ACTIVITY, ON ITS WAY TO A PANEL. The same seam shape as
 // arrivals and for the same reason: presenceNode receives, server.js
 // fans out, and neither knows about the other.
-const relayEvents = require('./arrivals').createFanOut();
+const relayEvents = spirit.require('spirit/arrivals.js').createFanOut();
 
-const arrivals = require('./arrivals').createArrivals({
+const arrivals = spirit.require('spirit/arrivals.js').createArrivals({
   // A packet that lands while no page is open waits IN THE LOG — a row
   // that is admitted and not yet taken. The seam keeps nothing of its
   // own and reaches the log through its api block, never through the
@@ -140,13 +141,13 @@ const arrivals = require('./arrivals').createArrivals({
 // shell (goal/G43.30).
 const BOOT_ASSETS = ['favicon.svg'];
 
-const jobs = require('./jobs')(port);
+const jobs = spirit.require('spirit/jobs.js')(port);
 jobs.startFsWatcherJob(ROOT_DIR);
 // WHERE THE JOIN STEPS STAND (goal/G30.1, box v40): a permanent job the shell's Join tile and the Join app hear, so
 // they draw when a seat, a contact or a face changes and never ask. Refreshed at /api/spirit after a relay, contact or
 // peer verb has answered (below), the moment the node knows.
 let joinStepsJob = null;
-try { joinStepsJob = require('./joinStepsJob').create(ROOT_DIR, jobs); } catch (e) { joinStepsJob = null; }
+try { joinStepsJob = spirit.require('spirit/joinStepsJob.js').create(ROOT_DIR, jobs); } catch (e) { joinStepsJob = null; }
 // THE ONE TABLE ON THE STREAM (goal/G40.11; Andy, 2026-10-26: "yes." to "one job for the table, one changed row per
 // update"): the permanent job 'shadow', published with each row of seen as it changed ({row}; {row: {publicKey, gone}}
 // when it went). It replaced the relays-whole job of goal/G40.10: a screen holds its rows and takes
@@ -159,7 +160,7 @@ let shadowJob = null;
 // open or closed, a card read, a report, a relay's rename. Only when one did change. The report is not on a row.
 const relayFactsSaid = Object.create(null);
 function relayFactsOf(row) {
-  const known = require('./relayKeys').byKey(ROOT_DIR, row.publicKey);
+  const known = spirit.require('spirit/relayKeys.js').byKey(ROOT_DIR, row.publicKey);
   return known && known.url ? hub.relayFacts(peerRouter, known.url) : null;
 }
 function shadowRow(row) {
@@ -172,8 +173,8 @@ function shadowRow(row) {
 function relayChanged(url) {
   if (!shadowJob) return;
   try {
-    const known = require('./relayKeys').byUrl(ROOT_DIR, url);
-    const row = known ? require('./nodeStore').open(ROOT_DIR).seen.get(known.key) : null;
+    const known = spirit.require('spirit/relayKeys.js').byUrl(ROOT_DIR, url);
+    const row = known ? spirit.require('spirit/nodeStore.js').open(ROOT_DIR).seen.get(known.key) : null;
     const facts = row ? relayFactsOf(row) : null;
     if (!facts || relayFactsSaid[row.publicKey] === JSON.stringify(facts)) return;
     jobs.ownNews('spirit.contact', 'row', { row: shadowRow(row) });
@@ -182,7 +183,7 @@ function relayChanged(url) {
 try {
   // A CONTACT ROW IS NEWS OF spirit.contact (goal/G43.20, Q1): { row }, nothing else in it.
   shadowJob = jobs.ownJob('spirit.contact');
-  require('./nodeStore').open(ROOT_DIR).seen.onChange(function (row) {
+  spirit.require('spirit/nodeStore.js').open(ROOT_DIR).seen.onChange(function (row) {
     try { jobs.ownNews('spirit.contact', 'row', { row: shadowRow(row) }); } catch (e) { /* the next change publishes again */ }
   });
 } catch (e) { shadowJob = null; }
@@ -203,7 +204,7 @@ let peerRouter = null;
 // on require.
 //
 // A relay has no such door and does not load this module (relayServer.js).
-const loopbackVerbs = require('./verbTable').createVerbTable();
+const loopbackVerbs = spirit.require('spirit/verbTable.js').createVerbTable();
 // The flat apiDoor (goal/G30.4), set once the app client exists below; /api/spirit dispatches through it (goal/G30.5).
 let nodeDoor = null;
 // This node's face (goal/G30.13), built on nodeDoor once it exists; presence hands it the relay's face events.
@@ -277,7 +278,7 @@ const pageStreams = new Set();
 // THE NODE'S ONE DISPATCHER OF EVENTS (goal/G40.6; Andy: "two verbs on events - publish - subscribe"): the jobs, the
 // relay events, the packets and the contact renames feed it; the pages, the processes and the face subscribe. Mounted
 // below as the events family; /api/events, a door outside any api, is gone.
-const events = require('./events/events.js').createEvents({
+const events = spirit.require('spirit/events/events.js').createEvents({
   jobs: jobs, relayEvents: relayEvents, arrivals: arrivals, renames: hub.contactRenames, pageStreams: pageStreams,
   readJsonBody: function (req) { return readJsonBody(req); }, bodyRefused: bodyRefused,
 });
@@ -321,7 +322,7 @@ function handleCreateJob(req, res) {
     catch (e) {
       // A process this node does not include is refused by name (slim/G1.3).
       if (e && (e.refusal === 'process-not-included' || e.refusal === 'not-a-process' || e.refusal === 'already-running')) {
-        const known = require('./spiritErrors').byCode(e.refusal);
+        const known = spirit.require('spirit/spiritErrors.js').byCode(e.refusal);
         res.writeHead(known.status, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({ ok: false, code: e.refusal, error: known.text, process: e.process }));
         return;
@@ -442,7 +443,7 @@ function writeFsResult(res, result) {
 // the bytes read; anything else is the bad JSON it always was. json answers the {ok, error} shape a verb answers.
 function bodyRefused(req, res, e, json) {
   const big = !!e && e.statusCode === 413;
-  const text = big ? 'Body too large: ' + common.bodyBytes(req) + ' of ' + require('./limits').BODY_MAX : 'Invalid JSON body';
+  const text = big ? 'Body too large: ' + common.bodyBytes(req) + ' of ' + spirit.require('spirit/limits.js').BODY_MAX : 'Invalid JSON body';
   res.writeHead(big ? 413 : 400, { 'Content-Type': (json ? 'application/json' : 'text/plain') + '; charset=utf-8' });
   res.end(json ? JSON.stringify({ ok: false, code: big ? 'too-big' : 'bad-request', error: text }) : text);
 }
@@ -492,7 +493,7 @@ function handleFsDelete(req, res) {
 // env logic and allow-list crap from it at well"; secrets will live in a later module that manages API keys and
 // secrets in a general fashion, the node being the owner.
 // net.fetch never reaches this machine (goal/G29.20).
-const netFence = require('./netFence');
+const netFence = spirit.require('spirit/netFence.js');
 
 // Generic outbound-request proxy — knows nothing about any specific
 // service, unlike the two hardcoded handlers this originally replaced (the
@@ -918,9 +919,9 @@ const server = http.createServer((req, res) => {
           return;
         }
         // Every verb but the proxy and the owner's fs.save and fs.load keeps the packet's bound (goal/G33.10).
-        if (['net.fetch', 'fs.save', 'fs.load'].indexOf(verb) === -1 && common.bodyBytes(req) > require('./limits').BODY_MAX) {
+        if (['net.fetch', 'fs.save', 'fs.load'].indexOf(verb) === -1 && common.bodyBytes(req) > spirit.require('spirit/limits.js').BODY_MAX) {
           res.writeHead(413, { 'Content-Type': 'text/plain; charset=utf-8' });
-          res.end('Body too large: ' + common.bodyBytes(req) + ' of ' + require('./limits').BODY_MAX);
+          res.end('Body too large: ' + common.bodyBytes(req) + ' of ' + spirit.require('spirit/limits.js').BODY_MAX);
           return;
         }
         // THROUGH THE FLAT apiDoor (goal/G30.5; Andy, 2026-10-20: "the api query belongs to the apiDoor"): a node
@@ -1030,7 +1031,7 @@ common.refuseListenError(server, port, 'spirit/server.js');
 //
 // Refused at boot, the way relayServer.js refuses, so a node too old says
 // so now instead of on the first search.
-const nodeStore = require('./nodeStore');
+const nodeStore = spirit.require('spirit/nodeStore.js');
 if (!nodeStore.available()) {
   console.error('node:sqlite is not available in Node ' + process.version +
     ' — a node needs 22.13 or later (nodeStore.js)');
@@ -1048,7 +1049,7 @@ catch (e) {
 // on the default and SAYS so, rather than refusing to start over a cache
 // size.
 (function () {
-  const settings = require('./nodeSettings').load(ROOT_DIR);
+  const settings = spirit.require('spirit/nodeSettings.js').load(ROOT_DIR);
   settings.problems.forEach(function (why) { console.warn('spirit/state/node.json: ' + why); });
 }());
 
@@ -1103,7 +1104,7 @@ catch (e) {
   // row and this one reads "this node was not running", not "nothing
   // happened". Written for every relay the record already knows.
   markRecord('started');
-  try { require('./serveCommon').ensureFirstRun(ROOT_DIR, { kind: 'node' }); }
+  try { spirit.require('spirit/serveCommon.js').ensureFirstRun(ROOT_DIR, { kind: 'node' }); }
   catch (e) { /* a caption must never be the reason a node will not boot */ }
 
   // ── AND A NODE WITH NO RELAY LIST GETS ONE ─────────────────────────
@@ -1165,17 +1166,17 @@ catch (e) {
   // THE RELAYS' OWN KEYS, pinned on first use (answerRelay.relayKey) and
   // the key a post to each is sealed to. It no longer answers any request:
   // the device-offer it answered was removed by goal/G16.2.
-  const answerer = require('./answerRelay').createAnswerer({
+  const answerer = spirit.require('spirit/answerRelay.js').createAnswerer({
     rootDir: ROOT_DIR,
     // THE RELAY'S CARD, through the router (goal/G22.6). Late-bound: the
     // router is built just below, and nothing asks before it exists.
     askKey: function (url) { return peerRouter.relayKey(url); },
   });
 
-  peerRouter = require('./peerPost').createPeerPost({
+  peerRouter = spirit.require('spirit/peerPost.js').createPeerPost({
     rootDir: ROOT_DIR,
     onRelayCard: function (url) { relayChanged(url); },
-    request: require('./hub').relayRequest,
+    request: spirit.require('spirit/hub.js').relayRequest,
     // THE QUEUE OUTLIVES THE PROCESS (cycle R16). This is the one peerPost
     // the tree builds; a relay builds none since partnering went (goal/G22.6).
     store: nodeStore.open(ROOT_DIR),
@@ -1191,7 +1192,7 @@ catch (e) {
     // while the process runs, and a node that acquired somebody an hour
     // ago must hear them now.
     door: function (from) {
-      return require('./hub').frontDoor(ROOT_DIR, from);
+      return spirit.require('spirit/hub.js').frontDoor(ROOT_DIR, from);
     },
     // WHERE A VERIFIED CARD IS KEPT (cycle 10, R3). peerPost checks the
     // signature — pure, and correct in a relay as in a node — and hands
@@ -1203,7 +1204,7 @@ catch (e) {
     // wanted answer: Contacts asks strangers for a card BEFORE adding
     // them, and a question must not write somebody into the book.
     keepCard: function (toKey, cardText) {
-      const book = require('./contacts');
+      const book = spirit.require('spirit/contacts.js');
       // ── A CARD WE ASKED FOR SITS ON THAT KEY'S ROW ──────────────
       //
       // After cycle 10 R5 a node cannot POST to somebody whose card it does not hold, so the card goes on the row,
@@ -1228,8 +1229,8 @@ catch (e) {
     // is: a card can arrive, and a key can rotate, while the process
     // runs. Empty means the post is refused — never sent plain.
     sealKeyFor: function (toKey) {
-      var row = require('./contacts').byPublicKey(ROOT_DIR, toKey);
-      var fromCard = row && require('./contacts').sealKeyOf(row);
+      var row = spirit.require('spirit/contacts.js').byPublicKey(ROOT_DIR, toKey);
+      var fromCard = row && spirit.require('spirit/contacts.js').sealKeyOf(row);
       if (fromCard) return fromCard;
       return answerer.relaySealKeyByKey ? answerer.relaySealKeyByKey(toKey) : '';
     },
@@ -1245,10 +1246,10 @@ catch (e) {
       if (!at && !relayUrl) return;
       // RANK ARRIVED: a packet demonstrably came from there, which proves
       // the road and says nothing about the name.
-      require('./hub').shadow(ROOT_DIR).note(from, {
+      spirit.require('spirit/hub.js').shadow(ROOT_DIR).note(from, {
         at: at || '', url: relayUrl || '',
         via: relayKeys.pinned(ROOT_DIR, relayUrl || '') || '',
-        rank: require('./seenPeers').ARRIVED,
+        rank: spirit.require('spirit/seenPeers.js').ARRIVED,
       });
       // AND THE DOT HEARS THE ARRIVAL (goal/G2.9). Andy: "and every incoming request?" — a packet the relay just
       // carried in is that relay saying its sender is there now, the strongest evidence there is; the live table
@@ -1259,7 +1260,7 @@ catch (e) {
       }
     },
     remember: function (from, verdict, relayUrl) {
-      return require('./hub').remember(ROOT_DIR, from, verdict, relayUrl);
+      return spirit.require('spirit/hub.js').remember(ROOT_DIR, from, verdict, relayUrl);
     },
     // AND WHERE AN ADMITTED PACKET GOES. The hook has existed since the
     // router landed and had no caller but a test, so until 2026-09-13 a
@@ -1282,7 +1283,7 @@ catch (e) {
   // "boots": true into the node with seams of its own, and appClient.startAll, which spawned
   // spirit/server.js --app for a manifest with "serves": true; and puppetPost.js, the node's own
   // listener for Caddy, switched on by spirit/state/face.json. All three are gone.
-  const appClient = require('./appClient').createAppClient({
+  const appClient = spirit.require('spirit/appClient.js').createAppClient({
     rootDir: ROOT_DIR,
     log: function (line) { console.log(line); },
     // No app named like a node family: they sit side by side in one flat table (goal/G30.4).
@@ -1294,7 +1295,7 @@ catch (e) {
   nodeDoor = loopbackVerbs.door(appClient, {
     // The owner's own calls carry his key and name (apiAuth/G1.13), so a server tracks his records by key like anybody's.
     owner: function () {
-      const me = require('./relayAuth').loadIdentity(ROOT_DIR);
+      const me = spirit.require('spirit/relayAuth.js').loadIdentity(ROOT_DIR);
       const own = { owner: true, key: me.publicKey };
       if (me.name) own.label = String(me.name);
       return own;
@@ -1320,15 +1321,15 @@ catch (e) {
   // app's. It is handed no decoder since goal/G16.5: arrivals.js reads the
   // envelope once and every witness is given what it read.
   {
-    const wire = require('./client/packet.js');
-    arrivals.witness(require('./puppetMode').puppetDoor({
+    const wire = spirit.require('spirit/client/packet.js');
+    arrivals.witness(spirit.require('spirit/puppetMode.js').puppetDoor({
       rootDir: ROOT_DIR,
       call: function (verb, args) { return nodeDoor.call(verb, args); },
       post: function (relayUrl, toKey, text) { return peerRouter.post(relayUrl, toKey, text); },
       encode: wire.encode,
-      auth: require('./relayAuth'),
+      auth: spirit.require('spirit/relayAuth.js'),
       selfKey: function () {
-        return require('./relayAuth').loadIdentity(ROOT_DIR).publicKey;
+        return spirit.require('spirit/relayAuth.js').loadIdentity(ROOT_DIR).publicKey;
       },
       log: function (line) { console.log(line); },
     }));
@@ -1337,7 +1338,7 @@ catch (e) {
     //
     // A request from the owner's face runs through the door the puppeteer uses above (nodeDoor.call), a file through
     // the browser's own GET (serveGet); faceStream carries what the loopback shell gets. faceHome.js says the rest.
-    faceHome = require('./faceHome').createFaceHome({
+    faceHome = spirit.require('spirit/faceHome.js').createFaceHome({
       call: function (verb, args) { return nodeDoor.call(verb, args); },
       serveFile: function (rel, res) { serveGet('/' + rel, res); },
       // A face's save in parts lands here (goal/G33.10): the work file copied to the target through the save gate.
@@ -1348,7 +1349,7 @@ catch (e) {
         const disc = require('fs');
         try { disc.mkdirSync(path.dirname(to), { recursive: true }); disc.copyFileSync(work, to); return { ok: true }; } catch (e) { return { ok: false, reason: 'error' }; }
       },
-      identity: function () { return require('./relayAuth').loadIdentity(ROOT_DIR); },
+      identity: function () { return spirit.require('spirit/relayAuth.js').loadIdentity(ROOT_DIR); },
       relayKey: function (url) { return relayKeys.pinned(ROOT_DIR, url) || ''; },
       // Whether this node set a face on that relay (goal/G41.30, RC1): the name on the relay's row, the node's own fact.
       faceSet: function (url) { return !!relayKeys.faceOf(ROOT_DIR, url); },
@@ -1366,8 +1367,8 @@ catch (e) {
     // record and its job-updated: on a puppet every server's published object also goes to the owner as a packet
     // named published, serialized, over the route the owner door's sending end would choose. puppetStream.js says
     // the rest; the master's shell routes the packet to onPublished (shell.js).
-    const puppetStream = require('./puppetStream').createPuppetStream({
-      puppet: require('./puppetMode').puppetIn(ROOT_DIR, function () {}),
+    const puppetStream = spirit.require('spirit/puppetStream.js').createPuppetStream({
+      puppet: spirit.require('spirit/puppetMode.js').puppetIn(ROOT_DIR, function () {}),
       route: function (to) { return hub.chooseRoute(peerRouter, to); },
       post: function (relayUrl, toKey, text, hints) { return peerRouter.post(relayUrl, toKey, text, hints); },
       encode: wire.encode,
@@ -1380,15 +1381,15 @@ catch (e) {
     // appPair/G1.3, a node verb with Andy's yes on it ("yes to all of wsl
     // points"). apiDoor.js says the rest; appClient answers it. Only the
     // front door's 'known' counts.
-    arrivals.witness(require('./apiDoor').createApiDoor({
+    arrivals.witness(spirit.require('spirit/apiDoor.js').createApiDoor({
       servers: nodeDoor,
       // `how` carries a background answer's mark to the queue (fileTransfer goal/G1.3).
       post: function (relayUrl, toKey, text, how) { return peerRouter.post(relayUrl, toKey, text, undefined, how); },
       encode: wire.encode,
-      isKnown: function (key) { return require('./hub').frontDoor(ROOT_DIR, key) === 'known'; },
+      isKnown: function (key) { return spirit.require('spirit/hub.js').frontDoor(ROOT_DIR, key) === 'known'; },
       // THE GATE'S GRANTS (apiAuth/G1.2, G1.3): a member's paths from node.db, read through apiAuth.js;
       // a store that cannot be read throws, and the gate fails closed.
-      auth: require('./apiAuth').createApiAuth({ rootDir: ROOT_DIR }),
+      auth: spirit.require('spirit/apiAuth.js').createApiAuth({ rootDir: ROOT_DIR }),
       log: function (line) { console.log(line); },
     }));
 
@@ -1398,9 +1399,9 @@ catch (e) {
     // the one answer that carries that command's hash. ownerPost.js says
     // which answers are taken. The route is hub's chooseRoute, the same
     // choice every post makes.
-    const ownerPost = require('./ownerPost').createOwnerPost({
-      identity: function () { return require('./relayAuth').loadIdentity(ROOT_DIR); },
-      auth: require('./relayAuth'),
+    const ownerPost = spirit.require('spirit/ownerPost.js').createOwnerPost({
+      identity: function () { return spirit.require('spirit/relayAuth.js').loadIdentity(ROOT_DIR); },
+      auth: spirit.require('spirit/relayAuth.js'),
       encode: wire.encode,
       randomId: wire.randomId,
       route: function (to) { return hub.chooseRoute(peerRouter, to); },
@@ -1409,7 +1410,7 @@ catch (e) {
     arrivals.witness(ownerPost.onArrival);
 
     // HIS SERVERS' BOX REPORTS, kept in memory and summed per box (G10).
-    boxes = require('./boxes').createBoxes({ rootDir: ROOT_DIR });
+    boxes = spirit.require('spirit/boxes.js').createBoxes({ rootDir: ROOT_DIR });
     arrivals.witness(boxes.onArrival);
     peerOwnerPost = function (puppetKey, verb, body) { return ownerPost.send(puppetKey, verb, body); };
   }
@@ -1433,12 +1434,12 @@ catch (e) {
       // hands {present, at: <ms>} for an ID it draws; the shadow row takes that word and that moment, and
       // nothing else on the row moves.
       if (what && typeof what.at === 'number') {
-        require('./hub').shadow(ROOT_DIR).note(key, { present: what.present === true, seen: what.at });
+        spirit.require('spirit/hub.js').shadow(ROOT_DIR).note(key, { present: what.present === true, seen: what.at });
         return;
       }
-      require('./hub').shadow(ROOT_DIR).note(key, Object.assign({
+      spirit.require('spirit/hub.js').shadow(ROOT_DIR).note(key, Object.assign({
         via: relayKeys.pinned(ROOT_DIR, (what && what.url) || '') || '',
-        rank: require('./seenPeers').HOST,
+        rank: spirit.require('spirit/seenPeers.js').HOST,
       }, what || {}));
     },
     // ── THE OWNER'S RELAY RECORD (cycle 11's R2) ─────────────────
@@ -1453,12 +1454,12 @@ catch (e) {
     // owner whose disc filled up would otherwise lose presence itself
     // rather than the log of it.
     recordReport: function (url, report) {
-      try { require('./nodeStore').open(ROOT_DIR).record.put(url, report); }
+      try { spirit.require('spirit/nodeStore.js').open(ROOT_DIR).record.put(url, report); }
       catch (e) { /* the record is a witness, never a participant */ }
     },
     recordEdge: function (url, kind, why) {
       relayChanged(url);
-      try { require('./nodeStore').open(ROOT_DIR).record.edge(url, kind, null, why); }
+      try { spirit.require('spirit/nodeStore.js').open(ROOT_DIR).record.edge(url, kind, null, why); }
       catch (e) { /* as above */ }
     },
     rootDir: ROOT_DIR,
@@ -1554,10 +1555,10 @@ catch (e) {
       // signed reply"). It outranks a packet merely arriving and is
       // outranked by the relay that holds the person.
       try {
-        require('./hub').shadow(ROOT_DIR).note(body.key, {
+        spirit.require('spirit/hub.js').shadow(ROOT_DIR).note(body.key, {
           at: body.at, url: url, label: body.label || '',
           via: relayKeys.pinned(ROOT_DIR, url) || '',
-          rank: require('./seenPeers').PROVED,
+          rank: spirit.require('spirit/seenPeers.js').PROVED,
           // THE WHOLE ROW (R28): a relay announcing a claim or a rename says
           // whether the member is connected right now, and only says so
           // when it is. Silence leaves what the node knew alone.
@@ -1618,7 +1619,7 @@ catch (e) {
   });
   // Which relays hold a seat for this node is asked of each relay's card,
   // through this router (goal/G22.6: GET /api/relay/key is closed).
-  peerRouter.startStreams(require('./hub').relayKeyAsk(peerRouter)).catch(() => {});
+  peerRouter.startStreams(spirit.require('spirit/hub.js').relayKeyAsk(peerRouter)).catch(() => {});
 
   // ── THE CLAIMS, WHERE WHAT THEY NEED IS ────────────────────────────
   //
@@ -1667,9 +1668,9 @@ catch (e) {
   const LIST = { ok: true, items: [{ key: '', label: '' }], more: false };
   // jobs.list is gone: a list is a search (puppets/G2, nodeSearches.js).
   // proxyVerb is the plain body-in, answer-out wrapper, whatever the group.
-  const nodeSearches = require('./nodeSearches').createNodeSearches({ jobs: jobs, rootDir: ROOT_DIR, mimeTypes: spirit.MIME_TYPES });
+  const nodeSearches = spirit.require('spirit/nodeSearches.js').createNodeSearches({ jobs: jobs, rootDir: ROOT_DIR, mimeTypes: spirit.MIME_TYPES });
   // auth (apiAuth/G1.4, its own family since goal/G30.6): the owner's allow-table, loopback only. An answer is the verb's object as is; a refusal is the catalogue's, by name.
-  const apiAuth = require('./apiAuth').createApiAuth({
+  const apiAuth = spirit.require('spirit/apiAuth.js').createApiAuth({
     rootDir: ROOT_DIR,
     tree: function () { return nodeDoor.ask('api').then(function (r) { return (r && r.body) || {}; }, function () { return {}; }); },
   });
@@ -1701,7 +1702,7 @@ catch (e) {
       // A REFUSAL SAYS WHY (goal/G10.10; Andy, 2026-10-12: "all refusals everywhere should say why."): the reason in
       // extra.why beside the code's own words.
       const refusal = function (code, why) {
-        const e = require('./spiritErrors').byCode(code);
+        const e = spirit.require('spirit/spiritErrors.js').byCode(code);
         const body = { ok: false, code: code, error: e ? e.text : code };
         if (why) body.extra = { why: String(why) };
         send((e && e.status) || 400, body);
@@ -1759,7 +1760,7 @@ catch (e) {
 
   // THE app FAMILY (goal/G43.2; Andy, box: "the "app" api-family will sit nicely beside all other families"): its verbs,
   // "just a search string", over the plugins in its folder (spirit/app.js). A face with no star may call it (Andy, box).
-  const appFamily = require('./app').createApp({ rootDir: ROOT_DIR, jobs: jobs });
+  const appFamily = spirit.require('spirit/app.js').createApp({ rootDir: ROOT_DIR, jobs: jobs });
   loopbackVerbs.mount('app', path.join(__dirname, 'app'), {
     'search': { request: { q: '' }, reply: LIST, handler: proxyVerb(function (b) { return appFamily.search(b); }) },
     // goal/G43.9, peer review wsl, Andy's yes on Q1. Off the face with no star: spirit/faceHome.js.
@@ -1828,7 +1829,7 @@ catch (e) {
     // behind the shell's two-press button.
     'rotateCipher': { request: {}, reply: { relays: 0, ok: true, at: 0 }, handler: function (rq, rs) {
       readJsonBody(rq).then(function () {
-        const said = require('./nodeCard').rotate(ROOT_DIR);
+        const said = spirit.require('spirit/nodeCard.js').rotate(ROOT_DIR);
         let relays = 0;
         if (said.ok) {
           try { relays = peerRouter ? peerRouter.handOverCardEverywhere() : 0; } catch (e) { relays = 0; }
@@ -1841,7 +1842,7 @@ catch (e) {
       }).catch(function (e) { bodyRefused(rq, rs, e, true); });
     } },
     // THE SHELL THE NODE NAMES (goal/G43.18, box v29; the verb reviewed by wsl, Andy: "the verb is node.shell"): spirit/nodeShell.js.
-    'shell': { request: { at: 'home', name: '' }, reply: { name: '' }, handler: proxyVerb(function (b) { return require('./nodeShell').shell(ROOT_DIR, b); }) },
+    'shell': { request: { at: 'home', name: '' }, reply: { name: '' }, handler: proxyVerb(function (b) { return spirit.require('spirit/nodeShell.js').shell(ROOT_DIR, b); }) },
   }, { wire: false, by: 'hub.js' });
 
   // ── owner.command: A COMMAND FOR ONE OF THIS NODE'S PUPPETS (puppets/G4)
@@ -1863,7 +1864,7 @@ catch (e) {
       if (!key) return { ok: false, status: 400, error: 'key required' };
       const box = boxes ? boxes.get(key) : null;
       if (!box) return { ok: false, status: 404, error: 'no such box' };
-      return require('./limits').boundedGet({ ok: true, status: 200, key: key, box: box });
+      return spirit.require('spirit/limits.js').boundedGet({ ok: true, status: 200, key: key, box: box });
     }) },
     // The puppet's answer as it came, its hash beside it.
     'command': { request: { to: '', command: '', body: {} }, reply: { hash: '' }, handler: function (rq, rs) {
@@ -1906,7 +1907,7 @@ catch (e) {
     'claim': { request: { url: '', name: '', invite: '', inviteLabel: '' }, reply: { mine: false }, handler: function (rq, rs) {
       hub.handleClaim(rq, rs, readJsonBody, {
         router: peerRouter,
-        probe: require('./hub').relayKeyAsk(peerRouter),
+        probe: spirit.require('spirit/hub.js').relayKeyAsk(peerRouter),
       });
     } },
     // Read-only: does this peer own the relay at that url? Answered off the
@@ -1937,7 +1938,7 @@ catch (e) {
     'face': { request: { url: '', name: '' }, reply: { ok: true, url: '', name: '', email: '' }, handler: proxyVerb(function (b) { return hub.relayFace(b, { router: peerRouter }); }) },
     // relay.join {url, email, code} (goal/G30.2, confirmed by Andy 2026-10-19): this node joins a relay by its user's
     // email. With an email it asks; with the code from the mailed link it takes the seat.
-    'join': { request: { url: '', email: '', code: '', link: '' }, reply: { ok: true, url: '' }, handler: proxyVerb(function (b) { return hub.relayJoin(b, { router: peerRouter, port: Number(port) || spirit.DEFAULT_SPIRIT_PORT, probe: require('./hub').relayKeyAsk(peerRouter) }); }) },
+    'join': { request: { url: '', email: '', code: '', link: '' }, reply: { ok: true, url: '' }, handler: proxyVerb(function (b) { return hub.relayJoin(b, { router: peerRouter, port: Number(port) || spirit.DEFAULT_SPIRIT_PORT, probe: spirit.require('spirit/hub.js').relayKeyAsk(peerRouter) }); }) },
     // WHAT A RELAY HAS SAID OVER TIME — cycle 11's R6. This reads what was
     // already written as the reports arrived, so it reaches no network at
     // all, though the namespace it sits in is marked `wire: true`.
@@ -2048,7 +2049,7 @@ catch (e) {
 // The record is a witness, never a participant, so a failure is swallowed.
 function markRecord(kind) {
   try {
-    const rec = require('./nodeStore').open(ROOT_DIR).record;
+    const rec = spirit.require('spirit/nodeStore.js').open(ROOT_DIR).record;
     rec.relays().forEach(function (url) { rec.edge(url, kind, null, ''); });
   } catch (e) { /* as recordEdge */ }
 }
@@ -2066,7 +2067,7 @@ function markRecord(kind) {
     let told = 0;
     // The browser's EventSource honours `retry:` natively, so telling the
     // page costs no client code at all.
-    try { told += require('./presence').sayGoingAway(Array.from(pageStreams), 3000); }
+    try { told += spirit.require('spirit/presence.js').sayGoingAway(Array.from(pageStreams), 3000); }
     catch (e) { /* no page open */ }
     // The relay half of this goodbye — its members' streams —
     // is relayServer.js since cycle 0. Same sayGoingAway, same three seconds.
@@ -2087,7 +2088,7 @@ const startEmail = common.emailFromArgs(process.argv.slice(2));
 // A request Node cannot parse is answered 400, never a reset (goal/G41.30, serveCommon.answerClientErrors).
 common.answerClientErrors(server);
 server.listen(port, BIND_HOST, () => {
-  hub.joinAtStart(startEmail, { router: peerRouter, port: Number(port) || spirit.DEFAULT_SPIRIT_PORT, probe: require('./hub').relayKeyAsk(peerRouter) })
+  hub.joinAtStart(startEmail, { router: peerRouter, port: Number(port) || spirit.DEFAULT_SPIRIT_PORT, probe: spirit.require('spirit/hub.js').relayKeyAsk(peerRouter) })
     .catch(function (e) { return { lines: ['The join at start broke: ' + ((e && e.message) || e) + '. Join from Natter instead.'] }; })
     .then(function (r) {
       (r.lines || []).forEach(function (line) { console.log(line); });

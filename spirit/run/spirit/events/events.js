@@ -22,7 +22,7 @@
 
 // The spirit object first, as the global spirit (goal/G40.1).
 require('../spirit.js');
-const limits = require('../limits');
+const limits = spirit.require('spirit/limits.js');
 
 // o: { jobs, relayEvents, arrivals, renames, readJsonBody, bodyRefused, pageStreams }
 function createEvents(o) {

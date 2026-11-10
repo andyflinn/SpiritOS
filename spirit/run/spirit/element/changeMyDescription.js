@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/element/changeMyDescription.js
 // THE NODE'S DESCRIPTION, CHANGED (goal/G41.6; Andy, Q1: Info's two blocks "become shell elements of their own, each
 // with its test folder"). One field, its Save and the bytes left: the second of the two things this node answers to
@@ -30,7 +31,7 @@
       '<div class="stack"><div data-description="form"></div>' +
       '<div data-description="left" class="job-manifest-note"></div>' +
       '<div data-description="said" class="job-start-error"></div></div>';
-    var form = E.rowForm.create(host.querySelector('[data-description="form"]'), { icon: '✏️', button: 'Save' });
+    var form = E.spirit.element.rowForm.create(host.querySelector('[data-description="form"]'), { icon: '✏️', button: 'Save' });
     form.span.innerHTML = '<input type="text" data-field="description" placeholder="' + esc('a sentence somebody who has just found you would want to read') + '">';
     var input = host.querySelector('[data-field="description"]');
     var left = host.querySelector('[data-description="left"]');
@@ -81,7 +82,7 @@
     });
 
     parts.then(function () {
-      if (!gone && E.fieldInput) E.fieldInput.attach(input, 'description');
+      if (!gone && window.spirit.required.spirit.element.fieldInput) window.spirit.required.spirit.element.fieldInput.attach(input, 'description');
     }, function () { /* the node still refuses what the rule refuses */ });
     input.addEventListener('input', count);
     // Return saves, as the button does.
@@ -100,5 +101,5 @@
     };
   }
 
-  E.changeMyDescription = { create: create };
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/changeMyDescription.js', { create: create }); });
 }(typeof window !== 'undefined' ? window : globalThis));

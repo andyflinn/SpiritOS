@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/element/joinSteps.js
 // THE JOIN APP'S STEPS, DECIDED IN ONE PLACE (goal/G30.1, box v39 and v40). The Join app walks a new user from joining
 // to his face link; its manifest lists the steps in order, each with its name, icon and the fact that ends it
@@ -51,5 +52,5 @@
   }
 
   (window.spirit = window.spirit || {}).element = window.spirit.element || {};
-  window.spirit.element.joinSteps = { fromJob: fromJob, done: done, current: current, linkRelay: linkRelay };
+  window.spirit.required && ['spirit', 'element', 'joinSteps'].reduce(function (o, k, i, all) { if (i === all.length - 1) { if (o[k] === undefined) o[k] = { fromJob: fromJob, done: done, current: current, linkRelay: linkRelay }; return o[k]; } return (o[k] = o[k] && typeof o[k] === 'object' ? o[k] : {}); }, window.spirit.required);
 }());

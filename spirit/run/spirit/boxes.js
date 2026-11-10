@@ -1,4 +1,5 @@
 'use strict';
+require('./spirit.js');
 // spirit/run/spirit/boxes.js
 // THE OWNER'S VIEW OF HIS BOXES — public-app-server/G10, the node's half.
 //
@@ -110,13 +111,13 @@ function createBoxes(opts) {
   function search(q) {
     const words = String(q == null ? '' : q).trim();
     const text = words === '*' ? '' : words;
-    const bucket = require('./probabilityBucket').createProbabilityBucket(Infinity);
-    const match = require('./probabilityStringObjectMatch').probabilityStringObjectMatch;
+    const bucket = spirit.require('spirit/probabilityBucket.js').createProbabilityBucket(Infinity);
+    const match = spirit.require('spirit/probabilityStringObjectMatch.js').probabilityStringObjectMatch;
     list().forEach(function (g) {
       const p = text ? match(text, { label: boxLabel(g), fingerprint: String(g.fingerprint || '') }) : 0;
       bucket.seatFor(p, { key: g.fingerprint, label: boxLabel(g) });
     });
-    const r = bucket.serialize(null, require('./limits').PLAINTEXT_MAX);
+    const r = bucket.serialize(null, spirit.require('spirit/limits.js').PLAINTEXT_MAX);
     return { items: r.items, more: !!r.more };
   }
   function get(key) {

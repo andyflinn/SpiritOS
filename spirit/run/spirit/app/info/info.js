@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/app/info/info.js
 // WHAT THIS NODE SAYS ABOUT ITSELF — the owner's screen, an app of spirit/app/ (goal/G43.24). Its contract and its test:
 // ./test/info.md and ./test/info.js.
@@ -22,7 +23,7 @@
     container.innerHTML = '';
     parts.then(function () {
       if (gone) return;
-      made = S.elements.nodeInfo.create(container, { open: o.open });
+      made = S.element.spirit.element.nodeInfo.create(container, { open: o.open });
     }, function () { if (!gone) container.textContent = 'Info could not be loaded.'; });
     return {
       destroy: function () {
@@ -34,6 +35,5 @@
     };
   }
 
-  S.elements = S.elements || {};
-  S.elements.info = { create: create };
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/info/info.js', { create: create }); });
 }());

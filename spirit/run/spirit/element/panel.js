@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/element/panel.js
 // WHAT MOUNTS COVERS ITS MOUNTER (goal/G43.17; Q12, Andy: "yes." to panel, in spirit/element/panel.js). Its contract and its
 // test: ./test/panel.md and ./test/panel.js.
@@ -36,7 +37,7 @@
       var box = document.createElement('div');
       box.className = 'app-container fill';
       // THE TITLE BAR OF ALL PANELS IS ONE rowForm (Andy: "rowForm: [app-icon] "<app-label> [x]").
-      var bar = E.rowForm.create(box, { icon: spec.icon || '', button: '✕' });
+      var bar = E.spirit.element.rowForm.create(box, { icon: spec.icon || '', button: '✕' });
       bar.button.className = 'app-container-close';
       bar.button.title = 'Close';
       bar.span.textContent = String(spec.label || '');
@@ -71,7 +72,7 @@
           if (look.label !== undefined) bar.span.textContent = String(look.label);
           if (look.icon !== undefined) {
             var hold = document.createElement('span');
-            E.icon.create(hold, { glyph: look.icon });
+            E.spirit.element.icon.create(hold, { glyph: look.icon });
             if (hold.firstChild) bar.root.replaceChild(hold.firstChild, bar.root.firstChild);
           }
         },
@@ -115,6 +116,5 @@
     };
   }
 
-  S.elements = S.elements || {};
-  S.elements.panel = { create: create };
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/panel.js', { create: create }); });
 }());

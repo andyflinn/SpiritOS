@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/element/search/contact.js
 // ONE SHELL ELEMENT: the contact selector, the peer picker apps build their screens with.
 //
@@ -102,7 +103,7 @@
     function presenceGlyph(key) { return presentOf[key] === true ? '🟢' : '⚪'; }
     // EACH ROW A ROW ELEMENT: its cells painted from the row and from what present and mark said of its key.
     function element(row, key) {
-      var el = window.spirit.element.rowElement.create({
+      var el = window.spirit.element.spirit.element.rowElement.create({
         kind: 'contact',
         key: key,
         row: row,
@@ -117,7 +118,7 @@
       // element in its place (the span that carries its title, or the cell), as it is mounted and after each repaint.
       var hosts = null;
       function iconsIn() {
-        var I = window.spirit.element.icon;
+        var I = window.spirit.element.spirit.element.icon;
         if (!hosts || !I || typeof I.create !== 'function') return;
         ['mine', 'present', 'status'].forEach(function (name) {
           var h = hosts[name];
@@ -177,7 +178,7 @@
     var any = function (name) { return function (all) { return all.some(function (r) { return r && r[name] === true; }); }; };
 
     parts().then(function () {
-      list = window.spirit.element.search.create(pane, {
+      list = window.spirit.element.spirit.element.search.create(pane, {
         face: isPane ? 'pane' : 'dropdown',
         placeholder: isPane ? '' : (options.placeholder || 'choose a contact…'),
         all: isPane ? undefined : options.all,
@@ -240,5 +241,5 @@
   // THE SHELL'S ELEMENT SHAPE (goal/G41.19, box v23: "every element gets a container and appends itself"): create(container,
   // options) appends the control to the container and answers it.
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
-  Object.assign(['search', 'contact'].reduce(function (o, k) { return (o[k] = o[k] || {}); }, (window.spirit.element = window.spirit.element || {})), { create: function (container, options) { var root = createContactSelector(options); container.appendChild(root); return root; } });
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/contact.js', { create: function (container, options) { var root = createContactSelector(options); container.appendChild(root); return root; } }); });
 })();

@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/element/appInstaller.js
 // THE APP INSTALLER (goal/G41.1, box v14). Andy: "we need a new standard shell element, the shell/js/appInstaller.js".
 // One activate/deactivate button for one app, drawn the same wherever it is used (the Apps list's column, the app's
@@ -60,5 +61,5 @@
     return createForApp(host, app[1]);
   }
 
-  E.appInstaller = { create: create };
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/appInstaller.js', { create: create }); });
 }());

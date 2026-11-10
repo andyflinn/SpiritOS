@@ -1,4 +1,5 @@
 'use strict';
+require('./spirit.js');
 
 // spirit/run/spirit/relayConfig.js
 // THE FIRST CONFIGURATION A RELAY HAS EVER HAD.
@@ -48,7 +49,7 @@
 // computed, so the figures a relay runs on are always readable on the box
 // rather than implied by an absent file.
 
-var relayLimits = require('./relayLimits');
+var relayLimits = spirit.require('spirit/relayLimits.js');
 
 // `text` is the file's contents, or null when there is no file.
 // `measured` is relayLimits.measure()'s answer — { totalMB, availableMB,

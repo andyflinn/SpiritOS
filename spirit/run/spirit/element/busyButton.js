@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/element/busyButton.js
 // THE BUTTON THAT WAITS FOR ITS REQUEST (goal/G41.23). Andy, goal/G41.18: "i need a new shell element: busySpinnerButton
 // or someting. it has an animated icon showing to the left of the buttons label, when the button is waiting for somekind
@@ -50,5 +51,5 @@
     return attach(b, o);
   }
 
-  E.busyButton = { create: create, attach: attach };
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/busyButton.js', { create: create, attach: attach }); });
 }());

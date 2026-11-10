@@ -1,4 +1,5 @@
 'use strict';
+require('./spirit.js');
 
 // spirit/run/spirit/netFence.js
 // NET.FETCH CANNOT REACH THIS MACHINE (goal/G29.20).

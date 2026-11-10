@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/app/introSpector/introSpector.js
 // INTROSPECTOR, AN APP OF spirit/app/ (goal/G43.29; Andy: "fill in the box, same icons, shell:mount only."), moved here from
 // shell/introSpector/. Its contract and its test: ./test/introSpector.md and ./test/introSpector.js.
@@ -10,13 +11,12 @@
 (function () {
   var S = window.spirit = window.spirit || {};
   var face = S.require('spirit/element/introSpector.js');
-  S.elements = S.elements || {};
-  S.elements.introSpector = {
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/introSpector/introSpector.js', {
     create: function (container, options) {
       var made = null;
       var gone = false;
-      Promise.resolve(face).then(function () { if (!gone) made = S.element.introSpector.create(container, options); });
+      Promise.resolve(face).then(function () { if (!gone) made = S.element.spirit.element.introSpector.create(container, options); });
       return { destroy: function () { gone = true; if (made) made.destroy(); made = null; } };
     },
-  };
+  }); });
 }());

@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/element/search/branch/rowElement.js
 // ONE BRANCH, AS A ROW ELEMENT (goal/G41.14). Its subject is a row of node.db's branch table, keyed by its hidden
 // number, the bundle it belongs to with it; its fields family, verb and delete (Andy, box: "branchSelector:pane, with
@@ -43,7 +44,7 @@
     return function () { gone = true; if (off) off(); off = null; };
   }
   function index() {
-    branches = branches || E.rowElement.index(dispatch);
+    branches = branches || E.spirit.element.rowElement.index(dispatch);
     return branches;
   }
 
@@ -55,7 +56,7 @@
   function create(row, opts) {
     var o = opts || {};
     var r = row || {};
-    var el = E.rowElement.create({
+    var el = E.spirit.element.rowElement.create({
       kind: 'branch',
       key: String(Number(r.id)),
       index: index(),
@@ -77,15 +78,15 @@
       mount(h);
       function controls() {
         var del = h.delete && typeof h.delete.querySelector === 'function' ? h.delete.querySelector('[data-action="delete"]') : null;
-        if (del) E.armingButton.attach(del, { label: 'Delete', run: function () { return el.act('delete', {}); } });
+        if (del) E.spirit.element.armingButton.attach(del, { label: 'Delete', run: function () { return el.act('delete', {}); } });
       }
       // Its parts are on the page by the time a list draws a row; until then the control waits for them.
-      if (E.armingButton) controls(); else parts.then(controls);
+      if (E.spirit.element.armingButton) controls(); else parts.then(controls);
       return el;
     };
     return el;
   }
 
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
-  Object.assign(['search', 'branch', 'rowElement'].reduce(function (o, k) { return (o[k] = o[k] || {}); }, E), { create: create });
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/branch/rowElement.js', { create: create }); });
 }());

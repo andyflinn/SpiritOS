@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/element/search/api.js
 // ONE SHELL ELEMENT: the app-server selector, a factory apps build their screens with.
 //
@@ -84,7 +85,7 @@
     }
     var list = { redraw: function () {} };
     var made = parts.then(function () {
-      list = window.spirit.element.search.create(host, {
+      list = window.spirit.element.spirit.element.search.create(host, {
         face: 'dropdown',
         placeholder: options.placeholder || 'choose a server…',
         all: options.all,
@@ -126,7 +127,10 @@
   // THE SHELL'S ELEMENT SHAPE (goal/G41.19, box v23: "every element gets a container and appends itself"): create(container,
   // options) appends the control to the container and answers it.
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
-  Object.assign(['search', 'api', 'server'].reduce(function (o, k) { return (o[k] = o[k] || {}); }, (window.spirit.element = window.spirit.element || {})), { create: function (container, options) { var root = createAppServerSelector(options); container.appendChild(root); return root; } });
+  // The app-server selector, a part of this element, at spirit.element.spirit.element.search.api.server: under this file's
+  // place, which the helper keeps whichever of the two lands first.
+  var serverSelector = { create: function (container, options) { var root = createAppServerSelector(options); container.appendChild(root); return root; } };
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/api/server.js', serverSelector); });
 })();
 
 // spirit/run/spirit/element/search/api.js
@@ -187,8 +191,8 @@
     function quiet(event) { if (event && typeof event.stopPropagation === 'function') event.stopPropagation(); }
     var made = parts.then(function () {
       var E = window.spirit.element;
-      families = E.search.api.server.create(root, { placeholder: options.familyPlaceholder, all: options.all, tree: options.tree });
-      verbs = E.search.api.verb.create(root, { own: typeof options.tree !== 'function' });
+      families = E.spirit.element.search.api.server.create(root, { placeholder: options.familyPlaceholder, all: options.all, tree: options.tree });
+      verbs = E.spirit.element.search.api.verb.create(root, { own: typeof options.tree !== 'function' });
       families.addEventListener('change', function (event) {
         quiet(event);
         if (families.value === root.family) return;
@@ -225,5 +229,5 @@
   // THE SHELL'S ELEMENT SHAPE (goal/G41.19, box v23: "every element gets a container and appends itself"): create(container,
   // options) appends the control to the container and answers it.
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
-  Object.assign(['search', 'api'].reduce(function (o, k) { return (o[k] = o[k] || {}); }, (window.spirit.element = window.spirit.element || {})), { create: function (container, options) { var root = createApiFamilySelector(options); container.appendChild(root); return root; } });
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/api.js', { create: function (container, options) { var root = createApiFamilySelector(options); container.appendChild(root); return root; } }); });
 })();

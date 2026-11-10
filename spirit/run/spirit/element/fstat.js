@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/element/fstat.js
 // A FILE'S INFO (goal/G43.17; Andy: "fstat is a file-info viewer"). It replaced the old file viewer, renamed and trimmed into
 // it (Q7). Since Andy's "separate fstat from file and text, in file, let fstat pop up for unknows file types (❔) only", text
@@ -114,5 +115,5 @@
     return { path: path, slot: slot };
   }
 
-  E.fstat = { create: create, read: read, mimeOf: mimeOf, kindOf: kindOf, iconOf: iconOf };
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/fstat.js', { create: create, read: read, mimeOf: mimeOf, kindOf: kindOf, iconOf: iconOf }); });
 }());

@@ -1,4 +1,5 @@
 'use strict';
+require('./spirit.js');
 
 // spirit/run/spirit/relayRequest.js
 // THE ONE OUTBOUND DOOR ONTO A PUBLIC RELAY.
@@ -37,9 +38,9 @@
 const http = require('http');
 const https = require('https');
 // The one body reader (goal/G16.6), serveCommon's (goal/G40.6).
-const readBody = require('./serveCommon').readBody;
-const limits = require('./limits.js');
-const assertRelayUrl = require('./relayUrl.js').assertRelayUrl;
+const readBody = spirit.require('spirit/serveCommon.js').readBody;
+const limits = spirit.require('spirit/limits.js');
+const assertRelayUrl = spirit.require('spirit/relayUrl.js').assertRelayUrl;
 
 // ── WHAT THE ANSWER MAY COST, AND HOW LONG IT MAY TAKE (goal/G16.6) ──
 //

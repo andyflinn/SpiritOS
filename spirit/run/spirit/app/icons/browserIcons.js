@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/app/icons/browserIcons.js
 // THE ICONS FACE (goal/G43.19, box v16; Q6: icons gets nodeIcons.js and browserIcons.js, as desk has them). Its contract and
 // its test: ./test/icons.md and ./test/icons.js.
@@ -55,7 +56,7 @@
           '<div data-icons="said" class="job-manifest-note"></div></div>';
         var said = host.querySelector('[data-icons="said"]');
         var field = host.querySelector('[data-icons="keywords"]');
-        S.element.fieldInput.attach(field, 'description');
+        S.required.spirit.element.fieldInput.attach(field, 'description');
         var close = function () { if (layer) layer.hide(); };
         var off = S.data.icons.data.watch(function (g, v) {
           if (g !== glyph) return;
@@ -68,7 +69,7 @@
         });
         // REMOVE ARMS FIRST (Andy: "icon detail, delete should be an armingButton."): the first press arms it and writes
         // nothing, the second removes the icon, a click elsewhere disarms it (spirit/element/armingButton.js).
-        S.element.armingButton.attach(host.querySelector('[data-icons="remove"]'), { label: 'Remove this icon', run: function () {
+        S.element.spirit.element.armingButton.attach(host.querySelector('[data-icons="remove"]'), { label: 'Remove this icon', run: function () {
           icon({ op: 'delete', glyph: glyph }).then(function (r) { if (r && r.deleted) close(); else said.textContent = 'not removed'; },
             function (e) { said.textContent = 'not removed: ' + ((e && e.message) || e); });
         } });
@@ -80,9 +81,9 @@
       if (gone) return;
       var E = S.element;
       // ITS OWN STACK when the mounter hands none, over its page (as contact.js).
-      if (typeof o.open !== 'function') stack = S.elements.panel.create(container, container.firstElementChild);
+      if (typeof o.open !== 'function') stack = S.element.spirit.element.panel.create(container, container.firstElementChild);
       // THE ADD ROW IS A ROWFORM (goal/G41.27; Andy: "icons app:\n[➕] [an icon:paste] [keywords, comma separated][Add]").
-      var form = E.rowForm.create(part('form'), { icon: '➕', button: 'Add' });
+      var form = E.spirit.element.rowForm.create(part('form'), { icon: '➕', button: 'Add' });
       form.span.innerHTML =
         '<input type="text" data-icons="new-glyph" placeholder="an icon (paste it)" style="width:8em">' +
         '<input type="text" data-icons="new-keywords" placeholder="keywords, comma separated" style="flex:1">';
@@ -90,9 +91,9 @@
       form.button.addEventListener('click', add);
       // The keywords to the description rule, the glyph to the glyph rule (goal/G41.27; Andy: "icon text follows description
       // rules.", "glyph field rule: max 1 char/glyph, 8-bytes maximum.").
-      E.fieldInput.attach(part('new-keywords') || container.querySelector('[data-icons="new-keywords"]'), 'description');
-      E.fieldInput.attach(container.querySelector('[data-icons="new-glyph"]'), 'glyph');
-      list = E.search.create(part('pane'), {
+      window.spirit.required.spirit.element.fieldInput.attach(part('new-keywords') || container.querySelector('[data-icons="new-keywords"]'), 'description');
+      window.spirit.required.spirit.element.fieldInput.attach(container.querySelector('[data-icons="new-glyph"]'), 'glyph');
+      list = E.spirit.element.search.create(part('pane'), {
         // Its own data source: icon.search on its branch, the rows seated into the icons family's cache it is a view of.
         search: function (args) {
           return icon({ op: 'search', text: String((args && args.text) || '') }).then(function (b) {
@@ -107,7 +108,7 @@
         args: function (text) { return { text: text }; },
         name: function (row) { return String(row.glyph || '') + ' ' + String((row.keywords || [])[0] || ''); },
         columns: [{ field: 'glyph', label: '' }, { field: 'keywords', label: 'Keywords' }],
-        element: function (row, key) { return E.search.icon.rowElement.create(Object.assign({ glyph: key }, row)); },
+        element: function (row, key) { return E.spirit.element.search.icon.rowElement.create(Object.assign({ glyph: key }, row)); },
         details: function (row, key) { openIcon(String(key || (row && row.glyph) || '')); },
         empty: 'No icon matches.',
       });
@@ -118,7 +119,7 @@
       var glyph = String((container.querySelector('[data-icons="new-glyph"]') || {}).value || '').trim();
       var kw = words((container.querySelector('[data-icons="new-keywords"]') || {}).value);
       if (!glyph) { say('paste an icon first'); return; }
-      if (!S.element.fieldInput.fits(kw.join(', '), 'description')) { say('too many keywords'); return; }
+      if (!S.required.spirit.element.fieldInput.fits(kw.join(', '), 'description')) { say('too many keywords'); return; }
       icon({ op: 'add', glyph: glyph, keywords: kw }).then(function (r) {
         if (gone) return;
         // A DUPLICATE IS REFUSED (Andy: "the icon app allowed me to add a duplicate icon.... that shouldn't work"), AND IT OPENS
@@ -139,7 +140,7 @@
     };
   }
 
-  S.elements = S.elements || {};
   // Under both names: icons.js stands spirit.elements.icons up at once and waits for this file; once here, the face itself.
-  S.elements.iconsFace = S.elements.icons = { create: create };
+  // At its own path (goal/G43.32): icons.js, the app's element, draws through it from there.
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/icons/browserIcons.js', { create: create }); });
 }());

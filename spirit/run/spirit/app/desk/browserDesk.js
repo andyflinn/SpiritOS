@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/app/desk/browserDesk.js
 // THE DESK ON A PAGE (goal/G43.27, requirement 23): the page half of ./desk.js, as spirit/app/agent/browserAgent.js is the
 // agent's. Andy: "look at agent.js, that's how it's done...", "NO FUCKING HACKS.".
@@ -10,10 +11,9 @@
 (function () {
   var S = window.spirit;
   S.require('spirit/app/desk/element/desk/desk.js');
-  S.elements = S.elements || {};
-  S.elements.desk = {
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/desk/browserDesk.js', {
     create: function (container, opts) {
-      return S.elements.deskPage.create(container, opts || {});
+      return S.element.spirit.app.desk.element.desk.desk.create(container, opts || {});
     },
-  };
+  }); });
 }());

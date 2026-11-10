@@ -22,8 +22,8 @@
 require('../../spirit.js');
 const fs = require('fs');
 const path = require('path');
-const appServer = require('../../appServer.js');
-const limits = require('../../limits.js');
+const appServer = spirit.require('spirit/appServer.js');
+const limits = spirit.require('spirit/limits.js');
 
 const argv = process.argv;
 const at = argv.indexOf('--state');

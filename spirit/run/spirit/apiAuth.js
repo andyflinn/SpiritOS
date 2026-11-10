@@ -1,4 +1,5 @@
 'use strict';
+require('./spirit.js');
 
 // spirit/run/spirit/apiAuth.js
 // WHO MAY CALL WHICH API: the owner's allow-table and the verbs that keep it (apiAuth/G1.3, G1.4).
@@ -18,11 +19,11 @@
 
 const fs = require('fs');
 const path = require('path');
-const nodeStore = require('./nodeStore');
-const contacts = require('./contacts');
-const limits = require('./limits');
-const probabilityStringObjectMatch = require('./probabilityStringObjectMatch').probabilityStringObjectMatch;
-const createProbabilityBucket = require('./probabilityBucket').createProbabilityBucket;
+const nodeStore = spirit.require('spirit/nodeStore.js');
+const contacts = spirit.require('spirit/contacts.js');
+const limits = spirit.require('spirit/limits.js');
+const probabilityStringObjectMatch = spirit.require('spirit/probabilityStringObjectMatch.js').probabilityStringObjectMatch;
+const createProbabilityBucket = spirit.require('spirit/probabilityBucket.js').createProbabilityBucket;
 // What one search answer may hold: the plaintext room, less its own frame.
 const SEARCH_ROOM = limits.PLAINTEXT_MAX - Buffer.byteLength(JSON.stringify({ items: [], more: false }), 'utf8');
 

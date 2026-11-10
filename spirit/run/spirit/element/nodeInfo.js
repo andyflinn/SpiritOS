@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/element/nodeInfo.js
 // WHAT THIS NODE SAYS ABOUT ITSELF, AN ELEMENT (goal/G43.24, requirement 6; Q2, Andy: "nodeInfo is fine."). The Info app is
 // its wrapper (spirit/app/info/info.js). Its contract and its test: ./test/nodeInfo.md and ./test/nodeInfo.js.
@@ -68,8 +69,8 @@
     function drawForms() {
       if (gone) return;
       var E = S.element;
-      if (E.joinForm) E.joinForm.mount(slot('email'), { relays: relays });
-      if (E.faceForm) E.faceForm.mount(slot('face'), { relays: relays, reload: loadRelays });
+      if (E.spirit.element.joinForm) E.spirit.element.joinForm.mount(slot('email'), { relays: relays });
+      if (E.spirit.element.faceForm) E.spirit.element.faceForm.mount(slot('face'), { relays: relays, reload: loadRelays });
     }
     // relay.status answers { status, text, body: { rows, ... } } itself (spirit/relay/api.js), so it is read as it comes.
     function loadRelays() {
@@ -85,7 +86,7 @@
       return into('rotateKey', { icon: '🆘', label: 'Rotate this node\'s cipher key', fill: function (pane, closed) {
         return S.require('spirit/element/rotateKey.js').then(function () {
           if (closed()) return null;
-          return S.elements.rotateKey.create(pane, {});
+          return S.element.spirit.element.rotateKey.create(pane, {});
         });
       } });
     }
@@ -93,10 +94,10 @@
     var fields = parts.then(function () {
       if (gone) return null;
       var E = S.element;
-      if (typeof o.open !== 'function') stack = S.elements.panel.create(box, page);
-      made.push(E.changeMyLabel.create(slot('name')));
-      made.push(E.changeMyDescription.create(slot('description')));
-      var rotate = E.rowForm.create(slot('rotate'), { icon: '🆘', button: 'Rotate this node\x27s cipher key' });
+      if (typeof o.open !== 'function') stack = S.element.spirit.element.panel.create(box, page);
+      made.push(E.spirit.element.changeMyLabel.create(slot('name')));
+      made.push(E.spirit.element.changeMyDescription.create(slot('description')));
+      var rotate = E.spirit.element.rowForm.create(slot('rotate'), { icon: '🆘', button: 'Rotate this node\x27s cipher key' });
       rotate.button.addEventListener('click', function () { openRotate(); });
       // THE CARD IS THE NODE FAMILY'S CACHE (goal/G41.28): node.card's answer is kept in spirit.data.node.data, and each of
       // the two fields draws itself from it.
@@ -126,6 +127,5 @@
     };
   }
 
-  S.elements = S.elements || {};
-  S.elements.nodeInfo = { create: create };
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/nodeInfo.js', { create: create }); });
 }());

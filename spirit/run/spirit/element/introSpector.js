@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/element/introSpector.js
 // INTROSPECTOR, AN ELEMENT (goal/G43.29; Andy: "a wrapper for separate spirit/element/ files"): what the introSpector app
 // (spirit/app/introSpector/introSpector.js) draws, moved here from shell/introSpector/introSpector.js (goal/G30.5) and
@@ -149,10 +150,10 @@
       var line = part('line');
       var hold = document.createElement('span');
       line.appendChild(hold);
-      var branch = S.element.search.api.create(line, { familyPlaceholder: 'choose a family…', tree: function () { return treeOf(party); } });
+      var branch = S.element.spirit.element.search.api.create(line, { familyPlaceholder: 'choose a family…', tree: function () { return treeOf(party); } });
       // THE PARTY: the contacts list as a dropdown (goal/G30.20, spirit/element/search/contact/listElement.js), the book and
       // this node's relays; no pick is self, this node.
-      picker = S.element.search.contact.listElement.create(hold, {
+      picker = S.element.spirit.element.search.contact.listElement.create(hold, {
         face: 'dropdown',
         placeholder: 'self (this node)',
         all: 'self (this node)',
@@ -166,7 +167,7 @@
         },
       });
       // THE REPLY ON THE CODEMIRROR ELEMENT, READ MODE (goal/G41.7), loaded with its parts.
-      Promise.resolve(S.element.codeMirror.create(part('reply'), { mode: 'read', text: '', path: 'reply.json' }))
+      Promise.resolve(S.element.spirit.element.codeMirror.create(part('reply'), { mode: 'read', text: '', path: 'reply.json' }))
         .then(function (view) { if (!gone) reply = view; }, function () { /* the reply stays unshown */ });
       // What a party answered decides what shows: no families, no dropdowns, and the input pane says why.
       branch.addEventListener('tree', function () {
@@ -193,6 +194,5 @@
     };
   }
 
-  S.element = S.element || {};
-  S.element.introSpector = { create: create, fieldsOf: fieldsOf, argsOf: argsOf };
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/introSpector.js', { create: create, fieldsOf: fieldsOf, argsOf: argsOf }); });
 }());

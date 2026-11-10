@@ -1,4 +1,5 @@
 'use strict';
+require('./spirit.js');
 
 // spirit/run/spirit/trafficLog.js
 // What this node sent and what it received. Personal nodes only.
@@ -108,7 +109,7 @@ function logPath(rootDir) {
 function table(rootDir, create) {
   if (!rootDir) return null;
   try {
-    var nodeStore = require('./nodeStore.js');
+    var nodeStore = spirit.require('spirit/nodeStore.js');
     if (!nodeStore.available()) return null;
     if (!create && !fs.existsSync(nodeStore.dbPath(rootDir))) return null;
     return nodeStore.open(rootDir).traffic;
@@ -239,7 +240,7 @@ function migrate(rootDir) {
   if (!fs.existsSync(file)) return false;
   var nodeStore;
   try {
-    nodeStore = require('./nodeStore.js');
+    nodeStore = spirit.require('spirit/nodeStore.js');
     if (!nodeStore.available()) return false;
   } catch (e) { return false; }
   var store = nodeStore.open(rootDir);

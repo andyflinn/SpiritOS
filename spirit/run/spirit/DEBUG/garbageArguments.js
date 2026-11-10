@@ -19,8 +19,9 @@
 // few sizes, containing bad characters", and "Pairs, not every combination": for any two arguments, every pairing of
 // their kinds meets in at least one entry, each entry setting all arguments at once.
 'use strict';
+require('../spirit.js');
 
-const limits = require('../limits.js');
+const limits = spirit.require('spirit/limits.js');
 
 const DEPTH = 64;
 const EXTRA = 'noSuchArgumentFromDEBUG';

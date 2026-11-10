@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/element/progressBar.js
 // THE PROGRESS BAR (goal/G29.14): one shared shell element, drawn from (done, total, text).
 //
@@ -27,5 +28,5 @@
   }
 
   (window.spirit = window.spirit || {}).element = window.spirit.element || {};
-  window.spirit.element.progressBar = progressBar;
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/progressBar.js', progressBar); });
 }());

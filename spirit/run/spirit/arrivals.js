@@ -1,4 +1,5 @@
 'use strict';
+require('./spirit.js');
 
 // spirit/run/spirit/arrivals.js
 // WHAT HAPPENS TO A PACKET THAT ARRIVES OVER THE ROUTER.
@@ -95,7 +96,7 @@
 //
 // Andy's ruling on the three hand-rolled parses, 2026-10-10: "yes. we fix
 // redundant code now."
-var packet = require('./client/packet.js');
+var packet = spirit.require('spirit/client/packet.js');
 
 // THE ENVELOPE, READ ONCE. For a packet: { app, re, body }, with `app` ''
 // when it carries none — '' rather than null so a reader never has to

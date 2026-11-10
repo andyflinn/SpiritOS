@@ -1,4 +1,5 @@
 'use strict';
+require('./spirit.js');
 
 // spirit/run/spirit/peerRank.js
 // THE PEER SEARCH'S ONE RANKER, ON THE PROBABILITY MODULES (goal/G29.17).
@@ -15,8 +16,8 @@
 //   q      the words typed; '' or '*' is anyone, every row in the order given
 //   slots  how many come back at most; more when one was turned away
 
-var probabilityStringObjectMatch = require('./probabilityStringObjectMatch').probabilityStringObjectMatch;
-var createProbabilityBucket = require('./probabilityBucket').createProbabilityBucket;
+var probabilityStringObjectMatch = spirit.require('spirit/probabilityStringObjectMatch.js').probabilityStringObjectMatch;
+var createProbabilityBucket = spirit.require('spirit/probabilityBucket.js').createProbabilityBucket;
 
 // How many rows one relay answers (the graded search's 32, kept).
 var SLOTS = 32;

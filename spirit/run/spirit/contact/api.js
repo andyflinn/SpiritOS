@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/contact/api.js
 // THE contact FAMILY ON THE SPIRIT OBJECT (goal/G32.1): the node's book of peers. Written to spirit.js's standard: every verb the
 // node mounts for this family, each argument with its rule ('?' optional); the spirit object makes each one a checked

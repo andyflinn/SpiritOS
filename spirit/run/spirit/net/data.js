@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/net/data.js
 // WHAT A CLIENT KNOWS OF THE net FAMILY, IN ITS OWN FOLDER (goal/G41.28). Andy: "WSL, make sure you assert that every
 // family in the api tree HAS a clientCacheManager"; a page finds it by the family's name (spirit.cacheManager).
@@ -7,6 +8,6 @@
 // spirit.data.net.data for them, as every family's readers do.
 (function () {
   // Its reads stand at spirit.data.net.data as every family's do, and it has none yet.
-  var D = typeof window !== 'undefined' ? window.spirit.data : require('../data.js');
+  var D = typeof window !== 'undefined' ? window.spirit.data : require('../spirit.js').require('spirit/data.js');
   D.makeFamily('net');
 }());

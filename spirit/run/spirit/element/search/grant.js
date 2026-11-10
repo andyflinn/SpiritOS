@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/element/search/grant.js
 // THE GRANT LIST, A DROP-IN SHELL ELEMENT (goal/G41.14), OF WHICHEVER GRANTS TABLE ITS CALLER HANDS IT (goal/G41.16;
 // Andy: "the callers (Grants and agent shell apps should boody well know how to configure the damn grantsPanel
@@ -35,7 +36,7 @@
         return { status: 200, body: { ok: true, items: (got && got.items) || [], more: !!(got && got.more) } };
       });
     }
-    var list = window.spirit.element.search.create(host, {
+    var list = window.spirit.element.spirit.element.search.create(host, {
       // Its own data source (goal/G43.24): the search asks it, and is handed no api.
       search: search,
       data: String(g.branch),
@@ -48,7 +49,7 @@
         { field: 'path', label: 'Path', sort: 'text' },
         { field: 'revoke', label: '' },
       ],
-      element: function (row) { return window.spirit.element.search.grant.rowElement.create(row, { grants: g, serves: o.serves }); },
+      element: function (row) { return window.spirit.element.spirit.element.search.grant.rowElement.create(row, { grants: g, serves: o.serves }); },
       filters: o.filters,
       selectors: o.selectors,
       empty: o.empty || 'No grant matches.',
@@ -63,5 +64,5 @@
 
   (window.spirit = window.spirit || {}).element = window.spirit.element || {};
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
-  Object.assign(['search', 'grant'].reduce(function (o, k) { return (o[k] = o[k] || {}); }, (window.spirit.element = window.spirit.element || {})), { create: create });
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/grant.js', { create: create }); });
 }());

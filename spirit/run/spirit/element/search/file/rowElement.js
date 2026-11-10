@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/element/search/file/rowElement.js
 // ONE FILE OR FOLDER, AS A ROW ELEMENT (goal/G30.18). Its subject is a path; its fields icon, name, size and changed;
 // it reads the node's file tree as the fs family's cache manager keeps it (spirit.data.fs.data, goal/G41.28), which the
@@ -34,13 +35,13 @@
   // all shell elements and apps."): made by icon.create and handed on as its markup, since a cell is painted as text; the
   // glyph as plain text while icon.js has not loaded.
   function iconHtml(glyph) {
-    var I = E.icon;
+    var I = E.spirit.element.icon;
     if (!I || typeof I.create !== 'function' || typeof document === 'undefined') return esc(glyph);
     var hold = document.createElement('span');
     I.create(hold, { glyph: glyph });
     return hold.innerHTML;
   }
-  function iconOf(p) { return E.fstat && typeof E.fstat.iconOf === 'function' ? E.fstat.iconOf(p) : '❔'; }
+  function iconOf(p) { return E.spirit.element.fstat && typeof E.spirit.element.fstat.iconOf === 'function' ? E.spirit.element.fstat.iconOf(p) : '❔'; }
   function bytes(n) {
     var f = window.spirit && spirit.formatBytes;
     return typeof n !== 'number' ? '' : (f ? f(n) : n + ' B');
@@ -105,13 +106,13 @@
     return function () { gone = true; if (typeof off === 'function') off(); };
   }
 
-  function index() { files = files || E.rowElement.index(dispatch); return files; }
+  function index() { files = files || E.spirit.element.rowElement.index(dispatch); return files; }
 
   function create(row) {
     var r = row || {};
     var p = String(r.path || '');
     var k = known(p) || {};
-    var el = E.rowElement.create({
+    var el = E.spirit.element.rowElement.create({
       kind: 'file',
       key: p,
       index: index(),
@@ -166,5 +167,5 @@
   }
 
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
-  Object.assign(['search', 'file', 'rowElement'].reduce(function (o, k) { return (o[k] = o[k] || {}); }, E), { create: create });
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/file/rowElement.js', { create: create }); });
 }());

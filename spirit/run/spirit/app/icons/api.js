@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/app/icons/api.js: the icons family's interface, at the top of the app folder (goal/G43.19, Q5), where the
 // node and a page find it (spirit.familyPath). Every verb nodeIcons.js serves, each argument with its rule (spirit.js's
 // standard); a verb added there is added here, in the same commit. DEBUG is appServer's, not listed here.

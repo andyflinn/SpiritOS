@@ -1,4 +1,5 @@
 'use strict';
+require('../../spirit.js');
 
 // spirit/run/spirit/app/publishData/agentReadme.js
 // AN AGENT'S README IN THE MEASUREMENT TREE (goal/G33.5), written by publishData.js into agents/<agent>/. The box, Andy:
@@ -37,7 +38,7 @@ function mb(bytes) { return n(Math.round(Number(bytes || 0) / 1048576)) + ' MB';
 
 function summaryOf(cap) {
   if (!cap || !(Number(cap.relayAtRestRss) > 0)) return null;
-  const relay = require('../../../spirit/relay.js');
+  const relay = spirit.require('spirit/relay.js');
   const allowance = relay.allowanceFor(RAM_MB, Number(cap.relayAtRestRss) / 1048576);
   const members = allowance ? Math.floor(allowance / relay.SEAT_STREAMS) : 0;
   const perPeer = Number(cap.perReachablePeerBytes) || 0;

@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/app/desk/element/deskRunStatus/deskRunStatus.js (moved from shell/shared/js/ with goal/G43.30)
 // THE VERIFIER'S RUN IN AN ITEM'S STATUS — goal/G33.6, bringing back goal/G18.5's status box.
 //
@@ -41,6 +42,5 @@
     }
     return '<span style="color:#c00">red: ' + n + ' suite' + (n === 1 ? '' : 's') + '</span>';
   }
-  (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
-  window.spirit.elements.deskRunStatus = deskRunStatus;
+  window.spirit.required && ['spirit', 'app', 'desk', 'element', 'deskRunStatus', 'deskRunStatus'].reduce(function (o, k, i, all) { if (i === all.length - 1) { if (o[k] === undefined) o[k] = deskRunStatus; return o[k]; } return (o[k] = o[k] && typeof o[k] === 'object' ? o[k] : {}); }, window.spirit.required);
 }());

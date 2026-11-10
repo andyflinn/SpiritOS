@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/app/appSelector/rowFormSetShell.js
 // THE NODE'S SHELL, AT HOME OR ON ITS FACE, ONE rowForm (goal/G43.18, box v29, "The shell"; the RULE: "a shell must be able to
 // replace itself"). Andy drew the two rows of the app detail:
@@ -44,18 +45,18 @@
       var row = rows()[key];
       if (!row || row.shell !== true) return;
       var E = S.element;
-      form = E.rowForm.create(host, { icon: LOOK[at].icon, button: 'Set' });
+      form = E.spirit.element.rowForm.create(host, { icon: LOOK[at].icon, button: 'Set' });
       form.span.appendChild(document.createTextNode(LOOK[at].words + ' '));
       shown = document.createElement('span');
       form.span.appendChild(shown);
       form.span.appendChild(document.createTextNode(' '));
       var listHost = document.createElement('span');
       form.span.appendChild(listHost);
-      list = E.search.app.create(listHost, { face: 'dropdown', shells: true, pick: function (r, k) { picked = k || ''; } });
+      list = E.spirit.element.search.app.create(listHost, { face: 'dropdown', shells: true, pick: function (r, k) { picked = k || ''; } });
       said = document.createElement('div');
       said.className = 'job-manifest-note';
       host.appendChild(said);
-      E.armingButton.attach(form.button, { label: 'Set', run: function () {
+      E.spirit.element.armingButton.attach(form.button, { label: 'Set', run: function () {
         if (!picked) { said.textContent = 'Choose a shell first.'; return; }
         S.ready.then(function (s) { return s.node.shell({ at: at, name: picked }); }).then(function (r) {
           named = String((r && r.name) || picked);
@@ -84,6 +85,5 @@
     };
   }
 
-  (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
-  window.spirit.elements.rowFormSetShell = { create: create };
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/appSelector/rowFormSetShell.js', { create: create }); });
 }());

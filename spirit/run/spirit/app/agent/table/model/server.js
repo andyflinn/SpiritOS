@@ -1,4 +1,5 @@
 'use strict';
+require('../../../../spirit.js');
 
 // spirit/run/spirit/app/agent/table/model/server.js
 // THE MODEL TABLE (goal/G41.4): one model of one provider. Andy, box v22: "a model table, keyed by ID same as the
@@ -16,7 +17,7 @@
 // update(providerId, models): the provider table's ask (../provider/server.js) puts a provider's list here: a model not
 // yet there is added, labelled with its model name as the provider gives it; one no longer listed is removed; one still
 // listed keeps its row. Another provider's models are not touched. Every change goes through the verb, so it is published.
-const { rowTable } = require('../rowTable.js');
+const { rowTable } = spirit.require('spirit/app/agent/table/rowTable.js');
 
 module.exports = function (ctx) {
   // An agent.db from before keeps a model's name in modelName: it becomes the label, before that column goes.

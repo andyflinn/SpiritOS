@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/net/api.js
 // THE net FAMILY ON THE SPIRIT OBJECT (goal/G32.1): a fetch the node makes for the page. Written to spirit.js's standard: every verb the
 // node mounts for this family, each argument with its rule ('?' optional); the spirit object makes each one a checked

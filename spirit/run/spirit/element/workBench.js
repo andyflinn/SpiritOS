@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/element/workBench.js
 // THE WORKBENCH (goal/G41.1): an app's top-level visual container. Three panes side by side, left, centre and right,
 // with a vertical icon strip along the window's left edge and another along its right edge, after goal/G7's vision:
@@ -71,7 +72,7 @@
     // Each strip button's glyph, through the icon element once it is there; as plain text until then, or if it never
     // comes, so a button is never empty.
     function paintIcons() {
-      var I = window.spirit && window.spirit.element && window.spirit.element.icon;
+      var I = window.spirit && window.spirit.element && window.spirit.element.spirit.element.icon;
       ['left', 'right'].forEach(function (side) {
         var s = part('strip-' + side);
         if (!s) return;
@@ -193,6 +194,5 @@
 
   var root = typeof window !== 'undefined' ? window : globalThis;
   root.spirit = root.spirit || {};
-  root.spirit.element = root.spirit.element || {};
-  root.spirit.element.workBench = { create: create };
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/workBench.js', { create: create }); });
 }());

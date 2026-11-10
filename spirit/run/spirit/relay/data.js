@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/relay/data.js
 // WHAT A CLIENT KNOWS OF ITS NODE'S RELAYS, IN THE relay FAMILY'S OWN FOLDER (goal/G41.28). Andy: "anything not using the
 // new spiritData.js and it's buddies clientCacheManager.js must do so in this item. no exceptions." A page or process
@@ -11,7 +12,7 @@
 // The node publishes no relay.get answer, so it translates nothing: spirit.relay.status keeps each one it got (keep).
 (function () {
   var ROWS = 'relayRows';
-  var D = typeof window !== 'undefined' ? window.spirit.data : require('../data.js');
+  var D = typeof window !== 'undefined' ? window.spirit.data : require('../spirit.js').require('spirit/data.js');
   D.makeFamily('relay', function () {
     var HOME = D.viewAt(null, 'relay');
     // THE READS AND THE ONE WRITE:

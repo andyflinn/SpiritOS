@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/element/fieldInput.js
 // AN INPUT STOPS AT ITS LIMIT (goal/G32.2; Andy: "field rules is already badly applied in the UI, the input tell you how
 // man characters you typed in excess of the limit instead of simply refusing to take more characters."). A field's
@@ -49,5 +50,5 @@
     return input;
   }
 
-  E.fieldInput = { fits: fits, attach: attach };
+  window.spirit.required && ['spirit', 'element', 'fieldInput'].reduce(function (o, k, i, all) { if (i === all.length - 1) { if (o[k] === undefined) o[k] = { fits: fits, attach: attach }; return o[k]; } return (o[k] = o[k] && typeof o[k] === 'object' ? o[k] : {}); }, window.spirit.required);
 }(typeof window !== 'undefined' ? window : globalThis));

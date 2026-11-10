@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/element/search/bundle/listElement.js
 // THE BUNDLE LIST, A DROP-IN SHELL ELEMENT (goal/G41.14). Andy, box: "both new auth/bundle tables receive Selector shell
 // elements, these shell elements must follow the design pattern of the contactSelector, with a sibling folder for a
@@ -40,7 +41,7 @@
       });
     }
     var names = Array.isArray(o.columns) && o.columns.length ? o.columns : ['label', 'owner'];
-    list = window.spirit.element.search.create(host, {
+    list = window.spirit.element.spirit.element.search.create(host, {
       // Its own data source (goal/G43.24): the search asks it, and is handed no api.
       search: search,
       // A view of the node's bundles, the branch the auth family's manager keeps (spirit.data.auth.data.bundles.branch).
@@ -56,7 +57,7 @@
       filters: family ? [{ name: 'owner', when: function () { return false; }, test: function (r) { return r && (r.owner || 'node') === family ? 1 : 0; } }] : [],
       columns: names.map(function (n) { return COLUMNS[n]; }).filter(Boolean),
       element: function (row, key) {
-        return window.spirit.element.search.bundle.rowElement.create(row);
+        return window.spirit.element.spirit.element.search.bundle.rowElement.create(row);
       },
       // A pick shows the bundle's label, never its number (Andy: "the bundleSelector shows a fucking number is selected
       // instead of the fucking label"); the number is hidden (box: "a hidden numeric key").
@@ -74,5 +75,5 @@
 
   (window.spirit = window.spirit || {}).element = window.spirit.element || {};
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
-  Object.assign(['search', 'bundle', 'listElement'].reduce(function (o, k) { return (o[k] = o[k] || {}); }, (window.spirit.element = window.spirit.element || {})), { create: create });
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/bundle/listElement.js', { create: create }); });
 }());

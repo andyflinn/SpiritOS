@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/element/joinList.js
 // THE JOIN STEPS, AN ELEMENT (goal/G43.26; Andy: "JOIN IS A FUCKING APP and DOES NOT FUCKING DRAG HALF OF THE OLD SHIT INTO
 // THE NEW!"). The Join app (spirit/app/join/join.js) is its wrapper. It walks a new user through joining a relay and
@@ -46,7 +47,7 @@
     // A mark stands alone before its step's name, so it is an icon: a place naming its glyph, the icon element made there.
     function mark(glyph) { return '<span data-icon="' + glyph + '">' + glyph + '</span>'; }
     function icons() {
-      var I = S.element && S.element.icon;
+      var I = S.element && S.element.spirit.element.icon;
       if (!I || typeof I.create !== 'function') return;
       Array.prototype.forEach.call(host.querySelectorAll('[data-icon]'), function (p) {
         if (p.querySelector('.shell-icon')) return;
@@ -55,7 +56,7 @@
       });
     }
     function where() {
-      var J = S.element && S.element.joinSteps;
+      var J = S.element && S.required.spirit.element.joinSteps;
       if (!J || !job || !steps) return null;
       var facts = J.fromJob(job, false);
       var open = J.current(steps, facts);
@@ -106,9 +107,9 @@
       var E = S.element || {};
       // Step 1 (box v41): the one join control, its words where the node stands: Join with no seat, Add on a seat taken
       // without a verified email (by invite), Change once verified. THE EMAIL FORM, THE SAME EVERYWHERE (goal/G40.10).
-      if (step.until === 'email' && E.joinForm) { withRelays(function () { E.joinForm.mount(box, { relays: relays }); }); return; }
+      if (step.until === 'email' && E.spirit.element.joinForm) { withRelays(function () { E.spirit.element.joinForm.mount(box, { relays: relays }); }); return; }
       // FIND SOMEONE: the same one list Contacts draws (goal/G30.19). The node republishes its join news once the contact is in.
-      var list = E.search && E.search.contact && E.search.contact.listElement;
+      var list = E.spirit.element.search && E.spirit.element.search.contact && E.spirit.element.search.contact.listElement;
       if (step.until === 'contact' && list) {
         box.innerHTML = '<div class="join-find-list"></div><div class="job-manifest-note join-find-said"></div>';
         made.push(list.create(box.querySelector('.join-find-list'), {
@@ -147,6 +148,5 @@
     };
   }
 
-  S.elements = S.elements || {};
-  S.elements.joinList = { create: create };
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/joinList.js', { create: create }); });
 }());

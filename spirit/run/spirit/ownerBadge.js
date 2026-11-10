@@ -17,10 +17,10 @@
 // will be changed in one of them. Nothing below this line requires
 // anything unless it is running under node.
 const isNode = typeof process !== 'undefined' && !!process.versions && !!process.versions.node;
-const auth = isNode ? require('./relayAuth') : null;
+const auth = isNode ? require('./spirit.js').require('spirit/relayAuth.js') : null;
 // Where this node holds a seat, and who each relay is. Both are records
 // this node keeps about itself — see probe.
-const relayKeys = isNode ? require('./relayKeys') : null;
+const relayKeys = isNode ? require('./spirit.js').require('spirit/relayKeys.js') : null;
 
 function normalizeUrl(u) {
   return String(u == null ? '' : u).trim().replace(/\/+$/, '');

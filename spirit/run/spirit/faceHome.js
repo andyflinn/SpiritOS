@@ -1,4 +1,5 @@
 'use strict';
+require('./spirit.js');
 
 // spirit/run/spirit/faceHome.js
 // THE HOME NODE ANSWERS ITS FACE (goal/G30.13, step 2 of goal/G30.10). The box, Andy's:
@@ -29,10 +30,10 @@
 // each piece's text its bytes in base64. Its stream is sealed to k line by line, k handed over by face-open. A face
 // that cannot seal is answered as before, unsealed; it was warned that the relay can read it.
 
-const auth = require('./relayAuth');
+const auth = spirit.require('spirit/relayAuth.js');
 // Every upload goes out through the one outbound door (goal/G30.10): relayRequest.relayUpload, streamed.
-const relayUpload = require('./relayRequest').relayUpload;
-const seal = require('./seal');
+const relayUpload = spirit.require('spirit/relayRequest.js').relayUpload;
+const seal = spirit.require('spirit/seal.js');
 
 const FACE_PRIORITY = { fs: 2, presence: 3, app: 4, stats: 5 };
 const FACE_PIECE = 64 * 1024;
@@ -156,7 +157,7 @@ function createFaceHome(opts) {
   const pieces = new Map();
   const PIECES_MAX = 64;
   const PIECE_WAIT_MS = 60000;
-  const PIECES_BYTES_MAX = PIECES_MAX * require('./limits').BODY_MAX;
+  const PIECES_BYTES_MAX = PIECES_MAX * spirit.require('spirit/limits.js').BODY_MAX;
   function piece(p, res) {
     const now = Date.now();
     pieces.forEach(function (v, k) { if (now - v.at > PIECE_WAIT_MS) pieces.delete(k); });

@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/element/grantsPanel.js
 // THE GRANTS PANEL, A SHELL ELEMENT (goal/G41.16): grants of whichever ID table its caller hands it. Andy: "the shell app
 // shell/grans/grants/ must be a wrapper for a new shell element: shell/js/grantsPanel.js, and shell/js/grantsPanel.js is
@@ -278,19 +279,19 @@
       var idTable = { table: ids.table, key: ids.key, label: ids.label };
       // Each made in a slot of its own; paint moves it into the line it stands in, each time it draws the form.
       var slot = function () { return document.createElement('span'); };
-      idSel = P.search.contact.create(slot(), Object.assign({ placeholder: 'choose an ID…' }, idTable));
-      bundleSel = P.search.bundle.create(slot(), { placeholder: 'choose a bundle…' });
-      filterId = P.search.contact.create(slot(), Object.assign({ placeholder: 'every ID', all: 'every ID' }, idTable));
-      filterFamily = P.search.api.create(slot(), { all: 'every family' });
+      idSel = P.spirit.element.search.contact.create(slot(), Object.assign({ placeholder: 'choose an ID…' }, idTable));
+      bundleSel = P.spirit.element.search.bundle.create(slot(), { placeholder: 'choose a bundle…' });
+      filterId = P.spirit.element.search.contact.create(slot(), Object.assign({ placeholder: 'every ID', all: 'every ID' }, idTable));
+      filterFamily = P.spirit.element.search.api.create(slot(), { all: 'every family' });
       // THE GRANT FORM IS A ROWFORM (goal/G41.27; Andy: "grantsPanel:\n\n➕ [choose an ID… ▾][choose a bundle… ▾][Grant]"):
       // ➕, the ID and the bundle selector in its span, Grant its button; made once, paint putting it back. What a press
       // did is said below it, not in it.
-      form = P.rowForm.create(slot(), { icon: '➕', button: 'Grant' });
+      form = P.spirit.element.rowForm.create(slot(), { icon: '➕', button: 'Grant' });
       form.span.appendChild(idSel);
       form.span.appendChild(bundleSel);
       // GRANT WAITS AS A BUSY BUTTON (goal/G41.23; Andy, goal/G41.18: "for all buttons that wait for potentially long
       // requests"): greyed and turning until every grant of the bundle is answered.
-      if (P.busyButton) P.busyButton.attach(form.button, { run: grantBundle });
+      if (P.spirit.element.busyButton) P.spirit.element.busyButton.attach(form.button, { run: grantBundle });
       else form.button.addEventListener('click', function () { grantBundle(); });
       paint();
       watchGrants();
@@ -298,7 +299,7 @@
       followServers();
       return loadTree().then(function () {
         if (gone) return;
-        list = P.search.grant.create(listHost, { grants: g, filters: filters, selectors: selectors(), serves: serves });
+        list = P.spirit.element.search.grant.create(listHost, { grants: g, filters: filters, selectors: selectors(), serves: serves });
       });
     });
 
@@ -316,5 +317,5 @@
     };
   }
 
-  E.grantsPanel = { create: create, nodeGrants: nodeGrants };
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/grantsPanel.js', { create: create, nodeGrants: nodeGrants }); });
 }());

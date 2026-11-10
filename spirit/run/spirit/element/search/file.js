@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/element/search/file.js
 // THE FILES LIST, A DROP-IN SHELL ELEMENT (goal/G30.20): the node's files on the standard list-tool
 // (spirit/element/search.js), each row a file row element (file/rowElement.js), the list a view of the fs family's
@@ -27,7 +28,7 @@
     if (row.kind === 'folder' || accept == null) return true;
     if (typeof accept === 'function') return !!accept(row);
     var name = String(row.path || '').toLowerCase();
-    var mime = E.fstat ? String(E.fstat.mimeOf(name)) : '';
+    var mime = E.spirit.element.fstat ? String(E.spirit.element.fstat.mimeOf(name)) : '';
     return (Array.isArray(accept) ? accept : [accept]).some(function (a) {
       a = String(a).toLowerCase();
       return a.charAt(0) === '.' ? name.slice(-a.length) === a : mime.indexOf(a) === 0;
@@ -78,7 +79,7 @@
       // The list search's box takes all of this one (goal/G40.8: space granted top-down).
       '<div class="files-tree fill"></div>';
     var inner = host.lastChild;
-    list = E.search.create(inner, {
+    list = E.spirit.element.search.create(inner, {
       // Its own data source (goal/G43.24): the search asks it, and is handed no api.
       search: function (args) { return search(args, function (next, at) { scores = next; lines = at; }); },
       // A view of the node's file tree, the branch the fs family's manager keeps (spirit.data.fs.data.branch).
@@ -101,10 +102,10 @@
       // A FILE'S TILE (goal/G43.17, Q14): its kind's icon, a folder 📁 shut and 📂 open, and its name.
       tile: function (row, key) {
         var p = String(key || row.path || '');
-        var icon = row.kind === 'folder' ? (opened[p] ? '📂' : '📁') : (E.fstat ? E.fstat.iconOf(p) : '❔');
+        var icon = row.kind === 'folder' ? (opened[p] ? '📂' : '📁') : (E.spirit.element.fstat ? E.spirit.element.fstat.iconOf(p) : '❔');
         return { icon: icon, label: p.slice(p.lastIndexOf('/') + 1) };
       },
-      element: function (row, key) { var el = E.search.file.rowElement.create(Object.assign({ path: key }, row, { open: !!opened[key] })); made[key] = el; return el; },
+      element: function (row, key) { var el = E.spirit.element.search.file.rowElement.create(Object.assign({ path: key }, row, { open: !!opened[key] })); made[key] = el; return el; },
       score: function (row, values) { return values.in === 'contents' ? (scores[row.key || row.path] || 0) : null; },
       filters: [
         { name: 'in', choices: [{ value: 'names', word: 'names' }, { value: 'contents', word: 'contents' }] },
@@ -141,5 +142,5 @@
   }
 
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
-  Object.assign(['search', 'file'].reduce(function (o, k) { return (o[k] = o[k] || {}); }, E), { create: create });
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/file.js', { create: create }); });
 }());

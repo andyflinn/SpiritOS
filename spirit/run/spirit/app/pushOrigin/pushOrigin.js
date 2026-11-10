@@ -1,4 +1,5 @@
 'use strict';
+require('../../spirit.js');
 
 // spirit/run/spirit/app/pushOrigin/pushOrigin.js (an app of its own since goal/G43.21)
 // goal/G5.1: ONE PLACE THAT SENDS COMMITS ALREADY MADE TO GITHUB, EVEN WHEN THE CLONE IS BEHIND ORIGIN.

@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/app/appSelector/rowFormAppActive.js
 // ACTIVATE OR DEACTIVATE ONE APP, A rowFormToggle THAT HIDES ITSELF FOR AN INTRINSIC APP (goal/G43.15). Andy: "the
 // "activate/deacivate" should be an element, too, that self-hides if the app is intrinsic, that way nobody that uses that element
@@ -22,7 +23,7 @@
       if (!r) return;
       S.ready.then(function (s) { return s.app.activeApp({ key: key, active: r.active !== true }); }).then(null, function () { /* the row stays */ });
     }
-    var t = S.elements.rowFormToggle.create(host, { on: false, words: '', press: press });
+    var t = S.element.spirit.app.appSelector.rowFormToggle.create(host, { on: false, words: '', press: press });
     t.root.hidden = true;
     function paint() {
       if (gone) return;
@@ -57,6 +58,5 @@
     return { destroy: function () { gone = true; offRow(); offAll(); t.destroy(); } };
   }
 
-  (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
-  window.spirit.elements.rowFormAppActive = { create: create };
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/appSelector/rowFormAppActive.js', { create: create }); });
 }());

@@ -1,4 +1,5 @@
 'use strict';
+require('./spirit.js');
 
 // spirit/run/spirit/nodeSearches.js
 // THE NODE'S JOBS AND FILES, SEARCHED RATHER THAN LISTED (puppets/G2).
@@ -34,10 +35,10 @@
 
 var fs = require('fs');
 var path = require('path');
-var limits = require('./limits');
-var probabilityStringObjectMatch = require('./probabilityStringObjectMatch').probabilityStringObjectMatch;
-var probabilityStringMatch = require('./probabilityStringMatch').probabilityStringMatch;
-var createProbabilityBucket = require('./probabilityBucket').createProbabilityBucket;
+var limits = spirit.require('spirit/limits.js');
+var probabilityStringObjectMatch = spirit.require('spirit/probabilityStringObjectMatch.js').probabilityStringObjectMatch;
+var probabilityStringMatch = spirit.require('spirit/probabilityStringMatch.js').probabilityStringMatch;
+var createProbabilityBucket = spirit.require('spirit/probabilityBucket.js').createProbabilityBucket;
 // THE CONTENTS SEARCH'S BOUND (goal/G29.11, the box: "the node also reads text files up to 1 MB (larger ones are found by
 // name only)"): a file bigger than this is never read.
 var CONTENTS_MAX_BYTES = 1024 * 1024;

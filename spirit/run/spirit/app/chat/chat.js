@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/app/chat/chat.js
 // CHAT, ONE FILE FOR THE PAGE AND THE NODE (goal/G43.31; Andy: "chat.js splits between browser and node.... the usual
 // pattern"), as spirit/app/desk/desk.js is: the node starts this name, and a shell opening the Chat app loads it. On a page
@@ -6,5 +7,5 @@
 (function () {
   var S = typeof window !== 'undefined' && window.spirit ? window.spirit : require('../../spirit.js');
   if (S.isBrowser()) S.require('spirit/app/chat/element.js');
-  else require('./nodeChat.js');
+  else require('../../spirit.js').require('spirit/app/chat/nodeChat.js');
 }());

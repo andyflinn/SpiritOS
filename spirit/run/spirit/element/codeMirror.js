@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/element/codeMirror.js
 // THE CODEMIRROR SHELL ELEMENT (goal/G41.7): a file's text on CodeMirror 5, in read mode or edit mode.
 //
@@ -113,5 +114,5 @@
     });
   }
 
-  E.codeMirror = { create: create };
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/codeMirror.js', { create: create }); });
 }());

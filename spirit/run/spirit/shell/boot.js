@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/shell/boot.js (goal/G41.3: face/shell.js moved into shell/ as the boot)
 // THE BOOT OF THE GREEN SHELL'S PAGE (goal/G30.9; since goal/G43.18, box v29, "The shell"; Andy: "boot should solve
 // transport issues only, then load whichever shell the node has configured"; Q22, Andy: "ok." to "the link home moves
@@ -213,7 +214,9 @@
     }, function () { return 'shell'; }).then(function (name) {
       if (!/^[A-Za-z0-9_-]+$/.test(name)) name = 'shell';
       return spirit.require('spirit/app/' + name + '/' + name + '.js').then(function () {
-        var E = window.spirit.elements && window.spirit.elements[name];
+        // The shell's element at the place of the file just loaded, spirit.element.<its path> (goal/G43.32).
+        var app = window.spirit.element && window.spirit.element.spirit && window.spirit.element.spirit.app;
+        var E = app && app[name] && app[name][name];
         desktop.innerHTML = '';
         // THE SHELL'S AREA IS NO DESKTOP GRID (Andy, of his face.html: "all icons of the app.search are in a thin strip in the left
         // of my browser window"): a fill column the shell lays itself out in (face.css, #desktop.shell-area).
@@ -294,7 +297,7 @@
     joinCode = '';
     // Join's steps come with the link that needs them (goal/G43.27), required here.
     Promise.all([window.spirit.require('spirit/element/joinSteps.js'), Promise.resolve(spirit.ready).then(function (sp) { return sp.contact.search({ q: '*', relay: 'yes' }); })]).then(function (got) {
-      var S = window.spirit.element && window.spirit.element.joinSteps;
+      var S = window.spirit.element && window.spirit.required.spirit.element.joinSteps;
       var s = got[1];
       var url = S ? S.linkRelay(joinRelayKey, (s && s.items) || []) : '';
       if (!url) throw new Error('this node lists no relay that sent this link');

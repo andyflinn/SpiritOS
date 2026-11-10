@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/app/desk/: the desk server's family interface, at the top of the desk app's folder (goal/G43.27)
 // THE desk SERVER'S INTERFACE (goal/G32.3): every verb it serves, each argument with its rule (spirit.js's
 // standard, '?' optional). The node answers this text to api {family} without the server hearing of it, and maps it

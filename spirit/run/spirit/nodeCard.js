@@ -1,4 +1,5 @@
 'use strict';
+require('./spirit.js');
 
 // spirit/run/spirit/nodeCard.js
 // WHAT A NODE ANSWERS ABOUT ITSELF, TO ANYBODY WHO ASKS.
@@ -48,10 +49,10 @@
 // always had. Adding a second question here is a decision about what a
 // node is, and deserves the argument this one got.
 
-const auth = require('./relayAuth');
-const fieldRules = require('./fieldRules');
+const auth = spirit.require('spirit/relayAuth.js');
+const fieldRules = spirit.require('spirit/fieldRules.js');
 // The node layer's one reading of what arrived (N1, goal/G16.5).
-const arrivals = require('./arrivals');
+const arrivals = spirit.require('spirit/arrivals.js');
 
 // ── ONE NAME FOR ONE THING (cycle 10, R1) ────────────────────────────
 //

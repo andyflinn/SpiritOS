@@ -1,4 +1,5 @@
 'use strict';
+require('./spirit.js');
 
 // spirit/run/spirit/contacts.js — the owner's acts on the one table.
 //
@@ -23,11 +24,11 @@
 // somebody it listens to. A search finds people, and only the owner's act (Add, accept, a claim on a relay this node
 // owns, an invite) keeps them.
 
-const nodeCard = require('./nodeCard');
-const auth = require('./relayAuth');
-const ownerBadge = require('./ownerBadge');
+const nodeCard = spirit.require('spirit/nodeCard.js');
+const auth = spirit.require('spirit/relayAuth.js');
+const ownerBadge = spirit.require('spirit/ownerBadge.js');
 
-function seen(rootDir) { return require('./nodeStore').open(rootDir).seen; }
+function seen(rootDir) { return spirit.require('spirit/nodeStore.js').open(rootDir).seen; }
 
 // A table row as a contact row; null for no row.
 function shaped(r) {
@@ -97,7 +98,7 @@ function noteLabel(rootDir, publicKey, publicLabel) {
 function noteRelay(rootDir, publicKey, relayUrl) {
   const url = String(relayUrl || '').replace(/\/+$/, '');
   if (!url) return;
-  const at = require('./relayKeys').pinned(rootDir, url);
+  const at = spirit.require('spirit/relayKeys.js').pinned(rootDir, url);
   if (at) seen(rootDir).putRoute(publicKey, { via: at, at: at, url: url, rank: 4, told: Date.now() });
 }
 

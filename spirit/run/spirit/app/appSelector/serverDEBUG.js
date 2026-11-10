@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/app/appSelector/serverDEBUG.js
 // ONE SERVER'S DEBUG, A rowFormToggle (goal/G43.15). Andy, box: "when the app is NOT mountable by the node (node.mount==false) it
 // hides itself", "configured text: "turn on|off DEBUG <app-label>"", "it will use the OWNER-ONLYE VERB DEBUG in the appServer",
@@ -34,7 +35,7 @@
       var want = !on();
       Promise.resolve(S.require(S.familyPath(key))).then(function (fam) { return fam.DEBUG({ on: want }); }).then(null, function () { /* the job stays */ });
     }
-    var t = S.elements.rowFormToggle.create(host, { on: false, words: '', press: press });
+    var t = S.element.spirit.app.appSelector.rowFormToggle.create(host, { on: false, words: '', press: press });
     t.root.hidden = true;
     function paint() {
       if (gone) return;
@@ -61,6 +62,5 @@
     return { destroy: function () { gone = true; offJobs(); offRow(); t.destroy(); } };
   }
 
-  (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
-  window.spirit.elements.serverDEBUG = { create: create };
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/appSelector/serverDEBUG.js', { create: create }); });
 }());

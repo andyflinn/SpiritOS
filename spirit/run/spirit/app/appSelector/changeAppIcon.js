@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/app/appSelector/changeAppIcon.js
 // ONE APP'S ICON, ONE rowForm (goal/G43.15; Andy: "i thought you'd make the changeAppLabel and changeAppIcon form elements as
 // well, in spirit/app/ then i can re-use them as is in the config right side panel of agent", Q4: "yes."). Its row as Andy drew
@@ -20,13 +21,13 @@
     var gone = false;
     var picked = '';
     function row() { var A = S.data.app && S.data.app.data; return A ? A.rows()[key] || null : null; }
-    var form = E.rowForm.create(host, { icon: '✏️', button: 'Change' });
+    var form = E.spirit.element.rowForm.create(host, { icon: '✏️', button: 'Change' });
     form.span.appendChild(document.createTextNode('Icon '));
     var shown = document.createElement('span');
     form.span.appendChild(shown);
     var listHost = document.createElement('span');
     form.span.appendChild(listHost);
-    var list = E.search.icon.listElement.create(listHost, { face: 'dropdown', pick: function (r, glyph) { picked = glyph || ''; } });
+    var list = E.spirit.element.search.icon.listElement.create(listHost, { face: 'dropdown', pick: function (r, glyph) { picked = glyph || ''; } });
     form.button.addEventListener('click', function () {
       if (!picked) return;
       S.ready.then(function (s) { return s.app.iconApp({ key: key, icon: picked }); }).then(null, function () { /* the row stays */ });
@@ -35,7 +36,7 @@
       if (gone) return;
       var r = row();
       shown.innerHTML = '';
-      if (r) E.icon.create(shown, { glyph: r.icon });
+      if (r) E.spirit.element.icon.create(shown, { glyph: r.icon });
     }
     function ask() {
       S.ready.then(function (s) { return s.app.searchApp({ q: '' }); }).then(function (got) {
@@ -49,6 +50,5 @@
     return { destroy: function () { gone = true; offRow(); offAll(); list.destroy(); host.innerHTML = ''; } };
   }
 
-  (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
-  window.spirit.elements.changeAppIcon = { create: create };
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/appSelector/changeAppIcon.js', { create: create }); });
 }());

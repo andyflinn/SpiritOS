@@ -1,4 +1,5 @@
 'use strict';
+require('./spirit.js');
 
 // spirit/run/spirit/answerRelay.js
 // What this node knows about the RELAYS it talks to: each one's own public
@@ -8,8 +9,8 @@
 // It once also answered the relay's device-offer request; that went with
 // the device enrolment, removed by goal/G16.2. The name stays.
 
-const relayKeys = require('./relayKeys');
-const auth = require('./relayAuth');
+const relayKeys = spirit.require('spirit/relayKeys.js');
+const auth = spirit.require('spirit/relayAuth.js');
 
 // opts: { rootDir, askKey, onKeyChanged }
 //

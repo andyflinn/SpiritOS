@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/element/search/branch/listElement.js
 // THE BRANCH LIST, A DROP-IN SHELL ELEMENT (goal/G41.14). Andy, box: "branchSelector.js and branchSelector/ folder,
 // featuring a pane mode and a dropdown mode for displaying and selecting branch rows", "the branchSelector element will
@@ -32,7 +33,7 @@
     var E = window.spirit.element;
     var list = null;
     // THE FILTER: the family selector, made here and mounted by the search in its 🪣 row.
-    var family = E.search.api.create(document.createElement('span'), { all: 'every family' });
+    var family = E.spirit.element.search.api.create(document.createElement('span'), { all: 'every family' });
     var box = document.createElement('div');
     box.className = 'fill';
     host.appendChild(box);
@@ -48,7 +49,7 @@
       });
     }
     var names = Array.isArray(o.columns) && o.columns.length ? o.columns : ['family', 'verb'];
-    list = E.search.create(box, {
+    list = E.spirit.element.search.create(box, {
       // Its own data source (goal/G43.24): the search asks it, and is handed no api.
       search: search,
       // A view of the node's branches, the branch the auth family's manager keeps (spirit.data.auth.data.branches.branch).
@@ -61,7 +62,7 @@
       pick: function (row, key) { if (typeof o.pick === 'function') o.pick(row, key); },
       args: function (text) { return { text: text }; },
       columns: names.map(function (n) { return COLUMNS[n]; }).filter(Boolean),
-      element: function (row) { return E.search.branch.rowElement.create(row); },
+      element: function (row) { return E.spirit.element.search.branch.rowElement.create(row); },
       // A pick shows the branch as family.verb, the family alone for (ALL), never its numbers.
       name: function (row) { return row ? (row.verb ? row.family + '.' + row.verb : row.family + ' (ALL)') : ''; },
       // THE VIEW HOLDS EVERY BRANCH THE PAGE KNOWS: this list shows its own bundle's, narrowed by the family selector, as
@@ -94,5 +95,5 @@
   (window.spirit = window.spirit || {}).element = window.spirit.element || {};
   // Its parts are loaded first, so a caller that requires this file and waits finds them all on the page.
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
-  Object.assign(['search', 'branch', 'listElement'].reduce(function (o, k) { return (o[k] = o[k] || {}); }, (window.spirit.element = window.spirit.element || {})), { create: create, ready: parts });
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/branch/listElement.js', { create: create, ready: parts }); });
 }());

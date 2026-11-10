@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/config/api.js
 // THE config FAMILY ON THE SPIRIT OBJECT (goal/G32.1): kept empty for later use (goal/G30.20). Written to spirit.js's standard: every verb the
 // node mounts for this family, each argument with its rule ('?' optional); the spirit object makes each one a checked

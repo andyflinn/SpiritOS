@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/app/desk/element/deskDetails/deskDetails.js
 // ONE ITEM OF THE DESK, AS A DIALOG — desk/G2.7.
 //
@@ -76,8 +77,8 @@ var ddParts = Promise.resolve(typeof spirit !== 'undefined' && spirit.require
   ? Promise.all([spirit.require('spirit/element/armingButton.js'), spirit.require('spirit/element/fieldInput.js')]) : null);
 function ddArming() {
   return ddParts.then(function () {
-    var A = typeof window !== 'undefined' && window.spirit && window.spirit.element && window.spirit.element.armingButton;
-    var F = typeof window !== 'undefined' && window.spirit && window.spirit.element && window.spirit.element.fieldInput;
+    var A = typeof window !== 'undefined' && window.spirit && window.spirit.element && window.spirit.element.spirit.element.armingButton;
+    var F = typeof window !== 'undefined' && window.spirit && window.spirit.element && window.spirit.required.spirit.element.fieldInput;
     var say = document.getElementById('dd-say');
     if (F && say && !say.getAttribute('data-held')) { F.attach(say, 'line'); say.setAttribute('data-held', 'line'); }
     var body = document.getElementById('dd-body');
@@ -186,7 +187,7 @@ function ddShowLeft(name) {
   if (left && box && left.parentNode !== box) box.appendChild(left);
 }
 function ddMakeBench(n) {
-  var W = window.spirit && window.spirit.element && window.spirit.element.workBench;
+  var W = window.spirit && window.spirit.element && window.spirit.element.spirit.element.workBench;
   var host = document.getElementById('dd-bench');
   var hold = document.getElementById('dd-hold');
   var centre = document.getElementById('dd-centre');
@@ -228,9 +229,13 @@ var DD_LABELS = { 'start-design': 'Start design', 'end-design': 'End design', go
 // joined with deskVerify's own publish (ddRun), through the one shared rendering (spirit/app/desk/element/deskRunStatus/deskRunStatus.js).
 var ddRun = null;
 var DD_RUN_STATUS = '/spirit/app/desk/element/deskRunStatus/deskRunStatus.js';
+// The shared run status, by its place spirit.element.<its path> (goal/G43.32): undefined while it is not loaded yet.
+function ddRunStatus() {
+  return 'spirit.app.desk.element.deskRunStatus.deskRunStatus'.split('.').reduce(function (o, k) { return o == null ? undefined : o[k]; }, typeof window !== 'undefined' && window.spirit ? window.spirit.element : undefined);
+}
 function ddRunHtml() {
-  var els = typeof window !== 'undefined' && window.spirit && window.spirit.elements;
-  return els && typeof els.deskRunStatus === 'function' ? els.deskRunStatus(ddFacts || {}, ddRun, ddEsc) : '';
+  var status = ddRunStatus();
+  return typeof status === 'function' ? status(ddFacts || {}, ddRun, ddEsc) : '';
 }
 function ddHearVerifier(obj) {
   if (!obj || typeof obj !== 'object' || typeof obj.doing !== 'string') return;
@@ -238,7 +243,7 @@ function ddHearVerifier(obj) {
   ddSet('dd-run', ddRunHtml());
 }
 function ddLoadRunStatus() {
-  var have = typeof window !== 'undefined' && window.spirit && window.spirit.elements && window.spirit.elements.deskRunStatus;
+  var have = ddRunStatus();
   if (typeof have === 'function') return;
   ddNeed(DD_RUN_STATUS).then(function () { ddSet('dd-run', ddRunHtml()); }, function () { /* the run is not drawn */ });
 }
@@ -453,7 +458,7 @@ function ddBoxMount() {
       el.innerHTML = '<div style="display:flex;gap:1em;align-items:center;margin-bottom:0.25em"><span class="job-manifest-note" data-box-version></span>' +
         // No find field over the box (goal/G43.22; Andy: "the codeMirror search works better for editing purposes.").
         '</div><div data-box-editor style="flex:1 1 0;min-height:0;position:relative"></div>';
-      return window.spirit.element.codeMirror.create(el.querySelector('[data-box-editor]'), { mode: 'edit', text: ddBox }).then(function (view) {
+      return window.spirit.element.spirit.element.codeMirror.create(el.querySelector('[data-box-editor]'), { mode: 'edit', text: ddBox }).then(function (view) {
         // He went into the textarea meanwhile, or left the item: it stays as it is, and the next item asks anew.
         if (ddId !== id || ddBoxFocused) { ddBoxViewAsked = ''; return; }
         // It fills what the version row leaves, and scrolls inside it (goal/G40.8: only a list or a viewer scrolls).
@@ -824,7 +829,7 @@ function ddMountRulePick() {
   ddRulePick = null;
   ddRulePickHost = el;
   var make = function () {
-    var P = window.spirit && window.spirit.element && window.spirit.element.search && window.spirit.element.search.create ? window.spirit.element.search : null;
+    var P = window.spirit && window.spirit.element && window.spirit.element.spirit.element.search && window.spirit.element.spirit.element.search.create ? window.spirit.element.spirit.element.search : null;
     if (!P || typeof P.create !== 'function' || ddRulePickHost !== el || ddRulePick) return;
     ddRulePick = P.create(el, {
       // ITS OWN DATA SOURCE, over this page's api (goal/G43.24: the search is handed no api).
@@ -854,7 +859,7 @@ function ddMountRulePick() {
     });
     ddRulePick.refresh();
   };
-  if (window.spirit && window.spirit.element && window.spirit.element.search && window.spirit.element.search.create) { make(); return; }
+  if (window.spirit && window.spirit.element && window.spirit.element.spirit.element.search && window.spirit.element.spirit.element.search.create) { make(); return; }
   ddNeed(DD_SEARCH).then(make, function () { el.textContent = 'The search could not be loaded.'; });
 }
 function ddSuitesHtml() {
@@ -1008,7 +1013,7 @@ function ddLoad() {
   });
 }
 
-// AN ELEMENT OF THE DESK APP (goal/G43.27, requirement 23): spirit.elements.deskDetails, made in a layer over the Desk page,
+// AN ELEMENT OF THE DESK APP (goal/G43.27, requirement 23): spirit.element.spirit.app.desk.element.deskDetails.deskDetails, made in a layer over the Desk page,
 // which hands it the page's own way to the node (opts.via: verb, escapeHtml, onPublished, closeDialog, setScreenTitle).
 var ddApp = {
   mount: function (container, api) {
@@ -1140,9 +1145,8 @@ var ddApp = {
     });
   },
 };
-window.spirit.elements = window.spirit.elements || {};
-window.spirit.elements.deskDetails = { create: function (container, opts) {
+window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/desk/element/deskDetails/deskDetails.js', { create: function (container, opts) {
   ddApp.mount(container, opts.via);
   ddApp.open(opts);
   return { destroy: function () { container.innerHTML = ''; } };
-} };
+} }); });

@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/app/agent/table/rowElement.js
 // ONE ROW OF THE AGENT'S TABLES, EDITED IN THE PAGE (goal/G41.4), an element of its own (goal/G41.28; the general test:
 // a file registers one element). Each table's elementRow.js names its fields and builds on this one; the title row, the
@@ -12,14 +13,13 @@
 // in the servers update/change stream"): a field changed and Delete go to the server, and what the editor shows is the
 // server's get and the rows its stream then brings, never what was typed.
 (function () {
-  var E = (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the tables' shared element, whose helpers it uses.
   spirit.require('spirit/app/agent/table/tableElement.js');
   var made = 0;
-  function A() { return window.spirit.elements.agentDetail; }
+  function A() { return window.spirit.element.spirit.app.agent.table.tableElement; }
   function esc(s) { return A().esc(s); }
   function call(table, args) { return A().call(table, args); }
-  function needs(paths) { return A().needs(paths).then(function () { E = window.spirit.elements; }); }
+  function needs(paths) { return A().needs(paths); }
   function branchOf(table) { return A().branchOf(table); }
   function titleRow(look, words) { return A().titleRow(look, words); }
   function fieldLine(label, input) { return A().fieldLine(label, input); }
@@ -130,7 +130,7 @@
           : '<button type="button" id="' + pre + 'delete">Delete</button>') + ' <span id="' + pre + 'note">' + esc(note) + '</span></div></div>';
       fields.forEach(function (f) {
         var el = input(f);
-        if ((f.kind === 'name' || f.kind === 'description') && window.spirit.element.fieldInput) window.spirit.element.fieldInput.attach(el, f.kind);
+        if ((f.kind === 'name' || f.kind === 'description') && window.spirit.required.spirit.element.fieldInput) window.spirit.required.spirit.element.fieldInput.attach(el, f.kind);
         // A FIELD CHANGED SAVES THE ROW (Andy: "and why the fuck does a row not automatically save when i make a change to a
         // field?"; on Q2: "yes, send the whole row for update. it costs nothing, and we don't need more fucking verbs than
         // necessary."): an input's change, a pick, a bundle picked; there is no Save.
@@ -139,13 +139,13 @@
         if (f.kind === 'icon') {
           needs(['spirit/element/search/icon.js']).then(function () {
             if (gone || !el.isConnected) return;
-            icons[f.field] = window.spirit.element.search.icon.create(el, { value: row[f.field] || (o.look && o.look.icon) || '' });
+            icons[f.field] = window.spirit.element.spirit.element.search.icon.create(el, { value: row[f.field] || (o.look && o.look.icon) || '' });
             if (icons[f.field] && typeof icons[f.field].addEventListener === 'function') icons[f.field].addEventListener('change', save);
           });
         }
         if (f.kind === 'code') {
           needs(['spirit/element/codeMirror.js']).then(function () {
-            return window.spirit.element.codeMirror.create(el, { mode: 'edit', text: String(row[f.field] || ''), path: f.field + '.md' });
+            return window.spirit.element.spirit.element.codeMirror.create(el, { mode: 'edit', text: String(row[f.field] || ''), path: f.field + '.md' });
           }).then(function (cm) { editors[f.field] = cm; });
         }
         // The field shows the row picked now, by its label from the other table's branch, until another is picked; only a
@@ -191,11 +191,11 @@
         // selector, loaded here (rule/26); only a new pick is saved, as for a pick field.
         if (f.kind === 'bundle') {
           needs(['spirit/element/search/bundle.js']).then(function () {
-            if (gone || !(window.spirit.element.search && window.spirit.element.search.bundle && window.spirit.element.search.bundle.create)) return;
+            if (gone || !(window.spirit.element.spirit.element.search && window.spirit.element.spirit.element.search.bundle && window.spirit.element.spirit.element.search.bundle.create)) return;
             // The bundle by its label, as the node has it (Andy: "why would the bundle picker show \"bundle 2\" for it's
             // selection instead of the fucking label?"); its number only once the node has no such bundle.
             var says = !row[f.field] ? 'Pick a bundle' : bundleLabel[row[f.field]] !== undefined ? bundleLabel[row[f.field]] : bundleHeld[row[f.field]] === false ? 'bundle ' + row[f.field] : '…';
-            bundles[f.field] = window.spirit.element.search.bundle.create(el, { placeholder: says });
+            bundles[f.field] = window.spirit.element.spirit.element.search.bundle.create(el, { placeholder: says });
             if (bundles[f.field] && typeof bundles[f.field].addEventListener === 'function') bundles[f.field].addEventListener('change', save);
           });
           if (row[f.field] && bundleHeld[row[f.field]] === undefined) {
@@ -220,8 +220,8 @@
       if (adding) { container.querySelector('#' + pre + 'addnew').addEventListener('click', addNew); return; }
       var del = container.querySelector('#' + pre + 'delete');
       needs(['spirit/element/armingButton.js']).then(function () {
-        if (gone || !del.isConnected || !window.spirit.element.armingButton) return;
-        window.spirit.element.armingButton.attach(del, { label: 'Delete', run: remove });
+        if (gone || !del.isConnected || !window.spirit.element.spirit.element.armingButton) return;
+        window.spirit.element.spirit.element.armingButton.attach(del, { label: 'Delete', run: remove });
       });
     }
     // THE WHOLE ROW, as the verb takes it (Andy, Q2: "yes, send the whole row for update"): every field as the editor shows
@@ -316,5 +316,5 @@
     return { destroy: function () { gone = true; unwatch(); Object.keys(picks).forEach(function (k) { picks[k].destroy(); }); Object.keys(bundles).forEach(function (k) { if (bundles[k] && typeof bundles[k].destroy === 'function') bundles[k].destroy(); }); container.innerHTML = ''; } };
   }
 
-  E.agentRow = { create: createRow };
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/agent/table/rowElement.js', { create: createRow }); });
 }());

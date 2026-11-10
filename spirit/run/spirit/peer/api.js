@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/peer/api.js
 // THE peer FAMILY ON THE SPIRIT OBJECT (goal/G32.1): packets to peers, and acquiring one. Written to spirit.js's standard: every verb the
 // node mounts for this family, each argument with its rule ('?' optional); the spirit object makes each one a checked

@@ -1,4 +1,5 @@
 'use strict';
+require('./spirit.js');
 
 // spirit/run/spirit/joinStepsJob.js
 // WHERE THE JOIN STEPS STAND, AS A STREAM (goal/G30.1, box v40). Andy, 2026-10-20: "does the fucking new element even
@@ -16,9 +17,9 @@
 // server.js refreshes it after any relay, contact or peer verb, the verbs that can take a seat, add a contact or keep
 // a face.
 
-const auth = require('./relayAuth');
-const relayKeys = require('./relayKeys');
-const contactBook = require('./contacts');
+const auth = spirit.require('spirit/relayAuth.js');
+const relayKeys = spirit.require('spirit/relayKeys.js');
+const contactBook = spirit.require('spirit/contacts.js');
 
 function facts(rootDir) {
   const out = { seated: false, relayUrl: '', contact: false, face: '', faceUrl: '' };
@@ -26,7 +27,7 @@ function facts(rootDir) {
   try { seated = relayKeys.seatedUrls(rootDir); } catch (e) { seated = []; }
   out.seated = seated.length > 0;
   let listed = [];
-  try { listed = require('./ownerBadge').loadRelays(rootDir).map(function (r) { return r.url; }); } catch (e) { listed = []; }
+  try { listed = spirit.require('spirit/ownerBadge.js').loadRelays(rootDir).map(function (r) { return r.url; }); } catch (e) { listed = []; }
   out.relayUrl = String(seated[0] || listed[0] || '');
   // THE FACE NAME on that relay, the node's own fact on its row (goal/G40.11).
   if (out.seated) {

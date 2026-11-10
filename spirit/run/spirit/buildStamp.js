@@ -1,4 +1,5 @@
 'use strict';
+require('./spirit.js');
 
 // spirit/run/spirit/buildStamp.js
 // Which commit is this process actually running?

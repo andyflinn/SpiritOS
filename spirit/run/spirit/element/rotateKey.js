@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/element/rotateKey.js
 // THE ROTATE KEY DIALOG, AN ELEMENT (goal/G43.24, requirement 8; cycle-10/R13). Its contract and its test: ./test/rotateKey.md
 // and ./test/rotateKey.js.
@@ -57,7 +58,7 @@
       var b = body.querySelector('[data-rotate]');
       if (b) parts.then(function () {
         if (gone) return;
-        S.element.armingButton.attach(b, { label: 'Rotate the key', armedLabel: 'Rotate the key: press again', run: rotate });
+        S.element.spirit.element.armingButton.attach(b, { label: 'Rotate the key', armedLabel: 'Rotate the key: press again', run: rotate });
       });
     }
 
@@ -75,6 +76,5 @@
     return { destroy: function () { gone = true; container.innerHTML = ''; } };
   }
 
-  S.elements = S.elements || {};
-  S.elements.rotateKey = { create: create };
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/rotateKey.js', { create: create }); });
 }());

@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/app/chat/: the chat server's branch interface, where spirit.familyPath('chat') finds it (goal/G41.12)
 // THE chat SERVER'S INTERFACE (goal/G32.3; the branch is chat, as its folder, since goal/G43.31): every verb it serves, each argument with its rule (spirit.js's
 // standard, '?' optional). The node answers this text to api {family} without the server hearing of it, and maps it

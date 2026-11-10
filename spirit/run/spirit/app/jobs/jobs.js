@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/app/jobs/jobs.js
 // THE JOB MONITOR, AN APP OF spirit/app/ (goal/G43.29; Andy: "fill in the box, same icons, shell:mount only."), moved here
 // from shell/jobs/. Its contract and its test: ./test/jobs.md and ./test/jobs.js.
@@ -10,13 +11,12 @@
 (function () {
   var S = window.spirit = window.spirit || {};
   var face = S.require('spirit/element/jobs.js');
-  S.elements = S.elements || {};
-  S.elements.jobs = {
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/jobs/jobs.js', {
     create: function (container, options) {
       var made = null;
       var gone = false;
-      Promise.resolve(face).then(function () { if (!gone) made = S.element.jobs.create(container, options); });
+      Promise.resolve(face).then(function () { if (!gone) made = S.element.spirit.element.jobs.create(container, options); });
       return { destroy: function () { gone = true; if (made) made.destroy(); made = null; } };
     },
-  };
+  }); });
 }());

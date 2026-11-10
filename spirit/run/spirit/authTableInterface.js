@@ -1,4 +1,5 @@
 'use strict';
+require('./spirit.js');
 
 // spirit/run/spirit/authTableInterface.js
 // ONE INTERFACE TO AN AUTH TABLE (goal/G41.4). Andy: "node's auth modules will have a file authTableInterface.js,

@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/app/appSelector/changeAppLabel.js
 // ONE APP'S LABEL, ONE rowForm (goal/G43.15; Andy: "i thought you'd make the changeAppLabel and changeAppIcon form elements as
 // well, in spirit/app/ then i can re-use them as is in the config right side panel of agent", Q4: "yes.").
@@ -17,12 +18,12 @@
     var key = String((options && options.key) || '');
     var gone = false;
     function row() { var A = S.data.app && S.data.app.data; return A ? A.rows()[key] || null : null; }
-    var form = E.rowForm.create(host, { icon: '✏️', button: 'Change' });
+    var form = E.spirit.element.rowForm.create(host, { icon: '✏️', button: 'Change' });
     var input = document.createElement('input');
     input.type = 'text';
     form.span.appendChild(document.createTextNode('Label '));
     form.span.appendChild(input);
-    if (E.fieldInput) E.fieldInput.attach(input, 'name');
+    if (window.spirit.required.spirit.element.fieldInput) window.spirit.required.spirit.element.fieldInput.attach(input, 'name');
     form.button.addEventListener('click', function () {
       S.ready.then(function (s) { return s.app.labelApp({ key: key, label: input.value }); }).then(null, function () { /* not written: the row stays as the node last said */ });
     });
@@ -43,6 +44,5 @@
     return { destroy: function () { gone = true; offRow(); offAll(); host.innerHTML = ''; } };
   }
 
-  (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
-  window.spirit.elements.changeAppLabel = { create: create };
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/appSelector/changeAppLabel.js', { create: create }); });
 }());

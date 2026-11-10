@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/app/starter/starter.js
 // THE SMALLEST APP, IN THE SHAPE OF spirit/app/ (goal/G43.27). Andy: "cw, you bring deskClient and deskVerify into
 // spirit/app/ under their old names, do the backup as well (and fix it) and starter as well". Copy this folder to begin:
@@ -39,6 +40,5 @@
     return { destroy: function () { gone = true; container.innerHTML = ''; } };
   }
 
-  S.elements = S.elements || {};
-  S.elements.starter = { create: create };
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/starter/starter.js', { create: create }); });
 }());

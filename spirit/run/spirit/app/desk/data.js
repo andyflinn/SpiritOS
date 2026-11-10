@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/app/desk/data.js
 // WHAT THE DESK KNOWS OF ITS ROWS AT THE RECEIVING END, IN THE DESK'S OWN FOLDER (goal/G41.24; Andy: "where
 // clientCacheManager.js must work in both browser and an appServer that subscribes? and deskClient can get it form its own
@@ -32,9 +33,9 @@
   var DOORS = 'deskDoors';
   var DOOR_RUNS = 'deskDoorRuns';
   var cache = typeof module !== 'undefined' && module && module.exports && typeof require === 'function'
-    ? require('./cacheRules.js')({ items: ITEMS, parts: PARTS, state: STATE }) : null;
+    ? require('../../spirit.js').require('spirit/app/desk/cacheRules.js')({ items: ITEMS, parts: PARTS, state: STATE }) : null;
   // THE TRANSLATOR, ONCE PER DATA SET: spirit.data.makeFamily runs this once, however often the file is loaded.
-  var D = typeof window !== 'undefined' ? window.spirit.data : require('../../../spirit/data.js');
+  var D = typeof window !== 'undefined' ? window.spirit.data : require('../../spirit.js').require('spirit/data.js');
   D.makeFamily('desk', function () {
     // THE DESK'S ROWS UNDER THE NODE THAT SERVED THEM (goal/G41.28; Andy, the box: "The RAM-CACHE-is organized BY
     // SERVER-NODE-ID at it's lowest level. IE: spirit.data.<server-public-key-in-base64url>.<api-family>...."): V is the desk

@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/app/chat/data.js
 // WHAT A CLIENT KNOWS OF THE CHATS, IN THE chat BRANCH'S OWN FOLDER (goal/G41.28; the branch is chat since goal/G43.31). Andy: "anything not using the
 // new spiritData.js and it's buddies clientCacheManager.js must do so in this item. no exceptions." A page loads it
@@ -18,7 +19,7 @@
     return { peer: String(peer), sent: Number(l.sent), seq: Number(l.seq), at: String(l.at || ''), text: String(l.text || ''),
       receivedAt: String(l.receivedAt || ''), re: l.re || { writer: '', seq: 0 }, refused: String(l.refused || '') };
   }
-  var D = typeof window !== 'undefined' ? window.spirit.data : require('../../../spirit/data.js');
+  var D = typeof window !== 'undefined' ? window.spirit.data : require('../../spirit.js').require('spirit/data.js');
   D.makeFamily('chat', function () {
     var HOME = D.viewAt(null, 'chat');
     function put(V, peer, l) {

@@ -46,11 +46,11 @@ require('../../spirit.js');
 const fs = require('fs');
 const path = require('path');
 const { DatabaseSync } = require('node:sqlite');
-const appServer = require('../../appServer.js');
-const limits = require('../../limits.js');
-const VENDORED_FOLDERS = require('../../fileSystem.js').VENDORED_FOLDERS;
-const createProbabilityBucket = require('../../probabilityBucket.js').createProbabilityBucket;
-const probabilityStringObjectMatch = require('../../probabilityStringObjectMatch.js').probabilityStringObjectMatch;
+const appServer = spirit.require('spirit/appServer.js');
+const limits = spirit.require('spirit/limits.js');
+const VENDORED_FOLDERS = spirit.require('spirit/fileSystem.js').VENDORED_FOLDERS;
+const createProbabilityBucket = spirit.require('spirit/probabilityBucket.js').createProbabilityBucket;
+const probabilityStringObjectMatch = spirit.require('spirit/probabilityStringObjectMatch.js').probabilityStringObjectMatch;
 
 const argv = process.argv;
 function arg(name) { const i = argv.indexOf(name); return i !== -1 ? String(argv[i + 1] || '') : ''; }
@@ -1146,7 +1146,7 @@ function watchCheckout(root) {
       const rel = path.relative(root, String(full)).split(path.sep).join('/');
       return rel.split('/').some(function (part) { return part === '.git'; }) || VENDORED_FOLDERS.holds(rel);
     };
-    require('../../jobs/chokidar/index.js').watch(root, { ignored: skip, ignoreInitial: true, persistent: true }).on('all', function (event, full) {
+    spirit.require('spirit/jobs/chokidar/index.js').watch(root, { ignored: skip, ignoreInitial: true, persistent: true }).on('all', function (event, full) {
       if (!WHAT[event] || !full) return;
       const rel = path.relative(root, String(full)).split(path.sep).join('/');
       if (!statusWorthy(rel)) return;
@@ -1187,7 +1187,7 @@ function relayVerifier(run) {
 }
 // THROUGH spirit.data (goal/G43.5; Andy: "the rule covers everything"): the verifier's own cache manager keeps what it
 // publishes, the data set takes the node's stream, and this listens to the manager.
-require('../deskVerify/data.js');
+spirit.require('spirit/app/deskVerify/data.js');
 if (globalThis.spirit && ((globalThis.spirit.data || {}).deskVerify || {}).data) globalThis.spirit.data.deskVerify.data.watch(relayVerifier);
 if (globalThis.spirit && globalThis.spirit.data && typeof globalThis.spirit.data.followStream === 'function') globalThis.spirit.data.followStream();
 gitIn(['rev-parse', '--show-toplevel'], __dirname).then(function (top) { if (top.status === 0 && top.out) watchCheckout(top.out); });

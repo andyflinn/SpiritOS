@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/data.js
 // THE FACELESS LAYER (goal/G30.16, box v14-v16). Andy: "we need to view the shell like a transient version of a node. it
 // needs a 100% faceless layer", "accurately mirror the exact state of the node that is its partner", "the shell stores
@@ -338,8 +339,8 @@
   var SEARCH_SCANNED = 1000;
   function ranking() {
     if (typeof require === 'function' && typeof module !== 'undefined' && module) {
-      return { match: require('./probabilityStringObjectMatch.js').probabilityStringObjectMatch,
-        bucket: require('./probabilityBucket.js').createProbabilityBucket, limits: require('./limits.js') };
+      return { match: require('./spirit.js').require('spirit/probabilityStringObjectMatch.js').probabilityStringObjectMatch,
+        bucket: require('./spirit.js').require('spirit/probabilityBucket.js').createProbabilityBucket, limits: require('./spirit.js').require('spirit/limits.js') };
     }
     var p = (root.spirit && root.spirit.probability) || {};
     return { match: p.probabilityStringObjectMatch, bucket: p.createProbabilityBucket, limits: root.spirit && root.spirit.limits };

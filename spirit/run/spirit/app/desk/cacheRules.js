@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/app/desk/cacheRules.js
 // THE DESK FAMILY'S CACHE RULES, FOR NODE ALONE (goal/G41.28): what a subscribing appServer keeps of the desk's rows, and
 // the reads deskClient answers from them. A page loads data.js as a file of the family's folder,

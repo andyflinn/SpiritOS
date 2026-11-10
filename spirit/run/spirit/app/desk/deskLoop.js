@@ -1,4 +1,5 @@
 'use strict';
+require('../../spirit.js');
 
 // spirit/run/spirit/app/desk/deskLoop.js
 // THE DRIVER FOR A MODEL WITH NO HARNESS — goal/G4.28.

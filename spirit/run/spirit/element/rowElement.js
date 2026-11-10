@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/element/rowElement.js
 // WHAT EVERY ROW ELEMENT SHARES (goal/G30.18). Andy's box:
 //
@@ -121,5 +122,5 @@
   }
 
   (window.spirit = window.spirit || {}).element = window.spirit.element || {};
-  window.spirit.element.rowElement = { create: create, index: index };
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/rowElement.js', { create: create, index: index }); });
 }());

@@ -22,10 +22,10 @@ require('./spirit.js');
 const fs = require('fs');
 const path = require('path');
 // The node's file system: its write gate for a path under spirit/run (goal/G40.6).
-const fileSystem = require('./fileSystem');
+const fileSystem = spirit.require('spirit/fileSystem.js');
 // The probability modules (goal/G29.19): FS.search ranks with them.
-const createProbabilityBucket = require('./probabilityBucket').createProbabilityBucket;
-const probabilityStringObjectMatch = require('./probabilityStringObjectMatch').probabilityStringObjectMatch;
+const createProbabilityBucket = spirit.require('spirit/probabilityBucket.js').createProbabilityBucket;
+const probabilityStringObjectMatch = spirit.require('spirit/probabilityStringObjectMatch.js').probabilityStringObjectMatch;
 
 const AGENTS_FILE = 'AGENTS.md';
 // A verb name as the server takes it, without the family's own uppercase.
@@ -41,7 +41,7 @@ function refusal(code, extra) {
 }
 
 // The room one answer has.
-function room() { return require('./limits').ANSWER_MAX; }
+function room() { return spirit.require('spirit/limits.js').ANSWER_MAX; }
 
 // The verb files of a folder: {stem: fileName}, and the files that name no
 // declared verb. `declared` is the list of verb names the module answers,

@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/element/search.js
 // THE SHELL'S ONE LIST-TOOL (goal/G30.17), a finished intrinsic shell element: every list in the shell is one.
 //
@@ -206,7 +207,7 @@
     // probabilitySearch's search bubble uses."): shell.css's .shell-bubble, the rowForm's too.
     var ROW = 'display:flex;flex-wrap:wrap;align-items:center;gap:1em;';
     function iconHtml(glyph) {
-      var I = window.spirit.element && window.spirit.element.icon;
+      var I = window.spirit.element && window.spirit.element.spirit.element.icon;
       if (!I || typeof I.create !== 'function' || typeof document === 'undefined') return '<span>' + esc(glyph) + '</span>';
       var hold = document.createElement('span');
       I.create(hold, { glyph: glyph });
@@ -261,7 +262,7 @@
     // THE SEARCH WORDS STOP AT THEIR LIMIT (goal/G41.27; Andy: "of course search words need a limit, search words must
     // follow the description rules."): fieldInput holds them to the description rule as they are typed.
     var E0 = window.spirit.element || {};
-    if (E0.fieldInput && el('text')) E0.fieldInput.attach(el('text'), 'description');
+    if (E0.spirit.element.fieldInput && el('text')) E0.spirit.element.fieldInput.attach(el('text'), 'description');
     // The selectors mounted in their row; a pick in any of them redraws the list.
     function onSelector() { draw(); }
     selectors.forEach(function (s, i) {
@@ -690,6 +691,6 @@
   }
   (window.spirit = window.spirit || {}).element = window.spirit.element || {};
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
-  Object.assign(['search'].reduce(function (o, k) { return (o[k] = o[k] || {}); }, (window.spirit.element = window.spirit.element || {})), { create: create, order: order });
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search.js', { create: create, order: order }); });
   window.spirit.matchRanges = matchRanges;
 }());

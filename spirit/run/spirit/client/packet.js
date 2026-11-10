@@ -35,7 +35,7 @@
 // page. spirit.js requires limits.js before packet.js for exactly that
 // reason (spirit.peerPost).
 var limits = (typeof process !== 'undefined' && process.versions && process.versions.node)
-  ? require('../limits.js')
+  ? require('../spirit.js').require('spirit/limits.js')
   : (typeof window !== 'undefined' ? window.spirit.limits : null);
 
 // SAY WHICH SCRIPT IS MISSING, rather than dying on `undefined.PAYLOAD_MAX`.

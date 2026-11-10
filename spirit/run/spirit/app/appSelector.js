@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/app/appSelector.js
 // ONE ELEMENT: the app selector (goal/G43.2; Andy, box: "the face part of this api will be an probabilitySearch
 // derivative"), following spirit/element/search/bundle.js. Its contract and its test: ./test/appSelector.md and
@@ -23,6 +24,16 @@
 // shows it as it was left (Q3: "yes."). A launched app switched off leaves the view and stays loaded until the shell boots
 // again (Q11: "it only must disappear from view. it won't be loaded on the next shell-boot.").
 (function () {
+  // AN APP'S ELEMENT BY THE APP'S NAME (goal/G43.32): placed at spirit.element.<its file's path>, in the file it is in today
+  // (Andy: where an app's main element lives and what it is named is settled "when we fix apps"): spirit/app/<name>/<name>.js,
+  // else its element.js, else its browser<Name>.js.
+  function appElementOf(name) {
+    var n = String(name);
+    var app = window.spirit && window.spirit.element && window.spirit.element.spirit && window.spirit.element.spirit.app;
+    var b = app && app[n];
+    if (!b) return null;
+    return [n, 'element', 'browser' + n.charAt(0).toUpperCase() + n.slice(1)].map(function (k) { return b[k]; }).filter(function (e) { return e && typeof e.create === 'function'; })[0] || null;
+  }
   function createAppSelector(options) {
     var o = options || {};
     var face = o.face === 'pane' || o.face === 'tiles' ? o.face : 'dropdown';
@@ -80,7 +91,7 @@
           if (closed()) return null;
           // What the app opens goes in this same stack, over all of it (panel.js: one stack, each ✕ one step back).
           var over = function (k, spec) { return stack ? stack.open('app/' + name + '/' + k, spec) : Promise.resolve(null); };
-          return S.app[name] ? S.app[name].createApp(pane) : S.elements[name].create(pane, { title: title, open: over });
+          return S.app[name] ? S.app[name].createApp(pane) : appElementOf(name).create(pane, { title: title, open: over });
         });
       }, look);
     }
@@ -89,7 +100,7 @@
     function detailReady() { return window.spirit.require('spirit/app/appSelector/detailElement.js'); }
     function panel(row) {
       open('detail', row, function (pane, closed) {
-        return detailReady().then(function () { return closed() ? null : window.spirit.elements.appDetail.create(pane, { row: row, panel: true }); });
+        return detailReady().then(function () { return closed() ? null : window.spirit.element.spirit.app.appSelector.detailElement.create(pane, { row: row, panel: true }); });
       });
     }
     function clearDetail() { if (detail) detail.destroy(); detail = null; }
@@ -105,7 +116,7 @@
       detailReady().then(function () {
         if (gone || root.row !== asked) return;
         clearDetail();
-        detail = window.spirit.elements.appDetail.create(detailBox, { row: row });
+        detail = window.spirit.element.spirit.app.appSelector.detailElement.create(detailBox, { row: row });
       });
     }
     function onFace(now) {
@@ -117,8 +128,8 @@
     Promise.all([window.spirit.require('spirit/element/search/app.js'), window.spirit.require('spirit/element/panel.js')]).then(function () {
       if (gone) return;
       // A list's box is a flex box, so the panel covers it by its display.
-      stack = window.spirit.elements.panel.create(root, listBox);
-      made = window.spirit.element.search.app.create(listBox, { face: face, toggle: o.toggle === true, onFace: onFace, pick: pick,
+      stack = window.spirit.element.spirit.element.panel.create(root, listBox);
+      made = window.spirit.element.spirit.element.search.app.create(listBox, { face: face, toggle: o.toggle === true, onFace: onFace, pick: pick,
         // The filter is on the page, on the row's active (the box): app.search stays "just a search string".
         // o.hide, the keys left out of every face (goal/G43.18; Andy: "the shell should exclude itself completely from the
         // app-list"): the shell app hands its own.
@@ -144,6 +155,5 @@
     return root;
   }
 
-  (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
-  window.spirit.elements.appSelector = { create: function (container, options) { var root = createAppSelector(options); container.appendChild(root); return root; } };
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/appSelector.js', { create: function (container, options) { var root = createAppSelector(options); container.appendChild(root); return root; } }); });
 })();

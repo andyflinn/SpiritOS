@@ -1,4 +1,5 @@
 'use strict';
+require('./spirit.js');
 
 // spirit/run/spirit/verbTable.js
 // What the loopback client door can be asked, and who answers it.
@@ -186,7 +187,7 @@ function createVerbTable() {
       shape[v] = { request: d.request, reply: d.reply };
     });
     claim(ns, (opts && opts.by) || ns, group, opts);
-    require('./introSpector').stale(String(dir || ''), Object.keys(declarations)).forEach(function (file) {
+    spirit.require('spirit/introSpector.js').stale(String(dir || ''), Object.keys(declarations)).forEach(function (file) {
       console.error('verbTable: ' + file + ' in the folder of ' + ns + ' names a verb it does not declare');
     });
     shapes[ns] = shape;
@@ -217,7 +218,13 @@ function createVerbTable() {
     if (dot < 1) return null;
     var family = name.slice(0, dot);
     if (!(family in declared)) {
-      try { declared[family] = require(require('path').join(__dirname, family, 'api.js')).verbs || null; } catch (e) { declared[family] = null; }
+      // The family's api.js through spirit.require (goal/G43.32), read where it is placed, spirit.required.spirit.<family>.api;
+      // the binding it also starts asks this node, which the check needs nothing of.
+      try {
+        if (require('fs').existsSync(require('path').join(__dirname, family, 'api.js'))) Promise.resolve(spirit.require('spirit/' + family + '/api.js')).then(null, function () { /* the binding */ });
+        var placed = spirit.required && spirit.required.spirit && spirit.required.spirit[family] && spirit.required.spirit[family].api;
+        declared[family] = (placed && placed.verbs) || null;
+      } catch (e) { declared[family] = null; }
     }
     var verbs = declared[family];
     var v = name.slice(dot + 1);
@@ -411,7 +418,7 @@ function createVerbTable() {
 // that has already passed (found on a planted node, 2026-10-09: every family ask hung and the client saw no answer).
 // Moved here from introSpector with mount (goal/G30.4).
 function readBody(rq) {
-  return require('./serveCommon').readJsonBody(rq);
+  return spirit.require('spirit/serveCommon.js').readJsonBody(rq);
 }
 
 module.exports = { createVerbTable: createVerbTable };

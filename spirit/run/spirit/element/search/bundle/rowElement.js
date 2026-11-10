@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/element/search/bundle/rowElement.js
 // ONE BUNDLE, AS A ROW ELEMENT (goal/G41.14). Its subject is a bundle of node.db's
 // bundle table, keyed by its hidden number; its fields label and owner. rowElement.js does the shared work; this
@@ -44,7 +45,7 @@
     return function () { gone = true; if (off) off(); off = null; };
   }
   function index() {
-    bundles = bundles || E.rowElement.index(dispatch);
+    bundles = bundles || E.spirit.element.rowElement.index(dispatch);
     return bundles;
   }
 
@@ -56,7 +57,7 @@
   function create(row) {
     var r = row || {};
     var id = Number(r.id);
-    return E.rowElement.create({
+    return E.spirit.element.rowElement.create({
       kind: 'bundle',
       key: String(id),
       index: index(),
@@ -71,5 +72,5 @@
   }
 
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
-  Object.assign(['search', 'bundle', 'rowElement'].reduce(function (o, k) { return (o[k] = o[k] || {}); }, E), { create: create });
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/bundle/rowElement.js', { create: create }); });
 }());

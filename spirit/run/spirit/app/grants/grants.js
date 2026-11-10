@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/app/grants/grants.js
 // WHO MAY CALL WHICH API — the owner's screen for the allow-table (apiAuth/G1.6), an app of spirit/app/ (goal/G43.24). Its
 // contract and its test: ./test/grants.md and ./test/grants.js.
@@ -29,13 +30,13 @@
     parts.then(function () {
       if (gone) return;
       var E = S.element;
-      tabs = E.tabContainer.create(container, {
+      tabs = E.spirit.element.tabContainer.create(container, {
         tabs: [
           { name: 'grants', label: 'Grants', mount: function (box) {
-            return E.grantsPanel.create(box, { ids: { table: 'loopback://api/contact/search' }, grants: E.grantsPanel.nodeGrants });
+            return E.spirit.element.grantsPanel.create(box, { ids: { table: 'loopback://api/contact/search' }, grants: E.spirit.element.grantsPanel.nodeGrants });
           } },
           { name: 'bundles', label: 'Bundles', mount: function (box) {
-            return E.bundleEditor.create(box, { tabs: tabs, tabLabel: function (row) { return String(row.owner || 'node') + '-' + String(row.label || ''); } });
+            return E.spirit.element.bundleEditor.create(box, { tabs: tabs, tabLabel: function (row) { return String(row.owner || 'node') + '-' + String(row.label || ''); } });
           } },
         ],
       });
@@ -50,6 +51,5 @@
     };
   }
 
-  S.elements = S.elements || {};
-  S.elements.grants = { create: create };
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/grants/grants.js', { create: create }); });
 }());

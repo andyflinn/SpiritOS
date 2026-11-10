@@ -1,4 +1,5 @@
 'use strict';
+require('./spirit.js');
 
 // spirit/run/spirit/presenceNode.js
 // The personal node's half of presence: one held connection to every
@@ -16,11 +17,11 @@
 // infrastructure and this knows about relays, keys and signatures.
 
 const path = require('path');
-const auth = require('./relayAuth');
-const ownerBadge = require('./ownerBadge');
-const sseClient = require('./sseClient');
+const auth = spirit.require('spirit/relayAuth.js');
+const ownerBadge = spirit.require('spirit/ownerBadge.js');
+const sseClient = spirit.require('spirit/sseClient.js');
 // Which key a relay answers to, pinned when this node took its seat.
-const relayKeys = require('./relayKeys');
+const relayKeys = spirit.require('spirit/relayKeys.js');
 
 function streamUrl(relayUrl, key) {
   return String(relayUrl).replace(/\/+$/, '') +
@@ -302,7 +303,7 @@ function createPresence(opts) {
     const relayKey = relayKeys.pinned(rootDir, url);
     if (!relayKey) return;
     let card = '';
-    try { card = require('./nodeCard').describe(rootDir); }
+    try { card = spirit.require('spirit/nodeCard.js').describe(rootDir); }
     catch (e) { card = ''; }
     if (!card) return;
     try {

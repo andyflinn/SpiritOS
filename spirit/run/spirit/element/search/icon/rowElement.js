@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/element/search/icon/rowElement.js
 // ONE ICON, AS A ROW ELEMENT (goal/G30.21). Its subject is a glyph, the icon itself (Andy: "it's the icon we store or
 // use"); its fields the glyph and the keywords it is found by, from the system set (spirit/iconSet.json).
@@ -15,18 +16,18 @@
   // and apps."): made by icon.create and handed on as its markup, since a cell is painted as text; the glyph as plain text
   // while icon.js has not loaded.
   function iconHtml(glyph) {
-    var I = E.icon;
+    var I = E.spirit.element.icon;
     if (!I || typeof I.create !== 'function' || typeof document === 'undefined') return esc(glyph);
     var hold = document.createElement('span');
     I.create(hold, { glyph: glyph });
     return hold.innerHTML;
   }
-  function index() { icons = icons || E.rowElement.index(function () {}); return icons; }
+  function index() { icons = icons || E.spirit.element.rowElement.index(function () {}); return icons; }
 
   function create(row) {
     var r = row || {};
     var glyph = String(r.glyph || r.key || '');
-    return E.rowElement.create({
+    return E.spirit.element.rowElement.create({
       kind: 'icon',
       key: glyph,
       index: index(),
@@ -40,5 +41,5 @@
   }
 
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
-  Object.assign(['search', 'icon', 'rowElement'].reduce(function (o, k) { return (o[k] = o[k] || {}); }, E), { create: create });
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/icon/rowElement.js', { create: create }); });
 }());

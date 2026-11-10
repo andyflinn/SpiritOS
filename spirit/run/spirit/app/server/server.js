@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/app/server/server.js
 // A FACE-APP SKELETON, AN ELEMENT (goal/G43.2). Andy, box: "both these apps will just be shell elements <name>.js, which paint
 // their name in big letters in the center of their container". Its contract and its test: ./test/server.md and
@@ -30,6 +31,5 @@
     return { destroy: function () { offRow(); offAll(); container.innerHTML = ''; } };
   }
 
-  (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
-  window.spirit.elements.server = { create: create };
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/server/server.js', { create: create }); });
 }());

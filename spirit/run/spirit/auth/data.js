@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/auth/data.js
 // WHAT A CLIENT KNOWS OF A NODE'S BUNDLES, BRANCHES AND GRANTS, IN THE auth FAMILY'S OWN FOLDER (goal/G41.28). Andy:
 // "We're not done until every family of the API tree as a clientCacheManager, and clients can use that to organize their
@@ -17,7 +18,7 @@
   var BRANCHES = 'branches';
   var GRANTS = 'grants';
   function grantKey(key, path) { return String(key) + '\n' + String(path); }
-  var D = typeof window !== 'undefined' ? window.spirit.data : require('../data.js');
+  var D = typeof window !== 'undefined' ? window.spirit.data : require('../spirit.js').require('spirit/data.js');
   D.makeFamily('auth', function () {
     var HOME = D.viewAt(null, 'auth');
     D.addTranslator({

@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/element/search/contact/rowElement.js
 // ONE CONTACT, AS A ROW ELEMENT (goal/G30.18). Its subject is a public key; its fields presence (the dot), status
 // (mine, blocked: the row's flags in the one table, goal/G40.11), label (the name, editable in a details dialog)
@@ -40,7 +41,7 @@
     return '<span data-icon="' + esc(glyph) + '"' + (title ? ' title="' + esc(title) + '"' : '') + '>' + esc(glyph) + '</span>';
   }
   function iconsIn(hosts) {
-    var I = E.icon;
+    var I = E.spirit.element.icon;
     if (!hosts || !I || typeof I.create !== 'function') return;
     var p = hosts.presence;
     if (p && typeof p.querySelectorAll === 'function') {
@@ -87,7 +88,7 @@
     return function () { gone = true; if (typeof off === 'function') off(); };
   }
   function index() {
-    contacts = contacts || E.rowElement.index(dispatch);
+    contacts = contacts || E.spirit.element.rowElement.index(dispatch);
     return contacts;
   }
 
@@ -108,7 +109,7 @@
           close: function () { if (layer) layer.hide(); },
           setTitle: function (text) { if (layer) layer.set({ label: String(text || '') }); },
         };
-        var E = window.spirit.element.search.contact;
+        var E = window.spirit.element.spirit.element.search.contact;
         return kind === 'relay' ? E.relayPanel.create(pane, { key: key, layer: here }) : E.detailElement.create(pane, { key: key, layer: here });
       });
     } })).then(function (l) { layer = l; return l; });
@@ -148,7 +149,7 @@
     // the element's own, so its act reads it as it stands.
     var actions = offered(Object.assign({}, r, { relay: relay })).slice();
     var made = null;
-    made = E.rowElement.create({
+    made = E.spirit.element.rowElement.create({
       kind: 'contact',
       key: key,
       index: index(),
@@ -212,5 +213,5 @@
   }
 
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
-  Object.assign(['search', 'contact', 'rowElement'].reduce(function (o, k) { return (o[k] = o[k] || {}); }, E), { create: create });
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/contact/rowElement.js', { create: create }); });
 }());

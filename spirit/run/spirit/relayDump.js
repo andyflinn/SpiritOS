@@ -1,4 +1,5 @@
 'use strict';
+require('./spirit.js');
 
 // spirit/run/spirit/relayDump.js
 // WHAT A RELAY HOLDS, ASKED OVER SSH — read-only, until cycle 4's monitor.
@@ -22,8 +23,8 @@
 // throws. Safe beside a running relay.
 
 const path = require('path');
-const relayStore = require('./relayStore');
-const auth = require('./relayAuth');
+const relayStore = spirit.require('spirit/relayStore.js');
+const auth = spirit.require('spirit/relayAuth.js');
 
 const LABEL_LIMIT = 10;
 

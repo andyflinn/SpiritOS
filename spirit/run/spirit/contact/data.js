@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/contact/data.js
 // WHAT A CLIENT KNOWS OF A NODE'S CONTACTS, IN THE contact FAMILY'S OWN FOLDER (goal/G41.28). Andy: "We're not done until
 // every family of the API tree as a clientCacheManager, and clients can use that to organize their spirit.data". A page
@@ -14,7 +15,7 @@
 // set, merge, del or seat; it asks nothing.
 (function () {
   var CONTACTS = 'contacts';
-  var D = typeof window !== 'undefined' ? window.spirit.data : require('../data.js');
+  var D = typeof window !== 'undefined' ? window.spirit.data : require('../spirit.js').require('spirit/data.js');
   D.makeFamily('contact', function () {
     var HOME = D.viewAt(null, 'contact');
     var told = Object.create(null);   // keys the presence table has spoken of, by node

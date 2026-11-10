@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/element/search/icon.js
 // ONE SHELL ELEMENT: the icon selector, a factory apps build their screens with.
 //
@@ -18,7 +19,7 @@
   // by icon.create and handed on as its markup, since the field and the rows are painted as text; plain text until then.
   var iconReady = typeof spirit.require === 'function' ? Promise.resolve(spirit.require('spirit/element/icon.js')).then(null, function () {}) : Promise.resolve();
   function iconHtml(glyph) {
-    var I = window.spirit.element && window.spirit.element.icon;
+    var I = window.spirit.element && window.spirit.element.spirit.element.icon;
     if (!I || typeof I.create !== 'function') return escapeHtml(glyph);
     var hold = document.createElement('span');
     I.create(hold, { glyph: glyph });
@@ -67,7 +68,7 @@
     var choices = [];
     var excludedGlyph = Object.create(null);
     (excludeGlyphs || []).forEach(function (g) { if (g) excludedGlyph[g] = true; });
-    Promise.resolve().then(function () { return spirit.require('spirit/element/search/icon/listElement.js'); }).then(function () { return window.spirit.element.search.icon.listElement.set(); }).then(function (set) {
+    Promise.resolve().then(function () { return spirit.require('spirit/element/search/icon/listElement.js'); }).then(function () { return window.spirit.element.spirit.element.search.icon.listElement.set(); }).then(function (set) {
       choices = Object.keys(set).filter(function (g) { return g && !excludedGlyph[g]; }).map(function (g) {
         var keys = Array.isArray(set[g]) ? set[g].map(String) : [];
         return { glyph: g, key: keys[0] || '', keys: keys, label: keys.join(', ') };
@@ -218,5 +219,5 @@
   // THE SHELL'S ELEMENT SHAPE (goal/G41.19, box v23: "every element gets a container and appends itself"):
   // create(container, options) appends the dropdown and answers it; options.exclude the glyphs spoken for.
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
-  Object.assign(['search', 'icon'].reduce(function (o, k) { return (o[k] = o[k] || {}); }, (window.spirit.element = window.spirit.element || {})), { create: function (container, options) { var o = options || {}; var root = createIconSelector(o.exclude || null, o); container.appendChild(root); return root; } });
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/icon.js', { create: function (container, options) { var o = options || {}; var root = createIconSelector(o.exclude || null, o); container.appendChild(root); return root; } }); });
 })();

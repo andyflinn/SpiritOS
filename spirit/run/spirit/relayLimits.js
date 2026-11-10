@@ -1,4 +1,5 @@
 'use strict';
+require('./spirit.js');
 
 // spirit/run/spirit/relayLimits.js
 // WHAT THE BOX CAN ACTUALLY GIVE, AND WHAT A RELAY TAKES OF IT BY DEFAULT.

@@ -1,36 +1,37 @@
 'use strict';
+require('./spirit.js');
 
 const fs = require('fs');
 const path = require('path');
-const auth = require('./relayAuth');
-const invites = require('./invites');
+const auth = spirit.require('spirit/relayAuth.js');
+const invites = spirit.require('spirit/invites.js');
 // One place decides how big a thing may be, and the browser reads the
 // same file (limits.js, beside this one). A cap the client pre-checks must be the cap
 // the relay enforces, or the pre-check is a lie.
-const limits = require('./limits.js');
+const limits = spirit.require('spirit/limits.js');
 // The peer search's one ranker, on the probability modules (goal/G29.17), shared with the node.
-const peerRank = require('./peerRank');
-const presence = require('./presence');
-const routerTable = require('./router');
-const relayStatus = require('./relayStatus');
+const peerRank = spirit.require('spirit/peerRank.js');
+const presence = spirit.require('spirit/presence.js');
+const routerTable = spirit.require('spirit/router.js');
+const relayStatus = spirit.require('spirit/relayStatus.js');
 // The relay's data on disc (cycle 3): members and invites.
-const relayStore = require('./relayStore');
-const faceRoute = require('./faceRoute');
+const relayStore = spirit.require('spirit/relayStore.js');
+const faceRoute = spirit.require('spirit/faceRoute.js');
 // The same validation the file gets at boot, so the owner's `config` verb
 // (reconfigure) cannot accept a figure a restart would then refuse.
-const relayConfig = require('./relayConfig');
+const relayConfig = spirit.require('spirit/relayConfig.js');
 // A relay is a peer with a key (0010), so posts addressed to it are
 // sealed like any other and it opens them with its own (cycle 10, R9).
-const seal = require('./seal');
+const seal = spirit.require('spirit/seal.js');
 // And it keeps its members' cards, verifying each one on every read
 // against the key its row is filed under (cycle 10, R5 and R13).
-const nodeCard = require('./nodeCard');
+const nodeCard = spirit.require('spirit/nodeCard.js');
 // The ceilings the owner's read reports — what this box could give — from
 // the same module the installer and first start use.
-const relayLimits = require('./relayLimits');
+const relayLimits = spirit.require('spirit/relayLimits.js');
 // Once, at load, for the same reason server.js does it: the answer must
 // describe the code that is running, not the code on disk.
-const RUNNING = require('./buildStamp').resolve(path.join(__dirname, '..'));
+const RUNNING = spirit.require('spirit/buildStamp.js').resolve(path.join(__dirname, '..'));
 
 // THE RING IS GONE (R8, 2026-09-15), and this is the whole of what it
 // was: `send()` into a 200-entry `messages` array persisted inside
@@ -124,8 +125,8 @@ var SEARCH_WORDS_MAX = 200;
 // THIS FILE IS STILL THE ENFORCER. The browser half is a courtesy that
 // saves a hop; the ledger is written here, and every claim and rename
 // is checked here whatever any page believed.
-var fieldRules = require('./fieldRules');
-var lever = require('./lever');
+var fieldRules = spirit.require('spirit/fieldRules.js');
+var lever = spirit.require('spirit/lever.js');
 
 // ── HOW MANY STREAMS THE OWNER'S RAM ALLOWS (cycle 8) ────────────────────
 //
@@ -2628,7 +2629,7 @@ function createRelay(rootDir, deps) {
   var selfFamily = null;
   function relaySelfFamily() {
     if (!selfFamily) {
-      try { selfFamily = require('./introSpector').family(path.join(__dirname, 'relaySelf'), { declared: MEMBER_VERBS.concat(OWNER_VERBS) }).verbs; }
+      try { selfFamily = spirit.require('spirit/introSpector.js').family(path.join(__dirname, 'relaySelf'), { declared: MEMBER_VERBS.concat(OWNER_VERBS) }).verbs; }
       catch (e) { selfFamily = {}; }
     }
     return selfFamily;

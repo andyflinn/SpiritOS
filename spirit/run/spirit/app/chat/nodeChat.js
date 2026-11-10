@@ -30,12 +30,12 @@ require('../../../spirit/spirit.js');
 const fs = require('fs');
 const path = require('path');
 const { DatabaseSync } = require('node:sqlite');
-const appServer = require('../../../spirit/appServer.js');
-const packet = require('../../../spirit/client/packet.js');
-const limits = require('../../../spirit/limits.js');
+const appServer = spirit.require('spirit/appServer.js');
+const packet = spirit.require('spirit/client/packet.js');
+const limits = spirit.require('spirit/limits.js');
 // The probability modules (goal/G29.18).
-const createProbabilityBucket = require('../../../spirit/probabilityBucket.js').createProbabilityBucket;
-const probabilityStringObjectMatch = require('../../../spirit/probabilityStringObjectMatch.js').probabilityStringObjectMatch;
+const createProbabilityBucket = spirit.require('spirit/probabilityBucket.js').createProbabilityBucket;
+const probabilityStringObjectMatch = spirit.require('spirit/probabilityStringObjectMatch.js').probabilityStringObjectMatch;
 
 const argv = process.argv;
 function arg(name) { const i = argv.indexOf(name); return i !== -1 ? String(argv[i + 1] || '') : ''; }

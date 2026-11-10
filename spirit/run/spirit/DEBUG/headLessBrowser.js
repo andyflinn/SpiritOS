@@ -7,10 +7,10 @@
 // spirit.shell.activateApp) is mounted into the box with an api as the face
 // gives one (shell/boot.js apiFor). An element
 // is created with the box alone, no options (box v23: "no manifests at this point, because special cases can be handled
-// by the elements own test script"): the one element with a create that the file's own code put on spirit.element, or
-// on spirit.elements for the ones that have not moved (goal/G43.5),
-// known by the script running as it is set, so the elements its parts register are not taken for it; none, or more than
-// one, fails and says what it found. /shell.css is the shell's one sheet, a link and not a script. What happened is on
+// by the elements own test script"): the element that stands at spirit.element.<the file's path> once it is required,
+// put there by its own installSpiritElement call (goal/G43.32; Andy: "element scripts installed by the above logic place
+// their element-factory at spirit.element.<path-of-fucking-element-script>"); none there fails and says where it looked.
+// /shell.css is the shell's one sheet, a link and not a script. What happened is on
 // window.spiritMount: { state: loading | mounted | failed, error, box, destroy }.
 'use strict';
 
@@ -21,17 +21,7 @@ function mountScript(file) {
     'var report = window.spiritMount = { state: "loading", error: "", box: box, destroy: null };\n' +
     'function failed(e) { report.state = "failed"; report.error = String((e && e.message) || e || "failed"); }\n' +
     'var file = ' + JSON.stringify(file) + ';\n' +
-    'var own = [];\n' +
-    'window.spirit = window.spirit || {};\n' +
-    'function running() { var s = document.currentScript; var m = s && /\\/\\/# sourceURL=(\\S+)\\s*$/.exec(s.textContent || ""); return m ? m[1] : ""; }\n' +
-    'function noted(k) { if (running() === file && own.indexOf(k) === -1) own.push(k); }\n' +
-    'function kept(o) { return new Proxy(o, {\n' +
-    '  set: function (t, k, v) { noted(k); t[k] = v; return true; },\n' +
-    '  defineProperty: function (t, k, d) { noted(k); Object.defineProperty(t, k, d); return true; }\n' +
-    '}); }\n' +
-    'var E = window.spirit.element = kept(window.spirit.element || {});\n' +
-    'var Old = window.spirit.elements = kept(window.spirit.elements || {});\n' +
-    'function made(k) { return E[k] || Old[k]; }\n' +
+    'function placed() { return file.replace(/\\.js$/, "").split("/").reduce(function (o, k) { return o == null ? undefined : o[k]; }, window.spirit.element); }\n' +
     'function ask(verb, args) {\n' +
     '  var name = String(verb); var dot = name.indexOf(".");\n' +
     '  var fam = dot > 0 ? spirit[name.slice(0, dot)] : null;\n' +
@@ -45,7 +35,7 @@ function mountScript(file) {
     '  setScreenTitle: function () {}, setScreenMark: function () {}, addTitlebarLink: function () {},\n' +
     '  armUntilElsewhere: function () {}, isVisible: function () { return true; }, refresh: function () {},\n' +
     '  onJobs: function () { return function () {}; }, onFiles: function () { return function () {}; }, onRelayEvent: function () { return function () {}; },\n' +
-    '  ui: { elements: Old, element: E }\n' +
+    '  ui: { element: window.spirit.element }\n' +
     '};\n' +
     'var app = null;\n' +
     '(spirit.shell = spirit.shell || {}).activateApp = function (behavior) { app = behavior; };\n' +
@@ -56,9 +46,9 @@ function mountScript(file) {
     '    report.state = "mounted";\n' +
     '    return;\n' +
     '  }\n' +
-    '  var mine = own.filter(function (k) { return made(k) && typeof made(k).create === "function"; });\n' +
-    '  if (mine.length !== 1) throw new Error(file + (mine.length ? " registers more than one element: " + mine.join(", ") : " registers no element with a create" + (own.length ? "; it registers " + own.join(", ") : "")));\n' +
-    '  return Promise.resolve(made(mine[0]).create(box)).then(function (m) {\n' +
+    '  var el = placed();\n' +
+    '  if (!el || typeof el.create !== "function") throw new Error(file + " places no element with a create at spirit.element." + file.replace(/\\.js$/, "").split("/").join("."));\n' +
+    '  return Promise.resolve(el.create(box)).then(function (m) {\n' +
     '    if (m && typeof m.destroy === "function") report.destroy = function () { return m.destroy(); };\n' +
     '    report.state = "mounted";\n' +
     '  });\n' +

@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/app/deskVerify/data.js
 // WHAT A CLIENT KNOWS OF THE VERIFIER, IN THE VERIFIER'S OWN FOLDER (goal/G41.28), as the desk's own is
 // (spirit/app/desk/data.js). Andy: "These rules apply to ALL clients. including deskVerify", and the box:
@@ -14,7 +15,7 @@
 (function () {
   var STATE = 'verify';
   var FLIPS = 'verifyFlips';
-  var D = typeof window !== 'undefined' ? window.spirit.data : require('../../data.js');
+  var D = typeof window !== 'undefined' ? window.spirit.data : require('../../spirit.js').require('spirit/data.js');
   D.makeFamily('deskVerify', function () {
     // The deskVerify family's view of the home node; a publish is filed under the node that sent it (goal/G41.28).
     var HOME = D.viewAt(null, 'deskVerify');

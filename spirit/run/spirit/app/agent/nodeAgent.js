@@ -17,7 +17,7 @@ require('../../spirit.js');
 const fs = require('fs');
 const path = require('path');
 const { DatabaseSync } = require('node:sqlite');
-const appServer = require('../../../spirit/appServer.js');
+const appServer = spirit.require('spirit/appServer.js');
 
 const argv = process.argv;
 const at = argv.indexOf('--state');
@@ -36,7 +36,7 @@ db.exec('DROP TABLE IF EXISTS "grant"');
 const TABLES = ['provider', 'model', 'persona', 'job'];
 const tables = {};
 const ctx = { db: db, dbFile: DB_FILE, tables: tables, publish: function (x) { appServer.publish(x); } };
-TABLES.forEach(function (name) { tables[name] = require('./table/' + name + '/server.js')(ctx); });
+TABLES.forEach(function (name) { tables[name] = spirit.require('spirit/app/agent/table/' + name + '/server.js')(ctx); });
 
 const verbs = {};
 TABLES.forEach(function (name) { verbs[name] = tables[name].verb; });

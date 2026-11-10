@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/app/data.js
 // WHAT A CLIENT KNOWS OF A NODE'S APPS, IN THE app FAMILY'S OWN FOLDER (goal/G43.2). A page loads it through
 // spirit.cacheManager('app'); it runs the translator into that page's spirit.data, under the node that served the rows.
@@ -9,7 +10,7 @@
 // Every event ends in set or del; it asks nothing.
 (function () {
   var APPS = 'apps';
-  var D = typeof window !== 'undefined' ? window.spirit.data : require('../data.js');
+  var D = typeof window !== 'undefined' ? window.spirit.data : require('../spirit.js').require('spirit/data.js');
   D.makeFamily('app', function () {
     var HOME = D.viewAt(null, 'app');
     D.addTranslator({

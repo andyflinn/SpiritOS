@@ -690,7 +690,7 @@ test.startTest('spirit/run/spirit.js: the one spirit object, in node and on a pa
       if (up === '200') {
         const mark = lazyPage.heard.length;
         const drawn = await lazyPage.evaluate("(function () { var d = document.createElement('div'); document.body.appendChild(d);" +
-          " return Promise.resolve(window.spirit.require('spirit/app/desk/desk.js')).then(function () { window.spirit.elements.desk.create(d, {});" +
+          " return Promise.resolve(window.spirit.require('spirit/app/desk/desk.js')).then(function () { window.spirit.element.spirit.app.desk.browserDesk.create(d, {});" +
           " return new Promise(function (r) { setTimeout(function () { r(JSON.stringify({ text: d.innerText, nodes: d.querySelectorAll('*').length })); }, 8000); }); }," +
           " function (e) { return JSON.stringify({ refused: String(e && e.message) }); }); })()");
         let got = {};

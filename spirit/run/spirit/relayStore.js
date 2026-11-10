@@ -1,4 +1,5 @@
 'use strict';
+require('./spirit.js');
 
 // spirit/run/spirit/relayStore.js
 // THE RELAY'S DATA, ON DISC. RAM IS ITS CLIENT.

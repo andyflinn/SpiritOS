@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/element/appHeader/appHeader.js
 // ONE SHELL ELEMENT: the app header (goal/G6.1), the header area an app or a dialog fills.
 //
@@ -24,5 +25,5 @@
   (window.spirit = window.spirit || {}).element = window.spirit.element || {};
   // THE SHELL'S ELEMENT SHAPE (goal/G41.19, box v23: "every element gets a container and appends itself"):
   // create(container) appends the header area and answers it.
-  window.spirit.element.appHeader = { create: function (container) { var div = createAppHeader(); container.appendChild(div); return div; } };
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/appHeader/appHeader.js', { create: function (container) { var div = createAppHeader(); container.appendChild(div); return div; } }); });
 })();

@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/app/file/file.js
 // FILES, AN ELEMENT (goal/G43.17; Andy: "file should be the same as files is. i don't want to loose all the nice stuff files
 // has..."). The old shell's Files app, moved. Its contract and its test: ./test/file.md and ./test/file.js.
@@ -39,7 +40,7 @@
       return { icon: (t && t.icon) || app.icon || '', label: (app.label ? app.label + ': ' : '') + name };
     }
     function open(key, words, line) {
-      var FS = S.element.fstat;
+      var FS = S.element.spirit.element.fstat;
       var name = String(key).split('/').pop();
       var opener = OPENERS[FS.kindOf(FS.mimeOf(key))];
       var layer = null;
@@ -52,7 +53,8 @@
         if (!opener) { FS.create(pane, { path: key }); return { destroy: function () { pane.innerHTML = ''; } }; }
         return S.require('spirit/app/' + opener + '/' + opener + '.js').then(function () {
           if (closed()) return null;
-          return S.elements[opener].create(pane, { path: key, words: words, line: line, title: title });
+          // The opener's element at the place of the file just loaded (goal/G43.32).
+          return S.element.spirit.app[opener][opener].create(pane, { path: key, words: words, line: line, title: title });
         });
       } })).then(function (l) {
         layer = l;
@@ -64,8 +66,8 @@
 
     parts.then(function () {
       if (gone) return;
-      stack = S.elements.panel.create(box, listBox);
-      list = S.element.search.file.create(listBox, {
+      stack = S.element.spirit.element.panel.create(box, listBox);
+      list = S.element.spirit.element.search.file.create(listBox, {
         face: 'pane',
         toggle: true,
         pick: function (row, key) {
@@ -90,6 +92,5 @@
     };
   }
 
-  S.elements = S.elements || {};
-  S.elements.file = { create: create };
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/file/file.js', { create: create }); });
 }());

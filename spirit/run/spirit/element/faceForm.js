@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/element/faceForm.js
 // THE FACE FORM, ONE SHELL ELEMENT (goal/G30.1, box v39). One row: the relay dropdown, the face name and Ask, then what
 // this node holds on the relay picked and the relay's answer. relay.face is {url, name} (box v30): the relay pairs the
@@ -55,7 +56,7 @@
       '<div class="sp-face-form"></div>' +
       '<div class="job-manifest-note sp-face-now">' + escape(holds(picked)) + '</div>' +
       '<div class="job-start-error sp-face-out"></div>';
-    var f = window.spirit.element.rowForm.create(box.querySelector('.sp-face-form'), { icon: '❓', button: 'Ask' });
+    var f = window.spirit.element.spirit.element.rowForm.create(box.querySelector('.sp-face-form'), { icon: '❓', button: 'Ask' });
     f.button.className = 'sp-face-go';
     f.button.disabled = !picked;
     f.span.innerHTML =
@@ -167,5 +168,5 @@
     mount(container, options);
     return { destroy: function () { if (container && typeof container._spFaceStop === 'function') container._spFaceStop(); if (container) container.innerHTML = ''; } };
   }
-  window.spirit.element.faceForm = { create: create, mount: mount, offers: function (relays) { return offered(relays).length > 0; } };
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/faceForm.js', { create: create, mount: mount, offers: function (relays) { return offered(relays).length > 0; } }); });
 }());

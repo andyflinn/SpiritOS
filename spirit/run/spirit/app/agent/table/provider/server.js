@@ -1,4 +1,5 @@
 'use strict';
+require('../../../../spirit.js');
 
 // spirit/run/spirit/app/agent/table/provider/server.js
 // THE PROVIDER TABLE (goal/G41.4): a model provider, its url and its API key. Andy, box v22: "a provider table. keyed by
@@ -20,7 +21,7 @@
 // provider row will be flagged as unusable"); a later answer clears the flag.
 const fs = require('fs');
 const path = require('path');
-const { rowTable } = require('../rowTable.js');
+const { rowTable } = spirit.require('spirit/app/agent/table/rowTable.js');
 
 const PLUGINS = path.join(__dirname, '..', '..', 'provider');
 const FALLBACK = 'openai';
@@ -36,7 +37,7 @@ function pluginOf(label) {
   let names = [];
   try { names = fs.readdirSync(PLUGINS); } catch (e) { names = []; }
   const name = names.filter(function (n) { return n.toLowerCase() === want && fs.existsSync(path.join(PLUGINS, n, n + '.js')); })[0] || FALLBACK;
-  return require(path.join(PLUGINS, name, name + '.js'));
+  return spirit.require('spirit/app/agent/provider/' + name + '/' + name + '.js');
 }
 
 module.exports = function (ctx) {

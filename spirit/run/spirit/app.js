@@ -1,4 +1,5 @@
 'use strict';
+require('./spirit.js');
 
 // spirit/run/spirit/app.js
 // THE app FAMILY'S CORE MODULE (goal/G43.2). Andy, box: "we build a skeleton core-api-family, not a separate server,
@@ -25,16 +26,19 @@
 
 const fs = require('fs');
 const path = require('path');
-const limits = require('./limits');
-const probabilityStringObjectMatch = require('./probabilityStringObjectMatch').probabilityStringObjectMatch;
-const createProbabilityBucket = require('./probabilityBucket').createProbabilityBucket;
+const limits = spirit.require('spirit/limits.js');
+const probabilityStringObjectMatch = spirit.require('spirit/probabilityStringObjectMatch.js').probabilityStringObjectMatch;
+const createProbabilityBucket = spirit.require('spirit/probabilityBucket.js').createProbabilityBucket;
 
 const ROOM = limits.PLAINTEXT_MAX - Buffer.byteLength(JSON.stringify({ ok: true, items: [], more: false }), 'utf8');
 // A plugin's own file, or its folder: what changes the table.
 const PLUGIN_PATH = /^spirit\/app\/([^/]+)(\/\1\.json)?$/;
 
 // goal/G43.6, Andy, box: "spirit.app also holds the family's verb, search, so no app may take the name of a verb."
-const VERBS = require('./app/api.js').verbs;
+// The branch's api.js through spirit.require (goal/G43.32): placed at once at spirit.required.spirit.app.api, the verbs read
+// from there; the binding it also starts asks this node, which this file needs nothing of.
+Promise.resolve(spirit.require('spirit/app/api.js')).then(null, function () { /* the binding; the verbs are read below */ });
+const VERBS = spirit.required.spirit.app.api.verbs;
 
 function createApp(opts) {
   const o = opts || {};
@@ -121,7 +125,7 @@ function createApp(opts) {
     const key = String((body && body.key) || '');
     // Its development team made it intrinsic, so no press switches it, and nothing is written for it (goal/G43.14). Refused by
     // name (goal/G43.15; Andy: "And what's even worse, the server allows it!!!!").
-    if (require('./coreFiles').appIntrinsic(path.resolve(o.rootDir, '..', '..'), key) === true && names().indexOf(key) !== -1) {
+    if (spirit.require('spirit/coreFiles.js').appIntrinsic(path.resolve(o.rootDir, '..', '..'), key) === true && names().indexOf(key) !== -1) {
       return { ok: false, status: 409, code: 'app-intrinsic', error: 'app ' + key + ' is intrinsic: it is always active' };
     }
     // ONE THAT IS ONLY RUN HAS NOTHING TO ACTIVATE (goal/G43.21; Andy: "and the node should know it, too."): refused by name, and

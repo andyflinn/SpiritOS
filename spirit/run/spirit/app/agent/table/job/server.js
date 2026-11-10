@@ -1,4 +1,5 @@
 'use strict';
+require('../../../../spirit.js');
 
 // spirit/run/spirit/app/agent/table/job/server.js
 // THE JOB TABLE (goal/G41.4). Andy, box v22: "a job table. keyed by ID same as the shadow-roll (with Label and
@@ -7,7 +8,7 @@
 // job's grant"), its provider and its persona; the grant table, and the delete hook that dropped a job's grants, are gone.
 // Enforcing the bundle when a job runs is out of scope (Andy: "oos."): it is stored.
 // No description since goal/G41.21 (Andy: "ALL, drop the description for ALL tables. it does NOTHING AND IS USELESS.").
-const { rowTable } = require('../rowTable.js');
+const { rowTable } = spirit.require('spirit/app/agent/table/rowTable.js');
 
 module.exports = function (ctx) {
   return rowTable(ctx.db, {

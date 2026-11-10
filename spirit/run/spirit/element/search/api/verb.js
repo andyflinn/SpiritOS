@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/element/search/api/verb.js
 // ONE SHELL ELEMENT: the verb dropdown, the verbs of one family of an api tree (goal/G41.5).
 //
@@ -43,7 +44,7 @@
     }
     // A PROBABILITYSEARCH DROPDOWN (the old shell's list search is forbidden on the face, goal/G40.8).
     parts.then(function () {
-      list = window.spirit.element.search.create(root, {
+      list = window.spirit.element.spirit.element.search.create(root, {
         face: 'dropdown',
         placeholder: options.placeholder || 'All Verbs',
         all: 'All Verbs',
@@ -75,5 +76,5 @@
   // THE SHELL'S ELEMENT SHAPE (goal/G41.19, box v23: "every element gets a container and appends itself"): create(container,
   // options) appends the control to the container and answers it.
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
-  Object.assign(['search', 'api', 'verb'].reduce(function (o, k) { return (o[k] = o[k] || {}); }, (window.spirit.element = window.spirit.element || {})), { create: function (container, options) { var root = createApiVerbSelector(options); container.appendChild(root); return root; } });
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/api/verb.js', { create: function (container, options) { var root = createApiVerbSelector(options); container.appendChild(root); return root; } }); });
 })();

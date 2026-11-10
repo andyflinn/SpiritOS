@@ -49,7 +49,7 @@ function isInteger(v) {
 // rule, not one per environment that could drift.
 function fieldRules() {
   if (typeof module !== 'undefined' && module.exports && typeof require === 'function') {
-    return require('./fieldRules.js');
+    return require('./spirit.js').require('spirit/fieldRules.js');
   }
   return (typeof window !== 'undefined' && window.spirit && window.spirit.fieldRules) || null;
 }

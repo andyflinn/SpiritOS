@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/app/agent/table/tableElement.js
 // WHAT THE TABLES' ELEMENTS SHARE (goal/G41.4), in the page: each table's elementTable.js and elementRow.js name their
 // columns and fields and build on these two. Andy, box v22:
@@ -41,7 +42,6 @@
 // in the servers update/change stream"): a changed field and Delete go to the server, and what an editor shows is the server's get
 // and the rows its stream then brings, never what was typed.
 (function () {
-  var E = (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
   var AGENT = spirit.familyPath('agent');
   var made = 0;
   function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
@@ -55,7 +55,7 @@
   function call(table, args) {
     return agent().then(function (a) { return a[table](args); }).then(function (body) { return body || {}; }, function (e) { return { refused: whyOf(e) }; });
   }
-  function needs(paths) { return Promise.all(paths.map(function (p) { return spirit.require(p); })).then(function () { E = window.spirit.elements; }); }
+  function needs(paths) { return Promise.all(paths.map(function (p) { return spirit.require(p); })); }
   // A TABLE'S BRANCH IS THE agent FAMILY'S CACHE (goal/G41.28): its whole path in spirit.data, as the family's own
   // data.js keeps it (spirit.data.agent.data), loaded with this element, as part of its tree. A page where it could
   // not be loaded (the agent server not running on its node, so the family is not there) is refused, never drawn
@@ -77,7 +77,7 @@
   // apps."): made by icon.create and written as the markup it made, since the row is text; the glyph as text only while
   // spirit/element/icon.js has not loaded (every pane that draws a title row loads it first, below).
   function iconHtml(glyph, size) {
-    var I = window.spirit.element && window.spirit.element.icon;
+    var I = window.spirit.element && window.spirit.element.spirit.element.icon;
     if (!I || typeof I.create !== 'function') return '<span style="font-size:' + size + 'em">' + esc(glyph) + '</span>';
     var hold = document.createElement('span');
     I.create(hold, { glyph: String(glyph || ''), size: size });
@@ -119,7 +119,7 @@
   }
   function search(host, o, more) {
     var columns = o.columns || columnsOf(o.table);
-    var s = window.spirit.element.search.create(host, Object.assign({
+    var s = window.spirit.element.spirit.element.search.create(host, Object.assign({
       // WHAT IT NEEDS, THE SEARCH REQUIRES ITSELF (goal/G43.24): it asks agent.<table> through the spirit object; no api.
       server: 'agent', verb: o.table, data: branchOf(o.table),
       args: function (text) { return { op: 'search', text: text }; },
@@ -130,7 +130,8 @@
     return s;
   }
   // What the tables' lists and editors share, the row's editor (./rowElement.js) among them.
-  E.agentDetail = { titleRow: titleRow, fieldLine: fieldLine, stretch: STRETCH, search: search, branchOf: branchOf, whyOf: whyOf,
+  // The tables' shared parts, placed with the table at this file's path (goal/G43.32: one file, one place; below).
+  var parts = { titleRow: titleRow, fieldLine: fieldLine, stretch: STRETCH, search: search, branchOf: branchOf, whyOf: whyOf,
     esc: esc, call: call, needs: needs, nameOf: nameOf, columnsOf: columnsOf };
 
   // o.add(open): what Add does instead of opening the editor in Add mode (no table hands one since the grant table went,
@@ -184,5 +185,5 @@
     };
   }
 
-  E.agentTable = { create: createTable };
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/agent/table/tableElement.js', Object.assign({ create: createTable }, parts)); });
 }());

@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/app/appSelector/rowFormToggle.js
 // ONE ON/OFF SWITCH, A rowForm (goal/G43.15). Andy, box: "it acts exactly like the two toggle switches in
 // appSelector:detailElement", "it is configurable with a description of what is being toggled." Its contract and its test:
@@ -20,10 +21,10 @@
     // One form redrawn whole, as a form's icon is fixed when it is made.
     function draw() {
       root.innerHTML = '';
-      var f = window.spirit.element.rowForm.create(root, { icon: on ? '🟢' : '🔴', button: '' });
+      var f = window.spirit.element.spirit.element.rowForm.create(root, { icon: on ? '🟢' : '🔴', button: '' });
       // THE BUTTON'S GLYPH IS AN ICON TOO (goal/G43.32; Andy: "fix the fucking elements/pages."): painted through the icon
       // element, which rowForm.js has loaded, as every pictograph the shell draws.
-      window.spirit.element.icon.create(f.button, { glyph: on ? '🔴' : '🟢' });
+      window.spirit.element.spirit.element.icon.create(f.button, { glyph: on ? '🔴' : '🟢' });
       f.span.textContent = words;
       f.button.addEventListener('click', function () { if (typeof o.press === 'function') o.press(); });
     }
@@ -39,6 +40,5 @@
     };
   }
 
-  (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
-  window.spirit.elements.rowFormToggle = { create: create };
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/appSelector/rowFormToggle.js', { create: create }); });
 }());

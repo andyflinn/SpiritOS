@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/element/search/grant/rowElement.js
 // ONE GRANT, AS A ROW ELEMENT (goal/G41.14), OF WHICHEVER GRANTS TABLE ITS CALLER
 // HANDS IT (goal/G41.16; Andy: "the callers (Grants and agent shell apps should boody well know how to configure the
@@ -43,7 +44,7 @@
   }
   function indexOf(g) {
     var t = tableOf(g);
-    t.index = t.index || E.rowElement.index(t.dispatch);
+    t.index = t.index || E.spirit.element.rowElement.index(t.dispatch);
     return t.index;
   }
 
@@ -62,7 +63,7 @@
     var key = configured ? r[g.key] : '';
     var label = configured ? r[g.label] : '';
     var revoke = configured ? [{ name: 'revoke', paint: function () { return '<button type="button" class="gr-revoke" data-action="revoke">Revoke</button>'; } }] : [];
-    var el = E.rowElement.create({
+    var el = E.spirit.element.rowElement.create({
       kind: 'grant',
       key: keyOf(key, r.path),
       index: configured ? indexOf(g) : null,
@@ -86,15 +87,15 @@
       mount(h);
       function controls() {
         var b = h.revoke && typeof h.revoke.querySelector === 'function' ? h.revoke.querySelector('[data-action="revoke"]') : null;
-        if (b) E.armingButton.attach(b, { label: 'Revoke', run: function () { return el.act('revoke', {}); } });
+        if (b) E.spirit.element.armingButton.attach(b, { label: 'Revoke', run: function () { return el.act('revoke', {}); } });
       }
       // Its parts are on the page by the time a list draws a row; until then the control waits for them.
-      if (E.armingButton) controls(); else parts.then(controls);
+      if (E.spirit.element.armingButton) controls(); else parts.then(controls);
       return el;
     };
     return el;
   }
 
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
-  Object.assign(['search', 'grant', 'rowElement'].reduce(function (o, k) { return (o[k] = o[k] || {}); }, E), { create: create });
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/grant/rowElement.js', { create: create }); });
 }());

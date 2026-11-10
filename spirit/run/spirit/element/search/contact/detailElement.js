@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/element/search/contact/detailElement.js
 // One row of the contacts, as its own panel, opened over the list that
 // mounted it (search/contact/rowElement.js, openDetails): it shows that
@@ -154,7 +155,7 @@ function cdTitle() {
 // and keeps one armed at a time; this screen says only what each says and what its second press does.
 function cdArming(id, label, armedLabel, run) {
   var button = cdById(id);
-  var E = window.spirit && window.spirit.element && window.spirit.element.armingButton;
+  var E = window.spirit && window.spirit.element && window.spirit.element.spirit.element.armingButton;
   if (!button || !E) return;
   E.attach(button, { label: label, armedLabel: armedLabel, run: run });
 }
@@ -351,7 +352,7 @@ if (window.spirit && window.spirit.require) window.spirit.require('spirit/elemen
 // create(container, options) draws the same screen into the container, options { key, layer }.
 // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18; Andy: "contactDetails.js should really be
 // spirit/run/spirit/element/search/contact/detailElement.js"): merged into, so the parts of search/contact/ load in any order.
-Object.assign(['search', 'contact', 'detailElement'].reduce(function (o, k) { return (o[k] = o[k] || {}); }, (window.spirit.element = window.spirit.element || {})), {
+window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/contact/detailElement.js', {
   create: function (container, options) {
     var o = options || {};
     var done = { destroy: function () { container.innerHTML = ''; } };
@@ -370,4 +371,4 @@ Object.assign(['search', 'contact', 'detailElement'].reduce(function (o, k) { re
   },
   // NO open OF ITS OWN (goal/G43.18): it opens as a panel over what mounted its list (search/contact/rowElement.js, openDetails),
   // never as a page on the navigation.
-});
+}); });

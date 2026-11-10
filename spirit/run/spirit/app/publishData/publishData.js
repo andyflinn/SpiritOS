@@ -135,7 +135,7 @@ function writeTestState(out, agent, commit) {
 
 // agents/<agent>/README.md: since goal/G33.5 written by agentReadme.js (Machine Description, Summary, Measurements),
 // with summary.json beside it, from the files themselves, so it never goes stale.
-function writeIndex(out, agent) { return require('./agentReadme.js').write(out, agent); }
+function writeIndex(out, agent) { return spirit.require('spirit/app/publishData/agentReadme.js').write(out, agent); }
 
 async function main() {
   const top = git(['rev-parse', '--show-toplevel'], process.cwd());
@@ -229,7 +229,7 @@ async function main() {
   if (c.status !== 0) end(1, 'publishData: the commit was refused: ' + (c.stderr || c.stdout).trim());
   // PUSH THROUGH pushOrigin (goal/G5.1): one shared place that rebases onto origin's newest, pushes, retries on a
   // race (Andy: "tries again if someone pushed meanwhile"), stops on a clash.
-  const { pushOrigin } = require('../pushOrigin/pushOrigin.js');
+  const { pushOrigin } = spirit.require('spirit/app/pushOrigin/pushOrigin.js');
   const pushed = await pushOrigin({ repo: clone });
   // pushOrigin's reason says what went wrong, the push itself or putting the clone's unsaved edits back (goal/G19.6).
   if (!pushed || !pushed.ok) end(1, 'publishData: pushOrigin did not finish: ' + ((pushed && pushed.reason) || 'unknown'));

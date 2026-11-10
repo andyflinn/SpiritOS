@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/app/shell/shell.js
 // THE SHELL APP (goal/G43.18, box v29, "The shell"; Andy: "i propose an app called shell, that wraps
 // spirit/element/search/app.js search as shell"): the default shell for home and face on a first boot (Q12), and the one a
@@ -23,7 +24,7 @@
       if (gone) return;
       // As appMigration draws it (Andy: "it should look like the latest thing we had using appMigration", an app gone since 64e2d054): tiles, with the toggle.
       // And never itself (Andy: "the shell should exclude itself completely from the app-list, haha...").
-      made = window.spirit.elements.appSelector.create(box, { face: 'tiles', toggle: true, hide: ['shell'] });
+      made = window.spirit.element.spirit.app.appSelector.create(box, { face: 'tiles', toggle: true, hide: ['shell'] });
     }, function () { box.textContent = 'The shell could not be loaded.'; });
     return {
       destroy: function () {
@@ -35,6 +36,5 @@
     };
   }
 
-  (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
-  window.spirit.elements.shell = { create: create };
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/shell/shell.js', { create: create }); });
 }());

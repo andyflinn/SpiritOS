@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/word.js
 // THE NAMESPACE CLAIMS (goal/G43.4). Andy, the box: "i will track nameSpace claims." After this item it is his, with every
 // word.json: "ANDY owns word.js and ALL word.json files." Its contract and its test: ./test/word.md and ./test/word.js.
@@ -39,7 +40,8 @@
     require('./spirit.js');
     var fs = require('fs');
     var path = require('path');
-    var VENDORED_FOLDERS = require('./fileSystem.js').VENDORED_FOLDERS;
+    // Through spirit.require (goal/G43.32; Andy allowed word.js to be changed to the rules).
+    var VENDORED_FOLDERS = spirit.require('spirit/fileSystem.js').VENDORED_FOLDERS;
     var readOr = function (file) { try { return fs.readFileSync(file, 'utf8'); } catch (e) { return null; } };
     var check = function (at, word) {
       var w = wordOf(word);

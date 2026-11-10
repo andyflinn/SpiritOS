@@ -1,4 +1,5 @@
 'use strict';
+require('./spirit.js');
 
 // Shared by the relay (relay.js, relayServer.js: verify) and the node (peerPost.js, hub.js, nodeCard.js and
 // others: sign and verify). Node crypto only.
@@ -14,7 +15,7 @@ const os = require('os');
 // What a label and a description may be, said once for both sides of the
 // wire. It requires nothing at all — that is what lets the browser have
 // the same copy — so this is another one-way edge.
-const fieldRules = require('./fieldRules');
+const fieldRules = spirit.require('spirit/fieldRules.js');
 
 // ── RESERVED_NAME = 'relay' STOOD HERE ───────────────────────────────
 //

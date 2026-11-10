@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/element/changeMyLabel.js
 // THE NODE'S NAME, CHANGED (goal/G41.6; Andy, Q1: Info's two blocks "become shell elements of their own, each with its
 // test folder"). One field and its Save: what this node answers to anybody who asks (spirit/nodeCard.js). Info draws it.
@@ -31,7 +32,7 @@
       '<div class="stack"><div data-label="form"></div>' +
       '<div data-label="left" class="job-manifest-note"></div>' +
       '<div data-label="said" class="job-start-error"></div></div>';
-    var form = E.rowForm.create(host.querySelector('[data-label="form"]'), { icon: '✏️', button: 'Save' });
+    var form = E.spirit.element.rowForm.create(host.querySelector('[data-label="form"]'), { icon: '✏️', button: 'Save' });
     form.span.innerHTML = 'Name' +
       '<input type="text" data-field="label" placeholder="' + esc('what people see, everywhere') + '">';
     var input = host.querySelector('[data-field="label"]');
@@ -81,7 +82,7 @@
     });
 
     parts.then(function () {
-      if (!gone && E.fieldInput) E.fieldInput.attach(input, 'name');
+      if (!gone && window.spirit.required.spirit.element.fieldInput) window.spirit.required.spirit.element.fieldInput.attach(input, 'name');
     }, function () { /* the node still refuses what the rule refuses */ });
     input.addEventListener('input', count);
     // Return saves, as the button does: the hand that never leaves the keyboard.
@@ -100,5 +101,5 @@
     };
   }
 
-  E.changeMyLabel = { create: create };
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/changeMyLabel.js', { create: create }); });
 }(typeof window !== 'undefined' ? window : globalThis));

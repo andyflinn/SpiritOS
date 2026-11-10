@@ -29,7 +29,7 @@
 // In node the module beside it; in a page the one on window.spirit.probability, read when it is called (goal/G41.18): a
 // part that loads both itself may have this one run first, so nothing is read from the page as this file loads.
 var nodeStringMatch = typeof require === 'function' && typeof module !== 'undefined' && module
-  ? require('./probabilityStringMatch').probabilityStringMatch
+  ? require('./spirit.js').require('spirit/probabilityStringMatch.js').probabilityStringMatch
   : null;
 function probabilityStringMatch(a, b) {
   var f = nodeStringMatch || (window.spirit && window.spirit.probability && window.spirit.probability.probabilityStringMatch);

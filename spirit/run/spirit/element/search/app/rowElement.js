@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/element/search/app/rowElement.js
 // ONE APP, AS A ROW ELEMENT (goal/G43.2), as spirit/element/search/bundle/rowElement.js is one bundle. rowElement.js does the
 // shared work; this file says what an app is. Its contract and its test: ./test/rowElement.md and ./test/rowElement.js.
@@ -29,22 +30,22 @@
     return function () { gone = true; if (off) off(); off = null; };
   }
   function index() {
-    apps = apps || window.spirit.element.rowElement.index(dispatch);
+    apps = apps || window.spirit.element.spirit.element.rowElement.index(dispatch);
     return apps;
   }
 
   function esc(s) { return window.spirit.escapeHtml(s); }
   // THE ICON IS THE ICON ELEMENT (goal/G41.23), handed on as its markup, since a cell is painted as text.
   function iconHtml(glyph) {
-    if (!window.spirit.element.icon) return esc(glyph);
+    if (!window.spirit.element.spirit.element.icon) return esc(glyph);
     var hold = document.createElement('span');
-    window.spirit.element.icon.create(hold, { glyph: glyph });
+    window.spirit.element.spirit.element.icon.create(hold, { glyph: glyph });
     return hold.innerHTML;
   }
 
   function create(row) {
     var r = row || {};
-    var el = window.spirit.element.rowElement.create({
+    var el = window.spirit.element.spirit.element.rowElement.create({
       kind: 'app',
       key: String(r.key || ''),
       index: index(),
@@ -72,7 +73,7 @@
         // It may still be loading: made once it is in, unless the row was drawn again meanwhile.
         var made = Promise.resolve(window.spirit.require('spirit/app/appSelector/rowFormAppActive.js')).then(function () {
           if (installer !== made) return;
-          installer = window.spirit.elements.rowFormAppActive.create(cell, { key: key });
+          installer = window.spirit.element.spirit.app.appSelector.rowFormAppActive.create(cell, { key: key });
         });
         installer = made;
       }
@@ -83,5 +84,5 @@
   }
 
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
-  Object.assign(['search', 'app', 'rowElement'].reduce(function (o, k) { return (o[k] = o[k] || {}); }, E), { create: create });
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/app/rowElement.js', { create: create }); });
 }());

@@ -1,4 +1,5 @@
 'use strict';
+require('./spirit.js');
 
 // spirit/run/spirit/streamSink.js
 // The sink a relay hands to relay.js for one held stream — and the one
@@ -23,7 +24,7 @@
 // Moved out of relayServer.js so it can be tested against a real socket
 // without booting a relay.
 
-const limits = require('./limits');
+const limits = spirit.require('spirit/limits.js');
 
 // `res` is the held response. `onStall(backlog)` is called once, on the
 // next turn after the socket is destroyed, with the backlog that tripped

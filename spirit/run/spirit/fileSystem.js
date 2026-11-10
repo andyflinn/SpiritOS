@@ -72,7 +72,7 @@ function statFile(filePath) {
 // A CORE FILE, by the one rule the commit check reads (spirit/coreFiles.js): spirit/run/spirit/, spirit/run/spirit/element/, the
 // shell's frame and an intrinsic app's folder, never a manifest. The repo root is two folders above the run folder.
 function isCoreFile(canonical) {
-  return require('./coreFiles').isCore('spirit/run/' + canonical, path.resolve(ROOT_DIR, '..', '..'));
+  return spirit.require('spirit/coreFiles.js').isCore('spirit/run/' + canonical, path.resolve(ROOT_DIR, '..', '..'));
 }
 // The one sidecar per annotated file gets a suffix, never a same-name
 // extension swap — <file>.sidecar.json can never collide with the

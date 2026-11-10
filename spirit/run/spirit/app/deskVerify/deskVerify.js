@@ -37,10 +37,10 @@ const fs = require('fs');
 const path = require('path');
 const { spawn, spawnSync } = require('child_process');
 const { DatabaseSync } = require('node:sqlite');
-const appServer = require('../../appServer.js');
-const limits = require('../../limits.js');
-const probabilityStringMatch = require('../../probabilityStringMatch.js').probabilityStringMatch;
-const createProbabilityBucket = require('../../probabilityBucket.js').createProbabilityBucket;
+const appServer = spirit.require('spirit/appServer.js');
+const limits = spirit.require('spirit/limits.js');
+const probabilityStringMatch = spirit.require('spirit/probabilityStringMatch.js').probabilityStringMatch;
+const createProbabilityBucket = spirit.require('spirit/probabilityBucket.js').createProbabilityBucket;
 
 const argv = process.argv;
 const at = argv.indexOf('--state');

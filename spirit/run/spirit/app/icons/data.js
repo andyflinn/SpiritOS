@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/app/icons/data.js
 // WHAT A CLIENT KNOWS OF THE ICON SET, IN THE icons FAMILY'S OWN FOLDER (goal/G43.19; the box: "it implements a
 // database-table interface, also reflected in api.js and data.js"). A page loads it through spirit.cacheManager('icons').
@@ -9,7 +10,7 @@
 // Every event ends in set or del; it asks nothing.
 (function () {
   var ICONS = 'icons';
-  var D = typeof window !== 'undefined' ? window.spirit.data : require('../../data.js');
+  var D = typeof window !== 'undefined' ? window.spirit.data : require('../../spirit.js').require('spirit/data.js');
   D.makeFamily('icons', function () {
     var HOME = D.viewAt(null, 'icons');
     D.addTranslator({

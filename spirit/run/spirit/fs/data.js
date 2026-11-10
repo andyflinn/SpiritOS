@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/fs/data.js
 // WHAT A CLIENT KNOWS OF A NODE'S FILES, IN THE fs FAMILY'S OWN FOLDER (goal/G41.28). Andy: "We're not done until every
 // family of the API tree as a clientCacheManager, and clients can use that to organize their spirit.data", and the box:
@@ -16,7 +17,7 @@
 (function () {
   var FILES = 'files';
   var ICONS = 'icons';
-  var D = typeof window !== 'undefined' ? window.spirit.data : require('../data.js');
+  var D = typeof window !== 'undefined' ? window.spirit.data : require('../spirit.js').require('spirit/data.js');
   D.makeFamily('fs', function () {
     // The fs family's view of the home node (a page's own); a stream's job is filed under the node that sent it.
     var HOME = D.viewAt(null, 'fs');

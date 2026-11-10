@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/spirit.js (goal/G43.18: moved from the run root, served at /spirit.js as before)
 // THE SPIRIT OBJECT (goal/G32.1): the node api for face apps, one file. face.html loads it first, by a script tag, from
 // the relay or the home node (goal/G41.19); the home node's index.html loads it; a server process requires it.
@@ -280,10 +281,13 @@
   // spirit.<family>; a peer's family is held under that peer's key and answered by spirit.require.
   //
   // A family's interface asked by ask, and made a member over ask and getFile, or refused no-interface.
+  var interfaceDefs = Object.create(null);
   function bindOn(ask, getFile, fam) {
     return Promise.resolve(ask('api', { family: fam })).then(function (got) {
       if (!got || got.status !== 200 || !got.body || typeof got.body.interface !== 'string') throw refusal('no-interface', 'no interface for the family ' + fam);
       var def = loadInterface(got.body.interface, fam);
+      // The api.js as it ran, kept for its place at spirit.required.<its path> (goal/G43.32; requireOne).
+      if (def) interfaceDefs[fam] = def;
       if (!def || !def.verbs) throw refusal('no-interface', 'the interface of ' + fam + ' names no verbs');
       return member(ask, getFile, fam, def);
     });
@@ -431,7 +435,8 @@
     if (!managers[n]) {
       if (isNode()) {
         var at = managerPaths(n).filter(function (p) { return require('fs').existsSync(require('path').join(RUN_ROOT, p)); })[0];
-        managers[n] = at ? requireOne(at) : Promise.reject(refusal('not-found', 'the family ' + n + ' has no ' + MANAGER));
+        // A manager is still asked for as a promise; the node's require answers it at once (goal/G43.32).
+        managers[n] = at ? new Promise(function (resolve) { resolve(requireOne(at)); }) : Promise.reject(refusal('not-found', 'the family ' + n + ' has no ' + MANAGER));
       } else {
         // ANDY'S RULES FOR THE FINDER (goal/G43.27): "less path elements get priority", "the target needs an api.js", and
         // "duplicate <name>/api.js raise a red" (the tree's test). So spirit/<name>/ is the place, and spirit/app/<name>/ only
@@ -468,15 +473,77 @@
     if (typeof document === 'undefined' || document.readyState !== 'loading') return Promise.resolve();
     return new Promise(function (resolve) { document.addEventListener('DOMContentLoaded', function () { resolve(); }, { once: true }); });
   }
+  // EVERY SCRIPT REQUIRED STANDS AT spirit.required.<its path> (goal/G43.32). Andy: "spirit.require() both on the node, AND
+  // on the browser should simply install every script required, at the following point: spirit.required.<path.of.fucking.
+  // script>. - no name collisions - easily checkable if script is already loaded." One key per folder of its run-root path,
+  // its name without .js the last: spirit/relayUrl.js at spirit.required.spirit.relayUrl. On the node it is the module's
+  // exports; on a page, where a script installs itself as it runs, an empty object marks it loaded.
+  var required = Object.create(null);
+  self.required = required;
+  // THE ELEMENTS' TREE (goal/G43.32): every element stands at spirit.element.<its path>, put there by
+  // spirit/element/installSpiritElement.js; this file makes the tree, so no element script assigns spirit.element itself.
+  self.element = self.element && typeof self.element === 'object' ? self.element : {};
+  // Its first levels made here, so a reader asking spirit.element.spirit.element.<x> or .spirit.app.<x> before any element
+  // loaded reads undefined instead of throwing.
+  self.element.spirit = self.element.spirit && typeof self.element.spirit === 'object' ? self.element.spirit : {};
+  ['element', 'app'].forEach(function (k) { if (!self.element.spirit[k] || typeof self.element.spirit[k] !== 'object') self.element.spirit[k] = {}; });
+  // A folder's place made before its file is required holds only what was placed under it; the file's answer takes the
+  // place and keeps those (no name collision: x.js and x/y.js both stand, whichever comes first).
+  var holders = typeof WeakSet === 'function' ? new WeakSet() : null;
+  function isHolder(o) { return !!(holders && o && typeof o === 'object' && holders.has(o)); }
+  function placeAt(rootObj, p, value) {
+    var keys = String(p).replace(/\.js$/, '').split('/').filter(Boolean);
+    var o = rootObj;
+    for (var i = 0; i < keys.length - 1; i += 1) {
+      var k = keys[i];
+      if (o[k] == null || (typeof o[k] !== 'object' && typeof o[k] !== 'function')) {
+        var h = {};
+        if (holders) holders.add(h);
+        o[k] = h;
+      }
+      o = o[k];
+    }
+    var last = keys[keys.length - 1];
+    var was = o[last];
+    if (was === value) return value;
+    if (was === undefined || isHolder(was)) {
+      if (isHolder(was) && value && (typeof value === 'object' || typeof value === 'function')) {
+        Object.keys(was).forEach(function (k) { if (!(k in value)) value[k] = was[k]; });
+      }
+      o[last] = value;
+    }
+    return o[last];
+  }
+  // THE NODE'S MODULES, KEPT AT ONCE (Andy: "box that spirit.require() on the node is just a path-translating wrapper."):
+  // a script's module.exports, the same one every time, no promise. An interface is still bound by asking a node.
+  var nodeOnce = Object.create(null);
   function requireOne(path, key, how) {
     var p = String(path || '').replace(/^\/+/, '');
     var fam = interfaceName(p);
+    // A BRANCH'S api.js STANDS AT spirit.required.spirit.<branch-path>.api (goal/G43.32; Andy: "i agree: thing
+    // spirit.required.spirit.<branch-path>.api is where it should land"): on the node it is the file as it is, loaded and
+    // placed at once, before the branch is bound, so an app server checks its calls by it without asking a node.
+    if (fam && isNode() && !Object.prototype.hasOwnProperty.call(nodeOnce, p)) {
+      var apiFile = require('path').join(RUN_ROOT, p);
+      if (require('fs').existsSync(apiFile)) { nodeOnce[p] = require(apiFile); placeAt(required, p, nodeOnce[p]); }
+    }
     if (fam && key) return bindPeer(key, fam, how);
-    if (fam) return bindOwn(fam);
+    // On a page the api.js the node handed over stands at its place once its branch is bound.
+    if (fam) return bindOwn(fam).then(function (m) { if (interfaceDefs[fam]) placeAt(required, p, interfaceDefs[fam]); return m; });
+    if (isNode()) {
+      if (Object.prototype.hasOwnProperty.call(nodeOnce, p)) return nodeOnce[p];
+      var file = require('path').join(RUN_ROOT, p);
+      // A script that is not there refuses not-found, as it always has (spirit.js's own test); one that is answers at once.
+      if (!require('fs').existsSync(file)) return Promise.reject(refusal('not-found', p + ' is not there'));
+      var mod = require(file);
+      nodeOnce[p] = mod;
+      placeAt(required, p, mod);
+      return mod;
+    }
     if (requiredOnce[p]) { if (collecting) collecting.push(requiredOnce[p]); return requiredOnce[p]; }
     // A script the page loaded by its own tag (the home shell's index.html) has run: it counts as required.
-    if (!isNode() && loadedByTag(p)) { requiredOnce[p] = Promise.resolve({}); if (collecting) collecting.push(requiredOnce[p]); return requiredOnce[p]; }
-    var answer = isNode() ? new Promise(function (resolve) { resolve(require(require('path').join(RUN_ROOT, p))); }) : get(p).then(function (r) {
+    if (loadedByTag(p)) { requiredOnce[p] = Promise.resolve({}); placeAt(required, p, {}); if (collecting) collecting.push(requiredOnce[p]); return requiredOnce[p]; }
+    var answer = get(p).then(function (r) {
       if (!r || r.status !== 200) throw refusal('not-found', p + ' answered ' + (r && r.status));
       var outer = collecting;
       var tree = collecting = [];
@@ -485,7 +552,7 @@
       // window.spirit as it runs, so none is handed a module box, and a file written for both node and a page
       // (CodeMirror's) takes its page branch. A stylesheet goes on the page as a style. The answer is an empty object.
       try { inject(p, text(r.bytes)); } finally { collecting = outer; }
-      return Promise.all(tree).then(function () { return {}; });
+      return Promise.all(tree).then(function () { var mark = {}; placeAt(required, p, mark); return mark; });
     });
     requiredOnce[p] = answer;
     // A refused require is not kept: it may be asked again.
@@ -728,11 +795,14 @@
     // how: waitMs (30 s by default), patienceMs, kind. Resolves the answer's body; {ok: false, code: 'not-posted'} for a
     // post the node refused, {ok: false, code: 'no-answer'} after waitMs of silence. It never rejects.
     // By its run-root path, as this file loads every other part (goal/G43.18: it sits in spirit/ now, beside client/).
-    var packet = require(require('path').join(RUN_ROOT, 'spirit', 'client', 'packet.js'));
+    // Loaded at its first use, not while this file loads (goal/G43.32): packet.js takes the spirit object first, so a
+    // require of it from here, mid-load, would hand it this file half made.
+    var packet = null;
     self.peerPost = function (peer, app, body, how) {
       var o = how && typeof how === 'object' ? how : {};
       var waitMs = Number(o.waitMs) > 0 ? Number(o.waitMs) : 30000;
       if (!PORT) return Promise.resolve({ ok: false, code: 'not-posted', error: 'no node: spirit/state/environment.json names no port' });
+      if (!packet) packet = requireOne('spirit/client/packet.js');
       var made = packet.encode(app, body);
       if (!made || !made.ok) return Promise.resolve({ ok: false, code: 'not-posted', error: (made && made.error) || 'the ask could not be encoded' });
       return post('events.subscribe', {}, { stream: true, headers: { 'X-Spirit-Reader': 'server' } }).then(function (r) {

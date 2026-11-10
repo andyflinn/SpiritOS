@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/app/agent/api.js: the agent server's family interface. An app of spirit/app/ has it at its top, as a
 // family of spirit/<family>/ does (goal/G43.27), where the node's familyDir, appServer's withAgents and spirit.familyPath
 // find it.

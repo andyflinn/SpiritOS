@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/app/desk/element/ruleDetails/ruleDetails.js (moved from shell/ruleDetails/ with goal/G43.30)
 // ONE RULE OF THE DESK, AS A DIALOG — goal/G6.4, beside deskDetails.
 //
@@ -66,7 +67,7 @@ function rdFrame() {
     '<div class="stat-tile wide"><div class="label">Chat, newest first</div><div id="rd-chat"></div></div>';
   rdHeader();
   rdParts.then(function () {
-    var A = typeof window !== 'undefined' && window.spirit && window.spirit.element && window.spirit.element.armingButton;
+    var A = typeof window !== 'undefined' && window.spirit && window.spirit.element && window.spirit.element.spirit.element.armingButton;
     if (!A) return;
     [['rd-activate', 'Activate', 'active'], ['rd-delete', 'Delete', 'deleted']].forEach(function (b) {
       var button = document.getElementById(b[0]);
@@ -79,9 +80,9 @@ function rdFrame() {
 function rdHeader() {
   var old = document.getElementById('rd-bars');
   var els = window.spirit.element || {};
-  if (!old || !old.parentNode || !els.appHeader) return;
+  if (!old || !old.parentNode || !els.spirit.element.appHeader.appHeader) return;
   // Made in the old block's parent, then put in its place (the element shape, goal/G41.19).
-  var head = els.appHeader.create(old.parentNode);
+  var head = els.spirit.element.appHeader.appHeader.create(old.parentNode);
   old.parentNode.insertBefore(head, old);
   head.id = 'rd-bars';
   head.style.paddingBottom = '2px';
@@ -236,7 +237,7 @@ function rdSay() {
   });
 }
 
-// AN ELEMENT OF THE DESK APP (goal/G43.27, requirement 23): spirit.elements.ruleDetails, made in a layer over the Desk page,
+// AN ELEMENT OF THE DESK APP (goal/G43.27, requirement 23): spirit.element.spirit.app.desk.element.ruleDetails.ruleDetails, made in a layer over the Desk page,
 // which hands it the page's own way to the node (opts.via: verb, escapeHtml, setScreenTitle).
 var rdApp = {
   mount: function (container, api) {
@@ -267,12 +268,11 @@ var rdApp = {
     return rdLoad();
   },
 };
-window.spirit.elements = window.spirit.elements || {};
-window.spirit.elements.ruleDetails = { create: function (container, opts) {
+window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/desk/element/ruleDetails/ruleDetails.js', { create: function (container, opts) {
   rdApp.mount(container, opts.via);
   // What it draws with, it loads itself (rule/26).
   return window.spirit.require('spirit/element/appHeader/appHeader.js').catch(function () {}).then(function () {
     rdApp.open(opts);
     return { destroy: function () { container.innerHTML = ''; } };
   });
-} };
+} }); });

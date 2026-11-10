@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/element/jobDetail.js
 // ONE JOB OF THE JOB MONITOR, AN ELEMENT (goal/G43.29; Andy: "a wrapper for separate spirit/element/ files"), moved here
 // from shell/jobsDetails/jobsDetails.js and working as it did, now a panel over Jobs (Q1: "a job row opens detail panel
@@ -158,7 +159,7 @@
       var win = part('window');
       if (win) win.textContent = 'Events (the last ' + ((J && J.eventWindow) || 256) + ')';
       // THE EXTRACT BOX ON THE CODEMIRROR ELEMENT, READ MODE (goal/G41.7).
-      Promise.resolve(S.element.codeMirror.create(part('extract'), { mode: 'read', text: '', path: 'event.json' })).then(function (v) {
+      Promise.resolve(S.element.spirit.element.codeMirror.create(part('extract'), { mode: 'read', text: '', path: 'event.json' })).then(function (v) {
         if (gone) return;
         view = v;
         if (view && view.cm && typeof view.cm.setSize === 'function') view.cm.setSize('100%', '100%');
@@ -180,6 +181,5 @@
     };
   }
 
-  S.element = S.element || {};
-  S.element.jobDetail = { create: create };
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/jobDetail.js', { create: create }); });
 }());

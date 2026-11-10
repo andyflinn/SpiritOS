@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/app/agent/chatPane.js
 // THE CHAT WITH A PERSONA, IN THE AGENT APP'S CENTRE (goal/G41.26). The Agent app opens it when a persona is picked in its
 // 💬 Select Persona panel (./browserAgent.js). Its contract and its test: ./test/chatPane.md and ./test/chatPane.js.
@@ -13,7 +14,6 @@
 //
 //   spirit.elements.chatPane.create(container, { persona }) -> { destroy() }   persona: the row picked, { id, label }
 (function () {
-  var E = (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
   var made = 0;
 
   function create(container, options) {
@@ -35,7 +35,7 @@
     var gone = false;
     Promise.all([spirit.require('spirit/app/agent/table/tableElement.js'), spirit.require('spirit/element/icon.js')]).then(function () {
       if (gone) return;
-      root.querySelector('#' + pre + 'title').innerHTML = window.spirit.elements.agentDetail.titleRow({ icon: '💬' }, ['Chat with ' + (persona.label || '')]);
+      root.querySelector('#' + pre + 'title').innerHTML = window.spirit.element.spirit.app.agent.table.tableElement.titleRow({ icon: '💬' }, ['Chat with ' + (persona.label || '')]);
     });
     var line = root.querySelector('#' + pre + 'line');
     var sendButton = root.querySelector('#' + pre + 'send');
@@ -53,5 +53,5 @@
     };
   }
 
-  E.chatPane = { create: create };
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/agent/chatPane.js', { create: create }); });
 }());

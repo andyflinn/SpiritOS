@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/app/agent/table/model/elementTable.js
 // THE MODEL TABLE IN THE PAGE (goal/G41.4): a model of a provider, its rows in a search list, a row picked opening in its
 // editor (./elementRow.js) in the page's detail pane. Built on the tables' shared element (../tableElement.js).
@@ -7,9 +8,8 @@
 // [providerSelector:dropdown] [Ask], the model list below it following the updated table by the stream. A refusal is said on one line, the provider's reason.
 //   spirit.elements.modelTable.create(container, detail) -> { refresh, destroy }   detail: the page's detail pane (../tableElement.js)
 (function () {
-  var E = (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
   var made = 0;
-  E.modelTable = {
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/agent/table/model/elementTable.js', {
     create: function (container, detail) {
       var pre = 'mt' + (++made) + '-';
       var table = null;
@@ -20,7 +20,6 @@
         spirit.require('spirit/element/search.js'), spirit.require('spirit/element/busyButton.js'),
         spirit.require('spirit/element/rowForm.js')]).then(function () {
         if (gone) return;
-        E = window.spirit.elements;
         container.innerHTML = '<div class="fill">' +
           '<div id="' + pre + 'form"></div>' +
           '<div id="' + pre + 'said" class="job-manifest-note"></div>' +
@@ -28,21 +27,21 @@
         // A ROWFORM (goal/G41.27; Andy: "agent: left panel. \n\n[❓] [Pick a provider ▾] [Ask]"): ❓, the
         // providerSelector:dropdown in its span, the same the job detail has (../tableElement.js, agentDetail.search), Ask
         // its button; "from" gone.
-        var form = window.spirit.element.rowForm.create(container.querySelector('#' + pre + 'form'), { icon: '❓', button: 'Ask' });
-        drop = E.agentDetail.search(form.span, { table: 'provider' }, { face: 'dropdown', placeholder: 'Pick a provider' });
+        var form = window.spirit.element.spirit.element.rowForm.create(container.querySelector('#' + pre + 'form'), { icon: '❓', button: 'Ask' });
+        drop = window.spirit.element.spirit.app.agent.table.tableElement.search(form.span, { table: 'provider' }, { face: 'dropdown', placeholder: 'Pick a provider' });
         var said = container.querySelector('#' + pre + 'said');
         // ASK WAITS AS A BUSY BUTTON (goal/G41.23): its request the provider table's ask, which updates the model table.
-        window.spirit.element.busyButton.attach(form.button, { run: function () {
+        window.spirit.element.spirit.element.busyButton.attach(form.button, { run: function () {
           var id = drop && drop.value ? String(drop.value) : '';
           if (!id) return null;
           said.textContent = '';
           return Promise.resolve(spirit.require(spirit.familyPath('agent'))).then(function (agent) { return agent.provider({ op: 'ask', id: id }); }).then(function () {}, function (e) {
-            if (!gone) said.textContent = E.agentDetail.whyOf(e);
+            if (!gone) said.textContent = window.spirit.element.spirit.app.agent.table.tableElement.whyOf(e);
           });
         } });
-        table = E.agentTable.create(container.querySelector('#' + pre + 'list'), {
+        table = window.spirit.element.spirit.app.agent.table.tableElement.create(container.querySelector('#' + pre + 'list'), {
           table: 'model', detail: detail,
-          row: function (box, id, added) { return E.modelRow.create(box, id, added, detail); },
+          row: function (box, id, added) { return window.spirit.element.spirit.app.agent.table.model.elementRow.create(box, id, added, detail); },
           // NO ADD: a model comes from its provider's list (Andy, on G41.18: "get RID of [Add a Model] button in the left
           // panes model mode. NOT required.").
           add: false,
@@ -60,5 +59,5 @@
         destroy: function () { gone = true; if (drop) drop.destroy(); if (table) table.destroy(); },
       };
     },
-  };
+  }); });
 }());

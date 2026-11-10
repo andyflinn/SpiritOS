@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/app/text/text.js
 // TEXT, AN ELEMENT (goal/G43.17; the box: "Four elements: file, fstat, text and media", and "text and media take a file when
 // mounted"; Andy, since: "please show the full media viewer or text editor (including the file picker) even when launched from
@@ -38,7 +39,7 @@
       if (gone) return;
       var E = S.element;
       // The row's icon is the editor's, until Andy names another.
-      var row = E.rowForm.create(box, { icon: '✏️', button: 'Save' });
+      var row = E.spirit.element.rowForm.create(box, { icon: '✏️', button: 'Save' });
       var status = document.createElement('div');
       status.className = 'job-manifest-note';
       status.setAttribute('data-text', 'status');
@@ -69,10 +70,10 @@
         shown = mine;
         mine.path = path;
         mine.destroy = function () { if (mine.view && typeof mine.view.destroy === 'function') mine.view.destroy(); };
-        E.fstat.read(path).then(function (r) {
+        E.spirit.element.fstat.read(path).then(function (r) {
           if (gone || shown !== mine) return null;
           if (r.status !== 200) { status.textContent = 'not loaded: ' + r.status; return null; }
-          return E.codeMirror.create(place, { mode: 'edit', text: new TextDecoder().decode(r.bytes), words: words || '', line: line || 0, path: path });
+          return E.spirit.element.codeMirror.create(place, { mode: 'edit', text: new TextDecoder().decode(r.bytes), words: words || '', line: line || 0, path: path });
         }).then(function (v) { if (v && shown === mine) { mine.view = v; status.textContent = 'loaded'; } }, function (e) {
           status.textContent = 'not loaded: ' + ((e && e.message) || e);
         });
@@ -90,7 +91,7 @@
       // ALWAYS WHOLE (Andy: "i changed my mind. please show the full media viewer or text editor (including the file picker) even when
       // launched from files."): the picker shows with a file handed in too, and that file is shown under it.
       var placeholder = 'open a file…';
-      picker = S.element.search.file.create(row.span, {
+      picker = S.element.spirit.element.search.file.create(row.span, {
         face: 'dropdown',
         placeholder: placeholder,
         name: function () { return placeholder; },
@@ -118,6 +119,5 @@
     };
   }
 
-  S.elements = S.elements || {};
-  S.elements.text = { create: create };
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/text/text.js', { create: create }); });
 }());

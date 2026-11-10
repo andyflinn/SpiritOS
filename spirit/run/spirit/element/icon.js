@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/element/icon.js
 // THE ICON ELEMENT (goal/G41.23, carried from goal/G41.21's box v9). Andy: "we will create a new shell element "icon", it
 // centers the glyph, in a square box, the size of which follows font-size, it's size option should vary from that
@@ -24,5 +25,5 @@
     return el;
   }
 
-  E.icon = { create: create };
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/icon.js', { create: create }); });
 }());

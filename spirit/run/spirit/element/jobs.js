@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/element/jobs.js
 // THE JOB MONITOR'S LIST, AN ELEMENT (goal/G43.29; Andy: "a wrapper for separate spirit/element/ files"): what the Jobs app
 // (spirit/app/jobs/jobs.js) draws, moved here from shell/jobs/jobs.js and working as it did. Its contract and its test:
@@ -54,7 +55,7 @@
   // The bar from the job's own app object: a job open (start or progress) draws it, an ended one or a terminal job none.
   function progressOf(job) {
     var c = job && job.app && typeof job.app === 'object' ? job.app.job : null;
-    var bar = S.element && S.element.progressBar;
+    var bar = S.element && S.element.spirit.element.progressBar;
     if (!c || typeof c !== 'object' || TERMINAL.indexOf(job.status) !== -1 || typeof bar !== 'function') return '';
     if (c.state === 'start') return bar(0, 0, String(c.name || ''));
     if (c.state === 'progress') return bar(Number(c.done) || 0, Number(c.total) || 0, String(c.text || ''));
@@ -64,7 +65,7 @@
   // THE STATUS MARK IS THE ICON ELEMENT (goal/G41.23): made by icon.create and handed on as its markup, since a cell is
   // painted as text. Its word beside it stays text.
   function glyphOf(glyph) {
-    var I = S.element && S.element.icon;
+    var I = S.element && S.element.spirit.element.icon;
     if (!I || typeof I.create !== 'function') return esc(glyph);
     var hold = document.createElement('span');
     I.create(hold, { glyph: glyph });
@@ -88,7 +89,7 @@
 
     // EACH JOB A ROW ELEMENT (goal/G41.21: the row element paints every list's rows): its cells drawn from the job as kept.
     function rowOf(row) {
-      var R = S.element.rowElement;
+      var R = S.element.spirit.element.rowElement;
       var job = row || {};
       index = index || R.index(function () {});
       return R.create({
@@ -114,7 +115,7 @@
       if (!id) return;
       var layer = null;
       Promise.resolve(openOver('job/' + id, { icon: STATUS_ICON[job.status] || '📋', label: id, fill: function (host) {
-        return S.element.jobDetail.create(host, {
+        return S.element.spirit.element.jobDetail.create(host, {
           id: id,
           title: function (t) { if (layer) layer.set(t); },
           close: function () { if (layer) layer.hide(); },
@@ -126,9 +127,9 @@
       if (gone) return;
       var box = container.firstElementChild;
       // ITS OWN STACK when the mounter hands none, over its page (as contact.js).
-      if (typeof o.open !== 'function') stack = S.elements.panel.create(container, box);
+      if (typeof o.open !== 'function') stack = S.element.spirit.element.panel.create(container, box);
       var J = S.data.jobs.data;
-      list = S.element.search.create(box, {
+      list = S.element.spirit.element.search.create(box, {
         data: J.branch,
         columns: [
           { field: 'latest', label: '' },
@@ -164,6 +165,5 @@
     };
   }
 
-  S.element = S.element || {};
-  S.element.jobs = { create: create };
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/jobs.js', { create: create }); });
 }());

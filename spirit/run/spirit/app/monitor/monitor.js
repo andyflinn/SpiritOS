@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/app/monitor/monitor.js
 // AN APP THAT READS AND DISPLAYS A STREAM (goal/G43.6). Andy, box: "An app that reads and displays a stream, called "monitor". It
 // resides in spirit.app.monitor, in the new format of app plugins, under one namespace." Its contract and its test:
@@ -62,7 +63,7 @@
     var off = null;
     parts.then(function () {
       if (gone) return;
-      list = S.element.search.valued.create(container, { rows: rows, columns: COLUMNS });
+      list = S.element.spirit.element.search.valued.create(container, { rows: rows, columns: COLUMNS });
       // WHO PAINTS, LISTENS (Andy, G41.32): each new reading repaints. A forgotten set or a job gone may be the reading's.
       off = S.data.jobs.data.watch(function (id, job) { if (!id || !job || id === 'spirit') list.redraw(); });
     });

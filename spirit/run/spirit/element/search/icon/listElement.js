@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/element/search/icon/listElement.js
 // THE ICONS LIST, A DROP-IN SHELL ELEMENT (goal/G30.21): the system set (spirit/iconSet.json, each glyph with
 // the keywords it is found by) on the standard list-tool (spirit/element/search.js), each row an icon row element (./rowElement.js). The
@@ -58,7 +59,7 @@
         return set;
       });
     }
-    list = E.search.create(host, {
+    list = E.spirit.element.search.create(host, {
       // Its own data source (goal/G43.24), which finds nothing: the rows are its own.
       search: function () { return Promise.resolve({ status: 200, body: { ok: true, items: [], more: false } }); },
       server: 'fs',
@@ -72,7 +73,7 @@
         { field: 'glyph', label: '' },
         { field: 'keywords', label: 'Keywords' },
       ],
-      element: function (row, key) { return E.search.icon.rowElement.create(Object.assign({ glyph: key }, row)); },
+      element: function (row, key) { return E.spirit.element.search.icon.rowElement.create(Object.assign({ glyph: key }, row)); },
       pick: function (row, key) { if (typeof o.pick === 'function') o.pick(row, key); },
       details: typeof o.details === 'function' ? function (row, key) { o.details(row, key); } : undefined,
       empty: o.empty || 'No icon matches.',
@@ -83,5 +84,5 @@
   }
 
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
-  Object.assign(['search', 'icon', 'listElement'].reduce(function (o, k) { return (o[k] = o[k] || {}); }, E), { create: create, set: readSet, SET: SET });
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/icon/listElement.js', { create: create, set: readSet, SET: SET }); });
 }());

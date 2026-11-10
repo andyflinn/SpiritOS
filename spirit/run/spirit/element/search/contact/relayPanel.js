@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/element/search/contact/relayPanel.js
 // ONE RELAY, A SHELL ELEMENT (goal/G41.32; Andy: "natterDetails will become an shell element: relayPanel.js, it is configured
 // with it's own contact row, and follows only that."). Its contract and its test: ./test/relayPanel.md and ./test/relayPanel.js.
@@ -46,7 +47,7 @@ var ndEscapeHtml = spirit.escapeHtml;
 // as text; plain text while spirit/element/icon.js has not loaded. A mark among words (a heading's) is text (Andy: "glyphs are
 // legal in labels and description true, and in that context they don't need special handling").
 function ndIconHtml(glyph) {
-  var I = window.spirit && window.spirit.element && window.spirit.element.icon;
+  var I = window.spirit && window.spirit.element && window.spirit.element.spirit.element.icon;
   if (!I || typeof I.create !== 'function') return ndEscapeHtml(glyph);
   var hold = document.createElement('span');
   I.create(hold, { glyph: glyph });
@@ -745,13 +746,13 @@ function ndEmailHtml() {
 function ndFaceHtml() {
   // ONE RULE, THE FORM'S (goal/G41.32; Andy: "faceForm provides that check as a function"): since goal/G43.18 it shows only on a
   // starred relay. Drawn again once the form is on the page.
-  var form = window.spirit && window.spirit.element && window.spirit.element.faceForm;
+  var form = window.spirit && window.spirit.element && window.spirit.element.spirit.element.faceForm;
   if (!ndBadge || !form || !form.offers([ndBadge])) return '';
   return ndPanel('face', '🌐', 'A face name', '<div class="nd-face-form"></div>', 'natter-face');
 }
 
 // THE JOIN FORM IS A SHELL ELEMENT (goal/G30.1, box v33): spirit/element/joinForm.js, which this file loads itself (iconReady).
-function ndJoinForm() { return (window.spirit && window.spirit.element && window.spirit.element.joinForm) || null; }
+function ndJoinForm() { return (window.spirit && window.spirit.element && window.spirit.element.spirit.element.joinForm) || null; }
 
 // ── WHAT IS OUTSTANDING, AND TAKING ONE BACK ─────────────────────────
 //
@@ -1289,7 +1290,7 @@ function ndSetTitle() {
 // moves and keeps one armed at a time. This screen says only what each
 // says, armed and not, and what its second press does.
 function ndArming(body) {
-  var E = window.spirit && window.spirit.element && window.spirit.element.armingButton;
+  var E = window.spirit && window.spirit.element && window.spirit.element.spirit.element.armingButton;
   if (!E) return;
   var each = function (selector, fn) { Array.prototype.forEach.call(body.querySelectorAll(selector), fn); };
   var attach = function (button, armedLabel, run) {
@@ -1346,9 +1347,9 @@ function ndRender() {
 function ndMountForms(body) {
   var el = (window.spirit && window.spirit.element) || {};
   var here = Object.assign({ url: ndUrl, label: (ndBadge && ndBadge.label) || ndUrl }, ndBadge || {});
-  Array.prototype.forEach.call(body.querySelectorAll('.nd-join-form'), function (box) { if (el.joinForm) el.joinForm.mount(box, { relays: [here], fixed: ndUrl }); });
+  Array.prototype.forEach.call(body.querySelectorAll('.nd-join-form'), function (box) { if (el.spirit.element.joinForm) el.spirit.element.joinForm.mount(box, { relays: [here], fixed: ndUrl }); });
   var face = body.querySelector('.nd-face-form');
-  if (face && el.faceForm) el.faceForm.mount(face, { relays: [here], fixed: ndUrl, reload: function () { return Promise.resolve(); } });
+  if (face && el.spirit.element.faceForm) el.spirit.element.faceForm.mount(face, { relays: [here], fixed: ndUrl, reload: function () { return Promise.resolve(); } });
 }
 
 // NOTHING REPAINTS THIS SCREEN except ndRender: on a press, when ndLoad
@@ -1771,7 +1772,7 @@ return {
 // create(container, { key, layer? }) draws it into the container.
 // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18; Andy: "spirit/run/spirit/element/relayPanel.js really should be
 // spirit/run/spirit/element/search/contact/relayPanel.js"): merged into, so the parts of search/contact/ load in any order.
-Object.assign(['search', 'contact', 'relayPanel'].reduce(function (o, k) { return (o[k] = o[k] || {}); }, (window.spirit.element = window.spirit.element || {})), {
+window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/contact/relayPanel.js', {
   create: function (container, options) {
     var o = options || {};
     // UNCONFIGURED, IT SAYS SO and throws nothing (box v23: "no throw even unconfigured").
@@ -1786,5 +1787,5 @@ Object.assign(['search', 'contact', 'relayPanel'].reduce(function (o, k) { retur
   },
   // NO open OF ITS OWN (goal/G43.18): it opens as a panel over what mounted its list (search/contact/rowElement.js, openDetails),
   // never as a page on the navigation.
-});
+}); });
 }());

@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/element/armingButton.js
 // THE ARE-YOU-SURE BUTTON (goal/G41.9; Andy: "create shell-element \"armingButton\" with test folders and all"): one
 // element for every two-press confirm in the shell, in place of the copies each app hand-rolled. The rule it carries is
@@ -80,5 +81,5 @@
     return attach(button, o);
   }
 
-  E.armingButton = { create: create, attach: attach };
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/armingButton.js', { create: create, attach: attach }); });
 }());

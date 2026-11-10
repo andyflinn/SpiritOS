@@ -25,18 +25,18 @@ const http = require('http');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const relayConfig = require('./relayConfig');
-const relayLimits = require('./relayLimits');
+const relayConfig = spirit.require('spirit/relayConfig.js');
+const relayLimits = spirit.require('spirit/relayLimits.js');
 // The node's file system: the files of the run folder and what may be served or written (goal/G40.6).
-const fileSystem = require('./fileSystem');
-const createRelay = require('./relay');
+const fileSystem = spirit.require('spirit/fileSystem.js');
+const createRelay = spirit.require('spirit/relay.js');
 // The build stamp for GET /api/version stood here; that route is closed
 // (goal/G22.6), and a relay's version reaches its owner in relay-status
 // (relay.js, RUNNING).
-const common = require('./serveCommon');
-const streamSink = require('./streamSink');
+const common = spirit.require('spirit/serveCommon.js');
+const streamSink = spirit.require('spirit/streamSink.js');
 // R36 phase B: a refusal carries the catalogue's code beside its sentence.
-const spiritErrors = require('./spiritErrors');
+const spiritErrors = spirit.require('spirit/spiritErrors.js');
 const readJsonBody = common.readJsonBody;
 const nodeRefusal = common.nodeRefusal;
 
@@ -103,7 +103,7 @@ function refuseToStart(why) {
 // no in-memory copy to fall back on. A Node too old to load the driver
 // (floor 22.13) cannot be a relay, and says so now rather than on the
 // first claim. The node never loads this module.
-const relayStore = require('./relayStore');
+const relayStore = spirit.require('spirit/relayStore.js');
 if (!relayStore.available()) {
   refuseToStart('node:sqlite is not available in Node ' +
     process.version + ' — a relay needs 22.13 or later (relayStore.js)');
@@ -146,7 +146,7 @@ catch (e) {
 // relay with people on it and nobody answering for them is still broken,
 // not new, so it does not start. No members and no owner is a relay that
 // was never installed: bash/install-units writes owner.json first.
-if (!require('./relayAuth').loadOwner(ROOT_DIR) &&
+if (!spirit.require('spirit/relayAuth.js').loadOwner(ROOT_DIR) &&
     relayStore.open(ROOT_DIR).members.count() > 0) {
   refuseToStart('spirit/state/relay.db holds ' + relayStore.open(ROOT_DIR).members.count() +
     ' member(s) but spirit/state/owner.json names no owner. Restore owner.json over SSH ' +
@@ -269,7 +269,7 @@ function argMB(flag) {
 // THE RELAY SENDS MAIL THROUGH A DRIVER (goal/G30.2): the join link goes to the user's email. Only when the owner has
 // placed spirit/state/mail.json naming its driver (sendMail.js); without it the relay takes no join, and its card says
 // services.sendMail false.
-const mailSender = require('./sendMail').createSender(ROOT_DIR);
+const mailSender = spirit.require('spirit/sendMail.js').createSender(ROOT_DIR);
 console.log(mailSender ? 'mail: sent through the ' + mailSender.driver + ' driver' : 'mail: none (no spirit/state/mail.json naming a driver), so no join by email');
 
 const relay = createRelay.createRelay(undefined, {
@@ -379,9 +379,9 @@ if (process.env.INVOCATION_ID) setServiceCap(2 * CONFIG.ramLimitMB);
 // as the answer to a card ask on the one door (relay.js relayCard,
 // goal/G22.6), and it is NOT the owner's key — the owner is a peer who
 // claimed, the relay is the box.
-require('./relayAuth').nameIdentity(ROOT_DIR, 'relay');
+spirit.require('spirit/relayAuth.js').nameIdentity(ROOT_DIR, 'relay');
 // FIRST-RUN DEFAULTS (goal/G30.7): a first description and a first public label, by the node's own rule (serveCommon).
-try { require('./serveCommon').ensureFirstRun(ROOT_DIR, { kind: 'relay' }); }
+try { spirit.require('spirit/serveCommon.js').ensureFirstRun(ROOT_DIR, { kind: 'relay' }); }
 catch (e) { /* a caption must never be the reason a relay will not boot */ }
 
 // handleDeviceOffer (POST /api/relay/device) STOOD HERE, removed by
@@ -984,7 +984,7 @@ server.listen(port, BIND_HOST, () => {
   // (goal/G16.8 — Andy: "the relays should do first-claim, it should
   // happen at install time. that's the only \"safe\" way."). Saying so at
   // boot is what tells an operator why nobody can get in.
-  if (!require('./relayAuth').loadOwner(ROOT_DIR)) {
+  if (!spirit.require('spirit/relayAuth.js').loadOwner(ROOT_DIR)) {
     console.warn(
       '    UNOWNED — no owner in spirit/state/owner.json, so this relay refuses every claim.\n' +
       '    The owner is written at install: OWNER_KEY=<your node\'s public key> ./bash/install-units'

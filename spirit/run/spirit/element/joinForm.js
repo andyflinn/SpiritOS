@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/element/joinForm.js
 // THE EMAIL FORM, ONE SHELL ELEMENT (goal/G30.1, box v33; Andy: "you better make that form a shell-element"). One row:
 // the relay dropdown, the email field and its button, then the line under it, asking relay.join of the relay picked:
@@ -56,7 +57,7 @@
     box.innerHTML = '<div class="label sp-join-title">' + escape(w.title) + '</div>' +
       '<div class="sp-join-form"></div>' +
       '<div class="job-manifest-note sp-join-out"></div>';
-    var f = window.spirit.element.rowForm.create(box.querySelector('.sp-join-form'), { icon: w.icon, button: w.button });
+    var f = window.spirit.element.spirit.element.rowForm.create(box.querySelector('.sp-join-form'), { icon: w.icon, button: w.button });
     f.button.className = 'sp-join-go';
     f.span.innerHTML =
       '<select class="sp-join-relay"' + (o.fixed ? ' disabled' : '') + '>' +
@@ -178,5 +179,5 @@
     mount(container, options);
     return { destroy: function () { if (container && typeof container._spJoinStop === 'function') container._spJoinStop(); if (container) container.innerHTML = ''; } };
   }
-  window.spirit.element.joinForm = { words: words, create: create, mount: mount, send: send };
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/joinForm.js', { words: words, create: create, mount: mount, send: send }); });
 }());

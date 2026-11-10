@@ -41,8 +41,8 @@ require('./spirit.js');
 const fs = require('fs');
 const path = require('path');
 const http = require('http');
-const errors = require('./spiritErrors');
-const limits = require('./limits');
+const errors = spirit.require('spirit/spiritErrors.js');
+const limits = spirit.require('spirit/limits.js');
 
 const RESERVED = ['api', 'ok'];
 const VERB_RE = /^[A-Za-z_][A-Za-z0-9_.-]{0,63}$/;
@@ -416,7 +416,7 @@ const CACHE_LIMIT = 4 * 1024 * 1024;
 const CACHE_SAVE_MS = 10;
 let streamData = null;
 function dataSet() {
-  if (!streamData) streamData = require('./data.js');
+  if (!streamData) streamData = spirit.require('spirit/data.js');
   return streamData;
 }
 // One per sender this server follows: where it stands and what it keeps.
@@ -437,7 +437,7 @@ function familyApi(family) {
   // Beside the family's api.js (spirit.familyPath): an app's in spirit/app/<name>/, a system family's in spirit/<name>/.
   const file = path.join(RUN_ROOT, path.dirname(spirit.familyPath(String(family))), 'data.js');
   if (!fs.existsSync(file)) return null;
-  try { return require(file); } catch (e) { return null; }
+  try { return spirit.require(path.relative(RUN_ROOT, file).split(path.sep).join('/')); } catch (e) { return null; }
 }
 function senderOf(key, family) {
   const k = String(key || '');
@@ -570,7 +570,7 @@ function withStreamListener(verbs, stream, followed, name) {
   if (!stream || typeof stream !== 'object' || Object.prototype.hasOwnProperty.call(verbs, 'streamListener')) return verbs;
   dataSet();
   // A family's data.js stands on this server's data set as it is required (goal/G41.24, goal/G43.7).
-  if (stream.translator) require(path.resolve(String(stream.translator)));
+  if (stream.translator) spirit.require(path.relative(RUN_ROOT, path.resolve(String(stream.translator))).split(path.sep).join('/'));
   const cache = stream.cache === true || isPlain(stream.cache);
   following = {
     module: String(stream.module || ''),
@@ -638,7 +638,7 @@ let published = 0;
 const log = [];                  // { run, n, row }, oldest first, bounded by publisher.logMax
 // A server family's interface: the one family path function (spirit.js, goal/G41.12), handed out by this file too.
 function familyPath(name) { return spirit.familyPath(name); }
-const createProbabilityBucket = require('./probabilityBucket').createProbabilityBucket;
+const createProbabilityBucket = spirit.require('spirit/probabilityBucket.js').createProbabilityBucket;
 // One answer's room, as the desk's lists were cut (ANSWER_ROOM): half a sealed packet less 512 bytes for its envelope,
 // less the bytes the bundle's JSON gains as the json string of its request.
 const BUNDLE_ROOM = Math.floor(limits.SEALED_MAX / 2) - 512;
@@ -772,7 +772,7 @@ function subscribersFromGrants(name) {
 // spirit/jobs/ ...", "i think the shape needs alignment."): a server is spirit/app/<name>/<name>.js, its family beside it.
 function withAgents(verbs, script) {
   const resolved = path.resolve(String(script || ''));
-  require('./introSpector').stale(path.dirname(resolved), Object.keys(verbs)).forEach(function (file) {
+  spirit.require('spirit/introSpector.js').stale(path.dirname(resolved), Object.keys(verbs)).forEach(function (file) {
     console.error('appServer: ' + file + ' names a verb this server does not declare');
   });
   return Object.assign({}, verbs);
@@ -782,6 +782,39 @@ function withAgents(verbs, script) {
 // Started by the node, it ends with the node (processes/G1.3).
 // opts: { fallback, codes, stream, publisher }: fallback as createAppServer takes it, codes as declareCodes, stream
 // and publisher as withStreamListener and withPublisher above.
+// EVERY CALL CHECKED BY THE APP'S api.js, IN THE APP'S OWN PROCESS (goal/G43.32, the box, decided 9). Andy: "the arguments
+// for an API call MUST be validated twice: a) on the browser ... b) ON THE FUCKING NODE ... and it MUST be the same code",
+// and "appClient.js has no business running or parsing code. that must be done by the plugin. i don't care if it's
+// spirit/appServer.js, since it'll crash with the server process and leave the node intact." So the same spirit.check the
+// page runs, against the branch's api.js where spirit.require placed it (spirit.required.spirit.app.<name>.api), before the
+// handler; a verb its api.js does not declare (this server's own, DEBUG, the stream's) goes on unchecked, as before.
+function withChecked(verbs, script) {
+  const m = /(?:^|[\/\\])spirit[\/\\]app[\/\\]([^\/\\]+)[\/\\]\1\.js$/.exec(String(script || ''));
+  if (!m) return verbs;
+  const branch = m[1];
+  const apiPath = 'spirit/app/' + branch + '/api.js';
+  if (!fs.existsSync(path.join(RUN_ROOT, apiPath))) return verbs;
+  // spirit.require places the file at once; its binding asks a node, which this check needs nothing of.
+  try { Promise.resolve(spirit.require(apiPath)).then(null, function () { /* the binding; the check reads the file */ }); } catch (e) { return verbs; }
+  const api = ['spirit', 'app', branch, 'api'].reduce(function (o, k) { return o == null ? undefined : o[k]; }, spirit.required);
+  const declaredVerbs = api && api.verbs && typeof api.verbs === 'object' ? api.verbs : null;
+  if (!declaredVerbs) return verbs;
+  const out = Object.assign({}, verbs);
+  Object.keys(out).forEach(function (v) {
+    if (!Object.prototype.hasOwnProperty.call(declaredVerbs, v) || !out[v] || typeof out[v].handler !== 'function') return;
+    const own = out[v].handler;
+    const rule = declaredVerbs[v];
+    out[v] = Object.assign({}, out[v], {
+      handler: function (a, caller) {
+        const bad = spirit.check(branch + '.' + v, rule, a);
+        if (bad) throw Object.assign(new Error(String(bad.message || 'bad-request')), { refusal: bad.refusal && errors.byCode(bad.refusal) ? bad.refusal : 'bad-request', extra: { why: String(bad.message || '') } });
+        return own.apply(this, arguments);
+      },
+    });
+  });
+  return out;
+}
+
 function serve(verbs, opts) {
   const argv = process.argv;
   const at = argv.indexOf('--pipe');
@@ -814,6 +847,7 @@ function serve(verbs, opts) {
     console.error(e.message);
     process.exit(2);
   }
+  verbs = withChecked(verbs, argv[1]);
   const s = createAppServer(verbs, opts && typeof opts.fallback === 'function' ? { fallback: opts.fallback } : undefined);
   // IT SAYS WHO IT IS, AND WHAT IT ANSWERS. Andy, 2026-09-29: "after
   // starting the listener, it should announce itself with its name, and a
@@ -929,4 +963,16 @@ module.exports = {
   matches: matches,
   RESERVED: RESERVED,
 };
+
+// THE NODE STARTS EVERY APP SERVER AS THIS FILE, THE APP'S SCRIPT AFTER IT (goal/G43.32, the box, decided 9; Andy: "for
+// one-shot servers, appClient launches appServer with the argument "spirit/app/<name>/name.js", then the appServer module
+// "requires" that script"): node spirit/appServer.js <the app's script> <its arguments>. The script then stands where it
+// always stood in the arguments (argv[1]), is required through spirit.require, and serves through serve() above, where each
+// call is checked by its api.js before its handler.
+if (require.main === module) {
+  const script = process.argv[2];
+  if (!script) { console.error('appServer: no app script; the node starts an app server as appServer.js <script>'); process.exit(2); }
+  process.argv.splice(1, 1);
+  spirit.require(path.relative(RUN_ROOT, path.resolve(script)).split(path.sep).join('/'));
+}
 

@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/jobs/data.js
 // WHAT A CLIENT KNOWS OF A NODE'S JOBS, IN THE jobs FAMILY'S OWN FOLDER (goal/G41.28). Andy: "anything not using the new
 // spiritData.js and it's buddies clientCacheManager.js must do so in this item. no exceptions." A page loads it through
@@ -21,7 +22,7 @@
     if (!obj || typeof obj !== 'object') return '';
     try { return JSON.stringify(obj); } catch (e) { return ''; }
   }
-  var D = typeof window !== 'undefined' ? window.spirit.data : require('../data.js');
+  var D = typeof window !== 'undefined' ? window.spirit.data : require('../spirit.js').require('spirit/data.js');
   D.makeFamily('jobs', function () {
     var HOME = D.viewAt(null, 'jobs');
     D.addTranslator({

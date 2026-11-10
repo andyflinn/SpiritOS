@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/element/rowForm.js
 // THE ONE-ROW FORM, A SHELL ELEMENT (goal/G41.27). Andy, box: "new shell element: rowForm", "one row forms show as blocks
 // taking up the full width of their container, and wrap, if it's form elements don't have enough space.", "they form a
@@ -22,7 +23,7 @@
     var o = options || {};
     var root = document.createElement('div');
     root.className = 'shell-bubble shell-row-form';
-    E.icon.create(root, { glyph: o.icon == null ? '' : String(o.icon) });
+    E.spirit.element.icon.create(root, { glyph: o.icon == null ? '' : String(o.icon) });
     var span = document.createElement('span');
     span.className = 'shell-row-form-span';
     root.appendChild(span);
@@ -34,5 +35,5 @@
     return { root: root, span: span, button: button };
   }
 
-  E.rowForm = { create: create };
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/rowForm.js', { create: create }); });
 }());

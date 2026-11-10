@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/element/search/bundle.js
 // ONE SHELL ELEMENT: the bundle selector, the bundle picker apps build their screens with (goal/G41.14; Andy, box:
 // "bundleSelector.js and bundleSelector/ folder, featuring a pane mode and a dropdown mode for displaying and selecting
@@ -46,7 +47,7 @@
         var said = typeof options.tabLabel === 'function' ? options.tabLabel(row) : String(row.label || '');
         var header = said && typeof said === 'object' ? said : { label: String(said || '') };
         tabs.add({ name: name, label: String(header.label || ''), italic: header.italic === true, closable: true, mount: function (box) {
-          return window.spirit.element.branchEditor.create(box, { bundle: Number(row.id), label: String(row.label || ''), owner: String(row.owner || 'node'), gone: function () { tabs.close(name); } });
+          return window.spirit.element.spirit.element.branchEditor.create(box, { bundle: Number(row.id), label: String(row.label || ''), owner: String(row.owner || 'node'), gone: function () { tabs.close(name); } });
         } });
       });
     }
@@ -54,7 +55,7 @@
     var gone = false;
     Promise.resolve(window.spirit.require ? window.spirit.require('spirit/element/search/bundle/listElement.js') : null).then(function () {
       if (gone) return;
-      made = window.spirit.element.search.bundle.listElement.create(root, {
+      made = window.spirit.element.spirit.element.search.bundle.listElement.create(root, {
         face: isPane ? 'pane' : 'dropdown',
         placeholder: isPane ? '' : (options.placeholder || 'choose a bundle…'),
         all: isPane ? undefined : options.all,
@@ -81,5 +82,5 @@
   // THE SHELL'S ELEMENT SHAPE (goal/G41.19, box v23: "every element gets a container and appends itself"): create(container,
   // options) appends the control to the container and answers it.
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
-  Object.assign(['search', 'bundle'].reduce(function (o, k) { return (o[k] = o[k] || {}); }, (window.spirit.element = window.spirit.element || {})), { create: function (container, options) { var root = createBundleSelector(options); container.appendChild(root); return root; } });
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/bundle.js', { create: function (container, options) { var root = createBundleSelector(options); container.appendChild(root); return root; } }); });
 })();

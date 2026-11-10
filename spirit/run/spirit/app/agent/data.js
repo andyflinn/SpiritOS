@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/app/agent/data.js
 // WHAT A CLIENT KNOWS OF THE AGENT SERVER'S TABLES, IN THE agent FAMILY'S OWN FOLDER (goal/G41.28). Andy: "We're not done
 // until every family of the API tree as a clientCacheManager, and clients can use that to organize their spirit.data". A
@@ -13,7 +14,7 @@
 // rows, another module's, or a row with no id write nothing. It asks nothing.
 (function () {
   var TABLES = ['job', 'model', 'persona', 'provider'];
-  var D = typeof window !== 'undefined' ? window.spirit.data : require('../../../spirit/data.js');
+  var D = typeof window !== 'undefined' ? window.spirit.data : require('../../spirit.js').require('spirit/data.js');
   D.makeFamily('agent', function () {
     var HOME = D.viewAt(null, 'agent');
     D.addTranslator({

@@ -1,4 +1,5 @@
 'use strict';
+require('./spirit.js');
 
 // spirit/run/spirit/nodeShell.js
 // THE SHELL THE NODE NAMES (goal/G43.18, box v29, "The shell"; Andy: "boot should solve transport issues only, then load

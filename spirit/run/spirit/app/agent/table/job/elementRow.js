@@ -1,10 +1,10 @@
+'use strict';
 // spirit/run/spirit/app/agent/table/job/elementRow.js
 // ONE JOB ROW IN THE PAGE (goal/G41.4): its fields to maintain and edit, each saved as it changes (no Save), and Delete, drawn from the server's
 // answer and its stream only (rule/19). Built on the tables' row element (../rowElement.js).
 //   spirit.elements.jobRow.create(container, id, added, detail) -> { destroy }   added: just made by Add; detail: the
 //   page's detail pane, whose look(table) gives the title row its icon and name
 (function () {
-  var E = (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
   // Its table's rows are the agent family's cache (goal/G41.28): the family's own data.js
   // (spirit/app/agent/data.js) translates them into the table's branch; it is loaded here, with
   // this element.
@@ -14,13 +14,13 @@
     // grant"; the provider and the persona each by a pick field of its table.
     { field: 'bundle', label: 'Bundle (its grant)', kind: 'bundle' }, { field: 'provider', label: 'Provider', kind: 'pick', pick: 'provider' },
     { field: 'persona', label: 'Persona', kind: 'pick', pick: 'persona' }];
-  E.jobRow = {
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/agent/table/job/elementRow.js', {
     create: function (container, id, added, detail) {
       var made = null;
       var gone = false;
       Promise.resolve(spirit.require('spirit/app/agent/table/rowElement.js')).then(function () {
         if (gone) return;
-        made = window.spirit.elements.agentRow.create(container, {
+        made = window.spirit.element.spirit.app.agent.table.rowElement.create(container, {
           table: 'job', id: id, added: added === true, look: detail && detail.look ? detail.look('job') : null, fields: FIELDS,
           // Its mandatory fields, as its server names them (goal/G41.21: "# mandatory fields (server AND ui)").
           required: ['icon', 'label'],
@@ -28,5 +28,5 @@
       });
       return { destroy: function () { gone = true; if (made) made.destroy(); } };
     },
-  };
+  }); });
 }());

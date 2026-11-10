@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/app/desk/element/desk/desk.js
 // ANDY'S DESK FOR TALKING TO THE AGENTS — design/shell/AGENTS-UI.md.
 //
@@ -56,6 +57,15 @@ function deskHear(fn) {
 // first one's hidden parts and showed only its title bar. So every item opens in the one 'item' layer, every rule in the
 // one 'rule' layer, and opening another row fills that layer again with it.
 var deskPanes = {};
+// An element by its place, spirit.element.<its path> (goal/G43.32): undefined while any part of the path is not there yet.
+function deskElementAt(place) {
+  return String(place).split('.').reduce(function (o, k) { return o == null ? undefined : o[k]; }, typeof window !== 'undefined' && window.spirit ? window.spirit.element : undefined);
+}
+// A helper by its place, spirit.required.<its path> (Andy: helpers with no create "live in require"): undefined till it ran.
+function deskRequiredAt(place) {
+  return String(place).split('.').reduce(function (o, k) { return o == null ? undefined : o[k]; }, typeof window !== 'undefined' && window.spirit ? window.spirit.required : undefined);
+}
+function deskElementOf(file) { return deskElementAt(String(file).replace(/^\/+/, '').replace(/\.js$/, '').split('/').join('.')); }
 function deskDialog(key, label, file, element, params) {
   var S = window.spirit;
   return new Promise(function (resolve) {
@@ -68,7 +78,7 @@ function deskDialog(key, label, file, element, params) {
           closeDialog: function (result) { if (layer && typeof layer.hide === 'function') layer.hide(); resolve(result || {}); },
           setScreenTitle: function (text) { if (layer && typeof layer.set === 'function') layer.set({ icon: '🗂️', label: String(text || label) }); },
         });
-        return S.elements[element].create(pane, Object.assign({}, params, { via: via }));
+        return deskElementOf(file).create(pane, Object.assign({}, params, { via: via }));
       });
     }
     var spec = { icon: '🗂️', label: label, fill: function (pane, closed) {
@@ -511,7 +521,7 @@ function deskGlyph(glyph, title) {
 }
 var deskIconReady = null;
 function deskPaintIcons(root) {
-  var I = typeof window !== 'undefined' && window.spirit && window.spirit.element && window.spirit.element.icon;
+  var I = typeof window !== 'undefined' && window.spirit && window.spirit.element && window.spirit.element.spirit.element.icon;
   if (!I || !root || typeof root.querySelectorAll !== 'function') return;
   Array.prototype.forEach.call(root.querySelectorAll('[data-icon]'), function (p) {
     if (p.querySelector('.shell-icon')) return;
@@ -538,7 +548,7 @@ function deskForgetKept() {
 // without it draws the status word alone.
 var DESK_RUN_STATUS = '/spirit/app/desk/element/deskRunStatus/deskRunStatus.js';
 function deskLoadRunStatus() {
-  var have = typeof window !== 'undefined' && window.spirit && window.spirit.elements && window.spirit.elements.deskRunStatus;
+  var have = deskRequiredAt('spirit.app.desk.element.deskRunStatus.deskRunStatus');
   if (typeof have === 'function') return;
   deskNeed(DESK_RUN_STATUS).then(function () { deskDraw(); }, function () { /* the status word alone */ });
 }
@@ -664,8 +674,8 @@ function deskRowCells(row, presses) {
 // the items status column?" deskVerify knows no item, so the row joins the desk's fact (verifyRunning) with the
 // verifier's own publish (deskVerifyRun), through the one rendering the dialog uses too (spirit/app/desk/element/deskRunStatus/deskRunStatus.js).
 function deskStatusCell(row) {
-  var els = typeof window !== 'undefined' && window.spirit && window.spirit.elements;
-  var run = els && typeof els.deskRunStatus === 'function' ? els.deskRunStatus(row, deskVerifyRun, deskEsc) : '';
+  var status = deskRequiredAt('spirit.app.desk.element.deskRunStatus.deskRunStatus');
+  var run = typeof status === 'function' ? status(row, deskVerifyRun, deskEsc) : '';
   if (run) return run;
   var word = String(row.status || '');
   // A FILE THE AGENT'S CHECKOUT CHANGED (goal/G33.11), by its statusTone: red a test file, white a production file.
@@ -707,8 +717,8 @@ var deskList = null;
 var deskListIndex = null;
 function deskListElement(row, key) {
   var E = window.spirit.element;
-  deskListIndex = deskListIndex || E.rowElement.index(function () { /* a publish redraws the list; each element applies its row */ });
-  var el = E.rowElement.create({
+  deskListIndex = deskListIndex || E.spirit.element.rowElement.index(function () { /* a publish redraws the list; each element applies its row */ });
+  var el = E.spirit.element.rowElement.create({
     kind: 'deskRow', key: key, index: deskListIndex, row: row,
     fields: DESK_LIST_FIELDS.map(function (name, i) { return { name: name, paint: function (r) { return deskRowCellParts(r)[i] || ''; } }; }),
   });
@@ -754,7 +764,7 @@ function deskMountList() {
   deskLoadSearch(function () {
     // The List is drawn once the cache manager is there, its branch the List's (goal/G41.28).
     deskNeed(DESK_DATA).then(function () {
-    var P = window.spirit && window.spirit.element && window.spirit.element.search && window.spirit.element.search.create ? window.spirit.element.search : null;
+    var P = window.spirit && window.spirit.element && window.spirit.element.spirit.element.search && window.spirit.element.spirit.element.search.create ? window.spirit.element.spirit.element.search : null;
     var K = deskKept();
     if (!P || typeof P.create !== 'function' || deskList || !K) return;
     deskList = P.create(el, {
@@ -818,7 +828,7 @@ var deskParts = Promise.resolve(typeof spirit !== 'undefined' && spirit.require
 function deskArming(button, armedLabel, run) {
   if (!button) return;
   deskParts.then(function () {
-    var A = typeof window !== 'undefined' && window.spirit && window.spirit.element && window.spirit.element.armingButton;
+    var A = typeof window !== 'undefined' && window.spirit && window.spirit.element && window.spirit.element.spirit.element.armingButton;
     if (!A || typeof button.armed === 'function') return;
     A.attach(button, { label: button.textContent, armedLabel: armedLabel, run: run });
   }, function () { /* no armingButton, no second press */ });
@@ -878,7 +888,7 @@ function deskRulesSearch() {
   var el = document.getElementById('desk-rule-list');
   if (!el) return;
   var make = function () {
-    var P = window.spirit && window.spirit.element && window.spirit.element.search && window.spirit.element.search.create ? window.spirit.element.search : null;
+    var P = window.spirit && window.spirit.element && window.spirit.element.spirit.element.search && window.spirit.element.spirit.element.search.create ? window.spirit.element.spirit.element.search : null;
     var K = deskKept();
     if (!P || typeof P.create !== 'function' || deskRulesList || !K) return;
     // THE TOGGLES OF THE RULES LIST, as they always were (goal/G6.5): a button per type and per status, each on until he
@@ -917,8 +927,8 @@ function deskRulesSearch() {
 var deskRuleIndex = null;
 function deskRuleElement(row, key) {
   var E = window.spirit.element;
-  deskRuleIndex = deskRuleIndex || E.rowElement.index(function () { /* the list asks again on a rule's publish */ });
-  return E.rowElement.create({
+  deskRuleIndex = deskRuleIndex || E.spirit.element.rowElement.index(function () { /* the list asks again on a rule's publish */ });
+  return E.spirit.element.rowElement.create({
     kind: 'rule', key: key, index: deskRuleIndex,
     row: { status: String((row && row.status) || ''), label: String((row && row.label) || ''), type: String((row && row.type) || ''), key: String(key) },
     fields: [
@@ -1292,15 +1302,14 @@ function deskHeaderMove() {
   var old = document.getElementById('desk-bars');
   if (!old || !old.parentNode || !(window.spirit.element || {}).appHeader) return;
   // Made in the old block's parent, then put in its place (the element shape, goal/G41.19).
-  var head = window.spirit.element.appHeader.create(old.parentNode);
+  var head = window.spirit.element.spirit.element.appHeader.appHeader.create(old.parentNode);
   old.parentNode.insertBefore(head, old);
   head.id = 'desk-bars';
   while (old.firstChild) head.appendChild(old.firstChild);
   old.parentNode.removeChild(old);
 }
 
-window.spirit.elements = window.spirit.elements || {};
-window.spirit.elements.deskPage = { create: function (container, opts) {
+window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/desk/element/desk/desk.js', { create: function (container, opts) {
     deskOpts = opts || {};
     {
     // ── THE TABS ───────────────────────────────────────────────────
@@ -1488,6 +1497,6 @@ window.spirit.elements.deskPage = { create: function (container, opts) {
     deskAskVerifier();
     }
     // Its own stack when its mounter hands none (panel.js), so a dialog opens over the page either way.
-    if (typeof deskOpts.open !== 'function') window.spirit.require('spirit/element/panel.js').then(function () { if (!deskStack && container.firstElementChild && (window.spirit.elements || {}).panel) deskStack = window.spirit.elements.panel.create(container, container.firstElementChild); });
+    if (typeof deskOpts.open !== 'function') window.spirit.require('spirit/element/panel.js').then(function () { if (!deskStack && container.firstElementChild && deskElementAt('spirit.element.panel')) deskStack = window.spirit.element.spirit.element.panel.create(container, container.firstElementChild); });
     return { destroy: function () { deskHeard = []; container.innerHTML = ''; } };
-} };
+} }); });

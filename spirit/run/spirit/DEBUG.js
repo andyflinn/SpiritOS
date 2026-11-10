@@ -82,7 +82,7 @@ function answer(req, res, server) {
     return true;
   }
   let made = null;
-  try { made = require(at.script).make({ module: at.module, file: at.file, ext: at.ext, run: RUN, server: server || {} }); }
+  try { made = spirit.require(path.relative(RUN, at.script).split(path.sep).join('/')).make({ module: at.module, file: at.file, ext: at.ext, run: RUN, server: server || {} }); }
   catch (e) { made = Promise.reject(e); }
   Promise.resolve(made).then(function (out) {
     if (!out) { res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' }); res.end('Not found'); return; }

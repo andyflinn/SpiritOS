@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/jobs/api.js
 // THE jobs FAMILY ON THE SPIRIT OBJECT (goal/G32.1): the node's jobs and the servers it runs. Written to spirit.js's standard: every verb the
 // node mounts for this family, each argument with its rule ('?' optional); the spirit object makes each one a checked

@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/app/contact/contact.js
 // CONTACTS, AN ELEMENT (goal/G43.14; Andy: "the new contact app will be exactly the same as the old, merely placed where it
 // now belongs."). Its contract and its test: ./test/contact.md and ./test/contact.js.
@@ -106,8 +107,8 @@ function contactCreate(container, options) {
     var book = document.getElementById('contacts-book');
     contactsParts.then(function () {
       if (gone) return;
-      if (typeof o.open !== 'function') stack = window.spirit.elements.panel.create(container, container.firstElementChild);
-      contactsList = window.spirit.element.search.contact.listElement.create(book, {
+      if (typeof o.open !== 'function') stack = window.spirit.element.spirit.element.panel.create(container, container.firstElementChild);
+      contactsList = window.spirit.element.spirit.element.search.contact.listElement.create(book, {
         open: openOver,
         say: contactsStatus,
         empty: 'Nobody matches: the network is searched as you type.',
@@ -125,5 +126,4 @@ function contactCreate(container, options) {
     };
 }
 
-(window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
-window.spirit.elements.contact = { create: contactCreate };
+window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/contact/contact.js', { create: contactCreate }); });

@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/node/data.js
 // WHAT A CLIENT KNOWS OF A NODE ITSELF, IN THE node FAMILY'S OWN FOLDER (goal/G41.28). Andy: "We're not done until every
 // family of the API tree as a clientCacheManager, and clients can use that to organize their spirit.data". A page loads
@@ -17,7 +18,7 @@
   var TREE = 'apiTree';
   var VERBS = 'apiVerbs';
   var CARD = 'nodeCard';
-  var D = typeof window !== 'undefined' ? window.spirit.data : require('../data.js');
+  var D = typeof window !== 'undefined' ? window.spirit.data : require('../spirit.js').require('spirit/data.js');
   D.makeFamily('node', function () {
     var HOME = D.viewAt(null, 'node');
     // THE READS AND THE ONE WRITE:

@@ -15,10 +15,10 @@
 require('./spirit.js');
 const fs = require('fs');
 const path = require('path');
-const limits = require('./limits.js');
+const limits = spirit.require('spirit/limits.js');
 // THE DEBUG TEST ROUTES (goal/G41.19, spirit/test/DEBUG.md): both servers hand every request to DEBUG.js first, as
 // debugFirst below; with DEBUG off it answers nothing.
-const DEBUG = require('./DEBUG.js');
+const DEBUG = spirit.require('spirit/DEBUG.js');
 
 const MIME_TYPES = spirit.MIME_TYPES;
 
@@ -454,7 +454,7 @@ function firstDescription(kind, now) {
   return 'this ' + kind + ' described for the first time ' + at.slice(0, 10) + ' ' + at.slice(11, 19) + ' UTC';
 }
 function ensureFirstRun(rootDir, opts) {
-  const auth = require('./relayAuth');
+  const auth = spirit.require('spirit/relayAuth.js');
   const kind = opts && opts.kind === 'relay' ? 'relay' : 'node';
   const id = auth.loadIdentity(rootDir);
   if (!id || !id.publicKey) return null;

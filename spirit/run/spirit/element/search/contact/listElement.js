@@ -1,3 +1,4 @@
+'use strict';
 // spirit/run/spirit/element/search/contact/listElement.js
 // THE CONTACTS LIST, A DROP-IN SHELL ELEMENT (goal/G30.19, G30.20). Contacts draws it as a pane, and Join as its contact
 // step; grants and introSpector draw it as a dropdown (opts.face, placeholder, all, pick(row, key)). The box:
@@ -93,7 +94,7 @@
       }, function (e) { say('could not reach them — ' + ((e && e.message) || e)); });
     }
 
-    list = window.spirit.element.search.create(host, {
+    list = window.spirit.element.spirit.element.search.create(host, {
       // Its own data source (goal/G43.24): the search asks it, and is handed no api.
       search: search,
       // A view of the node's contacts, the branch the contact family's manager keeps (spirit.data.contact.data.branch).
@@ -111,7 +112,7 @@
         { field: 'label', from: 'name', label: 'Name', sort: 'text' },
         { field: 'add', label: '' },
       ],
-      element: function (row, key) { var el = window.spirit.element.search.contact.rowElement.create(Object.assign({ key: key }, row), { open: o.open }); els[key] = el; return el; },
+      element: function (row, key) { var el = window.spirit.element.spirit.element.search.contact.rowElement.create(Object.assign({ key: key }, row), { open: o.open }); els[key] = el; return el; },
       filters: FILTERS,
       details: function (row, key, el) {
         if (undecided(row)) { askCard(row, key); return; }
@@ -155,5 +156,5 @@
 
   (window.spirit = window.spirit || {}).element = window.spirit.element || {};
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
-  Object.assign(['search', 'contact', 'listElement'].reduce(function (o, k) { return (o[k] = o[k] || {}); }, (window.spirit.element = window.spirit.element || {})), { create: create, filters: FILTERS });
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/contact/listElement.js', { create: create, filters: FILTERS }); });
 }());
