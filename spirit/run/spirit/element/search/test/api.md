@@ -1,27 +1,38 @@
 # spirit/element/search/api.js
 
-The app-server selector (apiAuth/G1.8; goal/G41.5): one shell element, a dropdown of the families a party's api tree
-lists. Grants and introSpector build their lines with it, through the family selector in the same file.
+The family selector (goal/G41.14): a family of an api tree, and a verb of it, side by side. It was `apiBranchSelector.js`,
+renamed (Andy: *"apiBranchSelector.js will be RENAMED apiFamilySelector.js, which is the proper name for it."*), its
+verb half kept (Andy: *"apiFamiliySelector.js will use apiVerbSelector as part of itself, because the verb selector
+NEEDs the family selector to have any meaning at all."*). Since goal/G43.18 it is in `spirit/element/search/api.js`; since goal/G43.32 the api search's selector, its family half the family list, `search/api/listElement.js`, and its verb half `search/api/verb.js`. Its test is `./api.js`.
 
 ## Requirements
 
-- **Built on probabilitySearch**, as a dropdown (`face: 'dropdown'`); nothing of `shellCreateListSearch` (goal/G40.8).
-- **It loads probabilitySearch itself**, through `spirit.require` (goal/G41.3).
-- `spirit.element.search.api.server.create(container, { placeholder, all, tree })` appends its root element to the container and
-  answers it (box v23: *"every element gets a container and appends itself"*); `createAppServerSelector` no more.
-  `root.value` the chosen family, `''` for none; `root.tree` the tree it was drawn from.
-- Its rows are `apiTreeIndex.servers(tree)`: sorted, a family that did not answer (`{ ok: false }`) left out.
-- `all` is what its None reads; None clears the value.
-- A pick sets `root.value` and fires a bubbling `change`.
-- **Any party's tree** (goal/G30.5): `options.tree` or `root.load(fn)` lists the families of the tree `fn` answers and
-  clears the choice; without one, this node's own (`spirit.ready` then `tree()`). `root.load(fn)` on a selector made for this node
-  is deferred with introSpector and still red (the box: *"the only exception is introspector, deferred for network-scope
-  design reasons."*): its red says so.
+- `spirit/element/search/api.js` is there and `spirit/element/apiBranchSelector.js` is not; the rename leaves no copy.
+- It registers `spirit.element.spirit.element.search.api.create(container, options)`, and `createApiFamilySelector` and
+  `createApiBranchSelector` no more. The control is appended to the container and answered (box v23: *"every element
+  gets a container and appends itself"*).
+- Nothing of `shellCreateListSearch` (goal/G40.8).
+- It is built from its two halves: the family dropdown, the app-server selector in the same file, and the verb selector,
+  `spirit/element/search/api/verb.js`, which it loads itself (rule/26). Two probabilitySearch dropdowns.
+- Its families are the tree's; one that did not answer is left out. `options.all` is what the family half reads
+  unchosen.
+- Its root carries `family`, `verb` and `value`:
+  - nothing chosen: all three `''`, the verb half hidden;
+  - a family picked: `family` is it, `verb` `''`, `value` the family; the verb half shows that family's verbs, DEBUG never
+    (DEPENDENCIES is gone, goal/G41.24);
+  - a verb picked: `verb` is it, `value` is `family.verb`;
+  - All Verbs: `verb` `''`, `value` the family again;
+  - another family clears the verb and lists its own verbs.
+- Every change fires one `change`.
+- `root.load(fn)` lists another party's tree, clears the choice and hides the verb half. Deferred with introSpector and
+  still red (the box: *"the only exception is introspector, deferred for network-scope design reasons."*): its red says so.
 
 ## What its test must try to break
 
-- An old shell list made, or probabilitySearch not loaded by itself.
-- The old factory still registered, or a control not appended to its container.
-- A family that did not answer listed, or the rows unsorted.
-- A pick that does not fire change, or None that leaves the value.
-- load(fn) still listing the old tree.
+- The old file left beside the new one, or the old factory still registered.
+- A control not appended to its container.
+- A part counted on that it did not load itself.
+- The verb half shown before a family is chosen, or a verb kept across families.
+- DEBUG offered as a verb.
+- A wrong value after a family pick, a verb pick, or All Verbs.
+- load leaving the old choice.

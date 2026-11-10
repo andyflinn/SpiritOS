@@ -1,16 +1,24 @@
 'use strict';
 
 // spirit/run/spirit/element/search/test/api.js
-// The tests of spirit/element/search/api.js, and of no other module (spec: ./api.md; goal/G41.5). The browser file runs in node on a window of their own: probabilitySearch is a
-// stub that keeps every list it was asked to make, and the node's api tree is the spirit object's answer.
+// The tests of spirit/element/search/api.js, and of no other module (spec: ./api.md; goal/G41.14). It was
+// apiBranchSelector.js, renamed (Andy: "apiBranchSelector.js will be RENAMED apiFamilySelector.js, which is the proper
+// name for it"), its verb half kept (Andy: "apiFamiliySelector.js will use apiVerbSelector as part of itself, because
+// the verb selector NEEDs the family selector to have any meaning at all."). The browser file runs in node on a BARE
+// window (rule/26): its two halves, the family list search/api/listElement.js and the verb half search/api/verb.js, are put there real once required;
+// probabilitySearch is a stand-in that keeps every list it was asked to make; the node's api tree is the spirit
+// object's answer, kept by the node family's data.js (goal/G41.28), loaded as a page's
+// spirit.cacheManager('node') loads it, the page's node known as spirit.start makes it known (spirit.node.key, then
+// data.homeNode).
 
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-const SERVER_FILE = path.join(__dirname, '..', 'api.js');
-const SERVER_SRC = fs.readFileSync(SERVER_FILE, 'utf8');
+const JS = path.join(__dirname, '..', '..');
+const FILE = path.join(JS, 'search', 'api.js');
+const OLD = path.join(JS, 'apiBranchSelector.js');
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
@@ -32,22 +40,29 @@ const OTHER = { relay: { card: {} } };
 
 function world() {
   const w = { lists: [], required: [] };
-  const E = nestSearch({
-    'search': { create: function (host, opts) { const l = { host: host, opts: opts, redrawn: 0, value: '', row: null,
-      redraw: function () { l.redrawn += 1; }, refresh: function () {}, destroy: function () {} }; w.lists.push(l); return l; } },
-    shellCreateListSearch: function (host, opts) { w.old = true; return { redraw: function () {}, refresh: function () {} }; },
-  });
+  const real = function (file) { return function (win) { vm.runInContext(fs.readFileSync(path.join(JS, file), 'utf8'), win, { filename: file }); }; };
+  const STANDS = {
+    'spirit/element/search.js': function (win) { const at = win.spirit.element.spirit.element; at.search = Object.assign(at.search || {}, { create: function (host, opts) { const l = { host: host, opts: opts, redrawn: 0, value: '', row: null,
+      redraw: function () { l.redrawn += 1; }, refresh: function () {}, destroy: function () {} }; w.lists.push(l); return l; } }); },
+    // Its two halves (goal/G43.32): the family list, search/api/listElement.js, and the verb half, search/api/verb.js.
+    'spirit/element/search/api/listElement.js': real('search/api/listElement.js'),
+    'spirit/element/search/api/verb.js': real('search/api/verb.js'),
+  };
   const win = {
-    spirit: { element: E, escapeHtml: function (s) { return String(s); },
-      ready: Promise.resolve({ tree: function () { return Promise.resolve(TREE); } }),
-      require: function (p) { w.required.push(String(p)); return Promise.resolve(true); } },
+    // goal/G43.32: an element stands at spirit.element.<its path>.
+    spirit: { element: { spirit: { element: {} } }, escapeHtml: function (s) { return String(s); },
+      ready: Promise.resolve({ tree: function () { return Promise.resolve(TREE); } }) },
     document: { createElement: function (t) { return node(t); } },
     Event: function (type) { this.type = type; },
     setTimeout: setTimeout, Promise: Promise, JSON: JSON, Object: Object,
     console: { log: function () {}, error: function () {} },
   };
+  win.spirit.require = function (p) { w.required.push(String(p)); if (STANDS[p] && !w['done' + p]) { w['done' + p] = true; STANDS[p](win); } return Promise.resolve(true); };
   win.window = win;
+  // The page's installSpiritElement, as spirit.js hands it (spirit/test/headLessChrome.js pageSpirit).
+  require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(win.spirit);
   vm.createContext(win);
+  // The tree index is one of the spirit object's own, there before any element.
   // The page's one data set, which spirit.js brings before any element runs (goal/G41.28: the api tree is kept there).
   vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), win, { filename: 'data.js' });
   pageData = win.spirit.data;
@@ -63,8 +78,8 @@ function world() {
     return Promise.resolve(true);
   };
   vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'client', 'apiTreeIndex.js'), 'utf8'), win, { filename: 'apiTreeIndex.js' });
-  vm.runInContext(SERVER_SRC, win, { filename: SERVER_FILE });
-  w.E = win.spirit.element;
+  vm.runInContext(fs.readFileSync(FILE, 'utf8'), win, { filename: FILE });
+  w.E = win.spirit.element.spirit.element;
   return w;
 }
 // What a list offers, as the search element would draw it: the rows of its spirit.data branch (goal/G41.28), or for
@@ -76,39 +91,51 @@ const names = function (l) {
     .map(function (r) { return r.name != null ? r.name : r.key; }).sort();
 };
 
-test.startTest('appServerSelector.js: the app-server selector');
+test.startTest('apiFamilySelector.js: the family selector, its verb half with it');
+process.on('unhandledRejection', function (e) { test.fail('it threw where nothing caught it: ' + (e && e.message || e)); });
 
 (async function () {
-  test.subHeading('built on probabilitySearch, nothing of the old shell\'s list search (goal/G40.8)');
-  ok(!/shellCreateListSearch/.test(SERVER_SRC), 'appServerSelector.js names no shellCreateListSearch', 'appServerSelector.js still names it');
+  test.subHeading('renamed, the old name gone');
+  ok(fs.existsSync(FILE), 'spirit/element/search/api.js is there', 'there is no spirit/element/search/api.js');
+  ok(!fs.existsSync(OLD), 'spirit/element/apiBranchSelector.js is not: the rename leaves no copy', 'spirit/element/apiBranchSelector.js is still there');
+  if (!fs.existsSync(FILE)) return;
+  ok(!/shellCreateListSearch/.test(fs.readFileSync(FILE, 'utf8').replace(/\/\/.*$/gm, '')), 'it names no shellCreateListSearch (goal/G40.8)', 'it names shellCreateListSearch');
   const w = world();
-  ok(w.required.indexOf('spirit/element/search.js') !== -1, 'it loads probabilitySearch itself (goal/G41.3)', 'required: ' + short(w.required));
-
-  test.subHeading('the server half: a probabilitySearch dropdown of the node\'s families');
-  const changes = [];
-  const made = w.E.search.api.server;
-  ok(made && typeof made.create === 'function' && !('createAppServerSelector' in w.E), 'it registers appServerSelector with a create, and createAppServerSelector no more', 'elements: ' + short(Object.keys(w.E)));
+  await settle();
+  const made = w.E.search.api;
+  ok(made && typeof made.create === 'function' && !('createApiFamilySelector' in w.E) && !('createApiBranchSelector' in w.E),
+    'it registers apiFamilySelector with a create, and createApiFamilySelector and createApiBranchSelector no more', 'elements: ' + short(Object.keys(w.E)));
   if (!made || typeof made.create !== 'function') return;
+  ok(w.required.indexOf('spirit/element/search/api/listElement.js') !== -1 && w.required.indexOf('spirit/element/search/api/verb.js') !== -1,
+    'it loads its two halves itself (rule/26): the family list, search/api/listElement.js, and the verb selector', 'required: ' + short(w.required));
+
+  test.subHeading('the family, then its verb, side by side');
   // Box v23: "every element gets a container and appends itself".
   const box = node('div');
-  const servers = made.create(box, { all: 'all servers' });
-  ok(box.kids.length === 1 && box.kids[0] === servers, 'create(container, options) appends the control to its container and answers it', 'container holds ' + box.kids.length + (box.kids[0] === servers ? ', the control' : ', not the control'));
-  servers.addEventListener('change', function () { changes.push(servers.value); });
+  const fam = made.create(box, { all: 'every family' });
+  ok(box.kids.length === 1 && box.kids[0] === fam, 'create(container, options) appends the control to its container and answers it', 'container holds ' + box.kids.length + (box.kids[0] === fam ? ', the control' : ', not the control'));
+  const seen = [];
+  fam.addEventListener('change', function () { seen.push(fam.value); });
   await settle();
-  const sl = w.lists[0];
-  ok(!w.old && !!sl && sl.opts.face === 'dropdown', 'it draws one probabilitySearch dropdown', 'lists: ' + w.lists.length + (w.old ? ', and an old one' : ''));
-  if (!sl) return;
-  ok(sl.opts.all === 'all servers', 'its None reads what the app names', 'all: ' + sl.opts.all);
-  ok(short(names(sl)) === short(['fs', 'jobs']), 'its rows are the families that answered, sorted', 'rows: ' + short(names(sl)));
-  sl.opts.pick({ key: 'fs', name: 'fs' }, 'fs');
-  ok(servers.value === 'fs' && changes[changes.length - 1] === 'fs', 'a pick sets its value and fires change', 'value ' + servers.value + ', changes ' + short(changes));
-  sl.opts.pick(null, '');
-  ok(servers.value === '', 'None clears it', 'value ' + servers.value);
-  await servers.load(function () { return Promise.resolve(OTHER); }); await settle();
-  ok(short(names(sl)) === short(['relay']), 'load(fn) lists another party\'s families', 'rows: ' + short(names(sl)) + ' (introSpector\'s deferral, the box: "the only exception is introspector, deferred for network-scope design reasons.")');
-
+  ok(w.lists.length === 2 && w.lists.every(function (l) { return l.opts.face === 'dropdown'; }), 'it draws two probabilitySearch dropdowns', 'lists: ' + short(w.lists.map(function (l) { return l.opts.face; })));
+  if (w.lists.length < 2) return;
+  const vl = w.lists.filter(function (l) { return l.opts.all === 'All Verbs'; })[0];
+  const fl = w.lists.filter(function (l) { return l !== vl; })[0];
+  if (!vl || !fl) { test.fail('no family half and verb half: ' + short(w.lists.map(function (l) { return l.opts.all; }))); return; }
+  ok(fl.opts.all === 'every family', 'options.all is what the family half reads unchosen', 'all: ' + short(fl.opts.all));
+  ok(short(names(fl)) === short(['fs', 'jobs']), 'its families are the tree\'s, one that did not answer left out', 'families: ' + short(names(fl)));
+  const verbBox = vl.host;
+  ok(verbBox.hidden === true && fam.family === '' && fam.verb === '' && fam.value === '', 'nothing chosen: the verb half hidden; family, verb and value \'\'', 'hidden ' + verbBox.hidden + ', ' + short({ family: fam.family, verb: fam.verb, value: fam.value }));
+  fl.opts.pick({ key: 'fs', name: 'fs' }, 'fs');
+  ok(fam.family === 'fs' && fam.verb === '' && fam.value === 'fs' && seen[seen.length - 1] === 'fs', 'a family pick: family is it, value the family alone, one change', 'family ' + fam.family + ', value ' + fam.value);
+  ok(verbBox.hidden === false && short(names(vl)) === short(['loadFile', 'search']), 'and the verb half shows its verbs, DEBUG never offered', 'hidden ' + verbBox.hidden + ', verbs ' + short(names(vl)));
+  vl.opts.pick({ key: 'search', name: 'search' }, 'search');
+  ok(fam.verb === 'search' && fam.value === 'fs.search', 'a verb pick: verb is it, value family.verb', 'verb ' + fam.verb + ', value ' + fam.value);
+  vl.opts.pick(null, '');
+  ok(fam.verb === '' && fam.value === 'fs', 'All Verbs: the empty verb, value the family again', 'verb ' + short(fam.verb) + ', value ' + fam.value);
+  fl.opts.pick({ key: 'jobs', name: 'jobs' }, 'jobs');
+  ok(fam.family === 'jobs' && fam.verb === '' && short(names(vl)) === short(['list']), 'another family clears the verb and lists its own verbs', 'family ' + fam.family + ', verb ' + short(fam.verb) + ', verbs ' + short(names(vl)));
+  await fam.load(function () { return Promise.resolve(OTHER); }); await settle();
+  ok(fam.family === '' && fam.value === '' && verbBox.hidden === true && short(names(fl)) === short(['relay']), 'load lists another party\'s tree, clears the choice and hides the verb half', 'family ' + fam.family + ', hidden ' + verbBox.hidden + ' (introSpector\'s deferral, the box: "the only exception is introspector, deferred for network-scope design reasons.")');
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });
-
-// THE ELEMENT NAMES SINCE goal/G43.18: a stand-in keyed by its place, 'search.contact' and so on, nested where the page has it.
-function nestSearch(o) { Object.keys(o).forEach(function (k) { if (k !== 'search' && k.indexOf('search.') !== 0) return; var v = o[k]; delete o[k]; var ks = k.split('.'); var at = o; ks.slice(0, -1).forEach(function (p) { at = at[p] = at[p] || {}; }); var last = ks[ks.length - 1]; at[last] = Object.assign(at[last] || {}, v); }); return o; }

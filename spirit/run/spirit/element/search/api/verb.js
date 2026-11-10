@@ -3,8 +3,8 @@
 // ONE SHELL ELEMENT: the verb dropdown, the verbs of one family of an api tree (goal/G41.5).
 //
 //   Andy, 2026-10-27: "the Dropdowns for family and verb MUST be new or updated shell elements for those data types.
-//   including test folders." The family half is the app-server selector (spirit/element/search/api.js); this is the
-//   verb half, and the family selector (spirit/element/search/api.js) holds the two side by side.
+//   including test folders." The family half is the family list (./listElement.js, the app-server selector until
+//   goal/G43.32); this is the verb half, and the family selector (spirit/element/search/api.js) holds the two side by side.
 //
 // spirit.element.spirit.element.search.api.verb.create(container, options) -> root, the control: root.value is the chosen verb, '' for its first option, All
 // Verbs, every verb (goal/G41.14; Andy: "the apiVerbSelector element MUST offer a (valid) All option at the top, which
@@ -13,13 +13,10 @@
 // clients."); with no server it hides, lists nothing and clears the choice.
 (function () {
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree....").
-  // The app-server selector too, the reader of the api tree, and with it the node family's cache manager, the keeper of
-  // the verbs it draws from (goal/G41.28).
-  // search/api.js, its app-server half, is asked one tick later (goal/G43.18): that file requires this one, and a require
-  // made while this file runs joins this file's own load, so each would wait for the other and neither would ever load.
-  // Asked outside it, this file's load does not wait for api.js; what it draws waits on parts, which still does.
+  // The family list too, the reader of the api tree (./listElement.js, goal/G43.32; it stood in ../api.js, which requires
+  // this file), and with it the node family's cache manager, the keeper of the verbs it draws from (goal/G41.28).
   var parts = Promise.all([window.spirit.require ? window.spirit.require('spirit/element/search.js') : null,
-    Promise.resolve().then(function () { return window.spirit.require ? window.spirit.require('spirit/element/search/api.js') : null; }),
+    window.spirit.require ? window.spirit.require('spirit/element/search/api/listElement.js') : null,
     window.spirit.require ? window.spirit.require('spirit/client/apiTreeIndex.js') : null,
     window.spirit.cacheManager('node')]);
 
