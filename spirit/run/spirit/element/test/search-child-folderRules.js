@@ -56,8 +56,12 @@ function rules(n) {
     if (p === 'detailElement' && NO_DETAIL.indexOf(n) !== -1) { ok(!isFile(f), dir + ': no detail, since none is ever opened', f + ': stands, though no ' + n + ' row ever opens a detail'); return; }
     ok(isFile(f) && placesItself(f), f + ': its ' + p + ', placed by its path', f + ': ' + (isFile(f) ? 'places no create by its path' : 'is not there'));
   });
-  // The selector draws its list: it requires its listElement, so a selector is never a second list.
-  ok(new RegExp("['\"]" + dir.replace(/\//g, '\\/') + "\\/listElement\\.js['\"]").test(code(sel)), sel + ': it draws its own listElement.js', sel + ': it does not require ' + dir + '/listElement.js');
+  // ONE LIST, SHARED BY POPUP AND LIST MODES (Andy: "all, any search-unit has ONE list shared by popup and list modes."): the
+  // selector requires its listElement and draws it, and makes no list of its own: no probabilitySearch, no rows.
+  const c = code(sel);
+  ok(new RegExp("['\"]" + dir.replace(/\//g, '\\/') + "\\/listElement\\.js['\"]").test(c) && new RegExp('\\.search\\.' + n + '\\.listElement\\.create\\(').test(c),
+    sel + ': it draws its own listElement.js', sel + ': it does not draw ' + dir + '/listElement.js');
+  ok(!/\.element\.search\.create\(|createElement\(['"](button|tr|li)['"]\)/.test(c), sel + ': and makes no list of its own', sel + ': it makes a list of its own beside its listElement.js');
 }
 
 test.startTest('search-child-folderRules.js: every search, the same shape, judged on ' + (askedName ? SEARCH + '/' + askedName : 'every search') + ' (goal/G43.32)');

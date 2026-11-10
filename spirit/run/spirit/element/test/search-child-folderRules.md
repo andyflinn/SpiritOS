@@ -19,7 +19,9 @@ already."*
   - `search/<name>/listElement.js`, `rowElement.js` and `detailElement.js` are there, each an element placed by its path.
     Branch and icon have no detail: none is ever opened (Andy: *"branch and icon: if no details are ever openened, there
     needs to be now detail panel."*).
-  - The selector requires its own `listElement.js`: it draws that list, and is never a second one.
+  - The selector requires its own `listElement.js` and draws it (`search.<name>.listElement.create`), in its dropdown and in
+    its pane, and makes no list of its own: no probabilitySearch, no rows (Andy: *"all, any search-unit has ONE list shared
+    by popup and list modes."*).
 
 ## What its test must try to break
 
