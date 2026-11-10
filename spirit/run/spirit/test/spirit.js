@@ -29,6 +29,9 @@ async function refusedWith(promise) { try { await promise; return 'answered'; } 
 
 // A family's api.js as the node hands it: two verbs, one dotted, and a name of its own.
 const DEMO = 'module.exports = { verbs: { hello: { name: "text" }, "line.write": { text: "text" } }, names: function (call) { return { hi: function (n) { return call("hello", { name: n }); } }; } };';
+// WHAT A PEER MIGHT HAND BACK FOR ITS api.js (goal/G43.32; Andy: "clients don't run code from afar, they run their own
+// FUCKING copy", "DO IT! WITH CODE FROM THE OWN NODE!"): code that marks the process it runs in and names a verb of its own.
+const POISON = 'globalThis.peerCodeRan = true; module.exports = { verbs: { hello: { name: "text" }, peerOnly: { x: "text" } } };';
 // A call as the node's door takes it (goal/G41.15): { call: "<family>.<verb>", args: { ... } }, nothing beside them.
 // Anything else is refused 400 bad-request, as the door refuses it.
 function isCall(b) {
@@ -98,6 +101,9 @@ function scratchRoot(port) {
   fs.cpSync(path.join(RUN, 'spirit'), path.join(root, 'spirit'), { recursive: true, filter: function (src) { return src !== path.join(RUN, 'spirit', 'state'); } });
   fs.mkdirSync(path.join(root, 'spirit', 'state'), { recursive: true });
   if (port) fs.writeFileSync(path.join(root, 'spirit', 'state', 'environment.json'), JSON.stringify({ PORT: port }));
+  // The demo branch's own api.js on this root's disc (goal/G43.32): a peer's demo is bound from it, never from the peer.
+  fs.mkdirSync(path.join(root, 'spirit', 'demo'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'spirit', 'demo', 'api.js'), DEMO + '\n');
   return root;
 }
 // What a node process sees through the instance of that root: run in a process of its own, its observations as JSON.
@@ -158,10 +164,12 @@ async function code(p) { try { await p; return 'answered'; } catch (e) { return 
     s.peerPost = function (peer, app, body, how) {
       if (body && body.api) asks++;
       out.peerHow = how && how.waitMs;
-      return new Promise(function (r) { setTimeout(function () { r(body && body.api ? { interface: '${DEMO.replace(/'/g, "\\'")}' } : { said: 'hello from ' + peer }); }, 20); });
+      return new Promise(function (r) { setTimeout(function () { r(body && body.api ? { interface: '${POISON.replace(/'/g, "\\'")}' } : { said: 'hello from ' + peer }); }, 20); });
     };
     const both = await Promise.all([s.require(s.familyPath('demo'), 'peerKey1', { waitMs: 777 }), s.require(s.familyPath('demo'), 'peerKey1', { waitMs: 777 })]);
     out.peer = [both[0] === both[1], asks, (await both[0].hello({ name: 'x' })).said, s.demo !== both[0]];
+    out.peerRan = globalThis.peerCodeRan === true;
+    out.peerOwn = typeof both[0].hello === 'function' && typeof both[0].peerOnly === 'undefined';
   }
   process.stdout.write(JSON.stringify(out));
 }()).catch(function (e) { process.stdout.write(JSON.stringify({ threw: String(e && e.stack || e) })); });
@@ -368,9 +376,17 @@ test.startTest('spirit/run/spirit.js: the one spirit object, in node and on a pa
       if (o.peerAnswer && o.peerAnswer.said === 'answered by peerKey9' && viaStream && node.asked.some(function (b) { return b.call === 'peer.post' && b.args && b.args.to === 'peerKey9'; }))
         test.check('spirit.peerPost: one post of peer.post, the answer read off the node\'s events (events.subscribe) as a server, as it always worked');
       else test.fail('spirit.peerPost: ' + short([o.peerAnswer, viaStream]));
-      if (o.peer && o.peer[0] === true && o.peer[1] === 1 && o.peer[2] === 'hello from peerKey1' && o.peer[3] === true && o.peerHow === 777)
-        test.check('spirit.require(path, key, how): the peer\'s family through spirit.peerPost with how, two callers at once ask once, and it is not its own node\'s spirit.demo');
+      if (o.peer && o.peer[0] === true && o.peer[2] === 'hello from peerKey1' && o.peer[3] === true && o.peerHow === 777)
+        test.check('spirit.require(path, key, how): the peer\'s family, its calls through spirit.peerPost with how, one for two callers at once, and not its own node\'s spirit.demo');
       else test.fail('a peer\'s family: ' + short([o.peer, o.peerHow]));
+      // goal/G43.32; Andy: "clients don't run code from afar, they run their own FUCKING copy", "DO IT! WITH CODE FROM THE
+      // OWN NODE!": the peer's family is made from this root's own spirit/demo/api.js; what the peer hands back is never run.
+      if (o.peer && o.peer[1] === 0) test.check('a peer\'s family is made without asking the peer for its api.js');
+      else test.fail('the peer was asked for its api.js ' + short(o.peer && o.peer[1]) + ' times');
+      if (o.peerRan === false) test.check('nothing the peer hands back is run: its code never ran here');
+      else test.fail('the peer\'s api.js text ran in this process (it marked it)');
+      if (o.peerOwn === true) test.check('the peer\'s family has the verbs of its own copy, hello, and none the peer named (peerOnly)');
+      else test.fail('the peer\'s family was made from what the peer sent: ' + short(o.peerOwn));
     }
     const n = await observe(bare, 'none');
     if (n.require === 'no-node' && n.tree === 'no-node' && n.noPort === true) test.check('with no port in its environment.json: require of an interface and tree refuse no-node; no default port is guessed, and none is placed on the instance');

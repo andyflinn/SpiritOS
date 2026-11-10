@@ -92,6 +92,11 @@ easily checkable if script is already loaded."*): every script required stands a
 one key per folder and its name without `.js` the last (`spirit/relayUrl.js` at `spirit.required.spirit.relayUrl`), on
 the node and on a page. A script never required has no place there.
 
+**A peer's branch is made from the caller's own copy** (goal/G43.32; Andy: *"clients don't run code from afar, they
+run their own FUCKING copy"*, *"DO IT! WITH CODE FROM THE OWN NODE!"*): `spirit.require(<branch>/api.js, key)` makes the
+peer's `spirit.<branch>.<verb>` functions from the caller's own `api.js` of that branch, on its own disc; the peer is
+asked only to answer each call, never for its `api.js`, and nothing a peer hands back is run.
+
 **On the node it answers at once** (Andy: *"box that spirit.require() on the node is just a path-translating
 wrapper."*): a script's `module.exports`, not a promise, the same answer every time it is asked. An interface is still
 bound by asking a node, so it stays a promise.
