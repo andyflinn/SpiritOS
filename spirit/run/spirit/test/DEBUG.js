@@ -228,6 +228,10 @@ test.startTest('/spirit/DEBUG.js: the DEBUG test routes, for node and relay alik
     judgePage(await ask('127.0.0.1', N, PAGE), 'spirit/element/workBench', 'the node');
 
     test.subHeading(named(GARBAGE) + ', the node, DEBUG on');
+    // deskVerify'S VERBS COME FROM ITS OWN SERVER (goal/G43.32, requirement 9: appServer loads the app's api.js), so its
+    // garbage is asked once the node's api names them, not while its server is still starting.
+    const upNow = await until(function () { return call(N, 'api').then(function (r) { const t = json(r) || {}; return Object.keys(t.deskVerify || {}).length > 1; }); }, 30000);
+    ok(upNow, 'the world: the node\'s api names the deskVerify server\'s verbs', 'the deskVerify server never came up: nothing judged');
     const g = await ask('127.0.0.1', N, GARBAGE);
     const list = json(g);
     ok(g.status === 200 && /json/.test(g.type) && Array.isArray(list) && list.length > 0, 'the garbage is answered, 200, a JSON list of ' + (Array.isArray(list) ? list.length : 0), 'it answered ' + g.status + ' ' + g.type + ' ' + short(g.text));

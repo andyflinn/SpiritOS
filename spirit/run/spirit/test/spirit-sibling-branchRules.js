@@ -161,7 +161,7 @@ function cacheRules() {
     const m = b.data;
     const src = code(path.join(RUN, m));
     // Its branches, the strings it gives its names to (var ITEMS = 'desk'), are named by it alone: no other file hands a
-    // path of them to a spirit.data reader or writer (D.get('desk/' + id), data.watch("deskItem/...")).
+    // path of them to a spirit.data reader or writer (D.get('desk/' + id), a watch on such a path).
     const owned = []; const re = /\bvar\s+[A-Z][A-Z_]*\s*=\s*'([a-zA-Z]\w*)'\s*;/g; let x;
     while ((x = re.exec(src))) if (owned.indexOf(x[1]) === -1) owned.push(x[1]);
     test.comment(m + ' names the branches ' + owned.join(', '));

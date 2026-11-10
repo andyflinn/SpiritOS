@@ -19,6 +19,9 @@
 //
 // On a page an element script loads it first (spirit.require answers once it ran, the function then at
 // spirit.required.spirit.element.installSpiritElement); in node spirit.require answers the function itself.
+// In node it loads the spirit object first, as every module does (the spirit object is the only door); on a page spirit.js
+// is there already.
+if (typeof module === 'object' && module && module.exports) require('../spirit.js');
 (function (root) {
   var holders = typeof WeakSet === 'function' ? new WeakSet() : null;
   function holder() { var h = {}; if (holders) holders.add(h); return h; }
