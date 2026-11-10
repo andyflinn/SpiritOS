@@ -92,9 +92,9 @@ test.startTest('agent-centreTabs.js: the agent app\'s centre is closable tabs (g
 
     // Who listens, listens once: a press on a row that has its tab adds no second listener, and closing a tab lets go of its own.
     test.subHeading('a tab has one listener on its row, and lets go of it when it closes');
-    // A row's listeners are counted where the tab and its editor ask for them: the agent family's cache, watchRow (goal/G43.32:
+    // A row's listeners are counted where the tab and its editor ask for them: the agent family's cache, its table's watch(id, fn) (goal/G43.32:
     // a reader asks its family's cache, which alone names its addresses).
-    await c.evaluate('(function () { var A = window.spirit.data.agent.data; var made = A.watchRow; window.__live = 0; window.__rowPath = ' + JSON.stringify('/' + P.body.id) + '; A.watchRow = function (t, id, fn) { var mine = "/" + String(id) === window.__rowPath; var off = made.call(A, t, id, fn); if (!mine) return off; window.__live++; var done = false; return function () { if (!done) { done = true; window.__live--; } return off(); }; }; return true; }())');
+    await c.evaluate('(function () { var A = window.spirit.data.agent.data; window.__live = 0; window.__rowPath = ' + JSON.stringify('/' + P.body.id) + '; A.tables.forEach(function (t) { var B = A[t]; var made = B.watch; B.watch = function (id, fn) { var mine = typeof id === "string" && "/" + id === window.__rowPath; var off = made.call(B, id, fn); if (!mine) return off; window.__live++; var done = false; return function () { if (!done) { done = true; window.__live--; } return off(); }; }; }); return true; }())');
     for (let i = 0; i < 3; i++) { await pressRow('zzProvider'); await sleep(250); }
     const stacked = await c.evaluate('window.__live');
     ok(stacked === 0, 'three more presses on an open row add no listener', stacked + ' more listeners on that row after three presses');

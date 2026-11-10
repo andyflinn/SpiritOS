@@ -50,7 +50,7 @@
       }).then(null, function () { /* a face that may not read the file: the words name no parts */ });
     }
     // WHO PAINTS, LISTENS (G41.32); a connect forgetting what is kept asks again.
-    var offRow = S.data.app.data.watchApp(key, function () { paint(); readParts(); });
+    var offRow = S.data.app.data.watch(key, function () { paint(); readParts(); });
     var offAll = S.data.app.data.watch(function (k) { if (!k) ask(); });
     if (!row()) ask();
     paint();

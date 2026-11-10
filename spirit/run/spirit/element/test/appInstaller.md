@@ -12,7 +12,7 @@ come later.
 ## Requirements
 
 - **An app in spirit/app** (goal/G43.9): it is on while its row in `spirit.data.app` says `active: true`
-  (`spirit.cacheManager('app')`, then `watchApp(key)`).
+  (`spirit.cacheManager('app')`, then `watch(key)`).
   - A press asks the node, `spirit.app.activeApp({ key, active })`, the row's active turned over.
   - It draws only what the stream then brings (rule/19): a press leaves the button as it was until the row changes.
 - **An intrinsic app** (its row says `intrinsic: true`) gets no button and no note (goal/G43.15).

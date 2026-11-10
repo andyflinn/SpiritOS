@@ -24,7 +24,7 @@
       });
     }
     // WHO PAINTS, LISTENS (Andy, G41.32); a connect forgetting what is kept, a word with no row, asks again.
-    var offRow = window.spirit.data.app.data.watchApp(NAME, paint);
+    var offRow = window.spirit.data.app.data.watch(NAME, paint);
     var offAll = window.spirit.data.app.data.watch(function (key) { if (!key) ask(); });
     paint();
     if (!box.textContent) ask();

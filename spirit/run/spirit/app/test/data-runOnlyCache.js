@@ -50,7 +50,7 @@ test.startTest('data-runOnlyCache.js: a node:run app shows no tile and no Activa
     // From here on: every value the cache holds for a run-only app, and every app label a tile ever draws (a MutationObserver).
     const LABELS = JSON.stringify(own.map(function (a) { return a.label; }));
     await chrome.evaluate('(function () { window.seen = {}; window.drawn = []; var want = ' + LABELS + ';' +
-      ' ' + JSON.stringify(only.map(function (a) { return a.key; })) + '.forEach(function (k) { window.seen[k] = []; spirit.data.app.data.watchApp(k, function (r) { window.seen[k].push(r === undefined ? null : r); }); });' +
+      ' ' + JSON.stringify(only.map(function (a) { return a.key; })) + '.forEach(function (k) { window.seen[k] = []; spirit.data.app.data.watch(k, function (r) { window.seen[k].push(r === undefined ? null : r); }); });' +
       ' function look() { var all = document.querySelectorAll("#tiles *"); for (var i = 0; i < all.length; i++) { var t = String(all[i].innerText || "").trim(); if (!all[i].children.length && want.indexOf(t) !== -1 && window.drawn.indexOf(t) === -1) window.drawn.push(t); } }' +
       ' look(); window.before = window.drawn; window.drawn = []; new MutationObserver(look).observe(document.getElementById("tiles"), { childList: true, subtree: true, characterData: true }); return true; }())');
     const before = JSON.parse(await chrome.evaluate('JSON.stringify(window.before)'));

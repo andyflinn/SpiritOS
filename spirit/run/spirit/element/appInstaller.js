@@ -44,7 +44,7 @@
       if (gone) return;
       render();
       var A = reads();
-      if (A) off = A.watchApp(key, render) || off;
+      if (A) off = A.watch(key, render) || off;
     });
     return {
       destroy: function () {

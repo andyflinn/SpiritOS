@@ -49,7 +49,7 @@
       offJobs = S.data.jobs.data.watch(function (id, j) { if (j && j.module === module) asked = null; paint(); });
       paint();
     }, function () { /* no jobs, no server to show */ });
-    var offRow = S.data.app.data.watchApp(key, paint);
+    var offRow = S.data.app.data.watch(key, paint);
     S.ready.then(function (s) { return s.fs.loadFile('spirit/app/' + key + '/' + key + '.json'); }).then(function (text) {
       var j = JSON.parse(String(text));
       serves = !!(j.node && j.node.mount === true);

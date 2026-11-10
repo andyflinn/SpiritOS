@@ -50,7 +50,7 @@ function world(rows) {
     cacheManager: function (name) { w.managers.push(name); return Promise.resolve(true); },
     data: { app: { data: {
       rows: function () { return w.rows; },
-      watchApp: function (key, fn) { (w.watchers[key] = w.watchers[key] || []).push(fn); return function () { w.released += 1; w.watchers[key] = w.watchers[key].filter(function (x) { return x !== fn; }); }; },
+      watch: function (key, fn) { (w.watchers[key] = w.watchers[key] || []).push(fn); return function () { w.released += 1; w.watchers[key] = w.watchers[key].filter(function (x) { return x !== fn; }); }; },
     } } },
     escapeHtml: function (s) { return String(s); },
   }, setTimeout: setTimeout, Promise: Promise, JSON: JSON, console: { log: function () {}, error: function () {} } };

@@ -69,7 +69,7 @@ const MAKE = '(function () {' +
   ' return window.spirit.ready.then(function (s) { if (!window.__asks) { window.__asks = []; window.__watches = [];' +
   '  var read = s.fs.loadFile; s.fs.loadFile = function (p) { window.__asks.push(String(p)); return read.apply(this, arguments); }; }' +
   '  return window.spirit.require("spirit/element/search/icon/listElement.js"); }).then(function () { var F = window.spirit.data.fs.data;' +
-  '   if (!F.__kept) { F.__kept = true; var watch = F.watchFile; F.watchFile = function (p) { window.__watches.push(String(p)); return watch.apply(this, arguments); }; }' +
+  '   if (!F.__kept) { F.__kept = true; var watch = F.watch; F.watch = function (p) { if (typeof p === "string") window.__watches.push(p); return watch.apply(this, arguments); }; }' +
   '   var box = document.body.appendChild(document.createElement("div")); box.style.cssText = "position:fixed;left:0;top:0;width:600px;height:400px;display:flex;flex-direction:column;background:#fff;z-index:99999";' +
   '   window.__list = window.spirit.element.spirit.element.search.icon.listElement.create(box, { face: "pane" }); window.__box = box; return "made"; }); })';
 const SEEN = 'JSON.stringify({ asks: (window.__asks || []).filter(function (p) { return /iconSet\\.json$/.test(p); }), watches: (window.__watches || []).filter(function (p) { return /iconSet\\.json$/.test(p); }), SET: window.spirit.element.spirit.element.search.icon.listElement.SET })';

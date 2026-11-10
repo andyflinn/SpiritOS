@@ -40,7 +40,7 @@
         if (!gone) S.data.seatRows(S.data.app.data.branch, got.items);
       }, function () { /* the row comes with the stream */ });
     }
-    var offRow = S.data.app.data.watchApp(key, paint);
+    var offRow = S.data.app.data.watch(key, paint);
     var offAll = S.data.app.data.watch(function (k) { if (!k) ask(); });
     if (!row()) ask();
     paint();

@@ -31,12 +31,16 @@
     // THE READS, ANSWERED HERE:
     //   rows()      every app kept, key -> row
     //   watch(fn)   fn(key, row) on every change, row undefined once it is gone; answers its release
-    //   watchApp(key, fn)   fn(row) when that one app changes; answers its release
+    //   watch(key, fn)      fn(row) when that one app changes; answers its release. A branch's watch is watch, the
+    //                       branch implied by the object it is on (Andy, goal/G43.32: "that's a decision: a BRANCHE's
+    //                       what is called \"watch\"", "the branch is already implied in it's containing object.")
     //   branch      the apps' whole path, for a list that is a view of it (probabilitySearch's data)
     var appReads = {
       rows: function () { return HOME.branch(APPS); },
-      watch: function (fn) { return HOME.watch(APPS, function (whole, v) { if (typeof fn === 'function') fn(HOME.row(whole, APPS), v); }); },
-      watchApp: function (key, fn) { return HOME.watch(APPS + '/' + key, function (whole, v) { if (typeof fn === 'function') fn(v); }); },
+      watch: function (key, fn) {
+        if (typeof key === 'function') { var all = key; return HOME.watch(APPS, function (whole, v) { all(HOME.row(whole, APPS), v); }); }
+        return HOME.watch(APPS + '/' + key, function (whole, v) { if (typeof fn === 'function') fn(v); });
+      },
       get branch() { return HOME.path(APPS); },
     };
     return appReads;

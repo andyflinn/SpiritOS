@@ -46,16 +46,18 @@
     //   ready()          true once the whole tree has come
     //   watch(fn)        fn(path, row) on every change, row undefined once it is gone, path '' when the tree is whole
     //                    or forgotten; answers its release
-    //   watchFile(p, fn) fn(row) when that one file changes; answers its release
-    //   branch           the tree's whole path, for a list that is a view of it (probabilitySearch's data)
+    //   watch(p, fn)     fn(row) when that one file changes; answers its release. A branch's watch is watch, the branch
+    //                    implied by the object it is on (Andy, goal/G43.32: "that's a decision: a BRANCHE's what is called
+    //                    \"watch\"", "the branch is already implied in it's containing object.")
+    //   branch          the tree's whole path, for a list that is a view of it (probabilitySearch's data)
     var fsReads = {
       file: function (p) { return p ? HOME.get(FILES + '/' + p) || null : null; },
       files: function () { return HOME.branch(FILES); },
       ready: function () { return !!HOME.ready(FILES); },
-      watch: function (fn) {
-        return HOME.watch(FILES, function (whole, v) { if (typeof fn === 'function') fn(HOME.row(whole, FILES), v); });
+      watch: function (p, fn) {
+        if (typeof p === 'function') { var all = p; return HOME.watch(FILES, function (whole, v) { all(HOME.row(whole, FILES), v); }); }
+        return HOME.watch(FILES + '/' + p, function (whole, v) { if (typeof fn === 'function') fn(v); });
       },
-      watchFile: function (p, fn) { return HOME.watch(FILES + '/' + p, function (whole, v) { if (typeof fn === 'function') fn(v); }); },
       get branch() { return HOME.path(FILES); },
       // The icon set: keep(set) replaces it whole ({ glyph: [keywords] }); row(glyph); watch(glyph, fn(row)); branch.
       icons: {

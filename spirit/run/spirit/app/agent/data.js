@@ -30,17 +30,25 @@
     //   branch(table)    a table's whole path, for a list that is a view of it (probabilitySearch's data) and for an
     //                    editor's row (branch + '/' + id); '' for a table the agent server has not
     //   row(table, id)   a row, or null
-    //   watchRow(table, id, fn)  fn(row) each time that row is written, undefined once it is gone; answers its release,
-    //                    a do-nothing one for a table the agent server has not (an editor, a tab following its row)
+    //   job, model, persona, provider   each table its own branch: watch(fn) fn(id, row) on every change of it,
+    //                    watch(id, fn) fn(row) each time that row is written, undefined once it is gone; each answers its
+    //                    release (an editor, a tab following its row). A branch's watch is watch, the branch implied by the
+    //                    object it is on (Andy, goal/G43.32: "that's a decision: a BRANCHE's what is called \"watch\"",
+    //                    "the branch is already implied in it's containing object.")
     var agentReads = {
       tables: TABLES.slice(),
       branch: function (table) { return TABLES.indexOf(String(table)) === -1 ? '' : HOME.path(String(table)); },
       row: function (table, id) { return TABLES.indexOf(String(table)) !== -1 && id ? HOME.get(String(table) + '/' + id) || null : null; },
-      watchRow: function (table, id, fn) {
-        if (TABLES.indexOf(String(table)) === -1 || !id) return function () {};
-        return HOME.watch(String(table) + '/' + id, function (whole, v) { if (typeof fn === 'function') fn(v); });
-      },
     };
+    TABLES.forEach(function (t) {
+      agentReads[t] = {
+        watch: function (id, fn) {
+          if (typeof id === 'function') { var all = id; return HOME.watch(t, function (whole, v) { all(HOME.row(whole, t), v); }); }
+          if (!id) return function () {};
+          return HOME.watch(t + '/' + id, function (whole, v) { if (typeof fn === 'function') fn(v); });
+        },
+      };
+    });
     return agentReads;
   });
 }());

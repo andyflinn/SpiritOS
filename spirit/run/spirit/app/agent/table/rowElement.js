@@ -291,10 +291,11 @@
       });
     }
     // THE ROW AS spirit.data HOLDS IT: what the stream writes there repaints this editor, a delete says so. Asked of the
-    // agent family's cache, which alone names its addresses (spirit/app/agent/data.js, watchRow).
+    // agent family's cache, which alone names its addresses: its table's branch, watch(id, fn) (spirit/app/agent/data.js).
     var unwatch = function () {};
     function attach() {
-    unwatch = window.spirit.data.agent.data.watchRow(o.table, o.id, function (value) {
+    var B = window.spirit.data.agent.data[o.table];
+    unwatch = !B ? function () {} : B.watch(o.id, function (value) {
       if (value === undefined) { row = null; note = 'Deleted.'; paint(); return; }
       row = value;
       paint();
