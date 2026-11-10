@@ -94,6 +94,45 @@ test.startTest('appClient.js: the node asks its app servers');
     ok(seen >= 1 || pids >= 2, 'the world: runs of icons.js were seen while they were answered (' + seen + ' samples, ' + pids + ' pids its job named)', 'no run of icons.js was ever seen, so "one at a time" judged nothing');
     ok(most <= 1, 'never two runs of icons.js at once', most + ' runs of icons.js at once');
     ok(await H.until(function () { return Promise.resolve(runsOf(s.root, 'icons').length === 0); }, 3000), 'and none is left running', 'icons.js runs after all were answered: ' + short(runsOf(s.root, 'icons')));
+
+    // ── THE NODE RUNS NO APP CODE; appServer CHECKS, IN THE APP'S PROCESS (goal/G43.32) ──
+    // Andy: "isolation, we don't want the NODE to run the validation, because we want the node kept safe from "foreign"
+    // code.", "so, really the appClient.js has no business running or parsing code. that must be done by the plugin. i
+    // don't care if it's spirit/appServer.js, since it'll crash with the server process and leave the node intact.", and
+    // "for one-shot servers, appClient launches appServer with the argument "spirit/app/<name>/name.js", then the
+    // appServer module "requires" that script and passes it a ready-made spirit-object with it's spirit.check already done".
+    // The box: "The node starts every app server, one-shot and long-running alike, as appServer.js with the app's path".
+    test.subHeading('the node runs no app code: every app server is appServer.js with the app\'s path, and checks in its own process');
+    const own = fs.readFileSync(path.join(RUN, 'spirit', 'appClient.js'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1');
+    ok(!/\brequire\s*\([^)]*\bapi\b/.test(own) && !/\bspirit\.require\s*\([^)]*api/.test(own), 'appClient.js loads no app\'s api.js, nor any of its code', 'appClient.js still loads an app\'s code: ' + short(own.match(/\b(spirit\.)?require\s*\([^)]*api[^)]*\)/g)));
+    const cmdOf = function (pid) { try { return fs.readFileSync('/proc/' + pid + '/cmdline', 'utf8').split('\0').join(' '); } catch (e) { return ''; } };
+    if (process.platform === 'linux') {
+      const perm = runsOf(s.root, NAME).map(cmdOf).filter(Boolean);
+      ok(perm.length === 1 && /spirit[\\/]appServer\.js\s/.test(perm[0]) && perm[0].indexOf(path.join('spirit', 'app', NAME, NAME + '.js')) > perm[0].indexOf('appServer.js'),
+        'the permanent ' + NAME + ' runs as spirit/appServer.js with its path', 'the permanent ' + NAME + ' runs as ' + short(perm));
+      // A run started for the call is a pid of the icons job's that was not its pid before the call; its command line is
+      // read while it runs.
+      const pidNow = function () { return post('jobs.get', { key: 'spirit.app.icons' }).then(function (r) { return String((r.body && r.body.job && r.body.job.data && r.body.job.data.pid) || ''); }); };
+      const before = await pidNow();
+      const fresh = [];
+      const seenCmd = [];
+      let looking = true;
+      const sampler = (async function () {
+        while (looking) {
+          const p = await pidNow();
+          if (p && p !== before && fresh.indexOf(p) === -1) fresh.push(p);
+          runsOf(s.root, 'icons').map(cmdOf).filter(Boolean).forEach(function (c) { if (seenCmd.indexOf(c) === -1) seenCmd.push(c); });
+          await H.sleep(5);
+        }
+      }());
+      const bad = await post('icons.icon', { op: 42 });
+      await H.sleep(300);
+      looking = false;
+      await sampler;
+      ok(bad.status === 400, 'a call that breaks icons\'s api.js (op 42, not an id) is refused 400', 'icons.icon {op: 42} answered ' + bad.status + ' ' + short(bad.text));
+      ok(fresh.length >= 1, 'and it was refused by icons\'s own run, not by the node: a run of icons started for it (pid ' + fresh.join(', ') + ')', 'no run of icons started for the bad call (the job\'s pid stayed ' + (before || 'none') + '): the node refused it itself, running the app\'s api.js');
+      ok(seenCmd.length >= 1 && seenCmd.every(function (c) { return /spirit[\\/]appServer\.js\s/.test(c); }), 'that run is spirit/appServer.js with icons\'s path', 'the one-shot ran as ' + short(seenCmd.length ? seenCmd : 'nothing seen'));
+    } else test.comment('the process command lines are read on Linux only; not judged here');
   } finally {
     try { child.kill(); } catch (e) { /* gone */ }
     await H.sleep(500);
