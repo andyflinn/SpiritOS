@@ -332,8 +332,9 @@ test.startTest('spirit/run/spirit.js: the one spirit object, in node and on a pa
     else {
       if (o.same) test.check('the scratch run root\'s instance is its process\'s one global');
       else test.fail('the scratch instance is not its process\'s global');
-      if (o.two && o.two[0] === 'hello bert' && o.two[1] === 'hello carl' && o.bound && node.asked.filter(function (b) { return b.call === 'api' && b.args && b.args.family === 'demo'; }).length === 1)
-        test.check('spirit.require of the demo interface binds it on the one instance as spirit.demo, from 127.0.0.1:<its port>, asked once by two callers at once');
+      // goal/G43.32: in node a branch is bound from the api.js on its own disc, so its node is never asked for it.
+      if (o.two && o.two[0] === 'hello bert' && o.two[1] === 'hello carl' && o.bound && node.asked.filter(function (b) { return b.call === 'api' && b.args && b.args.family === 'demo'; }).length === 0)
+        test.check('spirit.require of the demo interface binds it on the one instance as spirit.demo, once for two callers at once, from its own disc: its node is never asked for its api.js');
       else test.fail('binding demo: ' + short([o.two, o.bound, node.asked.filter(function (b) { return b.call === 'api'; }).length]));
       // goal/G43.32, decided 8: "spirit.require of a branch's api.js places the api.js at spirit.required.spirit.<branch-path>.api and binds its verbs on spirit.<branch>.<verb>".
       if (o.bound && o.apiPlaced) test.check('in node: the api.js required also stands at spirit.required.spirit.demo.api, the verbs bound on spirit.demo');

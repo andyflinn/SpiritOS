@@ -55,15 +55,14 @@ const NAMED = ADDRESS.slice('/DEBUG'.length);
 // THE AGENT TABLES' PAGES (goal/G41.27; Andy, Q5: "it covers them, too"): the tables' shared element, its row editor
 // (goal/G41.28) and each table's list and editor live in spirit/app/agent/table/ since goal/G43.12, which no pattern below
 // matches; there they are neither, and are not mounted. spirit/app/agent/agent.js is an element by the new-folder rule.
+// WHAT IS A PAGE MODULE (goal/G43.32; Andy: "helpers with no create are no fucking elements. they live in require.
+// element scripts place their factories in spirit.element.<their path>"): a file is mounted when its own code places its
+// factory by installSpiritElement; a switch (agent.js), a server or a helper is not. Read from the file, not guessed from
+// its path.
 function kindOf(file) {
   const f = String(file || '');
-  if (/^spirit\/element\/.+\.js$/.test(f)) return 'element';
-  // THE APP FAMILY'S SELECTOR (goal/G43.2): an element in the new folder, judged as the shell's are.
-  if (/^spirit\/app\/appSelector(\/[^/]+)?\.js$/.test(f)) return 'element';
-  // AN APP IN THE NEW FOLDER IS AN ELEMENT TOO (goal/G43.2; Andy, box: "both of these apps are face-app skeletons (elements)").
-  if (/^spirit\/app\/([^/]+)\/\1\.js$/.test(f)) return 'element';
-  const m = /^shell\/([^/]+)\/([^/]+)\.js$/.exec(f);
-  return m && m[1] === m[2] ? 'app' : '';
+  if (!/^spirit\/.+\.js$/.test(f) || /(^|\/)test\//.test(f)) return '';
+  try { return /\binstallSpiritElement\s*\(/.test(codeOf(fs.readFileSync(path.join(RUN, f), 'utf8'), true)) ? 'element' : ''; } catch (e) { return ''; }
 }
 const WAIT = 20000;
 // THE SERVERS ITS PAGES STAND ON, TURNED ON (goal/G41.28): the agent tables' pages draw the agent family's cache, which
@@ -160,7 +159,17 @@ const WATCH = String.raw`(function () {
   function searches(els) {
     if (!els || typeof els !== 'object' || els.__searched) return;
     try { Object.defineProperty(els, '__searched', { value: true }); } catch (e) { return; }
-    var cur = window.spirit.element.search;
+    // The search element stands at its path since goal/G43.32, spirit.element.spirit.element.search: every step of the path
+    // is followed as it is made, and the element wrapped when it is placed or read.
+    function along(o, keys, done) {
+      if (!o || typeof o !== 'object') return;
+      var k = keys[0];
+      var last = keys.length === 1;
+      var at = o[k];
+      function took(v) { if (last) done(v); else along(v, keys.slice(1), done); }
+      try { Object.defineProperty(o, k, { configurable: true, enumerable: true, get: function () { if (last) done(at); return at; }, set: function (v) { at = v; took(v); } }); } catch (e) { /* kept as it is */ }
+      if (at) took(at);
+    }
     function wrap(v) { if (v && typeof v.create === 'function' && !v.create.__kept) { var c = v.create; v.create = function (host, o) { var x = o || {}; W.searches.push({ data: typeof x.data === 'string' ? x.data : '', rows: typeof x.rows === 'function', verb: String(x.verb || ''), face: String(x.face || 'pane') }); (window.spiritSearchHosts = window.spiritSearchHosts || []).push(host); return c.apply(this, arguments); }; v.create.__kept = true; } }
   // WHAT IT WATCHES, IT DRAWS FROM: a marked row written into each spirit.data path the module watches, and whether its
   // box changed for it within a second. A watch path is by server node first (goal/G41.28): '<node>/<family>/<branch>',
@@ -214,9 +223,7 @@ const WATCH = String.raw`(function () {
       return { verb: x.verb, data: x.data, drawn: keys.length, outside: keys.filter(function (k) { return !held[k]; }).slice(0, 5) };
     });
   };
-    // spirit.element.search since goal/G43.18: its create is assigned into it after it is made, so it is wrapped when read.
-    Object.defineProperty(els, 'search', { configurable: true, enumerable: true, get: function () { wrap(cur); return cur; }, set: function (v) { cur = v; wrap(v); } });
-    wrap(cur);
+    along(els, ['spirit', 'element', 'search'], wrap);
   }
   function hook(o) {
     if (!o || typeof o !== 'object' || o.__watched) return;
@@ -642,7 +649,7 @@ test.startTest((full ? NAMED : 'every page module') + ': the general rules of an
     if (!why.length) test.check('it starts with \'use strict\', takes spirit first, and loads the tree only through spirit.require');
     why.forEach(function (w) { test.fail(w); });
   }
-  if (!kindOf(rel)) { test.subHeading(NAMED); test.check(rel + ' is neither an app (shell/<app>/<app>.js) nor an element (under spirit/element/, or an agent table\'s page): not mounted'); return; }
+  if (!kindOf(rel)) { test.subHeading(NAMED); test.check(rel + ' places no element (it calls no installSpiritElement): a switch, a server or a helper, not mounted'); return; }
   // THE WHOLE ROW, NEVER A FEW FIELDS (goal/G41.28; Andy, box v15: "All client side searches will be fixed, too, and
   // search the whole row, as cached in spirit.data."): no app or element hands a search a matched(row) of its own; the
   // search element itself matches the whole row.
@@ -758,7 +765,7 @@ test.startTest((full ? NAMED : 'every page module') + ': the general rules of an
       '  var inIcon = !!mark && !!el && !!el.closest("." + mark); if (inIcon || !el.getClientRects().length) continue;' +
       '  var parts = []; for (var e = el; e && e !== box; e = e.parentNode) { if (e.id || e === el) parts.unshift(e.tagName.toLowerCase() + (e.id ? "#" + e.id : "")); }' +
       '  out.push(g.join("") + " in " + parts.join(" > ")); } return out; }())';
-    await page.evaluate('Promise.resolve().then(function () { return spirit.require("spirit/element/icon.js"); }).then(function () { var p = document.createElement("div"); var i = spirit.element.icon.create(p, { glyph: "A" }); window.spiritIconMark = String(i && i.className || "").trim().split(/\\s+/)[0] || ""; }, function () { window.spiritIconMark = ""; })');
+    await page.evaluate('Promise.resolve().then(function () { return spirit.require("spirit/element/icon.js"); }).then(function () { var p = document.createElement("div"); var i = spirit.element.spirit.element.icon.create(p, { glyph: "A" }); window.spiritIconMark = String(i && i.className || "").trim().split(/\\s+/)[0] || ""; }, function () { window.spiritIconMark = ""; })');
     const iconMark = await page.evaluate('window.spiritIconMark || ""');
     const loose = {};
     const iconProbe = async function () { const s = await page.evaluate('JSON.stringify(' + ICONS + ')'); (s ? JSON.parse(s) : []).forEach(function (x) { loose[x] = true; }); };
