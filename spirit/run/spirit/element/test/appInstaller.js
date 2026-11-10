@@ -55,9 +55,11 @@ function world(rows) {
     escapeHtml: function (s) { return String(s); },
   }, setTimeout: setTimeout, Promise: Promise, JSON: JSON, console: { log: function () {}, error: function () {} } };
   win.window = win;
+  // goal/G43.32: appInstaller.js places itself by installSpiritElement (spirit/test/headLessChrome.js pageSpirit), at its path.
+  require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(win.spirit);
   vm.createContext(win);
   vm.runInContext(fs.readFileSync(FILE, 'utf8'), win, { filename: FILE });
-  w.E = win.spirit.element || {};
+  w.E = ((win.spirit.element || {}).spirit || {}).element || {};
   w.put = function (key, row) { w.rows[key] = row; (w.watchers[key] || []).slice().forEach(function (fn) { fn(row); }); };
   return w;
 }

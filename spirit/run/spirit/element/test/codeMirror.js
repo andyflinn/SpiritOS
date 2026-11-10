@@ -76,6 +76,12 @@ function world() {
       return Promise.resolve({});
     },
   };
+  // goal/G43.32: codeMirror.js places itself by installSpiritElement; the recorder hands that helper to the page stand-in
+  // (spirit/test/headLessChrome.js pageSpirit), and writes down only what the element asks for besides.
+  const own = win.spirit.require;
+  require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(win.spirit);
+  const pageRequire = win.spirit.require;
+  win.spirit.require = function (p) { return /installSpiritElement\.js$/.test(p) ? pageRequire(p) : own(p); };
   vm.createContext(win);
   return { w: w, win: win };
 }
@@ -92,7 +98,9 @@ test.startTest('codeMirror.js: the CodeMirror shell element, read and edit');
   if (there) {
     try { vm.runInContext(SRC, win, { filename: FILE }); } catch (e) { test.fail('it threw as it loaded: ' + e.message); }
   }
-  const E = win.spirit.element.codeMirror;
+  await settle();
+  // goal/G43.32: it stands at its path.
+  const E = ((win.spirit.element.spirit || {}).element || {}).codeMirror;
   ok(!!E && typeof E.create === 'function', 'it puts itself on window.spirit.element as codeMirror, with create', 'no window.spirit.element.spirit.element.codeMirror.create');
 
   test.subHeading('it loads the library itself, never through index.html (goal/G40.7)');

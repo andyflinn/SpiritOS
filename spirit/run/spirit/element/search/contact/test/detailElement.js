@@ -182,16 +182,23 @@ function world(person, relayRows) {
     require: function (p) { w.required.push(String(p).replace(/^\/+/, '')); return Promise.resolve({}); },
     ready: Promise.resolve(families),
     relay: { status: function () { w.statusAsked += 1; w.statusAt = w.calls.length; return Promise.resolve({ body: { rows: relayRows || [] } }); } },
-    get element() { return this.elements; }, elements: {
+    // goal/G43.32: the armingButton stands where an element now finds it, spirit.element.spirit.element.
+    element: { spirit: { element: {
       armingButton: {
         attach: function (button, opts) { return record('attach', button, opts); },
         create: function (opts) { const b = document.createElement('button'); b.type = 'button'; b.textContent = (opts && opts.label) || ''; return record('create', b, opts); },
       },
-    },
+    } } },
   };
+  // goal/G43.32: the element places itself by installSpiritElement; the recorder hands that helper to the page stand-in
+  // (spirit/test/headLessChrome.js pageSpirit).
+  const recorder = win.spirit.require;
+  require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(win.spirit);
+  const pageRequire = win.spirit.require;
+  win.spirit.require = function (p) { return /installSpiritElement\.js$/.test(p) ? pageRequire(p) : recorder(p); };
   // A PANEL'S MOUNT, NO NAVIGATION PAGE (goal/G43.18): the element made in a box of its own with its layer, as a layer's
   // fill makes it (spirit/element/search/contact/rowElement.js, openDetails).
-  w.open = function (key) { const box = document.createElement('div'); document.body.appendChild(box); w.box = box; return win.spirit.element.search.contact.detailElement.create(box, { key: key, layer: layer }); };
+  w.open = function (key) { const box = document.createElement('div'); document.body.appendChild(box); w.box = box; return win.spirit.element.spirit.element.search.contact.detailElement.create(box, { key: key, layer: layer }); };
   vm.createContext(win);
   vm.runInContext(SRC, win, { filename: FILE });
   w.win = win;
@@ -219,7 +226,7 @@ test.startTest('detailElement.js: its are-you-sure buttons are armingButtons (go
   test.subHeading('it loads armingButton itself (goal/G41.3)');
   ok(w.required.indexOf('spirit/element/armingButton.js') !== -1, 'it requires spirit/element/armingButton.js through spirit.require', 'required: ' + short(w.required));
 
-  const E = w.win.spirit.element.search.contact.detailElement;
+  const E = w.win.spirit.element.spirit.element.search.contact.detailElement;
   ok(!!E && typeof E.create === 'function' && E.open === undefined, 'it is window.spirit.element.spirit.element.search.contact.detailElement, made by create; no open of its own: it opens as a panel (goal/G43.18)', 'detailElement: create ' + typeof (E && E.create) + ', open ' + typeof (E && E.open));
   if (!E) return;
   w.open(KEY);
@@ -327,7 +334,7 @@ test.startTest('detailElement.js: its are-you-sure buttons are armingButtons (go
   ok(typeof w.title === 'string' && w.title.indexOf('bob') !== -1, 'its title goes to the layer it is drawn in (options.layer.setTitle)', 'title: ' + short(w.title));
   const w8 = world({ key: 'K8', publicLabel: 'carol' }, []);
   const box8 = w8.document.createElement('div'); w8.document.body.appendChild(box8); w8.box = box8;
-  w8.win.spirit.element.search.contact.detailElement.create(box8, { key: 'K8' });
+  w8.win.spirit.element.spirit.element.search.contact.detailElement.create(box8, { key: 'K8' });
   await settle();
   ok(w8.calls.some(function (c) { return c.name === 'contact.get' && c.body.key === 'K8'; }) && /carol/.test(box8.innerHTML), 'mounted with its key alone, no layer, it reads the row and draws it', 'calls: ' + short(w8.calls.map(function (c) { return c.name; })));
   w8.refuse = { 'contact.block': { status: 403, body: { ok: false, error: 'not yours' } } };

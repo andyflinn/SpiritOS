@@ -39,11 +39,12 @@ test.startTest('apiVerbSelector.js: the verb dropdown');
 
   // A BARE WINDOW (rule/26): probabilitySearch is on the page only once the selector requires it.
   const w = { lists: [], required: [] };
+  // goal/G43.32: the stand-in search stands where an element now finds it, spirit.element.spirit.element.search.
   const STAND = function (E) { E.search = Object.assign(E.search || {}, { create: function (host, opts) { const l = { host: host, opts: opts, redrawn: 0,
     redraw: function () { l.redrawn += 1; }, refresh: function () {}, destroy: function () {} }; w.lists.push(l); return l; } }); };
   const win = {
     spirit: { escapeHtml: function (s) { return String(s); }, element: {},
-      require: function (p) { w.required.push(String(p)); if (p === 'spirit/element/search.js' && !w.stood) { w.stood = true; STAND(win.spirit.element); } return Promise.resolve(true); },
+      require: function (p) { w.required.push(String(p)); if (p === 'spirit/element/search.js' && !w.stood) { w.stood = true; STAND(((win.spirit.element.spirit = win.spirit.element.spirit || {}).element = win.spirit.element.spirit.element || {})); } return Promise.resolve(true); },
       // A family's cache (goal/G41.28): the family's own manager, run on this window over the real data set.
       cacheManager: function (name) {
         w.managers = (w.managers || []).concat(name);
@@ -56,6 +57,12 @@ test.startTest('apiVerbSelector.js: the verb dropdown');
     console: { log: function () {}, error: function () {} },
   };
   win.window = win;
+  // goal/G43.32: verb.js places itself by installSpiritElement; the recorder hands that helper to the page stand-in
+  // (spirit/test/headLessChrome.js pageSpirit).
+  const recorder = win.spirit.require;
+  require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(win.spirit);
+  const pageRequire = win.spirit.require;
+  win.spirit.require = function (p) { return /installSpiritElement\.js$/.test(p) ? pageRequire(p) : recorder(p); };
   vm.createContext(win);
   vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'client', 'apiTreeIndex.js'), 'utf8'), win, { filename: 'apiTreeIndex.js' });
   // The page's one data set, its node known (goal/G41.28, Q10), as spirit.start leaves it before any element runs.
@@ -63,7 +70,8 @@ test.startTest('apiVerbSelector.js: the verb dropdown');
   win.spirit.node = { key: 'KEY+VERB/SELECTOR==' };
   win.spirit.data.homeNode(win.spirit.node.key);
   vm.runInContext(SRC, win, { filename: FILE });
-  const E = win.spirit.element;
+  // goal/G43.32: it stands at its path, spirit.element.spirit.element.search.api.verb.
+  const E = ((win.spirit.element.spirit || {}).element || {});
 
   test.subHeading('a shell element of its own, on probabilitySearch');
   const made = E.search.api.verb;

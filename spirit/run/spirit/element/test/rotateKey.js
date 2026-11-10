@@ -89,8 +89,9 @@ function world(answer) {
       if (p === 'spirit/element/armingButton.js') {
         vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'element', 'armingButton.js'), 'utf8'), win, { filename: 'armingButton.js' });
         // Every attach recorded, so what the button was handed is judged; the real attach does the arming.
-        const real = win.spirit.element.armingButton.attach;
-        win.spirit.element.armingButton.attach = function (b, o) { w.attached.push({ button: b, opts: o || {} }); return real(b, o); };
+        // goal/G43.32: it places itself at its path, spirit.element.spirit.element.armingButton.
+        const real = win.spirit.element.spirit.element.armingButton.attach;
+        win.spirit.element.spirit.element.armingButton.attach = function (b, o) { w.attached.push({ button: b, opts: o || {} }); return real(b, o); };
       }
       return w.hold ? w.hold : Promise.resolve({});
     },
@@ -107,6 +108,12 @@ function world(answer) {
       },
     },
   };
+  // goal/G43.32: every element places itself by installSpiritElement; the recorder hands that helper to the page stand-in
+  // (spirit/test/headLessChrome.js pageSpirit), at once, held or not.
+  const recorder = win.spirit.require;
+  require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(win.spirit);
+  const pageRequire = win.spirit.require;
+  win.spirit.require = function (p) { return /installSpiritElement\.js$/.test(p) ? pageRequire(p) : recorder(p); };
   if (SRC) vm.runInContext(SRC, win, { filename: FILE });
   w.win = win;
   w.button = function (host) { return host.querySelector('[data-rotate]'); };
@@ -123,8 +130,10 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
 
   test.subHeading('an element mounted the new shell\'s way (goal/G43.24, requirements 7 and 8)');
   const w = world(rotated);
-  const E = (w.win.spirit.elements || {}).rotateKey;
-  ok(!!E && typeof E.create === 'function', 'it sets spirit.element.spirit.element.rotateKey = { create }', 'elements: ' + short(Object.keys(w.win.spirit.elements || {})));
+  // goal/G43.32: it stands at its path.
+  const at = ((w.win.spirit.element || {}).spirit || {}).element || {};
+  const E = at.rotateKey;
+  ok(!!E && typeof E.create === 'function', 'it sets spirit.element.spirit.element.rotateKey = { create }', 'elements: ' + short(Object.keys(at)));
   if (!E) return;
   ok(!/\bactivateApp\b|\bspirit\.shell\b|\bcallDialog\b|\bcloseDialog\b/.test(CODE), 'no spirit.shell.activateApp, no dialog of the old shell', 'rotateKey.js still mounts or closes the old shell\'s way');
   // Andy: "every fucking element gets the interfaces it needs": the node's own verb, through the spirit object, no api.verb.
@@ -179,7 +188,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   test.subHeading('while the node has not answered, the button waits');
   const slow = world(function () { return { wait: true, body: { ok: true, at: 3, relays: 2 } }; });
   const h2 = node('<div>');
-  slow.win.spirit.elements.rotateKey.create(h2, {});
+  slow.win.spirit.element.spirit.element.rotateKey.create(h2, {});
   await settle();
   const b2 = slow.button(h2);
   b2.fire('click', { preventDefault: function () {} }); b2.fire('click', { preventDefault: function () {} }); await settle();
@@ -195,7 +204,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   test.subHeading('a refusal is said, and the button stays to try again');
   const no = world(function () { return { status: 403, body: { ok: false, code: 'owner-only', error: 'owner <only>' } }; });
   const h3 = node('<div>');
-  no.win.spirit.elements.rotateKey.create(h3, {});
+  no.win.spirit.element.spirit.element.rotateKey.create(h3, {});
   await settle();
   const b3 = no.button(h3);
   b3.fire('click', { preventDefault: function () {} }); b3.fire('click', { preventDefault: function () {} }); await settle();
@@ -204,7 +213,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(!!again && !again.disabled && again.getAttribute('data-armed') === null && again.textContent === BUTTON, 'its button is back, disarmed', 'button: ' + short(again && { text: again.textContent, disabled: again.disabled }));
   const none = world(function () { return { status: 0, body: null }; });
   const h4 = node('<div>');
-  none.win.spirit.elements.rotateKey.create(h4, {});
+  none.win.spirit.element.spirit.element.rotateKey.create(h4, {});
   await settle();
   const b4 = none.button(h4);
   b4.fire('click', { preventDefault: function () {} }); b4.fire('click', { preventDefault: function () {} }); await settle();
@@ -225,9 +234,11 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const late = world(rotated);
   let letGo = null;
   late.hold = new Promise(function (r) { letGo = r; });
+  // goal/G43.32: installSpiritElement overwrites no element that stands; the run again takes the place of a fresh page's.
+  delete late.win.spirit.element.spirit.element.rotateKey;
   vm.runInContext(SRC, late.win, { filename: FILE });
   const h6 = node('<div>');
-  const m6 = late.win.spirit.elements.rotateKey.create(h6, {});
+  const m6 = late.win.spirit.element.spirit.element.rotateKey.create(h6, {});
   m6.destroy();
   letGo({}); await settle();
   ok(h6.innerHTML === '' && late.attached.length === 0, 'destroyed before its arming button loads, it draws and attaches nothing', 'left ' + short(h6.innerHTML) + ', attached ' + late.attached.length);

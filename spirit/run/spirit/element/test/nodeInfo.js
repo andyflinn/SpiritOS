@@ -88,8 +88,9 @@ function world(o) {
   const rotateKey = { create: function (pane, x) { const r = { pane: pane, opts: x, destroy: function () {} }; w.rotateKeys.push(r); return r; } };
   const FILES = { 'spirit/element/changeMyLabel.js': ['changeMyLabel'], 'spirit/element/changeMyDescription.js': ['changeMyDescription'],
     'spirit/element/joinForm.js': ['joinForm'], 'spirit/element/faceForm.js': ['faceForm'], 'spirit/element/rowForm.js': ['rowForm'] };
-  const page = {};
-  const els = {};
+  // goal/G43.32: one place for every element, spirit.element.spirit.element, the parts it requires and itself.
+  const page = { spirit: { element: {} } };
+  const els = page.spirit.element;
   const win = {
     document: { createElement: function (t) { return node('<' + t + '>'); } },
     setTimeout: setTimeout, Promise: Promise, JSON: JSON, Object: Object, Array: Array, String: String,
@@ -101,7 +102,6 @@ function world(o) {
   vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), win, { filename: 'data.js' });
   const S = win.spirit;
   S.element = page;
-  S.elements = els;
   S.node = { key: 'NODEKEY+INFO==',
     card: function (args) { w.calls.push({ name: 'node.card', args: args });
       if (opt.cardHeld) return opt.cardHeld;
@@ -119,7 +119,7 @@ function world(o) {
   S.require = function (p) {
     w.required.push(String(p));
     if (opt.refuse && opt.refuse.indexOf(p) !== -1) return Promise.reject(new Error('not-found ' + p));
-    (FILES[p] || []).forEach(function (k) { page[k] = E[k]; });
+    (FILES[p] || []).forEach(function (k) { els[k] = E[k]; });
     if (p === 'spirit/element/panel.js') els.panel = panel;
     if (p === 'spirit/element/rotateKey.js') els.rotateKey = rotateKey;
     return Promise.resolve({});
@@ -130,6 +130,12 @@ function world(o) {
     vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'data.js'), 'utf8'), win, { filename: name + '/data.js' });
     return Promise.resolve(true);
   };
+  // goal/G43.32: nodeInfo.js places itself by installSpiritElement; the recorder hands that helper to the page stand-in
+  // (spirit/test/headLessChrome.js pageSpirit).
+  const recorder = S.require;
+  require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(S);
+  const pageRequire = S.require;
+  S.require = function (p) { return /installSpiritElement\.js$/.test(p) ? pageRequire(p) : recorder(p); };
   if (SRC) vm.runInContext(SRC, win, { filename: FILE });
   w.win = win; w.S = S; w.page = page; w.els = els;
   w.slot = function (host, name) { return host.querySelector('[data-info="' + name + '"]'); };

@@ -135,7 +135,8 @@ function world() {
         w.required.push(String(p));
         const server = Object.keys(servers).filter(function (k) { return familyPath(k) === p; })[0];
         if (server) return Promise.resolve(servers[server]);
-        (FILES[p] || []).forEach(function (k) { page[k] = E[k]; });
+        // goal/G43.32: what the panel draws with stands where an element now finds it, spirit.element.spirit.element.
+        (FILES[p] || []).forEach(function (k) { const at = ((page.spirit = page.spirit || {}).element = page.spirit.element || {}); at[k] = E[k]; });
         return Promise.resolve(true);
       },
       familyPath: familyPath,
@@ -159,6 +160,12 @@ function world() {
   };
   win.window = win;
   win.spirit.ready = Promise.resolve(Object.assign({ auth: auth }, families));
+  // goal/G43.32: grantsPanel.js places itself by installSpiritElement; the recorder hands that helper to the page stand-in
+  // (spirit/test/headLessChrome.js pageSpirit).
+  const recorder = win.spirit.require;
+  require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(win.spirit);
+  const pageRequire = win.spirit.require;
+  win.spirit.require = function (p) { return /installSpiritElement\.js$/.test(p) ? pageRequire(p) : recorder(p); };
   vm.createContext(win);
   vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'client', 'apiTreeIndex.js'), 'utf8'), win, { filename: 'apiTreeIndex.js' });
   vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), win, { filename: 'data.js' });
@@ -176,7 +183,8 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const code = SRC.replace(/\/\/.*$/gm, '');
   const w = world();
   await settle();
-  const E = w.page;
+  // goal/G43.32: the elements stand at their paths, spirit.element.spirit.element.
+  const E = ((w.page.spirit || {}).element || {});
 
   test.subHeading('a shell element that loads what it uses itself (rule/26), and knows no table');
   ['spirit/element/search/contact.js', 'spirit/element/search/bundle.js', 'spirit/element/search/api.js', 'spirit/element/search/grant.js'].forEach(function (p) {
@@ -186,7 +194,8 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   // The grants table and the ID table are its caller's; the node's bundles (auth.bundle, auth.branch) are the one
   // dictionary both kinds of grant are made from, so a bundle's branches are the panel's to read.
   // The panel itself, create(): the node's grants table beside it (nodeGrants, below) is one its caller picks by name.
-  const made = code.slice(code.indexOf('function create('), code.indexOf('E.grantsPanel ='));
+  // goal/G43.32: create() runs up to where the script places itself, as it ran up to E.grantsPanel = before.
+  const made = code.slice(code.indexOf('function create('), code.indexOf("window.spirit.require('spirit/element/installSpiritElement.js')"));
   ok(made.length > 0 && !/auth\.(grant|revoke|search)\b|nodeGrants|data\.auth|agent\.|loopback:\/\/|contact\.search|job_id|'grants'|"grants"/.test(made), 'the panel names no grants table and no ID table: no auth grant verb, not nodeGrants, no agent verb, no loopback location, no branch (goal/G41.16)', made.length ? 'create() names a table of its own' : 'no function create( in grantsPanel.js: nothing judged');
   // Andy: "every fucking element gets the interfaces it needs".
   ok(!/\.verb\s*\(|\bapi\.(verb|escapeHtml)\b/.test(code), 'it asks its verbs through the spirit object: no api.verb, no api.escapeHtml (goal/G43.24)', 'grantsPanel.js still asks through the api it was handed');

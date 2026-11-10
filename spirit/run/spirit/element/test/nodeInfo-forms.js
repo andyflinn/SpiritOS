@@ -64,11 +64,12 @@ async function info(relayRows) {
   vm.createContext(win);
   vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), win, { filename: 'data.js' });
   const S = win.spirit;
-  S.element = {};
-  S.elements = {};
+  // goal/G43.32: every element stands at its path, spirit.element.spirit.element.<name>, the stand-ins with them.
+  S.element = { spirit: { element: {} } };
+  const at = S.element.spirit.element;
   const field = { create: function () { return { destroy: function () {} }; } };
-  S.element.changeMyLabel = field; S.element.changeMyDescription = field;
-  S.element.rowForm = { create: function (c, x) {
+  at.changeMyLabel = field; at.changeMyDescription = field;
+  at.rowForm = { create: function (c, x) {
     const f = { opts: x || {}, root: node('<div>'), span: node('<span>'), button: node('<button>') };
     f.root.appendChild(f.span); f.root.appendChild(f.button);
     if (c && typeof c.appendChild === 'function') c.appendChild(f.root);
@@ -86,10 +87,15 @@ async function info(relayRows) {
   S.outcome = function (c) { return Promise.resolve(c).then(function (body) { return { status: 200, body: body }; }, function (e) { return { status: (e && e.status) || 0, body: (e && e.body) || null }; }); };
   // The two forms are the real files, run on this window as a page runs them; every other part a stand-in.
   const real = { 'spirit/element/joinForm.js': 1, 'spirit/element/faceForm.js': 1 };
+  // goal/G43.32: each element places itself by installSpiritElement, handed by the page stand-in
+  // (spirit/test/headLessChrome.js pageSpirit).
+  require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(S);
+  const pageRequire = S.require;
   S.require = function (p) {
+    if (/installSpiritElement\.js$/.test(p)) return pageRequire(p);
     if (real[p]) { vm.runInContext(fs.readFileSync(path.join(RUN, p), 'utf8'), win, { filename: p }); delete real[p]; }
-    if (p === 'spirit/element/panel.js') S.elements.panel = { create: function () { return { open: function () { return Promise.resolve({}); }, destroy: function () {} }; } };
-    if (p === 'spirit/element/rotateKey.js') S.elements.rotateKey = { create: function () { return { destroy: function () {} }; } };
+    if (p === 'spirit/element/panel.js') at.panel = { create: function () { return { open: function () { return Promise.resolve({}); }, destroy: function () {} }; } };
+    if (p === 'spirit/element/rotateKey.js') at.rotateKey = { create: function () { return { destroy: function () {} }; } };
     return Promise.resolve({});
   };
   S.cacheManager = function (name) {
@@ -98,7 +104,7 @@ async function info(relayRows) {
   };
   vm.runInContext(fs.readFileSync(path.join(EL, 'nodeInfo.js'), 'utf8'), win, { filename: 'nodeInfo.js' });
   const host = node('<div>');
-  const made = S.elements.nodeInfo && typeof S.elements.nodeInfo.create === 'function' ? S.elements.nodeInfo.create(host, {}) : null;
+  const made = at.nodeInfo && typeof at.nodeInfo.create === 'function' ? at.nodeInfo.create(host, {}) : null;
   await settle();
   const slot = function (name) { return host.querySelector('[data-info="' + name + '"]'); };
   const shows = function (box, cls) { return !!box && box.style.display !== 'none' && !box.hidden && !!box.querySelector(cls); };
@@ -111,7 +117,9 @@ test.startTest('nodeInfo-forms.js: Info shows the email form always, the face fo
   test.subHeading('the world');
   const plain = await info(rows(''));
   ok(!!plain.made && !!plain.email && !!plain.face, 'the world: Info is made, with its email and face slots', 'Info made ' + !!plain.made + ', email slot ' + !!plain.email + ', face slot ' + !!plain.face + ': nothing judged');
-  ok(!!plain.S.element.joinForm && !!plain.S.element.faceForm, 'the world: the real joinForm.js and faceForm.js ran on the page', 'joinForm ' + !!plain.S.element.joinForm + ', faceForm ' + !!plain.S.element.faceForm);
+  // goal/G43.32: they stand at their paths.
+  const placed = plain.S.element.spirit.element;
+  ok(!!placed.joinForm && !!placed.faceForm, 'the world: the real joinForm.js and faceForm.js ran on the page', 'joinForm ' + !!placed.joinForm + ', faceForm ' + !!placed.faceForm);
 
   test.subHeading('9. the email form always');
   ok(plain.shows(plain.email, '.sp-join-email'), 'seats on A and O, none starred: the email form shows', 'no email form: ' + short(plain.email && plain.email.innerHTML));

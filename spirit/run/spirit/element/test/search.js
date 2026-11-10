@@ -23,6 +23,8 @@ global.window = { spirit: { probability: {
   probabilityStringObjectMatch: require(path.join(RUN, 'spirit', 'probabilityStringObjectMatch.js')).probabilityStringObjectMatch,
   createProbabilityBucket: require(path.join(RUN, 'spirit', 'probabilityBucket.js')).createProbabilityBucket,
 } } };
+// goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
+require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
 vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
 const PS = window.spirit.element.spirit.element.search;
 

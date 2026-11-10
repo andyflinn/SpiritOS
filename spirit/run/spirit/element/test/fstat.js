@@ -79,9 +79,11 @@ function world(o) {
     console: { log: function () {}, error: function () {} },
   };
   win.window = win;
+  // goal/G43.32: fstat.js places itself by installSpiritElement (spirit/test/headLessChrome.js pageSpirit), at its path.
+  require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(win.spirit);
   vm.createContext(win);
   try { vm.runInContext(fs.readFileSync(FILE, 'utf8'), win, { filename: FILE }); } catch (e) { w.error = e; }
-  w.E = (win.spirit.element || {}).fstat;
+  w.E = (((win.spirit.element || {}).spirit || {}).element || {}).fstat;
   return w;
 }
 

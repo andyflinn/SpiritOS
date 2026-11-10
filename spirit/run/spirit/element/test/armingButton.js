@@ -47,6 +47,8 @@ function world() {
   };
   win.window = win;
   win.spirit = { element: {} };
+  // goal/G43.32: armingButton.js places itself by installSpiritElement (spirit/test/headLessChrome.js pageSpirit).
+  require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(win.spirit);
   vm.createContext(win);
   if (fs.existsSync(FILE)) {
     try { vm.runInContext(fs.readFileSync(FILE, 'utf8'), win, { filename: FILE }); } catch (e) { test.fail('it threw as it loaded: ' + e.message); }
@@ -60,7 +62,9 @@ test.startTest('armingButton.js: the are-you-sure button');
 (async function () {
   ok(fs.existsSync(FILE), 'spirit/element/armingButton.js exists', 'there is no spirit/element/armingButton.js');
   const win = world();
-  const E = win.spirit.element.armingButton;
+  await settle();
+  // goal/G43.32: it stands at its path.
+  const E = ((win.spirit.element.spirit || {}).element || {}).armingButton;
   ok(!!E && typeof E.create === 'function' && E.create.length === 2, 'it adds armingButton.create(container, options) to window.spirit.element', 'no window.spirit.element.spirit.element.armingButton.create of a container and options');
   if (!E) return;
 

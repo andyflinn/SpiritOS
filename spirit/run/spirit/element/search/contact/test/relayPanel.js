@@ -216,16 +216,23 @@ function world(rows, relayStatus) {
     },
     // The contact family's cache (goal/G41.28): its manager loads, and the page watches spirit.data.contact.data's rows.
     cacheManager: function (name) { w.managers = (w.managers || []).concat(name); ((win.spirit.data = win.spirit.data || {}).contact = {}).data = { watch: function (h) { (w.watches = w.watches || []).push(h); return function () {}; } }; return Promise.resolve(true); },
-    get element() { return this.elements; }, elements: {
+    // goal/G43.32: the armingButton stands where an element now finds it, spirit.element.spirit.element.
+    element: { spirit: { element: {
       armingButton: {
         attach: function (button, opts) { return record('attach', button, opts); },
         create: function (opts) { const b = document.createElement('button'); b.type = 'button'; b.textContent = (opts && opts.label) || ''; return record('create', b, opts); },
       },
-    },
+    } } },
   };
+  // goal/G43.32: the element places itself by installSpiritElement; the recorder hands that helper to the page stand-in
+  // (spirit/test/headLessChrome.js pageSpirit).
+  const recorder = win.spirit.require;
+  require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(win.spirit);
+  const pageRequire = win.spirit.require;
+  win.spirit.require = function (p) { return /installSpiritElement\.js$/.test(p) ? pageRequire(p) : recorder(p); };
   // A PANEL'S MOUNT, NO NAVIGATION PAGE (goal/G43.18): the element made in a box of its own with its layer, as a layer's
   // fill makes it (spirit/element/search/contact/rowElement.js, openDetails).
-  w.open = function (key) { const box = document.createElement('div'); document.body.appendChild(box); w.box = box; return win.spirit.element.search.contact.relayPanel.create(box, { key: key, layer: layer }); };
+  w.open = function (key) { const box = document.createElement('div'); document.body.appendChild(box); w.box = box; return win.spirit.element.spirit.element.search.contact.relayPanel.create(box, { key: key, layer: layer }); };
   vm.createContext(win);
   vm.runInContext(SRC, win, { filename: FILE });
   w.win = win;
@@ -254,7 +261,7 @@ test.startTest('relayPanel.js: its are-you-sure buttons are armingButtons (goal/
   const w = world(OWNED, OWNED_SAID);
   test.subHeading('it loads armingButton itself (goal/G41.3)');
   ok(w.required.indexOf('spirit/element/armingButton.js') !== -1, 'it requires spirit/element/armingButton.js through spirit.require', 'required: ' + short(w.required));
-  const E = w.win.spirit.element.search.contact.relayPanel;
+  const E = w.win.spirit.element.spirit.element.search.contact.relayPanel;
   ok(!!E && typeof E.create === 'function' && E.open === undefined, 'it is window.spirit.element.spirit.element.search.contact.relayPanel, made by create; no open of its own: it opens as a panel (goal/G43.18)', 'relayPanel: create ' + typeof (E && E.create) + ', open ' + typeof (E && E.open));
   if (!E) return;
   w.open('RK');

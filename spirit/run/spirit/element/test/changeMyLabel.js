@@ -46,7 +46,9 @@ function under(n) { const out = []; (function walk(x) { x.nodes.concat(x.kids).f
 function world(answer) {
   const w = { calls: [], attached: [], required: [], saved: [], forms: [] };
   const win = {
-    spirit: { element: { fieldInput: { attach: function (input, rule) { w.attached.push({ input: input, rule: rule }); return input; } },
+    // goal/G43.32: the rowForm stands where an element now finds it, spirit.element.spirit.element; fieldInput, a helper
+    // with no create, at spirit.required.spirit.element (below).
+    spirit: { element: { spirit: { element: {
       // The one-row form (goal/G41.27), tested in its own folder: a stand-in answering { root, span, button } as the
       // real one does, its root appended to the container it is given, its button saying the words it was handed.
       rowForm: { create: function (c, o) {
@@ -54,7 +56,7 @@ function world(answer) {
         f.button.textContent = String((o && o.button) || ''); f.root.appendChild(f.span); f.root.appendChild(f.button);
         if (c && typeof c.appendChild === 'function') c.appendChild(f.root);
         w.forms.push(f); return f;
-      } } },
+      } } } } },
       require: function (p) { w.required.push(String(p)); return Promise.resolve(true); },
       // A family's cache (goal/G41.28): the family's own manager, run on this window over the real data set.
       cacheManager: function (name) {
@@ -67,6 +69,13 @@ function world(answer) {
     TextEncoder: TextEncoder, console: { log: function () {}, error: function () {} },
   };
   win.window = win;
+  // goal/G43.32: the element places itself by installSpiritElement; the recorder hands that helper to the page stand-in
+  // (spirit/test/headLessChrome.js pageSpirit).
+  const recorder = win.spirit.require;
+  require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(win.spirit);
+  const pageRequire = win.spirit.require;
+  win.spirit.require = function (p) { return /installSpiritElement\.js$/.test(p) ? pageRequire(p) : recorder(p); };
+  win.spirit.required.spirit.element.fieldInput = { attach: function (input, rule) { w.attached.push({ input: input, rule: rule }); return input; } };
   vm.createContext(win);
   vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'fieldRules.js'), 'utf8'), win, { filename: 'fieldRules.js' });
   // The page's one data set, its node known (goal/G41.28, Q10), as spirit.start leaves it before any element runs.
@@ -85,7 +94,8 @@ function world(answer) {
     return a && a.status === 200 ? Promise.resolve(a.body) : Promise.reject({ status: (a && a.status) || 0, body: a && a.body });
   };
   win.spirit.ready = Promise.resolve(win.spirit);
-  w.E = win.spirit.element; w.win = win;
+  // goal/G43.32: it stands at its path.
+  w.E = win.spirit.element.spirit.element; w.win = win;
   return w;
 }
 const stored = function (name, args) { return { status: 200, body: { ok: true, name: String(args.name).trim() } }; };
