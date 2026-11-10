@@ -562,7 +562,7 @@ test.startTest('spirit/run/spirit.js: the one spirit object, in node and on a pa
 
   // ── 8. A MODULE THAT DOES NOT LOAD spirit.js FIRST GOES RED ──────────
   test.subHeading('8. a module that does not load spirit.js first goes red');
-  const rule = path.join(RUN, 'test', 'spirit-child-generalRules.js');
+  const rule = path.join(RUN, 'spirit', 'test', 'spirit-child-generalRules.js');
   const onSpirit = spawnSync(process.execPath, [rule, 'spirit/spirit.js'], { cwd: RUN, encoding: 'utf8' });
   if (/✅:2\b/.test(onSpirit.stdout) && !/❌/.test(onSpirit.stdout)) test.check('the general rules pass spirit.js itself');
   else test.fail('the general rules on spirit.js: ' + short(onSpirit.stdout.slice(-200)));
