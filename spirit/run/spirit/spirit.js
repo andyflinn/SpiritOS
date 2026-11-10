@@ -282,11 +282,27 @@
   //
   // A family's interface asked by ask, and made a member over ask and getFile, or refused no-interface.
   var interfaceDefs = Object.create(null);
-  function bindOn(ask, getFile, fam) {
-    return Promise.resolve(ask('api', { family: fam })).then(function (got) {
+  // A BRANCH IS BOUND FROM THE CALLER'S OWN COPY OF ITS api.js, A PEER'S TOO (goal/G43.32; Andy: "ALL, DO IT! WITH CODE FROM
+  // THE OWN NODE!"): in node the file on its own disc, required as it is; on a page what its own node answers for it. Only
+  // the calls go where ask sends them, to this node or to a peer; nothing a peer hands over is run here.
+  function ownInterface(fam) {
+    if (isNode()) {
+      var p = familyPath(fam);
+      var file = require('path').join(RUN_ROOT, p);
+      if (!require('fs').existsSync(file)) return Promise.reject(refusal('no-interface', 'no interface for the family ' + fam));
+      if (!Object.prototype.hasOwnProperty.call(nodeOnce, p)) { nodeOnce[p] = require(file); placeAt(required, p, nodeOnce[p]); }
+      return Promise.resolve(nodeOnce[p]);
+    }
+    return Promise.resolve(post('api', { family: fam })).then(function (got) {
       if (!got || got.status !== 200 || !got.body || typeof got.body.interface !== 'string') throw refusal('no-interface', 'no interface for the family ' + fam);
-      var def = loadInterface(got.body.interface, fam);
-      // The api.js as it ran, kept for its place at spirit.required.<its path> (goal/G43.32; requireOne).
+      return loadInterface(got.body.interface, fam);
+    });
+  }
+  function bindOn(ask, getFile, fam) {
+    // Bound calls go to a node: in node with no port there is none to send them to, so nothing is bound (no default port).
+    if (isNode() && !PORT) return Promise.reject(noNode());
+    return ownInterface(fam).then(function (def) {
+      // The api.js, kept for its place at spirit.required.<its path> (goal/G43.32; requireOne).
       if (def) interfaceDefs[fam] = def;
       if (!def || !def.verbs) throw refusal('no-interface', 'the interface of ' + fam + ' names no verbs');
       return member(ask, getFile, fam, def);
