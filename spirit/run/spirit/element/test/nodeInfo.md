@@ -46,7 +46,8 @@ judged in `./nodeInfoRotate.js`.
     of Info and its ✕ shows Info again.
   The layer's fill loads rotateKey.js and makes `spirit.elements.rotateKey.create(pane, {})` in the layer's pane,
   answering it to destroy; a layer closed before that loads gets nothing made.
-- **destroy()** destroys both fields and its own stack (the dialog with it) and empties its container. A card or relays
+- **destroy()** destroys both fields, both forms (each made once by its `create`, then handed the relays again by its
+  `mount`; each holds a contact watch, rule/8) and its own stack (the dialog with it) and empties its container. A card or relays
   that land after destroy keep nothing and draw nothing.
 
 ## What its test must try to break

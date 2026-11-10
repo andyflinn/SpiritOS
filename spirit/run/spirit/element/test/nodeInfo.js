@@ -64,11 +64,17 @@ function world(o) {
       w.made.push(el); return el;
     } };
   }
+  function form(name) {
+    const mount = function (host, x) { w.forms.push({ form: name, host: host, o: x }); };
+    return { mount: mount, create: function (host, x) { mount(host, x); return { destroy: function () { w.destroyed.push(name + 'Form'); } }; } };
+  }
   const E = {
     changeMyLabel: field('label'),
     changeMyDescription: field('description'),
-    joinForm: { mount: function (host, x) { w.forms.push({ form: 'join', host: host, o: x }); } },
-    faceForm: { mount: function (host, x) { w.forms.push({ form: 'face', host: host, o: x }); } },
+    // The two forms, tested in their own folders: create(container, options) mounts and answers its destroy, as the real
+    // ones do; mount(container, options) hands them the relays again.
+    joinForm: form('join'),
+    faceForm: form('face'),
     // The one-row form (goal/G41.27), tested in its own folder: a stand-in answering { root, span, button } as the real
     // one does, its root appended to the container it is given, its button saying the words it was handed.
     rowForm: { create: function (c, x) {
@@ -280,6 +286,8 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   test.subHeading('destroy');
   made.destroy();
   ok(w.destroyed.indexOf('label') !== -1 && w.destroyed.indexOf('description') !== -1, 'destroy destroys both fields', 'destroyed: ' + short(w.destroyed));
+  // rule/8: each form holds a contact watch, let go only by its destroy.
+  ok(w.destroyed.indexOf('joinForm') !== -1 && w.destroyed.indexOf('faceForm') !== -1, 'and both forms, each made once by its create', 'destroyed: ' + short(w.destroyed));
   ok(w.panels[0].destroyed === true, 'and its stack, the open dialog with it', 'stack destroyed: ' + w.panels[0].destroyed);
   ok(host.innerHTML === '' && host.kids.length === 0, 'and empties its container', 'left: ' + short({ html: host.innerHTML, kids: host.kids.length }));
   let letCard = null;

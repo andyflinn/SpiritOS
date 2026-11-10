@@ -312,6 +312,9 @@
         unfollow = null;
         if (list) list.destroy();
         list = null;
+        // Its four selectors each watch their branch (rule/8: what it made, its destroy lets go).
+        [idSel, bundleSel, filterId, filterFamily].forEach(function (s) { if (s && typeof s.destroy === 'function') s.destroy(); });
+        idSel = bundleSel = filterId = filterFamily = null;
         host.innerHTML = '';
       },
     };

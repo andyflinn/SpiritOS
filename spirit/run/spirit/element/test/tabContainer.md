@@ -24,7 +24,8 @@ An element with one row of tabs at the top, showing the selected tab's content i
   box is kept: selecting the tab again mounts nothing. Only the selected tab's box shows; every other box is hidden.
 - `select(name)` with a name that is no tab changes nothing.
 - It listens on its container, one listener per event type: a click on a tab button selects that tab.
-- `destroy()` empties the container and drops its listeners: a click after it does nothing.
+- `destroy()` empties the container and drops its listeners: a click after it does nothing. What every mounted tab's
+  `mount` answered is destroyed with it, as `close` destroys it (rule/8).
 
 ## What its test must try to break
 

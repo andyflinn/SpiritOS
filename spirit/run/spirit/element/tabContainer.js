@@ -121,6 +121,12 @@
       destroy: function () {
         gone = true;
         container.removeEventListener('click', onClick);
+        // What each tab's mount answered destroyed, as close does (rule/8: what it made, its destroy lets go).
+        Object.keys(mounted).forEach(function (k) {
+          var made = mounted[k];
+          delete mounted[k];
+          try { if (made && typeof made.destroy === 'function') made.destroy(); } catch (e) { /* one tab's fault */ }
+        });
         container.innerHTML = '';
       },
     };

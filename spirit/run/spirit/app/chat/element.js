@@ -366,9 +366,20 @@ var chElements = Promise.all(['spirit/element/search/contact.js', 'spirit/elemen
 function chCreate(container) {
   var gone = false;
   chElements.then(function () { if (!gone) chMount(container); }, function () { container.textContent = 'Chat could not be loaded.'; });
-  return { destroy: function () { gone = true; if (chOffReconnect) chOffReconnect(); chOffReconnect = null; chRoot = null; container.innerHTML = ''; } };
+  return { destroy: function () {
+    gone = true;
+    // Every watch it took let go (rule/8), its contact pane's with it.
+    chStops.splice(0).forEach(function (stop) { try { stop(); } catch (e) { /* its own */ } });
+    if (chPane && typeof chPane.destroy === 'function') chPane.destroy();
+    chPane = null; chRoot = null; container.innerHTML = '';
+  } };
 }
-var chOffReconnect = null;
+// The releases of what the open chat watches; one taken after the app was destroyed is let go at once.
+var chStops = [];
+function chKeep(stop) {
+  if (typeof stop !== 'function') return;
+  if (chRoot) chStops.push(stop); else stop();
+}
 
 function chMount(container) {
     chStyle = 'plain';
@@ -638,22 +649,22 @@ function chMount(container) {
       function dot(key, row) { if (chPane && typeof chPane.present === 'function') chPane.present(key, !!(row && row.present === true)); }
       var all = C.contacts();
       Object.keys(all).forEach(function (key) { dot(key, all[key]); });
-      C.watch(function (key, row) { if (key) dot(key, row); });
+      chKeep(C.watch(function (key, row) { if (key) dot(key, row); }));
     }, function () { /* the dots stay white */ });
 
     // The lines as the chat branch's cache keeps them: placed in the open chat as they change, an arrival read.
     Promise.resolve(spirit.cacheManager('chat')).then(function () {
       var C = chData();
       if (!C) return;
-      C.watch(function (peer, line) { if (peer && peer === chPeer) chUpsert(line); });
-      C.published(chArrived);
+      chKeep(C.watch(function (peer, line) { if (peer && peer === chPeer) chUpsert(line); }));
+      chKeep(C.published(chArrived));
     }, function () { /* no lines are kept: the chat says so as it is read */ });
     // THE STREAM BACK AFTER A DROP (Andy: "this should work without a hickup"): spirit.data forgets what it kept on a
     // reconnect, and the chat branch's cache says so (forgot), so the chats and the open chat are asked again. The element
     // takes no stream of its own (only spirit.data does).
     Promise.resolve(spirit.cacheManager('chat')).then(function () {
       var C = chData();
-      if (C && typeof C.forgot === 'function') chOffReconnect = C.forgot(function () { if (chPane) chPane.refresh(); chMarkChats(); if (chPeer) chOpen(chPeer); });
+      if (C && typeof C.forgot === 'function') chKeep(C.forgot(function () { if (chPane) chPane.refresh(); chMarkChats(); if (chPeer) chOpen(chPeer); }));
     }, function () { /* nothing kept, nothing forgotten */ });
     // This node's key, for a reply to one of its own lines.
     Promise.resolve(window.spirit.ready).then(function (s) { return s.node.card({}); }).then(function (b) {

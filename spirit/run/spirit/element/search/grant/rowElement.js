@@ -34,8 +34,9 @@
     var b = String(g.branch);
     if (tables[b]) return tables[b];
     tables[b] = { index: null, dispatch: dispatch };
+    // Its release answered, so the index lets the watch go with the table's last row (rowElement.index, rule/8).
     function dispatch(idx) {
-      g.watch(function (key, v) {
+      return g.watch(function (key, v) {
         if (!key || !v) return;
         idx.forKey(key).forEach(function (el) { el.apply({ label: String(v[g.label] || '') }); });
       });

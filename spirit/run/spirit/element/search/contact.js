@@ -177,7 +177,9 @@
     };
     var any = function (name) { return function (all) { return all.some(function (r) { return r && r[name] === true; }); }; };
 
+    var gone = false;
     parts().then(function () {
+      if (gone) return;
       list = window.spirit.element.spirit.element.search.create(pane, {
         face: isPane ? 'pane' : 'dropdown',
         placeholder: isPane ? '' : (options.placeholder || 'choose a contact…'),
@@ -234,6 +236,14 @@
       repaint(key, 'present');
     };
     root.mark = function (key, status) { statusOf[key] = status; repaint(key, 'status'); };
+    // Its list destroyed with it (rule/8: what an element subscribes, its destroy lets go), as search/api.js's is, and it
+    // takes itself out of its container, which it leaves empty (goal/G41.19, box v23).
+    root.destroy = function () {
+      gone = true;
+      if (root.parentNode) root.parentNode.removeChild(root);
+      if (list && typeof list.destroy === 'function') list.destroy();
+      list = null;
+    };
     return root;
   }
 

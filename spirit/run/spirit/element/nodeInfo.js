@@ -66,11 +66,19 @@
     // makes the face-form appear in \"info\", the email form must always show in \"info\""): the email form is handed every
     // relay this node lists, Join where it holds no seat and Change where it does; the face form is handed them too and
     // offers only a seated, starred one itself (faceForm.offered), hiding its box with none.
+    // Each form is made once by its create, kept with what destroy lets go (rule/8: its contact watch goes with Info), and
+    // only handed the relays again after.
+    var forms = {};
+    function drawForm(key, name, slotName, opts) {
+      var F = S.element.spirit.element[name];
+      if (!F) return;
+      if (forms[key]) F.mount(slot(slotName), opts);
+      else { forms[key] = F.create(slot(slotName), opts); made.push(forms[key]); }
+    }
     function drawForms() {
       if (gone) return;
-      var E = S.element;
-      if (E.spirit.element.joinForm) E.spirit.element.joinForm.mount(slot('email'), { relays: relays });
-      if (E.spirit.element.faceForm) E.spirit.element.faceForm.mount(slot('face'), { relays: relays, reload: loadRelays });
+      drawForm('email', 'joinForm', 'email', { relays: relays });
+      drawForm('face', 'faceForm', 'face', { relays: relays, reload: loadRelays });
     }
     // relay.status answers { status, text, body: { rows, ... } } itself (spirit/relay/api.js), so it is read as it comes.
     function loadRelays() {

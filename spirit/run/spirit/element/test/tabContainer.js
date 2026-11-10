@@ -146,6 +146,13 @@ ok(c1.innerHTML === '' && c1.listenerCount() === 0, 'destroy empties the contain
 let threw = null;
 try { c1.fire('click', clickOn('one')); tc.select('two'); } catch (e) { threw = e; }
 ok(!threw, 'a click or a select after destroy does nothing and throws nothing', 'threw ' + (threw && threw.message));
+// rule/8: what each tab's mount answered is destroyed with the container, as close destroys it.
+const gone = [];
+const cd = container();
+const tcd = T.create(cd, { tabs: ['a', 'b'].map(function (n) { return { name: n, label: n, mount: function () { return { destroy: function () { gone.push(n); } }; } }; }) });
+tcd.select('b');
+tcd.destroy();
+ok(gone.sort().join() === 'a,b', 'destroy destroys what every mounted tab answered', 'destroyed: ' + JSON.stringify(gone));
 
 // THE CONTENT IS A BUBBLE (goal/G41.13; Andy: "the container pain of the tabs content, must have our standard 0.5em
 // padding", "it must occupy all remaining vertical space, that it must be constrained to", and "it should present as a
