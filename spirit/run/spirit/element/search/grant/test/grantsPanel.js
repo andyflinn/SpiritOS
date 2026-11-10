@@ -12,6 +12,8 @@
 // and every family's FS verbs under FS; the auth family on spirit.ready, a server's family through
 // spirit.require(spirit.familyPath(name)). Then the table it offers by name, grantsPanel.nodeGrants (moved here from the
 // Grants app), over the real auth family's cache manager.
+// This is the one test file of its script (spirit/test/TEST_SYSTEM.md): the authSource and noWarning parts, once files of
+// their own, are sections at its end, run after the checks above and counted with them.
 
 const fs = require('fs');
 const path = require('path');
@@ -416,8 +418,73 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   if (typeof off === 'function') off();
   D.takeJob({ id: 'spirit.auth', data: { table: 'grant', row: { key: 'K8', path: 'jobs.list', label: 'Yan' } } });
   ok(typeof off === 'function' && heard.length === 2, 'its release ends the watch', 'heard after release: ' + short(heard.slice(2)));
-}()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
-  function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });
+}()).then(function () { return null; }, function (e) { test.fail('the test threw ' + (e && e.stack || e)); return 0; })
+  .then(async function (failExit) {
+    // The folded parts, in order, after the checks above; one count and one report for the whole file.
+    for (const part of [authSourcePart, noWarningPart]) {
+      try { await part(); } catch (e) { test.fail('the ' + part.name.replace(/Part$/, '') + ' part threw ' + (e && e.stack || e)); }
+    }
+    test.reportSuccessFailureCount();
+    process.exit(failExit === null ? (0) : failExit);
+  });
 
 // THE ELEMENT NAMES SINCE goal/G43.18: a stand-in keyed by its place, 'search.contact' and so on, nested where the page has it.
 function nestSearch(o) { Object.keys(o).forEach(function (k) { if (k !== 'search' && k.indexOf('search.') !== 0) return; var v = o[k]; delete o[k]; var ks = k.split('.'); var at = o; ks.slice(0, -1).forEach(function (p) { at = at[p] = at[p] || {}; }); var last = ks[ks.length - 1]; at[last] = Object.assign(at[last] || {}, v); }); return o; }
+
+// ── THE AUTHSOURCE PART (once its own file; one test file per script: spirit/test/TEST_SYSTEM.md) ──
+async function authSourcePart() {
+  // GRANTS' DATA SOURCE IS grantsPanel'S (goal/G43.24, requirement 6; spec: ./grantsPanel.md, section "authSource"). The box: "Still its
+  // own: the panel's data source, auth.search and auth.grant / auth.revoke over the auth cache (GR_GRANTS). It moves into
+  // grantsPanel." Andy: "no i want those apps to basically be wrappers for spirit/element/ things....". grantsPanel.js read as
+  // it is, comments stripped.
+
+  const fs = require('fs');
+  const path = require('path');
+  const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..');
+  const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+
+  function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
+  function code(f) { try { return fs.readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1'); } catch (e) { return ''; } }
+
+  test.subHeading('authSource: Grants\' data source is grantsPanel\'s (goal/G43.24)');
+
+  test.subHeading('the box, 6: Grants\' data source "moves into grantsPanel"');
+  const panel = code(path.join(RUN, 'spirit', 'element', 'search', 'grant', 'grantsPanel.js'));
+  ok(panel.length > 0, 'the world: spirit/element/search/grant/grantsPanel.js is there', 'no grantsPanel.js: nothing judged');
+  ['search', 'grant', 'revoke'].forEach(function (v) {
+    ok(new RegExp('\\bauth\\W{1,4}' + v + '\\b').test(panel), 'Grants\' data source moves into grantsPanel: it asks auth.' + v, 'grantsPanel.js asks no auth.' + v);
+  });
+  ok(/\bdata\.auth\b|cacheManager\s*\(\s*['"]auth['"]/.test(panel), 'grantsPanel holds the auth cache it reads (spirit.data.auth)', 'grantsPanel.js reads no auth cache');
+}
+
+// ── THE NOWARNING PART (once its own file; one test file per script: spirit/test/TEST_SYSTEM.md) ──
+async function noWarningPart() {
+  // NO WARNING ON A GRANT (goal/G43.27, requirement 7; spec: ./grantsPanel.md, section "noWarning"). Andy: "compare that to giving a linux
+  // user root authority, he then can fuck up the whole system, not our problem.": grantsPanel reads no <verb>.warning.txt, and
+  // none is left, spirit/auth/grant.warning.txt among them. The tree read as it is, comments stripped.
+
+  const fs = require('fs');
+  const path = require('path');
+  const { execSync } = require('child_process');
+  const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..');
+  const REPO = path.resolve(RUN, '..', '..');
+  const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+
+  function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
+  function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 400); }
+  function code(text) { return String(text).replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1'); }
+  // Line ends aside: a Windows checkout (autocrlf) holds CRLF where git holds LF.
+  function read(rel) { const f = path.join(RUN, rel); return fs.existsSync(f) ? fs.readFileSync(f, 'utf8').replace(/\r\n/g, '\n') : ''; }
+
+  test.subHeading('noWarning: no warning on a grant (goal/G43.27)');
+
+  test.subHeading('7. no warning on a grant');
+  const tracked = execSync('git ls-files', { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(Boolean).filter(function (f) { return fs.existsSync(path.join(REPO, f)); });
+  ok(tracked.length > 100, 'the world: ' + tracked.length + ' tracked files on disk are read', 'only ' + tracked.length + ' tracked files read: nothing judged');
+  ok(!fs.existsSync(path.join(RUN, 'spirit', 'auth', 'grant.warning.txt')), 'spirit/auth/grant.warning.txt is gone', 'spirit/auth/grant.warning.txt is still there');
+  const gp = code(read('spirit/element/search/grant/grantsPanel.js'));
+  ok(gp.length > 1000, 'the world: grantsPanel.js is read', 'no grantsPanel.js: nothing judged');
+  ok(!/warning\.txt|\.FS\.loadFile/.test(gp), 'grantsPanel reads no <verb>.warning.txt', 'grantsPanel still reads one');
+  const warns = tracked.filter(function (f) { return /\.warning\.txt$/.test(f); });
+  ok(!warns.length, 'no <verb>.warning.txt is left', warns.length + ' are: ' + short(warns));
+}

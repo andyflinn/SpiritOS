@@ -5,6 +5,8 @@
 // server runs in this process on a state folder of its own: the spirit object, appServer and the file watcher are
 // stubs, the data set and the desk's translator are the real ones, and the desk is a fake that keeps every ask and
 // answers what the test tells it to. The desk's stream is fed by hand, as appServer's streamListener feeds it.
+// This is the one test file of its script (spirit/test/TEST_SYSTEM.md): the chokidar and noTeamChat parts, once files of
+// their own, are sections at its end, run after the checks above and counted with them.
 
 const fs = require('fs');
 const os = require('os');
@@ -552,5 +554,89 @@ test.startTest('deskClient.js: the desk client, its cache and its wakes (goal/G4
     'the next wake hands, once each, the wake handed but never read and the line that waited', 'wake: ' + short(wAfter));
   ok(!!wAfter && Array.isArray(wAfter.lines) && wAfter.lines.length > 0 && !has(wAfter, 'wake D') && !has(wAfter, 'wake A'),
     'and nothing it already read comes back', 'wake: ' + short(wAfter));
-}()).then(function () { test.reportSuccessFailureCount(); process.exit(process.exitCode || 0); },
-  function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(1); });
+}()).then(function () { return null; }, function (e) { test.fail('the test threw ' + (e && e.stack || e)); return 1; })
+  .then(async function (failExit) {
+    // The folded parts, in order, after the checks above; one count and one report for the whole file.
+    for (const part of [chokidarPart, noTeamChatPart]) {
+      try { await part(); } catch (e) { test.fail('the ' + part.name.replace(/Part$/, '') + ' part threw ' + (e && e.stack || e)); }
+    }
+    test.reportSuccessFailureCount();
+    process.exit(failExit === null ? (process.exitCode || 0) : failExit);
+  });
+
+// ── THE CHOKIDAR PART (once its own file; one test file per script: spirit/test/TEST_SYSTEM.md) ──
+async function chokidarPart() {
+  // deskClient WATCHES ITS CLONE WITH chokidar FROM spirit/job/ (goal/G43.25; spec: ./deskClient.md, section "chokidar"). Andy: "can we hide
+  // those suckers in spirit/jobs/ for now? without the damn node_modules container?". deskClient.js requires chokidar by path, the
+  // one in spirit/job/chokidar/, and what it requires, watching a folder, hears a file added. The move itself is
+  // spirit/test/job.js, its vendoredLibraries part. The watcher run in a child process on a scratch folder inside spirit/run.
+
+  const fs = require('fs');
+  const path = require('path');
+  const { spawnSync } = require('child_process');
+  const RUN = path.resolve(__dirname, '..', '..', '..', '..');
+  const REPO = path.resolve(RUN, '..', '..');
+  const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+  const NEW = 'spirit/run/spirit/job/';
+
+  function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
+  function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 400); }
+  function code(text) { return String(text).replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1'); }
+
+  test.subHeading('chokidar: deskClient requires chokidar from spirit/job/ by path, and its watcher hears (goal/G43.25)');
+
+  const idxNew = path.join(REPO, NEW, 'chokidar', 'index.js');
+  const users = ['spirit/run/spirit/app/deskClient/deskClient.js'];
+  test.subHeading('3. the two users require it by path: deskClient.js here, job.js in spirit/test/job.js');
+  users.forEach(function (u) {
+    const c = code(fs.readFileSync(path.join(REPO, u), 'utf8'));
+    const specs = (c.match(/require\(\s*['"][^'"]*chokidar[^'"]*['"]\s*\)/g) || []).map(function (r) { return r.replace(/^require\(\s*['"]|['"]\s*\)$/g, ''); });
+    let to = '';
+    // goal/G43.32: loaded by spirit.require, by its run-root path ("spirit/jobs/chokidar/index.js"); a relative path is the old way.
+    try { to = specs.length === 1 ? require.resolve(specs[0].charAt(0) === '.' ? path.resolve(path.dirname(path.join(REPO, u)), specs[0]) : path.join(RUN, specs[0])) : ''; } catch (e) { to = ''; }
+    ok(to === idxNew, u + ' requires ' + specs[0] + ', which is spirit/job/chokidar/index.js', u + ' requires ' + short(specs) + ' (resolves to ' + short(to || 'nothing') + ')');
+  });
+
+  test.subHeading('4. the file watcher works as before: deskClient\'s');
+  // Scratch folders inside spirit/run (scanFolder refuses anything outside it, as fsWatcherCommands.js says), removed after.
+  function child(src, dir) {
+    fs.rmSync(dir, { recursive: true, force: true });
+    fs.mkdirSync(dir, { recursive: true });
+    const r = spawnSync(process.execPath, ['-e', src, dir], { cwd: RUN, encoding: 'utf8', timeout: 30000 });
+    fs.rmSync(dir, { recursive: true, force: true });
+    return String(r.stdout || '').trim() + (r.stderr ? ' | ' + String(r.stderr).trim().slice(0, 300) : '');
+  }
+  // deskClient's watch of its clone: what deskClient requires, watching a folder, hears a file added.
+  const dcSpec = (code(fs.readFileSync(path.join(REPO, users[0]), 'utf8')).match(/require\(\s*['"]([^'"]*chokidar[^'"]*)['"]\s*\)/) || [])[1] || '';
+  const dcFrom = dcSpec.charAt(0) === '.' ? path.resolve(path.dirname(path.join(REPO, users[0])), dcSpec) : path.join(RUN, dcSpec);
+  const dcOut = child([
+    "const fs = require('fs'), path = require('path'), dir = process.argv[1];",
+    "let w = null; try { w = require(require.resolve(" + JSON.stringify(dcFrom) + ", { paths: [" + JSON.stringify(path.dirname(path.join(REPO, users[0]))) + "] })); } catch (e) { console.log('NOT LOADED ' + e.message); process.exit(0); }",
+    "w.watch(dir, { ignoreInitial: true, persistent: true }).on('add', function (f) { if (/made\\.txt$/.test(f)) { console.log('HEARD'); process.exit(0); } });",
+    "setTimeout(function () { fs.writeFileSync(path.join(dir, 'made.txt'), 'x'); }, 1500);",
+    "setTimeout(function () { console.log('DEAF'); process.exit(0); }, 12000);",
+  ].join('\n'), path.join(RUN, 'vendoredFolders-desk-test'));
+  ok(/^HEARD/.test(dcOut) && dcFrom.indexOf('chokidar') !== -1, 'deskClient\'s watcher (' + dcSpec + ') hears a file added', 'deskClient\'s watcher (' + short(dcSpec) + '): ' + short(dcOut));
+}
+
+// ── THE NOTEAMCHAT PART (once its own file; one test file per script: spirit/test/TEST_SYSTEM.md) ──
+async function noTeamChatPart() {
+  // deskClient WAKES NOBODY ON A TEAM CHAT LINE (goal/G43.22; spec: ./deskClient.md, section "noTeamChat"): spirit/app/deskClient/deskClient.js.
+  // Andy, the box: "the apps and plugin system goes.", "there will only be goals, items and rules left, plus the verifier stuff
+  // can stay for now.". Q5: "G0 goes, from ui and server, kept in database.". The tree read as it is, comments left out.
+
+  const fs = require('fs');
+  const path = require('path');
+  const RUN = path.resolve(__dirname, '..', '..', '..', '..');
+  const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+
+  function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
+  function code(f) { try { return fs.readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1').replace(/<!--[\s\S]*?-->/g, ''); } catch (e) { return ''; } }
+  const DESK = path.join(RUN, 'spirit', 'app', 'desk');
+
+  test.subHeading('noTeamChat: deskClient wakes nobody on a team chat line (goal/G43.22)');
+
+  test.subHeading('Andy: "G0 goes, from ui and server"');
+  const client = code(path.join(RUN, 'spirit', 'app', 'deskClient', 'deskClient.js'));
+  ok(!!client && !/goal\/G0['"]/.test(client), 'deskClient wakes nobody on a team chat line', 'deskClient.js still names goal/G0');
+}

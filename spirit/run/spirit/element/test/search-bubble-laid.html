@@ -11,7 +11,7 @@
 // goal/G41.26 (Andy: "why do the icons in the probabilitySearch row have different width's? do they not use the icon
 // element? I'd like it, if the controls in the search bubble look better aligned."): a pane and a dropdown of the search
 // element with filters, and what the browser makes of their bubble's rows, measured. Opened by
-// ./search-bubble.js at /DEBUG/spirit/element/test/search-bubble-laid.html.
+// the bubble part of ./search.js at /DEBUG/spirit/element/test/search-bubble-laid.html.
 window.laid = function () {
   return Promise.resolve().then(function () { return spirit.require('spirit/element/search.js'); }).catch(function () { return null; }).then(function () {
     var P = (((spirit.element || {}).spirit || {}).element || {}).search;

@@ -361,11 +361,12 @@ function noProcessAnywhere() {
 // scan leaves those two out.
 const OLD_TEST = 'spirit/run/' + 'test/';
 const OLD_NAMED = new RegExp(OLD_TEST.replace(/\//g, '\\/') + '|run:\\/\\/?' + 'test\\/');
-// The 19 files of run://test/ on 2026-11-10, by their place inside it.
+// The files of run://test/ on 2026-11-10, by their place inside it; test/testReport-verifier.js and .md were folded into
+// test/testReport.js and .md since (goal/G45.1: one test file per script).
 const MOVED = ['TEST_SYSTEM.md', 'headLessChrome.js', 'testModule.js', 'testReport.js', 'spirit-child-generalRules.js',
   'spirit-sibling-generalRules.js', 'spirit-sibling-generalRules.md', 'spirit-sibling-noFuckingGarbage.js', 'spirit-sibling-noFuckingGarbage.md',
   'spirit-sibling-searchRules.js', 'spirit-sibling-searchRules.md', 'spirit-sibling-testReachRules.js', 'spirit-sibling-testReachRules.md',
-  'test/testModule.js', 'test/testModule.md', 'test/testReport.js', 'test/testReport.md', 'test/testReport-verifier.js', 'test/testReport-verifier.md'];
+  'test/testModule.js', 'test/testModule.md', 'test/testReport.js', 'test/testReport.md'];
 // The tools of run://spirit/test/: tools, not tests (Q2).
 const TOOLS = ['testReport.js', 'testModule.js', 'headLessChrome.js'];
 const SELF = ['spirit-sibling-generalRules.js', 'spirit-sibling-generalRules.md'];

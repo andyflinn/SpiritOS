@@ -12,9 +12,11 @@
 //   2. spirit/test/ holds, beside the tests of spirit/'s modules, the test system's tools (testModule.js's TOOLS) and
 //      TEST_SYSTEM.md (goal/G43.32, Q2; Andy: "We need special rules for run://spirit/test/  it will be where
 //      run://spirit/app/test/ finds it's main tools."): tools, not tests named after no module;
-//   3. a test/ inside a test/ folder holds the tests of the files beside it, <name>.js or <name>-<what>.js and their .md;
-//   4. every other test MATCHES A PRODUCTION FILE: test/<name>.js, a test by name test/<name>-<what>.js, or a general test
-//      <name>-child-* or <name>-sibling-*, of a <name>.js beside the folder; a plain test named after no module is garbage (Andy, above);
+//   3. a test/ inside a test/ folder holds the tests of the files beside it, <name>.js and its .md;
+//   4. every other test MATCHES A PRODUCTION FILE: test/<name>.js, or a general test <name>-child-* or <name>-sibling-*, of a
+//      <name>.js beside the folder; a plain test named after no module is garbage (Andy, above). ONE TEST FILE PER SCRIPT
+//      (goal/G45.1, ./TEST_SYSTEM.md; Andy: "there is ONE FUCKING test file in the test folder per script file, and every
+//      fucking test that applies to that file must be inserted in the that one file"): a test/<name>-<what>.js is red;
 //   5. a test's .js has its .md beside it, and an .md its .js;
 //   6. any other file (a laid page, a fixture) is named after a module beside the folder: <module>-<what>.<ext>.
 //
@@ -54,15 +56,16 @@ function garbage(rel) {
   const stem = m ? m[1] : '';
   const twin = m ? rel.slice(0, -m[2].length) + (m[2] === 'js' ? 'md' : 'js') : '';
   const general = stem.match(/^(.+?)-(child|sibling)-.+$/);
-  // test/<name>-<what>.js, a test of <name>.js by name (goal/G43.27; Andy: "directly (by name)"), which testModule.js runs
-  // with <name>.js.
+  // test/<name>-<what>.js: a second test file of <name>.js, which one test file per script forbids (goal/G45.1).
   const named = !general && stem.indexOf('-') > 0 ? stem.slice(0, stem.indexOf('-')) : '';
+  const second = function () { return 'a second test file of ' + named + '.js: one test file per script, its tests go into test/' + named + '.js'; };
   // 2. spirit/test/'s tools and their document.
   if (SPIRIT_TEST_KEEPS.indexOf(rel) !== -1) return '';
   // 3. A test folder inside a test folder: the tests of the files beside it, nothing else.
   if (/(^|\/)test$/.test(dir)) {
     if (!m) return 'not a test: no .js or .md';
-    if (!exists(dir + '/' + stem + '.js') && !(named && exists(dir + '/' + named + '.js'))) return 'no ' + dir + '/' + (named || stem) + '.js beside this test folder: a test here tests a file of ' + dir + '/, and no other';
+    if (!exists(dir + '/' + stem + '.js') && named && exists(dir + '/' + named + '.js')) return second();
+    if (!exists(dir + '/' + stem + '.js')) return 'no ' + dir + '/' + stem + '.js beside this test folder: a test here tests a file of ' + dir + '/, and no other';
     return exists(twin) ? '' : (m[2] === 'js' ? 'no ' + path.basename(twin) + ' beside it: the test has no spec' : 'no ' + path.basename(twin) + ' beside it: a spec with no test');
   }
   // 1. A test folder belongs to a module.
@@ -70,7 +73,8 @@ function garbage(rel) {
   if (!modules.length) return 'no module in ' + dir + '/: a test folder belongs to the module beside it';
   // 4. A test matches a production file; 5. a test and its spec, together.
   if (m) {
-    const of = general ? general[1] : modules.indexOf(stem) === -1 && named ? named : stem;
+    if (!general && modules.indexOf(stem) === -1 && named && modules.indexOf(named) !== -1) return second();
+    const of = general ? general[1] : stem;
     if (modules.indexOf(of) === -1) return 'no ' + (dir ? dir + '/' : '') + of + '.js: ' + (general ? 'a general test of a module that is not beside the folder' : 'a test that matches no production file');
     return exists(twin) ? '' : (m[2] === 'js' ? 'no ' + path.basename(twin) + ' beside it: the test has no spec' : 'no ' + path.basename(twin) + ' beside it: a spec with no test');
   }

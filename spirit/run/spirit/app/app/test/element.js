@@ -1,6 +1,9 @@
 'use strict';
 
 // spirit/run/spirit/app/app/test/element.js
+// One file for every test of its script (Andy: "there is ONE FUCKING test file in the test folder per script file, and every fucking
+// test that applies to that file must be inserted in the that one file"; spirit/test/TEST_SYSTEM.md): each part below is its own
+// section at the end: nodeRun, shell.
 // The tests of spirit/app/app/element.js, the app selector, and of no other module (spec: ./element.md; goal/G43.2).
 // Since goal/G43.32 the app app's main element (it was spirit/app/appSelector.js). A real Chrome on a
 // scratch node's face page; neither Andy's node nor an agent's is touched.
@@ -31,7 +34,8 @@ test.startTest('element.js: the app app\'s main element, the app selector (goal/
 
 (async function () {
   if (!fs.existsSync(FILE)) { test.fail('spirit/app/app/element.js is not there'); return; }
-  const identity = JSON.parse(fs.readFileSync(path.join(RUN, 'spirit', 'app', 'server', 'server.json'), 'utf8')).identity;
+  const identity = JSON.parse(fs.readFileSync(path.join(RUN, 'spirit', 'app', 'starter', 'starter.json'), 'utf8')).identity;
+  // An app the user switches, not intrinsic, a face and no server: Starter, since Andy deleted the server app (25a95142, "delete dummy app").
   const node = await scratchNode();
   const chrome = await chromePage(findChrome());
   try {
@@ -52,7 +56,7 @@ test.startTest('element.js: the app app\'s main element, the app selector (goal/
     ok(made === 'made', 'it loads through spirit.require and mounts as a pane', 'it did not mount: ' + short(made));
     const text = function () { return chrome.evaluate('String((document.getElementById("under-test") || {}).innerText || "")'); };
     const found = await until(function () { return text().then(function (t) { return t.indexOf(identity.label) !== -1; }); }, 8000);
-    ok(found, 'the list shows server\'s label', 'the list never showed "' + identity.label + '": ' + short(await text()));
+    ok(found, 'the list shows starter\'s label', 'the list never showed "' + identity.label + '": ' + short(await text()));
     const html = await chrome.evaluate('String((document.getElementById("under-test") || {}).innerHTML || "")');
     ok(html.indexOf(identity.icon) !== -1 || /<svg|<img/.test(html), 'the list shows its icon', 'no icon in the list: ' + short(html));
     // ONLY ICON AND LABEL (Andy, box): what is left of the row once those two are taken out is nothing.
@@ -78,7 +82,7 @@ test.startTest('element.js: the app app\'s main element, the app selector (goal/
     await until(function () { return text().then(function (t) { return t.indexOf(identity.label) !== -1; }); }, 4000);
 
     // WHO PAINTS, LISTENS (Andy, G41.32): "every row's data ... must update instantly".
-    const disk = path.join(node.root, 'spirit', 'run', 'spirit', 'app', 'server', 'server.json');
+    const disk = path.join(node.root, 'spirit', 'run', 'spirit', 'app', 'starter', 'starter.json');
     const was = JSON.parse(fs.readFileSync(disk, 'utf8'));
     was.identity.label = 'Changed On Disk';
     fs.writeFileSync(disk, JSON.stringify(was));
@@ -230,16 +234,16 @@ test.startTest('element.js: the app app\'s main element, the app selector (goal/
     test.subHeading('the box: "in :tiles mode, only activated apps will appear."');
     await chrome.evaluate('(function () { var t = document.querySelector("#faces .list-toggle"); if (t) t.click(); return !!t; }())');
     const onlyActive = await until(function () { return chrome.evaluate('!!' + tileOf(monitorLabel) + ' && !' + tileOf(serverLabel)); }, 5000);
-    ok(onlyActive, 'the toggle shows tiles: Hearing, active, and not server', 'the tiles: ' + short(await inFaces()));
+    ok(onlyActive, 'the toggle shows tiles: Hearing, active, and not starter', 'the tiles: ' + short(await inFaces()));
     await mount({ face: 'tiles' });
     const direct = await until(function () { return chrome.evaluate('!!' + tileOf(monitorLabel) + ' && !' + tileOf(serverLabel)); }, 5000);
     ok(direct, 'face tiles from the start: the same', 'the tiles: ' + short(await inFaces()));
-    await chrome.evaluate('spirit.app.activeApp({ key: "server", active: true })');
+    await chrome.evaluate('spirit.app.activeApp({ key: "starter", active: true })');
     const arrives = await until(function () { return chrome.evaluate('!!' + tileOf(serverLabel)); }, 5000);
-    ok(arrives, 'an app made active appears, no search asked', 'the tiles after server turned on: ' + short(await inFaces()));
-    await chrome.evaluate('spirit.app.activeApp({ key: "server", active: false })');
+    ok(arrives, 'an app made active appears, no search asked', 'the tiles after starter turned on: ' + short(await inFaces()));
+    await chrome.evaluate('spirit.app.activeApp({ key: "starter", active: false })');
     const leaves = await until(function () { return chrome.evaluate('!' + tileOf(serverLabel)); }, 5000);
-    ok(leaves, 'an app made inactive leaves', 'the tiles after server turned off: ' + short(await inFaces()));
+    ok(leaves, 'an app made inactive leaves', 'the tiles after starter turned off: ' + short(await inFaces()));
 
     test.subHeading('the box: "in :tiles mode, appSelector icons will \'launch\'", "its open and close move into appSelector"');
     await chrome.evaluate('(function () { var t = ' + tileOf(monitorLabel) + '; if (t) t.click(); return !!t; }())');
@@ -387,5 +391,311 @@ test.startTest('element.js: the app app\'s main element, the app selector (goal/
     try { if (node.child) node.child.kill(); } catch (e) { /* gone */ }
     try { if (node.root) fs.rmSync(node.root, { recursive: true, force: true }); } catch (e) { /* scratch */ }
   }
-}()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
-  function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });
+}()).then(function () {}, function (e) { test.fail('the test threw ' + (e && e.stack || e)); }).then(async function () {
+  // The parts below, each after the checks above, in order; one report for all.
+  for (const part of [['nodeRun', nodeRunPart], ['shell', shellPart]]) {
+    try { await part[1](); } catch (e) { test.fail('the ' + part[0] + ' part threw ' + (e && e.stack || e)); }
+  }
+  test.reportSuccessFailureCount();
+  process.exit(0);
+});
+
+// ── THE nodeRun PART ─────────────────────────────────────────────────────────────────────────────────────────────
+async function nodeRunPart() {
+  // The nodeRun part of ./element.js.
+  // AN APP THAT IS RUN, NOT MOUNTED (goal/G43.21; spec: ./element.md, its nodeRun section). Andy, the box: "spirit app search will list these jobs
+  // (node:run) only in pane mode, bacause it they have no shell-mount. the app detail will show a run button.", and "the Andy
+  // user on each box will run those scripts when he feels like it". A real Chrome on a scratch node's face page, the two
+  // apps of the tree that say node.run, pushOrigin and publishData; neither Andy's node nor an agent's is touched. The scratch
+  // tree is no git clone, so a pushOrigin started there pushes nothing.
+
+  const fs = require('fs');
+  const path = require('path');
+  const RUN = path.resolve(__dirname, '..', '..', '..', '..');
+  const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+  const { scratchNode, chromePage, findChrome, until } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+
+  function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
+  function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
+  function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+  const APPS = path.join(RUN, 'spirit', 'app');
+
+  test.subHeading('nodeRun: an app that says node.run is listed in pane mode only, and its detail runs it (goal/G43.21)');
+
+  await (async function () {
+    // The tree's apps, from each <name>.json: which say node.run, and which mount as a shell app.
+    const own = fs.readdirSync(APPS).filter(function (n) { return fs.existsSync(path.join(APPS, n, n + '.json')); }).map(function (n) {
+      let j = {};
+      try { j = JSON.parse(fs.readFileSync(path.join(APPS, n, n + '.json'), 'utf8')); } catch (e) { j = {}; }
+      return { key: n, label: String((j.identity && j.identity.label) || n), icon: String((j.identity && j.identity.icon) || ''), run: !!(j.node && j.node.run === true), shell: !!(j.shell && j.shell.mount === true) };
+    });
+    const runs = own.filter(function (a) { return a.run; });
+    const mounts = own.filter(function (a) { return a.shell && !a.run; });
+    ok(runs.length >= 2 && mounts.length >= 1, 'the world: ' + runs.map(function (a) { return a.key; }).join(', ') + ' say node.run; ' + mounts.length + ' apps mount in the shell', 'nothing to judge with: ' + short(own));
+    if (!runs.length || !mounts.length) return;
+    const PUSH = own.filter(function (a) { return a.key === 'pushOrigin'; })[0];
+    const node = await scratchNode();
+    const chrome = await chromePage(findChrome());
+    try {
+      if (!node.up || chrome.error) { test.fail('no scratch node or no Chrome: nothing judged. ' + short(chrome.error || '')); return; }
+      const ask = async function (verb, args) { const r = await fetch(node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) }); try { return JSON.parse(await r.text()); } catch (e) { return null; } };
+      await chrome.send('Page.navigate', { url: node.base + '/face.html' });
+      await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
+      const loaded = await chrome.evaluate('window.spirit.ready.then(function () { return Promise.all([spirit.require("spirit/element/search/app.js"), spirit.require("spirit/element/search/app/detailElement.js")]); }).then(function () { return "loaded"; }, function (e) { return String(e && e.message || e); })');
+      ok(loaded === 'loaded', 'the world: the app search and the app detail load', 'they did not load: ' + short(loaded));
+      // The app labels drawn anywhere under an element: its leaves whose text is an app's label.
+      const LABELS = JSON.stringify(own.map(function (a) { return a.label; }));
+      const drawnUnder = function (expr) { return chrome.evaluate('(function () { var root = ' + expr + '; if (!root) return []; var want = ' + LABELS + '; var out = []; var all = root.querySelectorAll("*"); for (var i = 0; i < all.length; i++) { var t = String(all[i].innerText || "").trim(); if (!all[i].children.length && want.indexOf(t) !== -1 && out.indexOf(t) === -1) out.push(t); } return out.sort(); }())'); };
+      const has = function (list, a) { return list.indexOf(a.label) !== -1; };
+
+      test.subHeading('Andy: "spirit app search will list these jobs (node:run) only in pane mode"');
+      await chrome.evaluate('(function () { var c = document.createElement("div"); c.id = "pane"; document.body.appendChild(c); window.pane = spirit.element.spirit.element.search.app.create(c, { face: "pane" }); return true; }())');
+      await until(function () { return drawnUnder('document.getElementById("pane")').then(function (d) { return runs.every(function (a) { return has(d, a); }); }); }, 8000);
+      const inPane = await drawnUnder('document.getElementById("pane")');
+      runs.forEach(function (a) { ok(has(inPane, a), 'the pane lists ' + a.label, 'the pane does not list ' + a.label + ': ' + short(inPane)); });
+      await chrome.evaluate('(function () { window.pane.destroy(); var c = document.getElementById("pane"); if (c) c.remove(); return true; }())');
+      // The dropdown, pressed open: its list floats, so the whole page is read, with nothing else of the test on it.
+      await chrome.evaluate('(function () { var c = document.createElement("div"); c.id = "drop"; document.body.appendChild(c); window.drop = spirit.element.spirit.element.search.app.create(c, { face: "dropdown" }); return true; }())');
+      await sleep(800);
+      await chrome.evaluate('(function () { var d = window.drop, f = (d && d.list && d.list.field) || document.querySelector("#drop input, #drop [tabindex], #drop button"); if (f) f.click(); return !!f; }())');
+      await until(function () { return drawnUnder('document.body').then(function (d) { return mounts.some(function (a) { return has(d, a); }); }); }, 8000);
+      const inDrop = await drawnUnder('document.body');
+      ok(mounts.some(function (a) { return has(inDrop, a); }), 'the world: pressed, the dropdown lists the apps that mount (' + inDrop.length + ')', 'the dropdown listed no app at all: nothing judged. ' + short(inDrop));
+      runs.forEach(function (a) { ok(!has(inDrop, a), 'the dropdown does not list ' + a.label, 'the dropdown lists ' + a.label + ': ' + short(inDrop)); });
+      await chrome.evaluate('(function () { window.drop.destroy(); var c = document.getElementById("drop"); if (c) c.remove(); return true; }())');
+
+      test.subHeading('Andy: "the app detail will show a run button"');
+      // A Run button: a button whose own text is Run.
+      const runButton = 'Array.prototype.filter.call(document.querySelectorAll("#detail button"), function (b) { return /\\bRun\\b/.test(String(b.textContent || "")); })[0]';
+      const detailOf = function (a) { return chrome.evaluate('(function () { var old = document.getElementById("detail"); if (window.det) { window.det.destroy(); } if (old) old.remove(); var c = document.createElement("div"); c.id = "detail"; document.body.appendChild(c); window.det = spirit.element.spirit.element.search.app.detailElement.create(c, { row: ' + JSON.stringify({ key: a.key, label: a.label, icon: a.icon }) + ', panel: true }); return true; }())'); };
+      for (const a of runs) {
+        await detailOf(a);
+        const shown = await until(function () { return chrome.evaluate('!!(' + runButton + ')'); }, 6000);
+        ok(shown, a.label + '\'s detail shows a Run button', a.label + '\'s detail shows no Run: ' + short(await chrome.evaluate('String(document.getElementById("detail").innerText)')));
+      }
+      const plain = mounts[0];
+      await detailOf(plain);
+      await sleep(1500);
+      const drew = await chrome.evaluate('String(document.getElementById("detail").innerText || "").indexOf(' + JSON.stringify(plain.label) + ') !== -1');
+      const noRun = await chrome.evaluate('!(' + runButton + ')');
+      ok(drew && noRun, plain.label + ', which mounts and says no node.run, shows no Run', plain.label + '\'s detail: ' + short(await chrome.evaluate('String(document.getElementById("detail").innerText)')));
+
+      // Andy: "in the app list and details: an app that only has node:run and no node:mount or shell:mount cannot be "activated"
+      // show rowForms should knows that.", and "and the node should know it, too."
+      test.subHeading('Andy: "an app that only has node:run and no node:mount or shell:mount cannot be "activated""');
+      // An Activate or Deactivate row seen under an element: a leaf whose words start so (rowFormAppActive's "Activate <label> ...").
+      const activateUnder = function (expr) { return chrome.evaluate('(function () { var root = ' + expr + '; if (!root) return null; return Array.prototype.filter.call(root.querySelectorAll("*"), function (e) { return !e.children.length && /^\\s*(de)?activate\\b/i.test(String(e.textContent || "")) && e.offsetParent !== null; }).length; }())'); };
+      const only = runs.filter(function (a) { return !own.filter(function (o) { return o.key === a.key; }).some(function (o) { return o.shell; }); });
+      // The row of an app in a pane list: the smallest element holding its label and a button, or its label alone.
+      const rowOf = function (label) { return '(function () { var all = document.querySelectorAll("#rows tr, #rows .list-row"); for (var i = 0; i < all.length; i++) { if (String(all[i].innerText || "").indexOf(' + JSON.stringify(label) + ') !== -1) return all[i]; } return null; }())'; };
+      await chrome.evaluate('(function () { var c = document.createElement("div"); c.id = "rows"; document.body.appendChild(c); window.rows = spirit.element.spirit.element.search.app.create(c, { face: "pane" }); return true; }())');
+      await until(function () { return activateUnder(rowOf(plain.label)).then(function (n) { return n > 0; }); }, 8000);
+      ok((await activateUnder(rowOf(plain.label))) > 0, 'the world: ' + plain.label + '\'s row in the app list shows Activate', plain.label + '\'s row shows no Activate: nothing judged');
+      for (const a of only) {
+        // What it mounts is read from its <name>.json after the row is drawn: given the time that takes.
+        await until(function () { return activateUnder(rowOf(a.label)).then(function (n) { return n === 0; }); }, 4000);
+        const n = await activateUnder(rowOf(a.label));
+        ok(n === 0, a.label + '\'s row in the app list shows no Activate', a.label + '\'s row shows ' + short(n) + ' Activate buttons');
+      }
+      await chrome.evaluate('(function () { window.rows.destroy(); var c = document.getElementById("rows"); if (c) c.remove(); return true; }())');
+      await detailOf(plain);
+      ok(await until(function () { return activateUnder('document.getElementById("detail")').then(function (n) { return n > 0; }); }, 6000), 'the world: ' + plain.label + '\'s detail shows Activate', plain.label + '\'s detail shows no Activate: nothing judged');
+      for (const a of only) {
+        await detailOf(a);
+        await until(function () { return chrome.evaluate('!!(' + runButton + ')'); }, 6000);
+        await sleep(800);
+        const n = await activateUnder('document.getElementById("detail")');
+        ok(n === 0, a.label + '\'s detail shows no Activate', a.label + '\'s detail shows ' + short(n) + ' Activate buttons');
+      }
+      test.subHeading('a press runs it, active or not');
+      if (!PUSH || !PUSH.run) { test.fail('pushOrigin says no node.run: nothing to press'); return; }
+      // Every job the node holds, each read whole, its module with it.
+      const jobsOf = async function () { const got = await ask('job.search', { q: '' }); const out = []; for (const i of ((got && got.items) || [])) out.push(await ask('job.get', { key: i.key })); return JSON.stringify(out); };
+      const before = await jobsOf();
+      ok(before.indexOf('spirit.app.pushOrigin') === -1, 'the world: no job of pushOrigin before the press', 'a job of pushOrigin is there already: nothing judged');
+      const activeNow = await ask('app.search', { q: '' });
+      const pushRow = ((activeNow && activeNow.items) || []).filter(function (i) { return i.key === 'pushOrigin'; })[0];
+      let pushActive;
+      try { pushActive = JSON.parse(pushRow.label).active; } catch (e) { pushActive = undefined; }
+      ok(pushActive !== true, 'the world: pushOrigin is not active on this node', 'pushOrigin is active here: the press would not show that Run asks for no activation');
+      await detailOf(PUSH);
+      await until(function () { return chrome.evaluate('!!(' + runButton + ')'); }, 6000);
+      const pressed = await chrome.evaluate('(function () { var b = ' + runButton + '; if (!b) return false; b.click(); return true; }())');
+      ok(pressed === true, 'its Run can be pressed', 'no Run to press');
+      const started = await until(function () { return jobsOf().then(function (j) { return j.indexOf('spirit.app.pushOrigin') !== -1; }); }, 10000);
+      ok(started, 'the press starts spirit/app/pushOrigin/pushOrigin.js, a job of spirit.app.pushOrigin, though the app is not active', 'no job of pushOrigin after the press: ' + short(await jobsOf()));
+
+      // Andy: "and the node should know it, too." Asked last, since a node that takes it would leave the app active.
+      test.subHeading('Andy: "and the node should know it, too."');
+      for (const a of only) {
+        const r = await fetch(node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'app.active', args: { key: a.key, active: true } }) });
+        const t = await r.text();
+        const listed = await ask('app.search', { q: '' });
+        const row = ((listed && listed.items) || []).filter(function (i) { return i.key === a.key; })[0];
+        let now;
+        try { now = JSON.parse(row.label).active; } catch (e) { now = undefined; }
+        ok(r.status >= 400 && now !== true, 'the node refuses app.active for ' + a.key + ', and it stays inactive', 'app.active for ' + a.key + ' answered ' + r.status + ' ' + short(t) + ', active now ' + short(now));
+      }
+    } finally {
+      try { if (chrome.sock) chrome.sock.close(); } catch (e) { /* gone */ }
+      try { if (chrome.kid) chrome.kid.kill(); } catch (e) { /* gone */ }
+      try { if (node.child) node.child.kill(); } catch (e) { /* gone */ }
+      try { if (node.root) fs.rmSync(node.root, { recursive: true, force: true }); } catch (e) { /* scratch */ }
+    }
+  }());
+}
+
+// ── THE shell PART ───────────────────────────────────────────────────────────────────────────────────────────────
+async function shellPart() {
+  // The shell part of ./element.js.
+  // THE APP APP AS THE SHELL, AND A SHELL THAT REPLACES ITSELF (goal/G43.18, box v29, "The shell" and "Join"; spec: ./element.md, its shell section).
+  // Since goal/G43.32 the shell app is the app app (the box: "spirit/app/shell/ becomes spirit/app/app/. Its element.js is today's
+  // spirit/app/appSelector.js; shell.js goes. app.json is shell.json, renamed"). A real
+  // node on a scratch copy of the tracked files, with a shell-worthy app of the test's own beside the shell app, and real
+  // clicks in a real Chrome on the page Andy uses at home, /face.html. Neither Andy's node nor an agent's is touched.
+
+  const fs = require('fs');
+  const os = require('os');
+  const path = require('path');
+  const { spawn, execSync } = require('child_process');
+  const RUN = path.resolve(__dirname, '..', '..', '..', '..');
+  const REPO = path.resolve(RUN, '..', '..');
+  const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+  const { freePort, until, sleep, chromePage, findChrome } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+
+  function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
+  function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
+  function parsed(t) { try { return JSON.parse(t); } catch (e) { return null; } }
+  function readJson(f) { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch (e) { return null; } }
+
+  // The test's own shell: it draws one line and nothing else, and knows nothing of Join.
+  const MARK = 'zz shell drawn';
+  const ZZ = { identity: { label: 'Zz Shell', icon: '🧪' }, shell: { true: true, mount: true, tile: true } };
+  const ZZ_JS = '(function () { var b = document.createElement("div"); b.id = "zzShell"; b.textContent = ' + JSON.stringify(MARK) + '; document.body.appendChild(b); }());\n';
+  function scratch() {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-shellapp-'));
+    execSync('git ls-files -- spirit/run', { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(Boolean)
+      .filter(function (f) { return fs.existsSync(path.join(REPO, f)); })
+      .forEach(function (f) { const d = path.join(root, f); fs.mkdirSync(path.dirname(d), { recursive: true }); fs.copyFileSync(path.join(REPO, f), d); });
+    const run = path.join(root, 'spirit', 'run');
+    const zz = path.join(run, 'spirit', 'app', 'zzshell');
+    fs.mkdirSync(zz, { recursive: true });
+    fs.writeFileSync(path.join(zz, 'zzshell.json'), JSON.stringify(ZZ));
+    fs.writeFileSync(path.join(zz, 'element.js'), ZZ_JS);
+    return { root: root, run: run };
+  }
+  async function call(base, verb, args) {
+    try {
+      const r = await fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) });
+      const text = await r.text();
+      return { status: r.status, text: text, body: parsed(text) };
+    } catch (e) { return { status: 0, text: String(e && e.message), body: null }; }
+  }
+  async function boot(run) {
+    const port = await freePort();
+    const child = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], { cwd: run, stdio: 'ignore' });
+    const base = 'http://127.0.0.1:' + port;
+    const up = await until(function () { return call(base, 'api').then(function (r) { return r.status === 200; }); }, 60000);
+    return { child: child, base: base, up: !!up };
+  }
+  function stop(c) { return new Promise(function (r) { if (!c || c.exitCode !== null) return r(); c.once('exit', function () { r(); }); c.kill(); setTimeout(r, 6000); }); }
+
+  test.subHeading('shell: the app app as the shell, and a shell that replaces itself (goal/G43.18, G43.32)');
+
+  await (async function () {
+    const shellJson = readJson(path.join(RUN, 'spirit', 'app', 'app', 'app.json'));
+    const SHELL_LABEL = String((shellJson && shellJson.identity && shellJson.identity.label) || '');
+    ok(!!SHELL_LABEL, 'the world: the shell app has a label, ' + SHELL_LABEL, 'spirit/app/app/app.json gives no label: ' + short(shellJson));
+    const LABELS = fs.readdirSync(path.join(RUN, 'spirit', 'app')).map(function (n) { const j = readJson(path.join(RUN, 'spirit', 'app', n, n + '.json')); return j && j.identity && j.identity.label; }).filter(Boolean).concat([ZZ.identity.label]);
+
+    const s = scratch();
+    let N = null;
+    let c = null;
+    try {
+      N = await boot(s.run);
+      ok(N.up, 'the world: a scratch node comes up', 'the scratch node did not come up: nothing judged');
+      if (!N.up) return;
+      const where = findChrome();
+      if (!where) { test.fail('no Chrome here: nothing judged'); return; }
+      c = await chromePage(where);
+      if (c.error) { test.fail('Chrome: ' + c.error); return; }
+      const open = async function () {
+        await c.evaluate('window.__zzOld = true').catch(function () {});
+        await c.send('Page.navigate', { url: N.base + '/face.html' });
+        const up = await until(function () { return c.evaluate('!window.__zzOld && document.readyState === "complete" && !!window.spirit'); }, 20000);
+        await sleep(4000);
+        return up;
+      };
+      const loaded = function () { return c.evaluate('performance.getEntriesByType("resource").map(function (e) { return e.name.replace(/^https?:\\/\\/[^/]+/, ""); })'); };
+      const text = function () { return c.evaluate('String(document.body.innerText || "")'); };
+
+      test.subHeading('the box: "spirit/app/shell/ ... is the default for home and face on a first boot" (Q12: no spirit/state/shell.json), the app app since goal/G43.32');
+      ok(await open(), 'the world: the page opens', 'the page did not open: nothing judged');
+      const first = await loaded();
+      ok(first.some(function (n) { return /^\/spirit\/app\/app\/element\.js(\?|$)/.test(n); }), 'with no shell chosen the page loads spirit/app/app/element.js', 'it loaded: ' + short(first.filter(function (n) { return /\/app\//.test(n); })));
+      ok(first.some(function (n) { return /^\/spirit\/element\/search\/app\.js(\?|$)/.test(n); }) && /\bContacts\b/.test(await text()), '"an app that wraps the app search": the app search is on the page, Contacts listed', 'the app search: ' + short(first.filter(function (n) { return /search/.test(n); })) + ', page: ' + short(await text()));
+
+      // goal/G43.18, Andy: "the shell should exclude itself completely from the app-list, haha..."
+      const keys = await c.evaluate('Array.prototype.slice.call(document.querySelectorAll("[data-key]")).filter(function (e) { return e.offsetParent !== null; }).map(function (e) { return e.getAttribute("data-key"); })');
+      ok(keys.indexOf('contact') !== -1 && keys.indexOf('app') === -1 && !new RegExp('(^|\\n)\\s*' + SHELL_LABEL + '\\s*(\\n|$)').test(await text()), 'Andy: "the shell should exclude itself completely from the app-list": Contacts listed, the shell not', 'the list shows: ' + short(keys));
+
+      test.subHeading('the box: "RULE: a shell must be able to replace itself", "boot.js ... then loads the shell the node names"');
+      const set = await call(N.base, 'node.shell', { at: 'home', name: 'zzshell' });
+      ok(set.status === 200, 'the world: node.shell names zzshell at home', 'node.shell: ' + set.status + ' ' + short(set.text));
+      await open();
+      const second = await loaded();
+      const drawn = await text();
+      ok(drawn.indexOf(MARK) !== -1 && second.some(function (n) { return /^\/spirit\/app\/zzshell\/element\.js(\?|$)/.test(n); }), 'the page loads the shell the node names, zzshell, and it draws', 'zzshell: ' + short(second.filter(function (n) { return /\/app\//.test(n); })) + ', page: ' + short(drawn));
+      ok(drawn.indexOf(MARK) !== -1 && !second.some(function (n) { return /^\/spirit\/app\/app\/element\.js(\?|$)/.test(n); }) && !/\bContacts\b/.test(drawn), 'and nothing of the other shell, nor a desktop of boot.js\'s own', drawn.indexOf(MARK) !== -1 ? 'beside zzshell the page shows: ' + short(drawn) : 'zzshell never drew: nothing judged');
+
+      // Q18, Andy: "join. not the shells job.": zzshell knows nothing of Join, and Join still shows a new node its steps.
+      test.subHeading('the box: "Join shows a new user its steps on its own ... neither boot.js nor any shell decides it"');
+      const steps = await call(N.base, 'job.list', {});
+      test.comment('the scratch node is new: its join steps are open (' + short(steps.status) + ')');
+      const joined = drawn.indexOf(MARK) !== -1 && await until(function () { return text().then(function (t) { return /\bJoin\b/.test(t); }); }, 10000);
+      ok(joined, 'under a shell that knows nothing of it, Join shows itself', drawn.indexOf(MARK) !== -1 ? 'under zzshell no Join in 10 s: ' + short(await text()) : 'zzshell never drew: nothing judged');
+
+      test.subHeading('the box: the two rows of the app detail, "shown only for an app whose <name>.json says shell:true:true"');
+      await call(N.base, 'node.shell', { at: 'home', name: 'app' });
+      await open();
+      const detail = function (key) {
+        return c.evaluate('(function () { return spirit.ready.then(function (s) { return s.app.searchApp({ q: "" }); }).then(function (got) { var it = (got.items || []).filter(function (i) { return i.key === ' + JSON.stringify(key) + '; })[0]; if (!it) return "no row"; var row = Object.assign({ key: it.key }, JSON.parse(it.label || "{}")); return spirit.require("spirit/element/search/app/detailElement.js").then(function () { var old = document.getElementById("zzDetail"); if (old) old.remove(); var h = document.createElement("div"); h.id = "zzDetail"; document.body.appendChild(h); spirit.element.spirit.element.search.app.detailElement.create(h, { row: row, panel: true }); return "made"; }); }); }())');
+      };
+      const inDetail = function () { return c.evaluate('String((document.getElementById("zzDetail") || {}).innerText || "")'); };
+      ok((await detail('contact')) === 'made', 'the world: Contacts\' detail is drawn', 'no detail for contact');
+      await sleep(2000);
+      const plain = await inDetail();
+      ok(plain.length > 0 && !/Home shell|Face shell/.test(plain), 'Contacts, shell:true false: no Home shell or Face shell row', 'Contacts\' detail: ' + short(plain));
+      ok((await detail('zzshell')) === 'made', 'the world: zzshell\'s detail is drawn', 'no detail for zzshell');
+      await sleep(2000);
+      const worthy = await inDetail();
+      ok(/Home shell/.test(worthy) && /Face shell/.test(worthy), 'zzshell, shell:true true: a Home shell and a Face shell row', 'zzshell\'s detail: ' + short(worthy));
+      // "the dropdown first showing the configured home shell": the shell app, by Q12 and as set back above.
+      const rowText = function (words) { return c.evaluate('(function () { var d = document.getElementById("zzDetail"); var all = Array.prototype.slice.call(d.querySelectorAll("*")); var r = all.filter(function (e) { return e.children.length && String(e.innerText || "").indexOf(' + JSON.stringify(words) + ') !== -1; }).pop(); r = r && (r.closest(".shell-row-form") || r); if (!r) return ""; var i = r.querySelector("input"); return String(r.innerText || "") + " | " + (i ? i.value : ""); }())'); };
+      const homeRow = await rowText('Home shell');
+      ok(!!SHELL_LABEL && /Home shell/.test(homeRow) && homeRow.indexOf(SHELL_LABEL) !== -1 && homeRow.indexOf(ZZ.identity.label) === -1, 'its Home shell dropdown first shows the configured home shell, ' + SHELL_LABEL, 'the Home shell row: ' + short(homeRow));
+
+      test.subHeading('the box: "Both dropdowns list only the apps whose <name>.json says shell:true:true"');
+      for (const words of ['Home shell', 'Face shell']) {
+        const opened = await c.evaluate('(function () { var d = document.getElementById("zzDetail"); var all = Array.prototype.slice.call(d.querySelectorAll("*")); var r = all.filter(function (e) { return e.children.length && String(e.innerText || "").indexOf(' + JSON.stringify(words) + ') !== -1; }).pop(); r = r && (r.closest(".shell-row-form") || r); var i = r && r.querySelector("input"); if (!i) return false; i.focus(); i.click(); i.dispatchEvent(new Event("input", { bubbles: true })); return true; }())');
+        await sleep(1500);
+        // What the dropdown lists: the labels inside that row, its own field and title aside.
+        const seen = parsed(await c.evaluate('JSON.stringify((function () { var want = ' + JSON.stringify(LABELS) + '; var out = []; var d = document.getElementById("zzDetail"); var all = Array.prototype.slice.call(d.querySelectorAll("*")); var r = all.filter(function (e) { return e.children.length && String(e.innerText || "").indexOf(' + JSON.stringify(words) + ') !== -1; }).pop(); r = r && (r.closest(".shell-row-form") || r); Array.prototype.slice.call(r ? r.querySelectorAll("[data-key] td, li") : []).forEach(function (e) { var t = String(e.innerText || "").trim(); if ( e.offsetParent !== null && want.indexOf(t) !== -1 && out.indexOf(t) === -1) out.push(t); }); return out.sort(); }()))')) || [];
+        const others = seen.filter(function (l) { return l !== SHELL_LABEL && l !== ZZ.identity.label; });
+        // Q28, Andy: "no, the shell icon is now properly missing :)": the shell app leaves itself out here too.
+        ok(opened && seen.indexOf(ZZ.identity.label) !== -1 && seen.indexOf(SHELL_LABEL) === -1 && !others.length, words + ': open, it lists ' + ZZ.identity.label + ', not ' + SHELL_LABEL + ' (Q28), and no app that is no shell', words + ': opened ' + opened + ', it lists ' + short(seen));
+        await c.evaluate('document.body.click(); true');
+      }
+
+      test.subHeading('the box: "[armingButton-\'Set\']" and node.shell');
+      const chose = await c.evaluate('(function () { var d = document.getElementById("zzDetail"); var all = Array.prototype.slice.call(d.querySelectorAll("*")); var r = all.filter(function (e) { return e.children.length && String(e.innerText || "").indexOf("Home shell") !== -1; }).pop(); r = r && (r.closest(".shell-row-form") || r); var i = r && r.querySelector("input"); if (!i) return "no field"; i.focus(); i.click(); i.value = "Zz"; i.dispatchEvent(new Event("input", { bubbles: true })); return new Promise(function (res) { setTimeout(function () { var hit = Array.prototype.slice.call(document.querySelectorAll("*")).filter(function (e) { return !e.children.length && e.offsetParent !== null && String(e.innerText || "").trim() === ' + JSON.stringify(ZZ.identity.label) + '; })[0]; if (!hit) return res("no row"); hit.click(); setTimeout(function () { var b = Array.prototype.slice.call(r.querySelectorAll("button")).filter(function (x) { return /^Set\\b/.test(String(x.textContent).trim()); })[0]; if (!b) return res("no Set"); b.click(); setTimeout(function () { var armed = b.hasAttribute("data-armed"); b.click(); res(armed ? "pressed twice" : "not armed"); }, 300); }, 500); }, 1500); }); }())');
+      ok(chose === 'pressed twice', 'zzshell chosen in Home shell, Set armed by the first press and pressed again', 'the Home shell row: ' + short(chose));
+      ok(await until(function () { return call(N.base, 'node.shell', { at: 'home' }).then(function (a) { return a.body && a.body.name === 'zzshell'; }); }, 6000), 'and the node names zzshell at home', 'node.shell home: ' + short(await call(N.base, 'node.shell', { at: 'home' })));
+      ok((await call(N.base, 'node.shell', { at: 'face' })).body.name === 'app', 'the face shell is its own, still app', 'node.shell face: ' + short(await call(N.base, 'node.shell', { at: 'face' })));
+    } finally {
+      try { if (c && c.kid) c.kid.kill(); } catch (e) { /* gone */ }
+      if (N) await stop(N.child);
+      try { fs.rmSync(s.root, { recursive: true, force: true }); } catch (e) { /* scratch */ }
+    }
+  }());
+}

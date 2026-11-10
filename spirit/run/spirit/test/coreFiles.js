@@ -2,7 +2,9 @@
 
 // spirit/run/spirit/test/coreFiles.js
 // The tests of spirit/coreFiles.js, which files are core, and of no other module (spec: ./coreFiles.md). It asks isCore
-// and intrinsic of repo paths; it reads no file and needs no node.
+// and intrinsic of repo paths; it reads no file and needs no node. The one test file of coreFiles.js: the dependency
+// part (what a core file loads is core) and the infoGrants part (Info and Grants intrinsic by their own json), once
+// coreFiles-dependency.js and coreFiles-infoGrants.js, are sections of it, run after its own checks.
 
 const path = require('path');
 const RUN = path.resolve(__dirname, '../..');
@@ -90,6 +92,113 @@ test.subHeading('goal/G43.24: Info and Grants moved to spirit/app/ and say it in
 ['info', 'grants'].forEach(function (name) {
   ok(core.appIntrinsic(path.resolve(RUN, '..', '..'), name) === true, 'spirit/app/' + name + '/' + name + '.json says intrinsic true',
     'spirit/app/' + name + '/' + name + '.json says intrinsic ' + core.appIntrinsic(path.resolve(RUN, '..', '..'), name));
+});
+
+// THE DEPENDENCY PART, once coreFiles-dependency.js.
+function dependencyPart() {
+  // Once spirit/run/spirit/test/coreFiles-dependency.js.
+  // WHAT A CORE FILE LOADS IS CORE (goal/G41.30; Andy: "it looks like we better make sure that those files that core files
+  // depend on, are core-files, too."). A core file is grant-locked (spirit/coreFiles.js); a file it loads that is not
+  // could be rewritten by any page, and the core file would run what was written. So every file a core file loads must be
+  // core too, or this test is red naming both. Read from the code itself, comments left out: a page's script and style
+  // tags, a script's require of a file beside it, and spirit.require of a literal path. A test folder, a vendored folder
+  // (fileSystem.js's list) and a require by package name (node's own) are not files of the run, and are not asked.
+
+  const fs = require('fs');
+  const REPO = path.join(RUN, '..', '..');
+  const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fileSystem.js')).VENDORED_FOLDERS;
+
+  const tracked = require('child_process').execFileSync('git', ['ls-files', 'spirit/run'], { cwd: REPO, encoding: 'utf8' }).split('\n').filter(Boolean);
+  const isCore = function (rel) { return core.isCore('spirit/run/' + rel, REPO); };
+  const exists = function (rel) { return fs.existsSync(path.join(RUN, rel)) && fs.statSync(path.join(RUN, rel)).isFile(); };
+  function stripped(text, html) {
+    if (html) return text.replace(/<!--[\s\S]*?-->/g, '');
+    return text.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"`])\/\/.*$/gm, '$1');
+  }
+
+  // What one file loads, as run-relative paths.
+  function loads(rel) {
+    const src = fs.readFileSync(path.join(RUN, rel), 'utf8');
+    const out = [];
+    if (/\.html$/.test(rel)) {
+      const t = stripped(src, true);
+      let m; const re = /<(?:script|link)\b[^>]*\b(?:src|href)\s*=\s*["']([^"']+)["']/gi;
+      while ((m = re.exec(t))) { const u = m[1]; if (/^(https?:)?\/\//.test(u) || /^data:/.test(u)) continue; out.push(u.charAt(0) === '/' ? u.slice(1).split(/[?#]/)[0] : path.posix.normalize(path.posix.join(path.posix.dirname(rel), u.split(/[?#]/)[0]))); }
+      return out;
+    }
+    if (!/\.js$/.test(rel)) return out;
+    const t = stripped(src, false);
+    let m;
+    const req = /\brequire\(\s*(['"])(\.{1,2}\/[^'"]+)\1\s*\)/g;
+    while ((m = req.exec(t))) {
+      let p = path.posix.normalize(path.posix.join(path.posix.dirname(rel), m[2]));
+      if (!/\.(js|json)$/.test(p)) p = exists(p + '.js') ? p + '.js' : exists(p + '/index.js') ? p + '/index.js' : p + '.js';
+      out.push(p);
+    }
+    const sreq = /spirit\.require\(\s*(['"])([^'"]+\.(?:js|css|json))\1/g;
+    while ((m = sreq.exec(t))) out.push(m[2].replace(/^\/+/, ''));
+    return out;
+  }
+
+  test.subHeading('coreFiles-dependency: what a core file loads is core (goal/G41.30)');
+
+  const coreFiles = tracked.map(function (f) { return f.replace(/^spirit\/run\//, ''); })
+    .filter(function (f) { return !/(^|\/)test\//.test(f) && !VENDORED_FOLDERS.holds(f) && /\.(js|html)$/.test(f) && exists(f) && isCore(f); });
+  ok(coreFiles.length > 50, 'it reads ' + coreFiles.length + ' core files', 'only ' + coreFiles.length + ' core files were found: the scan judges nothing');
+
+  const loose = [];
+  let asked = 0;
+  coreFiles.forEach(function (f) {
+    loads(f).forEach(function (dep) {
+      if (/(^|\/)test\//.test(dep)) return;
+      if (!exists(dep)) return; // a missing file is another test's to judge, not this rule's
+      asked += 1;
+      if (!isCore(dep)) loose.push(dep + ', loaded by ' + f);
+    });
+  });
+  test.comment(asked + ' files loaded by core files were asked');
+  ok(asked > 50, 'it asked ' + asked + ' loaded files', 'only ' + asked + ' loaded files were found: the scan judges nothing');
+  const byDep = {};
+  loose.forEach(function (l) { const d = l.split(', loaded by ')[0]; (byDep[d] = byDep[d] || []).push(l.split(', loaded by ')[1]); });
+  Object.keys(byDep).sort().forEach(function (d) {
+    test.fail(d + ' is not core, yet ' + byDep[d].length + ' core file(s) load it: ' + byDep[d].slice(0, 3).join(', '));
+  });
+  if (!loose.length) test.check('every file a core file loads is core');
+
+  // SHELL/SHARED IS GONE (goal/G43.30, with all of shell/; Andy: "can we delete run://shell/"): its rule, that it held no
+  // core file (goal/G41.30), has nothing left to hold.
+  const shellLeft = tracked.filter(function (f) { return f.indexOf('spirit/run/shell/') === 0; });
+  ok(!shellLeft.length, 'run://shell/ holds no tracked file', 'run://shell/ still holds ' + shellLeft.length + ': ' + shellLeft.slice(0, 5).join(', '));
+}
+
+// THE INFOGRANTS PART, once coreFiles-infoGrants.js.
+function infoGrantsPart() {
+  // Once spirit/run/spirit/test/coreFiles-infoGrants.js.
+  // INFO AND GRANTS ARE INTRINSIC BY THEIR OWN <name>.json, NOT BY coreFiles.js'S LIST (goal/G43.24, requirement 2; spec:
+  // ./coreFiles.md). Andy: "i just moved them, didn't fix the manifest.", "no i want those apps to basically be
+  // wrappers for spirit/element/ things....". coreFiles.js loaded as it is.
+
+  const REPO = path.resolve(RUN, '..', '..');
+
+  function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
+
+  test.subHeading('coreFiles-infoGrants: Info and Grants are intrinsic by their own <name>.json, not by coreFiles.js\'s list (goal/G43.24)');
+
+  test.subHeading('the box, 2: "both are intrinsic by their own <name>.json, as spirit/app apps say it"');
+  let core = null;
+  try { core = require(path.join(RUN, 'spirit', 'coreFiles.js')); } catch (e) { core = null; }
+  ok(!!core && typeof core.appIntrinsic === 'function', 'the world: coreFiles.js answers appIntrinsic', 'coreFiles.js: no appIntrinsic: nothing judged');
+  if (core && typeof core.appIntrinsic === 'function') {
+    // No coded list names them: since goal/G43.30 there is none at all.
+    ok(!('INTRINSIC' in core), 'no coded INTRINSIC list names shell/info or shell/grants: there is none (goal/G43.30)', 'coreFiles.js still answers an INTRINSIC list: ' + short(core.INTRINSIC));
+    ['info', 'grants'].forEach(function (name) {
+      ok(core.appIntrinsic(REPO, name) === true, 'coreFiles.appIntrinsic reads ' + name + ' intrinsic from its own ' + name + '.json', 'appIntrinsic(' + name + '): ' + short(core.appIntrinsic(REPO, name)));
+    });
+  }
+}
+
+[['dependency', dependencyPart], ['infoGrants', infoGrantsPart]].forEach(function (p) {
+  try { p[1](); } catch (e) { test.fail('the ' + p[0] + ' part threw ' + (e && e.stack || e)); }
 });
 
 test.reportSuccessFailureCount();

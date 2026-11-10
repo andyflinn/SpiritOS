@@ -49,3 +49,36 @@ Andy: *"i think in spirit/app/<name>/<name>.json (identity:intrinsic:true|false)
 - Q2, Andy: *"anything in spirit/app/ is core unless spirit/app/<name>/<name>.json says it's not intrinsic."* A json saying nothing of intrinsic keeps the folder core, and so does a folder with no json, as `appSelector/` and `test/` are.
 - The rule reads the json as it is on disc, on a tree handed as the repo root.
 - `spirit/app/contact/` is core in this tree, its json saying intrinsic true.
+
+## The dependency part: what a core file loads is core
+
+Once `./coreFiles-dependency.js`, now a section of `./coreFiles.js`. A general rule over every core file of the run (goal/G41.30; Andy: *"it looks like we better make sure that those files
+that core files depend on, are core-files, too."*).
+
+### Requirements
+
+- **What a core file loads is core.** A core file is grant-locked (`spirit/coreFiles.js`); a file it loads that is not
+  could be rewritten by any page, and the core file would run what was written. For every tracked core `.js` and
+  `.html` file outside a test folder, read from its code with comments left out:
+  - a page's script and style tags (`src`, `href`), not an outside address;
+  - a script's `require` of a file beside it;
+  - `spirit.require` of a literal path.
+  Each such file that exists must be core, or the test is red naming it and the core files that load it.
+- **run://shell/ is gone** (goal/G43.30; Andy: *"can we delete run://shell/"*), shell/shared/ with it: the rule that it held
+  no core file (goal/G41.30) has nothing left to hold, and the test finds no tracked file under it.
+- It must have judged something: over 50 core files read and over 50 loaded files asked.
+
+### What its test must try to break
+
+- A file a core page or script loads left writable.
+
+## The infoGrants part: Info and Grants intrinsic by their own json
+
+goal/G43.24, requirement 2. Its test, once `./coreFiles-infoGrants.js`, is a section of `./coreFiles.js`: coreFiles.js loaded as it is.
+
+Andy: *"i just moved them, didn't fix the manifest."*, *"no i want those apps to basically be wrappers for spirit/element/ things...."*, and *"box that these apps must mount in the new format of the new shell."*
+
+### Requirements
+
+- `shell/info` and `shell/grants` leave coreFiles.js's INTRINSIC list; since goal/G43.30 there is no such list at all.
+- `coreFiles.appIntrinsic` reads `info` and `grants` intrinsic from each one's own json.

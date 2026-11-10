@@ -1,26 +1,30 @@
-# spirit/fileSystem.js
 
-The node's file system: the two gates every read and write goes through, `fileServable` (can a path be read or listed)
-and `fileWritable` (can it be written). This test holds one part of it (goal/G41.30): a path spelled in another case.
 
-## Requirements
+## The noPreferences part: the node writes no preferences.json
 
-- **What a gate refuses, it refuses in every case** (Andy, 2026-11-02: *"Path gates are case-sensitive, so on Windows
-  and macOS GET /Relay-State/identity.json serves the private keys"*). On a case-insensitive disk a name in any case
-  opens the same file, so each closed path is asked as written and again upper-cased and title-cased:
-  - fileServable: spirit/state/identity.json, an app server's spirit/state/identity.json at depth, a file under an old
-    relay-state at depth, a server script (spirit/server.js), the DEBUG folder, a sidecar's own path;
-  - fileWritable: spirit/state/identity.json, anything under spirit/state, a core file (spirit/server.js,
-    spirit/element/icon.js), a sidecar's own path.
-- **Windows spellings of a closed path are refused, by both gates** (goal/G41.30, the review: *"8.3 short names like
-  RELAY-~1/IDENTI~1.JSO ... folder names ending in a dot or space; and ::$DATA"*): an 8.3 short name, a folder or file
-  name ending in a dot or a space, the ::$DATA stream and a named stream (a : in a name), each on the node's key, a
-  relay-state folder, a server script or a core file. The module refuses any path segment holding ~ plus a digit, a :,
-  or a trailing dot or space (`ALIAS_SEGMENT`), and judges every path lower-cased.
-- **What is open stays open**: index.html and spirit/element/icon.js servable.
-- Nothing is read or written: the gates are asked only.
+goal/G43.17. Its test, once `./fileSystem-noPreferences.js`, is a section of `./fileSystem.js`: a real node on a scratch copy of the tracked files.
+`spirit/fileSystem.js` held `preferences.json` as the node's one writable root file (`WRITABLE_ROOT_FILES`) until 7bfb9514,
+so what the node writes is judged beside it (goal/G43.28; moved from `spirit/test/nodeSettings-noPreferences.js`).
 
-## What its test must try to break
+Andy: *"i want to remove that information and all the code that references it, gone."*, *"go do it!"*
 
-- A closed path opened by spelling it in another case, for reading or for writing.
-- A fix so wide that an open path is closed.
+### Requirements
+
+- The node writes no `preferences.json`: a scratch node comes up, and its run root holds none. A node that does not come up is red, never a vacuous green.
+
+## The vendoredFolders part: one list of vendored folders, in fileSystem.js
+
+goal/G43.25, once `spirit/run/spirit/test/fileSystem-vendoredFolders.js`, now a section of `spirit/run/spirit/test/fileSystem.js`: `spirit/fileSystem.js`'s part.
+
+Andy: "can we hide those suckers in spirit/jobs/ for now? without the damn node_modules container?"
+
+The tree is read as it is. No node and no port are used. The tree before the move is commit 2fb29140.
+
+### Requirements
+
+- fileSystem.js exports one list of exactly spirit/job/chokidar, spirit/job/readdirp and spirit/element/codeMirror.
+- The node's file scan lists nothing inside them.
+- Vendor code is "servable but not writeable" (Andy, Q1): a file of each of the three folders is servable, and fileWritable refuses it.
+- Every walker that skipped node_modules at 2fb29140 and is still in the tree now reads that list and has no skip of its own, fileSystem.js and word.js among them. The ones that skipped codeMirror beside node_modules drop that too. The old system's walkers under spirit/test/, oneDoor.js among them, went with it (e9c6cb8c, "KILL!"), so what is judged is what is left, more than 10 walkers.
+
+The move of chokidar and readdirp itself is the vendoredLibraries part of `./job.md`.

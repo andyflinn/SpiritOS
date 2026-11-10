@@ -12,8 +12,8 @@ all rulers relating to branches."*, *"would that not actually be a general test 
 
 It took in, per branch, the branch rules of five tests (Q6: *"absolutely, AND MAKE SURE NO TEST GETS LOST."*):
 `spirit-familyFinder.js`, `data-caches.js`, `apiDoor-familyGate.js`, `server-appFamily.js`,
-`introSpector-branchVerbs.js`. What judges no branch stayed with the test of the module it judges: `./data-caches.js`
-(the data set, `spirit/data.js`) and `./spirit-familyFinder.js` (the finder, on planted folders); the other three are
+`introSpector-branchVerbs.js`. What judges no branch stayed with the test of the module it judges: `./data.js`, once `./data-caches.js`
+(the data set, `spirit/data.js`) and `./spirit.js`, its familyFinder part (the finder, on planted folders); the other three are
 gone. From `./app.js`: that an app's description names its icon and label. A scratch node; never a live one.
 
 ## Requirements
@@ -46,7 +46,7 @@ gone. From `./app.js`: that an app's description names its icon and label. A scr
 
 - **`<name>.json` names `identity.icon` and `identity.label`** (`AGENT.md`, an app: *"each described by its own
   <name>/<name>.json"*; Andy, box: *"containing identity:icon and identity:label"*).
-- **It has no `kind` or `operated`**: the node operates the server (`./appServer-mount.md`).
+- **It has no `kind` or `operated`**: the node operates the server (`./appServer.md`).
 - **Its name is no verb of the app family** (Andy, box: *"spirit.app also holds the family's verb, search, so no app may
   take the name of a verb."*).
 

@@ -3,7 +3,9 @@
 // spirit/run/spirit/element/test/search.js
 // The tests of spirit/element/search.js, and of no other module (spec: ./search.md). The browser file runs
 // in node on a window of its own, ranking with the spirit's own probability files; the container is a stub that keeps
-// a node per id the list draws, and hears the list's listeners.
+// a node per id the list draws, and hears the list's listeners. After them, the parts once files of their own, each in a real
+// Chrome on a scratch node: bubblePart (the bubble's rows laid out), folderPart (the search elements in spirit/element/search/),
+// popupPart (the dropdown's list floats) and tilesPart (the face tiles). The one test file of search.js.
 
 const fs = require('fs');
 const path = require('path');
@@ -642,5 +644,441 @@ ok(M('anything', '').length === 0 && M('anything', '   ').length === 0 && M(null
     ok(!threw && made && c10.shown()[0] === 'z', 'once loaded, with nothing preloaded, it draws and ranks: typing ze puts zed first', 'threw ' + JSON.stringify(threw) + ', shown ' + (made ? c10.shown() : ''));
   }
 
-  test.reportSuccessFailureCount();
-}()).catch(function (err) { test.fail('the test itself threw', String(err && err.stack || err)); test.reportSuccessFailureCount(); });
+}()).catch(function (err) { test.fail('the test itself threw', String(err && err.stack || err)); })
+  .then(async function () {
+    // The parts that were once files of their own (search-bubble.js, search-folder.js, search-popup.js, search-tiles.js):
+    // one test file per script (spirit/run/spirit/test/TEST_SYSTEM.md), each part a section of it, run in order.
+    for (const [what, part] of [['bubble', bubblePart], ['folder', folderPart], ['popup', popupPart], ['tiles', tilesPart]]) {
+      try { await part(); } catch (e) { test.fail('the ' + what + ' part threw ' + (e && e.stack || e)); }
+    }
+  })
+  .then(function () { test.reportSuccessFailureCount(); process.exit(process.exitCode || 0); });
+
+async function bubblePart() {
+  // The bubble part (once search-bubble.js).
+  // The tests of spirit/element/search.js in a real browser, its bubble's rows laid out (spec:
+  // ./search.md, its bubble section; goal/G41.26). Its other tests run in node: the first part of ./search.js. Here
+  // ./search-bubble-laid.html, on a scratch node with its DEBUG on, draws a pane and a dropdown with a filter.
+
+  const fs = require('fs');
+  const path = require('path');
+  const RUN = path.resolve(__dirname, '..', '..', '..');
+  const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+  const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+
+  function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
+  function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
+  const same = function (a, b) { return typeof a === 'number' && typeof b === 'number' && Math.abs(a - b) <= 0.5; };
+
+  const ADDRESS = '/DEBUG/spirit/element/test/search-bubble-laid.html';
+  test.subHeading('search-bubble: probabilitySearch.js in a browser: the bubble\'s rows aligned');
+
+  await (async function () {
+    const chrome = H.findChrome();
+    if (!chrome) { test.fail('no Chrome on this machine: SPIRIT_CHROME names none, and none is found by its name'); return; }
+    const node = await H.scratchNode();
+    let page = null;
+    try {
+      if (!node.up || !node.debug) { test.fail('the scratch node did not come up with its DEBUG on'); return; }
+      page = await H.chromePage(chrome);
+      if (page.error) { test.fail(page.error); return; }
+      await page.send('Page.navigate', { url: node.base + ADDRESS });
+      await H.until(function () { return page.evaluate('typeof window.laid === "function" && !!window.spirit').then(Boolean); }, H.WAIT);
+      const s = await page.evaluate('window.laid()').catch(function () { return ''; });
+      let m = null;
+      try { m = JSON.parse(s); } catch (e) { m = null; }
+      if (!m || !m.made) { test.fail('the page measured nothing: ' + JSON.stringify(s).slice(0, 300)); return; }
+      // Andy, on G41.26: "why do the icons in the probabilitySearch row have different width's? do they not use the icon
+      // element? I'd like it, if the controls in the search bubble look better aligned."
+      [['a pane', m.pane], ['a dropdown', m.dropdown]].forEach(function (x) {
+        test.subHeading(x[0]);
+        const r = x[1] || {};
+        ok(/\bshell-icon\b/.test(r.filterIconClass) && /\bshell-icon\b/.test(r.searchIconClass), 'its 🗜 and 🔎 are the icon element (spirit/element/icon.js)', 'classes: ' + short([r.filterIconClass, r.searchIconClass]));
+        // The icon element is a square of 1em whatever its glyph, so no glyph's own width moves what follows it: here a
+        // bare glyph is 20px wide at 16px, where a browser on another machine draws each glyph its own width.
+        ok(!!r.filterIcon && !!r.searchIcon && same(r.filterIcon.w, r.filterIconSize) && same(r.searchIcon.w, r.searchIconSize), 'each icon is a square of its font size, whatever its glyph', 'icons: ' + short([r.filterIcon, r.filterIconSize, r.searchIcon, r.searchIconSize]));
+        ok(!!r.filterIcon && !!r.searchIcon && same(r.filterIcon.w, r.searchIcon.w) && same(r.filterIcon.left, r.searchIcon.left), 'the two icons are as wide and stand one under the other', 'icons: ' + short([r.filterIcon, r.searchIcon]));
+        // And the 🪣 row of selectors on top (goal/G41.26: "the selectorRow must start with a\n🪣icon").
+        ok(/\bshell-icon\b/.test(r.bucketIconClass) && !!r.bucketIcon && same(r.bucketIcon.w, r.bucketIconSize) && !!r.filterIcon && same(r.bucketIcon.left, r.filterIcon.left),
+          'its 🪣 is the icon element too, a square of its font size, over the 🗜', 'bucket: ' + short([r.bucketIconClass, r.bucketIcon, r.bucketIconSize]));
+        ok(!!r.firstSelector && !!r.input && same(r.firstSelector.left, r.input.left), 'the first selector starts where the search input does', 'first selector ' + short(r.firstSelector) + ', input ' + short(r.input));
+        ok(!!r.firstFilter && !!r.input && same(r.firstFilter.left, r.input.left), 'each row\'s first control starts at the same place: the first filter over the search input', 'first filter ' + short(r.firstFilter) + ', input ' + short(r.input));
+      });
+    } finally {
+      if (page && page.kid) page.kid.kill();
+      if (node.child) node.child.kill();
+      try { if (page && page.profile) fs.rmSync(page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
+      try { if (node.root) fs.rmSync(node.root, { recursive: true, force: true }); } catch (e) { /* left */ }
+    }
+  }());
+}
+
+async function popupPart() {
+  // The popup part (once search-popup.js).
+  // THE DROPDOWN'S LIST FLOATS (goal/G43.18; spec: ./search.md, its popup section). Andy: "is it possible to have a "popup" element, which
+  // floats it's contents above all windows, but only one in the whole browser window can be active? only bound by the window
+  // size but not neccessarily filling it? all dropdown panels should be part of that", then "and the actual dropdown control
+  // stays where it is? just the popped list would "float"? then do that for the lists in the search-dropdown please." Real
+  // clicks and keys in a real Chrome on a scratch node's face page: two search dropdowns, each in a small box that cuts off
+  // what overflows it, as a row of a panel does, and a third low in the window. Neither Andy's node nor an agent's is touched.
+
+  const fs = require('fs');
+  const path = require('path');
+  const RUN = path.resolve(__dirname, '..', '..', '..');
+  const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+  const { scratchNode, chromePage, findChrome, until, sleep } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+
+  function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
+  function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
+
+  test.subHeading('search-popup: a search dropdown\'s list floats above everything, one at a time (goal/G43.18)');
+
+  await (async function () {
+    const node = await scratchNode();
+    const chrome = await chromePage(findChrome());
+    try {
+      if (!node.up || chrome.error) { test.fail('no scratch node or no Chrome: nothing judged. ' + short(chrome.error || '')); return; }
+      await chrome.send('Page.navigate', { url: node.base + '/face.html' });
+      await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
+      // Each box cuts off what overflows it (overflow hidden), and stands under a sibling drawn later on the same spot's level.
+      const made = await chrome.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/element/search.js"); }).then(function () { ' +
+        'var rows = []; for (var i = 0; i < 40; i++) rows.push({ key: "r" + i, name: "row " + i }); window.__z = {}; ' +
+        '[["a", 40, 100], ["b", 500, 100], ["low", 40, window.innerHeight - 70]].forEach(function (x) { var b = document.createElement("div"); b.id = "zz-" + x[0]; ' +
+        'b.style.cssText = "position:absolute;left:" + x[1] + "px;top:" + x[2] + "px;width:320px;height:48px;overflow:hidden;border:1px solid"; document.body.appendChild(b); ' +
+        'spirit.element.spirit.element.search.create(b, { face: "dropdown", rows: function () { return rows; }, columns: [{ field: "name", label: "Name" }], name: function (r) { return r.name; }, pick: function () {} }); ' +
+        'window.__z[x[0]] = { box: b, list: b.querySelector("[id$=list]"), field: b.querySelector("[id$=field]") }; }); ' +
+        'var cover = document.createElement("div"); cover.id = "zz-cover"; cover.style.cssText = "position:absolute;left:0;top:160px;width:900px;height:200px;background:#333;z-index:20"; document.body.appendChild(cover); ' +
+        'return Object.keys(window.__z).every(function (k) { return !!window.__z[k].list && !!window.__z[k].field; }) ? "made" : "no list or field"; }, function (e) { return String(e); })');
+      ok(made === 'made', 'the world: three search dropdowns of 40 rows, each in a 48 px box that cuts off its overflow, and a block drawn over the space below the first two', 'nothing made: ' + short(made));
+      if (made !== 'made') return;
+      await sleep(800);
+
+      // What one dropdown shows: where its field is, whether its list is open, where it lies, and whether it is what is seen there.
+      const look = function (k) {
+        return chrome.evaluate('(function () { var z = window.__z[' + JSON.stringify(k) + ']; var f = z.field.getBoundingClientRect(); var l = z.list.getBoundingClientRect(); var b = z.box.getBoundingClientRect(); ' +
+          'var open = l.height > 0 && getComputedStyle(z.list).visibility !== "hidden"; var x = Math.round(l.left + Math.min(l.width / 2, 60)), y = Math.round(Math.min(l.bottom - 4, Math.max(l.top + 4, b.bottom + 40))); ' +
+          'var hit = open ? document.elementFromPoint(x, y) : null; ' +
+          'return JSON.stringify({ field: [Math.round(f.left), Math.round(f.top)], fieldInBox: f.top >= b.top - 1 && f.bottom <= b.bottom + 1, open: open, list: [Math.round(l.left), Math.round(l.top), Math.round(l.right), Math.round(l.bottom)], ' +
+          'below: l.bottom > b.bottom + 20, seen: !!hit && z.list.contains(hit), inWindow: l.top >= 0 && l.left >= 0 && l.bottom <= window.innerHeight && l.right <= window.innerWidth, fills: l.height >= window.innerHeight - 2 && l.width >= window.innerWidth - 2 }); }())').then(JSON.parse);
+      };
+      const press = function (k) { return chrome.evaluate('window.__z[' + JSON.stringify(k) + '].field.click(); true').then(function () { return sleep(600); }); };
+      const key = async function (k, code) {
+        await chrome.send('Input.dispatchKeyEvent', { type: 'keyDown', key: k, code: k, windowsVirtualKeyCode: code });
+        await chrome.send('Input.dispatchKeyEvent', { type: 'keyUp', key: k, code: k, windowsVirtualKeyCode: code });
+        await sleep(400);
+      };
+
+      test.subHeading('Andy: "the actual dropdown control stays where it is", "just the popped list would float"');
+      const a0 = await look('a');
+      await press('a');
+      const a1 = await look('a');
+      ok(a1.open, 'the world: pressed, the first dropdown\'s list opens', 'the list did not open: ' + short(a1));
+      ok(a1.fieldInBox && a1.field[0] === a0.field[0] && a1.field[1] === a0.field[1], 'its field stays where it was, in its box', 'the field moved: ' + short(a0.field) + ' to ' + short(a1.field));
+      ok(a1.open && a1.below && a1.seen, '"floats it\'s contents above all windows": the list reaches past its box, over the block drawn on top, and is what is seen there', 'the list: ' + short(a1));
+      ok(a1.open && a1.inWindow && !a1.fills, '"only bound by the window size but not neccessarily filling it"', 'the list: ' + short(a1));
+
+      test.subHeading('Andy: "only one in the whole browser window can be active"');
+      await press('b');
+      const b1 = await look('b');
+      const a2 = await look('a');
+      ok(b1.open && b1.seen, 'the second dropdown pressed: its list opens, seen', 'the second list: ' + short(b1));
+      ok(b1.open && !a2.open, 'and the first one\'s list is closed', 'the first list is still open: ' + short(a2));
+      await key('Escape', 27);
+      ok(!(await look('b')).open, 'Escape closes it', 'after Escape: ' + short(await look('b')));
+      await press('a');
+      await chrome.evaluate('(function () { var e = document.elementFromPoint(window.innerWidth - 5, 5) || document.body; e.dispatchEvent(new MouseEvent("mousedown", { bubbles: true })); e.click(); }()); true');
+      await sleep(500);
+      ok(!(await look('a')).open, 'a press outside closes it', 'after a press outside: ' + short(await look('a')));
+
+      test.subHeading('low in the window, its list still inside the window');
+      await press('low');
+      const l1 = await look('low');
+      ok(l1.open && l1.inWindow && l1.seen, 'a dropdown low in the window opens its list inside the window, seen', 'the low list: ' + short(l1));
+    } finally {
+      try { if (chrome.sock) chrome.sock.close(); } catch (e) { /* gone */ }
+      try { if (chrome.kid) chrome.kid.kill(); } catch (e) { /* gone */ }
+      try { if (node.child) node.child.kill(); } catch (e) { /* gone */ }
+      try { if (node.root) fs.rmSync(node.root, { recursive: true, force: true }); } catch (e) { /* scratch */ }
+    }
+  }());
+}
+
+async function tilesPart() {
+  // The tiles part (once search-tiles.js).
+  // probabilitySearch's third face (spec: ./search.md, its tiles section; goal/G43.6). Andy, box: "probabilitySearch gets a third face,
+  // 'tiles', beside 'pane' and 'dropdown': the same ranked rows, drawn as tiles. Any list can use it." A real Chrome on a scratch
+  // node's page, what a tile looks like measured there, rows of the test's own; and the one scan, from the module itself.
+
+  const fs = require('fs');
+  const path = require('path');
+  const RUN = path.resolve(__dirname, '..', '..', '..');
+  const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+  const { scratchNode, chromePage, findChrome, until, sleep } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+  const match = require(path.join(RUN, 'spirit', 'probabilityStringObjectMatch.js'));
+
+  function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
+  function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 500); }
+
+  test.subHeading('search-tiles: probabilitySearch: the face tiles (goal/G43.6)');
+
+  await (async function () {
+    // Andy, box: "assembled by scanning the row without knowing its meaning, with the one scan probabilityStringObjectMatch uses:
+    // the scan also hands each string's js object path."
+    test.subHeading('the one scan: each string with its js object path');
+    ok(typeof match.measureObject === 'function', 'probabilityStringObjectMatch hands out its scan, measureObject', 'it exports ' + short(Object.keys(match)));
+    if (typeof match.measureObject === 'function') {
+      const table = match.measureObject({ label: 'Nest', stats: { cpu: 12 }, files: [{ name: 'a.txt' }] });
+      const at = function (s) { return table.filter(function (r) { return r.objectString === s; })[0] || {}; };
+      ok(at('Nest').path === 'label', 'a value carries its path: label', 'Nest: ' + short(at('Nest')));
+      ok(at('12').path === 'stats.cpu', 'a nested one: stats.cpu', '12: ' + short(at('12')));
+      ok(at('a.txt').path === 'files[0].name', 'one in an array: files[0].name', 'a.txt: ' + short(at('a.txt')));
+      ok(match.probabilityStringObjectMatch('Nest', { label: 'Nest' }) > 0, 'the match still scores with it', 'the match answered 0');
+    }
+
+    const node = await scratchNode();
+    const chrome = await chromePage(findChrome());
+    try {
+      await chrome.send('Page.navigate', { url: node.base + '/face.html' });
+      await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
+      const js = function (s) { return chrome.evaluate(s); };
+      const loaded = await js('window.spirit.ready.then(function () { return window.spirit.require("spirit/element/search.js"); }).then(function () { return "loaded"; }, function (e) { return "ERR " + e; })');
+      ok(loaded === 'loaded', 'the world: it loads', short(loaded));
+      await js('(function () { var d = document.body.appendChild(document.createElement("div")); d.className = "fill"; d.style.cssText = "position:fixed;left:0;top:0;width:800px;height:500px;display:flex;flex-direction:column;background:#111"; window.__box = d; window.__picked = []; window.__rows = [{ key: "alpha", label: "Alpha", icon: "🅰️" }, { key: "nest", label: "Nest", icon: "🧩", stats: { cpu: 12 }, files: [{ name: "a.txt" }] }, { key: "gamma", label: "Gamma", icon: "🍀" }]; window.__made = window.spirit.element.spirit.element.search.create(d, { face: "tiles", rows: function () { return window.__rows; }, columns: [{ field: "label", label: "Label" }], pick: function (row, key) { window.__picked.push(key); } }); if (window.__made.refresh) window.__made.refresh(); return true; })()');
+      await until(function () { return js('window.__box.querySelectorAll(".app-icon").length > 0'); }, 3000);
+      const read = async function () {
+        return JSON.parse(await js('(function () { var c = window.__box; var tiles = [].map.call(c.querySelectorAll(".app-icon"), function (t) { var r = t.getBoundingClientRect(); var bar = t.querySelector(".list-rank"); var fill = bar ? (bar.querySelector("div div") || bar.firstElementChild) : null; var img = [].filter.call(t.querySelectorAll("*"), function (e) { return !e.children.length && /[\\u{1F000}-\\u{1FAFF}\\u{2600}-\\u{27BF}]/u.test(e.textContent); })[0]; var lab = [].filter.call(t.querySelectorAll("*"), function (e) { return !e.children.length && /^(Alpha|Nest|Gamma)$/.test(e.textContent.trim()); })[0]; var rect = function (e) { if (!e) return null; var b = e.getBoundingClientRect(); return { t: Math.round(b.top - r.top), b: Math.round(b.bottom - r.top), l: Math.round(b.left - r.left), r: Math.round(b.right - r.left), w: Math.round(b.width), h: Math.round(b.height) }; }; return { text: t.innerText.replace(/\\s+/g, " ").trim(), w: Math.round(r.width), h: Math.round(r.height), img: rect(img), lab: rect(lab), hasBar: !!bar, bar: rect(bar), fill: rect(fill), colour: fill ? getComputedStyle(fill).borderTopColor : "", number: bar ? bar.getAttribute("title") : "", title: t.getAttribute("title") }; }); var inputs = [].filter.call(c.querySelectorAll("input"), function (i) { return i.getClientRects().length && i.type !== "checkbox"; }); return JSON.stringify({ tiles: tiles, inputs: inputs.length, headers: c.querySelectorAll("th").length, sorts: c.querySelectorAll("[data-sort]").length, tables: c.querySelectorAll("table").length }); })()'));
+      };
+      const type = async function (w) { await js('(function () { var i = [].filter.call(window.__box.querySelectorAll("input"), function (x) { return x.getClientRects().length && x.type !== "checkbox"; })[0]; i.value = ' + JSON.stringify(w) + '; i.dispatchEvent(new Event("input", { bubbles: true })); return true; })()'); await sleep(500); };
+      const plain = await read();
+      test.subHeading('"the same ranked rows, drawn as tiles", "No column headers or sorting"');
+      ok(plain.tiles.length === 3, 'one tile per row', short(plain.tiles.length) + ' tiles');
+      ok(plain.headers === 0 && plain.sorts === 0 && plain.tables === 0, 'no table, no column headers, no sort trigger', short({ h: plain.headers, s: plain.sorts, t: plain.tables }));
+      ok(plain.inputs === 1, 'one search field', plain.inputs + ' search fields');
+      const nest = plain.tiles.filter(function (t) { return /Nest/.test(t.text); })[0] || {};
+      ok(!!nest.img && !!nest.lab && nest.img.b <= nest.lab.t + 1, '"A tile: its image, the relevance, its label": image above label', 'the tile: ' + short(nest));
+      test.subHeading('"With no search words there is no bar. Its space stays, so the tiles do not jump."');
+      ok(plain.tiles.every(function (t) { return !t.hasBar || !t.fill || t.fill.w === 0; }), 'no words: no bar shows', short(plain.tiles.map(function (t) { return t.fill; })));
+      await type('Nest');
+      const searching = await read();
+      const nest2 = searching.tiles.filter(function (t) { return /Nest/.test(t.text); })[0] || {};
+      ok(!!nest2.lab && !!nest.lab && nest2.lab.t === nest.lab.t && nest2.h === nest.h, 'with words the label stands where it stood', 'label ' + short(nest.lab) + ' then ' + short(nest2.lab));
+      test.subHeading('"The relevance is a centered, horizontal bar, between the tile image and the tile label: the bar the lists draw, the same colour and number."');
+      ok(/Nest/.test(searching.tiles[0].text), 'the row that fits comes first', 'first: ' + short(searching.tiles[0].text));
+      const best = searching.tiles[0];
+      ok(best.hasBar && !!best.bar && !!best.img && !!best.lab && best.bar.t >= best.img.b - 1 && best.bar.b <= best.lab.t + 1, 'its bar stands between image and label', short({ bar: best.bar, img: best.img, lab: best.lab }));
+      ok(best.hasBar && !!best.fill && best.fill.w > best.fill.h, 'horizontal', short(best.fill));
+      ok(best.hasBar && !!best.bar && Math.abs((best.bar.l + best.bar.r) / 2 - best.w / 2) <= 2, 'centered in the tile', short({ bar: best.bar, w: best.w }));
+      ok(best.number === '1.00', 'the same number as a list: its rank against the best row\'s', 'number: ' + short(best.number));
+      const expected = await js('getComputedStyle(document.documentElement).getPropertyValue("--spirit-match")');
+      const probe = await js('(function () { var d = document.body.appendChild(document.createElement("div")); d.style.borderTop = "1px solid var(--spirit-match, rgba(130,180,240,0.55))"; var c = getComputedStyle(d).borderTopColor; d.remove(); return c; })()');
+      ok(best.colour === probe, 'the same colour as a list\'s bar', 'colour ' + short(best.colour) + ', a list\'s ' + short(probe) + ' (' + short(expected) + ')');
+      test.subHeading('"A tile the words miss stays, last, with an empty bar. Nothing is cut."');
+      await type('Nest');
+      const missed = searching.tiles.slice(1);
+      ok(searching.tiles.length === 3, 'all three tiles stay', short(searching.tiles.length) + ' tiles');
+      await type('qqqqzzzzxxxx');
+      const none = await read();
+      ok(none.tiles.length === 3 && none.tiles.every(function (t) { return t.hasBar && (!t.fill || t.fill.w === 0); }), 'words nothing fits: the tiles stay, every bar empty', short(none.tiles.map(function (t) { return { text: t.text, fill: t.fill }; })));
+      ok(missed.length === 2, 'the world: two others behind the best', short(missed.length));
+      await type('');
+      test.subHeading('"arrow keys also go left and right": Enter picks where they went');
+      // Each key goes where the focus really is, as a real key does: from the empty search field an arrow moves into the tiles.
+      await js('[].filter.call(window.__box.querySelectorAll("input"), function (x) { return x.getClientRects().length && x.type !== "checkbox"; })[0].focus(); true');
+      const press = async function (key) { await js('(function () { var at = document.activeElement || document.body; at.dispatchEvent(new KeyboardEvent("keydown", { key: ' + JSON.stringify(key) + ', bubbles: true, cancelable: true })); return true; })()'); await sleep(120); };
+      const order = (await read()).tiles.map(function (t) { return t.text; });
+      await press('ArrowRight'); await press('ArrowRight'); await press('ArrowLeft'); await press('Enter');
+      const picked1 = JSON.parse(await js('JSON.stringify(window.__picked)'));
+      ok(picked1.length === 1, 'Right, Right, Left, Enter picks one tile', 'picked: ' + short(picked1) + ', order ' + short(order));
+      await press('ArrowRight'); await press('Enter');
+      const picked2 = JSON.parse(await js('JSON.stringify(window.__picked)'));
+      ok(picked2.length === 2 && picked2[0] !== picked2[1], 'a further Right, Enter picks the next one', 'picked: ' + short(picked2));
+      test.subHeading('"A press opens": a pressed tile is the list\'s pick');
+      await js('window.__picked.length = 0; [].filter.call(window.__box.querySelectorAll(".app-icon"), function (t) { return /Gamma/.test(t.innerText); })[0].click(); true');
+      await sleep(150);
+      ok(await js('window.__picked[0] === "gamma"'), 'pressing Gamma picks gamma', 'picked: ' + short(await js('JSON.stringify(window.__picked)')));
+      test.subHeading('"The tooltip shows the contents of the row, one above the other", "If the object is nested, it shows the js object path", "It drops the icon row"');
+      const tip = async function (label) {
+        return js('(function () { var t = [].filter.call(window.__box.querySelectorAll(".app-icon"), function (x) { return x.innerText.indexOf(' + JSON.stringify(label) + ') !== -1; })[0]; t.dispatchEvent(new MouseEvent("mouseover", { bubbles: true })); t.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true })); var own = t.getAttribute("title") || ""; var pop = [].map.call(document.querySelectorAll("[role=tooltip]"), function (e) { return e.innerText; }).join("\\n"); return own || pop; })()');
+      };
+      const tipNest = String(await tip('Nest'));
+      const lines = tipNest.split('\n').map(function (l) { return l.trim(); });
+      ok(lines.indexOf('key: nest') !== -1 && lines.indexOf('label: Nest') !== -1, 'its row, one above the other', 'the tooltip: ' + short(tipNest));
+      ok(lines.indexOf('stats.cpu: 12') !== -1 && lines.indexOf('files[0].name: a.txt') !== -1, 'nested: stats.cpu: 12, files[0].name: a.txt', 'the tooltip: ' + short(tipNest));
+      ok(!/icon/.test(tipNest), 'no icon row', 'the tooltip: ' + short(tipNest));
+      test.subHeading('"Any list can use it": the other two faces stay');
+      const pane = await js('(function () { var d = document.body.appendChild(document.createElement("div")); d.className = "fill"; d.style.cssText = "position:fixed;left:0;top:0;width:500px;height:200px"; window.spirit.element.spirit.element.search.create(d, { rows: function () { return window.__rows; }, columns: [{ field: "label", label: "Label" }] }); return new Promise(function (r) { setTimeout(function () { var n = JSON.stringify({ tiles: d.querySelectorAll(".app-icon").length, headers: d.querySelectorAll("th").length }); d.remove(); r(n); }, 300); }); })()');
+      const pn = JSON.parse(pane);
+      ok(pn.tiles === 0 && pn.headers > 0, 'a pane stays a table with headers', short(pn));
+
+      // Named here for the builder: the toggle is .list-toggle, and the owner hears through the option onFace(face).
+      test.subHeading('the box: "A new option, toggle: true. Without it nothing changes for any other list."');
+      const make = function (opts) { return js('(function () { var d = document.body.appendChild(document.createElement("div")); d.className = "fill"; d.style.cssText = "position:fixed;left:0;top:0;width:800px;height:500px;display:flex;flex-direction:column;background:#111"; window.__t = d; window.__faces = []; window.__tl = window.spirit.element.spirit.element.search.create(d, Object.assign({ rows: function () { return window.__rows; }, columns: [{ field: "label", label: "Label" }], onFace: function (f) { window.__faces.push(f); } }, ' + JSON.stringify(opts) + ')); if (window.__tl.refresh) window.__tl.refresh(); return new Promise(function (r) { setTimeout(function () { r(true); }, 300); }); })()'); };
+      const drop = function () { return js('(function () { window.__t.remove(); return true; })()'); };
+      const toggles = function () { return js('window.__t.querySelectorAll(".list-toggle").length'); };
+      await make({ face: 'pane' });
+      ok(await toggles() === 0, 'a pane without the option has no toggle', 'a pane without the option has a toggle');
+      await drop();
+      await make({ face: 'tiles' });
+      ok(await toggles() === 0, 'tiles without the option have no toggle', 'tiles without the option have a toggle');
+      await drop();
+      test.subHeading('the box: "It flips pane and tiles only. Dropdown closes to a field, so it never shows the toggle."');
+      await make({ face: 'dropdown', toggle: true });
+      ok(await toggles() === 0, 'a dropdown with the option has no toggle', 'a dropdown shows a toggle');
+      await drop();
+      await make({ face: 'pane', toggle: true });
+      ok(await toggles() === 1, 'a pane with the option has one toggle', 'toggles on a pane with the option: ' + short(await toggles()));
+      test.subHeading('the box: "The toggle sits on the search row, right after the Search button."');
+      const placed = await js('(function () { var t = window.__t.querySelector(".list-toggle"); if (!t) return "none"; var b = [].filter.call(window.__t.querySelectorAll("button"), function (x) { return x.textContent === "Search"; })[0]; if (!b) return "no Search button"; return t.previousElementSibling === b ? "after" : "elsewhere"; })()');
+      ok(placed === 'after', 'it follows the Search button', 'the toggle stands: ' + short(placed));
+      test.subHeading('the box: "The face can change while the list lives, keeping the search words."');
+      await js('(function () { var i = [].filter.call(window.__t.querySelectorAll("input"), function (x) { return x.getClientRects().length && x.type !== "checkbox"; })[0]; if (!i) return false; i.value = "Nest"; i.dispatchEvent(new Event("input", { bubbles: true })); return true; })()');
+      const seen = function () { return js('JSON.stringify({ tiles: window.__t.querySelectorAll(".app-icon").length, headers: window.__t.querySelectorAll("th").length, words: ([].filter.call(window.__t.querySelectorAll("input"), function (x) { return x.getClientRects().length && x.type !== "checkbox"; })[0] || {}).value, faces: window.__faces })'); };
+      const click = function () { return js('(function () { var t = window.__t.querySelector(".list-toggle"); if (t) t.click(); return !!t; })()'); };
+      const asPane = JSON.parse(await seen());
+      ok(asPane.tiles === 0 && asPane.headers > 0, 'it starts as a pane', short(asPane));
+      await click();
+      await until(function () { return js('window.__t.querySelectorAll(".app-icon").length > 0'); }, 3000);
+      const asTiles = JSON.parse(await seen());
+      ok(asTiles.tiles === 3 && asTiles.headers === 0, 'a press draws tiles, one per row', short(asTiles));
+      ok(asTiles.words === 'Nest', 'the search words stay', 'the words after a press: ' + short(asTiles.words));
+      ok(await toggles() === 1, 'the toggle stays, to go back', 'no toggle on the tiles');
+      test.subHeading('the box: "It tells its owner the new face."');
+      ok(JSON.stringify(asTiles.faces) === '["tiles"]', 'the owner hears tiles', 'the owner heard: ' + short(asTiles.faces));
+      await click();
+      await until(function () { return js('window.__t.querySelectorAll("th").length > 0'); }, 3000);
+      const back = JSON.parse(await seen());
+      ok(back.tiles === 0 && back.headers > 0 && back.words === 'Nest' && JSON.stringify(back.faces) === '["tiles","pane"]', 'a second press goes back, words kept, the owner told', short(back));
+      await drop();
+    } finally {
+      if (chrome && chrome.kid) chrome.kid.kill();
+      if (node.child) node.child.kill();
+      try { if (chrome && chrome.profile) fs.rmSync(chrome.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
+      try { if (node.root) fs.rmSync(node.root, { recursive: true, force: true }); } catch (e) { /* left */ }
+    }
+  }());
+}
+
+// Last in the file: the folder part's scan reads this file up to here (see ownCut).
+async function folderPart() {
+  // The folder part (once search-folder.js).
+  // The tests of goal/G43.18, the search elements of spirit/element/ renamed into spirit/element/search/ (spec: ./search.md, its folder section).
+  // Andy, the box: "Every search element in spirit/element/ becomes spirit/element/search/<name>.js, with its companion folder
+  // spirit/element/search/<name>/ holding its list and row elements, the same pattern for all", and "renaming only". The tree read
+  // as it is: what is there, what is gone, and what the code names; and each one loaded on a page. That nothing else changed is the moved elements' own suites.
+
+  const fs = require('fs');
+  const path = require('path');
+  const RUN = path.resolve(__dirname, '../../..');
+  const REPO = path.resolve(RUN, '..', '..');
+  const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+  const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fileSystem.js')).VENDORED_FOLDERS;
+  const E = path.join(RUN, 'spirit', 'element');
+  const SEARCH = path.join(E, 'search');
+
+  function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
+  function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 400); }
+  function there(rel) { return fs.existsSync(path.join(RUN, rel)); }
+  function code(f) { try { return fs.readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1').replace(/<!--[\s\S]*?-->/g, ''); } catch (e) { return ''; } }
+  function filesUnder(dir) {
+    const out = [];
+    (function walk(d) { (fs.existsSync(d) ? fs.readdirSync(d, { withFileTypes: true }) : []).forEach(function (e) { if (VENDORED_FOLDERS.holds(path.join(d, e.name)) || e.name === 'state' || e.name === 'agents') return; const p = path.join(d, e.name); if (e.isDirectory()) walk(p); else out.push(p); }); }(dir));
+    return out;
+  }
+
+  // The list, with the remarks: each search element today, and where it goes.
+  const GONE = [
+    'spirit/element/probabilitySearch.js',
+    // "appServerSelector.js ... becomes search/api.js", "apiFamilySelector.js ... folds into search/api.js", "apiVerbSelector.js is the
+    // verb dropdown filter: search/api/verb.js"
+    'spirit/element/appServerSelector.js', 'spirit/element/apiFamilySelector.js', 'spirit/element/apiVerbSelector.js',
+    'spirit/element/contactSelector.js', 'spirit/element/contact',
+    'spirit/element/files',
+    'spirit/element/iconSelector.js', 'spirit/element/icons',
+    'spirit/element/bundleSelector.js', 'spirit/element/bundleSelector',
+    'spirit/element/branchSelector.js', 'spirit/element/branchSelector',
+    'spirit/element/grantSelector',
+    'spirit/element/valued.js',
+    // Andy: "contactDetails.js should really be spirit/run/spirit/element/search/contact/detailElement.js"
+    'spirit/element/contactDetails',
+    // Andy: "spirit/run/spirit/element/relayPanel.js really should be  spirit/run/spirit/element/search/contact/relayPanel.js"
+    'spirit/element/relayPanel.js',
+    // goal/G43.32 (Andy: "the contact list already knows the difference between contact types. so should the detail panel."): one
+    // contact detail draws a relay too.
+    'spirit/element/search/contact/relayPanel.js',
+    // app: its list and row, today in spirit/app/appSelector/.
+    'spirit/app/appSelector/listElement.js', 'spirit/app/appSelector/rowElement.js',
+  ];
+  const THERE = [
+    'spirit/element/search.js',
+    'spirit/element/search/api.js', 'spirit/element/search/api/verb.js',
+    'spirit/element/search/app.js', 'spirit/element/search/app/rowElement.js',
+    'spirit/element/search/contact.js', 'spirit/element/search/contact/listElement.js', 'spirit/element/search/contact/rowElement.js',
+    'spirit/element/search/contact/detailElement.js',
+    // "files/ and grantSelector/ ...: their listElement becomes search/file.js and search/grant.js, their rowElement stays in the folder."
+    'spirit/element/search/file.js', 'spirit/element/search/file/rowElement.js',
+    'spirit/element/search/icon.js', 'spirit/element/search/icon/listElement.js', 'spirit/element/search/icon/rowElement.js',
+    'spirit/element/search/bundle.js', 'spirit/element/search/bundle/listElement.js', 'spirit/element/search/bundle/rowElement.js',
+    'spirit/element/search/branch.js', 'spirit/element/search/branch/listElement.js', 'spirit/element/search/branch/rowElement.js',
+    'spirit/element/search/grant.js', 'spirit/element/search/grant/rowElement.js',
+    'spirit/element/search/valued.js',
+  ];
+  // An old path as code names it: the module path a require or a script tag carries.
+  const OLD = GONE.map(function (p) { return p.replace(/\.js$/, ''); });
+
+  test.subHeading('search-folder: the search elements in spirit/element/search/ (goal/G43.18)');
+
+  test.subHeading('the box: "spirit/element/probabilitySearch.js becomes spirit/element/search.js", and every one of the list after it');
+  const missing = THERE.filter(function (p) { return !there(p); });
+  ok(!missing.length, 'all ' + THERE.length + ' are there: search.js, and api, app, contact, file, icon, bundle, branch, grant and valued under search/', 'missing ' + missing.length + ': ' + short(missing));
+  THERE.forEach(function (p) { ok(there(p), p + ' is there', 'no ' + p); });
+
+  test.subHeading('the old names go');
+  GONE.forEach(function (p) { ok(!there(p), p + ' is gone', p + ' is still there'); });
+
+  test.subHeading('the box: "the same pattern for all": under search/ a <name>.js and its <name>/ folder, each name a word');
+  const top = fs.existsSync(SEARCH) ? fs.readdirSync(SEARCH, { withFileTypes: true }).filter(function (d) { return d.name !== 'test'; }) : [];
+  const odd = top.filter(function (d) { return d.isDirectory() ? !/^[a-z]+$/.test(d.name) || !fs.existsSync(path.join(SEARCH, d.name + '.js')) : !/^[a-z]+\.js$/.test(d.name); }).map(function (d) { return d.name; });
+  ok(top.length > 0 && !odd.length, 'every name under search/ is a word, and every folder sits beside its <name>.js', top.length ? 'off the pattern: ' + short(odd) : 'no spirit/element/search/');
+
+  test.subHeading('the box: "The apps and elements that require them name the new paths"');
+  // Once its own file, search-folder.js skipped itself; folded into search.js, it reads search.js up to this part, which
+  // holds the old paths in its own lists.
+  const own = path.resolve(__filename);
+  const ownCut = function (c) { const at = c.indexOf('async function folderPart()'); return at === -1 ? c : c.slice(0, at); };
+  const scripts = filesUnder(RUN).concat(filesUnder(path.join(REPO, 'spirit', 'test')))
+    .filter(function (f) { return /\.(js|html|css)$/.test(f); });
+  const naming = [];
+  scripts.forEach(function (f) {
+    const c = path.resolve(f) === own ? ownCut(code(f)) : code(f);
+    OLD.forEach(function (o) { if (new RegExp(o.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&') + '(?![A-Za-z])').test(c)) naming.push(path.relative(REPO, f) + ': ' + o); });
+  });
+  ok(scripts.length > 100 && !naming.length, 'no code names an old path, in ' + scripts.length + ' scripts and their tests', naming.length + ' still name one, the first: ' + short(naming.slice(0, 8)));
+  // "apiVerbSelector.js is the verb dropdown filter: search/api/verb.js, which branch names too."
+  const verbUsers = ['spirit/element/search/api.js', 'spirit/element/search/branch.js', 'spirit/element/search/branch/listElement.js']
+    .filter(function (p) { return /spirit\/element\/search\/api\/verb\.js/.test(code(path.join(RUN, p))); });
+  ok(verbUsers.indexOf('spirit/element/search/api.js') !== -1 && verbUsers.some(function (p) { return /branch/.test(p); }), 'api and branch both load the one verb filter, search/api/verb.js', 'loading it: ' + short(verbUsers));
+
+  // "renaming only": what loaded before still loads. A real Chrome on a scratch node's face.html, each file required through
+  // spirit.require and answered within its time. Folding apiFamilySelector into search/api.js made it and search/api/verb.js
+  // require each other, and neither ever loaded: the agent's bundle opened no tab (Andy: "the bundles fail to pop into a tab,
+  // when i click on a bundle, no network activity, no console activity.").
+  await (async function () {
+    test.subHeading('the box: "renaming only": every one of them loads on a page');
+    const { scratchNode, chromePage, findChrome, until } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+    const node = await scratchNode();
+    const chrome = await chromePage(findChrome());
+    try {
+      await chrome.send('Page.navigate', { url: node.base + '/face.html' });
+      await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
+      for (const p of THERE) {
+        const got = await chrome.evaluate('window.spirit.ready.then(function () { return Promise.race([window.spirit.require(' + JSON.stringify(p) + ').then(function () { return "loaded"; }, function (e) { return "refused: " + e; }), new Promise(function (r) { setTimeout(function () { r("never answered"); }, 8000); })]); })');
+        ok(got === 'loaded', p + ' loads', p + ': ' + short(got));
+      }
+    } finally {
+      if (chrome && chrome.kid) chrome.kid.kill();
+      if (node.child) node.child.kill();
+      try { if (chrome && chrome.profile) fs.rmSync(chrome.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
+      try { if (node.root) fs.rmSync(node.root, { recursive: true, force: true }); } catch (e) { /* left */ }
+    }
+  }());
+}

@@ -6,7 +6,8 @@
 // once nodeInfo requires it, a stand-in that keeps what it was handed (the two field elements, the two relay forms, the
 // rowForm, panel.js and rotateKey, each tested in its own file). The page's data set and the node family's cache manager
 // are the real ones. The node is the spirit object's node and relay families, stubs that record every call and answer as
-// the node would. The rotate key dialog opening over Info on a real page is judged in ./nodeInfoRotate.js.
+// the node would. The rotate key dialog opening over Info on a real page is judged in its rotate part, rotatePart below (once nodeInfo-rotate.js); Info's two relay forms with the real
+// joinForm.js and faceForm.js in formsPart, and all of Info in one element in partsPart.
 
 const fs = require('fs');
 const path = require('path');
@@ -312,5 +313,351 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   broken.els.nodeInfo.create(h8, {});
   await settle();
   ok(/Info could not be loaded/.test(broken.slot(h8, 'said').textContent), 'a part refused: Info could not be loaded.', 'said: ' + short(broken.slot(h8, 'said').textContent));
-}()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
-  function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });
+}()).catch(function (e) { test.fail('the test threw ' + (e && e.stack || e)); })
+  .then(async function () {
+    // The parts that were once files of their own (nodeInfo-forms.js, nodeInfo-parts.js, nodeInfo-rotate.js): one test
+    // file per script (spirit/run/spirit/test/TEST_SYSTEM.md), each part a section of it, run in order.
+    for (const [what, part] of [['forms', formsPart], ['parts', partsPart], ['rotate', rotatePart]]) {
+      try { await part(); } catch (e) { test.fail('the ' + what + ' part threw ' + (e && e.stack || e)); }
+    }
+  })
+  .then(function () { test.reportSuccessFailureCount(); process.exit(0); });
+
+async function formsPart() {
+  // The forms part (once nodeInfo-forms.js).
+  // INFO'S TWO RELAY FORMS (goal/G43.27, requirements 9 and 10; spec: ./nodeInfo.md, its forms section). Andy: "setting a star on a relay is
+  // what makes the face-form appear in \"info\", the email form must always show in \"info\"". nodeInfo.js runs in node on a
+  // bare window with the REAL joinForm.js and faceForm.js (what each shows is theirs to decide), the rowForm a stand-in. The
+  // node is the spirit object's node and relay families, stubs answering relay.status' rows as the node would. No node, no port.
+
+  const fs = require('fs');
+  const path = require('path');
+  const vm = require('vm');
+  const RUN = path.resolve(__dirname, '../../..');
+  const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+  const EL = path.join(RUN, 'spirit', 'element');
+
+  function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
+  function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
+  const settle = async function () { for (let i = 0; i < 40; i++) await new Promise(function (r) { setImmediate(r); }); };
+
+  // A node whose markup makes a child per tag; found by [attr="value"] or .class, anywhere below it.
+  function node(tag) {
+    const heard = {}; let html = '';
+    const n = { tag: tag || '', nodes: [], kids: [], value: '', defaultValue: '', className: '', textContent: '', hidden: false, style: {}, isConnected: true,
+      get innerHTML() { return html; },
+      set innerHTML(v) {
+        html = String(v); n.nodes = []; n.kids = [];
+        const re = /<([a-z]+)\b([^>]*)>/gi; let m;
+        while ((m = re.exec(html))) n.nodes.push(node(m[0]));
+      },
+      getAttribute: function (k) { const m = new RegExp('\\s' + k + '="([^"]*)"').exec(n.tag); return m ? m[1] : null; },
+      querySelector: function (sel) {
+        const a = /^\[([\w-]+)="([^"]*)"\]$/.exec(sel);
+        const c = /^\.([\w-]+)$/.exec(sel);
+        const all = under(n);
+        if (a) return all.filter(function (x) { return x.getAttribute(a[1]) === a[2]; })[0] || null;
+        if (c) return all.filter(function (x) { return (' ' + (x.getAttribute('class') || x.className || '') + ' ').indexOf(' ' + c[1] + ' ') !== -1; })[0] || null;
+        return null;
+      },
+      appendChild: function (k) { n.kids.push(k); k.parentNode = n; return k; },
+      addEventListener: function (t, fn) { (heard[t] = heard[t] || []).push(fn); },
+      fire: function (t, e) { (heard[t] || []).slice().forEach(function (fn) { fn(e || {}); }); },
+    };
+    return n;
+  }
+  function under(n) { const out = []; (function walk(x) { x.nodes.concat(x.kids).forEach(function (c) { out.push(c); walk(c); }); }(n)); return out; }
+
+  const CARD = { ok: true, name: 'Andy', description: 'a node', key: 'NODEKEY+INFO==' };
+  // A seat on A (claimed, its relay known), one on O (owned), and B merely listed (no seat).
+  function rows(starred) {
+    return [
+      { url: 'https://a.example', label: 'A', relay: true, claimed: true, mine: starred === 'A', roll: { relayKey: 'RELAYKEY+A==' } },
+      { url: 'https://o.example', label: 'O', relay: true, owned: true, mine: false, roll: { relayKey: 'RELAYKEY+O==' } },
+      { url: 'https://b.example', label: 'B', relay: true, claimed: false, mine: false, roll: { relayKey: 'RELAYKEY+B==' } },
+    ];
+  }
+
+  async function info(relayRows) {
+    const win = {
+      document: { createElement: function (t) { return node('<' + t + '>'); } },
+      setTimeout: setTimeout, Promise: Promise, JSON: JSON, Object: Object, Array: Array, String: String,
+      console: { log: function () {}, error: function () {} },
+    };
+    win.window = win;
+    vm.createContext(win);
+    vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), win, { filename: 'data.js' });
+    const S = win.spirit;
+    // goal/G43.32: every element stands at its path, spirit.element.spirit.element.<name>, the stand-ins with them.
+    S.element = { spirit: { element: {} } };
+    const at = S.element.spirit.element;
+    const field = { create: function () { return { destroy: function () {} }; } };
+    at.changeMyLabel = field; at.changeMyDescription = field;
+    at.rowForm = { create: function (c, x) {
+      const f = { opts: x || {}, root: node('<div>'), span: node('<span>'), button: node('<button>') };
+      f.root.appendChild(f.span); f.root.appendChild(f.button);
+      if (c && typeof c.appendChild === 'function') c.appendChild(f.root);
+      return f;
+    } };
+    S.node = { key: 'NODEKEY+INFO==', card: function () { return Promise.resolve(CARD); } };
+    S.data.homeNode(S.node.key);
+    // As the relay family's status answers (spirit/relay/api.js, status): { status, text, body: { rows, ... } }.
+    S.relay = { status: function () {
+      const body = { name: '', rows: relayRows.slice(), ownedUrls: [], claimedUrls: [], mustPick: false, relayStatus: {}, more: false };
+      return Promise.resolve({ status: 200, text: JSON.stringify(body), body: body });
+    } };
+    S.ready = Promise.resolve(S);
+    S.escapeHtml = function (s) { return String(s).replace(/</g, '&lt;'); };
+    S.outcome = function (c) { return Promise.resolve(c).then(function (body) { return { status: 200, body: body }; }, function (e) { return { status: (e && e.status) || 0, body: (e && e.body) || null }; }); };
+    // The two forms are the real files, run on this window as a page runs them; every other part a stand-in.
+    const real = { 'spirit/element/joinForm.js': 1, 'spirit/element/faceForm.js': 1 };
+    // goal/G43.32: each element places itself by installSpiritElement, handed by the page stand-in
+    // (spirit/test/headLessChrome.js pageSpirit).
+    require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(S);
+    const pageRequire = S.require;
+    S.require = function (p) {
+      if (/installSpiritElement\.js$/.test(p)) return pageRequire(p);
+      if (real[p]) { vm.runInContext(fs.readFileSync(path.join(RUN, p), 'utf8'), win, { filename: p }); delete real[p]; }
+      if (p === 'spirit/element/panel.js') at.panel = { create: function () { return { open: function () { return Promise.resolve({}); }, destroy: function () {} }; } };
+      if (p === 'spirit/element/rotateKey.js') at.rotateKey = { create: function () { return { destroy: function () {} }; } };
+      return Promise.resolve({});
+    };
+    S.cacheManager = function (name) {
+      if (!(S.data[name] && S.data[name].data)) vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'data.js'), 'utf8'), win, { filename: name + '/data.js' });
+      return Promise.resolve(true);
+    };
+    vm.runInContext(fs.readFileSync(path.join(EL, 'nodeInfo.js'), 'utf8'), win, { filename: 'nodeInfo.js' });
+    const host = node('<div>');
+    const made = at.nodeInfo && typeof at.nodeInfo.create === 'function' ? at.nodeInfo.create(host, {}) : null;
+    await settle();
+    const slot = function (name) { return host.querySelector('[data-info="' + name + '"]'); };
+    const shows = function (box, cls) { return !!box && box.style.display !== 'none' && !box.hidden && !!box.querySelector(cls); };
+    return { made: made, email: slot('email'), face: slot('face'), shows: shows, S: S };
+  }
+
+  test.subHeading('nodeInfo-forms: Info shows the email form always, the face form only for a starred relay (goal/G43.27, 9 and 10)');
+
+  await (async function () {
+    test.subHeading('the world');
+    const plain = await info(rows(''));
+    ok(!!plain.made && !!plain.email && !!plain.face, 'the world: Info is made, with its email and face slots', 'Info made ' + !!plain.made + ', email slot ' + !!plain.email + ', face slot ' + !!plain.face + ': nothing judged');
+    // goal/G43.32: they stand at their paths.
+    const placed = plain.S.element.spirit.element;
+    ok(!!placed.joinForm && !!placed.faceForm, 'the world: the real joinForm.js and faceForm.js ran on the page', 'joinForm ' + !!placed.joinForm + ', faceForm ' + !!placed.faceForm);
+
+    test.subHeading('9. the email form always');
+    ok(plain.shows(plain.email, '.sp-join-email'), 'seats on A and O, none starred: the email form shows', 'no email form: ' + short(plain.email && plain.email.innerHTML));
+    const starred = await info(rows('A'));
+    ok(starred.shows(starred.email, '.sp-join-email'), 'A starred: the email form shows', 'no email form: ' + short(starred.email && starred.email.innerHTML));
+    const unseated = await info(rows('').map(function (r) { return Object.assign({}, r, { claimed: false, owned: false }); }));
+    ok(unseated.shows(unseated.email, '.sp-join-email'), 'no seat on any relay: the email form still shows', 'no email form with no seat: ' + short(unseated.email && unseated.email.innerHTML));
+
+    test.subHeading('10. the face form only for a starred relay');
+    ok(!plain.shows(plain.face, '.sp-face-name'), 'no relay starred: no face form', 'a face form shows with no relay starred: ' + short(plain.face && plain.face.innerHTML));
+    ok(starred.shows(starred.face, '.sp-face-name'), 'A starred: the face form shows', 'A starred, no face form: ' + short(starred.face && starred.face.innerHTML));
+    const drawn = starred.face ? [starred.face].concat(under(starred.face)).map(function (k) { return k.innerHTML; }).join(' ') : '';
+    const opts = (drawn.match(/<option value="([^"]*)"/g) || []).map(function (o) { return o.replace(/^<option value="|"$/g, ''); });
+    ok(opts.length === 1 && opts[0] === 'https://a.example', 'it offers the starred relay alone', 'it offers ' + short(opts));
+
+  })();
+}
+
+async function partsPart() {
+  // The parts part (once nodeInfo-parts.js).
+  // ALL OF INFO IS IN ONE ELEMENT, nodeInfo.js (goal/G43.24, requirement 6, Q2; spec: ./nodeInfo.md, its parts section). The box: "the page
+  // layout, the relays ... (relay.status), the card ... (node.card), the rotate button ... They move into one new element,
+  // spirit/element/nodeInfo.js (Q2)". Andy: "no i want those apps to basically be wrappers for spirit/element/ things....".
+  // nodeInfo.js read as it is, comments stripped.
+
+  const fs = require('fs');
+  const path = require('path');
+  const RUN = path.resolve(__dirname, '..', '..', '..');
+  const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+
+  function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
+  function code(f) { try { return fs.readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1'); } catch (e) { return ''; } }
+
+  test.subHeading('nodeInfo-parts: all of Info is in one element, nodeInfo.js (goal/G43.24)');
+
+  test.subHeading('the box, 6: "They move into one new element, spirit/element/nodeInfo.js (Q2)"');
+  const nodeInfo = code(path.join(RUN, 'spirit', 'element', 'nodeInfo.js'));
+  ok(nodeInfo.length > 0, 'Q2: spirit/element/nodeInfo.js is there', 'no spirit/element/nodeInfo.js');
+  ok(/\brelay\W{1,4}status\b/.test(nodeInfo), 'nodeInfo asks relay.status, the relays this node holds a seat on', 'nodeInfo.js asks no relay.status');
+  ok(/\bnode\W{1,4}card\b/.test(nodeInfo), 'nodeInfo puts the card into the node cache (node.card)', 'nodeInfo.js asks no node.card');
+  ok(/Rotate this node/.test(nodeInfo), 'nodeInfo draws the rotate button', 'nodeInfo.js draws no rotate button');
+}
+
+async function rotatePart() {
+  // The rotate part (once nodeInfo-rotate.js).
+  // THE ROTATE KEY DIALOG, DONE RIGHT (goal/G43.24, requirement 8; spec: ./nodeInfo.md, its rotate section). Andy, on "Info's rotate button
+  // opens the old shell's dialog": "not good." "do it right!", "it's just a panel that opens exactly overtop of the calling
+  // panel, new-shell-style.", "like fstat". The tree read as it is, then a real node on a scratch copy of the tree's files and
+  // real clicks in a real Chrome on /face.html, Info opened from its tile in the shell app. No key is ever rotated: the page's
+  // node.rotateCipher is replaced by a recorder that refuses, and the node's card is compared before and after. Neither Andy's
+  // node nor an agent's is touched.
+
+  const fs = require('fs');
+  const os = require('os');
+  const path = require('path');
+  const { spawn, execSync } = require('child_process');
+  const RUN = path.resolve(__dirname, '..', '..', '..');
+  const REPO = path.resolve(RUN, '..', '..');
+  const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+  const { freePort, until, sleep, chromePage, findChrome } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+
+  function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
+  function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
+  function parsed(t) { try { return JSON.parse(t); } catch (e) { return null; } }
+  function code(f) { try { return fs.readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1'); } catch (e) { return ''; } }
+
+  // The dialog's explanation and its button "as they are": shell/rotateKey/rotateKey.js at 4f01465b, as the page reads it.
+  const EXPLAINED = [
+    'Rotate this node\'s cipher key',
+    'When to use it: you believe this node\'s cipher key has been copied or seen, for example because the box was broken into or a backup of its home went somewhere it should not.',
+    'What it does: makes a new cipher key and throws the old one away. Your identity stays the same; only the key others seal to changes. The new card goes to every relay you are on at once, and peers pick it up the next time they post to you.',
+    'What it costs: anything already sealed to the old key and still on its way cannot be opened. Peers who are offline catch up when they next post.',
+    'What it does not do: protect what was sent before. Whoever holds the old key can still read anything they captured with it.',
+    'It is a crisis measure, not a routine one.',
+  ];
+  const BUTTON = 'Rotate the key';
+  const ARMED = 'Rotate the key: press again';
+  const ELEMENT = path.join(RUN, 'spirit', 'element', 'rotateKey.js');
+
+  function treeFiles() {
+    return execSync('git ls-files --cached --others --exclude-standard -- spirit/run', { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 26 })
+      .split('\n').filter(Boolean).filter(function (f) { return fs.existsSync(path.join(REPO, f)) && fs.statSync(path.join(REPO, f)).isFile(); });
+  }
+  function scratch() {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-rk-'));
+    treeFiles().forEach(function (f) { const d = path.join(root, f); fs.mkdirSync(path.dirname(d), { recursive: true }); fs.copyFileSync(path.join(REPO, f), d); });
+    return { root: root, run: path.join(root, 'spirit', 'run') };
+  }
+  async function call(base, verb, args) {
+    try {
+      const r = await fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) });
+      const text = await r.text();
+      return { status: r.status, text: text, body: parsed(text) };
+    } catch (e) { return { status: 0, text: String(e && e.message), body: null }; }
+  }
+  async function boot(run) {
+    const port = await freePort();
+    const child = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], { cwd: run, stdio: 'ignore' });
+    const base = 'http://127.0.0.1:' + port;
+    const up = await until(function () { return call(base, 'api').then(function (r) { return r.status === 200; }); }, 60000);
+    return { child: child, base: base, up: !!up };
+  }
+  function stop(c) { return new Promise(function (r) { if (!c || c.exitCode !== null) return r(); c.once('exit', function () { r(); }); c.kill(); setTimeout(r, 6000); }); }
+
+  // THE PAGE'S HANDS: what shows in #zzBox (or #zzOwn, the element alone); a hidden layer never counts.
+  const HANDS = '(function () {' +
+    'function box() { return document.getElementById(window.__in || "zzBox"); }' +
+    'function seen(e) { return !!e && e.getClientRects().length > 0 && getComputedStyle(e).visibility !== "hidden"; }' +
+    'function all(sel) { var b = box(); return b ? Array.prototype.slice.call(b.querySelectorAll(sel)).filter(seen) : []; }' +
+    'window.__t = {' +
+    '  text: function () { var b = box(); return b ? String(b.innerText || "").replace(/\\s+/g, " ") : ""; },' +
+    '  tiles: function () { return all(".app-icon[data-key]").map(function (t) { return t.getAttribute("data-key"); }); },' +
+    '  tile: function (k) { var t = all(".app-icon[data-key]").filter(function (e) { return e.getAttribute("data-key") === k; })[0]; if (!t) return false; t.click(); return true; },' +
+    '  bars: function () { return all("button").filter(function (b) { return String(b.textContent).trim() === "✕" && !/clear$/.test(b.id || ""); }).map(function (b) { return String(b.parentElement.innerText || "").replace("✕", "").replace(/\\s+/g, " ").trim(); }); },' +
+    '  closeLast: function () { var b = all("button").filter(function (b) { return String(b.textContent).trim() === "✕" && !/clear$/.test(b.id || ""); }); if (!b.length) return false; b[b.length - 1].click(); return true; },' +
+    '  count: function (sel) { return all(sel).length; },' +
+    '  buttons: function () { return all("button").map(function (b) { return String(b.textContent).replace(/\\s+/g, " ").trim(); }); },' +
+    '  press: function (words) { var b = all("button").filter(function (x) { return String(x.textContent).replace(/\\s+/g, " ").trim() === words; })[0]; if (!b) return false; b.click(); return true; },' +
+    '  says: function (lines) { var t = window.__t.text(); return lines.filter(function (l) { return t.indexOf(l) === -1; }); },' +
+    '}; return "hands"; }())';
+
+  test.subHeading('nodeInfo-rotate: the rotate key dialog, an element opened over Info through panel.js (goal/G43.24)');
+
+  await (async function () {
+    test.subHeading('the box, 8: "shell/rotateKey/ goes, its line in coreFiles.js\'s INTRINSIC list with it, and its test moves"');
+    ok(!fs.existsSync(path.join(RUN, 'shell', 'rotateKey')), 'shell/rotateKey/ is gone', 'shell/rotateKey/ is still there');
+    let core = null;
+    try { core = require(path.join(RUN, 'spirit', 'coreFiles.js')); } catch (e) { core = null; }
+    // Since goal/G43.30 there is no coded INTRINSIC list at all, so none can list shell/rotateKey.
+    ok(!!core && !('INTRINSIC' in core), 'no coded INTRINSIC list lists shell/rotateKey: coreFiles.js holds none (goal/G43.30)', 'coreFiles.js ' + (core ? 'still answers an INTRINSIC list' : 'did not load'));
+    ok(fs.existsSync(path.join(RUN, 'spirit', 'element', 'test', 'rotateKey.js')) && fs.existsSync(path.join(RUN, 'spirit', 'element', 'test', 'rotateKey.md')), 'its test is in the element\'s test folder: spirit/element/test/rotateKey.js and .md', 'no spirit/element/test/rotateKey.js and .md');
+    // What runs, its comments out and its tests out: nothing opens the old dialog any more.
+    const opening = treeFiles().filter(function (f) { return /\.(js|html)$/.test(f) && f.split('/').indexOf('test') === -1; })
+      .filter(function (f) { return /shell\/rotateKey(?![\w-])/.test(code(path.join(REPO, f))); });
+    ok(!opening.length, 'no code opens shell/rotateKey', 'still opening it: ' + short(opening));
+
+    test.subHeading('the box, 8: "becomes an element, spirit/element/rotateKey.js, mounted the new shell\'s way (requirement 7)"');
+    const el = code(ELEMENT);
+    ok(el.length > 0, 'spirit/element/rotateKey.js is there', 'no spirit/element/rotateKey.js');
+    ok(el.length > 0 && !/\bactivateApp\b/.test(el) && !/\bspirit\.shell\b/.test(el), 'rotateKey.js mounts through no spirit.shell.activateApp', el.length ? 'rotateKey.js calls spirit.shell.activateApp' : 'no rotateKey.js: nothing judged');
+    const ni = code(path.join(RUN, 'spirit', 'element', 'nodeInfo.js'));
+    ok(ni.length > 0 && !/\bcallDialog\b/.test(ni), 'nodeInfo opens no dialog of the old shell (no callDialog)', ni.length ? 'nodeInfo.js calls callDialog' : 'no spirit/element/nodeInfo.js: nothing judged');
+
+    const s = scratch();
+    let N = null;
+    let c = null;
+    try {
+      N = await boot(s.run);
+      ok(N.up, 'the world: a scratch node comes up', 'the scratch node did not come up: nothing judged');
+      if (!N.up) return;
+      const card0 = await call(N.base, 'node.card', {});
+      ok(card0.status === 200 && !!card0.body, 'the world: the node answers its card', 'node.card: ' + card0.status + ' ' + short(card0.text));
+      const where = findChrome();
+      if (!where) { test.fail('no Chrome here: the page was not judged'); return; }
+      c = await chromePage(where);
+      if (c.error) { test.fail('Chrome: ' + c.error); return; }
+      await c.send('Page.navigate', { url: N.base + '/face.html' });
+      ok(await until(function () { return c.evaluate('!!(window.spirit && window.spirit.ready && window.spirit.event)'); }, 20000), 'the world: the face page has its spirit', 'the page has no spirit: nothing judged');
+      // NO KEY IS ROTATED: the page's node.rotateCipher records the ask and refuses it.
+      const spy = await c.evaluate('window.spirit.ready.then(function () { var S = window.spirit; window.__rotations = 0; if (!S.node || typeof S.node.rotateCipher !== "function") return "no spirit.node.rotateCipher"; S.node.rotateCipher = function () { window.__rotations += 1; return Promise.resolve({ status: 403, body: { ok: false, error: "refused by the test" } }); }; return "spied"; })');
+      ok(spy === 'spied', 'the world: the page\'s node.rotateCipher is a recorder that refuses', 'the spy: ' + short(spy));
+      await c.evaluate(HANDS);
+      const T = function (expr) { return c.evaluate('window.__t.' + expr); };
+      const waitFor = function (expr, ms) { return until(function () { return c.evaluate('(function () { with (window.__t) { return !!(' + expr + '); } }())'); }, ms || 8000); };
+      const rotations = function () { return c.evaluate('window.__rotations'); };
+
+      test.subHeading('the box, 8: the element alone, "its explanation and its two-press arming button as they are"');
+      await c.evaluate('window.__in = "zzOwn"');
+      // goal/G43.32: rotateKey stands at its path, spirit.element.spirit.element.rotateKey; spirit.elements is no more.
+      const made = await c.evaluate('(function () { var b = document.createElement("div"); b.id = "zzOwn"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999"; document.body.appendChild(b); var p; try { p = spirit.require("spirit/element/rotateKey.js"); } catch (e) { return "load threw: " + e; } return Promise.resolve(p).then(function () { var E = ((spirit.element || {}).spirit || {}).element; E = E && E.rotateKey; if (!E || typeof E.create !== "function") return "no spirit.element.spirit.element.rotateKey.create"; window.__rk = E.create(b, {}); return window.__rk && typeof window.__rk.destroy === "function" ? "made" : "create answered " + typeof window.__rk; }, function (e) { return "load: " + e; }); }())');
+      ok(made === 'made', 'spirit.element.spirit.element.rotateKey.create(container, opts) answers { destroy() }', 'rotateKey: ' + short(made));
+      const alone = made === 'made' && await waitFor('says(' + JSON.stringify(EXPLAINED) + ').length === 0', 6000);
+      ok(alone, 'it draws the explanation as it is', made === 'made' ? 'missing: ' + short(await T('says(' + JSON.stringify(EXPLAINED) + ')')) : 'no element: nothing judged');
+      const hasButton = made === 'made' && await waitFor('buttons().indexOf(' + JSON.stringify(BUTTON) + ') !== -1', 6000);
+      ok(hasButton, 'it draws its button, ' + BUTTON, made === 'made' ? 'its buttons: ' + short(await T('buttons()')) : 'no element: nothing judged');
+      if (hasButton) await T('press(' + JSON.stringify(BUTTON) + ')');
+      const armedAlone = hasButton && await waitFor('buttons().indexOf(' + JSON.stringify(ARMED) + ') !== -1 && count("button[data-armed]") === 1', 4000);
+      ok(armedAlone, 'one press arms it: ' + ARMED, hasButton ? 'after one press: ' + short(await T('buttons()')) : 'no button: nothing judged');
+      ok(hasButton && (await rotations()) === 0, 'and one press rotates nothing', hasButton ? 'one press asked node.rotateCipher ' + (await rotations()) + ' times' : 'no button: nothing judged');
+      await c.evaluate('(function () { try { if (window.__rk) window.__rk.destroy(); } catch (e) { /* judged above */ } var b = document.getElementById("zzOwn"); if (b) b.remove(); window.__in = "zzBox"; return true; }())');
+
+      test.subHeading('the box, 8: "nodeInfo\'s rotate button opens it as a layer over Info through panel.js ... its ✕ shows Info again"');
+      const shell = await c.evaluate('(function () { var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.require("spirit/app/app/element.js").then(function () { window.__shell = spirit.element.spirit.app.app.element.create(b); return "made"; }, function (e) { return "load: " + e; }); }())');
+      ok(shell === 'made' && await waitFor('tiles().indexOf("file") !== -1', 10000), 'the world: the shell draws its tiles', 'the shell: ' + short(shell) + ', tiles ' + short(await T('tiles()')));
+      const infoOpen = (await waitFor('tiles().indexOf("info") !== -1', 6000)) && (await T('tile("info")')) && await waitFor('count("[data-field=label]") === 1 && buttons().some(function (b) { return /^Rotate this node.s cipher key$/.test(b); })', 10000);
+      ok(infoOpen, 'the world: Info opens from its tile, its name field and its rotate button shown', 'Info did not open with its rotate button: ' + short(await T('text()')) + ' tiles ' + short(await T('tiles()')));
+      if (!infoOpen) { test.fail('Info did not open: the rotate button was not judged'); return; }
+      const before = await T('bars()');
+      await T('press("Rotate this node\'s cipher key")');
+      const over = await waitFor('says(' + JSON.stringify(EXPLAINED.slice(1)) + ').length === 0', 8000);
+      ok(over, 'the rotate button opens the dialog: its explanation shows', 'after the press: ' + short(await T('text()')));
+      ok(over && (await T('count("[data-field=label]")')) === 0 && (await T('count("[data-field=description]")')) === 0, 'over Info: Info\'s fields are out of view', over ? 'Info still shows its fields' : 'nothing opened: nothing judged');
+      const bars = await T('bars()');
+      ok(over && bars.length === 1 && short(bars) !== short(before) && (await T('count(".app-container-close")')) === 1, '"like fstat": one layer of panel.js over all of Info, one bar in view, its own (' + short(bars) + ')', over ? 'bars before ' + short(before) + ', now ' + short(bars) + ', panel.js closes in view ' + (await T('count(".app-container-close")')) : 'nothing opened: nothing judged');
+      const layerButton = over && await waitFor('buttons().indexOf(' + JSON.stringify(BUTTON) + ') !== -1', 4000);
+      ok(layerButton, 'the layer shows its button, ' + BUTTON, over ? 'its buttons: ' + short(await T('buttons()')) : 'nothing opened: nothing judged');
+      if (layerButton) await T('press(' + JSON.stringify(BUTTON) + ')');
+      const armed = layerButton && await waitFor('buttons().indexOf(' + JSON.stringify(ARMED) + ') !== -1', 4000);
+      ok(armed, 'one press arms it: ' + ARMED, layerButton ? 'after one press: ' + short(await T('buttons()')) : 'no button: nothing judged');
+      await sleep(800);
+      ok(layerButton && (await rotations()) === 0, 'and one press rotates nothing', layerButton ? 'one press asked node.rotateCipher ' + (await rotations()) + ' times' : 'no button: nothing judged');
+      const closed = over && await T('closeLast()');
+      const back = closed && await waitFor('count("[data-field=label]") === 1 && count("[data-field=description]") === 1 && says([' + JSON.stringify(EXPLAINED[1]) + ']).length === 1', 6000);
+      ok(back, 'its ✕ shows Info again, the dialog out of view', closed ? 'after ✕: ' + short(await T('text()')) : 'no ✕ to press: nothing judged');
+      ok(back && short(await T('bars()')) === short(before), 'and Info\'s bar is the one in view again', back ? 'bars: ' + short(await T('bars()')) : 'Info did not come back: nothing judged');
+
+      test.subHeading('no key was rotated');
+      const card1 = await call(N.base, 'node.card', {});
+      ok(card0.status === 200 && card1.status === 200 && card1.text === card0.text, 'the node\'s card is as it was', 'card before ' + short(card0.text) + ', after ' + short(card1.text));
+    } finally {
+      try { if (c && c.sock) c.sock.close(); } catch (e) { /* gone */ }
+      try { if (c && c.kid) c.kid.kill(); } catch (e) { /* gone */ }
+      if (N) await stop(N.child);
+      try { fs.rmSync(s.root, { recursive: true, force: true }); } catch (e) { /* scratch */ }
+    }
+  }());
+}

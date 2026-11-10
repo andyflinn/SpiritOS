@@ -3,7 +3,7 @@
 The Grants app (apiAuth/G1.6; goal/G41.5, G41.13, G41.14, G41.16, G41.32, G43.24): the owner's screen for who may call
 which api. Intrinsic by its own `grants.json`, so it shows on every face, the loopback face's and a relay face's alike
 (Andy, Q1: *"Of course on both, how else can i give someone access when i travel?"*). Its test is `./grants.js`; its
-manifest, its tile and its opening in a real Chrome are judged in `spirit/app/grants/test/element-wrapper.js`.
+manifest, its tile and its opening in a real Chrome are judged in its wrapper part (below).
 
 It is a wrapper (Andy: *"no i want those apps to basically be wrappers for spirit/element/ things...."*): its Grants tab is
 the grants panel, which knows no table of its own; this app configures it (*"the callers (Grants and agent shell apps
@@ -47,3 +47,44 @@ pane has no Edit or Delete, and a press throws nothing.
 - A Grants tab that is not the panel, a panel handed another ID table or grants table, or an api handed.
 - A Bundles tab whose tabs open elsewhere than this app's tab row, or are named otherwise than owner-bundle.
 - A mount through the old shell; something made after destroy.
+
+## The wrapper part: spirit/app/grants/element.js: Grants, a wrapper mounted the new shell's way
+
+goal/G43.24, requirements 1 to 7, for Grants. Its test is the wrapper part of `./element.js`: the tree read as it is, `./element.js` run (its own checks, not this part again), then a real node on a scratch copy of the tree's files (tracked and new, not ignored) and real clicks in a real Chrome on `/face.html`, on the shell app (`spirit/app/app/element.js`) as boot.js draws it.
+
+Andy: *"i just moved them, didn't fix the manifest."* (4f01465b: shell/info is spirit/app/info/, shell/grants is spirit/app/grants/), *"no i want those apps to basically be wrappers for spirit/element/ things...."*, and *"box that these apps must mount in the new format of the new shell."*
+
+### Requirements
+
+#### 1. The manifest
+
+- `grants.json` holds what `file.json` holds, the spirit/app form: identity `{icon, label, intrinsic: true}`, mount `{"grants.js": true}`, shell `{true: false, mount: true, tile: true}`, node `{mount: false}`, and nothing of the old form.
+- Icon and label as they were: Grants 🔒.
+- Q1, the old description sentence: *"it goes."*
+
+#### 2. Intrinsic by its own `grants.json`
+
+- The node's `app.search` lists grants intrinsic, so always active. (Its leaving coreFiles.js's INTRINSIC list is `spirit/test/coreFiles.js`; the old shell's list, `spirit/client/test/shell-infoGrants.js`.)
+
+#### 3. In the shell as before
+
+- With nothing pressed, the shell shows its tile.
+- Grants' tile opens Grants: its Grants and Bundles tabs, the grants panel configured (no "not configured"), one bar in view, `🔒 Grants`.
+
+#### 4. Its test runs from the new place
+
+- `spirit/app/grants/test/element.js` runs with no "Cannot find module" and prints testReport's completion line.
+
+#### 5. Nothing names the old place
+
+- No file of the tree (tracked, or new and not ignored) names `shell/grants`; the red files that must name it are left out.
+
+#### 6. A wrapper of spirit/element/
+
+- `grants.js` loads only `spirit/element/` scripts, through `spirit.require`; asks no cacheManager; calls no verb (`.verb(`, `spirit.outcome`, `callDialog`, `fetch`, relay.status, node.card, auth.search/grant/revoke); draws no markup of its own.
+- (Grants' data source, in grantsPanel, is the authSource part of `spirit/element/search/grant/test/grantsPanel.js`.)
+
+#### 7. The new shell's way
+
+- No `spirit.shell.activateApp` in `grants.js`.
+- On the page, `spirit.require('spirit/app/grants/element.js')` sets `spirit.element.spirit.app.grants.element`, whose `create(container, opts)` draws into the container and answers `{ destroy() }`.

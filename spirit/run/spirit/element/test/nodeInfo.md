@@ -2,8 +2,8 @@
 
 What this node says about itself, an element (goal/G43.24, requirement 6; Q2, Andy: *"nodeInfo is fine."*): all of Info.
 The Info app is its wrapper (`spirit/app/info/element.js`, Andy: *"no i want those apps to basically be wrappers for
-spirit/element/ things...."*). Its test is `./nodeInfo.js`; the rotate key dialog opening over Info on a real page is
-judged in `./nodeInfoRotate.js`.
+spirit/element/ things...."*). Its test is `./nodeInfo.js`, the one test file of nodeInfo.js; the rotate key dialog opening over Info on a real page is
+judged in its rotate part (once `./nodeInfo-rotate.js`), the sections below.
 
 ## Requirements
 
@@ -59,3 +59,59 @@ judged in `./nodeInfoRotate.js`.
 - A rotate button that rotates, opens the old shell's dialog, opens outside the mounter's stack when handed one, or
   makes its own stack beside the mounter's.
 - The relay table, the push or the rename back in the file; a timer.
+
+## Info's two relay forms
+
+goal/G43.27, requirements 9 and 10, the forms part of `spirit/run/spirit/element/test/nodeInfo.js` (once `nodeInfo-forms.js`).
+
+Andy: "setting a star on a relay is what makes the face-form appear in \"info\", the email form must always show in \"info\"".
+
+nodeInfo.js runs on a bare window, with the real joinForm.js and faceForm.js. The rowForm is a stand-in. relay.status answers as the relay family's own `status` does: `{ status, text, body: { rows, ... } }`. Its rows are a seat on A (claimed), one on O (owned), and B, which is only listed. A star is a row's `mine`, the field faceForm reads (faceForm.js:33).
+
+### Requirements
+
+- **9. The email form always shows.**
+  - It shows with seats and no star.
+  - It shows with A starred.
+  - It shows with no seat on any relay.
+- **10. The face form only for a starred relay.**
+  - With no relay starred, there is no face form.
+  - With A starred, the face form shows, and it offers A alone.
+
+## spirit/element/nodeInfo.js: all of Info in one element
+
+goal/G43.24, requirement 6. Its test is the parts part of `./nodeInfo.js` (once `./nodeInfo-parts.js`): nodeInfo.js read as it is, comments stripped.
+
+Andy: *"i just moved them, didn't fix the manifest."*, *"no i want those apps to basically be wrappers for spirit/element/ things...."*, and *"box that these apps must mount in the new format of the new shell."*
+
+### Requirements
+
+- Info's own parts move into `spirit/element/nodeInfo.js` (Q2: *"nodeInfo is fine."*): it is there, it asks relay.status and node.card, and it draws the rotate button.
+
+## The rotate key dialog, an element over Info
+
+goal/G43.24, requirement 8. Its test is the rotate part of `./nodeInfo.js` (once `./nodeInfo-rotate.js`): the tree read as it is, then a real node on a scratch copy of the tree's files (tracked and new, not ignored) and real clicks in a real Chrome on `/face.html`, Info opened from its tile in the shell app. No key is rotated: the page's `node.rotateCipher` is replaced by a recorder that refuses, and the node's card is compared before and after. The dialog's own test moves to `./rotateKey.js`; this one judges the move and the opening.
+
+Andy, on "Info's rotate button opens the old shell's dialog": *"not good."* *"do it right!"* And: *"it's just a panel that opens exactly overtop of the calling panel, new-shell-style."*, *"like fstat"*.
+
+### Requirements
+
+#### The move
+
+- `shell/rotateKey/` is gone; coreFiles.js's INTRINSIC list has no `shell/rotateKey`; no code (comments and tests out) opens `shell/rotateKey`.
+- Its test is in the element's test folder: `spirit/element/test/rotateKey.js` and `.md`.
+- `spirit/element/rotateKey.js` is there and mounts the new shell's way (requirement 7): no `spirit.shell.activateApp`; `spirit.elements.rotateKey.create(container, opts)` answers `{ destroy() }`.
+- nodeInfo opens no dialog of the old shell: no `callDialog` in `spirit/element/nodeInfo.js`.
+
+#### Its explanation and its two-press button, as they are
+
+- The element alone draws the explanation of shell/rotateKey/rotateKey.js at 4f01465b, word for word, and its button, Rotate the key.
+- One press arms it (`data-armed`, *Rotate the key: press again*), and asks no `node.rotateCipher`.
+
+#### Over Info, through panel.js
+
+- Info's Rotate this node's cipher key opens the dialog: its explanation shows and Info's name and description fields are out of view.
+- *"like fstat"*: as file opens fstat, over all of the one that opens it, its bar too (the file suite's "one bar in view"): one bar in view, not Info's, and one panel.js close (`.app-container-close`) in view.
+- The layer shows Rotate the key; one press arms it and rotates nothing.
+- Its ✕ shows Info again, the dialog out of view, and Info's bar is the one in view again.
+- The node's card is as it was.

@@ -270,3 +270,72 @@ spirit.js itself and set as `spirit.link` and `window.spirit.transport`; `spirit
 `{ home, loggedIn, name }`, and `spirit.booted` answers once `boot.js` runs. The red asserts that every call goes
 through a `window.spirit.transport` once set, and that on the home node's own page spirit.js gets `shell/boot.js`
 alone and `spirit.booted` answers (sections 6 and 6b); a login and the sealed link themselves are not run.
+
+## A page finds data.js by the folder shape (the cache manager)
+
+goal/G43.27, requirement 6. Its test is a section of `./spirit.js`: spirit.js read as it is, comments stripped, and a real
+page (headless Chrome) of a scratch node with the agent app switched on, never a live one.
+
+Andy: "spirit.js can be fixed, no? it knows the difference between an app and a system branch?"
+
+### Requirements
+
+- **6. A page finds `data.js` by the folder shape.** spirit.js's cacheManager asks no `FS.path`, and spirit.js asks
+  `FS.path` nowhere. On a real page of a scratch node, every family the node names whose data.js is in the tree is loaded
+  by `spirit.cacheManager`, contact among them (an app and a system family share that name).
+
+## The element move
+
+The move of the elements out of `shell/js` (goal/G43.5). Its test is a section of `./spirit.js`. Its lists are what `shell/js` held when the item began.
+
+Andy, box: *"We are ONLY moving the contents of "run://shell/js/" to "run://spirit/element/""*, and *"on the browsers, spirit object, these elements will live in "spirit.element" (SINGLULAR) and not on spirit.elementS!!!!"*
+
+### Requirements
+
+- `shell/js` is gone, and every file it held stands at `spirit/element/` under its own name and folder, its tests and documents with it. *"all elements will keep their name during this move."*
+- No code, test or document under `spirit/` names `shell/js`, or reaches a moved element through `spirit.elements`, directly or through a local name for that object. *"both file-location AND the home in spirit.element (singular)"*, *"uncluding tests"*, *"including the contents of shell/ that remains"*, *"including, new code in spirit/app"*.
+- The other way round too: no code reaches through `spirit.element` for an element `spirit/element/` does not define. Andy, live: *"contact detail don't load in contacts"*, because `contactDetails` asked `spirit.element` for `navigation`, which stayed on `spirit.elements`.
+- Andy's own words are never rewritten: a double-quoted part of a comment or a document is left out of that scan. `agents/` and `design/` are left out too.
+- On a real page `spirit.element` exists at start, every moved module loads from its new place, and all the moved elements stand on `spirit.element` and none on `spirit.elements`.
+- The library is `spirit/element/codeMirror.js`'s own folder: `spirit/element/test/codeMirror.md`. What stays in `shell/shared/` is `shell/shared/js/test/deskRunStatus-home.md`.
+
+### What else proves it
+
+The move must break nothing, and that is the old suites' to say. A file moved is its own suite moved. `spirit/test/word.js` must then fail on `job` alone: `spirit/element/` and `spirit.element` give `element` its home.
+
+## The relay login
+
+goal/G43.18, box v29, *The relay login*. Its test is a section of `./spirit.js`: a real scratch node and relay, a face on a starred relay (box v29: a face only on one), its real login, and a real Chrome on the face at `<name>.localhost`.
+
+Andy's box: *"The relay serves a logged-out face one plain page, the one-field form, with spirit.js and seal.js only, which make the sealed link home. boot.js, shell.css, face.css and every other part of the shell come from the home node over that link."* and *"The login is spirit.login, in spirit.js, no app. It holds the relay's own calls, state, login and logout on /face/api, and draws the one field when logged out. shell/login/ and its login.json go."*
+
+### Requirements
+
+- `shell/login/` is gone.
+- The relay serves the face its page, `/spirit.js` and `/shell/seal.js`. Logged out or in, it does not itself serve `/shell/boot.js`, `/shell.css`, `/shell/face.css`, `/shell/login/login.js` or `/shell/login/login.json`.
+- On the face, `spirit.login` holds `state`, `login` and `logout`. Logged out, the page shows one field and loads nothing but `spirit.js` and `seal.js` (its favicon and `/face/api` aside).
+- Logged in, the face draws the home node's shell (Contacts on its list), and none of `boot.js`, `shell.css` or `face.css` came as the relay's own file.
+- After `spirit.login.logout()`, the page shows the one field again, and the relay holds the login no more.
+
+## How a family is found by its name
+
+goal/G43.27, a section of `spirit/run/spirit/test/spirit.js`.
+
+Andy: "make sure there's a test for the module searching for api's that makes sure those rules are followed - less path elements get priority, - the target needs an api.js - and duplicate <name>/api.js raise a red.", and "spirit/app/contact/ does NOT have an api.js".
+
+The tree is read as it is. The finding is judged on a real page (headless Chrome) of a scratch node. Folders that break the rules are planted into the scratch node's copy, never into the tree.
+
+### Requirements
+
+- **3. A second `<name>/api.js` is seen.** A family interface is any of `spirit/<name>/api.js`, `spirit/app/<name>/api.js` and `process/js/<name>/[family/]api.js`. A second relay/api.js planted into the scratch copy is seen as a duplicate. That no branch's name has two in the tree is judged on each branch folder by `./spirit-sibling-branchRules.js` (goal/G43.32).
+- **2. The target needs an api.js.** A `spirit/app/contact/data.js` planted beside no api.js never runs, and contact loads `spirit/contact/data.js`.
+- **1. The fewest path elements win.** A planted `spirit/app/relay/` with its own api.js and data.js loses to `spirit/relay/`, whose data.js is the one loaded.
+- An app's family found where its api.js is, and a page getting each branch's own `data.js`, are judged on each branch folder by `./spirit-sibling-branchRules.js` (goal/G43.32).
+- **No data.js is asked that is not there (no 404).**
+
+### goal/G43.20: a family's path in a process
+
+The box: *"a family is found as spirit/<name>/api.js or spirit/app/<name>/api.js, a job is named by its route, and nothing
+falls back to process/js/<name>"*. In a process, `spirit.familyPath` gives a system family's own `spirit/<name>/api.js`
+(fs), an app's `spirit/app/<name>/api.js` (desk, agent), and no path it gives names `process/js`, a name of no family's
+included.

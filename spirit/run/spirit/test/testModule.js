@@ -7,8 +7,8 @@
 //
 // testsFor(path, { root }) -> [{ test, file? }], every path relative to root (spirit/run/ by default), '/'-separated.
 //   - With no path: every test file in any test/ folder of the tree, and each general test once per file it judges.
-//   - With a module's path: that file's blast radius. Its own test (./test/<name>.js) and its other tests by name
-//     (./test/<name>-<what>.js), every test under ./<name>/ (its
+//   - With a module's path: that file's blast radius. Its own test (./test/<name>.js, its one test file: goal/G45.1,
+//     TEST_SYSTEM.md "one test file per script"; no ./test/<name>-<what>.js is read), every test under ./<name>/ (its
 //     components), and the own tests of the modules on its line upward; never a sibling branch. Andy: "re-test all test
 //     in ./file/ child-scopes and ../ and ../../ and ../../../ but NOT ../othername/...".
 //   - A general test, ./test/<x>-child-<t>.js or ./test/<x>-sibling-<t>.js beside ./<x>.js, is one entry per file it
@@ -78,12 +78,6 @@ function branchesOf(root) {
 }
 // A branch-rules test, ./test/<x>-sibling-branchRules.js: one entry per branch folder, not per module.
 function isBranchRules(t) { return /-sibling-branchRules\.js$/.test(path.posix.basename(t)); }
-// ITS OTHER TESTS BY NAME (goal/G43.27; Andy: "every test must be directly (by name) or indirectly (by general rule) be
-// associated with a production file"): ./test/<name>-<what>.js beside it, a general test (-child-, -sibling-) excepted.
-function namedTests(m, tests) {
-  const own = ownTest(m).replace(/\.js$/, '-');
-  return tests.filter(function (t) { return t.indexOf(own) === 0 && !/-(child|sibling)-/.test(path.posix.basename(t)); });
-}
 function under(p, dir) { return dir === '' || p.indexOf(dir + '/') === 0; }
 
 // A general test's reach, or null when it is a plain test: the folder holding its test folder, the module it is named
@@ -139,14 +133,12 @@ function testsFor(file, opts) {
     const below = join(dirOf(target), path.posix.basename(target, '.js'));
     judged = opted.filter(function (m) { return m === target || under(m, below); });
     if (isTest[ownTest(target)]) add(ownTest(target));
-    namedTests(target, tree.tests).forEach(function (t) { add(t); });
     tree.tests.forEach(function (t) { if (under(t, below) && !generalOf(t, has)) add(t); });
     // The line upward: each folder above the file is a module's components; that module's own test runs.
     let dir = dirOf(target);
     while (dir) {
       const parent = join(dirOf(dir), path.posix.basename(dir) + '.js');
       if (isTest[ownTest(parent)]) add(ownTest(parent));
-      namedTests(parent, tree.tests).forEach(function (t) { add(t); });
       dir = dirOf(dir);
     }
   }

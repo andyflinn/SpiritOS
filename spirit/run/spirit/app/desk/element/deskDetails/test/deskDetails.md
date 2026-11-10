@@ -158,3 +158,28 @@ Andy: *"while your mucking with desk, can you make sure that all delete and clos
 - A Close or a Delete that writes on its first press, in the stand-in or on the real page.
 - "Nothing deleted" judged on an item that is gone, or on a status that reads empty for both.
 - A run status still loaded from shell/shared/.
+
+## The noFind part: spirit/app/desk/element/deskDetails/deskDetails.js
+
+goal/G43.22. Its test is the noFind part of `./deskDetails.js`: the tree read as it is, comments left out.
+
+Andy, the box: *"the apps and plugin system goes."*, *"there will only be goals, items and rules left, plus the verifier stuff can stay for now."*
+
+### Requirements
+
+- Andy: *"take out your search of the items text"*, *"take out the chat-search do, it's not actually usable."*: the item detail has no find field over its box and no chat search.
+
+## The noSharedLeftovers part: deskChat.js and deskElement.js gone from shell/shared
+
+goal/G43.23, item 10 (after goal/G43.22). Its test is the noSharedLeftovers part of `./deskDetails.js`: the tree read as it is, tracked
+files on disk. `deskChat.js` drew an item's chat, which the item detail, `deskDetails.js`, draws itself now, so their absence
+is judged beside it (goal/G43.28; moved from `shell/shared/js/test/deskRunStatus-noDeskLeftovers.js`).
+
+The box: *"plugin leftovers (G43.22): deskChat.js and deskElement.js in shell/shared, loaded by nothing"*. A test that reads a file gone from the tree is stale, G43.23 Q3: *"yes."*
+
+### Requirements
+
+- `spirit/run/shell/shared/js/deskChat.js` and `deskElement.js` are gone.
+- Their tests are gone: `shell/shared/js/test/deskChat.js`, `deskChat.md`, `deskElement.js`, `deskElement.md`, and no other test or spec in a `test/` folder reads or names `deskChat.js`, `deskElement.js`, `createDeskChat` or `createDeskElement`. A spec that quotes the box's line is no use of them and is not counted.
+- The world: `deskRunStatus.js` moved into Desk (`spirit/app/desk/element/deskRunStatus/`) and the folder the leftovers stood in,
+  `shell/shared/js/`, is gone with all of `shell/` (goal/G43.30); `deskDetails.js` is beside this test, and the tracked files and tests read are many, so an empty read is red.

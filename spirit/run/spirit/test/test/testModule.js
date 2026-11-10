@@ -42,20 +42,22 @@ GENERAL.forEach(function (g) {
   ok(hit.length === 1, g + ' judges ' + MODULE + ' on its blast radius', g + ' is not given ' + MODULE + ' to judge; its entries: ' + short(radius.filter(function (e) { return e.test === g; })));
 });
 
-// ITS TESTS BY NAME (goal/G43.27; Andy: "every test must be directly (by name) or indirectly (by general rule) be associated
-// with a production file"): ./test/<name>-<what>.js runs with ./<name>.js, and with every module below it, as its own test does.
-test.subHeading('a module\'s tests by name');
-// spirit/server.js and its test by name, server-garbage.js (apiDoor.js's, apiDoor-familyGate.js, went into
-// spirit-branches.js in goal/G43.32, Q6).
-const BY_NAME_OF = 'spirit/server.js';
-const byNameRadius = testsFor(BY_NAME_OF);
-const byName = byNameRadius.filter(function (e) { return e.test === 'spirit/test/server-garbage.js' && !e.file; });
-ok(byName.length === 1, BY_NAME_OF + '\'s blast radius holds spirit/test/server-garbage.js, its test by name, once', 'its blast radius: ' + short(byNameRadius.map(function (e) { return e.test; })));
-ok(!byNameRadius.some(function (e) { return /\/test\/serverX|\/test\/serve-/.test(e.test); }) && !testsFor('spirit/apiAuth.js').some(function (e) { return e.test === 'spirit/test/server-garbage.js'; }),
-  'a test by name runs with its own module only: spirit/apiAuth.js does not get server-garbage.js', 'server-garbage.js runs with spirit/apiAuth.js too');
-const below = testsFor('spirit/element/search/contact/detailElement.js').map(function (e) { return e.test; });
-ok(below.indexOf('spirit/element/search/contact/test/detailElement-relayRowStream.js') !== -1 && below.indexOf('spirit/element/test/search-bubble.js') !== -1,
-  'a module below runs its own tests by name and those of the module above it (search.js: search-bubble.js)', 'detailElement.js\'s blast radius: ' + short(below));
+// ONE TEST FILE PER SCRIPT (goal/G45.1; spirit/run/spirit/test/TEST_SYSTEM.md; Andy: "there is ONE FUCKING test file in the
+// test folder per script file, and every fucking test that applies to that file must be inserted in the that one file"):
+// testsFor reads ./test/<name>.js for a script, and never a ./test/<name>-<what>.js. Judged on a planted tree of its own.
+test.subHeading('one test file per script: no <name>-<what>.js is read');
+{
+  const planted = require('fs').mkdtempSync(path.join(require('os').tmpdir(), 'spirit-onefile-'));
+  const put = function (rel, text) { const f = path.join(planted, rel); require('fs').mkdirSync(path.dirname(f), { recursive: true }); require('fs').writeFileSync(f, text || '\n'); };
+  put('spirit/zz.js'); put('spirit/test/zz.js'); put('spirit/test/zz-extra.js'); put('spirit/zz/part.js'); put('spirit/zz/test/part.js'); put('spirit/zz/test/part-more.js');
+  const zz = testsFor('spirit/zz.js', { root: planted }).map(function (e) { return e.test; });
+  const part = testsFor('spirit/zz/part.js', { root: planted }).map(function (e) { return e.test; });
+  ok(zz.indexOf('spirit/test/zz.js') !== -1 && part.indexOf('spirit/zz/test/part.js') !== -1 && part.indexOf('spirit/test/zz.js') !== -1,
+    'the world: a script\'s one test file runs with it, and with the scripts below it', 'zz: ' + short(zz) + ', part: ' + short(part));
+  ok(zz.indexOf('spirit/test/zz-extra.js') === -1 && part.indexOf('spirit/test/zz-extra.js') === -1 && part.indexOf('spirit/zz/test/part-more.js') === -1,
+    'no <name>-<what>.js is read, on its own script or below it', 'read: ' + short(zz.concat(part).filter(function (t) { return /-(extra|more)\.js$/.test(t); })));
+  try { require('fs').rmSync(planted, { recursive: true, force: true }); } catch (e) { /* scratch */ }
+}
 
 test.subHeading('the whole list');
 const all = testsFor('');

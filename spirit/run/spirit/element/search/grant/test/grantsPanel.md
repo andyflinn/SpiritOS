@@ -101,3 +101,25 @@ its own folder (`./busyButton.md`); here a stand-in keeps what it is handed.
 - A Grant button that is no busyButton, or one whose request answers before the grants do.
 - A verb asked through an api instead of the spirit object.
 - nodeGrants asking anything but the node's auth verbs, losing a refusal, or a watch that goes on after its release.
+
+## The authSource part: spirit/element/search/grant/grantsPanel.js: Grants' data source
+
+goal/G43.24, requirement 6. Its test is the authSource part of `./grantsPanel.js`: grantsPanel.js read as it is, comments stripped.
+
+Andy: *"i just moved them, didn't fix the manifest."*, *"no i want those apps to basically be wrappers for spirit/element/ things...."*, and *"box that these apps must mount in the new format of the new shell."*
+
+### Requirements
+
+- Grants' data source moves into grantsPanel: `grantsPanel.js` asks auth.search, auth.grant and auth.revoke, over the auth cache.
+
+## The noWarning part: spirit/element/search/grant/grantsPanel.js: no warning on a grant
+
+goal/G43.27, requirement 7. Its test is the noWarning part of `./grantsPanel.js`: the tree read as it is, comments stripped.
+
+Andy: "compare that to giving a linux user root authority, he then can fuck up the whole system, not our problem."
+
+### Requirements
+
+- **7. No warning on a grant.**
+  - grantsPanel reads no `<verb>.warning.txt`.
+  - `spirit/auth/grant.warning.txt` is gone, and no `<verb>.warning.txt` is left: grantsPanel was their one reader.

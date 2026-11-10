@@ -260,7 +260,7 @@ to ignore the run:/ folder except for run://spirit/"*.
 Judged in the run with no file:
 
 - **The old folder is empty**: git tracks no file in `run://test/`.
-- **The new folder holds the move**: the 19 files `run://test/` held on 2026-11-10, `test/test/` included, stand in
+- **The new folder holds the move**: the files `run://test/` held on 2026-11-10 (testReport-verifier.js and .md since folded into test/testReport.js and .md, goal/G45.1), `test/test/` included, stand in
   `run://spirit/test/`.
 - **Nothing names the old folder**: no tracked `.js`, `.md`, `.html` or `.json` under spirit/run/, tests and documents
   included and the vendored folders left out, names it as a path or as `run://test/`, in code, comment or text. This suite's

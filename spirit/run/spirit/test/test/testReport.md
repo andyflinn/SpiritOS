@@ -1,7 +1,8 @@
 # spirit/test/testReport.js
 
 The product test system's reporter: every test in `spirit/run` prints its checks through it, and under the verifier
-sends each one on (`deskVerify.record`). This test holds one part of it: **the name a test is sent by** (goal/G41.19).
+sends each one on (`deskVerify.record`). Its one test is `./testReport.js`. It holds two parts of it: **the name a test is sent by** (goal/G41.19), and, a
+section below, **a test's results reaching the verifier** (goal/G43.23, item 3).
 
 Andy, on G41.19: *"RULE: The test names (what is sent to deskVerify) must ALWAYS start with the module tested:
 \"/<path>/<module-no-extension>, so when i look in desk->fallout i have an instant idea which thing failed."*, and
@@ -47,3 +48,15 @@ set to the test file named.
 - Two test files of one name sent by one name.
 - `/test/` left in the name, or the extension.
 - A general test sent by its own name instead of the file it judges.
+
+## A test's results reach the verifier
+
+goal/G43.23, item 3. Its test is a section of `./testReport.js`: a scratch run tree under /tmp with a copy of `../testReport.js` and `spirit/`, whose `spirit/state/environment.json` names a fake verifier this suite stands up; a probe test there is run with `--verify-port <that port>`. No live node is touched.
+
+The box: *"no test result reaches the verifier: testReport.js requires the gone spirit/run/spirit.js and swallows the error."*
+
+### Requirements
+
+- A test run with `--verify-port <port>` hands its results to the verifier listening there: the verifier is handed records at all.
+- A green reaches the verifier as one record with outcome green.
+- A red reaches the verifier as one record with outcome red, carrying the failure it printed.

@@ -19,12 +19,14 @@ the `test/` folder beside it named after it; handed a file in a test folder, tha
 - **`spirit/test/`'s tools** (goal/G43.32, Q2; Andy: *"We need special rules for run://spirit/test/  it will be where
   run://spirit/app/test/ finds it's main tools."*): `testReport.js`, `testModule.js` and `headLessChrome.js`, as
   `testModule.js` lists them, and `TEST_SYSTEM.md` are bound there, not tests named after no module.
-- **A `test/` inside a `test/` folder** holds the tests of the files beside it, `<name>.js` or `<name>-<what>.js` and
-  their `.md`. Nothing else.
+- **A `test/` inside a `test/` folder** holds the tests of the files beside it, `<name>.js` and its `.md`. Nothing
+  else.
 - **Every other test matches a production file** (Andy: *"every test must be directly (by name) or indirectly (by
-  general rule) be associated with a production file"*): `test/<name>.js`, a test by name `test/<name>-<what>.js`
-  (`testModule.js` runs it with `<name>.js`), or a general test `<name>-child-*` or `<name>-sibling-*`, of a `<name>.js`
-  beside the folder. A test named after no module is garbage.
+  general rule) be associated with a production file"*): `test/<name>.js`, or a general test `<name>-child-*` or
+  `<name>-sibling-*`, of a `<name>.js` beside the folder. A test named after no module is garbage.
+- **One test file per script** (goal/G45.1, `./TEST_SYSTEM.md`; Andy: *"there is ONE FUCKING test file in the test folder
+  per script file, and every fucking test that applies to that file must be inserted in the that one file"*): a
+  `test/<name>-<what>.js` or `.md` beside `test/<name>.js`'s script is red, a second test file of `<name>.js`.
 - **A test and its spec together**: a `.js` has its `.md` beside it, and an `.md` its `.js`.
 - **Any other file** (a laid page, a fixture) is named after a module beside the folder: `<module>-<what>.<ext>`.
 - Each garbage file is its own check, named by its path, with the reason.
@@ -38,4 +40,5 @@ the `test/` folder beside it named after it; handed a file in a test folder, tha
 - A test named after no module beside its folder (`spirit/app/test/deskMove.js`, before goal/G43.27 renamed it), and a
   `<what>-<more>.js` whose first word is no module beside the folder.
 - A `.js` without its `.md`, an `.md` without its `.js`.
+- A `test/<name>-<what>.js` of a script that has its one test file, `test/<name>.js`.
 - A fixture named after no module (`provider-picker.html`, where there is no `provider.js`).

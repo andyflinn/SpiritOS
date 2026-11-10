@@ -2,7 +2,9 @@
 
 // spirit/run/spirit/test/spirit.js
 // THE RED OF spirit/run/spirit/spirit.js (goal/G40.6; the module moved from the run root, goal/G43.18, and its test with it,
-// goal/G43.27), and of no other module. It asserts ./spirit.md, section by section: the
+// goal/G43.27), and of no other module, every test of it in this one file. Its sections, after its own: the cache manager
+// (goal/G43.27), the element move (goal/G43.5), the relay login (goal/G43.18) and the family finder (goal/G43.27).
+// It asserts ./spirit.md, section by section: the
 // rule, where it runs, the one instance, every member of it, its node, the one loader, and that a module not loading
 // spirit.js first goes red. Everything is asked of the one instance, in node and on a page: there is nothing else.
 //   - In node, the instance itself for what needs no node; and, for what talks to a node, the instance of a scratch
@@ -727,5 +729,525 @@ test.startTest('spirit/run/spirit.js: the one spirit object, in node and on a pa
     }
   }
   if (lazyNode.child) lazyNode.child.kill();
-}()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
-  function (e) { test.fail('the suite threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });
+}()).then(null, function (e) { test.fail('the suite threw ' + (e && e.stack || e)); })
+  .then(runParts)
+  .then(function () { test.reportSuccessFailureCount(); process.exit(0); });
+
+// The sections below, each folded in from a file of its own, run in order after the checks above.
+async function runParts() {
+  const parts = [['cacheManager', cacheManagerPart], ['elementMove', elementMovePart], ['faceLogin', faceLoginPart], ['familyFinder', familyFinderPart]];
+  for (const p of parts) {
+    try { await p[1](); } catch (e) { test.fail('the ' + p[0] + ' part threw ' + (e && e.stack || e)); }
+  }
+}
+
+async function cacheManagerPart() {
+  // ── THE CACHE MANAGER PART ──
+  // A PAGE FINDS A FAMILY'S data.js BY THE FOLDER SHAPE, NEVER BY FS.path (goal/G43.27, requirement 6; spec:
+  // ./spirit.md, its section): spirit.js's cacheManager. Andy: "spirit.js can be fixed, no? it knows the difference between an
+  // app and a system branch?". spirit.js read as it is, comments stripped, and a real page (headless Chrome) of a scratch node
+  // (headLessChrome.scratchNode), never a live one.
+
+  const fs = require('fs');
+  const path = require('path');
+  const RUN = path.resolve(__dirname, '..', '..');
+  const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+  const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+
+  function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
+  function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 400); }
+  function code(text) { return String(text).replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1'); }
+  // Line ends aside: a Windows checkout (autocrlf) holds CRLF where git holds LF.
+  function read(rel) { const f = path.join(RUN, rel); return fs.existsSync(f) ? fs.readFileSync(f, 'utf8').replace(/\r\n/g, '\n') : ''; }
+
+  test.subHeading('cacheManager: a page finds a family\'s data.js by the folder shape, never by FS.path (goal/G43.27)');
+
+  await (async function () {
+    test.subHeading('6. a page finds a family\'s data.js by the folder shape, never by FS.path');
+    const sj = code(read('spirit/spirit.js'));
+    ok(sj.length > 1000 && /function cacheManager/.test(sj), 'the world: spirit.js and its cacheManager are read', 'no cacheManager in spirit.js: nothing judged');
+    const cm = (sj.match(/function cacheManager[\s\S]*?\n  }\n/) || [''])[0];
+    ok(cm && !/FS\.path|\.FS\b/.test(cm), 'cacheManager asks no FS.path, on a page or in node', 'cacheManager still asks the family\'s FS: ' + short((cm.match(/.*FS.*/) || [''])[0].trim()));
+    ok(!/\.FS\.path\s*\(|FS\.path\b/.test(sj), 'spirit.js asks FS.path nowhere', 'spirit.js still asks FS.path');
+
+    // ON A REAL PAGE: every family the node names whose data.js is in the tree is loaded by spirit.cacheManager, an app's and a
+    // system family's alike, also where an app has a system family's name (contact). The agent app is switched on, so its
+    // family is among them.
+    const node = await H.scratchNode();
+    ok(!!node.up, 'the world: a scratch node is up', 'the scratch node did not come up: nothing judged');
+    const ask = function (call, args) {
+      return fetch(node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: call, args: args || {} }) })
+        .then(function (r) { return r.json().then(function (b) { return { status: r.status, body: b }; }, function () { return { status: r.status, body: null }; }); }, function (e) { return { status: 0, body: String(e) }; });
+    };
+    if (node.up) {
+      await ask('app.active', { key: 'agent', active: true });
+      await H.until(function () { return ask('api', { family: 'agent' }).then(function (a) { return a.status === 200; }); }, 30000);
+    }
+    const chrome = H.findChrome();
+    const page = chrome && node.up ? await H.chromePage(chrome) : null;
+    let loaded = null;
+    if (page && !page.error) {
+      await page.send('Page.navigate', { url: node.base + '/' });
+      await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.ready)'); }, 30000);
+      loaded = await page.evaluate("Promise.resolve(window.spirit.ready).then(function (s) { return s.tree(); }).then(function (t) { return Promise.all(Object.keys(t || {}).map(function (n) { return window.spirit.cacheManager(n).then(function () { return [n, 'ok']; }, function (e) { return [n, String((e && e.message) || e)]; }); })); })");
+    }
+    const withData = function (n) { return ['spirit/' + n + '/data.js', 'spirit/app/' + n + '/data.js'].some(function (p) { return fs.existsSync(path.join(RUN, p)); }); };
+    const judged = (loaded || []).filter(function (r) { return withData(r[0]); });
+    ok(judged.length >= 5 && judged.some(function (r) { return r[0] === 'contact'; }), 'the world: a page asks the cache of ' + judged.length + ' families with a data.js, contact among them', 'a page asked ' + short(loaded) + ': nothing judged');
+    judged.forEach(function (r) { ok(r[1] === 'ok', 'on a page, spirit.cacheManager("' + r[0] + '") loads its data.js', 'on a page, spirit.cacheManager("' + r[0] + '"): ' + r[1]); });
+    if (page && page.kid) page.kid.kill();
+    if (node.child) node.child.kill();
+  })();
+}
+
+async function elementMovePart() {
+  // ── THE ELEMENT MOVE PART ──
+  // THE ELEMENT MOVE (spec: ./spirit.md, its section; goal/G43.5). Andy, the box: "We are ONLY moving the contents of
+  // "run://shell/js/" to "run://spirit/element/"", "all elements will keep their name during this move.", "on the browsers,
+  // spirit object, these elements will live in "spirit.element" (SINGLULAR)", and "all UI code in the product tree that
+  // references the moved element files, must be changed to correct those references. both file-location AND the home in
+  // spirit.element (singular)": "uncluding tests", "including the contents of shell/ that remains", "including, new code in
+  // spirit/app". "shell/shared/ will not be moved or touched." The lists below are what shell/js held when the item began.
+
+  const fs = require('fs');
+  const path = require('path');
+  const { execSync } = require('child_process');
+  const RUN = path.resolve(__dirname, '../..');
+  const REPO = path.resolve(RUN, '../..');
+  const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+  const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+  const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fileSystem.js')).VENDORED_FOLDERS;
+
+  function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
+  function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 600); }
+
+  // Every tracked file shell/js held, by its path under it.
+  const MOVED_FILES = [
+    'apiFamilySelector.js', 'apiVerbSelector.js', 'appHeader/appHeader.js',
+    'appHeader/test/appHeader-pinned.html', 'appHeader/test/appHeader.js', 'appHeader/test/appHeader.md',
+    'appInstaller.js', 'appServerSelector.js', 'armingButton.js', 'branchEditor.js', 'branchSelector.js',
+    'branchSelector/listElement.js', 'branchSelector/rowElement.js', 'branchSelector/test/listElement.js',
+    'branchSelector/test/listElement.md', 'branchSelector/test/rowElement.js',
+    'branchSelector/test/rowElement.md', 'bundleEditor.js', 'bundleSelector.js',
+    'bundleSelector/listElement.js', 'bundleSelector/rowElement.js', 'bundleSelector/test/listElement.js',
+    'bundleSelector/test/listElement.md', 'bundleSelector/test/rowElement.js',
+    'bundleSelector/test/rowElement.md', 'busyButton.js', 'changeMyDescription.js', 'changeMyLabel.js',
+    'codeMirror.js', 'contactDetails/contactDetails.js', 'contactDetails/test/contactDetails.js',
+    'contactDetails/test/contactDetails.md', 'contactLabel.js', 'contactSelector.js',
+    'contacts/listElement.js', 'contacts/rowElement.js', 'contacts/test/listElement.js',
+    'contacts/test/listElement.md', 'contacts/test/rowElement.js', 'contacts/test/rowElement.md',
+    'faceForm.js', 'fieldInput.js', 'fileViewer.js', 'files/listElement.js', 'files/rowElement.js',
+    'files/test/listElement.js', 'files/test/listElement.md', 'files/test/rowElement-words.html',
+    'files/test/rowElement.js', 'files/test/rowElement.md', 'grantSelector/listElement.js',
+    'grantSelector/rowElement.js', 'grantSelector/test/listElement.js', 'grantSelector/test/listElement.md',
+    'grantSelector/test/rowElement.js', 'grantSelector/test/rowElement.md', 'grantsPanel.js', 'icon.js',
+    'iconSelector.js', 'icons/listElement.js', 'icons/rowElement.js', 'joinForm.js', 'joinSteps.js',
+    'mediaViewer.js', 'probabilitySearch.js', 'progressBar.js', 'relayPanel.js', 'rowElement.js', 'rowForm.js',
+    'tabContainer.js', 'test/apiFamilySelector.js', 'test/apiFamilySelector.md', 'test/apiVerbSelector.js',
+    'test/apiVerbSelector.md', 'test/appInstaller.js', 'test/appInstaller.md', 'test/appServerSelector.js',
+    'test/appServerSelector.md', 'test/armingButton.js', 'test/armingButton.md', 'test/branchEditor.js',
+    'test/branchEditor.md', 'test/branchSelector.js', 'test/branchSelector.md', 'test/bundleEditor.js',
+    'test/bundleEditor.md', 'test/bundleSelector.js', 'test/bundleSelector.md', 'test/busyButton-pressed.html',
+    'test/busyButton.js', 'test/busyButton.md', 'test/changeMyDescription.js', 'test/changeMyDescription.md',
+    'test/changeMyLabel.js', 'test/changeMyLabel.md', 'test/codeMirror.js', 'test/codeMirror.md',
+    'test/contactLabel.js', 'test/contactLabel.md', 'test/contactSelector.js', 'test/contactSelector.md',
+    'test/faceForm-laid.html', 'test/faceForm.js', 'test/faceForm.md', 'test/fileViewer.js',
+    'test/fileViewer.md', 'test/grantsPanel.js', 'test/grantsPanel.md', 'test/icon-sized.html', 'test/icon.js',
+    'test/icon.md', 'test/joinForm-laid.html', 'test/joinForm.js', 'test/joinForm.md',
+    'test/probabilitySearch.js', 'test/probabilitySearch.md', 'test/probabilitySearchBubble-laid.html',
+    'test/probabilitySearchBubble.js', 'test/probabilitySearchBubble.md', 'test/relayPanel.js',
+    'test/relayPanel.md', 'test/relayRowStream.js', 'test/relayRowStream.md', 'test/rowElement.js',
+    'test/rowElement.md', 'test/rowForm-laid.html', 'test/rowForm.js', 'test/rowForm.md',
+    'test/tabContainer.js', 'test/tabContainer.md', 'test/textViewer.js', 'test/textViewer.md',
+    'test/workBench-contained.html', 'test/workBench.js', 'test/workBench.md', 'textViewer.js', 'workBench.js',
+  ];
+  // What each of those puts on the page, read from a real browser when the item began.
+  const MOVED_NAMES = [
+    'apiFamilySelector', 'apiVerbSelector', 'appHeader', 'appInstaller', 'appServerSelector', 'armingButton',
+    'branchEditor', 'branchElement', 'branchList', 'branchSelector', 'bundleEditor', 'bundleElement',
+    'bundleList', 'bundleSelector', 'busyButton', 'changeMyDescription', 'changeMyLabel', 'codeMirror',
+    'contactDetails', 'contactElement', 'contactLabel', 'contactList', 'contactSelector', 'faceForm',
+    'fieldInput', 'fileElement', 'fileList', 'fileViewer', 'grantElement', 'grantList', 'grantsPanel', 'icon',
+    'iconElement', 'iconList', 'iconSelector', 'joinForm', 'joinSteps', 'mediaViewer', 'probabilitySearch',
+    'progressBar', 'relayPanel', 'rowElement', 'rowForm', 'tabContainer', 'textViewer', 'workBench',
+  ];
+  // The modules among the files, each loaded on a real page below.
+  const MODULES = [
+    'apiFamilySelector.js', 'apiVerbSelector.js', 'appHeader/appHeader.js', 'appInstaller.js',
+    'appServerSelector.js', 'armingButton.js', 'branchEditor.js', 'branchSelector.js',
+    'branchSelector/listElement.js', 'branchSelector/rowElement.js', 'bundleEditor.js', 'bundleSelector.js',
+    'bundleSelector/listElement.js', 'bundleSelector/rowElement.js', 'busyButton.js', 'changeMyDescription.js',
+    'changeMyLabel.js', 'codeMirror.js', 'contactDetails/contactDetails.js', 'contactLabel.js',
+    'contactSelector.js', 'contacts/listElement.js', 'contacts/rowElement.js', 'faceForm.js', 'fieldInput.js',
+    'fileViewer.js', 'files/listElement.js', 'files/rowElement.js', 'grantSelector/listElement.js',
+    'grantSelector/rowElement.js', 'grantsPanel.js', 'icon.js', 'iconSelector.js', 'icons/listElement.js',
+    'icons/rowElement.js', 'joinForm.js', 'joinSteps.js', 'mediaViewer.js', 'probabilitySearch.js',
+    'progressBar.js', 'relayPanel.js', 'rowElement.js', 'rowForm.js', 'tabContainer.js', 'textViewer.js',
+    'workBench.js',
+  ];
+
+  const tracked = execSync('git ls-files', { cwd: REPO, encoding: 'utf8' }).split('\n').filter(Boolean);
+  const IN_RUN = tracked.filter(function (f) { return f.indexOf('spirit/run/') === 0; }).map(function (f) { return f.slice('spirit/run/'.length); });
+
+  // A line as it stands in the tree, his own words aside: a double-quoted part of a comment or of a document is a quote, and
+  // "Andy's words are never rewritten"; everything else counts, code in full.
+  function judged(file, line) {
+    if (/\.(md|txt)$/.test(file)) return line.replace(/"[^"]*"/g, '""');
+    const cut = line.search(/(^|[^:'"])\/\//);
+    if (cut === -1) return line;
+    return line.slice(0, cut + 1) + line.slice(cut + 1).replace(/"[^"]*"/g, '""');
+  }
+  // Not the product: what the desk writes, what is published, and this suite's own lists (in this file, spirit/test/spirit.js,
+  // and its spec, since the fold), and codeMirror's own test.
+  function out(file) {
+    return /^(agents|design)\//.test(file) ||
+      /spirit\/test\/spirit\.(js|md)$|spirit\/element\/test\/codeMirror\.(js|md)$|shell\/shared\/js\/test\/deskRunStatus-home\.(js|md)$/.test(file) || VENDORED_FOLDERS.holds(file) || /(^|\/)brains\//.test(file) ||
+      !/\.(js|json|html|md|css|txt)$/.test(file) || file.indexOf('spirit/') !== 0;
+  }
+  const OLD_PATH = /\bshell\/js\b|\bshell\/node_modules\b|['"]shell['"]\s*,\s*['"]js['"]/;
+  const NAMES = MOVED_NAMES.join('|');
+  const OLD_HOME = new RegExp('\\belements\\s*\\.\\s*(' + NAMES + ')\\b|\\belements\\s*\\[\\s*[\'"](' + NAMES + ')[\'"]');
+  const ALIAS = /\b([A-Za-z_]\w*)\s*=\s*[^;\n]*\.elements\b/;
+
+  test.subHeading('elementMove: shell/js into spirit/element, its elements on spirit.element (goal/G43.5)');
+
+  await (async function () {
+    test.subHeading('the files: "We are ONLY moving the contents of "run://shell/js/" to "run://spirit/element/""');
+    const left = IN_RUN.filter(function (f) { return f.indexOf('shell/js/') === 0; });
+    ok(!left.length, 'shell/js holds no tracked file', left.length + ' tracked files are still in shell/js, the first: ' + short(left.slice(0, 5)));
+    ok(!fs.existsSync(path.join(RUN, 'shell', 'js')), 'the folder shell/js is gone', 'the folder shell/js still stands');
+    const missing = MOVED_FILES.filter(function (f) { return IN_RUN.indexOf('spirit/element/' + f) === -1; });
+    ok(!missing.length, 'all ' + MOVED_FILES.length + ' files stand at spirit/element/, each under its own name and folder', missing.length + ' of ' + MOVED_FILES.length + ' are not at spirit/element/, the first: ' + short(missing.slice(0, 5)));
+
+    // The library, CodeMirror inside spirit/element/codeMirror/, is that element's own folder: spirit/element/test/codeMirror.js.
+
+    test.subHeading('the references: "both file-location AND the home in spirit.element (singular)", tests and documents too');
+    const oldPath = []; const oldHome = [];
+    tracked.filter(function (f) { return !out(f); }).forEach(function (f) {
+      const full = path.join(REPO, f);
+      if (!fs.existsSync(full)) return;
+      const text = fs.readFileSync(full, 'utf8');
+      const alias = ALIAS.exec(text);
+      const viaAlias = alias ? new RegExp('\\b' + alias[1] + '\\s*\\.\\s*(' + NAMES + ')\\b') : null;
+      text.split('\n').forEach(function (raw, i) {
+        const line = judged(f, raw);
+        if (OLD_PATH.test(line)) oldPath.push(f + ':' + (i + 1));
+        if (OLD_HOME.test(line) || (viaAlias && viaAlias.test(line))) oldHome.push(f + ':' + (i + 1));
+      });
+    });
+    ok(!oldPath.length, 'no code, test or document names shell/js', oldPath.length + ' lines name shell/js, the first: ' + short(oldPath.slice(0, 12)));
+    ok(!oldHome.length, 'no code, test or document reaches a moved element through spirit.elements', oldHome.length + ' lines do, the first: ' + short(oldHome.slice(0, 12)));
+    // THE OTHER WAY ROUND (found live: Andy, "contact detail don't load in contacts"): contactDetails reached navigation, which did
+    // not move, through spirit.element, so the page threw when a contact was opened. Nothing names an element there unless spirit/element/ defines it.
+    // What spirit/element/ defines today: what moved, and what has been added there since (goal/G43.6, valued).
+    const DEFINED = new Set(MOVED_NAMES);
+    IN_RUN.filter(function (f) { return /^spirit\/element\/.*\.js$/.test(f) && !/\/test\//.test(f) && f.indexOf('spirit/element/codeMirror/') !== 0; }).forEach(function (f) {
+      const full = path.join(RUN, f);
+      if (!fs.existsSync(full)) return;
+      const re = /\b(?:E|element)\.([A-Za-z_]\w*)\s*=[^=]/g;
+      const text = fs.readFileSync(full, 'utf8');
+      let d = null;
+      while ((d = re.exec(text))) DEFINED.add(d[1]);
+    });
+    const notMoved = [];
+    tracked.filter(function (f) { return !out(f) && /\.(js|html)$/.test(f); }).forEach(function (f) {
+      const full = path.join(REPO, f);
+      if (!fs.existsSync(full)) return;
+      fs.readFileSync(full, 'utf8').split('\n').forEach(function (raw, i) {
+        const cut = raw.search(/(^|[^:'"])\/\//);
+        const line = cut === -1 ? raw : raw.slice(0, cut + 1);
+        const re = /\bspirit\.element\.([A-Za-z_]\w*)/g;
+        let m = null;
+        while ((m = re.exec(line))) { if (!DEFINED.has(m[1])) notMoved.push(f + ':' + (i + 1) + ' ' + m[1]); }
+      });
+    });
+    ok(!notMoved.length, 'no code reaches through spirit.element for an element spirit/element/ does not define', notMoved.length + ' lines do: ' + short(notMoved.slice(0, 12)));
+
+    test.subHeading('the page: "these elements will live in "spirit.element" (SINGLULAR) and not on spirit.elementS!!!!"');
+    const chrome = H.findChrome();
+    if (!chrome) { test.fail('no Chrome on this machine: SPIRIT_CHROME names none, and none is found by its name'); return; }
+    const node = await H.scratchNode();
+    let page = null;
+    try {
+      page = node.up ? await H.chromePage(chrome) : null;
+      if (!page || page.error) { test.fail(page ? page.error : 'the scratch node did not come up'); return; }
+      await page.send('Page.navigate', { url: node.base + '/' });
+      await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.ready)').then(Boolean); }, H.WAIT);
+      await H.sleep(2500);
+      let at = {};
+      try { at = JSON.parse(await page.evaluate('JSON.stringify({ element: typeof window.spirit.element })')); } catch (e) { at = {}; }
+      ok(at.element === 'object', 'the page has spirit.element when it starts', 'spirit.element is ' + short(at.element));
+      const load = 'var fails = []; ' + JSON.stringify(MODULES.map(function (m) { return 'spirit/element/' + m; })) +
+        '.reduce(function (p, f) { return p.then(function () { return Promise.resolve(window.spirit.require(f)).then(null, function (e) { fails.push(f + ": " + e); }); }); }, Promise.resolve())' +
+        '.then(function () { return new Promise(function (r) { setTimeout(r, 1500); }); }).then(function () { var E = window.spirit.element || {}; var O = window.spirit.elements || {}; var N = ' + JSON.stringify(MOVED_NAMES) + ';' +
+        ' return JSON.stringify({ fails: fails, absent: N.filter(function (n) { return !E[n]; }), onOld: N.filter(function (n) { return !!O[n]; }) }); })';
+      let r = {};
+      try { r = JSON.parse(await page.evaluate(load)); } catch (e) { r = { threw: String(e) }; }
+      ok(Array.isArray(r.fails) && !r.fails.length, 'every moved module loads from its new place', 'loading: ' + short(r.threw || r.fails));
+      ok(Array.isArray(r.absent) && !r.absent.length, 'all ' + MOVED_NAMES.length + ' elements stand on spirit.element under their names', 'not on spirit.element: ' + short(r.threw || r.absent));
+      ok(Array.isArray(r.onOld) && !r.onOld.length, 'and none of them on spirit.elements', 'still on spirit.elements: ' + short(r.onOld));
+      // The element drawing from spirit/element/codeMirror/ is spirit/element/test/codeMirror.js; deskRunStatus staying on
+      // spirit.elements is judged in Desk's spirit/app/desk/element/deskRunStatus/test/deskRunStatus.js (goal/G43.30).
+    } finally {
+      if (page && page.kid) page.kid.kill();
+      if (node.child) node.child.kill();
+      try { if (page && page.profile) fs.rmSync(page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
+      try { if (node.root) fs.rmSync(node.root, { recursive: true, force: true }); } catch (e) { /* left */ }
+    }
+  }());
+}
+
+async function faceLoginPart() {
+  // ── THE FACE LOGIN PART ──
+  // THE RELAY LOGIN (goal/G43.18, box v29, "The relay login"; spec: ./spirit.md, its section). Andy's box: "The relay serves a logged-out
+  // face one plain page, the one-field form, with spirit.js and seal.js only, which make the sealed link home. boot.js,
+  // shell.css, face.css and every other part of the shell come from the home node over that link.", and "The login is
+  // spirit.login, in spirit.js, no app. It holds the relay's own calls, state, login and logout on /face/api, and draws the one
+  // field when logged out. shell/login/ and its login.json go." A real scratch node, a real relay, a real face and its login,
+  // and a real Chrome on the face at <name>.localhost, a secure context as a face over https is. A step that could not run is
+  // red, never skipped.
+
+  const fs = require('fs');
+  const path = require('path');
+  const http = require('http');
+  const RUN = path.resolve(__dirname, '..', '..');
+  const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+  const { scratchNode, scratchFaceRelay, chromePage, findChrome, sleep, until } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+
+  const DOMAIN = 'localhost';
+  const NAME = 'login';
+  const MAIL = 'bert@example.org';
+  function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
+  function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
+  function parsed(t) { try { return JSON.parse(t); } catch (e) { return null; } }
+
+  async function home(base, verb, args) {
+    const r = await fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) });
+    const text = await r.text();
+    return { status: r.status, text: text, body: parsed(text) };
+  }
+  // A request as the face's page sends it, at the face's own host.
+  function at(relay, method, p, body, sid) {
+    return new Promise(function (resolve) {
+      const b = body === undefined ? '' : JSON.stringify(body);
+      const host = NAME + '.' + DOMAIN + ':' + relay.port;
+      const headers = { Host: host, Origin: 'http://' + host };
+      if (b) { headers['Content-Type'] = 'application/json'; headers['Content-Length'] = Buffer.byteLength(b); }
+      if (sid) headers.Cookie = 'spirit_face=' + sid;
+      const q = http.request({ host: '127.0.0.1', port: relay.port, path: p, method: method, headers: headers }, function (r) {
+        let text = ''; r.on('data', function (d) { text += d; });
+        r.on('end', function () { resolve({ status: r.statusCode, type: String(r.headers['content-type'] || ''), text: text, cookie: String(r.headers['set-cookie'] || '') }); });
+      });
+      q.on('error', function (e) { resolve({ status: 0, text: String(e && e.message) }); });
+      q.end(b || undefined);
+    });
+  }
+  // A real join, the star pressed at home (box v29: a face only on a starred relay), a real face, a real login.
+  async function faceOf(N, R) {
+    await home(N.base, 'relay.add', { url: R.base, label: 'scratch' });
+    await home(N.base, 'relay.join', { url: R.base, email: MAIL });
+    await until(function () { return R.mailed.length > 0; }, 5000);
+    const code = R.mailed[0] && ((/[?&]join=([A-Za-z0-9_-]+)/.exec(R.mailed[0].text)) || [])[1];
+    if (!code) return { why: 'the relay mailed no join code' };
+    await home(N.base, 'relay.join', { url: R.base, email: MAIL, code: code });
+    const star = await home(N.base, 'contact.own', { key: R.relayKey, own: true });
+    if (star.status !== 200) return { why: 'contact.own: ' + short(star.text) };
+    let f = null;
+    for (let i = 0; i < 10; i++) { f = await home(N.base, 'relay.face', { url: R.base, name: NAME }); if (f.status === 200) break; await sleep(2000); }
+    if (!f || f.status !== 200) return { why: 'relay.face: ' + short(f && f.text) };
+    await until(function () { return at(R, 'POST', '/face/api', { call: 'state', args: {} }).then(function (s) { return s.status === 200; }); }, 15000);
+    const from = R.mailed.length;
+    await at(R, 'POST', '/face/api', { call: 'login', args: { text: MAIL } });
+    await until(function () { return R.mailed.length > from; }, 5000);
+    const token = R.mailed[from] && String(R.mailed[from].text).split(/\r?\n/).map(function (l) { return l.trim(); }).filter(function (l) { return /^[A-Za-z0-9_-]{16,}$/.test(l); })[0];
+    if (!token) return { why: 'the relay mailed no login token' };
+    const done = await at(R, 'POST', '/face/api', { call: 'login', args: { text: token } });
+    const sid = ((/spirit_face=([^;]+)/.exec(done.cookie)) || [])[1];
+    return sid ? { sid: sid } : { why: 'the login: ' + short(done.text) };
+  }
+  // What the page shows: its visible fields, the scripts it loaded, by path, and whether a shell is drawn (Contacts, intrinsic,
+  // is on every shell's list).
+  const SEEN = '(function () { var f = Array.prototype.slice.call(document.querySelectorAll("input, textarea, select")).filter(function (e) { return e.offsetParent !== null && e.type !== "hidden"; }); ' +
+    'var loaded = performance.getEntriesByType("resource").map(function (e) { return e.name.replace(/^https?:\\/\\/[^/]+/, ""); }); ' +
+    'var L = window.spirit && window.spirit.login; ' +
+    'return JSON.stringify({ fields: f.length, loaded: loaded, login: !!L && ["state", "login", "logout"].every(function (k) { return typeof L[k] === "function"; }), shell: /\\bContacts\\b/.test(document.body.innerText) }); }())';
+
+  test.subHeading('faceLogin: the relay login, a plain page, and the shell from the home node (goal/G43.18)');
+
+  await (async function () {
+    test.subHeading('the box: "shell/login/ and its login.json go"');
+    ok(!fs.existsSync(path.join(RUN, 'shell', 'login')), 'shell/login/ is gone', 'shell/login/ is still there: ' + short(fs.existsSync(path.join(RUN, 'shell', 'login')) ? fs.readdirSync(path.join(RUN, 'shell', 'login')) : []));
+
+    const N = await scratchNode();
+    const R = await scratchFaceRelay({ members: [], faceDomain: DOMAIN });
+    let chrome = null;
+    try {
+      if (!N.up || !R.up) { test.fail('the scratch node or relay did not come up: nothing judged'); return; }
+      const F = await faceOf(N, R);
+      ok(!!F.sid, 'the world: a real node has a real face on a starred relay, logged in', 'nothing judged: ' + F.why);
+      if (!F.sid) return;
+
+      test.subHeading('the box: "The relay serves a logged-out face one plain page ... with spirit.js and seal.js only"');
+      const pageGot = await at(R, 'GET', '/');
+      ok(pageGot.status === 200 && /text\/html/.test(pageGot.type), 'the relay serves the face its page', 'GET /: ' + pageGot.status + ' ' + short(pageGot.type));
+      for (const p of ['/spirit.js', '/shell/seal.js']) {
+        const g = await at(R, 'GET', p);
+        ok(g.status === 200 && g.text.length > 0, 'the relay serves ' + p, 'GET ' + p + ': ' + g.status);
+      }
+      // "boot.js, shell.css, face.css and every other part of the shell come from the home node over that link": logged out
+      // or in, the relay itself serves none of them.
+      for (const sid of ['', F.sid]) {
+        for (const p of ['/shell/boot.js', '/shell.css', '/shell/face.css', '/shell/login/login.js', '/shell/login/login.json']) {
+          const g = await at(R, 'GET', p, undefined, sid);
+          ok(g.status !== 200, (sid ? 'logged in' : 'logged out') + ', the relay does not serve ' + p, (sid ? 'logged in' : 'logged out') + ', the relay serves ' + p + ' itself: ' + g.status);
+        }
+      }
+
+      const where = findChrome();
+      if (!where) { test.fail('no Chrome here: nothing judged'); return; }
+      chrome = await chromePage(where);
+      if (chrome.error) { test.fail('Chrome: ' + chrome.error); return; }
+      const FACE = 'http://' + NAME + '.' + DOMAIN + ':' + R.port + '/';
+
+      test.subHeading('the box: "The login is spirit.login, in spirit.js, no app ... and draws the one field when logged out"');
+      await chrome.send('Page.navigate', { url: FACE });
+      await until(function () { return chrome.evaluate('!!window.spirit && document.readyState === "complete"'); }, 20000);
+      await sleep(3000);
+      const out = parsed(await chrome.evaluate(SEEN)) || {};
+      ok(out.login === true, 'spirit.login holds state, login and logout', 'spirit.login: ' + short(await chrome.evaluate('JSON.stringify(Object.keys((window.spirit && window.spirit.login) || {}))')));
+      ok(out.fields === 1, 'logged out, the page shows one field', 'logged out, the page shows ' + out.fields + ' fields: ' + short(await chrome.evaluate('document.body.innerText')));
+      const notThree = (out.loaded || []).filter(function (n) { return !/^\/(spirit\.js|shell\/seal\.js|favicon\.ico|shell\/favicon\.svg)(\?|$)/.test(n) && !/^\/face\/api/.test(n); });
+      ok(Array.isArray(out.loaded) && !notThree.length, 'logged out, it loads nothing but spirit.js and seal.js', 'logged out, it loaded ' + short(notThree));
+
+      test.subHeading('logged in: the shell comes from the home node, over the link');
+      const set = await chrome.send('Network.setCookie', { name: 'spirit_face', value: F.sid, url: FACE, path: '/' });
+      ok(!!(set.result && set.result.success), 'the world: the browser holds the login', 'the browser would not take the cookie: ' + short(set));
+      await chrome.send('Page.navigate', { url: FACE });
+      const drew = await until(function () { return chrome.evaluate(SEEN).then(function (t) { const v = parsed(t) || {}; return v.shell === true; }); }, 30000);
+      const inn = parsed(await chrome.evaluate(SEEN)) || {};
+      ok(!!drew, 'logged in, the face draws the home node\'s shell', 'logged in, no shell drew: ' + short(await chrome.evaluate('document.body.innerText')));
+      const plainGets = (inn.loaded || []).filter(function (n) { return /^\/shell\/(boot\.js|face\.css)|^\/shell\.css/.test(n); });
+      ok(!!drew && !plainGets.length, 'and none of boot.js, shell.css or face.css came as the relay\'s own file', 'logged in, the page fetched from the relay: ' + short(plainGets));
+
+      test.subHeading('the box: spirit.login "holds ... logout"');
+      await chrome.evaluate('Promise.resolve(window.spirit.login.logout()).then(function () { return true; }, function (e) { return String(e); })');
+      await chrome.send('Page.navigate', { url: FACE });
+      await until(function () { return chrome.evaluate('!!window.spirit && document.readyState === "complete"'); }, 20000);
+      await sleep(3000);
+      const after = parsed(await chrome.evaluate(SEEN)) || {};
+      ok(after.fields === 1 && after.shell === false, 'logged out by spirit.login.logout, the page shows the one field again', 'after logout: ' + short(after));
+      const st = await at(R, 'POST', '/face/api', { call: 'state', args: {} }, F.sid);
+      ok(st.status === 200 && !/"loggedIn":\s*true/.test(st.text), 'and the relay holds the login no more', 'after logout the relay says: ' + short(st.text));
+    } finally {
+      try { if (chrome && chrome.kid) chrome.kid.kill(); } catch (e) { /* gone */ }
+      try { R.stop(); } catch (e) { /* gone */ }
+      try { if (N.child) N.child.kill(); } catch (e) { /* gone */ }
+      try { if (N.root) fs.rmSync(N.root, { recursive: true, force: true }); } catch (e) { /* scratch */ }
+    }
+  }());
+}
+
+async function familyFinderPart() {
+  // ── THE FAMILY FINDER PART ──
+  // HOW A FAMILY IS FOUND BY ITS NAME (goal/G43.27; spec: ./spirit.md, its section). Andy: "make sure there's a test for the module
+  // searching for api's that makes sure those rules are followed - less path elements get priority, - the target needs an
+  // api.js - and duplicate <name>/api.js raise a red.", and "spirit/app/contact/ does NOT have an api.js". The tree read as
+  // it is; the finding judged on a real page (headless Chrome) of a scratch node, folders planted into its copy that break
+  // each rule. Never a live node.
+
+  const fs = require('fs');
+  const path = require('path');
+  const { execSync } = require('child_process');
+  const RUN = path.resolve(__dirname, '..', '..');
+  const REPO = path.resolve(RUN, '..', '..');
+  const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+  const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+
+  function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
+  function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 400); }
+
+  // Every family interface under a run folder, by its name: <name>/api.js where a family lives (spirit/<name>/,
+  // spirit/app/<name>/, process/js/<name>/ and its family/ folder).
+  function interfaces(run, files) {
+    const by = {};
+    files.forEach(function (f) {
+      const m = /^spirit\/(?:app\/)?([^/]+)\/api\.js$/.exec(f) || /^process\/js\/([^/]+)\/(?:family\/)?api\.js$/.exec(f);
+      if (!m || m[1] === 'app' && f === 'spirit/app/api.js') { if (f === 'spirit/app/api.js') (by.app = by.app || []).push(f); return; }
+      (by[m[1]] = by[m[1]] || []).push(f);
+    });
+    return by;
+  }
+  function walk(dir, base, out) {
+    (fs.existsSync(dir) ? fs.readdirSync(dir, { withFileTypes: true }) : []).forEach(function (e) {
+      if (e.name === 'node_modules' || e.name === 'state' || e.name === '.git' || e.name === 'test') return;
+      const p = path.join(dir, e.name);
+      if (e.isDirectory()) walk(p, base, out); else out.push(path.relative(base, p).split(path.sep).join('/'));
+    });
+    return out;
+  }
+
+  test.subHeading('familyFinder: a family found by its name: the fewest path elements, an api.js there, no name twice (goal/G43.27)');
+
+  await (async function () {
+    test.subHeading('the world');
+    const tracked = execSync('git ls-files -- spirit/run', { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(Boolean)
+      .filter(function (f) { return fs.existsSync(path.join(REPO, f)); }).map(function (f) { return f.slice('spirit/run/'.length); });
+    const by = interfaces(RUN, tracked);
+    ok(Object.keys(by).length >= 10 && by.contact && by.relay, 'the world: ' + Object.keys(by).length + ' family names with an api.js in the tree, contact and relay among them', 'only ' + short(Object.keys(by)) + ': nothing judged');
+    ok(fs.existsSync(path.join(RUN, 'spirit', 'app', 'contact')) && !fs.existsSync(path.join(RUN, 'spirit', 'app', 'contact', 'api.js')), 'the world: spirit/app/contact/ is an app folder with no api.js (Andy: "spirit/app/contact/ does NOT have an api.js")', 'spirit/app/contact/ is not as Andy said');
+
+    // That no branch's name has a second api.js in the tree is judged on each branch folder, as are an app's family found
+    // where its api.js is and a page getting each branch's own data.js (./spirit-sibling-branchRules.js, goal/G43.32). Here,
+    // the finder itself, on folders planted to break each rule.
+
+    // A scratch node, then folders planted into its copy that break each rule.
+    const node = await H.scratchNode();
+    ok(!!node.up && !!node.root, 'the world: a scratch node is up, on its own copy of the tree', 'the scratch node did not come up: nothing judged');
+    const sRun = node.root ? path.join(node.root, 'spirit', 'run') : '';
+    function plant(rel, text) { const f = path.join(sRun, rel); fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, text); }
+    const MARK = function (where) { return '(window.__planted = window.__planted || []).push(' + JSON.stringify(where) + ');\n'; };
+    if (sRun) {
+      // Rule 2: a folder of the name without api.js is never the target (spirit/app/contact/ has a data.js, no api.js).
+      plant('spirit/app/contact/data.js', MARK('spirit/app/contact'));
+      // Rule 1: the same name with an api.js one level deeper loses to spirit/relay/ (and is a duplicate, rule 3).
+      plant('spirit/app/relay/api.js', 'module.exports = { verbs: {} };\n');
+      plant('spirit/app/relay/data.js', MARK('spirit/app/relay'));
+    }
+
+    test.subHeading('3. a duplicate is seen');
+    const planted = interfaces(sRun, walk(sRun, sRun, []));
+    ok(!!planted.relay && planted.relay.length === 2, 'the check sees the planted second relay/api.js (spirit/relay/ and spirit/app/relay/)', 'the check saw ' + short(planted.relay));
+
+    test.subHeading('1, 2. a page finds each family where the rules say');
+    const page = node.up ? await H.chromePage(H.findChrome()) : null;
+    let got = null;
+    if (page && !page.error) {
+      await page.send('Page.navigate', { url: node.base + '/' });
+      await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.ready)'); }, 30000);
+      got = await page.evaluate("Promise.resolve(window.spirit.ready).then(function () { return Promise.all(['contact', 'relay'].map(function (n) { return window.spirit.cacheManager(n).then(function () { return [n, 'ok']; }, function (e) { return [n, String((e && e.message) || e)]; }); })); }).then(function (r) { return { said: r, planted: window.__planted || [] }; })");
+    }
+    ok(!!got, 'the world: the page asked contact and relay', 'the page asked nothing: ' + short(page && page.error));
+    const asked = page ? page.heard.filter(function (m) { return m.method === 'Network.responseReceived'; }).map(function (m) { return { url: m.params.response.url.replace(node.base, '').replace(/^\//, ''), status: m.params.response.status }; }) : [];
+    const fetched = function (p) { return asked.some(function (a) { return a.url === p && a.status === 200; }); };
+    const said = {}; ((got && got.said) || []).forEach(function (r) { said[r[0]] = r[1]; });
+    const ran = (got && got.planted) || [];
+    ok(said.contact === 'ok' && fetched('spirit/contact/data.js') && ran.indexOf('spirit/app/contact') === -1, '2. contact is spirit/contact/: spirit/app/contact/ has no api.js, and its data.js never runs', 'contact: ' + short(said.contact) + ', spirit/contact/data.js fetched ' + fetched('spirit/contact/data.js') + ', the planted spirit/app/contact/data.js ran ' + (ran.indexOf('spirit/app/contact') !== -1));
+    ok(said.relay === 'ok' && fetched('spirit/relay/data.js') && ran.indexOf('spirit/app/relay') === -1, '1. relay is spirit/relay/, the fewer path elements, over spirit/app/relay/', 'relay: ' + short(said.relay) + ', spirit/relay/data.js fetched ' + fetched('spirit/relay/data.js') + ', spirit/app/relay/data.js ran ' + (ran.indexOf('spirit/app/relay') !== -1));
+    const missed = asked.filter(function (a) { return /(^|\/)data\.js$/.test(a.url) && a.status === 404; });
+    ok(!missed.length, 'no data.js was asked that is not there (no 404)', missed.length + ' asked and missed: ' + short(missed));
+    if (page && page.kid) page.kid.kill();
+    if (node.child) node.child.kill();
+
+    // goal/G43.20, its box: "a family is found as spirit/<name>/api.js or spirit/app/<name>/api.js, a job is named by its
+    // route, and nothing falls back to process/js/<name>". In a process: the path spirit.familyPath gives is the family's own
+    // api.js, a system family's in spirit/<name>/, an app's in spirit/app/<name>/, and none names process/js.
+    test.subHeading('goal/G43.20: in a process, a family\'s path is its own api.js, and nothing falls back to process/js');
+    const paths = JSON.parse(require('child_process').spawnSync(process.execPath, ['-e',
+      "require('./spirit/spirit.js'); console.log(JSON.stringify({ fs: spirit.familyPath('fs'), desk: spirit.familyPath('desk'), agent: spirit.familyPath('agent'), none: spirit.familyPath('zzNoSuchFamily') }));"],
+      { cwd: RUN, encoding: 'utf8' }).stdout || '{}');
+    ok(paths.fs === 'spirit/fs/api.js', 'a system family\'s path is spirit/<name>/api.js: fs is spirit/fs/api.js', 'fs: ' + short(paths.fs));
+    ok(paths.desk === 'spirit/app/desk/api.js' && paths.agent === 'spirit/app/agent/api.js', 'an app\'s path is spirit/app/<name>/api.js: desk and agent', 'desk: ' + short(paths.desk) + ', agent: ' + short(paths.agent));
+    ok(Object.keys(paths).length === 4 && !/process\/js/.test(JSON.stringify(paths)), 'no path names process/js, a name of no family\'s included', 'paths: ' + short(paths));
+
+  })();
+}

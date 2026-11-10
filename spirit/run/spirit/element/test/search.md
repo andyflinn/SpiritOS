@@ -162,3 +162,101 @@ draws and ranks.
 - A bubble of another border colour, or not transparent; the two rows in two bubbles; the list inside the bubble.
 - A selector not mounted, or out of order, or below the filters; a 🪣 row with no selectors; a change that does not
   redraw, or asks the server.
+
+## Its bubble laid out (once search-bubble.js)
+
+The search element's bubble, in a real browser (goal/G41.26). Its test is the bubble part of `./search.js` (once `./search-bubble.js`); the
+element's other tests run in node, the first part of `./search.js`.
+
+Andy, on G41.26: *"why do the icons in the probabilitySearch row have different width's? do they not use the icon
+element? I'd like it, if the controls in the search bubble look better aligned."*
+
+Asked of a real browser, since widths and places are layout: `./search-bubble-laid.html`, opened at
+`/DEBUG/spirit/element/test/search-bubble-laid.html` on a scratch node with its DEBUG on
+(`spirit/test/headLessChrome.js`), a pane and a dropdown, each with a filter.
+
+### Requirements
+
+In a pane and in a dropdown's pane alike:
+
+- **The 🪣 row of selectors on top** (Andy: *"the selectorRow must start with a\n🪣icon"*): its 🪣 the icon element
+  too, a square of its font size, over the 🗜; its first selector starting where the search input does.
+- **The row icons are the icon element** (`spirit/element/icon.js`): 🗜 and 🔎 are spans of class `shell-icon`.
+- **Each icon is a square of its font size**, whatever its glyph. A bare glyph takes its own width, which differs
+  from glyph to glyph and from browser to browser.
+- **The icons stand one under the other**, as wide as each other.
+- **Each row's first control starts at the same place**: the first filter over the search input.
+
+### What its test must try to break
+
+- 🗜 or 🔎 drawn as a bare glyph: its class, and its width that is not its font size (here 20px at 16px).
+- The rows' first controls at different places.
+
+## The search elements in spirit/element/search/ (once search-folder.js)
+
+goal/G43.18. Its test is the folder part of `./search.js` (once `./search-folder.js`): the tree read as it is, what is there, what is gone and what the code names, and each file loaded on a page. That nothing else changed (*"No behaviour or function changes: renaming only"*) is judged by the moved elements' own suites, moved with them.
+
+Andy: *"all "probabilitySearch" elements follow the EXACT SAME PATTERN."*
+
+### Requirements
+
+- There: `spirit/element/search.js`; under `spirit/element/search/`:
+  - `api.js` and `api/verb.js`: *"appServerSelector.js is today's api search in dropdown mode: it becomes search/api.js"*, *"apiFamilySelector.js ... folds into search/api.js"*, *"apiVerbSelector.js is the verb dropdown filter: search/api/verb.js"*.
+  - `app.js` and `app/rowElement.js`, from `spirit/app/appSelector/listElement.js` and `rowElement.js`.
+  - `contact.js`, `contact/listElement.js`, `contact/rowElement.js`; the same for `icon`, `bundle` and `branch`.
+  - `file.js` and `file/rowElement.js`, `grant.js` and `grant/rowElement.js`: *"their listElement becomes search/file.js and search/grant.js, their rowElement stays in the folder."*
+  - `valued.js`.
+  - `contact/detailElement.js`, Andy: *"contactDetails.js should really be spirit/run/spirit/element/search/contact/detailElement.js"*; and `contact/relayPanel.js`, Andy: *"spirit/run/spirit/element/relayPanel.js really should be  spirit/run/spirit/element/search/contact/relayPanel.js"*. Gone: `contactDetails/` and `relayPanel.js`.
+- Gone: `probabilitySearch.js`, `appServerSelector.js`, `apiFamilySelector.js`, `apiVerbSelector.js`, `contactSelector.js` and `contact/`, `files/`, `iconSelector.js` and `icons/`, `bundleSelector.js` and its folder, `branchSelector.js` and its folder, `grantSelector/`, `valued.js`, and `spirit/app/appSelector/listElement.js` and `rowElement.js`.
+- The same pattern for all: every name under `search/` is a word, a to z, and every folder sits beside its `<name>.js`.
+- *"The apps and elements that require them name the new paths"*: no code, tests included, comments left out, names an old path.
+- *"search/api/verb.js, which branch names too"*: `search/api.js` and branch both load it.
+- Renaming only, so what loaded before still loads: in a real Chrome on a scratch node's `face.html`, every file in the list above is required through `spirit.require` and answers within 8 seconds. Folding the family selector into `search/api.js` made it and `search/api/verb.js` require each other, and neither loaded. Andy saw it in the agent: *"the bundles fail to pop into a tab, when i click on a bundle, no network activity, no console activity."*
+
+The app search's server filter, node.mount true and active, hidden by default, is judged in a real Chrome by the app search's own suite, `spirit/element/search/test/app.js`.
+
+## A search dropdown's list floats (once search-popup.js)
+
+goal/G43.18. Its test is the popup part of `./search.js` (once `./search-popup.js`): real clicks and keys in a real Chrome on a scratch node's face page, three search dropdowns of 40 rows, each in a 48 px box that cuts off what overflows it (as a row of a panel does), a block drawn over the space below the first two, and the third low in the window.
+
+Andy: *"is it possible to have a "popup" element, which floats it's contents above all windows, but only one in the whole browser window can be active? only bound by the window size but not neccessarily filling it? all dropdown panels should be part of that"*, then *"and the actual dropdown control stays where it is? just the popped list would "float"? then do that for the lists in the search-dropdown please."*
+
+### Requirements
+
+- Pressed, a dropdown's field stays where it was, in its box.
+- Its list reaches past its box, over the block drawn on top, and is what is seen there.
+- The list lies inside the window and does not fill it; low in the window too.
+- Only one open: pressing a second dropdown closes the first's list. Escape closes it, and so does a press outside.
+
+## The face tiles (once search-tiles.js)
+
+The third face of `spirit/element/search.js` (goal/G43.6). Its test is the tiles part of `./search.js` (once `./search-tiles.js`), in a real browser, with rows of its own. The other faces are the first part's.
+
+Andy, box: *"probabilitySearch gets a third face, 'tiles', beside 'pane' and 'dropdown': the same ranked rows, drawn as tiles. Any list can use it. No column headers or sorting; arrow keys also go left and right."*
+
+### Requirements
+
+- `face: 'tiles'`: one `.app-icon` tile per row, its image from `row.icon` above its label from `row.label`. No table, headers or sort triggers. One search field.
+- With no words there is no bar, and its space stays: with words a tile's label stands where it stood.
+- With words the best row comes first, with a bar between image and label, horizontal and centered: `.list-rank` as the lists draw it, the same colour and number.
+- A tile the words miss stays, last, with an empty bar. Nothing is cut.
+- Arrow keys go left and right as well, and Enter picks where they went. A pressed tile is the list's pick.
+- The tooltip shows the row, one `path: value` above the other, drawn from the scan `probabilityStringObjectMatch` uses: `measureObject`, exported, whose rows carry their js object path (`stats.cpu`, `files[0].name`). The `icon` row is dropped.
+- A pane stays a table with headers.
+
+### The toggle (goal/G43.9)
+
+- *"A new option, toggle: true. Without it nothing changes for any other list."* No option, no toggle, on a pane or on tiles.
+- *"It flips pane and tiles only. Dropdown closes to a field, so it never shows the toggle."*
+- *"The toggle sits on the search row, right after the Search button."* It is the next element after that button.
+- *"The face can change while the list lives, keeping the search words."* A press draws the other face, words kept, and a second press goes back.
+- *"It tells its owner the new face."*
+
+The box names neither, so the test names them for the builder: the toggle is `.list-toggle`, and the owner hears through the option `onFace(face)`. If the build names them otherwise, the verifier corrects the test.
+
+### What a list hands its tiles (goal/G43.17, Q14)
+
+Andy, on Q14 *"May I change the shared search list, so the Files tiles can show each file's own icon and name?"*: *"yes."*
+
+- The option `tile(row, key)` answers `{ icon, label }` for a tile. Either one left out is the row's own `row.icon` or `row.label`; without the option nothing changes for any other list.
+- The files list hands a file its kind's icon (fstat's `iconOf`), a folder 📁 shut and 📂 open, and the file's name.

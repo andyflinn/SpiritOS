@@ -16,7 +16,7 @@
 // spirit.<name>.data.js"). Every check is named by its branch folder. What it took in, per branch, from the five tests
 // that held branch rules (goal/G43.32, Q6: "absolutely, AND MAKE SURE NO TEST GETS LOST."): spirit-familyFinder.js,
 // data-caches.js, apiDoor-familyGate.js, server-appFamily.js, introSpector-branchVerbs.js; what judges no branch went back
-// to the test of the module it judges (./data-caches.js, ./spirit-familyFinder.js). A scratch node; never a live one.
+// to the test of the module it judges (./data.js, which data-caches.js went into, ./spirit.js, its familyFinder part). A scratch node; never a live one.
 
 const fs = require('fs');
 const path = require('path');
@@ -124,7 +124,7 @@ function placedRules(sRun, served) {
 // ── 1a. AN APP BRANCH'S DESCRIPTION ─────────────────────────────────────────────────────────────────────────────────
 // AGENT.md, an app: "the app family's live at spirit/run/spirit/app/<name>/, each described by its own <name>/<name>.json
 // (goal/G43.2)"; Andy, box: "containing identity:icon and identity:label", and "spirit.app also holds the family's verb,
-// search, so no app may take the name of a verb." (goal/G43.6); ./appServer-mount.md: "<name>.json has no kind or
+// search, so no app may take the name of a verb." (goal/G43.6); ./appServer.md: "<name>.json has no kind or
 // operated. The node operates the server."
 function appRules() {
   let familyVerbs = [];

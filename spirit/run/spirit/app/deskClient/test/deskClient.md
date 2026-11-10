@@ -90,3 +90,28 @@ client has a cache, if the agent wants to know stuff, give them FIRST the cache"
 
 - *"when product tests are modified, they should show up as red file-status in desk. product tests are the test folders under spirit/run/."* A file in a test folder under `spirit/run/` goes as `item.status` with tone `test`; a production file there with tone `code`.
 - *"the agents deskClient should relay the agents deskVerifier status during a run, this will tell desk that the agent "is busy". with no held item, it shows on the agent as working."* While the agent holds an item (red, build or verify), each suite its verifier announces goes as `item.status` under that item. With no held item, `agent.state` says `working` and no item gets a status. The verifier's publishes are fed both ways a client can hear them: its subscribers on the event stream, and the data set.
+
+## The chokidar part: deskClient watches its clone with chokidar from spirit/job/
+
+goal/G43.25, `spirit/run/spirit/app/deskClient/test/deskClient.js`, its chokidar part: `deskClient.js`'s part of the move of chokidar and readdirp into spirit/job/.
+
+Andy: "can we hide those suckers in spirit/jobs/ for now? without the damn node_modules container?"
+
+The watcher runs in a child process on a scratch folder inside spirit/run, removed afterwards.
+
+### Requirements
+
+- **deskClient.js requires it by path**, a path that resolves to spirit/job/chokidar/index.js.
+- **The file watcher works as before:** the library deskClient requires, watching a folder, hears a file added.
+
+The move itself is the vendoredLibraries part of `spirit/test/job.md`.
+
+## The noTeamChat part: spirit/app/deskClient/deskClient.js
+
+goal/G43.22. Its test is the noTeamChat part of `./deskClient.js`: the tree read as it is, comments left out.
+
+Andy, the box: *"the apps and plugin system goes."*, *"there will only be goals, items and rules left, plus the verifier stuff can stay for now."*
+
+### Requirements
+
+- Andy (Q5): *"G0 goes, from ui and server, kept in database."*: `deskClient.js` names no `goal/G0`.

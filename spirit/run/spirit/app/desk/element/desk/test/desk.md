@@ -94,3 +94,13 @@ titlebar of that item".
 
 - In a real browser on a scratch node, with desk switched on, a goal and two items: the first item opened, closed with its
   ✕, then the second opened. The second must draw its own details, and there must be one layer, not two.
+
+## The noPlugins part: spirit/app/desk/element/desk/desk.js
+
+goal/G43.22. Its test is the noPlugins part of `./desk.js`: the tree read as it is, comments left out.
+
+Andy, the box: *"the apps and plugin system goes."*, *"there will only be goals, items and rules left, plus the verifier stuff can stay for now."*
+
+### Requirements
+
+- Andy (Q5): *"G0 goes, from ui and server, kept in database."*: the desk page names no `goal/G0` and no plugin, and draws no Apps tab and no plugin tab.

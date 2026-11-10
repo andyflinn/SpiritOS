@@ -1,6 +1,9 @@
 'use strict';
 
 // spirit/run/spirit/app/desk/element/desk/test/desk.js
+// One file for every test of its script (Andy: "there is ONE FUCKING test file in the test folder per script file, and every fucking
+// test that applies to that file must be inserted in the that one file"; spirit/test/TEST_SYSTEM.md): each part below is its own
+// section at the end: noPlugins.
 // The tests of spirit/app/desk/element/desk/desk.js (spec: ./desk.md). goal/G41.1: every icon it draws is a glyph written as it is, with
 // no icon table and no lookup of a name into one, read from the module's own code. goal/G41.9: every are-you-sure it
 // draws is an armingButton, driven on a page of its own. goal/G41.11: the design buttons' colour is a class, and every
@@ -499,8 +502,36 @@ async function twoPress(w, find, armedSays, wantPress, what) {
     const gaps = notFill(made.host);
     ok(isFill(made.host) && !gaps.length, want[0] + ' stands in a fill box, and every box up to the app is fill too', want[0] + ': not fill: ' + gaps.join(' < '));
   });
+}()).catch(function (e) { test.fail('the test threw ' + (e && e.stack || e)); }).then(async function () {
+  // The parts below, each after the checks above, in order; one report for all.
+  for (const part of [['noPlugins', noPluginsPart]]) {
+    try { await part[1](); } catch (e) { test.fail('the ' + part[0] + ' part threw ' + (e && e.stack || e)); }
+  }
   test.reportSuccessFailureCount();
-}()).catch(function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); });
+});
 
 // THE ELEMENT NAMES SINCE goal/G43.18: a stand-in keyed by its place, 'search.contact' and so on, nested where the page has it.
 function nestSearch(o) { Object.keys(o).forEach(function (k) { if (k !== 'search' && k.indexOf('search.') !== 0) return; var v = o[k]; delete o[k]; var ks = k.split('.'); var at = o; ks.slice(0, -1).forEach(function (p) { at = at[p] = at[p] || {}; }); var last = ks[ks.length - 1]; at[last] = Object.assign(at[last] || {}, v); }); return o; }
+
+// ── THE noPlugins PART ───────────────────────────────────────────────────────────────────────────────────────────
+async function noPluginsPart() {
+  // The noPlugins part of ./desk.js.
+  // THE DESK PAGE WITHOUT APPS, PLUGINS AND TEAM CHAT (goal/G43.22; spec: ./desk.md, its noPlugins section): spirit/app/desk/element/desk/desk.js.
+  // Andy, the box: "the apps and plugin system goes.", "there will only be goals, items and rules left, plus the verifier stuff
+  // can stay for now.". Q5: "G0 goes, from ui and server, kept in database.". The tree read as it is, comments left out.
+
+  const fs = require('fs');
+  const path = require('path');
+  const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..', '..');
+  const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+
+  function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
+  function code(f) { try { return fs.readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1').replace(/<!--[\s\S]*?-->/g, ''); } catch (e) { return ''; } }
+  const DESK = path.join(RUN, 'spirit', 'app', 'desk');
+
+  test.subHeading('noPlugins: the desk page draws no Apps tab, no plugin and no team chat (goal/G43.22)');
+
+  test.subHeading('Andy: "removal of plugin support.", and "G0 goes, from ui and server"');
+  const page = code(path.join(DESK, 'element', 'desk', 'desk.js'));
+  ok(!!page && !/goal\/G0['"]/.test(page) && !/data-tab="apps"/.test(page) && !/plugin/i.test(page), 'the desk page draws no Apps tab, no plugin tab and no team chat', 'spirit/app/desk/element/desk/desk.js still names Apps, a plugin or goal/G0');
+}
