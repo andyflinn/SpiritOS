@@ -170,6 +170,40 @@ managers.forEach(function (m) {
   ok(!!f && !!f.data && typeof f.data === 'object' && !!f.cache, m + ': it stands at spirit.data.' + name + ', for clients to ask', m + ': spirit.data.' + name + ' is ' + short(f));
 });
 
+// ── 8. A BRANCH'S WATCH IS CALLED watch ─────────────────────────────────────────────────────────────────────────────
+// Andy, goal/G43.32: "that's a decision: a BRANCHE's what is called "watch"", "the branch is already implied in it's
+// containing object.", "wsl, assert this in a test for branches." Every object a family's reads hold, the reads
+// themselves and each object inside them, is a branch: its watch is the member named watch and no other (watchFile,
+// watchApp, watchRow are the names it replaces), and as the branch is the object it sits on, a watch is never told
+// which branch: it takes the function, and at most the row it narrows to (watch(fn), watch(id, fn)).
+test.subHeading('8. a branch\'s watch is called watch, and is never told its branch');
+managers.forEach(function (m) {
+  const named = /makeFamily\(\s*['"]([^'"]+)['"]/.exec(code(path.join(RUN, m)));
+  const name = named ? named[1] : '';
+  const f = name ? require(DATA)[name] : null;
+  if (!f || !f.data || typeof f.data !== 'object') { test.fail(m + ': no reads to judge at spirit.data.' + name); return; }
+  const others = [];
+  const told = [];
+  const watches = [];
+  const seen = [];
+  (function walk(o, at, depth) {
+    if (!o || typeof o !== 'object' || depth > 4 || seen.indexOf(o) !== -1) return;
+    seen.push(o);
+    Object.keys(o).forEach(function (k) {
+      let v;
+      try { v = o[k]; } catch (e) { return; }
+      const here = at ? at + '.' + k : k;
+      if (/^watch./.test(k)) others.push(here);
+      if (k === 'watch' && typeof v === 'function') { watches.push(here); if (v.length > 2) told.push(here + ' takes ' + v.length); }
+      if (v && typeof v === 'object' && !Array.isArray(v)) walk(v, here, depth + 1);
+    });
+  }(f.data, '', 0));
+  ok(!others.length, m + ': no branch of spirit.data.' + name + ' names its watch other than watch' + (watches.length ? ' (' + watches.join(', ') + ')' : ''),
+    m + ': spirit.data.' + name + '.data names a watch other than watch: ' + short(others));
+  ok(!told.length, m + ': no watch of spirit.data.' + name + ' is told its branch: each takes the function and at most its row',
+    m + ': a watch of spirit.data.' + name + ' takes more than its row and its function, so it is told its branch: ' + short(told));
+});
+
 // ── 7. NO OTHER WAY ─────────────────────────────────────────────────────────────────────────────────────────────────
 test.subHeading('7. nothing keeps node rows but spirit.data, and no file names another way');
 // Andy, the box: "anything not using the new spiritData.js and it's buddies clientCacheManager.js must do so in this

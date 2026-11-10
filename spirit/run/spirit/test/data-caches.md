@@ -55,6 +55,14 @@ is the appServer serializes the cache to disk."*
      branches (`deskItem/`, `deskItems/`, `deskState/`), `D.data.<branch>`. The list names the ways replaced so far;
      any other notion is read for by hand.
 
+8. **A branch's watch is called `watch`** (Andy, goal/G43.32: *"that's a decision: a BRANCHE's what is called
+   "watch""*, *"the branch is already implied in it's containing object."*, *"wsl, assert this in a test for
+   branches."*): every object a family's reads hold (`spirit.data.<name>.data`, and each object inside it) is a branch.
+   - Its watch is the member named `watch`, and no member is named `watch` and more (`watchFile`, `watchApp`, `watchRow`
+     are the names it replaces). Each family is its own check.
+   - A watch is never told its branch, the object it sits on: it takes the function and at most the row it narrows to,
+     `watch(fn)` or `watch(id, fn)`, so no more than two parameters.
+
 ## What its test must try to break
 
 - A family without a data.js.
@@ -64,3 +72,4 @@ is the appServer serializes the cache to disk."*
 - A manager that keeps its cache itself, on disk or in browser storage; a module writing a cache file besides appServer.
 - A manager without the contract; a page that cannot find a family's manager by its name; a manager the node does not
   serve.
+- A branch whose watch has another name (`watchRow`), or a watch told its branch (`watch(table, id, fn)`).
