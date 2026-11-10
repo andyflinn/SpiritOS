@@ -58,6 +58,14 @@
       var bench = null;
       var tabs = null;
       var unsaved = 0;
+      // What its tools made (the table lists, the persona search, the bundle editor), destroyed with it (rule/8: each
+      // watches its branch); one made after destroy goes at once.
+      var owned = [];
+      function own(m) {
+        if (!m || typeof m.destroy !== 'function') return m;
+        if (gone) m.destroy(); else owned.push(m);
+        return m;
+      }
       // A tab's header (Andy: "<provider-icon> <provider Label>", "<chat-icon> <persona-label>", "new  <row-type>*").
       function header(spec, row) {
         var r = row || {};
@@ -113,7 +121,7 @@
           return { name: t.name, icon: t.icon, title: t.title, mount: function (box) {
             box.className = 'fill';
             Promise.resolve(spirit.require('spirit/app/agent/table/' + t.name + '/elementTable.js')).then(function () {
-              agentAt('spirit.app.agent.table.' + t.name + '.elementTable').create(box, detail);
+              own(agentAt('spirit.app.agent.table.' + t.name + '.elementTable').create(box, detail));
             }, function () { box.textContent = 'The ' + t.name + ' table could not be loaded.'; });
           } };
         }).concat([{ name: 'chat', icon: '💬', title: 'Select Persona', mount: function (box) {
@@ -126,7 +134,7 @@
           Promise.resolve(spirit.require('spirit/app/agent/table/tableElement.js')).then(function () {
             var D = window.spirit.element.spirit.app.agent.table.tableElement;
             box.innerHTML = '<div class="fill">' + D.titleRow({ icon: '💬' }, ['Select Persona']) + '<div id="agent-personas" class="fill" style="margin-top:1em"></div></div>';
-            D.search(box.querySelector('#agent-personas'), { table: 'persona' }, { face: 'pane', pick: function (row, key) {
+            own(D.search(box.querySelector('#agent-personas'), { table: 'persona' }, { face: 'pane', pick: function (row, key) {
               var picked = { id: String((row && row.id) || key || ''), label: String((row && row.label) || '') };
               // Its own tab beside its persona's, following that persona's row.
               detail.open(function (centre) {
@@ -137,7 +145,7 @@
                 });
                 return { destroy: function () { closed = true; if (pane) pane.destroy(); } };
               }, { table: 'persona', id: picked.id, row: picked, chat: true });
-            } });
+            } }));
           }, function () { box.textContent = 'The persona table could not be loaded.'; });
         } }]),
         // THE SERVER'S TOOL IS serverDEBUG (goal/G43.15; Andy: "agent will in the server-config, on the right icon strip the ⚙ icon
@@ -161,10 +169,10 @@
           // (<bundle-name>) in italic print.").
           box.className = 'fill';
           Promise.resolve(spirit.require('spirit/element/bundleEditor.js')).then(function () {
-            window.spirit.element.spirit.element.bundleEditor.create(box, { tabs: tabs, tabLabel: function (row) {
+            own(window.spirit.element.spirit.element.bundleEditor.create(box, { tabs: tabs, tabLabel: function (row) {
               var label = String(row.label || '');
               return String(row.owner || 'node') === 'node' ? label : { label: '(' + label + ')', italic: true };
-            } });
+            } }));
           }, function () { box.textContent = 'The bundle editor could not be loaded.'; });
         } }],
       });
@@ -175,6 +183,10 @@
         destroy: function () {
           gone = true;
           if (serverPanel) serverPanel.destroy();
+          owned.splice(0).forEach(function (m) { try { m.destroy(); } catch (e) { /* its own */ } });
+          // The centre's tabs, each tab's detail and its row's follow with them (tabContainer's destroy).
+          if (tabs) tabs.destroy();
+          tabs = null;
           if (bench && typeof bench.destroy === 'function') bench.destroy();
           container.innerHTML = '';
         },
