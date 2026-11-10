@@ -62,6 +62,7 @@ const NAMED = ADDRESS.slice('/DEBUG'.length);
 function kindOf(file) {
   const f = String(file || '');
   if (!/^spirit\/.+\.js$/.test(f) || /(^|\/)test\//.test(f)) return '';
+  if (f === 'spirit/element/installSpiritElement.js') return '';
   try { return /\binstallSpiritElement\s*\(/.test(codeOf(fs.readFileSync(path.join(RUN, f), 'utf8'), true)) ? 'element' : ''; } catch (e) { return ''; }
 }
 const WAIT = 20000;
@@ -219,7 +220,10 @@ const WATCH = String.raw`(function () {
       var host = (window.spiritSearchHosts || [])[i];
       if (!host || !host.isConnected || !x.data || !D || typeof D.rowsOf !== 'function') return { verb: x.verb, data: x.data, drawn: 0, outside: [] };
       var held = {}; (D.rowsOf(x.data) || []).forEach(function (r) { held[String(r.key)] = true; });
-      var keys = Array.prototype.map.call(host.querySelectorAll('[data-key]'), function (el) { return String(el.getAttribute('data-key')); });
+      // A search mounted inside another's host (branch's family filter in its 🪣 row) draws its own rows: they are judged
+      // against its own branch, not this one's.
+      var inner = (window.spiritSearchHosts || []).filter(function (h, j) { return j !== i && h && h !== host && host.contains(h); });
+      var keys = Array.prototype.filter.call(host.querySelectorAll('[data-key]'), function (el) { return !inner.some(function (h) { return h.contains(el); }); }).map(function (el) { return String(el.getAttribute('data-key')); });
       return { verb: x.verb, data: x.data, drawn: keys.length, outside: keys.filter(function (k) { return !held[k]; }).slice(0, 5) };
     });
   };
@@ -237,9 +241,11 @@ const WATCH = String.raw`(function () {
         if (v && typeof v[k[1]] === 'function' && !v[k[1]].__kept) { var f = kept(k[0] + '.' + k[1], v[k[1]]); f.__kept = true; v[k[1]] = f; }
         // A family's view (goal/G41.28), spirit.data.viewAt(node, family): a manager watches through it, so its watch is kept
         // as one on spirit.data, under the whole path it watches.
-        if (k[0] === 'data' && v && typeof v.at === 'function' && !v.at.__kept) {
-          var at = v.at;
-          v.at = function () {
+        // spirit.data names it viewAt (spirit/data.js); a watch through the view is the module's own watch.
+        var VIEW = v && typeof v.viewAt === 'function' ? 'viewAt' : 'at';
+        if (k[0] === 'data' && v && typeof v[VIEW] === 'function' && !v[VIEW].__kept) {
+          var at = v[VIEW];
+          v[VIEW] = function () {
             var view = at.apply(this, arguments);
             var node = arguments[0];
             if (view && typeof view.watch === 'function') {
@@ -254,7 +260,7 @@ const WATCH = String.raw`(function () {
             }
             return view;
           };
-          v.at.__kept = true;
+          v[VIEW].__kept = true;
         }
       }
       Object.defineProperty(o, k[0], { configurable: true, enumerable: true, get: function () { return cur; }, set: function (v) { cur = v; wrap(v); } });
@@ -498,7 +504,8 @@ function everyScriptShaped() {
 // path> once required on a page. The node side runs in the scratch copy beside the scratch node, each script in a
 // process of its own; the page side on the scratch node's face page, a fresh page each. Never Andy's tree or node.
 function placeKeys(rel) { return rel.replace(/\.js$/, '').split('/'); }
-function isElementScript(rel) { return /\binstallSpiritElement\s*\(/.test(codeOf(fs.readFileSync(path.join(RUN, rel), 'utf8'), true)); }
+// The helper itself defines installSpiritElement and places nothing: it is required, no element.
+function isElementScript(rel) { return rel !== 'spirit/element/installSpiritElement.js' && /\binstallSpiritElement\s*\(/.test(codeOf(fs.readFileSync(path.join(RUN, rel), 'utf8'), true)); }
 function requireOnNode(run, rel) {
   return new Promise(function (resolve) {
     // A branch's api.js (decided 8) binds the branch, so it is waited on and judged by its place alone; every other script
