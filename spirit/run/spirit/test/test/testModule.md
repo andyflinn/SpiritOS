@@ -13,4 +13,12 @@ The box: *"the general rules judge no module: testModule.js looks for ./spirit.j
   rule) be associated with a production file"*): on its blast radius, `./test/<name>-<what>.js` runs once with
   `./<name>.js`, never with another module of the folder; a module below runs those of the module above it, as it runs
   that module's own test. Judged on `spirit/server.js` and `./server-garbage.js` (`spirit/apiDoor.js`'s test by name
-  went into `spirit-branches.js` in goal/G43.32).
+  went into the branch rules in goal/G43.32).
+- **The branch rules judge each branch folder once** (goal/G43.32; Andy: *"app-branches are easily identified using the
+  patterns: spirit/app/<name>/<name>.js, spirit/app/<name>/<name>.json"*, *"and system branches by: spirit.<name>.api.js
+  && spirit.<name>.data.js"*, to Q7: *"branch test only needs to associate a failure with either spirit/<name>/ or
+  spirit/app/<name>/"*): `branchesOf()` reads the branch folders by both patterns, as the disc holds them
+  (`spirit/app/appSelector/` and `spirit/test/` are none); on the whole list `spirit-sibling-branchRules.js` has one entry
+  per branch folder; on `spirit/app/desk/desk.js`'s blast radius, the one branch holding it, `spirit/app/desk`, not
+  `spirit/app`; a module in no branch (`spirit/apiAuth.js`) gets none. It is apart from the general rule tests above,
+  which judge modules.

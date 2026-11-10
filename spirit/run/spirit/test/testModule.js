@@ -15,6 +15,8 @@
 //     judges, that file in `file`: -child- judges ./<x>.js and ./<x>/ and below, -sibling- ./ and below. It judges only
 //     a module with its own test (opting in: "folder without a test/ subfolder won't fail the general assertions in the
 //     parent-folders"), and on a blast radius only the changed file and the files below it.
+//   - A branch-rules test, ./test/<x>-sibling-branchRules.js, is one entry per branch folder (branchesOf), the folder in
+//     `file`; on a blast radius, the branch holding the changed file.
 // It names tests and runs none: the harness and deskVerify run each entry as its own suite, a general one with its file
 // as the argument. Run from the command line it prints one entry a line, "<test>" or "<test> <file>".
 
@@ -57,6 +59,23 @@ function dirOf(p) { const i = p.lastIndexOf('/'); return i === -1 ? '' : p.slice
 function join(dir, name) { return dir ? dir + '/' + name : name; }
 // A module's own test: ./test/<name>.js beside it.
 function ownTest(m) { return join(join(dirOf(m), 'test'), path.posix.basename(m)); }
+
+// THE BRANCHES, RECOGNIZED BY THEIR FOLDER (goal/G43.32; Andy: "app-branches are easily identified using the patterns:
+// spirit/app/<name>/<name>.js, spirit/app/<name>/<name>.json", "and system branches by: spirit.<name>.api.js &&
+// spirit.<name>.data.js", and of the test that judges them, "branch test only needs to associate a failure with either
+// spirit/<name>/ or spirit/app/<name>/"): a system branch is spirit/<name>/ holding api.js and data.js, an app branch
+// spirit/app/<name>/ holding <name>.js and <name>.json. -> [{ dir, name, kind: 'system' | 'app' }], by dir.
+function branchesOf(root) {
+  const at = root || RUN;
+  const out = [];
+  const has = function (rel) { try { return fs.statSync(path.join(at, rel)).isFile(); } catch (e) { return false; } };
+  const dirs = function (rel) { try { return fs.readdirSync(path.join(at, rel), { withFileTypes: true }).filter(function (d) { return d.isDirectory() && SKIP.indexOf(d.name) === -1 && d.name !== 'test'; }).map(function (d) { return d.name; }); } catch (e) { return []; } };
+  dirs('spirit').forEach(function (n) { if (has('spirit/' + n + '/api.js') && has('spirit/' + n + '/data.js')) out.push({ dir: 'spirit/' + n, name: n, kind: 'system' }); });
+  dirs('spirit/app').forEach(function (n) { if (has('spirit/app/' + n + '/' + n + '.js') && has('spirit/app/' + n + '/' + n + '.json')) out.push({ dir: 'spirit/app/' + n, name: n, kind: 'app' }); });
+  return out.sort(function (x, y) { return x.dir < y.dir ? -1 : 1; });
+}
+// A branch-rules test, ./test/<x>-sibling-branchRules.js: one entry per branch folder, not per module.
+function isBranchRules(t) { return /-sibling-branchRules\.js$/.test(path.posix.basename(t)); }
 // ITS OTHER TESTS BY NAME (goal/G43.27; Andy: "every test must be directly (by name) or indirectly (by general rule) be
 // associated with a production file"): ./test/<name>-<what>.js beside it, a general test (-child-, -sibling-) excepted.
 function namedTests(m, tests) {
@@ -132,12 +151,19 @@ function testsFor(file, opts) {
   tree.tests.forEach(function (t) {
     const g = generalOf(t, has);
     if (!g) return;
+    // A branch-rules test judges branch folders: every one with no path, and the one holding the path on a blast radius.
+    if (isBranchRules(t)) {
+      // The branch holding a path is the deepest one: spirit/app/desk/desk.js is desk's, not the app branch spirit/app's.
+      const holding = branchesOf(root).filter(function (b) { return target === b.dir || under(target, b.dir); }).sort(function (x, y) { return y.dir.length - x.dir.length; }).slice(0, 1);
+      (target ? holding : branchesOf(root)).forEach(function (b) { add(t, b.dir); });
+      return;
+    }
     judged.filter(g.judges).forEach(function (m) { add(t, m); });
   });
   return out;
 }
 
-module.exports = { testsFor: testsFor, TOOLS: TOOLS };
+module.exports = { testsFor: testsFor, branchesOf: branchesOf, TOOLS: TOOLS };
 
 if (require.main === module) {
   testsFor(process.argv[2] || '').forEach(function (t) { console.log(t.file ? t.test + ' ' + t.file : t.test); });

@@ -18,8 +18,10 @@ function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 400); }
 
 // The general rule tests in spirit/test/, beside spirit/spirit.js (goal/G43.32).
-const GENERAL = fs.readdirSync(path.join(RUN, 'spirit', 'test')).filter(function (n) { return /^spirit-(child|sibling)-\w+Rules\.js$/.test(n); })
+// The branch rules (spirit-sibling-branchRules.js) judge branch folders, not modules: judged below, apart.
+const GENERAL = fs.readdirSync(path.join(RUN, 'spirit', 'test')).filter(function (n) { return /^spirit-(child|sibling)-\w+Rules\.js$/.test(n) && n !== 'spirit-sibling-branchRules.js'; })
   .map(function (n) { return 'spirit/test/' + n; }).sort();
+const BRANCH_RULES = 'spirit/test/spirit-sibling-branchRules.js';
 // The module judged: an opted-in product module under spirit/run/spirit/ (it has its own spirit/test/<name>.js).
 const MODULE = 'spirit/apiDoor.js';
 
@@ -63,6 +65,25 @@ GENERAL.forEach(function (g) {
   ok(judged.some(function (e) { return e.file === MODULE; }), g + ' judges ' + judged.length + ' modules, ' + MODULE + ' among them',
     g + ' judges no module on the whole list; its entries: ' + short(all.filter(function (e) { return e.test === g; })));
 });
+
+// THE BRANCH RULES JUDGE EACH BRANCH FOLDER ONCE (goal/G43.32; Andy: "app-branches are easily identified using the
+// patterns: spirit/app/<name>/<name>.js, spirit/app/<name>/<name>.json", "and system branches by: spirit.<name>.api.js &&
+// spirit.<name>.data.js", to Q7: "branch test only needs to associate a failure with either spirit/<name>/ or
+// spirit/app/<name>/").
+test.subHeading('the branch rules: one entry per branch folder');
+const { branchesOf } = require(path.join(RUN, 'spirit', 'test', 'testModule.js'));
+const branches = branchesOf(RUN).map(function (b) { return b.dir; });
+const onDisc = [];
+fs.readdirSync(path.join(RUN, 'spirit'), { withFileTypes: true }).forEach(function (d) { if (d.isDirectory() && fs.existsSync(path.join(RUN, 'spirit', d.name, 'api.js')) && fs.existsSync(path.join(RUN, 'spirit', d.name, 'data.js'))) onDisc.push('spirit/' + d.name); });
+fs.readdirSync(path.join(RUN, 'spirit', 'app'), { withFileTypes: true }).forEach(function (d) { if (d.isDirectory() && fs.existsSync(path.join(RUN, 'spirit', 'app', d.name, d.name + '.js')) && fs.existsSync(path.join(RUN, 'spirit', 'app', d.name, d.name + '.json'))) onDisc.push('spirit/app/' + d.name); });
+ok(fs.existsSync(path.join(RUN, BRANCH_RULES)) && branches.length >= 20 && branches.slice().sort().join() === onDisc.sort().join() && branches.indexOf('spirit/app/appSelector') === -1 && branches.indexOf('spirit/test') === -1,
+  'the world: ' + branches.length + ' branch folders, read by both patterns (spirit/app/appSelector/ and spirit/test/ are none)', 'branchesOf: ' + short(branches) + ', the disc by both patterns: ' + short(onDisc));
+const brAll = all.filter(function (e) { return e.test === BRANCH_RULES; }).map(function (e) { return e.file; });
+ok(brAll.length === branches.length && brAll.slice().sort().join() === branches.slice().sort().join(), 'on the whole list it has one entry per branch folder, ' + brAll.length, 'its entries: ' + short(brAll));
+const brDesk = testsFor('spirit/app/desk/desk.js').filter(function (e) { return e.test === BRANCH_RULES; }).map(function (e) { return e.file; });
+ok(brDesk.join() === 'spirit/app/desk', 'on spirit/app/desk/desk.js\'s blast radius, the one branch holding it, spirit/app/desk, not spirit/app', 'its entries there: ' + short(brDesk));
+const brNone = testsFor('spirit/apiAuth.js').filter(function (e) { return e.test === BRANCH_RULES; });
+ok(!brNone.length, 'a module in no branch (spirit/apiAuth.js) gets no entry of it', 'spirit/apiAuth.js gets ' + short(brNone));
 
 // THE TOOLS OF spirit/test/ (goal/G43.32, Q2): tools, not tests, and judged as no module; their own tests are listed.
 test.subHeading('spirit/test/\'s tools are not tests');

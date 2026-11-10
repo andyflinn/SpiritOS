@@ -49,8 +49,7 @@ test.startTest('app.js: the app family, a core api beside the others (goal/G43.2
   try { identity = JSON.parse(fs.readFileSync(path.join(SERVER, 'server.json'), 'utf8')).identity; } catch (e) { identity = null; }
   const label = identity && typeof identity.label === 'string' ? identity.label : '';
   const icon = identity && typeof identity.icon === 'string' ? identity.icon : '';
-  ok(!!label, 'server.json names identity.label: ' + label, 'server.json has no identity.label: ' + short(identity));
-  ok(!!icon, 'server.json names identity.icon: ' + icon, 'server.json has no identity.icon: ' + short(identity));
+  // That server.json names both is a rule of every app branch, judged in ./spirit-sibling-branchRules.js (goal/G43.32).
 
   // A FACE CAN CALL IT (Andy, box: "and yes, a face with no star can call appSearch"; since goal/G43.18, box v29, "A face is
   // whole, or there is none": the node answers a face only from a starred relay, faceStar.js, and that face calls every verb).
