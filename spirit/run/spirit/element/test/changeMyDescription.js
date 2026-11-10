@@ -113,7 +113,7 @@ test.startTest('changeMyDescription.js: the node\'s description, changed');
   ok(!!input, 'its input is marked data-field="description"', 'markup: ' + short(host.innerHTML));
 
   test.subHeading('its form, a rowForm: ✏️ [Description-input] [Save] (goal/G41.27)');
-  // Andy, on G41.27: "changeMyDescription:\n\n[✏️][Description-input][Save]". The box: "spirit.elements.rowForm.create(container, { icon, button }) -> { root, span, button }", "The mounter drops its form elements into span and wires the
+  // Andy, on G41.27: "changeMyDescription:\n\n[✏️][Description-input][Save]". The box: "spirit.element.spirit.element.rowForm.create(container, { icon, button }) -> { root, span, button }", "The mounter drops its form elements into span and wires the
   // button itself", and "a line saying what a press did (a refusal, a result) is the mounter's, below the bubble, not in it."
   ok(w.required.indexOf('spirit/element/rowForm.js') !== -1, 'it loads the rowForm itself (rule/26)', 'required: ' + short(w.required));
   ok(w.forms.length === 1 && rf.opts.icon === '✏️' && rf.opts.button === 'Save' && under(host).indexOf(rf.root) !== -1, 'its form is one rowForm in its host, its icon ✏️ and its button Save', 'rowForms: ' + short(w.forms.map(function (f) { return f.opts; })));

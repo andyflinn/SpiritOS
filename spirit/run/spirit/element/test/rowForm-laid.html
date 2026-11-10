@@ -17,7 +17,7 @@
 // ./rowForm.js at /DEBUG/spirit/element/test/rowForm-laid.html.
 window.laid = function () {
   return Promise.all([spirit.require('spirit/element/rowForm.js').catch(function () { return null; }), spirit.require('spirit/element/search.js').catch(function () { return null; })]).then(function () {
-    var R = (spirit.element || {}).rowForm;
+    var R = (((spirit.element || {}).spirit || {}).element || {}).rowForm;
     var out = { made: !!R && typeof R.create === 'function' };
     if (!out.made) return JSON.stringify(out);
     function rect(el) { if (!el) return null; var r = el.getBoundingClientRect(); return { top: Math.round(r.top * 10) / 10, bottom: Math.round(r.bottom * 10) / 10, left: Math.round(r.left * 10) / 10, right: Math.round(r.right * 10) / 10, h: Math.round(r.height * 10) / 10 }; }
@@ -57,7 +57,7 @@ window.laid = function () {
     out.wrapped = form(260, 4, 120);
     // probabilitySearch's bubble beside it: the one shared style (box: "The bubble is one shared style, the same
     // probabilitySearch's search bubble uses.").
-    var P = (spirit.element || {}).search;
+    var P = (((spirit.element || {}).spirit || {}).element || {}).search;
     if (P) {
       var pc = document.createElement('div'); pc.style.cssText = 'width:400px;height:200px;display:flex;flex-direction:column';
       document.body.appendChild(pc);

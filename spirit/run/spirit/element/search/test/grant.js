@@ -35,18 +35,20 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     'spirit/element/search/grant/rowElement.js': function (E) { ((E.search = E.search || {}).grant = E.search.grant || {}).rowElement = { create: function (row, opts) { const r = { kind: 'grant', row: row, opts: opts || {} }; rows.push(r); return r; } }; },
   };
   global.window = { spirit: { escapeHtml: function (s) { return String(s); }, ready: Promise.resolve({}), element: {} } };
+  // goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
+  require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
   global.spirit = global.window.spirit;
   global.document = { createElement: function () { return {}; } };
-  global.window.spirit.require = function (p) { required.push(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](global.window.spirit.element); } return Promise.resolve(true); };
+  global.window.spirit.require = function (p) { required.push(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.element.spirit = global.window.spirit.element.spirit || {}).element = global.window.spirit.element.spirit.element || {})); } return Promise.resolve(true); };
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
-  const E = global.window.spirit.element;
+  const E = ((global.window.spirit.element || {}).spirit || {}).element || {};
 
   test.subHeading('it loads what it uses itself (rule/26), and knows no grants table');
   ok(['spirit/element/search.js', 'spirit/element/search/grant/rowElement.js'].every(function (p) { return required.indexOf(p) !== -1; }) && !required.some(function (p) { return /data\.js$/.test(p); }),
     'it requires the search element and its row element, and no data script', 'required: ' + short(required));
   ok(!/auth\.|agent\.grant|job_id|'grants'|"grants"/.test(SRC), 'it names no table and no branch of its own: no auth verb, no agent grant, no data.grants (goal/G41.16)', 'listElement.js names a table or branch of its own');
-  ok(E.search.grant && typeof E.search.grant.create === 'function', 'it registers spirit.element.search.grant.create', 'elements: ' + short(Object.keys(E)));
+  ok(E.search.grant && typeof E.search.grant.create === 'function', 'it registers spirit.element.spirit.element.search.grant.create', 'elements: ' + short(Object.keys(E)));
   if (!E.search.grant || typeof E.search.grant.create !== 'function') return;
   let refused = null;
   try { E.search.grant.create({}, {}); } catch (e) { refused = e && e.message; }

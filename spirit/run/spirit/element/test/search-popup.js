@@ -31,7 +31,7 @@ test.startTest('search-popup.js: a search dropdown\'s list floats above everythi
       'var rows = []; for (var i = 0; i < 40; i++) rows.push({ key: "r" + i, name: "row " + i }); window.__z = {}; ' +
       '[["a", 40, 100], ["b", 500, 100], ["low", 40, window.innerHeight - 70]].forEach(function (x) { var b = document.createElement("div"); b.id = "zz-" + x[0]; ' +
       'b.style.cssText = "position:absolute;left:" + x[1] + "px;top:" + x[2] + "px;width:320px;height:48px;overflow:hidden;border:1px solid"; document.body.appendChild(b); ' +
-      'spirit.element.search.create(b, { face: "dropdown", rows: function () { return rows; }, columns: [{ field: "name", label: "Name" }], name: function (r) { return r.name; }, pick: function () {} }); ' +
+      'spirit.element.spirit.element.search.create(b, { face: "dropdown", rows: function () { return rows; }, columns: [{ field: "name", label: "Name" }], name: function (r) { return r.name; }, pick: function () {} }); ' +
       'window.__z[x[0]] = { box: b, list: b.querySelector("[id$=list]"), field: b.querySelector("[id$=field]") }; }); ' +
       'var cover = document.createElement("div"); cover.id = "zz-cover"; cover.style.cssText = "position:absolute;left:0;top:160px;width:900px;height:200px;background:#333;z-index:20"; document.body.appendChild(cover); ' +
       'return Object.keys(window.__z).every(function (k) { return !!window.__z[k].list && !!window.__z[k].field; }) ? "made" : "no list or field"; }, function (e) { return String(e); })');

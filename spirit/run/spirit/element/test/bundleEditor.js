@@ -83,15 +83,15 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     return Promise.resolve(true);
   };
   function arrive(id, label) { global.window.spirit.data.takeJob({ id: 'bundles', type: 'bundles', data: { table: 'bundle', row: { id: id, label: label, owner: 'node' } } }); }
-  global.window.spirit.require = function (p) { required.push(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](global.window.spirit.element); } return Promise.resolve(true); };
+  global.window.spirit.require = function (p) { required.push(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.element.spirit = global.window.spirit.element.spirit || {}).element = global.window.spirit.element.spirit.element || {})); } return Promise.resolve(true); };
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
-  const E = global.window.spirit.element;
+  const E = ((global.window.spirit.element || {}).spirit || {}).element || {};
 
   test.subHeading('it loads what it uses itself (rule/26)');
   ok(['spirit/element/fieldInput.js', 'spirit/element/search/bundle.js'].every(function (p) { return required.indexOf(p) !== -1; }), 'it requires the field input and the bundle selector through spirit.require', 'required: ' + short(required));
   ok(managers.indexOf('auth') !== -1, 'it loads the auth family\'s cache manager, whose bundles it adds to (goal/G41.28)', 'managers: ' + short(managers));
-  ok(E.bundleEditor && typeof E.bundleEditor.create === 'function', 'it registers spirit.element.bundleEditor.create', 'elements: ' + short(Object.keys(E)));
+  ok(E.bundleEditor && typeof E.bundleEditor.create === 'function', 'it registers spirit.element.spirit.element.bundleEditor.create', 'elements: ' + short(Object.keys(E)));
   if (!E.bundleEditor || typeof E.bundleEditor.create !== 'function') return;
 
   test.subHeading('at the top: new [label] [Add]');
@@ -103,7 +103,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const add = all(box).filter(function (k) { return k.tag === 'button' && /^\s*Add\s*$/.test(k.textContent || ''); })[0];
   ok(!!input && !!add, 'it draws a label input and an Add button', 'input ' + !!input + ', Add ' + !!add);
   if (!input || !add) return;
-  // Andy, on G41.27: "bundleEditor:\n[➕] [label] [Add]". The box: "spirit.elements.rowForm.create(container, { icon, button }) -> { root, span, button }", "The mounter drops its form elements into span and wires the button itself".
+  // Andy, on G41.27: "bundleEditor:\n[➕] [label] [Add]". The box: "spirit.element.spirit.element.rowForm.create(container, { icon, button }) -> { root, span, button }", "The mounter drops its form elements into span and wires the button itself".
   ok(required.indexOf('spirit/element/rowForm.js') !== -1, 'it loads the rowForm itself (rule/26)', 'required: ' + short(required));
   const rf = forms[0];
   ok(forms.length === 1 && rf.opts.icon === '➕' && rf.opts.button === 'Add' && all(box).indexOf(rf.root) !== -1, 'its add form is one rowForm in its box, its icon ➕ and its button Add', 'rowForms: ' + short(forms.map(function (f) { return f.opts; })));

@@ -93,7 +93,7 @@ test.startTest('codeMirror.js: the CodeMirror shell element, read and edit');
     try { vm.runInContext(SRC, win, { filename: FILE }); } catch (e) { test.fail('it threw as it loaded: ' + e.message); }
   }
   const E = win.spirit.element.codeMirror;
-  ok(!!E && typeof E.create === 'function', 'it puts itself on window.spirit.element as codeMirror, with create', 'no window.spirit.element.codeMirror.create');
+  ok(!!E && typeof E.create === 'function', 'it puts itself on window.spirit.element as codeMirror, with create', 'no window.spirit.element.spirit.element.codeMirror.create');
 
   test.subHeading('it loads the library itself, never through index.html (goal/G40.7)');
   let read = null;

@@ -74,6 +74,8 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   global.window = { spirit: { escapeHtml: function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); },
     fieldRules: require(path.join(RUN, 'spirit', 'fieldRules.js')), ready: Promise.resolve({ auth: auth }), auth: auth, element: {} } };
   global.spirit = global.window.spirit;
+  // goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
+  require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(global.window.spirit);
   // The page's one data set (spirit/data.js), which spirit.js brings with the client: the stream's rows land there.
   vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });
   const DATA = global.window.spirit.data;
@@ -91,10 +93,10 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   };
   // The direct writes below are the auth family's own view of the home node, as its manager files them.
   const V = DATA.viewAt(null, 'auth');
-  global.window.spirit.require = function (p) { required.push(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](global.window.spirit.element); } return Promise.resolve(true); };
+  global.window.spirit.require = function (p) { required.push(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.element.spirit = global.window.spirit.element.spirit || {}).element = global.window.spirit.element.spirit.element || {})); } return Promise.resolve(true); };
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
-  const E = global.window.spirit.element;
+  const E = ((global.window.spirit.element || {}).spirit || {}).element || {};
   const A = ((global.window.spirit.data || {}).auth || {}).data;
 
   test.subHeading('it loads what it uses itself (rule/26)');
@@ -103,7 +105,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     'it requires the shared row element through spirit.require, and no arming button: Delete is the branchEditor\'s (goal/G41.32)', 'required: ' + short(required));
   ok(managers.indexOf('auth') !== -1 && A && A.bundles && typeof A.bundles.row === 'function', 'it loads the auth family\'s cache manager, which puts ((spirit.data || {}).auth || {}).data on the page', 'managers: ' + short(managers));
   if (!A || !A.bundles || typeof A.bundles.row !== 'function') return;
-  ok(E.search.bundle.rowElement && typeof E.search.bundle.rowElement.create === 'function', 'it registers spirit.element.search.bundle.rowElement.create', 'elements: ' + short(Object.keys(E)));
+  ok(E.search.bundle.rowElement && typeof E.search.bundle.rowElement.create === 'function', 'it registers spirit.element.spirit.element.search.bundle.rowElement.create', 'elements: ' + short(Object.keys(E)));
   if (!E.search.bundle.rowElement || typeof E.search.bundle.rowElement.create !== 'function') return;
 
   test.subHeading('a bundle row: its label and owner');

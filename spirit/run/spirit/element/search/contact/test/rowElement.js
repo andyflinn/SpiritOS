@@ -17,6 +17,8 @@ function load(file) { vm.runInThisContext(fs.readFileSync(file, 'utf8'), { filen
 const asked = [];
 function verb(name) { return function (body) { asked.push({ verb: name, body: body }); return Promise.resolve({ ok: name }); }; }
 global.window = { spirit: {} };
+// goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
+require(path.join(__dirname, '..', '..', '..', '..', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
 global.spirit = window.spirit;
 window.spirit.ready = Promise.resolve({ contact: { block: verb('contact.block'), unblock: verb('contact.unblock'),
   forget: verb('contact.forget'), label: verb('contact.label'), get: verb('contact.get') }, peer: { acquire: verb('peer.acquire') } });
@@ -45,7 +47,7 @@ window.spirit.cacheManager = function (name) {
 };
 load(path.join(JS, 'rowElement.js'));
 load(path.join(JS, 'search', 'contact', 'rowElement.js'));
-const C = window.spirit.element.search.contact.rowElement;
+const C = window.spirit.element.spirit.element.search.contact.rowElement;
 const D = window.spirit.data;
 const CD = ((window.spirit.data || {}).contact || {}).data;
 // The direct writes below are the contact family's own view of the home node, as its manager files them.
@@ -157,9 +159,9 @@ function hostsFor(el) { const h = {}; el.fields.forEach(function (f) { h[f] = { 
   else test.fail('after destroy: ' + JSON.stringify({ a: ha.label.innerHTML, b: hb.label.innerHTML }));
 
   test.subHeading('the label\'s editor checks the rule before it asks');
-  const labelField = (function () { let f = null; const p = window.spirit.element.rowElement.create;
-    window.spirit.element.rowElement.create = function (parts) { f = parts.fields.filter(function (x) { return x.name === 'label'; })[0]; return p(parts); };
-    C.create({ key: 'K13', keep: true }); window.spirit.element.rowElement.create = p; return f; }());
+  const labelField = (function () { let f = null; const p = window.spirit.element.spirit.element.rowElement.create;
+    window.spirit.element.spirit.element.rowElement.create = function (parts) { f = parts.fields.filter(function (x) { return x.name === 'label'; })[0]; return p(parts); };
+    C.create({ key: 'K13', keep: true }); window.spirit.element.spirit.element.rowElement.create = p; return f; }());
   const n = asked.length;
   const bad = await labelField.edit({ key: 'K13' }, '   ');
   if (bad.ok === false && bad.error === 'a name is needed' && asked.length === n) test.check('a name the rule refuses is refused here, and not asked');

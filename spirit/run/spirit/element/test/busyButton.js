@@ -39,7 +39,7 @@ test.startTest('busyButton.js: the button that waits for its request');
     let m = null;
     try { m = JSON.parse(s); } catch (e) { m = null; }
     if (!m) { test.fail('the page measured nothing: ' + JSON.stringify(s).slice(0, 300)); return; }
-    ok(m.made, 'it adds busyButton.create(container, options) and busyButton.attach to window.spirit.element', 'no window.spirit.element.busyButton with create(container, options) and attach');
+    ok(m.made, 'it adds busyButton.create(container, options) and busyButton.attach to window.spirit.element', 'no window.spirit.element.spirit.element.busyButton with create(container, options) and attach');
     if (!m.made) return;
 
     test.subHeading('made, it is a plain button in its container');

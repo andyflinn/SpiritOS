@@ -147,7 +147,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   test.subHeading('an element mounted the new shell\'s way, that loads what it uses itself (rule/26)');
   const w = world();
   const NI = w.els.nodeInfo;
-  ok(!!NI && typeof NI.create === 'function', 'it sets spirit.elements.nodeInfo = { create }', 'elements: ' + short(Object.keys(w.els)));
+  ok(!!NI && typeof NI.create === 'function', 'it sets spirit.element.spirit.element.nodeInfo = { create }', 'elements: ' + short(Object.keys(w.els)));
   if (!NI) return;
   ['spirit/element/changeMyLabel.js', 'spirit/element/changeMyDescription.js', 'spirit/element/joinForm.js', 'spirit/element/faceForm.js',
     'spirit/element/rowForm.js', 'spirit/element/panel.js'].forEach(function (p) {
@@ -256,7 +256,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const pane = node('<pane>');
   const filled = await op.spec.fill(pane, function () { return false; });
   ok(w.required.indexOf('spirit/element/rotateKey.js') !== -1 && w.rotateKeys.length === 1 && w.rotateKeys[0].pane === pane && filled === w.rotateKeys[0],
-    'its fill loads spirit/element/rotateKey.js and makes spirit.elements.rotateKey in the layer\'s pane, answering it to destroy', 'required ' + short(w.required.slice(-1)) + ', made ' + w.rotateKeys.length);
+    'its fill loads spirit/element/rotateKey.js and makes spirit.element.spirit.element.rotateKey in the layer\'s pane, answering it to destroy', 'required ' + short(w.required.slice(-1)) + ', made ' + w.rotateKeys.length);
   const pane2 = node('<pane>');
   const notFilled = await op.spec.fill(pane2, function () { return true; });
   ok(notFilled === null && w.rotateKeys.length === 1, 'a layer closed before the dialog loads gets nothing made', 'made ' + w.rotateKeys.length + ', answered ' + short(notFilled));

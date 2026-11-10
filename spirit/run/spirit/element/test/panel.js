@@ -130,7 +130,7 @@ test.startTest('panel.js: what mounts covers its mounter (goal/G43.17)');
     // Every hand in expr is the page's, not only the first: "rows() ... && tiles()" asks both.
     const waitFor = function (expr, ms) { return until(function () { return c.evaluate('(function () { with (window.__t) { return !!(' + expr + '); } }())'); }, ms || 8000); };
     const selector = function (face) {
-      return c.evaluate('(function () { if (window.__sel) window.__sel.destroy(); var old = document.getElementById("zzBox"); if (old) old.remove(); var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.require("spirit/app/appSelector.js").then(function () { window.__sel = spirit.elements.appSelector.create(b, { face: ' + JSON.stringify(face) + ' }); return "made"; }); }())');
+      return c.evaluate('(function () { if (window.__sel) window.__sel.destroy(); var old = document.getElementById("zzBox"); if (old) old.remove(); var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.require("spirit/app/appSelector.js").then(function () { window.__sel = spirit.element.spirit.app.appSelector.create(b, { face: ' + JSON.stringify(face) + ' }); return "made"; }); }())');
     };
 
     test.subHeading('the box: "An element mounts over ALL of the one that mounts it, its title bar too", under "its own title bar [icon] <label> [✕]"');
@@ -213,7 +213,7 @@ test.startTest('panel.js: what mounts covers its mounter (goal/G43.17)');
     await waitFor('tiles().indexOf("file") !== -1', 10000);
     await sleep(2000);
     const loaded = await c.evaluate('performance.getEntriesByType("resource").map(function (e) { return e.name.replace(/^https?:\\/\\/[^/]+/, ""); }).filter(function (n) { return /\\/spirit\\/app\\/agent\\//.test(n); })');
-    ok(Array.isArray(loaded) && !loaded.length && (await c.evaluate('!(window.spirit.app && window.spirit.app.agent) && !(window.spirit.elements && window.spirit.elements.agent)')), 'after the shell boots again none of it is loaded', 'loaded: ' + short(loaded));
+    ok(Array.isArray(loaded) && !loaded.length && (await c.evaluate('!(window.spirit.app && window.spirit.app.agent) && !(window.spirit.element && window.spirit.element.spirit && window.spirit.element.spirit.app && window.spirit.element.spirit.app.agent)')), 'after the shell boots again none of it is loaded', 'loaded: ' + short(loaded));
 
     // goal/G43.18, Andy: "contact details and relay details should be proper panels in the newest shell style."
     test.subHeading('Andy: "contact details and relay details should be proper panels in the newest shell style."');

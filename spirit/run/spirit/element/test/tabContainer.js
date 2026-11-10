@@ -75,11 +75,13 @@ if (!fs.existsSync(FILE)) {
   process.exit(0);
 }
 global.window = { spirit: { element: {} } };
+// goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
+require(path.join(__dirname, '..', '..', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
 let loadError = null;
 try { vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE }); } catch (e) { loadError = e; }
-const T = window.spirit.element.tabContainer;
-ok(!loadError && T && typeof T.create === 'function', 'it loads on window.spirit.element.tabContainer with create',
-  'loading: ' + (loadError ? loadError.message : 'no window.spirit.element.tabContainer.create'));
+const T = window.spirit.element.spirit.element.tabContainer;
+ok(!loadError && T && typeof T.create === 'function', 'it loads on window.spirit.element.spirit.element.tabContainer with create',
+  'loading: ' + (loadError ? loadError.message : 'no window.spirit.element.spirit.element.tabContainer.create'));
 if (!T || typeof T.create !== 'function') { test.reportSuccessFailureCount(); process.exit(0); }
 
 const mounted = [];

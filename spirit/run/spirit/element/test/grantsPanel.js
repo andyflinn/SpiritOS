@@ -191,7 +191,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   // Andy: "every fucking element gets the interfaces it needs".
   ok(!/\.verb\s*\(|\bapi\.(verb|escapeHtml)\b/.test(code), 'it asks its verbs through the spirit object: no api.verb, no api.escapeHtml (goal/G43.24)', 'grantsPanel.js still asks through the api it was handed');
   ok(w.managers.indexOf('jobs') !== -1 && w.managers.indexOf('auth') !== -1, 'it loads the jobs family\'s cache manager and the auth family\'s, with its parts', 'managers: ' + short(w.managers));
-  ok(E.grantsPanel && typeof E.grantsPanel.create === 'function', 'it registers spirit.element.grantsPanel.create', 'elements: ' + short(Object.keys(E)));
+  ok(E.grantsPanel && typeof E.grantsPanel.create === 'function', 'it registers spirit.element.spirit.element.grantsPanel.create', 'elements: ' + short(Object.keys(E)));
   if (!E.grantsPanel || typeof E.grantsPanel.create !== 'function') return;
   // Unconfigured, it mounts and says so, throwing nothing (goal/G41.19, box v23: "throws nothing even when unconfigured
   // (it says it is not configured)").
@@ -217,7 +217,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   test.subHeading('the grant form, a rowForm: ➕ [ID] [bundle] [Grant] (goal/G41.27)');
   // Andy, on G41.27: "grantsPanel:\n\n➕ [choose an ID… ▾][choose a bundle… ▾][Grant]". The box: "new shell element:
   // rowForm",
-  // "spirit.elements.rowForm.create(container, { icon, button }) -> { root, span, button }", "The mounter drops
+  // "spirit.element.spirit.element.rowForm.create(container, { icon, button }) -> { root, span, button }", "The mounter drops
   // its form elements into span and wires the button itself (a busyButton or a click)."
   ok(w.bundles.length === 1 && w.ids.length === 2 && w.families.length === 1, 'one bundle selector, two ID selectors (the form\'s and the filter), one family selector', 'bundle ' + w.bundles.length + ', ID ' + w.ids.length + ', family ' + w.families.length);
   const parts = w.bundles.concat(w.ids, w.families);

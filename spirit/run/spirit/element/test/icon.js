@@ -36,7 +36,7 @@ test.startTest('icon.js: the glyph, centred in a square that follows the font si
     let m = null;
     try { m = JSON.parse(s); } catch (e) { m = null; }
     if (!m) { test.fail('the page measured nothing: ' + JSON.stringify(s).slice(0, 300)); return; }
-    ok(m.made, 'it adds icon.create(container, options) to window.spirit.element', 'no window.spirit.element.icon.create of a container and options');
+    ok(m.made, 'it adds icon.create(container, options) to window.spirit.element', 'no window.spirit.element.spirit.element.icon.create of a container and options');
     if (!m.made) return;
 
     test.subHeading('a shell element: appended, the glyph as it is given');

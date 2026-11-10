@@ -16,14 +16,14 @@
 window.laid = function () {
   var made = [];
   return spirit.require('spirit/element/rowForm.js').catch(function () { return null; }).then(function () {
-    var R = (spirit.element || {}).rowForm;
+    var R = (((spirit.element || {}).spirit || {}).element || {}).rowForm;
     if (R && typeof R.create === 'function') {
       var real = R.create;
       R.create = function (c, o) { var f = real.call(R, c, o); made.push({ opts: o || {}, f: f }); return f; };
     }
     return spirit.require('spirit/element/joinForm.js');
   }).catch(function () { return null; }).then(function () {
-    var J = (spirit.element || {}).joinForm;
+    var J = (((spirit.element || {}).spirit || {}).element || {}).joinForm;
     var out = { made: !!J && typeof J.mount === 'function' };
     if (!out.made) return JSON.stringify(out);
     var RELAYS = [{ url: 'wss://a.example', label: 'Alpha' }, { url: 'wss://b.example', label: 'Beta', claimed: true }];

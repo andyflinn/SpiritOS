@@ -18,6 +18,8 @@ function load(file) { vm.runInThisContext(fs.readFileSync(file, 'utf8'), { filen
 const asked = [];
 let searchAnswer = { items: [{ key: 'K1' }], more: true };
 global.window = { spirit: {} };
+// goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
+require(path.join(__dirname, '..', '..', '..', '..', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
 global.spirit = window.spirit;
 window.spirit.ready = Promise.resolve({
   contact: { search: function (b) { asked.push({ verb: 'contact.search', body: b }); return Promise.resolve(searchAnswer); } },
@@ -78,7 +80,7 @@ load(path.join(JS, 'rowElement.js'));
 load(path.join(JS, 'search', 'contact', 'rowElement.js'));
 const dataSubscribed = subscribers.length;
 load(path.join(JS, 'search', 'contact', 'listElement.js'));
-const L = window.spirit.element.search.contact.listElement;
+const L = window.spirit.element.spirit.element.search.contact.listElement;
 const F = {}; L.filters.forEach(function (f) { F[f.name] = f; });
 const tick = function () { return new Promise(function (r) { setTimeout(r, 0); }); };
 

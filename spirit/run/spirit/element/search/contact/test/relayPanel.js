@@ -255,7 +255,7 @@ test.startTest('relayPanel.js: its are-you-sure buttons are armingButtons (goal/
   test.subHeading('it loads armingButton itself (goal/G41.3)');
   ok(w.required.indexOf('spirit/element/armingButton.js') !== -1, 'it requires spirit/element/armingButton.js through spirit.require', 'required: ' + short(w.required));
   const E = w.win.spirit.element.search.contact.relayPanel;
-  ok(!!E && typeof E.create === 'function' && E.open === undefined, 'it is window.spirit.element.search.contact.relayPanel, made by create; no open of its own: it opens as a panel (goal/G43.18)', 'relayPanel: create ' + typeof (E && E.create) + ', open ' + typeof (E && E.open));
+  ok(!!E && typeof E.create === 'function' && E.open === undefined, 'it is window.spirit.element.spirit.element.search.contact.relayPanel, made by create; no open of its own: it opens as a panel (goal/G43.18)', 'relayPanel: create ' + typeof (E && E.create) + ', open ' + typeof (E && E.open));
   if (!E) return;
   w.open('RK');
   await settle();

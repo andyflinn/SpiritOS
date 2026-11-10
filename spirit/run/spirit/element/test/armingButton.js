@@ -61,7 +61,7 @@ test.startTest('armingButton.js: the are-you-sure button');
   ok(fs.existsSync(FILE), 'spirit/element/armingButton.js exists', 'there is no spirit/element/armingButton.js');
   const win = world();
   const E = win.spirit.element.armingButton;
-  ok(!!E && typeof E.create === 'function' && E.create.length === 2, 'it adds armingButton.create(container, options) to window.spirit.element', 'no window.spirit.element.armingButton.create of a container and options');
+  ok(!!E && typeof E.create === 'function' && E.create.length === 2, 'it adds armingButton.create(container, options) to window.spirit.element', 'no window.spirit.element.spirit.element.armingButton.create of a container and options');
   if (!E) return;
 
   test.subHeading('the first press arms it, and runs nothing');

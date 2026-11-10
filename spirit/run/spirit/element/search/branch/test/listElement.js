@@ -55,6 +55,8 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   global.Event = function (type, o) { this.type = type; this.bubbles = !!(o && o.bubbles); };
   global.document = { createElement: function (t) { return node(t); } };
   global.window = { spirit: { escapeHtml: function (s) { return String(s); }, ready: Promise.resolve({ auth: auth }), auth: auth, element: {} } };
+  // goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
+  require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
   global.spirit = global.window.spirit;
   // The page's one data set (spirit/data.js), which spirit.js brings with the client.
   vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });
@@ -70,15 +72,15 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'data.js'), 'utf8'), { filename: name + '/data.js' });
     return Promise.resolve(true);
   };
-  global.window.spirit.require = function (p) { required.push(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](global.window.spirit.element); } return Promise.resolve(true); };
+  global.window.spirit.require = function (p) { required.push(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.element.spirit = global.window.spirit.element.spirit || {}).element = global.window.spirit.element.spirit.element || {})); } return Promise.resolve(true); };
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
-  const E = global.window.spirit.element;
+  const E = ((global.window.spirit.element || {}).spirit || {}).element || {};
 
   test.subHeading('it loads what it uses itself (rule/26)');
   ok(['spirit/element/search.js', 'spirit/element/search/branch/rowElement.js', 'spirit/element/search/api.js'].every(function (p) { return required.indexOf(p) !== -1; }) && !required.some(function (p) { return /data\.js$/.test(p); }),
     'it requires the search element, its row element and the family selector through spirit.require, and no data script (Andy: "NO FUCKING DATA SCRIPT")', 'required: ' + short(required));
-  ok(E.search.branch.listElement && typeof E.search.branch.listElement.create === 'function', 'it registers spirit.element.search.branch.listElement.create', 'elements: ' + short(Object.keys(E)));
+  ok(E.search.branch.listElement && typeof E.search.branch.listElement.create === 'function', 'it registers spirit.element.spirit.element.search.branch.listElement.create', 'elements: ' + short(Object.keys(E)));
   if (!E.search.branch.listElement || typeof E.search.branch.listElement.create !== 'function') return;
 
   test.subHeading('one bundle\'s branches, searched at auth.branch');

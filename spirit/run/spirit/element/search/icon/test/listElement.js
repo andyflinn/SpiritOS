@@ -71,8 +71,8 @@ const MAKE = '(function () {' +
   '  return window.spirit.require("spirit/element/search/icon/listElement.js"); }).then(function () { var F = window.spirit.data.fs.data;' +
   '   if (!F.__kept) { F.__kept = true; var watch = F.watchFile; F.watchFile = function (p) { window.__watches.push(String(p)); return watch.apply(this, arguments); }; }' +
   '   var box = document.body.appendChild(document.createElement("div")); box.style.cssText = "position:fixed;left:0;top:0;width:600px;height:400px;display:flex;flex-direction:column;background:#fff;z-index:99999";' +
-  '   window.__list = window.spirit.element.search.icon.listElement.create(box, { face: "pane" }); window.__box = box; return "made"; }); })';
-const SEEN = 'JSON.stringify({ asks: (window.__asks || []).filter(function (p) { return /iconSet\\.json$/.test(p); }), watches: (window.__watches || []).filter(function (p) { return /iconSet\\.json$/.test(p); }), SET: window.spirit.element.search.icon.listElement.SET })';
+  '   window.__list = window.spirit.element.spirit.element.search.icon.listElement.create(box, { face: "pane" }); window.__box = box; return "made"; }); })';
+const SEEN = 'JSON.stringify({ asks: (window.__asks || []).filter(function (p) { return /iconSet\\.json$/.test(p); }), watches: (window.__watches || []).filter(function (p) { return /iconSet\\.json$/.test(p); }), SET: window.spirit.element.spirit.element.search.icon.listElement.SET })';
 // What the newest list answers to a word, typed as the owner types it: the glyphs it draws.
 const FINDS = function (word) {
   return '(function () { var i = [].filter.call(window.__box.querySelectorAll("input"), function (x) { return x.getClientRects().length && x.type !== "checkbox"; })[0]; i.value = ' + JSON.stringify(word) + '; i.dispatchEvent(new Event("input", { bubbles: true })); return true; })()';

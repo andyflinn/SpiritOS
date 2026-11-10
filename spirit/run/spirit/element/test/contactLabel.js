@@ -33,6 +33,8 @@ const asked = [];
 const captions = { KB: 'Bert' };
 let labelAnswer = null; let labelRefuse = null;
 global.window = { spirit: {} };
+// goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
+require(path.join(__dirname, '..', '..', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
 global.spirit = window.spirit;
 window.spirit.ready = Promise.resolve({ contact: {
   get: function (b) { asked.push({ verb: 'contact.get', key: b.key });
@@ -42,7 +44,7 @@ window.spirit.ready = Promise.resolve({ contact: {
 } });
 window.spirit.fieldRules = { problem: function (t) { return t.length > 8 ? 'too long' : ''; } };
 vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
-const made = window.spirit.element.contactLabel;
+const made = window.spirit.element.spirit.element.contactLabel;
 // Box v23: "every element gets a container and appends itself": each label here is made into a container of its own.
 const make = function (o) { return made.create(node('div'), o); };
 const tick = function () { return new Promise(function (r) { setTimeout(r, 0); }); };
@@ -57,7 +59,7 @@ const rename = function (detail) { doc.fire('contact.rename', { detail: detail }
 
   test.subHeading('the element');
   if (made && typeof made.create === 'function' && !('createContactLabel' in window.spirit.element))
-    test.check('it registers spirit.element.contactLabel with a create, and createContactLabel no more');
+    test.check('it registers spirit.element.spirit.element.contactLabel with a create, and createContactLabel no more');
   else { test.fail('elements: ' + JSON.stringify(Object.keys(window.spirit.element))); test.reportSuccessFailureCount(); return; }
   const box = node('div');
   const boxed = made.create(box, { key: 'KA', caption: 'Anna' });

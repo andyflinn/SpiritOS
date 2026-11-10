@@ -68,7 +68,7 @@ test.startTest('appInstaller.js: one activate/deactivate button for one app');
   test.subHeading('it is a standard shell element');
   if (!fs.existsSync(FILE)) { test.fail('spirit/element/appInstaller.js is not there'); return; }
   const w0 = world({});
-  ok(w0.E.appInstaller && typeof w0.E.appInstaller.create === 'function', 'it registers spirit.element.appInstaller.create', 'elements: ' + short(Object.keys(w0.E)));
+  ok(w0.E.appInstaller && typeof w0.E.appInstaller.create === 'function', 'it registers spirit.element.spirit.element.appInstaller.create', 'elements: ' + short(Object.keys(w0.E)));
   if (!w0.E.appInstaller) return;
 
   test.subHeading('an app in spirit/app: on while its row says active, by the app family\'s cache (goal/G43.9)');

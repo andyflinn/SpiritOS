@@ -54,14 +54,14 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   global.window.spirit.require = function (p) { required.push(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](); } return Promise.resolve(true); };
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
-  const E = global.window.spirit.element;
+  const E = ((global.window.spirit.element || {}).spirit || {}).element || {};
   const F = ((global.window.spirit.data || {}).fs || {}).data;
 
   test.subHeading('it loads what it uses itself (rule/26)');
   ok(required.indexOf('spirit/element/rowElement.js') !== -1 && !required.some(function (p) { return /data\.js$/.test(p); }), 'it requires the shared row element, and no data script', 'required: ' + short(required));
   ok(managers.indexOf('fs') !== -1 && F && typeof F.file === 'function', 'it loads the fs family\'s cache manager, which puts ((spirit.data || {}).fs || {}).data on the page', 'managers: ' + short(managers));
   if (!F || typeof F.file !== 'function') return;
-  ok(E.search.file.rowElement && typeof E.search.file.rowElement.create === 'function', 'it registers spirit.element.search.file.rowElement.create', 'elements: ' + short(Object.keys(E)));
+  ok(E.search.file.rowElement && typeof E.search.file.rowElement.create === 'function', 'it registers spirit.element.spirit.element.search.file.rowElement.create', 'elements: ' + short(Object.keys(E)));
   if (!E.search.file.rowElement || typeof E.search.file.rowElement.create !== 'function') return;
 
   test.subHeading('what the fs-watcher\'s stream means for data.files, in the type\'s own element (goal/G41.16)');

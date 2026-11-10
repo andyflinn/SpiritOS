@@ -220,7 +220,7 @@ test.startTest('detailElement.js: its are-you-sure buttons are armingButtons (go
   ok(w.required.indexOf('spirit/element/armingButton.js') !== -1, 'it requires spirit/element/armingButton.js through spirit.require', 'required: ' + short(w.required));
 
   const E = w.win.spirit.element.search.contact.detailElement;
-  ok(!!E && typeof E.create === 'function' && E.open === undefined, 'it is window.spirit.element.search.contact.detailElement, made by create; no open of its own: it opens as a panel (goal/G43.18)', 'detailElement: create ' + typeof (E && E.create) + ', open ' + typeof (E && E.open));
+  ok(!!E && typeof E.create === 'function' && E.open === undefined, 'it is window.spirit.element.spirit.element.search.contact.detailElement, made by create; no open of its own: it opens as a panel (goal/G43.18)', 'detailElement: create ' + typeof (E && E.create) + ', open ' + typeof (E && E.open));
   if (!E) return;
   w.open(KEY);
   await settle();

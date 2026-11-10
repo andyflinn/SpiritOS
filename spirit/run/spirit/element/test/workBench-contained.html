@@ -31,7 +31,7 @@ window.contained = function (name) {
       document.body.appendChild(c);
     }
     function tall(box) { var d = document.createElement('div'); d.style.cssText = 'height:5000px;flex:none'; d.textContent = 'tall'; box.appendChild(d); }
-    var b = spirit.element.workBench.create(c, {
+    var b = spirit.element.spirit.element.workBench.create(c, {
       left: [{ name: 'a', icon: 'A', title: 'a', mount: tall }],
       right: [{ name: 'b', icon: 'B', title: 'b', mount: tall }],
     });
@@ -62,9 +62,9 @@ window.strip = function (n) {
   return Promise.all([spirit.require('spirit/element/workBench.js'), Promise.resolve().then(function () { return spirit.require('spirit/element/icon.js'); }).catch(function () { return null; })]).then(function () {
     document.body.querySelectorAll('.case').forEach(function (x) { x.remove(); });
     var mark = '';
-    if (spirit.element.icon && typeof spirit.element.icon.create === 'function') {
+    if (spirit.element.spirit.element.icon && typeof spirit.element.spirit.element.icon.create === 'function') {
       var probe = document.createElement('div');
-      var made = spirit.element.icon.create(probe, { glyph: 'A' });
+      var made = spirit.element.spirit.element.icon.create(probe, { glyph: 'A' });
       mark = String(made && made.className || '').trim().split(/\s+/)[0] || '';
     }
     var c = document.createElement('div');
@@ -73,7 +73,7 @@ window.strip = function (n) {
     document.body.appendChild(c);
     var tools = [];
     for (var i = 0; i < n; i++) tools.push({ name: 't' + i, icon: ['🔑', '📦', '🧠', '📁', '⚙️', '🗂️'][i % 6], title: 't' + i, mount: function () {} });
-    spirit.element.workBench.create(c, { left: tools });
+    spirit.element.spirit.element.workBench.create(c, { left: tools });
     var s = c.querySelector('[id$="strip-left"]');
     var sr = s.getBoundingClientRect();
     var inner = sr.left + s.clientLeft + s.clientWidth;

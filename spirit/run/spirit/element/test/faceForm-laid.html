@@ -15,14 +15,14 @@
 window.laid = function () {
   var made = [];
   return spirit.require('spirit/element/rowForm.js').catch(function () { return null; }).then(function () {
-    var R = (spirit.element || {}).rowForm;
+    var R = (((spirit.element || {}).spirit || {}).element || {}).rowForm;
     if (R && typeof R.create === 'function') {
       var real = R.create;
       R.create = function (c, o) { var f = real.call(R, c, o); made.push({ opts: o || {}, f: f }); return f; };
     }
     return spirit.require('spirit/element/faceForm.js');
   }).catch(function () { return null; }).then(function () {
-    var F = (spirit.element || {}).faceForm;
+    var F = (((spirit.element || {}).spirit || {}).element || {}).faceForm;
     var out = { made: !!F && typeof F.mount === 'function' };
     if (!out.made) return JSON.stringify(out);
     // The form offers the relays this node is seated on (goal/G40.11) AND starred (goal/G43.18, box v29: "At home, faceForm

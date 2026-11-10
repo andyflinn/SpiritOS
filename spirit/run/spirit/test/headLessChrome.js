@@ -243,4 +243,26 @@ async function chromePage(chrome) {
   return { kid: kid, profile: profile, send: send, evaluate: evaluate, heard: heard, sock: sock };
 }
 
-module.exports = { sleep: sleep, until: until, freePort: freePort, appRuns: appRuns, watchRuns: watchRuns, findChrome: findChrome, scratchNode: scratchNode, scratchRelay: scratchRelay, scratchFaceRelay: scratchFaceRelay, chromePage: chromePage, WAIT: WAIT };
+// A FAKE PAGE'S SPIRIT, AS AN ELEMENT FINDS IT (goal/G43.32): a test that runs an element script in a world of its own
+// (vm) hands that world's spirit object here. It gets spirit.required, the real installSpiritElement resident at
+// spirit.required.spirit.element.installSpiritElement, and a spirit.require that answers what is already loaded at once,
+// as spirit.require does a second time: the helper, or any path the test hands in loaded. So an element script run there
+// places its factory at spirit.element.<its path> by its own call, as it runs. Answers the spirit object.
+function pageSpirit(s, loaded) {
+  const sp = s || {};
+  const helper = require(path.join(RUN, 'spirit', 'element', 'installSpiritElement.js'));
+  sp.required = sp.required || {};
+  sp.required.spirit = sp.required.spirit || {};
+  sp.required.spirit.element = sp.required.spirit.element || {};
+  sp.required.spirit.element.installSpiritElement = helper;
+  const have = Object.assign({ 'spirit/element/installSpiritElement.js': helper }, loaded || {});
+  const own = sp.require;
+  sp.require = function (p) {
+    const at = String(p || '').replace(/^\/+/, '');
+    if (Object.prototype.hasOwnProperty.call(have, at)) { const v = have[at]; return { then: function (f) { return Promise.resolve(f ? f(v) : v); } }; }
+    return typeof own === 'function' ? own.apply(this, arguments) : Promise.resolve({});
+  };
+  return sp;
+}
+
+module.exports = { pageSpirit: pageSpirit, sleep: sleep, until: until, freePort: freePort, appRuns: appRuns, watchRuns: watchRuns, findChrome: findChrome, scratchNode: scratchNode, scratchRelay: scratchRelay, scratchFaceRelay: scratchFaceRelay, chromePage: chromePage, WAIT: WAIT };

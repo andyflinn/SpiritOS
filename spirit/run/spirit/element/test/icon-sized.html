@@ -13,7 +13,7 @@
 // the browser makes of them, measured. Opened by ./icon.js at /DEBUG/spirit/element/test/icon-sized.html.
 window.sized = function () {
   return Promise.resolve().then(function () { return spirit.require('spirit/element/icon.js'); }).catch(function () { return null; }).then(function () {
-    var E = (spirit.element || {}).icon;
+    var E = (((spirit.element || {}).spirit || {}).element || {}).icon;
     var out = { made: !!E && typeof E.create === 'function' && E.create.length === 2 };
     if (!out.made) return JSON.stringify(out);
     function host(css) { var h = document.createElement('div'); h.style.cssText = css; document.body.appendChild(h); return h; }

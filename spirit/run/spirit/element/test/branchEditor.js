@@ -63,17 +63,19 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   global.window = { spirit: { escapeHtml: function (s) { return String(s).replace(/</g, '&lt;'); }, ready: Promise.resolve({ auth: auth }), auth: auth,
     get element() { return this.elements; }, elements: { navigation: { push: function (page) { const p = { page: page, box: node('box'), nav: { close: function () {}, setTitle: function () {} } }; pages.push(p); return p.nav; } } } } };
   global.spirit = global.window.spirit;
+  // goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
+  require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(global.window.spirit);
   ((global.window.spirit.data = global.window.spirit.data || {}).auth = {}).data = { bundles: { watch: function (fn) { bundleWatches.push(fn); return function () {}; } }, branches: { watch: function () { return function () {}; } } };
   global.window.spirit.cacheManager = function () { return Promise.resolve(); };
-  global.window.spirit.require = function (p) { required.push(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](global.window.spirit.element); } return Promise.resolve(true); };
+  global.window.spirit.require = function (p) { required.push(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.element.spirit = global.window.spirit.element.spirit || {}).element = global.window.spirit.element.spirit.element || {})); } return Promise.resolve(true); };
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
-  const E = global.window.spirit.element;
+  const E = ((global.window.spirit.element || {}).spirit || {}).element || {};
 
   test.subHeading('it loads what it uses itself (rule/26)');
   ok(['spirit/element/search/api.js', 'spirit/element/search/branch.js'].every(function (p) { return required.indexOf(p) !== -1; }),
     'it requires the family selector and the branch selector through spirit.require', 'required: ' + short(required));
-  ok(E.branchEditor && typeof E.branchEditor.create === 'function' && E.branchEditor.open === undefined, 'it registers spirit.element.branchEditor.create, and no page of its own (goal/G41.32)', 'elements: ' + short(Object.keys(E.branchEditor || {})));
+  ok(E.branchEditor && typeof E.branchEditor.create === 'function' && E.branchEditor.open === undefined, 'it registers spirit.element.spirit.element.branchEditor.create, and no page of its own (goal/G41.32)', 'elements: ' + short(Object.keys(E.branchEditor || {})));
   if (!E.branchEditor || typeof E.branchEditor.create !== 'function') return;
 
   test.subHeading('always on one bundle');

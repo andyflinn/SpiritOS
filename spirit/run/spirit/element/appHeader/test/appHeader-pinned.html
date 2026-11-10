@@ -16,7 +16,7 @@ window.pinned = function () {
   function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
   return spirit.require('spirit/element/appHeader/appHeader.js').then(function () {
     var pane = document.getElementById('the-pane');
-    var head = spirit.element.appHeader.create(pane);
+    var head = spirit.element.spirit.element.appHeader.appHeader.create(pane);
     head.innerHTML = '<div style="display:flex;gap:8px"><button type="button">List</button><button type="button">Rules</button></div>';
     var content = document.createElement('div');
     content.style.cssText = 'height:3000px;flex:none';

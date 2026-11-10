@@ -6,7 +6,7 @@
 // Written from reading the old module: its facts (Status, Id, Kind, Updated); Cancel for a process or a user-operated
 // server, never a node's own job; Delete once the job is terminal, the screen going with the job; the job's last events,
 // live, a click putting one into the Extract box as JSON.stringify(object, null, 2); a job no longer there said so.
-// spirit.element.jobDetail.create(host, { id, close }) mounted alone in a box of a real Chrome on a scratch node's face
+// spirit.element.spirit.element.jobDetail.create(host, { id, close }) mounted alone in a box of a real Chrome on a scratch node's face
 // page; a running process from a planted node.run app, started as Run starts one.
 
 const fs = require('fs');
@@ -44,10 +44,10 @@ test.startTest('jobDetail.js: one job, the Job Monitor\'s detail, an element of 
 
     await chrome.send('Page.navigate', { url: node.base + '/face.html' });
     await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
-    const loaded = await chrome.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/element/jobDetail.js"); }).then(function () { window.pageErrors = []; window.addEventListener("error", function (e) { window.pageErrors.push(String(e.message)); }); window.closes = []; var J = spirit.element.jobDetail; return J && typeof J.create === "function" ? "loaded" : "spirit.element.jobDetail.create is " + typeof (J && J.create); }, function (e) { return String(e && e.message || e); })');
-    ok(loaded === 'loaded', 'it loads through spirit.require: spirit.element.jobDetail.create(host, { id, close })', 'it did not load: ' + short(loaded));
+    const loaded = await chrome.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/element/jobDetail.js"); }).then(function () { window.pageErrors = []; window.addEventListener("error", function (e) { window.pageErrors.push(String(e.message)); }); window.closes = []; var J = spirit.element.spirit.element.jobDetail; return J && typeof J.create === "function" ? "loaded" : "spirit.element.spirit.element.jobDetail.create is " + typeof (J && J.create); }, function (e) { return String(e && e.message || e); })');
+    ok(loaded === 'loaded', 'it loads through spirit.require: spirit.element.spirit.element.jobDetail.create(host, { id, close })', 'it did not load: ' + short(loaded));
     if (loaded !== 'loaded') return;
-    const mount = function (id) { return chrome.evaluate('(function () { if (window.made) window.made.destroy(); var old = document.getElementById("box"); if (old) old.remove(); var c = document.createElement("div"); c.id = "box"; c.style.cssText = "position:fixed;left:0;top:0;width:1000px;height:760px;display:flex;flex-direction:column;background:#111;z-index:9"; document.body.appendChild(c); window.made = spirit.element.jobDetail.create(c, { id: ' + JSON.stringify(id) + ', close: function (w) { window.closes.push(w === undefined ? null : w); } }); return true; }())'); };
+    const mount = function (id) { return chrome.evaluate('(function () { if (window.made) window.made.destroy(); var old = document.getElementById("box"); if (old) old.remove(); var c = document.createElement("div"); c.id = "box"; c.style.cssText = "position:fixed;left:0;top:0;width:1000px;height:760px;display:flex;flex-direction:column;background:#111;z-index:9"; document.body.appendChild(c); window.made = spirit.element.spirit.element.jobDetail.create(c, { id: ' + JSON.stringify(id) + ', close: function (w) { window.closes.push(w === undefined ? null : w); } }); return true; }())'); };
     const text = function () { return chrome.evaluate('String((document.getElementById("box") || {}).innerText || "")'); };
     const buttons = function () { return chrome.evaluate('Array.prototype.filter.call(document.querySelectorAll("#box button"), function (b) { return b.getClientRects().length; }).map(function (b) { return String(b.textContent).trim(); })'); };
     const press = function (w) { return chrome.evaluate('(function () { var b = Array.prototype.filter.call(document.querySelectorAll("#box button"), function (x) { return x.getClientRects().length && String(x.textContent).trim() === ' + JSON.stringify(w) + '; })[0]; if (b) b.click(); return !!b; }())'); };

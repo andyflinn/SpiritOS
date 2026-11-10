@@ -55,8 +55,10 @@ test.startTest('contactSelector.js: the configurable ID selector');
   global.Event = function (type, o) { this.type = type; this.bubbles = !!(o && o.bubbles); };
   global.document = { createElement: element, addEventListener: function () {}, removeEventListener: function () {} };
   global.window = { spirit: { escapeHtml: function (s) { return String(s).replace(/</g, '&lt;'); }, ready: Promise.resolve(families), contact: families.contact, agent: families.agent, element: {} } };
+  // goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
+  require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
   global.spirit = global.window.spirit;
-  global.window.spirit.require = function (p) { required.push(String(p)); if (STANDS[p]) STANDS[p](global.window.spirit.element); return Promise.resolve(true); };
+  global.window.spirit.require = function (p) { required.push(String(p)); if (STANDS[p]) STANDS[p](((global.window.spirit.element.spirit = global.window.spirit.element.spirit || {}).element = global.window.spirit.element.spirit.element || {})); return Promise.resolve(true); };
   // The page's one data set, its node known (goal/G41.28, Q10), and a family's cache: the family's own manager, run here.
   vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });
   global.window.spirit.node = { key: 'KEY+CONTACT/SELECTOR==' };
@@ -68,9 +70,9 @@ test.startTest('contactSelector.js: the configurable ID selector');
     return Promise.resolve(true);
   };
   vm.runInThisContext(SRC, { filename: FILE });
-  const E = global.window.spirit.element;
+  const E = ((global.window.spirit.element || {}).spirit || {}).element || {};
   const made = E.search.contact;
-  ok(made && typeof made.create === 'function' && !('createContactSelector' in E), 'it registers spirit.element.search.contact with a create, and createContactSelector no more', 'elements: ' + short(Object.keys(E)));
+  ok(made && typeof made.create === 'function' && !('createContactSelector' in E), 'it registers spirit.element.spirit.element.search.contact with a create, and createContactSelector no more', 'elements: ' + short(Object.keys(E)));
   if (!made || typeof made.create !== 'function') return;
   // Box v23: "every element gets a container and appends itself".
   const make = function (o) { return made.create(element('div'), o); };

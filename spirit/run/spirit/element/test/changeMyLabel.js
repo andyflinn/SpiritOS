@@ -114,7 +114,7 @@ test.startTest('changeMyLabel.js: the node\'s name, changed');
 
   test.subHeading('its form, a rowForm: ✏️ "Name" [name-input] [Save] (goal/G41.27)');
   // Andy, on G41.27: "Info app:\n\n[✏️] \"Name\" [name-input] [Save]\n\nthis might be in the changeMyLabel element....".
-  // The box: "spirit.elements.rowForm.create(container, { icon, button }) -> { root, span, button }", "The mounter drops
+  // The box: "spirit.element.spirit.element.rowForm.create(container, { icon, button }) -> { root, span, button }", "The mounter drops
   // its form elements into span and wires the button itself", and "a line saying what a press did (a refusal, a result)
   // is the mounter's, below the bubble, not in it."
   ok(w.required.indexOf('spirit/element/rowForm.js') !== -1, 'it loads the rowForm itself (rule/26)', 'required: ' + short(w.required));

@@ -124,7 +124,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   test.subHeading('an element mounted the new shell\'s way (goal/G43.24, requirements 7 and 8)');
   const w = world(rotated);
   const E = (w.win.spirit.elements || {}).rotateKey;
-  ok(!!E && typeof E.create === 'function', 'it sets spirit.elements.rotateKey = { create }', 'elements: ' + short(Object.keys(w.win.spirit.elements || {})));
+  ok(!!E && typeof E.create === 'function', 'it sets spirit.element.spirit.element.rotateKey = { create }', 'elements: ' + short(Object.keys(w.win.spirit.elements || {})));
   if (!E) return;
   ok(!/\bactivateApp\b|\bspirit\.shell\b|\bcallDialog\b|\bcloseDialog\b/.test(CODE), 'no spirit.shell.activateApp, no dialog of the old shell', 'rotateKey.js still mounts or closes the old shell\'s way');
   // Andy: "every fucking element gets the interfaces it needs": the node's own verb, through the spirit object, no api.verb.

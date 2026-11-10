@@ -19,7 +19,7 @@ window.pressed = function () {
   var sheetsBefore = document.styleSheets.length;
   var stylesBefore = document.querySelectorAll('style').length;
   return Promise.resolve().then(function () { return spirit.require('spirit/element/busyButton.js'); }).catch(function () { return null; }).then(function () {
-    var E = (spirit.element || {}).busyButton;
+    var E = (((spirit.element || {}).spirit || {}).element || {}).busyButton;
     var out = { made: !!E && typeof E.create === 'function' && E.create.length === 2 && typeof E.attach === 'function' };
     if (!out.made) return JSON.stringify(out);
     // What a button shows: its label (the text outside any element in it), the element left of it, how it is drawn.

@@ -46,6 +46,8 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     'spirit/element/fstat.js': function (E) { E.fstat = { mimeOf: function (n) { return /\.png$/.test(n) ? 'image/png' : 'text/plain'; } }; },
   };
   global.window = { spirit: { escapeHtml: function (s) { return String(s); }, ready: Promise.resolve({ fs: fsFamily }), fs: fsFamily, element: {} } };
+  // goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
+  require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
   global.spirit = global.window.spirit;
   vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });
   const D = global.window.spirit.data;
@@ -60,10 +62,10 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'data.js'), 'utf8'), { filename: name + '/data.js' });
     return Promise.resolve(true);
   };
-  global.window.spirit.require = function (p) { required.push(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](global.window.spirit.element); } return Promise.resolve(true); };
+  global.window.spirit.require = function (p) { required.push(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.element.spirit = global.window.spirit.element.spirit || {}).element = global.window.spirit.element.spirit.element || {})); } return Promise.resolve(true); };
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
-  const E = global.window.spirit.element;
+  const E = ((global.window.spirit.element || {}).spirit || {}).element || {};
   const F = ((global.window.spirit.data || {}).fs || {}).data;
 
   test.subHeading('it loads what it uses itself (rule/26), and no data script');
@@ -72,7 +74,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(!required.some(function (p) { return /data\.js$/.test(p); }), 'and no data script: the file tree\'s stream is its row element\'s', 'required: ' + short(required));
   ok(managers.indexOf('fs') !== -1 && F && typeof F.file === 'function', 'it loads the fs family\'s cache manager, which puts ((spirit.data || {}).fs || {}).data on the page', 'managers: ' + short(managers));
   if (!F || typeof F.file !== 'function') return;
-  ok(E.search.file && typeof E.search.file.create === 'function', 'it registers spirit.element.search.file.create', 'elements: ' + short(Object.keys(E)));
+  ok(E.search.file && typeof E.search.file.create === 'function', 'it registers spirit.element.spirit.element.search.file.create', 'elements: ' + short(Object.keys(E)));
   if (!E.search.file || typeof E.search.file.create !== 'function') return;
 
   test.subHeading('a view of the node\'s file tree');

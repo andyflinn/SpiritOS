@@ -64,6 +64,8 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   };
   global.document = { createElement: function () { return {}; } };
   global.window = { spirit: { escapeHtml: function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }, ready: Promise.resolve({}), element: {} } };
+  // goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
+  require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
   global.spirit = global.window.spirit;
   vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });
   const DATA = global.window.spirit.data;
@@ -83,10 +85,10 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const A = ((global.window.spirit.data || {}).auth || {}).data;
   // The direct writes below are the auth family's own view of the home node, as its manager files them.
   const V = DATA.viewAt(null, 'auth');
-  global.window.spirit.require = function (p) { required.push(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](global.window.spirit.element); } return Promise.resolve(true); };
+  global.window.spirit.require = function (p) { required.push(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.element.spirit = global.window.spirit.element.spirit || {}).element = global.window.spirit.element.spirit.element || {})); } return Promise.resolve(true); };
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
-  const E = global.window.spirit.element;
+  const E = ((global.window.spirit.element || {}).spirit || {}).element || {};
 
   ok(!!A && !!A.grants && typeof A.grants.row === 'function' && typeof NODE.branch === 'string' && NODE.branch !== '' && typeof AGENT.branch === 'string' && AGENT.branch !== '' && NODE.branch !== AGENT.branch,
     'the auth family\'s cache manager is on the page, and each table names a branch of its own', 'authReads: ' + short(A && Object.keys(A)) + ', branches ' + short([NODE.branch, AGENT.branch]));
@@ -96,7 +98,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(['spirit/element/rowElement.js', 'spirit/element/armingButton.js'].every(function (p) { return required.indexOf(p) !== -1; }) && !required.some(function (p) { return /data\.js$/.test(p); }),
     'it requires the shared row element and the arming button, and no data script', 'required: ' + short(required));
   ok(!/auth\.|agent\.grant|'bundles'|"bundles"|job_id/.test(SRC), 'it names no table: no auth verb, no agent grant, no stream job of its own (goal/G41.16)', 'rowElement.js names a table of its own');
-  ok(E.search.grant.rowElement && typeof E.search.grant.rowElement.create === 'function', 'it registers spirit.element.search.grant.rowElement.create', 'elements: ' + short(Object.keys(E)));
+  ok(E.search.grant.rowElement && typeof E.search.grant.rowElement.create === 'function', 'it registers spirit.element.spirit.element.search.grant.rowElement.create', 'elements: ' + short(Object.keys(E)));
   if (!E.search.grant.rowElement || typeof E.search.grant.rowElement.create !== 'function') return;
   // UNCONFIGURED, IT THROWS NOTHING (goal/G41.19, box v23: "throws nothing even when unconfigured"): made with no grants
   // table it is a row of nothing, and never falls back to one.

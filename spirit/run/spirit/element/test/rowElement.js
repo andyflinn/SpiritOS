@@ -11,8 +11,10 @@ const test = require(path.join(path.resolve(__dirname, '../../..'), 'spirit', 't
 
 const FILE = path.join(__dirname, '..', 'rowElement.js');
 global.window = { spirit: {} };
+// goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
+require(path.join(__dirname, '..', '..', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
 vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
-const R = window.spirit.element.rowElement;
+const R = window.spirit.element.spirit.element.rowElement;
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 // A host that counts its paints.

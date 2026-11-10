@@ -47,16 +47,18 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   global.Event = function (type, o) { this.type = type; this.bubbles = !!(o && o.bubbles); };
   global.document = { createElement: element, addEventListener: function () {}, removeEventListener: function () {} };
   global.window = { spirit: { escapeHtml: function (s) { return String(s); }, ready: Promise.resolve({}), element: {} } };
+  // goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
+  require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
   global.spirit = global.window.spirit;
   global.window.spirit.require = function (p) {
     required.push(String(p));
-    if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](global.window.spirit.element); }
+    if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.element.spirit = global.window.spirit.element.spirit || {}).element = global.window.spirit.element.spirit.element || {})); }
     return Promise.resolve(true);
   };
   vm.runInThisContext(SRC, { filename: FILE });
-  const E = global.window.spirit.element;
+  const E = ((global.window.spirit.element || {}).spirit || {}).element || {};
   const made = E.search.branch;
-  ok(made && typeof made.create === 'function' && !('createBranchSelector' in E), 'it registers spirit.element.search.branch with a create, beside the shell\'s other selectors, and createBranchSelector no more', 'elements: ' + short(Object.keys(E)));
+  ok(made && typeof made.create === 'function' && !('createBranchSelector' in E), 'it registers spirit.element.spirit.element.search.branch with a create, beside the shell\'s other selectors, and createBranchSelector no more', 'elements: ' + short(Object.keys(E)));
   if (!made || typeof made.create !== 'function') return;
 
   test.subHeading('a thin selector over its own list (rule/26; the contactSelector\'s pattern)');
