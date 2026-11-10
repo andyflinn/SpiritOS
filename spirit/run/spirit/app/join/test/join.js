@@ -1,13 +1,14 @@
 'use strict';
 
-// spirit/run/shell/join/test/join.js
-// The tests of shell/join/join.js (spec: ./join.md; goal/G41.1): its steps' icons are glyphs, drawn as they are. The
+// spirit/run/spirit/app/join/test/join.js
+// The tests of spirit/app/join/join.js (spec: ./join.md; goal/G41.1): its steps' icons are glyphs, drawn as they are. The
 // browser file runs in node on a window of its own: the page, the shell and the spirit object are stubs.
 
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
-const RUN = path.resolve(__dirname, '../../..');
+// spirit/app/join/test/ -> the run root, four up.
+const RUN = path.resolve(__dirname, '../../../..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const DIR = path.join(__dirname, '..');
 const FILE = path.join(DIR, 'join.js');

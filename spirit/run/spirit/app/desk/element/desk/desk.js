@@ -1001,6 +1001,7 @@ function deskLoad() {
 // cache manager (goal/G41.28), spirit.data.backup.data; the line follows its watch.
 var DESK_BACKUP_DATA = '/spirit/app/backup/data.js';
 var deskBackupWatched = null;
+var deskVerifyWatched = null;   // the verifier tab's watch, let go by destroy
 function deskBackupPaint() {
   // Its own line alone once the page is drawn (goal/G27.9: one change, one element repainted).
   var el = typeof document !== 'undefined' && document.getElementById ? document.getElementById('desk-backup') : null;
@@ -1492,12 +1493,18 @@ window.spirit.require('spirit/element/installSpiritElement.js').then(function ()
     deskNeed(DESK_VERIFY_DATA).then(function () {
       var V = window.spirit && ((window.spirit.data || {}).deskVerify || {}).data;
       if (!V) return;
-      V.watch(deskVerifyEvent);
+      deskVerifyWatched = V.watch(deskVerifyEvent);
       if (V.state()) deskVerifyEvent(V.state());
     });
     deskAskVerifier();
     }
     // Its own stack when its mounter hands none (panel.js), so a dialog opens over the page either way.
     if (typeof deskOpts.open !== 'function') window.spirit.require('spirit/element/panel.js').then(function () { if (!deskStack && container.firstElementChild && deskElementAt('spirit.element.panel')) deskStack = window.spirit.element.spirit.element.panel.create(container, container.firstElementChild); });
-    return { destroy: function () { deskHeard = []; container.innerHTML = ''; } };
+    return { destroy: function () {
+      deskHeard = [];
+      // Both its watches let go (rule/8): the backup line's and the verifier tab's.
+      [deskBackupWatched, deskVerifyWatched].forEach(function (stop) { if (typeof stop === 'function') stop(); });
+      deskBackupWatched = deskVerifyWatched = null;
+      container.innerHTML = '';
+    } };
 } }); });

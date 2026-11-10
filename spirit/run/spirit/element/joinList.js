@@ -107,7 +107,12 @@
       var E = S.element || {};
       // Step 1 (box v41): the one join control, its words where the node stands: Join with no seat, Add on a seat taken
       // without a verified email (by invite), Change once verified. THE EMAIL FORM, THE SAME EVERYWHERE (goal/G40.10).
-      if (step.until === 'email' && E.spirit.element.joinForm) { withRelays(function () { E.spirit.element.joinForm.mount(box, { relays: relays }); }); return; }
+      // Made by its create and kept with what a redraw or destroy lets go (rule/8: the form holds a contact watch); a box a
+      // redraw already replaced gets none.
+      if (step.until === 'email' && E.spirit.element.joinForm) {
+        withRelays(function () { if (host.contains(box)) made.push(E.spirit.element.joinForm.create(box, { relays: relays })); });
+        return;
+      }
       // FIND SOMEONE: the same one list Contacts draws (goal/G30.19). The node republishes its join news once the contact is in.
       var list = E.spirit.element.search && E.spirit.element.search.contact && E.spirit.element.search.contact.listElement;
       if (step.until === 'contact' && list) {

@@ -25,7 +25,8 @@
         else HOME.del(STATUS + '/' + NOW);
       },
       status: function () { return HOME.get(STATUS + '/' + NOW) || null; },
-      watch: function (fn) { return HOME.watch(STATUS, function () { if (typeof fn === 'function') fn(backupReads.status()); }); },
+      // The row status() reads, and only that: what it watches is what it answers.
+      watch: function (fn) { return HOME.watch(STATUS + '/' + NOW, function () { if (typeof fn === 'function') fn(backupReads.status()); }); },
       get branch() { return HOME.path(STATUS); },
     };
     return backupReads;
