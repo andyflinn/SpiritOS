@@ -20,7 +20,10 @@
     // One form redrawn whole, as a form's icon is fixed when it is made.
     function draw() {
       root.innerHTML = '';
-      var f = window.spirit.element.rowForm.create(root, { icon: on ? '🟢' : '🔴', button: on ? '🔴' : '🟢' });
+      var f = window.spirit.element.rowForm.create(root, { icon: on ? '🟢' : '🔴', button: '' });
+      // THE BUTTON'S GLYPH IS AN ICON TOO (goal/G43.32; Andy: "fix the fucking elements/pages."): painted through the icon
+      // element, which rowForm.js has loaded, as every pictograph the shell draws.
+      window.spirit.element.icon.create(f.button, { glyph: on ? '🔴' : '🟢' });
       f.span.textContent = words;
       f.button.addEventListener('click', function () { if (typeof o.press === 'function') o.press(); });
     }
