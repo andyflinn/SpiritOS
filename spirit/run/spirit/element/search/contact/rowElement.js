@@ -99,18 +99,19 @@
   // as file opens its viewers. The details are handed only the layer they are drawn in, its close and title (options.layer);
   // every verb they ask, they ask through the spirit object themselves (goal/G43.24). No open handed: no details to open.
   // The page loads when it is first opened, through spirit.require.
+  // ONE DETAIL, WHICH KNOWS THE TYPE (goal/G43.32; Andy: "the contact list already knows the difference between contact types.
+  // so should the detail panel."): the row opens ./detailElement.js alone, telling it what the row is; the detail draws a
+  // relay's panel or a person's. The row names the layer only.
   function openDetails(open, kind, key) {
     if (typeof open !== 'function') return Promise.resolve(null);
-    var file = kind === 'relay' ? 'spirit/element/search/contact/relayPanel.js' : 'spirit/element/search/contact/detailElement.js';
     var layer = null;
     return Promise.resolve(open('contact/' + kind + '/' + key, { icon: '', label: kind === 'relay' ? 'Relay' : 'Contact', fill: function (pane) {
-      return window.spirit.require(file).then(function () {
+      return window.spirit.require('spirit/element/search/contact/detailElement.js').then(function () {
         var here = {
           close: function () { if (layer) layer.hide(); },
           setTitle: function (text) { if (layer) layer.set({ label: String(text || '') }); },
         };
-        var E = window.spirit.element.spirit.element.search.contact;
-        return kind === 'relay' ? E.relayPanel.create(pane, { key: key, layer: here }) : E.detailElement.create(pane, { key: key, layer: here });
+        return window.spirit.element.spirit.element.search.contact.detailElement.create(pane, { key: key, layer: here, relay: kind === 'relay' });
       });
     } })).then(function (l) { layer = l; return l; });
   }
@@ -155,7 +156,7 @@
       index: index(),
       row: { key: key, name: r.name || '', keep: r.keep === true, mine: r.mine === true, blocked: r.blocked === true,
         seated: r.seated === true, relay: relay,
-        present: was.present !== undefined ? was.present : r.present, url: r.url || '', publicLabel: r.publicLabel || '' },
+        present: was.present !== undefined ? was.present : r.present, url: r.url || '', publicLabel: r.publicLabel || '', mark: 0 },
       fields: [
         // The dot, and what it means on its title, where the question is asked (Contacts' wording, goal/G2.9).
         { name: 'presence', from: ['present'], paint: function (v) {
@@ -183,6 +184,9 @@
         { name: 'add', from: ['keep', 'mine', 'blocked', 'relay'], paint: function (v) {
           return !bookOf(v) && v.relay !== true ? '<button type="button" class="cancel-btn" data-action="add">Add</button>' : '';
         } },
+        // THE CALLER'S MARK (goal/G43.32, one contact list: what the contact picker painted as its status column), options.mark(key)
+        // a glyph or '': Chat's ⌛ on a peer whose line waits (goal/G4.10). Repainted when the list is told (mark changes).
+        { name: 'mark', from: ['mark'], paint: function (v) { return typeof co.mark === 'function' ? esc(co.mark(v.key) || '') : ''; } },
       ],
       actions: actions,
       expand: function (el) {

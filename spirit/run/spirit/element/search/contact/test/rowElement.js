@@ -26,8 +26,7 @@ window.spirit.fieldRules = { normalize: function (t) { return String(t || '').tr
   problem: function (t) { return t ? '' : 'a name is needed'; }, MAX_BYTES: 64 };
 // The details, made in a panel's pane (goal/G43.18): each records what it was made with.
 // goal/G43.32: what the row opens stands where an element now finds it, spirit.element.spirit.element.
-(((window.spirit.element = window.spirit.element || {}).spirit = window.spirit.element.spirit || {})).element = { search: { contact: { detailElement: { create: function (pane, o) { asked.push({ verb: 'contactDetails', body: o }); return {}; } },
-  relayPanel: { create: function (pane, o) { asked.push({ verb: 'relayPanel', body: o }); return {}; } } } } };
+(((window.spirit.element = window.spirit.element || {}).spirit = window.spirit.element.spirit || {})).element = { search: { contact: { detailElement: { create: function (pane, o) { asked.push({ verb: 'contactDetails', body: o }); return {}; } } } } };
 // The mounter's panel stack's open (spirit/element/panel.js): it records the layer asked for and fills a pane at once.
 const layers = [];
 function openLayer(key, spec) { layers.push({ key: key, label: spec.label }); return Promise.resolve(spec.fill({})).then(function () { return { hide: function () {}, set: function () {}, shown: function () { return true; } }; }); }
@@ -75,7 +74,7 @@ function hostsFor(el) { const h = {}; el.fields.forEach(function (f) { h[f] = { 
   else test.fail('not in the book: ' + names(stranger));
   if (names(relay) === 'open') test.check('a relay: open, even when kept');
   else test.fail('relay: ' + names(relay));
-  if (kept.kind === 'contact' && kept.key === 'K1' && kept.fields.join(',') === 'presence,status,label,add') test.check('kind contact, keyed by the public key, fields presence, status, label, add');
+  if (kept.kind === 'contact' && kept.key === 'K1' && kept.fields.join(',') === 'presence,status,label,add,mark') test.check('kind contact, keyed by the public key, fields presence, status, label, add, and the caller\'s mark (goal/G43.32)');
   else test.fail('the element: ' + JSON.stringify({ kind: kept.kind, key: kept.key, fields: kept.fields }));
   const byPublic = C.create({ publicKey: 'K9', keep: true });
   if (byPublic.key === 'K9') test.check('a row carrying publicKey instead of key is keyed by it');
@@ -96,13 +95,15 @@ function hostsFor(el) { const h = {}; el.fields.forEach(function (f) { h[f] = { 
   else test.fail('the book actions asked: ' + three);
   await kept.act('open'); await relay.act('open');
   const opens = asked.splice(-2);
-  if (opens[0].verb === 'contactDetails' && opens[0].body.key === 'K1' && opens[1].verb === 'relayPanel' && opens[1].body.key === 'R1') test.check('open: a contact\'s details by key, a relay\'s by its key');
+  // GOAL/G43.32 (Andy: "the contact list already knows the difference between contact types. so should the detail panel."): one
+  // detail opens for both, told what the row is; it draws a relay's panel or a person's.
+  if (opens[0].verb === 'contactDetails' && opens[0].body.key === 'K1' && opens[0].body.relay === false && opens[1].verb === 'contactDetails' && opens[1].body.key === 'R1' && opens[1].body.relay === true) test.check('open: the one contact detail, by key, told a person from a relay (goal/G43.32)');
   else test.fail('opens: ' + JSON.stringify(opens));
   // GOAL/G43.18: as a panel over the list, through the mounter's open; handed the layer, no api (goal/G43.24).
   if (layers.length === 2 && layers[0].key === 'contact/contact/K1' && layers[1].key === 'contact/relay/R1' && opens.every(function (o) { return !('api' in o.body) && o.body.layer && typeof o.body.layer.close === 'function' && typeof o.body.layer.setTitle === 'function'; })) test.check('each opens as a layer of the mounter\'s panel stack, handed that layer\'s close and title and no api (goal/G43.24)');
   else test.fail('layers: ' + JSON.stringify(layers) + ', made with ' + JSON.stringify(opens.map(function (o) { return Object.keys(o.body); })));
   const pages = required.slice(-2).join(',');
-  if (pages === 'spirit/element/search/contact/detailElement.js,spirit/element/search/contact/relayPanel.js') test.check('open loads the page it opens first, through spirit.require');
+  if (pages === 'spirit/element/search/contact/detailElement.js,spirit/element/search/contact/detailElement.js') test.check('open loads the detail it opens first, through spirit.require, for a person and a relay alike');
   else test.fail('open required: ' + pages);
   // goal/G43.32, decided 5: every element script also requires installSpiritElement, to place itself; that is no part it draws with.
   const parts = required.filter(function (p) { return p !== 'spirit/element/installSpiritElement.js'; });

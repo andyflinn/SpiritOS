@@ -88,6 +88,7 @@ load(path.join(JS, 'search', 'contact', 'listElement.js'));
 const L = window.spirit.element.spirit.element.search.contact.listElement;
 const F = {}; L.filters.forEach(function (f) { F[f.name] = f; });
 const tick = function () { return new Promise(function (r) { setTimeout(r, 0); }); };
+function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 
 (async function () {
   test.startTest('contacts/listElement.js: the contacts list');
@@ -130,7 +131,7 @@ const tick = function () { return new Promise(function (r) { setTimeout(r, 0); }
   const pane = L.create(host, { open: openLayer, say: function (t) { said.push(t); }, onAdded: function (r) { added.push(r); } });
   const o = made.opts;
   const CD = ((window.spirit.data || {}).contact || {}).data;
-  if (managers.indexOf('contact') !== -1 && CD && typeof CD.branch === 'string' && CD.branch !== '' && o.data === CD.branch && o.filters === L.filters && o.columns.map(function (c) { return c.field; }).join(',') === 'presence,status,label,add')
+  if (managers.indexOf('contact') !== -1 && CD && typeof CD.branch === 'string' && CD.branch !== '' && o.data === CD.branch && Array.isArray(o.filters) && o.filters.length === L.filters.length && L.filters.every(function (f, i) { return o.filters[i] === f; }) && o.columns.map(function (c) { return c.field; }).join(',') === 'presence,status,label,add')
     test.check('a view of the contact family\'s contacts (spirit.data.contact.data.branch), the list\'s filters, columns presence, status, label, add');
   else test.fail('the opts: ' + JSON.stringify({ data: o.data, contactBranch: CD && CD.branch, managers: managers, columns: o.columns }));
   if (made.refreshes === 1) test.check('it fills as soon as it is drawn: one refresh at create');
@@ -190,6 +191,44 @@ const tick = function () { return new Promise(function (r) { setTimeout(r, 0); }
   await tick();
   if (asked.length === n && made.refreshes === r0 + 1) test.check('a click on no button, or on a row the list did not make, does nothing');
   else test.fail('a stray click asked ' + JSON.stringify(asked.slice(n)));
+
+  // ONE CONTACT LIST (goal/G43.32; Andy: "contact: there should be only 1 list, i didn't even know there where two...."): what the
+  // contact picker drew as a list of its own until then, this list does.
+  test.subHeading('what the picker alone did: hidden filters, marks, a press that picks');
+  const hid = { name: 'offered', when: function () { return false; }, test: function () { return 1; } };
+  const marked = L.create({ isConnected: true, addEventListener: function () {} }, { filters: [hid], statuses: [{ status: 'none' }, { status: 'waiting', glyph: '⌛' }], details: null });
+  const mo = made.opts;
+  ok(mo.filters.length === L.filters.length + 1 && mo.filters[mo.filters.length - 1] === hid, 'a caller\'s hidden filters (opts.filters) come after its own (Andy: "Why can\'t chatter insert a hidden filter when it draws contacts?")', 'filters: ' + mo.filters.map(function (f) { return f.name; }).join(','));
+  ok(mo.columns.map(function (c) { return c.field; }).join(',') === 'presence,status,label,add,mark', 'statuses give it a mark column, last', 'columns: ' + mo.columns.map(function (c) { return c.field; }).join(','));
+  ok(mo.details === undefined, 'details: null, and a pane\'s press picks instead of opening the row (Chat\'s peers pane)', 'details: ' + typeof mo.details);
+  const me = mo.element({ keep: true, name: 'mo' }, 'K5');
+  const markOf = function () { const c = me.cells().filter(function (x) { return x.name === 'mark'; })[0]; return c ? c.html : null; };
+  const before = markOf();
+  marked.mark('K5', 'waiting');
+  const after = markOf();
+  marked.mark('K5', 'none');
+  ok(before === '' && after === '⌛' && markOf() === '', 'mark(key, status) gives that row its glyph from statuses, the first the default (none: no glyph)', 'mark: ' + JSON.stringify([before, after, markOf()]));
+
+  test.subHeading('any ID table of the shadow roll\'s shape (goal/G41.13, Andy, Q2)');
+  const realReady = window.spirit.ready;
+  const tableAsked = [];
+  window.spirit.ready = Promise.resolve({ agent: { job: function (b) { tableAsked.push(b); return Promise.resolve({ items: [{ key: 'row1', label: JSON.stringify({ id: 'KJ', title: 'Night job' }) }] }); } },
+    contact: { search: function (b) { tableAsked.push({ contact: b }); return Promise.resolve({ items: [] }); } } });
+  global.spirit = window.spirit;
+  L.create({ isConnected: true, addEventListener: function () {} }, { table: 'loopback://api/agent/job', key: 'id', label: 'title', face: 'dropdown' });
+  const to = made.opts;
+  ok(to.server === 'agent' && to.verb === 'job' && to.filters.length === 0 && to.details === undefined && to.columns.map(function (c) { return c.field; }).join(',') === 'label',
+    'a table names its family and verb, has no contact filters, nothing to open, and one column, the label', 'opts: ' + JSON.stringify({ server: to.server, verb: to.verb, filters: to.filters.length, details: typeof to.details, columns: to.columns }));
+  const tg = await to.search({ text: ' night ' });
+  const trow = tg.body.items[0] ? JSON.parse(tg.body.items[0].label) : null;
+  ok(tableAsked[0] && tableAsked[0].op === 'search' && tableAsked[0].text === 'night', 'a table of the agent tables\' norm is asked { op: search, text } through the spirit object, at that family and verb', 'asked: ' + JSON.stringify(tableAsked[0]));
+  ok(tg.body.items.length === 1 && tg.body.items[0].key === 'KJ' && trow && trow.name === 'Night job', 'opts.key names the field a row\'s ID is in, opts.label the field its label is in', 'rows: ' + JSON.stringify(tg.body.items));
+  const tel = to.element(trow, 'KJ');
+  ok(tel && tel.kind === 'id' && tel.key === 'KJ', 'a table\'s row is a plain row of its label, no contact', 'row: ' + JSON.stringify(tel && { kind: tel.kind, key: tel.key }));
+  L.create({ isConnected: true, addEventListener: function () {} }, { table: 'loopback://api/contact/search' });
+  ok(made.opts.server === 'contact' && made.opts.filters.length === L.filters.length, 'naming the contacts\' own table is the same as naming none', 'opts: ' + JSON.stringify({ server: made.opts.server }));
+  window.spirit.ready = realReady;
+  global.spirit = window.spirit;
 
   test.subHeading('the one table is the contact family\'s cache, and the list takes no stream itself (goal/G41.28)');
   // Andy, the box: "anything not using the new spiritData.js and it's buddies clientCacheManager.js must do so in this

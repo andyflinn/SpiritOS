@@ -1,36 +1,36 @@
-# spirit/element/search/contact.js
+# spirit/element/search/contact.js, the contact picker
 
-`spirit/run/spirit/element/search/contact.js` is the contact selector. Since goal/G41.13 it is the configurable ID selector
-of the grants app's add-grant row. Its test is `./contact.js`; this spec covers what G41.13 adds.
+The peer picker apps build their screens with: Chat's peers pane, the grants panel's ID selectors. Since goal/G43.32 it is a
+thin selector over the one contact list, `search/contact/listElement.js` (Andy: *"contact: there should be only 1 list, i
+didn't even know there where two...."*, *"all, any search-unit has ONE list shared by popup and list modes."*); until then
+it drew a list of its own. What that list alone did (any ID table, goal/G41.13; the caller's hidden filters; a mark column)
+the contact list does now, tested in its folder. Its test is `./contact.js`: the browser file run in node on a bare window,
+the list a stand-in that keeps what it was handed.
 
-Andy, Q2: *"the loopback-api-location of the ID table, which must be formed like the shadow roll : key:ID (ID-field-rules,
-label (label-field rules)"*, *"table:\"loopback://api/contact/search\""*, and *"if neccessary: key field name ('id',
-'contactID', what ever this ID based table calls its key); label field name ('label', 'relayLabel', what ever this ID
-based table calls its label)"*.
+`spirit.element.spirit.element.search.contact.create(container, options)` -> root.
 
 ## Requirements
 
-- It registers `spirit.element.search.contact.create(container, options)`, and `createContactSelector` no more. Its
-  root is appended to the container (box v23: *"every element gets a container and appends itself"*) and answered at
-  once, nothing chosen, with `refresh`, `present` and `mark`, as Chatter and the shell use it.
-- It loads what it uses itself (rule/26): on a bare page it requires `spirit/element/search.js`, then builds on
-  it. Nothing of the old shell's list search is in it (goal/G40.8).
-- With no table named, it searches the contacts, `contact.search`, and a row is the contact's key and name, as before.
-- **The contacts are the contact family's cache** (goal/G41.28): it loads `spirit.cacheManager('contact')` and, with no
-  table named, its list is a view of `spirit.data.contact.data.branch`. It takes no search of its caller's own.
-- **A caller's hidden filters** (Andy: *"Why can't chatter insert a hidden filter when it draws contacts?"*):
-  `options.filters`, `[{ name, when, test(row) }]`, are passed on to the list after its own.
-- `options.table` is the ID table's loopback api location, `loopback://api/<family>/<verb>`. It is searched through
-  the spirit object at that family and verb. A table of the agent tables' norm is asked `{ op: 'search', text }` (Andy:
-  *"the config info is auth.bundle (an api that conforms to the same interface norm as
-  \"process/js/agent/table/<tableName>\")"*). Naming the contacts' table is the same as naming none.
-- `options.key` names the field a row's ID is in, and `options.label` the field its label is in.
-- A pick sets `.value` to that ID.
+- It places itself at `spirit.element.spirit.element.search.contact`, with a create.
+- It makes no list of its own: no probabilitySearch, nothing of the old shell's list search (goal/G40.8).
+- `create(container, options)` appends its root to its container and answers it; on a bare page it requires the contact
+  list and the contact family's cache, then draws the list into its root.
+- The dropdown (the default) is the list in its dropdown face, `options.placeholder` and `options.all` handed on; the pane
+  (`face: 'pane'`) is the same list in its pane face, filling its box.
+- An ID table is handed on whole: `options.table`, `key`, `label` and `data`.
+- `options.filters` (the caller's hidden filters) and `options.statuses` (the mark column) are handed on.
+- A pane's press picks: the list is handed `details: null`, unless `options.details` opens something itself.
+- `root.value` is the picked key and `root.row` the picked row, `''` and `null` while none is; a pick fires one bubbling
+  `change`; None picked clears them.
+- `root.refresh()` asks the list again; `root.mark(key, status)` is the list's mark, and a mark said before the list is
+  here is said to it once it is.
+- `root.destroy()` lets its list go and takes the root out of its container; a picker destroyed before its list is here
+  draws none.
 
 ## What its test must try to break
 
-- The old factory still registered, or a root not appended to its container.
-- A configured table that is asked anywhere but its own family and verb.
-- A row whose ID or label is read from the wrong field.
-- The contacts' default broken by the new options.
-- An element counted on that the selector did not load itself.
+- A second list made beside the contact list.
+- An option dropped on the way: the table, the filters, the statuses, the words.
+- A pane that opens a contact instead of picking it, when its caller only picks.
+- A mark lost because it came before the list.
+- A list drawn after destroy.

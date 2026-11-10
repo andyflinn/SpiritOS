@@ -640,17 +640,8 @@ function chMount(container) {
       chApplyStyle();
     });
 
-    // PRESENCE, as Contacts shows it (goal/G4.10: "same green and white dots i see in contacts"): each contact's present
-    // as the contact family's cache keeps it (spirit.data.contact.data, goal/G41.28), drawn as the app opens and again on each
-    // change; a key it no longer knows present goes white, as in Contacts: unknown is never present.
-    Promise.resolve(spirit.cacheManager('contact')).then(function () {
-      var C = ((window.spirit.data || {}).contact || {}).data;
-      if (!C) return;
-      function dot(key, row) { if (chPane && typeof chPane.present === 'function') chPane.present(key, !!(row && row.present === true)); }
-      var all = C.contacts();
-      Object.keys(all).forEach(function (key) { dot(key, all[key]); });
-      chKeep(C.watch(function (key, row) { if (key) dot(key, row); }));
-    }, function () { /* the dots stay white */ });
+    // PRESENCE, as Contacts shows it (goal/G4.10: "same green and white dots i see in contacts"): the peers pane is the one
+    // contact list (goal/G43.32), whose rows paint each contact's dot from the contact family's cache themselves.
 
     // The lines as the chat branch's cache keeps them: placed in the open chat as they change, an arrival read.
     Promise.resolve(spirit.cacheManager('chat')).then(function () {

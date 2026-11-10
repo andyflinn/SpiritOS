@@ -11,7 +11,7 @@ in `spirit.data` under the serving node, `<node>/contact/contacts/<key>`), loads
 
 `create(row, options)`, options `{ open }`, row `{ key | publicKey, name, keep, mine, blocked, relay, present, url,
 publicLabel }` → a row element `{ kind: 'contact', key, row, fields, actions, cells(), mount(hosts), apply(changes),
-act(name, ctx), expandInfo(), destroy() }`, fields `presence, status, label, add`.
+act(name, ctx), expandInfo(), destroy() }`, fields `presence, status, label, add, mark`.
 
 ## Requirements
 
@@ -21,11 +21,13 @@ act(name, ctx), expandInfo(), destroy() }`, fields `presence, status, label, add
   not offer asks nothing. **What the row is follows its flags**: a row added (its `keep` set on its contact row) loses
   its Add and offers what a kept row offers; a row that leaves the book offers Add again.
 - **It loads what it uses** (goal/G41.3): loading, it requires `spirit/element/rowElement.js` through `spirit.require`; `open`
-  first requires the page it opens (`search/contact/detailElement.js`, `search/contact/relayPanel.js`), then opens it, as a
-  layer of the mounter's panel stack (`options.open`, goal/G43.18), handed `{ key, layer }`: the layer's close and title,
+  first requires the one contact detail (`search/contact/detailElement.js`), for a person and a relay alike, then opens it, as a
+  layer of the mounter's panel stack (`options.open`, goal/G43.18), handed `{ key, layer, relay }`: whether the row is a relay
+  (goal/G43.32; Andy: *"the contact list already knows the difference between contact types. so should the detail panel."*), the layer's close and title,
   and no api (goal/G43.24: the details ask their verbs through the spirit object themselves).
 - **Cells**: presence 🟢 present, 🔴 absent, ⚪ not known; status ❌ blocked over ⭐ mine, else blank; label
-  the name, HTML-escaped; add an Add button only on a row neither in the book nor a relay.
+  the name, HTML-escaped; add an Add button only on a row neither in the book nor a relay; mark the glyph `options.mark(key)`
+  answers, HTML-escaped, blank with none (goal/G43.32: the caller's mark, Chat's ⌛), repainted when the row is told `mark`.
 - **Presence already known** in the contacts (`spirit.data.contact.data`) wins over the row's own `present` at create.
 - **Dispatch**: one watch on the contacts (`spirit.data.contact.data.watch`); a write to a key repaints every live row of that key, only the fields
   whose values (or `from` values) changed. A destroyed row is no longer repainted.

@@ -364,6 +364,21 @@ window.spirit.require('spirit/element/installSpiritElement.js').then(function ()
       container.appendChild(note);
       return done;
     }
+    // IT KNOWS THE CONTACT'S TYPE (goal/G43.32; Andy: "the contact list already knows the difference between contact types. so
+    // should the detail panel."): a relay's details are its relay panel (./relayPanel.js), drawn here, loaded when first
+    // opened; a person's are this panel. options.relay says so, else the contact family's cache, as the list has the row.
+    var C = ((window.spirit.data || {}).contact || {}).data;
+    var held = C && typeof C.contact === 'function' ? C.contact(o.key) : null;
+    var relay = o.relay === true || (o.relay !== false && !!held && held.relay === true);
+    if (relay) {
+      var panel = null;
+      var gone = false;
+      Promise.resolve(window.spirit.require('spirit/element/search/contact/relayPanel.js')).then(function () {
+        if (gone) return;
+        panel = window.spirit.element.spirit.element.search.contact.relayPanel.create(container, { key: o.key, layer: o.layer });
+      });
+      return { destroy: function () { gone = true; if (panel && typeof panel.destroy === 'function') panel.destroy(); panel = null; container.innerHTML = ''; } };
+    }
     var page = cdInstance(container);
     page.mount(container, o.layer);
     page.open(o);

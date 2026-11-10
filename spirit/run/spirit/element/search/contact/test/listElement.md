@@ -30,6 +30,14 @@ the probabilitySearch's own data source (`options.search`), and what it asks a p
 - **The one table is the contact family's cache** (goal/G41.28): the list subscribes to no stream of its own; a row
   the node's `shadow` job hands is in `spirit.data.contact.data`'s branch, the one the list hands its search.
 - `refresh` and `destroy` are the search element's.
+- **One contact list** (goal/G43.32; Andy: *"contact: there should be only 1 list, i didn't even know there where two...."*):
+  what the contact picker drew as a list of its own, this list does. `opts.filters`, the caller's hidden filters, come after
+  its own; `opts.statuses` adds a mark column, last, and `mark(key, status)` gives that row its glyph, the first status the
+  default; `opts.details: null` makes a pane's press pick instead of opening the row.
+- **Any ID table** (goal/G41.13, Andy, Q2): `opts.table` `loopback://api/<family>/<verb>` is searched through the spirit object
+  at that family and verb, `{ op: 'search', text }` (or `{ text }` for a search verb); `opts.key` and `opts.label` name the
+  fields a row's ID and label are in. A table's rows are plain rows of their label, kind `id`: no contact filters, one
+  column, nothing to open. Naming the contacts' own table is naming none.
 - **It loads what it uses** (goal/G41.3): loading, it requires `spirit/element/search/contact/rowElement.js` and `spirit/element/search.js`
   through `spirit.require`, and the contact family's cache manager (`spirit.cacheManager('contact')`), and no data script (goal/G41.16): what the stream means for contacts is the contact family's manager's.
 
