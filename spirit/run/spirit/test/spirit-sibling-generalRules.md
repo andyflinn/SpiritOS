@@ -191,7 +191,11 @@ box is its own check, named by the element's path and the box's id chain."*
     closed dropdown on the page is opened in turn, what it watches written again, and shut. **A redraw proved in its own test** (Andy, Q24: *"Shall deskDetails' own test be the proof that it
     redraws from the verifier, since the page sweep opens no item?"* *"yes."*): `spirit/app/desk/element/deskDetails/deskDetails.js` draws
     the verifier's run only for an item open, which a bare mount never has; its own test is run, and the check is green
-    only when its check *"a verifier publish taken into spirit.data redraws the run"* passed;
+    only when its check *"a verifier publish taken into spirit.data redraws the run"* passed. So for Join (Andy,
+    goal/G43.32: *"cw, yes"*, to *"shall join's own test prove that it redraws, as you ruled for deskDetails in Q24?"*):
+    `spirit/element/joinList.js` and the Join app that mounts it, `spirit/app/join/join.js`, draw only the join news on
+    the spirit job, which a marked row cannot change; `spirit/element/test/joinList.js` is run, and the check is green only
+    when its check *"a new join on the spirit job, taken into spirit.data, redraws the steps"* passed;
   - in its code, since a bare mount seldom has a row to change: a module whose code sends a write (an op that changes a
     row, a setting verb named as a string such as `'node.setName'`, a relay `join` or `face`, a `grant`, a `saveFile`)
     holds a `.watch(` or makes a search on a `spirit.data` branch. The code rule is a net for what the page cannot

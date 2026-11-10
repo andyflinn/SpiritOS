@@ -74,6 +74,11 @@ const SERVERS = { servers: ['agent'] };
 // bare mount never has; its own test's check, by its words, stands for it here.
 const OWN_PROOF = {
   'spirit/app/desk/element/deskDetails/deskDetails.js': { test: 'spirit/app/desk/element/deskDetails/test/deskDetails.js', check: 'a verifier publish taken into spirit.data redraws the run' },
+  // Join draws only the join news on the spirit job, which a marked row in the jobs or the contacts cannot change (Andy,
+  // goal/G43.32: "cw, yes", to "shall join's own test prove that it redraws, as you ruled for deskDetails in Q24?"). The
+  // Join app is joinList mounted, so its page takes the same proof.
+  'spirit/element/joinList.js': { test: 'spirit/element/test/joinList.js', check: 'a new join on the spirit job, taken into spirit.data, redraws the steps' },
+  'spirit/app/join/join.js': { test: 'spirit/element/test/joinList.js', check: 'a new join on the spirit job, taken into spirit.data, redraws the steps' },
 };
 // THE LONGEST FIELD THE RULES ALLOW (spirit/fieldRules.js): a field that keeps more than this holds no rule at all.
 const FIELD_RULES = require(path.join(RUN, 'spirit', 'fieldRules.js'));

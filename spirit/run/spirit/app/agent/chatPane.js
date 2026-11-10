@@ -39,6 +39,12 @@
     });
     var line = root.querySelector('#' + pre + 'line');
     var sendButton = root.querySelector('#' + pre + 'send');
+    // THE LINE STOPS AT ITS LIMIT (goal/G41.27: "any input field must be checked for size-limits"): fieldInput's line rule,
+    // a chat line's, loaded here (rule/26).
+    spirit.require('spirit/element/fieldInput.js').then(function () {
+      var F = window.spirit.required.spirit.element.fieldInput;
+      if (!gone && F) F.attach(line, 'line');
+    }, function () { /* the line is unheld until it loads */ });
     // WHAT A SEND DOES IS OUT OF SCOPE (Andy, box: "how the chat will work, is oos for this item."): nothing yet.
     function send() {}
     // Enter is the send, its newline held back from the line; Shift+Enter is left to the line, which adds the newline.
