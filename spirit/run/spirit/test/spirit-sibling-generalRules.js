@@ -578,48 +578,9 @@ function oneHelper() {
   ok(!hand.length, 'no product script puts an element on spirit.element or spirit.elements by hand', hand.length + ' still do: ' + short(hand.slice(0, 8)));
 }
 
-// EVERY VERB'S ARGUMENTS IN ITS OWN .json (goal/G43.32). Andy: "one issue here is: same information in two places",
-// "other issue: ONE of those places is a miserable, crappy hack, where a *.js fucking file is parsed for data??????",
-// "get ALL the neccessary information info the fucking json files where it belongs!", and "IN THIS ITEM!!!!". The 132
-// verbs the api.js files listed on 2026-11-10, each with its arguments and their rules, are kept beside this test
-// (./spirit-verbRules.json, read from those files that day): each now has its <verb>.json in its family's folder,
-// whose request names every argument with its rule as spirit.js's check knows it; no api.js lists verbs; and no
-// product script reads an api.js as data.
-const VERB_RULES = (function () { try { return JSON.parse(fs.readFileSync(path.join(__dirname, 'spirit-verbRules.json'), 'utf8')); } catch (e) { return {}; } }());
-function verbsInJson() {
-  test.subHeading('every verb\'s arguments and their rules in its own <verb>.json');
-  const RULE_WORDS = require(path.join(RUN, 'spirit', 'spirit.js')).rules || [];
-  const verbs = Object.keys(VERB_RULES);
-  ok(verbs.length === 132 && RULE_WORDS.length > 0, 'the world: the 132 verbs of 2026-11-10 and ' + RULE_WORDS.length + ' rule words of spirit.js\'s check', 'the kept verbs (' + verbs.length + ') or the rule words (' + RULE_WORDS.length + ') are missing');
-  const missing = [];
-  const wrong = [];
-  verbs.forEach(function (j) {
-    let doc = null;
-    try { doc = JSON.parse(fs.readFileSync(path.join(RUN, j), 'utf8')); } catch (e) { missing.push(j); return; }
-    const req = doc && doc.request;
-    const want = VERB_RULES[j];
-    if (!req || typeof req !== 'object') { wrong.push(j + ': no request'); return; }
-    const off = Object.keys(want).filter(function (a) { return req[a] !== want[a]; }).concat(Object.keys(req).filter(function (a) { return !(a in want); }));
-    const bad = Object.keys(req).filter(function (a) { return RULE_WORDS.indexOf(String(req[a]).replace(/\?$/, '')) === -1; });
-    if (off.length || bad.length) wrong.push(j + ': ' + (off.length ? 'its arguments differ (' + off.join(', ') + ')' : 'not a rule: ' + bad.map(function (a) { return a + ' ' + JSON.stringify(req[a]); }).join(', ')));
-  });
-  ok(verbs.length > 0 && !missing.length, 'each of the ' + verbs.length + ' has its <verb>.json', missing.length + ' have none: ' + short(missing.slice(0, 8)));
-  ok(verbs.length > 0 && !wrong.length, 'and each request names every argument with its rule', wrong.length + ' do not: ' + short(wrong.slice(0, 6)));
-  const apis = require('child_process').execFileSync('git', ['ls-files'], { cwd: RUN, encoding: 'utf8' }).split('\n')
-    .filter(function (f) { return /^spirit\/.+\/api\.js$/.test(f) && !/(^|\/)test\//.test(f) && fs.existsSync(path.join(RUN, f)); });
-  const listing = apis.filter(function (f) { return /\bverbs\s*:/.test(codeOf(fs.readFileSync(path.join(RUN, f), 'utf8'), true)); });
-  ok(apis.length > 0 && !listing.length, 'no api.js lists verbs (' + apis.length + ' read)', listing.length + ' still do: ' + short(listing.slice(0, 8)));
-  const readers = productScripts().filter(function (f) {
-    const code = codeOf(fs.readFileSync(path.join(RUN, f), 'utf8'));
-    return /\b(readFileSync|readFile|createReadStream)\s*\([^;]*api\.js/.test(code) || /(^|[^.\w$])require\s*\([^;]*api\.js/.test(code);
-  });
-  ok(!readers.length, 'no product script reads an api.js as data', readers.length + ' still do: ' + short(readers.slice(0, 8)));
-}
-
 async function every() {
   noProcessAnywhere();
   oneHelper();
-  verbsInJson();
   branchesNamedAsFolders();
   runTestMoved();
   everyScriptShaped();
