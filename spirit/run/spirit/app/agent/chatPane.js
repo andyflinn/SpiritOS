@@ -12,7 +12,7 @@
 // have the same font size as all other pane-titles in the agent UI"): agentDetail.titleRow, from the agent tables' element
 // (spirit/app/agent/table/tableElement.js), loaded here with the icon element it paints with (rule/26).
 //
-//   spirit.elements.chatPane.create(container, { persona }) -> { destroy() }   persona: the row picked, { id, label }
+//   spirit.element.spirit.app.agent.chatPane.create(container, { persona }) -> { destroy() }   persona: the row picked, { id, label }
 (function () {
   var made = 0;
 

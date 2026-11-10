@@ -44,7 +44,7 @@ window.opened = function () {
   var out = {};
   // The element (goal/G43.27, requirement 23), as the Desk page makes it in a layer: handed the page's way to the node.
   return spirit.require('spirit/app/desk/element/deskDetails/deskDetails.js').then(function () {
-    spirit.elements.deskDetails.create(document.getElementById('app-content'), { id: facts.id, via: api });
+    spirit.element.spirit.app.desk.element.deskDetails.deskDetails.create(document.getElementById('app-content'), { id: facts.id, via: api });
   }).then(function () { return wait(1500); }).then(function () {
     var log = document.getElementById('dd-chat');
     var last = log && log.lastElementChild;

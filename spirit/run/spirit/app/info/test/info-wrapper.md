@@ -37,4 +37,4 @@ Andy: *"i just moved them, didn't fix the manifest."* (4f01465b: shell/info is s
 ### 7. The new shell's way
 
 - No `spirit.shell.activateApp` in `info.js`.
-- On the page, `spirit.require('spirit/app/info/info.js')` sets `spirit.elements.info`, whose `create(container, opts)` draws into the container and answers `{ destroy() }`.
+- On the page, `spirit.require('spirit/app/info/info.js')` sets `spirit.element.spirit.app.info.info`, whose `create(container, opts)` draws into the container and answers `{ destroy() }`.

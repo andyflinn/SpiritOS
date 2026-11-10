@@ -4,7 +4,7 @@
 // appSelector:detailElement", "it is configurable with a description of what is being toggled." Its contract and its test:
 // ./test/rowFormToggle.md and ./test/rowFormToggle.js.
 //
-//   spirit.elements.rowFormToggle.create(host, { on, words, press }) -> { root, set(on, words), destroy() }
+//   spirit.element.spirit.app.appSelector.rowFormToggle.create(host, { on, words, press }) -> { root, set(on, words), destroy() }
 //
 // It draws the state it is handed, 🟢 with a 🔴 button when on, 🔴 with a 🟢 button when off, and the words beside. A press only
 // calls press: the state changes when its owner says so, by set (rule/19: draw only what the server says).

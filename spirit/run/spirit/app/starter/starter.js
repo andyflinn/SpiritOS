@@ -4,7 +4,7 @@
 // spirit/app/ under their old names, do the backup as well (and fix it) and starter as well". Copy this folder to begin:
 // ./starter.json says what it is, and this file is its face.
 //
-//   spirit.elements.starter.create(container, { title, open }) -> { destroy() }
+//   spirit.element.spirit.app.starter.starter.create(container, { title, open }) -> { destroy() }
 //
 // It asks the node it runs on for its card (node.card), through the one spirit object, and shows its name and its
 // description. That is all it does.

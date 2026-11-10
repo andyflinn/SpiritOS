@@ -6,7 +6,7 @@ run in node on a bare window, the node's family a stand-in that answers `node.ca
 
 ## Requirements
 
-1. **One element**: `spirit.elements.starter.create(container, opts)`, answering `{ destroy() }`.
+1. **One element**: `spirit.element.spirit.app.starter.starter.create(container, opts)`, answering `{ destroy() }`.
 2. **It asks its node once**: `node.card` through `spirit.ready` and `spirit.outcome`, nothing else, no `spirit.require`.
 3. **It shows what the card says**: the node's name and its description, each in its own row, in the container.
 4. **A refusal is said, not swallowed**: a card that does not come back draws a `refused` row with the error.

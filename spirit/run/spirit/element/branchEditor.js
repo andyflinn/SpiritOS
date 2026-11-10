@@ -6,7 +6,7 @@
 // (duh?) 2. Verb 3. armingButton 'Delete'". The two dropdowns of the add form are the family selector's two halves (Andy:
 // "apiFamiliySelector.js will use apiVerbSelector as part of itself").
 //
-//   spirit.element.branchEditor.create(container, { bundle, label, owner, gone }) -> { destroy() }
+//   spirit.element.spirit.element.branchEditor.create(container, { bundle, label, owner, gone }) -> { destroy() }
 //     bundle  the bundle's id; label its label; owner its owner (its Delete is an armingButton, which hears a click elsewhere itself)
 //     gone    called when this bundle's deletion is heard (Andy: "a bundle that hears its deletion, closes its branchEditor tab.")
 // A BUNDLE NOT THE NODE'S IS SHOWN ONLY (Andy: "A user can only create, change and delete node-owned bundles and branches, and

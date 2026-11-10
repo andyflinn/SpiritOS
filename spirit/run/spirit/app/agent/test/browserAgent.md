@@ -13,7 +13,7 @@ No agents talk to each other through it: each agent sees itself as the only agen
 
 ## Requirements
 
-- It is an element (goal/G43.13): `spirit.elements.agent.create(container)` answers `{ destroy() }`. It names no `activateApp`.
+- It is an element (goal/G43.13): `spirit.element.spirit.app.agent.browserAgent.create(container)` answers `{ destroy() }`. It names no `activateApp`.
 - It reads only its container (the `{ title, open }` the appSelector's launch hands it go unread), and hands its tables no api (goal/G43.24; Andy: *"every element that accesses ANY api must require them themselves"*): each table is made with its box and the detail pane, `create(box, detail)`, and its list asks `agent.<table>` through the spirit object itself. No new verb; its code makes no api.
 - It keeps no state of its own: no `showDebug`, no `relay-state`, no title of the old shell, and opening it saves no file.
 - Its whole app area is one workBench: it hands `workBench.create` a box that takes the shell's `fill` class (rule/16).

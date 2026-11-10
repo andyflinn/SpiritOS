@@ -3,7 +3,7 @@
 // WHAT MOUNTS COVERS ITS MOUNTER (goal/G43.17; Q12, Andy: "yes." to panel, in spirit/element/panel.js). Its contract and its
 // test: ./test/panel.md and ./test/panel.js.
 //
-//   spirit.elements.panel.create(host, under) -> stack
+//   spirit.element.spirit.element.panel.create(host, under) -> stack
 //     host    the pane the mounter draws in; its layers go into it
 //     under   what the mounter shows there, covered while a layer is open
 //   stack.open(key, { icon, label, fill(pane, closed) }) -> layer

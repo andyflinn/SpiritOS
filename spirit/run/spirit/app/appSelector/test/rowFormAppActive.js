@@ -25,10 +25,10 @@ test.startTest('rowFormAppActive.js: Activate/Deactivate for one app, hidden whe
     if (!node.up || chrome.error) { test.fail('no scratch node or no Chrome: nothing judged. ' + short(chrome.error || '')); return; }
     await chrome.send('Page.navigate', { url: node.base + '/face.html' });
     await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
-    const loaded = await chrome.evaluate('spirit.ready.then(function () { return spirit.require("spirit/app/appSelector/rowFormAppActive.js"); }).then(function () { return !!(spirit.elements.rowFormAppActive && spirit.elements.rowFormAppActive.create); }, function (e) { return String(e); })');
-    ok(loaded === true, 'it loads through spirit.require and is spirit.elements.rowFormAppActive', 'it did not load: ' + short(loaded));
+    const loaded = await chrome.evaluate('spirit.ready.then(function () { return spirit.require("spirit/app/appSelector/rowFormAppActive.js"); }).then(function () { return !!(spirit.element.spirit.app.appSelector.rowFormAppActive && spirit.element.spirit.app.appSelector.rowFormAppActive.create); }, function (e) { return String(e); })');
+    ok(loaded === true, 'it loads through spirit.require and is spirit.element.spirit.app.appSelector.rowFormAppActive', 'it did not load: ' + short(loaded));
     if (loaded === true) {
-      const make = function (key) { return chrome.evaluate('(function () { var b = document.createElement("div"); b.id = "a-' + key + '"; document.body.appendChild(b); window["a_' + key + '"] = spirit.elements.rowFormAppActive.create(b, { key: ' + JSON.stringify(key) + ' }); return !!window["a_' + key + '"] && typeof window["a_' + key + '"].destroy === "function"; }())'); };
+      const make = function (key) { return chrome.evaluate('(function () { var b = document.createElement("div"); b.id = "a-' + key + '"; document.body.appendChild(b); window["a_' + key + '"] = spirit.element.spirit.app.appSelector.rowFormAppActive.create(b, { key: ' + JSON.stringify(key) + ' }); return !!window["a_' + key + '"] && typeof window["a_' + key + '"].destroy === "function"; }())'); };
       const view = function (key) { return chrome.evaluate('(function () { var b = document.getElementById("a-' + key + '"); var r = b.getBoundingClientRect(); return { text: String(b.innerText || "").replace(/\\s+/g, " ").trim(), height: r.height }; }())'); };
 
       test.subHeading('the box: "hidden when the app is intrinsic"');
@@ -48,7 +48,7 @@ test.startTest('rowFormAppActive.js: Activate/Deactivate for one app, hidden whe
     }
 
     test.subHeading('the box: "The appSelector\'s detail and its rows use them": no Activate on an intrinsic app\'s row');
-    const listed = await chrome.evaluate('spirit.require("spirit/app/appSelector.js").then(function () { var b = document.createElement("div"); b.id = "pane"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999"; document.body.appendChild(b); window.__sel = spirit.elements.appSelector.create(b, { face: "pane" }); return true; })');
+    const listed = await chrome.evaluate('spirit.require("spirit/app/appSelector.js").then(function () { var b = document.createElement("div"); b.id = "pane"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999"; document.body.appendChild(b); window.__sel = spirit.element.spirit.app.appSelector.create(b, { face: "pane" }); return true; })');
     ok(listed === true, 'the world: the appSelector\'s pane is made', 'no pane: ' + short(listed));
     // Each row of the pane, its text and the button it holds.
     const rows = function () { return chrome.evaluate('(function () { var out = {}; Array.prototype.slice.call(document.querySelectorAll("#pane tr, #pane [data-key]")).forEach(function (r) { var t = String(r.innerText || "").replace(/\\s+/g, " ").trim(); ["Contacts", "Agent"].forEach(function (n) { if (t.indexOf(n) !== -1 && !out[n]) out[n] = { text: t, forms: r.querySelectorAll(".shell-row-form").length, installers: r.querySelectorAll("button.app-installer").length, buttons: Array.prototype.map.call(r.querySelectorAll("button"), function (x) { return String(x.textContent || "").trim(); }) }; }); }); return out; }())'); };

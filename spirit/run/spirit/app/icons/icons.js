@@ -4,7 +4,7 @@
 // page load, as desk.js and agent.js are"). Its contract and its test: ./test/icons.md and ./test/icons.js.
 // In a node it is a one-shot run (Andy: "the node must execute spirit/app/<name>/<name>.js with the request, instead of
 // routing it to a server, like a cgi-script, and that process lives only as long as the request."): it requires
-// ./nodeIcons.js, which answers the one call. On a page it is spirit.elements.icons.create(container, { open }), which the
+// ./nodeIcons.js, which answers the one call. On a page it is spirit.element.spirit.app.icons.icons.create(container, { open }), which the
 // app selector's tile opens, open its panel stack (an icon opens over the app, Andy: "the icon detail panel is supposed to
 // open overtop of the icon app..... like contact detail"): it brings ./browserIcons.js, the face, and draws it once that is
 // loaded, so a tile pressed while the face is on its way waits for it.

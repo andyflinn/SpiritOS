@@ -43,7 +43,7 @@ test.startTest('data-runOnlyCache.js: a node:run app shows no tile and no Activa
     ok(loaded === 'loaded', 'the world: the app search and the app detail load', 'they did not load: ' + short(loaded));
     const held = function () { return chrome.evaluate('JSON.stringify(spirit.data.app.data.rows())').then(function (t) { try { return JSON.parse(t) || {}; } catch (e) { return {}; } }); };
     // The app list in tiles mode, drawn, so the cache holds every row app.search answered, and kept on the page while the job comes.
-    await chrome.evaluate('(function () { var c = document.createElement("div"); c.id = "tiles"; document.body.appendChild(c); window.tiles = spirit.element.search.app.create(c, { face: "tiles" }); return true; }())');
+    await chrome.evaluate('(function () { var c = document.createElement("div"); c.id = "tiles"; document.body.appendChild(c); window.tiles = spirit.element.spirit.element.search.app.create(c, { face: "tiles" }); return true; }())');
     await until(function () { return held().then(function (r) { return only.every(function (a) { return !!r[a.key]; }) && !!r[plain.key]; }); }, 8000);
     await until(function () { return chrome.evaluate('document.querySelectorAll("#tiles *").length > 5'); }, 8000);
     await sleep(1000);
@@ -93,7 +93,7 @@ test.startTest('data-runOnlyCache.js: a node:run app shows no tile and no Activa
     });
     // The app detail, made now: its Activate row reads the app cache as the job left it (no list on the page to ask again).
     const activateUnder = function (expr) { return chrome.evaluate('(function () { var root = ' + expr + '; if (!root) return null; return Array.prototype.filter.call(root.querySelectorAll("*"), function (e) { return !e.children.length && /^\\s*(de)?activate\\b/i.test(String(e.textContent || "")) && e.offsetParent !== null; }).length; }())'); };
-    const detailOf = function (key, label) { return chrome.evaluate('(function () { var old = document.getElementById("detail"); if (window.det) { window.det.destroy(); } if (old) old.remove(); var c = document.createElement("div"); c.id = "detail"; document.body.appendChild(c); window.det = spirit.elements.appDetail.create(c, { row: ' + JSON.stringify({ key: key, label: label }) + ', panel: true }); return true; }())'); };
+    const detailOf = function (key, label) { return chrome.evaluate('(function () { var old = document.getElementById("detail"); if (window.det) { window.det.destroy(); } if (old) old.remove(); var c = document.createElement("div"); c.id = "detail"; document.body.appendChild(c); window.det = spirit.element.spirit.app.appSelector.detailElement.create(c, { row: ' + JSON.stringify({ key: key, label: label }) + ', panel: true }); return true; }())'); };
     await detailOf(plain.key, fresher);
     ok(await until(function () { return activateUnder('document.getElementById("detail")').then(function (n) { return n > 0; }); }, 6000), 'the world: ' + plain.key + '\'s detail shows Activate', plain.key + '\'s detail shows no Activate: nothing judged');
     for (const a of only) {

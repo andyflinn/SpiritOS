@@ -6,7 +6,7 @@
 //
 // A THIN SELECTOR OVER THE APP LIST, spirit/element/search/app.js, WHICH IT LOADS ITSELF (rule/26).
 //
-//   spirit.elements.appSelector.create(container, options) -> root
+//   spirit.element.spirit.app.appSelector.create(container, options) -> root
 //     root.value   the chosen app's key, '' while none is
 //     root.row     the chosen app, null while none is
 //     one bubbling `change` on a pick, which shows that app's detail under the list; refresh() asks again

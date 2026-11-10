@@ -4,7 +4,7 @@
 // SHIT INTO THE NEW!", and "the join icon sits next to all other icons on a shell (SO IT's A FCUKING APP, LIKE IT ALWAYS
 // WAS)". Its contract and its test: ./test/join.md and ./test/join.js.
 //
-//   spirit.elements.join.create(container, {}) -> { destroy() }
+//   spirit.element.spirit.app.join.join.create(container, {}) -> { destroy() }
 //
 // A WRAPPER, MOUNTED THE NEW SHELL'S WAY, as spirit/app/info/info.js is: it loads joinList (spirit/element/joinList.js),
 // which holds all of Join, and mounts it. Its steps are its manifest's, join.json.

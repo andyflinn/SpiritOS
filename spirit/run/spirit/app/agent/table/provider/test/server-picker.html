@@ -44,7 +44,8 @@ window.picker = function (answers) {
   // The page starts as the Agent app's does (goal/G41.28): the data set loaded and its home node known, from node.card,
   // before the row element is asked for.
   return Promise.resolve(spirit.start()).then(function () { return spirit.require('spirit/app/agent/table/provider/elementRow.js'); }).then(function () {
-    spirit.elements.providerRow.create(pane, answers.provider, false, detail);
+    // goal/G43.32: the row element stands at its path.
+    spirit.element.spirit.app.agent.table.provider.elementRow.create(pane, answers.provider, false, detail);
     return wait(1500);
   }).then(function () {
     var label = Array.prototype.filter.call(pane.querySelectorAll('label'), function (l) { return /^\s*Model\s*$/.test(l.textContent); })[0] || null;

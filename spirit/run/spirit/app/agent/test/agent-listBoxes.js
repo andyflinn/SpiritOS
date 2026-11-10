@@ -158,11 +158,12 @@ function world() {
     familyPath: familyPath, isBrowser: function () { return true; },
     fs: { loadFile: function () { return Promise.reject(new Error('none')); }, saveFile: function () { return Promise.resolve(); } },
     tree: function () { return Promise.resolve({}); },
-    get element() { return this.elements; }, elements: nestSearch({
+    // goal/G43.32: the stand-ins stand where the elements read them, at spirit.element.<their path>.
+    element: { spirit: { app: {}, element: nestSearch({
       // The recorder: the box each list is made in, and whether it is a dropdown.
       'search': { create: function (host, o) { panes.push({ host: host, o: o || {} }); return { refresh: function () {}, redraw: function () {}, destroy: function () {}, value: '' }; } },
       'search.contact': selector, 'search.bundle': selector, 'search.api': selector,
-    }),
+    }) } },
     require: function (p) {
       const rel = String(p).replace(/^\/+/, '');
       if (rel === familyPath('agent')) return Promise.resolve(family);
@@ -179,6 +180,8 @@ function world() {
     },
   };
   win.spirit.ready = Promise.resolve(win.spirit);
+  // A page's spirit (spirit/test/headLessChrome.js pageSpirit), so each file places itself by installSpiritElement as it runs.
+  require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(win.spirit);
   vm.createContext(win);
   win.spirit.require('spirit/data.js');
   // Its node known (goal/G41.28, Q10), as spirit.start leaves it before any app runs.
@@ -212,7 +215,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const app = w.document.body.appendChild(w.document.createElement('div'));
   app.className = 'fill';
   // A tile hands it only its container (goal/G43.13).
-  w.win.spirit.elements.agent.create(app);
+  w.win.spirit.element.spirit.app.agent.browserAgent.create(app);
   await settle();
   let modelOrder = null;
   // Where, in the app's order of elements, the Models title rows, the Ask row (its providerSelector:dropdown, since

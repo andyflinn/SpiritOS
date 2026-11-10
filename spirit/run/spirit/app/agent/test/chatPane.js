@@ -39,7 +39,7 @@ test.startTest('chatPane.js: the chat with a persona, in the centre');
     let m = null;
     try { m = JSON.parse(s); } catch (e) { m = null; }
     if (!m) { test.fail('the page measured nothing: ' + JSON.stringify(s).slice(0, 300)); return; }
-    ok(m.made, 'it adds chatPane.create(container, { persona }) to window.spirit.elements', 'no window.spirit.elements.chatPane.create');
+    ok(m.made, 'it adds chatPane.create(container, { persona }) to window.spirit.elements', 'no window.spirit.element.spirit.app.agent.chatPane.create');
     if (!m.made) return;
     ok(m.answered && m.appended, 'create answers the pane, drawn into the container it is given (goal/G41.19)', 'made: ' + short({ answered: m.answered, appended: m.appended }));
 

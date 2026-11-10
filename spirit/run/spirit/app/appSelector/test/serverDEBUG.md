@@ -6,7 +6,7 @@ A server's DEBUG, as a rowFormToggle (goal/G43.15). Its test is `./serverDEBUG.j
 
 ### When it shows
 
-- `spirit.elements.serverDEBUG.create(host, { key })`, loaded through `spirit.require`.
+- `spirit.element.spirit.app.appSelector.serverDEBUG.create(host, { key })`, loaded through `spirit.require`.
 - For an app with `node.mount` false it shows nothing and takes no space.
 - For a server that is not running it shows nothing either (Q1).
 - Running, with DEBUG off, it says "turn on DEBUG <label>", with one button. On, it says "turn off DEBUG <label>".

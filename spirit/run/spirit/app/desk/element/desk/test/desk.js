@@ -196,8 +196,9 @@ function deskWorld(goal, items) {
       if (REAL.indexOf(rel) !== -1 && !ran[rel]) { ran[rel] = true; vm.runInContext(fs.readFileSync(path.join(RUN, rel), 'utf8'), win, { filename: rel }); }
       return Promise.resolve({});
     },
-    get element() { return this.elements; }, elements: nestSearch({ armingButton: armingStub(document, made),
-      'search': { create: function (host, o) { listOpts = o; return { refresh: function () {}, destroy: function () {}, redraw: function () {}, value: '' }; } } }),
+    // goal/G43.32: the parts stand where the page reads them, at spirit.element.<their path>.
+    element: { spirit: { app: {}, element: nestSearch({ armingButton: armingStub(document, made),
+      'search': { create: function (host, o) { listOpts = o; return { refresh: function () {}, destroy: function () {}, redraw: function () {}, value: '' }; } } }) } },
     // THE PAGE GETS WHAT IT NEEDS ITSELF (goal/G43.27, requirement 23): no api is handed to it. A family's verb is asked
     // through spirit.ready (every desk.<verb> reaches the recorder), its answer through outcome, and the desk's publishes
     // through its family's cache manager, the real spirit/app/desk/data.js.
@@ -206,6 +207,9 @@ function deskWorld(goal, items) {
     } })),
     outcome: function (p) { return p; },
     cacheManager: function (name) { return win.spirit.require('spirit/app/' + name + '/data.js'); } };
+  // A page's spirit (spirit/test/headLessChrome.js pageSpirit): spirit.required, and the helper answered, so each element
+  // places itself by installSpiritElement as it runs.
+  require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(win.spirit);
   vm.createContext(win);
   // The page's one data set, which spirit.js brings with the client before any app runs.
   win.spirit.require('spirit/data.js');
@@ -218,7 +222,7 @@ function deskWorld(goal, items) {
   vm.runInContext(raw, win, { filename: FILE });
   const w = { document: document, made: made, asked: asked, required: required, api: api, win: win };
   w.mount = async function () {
-    win.spirit.elements.deskPage.create(document.body.appendChild(document.createElement('div')), {});
+    win.spirit.element.spirit.app.desk.element.desk.desk.create(document.body.appendChild(document.createElement('div')), {});
     await settle();
     // THE GOAL PUSHED, AS THE STREAM PUSHES IT (goal/G41.28): the current goal is the cache's, the one its last
     // goal.whole named; the page reads it from there, never from a search answer.
@@ -396,7 +400,7 @@ async function twoPress(w, find, armedSays, wantPress, what) {
           const one = await call('desk.item.add', { goal: g.id, title: 'First opened item', blocks: '' });
           const two = await call('desk.item.add', { goal: g.id, title: 'Second opened item', blocks: '' });
           ok(!!g.id && !!one.id && !!two.id, 'the world: a goal and two items on the scratch desk', 'added ' + JSON.stringify([g, one, two]));
-          await page.evaluate("(function () { var d = document.createElement('div'); d.id = 'zzDesk'; d.style.height = '800px'; document.body.appendChild(d); return Promise.resolve(window.spirit.require('spirit/app/desk/desk.js')).then(function () { window.spirit.elements.desk.create(d, {}); return true; }); })()");
+          await page.evaluate("(function () { var d = document.createElement('div'); d.id = 'zzDesk'; d.style.height = '800px'; document.body.appendChild(d); return Promise.resolve(window.spirit.require('spirit/app/desk/desk.js')).then(function () { window.spirit.element.spirit.app.desk.browserDesk.create(d, {}); return true; }); })()");
           const open = function (title) { return page.evaluate("(function () { var all = Array.prototype.slice.call(document.querySelectorAll('#zzDesk *')).filter(function (x) { return x.textContent.indexOf(" + JSON.stringify(title) + ") !== -1 && !x.closest('.app-container'); }); if (!all.length) return false; all[all.length - 1].click(); return true; })()"); };
           const shown = function () { return page.evaluate("(function () { var all = Array.prototype.slice.call(document.querySelectorAll('#zzDesk .app-container')); var b = all.filter(function (x) { return x.style.display !== 'none'; }).pop(); var body = b && b.querySelector('#dd-body'); return JSON.stringify({ layers: all.length, drawn: !!body && body.children.length > 0, text: b ? b.textContent : '' }); })()").then(JSON.parse); };
           await H.until(function () { return page.evaluate("document.getElementById('zzDesk').textContent.indexOf('Second opened item') !== -1"); }, H.WAIT);
@@ -451,7 +455,7 @@ async function twoPress(w, find, armedSays, wantPress, what) {
           const state = async function () { const r = await call('desk.item.get', { id: it.id }); let i = r.item; if (typeof i === 'string') { try { i = JSON.parse(i); } catch (e) { i = null; } } return i || {}; };
           const before = await state();
           ok(!!g.id && !!it.id && before.status === 'done', 'the world: a goal and its item, done, on the scratch desk', 'the world: ' + JSON.stringify({ goal: g.id, item: it.id, status: before.status }));
-          await page.evaluate("(function () { var d = document.createElement('div'); d.id = 'zzDesk'; d.style.height = '800px'; document.body.appendChild(d); return Promise.resolve(window.spirit.require('spirit/app/desk/desk.js')).then(function () { window.spirit.elements.desk.create(d, {}); return true; }); })()");
+          await page.evaluate("(function () { var d = document.createElement('div'); d.id = 'zzDesk'; d.style.height = '800px'; document.body.appendChild(d); return Promise.resolve(window.spirit.require('spirit/app/desk/desk.js')).then(function () { window.spirit.element.spirit.app.desk.browserDesk.create(d, {}); return true; }); })()");
           const CLOSES = "Array.prototype.filter.call(document.querySelectorAll('#zzDesk [data-press=\"close\"]'), function (b) { return b.getClientRects().length && !b.closest('.app-container'); })";
           ok(await H.until(function () { return page.evaluate(CLOSES + '.length > 0'); }, H.WAIT), 'the world: the List draws the done item\'s Close', 'no Close in the List: ' + String(await page.evaluate("String(document.getElementById('zzDesk').innerText).slice(0, 300)")));
           const n = await page.evaluate(CLOSES + '.length');
@@ -481,8 +485,8 @@ async function twoPress(w, find, armedSays, wantPress, what) {
   // drawn as a dropdown stands inline, as every dropdown in the tree does, and is not asked here.
   const wf = deskWorld(goal, [item]);
   const panes = [];
-  const realCreate = wf.win.spirit.element.search.create;
-  wf.win.spirit.element.search.create = function (host, o) { if (!o || o.face !== 'dropdown') panes.push({ host: host, o: o || {} }); return realCreate(host, o); };
+  const realCreate = wf.win.spirit.element.spirit.element.search.create;
+  wf.win.spirit.element.spirit.element.search.create = function (host, o) { if (!o || o.face !== 'dropdown') panes.push({ host: host, o: o || {} }); return realCreate(host, o); };
   await wf.mount();
   const mountBox = wf.document.body.children[wf.document.body.children.length - 1];
   const rulesTab = wf.document.querySelector('[data-tab="rules"]');

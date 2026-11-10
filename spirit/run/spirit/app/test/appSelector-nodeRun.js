@@ -47,13 +47,13 @@ test.startTest('appSelector-nodeRun.js: an app that says node.run is listed in p
     const has = function (list, a) { return list.indexOf(a.label) !== -1; };
 
     test.subHeading('Andy: "spirit app search will list these jobs (node:run) only in pane mode"');
-    await chrome.evaluate('(function () { var c = document.createElement("div"); c.id = "pane"; document.body.appendChild(c); window.pane = spirit.element.search.app.create(c, { face: "pane" }); return true; }())');
+    await chrome.evaluate('(function () { var c = document.createElement("div"); c.id = "pane"; document.body.appendChild(c); window.pane = spirit.element.spirit.element.search.app.create(c, { face: "pane" }); return true; }())');
     await until(function () { return drawnUnder('document.getElementById("pane")').then(function (d) { return runs.every(function (a) { return has(d, a); }); }); }, 8000);
     const inPane = await drawnUnder('document.getElementById("pane")');
     runs.forEach(function (a) { ok(has(inPane, a), 'the pane lists ' + a.label, 'the pane does not list ' + a.label + ': ' + short(inPane)); });
     await chrome.evaluate('(function () { window.pane.destroy(); var c = document.getElementById("pane"); if (c) c.remove(); return true; }())');
     // The dropdown, pressed open: its list floats, so the whole page is read, with nothing else of the test on it.
-    await chrome.evaluate('(function () { var c = document.createElement("div"); c.id = "drop"; document.body.appendChild(c); window.drop = spirit.element.search.app.create(c, { face: "dropdown" }); return true; }())');
+    await chrome.evaluate('(function () { var c = document.createElement("div"); c.id = "drop"; document.body.appendChild(c); window.drop = spirit.element.spirit.element.search.app.create(c, { face: "dropdown" }); return true; }())');
     await sleep(800);
     await chrome.evaluate('(function () { var d = window.drop, f = (d && d.list && d.list.field) || document.querySelector("#drop input, #drop [tabindex], #drop button"); if (f) f.click(); return !!f; }())');
     await until(function () { return drawnUnder('document.body').then(function (d) { return mounts.some(function (a) { return has(d, a); }); }); }, 8000);
@@ -65,7 +65,7 @@ test.startTest('appSelector-nodeRun.js: an app that says node.run is listed in p
     test.subHeading('Andy: "the app detail will show a run button"');
     // A Run button: a button whose own text is Run.
     const runButton = 'Array.prototype.filter.call(document.querySelectorAll("#detail button"), function (b) { return /\\bRun\\b/.test(String(b.textContent || "")); })[0]';
-    const detailOf = function (a) { return chrome.evaluate('(function () { var old = document.getElementById("detail"); if (window.det) { window.det.destroy(); } if (old) old.remove(); var c = document.createElement("div"); c.id = "detail"; document.body.appendChild(c); window.det = spirit.elements.appDetail.create(c, { row: ' + JSON.stringify({ key: a.key, label: a.label, icon: a.icon }) + ', panel: true }); return true; }())'); };
+    const detailOf = function (a) { return chrome.evaluate('(function () { var old = document.getElementById("detail"); if (window.det) { window.det.destroy(); } if (old) old.remove(); var c = document.createElement("div"); c.id = "detail"; document.body.appendChild(c); window.det = spirit.element.spirit.app.appSelector.detailElement.create(c, { row: ' + JSON.stringify({ key: a.key, label: a.label, icon: a.icon }) + ', panel: true }); return true; }())'); };
     for (const a of runs) {
       await detailOf(a);
       const shown = await until(function () { return chrome.evaluate('!!(' + runButton + ')'); }, 6000);
@@ -86,7 +86,7 @@ test.startTest('appSelector-nodeRun.js: an app that says node.run is listed in p
     const only = runs.filter(function (a) { return !own.filter(function (o) { return o.key === a.key; }).some(function (o) { return o.shell; }); });
     // The row of an app in a pane list: the smallest element holding its label and a button, or its label alone.
     const rowOf = function (label) { return '(function () { var all = document.querySelectorAll("#rows tr, #rows .list-row"); for (var i = 0; i < all.length; i++) { if (String(all[i].innerText || "").indexOf(' + JSON.stringify(label) + ') !== -1) return all[i]; } return null; }())'; };
-    await chrome.evaluate('(function () { var c = document.createElement("div"); c.id = "rows"; document.body.appendChild(c); window.rows = spirit.element.search.app.create(c, { face: "pane" }); return true; }())');
+    await chrome.evaluate('(function () { var c = document.createElement("div"); c.id = "rows"; document.body.appendChild(c); window.rows = spirit.element.spirit.element.search.app.create(c, { face: "pane" }); return true; }())');
     await until(function () { return activateUnder(rowOf(plain.label)).then(function (n) { return n > 0; }); }, 8000);
     ok((await activateUnder(rowOf(plain.label))) > 0, 'the world: ' + plain.label + '\'s row in the app list shows Activate', plain.label + '\'s row shows no Activate: nothing judged');
     for (const a of only) {

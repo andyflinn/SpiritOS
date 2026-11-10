@@ -9,7 +9,7 @@
 // the family selector as its filter, the bundle's branches (auth.branch search) and each row
 // (branch/rowElement.js).
 //
-//   spirit.element.search.branch.create(container, options) -> root
+//   spirit.element.spirit.element.search.branch.create(container, options) -> root
 //     root.value   the chosen branch's id, a number, '' while none is
 //     root.row     the chosen branch, { id, bundle, family, verb }, null while none is
 //     one bubbling `change` on a pick; refresh() asks again

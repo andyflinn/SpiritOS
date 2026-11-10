@@ -4,7 +4,7 @@
 // hides itself", "configured text: "turn on|off DEBUG <app-label>"", "it will use the OWNER-ONLYE VERB DEBUG in the appServer",
 // Q1: it hides while its server is not running. Its contract and its test: ./test/serverDEBUG.md and ./test/serverDEBUG.js.
 //
-//   spirit.elements.serverDEBUG.create(host, { key }) -> { destroy() }
+//   spirit.element.spirit.app.appSelector.serverDEBUG.create(host, { key }) -> { destroy() }
 //
 // The state is the server's job's, data.debug, as the node streams it (appServer.js puts it there on every change), read from
 // the jobs family's cache; a press asks the server's DEBUG {on}, and the job's next change redraws it.

@@ -2,7 +2,7 @@
 // spirit/run/spirit/app/appSelector/detailElement.js
 // ONE APP'S DETAIL (goal/G43.2). Its contract and its test: ./test/detailElement.md and ./test/detailElement.js.
 //
-//   spirit.elements.appDetail.create(host, { row, panel }) -> { destroy() }
+//   spirit.element.spirit.app.appSelector.detailElement.create(host, { row, panel }) -> { destroy() }
 //     panel true: the form under a title bar, which says the icon and label already.
 //
 // Its icon and label, the same row element a list row is, so nothing has to keep the two in sync (G30.18), and its

@@ -53,7 +53,11 @@ function world(card, hold) {
         function (e) { return { status: 500, body: { ok: false, error: e.message } }; });
     },
     require: function (p) { w.required.push(String(p)); return Promise.resolve({}); },
+    element: {},
   };
+  // goal/G43.32: a page's spirit (spirit/test/headLessChrome.js pageSpirit), so starter.js places itself by
+  // installSpiritElement at spirit.element.spirit.app.starter.starter as it runs.
+  require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(win.spirit);
   if (SRC) vm.runInContext(SRC, win, { filename: FILE });
   w.win = win;
   return w;
@@ -65,8 +69,8 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
 (async function () {
   test.subHeading('1. one element');
   const w = world({ name: 'probe-node', description: 'a node for the test' });
-  const E = (w.win.spirit.elements || {}).starter;
-  ok(!!E && typeof E.create === 'function', 'spirit.elements.starter.create is there', 'no spirit.elements.starter.create: ' + short(E && Object.keys(E)));
+  const E = ((((w.win.spirit.element || {}).spirit || {}).app || {}).starter || {}).starter;
+  ok(!!E && typeof E.create === 'function', 'spirit.element.spirit.app.starter.starter.create is there', 'no spirit.element.spirit.app.starter.starter.create: ' + short(E && Object.keys(E)));
   if (!E) { test.reportSuccessFailureCount(); return; }
   const box = node('<div>');
   const made = E.create(box, {});
@@ -85,7 +89,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   test.subHeading('4. a refusal is said');
   const r = world(new Error('no such verb'));
   const rbox = node('<div>');
-  r.win.spirit.elements.starter.create(rbox, {});
+  r.win.spirit.element.spirit.app.starter.starter.create(rbox, {});
   await settle();
   ok(/refused: no such verb/.test(rbox.textContent), 'a refused card draws a refused row with its error', 'a refusal drew ' + short(rbox.textContent));
 
@@ -95,7 +99,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   let release = null;
   const late = world({ name: 'late', description: 'late' }, new Promise(function (r2) { release = r2; }));
   const lbox = node('<div>');
-  late.win.spirit.elements.starter.create(lbox, {}).destroy();
+  late.win.spirit.element.spirit.app.starter.starter.create(lbox, {}).destroy();
   release();
   await settle();
   ok(!/late/.test(lbox.textContent), 'an answer after destroy draws nothing', 'a late answer drew ' + short(lbox.textContent));

@@ -10,12 +10,12 @@ Its test is `./info.js`; its manifest, its tile and its opening in a real Chrome
 ## Requirements
 
 - **Mounted the new shell's way** (Andy: *"box that these apps must mount in the new format of the new shell."*), as
-  `spirit/app/file/file.js` is: it sets `spirit.elements.info = { create(container, { open }) -> { destroy() } }`. No
+  `spirit/app/file/file.js` is: it sets `spirit.element.spirit.app.info.info = { create(container, { open }) -> { destroy() } }`. No
   `spirit.shell.activateApp`.
 - **A wrapper**: it loads `spirit/element/nodeInfo.js` through `spirit.require` (rule/26), and only that. It asks nothing
   itself (no verb, no api, no cache manager, no relay, no card) and draws no markup of its own.
 - `create(container, opts)` empties the container and, once nodeInfo is loaded, makes
-  `spirit.elements.nodeInfo.create(container, { open })`, handing on `opts.open`, the stack its mounter opens layers in,
+  `spirit.element.spirit.element.nodeInfo.create(container, { open })`, handing on `opts.open`, the stack its mounter opens layers in,
   and nothing else; made with no opts, nodeInfo gets no `open` and keeps its own stack.
 - nodeInfo refused, the container says *Info could not be loaded.*
 - `destroy()` destroys nodeInfo and empties the container; destroyed before nodeInfo loads, nothing is made.

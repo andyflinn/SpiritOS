@@ -8,9 +8,9 @@ Andy, box v22: *"elementRow.js (a panel element, to maintain and edit one row of
 
 ## Requirements
 
-- It registers `spirit.elements.agentRow`, and no other element: one file, one element (goal/G41.28). The title row,
+- It registers `spirit.element.spirit.app.agent.table.rowElement`, and no other element: one file, one element (goal/G41.28). The title row,
   the field line, the table's searches and the one way to its server are the tables' shared element's
-  (`./tableElement.js`, `spirit.elements.agentDetail`), which it loads itself as part of its tree (rule/26).
+  (`./tableElement.js`, `spirit.element.spirit.app.agent.table.tableElement`), which it loads itself as part of its tree (rule/26).
 - **Unconfigured** (`agentRow.create(box, {})`, as the general test mounts every element by itself), it says it is not
   configured and throws nothing; its `destroy` empties the box (goal/G41.19, box v23), as the table does.
 - **A row's editor**, `agentRow.create(container, { table, id, added, look, fields, required })`, handed no api
@@ -20,7 +20,7 @@ Andy, box v22: *"elementRow.js (a panel element, to maintain and edit one row of
     slim (goal/G41.18; Andy: *"that exactly what GET is for, to bring in the rest for detail panels etc..."*).
   - Its title row says Add while the row is new, and Change once saved or when opened from the list.
   - The icon is its first field (*"the detail panel's first input will be the icon i choose for that row"*). It is
-    chosen with the shell's icon selector, `spirit.element.search.icon.create(the icon field, …)`
+    chosen with the shell's icon selector, `spirit.element.spirit.element.search.icon.create(the icon field, …)`
     (`spirit/element/search/icon.js`, the shell's element shape, goal/G41.19), on the table's icon while the row has none.
   - Each field shows the row: a line its value, a bool its tick, a list its words split by commas. A secret is an
     empty password box that says only whether it is set.

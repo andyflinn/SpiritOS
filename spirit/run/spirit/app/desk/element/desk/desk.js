@@ -14,7 +14,7 @@
 // id (goal/G<n> or goal/G<n>.<m>) and opens the item's dialog (spirit/app/desk/element/deskDetails).
 
 // WHAT IT NEEDS, IT GETS ITSELF (goal/G43.24, requirement 9; goal/G43.27, requirement 23): the page is an element of the new
-// shell, spirit.elements.deskPage, mounted by the Desk app (spirit/app/desk/deskBrowser.js). It is handed no api: deskVia is
+// shell, spirit.element.spirit.app.desk.element.desk.desk, mounted by the Desk app (spirit/app/desk/deskBrowser.js). It is handed no api: deskVia is
 // built here from the one spirit object, a family's verb asked through it, its escape, the desk server's publishes heard on
 // the stream through the data set's translator (the desk family's cache manager keeps them first), and a dialog opened as a
 // layer over the page through panel.js (the mounter's open, or the page's own stack).
@@ -1300,9 +1300,10 @@ function deskHeader() {
 }
 function deskHeaderMove() {
   var old = document.getElementById('desk-bars');
-  if (!old || !old.parentNode || !(window.spirit.element || {}).appHeader) return;
+  var AH = ((window.spirit.element.spirit.element.appHeader || {}).appHeader);
+  if (!old || !old.parentNode || !AH) return;
   // Made in the old block's parent, then put in its place (the element shape, goal/G41.19).
-  var head = window.spirit.element.spirit.element.appHeader.appHeader.create(old.parentNode);
+  var head = AH.create(old.parentNode);
   old.parentNode.insertBefore(head, old);
   head.id = 'desk-bars';
   while (old.firstChild) head.appendChild(old.firstChild);

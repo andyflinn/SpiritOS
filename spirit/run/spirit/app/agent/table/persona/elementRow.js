@@ -2,7 +2,7 @@
 // spirit/run/spirit/app/agent/table/persona/elementRow.js
 // ONE PERSONA ROW IN THE PAGE (goal/G41.4): its fields to maintain and edit, each saved as it changes (no Save), and Delete, drawn from the server's
 // answer and its stream only (rule/19). Built on the tables' row element (../rowElement.js).
-//   spirit.elements.personaRow.create(container, id, added, detail) -> { destroy }   added: just made by Add; detail: the
+//   spirit.element.spirit.app.agent.table.persona.elementRow.create(container, id, added, detail) -> { destroy }   added: just made by Add; detail: the
 //   page's detail pane, whose look(table) gives the title row its icon and name
 (function () {
   // Its table's rows are the agent family's cache (goal/G41.28): the family's own data.js

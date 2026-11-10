@@ -14,7 +14,7 @@ panel's `grantsPanel.nodeGrants` since goal/G43.24, and what the panel draws and
 ## Requirements
 
 - **Mounted the new shell's way** (Andy: *"box that these apps must mount in the new format of the new shell."*), as
-  `spirit/app/file/file.js` is: it sets `spirit.elements.grants = { create(container, opts) -> { destroy() } }`. No
+  `spirit/app/file/file.js` is: it sets `spirit.element.spirit.app.grants.grants = { create(container, opts) -> { destroy() } }`. No
   `spirit.shell.activateApp`; nothing of the old shell (no `shellCreateListSearch`, no `api.ui.elements`, no
   `apiBranchSelector`).
 - **A wrapper**: it loads `spirit/element/grantsPanel.js`, `spirit/element/tabContainer.js` and

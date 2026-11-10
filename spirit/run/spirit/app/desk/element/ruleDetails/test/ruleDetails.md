@@ -6,7 +6,7 @@ shell element armingButton (`spirit/element/armingButton.js`); the dialog keeps 
 
 ## Requirements
 
-- It is the element `spirit.elements.ruleDetails.create(container, { key, via })` (goal/G43.27, requirement 23), made
+- It is the element `spirit.element.spirit.app.desk.element.ruleDetails.ruleDetails.create(container, { key, via })` (goal/G43.27, requirement 23), made
   in a layer over the Desk page, which hands it its own way to the node (`via`: `verb`, `escapeHtml`, `setScreenTitle`,
   `closeDialog`); it reads the rule (`desk.rule.get`) and its chat (`desk.item.chat`).
 - **It loads `spirit/element/armingButton.js` itself**, through `spirit.require` (goal/G41.3).

@@ -113,7 +113,13 @@ test.startTest('job/: the job table');
     agentRow: { create: function (c, o) { made.rows.push({ c: c, o: o }); return { destroy: function () {} }; } },
   } } };
   global.spirit = global.window.spirit;
+  // goal/G43.32: the shared stand-ins stand where the page files read them, at spirit.element.<their path>.
+  const STAND = global.window.spirit.elements; delete global.window.spirit.elements;
+  global.window.spirit.element = { spirit: { app: { agent: { table: { tableElement: STAND.agentTable, rowElement: STAND.agentRow } } } } };
   global.window.spirit.require = function (p) { made.required.push(String(p)); return Promise.resolve(true); };
+  // goal/G43.32: the page's spirit.require answers the helper, so each file places itself by installSpiritElement as it
+  // runs (spirit/test/headLessChrome.js pageSpirit).
+  require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(global.window.spirit);
   // The page's one data set (spirit/data.js), which spirit.js brings with the client: the stream lands there, under
   // the node that served it (goal/G41.28), the page's own once node.card has answered, kept as spirit.node.key. A family's
   // cache manager is found by spirit.cacheManager(name), the real one, which in node reads it from its own disk.
@@ -122,9 +128,10 @@ test.startTest('job/: the job table');
   global.window.spirit.data.homeNode(HOME_KEY);
   global.window.spirit.cacheManager = require(path.join(RUN, 'spirit', 'spirit.js')).cacheManager;
   ['elementTable.js', 'elementRow.js'].forEach(function (f) { vm.runInThisContext(fs.readFileSync(path.join(DIR, f), 'utf8'), { filename: path.join(DIR, f) }); });
-  const E = global.window.spirit.elements;
+  const T = global.window.spirit.element.spirit.app.agent.table.job || {};
+  const E = { jobTable: T.elementTable, jobRow: T.elementRow };
   ok(E.jobTable && typeof E.jobTable.create === 'function' && E.jobRow && typeof E.jobRow.create === 'function',
-    'they register spirit.elements.jobTable and jobRow', 'elements: ' + short(Object.keys(E)));
+    'they place spirit.element.spirit.app.agent.table.job.elementTable and elementRow', 'placed: ' + short(Object.keys(T)));
   if (!E.jobTable || !E.jobRow) return;
     const detail = { open: function () {}, look: function (t2) { return { icon: '📋', name: 'Job', title: 'Jobs', table: t2 }; } };
   const box = { innerHTML: '' };

@@ -138,12 +138,21 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     // The agent tables' shared search (../../tableElement.js, agentDetail.search), the providerSelector it makes: a
     // stand-in that hands the search element what the real one does (rule/29): its data the table's branch, as the agent
     // family's cache manager names it (spirit.data.agent.data.branch, goal/G41.28).
-    agentDetail: { search: function (host, o2, more) { const E2 = global.window.spirit.element; const AD2 = ((global.window.spirit.data || {}).agent || {}).data; const s3 = E2.search.create(host, Object.assign({ server: 'agent', verb: o2.table, data: AD2 ? AD2.branch(o2.table) : '' }, more || {})); s3.refresh(); return s3; } },
+    agentDetail: { search: function (host, o2, more) { const E2 = global.window.spirit.element.spirit.element; const AD2 = ((global.window.spirit.data || {}).agent || {}).data; const s3 = E2.search.create(host, Object.assign({ server: 'agent', verb: o2.table, data: AD2 ? AD2.branch(o2.table) : '' }, more || {})); s3.refresh(); return s3; } },
     agentTable: { create: function (c, o) { made.tables.push({ c: c, o: o }); return { refresh: function () { made.refreshed = true; }, destroy: function () { made.destroyed = true; } }; } },
     agentRow: { create: function (c, o) { made.rows.push({ c: c, o: o }); return { destroy: function () {} }; } },
   }) } };
+  // goal/G43.32: the stand-ins stand where the page files read them, at spirit.element.<their path>; the shared table
+  // element's pieces (once agentDetail) with its create.
+  const STAND = global.window.spirit.elements;
+  global.window = { spirit: { familyPath: familyPath, element: { spirit: {
+    element: { search: STAND.search, rowForm: STAND.rowForm, busyButton: STAND.busyButton },
+    app: { agent: { table: { tableElement: Object.assign({}, STAND.agentDetail, STAND.agentTable), rowElement: STAND.agentRow } } } } } } };
   global.spirit = global.window.spirit;
   global.window.spirit.require = function (p) { made.required.push(String(p)); return Promise.resolve(p === AGENT ? made.family : true); };
+  // The page's spirit.require answers the helper, so each file places itself by installSpiritElement as it runs
+  // (spirit/test/headLessChrome.js pageSpirit).
+  require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(global.window.spirit);
   // The page's one data set (spirit/data.js), which spirit.js brings with the client: the stream lands there, under
   // the node that served it (goal/G41.28), the page's own once node.card has answered, kept as spirit.node.key. A family's
   // cache manager is found by spirit.cacheManager(name), the real one, which in node reads it from its own disk.
@@ -152,9 +161,10 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   global.window.spirit.data.homeNode(HOME_KEY);
   global.window.spirit.cacheManager = require(path.join(RUN, 'spirit', 'spirit.js')).cacheManager;
   ['elementTable.js', 'elementRow.js'].forEach(function (f) { vm.runInThisContext(fs.readFileSync(path.join(DIR, f), 'utf8'), { filename: path.join(DIR, f) }); });
-  const E = global.window.spirit.elements;
+  const T = global.window.spirit.element.spirit.app.agent.table.model || {};
+  const E = { modelTable: T.elementTable, modelRow: T.elementRow };
   ok(E.modelTable && typeof E.modelTable.create === 'function' && E.modelRow && typeof E.modelRow.create === 'function',
-    'they register spirit.elements.modelTable and modelRow', 'elements: ' + short(Object.keys(E)));
+    'they place spirit.element.spirit.app.agent.table.model.elementTable and elementRow', 'placed: ' + short(Object.keys(T)));
   if (!E.modelTable || !E.modelRow) return;
   const opened = [];
   const detail = { open: function (make) { opened.push(make); }, look: function (t2) { return { icon: '🧠', name: 'Model', title: 'Models', table: t2 }; } };

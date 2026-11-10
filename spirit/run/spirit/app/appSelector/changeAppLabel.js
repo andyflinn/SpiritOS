@@ -3,7 +3,7 @@
 // ONE APP'S LABEL, ONE rowForm (goal/G43.15; Andy: "i thought you'd make the changeAppLabel and changeAppIcon form elements as
 // well, in spirit/app/ then i can re-use them as is in the config right side panel of agent", Q4: "yes.").
 //
-//   spirit.elements.changeAppLabel.create(host, { key }) -> { destroy() }
+//   spirit.element.spirit.app.appSelector.changeAppLabel.create(host, { key }) -> { destroy() }
 //
 // Its input holds the row's label in spirit.data.app and follows it while it is not being typed in; Change asks the node,
 // spirit.app.labelApp, and the row the stream then brings redraws it.

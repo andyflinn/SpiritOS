@@ -4,8 +4,8 @@
 // (spirit/app/introSpector/introSpector.js) draws, moved here from shell/introSpector/introSpector.js (goal/G30.5) and
 // working as it did. Its contract and its test: ./test/introSpector.md and ./test/introSpector.js.
 //
-//   spirit.element.introSpector.create(container) -> { destroy() }
-//   spirit.element.introSpector.fieldsOf(request), .argsOf(fields, texts)   the form, without a page
+//   spirit.element.spirit.element.introSpector.create(container) -> { destroy() }
+//   spirit.element.spirit.element.introSpector.fieldsOf(request), .argsOf(fields, texts)   the form, without a page
 //
 //   Andy, 2026-10-20: "I want an intrinsic app: introSpector", and why: "this all happens because i want to SEE", and "it's
 //   also another way i can check on your work."

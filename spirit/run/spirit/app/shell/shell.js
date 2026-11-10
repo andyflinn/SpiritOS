@@ -6,7 +6,7 @@
 // area; this one draws the app search as tiles, through the app selector, whose tiles launch an app over it in one stack
 // (spirit/element/panel.js). Its contract and its test: ./test/shell.md and ./test/shell.js.
 //
-//   spirit.elements.shell.create(container) -> { destroy() }
+//   spirit.element.spirit.app.shell.shell.create(container) -> { destroy() }
 //
 // A shell must be able to replace itself (the RULE): the app detail it opens carries the Home shell and Face shell rows.
 // It knows nothing of Join (Q18, Andy: "join. not the shells job."): Join shows itself.

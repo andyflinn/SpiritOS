@@ -6,8 +6,8 @@
 // rule) refuses a keystroke or a paste that would take the text past it, before it lands; deleting always works. It
 // never says how far past the limit the text went: it simply does not get there.
 //
-//   spirit.element.fieldInput.fits(value, rule) -> true when the rule takes it
-//   spirit.element.fieldInput.attach(input, rule)   rule: 'name' (64 bytes), 'description' (128), 'paragraph' (2048),
+//   spirit.required.spirit.element.fieldInput.fits(value, rule) -> true when the rule takes it
+//   spirit.required.spirit.element.fieldInput.attach(input, rule)   rule: 'name' (64 bytes), 'description' (128), 'paragraph' (2048),
 //                                                     'line' (1024, a chat line), 'glyph' (one glyph of at most 8 bytes)
 (function (root) {
   var E = (root.spirit = root.spirit || {}).element = root.spirit.element || {};

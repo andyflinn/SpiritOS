@@ -80,7 +80,8 @@ function world(answer) {
     console: { log: function () {}, error: function () {} },
   };
   win.window = win;
-  win.spirit = { get element() { return this.elements; }, elements: { armingButton: stub },
+  // goal/G43.32: the arming button stands where ruleDetails.js reads it, spirit.element.spirit.element.armingButton.
+  win.spirit = { element: { spirit: { element: { armingButton: stub }, app: {} } },
     require: function (p) { w.required.push(String(p).replace(/^\/+/, '')); return Promise.resolve({}); },
     // A family's cache (goal/G41.28): the family's own manager, run on this window over the real data set.
     cacheManager: function (name) {
@@ -96,10 +97,12 @@ function world(answer) {
   vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), win, { filename: 'data.js' });
   win.spirit.node = { key: 'KEY+RULE/DETAILS==' };
   win.spirit.data.homeNode(win.spirit.node.key);
+  // A page's spirit (spirit/test/headLessChrome.js pageSpirit), so the element places itself by installSpiritElement as it runs.
+  require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(win.spirit);
   vm.runInContext(SRC, win, { filename: FILE });
   w.win = win;
   // THE ELEMENT (goal/G43.27, requirement 23): made in a layer over the Desk page, handed the page's way to the node.
-  w.make = function (container, opts) { return win.spirit.elements.ruleDetails.create(container, opts); };
+  w.make = function (container, opts) { return win.spirit.element.spirit.app.desk.element.ruleDetails.ruleDetails.create(container, opts); };
   w.api = api;
   return w;
 }
@@ -139,8 +142,8 @@ function answer(name) {
   nothingHandRolled('rdArmed');
 
   const w = world(answer);
-  const E = (w.win.spirit.elements || {}).ruleDetails;
-  ok(!!E && typeof E.create === 'function', 'it is the element spirit.elements.ruleDetails, with create(container, { key, via })', 'spirit.elements.ruleDetails is ' + short(E && Object.keys(E)));
+  const E = ((((w.win.spirit.element.spirit.app.desk || {}).element || {}).ruleDetails || {}).ruleDetails);
+  ok(!!E && typeof E.create === 'function', 'it is the element spirit.element.spirit.app.desk.element.ruleDetails.ruleDetails, with create(container, { key, via })', 'spirit.element.spirit.app.desk.element.ruleDetails.ruleDetails is ' + short(E && Object.keys(E)));
   if (!E) return;
   await w.make(node('container'), { key: 'rule/7', via: w.api });
   await settle();
@@ -153,7 +156,7 @@ function answer(name) {
   for (const c of cases) {
     test.subHeading(c.label + ' is an arming button');
     const a = armingFor(w, c.id, c.label);
-    ok(!!a, c.label + ' is made or attached through window.spirit.element.armingButton', 'arming buttons: ' + short(w.arming.map(function (x) { return x.button && x.button.id || x.opts.label; })));
+    ok(!!a, c.label + ' is made or attached through window.spirit.element.spirit.element.armingButton', 'arming buttons: ' + short(w.arming.map(function (x) { return x.button && x.button.id || x.opts.label; })));
     if (!a) continue;
     const label = a.opts.label != null ? a.opts.label : a.button.textContent;
     ok(label === c.label && a.opts.armedLabel === c.armed, 'it says ' + c.label + ', and armed ' + c.armed, 'label ' + short(label) + ', armedLabel ' + short(a.opts.armedLabel));
@@ -243,7 +246,7 @@ function answer(name) {
     ok(!!key, 'the world: a rule on the scratch desk', 'rule.add answered ' + short(added));
     if (!key) return;
     const before = await call('desk.rule.get', { key: key });
-    await page.evaluate("(function () { var d = document.createElement('div'); d.id = 'zzDesk'; d.style.height = '800px'; document.body.appendChild(d); return Promise.resolve(window.spirit.require('spirit/app/desk/desk.js')).then(function () { window.spirit.elements.desk.create(d, {}); return true; }); })()");
+    await page.evaluate("(function () { var d = document.createElement('div'); d.id = 'zzDesk'; d.style.height = '800px'; document.body.appendChild(d); return Promise.resolve(window.spirit.require('spirit/app/desk/desk.js')).then(function () { window.spirit.element.spirit.app.desk.browserDesk.create(d, {}); return true; }); })()");
     await H.until(function () { return page.evaluate("!!document.querySelector('#zzDesk [data-tab=\"rules\"]')"); }, H.WAIT);
     await page.evaluate("document.querySelector('#zzDesk [data-tab=\"rules\"]').click()");
     const row = "Array.prototype.slice.call(document.querySelectorAll('#zzDesk *')).filter(function (x) { return x.textContent.indexOf('zz rule to keep') !== -1 && !x.closest('.app-container') && !x.children.length; }).pop()";

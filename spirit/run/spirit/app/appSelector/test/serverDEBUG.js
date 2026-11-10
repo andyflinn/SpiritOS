@@ -112,11 +112,11 @@ test.startTest('serverDEBUG.js: a server\'s DEBUG, switched and streamed (goal/G
       return until(function () { return c.evaluate('!!(window.spirit && window.spirit.ready && window.spirit.events)'); }, 20000);
     };
     ok(await open(), 'the world: the face shell has its spirit', 'the page has no spirit: nothing judged');
-    const loaded = await c.evaluate('spirit.ready.then(function () { return spirit.require("spirit/app/appSelector/serverDEBUG.js"); }).then(function () { return !!(spirit.elements.serverDEBUG && spirit.elements.serverDEBUG.create); }, function (e) { return String(e); })');
-    ok(loaded === true, 'it loads through spirit.require and is spirit.elements.serverDEBUG', 'it did not load: ' + short(loaded));
+    const loaded = await c.evaluate('spirit.ready.then(function () { return spirit.require("spirit/app/appSelector/serverDEBUG.js"); }).then(function () { return !!(spirit.element.spirit.app.appSelector.serverDEBUG && spirit.element.spirit.app.appSelector.serverDEBUG.create); }, function (e) { return String(e); })');
+    ok(loaded === true, 'it loads through spirit.require and is spirit.element.spirit.app.appSelector.serverDEBUG', 'it did not load: ' + short(loaded));
     if (loaded !== true) return;
     // One serverDEBUG per app, each in a box of its own.
-    const make = function (key) { return c.evaluate('(function () { var b = document.createElement("div"); b.id = "dbg-' + key + '"; document.body.appendChild(b); window["dbg_' + key + '"] = spirit.elements.serverDEBUG.create(b, { key: ' + JSON.stringify(key) + ' }); return !!window["dbg_' + key + '"]; }())'); };
+    const make = function (key) { return c.evaluate('(function () { var b = document.createElement("div"); b.id = "dbg-' + key + '"; document.body.appendChild(b); window["dbg_' + key + '"] = spirit.element.spirit.app.appSelector.serverDEBUG.create(b, { key: ' + JSON.stringify(key) + ' }); return !!window["dbg_' + key + '"]; }())'); };
     const view = function (key) { return c.evaluate('(function () { var b = document.getElementById("dbg-' + key + '"); if (!b) return null; var r = b.getBoundingClientRect(); return { text: String(b.innerText || "").replace(/\\s+/g, " ").trim(), height: r.height, buttons: b.querySelectorAll("button").length }; }())'); };
     const pressIn = function (key) { return c.evaluate('(function () { var b = document.querySelector("#dbg-' + key + ' button"); if (!b) return false; b.click(); return true; }())'); };
     const hidden = function (v) { return !!v && v.height === 0 && v.text === ''; };
@@ -148,7 +148,7 @@ test.startTest('serverDEBUG.js: a server\'s DEBUG, switched and streamed (goal/G
 
     test.subHeading('the box: "It sits in the appSelector\'s detail, under the Activate row"');
     ok(await open(), 'the world: the page opens again', 'no page');
-    const detail = await c.evaluate('spirit.ready.then(function () { return spirit.require("spirit/app/appSelector/detailElement.js"); }).then(function () { var b = document.createElement("div"); b.id = "zzDetail"; document.body.appendChild(b); window.__d = spirit.elements.appDetail.create(b, { row: { key: ' + JSON.stringify(NAME) + ', label: ' + JSON.stringify(LABEL) + ', icon: "🐛" }, panel: true }); return true; })');
+    const detail = await c.evaluate('spirit.ready.then(function () { return spirit.require("spirit/app/appSelector/detailElement.js"); }).then(function () { var b = document.createElement("div"); b.id = "zzDetail"; document.body.appendChild(b); window.__d = spirit.element.spirit.app.appSelector.detailElement.create(b, { row: { key: ' + JSON.stringify(NAME) + ', label: ' + JSON.stringify(LABEL) + ', icon: "🐛" }, panel: true }); return true; })');
     ok(detail === true, 'the world: the detail of ' + LABEL + ' is made', 'no detail: ' + short(detail));
     // The box: "changeAppIcon and changeAppLabel ... The appSelector's detail uses them": the page asks for both files.
     const asked = function () { return c.heard.filter(function (m) { return m.method === 'Network.requestWillBeSent'; }).map(function (m) { return String(m.params.request.url); }); };

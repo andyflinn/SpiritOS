@@ -5,7 +5,7 @@
 //
 //   Andy: "i want an intrinsic app info, in which, for now the user can maintain both fields in this file, more to come."
 //
-//   spirit.elements.nodeInfo.create(container, { open }) -> { destroy() }
+//   spirit.element.spirit.element.nodeInfo.create(container, { open }) -> { destroy() }
 //     open(key, spec)  the stack its mounter opens layers in (the shell's, appSelector.js): the rotate key dialog opens over
 //                      all of Info there. Without one, nodeInfo keeps a stack over itself (panel.js), as file does.
 //

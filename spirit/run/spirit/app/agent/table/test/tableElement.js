@@ -112,37 +112,44 @@ test.startTest('tableElement.js: what the tables\' elements share');
     // what it was handed.
     // The are-you-sure button (spirit/element/armingButton.js), tested in its own folder: a stand-in whose first press arms and
     // whose second runs, as the real one does.
-    if (p === 'spirit/element/armingButton.js') global.window.spirit.element.armingButton = { attach: function (button, opts) {
+    if (p === 'spirit/element/armingButton.js') PE().armingButton = { attach: function (button, opts) {
       const a = { button: button, opts: opts || {}, armed: false };
       w.arming.push(a);
       button.addEventListener('click', function () { if (!a.armed) { a.armed = true; return; } a.armed = false; if (typeof a.opts.run === 'function') a.opts.run(); });
       return button;
     } };
-    if (p === 'spirit/element/search/bundle.js') (global.window.spirit.element.search = global.window.spirit.element.search || {}).bundle = { create: function (c, opts) {
+    if (p === 'spirit/element/search/bundle.js') (PE().search = PE().search || {}).bundle = { create: function (c, opts) {
       const sel = { value: '', row: null, opts: opts || {}, container: c, heard: {}, addEventListener: function (type, fn) { (sel.heard[type] = sel.heard[type] || []).push(fn); },
         refresh: function () {}, destroy: function () { sel.destroyed = true; } };
       w.bundles.push(sel); c.appendChild(sel); return sel;
     } };
     return Promise.resolve(p === AGENT ? w.family : true);
   };
-  global.window.spirit.element.search = Object.assign(global.window.spirit.element.search || {}, { create: function (host, o) {
+  // goal/G43.32: the page's own spirit.require answers the helper, so the element places itself by installSpiritElement,
+  // as it runs (spirit/test/headLessChrome.js pageSpirit); the parts it uses stand where it reads them, at
+  // spirit.element.<their path>.
+  require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(global.window.spirit);
+  const PE = function () { const e = global.window.spirit.element; e.spirit = e.spirit || {}; e.spirit.element = e.spirit.element || {}; return e.spirit.element; };
+  PE().search = Object.assign(PE().search || {}, { create: function (host, o) {
     const s = { host: host, o: o, refreshed: 0, destroyed: false, value: '', row: null,
       refresh: function () { s.refreshed += 1; }, destroy: function () { s.destroyed = true; } };
     w.searches.push(s); return s;
   } });
   // The shell's element shape (goal/G41.19): create(container, options) appends the dropdown and answers it.
-  (global.window.spirit.element.search = global.window.spirit.element.search || {}).icon = { create: function (c, opts) { const sel = { value: (opts && opts.value) || '', opts: opts, container: c }; w.icons.push(sel); c.appendChild(sel); return sel; } };
+  PE().search.icon = { create: function (c, opts) { const sel = { value: (opts && opts.value) || '', opts: opts, container: c }; w.icons.push(sel); c.appendChild(sel); return sel; } };
   load(FILE);
   // The element asks for the agent family's cache manager as it runs; the page has it once the element's tree has loaded.
   await settle();
-  const E = global.window.spirit.elements;
-  // One file, one element (goal/G41.28; the general test: a file registers one element): the row's editor, agentRow, is
-  // ./rowElement.js's.
-  ok(E.agentTable && typeof E.agentTable.create === 'function' && !E.agentRow,
-    'it registers spirit.elements.agentTable, with create, and no other element: agentRow is rowElement.js\'s', 'elements: ' + short(Object.keys(E)));
-  const AD = E.agentDetail || {};
+  const AT = ((((global.window.spirit.element.spirit || {}).app || {}).agent || {}).table || {});
+  // One file, one element (goal/G41.28; the general test: a file registers one element): the row's editor is
+  // ./rowElement.js's. goal/G43.32: it stands at its path, spirit.element.spirit.app.agent.table.tableElement, its shared
+  // pieces (once an element of their own, agentDetail) with its create.
+  ok(AT.tableElement && typeof AT.tableElement.create === 'function' && !AT.rowElement,
+    'it places spirit.element.spirit.app.agent.table.tableElement, with create, and no other element: the row\'s editor is rowElement.js\'s', 'placed: ' + short(Object.keys(AT)));
+  const E = { agentTable: AT.tableElement };
+  const AD = AT.tableElement || {};
   ok(['titleRow', 'fieldLine', 'search', 'branchOf', 'whyOf'].every(function (k) { return typeof AD[k] === 'function'; }) && typeof AD.stretch === 'string',
-    'and spirit.elements.agentDetail { titleRow, fieldLine, stretch, search, branchOf, whyOf }, every pane\'s look in one place', 'agentDetail: ' + short(Object.keys(AD)));
+    'and with it { titleRow, fieldLine, stretch, search, branchOf, whyOf }, every pane\'s look in one place', 'tableElement: ' + short(Object.keys(AD)));
   // goal/G41.16, Andy: "get rid of thos FUCKING data.js scripts": the shared element requires no data script; the agent
   // family's data.js (spirit/app/agent/data.js, goal/G41.28) takes the rows from the stream, asked for by cacheManager.
   ok(!w.required.some(function (p) { return /data\.js$/.test(p); }), 'it requires no data script: each table\'s row element takes its own rows from the stream (goal/G41.16)', 'required: ' + short(w.required));

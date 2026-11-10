@@ -111,7 +111,8 @@ function world() {
 }
 // The app loaded on a window of its own, with this world's stubs.
 function load(w) {
-  global.window = { spirit: { get element() { return this.elements; }, elements: { workBench: w.workBench, tabContainer: w.tabContainer }, fs: w.fs, escapeHtml: function (s) { return String(s); }, familyPath: familyPath, isBrowser: function () { return true; },
+  // goal/G43.32: the parts stand where the app reads them, at spirit.element.<their path>.
+  global.window = { spirit: { element: { spirit: { element: { workBench: w.workBench, tabContainer: w.tabContainer }, app: { agent: { table: {} }, appSelector: {} } } }, fs: w.fs, escapeHtml: function (s) { return String(s); }, familyPath: familyPath, isBrowser: function () { return true; },
     require: function (p) { w.required.push(String(p)); return Promise.resolve(p === AGENT_FAMILY ? w.family : true); },
     // A family's cache (goal/G41.28): the family's own manager, run on this window over the real data set.
     cacheManager: function (name) {
@@ -127,8 +128,10 @@ function load(w) {
   global.window.spirit.node = { key: 'KEY+AGENT/APP==' };
   global.window.spirit.data.homeNode(global.window.spirit.node.key);
   global.document = { createElement: function () { return box('made'); }, addEventListener: function () {}, removeEventListener: function () {} };
+  // A page's spirit (spirit/test/headLessChrome.js pageSpirit), so the app places itself by installSpiritElement as it runs.
+  require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(global.window.spirit);
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
-  return global.window.spirit.elements.agent;
+  return global.window.spirit.element.spirit.app.agent.browserAgent;
 }
 
 test.startTest('browserAgent.js: the agent face app');
@@ -145,8 +148,8 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const w = world();
   let def = null; let loadError = null;
   try { def = load(w); } catch (e) { loadError = e; }
-  // The box: "spirit.elements.agent.create(container) answers { destroy() }", "Its activateApp goes". This window has no shell, so a call to it throws.
-  ok(!loadError && def && typeof def.create === 'function', 'it is an element: spirit.elements.agent has create', 'loading: ' + (loadError ? loadError.message : 'no spirit.elements.agent.create'));
+  // The box: "spirit.element.spirit.app.agent.browserAgent.create(container) answers { destroy() }", "Its activateApp goes". This window has no shell, so a call to it throws.
+  ok(!loadError && def && typeof def.create === 'function', 'it is an element: spirit.element.spirit.app.agent.browserAgent has create', 'loading: ' + (loadError ? loadError.message : 'no spirit.element.spirit.app.agent.browserAgent.create'));
   if (!def || typeof def.create !== 'function') return;
   const app = box('app');
   const made0 = def.create(app);
@@ -184,7 +187,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     const t = L.filter(function (x) { return x.name === name; })[0];
     const before = w.required.length;
     const made = [];
-    global.window.spirit.elements[name + 'Table'] = { create: function (into, detail) { made.push({ into: into, detail: detail, handed: arguments.length }); return { refresh: function () {}, destroy: function () {} }; } };
+    global.window.spirit.element.spirit.app.agent.table[name] = { elementTable: { create: function (into, detail) { made.push({ into: into, detail: detail, handed: arguments.length }); return { refresh: function () {}, destroy: function () {} }; } } };
     const tb = box('table-' + name); t.mount(tb); await settle();
     const asked = w.required.slice(before);
     ok(asked.indexOf('spirit/app/agent/table/' + name + '/elementTable.js') !== -1 && /\bfill\b/.test(tb.className),
@@ -207,12 +210,12 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   if (CHAT_TOOL.length === 1) {
     const sels = [];
     const chats = [];
-    const prevDetail = global.window.spirit.elements.agentDetail;
-    global.window.spirit.elements.agentDetail = Object.assign({}, prevDetail || {}, { branchOf: function (table) { return 'agent/' + table; },
+    const prevDetail = global.window.spirit.element.spirit.app.agent.table.tableElement;
+    global.window.spirit.element.spirit.app.agent.table.tableElement = Object.assign({}, prevDetail || {}, { branchOf: function (table) { return 'agent/' + table; },
       titleRow: function (look, names) { return '<div class="agent-title"><span>' + (look && look.icon || '') + '</span> ' + (names || []).join(' ') + '</div>'; },
       search: function (host, o, more) { const s2 = { host: host, o: o, more: more || {}, refresh: function () {}, destroy: function () {} }; sels.push(s2); return s2; },
     });
-    global.window.spirit.elements.chatPane = { create: function (into, opts) { const c = { into: into, opts: opts || {}, destroy: function () { c.destroyed = true; } }; chats.push(c); return c; } };
+    global.window.spirit.element.spirit.app.agent.chatPane = { create: function (into, opts) { const c = { into: into, opts: opts || {}, destroy: function () { c.destroyed = true; } }; chats.push(c); return c; } };
     const before = w.required.length;
     const cb = box('chat'); CHAT_TOOL[0].mount(cb); await settle();
     const asked = w.required.slice(before);
@@ -233,8 +236,8 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
       sel.more.pick({ id: 'KB', label: 'Bea' }, 'KB'); await settle();
       ok(chats.length === 2 && chats[0].destroyed !== true && chats[1].opts.persona.id === 'KB', 'another persona picked opens its own chat in a tab beside the first (goal/G41.31)', 'chat panes: ' + short(chats.map(function (c) { return { id: c.opts.persona && c.opts.persona.id, destroyed: !!c.destroyed }; })));
     }
-    global.window.spirit.elements.agentDetail = prevDetail;
-    delete global.window.spirit.elements.chatPane;
+    global.window.spirit.element.spirit.app.agent.table.tableElement = prevDetail;
+    delete global.window.spirit.element.spirit.app.agent.chatPane;
   }
 
   test.subHeading('the right strip\'s bundle editor (goal/G41.21)');
@@ -243,12 +246,12 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   {
     const before = w.required.length;
     const editors = [];
-    global.window.spirit.element.bundleEditor = { create: function (into, cfg) { editors.push({ into: into, cfg: cfg || {} }); return { destroy: function () {} }; } };
+    global.window.spirit.element.spirit.element.bundleEditor = { create: function (into, cfg) { editors.push({ into: into, cfg: cfg || {} }); return { destroy: function () {} }; } };
     const bb = box('bundles'); BUNDLE_TOOL.mount(bb); await settle();
     const asked = w.required.slice(before);
     ok(asked.indexOf('spirit/element/bundleEditor.js') !== -1, 'its mount requires spirit/element/bundleEditor.js', 'required: ' + short(asked));
     ok(editors.length === 1 && editors[0].into === bb && !('api' in editors[0].cfg), 'and makes the bundle editor in the box it is handed, handed no api', 'bundle editors: ' + editors.length + ', handed ' + short(editors[0] && Object.keys(editors[0].cfg)));
-    delete global.window.spirit.element.bundleEditor;
+    delete global.window.spirit.element.spirit.element.bundleEditor;
   }
 
   test.subHeading('the box: "The tick box showDebug goes, with its use of relay-state/shell/agent/config.json"');
@@ -263,9 +266,9 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(!!SERVER_TOOL && /⚙/.test(String(SERVER_TOOL.icon)) && !/🐞/.test(String(SERVER_TOOL.icon)), 'the server\'s tool on the right strip takes ⚙', 'its icon: ' + short(SERVER_TOOL && SERVER_TOOL.icon));
   const debugs = [];
   const made = [];
-  global.window.spirit.elements.serverDEBUG = { create: function (into, o) { debugs.push({ into: into, o: o || {} }); made.push('serverDEBUG'); return { destroy: function () {} }; } };
+  global.window.spirit.element.spirit.app.appSelector.serverDEBUG = { create: function (into, o) { debugs.push({ into: into, o: o || {} }); made.push('serverDEBUG'); return { destroy: function () {} }; } };
   // goal/G43.15, the box: "the agent's ⚙ panel shows both above serverDEBUG".
-  ['changeAppIcon', 'changeAppLabel'].forEach(function (n) { global.window.spirit.elements[n] = { create: function (into, o) { made.push(n + ':' + ((o || {}).key || '')); return { destroy: function () {} }; } }; });
+  ['changeAppIcon', 'changeAppLabel'].forEach(function (n) { global.window.spirit.element.spirit.app.appSelector[n] = { create: function (into, o) { made.push(n + ':' + ((o || {}).key || '')); return { destroy: function () {} }; } }; });
   const callsBefore = w.calls.length;
   var rb = box('right'); SERVER_TOOL.mount(rb); await settle();
   ok(w.required.indexOf('spirit/app/appSelector/serverDEBUG.js') !== -1, 'its mount loads spirit/app/appSelector/serverDEBUG.js through spirit.require', 'required: ' + short(w.required));
@@ -275,16 +278,17 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(!/\.debug\(/.test(source), 'the app\'s code calls no agent debug verb', 'browserAgent.js still calls .debug(');
   ok(['spirit/app/appSelector/changeAppIcon.js', 'spirit/app/appSelector/changeAppLabel.js'].every(function (p) { return w.required.indexOf(p) !== -1; }), 'its mount loads changeAppIcon.js and changeAppLabel.js', 'required: ' + short(w.required));
   ok(JSON.stringify(made) === JSON.stringify(['changeAppIcon:agent', 'changeAppLabel:agent', 'serverDEBUG']), 'and makes the icon, then the label, for the agent, above serverDEBUG', 'made, in order: ' + short(made));
-  delete global.window.spirit.elements.serverDEBUG;
-  delete global.window.spirit.elements.changeAppIcon;
-  delete global.window.spirit.elements.changeAppLabel;
+  delete global.window.spirit.element.spirit.app.appSelector.serverDEBUG;
+  delete global.window.spirit.element.spirit.app.appSelector.changeAppIcon;
+  delete global.window.spirit.element.spirit.app.appSelector.changeAppLabel;
 
   test.subHeading('it bootstraps its own components');
   const w3 = world();
   const required = [];
   const def3 = load(w3);
-  global.window.spirit.elements = {};
-  global.window.spirit.require = function (p) { required.push(String(p)); global.window.spirit.element.workBench = w3.workBench; global.window.spirit.element.tabContainer = w3.tabContainer; return Promise.resolve(true); };
+  // No workBench on the page (goal/G43.32: an element stands at spirit.element.<its path>).
+  global.window.spirit.element.spirit.element = {};
+  global.window.spirit.require = function (p) { required.push(String(p)); global.window.spirit.element.spirit.element.workBench = w3.workBench; global.window.spirit.element.spirit.element.tabContainer = w3.tabContainer; return Promise.resolve(true); };
   def3.create(box('app3')); await settle();
   ok(required.indexOf('spirit/element/workBench.js') !== -1 && w3.created.length === 1, 'with no workBench on the page it loads spirit/element/workBench.js through spirit.require, then builds one',
     'required ' + short(required) + ', workbenches ' + w3.created.length);

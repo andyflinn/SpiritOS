@@ -16,7 +16,7 @@
 //   - Rows drawn by rowElements (goal/G30.18) when the app gives element(row): each row's element paints its own cells
 //     and repaints a field that changes on the stream; destroy drops them all.
 //
-// spirit.element.search.create(container, {   (the probabilitySearch)
+// spirit.element.spirit.element.search.create(container, {   (the probabilitySearch)
 //   server, verb               the family searched and its search verb: the list asks server.verb itself, through the spirit
 //                              object (goal/G43.24; Andy: "every element that accesses ANY api must require them
 //                              themselves"), a family on spirit.ready or one spirit.require(spirit.familyPath(server))
@@ -49,7 +49,7 @@
 //                              element's change redraws the list, and its test narrows it as a filter's does
 // }) -> { value, row, refresh, redraw, words(), ask(verb, args), sort(field, direction), destroy }
 //
-// spirit.element.search.order(entries, state) is the list's pure heart: what it draws, in order. entries [{ key, row, at,
+// spirit.element.spirit.element.search.order(entries, state) is the list's pure heart: what it draws, in order. entries [{ key, row, at,
 // gone, el }], state { words, values, filters, sort: { field, direction }, columns, score }.
 (function () {
   // ITS LIBRARIES, IT LOADS ITSELF (rule/26; found by the shell's general test on a bare page, goal/G41.18): the string

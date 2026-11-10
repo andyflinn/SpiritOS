@@ -6,7 +6,7 @@ Andy: *"i thought you'd make the changeAppLabel and changeAppIcon form elements 
 
 ## Requirements
 
-- `spirit.elements.changeAppIcon.create(host, { key })`, loaded through `spirit.require`, answers `{ destroy }`.
+- `spirit.element.spirit.app.appSelector.changeAppIcon.create(host, { key })`, loaded through `spirit.require`, answers `{ destroy }`.
 - A rowForm as the detail draws it: ✏️, the word Icon, the app's icon, the icon dropdown, and a Change button.
 - Change with nothing picked changes nothing.
 - A glyph picked in the dropdown, then Change, writes it through the app family's `iconApp`, and the app's row says it.

@@ -2,7 +2,7 @@
 // spirit/run/spirit/app/agent/table/provider/elementTable.js
 // THE PROVIDER TABLE IN THE PAGE (goal/G41.4): a model provider, its rows in a search list, a row picked opening in its
 // editor (./elementRow.js) in the page's detail pane. Built on the tables' shared element (../tableElement.js).
-//   spirit.elements.providerTable.create(container, detail) -> { refresh, destroy }   detail: the page's detail pane (../tableElement.js)
+//   spirit.element.spirit.app.agent.table.provider.elementTable.create(container, detail) -> { refresh, destroy }   detail: the page's detail pane (../tableElement.js)
 (function () {
   window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/agent/table/provider/elementTable.js', {
     create: function (container, detail) {

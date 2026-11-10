@@ -4,7 +4,7 @@
 // their name in big letters in the center of their container". Its contract and its test: ./test/server.md and
 // ./test/server.js. Its name is its identity.label, as the app family's cache holds it.
 //
-//   spirit.elements.server.create(container) -> { destroy() }
+//   spirit.element.spirit.app.server.server.create(container) -> { destroy() }
 (function () {
   var NAME = 'server';
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).

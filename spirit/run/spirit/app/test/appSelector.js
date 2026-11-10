@@ -47,7 +47,7 @@ test.startTest('appSelector.js: the app selector (goal/G43.2)');
     await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
     const made = await chrome.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/app/appSelector.js"); }).then(function () {' +
       ' var c = document.createElement("div"); c.id = "under-test"; document.body.appendChild(c); window.changes = 0;' +
-      ' window.sel = spirit.elements.appSelector.create(c, { face: "pane" }); if (window.sel.parentNode !== c) c.appendChild(window.sel); window.sel.addEventListener("change", function () { window.changes += 1; }); return "made"; }, function (e) { return String(e && e.message || e); })');
+      ' window.sel = spirit.element.spirit.app.appSelector.create(c, { face: "pane" }); if (window.sel.parentNode !== c) c.appendChild(window.sel); window.sel.addEventListener("change", function () { window.changes += 1; }); return "made"; }, function (e) { return String(e && e.message || e); })');
     ok(made === 'made', 'it loads through spirit.require and mounts as a pane', 'it did not mount: ' + short(made));
     const text = function () { return chrome.evaluate('String((document.getElementById("under-test") || {}).innerText || "")'); };
     const found = await until(function () { return text().then(function (t) { return t.indexOf(identity.label) !== -1; }); }, 8000);
@@ -64,7 +64,7 @@ test.startTest('appSelector.js: the app selector (goal/G43.2)');
     ok(pressed === true, 'its row can be pressed', 'no row to press');
     const picked = await until(function () { return chrome.evaluate('window.changes >= 1 && !!window.sel.row && window.sel.value !== ""'); }, 3000);
     ok(picked, 'a press sets value and row, and says change', 'a press gave ' + short(await chrome.evaluate('JSON.stringify({ changes: window.changes, value: window.sel.value, row: window.sel.row })')));
-    const detail = await until(function () { return chrome.evaluate('(function () { var h = document.querySelector("#under-test .app-container .shell-row-form"); return !!(spirit.elements.appDetail) && !!h && String(h.textContent).indexOf(' + JSON.stringify(identity.label) + ') !== -1; }())'); }, 3000);
+    const detail = await until(function () { return chrome.evaluate('(function () { var h = document.querySelector("#under-test .app-container .shell-row-form"); return !!(spirit.element.spirit.app.appSelector.detailElement) && !!h && String(h.textContent).indexOf(' + JSON.stringify(identity.label) + ') !== -1; }())'); }, 3000);
     ok(detail, 'a press shows that app\'s detail', 'a press showed no detail');
 
     await chrome.evaluate('(function () { var c = document.querySelector("#under-test .app-container-close"); if (c) c.click(); return !!c; }())');
@@ -99,7 +99,7 @@ test.startTest('appSelector.js: the app selector (goal/G43.2)');
     ok(await chrome.evaluate('!(window.spirit.app && window.spirit.app.appTiles)') === true, 'and so is spirit.app.appTiles', 'spirit.app.appTiles still stands');
     const monitorLabel = 'Hearing';
     const serverLabel = 'Changed On Disk';
-    const mount = function (opts) { return chrome.evaluate('(function () { var old = document.getElementById("faces"); if (old) old.remove(); var c = document.createElement("div"); c.id = "faces"; c.style.cssText = "position:fixed;left:0;top:0;width:900px;height:600px;display:flex;flex-direction:column;background:#111"; document.body.appendChild(c); window.fs = spirit.elements.appSelector.create(c, ' + JSON.stringify(opts) + '); if (window.fs.parentNode !== c) c.appendChild(window.fs); return true; }())'); };
+    const mount = function (opts) { return chrome.evaluate('(function () { var old = document.getElementById("faces"); if (old) old.remove(); var c = document.createElement("div"); c.id = "faces"; c.style.cssText = "position:fixed;left:0;top:0;width:900px;height:600px;display:flex;flex-direction:column;background:#111"; document.body.appendChild(c); window.fs = spirit.element.spirit.app.appSelector.create(c, ' + JSON.stringify(opts) + '); if (window.fs.parentNode !== c) c.appendChild(window.fs); return true; }())'); };
     const inFaces = function () { return chrome.evaluate('String((document.getElementById("faces") || {}).innerText || "")'); };
     const rowOf = function (label) { return '(function () { var all = document.querySelectorAll("#faces tr, #faces .list-row"); for (var i = 0; i < all.length; i++) if (String(all[i].textContent).indexOf(' + JSON.stringify(label) + ') !== -1) return all[i]; return null; }())'; };
     const tileOf = function (label) { return 'Array.prototype.filter.call(document.querySelectorAll("#faces .app-icon"), function (t) { return t.offsetParent !== null && String(t.textContent).indexOf(' + JSON.stringify(label) + ') !== -1; })[0]'; };
@@ -173,8 +173,12 @@ test.startTest('appSelector.js: the app selector (goal/G43.2)');
     ok(r1.icon.indexOf('✏') !== -1 && r1.words.indexOf('Label') !== -1 && r1.input === monitorLabel && r1.button === 'Change', 'the pencil, Label, the box holding the label, Change', 'row 1: ' + short(r1));
 
     test.subHeading('row 2: "if active: [🟢] "Deactivate <app-label> "face" ..." [🔴]", "if inactive: [🔴] "Activate ..." [🟢]"');
-    const r2 = l[3] || none;
-    ok(r2.icon.indexOf('🟢') !== -1 && r2.words === 'Deactivate ' + monitorLabel + ' face' && r2.button === '🔴', 'Hearing is active, and mounts a face only: [🟢] Deactivate Hearing face [🔴]', 'row 2: ' + short(r2));
+    // The words name what it mounts, read from hearing.json after the row is drawn: judged once that read has had its time,
+    // as the rows below are, not on the panel's first look (goal/G43.32, the panel now opens before the read answers).
+    const r2ok = function (x) { return x.icon.indexOf('🟢') !== -1 && x.words === 'Deactivate ' + monitorLabel + ' face' && x.button === '🔴'; };
+    const r2seen = await waitForm(3, r2ok);
+    const r2 = (await forms())[3] || none;
+    ok(r2seen && r2ok(r2), 'Hearing is active, and mounts a face only: [🟢] Deactivate Hearing face [🔴]', 'row 2: ' + short(r2));
     await press(3);
     const wentOff = await waitForm(3, function (x) { return x.icon.indexOf('🔴') !== -1 && x.words === 'Activate ' + monitorLabel + ' face' && x.button === '🟢'; });
     ok(wentOff && stateOf().active === false, 'a press: [🔴] Activate Hearing face [🟢], and active false in node.json', 'after a press: ' + short((await forms())[3]) + ' ' + short(stateOf()));
@@ -298,7 +302,7 @@ test.startTest('appSelector.js: the app selector (goal/G43.2)');
         else ok(!!(r[k] && r[k].active), 'the world: ' + k + ' is a row, active', k + ' is no active row, so its missing tile would judge nothing: ' + short(r[k]));
       });
 
-      const mount = function (opts) { return chrome.evaluate('(function () { var old = document.getElementById("faces"); if (old) { if (window.fsel) window.fsel.destroy(); old.remove(); } var c = document.createElement("div"); c.id = "faces"; c.style.cssText = "position:fixed;left:0;top:0;width:1200px;height:800px;display:flex;flex-direction:column;background:#111"; document.body.appendChild(c); window.fsel = spirit.elements.appSelector.create(c, ' + JSON.stringify(opts) + '); if (window.fsel.parentNode !== c) c.appendChild(window.fsel); return true; }())'); };
+      const mount = function (opts) { return chrome.evaluate('(function () { var old = document.getElementById("faces"); if (old) { if (window.fsel) window.fsel.destroy(); old.remove(); } var c = document.createElement("div"); c.id = "faces"; c.style.cssText = "position:fixed;left:0;top:0;width:1200px;height:800px;display:flex;flex-direction:column;background:#111"; document.body.appendChild(c); window.fsel = spirit.element.spirit.app.appSelector.create(c, ' + JSON.stringify(opts) + '); if (window.fsel.parentNode !== c) c.appendChild(window.fsel); return true; }())'); };
       // The labels drawn as tiles: every visible leaf under the tiles whose text is a label of the test's.
       const LABELS = Object.keys(PLANT).map(function (k) { return PLANT[k].label; }).concat(treeOff.map(function (a) { return a.label; }));
       const drawn = function () { return chrome.evaluate('(function () { var c = document.getElementById("faces"); if (!c) return "[]"; var want = ' + JSON.stringify(LABELS) + '; var out = []; var all = c.querySelectorAll("*"); for (var i = 0; i < all.length; i++) { var e = all[i]; if (!e.getClientRects().length) continue; var t = String(e.innerText || e.textContent || "").trim(); if (!e.children.length && want.indexOf(t) !== -1 && out.indexOf(t) === -1) out.push(t); } return JSON.stringify(out.sort()); }())').then(function (s) { try { return JSON.parse(s); } catch (e) { return []; } }); };

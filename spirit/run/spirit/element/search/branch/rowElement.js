@@ -6,7 +6,7 @@
 // drawn "(ALL)" as the filter draws it ("A branch row with an empty verb shows as "(ALL)", as the filter does").
 // rowElement.js does the shared work; this file says what a branch is.
 //
-//   spirit.element.search.branch.rowElement.create(row, opts) -> a rowElement of kind branch
+//   spirit.element.spirit.element.search.branch.rowElement.create(row, opts) -> a rowElement of kind branch
 //     row            { id, bundle, family, verb }, as auth.branch answers it
 // THE TYPE ON THE STREAM, IN ITS OWN ELEMENT (goal/G41.14; Andy: "EVERY FUCKING element MUST FUCKING LISTING to anything
 // that changes their data set", "NO FUCKING DATA SCRIPT"): the node publishes each changed branch row on its permanent

@@ -15,7 +15,7 @@
 // auth family's cache manager (below) puts it into spirit.data.auth.data.bundles, and every bundle row on the page repaints from there through its
 // kind's index. A row asks and draws nothing of its own (rule/19): what it shows is what the stream said.
 //
-//   spirit.element.search.bundle.rowElement.create(row) -> a rowElement of kind bundle
+//   spirit.element.spirit.element.search.bundle.rowElement.create(row) -> a rowElement of kind bundle
 //     row            { id, label, owner }, as auth.bundle answers it
 (function () {
   var E = (window.spirit = window.spirit || {}).element = window.spirit.element || {};

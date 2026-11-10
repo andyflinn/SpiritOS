@@ -231,14 +231,19 @@ function ddWorld(facts, checks, o) {
     require: function (p) {
       const q = String(p).replace(/^\/+/, '');
       required.push(q);
-      if (q === 'spirit/element/workBench.js') win.spirit.element.workBench = workBenchStub(document, benches);
+      if (q === 'spirit/element/workBench.js') win.spirit.element.spirit.element.workBench = workBenchStub(document, benches);
       // The verifier's cache manager and the shared run status, the real ones, where the page's data set is (below).
       if (o && o.real && (q === VERIFY_CCM || q === 'spirit/app/desk/element/deskRunStatus/deskRunStatus.js')) vm.runInContext(fs.readFileSync(path.join(RUN, q), 'utf8'), win, { filename: q });
       return Promise.resolve({});
     },
-    get element() { return this.elements; }, elements: nestSearch({ armingButton: armingStub(document, made), deskRunStatus: function () { return ''; },
-      'search': { create: function () { return { refresh: function () {}, destroy: function () {}, redraw: function () {}, value: '' }; } } }),
+    // goal/G43.32: the parts stand where the dialog reads them, the elements at spirit.element.<their path>, the run status,
+    // a helper, at spirit.required.<its path>.
+    element: { spirit: { app: {}, element: nestSearch({ armingButton: armingStub(document, made),
+      'search': { create: function () { return { refresh: function () {}, destroy: function () {}, redraw: function () {}, value: '' }; } } }) } },
+    required: { spirit: { element: {}, app: { desk: { element: { deskRunStatus: { deskRunStatus: function () { return ''; } } } } } } },
   };
+  // A page's spirit (spirit/test/headLessChrome.js pageSpirit), so the dialog places itself by installSpiritElement as it runs.
+  require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(win.spirit);
   vm.createContext(win);
   // THE PAGE'S ONE DATA SET, ITS NODE KNOWN (goal/G41.28, Q10), as spirit.start leaves it before any app runs, and the
   // run status the shared element draws, not a stand-in: what the verifier publishes reaches the page through spirit.data.
@@ -248,14 +253,14 @@ function ddWorld(facts, checks, o) {
     vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), win, { filename: 'data.js' });
     win.spirit.node = { key: 'KEY+DESK/DETAILS==' };
     win.spirit.data.homeNode(win.spirit.node.key);
-    delete win.spirit.elements.deskRunStatus;
+    delete win.spirit.required.spirit.app.desk.element.deskRunStatus.deskRunStatus;
     if (o.kept) { vm.runInContext(fs.readFileSync(path.join(RUN, VERIFY_CCM), 'utf8'), win, { filename: VERIFY_CCM }); win.spirit.data.takeJob(o.kept); }
   }
   vm.runInContext(raw, win, { filename: FILE });
   const w = { document: document, made: made, asked: asked, required: required, closed: closed, api: api, win: win, benches: benches, titles: titles };
   w.open = async function () {
     // THE ELEMENT (goal/G43.27, requirement 23): made in a layer over the Desk page, handed the page's way to the node.
-    win.spirit.elements.deskDetails.create(document.body.appendChild(document.createElement('div')), { id: facts.id, via: api });
+    win.spirit.element.spirit.app.desk.element.deskDetails.deskDetails.create(document.body.appendChild(document.createElement('div')), { id: facts.id, via: api });
     await settle();
   };
   w.writes = function () { return asked.filter(function (a) { return /^desk\.(press|item\.delete|check\.set)$/.test(a.name); }); };
@@ -402,9 +407,9 @@ const byId = function (w, id) { return function () { return w.document.getElemen
     const r = ddWorld(RULED, []);
     r.searches = [];
     const make = { create: function (host, o) { r.searches.push({ host: host, o: o || {} }); return { refresh: function () {}, destroy: function () {}, redraw: function () {}, value: '' }; } };
-    delete r.win.spirit.element.search;
+    delete r.win.spirit.element.spirit.element.search;
     const req = r.win.spirit.require;
-    r.win.spirit.require = function (p) { const q = String(p).replace(/^\/+/, ''); if (q === 'spirit/element/search.js') r.win.spirit.element.search = make; return req(p); };
+    r.win.spirit.require = function (p) { const q = String(p).replace(/^\/+/, ''); if (q === 'spirit/element/search.js') r.win.spirit.element.spirit.element.search = make; return req(p); };
     return r;
   };
   const rulePick = function (r) { return r.searches.filter(function (x) { return x.o.verb === 'rules.search' && x.o.face === 'dropdown'; }).pop() || null; };
@@ -673,7 +678,7 @@ const byId = function (w, id) { return function () { return w.document.getElemen
         await call('desk.press', { id: design.id, what: 'start-design' });
         const before = { done: await state(done.id), design: await state(design.id) };
         ok(before.done.status === 'done' && (before.design.buttons || []).indexOf('delete') !== -1, 'the world: an item done, and an item in design mode offering Delete', 'the world: ' + JSON.stringify({ done: before.done.status, designButtons: before.design.buttons }));
-        await page.evaluate("(function () { var d = document.createElement('div'); d.id = 'zzDesk'; d.style.height = '800px'; document.body.appendChild(d); return Promise.resolve(window.spirit.require('spirit/app/desk/desk.js')).then(function () { window.spirit.elements.desk.create(d, {}); return true; }); })()");
+        await page.evaluate("(function () { var d = document.createElement('div'); d.id = 'zzDesk'; d.style.height = '800px'; document.body.appendChild(d); return Promise.resolve(window.spirit.require('spirit/app/desk/desk.js')).then(function () { window.spirit.element.spirit.app.desk.browserDesk.create(d, {}); return true; }); })()");
         const open = function (title) { return page.evaluate("(function () { var all = Array.prototype.slice.call(document.querySelectorAll('#zzDesk *')).filter(function (x) { return x.tagName === 'TD' && x.textContent.indexOf(" + JSON.stringify(title) + ") !== -1 && !x.closest('.app-container'); }); if (!all.length) return false; all[all.length - 1].click(); return true; })()"); };
         const btn = function (id) { return "Array.prototype.filter.call(document.querySelectorAll('#zzDesk .app-container #" + id + "'), function (b) { return b.getClientRects().length; })[0]"; };
         const shut = function () { return page.evaluate("(function () { var c = Array.prototype.filter.call(document.querySelectorAll('#zzDesk .app-container-close'), function (x) { return x.getClientRects().length; }).pop(); if (c) c.click(); return !!c; })()"); };

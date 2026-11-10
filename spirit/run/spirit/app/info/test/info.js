@@ -43,15 +43,18 @@ function world(o) {
   };
   win.window = win;
   vm.createContext(win);
-  win.spirit = { elements: els,
+  // goal/G43.32: a page's spirit (spirit/test/headLessChrome.js pageSpirit), so info.js places itself by installSpiritElement
+  // at spirit.element.spirit.app.info.info as it runs; nodeInfo stands where it reads it, spirit.element.spirit.element.nodeInfo.
+  win.spirit = { element: { spirit: { element: els, app: {} } },
     require: function (p) {
       w.required.push(String(p));
       if (opt.refuse) return Promise.reject(new Error('not-found ' + p));
       const put = function () { if (p === 'spirit/element/nodeInfo.js') els.nodeInfo = nodeInfo; return {}; };
       return opt.held ? opt.held.then(put) : Promise.resolve(put());
     } };
+  require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(win.spirit);
   if (SRC) vm.runInContext(SRC, win, { filename: FILE });
-  w.win = win; w.els = els;
+  w.win = win; w.els = { info: (win.spirit.element.spirit.app.info || {}).info };
   return w;
 }
 
@@ -65,7 +68,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   test.subHeading('mounted the new shell\'s way (goal/G43.24, requirement 7)');
   const w = world();
   const I = w.els.info;
-  ok(!!I && typeof I.create === 'function', 'it sets spirit.elements.info = { create }', 'elements: ' + short(Object.keys(w.els)));
+  ok(!!I && typeof I.create === 'function', 'it sets spirit.element.spirit.app.info.info = { create }', 'elements: ' + short(Object.keys(w.els)));
   if (!I) return;
   ok(!/\bactivateApp\b|\bspirit\.shell\b/.test(CODE), 'no spirit.shell.activateApp, the old shell\'s way', 'info.js still mounts through spirit.shell');
 

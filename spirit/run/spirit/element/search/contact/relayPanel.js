@@ -3,7 +3,7 @@
 // ONE RELAY, A SHELL ELEMENT (goal/G41.32; Andy: "natterDetails will become an shell element: relayPanel.js, it is configured
 // with it's own contact row, and follows only that."). Its contract and its test: ./test/relayPanel.md and ./test/relayPanel.js.
 //
-//   spirit.element.search.contact.relayPanel.create(container, { key, layer? }) -> { destroy() }; it opens as a panel (goal/G43.18)
+//   spirit.element.spirit.element.search.contact.relayPanel.create(container, { key, layer? }) -> { destroy() }; it opens as a panel (goal/G43.18)
 //
 // WHO PAINTS, LISTENS (Andy: "every row's data, wherever it's visible OR invisible must update instantly, and when visible,
 // paint immediately."; "BEING INVISIBLE doesn't change a elements fucking duty to listen to fucking changes"): what it shows it

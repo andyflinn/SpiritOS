@@ -7,7 +7,7 @@
 // "shown only for an app whose <name>.json says shell:true:true", and "Both dropdowns list only the apps whose <name>.json says
 // shell:true:true". Q12: "the two set-shell rows are elements of their own, which any app that wants to be a shell can use."
 //
-//   spirit.elements.rowFormSetShell.create(host, { key, at }) -> { destroy() }
+//   spirit.element.spirit.app.appSelector.rowFormSetShell.create(host, { key, at }) -> { destroy() }
 //     key   the app whose detail it stands in: no row unless that app may be a shell
 //     at    'home' or 'face'
 //

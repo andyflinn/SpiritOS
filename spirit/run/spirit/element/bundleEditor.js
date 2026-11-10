@@ -8,7 +8,7 @@
 // its branch editor as a closable tab (goal/G41.32). The grants app draws it in its Bundles tab ("the Grant app must use
 // the bundleEditor in its "Bundle" tab"). A bundle is a label; its branches are the branch editor's.
 //
-//   spirit.element.bundleEditor.create(box, { tabs, tabLabel }) -> { destroy() }
+//   spirit.element.spirit.element.bundleEditor.create(box, { tabs, tabLabel }) -> { destroy() }
 //     box  the space it fills; tabs the tabContainer the pane opens tabs in;
 //     tabLabel(row) what names those tabs, its mounter's (the agent app's browserAgent.js), handed on to ./search/bundle.js
 (function () {

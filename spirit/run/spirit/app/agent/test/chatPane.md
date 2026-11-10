@@ -12,7 +12,7 @@ Chat input row is filled by an upward scrolling chat log."*, *"how the chat will
 
 ## API
 
-`window.spirit.elements.chatPane.create(container, { persona })` draws the pane into the container and answers it
+`window.spirit.element.spirit.app.agent.chatPane.create(container, { persona })` draws the pane into the container and answers it
 (goal/G41.19: *"every element gets a container and appends itself"*), with `destroy()`.
 
 - `persona` the persona row picked, `{ id, label }`.

@@ -3,7 +3,7 @@
 // THE ICONS FACE (goal/G43.19, box v16; Q6: icons gets nodeIcons.js and browserIcons.js, as desk has them). Its contract and
 // its test: ./test/icons.md and ./test/icons.js.
 //
-//   spirit.elements.icons.create(container, { open }) -> { destroy() }; also spirit.elements.iconsFace, which icons.js's
+//   spirit.element.spirit.app.icons.icons.create(container, { open }) -> { destroy() }; also spirit.elements.iconsFace, which icons.js's
 //   stand-in calls while it waited for this file
 //
 // The app's own icon set (the box: "the page asks icons through its api branch; only ./nodeIcons.js writes the table, the
@@ -140,7 +140,7 @@
     };
   }
 
-  // Under both names: icons.js stands spirit.elements.icons up at once and waits for this file; once here, the face itself.
+  // Under both names: icons.js stands spirit.element.spirit.app.icons.icons up at once and waits for this file; once here, the face itself.
   // At its own path (goal/G43.32): icons.js, the app's element, draws through it from there.
   window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/icons/browserIcons.js', { create: create }); });
 }());

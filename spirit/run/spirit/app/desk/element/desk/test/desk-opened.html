@@ -47,7 +47,7 @@ window.opened = function () {
     spirit.desk = new Proxy({}, { get: function (t, verb) { return function (args) { return api.verb('desk.' + String(verb), args).then(function (r) { return r.body; }); }; } });
     return spirit.require('spirit/app/desk/element/desk/desk.js');
   }).then(function () {
-    spirit.elements.deskPage.create(document.getElementById('app-content'), {});
+    spirit.element.spirit.app.desk.element.desk.desk.create(document.getElementById('app-content'), {});
     return wait(2500);
   }).then(function () { return JSON.stringify(state()); }, function (e) { return JSON.stringify({ error: String(e && e.stack || e) }); });
 };

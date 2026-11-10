@@ -8,7 +8,7 @@
 //   invoke the rotate key dialog." And on G43.24: "it's just a panel that opens exactly overtop of the calling panel,
 //   new-shell-style.", "like fstat".
 //
-//   spirit.elements.rotateKey.create(container) -> { destroy() }; its arming button hears a click elsewhere itself (goal/G43.24),
+//   spirit.element.spirit.element.rotateKey.create(container) -> { destroy() }; its arming button hears a click elsewhere itself (goal/G43.24),
 //   so it is mounted with its container alone
 //
 // nodeInfo opens it as a layer over Info through panel.js (spirit/element/nodeInfo.js), as file opens fstat. The explanation

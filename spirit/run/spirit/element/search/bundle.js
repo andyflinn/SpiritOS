@@ -9,7 +9,7 @@
 // shell element loads its own elements dynamically through the fucking apirit.require functionality"). The list draws
 // the node's bundles (auth.bundle search) and each row (bundle/rowElement.js).
 //
-//   spirit.element.search.bundle.create(container, options) -> root
+//   spirit.element.spirit.element.search.bundle.create(container, options) -> root
 //     root.value   the chosen bundle's id, a number, '' while none is
 //     root.row     the chosen bundle, { id, label }, null while none is
 //     one bubbling `change` on a pick; refresh() asks again

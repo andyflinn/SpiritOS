@@ -37,4 +37,4 @@ Andy: *"i just moved them, didn't fix the manifest."* (4f01465b: shell/info is s
 ### 7. The new shell's way
 
 - No `spirit.shell.activateApp` in `grants.js`.
-- On the page, `spirit.require('spirit/app/grants/grants.js')` sets `spirit.elements.grants`, whose `create(container, opts)` draws into the container and answers `{ destroy() }`.
+- On the page, `spirit.require('spirit/app/grants/grants.js')` sets `spirit.element.spirit.app.grants.grants`, whose `create(container, opts)` draws into the container and answers `{ destroy() }`.

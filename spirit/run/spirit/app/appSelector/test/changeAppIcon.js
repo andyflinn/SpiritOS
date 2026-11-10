@@ -25,10 +25,10 @@ test.startTest('changeAppIcon.js: one app\'s icon, as a rowForm (goal/G43.15)');
     if (!node.up || chrome.error) { test.fail('no scratch node or no Chrome: nothing judged. ' + short(chrome.error || '')); return; }
     await chrome.send('Page.navigate', { url: node.base + '/face.html' });
     await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
-    const loaded = await chrome.evaluate('spirit.ready.then(function () { return spirit.require("spirit/app/appSelector/changeAppIcon.js"); }).then(function () { return !!(spirit.elements.changeAppIcon && spirit.elements.changeAppIcon.create); }, function (e) { return String(e); })');
-    ok(loaded === true, 'it loads through spirit.require and is spirit.elements.changeAppIcon', 'it did not load: ' + short(loaded));
+    const loaded = await chrome.evaluate('spirit.ready.then(function () { return spirit.require("spirit/app/appSelector/changeAppIcon.js"); }).then(function () { return !!(spirit.element.spirit.app.appSelector.changeAppIcon && spirit.element.spirit.app.appSelector.changeAppIcon.create); }, function (e) { return String(e); })');
+    ok(loaded === true, 'it loads through spirit.require and is spirit.element.spirit.app.appSelector.changeAppIcon', 'it did not load: ' + short(loaded));
     if (loaded !== true) return;
-    const made = await chrome.evaluate('(function () { var b = document.createElement("div"); b.id = "i"; document.body.appendChild(b); window.__i = spirit.elements.changeAppIcon.create(b, { key: "agent" }); return !!window.__i && typeof window.__i.destroy === "function"; }())');
+    const made = await chrome.evaluate('(function () { var b = document.createElement("div"); b.id = "i"; document.body.appendChild(b); window.__i = spirit.element.spirit.app.appSelector.changeAppIcon.create(b, { key: "agent" }); return !!window.__i && typeof window.__i.destroy === "function"; }())');
     ok(made === true, 'create(host, { key }) answers { destroy }', 'it made: ' + short(made));
     const seen = function () { return chrome.evaluate('(function () { var b = document.getElementById("i"); var bs = b.querySelectorAll("button"); return { forms: b.querySelectorAll(".shell-row-form").length, text: String(b.innerText || "").replace(/\\s+/g, " ").trim(), last: bs.length ? String(bs[bs.length - 1].textContent || "").trim() : null }; }())'); };
 

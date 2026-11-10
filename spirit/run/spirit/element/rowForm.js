@@ -8,7 +8,7 @@
 // "a line saying what a press did (a refusal, a result) is the mounter's, below the bubble, not in it." Its contract and
 // its test: ./test/rowForm.md and ./test/rowForm.js.
 //
-//   spirit.element.rowForm.create(container, { icon, button }) -> { root, span, button }
+//   spirit.element.spirit.element.rowForm.create(container, { icon, button }) -> { root, span, button }
 //     icon the glyph, button the button's words. The mounter drops its form elements into span and wires button itself
 //     (a busyButton or a click): the form sends nothing.
 //

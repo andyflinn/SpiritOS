@@ -4,7 +4,7 @@
 // loopback and through a relay alike. Its contract and its test: ./test/browserAgent.md and ./test/browserAgent.js. Loaded
 // on a page by ./agent.js.
 //
-//   spirit.elements.agent.create(container) -> { destroy() }
+//   spirit.element.spirit.app.agent.browserAgent.create(container) -> { destroy() }
 //
 // AN ELEMENT (goal/G43.13): it reads only its container; the { title, open } the appSelector's launch hands it go unread. It keeps no state of its own: the tick
 // box that showed the server's DEBUG in the old shell's title went with that title (Andy: "yes, delete the tick box.").

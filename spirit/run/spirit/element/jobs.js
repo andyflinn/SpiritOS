@@ -4,7 +4,7 @@
 // (spirit/app/jobs/jobs.js) draws, moved here from shell/jobs/jobs.js and working as it did. Its contract and its test:
 // ./test/jobs.md and ./test/jobs.js.
 //
-//   spirit.element.jobs.create(container, { open }) -> { destroy() }
+//   spirit.element.spirit.element.jobs.create(container, { open }) -> { destroy() }
 //     open   the mounter's panel stack's open (the app selector's); with none, a stack of its own over its page
 //
 // ROWS ONLY (goal/G2.11). Andy, 2026-10-02: "the job monitor shell component. the folded "consoles" need to go into

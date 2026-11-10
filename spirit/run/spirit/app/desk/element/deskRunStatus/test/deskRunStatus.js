@@ -5,7 +5,9 @@
 // goal/G41.11, goal/G43.30). goal/G43.30 moved it out of shell/shared/js/ into Desk's own elements (the box: "deskRunStatus.js
 // moves to spirit/app/desk/element/deskRunStatus/ ... Desk and its detail load it from there"). The browser file runs in node
 // on a window of its own: a pure function of an item's facts and deskVerify's run. Then on a real page of a scratch node,
-// required from its place, it stands on spirit.elements, where Desk and its detail look for it.
+// required from its place, it stands at spirit.required.spirit.app.desk.element.deskRunStatus.deskRunStatus, where Desk and
+// its detail look for it: a helper, no element (goal/G43.32; Andy: "helpers with no create are no fucking elements. they
+// live in require.").
 
 const fs = require('fs');
 const path = require('path');
@@ -20,20 +22,23 @@ function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 
 const win = { Math: Math, Number: Number, String: String, Array: Array, Object: Object };
+// A page's spirit, holding spirit.required as spirit.js makes it before any script runs (goal/G43.32).
+win.spirit = { required: {} };
 win.window = win;
 vm.createContext(win);
 let loaded = '';
 try { vm.runInContext(fs.readFileSync(FILE, 'utf8'), win, { filename: FILE }); } catch (e) { loaded = String(e && e.message || e); }
-const S = win.spirit && win.spirit.elements && win.spirit.elements.deskRunStatus;
+const AT = function (o) { return ['spirit', 'app', 'desk', 'element', 'deskRunStatus', 'deskRunStatus'].reduce(function (x, k) { return x && x[k]; }, o); };
+const S = AT(win.spirit.required);
 const esc = function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); };
 const pct = function (h) { const m = /value="(\d+)"/.exec(h); return m ? Number(m[1]) : null; };
 
 test.startTest('deskRunStatus.js: the verifier\'s run in an item\'s status');
 
 (async function () {
-test.subHeading(PLACE + ': it adds deskRunStatus to window.spirit.elements');
+test.subHeading(PLACE + ': it stands at spirit.required.spirit.app.desk.element.deskRunStatus.deskRunStatus');
 ok(!loaded, 'it is at ' + PLACE, PLACE + ' did not load: ' + short(loaded));
-ok(typeof S === 'function', 'window.spirit.elements.deskRunStatus is a function', 'elements: ' + short(win.spirit && Object.keys(win.spirit.elements || {})));
+ok(typeof S === 'function', 'window.spirit.required.spirit.app.desk.element.deskRunStatus.deskRunStatus is a function', 'required: ' + short(win.spirit.required));
 if (typeof S !== 'function') return;
 
 test.subHeading('a run of this item: a progress bar and the suite it is in');
@@ -65,8 +70,9 @@ ok(S({ verified: 'red' }) === '<span style="color:#c00">red: 0 suites</span>', '
 ok(S({ verified: 'none' }) === '' && S({}) === '', 'neither green nor red: nothing', short(S({ verified: 'none' })));
 
 // ON A REAL PAGE, FROM ITS PLACE: what Desk and its detail do with it, spirit.require of its path, then
-// spirit.elements.deskRunStatus (goal/G43.5: "those elements do NOT belong in spirit.element").
-test.subHeading(PLACE + ': required on a real page, it stands on spirit.elements');
+// spirit.required.spirit.app.desk.element.deskRunStatus.deskRunStatus (goal/G43.5: "those elements do NOT belong in
+// spirit.element"; goal/G43.32: a helper lives in require).
+test.subHeading(PLACE + ': required on a real page, it stands at spirit.required, not on spirit.element');
 const chrome = H.findChrome();
 if (!chrome) { test.fail('no Chrome on this machine: SPIRIT_CHROME names none, and none is found by its name'); return; }
 const node = await H.scratchNode();
@@ -76,8 +82,8 @@ try {
   if (!page || page.error) { test.fail(page ? page.error : 'the scratch node did not come up'); return; }
   await page.send('Page.navigate', { url: node.base + '/face.html' });
   await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.ready)').then(Boolean); }, H.WAIT);
-  const got = JSON.parse(await page.evaluate('window.spirit.ready.then(function () { return spirit.require(' + JSON.stringify(PLACE) + '); }).then(function () { var e = spirit.elements && spirit.elements.deskRunStatus; return JSON.stringify({ fn: typeof e, html: typeof e === "function" ? e({ verified: "green" }, null) : null, onElement: !!(spirit.element && spirit.element.deskRunStatus) }); }, function (e) { return JSON.stringify({ error: String(e && e.message || e) }); })'));
-  ok(got.fn === 'function' && /verified green/.test(String(got.html)), 'spirit.require of its path puts it on spirit.elements.deskRunStatus, drawing an item\'s outcome', 'on the page: ' + short(got));
+  const got = JSON.parse(await page.evaluate('window.spirit.ready.then(function () { return spirit.require(' + JSON.stringify(PLACE) + '); }).then(function () { var at = function (o) { return ["spirit", "app", "desk", "element", "deskRunStatus", "deskRunStatus"].reduce(function (x, k) { return x && x[k]; }, o); }; var e = at(spirit.required); return JSON.stringify({ fn: typeof e, html: typeof e === "function" ? e({ verified: "green" }, null) : null, onElement: !!at(spirit.element) }); }, function (e) { return JSON.stringify({ error: String(e && e.message || e) }); })'));
+  ok(got.fn === 'function' && /verified green/.test(String(got.html)), 'spirit.require of its path puts it at spirit.required.spirit.app.desk.element.deskRunStatus.deskRunStatus, drawing an item\'s outcome', 'on the page: ' + short(got));
   ok(got.onElement === false, 'and not on spirit.element', 'on spirit.element, or not judged: ' + short(got));
 } finally {
   if (page && page.kid) page.kid.kill();

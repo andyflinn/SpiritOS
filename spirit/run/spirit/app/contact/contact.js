@@ -3,7 +3,7 @@
 // CONTACTS, AN ELEMENT (goal/G43.14; Andy: "the new contact app will be exactly the same as the old, merely placed where it
 // now belongs."). Its contract and its test: ./test/contact.md and ./test/contact.js.
 //
-//   spirit.elements.contact.create(container, { open }) -> { destroy() }; open, the mounter's panel stack's (goal/G43.18)
+//   spirit.element.spirit.app.contact.contact.create(container, { open }) -> { destroy() }; open, the mounter's panel stack's (goal/G43.18)
 //
 // What it draws: the one contact list (spirit/element/search/contact/listElement.js, below), which does its own asking
 // and whose rows open a person's or a relay's details, and the Add a relay fold, whose one call is relay.add. Nothing

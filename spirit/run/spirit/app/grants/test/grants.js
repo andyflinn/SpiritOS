@@ -47,8 +47,9 @@ function world(o) {
     grantsPanel: { nodeGrants: NODE_GRANTS, create: function (host, cfg) { const p = { host: host, cfg: cfg || {}, args: arguments.length }; w.panels.push(p); return p; } },
   };
   const FILES = { 'spirit/element/tabContainer.js': 'tabContainer', 'spirit/element/bundleEditor.js': 'bundleEditor', 'spirit/element/grantsPanel.js': 'grantsPanel' };
+  // goal/G43.32: the parts stand where grants.js reads them, at spirit.element.spirit.element.<name>; a page's spirit
+  // (spirit/test/headLessChrome.js pageSpirit), so grants.js places itself at spirit.element.spirit.app.grants.grants as it runs.
   const page = {};
-  const els = {};
   const win = {
     document: { createElement: function (t) { return node('<' + t + '>'); } },
     setTimeout: setTimeout, Promise: Promise, JSON: JSON, Object: Object, Array: Array, String: String,
@@ -56,15 +57,16 @@ function world(o) {
   };
   win.window = win;
   vm.createContext(win);
-  win.spirit = { element: page, elements: els,
+  win.spirit = { element: { spirit: { element: page, app: {} } },
     require: function (p) {
       w.required.push(String(p));
       if (opt.refuse && opt.refuse.indexOf(p) !== -1) return Promise.reject(new Error('not-found ' + p));
       const put = function () { if (FILES[p]) page[FILES[p]] = E[FILES[p]]; return {}; };
       return opt.held ? opt.held.then(put) : Promise.resolve(put());
     } };
+  require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(win.spirit);
   if (SRC) vm.runInContext(SRC, win, { filename: FILE });
-  w.win = win; w.els = els; w.NODE_GRANTS = NODE_GRANTS;
+  w.win = win; w.els = { grants: (win.spirit.element.spirit.app.grants || {}).grants }; w.NODE_GRANTS = NODE_GRANTS;
   return w;
 }
 
@@ -90,7 +92,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   test.subHeading('mounted the new shell\'s way (goal/G43.24, requirement 7)');
   const w = world();
   const G = w.els.grants;
-  ok(!!G && typeof G.create === 'function', 'it sets spirit.elements.grants = { create }', 'elements: ' + short(Object.keys(w.els)));
+  ok(!!G && typeof G.create === 'function', 'it sets spirit.element.spirit.app.grants.grants = { create }', 'elements: ' + short(Object.keys(w.els)));
   if (!G) return;
   ok(!/\bactivateApp\b|\bspirit\.shell\b/.test(CODE), 'no spirit.shell.activateApp, the old shell\'s way', 'grants.js still mounts through spirit.shell');
   ok(!/shellCreateListSearch|api\.ui\.elements|apiBranchSelector/.test(CODE), 'nothing of the old shell: no shellCreateListSearch, no api.ui.elements, no apiBranchSelector', 'grants.js still names one');
@@ -213,7 +215,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     await chrome.send('Page.navigate', { url: base + '/face.html' });
     ok(await H.until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready && window.spirit.events)'); }, 20000), 'the world: the face page has its spirit', 'the page has no spirit: nothing judged');
     // The shell app, as boot.js hands it the page's app area, here in a box of its own over the page.
-    const made = await chrome.evaluate('(function () { var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.require("spirit/app/shell/shell.js").then(function () { window.__shell = spirit.elements.shell.create(b); return "made"; }, function (e) { return "load: " + e; }); }())');
+    const made = await chrome.evaluate('(function () { var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.require("spirit/app/shell/shell.js").then(function () { window.__shell = spirit.element.spirit.app.shell.shell.create(b); return "made"; }, function (e) { return "load: " + e; }); }())');
     ok(made === 'made', 'the world: the shell app is drawn', 'the shell: ' + short(made));
     const tile = await waitFor(function () { return chrome.evaluate('(function () { var t = document.querySelector("#zzBox .app-icon[data-key=grants]"); if (!t || t.offsetParent === null) return false; t.click(); return true; }())'); }, 15000);
     ok(tile, 'the Grants app\'s tile is pressed', 'no Grants tile: nothing judged');
@@ -307,7 +309,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     // "in the agent app, this will be the tabContainer in the center tab of the workBench, oos for this item. and Edit/Delete
     // in the bundleSelector:pane go anyway."
     const mark = chrome.heard.length;
-    await chrome.evaluate('Promise.resolve(window.spirit.require("spirit/element/bundleEditor.js")).then(function () { var h = document.createElement("div"); h.id = "zzAgentLike"; h.style.cssText = "position:absolute;left:0;top:0;width:100%;height:300px;background:#fff;z-index:10000"; document.body.appendChild(h); window.spirit.element.bundleEditor.create(h, {}); return true; })');
+    await chrome.evaluate('Promise.resolve(window.spirit.require("spirit/element/bundleEditor.js")).then(function () { var h = document.createElement("div"); h.id = "zzAgentLike"; h.style.cssText = "position:absolute;left:0;top:0;width:100%;height:300px;background:#fff;z-index:10000"; document.body.appendChild(h); window.spirit.element.spirit.element.bundleEditor.create(h, {}); return true; })');
     await waitFor(function () { return chrome.evaluate('(function () { ' + LEAF + ' return !!leaf("zzOne", "#zzAgentLike"); }())'); }, 5000);
     const noBtn = await chrome.evaluate('Array.prototype.slice.call(document.querySelectorAll("#zzAgentLike button")).filter(function (b) { return /^(Edit|Delete)$/.test(b.textContent.trim()); }).length');
     ok(noBtn === 0, 'no Edit or Delete there either', noBtn + ' Edit or Delete buttons with no tabContainer');

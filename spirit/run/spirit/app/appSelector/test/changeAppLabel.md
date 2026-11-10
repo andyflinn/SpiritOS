@@ -6,7 +6,7 @@ Andy: *"i thought you'd make the changeAppLabel and changeAppIcon form elements 
 
 ## Requirements
 
-- `spirit.elements.changeAppLabel.create(host, { key })`, loaded through `spirit.require`, answers `{ destroy }`.
+- `spirit.element.spirit.app.appSelector.changeAppLabel.create(host, { key })`, loaded through `spirit.require`, answers `{ destroy }`.
 - One rowForm, as the detail draws it: ✏️, the word Label, a box holding the app's label, and a Change button.
 - Change writes the box's label through the app family's `labelApp`, and the app's row says it.
 - A label changed elsewhere shows in the box, with no reload.

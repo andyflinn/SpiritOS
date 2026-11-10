@@ -4,7 +4,7 @@
 // below it. Other apps with tabs catch up with it later. Its contract and its test: ./test/tabContainer.md and
 // ./test/tabContainer.js.
 //
-//   window.spirit.element.tabContainer.create(container, { tabs, selected }) -> { select, selected, add, close, rename, destroy }
+//   window.spirit.element.spirit.element.tabContainer.create(container, { tabs, selected }) -> { select, selected, add, close, rename, destroy }
 //     tabs       [{ name, label, mount(box), closable, italic }]: a tab's mount is called once, the first time it is selected, with
 //                a box of its own inside the content area; the box is kept, and only the selected tab's box shows
 //     selected   the tab shown first; the first tab when it names none

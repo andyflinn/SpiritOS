@@ -6,7 +6,7 @@
 // left pane (🧠Models) and replaces that panes [provider models] buttons. the center pane panel goes. the [Ask] button will
 // no longer spit out a list, and simply update the agent.model table"): a rowForm since goal/G41.27, ❓
 // [providerSelector:dropdown] [Ask], the model list below it following the updated table by the stream. A refusal is said on one line, the provider's reason.
-//   spirit.elements.modelTable.create(container, detail) -> { refresh, destroy }   detail: the page's detail pane (../tableElement.js)
+//   spirit.element.spirit.app.agent.table.model.elementTable.create(container, detail) -> { refresh, destroy }   detail: the page's detail pane (../tableElement.js)
 (function () {
   var made = 0;
   window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/agent/table/model/elementTable.js', {

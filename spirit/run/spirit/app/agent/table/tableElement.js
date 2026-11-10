@@ -5,7 +5,7 @@
 // "elementTable.js (an face-shell compatible interface to the table for browsers, with search-list using the probablility-group of elements in shell/js/)" and "elementRow.js (a
 // panel element, to maintain and edit one row of the table)".
 //
-//   spirit.elements.agentTable.create(container, { table, detail, row, add }) -> { refresh, destroy }
+//   spirit.element.spirit.app.agent.table.tableElement.create(container, { table, detail, row, add }) -> { refresh, destroy }
 //     a title row, an Add button and a probabilitySearch pane over the table's branch of spirit.data, shown at once,
 //     each row by its icon and its label alone (LIST_COLUMNS); Add gives the new row its table's icon;
 //     picking a row, or adding one, opens row(box, key, added, row) in the detail pane; add(open), when given, is what
@@ -14,7 +14,7 @@
 //     { icon, name, title }. Andy, on G41.4:
 //     "make the detail-panel take over the middle pane of the workBench UI please", so the agent page hands its
 //     workBench's centre.
-//   spirit.elements.agentRow.create(container, { table, id, added, look, fields, required }) -> { destroy }, an element
+//   spirit.element.spirit.app.agent.table.rowElement.create(container, { table, id, added, look, fields, required }) -> { destroy }, an element
 //   of its own (./rowElement.js), which builds on agentDetail, below:
 //     one row's fields as inputs, each saved as it changes (no Save), and Delete, under a title row; added says the row was
 //     just made by Add; fields

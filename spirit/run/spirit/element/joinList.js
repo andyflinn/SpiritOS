@@ -5,7 +5,7 @@
 // finding someone, as one to-do list (goal/G30.1, box v39). No face steps (goal/G43.26; Andy: "now remove these two steps
 // from \"join\" - Configure your node's remote control - Open your face"): a face is named in Info.
 //
-//   spirit.elements.joinList.create(container, {}) -> { destroy() }
+//   spirit.element.spirit.element.joinList.create(container, {}) -> { destroy() }
 //
 // The steps are the Join app's manifest's (spirit/app/join/join.json, steps), each with its name, icon and the fact that
 // ends it. Where the user stands is the join news on the node's spirit job (spirit/joinStepsJob.js), heard in the jobs family's cache

@@ -6,7 +6,8 @@
 // handles a call (Andy: "appClient does NOT route to api.js, that file has a different purpose")"; Q5: "api.js at the app's
 // top with no api/ folder"; 5: "the api branch is icons, and icons.<verb> can be granted to a peer like any branch". A
 // scratch node with Icons switched on, raw calls and a real Chrome on its face page; whether a call started a run is read
-// from the job spirit.app.icons, which names the pid of its last run.
+// from the job spirit.app.icons, which names the pid of its last run. Who checks a call is goal/G43.32's decided 9: the
+// app's run, spirit/appServer.js in front of icons.js, not the node.
 
 const fs = require('fs');
 const path = require('path');
@@ -51,7 +52,10 @@ test.startTest('api.js: the icons branch\'s interface, which the node checks a c
     const fam = await call('api', { family: 'icons' });
     ok(fam.status === 200 && fam.body && fam.body.interface === fs.readFileSync(FILE, 'utf8'), 'api {family: icons} answers spirit/app/icons/api.js, word for word', 'api {family: icons}: ' + fam.status + ' ' + short(fam.text));
 
-    test.subHeading('the box, 7: "the verbs and arguments the node checks a call against": a call that breaks it never starts a run');
+    // goal/G43.32, decided 9, which replaces this box's 7 on who checks: the check runs in the app's process, its run started
+    // as spirit/appServer.js in front of icons.js, never in the node. Andy: "isolation, we don't want the NODE to run the
+    // validation", "for one-shot servers, appClient launches appServer with the argument "spirit/app/<name>/name.js"".
+    test.subHeading('goal/G43.32, decided 9: a call that breaks it is refused by a run of the app, appServer.js in front of it, not by the node');
     const r0 = await call('icons.' + v, { op: 'search', text: '' });
     await sleep(300);
     const p1 = await lastRun();
@@ -72,7 +76,7 @@ test.startTest('api.js: the icons branch\'s interface, which the node checks a c
       await sleep(400);
       const after = await lastRun();
       ok(r.status >= 400 && r.status < 500, c[2] + ' is refused, ' + r.status + ' ' + String((r.body && r.body.code) || ''), c[2] + ' answered ' + r.status + ' ' + short(r.text));
-      ok(after === before, c[2] + ': and no run of icons.js was started', c[2] + ': a run was started (pid ' + before + ' -> ' + after + ')');
+      ok(!!after && after !== before, c[2] + ': refused by a run of the app, not by the node (pid ' + before + ' -> ' + after + ')', c[2] + ': no run was started, so the node refused it (pid ' + before + ' -> ' + after + ')');
     }
 
     test.subHeading('"a page binds by" it: spirit.icons.<verb> on a page');

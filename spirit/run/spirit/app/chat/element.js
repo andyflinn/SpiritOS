@@ -4,7 +4,7 @@
 // specific) elements go into spirit/app/chat/element/"), what was chatter.js, the face of this node's chat server
 // (./nodeChat.js), goal/G4.9 to G4.11. Its contract and its test: ./test/element.md and ./test/element.js.
 //
-//   spirit.elements.chat.create(container, { open }) -> { destroy() }
+//   spirit.element.spirit.app.chat.element.create(container, { open }) -> { destroy() }
 //
 // The chat server is faceless and knows keys only; this element is everything a person sees. It asks its server through
 // the chat branch spirit.require binds (spirit.chat.<verb>), and hears every kept line through the chat branch's cache

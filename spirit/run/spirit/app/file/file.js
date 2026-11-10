@@ -3,7 +3,7 @@
 // FILES, AN ELEMENT (goal/G43.17; Andy: "file should be the same as files is. i don't want to loose all the nice stuff files
 // has..."). The old shell's Files app, moved. Its contract and its test: ./test/file.md and ./test/file.js.
 //
-//   spirit.elements.file.create(container, { open }) -> { destroy() }
+//   spirit.element.spirit.app.file.file.create(container, { open }) -> { destroy() }
 //     open(key, spec): the stack file was opened in, handed by its mounter, so a file covers ALL of file, its bar too (Andy:
 //     "when a file is clicked on on "file", then the file viewer pops up overtop of ALL the "file" app...."). Without one,
 //     file keeps a stack over its own list.

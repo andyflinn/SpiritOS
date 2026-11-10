@@ -229,9 +229,10 @@ var DD_LABELS = { 'start-design': 'Start design', 'end-design': 'End design', go
 // joined with deskVerify's own publish (ddRun), through the one shared rendering (spirit/app/desk/element/deskRunStatus/deskRunStatus.js).
 var ddRun = null;
 var DD_RUN_STATUS = '/spirit/app/desk/element/deskRunStatus/deskRunStatus.js';
-// The shared run status, by its place spirit.element.<its path> (goal/G43.32): undefined while it is not loaded yet.
+// The shared run status, a helper, by its place spirit.required.<its path> (goal/G43.32; Andy: "helpers with no create
+// are no fucking elements. they live in require."): undefined while it is not loaded yet.
 function ddRunStatus() {
-  return 'spirit.app.desk.element.deskRunStatus.deskRunStatus'.split('.').reduce(function (o, k) { return o == null ? undefined : o[k]; }, typeof window !== 'undefined' && window.spirit ? window.spirit.element : undefined);
+  return 'spirit.app.desk.element.deskRunStatus.deskRunStatus'.split('.').reduce(function (o, k) { return o == null ? undefined : o[k]; }, typeof window !== 'undefined' && window.spirit ? window.spirit.required : undefined);
 }
 function ddRunHtml() {
   var status = ddRunStatus();

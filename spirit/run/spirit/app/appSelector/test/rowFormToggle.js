@@ -22,10 +22,10 @@ test.startTest('rowFormToggle.js: a rowForm that toggles (goal/G43.15)');
     if (!node.up || chrome.error) { test.fail('no scratch node or no Chrome: nothing judged. ' + short(chrome.error || '')); return; }
     await chrome.send('Page.navigate', { url: node.base + '/face.html' });
     await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
-    const loaded = await chrome.evaluate('spirit.ready.then(function () { return spirit.require("spirit/app/appSelector/rowFormToggle.js"); }).then(function () { return !!(spirit.elements.rowFormToggle && spirit.elements.rowFormToggle.create); }, function (e) { return String(e); })');
-    ok(loaded === true, 'it loads through spirit.require and is spirit.elements.rowFormToggle', 'it did not load: ' + short(loaded));
+    const loaded = await chrome.evaluate('spirit.ready.then(function () { return spirit.require("spirit/app/appSelector/rowFormToggle.js"); }).then(function () { return !!(spirit.element.spirit.app.appSelector.rowFormToggle && spirit.element.spirit.app.appSelector.rowFormToggle.create); }, function (e) { return String(e); })');
+    ok(loaded === true, 'it loads through spirit.require and is spirit.element.spirit.app.appSelector.rowFormToggle', 'it did not load: ' + short(loaded));
     if (loaded !== true) return;
-    const made = await chrome.evaluate('(function () { var b = document.createElement("div"); b.id = "t"; document.body.appendChild(b); window.__pressed = 0; window.__t = spirit.elements.rowFormToggle.create(b, { on: false, words: "Allow zz as shell", press: function () { window.__pressed += 1; } }); return !!window.__t && !!window.__t.root && typeof window.__t.set === "function" && typeof window.__t.destroy === "function"; }())');
+    const made = await chrome.evaluate('(function () { var b = document.createElement("div"); b.id = "t"; document.body.appendChild(b); window.__pressed = 0; window.__t = spirit.element.spirit.app.appSelector.rowFormToggle.create(b, { on: false, words: "Allow zz as shell", press: function () { window.__pressed += 1; } }); return !!window.__t && !!window.__t.root && typeof window.__t.set === "function" && typeof window.__t.destroy === "function"; }())');
     ok(made === true, 'create(host, { on, words, press }) answers { root, set, destroy }', 'it made: ' + short(made));
     if (made !== true) return;
     const seen = function () { return chrome.evaluate('(function () { var b = document.getElementById("t"); var btn = b.querySelector("button"); return { text: String(b.innerText || "").replace(/\\s+/g, " ").trim(), button: btn ? String(btn.textContent || "").trim() : null, forms: b.querySelectorAll(".shell-row-form").length }; }())'); };

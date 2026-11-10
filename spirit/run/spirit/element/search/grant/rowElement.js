@@ -11,7 +11,7 @@
 // mix, and every grant row repaints from that watch through its table's index. A row asks and draws nothing of its own
 // (rule/19).
 //
-//   spirit.element.search.grant.rowElement.create(row, opts) -> a rowElement of kind grant
+//   spirit.element.spirit.element.search.grant.rowElement.create(row, opts) -> a rowElement of kind grant
 //     row            a grant row, its id and whose grant it is in the fields its table names
 //     opts.grants    the grants table, required: { branch, key, label, revoke(id, path), watch(fn(id + newline + path,
 //                    row)) }; branch is a whole spirit.data path (node/family/branch), its rows its family's cache

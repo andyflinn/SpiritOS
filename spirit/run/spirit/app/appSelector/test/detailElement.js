@@ -30,8 +30,8 @@ test.startTest('appSelector/detailElement.js: one app, its detail (goal/G43.2)')
     const text = function () { return chrome.evaluate('String((document.getElementById("under-test") || {}).innerText || "")'); };
     const html = function () { return chrome.evaluate('String((document.getElementById("under-test") || {}).innerHTML || "")'); };
     const R = JSON.stringify(ROW);
-    const made = await chrome.evaluate('(function () { window.detail = spirit.elements.appDetail.create(document.getElementById("under-test"), { row: ' + R + ' }); return !!window.detail; }())');
-    ok(made === true, 'spirit.elements.appDetail.create(host, { row }) makes a detail', 'it made no detail: ' + short(made));
+    const made = await chrome.evaluate('(function () { window.detail = spirit.element.spirit.app.appSelector.detailElement.create(document.getElementById("under-test"), { row: ' + R + ' }); return !!window.detail; }())');
+    ok(made === true, 'spirit.element.spirit.app.appSelector.detailElement.create(host, { row }) makes a detail', 'it made no detail: ' + short(made));
     const t = String(await text());
     ok(t.indexOf(ROW.label) !== -1, 'the detail shows the label', 'the detail shows ' + short(t));
     ok((await html()).indexOf(ROW.icon) !== -1 || /<svg|<img/.test(await html()), 'the detail shows the icon', 'the detail has no icon: ' + short(await html()));

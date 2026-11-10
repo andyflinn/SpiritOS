@@ -3,9 +3,9 @@
 // ONE ROW OF THE AGENT'S TABLES, EDITED IN THE PAGE (goal/G41.4), an element of its own (goal/G41.28; the general test:
 // a file registers one element). Each table's elementRow.js names its fields and builds on this one; the title row, the
 // field line, the table's searches and the one way to its server are the tables' shared element's (./tableElement.js,
-// spirit.elements.agentDetail), which this file loads as part of its tree.
+// spirit.element.spirit.app.agent.table.tableElement), which this file loads as part of its tree.
 //
-//   spirit.elements.agentRow.create(container, { table, id, added, look, fields, required }) -> { destroy }
+//   spirit.element.spirit.app.agent.table.rowElement.create(container, { table, id, added, look, fields, required }) -> { destroy }
 //     one row's fields as inputs, under a title row; added says the row was just made by Add; fields
 //     [{ field, label, kind }], the row's icon always the first before them; the kinds are listed in ./tableElement.js.
 //

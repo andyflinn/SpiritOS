@@ -4,7 +4,7 @@
 // mounted"; Andy, since: "please show the full media viewer or text editor (including the file picker) even when launched from
 // files."). A text file, edited on the codeMirror element's edit mode, and saved. Its contract and its test: ./test/text.md and ./test/text.js.
 //
-//   spirit.elements.text.create(container, { path, words, line, title }) -> { destroy() }
+//   spirit.element.spirit.app.text.text.create(container, { path, words, line, title }) -> { destroy() }
 //     words, line: a file found by its contents opens with the words marked, at that line.
 //     title({ file }): told the name of the file shown, for the title bar of whoever mounts it ("[✏️] "Text Editor:" +
 //     file-name").

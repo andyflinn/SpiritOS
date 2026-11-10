@@ -2,7 +2,7 @@
 
 // spirit/run/spirit/app/agent/table/test/rowElement.js
 // The tests of spirit/app/agent/table/rowElement.js, and of no other module (spec: ./rowElement.md; goal/G41.4, goal/G41.28).
-// Its tables' shared element (../tableElement.js, spirit.elements.agentDetail) is part of its tree and runs real beside it.
+// Its tables' shared element (../tableElement.js, spirit.element.spirit.app.agent.table.tableElement) is part of its tree and runs real beside it.
 // The browser file runs in node on a window of its own, over the real spirit.data (spirit/data.js). The boxes,
 // the probabilitySearch element, the icon selector and the agent server's interface are stubs that keep what was asked
 // of them; the agent server answers as rowTable.js does.
@@ -108,41 +108,48 @@ test.startTest('rowElement.js: one row of the agent\'s tables, edited');
     if (a && a.op === 'get') return w.bundlesHeld[Number(a.id)] ? Promise.resolve({ id: Number(a.id), label: w.bundlesHeld[Number(a.id)] }) : Promise.reject(Object.assign(new Error('auth.bundle has no row ' + a.id), { code: 'no-such-row' }));
     return Promise.resolve({ items: [], more: false });
   } } });
+  const PE = function () { const e = global.window.spirit.element; e.spirit = e.spirit || {}; e.spirit.element = e.spirit.element || {}; return e.spirit.element; };
   global.window.spirit.require = function (p) {
     w.required.push(String(p));
     // The bundle selector (goal/G41.21), tested in its own folder: a stand-in on the page once it is asked for, keeping
     // what it was handed.
     // The are-you-sure button (spirit/element/armingButton.js), tested in its own folder: a stand-in whose first press arms and
     // whose second runs, as the real one does.
-    if (p === 'spirit/element/armingButton.js') global.window.spirit.element.armingButton = { attach: function (button, opts) {
+    if (p === 'spirit/element/armingButton.js') PE().armingButton = { attach: function (button, opts) {
       const a = { button: button, opts: opts || {}, armed: false };
       w.arming.push(a);
       button.addEventListener('click', function () { if (!a.armed) { a.armed = true; return; } a.armed = false; if (typeof a.opts.run === 'function') a.opts.run(); });
       return button;
     } };
-    if (p === 'spirit/element/search/bundle.js') (global.window.spirit.element.search = global.window.spirit.element.search || {}).bundle = { create: function (c, opts) {
+    if (p === 'spirit/element/search/bundle.js') (PE().search = PE().search || {}).bundle = { create: function (c, opts) {
       const sel = { value: '', row: null, opts: opts || {}, container: c, heard: {}, addEventListener: function (type, fn) { (sel.heard[type] = sel.heard[type] || []).push(fn); },
         refresh: function () {}, destroy: function () { sel.destroyed = true; } };
       w.bundles.push(sel); c.appendChild(sel); return sel;
     } };
     return Promise.resolve(p === AGENT ? w.family : true);
   };
-  global.window.spirit.element.search = Object.assign(global.window.spirit.element.search || {}, { create: function (host, o) {
+  // goal/G43.32: the page's own spirit.require answers the helper, so each element places itself by installSpiritElement,
+  // as it runs (spirit/test/headLessChrome.js pageSpirit); the parts it uses stand where it reads them, at
+  // spirit.element.<their path>.
+  require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(global.window.spirit);
+  PE().search = Object.assign(PE().search || {}, { create: function (host, o) {
     const s = { host: host, o: o, refreshed: 0, destroyed: false, value: '', row: null,
       refresh: function () { s.refreshed += 1; }, destroy: function () { s.destroyed = true; } };
     w.searches.push(s); return s;
   } });
   // The shell's element shape (goal/G41.19): create(container, options) appends the dropdown and answers it.
-  (global.window.spirit.element.search = global.window.spirit.element.search || {}).icon = { create: function (c, opts) { const sel = { value: (opts && opts.value) || '', opts: opts, container: c }; w.icons.push(sel); c.appendChild(sel); return sel; } };
+  PE().search.icon = { create: function (c, opts) { const sel = { value: (opts && opts.value) || '', opts: opts, container: c }; w.icons.push(sel); c.appendChild(sel); return sel; } };
   // Its tree as the page loads it: the shared element first, then this file.
   load(SHARED);
   await settle();
-  const E = global.window.spirit.elements;
-  ok(!E.agentRow, 'before it runs, the page has no agentRow', 'elements: ' + short(Object.keys(E)));
+  const AT = function () { return ((((global.window.spirit.element.spirit || {}).app || {}).agent || {}).table || {}); };
+  ok(!AT().rowElement, 'before it runs, the page has no row element', 'placed: ' + short(Object.keys(AT())));
   load(FILE);
   await settle();
-  // One file, one element (goal/G41.28; the general test: a file registers one element).
-  ok(E.agentRow && typeof E.agentRow.create === 'function', 'it registers spirit.elements.agentRow, with create', 'elements: ' + short(Object.keys(E)));
+  // One file, one element (goal/G41.28; the general test: a file registers one element). goal/G43.32: at its path,
+  // spirit.element.spirit.app.agent.table.rowElement.
+  const E = { agentRow: AT().rowElement };
+  ok(E.agentRow && typeof E.agentRow.create === 'function', 'it places spirit.element.spirit.app.agent.table.rowElement, with create', 'placed: ' + short(Object.keys(AT())));
   ok(w.required.indexOf('spirit/app/agent/table/tableElement.js') !== -1, 'it loads the tables\' shared element itself, as part of its tree (rule/26)', 'required: ' + short(w.required));
   ok(!/E\.agentTable\s*=/.test(fs.readFileSync(FILE, 'utf8')), 'and registers no other element: agentTable is tableElement.js\'s', 'rowElement.js assigns agentTable');
   if (!E.agentRow) return;
@@ -295,13 +302,14 @@ test.startTest('rowElement.js: one row of the agent\'s tables, edited');
   // models from that provider"): the list is a view of its rows (its data branch, or rows()), filtered and ranked by the
   // real list's own heart, probabilitySearch.order, the state it is made with.
   const LIST = (function () {
-    const win = { window: null, spirit: { get element() { return this.elements; }, elements: {} }, console: console };
+    // goal/G43.32: a page's spirit, so the list places itself at spirit.element.spirit.element.search as it runs.
+    const win = { window: null, spirit: require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit({ element: {} }), console: console };
     win.window = win;
     vm.createContext(win);
     ['spirit/probabilityStringMatch.js', 'spirit/probabilityStringObjectMatch.js', 'spirit/probabilityBucket.js', 'spirit/element/search.js'].forEach(function (rel) {
       vm.runInContext(fs.readFileSync(path.join(RUN, rel), 'utf8'), win, { filename: rel });
     });
-    return win.spirit.element.search;
+    return ((win.spirit.element.spirit || {}).element || {}).search;
   }());
   const offered = function (s) {
     if (!s || !LIST || typeof LIST.order !== 'function') return null;
@@ -320,8 +328,14 @@ test.startTest('rowElement.js: one row of the agent\'s tables, edited');
   // The servers check their arguments through the one spirit object's rules (spirit.check), as in the agent process.
   global.window.spirit.check = require(path.join(RUN, 'spirit', 'spirit.js')).check;
   const sctx = { db: new DatabaseSync(path.join(scratchDb, 'agent.db')), dbFile: path.join(scratchDb, 'agent.db'), tables: {}, publish: function () {} };
-  sctx.tables.provider = require(path.join(__dirname, '..', 'provider', 'server.js'))(sctx);
-  sctx.tables.model = require(path.join(__dirname, '..', 'model', 'server.js'))(sctx);
+  // goal/G43.32: a server runs in node, where spirit is spirit.js itself and spirit.require answers at once (decided 3);
+  // the page's stand-in is the global spirit only for the page's scripts.
+  const pageSpiritObj = global.spirit;
+  global.spirit = require(path.join(RUN, 'spirit', 'spirit.js'));
+  try {
+    sctx.tables.provider = require(path.join(__dirname, '..', 'provider', 'server.js'))(sctx);
+    sctx.tables.model = require(path.join(__dirname, '..', 'model', 'server.js'))(sctx);
+  } finally { global.spirit = pageSpiritObj; }
   const PA = sctx.tables.provider.verb.handler({ op: 'add', icon: '🏢', label: 'Mine', url: 'https://mine.example' }).id;
   const PB = sctx.tables.provider.verb.handler({ op: 'add', icon: '🏛', label: 'Theirs', url: 'https://theirs.example' }).id;
   const MA = sctx.tables.model.verb.handler({ op: 'add', label: 'claude-mine', providerId: PA }).id;
@@ -394,8 +408,13 @@ test.startTest('rowElement.js: one row of the agent\'s tables, edited');
   // stupid, when the user just selected a key by label for the respective table!!!!!". The agent server here is the real
   // job, persona and provider tables on the scratch agent.db: a job whose provider and persona are not picked yet.
   {
-    sctx.tables.persona = require(path.join(__dirname, '..', 'persona', 'server.js'))(sctx);
-    sctx.tables.job = require(path.join(__dirname, '..', 'job', 'server.js'))(sctx);
+    // In node, as above.
+    const pageSpiritAgain = global.spirit;
+    global.spirit = require(path.join(RUN, 'spirit', 'spirit.js'));
+    try {
+      sctx.tables.persona = require(path.join(__dirname, '..', 'persona', 'server.js'))(sctx);
+      sctx.tables.job = require(path.join(__dirname, '..', 'job', 'server.js'))(sctx);
+    } finally { global.spirit = pageSpiritAgain; }
     const viaTables = function (table, a) {
       try { return sctx.tables[table].verb.handler(a); } catch (e) { return refused(String((e.extra && e.extra.why) || e.message)); }
     };

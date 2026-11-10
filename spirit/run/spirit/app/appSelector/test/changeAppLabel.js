@@ -25,10 +25,10 @@ test.startTest('changeAppLabel.js: one app\'s label, as a rowForm (goal/G43.15)'
     if (!node.up || chrome.error) { test.fail('no scratch node or no Chrome: nothing judged. ' + short(chrome.error || '')); return; }
     await chrome.send('Page.navigate', { url: node.base + '/face.html' });
     await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
-    const loaded = await chrome.evaluate('spirit.ready.then(function () { return spirit.require("spirit/app/appSelector/changeAppLabel.js"); }).then(function () { return !!(spirit.elements.changeAppLabel && spirit.elements.changeAppLabel.create); }, function (e) { return String(e); })');
-    ok(loaded === true, 'it loads through spirit.require and is spirit.elements.changeAppLabel', 'it did not load: ' + short(loaded));
+    const loaded = await chrome.evaluate('spirit.ready.then(function () { return spirit.require("spirit/app/appSelector/changeAppLabel.js"); }).then(function () { return !!(spirit.element.spirit.app.appSelector.changeAppLabel && spirit.element.spirit.app.appSelector.changeAppLabel.create); }, function (e) { return String(e); })');
+    ok(loaded === true, 'it loads through spirit.require and is spirit.element.spirit.app.appSelector.changeAppLabel', 'it did not load: ' + short(loaded));
     if (loaded !== true) return;
-    const made = await chrome.evaluate('(function () { var b = document.createElement("div"); b.id = "l"; document.body.appendChild(b); window.__l = spirit.elements.changeAppLabel.create(b, { key: "agent" }); return !!window.__l && typeof window.__l.destroy === "function"; }())');
+    const made = await chrome.evaluate('(function () { var b = document.createElement("div"); b.id = "l"; document.body.appendChild(b); window.__l = spirit.element.spirit.app.appSelector.changeAppLabel.create(b, { key: "agent" }); return !!window.__l && typeof window.__l.destroy === "function"; }())');
     ok(made === true, 'create(host, { key }) answers { destroy }', 'it made: ' + short(made));
     const seen = function () { return chrome.evaluate('(function () { var b = document.getElementById("l"); var i = b.querySelector("input"); var btn = b.querySelector("button"); return { forms: b.querySelectorAll(".shell-row-form").length, text: String(b.innerText || "").replace(/\\s+/g, " ").trim(), input: i ? i.value : null, button: btn ? String(btn.textContent || "").trim() : null }; }())'); };
 

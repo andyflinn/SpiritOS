@@ -4,7 +4,7 @@
 // "activate/deacivate" should be an element, too, that self-hides if the app is intrinsic, that way nobody that uses that element
 // can forget to hide it....". Its contract and its test: ./test/rowFormAppActive.md and ./test/rowFormAppActive.js.
 //
-//   spirit.elements.rowFormAppActive.create(host, { key }) -> { destroy() }
+//   spirit.element.spirit.app.appSelector.rowFormAppActive.create(host, { key }) -> { destroy() }
 //
 // It follows the app's row in spirit.data.app (the row's active and intrinsic); a press asks the node, spirit.app.activeApp, and
 // the row the stream then brings redraws it. Its words name what the app mounts, from its <name>.json: face, server, or both.

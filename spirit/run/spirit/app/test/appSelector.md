@@ -2,7 +2,7 @@
 
 `spirit/run/spirit/app/appSelector.js` is the app selector (goal/G43.2), following `spirit/element/search/bundle.js`: a thin selector over the app list, `spirit/element/search/app.js`, which it loads itself. Its test is `./appSelector.js`, in a real browser on a scratch node.
 
-    spirit.elements.appSelector.create(container, options) -> root
+    spirit.element.spirit.app.appSelector.create(container, options) -> root
       root.value   the chosen app's key, '' while none is
       root.row     the chosen app, null while none is
       one bubbling `change` on a pick

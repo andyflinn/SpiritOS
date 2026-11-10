@@ -107,7 +107,8 @@ Module._load = function (request, parent, isMain) {
   if (/(^|\/)spirit\.js$/.test(request) && parent && parent.filename === FILE) return globalThis.spirit;
   if (/(^|\/)appServer\.js$/.test(request)) return appServerStub;
   // The node's own chokidar component (spirit/jobs/chokidar/), as deskClient.js requires it.
-  if (request === 'chokidar' || /(^|\/)chokidar\/index\.js$/.test(request)) return { watch: function () { const w = { on: function (ev, fn) { if (ev === 'all') watchAll = fn; return w; } }; return w; } };
+  // goal/G43.32: spirit.require hands node the run-root path made whole, so on Windows its separators are backslashes.
+  if (request === 'chokidar' || /(^|[\\/])chokidar[\\/]index\.js$/.test(request)) return { watch: function () { const w = { on: function (ev, fn) { if (ev === 'all') watchAll = fn; return w; } }; return w; } };
   return realLoad.apply(this, arguments);
 };
 // resubscribeMs 1 is read by nothing: deskClient.js has no such value. It subscribes again after QUIET_MS (10 s) of

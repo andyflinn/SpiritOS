@@ -79,10 +79,10 @@ function rdFrame() {
 // under the titlebar, and takes its id. As Desk's deskHeader (spirit/app/desk/element/desk/desk.js).
 function rdHeader() {
   var old = document.getElementById('rd-bars');
-  var els = window.spirit.element || {};
-  if (!old || !old.parentNode || !els.spirit.element.appHeader.appHeader) return;
+  var AH = ((window.spirit.element.spirit.element.appHeader || {}).appHeader);
+  if (!old || !old.parentNode || !AH) return;
   // Made in the old block's parent, then put in its place (the element shape, goal/G41.19).
-  var head = els.spirit.element.appHeader.appHeader.create(old.parentNode);
+  var head = AH.create(old.parentNode);
   old.parentNode.insertBefore(head, old);
   head.id = 'rd-bars';
   head.style.paddingBottom = '2px';

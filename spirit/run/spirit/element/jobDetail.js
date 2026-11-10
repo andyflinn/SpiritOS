@@ -4,7 +4,7 @@
 // from shell/jobsDetails/jobsDetails.js and working as it did, now a panel over Jobs (Q1: "a job row opens detail panel
 // overtop of jobs."). Its contract and its test: ./test/jobDetail.md and ./test/jobDetail.js.
 //
-//   spirit.element.jobDetail.create(host, { id, title, close }) -> { destroy() }
+//   spirit.element.spirit.element.jobDetail.create(host, { id, title, close }) -> { destroy() }
 //     id     the job it shows, and nothing else
 //     title  called with { icon, label } as the job's status changes (the layer's bar)
 //     close  called once the job is deleted: there is nobody left to show

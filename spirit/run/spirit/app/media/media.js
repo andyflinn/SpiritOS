@@ -5,7 +5,7 @@
 // files."). An image, a sound or a video, filling its box. It took
 // over what the old media viewer element did, which is gone (Q7). Its contract and its test: ./test/media.md and ./test/media.js.
 //
-//   spirit.elements.media.create(container, { path, title }) -> { destroy() }
+//   spirit.element.spirit.app.media.media.create(container, { path, title }) -> { destroy() }
 //     title({ file, icon }): told the file shown and its kind's icon, for the title bar of whoever mounts it (Andy: "the medias
 //     own icon or the media viewer's icon if no file is selcted yet").
 //

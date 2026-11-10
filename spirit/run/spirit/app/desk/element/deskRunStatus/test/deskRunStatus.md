@@ -6,7 +6,7 @@ item's dialog. Read from the module's code (goal/G41.11).
 
 ## API
 
-`window.spirit.elements.deskRunStatus(facts, run, esc)` answers HTML, or `''`.
+`window.spirit.required.spirit.app.desk.element.deskRunStatus.deskRunStatus(facts, run, esc)` answers HTML, or `''`.
 
 ## Requirements
 
@@ -17,7 +17,7 @@ item's dialog. Read from the module's code (goal/G41.11).
 - **Otherwise the ended outcome** (goal/G33.7): `verified green` in green; `red: N suites` in red, N from
   `verifyRed`, or, for an older row, the distinct first words (suites) of `verifyFailures`; singular for one.
 - No facts, or neither green nor red: `''`.
-- **Its place** (goal/G43.30, the box: "shell/shared/js/deskRunStatus.js moves to spirit/app/desk/element/deskRunStatus/ ... Desk and its detail load it from there"): `spirit/app/desk/element/deskRunStatus/deskRunStatus.js`. Required from there on a real page, it stands on `spirit.elements.deskRunStatus` and not on `spirit.element` (goal/G43.5).
+- **Its place** (goal/G43.30, the box: "shell/shared/js/deskRunStatus.js moves to spirit/app/desk/element/deskRunStatus/ ... Desk and its detail load it from there"): `spirit/app/desk/element/deskRunStatus/deskRunStatus.js`. Required from there on a real page, it stands at `spirit.required.spirit.app.desk.element.deskRunStatus.deskRunStatus` and not on `spirit.element` (goal/G43.5; goal/G43.32, Andy: "helpers with no create are no fucking elements. they live in require.").
 
 ## What its test must try to break
 
