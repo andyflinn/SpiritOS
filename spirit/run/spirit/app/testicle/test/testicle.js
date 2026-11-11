@@ -44,6 +44,9 @@ const PLANT = {
   'spirit/zzTesticle/epsilon.js': '\'use strict\';\n// epsilon, never touched\n',
   'spirit/zzTesticle/test/epsilon.js': '\'use strict\';\n// the test of epsilon, never touched\n',
   'spirit/zzTesticle/notes.md': '# no script\n',
+  // zeta and its test are never changed: asked by testicle.file.get alone (goal/G47.1, the verbs cycle).
+  'spirit/zzTesticle/zeta.js': '\'use strict\';\n// zeta, asked for, never changed\n',
+  'spirit/zzTesticle/test/zeta.js': '\'use strict\';\n// the test of zeta\n',
 };
 // The general test changed in the scratch copy: its entries name every file of its reach.
 const GENERAL = 'spirit/test/spirit-sibling-titleRules.js';
@@ -207,6 +210,56 @@ test.startTest('testicle/testicle.js: testicle\'s server keeps file and suite in
     put(Z + 'test/beta.js', '\'use strict\';\n// the new test of beta\n');
     const b1 = await after();
     ok(!!suiteRow(b1, Z + 'beta.js', Z + 'test/beta.js') && !!fileRow(b1, Z + 'beta.js'), 'a suite added makes its row, and its file\'s row', 'rows of beta.js: ' + short(suiteRows(b1, Z + 'beta.js')));
+
+    // goal/G47.1, the verbs cycle: testicle.file.get. The box: "If the argument (a filename, scoped to run://) is not a
+    // production script, it returns the error \"not a production script\"", "If the file does not exist, it returns the
+    // error \"no such file\"", "If the file does not have its file and suite rows, they are created automatically", "It
+    // creates them with the same code the server uses when it discovers a file change and no record exists: the suites are
+    // flagged \"needs testing\"", "The server then returns the file row." Its argument is the file row's key, name.
+    test.subHeading('the box: "testicle.file.get"');
+    const failed = function (r, words) { return !!r.body && r.body.ok === false && new RegExp(words).test(String(r.body.error || '')); };
+    const md = await call(N.base, 'testicle.file.get', { name: Z + 'notes.md' });
+    ok(failed(md, 'not a production script'), 'file.get of a file that is no script answers the error "not a production script"', 'file.get notes.md: ' + md.status + ' ' + short(md.text));
+    const asTest = await call(N.base, 'testicle.file.get', { name: Z + 'test/zeta.js' });
+    ok(failed(asTest, 'not a production script'), 'file.get of a script in a test folder answers the error "not a production script"', 'file.get test/zeta.js: ' + asTest.status + ' ' + short(asTest.text));
+    const nowhere = await call(N.base, 'testicle.file.get', { name: Z + 'nowhere.js' });
+    ok(failed(nowhere, 'no such file'), 'file.get of a production script that is not there answers the error "no such file"', 'file.get nowhere.js: ' + nowhere.status + ' ' + short(nowhere.text));
+    ok(!fileRow(tables(DB), Z + 'zeta.js'), 'the world: zeta.js, never changed, has no row before it is asked for', 'zeta.js has a row already');
+    const tz = Date.now();
+    const zeta = await call(N.base, 'testicle.file.get', { name: Z + 'zeta.js' });
+    const zt = tables(DB);
+    const zrow = fileRow(zt, Z + 'zeta.js');
+    ok(zeta.status === 200 && !!zrow, 'file.get of a production script with no rows makes its file row', 'file.get zeta.js: ' + zeta.status + ' ' + short(zeta.text) + '; its row ' + short(zrow));
+    ok(!!zrow && !!zeta.body && zeta.body.name === zrow.name && zeta.body.hash === zrow.hash && Number(zeta.body.changed) === Number(zrow.changed) && no(zrow.deleted) && Number(zrow.changed) >= tz - 1000,
+      'and answers that file row', 'answered ' + short(zeta.body) + ', the row ' + short(zrow));
+    const wantZeta = concerning(s.run, Z + 'zeta.js');
+    ok(wantZeta.indexOf(Z + 'test/zeta.js') !== -1 && JSON.stringify(names(suiteRows(zt, Z + 'zeta.js'))) === JSON.stringify(wantZeta), 'it makes a suite row for every suite that concerns the file', 'rows ' + short(names(suiteRows(zt, Z + 'zeta.js'))) + ', wanted ' + short(wantZeta));
+    const zunflagged = suiteRows(zt, Z + 'zeta.js').filter(function (r) { return !yes(r.test); });
+    ok(suiteRows(zt, Z + 'zeta.js').length > 0 && !zunflagged.length, 'every suite row it makes is flagged needs testing', 'not flagged: ' + short(names(zunflagged)));
+    const known = await call(N.base, 'testicle.file.get', { name: Z + 'gamma.js' });
+    const grow = fileRow(tables(DB), Z + 'gamma.js');
+    ok(known.status === 200 && !!grow && !!known.body && known.body.name === grow.name && known.body.hash === grow.hash, 'file.get of a file with rows answers its row as it stands', 'answered ' + short(known.body) + ', the row ' + short(grow));
+
+    // goal/G47.1, the verbs cycle: testicle.suite.search. The box: "A standard table search response", "The file row owns
+    // its suite rows: the suite table's key is file and suite. So suite.search takes the production file and answers that
+    // file's suite rows only, each suite once, with its filename and its status; the words narrow among them", "the suite
+    // files, each with test as the final folder it is in", "The suite search returns both: the filename AND its status
+    // \"needs running\"". The standard answer: {items: [{key, label}], more}, each label the row as JSON.
+    test.subHeading('the box: "testicle.suite.search"');
+    const items = function (r) { return ((r.body && r.body.items) || []).map(function (i) { return { key: i.key, row: parsed(i.label) || {} }; }); };
+    const suiteOf = function (i) { return String(i.row.suite || i.key || ''); };
+    const all = await call(N.base, 'testicle.suite.search', { file: Z + 'zeta.js', text: '' });
+    const got = items(all);
+    ok(all.status === 200 && !!all.body && Array.isArray(all.body.items) && typeof all.body.more === 'boolean', 'suite.search answers a standard table search: items and more', 'suite.search: ' + all.status + ' ' + short(all.text));
+    const gotNames = got.map(suiteOf).sort();
+    ok(JSON.stringify(gotNames) === JSON.stringify(wantZeta), 'with no words it answers the file\'s suites, each once, and no other', 'answered ' + short(gotNames) + ', wanted ' + short(wantZeta));
+    ok(got.length > 0 && got.every(function (i) { return i.row.file === Z + 'zeta.js'; }), 'every row it answers is the given file\'s', 'files: ' + short(got.map(function (i) { return i.row.file; })));
+    ok(got.length > 0 && got.every(function (i) { return path.posix.basename(path.posix.dirname(suiteOf(i))) === 'test'; }), 'every suite it answers is a file whose final folder is test', 'suites: ' + short(gotNames));
+    ok(got.length > 0 && got.every(function (i) { return yes(i.row.test) || i.row.status === 'needs running'; }), 'every suite it answers carries its status: needs running', 'rows: ' + short(got.map(function (i) { return i.row; }).slice(0, 3)));
+    const narrow = items(await call(N.base, 'testicle.suite.search', { file: Z + 'zeta.js', text: 'titleRules' })).map(suiteOf);
+    ok(narrow.indexOf(GENERAL) !== -1 && narrow.indexOf(Z + 'test/zeta.js') === -1, 'the words narrow among the file\'s suites', 'searched titleRules: ' + short(narrow));
+    const other = items(await call(N.base, 'testicle.suite.search', { file: Z + 'gamma.js', text: '' }));
+    ok(other.length > 0 && other.every(function (i) { return i.row.file === Z + 'gamma.js'; }) && other.map(suiteOf).indexOf(Z + 'test/zeta.js') === -1, 'another file\'s search answers that file\'s rows, none of the first', 'gamma.js: ' + short(other.map(function (i) { return i.row.file + ' ' + suiteOf(i); }).slice(0, 5)));
 
     // Before the general test changes: that one judges every product file, the untouched among them.
     test.subHeading('the box: "A product file or a suite that has not changed has no row"');

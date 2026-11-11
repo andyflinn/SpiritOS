@@ -95,10 +95,11 @@ test.startTest('testicle/element.js: testicle\'s first-cut face, a workBench wit
   ok(id.intrinsic === true, 'it is intrinsic', 'identity.intrinsic: ' + short(id.intrinsic));
   ok(!!own && !!own.shell && own.shell.mount === true, 'it has a face: shell.mount true', 'shell: ' + short(own && own.shell));
   // goal/G47.1, the server cycle: "The server mounts beside the face (testicle.json: node.mount true)", "The testicle
-  // server will serve one first verb, \"busy\"". The server's own checks are ./testicle.js.
+  // server will serve one first verb, \"busy\"", and the verbs cycle: testicle.file.get and testicle.suite.search, each
+  // with its json description (Andy's rule 6). The server's own checks are ./testicle.js.
   ok(!!own && !!own.node && own.node.mount === true, 'a server beside the face: node.mount true', 'node: ' + short(own && own.node));
   const held = fs.existsSync(APP) ? fs.readdirSync(APP).filter(function (f) { return f !== 'test'; }).sort() : [];
-  ok(JSON.stringify(held) === JSON.stringify(['api.js', 'busy.json', 'data.js', 'element.js', 'testicle.js', 'testicle.json']), 'its folder holds its manifest, its face, its server and the one verb\'s api.js, data.js and busy.json, and its test/ folder, nothing else', 'its folder holds ' + short(held));
+  ok(JSON.stringify(held) === JSON.stringify(['api.js', 'busy.json', 'data.js', 'element.js', 'file.get.json', 'suite.search.json', 'testicle.js', 'testicle.json']), 'its folder holds its manifest, its face, its server, its api.js and data.js, and a json description of each verb, busy, file.get and suite.search, and its test/ folder, nothing else', 'its folder holds ' + short(held));
   ok(!!own && !!own.mount && own.mount['element.js'] === true, 'its mount names element.js', 'mount: ' + short(own && own.mount));
   // The box: "spirit/app/test/ stays the app branch's test folder".
   ok(fs.existsSync(path.join(RUN, 'spirit', 'app', 'test')) && !fs.existsSync(path.join(RUN, 'spirit', 'app', 'test', 'test.json')), 'spirit/app/test/ stays the app branch\'s test folder, no app', 'spirit/app/test/ holds a test.json, or is gone');
