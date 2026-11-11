@@ -9,7 +9,9 @@ The box, in Andy's words where he gave them:
 
 - *"The server mounts beside the face (testicle.json: node.mount true); testicle.db sits in testicle's state folder"*:
   `node.mount` true, `mount` naming `testicle.js` beside `element.js`; `spirit/state/testicle/data/testicle.db`.
-- *"The server has no verb this cycle: it syncs by itself and nobody asks it"*: the node serves no `testicle.*` verb.
+- *"The testicle server will serve one first verb, "busy": it returns true if it is doing any work, false if it is
+  idle."*: the node lists `testicle.busy`; idle it answers false; asked over and over in the second after a general
+  test changes, it answers true at least once; once that work is done, false again.
 - *"A product file or a suite that has not changed has no row in the database yet: nothing is read at start."*
 - *"on any change of a product file it makes sure that file has its row, and a suite row for every suite that concerns
   it"*. A `file` row: `name` (the path in run://), `hash`, `deleted` false, `changed` a numeric UTC timestamp. A `suite`
@@ -29,4 +31,4 @@ The box, in Andy's words where he gave them:
 - A row made at start, or for a file never changed; a row for a file that is no product script.
 - A missing suite, or one too many, for a file; a general test's change not reaching every file it judges.
 - A hash that does not move with the file; a removal left unmarked.
-- Anything later than one second.
+- Anything later than one second; a busy that never says true while it works, or stays true once idle.

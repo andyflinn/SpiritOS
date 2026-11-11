@@ -136,13 +136,17 @@ test.startTest('testicle/testicle.js: testicle\'s server keeps file and suite in
     ok(!!(await until(function () { return Promise.resolve(fs.existsSync(DB) && !tables(DB).error); }, 30000)), 'testicle.db is made in its state folder, spirit/state/testicle/data/, with its tables file and suite', 'no readable testicle.db at ' + DB + ': ' + short(fs.existsSync(DB) ? tables(DB).error : 'no file'));
     if (!fs.existsSync(DB)) return;
 
-    test.subHeading('the box: "The server has no verb this cycle"');
-    const api = await call(N.base, 'api');
-    const verbs = JSON.stringify(api.body || {}).match(/"testicle\.[^"]*"/g) || [];
-    ok(api.status === 200 && !verbs.length, 'the node serves no testicle verb', 'testicle verbs served: ' + short(verbs));
+    // goal/G47.1, the box: "The testicle server will serve one first verb, \"busy\": it returns true if it is doing any
+    // work, false if it is idle."
+    test.subHeading('the box: "one first verb, busy"');
+    const api = await call(N.base, 'api', { family: 'testicle' });
+    const verbs = Array.from(new Set(JSON.stringify(api.body || {}).match(/"(testicle\.)?[a-zA-Z.]+"\s*:/g) || [])).join(' ');
+    ok(api.status === 200 && /"(testicle\.)?busy"/.test(verbs), 'the node lists the verb testicle.busy', 'testicle\'s api: ' + short(api.body || api.text));
+    await sleep(1000);
+    const idle = await call(N.base, 'testicle.busy', {});
+    ok(idle.status === 200 && (idle.body === false || (idle.body && idle.body.busy === false)), 'with nothing changing, busy answers false', 'busy, idle: ' + idle.status + ' ' + short(idle.text));
 
     test.subHeading('the box: "nothing is read at start"');
-    await sleep(1000);
     const start = tables(DB);
     ok(!start.error && start.file.length === 0, 'at start the file table holds no row', 'rows at start: ' + short(start.error || start.file.slice(0, 5)));
     ok(!start.error && start.suite.length === 0, 'at start the suite table holds no row', 'rows at start: ' + short(start.error || start.suite.slice(0, 5)));
@@ -206,7 +210,15 @@ test.startTest('testicle/testicle.js: testicle\'s server keeps file and suite in
     const reach = judgedBy(s.run, GENERAL);
     ok(reach.length > 100, 'the world: the changed general test judges every product file', 'it judges ' + reach.length);
     append(GENERAL, '// a general test changed\n');
-    const r1 = await after();
+    // While it does that work, busy answers true; asked over and over in that second, it says so at least once.
+    const seen = [];
+    const stopAt = Date.now() + 1000;
+    while (Date.now() < stopAt) { const b = await call(N.base, 'testicle.busy', {}); seen.push(b.body === true || (b.body && b.body.busy === true)); }
+    const r1 = tables(DB);
+    ok(seen.indexOf(true) !== -1, 'while it works on a changed general test, busy answers true', 'busy asked ' + seen.length + ' times in that second, never true');
+    await sleep(1000);
+    const done = await call(N.base, 'testicle.busy', {});
+    ok(done.status === 200 && (done.body === false || (done.body && done.body.busy === false)), 'once that work is done, busy answers false again', 'busy after: ' + done.status + ' ' + short(done.text));
     const missing = reach.filter(function (f) { return !suiteRow(r1, f, GENERAL); });
     ok(reach.length > 0 && !missing.length, 'one second after a general test changes, every file it judges has its suite row for it', missing.length + ' of ' + reach.length + ' have none, the first: ' + short(missing.slice(0, 5)));
     const unfiled = reach.filter(function (f) { return !fileRow(r1, f); });
