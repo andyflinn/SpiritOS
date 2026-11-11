@@ -93,9 +93,11 @@ const T = {
   reds: db.prepare('SELECT * FROM test WHERE current = 1 AND verified = 0 ORDER BY severity DESC, flipped DESC'),
   row: db.prepare('SELECT * FROM test WHERE script = ? AND suite = ? AND test = ? AND flipped = ?'),
 };
-// A test row as the verbs and the stream carry it: its key script|suite|test, its booleans booleans.
+// A test row as the verbs and the stream carry it: its key its full key, script|suite|test|flipped, its booleans booleans
+// (goal/G47.1, the box: "the page keeps test rows by their full key, script|suite|test|flipped, and shows a test's current
+// row"), so a flipped test's replaced row and its current row are two rows wherever they are kept.
 function testServed(r) {
-  return { key: r.script + '|' + r.suite + '|' + r.test, script: r.script, suite: r.suite, test: r.test, flipped: Number(r.flipped), current: !!r.current,
+  return { key: r.script + '|' + r.suite + '|' + r.test + '|' + Number(r.flipped), script: r.script, suite: r.suite, test: r.test, flipped: Number(r.flipped), current: !!r.current,
     verified: !!r.verified, tested: Number(r.tested), judged: r.judged, severity: Number(r.severity) };
 }
 
@@ -298,6 +300,9 @@ appServer.serve({
           else { T.retire.run(script, suite, name, Number(was.flipped)); T.add.run(script, suite, name, now, a.verified ? 1 : 0, now, judged, Math.max(severity, Number(was.severity) || 0)); }
           db.exec('COMMIT');
         } catch (e) { db.exec('ROLLBACK'); throw e; }
+        // On a flip the replaced row, current false now, is published too, before the new current row (goal/G47.1, the
+        // box: "on a flip, the replaced row turning current false is published too, beside the new current row").
+        if (was && Number(was.flipped) !== flipped) appServer.publish({ testicle: { table: 'test', row: testServed(T.row.get(script, suite, name, Number(was.flipped))) } });
         const out = testServed(T.row.get(script, suite, name, flipped));
         appServer.publish({ testicle: { table: 'test', row: out } });
         return out;

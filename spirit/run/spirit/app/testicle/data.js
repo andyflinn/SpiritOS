@@ -8,8 +8,9 @@
 // spirit.data.testicle.data (below), never a branch by name.
 //   script         name -> the script row { name, hash, deleted, changed }
 //   suite          script|suite -> the suite row { key, script, suite, test, status, deleted, outcome, changed }
-//   test           script|suite|test -> a test's current row { key, script, suite, test, flipped, current, verified, tested,
-//                  judged, severity }
+//   test           script|suite|test|flipped -> each test row the server published, the replaced one and the
+//                  current one of a flipped test each under its own key (goal/G47.1, the box) { key, script, suite,
+//                  test, flipped, current, verified, tested, judged, severity }
 // goal/G47.1, the UI cycle, the box: "The UI must listen to changes on all tables it interacts with, and the server, of
 // course, publishes changes." The server publishes each row it writes, its job's app { testicle: { table, row } }
 // (testicle.js), as the agent's tables publish theirs: the row is merged into its table's branch, so a list that is a view
