@@ -14,8 +14,8 @@ const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 
-function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
+function put(file, text) { fs.mkdirSync(path.dirname(file), { recursive: true }); fs.writeFileSync(file, text); }
 // A file's code, comments blanked (line numbers kept); null when the file is not there.
 function code(file) {
   if (!fs.existsSync(file)) return null;
@@ -31,69 +31,47 @@ function hits(file, re) {
   c.split('\n').forEach(function (l, i) { if (re.test(l)) out.push(path.basename(file) + ':' + (i + 1) + ' ' + l.trim().slice(0, 100)); });
   return out;
 }
+
+// the traffic log's admitted mark: trafficLog
+const f = path.join(RUN, 'spirit', 'trafficLog.js');
 // The world: the file is there and its code, comments left out, still holds a line that is surely code.
-function world(file, anchor) {
-  const c = code(file);
-  ok(c !== null && anchor.test(c), 'the world: the file is read, and its code, comments left out, still holds a line of code',
-    c === null ? path.relative(RUN, file) + ' is not there: nothing judged' : path.relative(RUN, file) + '\'s code holds no ' + anchor + ': the comment stripper ate it, nothing judged');
-  return c !== null;
-}
+test.run('the world: the file is read, and its code, comments left out, still holds a line of code', 0.2, function () {
+  const c = code(f);
+  return (c !== null && /module\.exports/.test(c)) ||
+    (c === null ? path.relative(RUN, f) + ' is not there: nothing judged' : path.relative(RUN, f) + '\'s code holds no /module\\.exports/: the comment stripper ate it, nothing judged');
+}, 1000);
+test.run('trafficLog.js\'s code names no admitted mark', 0.2, function () {
+  const h = hits(f, /admit/i);
+  if (h === null) return 'trafficLog.js is not there: nothing judged';
+  return !h.length || 'trafficLog.js\'s code still marks or reads admitted: ' + short(h);
+}, 1000);
 
-test.startTest('trafficLog.js: trafficLog.js names no admitted mark, and reads no old traffic.json');
+// ── THE NO RESCUE PART ──
+// THE TRAFFIC LOG READS NO OLD traffic.json (goal/G43.23, item 7; spec: ./trafficLog.md, its section). The box: "old-data rescue
+// still runs (G41.30): relayKeys importOld, shellMove, the old traffic.json, routingTable.json, invites.json, the cycle-3
+// relay.db owner column." This section holds the traffic log's part: this tree's trafficLog.js opened in-process on a scratch
+// root under /tmp, an old spirit/state/traffic.json planted there.
+// noRescue: on a scratch root, the traffic log reads no old traffic.json (goal/G43.23, item 7)
+// The box: "the old traffic.json"
+const OLD = 'rescue-traffic-hash-' + process.pid;
+const NEW = 'world-traffic-hash-' + process.pid;
+const W = { root: null, log: null, after: null };
+test.run('the log does not read the planted spirit/state/traffic.json', 0.2, function () {
+  W.root = fs.mkdtempSync(path.join(os.tmpdir(), 'nr-traffic-'));
+  put(path.join(W.root, 'spirit', 'state', 'traffic.json'), JSON.stringify({ entries: [{ at: '2026-01-01T00:00:00.000Z', dir: 'in', kind: 'message', peer: 'old', relay: '', hash: OLD, outcome: 'delivered' }] }));
+  W.log = require(f).createTrafficLog({ rootDir: W.root });
+  const before = W.log.read();
+  return !before.some(function (r) { return r && r.hash === OLD; }) || 'the log reads the old traffic.json: its row ' + OLD + ' is in what the log answers';
+}, 1000);
+test.run('the world: a row noted on this scratch log is read back', 0.2, function () {
+  if (!W.log) return 'no scratch log: the world failed';
+  W.log.note({ dir: 'in', kind: 'message', peer: 'world', hash: NEW, outcome: 'delivered' });
+  W.after = W.log.read();
+  return W.after.some(function (r) { return r && r.hash === NEW; }) || 'a row noted on this scratch log is not read back: the log read nothing, nothing judged (' + short(W.after) + ')';
+}, 1000);
+test.run('with node.db written, the planted traffic.json is still not read', 0.2, function () {
+  if (!W.after) return 'no row noted: the world failed';
+  return !W.after.some(function (r) { return r && r.hash === OLD; }) || 'with node.db written, the log reads the old traffic.json: its row ' + OLD + ' is in what the log answers';
+}, 1000);
 
-(async function () {
-  test.subHeading('the traffic log\'s admitted mark: trafficLog');
-  const f = path.join(RUN, 'spirit', 'trafficLog.js');
-  if (world(f, /module\.exports/)) {
-    const h = hits(f, /admit/i);
-    ok(!h.length, 'trafficLog.js\'s code names no admitted mark', 'trafficLog.js\'s code still marks or reads admitted: ' + short(h));
-  }
-}()).then(null, function (e) { test.fail('the test threw ' + (e && e.stack || e)); })
-  // The section folded in from a file of its own, no rescue, runs after the checks above.
-  .then(function () { return noRescuePart().then(null, function (e) { test.fail('the noRescue part threw ' + (e && e.stack || e)); }); })
-  .then(function () { test.reportSuccessFailureCount(); process.exit(0); });
-
-async function noRescuePart() {
-  // ── THE NO RESCUE PART ──
-  // THE TRAFFIC LOG READS NO OLD traffic.json (goal/G43.23, item 7; spec: ./trafficLog.md, its section). The box: "old-data rescue
-  // still runs (G41.30): relayKeys importOld, shellMove, the old traffic.json, routingTable.json, invites.json, the cycle-3
-  // relay.db owner column." This section holds the traffic log's part: this tree's trafficLog.js opened in-process on a scratch
-  // root under /tmp, an old spirit/state/traffic.json planted there.
-
-  const fs = require('fs');
-  const os = require('os');
-  const path = require('path');
-  const RUN = path.resolve(__dirname, '..', '..');
-  const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-
-  function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
-  function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
-  function put(file, text) { fs.mkdirSync(path.dirname(file), { recursive: true }); fs.writeFileSync(file, text); }
-
-  test.subHeading('noRescue: on a scratch root, the traffic log reads no old traffic.json (goal/G43.23, item 7)');
-
-  function trafficChecks() {
-    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'nr-traffic-'));
-    try {
-      test.subHeading('The box: "the old traffic.json"');
-      const OLD = 'rescue-traffic-hash-' + process.pid;
-      const NEW = 'world-traffic-hash-' + process.pid;
-      put(path.join(root, 'spirit', 'state', 'traffic.json'), JSON.stringify({ entries: [{ at: '2026-01-01T00:00:00.000Z', dir: 'in', kind: 'message', peer: 'old', relay: '', hash: OLD, outcome: 'delivered' }] }));
-      const trafficLog = require(path.join(RUN, 'spirit', 'trafficLog.js'));
-      const log = trafficLog.createTrafficLog({ rootDir: root });
-      const before = log.read();
-      ok(!before.some(function (r) { return r && r.hash === OLD; }), 'the log does not read the planted spirit/state/traffic.json',
-        'the log reads the old traffic.json: its row ' + OLD + ' is in what the log answers');
-      log.note({ dir: 'in', kind: 'message', peer: 'world', hash: NEW, outcome: 'delivered' });
-      const after = log.read();
-      ok(after.some(function (r) { return r && r.hash === NEW; }), 'the world: a row noted on this scratch log is read back',
-        'a row noted on this scratch log is not read back: the log read nothing, nothing judged (' + short(after) + ')');
-      ok(!after.some(function (r) { return r && r.hash === OLD; }), 'with node.db written, the planted traffic.json is still not read',
-        'with node.db written, the log reads the old traffic.json: its row ' + OLD + ' is in what the log answers');
-    } finally {
-      try { fs.rmSync(root, { recursive: true, force: true }); } catch (e) { /* scratch */ }
-    }
-  }
-
-  trafficChecks();
-}
+test.after(function () { if (W.root) { try { fs.rmSync(W.root, { recursive: true, force: true }); } catch (e) { /* scratch */ } } });

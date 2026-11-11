@@ -83,7 +83,6 @@ function garbage(rel) {
   return owner ? '' : 'named after no module beside the folder: a fixture is <module>-<what>.<ext>';
 }
 
-test.startTest('spirit-sibling-noFuckingGarbage.js: every test in run:/ matches a production file, no garbage in a test folder (goal/G43.27)');
 const tracked = function () {
   return execFileSync('git', ['ls-files', '--', '.'], { cwd: RUN, encoding: 'utf8' }).split('\n').filter(Boolean)
     .filter(function (f) { return inTestFolder(f) && exists(f); });
@@ -91,28 +90,36 @@ const tracked = function () {
 const handed = arg ? path.relative(RUN, path.resolve(fs.existsSync(path.resolve(arg)) ? arg : path.join(RUN, arg))).split(path.sep).join('/') : '';
 const WHOLE = !handed || handed === 'spirit/spirit.js';
 const MODULE = !WHOLE && /\.js$/.test(handed) && !inTestFolder(handed) && exists(handed);
-let files = [];
-if (WHOLE) files = tracked();
-else if (MODULE) {
-  const own = handed.replace(/([^/]+)\.js$/, 'test/$1');
-  files = tracked().filter(function (f) { return f === own + '.js' || f === own + '.md' || f.indexOf(own + '-') === 0; });
-} else files = [handed];
-test.subHeading('every file in a test folder');
-const judged = files.filter(inTestFolder);
-test.comment(judged.length + ' files in test folders read');
-if (WHOLE) ok(judged.length > 100, 'the scan read every test folder, more than a hundred files', 'the scan read only ' + judged.length + ' files: it judged too little to say');
-else if (MODULE) ok(judged.length > 0, 'the module handed has test files of its own, and they are read', handed + ' has no test of its own: nothing judged');
-else ok(judged.length === 1, 'the file handed is in a test folder', arg + ' is neither a module nor a tracked file in a test folder: nothing judged');
-let broken = 0;
-judged.forEach(function (rel) {
-  const why = garbage(rel);
-  if (!why) return;
-  broken++;
-  test.subHeading(rel);
-  test.fail(rel + ': garbage, ' + why + ' (' + RULE + ')');
-});
-if (!broken && judged.length) ok(true, 'every file in a test folder matches a production file: none is garbage', '');
-test.reportSuccessFailureCount();
-process.exit(0);
-
-function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
+let judged = null;
+function read() {
+  let files = [];
+  if (WHOLE) files = tracked();
+  else if (MODULE) {
+    const own = handed.replace(/([^/]+)\.js$/, 'test/$1');
+    files = tracked().filter(function (f) { return f === own + '.js' || f === own + '.md' || f.indexOf(own + '-') === 0; });
+  } else files = [handed];
+  judged = files.filter(inTestFolder);
+  test.comment(judged.length + ' files in test folders read');
+  return judged;
+}
+// every file in a test folder
+// The world, as the file handed says what is judged: the whole tree, one module's test files, or one file.
+if (WHOLE) {
+  test.run('the scan read every test folder, more than a hundred files', 0.2, function () {
+    return read().length > 100 || 'the scan read only ' + judged.length + ' files: it judged too little to say';
+  }, 1000);
+} else if (MODULE) {
+  test.run('the module handed has test files of its own, and they are read', 0.2, function () {
+    return read().length > 0 || handed + ' has no test of its own: nothing judged';
+  }, 1000);
+} else {
+  test.run('the file handed is in a test folder', 0.2, function () {
+    return read().length === 1 || arg + ' is neither a module nor a tracked file in a test folder: nothing judged';
+  }, 1000);
+}
+// Each file that is garbage named in the answer, by its path and why.
+test.run('every file in a test folder matches a production file: none is garbage', 0.4, function () {
+  if (!judged || !judged.length) return 'no file in a test folder read: nothing judged';
+  const bad = judged.map(function (rel) { const why = garbage(rel); return why ? rel + ': garbage, ' + why + ' (' + RULE + ')' : ''; }).filter(Boolean);
+  return !bad.length || bad.join('; ');
+}, 1000);

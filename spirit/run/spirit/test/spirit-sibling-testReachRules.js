@@ -83,29 +83,34 @@ function reaches(rel) {
   return out;
 }
 
-test.startTest('spirit-sibling-testReachRules.js: no production module loads a test file (goal/G41.30)');
-let files = [];
-if (arg) {
-  const rel = path.relative(RUN, path.resolve(fs.existsSync(path.resolve(arg)) ? arg : path.join(RUN, arg))).split(path.sep).join('/');
-  files = [rel];
-} else {
-  files = execFileSync('git', ['ls-files', '--', '.'], { cwd: RUN, encoding: 'utf8' }).split('\n').filter(Boolean)
-    .filter(function (f) { return production(f) && fs.existsSync(path.join(RUN, f)); });
+let judged = null;
+function read() {
+  let files = [];
+  if (arg) {
+    const rel = path.relative(RUN, path.resolve(fs.existsSync(path.resolve(arg)) ? arg : path.join(RUN, arg))).split(path.sep).join('/');
+    files = [rel];
+  } else {
+    files = execFileSync('git', ['ls-files', '--', '.'], { cwd: RUN, encoding: 'utf8' }).split('\n').filter(Boolean)
+      .filter(function (f) { return production(f) && fs.existsSync(path.join(RUN, f)); });
+  }
+  judged = files.filter(function (f) { return !excepted(f); });
+  test.comment(judged.length + ' production files read; the exception: DEBUG.js (spirit/DEBUG.js, spirit/DEBUG/)');
+  return judged;
 }
-const judged = files.filter(function (f) { return !excepted(f); });
-test.subHeading('every production module, its code read');
-test.comment(judged.length + ' production files read; the exception: DEBUG.js (spirit/DEBUG.js, spirit/DEBUG/)');
-if (!arg) ok(judged.length > 100, 'the scan read every production module, more than a hundred files', 'the scan read only ' + judged.length + ' files: it judged too little to say');
-let broken = 0;
-judged.forEach(function (rel) {
-  reaches(rel).forEach(function (r) {
-    broken++;
-    test.subHeading(rel);
-    test.fail(rel + ':' + r.line + ' ' + r.call + '() loads ' + r.path + ', a test file (the box: "no production module loads or requires any test file, with the exception of DEBUG.js.")');
+// every production module, its code read
+if (!arg) {
+  test.run('the scan read every production module, more than a hundred files', 0.2, function () {
+    return read().length > 100 || 'the scan read only ' + judged.length + ' files: it judged too little to say';
+  }, 1000);
+}
+// Each call that breaks it named in the answer, by its file and line.
+test.run('no production module loads or requires a test file', 0.4, function () {
+  if (!judged) read();
+  const bad = [];
+  judged.forEach(function (rel) {
+    reaches(rel).forEach(function (r) {
+      bad.push(rel + ':' + r.line + ' ' + r.call + '() loads ' + r.path + ', a test file (the box: "no production module loads or requires any test file, with the exception of DEBUG.js.")');
+    });
   });
-});
-if (!broken) ok(true, 'no production module loads or requires a test file', '');
-test.reportSuccessFailureCount();
-process.exit(0);
-
-function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
+  return !bad.length || bad.join('; ');
+}, 1000);

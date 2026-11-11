@@ -12,7 +12,6 @@ const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 
-function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 // A file's code, comments blanked (line numbers kept); null when the file is not there.
 function code(file) {
@@ -29,22 +28,17 @@ function hits(file, re) {
   c.split('\n').forEach(function (l, i) { if (re.test(l)) out.push(path.basename(file) + ':' + (i + 1) + ' ' + l.trim().slice(0, 100)); });
   return out;
 }
+
+// the traffic log's admitted mark: peerPost
+const f = path.join(RUN, 'spirit', 'peerPost.js');
 // The world: the file is there and its code, comments left out, still holds a line that is surely code.
-function world(file, anchor) {
-  const c = code(file);
-  ok(c !== null && anchor.test(c), 'the world: the file is read, and its code, comments left out, still holds a line of code',
-    c === null ? path.relative(RUN, file) + ' is not there: nothing judged' : path.relative(RUN, file) + '\'s code holds no ' + anchor + ': the comment stripper ate it, nothing judged');
-  return c !== null;
-}
-
-test.startTest('peerPost.js: peerPost.js names no admitted mark');
-
-(async function () {
-  test.subHeading('the traffic log\'s admitted mark: peerPost');
-  const f = path.join(RUN, 'spirit', 'peerPost.js');
-  if (world(f, /module\.exports/)) {
-    const h = hits(f, /admit/i);
-    ok(!h.length, 'peerPost.js\'s code names no admitted mark', 'peerPost.js\'s code still marks or reads admitted: ' + short(h));
-  }
-}()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
-  function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });
+test.run('the world: the file is read, and its code, comments left out, still holds a line of code', 0.2, function () {
+  const c = code(f);
+  return (c !== null && /module\.exports/.test(c)) ||
+    (c === null ? path.relative(RUN, f) + ' is not there: nothing judged' : path.relative(RUN, f) + '\'s code holds no /module\\.exports/: the comment stripper ate it, nothing judged');
+}, 1000);
+test.run('peerPost.js\'s code names no admitted mark', 0.2, function () {
+  const h = hits(f, /admit/i);
+  if (h === null) return 'peerPost.js is not there: nothing judged';
+  return !h.length || 'peerPost.js\'s code still marks or reads admitted: ' + short(h);
+}, 1000);

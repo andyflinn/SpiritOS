@@ -58,22 +58,24 @@ function picked(file) {
   }
   return out;
 }
+// What breaks the rule in one module, or '' when every search it makes takes the row whole.
 function judge(rel, file) {
   const lines = picked(file);
-  if (!lines.length) test.check('it hands every search the row whole');
-  else test.fail(rel + ': it hands probabilityStringObjectMatch fields it picks, at line' + (lines.length > 1 ? 's ' : ' ') + lines.join(', ') + ', in place of the row as its get serves it');
+  return !lines.length ? '' : rel + ': it hands probabilityStringObjectMatch fields it picks, at line' + (lines.length > 1 ? 's ' : ' ') + lines.join(', ') + ', in place of the row as its get serves it';
 }
 
-test.startTest('spirit-sibling-searchRules: ' + (full ? path.relative(REPO, full).split(path.sep).join('/') : arg || 'every module'));
-
-if (arg && !full) test.fail('no module to judge: ' + JSON.stringify(arg));
-else if (full) {
-  test.subHeading(path.relative(RUN, full).split(path.sep).join('/') + ': its searches match the whole row');
-  judge(path.relative(RUN, full).split(path.sep).join('/'), full);
-} else {
-  const reach = require(path.join(RUN, 'spirit', 'test', 'testModule.js')).testsFor('').filter(function (t) { return t.test === 'spirit/test/spirit-sibling-searchRules.js' && t.file; }).map(function (t) { return t.file; });
+// The modules it judges: the one handed, or every module testModule.js gives it.
+let reach = null;
+test.run('the world: there is a module to judge', 0.2, function () {
+  if (arg && !full) return 'no module to judge: ' + JSON.stringify(arg);
+  if (full) { reach = [path.relative(RUN, full).split(path.sep).join('/')]; return true; }
+  reach = require(path.join(RUN, 'spirit', 'test', 'testModule.js')).testsFor('').filter(function (t) { return t.test === 'spirit/test/spirit-sibling-searchRules.js' && t.file; }).map(function (t) { return t.file; });
   test.comment('every module in its reach: ' + reach.length);
-  if (!reach.length) test.fail('testModule.js gives it no file to judge');
-  reach.forEach(function (f) { test.subHeading(f); judge(f, path.join(RUN, f)); });
-}
-test.reportSuccessFailureCount();
+  return reach.length > 0 || 'testModule.js gives it no file to judge';
+}, 1000);
+// <file>: its searches match the whole row. Given no file, each module that breaks it is named in the answer.
+test.run('it hands every search the row whole', 0.4, function () {
+  if (!reach || !reach.length) return 'no module to judge: the world failed';
+  const bad = reach.map(function (f) { return judge(f, path.join(RUN, f)); }).filter(Boolean);
+  return !bad.length || bad.join('; ');
+}, 1000);
