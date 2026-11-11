@@ -45,13 +45,19 @@ const CORE = [
     for (const c of CORE) {
       const disk = path.join(run, c.run);
       const before = fs.existsSync(disk) ? fs.readFileSync(disk, 'utf8') : null;
-      ok(before !== null, 'the world: ' + c.run + ' is there', c.run + ' is missing: nothing judged');
+      const why = c.run + ' is missing: nothing judged';
+      if (c.family === 'contact') ok(before !== null, 'the world: the contact api file is there', why);
+      else if (c.family === 'app') ok(before !== null, 'the world: the app api file is there', why);
+      else ok(before !== null, 'the world: desk.json is there', why);
       if (before === null) continue;
       const saved = await post(c.family + '.FS.saveFile', { path: c.path, content: '// overwritten by introSpector.js\n' });
       const deleted = await post(c.family + '.FS.deleteFile', { path: c.path });
       const after = fs.existsSync(disk) ? fs.readFileSync(disk, 'utf8') : null;
-      ok(saved.status >= 400 && deleted.status >= 400 && after === before, c.family + '.FS.saveFile and FS.deleteFile on ' + c.run + ' are refused (' + saved.status + ', ' + deleted.status + '), the file unchanged',
-        c.family + '.FS on ' + c.run + ': save ' + saved.status + ' ' + short(saved.text) + ', delete ' + deleted.status + ', the file ' + (after === before ? 'unchanged' : 'CHANGED'));
+      const kept = saved.status >= 400 && deleted.status >= 400 && after === before;
+      const said = c.family + '.FS on ' + c.run + ': save ' + saved.status + ' ' + short(saved.text) + ', delete ' + deleted.status + ', the file ' + (after === before ? 'unchanged' : 'CHANGED');
+      if (c.family === 'contact') ok(kept, 'contact.FS.saveFile and FS.deleteFile on the contact api file are refused, the file unchanged', said);
+      else if (c.family === 'app') ok(kept, 'app.FS.saveFile and FS.deleteFile on the app api file are refused, the file unchanged', said);
+      else ok(kept, 'desk.FS.saveFile and FS.deleteFile on desk.json are refused, the file unchanged', said);
       if (after !== before) { try { fs.writeFileSync(disk, before); } catch (e) { /* scratch */ } }
     }
   } finally {

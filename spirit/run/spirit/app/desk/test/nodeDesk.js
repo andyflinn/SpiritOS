@@ -27,7 +27,11 @@ test.startTest('nodeDesk.js: the desk server keeps goals, items and rules; plugi
   test.subHeading('Andy: "removal of plugin folders."');
   for (const dir of ['spirit/run/spirit/app/desk/plugins', 'spirit/run/spirit/app/desk/element/desk/plugins', 'spirit/run/shell/stackFrameCheckDetail']) {
     const left = tracked(dir);
-    ok(!left.length && !fs.existsSync(path.join(REPO, dir)), dir + '/ is gone', dir + '/ still holds ' + short(left.length ? left : 'files on the disk'));
+    const gone = !left.length && !fs.existsSync(path.join(REPO, dir));
+    const why = dir + '/ still holds ' + short(left.length ? left : 'files on the disk');
+    if (dir === 'spirit/run/spirit/app/desk/plugins') ok(gone, 'the desk app\'s plugins folder is gone', why);
+    else if (dir === 'spirit/run/spirit/app/desk/element/desk/plugins') ok(gone, 'the desk element\'s plugins folder is gone', why);
+    else ok(gone, 'the old shell\'s stackFrameCheckDetail folder is gone', why);
   }
 
   test.subHeading('Andy: "removal of plugin support.", and "G0 goes, from ui and server"');
@@ -54,7 +58,7 @@ test.startTest('nodeDesk.js: the desk server keeps goals, items and rules; plugi
     // Asked until the desk listens: before that the client answers app-not-running for it.
     while (Date.now() < until) { const r = await ask('api'); const b = r && r.body && (r.body.desk || r.body); if (b && typeof b === 'object' && b.ok !== false && Object.keys(b).length) { api = b; break; } await new Promise(function (r2) { setTimeout(r2, 200); }); }
     const verbs = Object.keys(api.desk || api);
-    ok(verbs.length > 5 && verbs.indexOf('item.get') !== -1, 'the world: a scratch desk answers api, ' + verbs.length + ' verbs', 'no desk answered api: nothing judged. ' + short(api));
+    ok(verbs.length > 5 && verbs.indexOf('item.get') !== -1, 'the world: a scratch desk answers api with its verbs, item.get among them', 'no desk answered api: nothing judged. ' + short(api));
     const plug = verbs.filter(function (v) { return /^(stackFrameChecks|vision|fallout)\./.test(v); });
     ok(verbs.length > 5 && !plug.length, 'its api serves no verb of a plugin', 'its api still serves ' + short(plug));
     const g0 = await ask({ desk: { 'item.get': { id: 'goal/G0' } } });

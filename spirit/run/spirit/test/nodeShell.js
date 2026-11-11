@@ -83,14 +83,23 @@ test.startTest('nodeShell.js: the shell the node names (goal/G43.18)');
     ok(!fs.existsSync(FILE), 'the world: no spirit/state/shell.json', 'the scratch copy has a spirit/state/shell.json: nothing judged');
     for (const where of ['home', 'face']) {
       const a = await call(N.base, 'node.shell', { at: where });
-      ok(a.status === 200 && nameOf(a) === 'app', 'node.shell({ at: ' + where + ' }) answers { name: "app" }', 'node.shell at ' + where + ': ' + a.status + ' ' + short(a.text));
+      const app = a.status === 200 && nameOf(a) === 'app';
+      const why = 'node.shell at ' + where + ': ' + a.status + ' ' + short(a.text);
+      if (where === 'home') ok(app, 'node.shell({ at: home }) answers { name: "app" }', why);
+      else ok(app, 'node.shell({ at: face }) answers { name: "app" }', why);
     }
 
     test.subHeading('"A name that is no app, or whose <name>.json does not say shell:true:true, is refused with the reason, and the shell stays"');
     for (const bad of [['zzNoSuchApp', 'no app'], ['contact', 'an app whose contact.json says shell.true false']]) {
       const a = await call(N.base, 'node.shell', { at: 'home', name: bad[0] });
-      ok(refused(a) && !!(a.body && (a.body.error || a.body.reason)), bad[1] + ' is refused, with the reason', 'node.shell home ' + bad[0] + ': ' + a.status + ' ' + short(a.text));
-      ok(nameOf(await call(N.base, 'node.shell', { at: 'home' })) === 'app', 'and the home shell stays app', 'after ' + bad[0] + ' the home shell is ' + short(await call(N.base, 'node.shell', { at: 'home' })));
+      const said = refused(a) && !!(a.body && (a.body.error || a.body.reason));
+      const why = 'node.shell home ' + bad[0] + ': ' + a.status + ' ' + short(a.text);
+      if (bad[0] === 'zzNoSuchApp') ok(said, 'a name that is no app is refused, with the reason', why);
+      else ok(said, 'an app whose contact.json says shell.true false is refused, with the reason', why);
+      const stays = nameOf(await call(N.base, 'node.shell', { at: 'home' })) === 'app';
+      const now = 'after ' + bad[0] + ' the home shell is ' + short(await call(N.base, 'node.shell', { at: 'home' }));
+      if (bad[0] === 'zzNoSuchApp') ok(stays, 'and after the name that is no app, the home shell stays app', now);
+      else ok(stays, 'and after the app that says shell.true false, the home shell stays app', now);
     }
     const at = await call(N.base, 'node.shell', { at: 'desk', name: 'zzshell' });
     ok(refused(at), 'at other than home or face is refused', 'node.shell at desk: ' + at.status + ' ' + short(at.text));

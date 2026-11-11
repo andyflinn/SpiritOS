@@ -34,7 +34,7 @@ function hits(file, re) {
 // The world: the file is there and its code, comments left out, still holds a line that is surely code.
 function world(file, anchor) {
   const c = code(file);
-  ok(c !== null && anchor.test(c), 'the world: ' + path.relative(RUN, file) + ' is read, its code holding ' + anchor,
+  ok(c !== null && anchor.test(c), 'the world: the file is read, and its code, comments left out, still holds a line of code',
     c === null ? path.relative(RUN, file) + ' is not there: nothing judged' : path.relative(RUN, file) + '\'s code holds no ' + anchor + ': the comment stripper ate it, nothing judged');
   return c !== null;
 }
@@ -82,7 +82,7 @@ async function noRescuePart() {
       const trafficLog = require(path.join(RUN, 'spirit', 'trafficLog.js'));
       const log = trafficLog.createTrafficLog({ rootDir: root });
       const before = log.read();
-      ok(!before.some(function (r) { return r && r.hash === OLD; }), 'the log does not read the planted spirit/state/traffic.json (' + before.length + ' rows)',
+      ok(!before.some(function (r) { return r && r.hash === OLD; }), 'the log does not read the planted spirit/state/traffic.json',
         'the log reads the old traffic.json: its row ' + OLD + ' is in what the log answers');
       log.note({ dir: 'in', kind: 'message', peer: 'world', hash: NEW, outcome: 'delivered' });
       const after = log.read();

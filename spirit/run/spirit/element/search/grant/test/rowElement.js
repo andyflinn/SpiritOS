@@ -110,10 +110,14 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     { name: 'the agent\'s grants by job', g: AGENT, id: 'J1', label: 'Night <b>', row: function (x) { return { job_id: x.id, path: x.path, job: x.label }; } }]) {
     test.subHeading('a grant of ' + t.name + ': whose, the path, Revoke');
     const el = E.search.grant.rowElement.create(t.row({ id: t.id, path: 'desk.chat<add>', label: t.label }), { grants: t.g });
-    ok(el.kind === 'grant' && el.key === t.id + '\ndesk.chat<add>', 'it is a row element of kind grant, keyed <id>\\n<path>, the id read from the table\'s key field (' + t.g.key + ')', 'el: ' + short({ kind: el.kind, key: el.key }));
+    const keyed = el.kind === 'grant' && el.key === t.id + '\ndesk.chat<add>';
+    if (t.g === NODE) ok(keyed, 'it is a row element of kind grant, keyed <id>\\n<path>, the id read from the table\'s key field, key', 'el: ' + short({ kind: el.kind, key: el.key }));
+    else ok(keyed, 'it is a row element of kind grant, keyed <id>\\n<path>, the id read from the table\'s key field, job_id', 'el: ' + short({ kind: el.kind, key: el.key }));
     const cells = {}; (el.cells() || []).forEach(function (c) { cells[c.name] = c.html; });
     ok(JSON.stringify(Object.keys(cells)) === '["name","path","revoke"]', 'its fields are name, path and revoke: Revoke the rightmost', 'fields: ' + short(Object.keys(cells)));
-    ok(cells.name.indexOf(t.label.replace('<', '&lt;')) !== -1 && /desk\.chat&lt;add>/.test(cells.path || '') && !/<b>|<add>/.test(cells.name + cells.path), 'whose grant it is, read from the table\'s label field (' + t.g.label + '), and the path, drawn escaped', 'cells: ' + short(cells));
+    const drawn = cells.name.indexOf(t.label.replace('<', '&lt;')) !== -1 && /desk\.chat&lt;add>/.test(cells.path || '') && !/<b>|<add>/.test(cells.name + cells.path);
+    if (t.g === NODE) ok(drawn, 'whose grant it is, read from the table\'s label field, label, and the path, drawn escaped', 'cells: ' + short(cells));
+    else ok(drawn, 'whose grant it is, read from the table\'s label field, job, and the path, drawn escaped', 'cells: ' + short(cells));
     const hosts = { name: cell(), path: cell(), revoke: cell() };
     armed.length = 0;
     el.mount(hosts);

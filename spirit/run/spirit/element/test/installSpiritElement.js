@@ -24,12 +24,12 @@ test.startTest('installSpiritElement.js: an element\'s factory placed at spirit.
 
 (async function () {
   test.subHeading('the helper, resident in spirit.required');
-  ok(fs.existsSync(FILE), PLACE + ' is there', PLACE + ' is not there');
+  ok(fs.existsSync(FILE), 'the helper\'s file is there', PLACE + ' is not there');
   if (!fs.existsSync(FILE)) return;
   const s = require(path.join(RUN, 'spirit', 'spirit.js'));
   let install = null;
   try { install = s.require(PLACE); } catch (e) { install = e; }
-  ok(typeof install === 'function', 'spirit.require(' + PLACE + ') answers the helper at once, a function', 'spirit.require answered ' + short(install && install.message || typeof install));
+  ok(typeof install === 'function', 'spirit.require answers the helper at once, a function', 'spirit.require(' + PLACE + ') answered ' + short(install && install.message || typeof install));
   ok(typeof install === 'function' && at(s.required, ['spirit', 'element', 'installSpiritElement']) === install, 'it is resident at spirit.required.spirit.element.installSpiritElement', 'spirit.required.spirit.element.installSpiritElement is ' + short(typeof at(s.required, ['spirit', 'element', 'installSpiritElement'])));
   if (typeof install !== 'function') return;
 

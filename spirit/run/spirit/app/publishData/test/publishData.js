@@ -238,7 +238,7 @@ async function runPart() {
     let ts = null;
     try { ts = JSON.parse(fs.readFileSync(path.join(OUT, 'testState.json'), 'utf8')); } catch (e) { ts = null; }
     ok(ts && ts.agent === AGENT && ts.commit === COMMIT && ts.tests === ts.green + ts.red && Array.isArray(ts.suites) && Array.isArray(ts.reds) && ts.reds.length === ts.red && /no suite was run/.test(ts.from),
-      'testState.json: the newest row of each test in verify.db, read only, no suite run (' + (ts && ts.tests) + ' tests, ' + (ts && ts.red) + ' red)', 'testState ' + short(ts) + ' said ' + short(r.out));
+      'testState.json: the newest row of each test in verify.db, read only, no suite run', 'testState ' + short(ts) + ' said ' + short(r.out));
     const tsmd = fs.existsSync(path.join(OUT, 'testState.md')) ? fs.readFileSync(path.join(OUT, 'testState.md'), 'utf8') : '';
     ok(tsmd.indexOf('# Test state: ' + AGENT) === 0 && tsmd.indexOf('| suite | tests | green | red | newest |') !== -1 && tsmd.indexOf('## Red') !== -1, 'testState.md: the suites\' table and the reds', 'testState.md ' + short(tsmd));
     const readme = fs.existsSync(path.join(OUT, 'README.md')) ? fs.readFileSync(path.join(OUT, 'README.md'), 'utf8') : '';
@@ -267,7 +267,7 @@ async function runPart() {
     ok(head !== before && git(CLONE, ['rev-parse', head + '^']).out === before, 'one commit on its clone', 'HEAD ' + head);
     ok(git(CLONE, ['log', '-1', '--format=%s', head]).out === 'publish: ' + AGENT + ' at ' + COMMIT + ' (agents/' + AGENT + '/, the standing grant of goal/G4.33)', 'under the standing grant\'s message', 'message ' + short(git(CLONE, ['log', '-1', '--format=%s', head]).out));
     const files = git(CLONE, ['diff-tree', '--no-commit-id', '--name-only', '-r', head]).out.split('\n').filter(Boolean);
-    ok(files.length > 0 && files.every(function (f) { return f.indexOf('agents/' + AGENT + '/') === 0; }), 'its files all lie in agents/<agent>/ (' + files.length + ')', 'committed ' + short(files));
+    ok(files.length > 0 && files.every(function (f) { return f.indexOf('agents/' + AGENT + '/') === 0; }), 'its files all lie in agents/<agent>/', 'committed ' + short(files));
     ok(['packets.json', 'packets.md', 'platform.md', 'README.md'].every(function (f) { return files.indexOf('agents/' + AGENT + '/' + f) !== -1; }), 'packets, platform and README among them', 'committed ' + short(files));
     ok(git(CLONE, ['diff', '--cached', '--name-only']).out === 'his-staged.txt', 'what he had staged stays staged, and uncommitted', 'staged ' + short(git(CLONE, ['diff', '--cached', '--name-only']).out));
     ok(git(ORIGIN, ['rev-parse', 'refs/heads/master']).out === head, 'pushed: the origin is at its commit', 'origin ' + git(ORIGIN, ['rev-parse', 'refs/heads/master']).out);

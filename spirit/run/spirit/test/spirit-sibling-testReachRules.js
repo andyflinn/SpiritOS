@@ -95,7 +95,7 @@ if (arg) {
 const judged = files.filter(function (f) { return !excepted(f); });
 test.subHeading('every production module, its code read');
 test.comment(judged.length + ' production files read; the exception: DEBUG.js (spirit/DEBUG.js, spirit/DEBUG/)');
-if (!arg) ok(judged.length > 100, 'the scan read every production module: ' + judged.length + ' files', 'the scan read only ' + judged.length + ' files: it judged too little to say');
+if (!arg) ok(judged.length > 100, 'the scan read every production module, more than a hundred files', 'the scan read only ' + judged.length + ' files: it judged too little to say');
 let broken = 0;
 judged.forEach(function (rel) {
   reaches(rel).forEach(function (r) {
@@ -104,7 +104,7 @@ judged.forEach(function (rel) {
     test.fail(rel + ':' + r.line + ' ' + r.call + '() loads ' + r.path + ', a test file (the box: "no production module loads or requires any test file, with the exception of DEBUG.js.")');
   });
 });
-if (!broken) ok(true, 'no production module loads or requires a test file: ' + judged.length + ' files, none does', '');
+if (!broken) ok(true, 'no production module loads or requires a test file', '');
 test.reportSuccessFailureCount();
 process.exit(0);
 

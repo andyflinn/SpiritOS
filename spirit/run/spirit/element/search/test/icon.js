@@ -48,10 +48,10 @@ test.startTest('icon.js: the icon selector, one list with the icons list, offeri
     const offered = await rows();
     // The page's own reads of other files stand beside it (the boot reads join's state).
     const asks = (parsed(await chrome.evaluate('JSON.stringify(window.__asks)')) || []).filter(function (p) { return /iconSet\.json$/.test(p); });
-    ok(JSON.stringify(asks) === JSON.stringify([SET]), 'it reads ' + SET + ' and no other, through spirit.fs.loadFile', 'it read: ' + short(asks));
+    ok(JSON.stringify(asks) === JSON.stringify([SET]), 'it reads the icon set file and no other, through spirit.fs.loadFile', 'it read ' + short(asks) + ', not ' + SET + ' alone');
     const want = glyphs.filter(function (g) { return g !== left; });
     const missing = want.filter(function (g) { return offered.indexOf(g) === -1; });
-    ok(missing.length === 0, 'it offers every icon of that file: ' + want.length, missing.length + ' are not offered, ' + short(missing.slice(0, 20)));
+    ok(missing.length === 0, 'it offers every icon of that file', missing.length + ' of ' + want.length + ' are not offered, ' + short(missing.slice(0, 20)));
     ok(offered.length === want.length, 'and nothing else', 'it offers ' + offered.length + ' of ' + want.length);
     ok(offered.indexOf(left) === -1, 'an excluded glyph stays off it', 'an excluded glyph is offered');
     // ONE LIST (goal/G43.32): no rows of its own, its popup the icons list's dropdown.

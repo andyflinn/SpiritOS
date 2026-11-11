@@ -87,7 +87,7 @@ async function noAdmittedPart() {
   // The world: the file is there and its code, comments left out, still holds a line that is surely code.
   function world(file, anchor) {
     const c = code(file);
-    ok(c !== null && anchor.test(c), 'the world: ' + path.relative(RUN, file) + ' is read, its code holding ' + anchor,
+    ok(c !== null && anchor.test(c), 'the world: the file is read, and its code, comments left out, still holds a line of code',
       c === null ? path.relative(RUN, file) + ' is not there: nothing judged' : path.relative(RUN, file) + '\'s code holds no ' + anchor + ': the comment stripper ate it, nothing judged');
     return c !== null;
   }
@@ -117,7 +117,7 @@ async function noAdmittedPart() {
           db.close();
         } catch (e) { test.fail('node.db could not be read: ' + (e && e.message) + ': nothing judged'); }
         if (cols) {
-          ok(cols.indexOf('dir') !== -1 && cols.indexOf('hash') !== -1, 'the world: the store made node.db with a traffic table (' + cols.length + ' columns)', 'node.db holds no traffic table of the log\'s: ' + short(cols) + ': nothing judged');
+          ok(cols.indexOf('dir') !== -1 && cols.indexOf('hash') !== -1, 'the world: the store made node.db with a traffic table', 'node.db holds no traffic table of the log\'s: ' + short(cols) + ': nothing judged');
           ok(cols.indexOf('admitted') === -1, 'and that traffic table has no admitted column', 'the traffic table the store makes still has an admitted column');
         }
       }

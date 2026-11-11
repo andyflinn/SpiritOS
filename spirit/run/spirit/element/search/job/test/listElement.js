@@ -60,7 +60,11 @@ test.startTest('search/job/listElement.js: the Job Monitor\'s list, the job sear
     test.subHeading('the old module: every job of the node a row, its columns Status, Name, Kind, Progress, Updated');
     ok(await until(function () { return rows().then(function (r) { return r.some(function (t) { return t.indexOf('spirit.fs') !== -1; }); }); }, 10000), 'the node\'s own jobs are rows, spirit.fs among them', 'the rows: ' + short(await rows()));
     const t0 = await text();
-    ['Status', 'Name', 'Kind', 'Progress', 'Updated'].forEach(function (h) { ok(t0.indexOf(h) !== -1, 'a column ' + h, 'no column ' + h + ': ' + short(t0)); });
+    ok(t0.indexOf('Status') !== -1, 'it has a Status column', 'no column Status: ' + short(t0));
+    ok(t0.indexOf('Name') !== -1, 'it has a Name column', 'no column Name: ' + short(t0));
+    ok(t0.indexOf('Kind') !== -1, 'it has a Kind column', 'no column Kind: ' + short(t0));
+    ok(t0.indexOf('Progress') !== -1, 'it has a Progress column', 'no column Progress: ' + short(t0));
+    ok(t0.indexOf('Updated') !== -1, 'it has a Updated column', 'no column Updated: ' + short(t0));
     const fsRow = await rowOf('spirit.fs');
     ok(/\bnode\b/.test(fsRow) && /running/.test(fsRow), 'spirit.fs, the node\'s own, is of kind node, running', 'the spirit.fs row: ' + short(fsRow));
     const failRow = await rowOf('zzFail');
@@ -70,7 +74,7 @@ test.startTest('search/job/listElement.js: the Job Monitor\'s list, the job sear
     const words = await chrome.evaluate('Array.prototype.map.call(document.querySelectorAll("#box button"), function (b) { return String(b.textContent).trim(); })');
     const want = ['all', 'node', 'servers', 'transient', 'failed'];
     const at = want.map(function (w) { return (words || []).indexOf(w); });
-    ok(at.every(function (i) { return i !== -1; }) && at.every(function (i, n) { return n === 0 || i > at[n - 1]; }), 'its choices, in order: ' + want.join(', '), 'the buttons: ' + short(words));
+    ok(at.every(function (i) { return i !== -1; }) && at.every(function (i, n) { return n === 0 || i > at[n - 1]; }), 'its choices, in order: all, node, servers, transient, failed', 'the buttons: ' + short(words));
     const press = function (w) { return chrome.evaluate('(function () { var b = Array.prototype.filter.call(document.querySelectorAll("#box button"), function (x) { return String(x.textContent).trim() === ' + JSON.stringify(w) + '; })[0]; if (b) b.click(); return !!b; }())'); };
     await press('failed');
     ok(await until(function () { return rows().then(function (r) { return r.length >= 1 && r.every(function (t) { return /failed/.test(t); }); }); }, 5000), 'failed lists the failed jobs only', 'with failed: ' + short(await rows()));
