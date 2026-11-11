@@ -33,7 +33,8 @@
         // One tool, the files, on the left strip, shown at start; no right strip.
         left: [{ name: 'files', icon: '📁', title: 'Production scripts', mount: function (box) {
           box.className = 'fill';
-          list = E.search.file.create(box, { face: 'pane', accept: production });
+          // goal/G47.1, the box: "testicle turns flat on.": the scripts, by path, no folders.
+          list = E.search.file.create(box, { face: 'pane', accept: production, flat: true });
         } }],
         right: [],
       });

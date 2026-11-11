@@ -10,11 +10,16 @@
 //     or shuts it and is never a pick. Words: every match, ranked, with its path.
 //   - accept: the app's hidden type filter, extensions ('.md') and mimetype prefixes ('image/'), or a function of the
 //     row; a file outside it never shows, folders always do.
+//   - flat (goal/G47.1, the box: "The file list has one always hidden option, \"flat\", set only in code by the app that
+//     draws the list; no button shows or flips it", "With flat on: no folder rows, never the indented tree; with an
+//     empty field every file the app accepts is listed, each with its path; typing narrows it", "With flat off, the
+//     default, the file list is as it is today"): no folder row ever, and the flat look whether words are typed or not.
 //
 //   create(host, opts) -> the list (value, row, words(), refresh(), redraw(), sort(), destroy())
 //     opts.face         'pane' or 'dropdown'
 //     opts.toggle       true: a pane flips to tiles and back (goal/G43.17)
 //     opts.accept, opts.placeholder, opts.all, opts.empty
+//     opts.flat         true: no folders, never the tree (goal/G47.1); set in code only, nothing on screen shows it
 //     opts.name(row)    what the dropdown's field says once a file is picked; its path by default
 //     opts.pick(row, key)   a file chosen; row.line is the first matched line of a file found by its contents
 (function () {
@@ -76,9 +81,11 @@
     var lines = Object.create(null);
     var made = Object.create(null);     // path -> its row element, so a folder's press can say it is open (goal/G43.17: 📂)
     var list = null;
+    // FLAT (goal/G47.1): no folder row and never the indented tree, so every row shows its path.
+    var flat = o.flat === true;
     host.innerHTML = '<style>.files-tree .file-depth{display:inline-block;padding-left:calc(var(--depth) * 2em)}.files-tree .path-dir{display:none}</style>' +
       // The list search's box takes all of this one (goal/G40.8: space granted top-down).
-      '<div class="files-tree fill"></div>';
+      '<div class="' + (flat ? 'fill' : 'files-tree fill') + '"></div>';
     var inner = host.lastChild;
     list = E.spirit.element.search.create(inner, {
       // Its own data source (goal/G43.24): the search asks it, and is handed no api.
@@ -112,7 +119,9 @@
         { name: 'in', choices: [{ value: 'names', word: 'names' }, { value: 'contents', word: 'contents' }] },
         // THE TREE and THE APP'S TYPES, not drawn: while the field is empty a row shows only when every folder above it
         // is open.
+        // Flat, every accepted file shows, however deep, and no folder.
         { name: 'tree', when: function () { return false; }, test: function (row) {
+          if (flat) return row.kind !== 'folder' && accepted(o.accept, row) ? 1 : 0;
           if (!accepted(o.accept, row)) return 0;
           if (list && list.words()) return 1;
           var parts = String(row.path || '').split('/');
@@ -132,7 +141,7 @@
     });
     // The tree is in path order until a header is pressed; the indent only while the list is the tree.
     list.sort('name', 'asc');
-    function treeLook() { inner.classList.toggle('files-tree', !list.words()); }
+    function treeLook() { inner.classList.toggle('files-tree', !flat && !list.words()); }
     inner.addEventListener('input', treeLook);
     inner.addEventListener('click', treeLook);
     list.refresh();
