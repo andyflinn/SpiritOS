@@ -51,7 +51,6 @@ const PLANT = {
   'spirit/zzTesticle/test/theta.js': '\'use strict\';\n// the test of theta\n',
 };
 // The kept rows of an older testicle.db, for a script not on disc, so no change of this test's touches them.
-const OLD_TEST = 'older answers its question';
 const OLD = { name: 'spirit/zzTesticle/older.js', suite: 'spirit/zzTesticle/test/older.js', hash: 'an older hash', changed: 1700000000000 };
 // The general test changed in the scratch copy: its entries name every file of its reach.
 const GENERAL = 'spirit/test/spirit-sibling-titleRules.js';
@@ -75,11 +74,6 @@ function scratch() {
   old.exec('CREATE TABLE suite (file TEXT NOT NULL, suite TEXT NOT NULL, test INTEGER NOT NULL DEFAULT 0, deleted INTEGER NOT NULL DEFAULT 0, hash TEXT NOT NULL DEFAULT \'\', outcome TEXT NOT NULL DEFAULT \'\', changed INTEGER NOT NULL, PRIMARY KEY (file, suite))');
   old.prepare('INSERT INTO file (name, hash, deleted, changed) VALUES (?, ?, 0, ?)').run(OLD.name, OLD.hash, OLD.changed);
   old.prepare('INSERT INTO suite (file, suite, test, deleted, hash, outcome, changed) VALUES (?, ?, 1, 0, ?, \'\', ?)').run(OLD.name, OLD.suite, OLD.hash, OLD.changed);
-  // AN OLDER TABLE test (goal/G47.1, the rename cycle: "An older testicle.db holding the table test is renamed in place at
-  // start, every row kept as it was, no table test left"), as G45.1 made it, with its index, one row in it.
-  old.exec('CREATE TABLE test (script TEXT NOT NULL, suite TEXT NOT NULL, test TEXT NOT NULL, flipped INTEGER NOT NULL, current INTEGER NOT NULL DEFAULT 1, verified INTEGER NOT NULL, tested INTEGER NOT NULL, judged TEXT NOT NULL DEFAULT \'\', severity REAL NOT NULL DEFAULT 0, PRIMARY KEY (script, suite, test, flipped))');
-  old.exec('CREATE INDEX test_current ON test (verified, severity DESC, flipped DESC) WHERE current = 1');
-  old.prepare('INSERT INTO test (script, suite, test, flipped, current, verified, tested, judged, severity) VALUES (?, ?, ?, ?, 1, 1, ?, ?, 0.4)').run(OLD.name, OLD.suite, OLD_TEST, OLD.changed, OLD.changed, OLD.hash);
   old.close();
   return { root: root, run: run };
 }
@@ -224,20 +218,14 @@ test.run('the older suite row is kept, its key column now script', 0.2, function
 }, test.limit.quick);
 
 // goal/G47.1, the rename cycle, the box: "The testicle test table is renamed \"testicle\": the table in testicle.db, its
-// index, and the branch data.js keeps it under", "An older testicle.db holding the table test is renamed in place at start,
-// every row kept as it was, no table test left".
+// index, and the branch data.js keeps it under". No data rescue (Andy struck the box line on an older table test).
 const sqlNames = function (type) {
   try { const d = new DatabaseSync(DB, { readOnly: true }); const r = d.prepare('SELECT name, tbl_name FROM sqlite_master WHERE type = ?').all(type); d.close(); return r; } catch (e) { return [{ name: 'unreadable: ' + (e && e.message), tbl_name: '' }]; }
 };
-test.run('the older table test is now the table testicle, and no table test is left', 0.2, function () {
+test.run('testicle.db holds the table testicle, and no table test', 0.2, function () {
   if (!up()) return NONODE;
   const t = sqlNames('table').map(function (r) { return r.name; });
   return (t.indexOf('testicle') !== -1 && t.indexOf('test') === -1) || 'tables: ' + short(t);
-}, test.limit.quick);
-test.run('the older test row is kept in testicle, as it was', 0.2, function () {
-  if (!start) return NONODE;
-  const k = (start.test || []).filter(function (r) { return r.script === OLD.name && r.suite === OLD.suite && r.test === OLD_TEST; });
-  return (k.length === 1 && Number(k[0].flipped) === OLD.changed && yes(k[0].current) && yes(k[0].verified) && Number(k[0].tested) === OLD.changed && k[0].judged === OLD.hash && Number(k[0].severity) === 0.4) || 'the rows: ' + short(k);
 }, test.limit.quick);
 test.run('the index over the current rows is on the table testicle, and no index is on a table test', 0.2, function () {
   if (!up()) return NONODE;

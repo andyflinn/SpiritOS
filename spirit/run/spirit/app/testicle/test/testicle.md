@@ -37,34 +37,12 @@ The box, in Andy's words where he gave them:
   file's suites exactly; every suite a file whose final folder is `test`; each with its status, needs running; words
   narrow them; another file's search answers none of the first's.
 
-- **The rename** (goal/G47.1; Andy: *"this cycle will rename the \"file\" table to \"script\""*): the first table is
-  `script`, the suite table's key column `script`; an older testicle.db, its table `file` and its suite column `file`,
-  is renamed in place at start, its rows kept as they were, and no table `file` is left.
-
-- **The test table, test.set, test.search and testicle.red** (goal/G47.1, the test cycle; since the rename cycle the table
-  testicle and the verbs testicle.set and testicle.search, below). The table is goal/G45.1's:
-  script, suite, test, flipped, current, verified, tested, judged, severity.
-  - *"Every test.set happens by itself, no bundling"*, *"test.set MUST carry severity: {script, suite, test, verified,
-    severity}"*. A set for a script with no row makes its script row and a suite row for every suite that concerns it.
-    A test set for the first time has one row, current, with its result, its severity, flipped and tested now, judged
-    at the script's hash.
-  - *"If the test does not flip, the current row is only updated with the last checked date, and, if it exists, the hash
-    of the product file"*: no new row; tested moves, flipped stays; after the script changes, judged is its new hash.
-    *"The server applies the severity to the row only if the new severity is higher than the old one"*: a lower one
-    leaves it, a higher one is applied.
-  - *"If the test flips, a new active row is created; this will keep change history"*: two rows, one current with the
-    new result; the replaced row kept, current no longer. (The severity a flipped row starts with is not asserted: the
-    box does not say whether it takes the replaced row's when that is higher.)
-  - goal/G47.1, the cycle "the test table streamed": *"on a flip, the replaced row turning current false is published
-    too, beside the new current row"*, and every test row served carries its full key, `script|suite|test|flipped`, so
-    the page keeps the two apart. Judged where a page receives it, in testicle's face test (`./element.js`).
 - **The rename** (goal/G47.1, the cycle "the test table renamed testicle"): *"The testicle test table is renamed
   \"testicle\": the table in testicle.db, its index, and the branch data.js keeps it under. The stream carries it as the
-  table testicle."*; *"An older testicle.db holding the table test is renamed in place at start, every row kept as it
-  was, no table test left"*; *"test.set becomes testicle.set, test.search becomes testicle.search, their json files with
-  them; red stays red."* The scratch tree's older testicle.db holds a table test with its index and one row: after start
-  the table is testicle, the row as it was, the index on testicle, no table test. The node lists testicle.set and
-  testicle.search and neither old verb; testicle.test.set answers no such verb. Every check above calls the new names.
+  table testicle."*; *"test.set becomes testicle.set, test.search becomes testicle.search, their json files with them;
+  red stays red."* After start testicle.db holds the table testicle, its index on it, no table test; no older rows are
+  carried over (Andy struck that line). The node lists testicle.set and testicle.search and neither old verb;
+  testicle.test.set answers no such verb. Every check above calls the new names.
   The branch and the stream are judged in the face test; the reporter's call in its own test (`spirit/test/test/testReport.js`).
   - *"This cycle does not clear a suite's needs-testing flag"*: with every test passing, the flag stays.
   - *"test.search will only return \"current\" test rows for the script/suite combination supplied ... no script in the
