@@ -452,6 +452,7 @@ async function stateLayoutPart() {
         else if (name === 'desk') ok(!!a, 'desk says node.mount true, starts, and answers its api', answersWhy);
         else if (name === 'deskClient') ok(!!a, 'deskClient says node.mount true, starts, and answers its api', answersWhy);
         else if (name === 'deskVerify') ok(!!a, 'deskVerify says node.mount true, starts, and answers its api', answersWhy);
+        else test.fail(name + ' has no line of its own in this test, so nothing judged it');
       }
       await H.sleep(3000);
 

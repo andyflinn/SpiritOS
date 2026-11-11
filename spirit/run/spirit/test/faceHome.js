@@ -355,6 +355,7 @@ async function ownPart() {
     else if (j.id === 'spirit.app.zzOther') ok(held8, 'starred, on opening: the job spirit.app.zzOther is there', why8);
     else if (j.id === 'spirit.zzNeverSeen') ok(held8, 'starred, on opening: the job spirit.zzNeverSeen is there', why8);
     else if (j.id === 'spirit') ok(held8, 'starred, on opening: the job spirit is there', why8);
+    else test.fail(j.id + ' has no line of its own in this test, so nothing judged it');
     const held7 = !onWire(PLAIN, j.id);
     const why7 = 'no star, on opening: job ' + j.type + ' reached the face';
     if (j.id === 'spirit.auth') ok(held7, 'no star, on opening: the job spirit.auth is not', why7);
@@ -362,6 +363,7 @@ async function ownPart() {
     else if (j.id === 'spirit.app.zzOther') ok(held7, 'no star, on opening: the job spirit.app.zzOther is not', why7);
     else if (j.id === 'spirit.zzNeverSeen') ok(held7, 'no star, on opening: the job spirit.zzNeverSeen is not', why7);
     else if (j.id === 'spirit') ok(held7, 'no star, on opening: the job spirit is not', why7);
+    else test.fail(j.id + ' has no line of its own in this test, so nothing judged it');
   });
 
   test.subHeading('goal/G41.33: the queue does not change, and it loses none of the new ones');

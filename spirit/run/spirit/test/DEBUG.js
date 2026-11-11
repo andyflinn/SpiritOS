@@ -205,6 +205,7 @@ async function garbageRules(gen, PAYLOAD_MAX) {
     else if (keys.length === 3) ok(met, 'three arguments: every pair of their kinds meets in at least one entry', metWhy);
     else if (keys.length === 4) ok(met, 'four arguments: every pair of their kinds meets in at least one entry', metWhy);
     else if (keys.length === 5) ok(met, 'five arguments: every pair of their kinds meets in at least one entry', metWhy);
+    else test.fail(keys.length + ' arguments' + ' has no line of its own in this test, so nothing judged it');
   }
   ok(args5.length > 0 && args5.length < 200, 'and the garbage stays small: under 200 entries for five arguments, not every combination', 'five arguments make ' + args5.length + ' entries');
 }

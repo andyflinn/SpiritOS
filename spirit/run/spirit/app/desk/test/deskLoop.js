@@ -251,6 +251,7 @@ async function readTakePart() {
       const took = !!id && take.length >= 1 && take[take.length - 1].argv[1] === PORT;
       if (i === 0) ok(took, 'before its first answer is posted, its ear takes that line', 'the chat.add under ' + id + ' was posted with no line.take before it; started ' + short(started.slice(0, at + 1).map(function (s) { return s.kind + (s.argv[2] ? ' ' + s.argv[2] : ''); })));
       else if (i === 1) ok(took, 'before its second answer is posted, its ear takes that line', 'the chat.add under ' + id + ' was posted with no line.take before it; started ' + short(started.slice(0, at + 1).map(function (s) { return s.kind + (s.argv[2] ? ' ' + s.argv[2] : ''); })));
+      else test.fail('answer ' + (i + 1) + ' has no line of its own in this test, so nothing judged it');
     });
   }()).finally(function () { console.error = realError; });
 }

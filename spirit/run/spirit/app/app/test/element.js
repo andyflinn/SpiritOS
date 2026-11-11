@@ -438,6 +438,7 @@ test.startTest('element.js: the app app\'s main element, the app selector (goal/
         else if (a.key === 'starter') ok(held9, 'starter: its face script spirit/app/starter/element.js is there', why9);
         else if (a.key === 'testicle') ok(held9, 'testicle: its face script spirit/app/testicle/element.js is there', why9);
         else if (a.key === 'text') ok(held9, 'text: its face script spirit/app/text/element.js is there', why9);
+        else test.fail(a.key + ' has no line of its own in this test, so nothing judged it');
       });
       await chrome.evaluate('(function () { ' + JSON.stringify(treeOn.map(function (a) { return a.key; })) + '.forEach(function (k) { try { spirit.app.activeApp({ key: k, active: true }); } catch (e) { /* the tile says */ } }); return true; }())');
       const onKeys = JSON.stringify(treeOn.map(function (a) { return a.key; }));
@@ -471,6 +472,7 @@ test.startTest('element.js: the app app\'s main element, the app selector (goal/
         else if (a.key === 'starter') ok(held8, 'starter: its tile opens a face that draws', why8);
         else if (a.key === 'testicle') ok(held8, 'testicle: its tile opens a face that draws', why8);
         else if (a.key === 'text') ok(held8, 'text: its tile opens a face that draws', why8);
+        else test.fail(a.key + ' has no line of its own in this test, so nothing judged it');
         await chrome.evaluate('(function () { var c = ' + shown + '; var x = c && c.querySelector(".app-container-close"); if (x) x.click(); return !!x; }())');
         await until(function () { return chrome.evaluate('!' + shown); }, 5000);
       }
@@ -547,6 +549,7 @@ async function nodeRunPart() {
         const why7 = 'the pane does not list ' + a.label + ': ' + short(inPane);
         if (a.key === 'publishData') ok(held7, 'the pane lists Publish Data', why7);
         else if (a.key === 'pushOrigin') ok(held7, 'the pane lists Push Origin', why7);
+        else test.fail(a.key + ' has no line of its own in this test, so nothing judged it');
       });
       await chrome.evaluate('(function () { window.pane.destroy(); var c = document.getElementById("pane"); if (c) c.remove(); return true; }())');
       // The dropdown, pressed open: its list floats, so the whole page is read, with nothing else of the test on it.
@@ -561,6 +564,7 @@ async function nodeRunPart() {
         const why6 = 'the dropdown lists ' + a.label + ': ' + short(inDrop);
         if (a.key === 'publishData') ok(held6, 'the dropdown does not list Publish Data', why6);
         else if (a.key === 'pushOrigin') ok(held6, 'the dropdown does not list Push Origin', why6);
+        else test.fail(a.key + ' has no line of its own in this test, so nothing judged it');
       });
       await chrome.evaluate('(function () { window.drop.destroy(); var c = document.getElementById("drop"); if (c) c.remove(); return true; }())');
 
@@ -575,6 +579,7 @@ async function nodeRunPart() {
         const why5 = a.label + '\'s detail shows no Run: ' + short(await chrome.evaluate('String(document.getElementById("detail").innerText)'));
         if (a.key === 'publishData') ok(held5, 'Publish Data\'s detail shows a Run button', why5);
         else if (a.key === 'pushOrigin') ok(held5, 'Push Origin\'s detail shows a Run button', why5);
+        else test.fail(a.key + ' has no line of its own in this test, so nothing judged it');
       }
       const plain = mounts[0];
       await detailOf(plain);
@@ -602,6 +607,7 @@ async function nodeRunPart() {
         const why4 = a.label + '\'s row shows ' + short(n) + ' Activate buttons';
         if (a.key === 'publishData') ok(held4, 'Publish Data\'s row in the app list shows no Activate', why4);
         else if (a.key === 'pushOrigin') ok(held4, 'Push Origin\'s row in the app list shows no Activate', why4);
+        else test.fail(a.key + ' has no line of its own in this test, so nothing judged it');
       }
       await chrome.evaluate('(function () { window.rows.destroy(); var c = document.getElementById("rows"); if (c) c.remove(); return true; }())');
       await detailOf(plain);
@@ -615,6 +621,7 @@ async function nodeRunPart() {
         const why3 = a.label + '\'s detail shows ' + short(n) + ' Activate buttons';
         if (a.key === 'publishData') ok(held3, 'Publish Data\'s detail shows no Activate', why3);
         else if (a.key === 'pushOrigin') ok(held3, 'Push Origin\'s detail shows no Activate', why3);
+        else test.fail(a.key + ' has no line of its own in this test, so nothing judged it');
       }
       test.subHeading('a press runs it, active or not');
       if (!PUSH || !PUSH.run) { test.fail('pushOrigin says no node.run: nothing to press'); return; }
@@ -647,6 +654,7 @@ async function nodeRunPart() {
         const why2 = 'app.active for ' + a.key + ' answered ' + r.status + ' ' + short(t) + ', active now ' + short(now);
         if (a.key === 'publishData') ok(held2, 'the node refuses app.active for publishData, and it stays inactive', why2);
         else if (a.key === 'pushOrigin') ok(held2, 'the node refuses app.active for pushOrigin, and it stays inactive', why2);
+        else test.fail(a.key + ' has no line of its own in this test, so nothing judged it');
       }
     } finally {
       try { if (chrome.sock) chrome.sock.close(); } catch (e) { /* gone */ }
