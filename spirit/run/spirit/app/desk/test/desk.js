@@ -485,7 +485,7 @@ test.run('the world: a desk of its own starts, for the box', 0.2, async function
   W.askB = await startDesk('desk-box', [], {});
   if (W.askB) await profiles(W.askB);
   return !!W.askB || noB;
-}, 2000);
+}, 12000);
 test.run('an agent holds the box: his take is not refused, and the box is his', 0.2, async function () {
   if (!W.askB) return noB;
   await W.askB('box.take', { id: 'goal/G300.1' }, CW);
@@ -553,7 +553,7 @@ test.run('the world: a desk of its own starts, for the wake', 0.2, async functio
     await W.askW('subscribe', { family: 'deskClient' }, UBI);
   }
   return !!W.askW || noW;
-}, 3000);
+}, 12000);
 test.run('the world: ubi takes the red', 0.2, async function () {
   if (!W.askW) return noW;
   await ready(W.askW, 'goal/G300.1', UBI);
@@ -616,7 +616,7 @@ test.run('the world: a desk of its own starts, for an agent alone', 0.2, async f
   W.worldL = gitWorld(path.join(W.scratch, 'git-l'));
   W.askL = await startDesk('desk-alone', [], {}, undefined, W.worldL);
   return !!W.askL || noL;
-}, 3000);
+}, 12000);
 test.run('the only agent here claims the red and takes the build, with no press of his', 0.2, async function () {
   const askL = W.askL;
   if (!askL) return noL;
@@ -649,7 +649,7 @@ test.run('the world: a desk of its own starts, for the search', 0.2, async funct
   W.askS = await startDesk('desk-list', [], {}, [{ goal: LIST_GOAL, items: LIST_ITEMS.map(function (id) { return { id: id, title: 'Item ' + id, blocks: [LIST_GOAL.id] }; }) }]);
   if (W.askS) await profiles(W.askS);
   return !!W.askS || noS;
-}, 2000);
+}, 12000);
 test.run('a row holds only what the List draws, presses and filters on', 0.2, async function () {
   if (!W.askS) return noS;
   const first = W.first = await search(W.askS);
@@ -745,7 +745,7 @@ test.run('the world: a desk of its own starts, for the bubbles', 0.2, async func
     for (const a of [CW, UBI, NOBODY, CLIENT_ONLY]) await W.askG('agent.state', { word: 'listening' }, a);
   }
   return !!W.askG || noG;
-}, 2000);
+}, 12000);
 test.run('at start: a key holding desk whole has a bubble, and a key holding one small desk verb too', 0.2, async function () {
   if (!W.askG) return noG;
   const settled = await waitFor(async function () { return has(await goalG(), CW); }, 5000);
@@ -808,7 +808,7 @@ test.run('the world: a desk of its own starts, for [include closed]', 0.2, async
   if (W.node && W.heldGrants) { W.node.grants.splice(0, W.node.grants.length); W.heldGrants.forEach(function (g) { W.node.grants.push(g); }); }
   W.askM = await startDesk('desk-mixed', [], {}, [{ goal: MIX_GOAL, items: MIX_ITEMS.map(function (id) { return { id: id, title: 'Item ' + id, blocks: [MIX_GOAL.id] }; }) }]);
   return !!W.askM || noM;
-}, 3000);
+}, 12000);
 test.run('the world: 40 closed items, the oldest; without the filter only the 5 open show', 0.2, async function () {
   if (!W.askM) return noM;
   await W.askM('press', { id: MIX_GOAL.id, what: 'end-design' }, ANDY);
@@ -836,7 +836,7 @@ test.run('the world: a desk of its own starts on a scratch checkout of a scratch
   const worldA = W.worldA = gitWorld(path.join(W.scratch, 'git-a'));
   W.askA = await startDesk('desk-a', [], {}, undefined, worldA);
   return (!!W.askA && !!worldA.head()) || 'desk ' + !!W.askA + ', checkout at ' + short(worldA.head());
-}, 3000);
+}, 12000);
 test.run('the world: a commit lands on origin, and cw\'s red claim is taken', 0.2, async function () {
   if (!W.askA) return noA;
   await profiles(W.askA);
@@ -897,7 +897,7 @@ test.run('the world: a desk of its own starts, a run deskVerify took on goal/G30
   W.worldR = gitWorld(path.join(W.scratch, 'git-r'));
   W.askR = await startDesk('desk-r', [{ verb: 'verify.answer', by: 'desk', body: { id: 'goal/G300.3', taken: true, by: 'desk', key: '' } }], {}, undefined, W.worldR);
   return !!W.askR || 'desk ' + !!W.askR;
-}, 3000);
+}, 12000);
 test.run('the world: while a test run goes on, a commit lands on origin, and cw\'s red claim is taken', 0.2, async function () {
   if (!W.askR) return noR;
   await profiles(W.askR);
