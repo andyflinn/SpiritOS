@@ -12,7 +12,6 @@ const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const FILE = path.join(__dirname, '..', 'verb.js');
 
-function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 const tick = function () { return new Promise(function (r) { setImmediate(r); }); };
 const settle = async function () { for (let i = 0; i < 20; i++) await tick(); };
@@ -29,20 +28,30 @@ function node(tag) {
 
 const TREE = { fs: { search: {}, loadFile: {}, DEBUG: {} }, jobs: { list: {} } };
 
-test.startTest('apiVerbSelector.js: the verb dropdown');
+// One test.run per test (goal/G47.2). What the world and the tests make, for the tests after them.
+let SRC, w, win, E, made, box, verbs, l, mine, m, N;
+const seen = [];
+const NO_MADE = 'no verb element: the world failed';
+const NO_L = 'the verb element drew no probabilitySearch';
+const rows = function () { return (l && typeof l.opts.rows === 'function' ? l.opts.rows() : []).map(function (r) { return r.key; }); };
 
-(async function () {
-  ok(fs.existsSync(FILE), 'spirit/element/search/api/verb.js exists', 'there is no spirit/element/search/api/verb.js');
-  if (!fs.existsSync(FILE)) return;
-  const SRC = fs.readFileSync(FILE, 'utf8');
-  ok(!/shellCreateListSearch/.test(SRC), 'it names no shellCreateListSearch (goal/G40.8)', 'it names shellCreateListSearch');
+test.run('spirit/element/search/api/verb.js exists', 0.2, function () {
+  return fs.existsSync(FILE) || 'there is no spirit/element/search/api/verb.js';
+}, 1000);
+test.run('it names no shellCreateListSearch (goal/G40.8)', 0.2, function () {
+  SRC = fs.readFileSync(FILE, 'utf8');
+  return !/shellCreateListSearch/.test(SRC) || 'it names shellCreateListSearch';
+}, 1000);
 
+// a shell element of its own, on probabilitySearch
+test.run('it adds apiVerbSelector with a create to window.spirit.element, and createApiVerbSelector no more', 0.2, function () {
+  if (!SRC) return 'no verb.js to run';
   // A BARE WINDOW (rule/26): probabilitySearch is on the page only once the selector requires it.
-  const w = { lists: [], required: [] };
+  w = { lists: [], required: [] };
   // goal/G43.32: the stand-in search stands where an element now finds it, spirit.element.spirit.element.search.
   const STAND = function (E) { E.search = Object.assign(E.search || {}, { create: function (host, opts) { const l = { host: host, opts: opts, redrawn: 0,
     redraw: function () { l.redrawn += 1; }, refresh: function () {}, destroy: function () {} }; w.lists.push(l); return l; } }); };
-  const win = {
+  win = {
     spirit: { escapeHtml: function (s) { return String(s); }, element: {},
       require: function (p) { w.required.push(String(p)); if (p === 'spirit/element/search.js' && !w.stood) { w.stood = true; STAND(((win.spirit.element.spirit = win.spirit.element.spirit || {}).element = win.spirit.element.spirit.element || {})); } return Promise.resolve(true); },
       // A family's cache (goal/G41.28): the family's own manager, run on this window over the real data set.
@@ -71,51 +80,79 @@ test.startTest('apiVerbSelector.js: the verb dropdown');
   win.spirit.data.homeNode(win.spirit.node.key);
   vm.runInContext(SRC, win, { filename: FILE });
   // goal/G43.32: it stands at its path, spirit.element.spirit.element.search.api.verb.
-  const E = ((win.spirit.element.spirit || {}).element || {});
-
-  test.subHeading('a shell element of its own, on probabilitySearch');
-  const made = E.search.api.verb;
-  ok(made && typeof made.create === 'function' && !('createApiVerbSelector' in E), 'it adds apiVerbSelector with a create to window.spirit.element, and createApiVerbSelector no more', 'elements: ' + short(Object.keys(E)));
-  if (!made || typeof made.create !== 'function') return;
-  ok(w.required.indexOf('spirit/element/search.js') !== -1, 'it loads probabilitySearch itself (goal/G41.3)', 'required: ' + short(w.required));
-  // Box v23: "every element gets a container and appends itself".
-  const box = node('div');
-  const verbs = made.create(box, { own: false });
-  ok(box.kids.length === 1 && box.kids[0] === verbs, 'create(container, options) appends the control to its container and answers it', 'container holds ' + box.kids.length + (box.kids[0] === verbs ? ', the control' : ', not the control'));
-  const seen = [];
+  E = ((win.spirit.element.spirit || {}).element || {});
+  made = E.search && E.search.api && E.search.api.verb;
+  return made && typeof made.create === 'function' && !('createApiVerbSelector' in E) ? true : 'elements: ' + short(Object.keys(E));
+}, 1000);
+test.run('it loads probabilitySearch itself (goal/G41.3)', 0.2, function () {
+  if (!made || typeof made.create !== 'function') return NO_MADE;
+  return w.required.indexOf('spirit/element/search.js') !== -1 ? true : 'required: ' + short(w.required);
+}, 1000);
+// Box v23: "every element gets a container and appends itself".
+test.run('create(container, options) appends the control to its container and answers it', 0.2, function () {
+  if (!made || typeof made.create !== 'function') return NO_MADE;
+  box = node('div');
+  verbs = made.create(box, { own: false });
+  return box.kids.length === 1 && box.kids[0] === verbs ? true : 'container holds ' + box.kids.length + (box.kids[0] === verbs ? ', the control' : ', not the control');
+}, 1000);
+test.run('it draws one probabilitySearch dropdown', 0.2, async function () {
+  if (!verbs) return NO_MADE;
   verbs.addEventListener('change', function () { seen.push(verbs.value); });
   await settle();
-  const l = w.lists[0];
-  ok(!!l && l.opts.face === 'dropdown', 'it draws one probabilitySearch dropdown', 'lists: ' + short(w.lists.map(function (x) { return x.opts.face; })));
-  if (!l) return;
-  // Andy, goal/G41.14: "the apiVerbSelector element MUST offer a (valid) \"All Verbs\" option at the top, which results in an
-  // empty string as \"value\"".
-  ok(l.opts.all === 'All Verbs', 'its first option, at the top, reads All Verbs', 'all: ' + l.opts.all);
-  const rows = function () { return (typeof l.opts.rows === 'function' ? l.opts.rows() : []).map(function (r) { return r.key; }); };
+  l = w.lists[0];
+  return !!l && l.opts.face === 'dropdown' ? true : 'lists: ' + short(w.lists.map(function (x) { return x.opts.face; }));
+}, 1000);
+// Andy, goal/G41.14: "the apiVerbSelector element MUST offer a (valid) \"All Verbs\" option at the top, which results in an
+// empty string as \"value\"".
+test.run('its first option, at the top, reads All Verbs', 0.2, function () {
+  if (!l) return NO_L;
+  return l.opts.all === 'All Verbs' ? true : 'all: ' + l.opts.all;
+}, 1000);
 
-  test.subHeading('another party\'s tree (own: false), listed from that tree: introSpector\'s deferral (the box: "the only exception is introspector, deferred for network-scope design reasons.")');
-  ok(verbs.hidden === true && rows().length === 0, 'with no server it is hidden and lists nothing', 'hidden ' + verbs.hidden + ', rows ' + short(rows()));
+// another party's tree (own: false), listed from that tree: introSpector's deferral (the box: "the only exception is
+// introspector, deferred for network-scope design reasons.")
+test.run('with no server it is hidden and lists nothing', 0.2, function () {
+  if (!l) return NO_L;
+  return verbs.hidden === true && rows().length === 0 ? true : 'hidden ' + verbs.hidden + ', rows ' + short(rows());
+}, 1000);
+test.run('show(tree, server) lists that server\'s verbs, DEBUG never', 0.2, function () {
+  if (!l) return NO_L;
   verbs.show(TREE, 'fs');
-  ok(verbs.hidden === false && short(rows()) === short(['loadFile', 'search']), 'show(tree, server) lists that server\'s verbs, DEBUG never', 'hidden ' + verbs.hidden + ', rows ' + short(rows()));
+  return verbs.hidden === false && short(rows()) === short(['loadFile', 'search']) ? true : 'hidden ' + verbs.hidden + ', rows ' + short(rows());
+}, 1000);
+test.run('a pick sets its value and fires change', 0.2, function () {
+  if (!l) return NO_L;
   l.opts.pick({ key: 'search', name: 'search' }, 'search');
-  ok(verbs.value === 'search' && seen[seen.length - 1] === 'search', 'a pick sets its value and fires change', 'value ' + verbs.value + ', seen ' + short(seen));
+  return verbs.value === 'search' && seen[seen.length - 1] === 'search' ? true : 'value ' + verbs.value + ', seen ' + short(seen);
+}, 1000);
+test.run('All Verbs is a valid choice: its value is the empty string, and change says so', 0.2, function () {
+  if (!l) return NO_L;
   l.opts.pick(null, '');
-  ok(verbs.value === '' && seen[seen.length - 1] === '', 'All Verbs is a valid choice: its value is the empty string, and change says so', 'value ' + verbs.value + ', seen ' + short(seen));
+  return verbs.value === '' && seen[seen.length - 1] === '' ? true : 'value ' + verbs.value + ', seen ' + short(seen);
+}, 1000);
+test.run('show with no server hides it and clears the choice', 0.2, function () {
+  if (!l) return NO_L;
   l.opts.pick({ key: 'search', name: 'search' }, 'search');
   verbs.show(TREE, '');
-  ok(verbs.hidden === true && verbs.value === '' && rows().length === 0, 'show with no server hides it and clears the choice', 'hidden ' + verbs.hidden + ', value ' + verbs.value);
+  return verbs.hidden === true && verbs.value === '' && rows().length === 0 ? true : 'hidden ' + verbs.hidden + ', value ' + verbs.value;
+}, 1000);
 
-  test.subHeading('this node\'s own verbs are the node family\'s cache (goal/G41.28; Andy, Q7: "the family, verb and app-server selectors draw from it")');
-  const mine = made.create(node('div'), {});
+// this node's own verbs are the node family's cache (goal/G41.28; Andy, Q7: "the family, verb and app-server selectors
+// draw from it")
+test.run('it loads the node manager, and its list is a view of ((spirit.data || {}).node || {}).data\'s verbs, no rows of its own', 0.2, async function () {
+  if (!made || typeof made.create !== 'function') return NO_MADE;
+  mine = made.create(node('div'), {});
   await settle();
-  const m = w.lists[w.lists.length - 1];
-  const N = ((win.spirit.data || {}).node || {}).data;
-  ok((w.managers || []).indexOf('node') !== -1 && !!N && m.opts.data === N.verbsBranch && m.opts.rows === undefined, 'it loads the node manager, and its list is a view of ((spirit.data || {}).node || {}).data\'s verbs, no rows of its own', 'managers ' + short(w.managers) + ', data ' + short(m.opts.data) + ', rows ' + typeof m.opts.rows);
+  m = w.lists[w.lists.length - 1];
+  N = ((win.spirit.data || {}).node || {}).data;
+  return (w.managers || []).indexOf('node') !== -1 && !!N && m.opts.data === N.verbsBranch && m.opts.rows === undefined ? true : 'managers ' + short(w.managers) + ', data ' + short(m && m.opts.data) + ', rows ' + typeof (m && m.opts.rows);
+}, 1000);
+test.run('show(tree, server) narrows the kept verbs to that family\'s, DEBUG never', 0.2, function () {
+  if (!N || !m) return 'no node cache or no list of this node\'s own verbs';
   N.keepTree(TREE, win.spirit.apiTreeIndex);
   mine.show(TREE, 'fs');
   const kept = win.spirit.data.getPath(N.verbsBranch) || {};
   const fam = (m.opts.filters || []).filter(function (x) { return x.name === 'family'; })[0];
   const shown = Object.keys(kept).filter(function (k) { return fam && fam.test(kept[k]); }).map(function (k) { return kept[k].name; }).sort();
-  ok(!!fam && short(shown) === short(['loadFile', 'search']) && mine.hidden === false, 'show(tree, server) narrows the kept verbs to that family\'s, DEBUG never', 'shown ' + short(shown) + ', hidden ' + mine.hidden);
-}()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
-  function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });
+  return !!fam && short(shown) === short(['loadFile', 'search']) && mine.hidden === false ? true : 'shown ' + short(shown) + ', hidden ' + mine.hidden;
+}, 1000);

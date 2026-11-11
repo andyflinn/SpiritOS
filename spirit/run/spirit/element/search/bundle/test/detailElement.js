@@ -14,7 +14,6 @@ const RUN = path.resolve(__dirname, '../../../../..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const FILE = path.join(__dirname, '..', 'detailElement.js');
 
-function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 const tick = function () { return new Promise(function (r) { setImmediate(r); }); };
 const settle = async function () { for (let i = 0; i < 20; i++) await tick(); };
@@ -32,21 +31,29 @@ function node(tag) {
 function all(root) { const out = []; (function walk(x) { (x.kids || []).forEach(function (k) { out.push(k); walk(k); }); }(root)); return out; }
 function text(root) { return all(root).map(function (k) { return String(k.textContent || ''); }).join(' '); }
 
-test.startTest('branchEditor.js: one bundle\'s branches, edited');
-process.on('unhandledRejection', function (e) { test.fail('it threw where nothing caught it: ' + (e && e.message || e)); });
+// One test.run per test (goal/G47.2). What the world and the tests make, for the tests after them.
+let asked, required, pages, families, branchSels, forms, armed, bundleWatches, E, box, bs, fam, add, rf, dr, del;
+let closed = 0;
+let answer = function (a) { return Promise.resolve({ id: 11 }); };
+const D = function () { return (E && E.search && E.search.bundle && E.search.bundle.detailElement) || null; };
+const NO_E = 'the editor never ran: the world failed';
+const NO_D = 'no bundle detail element registered';
+const NO_BS = 'the editor drew no branch list';
+const NO_ADD = 'no add form with a family selector and an Add';
+const NO_DR = 'no Delete row';
+const hasD = function () { return !!(D() && typeof D().create === 'function'); };
 
-(async function () {
-  if (!fs.existsSync(FILE)) { test.fail('spirit/element/search/bundle/detailElement.js is not there'); return; }
-  const asked = [];
-  const required = [];
-  const pages = [];
-  const families = [];
-  const branchSels = [];
-  const forms = [];
-  let answer = function (a) { return Promise.resolve({ id: 11 }); };
+test.run('the world: the editor runs on a bare window, its parts stand-ins', 0.2, async function () {
+  if (!fs.existsSync(FILE)) return 'spirit/element/search/bundle/detailElement.js is not there';
+  asked = [];
+  required = [];
+  pages = [];
+  families = [];
+  branchSels = [];
+  forms = [];
   const auth = { branch: function (a) { asked.push(a); return answer(a); }, bundle: function (a) { asked.push(a); return Promise.resolve({ id: a.id }); } };
-  const armed = [];
-  const bundleWatches = [];
+  armed = [];
+  bundleWatches = [];
   const STANDS = {
     // The one-row form (goal/G41.27), tested in its own folder: a stand-in answering { root, span, button } as the real
     // one does, its root appended to the container it is given, its button saying the words it was handed.
@@ -72,89 +79,152 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   global.window.spirit.require = function (p) { required.push(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.element.spirit = global.window.spirit.element.spirit || {}).element = global.window.spirit.element.spirit.element || {})); } return Promise.resolve(true); };
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
-  const E = ((global.window.spirit.element || {}).spirit || {}).element || {};
-  const D = function () { return (E.search && E.search.bundle && E.search.bundle.detailElement) || null; };
+  E = ((global.window.spirit.element || {}).spirit || {}).element || {};
+  return true;
+}, 1000);
 
-  test.subHeading('it loads what it uses itself (rule/26)');
-  ok(['spirit/element/search/api.js', 'spirit/element/search/branch.js'].every(function (p) { return required.indexOf(p) !== -1; }),
-    'it requires the family selector and the branch selector through spirit.require', 'required: ' + short(required));
-  ok(D() && typeof D().create === 'function' && D().open === undefined, 'it registers spirit.element.spirit.element.search.bundle.detailElement.create, and no page of its own (goal/G41.32)', 'elements: ' + short(Object.keys(D() || {})));
-  if (!D() || typeof D().create !== 'function') return;
+// it loads what it uses itself (rule/26)
+test.run('it requires the family selector and the branch selector through spirit.require', 0.2, function () {
+  if (!required) return NO_E;
+  return ['spirit/element/search/api.js', 'spirit/element/search/branch.js'].every(function (p) { return required.indexOf(p) !== -1; }) ? true : 'required: ' + short(required);
+}, 1000);
+test.run('it registers spirit.element.spirit.element.search.bundle.detailElement.create, and no page of its own (goal/G41.32)', 0.2, function () {
+  if (!E) return NO_E;
+  return hasD() && D().open === undefined ? true : 'elements: ' + short(Object.keys(D() || {}));
+}, 1000);
 
-  test.subHeading('always on one bundle');
-  // Andy, box: "the branchEditor page is always configured with a bundle key".
-  const box = node('box');
-  let closed = 0;
-  const tabbed = D().create(box, { bundle: 7, label: 'Reader', gone: function () { closed += 1; } });
+// always on one bundle
+// Andy, box: "the branchEditor page is always configured with a bundle key".
+test.run('its list is branchSelector.create(the page, a pane on that bundle, columns family, verb, delete)', 0.2, async function () {
+  if (!hasD()) return NO_D;
+  box = node('box');
+  D().create(box, { bundle: 7, label: 'Reader', gone: function () { closed += 1; } });
   await settle();
-  const bs = branchSels[0];
-  ok(!!bs && bs.container === box && bs.o.bundle === 7 && bs.o.face === 'pane' && JSON.stringify(bs.o.columns) === '["family","verb","delete"]' && all(box).indexOf(bs) !== -1,
-    'its list is branchSelector.create(the page, a pane on that bundle, columns family, verb, delete)', 'branch selector: ' + short(bs && bs.o) + ', in the page ' + !!(bs && bs.container === box));
+  bs = branchSels[0];
+  return !!bs && bs.container === box && bs.o.bundle === 7 && bs.o.face === 'pane' && JSON.stringify(bs.o.columns) === '["family","verb","delete"]' && all(box).indexOf(bs) !== -1 ? true : 'branch selector: ' + short(bs && bs.o) + ', in the page ' + !!(bs && bs.container === box);
+}, 1000);
 
-  test.subHeading('the add form, a rowForm: ➕ [family, its verb] [Add] (goal/G41.27)');
-  // Andy, on G41.27: "branchEditor:\n\n[➕] [choose a family… ▾] [Add]", then "careful, there's a hidden verb selector
-  // there that only displays when a family is selected... !\n[➕] [choose a family… ▾] [All Verbs ▾] [Add]". And
-  // "apiFamiliySelector.js will use apiVerbSelector as part of itself": the two dropdowns are its two halves, the verb's
-  // hiding until a family is chosen the family selector's own (its test).
-  const fam = families[0];
-  const add = all(box).filter(function (k) { return k.tag === 'button' && /^\s*Add\s*$/.test(k.textContent || ''); })[0];
-  ok(required.indexOf('spirit/element/rowForm.js') !== -1, 'it loads the rowForm itself (rule/26)', 'required: ' + short(required));
-  const rf = forms[0];
-  ok(forms.filter(function (f) { return f.opts.icon === '➕'; }).length === 1 && rf.opts.icon === '➕' && rf.opts.button === 'Add' && all(box).indexOf(rf.root) !== -1, 'its add form is one rowForm in the page, its icon ➕ and its button Add', 'rowForms: ' + short(forms.map(function (f) { return f.opts; })));
+// the add form, a rowForm: ➕ [family, its verb] [Add] (goal/G41.27)
+// Andy, on G41.27: "branchEditor:\n\n[➕] [choose a family… ▾] [Add]", then "careful, there's a hidden verb selector
+// there that only displays when a family is selected... !\n[➕] [choose a family… ▾] [All Verbs ▾] [Add]". And
+// "apiFamiliySelector.js will use apiVerbSelector as part of itself": the two dropdowns are its two halves, the verb's
+// hiding until a family is chosen the family selector's own (its test).
+test.run('it loads the rowForm itself (rule/26)', 0.2, function () {
+  if (!box) return NO_BS;
+  fam = families[0];
+  add = all(box).filter(function (k) { return k.tag === 'button' && /^\s*Add\s*$/.test(k.textContent || ''); })[0];
+  return required.indexOf('spirit/element/rowForm.js') !== -1 ? true : 'required: ' + short(required);
+}, 1000);
+test.run('its add form is one rowForm in the page, its icon ➕ and its button Add', 0.2, function () {
+  if (!box) return NO_BS;
+  rf = forms[0];
+  return forms.filter(function (f) { return f.opts.icon === '➕'; }).length === 1 && rf.opts.icon === '➕' && rf.opts.button === 'Add' && all(box).indexOf(rf.root) !== -1 ? true : 'rowForms: ' + short(forms.map(function (f) { return f.opts; }));
+}, 1000);
+test.run('its span holds the one family selector, choose a family…, its verb half with it, and nothing else', 0.2, function () {
+  if (!box) return NO_BS;
   const inSpan = !!rf && !!fam && rf.span.kids.length === 1 && (rf.span.kids[0] === fam || (rf.span.kids[0].kids || []).indexOf(fam) !== -1 && rf.span.kids[0].kids.length === 1);
-  ok(families.length === 1 && inSpan && fam.o.all === 'choose a family…', 'its span holds the one family selector, choose a family…, its verb half with it, and nothing else', 'family ' + families.length + ', in the span ' + inSpan + ', all ' + short(fam && fam.o.all));
-  ok(!!rf && !!add && add === rf.button && all(box).filter(function (k) { return k.tag === 'button' && /^\s*Add\s*$/.test(k.textContent || ''); }).length === 1, 'its Add is the rowForm\'s button, the only Add', 'Add is the form\'s ' + !!(rf && add === rf.button));
-  if (!fam || !add) return;
-  ok(!/\bnew\b/.test(text(box)), 'the word "new" at its start is gone, ➕ in its place', 'text: ' + short(text(box)));
+  return families.length === 1 && inSpan && fam.o.all === 'choose a family…' ? true : 'family ' + families.length + ', in the span ' + inSpan + ', all ' + short(fam && fam.o.all);
+}, 1000);
+test.run('its Add is the rowForm\'s button, the only Add', 0.2, function () {
+  if (!box) return NO_BS;
+  return !!rf && !!add && add === rf.button && all(box).filter(function (k) { return k.tag === 'button' && /^\s*Add\s*$/.test(k.textContent || ''); }).length === 1 ? true : 'Add is the form\'s ' + !!(rf && add === rf.button);
+}, 1000);
+test.run('the word "new" at its start is gone, ➕ in its place', 0.2, function () {
+  if (!fam || !add) return NO_ADD;
+  return !/\bnew\b/.test(text(box)) ? true : 'text: ' + short(text(box));
+}, 1000);
+test.run('Add with no family asks nothing', 0.2, async function () {
+  if (!fam || !add) return NO_ADD;
   add.dispatchEvent({ type: 'click' });
   await settle();
-  ok(asked.length === 0, 'Add with no family asks nothing', 'asked: ' + short(asked));
+  return asked.length === 0 ? true : 'asked: ' + short(asked);
+}, 1000);
+let r0;
+test.run('Add with the verb left at All Verbs asks auth.branch { op: add, bundle, family, verb: \'\' }', 0.2, async function () {
+  if (!fam || !add) return NO_ADD;
   fam.family = 'desk'; fam.value = 'desk'; fam.dispatchEvent(new Event('change', { bubbles: true }));
   await settle();
-  const r0 = bs.refreshed;
+  r0 = bs.refreshed;
   add.dispatchEvent({ type: 'click' });
   await settle();
-  ok(asked.length === 1 && asked[0].op === 'add' && asked[0].bundle === 7 && asked[0].family === 'desk' && asked[0].verb === '', 'Add with the verb left at All Verbs asks auth.branch { op: add, bundle, family, verb: \'\' }', 'asked: ' + short(asked));
-  ok(bs.refreshed > r0, 'an answered add makes the list search again', 'refreshed: ' + (bs.refreshed - r0));
+  return asked.length === 1 && asked[0].op === 'add' && asked[0].bundle === 7 && asked[0].family === 'desk' && asked[0].verb === '' ? true : 'asked: ' + short(asked);
+}, 1000);
+test.run('an answered add makes the list search again', 0.2, function () {
+  if (!fam || !add) return NO_ADD;
+  return bs.refreshed > r0 ? true : 'refreshed: ' + (bs.refreshed - r0);
+}, 1000);
+test.run('a verb chosen is sent as it is', 0.2, async function () {
+  if (!fam || !add) return NO_ADD;
   fam.verb = 'chat.add'; fam.value = 'desk.chat.add';
   answer = function () { return Promise.reject(Object.assign(new Error('already in this bundle'), { refusal: 'already-in-bundle' })); };
   add.dispatchEvent({ type: 'click' });
   await settle();
-  ok(asked.length === 2 && asked[1].verb === 'chat.add', 'a verb chosen is sent as it is', 'asked: ' + short(asked));
-  ok(/already-in-bundle|already in this bundle/.test(text(box)), 'a refused add is said in the page, in the node\'s words', 'text: ' + short(text(box)));
+  return asked.length === 2 && asked[1].verb === 'chat.add' ? true : 'asked: ' + short(asked);
+}, 1000);
+test.run('a refused add is said in the page, in the node\'s words', 0.2, function () {
+  if (!fam || !add) return NO_ADD;
+  return /already-in-bundle|already in this bundle/.test(text(box)) ? true : 'text: ' + short(text(box));
+}, 1000);
 
-  test.subHeading('goal/G41.32: its Delete row at the bottom, and hearing its deletion');
-  // Andy: "i need the branchEditor to have a rowForm at the bottom: [❌] \"Delete <bundle-name> bundle and branches \" [Delete (armingButton)]."
-  const dr = forms[1];
-  ok(!!dr && dr.opts.icon === '❌' && dr.opts.button === 'Delete' && dr.span.textContent === 'Delete Reader bundle and branches' && box.kids.indexOf(dr.root) > box.kids.indexOf(bs), 'a second rowForm below the list: ❌, the words, Delete', 'form: ' + short(dr && dr.opts) + ', says ' + short(dr && dr.span.textContent));
-  const del = armed.filter(function (a) { return dr && a.button === dr.button; })[0];
-  ok(!!del && typeof del.o.run === 'function', 'its Delete is an armingButton', 'armed: ' + armed.length);
+// goal/G41.32: its Delete row at the bottom, and hearing its deletion
+// Andy: "i need the branchEditor to have a rowForm at the bottom: [❌] \"Delete <bundle-name> bundle and branches \" [Delete (armingButton)]."
+test.run('a second rowForm below the list: ❌, the words, Delete', 0.2, function () {
+  if (!box) return NO_BS;
+  dr = forms[1];
+  return !!dr && dr.opts.icon === '❌' && dr.opts.button === 'Delete' && dr.span.textContent === 'Delete Reader bundle and branches' && box.kids.indexOf(dr.root) > box.kids.indexOf(bs) ? true : 'form: ' + short(dr && dr.opts) + ', says ' + short(dr && dr.span.textContent);
+}, 1000);
+test.run('its Delete is an armingButton', 0.2, function () {
+  if (!box) return NO_BS;
+  del = armed.filter(function (a) { return dr && a.button === dr.button; })[0];
+  return !!del && typeof del.o.run === 'function' ? true : 'armed: ' + armed.length;
+}, 1000);
+test.run('its second press asks auth.bundle { op: delete, id }', 0.2, async function () {
+  if (!box) return NO_BS;
   if (del) { await del.o.run(); await settle(); }
-  ok(asked.filter(function (a) { return a.op === 'delete' && a.id === 7; }).length === 1, 'its second press asks auth.bundle { op: delete, id }', 'asked: ' + short(asked));
-  ok(closed === 0, 'and it waits to hear it: the answer closes nothing', 'closed ' + closed);
+  return asked.filter(function (a) { return a.op === 'delete' && a.id === 7; }).length === 1 ? true : 'asked: ' + short(asked);
+}, 1000);
+test.run('and it waits to hear it: the answer closes nothing', 0.2, function () {
+  if (!box) return NO_BS;
+  return closed === 0 ? true : 'closed ' + closed;
+}, 1000);
+test.run('another bundle gone changes nothing', 0.2, function () {
+  if (!box) return NO_BS;
   bundleWatches.forEach(function (fn) { fn('8', undefined); });
-  ok(closed === 0, 'another bundle gone changes nothing', 'closed ' + closed);
+  return closed === 0 ? true : 'closed ' + closed;
+}, 1000);
+test.run('its own row changed is not its deletion', 0.2, function () {
+  if (!box) return NO_BS;
   bundleWatches.forEach(function (fn) { fn('8', { id: 8, label: 'x' }); fn('7', { id: 7, label: 'Reader' }); });
-  ok(closed === 0, 'its own row changed is not its deletion', 'closed ' + closed);
+  return closed === 0 ? true : 'closed ' + closed;
+}, 1000);
+test.run('its deletion heard, it says gone, for the tab to close', 0.2, function () {
+  if (!box) return NO_BS;
   bundleWatches.forEach(function (fn) { fn('7', undefined); });
-  ok(closed === 1, 'its deletion heard, it says gone, for the tab to close', 'closed ' + closed);
+  return closed === 1 ? true : 'closed ' + closed;
+}, 1000);
 
-  test.subHeading('goal/G41.32: a bundle not the node\'s is shown only');
+// goal/G41.32: a bundle not the node's is shown only
+test.run('no form, and its branches with no Delete', 0.2, async function () {
+  if (!hasD()) return NO_D;
   const ro = node('box');
   const formsBefore = forms.length;
   D().create(ro, { bundle: 8, label: 'Theirs', owner: 'agent' });
   await settle();
   const rs = branchSels[branchSels.length - 1];
-  ok(forms.length === formsBefore && !!rs && rs.container === ro && JSON.stringify(rs.o.columns) === '["family","verb"]', 'no form, and its branches with no Delete', 'forms ' + (forms.length - formsBefore) + ', columns ' + short(rs && rs.o.columns));
+  return forms.length === formsBefore && !!rs && rs.container === ro && JSON.stringify(rs.o.columns) === '["family","verb"]' ? true : 'forms ' + (forms.length - formsBefore) + ', columns ' + short(rs && rs.o.columns);
+}, 1000);
 
-  test.subHeading('the shell\'s element shape: create(container, options) (goal/G41.19)');
-  // Box v23: "every element gets a container and appends itself".
+// the shell's element shape: create(container, options) (goal/G41.19)
+// Box v23: "every element gets a container and appends itself".
+let made;
+test.run('create(container, { bundle }) draws the editor into that container', 0.2, async function () {
+  if (!hasD()) return NO_D;
   const host = node('host');
-  const made = D().create(host, { bundle: 9 });
+  made = D().create(host, { bundle: 9 });
   await settle();
   const last = branchSels[branchSels.length - 1];
-  ok(!!last && last.o.bundle === 9 && all(host).indexOf(last) !== -1 && all(host).indexOf(families[families.length - 1]) !== -1,
-    'create(container, { bundle }) draws the editor into that container', 'branch selectors ' + branchSels.length + ', in host ' + !!(last && all(host).indexOf(last) !== -1));
-  ok(!!made && typeof made.destroy === 'function', 'and answers a handle with destroy', 'made: ' + short(made && Object.keys(made)));
-}()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
-  function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });
+  return !!last && last.o.bundle === 9 && all(host).indexOf(last) !== -1 && all(host).indexOf(families[families.length - 1]) !== -1 ? true : 'branch selectors ' + branchSels.length + ', in host ' + !!(last && all(host).indexOf(last) !== -1);
+}, 1000);
+test.run('and answers a handle with destroy', 0.2, function () {
+  return !!made && typeof made.destroy === 'function' ? true : 'made: ' + short(made && Object.keys(made));
+}, 1000);

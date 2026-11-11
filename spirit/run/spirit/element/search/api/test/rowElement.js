@@ -11,19 +11,18 @@ const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 
 const FILE = path.join(__dirname, '..', 'rowElement.js');
-function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 const tick = function () { return new Promise(function (r) { setImmediate(r); }); };
 const settle = async function () { for (let i = 0; i < 20; i++) await tick(); };
 
-test.startTest('search/api/rowElement.js: one family of an api tree, as a row element (goal/G43.32)');
-process.on('unhandledRejection', function (e) { test.fail('it threw where nothing caught it: ' + (e && e.message || e)); });
+// One test.run per test (goal/G47.2). What the world and the tests make, for the tests after them.
+let required, specs, indexes = 0, R, a, b;
+const NO_R = 'no row element: the world failed';
 
-(async function () {
-  if (!fs.existsSync(FILE)) { test.fail('spirit/element/search/api/rowElement.js is not there'); return; }
-  const required = [];
-  const specs = [];
-  let indexes = 0;
+test.run('the world: the row runs on a bare window, the shared row element a stand-in', 0.2, async function () {
+  if (!fs.existsSync(FILE)) return 'spirit/element/search/api/rowElement.js is not there';
+  required = [];
+  specs = [];
   global.window = { spirit: { escapeHtml: function (s) { return String(s).replace(/</g, '&lt;'); }, ready: Promise.resolve({}), element: {} } };
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
   global.spirit = global.window.spirit;
@@ -32,17 +31,33 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   await settle();
   const E = global.window.spirit.element.spirit.element;
   E.rowElement = { index: function () { indexes += 1; return { n: indexes }; }, create: function (spec) { specs.push(spec); return { spec: spec }; } };
-  const R = E.search && E.search.api && E.search.api.rowElement;
-  ok(R && typeof R.create === 'function', 'it places itself at spirit.element.spirit.element.search.api.rowElement, with a create', 'its place: ' + short(R && Object.keys(R)));
-  if (!R || typeof R.create !== 'function') return;
-  ok(required.indexOf('spirit/element/rowElement.js') !== -1, 'it loads the shared row element itself', 'required: ' + short(required));
+  R = E.search && E.search.api && E.search.api.rowElement;
+  return true;
+}, 1000);
+test.run('it places itself at spirit.element.spirit.element.search.api.rowElement, with a create', 0.2, function () {
+  return R && typeof R.create === 'function' ? true : 'its place: ' + short(R && Object.keys(R));
+}, 1000);
+test.run('it loads the shared row element itself', 0.2, function () {
+  if (!required) return NO_R;
+  return required.indexOf('spirit/element/rowElement.js') !== -1 ? true : 'required: ' + short(required);
+}, 1000);
 
-  test.subHeading('a family, its row');
+// a family, its row
+test.run('a row of kind family, keyed and named by the family, with no actions', 0.2, function () {
+  if (!R || typeof R.create !== 'function') return NO_R;
   R.create({ name: 'fs' });
   R.create({ key: '<x>' });
-  const a = specs[0], b = specs[1];
-  ok(a && a.kind === 'family' && a.key === 'fs' && a.row.name === 'fs' && Array.isArray(a.actions) && !a.actions.length, 'a row of kind family, keyed and named by the family, with no actions', 'spec: ' + short(a && { kind: a.kind, key: a.key, row: a.row }));
-  ok(a && a.fields.length === 1 && a.fields[0].name === 'name' && a.fields[0].paint(a.row) === 'fs', 'its one field is the family\'s name', 'fields: ' + short(a && a.fields.map(function (f) { return f.name; })));
-  ok(b && b.key === '<x>' && b.fields[0].paint(b.row) === '&lt;x>', 'a row handed only a key is named by it, and what it paints is escaped', 'spec: ' + short(b && { key: b.key, painted: b.fields[0].paint(b.row) }));
-  ok(indexes === 1 && a.index === b.index, 'its rows share one index', indexes + ' indexes');
-}()).then(function () { test.reportSuccessFailureCount(); }, function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); });
+  a = specs[0]; b = specs[1];
+  return a && a.kind === 'family' && a.key === 'fs' && a.row.name === 'fs' && Array.isArray(a.actions) && !a.actions.length ? true : 'spec: ' + short(a && { kind: a.kind, key: a.key, row: a.row });
+}, 1000);
+test.run('its one field is the family\'s name', 0.2, function () {
+  if (!a) return 'no row was made';
+  return a.fields.length === 1 && a.fields[0].name === 'name' && a.fields[0].paint(a.row) === 'fs' ? true : 'fields: ' + short(a.fields.map(function (f) { return f.name; }));
+}, 1000);
+test.run('a row handed only a key is named by it, and what it paints is escaped', 0.2, function () {
+  return b && b.key === '<x>' && b.fields[0].paint(b.row) === '&lt;x>' ? true : 'spec: ' + short(b && { key: b.key, painted: b.fields[0].paint(b.row) });
+}, 1000);
+test.run('its rows share one index', 0.2, function () {
+  if (!a || !b) return 'no rows were made';
+  return indexes === 1 && a.index === b.index ? true : indexes + ' indexes';
+}, 1000);

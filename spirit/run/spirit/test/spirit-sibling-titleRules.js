@@ -58,7 +58,7 @@ function blankComments(src) {
     if (ch === '/' && nx === '*') { const end = src.indexOf('*/', i + 2); const stop = end === -1 ? src.length : end + 2; out += src.slice(i, stop).replace(/[^\n]/g, ' '); i = stop; continue; }
     if (ch === '"' || ch === "'" || ch === '`') { str = ch; out += ch; i += 1; last = ch; continue; }
     // A slash opens a regular expression where a value is expected: after an operator, a bracket, a comma or a keyword.
-    if (ch === '/' && (/[(,=:[!&|?{};+\-*%<>~^]$/.test(last) || last === '' || /\b(return|typeof|case|in|of)$/.test(out.slice(-8)))) { regex = true; cls = false; out += ch; i += 1; last = ch; continue; }
+    if (ch === '/' && (/[(,=:[!&|?{};+\-*%<>~^]$/.test(last) || last === '' || /\b(return|typeof|case|in|of)$/.test(out.replace(/\s+$/, "").slice(-8)))) { regex = true; cls = false; out += ch; i += 1; last = ch; continue; }
     out += ch;
     if (!/\s/.test(ch)) last = ch;
     i += 1;

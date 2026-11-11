@@ -14,7 +14,6 @@ const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const FILE = path.join(RUN, 'spirit', 'element', 'search', 'branch', 'listElement.js');
 
-function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 const tick = function () { return new Promise(function (r) { setImmediate(r); }); };
 const settle = async function () { for (let i = 0; i < 20; i++) await tick(); };
@@ -32,16 +31,21 @@ function node(tag) {
 }
 function within(root, x) { if (root === x) return true; return (root.kids || []).some(function (k) { return within(k, x); }); }
 
-test.startTest('branchSelector/listElement.js: the branch list');
-process.on('unhandledRejection', function (e) { test.fail('it threw where nothing caught it: ' + (e && e.message || e)); });
+// One test.run per test (goal/G47.2). What the world and the tests make, for the tests after them.
+let asked, required, lists, families, managers, E, host, made, l, o, fam, sel;
+const NO_E = 'the list never ran: the world failed';
+const NO_LIST = 'no list element registered';
+const NO_SEARCH = 'the list drew no search';
+const NO_FAM = 'the list made no family selector';
+const listed = function () { return E && E.search && E.search.branch && E.search.branch.listElement && typeof E.search.branch.listElement.create === 'function'; };
 
-(async function () {
-  if (!fs.existsSync(FILE)) { test.fail('spirit/element/search/branch/listElement.js is not there'); return; }
-  const asked = [];
-  const required = [];
-  const lists = [];
-  const families = [];
-    const auth = { branch: function (a) { asked.push(a); return Promise.resolve({ items: [{ key: '3', label: JSON.stringify({ id: 3, bundle: 7, family: 'desk', verb: '' }) }], more: false }); } };
+test.run('the world: the list runs on a bare window, the page\'s data set real', 0.2, async function () {
+  if (!fs.existsSync(FILE)) return 'spirit/element/search/branch/listElement.js is not there';
+  asked = [];
+  required = [];
+  lists = [];
+  families = [];
+  const auth = { branch: function (a) { asked.push(a); return Promise.resolve({ items: [{ key: '3', label: JSON.stringify({ id: 3, bundle: 7, family: 'desk', verb: '' }) }], more: false }); } };
   const STANDS = {
     'spirit/element/search.js': function (E) { E.search = Object.assign(E.search || {}, { create: function (host, o) {
       const l = { host: host, o: o, refreshes: 0, destroyed: false, refresh: function () { l.refreshes += 1; }, redraw: function () {}, destroy: function () { l.destroyed = true; } };
@@ -66,7 +70,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   global.window.spirit.node = { key: NODE_KEY };
   DATA.homeNode(NODE_KEY);
   // spirit.cacheManager(name), as a page's: the family's manager loaded once, attaching itself to the data set.
-  const managers = [];
+  managers = [];
   global.window.spirit.cacheManager = function (name) {
     managers.push(String(name));
     vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'data.js'), 'utf8'), { filename: name + '/data.js' });
@@ -75,80 +79,130 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   global.window.spirit.require = function (p) { required.push(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.element.spirit = global.window.spirit.element.spirit || {}).element = global.window.spirit.element.spirit.element || {})); } return Promise.resolve(true); };
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
-  const E = ((global.window.spirit.element || {}).spirit || {}).element || {};
+  E = ((global.window.spirit.element || {}).spirit || {}).element || {};
+  return true;
+}, 1000);
 
-  test.subHeading('it loads what it uses itself (rule/26)');
-  ok(['spirit/element/search.js', 'spirit/element/search/branch/rowElement.js', 'spirit/element/search/api.js'].every(function (p) { return required.indexOf(p) !== -1; }) && !required.some(function (p) { return /data\.js$/.test(p); }),
-    'it requires the search element, its row element and the family selector through spirit.require, and no data script (Andy: "NO FUCKING DATA SCRIPT")', 'required: ' + short(required));
-  ok(E.search.branch.listElement && typeof E.search.branch.listElement.create === 'function', 'it registers spirit.element.spirit.element.search.branch.listElement.create', 'elements: ' + short(Object.keys(E)));
-  if (!E.search.branch.listElement || typeof E.search.branch.listElement.create !== 'function') return;
+// it loads what it uses itself (rule/26)
+test.run('it requires the search element, its row element and the family selector through spirit.require, and no data script (Andy: "NO FUCKING DATA SCRIPT")', 0.2, function () {
+  if (!required) return NO_E;
+  return ['spirit/element/search.js', 'spirit/element/search/branch/rowElement.js', 'spirit/element/search/api.js'].every(function (p) { return required.indexOf(p) !== -1; }) && !required.some(function (p) { return /data\.js$/.test(p); }) ? true : 'required: ' + short(required);
+}, 1000);
+test.run('it registers spirit.element.spirit.element.search.branch.listElement.create', 0.2, function () {
+  if (!E) return NO_E;
+  return listed() ? true : 'elements: ' + short(Object.keys(E));
+}, 1000);
 
-  test.subHeading('one bundle\'s branches, searched at auth.branch');
-  const host = node('host');
-  const made = E.search.branch.listElement.create(host, { bundle: 7, face: 'pane', columns: ['family', 'verb', 'delete'] });
+// one bundle's branches, searched at auth.branch
+test.run('it draws one probabilitySearch inside the host it is given', 0.2, async function () {
+  if (!listed()) return NO_LIST;
+  host = node('host');
+  made = E.search.branch.listElement.create(host, { bundle: 7, face: 'pane', columns: ['family', 'verb', 'delete'] });
   await settle();
-  const l = lists[0];
-  ok(!!l && within(host, l.host), 'it draws one probabilitySearch inside the host it is given', 'lists: ' + lists.length);
-  if (!l) return;
-  const o = l.o;
-  ok(l.refreshes >= 1, 'it fills as soon as it is drawn', 'refreshes: ' + l.refreshes);
-  // goal/G41.14: a view of the node's branches, kept current by the node's stream, so every branch list on a page agrees;
-  // goal/G41.28: the branch the auth family's cache manager keeps.
+  l = lists[0];
+  if (l) o = l.o;
+  return !!l && within(host, l.host) ? true : 'lists: ' + lists.length;
+}, 1000);
+test.run('it fills as soon as it is drawn', 0.2, function () {
+  if (!l) return NO_SEARCH;
+  return l.refreshes >= 1 ? true : 'refreshes: ' + l.refreshes;
+}, 1000);
+// goal/G41.14: a view of the node's branches, kept current by the node's stream, so every branch list on a page agrees;
+// goal/G41.28: the branch the auth family's cache manager keeps.
+test.run('it is a view of the auth family\'s branches (spirit.data.auth.data.branches.branch), the spirit object\'s cache', 0.2, function () {
+  if (!l) return NO_SEARCH;
   const B = ((global.window.spirit.data || {}).auth || {}).data && global.window.spirit.data.auth.data.branches;
-  ok(!!B && typeof B.branch === 'string' && B.branch !== '' && o.data === B.branch, 'it is a view of the auth family\'s branches (spirit.data.auth.data.branches.branch), the spirit object\'s cache', 'data: ' + short(o.data) + ', authReads.branches.branch ' + short(B && B.branch));
-
-  const got = await o.search(o.args(' cha ', {}));
-  ok(o.server === 'auth' && o.verb === 'branch' && asked.length === 1 && asked[0].op === 'search' && asked[0].text === 'cha' && asked[0].bundle === 7,
-    'its search asks auth.branch { op: search, text, bundle } through the spirit object, the text trimmed', 'asked: ' + short(asked));
-  ok(got && got.status === 200 && got.body && got.body.items.length === 1 && got.body.more === false, 'and answers as a reply: { items, more }', 'got: ' + short(got));
-  ok(JSON.stringify((o.columns || []).map(function (c) { return c.field; })) === '["family","verb","delete"]', 'opts.columns names the row\'s fields it shows, in order', 'columns: ' + short(o.columns));
+  return !!B && typeof B.branch === 'string' && B.branch !== '' && o.data === B.branch ? true : 'data: ' + short(o.data) + ', authReads.branches.branch ' + short(B && B.branch);
+}, 1000);
+let got;
+test.run('its search asks auth.branch { op: search, text, bundle } through the spirit object, the text trimmed', 0.2, async function () {
+  if (!l) return NO_SEARCH;
+  got = await o.search(o.args(' cha ', {}));
+  return o.server === 'auth' && o.verb === 'branch' && asked.length === 1 && asked[0].op === 'search' && asked[0].text === 'cha' && asked[0].bundle === 7 ? true : 'asked: ' + short(asked);
+}, 1000);
+test.run('and answers as a reply: { items, more }', 0.2, function () {
+  if (!l) return NO_SEARCH;
+  return got && got.status === 200 && got.body && got.body.items.length === 1 && got.body.more === false ? true : 'got: ' + short(got);
+}, 1000);
+test.run('opts.columns names the row\'s fields it shows, in order', 0.2, function () {
+  if (!l) return NO_SEARCH;
+  return JSON.stringify((o.columns || []).map(function (c) { return c.field; })) === '["family","verb","delete"]' ? true : 'columns: ' + short(o.columns);
+}, 1000);
+test.run('each row is a branchElement of that branch', 0.2, function () {
+  if (!l) return NO_SEARCH;
   const el = o.element({ id: 3, bundle: 7, family: 'desk', verb: '' }, '3');
-  ok(el && el.kind === 'branch' && el.row.id === 3 && el.row.family === 'desk', 'each row is a branchElement of that branch', 'element: ' + short(el));
-  // THE WHOLE ROW (goal/G41.28; Andy, box v15: "All client side searches will be fixed, too, and search the whole row, as
-  // cached in spirit.data."): the list hands its search no matched() of its own.
-  ok(typeof o.matched !== 'function', 'it hands its search no matched(): the whole row is matched (goal/G41.28)', 'it still hands matched(): ' + short(o.matched));
-  // goal/G41.14: a picked branch is shown by what it reaches, never its number (Andy: "the bundleSelector shows a
-  // fucking number is selected instead of the fucking label").
+  return el && el.kind === 'branch' && el.row.id === 3 && el.row.family === 'desk' ? true : 'element: ' + short(el);
+}, 1000);
+// THE WHOLE ROW (goal/G41.28; Andy, box v15: "All client side searches will be fixed, too, and search the whole row, as
+// cached in spirit.data."): the list hands its search no matched() of its own.
+test.run('it hands its search no matched(): the whole row is matched (goal/G41.28)', 0.2, function () {
+  if (!l) return NO_SEARCH;
+  return typeof o.matched !== 'function' ? true : 'it still hands matched(): ' + short(o.matched);
+}, 1000);
+// goal/G41.14: a picked branch is shown by what it reaches, never its number (Andy: "the bundleSelector shows a
+// fucking number is selected instead of the fucking label").
+test.run('a picked branch is shown as family.verb, or family (ALL), never its number', 0.2, function () {
+  if (!l) return NO_SEARCH;
   const nm = typeof o.name === 'function' ? [o.name({ id: 3, bundle: 7, family: 'desk', verb: 'chat.add' }, '3'), o.name({ id: 4, bundle: 7, family: 'files', verb: '' }, '4')] : null;
-  ok(nm && nm[0] === 'desk.chat.add' && nm[1] === 'files (ALL)', 'a picked branch is shown as family.verb, or family (ALL), never its number', 'name: ' + short(nm));
+  return nm && nm[0] === 'desk.chat.add' && nm[1] === 'files (ALL)' ? true : 'name: ' + short(nm);
+}, 1000);
 
-  test.subHeading('its filter: the family selector, its verb half with it');
-  // Andy, box: "the branchSelector element will use the standard apiFamilySelector and apiVerbSelector elements as
-  // pickers for family and verb search filters, if no valid family is selected, the verb selector is invisible, set to
-  // \"(ALL)\"", and since: "apiFamiliySelector.js will use apiVerbSelector as part of itself". The verb half's hiding
-  // is the family selector's own (its test).
-  const fam = families[0];
-  // goal/G41.26, Andy: "any searchSelector in our system must go into the probabilitySearch's selectorRow, so that the
-  // user-can see, which elements belong to the search." The shape (cw, under his go): the branch list's family selector
-  // moves into the 🪣 row, handed to the search; no filter row of its own above the list.
-  const sel = Array.isArray(l.o.selectors) ? l.o.selectors : [];
-  ok(!!fam && families.length === 1 && sel.length === 1 && sel[0].element === fam && !!sel[0].name && typeof sel[0].test === 'function',
-    'it makes one family selector and hands it to the search, for its 🪣 row', 'families ' + families.length + ', selectors ' + short(sel.map(function (x) { return { name: x.name, fam: x.element === fam }; })));
-  ok(!host.kids.some(function (k) { return k !== l.host && !within(k, l.host) && (k === fam.container || within(k, fam)); }), 'no filter row of its own above the list', 'host holds: ' + short(host.kids.map(function (k) { return k.className || k.tag; })));
-  ok(!!fam && sel[0] && (fam.family = 'desk', fam.verb = '', sel[0].test({ family: 'files', verb: '' }) === 0 && sel[0].test({ family: 'desk', verb: 'chat.add' }) === 1) && (fam.family = '', sel[0].test({ family: 'files' }) === 1),
-    'its test narrows by the family and verb chosen, every row when none is', 'test: ' + short(sel[0] && 'given'));
-  if (!fam) return;
+// its filter: the family selector, its verb half with it
+// Andy, box: "the branchSelector element will use the standard apiFamilySelector and apiVerbSelector elements as
+// pickers for family and verb search filters, if no valid family is selected, the verb selector is invisible, set to
+// \"(ALL)\"", and since: "apiFamiliySelector.js will use apiVerbSelector as part of itself". The verb half's hiding
+// is the family selector's own (its test).
+// goal/G41.26, Andy: "any searchSelector in our system must go into the probabilitySearch's selectorRow, so that the
+// user-can see, which elements belong to the search." The shape (cw, under his go): the branch list's family selector
+// moves into the 🪣 row, handed to the search; no filter row of its own above the list.
+test.run('it makes one family selector and hands it to the search, for its 🪣 row', 0.2, function () {
+  if (!l) return NO_SEARCH;
+  fam = families[0];
+  sel = Array.isArray(l.o.selectors) ? l.o.selectors : [];
+  return !!fam && families.length === 1 && sel.length === 1 && sel[0].element === fam && !!sel[0].name && typeof sel[0].test === 'function' ? true : 'families ' + families.length + ', selectors ' + short(sel.map(function (x) { return { name: x.name, fam: x.element === fam }; }));
+}, 1000);
+test.run('no filter row of its own above the list', 0.2, function () {
+  if (!fam) return NO_FAM;
+  return !host.kids.some(function (k) { return k !== l.host && !within(k, l.host) && (k === fam.container || within(k, fam)); }) ? true : 'host holds: ' + short(host.kids.map(function (k) { return k.className || k.tag; }));
+}, 1000);
+test.run('its test narrows by the family and verb chosen, every row when none is', 0.2, function () {
+  if (!fam) return NO_FAM;
+  return sel[0] && (fam.family = 'desk', fam.verb = '', sel[0].test({ family: 'files', verb: '' }) === 0 && sel[0].test({ family: 'desk', verb: 'chat.add' }) === 1) && (fam.family = '', sel[0].test({ family: 'files' }) === 1) ? true : 'test: ' + short(sel[0] && 'given');
+}, 1000);
+test.run('nothing chosen: the search narrows by neither family nor verb', 0.2, async function () {
+  if (!fam) return NO_FAM;
   asked.length = 0;
   await o.search(o.args('', {}), 'branch');
-  ok(asked[0] && !asked[0].family && !asked[0].verb, 'nothing chosen: the search narrows by neither family nor verb', 'asked: ' + short(asked));
+  return asked[0] && !asked[0].family && !asked[0].verb ? true : 'asked: ' + short(asked);
+}, 1000);
+test.run('a family chosen searches again, narrowed by the family', 0.2, async function () {
+  if (!fam) return NO_FAM;
   const r0 = l.refreshes;
   fam.family = 'desk'; fam.verb = ''; fam.value = 'desk'; fam.dispatchEvent(new Event('change', { bubbles: true }));
   await settle();
   asked.length = 0;
   await o.search(o.args('', {}), 'branch');
-  ok(l.refreshes > r0 && asked[0] && asked[0].family === 'desk' && !asked[0].verb, 'a family chosen searches again, narrowed by the family', 'asked: ' + short(asked));
+  return l.refreshes > r0 && asked[0] && asked[0].family === 'desk' && !asked[0].verb ? true : 'asked: ' + short(asked);
+}, 1000);
+test.run('a verb chosen searches again, narrowed by the family and the verb', 0.2, async function () {
+  if (!fam) return NO_FAM;
   const r1 = l.refreshes;
   fam.verb = 'chat.add'; fam.value = 'desk.chat.add'; fam.dispatchEvent(new Event('change', { bubbles: true }));
   await settle();
   asked.length = 0;
   await o.search(o.args('', {}), 'branch');
-  ok(l.refreshes > r1 && asked[0] && asked[0].family === 'desk' && asked[0].verb === 'chat.add', 'a verb chosen searches again, narrowed by the family and the verb', 'asked: ' + short(asked));
+  return l.refreshes > r1 && asked[0] && asked[0].family === 'desk' && asked[0].verb === 'chat.add' ? true : 'asked: ' + short(asked);
+}, 1000);
 
-  test.subHeading('refresh and destroy are the search element\'s');
+// refresh and destroy are the search element's
+test.run('refresh and destroy reach the search element; .list is it', 0.2, function () {
+  if (!l) return NO_SEARCH;
   const r2 = l.refreshes;
   made.refresh(); made.destroy();
-  ok(l.refreshes === r2 + 1 && l.destroyed === true && made.list === l, 'refresh and destroy reach the search element; .list is it', 'refreshes ' + (l.refreshes - r2) + ', destroyed ' + l.destroyed);
-  // goal/G41.19, box v23: "destroy empties it".
-  ok(host.kids.length === 0, 'and destroy leaves its host empty, the filters with it', 'kids left: ' + host.kids.length);
-}()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
-  function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });
+  return l.refreshes === r2 + 1 && l.destroyed === true && made.list === l ? true : 'refreshes ' + (l.refreshes - r2) + ', destroyed ' + l.destroyed;
+}, 1000);
+// goal/G41.19, box v23: "destroy empties it".
+test.run('and destroy leaves its host empty, the filters with it', 0.2, function () {
+  if (!l) return NO_SEARCH;
+  return host.kids.length === 0 ? true : 'kids left: ' + host.kids.length;
+}, 1000);

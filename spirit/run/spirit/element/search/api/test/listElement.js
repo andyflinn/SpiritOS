@@ -13,7 +13,6 @@ const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const SERVER_FILE = path.join(__dirname, '..', 'listElement.js');
 const SERVER_SRC = fs.readFileSync(SERVER_FILE, 'utf8');
 
-function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 const tick = function () { return new Promise(function (r) { setImmediate(r); }); };
 const settle = async function () { for (let i = 0; i < 20; i++) await tick(); };
@@ -80,39 +79,65 @@ const names = function (l) {
     .map(function (r) { return r.name != null ? r.name : r.key; }).sort();
 };
 
-test.startTest('search/api/listElement.js: the family list, the api search\'s (goal/G41.5, G43.32)');
+// One test.run per test (goal/G47.2). What the world and the tests make, for the tests after them.
+let w, made, box, servers, sl;
+const changes = [];
+const NO_W = 'no window: the world failed';
+const NO_MADE = 'no list element at spirit.element.spirit.element.search.api.listElement';
+const NO_SL = 'the list drew no probabilitySearch';
 
-(async function () {
-  test.subHeading('built on probabilitySearch, nothing of the old shell\'s list search (goal/G40.8)');
-  ok(!/shellCreateListSearch/.test(SERVER_SRC), 'listElement.js names no shellCreateListSearch', 'listElement.js still names it');
-  const w = world();
-  ok(w.required.indexOf('spirit/element/search.js') !== -1, 'it loads probabilitySearch itself (goal/G41.3)', 'required: ' + short(w.required));
+// built on probabilitySearch, nothing of the old shell's list search (goal/G40.8)
+test.run('listElement.js names no shellCreateListSearch', 0.2, function () {
+  return !/shellCreateListSearch/.test(SERVER_SRC) || 'listElement.js still names it';
+}, 1000);
+test.run('it loads probabilitySearch itself (goal/G41.3)', 0.2, function () {
+  w = world();
+  return w.required.indexOf('spirit/element/search.js') !== -1 ? true : 'required: ' + short(w.required);
+}, 1000);
 
-  test.subHeading('the server half: a probabilitySearch dropdown of the node\'s families');
-  const changes = [];
-  const made = w.E.search.api.listElement;
-  ok(made && typeof made.create === 'function' && !('createAppServerSelector' in w.E), 'it places itself at spirit.element.spirit.element.search.api.listElement, with a create, and createAppServerSelector no more', 'elements: ' + short(Object.keys(w.E)));
-  if (!made || typeof made.create !== 'function') return;
-  // Box v23: "every element gets a container and appends itself".
-  const box = node('div');
-  const servers = made.create(box, { all: 'all servers' });
-  ok(box.kids.length === 1 && box.kids[0] === servers, 'create(container, options) appends the control to its container and answers it', 'container holds ' + box.kids.length + (box.kids[0] === servers ? ', the control' : ', not the control'));
+// the server half: a probabilitySearch dropdown of the node's families
+test.run('it places itself at spirit.element.spirit.element.search.api.listElement, with a create, and createAppServerSelector no more', 0.2, function () {
+  if (!w) return NO_W;
+  made = w.E.search.api.listElement;
+  return made && typeof made.create === 'function' && !('createAppServerSelector' in w.E) ? true : 'elements: ' + short(Object.keys(w.E));
+}, 1000);
+// Box v23: "every element gets a container and appends itself".
+test.run('create(container, options) appends the control to its container and answers it', 0.2, function () {
+  if (!made || typeof made.create !== 'function') return NO_MADE;
+  box = node('div');
+  servers = made.create(box, { all: 'all servers' });
+  return box.kids.length === 1 && box.kids[0] === servers ? true : 'container holds ' + box.kids.length + (box.kids[0] === servers ? ', the control' : ', not the control');
+}, 1000);
+test.run('it draws one probabilitySearch dropdown', 0.2, async function () {
+  if (!servers) return NO_MADE;
   servers.addEventListener('change', function () { changes.push(servers.value); });
   await settle();
-  const sl = w.lists[0];
-  ok(!w.old && !!sl && sl.opts.face === 'dropdown', 'it draws one probabilitySearch dropdown', 'lists: ' + w.lists.length + (w.old ? ', and an old one' : ''));
-  if (!sl) return;
-  ok(sl.opts.all === 'all servers', 'its None reads what the app names', 'all: ' + sl.opts.all);
-  ok(short(names(sl)) === short(['fs', 'jobs']), 'its rows are the families that answered, sorted', 'rows: ' + short(names(sl)));
+  sl = w.lists[0];
+  return !w.old && !!sl && sl.opts.face === 'dropdown' ? true : 'lists: ' + w.lists.length + (w.old ? ', and an old one' : '');
+}, 1000);
+test.run('its None reads what the app names', 0.2, function () {
+  if (!sl) return NO_SL;
+  return sl.opts.all === 'all servers' ? true : 'all: ' + sl.opts.all;
+}, 1000);
+test.run('its rows are the families that answered, sorted', 0.2, function () {
+  if (!sl) return NO_SL;
+  return short(names(sl)) === short(['fs', 'jobs']) ? true : 'rows: ' + short(names(sl));
+}, 1000);
+test.run('a pick sets its value and fires change', 0.2, function () {
+  if (!sl) return NO_SL;
   sl.opts.pick({ key: 'fs', name: 'fs' }, 'fs');
-  ok(servers.value === 'fs' && changes[changes.length - 1] === 'fs', 'a pick sets its value and fires change', 'value ' + servers.value + ', changes ' + short(changes));
+  return servers.value === 'fs' && changes[changes.length - 1] === 'fs' ? true : 'value ' + servers.value + ', changes ' + short(changes);
+}, 1000);
+test.run('None clears it', 0.2, function () {
+  if (!sl) return NO_SL;
   sl.opts.pick(null, '');
-  ok(servers.value === '', 'None clears it', 'value ' + servers.value);
+  return servers.value === '' ? true : 'value ' + servers.value;
+}, 1000);
+test.run('load(fn) lists another party\'s families', 0.2, async function () {
+  if (!sl) return NO_SL;
   await servers.load(function () { return Promise.resolve(OTHER); }); await settle();
-  ok(short(names(sl)) === short(['relay']), 'load(fn) lists another party\'s families', 'rows: ' + short(names(sl)) + ' (introSpector\'s deferral, the box: "the only exception is introspector, deferred for network-scope design reasons.")');
-
-}()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
-  function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });
+  return short(names(sl)) === short(['relay']) ? true : 'rows: ' + short(names(sl)) + ' (introSpector\'s deferral, the box: "the only exception is introspector, deferred for network-scope design reasons.")';
+}, 1000);
 
 // THE ELEMENT NAMES SINCE goal/G43.18: a stand-in keyed by its place, 'search.contact' and so on, nested where the page has it.
 function nestSearch(o) { Object.keys(o).forEach(function (k) { if (k !== 'search' && k.indexOf('search.') !== 0) return; var v = o[k]; delete o[k]; var ks = k.split('.'); var at = o; ks.slice(0, -1).forEach(function (p) { at = at[p] = at[p] || {}; }); var last = ks[ks.length - 1]; at[last] = Object.assign(at[last] || {}, v); }); return o; }

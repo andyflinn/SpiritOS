@@ -15,240 +15,310 @@ const test = require(path.join(path.resolve(__dirname, '..', '..', '..', '..', '
 
 const JS = path.join(__dirname, '..', '..', '..');
 function load(file) { vm.runInThisContext(fs.readFileSync(file, 'utf8'), { filename: file }); }
-const asked = [];
-let searchAnswer = { items: [{ key: 'K1' }], more: true };
-global.window = { spirit: {} };
-// goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
-require(path.join(__dirname, '..', '..', '..', '..', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
-global.spirit = window.spirit;
-window.spirit.ready = Promise.resolve({
-  contact: { search: function (b) { asked.push({ verb: 'contact.search', body: b }); return Promise.resolve(searchAnswer); } },
-  peer: { acquire: function (b) { asked.push({ verb: 'peer.acquire', body: b }); return Promise.resolve({ publicLabel: b.publicLabel }); },
-    // A card ask through the spirit object (goal/G43.24): the packet as it went, and the card the node verified.
-    post: function (b) {
-      const sent = window.spirit.packet.decode(b.text);
-      asked.push({ verb: 'peer.post', key: b.to, body: sent.body, app: sent.app, legacy: sent.legacy });
-      return Promise.resolve(b.to === 'KW' ? { ok: true, card: { ok: false, why: 'wrong key' } } : { ok: true, card: { ok: true, name: 'zed', description: 'hi' } });
-    } },
-});
-// The packet envelope, the real one (spirit/client/packet.js), as the list requires it.
-window.spirit.packet = require(path.join(__dirname, '..', '..', '..', '..', 'client', 'packet.js'));
-Object.assign(window.spirit, {
-  // spirit.peerPost as spirit.js has it on a page (goal/G43.24): the body in its packet envelope, posted through the
-  // node's peer.post (the stand-in above); how.answer resolves the node's whole answer, { ok, status, body, card, from, error }.
-  peerPost: function (peer, app, body, how) {
-    const PK = window.spirit.packet;
-    const made = PK.encode(app, body);
-    return Promise.resolve(window.spirit.ready).then(function (f) { return f.peer.post({ to: String(peer), text: made.text }); }).then(function (said) {
-      const text = said && typeof said.text === 'string' ? said.text : '';
-      const got = text ? PK.decode(text).body : null;
-      const yes = !got || got.ok === undefined || !!got.ok;
-      if (how && how.answer === true) return { ok: !!(said && said.ok) && yes, status: 200, body: got, card: (said && said.card) || null, from: (said && said.from) || '', error: (said && said.error) || '' };
-      return got;
-    });
-  },
-});
-let made = null;
-// goal/G43.32: what the list draws with stands where an element now finds it, spirit.element.spirit.element.
-(((window.spirit.element = window.spirit.element || {}).spirit = window.spirit.element.spirit || {})).element = nestSearch({
-  'search': { create: function (host, o) {
-    made = { host: host, opts: o, refreshes: 0, destroyed: false };
-    return { refresh: function () { made.refreshes += 1; }, destroy: function () { made.destroyed = true; } };
-  } },
-  // Made in a panel's pane (goal/G43.18), recording what it was made with.
-  'search.contact.detailElement': { create: function (pane, o) { asked.push({ verb: 'contactDetails', body: o }); return {}; } },
-  natterDetails: { open: function (o) { asked.push({ verb: 'natterDetails', body: o }); } },
-});
-// The one loader, a recorder: what the list requires, answered at once (the elements above stand in for what it loads).
-const required = [];
-// goal/G43.32: the helper an element places itself with comes from the page stand-in (headLessChrome.js pageSpirit).
-// packet.js above takes the real spirit.js, whose require is the node's; the page stand-in goes back on top of it.
-require(path.join(__dirname, '..', '..', '..', '..', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
-const pageRequire = window.spirit.require;
-window.spirit.require = function (p) { required.push(p); return /installSpiritElement\.js$/.test(p) ? pageRequire(p) : Promise.resolve({}); };
-// The page's stream, a recorder: who subscribes to it (goal/G41.28: no client but spirit.data takes it itself).
-const subscribers = [];
-window.spirit.event = { subscribe: function (h) { subscribers.push(h); return function () {}; } };
-load(path.join(JS, '..', '..', 'spirit', 'data.js'));
-// THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.start asks node.card, keeps the key and hands it to the data set.
-const NODE_KEY = 'nOdE+key/one==';
-window.spirit.node = { key: NODE_KEY };
-window.spirit.data.homeNode(NODE_KEY);
-// spirit.cacheManager(name), as a page's: the family's manager loaded once, attaching itself to the data set.
-const managers = [];
-window.spirit.cacheManager = function (name) {
-  managers.push(String(name));
-  load(path.join(JS, '..', '..', 'spirit', String(name), 'data.js'));
-  return Promise.resolve(true);
-};
-load(path.join(JS, 'rowElement.js'));
-load(path.join(JS, 'search', 'contact', 'rowElement.js'));
-const dataSubscribed = subscribers.length;
-load(path.join(JS, 'search', 'contact', 'listElement.js'));
-const L = window.spirit.element.spirit.element.search.contact.listElement;
-const F = {}; L.filters.forEach(function (f) { F[f.name] = f; });
 const tick = function () { return new Promise(function (r) { setTimeout(r, 0); }); };
-function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 
-(async function () {
-  test.startTest('contacts/listElement.js: the contacts list');
+// One test.run per test (goal/G47.2). What the world and the tests make, for the tests after them.
+const asked = [];
+const required = [];
+const subscribers = [];
+const managers = [];
+const clicks = [];
+const said = [];
+const added = [];
+let searchAnswer = { items: [{ key: 'K1' }], more: true };
+let made = null;
+let L = null, F = null, dataSubscribed = 0, pane = null, o = null, CD = null, el = null, r0 = 0, mo = null, to = null, tg = null, trow = null;
+const NO_LIST = 'no contacts list: the world failed';
+const NO_OPTS = 'the list was never created';
 
-  test.subHeading('it loads what it uses');
-  // goal/G41.16: no data script; what the stream means for contacts is the contact family's manager's (goal/G41.28).
+test.run('the world: the contacts list runs on a window of its own, its row element and the data set real', 0.2, function () {
+  global.window = { spirit: {} };
+  // goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
+  require(path.join(__dirname, '..', '..', '..', '..', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
+  global.spirit = window.spirit;
+  window.spirit.ready = Promise.resolve({
+    contact: { search: function (b) { asked.push({ verb: 'contact.search', body: b }); return Promise.resolve(searchAnswer); } },
+    peer: { acquire: function (b) { asked.push({ verb: 'peer.acquire', body: b }); return Promise.resolve({ publicLabel: b.publicLabel }); },
+      // A card ask through the spirit object (goal/G43.24): the packet as it went, and the card the node verified.
+      post: function (b) {
+        const sent = window.spirit.packet.decode(b.text);
+        asked.push({ verb: 'peer.post', key: b.to, body: sent.body, app: sent.app, legacy: sent.legacy });
+        return Promise.resolve(b.to === 'KW' ? { ok: true, card: { ok: false, why: 'wrong key' } } : { ok: true, card: { ok: true, name: 'zed', description: 'hi' } });
+      } },
+  });
+  // The packet envelope, the real one (spirit/client/packet.js), as the list requires it.
+  window.spirit.packet = require(path.join(__dirname, '..', '..', '..', '..', 'client', 'packet.js'));
+  Object.assign(window.spirit, {
+    // spirit.peerPost as spirit.js has it on a page (goal/G43.24): the body in its packet envelope, posted through the
+    // node's peer.post (the stand-in above); how.answer resolves the node's whole answer, { ok, status, body, card, from, error }.
+    peerPost: function (peer, app, body, how) {
+      const PK = window.spirit.packet;
+      const m = PK.encode(app, body);
+      return Promise.resolve(window.spirit.ready).then(function (f) { return f.peer.post({ to: String(peer), text: m.text }); }).then(function (s) {
+        const text = s && typeof s.text === 'string' ? s.text : '';
+        const got = text ? PK.decode(text).body : null;
+        const yes = !got || got.ok === undefined || !!got.ok;
+        if (how && how.answer === true) return { ok: !!(s && s.ok) && yes, status: 200, body: got, card: (s && s.card) || null, from: (s && s.from) || '', error: (s && s.error) || '' };
+        return got;
+      });
+    },
+  });
+  // goal/G43.32: what the list draws with stands where an element now finds it, spirit.element.spirit.element.
+  (((window.spirit.element = window.spirit.element || {}).spirit = window.spirit.element.spirit || {})).element = nestSearch({
+    'search': { create: function (host, opts) {
+      made = { host: host, opts: opts, refreshes: 0, destroyed: false };
+      return { refresh: function () { made.refreshes += 1; }, destroy: function () { made.destroyed = true; } };
+    } },
+    // Made in a panel's pane (goal/G43.18), recording what it was made with.
+    'search.contact.detailElement': { create: function (p, opts) { asked.push({ verb: 'contactDetails', body: opts }); return {}; } },
+    natterDetails: { open: function (opts) { asked.push({ verb: 'natterDetails', body: opts }); } },
+  });
+  // The one loader, a recorder: what the list requires, answered at once (the elements above stand in for what it loads).
+  // goal/G43.32: the helper an element places itself with comes from the page stand-in (headLessChrome.js pageSpirit).
+  // packet.js above takes the real spirit.js, whose require is the node's; the page stand-in goes back on top of it.
+  require(path.join(__dirname, '..', '..', '..', '..', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
+  const pageRequire = window.spirit.require;
+  window.spirit.require = function (p) { required.push(p); return /installSpiritElement\.js$/.test(p) ? pageRequire(p) : Promise.resolve({}); };
+  // The page's stream, a recorder: who subscribes to it (goal/G41.28: no client but spirit.data takes it itself).
+  window.spirit.event = { subscribe: function (h) { subscribers.push(h); return function () {}; } };
+  load(path.join(JS, '..', '..', 'spirit', 'data.js'));
+  // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.start asks node.card, keeps the key and hands it to the data set.
+  const NODE_KEY = 'nOdE+key/one==';
+  window.spirit.node = { key: NODE_KEY };
+  window.spirit.data.homeNode(NODE_KEY);
+  // spirit.cacheManager(name), as a page's: the family's manager loaded once, attaching itself to the data set.
+  window.spirit.cacheManager = function (name) {
+    managers.push(String(name));
+    load(path.join(JS, '..', '..', 'spirit', String(name), 'data.js'));
+    return Promise.resolve(true);
+  };
+  load(path.join(JS, 'rowElement.js'));
+  load(path.join(JS, 'search', 'contact', 'rowElement.js'));
+  dataSubscribed = subscribers.length;
+  load(path.join(JS, 'search', 'contact', 'listElement.js'));
+  L = window.spirit.element.spirit.element.search.contact.listElement;
+  F = {}; L.filters.forEach(function (f) { F[f.name] = f; });
+  return true;
+}, 1000);
+
+// it loads what it uses
+// goal/G41.16: no data script; what the stream means for contacts is the contact family's manager's (goal/G41.28).
+test.run('loading, it requires its row and the search element through spirit.require, and no data script', 0.2, function () {
   const own = ['spirit/element/search/contact/rowElement.js', 'spirit/element/search.js'];
-  if (own.every(function (p) { return required.indexOf(p) !== -1; }) && !required.some(function (p) { return /data\.js$/.test(p); })) test.check('loading, it requires its row and the search element through spirit.require, and no data script');
-  else test.fail('as it loaded, the list required: ' + JSON.stringify(required));
+  return own.every(function (p) { return required.indexOf(p) !== -1; }) && !required.some(function (p) { return /data\.js$/.test(p); }) ? true : 'as it loaded, the list required: ' + JSON.stringify(required);
+}, 1000);
 
-  test.subHeading('the show filter: all, then each kind the list holds');
-  const values = function (rows) { return F.show.choices(rows).map(function (c) { return c.value; }).join(','); };
-  if (values([{ keep: true }]) === 'all' && values([{ mine: true }, { blocked: true }, { relay: true }]) === 'all,mine,blocked,relay')
-    test.check('only all over plain kept rows; mine, blocked, relays in that order when there are any');
-  else test.fail('choices: ' + values([{ mine: true }, { blocked: true }, { relay: true }]));
-  if (F.show.when([{ keep: true }]) === false && F.show.when([{ relay: true }]) === true) test.check('its buttons show only when there is a kind to choose');
-  else test.fail('show.when');
-  if (F.show.test({ keep: true }, 'all') === 1 && F.show.test({ keep: true }, '') === 1 && F.show.test({ mine: true }, 'mine') === 1
-    && F.show.test({ keep: true }, 'mine') === 0 && F.show.test({ mine: 'yes' }, 'mine') === 0) test.check('all lets every row through; a kind only rows whose flag is exactly true');
-  else test.fail('show.test');
+// the show filter: all, then each kind the list holds
+const values = function (rows) { return F.show.choices(rows).map(function (c) { return c.value; }).join(','); };
+test.run('only all over plain kept rows; mine, blocked, relays in that order when there are any', 0.2, function () {
+  if (!F) return NO_LIST;
+  return values([{ keep: true }]) === 'all' && values([{ mine: true }, { blocked: true }, { relay: true }]) === 'all,mine,blocked,relay' ? true : 'choices: ' + values([{ mine: true }, { blocked: true }, { relay: true }]);
+}, 1000);
+test.run('its buttons show only when there is a kind to choose', 0.2, function () {
+  if (!F) return NO_LIST;
+  return F.show.when([{ keep: true }]) === false && F.show.when([{ relay: true }]) === true ? true : 'show.when';
+}, 1000);
+test.run('all lets every row through; a kind only rows whose flag is exactly true', 0.2, function () {
+  if (!F) return NO_LIST;
+  return F.show.test({ keep: true }, 'all') === 1 && F.show.test({ keep: true }, '') === 1 && F.show.test({ mine: true }, 'mine') === 1
+    && F.show.test({ keep: true }, 'mine') === 0 && F.show.test({ mine: 'yes' }, 'mine') === 0 ? true : 'show.test';
+}, 1000);
 
-  test.subHeading('the network toggle and the named rule');
-  const stranger = {}; const keptRow = { keep: true }; const relayRow = { relay: true };
-  if (F.network.toggle === true && F.network.test(stranger, false) === 0 && F.network.test(stranger, true) === 1) test.check('a row nobody decided about, a network find, shows only with network on');
-  else test.fail('network on a stranger');
-  if (F.network.test(keptRow, false) === 1 && F.network.test(relayRow, false) === 1 && F.network.test({ blocked: true }, false) === 1)
-    test.check('a row that is kept, a relay or blocked shows with network off');
-  else test.fail('network on decided rows');
-  if (F.named.when() === false && F.named.test({ name: 'a' }) === 1 && F.named.test({ relay: true }) === 1 && F.named.test({ present: true }) === 0 && F.named.test(null) === 0)
-    test.check('named, never a button: a row with a name or a relay, never a bare presence');
-  else test.fail('named');
+// the network toggle and the named rule
+const stranger = {}; const keptRow = { keep: true }; const relayRow = { relay: true };
+test.run('a row nobody decided about, a network find, shows only with network on', 0.2, function () {
+  if (!F) return NO_LIST;
+  return F.network.toggle === true && F.network.test(stranger, false) === 0 && F.network.test(stranger, true) === 1 ? true : 'network on a stranger';
+}, 1000);
+test.run('a row that is kept, a relay or blocked shows with network off', 0.2, function () {
+  if (!F) return NO_LIST;
+  return F.network.test(keptRow, false) === 1 && F.network.test(relayRow, false) === 1 && F.network.test({ blocked: true }, false) === 1 ? true : 'network on decided rows';
+}, 1000);
+test.run('named, never a button: a row with a name or a relay, never a bare presence', 0.2, function () {
+  if (!F) return NO_LIST;
+  return F.named.when() === false && F.named.test({ name: 'a' }) === 1 && F.named.test({ relay: true }) === 1 && F.named.test({ present: true }) === 0 && F.named.test(null) === 0 ? true : 'named';
+}, 1000);
 
-  test.subHeading('create hands the search element the one table');
-  const clicks = [];
+// create hands the search element the one table
+test.run('a view of the contact family\'s contacts (spirit.data.contact.data.branch), the list\'s filters, columns presence, status, label, add', 0.2, function () {
+  if (!L) return NO_LIST;
   const host = { isConnected: true, addEventListener: function (t, fn) { if (t === 'click') clicks.push(fn); } };
-  const said = []; const added = [];
   // The mounter's panel stack's open (goal/G43.18), filling its pane at once.
   const openLayer = function (key, spec) { return Promise.resolve(spec.fill({})).then(function () { return { hide: function () {}, set: function () {}, shown: function () { return true; } }; }); };
   // WHAT IT NEEDS, IT REQUIRES ITSELF (goal/G43.24): it is handed no api; its search is its own data source.
-  const pane = L.create(host, { open: openLayer, say: function (t) { said.push(t); }, onAdded: function (r) { added.push(r); } });
-  const o = made.opts;
-  const CD = ((window.spirit.data || {}).contact || {}).data;
-  if (managers.indexOf('contact') !== -1 && CD && typeof CD.branch === 'string' && CD.branch !== '' && o.data === CD.branch && Array.isArray(o.filters) && o.filters.length === L.filters.length && L.filters.every(function (f, i) { return o.filters[i] === f; }) && o.columns.map(function (c) { return c.field; }).join(',') === 'presence,status,label,add')
-    test.check('a view of the contact family\'s contacts (spirit.data.contact.data.branch), the list\'s filters, columns presence, status, label, add');
-  else test.fail('the opts: ' + JSON.stringify({ data: o.data, contactBranch: CD && CD.branch, managers: managers, columns: o.columns }));
-  if (made.refreshes === 1) test.check('it fills as soon as it is drawn: one refresh at create');
-  else test.fail('refreshes at create: ' + made.refreshes);
+  pane = L.create(host, { open: openLayer, say: function (t) { said.push(t); }, onAdded: function (r) { added.push(r); } });
+  o = made.opts;
+  CD = ((window.spirit.data || {}).contact || {}).data;
+  return managers.indexOf('contact') !== -1 && CD && typeof CD.branch === 'string' && CD.branch !== '' && o.data === CD.branch && Array.isArray(o.filters) && o.filters.length === L.filters.length && L.filters.every(function (f, i) { return o.filters[i] === f; }) && o.columns.map(function (c) { return c.field; }).join(',') === 'presence,status,label,add'
+    ? true : 'the opts: ' + JSON.stringify({ data: o.data, contactBranch: CD && CD.branch, managers: managers, columns: o.columns });
+}, 1000);
+test.run('it fills as soon as it is drawn: one refresh at create', 0.2, function () {
+  if (!o) return NO_OPTS;
+  return made.refreshes === 1 ? true : 'refreshes at create: ' + made.refreshes;
+}, 1000);
+test.run('its search asks contact.search with the text trimmed, and answers as a reply', 0.2, async function () {
+  if (!o) return NO_OPTS;
   const got = await o.search({ q: '  an ' }, 'search');
   const s = asked.pop();
-  if (s.verb === 'contact.search' && s.body.q === 'an' && got.status === 200 && got.body.ok === true && got.body.items.length === 1 && got.body.more === true)
-    test.check('its search asks contact.search with the text trimmed, and answers as a reply');
-  else test.fail('search: ' + JSON.stringify({ s: s, got: got }));
+  return s.verb === 'contact.search' && s.body.q === 'an' && got.status === 200 && got.body.ok === true && got.body.items.length === 1 && got.body.more === true ? true : 'search: ' + JSON.stringify({ s: s, got: got });
+}, 1000);
+test.run('an empty answer is an empty list, like any other', 0.2, async function () {
+  if (!o) return NO_OPTS;
   searchAnswer = null;
   const empty = await o.search({}, 'search');
-  if (empty.body.ok === true && Array.isArray(empty.body.items) && empty.body.items.length === 0 && empty.body.more === false) test.check('an empty answer is an empty list, like any other');
-  else test.fail('an empty answer: ' + JSON.stringify(empty));
-  const el = o.element({ keep: true, name: 'anna' }, 'K1');
-  if (el.kind === 'contact' && el.key === 'K1' && el.row.name === 'anna') test.check('each row is a contactElement, keyed by the row\'s key');
-  else test.fail('the element: ' + JSON.stringify({ kind: el.kind, key: el.key }));
-  // THE WHOLE ROW (goal/G41.28; Andy, box v15: "All client side searches will be fixed, too, and search the whole row"):
-  // the list hands its search no matched() of its own.
-  if (typeof o.matched !== 'function') test.check('it hands its search no matched(): the whole row is matched (goal/G41.28)');
-  else test.fail('it still hands matched()');
+  return empty.body.ok === true && Array.isArray(empty.body.items) && empty.body.items.length === 0 && empty.body.more === false ? true : 'an empty answer: ' + JSON.stringify(empty);
+}, 1000);
+test.run('each row is a contactElement, keyed by the row\'s key', 0.2, function () {
+  if (!o) return NO_OPTS;
+  el = o.element({ keep: true, name: 'anna' }, 'K1');
+  return el.kind === 'contact' && el.key === 'K1' && el.row.name === 'anna' ? true : 'the element: ' + JSON.stringify({ kind: el.kind, key: el.key });
+}, 1000);
+// THE WHOLE ROW (goal/G41.28; Andy, box v15: "All client side searches will be fixed, too, and search the whole row"):
+// the list hands its search no matched() of its own.
+test.run('it hands its search no matched(): the whole row is matched (goal/G41.28)', 0.2, function () {
+  if (!o) return NO_OPTS;
+  return typeof o.matched !== 'function' ? true : 'it still hands matched()';
+}, 1000);
 
-  test.subHeading('pressing a row');
+// pressing a row
+test.run('a kept row opens its Contact', 0.2, async function () {
+  if (!o) return NO_OPTS;
   o.details({ keep: true }, 'K1', el);
   await tick();
   const open = asked.pop();
-  if (open.verb === 'contactDetails' && open.body.key === 'K1') test.check('a kept row opens its Contact');
-  else test.fail('pressing a kept row: ' + JSON.stringify(open));
+  return open.verb === 'contactDetails' && open.body.key === 'K1' ? true : 'pressing a kept row: ' + JSON.stringify(open);
+}, 1000);
+test.run('a row nobody decided about asks that node who it is (peer.post through the spirit object, a card ask in its envelope), and says its card', 0.2, async function () {
+  if (!o) return NO_OPTS;
   o.details({ name: 'z' }, 'KZ', null);
   await tick();
   const card = asked.pop();
-  if (card.verb === 'peer.post' && card.key === 'KZ' && card.body && card.body.card === true && card.legacy === false && card.app === null && said[said.length - 1] === 'zed: hi')
-    test.check('a row nobody decided about asks that node who it is (peer.post through the spirit object, a card ask in its envelope), and says its card');
-  else test.fail('pressing an undecided row: ' + JSON.stringify({ card: card, said: said }));
+  return card.verb === 'peer.post' && card.key === 'KZ' && card.body && card.body.card === true && card.legacy === false && card.app === null && said[said.length - 1] === 'zed: hi'
+    ? true : 'pressing an undecided row: ' + JSON.stringify({ card: card, said: said });
+}, 1000);
+test.run('a card from a different key is said as such', 0.2, async function () {
+  if (!o) return NO_OPTS;
   o.details({}, 'KW', null);
   await tick();
-  if (/answered by a different key/.test(said[said.length - 1])) test.check('a card from a different key is said as such');
-  else test.fail('a wrong key said: ' + said[said.length - 1]);
+  return /answered by a different key/.test(said[said.length - 1]) ? true : 'a wrong key said: ' + said[said.length - 1];
+}, 1000);
 
-  test.subHeading('a row\'s Add button');
+// a row's Add button
+function target(action, key) {
+  const b = { getAttribute: function (n) { return n === 'data-action' ? action : null; },
+    closest: function (sel) { return sel === '[data-action]' ? (action ? b : null) : tr; } };
+  const tr = { getAttribute: function () { return key; } };
+  return { target: b };
+}
+test.run('Add runs the row\'s add, says it, tells onAdded, and searches again', 0.2, async function () {
+  if (!o) return NO_OPTS;
   o.element({ publicLabel: 'bob' }, 'K2');
-  function target(action, key) {
-    const b = { getAttribute: function (n) { return n === 'data-action' ? action : null; },
-      closest: function (sel) { return sel === '[data-action]' ? (action ? b : null) : tr; } };
-    const tr = { getAttribute: function () { return key; } };
-    return { target: b };
-  }
-  const r0 = made.refreshes;
+  r0 = made.refreshes;
   clicks[0](target('add', 'K2'));
   await tick();
   const acq = asked.pop();
-  if (acq.verb === 'peer.acquire' && acq.body.publicKey === 'K2' && said[said.length - 1] === 'added bob' && added.length === 1 && made.refreshes === r0 + 1)
-    test.check('Add runs the row\'s add, says it, tells onAdded, and searches again');
-  else test.fail('Add: ' + JSON.stringify({ acq: acq, said: said.slice(-2), added: added, refreshes: made.refreshes - r0 }));
+  return acq.verb === 'peer.acquire' && acq.body.publicKey === 'K2' && said[said.length - 1] === 'added bob' && added.length === 1 && made.refreshes === r0 + 1
+    ? true : 'Add: ' + JSON.stringify({ acq: acq, said: said.slice(-2), added: added, refreshes: made.refreshes - r0 });
+}, 1000);
+test.run('a click on no button, or on a row the list did not make, does nothing', 0.2, async function () {
+  if (!o) return NO_OPTS;
   const n = asked.length;
   clicks[0](target(null, 'K2'));
   clicks[0](target('add', 'NOPE'));
   await tick();
-  if (asked.length === n && made.refreshes === r0 + 1) test.check('a click on no button, or on a row the list did not make, does nothing');
-  else test.fail('a stray click asked ' + JSON.stringify(asked.slice(n)));
+  return asked.length === n && made.refreshes === r0 + 1 ? true : 'a stray click asked ' + JSON.stringify(asked.slice(n));
+}, 1000);
 
-  // ONE CONTACT LIST (goal/G43.32; Andy: "contact: there should be only 1 list, i didn't even know there where two...."): what the
-  // contact picker drew as a list of its own until then, this list does.
-  test.subHeading('what the picker alone did: hidden filters, marks, a press that picks');
-  const hid = { name: 'offered', when: function () { return false; }, test: function () { return 1; } };
-  const marked = L.create({ isConnected: true, addEventListener: function () {} }, { filters: [hid], statuses: [{ status: 'none' }, { status: 'waiting', glyph: '⌛' }], details: null });
-  const mo = made.opts;
-  ok(mo.filters.length === L.filters.length + 1 && mo.filters[mo.filters.length - 1] === hid, 'a caller\'s hidden filters (opts.filters) come after its own (Andy: "Why can\'t chatter insert a hidden filter when it draws contacts?")', 'filters: ' + mo.filters.map(function (f) { return f.name; }).join(','));
-  ok(mo.columns.map(function (c) { return c.field; }).join(',') === 'presence,status,label,add,mark', 'statuses give it a mark column, last', 'columns: ' + mo.columns.map(function (c) { return c.field; }).join(','));
-  ok(mo.details === undefined, 'details: null, and a pane\'s press picks instead of opening the row (Chat\'s peers pane)', 'details: ' + typeof mo.details);
+// ONE CONTACT LIST (goal/G43.32; Andy: "contact: there should be only 1 list, i didn't even know there where two...."): what the
+// contact picker drew as a list of its own until then, this list does.
+// what the picker alone did: hidden filters, marks, a press that picks
+const hid = { name: 'offered', when: function () { return false; }, test: function () { return 1; } };
+let marked = null;
+test.run('a caller\'s hidden filters (opts.filters) come after its own (Andy: "Why can\'t chatter insert a hidden filter when it draws contacts?")', 0.2, function () {
+  if (!L) return NO_LIST;
+  marked = L.create({ isConnected: true, addEventListener: function () {} }, { filters: [hid], statuses: [{ status: 'none' }, { status: 'waiting', glyph: '⌛' }], details: null });
+  mo = made.opts;
+  return mo.filters.length === L.filters.length + 1 && mo.filters[mo.filters.length - 1] === hid ? true : 'filters: ' + mo.filters.map(function (f) { return f.name; }).join(',');
+}, 1000);
+test.run('statuses give it a mark column, last', 0.2, function () {
+  if (!mo) return NO_OPTS;
+  return mo.columns.map(function (c) { return c.field; }).join(',') === 'presence,status,label,add,mark' ? true : 'columns: ' + mo.columns.map(function (c) { return c.field; }).join(',');
+}, 1000);
+test.run('details: null, and a pane\'s press picks instead of opening the row (Chat\'s peers pane)', 0.2, function () {
+  if (!mo) return NO_OPTS;
+  return mo.details === undefined ? true : 'details: ' + typeof mo.details;
+}, 1000);
+test.run('mark(key, status) gives that row its glyph from statuses, the first the default (none: no glyph)', 0.2, function () {
+  if (!mo) return NO_OPTS;
   const me = mo.element({ keep: true, name: 'mo' }, 'K5');
   const markOf = function () { const c = me.cells().filter(function (x) { return x.name === 'mark'; })[0]; return c ? c.html : null; };
   const before = markOf();
   marked.mark('K5', 'waiting');
   const after = markOf();
   marked.mark('K5', 'none');
-  ok(before === '' && after === '⌛' && markOf() === '', 'mark(key, status) gives that row its glyph from statuses, the first the default (none: no glyph)', 'mark: ' + JSON.stringify([before, after, markOf()]));
+  return before === '' && after === '⌛' && markOf() === '' ? true : 'mark: ' + JSON.stringify([before, after, markOf()]);
+}, 1000);
 
-  test.subHeading('any ID table of the shadow roll\'s shape (goal/G41.13, Andy, Q2)');
-  const realReady = window.spirit.ready;
-  const tableAsked = [];
+// any ID table of the shadow roll's shape (goal/G41.13, Andy, Q2)
+const tableAsked = [];
+let realReady = null;
+test.run('a table names its family and verb, has no contact filters, nothing to open, and one column, the label', 0.2, function () {
+  if (!L) return NO_LIST;
+  realReady = window.spirit.ready;
   window.spirit.ready = Promise.resolve({ agent: { job: function (b) { tableAsked.push(b); return Promise.resolve({ items: [{ key: 'row1', label: JSON.stringify({ id: 'KJ', title: 'Night job' }) }] }); } },
     contact: { search: function (b) { tableAsked.push({ contact: b }); return Promise.resolve({ items: [] }); } } });
   global.spirit = window.spirit;
   L.create({ isConnected: true, addEventListener: function () {} }, { table: 'loopback://api/agent/job', key: 'id', label: 'title', face: 'dropdown' });
-  const to = made.opts;
-  ok(to.server === 'agent' && to.verb === 'job' && to.filters.length === 0 && to.details === undefined && to.columns.map(function (c) { return c.field; }).join(',') === 'label',
-    'a table names its family and verb, has no contact filters, nothing to open, and one column, the label', 'opts: ' + JSON.stringify({ server: to.server, verb: to.verb, filters: to.filters.length, details: typeof to.details, columns: to.columns }));
-  const tg = await to.search({ text: ' night ' });
-  const trow = tg.body.items[0] ? JSON.parse(tg.body.items[0].label) : null;
-  ok(tableAsked[0] && tableAsked[0].op === 'search' && tableAsked[0].text === 'night', 'a table of the agent tables\' norm is asked { op: search, text } through the spirit object, at that family and verb', 'asked: ' + JSON.stringify(tableAsked[0]));
-  ok(tg.body.items.length === 1 && tg.body.items[0].key === 'KJ' && trow && trow.name === 'Night job', 'opts.key names the field a row\'s ID is in, opts.label the field its label is in', 'rows: ' + JSON.stringify(tg.body.items));
+  to = made.opts;
+  return to.server === 'agent' && to.verb === 'job' && to.filters.length === 0 && to.details === undefined && to.columns.map(function (c) { return c.field; }).join(',') === 'label'
+    ? true : 'opts: ' + JSON.stringify({ server: to.server, verb: to.verb, filters: to.filters.length, details: typeof to.details, columns: to.columns });
+}, 1000);
+test.run('a table of the agent tables\' norm is asked { op: search, text } through the spirit object, at that family and verb', 0.2, async function () {
+  if (!to) return NO_OPTS;
+  tg = await to.search({ text: ' night ' });
+  trow = tg.body.items[0] ? JSON.parse(tg.body.items[0].label) : null;
+  return tableAsked[0] && tableAsked[0].op === 'search' && tableAsked[0].text === 'night' ? true : 'asked: ' + JSON.stringify(tableAsked[0]);
+}, 1000);
+test.run('opts.key names the field a row\'s ID is in, opts.label the field its label is in', 0.2, function () {
+  if (!tg) return 'the table was never searched';
+  return tg.body.items.length === 1 && tg.body.items[0].key === 'KJ' && trow && trow.name === 'Night job' ? true : 'rows: ' + JSON.stringify(tg.body.items);
+}, 1000);
+test.run('a table\'s row is a plain row of its label, no contact', 0.2, function () {
+  if (!to) return NO_OPTS;
   const tel = to.element(trow, 'KJ');
-  ok(tel && tel.kind === 'id' && tel.key === 'KJ', 'a table\'s row is a plain row of its label, no contact', 'row: ' + JSON.stringify(tel && { kind: tel.kind, key: tel.key }));
+  return tel && tel.kind === 'id' && tel.key === 'KJ' ? true : 'row: ' + JSON.stringify(tel && { kind: tel.kind, key: tel.key });
+}, 1000);
+test.run('naming the contacts\' own table is the same as naming none', 0.2, function () {
+  if (!L) return NO_LIST;
   L.create({ isConnected: true, addEventListener: function () {} }, { table: 'loopback://api/contact/search' });
-  ok(made.opts.server === 'contact' && made.opts.filters.length === L.filters.length, 'naming the contacts\' own table is the same as naming none', 'opts: ' + JSON.stringify({ server: made.opts.server }));
+  const res = made.opts.server === 'contact' && made.opts.filters.length === L.filters.length ? true : 'opts: ' + JSON.stringify({ server: made.opts.server });
   window.spirit.ready = realReady;
   global.spirit = window.spirit;
+  return res;
+}, 1000);
 
-  test.subHeading('the one table is the contact family\'s cache, and the list takes no stream itself (goal/G41.28)');
-  // Andy, the box: "anything not using the new spiritData.js and it's buddies clientCacheManager.js must do so in this
-  // item. no exceptions."
-  if (subscribers.length === dataSubscribed) test.check('loaded and created, the list subscribes to no stream of its own');
-  else test.fail('the list subscribed to the stream ' + (subscribers.length - dataSubscribed) + ' times');
+// the one table is the contact family's cache, and the list takes no stream itself (goal/G41.28)
+// Andy, the box: "anything not using the new spiritData.js and it's buddies clientCacheManager.js must do so in this
+// item. no exceptions."
+test.run('loaded and created, the list subscribes to no stream of its own', 0.2, function () {
+  if (!L) return NO_LIST;
+  return subscribers.length === dataSubscribed ? true : 'the list subscribed to the stream ' + (subscribers.length - dataSubscribed) + ' times';
+}, 1000);
+test.run('a row the node\'s shadow job hands is in the branch the list handed its search', 0.2, async function () {
+  if (!o) return NO_OPTS;
   window.spirit.data.takeJob({ id: 'spirit.contact', data: { row: { publicKey: 'K1', keep: true, blocked: true } } });
   await tick();
   const kept = CD && CD.contact('K1');
-  if (kept && kept.blocked === true && o.data === CD.branch) test.check('a row the node\'s shadow job hands is in the branch the list handed its search');
-  else test.fail('after the shadow job: ' + JSON.stringify(kept));
+  return kept && kept.blocked === true && o.data === CD.branch ? true : 'after the shadow job: ' + JSON.stringify(kept);
+}, 1000);
 
-  test.subHeading('refresh and destroy are the search element\'s');
+// refresh and destroy are the search element's
+test.run('refresh and destroy reach the search element', 0.2, function () {
+  if (!pane) return NO_OPTS;
   const r2 = made.refreshes;
   pane.refresh(); pane.destroy();
-  if (made.refreshes === r2 + 1 && made.destroyed === true && pane.list) test.check('refresh and destroy reach the search element');
-  else test.fail('refresh/destroy');
-
-  test.reportSuccessFailureCount();
-}());
+  return made.refreshes === r2 + 1 && made.destroyed === true && pane.list ? true : 'refresh/destroy';
+}, 1000);
 
 // THE ELEMENT NAMES SINCE goal/G43.18: a stand-in keyed by its place, 'search.contact' and so on, nested where the page has it.
-function nestSearch(o) { Object.keys(o).forEach(function (k) { if (k !== 'search' && k.indexOf('search.') !== 0) return; var v = o[k]; delete o[k]; var ks = k.split('.'); var at = o; ks.slice(0, -1).forEach(function (p) { at = at[p] = at[p] || {}; }); var last = ks[ks.length - 1]; at[last] = Object.assign(at[last] || {}, v); }); return o; }
+function nestSearch(m) { Object.keys(m).forEach(function (k) { if (k !== 'search' && k.indexOf('search.') !== 0) return; var v = m[k]; delete m[k]; var ks = k.split('.'); var at = m; ks.slice(0, -1).forEach(function (p) { at = at[p] = at[p] || {}; }); var last = ks[ks.length - 1]; at[last] = Object.assign(at[last] || {}, v); }); return m; }
