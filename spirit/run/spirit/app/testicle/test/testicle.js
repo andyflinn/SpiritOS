@@ -51,6 +51,7 @@ const PLANT = {
   'spirit/zzTesticle/test/theta.js': '\'use strict\';\n// the test of theta\n',
 };
 // The kept rows of an older testicle.db, for a script not on disc, so no change of this test's touches them.
+const OLD_TEST = 'older answers its question';
 const OLD = { name: 'spirit/zzTesticle/older.js', suite: 'spirit/zzTesticle/test/older.js', hash: 'an older hash', changed: 1700000000000 };
 // The general test changed in the scratch copy: its entries name every file of its reach.
 const GENERAL = 'spirit/test/spirit-sibling-titleRules.js';
@@ -74,6 +75,11 @@ function scratch() {
   old.exec('CREATE TABLE suite (file TEXT NOT NULL, suite TEXT NOT NULL, test INTEGER NOT NULL DEFAULT 0, deleted INTEGER NOT NULL DEFAULT 0, hash TEXT NOT NULL DEFAULT \'\', outcome TEXT NOT NULL DEFAULT \'\', changed INTEGER NOT NULL, PRIMARY KEY (file, suite))');
   old.prepare('INSERT INTO file (name, hash, deleted, changed) VALUES (?, ?, 0, ?)').run(OLD.name, OLD.hash, OLD.changed);
   old.prepare('INSERT INTO suite (file, suite, test, deleted, hash, outcome, changed) VALUES (?, ?, 1, 0, ?, \'\', ?)').run(OLD.name, OLD.suite, OLD.hash, OLD.changed);
+  // AN OLDER TABLE test (goal/G47.1, the rename cycle: "An older testicle.db holding the table test is renamed in place at
+  // start, every row kept as it was, no table test left"), as G45.1 made it, with its index, one row in it.
+  old.exec('CREATE TABLE test (script TEXT NOT NULL, suite TEXT NOT NULL, test TEXT NOT NULL, flipped INTEGER NOT NULL, current INTEGER NOT NULL DEFAULT 1, verified INTEGER NOT NULL, tested INTEGER NOT NULL, judged TEXT NOT NULL DEFAULT \'\', severity REAL NOT NULL DEFAULT 0, PRIMARY KEY (script, suite, test, flipped))');
+  old.exec('CREATE INDEX test_current ON test (verified, severity DESC, flipped DESC) WHERE current = 1');
+  old.prepare('INSERT INTO test (script, suite, test, flipped, current, verified, tested, judged, severity) VALUES (?, ?, ?, ?, 1, 1, ?, ?, 0.4)').run(OLD.name, OLD.suite, OLD_TEST, OLD.changed, OLD.changed, OLD.hash);
   old.close();
   return { root: root, run: run };
 }
@@ -101,7 +107,7 @@ function tables(dbFile) {
     const file = db.prepare('SELECT * FROM script').all();
     const suite = db.prepare('SELECT * FROM suite').all();
     let tests = [];
-    try { tests = db.prepare('SELECT * FROM test').all(); } catch (e) { tests = null; }
+    try { tests = db.prepare('SELECT * FROM testicle').all(); } catch (e) { tests = null; }
     return { script: file, suite: suite, test: tests };
   } catch (e) { return { error: String(e && e.message || e), script: [], suite: [], test: null }; }
   finally { try { if (db) db.close(); } catch (e) { /* closed */ } }
@@ -215,6 +221,40 @@ test.run('the older suite row is kept, its key column now script', 0.2, function
   if (!start) return NONODE;
   const keptSuite = suiteRow(start, OLD.name, OLD.suite);
   return (!!keptSuite && keptSuite.script === OLD.name && !('file' in keptSuite)) || 'the row: ' + short(keptSuite);
+}, test.limit.quick);
+
+// goal/G47.1, the rename cycle, the box: "The testicle test table is renamed \"testicle\": the table in testicle.db, its
+// index, and the branch data.js keeps it under", "An older testicle.db holding the table test is renamed in place at start,
+// every row kept as it was, no table test left".
+const sqlNames = function (type) {
+  try { const d = new DatabaseSync(DB, { readOnly: true }); const r = d.prepare('SELECT name, tbl_name FROM sqlite_master WHERE type = ?').all(type); d.close(); return r; } catch (e) { return [{ name: 'unreadable: ' + (e && e.message), tbl_name: '' }]; }
+};
+test.run('the older table test is now the table testicle, and no table test is left', 0.2, function () {
+  if (!up()) return NONODE;
+  const t = sqlNames('table').map(function (r) { return r.name; });
+  return (t.indexOf('testicle') !== -1 && t.indexOf('test') === -1) || 'tables: ' + short(t);
+}, test.limit.quick);
+test.run('the older test row is kept in testicle, as it was', 0.2, function () {
+  if (!start) return NONODE;
+  const k = (start.test || []).filter(function (r) { return r.script === OLD.name && r.suite === OLD.suite && r.test === OLD_TEST; });
+  return (k.length === 1 && Number(k[0].flipped) === OLD.changed && yes(k[0].current) && yes(k[0].verified) && Number(k[0].tested) === OLD.changed && k[0].judged === OLD.hash && Number(k[0].severity) === 0.4) || 'the rows: ' + short(k);
+}, test.limit.quick);
+test.run('the index over the current rows is on the table testicle, and no index is on a table test', 0.2, function () {
+  if (!up()) return NONODE;
+  const ix = sqlNames('index').filter(function (r) { return !/^sqlite_autoindex/.test(r.name); });
+  return (ix.some(function (r) { return r.tbl_name === 'testicle'; }) && !ix.some(function (r) { return r.tbl_name === 'test'; })) || 'indexes: ' + short(ix);
+}, test.limit.quick);
+test.run('the node lists the verbs testicle.set and testicle.search, and neither test.set nor test.search', 0.2, async function () {
+  if (!up()) return NONODE;
+  const api = await call(N.base, 'api', { family: 'testicle' });
+  const iface = String((api.body && api.body.interface) || '');
+  return (/['"]testicle\.set['"]\s*:/.test(iface) && /['"]testicle\.search['"]\s*:/.test(iface) && !/['"]test\.set['"]\s*:/.test(iface) && !/['"]test\.search['"]\s*:/.test(iface)) || 'testicle\'s api: ' + short(iface);
+}, test.limit.quick);
+test.run('the old verb testicle.test.set is no longer served', 0.2, async function () {
+  if (!up()) return NONODE;
+  // Asked for a script neither on disc nor in a row, so a verb still served refuses it for that and writes nothing.
+  const r = await call(N.base, 'testicle.test.set', { script: Z + 'nowhere.js', suite: Z + 'test/nowhere.js', test: 'never set', verified: true, severity: 0.2 });
+  return (!!r.body && r.body.code === 'no-such-verb') || 'testicle.test.set answered ' + r.status + ' ' + short(r.text);
 }, test.limit.quick);
 
 // the box: "nothing is read at start"
@@ -441,10 +481,10 @@ test.run('the world: theta.js has no row before a test of it is set', 0.2, funct
   if (!up()) return NONODE;
   return !scriptRow(tables(DB), TH) || 'theta.js has a row already';
 }, test.limit.quick);
-test.run('test.set is served, and testicle.db holds the table test', 0.2, async function () {
+test.run('testicle.set is served, and testicle.db holds the table testicle', 0.2, async function () {
   if (!up()) return NONODE;
   ts0 = Date.now();
-  set1 = await call(N.base, 'testicle.test.set', { script: TH, suite: THS, test: 'theta answers its first question', verified: true, severity: 0.2 });
+  set1 = await call(N.base, 'testicle.testicle.set', { script: TH, suite: THS, test: 'theta answers its first question', verified: true, severity: 0.2 });
   k1 = tables(DB);
   return (set1.status === 200 && Array.isArray(k1.test)) || 'test.set: ' + set1.status + ' ' + short(set1.text) + '; table test ' + short(k1.test === null ? 'missing' : 'there');
 }, test.limit.quick);
@@ -478,7 +518,7 @@ test.run('the same result again makes no new row', 0.2, async function () {
   if (!up()) return NONODE;
   await sleep(20);
   ts1 = Date.now();
-  await call(N.base, 'testicle.test.set', { script: TH, suite: THS, test: 'theta answers its first question', verified: true, severity: 0.1 });
+  await call(N.base, 'testicle.testicle.set', { script: TH, suite: THS, test: 'theta answers its first question', verified: true, severity: 0.1 });
   k2 = tables(DB);
   tr2 = currentOf(k2, TH, THS, 'theta answers its first question')[0];
   return (testRows(k2, TH, THS, 'theta answers its first question').length === 1 && !!tr2) || 'rows: ' + short(testRows(k2, TH, THS, 'theta answers its first question'));
@@ -493,7 +533,7 @@ test.run('with the script changed, the row is judged at its new hash', 0.2, asyn
   if (!up()) return NONODE;
   fs.appendFileSync(path.join(s.run, TH), '// theta changed\n');
   await sleep(1000);
-  await call(N.base, 'testicle.test.set', { script: TH, suite: THS, test: 'theta answers its first question', verified: true, severity: 0.5 });
+  await call(N.base, 'testicle.testicle.set', { script: TH, suite: THS, test: 'theta answers its first question', verified: true, severity: 0.5 });
   k3 = tables(DB);
   tr3 = currentOf(k3, TH, THS, 'theta answers its first question')[0];
   return (!!tr3 && !!tr1 && tr3.judged === (scriptRow(k3, TH) || {}).hash && tr3.judged !== tr1.judged) || 'judged ' + short(tr3 && tr3.judged) + ', the script\'s hash ' + short((scriptRow(k3, TH) || {}).hash);
@@ -506,7 +546,7 @@ test.run('a higher severity is applied to the row', 0.2, function () {
 test.run('a flip makes a second row, and one row alone is current', 0.2, async function () {
   if (!up()) return NONODE;
   ts2 = Date.now();
-  await call(N.base, 'testicle.test.set', { script: TH, suite: THS, test: 'theta answers its first question', verified: false, severity: 0.6 });
+  await call(N.base, 'testicle.testicle.set', { script: TH, suite: THS, test: 'theta answers its first question', verified: false, severity: 0.6 });
   k4 = tables(DB);
   all4 = testRows(k4, TH, THS, 'theta answers its first question');
   cur4 = currentOf(k4, TH, THS, 'theta answers its first question');
@@ -523,42 +563,42 @@ test.run('the row it replaces is kept, current no longer: the history', 0.2, fun
 // the box: "This cycle does not clear a suite's needs-testing flag"
 test.run('with every test of the suite passing, its needs-testing flag stays', 0.2, async function () {
   if (!up()) return NONODE;
-  await call(N.base, 'testicle.test.set', { script: TH, suite: THS, test: 'theta answers its first question', verified: true, severity: 0.6 });
+  await call(N.base, 'testicle.testicle.set', { script: TH, suite: THS, test: 'theta answers its first question', verified: true, severity: 0.6 });
   const k5 = tables(DB);
   const flag5 = suiteRow(k5, TH, THS);
   return (!!flag5 && yes(flag5.test)) || 'the suite row: ' + short(flag5);
 }, test.limit.quick);
 
 // the box: "test.search will only return current test rows"
-test.run('test.search answers a standard table search: items and more', 0.2, async function () {
+test.run('testicle.search answers a standard table search: items and more', 0.2, async function () {
   if (!up()) return NONODE;
-  await call(N.base, 'testicle.test.set', { script: TH, suite: THS, test: 'theta answers its second question', verified: false, severity: 0.9 });
-  await call(N.base, 'testicle.test.set', { script: TH, suite: THS, test: 'theta answers its third question', verified: false, severity: 0.3 });
-  await call(N.base, 'testicle.test.set', { script: Z + 'gamma.js', suite: Z + 'test/gamma.js', test: 'gamma answers', verified: false, severity: 0.7 });
-  sr = await call(N.base, 'testicle.test.search', { script: TH, suite: THS, text: '' });
+  await call(N.base, 'testicle.testicle.set', { script: TH, suite: THS, test: 'theta answers its second question', verified: false, severity: 0.9 });
+  await call(N.base, 'testicle.testicle.set', { script: TH, suite: THS, test: 'theta answers its third question', verified: false, severity: 0.3 });
+  await call(N.base, 'testicle.testicle.set', { script: Z + 'gamma.js', suite: Z + 'test/gamma.js', test: 'gamma answers', verified: false, severity: 0.7 });
+  sr = await call(N.base, 'testicle.testicle.search', { script: TH, suite: THS, text: '' });
   srRows = found(sr);
   return (sr.status === 200 && !!sr.body && Array.isArray(sr.body.items) && typeof sr.body.more === 'boolean') || 'test.search: ' + sr.status + ' ' + short(sr.text);
 }, test.limit.quick);
 test.run('for a script and suite it answers their current tests only, one row each', 0.2, function () {
   return (srRows.length === 3 && srRows.every(function (r) { return yes(r.current) && r.script === TH && r.suite === THS; })) || 'rows: ' + short(srRows);
 }, test.limit.quick);
-test.run('test.search answers the most severe first', 0.2, function () {
+test.run('testicle.search answers the most severe first', 0.2, function () {
   const sev = srRows.map(function (r) { return Number(r.severity); });
   return (sev.length === 3 && sev[0] >= sev[1] && sev[1] >= sev[2]) || 'severities in order: ' + short(sev);
 }, test.limit.quick);
 test.run('with no script it searches that suite\'s tests for any script', 0.2, async function () {
   if (!up()) return NONODE;
-  const anyScript = found(await call(N.base, 'testicle.test.search', { suite: THS, text: '' }));
+  const anyScript = found(await call(N.base, 'testicle.testicle.search', { suite: THS, text: '' }));
   return (anyScript.length === 3 && anyScript.every(function (r) { return r.suite === THS && yes(r.current); })) || 'rows: ' + short(anyScript);
 }, test.limit.quick);
 test.run('with no suite it searches that script\'s tests in any suite', 0.2, async function () {
   if (!up()) return NONODE;
-  const anySuite = found(await call(N.base, 'testicle.test.search', { script: Z + 'gamma.js', text: '' }));
+  const anySuite = found(await call(N.base, 'testicle.testicle.search', { script: Z + 'gamma.js', text: '' }));
   return (anySuite.length === 1 && anySuite[0].test === 'gamma answers') || 'rows: ' + short(anySuite);
 }, test.limit.quick);
 test.run('with neither it searches every current test', 0.2, async function () {
   if (!up()) return NONODE;
-  const everyOne = found(await call(N.base, 'testicle.test.search', { text: '' }));
+  const everyOne = found(await call(N.base, 'testicle.testicle.search', { text: '' }));
   return (everyOne.length === 4 && everyOne.every(function (r) { return yes(r.current); })) || 'rows: ' + short(everyOne);
 }, test.limit.quick);
 

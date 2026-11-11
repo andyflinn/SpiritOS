@@ -41,7 +41,8 @@ The box, in Andy's words where he gave them:
   `script`, the suite table's key column `script`; an older testicle.db, its table `file` and its suite column `file`,
   is renamed in place at start, its rows kept as they were, and no table `file` is left.
 
-- **The test table, test.set, test.search and testicle.red** (goal/G47.1, the test cycle). The table is goal/G45.1's:
+- **The test table, test.set, test.search and testicle.red** (goal/G47.1, the test cycle; since the rename cycle the table
+  testicle and the verbs testicle.set and testicle.search, below). The table is goal/G45.1's:
   script, suite, test, flipped, current, verified, tested, judged, severity.
   - *"Every test.set happens by itself, no bundling"*, *"test.set MUST carry severity: {script, suite, test, verified,
     severity}"*. A set for a script with no row makes its script row and a suite row for every suite that concerns it.
@@ -57,6 +58,14 @@ The box, in Andy's words where he gave them:
   - goal/G47.1, the cycle "the test table streamed": *"on a flip, the replaced row turning current false is published
     too, beside the new current row"*, and every test row served carries its full key, `script|suite|test|flipped`, so
     the page keeps the two apart. Judged where a page receives it, in testicle's face test (`./element.js`).
+- **The rename** (goal/G47.1, the cycle "the test table renamed testicle"): *"The testicle test table is renamed
+  \"testicle\": the table in testicle.db, its index, and the branch data.js keeps it under. The stream carries it as the
+  table testicle."*; *"An older testicle.db holding the table test is renamed in place at start, every row kept as it
+  was, no table test left"*; *"test.set becomes testicle.set, test.search becomes testicle.search, their json files with
+  them; red stays red."* The scratch tree's older testicle.db holds a table test with its index and one row: after start
+  the table is testicle, the row as it was, the index on testicle, no table test. The node lists testicle.set and
+  testicle.search and neither old verb; testicle.test.set answers no such verb. Every check above calls the new names.
+  The branch and the stream are judged in the face test; the reporter's call in its own test (`spirit/test/test/testReport.js`).
   - *"This cycle does not clear a suite's needs-testing flag"*: with every test passing, the flag stays.
   - *"test.search will only return \"current\" test rows for the script/suite combination supplied ... no script in the
     search query searches tests for any script; the same for suite"*: `{items, more}`, the current rows only, one per

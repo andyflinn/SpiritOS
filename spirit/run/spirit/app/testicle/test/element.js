@@ -148,9 +148,9 @@ test.run('it has a face: shell.mount true', 0.2, function () {
 test.run('a server beside the face: node.mount true', 0.2, function () {
   return (!!own && !!own.node && own.node.mount === true) || 'node: ' + short(own && own.node);
 }, test.limit.quick);
-test.run('its folder holds its manifest, its face, its server, its api.js and data.js, and a json description of each verb, busy, script.get, suite.search, test.set, test.search, red, subscribe and unsubscribe, and its test/ folder, nothing else', 0.2, function () {
+test.run('its folder holds its manifest, its face, its server, its api.js and data.js, and a json description of each verb, busy, script.get, suite.search, testicle.set, testicle.search, red, subscribe and unsubscribe, and its test/ folder, nothing else', 0.2, function () {
   const held = fs.existsSync(APP) ? fs.readdirSync(APP).filter(function (f) { return f !== 'test'; }).sort() : [];
-  return JSON.stringify(held) === JSON.stringify(['api.js', 'busy.json', 'data.js', 'element.js', 'red.json', 'script.get.json', 'subscribe.json', 'suite.search.json', 'test.search.json', 'test.set.json', 'testicle.js', 'testicle.json', 'unsubscribe.json']) || 'its folder holds ' + short(held);
+  return JSON.stringify(held) === JSON.stringify(['api.js', 'busy.json', 'data.js', 'element.js', 'red.json', 'script.get.json', 'subscribe.json', 'suite.search.json', 'testicle.js', 'testicle.json', 'testicle.search.json', 'testicle.set.json', 'unsubscribe.json']) || 'its folder holds ' + short(held);
 }, test.limit.quick);
 test.run('its mount names element.js', 0.2, function () {
   return (!!own && !!own.mount && own.mount['element.js'] === true) || 'mount: ' + short(own && own.mount);
@@ -424,15 +424,15 @@ test.run('a tab\'s close button takes it away', 0.2, async function () {
 const ETA_TEST = 'eta answers its question';
 const pageTests = function () {
   return c.evaluate('(function () { var R = window.spirit.data.testicle && window.spirit.data.testicle.data; if (!R) return null; ' +
-    'var b = window.spirit.data.getPath(R.branch("test")) || {}; return Object.keys(b).map(function (k) { return { key: k, row: b[k] }; }); }())');
+    'var b = window.spirit.data.getPath(R.branch("testicle")) || {}; return Object.keys(b).map(function (k) { return { key: k, row: b[k] }; }); }())');
 };
 const etaRows = function (all) { return (all || []).filter(function (e) { return e.row && e.row.script === F3 && e.row.suite === etaOwn && e.row.test === ETA_TEST; }); };
 let flipSet = null, kept = null;
 test.run('the world: a test of eta.js is set passing, then failing: a flip', 0.2, async function () {
   if (face()) return face();
-  const one = await call(N.base, 'testicle.test.set', { script: F3, suite: etaOwn, test: ETA_TEST, verified: true, severity: 0.2 });
+  const one = await call(N.base, 'testicle.testicle.set', { script: F3, suite: etaOwn, test: ETA_TEST, verified: true, severity: 0.2 });
   await sleep(20);
-  flipSet = await call(N.base, 'testicle.test.set', { script: F3, suite: etaOwn, test: ETA_TEST, verified: false, severity: 0.2 });
+  flipSet = await call(N.base, 'testicle.testicle.set', { script: F3, suite: etaOwn, test: ETA_TEST, verified: false, severity: 0.2 });
   return (one.status === 200 && flipSet.status === 200) || 'test.set: ' + one.status + ' ' + short(one.text) + '; then ' + flipSet.status + ' ' + short(flipSet.text);
 }, test.limit.quick);
 test.run('on a flip the replaced row reaches the page too, current false, beside the new current row', 0.2, async function () {

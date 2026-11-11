@@ -32,7 +32,7 @@ the completion line and ends the process, its exit code 1 when a test failed.
   fails under its title, the error as detail; a body still running at its limit fails under its title as a hang; the
   tests after both still run. Both are reported at 0.7.
 - `test.after` runs once every test has run. The completion line counts every test; the exit code is 1 when one failed.
-- **The report**: each test to `testicle.test.set` of the node of its checkout (spirit.js reads the port from that
+- **The report**: each test to `testicle.testicle.set` of the node of its checkout (spirit.js reads the port from that
   checkout's `spirit/state/environment.json`), once, `{script, suite, test, verified, severity}`: the script tested and
   the suite scoped to run://, the title as the test, the result, the severity the test gives. A failure's words never go
   into the title.
@@ -47,7 +47,7 @@ the completion line and ends the process, its exit code 1 when a test failed.
 
 A scratch run tree under the system's temporary folder holds a copy of `spirit/` and of `../testReport.js`, planted suites
 using it, and an `environment.json` naming a fake node this test stands up: it answers `api {family: testicle}` with
-testicle's real `api.js` and keeps every `testicle.test.set`. A second scratch tree has no `environment.json`. No live
+testicle's real `api.js` and keeps every `testicle.testicle.set`. A second scratch tree has no `environment.json`. No live
 node is touched.
 
 ## What its test must try to break

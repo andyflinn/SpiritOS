@@ -11,7 +11,7 @@
 // "each test raced against its own time limit set from its measured run time with a margin, 0.7 under its title", "each
 // suite can run one test only, if that test is supplied as an extra argument, its title", "if a test depends on other tests
 // running first, then the sequence is run up to the specified test", and from goal/G47.1: "the reporter reports every check
-// to testicle.test.set of the node of the checkout it runs in ... a checkout with no node running reports nowhere and still
+// to testicle.testicle.set of the node of the checkout it runs in ... a checkout with no node running reports nowhere and still
 // prints its lines".
 //
 // THE CALL, as this test asks it (goal/G47.2, the shapes the box leaves to the builder, wsl's):
@@ -24,7 +24,7 @@
 // HOW IT IS TRIED: a scratch run tree under the system's temporary folder holds a copy of this tree's spirit/ (its state
 // and test folders left out) and of spirit/test/testReport.js, with planted suites that use it. Its environment.json names
 // the port of a fake node this test stands up, which answers api {family: testicle} with testicle's real api.js and keeps
-// every testicle.test.set it is sent. Neither Andy's node nor an agent's is touched.
+// every testicle.testicle.set it is sent. Neither Andy's node nor an agent's is touched.
 
 const fs = require('fs');
 const os = require('os');
@@ -97,7 +97,7 @@ function scratchTree(port) {
   return { root: root, run: run };
 }
 
-// The fake node: its door, /api/spirit, answering testicle's interface and keeping each testicle.test.set.
+// The fake node: its door, /api/spirit, answering testicle's interface and keeping each testicle.testicle.set.
 function fakeNode() {
   const sets = [];
   const asked = [];
@@ -112,7 +112,7 @@ function fakeNode() {
       const send = function (status, obj) { res.writeHead(status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(obj)); };
       if (req.method !== 'POST' || req.url !== '/api/spirit' || !msg) return send(404, { ok: false, code: 'not-found' });
       if (msg.call === 'api' && msg.args && msg.args.family === 'testicle') return send(200, { family: 'testicle', interface: iface });
-      if (msg.call === 'testicle.test.set') { sets.push(msg.args); return send(200, { ok: true }); }
+      if (msg.call === 'testicle.testicle.set') { sets.push(msg.args); return send(200, { ok: true }); }
       return send(404, { ok: false, code: 'no-such-verb' });
     });
   });
@@ -186,7 +186,7 @@ test.run('the completion line counts every test, and the exit code says a test f
 }, test.limit.quick);
 
 // ── THE REPORT ──
-test.run('each test is reported to testicle.test.set of the node of its checkout, once', 0.2, function () {
+test.run('each test is reported to testicle.testicle.set of the node of its checkout, once', 0.2, function () {
   const titles = ['it passes', 'the spirit object stays global after a report', 'it fails with what went wrong', 'it fails with false', 'it throws', 'it rejects', 'it never answers', 'a security check', 'it passes after a hang'];
   const counts = titles.map(function (t) { return setOf(t).length; });
   return counts.every(function (n) { return n === 1; }) || 'sets per title ' + short(counts) + '; asked ' + short(W.node.asked.slice(0, 12));

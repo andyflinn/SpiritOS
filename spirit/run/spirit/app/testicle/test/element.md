@@ -18,7 +18,7 @@ existing file list with a filter for production *.js files: no new list."*
 - `spirit/app/testicle/testicle.json` is there and is JSON: an icon and a label; intrinsic (the goal box: *"an intrinsic
   app with a server and a face"*); a face, `shell.mount` true; a server, `node.mount` true.
 - Its folder holds `testicle.json`, `element.js`, `testicle.js`, `api.js`, `data.js`, and a json description of each
-  verb it serves (Andy's rule 6): `busy.json`, `script.get.json`, `suite.search.json`, `test.set.json`, `test.search.json`, `red.json`, `subscribe.json`,
+  verb it serves (Andy's rule 6): `busy.json`, `script.get.json`, `suite.search.json`, `testicle.set.json`, `testicle.search.json`, `red.json`, `subscribe.json`,
   `unsubscribe.json`; and its `test/` folder, nothing else; its `mount` names `element.js`.
 - `spirit/app/test/` stays the app branch's test folder: no `test.json` there.
 
