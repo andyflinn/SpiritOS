@@ -83,7 +83,8 @@
     var list = null;
     // FLAT (goal/G47.1): no folder row and never the indented tree, so every row shows its path.
     var flat = o.flat === true;
-    host.innerHTML = '<style>.files-tree .file-depth{display:inline-block;padding-left:calc(var(--depth) * 2em)}.files-tree .path-dir{display:none}</style>' +
+    // The tree's style, its indent and its hidden path, only where there is a tree.
+    host.innerHTML = (flat ? '' : '<style>.files-tree .file-depth{display:inline-block;padding-left:calc(var(--depth) * 2em)}.files-tree .path-dir{display:none}</style>') +
       // The list search's box takes all of this one (goal/G40.8: space granted top-down).
       '<div class="' + (flat ? 'fill' : 'files-tree fill') + '"></div>';
     var inner = host.lastChild;
