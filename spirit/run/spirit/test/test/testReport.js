@@ -44,6 +44,8 @@ const PROBE = [
   "const fs = require('fs');",
   "const test = " + REPORTER_FROM(2) + ";",
   "test.run('it passes', 0.2, function () { return true; }, 1000);",
+  // goal/G47.2: once a test is reported, a module loading the spirit object later still finds it the global it makes.
+  "test.run('the spirit object stays global after a report', 0.2, function () { require(require('path').join(__dirname, '..', '..', 'spirit', 'spirit.js')); return (!!globalThis.spirit && typeof globalThis.spirit === 'object') || 'no global spirit after a report'; }, 1000);",
   "test.run('it fails with what went wrong', 0.2, function () { return 'the count was 3, not 4'; }, 1000);",
   "test.run('it fails with false', 0.2, function () { return false; }, 1000);",
   "test.run('it throws', 0.2, function () { throw new Error('a thrown boom'); }, 1000);",
@@ -170,6 +172,9 @@ test.run('a body that rejects fails under its own title, the error as detail', 0
 test.run('a body past its time limit fails under its own title as a hang', 0.2, function () {
   return printed('it never answers').some(function (l) { return /FAILURE/.test(l); }) || 'printed: ' + short(printed('it never answers'));
 }, 1000);
+test.run('a module loading the spirit object after a report finds it global', 0.2, function () {
+  return printed('the spirit object stays global after a report').some(function (l) { return /SUCCESS/.test(l); }) || 'printed: ' + short(printed('the spirit object stays global after a report'));
+}, 1000);
 test.run('the tests after a crash and a hang still run', 0.2, function () {
   return printed('it passes after a hang').some(function (l) { return /SUCCESS/.test(l); }) || 'printed: ' + short(printed('it passes after a hang'));
 }, 1000);
@@ -177,12 +182,12 @@ test.run('test.after runs once every test has run', 0.2, function () {
   return fs.existsSync(path.join(W.tree.run, 'probe', 'test', 'after.txt')) || 'no after.txt';
 }, 1000);
 test.run('the completion line counts every test, and the exit code says a test failed', 0.2, function () {
-  return (/✅:2\s+❌:6/.test(W.probe.out) && W.probe.code === 1) || 'completion: ' + short((W.probe.out.match(/Test completed[^\n]*/) || [''])[0]) + ', exit ' + W.probe.code;
+  return (/✅:3\s+❌:6/.test(W.probe.out) && W.probe.code === 1) || 'completion: ' + short((W.probe.out.match(/Test completed[^\n]*/) || [''])[0]) + ', exit ' + W.probe.code;
 }, 1000);
 
 // ── THE REPORT ──
 test.run('each test is reported to testicle.test.set of the node of its checkout, once', 0.2, function () {
-  const titles = ['it passes', 'it fails with what went wrong', 'it fails with false', 'it throws', 'it rejects', 'it never answers', 'a security check', 'it passes after a hang'];
+  const titles = ['it passes', 'the spirit object stays global after a report', 'it fails with what went wrong', 'it fails with false', 'it throws', 'it rejects', 'it never answers', 'a security check', 'it passes after a hang'];
   const counts = titles.map(function (t) { return setOf(t).length; });
   return counts.every(function (n) { return n === 1; }) || 'sets per title ' + short(counts) + '; asked ' + short(W.node.asked.slice(0, 12));
 }, 5000);
@@ -227,7 +232,7 @@ test.run('the world: the probe suite runs with one test named', 0.2, async funct
 }, 20000);
 test.run('one test named runs the sequence up to it, and no test after it', 0.2, function () {
   const ran = W.alone.sets.map(function (s) { return s.test; });
-  return JSON.stringify(ran) === JSON.stringify(['it passes', 'it fails with what went wrong', 'it fails with false']) || 'it ran ' + short(ran);
+  return JSON.stringify(ran) === JSON.stringify(['it passes', 'the spirit object stays global after a report', 'it fails with what went wrong', 'it fails with false']) || 'it ran ' + short(ran);
 }, 5000);
 
 // ── A TITLE TWICE, A SEVERITY OUT OF RANGE ──

@@ -8,8 +8,9 @@
 //   node spirit/test/app-child-generalRules.js spirit/app/desk/desk.js     the app the file is in
 //   node spirit/test/app-child-generalRules.js                             every sub-folder of spirit/app/
 //
-// Judged on disc, from the files and the code (comments left out): no node is started. Every check is named by the
-// app's folder. What an element script places, a page judges in spirit-sibling-generalRules.js; what an api.js serves,
+// Judged on disc, from the files and the code (comments left out): no node is started. Each rule is one test over
+// every sub-folder judged, its detail naming each app's folder that breaks it (goal/G47.2: one title, unique in the
+// suite). What an element script places, a page judges in spirit-sibling-generalRules.js; what an api.js serves,
 // spirit-sibling-branchRules.js.
 
 const fs = require('fs');
@@ -19,7 +20,6 @@ const RUN = path.resolve(__dirname, '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 
 const ARGS = process.argv.slice(2).filter(function (a, i, all) { return a !== '--verify-port' && all[i - 1] !== '--verify-port'; });
-function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 400); }
 function code(rel) { let t = ''; try { t = fs.readFileSync(path.join(RUN, rel), 'utf8'); } catch (e) { return ''; } return t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"\\])\/\/[^\n]*/g, '$1'); }
 function isFile(rel) { try { return fs.statSync(path.join(RUN, rel)).isFile(); } catch (e) { return false; } }
@@ -54,107 +54,195 @@ function isObj(v) { return !!v && typeof v === 'object' && !Array.isArray(v); }
 // ── 0. job AND event, SINGULAR ──────────────────────────────────────────────────────────────────────────────────────
 // Andy, the box: "\"jobs\" and it's face spirit/app/jobs/ will be renamed, \"job\" (singular) and the same will happen for
 // \"events\", which will be renamed \"event\"". The decided: the seven verbs renamed, and every file and folder named so.
+function verbsOf(file, want) {
+  let verbs = null;
+  try { verbs = Object.keys(require(path.join(RUN, file)).verbs || {}); } catch (e) { verbs = null; }
+  const same = !!verbs && want.every(function (v) { return verbs.indexOf(v) !== -1; }) && verbs.length === want.length;
+  return same ? true : file + ': ' + (verbs ? 'declares ' + short(verbs) + ', not ' + want.join(', ') : 'is not there or does not load');
+}
+const OLD_NAME_CALL = /['"`](jobs|events)\.(search|get|create|cancel|delete|subscribe|publish|list|update)\b|\bspirit\.(jobs|events)\b|\bS\.(jobs|events)\b|\bs\.(jobs|events)\b/;
 function rule0() {
-  test.subHeading('rule 0: job and event, singular');
-  const plural = TREE.filter(function (f) { return /(^|\/)(jobs|events)(\/|[-.])/.test(f); });
-  ok(!plural.length, 'no file or folder is named jobs or events', plural.length + ' still are: ' + short(plural.slice(0, 8)));
-  ok(isFile('spirit/job/api.js') && isFile('spirit/job/data.js'), 'the branch job: spirit/job/ holds api.js and data.js', 'no branch spirit/job/ with api.js and data.js');
-  ok(isFile('spirit/event/api.js') && isFile('spirit/event/data.js'), 'the branch event: spirit/event/ holds api.js and data.js', 'no branch spirit/event/ with api.js and data.js');
-  ok(isFile('spirit/app/job/job.json'), 'its face: spirit/app/job/', 'no app spirit/app/job/');
-  [['spirit/job/api.js', ['search', 'get', 'create', 'cancel', 'delete']], ['spirit/event/api.js', ['subscribe', 'publish']]].forEach(function (p) {
-    let verbs = null;
-    try { verbs = Object.keys(require(path.join(RUN, p[0])).verbs || {}); } catch (e) { verbs = null; }
-    const same = !!verbs && p[1].every(function (v) { return verbs.indexOf(v) !== -1; }) && verbs.length === p[1].length;
-    const sameWhy = p[0] + ': ' + (verbs ? 'declares ' + short(verbs) + ', not ' + p[1].join(', ') : 'is not there or does not load');
-    if (p[0] === 'spirit/job/api.js') ok(same, 'spirit/job/api.js: the verbs search, get, create, cancel and delete, their words unchanged', sameWhy);
-    else if (p[0] === 'spirit/event/api.js') ok(same, 'spirit/event/api.js: the verbs subscribe and publish, their words unchanged', sameWhy);
-  });
+  // Rule 0: job and event, singular.
+  test.run('no file or folder is named jobs or events', 0.4, function () {
+    const plural = TREE.filter(function (f) { return /(^|\/)(jobs|events)(\/|[-.])/.test(f); });
+    return !plural.length ? true : plural.length + ' still are: ' + short(plural.slice(0, 8));
+  }, 1000);
+  test.run('the branch job: spirit/job/ holds api.js and data.js', 0.4, function () {
+    return (isFile('spirit/job/api.js') && isFile('spirit/job/data.js')) ? true : 'no branch spirit/job/ with api.js and data.js';
+  }, 1000);
+  test.run('the branch event: spirit/event/ holds api.js and data.js', 0.4, function () {
+    return (isFile('spirit/event/api.js') && isFile('spirit/event/data.js')) ? true : 'no branch spirit/event/ with api.js and data.js';
+  }, 1000);
+  test.run('its face: spirit/app/job/', 0.4, function () { return isFile('spirit/app/job/job.json') ? true : 'no app spirit/app/job/'; }, 1000);
+  test.run('spirit/job/api.js: the verbs search, get, create, cancel and delete, their words unchanged', 0.4, function () {
+    return verbsOf('spirit/job/api.js', ['search', 'get', 'create', 'cancel', 'delete']);
+  }, 1000);
+  test.run('spirit/event/api.js: the verbs subscribe and publish, their words unchanged', 0.4, function () {
+    return verbsOf('spirit/event/api.js', ['subscribe', 'publish']);
+  }, 1000);
   // A call by its old name: 'jobs.<verb>' or 'events.<verb>' in a string, or spirit.jobs / spirit.events, in any product file.
-  const calls = TREE.filter(function (f) { return /\.(js|html)$/.test(f) && !/\/test\//.test(f) && !/\/(chokidar|readdirp)\//.test(f); }).filter(function (f) {
-    return /['"`](jobs|events)\.(search|get|create|cancel|delete|subscribe|publish|list|update)\b|\bspirit\.(jobs|events)\b|\bS\.(jobs|events)\b|\bs\.(jobs|events)\b/.test(code(f));
-  });
-  ok(!calls.length, 'no product file calls a verb by its old name, jobs.* or events.*, nor spirit.jobs or spirit.events', calls.length + ' do: ' + short(calls.slice(0, 8)));
+  // (A constant: its quote characters inside a test's body would be read as strings by the title rule's parser.)
+  test.run('no product file calls a verb by its old name, jobs.* or events.*, nor spirit.jobs or spirit.events', 0.4, function () {
+    const calls = TREE.filter(function (f) { return /\.(js|html)$/.test(f) && !/\/test\//.test(f) && !/\/(chokidar|readdirp)\//.test(f); }).filter(function (f) {
+      return OLD_NAME_CALL.test(code(f));
+    });
+    return !calls.length ? true : calls.length + ' do: ' + short(calls.slice(0, 8));
+  }, 1000);
 }
 
 // ── THE APP APP (the box, decided) ──────────────────────────────────────────────────────────────────────────────────
 function appApp() {
-  test.subHeading('the app app');
-  const m = manifestOf('app');
-  ok(!!m.j && isObj(m.j.shell) && m.j.shell.true === true, 'spirit/app/app/app.json says shell true:true, a shell a node may load', 'spirit/app/app/app.json ' + (m.j ? 'does not say shell true:true' : 'is not there'));
-  ok(isFile('spirit/app/app/element.js') && isElement('spirit/app/app/element.js'), 'spirit/app/app/element.js is its element, the app selector', 'spirit/app/app/element.js is not there, or places no create');
-  const gone = ['spirit/app/shell', 'spirit/app/appSelector', 'spirit/app/appSelector.js'].filter(function (p) { return isDir(p) || isFile(p) || TREE.some(function (f) { return f.indexOf(p + '/') === 0; }); });
-  ok(!gone.length, 'the shell app, spirit/app/appSelector.js and spirit/app/appSelector/ are gone', short(gone) + ' still stand');
-  const parts = ['changeAppIcon', 'changeAppLabel', 'detailElement', 'rowFormAppActive', 'rowFormSetShell', 'rowFormToggle', 'serverDEBUG'];
-  const missing = parts.filter(function (p) { return !isFile('spirit/element/search/app/' + p + '.js'); });
-  ok(!missing.length, 'the app branch is intrinsic: its parts stand in spirit/element/search/app/ (' + parts.join(', ') + ')', 'not in spirit/element/search/app/: ' + short(missing));
-  const shellJs = code('spirit/nodeShell.js');
-  ok(/DEFAULT\s*=\s*'app'/.test(shellJs), 'the node\'s default shell is app (spirit/nodeShell.js)', 'spirit/nodeShell.js names another default shell');
+  test.run('spirit/app/app/app.json says shell true:true, a shell a node may load', 0.4, function () {
+    const m = manifestOf('app');
+    return (!!m.j && isObj(m.j.shell) && m.j.shell.true === true) ? true : 'spirit/app/app/app.json ' + (m.j ? 'does not say shell true:true' : 'is not there');
+  }, 1000);
+  test.run('spirit/app/app/element.js is its element, the app selector', 0.4, function () {
+    return (isFile('spirit/app/app/element.js') && isElement('spirit/app/app/element.js')) ? true : 'spirit/app/app/element.js is not there, or places no create';
+  }, 1000);
+  test.run('the shell app, spirit/app/appSelector.js and spirit/app/appSelector/ are gone', 0.4, function () {
+    const gone = ['spirit/app/shell', 'spirit/app/appSelector', 'spirit/app/appSelector.js'].filter(function (p) { return isDir(p) || isFile(p) || TREE.some(function (f) { return f.indexOf(p + '/') === 0; }); });
+    return !gone.length ? true : short(gone) + ' still stand';
+  }, 1000);
+  test.run('the app branch is intrinsic: its parts stand in spirit/element/search/app/ (changeAppIcon, changeAppLabel, detailElement, rowFormAppActive, rowFormSetShell, rowFormToggle, serverDEBUG)', 0.4, function () {
+    const parts = ['changeAppIcon', 'changeAppLabel', 'detailElement', 'rowFormAppActive', 'rowFormSetShell', 'rowFormToggle', 'serverDEBUG'];
+    const missing = parts.filter(function (p) { return !isFile('spirit/element/search/app/' + p + '.js'); });
+    return !missing.length ? true : 'not in spirit/element/search/app/: ' + short(missing);
+  }, 1000);
+  test.run('the node\'s default shell is app (spirit/nodeShell.js)', 0.4, function () {
+    return /DEFAULT\s*=\s*'app'/.test(code('spirit/nodeShell.js')) ? true : 'spirit/nodeShell.js names another default shell';
+  }, 1000);
 }
 
 // ── 1 TO 6, FOR EACH SUB-FOLDER ──────────────────────────────────────────────────────────────────────────────────────
-function appRules(n) {
+// One test per rule, judging every sub-folder judged here (one, when asked about a file): its title is the rule's, its
+// detail names each folder that breaks it. A rule that applies to none of them (a face rule, when the one app asked
+// about has no face) is not run.
+// What each sub-folder's manifest says, read once.
+function factsOf(n) {
   const dir = 'spirit/app/' + n;
-  const files = TREE.filter(function (f) { return f.indexOf(dir + '/') === 0 && f.indexOf(dir + '/test/') !== 0; });
-  test.subHeading(dir);
+  const m = manifestOf(n);
+  const j = m.j || {};
+  const id = isObj(j.identity) ? j.identity : {};
+  return {
+    n: n, dir: dir, m: m, j: j, id: id,
+    files: TREE.filter(function (f) { return f.indexOf(dir + '/') === 0 && f.indexOf(dir + '/test/') !== 0; }),
+    face: isObj(j.shell) && j.shell.mount === true,
+    server: isObj(j.node) && j.node.mount === true,
+    run: isObj(j.node) && j.node.run === true,
+    main: dir + '/element.js',
+    api: dir + '/api.js',
+  };
+}
+// The folders a rule judges, each answering true or what it breaks: true when none breaks it, else every break, joined.
+function each(list, judge) {
+  if (!list.length) return 'no sub-folder of spirit/app/ to judge';
+  const broken = list.map(judge).filter(function (v) { return v !== true; });
+  return !broken.length ? true : broken.join('; ');
+}
+function apiVerbs(f) {
+  try { const mod = require(path.join(RUN, f.api)); return isObj(mod && mod.verbs) ? Object.keys(mod.verbs) : null; } catch (e) { return null; }
+}
+function appRules(all) {
   // Rules 1 and 2: "sub folders of this folder are meant for plugin-applications." "a manifest called
   // run://spirit/app/[name]/[name].json must exists ..., and it must be valid." Valid (the box, decided): it says
   // identity.intrinsic, true or false.
-  const m = manifestOf(n);
-  ok(!m.missing, 'rule 2: its manifest is there', dir + ': rule 2, no manifest ' + m.rel + ': a sub-folder of spirit/app/ is an app');
-  if (m.missing) return;
-  const j = m.j || {};
-  const id = isObj(j.identity) ? j.identity : {};
-  const bad = [];
-  if (m.threw) bad.push('it does not parse: ' + m.threw);
-  if (typeof id.icon !== 'string' || !id.icon) bad.push('identity.icon');
-  if (typeof id.label !== 'string' || !id.label) bad.push('identity.label');
-  if (!isBool(id.intrinsic)) bad.push('identity.intrinsic, true or false');
-  if (!isObj(j.mount)) bad.push('mount');
-  if (!isObj(j.shell) || !isBool(j.shell.true) || !isBool(j.shell.mount) || !isBool(j.shell.tile)) bad.push('shell { true, mount, tile }, each true or false');
-  if (!isObj(j.node) || !isBool(j.node.mount) || (j.node.run !== undefined && !isBool(j.node.run))) bad.push('node { mount, run? }, each true or false');
-  ok(!bad.length, 'rule 2: its manifest is valid', dir + ': rule 2, its manifest lacks ' + bad.join('; '));
+  test.run('rule 2: its manifest is there', 0.4, function () {
+    return each(all, function (f) { return !f.m.missing ? true : f.dir + ': rule 2, no manifest ' + f.m.rel + ': a sub-folder of spirit/app/ is an app'; });
+  }, 1000);
+  const have = all.filter(function (f) { return !f.m.missing; });
+  if (!have.length) return;
+  test.run('rule 2: its manifest is valid', 0.4, function () {
+    return each(have, function (f) {
+      const j = f.j, id = f.id, m = f.m;
+      const bad = [];
+      if (m.threw) bad.push('it does not parse: ' + m.threw);
+      if (typeof id.icon !== 'string' || !id.icon) bad.push('identity.icon');
+      if (typeof id.label !== 'string' || !id.label) bad.push('identity.label');
+      if (!isBool(id.intrinsic)) bad.push('identity.intrinsic, true or false');
+      if (!isObj(j.mount)) bad.push('mount');
+      if (!isObj(j.shell) || !isBool(j.shell.true) || !isBool(j.shell.mount) || !isBool(j.shell.tile)) bad.push('shell { true, mount, tile }, each true or false');
+      if (!isObj(j.node) || !isBool(j.node.mount) || (j.node.run !== undefined && !isBool(j.node.run))) bad.push('node { mount, run? }, each true or false');
+      return !bad.length ? true : f.dir + ': rule 2, its manifest lacks ' + bad.join('; ');
+    });
+  }, 1000);
   // Rule 3: "these manifests describe an app: does it have a face? a server? Is it a persistent server process that lives
   // while the node lives, or only while handling a request?" shell.mount, node.mount, node.run.
-  const face = isObj(j.shell) && j.shell.mount === true;
-  const server = isObj(j.node) && j.node.mount === true;
-  const run = isObj(j.node) && j.node.run === true;
-  ok(face || server || run, 'rule 3: it says what it is, a face, a server living with the node or a run',
-    dir + ': rule 3, it says no face, no server and no run');
+  test.run('rule 3: it says what it is, a face, a server living with the node or a run', 0.4, function () {
+    return each(have, function (f) { return (f.face || f.server || f.run) ? true : f.dir + ': rule 3, it says no face, no server and no run'; });
+  }, 1000);
   // Rule 4: "if the application has a face, its main screen element must be spirit/app/[name]/element.js."
-  const main = dir + '/element.js';
-  if (face) {
-    ok(isFile(main) && isElement(main) && code(main).indexOf("'" + main + "'") !== -1,
-      'rule 4: it has a face, and its main element is element.js, placed by its path', dir + ': rule 4, it has a face, but ' + (isFile(main) ? main + ' places no create at its path' : 'no ' + main));
-  } else ok(!isFile(main), 'rule 4: no face, and no element.js', dir + ': rule 4, ' + main + ' stands, but its manifest says no face');
+  const faced = have.filter(function (f) { return f.face; });
+  const faceless = have.filter(function (f) { return !f.face; });
+  if (faced.length) {
+    test.run('rule 4: it has a face, and its main element is element.js, placed by its path', 0.4, function () {
+      return each(faced, function (f) {
+        return (isFile(f.main) && isElement(f.main) && code(f.main).indexOf("'" + f.main + "'") !== -1) ? true : f.dir + ': rule 4, it has a face, but ' + (isFile(f.main) ? f.main + ' places no create at its path' : 'no ' + f.main);
+      });
+    }, 1000);
+  }
+  if (faceless.length) {
+    test.run('rule 4: no face, and no element.js', 0.4, function () {
+      return each(faceless, function (f) { return !isFile(f.main) ? true : f.dir + ': rule 4, ' + f.main + ' stands, but its manifest says no face'; });
+    }, 1000);
+  }
   // Rule 5: "if the app is intrinsic, its additional elements belong in spirit/element/ if the app is not intrinsic, the
   // additional elements belong in spirit/app/[name]/element/."
-  const extra = files.filter(function (f) { return /\.js$/.test(f) && f !== main && isElement(f); });
-  if (id.intrinsic === true) ok(!extra.length, 'rule 5: intrinsic, and no element of its own but element.js (the rest in spirit/element/)', dir + ': rule 5, intrinsic, but its folder holds ' + extra.length + ' more elements: ' + short(extra));
-  else {
-    const astray = extra.filter(function (f) { return f.indexOf(dir + '/element/') !== 0; });
-    ok(!astray.length, 'rule 5: not intrinsic, and its other elements stand in its own element/ folder', dir + ': rule 5, not intrinsic, but ' + astray.length + ' elements stand outside ' + dir + '/element/: ' + short(astray));
+  const extra = function (f) { return f.files.filter(function (x) { return /\.js$/.test(x) && x !== f.main && isElement(x); }); };
+  const intrinsic = have.filter(function (f) { return f.id.intrinsic === true; });
+  const free = have.filter(function (f) { return f.id.intrinsic !== true; });
+  if (intrinsic.length) {
+    test.run('rule 5: intrinsic, and no element of its own but element.js (the rest in spirit/element/)', 0.4, function () {
+      return each(intrinsic, function (f) { const e = extra(f); return !e.length ? true : f.dir + ': rule 5, intrinsic, but its folder holds ' + e.length + ' more elements: ' + short(e); });
+    }, 1000);
+  }
+  if (free.length) {
+    test.run('rule 5: not intrinsic, and its other elements stand in its own element/ folder', 0.4, function () {
+      return each(free, function (f) {
+        const astray = extra(f).filter(function (x) { return x.indexOf(f.dir + '/element/') !== 0; });
+        return !astray.length ? true : f.dir + ': rule 5, not intrinsic, but ' + astray.length + ' elements stand outside ' + f.dir + '/element/: ' + short(astray);
+      });
+    }, 1000);
   }
   // Rule 6: "an app that serves verbs must also contain, in the spirit/app/[name]/ folder a valid api.js, a data.js and a json
   // description file for each verb it serves."
-  const api = dir + '/api.js';
-  if (!isFile(api)) { ok(!server, 'rule 6: it serves no verbs: no api.js, and no server', dir + ': rule 6, it has a server but no ' + api); return; }
-  let verbs = null;
-  try { const mod = require(path.join(RUN, api)); verbs = isObj(mod && mod.verbs) ? Object.keys(mod.verbs) : null; } catch (e) { verbs = null; }
-  ok(!!verbs && verbs.length > 0, 'rule 6: its api.js is valid', dir + ': rule 6, ' + api + ' does not load, or declares no verbs');
-  ok(isFile(dir + '/data.js'), 'rule 6: its data.js is there', dir + ': rule 6, it serves verbs but has no data.js');
-  const undescribed = (verbs || []).filter(function (v) {
-    try { return !isObj(JSON.parse(fs.readFileSync(path.join(RUN, dir, v + '.json'), 'utf8'))); } catch (e) { return true; }
-  });
-  ok(!!verbs && !undescribed.length, 'rule 6: each verb it serves has its json description', dir + ': rule 6, no valid <verb>.json for ' + short(undescribed));
+  const noApi = have.filter(function (f) { return !isFile(f.api); });
+  const withApi = have.filter(function (f) { return isFile(f.api); });
+  if (noApi.length) {
+    test.run('rule 6: it serves no verbs: no api.js, and no server', 0.4, function () {
+      return each(noApi, function (f) { return !f.server ? true : f.dir + ': rule 6, it has a server but no ' + f.api; });
+    }, 1000);
+  }
+  if (withApi.length) {
+    test.run('rule 6: its api.js is valid', 0.4, function () {
+      return each(withApi, function (f) { const v = apiVerbs(f); return (!!v && v.length > 0) ? true : f.dir + ': rule 6, ' + f.api + ' does not load, or declares no verbs'; });
+    }, 1000);
+    test.run('rule 6: its data.js is there', 0.4, function () {
+      return each(withApi, function (f) { return isFile(f.dir + '/data.js') ? true : f.dir + ': rule 6, it serves verbs but has no data.js'; });
+    }, 1000);
+    test.run('rule 6: each verb it serves has its json description', 0.4, function () {
+      return each(withApi, function (f) {
+        const verbs = apiVerbs(f);
+        const undescribed = (verbs || []).filter(function (v) {
+          try { return !isObj(JSON.parse(fs.readFileSync(path.join(RUN, f.dir, v + '.json'), 'utf8'))); } catch (e) { return true; }
+        });
+        return (!!verbs && !undescribed.length) ? true : f.dir + ': rule 6, no valid <verb>.json for ' + short(undescribed);
+      });
+    }, 1000);
+  }
 }
 
-test.startTest('app-child-generalRules.js: the rules for the sub-folders of spirit/app/, judged on ' + (askedApp && askedApp !== BRANCH_TESTS ? 'spirit/app/' + askedApp : 'every one') + ' (goal/G43.32)');
-test.subHeading('the sub-folders');
-ok(APPS.length >= 20, 'the world: twenty or more sub-folders of spirit/app/', 'only ' + short(APPS) + ': nothing to judge');
-ok(isDir('spirit/app/' + BRANCH_TESTS) && !isFile('spirit/app/' + BRANCH_TESTS + '/' + BRANCH_TESTS + '.json'),
-  'spirit/app/test/ is the app branch\'s own test folder, the one sub-folder with no manifest', 'spirit/app/test/ is not the app branch\'s test folder');
-if (askedApp && !TARGETS.length && askedApp !== BRANCH_TESTS) test.fail(asked + ' is in no sub-folder of spirit/app/ the tree holds');
+// The sub-folders.
+test.run('the world: twenty or more sub-folders of spirit/app/', 0.2, function () {
+  return APPS.length >= 20 ? true : 'only ' + short(APPS) + ': nothing to judge';
+}, 1000);
+test.run('spirit/app/test/ is the app branch\'s own test folder, the one sub-folder with no manifest', 0.4, function () {
+  return (isDir('spirit/app/' + BRANCH_TESTS) && !isFile('spirit/app/' + BRANCH_TESTS + '/' + BRANCH_TESTS + '.json')) ? true : 'spirit/app/test/ is not the app branch\'s test folder';
+}, 1000);
+if (askedApp && askedApp !== BRANCH_TESTS) {
+  test.run('the world: the file asked about is in a sub-folder of spirit/app/ the tree holds', 0.2, function () {
+    return TARGETS.length ? true : asked + ' is in no sub-folder of spirit/app/ the tree holds';
+  }, 1000);
+}
 rule0();
 appApp();
-TARGETS.filter(function (n) { return n !== BRANCH_TESTS; }).forEach(appRules);
-test.reportSuccessFailureCount();
+appRules(TARGETS.filter(function (n) { return n !== BRANCH_TESTS; }).map(factsOf));

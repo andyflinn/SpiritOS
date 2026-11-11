@@ -116,7 +116,7 @@ function record(title, outcome, failure) {
     globalThis.spirit = undefined;
     globalThis.window = undefined;
     let real = null;
-    try { real = require(path.join(__dirname, '..', 'spirit.js')); } finally { globalThis.spirit = own; globalThis.window = ownWindow; }
+    try { real = require(path.join(__dirname, '..', 'spirit.js')); } finally { globalThis.spirit = own !== undefined ? own : (real || undefined); globalThis.window = ownWindow; }
     family = family || real.require(real.familyPath(name));
     inTheAir++;
     family.then(function (f) { return f[verb](rec); }).catch(function () { /* the records are a record, not the verdict */ }).then(landed);
@@ -221,7 +221,7 @@ function reportToTesticle(rec) {
     globalThis.spirit = undefined;
     globalThis.window = undefined;
     let real = null;
-    try { real = require(path.join(__dirname, '..', 'spirit.js')); } finally { globalThis.spirit = own; globalThis.window = ownWindow; }
+    try { real = require(path.join(__dirname, '..', 'spirit.js')); } finally { globalThis.spirit = own !== undefined ? own : (real || undefined); globalThis.window = ownWindow; }
     testicle = testicle || real.require(real.familyPath('testicle'));
     reportsOut += 1;
     reportsLanded.push(Promise.resolve(testicle).then(function (f) { return f['test.set'](rec); })
@@ -292,7 +292,7 @@ function recordTitled(title, outcome, failure) {
     globalThis.spirit = undefined;
     globalThis.window = undefined;
     let real = null;
-    try { real = require(path.join(__dirname, '..', 'spirit.js')); } finally { globalThis.spirit = own; globalThis.window = ownWindow; }
+    try { real = require(path.join(__dirname, '..', 'spirit.js')); } finally { globalThis.spirit = own !== undefined ? own : (real || undefined); globalThis.window = ownWindow; }
     family = family || real.require(real.familyPath(RECORD.split('.')[0]));
     inTheAir++;
     family.then(function (f) { return f[RECORD.split('.')[1]](rec); }).catch(function () { /* a record, not the verdict */ }).then(landed);
