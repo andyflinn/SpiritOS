@@ -32,7 +32,7 @@ existing file list with a filter for production *.js files: no new list."*
 - It loads through `spirit.require` and stands at `spirit.element.spirit.app.testicle.element`; `create(container)`
   answers `{ destroy }`.
 - A workBench whose left strip holds exactly one icon, 📁, and whose right strip holds none.
-- Its leftmost pane shows the file list, and nothing else is shown: the centre is empty.
+- Its leftmost pane shows the file list; the centre holds the testicle search's tab alone (below).
 - The list shows production `*.js` files only: a `.js` outside any `test/` folder shows; a `.md`, a `.json`, and a test in
   a `test/` folder never show.
 - `destroy()` leaves its container empty.
@@ -57,6 +57,10 @@ suite search is spirit/element/search/suite.js and its folder"*.
 - On a flip of a test (goal/G47.1, the cycle "the test table streamed, and the page showing the current tests"), the
   replaced row, current false, reaches the page beside the new current row: the server publishes both.
 - The page keeps every test row by its full key, `script|suite|test|flipped`, so a flipped test keeps both its rows.
+- The testicle search (goal/G47.1, the cycle "the testicle search"): at the start the centre holds one tab, the testicle
+  search (`spirit/element/search/testicle.js`, judged in its own test), not closable; it stays first, before the script
+  tabs, which stay closable. A click on a test row there opens a new tab, active and closable: the test's history of
+  flips, every row of it, the newest first.
 
 ## What its test must try to break
 

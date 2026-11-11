@@ -100,6 +100,11 @@ const HANDS = '(function () {' +
   '  shown: function () { var c = window.__t.center(); var t = c ? all(".tab-content", c)[0] : null; if (!t) return null; var kids = Array.prototype.slice.call(t.querySelectorAll("*")).filter(seen); return { text: String(t.innerText || "").trim(), first: String(t.innerText || "").trim().split("\\n")[0].trim(), rows: all("tr[data-key]", t).map(function (r) { return { key: r.getAttribute("data-key"), text: String(r.innerText || "") }; }) }; },' +
   '  click: function (k) { var l = window.__t.left(); var r = l ? all("tr[data-key]", l).filter(function (t) { return t.getAttribute("data-key") === k; })[0] : null; if (!r) return false; r.click(); return true; },' +
   '  closeTab: function (n) { var c = window.__t.center(); var x = c ? all("[data-tab-close]", c).filter(function (e) { return e.getAttribute("data-tab-close") === n; })[0] : null; if (!x) return false; x.click(); return true; },' +
+  '  inCenter: function (sel) { var c = window.__t.center(); return c ? all(sel, c).length : 0; },' +
+  // A row of the testicle search in the centre, pressed by its key; the [data-key] elements of the shown tab, in order.
+  '  pressCenter: function (k) { var c = window.__t.center(); var r = c ? all("tr[data-key]", c).filter(function (t) { return t.getAttribute("data-key") === k; })[0] : null; if (!r) return false; r.click(); return true; },' +
+  '  shownKeys: function () { var c = window.__t.center(); var t = c ? all(".tab-content", c)[0] : null; return t ? all("[data-key]", t).map(function (e) { return e.getAttribute("data-key"); }) : []; },' +
+  '  selectTab: function (n) { var c = window.__t.center(); var b = c ? all("button[data-tab]", c).filter(function (e) { return e.getAttribute("data-tab") === n; })[0] : null; if (!b) return false; b.click(); return true; },' +
   '  centerText: function () { var b = box(); var c = b ? b.querySelector("[id$=\\"center\\"]") : null; return c ? String(c.innerText || "").trim() : null; },' +
   '}; return "hands"; }())';
 
@@ -232,11 +237,21 @@ test.run('the leftmost pane shows the file list, its search field there', 0.2, a
   if (face()) return face();
   return !!(await waitFor('inLeft("input[id$=text]") > 0', 15000)) || 'no file list in the leftmost pane: ' + short(await T('leftSays()'));
 }, test.limit.slow);
-test.run('and nothing else: the centre is empty', 0.2, async function () {
+// goal/G47.1, the cycle "the testicle search", the box: "The UI gets its first non-closable tab in the workbench centre pane:
+// the testicle search", "the tab is the tabContainer's, closable false, first in the centre, before any script's tab; the
+// script tabs stay closable".
+test.run('at the start the centre holds one tab, the testicle search, and it is not closable', 0.2, async function () {
   if (face()) return face();
-  const centre = await T('centerText()');
-  return (centre === null || centre === '') || 'the centre shows ' + short(centre);
-}, test.limit.quick);
+  await waitFor('tabs().length > 0', 10000);
+  const tabs0 = (await T('tabs()')) || [];
+  return (tabs0.length === 1 && tabs0[0].closable === false) || 'tabs: ' + short(tabs0);
+}, test.limit.slow);
+test.run('its tab shows the testicle search, spirit/element/search/testicle.js, which the face loads', 0.2, async function () {
+  if (face()) return face();
+  const loaded = /['"]spirit\/element\/search\/testicle\.js['"]/.test(code(FACE));
+  const there = await c.evaluate('!!(((((window.spirit.element || {}).spirit || {}).element || {}).search || {}).testicle)');
+  return (loaded && there && !!(await waitFor('shown() !== null && inCenter("input[id$=text]") > 0', 10000))) || 'loaded by the face ' + loaded + ', on the page ' + there + ', the tab shows ' + short(await T('shown()'));
+}, test.limit.slow);
 
 // goal/G47.1, the box: "With flat on: no folder rows, never the indented tree; with an empty field every file the app
 // accepts is listed, each with its path; typing narrows it."
@@ -300,13 +315,13 @@ test.run('the world: a production file in the left pane is clicked', 0.2, async 
   if (face()) return face();
   return !!(await T('click(' + JSON.stringify(F1) + ')')) || 'no row for ' + F1 + ' to click: ' + short(await T('rows()'));
 }, test.limit.quick);
-test.run('a click on a production file opens one tab in the centre', 0.2, async function () {
+test.run('a click on a production file opens one tab in the centre, after the testicle search\'s', 0.2, async function () {
   if (face()) return face();
-  return !!(await waitFor('tabs().length === 1', 10000)) || 'tabs: ' + short(await T('tabs()'));
+  return !!(await waitFor('tabs().length === 2 && tabs()[0].closable === false', 10000)) || 'tabs: ' + short(await T('tabs()'));
 }, test.limit.slow);
 test.run('the new tab is the active one', 0.2, async function () {
   if (face()) return face();
-  t1 = ((await T('tabs()')) || [])[0] || {};
+  t1 = ((await T('tabs()')) || [])[1] || {};
   return t1.selected === true || 'tabs: ' + short(await T('tabs()'));
 }, test.limit.quick);
 test.run('its header shows the file name without its path', 0.2, function () {
@@ -348,19 +363,24 @@ test.run('the suite search is spirit/element/search/suite.js, which the face loa
 // the box: a second click
 test.run('a second click on the same file opens no second tab: its tab is made active', 0.2, async function () {
   if (face()) return face();
-  return (await T('click(' + JSON.stringify(F1) + ')') && !!(await waitFor('tabs().length === 1 && tabs()[0].selected', 3000))) || 'tabs: ' + short(await T('tabs()'));
+  return (await T('click(' + JSON.stringify(F1) + ')') && !!(await waitFor('tabs().length === 2 && tabs()[1].selected', 3000))) || 'tabs: ' + short(await T('tabs()'));
 }, test.limit.slow);
 test.run('a click on another file opens a second tab', 0.2, async function () {
   if (face()) return face();
-  return (await T('click(' + JSON.stringify(F2) + ')') && !!(await waitFor('tabs().length === 2', 10000))) || 'tabs: ' + short(await T('tabs()'));
+  return (await T('click(' + JSON.stringify(F2) + ')') && !!(await waitFor('tabs().length === 3', 10000))) || 'tabs: ' + short(await T('tabs()'));
 }, test.limit.slow);
 test.run('the newest tab is the active one, and only it', 0.2, async function () {
   if (face()) return face();
-  two = (await T('tabs()')) || [];
+  two = ((await T('tabs()')) || []).slice(1);
   return (two.length === 2 && two.filter(function (t) { return t.selected; }).length === 1 && (two.filter(function (t) { return t.selected; })[0] || {}).label === 'alsoShown.js') || 'tabs: ' + short(two);
 }, test.limit.quick);
-test.run('all tabs are closable', 0.2, function () {
+test.run('every script tab is closable', 0.2, function () {
   return (two.length === 2 && two.every(function (t) { return t.closable; })) || 'tabs: ' + short(two);
+}, test.limit.quick);
+test.run('the testicle search\'s tab stays first, and not closable', 0.2, async function () {
+  if (face()) return face();
+  const first = ((await T('tabs()')) || [])[0] || {};
+  return first.closable === false || 'tabs: ' + short(await T('tabs()'));
 }, test.limit.quick);
 test.run('the active tab shows its own file\'s detail', 0.2, async function () {
   if (face()) return face();
@@ -456,6 +476,35 @@ test.run('the flipped test keeps both its rows, the replaced one and the current
   const keys = (kept || []).map(function (e) { return e.key; });
   return (keys.length === 2 && keys[0] !== keys[1]) || 'the test\'s rows on the page: ' + short(kept);
 }, test.limit.quick);
+
+// goal/G47.1, the cycle "the testicle search", the box: "The testicle detail is a history of flips, and opens in a closable
+// tab when a test row is clicked". eta's test was set passing, then failing: its history is two rows, the failing one newest.
+let histKeys = [];
+test.run('the world: the testicle search\'s tab is shown again, and lists eta\'s test', 0.2, async function () {
+  if (face()) return face();
+  const first = ((await T('tabs()')) || [])[0] || {};
+  if (!first.name || !(await T('selectTab(' + JSON.stringify(first.name) + ')'))) return 'no first tab to show: ' + short(await T('tabs()'));
+  const cur = (kept || []).filter(function (x) { return x.row.current === true; })[0];
+  if (!cur) return 'no current row of eta\'s test: the world failed';
+  return !!(await waitFor('shown() && shown().rows.some(function (r) { return r.key === ' + JSON.stringify(cur.key) + '; })', 10000)) || 'the search shows ' + short(await T('shown()'));
+}, test.limit.slow);
+test.run('a click on a test row opens a new tab, active and closable', 0.2, async function () {
+  if (face()) return face();
+  const cur = (kept || []).filter(function (x) { return x.row.current === true; })[0];
+  before = ((await T('tabs()')) || []).length;
+  if (!cur || !(await T('pressCenter(' + JSON.stringify(cur.key) + ')'))) return 'no row of eta\'s test to click: ' + short(await T('shown()'));
+  const ok = await waitFor('tabs().length === ' + (before + 1) + ' && tabs()[tabs().length - 1].selected && tabs()[tabs().length - 1].closable', 10000);
+  return !!ok || 'tabs: ' + short(await T('tabs()'));
+}, test.limit.slow);
+test.run('the detail is the test\'s history of flips: both its rows, the newest first', 0.2, async function () {
+  if (face()) return face();
+  const old = (kept || []).filter(function (x) { return x.row.current === false; })[0];
+  const cur = (kept || []).filter(function (x) { return x.row.current === true; })[0];
+  if (!old || !cur) return 'eta\'s two rows were not kept: the world failed';
+  await waitFor('shownKeys().indexOf(' + JSON.stringify(old.key) + ') !== -1', 10000);
+  histKeys = ((await T('shownKeys()')) || []).filter(function (k) { return k === old.key || k === cur.key; });
+  return (histKeys.length === 2 && histKeys[0] === cur.key && histKeys[1] === old.key) || 'the detail holds ' + short(await T('shownKeys()'));
+}, test.limit.slow);
 
 // destroy
 test.run('destroy leaves its container empty', 0.2, async function () {

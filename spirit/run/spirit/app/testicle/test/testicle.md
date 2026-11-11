@@ -43,6 +43,10 @@ The box, in Andy's words where he gave them:
   red stays red."* After start testicle.db holds the table testicle, its index on it, no table test; no older rows are
   carried over (Andy struck that line). The node lists testicle.set and testicle.search and neither old verb;
   testicle.test.set answers no such verb. Every check above calls the new names.
+- **A test's history** (goal/G47.1, the cycle "the testicle search"; the old ruling amended, Andy: *"test.search will return
+  only current test rows by default, unless a valid test-Title is supplied, in which case all rows will be show that
+  match: \"script, suite AND title\""*): theta's first question, set passing, failing and passing, answers its three rows,
+  one current, newest first, none of another test; without a title, its current row alone.
   The branch and the stream are judged in the face test; the reporter's call in its own test (`spirit/test/test/testReport.js`).
   - *"This cycle does not clear a suite's needs-testing flag"*: with every test passing, the flag stays.
   - *"test.search will only return \"current\" test rows for the script/suite combination supplied ... no script in the

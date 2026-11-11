@@ -590,6 +590,34 @@ test.run('with neither it searches every current test', 0.2, async function () {
   return (everyOne.length === 4 && everyOne.every(function (r) { return yes(r.current); })) || 'rows: ' + short(everyOne);
 }, test.limit.quick);
 
+// goal/G47.1, the cycle "the testicle search", the old ruling amended (Andy: "test.search will return only current test rows
+// by default, unless a valid test-Title is supplied, in which case all rows will be show that match: \"script, suite AND
+// title\""): given a test, every row of it, current or not, newest first. theta's first question was set passing, then
+// failing, then passing again: three rows, one current.
+let hist = [];
+test.run('given a test title, testicle.search answers every row of that test, current or not', 0.2, async function () {
+  if (!up()) return NONODE;
+  hist = found(await call(N.base, 'testicle.testicle.search', { script: TH, suite: THS, test: 'theta answers its first question', text: '' }));
+  const all = testRows(tables(DB), TH, THS, 'theta answers its first question');
+  return (all.length === 3 && hist.length === 3 && hist.filter(function (r) { return yes(r.current); }).length === 1) || 'rows answered ' + short(hist) + '; rows kept ' + all.length;
+}, test.limit.quick);
+test.run('those rows come newest first', 0.2, function () {
+  if (!up()) return NONODE;
+  const f = hist.map(function (r) { return Number(r.flipped); });
+  return (f.length === 3 && f[0] > f[1] && f[1] > f[2]) || 'flipped in order ' + short(f);
+}, test.limit.quick);
+test.run('and only rows of that script, suite and title', 0.2, function () {
+  if (!up()) return NONODE;
+  const other = hist.filter(function (r) { return r.script !== TH || r.suite !== THS || r.test !== 'theta answers its first question'; });
+  return (hist.length > 0 && !other.length) || 'rows of another test: ' + short(other);
+}, test.limit.quick);
+test.run('without a test title it still answers the current rows alone', 0.2, async function () {
+  if (!up()) return NONODE;
+  const cur = found(await call(N.base, 'testicle.testicle.search', { script: TH, suite: THS, text: '' }));
+  const mine = cur.filter(function (r) { return r.test === 'theta answers its first question'; });
+  return (mine.length === 1 && yes(mine[0].current)) || 'rows of theta\'s first question: ' + short(mine);
+}, test.limit.quick);
+
 // the box: "The verb red is testicle.red"
 test.run('testicle.red answers every failed current test, and no other', 0.2, async function () {
   if (!up()) return NONODE;
