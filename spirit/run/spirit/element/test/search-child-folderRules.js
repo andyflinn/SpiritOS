@@ -44,7 +44,8 @@ const TARGETS = askedName && EXEMPT.indexOf(askedName) === -1 && askedName !== '
 function placesItself(rel) { const c = code(rel); return /\binstallSpiritElement\s*\(/.test(c) && /\bcreate\b/.test(c) && c.indexOf("'" + rel + "'") !== -1; }
 const PARTS = ['listElement', 'rowElement', 'detailElement'];
 // NO DETAIL WHERE NONE OPENS (Andy: "branch and icon: if no details are ever openened, there needs to be now detail panel.").
-const NO_DETAIL = ['branch', 'icon'];
+// suite: a suite row in testicle's file detail opens nothing (goal/G47.1, the UI cycle), so by the same words it has none.
+const NO_DETAIL = ['branch', 'icon', 'suite'];
 
 function rules(n) {
   const sel = SEARCH + '/' + n + '.js';

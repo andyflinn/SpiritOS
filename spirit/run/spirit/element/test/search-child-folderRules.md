@@ -19,6 +19,7 @@ already."*
   - `search/<name>/listElement.js`, `rowElement.js` and `detailElement.js` are there, each an element placed by its path.
     Branch and icon have no detail: none is ever opened (Andy: *"branch and icon: if no details are ever openened, there
     needs to be now detail panel."*).
+    Nor has suite, testicle's suite search: a suite row opens nothing in the file detail (goal/G47.1, the UI cycle).
   - The selector requires its own `listElement.js` and draws it (`search.<name>.listElement.create`), in its dropdown and in
     its pane, and makes no list of its own: no probabilitySearch, no rows (Andy: *"all, any search-unit has ONE list shared
     by popup and list modes."*).
