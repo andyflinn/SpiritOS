@@ -1,0 +1,10 @@
+{
+  "description": "One test's result, set by itself (no bundling): {script, suite, test, verified, severity}, severity from 0.0 to 1.0. A script with no row, or changed since its row, gets its script and suite rows first, as a change makes them. The same result as the test's current row moves its tested and its judged, the script's hash, and its severity only upward; a flipped result makes a new current row and keeps the old one as history, its severity the higher of the two. Answers the test's current row. A name that is no production script answers \"not a production script\"; a script neither there nor known, \"no such file\".",
+  "request": {
+    "script": "text",
+    "suite": "text",
+    "test": "text",
+    "verified": "bool",
+    "severity": "number"
+  }
+}

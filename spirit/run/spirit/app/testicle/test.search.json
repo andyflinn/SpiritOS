@@ -1,0 +1,8 @@
+{
+  "description": "The current test rows, one per test, a standard table search: {items, more}, each item keyed by script|suite|test, its label the row. script and suite each optional: left out, any. The words narrow among them, '' for all. Most severe first, the newest flip first among equals.",
+  "request": {
+    "script": "text?",
+    "suite": "text?",
+    "text": "text"
+  }
+}
