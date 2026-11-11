@@ -13,7 +13,7 @@
 // spirit.require(spirit.familyPath(name)). Then the table it offers by name, grantsPanel.nodeGrants (moved here from the
 // Grants app), over the real auth family's cache manager.
 // This is the one test file of its script (spirit/test/TEST_SYSTEM.md): the authSource and noWarning parts, once files of
-// their own, are sections at its end, run after the checks above and counted with them.
+// their own, are sections at its end, run after the checks above and counted with them. One test.run per test (goal/G47.2).
 
 const fs = require('fs');
 const path = require('path');
@@ -23,7 +23,6 @@ const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const FILE = path.join(__dirname, '..', 'grantsPanel.js');
 const SRC = fs.existsSync(FILE) ? fs.readFileSync(FILE, 'utf8') : '';
 
-function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 const tick = function () { return new Promise(function (r) { setImmediate(r); }); };
 const settle = async function () { for (let i = 0; i < 20; i++) await tick(); };
@@ -177,39 +176,79 @@ function world() {
   return w;
 }
 
-test.startTest('grantsPanel.js: grants of whichever ID table its caller hands it');
-process.on('unhandledRejection', function (e) { test.fail('it threw where nothing caught it: ' + (e && e.message || e)); });
+// THE ELEMENT NAMES SINCE goal/G43.18: a stand-in keyed by its place, 'search.contact' and so on, nested where the page has it.
+function nestSearch(o) { Object.keys(o).forEach(function (k) { if (k !== 'search' && k.indexOf('search.') !== 0) return; var v = o[k]; delete o[k]; var ks = k.split('.'); var at = o; ks.slice(0, -1).forEach(function (p) { at = at[p] = at[p] || {}; }); var last = ks[ks.length - 1]; at[last] = Object.assign(at[last] || {}, v); }); return o; }
 
-(async function () {
-  if (!SRC) { test.fail('spirit/element/search/grant/grantsPanel.js is not there'); return; }
-  const code = SRC.replace(/\/\/.*$/gm, '');
-  const w = world();
+// What the world and the tests make, for the tests after them.
+let w, E, GP, code, unset, box, cfg, rf, inSpan, filterId, formId, gl, sels, D, dep, grantBtn, press, at0, gb, gbusy, gReq, gSettled, g, A, found;
+const NO_GP = 'no grantsPanel.create registered: the world failed';
+const NO_GL = 'no grant list was drawn';
+const NO_G = 'no grantsPanel.nodeGrants, or no auth cache on the page';
+const pass = function (r) { return sels.every(function (f) { return typeof f.test !== 'function' || f.test(r) > 0; }); };
+const NIGHT = { job_id: 'J1', path: 'fs.search', job: 'Night' };
+const DAY = { job_id: 'J2', path: 'gone.verb', job: 'Day' };
+const said = function () { return box.innerHTML.replace(/<[^>]*>/g, ' '); };
+
+test.run('the world: the panel runs on a bare window', 0.2, async function () {
+  if (!SRC) return 'spirit/element/search/grant/grantsPanel.js is not there';
+  code = SRC.replace(/\/\/.*$/gm, '');
+  w = world();
   await settle();
   // goal/G43.32: the elements stand at their paths, spirit.element.spirit.element.
-  const E = ((w.page.spirit || {}).element || {});
+  E = ((w.page.spirit || {}).element || {});
   // Since goal/G43.32 the panel stands in the grant search: spirit.element.spirit.element.search.grant.grantsPanel.
-  const GP = ((E.search || {}).grant || {}).grantsPanel;
+  GP = ((E.search || {}).grant || {}).grantsPanel;
+  return true;
+}, 1000);
 
-  test.subHeading('a shell element that loads what it uses itself (rule/26), and knows no table');
-  ok(w.required.indexOf('spirit/element/search/contact.js') !== -1, 'it requires spirit/element/search/contact.js', 'required: ' + short(w.required));
-  ok(w.required.indexOf('spirit/element/search/bundle.js') !== -1, 'it requires spirit/element/search/bundle.js', 'required: ' + short(w.required));
-  ok(w.required.indexOf('spirit/element/search/api.js') !== -1, 'it requires spirit/element/search/api.js', 'required: ' + short(w.required));
-  ok(w.required.indexOf('spirit/element/search/grant.js') !== -1, 'it requires spirit/element/search/grant.js', 'required: ' + short(w.required));
-  ok(!w.required.some(function (p) { return /data\.js$/.test(p); }), 'and no data script', 'required: ' + short(w.required));
-  // The grants table and the ID table are its caller's; the node's bundles (auth.bundle, auth.branch) are the one
-  // dictionary both kinds of grant are made from, so a bundle's branches are the panel's to read.
-  // The panel itself, create(): the node's grants table beside it (nodeGrants, below) is one its caller picks by name.
-  // goal/G43.32: create() runs up to where the script places itself, as it ran up to E.grantsPanel = before.
+// a shell element that loads what it uses itself (rule/26), and knows no table
+test.run('it requires spirit/element/search/contact.js', 0.2, function () {
+  if (!w) return NO_GP;
+  return w.required.indexOf('spirit/element/search/contact.js') !== -1 ? true : 'required: ' + short(w.required);
+}, 1000);
+test.run('it requires spirit/element/search/bundle.js', 0.2, function () {
+  if (!w) return NO_GP;
+  return w.required.indexOf('spirit/element/search/bundle.js') !== -1 ? true : 'required: ' + short(w.required);
+}, 1000);
+test.run('it requires spirit/element/search/api.js', 0.2, function () {
+  if (!w) return NO_GP;
+  return w.required.indexOf('spirit/element/search/api.js') !== -1 ? true : 'required: ' + short(w.required);
+}, 1000);
+test.run('it requires spirit/element/search/grant.js', 0.2, function () {
+  if (!w) return NO_GP;
+  return w.required.indexOf('spirit/element/search/grant.js') !== -1 ? true : 'required: ' + short(w.required);
+}, 1000);
+test.run('and no data script', 0.2, function () {
+  if (!w) return NO_GP;
+  return !w.required.some(function (p) { return /data\.js$/.test(p); }) ? true : 'required: ' + short(w.required);
+}, 1000);
+// The grants table and the ID table are its caller's; the node's bundles (auth.bundle, auth.branch) are the one
+// dictionary both kinds of grant are made from, so a bundle's branches are the panel's to read.
+// The panel itself, create(): the node's grants table beside it (nodeGrants, below) is one its caller picks by name.
+// goal/G43.32: create() runs up to where the script places itself, as it ran up to E.grantsPanel = before.
+test.run('the panel names no grants table and no ID table: no auth grant verb, not nodeGrants, no agent verb, no loopback location, no branch (goal/G41.16)', 0.2, function () {
+  if (!code) return 'no grantsPanel.js read: the world failed';
   const made = code.slice(code.indexOf('function create('), code.indexOf("window.spirit.require('spirit/element/installSpiritElement.js')"));
-  ok(made.length > 0 && !/auth\.(grant|revoke|search)\b|nodeGrants|data\.auth|agent\.|loopback:\/\/|contact\.search|job_id|'grants'|"grants"/.test(made), 'the panel names no grants table and no ID table: no auth grant verb, not nodeGrants, no agent verb, no loopback location, no branch (goal/G41.16)', made.length ? 'create() names a table of its own' : 'no function create( in grantsPanel.js: nothing judged');
-  // Andy: "every fucking element gets the interfaces it needs".
-  ok(!/\.verb\s*\(|\bapi\.(verb|escapeHtml)\b/.test(code), 'it asks its verbs through the spirit object: no api.verb, no api.escapeHtml (goal/G43.24)', 'grantsPanel.js still asks through the api it was handed');
-  ok(w.managers.indexOf('job') !== -1 && w.managers.indexOf('auth') !== -1, 'it loads the jobs family\'s cache manager and the auth family\'s, with its parts', 'managers: ' + short(w.managers));
-  ok(GP && typeof GP.create === 'function', 'it registers spirit.element.spirit.element.search.grant.grantsPanel.create', 'elements: ' + short(Object.keys(E)));
-  if (!GP || typeof GP.create !== 'function') return;
-  // Unconfigured, it mounts and says so, throwing nothing (goal/G41.19, box v23: "throws nothing even when unconfigured
-  // (it says it is not configured)").
-  const unset = [];
+  return made.length > 0 && !/auth\.(grant|revoke|search)\b|nodeGrants|data\.auth|agent\.|loopback:\/\/|contact\.search|job_id|'grants'|"grants"/.test(made) ? true : (made.length ? 'create() names a table of its own' : 'no function create( in grantsPanel.js: nothing judged');
+}, 1000);
+// Andy: "every fucking element gets the interfaces it needs".
+test.run('it asks its verbs through the spirit object: no api.verb, no api.escapeHtml (goal/G43.24)', 0.2, function () {
+  if (!code) return 'no grantsPanel.js read: the world failed';
+  return !/\.verb\s*\(|\bapi\.(verb|escapeHtml)\b/.test(code) ? true : 'grantsPanel.js still asks through the api it was handed';
+}, 1000);
+test.run('it loads the jobs family\'s cache manager and the auth family\'s, with its parts', 0.2, function () {
+  if (!w) return NO_GP;
+  return w.managers.indexOf('job') !== -1 && w.managers.indexOf('auth') !== -1 ? true : 'managers: ' + short(w.managers);
+}, 1000);
+test.run('it registers spirit.element.spirit.element.search.grant.grantsPanel.create', 0.2, function () {
+  if (!w) return NO_GP;
+  return GP && typeof GP.create === 'function' ? true : 'elements: ' + short(Object.keys(E));
+}, 1000);
+// Unconfigured, it mounts and says so, throwing nothing (goal/G41.19, box v23: "throws nothing even when unconfigured
+// (it says it is not configured)").
+test.run('made without its ID table or its grants table, it throws nothing', 0.2, async function () {
+  if (!GP || typeof GP.create !== 'function') return NO_GP;
+  unset = [];
   [[{}, /ID table/], [{ ids: config(w).ids }, /grants table/], [{ grants: config(w).grants }, /ID table/]].forEach(function (c) {
     const host = node('x'); let threw = null; let made = null;
     try { made = GP.create(host, Object.assign({}, c[0])); } catch (e) { threw = e && e.message; }
@@ -218,98 +257,177 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
       empties: !!made && typeof made.destroy === 'function' && (made.destroy(), host.innerHTML === '') });
   });
   await settle();
-  ok(unset.every(function (u) { return u.threw === null; }), 'made without its ID table or its grants table, it throws nothing', 'threw: ' + short(unset.map(function (u) { return u.threw; })));
-  ok(unset.every(function (u) { return u.fits; }) && w.grantLists.length === 0 && w.bundles.length === 0 && w.ids.length === 0 && w.families.length === 0,
-    'it says, in one note, "not configured: " and the table it lacks, and draws nothing else', 'said: ' + short(unset.map(function (u) { return u.said; })) + ', lists ' + w.grantLists.length + ', selectors ' + (w.bundles.length + w.ids.length + w.families.length));
-  ok(unset.every(function (u) { return u.empties; }), 'and its destroy empties the host', 'destroy: ' + short(unset.map(function (u) { return u.empties; })));
+  return unset.every(function (u) { return u.threw === null; }) ? true : 'threw: ' + short(unset.map(function (u) { return u.threw; }));
+}, 1000);
+test.run('it says, in one note, "not configured: " and the table it lacks, and draws nothing else', 0.2, function () {
+  if (!unset) return NO_GP;
+  return unset.every(function (u) { return u.fits; }) && w.grantLists.length === 0 && w.bundles.length === 0 && w.ids.length === 0 && w.families.length === 0 ? true
+    : 'said: ' + short(unset.map(function (u) { return u.said; })) + ', lists ' + w.grantLists.length + ', selectors ' + (w.bundles.length + w.ids.length + w.families.length);
+}, 1000);
+test.run('and its destroy empties the host', 0.2, function () {
+  if (!unset) return NO_GP;
+  return unset.every(function (u) { return u.empties; }) ? true : 'destroy: ' + short(unset.map(function (u) { return u.empties; }));
+}, 1000);
 
-  const box = node('panel');
-  const cfg = config(w);
+// the grant form, a rowForm: ➕ [ID] [bundle] [Grant] (goal/G41.27)
+// Andy, on G41.27: "grantsPanel:\n\n➕ [choose an ID… ▾][choose a bundle… ▾][Grant]". The box: "new shell element:
+// rowForm",
+// "spirit.element.spirit.element.rowForm.create(container, { icon, button }) -> { root, span, button }", "The mounter drops
+// its form elements into span and wires the button itself (a busyButton or a click)."
+test.run('one bundle selector, two ID selectors (the form\'s and the filter), one family selector', 0.2, async function () {
+  if (!GP || typeof GP.create !== 'function') return NO_GP;
+  box = node('panel');
+  cfg = config(w);
   GP.create(box, Object.assign({}, cfg));
   await settle();
-
-  test.subHeading('the grant form, a rowForm: ➕ [ID] [bundle] [Grant] (goal/G41.27)');
-  // Andy, on G41.27: "grantsPanel:\n\n➕ [choose an ID… ▾][choose a bundle… ▾][Grant]". The box: "new shell element:
-  // rowForm",
-  // "spirit.element.spirit.element.rowForm.create(container, { icon, button }) -> { root, span, button }", "The mounter drops
-  // its form elements into span and wires the button itself (a busyButton or a click)."
-  ok(w.bundles.length === 1 && w.ids.length === 2 && w.families.length === 1, 'one bundle selector, two ID selectors (the form\'s and the filter), one family selector', 'bundle ' + w.bundles.length + ', ID ' + w.ids.length + ', family ' + w.families.length);
-  const parts = w.bundles.concat(w.ids, w.families);
-  ok(parts.every(function (x) { return x.container && x.container.kids.indexOf(x) !== -1; }), 'each made with a container of its own, <name>.create(container, options)', 'containers: ' + short(parts.map(function (x) { return !!x.container; })));
-  ok(w.ids.every(function (c) { return c.opts.table === cfg.ids.table && c.opts.key === cfg.ids.key && c.opts.label === cfg.ids.label; }), 'both ID selectors search the ID table it was handed: its location, key and label fields', 'ID selectors: ' + short(w.ids.map(function (c) { return c.opts; })));
-  ok(w.required.indexOf('spirit/element/rowForm.js') !== -1, 'it loads the rowForm itself (rule/26)', 'required: ' + short(w.required));
-  const rf = w.rowForms[0];
-  ok(w.rowForms.length === 1 && rf.opts.icon === '➕' && rf.opts.button === 'Grant', 'its grant form is one rowForm, its icon ➕ and its button Grant', 'rowForms: ' + short(w.rowForms.map(function (f) { return f.opts; })));
+  rf = w.rowForms[0];
   // Where a selector stands in the form's span: itself, or the slot it was made in.
-  const inSpan = function (el) { if (!rf) return -1; return rf.span.kids.findIndex(function (k) { return k === el || k === el.container || (k.kids || []).indexOf(el) !== -1; }); };
+  inSpan = function (el) { if (!rf) return -1; return rf.span.kids.findIndex(function (k) { return k === el || k === el.container || (k.kids || []).indexOf(el) !== -1; }); };
   // The filter's ID selector says every ID when none is chosen; the form's has no such choice.
-  const filterId = w.ids.filter(function (c) { return !!c.opts.all; })[0];
-  const formId = w.ids.filter(function (c) { return c !== filterId; })[0];
-  ok(!!formId && inSpan(formId) !== -1 && inSpan(formId) < inSpan(w.bundles[0]) && rf.span.kids.length === 2,
-    'its span holds the ID selector, then the bundle selector, and nothing else', 'span: ID at ' + (formId ? inSpan(formId) : 'none') + ', bundle at ' + inSpan(w.bundles[0]) + ', of ' + (rf ? rf.span.kids.length : 0));
+  filterId = w.ids.filter(function (c) { return !!c.opts.all; })[0];
+  formId = w.ids.filter(function (c) { return c !== filterId; })[0];
+  return w.bundles.length === 1 && w.ids.length === 2 && w.families.length === 1 ? true : 'bundle ' + w.bundles.length + ', ID ' + w.ids.length + ', family ' + w.families.length;
+}, 1000);
+test.run('each made with a container of its own, <name>.create(container, options)', 0.2, function () {
+  if (!box) return NO_GP;
+  const parts = w.bundles.concat(w.ids, w.families);
+  return parts.every(function (x) { return x.container && x.container.kids.indexOf(x) !== -1; }) ? true : 'containers: ' + short(parts.map(function (x) { return !!x.container; }));
+}, 1000);
+test.run('both ID selectors search the ID table it was handed: its location, key and label fields', 0.2, function () {
+  if (!box) return NO_GP;
+  return w.ids.every(function (c) { return c.opts.table === cfg.ids.table && c.opts.key === cfg.ids.key && c.opts.label === cfg.ids.label; }) ? true : 'ID selectors: ' + short(w.ids.map(function (c) { return c.opts; }));
+}, 1000);
+test.run('it loads the rowForm itself (rule/26)', 0.2, function () {
+  if (!w) return NO_GP;
+  return w.required.indexOf('spirit/element/rowForm.js') !== -1 ? true : 'required: ' + short(w.required);
+}, 1000);
+test.run('its grant form is one rowForm, its icon ➕ and its button Grant', 0.2, function () {
+  if (!box) return NO_GP;
+  return w.rowForms.length === 1 && rf.opts.icon === '➕' && rf.opts.button === 'Grant' ? true : 'rowForms: ' + short(w.rowForms.map(function (f) { return f.opts; }));
+}, 1000);
+test.run('its span holds the ID selector, then the bundle selector, and nothing else', 0.2, function () {
+  if (!box) return NO_GP;
+  return !!formId && inSpan(formId) !== -1 && inSpan(formId) < inSpan(w.bundles[0]) && rf.span.kids.length === 2 ? true
+    : 'span: ID at ' + (formId ? inSpan(formId) : 'none') + ', bundle at ' + inSpan(w.bundles[0]) + ', of ' + (rf ? rf.span.kids.length : 0);
+}, 1000);
+test.run('the word "grant" at its start is gone, ➕ in its place, and it draws no Grant button of its own', 0.2, function () {
+  if (!box) return NO_GP;
   const text = box.innerHTML.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ');
-  ok(!/\bgrant\b/i.test(text) && !/<button[^>]*>\s*Grant\s*<\/button>/.test(box.innerHTML), 'the word "grant" at its start is gone, ➕ in its place, and it draws no Grant button of its own', 'panel says: ' + short(text));
-  ok(!!rf && w.busy.some(function (a) { return a.button === rf.button; }), 'the rowForm\'s button is the Grant, a busyButton (goal/G41.23)', 'busyButtons: ' + w.busy.length);
+  return !/\bgrant\b/i.test(text) && !/<button[^>]*>\s*Grant\s*<\/button>/.test(box.innerHTML) ? true : 'panel says: ' + short(text);
+}, 1000);
+test.run('the rowForm\'s button is the Grant, a busyButton (goal/G41.23)', 0.2, function () {
+  if (!box) return NO_GP;
+  return !!rf && w.busy.some(function (a) { return a.button === rf.button; }) ? true : 'busyButtons: ' + w.busy.length;
+}, 1000);
 
-  test.subHeading('its selectors go into the search\'s 🪣 row: no filter line of its own (goal/G41.26)');
-  // Andy, on G41.26: "any searchSelector in our system must go into the probabilitySearch's selectorRow, so that the
-  // user-can see, which elements belong to the search.", and "do it for all probabilitySearch object in the new
-  // face-shell. go." The shape (cw, under that go): the grant panel hands its ID and family selectors to the 🪣 row, its
-  // own filter line goes, and its deprecated becomes a plain 🗜 toggle.
+// its selectors go into the search's 🪣 row: no filter line of its own (goal/G41.26)
+// Andy, on G41.26: "any searchSelector in our system must go into the probabilitySearch's selectorRow, so that the
+// user-can see, which elements belong to the search.", and "do it for all probabilitySearch object in the new
+// face-shell. go." The shape (cw, under that go): the grant panel hands its ID and family selectors to the 🪣 row, its
+// own filter line goes, and its deprecated becomes a plain 🗜 toggle.
+test.run('it draws no filter line of its own, and no deprecated button', 0.2, function () {
+  if (!box) return NO_GP;
   const html = box.innerHTML;
-  ok(filterId && w.families[0] && !/data-grants="filters"/.test(html) && !/data-grants="deprecated"/.test(html),
-    'it draws no filter line of its own, and no deprecated button', 'panel: ' + short(html.slice(html.indexOf('data-grants="said"'))));
-  test.subHeading('the list: the grant list, of the same grants table, the one box that fills (rule/16)');
-  const gl = w.grantLists[0];
-  ok(w.grantLists.length === 1 && gl && gl.opts.grants === cfg.grants && /\bfill\b/.test(String(gl.host.className || '')), 'one grant list, handed the grants table it was given, in a fill box', 'grant lists ' + w.grantLists.length + ', same table ' + (gl && gl.opts.grants === cfg.grants) + ', host ' + short(gl && gl.host.className));
-  if (!gl) return;
-  // WHAT IT NEEDS, IT REQUIRES ITSELF (goal/G43.24): mounted with no api, it hands the grant list none.
-  ok(!('api' in gl.opts), 'it hands the grant list no api: its rows\' arming buttons hear a click elsewhere themselves', 'grant list handed: ' + short(Object.keys(gl.opts)));
+  return filterId && w.families[0] && !/data-grants="filters"/.test(html) && !/data-grants="deprecated"/.test(html) ? true : 'panel: ' + short(html.slice(html.indexOf('data-grants="said"')));
+}, 1000);
+// the list: the grant list, of the same grants table, the one box that fills (rule/16)
+test.run('one grant list, handed the grants table it was given, in a fill box', 0.2, function () {
+  if (!box) return NO_GP;
+  gl = w.grantLists[0];
+  if (gl) sels = Array.isArray(gl.opts.selectors) ? gl.opts.selectors : [];
+  return w.grantLists.length === 1 && gl && gl.opts.grants === cfg.grants && /\bfill\b/.test(String(gl.host.className || '')) ? true
+    : 'grant lists ' + w.grantLists.length + ', same table ' + (gl && gl.opts.grants === cfg.grants) + ', host ' + short(gl && gl.host.className);
+}, 1000);
+// WHAT IT NEEDS, IT REQUIRES ITSELF (goal/G43.24): mounted with no api, it hands the grant list none.
+test.run('it hands the grant list no api: its rows\' arming buttons hear a click elsewhere themselves', 0.2, function () {
+  if (!gl) return NO_GL;
+  return !('api' in gl.opts) ? true : 'grant list handed: ' + short(Object.keys(gl.opts));
+}, 1000);
+test.run('nothing above the list fills: the heading, the form and the filters take their own height', 0.2, function () {
+  if (!gl) return NO_GL;
   const fills = box.nodes.filter(function (n) { return /\bfill\b/.test(n.className || ''); }).length + box.kids.filter(function (k) { return k !== gl.host && /\bfill\b/.test(k.className || ''); }).length;
-  ok(fills === 0, 'nothing above the list fills: the heading, the form and the filters take their own height', fills + ' other fill box(es): ' + short(box.innerHTML.slice(0, 120)));
+  return fills === 0 ? true : fills + ' other fill box(es): ' + short(box.innerHTML.slice(0, 120));
+}, 1000);
+test.run('it hands the grant list its selectors: the ID filter, then the family selector, each named with its test', 0.2, function () {
+  if (!gl) return NO_GL;
+  return sels.length === 2 && sels[0].element === filterId && sels[1].element === w.families[0] && sels.every(function (x) { return typeof x.test === 'function' && !!x.name; }) ? true
+    : 'selectors: ' + short(sels.map(function (x) { return { name: x.name, id: x.element === filterId, family: x.element === w.families[0] }; }));
+}, 1000);
 
-  const sels = Array.isArray(gl.opts.selectors) ? gl.opts.selectors : [];
-  ok(sels.length === 2 && sels[0].element === filterId && sels[1].element === w.families[0] && sels.every(function (x) { return typeof x.test === 'function' && !!x.name; }),
-    'it hands the grant list its selectors: the ID filter, then the family selector, each named with its test', 'selectors: ' + short(sels.map(function (x) { return { name: x.name, id: x.element === filterId, family: x.element === w.families[0] }; })));
-
-  test.subHeading('the selectors narrow it, by the grants table\'s own key field');
-  const pass = function (r) { return sels.every(function (f) { return typeof f.test !== 'function' || f.test(r) > 0; }); };
-  const NIGHT = { job_id: 'J1', path: 'fs.search', job: 'Night' };
-  const DAY = { job_id: 'J2', path: 'gone.verb', job: 'Day' };
-  ok(pass(NIGHT) && pass(DAY), 'nothing chosen: every grant passes', 'passed: ' + [pass(NIGHT), pass(DAY)].join(' '));
+// the selectors narrow it, by the grants table's own key field
+test.run('nothing chosen: every grant passes', 0.2, function () {
+  if (!gl) return NO_GL;
+  return pass(NIGHT) && pass(DAY) ? true : 'passed: ' + [pass(NIGHT), pass(DAY)].join(' ');
+}, 1000);
+test.run('the ID filter narrows to that ID\'s grants, read from the table\'s key field', 0.2, function () {
+  if (!gl) return NO_GL;
+  if (!filterId) return 'no ID filter was drawn';
   filterId.value = 'J1'; filterId.fire('change', { target: filterId });
-  ok(pass(NIGHT) && !pass(DAY), 'the ID filter narrows to that ID\'s grants, read from the table\'s key field', 'Night ' + pass(NIGHT) + ', Day ' + pass(DAY));
+  const r = pass(NIGHT) && !pass(DAY) ? true : 'Night ' + pass(NIGHT) + ', Day ' + pass(DAY);
   filterId.value = ''; filterId.fire('change', { target: filterId });
+  return r;
+}, 1000);
+test.run('the family filter narrows to that family\'s paths', 0.2, function () {
+  if (!gl) return NO_GL;
   const fam = w.families[0];
+  if (!fam) return 'no family selector was drawn';
   fam.family = 'gone'; fam.value = 'gone'; fam.fire('change', { target: fam });
-  ok(!pass(NIGHT) && pass(DAY), 'the family filter narrows to that family\'s paths', 'Night ' + pass(NIGHT) + ', Day ' + pass(DAY));
+  return !pass(NIGHT) && pass(DAY) ? true : 'Night ' + pass(NIGHT) + ', Day ' + pass(DAY);
+}, 1000);
+test.run('a verb chosen narrows to that verb', 0.2, function () {
+  if (!gl) return NO_GL;
+  const fam = w.families[0];
+  if (!fam) return 'no family selector was drawn';
   fam.family = 'fs'; fam.verb = 'search'; fam.value = 'fs.search'; fam.fire('change', { target: fam });
-  ok(pass(NIGHT) && !pass({ job_id: 'J1', path: 'fs.loadFile', job: 'Night' }), 'a verb chosen narrows to that verb', 'fs.search ' + pass(NIGHT));
+  const r = pass(NIGHT) && !pass({ job_id: 'J1', path: 'fs.loadFile', job: 'Night' }) ? true : 'fs.search ' + pass(NIGHT);
   fam.family = ''; fam.verb = ''; fam.value = ''; fam.fire('change', { target: fam });
+  return r;
+}, 1000);
 
-  test.subHeading('deprecated: a report, following the stream, its filter off by default');
-  ok(w.treeAsked >= 1 && typeof gl.opts.serves === 'function' && gl.opts.serves('fs.search') === true && gl.opts.serves('gone.verb') === false,
-    'the tree is read through spirit.tree(), and the list told what it serves', 'tree asked ' + w.treeAsked + ', serves ' + short(typeof gl.opts.serves === 'function' ? [gl.opts.serves('fs.search'), gl.opts.serves('gone.verb')] : null));
-  const D = w.win.spirit.data;
+// deprecated: a report, following the stream, its filter off by default
+test.run('the tree is read through spirit.tree(), and the list told what it serves', 0.2, function () {
+  if (!gl) return NO_GL;
+  return w.treeAsked >= 1 && typeof gl.opts.serves === 'function' && gl.opts.serves('fs.search') === true && gl.opts.serves('gone.verb') === false ? true
+    : 'tree asked ' + w.treeAsked + ', serves ' + short(typeof gl.opts.serves === 'function' ? [gl.opts.serves('fs.search'), gl.opts.serves('gone.verb')] : null);
+}, 1000);
+test.run('a server job changed: the tree is read again, and the grant it now serves is no longer deprecated', 0.2, async function () {
+  if (!gl) return NO_GL;
+  if (typeof gl.opts.serves !== 'function') return 'the list was told nothing it serves';
+  D = w.win.spirit.data;
   const asked0 = w.treeAsked;
   w.tree = Object.assign({}, TREE, { gone: { verb: {} } });
   D.takeJob({ id: 'spirit.app.gone', kind: 'server', status: 'running', module: 'spirit.app.gone', data: {} });
   await settle();
-  ok(w.treeAsked > asked0 && gl.opts.serves('gone.verb') === true, 'a server job changed: the tree is read again, and the grant it now serves is no longer deprecated', 'serves gone.verb ' + gl.opts.serves('gone.verb'));
+  const r = w.treeAsked > asked0 && gl.opts.serves('gone.verb') === true ? true : 'serves gone.verb ' + gl.opts.serves('gone.verb');
   w.tree = TREE;
   D.takeJob({ id: 'spirit.app.gone', kind: 'server', status: 'exited', module: 'spirit.app.gone', data: {} });
   await settle();
-  const dep = (gl.opts.filters || []).filter(function (f) { return f && f.name === 'deprecated'; })[0];
-  ok(!!dep && dep.toggle === true && (typeof dep.when !== 'function' || dep.when([]) !== false) && dep.test(DAY, undefined) === 0 && dep.test(NIGHT, undefined) === 1,
-    'deprecated is a plain toggle of the search, its button drawn in the 🗜 row, off at first: a grant no server serves is left out', 'deprecated: ' + short(dep && { toggle: dep.toggle, hidden: typeof dep.when === 'function' && dep.when([]) === false, off: dep.test(DAY, undefined), served: dep.test(NIGHT, undefined) }));
-  ok(dep && dep.test(DAY, true) === 1, 'its toggle on, the deprecated grants are listed', 'Day ' + (dep && dep.test(DAY, true)));
+  return r;
+}, 1000);
+test.run('deprecated is a plain toggle of the search, its button drawn in the 🗜 row, off at first: a grant no server serves is left out', 0.2, function () {
+  if (!gl) return NO_GL;
+  dep = (gl.opts.filters || []).filter(function (f) { return f && f.name === 'deprecated'; })[0];
+  return !!dep && dep.toggle === true && (typeof dep.when !== 'function' || dep.when([]) !== false) && dep.test(DAY, undefined) === 0 && dep.test(NIGHT, undefined) === 1 ? true
+    : 'deprecated: ' + short(dep && { toggle: dep.toggle, hidden: typeof dep.when === 'function' && dep.when([]) === false, off: dep.test(DAY, undefined), served: dep.test(NIGHT, undefined) });
+}, 1000);
+test.run('its toggle on, the deprecated grants are listed', 0.2, function () {
+  return dep && dep.test(DAY, true) === 1 ? true : 'Day ' + (dep && dep.test(DAY, true));
+}, 1000);
 
-  test.subHeading('Grant: the bundle\'s branches, through the grants table it was handed');
-  const grantBtn = rf ? rf.button : null;
-  const press = function () { if (grantBtn) grantBtn.fire('click', { target: grantBtn, preventDefault: function () {} }); };
-  let at0 = w.calls.length;
+// Grant: the bundle's branches, through the grants table it was handed
+const NO_FORM = 'no grant form was drawn';
+test.run('with no bundle or no ID chosen, Grant asks nothing', 0.2, async function () {
+  if (!box) return NO_GP;
+  D = w.win.spirit.data;
+  grantBtn = rf ? rf.button : null;
+  press = function () { if (grantBtn) grantBtn.fire('click', { target: grantBtn, preventDefault: function () {} }); };
+  at0 = w.calls.length;
   press(); await settle();
-  ok(!w.calls.slice(at0).some(function (c) { return c.name === 'grants.grant'; }), 'with no bundle or no ID chosen, Grant asks nothing', 'calls: ' + short(w.calls.slice(at0)));
+  return !w.calls.slice(at0).some(function (c) { return c.name === 'grants.grant'; }) ? true : 'calls: ' + short(w.calls.slice(at0));
+}, 1000);
+test.run('Grant reads the chosen bundle\'s branches: auth.branch { op: search, bundle }', 0.2, async function () {
+  if (!press) return NO_FORM;
+  if (!formId || !w.bundles[0]) return 'no ID or no bundle selector to choose in';
   w.bundles[0].value = 7; w.bundles[0].row = { id: 7, label: 'Reader' };
   w.branchesOf[7] = [{ family: 'jobs', verb: 'list' }, { family: 'fs', verb: 'search' }, { family: 'desk', verb: '' }];
   formId.value = 'J3'; formId.row = { key: 'J3', name: 'Cat' };
@@ -317,175 +435,238 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   at0 = w.calls.length;
   press(); await settle();
   const read = w.calls.slice(at0).filter(function (c) { return c.name === 'auth.branch'; })[0];
-  ok(read && read.args.op === 'search' && read.args.bundle === 7, 'Grant reads the chosen bundle\'s branches: auth.branch { op: search, bundle }', 'calls: ' + short(w.calls.slice(at0)));
+  return read && read.args.op === 'search' && read.args.bundle === 7 ? true : 'calls: ' + short(w.calls.slice(at0));
+}, 1000);
+test.run('and grants each through the grants table it was handed, grant(id, path): family.verb, or the family alone for (ALL)', 0.2, function () {
+  if (!press) return NO_FORM;
   const grants = w.calls.slice(at0).filter(function (c) { return c.name === 'grants.grant'; });
-  ok(grants.length === 3 && grants.every(function (c) { return c.args.id === 'J3'; }) && JSON.stringify(grants.map(function (c) { return c.args.path; }).sort()) === '["desk","fs.search","jobs.list"]',
-    'and grants each through the grants table it was handed, grant(id, path): family.verb, or the family alone for (ALL)', 'grants: ' + short(grants.map(function (c) { return c.args; })));
-  ok(!w.calls.slice(at0).some(function (c) { return /^auth\.(grant|search)$/.test(c.name) || /^agent\./.test(c.name); }), 'nothing is granted, or read, past the table it was handed', 'calls: ' + short(w.calls.slice(at0).map(function (c) { return c.name; })));
-  ok(!/already-granted|already granted|not granted|refused/i.test(box.innerHTML.replace(/<[^>]*>/g, ' ')), 'a path the ID holds already is counted done, never said as a refusal', 'said: ' + short(box.innerHTML.replace(/<[^>]*>/g, ' ')));
-  ok(!w.calls.slice(at0).some(function (c) { return c.name === 'grants.search'; }), 'and reads no grant again (rule/19)', 'calls: ' + short(w.calls.slice(at0).map(function (c) { return c.name; })));
-  // Andy: "EVERY FUCKING ELEMENT is verified to make sure when it changes shit it listens to fucking update via the spirit
-  // object": the grants it sent come back through the grants table's own watch, and the panel says they arrived.
+  return grants.length === 3 && grants.every(function (c) { return c.args.id === 'J3'; }) && JSON.stringify(grants.map(function (c) { return c.args.path; }).sort()) === '["desk","fs.search","jobs.list"]' ? true
+    : 'grants: ' + short(grants.map(function (c) { return c.args; }));
+}, 1000);
+test.run('nothing is granted, or read, past the table it was handed', 0.2, function () {
+  if (!press) return NO_FORM;
+  return !w.calls.slice(at0).some(function (c) { return /^auth\.(grant|search)$/.test(c.name) || /^agent\./.test(c.name); }) ? true : 'calls: ' + short(w.calls.slice(at0).map(function (c) { return c.name; }));
+}, 1000);
+test.run('a path the ID holds already is counted done, never said as a refusal', 0.2, function () {
+  if (!press) return NO_FORM;
+  return !/already-granted|already granted|not granted|refused/i.test(said()) ? true : 'said: ' + short(said());
+}, 1000);
+test.run('and reads no grant again (rule/19)', 0.2, function () {
+  if (!press) return NO_FORM;
+  return !w.calls.slice(at0).some(function (c) { return c.name === 'grants.search'; }) ? true : 'calls: ' + short(w.calls.slice(at0).map(function (c) { return c.name; }));
+}, 1000);
+// Andy: "EVERY FUCKING ELEMENT is verified to make sure when it changes shit it listens to fucking update via the spirit
+// object": the grants it sent come back through the grants table's own watch, and the panel says they arrived.
+test.run('a grant it sent, arriving through the grants table\'s watch, is said as arrived', 0.2, async function () {
+  if (!press) return NO_FORM;
   const said0 = box.innerHTML;
   w.grantWatchers.slice().forEach(function (fn) { fn('J3\njobs.list', { job_id: 'J3', path: 'jobs.list' }); });
   await settle();
-  ok(w.grantWatchers.length > 0 && /arrived/.test(box.innerHTML.replace(/<[^>]*>/g, ' ')) && box.innerHTML !== said0,
-    'a grant it sent, arriving through the grants table\'s watch, is said as arrived', 'watchers ' + w.grantWatchers.length + ', said: ' + short(box.innerHTML.replace(/<[^>]*>/g, ' ')));
+  return w.grantWatchers.length > 0 && /arrived/.test(said()) && box.innerHTML !== said0 ? true : 'watchers ' + w.grantWatchers.length + ', said: ' + short(said());
+}, 1000);
+test.run('a grant refused for another reason says so', 0.2, async function () {
+  if (!press) return NO_FORM;
   w.grantAnswer = function () { return { ok: false, code: 'owner-only', error: 'owner only' }; };
   press(); await settle();
-  ok(/owner-only|owner only/.test(box.innerHTML), 'a grant refused for another reason says so', 'said: ' + short(box.innerHTML.replace(/<[^>]*>/g, ' ')));
+  return /owner-only|owner only/.test(box.innerHTML) ? true : 'said: ' + short(said());
+}, 1000);
 
-  test.subHeading('no warning before a grant (goal/G43.27)');
-  // Andy: "compare that to giving a linux user root authority, he then can fuck up the whole system, not our problem."
+// no warning before a grant (goal/G43.27)
+// Andy: "compare that to giving a linux user root authority, he then can fuck up the whole system, not our problem."
+let conf0;
+test.run('Grant reads no <verb>.warning.txt', 0.2, async function () {
+  if (!press) return NO_FORM;
   w.warnings['jobs.list'] = 'it lists every job';
   w.confirmAnswer = false;
   at0 = w.calls.length;
-  const conf0 = w.confirms.length;
+  conf0 = w.confirms.length;
   press(); await settle();
   const read1 = w.calls.slice(at0).filter(function (c) { return /\.FS\.loadFile$/.test(c.name) && /\.warning\.txt$/.test(String((c.args && c.args.path) || '')); });
-  ok(read1.length === 0, 'Grant reads no <verb>.warning.txt', 'warnings read: ' + short(read1));
-  ok(w.confirms.slice(conf0).length === 0, 'the owner is asked nothing before the grant', 'asked: ' + short(w.confirms.slice(conf0)));
-  ok(w.calls.slice(at0).some(function (c) { return c.name === 'grants.grant'; }), 'the grant goes out at once', 'calls: ' + short(w.calls.slice(at0).map(function (c) { return c.name; })));
-  ok(!/warning\.txt|window\.confirm/.test(fs.readFileSync(path.join(RUN, 'spirit', 'element', 'search', 'grant', 'grantsPanel.js'), 'utf8').replace(/\/\/[^\n]*/g, '')), 'grantsPanel.js holds no warning reading and no confirm', 'grantsPanel.js still reads warnings or confirms');
-  ok(!fs.existsSync(path.join(RUN, 'spirit', 'auth', 'grant.warning.txt')), 'spirit/auth/grant.warning.txt is gone', 'spirit/auth/grant.warning.txt is still there');
+  return read1.length === 0 ? true : 'warnings read: ' + short(read1);
+}, 1000);
+test.run('the owner is asked nothing before the grant', 0.2, function () {
+  if (conf0 === undefined) return NO_FORM;
+  return w.confirms.slice(conf0).length === 0 ? true : 'asked: ' + short(w.confirms.slice(conf0));
+}, 1000);
+test.run('the grant goes out at once', 0.2, function () {
+  if (conf0 === undefined) return NO_FORM;
+  const r = w.calls.slice(at0).some(function (c) { return c.name === 'grants.grant'; }) ? true : 'calls: ' + short(w.calls.slice(at0).map(function (c) { return c.name; }));
   w.warnings = {};
-  w.bundles[0].value = 7; w.bundles[0].row = { id: 7, label: 'Reader' };
+  if (w.bundles[0]) { w.bundles[0].value = 7; w.bundles[0].row = { id: 7, label: 'Reader' }; }
+  return r;
+}, 1000);
+test.run('grantsPanel.js holds no warning reading and no confirm', 0.2, function () {
+  return !/warning\.txt|window\.confirm/.test(fs.readFileSync(path.join(RUN, 'spirit', 'element', 'search', 'grant', 'grantsPanel.js'), 'utf8').replace(/\/\/[^\n]*/g, '')) ? true : 'grantsPanel.js still reads warnings or confirms';
+}, 1000);
+test.run('spirit/auth/grant.warning.txt is gone', 0.2, function () {
+  return !fs.existsSync(path.join(RUN, 'spirit', 'auth', 'grant.warning.txt')) ? true : 'spirit/auth/grant.warning.txt is still there';
+}, 1000);
 
-  test.subHeading('Grant is a busyButton, waiting until every grant is answered (goal/G41.23)');
-  // Box: "first users: Ask in the agent's Update model list, and Grant in the grants panel".
-  ok(w.required.indexOf('spirit/element/busyButton.js') !== -1, 'it loads the busyButton itself (rule/26)', 'required: ' + short(w.required));
-  // The panel may draw its form again when it says something: its Grant button is found again.
-  // Since goal/G41.27 it is the rowForm's button.
-  const grantNow = function () { return rf ? rf.button : null; };
-  const gb = grantNow();
-  const gbusy = w.busy.filter(function (a) { return a.button === gb; }).pop() || null;
-  ok(!!gbusy && typeof gbusy.opts.run === 'function', 'its Grant button is made a busyButton, the grant its request', 'busyButtons: ' + w.busy.length + (gbusy ? ', the Grant one with no request' : ', none on the Grant button'));
-  if (gbusy) {
-    let letGo = null;
-    w.grantAnswer = function () { return new Promise(function (r) { letGo = r; }); };
-    const before = gbusy.answers.length;
-    const at1 = w.calls.length;
-    gb.fire('click', { target: gb, preventDefault: function () {} });
-    await settle();
-    const r = gbusy.answers[before];
-    let settled = false;
-    Promise.resolve(r).then(function () { settled = true; }, function () { settled = true; });
-    await settle();
-    const asked = w.calls.slice(at1).filter(function (c) { return c.name === 'grants.grant'; }).length;
-    ok(asked === 1 && !!r && typeof r.then === 'function' && !settled, 'a press grants, and the request it hands the button is still waiting while the grant is not answered',
-      'grants asked ' + asked + ', the request answered ' + (r && typeof r.then === 'function' ? (settled ? 'a promise already settled' : 'a promise') : short(r)));
-    w.grantAnswer = null;
-    for (let i = 0; i < 5 && letGo; i++) { const go = letGo; letGo = null; go({ ok: true }); await settle(); }
-    ok(settled, 'and it settles once every grant is answered, so the button is plain again', 'still waiting after the answers');
-  }
+// Grant is a busyButton, waiting until every grant is answered (goal/G41.23)
+// Box: "first users: Ask in the agent's Update model list, and Grant in the grants panel".
+test.run('it loads the busyButton itself (rule/26)', 0.2, function () {
+  if (!w) return NO_GP;
+  return w.required.indexOf('spirit/element/busyButton.js') !== -1 ? true : 'required: ' + short(w.required);
+}, 1000);
+// The panel may draw its form again when it says something: its Grant button is found again.
+// Since goal/G41.27 it is the rowForm's button.
+test.run('its Grant button is made a busyButton, the grant its request', 0.2, function () {
+  if (!box) return NO_GP;
+  gb = rf ? rf.button : null;
+  gbusy = w.busy.filter(function (a) { return a.button === gb; }).pop() || null;
+  return !!gbusy && typeof gbusy.opts.run === 'function' ? true : 'busyButtons: ' + w.busy.length + (gbusy ? ', the Grant one with no request' : ', none on the Grant button');
+}, 1000);
+let letGo = null;
+test.run('a press grants, and the request it hands the button is still waiting while the grant is not answered', 0.2, async function () {
+  if (!gbusy) return 'no busyButton on the Grant button';
+  w.grantAnswer = function () { return new Promise(function (r) { letGo = r; }); };
+  const before = gbusy.answers.length;
+  const at1 = w.calls.length;
+  gb.fire('click', { target: gb, preventDefault: function () {} });
+  await settle();
+  gReq = gbusy.answers[before];
+  gSettled = false;
+  Promise.resolve(gReq).then(function () { gSettled = true; }, function () { gSettled = true; });
+  await settle();
+  const asked = w.calls.slice(at1).filter(function (c) { return c.name === 'grants.grant'; }).length;
+  return asked === 1 && !!gReq && typeof gReq.then === 'function' && !gSettled ? true
+    : 'grants asked ' + asked + ', the request answered ' + (gReq && typeof gReq.then === 'function' ? (gSettled ? 'a promise already settled' : 'a promise') : short(gReq));
+}, 1000);
+test.run('and it settles once every grant is answered, so the button is plain again', 0.2, async function () {
+  if (!gbusy) return 'no busyButton on the Grant button';
+  w.grantAnswer = null;
+  for (let i = 0; i < 5 && letGo; i++) { const go = letGo; letGo = null; go({ ok: true }); await settle(); }
+  return gSettled ? true : 'still waiting after the answers';
+}, 1000);
 
-  test.subHeading('grantsPanel.nodeGrants: the node\'s own grants table, one a caller picks by name (goal/G43.24)');
-  // goal/G43.24: "Still its own: the panel's data source, auth.search and auth.grant / auth.revoke over the auth cache
-  // (GR_GRANTS). It moves into grantsPanel."
-  const g = GP.nodeGrants;
-  const A = ((w.win.spirit.data || {}).auth || {}).data;
-  ok(!!g && !!A && g.branch === A.grants.branch && g.key === 'key' && g.label === 'label', 'grantsPanel.nodeGrants: its branch the auth family\'s cache (spirit.data.auth.data.grants.branch), keyed key, labelled label', 'nodeGrants ' + short(g && { branch: g.branch, key: g.key, label: g.label }) + ', auth cache ' + !!A);
-  if (!g || !A) return;
-  ok(['search', 'grant', 'revoke', 'watch'].every(function (f) { return typeof g[f] === 'function'; }) && !('stream' in g), 'with search, grant, revoke and watch, and no stream of its own', 'nodeGrants: ' + short(Object.keys(g)));
+// grantsPanel.nodeGrants: the node's own grants table, one a caller picks by name (goal/G43.24)
+// goal/G43.24: "Still its own: the panel's data source, auth.search and auth.grant / auth.revoke over the auth cache
+// (GR_GRANTS). It moves into grantsPanel."
+test.run('grantsPanel.nodeGrants: its branch the auth family\'s cache (spirit.data.auth.data.grants.branch), keyed key, labelled label', 0.2, function () {
+  if (!GP) return NO_GP;
+  g = GP.nodeGrants;
+  A = ((w.win.spirit.data || {}).auth || {}).data;
+  return !!g && !!A && g.branch === A.grants.branch && g.key === 'key' && g.label === 'label' ? true : 'nodeGrants ' + short(g && { branch: g.branch, key: g.key, label: g.label }) + ', auth cache ' + !!A;
+}, 1000);
+test.run('with search, grant, revoke and watch, and no stream of its own', 0.2, function () {
+  if (!g || !A) return NO_G;
+  return ['search', 'grant', 'revoke', 'watch'].every(function (f) { return typeof g[f] === 'function'; }) && !('stream' in g) ? true : 'nodeGrants: ' + short(Object.keys(g));
+}, 1000);
+test.run('the panel takes it as a grants table: configured with it, it says nothing is missing', 0.2, async function () {
+  if (!g || !A) return NO_G;
   const panelOk = node('ok');
   GP.create(panelOk, { ids: { table: 'loopback://api/contact/search' }, grants: g });
   await settle();
-  ok(!/not configured/.test(panelOk.kids.map(function (k) { return k.textContent; }).join(' ')), 'the panel takes it as a grants table: configured with it, it says nothing is missing', 'said: ' + short(panelOk.kids.map(function (k) { return k.textContent; })));
-  let at = w.calls.length;
-  const found = await g.search('bo');
+  return !/not configured/.test(panelOk.kids.map(function (k) { return k.textContent; }).join(' ')) ? true : 'said: ' + short(panelOk.kids.map(function (k) { return k.textContent; }));
+}, 1000);
+test.run('search(text) asks spirit\'s auth.search { text } and answers its { items, more }', 0.2, async function () {
+  if (!g || !A) return NO_G;
+  const at = w.calls.length;
+  found = await g.search('bo');
   const s = w.calls.slice(at)[0];
-  ok(s && s.name === 'auth.search' && s.args.text === 'bo' && found && Array.isArray(found.items) && found.more === true, 'search(text) asks spirit\'s auth.search { text } and answers its { items, more }', 'asked ' + short(s) + ', found ' + short(found));
-  // Found by cw live (goal/G41.16): auth.search says whose grant it is as name, and the panel reads its table's label field.
+  return s && s.name === 'auth.search' && s.args.text === 'bo' && found && Array.isArray(found.items) && found.more === true ? true : 'asked ' + short(s) + ', found ' + short(found);
+}, 1000);
+// Found by cw live (goal/G41.16): auth.search says whose grant it is as name, and the panel reads its table's label field.
+test.run('a found grant carries whose it is in the table\'s label field, label', 0.2, function () {
+  if (!found || !Array.isArray(found.items)) return 'search found nothing';
   let hit = null; try { hit = JSON.parse(found.items[0].label); } catch (e) { hit = null; }
-  ok(hit && hit[g.label] === 'Bob' && hit.key === 'K1' && hit.path === 'fs.search', 'a found grant carries whose it is in the table\'s label field, label', 'found row: ' + short(hit));
-  ok(found.items[1] && found.items[1].label === 'not json', 'a row it cannot read is handed on as it came', 'row: ' + short(found.items[1]));
-  at = w.calls.length;
+  return hit && hit[g.label] === 'Bob' && hit.key === 'K1' && hit.path === 'fs.search' ? true : 'found row: ' + short(hit);
+}, 1000);
+test.run('a row it cannot read is handed on as it came', 0.2, function () {
+  if (!found || !Array.isArray(found.items)) return 'search found nothing';
+  return found.items[1] && found.items[1].label === 'not json' ? true : 'row: ' + short(found.items[1]);
+}, 1000);
+test.run('grant(id, path) asks auth.grant { key, path } and answers { ok: true }', 0.2, async function () {
+  if (!g || !A) return NO_G;
+  const at = w.calls.length;
   const madeG = await g.grant('K3', 'jobs.list');
   const gr = w.calls.slice(at)[0];
-  ok(gr && gr.name === 'auth.grant' && gr.args.key === 'K3' && gr.args.path === 'jobs.list' && madeG && madeG.ok === true, 'grant(id, path) asks auth.grant { key, path } and answers { ok: true }', 'asked ' + short(gr) + ', answered ' + short(madeG));
+  return gr && gr.name === 'auth.grant' && gr.args.key === 'K3' && gr.args.path === 'jobs.list' && madeG && madeG.ok === true ? true : 'asked ' + short(gr) + ', answered ' + short(madeG);
+}, 1000);
+test.run('a refusal answers { ok: false, code, error }, in the node\'s words', 0.2, async function () {
+  if (!g || !A) return NO_G;
   const already = await g.grant('K3', 'fs.search');
-  ok(already && already.ok === false && already.code === 'already-granted' && already.error === 'already granted', 'a refusal answers { ok: false, code, error }, in the node\'s words', 'answered ' + short(already));
-  at = w.calls.length;
+  return already && already.ok === false && already.code === 'already-granted' && already.error === 'already granted' ? true : 'answered ' + short(already);
+}, 1000);
+test.run('revoke(id, path) asks auth.revoke { key, path } and answers { ok: true }', 0.2, async function () {
+  if (!g || !A) return NO_G;
+  const at = w.calls.length;
   const rvd = await g.revoke('K3', 'jobs.list');
   const rv = w.calls.slice(at)[0];
-  ok(rv && rv.name === 'auth.revoke' && rv.args.key === 'K3' && rv.args.path === 'jobs.list' && rvd && rvd.ok === true, 'revoke(id, path) asks auth.revoke { key, path } and answers { ok: true }', 'asked ' + short(rv) + ', answered ' + short(rvd));
-  // WHO ASKS FOR A CHANGE LISTENS FOR IT (goal/G41.27, G41.28): a grant the node's auth job hands comes back through watch.
-  const heard = [];
-  const off = g.watch(function (k, row) { heard.push({ k: k, row: row }); });
+  return rv && rv.name === 'auth.revoke' && rv.args.key === 'K3' && rv.args.path === 'jobs.list' && rvd && rvd.ok === true ? true : 'asked ' + short(rv) + ', answered ' + short(rvd);
+}, 1000);
+// WHO ASKS FOR A CHANGE LISTENS FOR IT (goal/G41.27, G41.28): a grant the node's auth job hands comes back through watch.
+let heard, off;
+test.run('watch(fn): a grant kept in spirit.data.auth is heard as <key>\\n<path> with its row, and once revoked with none', 0.2, function () {
+  if (!g || !A) return NO_G;
+  D = w.win.spirit.data;
+  heard = [];
+  off = g.watch(function (k, row) { heard.push({ k: k, row: row }); });
   D.takeJob({ id: 'spirit.auth', data: { table: 'grant', row: { key: 'K9', path: 'jobs.list', label: 'Zed' } } });
   D.takeJob({ id: 'spirit.auth', data: { table: 'grant', row: { key: 'K9', path: 'jobs.list' }, gone: true } });
-  ok(heard.length === 2 && heard[0].k === 'K9\njobs.list' && heard[0].row && heard[0].row.label === 'Zed' && heard[1].k === 'K9\njobs.list' && !heard[1].row,
-    'watch(fn): a grant kept in spirit.data.auth is heard as <key>\\n<path> with its row, and once revoked with none', 'heard: ' + short(heard));
+  return heard.length === 2 && heard[0].k === 'K9\njobs.list' && heard[0].row && heard[0].row.label === 'Zed' && heard[1].k === 'K9\njobs.list' && !heard[1].row ? true : 'heard: ' + short(heard);
+}, 1000);
+test.run('its release ends the watch', 0.2, function () {
+  if (!heard) return NO_G;
   if (typeof off === 'function') off();
   D.takeJob({ id: 'spirit.auth', data: { table: 'grant', row: { key: 'K8', path: 'jobs.list', label: 'Yan' } } });
-  ok(typeof off === 'function' && heard.length === 2, 'its release ends the watch', 'heard after release: ' + short(heard.slice(2)));
-}()).then(function () { return null; }, function (e) { test.fail('the test threw ' + (e && e.stack || e)); return 0; })
-  .then(async function (failExit) {
-    // The folded parts, in order, after the checks above; one count and one report for the whole file.
-    for (const part of [authSourcePart, noWarningPart]) {
-      try { await part(); } catch (e) { test.fail('the ' + part.name.replace(/Part$/, '') + ' part threw ' + (e && e.stack || e)); }
-    }
-    test.reportSuccessFailureCount();
-    process.exit(failExit === null ? (0) : failExit);
-  });
-
-// THE ELEMENT NAMES SINCE goal/G43.18: a stand-in keyed by its place, 'search.contact' and so on, nested where the page has it.
-function nestSearch(o) { Object.keys(o).forEach(function (k) { if (k !== 'search' && k.indexOf('search.') !== 0) return; var v = o[k]; delete o[k]; var ks = k.split('.'); var at = o; ks.slice(0, -1).forEach(function (p) { at = at[p] = at[p] || {}; }); var last = ks[ks.length - 1]; at[last] = Object.assign(at[last] || {}, v); }); return o; }
+  return typeof off === 'function' && heard.length === 2 ? true : 'heard after release: ' + short(heard.slice(2));
+}, 1000);
 
 // ── THE AUTHSOURCE PART (once its own file; one test file per script: spirit/test/TEST_SYSTEM.md) ──
-async function authSourcePart() {
-  // GRANTS' DATA SOURCE IS grantsPanel'S (goal/G43.24, requirement 6; spec: ./grantsPanel.md, section "authSource"). The box: "Still its
-  // own: the panel's data source, auth.search and auth.grant / auth.revoke over the auth cache (GR_GRANTS). It moves into
-  // grantsPanel." Andy: "no i want those apps to basically be wrappers for spirit/element/ things....". grantsPanel.js read as
-  // it is, comments stripped.
-
-  const fs = require('fs');
-  const path = require('path');
-  const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..');
-  const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-
-  function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
-  function code(f) { try { return fs.readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1'); } catch (e) { return ''; } }
-
-  test.subHeading('authSource: Grants\' data source is grantsPanel\'s (goal/G43.24)');
-
-  test.subHeading('the box, 6: Grants\' data source "moves into grantsPanel"');
-  const panel = code(path.join(RUN, 'spirit', 'element', 'search', 'grant', 'grantsPanel.js'));
-  ok(panel.length > 0, 'the world: spirit/element/search/grant/grantsPanel.js is there', 'no grantsPanel.js: nothing judged');
-  ok(/\bauth\W{1,4}search\b/.test(panel), 'Grants\' data source moves into grantsPanel: it asks auth.search', 'grantsPanel.js asks no auth.search');
-  ok(/\bauth\W{1,4}grant\b/.test(panel), 'Grants\' data source moves into grantsPanel: it asks auth.grant', 'grantsPanel.js asks no auth.grant');
-  ok(/\bauth\W{1,4}revoke\b/.test(panel), 'Grants\' data source moves into grantsPanel: it asks auth.revoke', 'grantsPanel.js asks no auth.revoke');
-  ok(/\bdata\.auth\b|cacheManager\s*\(\s*['"]auth['"]/.test(panel), 'grantsPanel holds the auth cache it reads (spirit.data.auth)', 'grantsPanel.js reads no auth cache');
-}
+// GRANTS' DATA SOURCE IS grantsPanel'S (goal/G43.24, requirement 6; spec: ./grantsPanel.md, section "authSource"). The box: "Still its
+// own: the panel's data source, auth.search and auth.grant / auth.revoke over the auth cache (GR_GRANTS). It moves into
+// grantsPanel." Andy: "no i want those apps to basically be wrappers for spirit/element/ things....". grantsPanel.js read as
+// it is, comments stripped.
+// authSource: Grants' data source is grantsPanel's (goal/G43.24); the box, 6: Grants' data source "moves into grantsPanel"
+function codeOf(f) { try { return fs.readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1'); } catch (e) { return ''; } }
+let panel = '';
+test.run('the world: spirit/element/search/grant/grantsPanel.js is there', 0.2, function () {
+  panel = codeOf(path.join(RUN, 'spirit', 'element', 'search', 'grant', 'grantsPanel.js'));
+  return panel.length > 0 ? true : 'no grantsPanel.js: nothing judged';
+}, 1000);
+test.run('Grants\' data source moves into grantsPanel: it asks auth.search', 0.2, function () {
+  return /\bauth\W{1,4}search\b/.test(panel) ? true : 'grantsPanel.js asks no auth.search';
+}, 1000);
+test.run('Grants\' data source moves into grantsPanel: it asks auth.grant', 0.2, function () {
+  return /\bauth\W{1,4}grant\b/.test(panel) ? true : 'grantsPanel.js asks no auth.grant';
+}, 1000);
+test.run('Grants\' data source moves into grantsPanel: it asks auth.revoke', 0.2, function () {
+  return /\bauth\W{1,4}revoke\b/.test(panel) ? true : 'grantsPanel.js asks no auth.revoke';
+}, 1000);
+test.run('grantsPanel holds the auth cache it reads (spirit.data.auth)', 0.2, function () {
+  const holds = /\bdata\.auth\b|cacheManager\s*\(\s*['"]auth['"]/.test(panel);
+  return holds ? true : 'grantsPanel.js reads no auth cache';
+}, 1000);
 
 // ── THE NOWARNING PART (once its own file; one test file per script: spirit/test/TEST_SYSTEM.md) ──
-async function noWarningPart() {
-  // NO WARNING ON A GRANT (goal/G43.27, requirement 7; spec: ./grantsPanel.md, section "noWarning"). Andy: "compare that to giving a linux
-  // user root authority, he then can fuck up the whole system, not our problem.": grantsPanel reads no <verb>.warning.txt, and
-  // none is left, spirit/auth/grant.warning.txt among them. The tree read as it is, comments stripped.
-
-  const fs = require('fs');
-  const path = require('path');
-  const { execSync } = require('child_process');
-  const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..');
-  const REPO = path.resolve(RUN, '..', '..');
-  const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-
-  function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
-  function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 400); }
-  function code(text) { return String(text).replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1'); }
-  // Line ends aside: a Windows checkout (autocrlf) holds CRLF where git holds LF.
-  function read(rel) { const f = path.join(RUN, rel); return fs.existsSync(f) ? fs.readFileSync(f, 'utf8').replace(/\r\n/g, '\n') : ''; }
-
-  test.subHeading('noWarning: no warning on a grant (goal/G43.27)');
-
-  test.subHeading('7. no warning on a grant');
-  const tracked = execSync('git ls-files', { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(Boolean).filter(function (f) { return fs.existsSync(path.join(REPO, f)); });
-  ok(tracked.length > 100, 'the world: more than a hundred tracked files on disk are read', 'only ' + tracked.length + ' tracked files read: nothing judged');
-  ok(!fs.existsSync(path.join(RUN, 'spirit', 'auth', 'grant.warning.txt')), 'with no warning on a grant, spirit/auth/grant.warning.txt is gone', 'spirit/auth/grant.warning.txt is still there');
-  const gp = code(read('spirit/element/search/grant/grantsPanel.js'));
-  ok(gp.length > 1000, 'the world: grantsPanel.js is read', 'no grantsPanel.js: nothing judged');
-  ok(!/warning\.txt|\.FS\.loadFile/.test(gp), 'grantsPanel reads no <verb>.warning.txt', 'grantsPanel still reads one');
+// NO WARNING ON A GRANT (goal/G43.27, requirement 7; spec: ./grantsPanel.md, section "noWarning"). Andy: "compare that to giving a linux
+// user root authority, he then can fuck up the whole system, not our problem.": grantsPanel reads no <verb>.warning.txt, and
+// none is left, spirit/auth/grant.warning.txt among them. The tree read as it is, comments stripped.
+// noWarning: no warning on a grant (goal/G43.27); 7. no warning on a grant
+const { execSync } = require('child_process');
+const REPO = path.resolve(RUN, '..', '..');
+function stripped(text) { return String(text).replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1'); }
+// Line ends aside: a Windows checkout (autocrlf) holds CRLF where git holds LF.
+function readRun(rel) { const f = path.join(RUN, rel); return fs.existsSync(f) ? fs.readFileSync(f, 'utf8').replace(/\r\n/g, '\n') : ''; }
+let tracked = [];
+let gp = '';
+test.run('the world: more than a hundred tracked files on disk are read', 0.2, function () {
+  tracked = execSync('git ls-files', { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(Boolean).filter(function (f) { return fs.existsSync(path.join(REPO, f)); });
+  return tracked.length > 100 ? true : 'only ' + tracked.length + ' tracked files read: nothing judged';
+}, 1000);
+test.run('with no warning on a grant, spirit/auth/grant.warning.txt is gone', 0.2, function () {
+  return !fs.existsSync(path.join(RUN, 'spirit', 'auth', 'grant.warning.txt')) ? true : 'spirit/auth/grant.warning.txt is still there';
+}, 1000);
+test.run('the world: grantsPanel.js is read', 0.2, function () {
+  gp = stripped(readRun('spirit/element/search/grant/grantsPanel.js'));
+  return gp.length > 1000 ? true : 'no grantsPanel.js: nothing judged';
+}, 1000);
+test.run('grantsPanel reads no <verb>.warning.txt', 0.2, function () {
+  if (!gp) return 'no grantsPanel.js read';
+  return !/warning\.txt|\.FS\.loadFile/.test(gp) ? true : 'grantsPanel still reads one';
+}, 1000);
+test.run('no <verb>.warning.txt is left', 0.2, function () {
   const warns = tracked.filter(function (f) { return /\.warning\.txt$/.test(f); });
-  ok(!warns.length, 'no <verb>.warning.txt is left', warns.length + ' are: ' + short(warns));
-}
+  return !warns.length ? true : warns.length + ' are: ' + short(warns);
+}, 1000);

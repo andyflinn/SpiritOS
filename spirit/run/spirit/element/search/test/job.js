@@ -12,7 +12,6 @@ const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 
 const FILE = path.join(__dirname, '..', 'job.js');
-function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 const tick = function () { return new Promise(function (r) { setImmediate(r); }); };
 const settle = async function () { for (let i = 0; i < 20; i++) await tick(); };
@@ -24,14 +23,16 @@ function element(tag) {
   return n;
 }
 
-test.startTest('search/job.js: the job selector, the job branch\'s search (goal/G43.32)');
-process.on('unhandledRejection', function (e) { test.fail('it threw where nothing caught it: ' + (e && e.message || e)); });
+// One test.run per test (goal/G47.2). What the world and the tests make, for the tests after them.
+let lists, required, made, box, open, root, list;
+const NO_MADE = 'no job selector with a create: the world failed';
+const NO_LIST = 'no list was drawn';
 
-(async function () {
-  if (!fs.existsSync(FILE)) { test.fail('spirit/element/search/job.js is not there'); return; }
+test.run('the world: the selector runs on a bare window', 0.2, async function () {
+  if (!fs.existsSync(FILE)) return 'spirit/element/search/job.js is not there';
   const SRC = fs.readFileSync(FILE, 'utf8');
-  const lists = [];
-  const required = [];
+  lists = [];
+  required = [];
   const STANDS = {
     'spirit/element/search/job/listElement.js': function () { require(path.join(RUN, 'spirit', 'element', 'installSpiritElement.js'))(global.window.spirit, 'spirit/element/search/job/listElement.js', { create: function (host, o) {
       const l = { host: host, o: o, destroyed: 0 };
@@ -50,26 +51,44 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   vm.runInThisContext(SRC, { filename: FILE });
   await settle();
   const E = ((global.window.spirit.element || {}).spirit || {}).element || {};
-  const made = E.search && E.search.job;
-  ok(made && typeof made.create === 'function', 'it places itself at spirit.element.spirit.element.search.job, with a create', 'elements: ' + short(Object.keys(E.search || {})));
-  if (!made || typeof made.create !== 'function') return;
+  made = E.search && E.search.job;
+  return true;
+}, 1000);
+test.run('it places itself at spirit.element.spirit.element.search.job, with a create', 0.2, function () {
+  if (!lists) return 'the selector never ran: the world failed';
+  const E = ((global.window.spirit.element || {}).spirit || {}).element || {};
+  return made && typeof made.create === 'function' ? true : 'elements: ' + short(Object.keys(E.search || {}));
+}, 1000);
 
-  test.subHeading('a thin selector over its own list (rule/26; the bundle selector\'s pattern)');
-  const box = element('div');
-  const open = function () {};
-  const root = made.create(box, { open: open });
+// a thin selector over its own list (rule/26; the bundle selector's pattern)
+test.run('create(container, options) appends its root to its container and answers it', 0.2, async function () {
+  if (!made || typeof made.create !== 'function') return NO_MADE;
+  box = element('div');
+  open = function () {};
+  root = made.create(box, { open: open });
   await settle();
-  ok(box.children.length === 1 && box.children[0] === root, 'create(container, options) appends its root to its container and answers it', 'container holds ' + box.children.length);
-  ok(required.indexOf('spirit/element/search/job/listElement.js') !== -1, 'on a bare page it requires its list, spirit/element/search/job/listElement.js', 'required: ' + short(required));
-  const list = lists[0];
-  ok(!!list && list.host === root && list.o.open === open, 'its list is drawn into its root, the mounter\'s open handed on, where a job\'s detail opens', 'list: ' + short(list && { inRoot: list.host === root, open: list.o.open === open }));
-  if (!list) return;
+  list = lists[0];
+  return box.children.length === 1 && box.children[0] === root ? true : 'container holds ' + box.children.length;
+}, 1000);
+test.run('on a bare page it requires its list, spirit/element/search/job/listElement.js', 0.2, function () {
+  if (!required) return 'the selector never ran: the world failed';
+  return required.indexOf('spirit/element/search/job/listElement.js') !== -1 ? true : 'required: ' + short(required);
+}, 1000);
+test.run('its list is drawn into its root, the mounter\'s open handed on, where a job\'s detail opens', 0.2, function () {
+  if (!box) return NO_MADE;
+  return !!list && list.host === root && list.o.open === open ? true : 'list: ' + short(list && { inRoot: list.host === root, open: list.o.open === open });
+}, 1000);
 
-  test.subHeading('destroy');
+// destroy
+test.run('destroy lets its list go and takes itself out of its container', 0.2, function () {
+  if (!list) return NO_LIST;
   root.destroy();
-  ok(list.destroyed === 1 && box.children.length === 0, 'destroy lets its list go and takes itself out of its container', 'destroyed ' + list.destroyed + ', container holds ' + box.children.length);
+  return list.destroyed === 1 && box.children.length === 0 ? true : 'destroyed ' + list.destroyed + ', container holds ' + box.children.length;
+}, 1000);
+test.run('a selector destroyed before its list is here draws no list', 0.2, async function () {
+  if (!list) return NO_LIST;
   const late = made.create(element('div'), {});
   late.destroy();
   await settle();
-  ok(lists.length === 1, 'a selector destroyed before its list is here draws no list', lists.length + ' lists drawn');
-}()).then(function () { test.reportSuccessFailureCount(); }, function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); });
+  return lists.length === 1 ? true : lists.length + ' lists drawn';
+}, 1000);

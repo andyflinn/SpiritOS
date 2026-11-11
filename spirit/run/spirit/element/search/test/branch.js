@@ -13,7 +13,6 @@ const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 
 const FILE = path.join(__dirname, '..', 'branch.js');
-function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 const tick = function () { return new Promise(function (r) { setImmediate(r); }); };
 const settle = async function () { for (let i = 0; i < 20; i++) await tick(); };
@@ -26,18 +25,18 @@ function element(tag) {
   return n;
 }
 
-test.startTest('branchSelector.js: the branch picker');
-// An element that counts on what it did not load throws inside a promise: that is a failure said, not a silent exit.
-process.on('unhandledRejection', function (e) { test.fail('it threw where nothing caught it: ' + (e && e.message || e)); });
+// One test.run per test (goal/G47.2). What the world and the tests make, for the tests after them.
+// An element that counts on what it did not load throws inside a promise: the reporter fails the test it ran in.
+let SRC, code, lists, required, E, made, box, root, list;
+const NO_MADE = 'no branch selector with a create: the world failed';
+const NO_LIST = 'no list was drawn';
 
-(async function () {
-  if (!fs.existsSync(FILE)) { test.fail('spirit/element/search/branch.js is not there'); return; }
-  const SRC = fs.readFileSync(FILE, 'utf8');
-  const code = SRC.replace(/\/\/.*$/gm, '');
-  // goal/G40.8: the old shell's list search is forbidden on the face.
-  ok(!/shellCreateListSearch|listSearch\.js/.test(code), 'it names nothing of the old shell\'s list search (goal/G40.8)', 'branchSelector.js names shellCreateListSearch or listSearch.js');
-  const lists = [];
-  const required = [];
+test.run('the world: the selector runs on a bare window', 0.2, async function () {
+  if (!fs.existsSync(FILE)) return 'spirit/element/search/branch.js is not there';
+  SRC = fs.readFileSync(FILE, 'utf8');
+  code = SRC.replace(/\/\/.*$/gm, '');
+  lists = [];
+  required = [];
   const STANDS = {
     'spirit/element/search/branch/listElement.js': function (E) { require(path.join(RUN, 'spirit', 'element', 'installSpiritElement.js'))(global.window.spirit, 'spirit/element/search/branch/listElement.js', { create: function (host, o) {
       const l = { host: host, o: o, refreshed: 0, refresh: function () { l.refreshed += 1; }, destroy: function () {} };
@@ -58,37 +57,69 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   vm.runInThisContext(SRC, { filename: FILE });
   // goal/G43.32: it places itself once installSpiritElement is in hand.
   await settle();
-  const E = ((global.window.spirit.element || {}).spirit || {}).element || {};
-  const made = E.search.branch;
-  ok(made && typeof made.create === 'function' && !('createBranchSelector' in E), 'it registers spirit.element.spirit.element.search.branch with a create, beside the shell\'s other selectors, and createBranchSelector no more', 'elements: ' + short(Object.keys(E)));
-  if (!made || typeof made.create !== 'function') return;
+  E = ((global.window.spirit.element || {}).spirit || {}).element || {};
+  made = E.search.branch;
+  return true;
+}, 1000);
+// goal/G40.8: the old shell's list search is forbidden on the face.
+test.run('it names nothing of the old shell\'s list search (goal/G40.8)', 0.2, function () {
+  if (!code) return 'no branch.js read: the world failed';
+  const names = /shellCreateListSearch|listSearch\.js/.test(code);
+  return !names ? true : 'branchSelector.js names shellCreateListSearch or listSearch.js';
+}, 1000);
+test.run('it registers spirit.element.spirit.element.search.branch with a create, beside the shell\'s other selectors, and createBranchSelector no more', 0.2, function () {
+  if (!E) return 'the selector never ran: the world failed';
+  return made && typeof made.create === 'function' && !('createBranchSelector' in E) ? true : 'elements: ' + short(Object.keys(E));
+}, 1000);
 
-  test.subHeading('a thin selector over its own list (rule/26; the contactSelector\'s pattern)');
-  // Box v23: "every element gets a container and appends itself".
-  const box = element('div');
-  const root = made.create(box, { bundle: 7, placeholder: 'choose a branch…' });
+// a thin selector over its own list (rule/26; the contactSelector's pattern)
+// Box v23: "every element gets a container and appends itself".
+test.run('create(container, options) appends its root to its container and answers it', 0.2, async function () {
+  if (!made || typeof made.create !== 'function') return NO_MADE;
+  box = element('div');
+  root = made.create(box, { bundle: 7, placeholder: 'choose a branch…' });
   await settle();
-  ok(box.children.length === 1 && box.children[0] === root, 'create(container, options) appends its root to its container and answers it', 'container holds ' + box.children.length + (box.children[0] === root ? ', the root' : ', not the root'));
-  ok(required.indexOf('spirit/element/search/branch/listElement.js') !== -1, 'on a bare page it requires its list, spirit/element/search/branch/listElement.js', 'required: ' + short(required));
-  ok(root && root.value === '' && root.row === null && /\bbranch-selector\b/.test(root.className), 'it answers its root at once, class branch-selector, nothing chosen: value \'\', row null',
-    'root: ' + short(root && { value: root.value, row: root.row, className: root.className }));
-  const list = lists[0];
-  ok(list && list.host === root && list.o.face === 'dropdown' && list.o.placeholder === 'choose a branch…' && list.o.bundle === 7, 'its list is drawn into its root, a dropdown by default, its bundle and placeholder handed on', 'list: ' + short(list && { face: list.o.face, placeholder: list.o.placeholder, inRoot: list.host === root }));
-  if (!list) return;
+  list = lists[0];
+  return box.children.length === 1 && box.children[0] === root ? true : 'container holds ' + box.children.length + (box.children[0] === root ? ', the root' : ', not the root');
+}, 1000);
+test.run('on a bare page it requires its list, spirit/element/search/branch/listElement.js', 0.2, function () {
+  if (!required) return 'the selector never ran: the world failed';
+  return required.indexOf('spirit/element/search/branch/listElement.js') !== -1 ? true : 'required: ' + short(required);
+}, 1000);
+test.run('it answers its root at once, class branch-selector, nothing chosen: value \'\', row null', 0.2, function () {
+  if (!box) return NO_MADE;
+  return root && root.value === '' && root.row === null && /\bbranch-selector\b/.test(root.className) ? true : 'root: ' + short(root && { value: root.value, row: root.row, className: root.className });
+}, 1000);
+test.run('its list is drawn into its root, a dropdown by default, its bundle and placeholder handed on', 0.2, function () {
+  if (!box) return NO_MADE;
+  return list && list.host === root && list.o.face === 'dropdown' && list.o.placeholder === 'choose a branch…' && list.o.bundle === 7 ? true : 'list: ' + short(list && { face: list.o.face, placeholder: list.o.placeholder, inRoot: list.host === root });
+}, 1000);
+test.run('face pane is the list itself; columns are handed to it', 0.2, async function () {
+  if (!list) return NO_LIST;
   made.create(element('div'), { bundle: 7, face: 'pane', columns: ['family', 'verb', 'delete'] }); await settle();
   const pane = lists[1] && lists[1].o;
-  ok(pane && pane.face === 'pane' && JSON.stringify(pane.columns) === '["family","verb","delete"]',
-    'face pane is the list itself; columns are handed to it', 'pane: ' + short(pane));
+  return pane && pane.face === 'pane' && JSON.stringify(pane.columns) === '["family","verb","delete"]' ? true : 'pane: ' + short(pane);
+}, 1000);
 
-  test.subHeading('a pick');
+// a pick
+test.run('a pick sets .value to the branch\'s id, a number, and .row to the branch', 0.2, function () {
+  if (!list) return NO_LIST;
   list.o.pick({ id: 3, bundle: 7, family: 'desk', verb: '' }, '3');
+  return root.value === 3 && root.row && root.row.id === 3 && root.row.bundle === 7 && root.row.family === 'desk' && root.row.verb === '' ? true : 'root: ' + short({ value: root.value, row: root.row });
+}, 1000);
+test.run('and says so with one bubbling change', 0.2, function () {
+  if (!list) return NO_LIST;
   const e = root.events[root.events.length - 1];
-  ok(root.value === 3 && root.row && root.row.id === 3 && root.row.bundle === 7 && root.row.family === 'desk' && root.row.verb === '', 'a pick sets .value to the branch\'s id, a number, and .row to the branch', 'root: ' + short({ value: root.value, row: root.row }));
-  ok(e && e.type === 'change' && e.bubbles === true, 'and says so with one bubbling change', 'events: ' + short(root.events));
+  return e && e.type === 'change' && e.bubbles === true ? true : 'events: ' + short(root.events);
+}, 1000);
+test.run('a clear picks nothing: value \'\' again', 0.2, function () {
+  if (!list) return NO_LIST;
   list.o.pick(null, '');
-  ok(root.value === '' && root.row === null, 'a clear picks nothing: value \'\' again', 'root: ' + short({ value: root.value, row: root.row }));
+  return root.value === '' && root.row === null ? true : 'root: ' + short({ value: root.value, row: root.row });
+}, 1000);
+test.run('refresh() asks again', 0.2, function () {
+  if (!list) return NO_LIST;
   const before = list.refreshed;
   root.refresh();
-  ok(list.refreshed === before + 1, 'refresh() asks again', 'refreshed: ' + list.refreshed);
-}()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
-  function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });
+  return list.refreshed === before + 1 ? true : 'refreshed: ' + list.refreshed;
+}, 1000);
