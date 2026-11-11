@@ -54,6 +54,9 @@ The box, in Andy's words where he gave them:
   - *"If the test flips, a new active row is created; this will keep change history"*: two rows, one current with the
     new result; the replaced row kept, current no longer. (The severity a flipped row starts with is not asserted: the
     box does not say whether it takes the replaced row's when that is higher.)
+  - goal/G47.1, the cycle "the test table streamed": *"on a flip, the replaced row turning current false is published
+    too, beside the new current row"*, and every test row served carries its full key, `script|suite|test|flipped`, so
+    the page keeps the two apart. Judged where a page receives it, in testicle's face test (`./element.js`).
   - *"This cycle does not clear a suite's needs-testing flag"*: with every test passing, the flag stays.
   - *"test.search will only return \"current\" test rows for the script/suite combination supplied ... no script in the
     search query searches tests for any script; the same for suite"*: `{items, more}`, the current rows only, one per
