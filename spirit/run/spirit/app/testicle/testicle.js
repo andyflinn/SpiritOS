@@ -25,7 +25,7 @@ require('../../spirit.js');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-const { execFile } = require('child_process');
+const { execFile, spawn } = require('child_process');
 const { DatabaseSync } = require('node:sqlite');
 const appServer = spirit.require('spirit/appServer.js');
 const { VENDORED_FOLDERS } = spirit.require('spirit/fileSystem.js');
@@ -120,6 +120,25 @@ function isSuite(rel) { return path.posix.basename(path.posix.dirname(rel)) === 
 function ownTestOf(file) { return path.posix.join(path.posix.dirname(file), 'test', path.posix.basename(file)); }
 function fileOfOwnTest(suite) { return path.posix.join(path.posix.dirname(path.posix.dirname(suite)), path.posix.basename(suite)); }
 
+// RUN A SUITE (goal/G47.1, the run cycle, the box: "Its work is one handler function of the server, later integrated into
+// the server's auto-test design; this cycle is not the implementation of that design", "testicle given: the suite runs up to
+// that test, the tests before it with it, by the reporter's --test <title>. testicle missing, as from the button: the server
+// runs the whole suite", "A general test is started with the script as its argument; a script's own test with none", "Each
+// test reports itself to testicle.testicle.set, as every suite does now"). The suite runs as its own process in this
+// checkout, so its reporter reports to this node. Nothing waits for it: the caller is answered at once (Andy: "for this cycle,
+// the servers will return the answer immediately, and not wait for the suite to complete.").
+function runSuite(script, suite, title) {
+  const args = [suite];
+  if (suite !== ownTestOf(script)) args.push(script);
+  if (title) args.push('--test', title);
+  running += 1;
+  let done = false;
+  const end = function () { if (!done) { done = true; running -= 1; } };
+  const kid = spawn(process.execPath, args, { cwd: RUN, stdio: 'ignore', windowsHide: true });
+  kid.on('error', end);
+  kid.on('exit', end);
+}
+
 // THE PAIRS testModule.js NAMES, run as its own process with no file: "<test> <file>" for a general test and the file it
 // judges, "<test>" for a test that is no general one.
 function pairs() {
@@ -190,6 +209,8 @@ const pending = new Set();
 let working = false;
 let timer = null;
 let getting = 0;
+// The suites run started and not yet ended (runSuite below): work, so busy says so.
+let running = 0;
 function kick() {
   if (working || timer || !pending.size) return;
   // The changes of one moment taken together: a save is often several events.
@@ -229,10 +250,28 @@ function mostSevereFirst(rows) {
 function refused(code) { return Object.assign(new Error(code), { refusal: code }); }
 
 appServer.serve({
+  // goal/G47.1, the run cycle, the box: "A new testicle verb, run {script, suite, testicle}": the suite started by runSuite,
+  // answered at once. The script a production script, the suite a suite, both on disc; testicle, a test's title, optional.
+  run: {
+    request: { script: '', suite: '' }, reply: {},
+    accepts: function (a) {
+      if (!a || typeof a !== 'object' || Array.isArray(a) || typeof a.script !== 'string' || typeof a.suite !== 'string') return false;
+      return Object.keys(a).every(function (k) { return k === 'script' || k === 'suite' || (k === 'testicle' && typeof a[k] === 'string'); });
+    },
+    handler: function (a) {
+      const script = posix(String(a.script || '')).replace(/^\.?\//, '');
+      const suite = posix(String(a.suite || '')).replace(/^\.?\//, '');
+      if (!/\.js$/.test(script) || isSuite(script) || script.indexOf('..') !== -1 || ignored(path.join(RUN, script))) throw refused('not-a-production-script');
+      if (!/\.js$/.test(suite) || !isSuite(suite) || suite.indexOf('..') !== -1) throw refused('not-a-suite');
+      if (!there(script) || !there(suite)) throw refused('no-such-file');
+      runSuite(script, suite, String(a.testicle || ''));
+      return { started: true };
+    },
+  },
   // goal/G47.1, the box: "busy": true if it is doing any work, false if it is idle.
   busy: {
     request: {}, reply: false,
-    handler: function () { return working || !!timer || pending.size > 0 || getting > 0; },
+    handler: function () { return working || !!timer || pending.size > 0 || getting > 0 || running > 0; },
   },
   // goal/G47.1, the verbs cycle, the box: "If the argument (a filename, scoped to run://) is not a production script, it
   // returns the error \"not a production script\"", "If the file does not exist, it returns the error \"no such file\", so

@@ -19,6 +19,8 @@ module.exports = {
     'testicle.search': { script: 'text?', suite: 'text?', test: 'text?', text: 'text' },
     // goal/G47.1, G45: every failed current test, most severe first. It takes nothing.
     red: {},
+    // goal/G47.1, the run cycle: one suite run for one script, testicle (a test's title) to run up to it; answered at once.
+    run: { script: 'text', suite: 'text', testicle: 'text?' },
     // appServer's streamPublisher (spirit/appServer.js), as agent's: the caller's key subscribes to testicle's rows, sent to
     // its family of that name from its position (run, since); unsubscribe stops it. Who may is the node's grant. Declared
     // here for now (Andy, goal/G43.32: "for now, it needs to declare them in api.js").

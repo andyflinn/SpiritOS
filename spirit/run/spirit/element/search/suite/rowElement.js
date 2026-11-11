@@ -5,10 +5,16 @@
 // while the row is flagged, shown red (the box: "the filename AND its status \"needs running\", which will be shown as red
 // in the UI").
 //
+// ITS 🏃‍♂️ (goal/G47.1, the run cycle, the box: "The 🏃‍♂️ column is on every row of the script detail tab, the first column,
+// each row's button running its own suite", "The button is the busy button exactly as it is"): the first field, a busy button
+// in its cell asking testicle.run {script, suite} for the row's own script and suite; busy until run answers, nothing after.
+//
 //   spirit.element.spirit.element.search.suite.rowElement.create(row) -> the row element
 (function () {
   var S = window.spirit = window.spirit || {};
   S.require('spirit/element/rowElement.js');
+  S.require('spirit/element/busyButton.js');
+  S.require('spirit/app/testicle/api.js');
 
   function esc(s) { return S.escapeHtml(String(s == null ? '' : s)); }
 
@@ -17,17 +23,38 @@
     var R = S.element.spirit.element.rowElement;
     var r = row || {};
     index = index || R.index(function () {});
-    return R.create({
+    var el = R.create({
       kind: 'suite',
       key: String(r.key || ''),
       index: index,
       row: r,
       fields: [
+        { name: 'run', paint: function () { return ''; } },
         { name: 'suite', paint: function (v) { return esc(v.suite); } },
         { name: 'status', paint: function (v) { return v.status ? '<span class="suite-status" style="color:#c00">' + esc(v.status) + '</span>' : ''; } },
       ],
       actions: [],
     });
+    // THE BUTTON, made anew in its cell at each draw; a press on it is its own, never the row's pick.
+    var button = null;
+    var mount = el.mount;
+    el.mount = function (hosts) {
+      mount(hosts);
+      var cell = hosts && hosts.run;
+      if (cell) {
+        cell.innerHTML = '';
+        cell.addEventListener('click', function (e) { if (e.target && e.target.closest && e.target.closest('button')) e.stopPropagation(); });
+        // It may still be loading: made once it is in, unless the row was drawn again meanwhile.
+        var made = Promise.all([S.require('spirit/element/busyButton.js'), S.require('spirit/app/testicle/api.js')]).then(function () {
+          if (button !== made) return;
+          button = S.element.spirit.element.busyButton.create(cell, { label: '🏃‍♂️', title: 'run this suite', className: 'suite-run',
+            run: function () { return S.testicle.run({ script: String(r.script || ''), suite: String(r.suite || '') }); } });
+        });
+        button = made;
+      }
+      return el;
+    };
+    return el;
   }
 
   window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/suite/rowElement.js', { create: create }); });

@@ -1,0 +1,8 @@
+{
+  "description": "Run one suite for one production script, both scoped to run://: the suite starts as its own process in this checkout, given the script when it is a general test, and its tests report themselves to testicle.set as every suite does. testicle, a test's title, runs the suite up to that test, the tests before it with it (the reporter's --test); left out, the whole suite. Answered at once with {started: true}, not waiting for the suite. Refused not-a-production-script, not-a-suite or no-such-file.",
+  "request": {
+    "script": "text",
+    "suite": "text",
+    "testicle": "text?"
+  }
+}
