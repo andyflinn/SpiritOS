@@ -27,19 +27,19 @@
 
   function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 
-  // ONE FILE'S DETAIL, in its tab's box: the title row, the full name; below it, once file.get has answered, its error or the
+  // ONE FILE'S DETAIL, in its tab's box: the title row, the full name; below it, once script.get has answered, its error or the
   // file's suite search.
   function fileDetail(box, file) {
     var gone = false;
     var made = null;
     box.innerHTML = '<div class="testicle-detail fill"><div class="testicle-title">' + esc(file) + '</div><div class="testicle-below fill"></div></div>';
     var below = box.querySelector('.testicle-below');
-    Promise.resolve(window.spirit.testicle['file.get']({ name: file })).then(function () {
+    Promise.resolve(window.spirit.testicle['script.get']({ name: file })).then(function () {
       if (gone) return;
-      made = window.spirit.element.spirit.element.search.suite.create(below, { file: file });
+      made = window.spirit.element.spirit.element.search.suite.create(below, { script: file });
     }, function (e) {
       if (gone) return;
-      below.textContent = String((e && e.message) || e || 'file.get failed');
+      below.textContent = String((e && e.message) || e || 'script.get failed');
     });
     return {
       destroy: function () {
@@ -78,7 +78,7 @@
       // The centre: the file details, one tab each.
       tabs = E.tabContainer.create(bench.center, { tabs: [] });
     }, function () { if (!gone) container.textContent = 'testicle could not be loaded.'; });
-    // A CLICK ON A PRODUCTION FILE: its tab opened and made active, at once; its detail asks file.get from there.
+    // A CLICK ON A PRODUCTION FILE: its tab opened and made active, at once; its detail asks script.get from there.
     function open(file) {
       if (gone || !tabs) return;
       tabs.add({ name: file, label: file.slice(file.lastIndexOf('/') + 1), closable: true, mount: function (box) { return fileDetail(box, file); } });

@@ -49,23 +49,28 @@ fs.mkdirSync(STATE, { recursive: true });
 const RUN = path.resolve(__dirname, '..', '..', '..');
 const TEST_MODULE = path.join(RUN, 'spirit', 'test', 'testModule.js');
 
-// THE TWO TABLES OF testicle.db (goal/G45.1's box). A boolean is 0 or 1; changed is a numeric UTC timestamp.
+// THE TWO TABLES OF testicle.db (goal/G45.1's box), script and suite. A boolean is 0 or 1; changed is a numeric UTC timestamp.
+// goal/G47.1, the box: "This cycle will also rename the \"file\" table to \"script\"", "The name changes everywhere it
+// means that table", "An existing testicle.db is renamed in place, its rows kept."
 const db = new DatabaseSync(path.join(STATE, 'testicle.db'));
-db.exec('CREATE TABLE IF NOT EXISTS file (name TEXT PRIMARY KEY, hash TEXT NOT NULL DEFAULT \'\', deleted INTEGER NOT NULL DEFAULT 0, changed INTEGER NOT NULL)');
-db.exec('CREATE TABLE IF NOT EXISTS suite (file TEXT NOT NULL, suite TEXT NOT NULL, test INTEGER NOT NULL DEFAULT 0, deleted INTEGER NOT NULL DEFAULT 0, ' +
-  'hash TEXT NOT NULL DEFAULT \'\', outcome TEXT NOT NULL DEFAULT \'\', changed INTEGER NOT NULL, PRIMARY KEY (file, suite))');
+const tableThere = function (name) { return !!db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?").get(name); };
+if (tableThere('file') && !tableThere('script')) db.exec('ALTER TABLE file RENAME TO script');
+if (tableThere('suite') && db.prepare('PRAGMA table_info(suite)').all().some(function (c) { return c.name === 'file'; })) db.exec('ALTER TABLE suite RENAME COLUMN file TO script');
+db.exec('CREATE TABLE IF NOT EXISTS script (name TEXT PRIMARY KEY, hash TEXT NOT NULL DEFAULT \'\', deleted INTEGER NOT NULL DEFAULT 0, changed INTEGER NOT NULL)');
+db.exec('CREATE TABLE IF NOT EXISTS suite (script TEXT NOT NULL, suite TEXT NOT NULL, test INTEGER NOT NULL DEFAULT 0, deleted INTEGER NOT NULL DEFAULT 0, ' +
+  'hash TEXT NOT NULL DEFAULT \'\', outcome TEXT NOT NULL DEFAULT \'\', changed INTEGER NOT NULL, PRIMARY KEY (script, suite))');
 const Q = {
-  file: db.prepare('SELECT * FROM file WHERE name = ?'),
-  putFile: db.prepare('INSERT INTO file (name, hash, deleted, changed) VALUES (?, ?, 0, ?) ON CONFLICT(name) DO UPDATE SET hash = excluded.hash, deleted = 0, changed = excluded.changed'),
-  goneFile: db.prepare('INSERT INTO file (name, hash, deleted, changed) VALUES (?, \'\', 1, ?) ON CONFLICT(name) DO UPDATE SET deleted = 1, changed = excluded.changed'),
+  script: db.prepare('SELECT * FROM script WHERE name = ?'),
+  putScript: db.prepare('INSERT INTO script (name, hash, deleted, changed) VALUES (?, ?, 0, ?) ON CONFLICT(name) DO UPDATE SET hash = excluded.hash, deleted = 0, changed = excluded.changed'),
+  goneScript: db.prepare('INSERT INTO script (name, hash, deleted, changed) VALUES (?, \'\', 1, ?) ON CONFLICT(name) DO UPDATE SET deleted = 1, changed = excluded.changed'),
   // A suite row flagged test: the suite needs running (goal/G45.1). Its outcome is kept: nothing runs a suite yet.
-  putSuite: db.prepare('INSERT INTO suite (file, suite, test, deleted, hash, outcome, changed) VALUES (?, ?, 1, 0, ?, \'\', ?) ' +
-    'ON CONFLICT(file, suite) DO UPDATE SET test = 1, deleted = 0, hash = excluded.hash, changed = excluded.changed'),
-  goneSuitesOfFile: db.prepare('UPDATE suite SET deleted = 1, changed = ? WHERE file = ? AND deleted = 0'),
+  putSuite: db.prepare('INSERT INTO suite (script, suite, test, deleted, hash, outcome, changed) VALUES (?, ?, 1, 0, ?, \'\', ?) ' +
+    'ON CONFLICT(script, suite) DO UPDATE SET test = 1, deleted = 0, hash = excluded.hash, changed = excluded.changed'),
+  goneSuitesOfScript: db.prepare('UPDATE suite SET deleted = 1, changed = ? WHERE script = ? AND deleted = 0'),
   goneRowsOfSuite: db.prepare('UPDATE suite SET deleted = 1, changed = ? WHERE suite = ? AND deleted = 0'),
-  suitesOfFile: db.prepare('SELECT * FROM suite WHERE file = ? ORDER BY suite'),
+  suitesOfScript: db.prepare('SELECT * FROM suite WHERE script = ? ORDER BY suite'),
   rowsOfSuite: db.prepare('SELECT * FROM suite WHERE suite = ?'),
-  suiteRow: db.prepare('SELECT * FROM suite WHERE file = ? AND suite = ?'),
+  suiteRow: db.prepare('SELECT * FROM suite WHERE script = ? AND suite = ?'),
 };
 
 function posix(p) { return String(p).split(path.sep).join('/'); }
@@ -115,22 +120,22 @@ function apply(changed, P) {
   const files = new Set();
   const written = new Map();
   const touched = function (file, suite) { written.set(file + '|' + suite, [file, suite]); };
-  const fileUp = function (file) { Q.putFile.run(file, hash(file), now); files.add(file); };
+  const fileUp = function (file) { Q.putScript.run(file, hash(file), now); files.add(file); };
   const suiteUp = function (file, suite) { Q.putSuite.run(file, suite, hash(suite), now); touched(file, suite); };
   db.exec('BEGIN');
   try {
     changed.forEach(function (rel) {
       if (isSuite(rel)) {
-        if (!there(rel)) { Q.rowsOfSuite.all(rel).forEach(function (r) { touched(r.file, r.suite); }); Q.goneRowsOfSuite.run(now, rel); return; }
+        if (!there(rel)) { Q.rowsOfSuite.all(rel).forEach(function (r) { touched(r.script, r.suite); }); Q.goneRowsOfSuite.run(now, rel); return; }
         // The files it concerns: the one it is the own test of, and every file a general test judges.
         const files = (P.bySuite[rel] || []).slice();
         const own = fileOfOwnTest(rel);
         if (there(own) && files.indexOf(own) === -1) files.push(own);
-        files.forEach(function (file) { if (!Q.file.get(file)) fileUp(file); suiteUp(file, rel); });
+        files.forEach(function (file) { if (!Q.script.get(file)) fileUp(file); suiteUp(file, rel); });
         return;
       }
-      if (!there(rel)) { Q.goneFile.run(rel, now); files.add(rel); Q.suitesOfFile.all(rel).forEach(function (r) { touched(r.file, r.suite); }); Q.goneSuitesOfFile.run(now, rel); return; }
-      const row = Q.file.get(rel);
+      if (!there(rel)) { Q.goneScript.run(rel, now); files.add(rel); Q.suitesOfScript.all(rel).forEach(function (r) { touched(r.script, r.suite); }); Q.goneSuitesOfScript.run(now, rel); return; }
+      const row = Q.script.get(rel);
       if (row && !row.deleted && row.hash === hash(rel)) return; // the same bytes: nothing changed
       fileUp(rel);
       const suites = (P.byFile[rel] || []).slice();
@@ -143,11 +148,11 @@ function apply(changed, P) {
     db.exec('ROLLBACK');
     throw e;
   }
-  files.forEach(function (file) { const r = Q.file.get(file); if (r) appServer.publish({ testicle: { table: 'file', row: served(r) } }); });
+  files.forEach(function (file) { const r = Q.script.get(file); if (r) appServer.publish({ testicle: { table: 'script', row: served(r) } }); });
   written.forEach(function (p) { const r = Q.suiteRow.get(p[0], p[1]); if (r) appServer.publish({ testicle: { table: 'suite', row: suiteServed(r) } }); });
 }
 
-// THE QUEUE: what changed since the last write, and whether a write is under way. busy is either, or a file.get making
+// THE QUEUE: what changed since the last write, and whether a write is under way. busy is either, or a script.get making
 // rows.
 const pending = new Set();
 let working = false;
@@ -177,10 +182,10 @@ watcher.on('all', function (event, full) {
 });
 watcher.on('error', function (e) { console.error('testicle: the watcher: ' + (e && e.message || e)); });
 
-// A file row as a verb answers it: its deleted a boolean.
+// A script row as a verb answers it: its deleted a boolean.
 function served(row) { return { name: row.name, hash: row.hash, deleted: !!row.deleted, changed: Number(row.changed) }; }
-// A suite row as a search and the stream carry it: its key file|suite, its status "needs running" while it is flagged.
-function suiteServed(r) { return { key: r.file + '|' + r.suite, file: r.file, suite: r.suite, test: !!r.test, status: r.test ? 'needs running' : '', deleted: !!r.deleted, outcome: r.outcome, changed: Number(r.changed) }; }
+// A suite row as a search and the stream carry it: its key script|suite, its status "needs running" while it is flagged.
+function suiteServed(r) { return { key: r.script + '|' + r.suite, script: r.script, suite: r.suite, test: !!r.test, status: r.test ? 'needs running' : '', deleted: !!r.deleted, outcome: r.outcome, changed: Number(r.changed) }; }
 function refused(code) { return Object.assign(new Error(code), { refusal: code }); }
 
 appServer.serve({
@@ -193,32 +198,33 @@ appServer.serve({
   // returns the error \"not a production script\"", "If the file does not exist, it returns the error \"no such file\", so
   // the caller can tell the difference", "If the file does not have its file and suite rows, they are created
   // automatically", "It creates them with the same code the server uses when it discovers a file change and no record
-  // exists: the suites are flagged \"needs testing\"", "The server then returns the file row."
-  'file.get': {
+  // exists: the suites are flagged \"needs testing\"", "The server then returns the file row." Named script.get since the
+  // rename (the box: "the verb testicle.file.get becomes testicle.script.get, its argument still name").
+  'script.get': {
     request: { name: '' }, reply: { name: '', hash: '', deleted: false, changed: 0 },
     handler: function (a) {
       const name = posix(String(a.name || '')).replace(/^\.?\//, '');
       if (!/\.js$/.test(name) || isSuite(name) || name.indexOf('..') !== -1 || ignored(path.join(RUN, name))) throw refused('not-a-production-script');
       if (!there(name)) throw refused('no-such-file');
-      const row = Q.file.get(name);
+      const row = Q.script.get(name);
       if (row) return served(row);
       getting += 1;
-      return pairs().then(function (P) { apply([name], P); return served(Q.file.get(name)); })
+      return pairs().then(function (P) { apply([name], P); return served(Q.script.get(name)); })
         .finally(function () { getting -= 1; });
     },
   },
   // goal/G47.1, the verbs cycle, the box: "A standard table search response", "The file row owns its suite rows: the suite
   // table's key is file and suite. So suite.search takes the production file and answers that file's suite rows only, each
   // suite once, with its filename and its status; the words narrow among them", "The suite search returns both: the
-  // filename AND its status \"needs running\"". Ranked over the whole row as it is served (goal/G41.28), as the agent's
+  // filename AND its status \"needs running\"", "suite.search takes {script, text}". Ranked over the whole row as it is served (goal/G41.28), as the agent's
   // tables search; with no words, all of them, by name.
   'suite.search': {
-    request: { file: '', text: '' }, reply: { items: [], more: false },
+    request: { script: '', text: '' }, reply: { items: [], more: false },
     handler: function (a) {
       const words = String(a.text || '').trim();
       const bucket = createProbabilityBucket(Infinity);
       let n = 0;
-      Q.suitesOfFile.all(String(a.file || '')).forEach(function (r) {
+      Q.suitesOfScript.all(String(a.script || '')).forEach(function (r) {
         const row = suiteServed(r);
         const score = words ? Number(probabilityStringObjectMatch(words, row)) || 0 : 1;
         n += 1;
