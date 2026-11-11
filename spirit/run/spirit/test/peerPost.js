@@ -36,9 +36,9 @@ test.run('the world: the file is read, and its code, comments left out, still ho
   const c = code(f);
   return (c !== null && /module\.exports/.test(c)) ||
     (c === null ? path.relative(RUN, f) + ' is not there: nothing judged' : path.relative(RUN, f) + '\'s code holds no /module\\.exports/: the comment stripper ate it, nothing judged');
-}, 1000);
+}, test.limit.quick);
 test.run('peerPost.js\'s code names no admitted mark', 0.2, function () {
   const h = hits(f, /admit/i);
   if (h === null) return 'peerPost.js is not there: nothing judged';
   return !h.length || 'peerPost.js\'s code still marks or reads admitted: ' + short(h);
-}, 1000);
+}, test.limit.quick);

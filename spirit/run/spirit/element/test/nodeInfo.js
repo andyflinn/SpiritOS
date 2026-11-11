@@ -155,115 +155,115 @@ let w, NI, host, made, said, label, desc, card, N, all, refused, h2, m2, N2, sil
   h6, m6, letRel, late2, h7, m7, broken, h8;
 test.run('spirit/element/nodeInfo.js is there', 0.2, function () {
   return (!!SRC) ? true : 'there is no spirit/element/nodeInfo.js';
-}, 1000);
+}, test.limit.quick);
 test.run('it sets spirit.element.spirit.element.nodeInfo = { create }', 0.2, function () {
   // an element mounted the new shell's way, that loads what it uses itself (rule/26)
   w = world();
   NI = w.els.nodeInfo;
   return (!!NI && typeof NI.create === 'function') ? true : 'elements: ' + short(Object.keys(w.els));
-}, 1000);
+}, test.limit.quick);
 test.run('it requires spirit/element/changeMyLabel.js', 0.2, function () {
   return (w.required.indexOf('spirit/element/changeMyLabel.js') !== -1) ? true : 'required: ' + short(w.required);
-}, 1000);
+}, test.limit.quick);
 test.run('it requires spirit/element/changeMyDescription.js', 0.2, function () {
   return (w.required.indexOf('spirit/element/changeMyDescription.js') !== -1) ? true : 'required: ' + short(w.required);
-}, 1000);
+}, test.limit.quick);
 test.run('it requires spirit/element/joinForm.js', 0.2, function () {
   return (w.required.indexOf('spirit/element/joinForm.js') !== -1) ? true : 'required: ' + short(w.required);
-}, 1000);
+}, test.limit.quick);
 test.run('it requires spirit/element/faceForm.js', 0.2, function () {
   return (w.required.indexOf('spirit/element/faceForm.js') !== -1) ? true : 'required: ' + short(w.required);
-}, 1000);
+}, test.limit.quick);
 test.run('it requires spirit/element/rowForm.js', 0.2, function () {
   return (w.required.indexOf('spirit/element/rowForm.js') !== -1) ? true : 'required: ' + short(w.required);
-}, 1000);
+}, test.limit.quick);
 test.run('it requires spirit/element/panel.js', 0.2, function () {
   return (w.required.indexOf('spirit/element/panel.js') !== -1) ? true : 'required: ' + short(w.required);
-}, 1000);
+}, test.limit.quick);
 test.run('and the rotate key dialog only when it is opened', 0.2, function () {
   return (w.required.indexOf('spirit/element/rotateKey.js') === -1) ? true : 'rotateKey.js required at load';
-}, 1000);
+}, test.limit.quick);
 test.run('no spirit.shell.activateApp, no dialog of the old shell', 0.2, function () {
   return (!/\bactivateApp\b|\bspirit\.shell\b|\bcallDialog\b/.test(CODE)) ? true : 'nodeInfo.js still mounts or opens the old shell\'s way';
-}, 1000);
+}, test.limit.quick);
 test.run('it asks through the spirit object\'s families: no api, no api.verb, no peerPost', 0.2, function () {
   // Andy: "every fucking element gets the interfaces it needs": the spirit object's families, no api handed.
   return (!/\bapi\s*\.|\.verb\s*\(|\bpeerPost\b/.test(CODE)) ? true : 'nodeInfo.js still asks through an api';
-}, 1000);
+}, test.limit.quick);
 test.run('nothing ticks: no timer', 0.2, function () {
   // Nothing ticks (the file's own rule): nothing here changes without this element asking.
   return (!/\bsetInterval\b|\bsetTimeout\b/.test(CODE)) ? true : 'nodeInfo.js runs a timer';
-}, 1000);
+}, test.limit.quick);
 test.run('no relay table, no push of the name to every relay, no rename', 0.2, function () {
   // "What each relay calls you" is dropped (Andy, 2026-10-27), its code with it.
   return (!/What each relay calls you/.test(SRC) && !/infoDrawRelays|infoPush|infoPushed|rename\s*:/.test(SRC)) ? true : 'nodeInfo.js still holds the relay table or the rename';
-}, 1000);
+}, test.limit.quick);
 test.run('create(container, opts) answers { ready, destroy() }', 0.2, function () {
   host = node('<container>');
   made = NI.create(host, {});
   return (!!made && typeof made.destroy === 'function' && made.ready && typeof made.ready.then === 'function') ? true : 'create answered ' + short(made && Object.keys(made));
-}, 1000);
+}, test.limit.quick);
 test.run('its heading: What this node says about itself', 0.2, async function () {
   await made.ready;
   await settle();
   // the page: what it says first, a slot for each part
   said = text(host);
   return (/What this node says about itself/.test(said)) ? true : 'says: ' + short(said);
-}, 1000);
+}, test.limit.quick);
 test.run('and the one note before the boxes: these two are answered to anybody who asks', 0.2, function () {
   return (said.indexOf('Anybody who asks this node is told these two things, whether or not you have ever met. Nothing else about this box is answered to a stranger.') !== -1) ? true : 'says: ' + short(said);
-}, 1000);
+}, test.limit.quick);
 const slotWhy = function (k) { return 'no data-info="' + k + '": ' + short(host.kids.map(function (k2) { return k2.innerHTML; }).join('').slice(0, 200)); };
 test.run('it has a slot for its name', 0.2, function () {
   return (!!w.slot(host, 'name')) ? true : slotWhy('name');
-}, 1000);
+}, test.limit.quick);
 test.run('it has a slot for its description', 0.2, function () {
   return (!!w.slot(host, 'description')) ? true : slotWhy('description');
-}, 1000);
+}, test.limit.quick);
 test.run('it has a slot for its said', 0.2, function () {
   return (!!w.slot(host, 'said')) ? true : slotWhy('said');
-}, 1000);
+}, test.limit.quick);
 test.run('it has a slot for its email', 0.2, function () {
   return (!!w.slot(host, 'email')) ? true : slotWhy('email');
-}, 1000);
+}, test.limit.quick);
 test.run('it has a slot for its face', 0.2, function () {
   return (!!w.slot(host, 'face')) ? true : slotWhy('face');
-}, 1000);
+}, test.limit.quick);
 test.run('it has a slot for its rotate', 0.2, function () {
   return (!!w.slot(host, 'rotate')) ? true : slotWhy('rotate');
-}, 1000);
+}, test.limit.quick);
 test.run('it empties its container and draws into one fill box', 0.2, function () {
   return (host.innerHTML === '' && host.kids.length === 1 && /\bfill\b/.test(host.kids[0].className)) ? true : 'container: ' + short({ html: host.innerHTML, kids: host.kids.length });
-}, 1000);
+}, test.limit.quick);
 test.run('the name is changeMyLabel, in the name slot', 0.2, function () {
   // its two fields are the two elements, handed nothing (goal/G41.6)
   label = w.made.filter(function (m) { return m.kind === 'label'; });
   desc = w.made.filter(function (m) { return m.kind === 'description'; });
   return (label.length === 1 && label[0].host === w.slot(host, 'name')) ? true : 'made: ' + short(w.made.map(function (m) { return m.kind; }));
-}, 1000);
+}, test.limit.quick);
 test.run('the description is changeMyDescription, in the description slot', 0.2, function () {
   return (desc.length === 1 && desc[0].host === w.slot(host, 'description')) ? true : 'made: ' + short(w.made.map(function (m) { return m.kind; }));
-}, 1000);
+}, test.limit.quick);
 test.run('each made with its container alone: no api handed, each gets what it needs itself', 0.2, function () {
   return (w.made.every(function (m) { return m.args === 1 && m.opts === undefined; })) ? true : 'handed: ' + short(w.made.map(function (m) { return m.opts; }));
-}, 1000);
+}, test.limit.quick);
 test.run('it asks spirit.node.card({}) once', 0.2, function () {
   // the card: node.card, kept in the node family's cache (goal/G41.28)
   card = w.calls.filter(function (c) { return c.name === 'node.card'; });
   return (card.length === 1 && JSON.stringify(card[0].args) === '{}') ? true : 'calls: ' + short(w.calls);
-}, 1000);
+}, test.limit.quick);
 test.run('it loads the node manager, and keeps node.card\'s answer in spirit.data.node.data\'s card, which each field draws itself from', 0.2, function () {
   N = ((w.S.data || {}).node || {}).data;
   return ((w.managers || []).indexOf('node') !== -1 && !!N && !!N.card.get() && N.card.get().name === 'Andy' && N.card.get().description === 'a node') ? true : 'managers ' + short(w.managers) + ', card ' + short(N && N.card.get());
-}, 1000);
+}, test.limit.quick);
 test.run('a card read says nothing', 0.2, function () {
   return (w.slot(host, 'said').textContent === '') ? true : 'said: ' + short(w.slot(host, 'said').textContent);
-}, 1000);
+}, test.limit.quick);
 test.run('no key is shown: not the node\'s, not a relay\'s', 0.2, function () {
   // No key is shown (goal/G40.10, box v15; Andy: "remove ANY indication of keys from all user interfaces").
   all = host.kids.map(function (k) { return k.innerHTML; }).join('') + under(host).map(function (k) { return k.innerHTML + k.textContent; }).join('');
   return (!/NODEKEY|RELAYKEY/.test(all) && !/\bkey\b/i.test(said.replace(/cipher key/g, ''))) ? true : 'a key shows: ' + short(said);
-}, 1000);
+}, test.limit.quick);
 test.run('a card refused is said in the node\'s words, and nothing is kept', 0.2, async function () {
   refused = world({ card: function () { return { status: 403, body: { ok: false, error: 'owner only' } }; } });
   h2 = node('<container>');
@@ -272,7 +272,7 @@ test.run('a card refused is said in the node\'s words, and nothing is kept', 0.2
   await settle();
   N2 = refused.S.data.node && refused.S.data.node.data;
   return (/owner only/.test(refused.slot(h2, 'said').textContent) && !(N2 && N2.card.get())) ? true : 'said ' + short(refused.slot(h2, 'said').textContent) + ', card ' + short(N2 && N2.card.get());
-}, 1000);
+}, test.limit.quick);
 test.run('a node that does not answer is said: node.card did not answer', 0.2, async function () {
   silent = world({ card: function () { return { status: 0, body: null }; } });
   h3 = node('<container>');
@@ -280,32 +280,32 @@ test.run('a node that does not answer is said: node.card did not answer', 0.2, a
   await m3.ready;
   await settle();
   return (/node\.card did not answer/.test(silent.slot(h3, 'said').textContent)) ? true : 'said ' + short(silent.slot(h3, 'said').textContent);
-}, 1000);
+}, test.limit.quick);
 test.run('it asks spirit.relay.status(\'\') once', 0.2, function () {
   // the two forms: the email form always, the face form only for a starred relay (goal/G43.27)
   return (w.statuses === 1 && w.calls.filter(function (c) { return c.name === 'relay.status'; })[0].args === '') ? true : 'relay.status asked ' + w.statuses + ' times';
-}, 1000);
+}, test.limit.quick);
 test.run('the email form (joinForm) above the face form (faceForm), each in its slot', 0.2, function () {
   join = w.forms.filter(function (f) { return f.form === 'join'; }).pop();
   face = w.forms.filter(function (f) { return f.form === 'face'; }).pop();
   return (!!join && !!face && join.host === w.slot(host, 'email') && face.host === w.slot(host, 'face')) ? true : 'forms: ' + short(w.forms.map(function (f) { return f.form; }));
-}, 1000);
+}, test.limit.quick);
 const urls = function (f) { return f.o.relays.map(function (r) { return r.url; }).join(','); };
 test.run('each is handed every relay this node lists, as relay.status answers them in its body (the email form always; the face form picks a seated, starred one itself)', 0.2, function () {
   return (urls(join) === ROWS.map(function (r) { return r.url; }).join(',') && urls(face) === urls(join)) ? true : 'join ' + urls(join) + ', face ' + urls(face);
-}, 1000);
+}, test.limit.quick);
 test.run('the email form is not narrowed to the seated, so Join shows where no seat is held; neither form is handed an escape (each escapes with spirit.escapeHtml itself, goal/G43.24)', 0.2, function () {
   return (!('pick' in join.o) && !('escape' in join.o) && !('escape' in face.o)) ? true : 'join ' + short({ pick: join.o.pick, escape: 'escape' in join.o }) + ', face escape ' + ('escape' in face.o);
-}, 1000);
+}, test.limit.quick);
 test.run('the face form is handed a reload', 0.2, function () {
   return (typeof face.o.reload === 'function') ? true : 'face: ' + short(Object.keys(face.o));
-}, 1000);
+}, test.limit.quick);
 test.run('its reload asks relay.status again and draws both forms again', 0.2, async function () {
   nForms = w.forms.length;
   await face.o.reload();
   await settle();
   return (w.statuses === 2 && w.forms.length === nForms + 2) ? true : 'relay.status ' + w.statuses + ', forms drawn ' + (w.forms.length - nForms);
-}, 1000);
+}, test.limit.quick);
 test.run('the fields and the card do not wait for the relays', 0.2, async function () {
   // The relays are a probe of every mailbox and land when they land: the fields do not wait for them.
   letRelays = null;
@@ -315,12 +315,12 @@ test.run('the fields and the card do not wait for the relays', 0.2, async functi
   await m4.ready;
   await settle();
   return (slow.made.length === 2 && !!(slow.S.data.node && slow.S.data.node.data.card.get()) && slow.forms.length === 0) ? true : 'fields ' + slow.made.length + ', forms ' + slow.forms.length;
-}, 1000);
+}, test.limit.quick);
 test.run('the forms are drawn when the relays land', 0.2, async function () {
   letRelays(answered(ROWS));
   await settle();
   return (slow.forms.length === 2) ? true : 'forms ' + slow.forms.length;
-}, 1000);
+}, test.limit.quick);
 test.run('relay.status refused, the forms are drawn over no relay, nothing thrown', 0.2, async function () {
   none = world({ relaysRefused: true });
   h5 = node('<container>');
@@ -328,41 +328,41 @@ test.run('relay.status refused, the forms are drawn over no relay, nothing throw
   await m5.ready;
   await settle();
   return (none.forms.length === 2 && none.forms.every(function (f) { return Array.isArray(f.o.relays) && f.o.relays.length === 0; })) ? true : 'forms: ' + short(none.forms.map(function (f) { return f.o.relays; }));
-}, 1000);
+}, test.limit.quick);
 test.run('one rowForm in the rotate slot, its icon 🆘 and its button Rotate this node\'s cipher key', 0.2, function () {
   // the key rotation, a rowForm: 🆘 [Rotate this node's cipher key] (goal/G41.27)
   rf = w.rotate();
   return (!!rf && w.rowForms.filter(function (f) { return /Rotate/.test(f.opts.button || ''); }).length === 1 && rf.opts.icon === '🆘' && rf.opts.button === 'Rotate this node\'s cipher key' && rf.container === w.slot(host, 'rotate')) ? true : 'rowForms: ' + short(w.rowForms.map(function (f) { return f.opts; }));
-}, 1000);
+}, test.limit.quick);
 test.run('its span holds nothing', 0.2, function () {
   return (rf.span.kids.length === 0 && rf.span.nodes.length === 0 && !String(rf.span.innerHTML || '').trim()) ? true : 'span: ' + short(rf.span.innerHTML);
-}, 1000);
+}, test.limit.quick);
 test.run('it draws no button of its own', 0.2, function () {
   return (!/<button/.test(host.kids.map(function (k) { return k.innerHTML; }).join('') + under(host).map(function (k) { return k.innerHTML; }).join(''))) ? true : 'markup holds a button';
-}, 1000);
+}, test.limit.quick);
 test.run('one stack, panel.create(its box, its page): a layer covers all of Info', 0.2, function () {
   // without a mounter's stack: the dialog opens over Info through its own panel.js stack (like fstat)
   return (w.panels.length === 1 && w.panels[0].host === host.kids[0] && !!w.panels[0].under && w.panels[0].under === host.kids[0].kids[0]) ? true : 'stacks: ' + short(w.panels.map(function (s) { return { host: s.host === host.kids[0], under: !!s.under }; }));
-}, 1000);
+}, test.limit.quick);
 test.run('its button opens rotateKey in that stack: 🆘 Rotate this node\'s cipher key, with a fill', 0.2, async function () {
   rf.button.fire('click');
   await settle();
   op = w.panels[0] && w.panels[0].opens[0];
   return (!!op && op.key === 'rotateKey' && op.spec.icon === '🆘' && op.spec.label === 'Rotate this node\'s cipher key' && typeof op.spec.fill === 'function') ? true : 'opened: ' + short(op && { key: op.key, icon: op.spec.icon, label: op.spec.label });
-}, 1000);
+}, test.limit.quick);
 test.run('pressing it rotates nothing: the dialog does, on its own two presses', 0.2, function () {
   return (w.calls.filter(function (c) { return /rotate/i.test(c.name); }).length === 0) ? true : 'calls: ' + short(w.calls);
-}, 1000);
+}, test.limit.quick);
 test.run('its fill loads spirit/element/rotateKey.js and makes spirit.element.spirit.element.rotateKey in the layer\'s pane, answering it to destroy', 0.2, async function () {
   pane = node('<pane>');
   filled = await op.spec.fill(pane, function () { return false; });
   return (w.required.indexOf('spirit/element/rotateKey.js') !== -1 && w.rotateKeys.length === 1 && w.rotateKeys[0].pane === pane && filled === w.rotateKeys[0]) ? true : 'required ' + short(w.required.slice(-1)) + ', made ' + w.rotateKeys.length;
-}, 1000);
+}, test.limit.quick);
 test.run('a layer closed before the dialog loads gets nothing made', 0.2, async function () {
   pane2 = node('<pane>');
   notFilled = await op.spec.fill(pane2, function () { return true; });
   return (notFilled === null && w.rotateKeys.length === 1) ? true : 'made ' + w.rotateKeys.length + ', answered ' + short(notFilled);
-}, 1000);
+}, test.limit.quick);
 test.run('it makes no stack of its own', 0.2, async function () {
   // with the mounter's stack, opts.open: the dialog opens there, over all of Info
   wo = world();
@@ -372,27 +372,27 @@ test.run('it makes no stack of its own', 0.2, async function () {
   await mo.ready;
   await settle();
   return (wo.panels.length === 0) ? true : 'stacks made: ' + wo.panels.length;
-}, 1000);
+}, test.limit.quick);
 test.run('its button opens rotateKey through opts.open', 0.2, async function () {
   wo.rotate().button.fire('click');
   await settle();
   return (opened.length === 1 && opened[0].key === 'rotateKey' && opened[0].spec.label === 'Rotate this node\'s cipher key' && typeof opened[0].spec.fill === 'function') ? true : 'opened: ' + short(opened.map(function (x) { return x.key; }));
-}, 1000);
+}, test.limit.quick);
 test.run('destroy destroys both fields', 0.2, function () {
   // destroy
   made.destroy();
   return (w.destroyed.indexOf('label') !== -1 && w.destroyed.indexOf('description') !== -1) ? true : 'destroyed: ' + short(w.destroyed);
-}, 1000);
+}, test.limit.quick);
 test.run('and both forms, each made once by its create', 0.2, function () {
   // rule/8: each form holds a contact watch, let go only by its destroy.
   return (w.destroyed.indexOf('joinForm') !== -1 && w.destroyed.indexOf('faceForm') !== -1) ? true : 'destroyed: ' + short(w.destroyed);
-}, 1000);
+}, test.limit.quick);
 test.run('and its stack, the open dialog with it', 0.2, function () {
   return (w.panels[0].destroyed === true) ? true : 'stack destroyed: ' + w.panels[0].destroyed;
-}, 1000);
+}, test.limit.quick);
 test.run('and empties its container', 0.2, function () {
   return (host.innerHTML === '' && host.kids.length === 0) ? true : 'left: ' + short({ html: host.innerHTML, kids: host.kids.length });
-}, 1000);
+}, test.limit.quick);
 test.run('a card that lands after destroy is not kept', 0.2, async function () {
   letCard = null;
   late = world({ cardHeld: new Promise(function (r) { letCard = r; }), relaysHeld: new Promise(function () {}) });
@@ -403,7 +403,7 @@ test.run('a card that lands after destroy is not kept', 0.2, async function () {
   letCard(CARD);
   await settle();
   return (!(late.S.data.node && late.S.data.node.data.card.get())) ? true : 'kept: ' + short(late.S.data.node && late.S.data.node.data.card.get());
-}, 1000);
+}, test.limit.quick);
 test.run('relays that land after destroy draw no form', 0.2, async function () {
   letRel = null;
   late2 = world({ relaysHeld: new Promise(function (r) { letRel = r; }) });
@@ -414,7 +414,7 @@ test.run('relays that land after destroy draw no form', 0.2, async function () {
   letRel(answered(ROWS));
   await settle();
   return (late2.forms.length === 0) ? true : 'forms drawn: ' + late2.forms.length;
-}, 1000);
+}, test.limit.quick);
 test.run('a part refused: Info could not be loaded.', 0.2, async function () {
   // a part that cannot be loaded is said
   broken = world({ refuse: ['spirit/element/changeMyLabel.js'] });
@@ -422,7 +422,7 @@ test.run('a part refused: Info could not be loaded.', 0.2, async function () {
   broken.els.nodeInfo.create(h8, {});
   await settle();
   return (/Info could not be loaded/.test(broken.slot(h8, 'said').textContent)) ? true : 'said: ' + short(broken.slot(h8, 'said').textContent);
-}, 1000);
+}, test.limit.quick);
 
 // The parts that were once files of their own (nodeInfo-forms.js, nodeInfo-parts.js, nodeInfo-rotate.js): one test
 // file per script (spirit/run/spirit/test/TEST_SYSTEM.md), each part a section of it, its tests run after these, in order.
@@ -548,36 +548,36 @@ function formsPart() {
     // the world
     plain = await info(rows(''));
     return (!!plain.made && !!plain.email && !!plain.face) ? true : 'Info made ' + !!plain.made + ', email slot ' + !!plain.email + ', face slot ' + !!plain.face + ': nothing judged';
-  }, 1000);
+  }, test.limit.quick);
   test.run('the world: the real joinForm.js and faceForm.js ran on the page', 0.2, function () {
     // goal/G43.32: they stand at their paths.
     placed = plain.S.element.spirit.element;
     return (!!placed.joinForm && !!placed.faceForm) ? true : 'joinForm ' + !!placed.joinForm + ', faceForm ' + !!placed.faceForm;
-  }, 1000);
+  }, test.limit.quick);
   test.run('seats on A and O, none starred: the email form shows', 0.2, function () {
     // 9. the email form always
     return (plain.shows(plain.email, '.sp-join-email')) ? true : 'no email form: ' + short(plain.email && plain.email.innerHTML);
-  }, 1000);
+  }, test.limit.quick);
   test.run('A starred: the email form shows', 0.2, async function () {
     starred = await info(rows('A'));
     return (starred.shows(starred.email, '.sp-join-email')) ? true : 'no email form: ' + short(starred.email && starred.email.innerHTML);
-  }, 1000);
+  }, test.limit.quick);
   test.run('no seat on any relay: the email form still shows', 0.2, async function () {
     unseated = await info(rows('').map(function (r) { return Object.assign({}, r, { claimed: false, owned: false }); }));
     return (unseated.shows(unseated.email, '.sp-join-email')) ? true : 'no email form with no seat: ' + short(unseated.email && unseated.email.innerHTML);
-  }, 1000);
+  }, test.limit.quick);
   test.run('no relay starred: no face form', 0.2, function () {
     // 10. the face form only for a starred relay
     return (!plain.shows(plain.face, '.sp-face-name')) ? true : 'a face form shows with no relay starred: ' + short(plain.face && plain.face.innerHTML);
-  }, 1000);
+  }, test.limit.quick);
   test.run('A starred: the face form shows', 0.2, function () {
     return (starred.shows(starred.face, '.sp-face-name')) ? true : 'A starred, no face form: ' + short(starred.face && starred.face.innerHTML);
-  }, 1000);
+  }, test.limit.quick);
   test.run('it offers the starred relay alone', 0.2, function () {
     drawn = starred.face ? [starred.face].concat(under(starred.face)).map(function (k) { return k.innerHTML; }).join(' ') : '';
     opts = (drawn.match(/<option value="([^"]*)"/g) || []).map(function (o) { return o.replace(/^<option value="|"$/g, ''); });
     return (opts.length === 1 && opts[0] === 'https://a.example') ? true : 'it offers ' + short(opts);
-  }, 1000);
+  }, test.limit.quick);
 }
 
 function partsPart() {
@@ -601,16 +601,16 @@ function partsPart() {
     // the box, 6: "They move into one new element, spirit/element/nodeInfo.js (Q2)"
     nodeInfo = code(path.join(RUN, 'spirit', 'element', 'nodeInfo.js'));
     return (nodeInfo.length > 0) ? true : 'no spirit/element/nodeInfo.js';
-  }, 1000);
+  }, test.limit.quick);
   test.run('nodeInfo asks relay.status, the relays this node holds a seat on', 0.2, function () {
     return (/\brelay\W{1,4}status\b/.test(nodeInfo)) ? true : 'nodeInfo.js asks no relay.status';
-  }, 1000);
+  }, test.limit.quick);
   test.run('nodeInfo puts the card into the node cache (node.card)', 0.2, function () {
     return (/\bnode\W{1,4}card\b/.test(nodeInfo)) ? true : 'nodeInfo.js asks no node.card';
-  }, 1000);
+  }, test.limit.quick);
   test.run('nodeInfo draws the rotate button', 0.2, function () {
     return (/Rotate this node/.test(nodeInfo)) ? true : 'nodeInfo.js draws no rotate button';
-  }, 1000);
+  }, test.limit.quick);
 }
 
 function rotatePart() {
@@ -697,64 +697,64 @@ function rotatePart() {
     // nodeInfo-rotate: the rotate key dialog, an element opened over Info through panel.js (goal/G43.24)
     // the box, 8: "shell/rotateKey/ goes, its line in coreFiles.js's INTRINSIC list with it, and its test moves"
     return (!fs.existsSync(path.join(RUN, 'shell', 'rotateKey'))) ? true : 'shell/rotateKey/ is still there';
-  }, 1000);
+  }, test.limit.quick);
   test.run('no coded INTRINSIC list lists shell/rotateKey: coreFiles.js holds none (goal/G43.30)', 0.2, function () {
     core = null;
     try { core = require(path.join(RUN, 'spirit', 'coreFiles.js')); } catch (e) { core = null; }
     // Since goal/G43.30 there is no coded INTRINSIC list at all, so none can list shell/rotateKey.
     return (!!core && !('INTRINSIC' in core)) ? true : 'coreFiles.js ' + (core ? 'still answers an INTRINSIC list' : 'did not load');
-  }, 1000);
+  }, test.limit.quick);
   test.run('its test is in the element\'s test folder: spirit/element/test/rotateKey.js and .md', 0.2, function () {
     return (fs.existsSync(path.join(RUN, 'spirit', 'element', 'test', 'rotateKey.js')) && fs.existsSync(path.join(RUN, 'spirit', 'element', 'test', 'rotateKey.md'))) ? true : 'no spirit/element/test/rotateKey.js and .md';
-  }, 1000);
+  }, test.limit.quick);
   test.run('no code opens shell/rotateKey', 0.2, function () {
     // What runs, its comments out and its tests out: nothing opens the old dialog any more.
     opening = treeFiles().filter(function (f) { return /\.(js|html)$/.test(f) && f.split('/').indexOf('test') === -1; })
       .filter(function (f) { return /shell\/rotateKey(?![\w-])/.test(code(path.join(REPO, f))); });
     return (!opening.length) ? true : 'still opening it: ' + short(opening);
-  }, 1000);
+  }, test.limit.quick);
   test.run('spirit/element/rotateKey.js is there', 0.2, function () {
     // the box, 8: "becomes an element, spirit/element/rotateKey.js, mounted the new shell's way (requirement 7)"
     el = code(ELEMENT);
     return (el.length > 0) ? true : 'no spirit/element/rotateKey.js';
-  }, 1000);
+  }, test.limit.quick);
   test.run('rotateKey.js mounts through no spirit.shell.activateApp', 0.2, function () {
     return (el.length > 0 && !/\bactivateApp\b/.test(el) && !/\bspirit\.shell\b/.test(el)) ? true : el.length ? 'rotateKey.js calls spirit.shell.activateApp' : 'no rotateKey.js: nothing judged';
-  }, 1000);
+  }, test.limit.quick);
   test.run('nodeInfo opens no dialog of the old shell (no callDialog)', 0.2, function () {
     ni = code(path.join(RUN, 'spirit', 'element', 'nodeInfo.js'));
     return (ni.length > 0 && !/\bcallDialog\b/.test(ni)) ? true : ni.length ? 'nodeInfo.js calls callDialog' : 'no spirit/element/nodeInfo.js: nothing judged';
-  }, 1000);
+  }, test.limit.quick);
   test.run('the world: a scratch node comes up', 0.2, async function () {
     s = scratch();
     N = null;
     c = null;
     N = await boot(s.run);
     return (N.up) ? true : 'the scratch node did not come up: nothing judged';
-  }, 4000);
+  }, test.limit.slow);
   test.run('the world: the node answers its card', 0.2, async function () {
     if (!N || !N.up) return 'no scratch node: the world failed';
     card0 = await call(N.base, 'node.card', {});
     return (card0.status === 200 && !!card0.body) ? true : 'node.card: ' + card0.status + ' ' + short(card0.text);
-  }, 1000);
+  }, test.limit.quick);
   test.run('the world: Chrome is here', 0.2, function () {
     if (!N || !N.up) return 'no scratch node: the world failed';
     where = findChrome();
     return (!!where) ? true : 'no Chrome here: the page was not judged';
-  }, 1000);
+  }, test.limit.quick);
   test.run('the world: a Chrome page opens', 0.2, async function () {
     if (!N || !N.up) return 'no scratch node: the world failed';
     if (!where) return 'no Chrome here: the world failed';
     c = await chromePage(where);
     return (!c.error) ? true : 'Chrome: ' + c.error;
-  }, 2000);
+  }, test.limit.quick);
   test.run('the world: the face page has its spirit', 0.2, async function () {
     if (!N || !N.up) return 'no scratch node: the world failed';
     if (!where) return 'no Chrome here: the world failed';
     if (!c || c.error) return 'no Chrome page: the world failed';
     await c.send('Page.navigate', { url: N.base + '/face.html' });
     return (await until(function () { return c.evaluate('!!(window.spirit && window.spirit.ready && window.spirit.event)'); }, 20000)) ? true : 'the page has no spirit: nothing judged';
-  }, 1000);
+  }, test.limit.quick);
   test.run('the world: the page\'s node.rotateCipher is a recorder that refuses', 0.2, async function () {
     if (!N || !N.up) return 'no scratch node: the world failed';
     if (!where) return 'no Chrome here: the world failed';
@@ -762,7 +762,7 @@ function rotatePart() {
     // NO KEY IS ROTATED: the page's node.rotateCipher records the ask and refuses it.
     spy = await c.evaluate('window.spirit.ready.then(function () { var S = window.spirit; window.__rotations = 0; if (!S.node || typeof S.node.rotateCipher !== "function") return "no spirit.node.rotateCipher"; S.node.rotateCipher = function () { window.__rotations += 1; return Promise.resolve({ status: 403, body: { ok: false, error: "refused by the test" } }); }; return "spied"; })');
     return (spy === 'spied') ? true : 'the spy: ' + short(spy);
-  }, 1000);
+  }, test.limit.quick);
   const T = function (expr) { return c.evaluate('window.__t.' + expr); };
   const waitFor = function (expr, ms) { return until(function () { return c.evaluate('(function () { with (window.__t) { return !!(' + expr + '); } }())'); }, ms || 8000); };
   const rotations = function () { return c.evaluate('window.__rotations'); };
@@ -776,21 +776,21 @@ function rotatePart() {
     // goal/G43.32: rotateKey stands at its path, spirit.element.spirit.element.rotateKey; spirit.elements is no more.
     made = await c.evaluate('(function () { var b = document.createElement("div"); b.id = "zzOwn"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999"; document.body.appendChild(b); var p; try { p = spirit.require("spirit/element/rotateKey.js"); } catch (e) { return "load threw: " + e; } return Promise.resolve(p).then(function () { var E = ((spirit.element || {}).spirit || {}).element; E = E && E.rotateKey; if (!E || typeof E.create !== "function") return "no spirit.element.spirit.element.rotateKey.create"; window.__rk = E.create(b, {}); return window.__rk && typeof window.__rk.destroy === "function" ? "made" : "create answered " + typeof window.__rk; }, function (e) { return "load: " + e; }); }())');
     return (made === 'made') ? true : 'rotateKey: ' + short(made);
-  }, 1000);
+  }, test.limit.quick);
   test.run('it draws the explanation as it is', 0.2, async function () {
     if (!N || !N.up) return 'no scratch node: the world failed';
     if (!where) return 'no Chrome here: the world failed';
     if (!c || c.error) return 'no Chrome page: the world failed';
     alone = made === 'made' && await waitFor('says(' + JSON.stringify(EXPLAINED) + ').length === 0', 6000);
     return (alone) ? true : made === 'made' ? 'missing: ' + short(await T('says(' + JSON.stringify(EXPLAINED) + ')')) : 'no element: nothing judged';
-  }, 1000);
+  }, test.limit.quick);
   test.run('it draws its button, Rotate the key', 0.2, async function () {
     if (!N || !N.up) return 'no scratch node: the world failed';
     if (!where) return 'no Chrome here: the world failed';
     if (!c || c.error) return 'no Chrome page: the world failed';
     hasButton = made === 'made' && await waitFor('buttons().indexOf(' + JSON.stringify(BUTTON) + ') !== -1', 6000);
     return (hasButton) ? true : made === 'made' ? 'its buttons: ' + short(await T('buttons()')) : 'no element: nothing judged';
-  }, 1000);
+  }, test.limit.quick);
   test.run('one press arms it: it says Rotate the key: press again', 0.2, async function () {
     if (!N || !N.up) return 'no scratch node: the world failed';
     if (!where) return 'no Chrome here: the world failed';
@@ -798,13 +798,13 @@ function rotatePart() {
     if (hasButton) await T('press(' + JSON.stringify(BUTTON) + ')');
     armedAlone = hasButton && await waitFor('buttons().indexOf(' + JSON.stringify(ARMED) + ') !== -1 && count("button[data-armed]") === 1', 4000);
     return (armedAlone) ? true : hasButton ? 'after one press: ' + short(await T('buttons()')) : 'no button: nothing judged';
-  }, 1000);
+  }, test.limit.quick);
   test.run('and one press rotates nothing', 0.2, async function () {
     if (!N || !N.up) return 'no scratch node: the world failed';
     if (!where) return 'no Chrome here: the world failed';
     if (!c || c.error) return 'no Chrome page: the world failed';
     return (hasButton && (await rotations()) === 0) ? true : hasButton ? 'one press asked node.rotateCipher ' + (await rotations()) + ' times' : 'no button: nothing judged';
-  }, 1000);
+  }, test.limit.quick);
   test.run('the world: the shell draws its tiles', 0.2, async function () {
     if (!N || !N.up) return 'no scratch node: the world failed';
     if (!where) return 'no Chrome here: the world failed';
@@ -813,14 +813,14 @@ function rotatePart() {
     // the box, 8: "nodeInfo's rotate button opens it as a layer over Info through panel.js ... its ✕ shows Info again"
     shell = await c.evaluate('(function () { var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.require("spirit/app/app/element.js").then(function () { window.__shell = spirit.element.spirit.app.app.element.create(b); return "made"; }, function (e) { return "load: " + e; }); }())');
     return (shell === 'made' && await waitFor('tiles().indexOf("file") !== -1', 10000)) ? true : 'the shell: ' + short(shell) + ', tiles ' + short(await T('tiles()'));
-  }, 1000);
+  }, test.limit.quick);
   test.run('the world: Info opens from its tile, its name field and its rotate button shown', 0.2, async function () {
     if (!N || !N.up) return 'no scratch node: the world failed';
     if (!where) return 'no Chrome here: the world failed';
     if (!c || c.error) return 'no Chrome page: the world failed';
     infoOpen = (await waitFor('tiles().indexOf("info") !== -1', 6000)) && (await T('tile("info")')) && await waitFor('count("[data-field=label]") === 1 && buttons().some(function (b) { return /^Rotate this node.s cipher key$/.test(b); })', 10000);
     return (infoOpen) ? true : 'Info did not open with its rotate button: ' + short(await T('text()')) + ' tiles ' + short(await T('tiles()'));
-  }, 1000);
+  }, test.limit.quick);
   test.run('the rotate button opens the dialog: its explanation shows', 0.2, async function () {
     if (!N || !N.up) return 'no scratch node: the world failed';
     if (!where) return 'no Chrome here: the world failed';
@@ -830,14 +830,14 @@ function rotatePart() {
     await T('press("Rotate this node\'s cipher key")');
     over = await waitFor('says(' + JSON.stringify(EXPLAINED.slice(1)) + ').length === 0', 8000);
     return (over) ? true : 'after the press: ' + short(await T('text()'));
-  }, 1000);
+  }, test.limit.quick);
   test.run('over Info: Info\'s fields are out of view', 0.2, async function () {
     if (!N || !N.up) return 'no scratch node: the world failed';
     if (!where) return 'no Chrome here: the world failed';
     if (!c || c.error) return 'no Chrome page: the world failed';
     if (!infoOpen) return 'Info did not open: the rotate button was not judged';
     return (over && (await T('count("[data-field=label]")')) === 0 && (await T('count("[data-field=description]")')) === 0) ? true : over ? 'Info still shows its fields' : 'nothing opened: nothing judged';
-  }, 1000);
+  }, test.limit.quick);
   test.run('"like fstat": one layer of panel.js over all of Info, one bar in view, its own', 0.2, async function () {
     if (!N || !N.up) return 'no scratch node: the world failed';
     if (!where) return 'no Chrome here: the world failed';
@@ -845,7 +845,7 @@ function rotatePart() {
     if (!infoOpen) return 'Info did not open: the rotate button was not judged';
     bars = await T('bars()');
     return (over && bars.length === 1 && short(bars) !== short(before) && (await T('count(".app-container-close")')) === 1) ? true : over ? 'bars before ' + short(before) + ', now ' + short(bars) + ', panel.js closes in view ' + (await T('count(".app-container-close")')) : 'nothing opened: nothing judged';
-  }, 1000);
+  }, test.limit.quick);
   test.run('the layer shows its button, Rotate the key', 0.2, async function () {
     if (!N || !N.up) return 'no scratch node: the world failed';
     if (!where) return 'no Chrome here: the world failed';
@@ -853,7 +853,7 @@ function rotatePart() {
     if (!infoOpen) return 'Info did not open: the rotate button was not judged';
     layerButton = over && await waitFor('buttons().indexOf(' + JSON.stringify(BUTTON) + ') !== -1', 4000);
     return (layerButton) ? true : over ? 'its buttons: ' + short(await T('buttons()')) : 'nothing opened: nothing judged';
-  }, 1000);
+  }, test.limit.quick);
   test.run('in the layer, one press arms it: it says Rotate the key: press again', 0.2, async function () {
     if (!N || !N.up) return 'no scratch node: the world failed';
     if (!where) return 'no Chrome here: the world failed';
@@ -862,7 +862,7 @@ function rotatePart() {
     if (layerButton) await T('press(' + JSON.stringify(BUTTON) + ')');
     armed = layerButton && await waitFor('buttons().indexOf(' + JSON.stringify(ARMED) + ') !== -1', 4000);
     return (armed) ? true : layerButton ? 'after one press: ' + short(await T('buttons()')) : 'no button: nothing judged';
-  }, 1000);
+  }, test.limit.quick);
   test.run('and in the layer, one press rotates nothing', 0.2, async function () {
     if (!N || !N.up) return 'no scratch node: the world failed';
     if (!where) return 'no Chrome here: the world failed';
@@ -870,7 +870,7 @@ function rotatePart() {
     if (!infoOpen) return 'Info did not open: the rotate button was not judged';
     await sleep(800);
     return (layerButton && (await rotations()) === 0) ? true : layerButton ? 'one press asked node.rotateCipher ' + (await rotations()) + ' times' : 'no button: nothing judged';
-  }, 3000);
+  }, test.limit.slow);
   test.run('its ✕ shows Info again, the dialog out of view', 0.2, async function () {
     if (!N || !N.up) return 'no scratch node: the world failed';
     if (!where) return 'no Chrome here: the world failed';
@@ -879,14 +879,14 @@ function rotatePart() {
     closed = over && await T('closeLast()');
     back = closed && await waitFor('count("[data-field=label]") === 1 && count("[data-field=description]") === 1 && says([' + JSON.stringify(EXPLAINED[1]) + ']).length === 1', 6000);
     return (back) ? true : closed ? 'after ✕: ' + short(await T('text()')) : 'no ✕ to press: nothing judged';
-  }, 1000);
+  }, test.limit.quick);
   test.run('and Info\'s bar is the one in view again', 0.2, async function () {
     if (!N || !N.up) return 'no scratch node: the world failed';
     if (!where) return 'no Chrome here: the world failed';
     if (!c || c.error) return 'no Chrome page: the world failed';
     if (!infoOpen) return 'Info did not open: the rotate button was not judged';
     return (back && short(await T('bars()')) === short(before)) ? true : back ? 'bars: ' + short(await T('bars()')) : 'Info did not come back: nothing judged';
-  }, 1000);
+  }, test.limit.quick);
   test.run('the node\'s card is as it was', 0.2, async function () {
     if (!N || !N.up) return 'no scratch node: the world failed';
     if (!where) return 'no Chrome here: the world failed';
@@ -895,7 +895,7 @@ function rotatePart() {
     // no key was rotated
     card1 = await call(N.base, 'node.card', {});
     return (card0.status === 200 && card1.status === 200 && card1.text === card0.text) ? true : 'card before ' + short(card0.text) + ', after ' + short(card1.text);
-  }, 1000);
+  }, test.limit.quick);
   test.after(async function () {
     try { if (c && c.sock) c.sock.close(); } catch (e) { /* gone */ }
     try { if (c && c.kid) c.kid.kill(); } catch (e) { /* gone */ }

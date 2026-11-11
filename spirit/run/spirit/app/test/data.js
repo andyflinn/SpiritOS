@@ -62,7 +62,7 @@ test.run('the world: publishData and pushOrigin are only run; agent mounts and m
   W.plain = own.filter(function (a) { return a.shell && !a.run && !a.intrinsic; })[0];
   W.apps = W.only.length >= 1 && !!W.plain;
   return W.apps || 'nothing to judge with: ' + short(own);
-}, 1000);
+}, test.limit.quick);
 test.run('the world: a scratch node and a Chrome page on its face', 0.2, async function () {
   if (!W.apps) return 'no apps to judge with: the world failed';
   W.node = await scratchNode();
@@ -72,13 +72,13 @@ test.run('the world: a scratch node and a Chrome page on its face', 0.2, async f
   await until(function () { return W.chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
   W.up = true;
   return true;
-}, 7000);
+}, test.limit.slow);
 test.run('the world: the app search and the app detail load', 0.2, async function () {
   if (!W.up) return NO_PAGE;
   const loaded = await W.chrome.evaluate('window.spirit.ready.then(function () { return Promise.all([spirit.require("spirit/element/search/app.js"), spirit.require("spirit/element/search/app/detailElement.js")]); }).then(function () { return "loaded"; }, function (e) { return String(e && e.message || e); })');
   W.loaded = loaded === 'loaded';
   return W.loaded || 'they did not load: ' + short(loaded);
-}, 1000);
+}, test.limit.quick);
 test.run('the world: before the job the tiles draw apps, no run-only one among them', 0.2, async function () {
   if (!W.loaded) return NO_PAGE;
   const chrome = W.chrome, only = W.only, plain = W.plain;
@@ -96,7 +96,7 @@ test.run('the world: before the job the tiles draw apps, no run-only one among t
   const before = JSON.parse(await chrome.evaluate('JSON.stringify(window.before)'));
   W.watching = true;
   return before.length > 0 && only.every(function (a) { return before.indexOf(a.label) === -1; }) ? true : 'before the job the tiles draw ' + short(before) + ': nothing judged';
-}, 4000);
+}, test.limit.slow);
 
 // the world: the node's apps job replaces the rows the page holds
 test.run('the world: app.label for agent is taken', 0.2, async function () {
@@ -104,7 +104,7 @@ test.run('the world: app.label for agent is taken', 0.2, async function () {
   W.fresh = W.plain.label + ' ' + process.pid;
   const wrote = await ask('app.label', { key: W.plain.key, label: W.fresh });
   return wrote.status === 200 ? true : 'app.label of ' + W.plain.key + ' answered ' + wrote.status + ' ' + short(wrote.body) + ': nothing judged';
-}, 1000);
+}, test.limit.quick);
 test.run('the world: the apps job reached the page, agent\'s held row now says its new label', 0.2, async function () {
   if (!W.fresh) return NO_PAGE;
   const plain = W.plain, fresh = W.fresh;
@@ -113,42 +113,42 @@ test.run('the world: the apps job reached the page, agent\'s held row now says i
   await sleep(1500);
   W.seen = JSON.parse(await W.chrome.evaluate('JSON.stringify(window.seen)'));
   return true;
-}, 5000);
+}, test.limit.slow);
 
 // the box: "app/data.js drops run and runOnly"
 test.run('the world: the apps job wrote publishData\'s row', 0.2, function () {
   if (!W.seen) return NO_JOB;
   return rowsOf('publishData').values.length > 0 || 'no write of publishData\'s row after the job: nothing judged';
-}, 1000);
+}, test.limit.quick);
 test.run('every row of publishData the app cache held after the job keeps run and runOnly', 0.2, function () {
   if (!W.seen) return NO_JOB;
   const ro = rowsOf('publishData');
   return ro.values.length > 0 && !ro.lost.length ? true : 'publishData\'s row in the app cache, after the apps job, held without them: ' + short(ro.lost[0]);
-}, 1000);
+}, test.limit.quick);
 test.run('the world: the apps job wrote pushOrigin\'s row', 0.2, function () {
   if (!W.seen) return NO_JOB;
   return rowsOf('pushOrigin').values.length > 0 || 'no write of pushOrigin\'s row after the job: nothing judged';
-}, 1000);
+}, test.limit.quick);
 test.run('every row of pushOrigin the app cache held after the job keeps run and runOnly', 0.2, function () {
   if (!W.seen) return NO_JOB;
   const ro = rowsOf('pushOrigin');
   return ro.values.length > 0 && !ro.lost.length ? true : 'pushOrigin\'s row in the app cache, after the apps job, held without them: ' + short(ro.lost[0]);
-}, 1000);
+}, test.limit.quick);
 
 // the box: "a node:run app shows as a tile with Activate"
 test.run('the world: the tiles drew app labels', 0.2, async function () {
   if (!W.seen) return NO_JOB;
   W.drawn = JSON.parse(await W.chrome.evaluate('JSON.stringify(window.drawn)'));
   return W.drawn.indexOf(W.fresh) !== -1 || W.drawn.length > 0 ? true : 'the tiles drew no app at all: nothing judged';
-}, 1000);
+}, test.limit.quick);
 test.run('the tiles never drew a tile for Publish Data', 0.2, function () {
   if (!W.drawn) return NO_JOB;
   return W.drawn.indexOf('Publish Data') === -1 || 'the tiles drew Publish Data once the apps job came: ' + short(W.drawn);
-}, 1000);
+}, test.limit.quick);
 test.run('the tiles never drew a tile for Push Origin', 0.2, function () {
   if (!W.drawn) return NO_JOB;
   return W.drawn.indexOf('Push Origin') === -1 || 'the tiles drew Push Origin once the apps job came: ' + short(W.drawn);
-}, 1000);
+}, test.limit.quick);
 test.run('the world: with no list on the page a second apps job reached it', 0.2, async function () {
   if (!W.seen) return NO_JOB;
   const plain = W.plain;
@@ -160,29 +160,29 @@ test.run('the world: with no list on the page a second apps job reached it', 0.2
   await sleep(800);
   W.after = await held();
   return wrote2.status === 200 && replaced2 ? true : 'the second apps job did not reach the page: ' + wrote2.status + ': nothing judged';
-}, 3000);
+}, test.limit.slow);
 test.run('publishData\'s row in the app cache, as the apps job left it, keeps run and runOnly', 0.2, function () {
   if (!W.after) return NO_JOB;
   const r = W.after['publishData'] || {};
   return r.run === true && r.runOnly === true ? true : 'publishData\'s row, as the apps job left it: ' + short(r);
-}, 1000);
+}, test.limit.quick);
 test.run('pushOrigin\'s row in the app cache, as the apps job left it, keeps run and runOnly', 0.2, function () {
   if (!W.after) return NO_JOB;
   const r = W.after['pushOrigin'] || {};
   return r.run === true && r.runOnly === true ? true : 'pushOrigin\'s row, as the apps job left it: ' + short(r);
-}, 1000);
+}, test.limit.quick);
 test.run('the world: agent\'s detail shows Activate', 0.2, async function () {
   if (!W.after) return NO_JOB;
   await detailOf(W.plain.key, W.fresher);
   return await until(function () { return activateUnder('document.getElementById("detail")').then(function (n) { return n > 0; }); }, 6000) ? true : W.plain.key + '\'s detail shows no Activate: nothing judged';
-}, 1000);
+}, test.limit.quick);
 test.run('Publish Data\'s detail shows no Activate', 0.2, async function () {
   if (!W.after) return NO_JOB;
   const na = await noActivate('publishData', 'Publish Data');
   return na.fine || na.why;
-}, 5000);
+}, test.limit.slow);
 test.run('Push Origin\'s detail shows no Activate', 0.2, async function () {
   if (!W.after) return NO_JOB;
   const na = await noActivate('pushOrigin', 'Push Origin');
   return na.fine || na.why;
-}, 5000);
+}, test.limit.slow);

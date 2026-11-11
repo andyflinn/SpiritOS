@@ -33,28 +33,28 @@ test.run('the world: a scratch node, and a Chrome on its face page', 0.2, async 
   if (!node.up || chrome.error) return 'no scratch node or no Chrome: nothing judged. ' + short(chrome.error || '');
   await chrome.send('Page.navigate', { url: node.base + '/face.html' });
   return (await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000)) ? true : 'the face page never had spirit.ready';
-}, 6000);
+}, test.limit.slow);
 test.run('it loads through spirit.require and is spirit.element.spirit.element.search.app.changeAppIcon', 0.2, async function () {
   if (!node || !node.up || !chrome || chrome.error) return NO_WORLD;
   loaded = await chrome.evaluate('spirit.ready.then(function () { return spirit.require("spirit/element/search/app/changeAppIcon.js"); }).then(function () { return !!(spirit.element.spirit.element.search.app.changeAppIcon && spirit.element.spirit.element.search.app.changeAppIcon.create); }, function (e) { return String(e); })');
   return loaded === true ? true : 'it did not load: ' + short(loaded);
-}, 1000);
+}, test.limit.quick);
 test.run('create(host, { key }) answers { destroy }', 0.2, async function () {
   if (loaded !== true) return NOT_LOADED;
   made = await chrome.evaluate('(function () { var b = document.createElement("div"); b.id = "i"; document.body.appendChild(b); window.__i = spirit.element.spirit.element.search.app.changeAppIcon.create(b, { key: "agent" }); return !!window.__i && typeof window.__i.destroy === "function"; }())');
   return made === true ? true : 'it made: ' + short(made);
-}, 1000);
+}, test.limit.quick);
 
 // one rowForm: [✏️] "Icon" [the app's icon] [iconSelector:dropdown] [Change], as the detail draws it
 test.run('a rowForm showing the app\'s icon, 🤖', 0.2, async function () {
   if (made !== true) return NOT_LOADED;
   return (await until(function () { return seen().then(function (v) { return v.forms >= 1 && v.text.indexOf('🤖') !== -1; }); }, 10000)) ? true : 'drawn: ' + short(await seen());
-}, 1000);
+}, test.limit.quick);
 test.run('with ✏️, the word Icon, the icon dropdown and a Change button', 0.2, async function () {
   if (made !== true) return NOT_LOADED;
   v0 = await seen();
   return /✏/.test(v0.text) && /Icon/.test(v0.text) && v0.last === 'Change' && /choose an icon/.test(v0.text) ? true : 'drawn: ' + short(v0);
-}, 1000);
+}, test.limit.quick);
 
 // Change with nothing picked changes nothing
 test.run('the app\'s icon stays 🤖', 0.2, async function () {
@@ -62,7 +62,7 @@ test.run('the app\'s icon stays 🤖', 0.2, async function () {
   await chrome.evaluate('(function () { var bs = document.querySelectorAll("#i button"); bs[bs.length - 1].click(); return 1; }())');
   await sleep(1500);
   return (await iconOf('agent')) === '🤖' ? true : 'the row: ' + short(await iconOf('agent'));
-}, 5000);
+}, test.limit.slow);
 
 // the box: "writing through the app family's iconApp": a glyph picked, then Change
 test.run('the world: the dropdown opens on the icon set', 0.2, async function () {
@@ -71,22 +71,22 @@ test.run('the world: the dropdown opens on the icon set', 0.2, async function ()
   await chrome.evaluate('(function () { var f = Array.prototype.filter.call(document.querySelectorAll("#i *"), function (e) { return /choose an icon/.test(e.textContent || "") && !e.children.length; })[0]; if (f) f.click(); return !!f; }())');
   glyph = await until(function () { return chrome.evaluate('(function () { var r = document.querySelector("#i tr[data-key]"); return r ? r.getAttribute("data-key") : ""; }())').then(function (k) { return k && k !== '🤖' ? k : ''; }); }, 8000);
   return !!glyph || 'no row of the icon set to pick';
-}, 1000);
+}, test.limit.quick);
 test.run('Change writes the picked glyph, and the app\'s row says it', 0.2, async function () {
   if (made !== true) return NOT_LOADED;
   key = await chrome.evaluate('(function () { var rows = Array.prototype.filter.call(document.querySelectorAll("#i tr[data-key]"), function (r) { return r.getAttribute("data-key") !== "🤖"; }); if (!rows.length) return ""; rows[0].click(); return rows[0].getAttribute("data-key"); }())');
   await chrome.evaluate('(function () { var bs = document.querySelectorAll("#i button"); bs[bs.length - 1].click(); return 1; }())');
   return !!key && await until(function () { return iconOf('agent').then(function (g) { return g === key; }); }, 10000) ? true : 'picked ' + short(key) + ', the row: ' + short(await iconOf('agent'));
-}, 1000);
+}, test.limit.quick);
 
 // an icon changed elsewhere shows, with no reload
 test.run('it shows the new icon', 0.2, async function () {
   if (made !== true) return NOT_LOADED;
   await ask('app.icon', { key: 'agent', icon: '🧩' });
   return (await until(function () { return seen().then(function (v) { return v.text.indexOf('🧩') !== -1; }); }, 10000)) ? true : 'drawn: ' + short(await seen());
-}, 1000);
+}, test.limit.quick);
 test.run('destroy empties its host', 0.2, async function () {
   if (made !== true) return NOT_LOADED;
   const empty = await chrome.evaluate('(function () { window.__i.destroy(); return document.getElementById("i").children.length === 0; }())');
   return empty === true ? true : 'destroy left ' + short(await seen());
-}, 1000);
+}, test.limit.quick);

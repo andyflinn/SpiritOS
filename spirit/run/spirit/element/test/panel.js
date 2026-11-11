@@ -90,20 +90,20 @@ let pushing, s, live, c, heardBefore, N, where, bars, marks, detail, agent, off,
 test.run('spirit/element/panel.js is there (Q12)', 0.2, function () {
   // the box: "That is one generic panel element, used by the appSelector and file; neither draws it with a <div> of its own (Q3)"
   return (fs.existsSync(PANEL)) ? true : 'no spirit/element/panel.js';
-}, 1000);
+}, test.limit.quick);
 test.run('appSelector loads spirit/element/panel.js', 0.2, function () {
   // appSelector and file: each loads the panel, and draws no title bar or close of its own.
   return (/spirit\/element\/panel\.js/.test(code(USERS.appSelector))) ? true : 'appSelector does not load spirit/element/panel.js';
-}, 1000);
+}, test.limit.quick);
 test.run('appSelector draws no title bar or close of its own', 0.2, function () {
   return (!!code(USERS.appSelector) && !/✕|app-container/.test(code(USERS.appSelector))) ? true : 'appSelector still draws a ✕ or an app-container';
-}, 1000);
+}, test.limit.quick);
 test.run('file loads spirit/element/panel.js', 0.2, function () {
   return (/spirit\/element\/panel\.js/.test(code(USERS.file))) ? true : 'file does not load spirit/element/panel.js';
-}, 1000);
+}, test.limit.quick);
 test.run('file draws no title bar or close of its own', 0.2, function () {
   return (!!code(USERS.file) && !/✕|app-container/.test(code(USERS.file))) ? true : 'file still draws a ✕ or an app-container';
-}, 1000);
+}, test.limit.quick);
 test.run('no app or element under spirit/ calls navigation.push', 0.2, function () {
   // goal/G43.18, Andy: "contact details and relay details should be proper panels in the newest shell style.", and "add it to a
   // general test that panels must be panels....": what opens over its mounter opens as a layer of this element, so no code pushes
@@ -113,7 +113,7 @@ test.run('no app or element under spirit/ calls navigation.push', 0.2, function 
   // Andy: "panels must be panels": no app or element opens a page on the navigation, what it opens over itself is a panel
   pushing = codeNaming(/navigation\.push\s*\(/).filter(function (f) { return f.split(path.sep)[0] === 'spirit'; });
   return (!pushing.length) ? true : pushing.length + ' still do: ' + short(pushing);
-}, 1000);
+}, test.limit.quick);
 test.run('the world: a scratch node comes up', 0.2, async function () {
   s = scratch();
   live = [];
@@ -122,18 +122,18 @@ test.run('the world: a scratch node comes up', 0.2, async function () {
   N = await boot(s.run);
   live.push(N.child);
   return (N.up) ? true : 'the scratch node did not come up: nothing judged';
-}, 4000);
+}, test.limit.slow);
 test.run('the world: Chrome is here', 0.2, function () {
   if (!N || !N.up) return 'no scratch node: the world failed';
   where = findChrome();
   return (!!where) ? true : 'no Chrome here: the page was not judged';
-}, 1000);
+}, test.limit.quick);
 test.run('the world: a Chrome page opens', 0.2, async function () {
   if (!N || !N.up) return 'no scratch node: the world failed';
   if (!where) return 'no Chrome here: the world failed';
   c = await chromePage(where);
   return (!c.error) ? true : 'Chrome: ' + c.error;
-}, 2000);
+}, test.limit.quick);
 const open = async function () {
   await c.evaluate('window.__zzOld = true').catch(function () {});
   await c.send('Page.navigate', { url: N.base + '/face.html' });
@@ -147,7 +147,7 @@ test.run('the world: the face shell has its spirit', 0.2, async function () {
   if (!c || c.error) return 'no Chrome page: the world failed';
   // A new page, not the old one before the reload lands: the old one carries a mark the new one has not.
   return (await open()) ? true : 'the page has no spirit: nothing judged';
-}, 1000);
+}, test.limit.quick);
 const T = function (expr) { return c.evaluate('window.__t.' + expr); };
 const waitFor = function (expr, ms) { return until(function () { return c.evaluate('(function () { with (window.__t) { return !!(' + expr + '); } }())'); }, ms || 8000); };
 const selector = function (face) {
@@ -161,26 +161,26 @@ test.run('the world: the tiles show Files', 0.2, async function () {
   // the box: "An element mounts over ALL of the one that mounts it, its title bar too", under "its own title bar [icon] <label> [✕]"
   await selector('tiles');
   return (await waitFor('tiles().indexOf("file") !== -1', 10000)) ? true : 'tiles: ' + short(await T('tiles()'));
-}, 1000);
+}, test.limit.quick);
 test.run('the world: Files opens', 0.2, async function () {
   if (!N || !N.up) return 'no scratch node: the world failed';
   if (!where) return 'no Chrome here: the world failed';
   if (!c || c.error) return 'no Chrome page: the world failed';
   await T('press("file")');
   return (await waitFor('rows().indexOf("zzFiles") !== -1', 10000)) ? true : 'the app: ' + short(await T('text()'));
-}, 1000);
+}, test.limit.quick);
 test.run('Files opens over the tiles under one bar: its icon, its label, ✕', 0.2, async function () {
   if (!N || !N.up) return 'no scratch node: the world failed';
   if (!where) return 'no Chrome here: the world failed';
   if (!c || c.error) return 'no Chrome page: the world failed';
   return (short(await T('bars()')) === short(['📁 Files'])) ? true : 'bars: ' + short(await T('bars()'));
-}, 1000);
+}, test.limit.quick);
 test.run('the tiles are out of view under it', 0.2, async function () {
   if (!N || !N.up) return 'no scratch node: the world failed';
   if (!where) return 'no Chrome here: the world failed';
   if (!c || c.error) return 'no Chrome page: the world failed';
   return ((await T('bars()')).length === 1 && (await T('tiles()')).length === 0) ? true : 'tiles: ' + short(await T('tiles()'));
-}, 1000);
+}, test.limit.quick);
 test.run('a file opens over Files, in the same pane', 0.2, async function () {
   if (!N || !N.up) return 'no scratch node: the world failed';
   if (!where) return 'no Chrome here: the world failed';
@@ -190,20 +190,20 @@ test.run('a file opens over Files, in the same pane', 0.2, async function () {
   await T('markBefore()');
   await T('press("zzFiles/notes.txt")');
   return (await waitFor('bars().length === 1 && /notes\\.txt$/.test(bars()[0])', 10000)) ? true : 'bars: ' + short(await T('bars()'));
-}, 1000);
+}, test.limit.quick);
 test.run('the box: "over ALL of the one that mounts it, its title bar too": one bar in view, an icon, ending in notes.txt', 0.2, async function () {
   if (!N || !N.up) return 'no scratch node: the world failed';
   if (!where) return 'no Chrome here: the world failed';
   if (!c || c.error) return 'no Chrome page: the world failed';
   bars = await T('bars()');
   return (bars.length === 1 && /^\S+ .*notes\.txt$/.test(bars[0])) ? true : 'bars: ' + short(bars);
-}, 1000);
+}, test.limit.quick);
 test.run('the list is out of view under it', 0.2, async function () {
   if (!N || !N.up) return 'no scratch node: the world failed';
   if (!where) return 'no Chrome here: the world failed';
   if (!c || c.error) return 'no Chrome page: the world failed';
   return ((await T('bars()')).length === 1 && (await T('rows()')).length === 0) ? true : 'rows: ' + short(await T('rows()'));
-}, 1000);
+}, test.limit.quick);
 test.run('its ✕ shows Files again, under its one bar', 0.2, async function () {
   if (!N || !N.up) return 'no scratch node: the world failed';
   if (!where) return 'no Chrome here: the world failed';
@@ -213,20 +213,20 @@ test.run('its ✕ shows Files again, under its one bar', 0.2, async function () 
   // the box: "✕ shows the mounter again", and "A closed layer is hidden, not destroyed"
   await T('close("notes.txt")');
   return (await waitFor('rows().indexOf("zzFiles/notes.txt") !== -1') && short(await T('bars()')) === short(['📁 Files'])) ? true : 'bars: ' + short(await T('bars()'));
-}, 1000);
+}, test.limit.quick);
 test.run('the closed layer is still on the page, out of view', 0.2, async function () {
   if (!N || !N.up) return 'no scratch node: the world failed';
   if (!where) return 'no Chrome here: the world failed';
   if (!c || c.error) return 'no Chrome page: the world failed';
   return (marks > 0 && (await T('marked("notes")')) > 0 && (await T('markedShown("notes")')) === 0) ? true : 'marked ' + marks + ', kept ' + (await T('marked("notes")')) + ', shown ' + (await T('markedShown("notes")'));
-}, 1000);
+}, test.limit.quick);
 test.run('reopening it shows what was there: the same layer, not a new one', 0.2, async function () {
   if (!N || !N.up) return 'no scratch node: the world failed';
   if (!where) return 'no Chrome here: the world failed';
   if (!c || c.error) return 'no Chrome page: the world failed';
   await T('press("zzFiles/notes.txt")');
   return (await waitFor('markedShown("notes") > 0', 10000)) ? true : 'shown ' + (await T('markedShown("notes")')) + ' of ' + marks;
-}, 1000);
+}, test.limit.quick);
 test.run('the file\'s ✕ goes one step back, to Files', 0.2, async function () {
   if (!N || !N.up) return 'no scratch node: the world failed';
   if (!where) return 'no Chrome here: the world failed';
@@ -234,21 +234,21 @@ test.run('the file\'s ✕ goes one step back, to Files', 0.2, async function () 
   // the box: "One stack; each ✕ goes one step back (Q17)"
   await T('close("notes.txt")');
   return (await waitFor('rows().indexOf("zzFiles/notes.txt") !== -1') && short(await T('bars()')) === short(['📁 Files'])) ? true : 'bars: ' + short(await T('bars()'));
-}, 1000);
+}, test.limit.quick);
 test.run('Files\' ✕ goes one more, to the tiles', 0.2, async function () {
   if (!N || !N.up) return 'no scratch node: the world failed';
   if (!where) return 'no Chrome here: the world failed';
   if (!c || c.error) return 'no Chrome page: the world failed';
   await T('close("Files")');
   return (await waitFor('bars().length === 0 && tiles().indexOf("file") !== -1')) ? true : 'bars: ' + short(await T('bars()')) + ', tiles ' + short(await T('tiles()'));
-}, 1000);
+}, test.limit.quick);
 test.run('the Files tile opens it again', 0.2, async function () {
   if (!N || !N.up) return 'no scratch node: the world failed';
   if (!where) return 'no Chrome here: the world failed';
   if (!c || c.error) return 'no Chrome page: the world failed';
   await T('press("file")');
   return (await waitFor('rows().indexOf("zzFiles") !== -1', 10000)) ? true : 'the app: ' + short(await T('text()'));
-}, 1000);
+}, test.limit.quick);
 test.run('reopened in the same session it shows what was there: its words kept', 0.2, async function () {
   if (!N || !N.up) return 'no scratch node: the world failed';
   if (!where) return 'no Chrome here: the world failed';
@@ -259,7 +259,7 @@ test.run('reopened in the same session it shows what was there: its words kept',
   await waitFor('bars().length === 0');
   await T('press("file")');
   return (await waitFor('rows().indexOf("zzFiles/notes.txt") !== -1 && words() === "notes"', 10000)) ? true : 'words: ' + short(await T('words()'));
-}, 4000);
+}, test.limit.slow);
 test.run('after a reload Files opens with no words', 0.2, async function () {
   if (!N || !N.up) return 'no scratch node: the world failed';
   if (!where) return 'no Chrome here: the world failed';
@@ -270,7 +270,7 @@ test.run('after a reload Files opens with no words', 0.2, async function () {
   await waitFor('tiles().indexOf("file") !== -1', 10000);
   await T('press("file")');
   return (await waitFor('rows().indexOf("zzFiles") !== -1', 10000) && (await T('words()')) === '') ? true : 'words: ' + short(await T('words()'));
-}, 2000);
+}, test.limit.quick);
 test.run('the world: the pane lists the Agent', 0.2, async function () {
   if (!N || !N.up) return 'no scratch node: the world failed';
   if (!where) return 'no Chrome here: the world failed';
@@ -278,7 +278,7 @@ test.run('the world: the pane lists the Agent', 0.2, async function () {
   // the box: "The appSelector's ✕ hides too (Q3)"
   await selector('pane');
   return (await waitFor('rows().indexOf("agent") !== -1', 10000)) ? true : 'rows: ' + short(await T('rows()'));
-}, 1000);
+}, test.limit.quick);
 test.run('the Agent\'s detail opens under one bar', 0.2, async function () {
   if (!N || !N.up) return 'no scratch node: the world failed';
   if (!where) return 'no Chrome here: the world failed';
@@ -286,7 +286,7 @@ test.run('the Agent\'s detail opens under one bar', 0.2, async function () {
   await T('markBefore()');
   await T('press("agent")');
   return (await waitFor('bars().length === 1', 10000)) ? true : 'bars: ' + short(await T('bars()'));
-}, 1000);
+}, test.limit.quick);
 test.run('its ✕ hides the detail: still on the page, out of view', 0.2, async function () {
   if (!N || !N.up) return 'no scratch node: the world failed';
   if (!where) return 'no Chrome here: the world failed';
@@ -295,14 +295,14 @@ test.run('its ✕ hides the detail: still on the page, out of view', 0.2, async 
   detail = await T('markLayer("detail")');
   await T('close("Agent")');
   return (await waitFor('bars().length === 0 && rows().indexOf("agent") !== -1') && detail > 0 && (await T('marked("detail")')) > 0) ? true : 'marked ' + detail + ', kept ' + (await T('marked("detail")'));
-}, 4000);
+}, test.limit.slow);
 test.run('pressed again, the same detail shows', 0.2, async function () {
   if (!N || !N.up) return 'no scratch node: the world failed';
   if (!where) return 'no Chrome here: the world failed';
   if (!c || c.error) return 'no Chrome page: the world failed';
   await T('press("agent")');
   return (await waitFor('markedShown("detail") > 0', 10000)) ? true : 'shown ' + (await T('markedShown("detail")'));
-}, 1000);
+}, test.limit.quick);
 test.run('the world: the Agent, active, has its tile', 0.2, async function () {
   if (!N || !N.up) return 'no scratch node: the world failed';
   if (!where) return 'no Chrome here: the world failed';
@@ -311,7 +311,7 @@ test.run('the world: the Agent, active, has its tile', 0.2, async function () {
   await call(N.base, 'app.active', { key: 'agent', active: true });
   await selector('tiles');
   return (await waitFor('tiles().indexOf("agent") !== -1', 15000)) ? true : 'tiles: ' + short(await T('tiles()'));
-}, 1000);
+}, test.limit.quick);
 test.run('the world: its tile opens the Agent', 0.2, async function () {
   if (!N || !N.up) return 'no scratch node: the world failed';
   if (!where) return 'no Chrome here: the world failed';
@@ -319,7 +319,7 @@ test.run('the world: its tile opens the Agent', 0.2, async function () {
   await T('markBefore()');
   await T('press("agent")');
   return (await waitFor('bars().length === 1', 15000)) ? true : 'bars: ' + short(await T('bars()'));
-}, 1000);
+}, test.limit.quick);
 test.run('the world: app.active switches the Agent off', 0.2, async function () {
   if (!N || !N.up) return 'no scratch node: the world failed';
   if (!where) return 'no Chrome here: the world failed';
@@ -330,25 +330,25 @@ test.run('the world: app.active switches the Agent off', 0.2, async function () 
   heardBefore = c.heard.length;
   off = await call(N.base, 'app.active', { key: 'agent', active: false });
   return (off.status === 200) ? true : 'app.active: ' + short(off.text);
-}, 7000);
+}, test.limit.slow);
 test.run('its open layer leaves the view', 0.2, async function () {
   if (!N || !N.up) return 'no scratch node: the world failed';
   if (!where) return 'no Chrome here: the world failed';
   if (!c || c.error) return 'no Chrome page: the world failed';
   return (await waitFor('markedShown("agent") === 0', 10000)) ? true : 'shown ' + (await T('markedShown("agent")')) + ' of ' + agent;
-}, 1000);
+}, test.limit.quick);
 test.run('and stays on the page, loaded', 0.2, async function () {
   if (!N || !N.up) return 'no scratch node: the world failed';
   if (!where) return 'no Chrome here: the world failed';
   if (!c || c.error) return 'no Chrome page: the world failed';
   return (agent > 0 && (await T('marked("agent")')) > 0) ? true : 'marked ' + agent + ', kept ' + (await T('marked("agent")'));
-}, 1000);
+}, test.limit.quick);
 test.run('its tile is gone, so it cannot be reopened', 0.2, async function () {
   if (!N || !N.up) return 'no scratch node: the world failed';
   if (!where) return 'no Chrome here: the world failed';
   if (!c || c.error) return 'no Chrome page: the world failed';
   return ((await T('tiles()')).indexOf('agent') === -1) ? true : 'tiles: ' + short(await T('tiles()'));
-}, 1000);
+}, test.limit.quick);
 test.run('after the shell boots again none of it is loaded', 0.2, async function () {
   if (!N || !N.up) return 'no scratch node: the world failed';
   if (!where) return 'no Chrome here: the world failed';
@@ -359,7 +359,7 @@ test.run('after the shell boots again none of it is loaded', 0.2, async function
   await sleep(2000);
   loaded = await c.evaluate('performance.getEntriesByType("resource").map(function (e) { return e.name.replace(/^https?:\\/\\/[^/]+/, ""); }).filter(function (n) { return /\\/spirit\\/app\\/agent\\//.test(n); })');
   return (Array.isArray(loaded) && !loaded.length && (await c.evaluate('!(window.spirit.app && window.spirit.app.agent) && !(window.spirit.element && window.spirit.element.spirit && window.spirit.element.spirit.app && window.spirit.element.spirit.app.agent)'))) ? true : 'loaded: ' + short(loaded);
-}, 7000);
+}, test.limit.slow);
 const zzKey = require('crypto').generateKeyPairSync('ed25519').publicKey.export({ type: 'spki', format: 'der' }).toString('base64');
 test.run('the world: a person is in the book', 0.2, async function () {
   if (!N || !N.up) return 'no scratch node: the world failed';
@@ -370,7 +370,7 @@ test.run('the world: a person is in the book', 0.2, async function () {
   // A person in the book beside the relay the node starts with: a key of our own, blocked, so the book holds it.
   planted = await call(N.base, 'contact.block', { publicKey: zzKey, publicLabel: 'zzPerson' });
   return (planted.status === 200) ? true : 'contact.block: ' + short(planted.text);
-}, 1000);
+}, test.limit.quick);
 const detailsOf = async function (who) {
   const d = {};
   await selector('tiles');
@@ -401,56 +401,56 @@ test.run('the world: the node knows a relay', 0.2, async function () {
   relay = people.filter(function (p) { return p.relay === true; })[0];
   contact = people.filter(function (p) { return p.relay !== true; })[0];
   return (!!relay) ? true : 'the world: no relay on the scratch node: ' + short(people);
-}, 1000);
+}, test.limit.quick);
 test.run('the world: the node knows a contact', 0.2, function () {
   if (!N || !N.up) return 'no scratch node: the world failed';
   if (!where) return 'no Chrome here: the world failed';
   if (!c || c.error) return 'no Chrome page: the world failed';
   return (!!contact) ? true : 'the world: no contact on the scratch node: ' + short(people);
-}, 1000);
+}, test.limit.quick);
 D = {};
 test.run('the world: Contacts opens and lists the relay', 0.2, async function () {
   if (!relay) return 'no relay on the scratch node: the world failed';
   D.relay = await detailsOf(relay);
   return D.relay.listed || D.relay.shown;
-}, 1000);
+}, test.limit.quick);
 test.run('the relay\'s details open over Contacts under one bar of their own', 0.2, function () {
   if (!D.relay) return 'the relay was not opened: the world failed';
   return D.relay.over || D.relay.overBars;
-}, 1000);
+}, test.limit.quick);
 test.run('the list is out of view under them', 0.2, function () {
   if (!D.relay) return 'the relay was not opened: the world failed';
   return D.relay.rows.indexOf(relay.key) === -1 || 'rows: ' + short(D.relay.rows);
-}, 1000);
+}, test.limit.quick);
 test.run('no page is pushed on the navigation', 0.2, function () {
   if (!D.relay) return 'the relay was not opened: the world failed';
   return D.relay.depthNow === D.relay.depth || 'the navigation went from ' + D.relay.depth + ' to ' + D.relay.depthNow;
-}, 1000);
+}, test.limit.quick);
 test.run('their ✕ shows Contacts again, one step back', 0.2, function () {
   if (!D.relay) return 'the relay was not opened: the world failed';
   return D.relay.back || D.relay.backBars;
-}, 1000);
+}, test.limit.quick);
 test.run('the world: Contacts opens and lists the contact', 0.2, async function () {
   if (!contact) return 'no contact on the scratch node: the world failed';
   D.contact = await detailsOf(contact);
   return D.contact.listed || D.contact.shown;
-}, 1000);
+}, test.limit.quick);
 test.run('the contact\'s details open over Contacts under one bar of their own', 0.2, function () {
   if (!D.contact) return 'the contact was not opened: the world failed';
   return D.contact.over || D.contact.overBars;
-}, 1000);
+}, test.limit.quick);
 test.run('the contact: the list is out of view under them', 0.2, function () {
   if (!D.contact) return 'the contact was not opened: the world failed';
   return D.contact.rows.indexOf(contact.key) === -1 || 'rows: ' + short(D.contact.rows);
-}, 1000);
+}, test.limit.quick);
 test.run('the contact: no page is pushed on the navigation', 0.2, function () {
   if (!D.contact) return 'the contact was not opened: the world failed';
   return D.contact.depthNow === D.contact.depth || 'the navigation went from ' + D.contact.depth + ' to ' + D.contact.depthNow;
-}, 1000);
+}, test.limit.quick);
 test.run('the contact: their ✕ shows Contacts again, one step back', 0.2, function () {
   if (!D.contact) return 'the contact was not opened: the world failed';
   return D.contact.back || D.contact.backBars;
-}, 1000);
+}, test.limit.quick);
 const zzKey2 = require('crypto').generateKeyPairSync('ed25519').publicKey.export({ type: 'spki', format: 'der' }).toString('base64');
 test.run('the world: a second person is in the book', 0.2, async function () {
   if (!N || !N.up) return 'no scratch node: the world failed';
@@ -461,7 +461,7 @@ test.run('the world: a second person is in the book', 0.2, async function () {
   // Andy: "give each contact row its own detail panel", as the agent's tabs hold the same ui for different rows
   planted2 = await call(N.base, 'contact.block', { publicKey: zzKey2, publicLabel: 'zzPersonTwo' });
   return (planted2.status === 200) ? true : 'contact.block: ' + short(planted2.text);
-}, 1000);
+}, test.limit.quick);
 test.run('the world: Contacts lists both', 0.2, async function () {
   if (!N || !N.up) return 'no scratch node: the world failed';
   if (!where) return 'no Chrome here: the world failed';
@@ -470,7 +470,7 @@ test.run('the world: Contacts lists both', 0.2, async function () {
   await waitFor('tiles().indexOf("contact") !== -1', 10000);
   await T('press("contact")');
   return (await waitFor('rows().indexOf(' + JSON.stringify(zzKey) + ') !== -1 && rows().indexOf(' + JSON.stringify(zzKey2) + ') !== -1', 10000)) ? true : 'rows: ' + short(await T('rows()'));
-}, 1000);
+}, test.limit.quick);
 const openOne = async function (key, mark) {
 await T('markBefore()');
 await T('openRow(' + JSON.stringify(key) + ')');
@@ -491,13 +491,13 @@ test.run('the world: the first person\'s details open', 0.2, async function () {
   // panel shows its own row, read from what is in view: its Public Handle fact (detailElement.js) and, blocked, Unblock.
   a = await openOne(zzKey, 'rowA');
   return (a > 0) ? true : 'nothing drew for the first person';
-}, 4000);
+}, test.limit.slow);
 test.run('the first person\'s panel shows their data: Public Handle zzPerson, Unblock', 0.2, async function () {
   if (!N || !N.up) return 'no scratch node: the world failed';
   if (!where) return 'no Chrome here: the world failed';
   if (!c || c.error) return 'no Chrome page: the world failed';
   return (await until(function () { return showsOwn('zzPerson'); }, 8000)) ? true : 'the first panel shows: ' + short(await c.evaluate('String((document.getElementById("zzBox") || {}).innerText || "")'));
-}, 1000);
+}, test.limit.quick);
 test.run('the second person\'s panel shows their own data: Public Handle zzPersonTwo, Unblock', 0.2, async function () {
   if (!N || !N.up) return 'no scratch node: the world failed';
   if (!where) return 'no Chrome here: the world failed';
@@ -505,19 +505,19 @@ test.run('the second person\'s panel shows their own data: Public Handle zzPerso
   await closeOne();
   b = await openOne(zzKey2, 'rowB');
   return (await until(function () { return showsOwn('zzPersonTwo'); }, 8000)) ? true : 'the second panel shows: ' + short(await c.evaluate('String((document.getElementById("zzBox") || {}).innerText || "")'));
-}, 4000);
+}, test.limit.slow);
 test.run('the second person\'s details are a panel of their own: new, and the first\'s out of view', 0.2, async function () {
   if (!N || !N.up) return 'no scratch node: the world failed';
   if (!where) return 'no Chrome here: the world failed';
   if (!c || c.error) return 'no Chrome page: the world failed';
   return (b > 0 && (await T('markedShown("rowA")')) === 0) ? true : 'drawn for the second ' + b + ', the first\'s shown ' + (await T('markedShown("rowA")'));
-}, 1000);
+}, test.limit.quick);
 test.run('and the first person\'s panel is kept, not drawn over', 0.2, async function () {
   if (!N || !N.up) return 'no scratch node: the world failed';
   if (!where) return 'no Chrome here: the world failed';
   if (!c || c.error) return 'no Chrome page: the world failed';
   return ((await T('marked("rowA")')) > 0) ? true : 'the first person\'s panel is gone: marked ' + (await T('marked("rowA")'));
-}, 1000);
+}, test.limit.quick);
 test.run('the first person pressed again: their own panel shows, as it was left, with their data', 0.2, async function () {
   if (!N || !N.up) return 'no scratch node: the world failed';
   if (!where) return 'no Chrome here: the world failed';
@@ -525,7 +525,7 @@ test.run('the first person pressed again: their own panel shows, as it was left,
   await closeOne();
   await T('openRow(' + JSON.stringify(zzKey) + ')');
   return (await waitFor('markedShown("rowA") > 0 && markedShown("rowB") === 0', 10000) && await showsOwn('zzPerson')) ? true : 'shown: first ' + (await T('markedShown("rowA")')) + ', second ' + (await T('markedShown("rowB")'));
-}, 1000);
+}, test.limit.quick);
 test.run('no uncaught error on the page outside the Agent, up to the Agent switched off', 0.2, async function () {
   if (!N || !N.up) return 'no scratch node: the world failed';
   if (!where) return 'no Chrome here: the world failed';
@@ -537,7 +537,7 @@ test.run('no uncaught error on the page outside the Agent, up to the Agent switc
   thrown = c.heard.slice(0, heardBefore).filter(function (m) { return m.method === 'Runtime.exceptionThrown'; }).map(function (m) { return (m.params.exceptionDetails.exception && m.params.exceptionDetails.exception.description) || m.params.exceptionDetails.text; })
   .filter(function (t) { return !/^\s+at .*spirit\/app\/agent\//m.test(String(t)); });
   return (!thrown.length) ? true : 'thrown: ' + short(thrown);
-}, 1000);
+}, test.limit.quick);
 test.after(async function () {
   if (N) await stop(N.child);
   (live || []).forEach(function (x) { try { x.kill(); } catch (e) { /* gone */ } });

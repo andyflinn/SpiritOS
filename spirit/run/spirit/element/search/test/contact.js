@@ -64,18 +64,18 @@ test.run('the world: the picker runs on a bare window', 0.2, async function () {
   const E = ((global.window.spirit.element || {}).spirit || {}).element || {};
   made = E.search && E.search.contact;
   return true;
-}, 1000);
+}, test.limit.quick);
 // goal/G40.8: the old shell's list search is forbidden on the face; goal/G43.32: no list of its own either.
 test.run('it makes no list of its own: no probabilitySearch, nothing of the old shell\'s list search', 0.2, function () {
   if (!code) return 'no contact.js read: the world failed';
   const own = /shellCreateListSearch|listSearch\.js/.test(code) || /\.element\.search\.create\(/.test(code);
   return !own ? true : 'contact.js still makes a list';
-}, 1000);
+}, test.limit.quick);
 test.run('it places itself at spirit.element.spirit.element.search.contact, with a create', 0.2, function () {
   if (!lists) return 'the picker never ran: the world failed';
   const E = ((global.window.spirit.element || {}).spirit || {}).element || {};
   return made && typeof made.create === 'function' ? true : 'elements: ' + short(Object.keys(E.search || {}));
-}, 1000);
+}, test.limit.quick);
 
 // one list, drawn in its dropdown and in its pane (Andy: "all, any search-unit has ONE list shared by popup and list modes.")
 test.run('create(container, options) appends its root to its container and answers it', 0.2, async function () {
@@ -85,35 +85,35 @@ test.run('create(container, options) appends its root to its container and answe
   await settle();
   d = lists[0];
   return box.children.length === 1 && box.children[0] === drop ? true : 'container holds ' + box.children.length;
-}, 1000);
+}, test.limit.quick);
 test.run('on a bare page it requires the one contact list and the contact family\'s cache, then draws it', 0.2, function () {
   if (!required) return 'the picker never ran: the world failed';
   return required.indexOf('spirit/element/search/contact/listElement.js') !== -1 && managers.indexOf('contact') !== -1 ? true : 'required ' + short(required) + ', managers ' + short(managers);
-}, 1000);
+}, test.limit.quick);
 test.run('the dropdown is the list in its dropdown face, drawn into its root, its words handed on', 0.2, function () {
   if (!box) return NO_MADE;
   return !!d && d.host === drop && d.o.face === 'dropdown' && d.o.placeholder === 'choose an ID…' && d.o.all === 'every ID' ? true : 'list: ' + short(d && d.o);
-}, 1000);
+}, test.limit.quick);
 test.run('an ID table (goal/G41.13) is handed on whole: table, key, label, data', 0.2, function () {
   if (!box) return NO_MADE;
   return !!d && d.o.table === 'loopback://api/agent/job' && d.o.key === 'id' && d.o.label === 'title' && d.o.data === 'b/branch' ? true : 'list: ' + short(d && d.o);
-}, 1000);
+}, test.limit.quick);
 test.run('nothing chosen at first: value \'\', row null', 0.2, function () {
   if (!box) return NO_MADE;
   return drop.value === '' && drop.row === null && /\bcontact-selector-face-dropdown\b/.test(drop.className) ? true : 'root: ' + short({ value: drop.value, row: drop.row, className: drop.className });
-}, 1000);
+}, test.limit.quick);
 test.run('a pick sets value to the key and row to the row, with one bubbling change', 0.2, function () {
   if (!d) return NO_D;
   changes = [];
   drop.addEventListener('change', function (e) { changes.push(e); });
   d.o.pick({ name: 'Night job' }, 'KJ');
   return drop.value === 'KJ' && drop.row && drop.row.name === 'Night job' && changes.length === 1 && changes[0].bubbles === true ? true : 'value ' + short(drop.value) + ', changes ' + changes.length;
-}, 1000);
+}, test.limit.quick);
 test.run('None picked clears them', 0.2, function () {
   if (!d) return NO_D;
   d.o.pick(null);
   return drop.value === '' && drop.row === null ? true : 'value ' + short(drop.value);
-}, 1000);
+}, test.limit.quick);
 
 const hid = { name: 'offered' };
 test.run('the pane is the same list in its pane face, filling its box', 0.2, async function () {
@@ -123,22 +123,22 @@ test.run('the pane is the same list in its pane face, filling its box', 0.2, asy
   await settle();
   p = lists[1];
   return !!p && p.o.face === 'pane' && p.o.placeholder === '' && p.o.all === undefined && /\bfill\b/.test(pane.className) ? true : 'list: ' + short(p && p.o);
-}, 1000);
+}, test.limit.quick);
 test.run('the caller\'s hidden filters and statuses are handed on (Chat\'s offered peers and ⌛)', 0.2, function () {
   if (!p) return NO_P;
   return p.o.filters[0] === hid && p.o.statuses === statuses ? true : 'list: ' + short({ filters: p.o.filters, statuses: p.o.statuses });
-}, 1000);
+}, test.limit.quick);
 test.run('a pane\'s press picks: it hands the list no details, so the list opens nothing itself', 0.2, function () {
   if (!p) return NO_P;
   return p.o.details === null ? true : 'details: ' + short(p.o.details);
-}, 1000);
+}, test.limit.quick);
 test.run('unless its caller opens something itself: options.details is handed on', 0.2, async function () {
   if (!made || typeof made.create !== 'function') return NO_MADE;
   const opened = [];
   made.create(element('div'), { face: 'pane', details: function (row) { opened.push(row); } });
   await settle();
   return lists[2] && typeof lists[2].o.details === 'function' ? true : 'details: ' + typeof (lists[2] && lists[2].o.details);
-}, 1000);
+}, test.limit.quick);
 
 // refresh and mark go to the list
 test.run('refresh() asks the list again; mark(key, status) is the list\'s mark', 0.2, function () {
@@ -146,7 +146,7 @@ test.run('refresh() asks the list again; mark(key, status) is the list\'s mark',
   pane.refresh();
   pane.mark('K1', 'waiting');
   return p.refreshed === 1 && JSON.stringify(p.marks) === '[["K1","waiting"]]' ? true : 'refreshed ' + p.refreshed + ', marks ' + short(p.marks);
-}, 1000);
+}, test.limit.quick);
 test.run('a mark said before the list is here is said to it once it is', 0.2, async function () {
   if (!made || typeof made.create !== 'function') return NO_MADE;
   let release = null;
@@ -158,14 +158,14 @@ test.run('a mark said before the list is here is said to it once it is', 0.2, as
   await settle();
   const e = lists[3];
   return !!e && JSON.stringify(e.marks) === '[["K2","waiting"]]' ? true : 'marks ' + short(e && e.marks);
-}, 1000);
+}, test.limit.quick);
 
 // destroy
 test.run('destroy lets its list go and takes itself out of its container', 0.2, function () {
   if (!d) return NO_D;
   drop.destroy();
   return d.destroyed === 1 && box.children.length === 0 ? true : 'destroyed ' + d.destroyed + ', container holds ' + box.children.length;
-}, 1000);
+}, test.limit.quick);
 test.run('a picker destroyed before its list is here draws none', 0.2, async function () {
   if (!made || typeof made.create !== 'function') return NO_MADE;
   let arrive = null;
@@ -176,4 +176,4 @@ test.run('a picker destroyed before its list is here draws none', 0.2, async fun
   hold = null;
   await settle();
   return lists.length === 4 ? true : lists.length + ' lists drawn';
-}, 1000);
+}, test.limit.quick);

@@ -79,7 +79,7 @@ test.run('the world: a server with event.subscribe on it', 0.2, async function (
   W.w = w;
   W.port = w.server.address().port;
   return !!W.port || 'the server has no port';
-}, 1000);
+}, test.limit.quick);
 
 // an open stream holds its heartbeat and its listeners, and hears every event
 test.run('one stream open: one heartbeat, one listener on the jobs', 0.2, async function () {
@@ -90,13 +90,13 @@ test.run('one stream open: one heartbeat, one listener on the jobs', 0.2, async 
   const openHeld = w.held();
   return openHeld.timers === 1 && openHeld.jobUpdated === 1 && openHeld.pageStreams === 1 ? true
     : 'one stream open holds ' + JSON.stringify(openHeld) + ': nothing below can be judged';
-}, 1000);
+}, test.limit.quick);
 test.run('it hears a job change', 0.2, async function () {
   if (!W.live) return 'no stream open: the test before failed';
   W.w.jobs.events.emit('job-updated', { id: 'one' });
   const heardIt = await until(function () { return W.live.heard.join('').indexOf('"id":"one"') !== -1; }, 2000);
   return heardIt || 'it heard ' + JSON.stringify(W.live.heard.join('').slice(0, 200));
-}, 1000);
+}, test.limit.quick);
 
 // closed by its client, as a process closes it when its reply has come
 test.run('closed: no heartbeat is left, and no listener on any source', 0.2, async function () {
@@ -104,7 +104,7 @@ test.run('closed: no heartbeat is left, and no listener on any source', 0.2, asy
   W.live.req.destroy();
   const gone = await until(function () { return same(W.w.held(), nothingHeld); }, 3000);
   return gone || 'closed, it still holds ' + JSON.stringify(W.w.held());
-}, 1000);
+}, test.limit.quick);
 
 // a server's stream the same (X-Spirit-Reader: server, every peerPost opens one)
 test.run('open, it witnesses the packets', 0.2, async function () {
@@ -112,13 +112,13 @@ test.run('open, it witnesses the packets', 0.2, async function () {
   W.reader = await open(W.port, { 'x-spirit-reader': 'server' });
   await until(function () { return W.w.held().packets === 1; }, 2000);
   return W.w.held().packets === 1 || 'open, it holds ' + JSON.stringify(W.w.held());
-}, 1000);
+}, test.limit.quick);
 test.run('closed: nothing is left', 0.2, async function () {
   if (!W.reader) return 'no server stream open: the test before failed';
   W.reader.res.destroy();
   const readerGone = await until(function () { return same(W.w.held(), nothingHeld); }, 3000);
   return readerGone || 'closed, it still holds ' + JSON.stringify(W.w.held());
-}, 1000);
+}, test.limit.quick);
 
 // twenty opened and closed, nothing grows
 test.run('after twenty, no heartbeat and no listener is left', 0.2, async function () {
@@ -126,7 +126,7 @@ test.run('after twenty, no heartbeat and no listener is left', 0.2, async functi
   for (let i = 0; i < 20; i++) { const s = await open(W.port, { 'x-spirit-reader': 'server' }); s.req.destroy(); }
   const flat = await until(function () { return same(W.w.held(), nothingHeld); }, 5000);
   return flat || 'after twenty, it still holds ' + JSON.stringify(W.w.held());
-}, 1000);
+}, test.limit.quick);
 
 // one closing leaves the other open
 test.run('the other keeps its heartbeat and goes on hearing', 0.2, async function () {
@@ -141,4 +141,4 @@ test.run('the other keeps its heartbeat and goes on hearing', 0.2, async functio
   const held = w.held();
   b.req.destroy();
   return held.timers === 1 && bHeard ? true : 'held ' + JSON.stringify(held) + ', heard ' + bHeard;
-}, 1000);
+}, test.limit.quick);

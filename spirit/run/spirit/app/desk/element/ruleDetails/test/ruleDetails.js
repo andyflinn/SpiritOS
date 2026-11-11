@@ -128,13 +128,13 @@ const noE = function () { return !W.E ? 'no element: the tests above failed' : '
 const noK = function () { return !W.K ? 'no desk cache: the tests above failed' : ''; };
 
 // spirit/app/desk/element/ruleDetails/ruleDetails.js: Desk's rule dialog, in Desk's own elements (goal/G43.30)
-test.run('its element file is there', 0.2, function () { return SRC !== '' || PLACE + ' is not there'; }, 1000);
+test.run('its element file is there', 0.2, function () { return SRC !== '' || PLACE + ' is not there'; }, test.limit.quick);
 
 // nothing hand-rolled is left (goal/G41.9)
-test.run('no data-armed of its own: the arming button carries it', 0.2, function () { return (SRC !== '' && !/data-armed/.test(CODE)) || 'its code still writes data-armed, or there is no code'; }, 1000);
-test.run('it hands nothing to armUntilElsewhere itself: the arming button does', 0.2, function () { return (SRC !== '' && !/armUntilElsewhere/.test(CODE)) || 'its code still calls armUntilElsewhere, or there is no code'; }, 1000);
-test.run('no armed flag of its own', 0.2, function () { return (SRC !== '' && !/\brdArmed\b/.test(CODE)) || 'its code still keeps rdArmed, or there is no code'; }, 1000);
-test.run('no armed class and no armedButton helper of its own', 0.2, function () { return (SRC !== '' && !/classList\.(add|remove|toggle)\(\s*['"]armed['"]/.test(CODE) && !/armedButton/.test(CODE)) || 'its code still has an armed class or an armedButton helper, or there is no code'; }, 1000);
+test.run('no data-armed of its own: the arming button carries it', 0.2, function () { return (SRC !== '' && !/data-armed/.test(CODE)) || 'its code still writes data-armed, or there is no code'; }, test.limit.quick);
+test.run('it hands nothing to armUntilElsewhere itself: the arming button does', 0.2, function () { return (SRC !== '' && !/armUntilElsewhere/.test(CODE)) || 'its code still calls armUntilElsewhere, or there is no code'; }, test.limit.quick);
+test.run('no armed flag of its own', 0.2, function () { return (SRC !== '' && !/\brdArmed\b/.test(CODE)) || 'its code still keeps rdArmed, or there is no code'; }, test.limit.quick);
+test.run('no armed class and no armedButton helper of its own', 0.2, function () { return (SRC !== '' && !/classList\.(add|remove|toggle)\(\s*['"]armed['"]/.test(CODE) && !/armedButton/.test(CODE)) || 'its code still has an armed class or an armedButton helper, or there is no code'; }, test.limit.quick);
 
 test.run('it is the element spirit.element.spirit.app.desk.element.ruleDetails.ruleDetails, with create(container, { key, via })', 0.2, function () {
   if (SRC === '') return PLACE + ' is not there';
@@ -142,13 +142,13 @@ test.run('it is the element spirit.element.spirit.app.desk.element.ruleDetails.r
   const E = ((((W.w.win.spirit.element.spirit.app.desk || {}).element || {}).ruleDetails || {}).ruleDetails);
   W.E = !!E && typeof E.create === 'function' ? E : null;
   return !!W.E || 'spirit.element.spirit.app.desk.element.ruleDetails.ruleDetails is ' + short(E && Object.keys(E));
-}, 1000);
+}, test.limit.quick);
 test.run('it loads spirit/element/armingButton.js itself, through spirit.require', 0.2, async function () {
   if (noE()) return noE();
   await W.w.make(node('container'), { key: 'rule/7', via: W.w.api });
   await settle();
   return W.w.required.indexOf('spirit/element/armingButton.js') !== -1 || 'required: ' + short(W.w.required);
-}, 1000);
+}, test.limit.quick);
 
 // Activate and Delete are arming buttons, each driven as its second press would
 const armingWhy = function () { return 'arming buttons: ' + short(W.w.arming.map(function (x) { return x.button && x.button.id || x.opts.label; })); };
@@ -167,33 +167,33 @@ test.run('Activate is an arming button', 0.2, function () {
   if (noE()) return noE();
   W.act = armingFor(W.w, ACT.id, ACT.label);
   return !!W.act || armingWhy();
-}, 1000);
-test.run('it says Activate, and armed Activate: sure?', 0.2, function () { if (!W.act) return 'no Activate arming button'; return says(W.act, ACT) || saysWhy(W.act); }, 1000);
-test.run('Activate: it is handed no api: the arming button hears a click elsewhere itself (goal/G43.24)', 0.2, function () { if (!W.act) return 'no Activate arming button'; return !('api' in W.act.opts) || 'handed: ' + short(Object.keys(W.act.opts)); }, 1000);
-test.run('Activate: it has a run', 0.2, function () { if (!W.act) return 'no Activate arming button'; return typeof W.act.opts.run === 'function' || 'no run'; }, 1000);
+}, test.limit.quick);
+test.run('it says Activate, and armed Activate: sure?', 0.2, function () { if (!W.act) return 'no Activate arming button'; return says(W.act, ACT) || saysWhy(W.act); }, test.limit.quick);
+test.run('Activate: it is handed no api: the arming button hears a click elsewhere itself (goal/G43.24)', 0.2, function () { if (!W.act) return 'no Activate arming button'; return !('api' in W.act.opts) || 'handed: ' + short(Object.keys(W.act.opts)); }, test.limit.quick);
+test.run('Activate: it has a run', 0.2, function () { if (!W.act) return 'no Activate arming button'; return typeof W.act.opts.run === 'function' || 'no run'; }, test.limit.quick);
 test.run('Activate\'s run asks rule.version of this rule, status active, with the text as it stands', 0.2, async function () {
   if (!W.act || typeof W.act.opts.run !== 'function') return 'no Activate run';
   const r = await runAsks(W.act, ACT.status);
   return r.good || r.why;
-}, 1000);
+}, test.limit.quick);
 test.run('Delete is an arming button', 0.2, function () {
   if (noE()) return noE();
   W.del = armingFor(W.w, DEL.id, DEL.label);
   return !!W.del || armingWhy();
-}, 1000);
-test.run('it says Delete, and armed Delete: sure?', 0.2, function () { if (!W.del) return 'no Delete arming button'; return says(W.del, DEL) || saysWhy(W.del); }, 1000);
-test.run('Delete: it is handed no api: the arming button hears a click elsewhere itself (goal/G43.24)', 0.2, function () { if (!W.del) return 'no Delete arming button'; return !('api' in W.del.opts) || 'handed: ' + short(Object.keys(W.del.opts)); }, 1000);
-test.run('Delete: it has a run', 0.2, function () { if (!W.del) return 'no Delete arming button'; return typeof W.del.opts.run === 'function' || 'no run'; }, 1000);
+}, test.limit.quick);
+test.run('it says Delete, and armed Delete: sure?', 0.2, function () { if (!W.del) return 'no Delete arming button'; return says(W.del, DEL) || saysWhy(W.del); }, test.limit.quick);
+test.run('Delete: it is handed no api: the arming button hears a click elsewhere itself (goal/G43.24)', 0.2, function () { if (!W.del) return 'no Delete arming button'; return !('api' in W.del.opts) || 'handed: ' + short(Object.keys(W.del.opts)); }, test.limit.quick);
+test.run('Delete: it has a run', 0.2, function () { if (!W.del) return 'no Delete arming button'; return typeof W.del.opts.run === 'function' || 'no run'; }, test.limit.quick);
 test.run('Delete\'s run asks rule.version of this rule, status deleted, with the text as it stands', 0.2, async function () {
   if (!W.del || typeof W.del.opts.run !== 'function') return 'no Delete run';
   const r = await runAsks(W.del, DEL.status);
   return r.good || r.why;
-}, 1000);
+}, test.limit.quick);
 // Version and Auto-attach stay plain buttons
 test.run('only Activate and Delete arm', 0.2, function () {
   if (noE()) return noE();
   return (!armingFor(W.w, 'rd-version', 'Version') && !armingFor(W.w, 'rd-auto', 'Auto-attach')) || armingWhy();
-}, 1000);
+}, test.limit.quick);
 
 // Andy: "EVERY FUCKING ELEMENT is verified to make sure when it changes shit it listens to fucking update via the
 // spirit object" (goal/G41.28).
@@ -206,24 +206,24 @@ test.run('it loads the desk family\'s cache manager (((spirit.data || {}).desk |
   await settle();
   W.K = ((W.v.win.spirit.data || {}).desk || {}).data;
   return ((W.v.managers || []).indexOf('desk') !== -1 && !!W.K) || 'managers: ' + short(W.v.managers);
-}, 1000);
+}, test.limit.quick);
 test.run('rule.get\'s answer is kept in ((spirit.data || {}).desk || {}).data', 0.2, function () {
   if (noK()) return noK();
   return (!!W.K.rule('rule/7') && W.K.rule('rule/7').text === 'the text') || 'kept: ' + short(W.K.rule('rule/7'));
-}, 1000);
+}, test.limit.quick);
 test.run('item.chat\'s answer is kept there too, under the rule', 0.2, function () {
   if (noK()) return noK();
   const part = W.K.part('rule/7');
   return (!!part && Array.isArray(part.chat) && part.chat.length === 1 && part.chat[0].text === 'first line') || 'kept: ' + short(part);
-}, 1000);
+}, test.limit.quick);
 test.run('the chat drawn is the chat kept', 0.2, function () {
   if (noK()) return noK();
   return /first line/.test(byId['rd-chat'] ? byId['rd-chat'].innerHTML : '') || 'chat: ' + short(byId['rd-chat'] && byId['rd-chat'].innerHTML);
-}, 1000);
+}, test.limit.quick);
 test.run('it has no listener of its own on the desk\'s publishes: the cache is what it hears', 0.2, function () {
   if (noK()) return noK();
   return !/onPublished/.test(CODE) || 'its code still calls onPublished';
-}, 1000);
+}, test.limit.quick);
 
 // a rule row changed in the cache repaints it, and refills the textbox only after his Version
 test.run('a rule changed in the cache, from elsewhere, repaints its head', 0.2, async function () {
@@ -232,27 +232,27 @@ test.run('a rule changed in the cache, from elsewhere, repaints its head', 0.2, 
   W.box.value = 'his own typing';
   W.K.published({ rule: 'rule/7', row: Object.assign({}, RULE, { label: 'renamed elsewhere', text: 'changed elsewhere' }) }); await settle();
   return /renamed elsewhere/.test(byId['rd-head'] ? byId['rd-head'].innerHTML : '') || 'head: ' + short(byId['rd-head'] && byId['rd-head'].innerHTML);
-}, 1000);
+}, test.limit.quick);
 test.run('and his typing in the textbox stays', 0.2, function () {
   if (!W.box) return 'no textbox: the tests above failed';
   return W.box.value === 'his own typing' || 'textbox: ' + short(W.box.value);
-}, 1000);
+}, test.limit.quick);
 test.run('Version sends the textbox as it stands', 0.2, async function () {
   if (!W.box) return 'no textbox: the tests above failed';
   W.asked = calls(W.v, 'desk.rule.get').length;
   byId['rd-body'].fire('click', { target: byId['rd-version'] }); await settle();
   const last = calls(W.v, 'desk.rule.version').pop();
   return (!!last && last.args.text === 'his own typing') || 'asked: ' + short(W.v.calls.slice(-1));
-}, 1000);
+}, test.limit.quick);
 test.run('and does not ask rule.get again: the version comes back through the cache', 0.2, function () {
   if (W.asked === undefined) return 'no Version press: the tests above failed';
   return calls(W.v, 'desk.rule.get').length === W.asked || 'rule.get asked ' + W.asked + ', then ' + calls(W.v, 'desk.rule.get').length;
-}, 1000);
+}, test.limit.quick);
 test.run('the version, come back as the rule\'s row in the cache, refills the textbox', 0.2, async function () {
   if (!W.box) return 'no textbox: the tests above failed';
   W.K.published({ rule: 'rule/7', row: Object.assign({}, RULE, { text: 'his own typing, versioned' }) }); await settle();
   return W.box.value === 'his own typing, versioned' || 'textbox: ' + short(W.box.value);
-}, 1000);
+}, test.limit.quick);
 test.run('a draft come back never refills the textbox', 0.2, async function () {
   if (!W.box) return 'no textbox: the tests above failed';
   const box = W.box;
@@ -262,7 +262,7 @@ test.run('a draft come back never refills the textbox', 0.2, async function () {
   box.value = 'typing on';
   W.K.published({ rule: 'rule/7', row: Object.assign({}, RULE, { text: 'his own typing, versioned', draft: 'a draft, as kept' }) }); await settle();
   return box.value === 'typing on' || 'textbox: ' + short(box.value);
-}, 1000);
+}, test.limit.quick);
 
 // a line said under the rule drops its chat kept, and it reads the chat again
 test.run('Send says the line under this rule (chat.add)', 0.2, async function () {
@@ -274,20 +274,20 @@ test.run('Send says the line under this rule (chat.add)', 0.2, async function ()
   byId['rd-body'].fire('click', { target: byId['rd-say-send'] }); await settle();
   const sent = calls(W.v, 'desk.chat.add').pop();
   return (!!sent && sent.args.id === 'rule/7' && sent.args.text === 'second line') || 'asked: ' + short(sent);
-}, 1000);
+}, test.limit.quick);
 test.run('and does not read the chat itself', 0.2, function () {
   if (W.chats === undefined) return 'no Send: the tests above failed';
   return calls(W.v, 'desk.item.chat').length === W.chats || 'item.chat asked ' + W.chats + ', then ' + calls(W.v, 'desk.item.chat').length;
-}, 1000);
+}, test.limit.quick);
 test.run('the rule.chat publish, come into the cache, has it read the chat again', 0.2, async function () {
   if (W.chats === undefined) return 'no Send: the tests above failed';
   W.K.published({ verb: 'rule.chat', rule: 'rule/7' }); await settle();
   return calls(W.v, 'desk.item.chat').length === W.chats + 1 || 'item.chat asked ' + W.chats + ', then ' + calls(W.v, 'desk.item.chat').length;
-}, 1000);
+}, test.limit.quick);
 test.run('and the chat drawn holds the new line', 0.2, function () {
   if (noK()) return noK();
   return /second line/.test(byId['rd-chat'] ? byId['rd-chat'].innerHTML : '') || 'chat: ' + short(byId['rd-chat'] && byId['rd-chat'].innerHTML);
-}, 1000);
+}, test.limit.quick);
 
 // ── ON THE REAL PAGE (goal/G43.30) ─────────────────────────────────────────────────────────────────────────────────
 // The box: "Desk opens it from there", and "A test presses each one once on the real page and finds that nothing
@@ -315,7 +315,7 @@ test.run('the world: a rule on the scratch desk', 0.2, async function () {
   const added = await W.call('desk.rule.add', { type: 'desk', label: 'zz rule to keep', text: 'a rule pressed once' });
   W.key = added.key || added.id;
   return !!W.key || 'rule.add answered ' + short(added);
-}, 130000);
+}, test.limit.long);
 test.run('the world: the rule\'s row is in Desk\'s Rules list', 0.2, async function () {
   if (noPage()) return noPage();
   const page = W.page;
@@ -324,19 +324,19 @@ test.run('the world: the rule\'s row is in Desk\'s Rules list', 0.2, async funct
   await H.until(function () { return page.evaluate("!!document.querySelector('#zzDesk [data-tab=\"rules\"]')"); }, H.WAIT);
   await page.evaluate("document.querySelector('#zzDesk [data-tab=\"rules\"]').click()");
   return (await H.until(function () { return page.evaluate('!!' + ROW); }, H.WAIT)) || 'no row for the rule';
-}, 2000);
+}, test.limit.quick);
 test.run('pressing it opens the rule dialog, its Delete there', 0.2, async function () {
   if (noPage()) return noPage();
   const page = W.page;
   await page.evaluate('(function () { var r = ' + ROW + '; if (r) r.click(); return !!r; })()');
   return (await H.until(function () { return page.evaluate('!!' + DELETE); }, H.WAIT)) || 'no rule dialog with a Delete: ' + short(await page.evaluate("String(document.getElementById('zzDesk').innerText).slice(0, 300)"));
-}, 2000);
+}, test.limit.quick);
 test.run('Desk opens it from spirit/app/desk/element/ruleDetails/ruleDetails.js, never from shell/ruleDetails/', 0.2, async function () {
   if (noPage()) return noPage();
   const from = JSON.parse(await W.page.evaluate('JSON.stringify(performance.getEntriesByType("resource").map(function (e) { return e.name; }).filter(function (n) { return /ruleDetails/.test(n); }))'));
   const fromShell = /\/shell\/ruleDetails\//;
   return (from.some(function (n) { return n.indexOf('/' + PLACE) !== -1; }) && !from.some(function (n) { return fromShell.test(n); })) || 'the page loaded ' + short(from);
-}, 1000);
+}, test.limit.quick);
 test.run('Delete pressed once deletes nothing: the rule stands as before', 0.2, async function () {
   if (noPage()) return noPage();
   await W.page.evaluate('(function () { var b = ' + DELETE + '; if (b) b.click(); return !!b; })()');
@@ -345,11 +345,11 @@ test.run('Delete pressed once deletes nothing: the rule stands as before', 0.2, 
   const before = W.before;
   return (!!after && after.status === before.status && after.status !== 'deleted') ||
     'after one press the rule is ' + short(after && after.status) + ', before ' + short(before && before.status);
-}, 5000);
+}, test.limit.slow);
 test.run('and it stands armed, waiting for the second press', 0.2, async function () {
   if (noPage()) return noPage();
   return (await W.page.evaluate('(function () { var b = ' + DELETE + '; return !!b && b.hasAttribute("data-armed"); })()')) || 'after one press its Delete is not armed';
-}, 1000);
+}, test.limit.quick);
 test.after(function () {
   const page = W.page, scratch = W.scratch || {};
   if (page && page.kid) page.kid.kill();

@@ -107,50 +107,50 @@ test.run('the world: the row runs on a bare window, the page\'s data set and the
   E = ((global.window.spirit.element || {}).spirit || {}).element || {};
   A = ((global.window.spirit.data || {}).auth || {}).data;
   return true;
-}, 1000);
+}, test.limit.quick);
 
 // it loads what it uses itself (rule/26)
 // goal/G41.26: the label is shown only, so no field input is used, and none is asked of it.
 test.run('it requires the shared row element through spirit.require, and no arming button: Delete is the branchEditor\'s (goal/G41.32)', 0.2, function () {
   if (!required) return NO_E;
   return required.indexOf('spirit/element/rowElement.js') !== -1 && required.indexOf('spirit/element/armingButton.js') === -1 ? true : 'required: ' + short(required);
-}, 1000);
+}, test.limit.quick);
 test.run('it loads the auth family\'s cache manager, which puts ((spirit.data || {}).auth || {}).data on the page', 0.2, function () {
   if (!managers) return NO_E;
   return managers.indexOf('auth') !== -1 && hasA() ? true : 'managers: ' + short(managers);
-}, 1000);
+}, test.limit.quick);
 test.run('it registers spirit.element.spirit.element.search.bundle.rowElement.create', 0.2, function () {
   if (!hasA()) return NO_A;
   return hasRow() ? true : 'elements: ' + short(Object.keys(E));
-}, 1000);
+}, test.limit.quick);
 
 // a bundle row: its label and owner
 test.run('it is a row element of kind bundle, keyed by the bundle\'s id', 0.2, function () {
   if (!hasRow()) return NO_ROW;
   el = E.search.bundle.rowElement.create({ id: 7, label: 'Read <files>' });
   return el.kind === 'bundle' && el.key === '7' && el.row.label === 'Read <files>' ? true : 'el: ' + short({ kind: el.kind, key: el.key, row: el.row });
-}, 1000);
+}, test.limit.quick);
 // goal/G41.25, box: "the bundleSelector's list will gain a new column \"owner\", displayed right after the bundles label."
 // goal/G41.32: "the bundleSelector:pane looses both the 'Edit' button and the 'Delete' Button."
 test.run('its fields are label and owner, in that order', 0.2, function () {
   if (!el) return NO_ROW;
   cells = cellsOf(el);
   return JSON.stringify(Object.keys(cells)) === '["label","owner"]' ? true : 'fields: ' + short(Object.keys(cells));
-}, 1000);
+}, test.limit.quick);
 test.run('the owner is shown as the bundle names it, never an input: it never changes after the add', 0.2, function () {
   if (!hasRow()) return NO_ROW;
   const owCells = cellsOf(E.search.bundle.rowElement.create({ id: 9, label: 'Agent tools', owner: 'agent' }));
   return /\bagent\b/.test(owCells.owner || '') && !/<input/.test(owCells.owner || '') ? true : 'owner: ' + short(owCells.owner);
-}, 1000);
+}, test.limit.quick);
 test.run('and drawn escaped', 0.2, function () {
   if (!hasRow()) return NO_ROW;
   const oddCells = cellsOf(E.search.bundle.rowElement.create({ id: 10, label: 'x', owner: 'a<b' }));
   return /a&lt;b/.test(oddCells.owner || '') && !/a<b/.test(oddCells.owner || '') ? true : 'owner: ' + short(oddCells.owner);
-}, 1000);
+}, test.limit.quick);
 test.run('the label is drawn escaped', 0.2, function () {
   if (!cells) return NO_ROW;
   return (/Read &lt;files>/).test(cells.label || '') && !/<files>/.test(cells.label || '') ? true : 'label: ' + short(cells.label);
-}, 1000);
+}, test.limit.quick);
 
 // the label is shown only (goal/G41.26)
 // Andy, box: "bundleSelector:pane mode the Label should now just be an output, field: A bundles label is determined
@@ -163,15 +163,15 @@ test.run('mounted, its label cell holds no input, editable or not', 0.2, async f
   ed.mount(hosts);
   await settle();
   return !hosts.label.querySelector('input') && !hosts.label.kids.some(function (k) { return /input|textarea/i.test(k.tag || ''); }) ? true : 'label cell: ' + short(hosts.label.kids.map(function (k) { return k.tag; }));
-}, 1000);
+}, test.limit.quick);
 test.run('it shows the label, escaped', 0.2, function () {
   if (!ed) return NO_ED;
   return (/Read &lt;files>|Read <files>/).test(labelText()) && !/<files>/.test(String(hosts.label.innerHTML || '')) ? true : 'label cell: ' + short(labelText());
-}, 1000);
+}, test.limit.quick);
 test.run('and asks the node no set, ever', 0.2, function () {
   if (!ed) return NO_ED;
   return asked.every(function (a) { return a.op !== 'set'; }) ? true : 'asked: ' + short(asked);
-}, 1000);
+}, test.limit.quick);
 // rule/19: a ui only draws what the server's stream says; goal/G41.14, Andy: "EVERY FUCKING element MUST FUCKING
 // LISTING to anything that changes their data set". The row repaints from the auth family's bundles.
 test.run('the bundle\'s row in the bundles changed, the row repaints its label', 0.2, async function () {
@@ -179,13 +179,13 @@ test.run('the bundle\'s row in the bundles changed, the row repaints its label',
   V.set('bundles/7', { id: 7, label: 'Mover' });
   await settle();
   return ed.row.label === 'Mover' && /Mover/.test(labelText()) ? true : 'row: ' + short(ed.row) + ', label cell ' + short(labelText());
-}, 1000);
+}, test.limit.quick);
 test.run('another bundle\'s row changes nothing here', 0.2, async function () {
   if (!ed) return NO_ED;
   V.set('bundles/8', { id: 8, label: 'Someone else' });
   await settle();
   return ed.row.label === 'Mover' ? true : 'row: ' + short(ed.row);
-}, 1000);
+}, test.limit.quick);
 
 // the type's own element takes the node's bundle rows from the stream (goal/G41.14)
 // The row element is the data type's code (G30.18: "rowElements carry the listeners and painters a subject needs
@@ -197,18 +197,18 @@ test.run('a bundle row published lands in the auth family\'s bundles by its id, 
   if (!hasA()) return NO_A;
   DATA.takeJob({ id: 'spirit.auth', data: { table: 'bundle', row: { id: 7, label: 'Reader' } } });
   return JSON.stringify(A.bundles.row({ id: 7, label: 'Reader' }.id)) === JSON.stringify({ id: 7, label: 'Reader' }) ? true : 'data: ' + short(A.bundles.rows());
-}, 1000);
+}, test.limit.quick);
 test.run('a row published again replaces the one kept', 0.2, function () {
   if (!hasA()) return NO_A;
   DATA.takeJob({ id: 'spirit.auth', data: { table: 'bundle', row: { id: 7, label: 'Lister' } } });
   const again = A.bundles.row({ id: 7, label: 'Reader' }.id);
   return again && again.label === 'Lister' ? true : 'data: ' + short(again);
-}, 1000);
+}, test.limit.quick);
 test.run('a row published gone is taken out', 0.2, function () {
   if (!hasA()) return NO_A;
   DATA.takeJob({ id: 'spirit.auth', data: { table: 'bundle', row: { id: { id: 7, label: 'Reader' }.id }, gone: true } });
   return A.bundles.row({ id: 7, label: 'Reader' }.id) === null ? true : 'data: ' + short(A.bundles.rows());
-}, 1000);
+}, test.limit.quick);
 test.run('the other table\'s rows, another job\'s, and a row with no id write nothing in the bundles', 0.2, function () {
   if (!hasA()) return NO_A;
   const before = JSON.stringify(A.bundles.rows());
@@ -216,4 +216,4 @@ test.run('the other table\'s rows, another job\'s, and a row with no id write no
   DATA.takeJob({ id: 'spirit.contact', data: { row: { id: 98 } } });
   DATA.takeJob({ id: 'spirit.auth', data: { table: 'bundle', row: { label: 'no id' } } });
   return JSON.stringify(A.bundles.rows()) === before ? true : 'data: ' + short(A.bundles.rows());
-}, 1000);
+}, test.limit.quick);

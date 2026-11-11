@@ -46,28 +46,28 @@ test.run('the world: the list runs on a bare window', 0.2, async function () {
   await settle();
   E = ((global.window.spirit.element || {}).spirit || {}).element || {};
   return true;
-}, 1000);
+}, test.limit.quick);
 
 // it loads what it uses itself (rule/26), and knows no grants table
 test.run('it requires the search element and its row element, and no data script', 0.2, function () {
   if (!required) return 'the list never ran: the world failed';
   return ['spirit/element/search.js', 'spirit/element/search/grant/rowElement.js'].every(function (p) { return required.indexOf(p) !== -1; }) && !required.some(function (p) { return /data\.js$/.test(p); }) ? true : 'required: ' + short(required);
-}, 1000);
+}, test.limit.quick);
 test.run('it names no table and no branch of its own: no auth verb, no agent grant, no data.grants (goal/G41.16)', 0.2, function () {
   if (!SRC) return 'no listElement.js read: the world failed';
   const names = /auth\.|agent\.grant|job_id|'grants'|"grants"/.test(SRC);
   return !names ? true : 'listElement.js names a table or branch of its own';
-}, 1000);
+}, test.limit.quick);
 test.run('it registers spirit.element.spirit.element.search.grant.listElement.create', 0.2, function () {
   if (!E) return 'the list never ran: the world failed';
   return !noList() ? true : 'elements: ' + short(Object.keys(E));
-}, 1000);
+}, test.limit.quick);
 test.run('made with no grants table, it is refused, and draws nothing', 0.2, function () {
   if (noList()) return NO_LIST;
   let refused = null;
   try { E.search.grant.listElement.create({}, {}); } catch (e) { refused = e && e.message; }
   return refused !== null && lists.length === 0 ? true : 'made with none: ' + short(refused) + ', lists ' + lists.length;
-}, 1000);
+}, test.limit.quick);
 
 // a pane of the table it is handed, a view of that table's branch
 test.run('it draws one probabilitySearch into its host, and fills it as soon as it is drawn', 0.2, async function () {
@@ -88,46 +88,46 @@ test.run('it draws one probabilitySearch into its host, and fills it as soon as 
   l = lists[0];
   if (l) o = l.o;
   return !!l && l.host === host && l.refreshes === 1 ? true : 'lists: ' + lists.length + ', refreshes ' + (l && l.refreshes);
-}, 1000);
+}, test.limit.quick);
 test.run('it is a view of the branch its table names: here nOdE-key_one/agent/grant', 0.2, function () {
   if (!l) return NO_SEARCH;
   return o.data === 'nOdE-key_one/agent/grant' ? true : 'data: ' + short(o.data);
-}, 1000);
+}, test.limit.quick);
 // WHAT IT NEEDS, IT REQUIRES ITSELF (goal/G43.24): its own data source is the search's options.search, never an api.
 test.run('it hands its search a data source of its own (options.search), no api', 0.2, function () {
   if (!l) return NO_SEARCH;
   return o.api === undefined && typeof o.search === 'function' ? true : 'api ' + typeof o.api + ', search ' + typeof o.search;
-}, 1000);
+}, test.limit.quick);
 test.run('its search is the table\'s search(text), the text trimmed, answered as a reply', 0.2, async function () {
   if (!l) return NO_SEARCH;
   if (typeof o.search !== 'function') return 'it hands its search no data source';
   const got = await o.search(o.args(' ni ', {}), o.verb);
   return searched.length === 1 && searched[0] === 'ni' && got && got.status === 200 && got.body && got.body.items.length === 1 ? true : 'searched ' + short(searched) + ', got ' + short(got);
-}, 1000);
+}, test.limit.quick);
 test.run('its columns are whose, the path and Revoke, Revoke the rightmost', 0.2, function () {
   if (!l) return NO_SEARCH;
   const cols = (o.columns || []).map(function (c) { return c.field; });
   return JSON.stringify(cols) === '["name","path","revoke"]' ? true : 'columns: ' + short(cols);
-}, 1000);
+}, test.limit.quick);
 test.run('each row is a grantElement, handed the same table and what the tree serves', 0.2, function () {
   if (!l) return NO_SEARCH;
   const el = o.element({ job_id: 'J1', path: 'fs.search', job: 'Night' }, 'J1\nfs.search');
   return el && el.kind === 'grant' && el.opts.grants === AGENT && el.opts.serves === serves ? true : 'element: ' + short(el && { kind: el.kind, same: el.opts.grants === AGENT });
-}, 1000);
+}, test.limit.quick);
 // THE WHOLE ROW (goal/G41.28; Andy, box v15: "All client side searches will be fixed, too, and search the whole row, as
 // cached in spirit.data."): the list hands its search no matched() of its own.
 test.run('it hands its search no matched(): the whole row is matched (goal/G41.28)', 0.2, function () {
   if (!l) return NO_SEARCH;
   return typeof o.matched !== 'function' ? true : 'it still hands matched(): ' + short(o.matched);
-}, 1000);
+}, test.limit.quick);
 test.run('the filters the page hands it are its own', 0.2, function () {
   if (!l) return NO_SEARCH;
   return o.filters === filters ? true : 'filters: ' + short(o.filters);
-}, 1000);
+}, test.limit.quick);
 test.run('and the selectors it hands it go to the search as they are, for its 🪣 row (goal/G41.26)', 0.2, function () {
   if (!l) return NO_SEARCH;
   return o.selectors === selectors ? true : 'selectors: ' + short(o.selectors && o.selectors.length);
-}, 1000);
+}, test.limit.quick);
 
 // an empty list holds its first grant (goal/G41.16), its cache manager's (goal/G41.28)
 // Found by cw live: a list with no rows drawn never heard its first grant. Since goal/G41.28 a table's rows are its
@@ -152,7 +152,7 @@ test.run('a list made with no row drawn is a view of the branch its first grant 
   const fresh = lists[n];
   const kept = A.grants.row(A.grantKey('K7', 'job.list'));
   return !!fresh && fresh.o.data === A.grants.branch && kept && kept.label === 'First' ? true : 'data ' + short(fresh && fresh.o.data) + ', kept ' + short(kept);
-}, 1000);
+}, test.limit.quick);
 
 // refresh and destroy are the search element's
 test.run('refresh and destroy reach the search element; .list is it', 0.2, function () {
@@ -160,4 +160,4 @@ test.run('refresh and destroy reach the search element; .list is it', 0.2, funct
   const r0 = l.refreshes;
   made.refresh(); made.destroy();
   return l.refreshes === r0 + 1 && l.destroyed === true && made.list === l ? true : 'refreshes ' + (l.refreshes - r0) + ', destroyed ' + l.destroyed;
-}, 1000);
+}, test.limit.quick);

@@ -37,11 +37,11 @@ const rows = function () { return (l && typeof l.opts.rows === 'function' ? l.op
 
 test.run('spirit/element/search/api/verb.js exists', 0.2, function () {
   return fs.existsSync(FILE) || 'there is no spirit/element/search/api/verb.js';
-}, 1000);
+}, test.limit.quick);
 test.run('it names no shellCreateListSearch (goal/G40.8)', 0.2, function () {
   SRC = fs.readFileSync(FILE, 'utf8');
   return !/shellCreateListSearch/.test(SRC) || 'it names shellCreateListSearch';
-}, 1000);
+}, test.limit.quick);
 
 // a shell element of its own, on probabilitySearch
 test.run('it adds apiVerbSelector with a create to window.spirit.element, and createApiVerbSelector no more', 0.2, function () {
@@ -83,59 +83,59 @@ test.run('it adds apiVerbSelector with a create to window.spirit.element, and cr
   E = ((win.spirit.element.spirit || {}).element || {});
   made = E.search && E.search.api && E.search.api.verb;
   return made && typeof made.create === 'function' && !('createApiVerbSelector' in E) ? true : 'elements: ' + short(Object.keys(E));
-}, 1000);
+}, test.limit.quick);
 test.run('it loads probabilitySearch itself (goal/G41.3)', 0.2, function () {
   if (!made || typeof made.create !== 'function') return NO_MADE;
   return w.required.indexOf('spirit/element/search.js') !== -1 ? true : 'required: ' + short(w.required);
-}, 1000);
+}, test.limit.quick);
 // Box v23: "every element gets a container and appends itself".
 test.run('create(container, options) appends the control to its container and answers it', 0.2, function () {
   if (!made || typeof made.create !== 'function') return NO_MADE;
   box = node('div');
   verbs = made.create(box, { own: false });
   return box.kids.length === 1 && box.kids[0] === verbs ? true : 'container holds ' + box.kids.length + (box.kids[0] === verbs ? ', the control' : ', not the control');
-}, 1000);
+}, test.limit.quick);
 test.run('it draws one probabilitySearch dropdown', 0.2, async function () {
   if (!verbs) return NO_MADE;
   verbs.addEventListener('change', function () { seen.push(verbs.value); });
   await settle();
   l = w.lists[0];
   return !!l && l.opts.face === 'dropdown' ? true : 'lists: ' + short(w.lists.map(function (x) { return x.opts.face; }));
-}, 1000);
+}, test.limit.quick);
 // Andy, goal/G41.14: "the apiVerbSelector element MUST offer a (valid) \"All Verbs\" option at the top, which results in an
 // empty string as \"value\"".
 test.run('its first option, at the top, reads All Verbs', 0.2, function () {
   if (!l) return NO_L;
   return l.opts.all === 'All Verbs' ? true : 'all: ' + l.opts.all;
-}, 1000);
+}, test.limit.quick);
 
 // another party's tree (own: false), listed from that tree: introSpector's deferral (the box: "the only exception is
 // introspector, deferred for network-scope design reasons.")
 test.run('with no server it is hidden and lists nothing', 0.2, function () {
   if (!l) return NO_L;
   return verbs.hidden === true && rows().length === 0 ? true : 'hidden ' + verbs.hidden + ', rows ' + short(rows());
-}, 1000);
+}, test.limit.quick);
 test.run('show(tree, server) lists that server\'s verbs, DEBUG never', 0.2, function () {
   if (!l) return NO_L;
   verbs.show(TREE, 'fs');
   return verbs.hidden === false && short(rows()) === short(['loadFile', 'search']) ? true : 'hidden ' + verbs.hidden + ', rows ' + short(rows());
-}, 1000);
+}, test.limit.quick);
 test.run('a pick sets its value and fires change', 0.2, function () {
   if (!l) return NO_L;
   l.opts.pick({ key: 'search', name: 'search' }, 'search');
   return verbs.value === 'search' && seen[seen.length - 1] === 'search' ? true : 'value ' + verbs.value + ', seen ' + short(seen);
-}, 1000);
+}, test.limit.quick);
 test.run('All Verbs is a valid choice: its value is the empty string, and change says so', 0.2, function () {
   if (!l) return NO_L;
   l.opts.pick(null, '');
   return verbs.value === '' && seen[seen.length - 1] === '' ? true : 'value ' + verbs.value + ', seen ' + short(seen);
-}, 1000);
+}, test.limit.quick);
 test.run('show with no server hides it and clears the choice', 0.2, function () {
   if (!l) return NO_L;
   l.opts.pick({ key: 'search', name: 'search' }, 'search');
   verbs.show(TREE, '');
   return verbs.hidden === true && verbs.value === '' && rows().length === 0 ? true : 'hidden ' + verbs.hidden + ', value ' + verbs.value;
-}, 1000);
+}, test.limit.quick);
 
 // this node's own verbs are the node family's cache (goal/G41.28; Andy, Q7: "the family, verb and app-server selectors
 // draw from it")
@@ -146,7 +146,7 @@ test.run('it loads the node manager, and its list is a view of ((spirit.data || 
   m = w.lists[w.lists.length - 1];
   N = ((win.spirit.data || {}).node || {}).data;
   return (w.managers || []).indexOf('node') !== -1 && !!N && m.opts.data === N.verbsBranch && m.opts.rows === undefined ? true : 'managers ' + short(w.managers) + ', data ' + short(m && m.opts.data) + ', rows ' + typeof (m && m.opts.rows);
-}, 1000);
+}, test.limit.quick);
 test.run('show(tree, server) narrows the kept verbs to that family\'s, DEBUG never', 0.2, function () {
   if (!N || !m) return 'no node cache or no list of this node\'s own verbs';
   N.keepTree(TREE, win.spirit.apiTreeIndex);
@@ -155,4 +155,4 @@ test.run('show(tree, server) narrows the kept verbs to that family\'s, DEBUG nev
   const fam = (m.opts.filters || []).filter(function (x) { return x.name === 'family'; })[0];
   const shown = Object.keys(kept).filter(function (k) { return fam && fam.test(kept[k]); }).map(function (k) { return kept[k].name; }).sort();
   return !!fam && short(shown) === short(['loadFile', 'search']) && mine.hidden === false ? true : 'shown ' + short(shown) + ', hidden ' + mine.hidden;
-}, 1000);
+}, test.limit.quick);

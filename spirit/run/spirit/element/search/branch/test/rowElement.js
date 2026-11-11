@@ -76,21 +76,21 @@ test.run('the world: the row runs on a bare window, the page\'s data set and the
   E = ((global.window.spirit.element || {}).spirit || {}).element || {};
   A = ((global.window.spirit.data || {}).auth || {}).data;
   return true;
-}, 1000);
+}, test.limit.quick);
 
 // it loads what it uses itself (rule/26)
 test.run('it requires the shared row element and the arming button through spirit.require', 0.2, function () {
   if (!required) return NO_E;
   return ['spirit/element/rowElement.js', 'spirit/element/armingButton.js'].every(function (p) { return required.indexOf(p) !== -1; }) ? true : 'required: ' + short(required);
-}, 1000);
+}, test.limit.quick);
 test.run('it loads the auth family\'s cache manager, which puts ((spirit.data || {}).auth || {}).data on the page', 0.2, function () {
   if (!managers) return NO_E;
   return managers.indexOf('auth') !== -1 && hasA() ? true : 'managers: ' + short(managers);
-}, 1000);
+}, test.limit.quick);
 test.run('it registers spirit.element.spirit.element.search.branch.rowElement.create', 0.2, function () {
   if (!hasA()) return NO_A;
   return hasRow() ? true : 'elements: ' + short(Object.keys(E));
-}, 1000);
+}, test.limit.quick);
 
 // a branch row: Family, Verb, Delete
 // Andy, box: "branchSelector:pane, with table columns as follows: 1. Family (duh?) 2. Verb 3. armingButton 'Delete'".
@@ -98,27 +98,27 @@ test.run('it is a row element of kind branch, keyed by the branch\'s id, its bun
   if (!hasRow()) return NO_ROW;
   el = E.search.branch.rowElement.create({ id: 3, bundle: 7, family: 'de<sk>', verb: 'chat<add>' });
   return el.kind === 'branch' && el.key === '3' && el.row.bundle === 7 && el.row.family === 'de<sk>' ? true : 'el: ' + short({ kind: el.kind, key: el.key, row: el.row });
-}, 1000);
+}, test.limit.quick);
 test.run('its fields are family, verb and delete, in that order', 0.2, function () {
   if (!el) return NO_ROW;
   cells = {}; (el.cells() || []).forEach(function (c) { cells[c.name] = c.html; });
   return JSON.stringify(Object.keys(cells)) === '["family","verb","delete"]' ? true : 'fields: ' + short(Object.keys(cells));
-}, 1000);
+}, test.limit.quick);
 test.run('family and verb are drawn escaped', 0.2, function () {
   if (!cells) return NO_ROW;
   return cells.family === 'de&lt;sk>' && /chat&lt;add>/.test(cells.verb || '') && !/<add>/.test(cells.verb || '') ? true : 'cells: ' + short(cells);
-}, 1000);
+}, test.limit.quick);
 // Andy, box: "A branch row with an empty verb shows as \"(ALL)\", as the filter does."
 test.run('an empty verb shows as (ALL)', 0.2, function () {
   if (!hasRow()) return NO_ROW;
   const all = E.search.branch.rowElement.create({ id: 4, bundle: 7, family: 'files', verb: '' });
   allCells = {}; all.cells().forEach(function (c) { allCells[c.name] = c.html; });
   return allCells.verb === '(ALL)' ? true : 'verb: ' + short(allCells.verb);
-}, 1000);
+}, test.limit.quick);
 test.run('delete is a button naming its action', 0.2, function () {
   if (!cells) return NO_ROW;
   return /data-action="delete"/.test(cells.delete || '') ? true : 'delete: ' + short(cells.delete);
-}, 1000);
+}, test.limit.quick);
 
 // Delete asks are-you-sure
 test.run('mounted, its Delete is an armingButton, and nothing is asked yet', 0.2, function () {
@@ -127,12 +127,12 @@ test.run('mounted, its Delete is an armingButton, and nothing is asked yet', 0.2
   el.mount(hosts);
   del = armed.filter(function (a) { return a.button && a.button.action === 'delete'; })[0];
   return !!del && typeof del.o.run === 'function' && asked.length === 0 ? true : 'armed: ' + short(armed.length) + ', asked ' + short(asked);
-}, 1000);
+}, test.limit.quick);
 test.run('its second press asks auth.branch { op: delete, id }', 0.2, async function () {
   if (!el) return NO_ROW;
   if (del) { await del.o.run(); await settle(); }
   return asked.length === 1 && asked[0].op === 'delete' && asked[0].id === 3 ? true : 'asked: ' + short(asked);
-}, 1000);
+}, test.limit.quick);
 
 // it repaints from the auth family's branches (goal/G41.14, G41.28)
 // Andy: "EVERY FUCKING element MUST FUCKING LISTING to anything that changes their data set".
@@ -144,13 +144,13 @@ test.run('its row in the branches changed, the row repaints: the verb now (ALL)'
   V.set('branches/5', { id: 5, bundle: 7, family: 'files', verb: '' });
   await settle();
   return live.row.verb === '' && lh.verb.innerHTML === '(ALL)' ? true : 'row: ' + short(live.row) + ', verb cell ' + short(lh.verb.innerHTML);
-}, 1000);
+}, test.limit.quick);
 test.run('another branch\'s row changes nothing here', 0.2, async function () {
   if (!live) return NO_ROW;
   V.set('branches/6', { id: 6, bundle: 7, family: 'desk', verb: 'x' });
   await settle();
   return live.row.family === 'files' ? true : 'row: ' + short(live.row);
-}, 1000);
+}, test.limit.quick);
 
 // the type's own element takes the node's branch rows from the stream (goal/G41.14)
 // The row element is the data type's code (G30.18: "rowElements carry the listeners and painters a subject needs
@@ -162,18 +162,18 @@ test.run('a branch row published lands in the auth family\'s branches by its id,
   if (!hasA()) return NO_A;
   DATA.takeJob({ id: 'spirit.auth', data: { table: 'branch', row: { id: 3, bundle: 7, family: 'desk', verb: 'chat.add' } } });
   return JSON.stringify(A.branches.row({ id: 3, bundle: 7, family: 'desk', verb: 'chat.add' }.id)) === JSON.stringify({ id: 3, bundle: 7, family: 'desk', verb: 'chat.add' }) ? true : 'data: ' + short(A.branches.rows());
-}, 1000);
+}, test.limit.quick);
 test.run('a row published again replaces the one kept', 0.2, function () {
   if (!hasA()) return NO_A;
   DATA.takeJob({ id: 'spirit.auth', data: { table: 'branch', row: { id: 3, bundle: 7, family: 'desk', verb: '' } } });
   const again = A.branches.row({ id: 3, bundle: 7, family: 'desk', verb: 'chat.add' }.id);
   return again && again.verb === '' ? true : 'data: ' + short(again);
-}, 1000);
+}, test.limit.quick);
 test.run('a row published gone is taken out', 0.2, function () {
   if (!hasA()) return NO_A;
   DATA.takeJob({ id: 'spirit.auth', data: { table: 'branch', row: { id: { id: 3, bundle: 7, family: 'desk', verb: 'chat.add' }.id }, gone: true } });
   return A.branches.row({ id: 3, bundle: 7, family: 'desk', verb: 'chat.add' }.id) === null ? true : 'data: ' + short(A.branches.rows());
-}, 1000);
+}, test.limit.quick);
 test.run('the other table\'s rows, another job\'s, and a row with no id write nothing in the branches', 0.2, function () {
   if (!hasA()) return NO_A;
   const before = JSON.stringify(A.branches.rows());
@@ -181,4 +181,4 @@ test.run('the other table\'s rows, another job\'s, and a row with no id write no
   DATA.takeJob({ id: 'spirit.contact', data: { row: { id: 98 } } });
   DATA.takeJob({ id: 'spirit.auth', data: { table: 'branch', row: { label: 'no id' } } });
   return JSON.stringify(A.branches.rows()) === before ? true : 'data: ' + short(A.branches.rows());
-}, 1000);
+}, test.limit.quick);

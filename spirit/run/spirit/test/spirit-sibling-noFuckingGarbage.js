@@ -107,19 +107,19 @@ function read() {
 if (WHOLE) {
   test.run('the scan read every test folder, more than a hundred files', 0.2, function () {
     return read().length > 100 || 'the scan read only ' + judged.length + ' files: it judged too little to say';
-  }, 1000);
+  }, test.limit.quick);
 } else if (MODULE) {
   test.run('the module handed has test files of its own, and they are read', 0.2, function () {
     return read().length > 0 || handed + ' has no test of its own: nothing judged';
-  }, 1000);
+  }, test.limit.quick);
 } else {
   test.run('the file handed is in a test folder', 0.2, function () {
     return read().length === 1 || arg + ' is neither a module nor a tracked file in a test folder: nothing judged';
-  }, 1000);
+  }, test.limit.quick);
 }
 // Each file that is garbage named in the answer, by its path and why.
 test.run('every file in a test folder matches a production file: none is garbage', 0.4, function () {
   if (!judged || !judged.length) return 'no file in a test folder read: nothing judged';
   const bad = judged.map(function (rel) { const why = garbage(rel); return why ? rel + ': garbage, ' + why + ' (' + RULE + ')' : ''; }).filter(Boolean);
   return !bad.length || bad.join('; ');
-}, 1000);
+}, test.limit.quick);

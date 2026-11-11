@@ -17,4 +17,4 @@ const DESK = path.join(RUN, 'spirit', 'app', 'desk');
 test.run('deskVerify records no Stacks door verdict', 0.2, function () {
   const verifyApi = code(path.join(RUN, 'spirit', 'app', 'deskVerify', 'api.js'));
   return (!!verifyApi && !/door\.record/.test(verifyApi)) || 'deskVerify\'s api still has door.record';
-}, 1000);
+}, test.limit.quick);

@@ -33,35 +33,35 @@ test.run('the world: a scratch node, and a Chrome on its face page', 0.2, async 
   if (!node.up || chrome.error) return 'no scratch node or no Chrome: nothing judged. ' + short(chrome.error || '');
   await chrome.send('Page.navigate', { url: node.base + '/face.html' });
   return (await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000)) ? true : 'the face page never had spirit.ready';
-}, 6000);
+}, test.limit.slow);
 test.run('it loads through spirit.require and is spirit.element.spirit.element.search.app.changeAppLabel', 0.2, async function () {
   if (!node || !node.up || !chrome || chrome.error) return NO_WORLD;
   loaded = await chrome.evaluate('spirit.ready.then(function () { return spirit.require("spirit/element/search/app/changeAppLabel.js"); }).then(function () { return !!(spirit.element.spirit.element.search.app.changeAppLabel && spirit.element.spirit.element.search.app.changeAppLabel.create); }, function (e) { return String(e); })');
   return loaded === true ? true : 'it did not load: ' + short(loaded);
-}, 1000);
+}, test.limit.quick);
 test.run('create(host, { key }) answers { destroy }', 0.2, async function () {
   if (loaded !== true) return NOT_LOADED;
   made = await chrome.evaluate('(function () { var b = document.createElement("div"); b.id = "l"; document.body.appendChild(b); window.__l = spirit.element.spirit.element.search.app.changeAppLabel.create(b, { key: "agent" }); return !!window.__l && typeof window.__l.destroy === "function"; }())');
   return made === true ? true : 'it made: ' + short(made);
-}, 1000);
+}, test.limit.quick);
 
 // one rowForm: [✏️] "Label" [its label in a box] [Change], as the detail draws it
 test.run('one rowForm, its box holding the app\'s label, Agent', 0.2, async function () {
   if (made !== true) return NOT_LOADED;
   return (await until(function () { return seen().then(function (v) { return v.forms === 1 && v.input === 'Agent'; }); }, 10000)) ? true : 'drawn: ' + short(await seen());
-}, 1000);
+}, test.limit.quick);
 test.run('with ✏️, the word Label, and a Change button', 0.2, async function () {
   if (made !== true) return NOT_LOADED;
   const v0 = await seen();
   return /✏/.test(v0.text) && /Label/.test(v0.text) && v0.button === 'Change' ? true : 'drawn: ' + short(v0);
-}, 1000);
+}, test.limit.quick);
 
 // the box: "writing through the app family's labelApp"
 test.run('Change writes the new label, and the app\'s row says it', 0.2, async function () {
   if (made !== true) return NOT_LOADED;
   await chrome.evaluate('(function () { var i = document.querySelector("#l input"); i.value = "Zz Renamed"; i.dispatchEvent(new Event("input", { bubbles: true })); document.querySelector("#l button").click(); return 1; }())');
   return (await until(function () { return labelOf('agent').then(function (l) { return l === 'Zz Renamed'; }); }, 10000)) ? true : 'the row: ' + short(await labelOf('agent'));
-}, 1000);
+}, test.limit.quick);
 
 // a label changed elsewhere shows, with no reload
 test.run('its box follows the row', 0.2, async function () {
@@ -69,9 +69,9 @@ test.run('its box follows the row', 0.2, async function () {
   await chrome.evaluate('document.activeElement && document.activeElement.blur && document.activeElement.blur(); 1');
   await ask('app.label', { key: 'agent', label: 'Zz From Elsewhere' });
   return (await until(function () { return seen().then(function (v) { return v.input === 'Zz From Elsewhere'; }); }, 10000)) ? true : 'drawn: ' + short(await seen());
-}, 1000);
+}, test.limit.quick);
 test.run('destroy empties its host', 0.2, async function () {
   if (made !== true) return NOT_LOADED;
   const empty = await chrome.evaluate('(function () { window.__l.destroy(); return document.getElementById("l").children.length === 0; }())');
   return empty === true ? true : 'destroy left ' + short(await seen());
-}, 1000);
+}, test.limit.quick);

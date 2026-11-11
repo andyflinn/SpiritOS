@@ -30,11 +30,11 @@ const NO_TREE = 'no tracked files read: the world failed';
 test.run('the world: before the move, the agent\'s api.js one folder down declares provider, model, persona and job', 0.2, function () {
   const was = execSync('git show ' + BASE + ':spirit/run/spirit/app/agent/api/api.js', { cwd: REPO, encoding: 'utf8' });
   return VERBS.every(function (v) { return new RegExp('\\n\\s+' + v + ':').test(was); }) ? true : 'the agent\'s api.js at ' + BASE + ' is not as read: nothing to compare with';
-}, 1000);
+}, test.limit.quick);
 test.run('the world: the tracked files on disk are read', 0.2, function () {
   X.tracked = execSync('git ls-files', { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(Boolean).filter(function (f) { return fs.existsSync(path.join(REPO, f)); });
   return X.tracked.length > 100 ? true : 'only ' + X.tracked.length + ' tracked files read: nothing judged';
-}, 1000);
+}, test.limit.quick);
 
 // ── 1. the agent's family at the app's top ──
 const top = path.join(RUN, 'spirit', 'app', 'agent', 'api.js');
@@ -46,28 +46,28 @@ test.run('spirit/app/agent/api.js is there, in git, with provider, model, person
   try { delete require.cache[top]; X.verbs = Object.keys(require(top).verbs || {}); } catch (e) { X.verbs = []; }
   return X.tracked.indexOf('spirit/run/spirit/app/agent/api.js') !== -1 && JSON.stringify(X.verbs) === JSON.stringify(NOW)
     ? true : 'spirit/app/agent/api.js: in git ' + (X.tracked.indexOf('spirit/run/spirit/app/agent/api.js') !== -1) + ', verbs ' + short(X.verbs);
-}, 1000);
+}, test.limit.quick);
 test.run('spirit/app/agent/api/ is gone', 0.2, function () {
   return !fs.existsSync(path.join(RUN, 'spirit', 'app', 'agent', 'api')) ? true : 'spirit/app/agent/api/ is still there';
-}, 1000);
+}, test.limit.quick);
 test.run('no app keeps an ./api/ folder', 0.2, function () {
   if (!X.tracked) return NO_TREE;
   const sub = X.tracked.filter(function (f) { return (/^spirit\/run\/spirit\/app\/[^/]+\/api\//).test(f); });
   return !sub.length ? true : sub.length + ' files still sit in one: ' + short(sub);
-}, 1000);
+}, test.limit.quick);
 
 // ── 3. one <verb>.json for each of the agent's verbs, as spirit/job/ has ──
 test.run('the world: spirit/job/get.json is the shape', 0.2, function () {
   return fs.existsSync(path.join(RUN, 'spirit', 'job', 'get.json')) ? true : 'no spirit/job/get.json to compare with';
-}, 1000);
+}, test.limit.quick);
 // One check per verb, each its own plain title (goal/G45.6).
 function verbJson(v) { let d = null; try { d = JSON.parse(read('spirit/app/agent/' + v + '.json')); } catch (e) { d = null; } return d; }
 function describes(d) { return !!d && typeof d.description === 'string' && d.description.trim().length > 0; }
 function whyNot(v) { const d = verbJson(v); return 'spirit/app/agent/' + v + '.json: ' + (d ? 'no description' : 'not there, or no json'); }
-test.run('provider.json describes the provider verb', 0.2, function () { return describes(verbJson('provider')) ? true : whyNot('provider'); }, 1000);
-test.run('model.json describes the model verb', 0.2, function () { return describes(verbJson('model')) ? true : whyNot('model'); }, 1000);
-test.run('persona.json describes the persona verb', 0.2, function () { return describes(verbJson('persona')) ? true : whyNot('persona'); }, 1000);
-test.run('job.json describes the job verb', 0.2, function () { return describes(verbJson('job')) ? true : whyNot('job'); }, 1000);
+test.run('provider.json describes the provider verb', 0.2, function () { return describes(verbJson('provider')) ? true : whyNot('provider'); }, test.limit.quick);
+test.run('model.json describes the model verb', 0.2, function () { return describes(verbJson('model')) ? true : whyNot('model'); }, test.limit.quick);
+test.run('persona.json describes the persona verb', 0.2, function () { return describes(verbJson('persona')) ? true : whyNot('persona'); }, test.limit.quick);
+test.run('job.json describes the job verb', 0.2, function () { return describes(verbJson('job')) ? true : whyNot('job'); }, test.limit.quick);
 
 // ── 4. no file names spirit/app/agent/api/ ──
 test.run('no file names spirit/app/agent/api/', 0.2, function () {
@@ -75,4 +75,4 @@ test.run('no file names spirit/app/agent/api/', 0.2, function () {
   const naming = X.tracked.filter(function (f) { return !SELF.test(f) && /\.(js|md|json|html|txt)$/.test(f); })
     .filter(function (f) { return (/spirit\/app\/agent\/api\/|app\/agent\/api\b(?!\.js)|'agent', 'api'/).test(fs.readFileSync(path.join(REPO, f), 'utf8')); });
   return !naming.length ? true : naming.length + ' still do: ' + short(naming);
-}, 1000);
+}, test.limit.quick);

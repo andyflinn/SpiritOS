@@ -12,11 +12,14 @@ default (0.2), general rule violation (0.4), crash/hang (0.7), security (0.8)"*.
 
 ## The call
 
-    test.run(title, severity, body, limitMs)
+    test.run(title, severity, body, limit)
     test.after(fn)
 
-`body()` returns `true` to pass; `false`, or a string saying what went wrong, to fail; it may be async. `limitMs` is the
-test's time limit, set from its measured run time with a margin. `test.after(fn)` runs once every test has run, whatever
+`body()` returns `true` to pass; `false`, or a string saying what went wrong, to fail; it may be async. `limit` is the
+test's time limit, one of the reporter's named limits, `test.limit.quick` (10 s, a test that asks and answers),
+`.slow` (60 s, one that starts a scratch node, a desk or a Chrome page) or `.long` (300 s, a whole world end to end);
+they sit in the reporter alone, so one change there moves every suite (Andy, 2026-11-11: *"i hope you have those as
+relatively central constants"*). A limit catches a hang, not a slow machine. `test.after(fn)` runs once every test has run, whatever
 they did. The tests run one at a time in the order given; the reporter prints a line for each, reports each, then prints
 the completion line and ends the process, its exit code 1 when a test failed.
 

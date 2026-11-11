@@ -80,7 +80,7 @@ function filesUnder(dir) {
       c = null;
     N = await boot(s.run); live.push(N.child);
     return (N.up) ? true : 'the scratch node did not come up: nothing judged';
-  }, 4000);
+  }, test.limit.slow);
   test.run('the world: the page has its spirit', 0.2, async function () {
     if (STOP) return STOP;
     if (!N.up) { STOP = 'nothing judged: an earlier test of this part failed'; return STOP; }
@@ -93,7 +93,7 @@ function filesUnder(dir) {
       return until(function () { return c.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
     };
     return (await open()) ? true : 'the page has no spirit: nothing judged';
-  }, 3000);
+  }, test.limit.slow);
   // ── the box: active is its one switch; before it nothing runs ──
   test.run('not active: no server job', 0.2, async function () {
     if (STOP) return STOP;
@@ -116,22 +116,22 @@ function filesUnder(dir) {
     tool = function (name) { return c.evaluate('(function () { var b = document.querySelector("#zzBox [data-tool=' + name + ']"); if (!b) return false; if (!b.hasAttribute("data-current")) b.click(); return true; }())'); };
 
     return (!(await liveJob(N.base))) ? true : 'a server job before Activate';
-  }, 1000);
+  }, test.limit.quick);
   test.run('not active: its verbs are not answered', 0.2, async function () {
     if (STOP) return STOP;
     return (!answers(await call(N.base, 'agent.DEBUG', {}))) ? true : 'its verb answered before Activate';
-  }, 1000);
+  }, test.limit.quick);
   test.run('its row is in the appSelector\'s pane', 0.2, async function () {
     if (STOP) return STOP;
     await selector('pane');
     return (await shows('Agent')) ? true : 'the pane: ' + short(await shown());
-  }, 1000);
+  }, test.limit.quick);
   test.run('and no tile yet', 0.2, async function () {
     if (STOP) return STOP;
     await selector('tiles');
     await sleep(1500);
     return ((await shown()).indexOf('Agent') === -1) ? true : 'tiles: ' + short(await shown());
-  }, 5000);
+  }, test.limit.slow);
   // ── the box: "Activate in the appSelector, and the server starts." ──
   test.run('the world: its row has an Activate button, and it is pressed', 0.2, async function () {
     if (STOP) return STOP;
@@ -140,21 +140,21 @@ function filesUnder(dir) {
     await shows('Agent');
     pressed = await until(function () { return pressInstaller().then(function (t) { return t === 'Activate'; }); }, 10000);
     return (pressed) ? true : 'no Activate on the Agent\'s row: ' + short(await shown());
-  }, 1000);
+  }, test.limit.quick);
   test.run('pressed, the server answers its verbs', 0.2, async function () {
     if (STOP) return STOP;
     return (await serverUp(N.base)) ? true : 'pressed, agent.debug: ' + short((await call(N.base, 'agent.DEBUG', {})).text);
-  }, 2000);
+  }, test.limit.quick);
   test.run('its server runs as a live job under the agent app\'s id', 0.2, async function () {
     if (STOP) return STOP;
     if (!answers(await call(N.base, 'agent.DEBUG', {}))) { STOP = 'no server, so nothing further is judged'; return STOP; }
     return (!!(await liveJob(N.base))) ? true : 'no live job with the id ' + MODULE;
-  }, 1000);
+  }, test.limit.quick);
   test.run('its rows are kept in spirit/state/agent/data/', 0.2, async function () {
     if (STOP) return STOP;
     db = path.join(s.run, 'spirit', 'state', 'agent', 'data', 'agent.db');
     return (fs.existsSync(db)) ? true : 'no agent.db in spirit/state/agent/data/';
-  }, 1000);
+  }, test.limit.quick);
   test.run('the world: the server takes a provider, a model, a persona and a job', 0.2, async function () {
     if (STOP) return STOP;
 
@@ -164,7 +164,7 @@ function filesUnder(dir) {
     Pe = await call(N.base, 'agent.persona', { op: 'add', icon: '🧙', label: ROWS.persona, persona: 'zz', bundle: 'zz', provider: P.body && P.body.id });
     J = await call(N.base, 'agent.job', { op: 'add', icon: '🧰', label: ROWS.job, job: 'zz', bundle: 'zz', provider: P.body && P.body.id, persona: Pe.body && Pe.body.id });
     return ([P, M, Pe, J].every(function (r) { return r.status === 200 && r.body && r.body.id; })) ? true : 'rows: ' + short([P.text, M.text, Pe.text, J.text]);
-  }, 1000);
+  }, test.limit.quick);
   // ── the box: "The Agent's tile opens, its tables work, and its rows are there" ──
   test.run('its tile opens the app', 0.2, async function () {
     if (STOP) return STOP;
@@ -176,29 +176,29 @@ function filesUnder(dir) {
       return until(function () { return c.evaluate('!!document.querySelector("#zzBox [data-tool=provider]")'); }, 15000);
     };
     return (await openTile()) ? true : 'the tile opened nothing: ' + short(await shown());
-  }, 2000);
+  }, test.limit.quick);
 async function rowShows(name) { const hit = await tool(name); return { ok: !!(hit && await shows(ROWS[name])), says: 'the ' + name + ' tool: ' + short(await shown()) }; }
   test.run('the provider table shows the provider row the test planted', 0.2, async function () {
     if (STOP) return STOP;
     // One table at a time, each check its own plain title (goal/G45.6: a title has no value built into it).
     PROVIDER_ROW = await rowShows('provider');
     return (PROVIDER_ROW.ok) ? true : PROVIDER_ROW.says;
-  }, 1000);
+  }, test.limit.quick);
   test.run('the model table shows the model row the test planted', 0.2, async function () {
     if (STOP) return STOP;
     MODEL_ROW = await rowShows('model');
     return (MODEL_ROW.ok) ? true : MODEL_ROW.says;
-  }, 1000);
+  }, test.limit.quick);
   test.run('the persona table shows the persona row the test planted', 0.2, async function () {
     if (STOP) return STOP;
     PERSONA_ROW = await rowShows('persona');
     return (PERSONA_ROW.ok) ? true : PERSONA_ROW.says;
-  }, 1000);
+  }, test.limit.quick);
   test.run('the job table shows the job row the test planted', 0.2, async function () {
     if (STOP) return STOP;
     JOB_ROW = await rowShows('job');
     return (JOB_ROW.ok) ? true : JOB_ROW.says;
-  }, 1000);
+  }, test.limit.quick);
   // ── the box: "data.js takes the id spirit.app.agent, not process/js/agent." ──
   test.run('the world: the server adds a provider', 0.2, async function () {
     if (STOP) return STOP;
@@ -207,12 +207,12 @@ async function rowShows(name) { const hit = await tool(name); return { ok: !!(hi
     added = await call(N.base, 'agent.provider', { op: 'add', icon: '🧪', label: 'zzLive', url: 'http://192.0.2.2:9/' });
     liveId = added.body && added.body.id;
     return (!!liveId) ? true : 'agent.provider add: ' + short(added.text);
-  }, 1000);
+  }, test.limit.quick);
   test.run('it reaches the page\'s spirit.data.agent with no reload', 0.2, async function () {
     if (STOP) return STOP;
     onPage = function () { return c.evaluate('(function () { var r = spirit.data.agent && spirit.data.agent.data && spirit.data.agent.data.row("provider", ' + JSON.stringify(String(liveId)) + '); return r ? r.label : ""; }())'); };
     return (!!liveId && await until(function () { return onPage().then(function (l) { return l === 'zzLive'; }); }, 8000)) ? true : 'on the page: ' + short(await onPage());
-  }, 1000);
+  }, test.limit.quick);
   // ── goal/G43.15, the box: "On the agent's right icon strip, the server's tool takes ⚙ instead of 🐞, and its panel shows serverDEBUG" ──
   test.run('the server\'s tool shows ⚙', 0.2, async function () {
     if (STOP) return STOP;
@@ -220,55 +220,55 @@ async function rowShows(name) { const hit = await tool(name); return { ok: !!(hi
     // goal/G43.15: the agent's own switch went; its server tool shows serverDEBUG, which switches appServer's DEBUG, kept by the node.
     serverIcon = await c.evaluate('(function () { var b = document.querySelector("#zzBox [data-tool=server]"); return b ? String(b.textContent || "").trim() : null; }())');
     return (/⚙/.test(String(serverIcon)) && !/🐞/.test(String(serverIcon))) ? true : 'its icon: ' + short(serverIcon);
-  }, 1000);
+  }, test.limit.quick);
   test.run('its panel shows serverDEBUG: turn on DEBUG Agent', 0.2, async function () {
     if (STOP) return STOP;
     await tool('server');
     debugRow = function () { return c.evaluate('(function () { var rows = Array.prototype.slice.call(document.querySelectorAll("#zzBox .shell-row-form")).filter(function (r) { return /DEBUG/.test(String(r.innerText || "")) && r.getBoundingClientRect().height > 0; }); return rows.length ? String(rows[0].innerText || "").replace(/\\s+/g, " ").trim() : ""; }())'); };
     return (await until(function () { return debugRow().then(function (t) { return /turn on DEBUG/i.test(t) && /Agent/.test(t); }); }, 10000)) ? true : 'its panel: ' + short(await debugRow());
-  }, 1000);
+  }, test.limit.quick);
   test.run('above it, the agent\'s icon, then its label', 0.2, async function () {
     if (STOP) return STOP;
     // goal/G43.15, the box: "the agent's ⚙ panel shows both above serverDEBUG": its visible rows, in order.
     panelRows = function () { return c.evaluate('(function () { var d = Array.prototype.filter.call(document.querySelectorAll("#zzBox .shell-row-form"), function (r) { return /DEBUG/.test(String(r.innerText || "")) && r.getBoundingClientRect().height > 0; })[0]; if (!d) return []; var p = d.parentElement; while (p && p.querySelectorAll(".shell-row-form").length < 3) p = p.parentElement; if (!p) return []; return Array.prototype.filter.call(p.querySelectorAll(".shell-row-form"), function (r) { return r.getBoundingClientRect().height > 0; }).map(function (r) { return String(r.innerText || "").replace(/\\s+/g, " ").trim(); }); }())'); };
     return (await until(function () { return panelRows().then(function (rows) { var i = rows.findIndex(function (t) { return /^✏️? ?Icon/.test(t) || /Icon/.test(t); }), l = rows.findIndex(function (t) { return /Label/.test(t); }), d = rows.findIndex(function (t) { return /DEBUG/.test(t); }); return i !== -1 && l !== -1 && d !== -1 && i < l && l < d; }); }, 10000)) ? true : 'its panel: ' + short(await panelRows());
-  }, 1000);
+  }, test.limit.quick);
   test.run('pressed, the agent\'s DEBUG is on', 0.2, async function () {
     if (STOP) return STOP;
     await c.evaluate('(function () { var rows = Array.prototype.slice.call(document.querySelectorAll("#zzBox .shell-row-form")).filter(function (r) { return /DEBUG/.test(String(r.innerText || "")); }); if (rows[0]) rows[0].querySelector("button").click(); return 1; }())');
     return (await until(function () { return call(N.base, 'agent.DEBUG', {}).then(function (r) { return !!r.body && r.body.debug === true; }); }, 8000)) ? true : 'agent.DEBUG {}: ' + short((await call(N.base, 'agent.DEBUG', {})).text);
-  }, 1000);
+  }, test.limit.quick);
   test.run('and the node keeps it in spirit/state/agent/node.json', 0.2, async function () {
     if (STOP) return STOP;
     kept = path.join(s.run, 'spirit', 'state', 'agent', 'node.json');
     return (await until(function () { return Promise.resolve((readJson(kept) || {}).debug === true); }, 8000)) ? true : 'node.json: ' + short(readJson(kept));
-  }, 1000);
+  }, test.limit.quick);
   test.run('no config.json of the agent\'s own is written', 0.2, async function () {
     if (STOP) return STOP;
     return (!fs.existsSync(path.join(s.run, 'spirit', 'state', 'agent', 'data', 'config.json'))) ? true : 'spirit/state/agent/data/config.json is there';
-  }, 1000);
+  }, test.limit.quick);
   test.run('and its panel says turn off DEBUG', 0.2, async function () {
     if (STOP) return STOP;
     return (await until(function () { return debugRow().then(function (t) { return /turn off DEBUG/i.test(t); }); }, 8000)) ? true : 'its panel: ' + short(await debugRow());
-  }, 1000);
+  }, test.limit.quick);
   // ── the box: "The tick box showDebug goes, with its use of relay-state/shell/agent/config.json" ──
   test.run('the tick box is not on the page', 0.2, async function () {
     if (STOP) return STOP;
 
     page = await c.evaluate('document.getElementById("zzBox").innerText').then(String);
     return (!/DEBUG state in the title bar/.test(page)) ? true : 'the page still says it';
-  }, 1000);
+  }, test.limit.quick);
   // ── the tile closes ──
   test.run('closed, the app is gone from the page', 0.2, async function () {
     if (STOP) return STOP;
 
     closed = await c.evaluate('(function () { var b = document.querySelector("#zzBox .app-container-close"); if (!b) return false; b.click(); return true; }())');
     return (closed && await until(function () { return c.evaluate('!document.querySelector("#zzBox [data-tool=provider]")'); }, 8000)) ? true : 'closing: ' + closed;
-  }, 25000);
+  }, test.limit.long);
   test.run('and it opens again', 0.2, async function () {
     if (STOP) return STOP;
     return (await openTile()) ? true : 'it did not open again: ' + short(await shown());
-  }, 1000);
+  }, test.limit.quick);
   // ── the box: "Deactivate, and the server stops and the tile goes." ──
   test.run('the world: its row has a Deactivate button, and it is pressed', 0.2, async function () {
     if (STOP) return STOP;
@@ -277,25 +277,25 @@ async function rowShows(name) { const hit = await tool(name); return { ok: !!(hi
     await shows('Agent');
     deact = await until(function () { return pressInstaller().then(function (t) { return t === 'Deactivate'; }); }, 10000);
     return (deact) ? true : 'no Deactivate on the Agent\'s row: ' + short(await shown());
-  }, 1000);
+  }, test.limit.quick);
   test.run('pressed, the server stops', 0.2, async function () {
     if (STOP) return STOP;
     return (await until(function () { return liveJob(N.base).then(function (j) { return !j; }); }, 15000)) ? true : 'a live server job stayed';
-  }, 1000);
+  }, test.limit.quick);
   test.run('and its verbs are not answered', 0.2, async function () {
     if (STOP) return STOP;
     return (!answers(await call(N.base, 'agent.DEBUG', {}))) ? true : 'its verb answered after Deactivate';
-  }, 1000);
+  }, test.limit.quick);
   test.run('its row stays in the pane', 0.2, async function () {
     if (STOP) return STOP;
     return (await shows('Agent')) ? true : 'the pane: ' + short(await shown());
-  }, 1000);
+  }, test.limit.quick);
   test.run('and its tile goes', 0.2, async function () {
     if (STOP) return STOP;
     await selector('tiles');
     await sleep(1500);
     return ((await shown()).indexOf('Agent') === -1) ? true : 'tiles: ' + short(await shown());
-  }, 5000);
+  }, test.limit.slow);
   // ── the box: "its rows are there, from the same spirit/state/agent/data/": through a restart, active again ──
   test.run('a restarted node starts it', 0.2, async function () {
     if (STOP) return STOP;
@@ -305,17 +305,17 @@ async function rowShows(name) { const hit = await tool(name); return { ok: !!(hi
     if (N) await stop(N.child);
     N = await boot(s.run); live.push(N.child);
     return (N.up && await serverUp(N.base)) ? true : 'a restarted node did not start it';
-  }, 3000);
+  }, test.limit.slow);
   test.run('its tile opens', 0.2, async function () {
     if (STOP) return STOP;
     await open();
     return (await openTile()) ? true : 'its tile did not open: ' + short(await shown());
-  }, 3000);
+  }, test.limit.slow);
   test.run('and the row made before is there', 0.2, async function () {
     if (STOP) return STOP;
     await tool('provider');
     return (await shows(ROWS.provider)) ? true : 'the provider tool: ' + short(await shown());
-  }, 1000);
+  }, test.limit.quick);
   // ── the box: "The agent has no sidecar. Nothing in this item reads, writes or tests one" ──
   test.run('after all that, no sidecar of the agent stands anywhere', 0.2, async function () {
     if (STOP) return STOP;
@@ -323,14 +323,14 @@ async function rowShows(name) { const hit = await tool(name); return { ok: !!(hi
     sidecars = filesUnder(path.join(s.run, 'spirit', 'state')).concat(filesUnder(path.join(s.run, 'spirit', 'app', 'agent')))
       .filter(function (f) { return /agent[^/\\]*\.sidecar\.json$/.test(f) });
     return (!sidecars.length) ? true : 'sidecars: ' + short(sidecars);
-  }, 1000);
+  }, test.limit.quick);
   test.run('and no code or test of the agent names one', 0.2, async function () {
     if (STOP) return STOP;
     code = filesUnder(path.join(RUN, 'spirit', 'app', 'agent')).filter(function (f) { return /\.js$/.test(f); })
       .filter(function (f) { return /sidecar/i.test(fs.readFileSync(f, 'utf8').replace(/\/\/.*$/gm, '')); }).map(function (f) { return path.relative(RUN, f); })
       .filter(function (f) { return f !== path.relative(RUN, __filename); });
     return (!code.length) ? true : 'naming one: ' + short(code);
-  }, 1000);
+  }, test.limit.quick);
   // ── the box: "The agent's files name their new paths." ──
   test.run('no code of the agent names its old folders', 0.2, async function () {
     if (STOP) return STOP;
@@ -339,14 +339,14 @@ async function rowShows(name) { const hit = await tool(name); return { ok: !!(hi
       .filter(function (f) { return /process\/js\/agent|shell\/agent/.test(fs.readFileSync(f, 'utf8').replace(/\/\/.*$/gm, '')); }).map(function (f) { return path.relative(RUN, f); })
       .filter(function (f) { return f !== path.relative(RUN, __filename); });
     return (!old.length) ? true : 'naming them: ' + short(old);
-  }, 1000);
+  }, test.limit.quick);
   // ── nothing threw on the page ──
   test.run('no uncaught error on the page, all the way', 0.2, async function () {
     if (STOP) return STOP;
 
     thrown = c.heard.filter(function (m) { return m.method === 'Runtime.exceptionThrown'; }).map(function (m) { return (m.params.exceptionDetails.exception && m.params.exceptionDetails.exception.description) || m.params.exceptionDetails.text; });
     return (!thrown.length) ? true : 'thrown: ' + short(thrown);
-  }, 1000);
+  }, test.limit.quick);
   // (left after the last check)
   test.after(async function () {
     if (N) await stop(N.child);
@@ -399,7 +399,7 @@ async function rowShows(name) { const hit = await tool(name); return { ok: !!(hi
     P = null;
     await until(function () { return home('agent.provider', { op: 'add', icon: ICON.provider, label: 'zzProvider', url: 'http://192.0.2.1:9/' }).then(function (a) { P = a; return a.status === 200 && !!(a.body && a.body.id); }); }, 20000);
     return (!!(P && P.body && P.body.id)) ? true : 'nothing judged: ' + short(P && P.text);
-  }, 5000);
+  }, test.limit.slow);
   test.run('and a model, a persona and a job', 0.2, async function () {
     if (STOP) return STOP;
     if (!(P && P.body && P.body.id)) { STOP = 'nothing judged: an earlier test of this part failed'; return STOP; }
@@ -407,12 +407,12 @@ async function rowShows(name) { const hit = await tool(name); return { ok: !!(hi
     Pe = await home('agent.persona', { op: 'add', icon: ICON.persona, label: 'zzPersona', persona: 'zz', bundle: 'zz', provider: P.body.id });
     J = await home('agent.job', { op: 'add', icon: ICON.job, label: 'zzJob', job: 'zz', bundle: 'zz', provider: P.body.id, persona: Pe.body && Pe.body.id });
     return (M.status === 200 && Pe.status === 200 && J.status === 200) ? true : 'nothing judged: ' + short([M.text, Pe.text, J.text]);
-  }, 1000);
+  }, test.limit.quick);
   test.run('and a bundle of the node\'s', 0.2, async function () {
     if (STOP) return STOP;
     B = await home('auth.bundle', { op: 'add', label: 'zzNodeBundle' });
     return (B.status === 200) ? true : 'auth.bundle: ' + short(B.text);
-  }, 1000);
+  }, test.limit.quick);
   test.run('the Agent app opens', 0.2, async function () {
     if (STOP) return STOP;
     where = findChrome();
@@ -429,7 +429,7 @@ async function rowShows(name) { const hit = await tool(name); return { ok: !!(hi
     await until(function () { return c.evaluate('!!document.querySelector("[data-tool=provider]")'); }, 10000);
     appOpen = await c.evaluate('!!document.querySelector("[data-tool=provider]")');
     return (appOpen) ? true : 'no Agent app, nothing judged: ' + short(await c.evaluate('document.body.innerText'));
-  }, 5000);
+  }, test.limit.slow);
   // ── a tabContainer stands in the centre, from the start ──
   test.run('with nothing opened, it is there', 0.2, async function () {
     if (STOP) return STOP;
@@ -444,11 +444,11 @@ async function rowShows(name) { const hit = await tool(name); return { ok: !!(hi
     waitTab = function (words) { return until(function () { return tabOf(words).then(function (t) { return t.length > 0; }); }, 6000); };
 
     return (await c.evaluate('!!document.querySelector(' + JSON.stringify(CENTRE + ' .tab-content') + ')')) ? true : 'no tabContainer in the centre';
-  }, 1000);
+  }, test.limit.quick);
   test.run('with no tabs yet', 0.2, async function () {
     if (STOP) return STOP;
     return ((await tabs()).length === 0) ? true : 'tabs before anything was opened: ' + short(await tabs());
-  }, 1000);
+  }, test.limit.quick);
   // ── each kind of row opens a closable tab, named by the box ──
 async function tabOpens(kind, row) {
   const words = ICON[kind] + ' ' + row;
@@ -464,38 +464,38 @@ async function tabOpens(kind, row) {
     // One kind of row at a time, each check its own plain title (goal/G45.6): its tab reads its table's icon and the row's label.
     PROVIDER_TAB = await tabOpens('provider', 'zzProvider');
     return (PROVIDER_TAB.opens) ? true : PROVIDER_TAB.opensSays;
-  }, 1000);
+  }, test.limit.quick);
   test.run('the provider row\'s tab has a close button', 0.2, async function () {
     if (STOP) return STOP;
     return (PROVIDER_TAB.closable) ? true : PROVIDER_TAB.closableSays;
-  }, 1000);
+  }, test.limit.quick);
   test.run('a model row opens a tab named by its icon and label, and it is active', 0.2, async function () {
     if (STOP) return STOP;
     MODEL_TAB = await tabOpens('model', 'zzModel');
     return (MODEL_TAB.opens) ? true : MODEL_TAB.opensSays;
-  }, 2000);
+  }, test.limit.quick);
   test.run('the model row\'s tab has a close button', 0.2, async function () {
     if (STOP) return STOP;
     return (MODEL_TAB.closable) ? true : MODEL_TAB.closableSays;
-  }, 1000);
+  }, test.limit.quick);
   test.run('a persona row opens a tab named by its icon and label, and it is active', 0.2, async function () {
     if (STOP) return STOP;
     PERSONA_TAB = await tabOpens('persona', 'zzPersona');
     return (PERSONA_TAB.opens) ? true : PERSONA_TAB.opensSays;
-  }, 1000);
+  }, test.limit.quick);
   test.run('the persona row\'s tab has a close button', 0.2, async function () {
     if (STOP) return STOP;
     return (PERSONA_TAB.closable) ? true : PERSONA_TAB.closableSays;
-  }, 1000);
+  }, test.limit.quick);
   test.run('a job row opens a tab named by its icon and label, and it is active', 0.2, async function () {
     if (STOP) return STOP;
     JOB_TAB = await tabOpens('job', 'zzJob');
     return (JOB_TAB.opens) ? true : JOB_TAB.opensSays;
-  }, 1000);
+  }, test.limit.quick);
   test.run('the job row\'s tab has a close button', 0.2, async function () {
     if (STOP) return STOP;
     return (JOB_TAB.closable) ? true : JOB_TAB.closableSays;
-  }, 1000);
+  }, test.limit.quick);
   // ── a row already open: its tab is made active, no second one ──
   test.run('the provider\'s tab is active again, and alone', 0.2, async function () {
     if (STOP) return STOP;
@@ -505,7 +505,7 @@ async function tabOpens(kind, row) {
     await sleep(500);
     again = await tabOf(ICON.provider + ' zzProvider');
     return (again.length === 1 && again[0].on) ? true : 'tabs ' + short(await tabs());
-  }, 2000);
+  }, test.limit.quick);
   // ── a tab has one listener on its row, and lets go of it when it closes ──
   test.run('three more presses on an open row add no listener', 0.2, async function () {
     if (STOP) return STOP;
@@ -517,7 +517,7 @@ async function tabOpens(kind, row) {
     for (let i = 0; i < 3; i++) { await pressRow('zzProvider'); await sleep(250); }
     stacked = await c.evaluate('window.__live');
     return (stacked === 0) ? true : stacked + ' more listeners on that row after three presses';
-  }, 3000);
+  }, test.limit.slow);
   // ── the tabs stay when the left tool changes ──
   test.run('showing another tool closes none of the open tabs', 0.2, async function () {
     if (STOP) return STOP;
@@ -526,7 +526,7 @@ async function tabOpens(kind, row) {
     await tool('job');
     await sleep(500);
     return (before >= 4 && (await tabs()).length === before) ? true : 'before ' + before + ', after ' + short(await tabs());
-  }, 2000);
+  }, test.limit.quick);
   // ── a chat is a tab of its own beside its persona's ──
   test.run('a persona picked opens its chat as a tab named by the chat icon and the persona, and it is active', 0.2, async function () {
     if (STOP) return STOP;
@@ -537,11 +537,11 @@ async function tabOpens(kind, row) {
     await waitTab(chatWords);
     chat = await tabOf(chatWords);
     return (chat.length === 1 && chat[0].on) ? true : 'tabs ' + short(await tabs());
-  }, 1000);
+  }, test.limit.quick);
   test.run('and the persona\'s own tab is still there', 0.2, async function () {
     if (STOP) return STOP;
     return ((await tabOf(ICON.persona + ' zzPersona')).length === 1) ? true : 'tabs ' + short(await tabs());
-  }, 1000);
+  }, test.limit.quick);
   // ── a bundle's tab: its name; not the node's: in brackets and italic ──
   test.run('a node\'s bundle: "zzNodeBundle" alone', 0.2, async function () {
     if (STOP) return STOP;
@@ -550,12 +550,12 @@ async function tabOpens(kind, row) {
     await until(function () { return pressRow('zzNodeBundle'); }, 6000);
     await waitTab('zzNodeBundle');
     return ((await tabOf('zzNodeBundle')).length === 1) ? true : 'tabs ' + short(await tabs());
-  }, 2000);
+  }, test.limit.quick);
   test.run('in plain print', 0.2, async function () {
     if (STOP) return STOP;
     styleOf = function (words) { return c.evaluate('(function () { var b = Array.prototype.slice.call(document.querySelectorAll(' + JSON.stringify(CENTRE + ' .tab-button') + ')).filter(function (x) { return x.textContent.indexOf(' + JSON.stringify(words) + ') !== -1; })[0]; if (!b) return null; var all = [b].concat(Array.prototype.slice.call(b.querySelectorAll("*"))); return all.some(function (e) { return e.textContent.indexOf(' + JSON.stringify(words) + ') !== -1 && getComputedStyle(e).fontStyle === "italic"; }); }())'); };
     return ((await styleOf('zzNodeBundle')) === false) ? true : 'a node\'s bundle: italic ' + (await styleOf('zzNodeBundle'));
-  }, 1000);
+  }, test.limit.quick);
   // ── a label changed anywhere: its tab says so ──
   test.run('the model\'s header follows its row', 0.2, async function () {
     if (STOP) return STOP;
@@ -563,7 +563,7 @@ async function tabOpens(kind, row) {
     await home('agent.model', { op: 'set', id: M.body.id, label: 'zzModelTwo' });
     await waitTab(ICON.model + ' zzModelTwo');
     return ((await tabOf(ICON.model + ' zzModelTwo')).length === 1 && (await tabOf(ICON.model + ' zzModel')).length === 0) ? true : 'tabs ' + short(await tabs());
-  }, 1000);
+  }, test.limit.quick);
   // ── the close button takes a tab away, and the row stays ──
   test.run('its tab is gone', 0.2, async function () {
     if (STOP) return STOP;
@@ -571,11 +571,11 @@ async function tabOpens(kind, row) {
     closed = await c.evaluate('(function () { var b = Array.prototype.slice.call(document.querySelectorAll(' + JSON.stringify(CENTRE + ' .tab-button') + ')).filter(function (x) { return x.textContent.indexOf("zzModelTwo") !== -1; })[0]; var k = b && b.querySelector("[data-tab-close]"); if (!k) return false; k.click(); return true; }())');
     await until(function () { return tabOf(ICON.model + ' zzModelTwo').then(function (t) { return !t.length; }); }, 4000);
     return (closed === true && (await tabOf(ICON.model + ' zzModelTwo')).length === 0) ? true : 'tabs ' + short(await tabs());
-  }, 1000);
+  }, test.limit.quick);
   test.run('the model is still there', 0.2, async function () {
     if (STOP) return STOP;
     return ((await home('agent.model', { op: 'get', id: M.body.id })).status === 200) ? true : 'closing its tab deleted the model';
-  }, 1000);
+  }, test.limit.quick);
   // ── a closed tab listens no more ──
   test.run("opened again, the listeners of the tab and of its editor, one each", 0.2, async function () {
     if (STOP) return STOP;
@@ -593,11 +593,11 @@ async function tabOpens(kind, row) {
     afterClose = await c.evaluate('window.__live');
     // Two, each once: the tab follows its row, and the row's own editor (agentRow) watches the same path to repaint itself.
     return (hadPersona && opened === 2) ? true : 'it had a tab ' + hadPersona + ', then ' + opened + ' listeners';
-  }, 1000);
+  }, test.limit.quick);
   test.run('closed, none', 0.2, async function () {
     if (STOP) return STOP;
     return (afterClose === 0) ? true : afterClose + ' listeners after its tab closed';
-  }, 1000);
+  }, test.limit.quick);
   // ── a row deleted elsewhere closes its tab ──
   test.run('the job\'s tab closes itself', 0.2, async function () {
     if (STOP) return STOP;
@@ -606,14 +606,14 @@ async function tabOpens(kind, row) {
     await home('agent.job', { op: 'delete', id: J.body.id });
     await until(function () { return tabOf(ICON.job + ' zzJob').then(function (t) { return !t.length; }); }, 5000);
     return (hadJob && (await tabOf(ICON.job + ' zzJob')).length === 0) ? true : hadJob ? 'the tab stayed: ' + short(await tabs()) : 'it never had a tab: nothing judged';
-  }, 1000);
+  }, test.limit.quick);
   test.run('the bundle\'s too', 0.2, async function () {
     if (STOP) return STOP;
     hadBundle = (await tabOf('zzNodeBundle')).length === 1;
     await home('auth.bundle', { op: 'delete', id: B.body.id });
     await until(function () { return tabOf('zzNodeBundle').then(function (t) { return !t.length; }); }, 5000);
     return (hadBundle && (await tabOf('zzNodeBundle')).length === 0) ? true : hadBundle ? 'the tab stayed: ' + short(await tabs()) : 'it never had a tab: nothing judged';
-  }, 1000);
+  }, test.limit.quick);
   // ── Add: "new <row-type>*", until it is saved; then it is that row's tab ──
   test.run('a tab reading "new provider*" opens, and is active', 0.2, async function () {
     if (STOP) return STOP;
@@ -623,35 +623,35 @@ async function tabOpens(kind, row) {
     await waitTab('new provider*');
     fresh = await tabOf('new provider*');
     return (fresh.length === 1 && fresh[0].on) ? true : 'tabs ' + short(await tabs());
-  }, 1000);
+  }, test.limit.quick);
   test.run('its fields are filled', 0.2, async function () {
     if (STOP) return STOP;
     filled = await c.evaluate('(function () { var box = Array.prototype.slice.call(document.querySelectorAll(' + JSON.stringify(CENTRE + ' .tab-content > *') + ')).filter(function (x) { return !x.hidden; })[0]; if (!box) return "no box"; var inputs = Array.prototype.slice.call(box.querySelectorAll("input")); var set = function (word, v) { var i = inputs.filter(function (x) { return x.id.slice(-word.length - 1) === "-" + word.toLowerCase(); })[0]; if (!i) return false; i.value = v; i.dispatchEvent(new Event("input", { bubbles: true })); i.dispatchEvent(new Event("change", { bubbles: true })); return true; }; return set("Label", "zzSaved") && set("URL", "http://192.0.2.2:9/") ? "ok" : "fields: " + box.textContent.slice(0, 200); }())');
     return (filled === 'ok') ? true : 'the form: ' + short(filled);
-  }, 1000);
+  }, test.limit.quick);
   test.run('saved: its header is the row\'s', 0.2, async function () {
     if (STOP) return STOP;
     await press('Add new Provider');
     await until(function () { return tabs().then(function (ts) { return ts.some(function (t) { return t.text.indexOf('zzSaved') !== -1; }); }); }, 6000);
     saved = (await tabs()).filter(function (t) { return t.text.indexOf('zzSaved') !== -1; });
     return (saved.length === 1 && saved[0].on) ? true : 'tabs ' + short(await tabs());
-  }, 1000);
+  }, test.limit.quick);
   test.run('and "new provider*" is gone', 0.2, async function () {
     if (STOP) return STOP;
     return ((await tabOf('new provider*')).length === 0) ? true : 'tabs ' + short(await tabs());
-  }, 1000);
+  }, test.limit.quick);
   test.run('pressing that row in the list activates it: no second tab', 0.2, async function () {
     if (STOP) return STOP;
     await until(function () { return pressRow('zzSaved'); }, 6000);
     await sleep(600);
     onlyOne = (await tabs()).filter(function (t) { return t.text.indexOf('zzSaved') !== -1; });
     return (onlyOne.length === 1 && onlyOne[0].on) ? true : 'tabs ' + short(await tabs());
-  }, 2000);
+  }, test.limit.quick);
   test.run('nothing threw in the page', 0.2, async function () {
     if (STOP) return STOP;
     threw = c.heard.filter(function (m) { return m.method === 'Runtime.exceptionThrown'; }).map(function (m) { return m.params.exceptionDetails.text + ' ' + short((m.params.exceptionDetails.exception || {}).description || ''); });
     return (!threw.length) ? true : 'the page threw: ' + threw.slice(0, 2).join(' | ');
-  }, 1000);
+  }, test.limit.quick);
 }
 
 // ── THE listBoxes PART ────────────────────────────────────────
@@ -911,29 +911,29 @@ async function paneFills(t) {
 
     }());
     return READY.then(function () { return true; });
-  }, 1000);
+  }, test.limit.quick);
   test.run('the provider tool\'s list stands in a fill box, and every box up to the app is fill too', 0.2, async function () {
     if (STOP) return STOP;
     if (!READY) return 'no app: the world failed';
     await READY;
     PROVIDER_PANE = await paneFills(want[0]);
     return (PROVIDER_PANE.ok) ? true : PROVIDER_PANE.says;
-  }, 1000);
+  }, test.limit.quick);
   test.run('the model tool\'s list stands in a fill box, and every box up to the app is fill too', 0.2, async function () {
     if (STOP) return STOP;
     MODEL_PANE = await paneFills(want[1]);
     return (MODEL_PANE.ok) ? true : MODEL_PANE.says;
-  }, 1000);
+  }, test.limit.quick);
   test.run('the persona tool\'s list stands in a fill box, and every box up to the app is fill too', 0.2, async function () {
     if (STOP) return STOP;
     PERSONA_PANE = await paneFills(want[2]);
     return (PERSONA_PANE.ok) ? true : PERSONA_PANE.says;
-  }, 1000);
+  }, test.limit.quick);
   test.run('the job tool\'s list stands in a fill box, and every box up to the app is fill too', 0.2, async function () {
     if (STOP) return STOP;
     JOB_PANE = await paneFills(want[3]);
     return (JOB_PANE.ok) ? true : JOB_PANE.says;
-  }, 1000);
+  }, test.limit.quick);
   // ── the 🧠 Models pane: its title row first (goal/G41.26) ──
   test.run('the pane draws one 🧠 Models title row', 0.2, async function () {
     if (STOP) return STOP;
@@ -942,15 +942,15 @@ async function paneFills(t) {
     // Studio ▾] [Ask] row."
     mo = modelOrder || {};
     return (mo.titles === 1) ? true : 'title rows saying Models: ' + mo.titles;
-  }, 1000);
+  }, test.limit.quick);
   test.run('the title row comes before the Ask row, its providerSelector:dropdown', 0.2, async function () {
     if (STOP) return STOP;
     return (mo.title !== -1 && mo.from !== -1 && mo.title < mo.from) ? true : 'title at ' + mo.title + ', from at ' + mo.from;
-  }, 1000);
+  }, test.limit.quick);
   test.run('and the model list after it', 0.2, async function () {
     if (STOP) return STOP;
     return (mo.from !== -1 && mo.list !== -1 && mo.from < mo.list) ? true : 'from at ' + mo.from + ', list at ' + mo.list;
-  }, 1000);
+  }, test.limit.quick);
   // ── every list pane the app drew ──
   test.run('every list pane the app draws stands in a fill box, none only as tall as its content', 0.2, async function () {
     if (STOP) return STOP;
@@ -958,7 +958,7 @@ async function paneFills(t) {
     all = w.panes.filter(function (p) { return p.o.face !== 'dropdown' && under(p.host, app); });
     bad = all.map(function (p) { return { verb: p.o.verb, gaps: gaps(p.host, app) }; }).filter(function (x) { return x.gaps.length; });
     return (all.length >= 4 && !bad.length) ? true : all.length + ' panes; not fill: ' + short(bad);
-  }, 1000);
+  }, test.limit.quick);
   // ── each list pane is a view of its table in the agent family's cache (goal/G41.28) ──
   test.run('every list pane is handed its table\'s branch, spirit.data.agent.data.branch(table)', 0.2, async function () {
     if (STOP) return STOP;
@@ -966,5 +966,5 @@ async function paneFills(t) {
     AD = ((w.win.spirit.data || {}).agent || {}).data;
     off = all.filter(function (p) { return !AD || !p.o.data || p.o.data !== AD.branch(p.o.verb); }).map(function (p) { return { verb: p.o.verb, data: p.o.data }; });
     return (!!AD && all.length >= 4 && !off.length) ? true : 'agentReads ' + !!AD + ', not its branch: ' + short(off);
-  }, 1000);
+  }, test.limit.quick);
 }

@@ -41,7 +41,7 @@ test.after(function () { try { if (X.scratch) fs.rmSync(X.scratch, { recursive: 
 test.run('it has server.js, and elementTable.js and elementRow.js in the app\'s element folder', 0.2, function () {
   const files = [path.join(DIR, 'server.js'), path.join(EL, 'elementTable.js'), path.join(EL, 'elementRow.js')];
   return files.every(function (f) { return fs.existsSync(f); }) ? true : 'missing: ' + short(files.filter(function (f) { return !fs.existsSync(f); }));
-}, 1000);
+}, test.limit.quick);
 
 // ── server.js: the table in agent.db ──
 test.run('server.js(ctx) answers the table, its verb and has', 0.2, function () {
@@ -52,23 +52,23 @@ test.run('server.js(ctx) answers the table, its verb and has', 0.2, function () 
   const t = X.t = ctx.tables.provider = require(path.join(DIR, 'server.js'))(ctx);
   X.cols = db.prepare('PRAGMA table_info("provider")').all().map(function (c) { return c.name; });
   return t && t.verb && typeof t.verb.handler === 'function' && typeof t.has === 'function' ? true : 'answered: ' + short(t && Object.keys(t));
-}, 1000);
+}, test.limit.quick);
 // Andy, box v22: "with Label and Description, URL, and API_KEY"; goal/G41.18, box v17: "if it fails, the provider row
 // will be flagged as unusable".
 // goal/G41.21 (box v17): "The provider table gains a field, model: the id of one row of the model table".
 // One check per column, each its own plain title (goal/G45.6: a title names no value built into it).
 const has = function (c) { return X.cols.indexOf(c) !== -1 ? true : 'columns: ' + short(X.cols); };
-test.run('the provider table has an id column', 0.2, function () { return has('id'); }, 1000);
-test.run('the provider table has a privateKey column', 0.2, function () { return has('privateKey'); }, 1000);
-test.run('the provider table has a sealPublicKey column', 0.2, function () { return has('sealPublicKey'); }, 1000);
-test.run('the provider table has a sealPrivateKey column', 0.2, function () { return has('sealPrivateKey'); }, 1000);
-test.run('the provider table has an icon column', 0.2, function () { return has('icon'); }, 1000);
-test.run('the provider table has a label column', 0.2, function () { return has('label'); }, 1000);
-test.run('the provider table has an url column', 0.2, function () { return has('url'); }, 1000);
-test.run('the provider table has an apiKey column', 0.2, function () { return has('apiKey'); }, 1000);
-test.run('the provider table has an unusable column', 0.2, function () { return has('unusable'); }, 1000);
-test.run('the provider table has a model column', 0.2, function () { return has('model'); }, 1000);
-test.run('and nothing else', 0.2, function () { return X.cols.length === 10 ? true : 'columns: ' + short(X.cols); }, 1000);
+test.run('the provider table has an id column', 0.2, function () { return has('id'); }, test.limit.quick);
+test.run('the provider table has a privateKey column', 0.2, function () { return has('privateKey'); }, test.limit.quick);
+test.run('the provider table has a sealPublicKey column', 0.2, function () { return has('sealPublicKey'); }, test.limit.quick);
+test.run('the provider table has a sealPrivateKey column', 0.2, function () { return has('sealPrivateKey'); }, test.limit.quick);
+test.run('the provider table has an icon column', 0.2, function () { return has('icon'); }, test.limit.quick);
+test.run('the provider table has a label column', 0.2, function () { return has('label'); }, test.limit.quick);
+test.run('the provider table has an url column', 0.2, function () { return has('url'); }, test.limit.quick);
+test.run('the provider table has an apiKey column', 0.2, function () { return has('apiKey'); }, test.limit.quick);
+test.run('the provider table has an unusable column', 0.2, function () { return has('unusable'); }, test.limit.quick);
+test.run('the provider table has a model column', 0.2, function () { return has('model'); }, test.limit.quick);
+test.run('and nothing else', 0.2, function () { return X.cols.length === 10 ? true : 'columns: ' + short(X.cols); }, test.limit.quick);
 
 // ── server.js: the API key never leaves the agent process ──
 test.run('the API key is kept on the row', 0.2, function () {
@@ -76,22 +76,22 @@ test.run('the API key is kept on the row', 0.2, function () {
   X.added = call(X.t.verb, { op: 'add', icon: '🏢', label: 'Anthropic', url: 'https://api.anthropic.com', apiKey: SECRET });
   const raw = X.added.id ? X.db.prepare('SELECT apiKey FROM "provider" WHERE id = ?').get(X.added.id) : null;
   return raw && raw.apiKey === SECRET ? true : 'row: ' + short(raw && { set: !!raw.apiKey });
-}, 1000);
+}, test.limit.quick);
 // The key in a get, a search or a published row would leak it to every page.
 test.run('no get, search or published row carries it: only apiKeySet true', 0.8, function () {
   if (!X.added || !X.added.id) return NO_ROW;
   const got = X.got = call(X.t.verb, { op: 'get', id: X.added.id });
   const seen = JSON.stringify([got, call(X.t.verb, { op: 'search', text: 'Anthropic' }), X.published]);
   return got && got.apiKeySet === true && !('apiKey' in got) && seen.indexOf(SECRET) === -1 ? true : 'get: ' + short(got);
-}, 1000);
+}, test.limit.quick);
 test.run('its url and label are shown', 0.2, function () {
   const got = X.got;
   return got && got.url === 'https://api.anthropic.com' && got.label === 'Anthropic' ? true : 'get: ' + short(got);
-}, 1000);
+}, test.limit.quick);
 test.run('a url that is not one is refused', 0.2, function () {
   if (!X.t) return NO_TABLE;
   return call(X.t.verb, { op: 'add', url: 'not a url' }).refusal === 'bad-request' ? true : 'bad url answered';
-}, 1000);
+}, test.limit.quick);
 
 // ── server.js: one provider row per url (goal/G41.18) ──
 // Andy, box v17: "a new provider row will not be added if the URL is the same as an existing URL in the provider table,
@@ -101,30 +101,30 @@ test.run('a new row with a url already in the table is refused, and nothing is a
   if (!X.added || !X.added.id) return NO_ROW;
   const n0 = count();
   return call(X.t.verb, { op: 'add', icon: '🏢', label: 'Again', url: 'https://api.anthropic.com' }).refusal === 'bad-request' && count() === n0 ? true : 'rows ' + count() + ' of ' + n0;
-}, 1000);
+}, test.limit.quick);
 test.run('and so is the same url with a trailing slash', 0.2, function () {
   if (!X.added || !X.added.id) return NO_ROW;
   const n0 = count();
   return call(X.t.verb, { op: 'add', icon: '🏢', label: 'Slash', url: 'https://api.anthropic.com/' }).refusal === 'bad-request' && count() === n0 ? true : 'rows ' + count() + ' of ' + n0;
-}, 1000);
+}, test.limit.quick);
 test.run('a row with a url of its own is added', 0.2, function () {
   if (!X.t) return NO_TABLE;
   const n1 = count();
   X.other = call(X.t.verb, { op: 'add', icon: '🏢', label: 'Other', url: 'https://api.openai.com/v1' });
   return X.other.id && count() === n1 + 1 ? true : 'answer: ' + short(X.other);
-}, 1000);
+}, test.limit.quick);
 test.run('a change to another row\'s url is refused, the url kept', 0.2, function () {
   if (!X.other || !X.other.id) return NO_ROW;
   const moved = call(X.t.verb, { op: 'set', id: X.other.id, url: 'https://api.anthropic.com/' });
   return moved.refusal === 'bad-request' && call(X.t.verb, { op: 'get', id: X.other.id }).url === 'https://api.openai.com/v1' ? true : 'answer: ' + short(moved);
-}, 1000);
+}, test.limit.quick);
 test.run('a row may keep its own url, with or without the slash, and change its other fields', 0.2, function () {
   if (!X.other || !X.other.id) return NO_ROW;
   const t = X.t, other = X.other;
   const verdict = !call(t.verb, { op: 'set', id: other.id, url: 'https://api.openai.com/v1/' }).refusal && !call(t.verb, { op: 'set', id: other.id, label: 'Renamed' }).refusal ? true : 'own url refused';
   call(t.verb, { op: 'delete', id: other.id });
   return verdict;
-}, 1000);
+}, test.limit.quick);
 
 // ── server.js: no invalid provider row (goal/G41.21) ──
 // Andy: "NO FUKCING INVALID ROWS GET ONTO A TABLE!!!!!!!!!!!!!"; "# mandatory fields (server AND ui) - provider: icon,
@@ -139,16 +139,16 @@ test.run('an add without its url, its icon or its label, or with a label of blan
   V.noLabel = call(t.verb, { op: 'add', icon: '🏢', url: 'https://no-label.example' });
   const blank = call(t.verb, { op: 'add', icon: '🏢', label: '   ', url: 'https://blank.example' });
   return [V.noUrl, V.noIcon, V.noLabel, blank].every(function (r) { return r.refusal && !r.id; }) && count() === V.before ? true : 'answers: ' + short([V.noUrl, V.noIcon, V.noLabel, blank]);
-}, 1000);
+}, test.limit.quick);
 test.run('each refusal names the field missing', 0.2, function () {
   if (!V.noUrl) return NO_TABLE;
   return (/url/i).test(String(V.noUrl.why)) && /icon/i.test(String(V.noIcon.why)) && /label/i.test(String(V.noLabel.why)) ? true : 'why: ' + short([V.noUrl.why, V.noIcon.why, V.noLabel.why]);
-}, 1000);
+}, test.limit.quick);
 test.run('with its icon, its label and a url, it is added', 0.2, function () {
   if (!X.t) return NO_TABLE;
   V.whole = call(X.t.verb, { op: 'add', icon: '🏢', label: 'Whole', url: 'https://whole.example' });
   return V.whole.id && count() === V.before + 1 ? true : 'answer: ' + short(V.whole);
-}, 1000);
+}, test.limit.quick);
 test.run('a change that would empty its label or its url is refused, the row kept', 0.2, function () {
   if (!V.whole || !V.whole.id) return NO_ROW;
   const t = X.t;
@@ -157,7 +157,7 @@ test.run('a change that would empty its label or its url is refused, the row kep
   const verdict = emptied.refusal && unurled.refusal && call(t.verb, { op: 'get', id: V.whole.id }).label === 'Whole' ? true : 'answers: ' + short([emptied, unurled]);
   call(t.verb, { op: 'delete', id: V.whole.id });
   return verdict;
-}, 1000);
+}, test.limit.quick);
 
 // ── server.js: ask, a provider's models into the model table (goal/G41.18) ──
 // Andy, box v17: "the provider table gets a new verb: \"ask\", which does the model-list fetching and model-table
@@ -193,38 +193,38 @@ test.run('ask of a row that is not there is refused no-such-row', 0.2, async fun
   if (X.added && X.added.id) call(X.t.verb, { op: 'delete', id: X.added.id });
   A.anth = call(X.t.verb, { op: 'add', icon: '🏢', label: 'Anthropic', url: A.host, apiKey: SECRET });
   return (await ask({ op: 'ask', id: require(path.join(RUN, 'spirit', 'relayAuth.js')).generateIdentity('').publicKey })).refusal === 'no-such-row' ? true : 'ask answered';
-}, 1000);
+}, test.limit.quick);
 test.run('a row labelled Anthropic asks through the Anthropic plugin, with its key', 0.2, async function () {
   if (!A.anth || !A.anth.id) return NO_ANTH;
   stand.anthropic = [['claude-a', 'Claude A'], ['claude-b', 'Claude B']];
   X.published.length = 0;
   A.first = await ask({ op: 'ask', id: A.anth.id });
   return stand.heard.length >= 1 && stand.heard[0].headers['x-api-key'] === SECRET ? true : 'heard: ' + short(stand.heard.map(function (x) { return x.url; }));
-}, 1000);
+}, test.limit.quick);
 test.run('it answers the provider\'s list, { models: [{ modelName, label }], updated: true }', 0.2, function () {
   const first = A.first;
   if (!first) return NO_ANTH;
   return first && Array.isArray(first.models) && JSON.stringify(first.models) === JSON.stringify([{ modelName: 'claude-a', label: 'Claude A' }, { modelName: 'claude-b', label: 'Claude B' }]) && first.updated === true
     ? true : 'answer: ' + short(first);
-}, 1000);
+}, test.limit.quick);
 // goal/G41.21: "the label hold the model name as provided by the provider": never its display name (Claude A).
 test.run('each model not yet in the table is added, for that provider, its label the model name exactly as the provider gives it', 0.2, function () {
   if (!A.anth || !A.anth.id) return NO_ANTH;
   const mA = modelsOf(A.anth.id);
   return JSON.stringify(names(A.anth.id)) === '["claude-a","claude-b"]' && mA.every(function (m) { return !('modelName' in m); }) ? true : 'models: ' + short(mA.map(function (m) { return m.label; }));
-}, 1000);
+}, test.limit.quick);
 test.run('and each new model row is published, so the lists follow', 0.2, function () {
   if (!A.first) return NO_ANTH;
   const published = X.published;
   return published.filter(function (p) { return p.agent && p.agent.table === 'model' && p.agent.row; }).length === 2 ? true : 'published: ' + short(published.map(function (p) { return p.agent && p.agent.table; }));
-}, 1000);
+}, test.limit.quick);
 test.run('the plugin is matched to the label in any case: ANTHROPIC is Anthropic', 0.2, async function () {
   if (!A.anth || !A.anth.id) return NO_ANTH;
   stand.heard.length = 0;
   call(X.t.verb, { op: 'set', id: A.anth.id, label: 'ANTHROPIC' });
   await ask({ op: 'ask', id: A.anth.id });
   return stand.heard.length >= 1 && stand.heard[0].headers['x-api-key'] === SECRET ? true : 'heard: ' + short(stand.heard.map(function (x) { return Object.keys(x.headers); }));
-}, 1000);
+}, test.limit.quick);
 
 // ── ask updates: new models added, gone ones removed, his own words kept ──
 test.run('a model the provider no longer lists is removed; a new one is added', 0.2, async function () {
@@ -240,20 +240,20 @@ test.run('a model the provider no longer lists is removed; a new one is added', 
   X.published.length = 0;
   await ask({ op: 'ask', id: anth.id });
   return JSON.stringify(names(anth.id)) === '["claude-b","claude-c"]' ? true : 'models: ' + short(names(anth.id));
-}, 1000);
+}, test.limit.quick);
 test.run('a model it still lists keeps its row, its label the model name, and what else it holds', 0.2, function () {
   if (!A.keep) return NO_ANTH;
   const b = modelsOf(A.anth.id).filter(function (m) { return m.label === 'claude-b'; })[0];
   return b && b.id === A.keep.id && b.label === 'claude-b' && b.capabilities === JSON.stringify(['mine']) ? true : 'claude-b: ' + short(b && { id: b.id === A.keep.id, label: b.label, description: b.description });
-}, 1000);
+}, test.limit.quick);
 test.run('the removed model is published removed', 0.2, function () {
   if (!A.keep) return NO_ANTH;
   return X.published.some(function (p) { return p.agent && p.agent.table === 'model' && p.agent.removed === true; }) ? true : 'published: ' + short(X.published);
-}, 1000);
+}, test.limit.quick);
 test.run('another provider\'s models are not touched', 0.2, function () {
   if (!A.openaiRow) return NO_ANTH;
   return names(A.openaiRow.id).indexOf('gpt-kept') !== -1 && X.ctx.tables.model.has(A.otherModel.id) ? true : 'other provider: ' + short(names(A.openaiRow.id));
-}, 1000);
+}, test.limit.quick);
 
 // ── an empty list changes nothing ──
 test.run('a provider answering no models: { models: [], updated: false }, and the model table is as it was', 0.2, async function () {
@@ -263,7 +263,7 @@ test.run('a provider answering no models: { models: [], updated: false }, and th
   const none = await ask({ op: 'ask', id: A.anth.id });
   return none && Array.isArray(none.models) && none.models.length === 0 && none.updated === false && JSON.stringify(modelsOf(A.anth.id)) === before
     ? true : 'answer ' + short(none) + ', models ' + short(names(A.anth.id));
-}, 1000);
+}, test.limit.quick);
 
 // ── no plugin for the label: the OpenAI plugin; it failing flags the row unusable ──
 const NO_UNSLOTH = 'no Unsloth row to ask: it was not added';
@@ -276,11 +276,11 @@ test.run('a row no plugin matches (Unsloth) asks as the OpenAI plugin does, GET 
   stand.heard.length = 0;
   A.local = await ask({ op: 'ask', id: A.unsloth.id });
   return stand.heard.length === 1 && !stand.heard[0].headers['x-api-key'] && new URL(stand.heard[0].url, 'http://x').pathname === '/v1/models' ? true : 'heard: ' + short(stand.heard);
-}, 1000);
+}, test.limit.quick);
 test.run('and its models are added', 0.2, function () {
   if (!A.unsloth) return NO_UNSLOTH;
   return A.local && A.local.updated === true && JSON.stringify(names(A.unsloth.id)) === '["llama-local","qwen-local"]' ? true : 'answer ' + short(A.local) + ', models ' + short(names(A.unsloth.id));
-}, 1000);
+}, test.limit.quick);
 test.run('a provider that fails, once asked, is refused', 0.2, async function () {
   if (!A.unsloth) return NO_UNSLOTH;
   stand.fail = true;
@@ -288,28 +288,28 @@ test.run('a provider that fails, once asked, is refused', 0.2, async function ()
   stand.heard.length = 0;
   A.failed = await ask({ op: 'ask', id: A.unsloth.id });
   return A.failed && A.failed.refusal !== undefined && stand.heard.length === 1 ? true : 'answer ' + short(A.failed) + ', asked ' + stand.heard.length;
-}, 1000);
+}, test.limit.quick);
 test.run('and the provider row is flagged unusable, kept on the row and shown', 0.2, function () {
   if (!A.unsloth) return NO_UNSLOTH;
   return usable(A.unsloth.id) === 1 && call(X.t.verb, { op: 'get', id: A.unsloth.id }).unusable === true ? true : 'unusable: ' + short(call(X.t.verb, { op: 'get', id: A.unsloth.id }));
-}, 1000);
+}, test.limit.quick);
 test.run('a failed ask removes nothing', 0.2, function () {
   if (!A.unsloth) return NO_UNSLOTH;
   return JSON.stringify(modelsOf(A.unsloth.id)) === A.keptLocal ? true : 'models: ' + short(names(A.unsloth.id));
-}, 1000);
+}, test.limit.quick);
 test.run('an ask that is answered again clears the flag', 0.2, async function () {
   if (!A.unsloth) return NO_UNSLOTH;
   stand.fail = false;
   await ask({ op: 'ask', id: A.unsloth.id });
   return usable(A.unsloth.id) === 0 ? true : 'unusable: ' + usable(A.unsloth.id);
-}, 1000);
+}, test.limit.quick);
 // The key in an answer or a published row would leak it to every page.
 test.run('no answer of ask, and no row it publishes, carries the API key', 0.8, async function () {
   if (!A.server) return NO_ANTH;
   const verdict = JSON.stringify([A.first, A.local, A.failed, X.published]).indexOf(SECRET) === -1 ? true : 'the key left the process';
   await new Promise(function (r) { A.server.close(r); });
   return verdict;
-}, 1000);
+}, test.limit.quick);
 
 // ── server.js: a search answers what the list shows (goal/G41.18) ──
 // Andy: "only the ID and the fields shown in a table, that's all it needs"; "that exactly what GET is for, to bring in
@@ -322,7 +322,7 @@ test.run('a search answers the id, the icon and the label of a row, nothing else
   try { listedRow = (call(t.verb, { op: 'search', text: 'Listed one' }).items || []).map(function (i) { return JSON.parse(i.label); }).filter(function (r) { return r.id === listedId; })[0]; } catch (e) { listedRow = null; }
   call(t.verb, { op: 'delete', id: listedId });
   return listedRow && listedRow.icon === '🧪' && listedRow.label === 'Listed one' && JSON.stringify(Object.keys(listedRow).sort()) === '["icon","id","label"]' ? true : 'found: ' + short(listedRow);
-}, 1000);
+}, test.limit.quick);
 
 // A GRANTED PEER CANNOT STEAL THE MODEL KEYS (goal/G41.30, the review, RH4: "a peer granted the agent's remoteUser bundle
 // can steal the model API keys"; its fix: "make provider add, set, delete and ask owner-only, and clear apiKey whenever
@@ -338,17 +338,17 @@ test.run('a row keeps its key', 0.2, function () {
   if (!X.t) return NO_TABLE;
   K.row = call(X.t.verb, { op: 'add', icon: '🔑', label: 'Anthropic', url: 'https://steal.example', apiKey: KEY }).id;
   return keyOf(K.row) === KEY ? true : 'the key was not kept';
-}, 1000);
+}, test.limit.quick);
 test.run('a set with no new url keeps the key', 0.2, function () {
   if (!K.row) return NO_KEYROW;
   call(X.t.verb, { op: 'set', id: K.row, label: 'Anthropic' });
   return keyOf(K.row) === KEY ? true : 'a set of the label alone lost the key';
-}, 1000);
+}, test.limit.quick);
 test.run('a set of the same url keeps the key', 0.2, function () {
   if (!K.row) return NO_KEYROW;
   call(X.t.verb, { op: 'set', id: K.row, url: 'https://steal.example' });
   return keyOf(K.row) === KEY ? true : 'a set of the same url lost the key';
-}, 1000);
+}, test.limit.quick);
 test.run('the set of a new url is taken', 0.2, async function () {
   if (!K.row) return NO_KEYROW;
   // The peer's own server.
@@ -357,26 +357,26 @@ test.run('the set of a new url is taken', 0.2, async function () {
   const peerUrl = 'http://127.0.0.1:' + K.peers.address().port;
   const moved = call(X.t.verb, { op: 'set', id: K.row, url: peerUrl });
   return !moved.refusal ? true : 'the set of a new url was refused: ' + short(moved);
-}, 1000);
+}, test.limit.quick);
 // A key kept with a changed url goes to whoever owns the new url.
 test.run('a set of a new url with no new key clears the key', 0.8, function () {
   if (!K.row) return NO_KEYROW;
   return !keyOf(K.row) ? true : 'the key stayed on the row with the new url';
-}, 1000);
+}, test.limit.quick);
 test.run('and an ask then sends the new url no old key', 0.8, async function () {
   if (!K.peers) return 'no peer\'s server: it was not started';
   await ask({ op: 'ask', id: K.row });
   await new Promise(function (r) { K.peers.close(r); });
   const heard = K.heard;
   return heard.length > 0 && JSON.stringify(heard).indexOf(KEY) === -1 ? true : (heard.length ? 'THE KEY WENT TO THE NEW URL: ' + short(heard.map(function (h) { return h['x-api-key'] || h.authorization; })) : 'the ask never reached the new url: nothing judged');
-}, 1000);
+}, test.limit.quick);
 test.run('a set of a url and a new key keeps the new key', 0.2, function () {
   if (!K.row) return NO_KEYROW;
   call(X.t.verb, { op: 'set', id: K.row, url: 'https://steal-other.example', apiKey: 'sk-new-one' });
   const verdict = keyOf(K.row) === 'sk-new-one' ? true : 'url and new key: the row holds ' + (keyOf(K.row) ? 'another key' : 'no key');
   call(X.t.verb, { op: 'delete', id: K.row });
   return verdict;
-}, 1000);
+}, test.limit.quick);
 
 // ── the page: elementTable.js and elementRow.js ──
 const P = { made: null, E: {}, list: null, o: null, r: null, AD: null, BRANCH: '' };
@@ -408,25 +408,25 @@ test.run('they place spirit.element.spirit.app.agent.element.table.provider.elem
   const T = global.window.spirit.element.spirit.app.agent.element.table.provider || {};
   P.E = { providerTable: T.elementTable, providerRow: T.elementRow };
   return P.E.providerTable && typeof P.E.providerTable.create === 'function' && P.E.providerRow && typeof P.E.providerRow.create === 'function' ? true : 'placed: ' + short(Object.keys(T));
-}, 1000);
+}, test.limit.quick);
 test.run('elementTable.js requires the shared element and its own row element', 0.2, async function () {
   if (!P.E.providerTable || !P.E.providerRow) return NO_PAGE;
   P.list = P.E.providerTable.create(box, detail);
   await settle();
   const made = P.made;
   return made.required.indexOf('spirit/app/agent/element/table/tableElement.js') !== -1 && made.required.indexOf('spirit/app/agent/element/table/provider/elementRow.js') !== -1 ? true : 'required: ' + short(made.required);
-}, 1000);
+}, test.limit.quick);
 test.run('it builds on agentTable, in its box, for the provider table, with the detail pane and no api, and the shared Add', 0.2, function () {
   if (!P.list) return NO_PAGE;
   const made = P.made;
   const o = P.o = made.tables[0] && made.tables[0].o;
   return made.tables.length === 1 && made.tables[0].c === box && o.table === 'provider' && !('api' in o) && o.detail === detail && !o.add ? true : 'agentTable: ' + short(o && { table: o.table, add: !!o.add });
-}, 1000);
+}, test.limit.quick);
 test.run('its refresh and destroy are the shared element\'s', 0.2, function () {
   if (!P.list) return NO_PAGE;
   P.list.refresh(); P.list.destroy();
   return P.made.refreshed && P.made.destroyed ? true : 'refreshed ' + P.made.refreshed + ', destroyed ' + P.made.destroyed;
-}, 1000);
+}, test.limit.quick);
 test.run('a row it opens is a providerRow, built on agentRow, in the box it is handed, with its id and added, no api', 0.2, async function () {
   if (!P.o) return NO_PAGE;
   const made = P.made;
@@ -435,16 +435,16 @@ test.run('a row it opens is a providerRow, built on agentRow, in the box it is h
   await settle();
   const r = P.r = made.rows[0] && made.rows[0].o;
   return made.rows.length === 1 && made.rows[0].c === into && r.table === 'provider' && !('api' in r) && r.id === 'KP' && r.added === true ? true : 'agentRow: ' + short(r && { table: r.table, id: r.id, added: r.added });
-}, 1000);
+}, test.limit.quick);
 // goal/G41.21: "# mandatory fields (server AND ui)": the row hands the shared editor its table's mandatory fields.
 test.run('it hands the editor the provider table\'s mandatory fields, [icon, label, url]', 0.2, function () {
   const r = P.r;
   return r && JSON.stringify(r.required) === JSON.stringify(['icon', 'label', 'url']) ? true : 'required: ' + short(r && r.required);
-}, 1000);
+}, test.limit.quick);
 test.run('its title row has the provider table\'s look', 0.2, function () {
   const r = P.r;
   return r && r.look && r.look.icon === '🏢' && r.look.table === 'provider' ? true : 'look: ' + short(r && r.look);
-}, 1000);
+}, test.limit.quick);
 // Andy, box v22: "with Label and Description, URL, and API_KEY"; the icon comes first of every editor (tableElement.js).
 // goal/G41.21: "a Model field at the bottom. It is a pick field ... showing only the models whose provider is this
 // provider": of names the picked table's field that must hold this row's id (../../tableElement.js).
@@ -452,7 +452,7 @@ test.run('its fields are the label, the url, the API key as a secret, and last t
   const r = P.r;
   return r && JSON.stringify(r.fields.map(function (f) { return [f.field, f.kind, f.pick || '', f.of || '']; })) === JSON.stringify([['label', 'name', '', ''], ['url', 'url', '', ''], ['apiKey', 'secret', '', ''], ['model', 'pick', 'model', 'providerId']])
     ? true : 'fields: ' + short(r && r.fields);
-}, 1000);
+}, test.limit.quick);
 
 // ── elementRow.js loads the agent family's cache manager, which takes the provider table's rows from the stream (goal/G41.16, G41.28) ──
 // Andy: "get rid of thos FUCKING data.js scripts, DIDN't WE INSIST on the PROPER way to do this shit?": what the stream
@@ -464,14 +464,14 @@ const job = function (agent, module) { return { id: 'job-agent', module: module 
 test.run('its page files require no data script', 0.2, function () {
   if (!P.made) return NO_PAGE;
   return !P.made.required.some(function (p) { return (/data\.js$/).test(p); }) ? true : 'required: ' + short(P.made.required);
-}, 1000);
+}, test.limit.quick);
 test.run('the agent family\'s cache manager is loaded: spirit.data.agent.data.branch(\'provider\') is the home node\'s <node>/agent/provider', 0.2, function () {
   if (!P.made) return NO_PAGE;
   const DATA = global.window.spirit.data;
   const AD = P.AD = ((global.window.spirit.data || {}).agent || {}).data;
   P.BRANCH = DATA.nodeId(HOME_KEY) + '/agent/provider';
   return !!AD && typeof AD.branch === 'function' && AD.branch('provider') === P.BRANCH ? true : 'agentReads: ' + short(AD ? AD.branch('provider') : AD);
-}, 1000);
+}, test.limit.quick);
 test.run('a provider row on the stream lands at <node>/agent/provider/<id>, and the branch\'s watcher hears it', 0.2, function () {
   if (!P.AD) return NO_MANAGER;
   const DATA = global.window.spirit.data, AD = P.AD, BRANCH = P.BRANCH;
@@ -480,19 +480,19 @@ test.run('a provider row on the stream lands at <node>/agent/provider/<id>, and 
   DATA.takeJob(job({ table: 'provider', row: { id: 'KT', label: 'First', extra: 1 } }));
   off();
   return AD.row('provider', 'KT') && AD.row('provider', 'KT').label === 'First' && heard.indexOf(BRANCH + '/KT') !== -1 ? true : 'provider: ' + short(DATA.branchAt(BRANCH));
-}, 1000);
+}, test.limit.quick);
 test.run('a changed row is merged: what it names changes, what it does not stays', 0.2, function () {
   if (!P.AD) return NO_MANAGER;
   const DATA = global.window.spirit.data, AD = P.AD;
   DATA.takeJob(job({ table: 'provider', row: { id: 'KT', label: 'Renamed' } }));
   return AD.row('provider', 'KT') && AD.row('provider', 'KT').label === 'Renamed' && AD.row('provider', 'KT').extra === 1 ? true : 'row: ' + short(AD.row('provider', 'KT'));
-}, 1000);
+}, test.limit.quick);
 test.run('a row removed, by its id, is gone', 0.2, function () {
   if (!P.AD) return NO_MANAGER;
   const DATA = global.window.spirit.data, AD = P.AD;
   DATA.takeJob(job({ table: 'provider', id: 'KT', removed: true }));
   return !AD.row('provider', 'KT') && !('KT' in DATA.branchAt(P.BRANCH)) ? true : 'row: ' + short(AD.row('provider', 'KT'));
-}, 1000);
+}, test.limit.quick);
 test.run('another table\'s rows, another module\'s, and a row with no id write nothing here', 0.2, function () {
   if (!P.AD) return NO_MANAGER;
   const DATA = global.window.spirit.data;
@@ -501,7 +501,7 @@ test.run('another table\'s rows, another module\'s, and a row with no id write n
   DATA.takeJob(job({ table: 'provider', row: { id: 'KX', label: 'from the desk' } }, 'spirit.app.desk'));
   DATA.takeJob(job({ table: 'provider', row: { label: 'no id' } }));
   return JSON.stringify(DATA.branchAt(P.BRANCH)) === before ? true : 'provider: ' + short(DATA.branchAt(P.BRANCH));
-}, 1000);
+}, test.limit.quick);
 
 // ── THE MODEL PICKER IN A REAL BROWSER (goal/G41.21; Andy: "the model picker for anthropic simply shows: "Nothing
 // matches.", no if the search field is empty or not", "make sure that the picker is filled, from the beginning, with the
@@ -560,31 +560,31 @@ test.run('the world: ./server-picker.html draws the provider\'s detail with the 
   if (m) test.comment('the page asked: ' + JSON.stringify(m.asked).slice(0, 900) + '; answers held: ' + JSON.stringify(Object.keys(answers)).slice(0, 600));
   PK.m = m;
   return m ? true : 'the page measured nothing: ' + JSON.stringify(s).slice(0, 300);
-}, 14000);
+}, test.limit.slow);
 test.run('the provider\'s detail shows its Model field, the provider having models', 0.2, function () {
   const m = PK.m;
   if (!m) return NO_PICKER;
   return m.label && m.shown ? true : 'Model field: drawn ' + m.label + ', shown ' + m.shown;
-}, 1000);
+}, test.limit.quick);
 test.run('as the panel opens, the Model field shows the provider\'s current model, claude-alpha', 0.2, function () {
   const m = PK.m;
   if (!m) return NO_PICKER;
   return (/claude-alpha/).test(m.fieldText) ? true : 'the Model field says ' + JSON.stringify(m.fieldText);
-}, 1000);
+}, test.limit.quick);
 test.run('pressed, the Model field opens its dropdown', 0.2, function () {
   const m = PK.m;
   if (!m) return NO_PICKER;
   return m.field && m.popupOpen ? true : 'field ' + m.field + ', open ' + m.popupOpen;
-}, 1000);
+}, test.limit.quick);
 test.run('with the search empty, from the start, it lists this provider\'s two models and nothing else', 0.2, function () {
   const m = PK.m;
   if (!m) return NO_PICKER;
   const keys = m.rows.map(function (r) { return r.key; }).sort();
   return !m.nothing && JSON.stringify(keys) === JSON.stringify(PK.mine.slice().sort())
     ? true : (m.nothing ? 'it says Nothing matches.; ' : '') + 'it lists ' + short(m.rows) + (keys.indexOf(PK.theirs) !== -1 ? ', another provider\'s model among them' : '');
-}, 1000);
+}, test.limit.quick);
 test.run('each row says its model', 0.2, function () {
   const m = PK.m;
   if (!m) return NO_PICKER;
   return m.rows.length > 0 && m.rows.every(function (r) { return (/claude-(alpha|beta)/).test(r.text); }) ? true : 'rows: ' + short(m.rows);
-}, 1000);
+}, test.limit.quick);

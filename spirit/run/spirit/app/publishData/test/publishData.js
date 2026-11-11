@@ -40,11 +40,11 @@ test.run('run with no argument it does not stop at its usage', 0.2, async functi
     W.said = String(r.stdout || '') + String(r.stderr || '');
     return (r.status !== 2 && !/usage:/.test(W.said)) ? true : 'it stopped at usage (exit ' + r.status + '): ' + short(W.said);
   } finally { try { fs.rmSync(tmp, { recursive: true, force: true }); } catch (e) { /* scratch */ } }
-}, 1000);
+}, test.limit.quick);
 test.run('it goes on past its arguments, to its first step', 0.2, function () {
   if (typeof W.said !== 'string') return 'it was not run: the test before failed';
   return (/not in a git clone/.test(W.said)) ? true : 'it said ' + short(W.said);
-}, 1000);
+}, test.limit.quick);
 
 let line, at, want, readme, client;
 
@@ -56,24 +56,24 @@ test.run('it reads deskVerify\'s verify.db where deskVerify keeps it, its state 
   try { at = line ? new Function('path', '__dirname', 'return ' + line)(path, HERE) : ''; } catch (e) { at = 'threw ' + e.message; }
   want = path.join(RUN, 'spirit', 'state', 'deskVerify', 'data', 'verify.db');
   return (path.resolve(String(at)) === want) ? true : 'it reads ' + short(at) + ', want ' + want;
-}, 1000);
+}, test.limit.quick);
 test.run('agentReadme.js stands beside it and loads', 0.2, function () {
   readme = null;
   try { readme = require(path.join(HERE, 'agentReadme.js')); } catch (e) { readme = null; }
   return (!!readme && typeof readme.write === 'function') ? true : 'no agentReadme.js beside it in spirit/app/publishData/';
-}, 1000);
+}, test.limit.quick);
 
 // Andy runs it; no agent starts it
 test.run('the old spirit/app/deskClient/publishData.js is gone', 0.2, function () {
   return (!fs.existsSync(path.join(OLD, 'publishData.js'))) ? true : 'spirit/app/deskClient/publishData.js is still there';
-}, 1000);
+}, test.limit.quick);
 test.run('the old spirit/app/deskClient/agentReadme.js is gone', 0.2, function () {
   return (!fs.existsSync(path.join(OLD, 'agentReadme.js'))) ? true : 'spirit/app/deskClient/agentReadme.js is still there';
-}, 1000);
+}, test.limit.quick);
 test.run('deskClient starts no publishData', 0.2, function () {
   client = code(path.join(OLD, 'deskClient.js'));
   return (!!client && !/publishData/.test(client)) ? true : 'deskClient.js still names publishData';
-}, 1000);
+}, test.limit.quick);
 
 // ── THE NOSUMMARY PART (once its own file; one test file per script: spirit/test/TEST_SYSTEM.md) ──
 // publishData POSTS NOTHING TO THE DESK (goal/G43.22; spec: ./publishData.md, section "noSummary"): spirit/app/publishData/publishData.js.
@@ -86,7 +86,7 @@ function codeNoHtml(f) { try { return fs.readFileSync(f, 'utf8').replace(/\/\*[\
 test.run('publishData posts nothing to the desk', 0.2, function () {
   const pub = codeNoHtml(path.join(RUN, 'spirit', 'app', 'publishData', 'publishData.js'));
   return (!!pub && !/chat\.add/.test(pub)) ? true : 'publishData.js still posts a chat.add';
-}, 1000);
+}, test.limit.quick);
 
 // ── THE RUN PART (once its own file; one test file per script: spirit/test/TEST_SYSTEM.md) ──
 // The tests of spirit/app/publishData/publishData.js run whole, as an agent runs it, and of no other module (spec:
@@ -195,7 +195,7 @@ test.run('the world: a scratch clone with a bare origin beside it and a traffic 
   WR.COMMIT = git(__dirname, ['rev-parse', '--short', 'HEAD']).out;
   WR.ready = fs.existsSync(PRELOAD) && fs.existsSync(path.join(CLONE, 'README.md')) && !!WR.COMMIT;
   return WR.ready || 'the scratch clone was not made: ' + shortRun(fs.existsSync(TMP) ? fs.readdirSync(TMP) : 'no ' + TMP);
-}, 2000);
+}, test.limit.quick);
 
 let u, nogit, noname, nolog, OUT, headBefore, r, pg, p, pmd, plat, ts, tsmd, readmeMd, origDb, rowsNow, before, w, head, files, post;
 
@@ -204,22 +204,22 @@ test.run('no port, given or handed by its node: exit 2, its usage, nothing asked
   if (!WR.ready) return 'no scratch clone: the world failed';
   u = publish(CLONE, []);
   return (u.status === 2 && /^usage: node publishData.js \[<port of the agent's own node>\]/.test(u.err) && u.asks.length === 0) ? true : 'exit ' + u.status + ' err ' + shortRun(u.err);
-}, 1000);
+}, test.limit.quick);
 test.run('run outside a git clone: exit 1, saying so, nothing asked', 0.2, function () {
   if (!WR.ready) return 'no scratch clone: the world failed';
   nogit = publish(os.tmpdir(), ['45440', '--only', 'packets', '--out', path.join(TMP, 'x')]);
   return (nogit.status === 1 && nogit.err === 'publishData: not in a git clone' && nogit.asks.length === 0) ? true : 'exit ' + nogit.status + ' err ' + shortRun(nogit.err);
-}, 1000);
+}, test.limit.quick);
 test.run('an agent with no name at the desk: exit 1, saying so', 0.2, function () {
   if (!WR.ready) return 'no scratch clone: the world failed';
   noname = publish(CLONE, ['45440', '--only', 'packets', '--out', path.join(TMP, 'x')], '');
   return (noname.status === 1 && /^publishData: this agent has no name at the desk yet/.test(noname.err)) ? true : 'exit ' + noname.status + ' err ' + shortRun(noname.err);
-}, 1000);
+}, test.limit.quick);
 test.run('a clone with no traffic log: exit 1, naming where it looked', 0.2, function () {
   if (!WR.ready) return 'no scratch clone: the world failed';
   nolog = publish(BARE_CLONE, ['45440', '--only', 'packets', '--out', path.join(TMP, 'y'), '--asks', '1']);
   return (nolog.status === 1 && nolog.err.indexOf('publishData: no traffic log at ' + path.join(BARE_CLONE, 'spirit', 'run', 'spirit', 'state', 'node.db')) === 0) ? true : 'exit ' + nolog.status + ' err ' + shortRun(nolog.err);
-}, 5000);
+}, test.limit.slow);
 
 // --only packets --out: N read-only desk asks, timed by the node's own traffic log
 test.run('it exits 0: written to <out>', 0.2, function () {
@@ -228,87 +228,87 @@ test.run('it exits 0: written to <out>', 0.2, function () {
   headBefore = git(CLONE, ['rev-parse', 'HEAD']).out;
   r = publish(CLONE, ['45440', '--only', 'packets', '--out', OUT, '--asks', '3']);
   return (r.status === 0 && r.out.split('\n').pop() === 'publishData: written to ' + OUT) ? true : 'exit ' + r.status + ' out ' + shortRun(r.out) + ' err ' + shortRun(r.err);
-}, 6000);
+}, test.limit.slow);
 test.run('its agent is the name in its profile, its commit the tree it runs from', 0.2, function () {
   if (!WR.ready) return 'no scratch clone: the world failed';
   return (r.out.indexOf('publishData: agent ' + AGENT + ', commit ' + WR.COMMIT + ', into ' + OUT) !== -1) ? true : 'out ' + shortRun(r.out);
-}, 1000);
+}, test.limit.quick);
 test.run('one profile.get for its name, then 3 more, read-only, and nothing else asked', 0.2, function () {
   if (!WR.ready) return 'no scratch clone: the world failed';
   pg = r.asks.filter(function (a) { return a.args.name === 'profile.get'; });
   return (pg.length === 4 && pg.every(function (a) { return a.args.json === '{"agent":""}'; }) && r.asks.length === 4) ? true : 'asks ' + shortRun(r.asks);
-}, 1000);
+}, test.limit.quick);
 test.run('every ask through its deskClient\'s family, on the spirit object', 0.2, function () {
   if (!WR.ready) return 'no scratch clone: the world failed';
   return (r.required.every(function (a) { return a.require === WR.FAMILY; })) ? true : 'required ' + shortRun(r.required);
-}, 1000);
+}, test.limit.quick);
 test.run('packets.json names the agent, the commit, the asks and when', 0.2, function () {
   if (!WR.ready) return 'no scratch clone: the world failed';
   p = null;
   try { p = JSON.parse(fs.readFileSync(path.join(OUT, 'packets.json'), 'utf8')); } catch (e) { p = null; }
   return (p && p.agent === AGENT && p.commit === WR.COMMIT && p.asks === 3 && !isNaN(Date.parse(p.measuredAt))) ? true : 'packets ' + shortRun(p);
-}, 1000);
+}, test.limit.quick);
 test.run('posts: the closing rows since it began (replies in, and requests out refused or unanswered)', 0.2, function () {
   if (!WR.ready) return 'no scratch clone: the world failed';
   return (p && p.posts === 4) ? true : 'posts ' + shortRun(p && p.posts);
-}, 1000);
+}, test.limit.quick);
 test.run('queue wait: median and worst of the rows that carry waitMs', 0.2, function () {
   if (!WR.ready) return 'no scratch clone: the world failed';
   return (p && p.waitMs.median === 10 && p.waitMs.max === 20) ? true : 'waitMs ' + shortRun(p && p.waitMs);
-}, 1000);
+}, test.limit.quick);
 test.run('flight: each row\'s ms less its wait', 0.2, function () {
   if (!WR.ready) return 'no scratch clone: the world failed';
   return (p && p.flight.median === 30 && p.flight.max === 35) ? true : 'flight ' + shortRun(p && p.flight);
-}, 1000);
+}, test.limit.quick);
 test.run('retried: the rows that took more than one attempt', 0.2, function () {
   if (!WR.ready) return 'no scratch clone: the world failed';
   return (p && p.retried === 1) ? true : 'retried ' + shortRun(p && p.retried);
-}, 1000);
+}, test.limit.quick);
 test.run('refusals counted by code, else by outcome', 0.2, function () {
   if (!WR.ready) return 'no scratch clone: the world failed';
   return (p && JSON.stringify(p.refusals) === JSON.stringify({ 'not-granted': 1, 'no-answer': 1 })) ? true : 'refusals ' + shortRun(p && p.refusals);
-}, 1000);
+}, test.limit.quick);
 test.run('packets.md says the same', 0.2, function () {
   if (!WR.ready) return 'no scratch clone: the world failed';
   pmd = fs.existsSync(path.join(OUT, 'packets.md')) ? fs.readFileSync(path.join(OUT, 'packets.md'), 'utf8') : '';
   return (pmd.indexOf('# Packets: ' + AGENT) === 0 && pmd.indexOf('| queue wait (ms) | 10 | 20 |') !== -1 && pmd.indexOf('| flight (ms) | 30 | 35 |') !== -1 && pmd.indexOf('4 posts, 1 needed more than one try, refusals: {"not-granted":1,"no-answer":1}.') !== -1) ? true : 'packets.md ' + shortRun(pmd);
-}, 1000);
+}, test.limit.quick);
 test.run('platform.md names the agent, the commit and the box', 0.2, function () {
   if (!WR.ready) return 'no scratch clone: the world failed';
   plat = fs.existsSync(path.join(OUT, 'platform.md')) ? fs.readFileSync(path.join(OUT, 'platform.md'), 'utf8') : '';
   return (plat.indexOf('# ' + AGENT) === 0 && plat.indexOf('| agent | ' + AGENT + ' |') !== -1 && plat.indexOf('`' + WR.COMMIT + '`') !== -1 && plat.indexOf('| node | ' + process.version + ' |') !== -1) ? true : 'platform.md ' + shortRun(plat);
-}, 1000);
+}, test.limit.quick);
 test.run('testState.json: the newest row of each test in verify.db, read only, no suite run', 0.2, function () {
   if (!WR.ready) return 'no scratch clone: the world failed';
   ts = null;
   try { ts = JSON.parse(fs.readFileSync(path.join(OUT, 'testState.json'), 'utf8')); } catch (e) { ts = null; }
   return (ts && ts.agent === AGENT && ts.commit === WR.COMMIT && ts.tests === ts.green + ts.red && Array.isArray(ts.suites) && Array.isArray(ts.reds) && ts.reds.length === ts.red && /no suite was run/.test(ts.from)) ? true : 'testState ' + shortRun(ts) + ' said ' + shortRun(r.out);
-}, 1000);
+}, test.limit.quick);
 test.run('testState.md: the suites\' table and the reds', 0.2, function () {
   if (!WR.ready) return 'no scratch clone: the world failed';
   tsmd = fs.existsSync(path.join(OUT, 'testState.md')) ? fs.readFileSync(path.join(OUT, 'testState.md'), 'utf8') : '';
   return (tsmd.indexOf('# Test state: ' + AGENT) === 0 && tsmd.indexOf('| suite | tests | green | red | newest |') !== -1 && tsmd.indexOf('## Red') !== -1) ? true : 'testState.md ' + shortRun(tsmd);
-}, 1000);
+}, test.limit.quick);
 test.run('the README is written beside them (agentReadme)', 0.2, function () {
   if (!WR.ready) return 'no scratch clone: the world failed';
   readmeMd = fs.existsSync(path.join(OUT, 'README.md')) ? fs.readFileSync(path.join(OUT, 'README.md'), 'utf8') : '';
   return (readmeMd.indexOf('# ' + AGENT + '\n') === 0 && readmeMd.indexOf('## Measurements') !== -1) ? true : 'README ' + shortRun(readmeMd);
-}, 1000);
+}, test.limit.quick);
 test.run('--only packets runs no harness', 0.2, function () {
   if (!WR.ready) return 'no scratch clone: the world failed';
   return (r.out.indexOf('measurePlatform') === -1 && r.out.indexOf('harness and capacity') === -1) ? true : 'out ' + shortRun(r.out);
-}, 1000);
+}, test.limit.quick);
 test.run('and with --out nothing is committed and nothing posted', 0.2, function () {
   if (!WR.ready) return 'no scratch clone: the world failed';
   return (git(CLONE, ['rev-parse', 'HEAD']).out === headBefore && r.asks.every(function (a) { return a.args.name !== 'chat.add'; })) ? true : 'HEAD ' + git(CLONE, ['rev-parse', 'HEAD']).out;
-}, 1000);
+}, test.limit.quick);
 test.run('the node\'s own traffic log is read from a copy, untouched', 0.2, function () {
   if (!WR.ready) return 'no scratch clone: the world failed';
   origDb = new DatabaseSync(path.join(CLONE, 'spirit', 'run', 'spirit', 'state', 'node.db'), { readOnly: true });
   rowsNow = origDb.prepare('SELECT COUNT(*) AS n FROM traffic').get().n;
   origDb.close();
   return (rowsNow === ROWS.length) ? true : 'rows now ' + rowsNow;
-}, 1000);
+}, test.limit.quick);
 
 // the whole run: harness in a worktree, then its one folder committed, pushed and said
 // A traffic log that counts nothing this time: zero posts is published too.
@@ -322,49 +322,49 @@ test.run('it exits 0: published agents/<agent>/', 0.2, function () {
   before = git(CLONE, ['rev-parse', 'HEAD']).out;
   w = publish(CLONE, ['45440', '--asks', '2']);
   return (w.status === 0 && w.out.split('\n').pop() === 'publishData: published agents/' + AGENT + '/') ? true : 'exit ' + w.status + ' out ' + shortRun(w.out) + ' err ' + shortRun(w.err);
-}, 7000);
+}, test.limit.slow);
 test.run('the harness step runs measurePlatform in a worktree, and says how it ended', 0.2, function () {
   if (!WR.ready) return 'no scratch clone: the world failed';
   return (/harness and capacity in a worktree of /.test(w.out) && /measurePlatform exited /.test(w.out)) ? true : 'out ' + shortRun(w.out);
-}, 1000);
+}, test.limit.quick);
 test.run('and the worktree is removed after', 0.2, function () {
   if (!WR.ready) return 'no scratch clone: the world failed';
   return (git(CLONE, ['worktree', 'list', '--porcelain']).out.split('\n').filter(function (l) { return /^worktree /.test(l); }).length === 1) ? true : 'worktrees ' + shortRun(git(CLONE, ['worktree', 'list']).out);
-}, 1000);
+}, test.limit.quick);
 test.run('zero posts is published, and said aloud', 0.2, function () {
   if (!WR.ready) return 'no scratch clone: the world failed';
   return (w.out.indexOf('the desk asks counted 0 posts; published as measured') !== -1) ? true : 'out ' + shortRun(w.out);
-}, 1000);
+}, test.limit.quick);
 test.run('one commit on its clone', 0.2, function () {
   if (!WR.ready) return 'no scratch clone: the world failed';
   head = git(CLONE, ['rev-parse', 'HEAD']).out;
   return (head !== before && git(CLONE, ['rev-parse', head + '^']).out === before) ? true : 'HEAD ' + head;
-}, 1000);
+}, test.limit.quick);
 test.run('under the standing grant\'s message', 0.2, function () {
   if (!WR.ready) return 'no scratch clone: the world failed';
   return (git(CLONE, ['log', '-1', '--format=%s', head]).out === 'publish: ' + AGENT + ' at ' + WR.COMMIT + ' (agents/' + AGENT + '/, the standing grant of goal/G4.33)') ? true : 'message ' + shortRun(git(CLONE, ['log', '-1', '--format=%s', head]).out);
-}, 1000);
+}, test.limit.quick);
 test.run('its files all lie in agents/<agent>/', 0.2, function () {
   if (!WR.ready) return 'no scratch clone: the world failed';
   files = git(CLONE, ['diff-tree', '--no-commit-id', '--name-only', '-r', head]).out.split('\n').filter(Boolean);
   return (files.length > 0 && files.every(function (f) { return f.indexOf('agents/' + AGENT + '/') === 0; })) ? true : 'committed ' + shortRun(files);
-}, 1000);
+}, test.limit.quick);
 test.run('packets, platform and README among them', 0.2, function () {
   if (!WR.ready) return 'no scratch clone: the world failed';
   return (['packets.json', 'packets.md', 'platform.md', 'README.md'].every(function (f) { return files.indexOf('agents/' + AGENT + '/' + f) !== -1; })) ? true : 'committed ' + shortRun(files);
-}, 1000);
+}, test.limit.quick);
 test.run('what he had staged stays staged, and uncommitted', 0.2, function () {
   if (!WR.ready) return 'no scratch clone: the world failed';
   return (git(CLONE, ['diff', '--cached', '--name-only']).out === 'his-staged.txt') ? true : 'staged ' + shortRun(git(CLONE, ['diff', '--cached', '--name-only']).out);
-}, 1000);
+}, test.limit.quick);
 test.run('pushed: the origin is at its commit', 0.2, function () {
   if (!WR.ready) return 'no scratch clone: the world failed';
   return (git(ORIGIN, ['rev-parse', 'refs/heads/master']).out === head) ? true : 'origin ' + git(ORIGIN, ['rev-parse', 'refs/heads/master']).out;
-}, 1000);
+}, test.limit.quick);
 
 // goal/G43.22, Andy: "publishData summary is no longer needed, i only check on github.": nothing is posted to the desk.
 test.run('no summary line posted to Desk', 0.2, function () {
   if (!WR.ready) return 'no scratch clone: the world failed';
   post = w.asks.filter(function (a) { return a.args.name === 'chat.add'; });
   return (w.asks.length > 0 && post.length === 0) ? true : 'posted ' + shortRun(post);
-}, 1000);
+}, test.limit.quick);

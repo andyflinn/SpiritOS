@@ -131,63 +131,63 @@ test.run('spirit/app/testicle/testicle.json is there, and JSON', 0.2, function (
   own = readJson(path.join(APP, 'testicle.json'));
   id = (own && own.identity) || {};
   return !!own || 'no spirit/app/testicle/testicle.json, or no JSON';
-}, 1000);
+}, test.limit.quick);
 test.run('it names an icon and a label', 0.2, function () {
   return (typeof id.icon === 'string' && !!id.icon && typeof id.label === 'string' && !!id.label) || 'identity: ' + short(id);
-}, 1000);
+}, test.limit.quick);
 // The goal box: "testicle: an intrinsic app with a server and a face".
 test.run('it is intrinsic', 0.2, function () {
   return id.intrinsic === true || 'identity.intrinsic: ' + short(id.intrinsic);
-}, 1000);
+}, test.limit.quick);
 test.run('it has a face: shell.mount true', 0.2, function () {
   return (!!own && !!own.shell && own.shell.mount === true) || 'shell: ' + short(own && own.shell);
-}, 1000);
+}, test.limit.quick);
 // goal/G47.1, the server cycle: "The server mounts beside the face (testicle.json: node.mount true)", "The testicle
 // server will serve one first verb, \"busy\"", and the verbs cycle: testicle.script.get and testicle.suite.search, each
 // with its json description (Andy's rule 6). The server's own checks are ./testicle.js.
 test.run('a server beside the face: node.mount true', 0.2, function () {
   return (!!own && !!own.node && own.node.mount === true) || 'node: ' + short(own && own.node);
-}, 1000);
+}, test.limit.quick);
 test.run('its folder holds its manifest, its face, its server, its api.js and data.js, and a json description of each verb, busy, script.get, suite.search, test.set, test.search, red, subscribe and unsubscribe, and its test/ folder, nothing else', 0.2, function () {
   const held = fs.existsSync(APP) ? fs.readdirSync(APP).filter(function (f) { return f !== 'test'; }).sort() : [];
   return JSON.stringify(held) === JSON.stringify(['api.js', 'busy.json', 'data.js', 'element.js', 'red.json', 'script.get.json', 'subscribe.json', 'suite.search.json', 'test.search.json', 'test.set.json', 'testicle.js', 'testicle.json', 'unsubscribe.json']) || 'its folder holds ' + short(held);
-}, 1000);
+}, test.limit.quick);
 test.run('its mount names element.js', 0.2, function () {
   return (!!own && !!own.mount && own.mount['element.js'] === true) || 'mount: ' + short(own && own.mount);
-}, 1000);
+}, test.limit.quick);
 // The box: "spirit/app/test/ stays the app branch's test folder".
 test.run('spirit/app/test/ stays the app branch\'s test folder, no app', 0.2, function () {
   return (fs.existsSync(path.join(RUN, 'spirit', 'app', 'test')) && !fs.existsSync(path.join(RUN, 'spirit', 'app', 'test', 'test.json'))) || 'spirit/app/test/ holds a test.json, or is gone';
-}, 1000);
+}, test.limit.quick);
 
 // the box: "calls no verbs in this round", "the existing file list ...: no new list"
 test.run('spirit/app/testicle/element.js is there', 0.2, function () {
   src = code(FACE);
   return src !== '' || 'no spirit/app/testicle/element.js';
-}, 1000);
+}, test.limit.quick);
 test.run('it draws with the workBench element, spirit/element/workBench.js', 0.2, function () {
   return (/['"]spirit\/element\/workBench\.js['"]/).test(src) || 'it does not require spirit/element/workBench.js';
-}, 1000);
+}, test.limit.quick);
 test.run('its file viewer is the existing file list, spirit/element/search/file.js', 0.2, function () {
   return (/['"]spirit\/element\/search\/file\.js['"]/).test(src) || 'it does not require spirit/element/search/file.js';
-}, 1000);
+}, test.limit.quick);
 test.run('it makes no list of its own', 0.2, function () {
   return (src !== '' && !/\.element\.search\.create\(|createElement\(['"](tr|li|table)['"]\)/.test(src)) || 'it makes a list of its own';
-}, 1000);
+}, test.limit.quick);
 // goal/G47.1, the UI cycle: the face asks testicle.script.get on a click, through spirit; never by itself.
 test.run('it asks the node only through spirit: no peerPost, no fetch', 0.2, function () {
   return (src !== '' && !/\.peerPost\(|\bfetch\(|XMLHttpRequest/.test(src)) || 'it asks the node something itself';
-}, 1000);
+}, test.limit.quick);
 // goal/G47.1, the box: "testicle turns flat on."
 test.run('it draws the file list with flat on', 0.2, function () {
   return (/\bflat\s*:\s*true\b/).test(src) || 'it does not hand the file list flat: true';
-}, 1000);
+}, test.limit.quick);
 
 test.run('the world: a scratch node comes up', 0.2, async function () {
   s = scratch();
   N = await boot(s.run); live.push(N.child);
   return N.up || 'the scratch node did not come up: nothing judged';
-}, 65000);
+}, test.limit.long);
 // Chrome, opened on the node's face page: its failures are this test's.
 test.run('the world: the face page has its spirit', 0.2, async function () {
   if (!N || !N.up) return NONODE;
@@ -197,7 +197,7 @@ test.run('the world: the face page has its spirit', 0.2, async function () {
   if (c.error) return 'Chrome: ' + c.error;
   await c.send('Page.navigate', { url: N.base + '/face.html' });
   return !!(await until(function () { return c.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000)) || 'the page has no spirit: nothing judged';
-}, 25000);
+}, test.limit.long);
 
 // its place: spirit.element.spirit.app.testicle.element, with a create
 test.run('it loads through spirit.require and mounts with create(container), answering { destroy }', 0.2, async function () {
@@ -209,80 +209,80 @@ test.run('it loads through spirit.require and mounts with create(container), ans
     ' var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:1200px;height:800px;display:flex;"; document.body.appendChild(b);' +
     ' window.__made = E.create(b, {}); return window.__made && typeof window.__made.destroy === "function" ? "made" : "no destroy"; }, function (e) { return "refused: " + (e && e.message || e); })');
   return made === 'made' || 'it did not mount: ' + short(made);
-}, 3000);
+}, test.limit.slow);
 
 // the box: "a workBench with one 📁 icon"
 test.run('the world: the workBench\'s left strip is drawn', 0.2, async function () {
   if (face()) return face();
   return !!(await waitFor('icons("left") && icons("left").length > 0')) || 'no left strip: ' + short(await T('icons("left")'));
-}, 13000);
+}, test.limit.slow);
 test.run('its left strip holds exactly one icon, 📁', 0.2, async function () {
   if (face()) return face();
   const left = await T('icons("left")');
   return (Array.isArray(left) && left.length === 1 && /📁/.test(left[0])) || 'the left strip holds ' + short(left);
-}, 1000);
+}, test.limit.quick);
 test.run('its right strip holds none', 0.2, async function () {
   if (face()) return face();
   const right = await T('icons("right")');
   return (!right || right.length === 0) || 'the right strip holds ' + short(right);
-}, 1000);
+}, test.limit.quick);
 
 // the box: "it shows a file pane in the leftmost workBench pane, and nothing else"
 test.run('the leftmost pane shows the file list, its search field there', 0.2, async function () {
   if (face()) return face();
   return !!(await waitFor('inLeft("input[id$=text]") > 0', 15000)) || 'no file list in the leftmost pane: ' + short(await T('leftSays()'));
-}, 18000);
+}, test.limit.slow);
 test.run('and nothing else: the centre is empty', 0.2, async function () {
   if (face()) return face();
   const centre = await T('centerText()');
   return (centre === null || centre === '') || 'the centre shows ' + short(centre);
-}, 1000);
+}, test.limit.quick);
 
 // goal/G47.1, the box: "With flat on: no folder rows, never the indented tree; with an empty field every file the app
 // accepts is listed, each with its path; typing narrows it."
 test.run('the world: with the field empty the list draws rows', 0.2, async function () {
   if (face()) return face();
   return !!(await waitFor('rows().length > 0', 15000)) || 'no rows with the field empty: ' + short(await T('leftSays()'));
-}, 18000);
+}, test.limit.slow);
 // A folder's key has no extension; every production script's has .js.
 test.run('with the field empty no folder row shows', 0.2, async function () {
   if (face()) return face();
   bare = (await T('rows()')) || [];
   const folders = bare.filter(function (k) { return !/\.[a-z0-9]+$/i.test(k); });
   return folders.length === 0 || 'folder rows: ' + short(folders.slice(0, 10));
-}, 1000);
+}, test.limit.quick);
 test.run('with the field empty files deep in the tree show, no folder opened', 0.2, function () {
   const deep = bare.filter(function (k) { return k.split('/').length >= 3; });
   return deep.length > 0 || 'rows: ' + short(bare.slice(0, 10));
-}, 1000);
+}, test.limit.quick);
 test.run('with the field empty each row shows its path', 0.2, async function () {
   if (face()) return face();
   const one = bare.filter(function (k) { return k.split('/').length >= 3; })[0] || '';
   const said = one ? await T('rowText(' + JSON.stringify(one) + ')') : null;
   return (!!one && typeof said === 'string' && said.indexOf(one.slice(0, one.lastIndexOf('/') + 1)) !== -1) || 'the row of ' + short(one) + ' reads ' + short(said);
-}, 1000);
+}, test.limit.quick);
 
 // the box: "its file viewer showing production *.js files only"
 test.run('the world: a planted production script is found by its word', 0.2, async function () {
   if (face()) return face();
   await T('type("zzTesticle")');
   return !!(await waitFor('rows().indexOf("' + SHOWN[0] + '") !== -1', 15000)) || 'the planted script is not listed: ' + short(await T('rows()'));
-}, 18000);
+}, test.limit.slow);
 test.run('every planted production *.js file shows', 0.2, async function () {
   if (face()) return face();
   rows = (await T('rows()')) || [];
   files = rows.filter(function (k) { return /\.[a-z0-9]+$/i.test(k); });
   return SHOWN.every(function (f) { return rows.indexOf(f) !== -1; }) || 'shown: ' + short(rows) + ', wanted ' + SHOWN.join(', ');
-}, 1000);
+}, test.limit.quick);
 test.run('no other file shows: not a .md, not a .json, not a test in a test/ folder', 0.2, function () {
   return !HIDDEN.some(function (f) { return rows.indexOf(f) !== -1; }) || 'shown, though no production script: ' + short(HIDDEN.filter(function (f) { return rows.indexOf(f) !== -1; }));
-}, 1000);
+}, test.limit.quick);
 test.run('with words typed no folder row shows', 0.2, function () {
   return (rows.indexOf('spirit/zzTesticle') === -1 && rows.indexOf('spirit/zzTesticle/inner') === -1 && rows.indexOf('spirit/zzTesticle/test') === -1) || 'folder rows: ' + short(rows.filter(function (k) { return !/\.[a-z0-9]+$/i.test(k); }));
-}, 1000);
+}, test.limit.quick);
 test.run('every file it lists is a .js outside any test/ folder', 0.2, function () {
   return (files.length > 0 && files.every(function (k) { return /\.js$/.test(k) && k.split('/').indexOf('test') === -1; })) || 'it lists ' + short(files.filter(function (k) { return !/\.js$/.test(k) || k.split('/').indexOf('test') !== -1; }));
-}, 1000);
+}, test.limit.quick);
 // goal/G47.1, the UI cycle. The box: "When a user clicks on a production file in the left pane of the production file
 // list", "A new tab is opened and activated in the center pane's tabContainer: the file detail", "The tab header shows
 // the production file name without path", "The detail shows as title row the full file name, and below it a standard
@@ -295,130 +295,130 @@ test.run('the world: shown.js is concerned by its own test and by general tests'
   if (!N || !N.up) return NONODE;
   want1 = concerning(s.run, F1);
   return (want1.indexOf('spirit/zzTesticle/test/shown.js') !== -1 && want1.length > 1) || 'testModule.js names ' + short(want1);
-}, 1000);
+}, test.limit.quick);
 test.run('the world: a production file in the left pane is clicked', 0.2, async function () {
   if (face()) return face();
   return !!(await T('click(' + JSON.stringify(F1) + ')')) || 'no row for ' + F1 + ' to click: ' + short(await T('rows()'));
-}, 1000);
+}, test.limit.quick);
 test.run('a click on a production file opens one tab in the centre', 0.2, async function () {
   if (face()) return face();
   return !!(await waitFor('tabs().length === 1', 10000)) || 'tabs: ' + short(await T('tabs()'));
-}, 13000);
+}, test.limit.slow);
 test.run('the new tab is the active one', 0.2, async function () {
   if (face()) return face();
   t1 = ((await T('tabs()')) || [])[0] || {};
   return t1.selected === true || 'tabs: ' + short(await T('tabs()'));
-}, 1000);
+}, test.limit.quick);
 test.run('its header shows the file name without its path', 0.2, function () {
   return t1.label === 'shown.js' || 'header: ' + short(t1.label);
-}, 1000);
+}, test.limit.quick);
 test.run('its tab is closable', 0.2, async function () {
   if (face()) return face();
   return t1.closable === true || 'tabs: ' + short(await T('tabs()'));
-}, 1000);
+}, test.limit.quick);
 // the box: "as title row the full file name, and below it a standard testicle.suite.search"
 test.run('the detail\'s title row is the full file name', 0.2, async function () {
   if (face()) return face();
   return !!(await waitFor('shown() && shown().first === ' + JSON.stringify(F1), 10000)) || 'the detail reads ' + short(await T('shown()'));
-}, 13000);
+}, test.limit.slow);
 test.run('the world: below the title the suite search draws rows', 0.2, async function () {
   if (face()) return face();
   return !!(await waitFor('shown() && shown().rows.length >= ' + want1.length, 15000)) || 'the detail: ' + short(await T('shown()'));
-}, 18000);
+}, test.limit.slow);
 test.run('below the title it lists every suite that concerns the file', 0.2, async function () {
   if (face()) return face();
   d1 = (await T('shown()')) || { rows: [] };
   const lacking = want1.filter(function (w) { return !named(d1.rows, w); });
   return !lacking.length || 'missing: ' + short(lacking) + '; rows ' + short(d1.rows.map(function (r) { return r.key; }));
-}, 1000);
+}, test.limit.quick);
 test.run('and no other: each suite once', 0.2, function () {
   return d1.rows.length === want1.length || d1.rows.length + ' rows for ' + want1.length + ' suites: ' + short(d1.rows.map(function (r) { return r.key; }));
-}, 1000);
+}, test.limit.quick);
 // shown.js was never changed: its rows exist only if the click's script.get made them. Asked by suite.search, which makes none.
 test.run('the click made the script\'s rows: script.get ran for it', 0.2, async function () {
   if (!N || !N.up) return NONODE;
   const rowsMade = await call(N.base, 'testicle.suite.search', { script: F1, text: '' });
   return (rowsMade.status === 200 && rowsMade.body && Array.isArray(rowsMade.body.items) && rowsMade.body.items.length === want1.length) || 'suite.search after the click: ' + short(rowsMade.text);
-}, 1000);
+}, test.limit.quick);
 test.run('the suite search is spirit/element/search/suite.js, which the face loads', 0.2, function () {
   const srcNow = code(FACE);
   return (/['"]spirit\/element\/search\/suite\.js['"]/.test(srcNow) && fs.existsSync(path.join(RUN, 'spirit', 'element', 'search', 'suite.js'))) || 'the face does not load spirit/element/search/suite.js, or it is not there';
-}, 1000);
+}, test.limit.quick);
 
 // the box: a second click
 test.run('a second click on the same file opens no second tab: its tab is made active', 0.2, async function () {
   if (face()) return face();
   return (await T('click(' + JSON.stringify(F1) + ')') && !!(await waitFor('tabs().length === 1 && tabs()[0].selected', 3000))) || 'tabs: ' + short(await T('tabs()'));
-}, 5000);
+}, test.limit.slow);
 test.run('a click on another file opens a second tab', 0.2, async function () {
   if (face()) return face();
   return (await T('click(' + JSON.stringify(F2) + ')') && !!(await waitFor('tabs().length === 2', 10000))) || 'tabs: ' + short(await T('tabs()'));
-}, 13000);
+}, test.limit.slow);
 test.run('the newest tab is the active one, and only it', 0.2, async function () {
   if (face()) return face();
   two = (await T('tabs()')) || [];
   return (two.length === 2 && two.filter(function (t) { return t.selected; }).length === 1 && (two.filter(function (t) { return t.selected; })[0] || {}).label === 'alsoShown.js') || 'tabs: ' + short(two);
-}, 1000);
+}, test.limit.quick);
 test.run('all tabs are closable', 0.2, function () {
   return (two.length === 2 && two.every(function (t) { return t.closable; })) || 'tabs: ' + short(two);
-}, 1000);
+}, test.limit.quick);
 test.run('the active tab shows its own file\'s detail', 0.2, async function () {
   if (face()) return face();
   return !!(await waitFor('shown() && shown().first === ' + JSON.stringify(F2), 10000)) || 'the detail reads ' + short(await T('shown()'));
-}, 13000);
+}, test.limit.slow);
 
 // the box: "The UI must listen to changes on all tables it interacts with"
 test.run('the world: eta.js\'s detail lists its suites', 0.2, async function () {
   if (face()) return face();
   return (await T('click(' + JSON.stringify(F3) + ')') && !!(await waitFor('shown() && shown().first === ' + JSON.stringify(F3) + ' && shown().rows.length > 0', 15000))) || 'the detail: ' + short(await T('shown()'));
-}, 18000);
+}, test.limit.slow);
 test.run('the world: before its own test is written, eta.js lists none', 0.2, async function () {
   if (face()) return face();
   etaBefore = await T('shown()');
   return (!!etaBefore && etaBefore.first === F3 && !named(etaBefore.rows, etaOwn)) || 'the detail: ' + short(etaBefore);
-}, 1000);
+}, test.limit.quick);
 test.run('a suite written for the file shows in its open detail, with no click: the detail listens, the server publishes', 0.2, async function () {
   if (face()) return face();
   fs.mkdirSync(path.join(s.run, 'spirit', 'zzTesticle', 'test'), { recursive: true });
   fs.writeFileSync(path.join(s.run, etaOwn), '\'use strict\';\n// the new test of eta\n');
   return !!(await until(function () { return T('shown()').then(function (d) { return !!d && d.rows.some(function (r) { return r.key === etaOwn || String(r.text).indexOf(etaOwn) !== -1; }); }); }, 10000)) || 'the detail after the new suite: ' + short(await T('shown()'));
-}, 13000);
+}, test.limit.slow);
 
 // the box: "The tab opens first ... or the error script.get gives"
 test.run('the world: gone.js is listed in the left pane', 0.2, async function () {
   if (face()) return face();
   return ((await T('rows()')) || []).indexOf(F4) !== -1 || 'gone.js is not listed: ' + short(await T('rows()'));
-}, 1000);
+}, test.limit.quick);
 test.run('the world: gone.js, removed, is still there to click', 0.2, async function () {
   if (face()) return face();
   fs.rmSync(path.join(s.run, F4));
   clicked = await T('click(' + JSON.stringify(F4) + ')');
   return !!clicked || 'its row went before the click: nothing judged';
-}, 1000);
+}, test.limit.quick);
 test.run('its tab opens and is the active one, though script.get will refuse', 0.2, async function () {
   if (face()) return face();
   return !!(await waitFor('tabs().some(function (t) { return t.label === "gone.js" && t.selected; })', 5000)) || 'tabs: ' + short(await T('tabs()'));
-}, 8000);
+}, test.limit.slow);
 test.run('below the title line it shows the error script.get gives: no such file', 0.2, async function () {
   if (face()) return face();
   return !!(await waitFor('shown() && shown().first === ' + JSON.stringify(F4) + ' && /no such file/.test(shown().text)', 10000)) || 'the detail reads ' + short(await T('shown()'));
-}, 13000);
+}, test.limit.slow);
 test.run('and no suite search', 0.2, async function () {
   if (face()) return face();
   goneShown = await T('shown()');
   return (!!goneShown && goneShown.first === F4 && goneShown.rows.length === 0) || 'the detail: ' + short(goneShown);
-}, 1000);
+}, test.limit.quick);
 
 // the box: "All tabs are closable"
 test.run('a tab\'s close button takes it away', 0.2, async function () {
   if (face()) return face();
   before = ((await T('tabs()')) || []).length;
   return (await T('closeTab(' + JSON.stringify(F4) + ')') && !!(await waitFor('tabs().length === ' + (before - 1) + ' && !tabs().some(function (t) { return t.label === "gone.js"; })', 3000))) || 'tabs after closing gone.js: ' + short(await T('tabs()'));
-}, 5000);
+}, test.limit.slow);
 
 // destroy
 test.run('destroy leaves its container empty', 0.2, async function () {
   if (face()) return face();
   const after = await c.evaluate('(function () { window.__made.destroy(); var b = document.getElementById("zzBox"); return b ? b.innerHTML : "gone"; }())');
   return (after === '' || after === 'gone') || 'after destroy: ' + short(after).slice(0, 200);
-}, 1000);
+}, test.limit.quick);

@@ -26,7 +26,7 @@ test.after(function () {
 });
 test.run('spirit/element/search/grant/detailElement.js is there', 0.2, function () {
   return fs.existsSync(path.join(__dirname, '..', 'detailElement.js')) ? true : 'spirit/element/search/grant/detailElement.js is not there: nothing below can pass';
-}, 1000);
+}, test.limit.quick);
 test.run('the world: a scratch node, and Chrome on its face page', 0.2, async function () {
   node = await scratchNode();
   chrome = await chromePage(findChrome());
@@ -40,52 +40,52 @@ test.run('the world: a scratch node, and Chrome on its face page', 0.2, async fu
   };
   text = function (id) { return js('String((document.getElementById("' + id + '") || {}).innerText || "")'); };
   return true;
-}, 10000);
+}, test.limit.slow);
 test.run('it loads on a page, at spirit.element.spirit.element.search.grant.detailElement, and makes its detail', 0.2, async function () {
   if (!js) return NO_PAGE;
   return (await mount('zzOne', true)) === 'made' ? true : 'mounting it failed';
-}, 3000);
+}, test.limit.slow);
 test.run('it says whose grant it is and its path', 0.2, async function () {
   if (!js) return NO_PAGE;
   await until(function () { return text('zzOne').then(function (t) { return /Zz Peer/.test(t); }); }, 8000);
   one = await text('zzOne');
   return /Zz Peer/.test(one) && /zz\/thing/.test(one) ? true : 'the detail shows: ' + short(one);
-}, 12000);
+}, test.limit.slow);
 test.run('a path a server serves is not marked deprecated', 0.2, function () {
   if (one === undefined) return NO_PAGE;
   return !/deprecated/.test(one) ? true : 'the detail shows: ' + short(one);
-}, 1000);
+}, test.limit.quick);
 test.run('the world: a second detail, on a path no server serves', 0.2, async function () {
   if (!js) return NO_PAGE;
   return (await mount('zzTwo', false)) === 'made' ? true : 'the second did not mount';
-}, 3000);
+}, test.limit.slow);
 test.run('a path no server serves today is marked deprecated', 0.2, async function () {
   if (!js) return NO_PAGE;
   await until(function () { return text('zzTwo').then(function (t) { return /Zz Peer/.test(t); }); }, 8000);
   const two = await text('zzTwo');
   return /deprecated/.test(two) ? true : 'the detail shows: ' + short(two);
-}, 12000);
+}, test.limit.slow);
 
 // its Revoke, an armingButton: "a armingButton [Revoke], which must revoke/delete that grant"
 test.run('the world: it has a Revoke button', 0.2, async function () {
   if (!js) return NO_PAGE;
   press = function () { return js('(function () { var b = Array.prototype.slice.call(document.getElementById("zzOne").querySelectorAll("button")).filter(function (x) { return /Revoke/.test(x.textContent); })[0]; if (!b) return false; b.click(); return true; })()'); };
   return (await press()) ? true : 'no Revoke button in: ' + short(one);
-}, 3000);
+}, test.limit.slow);
 test.run('one press only arms it: nothing is revoked', 0.2, async function () {
   if (!js) return NO_PAGE;
   await sleep(300);
   return (await js('window.__revoked.length')) === 0 ? true : 'one press revoked: ' + short(await js('window.__revoked'));
-}, 3000);
+}, test.limit.slow);
 test.run('the second press revokes that grant, by its ID and its path', 0.2, async function () {
   if (!js) return NO_PAGE;
   await press();
   return (await until(function () { return js('window.__revoked.join("|")').then(function (v) { return v === 'KEYZZ zz/thing'; }); }, 5000)) ? true : 'revoked: ' + short(await js('window.__revoked'));
-}, 10000);
+}, test.limit.slow);
 test.run('and says so below the bubble', 0.2, async function () {
   if (!js) return NO_PAGE;
   return (await until(function () { return text('zzOne').then(function (t) { return /revoked/.test(t); }); }, 5000)) ? true : 'the detail shows: ' + short(await text('zzOne'));
-}, 10000);
+}, test.limit.slow);
 
 // "who paints, listens": its row, as its table's watch hands it
 test.run('a new label of its own grant repaints it, and another grant\'s does not', 0.2, async function () {
@@ -93,27 +93,27 @@ test.run('a new label of its own grant repaints it, and another grant\'s does no
   await js('(function () { (window.__watchers || []).forEach(function (fn) { fn("KEYZZ\\nzz/thing", { contact: "KEYZZ", name: "Zz Renamed", path: "zz/thing" }); fn("OTHER\\nzz/else", { contact: "OTHER", name: "Not Mine", path: "zz/else" }); }); return true; })()');
   const renamed = await text('zzTwo');
   return /Zz Renamed/.test(renamed) && !/Not Mine/.test(renamed) ? true : 'after the watch: ' + short(renamed);
-}, 3000);
+}, test.limit.slow);
 test.run('its grant gone, revoked anywhere, it says so', 0.2, async function () {
   if (!js) return NO_PAGE;
   await js('(function () { (window.__watchers || []).forEach(function (fn) { fn("KEYZZ\\nzz/thing", undefined); }); return true; })()');
   const t = await text('zzTwo');
   return /revoked/.test(t) ? true : 'after the grant went: ' + short(t);
-}, 3000);
+}, test.limit.slow);
 
 // destroy(), and unconfigured
 test.run('destroy leaves its host empty', 0.2, async function () {
   if (!js) return NO_PAGE;
   const after = await js('(function () { window.__zzOne.destroy(); return document.getElementById("zzOne").children.length; })()');
   return after === 0 ? true : 'after destroy it holds ' + short(after) + ' children';
-}, 3000);
+}, test.limit.slow);
 test.run('and lets its watch go', 0.2, async function () {
   if (!js) return NO_PAGE;
   const released = await js('window.__released');
   return released === 1 ? true : 'watches let go: ' + short(released);
-}, 3000);
+}, test.limit.slow);
 test.run('with no row and no table it says it is not configured, and throws nothing', 0.2, async function () {
   if (!js) return NO_PAGE;
   const bare = await js('(function () { var b = document.body.appendChild(document.createElement("div")); try { spirit.element.spirit.element.search.grant.detailElement.create(b, {}); } catch (e) { return "threw " + e; } return String(b.innerText); })()');
   return /not configured/.test(bare) ? true : 'unconfigured: ' + short(bare);
-}, 3000);
+}, test.limit.slow);

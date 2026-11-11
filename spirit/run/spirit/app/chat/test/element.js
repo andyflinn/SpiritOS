@@ -37,13 +37,13 @@ test.after(function () {
 test.run('its element file is there', 0.2, function () {
   X.src = code(FILE);
   return X.src !== '' ? true : PLACE + ' is not there';
-}, 1000);
+}, test.limit.quick);
 test.run('it mounts through no old shell: no activateApp, no spirit.shell', 0.2, function () {
   return X.src !== '' && !/activateApp|spirit\.shell\b/.test(X.src) ? true : 'element.js still reaches the old shell: ' + short(X.src.match(/activateApp|spirit\.shell\b/g));
-}, 1000);
+}, test.limit.quick);
 test.run('and names no chatClerver: its server is the branch chat', 0.2, function () {
   return X.src !== '' && !/\bchatClerver\b/.test(X.src) ? true : 'element.js still names chatClerver';
-}, 1000);
+}, test.limit.quick);
 
 test.run('the world: a scratch node with chat switched on, its face page in Chrome', 0.2, async function () {
   const chrome = H.findChrome();
@@ -60,7 +60,7 @@ test.run('the world: a scratch node with chat switched on, its face page in Chro
   await page.send('Page.navigate', { url: node.base + '/face.html' });
   X.ready = await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.ready)').then(Boolean); }, H.WAIT);
   return X.ready ? true : 'the face page never had window.spirit.ready';
-}, 9000);
+}, test.limit.slow);
 
 // ── spirit.element.spirit.app.chat.element.create(container, { open }) -> { destroy }, mounted alone ──
 test.run('it loads through spirit.require and mounts, answering { destroy }', 0.2, async function () {
@@ -76,7 +76,7 @@ test.run('it loads through spirit.require and mounts, answering { destroy }', 0.
     ' var c = document.createElement("div"); c.id = "box"; c.style.cssText = "position:fixed;left:0;top:0;width:1200px;height:760px;display:flex;background:#111;z-index:9"; document.body.appendChild(c);' +
     ' window.made = E.create(c, {}); return window.made && typeof window.made.destroy === "function" ? "made" : "create answered " + typeof window.made; }, function (e) { return String(e && e.message || e); })');
   return X.made === 'made' ? true : 'it did not mount: ' + short(X.made);
-}, 1000);
+}, test.limit.quick);
 
 // ── it draws today's chatter: the contacts pane, and the chat's input ──
 test.run('the chat\'s input says Enter sends, Shift+Enter a new line', 0.2, async function () {
@@ -84,13 +84,13 @@ test.run('the chat\'s input says Enter sends, Shift+Enter a new line', 0.2, asyn
   if (X.made !== 'made') return NOT_MOUNTED;
   return await H.until(function () { return page.evaluate('!!Array.prototype.find.call(document.querySelectorAll("#box textarea"), function (t) { return /Enter sends, Shift\\+Enter a new line/.test(t.getAttribute("placeholder") || ""); })'); }, 10000)
     ? true : 'no such input: ' + short(await page.evaluate('String(document.getElementById("box").innerHTML).slice(0, 300)'));
-}, 1000);
+}, test.limit.quick);
 test.run('and its contacts pane, the contact search', 0.2, async function () {
   const page = X.page;
   if (X.made !== 'made') return NOT_MOUNTED;
   return await H.until(function () { return page.evaluate('!!(spirit.element && spirit.element.spirit.element.search && spirit.element.spirit.element.search.contact) && document.querySelectorAll("#box *").length > 10'); }, 10000)
     ? true : 'no contacts pane: the contact search is ' + short(await page.evaluate('typeof (spirit.element && spirit.element.spirit.element.search && spirit.element.spirit.element.search.contact)'));
-}, 1000);
+}, test.limit.quick);
 
 // ── it asks its server through spirit, as the branch chat ──
 test.run('at mount it asks chat.chats.search', 0.2, async function () {
@@ -98,18 +98,18 @@ test.run('at mount it asks chat.chats.search', 0.2, async function () {
   if (X.made !== 'made') return NOT_MOUNTED;
   return await H.until(function () { return page.evaluate('window.sent.some(function (b) { return /"chat\\.chats\\.search"/.test(b); })'); }, 10000)
     ? true : 'it sent: ' + short(await page.evaluate('JSON.stringify(window.sent.slice(-8))'));
-}, 1000);
+}, test.limit.quick);
 test.run('and never chatClerver.<verb>', 0.2, async function () {
   const page = X.page;
   if (X.made !== 'made') return NOT_MOUNTED;
   return await page.evaluate('!window.sent.some(function (b) { return /chatClerver/.test(b); })')
     ? true : 'it sent chatClerver: ' + short(await page.evaluate('JSON.stringify(window.sent.filter(function (b) { return /chatClerver/.test(b); }))'));
-}, 1000);
+}, test.limit.quick);
 test.run('its lines are the branch chat\'s cache, spirit.data.chat', 0.2, async function () {
   const page = X.page;
   if (X.made !== 'made') return NOT_MOUNTED;
   return await H.until(function () { return page.evaluate('!!(spirit.data && spirit.data.chat && spirit.data.chat.data)'); }, 10000) ? true : 'no spirit.data.chat on the page';
-}, 1000);
+}, test.limit.quick);
 
 // ── destroy ──
 test.run('destroy empties its container', 0.2, async function () {
@@ -117,10 +117,10 @@ test.run('destroy empties its container', 0.2, async function () {
   if (X.made !== 'made') return NOT_MOUNTED;
   return await page.evaluate('(function () { window.made.destroy(); return document.getElementById("box").children.length === 0; }())')
     ? true : 'destroy left ' + short(await page.evaluate('String(document.getElementById("box").innerHTML).slice(0, 200)'));
-}, 1000);
+}, test.limit.quick);
 test.run('and the page threw nothing', 0.2, async function () {
   const page = X.page;
   if (X.made !== 'made') return NOT_MOUNTED;
   const errs = JSON.parse(await page.evaluate('JSON.stringify(window.pageErrors)'));
   return errs.length === 0 ? true : 'page errors: ' + short(errs);
-}, 1000);
+}, test.limit.quick);

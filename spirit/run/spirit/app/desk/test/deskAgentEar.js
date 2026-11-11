@@ -63,55 +63,55 @@ const wake = { lines: ['DESK andy chat.add {"id":"goal/G9.1","text":"wsl: hello"
 test.run('a wait prints the wake\'s lines and exits 0', 0.2, function () {
   const a = W.a = ear(['45441'], { next: [wake] });
   return (a.code === 0 && a.out.indexOf('wsl: hello') !== -1) || 'exit ' + a.code + ', out ' + short(a.out) + short(a.err);
-}, 1000);
+}, test.limit.quick);
 test.run('its last line is the arm to run next: next: node deskAgentEar.js <port> --read <key>', 0.2, function () {
   if (!W.a) return 'no wait ran: the test before failed';
   const outLines = W.a.out.trim().split('\n');
   return outLines[outLines.length - 1] === 'next: node deskAgentEar.js 45441 --read w-17' || 'last line: ' + short(outLines[outLines.length - 1]);
-}, 1000);
+}, test.limit.quick);
 test.run('armed without --read it asks next with no key', 0.2, function () {
   if (!W.a) return 'no wait ran: the test before failed';
   const firstNext = W.a.asks.filter(function (x) { return x.verb === 'next'; })[0];
   return (!!firstNext && JSON.stringify(firstNext.args) === '{}') || 'asked: ' + short(W.a.asks);
-}, 1000);
+}, test.limit.quick);
 
 // The next arm names that key.
 test.run('with --read <key> it asks next with { read: key }', 0.2, function () {
   const b = W.b = ear(['45441', '--read', 'w-17'], { next: [{ lines: ['DESK andy chat.add {"id":"goal/G9.1","text":"wsl: after"}'], key: 'w-18' }] });
   const nexts = b.asks.filter(function (x) { return x.verb === 'next'; });
   return (b.code === 0 && nexts.length >= 1 && nexts[0].args && nexts[0].args.read === 'w-17') || 'exit ' + b.code + ', asked ' + short(b.asks) + short(b.err);
-}, 1000);
+}, test.limit.quick);
 test.run('--read is no desk verb: the desk is not asked', 0.2, function () {
   if (!W.b) return 'no arm ran: the test before failed';
   return !W.b.asks.some(function (x) { return x.verb === 'desk'; }) || 'asked: ' + short(W.b.asks);
-}, 1000);
+}, test.limit.quick);
 test.run('and ends with the new wake\'s key', 0.2, function () {
   if (!W.b) return 'no arm ran: the test before failed';
   return /--read w-18\s*$/.test(W.b.out) || 'out: ' + short(W.b.out);
-}, 1000);
+}, test.limit.quick);
 
 // An arm that names no key is handed the unread wake at once.
 test.run('deskClient hands the unread wake again, and the ear prints it on the first ask', 0.2, function () {
   const c = ear(['45441'], { next: [wake] });
   return (c.code === 0 && c.out.indexOf('wsl: hello') !== -1 && c.asks.filter(function (x) { return x.verb === 'next'; }).length === 1) || 'exit ' + c.code + ', asks ' + c.asks.length;
-}, 1000);
+}, test.limit.quick);
 
 // An empty answer is asked again; a refusal ends it.
 test.run('it asks again while the answer is empty, naming the same key each time', 0.2, function () {
   const d = ear(['45441', '--read', 'w-18'], { next: [{ lines: [] }, { lines: [] }, { lines: ['DESK a third'], key: 'w-19' }] });
   const dn = d.asks.filter(function (x) { return x.verb === 'next'; });
   return (d.code === 0 && dn.length === 3 && dn.every(function (x) { return x.args && x.args.read === 'w-18'; })) || 'asks ' + short(dn) + ', exit ' + d.code;
-}, 2000);
+}, test.limit.quick);
 // A door that timed out (504, app-did-not-answer) handed nothing: the ear waits again with the same key, never ends.
 test.run('a door that timed out is asked again with the same key, and the wake that follows is printed', 0.2, function () {
   const t = ear(['45441', '--read', 'w-19'], { next: [{ ok: false, code: 'app-did-not-answer', error: 'the app server did not answer in time' }, { lines: ['DESK after the timeout'], key: 'w-20' }] });
   const tn = t.asks.filter(function (x) { return x.verb === 'next'; });
   return (t.code === 0 && tn.length === 2 && tn.every(function (x) { return x.args && x.args.read === 'w-19'; }) && /after the timeout/.test(t.out)) || 'exit ' + t.code + ', asks ' + short(tn) + ', err ' + short(t.err);
-}, 2000);
+}, test.limit.quick);
 test.run('a signed-off agent is told so, exit 1', 0.2, function () {
   const e = ear(['45441'], { next: [{ ok: false, code: 'signed-off', error: 'this agent is signed off' }] });
   return (e.code === 1 && /signed off/.test(e.err)) || 'exit ' + e.code + ', err ' + short(e.err);
-}, 1000);
+}, test.limit.quick);
 
 // One ask of the desk, or of deskClient, printed as it came.
 test.run('a desk verb goes through deskClient\'s desk, its answer printed', 0.2, function () {
@@ -119,19 +119,19 @@ test.run('a desk verb goes through deskClient\'s desk, its answer printed', 0.2,
   let version = null;
   try { version = JSON.parse(f.out).version; } catch (e) { version = null; }
   return (f.code === 0 && f.asks.length === 1 && f.asks[0].verb === 'desk' && f.asks[0].args.name === 'item.get' && version === 3) || 'exit ' + f.code + ', asks ' + short(f.asks);
-}, 1000);
+}, test.limit.quick);
 test.run('a desk refusal ends it with exit 1', 0.2, function () {
   const g = ear(['45441', 'item.get', '{"id":"goal/G9.1"}'], { desk: [{ ok: false, code: 'refused', why: 'no' }] });
   return g.code === 1 || 'exit ' + g.code;
-}, 1000);
+}, test.limit.quick);
 test.run('deskClient.<verb> asks deskClient itself', 0.2, function () {
   const h = ear(['45441', 'deskClient.history.search', '{"text":""}'], { 'history.search': [{ items: [], more: false }] });
   return (h.code === 0 && h.asks.length === 1 && h.asks[0].verb === 'history.search') || 'exit ' + h.code + ', asks ' + short(h.asks);
-}, 1000);
+}, test.limit.quick);
 test.run('a port that is no number gets the usage, exit 2', 0.2, function () {
   const i = ear(['nope'], {});
   return (i.code === 2 && /usage/.test(i.err)) || 'exit ' + i.code;
-}, 1000);
+}, test.limit.quick);
 
 test.after(function () {
   try { if (DIR) fs.rmSync(DIR, { recursive: true, force: true }); } catch (e) { /* a temp folder left behind is no failure */ }

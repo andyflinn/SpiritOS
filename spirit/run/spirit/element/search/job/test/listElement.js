@@ -51,12 +51,12 @@ test.run('the world: a scratch node of its own, two planted apps, and Chrome', 0
     return { status: r.status, body: b, text: t };
   };
   return true;
-}, 10000);
+}, test.limit.slow);
 test.run('the world: zzFail started', 0.2, async function () {
   if (!call) return NO_PAGE;
   const failed = await call('job.create', { command: 'node', args: ['spirit/app/zzFail/zzFail.js'] });
   return failed.status >= 200 && failed.status < 300 ? true : 'job.create zzFail: ' + short(failed.text);
-}, 5000);
+}, test.limit.slow);
 test.run('it loads through spirit.require and mounts with spirit.element.spirit.element.search.job.listElement.create(container, { open })', 0.2, async function () {
   if (!call) return NO_PAGE;
   await until(function () { return call('job.get', { key: 'spirit.app.zzFail' }).then(function (j) { return !!(j.body && j.body.job && j.body.job.status === 'failed'); }); }, 15000);
@@ -69,7 +69,7 @@ test.run('it loads through spirit.require and mounts with spirit.element.spirit.
   rowOf = function (name) { return rows().then(function (r) { return r.filter(function (t) { return t.indexOf(name) !== -1; })[0] || ''; }); };
   press = function (w) { return chrome.evaluate('(function () { var b = Array.prototype.filter.call(document.querySelectorAll("#box button"), function (x) { return String(x.textContent).trim() === ' + JSON.stringify(w) + '; })[0]; if (b) b.click(); return !!b; }())'); };
   return made === 'made' ? true : 'it did not mount: ' + short(made);
-}, 10000);
+}, test.limit.slow);
 
 // the old module: every job of the node a row, its columns Status, Name, Kind, Progress, Updated
 test.run('the node\'s own jobs are rows, spirit.fs among them', 0.2, async function () {
@@ -77,37 +77,37 @@ test.run('the node\'s own jobs are rows, spirit.fs among them', 0.2, async funct
   const there = await until(function () { return rows().then(function (r) { return r.some(function (t) { return t.indexOf('spirit.fs') !== -1; }); }); }, 10000);
   t0 = await text();
   return there ? true : 'the rows: ' + short(await rows());
-}, 15000);
+}, test.limit.slow);
 test.run('it has a Status column', 0.2, function () {
   if (t0 === undefined) return NO_LIST;
   return t0.indexOf('Status') !== -1 ? true : 'no column Status: ' + short(t0);
-}, 1000);
+}, test.limit.quick);
 test.run('it has a Name column', 0.2, function () {
   if (t0 === undefined) return NO_LIST;
   return t0.indexOf('Name') !== -1 ? true : 'no column Name: ' + short(t0);
-}, 1000);
+}, test.limit.quick);
 test.run('it has a Kind column', 0.2, function () {
   if (t0 === undefined) return NO_LIST;
   return t0.indexOf('Kind') !== -1 ? true : 'no column Kind: ' + short(t0);
-}, 1000);
+}, test.limit.quick);
 test.run('it has a Progress column', 0.2, function () {
   if (t0 === undefined) return NO_LIST;
   return t0.indexOf('Progress') !== -1 ? true : 'no column Progress: ' + short(t0);
-}, 1000);
+}, test.limit.quick);
 test.run('it has a Updated column', 0.2, function () {
   if (t0 === undefined) return NO_LIST;
   return t0.indexOf('Updated') !== -1 ? true : 'no column Updated: ' + short(t0);
-}, 1000);
+}, test.limit.quick);
 test.run('spirit.fs, the node\'s own, is of kind node, running', 0.2, async function () {
   if (made !== 'made') return NO_LIST;
   const fsRow = await rowOf('spirit.fs');
   return /\bnode\b/.test(fsRow) && /running/.test(fsRow) ? true : 'the spirit.fs row: ' + short(fsRow);
-}, 3000);
+}, test.limit.slow);
 test.run('a failed job shows ❌ failed', 0.2, async function () {
   if (made !== 'made') return NO_LIST;
   const failRow = await rowOf('zzFail');
   return /failed/.test(failRow) && failRow.indexOf('❌') !== -1 || /failed/.test(failRow) && await chrome.evaluate('document.getElementById("box").innerHTML.indexOf("❌") !== -1') ? true : 'the zzFail row: ' + short(failRow);
-}, 3000);
+}, test.limit.slow);
 
 // the kind filter: all, node, servers, transient, failed ("the last filter in the jobs search should be failed")
 test.run('its choices, in order: all, node, servers, transient, failed', 0.2, async function () {
@@ -116,39 +116,39 @@ test.run('its choices, in order: all, node, servers, transient, failed', 0.2, as
   const want = ['all', 'node', 'servers', 'transient', 'failed'];
   const at = want.map(function (w) { return (words || []).indexOf(w); });
   return at.every(function (i) { return i !== -1; }) && at.every(function (i, n) { return n === 0 || i > at[n - 1]; }) ? true : 'the buttons: ' + short(words);
-}, 3000);
+}, test.limit.slow);
 test.run('failed lists the failed jobs only', 0.2, async function () {
   if (made !== 'made') return NO_LIST;
   await press('failed');
   return (await until(function () { return rows().then(function (r) { return r.length >= 1 && r.every(function (t) { return /failed/.test(t); }); }); }, 5000)) ? true : 'with failed: ' + short(await rows());
-}, 10000);
+}, test.limit.slow);
 test.run('node lists the node\'s own jobs only', 0.2, async function () {
   if (made !== 'made') return NO_LIST;
   await press('node');
   return (await until(function () { return rows().then(function (r) { return r.length >= 1 && r.every(function (t) { return /\bnode\b/.test(t); }) && !r.some(function (t) { return t.indexOf('zzFail') !== -1; }); }); }, 5000)) ? true : 'with node: ' + short(await rows());
-}, 10000);
+}, test.limit.slow);
 test.run('all lists them all again', 0.2, async function () {
   if (made !== 'made') return NO_LIST;
   await press('all');
   return (await until(function () { return rows().then(function (r) { return r.some(function (t) { return t.indexOf('zzFail') !== -1; }) && r.some(function (t) { return t.indexOf('spirit.fs') !== -1; }); }); }, 5000)) ? true : 'with all: ' + short(await rows());
-}, 10000);
+}, test.limit.slow);
 
 // "one green dot hops between rows, always showing the most recent update"
 test.run('the world: zzSleep started', 0.2, async function () {
   if (!call) return NO_PAGE;
   const started = await call('job.create', { command: 'node', args: ['spirit/app/zzSleep/zzSleep.js'] });
   return started.status >= 200 && started.status < 300 ? true : 'job.create zzSleep: ' + short(started.text);
-}, 5000);
+}, test.limit.slow);
 test.run('the one dot is on zzSleep, the job that changed last', 0.2, async function () {
   if (made !== 'made') return NO_LIST;
   dotted = function () { return chrome.evaluate('Array.prototype.map.call(document.querySelectorAll("#box tr, #box .list-row"), function (r) { return r.innerHTML.indexOf("●") !== -1 ? String(r.innerText || "") : ""; }).filter(Boolean)'); };
   return (await until(function () { return dotted().then(function (d) { return d.length === 1 && d[0].indexOf('zzSleep') !== -1; }); }, 10000)) ? true : 'the dotted rows: ' + short(await dotted());
-}, 15000);
+}, test.limit.slow);
 test.run('a job cancelled on the node repaints its row, no reload', 0.2, async function () {
   if (made !== 'made') return NO_LIST;
   await call('job.cancel', { id: 'spirit.app.zzSleep' });
   return (await until(function () { return rowOf('zzSleep').then(function (r) { return /cancelled|stopped/.test(r) || r === ''; }); }, 10000)) ? true : 'the zzSleep row after its cancel: ' + short(await rowOf('zzSleep'));
-}, 15000);
+}, test.limit.slow);
 
 // Q1: "a job row opens detail panel overtop of jobs": a press hands the row to the mounter's open
 const PRESS_FS = '(function () { var r = Array.prototype.filter.call(document.querySelectorAll("#box tr, #box .list-row"), function (x) { return x.getClientRects().length && String(x.textContent).indexOf("spirit.fs") !== -1; })[0]; if (!r) return false; var leaf = Array.prototype.filter.call(r.querySelectorAll("*"), function (e) { return !e.children.length && e.getClientRects().length; })[0] || r; leaf.click(); return true; }())';
@@ -158,7 +158,7 @@ test.run('a press on spirit.fs calls open with its key and a fill', 0.2, async f
   const opened = await until(function () { return chrome.evaluate('window.opened.length >= 1'); }, 5000);
   const o1 = JSON.parse(await chrome.evaluate('JSON.stringify(window.opened)'));
   return opened && o1[0].fill && /spirit\.fs/.test(o1[0].key) ? true : 'open was called with ' + short(o1);
-}, 10000);
+}, test.limit.slow);
 
 // with no open handed, its own panel over its box (as contact's)
 const OVER = '(function () { var box = document.getElementById("box"); var b = box.getBoundingClientRect(); var l = Array.prototype.filter.call(box.querySelectorAll(".app-container"), function (c) { return c.offsetParent !== null; }).pop(); if (!l) return "no panel layer"; var r = l.getBoundingClientRect(); if (r.width < b.width - 4 || r.height < b.height - 4) return "a layer of " + Math.round(r.width) + "x" + Math.round(r.height); return String(l.textContent).indexOf("spirit.fs") !== -1 ? "over" : "the layer does not name spirit.fs"; }())';
@@ -168,21 +168,21 @@ test.run('a press opens a panel over the whole list, spirit.fs on it', 0.2, asyn
   await until(function () { return rows().then(function (r) { return r.some(function (t) { return t.indexOf('spirit.fs') !== -1; }); }); }, 10000);
   await chrome.evaluate(PRESS_FS);
   return (await until(function () { return chrome.evaluate(OVER).then(function (v) { return v === 'over'; }); }, 5000)) ? true : 'the press: ' + short(await chrome.evaluate(OVER));
-}, 20000);
+}, test.limit.slow);
 test.run('its close brings the list back', 0.2, async function () {
   if (made !== 'made') return NO_LIST;
   await chrome.evaluate('(function () { var c = Array.prototype.filter.call(document.querySelectorAll("#box .app-container-close"), function (x) { return x.offsetParent !== null; }).pop(); if (c) c.click(); return !!c; }())');
   return (await until(function () { return chrome.evaluate('!Array.prototype.some.call(document.querySelectorAll("#box .app-container"), function (c) { return c.offsetParent !== null; })'); }, 5000)) ? true : 'the panel stayed after its close';
-}, 10000);
+}, test.limit.slow);
 
 // destroy
 test.run('destroy empties its container', 0.2, async function () {
   if (made !== 'made') return NO_LIST;
   const empty = await chrome.evaluate('(function () { window.made.destroy(); return document.getElementById("box").children.length === 0; }())');
   return empty === true ? true : 'destroy left ' + short(await text());
-}, 3000);
+}, test.limit.slow);
 test.run('and the page threw nothing', 0.2, async function () {
   if (made !== 'made') return NO_LIST;
   const errors = JSON.parse(await chrome.evaluate('JSON.stringify(window.pageErrors)'));
   return errors.length === 0 ? true : 'page errors: ' + short(errors);
-}, 3000);
+}, test.limit.slow);

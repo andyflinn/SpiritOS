@@ -352,16 +352,16 @@ function gateSection() {
     asks += n;
     return !wrong.length || title + ': ' + wrong.length + ' of ' + n + ' wrong, first: ' + short(wrong.slice(0, 4));
   }
-  test.run('a request of one string (name): its own value passes and every garbage one is refused', 0.2, function () { return judge('one string'); }, 1000);
-  test.run('a request of a string and a number (id, n): its own value passes and every garbage one is refused', 0.2, function () { return judge('a string and a number'); }, 1000);
-  test.run('a request of three of three types (id, on, n): its own value passes and every garbage one is refused', 0.2, function () { return judge('three of three types'); }, 1000);
-  test.run('a request of four, an array among them (id, tags, on, n): its own value passes and every garbage one is refused', 0.2, function () { return judge('four, an array among them'); }, 1000);
-  test.run('a request of five, an object among them (id, text, version, on, opts): its own value passes and every garbage one is refused', 0.2, function () { return judge('five, an object among them'); }, 1000);
-  test.run('a request of one nested two deep (id, where): its own value passes and every garbage one is refused', 0.2, function () { return judge('one nested two deep'); }, 1000);
+  test.run('a request of one string (name): its own value passes and every garbage one is refused', 0.2, function () { return judge('one string'); }, test.limit.quick);
+  test.run('a request of a string and a number (id, n): its own value passes and every garbage one is refused', 0.2, function () { return judge('a string and a number'); }, test.limit.quick);
+  test.run('a request of three of three types (id, on, n): its own value passes and every garbage one is refused', 0.2, function () { return judge('three of three types'); }, test.limit.quick);
+  test.run('a request of four, an array among them (id, tags, on, n): its own value passes and every garbage one is refused', 0.2, function () { return judge('four, an array among them'); }, test.limit.quick);
+  test.run('a request of five, an object among them (id, text, version, on, opts): its own value passes and every garbage one is refused', 0.2, function () { return judge('five, an object among them'); }, test.limit.quick);
+  test.run('a request of one nested two deep (id, where): its own value passes and every garbage one is refused', 0.2, function () { return judge('one nested two deep'); }, test.limit.quick);
   test.run('every permutation of the box\'s kinds was thrown at it, more than a thousand asks', 0.2, function () {
     test.comment('the shared gate was asked ' + asks + ' times, in memory');
     return asks > 1000 || 'only ' + asks + ' asks were made';
-  }, 1000);
+  }, test.limit.quick);
   // A VERB WITH A CHECK OF ITS OWN SKIPS THE GATE (appServer.js route: its own accepts() if it has one, else matches):
   // its own check is the only one, so the gate's test does not cover it; the deep garbage goes to those verbs.
   const G = { seen: [], r: null };
@@ -373,11 +373,11 @@ function gateSection() {
     });
     G.r = await Promise.all([s.route({ own: { garbage: 12345 } }), s.route({ shared: { garbage: 12345 } })]);
     return (G.seen.length === 1 && G.r[0].status === 200) || 'own check asked ' + G.seen.length + ', status ' + G.r[0].status;
-  }, 1000);
+  }, test.limit.quick);
   test.run('a verb with no check of its own is refused that garbage by the gate', 0.2, function () {
     if (!G.r) return 'no answers to judge: the test before failed';
     return (!!G.r[1].body && G.r[1].body.code === 'no-such-argument') || 'shared: ' + short(G.r[1]);
-  }, 1000);
+  }, test.limit.quick);
 }
 
 // The parts ran each in a process of its own before they were folded in: the stand-in spirit.js, the module loader and
@@ -413,10 +413,10 @@ function agentsFilePart() {
     const as = read('spirit/appServer.js');
     block = (as.match(/AGENTS: AN APP'S RULES FOR AGENTS[\s\S]*?\n\n/) || [''])[0];
     return block.length > 100 || 'no AGENTS paragraph in appServer.js: nothing judged';
-  }, 1000);
+  }, test.limit.quick);
   test.run('it says AGENTS.md is read with spirit.fs.loadFile at its path', 0.2, function () {
     return (/spirit\.fs\.loadFile/.test(block) && !/family's FS|FS\.loadFile \{path: "AGENTS\.md"\}/.test(block)) || 'it still says: ' + short((block.match(/.*FS.*/g) || []).join(' / '));
-  }, 1000);
+  }, test.limit.quick);
 }
 
 // THE MOUNT PART, once appServer-mount.js.
@@ -572,42 +572,42 @@ function mountPart() {
     elsewhere = path.join(s.root, 'other', 'spirit', 'app', NAME, NAME + '.js');
     N = await boot(s.run); live.push(N.child);
     return N.up || 'the scratch node did not come up';
-  }, 5000);
+  }, test.limit.slow);
   test.run('the world: the throwaway app is a row of the app family', 0.2, async function () {
     return noNode() || !!(await rowOf(N.base, NAME)) || 'no row for the throwaway app';
-  }, 1000);
+  }, test.limit.quick);
 
   // the goal box: "An app server cannot be booted until a user activates it."
   test.run('not active: no server job', 0.2, async function () {
     if (noNode()) return noNode();
     await sleep(1500);
     return !(await liveJob(N.base, MODULE)) || 'a server job ran before it was activated';
-  }, 5000);
+  }, test.limit.slow);
   test.run('not active: the script did not run', 0.2, function () {
     return noNode() || !fs.existsSync(started()) || 'the script ran before it was activated';
-  }, 1000);
+  }, test.limit.quick);
   test.run('not active: its verb is not answered', 0.2, async function () {
     return noNode() || !answers(await pingOf(N.base)) || 'its verb answered before it was activated';
-  }, 1000);
+  }, test.limit.quick);
 
   // goal/G43.14, the box: "intrinsic true: the app is always active. It runs at boot with no Activate, and app.active does
   // not switch it off."
   test.run('an intrinsic server runs from the boot, with nothing pressed', 0.2, async function () {
     if (noNode()) return noNode();
     return (await until(function () { return pingOf(N.base, 'always').then(answers); }, 30000)) || 'always.ping: ' + short((await pingOf(N.base, 'always')).text);
-  }, 1000);
+  }, test.limit.quick);
   // Its DEBUG state is the one thing written there, by the server itself (goal/G43.15); no active switch is.
   test.run('and no active was written to its node.json', 0.2, function () {
     if (noNode()) return noNode();
     return !('active' in (readJson(path.join(s.run, 'spirit', 'state', 'always', 'node.json')) || {})) || 'its node.json: ' + short(readJson(path.join(s.run, 'spirit', 'state', 'always', 'node.json')));
-  }, 1000);
+  }, test.limit.quick);
   test.run('app.active false does not stop it', 0.2, async function () {
     if (noNode()) return noNode();
     const alwaysPid = Number(((await pingOf(N.base, 'always')).body || {}).pid);
     await call(N.base, 'app.active', { key: 'always', active: false });
     await sleep(3000);
     return (answers(await pingOf(N.base, 'always')) && alive(alwaysPid)) || 'after app.active false: ' + short((await pingOf(N.base, 'always')).text);
-  }, 10000);
+  }, test.limit.slow);
 
   // goal/G43.20, the box: "job.create starts only an app's own script, spirit/app/<name>/<name>.js, of an app whose
   // <name>.json says node run true; anything else is refused"
@@ -616,13 +616,13 @@ function mountPart() {
     const inactive = await startIt('spirit/app/' + NAME + '/helper.js', ranHelper);
     await sleep(1500);
     return (refused(inactive) && !fs.existsSync(ranHelper)) || 'job.create on an inactive app: ' + short(inactive.text) + ', ran: ' + fs.existsSync(ranHelper);
-  }, 5000);
+  }, test.limit.slow);
   test.run('its server script, its json saying node mount, not node run, is refused too, and does not run', 0.8, async function () {
     if (noNode()) return noNode();
     const inactiveMain = await startIt('spirit/app/' + NAME + '/' + NAME + '.js');
     await sleep(1500);
     return (refused(inactiveMain) && !fs.existsSync(started())) || 'job.create on an inactive server: ' + short(inactiveMain.text) + ', ran: ' + fs.existsSync(started());
-  }, 5000);
+  }, test.limit.slow);
   // Outside the two places: a script of the shell, a file at the top of spirit/app, the same path in another tree, and a way out by dots.
   test.run('the world: the scripts outside the two places are planted', 0.2, function () {
     if (!s) return 'no scratch tree: the world failed';
@@ -631,37 +631,37 @@ function mountPart() {
     fs.writeFileSync(path.join(s.run, 'shell', 'planted.js'), "require('fs').writeFileSync(" + JSON.stringify(ranElsewhere) + ", 'ran');\n");
     fs.writeFileSync(path.join(s.run, 'spirit', 'app', 'planted.js'), "require('fs').writeFileSync(" + JSON.stringify(ranElsewhere) + ", 'ran');\n");
     return true;
-  }, 1000);
+  }, test.limit.quick);
   const outside = async function (what, script) {
     if (noNode()) return noNode();
     const r = await startIt(script);
     await sleep(1000);
     return (refused(r) && !fs.existsSync(ranElsewhere)) || what + ': ' + short(r.text) + ', ran: ' + fs.existsSync(ranElsewhere);
   };
-  test.run('a script of the shell is refused, and does not run', 0.8, function () { return outside('a script of the shell', 'shell/planted.js'); }, 4000);
-  test.run('a file at the top of spirit/app is refused, and does not run', 0.8, function () { return outside('a file at the top of spirit/app', 'spirit/app/planted.js'); }, 4000);
-  test.run('the same path in another tree is refused, and does not run', 0.8, function () { return outside('the same path in another tree', elsewhere); }, 4000);
-  test.run('a way out of an app\'s folder is refused, and does not run', 0.8, function () { return outside('a way out of an app\'s folder', 'spirit/app/' + NAME + '/../../../shell/planted.js'); }, 4000);
+  test.run('a script of the shell is refused, and does not run', 0.8, function () { return outside('a script of the shell', 'shell/planted.js'); }, test.limit.slow);
+  test.run('a file at the top of spirit/app is refused, and does not run', 0.8, function () { return outside('a file at the top of spirit/app', 'spirit/app/planted.js'); }, test.limit.slow);
+  test.run('the same path in another tree is refused, and does not run', 0.8, function () { return outside('the same path in another tree', elsewhere); }, test.limit.slow);
+  test.run('a way out of an app\'s folder is refused, and does not run', 0.8, function () { return outside('a way out of an app\'s folder', 'spirit/app/' + NAME + '/../../../shell/planted.js'); }, test.limit.slow);
 
   // the box: "It starts one only if its <name>.json says node.mount true and spirit/state/<name>/node.json says active true"
   test.run('the world: an app with node.mount false is activated', 0.2, async function () {
     if (noNode()) return noNode();
     const quietOn = await call(N.base, 'app.active', { key: 'quiet', active: true });
     return quietOn.status === 200 || 'app.active on quiet: ' + short(quietOn.text);
-  }, 1000);
+  }, test.limit.quick);
   test.run('active with node.mount false and no data.js: no server job', 0.2, async function () {
     if (noNode()) return noNode();
     await sleep(3000);
     return !(await liveJob(N.base, 'spirit.app.quiet')) || 'a server job for an app with node.mount false and no data.js';
-  }, 10000);
+  }, test.limit.slow);
   test.run('and the quiet app\'s verb is not answered', 0.2, async function () {
     return noNode() || !answers(await pingOf(N.base, 'quiet')) || 'an app with node.mount false and no data.js answered its verb';
-  }, 1000);
+  }, test.limit.quick);
   test.run('a script outside spirit/app is refused by name', 0.8, async function () {
     if (noNode()) return noNode();
     const otherPlace = await call(N.base, 'job.create', { command: 'node', args: ['shell/planted.js'], type: 'the red' });
     return (otherPlace.status >= 400 && !!otherPlace.body && otherPlace.body.code === 'not-a-process') || 'job.create on shell/planted.js: ' + short(otherPlace.text);
-  }, 1000);
+  }, test.limit.quick);
 
   // the box: "No gate changes for a caller: once a server is registered, the door and the grants go by its name."
   const reached = [];
@@ -672,12 +672,12 @@ function mountPart() {
     if (!answer) ({ answer } = require(path.join(RUN, 'spirit', 'apiDoor.js')));
     const stranger = await answer(servers, { [NAME]: { ping: {} } }, member([]));
     return (!!stranger && !!stranger.body && stranger.body.ok === false && reached.length === 0) || 'a member without a grant: ' + short(stranger) + ', asked ' + reached.length;
-  }, 1000);
+  }, test.limit.quick);
   test.run('a member granted <name>.ping reaches it', 0.2, async function () {
     if (!answer) return 'no apiDoor: the test before failed';
     const granted = await answer(servers, { [NAME]: { ping: {} } }, member([NAME + '.ping']));
     return (!!granted && granted.status === 200 && reached.length === 1) || 'a member granted: ' + short(granted) + ', asked ' + reached.length;
-  }, 1000);
+  }, test.limit.quick);
 
   // the box: "data.js sits beside <name>.js ... and the lookups follow it": a client's cache
   // What a client kept of a sender comes back only when that sender's family has a data.js here.
@@ -702,34 +702,34 @@ function mountPart() {
     if (!s) return 'no scratch tree: the world failed';
     const keptOld = await kept('contact');
     return (!!keptOld && keptOld.kept === 'contact') || 'kept of contact: ' + short(keptOld);
-  }, 2000);
+  }, test.limit.quick);
   test.run('the world: and nothing of a family with no data.js here', 0.2, async function () {
     if (!s) return 'no scratch tree: the world failed';
     const keptNone = await kept('noSuchFamily');
     return !keptNone || 'kept of noSuchFamily: ' + short(keptNone);
-  }, 19000);
+  }, test.limit.slow);
   test.run('a client gets back what it kept of the new family', 0.2, async function () {
     if (!s) return 'no scratch tree: the world failed';
     const keptNew = await kept(NAME);
     return (!!keptNew && keptNew.kept === NAME) || 'kept of ' + NAME + ': ' + short(keptNew);
-  }, 2000);
+  }, test.limit.quick);
 
   // the box: "active in node.json starts and stops it while the node runs"
   test.run('the world: the app is activated, by the verb its element presses', 0.2, async function () {
     if (noNode()) return noNode();
     const on = await call(N.base, 'app.active', { key: NAME, active: true });
     return on.status === 200 || 'app.active: ' + short(on.text);
-  }, 1000);
+  }, test.limit.quick);
   test.run('activated, the server starts and answers its verb, with no restart of the node', 0.2, async function () {
     if (noNode()) return noNode();
     const up = await upAgain(N.base);
     first = (await pingOf(N.base)).body || {};
     return up || 'activated, its verb did not answer: ' + short((await pingOf(N.base)).text);
-  }, 1000);
+  }, test.limit.quick);
   test.run('the world: the pid it gave is a live process', 0.2, function () {
     if (!first.pid) return 'no server to judge further';
     return alive(Number(first.pid)) || 'the pid it gave is not alive: ' + short(first);
-  }, 1000);
+  }, test.limit.quick);
 
   // the box: "<name> is its family name in the node's flat table", its family at the top of the app folder, as
   // spirit/<family>/ has it (goal/G43.27)
@@ -738,40 +738,40 @@ function mountPart() {
     if (noNode()) return noNode();
     tree = (await call(N.base, 'api')).body || {};
     return (!!tree[NAME] && !!tree[NAME].ping) || 'the flat table: ' + short(Object.keys(tree)) + ', ' + NAME + ': ' + short(tree[NAME]);
-  }, 1000);
+  }, test.limit.quick);
   test.run('its interface is the api.js at the top of the app folder', 0.2, async function () {
     if (noNode()) return noNode();
     const iface = (await call(N.base, 'api', { family: NAME })).body || {};
     return String(iface.interface || '').indexOf(INTERFACE) !== -1 || 'api {family}: ' + short(iface);
-  }, 1000);
+  }, test.limit.quick);
   // No FS set (goal/G43.20; Andy: "those owner only FS verbs are no longer needed, because not the api ID ... ARE the path to
   // all those files"): the app folder's files are spirit.fs's, by the path its id names.
   test.run('its branch carries no FS set', 0.2, function () {
     if (!tree[NAME]) return 'no branch to judge: the flat table holds no ' + NAME;
     return !Object.keys(tree[NAME] || {}).some(function (v) { return /^FS\./.test(v); }) || 'its branch: ' + short(tree[NAME]);
-  }, 1000);
+  }, test.limit.quick);
   test.run('its folder is spirit/app/probe/, read through spirit.fs by that path', 0.2, async function () {
     if (noNode()) return noNode();
     const note = (await call(N.base, 'fs.load', { path: 'spirit/app/' + NAME + '/note.txt' })).body || {};
     return note.text === NOTE || 'fs.load note.txt: ' + short(note);
-  }, 1000);
+  }, test.limit.quick);
 
   // the box: "Its module id is spirit.app.<name>", "Jobs names it so."
   test.run('its server job has the module id spirit.app.probe', 0.2, async function () {
     if (noNode()) return noNode();
     job = await liveJob(N.base, MODULE);
     return !!job || 'no live server job with that id: ' + short((await jobsOf(N.base)).filter(function (j) { return j.kind === 'server'; }).map(function (j) { return j.module; }));
-  }, 1000);
+  }, test.limit.quick);
 
   // the box: "node.mount true means a server the node runs, with no arguments"
   test.run('the world: its <name>.json has neither, and it runs', 0.2, function () {
     if (!s) return 'no scratch tree: the world failed';
     const own = readJson(path.join(s.run, 'spirit', 'app', NAME, NAME + '.json')) || {};
     return (own.node && own.node.mount === true && !('kind' in own) && !('operated' in own)) || 'the fixture\'s json: ' + short(own);
-  }, 1000);
+  }, test.limit.quick);
   test.run('the node operates it', 0.2, function () {
     return (!!job && job.data && job.data.operated === 'node') || 'its job: ' + short(job && job.data);
-  }, 1000);
+  }, test.limit.quick);
 
   // the box: "Its door.sock lives in spirit/state/<name>/", and its state stays in data/
   if (POSIX) {
@@ -780,39 +780,39 @@ function mountPart() {
       if (!s) return 'no scratch tree: the world failed';
       const door = path.join(state(), 'door.sock');
       return (fs.existsSync(door) && fs.statSync(door).isSocket()) || 'no socket at spirit/state/' + NAME + '/door.sock';
-    }, 1000);
+    }, test.limit.quick);
     test.run('and none in its data/', 0.2, function () {
       if (!s) return 'no scratch tree: the world failed';
       return !fs.existsSync(path.join(state(), 'data', 'door.sock')) || 'a door in its data/';
-    }, 1000);
+    }, test.limit.quick);
   }
   test.run('the node hands it spirit/state/probe/data as --state', 0.2, function () {
     if (!s) return 'no scratch tree: the world failed';
     return path.resolve(String(first.state)) === path.join(state(), 'data') || '--state: ' + short(first.state);
-  }, 1000);
+  }, test.limit.quick);
   test.run('what it writes there is on disc', 0.2, function () {
     if (!s) return 'no scratch tree: the world failed';
     return fs.existsSync(started()) || 'no started.txt in its data/';
-  }, 1000);
+  }, test.limit.quick);
 
   // the box: "active is the one switch, with no separate running field"
   test.run('node.json says active true, and holds no running', 0.2, function () {
     if (!s) return 'no scratch tree: the world failed';
     const j1 = nodeJson() || {};
     return (j1.active === true && !('running' in j1)) || 'node.json: ' + short(j1);
-  }, 1000);
+  }, test.limit.quick);
   test.run('killed, the node starts it again', 0.2, async function () {
     if (noNode()) return noNode();
     if (!first.pid) return 'no server to kill: the world failed';
     process.kill(Number(first.pid), 'SIGKILL');
     await until(function () { return Promise.resolve(!alive(Number(first.pid))); }, 5000);
     return (await until(function () { return pingOf(N.base).then(function (r) { return answers(r) && Number(r.body.pid) !== Number(first.pid); }); }, 30000)) || 'killed, it did not come back';
-  }, 4000);
+  }, test.limit.slow);
   test.run('and active stays true through that', 0.2, function () {
     if (!s) return 'no scratch tree: the world failed';
     const j2 = nodeJson() || {};
     return (j2.active === true && !('running' in j2)) || 'node.json after the kill: ' + short(j2);
-  }, 1000);
+  }, test.limit.quick);
 
   // goal/G43.20, the box: "A second script in an app folder is therefore never started."
   test.run('a helper of an active app is refused, and does not run', 0.8, async function () {
@@ -820,7 +820,7 @@ function mountPart() {
     const activeHelper = await startIt('spirit/app/' + NAME + '/helper.js', ranHelper);
     await sleep(1500);
     return (refused(activeHelper) && !fs.existsSync(ranHelper)) || 'job.create on a helper of an active app: ' + short(activeHelper.text) + ', ran: ' + fs.existsSync(ranHelper);
-  }, 5000);
+  }, test.limit.slow);
 
   // a page and a process bind it by its name (the box: "A page changes nothing. It binds a family by its name, and the node
   // finds the folder."; "data.js sits beside <name>.js ... and the lookups follow it")
@@ -834,26 +834,26 @@ function mountPart() {
     if (chrome.error) return 'Chrome: ' + chrome.error;
     await chrome.send('Page.navigate', { url: N.base + '/' });
     return true;
-  }, 2000);
+  }, test.limit.quick);
   test.run('the world: the page has its spirit', 0.2, async function () {
     if (noPage()) return noPage();
     return (await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000)) || 'the page has no spirit';
-  }, 1000);
+  }, test.limit.quick);
   test.run('a page binds the new family by its name, and its verb answers', 0.2, async function () {
     if (noPage()) return noPage();
     const pinged = await onPage("spirit.ready.then(function () { return spirit.require(spirit.familyPath('" + NAME + "')); }).then(function (f) { return f.ping({}); })");
     return (!!pinged && !!pinged.v && Number(pinged.v.pid) > 0) || 'a page binding ' + NAME + ': ' + short(pinged);
-  }, 1000);
+  }, test.limit.quick);
   test.run('a page finds its data.js beside <name>.js', 0.2, async function () {
     if (noPage()) return noPage();
     const managed = await onPage("spirit.cacheManager('" + NAME + "').then(function () { return window.__appData; })");
     return (!!managed && managed.v === NAME) || 'cacheManager on a page: ' + short(managed);
-  }, 1000);
+  }, test.limit.quick);
   test.run('the one <name>.js also runs on a page (the box: "<name>.js is one file, on the page and as the server")', 0.2, async function () {
     if (noPage()) return noPage();
     const same = await onPage("spirit.require('spirit/app/" + NAME + '/' + NAME + ".js').then(function () { return window.__appOnPage; })");
     return (!!same && same.v === NAME) || 'its script on a page: ' + short(same);
-  }, 1000);
+  }, test.limit.quick);
   const inNode = function (family) {
     const r = spawnSync(process.execPath, ['-e', "require('./spirit/spirit.js'); spirit.cacheManager(" + JSON.stringify(family) + ").then(function () { console.log('found ' + (global.__appData || '')); process.exit(0); }, function (e) { console.log('not found ' + (e && (e.code || e.message))); process.exit(0); });"], { cwd: s.run, encoding: 'utf8', timeout: 30000 });
     return String(r.stdout || '').trim();
@@ -862,12 +862,12 @@ function mountPart() {
     if (!s) return 'no scratch tree: the world failed';
     const found = inNode('deskClient');
     return /^found/.test(found) || 'a process, deskClient: ' + short(found);
-  }, 1000);
+  }, test.limit.quick);
   test.run('a process finds the new family\'s data.js', 0.2, function () {
     if (!s) return 'no scratch tree: the world failed';
     const found = inNode(NAME);
     return found === 'found ' + NAME || 'a process, ' + NAME + ': ' + short(found);
-  }, 1000);
+  }, test.limit.quick);
 
   // the box: "turning "active" will NOT take the row out of the list"; and off stops it
   test.run('the world: the app is deactivated', 0.2, async function () {
@@ -875,37 +875,37 @@ function mountPart() {
     before = Number(((await pingOf(N.base)).body || {}).pid);
     const off = await call(N.base, 'app.active', { key: NAME, active: false });
     return off.status === 200 || 'app.active false: ' + short(off.text);
-  }, 1000);
+  }, test.limit.quick);
   test.run('deactivated, the server process stops', 0.2, async function () {
     if (noNode()) return noNode();
     return (await until(function () { return Promise.resolve(!alive(before)); }, 15000)) || 'deactivated, pid ' + before + ' still runs';
-  }, 1000);
+  }, test.limit.quick);
   test.run('and no server job stays live', 0.2, async function () {
     if (noNode()) return noNode();
     return (await until(function () { return liveJob(N.base, MODULE).then(function (j) { return !j; }); }, 10000)) || 'a live server job stayed';
-  }, 1000);
+  }, test.limit.quick);
   test.run('and its verb is not answered', 0.2, async function () {
     return noNode() || !answers(await pingOf(N.base)) || 'its verb answered after deactivating';
-  }, 1000);
+  }, test.limit.quick);
   test.run('and it does not come back by itself', 0.2, async function () {
     if (noNode()) return noNode();
     await sleep(3000);
     return (!answers(await pingOf(N.base)) && !alive(before)) || 'it came back after deactivating';
-  }, 10000);
+  }, test.limit.slow);
   test.run('its row stays in the list, active false', 0.2, async function () {
     if (noNode()) return noNode();
     const offRow = await rowOf(N.base, NAME);
     return (!!offRow && offRow.active === false) || 'its row after deactivating: ' + short(offRow);
-  }, 1000);
+  }, test.limit.quick);
   test.run('node.json says active false', 0.2, function () {
     if (!s) return 'no scratch tree: the world failed';
     return (nodeJson() || {}).active === false || 'node.json: ' + short(nodeJson());
-  }, 1000);
+  }, test.limit.quick);
   test.run('activated again, it starts again', 0.2, async function () {
     if (noNode()) return noNode();
     await call(N.base, 'app.active', { key: NAME, active: true });
     return (await upAgain(N.base)) || 'activated again, its verb did not answer';
-  }, 1000);
+  }, test.limit.quick);
 
   // the box: "true means the node runs it now and starts it at every boot"; Andy: "that's how the node knows, at re-boot
   // time, which servers it must autostart."
@@ -914,15 +914,15 @@ function mountPart() {
     await stop(N.child);
     N = await boot(s.run); live.push(N.child);
     return (N.up && await upAgain(N.base)) || 'a restarted node did not start it';
-  }, 3000);
+  }, test.limit.slow);
   test.run('and active stays true', 0.2, function () {
     if (!s) return 'no scratch tree: the world failed';
     return (nodeJson() || {}).active === true || 'node.json after a restart: ' + short(nodeJson());
-  }, 1000);
+  }, test.limit.quick);
   test.run('and its job is there, under its module id', 0.2, async function () {
     if (noNode()) return noNode();
     return !!(await liveJob(N.base, MODULE)) || 'no job after a restart';
-  }, 1000);
+  }, test.limit.quick);
   // A power cut: nothing gets to clean up, the node and the server go at once.
   test.run('after a power cut, its door left behind, the node starts it', 0.2, async function () {
     if (!s) return 'no scratch tree: the world failed';
@@ -932,7 +932,7 @@ function mountPart() {
     await until(function () { return Promise.resolve(N.child.exitCode !== null || N.child.signalCode !== null); }, 5000);
     N = await boot(s.run); live.push(N.child);
     return (N.up && await until(function () { return pingOf(N.base).then(function (r) { return answers(r) && Number(r.body.pid) !== cutPid; }); }, 30000)) || 'after a power cut it did not start: ' + short((await pingOf(N.base)).text);
-  }, 3000);
+  }, test.limit.slow);
   test.run('deactivated, a restarted node does not start it', 0.2, async function () {
     if (!s) return 'no scratch tree: the world failed';
     await call(N.base, 'app.active', { key: NAME, active: false });
@@ -944,7 +944,7 @@ function mountPart() {
     const notStarted = N.up && !fs.existsSync(started()) && !(await liveJob(N.base, MODULE));
     await stop(N.child);
     return notStarted || 'deactivated, a restarted node started it';
-  }, 11000);
+  }, test.limit.slow);
 }
 
 // THE STATECACHE PART, once appServer-stateCache.js.
@@ -1024,7 +1024,7 @@ function stateCachePart() {
     cache = path.join(state, 'cache');
     if (nodeId.length > 10) id = nodeId;
     return nodeId.length > 10 || 'no node id for the sender, its file name ' + short(nodeId) + ': nothing judged';
-  }, 1000);
+  }, test.limit.quick);
 
   // "cache ... was ALWAYS supposed to go into spirit/state/<name>/cache/": read back from there
   let inCache = null;
@@ -1032,28 +1032,28 @@ function stateCachePart() {
     if (noTree()) return noTree();
     inCache = await startWith(cache);
     return (!!inCache.seen && inCache.seen.kept === cache) || 'came back: ' + short(inCache.seen);
-  }, 6000);
+  }, test.limit.slow);
   test.run('and its cache.dump writes it there again, spirit/state/follower/cache/<id>.json', 0.2, function () {
     if (!inCache) return 'the follower did not start: the test before failed';
     const wrote = Array.isArray(inCache.saved) ? inCache.saved.map(function (f) { return f.file; }) : [];
     return (wrote.indexOf(id + '.json') !== -1 && fs.existsSync(path.join(cache, id + '.json'))) || 'saved: ' + short(inCache.saved);
-  }, 1000);
+  }, test.limit.quick);
   test.run('no cache file is written in spirit/state/follower/ itself', 0.2, function () {
     if (noTree()) return noTree();
     const top = fs.existsSync(state) ? fs.readdirSync(state).filter(function (f) { return /\.json$/.test(f) && f !== 'node.json'; }) : [];
     return !top.length || 'written there: ' + short(top);
-  }, 1000);
+  }, test.limit.quick);
 
   // "NO FUCKING RESCUE CODE": a cache file left at the old place is not read
   test.run('a file at spirit/state/follower/<id>.json is not read back: a cache left behind is rebuilt from the stream', 0.2, async function () {
     if (noTree()) return noTree();
     const atTop = await startWith(state);
     return !atTop.seen || 'came back: ' + short(atTop.seen);
-  }, 6000);
+  }, test.limit.slow);
   test.run('and it is left where it was, not moved', 0.2, function () {
     if (noTree()) return noTree();
     return fs.existsSync(path.join(state, id + '.json')) || 'the old file was moved or removed';
-  }, 1000);
+  }, test.limit.quick);
 
   // THE ATTACKER (rule/27: "tests MUST be "the enemy, the attacker" an try everything conceivable to break the code").
   // startWith plants a good file; each case below then spoils cache/ before the follower starts again.
@@ -1078,29 +1078,29 @@ function stateCachePart() {
     if (noTree()) return noTree();
     const swapped = await spoiled(function () { fs.writeFileSync(path.join(cache, id + '.json'), JSON.stringify({ key: OTHER, family: FAMILY, run: 'r', n: 1, rows: [{ kept: 'swapped' }] })); });
     return (swapped.up && !swapped.seen) || 'came back: ' + short(swapped.seen);
-  }, 6000);
+  }, test.limit.slow);
   // the attacker: only a half-written .tmp, as a kill leaves it
   test.run('a .tmp is never read back', 0.2, async function () {
     if (noTree()) return noTree();
     const half = await spoiled(function () { fs.writeFileSync(path.join(cache, id + '.json.tmp'), JSON.stringify({ key: SENDER, family: FAMILY, run: 'r', n: 1, rows: [{ kept: 'half' }] })); });
     return (half.up && !half.seen) || 'came back: ' + short(half.seen);
-  }, 6000);
+  }, test.limit.slow);
   // the attacker: a cache file that is no JSON, and one that is JSON of the wrong shape
   test.run('a broken file: the server still starts, reads nothing back, and saves', 0.2, async function () {
     if (noTree()) return noTree();
     const broken = await spoiled(function () { fs.writeFileSync(path.join(cache, id + '.json'), '{"key": "' + SENDER + '", "rows": [ {"kept": '); });
     return (broken.up && !broken.seen && Array.isArray(broken.saved)) || 'up ' + broken.up + ', seen ' + short(broken.seen) + ', saved ' + short(broken.saved);
-  }, 6000);
+  }, test.limit.slow);
   test.run('rows that are no list: nothing read back, and the server saves on', 0.2, async function () {
     if (noTree()) return noTree();
     const shape = await spoiled(function () { fs.writeFileSync(path.join(cache, id + '.json'), JSON.stringify({ key: SENDER, family: FAMILY, run: 7, n: -3, rows: 'not a list' })); });
     return (shape.up && !shape.seen && Array.isArray(shape.saved)) || 'up ' + shape.up + ', seen ' + short(shape.seen);
-  }, 6000);
+  }, test.limit.slow);
   test.run('and after all of it spirit/state/follower/ holds nothing beside cache/ (and its socket)', 0.2, function () {
     if (noTree()) return noTree();
     const strays = fs.existsSync(state) ? fs.readdirSync(state).filter(function (f) { return ['cache', 'data', 'node.json', 'door.sock'].indexOf(f) === -1; }) : [];
     return !strays.length || 'also there: ' + short(strays);
-  }, 1000);
+  }, test.limit.quick);
 }
 
 // ── its own checks: one stream protocol for every server (goal/G41.11, goal/G41.12) ─────────────────────────────────────
@@ -1109,26 +1109,26 @@ function ownPart() {
   test.run('appServer exports familyPath', 0.2, function () {
     const A0 = require(FILE);
     return typeof A0.familyPath === 'function' || 'appServer has no familyPath export: ' + typeof A0.familyPath;
-  }, 1000);
+  }, test.limit.quick);
   test.run('familyPath(name) of an app is spirit/app/<name>/api.js (goal/G43.20)', 0.2, function () {
     const A0 = require(FILE);
     const fp = typeof A0.familyPath === 'function' ? A0.familyPath('deskVerify') : null;
     return fp === 'spirit/app/deskVerify/api.js' || 'familyPath(\'deskVerify\') is ' + short(fp);
-  }, 1000);
+  }, test.limit.quick);
   // Apps of spirit/app/ since goal/G43.27 (Andy: "cw, you bring deskClient and deskVerify into spirit/app/ under their old
   // names, do the backup as well"): the family's interface at the top of the app folder, no family/ left.
   const moved = function (n) {
     const app = path.join(RUN, 'spirit', 'app', n);
     return (fs.existsSync(path.join(app, 'api.js')) && !fs.existsSync(path.join(app, 'family'))) || n + ': api.js ' + fs.existsSync(path.join(app, 'api.js')) + ', family/ ' + fs.existsSync(path.join(app, 'family'));
   };
-  test.run('backup: its interface is spirit/app/backup/api.js, no family/ is left', 0.2, function () { return moved('backup'); }, 1000);
-  test.run('deskClient: its interface is spirit/app/deskClient/api.js, no family/ is left', 0.2, function () { return moved('deskClient'); }, 1000);
-  test.run('deskVerify: its interface is spirit/app/deskVerify/api.js, no family/ is left', 0.2, function () { return moved('deskVerify'); }, 1000);
+  test.run('backup: its interface is spirit/app/backup/api.js, no family/ is left', 0.2, function () { return moved('backup'); }, test.limit.quick);
+  test.run('deskClient: its interface is spirit/app/deskClient/api.js, no family/ is left', 0.2, function () { return moved('deskClient'); }, test.limit.quick);
+  test.run('deskVerify: its interface is spirit/app/deskVerify/api.js, no family/ is left', 0.2, function () { return moved('deskVerify'); }, test.limit.quick);
   // Andy, goal/G41.28: "all, KILL deskAgent!". The server goes, its folder and every file that names it.
   test.run('and no file names the deskAgent server', 0.2, function () {
     const namers = codeFiles(RUN, []).filter(function (f) { return f !== FILE && f !== SELF_FILE && /['"]deskAgent\/|deskAgent\.js\b/.test(fs.readFileSync(f, 'utf8')); }).map(function (f) { return path.relative(RUN, f); });
     return namers.length === 0 || namers.length + ' files still name it: ' + namers.join(', ');
-  }, 1000);
+  }, test.limit.quick);
   // No file but appServer writes a family path: no <name>.family, no family/api.js, no join onto 'family'. This file
   // routes by the pattern and is left out; so are appServer.js and spirit.js: the browser cannot load appServer, so
   // spirit.js holds the function and appServer hands out the same one (cw, goal/G41.12 Q3).
@@ -1142,7 +1142,7 @@ function ownPart() {
       return FAMILY_PATH_WRITTEN.some(function (re) { return re.test(t); });
     }).map(function (f) { return path.relative(RUN, f); });
     return writers.length === 0 || writers.length + ' files write one: ' + writers.join(', ');
-  }, 1000);
+  }, test.limit.quick);
 
   // goal/G41.24: DEPENDENCIES is gone
   // Andy, box: "DEPENDENCIES will be killed, eradicated, from all code where it appears, and from the desk folder
@@ -1153,7 +1153,7 @@ function ownPart() {
       return /DEPENDENCIES/.test(t) || /\bdependencies\s*:/.test(t) || /opts\.dependencies|withDependencies|checkDependencies/.test(t);
     }).map(function (f) { return path.relative(RUN, f); });
     return named.length === 0 || named.length + ' still do: ' + named.join(', ');
-  }, 1000);
+  }, test.limit.quick);
 
   // goal/G43.20: no <name>Bundles.json is left
   // The box: "spirit/app/desk/deskBundles.json, deskClient/deskClientBundles.json and deskVerify/deskVerifyBundles.json are
@@ -1161,17 +1161,17 @@ function ownPart() {
   test.run('no app folder holds a <name>Bundles.json', 0.2, function () {
     const bundleFiles = jsonFiles(path.join(RUN, 'spirit', 'app'), []).filter(function (f) { return /Bundles\.json$/.test(f); }).map(function (f) { return path.relative(RUN, f); });
     return bundleFiles.length === 0 || 'still there: ' + bundleFiles.join(', ');
-  }, 1000);
+  }, test.limit.quick);
 
   // what goes (box v15)
   test.run('the desk has no bundled() of its own', 0.2, function () {
     const deskJs = fs.readFileSync(path.join(RUN, 'spirit', 'app', 'desk', 'nodeDesk.js'), 'utf8');
     return !/function\s+bundled\s*\(/.test(deskJs) || 'desk.js still defines bundled()';
-  }, 1000);
+  }, test.limit.quick);
   test.run('deskClient keeps no cache.json of its own', 0.2, function () {
     const clientJs = fs.readFileSync(path.join(RUN, 'spirit', 'app', 'deskClient', 'deskClient.js'), 'utf8');
     return !/cache\.json/.test(clientJs) || 'deskClient.js still names cache.json';
-  }, 1000);
+  }, test.limit.quick);
 
   // ── one process: a client following its own publisher ──────────────────────────────────────────────────────────
   // goal/G41.24: the desk's translator is its family's data.js; the stream checks below follow it.
@@ -1180,13 +1180,13 @@ function ownPart() {
   const noServer = function () { return !O.D || !O.s || typeof O.s.subscribe !== 'function' ? 'no server with its client half: the world failed' : ''; };
   test.run('the world: the desk\'s translator, spirit/app/desk/data.js, is there', 0.2, function () {
     return fs.existsSync(TRANSLATOR) || 'the desk\'s translator, spirit/app/desk/data.js, is not there: the stream checks wait on it';
-  }, 1000);
+  }, test.limit.quick);
   test.run('it serves, keeps a data set and has its client half (subscribe)', 0.2, async function () {
     const { A, s, D } = start({}, { logMax: 5 });
     O.A = A; O.s = s; O.D = D;
     await tick(100);
     return (!!D && typeof D.getPath === 'function' && !!s && typeof s.subscribe === 'function') || 'data ' + typeof (D && D.getPath) + ', subscribe ' + typeof (s && s.subscribe);
-  }, 1000);
+  }, test.limit.quick);
 
   // the first subscribe: a full push
   test.run('a subscribe follows the publisher\'s key and asks its family to subscribe it', 0.2, async function () {
@@ -1196,14 +1196,14 @@ function ownPart() {
     await tick(300);
     return (first === true && asked.some(function (a) { return a.verb === 'subscribe' && a.key === PUBLISHER; }) && asked.some(function (a) { return a.verb === 'auth.grant'; }))
       || 'answered ' + short(first) + ', asked ' + short(asked);
-  }, 2000);
+  }, test.limit.quick);
   test.run('the bootstrap lands in the cache: both items', 0.2, function () {
     if (noServer()) return noServer();
     return (has(1) && has(2)) || short({ one: itemOf('goal/G9.1'), two: itemOf('goal/G9.2') });
-  }, 1000);
+  }, test.limit.quick);
   test.run('every delivery is a bundle: one JSON array of rows in one peerPost', 0.2, function () {
     return (posts.length > 0 && posts.every(Array.isArray)) || 'deliveries: ' + short(posts);
-  }, 1000);
+  }, test.limit.quick);
 
   // rows that back up go as bundles (box v15)
   let before = 0;
@@ -1219,11 +1219,11 @@ function ownPart() {
     await tick(800);
     const landed = []; for (let i = 10; i < 30; i++) if (has(i)) landed.push(i);
     return landed.length === 20 || 'landed: ' + short(landed);
-  }, 4000);
+  }, test.limit.slow);
   test.run('nineteen rows backed up behind a held one went in a bundle, not one peerPost each', 0.2, function () {
     if (noServer()) return noServer();
     return posts.length - before <= 3 || (posts.length - before) + ' peerPosts for 20 rows';
-  }, 1000);
+  }, test.limit.quick);
 
   // the position: a subscribe again is handed what came after it, no push (box v15)
   let again = null;
@@ -1243,20 +1243,20 @@ function ownPart() {
     again = await O.s.subscribe(PUBLISHER, NAME);
     await tick(500);
     return (again === true && has(30) && has(31) && has(32)) || 'answered ' + short(again) + ', items 30-32: ' + [has(30), has(31), has(32)].join(' ');
-  }, 3000);
+  }, test.limit.slow);
   test.run('a row addressed to another key is left out of what it is handed', 0.2, function () {
     if (noServer()) return noServer();
     return (again === true && has(32) && !has(33)) || 'item 33, addressed to another key: ' + has(33);
-  }, 1000);
+  }, test.limit.quick);
   test.run('the sender\'s log answers it: no bootstrap, and the cache is not replaced', 0.2, function () {
     if (noServer()) return noServer();
     return (bootstraps === before && has(2)) || 'bootstraps ' + before + ' -> ' + bootstraps + ', item 2 kept: ' + has(2);
-  }, 1000);
+  }, test.limit.quick);
   test.run('the subscribe again carries the position the client holds', 0.2, function () {
     const subArgs = asked.filter(function (a) { return a.verb === 'subscribe'; }).map(function (a) { return a.args; });
     const last = subArgs[subArgs.length - 1] || {};
     return (subArgs.length >= 2 && JSON.stringify(last) !== JSON.stringify(subArgs[0])) || 'subscribes: ' + short(subArgs);
-  }, 1000);
+  }, test.limit.quick);
 
   // goal/G41.15, Andy: "make sure the deskClient doesn't loose cached info outside the current goal", Q1: "nothing
   // drops from the cache, unless the api.js from the server says so", and the box: "a goal pushed whole takes
@@ -1275,20 +1275,20 @@ function ownPart() {
     await O.s.subscribe(PUBLISHER, NAME);
     await tick(600);
     return bootstraps === before + 1 || 'bootstraps ' + before + ' -> ' + bootstraps;
-  }, 4000);
+  }, test.limit.slow);
   test.run('the push takes precedence: a row it carries replaces the one kept', 0.2, function () {
     if (noServer()) return noServer();
     const one1 = itemOf('goal/G9.1');
     return (!!one1 && one1.title === 'item 1, pushed') || 'item 1: ' + short(one1);
-  }, 1000);
+  }, test.limit.quick);
   test.run('and drops nothing it does not carry: items the push leaves out stay kept', 0.2, function () {
     if (noServer()) return noServer();
     return (has(2) && has(30)) || 'item 2 ' + has(2) + ', item 30 ' + has(30);
-  }, 1000);
+  }, test.limit.quick);
   test.run('a row never delivered is not invented by the push', 0.2, function () {
     if (noServer()) return noServer();
     return !has(45) || 'item 45 ' + has(45);
-  }, 1000);
+  }, test.limit.quick);
   // The read-pointer: the push landed, so the client stands at the push's number; a subscribe again is answered from
   // the log, with no second push and nothing from before it.
   test.run('its place in the stream moved to the push: subscribed again, it is handed nothing older and pushed nothing again', 0.2, async function () {
@@ -1303,7 +1303,7 @@ function ownPart() {
     const pushEnd = ends[ends.length - 1] || {};
     return (asked.filter(function (a) { return a.verb === 'subscribe'; }).length === subsBefore + 1 && bootstraps === pushedAt && lastSub.since === pushEnd.n && lastSub.run === pushEnd.run)
       || 'bootstraps ' + pushedAt + ' -> ' + bootstraps + ', subscribed with ' + short(lastSub) + ', the push ended at ' + short(pushEnd);
-  }, 2000);
+  }, test.limit.quick);
 
   // goal/G41.22, Andy: "take the 3 seconds out, appServer.js calls peerPost in the most basic way": a subscriber that
   // answers late, within the publisher's own wait, is no subscriber gone (traced 2026-10-30: the node's one sending slot
@@ -1324,12 +1324,12 @@ function ownPart() {
     release();
     await tick(400);
     return (has(60) && has(61) && has(62)) || 'items 60-62: ' + [has(60), has(61), has(62)].join(' ');
-  }, 14000);
+  }, test.limit.slow);
   test.run('what piled up while the first was out goes in one bundle after it', 0.2, function () {
     if (noServer()) return noServer();
     const sentLate = posts.slice(L.posts).filter(Array.isArray);
     return (sentLate.length === 2 && sentLate[1].length === 2) || 'bundles after the hold: ' + short(sentLate.map(function (b) { return b.length; }));
-  }, 1000);
+  }, test.limit.quick);
   test.run('the subscriber was never dropped: the next row comes with no subscribe again and no push', 0.2, async function () {
     if (noServer()) return noServer();
     O.A.publish(row(item(63)));
@@ -1337,10 +1337,10 @@ function ownPart() {
     const subs = asked.filter(function (a) { return a.verb === 'subscribe'; }).length;
     return (has(63) && bootstraps === L.boots && subs === L.subs)
       || 'item 63 ' + has(63) + ', subscribes ' + L.subs + ' -> ' + subs + ', bootstraps ' + L.boots + ' -> ' + bootstraps;
-  }, 1000);
+  }, test.limit.quick);
   test.run('appServer.js races no delivery and no subscribe against a clock of its own', 0.2, function () {
     return !/FAST_MS|Promise\.race/.test(fs.readFileSync(FILE, 'utf8')) || 'appServer.js still names FAST_MS or Promise.race';
-  }, 1000);
+  }, test.limit.quick);
 
   // ── restarts and the cache switch: each a process of its own ───────────────────────────────────────────────────
   // the cache, per sender, saved and read back (box v15)
@@ -1349,55 +1349,55 @@ function ownPart() {
     clearCache('cacheProbe');
     C.one = runChild('first', 'cacheProbe');
     return (C.one.subscribed === true && !!C.one.one && !!C.one.two) || short(C.one);
-  }, 2000);
+  }, test.limit.quick);
   test.run('it saves the cache as spirit/state/<client>/<sender key>.json (goal/G41.28, box v19)', 0.2, function () {
     const file = cacheFile('cacheProbe');
     let text = '';
     try { text = fs.readFileSync(file, 'utf8'); } catch (e) { text = ''; }
     return text.indexOf('item 2') !== -1 || path.relative(RUN, file) + ': ' + (text ? short(text) : 'no file');
-  }, 1000);
+  }, test.limit.quick);
   test.run('its spirit.data holds the cache under the sender\'s key, and nothing beside it at the top (box v19)', 0.2, function () {
     const one = C.one || {};
     return (!!one.byNode && one.byNode.length === 1 && !!one.top && one.top.length === 1) || 'at the top of spirit.data: ' + short(one.top);
-  }, 1000);
+  }, test.limit.quick);
   test.run('and under the sender\'s key, the family: <key>.desk', 0.2, function () {
     const one = C.one || {};
     return (Array.isArray(one.family) && one.family.indexOf('desk') !== -1) || 'under the key: ' + short(one.family);
-  }, 1000);
+  }, test.limit.quick);
   test.run('started again, it reads its cache back before it subscribes', 0.2, function () {
     C.two = runChild('restart', 'cacheProbe');
     return (!!C.two.readOne && !!C.two.readTwo) || short(C.two);
-  }, 3000);
+  }, test.limit.slow);
   test.run('a sender of a new run pushes in full: its rows take precedence, and a kept row it does not carry stays (goal/G41.15)', 0.2, function () {
     const two = C.two || {};
     return (two.subscribed === true && two.title === 'item 1, renamed' && !!two.two) || short(two);
-  }, 1000);
+  }, test.limit.quick);
   test.run('without the switch no cache file is kept', 0.2, function () {
     clearCache('cacheOff');
     runChild('off', 'cacheOff');
     return !fs.existsSync(cacheFile('cacheOff')) || 'cache file found: ' + path.relative(RUN, cacheFile('cacheOff'));
-  }, 2000);
+  }, test.limit.quick);
   test.run('a sender whose family has no folder on this node is not cached', 0.2, function () {
     clearCache('cacheNoFam');
     runChild('nofamily', 'cacheNoFam', 'noSuchServer');
     return !fs.existsSync(cacheFile('cacheNoFam')) || 'cache file found: ' + path.relative(RUN, cacheFile('cacheNoFam'));
-  }, 2000);
+  }, test.limit.quick);
   test.run('within the limit the cache keeps every goal the sender sends, no filtering on the client side', 0.2, function () {
     clearCache('cacheEvery');
     const every = runChild('every', 'cacheEvery');
     return (Array.isArray(every.g9) && every.g9.length === 3 && Array.isArray(every.g10) && every.g10.length === 3) || short(every);
-  }, 5000);
+  }, test.limit.slow);
   test.run('the cache keeps to the limit the client sets', 0.2, function () {
     clearCache('cacheLimit');
     C.full = runChild('limit', 'cacheLimit');
     let size = -1;
     try { size = fs.statSync(cacheFile('cacheLimit')).size; } catch (e) { size = -1; }
     return (size > 0 && size <= 3500) || 'cache file of ' + size + ' bytes for a limit of 3500';
-  }, 7000);
+  }, test.limit.slow);
   test.run('past the limit the goal untouched longest goes whole, the other is kept whole (Andy, Q2)', 0.2, function () {
     const full = C.full || {};
     return (Array.isArray(full.g9) && full.g9.length === 0 && Array.isArray(full.g10) && full.g10.length === 10) || short(full);
-  }, 1000);
+  }, test.limit.quick);
   // One goal: the item untouched longest goes, its chat with it; the newest stay (Andy, Q2).
   test.run('one goal past the limit: the items untouched longest go whole, the newest stay, the goal stays', 0.2, function () {
     clearCache('cacheItems');
@@ -1405,19 +1405,19 @@ function ownPart() {
     const kept = Array.isArray(C.items.items) ? C.items.items : [];
     const prefixGone = kept.length > 0 && kept.length < 10 && kept.every(function (n, i) { return n === 10 - kept.length + 1 + i; });
     return (!!C.items.goal && prefixGone) || short(C.items);
-  }, 7000);
+  }, test.limit.slow);
   test.run('an item shed goes lock, stock and barrel: its chat with it', 0.2, function () {
     const items = C.items || {};
     const kept = Array.isArray(items.items) ? items.items : [];
     return (kept.indexOf(1) === -1 && Array.isArray(items.chat) && items.chat.length === 0) || short(items);
-  }, 1000);
+  }, test.limit.quick);
   test.run('one goal with one item past the limit: the oldest chat lines go, the item and the newest lines stay', 0.2, function () {
     clearCache('cacheChat');
     const chat = runChild('chat', 'cacheChat');
     const lines = Array.isArray(chat.chat) ? chat.chat : [];
     const newest = lines.length > 0 && lines.length < 30 && lines.every(function (n, i) { return n === 30 - lines.length + 1 + i; });
     return (!!chat.goal && Array.isArray(chat.items) && chat.items.length === 1 && newest) || short(chat);
-  }, 7000);
+  }, test.limit.slow);
 }
 
 if (CHILD) {

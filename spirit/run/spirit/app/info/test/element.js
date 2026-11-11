@@ -65,7 +65,7 @@ const NO_APP = 'no spirit.element.spirit.app.info.element: the tests before fail
 
 test.run('spirit/app/info/element.js is there', 0.2, function () {
   return !!SRC || 'there is no spirit/app/info/element.js';
-}, 1000);
+}, test.limit.quick);
 
 // mounted the new shell's way (goal/G43.24, requirement 7)
 test.run('it sets spirit.element.spirit.app.info.element = { create }', 0.2, function () {
@@ -73,25 +73,25 @@ test.run('it sets spirit.element.spirit.app.info.element = { create }', 0.2, fun
   U.w = world();
   U.I = U.w.els.info;
   return !!U.I && typeof U.I.create === 'function' ? true : 'elements: ' + short(Object.keys(U.w.els));
-}, 1000);
+}, test.limit.quick);
 test.run('no spirit.shell.activateApp, the old shell\'s way', 0.2, function () {
   if (!SRC) return 'there is no spirit/app/info/element.js';
   return !/\bactivateApp\b|\bspirit\.shell\b/.test(CODE) || 'info.js still mounts through spirit.shell';
-}, 1000);
+}, test.limit.quick);
 
 // a wrapper: it loads nodeInfo, and nothing of its own (requirement 6)
 test.run('it requires spirit/element/nodeInfo.js, and only that', 0.2, function () {
   if (!U.w) return NO_APP;
   return JSON.stringify(U.w.required) === '["spirit/element/nodeInfo.js"]' || 'required: ' + short(U.w.required);
-}, 1000);
+}, test.limit.quick);
 test.run('it asks nothing itself: no verb, no api, no cache, no relay, no card', 0.2, function () {
   if (!SRC) return 'there is no spirit/app/info/element.js';
   return !/\.verb\s*\(|\bapi\b|\boutcome\b|\bcacheManager\b|\brelay\b|\bnode\.card\b|\bcallDialog\b|\bfetch\s*\(/.test(CODE) || 'info.js still asks something of its own';
-}, 1000);
+}, test.limit.quick);
 test.run('it draws no markup of its own', 0.2, function () {
   if (!SRC) return 'there is no spirit/app/info/element.js';
   return !/['"][^'"\n]*<(div|span|button|input|b)\b/.test(CODE) && !/createElement/.test(CODE) ? true : 'info.js draws markup of its own';
-}, 1000);
+}, test.limit.quick);
 
 // create(container, { open }): nodeInfo mounted into the container, handed the mounter's stack
 test.run('create answers { destroy() }', 0.2, function () {
@@ -101,22 +101,22 @@ test.run('create answers { destroy() }', 0.2, function () {
   U.open = function () {};
   U.m = U.I.create(U.box, { open: U.open });
   return !!U.m && typeof U.m.destroy === 'function' ? true : 'create answered ' + short(U.m && Object.keys(U.m));
-}, 1000);
+}, test.limit.quick);
 test.run('it empties its container', 0.2, async function () {
   if (!U.box) return 'create was never called';
   const left = U.box.innerHTML;
   await settle();
   return left === '' || 'left: ' + short(left);
-}, 1000);
+}, test.limit.quick);
 test.run('it makes nodeInfo in its container', 0.2, function () {
   if (!U.box) return 'create was never called';
   return U.w.made.length === 1 && U.w.made[0].host === U.box ? true : 'made: ' + U.w.made.length;
-}, 1000);
+}, test.limit.quick);
 test.run('handed { open }, the stack its mounter opens layers in, and nothing else', 0.2, function () {
   if (!U.box) return 'create was never called';
   const made = U.w.made[0];
   return made && made.opts && made.opts.open === U.open && Object.keys(made.opts).join() === 'open' ? true : 'handed: ' + short(made && made.opts);
-}, 1000);
+}, test.limit.quick);
 test.run('made with no opts, nodeInfo gets no open, and keeps its own stack', 0.2, async function () {
   if (!SRC) return 'there is no spirit/app/info/element.js';
   const w2 = world();
@@ -124,26 +124,26 @@ test.run('made with no opts, nodeInfo gets no open, and keeps its own stack', 0.
   w2.els.info.create(box2);
   await settle();
   return w2.made.length === 1 && w2.made[0].opts && w2.made[0].opts.open === undefined ? true : 'handed: ' + short(w2.made[0] && w2.made[0].opts);
-}, 1000);
+}, test.limit.quick);
 
 // destroy
 test.run('destroy destroys nodeInfo and empties its container', 0.2, function () {
   if (!U.m) return 'create was never called';
   U.m.destroy();
   return U.w.destroyed === 1 && U.box.innerHTML === '' ? true : 'destroyed ' + U.w.destroyed + ', left ' + short(U.box.innerHTML);
-}, 1000);
+}, test.limit.quick);
 test.run('the world: made while nodeInfo is still loading', 0.2, function () {
   if (!SRC) return 'there is no spirit/app/info/element.js';
   U.late = world({ held: new Promise(function (r) { U.letGo = r; }) });
   U.box3 = node('<container>');
   U.m3 = U.late.els.info ? U.late.els.info.create(U.box3, {}) : null;
   return !!U.m3 || 'no info.create on a loading page';
-}, 1000);
+}, test.limit.quick);
 test.run('destroyed before nodeInfo loads, nothing is made', 0.2, async function () {
   if (!U.m3) return 'nothing made while loading: the world failed';
   U.m3.destroy(); U.letGo(); await settle();
   return U.late.made.length === 0 && U.box3.innerHTML === '' ? true : 'made ' + U.late.made.length;
-}, 1000);
+}, test.limit.quick);
 
 // nodeInfo refused
 test.run('it says Info could not be loaded.', 0.2, async function () {
@@ -153,7 +153,7 @@ test.run('it says Info could not be loaded.', 0.2, async function () {
   no.els.info.create(box4, {});
   await settle();
   return box4.textContent === 'Info could not be loaded.' && no.made.length === 0 ? true : 'said: ' + short(box4.textContent);
-}, 1000);
+}, test.limit.quick);
 
 // ── THE WRAPPER PART (once its own file; one test file per script: spirit/test/TEST_SYSTEM.md) ──
 // Info IN spirit/app/, A WRAPPER MOUNTED THE NEW SHELL'S WAY (goal/G43.24, requirements 1 to 7; spec: ./element.md, section "wrapper"): the
@@ -242,42 +242,42 @@ if (!process.env.SPIRIT_TEST_OWN_ONLY) {
   test.run('the world: file.json, the form, has identity, mount, shell and node', 0.2, function () {
     R.fileJson = readJson(path.join(RUN, 'spirit', 'app', 'file', 'file.json')) || {};
     return same(Object.keys(R.fileJson).sort(), ['identity', 'mount', 'node', 'shell']) || 'file.json reads ' + short(R.fileJson);
-  }, 1000);
+  }, test.limit.quick);
   test.run('the world: spirit/app/info/info.json is there and reads', 0.2, function () {
     R.j = readJson(path.join(APP_DIR, NAME + '.json'));
     return !!R.j || 'no readable spirit/app/' + NAME + '/' + NAME + '.json: nothing judged';
-  }, 1000);
+  }, test.limit.quick);
   const NO_JSON = 'no info.json: the world failed';
   test.run('info.json: its identity is the icon ℹ️, the label Info, and intrinsic true', 0.2, function () {
     if (!R.j) return NO_JSON;
     return same(R.j.identity, { icon: WANT.icon, label: WANT.label, intrinsic: true }) || NAME + '.json identity: ' + short(R.j.identity);
-  }, 1000);
+  }, test.limit.quick);
   test.run('info.json: it mounts element.js', 0.2, function () {
     if (!R.j) return NO_JSON;
     return same(R.j.mount, { 'element.js': true }) || NAME + '.json mount: ' + short(R.j.mount);
-  }, 1000);
+  }, test.limit.quick);
   test.run('info.json: in the shell it mounts and has a tile, and is no shell itself', 0.2, function () {
     if (!R.j) return NO_JSON;
     return same(R.j.shell, { true: false, mount: true, tile: true }) || NAME + '.json shell: ' + short(R.j.shell);
-  }, 1000);
+  }, test.limit.quick);
   test.run('info.json: the node mounts no server for it', 0.2, function () {
     if (!R.j) return NO_JSON;
     return same(R.j.node, { mount: false }) || NAME + '.json node: ' + short(R.j.node);
-  }, 1000);
+  }, test.limit.quick);
   test.run('info.json holds what file.json holds, nothing of the old form', 0.2, function () {
     if (!R.j) return NO_JSON;
     return same(Object.keys(R.j).sort(), Object.keys(R.fileJson).sort()) || NAME + '.json keys: ' + short(Object.keys(R.j));
-  }, 1000);
+  }, test.limit.quick);
   test.run('Q1, the old description sentence: "it goes.", and info.json holds none', 0.2, function () {
     if (!R.j) return NO_JSON;
     return JSON.stringify(R.j).indexOf('"description"') === -1 || NAME + '.json still says a description: ' + short(R.j.description);
-  }, 1000);
+  }, test.limit.quick);
 
   // the box, 6: "each app's <name>.js only loads spirit/element/ parts (spirit.require) and mounts them into its container"
   test.run('the world: its element.js is there', 0.2, function () {
     R.c0 = code(path.join(APP_DIR, 'element.js'));
     return R.c0.length > 0 || 'no spirit/app/' + NAME + '/' + NAME + '.js: nothing judged';
-  }, 1000);
+  }, test.limit.quick);
   const NO_CODE = 'no element.js: the world failed';
   test.run('it loads only spirit/element/ parts, through spirit.require', 0.2, function () {
     if (!R.c0) return NO_CODE;
@@ -286,39 +286,39 @@ if (!process.env.SPIRIT_TEST_OWN_ONLY) {
     const asks = (R.c0.match(/\brequire\s*\(/g) || []).length;
     const strays = named.filter(function (s) { return !/^spirit\/element\/[^]+\.js$/.test(s); });
     return asks > 0 && named.length > 0 && !strays.length ? true : (asks && named.length ? NAME + '.js loads what is no element: ' + short(strays) : NAME + '.js loads nothing through spirit.require: nothing judged');
-  }, 1000);
+  }, test.limit.quick);
   test.run('it loads no data family of its own (no cacheManager)', 0.2, function () {
     if (!R.c0) return NO_CODE;
     return !/\bcacheManager\s*\(/.test(R.c0) || NAME + '.js asks a cacheManager itself';
-  }, 1000);
+  }, test.limit.quick);
   test.run('it calls no verb of its own', 0.2, function () {
     if (!R.c0) return NO_CODE;
     const verbs = [/\.verb\s*\(/, /\bspirit\.outcome\b/, /\bcallDialog\b/, /\bfetch\s*\(/, /\brelay\W{1,4}status\b/, /\bnode\W{1,4}card\b/, /\bauth\W{1,4}(search|grant|revoke)\b/]
       .filter(function (re) { return re.test(R.c0); }).map(String);
     return !verbs.length || NAME + '.js still calls: ' + short(verbs);
-  }, 1000);
+  }, test.limit.quick);
   test.run('as a wrapper, it draws no markup of its own', 0.2, function () {
     if (!R.c0) return NO_CODE;
     const markup = R.c0.match(/['"][^'"\n]*<(div|span|button|input|table|b)\b[^'"\n]*['"]/g) || [];
     return !markup.length || NAME + '.js draws: ' + short(markup);
-  }, 1000);
+  }, test.limit.quick);
   // Info: "They move into one new element, spirit/element/nodeInfo.js (Q2)".
   test.run('info.js loads spirit/element/nodeInfo.js', 0.2, function () {
     const LOADS = /['"]spirit\/element\/nodeInfo\.js['"]/;
     return LOADS.test(R.c0 || '') || 'info.js does not load spirit/element/nodeInfo.js';
-  }, 1000);
+  }, test.limit.quick);
 
   // the box, 7: "no spirit.shell.activateApp, the old shell's way"
   test.run('it mounts through no spirit.shell.activateApp', 0.2, function () {
     const c0 = R.c0 || '';
     return c0.length > 0 && !/\bactivateApp\b/.test(c0) && !/\bspirit\.shell\b/.test(c0) ? true : (c0.length ? NAME + '.js still calls spirit.shell.activateApp' : 'no ' + NAME + '.js: nothing judged');
-  }, 1000);
+  }, test.limit.quick);
 
   // the box, 4: "info/test/info.js and grants/test/grants.js find the run root at their new depth"
   const OWN = path.join(APP_DIR, 'test', 'element.js');
   test.run('the world: its own test is there', 0.2, function () {
     return fs.existsSync(OWN) || 'no spirit/app/' + NAME + '/test/' + NAME + '.js: nothing judged';
-  }, 1000);
+  }, test.limit.quick);
   test.run('its own test runs from the new place: testReport.js found, its completion line printed', 0.2, function () {
     if (!fs.existsSync(OWN)) return 'no own test: the world failed';
     // This part lives in that file now: the child runs the file's own checks only (SPIRIT_TEST_OWN_ONLY), as it did when
@@ -327,14 +327,14 @@ if (!process.env.SPIRIT_TEST_OWN_ONLY) {
     const out = String(r.stdout || '') + String(r.stderr || '');
     const lost = /Cannot find module[^\n]*/.exec(out);
     return !lost && /Test completed\./.test(out) ? true : (lost ? NAME + '.js: ' + short(lost[0]) : NAME + '.js printed no completion line: ' + short(out.slice(-300)));
-  }, 1000);
+  }, test.limit.quick);
 
   // the box, 5: "no file names shell/info or shell/grants any more" (shell/info)
   test.run('the world: more than five hundred of the tree\'s files are read', 0.2, function () {
     R.tracked = execSync('git ls-files --cached --others --exclude-standard', { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(Boolean)
       .filter(function (f) { return MINE.indexOf(f) === -1 && fs.existsSync(path.join(REPO, f)) && fs.statSync(path.join(REPO, f)).isFile(); });
     return R.tracked.length > 500 || 'only ' + R.tracked.length + ' files read: nothing judged';
-  }, 1000);
+  }, test.limit.quick);
   test.run('no file names shell/info', 0.2, function () {
     if (!R.tracked) return 'no files read: the world failed';
     const OLD = new RegExp('shell/' + NAME + '(?![\\w-])');
@@ -344,13 +344,13 @@ if (!process.env.SPIRIT_TEST_OWN_ONLY) {
       return t.indexOf('\u0000') === -1 && OLD.test(t);
     });
     return !naming.length || naming.length + ' files still name it: ' + naming.join(', ');
-  }, 1000);
+  }, test.limit.quick);
 
   test.run('the world: a scratch node comes up', 0.2, async function () {
     R.s = scratch();
     R.N = await boot(R.s.run);
     return R.N.up || 'the scratch node did not come up: nothing judged';
-  }, 6000);
+  }, test.limit.slow);
 
   // the box, 2: intrinsic "as spirit/app apps say it": the node says so
   test.run('the world: the node lists Files, intrinsic', 0.2, async function () {
@@ -359,11 +359,11 @@ if (!process.env.SPIRIT_TEST_OWN_ONLY) {
     R.rows = {};
     ((listed.body && listed.body.items) || []).forEach(function (i) { R.rows[i.key] = parsed(i.label) || {}; });
     return !!R.rows.file && R.rows.file.intrinsic === true ? true : 'app.search: ' + short(listed.text);
-  }, 1000);
+  }, test.limit.quick);
   test.run('the node lists info intrinsic, so always active', 0.2, function () {
     if (!R.rows) return R_NO_NODE;
     return !!R.rows[NAME] && R.rows[NAME].intrinsic === true && R.rows[NAME].active === true ? true : 'app.search\'s ' + NAME + ': ' + short(R.rows[NAME]);
-  }, 1000);
+  }, test.limit.quick);
 
   test.run('the world: a Chrome page', 0.2, async function () {
     if (!R.N || !R.N.up) return R_NO_NODE;
@@ -373,21 +373,21 @@ if (!process.env.SPIRIT_TEST_OWN_ONLY) {
     if (c.error) return 'Chrome: ' + c.error;
     R.c = c;
     return true;
-  }, 2000);
+  }, test.limit.quick);
   test.run('the world: the face page has its spirit', 0.2, async function () {
     if (!R.c) return 'no Chrome page: the world failed';
     await R.c.send('Page.navigate', { url: R.N.base + '/face.html' });
     R.page = !!(await H.until(function () { return R.c.evaluate('!!(window.spirit && window.spirit.ready && window.spirit.event)'); }, 20000));
     if (R.page) await R.c.evaluate(HANDS);
     return R.page || 'the page has no spirit: nothing judged';
-  }, 2000);
+  }, test.limit.quick);
 
   // the box, 7: "its <name>.js sets spirit.elements.<name> = { create(container, opts) -> { destroy() } }"
   test.run('its element\'s create draws into the container it is given and answers destroy', 0.2, async function () {
     if (!R.page) return R_NO_PAGE;
     const made = await R.c.evaluate('(function () { var b = document.createElement("div"); b.id = "zzOwn"; b.style.cssText = "position:absolute;left:0;top:0;width:50%;height:50%"; document.body.appendChild(b); var p; try { p = spirit.require("spirit/app/' + NAME + '/element.js"); } catch (e) { return "load threw: " + e; } return Promise.resolve(p).then(function () { var E = spirit.element.spirit.app[' + JSON.stringify(NAME) + '] && spirit.element.spirit.app[' + JSON.stringify(NAME) + '].element; if (!E || typeof E.create !== "function") return "no spirit.element.spirit.app.' + NAME + '.element.create"; var m = E.create(b, {}); if (!m || typeof m.destroy !== "function") return "create answered " + typeof m; return new Promise(function (r) { setTimeout(r, 2500); }).then(function () { var drew = b.innerHTML.length > 0; m.destroy(); b.remove(); return drew ? "ok" : "it drew nothing"; }); }, function (e) { b.remove(); return "load: " + e; }); }())');
     return made === 'ok' || NAME + ': ' + short(made);
-  }, 8000);
+  }, test.limit.slow);
 
   // the box, 3: "both show in the shell as before: a tile each, and each opens as it did"
   // The shell app, as boot.js hands it the page's app area, here in a box of its own over the page.
@@ -395,11 +395,11 @@ if (!process.env.SPIRIT_TEST_OWN_ONLY) {
     if (!R.page) return R_NO_PAGE;
     const shell = await R.c.evaluate('(function () { var old = document.getElementById("zzBox"); if (old) old.remove(); var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.require("spirit/app/app/element.js").then(function () { window.__shell = spirit.element.spirit.app.app.element.create(b); return "made"; }, function (e) { return "load: " + e; }); }())');
     return shell === 'made' && await waitFor('tiles().indexOf("file") !== -1', 10000) ? true : 'the shell: ' + short(shell) + ', tiles ' + short(await T('tiles()'));
-  }, 1000);
+  }, test.limit.quick);
   test.run('Info has its tile, with nothing pressed', 0.2, async function () {
     if (!R.page) return R_NO_PAGE;
     return await waitFor('tiles().indexOf("' + NAME + '") !== -1', 6000) ? true : 'no ' + NAME + ' tile: ' + short(await T('tiles()'));
-  }, 1000);
+  }, test.limit.quick);
 
   // Info opens as it did: its name and description fields, and the rotate button.
   test.run('Info\'s tile opens Info: its name and its description field', 0.2, async function () {
@@ -407,23 +407,23 @@ if (!process.env.SPIRIT_TEST_OWN_ONLY) {
     const infoPressed = await T('tile("info")');
     R.infoOpen = !!(infoPressed && await waitFor('count("[data-field=label]") === 1 && count("[data-field=description]") === 1', 10000));
     return R.infoOpen ? true : (infoPressed ? 'Info shows: ' + short(await T('text()')) : 'no Info tile to press: nothing judged');
-  }, 1000);
+  }, test.limit.quick);
   test.run('Info shows its Rotate this node\'s cipher key button', 0.2, async function () {
     if (!R.infoOpen) return NOT_OPEN;
     return await waitFor('buttons().some(function (b) { return /^Rotate this node.s cipher key$/.test(b); })', 6000) ? true : 'Info\'s buttons: ' + short(await T('buttons()'));
-  }, 1000);
+  }, test.limit.quick);
   test.run('over the tiles one bar in view, ℹ️ Info', 0.2, async function () {
     if (!R.infoOpen) return NOT_OPEN;
     const infoBars = await T('bars()');
     return infoBars.length === 1 && infoBars[0] === WANT.icon + ' Info' ? true : 'bars: ' + short(infoBars);
-  }, 1000);
+  }, test.limit.quick);
   test.run('Info says nothing could not be loaded', 0.2, async function () {
     if (!R.infoOpen) return NOT_OPEN;
     return !/could not be loaded/i.test(await T('text()')) || 'Info: ' + short(await T('text()'));
-  }, 1000);
+  }, test.limit.quick);
   test.run('the world: Info\'s ✕ shows the tiles again', 0.2, async function () {
     if (!R.infoOpen) return NOT_OPEN;
     await T('close("Info")');
     return await waitFor('tiles().indexOf("info") !== -1', 6000) ? true : 'after ✕: ' + short(await T('text()'));
-  }, 1000);
+  }, test.limit.quick);
 }

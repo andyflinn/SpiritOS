@@ -39,12 +39,12 @@ test.run('the world: the file is read, and its code, comments left out, still ho
   const c = code(f);
   return (c !== null && /module\.exports/.test(c)) ||
     (c === null ? path.relative(RUN, f) + ' is not there: nothing judged' : path.relative(RUN, f) + '\'s code holds no /module\\.exports/: the comment stripper ate it, nothing judged');
-}, 1000);
+}, test.limit.quick);
 test.run('trafficLog.js\'s code names no admitted mark', 0.2, function () {
   const h = hits(f, /admit/i);
   if (h === null) return 'trafficLog.js is not there: nothing judged';
   return !h.length || 'trafficLog.js\'s code still marks or reads admitted: ' + short(h);
-}, 1000);
+}, test.limit.quick);
 
 // ── THE NO RESCUE PART ──
 // THE TRAFFIC LOG READS NO OLD traffic.json (goal/G43.23, item 7; spec: ./trafficLog.md, its section). The box: "old-data rescue
@@ -62,16 +62,16 @@ test.run('the log does not read the planted spirit/state/traffic.json', 0.2, fun
   W.log = require(f).createTrafficLog({ rootDir: W.root });
   const before = W.log.read();
   return !before.some(function (r) { return r && r.hash === OLD; }) || 'the log reads the old traffic.json: its row ' + OLD + ' is in what the log answers';
-}, 1000);
+}, test.limit.quick);
 test.run('the world: a row noted on this scratch log is read back', 0.2, function () {
   if (!W.log) return 'no scratch log: the world failed';
   W.log.note({ dir: 'in', kind: 'message', peer: 'world', hash: NEW, outcome: 'delivered' });
   W.after = W.log.read();
   return W.after.some(function (r) { return r && r.hash === NEW; }) || 'a row noted on this scratch log is not read back: the log read nothing, nothing judged (' + short(W.after) + ')';
-}, 1000);
+}, test.limit.quick);
 test.run('with node.db written, the planted traffic.json is still not read', 0.2, function () {
   if (!W.after) return 'no row noted: the world failed';
   return !W.after.some(function (r) { return r && r.hash === OLD; }) || 'with node.db written, the log reads the old traffic.json: its row ' + OLD + ' is in what the log answers';
-}, 1000);
+}, test.limit.quick);
 
 test.after(function () { if (W.root) { try { fs.rmSync(W.root, { recursive: true, force: true }); } catch (e) { /* scratch */ } } });

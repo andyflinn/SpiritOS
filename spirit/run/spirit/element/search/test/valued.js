@@ -23,13 +23,13 @@ const BEST = 'var best = null; c.querySelectorAll("*").forEach(function (e) { if
 test.run('spirit/element/search/valued.js is there', 0.2, function () {
   code = fs.existsSync(path.join(__dirname, '..', 'valued.js')) ? fs.readFileSync(path.join(__dirname, '..', 'valued.js'), 'utf8').replace(/\/\/[^\n]*/g, '') : '';
   return !!code ? true : 'spirit/element/search/valued.js is not there: nothing below can pass';
-}, 1000);
+}, test.limit.quick);
 test.run('it reaches no old code', 0.2, function () {
   return code && !/\.elements\b|spirit\.shell/.test(code) ? true : 'valued.js names spirit.elements or spirit.shell';
-}, 1000);
+}, test.limit.quick);
 test.run('it is a probabilitySearch (spirit/element/search.js since goal/G43.18)', 0.2, function () {
   return code && /spirit\/element\/search\.js|element\.search\.create/.test(code) ? true : 'valued.js does not use probabilitySearch';
-}, 1000);
+}, test.limit.quick);
 
 test.after(function () {
   if (chrome && chrome.kid) chrome.kid.kill();
@@ -45,18 +45,18 @@ test.run('the world: a scratch node, and Chrome on its face page', 0.2, async fu
   await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
   js = function (s) { return chrome.evaluate(s); };
   return true;
-}, 10000);
+}, test.limit.slow);
 test.run('it loads on a page', 0.2, async function () {
   if (!js) return NO_PAGE;
   loaded = await js('window.spirit.ready.then(function () { return window.spirit.require("spirit/element/search/valued.js"); }).then(function () { return "loaded"; }, function (e) { return "ERR " + e; })');
   return loaded === 'loaded' ? true : 'loading it: ' + short(loaded);
-}, 5000);
+}, test.limit.slow);
 test.run('spirit.element.spirit.element.search.valued.create, and nothing on spirit.elements', 0.2, async function () {
   if (!js) return NO_PAGE;
   const homes = await js('JSON.stringify({ now: typeof (((((window.spirit.element || {}).spirit || {}).element || {}).search || {}).valued || {}).create, old: typeof (window.spirit.elements || {}).valued })');
   try { h = JSON.parse(homes); } catch (e) { h = {}; }
   return h.now === 'function' && h.old === 'undefined' ? true : 'homes: ' + short(h);
-}, 3000);
+}, test.limit.slow);
 // THE FACE SETTLES FIRST (cw traced it): the face page's own app selector is still loading its app cache as the page comes
 // up, and those calls are the page's, not valued's. Counting starts once the page has asked nothing new for two seconds.
 test.run('the world: the face page has settled before valued is mounted', 0.2, async function () {
@@ -68,7 +68,7 @@ test.run('the world: the face page has settled before valued is mounted', 0.2, a
     return still >= 4;
   }, 30000);
   return settled ? true : 'the face page never settled: nothing judged';
-}, 40000);
+}, test.limit.long);
 
 // the rows it is handed, one per line
 test.run('all 60 rows show', 0.2, async function () {
@@ -83,20 +83,20 @@ test.run('all 60 rows show', 0.2, async function () {
   await until(function () { return read().then(function (r) { return (r.rows || []).length > 0; }); }, 8000);
   first = await read();
   return (first.rows || []).length === 60 ? true : 'it shows ' + short((first.rows || []).length) + ' rows: ' + short(first.threw || (first.rows || []).slice(0, 3));
-}, 15000);
+}, test.limit.slow);
 test.run('a row shows its columns', 0.2, function () {
   if (!first) return NO_ROWS;
   return (first.rows || []).some(function (l) { return /Even/.test(l) && /row0/.test(l); }) ? true : 'the rows: ' + short((first.rows || []).slice(0, 3));
-}, 1000);
+}, test.limit.quick);
 test.run('one search field', 0.2, function () {
   if (!first) return NO_ROWS;
   return first.inputs === 1 ? true : first.inputs + ' search fields';
-}, 1000);
+}, test.limit.quick);
 // rule/16: its list scrolls inside the box it is given
 test.run('more rows than fit: a part of it scrolls, in the box', 0.2, function () {
   if (!first) return NO_ROWS;
   return first.canScroll === true ? true : 'nothing in it scrolls';
-}, 1000);
+}, test.limit.quick);
 // redraw(): what the rows say now, the scroll kept
 test.run('redraw shows the changed value', 0.2, async function () {
   if (!first) return NO_ROWS;
@@ -105,11 +105,11 @@ test.run('redraw shows the changed value', 0.2, async function () {
   await sleep(300);
   redrawn = await read();
   return (redrawn.rows || []).some(function (l) { return /row0 /.test(l + ' ') && /changed0/.test(l); }) ? true : 'after redraw: ' + short((redrawn.rows || []).slice(0, 3));
-}, 3000);
+}, test.limit.slow);
 test.run('and keeps the scroll', 0.2, function () {
   if (!redrawn) return NO_ROWS;
   return redrawn.scroll === 60 ? true : 'the scroll is ' + short(redrawn.scroll);
-}, 1000);
+}, test.limit.quick);
 // searchable, "over rows it already holds, with no node verb"
 test.run('words put the matching row first', 0.2, async function () {
   if (!first) return NO_ROWS;
@@ -117,18 +117,18 @@ test.run('words put the matching row first', 0.2, async function () {
   await sleep(600);
   found = await read();
   return (found.rows || [])[0] && /row17/.test(found.rows[0]) ? true : 'searching: ' + short((found.rows || []).slice(0, 3));
-}, 3000);
+}, test.limit.slow);
 test.run('the words stay in the field', 0.2, function () {
   if (!found) return NO_ROWS;
   return found.word === 'row17' ? true : 'the field holds ' + short(found.word);
-}, 1000);
+}, test.limit.quick);
 test.run('redraw keeps the words and shows the new value', 0.2, async function () {
   if (!first) return NO_ROWS;
   await js('(function () { window.__rows[17] = { group: "Odd", name: "row17", value: "changed17" }; window.__made.redraw(); return true; })()');
   await sleep(300);
   keeps = await read();
   return keeps.word === 'row17' && (keeps.rows || []).some(function (l) { return /changed17/.test(l); }) ? true : 'after redraw: ' + short({ word: keeps.word, rows: (keeps.rows || []).slice(0, 2) });
-}, 3000);
+}, test.limit.slow);
 // A list that was searched goes to its top when it draws: a repaint is no search, so the scroll stays.
 test.run('after a search too, redraw keeps the scroll', 0.2, async function () {
   if (!first) return NO_ROWS;
@@ -138,14 +138,14 @@ test.run('after a search too, redraw keeps the scroll', 0.2, async function () {
   await sleep(300);
   const searchedScroll = await read();
   return searchedScroll.scroll === 70 ? true : 'after a search, redraw left the scroll at ' + short(searchedScroll.scroll);
-}, 4000);
+}, test.limit.slow);
 test.run('and it asked the node nothing', 0.2, function () {
   if (!keeps) return NO_ROWS;
   return Array.isArray(keeps.asks) && !keeps.asks.length ? true : 'it asked: ' + short(keeps.asks);
-}, 1000);
+}, test.limit.quick);
 // destroy()
 test.run('destroy leaves its container empty', 0.2, async function () {
   if (h.now !== 'function') return NO_HOME;
   const after = await js('(function () { window.__made.destroy(); return window.__box.children.length; })()');
   return after === 0 ? true : 'after destroy it holds ' + short(after) + ' children';
-}, 3000);
+}, test.limit.slow);

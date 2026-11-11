@@ -20,11 +20,11 @@ const code = fs.readFileSync(FILE, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').repl
 // its code holds no move of an old store
 // The move of goal/G40.11 read four old stores into the seen table on a node's first start: the old seen rows, the
 // relays list, apiAuth's peer names and spirit/state/contacts.json, then deleted them.
-test.run('it names no contacts.json', 0.2, function () { return !/contacts\.json/.test(code) || 'nodeStore.js still names contacts.json'; }, 1000);
-test.run('it has no moveIn', 0.2, function () { return !/\bmoveIn\b/.test(code) || 'nodeStore.js still has its moveIn'; }, 1000);
+test.run('it names no contacts.json', 0.2, function () { return !/contacts\.json/.test(code) || 'nodeStore.js still names contacts.json'; }, test.limit.quick);
+test.run('it has no moveIn', 0.2, function () { return !/\bmoveIn\b/.test(code) || 'nodeStore.js still has its moveIn'; }, test.limit.quick);
 test.run('it reads no old relays or peers table', 0.2, function () {
   return (!/FROM\s+(relays|peers)\b/i.test(code) && !/has\(\s*['"`](relays|peers)['"`]\s*\)/.test(code)) || 'nodeStore.js still reads an old relays or peers table';
-}, 1000);
+}, test.limit.quick);
 
 // an old address book beside it is left as it is, unread
 const KEY = 'MCowBQYDK2VwAyEAOLDOLDOLDOLDOLDOLDOLDOLDOLDOLDOLDOLDOLDOLDOLD=';
@@ -37,13 +37,13 @@ test.run('the world: the store opens beside an old book', 0.2, function () {
   fs.writeFileSync(path.join(state, 'contacts.json'), book);
   try { W.store = require(FILE).open(W.home); } catch (e) { return 'the store did not open beside an old book: ' + (e && e.message); }
   return true;
-}, 1000);
+}, test.limit.quick);
 test.run('the old contacts.json is still there, byte for byte', 0.2, function () {
   if (!W.home) return 'no scratch folder: the world failed';
   const f = path.join(W.home, 'spirit', 'state', 'contacts.json');
   const left = fs.existsSync(f) ? fs.readFileSync(f, 'utf8') : null;
   return left === book || (left === null ? 'the old contacts.json was deleted' : 'the old contacts.json was changed: ' + short(left));
-}, 1000);
+}, test.limit.quick);
 test.run('and nothing of it was read into the store', 0.2, function () {
   if (!W.home) return 'no scratch folder: the world failed';
   let row = null;
@@ -54,7 +54,7 @@ test.run('and nothing of it was read into the store', 0.2, function () {
     db.close();
   } catch (e) { row = { error: String(e && e.message) }; }
   return !row || 'the store took a row from the old book: ' + short(row);
-}, 1000);
+}, test.limit.quick);
 
 // ── THE NO ADMITTED PART ──
 // NODESTORE.JS MARKS NO ADMITTED, AND ITS TRAFFIC TABLE HAS NO admitted COLUMN (goal/G43.23, item 6, after goal/G43.17; spec: ./nodeStore.md, its section). Andy, G43.17: "Didn't i say remove ALL
@@ -84,12 +84,12 @@ test.run('the world: the file is read, and its code, comments left out, still ho
   const c = codeOf(FILE);
   return (c !== null && /module\.exports/.test(c)) ||
     (c === null ? path.relative(RUN, FILE) + ' is not there: nothing judged' : path.relative(RUN, FILE) + '\'s code holds no /module\\.exports/: the comment stripper ate it, nothing judged');
-}, 1000);
+}, test.limit.quick);
 test.run('nodeStore.js\'s code names no admitted mark', 0.2, function () {
   const h = hits(FILE, /admit/i);
   if (h === null) return 'nodeStore.js is not there: nothing judged';
   return !h.length || 'nodeStore.js\'s code still marks or reads admitted: ' + short(h);
-}, 1000);
+}, test.limit.quick);
 
 // the node's own store makes no admitted column in node.db's traffic table
 let cols = null;
@@ -104,11 +104,11 @@ test.run('the world: the store made node.db with a traffic table', 0.2, function
     db.close();
   } catch (e) { return 'node.db could not be read: ' + (e && e.message) + ': nothing judged'; }
   return (cols.indexOf('dir') !== -1 && cols.indexOf('hash') !== -1) || 'node.db holds no traffic table of the log\'s: ' + short(cols) + ': nothing judged';
-}, 1000);
+}, test.limit.quick);
 test.run('and that traffic table has no admitted column', 0.2, function () {
   if (!cols) return 'no traffic table read: the world failed';
   return cols.indexOf('admitted') === -1 || 'the traffic table the store makes still has an admitted column';
-}, 1000);
+}, test.limit.quick);
 
 test.after(function () {
   void W.store;

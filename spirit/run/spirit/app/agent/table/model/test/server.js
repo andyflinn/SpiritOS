@@ -75,7 +75,7 @@ test.after(function () { try { if (X.scratch) fs.rmSync(X.scratch, { recursive: 
 test.run('it has server.js, and elementTable.js and elementRow.js in the app\'s element folder', 0.2, function () {
   const files = [path.join(DIR, 'server.js'), path.join(EL, 'elementTable.js'), path.join(EL, 'elementRow.js')];
   return files.every(function (f) { return fs.existsSync(f); }) ? true : 'missing: ' + short(files.filter(function (f) { return !fs.existsSync(f); }));
-}, 1000);
+}, test.limit.quick);
 
 // ── server.js: the table in agent.db ──
 test.run('server.js(ctx) answers the table, its verb and has', 0.2, function () {
@@ -87,21 +87,21 @@ test.run('server.js(ctx) answers the table, its verb and has', 0.2, function () 
   const t = X.t = ctx.tables.model = require(path.join(DIR, 'server.js'))(ctx);
   X.cols = db.prepare('PRAGMA table_info("model")').all().map(function (c) { return c.name; });
   return t && t.verb && typeof t.verb.handler === 'function' && typeof t.has === 'function' ? true : 'answered: ' + short(t && Object.keys(t));
-}, 1000);
+}, test.limit.quick);
 // Andy, box v22: "with Label and Description, provider-key, and model-name and capabilities"; then, goal/G41.21: "i decided that model, does NOT need a name field, which i also NEVER FUCKING ASKED FOR, and the label hold the model name as provided by the provider, and is output only in the models UI."
 // One check per column, each its own plain title (goal/G45.6: a title names no value built into it).
 const has = function (c) { return X.cols.indexOf(c) !== -1 ? true : 'columns: ' + short(X.cols); };
-test.run('the model table has an id column', 0.2, function () { return has('id'); }, 1000);
-test.run('the model table has a privateKey column', 0.2, function () { return has('privateKey'); }, 1000);
-test.run('the model table has a sealPublicKey column', 0.2, function () { return has('sealPublicKey'); }, 1000);
-test.run('the model table has a sealPrivateKey column', 0.2, function () { return has('sealPrivateKey'); }, 1000);
-test.run('the model table has an icon column', 0.2, function () { return has('icon'); }, 1000);
-test.run('the model table has a label column', 0.2, function () { return has('label'); }, 1000);
-test.run('the model table has a providerId column', 0.2, function () { return has('providerId'); }, 1000);
-test.run('the model table has a capabilities column', 0.2, function () { return has('capabilities'); }, 1000);
+test.run('the model table has an id column', 0.2, function () { return has('id'); }, test.limit.quick);
+test.run('the model table has a privateKey column', 0.2, function () { return has('privateKey'); }, test.limit.quick);
+test.run('the model table has a sealPublicKey column', 0.2, function () { return has('sealPublicKey'); }, test.limit.quick);
+test.run('the model table has a sealPrivateKey column', 0.2, function () { return has('sealPrivateKey'); }, test.limit.quick);
+test.run('the model table has an icon column', 0.2, function () { return has('icon'); }, test.limit.quick);
+test.run('the model table has a label column', 0.2, function () { return has('label'); }, test.limit.quick);
+test.run('the model table has a providerId column', 0.2, function () { return has('providerId'); }, test.limit.quick);
+test.run('the model table has a capabilities column', 0.2, function () { return has('capabilities'); }, test.limit.quick);
 test.run('and nothing else: no model name column, the label holds it', 0.2, function () {
   return X.cols.length === 8 && X.cols.indexOf('modelName') === -1 ? true : 'columns: ' + short(X.cols);
-}, 1000);
+}, test.limit.quick);
 
 // ── server.js: a model names a provider that is there ──
 test.run('a model is added with its provider\'s id, its label the model name as the provider gives it', 0.2, function () {
@@ -111,21 +111,21 @@ test.run('a model is added with its provider\'s id, its label the model name as 
   X.got = X.added.id ? call(X.t.verb, { op: 'get', id: X.added.id }) : null;
   const got = X.got;
   return got && got.providerId === X.provider.id && got.label === 'claude-opus-5-5' ? true : 'get: ' + short(got);
-}, 1000);
+}, test.limit.quick);
 test.run('its capabilities are a list', 0.2, function () {
   const got = X.got;
   return got && JSON.stringify(got.capabilities) === '["text","tools"]' ? true : 'capabilities: ' + short(got && got.capabilities);
-}, 1000);
+}, test.limit.quick);
 test.run('a model naming a provider that is not there is refused, saying so', 0.2, function () {
   if (!X.t) return NO_TABLE;
   X.gone = require(path.join(RUN, 'spirit', 'relayAuth.js')).generateIdentity('').publicKey;
   const noProvider = call(X.t.verb, { op: 'add', label: 'Lost', providerId: X.gone });
   return noProvider.refusal === 'bad-request' && /no provider/.test(noProvider.why) ? true : 'answer: ' + short(noProvider);
-}, 1000);
+}, test.limit.quick);
 test.run('and so is a set to one, the provider kept', 0.2, function () {
   if (!X.added || !X.added.id) return NO_ROW;
   return call(X.t.verb, { op: 'set', id: X.added.id, providerId: X.gone }).refusal === 'bad-request' && call(X.t.verb, { op: 'get', id: X.added.id }).providerId === X.provider.id ? true : 'set answered';
-}, 1000);
+}, test.limit.quick);
 
 // ── server.js: a model is shown with its provider's icon (goal/G41.18) ──
 // Andy, box v17: "the model will [icon] \"model-name\", where the [icon] will be the provider-icon, associated with the
@@ -136,35 +136,35 @@ test.run('a model\'s get carries providerIcon, the icon of its provider row', 0.
   call(X.ctx.tables.provider.verb, { op: 'set', id: X.provider.id, icon: '🅰' });
   const shownGet = call(X.t.verb, { op: 'get', id: X.added.id });
   return shownGet && shownGet.providerIcon === '🅰' ? true : 'get: ' + short(shownGet);
-}, 1000);
+}, test.limit.quick);
 test.run('and so does each row a search finds', 0.2, function () {
   if (!X.t) return NO_TABLE;
   try { X.found = JSON.parse((call(X.t.verb, { op: 'search', text: 'opus' }).items || [])[0].label); } catch (e) { X.found = null; }
   return X.found && X.found.providerIcon === '🅰' ? true : 'found: ' + short(X.found);
-}, 1000);
+}, test.limit.quick);
 // goal/G41.18, Andy: "only the ID and the fields shown in a table, that's all it needs": the model list shows the
 // provider's icon and the model name.
 test.run('a search answers the id and what the model list shows, the label (the model name) and the provider\'s icon, nothing else', 0.2, function () {
   const found = X.found;
   return found && JSON.stringify(Object.keys(found).sort()) === '["id","label","providerIcon"]' ? true : 'found: ' + short(found && Object.keys(found));
-}, 1000);
+}, test.limit.quick);
 test.run('and each model row the server publishes', 0.2, function () {
   if (!X.provider) return NO_TABLE;
   X.published.length = 0;
   call(X.t.verb, { op: 'add', label: 'claude-sonnet-5-5', providerId: X.provider.id });
   const pub = X.published.filter(function (x) { return x.agent && x.agent.table === 'model' && x.agent.row; })[0];
   return pub && pub.agent.row.providerIcon === '🅰' ? true : 'published: ' + short(X.published);
-}, 1000);
+}, test.limit.quick);
 test.run('a model with no provider has an empty providerIcon', 0.2, function () {
   if (!X.t) return NO_TABLE;
   const bare = call(X.t.verb, { op: 'add', label: 'Bare' });
   return bare.id && call(X.t.verb, { op: 'get', id: bare.id }).providerIcon === '' ? true : 'get: ' + short(bare.id && call(X.t.verb, { op: 'get', id: bare.id }));
-}, 1000);
+}, test.limit.quick);
 test.run('it is shown, not kept: the model table has no providerIcon column', 0.2, function () {
   if (!X.db) return NO_TABLE;
   const cols2 = X.db.prepare('PRAGMA table_info("model")').all().map(function (c) { return c.name; });
   return cols2.indexOf('providerIcon') === -1 ? true : 'columns: ' + short(cols2);
-}, 1000);
+}, test.limit.quick);
 
 // ── the page: elementTable.js and elementRow.js ──
 const opened = [];
@@ -217,7 +217,7 @@ test.run('they place spirit.element.spirit.app.agent.element.table.model.element
   const T = global.window.spirit.element.spirit.app.agent.element.table.model || {};
   X.E = { modelTable: T.elementTable, modelRow: T.elementRow };
   return X.E.modelTable && typeof X.E.modelTable.create === 'function' && X.E.modelRow && typeof X.E.modelRow.create === 'function' ? true : 'placed: ' + short(Object.keys(T));
-}, 1000);
+}, test.limit.quick);
 test.run('elementTable.js requires the shared element and its own row element', 0.2, async function () {
   if (!X.E.modelTable || !X.E.modelRow) return NO_PAGE;
   X.pane = box('models');
@@ -225,19 +225,19 @@ test.run('elementTable.js requires the shared element and its own row element', 
   await settle();
   const made = X.made;
   return made.required.indexOf('spirit/app/agent/element/table/tableElement.js') !== -1 && made.required.indexOf('spirit/app/agent/element/table/model/elementRow.js') !== -1 ? true : 'required: ' + short(made.required);
-}, 1000);
+}, test.limit.quick);
 test.run('it builds on agentTable, in its box, for the model table, with the detail pane and no api, and no Add (Andy, on G41.18: "get RID of [Add a Model] button ... NOT required")', 0.2, function () {
   if (!X.list) return NO_PAGE;
   const made = X.made;
   const o = X.o = made.tables[0] && made.tables[0].o;
   return made.tables.length === 1 && !!made.tables[0].c && o.table === 'model' && !('api' in o) && o.detail === detail && o.add === false ? true : 'agentTable: ' + short(o && { table: o.table, add: o.add });
-}, 1000);
+}, test.limit.quick);
 // goal/G41.18, box v17: the list shows "[icon] \"model-name\"", the provider's icon.
 test.run('its list shows each model by its provider\'s icon and its label, the model name (goal/G41.18, G41.21)', 0.2, function () {
   const o = X.o;
   const shownBy = ((o && o.columns) || []).map(function (c) { return c.from || c.field; });
   return JSON.stringify(shownBy) === '["providerIcon","label"]' ? true : 'columns: ' + short(o && o.columns);
-}, 1000);
+}, test.limit.quick);
 
 // ── the Ask form at the top of 🧠 Models, the Update model list pane gone (goal/G41.26) ──
 // Andy, box: "the middle pane (🧠 Update model list): The form \"from [Pick a provider ▾] [Ask]\" moves to the top of
@@ -247,20 +247,20 @@ test.run('the list is handed no provider models button', 0.2, function () {
   if (!X.o) return NO_PAGE;
   const o = X.o;
   return !((o && o.buttons) || []).some(function (b2) { return b2 && b2.label === 'provider models'; }) ? true : 'buttons: ' + short(o && o.buttons);
-}, 1000);
+}, test.limit.quick);
 test.run('the Update model list pane is gone: model/updatePanel.js and its test', 0.2, function () {
   return !fs.existsSync(path.join(DIR, 'updatePanel.js')) && !fs.existsSync(path.join(__dirname, 'updatePanel.js')) && !fs.existsSync(path.join(__dirname, 'updatePanel.md'))
     ? true : 'still there: ' + short(['updatePanel.js', 'test/updatePanel.js', 'test/updatePanel.md'].filter(function (f) { return fs.existsSync(path.join(DIR, f)); }));
-}, 1000);
+}, test.limit.quick);
 test.run('and nothing loads it', 0.2, function () {
   if (!X.made) return NO_PAGE;
   return X.made.required.indexOf('spirit/app/agent/table/model/updatePanel.js') === -1 && !X.E.modelUpdate ? true : 'required: ' + short(X.made.required);
-}, 1000);
+}, test.limit.quick);
 test.run('it loads what the form uses itself (rule/26): the search element, the busyButton and the rowForm', 0.2, function () {
   if (!X.made) return NO_PAGE;
   const made = X.made;
   return made.required.indexOf('spirit/element/search.js') !== -1 && made.required.indexOf('spirit/element/busyButton.js') !== -1 && made.required.indexOf('spirit/element/rowForm.js') !== -1 ? true : 'required: ' + short(made.required);
-}, 1000);
+}, test.limit.quick);
 // goal/G41.27, Andy: "agent: left panel. \n\n[❓] [Pick a provider ▾] [Ask]": the form is a rowForm, ❓, the
 // providerSelector:dropdown in its span, Ask its button; the word from at its start goes, as new and grant did.
 test.run('the Ask form is one rowForm, its icon ❓ and its button Ask', 0.2, function () {
@@ -270,18 +270,18 @@ test.run('the Ask form is one rowForm, its icon ❓ and its button Ask', 0.2, fu
   X.drop = made.searches.filter(function (x) { return x.o && x.o.verb === 'provider'; })[0];
   X.askBtn = rf ? rf.button : the(X.pane, 'ask');
   return made.forms.length === 1 && rf.opts.icon === '❓' && rf.opts.button === 'Ask' ? true : 'rowForms: ' + short(made.forms.map(function (f) { return f.opts; }));
-}, 1000);
+}, test.limit.quick);
 test.run('its span holds the providerSelector:dropdown, Pick a provider, and nothing else', 0.2, function () {
   if (!X.made) return NO_PAGE;
   const rf = X.rf, drop = X.drop;
   const inSpan = !!rf && !!drop && (drop.host === rf.span || rf.span.children.indexOf(drop.host) !== -1) && rf.span.children.length <= 1;
   return !!drop && drop.o.face === 'dropdown' && drop.o.server === 'agent' && drop.o.data === global.window.spirit.data.nodeId(HOME_KEY) + '/agent/provider' && drop.o.placeholder === 'Pick a provider' && inSpan
     ? true : 'dropdown ' + short(drop && { face: drop.o.face, verb: drop.o.verb, data: drop.o.data, placeholder: drop.o.placeholder }) + ', in the span ' + inSpan;
-}, 1000);
+}, test.limit.quick);
 test.run('the word from is gone, and it draws no Ask button of its own', 0.2, function () {
   if (!X.pane) return NO_PAGE;
   return !/>\s*from\s*</.test(X.pane.innerHTML) && !/<button\b[^>]*>\s*Ask\s*</.test(X.pane.innerHTML) ? true : 'pane: ' + short(X.pane.innerHTML);
-}, 1000);
+}, test.limit.quick);
 // At the top: the list is drawn into a part of the pane below the form, never over it.
 test.run('the form is at the top of the pane, the model list below it', 0.2, function () {
   if (!X.made) return NO_PAGE;
@@ -289,12 +289,12 @@ test.run('the form is at the top of the pane, the model list below it', 0.2, fun
   const listAt = made.tables[0] && made.tables[0].c && made.tables[0].c.id ? pane.innerHTML.indexOf('id="' + made.tables[0].c.id + '"') : -1;
   const formAt = rf && rf.container && rf.container.id ? pane.innerHTML.indexOf('id="' + rf.container.id + '"') : -1;
   return formAt !== -1 && listAt > formAt ? true : 'the form\'s box at ' + formAt + ', the list\'s box at ' + listAt;
-}, 1000);
+}, test.limit.quick);
 test.run('Ask with no provider chosen asks nothing', 0.2, async function () {
   if (!X.askBtn || !X.drop) return NO_ASK;
   X.askBtn.click(); await settle();
   return !X.made.calls.some(function (c) { return c.args && c.args.op === 'ask'; }) ? true : 'calls: ' + short(X.made.calls);
-}, 1000);
+}, test.limit.quick);
 test.run('Ask calls provider { op: ask, id } through the agent\'s interface, the provider chosen', 0.2, async function () {
   if (!X.askBtn || !X.drop) return NO_ASK;
   const made = X.made;
@@ -303,17 +303,17 @@ test.run('Ask calls provider { op: ask, id } through the agent\'s interface, the
   made.answer = function () { return { models: [{ label: 'claude-alpha' }, { label: 'claude-beta' }], updated: true }; };
   X.askBtn.click(); await settle();
   return made.calls.length === 1 && made.calls[0].table === 'provider' && JSON.stringify(made.calls[0].args) === JSON.stringify({ op: 'ask', id: 'KP' }) ? true : 'calls: ' + short(made.calls);
-}, 1000);
+}, test.limit.quick);
 test.run('and spits out no list: the model table it updated is the list below', 0.2, function () {
   if (!X.askBtn || !X.drop) return NO_ASK;
   const after = shown(X.pane);
   return after.indexOf('claude-alpha') === -1 && after.indexOf('claude-beta') === -1 && after.indexOf('model list updated') === -1 ? true : 'shown: ' + short(after);
-}, 1000);
+}, test.limit.quick);
 test.run('its Ask is a busyButton, the ask its request (goal/G41.23)', 0.2, function () {
   if (!X.askBtn || !X.drop) return NO_ASK;
   const ab = X.ab = X.made.busy.filter(function (x) { return x.button === X.askBtn; }).pop();
   return !!ab && typeof ab.opts.run === 'function' ? true : 'busyButtons: ' + X.made.busy.length;
-}, 1000);
+}, test.limit.quick);
 const W8 = { letGo: null, settled: false };
 test.run('the request it hands the button waits while the provider has not answered', 0.2, async function () {
   const ab = X.ab;
@@ -324,18 +324,18 @@ test.run('the request it hands the button waits while the provider has not answe
   Promise.resolve(ab.answers[before]).then(function () { W8.settled = true; }, function () { W8.settled = true; });
   await settle();
   return !W8.settled ? true : 'settled before the answer';
-}, 1000);
+}, test.limit.quick);
 test.run('and settles once it answers', 0.2, async function () {
   if (!X.ab) return 'no busyButton on Ask';
   if (W8.letGo) W8.letGo({ models: [], updated: false });
   await settle();
   return W8.settled ? true : 'still waiting after the answer';
-}, 1000);
+}, test.limit.quick);
 test.run('its refresh and destroy are the shared element\'s', 0.2, function () {
   if (!X.list) return NO_PAGE;
   X.list.refresh(); X.list.destroy();
   return X.made.refreshed && X.made.destroyed ? true : 'refreshed ' + X.made.refreshed + ', destroyed ' + X.made.destroyed;
-}, 1000);
+}, test.limit.quick);
 test.run('a row it opens is a modelRow, built on agentRow, in the box it is handed, with its id and added, no api', 0.2, async function () {
   if (!X.o) return NO_PAGE;
   const made = X.made;
@@ -344,23 +344,23 @@ test.run('a row it opens is a modelRow, built on agentRow, in the box it is hand
   await settle();
   const r = X.r = made.rows[0] && made.rows[0].o;
   return made.rows.length === 1 && made.rows[0].c === into && r.table === 'model' && !('api' in r) && r.id === 'KM' && r.added === false ? true : 'agentRow: ' + short(r && { table: r.table, id: r.id, added: r.added });
-}, 1000);
+}, test.limit.quick);
 test.run('its title row has the model table\'s look', 0.2, function () {
   const r = X.r;
   return r && r.look && r.look.icon === '🧠' && r.look.table === 'model' ? true : 'look: ' + short(r && r.look);
-}, 1000);
+}, test.limit.quick);
 // goal/G41.21, Andy: "In model, the fucking <provider> field is OUTPUT ONLY. I NEVER ordered a fucking picker for
 // that.............": the provider is shown (kind output, the provider table's row by its icon and label), never picked.
 test.run('its fields are the label shown only (the model name as the provider gives it), the provider shown and never picked, and the capabilities shown only', 0.2, function () {
   const r = X.r;
   return r && JSON.stringify(r.fields.map(function (f) { return [f.field, f.kind, f.pick || '']; })) === JSON.stringify([['label', 'output', ''], ['providerId', 'output', 'provider'], ['capabilities', 'output', '']])
     ? true : 'fields: ' + short(r && r.fields);
-}, 1000);
+}, test.limit.quick);
 test.run('the provider is picked from a search of the provider table', 0.2, function () {
   const r = X.r;
   const provField = r && r.fields.filter(function (f) { return f.field === 'providerId'; })[0];
   return provField && provField.pick === 'provider' ? true : 'providerId: ' + short(provField);
-}, 1000);
+}, test.limit.quick);
 
 // ── elementRow.js loads the agent family's cache manager, which takes the model table's rows from the stream (goal/G41.16, G41.28) ──
 // Andy: "get rid of thos FUCKING data.js scripts, DIDN't WE INSIST on the PROPER way to do this shit?": what the stream
@@ -372,14 +372,14 @@ const job = function (agent, module) { return { id: 'job-agent', module: module 
 test.run('its page files require no data script', 0.2, function () {
   if (!X.made) return NO_PAGE;
   return !X.made.required.some(function (p) { return (/data\.js$/).test(p); }) ? true : 'required: ' + short(X.made.required);
-}, 1000);
+}, test.limit.quick);
 test.run('the agent family\'s cache manager is loaded: spirit.data.agent.data.branch(\'model\') is the home node\'s <node>/agent/model', 0.2, function () {
   if (!X.made) return NO_PAGE;
   const DATA = global.window.spirit.data;
   const AD = X.AD = ((global.window.spirit.data || {}).agent || {}).data;
   X.BRANCH = DATA.nodeId(HOME_KEY) + '/agent/model';
   return !!AD && typeof AD.branch === 'function' && AD.branch('model') === X.BRANCH ? true : 'agentReads: ' + short(AD ? AD.branch('model') : AD);
-}, 1000);
+}, test.limit.quick);
 test.run('a model row on the stream lands at <node>/agent/model/<id>, and the branch\'s watcher hears it', 0.2, function () {
   if (!X.AD) return NO_MANAGER;
   const DATA = global.window.spirit.data, AD = X.AD, BRANCH = X.BRANCH;
@@ -388,19 +388,19 @@ test.run('a model row on the stream lands at <node>/agent/model/<id>, and the br
   DATA.takeJob(job({ table: 'model', row: { id: 'KT', label: 'First', extra: 1 } }));
   off();
   return AD.row('model', 'KT') && AD.row('model', 'KT').label === 'First' && heard.indexOf(BRANCH + '/KT') !== -1 ? true : 'model: ' + short(DATA.branchAt(BRANCH));
-}, 1000);
+}, test.limit.quick);
 test.run('a changed row is merged: what it names changes, what it does not stays', 0.2, function () {
   if (!X.AD) return NO_MANAGER;
   const DATA = global.window.spirit.data, AD = X.AD;
   DATA.takeJob(job({ table: 'model', row: { id: 'KT', label: 'Renamed' } }));
   return AD.row('model', 'KT') && AD.row('model', 'KT').label === 'Renamed' && AD.row('model', 'KT').extra === 1 ? true : 'row: ' + short(AD.row('model', 'KT'));
-}, 1000);
+}, test.limit.quick);
 test.run('a row removed, by its id, is gone', 0.2, function () {
   if (!X.AD) return NO_MANAGER;
   const DATA = global.window.spirit.data, AD = X.AD;
   DATA.takeJob(job({ table: 'model', id: 'KT', removed: true }));
   return !AD.row('model', 'KT') && !('KT' in DATA.branchAt(X.BRANCH)) ? true : 'row: ' + short(AD.row('model', 'KT'));
-}, 1000);
+}, test.limit.quick);
 test.run('another table\'s rows, another module\'s, and a row with no id write nothing here', 0.2, function () {
   if (!X.AD) return NO_MANAGER;
   const DATA = global.window.spirit.data;
@@ -409,4 +409,4 @@ test.run('another table\'s rows, another module\'s, and a row with no id write n
   DATA.takeJob(job({ table: 'model', row: { id: 'KX', label: 'from the desk' } }, 'spirit.app.desk'));
   DATA.takeJob(job({ table: 'model', row: { label: 'no id' } }));
   return JSON.stringify(DATA.branchAt(X.BRANCH)) === before ? true : 'model: ' + short(DATA.branchAt(X.BRANCH));
-}, 1000);
+}, test.limit.quick);

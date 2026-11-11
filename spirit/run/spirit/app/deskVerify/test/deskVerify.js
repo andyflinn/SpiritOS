@@ -49,16 +49,16 @@ test.run('started with --state and no db, it makes verify.db in its state', 0.2,
   fs.mkdirSync(state, { recursive: true });
   const r1 = start(W.one, {}, state);
   return fs.existsSync(path.join(state, 'verify.db')) || 'no verify.db in its state; it said ' + short(r1.said);
-}, 91000);
+}, test.limit.long);
 test.run('it makes no verify.db anywhere else in its working folder', 0.2, function () {
   if (!W.one) return 'no first start: the world failed';
   const made = filesUnder(W.one).filter(function (f) { return /verify\.db/.test(f) && f.indexOf('spirit/state/deskVerify/data/') !== 0; });
   return !made.length || 'it also made ' + short(made);
-}, 1000);
+}, test.limit.quick);
 test.run('it makes no verify.db beside the script', 0.2, function () {
   const beside = fs.readdirSync(path.dirname(FILE)).filter(function (n) { return /^verify\.db/.test(n); });
   return !beside.length || 'beside the script: ' + short(beside);
-}, 1000);
+}, test.limit.quick);
 
 // 2. the node hands it spirit/state/deskVerify/data/
 test.run('the node names its state spirit/state/deskVerify/data/, so verify.db is kept there', 0.2, function () {
@@ -68,7 +68,7 @@ test.run('the node names its state spirit/state/deskVerify/data/, so verify.db i
   let named = '';
   try { named = line ? new Function('path', 'rootDir', 'name', 'return ' + line)(path, RUN, 'deskVerify') : ''; } catch (e) { named = 'threw ' + e.message; }
   return path.resolve(String(named)) === path.join(RUN, 'spirit', 'state', 'deskVerify', 'data') || 'job.js names its state ' + short(named);
-}, 1000);
+}, test.limit.quick);
 
 // 3. db names another file
 test.run('given db, it keeps its records in that file', 0.2, function () {
@@ -79,11 +79,11 @@ test.run('given db, it keeps its records in that file', 0.2, function () {
   const other = path.join(two, 'elsewhere', 'mine.db');
   const r3 = start(two, { db: other }, W.state2);
   return fs.existsSync(other) || 'no file at db; it said ' + short(r3.said);
-}, 91000);
+}, test.limit.long);
 test.run('given db, it makes nothing in its state', 0.2, function () {
   if (!W.state2) return 'no second start: the world failed';
   return !filesUnder(W.state2).length || 'in its state: ' + short(filesUnder(W.state2));
-}, 1000);
+}, test.limit.quick);
 
 // 4. with neither, it stops
 test.run('no --state and no db: it exits 2', 0.2, function () {
@@ -92,15 +92,15 @@ test.run('no --state and no db: it exits 2', 0.2, function () {
   fs.mkdirSync(W.three, { recursive: true });
   W.r4 = start(W.three, {}, '');
   return W.r4.status === 2 || 'it exited ' + W.r4.status;
-}, 1000);
+}, test.limit.quick);
 test.run('it says why', 0.2, function () {
   if (!W.r4) return 'no third start: the world failed';
   return /no --state and no db/.test(W.r4.said) || 'it said ' + short(W.r4.said);
-}, 1000);
+}, test.limit.quick);
 test.run('it makes no verify.db anywhere', 0.2, function () {
   if (!W.three) return 'no third start: the world failed';
   return !filesUnder(W.three).length || 'it made ' + short(filesUnder(W.three));
-}, 1000);
+}, test.limit.quick);
 
 // 5. its manifest leaves db empty
 test.run('deskVerify.json\'s db default is empty, so a node\'s start keeps verify.db in its state', 0.2, function () {
@@ -108,4 +108,4 @@ test.run('deskVerify.json\'s db default is empty, so a node\'s start keeps verif
   try { m = JSON.parse(fs.readFileSync(MANIFEST, 'utf8')); } catch (e) { m = null; }
   const db = ((m && m.args) || []).filter(function (a) { return a && a.name === 'db'; })[0];
   return (!!db && db.default === '') || 'db in the manifest: ' + short(db);
-}, 1000);
+}, test.limit.quick);

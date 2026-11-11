@@ -280,7 +280,7 @@ test.run('the world: the desk starts', 0.2, async function () {
   await call('agent.state', { word: 'listening' }, KEYED);
   await call('subscribe', { family: 'deskClient' }, CW);
   return true;
-}, 3000);
+}, test.limit.slow);
 
 // bundles: item.files.add takes a list of paths (Desk only)
 test.run('item.files.add {id, paths} lands every path of the list on the caller\'s list', 0.2, async function () {
@@ -291,7 +291,7 @@ test.run('item.files.add {id, paths} lands every path of the list on the caller\
   const listed = (await filesOf('goal/G100.1')).map(function (f) { return f.path; });
   return (bundle.ok !== false && paths.every(function (p) { return listed.indexOf(p) !== -1; })) ||
     'the bundle answered ' + short(bundle) + '; listed ' + short(listed);
-}, 1000);
+}, test.limit.quick);
 
 // bundles: a goal pushed whole reaches a subscribed client as bundles of rows
 test.run('its seven rows come several to a post, not one post a row', 0.2, async function () {
@@ -309,18 +309,18 @@ test.run('its seven rows come several to a post, not one post a row', 0.2, async
   const most = pushed.reduce(function (m, p) { return Math.max(m, wholeRows(p)); }, 0);
   const total = pushed.reduce(function (m, p) { return m + wholeRows(p); }, 0);
   return (total >= OTHER_ITEMS.length + 1 && most > 1) || 'rows ' + total + ' in ' + pushed.length + ' posts, the most in one post ' + most;
-}, 1000);
+}, test.limit.quick);
 test.run('each post stays within one payload', 0.2, function () {
   if (!W.pushed) return 'nothing was pushed: the test before failed';
   return W.pushed.every(function (p) { return Buffer.byteLength(String(p.json), 'utf8') <= 16384; }) || 'a post of ' + short(W.pushed.map(function (p) { return Buffer.byteLength(String(p.json), 'utf8'); })) + ' bytes';
-}, 1000);
+}, test.limit.quick);
 test.run('the world: the goal leaves design mode', 0.2, async function () {
   if (!W.up) return noDesk;
   await call('press', { id: GOAL.id, what: 'make-current' }, ANDY);
   // Out of design, so his Go is offered: what refuses it below is the file list alone.
   const ended = await call('press', { id: GOAL.id, what: 'end-design' }, ANDY);
   return !!ended.change || 'End design answered ' + short(ended);
-}, 1000);
+}, test.limit.quick);
 
 // files known in design: a code item is not green with an empty file list
 test.run('a code item with no file listed is not green', 0.2, async function () {
@@ -328,24 +328,24 @@ test.run('a code item with no file listed is not green', 0.2, async function () 
   await call('press', { id: 'goal/G100.2', what: 'code' }, ANDY);
   const bare = await facts('goal/G100.2');
   return (bare.code === true && bare.green === false) || 'code ' + short(bare.code) + ', green ' + short(bare.green) + ', files ' + short(bare.fileCount);
-}, 1000);
+}, test.limit.quick);
 test.run('his Go on it is refused, the why naming its empty file list', 0.2, async function () {
   if (!W.up) return noDesk;
   const goEmpty = await call('press', { id: 'goal/G100.2', what: 'go' }, ANDY);
   return (goEmpty.ok === false && /file/i.test(why(goEmpty) + ' ' + String(goEmpty.error || ''))) || 'Go answered ' + short(goEmpty);
-}, 1000);
+}, test.limit.quick);
 test.run('with a file listed it is green', 0.2, async function () {
   if (!W.up) return noDesk;
   await call('item.take', { id: 'goal/G100.2' }, UBI);
   await call('item.files.add', { id: 'goal/G100.2', path: 'spirit/run/early.js' }, UBI);
   const listedOne = await facts('goal/G100.2');
   return listedOne.green === true || 'green ' + short(listedOne.green);
-}, 1000);
+}, test.limit.quick);
 test.run('and his Go is taken', 0.2, async function () {
   if (!W.up) return noDesk;
   const goNow = await call('press', { id: 'goal/G100.2', what: 'go' }, ANDY);
   return (!!goNow.change && goNow.ok !== false) || 'Go answered ' + short(goNow);
-}, 1000);
+}, test.limit.quick);
 test.run('a file added after his Go is allowed', 0.2, async function () {
   if (!W.up) return noDesk;
   const lateAdd = await call('item.files.add', { id: 'goal/G100.2', path: 'spirit/run/late.js' }, UBI);
@@ -353,42 +353,42 @@ test.run('a file added after his Go is allowed', 0.2, async function () {
   W.early = entries.filter(function (f) { return f.path === 'spirit/run/early.js'; })[0] || {};
   W.late = entries.filter(function (f) { return f.path === 'spirit/run/late.js'; })[0] || null;
   return (!!lateAdd.change && !!W.late) || 'the late add answered ' + short(lateAdd);
-}, 1000);
+}, test.limit.quick);
 test.run('and marked late on the item; the file listed before Go is not', 0.2, function () {
   const late = W.late; const early = W.early || {};
   return (!!late && late.late === true && early.late !== true) || 'late ' + short(late) + ', early ' + short(early);
-}, 1000);
+}, test.limit.quick);
 
 // addresses: all or a nick counts only when punctuation follows
 test.run('"all agents seem busy" is addressed to nobody', 0.2, async function () {
   if (!W.up) return noDesk;
   const plainAll = await toOf((await call('chat.add', { id: 'goal/G100.3', text: 'all agents seem busy' }, ANDY), 'all agents seem busy'));
   return (plainAll.heard && !(plainAll.to && plainAll.to.length)) || 'its to list: ' + short(plainAll);
-}, 1000);
+}, test.limit.quick);
 test.run('"wsl is here" is addressed to nobody', 0.2, async function () {
   if (!W.up) return noDesk;
   const plainNick = await toOf((await call('chat.add', { id: 'goal/G100.3', text: 'wsl is here' }, ANDY), 'wsl is here'));
   return (plainNick.heard && !(plainNick.to && plainNick.to.length)) || 'its to list: ' + short(plainNick);
-}, 1000);
+}, test.limit.quick);
 test.run('"wsl, ..." is addressed to wsl alone', 0.2, async function () {
   if (!W.up) return noDesk;
   const commaNick = await toOf((await call('chat.add', { id: 'goal/G100.3', text: 'wsl, look here' }, ANDY), 'wsl, look here'));
   return (!!commaNick.to && commaNick.to.length === 1 && commaNick.to[0] === WSL.key) || 'its to list: ' + short(commaNick);
-}, 1000);
+}, test.limit.quick);
 test.run('"all: ..." is addressed to the included agents', 0.2, async function () {
   if (!W.up) return noDesk;
   const allColon = await toOf((await call('chat.add', { id: 'goal/G100.3', text: 'all: your thoughts?' }, ANDY), 'all: your thoughts?'));
   const to = W.to = allColon.to || [];
   return (to.indexOf(CW.key) !== -1 && to.indexOf(WSL.key) !== -1) || 'its to list: ' + short(to);
-}, 1000);
+}, test.limit.quick);
 test.run('among them one known by its profile alone, and one known by its key alone', 0.2, function () {
   const to = W.to || [];
   return (to.indexOf(UBI.key) !== -1 && to.indexOf(KEYED.key) !== -1) || 'its to list: ' + short(to);
-}, 1000);
+}, test.limit.quick);
 test.run('and never one he excluded', 0.2, function () {
   if (!W.to) return 'no to list: the test before failed';
   return W.to.indexOf(OUT.key) === -1 || 'its to list: ' + short(W.to);
-}, 1000);
+}, test.limit.quick);
 
 // auto-cap: a box write into red offers the cap to the agents with cap on
 test.run('the desk names the room of one answer', 0.2, async function () {
@@ -396,14 +396,14 @@ test.run('the desk names the room of one answer', 0.2, async function () {
   const tooBig = await call('box.write', { id: 'goal/G100.4', text: 'x'.repeat(20000), version: 0 }, ANDY);
   W.room = tooBig && tooBig.extra && Number(tooBig.extra.max) > 0 ? Number(tooBig.extra.max) : 0;
   return W.room > 0 || 'a box past one answer answered ' + short(tooBig);
-}, 1000);
+}, test.limit.quick);
 test.run('a box write below red offers nothing: an agent with cap off takes it plainly', 0.2, async function () {
   if (!(W.room > 0)) return 'the desk named no room: the test before failed';
   const v0 = (await facts('goal/G100.4')).version || 0;
   const small = await call('box.write', { id: 'goal/G100.4', text: 'a short box', version: v0 }, ANDY);
   const takeSmall = await call('box.take', { id: 'goal/G100.4' }, WSL);
   return (!!small.change && !!takeSmall.change) || 'write ' + short(small) + ', take ' + short(takeSmall);
-}, 1000);
+}, test.limit.quick);
 test.run('a box write to 80% of one answer lands', 0.2, async function () {
   if (!(W.room > 0)) return 'the desk named no room: the test before failed';
   await call('box.release', { id: 'goal/G100.4' }, WSL);
@@ -411,18 +411,18 @@ test.run('a box write to 80% of one answer lands', 0.2, async function () {
   const red = 'y'.repeat(Math.ceil(W.room * 0.8));
   const big = await call('box.write', { id: 'goal/G100.4', text: red, version: v1 }, ANDY);
   return !!big.change || 'it answered ' + short(big);
-}, 1000);
+}, test.limit.quick);
 test.run('then an agent with cap off is refused the box, the cap\'s why', 0.2, async function () {
   if (!(W.room > 0)) return 'the desk named no room: the test before failed';
   const offOff = await call('box.take', { id: 'goal/G100.4' }, WSL);
   return (offOff.ok === false && /cap/i.test(why(offOff))) || 'wsl\'s take answered ' + short(offOff);
-}, 1000);
+}, test.limit.quick);
 test.run('and an agent with cap on takes it, held for one write', 0.2, async function () {
   if (!(W.room > 0)) return 'the desk named no room: the test before failed';
   const onTake = await call('box.take', { id: 'goal/G100.4' }, UBI);
   const held = await facts('goal/G100.4');
   return (!!onTake.change && held.boxTaken === UBI.label) || 'ubi\'s take answered ' + short(onTake) + ', boxTaken ' + short(held.boxTaken);
-}, 1000);
+}, test.limit.quick);
 
 // the position: a subscribe without since bootstraps as before
 const FRESH = { key: 'MCowBQYDK2VwAyEAdeskProductTestFRESHAAAAAAAAAAAAAAAAAAA=', label: 'fresh' };
@@ -435,18 +435,18 @@ test.run('with no since, the current goal\'s facts come whole (the goal and each
   const plainIds = wholeOf(W.plainRows).map(function (r) { return String(r.item.id); });
   return (plain.subscribed === true && W.plainEnded && memberIds.every(function (id) { return plainIds.indexOf(id) !== -1; })) ||
     'subscribed ' + short(plain) + ', ended ' + W.plainEnded + ', facts of ' + short(plainIds);
-}, 1000);
+}, test.limit.quick);
 test.run('and no side row (no chat line, check or box): nothing after a position it never named', 0.2, function () {
   if (!W.plainRows) return 'no subscribe ran: the test before failed';
   return (W.plainEnded && sideOf(W.plainRows).length === 0) || 'side rows: ' + short(sideOf(W.plainRows).map(function (r) { return r.table + ' ' + r.id; }));
-}, 1000);
+}, test.limit.quick);
 test.run('since 0 is the same as none', 0.2, async function () {
   if (!W.up) return noDesk;
   const zero = W.node.sent.length;
   await call('subscribe', { family: 'deskClient', since: 0 }, FRESH);
   await waitEnd(FRESH.key, zero);
   return (sideOf(rowsTo(FRESH.key, zero)).length === 0 && wholeOf(rowsTo(FRESH.key, zero)).length >= memberIds.length) || 'rows: ' + short(rowsTo(FRESH.key, zero).length);
-}, 1000);
+}, test.limit.quick);
 
 // NOT CHECKED: a catch-up from a desk change number (the one stream protocol of goal/G41.12: a push is the whole
 // goal, then its end), and a subscriber kept after a failed delivery (Andy: "take the 3 seconds out, appServer.js
@@ -456,11 +456,11 @@ test.run('since 0 is the same as none', 0.2, async function () {
 test.run('the last entry of a push is its end, { full: true, end: true }', 0.2, function () {
   if (!W.plainRows) return 'no subscribe ran: the test before failed';
   return isEnd(lastOf(W.plainRows)) || 'last row: ' + short(lastOf(W.plainRows));
-}, 1000);
+}, test.limit.quick);
 test.run('once per push', 0.2, function () {
   if (!W.plainRows) return 'no subscribe ran: the test before failed';
   return W.plainRows.filter(isEnd).length === 1 || 'ends in one push: ' + W.plainRows.filter(isEnd).length;
-}, 1000);
+}, test.limit.quick);
 
 // ── goal/G43.3, THE BOX (Andy: "desk cannot refuse the box to the user. agent updates will fail it the user takes the
 // box, and desk will note so in the chat."). This replaces his G9.3 and G21.1 words on a hold. ───────────────────
@@ -485,22 +485,22 @@ test.run('the world: a desk of its own starts, for the box', 0.2, async function
   W.askB = await startDesk('desk-box', [], {});
   if (W.askB) await profiles(W.askB);
   return !!W.askB || noB;
-}, 12000);
+}, test.limit.slow);
 test.run('an agent holds the box: his take is not refused, and the box is his', 0.2, async function () {
   if (!W.askB) return noB;
   await W.askB('box.take', { id: 'goal/G300.1' }, CW);
   const overTake = await W.askB('box.take', { id: 'goal/G300.1' }, ANDY);
   return (!!overTake.change && (await factsB('goal/G300.1')).boxTaken === 'andy') || 'his take answered ' + short(overTake) + ', boxTaken ' + short((await factsB('goal/G300.1')).boxTaken);
-}, 1000);
+}, test.limit.quick);
 test.run('after his take over cw: the agent\'s update fails, and the box stays his', 0.2, async function () {
   if (!W.askB) return noB;
   W.faCw = await failsAndSays('goal/G300.1', CW, 'after his take over cw');
   return W.faCw.failed || W.faCw.failedWhy;
-}, 1000);
+}, test.limit.quick);
 test.run('after his take over cw: and the desk notes it in the chat', 0.2, function () {
   if (!W.faCw) return noB;
   return W.faCw.said || W.faCw.saidWhy;
-}, 1000);
+}, test.limit.quick);
 // The one-write hold of the cap (goal/G21.1) is an agent's hold too: "nobody else takes it meanwhile, Andy included" goes.
 test.run('the world: ubi holds the box under the one-write hold of the cap', 0.2, async function () {
   if (!W.askB) return noB;
@@ -511,27 +511,27 @@ test.run('the world: ubi holds the box under the one-write hold of the cap', 0.2
   const bigB = await askB('box.write', { id: 'goal/G300.2', text: 'y'.repeat(Math.ceil(roomB * 0.8)), version: v2 }, ANDY);
   const heldB = await askB('box.take', { id: 'goal/G300.2' }, UBI);
   return (roomB > 0 && !!bigB.change && !!heldB.change && (await factsB('goal/G300.2')).boxTaken === UBI.label) || 'room ' + roomB + ', the write ' + short(bigB) + ', ubi\'s take ' + short(heldB);
-}, 1000);
+}, test.limit.quick);
 test.run('an agent\'s one-write hold: his take is not refused either', 0.2, async function () {
   if (!W.askB) return noB;
   const overHold = await W.askB('box.take', { id: 'goal/G300.2' }, ANDY);
   return (!!overHold.change && (await factsB('goal/G300.2')).boxTaken === 'andy') || 'his take answered ' + short(overHold) + ', boxTaken ' + short((await factsB('goal/G300.2')).boxTaken);
-}, 1000);
+}, test.limit.quick);
 test.run('after his take over ubi\'s hold: the agent\'s update fails, and the box stays his', 0.2, async function () {
   if (!W.askB) return noB;
   W.faUbi = await failsAndSays('goal/G300.2', UBI, 'after his take over ubi\'s hold');
   return W.faUbi.failed || W.faUbi.failedWhy;
-}, 1000);
+}, test.limit.quick);
 test.run('after his take over ubi\'s hold: and the desk notes it in the chat', 0.2, function () {
   if (!W.faUbi) return noB;
   return W.faUbi.said || W.faUbi.saidWhy;
-}, 1000);
+}, test.limit.quick);
 test.run('his own write under his take lands', 0.2, async function () {
   if (!W.askB) return noB;
   const v3 = (await factsB('goal/G300.1')).version || 0;
   const hisWrite = await W.askB('box.write', { id: 'goal/G300.1', text: 'his own text', version: v3 }, ANDY);
   return (!!hisWrite.change && (await W.askB('item.box', { id: 'goal/G300.1' }, ANDY)).box === 'his own text') || 'his write answered ' + short(hisWrite);
-}, 1000);
+}, test.limit.quick);
 
 // ── goal/G43.3, THE PHASE WAKE (Andy: "when the red phase ends, the desk must summon/wake another agent to take the
 // build phase, or the same agent that did the red phase, if that's the only one available", and "a red-claim or a
@@ -553,61 +553,61 @@ test.run('the world: a desk of its own starts, for the wake', 0.2, async functio
     await W.askW('subscribe', { family: 'deskClient' }, UBI);
   }
   return !!W.askW || noW;
-}, 12000);
+}, test.limit.slow);
 test.run('the world: ubi takes the red', 0.2, async function () {
   if (!W.askW) return noW;
   await ready(W.askW, 'goal/G300.1', UBI);
   await jobsDone();
   const tookRed = await W.askW('phase.take', { id: 'goal/G300.1', phase: 'red' }, UBI);
   return !!tookRed.change || 'its take answered ' + short(tookRed);
-}, 1000);
+}, test.limit.quick);
 test.run('the world: ubi\'s red claim is taken', 0.2, async function () {
   if (!W.askW) return noW;
   const hW = W.worldW.push();
   W.fromR = W.node.sent.length;
   const redW = await W.askW('claim', { id: 'goal/G300.1', phase: 'red', commit: hW }, UBI);
   return !!redW.change || 'the claim answered ' + short(redW);
-}, 1000);
+}, test.limit.quick);
 test.run('the red claim alone ends the red: the build is open, nobody holding it', 0.2, async function () {
   if (!W.askW) return noW;
   const fW = await factsW('goal/G300.1');
   return (fW.phase === 'build' && !fW.phaseWith) || 'after the claim: phase ' + short(fW.phase) + ', held by ' + short(fW.phaseWith);
-}, 1000);
+}, test.limit.quick);
 test.run('the row that opens the build reaches every subscribed agent, the red\'s author included', 0.2, async function () {
   if (!W.askW || W.fromR === undefined) return noW;
   const wokeCW = await waitFor(function () { return opened(W.fromR, CW.key, 'goal/G300.1', 'build'); }, 5000);
   const wokeUBI = await waitFor(function () { return opened(W.fromR, UBI.key, 'goal/G300.1', 'build'); }, 2000);
   return (wokeCW && wokeUBI) || 'reached cw ' + wokeCW + ', ubi ' + wokeUBI;
-}, 1000);
+}, test.limit.quick);
 test.run('with another agent here, the red\'s author does not take the build', 0.2, async function () {
   if (!W.askW) return noW;
   await W.askW('agent.state', { word: 'listening' }, CW);
   const redAuthor = await W.askW('phase.take', { id: 'goal/G300.1', phase: 'build' }, UBI);
   return redAuthor.ok === false || 'its take answered ' + short(redAuthor);
-}, 1000);
+}, test.limit.quick);
 test.run('the other agent takes it', 0.2, async function () {
   if (!W.askW) return noW;
   const tookBuild = await W.askW('phase.take', { id: 'goal/G300.1', phase: 'build' }, CW);
   return !!tookBuild.change || 'cw\'s take answered ' + short(tookBuild);
-}, 1000);
+}, test.limit.quick);
 test.run('the world: cw\'s code-done is taken', 0.2, async function () {
   if (!W.askW) return noW;
   const hB = W.worldW.push();
   W.fromB = W.node.sent.length;
   const doneW = await W.askW('claim', { id: 'goal/G300.1', phase: 'build', commit: hB }, CW);
   return !!doneW.change || 'the claim answered ' + short(doneW);
-}, 1000);
+}, test.limit.quick);
 test.run('the code-done alone opens the verify, nobody holding it', 0.2, async function () {
   if (!W.askW) return noW;
   const fV = await factsW('goal/G300.1');
   return (fV.phase === 'verify' && !fV.phaseWith) || 'after the claim: phase ' + short(fV.phase) + ', held by ' + short(fV.phaseWith);
-}, 1000);
+}, test.limit.quick);
 test.run('the row that opens the verify reaches every subscribed agent', 0.2, async function () {
   if (!W.askW || W.fromB === undefined) return noW;
   const wokeCW2 = await waitFor(function () { return opened(W.fromB, CW.key, 'goal/G300.1', 'verify'); }, 5000);
   const wokeUBI2 = await waitFor(function () { return opened(W.fromB, UBI.key, 'goal/G300.1', 'verify'); }, 2000);
   return (wokeCW2 && wokeUBI2) || 'reached cw ' + wokeCW2 + ', ubi ' + wokeUBI2;
-}, 1000);
+}, test.limit.quick);
 
 // goal/G43.3: alone, the agent that wrote the red takes the build itself
 const noL = 'the desk did not start: alone is not judged';
@@ -616,7 +616,7 @@ test.run('the world: a desk of its own starts, for an agent alone', 0.2, async f
   W.worldL = gitWorld(path.join(W.scratch, 'git-l'));
   W.askL = await startDesk('desk-alone', [], {}, undefined, W.worldL);
   return !!W.askL || noL;
-}, 12000);
+}, test.limit.slow);
 test.run('the only agent here claims the red and takes the build, with no press of his', 0.2, async function () {
   const askL = W.askL;
   if (!askL) return noL;
@@ -627,7 +627,7 @@ test.run('the only agent here claims the red and takes the build, with no press 
   const redL = await askL('claim', { id: 'goal/G300.1', phase: 'red', commit: W.worldL.push() }, CW);
   const tookL = await askL('phase.take', { id: 'goal/G300.1', phase: 'build' }, CW);
   return (!!redL.change && !!tookL.change) || 'the claim ' + short(redL) + ', the take ' + short(tookL);
-}, 1000);
+}, test.limit.quick);
 
 // ── goal/G43.3, THE LIST'S SEARCH (Andy: "reduce the number of fields that a front page ("list-tab") search returns for
 // every returned rows, so MORE rows fit into a search result. the search needs only those fields of a row that it
@@ -649,20 +649,20 @@ test.run('the world: a desk of its own starts, for the search', 0.2, async funct
   W.askS = await startDesk('desk-list', [], {}, [{ goal: LIST_GOAL, items: LIST_ITEMS.map(function (id) { return { id: id, title: 'Item ' + id, blocks: [LIST_GOAL.id] }; }) }]);
   if (W.askS) await profiles(W.askS);
   return !!W.askS || noS;
-}, 12000);
+}, test.limit.slow);
 test.run('a row holds only what the List draws, presses and filters on', 0.2, async function () {
   if (!W.askS) return noS;
   const first = W.first = await search(W.askS);
   const extra = {};
   first.rows.forEach(function (row) { Object.keys(row).forEach(function (k) { if (LIST_FIELDS.indexOf(k) === -1 && !(row.goal === '' && GOAL_FIELDS.indexOf(k) !== -1)) extra[k] = true; }); });
   return (first.rows.length > 0 && !Object.keys(extra).length) || 'the first search\'s rows also hold: ' + Object.keys(extra).join(', ');
-}, 1000);
+}, test.limit.quick);
 test.run('the first search holds the current goal and all its 25 open items', 0.2, function () {
   const first = W.first;
   if (!first) return noS;
   const openShown = LIST_ITEMS.filter(function (id) { return first.keys.indexOf(id) !== -1; });
   return (first.keys.indexOf(LIST_GOAL.id) !== -1 && openShown.length === LIST_ITEMS.length && !first.more) || 'the first search holds ' + first.keys.length + ' rows, ' + openShown.length + ' of the 25 open items, more ' + first.more;
-}, 1000);
+}, test.limit.quick);
 test.run('the goal\'s row still names the agents here and who is working: the page draws its bubbles from it', 0.2, async function () {
   if (!W.askS) return noS;
   await W.askS('agent.state', { word: 'working' }, CW);
@@ -670,22 +670,22 @@ test.run('the goal\'s row still names the agents here and who is working: the pa
   const goalRow = W.goalRow = (await search(W.askS)).rows.filter(function (r) { return r.id === LIST_GOAL.id; })[0] || {};
   W.whole = JSON.parse((await W.askS('item.get', { id: LIST_GOAL.id }, ANDY)).item || '{}');
   return (Array.isArray(goalRow.live) && goalRow.live.indexOf(CW.label) !== -1 && Array.isArray(goalRow.working) && goalRow.working.indexOf(CW.label) !== -1) || 'the goal\'s row: ' + short(goalRow);
-}, 1000);
+}, test.limit.quick);
 test.run('and the agents the desk knows', 0.2, function () {
   const goalRow = W.goalRow || {};
   return (!!goalRow.agents && Object.keys(goalRow.agents).length > 0) || 'the goal\'s row: ' + short(goalRow);
-}, 1000);
+}, test.limit.quick);
 test.run('and the design state, as item.get says it', 0.2, function () {
   if (!W.goalRow || !W.whole) return 'no goal row: the test before failed';
   return W.goalRow.design === W.whole.design || 'the goal\'s row says design ' + short(W.goalRow.design) + ', item.get ' + short(W.whole.design);
-}, 1000);
+}, test.limit.quick);
 // His ruling of goal/G41.28 stands on the server: a search covers the whole row, and the chat.
 test.run('the server still searches what the row no longer carries: a chat word finds its item first', 0.2, async function () {
   if (!W.askS) return noS;
   await W.askS('chat.add', { id: 'goal/G400.20', text: 'zebrafinch' }, ANDY);
   const byChat = await search(W.askS, { text: 'zebrafinch' });
   return byChat.keys[0] === 'goal/G400.20' || 'searching a chat word answers first ' + short(byChat.keys[0]);
-}, 1000);
+}, test.limit.quick);
 
 // goal/G43.3: Andy: "file list should not show duplicates". A path two agents added is one row.
 test.run('two agents add one path: it is one row, and the other file stays', 0.2, async function () {
@@ -698,14 +698,14 @@ test.run('two agents add one path: it is one row, and the other file stays', 0.2
   await askS('item.files.add', { id: 'goal/G400.1', path: 'spirit/run/once.js' }, UBI);
   const twice = (((await askS('item.files', { id: 'goal/G400.1' }, ANDY)).files) || []).map(function (e) { return e.path; });
   return (twice.filter(function (p) { return p === 'spirit/run/twice.js'; }).length === 1 && twice.indexOf('spirit/run/once.js') !== -1) || 'the list: ' + short(twice);
-}, 1000);
+}, test.limit.quick);
 
 // goal/G43.3: Andy: "when i add a rule to an item or goal, it will not immediately display in the rule-list."
 test.run('the world: a rule exists', 0.2, async function () {
   if (!W.askS) return noS;
   W.made = await W.askS('rule.add', { type: 'code', label: 'A rule to attach', text: 'the text of a rule' }, ANDY);
   return !!W.made.key || 'rule.add answered ' + short(W.made);
-}, 1000);
+}, test.limit.quick);
 // A rule attached to id: the row naming it published to his page.
 const attachedReaches = async function (id) {
   if (!W.askS || !W.made || !W.made.key) return 'no rule to attach: the world failed';
@@ -714,8 +714,8 @@ const attachedReaches = async function (id) {
   const reached = await waitFor(function () { return W.node.pages.slice(fromP).some(function (o) { return o && o.item && o.item.id === id && (o.item.rules || []).some(function (r) { return r.key === W.made.key; }); }); }, 3000);
   return (!!attached.change && reached) || id + ': the attach ' + short(attached) + ', a row naming it published ' + reached;
 };
-test.run('on an item, goal/G400.2: the row naming the new rule is published to his page', 0.2, function () { return attachedReaches('goal/G400.2'); }, 1000);
-test.run('on a goal, goal/G400: the row naming the new rule is published to his page', 0.2, function () { return attachedReaches(LIST_GOAL.id); }, 1000);
+test.run('on an item, goal/G400.2: the row naming the new rule is published to his page', 0.2, function () { return attachedReaches('goal/G400.2'); }, test.limit.quick);
+test.run('on a goal, goal/G400: the row naming the new rule is published to his page', 0.2, function () { return attachedReaches(LIST_GOAL.id); }, test.limit.quick);
 
 // ── goal/G43.3, THE AGENT BUBBLES FOLLOW THE GRANTS. Andy: "the real thing would be: the desk listens to the grants and
 // adds/removes thos bubbles accordingly", and "if the ID has grants to desk, desk should list it as one of it's agents, it
@@ -745,47 +745,47 @@ test.run('the world: a desk of its own starts, for the bubbles', 0.2, async func
     for (const a of [CW, UBI, NOBODY, CLIENT_ONLY]) await W.askG('agent.state', { word: 'listening' }, a);
   }
   return !!W.askG || noG;
-}, 12000);
+}, test.limit.slow);
 test.run('at start: a key holding desk whole has a bubble, and a key holding one small desk verb too', 0.2, async function () {
   if (!W.askG) return noG;
   const settled = await waitFor(async function () { return has(await goalG(), CW); }, 5000);
   const fg = W.fg0 = await goalG();
   return (settled && has(fg, CW) && has(fg, UBI)) || 'the goal row: ' + short({ agents: fg.agents, live: fg.live });
-}, 1000);
+}, test.limit.quick);
 test.run('a key with a grant that has never written to this desk has one too', 0.2, function () {
   const fg = W.fg0;
   if (!fg) return noG;
   return has(fg, OUT) || 'the goal row: ' + short({ agents: fg.agents });
-}, 1000);
+}, test.limit.quick);
 test.run('a key that has written, with a profile and no grant, has none', 0.2, function () {
   const fg = W.fg0;
   if (!fg) return noG;
   return (!has(fg, NOBODY) && !shows(fg, NOBODY)) || 'the goal row: ' + short({ agents: fg.agents, live: fg.live });
-}, 1000);
+}, test.limit.quick);
 test.run('a grant on deskClient is no grant to desk: none', 0.2, function () {
   const fg = W.fg0;
   if (!fg) return noG;
   return (!has(fg, CLIENT_ONLY) && !shows(fg, CLIENT_ONLY)) || 'the goal row: ' + short({ agents: fg.agents, live: fg.live });
-}, 1000);
+}, test.limit.quick);
 test.run('a grant given while it runs: the bubble comes, with nothing else asked', 0.2, async function () {
   if (!W.askG) return noG;
   W.node.grants.push({ key: NOBODY.key, path: 'desk.item.get', name: NOBODY.label });
   W.node.grantEvent({ key: NOBODY.key, path: 'desk.item.get', label: NOBODY.label });
   const given = await waitFor(async function () { return has(await goalG(), NOBODY); }, 5000);
   return given || 'the goal row: ' + short((await goalG()).agents);
-}, 1000);
+}, test.limit.quick);
 test.run('its last grant revoked: the bubble goes', 0.2, async function () {
   if (!W.askG) return noG;
   W.node.grants.splice(W.node.grants.findIndex(function (g) { return g.key === NOBODY.key; }), 1);
   W.node.grantEvent({ key: NOBODY.key, path: 'desk.item.get' }, true);
   const revoked = await waitFor(async function () { const f = await goalG(); return !has(f, NOBODY) && !shows(f, NOBODY); }, 5000);
   return revoked || 'the goal row: ' + short((await goalG()).agents);
-}, 1000);
+}, test.limit.quick);
 test.run('and its row stays in the desk, its profile with it', 0.2, async function () {
   if (!W.askG) return noG;
   const kept = await profileRow(NOBODY.key);
   return (!!kept && kept.name === 'No Grant') || 'agents.search says of it: ' + short(kept);
-}, 1000);
+}, test.limit.quick);
 test.run('one of two grants revoked: the bubble stays', 0.2, async function () {
   if (!W.askG) return noG;
   const node = W.node;
@@ -795,7 +795,7 @@ test.run('one of two grants revoked: the bubble stays', 0.2, async function () {
   node.grantEvent({ key: UBI.key, path: 'desk.item.get' }, true);
   await sleep(800);
   return has(await goalG(), UBI) || 'the goal row: ' + short((await goalG()).agents);
-}, 3000);
+}, test.limit.slow);
 
 // goal/G43.3: [include closed] adds the closed rows, and the open ones stay in the first answer
 const MIX_GOAL = { id: 'goal/G500', title: 'Closed first' };
@@ -808,26 +808,26 @@ test.run('the world: a desk of its own starts, for [include closed]', 0.2, async
   if (W.node && W.heldGrants) { W.node.grants.splice(0, W.node.grants.length); W.heldGrants.forEach(function (g) { W.node.grants.push(g); }); }
   W.askM = await startDesk('desk-mixed', [], {}, [{ goal: MIX_GOAL, items: MIX_ITEMS.map(function (id) { return { id: id, title: 'Item ' + id, blocks: [MIX_GOAL.id] }; }) }]);
   return !!W.askM || noM;
-}, 12000);
+}, test.limit.slow);
 test.run('the world: 40 closed items, the oldest; without the filter only the 5 open show', 0.2, async function () {
   if (!W.askM) return noM;
   await W.askM('press', { id: MIX_GOAL.id, what: 'end-design' }, ANDY);
   for (const id of CLOSED) await W.askM('press', { id: id, what: 'close' }, ANDY);
   const without = await searchM({ includeClosed: false });
   return (without.filter(function (k) { return CLOSED.indexOf(k) !== -1; }).length === 0 && OPEN.every(function (k) { return without.indexOf(k) !== -1; })) || 'without the filter: ' + short(without);
-}, 4000);
+}, test.limit.slow);
 test.run('with [include closed] every open item is still in the answer', 0.2, async function () {
   if (!W.askM) return noM;
   const withC = W.withC = await searchM({ includeClosed: true });
   const missing = OPEN.filter(function (k) { return withC.indexOf(k) === -1; });
   return !missing.length || 'with [include closed] these open items are gone: ' + missing.join(', ') + ', the answer holds ' + withC.length + ' rows';
-}, 1000);
+}, test.limit.quick);
 test.run('and the open items come before the closed ones, and closed ones show', 0.2, function () {
   const withC = W.withC;
   if (!withC) return noM;
   const firstClosed = withC.findIndex(function (k) { return CLOSED.indexOf(k) !== -1; });
   return (firstClosed !== -1 && OPEN.every(function (k) { const at = withC.indexOf(k); return at !== -1 && at < firstClosed; })) || 'the order: ' + short(withC.slice(0, 12));
-}, 1000);
+}, test.limit.quick);
 
 // auto pull: a red claim or a build claim taken, the desk pulls its own checkout
 const noA = 'the desk on a scratch checkout did not start: the world failed';
@@ -836,7 +836,7 @@ test.run('the world: a desk of its own starts on a scratch checkout of a scratch
   const worldA = W.worldA = gitWorld(path.join(W.scratch, 'git-a'));
   W.askA = await startDesk('desk-a', [], {}, undefined, worldA);
   return (!!W.askA && !!worldA.head()) || 'desk ' + !!W.askA + ', checkout at ' + short(worldA.head());
-}, 12000);
+}, test.limit.slow);
 test.run('the world: a commit lands on origin, and cw\'s red claim is taken', 0.2, async function () {
   if (!W.askA) return noA;
   await profiles(W.askA);
@@ -845,24 +845,24 @@ test.run('the world: a commit lands on origin, and cw\'s red claim is taken', 0.
   const h1 = W.h1 = W.worldA.push();
   const redA = await W.askA('claim', { id: 'goal/G300.1', phase: 'red', commit: h1 }, CW);
   return (!!h1 && !!redA.change) || 'go ' + short(goA) + ', origin\'s new commit ' + short(h1) + ', the claim answered ' + short(redA);
-}, 1000);
+}, test.limit.quick);
 test.run('the red claim taken, its checkout pulls: it holds the commit pushed onto origin since', 0.2, async function () {
   if (!W.askA) return noA;
   const pulledRed = await waitFor(function () { return W.worldA.holds(W.h1); }, 15000);
   return pulledRed || 'checkout at ' + short(W.worldA.head()) + ', origin\'s new commit ' + short(W.h1);
-}, 1000);
+}, test.limit.quick);
 test.run('the world: another commit lands on origin, and cw\'s build claim is taken', 0.2, async function () {
   if (!W.askA) return noA;
   await jobsDone();
   const h2 = W.h2 = W.worldA.push();
   const buildA = await W.askA('claim', { id: 'goal/G300.1', phase: 'build', commit: h2 }, CW);
   return (!!h2 && !!buildA.change) || 'origin\'s new commit ' + short(h2) + ', the claim answered ' + short(buildA);
-}, 1000);
+}, test.limit.quick);
 test.run('the build claim taken, it pulls again', 0.2, async function () {
   if (!W.askA) return noA;
   const pulledBuild = await waitFor(function () { return W.worldA.holds(W.h2); }, 15000);
   return pulledBuild || 'checkout at ' + short(W.worldA.head()) + ', origin\'s new commit ' + short(W.h2);
-}, 1000);
+}, test.limit.quick);
 
 // auto pull: never over edits of its own: it pulls nothing and says so under the item
 test.run('the world: a commit lands on origin, its checkout holds an edit, and ubi\'s red claim is taken', 0.2, async function () {
@@ -876,7 +876,7 @@ test.run('the world: a commit lands on origin, its checkout holds an edit, and u
   const goE = await ready(W.askA, 'goal/G300.2', UBI);
   const redE = await W.askA('claim', { id: 'goal/G300.2', phase: 'red', commit: h3 }, UBI);
   return (!!h3 && !!redE.change) || 'go ' + short(goE) + ', the claim answered ' + short(redE);
-}, 1000);
+}, test.limit.quick);
 test.run('a claim taken over a checkout with an edit of its own pulls nothing, the edit stays, and a line of the desk\'s under the item says so', 0.2, async function () {
   if (!W.askA || W.linesE === undefined) return noA;
   const worldA = W.worldA;
@@ -885,7 +885,7 @@ test.run('a claim taken over a checkout with an edit of its own pulls nothing, t
   const keptE = fs.readFileSync(W.edited, 'utf8') === 'an edit of its own, not committed\n';
   return (saidE && !worldA.holds(W.h3) && worldA.head() === W.headE && keptE) ||
     'a desk line ' + saidE + ', pulled ' + worldA.holds(W.h3) + ', head moved ' + (worldA.head() !== W.headE) + ', edit kept ' + keptE;
-}, 4000);
+}, test.limit.slow);
 
 // auto pull: never while a test run goes on in it: it pulls nothing and says so under the item
 // The run the desk knows of is deskVerify's: an item handed over (verify.answer taken) whose run has not been read
@@ -897,7 +897,7 @@ test.run('the world: a desk of its own starts, a run deskVerify took on goal/G30
   W.worldR = gitWorld(path.join(W.scratch, 'git-r'));
   W.askR = await startDesk('desk-r', [{ verb: 'verify.answer', by: 'desk', body: { id: 'goal/G300.3', taken: true, by: 'desk', key: '' } }], {}, undefined, W.worldR);
   return !!W.askR || 'desk ' + !!W.askR;
-}, 12000);
+}, test.limit.slow);
 test.run('the world: while a test run goes on, a commit lands on origin, and cw\'s red claim is taken', 0.2, async function () {
   if (!W.askR) return noR;
   await profiles(W.askR);
@@ -908,7 +908,7 @@ test.run('the world: while a test run goes on, a commit lands on origin, and cw\
   W.linesR = (await deskLines(W.askR, 'goal/G300.1')).length;
   const redR = await W.askR('claim', { id: 'goal/G300.1', phase: 'red', commit: h4 }, CW);
   return (!!h4 && !!redR.change) || 'go ' + short(goR) + ', the claim answered ' + short(redR);
-}, 2000);
+}, test.limit.quick);
 test.run('a claim taken while a run goes on pulls nothing, and a line of the desk\'s under the item says so', 0.2, async function () {
   if (!W.askR || W.linesR === undefined) return noR;
   const worldR = W.worldR;
@@ -916,7 +916,7 @@ test.run('a claim taken while a run goes on pulls nothing, and a line of the des
   await sleep(1000);
   return (saidR && !worldR.holds(W.h4) && worldR.head() === W.headR) ||
     'a desk line ' + saidR + ', pulled ' + worldR.holds(W.h4) + ', head moved ' + (worldR.head() !== W.headR);
-}, 4000);
+}, test.limit.slow);
 
 test.after(async function () {
   W.pullKids.forEach(function (k) { try { k.kill(); } catch (e) { /* gone */ } });

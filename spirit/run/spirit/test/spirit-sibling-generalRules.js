@@ -508,108 +508,108 @@ function every() {
   test.run('the world: the modules are read', 0.2, function () {
     E.tracked = require('child_process').execFileSync('git', ['ls-files'], { cwd: RUN, encoding: 'utf8' }).split('\n').filter(function (f) { return /\.(js|html|json)$/.test(f) && !/(^|\/)test\//.test(f); });
     return E.tracked.length > 0 || 'git ls-files gave no module to read';
-  }, 1000);
+  }, test.limit.quick);
   test.run('none of them names spirit/run/process or run://process, in code or comment', 0.4, function () {
     const named = processNamers();
     return (!!E.tracked && E.tracked.length > 0 && !named.length) || named.length + ' still name it: ' + short(named);
-  }, 1000);
+  }, test.limit.quick);
 
   // elements are placed by installSpiritElement alone
   test.run('spirit/element/installSpiritElement.js is there', 0.4, function () {
     return fs.existsSync(path.join(RUN, 'spirit', 'element', 'installSpiritElement.js')) || 'there is no spirit/element/installSpiritElement.js';
-  }, 1000);
+  }, test.limit.quick);
   test.run('no product script puts an element on spirit.element or spirit.elements by hand', 0.4, function () {
     const hand = placedByHand();
     return !hand.length || hand.length + ' still do: ' + short(hand.slice(0, 8));
-  }, 1000);
+  }, test.limit.quick);
   // Decided 6: an app's element is placed like every element, "the shell, the app selector, the file opener and the desk
   // find it there"; so nothing reads an element at the old place, spirit.elements.<name>, any more.
   test.run('no product script reads or writes the old spirit.elements: every element is found at spirit.element.<its path>', 0.4, function () {
     const old = productScripts().filter(function (f) { return /\.elements\b/.test(codeOf(fs.readFileSync(path.join(RUN, f), 'utf8'), true)); });
     return !old.length || old.length + ' still name spirit.elements: ' + short(old.slice(0, 8));
-  }, 1000);
+  }, test.limit.quick);
 
   // run://test/ is moved into run://spirit/test/
   test.run('run://test/ holds no tracked file', 0.4, function () {
     const left = gitIn(RUN, ['ls-files', '--', 'test/']);
     return !left.length || left.length + ' still tracked there: ' + short(left);
-  }, 1000);
+  }, test.limit.quick);
   test.run('run://spirit/test/ holds all the moved files, test/test/ included', 0.4, function () {
     const missing = MOVED.filter(function (f) { return !fs.existsSync(path.join(RUN, 'spirit', 'test', f)); });
     return !missing.length || missing.length + ' are not there: ' + short(missing);
-  }, 1000);
+  }, test.limit.quick);
   // nothing under spirit/run/ names run://test/
   test.run('the world: the files are read, tests and documents included', 0.2, function () {
     E.files = gitIn(RUN, ['ls-files']).filter(function (f) {
       return /\.(js|md|html|json)$/.test(f) && !VENDORED_FOLDERS.holds(f) && SELF.indexOf(path.basename(f)) === -1 && fs.existsSync(path.join(RUN, f));
     });
     return E.files.length > 0 || 'git ls-files gave no file to read';
-  }, 1000);
+  }, test.limit.quick);
   test.run('none of them names the old run://test/, in code, comment or document', 0.4, function () {
     const files = E.files || [];
     const naming = files.filter(function (f) { try { return OLD_NAMED.test(fs.readFileSync(path.join(RUN, f), 'utf8')); } catch (e) { return false; } });
     return (files.length > 0 && !naming.length) || naming.length + ' still name it: ' + short(naming);
-  }, 1000);
+  }, test.limit.quick);
   // run://spirit/test/'s tools are not tests
   test.run('the world: testModule.js lists tests', 0.2, function () {
     const moduleAt = [path.join(RUN, 'spirit', 'test', 'testModule.js'), path.join(RUN, 'test', 'testModule.js')].filter(function (p) { return fs.existsSync(p); })[0];
     E.listed = moduleAt ? require(moduleAt).testsFor('').map(function (t) { return t.test; }) : [];
     return E.listed.length > 0 || 'no testModule.js to ask';
-  }, 1000);
+  }, test.limit.quick);
   test.run('testModule.js lists none of testReport.js, testModule.js and headLessChrome.js as a test', 0.4, function () {
     const all = E.listed || [];
     const toolsListed = all.filter(function (t) { return TOOLS.indexOf(path.posix.basename(t)) !== -1 && /^(spirit\/)?test\/[^/]+$/.test(t); });
     return (all.length > 0 && !toolsListed.length) || 'it lists them as tests: ' + short(toolsListed);
-  }, 1000);
+  }, test.limit.quick);
   // git ignores run:// except run://spirit/
   function ignoreLines() { return fs.readFileSync(path.join(REPO, '.gitignore'), 'utf8').split(/\r?\n/).map(function (l) { return l.trim(); }).filter(function (l) { return l && l[0] !== '#'; }); }
   test.run('.gitignore holds /spirit/run/* and !/spirit/run/spirit/', 0.4, function () {
     const lines = ignoreLines();
     return (lines.indexOf('/spirit/run/*') !== -1 && lines.indexOf('!/spirit/run/spirit/') !== -1) || 'it lacks ' + short(['/spirit/run/*', '!/spirit/run/spirit/'].filter(function (l) { return lines.indexOf(l) === -1; }));
-  }, 1000);
+  }, test.limit.quick);
   test.run('no other line names a path under run:// outside run://spirit/, since run://* covers it', 0.4, function () {
     const dead = ignoreLines().filter(function (l) {
       const p = l.replace(/^!/, '').replace(/^\//, '');
       return p.indexOf('spirit/run/') === 0 && p.indexOf('spirit/run/spirit/') !== 0 && l !== '/spirit/run/*';
     });
     return !dead.length || dead.length + ' left: ' + short(dead);
-  }, 1000);
+  }, test.limit.quick);
   test.run('a new file in run:// outside spirit/ is ignored', 0.4, function () {
     const outside = 'spirit/run/zz-g4332-not-tracked.txt';
     return ignoredByGit(outside) || 'git does not ignore ' + outside;
-  }, 1000);
+  }, test.limit.quick);
   test.run('a new file in run://spirit/ is not ignored', 0.4, function () {
     const inside = 'spirit/run/spirit/zz-g4332-not-tracked.txt';
     return !ignoredByGit(inside) || 'git ignores ' + inside;
-  }, 1000);
+  }, test.limit.quick);
 
   // every product script: use strict, spirit first, the tree only through spirit.require
   test.run('the world: the product scripts are read (tests and vendored code left out)', 0.2, function () {
     E.scripts = productScripts();
     return E.scripts.length > 100 || 'only ' + E.scripts.length + ' product scripts found: too few to judge';
-  }, 1000);
+  }, test.limit.quick);
   test.run('all of them hold the shape', 0.4, function () {
     const all = E.scripts || [];
     const broken = all.map(function (f) { return { f: f, why: shapeBreaks(f) }; }).filter(function (x) { return x.why.length; });
     return (all.length > 100 && !broken.length) || broken.length + ' of ' + all.length + ' do not; the first: ' + short(broken.slice(0, 5).map(function (x) { return x.f + ': ' + x.why[0]; }));
-  }, 1000);
+  }, test.limit.quick);
 
   // every product script: spirit.js required first, every require path a child, a sibling or an ancestor's file
   test.run('the world: the product scripts are read for the module rules', 0.2, function () {
     const all = productScripts();
     E.ruled = all.map(function (f) { return { f: f, r: moduleRules(path.join(RUN, f)) }; });
     return all.length > 100 || 'only ' + all.length + ' product scripts found: too few to judge';
-  }, 1000);
+  }, test.limit.quick);
   test.run('every one takes spirit.js first, or is page code', 0.4, function () {
     const ruled = E.ruled || [];
     const late = ruled.filter(function (x) { return x.r.early; });
     return (ruled.length > 100 && !late.length) || late.length + ' of ' + ruled.length + ' do not; the first: ' + short(late.slice(0, 5).map(function (x) { return x.f + ': ' + x.r.early; }));
-  }, 1000);
+  }, test.limit.quick);
   test.run('none of their require paths breaks the require rule', 0.4, function () {
     const ruled = E.ruled || [];
     const astray = ruled.filter(function (x) { return x.r.bad.length; });
     return (ruled.length > 100 && !astray.length) || astray.length + ' of ' + ruled.length + ' do; the first: ' + short(astray.slice(0, 5).map(function (x) { return x.f + ' requires ' + x.r.bad[0]; }));
-  }, 1000);
+  }, test.limit.quick);
 
   // every shell file that paints an icon loads the icon element
   // Said only when a file paints icons: painters() reads the files git tracks under shell/.
@@ -626,7 +626,7 @@ function every() {
         // itself (rule/26).
         return src.indexOf('spirit/element/icon.js') === -1 && src.indexOf('spirit/element/rowForm.js') === -1;
       }).map(function (f) { return f + ': it paints icons and never loads spirit/element/icon.js'; }));
-    }, 1000);
+    }, test.limit.quick);
   }
 
   // The page modules in its reach, and the one scratch node they are judged on.
@@ -635,11 +635,11 @@ function every() {
     E.files2 = reach.filter(kindOf);
     test.comment('every app and element in its reach: ' + E.files2.length + ' of ' + reach.length + '; not mounted, being neither: ' + reach.filter(function (f) { return !kindOf(f); }).join(', '));
     return E.files2.length > 0 || 'testModule.js gives it no file to judge';
-  }, 1000);
+  }, test.limit.quick);
   test.run('the world: a scratch node comes up with its DEBUG on', 0.2, async function () {
     E.node = await scratchNode(SERVERS);
     return (E.node.up && E.node.debug) || 'the scratch node did not come up with its DEBUG on: every file would blame the wrong thing';
-  }, 5000);
+  }, test.limit.slow);
   const NO_NODE = 'no scratch node with its DEBUG on: the world failed';
   const nodeUp = function () { return !!E.node && E.node.up && E.node.debug; };
 
@@ -647,7 +647,7 @@ function every() {
   test.run('the world: the product scripts, each required alone on the node and on a page', 0.2, function () {
     E.req = productScripts().filter(function (f) { return f !== 'spirit/spirit.js'; });
     return E.req.length > 100 || 'too few scripts to judge: ' + E.req.length;
-  }, 1000);
+  }, test.limit.quick);
   test.run('the world: some of them load on the node', 0.2, async function () {
     if (!nodeUp()) return NO_NODE;
     const run = E.node.root ? path.join(E.node.root, 'spirit', 'run') : '';
@@ -661,11 +661,11 @@ function every() {
       else if (!r.placed) E.nodeBad.push(f + ': nothing stands at spirit.required.' + placeKeys(f).join('.'));
     }
     return E.nodeLoaded.length > 0 || 'none loads on the node: nothing judged there';
-  }, 70000);
+  }, test.limit.long);
   test.run('on the node: all that load answer at once and stand at spirit.required.<path>', 0.4, function () {
     if (!E.nodeLoaded) return 'nothing required on the node: the world failed';
     return (E.nodeLoaded.length > 0 && !E.nodeBad.length) || E.nodeBad.length + ' of ' + E.nodeLoaded.length + ' do not; the first: ' + short(E.nodeBad.slice(0, 5));
-  }, 1000);
+  }, test.limit.quick);
   test.run('the world: some of them load on a page', 0.2, async function () {
     if (!nodeUp()) return NO_NODE;
     const chrome = findChrome();
@@ -691,15 +691,15 @@ function every() {
     try { if (page.kid) page.kid.kill(); } catch (e) { /* gone */ }
     try { if (page.profile) fs.rmSync(page.profile, { recursive: true, force: true }); } catch (e) { /* scratch */ }
     return E.pageLoaded.length > 0 || 'none loads on a page: nothing judged there';
-  }, 232000);
+  }, test.limit.long);
   test.run('on a page: all that load stand at spirit.required.<path>', 0.4, function () {
     if (!E.pageLoaded) return 'nothing required on a page: the world failed';
     return (E.pageLoaded.length > 0 && !E.pageBad.length) || E.pageBad.length + ' of ' + E.pageLoaded.length + ' do not; the first: ' + short(E.pageBad.slice(0, 5));
-  }, 1000);
+  }, test.limit.quick);
   test.run('every element script has its factory at spirit.element.<its path>, by its own installSpiritElement', 0.4, function () {
     if (!E.pageLoaded) return 'nothing required on a page: the world failed';
     return (E.elements.length > 0 && !E.noFactory.length) || (E.elements.length ? E.noFactory.length + ' of ' + E.elements.length + ' have none there: ' + short(E.noFactory.slice(0, 5)) : 'no script calls installSpiritElement: no element is placed by its path');
-  }, 1000);
+  }, test.limit.quick);
 
   // Each page module in a run of its own, so each is recorded under its own module (spirit/test/testReport.js); each page
   // that is not green named in the answer, by its address.
@@ -724,7 +724,7 @@ function every() {
       if (!(reds === 0 && greens > 0)) red.push(at + ': ' + reds + ' red, ' + greens + ' green; first: ' + first.slice(0, 200));
     }
     return listed(red);
-  }, 1470000);
+  }, test.limit.long);
 
   test.after(async function () {
     if (E.page) { try { if (E.page.kid) E.page.kid.kill(); } catch (e) { /* gone */ } }
@@ -918,28 +918,28 @@ function oneFile(P) {
   // <address>: it mentions no spirit/run/process
   test.run('it names neither spirit/run/process nor run://process, in code or comment', 0.4, function () {
     return !namesProcess(rel) || 'it mentions spirit/run/process: ' + short((fs.readFileSync(full, 'utf8').match(PROCESS_NAMED) || [])[0]);
-  }, 1000);
+  }, test.limit.quick);
   // goal/G43.32: a product script holds the shape (everyScriptShaped), each reason named in its answer.
   if (/^spirit\/.+\.js$/.test(rel) && !/(^|\/)test\//.test(rel) && !VENDORED_FOLDERS.holds(rel)) {
     // <address>: use strict, spirit first, the tree only through spirit.require
     test.run('it starts with \'use strict\', takes spirit first, and loads the tree only through spirit.require', 0.4, function () {
       return listed(shapeBreaks(rel));
-    }, 1000);
+    }, test.limit.quick);
   }
   // The general rules of a module (moduleRules above), on any file handed, a product script or not.
   // <address>: the spirit object is a global before anything else is loaded
   const mr = moduleRules(full);
-  if (mr.page) test.run('it is page code: node never loads it', 0.4, function () { return moduleRules(full).page || 'it is no longer page code'; }, 1000);
-  else if (mr.spirit) test.run('it sets the global spirit before its first require', 0.4, function () { return !moduleRules(full).early || moduleRules(full).early; }, 1000);
-  else test.run('it requires spirit.js first', 0.4, function () { return !moduleRules(full).early || moduleRules(full).early; }, 1000);
+  if (mr.page) test.run('it is page code: node never loads it', 0.4, function () { return moduleRules(full).page || 'it is no longer page code'; }, test.limit.quick);
+  else if (mr.spirit) test.run('it sets the global spirit before its first require', 0.4, function () { return !moduleRules(full).early || moduleRules(full).early; }, test.limit.quick);
+  else test.run('it requires spirit.js first', 0.4, function () { return !moduleRules(full).early || moduleRules(full).early; }, test.limit.quick);
   // <address>: every require path is a child, a sibling or an ancestor's file
   test.run('none of its require paths breaks the rule', 0.4, function () {
     return listed(moduleRules(full).bad.map(function (p) { return 'require error: it requires ' + JSON.stringify(p); }));
-  }, 1000);
+  }, test.limit.quick);
   if (!kindOf(rel)) {
     test.run('it places no element (it calls no installSpiritElement): a switch, a server or a helper, not mounted', 0.4, function () {
       return !kindOf(rel) || 'it places an element after all';
-    }, 1000);
+    }, test.limit.quick);
     return;
   }
   const ownCode = fs.readFileSync(full, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1');
@@ -950,7 +950,7 @@ function oneFile(P) {
     // <address>: its searches match the whole row
     test.run('it hands no search a matched() of its own', 0.4, function () {
       return !/\bmatched\s*:/.test(ownCode) || 'it hands a search matched(), a few fields in place of the whole row';
-    }, 1000);
+    }, test.limit.quick);
   }
   // WHAT IT CHANGES, IT LISTENS FOR, IN ITS CODE (goal/G41.28; Andy: "EVERY FUCKING ELEMENT is verified to make sure when
   // it changes shit it listens to fucking update via the spirit object"): judged without a page, since a bare mount
@@ -968,7 +968,7 @@ function oneFile(P) {
     else {
       test.run('it sends writes and watches spirit.data', 0.4, function () {
         return (/\.watch\s*\(/.test(own) || /\bdata\s*:\s*(?:['"][\w.\/-]+['"]|[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)+)/.test(own)) || 'it sends writes (' + writes[0].replace(/\s+/g, ' ') + ') and its code watches nothing in spirit.data';
-      }, 1000);
+      }, test.limit.quick);
     }
   }
   // WHAT IT NEEDS, IT REQUIRES ITSELF (goal/G43.24; Andy: "every element that accesses ANY api must require them
@@ -980,25 +980,25 @@ function oneFile(P) {
     const own = ownCode;
     const handed = own.match(/\b(?:opts|options|o|op)\s*\.\s*api\b|(?<![.\w$])api\s*\.\s*(?:verb|escapeHtml)\b/g) || [];
     return !handed.length || 'it uses an api handed to it: ' + short(handed.filter(function (h, i) { return handed.indexOf(h) === i; }));
-  }, 1000);
+  }, test.limit.quick);
 
   // ON ITS PAGE: what the session drew, each rule said as the old checks were.
   test.run('the world: a scratch node with its DEBUG on, and a Chrome page', 0.2, function () {
     (P.notes || []).forEach(function (n) { test.comment(n); });
     return !P.fail || P.fail;
-  }, 1000);
+  }, test.limit.quick);
   const before = function () { return P.fail ? 'no page: the world failed' : ''; };
   // <address>: it loads by itself
   test.run('the node answers its DEBUG page for it', 0.4, function () {
     return before() || P.debugStatus === 200 || ADDRESS + ' answered ' + P.debugStatus;
-  }, 1000);
+  }, test.limit.quick);
   const noMount = function () { return before() || (P.debugStatus !== 200 ? 'no DEBUG page: the world failed' : ''); };
   test.run('it mounts by itself on a bare page: spirit.js, then this file alone', 0.4, function () {
     return noMount() || (!!P.report && P.report.state === 'mounted') || 'the page said: ' + short(P.report);
-  }, 1000);
-  test.run('nothing it runs throws', 0.4, function () { return noMount() || !P.thrown.length || 'thrown: ' + short(P.thrown); }, 1000);
-  test.run('every file it asks for is there', 0.4, function () { return noMount() || !P.missing.length || 'missing: ' + short(P.missing); }, 1000);
-  test.run('and it says no error on the console', 0.4, function () { return noMount() || !P.errors.length || 'console: ' + short(P.errors); }, 1000);
+  }, test.limit.quick);
+  test.run('nothing it runs throws', 0.4, function () { return noMount() || !P.thrown.length || 'thrown: ' + short(P.thrown); }, test.limit.quick);
+  test.run('every file it asks for is there', 0.4, function () { return noMount() || !P.missing.length || 'missing: ' + short(P.missing); }, test.limit.quick);
+  test.run('and it says no error on the console', 0.4, function () { return noMount() || !P.errors.length || 'console: ' + short(P.errors); }, test.limit.quick);
   const mounted = P.stage === 'done';
   const notDrawn = function () { return noMount() || (!mounted ? 'it did not mount: the world failed' : ''); };
   // Said when it drew a scrolling box; each box that grows named in the answer.
@@ -1015,18 +1015,18 @@ function oneFile(P) {
         if (p.tall.spilt || p.wide.spilt) why.push('the mount box overflows');
         return why.length ? k + ': ' + why.join('; ') : '';
       }).filter(Boolean));
-    }, 1000);
+    }, test.limit.quick);
   }
   // <address>: every icon it paints is the icon element
   test.run('every pictograph it draws lies inside the icon element', 0.4, function () {
     if (notDrawn()) return notDrawn();
     return (!!P.iconMark && !P.loose.length) || (P.iconMark ? P.loose.length + ' drawn outside the icon element: ' + short(P.loose.slice(0, 5)) : 'no icon element to paint through: spirit/element/icon.js made no element with a class');
-  }, 1000);
+  }, test.limit.quick);
   // <address>: its box never grows
   test.run('it never grows its box, and the page never scrolls sideways', 0.4, function () {
     if (notDrawn()) return notDrawn();
     return P.spills === false || 'its box overflows, or the page scrolls sideways';
-  }, 1000);
+  }, test.limit.quick);
   // <address>: every field it draws stops at its limit
   if (mounted && !P.fields.length) unjudged('it draws no text field');
   else {
@@ -1034,7 +1034,7 @@ function oneFile(P) {
       if (notDrawn()) return notDrawn();
       const free = P.fields.filter(function (f) { return f.kept > MOST_BYTES; });
       return !free.length || free.length + ' kept more than any rule allows: ' + short(free.map(function (f) { return f.at + ' kept ' + f.kept; }));
-    }, 1000);
+    }, test.limit.quick);
   }
   const W = (P.W) || { net: [], subs: [], writes: [], moved: [], searches: [] };
   // EVERY CALL ON THE WIRE THROUGH SPIRIT (goal/G41.27; Andy: "can it assert that no element posts or fetches by itself,
@@ -1050,7 +1050,7 @@ function oneFile(P) {
     // shell/login/login.js is no longer in the tree; the file viewer's spirit/element/fstat.js is.
     const OUTSIDE = own.some(function (c) { return /^(shell\/login\/login|spirit\/element\/fstat)\.js$/.test(String(c.file || '')); }) ? ' (outside goal/G41.28, Andy: "WSL will drop Q23 from this item, and mark those two related reds as outside it")' : '';
     return !own.length || own.length + ' made by itself: ' + short(own.map(function (c) { return c.kind + ' ' + c.url.replace(P.node.base, '') + ' from ' + (c.file || 'an unnamed script'); })) + OUTSIDE;
-  }, 1000);
+  }, test.limit.quick);
 
   // WHO ASKS FOR A CHANGE LISTENS FOR IT (goal/G41.27; Andy: "elements that change things, also subscribe to the changes
   // they cause, since andy request an element generates would imply that it must listen for confirmation of the
@@ -1072,13 +1072,13 @@ function oneFile(P) {
       const p = OWN_PROOF[rel];
       const said = require('child_process').spawnSync(process.execPath, [path.join(RUN, p.test)], { cwd: RUN, encoding: 'utf8', timeout: 120000 }).stdout || '';
       return said.split('\n').some(function (l) { return /SUCCESS/.test(l) && l.indexOf(p.check) !== -1; }) || 'its own test (' + p.test + ') did not pass: ' + p.check;
-    }, 125000);
+    }, test.limit.long);
   }
   else {
     test.run('a change written into what it watches redraws it', 0.4, function () {
       if (notDrawn()) return notDrawn();
       return seenProbe.some(function (x) { return x.redrew; }) || 'it watches ' + seenProbe.map(function (x) { return x.path; }).join(', ') + ' and redraws for none of them';
-    }, 1000);
+    }, test.limit.quick);
   }
   // <address>: what it changes, it listens for through spirit.data
   if (mounted && !W.writes.length) unjudged('its presses sent no write (its code is judged for it, above)');
@@ -1088,7 +1088,7 @@ function oneFile(P) {
       const watching = W.subs.filter(function (x) { return x.mine && x.live && x.kind === 'data.watch'; }).length;
       const raw = W.subs.filter(function (x) { return x.mine && x.live && x.kind !== 'data.watch'; }).length;
       return watching > 0 || 'it sent ' + short(W.writes) + ' and watches no spirit.data path' + (raw ? '; it listens to the raw stream ' + raw + ' times instead' : '');
-    }, 1000);
+    }, test.limit.quick);
   }
   // IT DRAWS ONLY WHAT THE STREAM SAYS (rule/19; goal/G41.27, the box: "after a press, until the stream answers, an
   // element may change only its busy spinner, its button's disabled state and its fine print; any other change it makes
@@ -1099,7 +1099,7 @@ function oneFile(P) {
     test.run('while its writes were out it changed only busy marks, disabled buttons and fine print', 0.4, function () {
       if (notDrawn()) return notDrawn();
       return !W.moved.length || W.moved.length + ' changes while a write was out: ' + short(W.moved.slice(0, 6));
-    }, 1000);
+    }, test.limit.quick);
   }
   // EVERY SEARCH FROM SPIRIT.DATA (goal/G41.28; Andy, box v15: "general test for screen objects will make sure that all
   // damn data is cached in spirit data.", and "every probabilitySearch on a page is made with a spirit.data branch (its
@@ -1116,7 +1116,7 @@ function oneFile(P) {
       if (notDrawn()) return notDrawn();
       const off = made.filter(function (x) { return !x.data || x.rows; });
       return !off.length || off.length + ' not from spirit.data: ' + short(off.map(function (x) { return (x.verb || 'a search') + (x.data ? '' : ' with no data branch') + (x.rows ? ' fed by its own rows()' : ''); })) + DEFERRED;
-    }, 1000);
+    }, test.limit.quick);
   }
   // "and draws only rows that branch holds": every row a search shows, after its tools and buttons are pressed, is a
   // row of its branch in spirit.data. A list that keeps its rows anywhere else draws what the branch does not hold.
@@ -1128,15 +1128,15 @@ function oneFile(P) {
       if (notDrawn()) return notDrawn();
       const strays = outside.filter(function (x) { return x.outside.length; });
       return !strays.length || strays.length + ' searches draw rows their branch does not hold: ' + short(strays.map(function (x) { return (x.verb || 'a search') + ' on ' + x.data + ': ' + x.outside.join(', '); }));
-    }, 1000);
+    }, test.limit.quick);
   }
   // <address>: destroy leaves its box empty
-  if (mounted && P.destroyed === 'none') test.run('it has no destroy of its own (an app is closed by the face)', 0.4, function () { return P.destroyed === 'none' || 'after destroy its box still holds what it drew'; }, 1000);
+  if (mounted && P.destroyed === 'none') test.run('it has no destroy of its own (an app is closed by the face)', 0.4, function () { return P.destroyed === 'none' || 'after destroy its box still holds what it drew'; }, test.limit.quick);
   else {
     test.run('destroyed, its box is empty', 0.4, function () {
       if (notDrawn()) return notDrawn();
       return P.destroyed === 'empty' || 'after destroy its box still holds what it drew';
-    }, 1000);
+    }, test.limit.quick);
     const mine = (P.after || []).filter(function (x) { return x.mine; });
     if (mounted && !mine.length) unjudged('it made no subscription');
     else {
@@ -1144,7 +1144,7 @@ function oneFile(P) {
         if (notDrawn()) return notDrawn();
         const held = mine.filter(function (x) { return x.live; });
         return !held.length || held.length + ' still held after destroy: ' + short(held.map(function (x) { return x.kind; }));
-      }, 1000);
+      }, test.limit.quick);
     }
   }
   test.after(async function () {
@@ -1161,6 +1161,6 @@ function oneFile(P) {
 // before its rules are said (session above), so a rule its page gives nothing to judge is never said green.
 if (!arg) every();
 else if (!full) {
-  test.run('the world: the file handed is there', 0.2, function () { return 'no shell app or element to judge: ' + JSON.stringify(arg); }, 1000);
+  test.run('the world: the file handed is there', 0.2, function () { return 'no shell app or element to judge: ' + JSON.stringify(arg); }, test.limit.quick);
 } else if (!kindOf(rel)) oneFile({ fail: '', stage: 'none' });
 else bounded(session()).then(oneFile);

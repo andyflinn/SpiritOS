@@ -30,7 +30,7 @@ try { map = mapSrc ? new Function('common', 'return ' + mapSrc + ';')(common) : 
 // where its face files come from
 test.run('its face files are read from the run root, each by its file (FACE_DIR)', 0.2, function () {
   return (!!dir && path.relative(RUN, dir) === '') || 'FACE_DIR is ' + (dir ? path.relative(RUN, dir) : 'not found in the source');
-}, 1000);
+}, test.limit.quick);
 
 // the addresses it serves
 // goal/G43.18, box v29: "The relay serves a logged-out face one plain page, the one-field form, with spirit.js and seal.js
@@ -39,19 +39,19 @@ const WANT = ['/spirit.js', '/shell/seal.js', '/shell/favicon.svg'];
 const keys = map ? Object.keys(map).sort() : [];
 test.run('its map serves exactly /spirit.js, /shell/seal.js and /shell/favicon.svg', 0.2, function () {
   return (!!map && JSON.stringify(keys) === JSON.stringify(WANT.slice().sort())) || 'its map serves ' + JSON.stringify(keys);
-}, 1000);
+}, test.limit.quick);
 test.run('no address under /face/ serves a file any more', 0.2, function () {
   const old = keys.filter(function (k) { return k.indexOf('/face/') === 0; });
   return (!!map && !old.length) || 'old addresses still served: ' + JSON.stringify(old);
-}, 1000);
+}, test.limit.quick);
 test.run('every file the map names is there', 0.2, function () {
   const missing = map && dir ? keys.filter(function (k) { return !fs.existsSync(path.join(dir, map[k])); }) : keys;
   return (!!map && !!dir && !missing.length) || 'files not there: ' + JSON.stringify(missing.map(function (k) { return k + ' -> ' + (map ? map[k] : '?'); }));
-}, 1000);
+}, test.limit.quick);
 test.run('each address is served from its file, as the node serves it (serveCommon.pageFile)', 0.2, function () {
   const named = map ? keys.every(function (k) { return map[k] === common.pageFile(k); }) : false;
   return named || 'an address and its file differ: ' + JSON.stringify(map);
-}, 1000);
+}, test.limit.quick);
 
 // goal/G41.19, Andy: "LOAD IT WITH A FUCKING SCRIPT TAG!": the relay hands face.html and spirit.js over as they are on
 // disk. Its faceSend is lifted out of the source and run on the real files.
@@ -83,19 +83,19 @@ test.run('asked with /?<token>, it serves face.html', 0.2, function () {
       function (res, sid) { asked.cookies.push(sid); }, function (res, st, file) { asked.sent.push(file); }, { name: 'harbour' }, {}, common);
   }
   return (!!route && served === true && asked.sent[0] === common.pageFile('face.html')) || (route ? 'served ' + served + ', sent ' + JSON.stringify(asked.sent) : 'the face page\'s route was not found in the source');
-}, 1000);
+}, test.limit.quick);
 // A token in an address that logs in is a login by a link: 0.8.
 test.run('and logs nobody in: no faceLogin asked, no login cookie set', 0.8, function () {
   return (!!route && asked.logins.length === 0 && asked.cookies.length === 0) || 'faceLogin asked ' + JSON.stringify(asked.logins) + ', cookies ' + JSON.stringify(asked.cookies);
-}, 1000);
+}, test.limit.quick);
 test.run('the relay serves face.html byte for byte as it is on disk', 0.2, async function () {
   const got = await sent(common.pageFile('face.html'));
   return (!!got && got.equals(fs.readFileSync(path.join(RUN, 'spirit', 'shell', 'face.html')))) || 'the relay serves face.html changed, or its faceSend was not found';
-}, 1000);
+}, test.limit.quick);
 test.run('the relay serves /spirit.js, from spirit/spirit.js, byte for byte', 0.2, async function () {
   const got = await sent(map && map['/spirit.js'] || common.pageFile('spirit.js'));
   return (!!got && got.equals(fs.readFileSync(path.join(RUN, 'spirit', 'spirit.js')))) || 'the relay does not serve spirit/spirit.js as it is';
-}, 1000);
+}, test.limit.quick);
 
 // A PAGE ON ANOTHER MEMBER'S FACE CANNOT DRIVE A LOGGED-IN OWNER'S NODE (goal/G41.30, the review, RC2: "a page on any
 // member's face can make a logged-in owner's face run verbs on his node, because all faces are same-site and /face/call
@@ -136,37 +136,37 @@ async function faceRefused(name, o) {
 test.run('a scratch relay with two faces, present and logged in', 0.2, async function () {
   FP.R = await scratchFaceRelay();
   return (FP.R.up && !!FP.R.members.harbour && !!FP.R.members.quay) || 'the scratch relay with faces did not come up: nothing judged';
-}, 3000);
+}, test.limit.slow);
 test.run('/face/call refused, a 4xx and no face event: an Origin of another face', 0.8, function () {
   if (!FP.R || !FP.R.up) return NO_FACES;
   return faceRefused('an Origin of another face', { origin: 'https://' + FP.R.members.quay.host, type: JSONT });
-}, 2000);
-test.run('/face/call refused, a 4xx and no face event: no Origin', 0.8, function () { return faceRefused('no Origin', { type: JSONT }); }, 2000);
+}, test.limit.quick);
+test.run('/face/call refused, a 4xx and no face event: no Origin', 0.8, function () { return faceRefused('no Origin', { type: JSONT }); }, test.limit.quick);
 test.run('/face/call refused, a 4xx and no face event: text/plain, a form a page sends with no preflight', 0.8, function () {
   if (!FP.R || !FP.R.up) return NO_FACES;
   return faceRefused('text/plain, a form a page sends with no preflight', { origin: own(), type: 'text/plain' });
-}, 2000);
+}, test.limit.quick);
 test.run('/face/call refused, a 4xx and no face event: another member\'s session at this face\'s host', 0.8, function () {
   if (!FP.R || !FP.R.up) return NO_FACES;
   return faceRefused('another member\'s session at this face\'s host', { origin: own(), type: JSONT, sid: FP.R.members.quay.sid });
-}, 2000);
+}, test.limit.quick);
 test.run('the face\'s own page, its Origin and json, still reaches its node', 0.2, async function () {
   if (!FP.R || !FP.R.up) return NO_FACES;
   const from = FP.R.lines.length;
   await facePost('/face/call', { origin: own(), type: JSONT, body: '{"call":"node.card","args":{}}' });
   const ev = faceEvents(from);
   return (ev.length === 1 && ev[0].stream === 'harbour') || 'its own page: ' + ev.length + ' face event(s), to ' + short(ev.map(function (l) { return l.stream; }));
-}, 4000);
+}, test.limit.slow);
 test.run('/face/api refused, a 4xx: an Origin of another face', 0.8, async function () {
   if (!FP.R || !FP.R.up) return NO_FACES;
   const api = await facePost('/face/api', { origin: 'https://' + FP.R.members.quay.host, type: JSONT, body: '{"verb":"state"}' });
   return (api.status >= 400 && api.status < 500) || '/face/api with an Origin of another face answered ' + api.status;
-}, 2000);
+}, test.limit.quick);
 test.run('the face\'s own page still reaches /face/api', 0.2, async function () {
   if (!FP.R || !FP.R.up) return NO_FACES;
   const apiOwn = await facePost('/face/api', { origin: own(), type: JSONT, body: '{"verb":"state"}' });
   return apiOwn.status === 200 || '/face/api from its own page answered ' + apiOwn.status;
-}, 2000);
+}, test.limit.quick);
 
 // ── THE GARBAGE PART ──
 // THE ATTACKER AT THE RELAY'S DOOR (goal/G41.30; spec: ./relayServer.md, its section). The box: "all servers (node
@@ -306,7 +306,7 @@ test.run('the world: a scratch relay comes up and hands its garbage list', 0.2, 
   test.comment('it will make ' + G.ASKS.length + ' signed asks of bad arguments over ' + Object.keys(verbs).length + ' relay verbs (' + Object.keys(verbs).join(', ') + '), ' +
     list.length + ' as the owner and ' + list.length + ' as a stranger, each batch of ' + BATCH + ' followed by a plain request; and ' + RAWS.length + ' raw requests');
   return true;
-}, 3000);
+}, test.limit.slow);
 
 // THE VERBS, BATCH BY BATCH.
 // /api/relay/post: every relay verb takes bad arguments without crashing or hanging
@@ -334,12 +334,12 @@ test.run('/api/relay/post: the relay verbs took all their garbage without crashi
   const bad = Object.keys(G.verbs).filter(function (v) { return broken[v]; }).map(function (v) { return '/api/relay/post ' + v + ': ' + broken[v].length + ' crashed or hung, first: ' + broken[v][0]; });
   if (G.killer) bad.push('/api/relay/post: THE RELAY DIED (exit ' + relay.child.exitCode + ') at ' + G.killer);
   return !bad.length || bad.join('; ');
-}, 6000);
+}, test.limit.slow);
 test.run('/api/relay/post: after every batch the relay answered a plain request in time', 0.2, function () {
   if (!G.thrown) return 'no garbage thrown: the world failed';
   if (G.killer) return '/api/relay/post: THE RELAY DIED (exit ' + G.relay.child.exitCode + ') at ' + G.killer;
   return !G.hungAfter.length || '/api/relay/post: after ' + G.hungAfter.length + ' batches the relay did not answer a plain request within ' + (PLAIN_MS / 1000) + ' s';
-}, 1000);
+}, test.limit.quick);
 
 // THE RAW REQUESTS, ONE BY ONE.
 // the relay's door: raw requests and malformed paths
@@ -360,191 +360,191 @@ async function door(ri) {
   if (relay.child.exitCode !== null && !G.killer) { G.killer = r0.why; why = 'IT KILLED THE RELAY (exit ' + relay.child.exitCode + ')'; }
   return !why || 'the relay\'s door, ' + r0.why + ': ' + why;
 }
-test.run('POST /api/relay/post, not JSON: answered, and the relay still answers', 0.2, function () { return door(0); }, 17000);
-test.run('POST /api/relay/post, JSON that is not an object: answered, and the relay still answers', 0.2, function () { return door(1); }, 17000);
-test.run('POST /api/relay/post, a bare JSON string: answered, and the relay still answers', 0.2, function () { return door(2); }, 17000);
-test.run('POST /api/relay/post, JSON null: answered, and the relay still answers', 0.2, function () { return door(3); }, 17000);
-test.run('POST /api/relay/post, deep nesting, 5000 levels: answered, and the relay still answers', 0.2, function () { return door(4); }, 17000);
-test.run('POST /api/relay/post, a __proto__ key: answered, and the relay still answers', 0.2, function () { return door(5); }, 17000);
-test.run('POST /api/relay/post, a constructor key: answered, and the relay still answers', 0.2, function () { return door(6); }, 17000);
-test.run('POST /api/relay/post, invalid UTF-8 bytes: answered, and the relay still answers', 0.2, function () { return door(7); }, 17000);
-test.run('POST /api/relay/post, from as a number: answered, and the relay still answers', 0.2, function () { return door(8); }, 17000);
-test.run('POST /api/relay/post, sig missing: answered, and the relay still answers', 0.2, function () { return door(9); }, 17000);
-test.run('POST /api/relay/post, a forged sig: answered, and the relay still answers', 0.2, function () { return door(10); }, 17000);
-test.run('POST /api/relay/post, text not JSON, signed: answered, and the relay still answers', 0.2, function () { return door(11); }, 17000);
-test.run('POST /api/relay/post, text a JSON array, signed: answered, and the relay still answers', 0.2, function () { return door(12); }, 17000);
-test.run('POST /api/relay/post, text a huge string, signed: answered, and the relay still answers', 0.2, function () { return door(13); }, 17000);
-test.run('POST /api/relay/post, text with a NUL, signed: answered, and the relay still answers', 0.2, function () { return door(14); }, 17000);
-test.run('POST /api/relay/post, no Content-Type: answered, and the relay still answers', 0.2, function () { return door(15); }, 17000);
-test.run('POST /api/relay/post, Content-Type text/plain: answered, and the relay still answers', 0.2, function () { return door(16); }, 17000);
-test.run('POST /api/relay/post, a body cut off half-way: answered, and the relay still answers', 0.2, function () { return door(17); }, 31000);
-test.run('POST /api/relay/post, one byte past BODY_MAX: answered, and the relay still answers', 0.2, function () { return door(18); }, 17000);
-test.run('POST /api/relay/post, a Content-Length far past what is sent: answered, and the relay still answers', 0.2, function () { return door(19); }, 31000);
-test.run('POST /api/relay/reply, not JSON: answered, and the relay still answers', 0.2, function () { return door(20); }, 17000);
-test.run('POST /api/relay/reply, JSON that is not an object: answered, and the relay still answers', 0.2, function () { return door(21); }, 17000);
-test.run('POST /api/relay/reply, a bare JSON string: answered, and the relay still answers', 0.2, function () { return door(22); }, 17000);
-test.run('POST /api/relay/reply, JSON null: answered, and the relay still answers', 0.2, function () { return door(23); }, 17000);
-test.run('POST /api/relay/reply, deep nesting, 5000 levels: answered, and the relay still answers', 0.2, function () { return door(24); }, 17000);
-test.run('POST /api/relay/reply, a __proto__ key: answered, and the relay still answers', 0.2, function () { return door(25); }, 17000);
-test.run('POST /api/relay/reply, a constructor key: answered, and the relay still answers', 0.2, function () { return door(26); }, 17000);
-test.run('POST /api/relay/reply, invalid UTF-8 bytes: answered, and the relay still answers', 0.2, function () { return door(27); }, 17000);
-test.run('POST /api/relay/reply, from as a number: answered, and the relay still answers', 0.2, function () { return door(28); }, 17000);
-test.run('POST /api/relay/reply, sig missing: answered, and the relay still answers', 0.2, function () { return door(29); }, 17000);
-test.run('POST /api/relay/reply, a forged sig: answered, and the relay still answers', 0.2, function () { return door(30); }, 17000);
-test.run('POST /api/relay/reply, text not JSON, signed: answered, and the relay still answers', 0.2, function () { return door(31); }, 17000);
-test.run('POST /api/relay/reply, text a JSON array, signed: answered, and the relay still answers', 0.2, function () { return door(32); }, 17000);
-test.run('POST /api/relay/reply, text a huge string, signed: answered, and the relay still answers', 0.2, function () { return door(33); }, 17000);
-test.run('POST /api/relay/reply, text with a NUL, signed: answered, and the relay still answers', 0.2, function () { return door(34); }, 17000);
-test.run('POST /api/relay/reply, no Content-Type: answered, and the relay still answers', 0.2, function () { return door(35); }, 17000);
-test.run('POST /api/relay/reply, Content-Type text/plain: answered, and the relay still answers', 0.2, function () { return door(36); }, 17000);
-test.run('POST /api/relay/reply, a body cut off half-way: answered, and the relay still answers', 0.2, function () { return door(37); }, 31000);
-test.run('POST /api/relay/reply, one byte past BODY_MAX: answered, and the relay still answers', 0.2, function () { return door(38); }, 17000);
-test.run('POST /api/relay/reply, a Content-Length far past what is sent: answered, and the relay still answers', 0.2, function () { return door(39); }, 31000);
-test.run('POST /api/relay/face/answer, not JSON: answered, and the relay still answers', 0.2, function () { return door(40); }, 17000);
-test.run('POST /api/relay/face/answer, JSON that is not an object: answered, and the relay still answers', 0.2, function () { return door(41); }, 17000);
-test.run('POST /api/relay/face/answer, a bare JSON string: answered, and the relay still answers', 0.2, function () { return door(42); }, 17000);
-test.run('POST /api/relay/face/answer, JSON null: answered, and the relay still answers', 0.2, function () { return door(43); }, 17000);
-test.run('POST /api/relay/face/answer, deep nesting, 5000 levels: answered, and the relay still answers', 0.2, function () { return door(44); }, 17000);
-test.run('POST /api/relay/face/answer, a __proto__ key: answered, and the relay still answers', 0.2, function () { return door(45); }, 17000);
-test.run('POST /api/relay/face/answer, a constructor key: answered, and the relay still answers', 0.2, function () { return door(46); }, 17000);
-test.run('POST /api/relay/face/answer, invalid UTF-8 bytes: answered, and the relay still answers', 0.2, function () { return door(47); }, 17000);
-test.run('POST /api/relay/face/answer, from as a number: answered, and the relay still answers', 0.2, function () { return door(48); }, 17000);
-test.run('POST /api/relay/face/answer, sig missing: answered, and the relay still answers', 0.2, function () { return door(49); }, 17000);
-test.run('POST /api/relay/face/answer, a forged sig: answered, and the relay still answers', 0.2, function () { return door(50); }, 17000);
-test.run('POST /api/relay/face/answer, text not JSON, signed: answered, and the relay still answers', 0.2, function () { return door(51); }, 17000);
-test.run('POST /api/relay/face/answer, text a JSON array, signed: answered, and the relay still answers', 0.2, function () { return door(52); }, 17000);
-test.run('POST /api/relay/face/answer, text a huge string, signed: answered, and the relay still answers', 0.2, function () { return door(53); }, 17000);
-test.run('POST /api/relay/face/answer, text with a NUL, signed: answered, and the relay still answers', 0.2, function () { return door(54); }, 17000);
-test.run('POST /api/relay/face/answer, no Content-Type: answered, and the relay still answers', 0.2, function () { return door(55); }, 17000);
-test.run('POST /api/relay/face/answer, Content-Type text/plain: answered, and the relay still answers', 0.2, function () { return door(56); }, 17000);
-test.run('POST /api/relay/face/answer, a body cut off half-way: answered, and the relay still answers', 0.2, function () { return door(57); }, 31000);
-test.run('POST /api/relay/face/answer, one byte past BODY_MAX: answered, and the relay still answers', 0.2, function () { return door(58); }, 17000);
-test.run('POST /api/relay/face/answer, a Content-Length far past what is sent: answered, and the relay still answers', 0.2, function () { return door(59); }, 31000);
-test.run('POST /api/relay/face/stream, not JSON: answered, and the relay still answers', 0.2, function () { return door(60); }, 17000);
-test.run('POST /api/relay/face/stream, JSON that is not an object: answered, and the relay still answers', 0.2, function () { return door(61); }, 17000);
-test.run('POST /api/relay/face/stream, a bare JSON string: answered, and the relay still answers', 0.2, function () { return door(62); }, 17000);
-test.run('POST /api/relay/face/stream, JSON null: answered, and the relay still answers', 0.2, function () { return door(63); }, 17000);
-test.run('POST /api/relay/face/stream, deep nesting, 5000 levels: answered, and the relay still answers', 0.2, function () { return door(64); }, 17000);
-test.run('POST /api/relay/face/stream, a __proto__ key: answered, and the relay still answers', 0.2, function () { return door(65); }, 17000);
-test.run('POST /api/relay/face/stream, a constructor key: answered, and the relay still answers', 0.2, function () { return door(66); }, 17000);
-test.run('POST /api/relay/face/stream, invalid UTF-8 bytes: answered, and the relay still answers', 0.2, function () { return door(67); }, 17000);
-test.run('POST /api/relay/face/stream, from as a number: answered, and the relay still answers', 0.2, function () { return door(68); }, 17000);
-test.run('POST /api/relay/face/stream, sig missing: answered, and the relay still answers', 0.2, function () { return door(69); }, 17000);
-test.run('POST /api/relay/face/stream, a forged sig: answered, and the relay still answers', 0.2, function () { return door(70); }, 17000);
-test.run('POST /api/relay/face/stream, text not JSON, signed: answered, and the relay still answers', 0.2, function () { return door(71); }, 17000);
-test.run('POST /api/relay/face/stream, text a JSON array, signed: answered, and the relay still answers', 0.2, function () { return door(72); }, 17000);
-test.run('POST /api/relay/face/stream, text a huge string, signed: answered, and the relay still answers', 0.2, function () { return door(73); }, 17000);
-test.run('POST /api/relay/face/stream, text with a NUL, signed: answered, and the relay still answers', 0.2, function () { return door(74); }, 17000);
-test.run('POST /api/relay/face/stream, no Content-Type: answered, and the relay still answers', 0.2, function () { return door(75); }, 17000);
-test.run('POST /api/relay/face/stream, Content-Type text/plain: answered, and the relay still answers', 0.2, function () { return door(76); }, 17000);
-test.run('POST /api/relay/face/stream, a body cut off half-way: answered, and the relay still answers', 0.2, function () { return door(77); }, 31000);
-test.run('POST /api/relay/face/stream, one byte past BODY_MAX: answered, and the relay still answers', 0.2, function () { return door(78); }, 17000);
-test.run('POST /api/relay/face/stream, a Content-Length far past what is sent: answered, and the relay still answers', 0.2, function () { return door(79); }, 31000);
-test.run('POST /face/api (face host), not JSON: answered, and the relay still answers', 0.2, function () { return door(80); }, 17000);
-test.run('POST /face/api (face host), JSON that is not an object: answered, and the relay still answers', 0.2, function () { return door(81); }, 17000);
-test.run('POST /face/api (face host), a bare JSON string: answered, and the relay still answers', 0.2, function () { return door(82); }, 17000);
-test.run('POST /face/api (face host), JSON null: answered, and the relay still answers', 0.2, function () { return door(83); }, 17000);
-test.run('POST /face/api (face host), deep nesting, 5000 levels: answered, and the relay still answers', 0.2, function () { return door(84); }, 17000);
-test.run('POST /face/api (face host), a __proto__ key: answered, and the relay still answers', 0.2, function () { return door(85); }, 17000);
-test.run('POST /face/api (face host), a constructor key: answered, and the relay still answers', 0.2, function () { return door(86); }, 17000);
-test.run('POST /face/api (face host), invalid UTF-8 bytes: answered, and the relay still answers', 0.2, function () { return door(87); }, 17000);
-test.run('POST /face/call (face host), not JSON: answered, and the relay still answers', 0.2, function () { return door(88); }, 17000);
-test.run('POST /face/call (face host), JSON that is not an object: answered, and the relay still answers', 0.2, function () { return door(89); }, 17000);
-test.run('POST /face/call (face host), a bare JSON string: answered, and the relay still answers', 0.2, function () { return door(90); }, 17000);
-test.run('POST /face/call (face host), JSON null: answered, and the relay still answers', 0.2, function () { return door(91); }, 17000);
-test.run('POST /face/call (face host), deep nesting, 5000 levels: answered, and the relay still answers', 0.2, function () { return door(92); }, 17000);
-test.run('POST /face/call (face host), a __proto__ key: answered, and the relay still answers', 0.2, function () { return door(93); }, 17000);
-test.run('POST /face/call (face host), a constructor key: answered, and the relay still answers', 0.2, function () { return door(94); }, 17000);
-test.run('POST /face/call (face host), invalid UTF-8 bytes: answered, and the relay still answers', 0.2, function () { return door(95); }, 17000);
-test.run('GET /face/allowed?domain=%00 (face host): answered, and the relay still answers', 0.2, function () { return door(96); }, 17000);
-test.run('GET /face/allowed?domain=<9000 a\'s> (face host): answered, and the relay still answers', 0.2, function () { return door(97); }, 17000);
-test.run('GET /face/file?path=..%2f..%2frelay-state (face host): answered, and the relay still answers', 0.2, function () { return door(98); }, 17000);
-test.run('GET /face/stream (face host): answered, and the relay still answers', 0.2, function () { return door(99); }, 17000);
-test.run('GET /api/relay/stream: answered, and the relay still answers', 0.2, function () { return door(100); }, 17000);
-test.run('GET /api/relay/stream?sig=garbage&key=%00: answered, and the relay still answers', 0.2, function () { return door(101); }, 17000);
-test.run('GET /api/relay/stream?sig=<9000 a\'s>: answered, and the relay still answers', 0.2, function () { return door(102); }, 17000);
-test.run('GET /api/relay/stream?key=__proto__: answered, and the relay still answers', 0.2, function () { return door(103); }, 17000);
-test.run('a request line that is not HTTP: answered, and the relay still answers', 0.2, function () { return door(104); }, 17000);
-test.run('a header line with no colon: answered, and the relay still answers', 0.2, function () { return door(105); }, 17000);
-test.run('GET /..: answered, and the relay still answers', 0.2, function () { return door(106); }, 17000);
-test.run('POST /..: answered, and the relay still answers', 0.2, function () { return door(107); }, 17000);
-test.run('GET /../../../../etc/passwd: answered, and the relay still answers', 0.2, function () { return door(108); }, 17000);
-test.run('POST /../../../../etc/passwd: answered, and the relay still answers', 0.2, function () { return door(109); }, 17000);
-test.run('GET /%2e%2e/%2e%2e/etc/passwd: answered, and the relay still answers', 0.2, function () { return door(110); }, 17000);
-test.run('POST /%2e%2e/%2e%2e/etc/passwd: answered, and the relay still answers', 0.2, function () { return door(111); }, 17000);
-test.run('GET /shell/%2f%2f..%2f..%2fetc: answered, and the relay still answers', 0.2, function () { return door(112); }, 17000);
-test.run('POST /shell/%2f%2f..%2f..%2fetc: answered, and the relay still answers', 0.2, function () { return door(113); }, 17000);
-test.run('GET /<9000 a\'s>: answered, and the relay still answers', 0.2, function () { return door(114); }, 17000);
-test.run('POST /<9000 a\'s>: answered, and the relay still answers', 0.2, function () { return door(115); }, 17000);
-test.run('GET /%: answered, and the relay still answers', 0.2, function () { return door(116); }, 17000);
-test.run('POST /%: answered, and the relay still answers', 0.2, function () { return door(117); }, 17000);
-test.run('GET /%zz: answered, and the relay still answers', 0.2, function () { return door(118); }, 17000);
-test.run('POST /%zz: answered, and the relay still answers', 0.2, function () { return door(119); }, 17000);
-test.run('GET /%E0%A4%A: answered, and the relay still answers', 0.2, function () { return door(120); }, 17000);
-test.run('POST /%E0%A4%A: answered, and the relay still answers', 0.2, function () { return door(121); }, 17000);
-test.run('GET /api/%2e%2e/relay/post: answered, and the relay still answers', 0.2, function () { return door(122); }, 17000);
-test.run('POST /api/%2e%2e/relay/post: answered, and the relay still answers', 0.2, function () { return door(123); }, 17000);
-test.run('GET //api//relay//post: answered, and the relay still answers', 0.2, function () { return door(124); }, 17000);
-test.run('POST //api//relay//post: answered, and the relay still answers', 0.2, function () { return door(125); }, 17000);
-test.run('GET /DEBUG/../../spirit/state/identity.json: answered, and the relay still answers', 0.2, function () { return door(126); }, 17000);
-test.run('POST /DEBUG/../../spirit/state/identity.json: answered, and the relay still answers', 0.2, function () { return door(127); }, 17000);
-test.run('GET /shell/../../spirit/state/relay.db: answered, and the relay still answers', 0.2, function () { return door(128); }, 17000);
-test.run('POST /shell/../../spirit/state/relay.db: answered, and the relay still answers', 0.2, function () { return door(129); }, 17000);
-test.run('GET /\\..\\..\\relay-state: answered, and the relay still answers', 0.2, function () { return door(130); }, 17000);
-test.run('POST /\\..\\..\\relay-state: answered, and the relay still answers', 0.2, function () { return door(131); }, 17000);
-test.run('GET /?%: answered, and the relay still answers', 0.2, function () { return door(132); }, 17000);
-test.run('POST /?%: answered, and the relay still answers', 0.2, function () { return door(133); }, 17000);
-test.run('GET *: answered, and the relay still answers', 0.2, function () { return door(134); }, 17000);
-test.run('POST *: answered, and the relay still answers', 0.2, function () { return door(135); }, 17000);
-test.run('GET /%00: answered, and the relay still answers', 0.2, function () { return door(136); }, 17000);
-test.run('POST /%00: answered, and the relay still answers', 0.2, function () { return door(137); }, 17000);
-test.run('GET /face.html%00.js: answered, and the relay still answers', 0.2, function () { return door(138); }, 17000);
-test.run('POST /face.html%00.js: answered, and the relay still answers', 0.2, function () { return door(139); }, 17000);
-test.run('GET /shell/boot.js%00: answered, and the relay still answers', 0.2, function () { return door(140); }, 17000);
-test.run('POST /shell/boot.js%00: answered, and the relay still answers', 0.2, function () { return door(141); }, 17000);
-test.run('GET /.. (face host): answered, and the relay still answers', 0.2, function () { return door(142); }, 17000);
-test.run('POST /.. (face host): answered, and the relay still answers', 0.2, function () { return door(143); }, 17000);
-test.run('GET /../../../../etc/passwd (face host): answered, and the relay still answers', 0.2, function () { return door(144); }, 17000);
-test.run('POST /../../../../etc/passwd (face host): answered, and the relay still answers', 0.2, function () { return door(145); }, 17000);
-test.run('GET /%2e%2e/%2e%2e/etc/passwd (face host): answered, and the relay still answers', 0.2, function () { return door(146); }, 17000);
-test.run('POST /%2e%2e/%2e%2e/etc/passwd (face host): answered, and the relay still answers', 0.2, function () { return door(147); }, 17000);
-test.run('GET /shell/%2f%2f..%2f..%2fetc (face host): answered, and the relay still answers', 0.2, function () { return door(148); }, 17000);
-test.run('POST /shell/%2f%2f..%2f..%2fetc (face host): answered, and the relay still answers', 0.2, function () { return door(149); }, 17000);
-test.run('GET /<9000 a\'s> (face host): answered, and the relay still answers', 0.2, function () { return door(150); }, 17000);
-test.run('POST /<9000 a\'s> (face host): answered, and the relay still answers', 0.2, function () { return door(151); }, 17000);
-test.run('GET /% (face host): answered, and the relay still answers', 0.2, function () { return door(152); }, 17000);
-test.run('POST /% (face host): answered, and the relay still answers', 0.2, function () { return door(153); }, 17000);
-test.run('GET /%zz (face host): answered, and the relay still answers', 0.2, function () { return door(154); }, 17000);
-test.run('POST /%zz (face host): answered, and the relay still answers', 0.2, function () { return door(155); }, 17000);
-test.run('GET /%E0%A4%A (face host): answered, and the relay still answers', 0.2, function () { return door(156); }, 17000);
-test.run('POST /%E0%A4%A (face host): answered, and the relay still answers', 0.2, function () { return door(157); }, 17000);
-test.run('GET /api/%2e%2e/relay/post (face host): answered, and the relay still answers', 0.2, function () { return door(158); }, 17000);
-test.run('POST /api/%2e%2e/relay/post (face host): answered, and the relay still answers', 0.2, function () { return door(159); }, 17000);
-test.run('GET //api//relay//post (face host): answered, and the relay still answers', 0.2, function () { return door(160); }, 17000);
-test.run('POST //api//relay//post (face host): answered, and the relay still answers', 0.2, function () { return door(161); }, 17000);
-test.run('GET /DEBUG/../../spirit/state/identity.json (face host): answered, and the relay still answers', 0.2, function () { return door(162); }, 17000);
-test.run('POST /DEBUG/../../spirit/state/identity.json (face host): answered, and the relay still answers', 0.2, function () { return door(163); }, 17000);
-test.run('GET /shell/../../spirit/state/relay.db (face host): answered, and the relay still answers', 0.2, function () { return door(164); }, 17000);
-test.run('POST /shell/../../spirit/state/relay.db (face host): answered, and the relay still answers', 0.2, function () { return door(165); }, 17000);
-test.run('GET /\\..\\..\\relay-state (face host): answered, and the relay still answers', 0.2, function () { return door(166); }, 17000);
-test.run('POST /\\..\\..\\relay-state (face host): answered, and the relay still answers', 0.2, function () { return door(167); }, 17000);
-test.run('GET /?% (face host): answered, and the relay still answers', 0.2, function () { return door(168); }, 17000);
-test.run('POST /?% (face host): answered, and the relay still answers', 0.2, function () { return door(169); }, 17000);
-test.run('GET * (face host): answered, and the relay still answers', 0.2, function () { return door(170); }, 17000);
-test.run('POST * (face host): answered, and the relay still answers', 0.2, function () { return door(171); }, 17000);
-test.run('GET /%00 (face host): answered, and the relay still answers', 0.2, function () { return door(172); }, 17000);
-test.run('POST /%00 (face host): answered, and the relay still answers', 0.2, function () { return door(173); }, 17000);
-test.run('GET /face.html%00.js (face host): answered, and the relay still answers', 0.2, function () { return door(174); }, 17000);
-test.run('POST /face.html%00.js (face host): answered, and the relay still answers', 0.2, function () { return door(175); }, 17000);
-test.run('GET /shell/boot.js%00 (face host): answered, and the relay still answers', 0.2, function () { return door(176); }, 17000);
-test.run('POST /shell/boot.js%00 (face host): answered, and the relay still answers', 0.2, function () { return door(177); }, 17000);
+test.run('POST /api/relay/post, not JSON: answered, and the relay still answers', 0.2, function () { return door(0); }, test.limit.slow);
+test.run('POST /api/relay/post, JSON that is not an object: answered, and the relay still answers', 0.2, function () { return door(1); }, test.limit.slow);
+test.run('POST /api/relay/post, a bare JSON string: answered, and the relay still answers', 0.2, function () { return door(2); }, test.limit.slow);
+test.run('POST /api/relay/post, JSON null: answered, and the relay still answers', 0.2, function () { return door(3); }, test.limit.slow);
+test.run('POST /api/relay/post, deep nesting, 5000 levels: answered, and the relay still answers', 0.2, function () { return door(4); }, test.limit.slow);
+test.run('POST /api/relay/post, a __proto__ key: answered, and the relay still answers', 0.2, function () { return door(5); }, test.limit.slow);
+test.run('POST /api/relay/post, a constructor key: answered, and the relay still answers', 0.2, function () { return door(6); }, test.limit.slow);
+test.run('POST /api/relay/post, invalid UTF-8 bytes: answered, and the relay still answers', 0.2, function () { return door(7); }, test.limit.slow);
+test.run('POST /api/relay/post, from as a number: answered, and the relay still answers', 0.2, function () { return door(8); }, test.limit.slow);
+test.run('POST /api/relay/post, sig missing: answered, and the relay still answers', 0.2, function () { return door(9); }, test.limit.slow);
+test.run('POST /api/relay/post, a forged sig: answered, and the relay still answers', 0.2, function () { return door(10); }, test.limit.slow);
+test.run('POST /api/relay/post, text not JSON, signed: answered, and the relay still answers', 0.2, function () { return door(11); }, test.limit.slow);
+test.run('POST /api/relay/post, text a JSON array, signed: answered, and the relay still answers', 0.2, function () { return door(12); }, test.limit.slow);
+test.run('POST /api/relay/post, text a huge string, signed: answered, and the relay still answers', 0.2, function () { return door(13); }, test.limit.slow);
+test.run('POST /api/relay/post, text with a NUL, signed: answered, and the relay still answers', 0.2, function () { return door(14); }, test.limit.slow);
+test.run('POST /api/relay/post, no Content-Type: answered, and the relay still answers', 0.2, function () { return door(15); }, test.limit.slow);
+test.run('POST /api/relay/post, Content-Type text/plain: answered, and the relay still answers', 0.2, function () { return door(16); }, test.limit.slow);
+test.run('POST /api/relay/post, a body cut off half-way: answered, and the relay still answers', 0.2, function () { return door(17); }, test.limit.long);
+test.run('POST /api/relay/post, one byte past BODY_MAX: answered, and the relay still answers', 0.2, function () { return door(18); }, test.limit.slow);
+test.run('POST /api/relay/post, a Content-Length far past what is sent: answered, and the relay still answers', 0.2, function () { return door(19); }, test.limit.long);
+test.run('POST /api/relay/reply, not JSON: answered, and the relay still answers', 0.2, function () { return door(20); }, test.limit.slow);
+test.run('POST /api/relay/reply, JSON that is not an object: answered, and the relay still answers', 0.2, function () { return door(21); }, test.limit.slow);
+test.run('POST /api/relay/reply, a bare JSON string: answered, and the relay still answers', 0.2, function () { return door(22); }, test.limit.slow);
+test.run('POST /api/relay/reply, JSON null: answered, and the relay still answers', 0.2, function () { return door(23); }, test.limit.slow);
+test.run('POST /api/relay/reply, deep nesting, 5000 levels: answered, and the relay still answers', 0.2, function () { return door(24); }, test.limit.slow);
+test.run('POST /api/relay/reply, a __proto__ key: answered, and the relay still answers', 0.2, function () { return door(25); }, test.limit.slow);
+test.run('POST /api/relay/reply, a constructor key: answered, and the relay still answers', 0.2, function () { return door(26); }, test.limit.slow);
+test.run('POST /api/relay/reply, invalid UTF-8 bytes: answered, and the relay still answers', 0.2, function () { return door(27); }, test.limit.slow);
+test.run('POST /api/relay/reply, from as a number: answered, and the relay still answers', 0.2, function () { return door(28); }, test.limit.slow);
+test.run('POST /api/relay/reply, sig missing: answered, and the relay still answers', 0.2, function () { return door(29); }, test.limit.slow);
+test.run('POST /api/relay/reply, a forged sig: answered, and the relay still answers', 0.2, function () { return door(30); }, test.limit.slow);
+test.run('POST /api/relay/reply, text not JSON, signed: answered, and the relay still answers', 0.2, function () { return door(31); }, test.limit.slow);
+test.run('POST /api/relay/reply, text a JSON array, signed: answered, and the relay still answers', 0.2, function () { return door(32); }, test.limit.slow);
+test.run('POST /api/relay/reply, text a huge string, signed: answered, and the relay still answers', 0.2, function () { return door(33); }, test.limit.slow);
+test.run('POST /api/relay/reply, text with a NUL, signed: answered, and the relay still answers', 0.2, function () { return door(34); }, test.limit.slow);
+test.run('POST /api/relay/reply, no Content-Type: answered, and the relay still answers', 0.2, function () { return door(35); }, test.limit.slow);
+test.run('POST /api/relay/reply, Content-Type text/plain: answered, and the relay still answers', 0.2, function () { return door(36); }, test.limit.slow);
+test.run('POST /api/relay/reply, a body cut off half-way: answered, and the relay still answers', 0.2, function () { return door(37); }, test.limit.long);
+test.run('POST /api/relay/reply, one byte past BODY_MAX: answered, and the relay still answers', 0.2, function () { return door(38); }, test.limit.slow);
+test.run('POST /api/relay/reply, a Content-Length far past what is sent: answered, and the relay still answers', 0.2, function () { return door(39); }, test.limit.long);
+test.run('POST /api/relay/face/answer, not JSON: answered, and the relay still answers', 0.2, function () { return door(40); }, test.limit.slow);
+test.run('POST /api/relay/face/answer, JSON that is not an object: answered, and the relay still answers', 0.2, function () { return door(41); }, test.limit.slow);
+test.run('POST /api/relay/face/answer, a bare JSON string: answered, and the relay still answers', 0.2, function () { return door(42); }, test.limit.slow);
+test.run('POST /api/relay/face/answer, JSON null: answered, and the relay still answers', 0.2, function () { return door(43); }, test.limit.slow);
+test.run('POST /api/relay/face/answer, deep nesting, 5000 levels: answered, and the relay still answers', 0.2, function () { return door(44); }, test.limit.slow);
+test.run('POST /api/relay/face/answer, a __proto__ key: answered, and the relay still answers', 0.2, function () { return door(45); }, test.limit.slow);
+test.run('POST /api/relay/face/answer, a constructor key: answered, and the relay still answers', 0.2, function () { return door(46); }, test.limit.slow);
+test.run('POST /api/relay/face/answer, invalid UTF-8 bytes: answered, and the relay still answers', 0.2, function () { return door(47); }, test.limit.slow);
+test.run('POST /api/relay/face/answer, from as a number: answered, and the relay still answers', 0.2, function () { return door(48); }, test.limit.slow);
+test.run('POST /api/relay/face/answer, sig missing: answered, and the relay still answers', 0.2, function () { return door(49); }, test.limit.slow);
+test.run('POST /api/relay/face/answer, a forged sig: answered, and the relay still answers', 0.2, function () { return door(50); }, test.limit.slow);
+test.run('POST /api/relay/face/answer, text not JSON, signed: answered, and the relay still answers', 0.2, function () { return door(51); }, test.limit.slow);
+test.run('POST /api/relay/face/answer, text a JSON array, signed: answered, and the relay still answers', 0.2, function () { return door(52); }, test.limit.slow);
+test.run('POST /api/relay/face/answer, text a huge string, signed: answered, and the relay still answers', 0.2, function () { return door(53); }, test.limit.slow);
+test.run('POST /api/relay/face/answer, text with a NUL, signed: answered, and the relay still answers', 0.2, function () { return door(54); }, test.limit.slow);
+test.run('POST /api/relay/face/answer, no Content-Type: answered, and the relay still answers', 0.2, function () { return door(55); }, test.limit.slow);
+test.run('POST /api/relay/face/answer, Content-Type text/plain: answered, and the relay still answers', 0.2, function () { return door(56); }, test.limit.slow);
+test.run('POST /api/relay/face/answer, a body cut off half-way: answered, and the relay still answers', 0.2, function () { return door(57); }, test.limit.long);
+test.run('POST /api/relay/face/answer, one byte past BODY_MAX: answered, and the relay still answers', 0.2, function () { return door(58); }, test.limit.slow);
+test.run('POST /api/relay/face/answer, a Content-Length far past what is sent: answered, and the relay still answers', 0.2, function () { return door(59); }, test.limit.long);
+test.run('POST /api/relay/face/stream, not JSON: answered, and the relay still answers', 0.2, function () { return door(60); }, test.limit.slow);
+test.run('POST /api/relay/face/stream, JSON that is not an object: answered, and the relay still answers', 0.2, function () { return door(61); }, test.limit.slow);
+test.run('POST /api/relay/face/stream, a bare JSON string: answered, and the relay still answers', 0.2, function () { return door(62); }, test.limit.slow);
+test.run('POST /api/relay/face/stream, JSON null: answered, and the relay still answers', 0.2, function () { return door(63); }, test.limit.slow);
+test.run('POST /api/relay/face/stream, deep nesting, 5000 levels: answered, and the relay still answers', 0.2, function () { return door(64); }, test.limit.slow);
+test.run('POST /api/relay/face/stream, a __proto__ key: answered, and the relay still answers', 0.2, function () { return door(65); }, test.limit.slow);
+test.run('POST /api/relay/face/stream, a constructor key: answered, and the relay still answers', 0.2, function () { return door(66); }, test.limit.slow);
+test.run('POST /api/relay/face/stream, invalid UTF-8 bytes: answered, and the relay still answers', 0.2, function () { return door(67); }, test.limit.slow);
+test.run('POST /api/relay/face/stream, from as a number: answered, and the relay still answers', 0.2, function () { return door(68); }, test.limit.slow);
+test.run('POST /api/relay/face/stream, sig missing: answered, and the relay still answers', 0.2, function () { return door(69); }, test.limit.slow);
+test.run('POST /api/relay/face/stream, a forged sig: answered, and the relay still answers', 0.2, function () { return door(70); }, test.limit.slow);
+test.run('POST /api/relay/face/stream, text not JSON, signed: answered, and the relay still answers', 0.2, function () { return door(71); }, test.limit.slow);
+test.run('POST /api/relay/face/stream, text a JSON array, signed: answered, and the relay still answers', 0.2, function () { return door(72); }, test.limit.slow);
+test.run('POST /api/relay/face/stream, text a huge string, signed: answered, and the relay still answers', 0.2, function () { return door(73); }, test.limit.slow);
+test.run('POST /api/relay/face/stream, text with a NUL, signed: answered, and the relay still answers', 0.2, function () { return door(74); }, test.limit.slow);
+test.run('POST /api/relay/face/stream, no Content-Type: answered, and the relay still answers', 0.2, function () { return door(75); }, test.limit.slow);
+test.run('POST /api/relay/face/stream, Content-Type text/plain: answered, and the relay still answers', 0.2, function () { return door(76); }, test.limit.slow);
+test.run('POST /api/relay/face/stream, a body cut off half-way: answered, and the relay still answers', 0.2, function () { return door(77); }, test.limit.long);
+test.run('POST /api/relay/face/stream, one byte past BODY_MAX: answered, and the relay still answers', 0.2, function () { return door(78); }, test.limit.slow);
+test.run('POST /api/relay/face/stream, a Content-Length far past what is sent: answered, and the relay still answers', 0.2, function () { return door(79); }, test.limit.long);
+test.run('POST /face/api (face host), not JSON: answered, and the relay still answers', 0.2, function () { return door(80); }, test.limit.slow);
+test.run('POST /face/api (face host), JSON that is not an object: answered, and the relay still answers', 0.2, function () { return door(81); }, test.limit.slow);
+test.run('POST /face/api (face host), a bare JSON string: answered, and the relay still answers', 0.2, function () { return door(82); }, test.limit.slow);
+test.run('POST /face/api (face host), JSON null: answered, and the relay still answers', 0.2, function () { return door(83); }, test.limit.slow);
+test.run('POST /face/api (face host), deep nesting, 5000 levels: answered, and the relay still answers', 0.2, function () { return door(84); }, test.limit.slow);
+test.run('POST /face/api (face host), a __proto__ key: answered, and the relay still answers', 0.2, function () { return door(85); }, test.limit.slow);
+test.run('POST /face/api (face host), a constructor key: answered, and the relay still answers', 0.2, function () { return door(86); }, test.limit.slow);
+test.run('POST /face/api (face host), invalid UTF-8 bytes: answered, and the relay still answers', 0.2, function () { return door(87); }, test.limit.slow);
+test.run('POST /face/call (face host), not JSON: answered, and the relay still answers', 0.2, function () { return door(88); }, test.limit.slow);
+test.run('POST /face/call (face host), JSON that is not an object: answered, and the relay still answers', 0.2, function () { return door(89); }, test.limit.slow);
+test.run('POST /face/call (face host), a bare JSON string: answered, and the relay still answers', 0.2, function () { return door(90); }, test.limit.slow);
+test.run('POST /face/call (face host), JSON null: answered, and the relay still answers', 0.2, function () { return door(91); }, test.limit.slow);
+test.run('POST /face/call (face host), deep nesting, 5000 levels: answered, and the relay still answers', 0.2, function () { return door(92); }, test.limit.slow);
+test.run('POST /face/call (face host), a __proto__ key: answered, and the relay still answers', 0.2, function () { return door(93); }, test.limit.slow);
+test.run('POST /face/call (face host), a constructor key: answered, and the relay still answers', 0.2, function () { return door(94); }, test.limit.slow);
+test.run('POST /face/call (face host), invalid UTF-8 bytes: answered, and the relay still answers', 0.2, function () { return door(95); }, test.limit.slow);
+test.run('GET /face/allowed?domain=%00 (face host): answered, and the relay still answers', 0.2, function () { return door(96); }, test.limit.slow);
+test.run('GET /face/allowed?domain=<9000 a\'s> (face host): answered, and the relay still answers', 0.2, function () { return door(97); }, test.limit.slow);
+test.run('GET /face/file?path=..%2f..%2frelay-state (face host): answered, and the relay still answers', 0.2, function () { return door(98); }, test.limit.slow);
+test.run('GET /face/stream (face host): answered, and the relay still answers', 0.2, function () { return door(99); }, test.limit.slow);
+test.run('GET /api/relay/stream: answered, and the relay still answers', 0.2, function () { return door(100); }, test.limit.slow);
+test.run('GET /api/relay/stream?sig=garbage&key=%00: answered, and the relay still answers', 0.2, function () { return door(101); }, test.limit.slow);
+test.run('GET /api/relay/stream?sig=<9000 a\'s>: answered, and the relay still answers', 0.2, function () { return door(102); }, test.limit.slow);
+test.run('GET /api/relay/stream?key=__proto__: answered, and the relay still answers', 0.2, function () { return door(103); }, test.limit.slow);
+test.run('a request line that is not HTTP: answered, and the relay still answers', 0.2, function () { return door(104); }, test.limit.slow);
+test.run('a header line with no colon: answered, and the relay still answers', 0.2, function () { return door(105); }, test.limit.slow);
+test.run('GET /..: answered, and the relay still answers', 0.2, function () { return door(106); }, test.limit.slow);
+test.run('POST /..: answered, and the relay still answers', 0.2, function () { return door(107); }, test.limit.slow);
+test.run('GET /../../../../etc/passwd: answered, and the relay still answers', 0.2, function () { return door(108); }, test.limit.slow);
+test.run('POST /../../../../etc/passwd: answered, and the relay still answers', 0.2, function () { return door(109); }, test.limit.slow);
+test.run('GET /%2e%2e/%2e%2e/etc/passwd: answered, and the relay still answers', 0.2, function () { return door(110); }, test.limit.slow);
+test.run('POST /%2e%2e/%2e%2e/etc/passwd: answered, and the relay still answers', 0.2, function () { return door(111); }, test.limit.slow);
+test.run('GET /shell/%2f%2f..%2f..%2fetc: answered, and the relay still answers', 0.2, function () { return door(112); }, test.limit.slow);
+test.run('POST /shell/%2f%2f..%2f..%2fetc: answered, and the relay still answers', 0.2, function () { return door(113); }, test.limit.slow);
+test.run('GET /<9000 a\'s>: answered, and the relay still answers', 0.2, function () { return door(114); }, test.limit.slow);
+test.run('POST /<9000 a\'s>: answered, and the relay still answers', 0.2, function () { return door(115); }, test.limit.slow);
+test.run('GET /%: answered, and the relay still answers', 0.2, function () { return door(116); }, test.limit.slow);
+test.run('POST /%: answered, and the relay still answers', 0.2, function () { return door(117); }, test.limit.slow);
+test.run('GET /%zz: answered, and the relay still answers', 0.2, function () { return door(118); }, test.limit.slow);
+test.run('POST /%zz: answered, and the relay still answers', 0.2, function () { return door(119); }, test.limit.slow);
+test.run('GET /%E0%A4%A: answered, and the relay still answers', 0.2, function () { return door(120); }, test.limit.slow);
+test.run('POST /%E0%A4%A: answered, and the relay still answers', 0.2, function () { return door(121); }, test.limit.slow);
+test.run('GET /api/%2e%2e/relay/post: answered, and the relay still answers', 0.2, function () { return door(122); }, test.limit.slow);
+test.run('POST /api/%2e%2e/relay/post: answered, and the relay still answers', 0.2, function () { return door(123); }, test.limit.slow);
+test.run('GET //api//relay//post: answered, and the relay still answers', 0.2, function () { return door(124); }, test.limit.slow);
+test.run('POST //api//relay//post: answered, and the relay still answers', 0.2, function () { return door(125); }, test.limit.slow);
+test.run('GET /DEBUG/../../spirit/state/identity.json: answered, and the relay still answers', 0.2, function () { return door(126); }, test.limit.slow);
+test.run('POST /DEBUG/../../spirit/state/identity.json: answered, and the relay still answers', 0.2, function () { return door(127); }, test.limit.slow);
+test.run('GET /shell/../../spirit/state/relay.db: answered, and the relay still answers', 0.2, function () { return door(128); }, test.limit.slow);
+test.run('POST /shell/../../spirit/state/relay.db: answered, and the relay still answers', 0.2, function () { return door(129); }, test.limit.slow);
+test.run('GET /\\..\\..\\relay-state: answered, and the relay still answers', 0.2, function () { return door(130); }, test.limit.slow);
+test.run('POST /\\..\\..\\relay-state: answered, and the relay still answers', 0.2, function () { return door(131); }, test.limit.slow);
+test.run('GET /?%: answered, and the relay still answers', 0.2, function () { return door(132); }, test.limit.slow);
+test.run('POST /?%: answered, and the relay still answers', 0.2, function () { return door(133); }, test.limit.slow);
+test.run('GET *: answered, and the relay still answers', 0.2, function () { return door(134); }, test.limit.slow);
+test.run('POST *: answered, and the relay still answers', 0.2, function () { return door(135); }, test.limit.slow);
+test.run('GET /%00: answered, and the relay still answers', 0.2, function () { return door(136); }, test.limit.slow);
+test.run('POST /%00: answered, and the relay still answers', 0.2, function () { return door(137); }, test.limit.slow);
+test.run('GET /face.html%00.js: answered, and the relay still answers', 0.2, function () { return door(138); }, test.limit.slow);
+test.run('POST /face.html%00.js: answered, and the relay still answers', 0.2, function () { return door(139); }, test.limit.slow);
+test.run('GET /shell/boot.js%00: answered, and the relay still answers', 0.2, function () { return door(140); }, test.limit.slow);
+test.run('POST /shell/boot.js%00: answered, and the relay still answers', 0.2, function () { return door(141); }, test.limit.slow);
+test.run('GET /.. (face host): answered, and the relay still answers', 0.2, function () { return door(142); }, test.limit.slow);
+test.run('POST /.. (face host): answered, and the relay still answers', 0.2, function () { return door(143); }, test.limit.slow);
+test.run('GET /../../../../etc/passwd (face host): answered, and the relay still answers', 0.2, function () { return door(144); }, test.limit.slow);
+test.run('POST /../../../../etc/passwd (face host): answered, and the relay still answers', 0.2, function () { return door(145); }, test.limit.slow);
+test.run('GET /%2e%2e/%2e%2e/etc/passwd (face host): answered, and the relay still answers', 0.2, function () { return door(146); }, test.limit.slow);
+test.run('POST /%2e%2e/%2e%2e/etc/passwd (face host): answered, and the relay still answers', 0.2, function () { return door(147); }, test.limit.slow);
+test.run('GET /shell/%2f%2f..%2f..%2fetc (face host): answered, and the relay still answers', 0.2, function () { return door(148); }, test.limit.slow);
+test.run('POST /shell/%2f%2f..%2f..%2fetc (face host): answered, and the relay still answers', 0.2, function () { return door(149); }, test.limit.slow);
+test.run('GET /<9000 a\'s> (face host): answered, and the relay still answers', 0.2, function () { return door(150); }, test.limit.slow);
+test.run('POST /<9000 a\'s> (face host): answered, and the relay still answers', 0.2, function () { return door(151); }, test.limit.slow);
+test.run('GET /% (face host): answered, and the relay still answers', 0.2, function () { return door(152); }, test.limit.slow);
+test.run('POST /% (face host): answered, and the relay still answers', 0.2, function () { return door(153); }, test.limit.slow);
+test.run('GET /%zz (face host): answered, and the relay still answers', 0.2, function () { return door(154); }, test.limit.slow);
+test.run('POST /%zz (face host): answered, and the relay still answers', 0.2, function () { return door(155); }, test.limit.slow);
+test.run('GET /%E0%A4%A (face host): answered, and the relay still answers', 0.2, function () { return door(156); }, test.limit.slow);
+test.run('POST /%E0%A4%A (face host): answered, and the relay still answers', 0.2, function () { return door(157); }, test.limit.slow);
+test.run('GET /api/%2e%2e/relay/post (face host): answered, and the relay still answers', 0.2, function () { return door(158); }, test.limit.slow);
+test.run('POST /api/%2e%2e/relay/post (face host): answered, and the relay still answers', 0.2, function () { return door(159); }, test.limit.slow);
+test.run('GET //api//relay//post (face host): answered, and the relay still answers', 0.2, function () { return door(160); }, test.limit.slow);
+test.run('POST //api//relay//post (face host): answered, and the relay still answers', 0.2, function () { return door(161); }, test.limit.slow);
+test.run('GET /DEBUG/../../spirit/state/identity.json (face host): answered, and the relay still answers', 0.2, function () { return door(162); }, test.limit.slow);
+test.run('POST /DEBUG/../../spirit/state/identity.json (face host): answered, and the relay still answers', 0.2, function () { return door(163); }, test.limit.slow);
+test.run('GET /shell/../../spirit/state/relay.db (face host): answered, and the relay still answers', 0.2, function () { return door(164); }, test.limit.slow);
+test.run('POST /shell/../../spirit/state/relay.db (face host): answered, and the relay still answers', 0.2, function () { return door(165); }, test.limit.slow);
+test.run('GET /\\..\\..\\relay-state (face host): answered, and the relay still answers', 0.2, function () { return door(166); }, test.limit.slow);
+test.run('POST /\\..\\..\\relay-state (face host): answered, and the relay still answers', 0.2, function () { return door(167); }, test.limit.slow);
+test.run('GET /?% (face host): answered, and the relay still answers', 0.2, function () { return door(168); }, test.limit.slow);
+test.run('POST /?% (face host): answered, and the relay still answers', 0.2, function () { return door(169); }, test.limit.slow);
+test.run('GET * (face host): answered, and the relay still answers', 0.2, function () { return door(170); }, test.limit.slow);
+test.run('POST * (face host): answered, and the relay still answers', 0.2, function () { return door(171); }, test.limit.slow);
+test.run('GET /%00 (face host): answered, and the relay still answers', 0.2, function () { return door(172); }, test.limit.slow);
+test.run('POST /%00 (face host): answered, and the relay still answers', 0.2, function () { return door(173); }, test.limit.slow);
+test.run('GET /face.html%00.js (face host): answered, and the relay still answers', 0.2, function () { return door(174); }, test.limit.slow);
+test.run('POST /face.html%00.js (face host): answered, and the relay still answers', 0.2, function () { return door(175); }, test.limit.slow);
+test.run('GET /shell/boot.js%00 (face host): answered, and the relay still answers', 0.2, function () { return door(176); }, test.limit.slow);
+test.run('POST /shell/boot.js%00 (face host): answered, and the relay still answers', 0.2, function () { return door(177); }, test.limit.slow);
 
 // the relay is still running at the end
 test.run('the scratch relay is still running and answers', 0.2, async function () {
   if (!G.list) return NO_RELAY;
   const relay = G.relay;
   return (relay.child.exitCode === null && await G.plain()) || 'the scratch relay ' + (relay.child.exitCode !== null ? 'exited with ' + relay.child.exitCode : 'does not answer');
-}, 4000);
+}, test.limit.slow);
 
 // ONE HEADER MUST NOT CRASH THE RELAY (goal/G41.30, the review, RH3: "any member with a face can crash a relay with one
 // header"; its fix: "clamp the status to an integer from 100 to 599 (else 502), and wrap faceAnswer and faceFeed in
@@ -595,34 +595,34 @@ test.run('a scratch relay with a face, present and logged in', 0.2, async functi
   // The garbage's relay is let go first.
   if (G.relay) { try { if (G.relay.child) G.relay.child.kill(); } catch (e) { /* gone */ } }
   return (await fresh()) || 'the scratch relay with a face did not come up: nothing judged';
-}, 3000);
-test.run('x-spirit-status 99: the relay is still running', 0.2, function () { return badStatus('99'); }, 7000);
-test.run('x-spirit-status 99: the viewer gets 502', 0.2, function () { return viewerGot('99'); }, 1000);
-test.run('x-spirit-status 1000: the relay is still running', 0.2, function () { return badStatus('1000'); }, 7000);
-test.run('x-spirit-status 1000: the viewer gets 502', 0.2, function () { return viewerGot('1000'); }, 1000);
-test.run('x-spirit-status abc: the relay is still running', 0.2, function () { return badStatus('abc'); }, 7000);
-test.run('x-spirit-status abc: the viewer gets 502', 0.2, function () { return viewerGot('abc'); }, 1000);
-test.run('x-spirit-status -1: the relay is still running', 0.2, function () { return badStatus('-1'); }, 7000);
-test.run('x-spirit-status -1: the viewer gets 502', 0.2, function () { return viewerGot('-1'); }, 1000);
-test.run('x-spirit-status 0: the relay is still running', 0.2, function () { return badStatus('0'); }, 7000);
-test.run('x-spirit-status 0: the viewer gets 502', 0.2, function () { return viewerGot('0'); }, 1000);
-test.run('x-spirit-status 600: the relay is still running', 0.2, function () { return badStatus('600'); }, 7000);
-test.run('x-spirit-status 600: the viewer gets 502', 0.2, function () { return viewerGot('600'); }, 1000);
-test.run('x-spirit-status 1.5: the relay is still running', 0.2, function () { return badStatus('1.5'); }, 7000);
-test.run('x-spirit-status 1.5: the viewer gets 502', 0.2, function () { return viewerGot('1.5'); }, 1000);
+}, test.limit.slow);
+test.run('x-spirit-status 99: the relay is still running', 0.2, function () { return badStatus('99'); }, test.limit.slow);
+test.run('x-spirit-status 99: the viewer gets 502', 0.2, function () { return viewerGot('99'); }, test.limit.quick);
+test.run('x-spirit-status 1000: the relay is still running', 0.2, function () { return badStatus('1000'); }, test.limit.slow);
+test.run('x-spirit-status 1000: the viewer gets 502', 0.2, function () { return viewerGot('1000'); }, test.limit.quick);
+test.run('x-spirit-status abc: the relay is still running', 0.2, function () { return badStatus('abc'); }, test.limit.slow);
+test.run('x-spirit-status abc: the viewer gets 502', 0.2, function () { return viewerGot('abc'); }, test.limit.quick);
+test.run('x-spirit-status -1: the relay is still running', 0.2, function () { return badStatus('-1'); }, test.limit.slow);
+test.run('x-spirit-status -1: the viewer gets 502', 0.2, function () { return viewerGot('-1'); }, test.limit.quick);
+test.run('x-spirit-status 0: the relay is still running', 0.2, function () { return badStatus('0'); }, test.limit.slow);
+test.run('x-spirit-status 0: the viewer gets 502', 0.2, function () { return viewerGot('0'); }, test.limit.quick);
+test.run('x-spirit-status 600: the relay is still running', 0.2, function () { return badStatus('600'); }, test.limit.slow);
+test.run('x-spirit-status 600: the viewer gets 502', 0.2, function () { return viewerGot('600'); }, test.limit.quick);
+test.run('x-spirit-status 1.5: the relay is still running', 0.2, function () { return badStatus('1.5'); }, test.limit.slow);
+test.run('x-spirit-status 1.5: the viewer gets 502', 0.2, function () { return viewerGot('1.5'); }, test.limit.quick);
 test.run('a bad x-spirit-type: the relay is still running', 0.2, async function () {
   if (!BA.R || !BA.R.up) return NO_FACE;
   if (!(await ready())) return 'a fresh scratch relay did not come up';
   const type = await answered({ 'X-Spirit-Status': '200', 'X-Spirit-Type': 'text/\x7fbad' });
   await sleep(100);
   return BA.R.child.exitCode === null || 'a bad x-spirit-type: IT KILLED THE RELAY (exit ' + BA.R.child.exitCode + '), the viewer got ' + type.viewer;
-}, 10000);
+}, test.limit.slow);
 test.run('a good status still reaches the viewer as it is: 201', 0.2, async function () {
   if (!BA.R || !BA.R.up) return NO_FACE;
   if (!(await ready())) return 'a fresh scratch relay did not come up';
   const good = await answered({ 'X-Spirit-Status': '201', 'X-Spirit-Type': 'text/plain' });
   return good.viewer === 201 || 'x-spirit-status 201: the viewer got ' + (good.viewer || 'nothing');
-}, 7000);
+}, test.limit.slow);
 
 test.after(function () {
   if (FP.R) { try { FP.R.stop(); } catch (e) { /* gone */ } }

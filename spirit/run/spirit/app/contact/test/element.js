@@ -73,59 +73,59 @@ const NO_PAGE = 'no page: the world failed';
 // the box: "the folder spirit/element/contacts/ needs to be renamed spirit/element/search/contact/"
 test.run('spirit/element/contacts/ is gone', 0.2, function () {
   return !fs.existsSync(path.join(RUN, 'spirit', 'element', 'contacts')) || 'spirit/element/contacts/ is still there';
-}, 1000);
+}, test.limit.quick);
 test.run('spirit/element/search/contact/ holds listElement.js and rowElement.js', 0.2, function () {
   return ['listElement.js', 'rowElement.js'].every(function (f) { return fs.existsSync(path.join(RUN, 'spirit', 'element', 'search', 'contact', f)); }) || 'spirit/element/search/contact/ lacks one of them';
-}, 1000);
+}, test.limit.quick);
 test.run('no code names spirit/element/contacts/', 0.2, function () {
   const oldElement = codeNaming(/spirit\/element\/contacts\//);
   return !oldElement.length || 'naming it: ' + short(oldElement);
-}, 1000);
+}, test.limit.quick);
 
 // the box: "the new contact app will be exactly the same as the old, merely placed where it now belongs"
 test.run('shell/contacts/ is gone', 0.2, function () {
   return !fs.existsSync(path.join(RUN, 'shell', 'contacts')) || 'shell/contacts/ is still there';
-}, 1000);
+}, test.limit.quick);
 test.run('spirit/app/contact/element.js is there', 0.2, function () {
   return fs.existsSync(path.join(APP, 'element.js')) || 'no spirit/app/contact/element.js';
-}, 1000);
+}, test.limit.quick);
 test.run('no code names shell/contacts', 0.2, function () {
   const oldApp = codeNaming(/shell\/contacts\b/);
   return !oldApp.length || 'naming it: ' + short(oldApp);
-}, 1000);
+}, test.limit.quick);
 const OWN = function () { return readJson(path.join(APP, 'contact.json')) || {}; };
 test.run('its icon is 🤩 (Andy: "icon for new contact app: 🤩")', 0.2, function () {
   const id = OWN().identity || {};
   return id.icon === '🤩' || 'identity.icon: ' + short(id.icon);
-}, 1000);
+}, test.limit.quick);
 test.run('its label is Contacts, as the old app\'s name', 0.2, function () {
   const id = OWN().identity || {};
   return id.label === 'Contacts' || 'identity.label: ' + short(id.label);
-}, 1000);
+}, test.limit.quick);
 test.run('it is intrinsic (the box: "Contacts is always on today, so it is always on in spirit/app too")', 0.2, function () {
   const id = OWN().identity || {};
   return id.intrinsic === true || 'identity.intrinsic: ' + short(id.intrinsic);
-}, 1000);
+}, test.limit.quick);
 test.run('it mounts on the shell and has no server', 0.2, function () {
   const own = OWN();
   return !!own.shell && own.shell.mount === true && !!own.node && own.node.mount === false ? true : 'shell ' + short(own.shell) + ', node ' + short(own.node);
-}, 1000);
+}, test.limit.quick);
 
 // the box: "spirit/peerStats.js goes, and with it the count of every message that arrives"
 test.run('spirit/peerStats.js is gone', 0.2, function () {
   return !fs.existsSync(path.join(RUN, 'spirit', 'peerStats.js')) || 'spirit/peerStats.js is still there';
-}, 1000);
+}, test.limit.quick);
 test.run('no code names peerStats', 0.2, function () {
   const counting = codeNaming(/peerStats/);
   return !counting.length || 'naming it: ' + short(counting);
-}, 1000);
+}, test.limit.quick);
 
 test.run('the world: a scratch node comes up', 0.2, async function () {
   W.s = scratch();
   const N = await boot(W.s.run); W.live.push(N.child);
   W.N = N;
   return N.up || 'the scratch node did not come up: nothing judged';
-}, 5000);
+}, test.limit.slow);
 
 // the box: "A contact row no longer carries unansweredInbound, inboundPerDay or outboundPerDay"
 test.run('the world: the node knows a contact', 0.2, async function () {
@@ -134,17 +134,17 @@ test.run('the world: the node knows a contact', 0.2, async function () {
   W.items = (found.body && found.body.items) || [];
   W.relay = W.items.map(function (i) { return Object.assign({ key: i.key }, parsed(i.label) || {}); }).filter(function (r) { return r.name; })[0] || {};
   return W.items.length > 0 || 'contact.search: ' + short(found.text);
-}, 1000);
+}, test.limit.quick);
 test.run('no row of contact.search carries them', 0.2, function () {
   if (!W.items) return NO_NODE;
   return W.items.every(function (i) { const r = parsed(i.label) || {}; return COUNTERS.every(function (k) { return !(k in r); }); }) || 'rows: ' + short(W.items);
-}, 1000);
+}, test.limit.quick);
 test.run('nor does contact.get', 0.2, async function () {
   if (!W.N || !W.N.up) return NO_NODE;
   const got = await call(W.N.base, 'contact.get', { key: (W.relay || {}).key });
   const person = (got.body && (got.body.person || got.body)) || {};
   return got.status === 200 && COUNTERS.every(function (k) { return !(k in person); }) ? true : 'contact.get: ' + short(got.text);
-}, 1000);
+}, test.limit.quick);
 
 test.run('the world: a Chrome page', 0.2, async function () {
   if (!W.N || !W.N.up) return NO_NODE;
@@ -153,7 +153,7 @@ test.run('the world: a Chrome page', 0.2, async function () {
   W.c = await chromePage(where);
   if (W.c.error) { const e = W.c.error; W.c = null; return 'Chrome: ' + e; }
   return true;
-}, 2000);
+}, test.limit.quick);
 // The shell Andy uses, /face.html, where the shell app (spirit/app/app/element.js) runs the appSelector (boot.js loads what an app's pages open with).
 const selector = function (face) {
   return W.c.evaluate('(function () { if (window.__sel) window.__sel.destroy(); var old = document.getElementById("zzBox"); if (old) old.remove(); var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999"; document.body.appendChild(b); return spirit.require("spirit/app/app/element.js").then(function () { window.__sel = spirit.element.spirit.app.app.element.create(b, { face: ' + JSON.stringify(face) + ' }); return "made"; }); }())');
@@ -169,14 +169,14 @@ test.run('the world: the face shell has its spirit', 0.2, async function () {
   await W.c.send('Page.navigate', { url: W.N.base + '/face.html' });
   W.page = !!(await until(function () { return W.c.evaluate('!!(window.spirit && window.spirit.ready && window.spirit.event)'); }, 20000));
   return W.page || 'the page has no spirit: nothing judged';
-}, 1000);
+}, test.limit.quick);
 
 // the box: "intrinsic true: the app is always active": its tile is there with nothing pressed
 test.run('the tiles show Contacts, with nothing pressed', 0.2, async function () {
   if (!W.page) return NO_PAGE;
   await selector('tiles');
   return await shows('Contacts') ? true : 'tiles: ' + short(await shown());
-}, 1000);
+}, test.limit.quick);
 
 // the box: "exactly the same as the old": its tile opens the contacts
 test.run('its tile opens the app, and the contact the node knows is listed', 0.2, async function () {
@@ -184,14 +184,14 @@ test.run('its tile opens the app, and the contact the node knows is listed', 0.2
   const relay = W.relay || {};
   await press('Contacts');
   return await shows(relay.name || 'noderoutes') ? true : 'the app, wanting ' + (relay.name || 'noderoutes') + ': ' + short(await shown());
-}, 1000);
+}, test.limit.quick);
 test.run('the box: "a contact\'s detail no longer shows them"', 0.2, async function () {
   if (!W.page) return NO_PAGE;
   await press((W.relay || {}).name || 'noderoutes');
   await sleep(1500);
   const detail = await shown();
   return !/Unanswered inbound|Inbound rate|Outbound rate/.test(detail) || 'the detail: ' + short(detail);
-}, 5000);
+}, test.limit.slow);
 
 // the box: "In the appSelector's detail an intrinsic app has no row to activate or deactivate it"
 test.run('its detail shows no Activate and no Deactivate', 0.2, async function () {
@@ -202,7 +202,7 @@ test.run('its detail shows no Activate and no Deactivate', 0.2, async function (
   await sleep(2000);
   const panel = await shown();
   return panel.indexOf('Contacts') !== -1 && !/Activate|Deactivate/.test(panel) ? true : 'its detail: ' + short(panel);
-}, 7000);
+}, test.limit.slow);
 
 // the box: "app.active does not switch it off"
 test.run('after app.active false, its tile is still there', 0.2, async function () {
@@ -211,7 +211,7 @@ test.run('after app.active false, its tile is still there', 0.2, async function 
   await selector('tiles');
   await sleep(1500);
   return (await shown()).indexOf('Contacts') !== -1 || 'tiles: ' + short(await shown());
-}, 5000);
+}, test.limit.slow);
 
 // nothing threw on the page
 test.run('no uncaught error on the page, all the way', 0.2, async function () {
@@ -219,4 +219,4 @@ test.run('no uncaught error on the page, all the way', 0.2, async function () {
   const thrown = W.c.heard.filter(function (m) { return m.method === 'Runtime.exceptionThrown'; }).map(function (m) { return (m.params.exceptionDetails.exception && m.params.exceptionDetails.exception.description) || m.params.exceptionDetails.text; });
   await stop(W.N.child);
   return !thrown.length || 'thrown: ' + short(thrown);
-}, 1000);
+}, test.limit.quick);

@@ -23,16 +23,16 @@ let m = null;
 let tol;
 test.run('spirit/element/icon.js exists', 0.2, function () {
   return (fs.existsSync(FILE)) ? true : 'there is no spirit/element/icon.js';
-}, 1000);
+}, test.limit.quick);
 // The page: icons in containers of several font sizes
 test.run('the world: Chrome is on this machine', 0.2, function () {
   W.chrome = H.findChrome();
   return !!W.chrome || 'no Chrome on this machine: SPIRIT_CHROME names none, and none is found by its name';
-}, 1000);
+}, test.limit.quick);
 test.run('the world: a scratch node comes up with its DEBUG on', 0.2, async function () {
   W.node = await H.scratchNode();
   return (W.node.up && W.node.debug) || 'the scratch node did not come up with its DEBUG on';
-}, 6000);
+}, test.limit.slow);
 test.run('the world: the page sizes its icons', 0.2, async function () {
   if (!W.chrome || !W.node || !W.node.up) return 'no Chrome or no scratch node: the world failed';
   W.page = await H.chromePage(W.chrome);
@@ -42,7 +42,7 @@ test.run('the world: the page sizes its icons', 0.2, async function () {
   const s = await W.page.evaluate('window.sized()').catch(function () { return ''; });
   try { m = JSON.parse(s); } catch (e) { m = null; }
   return !!m || 'the page measured nothing: ' + JSON.stringify(s).slice(0, 300);
-}, 3000);
+}, test.limit.slow);
 test.after(function () {
   if (W.page && W.page.kid) W.page.kid.kill();
   if (W.node && W.node.child) W.node.child.kill();
@@ -52,54 +52,54 @@ test.after(function () {
 test.run('it adds icon.create(container, options) to window.spirit.element', 0.2, function () {
   if (!m) return 'nothing measured: the world failed';
   return (m.made) ? true : 'no window.spirit.element.spirit.element.icon.create of a container and options';
-}, 1000);
+}, test.limit.quick);
 test.run('create answers an element, appended to the container it is given', 0.2, function () {
   if (!m) return 'nothing measured: the world failed';
   // a shell element: appended, the glyph as it is given
   return (m.base.answered && m.base.appended) ? true : 'made: ' + short(m.base);
-}, 1000);
+}, test.limit.quick);
 test.run('it shows the glyph it is given, as it is', 0.2, function () {
   if (!m) return 'nothing measured: the world failed';
   // "the glyph IS the glyph, no key-abstraction."
   return (m.base.text === 'A' && m.key === '🔑') ? true : 'shows ' + short(m.base.text) + ' and ' + short(m.key);
-}, 1000);
+}, test.limit.quick);
 test.run('it carries a class of its own', 0.2, function () {
   if (!m) return 'nothing measured: the world failed';
   // The class it carries is how the shell's other elements are seen to paint through it (workBench's test).
   return (m.base.className.trim() !== '') ? true : 'it carries no class';
-}, 1000);
+}, test.limit.quick);
 test.run('in 20 pixel type, no size given: a square of 20', 0.2, function () {
   if (!m) return 'nothing measured: the world failed';
   // a square, its side the font size times size
   // "a square box, the size of which follows font-size, it's size option should vary from that base-line, be a
   // multiplier of it."
   return (square(m.base.size, 20)) ? true : 'it is ' + short(m.base.size);
-}, 1000);
+}, test.limit.quick);
 test.run('size 2: a square of 40', 0.2, function () {
   if (!m) return 'nothing measured: the world failed';
   return (square(m.twice, 40)) ? true : 'it is ' + short(m.twice);
-}, 1000);
+}, test.limit.quick);
 test.run('size 0.5: a square of 10', 0.2, function () {
   if (!m) return 'nothing measured: the world failed';
   return (square(m.half, 10)) ? true : 'it is ' + short(m.half);
-}, 1000);
+}, test.limit.quick);
 test.run('in 10 pixel type: a square of 10, the size it inherits', 0.2, function () {
   if (!m) return 'nothing measured: the world failed';
   return (square(m.small, 10)) ? true : 'it is ' + short(m.small);
-}, 1000);
+}, test.limit.quick);
 test.run('in a row of 5 pixels beside a long label it never shrinks: still 20', 0.2, function () {
   if (!m) return 'nothing measured: the world failed';
   return (square(m.tight, 20)) ? true : 'it is ' + short(m.tight);
-}, 1000);
+}, test.limit.quick);
 test.run('the glyph\'s middle is the square\'s middle, within a tenth of its side', 0.2, function () {
   if (!m) return 'nothing measured: the world failed';
   // the glyph centred, the rest its container's
   // "it centers the glyph"; tolerance a tenth of the side, for the font's own glyph metrics.
   tol = m.centred.side / 10;
   return (m.centred.dx <= tol && m.centred.dy <= tol) ? true : 'the glyph is off its square\'s middle by ' + m.centred.dx + ' across and ' + m.centred.dy + ' down, in a side of ' + m.centred.side;
-}, 1000);
+}, test.limit.quick);
 test.run('it follows its container like a text character: its colour', 0.2, function () {
   if (!m) return 'nothing measured: the world failed';
   // "no other option than size, like like text characters, it follows, its container in most attributes."
   return (m.base.color === 'rgb(200, 0, 0)') ? true : 'its colour is ' + short(m.base.color) + ', its container\'s rgb(200, 0, 0)';
-}, 1000);
+}, test.limit.quick);

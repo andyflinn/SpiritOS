@@ -151,50 +151,50 @@ test.run('the world: the shared element runs on a window of its own, over the re
   E.agentTable = AT.tableElement;
   AD = AT.tableElement || {};
   return true;
-}, 1000);
+}, test.limit.quick);
 // One file, one element (goal/G41.28; the general test: a file registers one element): the row's editor is
 // ./rowElement.js's. goal/G43.32: it stands at its path, spirit.element.spirit.app.agent.element.table.tableElement, its shared
 // pieces (once an element of their own, agentDetail) with its create.
 test.run('it places spirit.element.spirit.app.agent.element.table.tableElement, with create, and no other element: the row\'s editor is rowElement.js\'s', 0.2, function () {
   if (!AT) return NO_WORLD;
   return AT.tableElement && typeof AT.tableElement.create === 'function' && !AT.rowElement ? true : 'placed: ' + short(Object.keys(AT));
-}, 1000);
+}, test.limit.quick);
 test.run('and with it { titleRow, fieldLine, stretch, search, branchOf, whyOf }, every pane\'s look in one place', 0.2, function () {
   if (!AT) return NO_WORLD;
   return ['titleRow', 'fieldLine', 'search', 'branchOf', 'whyOf'].every(function (k) { return typeof AD[k] === 'function'; }) && typeof AD.stretch === 'string'
     ? true : 'tableElement: ' + short(Object.keys(AD));
-}, 1000);
+}, test.limit.quick);
 // goal/G41.16, Andy: "get rid of thos FUCKING data.js scripts": the shared element requires no data script; the agent
 // family's data.js (spirit/app/agent/data.js, goal/G41.28) takes the rows from the stream, asked for by cacheManager.
 test.run('it requires no data script: each table\'s row element takes its own rows from the stream (goal/G41.16)', 0.2, function () {
   if (!w) return NO_WORLD;
   return !w.required.some(function (p) { return (/data\.js$/).test(p); }) ? true : 'required: ' + short(w.required);
-}, 1000);
+}, test.limit.quick);
 
 // ── the shared pieces ──
 test.run('titleRow(look, words): the agent-title row, its icon, then the words, each in a part of its own', 0.2, function () {
   if (!E.agentTable || !AD.titleRow) return NO_TABLE;
   const tr = AD.titleRow({ icon: '🏢' }, ['Add', 'Provider']);
   return (/class="agent-title"/).test(tr) && tr.indexOf('🏢') !== -1 && /<b>Add<\/b>/.test(tr) && /<span>Provider<\/span>/.test(tr) ? true : 'titleRow: ' + short(tr);
-}, 1000);
+}, test.limit.quick);
 test.run('set as a title, bigger and semibold (Andy: "a bit more title-like a bit bigger")', 0.2, function () {
   if (!E.agentTable || !AD.titleRow) return NO_TABLE;
   const tr = AD.titleRow({ icon: '🏢' }, ['Add', 'Provider']);
   return (/font-size:1\.3em/).test(tr) && /font-weight:600/.test(tr) ? true : 'titleRow: ' + short(tr);
-}, 1000);
+}, test.limit.quick);
 test.run('and escapes what it shows', 0.2, function () {
   if (!E.agentTable || !AD.titleRow) return NO_TABLE;
   return AD.titleRow({ icon: '<x>' }, ['a&b']).indexOf('<x>') === -1 ? true : 'titleRow: ' + short(AD.titleRow({ icon: '<x>' }, ['a&b']));
-}, 1000);
+}, test.limit.quick);
 test.run('fieldLine(label, input): the label, 1em, then the input to the right edge', 0.2, function () {
   if (!E.agentTable || !AD.titleRow) return NO_TABLE;
   const fl = AD.fieldLine('L', '<input>');
   return (/display:flex/).test(fl) && /gap:1em/.test(fl) && /flex:1 1 0/.test(fl) ? true : 'fieldLine: ' + short(fl);
-}, 1000);
+}, test.limit.quick);
 test.run('branchOf(table) is the home node\'s <node>/agent/<table>, as ((spirit.data || {}).agent || {}).data names it (goal/G41.28)', 0.2, function () {
   if (!E.agentTable || !AD.titleRow) return NO_TABLE;
   return AD.branchOf('job') === BRANCH('job') ? true : 'branchOf: ' + short(AD.branchOf('job'));
-}, 1000);
+}, test.limit.quick);
 // A page where the agent family's cache could not be loaded (its server not running on the node) is refused, saying
 // why: never a list drawn with no branch.
 test.run('with no agent family\'s cache on the page, branchOf refuses and says why', 0.2, function () {
@@ -205,7 +205,7 @@ test.run('with no agent family\'s cache on the page, branchOf refuses and says w
   try { drawn = AD.branchOf('job'); } catch (e) { why = e; }
   global.window.spirit.data.agent.data = keptAD;
   return !!why && /agent/.test(String(why.message)) && /cache/.test(String(why.message)) ? true : 'branchOf answered ' + short(drawn) + (why ? ', said ' + short(why.message) : '');
-}, 1000);
+}, test.limit.quick);
 
 // ── unconfigured, the table says so and throws nothing (goal/G41.19) ──
 const U = { bare: null, made: null };
@@ -215,17 +215,17 @@ test.run('agentTable.create(box, {}) throws nothing and says it is not configure
   let threw = null;
   try { U.made = E.agentTable.create(U.bare, {}); } catch (e) { threw = e; }
   return !threw && !!U.made && /not configured/.test(U.bare.textContent) ? true : 'threw ' + short(threw && threw.message) + ', box: ' + short(U.bare.textContent);
-}, 1000);
+}, test.limit.quick);
 test.run('and its destroy leaves the box empty', 0.2, function () {
   if (!U.made || typeof U.made.destroy !== 'function') return 'the unconfigured table has no destroy';
   U.made.destroy();
   return U.bare.innerHTML === '' ? true : 'box: ' + short(U.bare.innerHTML);
-}, 1000);
+}, test.limit.quick);
 test.run('whyOf(refusal) is the server\'s own reason, else the refusal\'s words, else refused', 0.2, function () {
   if (!E.agentTable || !AD.titleRow) return NO_TABLE;
   return AD.whyOf(refused('job takes no argument verb')) === 'job takes no argument verb' && AD.whyOf(new Error('bad')) === 'bad' && AD.whyOf(null) === 'refused'
     ? true : 'whyOf: ' + short([AD.whyOf(refused('x')), AD.whyOf(new Error('bad')), AD.whyOf(null)]);
-}, 1000);
+}, test.limit.quick);
 
 // ── a table: its title row, its Add button, its list shown at once ──
 const T = { left: null, t: null, list: null, rows: [] };
@@ -240,33 +240,33 @@ test.run('its title row is the table\'s icon and its title, from the detail pane
   T.t = E.agentTable.create(T.left, { table: 'provider', detail: detail, row: function (b, key, added, row) { T.rows.push({ box: b, key: key, added: added, row: row }); return { destroy: function () {} }; } });
   await settle();
   return T.left.innerHTML.indexOf('Model providers') !== -1 && T.left.innerHTML.indexOf('🏢') !== -1 && /class="agent-title"/.test(T.left.innerHTML) ? true : 'left: ' + short(T.left.innerHTML);
-}, 1000);
+}, test.limit.quick);
 test.run('it has an Add button', 0.2, function () {
   if (!T.left) return 'no table: it was not made';
   return the(T.left, 'add') && /Add a provider/.test(T.left.innerHTML) ? true : 'left: ' + short(T.left.innerHTML);
-}, 1000);
+}, test.limit.quick);
 test.run('its list is a probabilitySearch in its own box, searched as it is made (Andy: "must be immediately shown")', 0.2, function () {
   if (!T.left) return 'no table: it was not made';
   T.list = w.searches[0];
   return T.list && T.list.host === the(T.left, 'list') && T.list.refreshed >= 1 ? true : 'searches: ' + w.searches.length + ', refreshed ' + (T.list && T.list.refreshed);
-}, 1000);
+}, test.limit.quick);
 const NO_LIST = 'no list: the table made none';
 test.run('it searches the agent server\'s provider verb, seated in the branch <node>/agent/provider of spirit.data', 0.2, function () {
   if (!T.list) return NO_LIST;
   return T.list.o.server === 'agent' && T.list.o.verb === 'provider' && T.list.o.data === BRANCH('provider') ? true : 'search: ' + short({ server: T.list.o.server, verb: T.list.o.verb, data: T.list.o.data });
-}, 1000);
+}, test.limit.quick);
 test.run('its search asks { op: search, text }', 0.2, function () {
   if (!T.list) return NO_LIST;
   return JSON.stringify(T.list.o.args('ab')) === JSON.stringify({ op: 'search', text: 'ab' }) ? true : 'args: ' + short(T.list.o.args('ab'));
-}, 1000);
+}, test.limit.quick);
 test.run('every row is shown by its icon and its label alone (Andy: "will only show: icon and label")', 0.2, function () {
   if (!T.list) return NO_LIST;
   return JSON.stringify((T.list.o.columns || []).map(function (c) { return c.field; })) === '["icon","label"]' ? true : 'columns: ' + short(T.list.o.columns);
-}, 1000);
+}, test.limit.quick);
 test.run('a row\'s name is its icon and its label, as a picker shows it', 0.2, function () {
   if (!T.list) return NO_LIST;
   return T.list.o.name({ icon: '🏢', label: 'One' }) === '🏢 One' ? true : 'name: ' + short(T.list.o.name({ icon: '🏢', label: 'One' }));
-}, 1000);
+}, test.limit.quick);
 
 // ── a row picked opens its editor in the detail pane ──
 test.run('pick opens row(box, key, false, row) in the detail pane', 0.2, function () {
@@ -275,7 +275,7 @@ test.run('pick opens row(box, key, false, row) in the detail pane', 0.2, functio
   const rows = T.rows;
   return rows.length === 1 && rows[0].box === detail.center && rows[0].key === 'KP' && rows[0].added === false && rows[0].row.label === 'One'
     ? true : 'rows: ' + short(rows.map(function (r) { return { key: r.key, added: r.added }; }));
-}, 1000);
+}, test.limit.quick);
 
 // ── Add makes no row: it opens the detail in Add mode (goal/G41.21) ──
 // Andy: "NO ROW WILL BE CREATED WITH AN "Add" BUTTON for provider, persona, OR JOB!!!!!!!!!!!!"; "the proper way to do
@@ -288,12 +288,12 @@ test.run('pressing Add asks the server nothing: no row is made', 0.2, async func
   ADD.opened0 = T.rows.length;
   the(T.left, 'add').click(); await settle();
   return !w.calls.some(function (c) { return c.args && c.args.op === 'add'; }) ? true : 'calls: ' + short(w.calls);
-}, 1000);
+}, test.limit.quick);
 test.run('it opens an editor with no row of its own, in Add mode', 0.2, function () {
   if (!T.list) return NO_LIST;
   const rows = T.rows;
   return rows.length === ADD.opened0 + 1 && !rows[rows.length - 1].key && rows[rows.length - 1].added === true ? true : 'rows: ' + short(rows.map(function (r) { return { key: r.key, added: r.added }; }));
-}, 1000);
+}, test.limit.quick);
 
 // ── a table may make its own Add ──
 test.run('given add(open), Add calls it and asks the server nothing', 0.2, async function () {
@@ -305,7 +305,7 @@ test.run('given add(open), Add calls it and asks the server nothing', 0.2, async
   await settle();
   the(left2, 'add').click(); await settle();
   return own.length === 1 && typeof own[0] === 'function' && w.calls.length === 0 ? true : 'add called ' + own.length + ', calls ' + short(w.calls);
-}, 1000);
+}, test.limit.quick);
 
 // ── a table may hand its own buttons, and its own columns (goal/G41.18) ──
 // A table's own buttons (the model table once held "provider models", box v17) and its columns (the model's "[icon]
@@ -321,21 +321,21 @@ test.run('each button is drawn on the Add line, by its label, Add kept', 0.2, as
   await settle();
   OWN.b0 = the(OWN.left3, 'button0');
   return !!OWN.b0 && OWN.left3.innerHTML.indexOf('provider models') !== -1 && !!the(OWN.left3, 'add') ? true : 'left3: ' + short(OWN.left3.innerHTML);
-}, 1000);
+}, test.limit.quick);
 test.run('a button pressed calls its press()', 0.2, function () {
   if (!OWN.left3) return 'no table with buttons: it was not made';
   if (OWN.b0) OWN.b0.click();
   return OWN.pressed.length === 1 ? true : 'pressed: ' + short(OWN.pressed);
-}, 1000);
+}, test.limit.quick);
 test.run('the columns a table hands are the list\'s, in place of icon and label', 0.2, function () {
   if (!OWN.left3) return 'no table with buttons: it was not made';
   const l3 = w.searches[OWN.n3];
   return l3 && l3.o.columns === COLS ? true : 'columns: ' + short(l3 && l3.o.columns);
-}, 1000);
+}, test.limit.quick);
 test.run('a table that hands none keeps icon and label', 0.2, function () {
   if (!T.list) return NO_LIST;
   return JSON.stringify((T.list.o.columns || []).map(function (c) { return c.field; })) === '["icon","label"]' ? true : 'columns: ' + short(T.list.o.columns);
-}, 1000);
+}, test.limit.quick);
 
 // ── a table may have no Add (goal/G41.18) ──
 test.run('given add false, no Add is drawn; its buttons and title row are', 0.2, async function () {
@@ -346,11 +346,11 @@ test.run('given add false, no Add is drawn; its buttons and title row are', 0.2,
     buttons: [{ label: 'provider models', press: function () {} }] });
   await settle();
   return !the(left4, 'add') && !/Add a model/.test(left4.innerHTML) && !!the(left4, 'button0') && /class="agent-title"/.test(left4.innerHTML) ? true : 'left4: ' + short(left4.innerHTML);
-}, 1000);
+}, test.limit.quick);
 
 // ── destroy ──
 test.run('destroy destroys the list and empties the box', 0.2, function () {
   if (!T.list) return NO_LIST;
   T.t.destroy();
   return T.list.destroyed && T.left.innerHTML === '' ? true : 'destroyed ' + T.list.destroyed + ', box ' + short(T.left.innerHTML);
-}, 1000);
+}, test.limit.quick);

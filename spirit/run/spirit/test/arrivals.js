@@ -36,9 +36,9 @@ test.run('the world: the file is read, and its code, comments left out, still ho
   const c = code(F);
   if (c === null) return path.relative(RUN, F) + ' is not there: nothing judged';
   return /module\.exports/.test(c) || path.relative(RUN, F) + '\'s code holds no /module\\.exports/: the comment stripper ate it, nothing judged';
-}, 1000);
+}, test.limit.quick);
 test.run('arrivals.js\'s code names no admitted mark', 0.2, function () {
   const h = hits(F, /admit/i);
   if (h === null) return 'arrivals.js is not there: the world failed';
   return !h.length || 'arrivals.js\'s code still marks or reads admitted: ' + short(h);
-}, 1000);
+}, test.limit.quick);

@@ -13,9 +13,9 @@
 // supplies its severity and reports itself to testicle, with the appropriate severity if the test hangs or crashes, else
 // with the default severity. Every test holds on one single string, the title, which is supplied with the report, success
 // or failure."; its contract: ./test/testReport.md):
-//   test.run(title, severity, body, limitMs)   body() answers true to pass; false, or a string saying what went wrong, to
+//   test.run(title, severity, body, limit)     limit is test.limit.quick, .slow or .long (below). body() answers true to pass; false, or a string saying what went wrong, to
 //                                              fail; it may be async. A throw or a rejection fails it at 0.7, the error as
-//                                              its detail; still running at limitMs, it fails as a hang at 0.7.
+//                                              its detail; still running at its limit, it fails as a hang at 0.7.
 //   test.after(fn)                             run once every test has run, whatever they did.
 // The tests run one at a time in the order given. Each is reported by itself to testicle.test.set of the node of the
 // checkout it runs in (spirit.js reads that node's port from the checkout's spirit/state/environment.json; goal/G47.1:
@@ -190,6 +190,12 @@ const queue = [];
 const afters = [];
 let started = false;
 function start() { if (!started) { started = true; ownImmediate(runAll); } }
+// THE TIME LIMITS, CENTRAL (Andy, 2026-11-11, after limits measured on one machine hung the tests on another: "cw, change
+// the limits, i hope you have those as relatively central constants, GO!!"). Every suite gives a test one of these, never
+// a number of its own (spirit-sibling-titleRules.js judges it): quick for a test that asks and answers, slow for one that
+// starts a scratch node, a desk or a Chrome page, long for one that runs a whole world end to end. A limit catches a hang,
+// not a slow machine, so each is wide; change one here and every suite follows.
+test.limit = Object.freeze({ quick: 10000, slow: 60000, long: 300000 });
 test.run = function (title, severity, body, limitMs) { queue.push({ title: title, severity: severity, body: body, limit: limitMs }); start(); };
 test.after = function (fn) { afters.push(fn); start(); };
 

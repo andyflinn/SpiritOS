@@ -18,10 +18,11 @@ key is its description, nothing else"*): a title that changes from run to run is
 
 - A suite is a `.js` file in a folder named `test`, not one of `spirit/test/`'s tools (`testReport.js`, `testModule.js`,
   `headLessChrome.js`) and not in a vendored folder.
-- A test is one call to the reporter, `test.run(title, severity, body, limitMs)` (goal/G47.2; Andy: *"Every test inside
+- A test is one call to the reporter, `test.run(title, severity, body, limit)` (goal/G47.2; Andy: *"Every test inside
   every suite has its unique (within the suite) title. Every test supplies its severity"*; the box: *"One call per test,
   the reporter's"*). Its title is the first argument, its severity the second, a number literal from 0.0 to 1.0, its
-  time limit the fourth, a number literal of milliseconds.
+  time limit the fourth, one of the reporter's named limits, `test.limit.quick`, `.slow` or `.long`, never a number of
+  its own (Andy, 2026-11-11: *"i hope you have those as relatively central constants"*).
 - The old ways of saying a check are a helper `ok` of the suite's own, `test.check`, `test.fail` and
   `test.reportSuccessFailureCount` (the box: *"No suite keeps a helper of its own that hands the reporter a title on a
   pass and other words on a fail"*).

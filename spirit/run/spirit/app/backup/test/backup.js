@@ -64,7 +64,7 @@ test.run('the world: spirit/state/ holds node.db with its row, desk/data/marker.
   fs.writeFileSync(path.join(state, 'config.json'), JSON.stringify({ spiritHome: W.homeCfg }));
   return dbMark(path.join(state, 'node.db')) === NODE_MARK && readText(path.join(state, 'desk', 'data', 'marker.json')).indexOf(DESK_MARK) !== -1
     ? true : 'the scratch state was not planted: nothing judged';
-}, 1000);
+}, test.limit.quick);
 
 test.run('the world: the backup server ran once and said so', 0.2, async function () {
   // A named pipe on Windows, as the node names its servers' (appClient.js); a socket file elsewhere.
@@ -81,19 +81,19 @@ test.run('the world: the backup server ran once and said so', 0.2, async functio
   const homes = [W.homeCfg, path.join(W.fakeHome, '.SpiritOS')];
   W.copied = [].concat.apply([], homes.map(function (h) { return filesUnder(path.join(h, 'backups')); }));
   return / (wrote |checked)/.test(out) ? true : 'the backup server said no run in 15 s: nothing judged. It said: ' + short(out);
-}, 3000);
+}, test.limit.slow);
 
 // The box: "it copies only its own state folder"
 test.run('another process\'s state, spirit/state/desk/data/marker.json, is copied', 0.2, function () {
   const copied = W.copied || [];
   const desk = copied.filter(function (f) { return readText(f).indexOf(DESK_MARK) !== -1; });
   return desk.length > 0 ? true : 'spirit/state/desk/data/marker.json is not copied anywhere; the backup wrote only ' + short(copied.map(function (f) { return path.relative(W.scratch, f); }));
-}, 1000);
+}, test.limit.quick);
 test.run('the node\'s node.db is copied, its row in the copy', 0.2, function () {
   const copied = W.copied || [];
   const ndb = copied.filter(function (f) { return dbMark(f) === NODE_MARK; });
   return ndb.length > 0 ? true : 'spirit/state/node.db is not copied anywhere; the backup wrote only ' + short(copied.map(function (f) { return path.relative(W.scratch, f); }));
-}, 1000);
+}, test.limit.quick);
 
 // The box: "reads a config path that does not exist"
 test.run('the backup lands under the spiritHome of spirit/state/config.json, nothing under the fallback home', 0.2, function () {
@@ -101,4 +101,4 @@ test.run('the backup lands under the spiritHome of spirit/state/config.json, not
   const inFallback = filesUnder(path.join(W.fakeHome, '.SpiritOS'));
   return inCfg.length > 0 && inFallback.length === 0 ? true
     : 'spirit/state/config.json\'s spiritHome is not used: ' + inCfg.length + ' files under it, ' + inFallback.length + ' under <home>/.SpiritOS (' + short(inFallback.map(function (f) { return path.relative(W.scratch, f); })) + ')';
-}, 1000);
+}, test.limit.quick);

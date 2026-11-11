@@ -66,21 +66,21 @@ test.run('the world: the row runs on a bare window, the page\'s data set real', 
   E = ((global.window.spirit.element || {}).spirit || {}).element || {};
   F = ((global.window.spirit.data || {}).fs || {}).data;
   return true;
-}, 1000);
+}, test.limit.quick);
 
 // it loads what it uses itself (rule/26)
 test.run('it requires the shared row element, and no data script', 0.2, function () {
   if (!required) return 'the row never ran: the world failed';
   return required.indexOf('spirit/element/rowElement.js') !== -1 && !required.some(function (p) { return /data\.js$/.test(p); }) ? true : 'required: ' + short(required);
-}, 1000);
+}, test.limit.quick);
 test.run('it loads the fs family\'s cache manager, which puts ((spirit.data || {}).fs || {}).data on the page', 0.2, function () {
   if (!managers) return 'the row never ran: the world failed';
   return managers.indexOf('fs') !== -1 && F && typeof F.file === 'function' ? true : 'managers: ' + short(managers);
-}, 1000);
+}, test.limit.quick);
 test.run('it registers spirit.element.spirit.element.search.file.rowElement.create', 0.2, function () {
   if (!F || typeof F.file !== 'function') return NO_F;
   return E.search.file.rowElement && typeof E.search.file.rowElement.create === 'function' ? true : 'elements: ' + short(Object.keys(E));
-}, 1000);
+}, test.limit.quick);
 
 // what the fs-watcher's stream means for data.files, in the type's own element (goal/G41.16)
 // Andy: "get rid of thos FUCKING data.js scripts, DIDN't WE INSIST on the PROPER way to do this shit?": the file tree's
@@ -89,51 +89,51 @@ test.run('it registers spirit.element.spirit.element.search.file.rowElement.crea
 test.run('before the tree is whole, data.files is not ready', 0.2, function () {
   if (noRow()) return noRow();
   return F.ready() !== true ? true : 'ready: ' + short(F.ready());
-}, 1000);
+}, test.limit.quick);
 test.run('a createDirectory is a folder at files/<path>', 0.2, function () {
   if (noRow()) return noRow();
   D.takeJob(cmd({ op: 'createDirectory', path: 'docs' }));
   D.takeJob(cmd({ op: 'createFile', path: 'docs/a.md', size: 5, modified: '2030-01-01T00:00:00Z' }));
   D.takeJob(cmd({ op: 'createFile', path: 'docs/core.js', size: 7, core: true }));
   return F.file('docs') && F.file('docs').kind === 'folder' ? true : 'files/docs: ' + short(F.file('docs'));
-}, 1000);
+}, test.limit.quick);
 test.run('a createFile is a file with its size and its time, core false', 0.2, function () {
   if (noRow()) return noRow();
   const a = F.file('docs/a.md');
   return a && a.kind === 'file' && a.size === 5 && a.modified === '2030-01-01T00:00:00Z' && a.core === false ? true : 'files/docs/a.md: ' + short(a);
-}, 1000);
+}, test.limit.quick);
 test.run('the node\'s word that a file is core is kept', 0.2, function () {
   if (noRow()) return noRow();
   return F.file('docs/core.js') && F.file('docs/core.js').core === true ? true : 'files/docs/core.js: ' + short(F.file('docs/core.js'));
-}, 1000);
+}, test.limit.quick);
 test.run('treeComplete: data.files is ready', 0.2, function () {
   if (noRow()) return noRow();
   D.takeJob({ id: 'spirit.fs', data: { treeComplete: true } });
   return F.ready() === true ? true : 'ready: ' + short(F.ready());
-}, 1000);
+}, test.limit.quick);
 test.run('a change by path sets the file again, its kind kept', 0.2, function () {
   if (noRow()) return noRow();
   D.takeJob(cmd({ op: 'changeFile', path: 'docs/a.md', size: 6 }));
   return F.file('docs/a.md') && F.file('docs/a.md').size === 6 && F.file('docs/a.md').kind === 'file' ? true : 'files/docs/a.md: ' + short(F.file('docs/a.md'));
-}, 1000);
+}, test.limit.quick);
 test.run('a deleteFile takes that file out', 0.2, function () {
   if (noRow()) return noRow();
   D.takeJob(cmd({ op: 'deleteFile', path: 'docs/a.md' }));
   return F.file('docs/a.md') === null && F.file('docs') ? true : 'files: ' + short(Object.keys(F.files()));
-}, 1000);
+}, test.limit.quick);
 test.run('a deleteDirectory takes the folder out, and everything under it', 0.2, function () {
   if (noRow()) return noRow();
   D.takeJob(cmd({ op: 'createFile', path: 'docs/sub/x.txt', size: 1 }));
   D.takeJob(cmd({ op: 'deleteDirectory', path: 'docs' }));
   return !Object.keys(F.files()).some(function (k) { return k === 'docs' || k.indexOf('docs/') === 0; }) ? true : 'files: ' + short(Object.keys(F.files()));
-}, 1000);
+}, test.limit.quick);
 test.run('another job\'s command, or a command with no path, writes nothing', 0.2, function () {
   if (noRow()) return noRow();
   const before = JSON.stringify(F.files());
   D.takeJob({ id: 'j2', type: 'relay-presence', data: { command: { op: 'createFile', path: 'nope.txt' } } });
   D.takeJob(cmd({ op: 'createFile' }));
   return JSON.stringify(F.files()) === before ? true : 'files: ' + short(Object.keys(F.files()));
-}, 1000);
+}, test.limit.quick);
 
 // one file or folder as a row
 test.run('a row element of kind file, keyed by its path, its facts from data.files', 0.2, function () {
@@ -141,26 +141,26 @@ test.run('a row element of kind file, keyed by its path, its facts from data.fil
   D.takeJob(cmd({ op: 'createFile', path: 'web/page<1>.html', size: 2048, modified: '2030-01-02T03:04:00Z', core: false }));
   el = E.search.file.rowElement.create({ path: 'web/page<1>.html' });
   return el.kind === 'file' && el.key === 'web/page<1>.html' && el.row.size === 2048 && el.row.name === 'page<1>.html' ? true : 'el: ' + short({ kind: el.kind, key: el.key, row: el.row });
-}, 1000);
+}, test.limit.quick);
 test.run('its fields are name, size and changed', 0.2, function () {
   if (!el) return NO_EL;
   return JSON.stringify(Object.keys(cellsOf(el))) === '["name","size","changed"]' ? true : 'fields: ' + short(Object.keys(cellsOf(el)));
-}, 1000);
+}, test.limit.quick);
 test.run('the name cell: a text file\'s icon 📜 (goal/G43.17), where it lives, and its name, escaped', 0.2, function () {
   if (!el) return NO_EL;
   const cells = cellsOf(el);
   return /📜/.test(cells.name) && /page&lt;1>\.html/.test(cells.name) && /web\//.test(cells.name) && !/<1>/.test(cells.name) ? true : 'name: ' + short(cells.name);
-}, 1000);
+}, test.limit.quick);
 test.run('its size through formatBytes, its time to the minute', 0.2, function () {
   if (!el) return NO_EL;
   const cells = cellsOf(el);
   return cells.size === '2048 Bytes' && cells.changed === '2030-01-02 03:04' ? true : 'cells: ' + short(cells);
-}, 1000);
+}, test.limit.quick);
 test.run('a folder: its icon, and no size', 0.2, function () {
   if (noRow()) return noRow();
   const fc = cellsOf(E.search.file.rowElement.create({ path: 'web', kind: 'folder' }));
   return /📁/.test(fc.name) && fc.size === '' ? true : 'folder: ' + short(fc);
-}, 1000);
+}, test.limit.quick);
 // goal/G43.17, the box: "text 📜, video 📹, image 🌇, audio 🔊; a folder 📁 shut and 📂 open; any other file, of unknown kind, ❔, in
 // place of today's 📄; a file gone stays ❌".
 test.run('a file\'s icon by its kind: text 📜, image 🌇, video 📹, audio 🔊, any other ❔, none 📄', 0.2, async function () {
@@ -169,12 +169,12 @@ test.run('a file\'s icon by its kind: text 📜, image 🌇, video 📹, audio �
   const KINDS = { 'web/a.txt': '📜', 'web/a.png': '🌇', 'web/a.mp4': '📹', 'web/a.mp3': '🔊', 'web/a.zzq': '❔' };
   const wrong = Object.keys(KINDS).filter(function (p) { const k = cellsOf(E.search.file.rowElement.create({ path: p })); return k.name.indexOf(KINDS[p]) === -1 || /📄/.test(k.name); });
   return !wrong.length ? true : 'wrong: ' + short(wrong);
-}, 1000);
+}, test.limit.quick);
 test.run('a core file\'s name in yellow, said core: write-protected', 0.2, function () {
   if (noRow()) return noRow();
   const cc = cellsOf(E.search.file.rowElement.create({ path: 'spirit/spirit.js', core: true }));
   return /spirit-core/.test(cc.name) && /core: write-protected/.test(cc.name) ? true : 'core: ' + short(cc.name);
-}, 1000);
+}, test.limit.quick);
 
 // it repaints from data.files
 test.run('its path in data.files changed, the row repaints its size', 0.2, async function () {
@@ -184,13 +184,13 @@ test.run('its path in data.files changed, the row repaints its size', 0.2, async
   D.takeJob(cmd({ op: 'changeFile', path: 'web/page<1>.html', size: 4096, modified: '2030-01-02T03:04:00Z', core: false }));
   await settle();
   return el.row.size === 4096 && hosts.size.innerHTML === '4096 Bytes' ? true : 'row: ' + short(el.row) + ', size ' + short(hosts.size.innerHTML);
-}, 1000);
+}, test.limit.quick);
 test.run('its path gone from data.files, the row is marked gone', 0.2, async function () {
   if (!el || !hosts) return NO_EL;
   D.takeJob(cmd({ op: 'deleteFile', path: 'web/page<1>.html' }));
   await settle();
   return el.row.gone === true && /❌/.test(hosts.name.innerHTML) ? true : 'row: ' + short(el.row);
-}, 1000);
+}, test.limit.quick);
 
 // its actions ask, and paint nothing
 test.run('open hands its path to the viewer the page gave', 0.2, async function () {
@@ -198,23 +198,23 @@ test.run('open hands its path to the viewer the page gave', 0.2, async function 
   const opened = [];
   await el.act('open', { open: function (p) { opened.push(p); } });
   return opened.length === 1 && opened[0] === 'web/page<1>.html' ? true : 'opened: ' + short(opened);
-}, 1000);
+}, test.limit.quick);
 test.run('with no viewer, the text launcher', 0.2, async function () {
   if (!el) return NO_EL;
   const launched = [];
   await el.act('open', { launchApp: function (app, a) { launched.push([app, a]); } });
   return launched.length === 1 && launched[0][0] === 'text-file-launcher' && launched[0][1].path === 'web/page<1>.html' ? true : 'launched: ' + short(launched);
-}, 1000);
+}, test.limit.quick);
 test.run('remove asks fs.delete { path } through the spirit object', 0.2, async function () {
   if (!el) return NO_EL;
   await el.act('remove', {});
   return asked.some(function (c) { return c.verb === 'fs.delete' && c.args.path === 'web/page<1>.html'; }) ? true : 'asked: ' + short(asked);
-}, 1000);
+}, test.limit.quick);
 test.run('expandInfo asks fs.stat, and no annotations (goal/G43.20: the node\'s only)', 0.2, async function () {
   if (!el) return NO_EL;
   const info = await el.expandInfo();
   return info && info.stat && !('annotations' in info) && asked.some(function (c) { return c.verb === 'fs.stat'; }) && !asked.some(function (c) { return c.verb === 'fs.annotations'; }) ? true : 'info: ' + short(info) + ', asked ' + short(asked);
-}, 1000);
+}, test.limit.quick);
 
 // ── goal/G43.4: THE RESERVED WORDS IN COLOUR, IN A REAL BROWSER ───────────────────────────────────
 // Real rows on a scratch node (./rowElement-words.html), spirit/word.js and the node's own file stream under them.
@@ -242,56 +242,56 @@ test.run('the world: a scratch node with its DEBUG on, and Chrome on the words p
   await page.evaluate('window.ready()');
   row = async function (p, kind) { try { return JSON.parse(await page.evaluate('window.row(' + JSON.stringify(p) + ', ' + JSON.stringify(kind || 'folder') + ')')); } catch (e) { return { threw: String(e) }; } };
   return true;
-}, 12000);
+}, test.limit.slow);
 test.run('spirit/app: reserved, and the spirit object holds spirit.app: light blue', 0.2, async function () {
   if (!row) return NO_PAGE;
   const app = await row('spirit/app');
   return app.app === 'lightblue' ? true : 'spirit/app: ' + short(app);
-}, 5000);
+}, test.limit.slow);
 test.run('its path element spirit: always the colour of a word that holds, light blue', 0.2, async function () {
   if (!row) return NO_PAGE;
   const app = await row('spirit/app');
   return app.spirit === 'lightblue' ? true : 'spirit/app: ' + short(app);
-}, 5000);
+}, test.limit.slow);
 test.run('spirit/element: light blue', 0.2, async function () {
   if (!row) return NO_PAGE;
   const element = await row('spirit/element');
   return element.element === 'lightblue' ? true : 'spirit/element: ' + short(element);
-}, 5000);
+}, test.limit.slow);
 // Andy's commit d278c3e6, "identity": contact is no hard-coded word now.
 test.run('spirit/contact: a word (word.js), and the page holds spirit.contact: light blue', 0.2, async function () {
   if (!row) return NO_PAGE;
   const contact = await row('spirit/contact');
   return contact.contact === 'lightblue' ? true : 'spirit/contact: ' + short(contact);
-}, 5000);
+}, test.limit.slow);
 test.run('a file inside: its path elements carry the colours too, the file api.js, a word with no spirit.app.api, light purple', 0.2, async function () {
   if (!row) return NO_PAGE;
   const inside = await row('spirit/app/api.js', 'file');
   return inside.app === 'lightblue' && inside.spirit === 'lightblue' && inside['api.js'] === 'lightpurple' ? true : 'spirit/app/api.js: ' + short(inside);
-}, 5000);
+}, test.limit.slow);
 // A folder no word names stays plain (goal/G43.32: spirit/jobs, plain before, is spirit/job, one of word.js's words, below).
 test.run('spirit/client: not reserved: no colour', 0.2, async function () {
   if (!row) return NO_PAGE;
   const plain = await row('spirit/client');
   return plain.client === 'none' ? true : 'spirit/client: ' + short(plain);
-}, 5000);
+}, test.limit.slow);
 test.run('spirit/hub.js: not reserved: no colour', 0.2, async function () {
   if (!row) return NO_PAGE;
   const hub = await row('spirit/hub.js', 'file');
   return hub['hub.js'] === 'none' ? true : 'spirit/hub.js: ' + short(hub);
-}, 5000);
+}, test.limit.slow);
 test.run('outside spirit/ no word holds: shell/app has no colour', 0.2, async function () {
   if (!row) return NO_PAGE;
   const elsewhere = await row('shell/app', 'folder');
   return elsewhere.app === 'none' ? true : 'shell/app: ' + short(elsewhere);
-}, 5000);
+}, test.limit.slow);
 test.run('spirit/job: reserved, a folder, and no spirit.job: light purple, where red was', 0.2, async function () {
   if (!row) return NO_PAGE;
   put('spirit/job/keep.txt', 'a folder for the word job');
   const job = await row('spirit/job');
   del('spirit/job/keep.txt');
   return job.job === 'lightpurple' ? true : 'spirit/job: ' + short(job);
-}, 5000);
+}, test.limit.slow);
 
 // goal/G43.4: "the colors will follow word.json changes live."
 test.run('the folder spirit/app/thing, no word: no colour', 0.2, async function () {
@@ -299,19 +299,19 @@ test.run('the folder spirit/app/thing, no word: no colour', 0.2, async function 
   put('spirit/app/thing/keep.txt', 'a folder');
   const before = await row('spirit/app/thing');
   return before.thing === 'none' ? true : 'spirit/app/thing: ' + short(before);
-}, 5000);
+}, test.limit.slow);
 test.run('word.json gains the word: the same row goes light purple, with no reload: no spirit.app.thing', 0.2, async function () {
   if (!row) return NO_PAGE;
   put('spirit/app/word.json', JSON.stringify({ thing: true }));
   const red = await row('spirit/app/thing');
   return red.thing === 'lightpurple' ? true : 'spirit/app/thing: ' + short(red);
-}, 5000);
+}, test.limit.slow);
 test.run('with spirit.app.thing on the object: light blue', 0.2, async function () {
   if (!row) return NO_PAGE;
   await page.evaluate('window.setObject(true); window.fresh("spirit/app/thing")');
   const blue = await row('spirit/app/thing');
   return blue.thing === 'lightblue' ? true : 'spirit/app/thing: ' + short(blue);
-}, 5000);
+}, test.limit.slow);
 test.run('word.json gone: the row loses its colour, with no reload', 0.2, async function () {
   if (!row) return NO_PAGE;
   await page.evaluate('window.setObject(false)');
@@ -319,4 +319,4 @@ test.run('word.json gone: the row loses its colour, with no reload', 0.2, async 
   const gone = await row('spirit/app/thing');
   del('spirit/app/thing/keep.txt');
   return gone.thing === 'none' ? true : 'spirit/app/thing: ' + short(gone);
-}, 5000);
+}, test.limit.slow);

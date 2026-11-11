@@ -98,26 +98,26 @@ const NO_HALVES = 'no family half and verb half';
 // renamed, the old name gone
 test.run('spirit/element/search/api.js is there', 0.2, function () {
   return fs.existsSync(FILE) ? true : 'there is no spirit/element/search/api.js';
-}, 1000);
+}, test.limit.quick);
 test.run('spirit/element/apiBranchSelector.js is not: the rename leaves no copy', 0.2, function () {
   return !fs.existsSync(OLD) ? true : 'spirit/element/apiBranchSelector.js is still there';
-}, 1000);
+}, test.limit.quick);
 test.run('it names no shellCreateListSearch (goal/G40.8)', 0.2, function () {
   if (!fs.existsSync(FILE)) return 'there is no spirit/element/search/api.js';
   const names = /shellCreateListSearch/.test(fs.readFileSync(FILE, 'utf8').replace(/\/\/.*$/gm, ''));
   return !names ? true : 'it names shellCreateListSearch';
-}, 1000);
+}, test.limit.quick);
 test.run('it registers apiFamilySelector with a create, and createApiFamilySelector and createApiBranchSelector no more', 0.2, async function () {
   if (!fs.existsSync(FILE)) return 'there is no spirit/element/search/api.js';
   w = world();
   await settle();
   made = w.E.search.api;
   return made && typeof made.create === 'function' && !('createApiFamilySelector' in w.E) && !('createApiBranchSelector' in w.E) ? true : 'elements: ' + short(Object.keys(w.E));
-}, 1000);
+}, test.limit.quick);
 test.run('it loads its two halves itself (rule/26): the family list, search/api/listElement.js, and the verb selector', 0.2, function () {
   if (!made || typeof made.create !== 'function') return NO_MADE;
   return w.required.indexOf('spirit/element/search/api/listElement.js') !== -1 && w.required.indexOf('spirit/element/search/api/verb.js') !== -1 ? true : 'required: ' + short(w.required);
-}, 1000);
+}, test.limit.quick);
 
 // the family, then its verb, side by side
 // Box v23: "every element gets a container and appends itself".
@@ -128,58 +128,58 @@ test.run('create(container, options) appends the control to its container and an
   seen = [];
   fam.addEventListener('change', function () { seen.push(fam.value); });
   return box.kids.length === 1 && box.kids[0] === fam ? true : 'container holds ' + box.kids.length + (box.kids[0] === fam ? ', the control' : ', not the control');
-}, 1000);
+}, test.limit.quick);
 test.run('it draws two probabilitySearch dropdowns', 0.2, async function () {
   if (!fam) return NO_MADE;
   await settle();
   return w.lists.length === 2 && w.lists.every(function (l) { return l.opts.face === 'dropdown'; }) ? true : 'lists: ' + short(w.lists.map(function (l) { return l.opts.face; }));
-}, 1000);
+}, test.limit.quick);
 test.run('the world: a family half and a verb half', 0.2, function () {
   if (!fam) return NO_MADE;
   vl = w.lists.filter(function (l) { return l.opts.all === 'All Verbs'; })[0];
   fl = w.lists.filter(function (l) { return l !== vl; })[0];
   if (vl) verbBox = vl.host;
   return w.lists.length >= 2 && vl && fl ? true : 'no family half and verb half: ' + short(w.lists.map(function (l) { return l.opts.all; }));
-}, 1000);
+}, test.limit.quick);
 test.run('options.all is what the family half reads unchosen', 0.2, function () {
   if (!vl || !fl) return NO_HALVES;
   return fl.opts.all === 'every family' ? true : 'all: ' + short(fl.opts.all);
-}, 1000);
+}, test.limit.quick);
 test.run('its families are the tree\'s, one that did not answer left out', 0.2, function () {
   if (!vl || !fl) return NO_HALVES;
   return short(names(fl)) === short(['fs', 'jobs']) ? true : 'families: ' + short(names(fl));
-}, 1000);
+}, test.limit.quick);
 test.run('nothing chosen: the verb half hidden; family, verb and value \'\'', 0.2, function () {
   if (!vl || !fl) return NO_HALVES;
   return verbBox.hidden === true && fam.family === '' && fam.verb === '' && fam.value === '' ? true : 'hidden ' + verbBox.hidden + ', ' + short({ family: fam.family, verb: fam.verb, value: fam.value });
-}, 1000);
+}, test.limit.quick);
 test.run('a family pick: family is it, value the family alone, one change', 0.2, function () {
   if (!vl || !fl) return NO_HALVES;
   fl.opts.pick({ key: 'fs', name: 'fs' }, 'fs');
   return fam.family === 'fs' && fam.verb === '' && fam.value === 'fs' && seen[seen.length - 1] === 'fs' ? true : 'family ' + fam.family + ', value ' + fam.value;
-}, 1000);
+}, test.limit.quick);
 test.run('and the verb half shows its verbs, DEBUG never offered', 0.2, function () {
   if (!vl || !fl) return NO_HALVES;
   return verbBox.hidden === false && short(names(vl)) === short(['loadFile', 'search']) ? true : 'hidden ' + verbBox.hidden + ', verbs ' + short(names(vl));
-}, 1000);
+}, test.limit.quick);
 test.run('a verb pick: verb is it, value family.verb', 0.2, function () {
   if (!vl || !fl) return NO_HALVES;
   vl.opts.pick({ key: 'search', name: 'search' }, 'search');
   return fam.verb === 'search' && fam.value === 'fs.search' ? true : 'verb ' + fam.verb + ', value ' + fam.value;
-}, 1000);
+}, test.limit.quick);
 test.run('All Verbs: the empty verb, value the family again', 0.2, function () {
   if (!vl || !fl) return NO_HALVES;
   vl.opts.pick(null, '');
   return fam.verb === '' && fam.value === 'fs' ? true : 'verb ' + short(fam.verb) + ', value ' + fam.value;
-}, 1000);
+}, test.limit.quick);
 test.run('another family clears the verb and lists its own verbs', 0.2, function () {
   if (!vl || !fl) return NO_HALVES;
   fl.opts.pick({ key: 'jobs', name: 'jobs' }, 'jobs');
   return fam.family === 'jobs' && fam.verb === '' && short(names(vl)) === short(['list']) ? true : 'family ' + fam.family + ', verb ' + short(fam.verb) + ', verbs ' + short(names(vl));
-}, 1000);
+}, test.limit.quick);
 test.run('load lists another party\'s tree, clears the choice and hides the verb half', 0.2, async function () {
   if (!vl || !fl) return NO_HALVES;
   await fam.load(function () { return Promise.resolve(OTHER); }); await settle();
   return fam.family === '' && fam.value === '' && verbBox.hidden === true && short(names(fl)) === short(['relay']) ? true
     : 'family ' + fam.family + ', hidden ' + verbBox.hidden + ' (introSpector\'s deferral, the box: "the only exception is introspector, deferred for network-scope design reasons.")';
-}, 1000);
+}, test.limit.quick);

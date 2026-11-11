@@ -41,11 +41,11 @@ test.run('the card is kept', 0.2, function () {
   const said = contacts.setCard(W.home, W.puppet.publicKey, cardOf(W.puppet, W.me.publicKey, 1));
   W.row = W.seen.get(W.puppet.publicKey) || {};
   return (said.ok === true && !!W.row.card) || 'setCard: ' + short(said) + ', card kept ' + !!W.row.card;
-}, 2000);
+}, test.limit.quick);
 test.run('and sets no star: anyone can sign a card naming this node', 0.8, function () {
   if (!W.row) return 'no card set: the test before it failed';
   return !W.row.mine || 'the card set the star: ' + short({ mine: W.row.mine });
-}, 1000);
+}, test.limit.quick);
 // A card naming another owner.
 test.run('takes no star away: only the button does', 0.8, function () {
   if (!W.seen) return 'no store: the first test failed';
@@ -54,7 +54,7 @@ test.run('takes no star away: only the button does', 0.8, function () {
   const other = auth.generateIdentity('other');
   const said2 = contacts.setCard(W.home, W.puppet.publicKey, cardOf(W.puppet, other.publicKey, 2));
   return (said2.ok === true && !!(seen.get(W.puppet.publicKey) || {}).mine) || 'setCard ' + short(said2) + ', mine ' + (seen.get(W.puppet.publicKey) || {}).mine;
-}, 1000);
+}, test.limit.quick);
 
 // /api/spirit contact.own: the button's verb.
 const call = async function (name, args) {
@@ -69,7 +69,7 @@ function noNode() { return W.node && W.node.up ? null : 'no scratch node: the wo
 test.run('the world: the scratch node comes up', 0.2, async function () {
   W.node = await scratchNode();
   return W.node.up || 'the scratch node did not come up: nothing judged';
-}, 5000);
+}, test.limit.slow);
 test.after(function () {
   try { if (W.home) fs.rmSync(W.home, { recursive: true, force: true }); } catch (e) { /* scratch */ }
   const node = W.node || {};
@@ -82,37 +82,37 @@ test.run('a row is there to star', 0.2, async function () {
   const made = await call('contact.block', { publicKey: W.KEY, publicLabel: 'a contact' });
   await call('contact.unblock', { publicKey: W.KEY });
   return (made.status >= 200 && made.status < 300) || 'contact.block: ' + made.status + ' ' + short(made.text);
-}, 1000);
+}, test.limit.quick);
 test.run('a new row has no star', 0.2, async function () {
   if (noNode()) return noNode();
   return await mine() === false || 'before: ' + (await mine());
-}, 1000);
+}, test.limit.quick);
 test.run('contact.own {key, own: true} is answered', 0.2, async function () {
   if (noNode()) return noNode();
   const on = await call('contact.own', { key: W.KEY, own: true });
   return (on.status >= 200 && on.status < 300) || 'contact.own true: ' + on.status + ' ' + short(on.text);
-}, 1000);
+}, test.limit.quick);
 test.run('and puts the star on', 0.2, async function () {
   if (noNode()) return noNode();
   return await mine() === true || 'after own true: ' + (await mine());
-}, 1000);
+}, test.limit.quick);
 test.run('contact.own {key, own: false} takes it away', 0.2, async function () {
   if (noNode()) return noNode();
   const off = await call('contact.own', { key: W.KEY, own: false });
   return (off.status >= 200 && off.status < 300 && await mine() === false) || 'contact.own false: ' + off.status + ', mine ' + (await mine());
-}, 1000);
+}, test.limit.quick);
 test.run('a key with no row is refused with a code', 0.2, async function () {
   if (noNode()) return noNode();
   const unknown = await call('contact.own', { key: auth.generateIdentity('nobody').publicKey, own: true });
   return refused(unknown) || 'unknown key: ' + unknown.status + ' ' + short(unknown.text);
-}, 1000);
+}, test.limit.quick);
 test.run('own that is not true or false is refused, and nothing changes', 0.2, async function () {
   if (noNode()) return noNode();
   const notBool = await call('contact.own', { key: W.KEY, own: 'yes' });
   return (refused(notBool) && await mine() === false) || 'own "yes": ' + notBool.status + ' ' + short(notBool.text);
-}, 1000);
+}, test.limit.quick);
 test.run('a key of the wrong type is refused', 0.2, async function () {
   if (noNode()) return noNode();
   const badKey = await call('contact.own', { key: 12345, own: true });
   return refused(badKey) || 'key 12345: ' + badKey.status + ' ' + short(badKey.text);
-}, 1000);
+}, test.limit.quick);

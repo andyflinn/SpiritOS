@@ -32,21 +32,21 @@ test.run('the world: a scratch node comes up', 0.2, async function () {
   W.node = await H.scratchNode();
   W.face = fs.readFileSync(FACE, 'utf8');
   return W.node.up || 'the scratch node did not come up: nothing judged';
-}, 7000);
+}, test.limit.slow);
 test.run('"/" answers 200', 0.2, async function () {
   if (!W.node || !W.node.up) return 'no scratch node: the world failed';
   W.r = await fetch(W.node.base + '/');
   W.body = await W.r.text();
   return W.r.status === 200 || '"/" answered ' + W.r.status;
-}, 1000);
+}, test.limit.quick);
 test.run('as text/html', 0.2, function () {
   if (!W.r) return 'nothing asked: the world failed';
   return /^text\/html/.test(String(W.r.headers.get('content-type'))) || 'its content type is ' + short(W.r.headers.get('content-type'));
-}, 1000);
+}, test.limit.quick);
 test.run('its body is spirit/shell/face.html as it stands on the disc', 0.2, function () {
   if (!W.r) return 'nothing asked: the world failed';
   return W.body === W.face || 'its body is not face.html: ' + short(W.body.slice(0, 200));
-}, 1000);
+}, test.limit.quick);
 
 // opened in a real Chrome, "/" is the face: the spirit object, ready
 test.run('the world: a Chrome page opens at "/"', 0.2, async function () {
@@ -57,23 +57,23 @@ test.run('the world: a Chrome page opens at "/"', 0.2, async function () {
   if (!W.page || W.page.error) return W.page ? W.page.error : 'no Chrome page';
   await W.page.send('Page.navigate', { url: W.node.base + '/' });
   return true;
-}, 2000);
+}, test.limit.quick);
 test.run('the page at "/" has the spirit object', 0.2, async function () {
   if (!W.page || W.page.error) return 'no Chrome page: the world failed';
   W.ready = await H.until(function () { return W.page.evaluate('!!(window.spirit && window.spirit.ready)').then(Boolean); }, H.WAIT);
   return !!W.ready || 'no spirit object at "/"';
-}, 21000);
+}, test.limit.long);
 test.run('and spirit.ready settles, as on face.html', 0.2, async function () {
   if (!W.ready) return 'no spirit object: the world failed';
   const settled = await W.page.evaluate('window.spirit.ready.then(function () { return "ready"; }, function (e) { return "refused: " + String(e && e.message || e); })');
   return settled === 'ready' || 'spirit.ready at "/": ' + short(settled);
-}, 1000);
+}, test.limit.quick);
 test.run('it loads face.html\'s own scripts first', 0.2, async function () {
   if (!W.page || W.page.error) return 'no Chrome page: the world failed';
   const scripts = JSON.parse(await W.page.evaluate('JSON.stringify(Array.prototype.map.call(document.scripts, function (s) { return s.getAttribute("src") || ""; }).filter(Boolean))'));
   const faceScripts = (W.face.match(/src="([^"]*)"/g) || []).map(function (m) { return m.slice(5, -1); });
   return JSON.stringify(scripts.slice(0, faceScripts.length)) === JSON.stringify(faceScripts) || 'the page at "/" loads ' + short(scripts) + ', face.html names ' + short(faceScripts);
-}, 1000);
+}, test.limit.quick);
 
 // ── THE GARBAGE PART ──
 // THE ATTACKER'S GARBAGE, AT EVERY DOOR (goal/G41.30; spec: ./server.md, its section). Andy, the box: "all
@@ -318,7 +318,7 @@ test.run('the world: the garbage\'s scratch node comes up, every app server it t
   test.comment('it will make ' + G.asks.length + ' asks of bad arguments over ' + Object.keys(tree).length + ' families (' + G.asks.filter(function (a) { return a.pair; }).length + ' of them pairs): ' + G.readingAsks.length + ' here, ' + G.actingAsks.length + ' to the ' + G.actingVerbs.length + ' verbs that act, on a throwaway node of their own; and ' + RAWS.length + ' raw requests, each batch of ' + BATCH + ' followed by a plain call');
   const missingServers = SERVERS.filter(function (s) { return !tree[s]; });
   return !missingServers.length || 'the scratch node came up without ' + missingServers.join(', ') + ': their verbs would be judged on nothing';
-}, 100000);
+}, test.limit.long);
 
 // THROWN, BATCH BY BATCH: each ask judged; after each batch the node answers a plain call within PLAIN_MS.
 const hungAfter = [];
@@ -351,11 +351,11 @@ test.run('the verbs that do not act took all their garbage, pairs included, with
   // Each verb that broke named in the answer: the verbs are what the node's api names, so no title can be written out per verb.
   const bad = Object.keys(broken).map(function (name) { return '/api/spirit ' + name + ': ' + broken[name].length + ' crashed or hung, first: ' + broken[name][0]; });
   return !bad.length || bad.join('; ');
-}, 19000);
+}, test.limit.slow);
 test.run('/api/spirit: after every batch the node answered a plain call in time', 0.2, function () {
   if (!thrown) return 'no garbage thrown: the world failed';
   return !hungAfter.length || '/api/spirit: after ' + hungAfter.length + ' batches the node did not answer a plain call within ' + (PLAIN_MS / 1000) + ' s, first after: ' + shortG(hungAfter[0]);
-}, 1000);
+}, test.limit.quick);
 
 // the node's door: raw requests and malformed paths
 // Each request written out, in the order thrown, so that each check has a plain title of its own. A request is thrown by
@@ -376,69 +376,69 @@ async function door(ri) {
   if (node.child && node.child.exitCode !== null && !G.killer) { G.killer = r0.why; why = 'IT KILLED THE NODE (exit ' + node.child.exitCode + ')'; }
   return !why || 'the node\'s door, ' + r0.why + ': ' + why;
 }
-test.run('a body that is not JSON: answered, and the node still answers', 0.2, function () { return door(0); }, 17000);
-test.run('JSON that is not an object: answered, and the node still answers', 0.2, function () { return door(1); }, 17000);
-test.run('a bare JSON string: answered, and the node still answers', 0.2, function () { return door(2); }, 17000);
-test.run('JSON null: answered, and the node still answers', 0.2, function () { return door(3); }, 17000);
-test.run('a body cut off half-way: answered, and the node still answers', 0.2, function () { return door(4); }, 31000);
-test.run('a body one byte past BODY_MAX: answered, and the node still answers', 0.2, function () { return door(5); }, 17000);
-test.run('a Content-Length far past what is sent: answered, and the node still answers', 0.2, function () { return door(6); }, 31000);
-test.run('deep nesting, 5000 levels: answered, and the node still answers', 0.2, function () { return door(7); }, 17000);
-test.run('a __proto__ key: answered, and the node still answers', 0.2, function () { return door(8); }, 17000);
-test.run('a constructor key: answered, and the node still answers', 0.2, function () { return door(9); }, 17000);
-test.run('call as __proto__: answered, and the node still answers', 0.2, function () { return door(10); }, 17000);
-test.run('call as constructor.prototype: answered, and the node still answers', 0.2, function () { return door(11); }, 17000);
-test.run('no Content-Type: answered, and the node still answers', 0.2, function () { return door(12); }, 17000);
-test.run('Content-Type text/plain: answered, and the node still answers', 0.2, function () { return door(13); }, 17000);
-test.run('Content-Type multipart with no boundary: answered, and the node still answers', 0.2, function () { return door(14); }, 17000);
-test.run('invalid UTF-8 bytes: answered, and the node still answers', 0.2, function () { return door(15); }, 17000);
-test.run('a request line that is not HTTP: answered, and the node still answers', 0.2, function () { return door(16); }, 17000);
-test.run('a header line with no colon: answered, and the node still answers', 0.2, function () { return door(17); }, 17000);
-test.run('GET /..: answered, and the node still answers', 0.2, function () { return door(18); }, 17000);
-test.run('POST /..: answered, and the node still answers', 0.2, function () { return door(19); }, 17000);
-test.run('GET /../../../../etc/passwd: answered, and the node still answers', 0.2, function () { return door(20); }, 17000);
-test.run('POST /../../../../etc/passwd: answered, and the node still answers', 0.2, function () { return door(21); }, 17000);
-test.run('GET /%2e%2e/%2e%2e/etc/passwd: answered, and the node still answers', 0.2, function () { return door(22); }, 17000);
-test.run('POST /%2e%2e/%2e%2e/etc/passwd: answered, and the node still answers', 0.2, function () { return door(23); }, 17000);
-test.run('GET /shell/%2f%2f..%2f..%2fetc: answered, and the node still answers', 0.2, function () { return door(24); }, 17000);
-test.run('POST /shell/%2f%2f..%2f..%2fetc: answered, and the node still answers', 0.2, function () { return door(25); }, 17000);
-test.run('GET a path of 9001 letters: answered, and the node still answers', 0.2, function () { return door(26); }, 17000);
-test.run('POST a path of 9001 letters: answered, and the node still answers', 0.2, function () { return door(27); }, 17000);
-test.run('GET /%: answered, and the node still answers', 0.2, function () { return door(28); }, 17000);
-test.run('POST /%: answered, and the node still answers', 0.2, function () { return door(29); }, 17000);
-test.run('GET /%zz: answered, and the node still answers', 0.2, function () { return door(30); }, 17000);
-test.run('POST /%zz: answered, and the node still answers', 0.2, function () { return door(31); }, 17000);
-test.run('GET /%E0%A4%A: answered, and the node still answers', 0.2, function () { return door(32); }, 17000);
-test.run('POST /%E0%A4%A: answered, and the node still answers', 0.2, function () { return door(33); }, 17000);
-test.run('GET /api/%2e%2e/spirit: answered, and the node still answers', 0.2, function () { return door(34); }, 17000);
-test.run('POST /api/%2e%2e/spirit: answered, and the node still answers', 0.2, function () { return door(35); }, 17000);
-test.run('GET //api//spirit: answered, and the node still answers', 0.2, function () { return door(36); }, 17000);
-test.run('POST //api//spirit: answered, and the node still answers', 0.2, function () { return door(37); }, 17000);
-test.run('GET /DEBUG/../../spirit/state/node.json: answered, and the node still answers', 0.2, function () { return door(38); }, 17000);
-test.run('POST /DEBUG/../../spirit/state/node.json: answered, and the node still answers', 0.2, function () { return door(39); }, 17000);
-test.run('GET /spirit/element/../../../spirit/state/identity.json: answered, and the node still answers', 0.2, function () { return door(40); }, 17000);
-test.run('POST /spirit/element/../../../spirit/state/identity.json: answered, and the node still answers', 0.2, function () { return door(41); }, 17000);
-test.run('GET /api/spirit/../../spirit/state/node.json: answered, and the node still answers', 0.2, function () { return door(42); }, 17000);
-test.run('POST /api/spirit/../../spirit/state/node.json: answered, and the node still answers', 0.2, function () { return door(43); }, 17000);
-test.run('GET /\\..\\..\\relay-state: answered, and the node still answers', 0.2, function () { return door(44); }, 17000);
-test.run('POST /\\..\\..\\relay-state: answered, and the node still answers', 0.2, function () { return door(45); }, 17000);
-test.run('GET /?%: answered, and the node still answers', 0.2, function () { return door(46); }, 17000);
-test.run('POST /?%: answered, and the node still answers', 0.2, function () { return door(47); }, 17000);
-test.run('GET /#x: answered, and the node still answers', 0.2, function () { return door(48); }, 17000);
-test.run('POST /#x: answered, and the node still answers', 0.2, function () { return door(49); }, 17000);
-test.run('GET *: answered, and the node still answers', 0.2, function () { return door(50); }, 17000);
-test.run('POST *: answered, and the node still answers', 0.2, function () { return door(51); }, 17000);
-test.run('GET /%00: answered, and the node still answers', 0.2, function () { return door(52); }, 17000);
-test.run('POST /%00: answered, and the node still answers', 0.2, function () { return door(53); }, 17000);
-test.run('GET /index.html%00.js: answered, and the node still answers', 0.2, function () { return door(54); }, 17000);
-test.run('POST /index.html%00.js: answered, and the node still answers', 0.2, function () { return door(55); }, 17000);
+test.run('a body that is not JSON: answered, and the node still answers', 0.2, function () { return door(0); }, test.limit.slow);
+test.run('JSON that is not an object: answered, and the node still answers', 0.2, function () { return door(1); }, test.limit.slow);
+test.run('a bare JSON string: answered, and the node still answers', 0.2, function () { return door(2); }, test.limit.slow);
+test.run('JSON null: answered, and the node still answers', 0.2, function () { return door(3); }, test.limit.slow);
+test.run('a body cut off half-way: answered, and the node still answers', 0.2, function () { return door(4); }, test.limit.long);
+test.run('a body one byte past BODY_MAX: answered, and the node still answers', 0.2, function () { return door(5); }, test.limit.slow);
+test.run('a Content-Length far past what is sent: answered, and the node still answers', 0.2, function () { return door(6); }, test.limit.long);
+test.run('deep nesting, 5000 levels: answered, and the node still answers', 0.2, function () { return door(7); }, test.limit.slow);
+test.run('a __proto__ key: answered, and the node still answers', 0.2, function () { return door(8); }, test.limit.slow);
+test.run('a constructor key: answered, and the node still answers', 0.2, function () { return door(9); }, test.limit.slow);
+test.run('call as __proto__: answered, and the node still answers', 0.2, function () { return door(10); }, test.limit.slow);
+test.run('call as constructor.prototype: answered, and the node still answers', 0.2, function () { return door(11); }, test.limit.slow);
+test.run('no Content-Type: answered, and the node still answers', 0.2, function () { return door(12); }, test.limit.slow);
+test.run('Content-Type text/plain: answered, and the node still answers', 0.2, function () { return door(13); }, test.limit.slow);
+test.run('Content-Type multipart with no boundary: answered, and the node still answers', 0.2, function () { return door(14); }, test.limit.slow);
+test.run('invalid UTF-8 bytes: answered, and the node still answers', 0.2, function () { return door(15); }, test.limit.slow);
+test.run('a request line that is not HTTP: answered, and the node still answers', 0.2, function () { return door(16); }, test.limit.slow);
+test.run('a header line with no colon: answered, and the node still answers', 0.2, function () { return door(17); }, test.limit.slow);
+test.run('GET /..: answered, and the node still answers', 0.2, function () { return door(18); }, test.limit.slow);
+test.run('POST /..: answered, and the node still answers', 0.2, function () { return door(19); }, test.limit.slow);
+test.run('GET /../../../../etc/passwd: answered, and the node still answers', 0.2, function () { return door(20); }, test.limit.slow);
+test.run('POST /../../../../etc/passwd: answered, and the node still answers', 0.2, function () { return door(21); }, test.limit.slow);
+test.run('GET /%2e%2e/%2e%2e/etc/passwd: answered, and the node still answers', 0.2, function () { return door(22); }, test.limit.slow);
+test.run('POST /%2e%2e/%2e%2e/etc/passwd: answered, and the node still answers', 0.2, function () { return door(23); }, test.limit.slow);
+test.run('GET /shell/%2f%2f..%2f..%2fetc: answered, and the node still answers', 0.2, function () { return door(24); }, test.limit.slow);
+test.run('POST /shell/%2f%2f..%2f..%2fetc: answered, and the node still answers', 0.2, function () { return door(25); }, test.limit.slow);
+test.run('GET a path of 9001 letters: answered, and the node still answers', 0.2, function () { return door(26); }, test.limit.slow);
+test.run('POST a path of 9001 letters: answered, and the node still answers', 0.2, function () { return door(27); }, test.limit.slow);
+test.run('GET /%: answered, and the node still answers', 0.2, function () { return door(28); }, test.limit.slow);
+test.run('POST /%: answered, and the node still answers', 0.2, function () { return door(29); }, test.limit.slow);
+test.run('GET /%zz: answered, and the node still answers', 0.2, function () { return door(30); }, test.limit.slow);
+test.run('POST /%zz: answered, and the node still answers', 0.2, function () { return door(31); }, test.limit.slow);
+test.run('GET /%E0%A4%A: answered, and the node still answers', 0.2, function () { return door(32); }, test.limit.slow);
+test.run('POST /%E0%A4%A: answered, and the node still answers', 0.2, function () { return door(33); }, test.limit.slow);
+test.run('GET /api/%2e%2e/spirit: answered, and the node still answers', 0.2, function () { return door(34); }, test.limit.slow);
+test.run('POST /api/%2e%2e/spirit: answered, and the node still answers', 0.2, function () { return door(35); }, test.limit.slow);
+test.run('GET //api//spirit: answered, and the node still answers', 0.2, function () { return door(36); }, test.limit.slow);
+test.run('POST //api//spirit: answered, and the node still answers', 0.2, function () { return door(37); }, test.limit.slow);
+test.run('GET /DEBUG/../../spirit/state/node.json: answered, and the node still answers', 0.2, function () { return door(38); }, test.limit.slow);
+test.run('POST /DEBUG/../../spirit/state/node.json: answered, and the node still answers', 0.2, function () { return door(39); }, test.limit.slow);
+test.run('GET /spirit/element/../../../spirit/state/identity.json: answered, and the node still answers', 0.2, function () { return door(40); }, test.limit.slow);
+test.run('POST /spirit/element/../../../spirit/state/identity.json: answered, and the node still answers', 0.2, function () { return door(41); }, test.limit.slow);
+test.run('GET /api/spirit/../../spirit/state/node.json: answered, and the node still answers', 0.2, function () { return door(42); }, test.limit.slow);
+test.run('POST /api/spirit/../../spirit/state/node.json: answered, and the node still answers', 0.2, function () { return door(43); }, test.limit.slow);
+test.run('GET /\\..\\..\\relay-state: answered, and the node still answers', 0.2, function () { return door(44); }, test.limit.slow);
+test.run('POST /\\..\\..\\relay-state: answered, and the node still answers', 0.2, function () { return door(45); }, test.limit.slow);
+test.run('GET /?%: answered, and the node still answers', 0.2, function () { return door(46); }, test.limit.slow);
+test.run('POST /?%: answered, and the node still answers', 0.2, function () { return door(47); }, test.limit.slow);
+test.run('GET /#x: answered, and the node still answers', 0.2, function () { return door(48); }, test.limit.slow);
+test.run('POST /#x: answered, and the node still answers', 0.2, function () { return door(49); }, test.limit.slow);
+test.run('GET *: answered, and the node still answers', 0.2, function () { return door(50); }, test.limit.slow);
+test.run('POST *: answered, and the node still answers', 0.2, function () { return door(51); }, test.limit.slow);
+test.run('GET /%00: answered, and the node still answers', 0.2, function () { return door(52); }, test.limit.slow);
+test.run('POST /%00: answered, and the node still answers', 0.2, function () { return door(53); }, test.limit.slow);
+test.run('GET /index.html%00.js: answered, and the node still answers', 0.2, function () { return door(54); }, test.limit.slow);
+test.run('POST /index.html%00.js: answered, and the node still answers', 0.2, function () { return door(55); }, test.limit.slow);
 
 // the node is still running at the end
 test.run('the scratch node is still running and answers', 0.2, async function () {
   if (!G.tree) return NO_GARBAGE_NODE;
   const node = G.node;
   return (node.child && node.child.exitCode === null && await G.plain()) || 'the scratch node ' + (node.child && node.child.exitCode !== null ? 'exited with ' + node.child.exitCode : 'does not answer');
-}, 4000);
+}, test.limit.slow);
 
 // THE VERBS THAT ACT, ON A THROWAWAY NODE OF THEIR OWN: node A is let go first. Verb by verb, each verb's garbage in
 // batches, a plain call after each; a node that dies is judged and replaced by a fresh one, so the next verb is judged
@@ -452,7 +452,7 @@ test.run('the world: the throwaway node for the verbs that act comes up, every a
   if (!B.plain) return 'the throwaway node for the verbs that act did not come up';
   HOST = new URL(B.base).host;
   return !B.missing.length || 'the throwaway node for the verbs that act came up without ' + B.missing.join(', ') + ': their verbs would be judged on nothing';
-}, 100000);
+}, test.limit.long);
 test.run('the verbs that act took the whole garbage, bad strings, missing, extraneous and pairs, without crashing or hanging', 0.2, async function () {
   if (!B || !B.plain) return 'no throwaway node: the world failed';
   const actingAsks = G.actingAsks; const actingVerbs = G.actingVerbs;
@@ -487,7 +487,7 @@ test.run('the verbs that act took the whole garbage, bad strings, missing, extra
   const fine = actingVerbs.length - bad.length;
   if (fine <= 0) return 'no verb that acts was judged, of ' + actingVerbs.length;
   return !(bad.length || fresh.length) || bad.concat(fresh).join('; ');
-}, 27000);
+}, test.limit.long);
 
 test.after(function () {
   letGo(W.node, W.page);

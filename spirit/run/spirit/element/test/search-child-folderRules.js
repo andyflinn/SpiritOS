@@ -59,34 +59,34 @@ const partWhy = function (f) { return f + ': ' + (isFile(f) ? 'places no create 
 // The searches.
 test.run('the world: eight or more searches, valued exempt', 0.2, function () {
   return NAMES.length >= 8 || 'only ' + short(NAMES) + ': nothing to judge';
-}, 1000);
+}, test.limit.quick);
 test.run('the job branch has its search, spirit/element/search/job.js', 0.4, function () {
   return NAMES.indexOf('job') !== -1 || 'no search of the job branch: ' + SEARCH + '/job.js';
-}, 1000);
+}, test.limit.quick);
 test.run('the job list and its detail no longer stand in spirit/element/', 0.4, function () {
   const astray = ['spirit/element/job.js', 'spirit/element/jobDetail.js'].filter(isFile);
   return !astray.length || short(astray) + ' still stand';
-}, 1000);
+}, test.limit.quick);
 // Each search: SEARCH/<n>.js, its selector, and SEARCH/<n>/ holding its listElement, rowElement and detailElement.
 test.run('its selector is an element placed by its path', 0.4, function () {
   return eachSearch(function (n) { const sel = SEARCH + '/' + n + '.js'; return isFile(sel) && placesItself(sel) ? '' : partWhy(sel); });
-}, 1000);
+}, test.limit.quick);
 test.run('its listElement is placed by its path', 0.4, function () {
   return eachSearch(function (n) { const f = SEARCH + '/' + n + '/listElement.js'; return isFile(f) && placesItself(f) ? '' : partWhy(f); });
-}, 1000);
+}, test.limit.quick);
 test.run('its rowElement is placed by its path', 0.4, function () {
   return eachSearch(function (n) { const f = SEARCH + '/' + n + '/rowElement.js'; return isFile(f) && placesItself(f) ? '' : partWhy(f); });
-}, 1000);
+}, test.limit.quick);
 // Only where there is a search to judge by it: a detail where one opens, none where none does.
 if (TARGETS.some(function (n) { return NO_DETAIL.indexOf(n) === -1; })) {
   test.run('its detailElement is placed by its path', 0.4, function () {
     return eachSearch(function (n) { const f = SEARCH + '/' + n + '/detailElement.js'; return NO_DETAIL.indexOf(n) !== -1 || (isFile(f) && placesItself(f)) ? '' : partWhy(f); });
-  }, 1000);
+  }, test.limit.quick);
 }
 if (TARGETS.some(function (n) { return NO_DETAIL.indexOf(n) !== -1; })) {
   test.run('it has no detail, since none is ever opened', 0.4, function () {
     return eachSearch(function (n) { const f = SEARCH + '/' + n + '/detailElement.js'; return NO_DETAIL.indexOf(n) === -1 || !isFile(f) ? '' : f + ': stands, though no ' + n + ' row ever opens a detail'; });
-  }, 1000);
+  }, test.limit.quick);
 }
 // ONE LIST, SHARED BY POPUP AND LIST MODES (Andy: "all, any search-unit has ONE list shared by popup and list modes."): the
 // selector requires its listElement and draws it, and makes no list of its own: no probabilitySearch, no rows.
@@ -96,13 +96,13 @@ test.run('its selector draws its own listElement.js', 0.4, function () {
     return new RegExp("['\"]" + dir.replace(/\//g, '\\/') + "\\/listElement\\.js['\"]").test(c) && new RegExp('\\.search\\.' + n + '\\.listElement\\.create\\(').test(c)
       ? '' : sel + ': it does not draw ' + dir + '/listElement.js';
   });
-}, 1000);
+}, test.limit.quick);
 test.run('and its selector makes no list of its own', 0.4, function () {
   return eachSearch(function (n) {
     const sel = SEARCH + '/' + n + '.js';
     return !/\.element\.search\.create\(|createElement\(['"](button|tr|li)['"]\)/.test(code(sel)) ? '' : sel + ': it makes a list of its own beside its listElement.js';
   });
-}, 1000);
+}, test.limit.quick);
 
 // A LIST'S PANELS STAND IN ITS SEARCH (Andy: "wsl, can you generalize the concept: if a detail panel is used for a list it
 // should reside in that lists search-system", "the contact list already knows the difference between contact types. so should
@@ -112,17 +112,17 @@ test.run('and its selector makes no list of its own', 0.4, function () {
 test.run('no list\'s panel or detail stands beside the searches in spirit/element/', 0.4, function () {
   const loose = TREE.filter(function (f) { return (/^spirit\/element\/[^/]+\.js$/).test(f) && (/(Panel|Detail|Details)\.js$/).test(f); });
   return !loose.length || short(loose) + ' still stand in spirit/element/';
-}, 1000);
+}, test.limit.quick);
 const GRANTS = SEARCH + '/grant/grantsPanel.js';
 test.run('the grants panel stands in the grant search, placed by its path', 0.4, function () {
   return (isFile(GRANTS) && placesItself(GRANTS)) || partWhy(GRANTS);
-}, 1000);
+}, test.limit.quick);
 // One detail for every kind of contact: a relay's blocks are drawn by the contact detail, and the row opens nothing else.
 const RELAY = SEARCH + '/contact/relayPanel.js';
 test.run('no second contact detail: the relay panel is gone into the contact detail', 0.4, function () {
   return !isFile(RELAY) || RELAY + ' still stands';
-}, 1000);
+}, test.limit.quick);
 test.run('a contact row opens the contact detail alone, whatever the contact is', 0.4, function () {
   return (!/relayPanel/.test(code(SEARCH + '/contact/rowElement.js')) && /contact\/detailElement\.js/.test(code(SEARCH + '/contact/rowElement.js'))) ||
     SEARCH + '/contact/rowElement.js still opens relayPanel, or not the contact detail';
-}, 1000);
+}, test.limit.quick);

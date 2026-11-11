@@ -34,27 +34,27 @@ test.run('the world: the relay store opens on a scratch root holding routingTabl
   put(inv(), invText);
   try { W.store = relayStore.open(W.a); } catch (e) { return 'the relay store did not open: ' + String(e && e.message || e) + '; nothing judged'; }
   return !!W.store || 'the relay store did not open: ; nothing judged';
-}, 1000);
+}, test.limit.quick);
 test.run('the world: a member put on this scratch store is read back', 0.2, function () {
   if (!W.store) return NO_STORE;
   const M = 'world-member-key-' + process.pid;
   W.store.members.put({ publicKey: M, publicLabel: 'world', claimedAt: '' });
   return !!W.store.members.get(M) || 'a member put on this scratch store is not read back: nothing judged';
-}, 1000);
+}, test.limit.quick);
 test.run('routingTable.json\'s member is not taken into the roll', 0.2, function () {
   if (!W.store) return NO_STORE;
   return !W.store.members.get(KEY) || 'the store took routingTable.json\'s member ' + KEY + ' into the roll';
-}, 1000);
+}, test.limit.quick);
 test.run('invites.json\'s invite is not taken in', 0.2, function () {
   if (!W.store) return NO_STORE;
   return !W.store.invites.get(TOKEN) || 'the store took invites.json\'s invite ' + TOKEN + ' in';
-}, 1000);
+}, test.limit.quick);
 test.run('routingTable.json and invites.json are left as they were, neither renamed .imported', 0.2, function () {
   if (!W.store) return NO_STORE;
   const r = roll(); const i = inv();
   return (readText(r) === rollText && readText(i) === invText && !fs.existsSync(r + '.imported') && !fs.existsSync(i + '.imported')) ||
     'the store moved the old files: ' + short({ routingTable: fs.existsSync(r), invites: fs.existsSync(i), rollImported: fs.existsSync(r + '.imported'), invImported: fs.existsSync(i + '.imported') });
-}, 1000);
+}, test.limit.quick);
 
 // The box: "the cycle-3 relay.db owner column"
 const OWNER = 'cycle3-owner-' + process.pid;
@@ -70,7 +70,7 @@ test.run('the world: a relay.db made as cycle 3 made it, its members table with 
   const had = db.prepare('PRAGMA table_info(members)').all().some(function (c) { return c.name === 'owner'; });
   db.close();
   return had || 'the planted relay.db has no owner column: nothing judged';
-}, 1000);
+}, test.limit.quick);
 test.run('the world: the relay store opens that relay.db and reads its member', 0.2, function () {
   if (!W.b) return 'no planted relay.db: the world failed';
   let err = '';
@@ -78,7 +78,7 @@ test.run('the world: the relay store opens that relay.db and reads its member', 
   const read = !!W.s2 && !!W.s2.members.get(MEMBER);
   try { if (W.s2) W.s2.close(); } catch (e) { /* closed */ }
   return read || 'the relay store did not open that relay.db or read its member: ' + err + '; nothing judged';
-}, 1000);
+}, test.limit.quick);
 test.run('the owner column is left as it was, its value kept', 0.2, function () {
   if (!W.dbFile) return 'no planted relay.db: the world failed';
   let still = false;
@@ -90,7 +90,7 @@ test.run('the owner column is left as it was, its value kept', 0.2, function () 
     db.close();
   } catch (e) { still = false; }
   return (still && ownerOf === OWNER) || 'opening the store dropped the cycle-3 owner column from members';
-}, 1000);
+}, test.limit.quick);
 
 test.after(function () {
   try { relayStore.closeAll(); } catch (e) { /* closed */ }

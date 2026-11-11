@@ -67,11 +67,11 @@ const judged = files.filter(function (f) { return inReach(f) && fs.existsSync(pa
 if (arg) {
   test.run('the world: the module asked is search.js or a module below it', 0.2, function () {
     return judged.length === 1 || arg + ' is not search.js or a module below it: nothing judged';
-  }, 1000);
+  }, test.limit.quick);
 } else {
   test.run('the world: more than ten modules read', 0.2, function () {
     return judged.length > 10 || 'only ' + judged.length + ' modules read: too little to judge';
-  }, 1000);
+  }, test.limit.quick);
 }
 // Each lookup across the page is named in what the test answers, by file and line.
 test.run('an element finds its parts inside its own container, never by id across the page: no module looks across the page', 0.4, function () {
@@ -79,4 +79,4 @@ test.run('an element finds its parts inside its own container, never by id acros
   const found = [];
   judged.forEach(function (rel) { across(rel).forEach(function (a) { found.push(rel + ':' + a.line + ' ' + a.call + '()'); }); });
   return !found.length || found.join(', ') + (found.length === 1 ? ' finds' : ' find') + ' a part across the whole page (' + RULE + ')';
-}, 1000);
+}, test.limit.quick);

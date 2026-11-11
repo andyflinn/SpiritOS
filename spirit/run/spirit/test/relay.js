@@ -57,7 +57,7 @@ const NO_RELAY = 'no scratch relay: the world failed';
 test.run('the world: a scratch relay, its mail kept', 0.2, function () {
   W.R = scratchRelay();
   return !!(W.R && W.R.relay) || 'the scratch relay was not made';
-}, 2000);
+}, test.limit.quick);
 
 // the join mail goes only to a link on the asker's own computer
 // The box: "the relay must refuse to send a join-email, unless the link in it points to the asker's own computer, so
@@ -70,26 +70,26 @@ test.run('the link a node sends, http://127.0.0.1:65432/face.html?app=join, is m
   if (!W.R) return NO_RELAY;
   const a = ask(NODE);
   return (a.said.ok === true && !!a.mail && a.mail.text.indexOf(NODE) !== -1) || 'said ' + short(a.said) + ', mail ' + short(a.mail);
-}, 1000);
+}, test.limit.quick);
 test.run('with no port, it is mailed', 0.2, function () {
   if (!W.R) return NO_RELAY;
   const b = ask('http://127.0.0.1/face.html?app=join');
   return (b.said.ok === true && !!b.mail) || 'said ' + short(b.said) + ', mail ' + short(b.mail);
-}, 1000);
+}, test.limit.quick);
 // Each link written out, so that each check has a plain title of its own.
 const mailed = function (link) {
   if (!W.R) return NO_RELAY;
   const r = ask(link);
   return (r.said.ok === false && !r.mail) || link + ': said ' + short(r.said) + ', mail ' + (r.mail ? 'sent' : 'none');
 };
-test.run('refused, and no mail sent: https://127.0.0.1:65432/face.html (the scheme is not exactly http)', 0.8, function () { return mailed('https://127.0.0.1:65432/face.html'); }, 1000);
-test.run('refused, and no mail sent: http://localhost:65432/face.html (the host is not exactly 127.0.0.1)', 0.8, function () { return mailed('http://localhost:65432/face.html'); }, 1000);
-test.run('refused, and no mail sent: http://evil.com/face.html (the host is another site)', 0.8, function () { return mailed('http://evil.com/face.html'); }, 1000);
-test.run('refused, and no mail sent: http://127.0.0.1.evil.com/face.html (a host that only begins with 127.0.0.1 (the box: "http://127.0.0.1.evil.com/"))', 0.8, function () { return mailed('http://127.0.0.1.evil.com/face.html'); }, 1000);
-test.run('refused, and no mail sent: http://127.0.0.1:1@evil.com/face.html (a user name and password before an @, the site evil.com (the box: "http://127.0.0.1:1@evil.com/"))', 0.8, function () { return mailed('http://127.0.0.1:1@evil.com/face.html'); }, 1000);
-test.run('refused, and no mail sent: http://user@127.0.0.1:65432/face.html (a user name before an @, even on 127.0.0.1)', 0.8, function () { return mailed('http://user@127.0.0.1:65432/face.html'); }, 1000);
-test.run('refused, and no mail sent: http://127.0.0.2:65432/face.html (another loopback address, not exactly 127.0.0.1)', 0.8, function () { return mailed('http://127.0.0.2:65432/face.html'); }, 1000);
-test.run('refused, and no mail sent: http://evil.com/?http://127.0.0.1:65432/ (127.0.0.1 only in the query, the site evil.com)', 0.8, function () { return mailed('http://evil.com/?http://127.0.0.1:65432/'); }, 1000);
+test.run('refused, and no mail sent: https://127.0.0.1:65432/face.html (the scheme is not exactly http)', 0.8, function () { return mailed('https://127.0.0.1:65432/face.html'); }, test.limit.quick);
+test.run('refused, and no mail sent: http://localhost:65432/face.html (the host is not exactly 127.0.0.1)', 0.8, function () { return mailed('http://localhost:65432/face.html'); }, test.limit.quick);
+test.run('refused, and no mail sent: http://evil.com/face.html (the host is another site)', 0.8, function () { return mailed('http://evil.com/face.html'); }, test.limit.quick);
+test.run('refused, and no mail sent: http://127.0.0.1.evil.com/face.html (a host that only begins with 127.0.0.1 (the box: "http://127.0.0.1.evil.com/"))', 0.8, function () { return mailed('http://127.0.0.1.evil.com/face.html'); }, test.limit.quick);
+test.run('refused, and no mail sent: http://127.0.0.1:1@evil.com/face.html (a user name and password before an @, the site evil.com (the box: "http://127.0.0.1:1@evil.com/"))', 0.8, function () { return mailed('http://127.0.0.1:1@evil.com/face.html'); }, test.limit.quick);
+test.run('refused, and no mail sent: http://user@127.0.0.1:65432/face.html (a user name before an @, even on 127.0.0.1)', 0.8, function () { return mailed('http://user@127.0.0.1:65432/face.html'); }, test.limit.quick);
+test.run('refused, and no mail sent: http://127.0.0.2:65432/face.html (another loopback address, not exactly 127.0.0.1)', 0.8, function () { return mailed('http://127.0.0.2:65432/face.html'); }, test.limit.quick);
+test.run('refused, and no mail sent: http://evil.com/?http://127.0.0.1:65432/ (127.0.0.1 only in the query, the site evil.com)', 0.8, function () { return mailed('http://evil.com/?http://127.0.0.1:65432/'); }, test.limit.quick);
 
 // the login mail carries the token, where to paste it, and no link
 // The box: "The login-email must not carry a link, so a fake login-email cannot lead the user to a look-alike site",
@@ -117,21 +117,21 @@ test.run('asked with the member\'s own email, the relay mails a login', 0.2, fun
   const lines = L.text.split(/\r?\n/).map(function (l) { return l.trim(); });
   L.token = lines.filter(function (l) { return /^[A-Za-z0-9_-]{16,}$/.test(l); })[0] || '';
   return !!L.login || L.why || 'no login mail was sent';
-}, 1000);
-test.run('the token stands on a line of its own', 0.2, function () { return !!L.token || 'no line holds the token alone: ' + short(L.text); }, 1000);
+}, test.limit.quick);
+test.run('the token stands on a line of its own', 0.2, function () { return !!L.token || 'no line holds the token alone: ' + short(L.text); }, test.limit.quick);
 test.run('it says where to paste the token: into the Log in field of the face, opened by its address and never from a link', 0.2, function () {
   return L.text.indexOf(SAY) !== -1 || 'the mail says: ' + short(L.text) + ', not ' + SAY;
-}, 1000);
-test.run('it holds no link', 0.8, function () { return (!!L.login && !/https?:\/\/|www\./i.test(L.text)) || 'the mail holds a link: ' + short(L.text); }, 1000);
+}, test.limit.quick);
+test.run('it holds no link', 0.8, function () { return (!!L.login && !/https?:\/\/|www\./i.test(L.text)) || 'the mail holds a link: ' + short(L.text); }, test.limit.quick);
 test.run('it does not write out the face\'s address', 0.2, function () {
   return (!!L.login && !/harbour\.relay\.example|relay\.example/i.test(L.text)) || 'the mail names the address: ' + short(L.text);
-}, 1000);
+}, test.limit.quick);
 test.run('the token, pasted into the Log in field, logs in', 0.2, function () {
   if (!W.R) return NO_RELAY;
   let pasted = null;
   try { pasted = L.token ? W.R.relay.faceLogin('harbour', L.token) : null; } catch (e) { pasted = null; }
   return (!!pasted && pasted.loggedIn === true) || 'faceLogin with the token: ' + short(pasted);
-}, 1000);
+}, test.limit.quick);
 
 // A LONG SEARCH MUST NOT STOP THE RELAY (goal/G41.30; the box: "the server MUST not CRASH or HANG", "an attacker trying
 // to crash our servers will throw ANYTHING at the api. Imitate that attacker!"; Andy, on the report "A long search query
@@ -166,7 +166,7 @@ test.run('500 members seated and connected', 0.2, function () {
     LS.seated += 1;
   }
   return LS.seated === MEMBERS || 'only ' + LS.seated + ' of ' + MEMBERS + ' members were seated and connected: the search would rank fewer rows than asked';
-}, 135000);
+}, test.limit.long);
 test.run('the search thrown is at least 12000 characters, near 3/4 of the payload', 0.2, function () {
   if (!LS.box || !LS.asker) return 'no relay with members: the world failed';
   const limits = require(path.join(RUN, 'spirit', 'limits.js'));
@@ -184,7 +184,7 @@ test.run('the search thrown is at least 12000 characters, near 3/4 of the payloa
   LS.len = len; LS.text = text;
   test.comment('the search: ' + len + ' characters, ' + Buffer.byteLength(text, 'utf8') + ' bytes sealed, over ' + LS.seated + ' connected members (a longer one, as the report\'s 60,000, is refused 413 by the wire)');
   return len >= 12000 || 'only ' + len + ' characters fit: the search judges too little';
-}, 1000);
+}, test.limit.quick);
 test.run('the relay takes the search', 0.2, async function () {
   if (!LS.text) return 'no search made: the world failed';
   const box = LS.box; const asker = LS.asker; const relayKey = box.relayPublicKey(); const text = LS.text;
@@ -199,15 +199,15 @@ test.run('the relay takes the search', 0.2, async function () {
   LS.worst = Math.max(gap, inPost);
   LS.ran = true;
   return (!!LS.posted && LS.posted.ok !== false) || 'the relay refused the search: ' + short(LS.posted);
-}, 6000);
+}, test.limit.slow);
 test.run('while it searches, the relay keeps answering: its event loop never waited more than 250 ms', 0.2, function () {
   if (!LS.ran) return 'the search was never posted: the world failed';
   return LS.worst <= GAP_MS || 'IT HANGS: one search of ' + LS.len + ' characters over ' + LS.seated + ' members held the relay\'s event loop for ' + LS.worst + ' ms (more than ' + GAP_MS + '), every other request on the relay waiting';
-}, 1000);
+}, test.limit.quick);
 test.run('and the search is answered', 0.2, function () {
   if (!LS.ran) return 'the search was never posted: the world failed';
   return LS.answered || 'the search was never answered within 5 s';
-}, 1000);
+}, test.limit.quick);
 
 // THE FACE COMES BACK BY ITSELF (goal/G43.30; Andy: "ALL, I had to, several times, refresh my new face, because it
 // doesn't seem to auto-reconnect.", "all, FIX IT, IN THIS ITEM, then we tag."). The face retries only once its stream ends
@@ -255,19 +255,19 @@ test.run('the world: a scratch relay, harbour seated with a face, its node prese
   if (!F.R.up) return 'the scratch relay did not come up';
   F.M = F.R.members.harbour;
   return true;
-}, 3000);
+}, test.limit.slow);
 test.run('the face opens its stream, and the home node hears face-open', 0.2, async function () {
   if (!F.M) return NO_FACE_RELAY;
   const opensBefore = faceOpens();
   F.face = await openFace();
   return (await wait(function () { return faceOpens() > opensBefore; }) && !F.face.ended) || 'the face stream: ' + F.face.status + ', face-open heard ' + (faceOpens() - opensBefore) + ' times';
-}, 6000);
+}, test.limit.slow);
 test.run('the world: the home node\'s feed reaches the face', 0.2, async function () {
   if (!F.face) return NO_FACE_RELAY;
   F.one = feed();
   F.one.write(JSON.stringify({ event: 'zz-first', data: {} }) + '\n');
   return !!(await wait(function () { return F.face.lines.join('').indexOf('zz-first') !== -1; })) || 'the face heard ' + short(F.face.lines.join(''));
-}, 6000);
+}, test.limit.slow);
 
 // the attacker: a feed replaced by a newer one goes, and the face's stream stays
 test.run('the old feed cut, the face\'s stream stays open and the newer feed still reaches it', 0.2, async function () {
@@ -281,20 +281,20 @@ test.run('the old feed cut, the face\'s stream stays open and the newer feed sti
   F.two.write(JSON.stringify({ event: 'zz-third', data: {} }) + '\n');
   return (!face.ended && !!(await wait(function () { return face.lines.join('').indexOf('zz-third') !== -1; }))) ||
     'after the replaced feed went: ' + JSON.stringify({ ended: face.ended, heard: face.lines.join('').slice(-200) });
-}, 12000);
+}, test.limit.slow);
 
 // the feed into the face goes, as when the home node goes away
 test.run('the relay ends the face\'s stream: the face sees it end, and retries', 0.2, async function () {
   if (!F.two) return NO_FACE_RELAY;
   F.two.destroy();
   return !!(await wait(function () { return F.face.ended; }, 8000)) || 'the face\'s stream stayed open, silent, after its node\'s feed went: the face never retries';
-}, 9000);
+}, test.limit.slow);
 test.run('the face opens its stream again, and the home node hears face-open once more', 0.2, async function () {
   if (!F.M) return NO_FACE_RELAY;
   const opensNow = faceOpens();
   F.again = await openFace();
   return (await wait(function () { return faceOpens() > opensNow; }) && !F.again.ended) || 'the face\'s new stream: ' + F.again.status + ', face-open heard ' + (faceOpens() - opensNow) + ' times';
-}, 6000);
+}, test.limit.slow);
 test.run('and its updates reach the face again, no reload', 0.2, async function () {
   if (!F.again) return NO_FACE_RELAY;
   F.three = feed();
@@ -302,7 +302,7 @@ test.run('and its updates reach the face again, no reload', 0.2, async function 
   const heard = await wait(function () { return F.again.lines.join('').indexOf('zz-back') !== -1; });
   F.three.destroy();
   return !!heard || 'the face heard ' + short(F.again.lines.join(''));
-}, 6000);
+}, test.limit.slow);
 
 test.after(function () {
   if (W.R) { try { fs.rmSync(W.R.home, { recursive: true, force: true }); } catch (e) { /* scratch */ } }

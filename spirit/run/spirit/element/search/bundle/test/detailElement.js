@@ -81,17 +81,17 @@ test.run('the world: the editor runs on a bare window, its parts stand-ins', 0.2
   await settle();
   E = ((global.window.spirit.element || {}).spirit || {}).element || {};
   return true;
-}, 1000);
+}, test.limit.quick);
 
 // it loads what it uses itself (rule/26)
 test.run('it requires the family selector and the branch selector through spirit.require', 0.2, function () {
   if (!required) return NO_E;
   return ['spirit/element/search/api.js', 'spirit/element/search/branch.js'].every(function (p) { return required.indexOf(p) !== -1; }) ? true : 'required: ' + short(required);
-}, 1000);
+}, test.limit.quick);
 test.run('it registers spirit.element.spirit.element.search.bundle.detailElement.create, and no page of its own (goal/G41.32)', 0.2, function () {
   if (!E) return NO_E;
   return hasD() && D().open === undefined ? true : 'elements: ' + short(Object.keys(D() || {}));
-}, 1000);
+}, test.limit.quick);
 
 // always on one bundle
 // Andy, box: "the branchEditor page is always configured with a bundle key".
@@ -102,7 +102,7 @@ test.run('its list is branchSelector.create(the page, a pane on that bundle, col
   await settle();
   bs = branchSels[0];
   return !!bs && bs.container === box && bs.o.bundle === 7 && bs.o.face === 'pane' && JSON.stringify(bs.o.columns) === '["family","verb","delete"]' && all(box).indexOf(bs) !== -1 ? true : 'branch selector: ' + short(bs && bs.o) + ', in the page ' + !!(bs && bs.container === box);
-}, 1000);
+}, test.limit.quick);
 
 // the add form, a rowForm: ➕ [family, its verb] [Add] (goal/G41.27)
 // Andy, on G41.27: "branchEditor:\n\n[➕] [choose a family… ▾] [Add]", then "careful, there's a hidden verb selector
@@ -114,31 +114,31 @@ test.run('it loads the rowForm itself (rule/26)', 0.2, function () {
   fam = families[0];
   add = all(box).filter(function (k) { return k.tag === 'button' && /^\s*Add\s*$/.test(k.textContent || ''); })[0];
   return required.indexOf('spirit/element/rowForm.js') !== -1 ? true : 'required: ' + short(required);
-}, 1000);
+}, test.limit.quick);
 test.run('its add form is one rowForm in the page, its icon ➕ and its button Add', 0.2, function () {
   if (!box) return NO_BS;
   rf = forms[0];
   return forms.filter(function (f) { return f.opts.icon === '➕'; }).length === 1 && rf.opts.icon === '➕' && rf.opts.button === 'Add' && all(box).indexOf(rf.root) !== -1 ? true : 'rowForms: ' + short(forms.map(function (f) { return f.opts; }));
-}, 1000);
+}, test.limit.quick);
 test.run('its span holds the one family selector, choose a family…, its verb half with it, and nothing else', 0.2, function () {
   if (!box) return NO_BS;
   const inSpan = !!rf && !!fam && rf.span.kids.length === 1 && (rf.span.kids[0] === fam || (rf.span.kids[0].kids || []).indexOf(fam) !== -1 && rf.span.kids[0].kids.length === 1);
   return families.length === 1 && inSpan && fam.o.all === 'choose a family…' ? true : 'family ' + families.length + ', in the span ' + inSpan + ', all ' + short(fam && fam.o.all);
-}, 1000);
+}, test.limit.quick);
 test.run('its Add is the rowForm\'s button, the only Add', 0.2, function () {
   if (!box) return NO_BS;
   return !!rf && !!add && add === rf.button && all(box).filter(function (k) { return k.tag === 'button' && /^\s*Add\s*$/.test(k.textContent || ''); }).length === 1 ? true : 'Add is the form\'s ' + !!(rf && add === rf.button);
-}, 1000);
+}, test.limit.quick);
 test.run('the word "new" at its start is gone, ➕ in its place', 0.2, function () {
   if (!fam || !add) return NO_ADD;
   return !/\bnew\b/.test(text(box)) ? true : 'text: ' + short(text(box));
-}, 1000);
+}, test.limit.quick);
 test.run('Add with no family asks nothing', 0.2, async function () {
   if (!fam || !add) return NO_ADD;
   add.dispatchEvent({ type: 'click' });
   await settle();
   return asked.length === 0 ? true : 'asked: ' + short(asked);
-}, 1000);
+}, test.limit.quick);
 let r0;
 test.run('Add with the verb left at All Verbs asks auth.branch { op: add, bundle, family, verb: \'\' }', 0.2, async function () {
   if (!fam || !add) return NO_ADD;
@@ -148,11 +148,11 @@ test.run('Add with the verb left at All Verbs asks auth.branch { op: add, bundle
   add.dispatchEvent({ type: 'click' });
   await settle();
   return asked.length === 1 && asked[0].op === 'add' && asked[0].bundle === 7 && asked[0].family === 'desk' && asked[0].verb === '' ? true : 'asked: ' + short(asked);
-}, 1000);
+}, test.limit.quick);
 test.run('an answered add makes the list search again', 0.2, function () {
   if (!fam || !add) return NO_ADD;
   return bs.refreshed > r0 ? true : 'refreshed: ' + (bs.refreshed - r0);
-}, 1000);
+}, test.limit.quick);
 test.run('a verb chosen is sent as it is', 0.2, async function () {
   if (!fam || !add) return NO_ADD;
   fam.verb = 'chat.add'; fam.value = 'desk.chat.add';
@@ -160,11 +160,11 @@ test.run('a verb chosen is sent as it is', 0.2, async function () {
   add.dispatchEvent({ type: 'click' });
   await settle();
   return asked.length === 2 && asked[1].verb === 'chat.add' ? true : 'asked: ' + short(asked);
-}, 1000);
+}, test.limit.quick);
 test.run('a refused add is said in the page, in the node\'s words', 0.2, function () {
   if (!fam || !add) return NO_ADD;
   return /already-in-bundle|already in this bundle/.test(text(box)) ? true : 'text: ' + short(text(box));
-}, 1000);
+}, test.limit.quick);
 
 // goal/G41.32: its Delete row at the bottom, and hearing its deletion
 // Andy: "i need the branchEditor to have a rowForm at the bottom: [❌] \"Delete <bundle-name> bundle and branches \" [Delete (armingButton)]."
@@ -172,36 +172,36 @@ test.run('a second rowForm below the list: ❌, the words, Delete', 0.2, functio
   if (!box) return NO_BS;
   dr = forms[1];
   return !!dr && dr.opts.icon === '❌' && dr.opts.button === 'Delete' && dr.span.textContent === 'Delete Reader bundle and branches' && box.kids.indexOf(dr.root) > box.kids.indexOf(bs) ? true : 'form: ' + short(dr && dr.opts) + ', says ' + short(dr && dr.span.textContent);
-}, 1000);
+}, test.limit.quick);
 test.run('its Delete is an armingButton', 0.2, function () {
   if (!box) return NO_BS;
   del = armed.filter(function (a) { return dr && a.button === dr.button; })[0];
   return !!del && typeof del.o.run === 'function' ? true : 'armed: ' + armed.length;
-}, 1000);
+}, test.limit.quick);
 test.run('its second press asks auth.bundle { op: delete, id }', 0.2, async function () {
   if (!box) return NO_BS;
   if (del) { await del.o.run(); await settle(); }
   return asked.filter(function (a) { return a.op === 'delete' && a.id === 7; }).length === 1 ? true : 'asked: ' + short(asked);
-}, 1000);
+}, test.limit.quick);
 test.run('and it waits to hear it: the answer closes nothing', 0.2, function () {
   if (!box) return NO_BS;
   return closed === 0 ? true : 'closed ' + closed;
-}, 1000);
+}, test.limit.quick);
 test.run('another bundle gone changes nothing', 0.2, function () {
   if (!box) return NO_BS;
   bundleWatches.forEach(function (fn) { fn('8', undefined); });
   return closed === 0 ? true : 'closed ' + closed;
-}, 1000);
+}, test.limit.quick);
 test.run('its own row changed is not its deletion', 0.2, function () {
   if (!box) return NO_BS;
   bundleWatches.forEach(function (fn) { fn('8', { id: 8, label: 'x' }); fn('7', { id: 7, label: 'Reader' }); });
   return closed === 0 ? true : 'closed ' + closed;
-}, 1000);
+}, test.limit.quick);
 test.run('its deletion heard, it says gone, for the tab to close', 0.2, function () {
   if (!box) return NO_BS;
   bundleWatches.forEach(function (fn) { fn('7', undefined); });
   return closed === 1 ? true : 'closed ' + closed;
-}, 1000);
+}, test.limit.quick);
 
 // goal/G41.32: a bundle not the node's is shown only
 test.run('no form, and its branches with no Delete', 0.2, async function () {
@@ -212,7 +212,7 @@ test.run('no form, and its branches with no Delete', 0.2, async function () {
   await settle();
   const rs = branchSels[branchSels.length - 1];
   return forms.length === formsBefore && !!rs && rs.container === ro && JSON.stringify(rs.o.columns) === '["family","verb"]' ? true : 'forms ' + (forms.length - formsBefore) + ', columns ' + short(rs && rs.o.columns);
-}, 1000);
+}, test.limit.quick);
 
 // the shell's element shape: create(container, options) (goal/G41.19)
 // Box v23: "every element gets a container and appends itself".
@@ -224,7 +224,7 @@ test.run('create(container, { bundle }) draws the editor into that container', 0
   await settle();
   const last = branchSels[branchSels.length - 1];
   return !!last && last.o.bundle === 9 && all(host).indexOf(last) !== -1 && all(host).indexOf(families[families.length - 1]) !== -1 ? true : 'branch selectors ' + branchSels.length + ', in host ' + !!(last && all(host).indexOf(last) !== -1);
-}, 1000);
+}, test.limit.quick);
 test.run('and answers a handle with destroy', 0.2, function () {
   return !!made && typeof made.destroy === 'function' ? true : 'made: ' + short(made && Object.keys(made));
-}, 1000);
+}, test.limit.quick);

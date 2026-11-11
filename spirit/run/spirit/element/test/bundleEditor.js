@@ -40,7 +40,7 @@ let SRC, asked, required, sels, forms, answer, auth, STANDS, managers, watches, 
 test.run('it names no api-branch selector and no description: a bundle is a label, its branches the branch editor\'s', 0.2, function () {
   SRC = fs.readFileSync(FILE, 'utf8').replace(/\/\/.*$/gm, '');
   return (!/apiBranchSelector|createApiBranchSelector|description/.test(SRC)) ? true : 'bundleEditor.js still names them';
-}, 1000);
+}, test.limit.quick);
 test.run('it requires the field input and the bundle selector through spirit.require', 0.2, async function () {
   asked = [];
   required = [];
@@ -92,13 +92,13 @@ test.run('it requires the field input and the bundle selector through spirit.req
   E = ((global.window.spirit.element || {}).spirit || {}).element || {};
   // it loads what it uses itself (rule/26)
   return (['spirit/element/fieldInput.js', 'spirit/element/search/bundle.js'].every(function (p) { return required.indexOf(p) !== -1; })) ? true : 'required: ' + short(required);
-}, 1000);
+}, test.limit.quick);
 test.run('it loads the auth family\'s cache manager, whose bundles it adds to (goal/G41.28)', 0.2, function () {
   return (managers.indexOf('auth') !== -1) ? true : 'managers: ' + short(managers);
-}, 1000);
+}, test.limit.quick);
 test.run('it registers spirit.element.spirit.element.bundleEditor.create', 0.2, function () {
   return (E.bundleEditor && typeof E.bundleEditor.create === 'function') ? true : 'elements: ' + short(Object.keys(E));
-}, 1000);
+}, test.limit.quick);
 test.run('it draws a label input and an Add button', 0.2, async function () {
   // at the top: new [label] [Add]
   // Andy, box: "the [add-Button] refused an empty or invalid label"; the form itself is goal/G41.27's rowForm (below).
@@ -108,30 +108,30 @@ test.run('it draws a label input and an Add button', 0.2, async function () {
   input = all(box).filter(function (k) { return k.tag === 'input'; })[0];
   add = all(box).filter(function (k) { return k.tag === 'button' && /^\s*Add\s*$/.test(k.textContent || ''); })[0];
   return (!!input && !!add) ? true : 'input ' + !!input + ', Add ' + !!add;
-}, 1000);
+}, test.limit.quick);
 test.run('it loads the rowForm itself (rule/26)', 0.2, function () {
   // Andy, on G41.27: "bundleEditor:\n[➕] [label] [Add]". The box: "spirit.element.spirit.element.rowForm.create(container, { icon, button }) -> { root, span, button }", "The mounter drops its form elements into span and wires the button itself".
   return (required.indexOf('spirit/element/rowForm.js') !== -1) ? true : 'required: ' + short(required);
-}, 1000);
+}, test.limit.quick);
 test.run('its add form is one rowForm in its box, its icon ➕ and its button Add', 0.2, function () {
   rf = forms[0];
   return (forms.length === 1 && rf.opts.icon === '➕' && rf.opts.button === 'Add' && all(box).indexOf(rf.root) !== -1) ? true : 'rowForms: ' + short(forms.map(function (f) { return f.opts; }));
-}, 1000);
+}, test.limit.quick);
 test.run('its span holds the label input, and nothing else', 0.2, function () {
   return (!!rf && rf.span.kids.length === 1 && rf.span.kids[0] === input) ? true : 'span holds ' + (rf ? rf.span.kids.length : 0) + (rf && rf.span.kids[0] === input ? ', the input' : '');
-}, 1000);
+}, test.limit.quick);
 test.run('its Add is the rowForm\'s button, the only Add', 0.2, function () {
   return (!!rf && add === rf.button && all(box).filter(function (k) { return k.tag === 'button' && /^\s*Add\s*$/.test(k.textContent || ''); }).length === 1) ? true : 'Add is the form\'s ' + (rf && add === rf.button);
-}, 1000);
+}, test.limit.quick);
 test.run('the word "new" at its start is gone, ➕ in its place', 0.2, function () {
   return (!/\bnew\b/.test(text(box))) ? true : 'text: ' + short(text(box));
-}, 1000);
+}, test.limit.quick);
 test.run('the input is a fieldInput, held to the label\'s rule', 0.2, function () {
   return (!!input.heard.beforeinput) ? true : 'listeners: ' + short(Object.keys(input.heard));
-}, 1000);
+}, test.limit.quick);
 test.run('drawn, it asks the node nothing', 0.2, function () {
   return (asked.length === 0) ? true : 'asked: ' + short(asked);
-}, 1000);
+}, test.limit.quick);
 test.run('Add refuses an empty label, or one the label\'s rule refuses: nothing asked', 0.2, async function () {
   add.dispatchEvent({ type: 'click' });
   input.value = '   ';
@@ -140,7 +140,7 @@ test.run('Add refuses an empty label, or one the label\'s rule refuses: nothing 
   add.dispatchEvent({ type: 'click' });
   await settle();
   return (asked.length === 0) ? true : 'asked: ' + short(asked);
-}, 1000);
+}, test.limit.quick);
 test.run('bundleSelector.create(its box, a pane, columns label, owner), its labels shown only (goal/G41.26: "the Label should now just be an output")', 0.2, function () {
   // below it, filling the rest: the bundles, as a pane
   // Andy, goal/G41.32: "the bundleSelector:pane looses both the 'Edit' button and the 'Delete' Button." A row pressed
@@ -148,10 +148,10 @@ test.run('bundleSelector.create(its box, a pane, columns label, owner), its labe
   sel = sels[0];
   // goal/G41.25, box: "the bundleSelector's list will gain a new column \"owner\", displayed right after the bundles label."
   return (!!sel && sel.container === box && all(box).indexOf(sel) !== -1 && sel.o.face === 'pane' && JSON.stringify(sel.o.columns) === '["label","owner"]' && !sel.o.editable) ? true : 'selector: ' + short(sel && sel.o) + ', in its box ' + !!(sel && sel.container === box);
-}, 1000);
+}, test.limit.quick);
 test.run('in a box that fills the space left (shell.css fill)', 0.2, function () {
   return (!!sel && (/\bfill\b/.test(sel.className || '') || holds(box, 'fill'))) ? true : 'classes: ' + short(all(box).map(function (k) { return k.className; }));
-}, 1000);
+}, test.limit.quick);
 test.run('a valid label asks auth.bundle { op: add, label }, the label as the rule writes it (goal/G41.32: a user makes node-owned bundles alone)', 0.2, async function () {
   // Add
   input.value = '  Reader ';
@@ -161,44 +161,44 @@ test.run('a valid label asks auth.bundle { op: add, label }, the label as the ru
   // Andy, goal/G41.32: "A user can only create, change and delete node-owned bundles and branches, and sees the others
   // read-only": the add names no owner.
   return (asked.length === 1 && asked[0].op === 'add' && asked[0].label === 'Reader' && Object.keys(asked[0]).length === 2) ? true : 'asked: ' + short(asked);
-}, 1000);
+}, test.limit.quick);
 test.run('answered, before the bundle is in the auth family\'s cache, the label stays and nothing is said added', 0.2, function () {
   // goal/G41.28 (Andy: "EVERY FUCKING ELEMENT is verified to make sure when it changes shit it listens to fucking update
   // via the spirit object"): what it adds, it listens for, in spirit.data.auth.data.bundles.
   return (input.value === '  Reader ' && !/\badded\b/.test(text(box))) ? true : 'input ' + short(input.value) + ', text: ' + short(text(box));
-}, 1000);
+}, test.limit.quick);
 test.run('another bundle arriving leaves the label as it is', 0.2, async function () {
   arrive(7, 'Somebody else');
   await settle();
   return (input.value === '  Reader ') ? true : 'input ' + short(input.value);
-}, 1000);
+}, test.limit.quick);
 test.run('once the bundle it asked for is in spirit.data.auth.data.bundles, the input is empty for the next and the add is said', 0.2, async function () {
   arrive(8, 'Reader');
   await settle();
   return (input.value === '' && /\badded\b/.test(text(box))) ? true : 'input ' + short(input.value) + ', text: ' + short(text(box));
-}, 1000);
+}, test.limit.quick);
 test.run('it asks its pane to search nothing again: the pane is a view of that branch', 0.2, function () {
   return (sel.refreshed === r0) ? true : 'refreshed ' + (sel.refreshed - r0);
-}, 1000);
+}, test.limit.quick);
 test.run('a refused add is said in the panel, in the node\'s words, and the label stays to be mended', 0.2, async function () {
   answer = function () { return Promise.reject(Object.assign(new Error('label refused'), { refusal: 'bad-request' })); };
   input.value = 'Writer';
   add.dispatchEvent({ type: 'click' });
   await settle();
   return (/label refused|bad-request/.test(text(box)) && input.value === 'Writer') ? true : 'text: ' + short(text(box)) + ', input ' + short(input.value);
-}, 1000);
+}, test.limit.quick);
 test.run('create answers { destroy }', 0.2, function () {
   // destroy
   return (made && typeof made.destroy === 'function') ? true : 'made: ' + short(made && Object.keys(made));
-}, 1000);
+}, test.limit.quick);
 test.run('destroy empties its box', 0.2, function () {
   w0 = watches.released;
   made.destroy();
   return (box.kids.length === 0) ? true : 'kids left: ' + box.kids.length;
-}, 1000);
+}, test.limit.quick);
 test.run('destroy lets its watch on spirit.data.auth.data.bundles go', 0.2, function () {
   return (watches.released === w0 + 1) ? true : 'released ' + (watches.released - w0) + ' of ' + watches.made + ' made';
-}, 1000);
+}, test.limit.quick);
 test.run('destroy lets its bundle pane go', 0.2, function () {
   return (sel.destroyed === 1) ? true : 'pane destroyed ' + sel.destroyed;
-}, 1000);
+}, test.limit.quick);

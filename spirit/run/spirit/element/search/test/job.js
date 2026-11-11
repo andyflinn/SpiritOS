@@ -53,12 +53,12 @@ test.run('the world: the selector runs on a bare window', 0.2, async function ()
   const E = ((global.window.spirit.element || {}).spirit || {}).element || {};
   made = E.search && E.search.job;
   return true;
-}, 1000);
+}, test.limit.quick);
 test.run('it places itself at spirit.element.spirit.element.search.job, with a create', 0.2, function () {
   if (!lists) return 'the selector never ran: the world failed';
   const E = ((global.window.spirit.element || {}).spirit || {}).element || {};
   return made && typeof made.create === 'function' ? true : 'elements: ' + short(Object.keys(E.search || {}));
-}, 1000);
+}, test.limit.quick);
 
 // a thin selector over its own list (rule/26; the bundle selector's pattern)
 test.run('create(container, options) appends its root to its container and answers it', 0.2, async function () {
@@ -69,26 +69,26 @@ test.run('create(container, options) appends its root to its container and answe
   await settle();
   list = lists[0];
   return box.children.length === 1 && box.children[0] === root ? true : 'container holds ' + box.children.length;
-}, 1000);
+}, test.limit.quick);
 test.run('on a bare page it requires its list, spirit/element/search/job/listElement.js', 0.2, function () {
   if (!required) return 'the selector never ran: the world failed';
   return required.indexOf('spirit/element/search/job/listElement.js') !== -1 ? true : 'required: ' + short(required);
-}, 1000);
+}, test.limit.quick);
 test.run('its list is drawn into its root, the mounter\'s open handed on, where a job\'s detail opens', 0.2, function () {
   if (!box) return NO_MADE;
   return !!list && list.host === root && list.o.open === open ? true : 'list: ' + short(list && { inRoot: list.host === root, open: list.o.open === open });
-}, 1000);
+}, test.limit.quick);
 
 // destroy
 test.run('destroy lets its list go and takes itself out of its container', 0.2, function () {
   if (!list) return NO_LIST;
   root.destroy();
   return list.destroyed === 1 && box.children.length === 0 ? true : 'destroyed ' + list.destroyed + ', container holds ' + box.children.length;
-}, 1000);
+}, test.limit.quick);
 test.run('a selector destroyed before its list is here draws no list', 0.2, async function () {
   if (!list) return NO_LIST;
   const late = made.create(element('div'), {});
   late.destroy();
   await settle();
   return lists.length === 1 ? true : lists.length + ' lists drawn';
-}, 1000);
+}, test.limit.quick);

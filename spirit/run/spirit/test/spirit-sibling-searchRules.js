@@ -72,10 +72,10 @@ test.run('the world: there is a module to judge', 0.2, function () {
   reach = require(path.join(RUN, 'spirit', 'test', 'testModule.js')).testsFor('').filter(function (t) { return t.test === 'spirit/test/spirit-sibling-searchRules.js' && t.file; }).map(function (t) { return t.file; });
   test.comment('every module in its reach: ' + reach.length);
   return reach.length > 0 || 'testModule.js gives it no file to judge';
-}, 1000);
+}, test.limit.quick);
 // <file>: its searches match the whole row. Given no file, each module that breaks it is named in the answer.
 test.run('it hands every search the row whole', 0.4, function () {
   if (!reach || !reach.length) return 'no module to judge: the world failed';
   const bad = reach.map(function (f) { return judge(f, path.join(RUN, f)); }).filter(Boolean);
   return !bad.length || bad.join('; ');
-}, 1000);
+}, test.limit.quick);

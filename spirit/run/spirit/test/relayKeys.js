@@ -34,18 +34,18 @@ const W = { home: null, a: null, b: null, root: null, child: null, run: null, no
 test.run('a relay row is there to report on', 0.2, function () {
   W.home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-relaykeys-'));
   return relayKeys.accept(W.home, URL_A, KEY_A) === true || 'the relay row could not be made';
-}, 2000);
+}, test.limit.quick);
 test.run('it notes the seat the relay says this node holds', 0.2, function () {
   if (!W.home) return 'no scratch folder: the world failed';
   relayKeys.ownerSeat(W.home, URL_A, 'andy');
   W.a = nodeStore.open(W.home).seen.get(KEY_A) || {};
   return !!W.a.seated || 'after the report: ' + short(W.a);
-}, 1000);
+}, test.limit.quick);
 // A relay that could set the star by its own report would be trusted on its own word: 0.8.
 test.run('and sets no star: a report is the relay\'s own word, and any relay can say it', 0.8, function () {
   if (!W.a) return 'no report made: the world failed';
   return !W.a.mine || 'the report set the star: ' + short(W.a);
-}, 1000);
+}, test.limit.quick);
 
 // a star already on a row
 test.run('a report takes no star away either', 0.2, function () {
@@ -55,11 +55,11 @@ test.run('a report takes no star away either', 0.2, function () {
   relayKeys.ownerSeat(W.home, URL_B, 'andy');
   W.b = nodeStore.open(W.home).seen.get(KEY_B) || {};
   return !!W.b.mine || 'after the report: ' + short(W.b);
-}, 1000);
+}, test.limit.quick);
 test.run('and still notes the seat', 0.2, function () {
   if (!W.b) return 'no report made: the world failed';
   return !!W.b.seated || 'after the report: ' + short(W.b);
-}, 1000);
+}, test.limit.quick);
 
 // ── THE NO RESCUE PART ──
 // NO relayKeys importOld ON A BOOTED NODE (goal/G43.23, item 7; spec: ./relayKeys.md, its section). The box: "old-data rescue still
@@ -84,7 +84,7 @@ test.run('the world: spirit/state/relays.json and relayKeys.json planted in a sc
   put(path.join(W.run, 'spirit', 'state', 'relayKeys.json'), keysText);
   return (readText(path.join(W.run, 'spirit', 'state', 'relays.json')) === relaysText && readText(path.join(W.run, 'spirit', 'state', 'relayKeys.json')) === keysText) ||
     'the scratch tree was not planted: nothing judged';
-}, 1000);
+}, test.limit.quick);
 test.run('the world: the scratch node came up', 0.2, async function () {
   if (!W.run) return 'no scratch tree: the world failed';
   const port = await freePort();
@@ -94,14 +94,14 @@ test.run('the world: the scratch node came up', 0.2, async function () {
     return fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'api', args: {} }) }).then(function (r) { return r.status === 200; });
   }, 60000));
   return W.up || 'the scratch node at ' + base + ' did not come up in 60 s: nothing judged';
-}, 3000);
+}, test.limit.slow);
 test.run('the world: the scratch node opened its node.db', 0.2, async function () {
   if (!W.up) return 'no scratch node: the world failed';
   // What boot does it has done by now; a few seconds more for anything that follows the first answer.
   await sleep(3000);
   W.nodeDb = path.join(W.run, 'spirit', 'state', 'node.db');
   return fs.existsSync(W.nodeDb) || 'the scratch node wrote no node.db: the relay table cannot be judged';
-}, 10000);
+}, test.limit.slow);
 
 // The box: "relayKeys importOld" (relays.json and relayKeys.json into the one relay table)
 test.run('node.db holds no row and no route of the planted relay', 0.2, function () {
@@ -116,13 +116,13 @@ test.run('node.db holds no row and no route of the planted relay', 0.2, function
     } finally { db.close(); }
   } catch (e) { routes = [{ error: String(e.message || e) }]; }
   return (routes.length === 0 && rows.length === 0) || 'the boot took the planted relay into node.db: ' + short({ routes: routes, rows: rows });
-}, 1000);
+}, test.limit.quick);
 test.run('spirit/state/relays.json and relayKeys.json are left as they were', 0.2, function () {
   if (!W.up) return 'no scratch node: the world failed';
   const run = W.run;
   const filesStay = readText(path.join(run, 'spirit', 'state', 'relays.json')) === relaysText && readText(path.join(run, 'spirit', 'state', 'relayKeys.json')) === keysText;
   return filesStay || 'the boot removed or changed the old files: relays.json ' + (fs.existsSync(path.join(run, 'spirit', 'state', 'relays.json')) ? 'there' : 'gone') + ', relayKeys.json ' + (fs.existsSync(path.join(run, 'spirit', 'state', 'relayKeys.json')) ? 'there' : 'gone');
-}, 1000);
+}, test.limit.quick);
 
 test.after(async function () {
   if (W.home) { try { fs.rmSync(W.home, { recursive: true, force: true }); } catch (e) { /* scratch */ } }

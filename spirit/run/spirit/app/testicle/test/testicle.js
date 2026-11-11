@@ -160,26 +160,26 @@ test.after(async function () {
 test.run('its manifest mounts a server: node.mount true', 0.2, function () {
   own = readJson(path.join(APP, 'testicle.json'));
   return (!!own && !!own.node && own.node.mount === true) || 'node: ' + short(own && own.node);
-}, 1000);
+}, test.limit.quick);
 test.run('its mount names testicle.js beside element.js', 0.2, function () {
   return (!!own && !!own.mount && own.mount['testicle.js'] === true && own.mount['element.js'] === true) || 'mount: ' + short(own && own.mount);
-}, 1000);
+}, test.limit.quick);
 test.run('spirit/app/testicle/testicle.js is there', 0.2, function () {
   return fs.existsSync(path.join(APP, 'testicle.js')) || 'no spirit/app/testicle/testicle.js';
-}, 1000);
+}, test.limit.quick);
 
 test.run('the world: a scratch node comes up', 0.2, async function () {
   s = scratch();
   DB = path.join(s.run, 'spirit', 'state', 'testicle', 'data', 'testicle.db');
   N = await boot(s.run); live.push(N.child);
   return N.up || 'the scratch node did not come up: nothing judged';
-}, 65000);
+}, test.limit.long);
 
 // the box: "testicle.db sits in testicle's state folder"
 test.run('testicle.db is made in its state folder, spirit/state/testicle/data/, with its tables file and suite', 0.2, async function () {
   if (!up()) return NONODE;
   return !!(await until(function () { return Promise.resolve(fs.existsSync(DB) && !tables(DB).error); }, 30000)) || 'no readable testicle.db at ' + DB + ': ' + short(fs.existsSync(DB) ? tables(DB).error : 'no file');
-}, 35000);
+}, test.limit.long);
 
 // goal/G47.1, the box: "The testicle server will serve one first verb, \"busy\": it returns true if it is doing any
 // work, false if it is idle."
@@ -189,13 +189,13 @@ test.run('the node lists the verb testicle.busy', 0.2, async function () {
   // api {family} answers { family, interface }, the interface the text of its api.js.
   const iface = String((api.body && api.body.interface) || '');
   return (api.status === 200 && /\bverbs\s*:/.test(iface) && /['"]?busy['"]?\s*:/.test(iface)) || 'testicle\'s api: ' + short(api.body || api.text);
-}, 1000);
+}, test.limit.quick);
 test.run('with nothing changing, busy answers false', 0.2, async function () {
   if (!up()) return NONODE;
   await sleep(1000);
   const idle = await call(N.base, 'testicle.busy', {});
   return (idle.status === 200 && (idle.body === false || (idle.body && idle.body.busy === false))) || 'busy, idle: ' + idle.status + ' ' + short(idle.text);
-}, 4000);
+}, test.limit.slow);
 
 // goal/G47.1, the rename: "the table script; the suite table's key column script", "an existing testicle.db is renamed
 // in place, its rows kept".
@@ -205,29 +205,29 @@ test.run('the older table file is now the table script, and no table file is lef
   let names0 = [];
   try { const d0 = new DatabaseSync(DB, { readOnly: true }); names0 = d0.prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all().map(function (r) { return r.name; }); d0.close(); } catch (e) { names0 = ['unreadable: ' + (e && e.message)]; }
   return (names0.indexOf('script') !== -1 && names0.indexOf('file') === -1) || 'tables: ' + short(names0);
-}, 1000);
+}, test.limit.quick);
 test.run('the older file row is kept in script, as it was', 0.2, function () {
   if (!start) return NONODE;
   const kept = scriptRow(start, OLD.name);
   return (!!kept && kept.hash === OLD.hash && Number(kept.changed) === OLD.changed) || 'the row: ' + short(kept);
-}, 1000);
+}, test.limit.quick);
 test.run('the older suite row is kept, its key column now script', 0.2, function () {
   if (!start) return NONODE;
   const keptSuite = suiteRow(start, OLD.name, OLD.suite);
   return (!!keptSuite && keptSuite.script === OLD.name && !('file' in keptSuite)) || 'the row: ' + short(keptSuite);
-}, 1000);
+}, test.limit.quick);
 
 // the box: "nothing is read at start"
 test.run('at start the script table holds no row beyond those kept', 0.2, function () {
   if (!start) return NONODE;
   const fresh = start.script.filter(function (r) { return r.name !== OLD.name; });
   return (!start.error && fresh.length === 0) || 'rows at start: ' + short(start.error || fresh.slice(0, 5));
-}, 1000);
+}, test.limit.quick);
 test.run('at start the suite table holds no row beyond those kept', 0.2, function () {
   if (!start) return NONODE;
   const freshSuites = start.suite.filter(function (r) { return r.script !== OLD.name; });
   return (!start.error && freshSuites.length === 0) || 'rows at start: ' + short(start.error || freshSuites.slice(0, 5));
-}, 1000);
+}, test.limit.quick);
 
 // the box: "on any change of a product file it makes sure that file has its row"
 test.run('one second after a product file changes, it has its row in script', 0.2, async function () {
@@ -237,45 +237,45 @@ test.run('one second after a product file changes, it has its row in script', 0.
   a1 = await after();
   alpha = scriptRow(a1, Z + 'alpha.js');
   return !!alpha || 'no row for ' + Z + 'alpha.js: ' + short(a1.error || a1.script);
-}, 4000);
+}, test.limit.slow);
 test.run('the row holds the file\'s hash', 0.2, function () {
   return (!!alpha && typeof alpha.hash === 'string' && alpha.hash !== '') || 'hash: ' + short(alpha && alpha.hash);
-}, 1000);
+}, test.limit.quick);
 test.run('the row is not marked deleted', 0.2, function () {
   return (!!alpha && no(alpha.deleted)) || 'deleted: ' + short(alpha && alpha.deleted);
-}, 1000);
+}, test.limit.quick);
 test.run('the row\'s changed is a numeric UTC timestamp of that change', 0.2, function () {
   return (!!alpha && Number(alpha.changed) >= t0 - 1000 && Number(alpha.changed) <= Date.now()) || 'changed: ' + short(alpha && alpha.changed) + ', the change at ' + t0;
-}, 1000);
+}, test.limit.quick);
 
 // the box: "and a suite row for every suite that concerns it"
 test.run('the world: alpha.js is concerned by its own test and by general tests', 0.2, function () {
   if (!up()) return NONODE;
   wantAlpha = concerning(s.run, Z + 'alpha.js');
   return (wantAlpha.indexOf(Z + 'test/alpha.js') !== -1 && wantAlpha.length > 1) || 'testModule.js names ' + short(wantAlpha);
-}, 1000);
+}, test.limit.quick);
 test.run('its suite rows are exactly its own test and the general tests that name it', 0.2, function () {
   if (!a1) return NONODE;
   return JSON.stringify(names(suiteRows(a1, Z + 'alpha.js'))) === JSON.stringify(wantAlpha) || 'rows ' + short(names(suiteRows(a1, Z + 'alpha.js'))) + ', wanted ' + short(wantAlpha);
-}, 1000);
+}, test.limit.quick);
 test.run('every one of its suite rows is flagged test', 0.2, function () {
   if (!a1) return NONODE;
   ownRow = suiteRow(a1, Z + 'alpha.js', Z + 'test/alpha.js');
   const unflagged = suiteRows(a1, Z + 'alpha.js').filter(function (r) { return !yes(r.test); });
   return (suiteRows(a1, Z + 'alpha.js').length > 0 && !unflagged.length) || 'not flagged: ' + short(names(unflagged));
-}, 1000);
+}, test.limit.quick);
 test.run('a suite row holds the suite file\'s own hash', 0.2, function () {
   return (!!ownRow && typeof ownRow.hash === 'string' && ownRow.hash !== '' && ownRow.hash !== alpha.hash) || 'suite hash ' + short(ownRow && ownRow.hash) + ', file hash ' + short(alpha && alpha.hash);
-}, 1000);
+}, test.limit.quick);
 test.run('a suite row is not marked deleted', 0.2, function () {
   return (!!ownRow && no(ownRow.deleted)) || 'deleted: ' + short(ownRow && ownRow.deleted);
-}, 1000);
+}, test.limit.quick);
 test.run('a suite row\'s outcome is empty: nothing runs a suite this cycle', 0.2, function () {
   return (!!ownRow && empty(ownRow.outcome)) || 'outcome: ' + short(ownRow && ownRow.outcome);
-}, 1000);
+}, test.limit.quick);
 test.run('a suite row\'s changed is a numeric UTC timestamp', 0.2, function () {
   return (!!ownRow && Number(ownRow.changed) >= t0 - 1000 && Number(ownRow.changed) <= Date.now()) || 'changed: ' + short(ownRow && ownRow.changed);
-}, 1000);
+}, test.limit.quick);
 
 // the box: "When a suite or a product file is changed ... the server adjusts the two tables"
 test.run('a product file changed again gets its new hash', 0.2, async function () {
@@ -285,14 +285,14 @@ test.run('a product file changed again gets its new hash', 0.2, async function (
   a2 = await after();
   alpha2 = scriptRow(a2, Z + 'alpha.js');
   return (!!alpha2 && !!alpha && alpha2.hash !== alpha.hash) || 'hash before ' + short(alpha && alpha.hash) + ', after ' + short(alpha2 && alpha2.hash);
-}, 4000);
+}, test.limit.slow);
 test.run('and its changed moves to that change', 0.2, function () {
   return (!!alpha2 && Number(alpha2.changed) >= t1) || 'changed: ' + short(alpha2 && alpha2.changed) + ', the change at ' + t1;
-}, 1000);
+}, test.limit.quick);
 test.run('a file keeps one row', 0.2, function () {
   if (!a2) return NONODE;
   return a2.script.filter(function (r) { return r.name === Z + 'alpha.js'; }).length === 1 || 'rows for alpha.js: ' + a2.script.filter(function (r) { return r.name === Z + 'alpha.js'; }).length;
-}, 1000);
+}, test.limit.quick);
 test.run('a suite changed gets its new hash on its rows', 0.2, async function () {
   if (!up()) return NONODE;
   t2 = Date.now();
@@ -300,10 +300,10 @@ test.run('a suite changed gets its new hash on its rows', 0.2, async function ()
   a3 = await after();
   ownRow3 = suiteRow(a3, Z + 'alpha.js', Z + 'test/alpha.js');
   return (!!ownRow3 && !!ownRow && ownRow3.hash !== ownRow.hash) || 'suite hash before ' + short(ownRow && ownRow.hash) + ', after ' + short(ownRow3 && ownRow3.hash);
-}, 4000);
+}, test.limit.slow);
 test.run('and its rows are flagged test, changed at that change', 0.2, function () {
   return (!!ownRow3 && yes(ownRow3.test) && Number(ownRow3.changed) >= t2) || 'row: ' + short(ownRow3);
-}, 1000);
+}, test.limit.quick);
 
 // the box: "When a suite ... is changed or added": a suite of a file with no row yet
 test.run('a changed suite makes its row for the file it concerns', 0.2, async function () {
@@ -311,11 +311,11 @@ test.run('a changed suite makes its row for the file it concerns', 0.2, async fu
   append(Z + 'test/gamma.js', '// the suite of gamma changed\n');
   g1 = await after();
   return !!suiteRow(g1, Z + 'gamma.js', Z + 'test/gamma.js') || 'suite rows of gamma.js: ' + short(suiteRows(g1, Z + 'gamma.js'));
-}, 4000);
+}, test.limit.slow);
 test.run('and that file has its row in script', 0.2, function () {
   if (!g1) return NONODE;
   return !!scriptRow(g1, Z + 'gamma.js') || 'no row for ' + Z + 'gamma.js';
-}, 1000);
+}, test.limit.quick);
 
 // the box: "changed or added": a new product file
 test.run('a product file added has its row one second later', 0.2, async function () {
@@ -323,12 +323,12 @@ test.run('a product file added has its row one second later', 0.2, async functio
   put(Z + 'delta.js', '\'use strict\';\n// delta, new\n');
   d1 = await after();
   return !!scriptRow(d1, Z + 'delta.js') || 'no row for ' + Z + 'delta.js';
-}, 4000);
+}, test.limit.slow);
 test.run('with a suite row for every general test that names it', 0.2, function () {
   if (!d1) return NONODE;
   wantDelta = concerning(s.run, Z + 'delta.js');
   return (wantDelta.length > 0 && JSON.stringify(names(suiteRows(d1, Z + 'delta.js'))) === JSON.stringify(wantDelta)) || 'rows ' + short(names(suiteRows(d1, Z + 'delta.js'))) + ', wanted ' + short(wantDelta);
-}, 1000);
+}, test.limit.quick);
 
 // the box: "changed or added": a new suite
 test.run('a suite added makes its row, and its file\'s row', 0.2, async function () {
@@ -336,7 +336,7 @@ test.run('a suite added makes its row, and its file\'s row', 0.2, async function
   put(Z + 'test/beta.js', '\'use strict\';\n// the new test of beta\n');
   b1 = await after();
   return (!!suiteRow(b1, Z + 'beta.js', Z + 'test/beta.js') && !!scriptRow(b1, Z + 'beta.js')) || 'rows of beta.js: ' + short(suiteRows(b1, Z + 'beta.js'));
-}, 4000);
+}, test.limit.slow);
 
 // goal/G47.1, the verbs cycle: testicle.script.get. The box: "If the argument (a filename, scoped to run://) is not a
 // production script, it returns the error \"not a production script\"", "If the file does not exist, it returns the
@@ -347,21 +347,21 @@ test.run('script.get of a file that is no script answers the error "not a produc
   if (!up()) return NONODE;
   const md = await call(N.base, 'testicle.script.get', { name: Z + 'notes.md' });
   return failed(md, 'not a production script') || 'script.get notes.md: ' + md.status + ' ' + short(md.text);
-}, 1000);
+}, test.limit.quick);
 test.run('script.get of a script in a test folder answers the error "not a production script"', 0.2, async function () {
   if (!up()) return NONODE;
   const asTest = await call(N.base, 'testicle.script.get', { name: Z + 'test/zeta.js' });
   return failed(asTest, 'not a production script') || 'script.get test/zeta.js: ' + asTest.status + ' ' + short(asTest.text);
-}, 1000);
+}, test.limit.quick);
 test.run('script.get of a production script that is not there answers the error "no such file"', 0.2, async function () {
   if (!up()) return NONODE;
   const nowhere = await call(N.base, 'testicle.script.get', { name: Z + 'nowhere.js' });
   return failed(nowhere, 'no such file') || 'script.get nowhere.js: ' + nowhere.status + ' ' + short(nowhere.text);
-}, 1000);
+}, test.limit.quick);
 test.run('the world: zeta.js, never changed, has no row before it is asked for', 0.2, function () {
   if (!up()) return NONODE;
   return !scriptRow(tables(DB), Z + 'zeta.js') || 'zeta.js has a row already';
-}, 1000);
+}, test.limit.quick);
 test.run('script.get of a production script with no rows makes its file row', 0.2, async function () {
   if (!up()) return NONODE;
   tz = Date.now();
@@ -369,27 +369,27 @@ test.run('script.get of a production script with no rows makes its file row', 0.
   zt = tables(DB);
   zrow = scriptRow(zt, Z + 'zeta.js');
   return (zeta.status === 200 && !!zrow) || 'script.get zeta.js: ' + zeta.status + ' ' + short(zeta.text) + '; its row ' + short(zrow);
-}, 1000);
+}, test.limit.quick);
 test.run('and answers that file row', 0.2, function () {
   if (!zeta) return NONODE;
   return (!!zrow && !!zeta.body && zeta.body.name === zrow.name && zeta.body.hash === zrow.hash && Number(zeta.body.changed) === Number(zrow.changed) && no(zrow.deleted) && Number(zrow.changed) >= tz - 1000) || 'answered ' + short(zeta.body) + ', the row ' + short(zrow);
-}, 1000);
+}, test.limit.quick);
 test.run('it makes a suite row for every suite that concerns the file', 0.2, function () {
   if (!zt) return NONODE;
   wantZeta = concerning(s.run, Z + 'zeta.js');
   return (wantZeta.indexOf(Z + 'test/zeta.js') !== -1 && JSON.stringify(names(suiteRows(zt, Z + 'zeta.js'))) === JSON.stringify(wantZeta)) || 'rows ' + short(names(suiteRows(zt, Z + 'zeta.js'))) + ', wanted ' + short(wantZeta);
-}, 1000);
+}, test.limit.quick);
 test.run('every suite row it makes is flagged needs testing', 0.2, function () {
   if (!zt) return NONODE;
   const zunflagged = suiteRows(zt, Z + 'zeta.js').filter(function (r) { return !yes(r.test); });
   return (suiteRows(zt, Z + 'zeta.js').length > 0 && !zunflagged.length) || 'not flagged: ' + short(names(zunflagged));
-}, 1000);
+}, test.limit.quick);
 test.run('script.get of a file with rows answers its row as it stands', 0.2, async function () {
   if (!up()) return NONODE;
   const known = await call(N.base, 'testicle.script.get', { name: Z + 'gamma.js' });
   const grow = scriptRow(tables(DB), Z + 'gamma.js');
   return (known.status === 200 && !!grow && !!known.body && known.body.name === grow.name && known.body.hash === grow.hash) || 'answered ' + short(known.body) + ', the row ' + short(grow);
-}, 1000);
+}, test.limit.quick);
 
 // goal/G47.1, the verbs cycle: testicle.suite.search. The box: "A standard table search response", "The file row owns
 // its suite rows: the suite table's key is file and suite. So suite.search takes the production file and answers that
@@ -401,30 +401,30 @@ test.run('suite.search answers a standard table search: items and more', 0.2, as
   all = await call(N.base, 'testicle.suite.search', { script: Z + 'zeta.js', text: '' });
   got = items(all);
   return (all.status === 200 && !!all.body && Array.isArray(all.body.items) && typeof all.body.more === 'boolean') || 'suite.search: ' + all.status + ' ' + short(all.text);
-}, 1000);
+}, test.limit.quick);
 test.run('with no words it answers the file\'s suites, each once, and no other', 0.2, function () {
   const gotNames = got.map(suiteOf).sort();
   return JSON.stringify(gotNames) === JSON.stringify(wantZeta) || 'answered ' + short(gotNames) + ', wanted ' + short(wantZeta);
-}, 1000);
+}, test.limit.quick);
 test.run('every row it answers is the given script\'s', 0.2, function () {
   return (got.length > 0 && got.every(function (i) { return i.row.script === Z + 'zeta.js'; })) || 'scripts: ' + short(got.map(function (i) { return i.row.script; }));
-}, 1000);
+}, test.limit.quick);
 test.run('every suite it answers is a file whose final folder is test', 0.2, function () {
   return (got.length > 0 && got.every(function (i) { return path.posix.basename(path.posix.dirname(suiteOf(i))) === 'test'; })) || 'suites: ' + short(got.map(suiteOf).sort());
-}, 1000);
+}, test.limit.quick);
 test.run('every suite it answers carries its status: needs running', 0.2, function () {
   return (got.length > 0 && got.every(function (i) { return yes(i.row.test) || i.row.status === 'needs running'; })) || 'rows: ' + short(got.map(function (i) { return i.row; }).slice(0, 3));
-}, 1000);
+}, test.limit.quick);
 test.run('the words narrow among the file\'s suites', 0.2, async function () {
   if (!up()) return NONODE;
   const narrow = items(await call(N.base, 'testicle.suite.search', { script: Z + 'zeta.js', text: 'titleRules' })).map(suiteOf);
   return (narrow.indexOf(GENERAL) !== -1 && narrow.indexOf(Z + 'test/zeta.js') === -1) || 'searched titleRules: ' + short(narrow);
-}, 1000);
+}, test.limit.quick);
 test.run('another file\'s search answers that file\'s rows, none of the first', 0.2, async function () {
   if (!up()) return NONODE;
   const other = items(await call(N.base, 'testicle.suite.search', { script: Z + 'gamma.js', text: '' }));
   return (other.length > 0 && other.every(function (i) { return i.row.script === Z + 'gamma.js'; }) && other.map(suiteOf).indexOf(Z + 'test/zeta.js') === -1) || 'gamma.js: ' + short(other.map(function (i) { return i.row.script + ' ' + suiteOf(i); }).slice(0, 5));
-}, 1000);
+}, test.limit.quick);
 
 // goal/G47.1, the test cycle. The box: "The testicle.test table now needs a \"set\" verb, and a \"search\" verb", "When
 // a test row is set, and a script row is missing, the server needs to auto-create the script/suite rows for that test",
@@ -440,38 +440,38 @@ test.run('another file\'s search answers that file\'s rows, none of the first', 
 test.run('the world: theta.js has no row before a test of it is set', 0.2, function () {
   if (!up()) return NONODE;
   return !scriptRow(tables(DB), TH) || 'theta.js has a row already';
-}, 1000);
+}, test.limit.quick);
 test.run('test.set is served, and testicle.db holds the table test', 0.2, async function () {
   if (!up()) return NONODE;
   ts0 = Date.now();
   set1 = await call(N.base, 'testicle.test.set', { script: TH, suite: THS, test: 'theta answers its first question', verified: true, severity: 0.2 });
   k1 = tables(DB);
   return (set1.status === 200 && Array.isArray(k1.test)) || 'test.set: ' + set1.status + ' ' + short(set1.text) + '; table test ' + short(k1.test === null ? 'missing' : 'there');
-}, 1000);
+}, test.limit.quick);
 test.run('a set for a script with no row makes its script row', 0.2, function () {
   if (!k1) return NONODE;
   return !!scriptRow(k1, TH) || 'no script row for ' + TH;
-}, 1000);
+}, test.limit.quick);
 test.run('and a suite row for every suite that concerns it', 0.2, function () {
   if (!k1) return NONODE;
   wantTheta = concerning(s.run, TH);
   return JSON.stringify(names(suiteRows(k1, TH))) === JSON.stringify(wantTheta) || 'rows ' + short(names(suiteRows(k1, TH))) + ', wanted ' + short(wantTheta);
-}, 1000);
+}, test.limit.quick);
 test.run('a test set for the first time has one row, current', 0.2, function () {
   if (!k1) return NONODE;
   tr1 = currentOf(k1, TH, THS, 'theta answers its first question')[0];
   return (testRows(k1, TH, THS, 'theta answers its first question').length === 1 && !!tr1) || 'rows: ' + short(testRows(k1, TH, THS, 'theta answers its first question'));
-}, 1000);
+}, test.limit.quick);
 test.run('the row holds its result and its severity', 0.2, function () {
   return (!!tr1 && yes(tr1.verified) && Number(tr1.severity) === 0.2) || 'row: ' + short(tr1);
-}, 1000);
+}, test.limit.quick);
 test.run('the row holds when it flipped and when it was tested, numeric UTC timestamps', 0.2, function () {
   return (!!tr1 && Number(tr1.flipped) >= ts0 - 1000 && Number(tr1.tested) >= ts0 - 1000 && Number(tr1.tested) <= Date.now()) || 'row: ' + short(tr1);
-}, 1000);
+}, test.limit.quick);
 test.run('the row is judged at the script\'s hash', 0.2, function () {
   if (!k1) return NONODE;
   return (!!tr1 && tr1.judged === (scriptRow(k1, TH) || {}).hash && typeof tr1.judged === 'string' && tr1.judged !== '') || 'judged ' + short(tr1 && tr1.judged) + ', the script\'s hash ' + short((scriptRow(k1, TH) || {}).hash);
-}, 1000);
+}, test.limit.quick);
 
 // the box: "If the test does not flip, the current row is only updated"
 test.run('the same result again makes no new row', 0.2, async function () {
@@ -482,13 +482,13 @@ test.run('the same result again makes no new row', 0.2, async function () {
   k2 = tables(DB);
   tr2 = currentOf(k2, TH, THS, 'theta answers its first question')[0];
   return (testRows(k2, TH, THS, 'theta answers its first question').length === 1 && !!tr2) || 'rows: ' + short(testRows(k2, TH, THS, 'theta answers its first question'));
-}, 1000);
+}, test.limit.quick);
 test.run('the current row\'s tested moves, its flipped stays', 0.2, function () {
   return (!!tr2 && !!tr1 && Number(tr2.tested) >= ts1 && Number(tr2.flipped) === Number(tr1.flipped)) || 'before ' + short(tr1) + ', after ' + short(tr2);
-}, 1000);
+}, test.limit.quick);
 test.run('a lower severity leaves the row\'s severity as it was', 0.2, function () {
   return (!!tr2 && Number(tr2.severity) === 0.2) || 'severity after a set of 0.1: ' + short(tr2 && tr2.severity);
-}, 1000);
+}, test.limit.quick);
 test.run('with the script changed, the row is judged at its new hash', 0.2, async function () {
   if (!up()) return NONODE;
   fs.appendFileSync(path.join(s.run, TH), '// theta changed\n');
@@ -497,10 +497,10 @@ test.run('with the script changed, the row is judged at its new hash', 0.2, asyn
   k3 = tables(DB);
   tr3 = currentOf(k3, TH, THS, 'theta answers its first question')[0];
   return (!!tr3 && !!tr1 && tr3.judged === (scriptRow(k3, TH) || {}).hash && tr3.judged !== tr1.judged) || 'judged ' + short(tr3 && tr3.judged) + ', the script\'s hash ' + short((scriptRow(k3, TH) || {}).hash);
-}, 4000);
+}, test.limit.slow);
 test.run('a higher severity is applied to the row', 0.2, function () {
   return (!!tr3 && Number(tr3.severity) === 0.5) || 'severity after a set of 0.5: ' + short(tr3 && tr3.severity);
-}, 1000);
+}, test.limit.quick);
 
 // the box: "If the test flips, a new active row is created"
 test.run('a flip makes a second row, and one row alone is current', 0.2, async function () {
@@ -511,14 +511,14 @@ test.run('a flip makes a second row, and one row alone is current', 0.2, async f
   all4 = testRows(k4, TH, THS, 'theta answers its first question');
   cur4 = currentOf(k4, TH, THS, 'theta answers its first question');
   return (all4.length === 2 && cur4.length === 1) || 'rows: ' + short(all4);
-}, 1000);
+}, test.limit.quick);
 test.run('the new current row holds the new result, flipped now', 0.2, function () {
   return (cur4.length === 1 && no(cur4[0].verified) && Number(cur4[0].flipped) >= ts2) || 'current: ' + short(cur4);
-}, 1000);
+}, test.limit.quick);
 test.run('the row it replaces is kept, current no longer: the history', 0.2, function () {
   const old4 = all4.filter(function (r) { return !yes(r.current); })[0];
   return (!!old4 && !!tr1 && yes(old4.verified) && Number(old4.flipped) === Number(tr1.flipped)) || 'the old row: ' + short(old4);
-}, 1000);
+}, test.limit.quick);
 
 // the box: "This cycle does not clear a suite's needs-testing flag"
 test.run('with every test of the suite passing, its needs-testing flag stays', 0.2, async function () {
@@ -527,7 +527,7 @@ test.run('with every test of the suite passing, its needs-testing flag stays', 0
   const k5 = tables(DB);
   const flag5 = suiteRow(k5, TH, THS);
   return (!!flag5 && yes(flag5.test)) || 'the suite row: ' + short(flag5);
-}, 1000);
+}, test.limit.quick);
 
 // the box: "test.search will only return current test rows"
 test.run('test.search answers a standard table search: items and more', 0.2, async function () {
@@ -538,40 +538,40 @@ test.run('test.search answers a standard table search: items and more', 0.2, asy
   sr = await call(N.base, 'testicle.test.search', { script: TH, suite: THS, text: '' });
   srRows = found(sr);
   return (sr.status === 200 && !!sr.body && Array.isArray(sr.body.items) && typeof sr.body.more === 'boolean') || 'test.search: ' + sr.status + ' ' + short(sr.text);
-}, 1000);
+}, test.limit.quick);
 test.run('for a script and suite it answers their current tests only, one row each', 0.2, function () {
   return (srRows.length === 3 && srRows.every(function (r) { return yes(r.current) && r.script === TH && r.suite === THS; })) || 'rows: ' + short(srRows);
-}, 1000);
+}, test.limit.quick);
 test.run('test.search answers the most severe first', 0.2, function () {
   const sev = srRows.map(function (r) { return Number(r.severity); });
   return (sev.length === 3 && sev[0] >= sev[1] && sev[1] >= sev[2]) || 'severities in order: ' + short(sev);
-}, 1000);
+}, test.limit.quick);
 test.run('with no script it searches that suite\'s tests for any script', 0.2, async function () {
   if (!up()) return NONODE;
   const anyScript = found(await call(N.base, 'testicle.test.search', { suite: THS, text: '' }));
   return (anyScript.length === 3 && anyScript.every(function (r) { return r.suite === THS && yes(r.current); })) || 'rows: ' + short(anyScript);
-}, 1000);
+}, test.limit.quick);
 test.run('with no suite it searches that script\'s tests in any suite', 0.2, async function () {
   if (!up()) return NONODE;
   const anySuite = found(await call(N.base, 'testicle.test.search', { script: Z + 'gamma.js', text: '' }));
   return (anySuite.length === 1 && anySuite[0].test === 'gamma answers') || 'rows: ' + short(anySuite);
-}, 1000);
+}, test.limit.quick);
 test.run('with neither it searches every current test', 0.2, async function () {
   if (!up()) return NONODE;
   const everyOne = found(await call(N.base, 'testicle.test.search', { text: '' }));
   return (everyOne.length === 4 && everyOne.every(function (r) { return yes(r.current); })) || 'rows: ' + short(everyOne);
-}, 1000);
+}, test.limit.quick);
 
 // the box: "The verb red is testicle.red"
 test.run('testicle.red answers every failed current test, and no other', 0.2, async function () {
   if (!up()) return NONODE;
   red = found(await call(N.base, 'testicle.red', {}));
   return (red.length === 3 && red.every(function (r) { return no(r.verified) && yes(r.current); })) || 'rows: ' + short(red);
-}, 1000);
+}, test.limit.quick);
 test.run('testicle.red answers the most severe first', 0.2, function () {
   const redSev = red.map(function (r) { return Number(r.severity); });
   return JSON.stringify(redSev) === JSON.stringify([0.9, 0.7, 0.3]) || 'severities in order: ' + short(redSev);
-}, 1000);
+}, test.limit.quick);
 
 // Before the general test changes: that one judges every product file, the untouched among them.
 // the box: "A product file or a suite that has not changed has no row"
@@ -580,18 +580,18 @@ test.run('a changed file that is no product script gets no row', 0.2, async func
   append(Z + 'notes.md', 'no script\n');
   n1 = await after();
   return !scriptRow(n1, Z + 'notes.md') || 'a row for notes.md: ' + short(scriptRow(n1, Z + 'notes.md'));
-}, 4000);
+}, test.limit.slow);
 test.run('a product file never changed, its suite never changed, has no row', 0.2, function () {
   if (!n1) return NONODE;
   return (!scriptRow(n1, Z + 'epsilon.js') && !suiteRows(n1, Z + 'epsilon.js').length) || 'rows for epsilon.js: ' + short([scriptRow(n1, Z + 'epsilon.js'), suiteRows(n1, Z + 'epsilon.js')]);
-}, 1000);
+}, test.limit.quick);
 
 // the box: "When a suite ... is changed": a general test
 test.run('the world: the changed general test judges every product file', 0.2, function () {
   if (!up()) return NONODE;
   reach = judgedBy(s.run, GENERAL);
   return reach.length > 100 || 'it judges ' + reach.length;
-}, 1000);
+}, test.limit.quick);
 test.run('while it works on a changed general test, busy answers true', 0.2, async function () {
   if (!up()) return NONODE;
   append(GENERAL, '// a general test changed\n');
@@ -601,23 +601,23 @@ test.run('while it works on a changed general test, busy answers true', 0.2, asy
   while (Date.now() < stopAt) { const b = await call(N.base, 'testicle.busy', {}); seen.push(b.body === true || (b.body && b.body.busy === true)); }
   r1 = tables(DB);
   return seen.indexOf(true) !== -1 || 'busy asked ' + seen.length + ' times in that second, never true';
-}, 4000);
+}, test.limit.slow);
 test.run('once that work is done, busy answers false again', 0.2, async function () {
   if (!up()) return NONODE;
   await sleep(1000);
   const done = await call(N.base, 'testicle.busy', {});
   return (done.status === 200 && (done.body === false || (done.body && done.body.busy === false))) || 'busy after: ' + done.status + ' ' + short(done.text);
-}, 4000);
+}, test.limit.slow);
 test.run('one second after a general test changes, every file it judges has its suite row for it', 0.2, function () {
   if (!r1) return NONODE;
   const missing = reach.filter(function (f) { return !suiteRow(r1, f, GENERAL); });
   return (reach.length > 0 && !missing.length) || missing.length + ' of ' + reach.length + ' have none, the first: ' + short(missing.slice(0, 5));
-}, 1000);
+}, test.limit.quick);
 test.run('and every one of those files has its row in script', 0.2, function () {
   if (!r1) return NONODE;
   const unfiled = reach.filter(function (f) { return !scriptRow(r1, f); });
   return (reach.length > 0 && !unfiled.length) || unfiled.length + ' of ' + reach.length + ' have none, the first: ' + short(unfiled.slice(0, 5));
-}, 1000);
+}, test.limit.quick);
 
 // the box: "A removed file's row is marked deleted"
 test.run('one second after a product file is removed, its row is marked deleted', 0.2, async function () {
@@ -626,9 +626,9 @@ test.run('one second after a product file is removed, its row is marked deleted'
   x1 = await after();
   const gone = scriptRow(x1, Z + 'alpha.js');
   return (!!gone && yes(gone.deleted)) || 'row: ' + short(gone);
-}, 4000);
+}, test.limit.slow);
 test.run('and its suite rows are marked deleted', 0.2, function () {
   if (!x1) return NONODE;
   const left = suiteRows(x1, Z + 'alpha.js').filter(function (r) { return !yes(r.deleted); });
   return (suiteRows(x1, Z + 'alpha.js').length > 0 && !left.length) || 'not deleted: ' + short(names(left));
-}, 1000);
+}, test.limit.quick);

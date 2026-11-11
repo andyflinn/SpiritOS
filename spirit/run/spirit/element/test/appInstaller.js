@@ -69,7 +69,7 @@ test.run('it registers spirit.element.spirit.element.appInstaller.create', 0.2, 
   // it is a standard shell element
   w0 = world({});
   return (w0.E.appInstaller && typeof w0.E.appInstaller.create === 'function') ? true : 'elements: ' + short(Object.keys(w0.E));
-}, 1000);
+}, test.limit.quick);
 test.run('it loads the app family\'s cache', 0.2, async function () {
   // an app in spirit/app: on while its row says active, by the app family's cache (goal/G43.9)
   PATH = 'spirit/app/zz/zz.js';
@@ -78,48 +78,48 @@ test.run('it loads the app family\'s cache', 0.2, async function () {
   inst = w.E.appInstaller.create(h, { path: PATH });
   await settle();
   return (w.managers.indexOf('app') !== -1) ? true : 'managers: ' + short(w.managers);
-}, 1000);
+}, test.limit.quick);
 test.run('its row inactive: Activate, off', 0.2, function () {
   return (h.button && h.button.text === 'Activate' && !onOf(h)) ? true : 'button: ' + short(h.button && { text: h.button.text, attrs: h.button.attrs });
-}, 1000);
+}, test.limit.quick);
 test.run('a press asks the node, spirit.app.activeApp { key, active: true }', 0.2, async function () {
   e1 = h.button.click();
   await settle();
   return (w.asked.length === 1 && w.asked[0].key === 'zz' && w.asked[0].active === true) ? true : 'asked ' + short(w.asked);
-}, 1000);
+}, test.limit.quick);
 test.run('the click stays its own: it does not reach the row around it', 0.2, function () {
   return (e1.stopped) ? true : 'the click propagated';
-}, 1000);
+}, test.limit.quick);
 test.run('until the stream says so, it stays off: it draws the cache, not the click', 0.2, function () {
   return (!onOf(h) && h.button.text === 'Activate') ? true : 'after the press: ' + short(h.button.text);
-}, 1000);
+}, test.limit.quick);
 test.run('its row active in the cache: Deactivate, on', 0.2, async function () {
   w.put('zz', { key: 'zz', active: true });
   await settle();
   return (onOf(h) && h.button.text === 'Deactivate') ? true : 'after active: ' + short(h.button && h.button.text);
-}, 1000);
+}, test.limit.quick);
 test.run('pressed again it asks active false', 0.2, async function () {
   h.button.click();
   await settle();
   return (w.asked.length === 2 && w.asked[1].active === false) ? true : 'asked ' + short(w.asked);
-}, 1000);
+}, test.limit.quick);
 test.run('its row inactive again: Activate, off', 0.2, async function () {
   w.put('zz', { key: 'zz', active: false });
   await settle();
   return (!onOf(h) && h.button.text === 'Activate') ? true : 'after inactive: ' + short(h.button && h.button.text);
-}, 1000);
+}, test.limit.quick);
 test.run('it reads and writes no face part (goal/G43.20)', 0.2, function () {
   return (w.fsAsked === 0) ? true : 'fs asked ' + w.fsAsked + ' times';
-}, 1000);
+}, test.limit.quick);
 test.run('destroy ends its watch', 0.2, function () {
   inst.destroy();
   return (w.released === 1) ? true : 'released ' + w.released;
-}, 1000);
+}, test.limit.quick);
 test.run('and nothing is drawn after it', 0.2, async function () {
   w.put('zz', { key: 'zz', active: true });
   await settle();
   return (!onOf(h)) ? true : 'drew after destroy';
-}, 1000);
+}, test.limit.quick);
 test.run('its row says intrinsic: no button and no note', 0.2, async function () {
   // an intrinsic app gets no button (goal/G43.15)
   wi = world({ core: { key: 'core', active: true, intrinsic: true } });
@@ -127,7 +127,7 @@ test.run('its row says intrinsic: no button and no note', 0.2, async function ()
   wi.E.appInstaller.create(hi, { path: 'spirit/app/core/core.js' });
   await settle();
   return (!hi.button && hi.innerHTML === '') ? true : 'drew: ' + short(hi.innerHTML);
-}, 1000);
+}, test.limit.quick);
 test.run('a shell app\'s script gets nothing, and no face part is read', 0.2, async function () {
   // the old shell's face parts are gone (goal/G43.20, Andy: "drop the old shells face parts altogether.")
   ws = world({});
@@ -135,10 +135,10 @@ test.run('a shell app\'s script gets nothing, and no face part is read', 0.2, as
   ws.E.appInstaller.create(hs, { path: 'shell/icons/icons.js' });
   await settle();
   return (!hs.button && hs.innerHTML === '' && ws.fsAsked === 0) ? true : 'drew: ' + short(hs.innerHTML) + ', fs asked ' + ws.fsAsked;
-}, 1000);
+}, test.limit.quick);
 test.run('another script of an app folder gets nothing', 0.2, async function () {
   hx = host();
   ws.E.appInstaller.create(hx, { path: 'spirit/app/zz/other.js' });
   await settle();
   return (!hx.button && hx.innerHTML === '') ? true : 'drew: ' + short(hx.innerHTML);
-}, 1000);
+}, test.limit.quick);

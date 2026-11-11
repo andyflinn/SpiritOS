@@ -37,7 +37,7 @@ test.run('it exports rowTable(db, def, publish)', 0.2, function () {
   if (!fs.existsSync(FILE)) return 'spirit/app/agent/table/rowTable.js is not there';
   const mod = X.mod = require(FILE);
   return mod && typeof mod.rowTable === 'function' ? true : 'exports: ' + short(Object.keys(mod || {}));
-}, 1000);
+}, test.limit.quick);
 test.run('it answers { verb, has, label, icon }', 0.2, function () {
   if (!X.mod || typeof X.mod.rowTable !== 'function') return NO_MOD;
   X.scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-rowTable-'));
@@ -53,28 +53,28 @@ test.run('it answers { verb, has, label, icon }', 0.2, function () {
   X.cols = X.db.prepare('PRAGMA table_info("thing")').all();
   X.names = X.cols.map(function (c) { return c.name; });
   return t && t.verb && typeof t.verb.handler === 'function' && typeof t.has === 'function' && typeof t.label === 'function' && typeof t.icon === 'function' ? true : 'answered: ' + short(t && Object.keys(t));
-}, 1000);
+}, test.limit.quick);
 
 // ── the table: the key set, the common fields, the named fields ──
 // One check per column, each its own plain title (goal/G45.6: a title names no value built into it).
 const has = function (c) { return X.names.indexOf(c) !== -1 ? true : 'columns: ' + short(X.names); };
-test.run('the table has an id column', 0.2, function () { return has('id'); }, 1000);
-test.run('the table has a privateKey column', 0.2, function () { return has('privateKey'); }, 1000);
-test.run('the table has a sealPublicKey column', 0.2, function () { return has('sealPublicKey'); }, 1000);
-test.run('the table has a sealPrivateKey column', 0.2, function () { return has('sealPrivateKey'); }, 1000);
-test.run('the table has an icon column', 0.2, function () { return has('icon'); }, 1000);
-test.run('the table has a label column', 0.2, function () { return has('label'); }, 1000);
-test.run('the table has an url column', 0.2, function () { return has('url'); }, 1000);
-test.run('the table has an apiKey column', 0.2, function () { return has('apiKey'); }, 1000);
-test.run('the table has an on column', 0.2, function () { return has('on'); }, 1000);
-test.run('the table has a tags column', 0.2, function () { return has('tags'); }, 1000);
+test.run('the table has an id column', 0.2, function () { return has('id'); }, test.limit.quick);
+test.run('the table has a privateKey column', 0.2, function () { return has('privateKey'); }, test.limit.quick);
+test.run('the table has a sealPublicKey column', 0.2, function () { return has('sealPublicKey'); }, test.limit.quick);
+test.run('the table has a sealPrivateKey column', 0.2, function () { return has('sealPrivateKey'); }, test.limit.quick);
+test.run('the table has an icon column', 0.2, function () { return has('icon'); }, test.limit.quick);
+test.run('the table has a label column', 0.2, function () { return has('label'); }, test.limit.quick);
+test.run('the table has an url column', 0.2, function () { return has('url'); }, test.limit.quick);
+test.run('the table has an apiKey column', 0.2, function () { return has('apiKey'); }, test.limit.quick);
+test.run('the table has an on column', 0.2, function () { return has('on'); }, test.limit.quick);
+test.run('the table has a tags column', 0.2, function () { return has('tags'); }, test.limit.quick);
 test.run('id is its one primary key', 0.2, function () {
   const pk = X.cols.filter(function (c) { return c.pk; }).map(function (c) { return c.name; });
   return pk.length === 1 && pk[0] === 'id' ? true : 'primary key: ' + short(pk);
-}, 1000);
+}, test.limit.quick);
 test.run('a bool field is kept as an INTEGER', 0.2, function () {
   return (X.cols.filter(function (c) { return c.name === 'on'; })[0] || {}).type === 'INTEGER' ? true : 'on: ' + short(X.cols.filter(function (c) { return c.name === 'on'; }));
-}, 1000);
+}, test.limit.quick);
 
 // ── add makes the row with its whole key set ──
 test.run('add answers { id } alone, an ed25519 public key', 0.2, function () {
@@ -83,24 +83,24 @@ test.run('add answers { id } alone, an ed25519 public key', 0.2, function () {
   X.id = added && added.id;
   X.raw = isKey(X.id) ? X.db.prepare('SELECT * FROM "thing" WHERE id = ?').get(X.id) : null;
   return isKey(X.id) && Object.keys(added).length === 1 ? true : 'answer: ' + short(added);
-}, 1000);
+}, test.limit.quick);
 test.run('the row holds its private key, its seal public key and its seal private key beside the id', 0.2, function () {
   const raw = X.raw;
   return raw && /^MC4CAQAwBQYDK2Vw/.test(String(raw.privateKey)) && String(raw.sealPublicKey) && String(raw.sealPrivateKey) && raw.sealPublicKey !== raw.id
     ? true : 'row: ' + short(raw && { privateKey: String(raw.privateKey).slice(0, 20), seal: !!raw.sealPublicKey });
-}, 1000);
+}, test.limit.quick);
 test.run('the secret is kept as typed, the bool as 1, the list as JSON', 0.2, function () {
   const raw = X.raw;
   return raw && raw.apiKey === SECRET && raw.on === 1 && raw.tags === '["a","b"]' ? true : 'row: ' + short(raw && { apiKey: raw.apiKey === SECRET, on: raw.on, tags: raw.tags });
-}, 1000);
+}, test.limit.quick);
 test.run('each add makes a key set of its own', 0.2, function () {
   if (!X.verb) return NO_TABLE;
   X.second = call(X.verb, { op: 'add', label: 'Second' });
   return isKey(X.second.id) && X.second.id !== X.id ? true : 'second: ' + short(X.second);
-}, 1000);
+}, test.limit.quick);
 test.run('the table\'s own check is asked before the row is made', 0.2, function () {
   return X.checked && X.checked.op === 'add' ? true : 'checked: ' + short(X.checked);
-}, 1000);
+}, test.limit.quick);
 
 // ── no secret leaves the table ──
 const leaks = function (x) { const s = JSON.stringify(x); const raw = X.raw; return s.indexOf(SECRET) !== -1 || (raw && (s.indexOf(String(raw.privateKey)) !== -1 || s.indexOf(String(raw.sealPrivateKey)) !== -1)); };
@@ -108,34 +108,34 @@ test.run('get answers the row', 0.2, function () {
   if (!X.id) return NO_ROW;
   const got = X.got = call(X.verb, { op: 'get', id: X.id });
   return got && got.id === X.id && got.label === 'First' && got.url === 'https://one.example' ? true : 'get: ' + short(got);
-}, 1000);
+}, test.limit.quick);
 // A private half or a secret in an answer would leak it to whoever asks.
 test.run('get carries no private half and no secret, only apiKeySet true', 0.8, function () {
   const got = X.got;
   return got && !('privateKey' in got) && !('sealPrivateKey' in got) && !('apiKey' in got) && got.apiKeySet === true ? true : 'get: ' + short(got && Object.keys(got));
-}, 1000);
+}, test.limit.quick);
 test.run('get shows the bool as a bool and the list as a list', 0.2, function () {
   const got = X.got;
   return got && got.on === true && JSON.stringify(got.tags) === '["a","b"]' ? true : 'get: ' + short(got && { on: got.on, tags: got.tags });
-}, 1000);
+}, test.limit.quick);
 test.run('a row with no secret says apiKeySet false', 0.2, function () {
   if (!X.second || !X.second.id) return NO_ROW;
   return call(X.verb, { op: 'get', id: X.second.id }).apiKeySet === false ? true : 'get second: ' + short(call(X.verb, { op: 'get', id: X.second.id }));
-}, 1000);
+}, test.limit.quick);
 test.run('no published row carries a private half or a secret', 0.8, function () {
   return X.published.length >= 2 && !X.published.some(leaks) ? true : 'published: ' + short(X.published);
-}, 1000);
+}, test.limit.quick);
 test.run('no search answer carries one either', 0.8, function () {
   if (!X.verb) return NO_TABLE;
   X.found = call(X.verb, { op: 'search', text: '' });
   return X.found && !leaks(X.found) ? true : 'search: ' + short(X.found);
-}, 1000);
+}, test.limit.quick);
 
 // ── every change is published ──
 test.run('add publishes { agent: { table, row } }, the row as get shows it', 0.2, function () {
   const p0 = X.published[0] && X.published[0].agent;
   return p0 && p0.table === 'thing' && p0.row && p0.row.id === X.id && p0.row.apiKeySet === true ? true : 'published: ' + short(X.published[0]);
-}, 1000);
+}, test.limit.quick);
 
 // ── set changes what it names and keeps the rest ──
 const SET = { n: 0 };
@@ -145,24 +145,24 @@ test.run('set {id, label} answers { id }, changes the label and keeps url, the s
   const set = call(X.verb, { op: 'set', id: X.id, label: 'Renamed' });
   const after = call(X.verb, { op: 'get', id: X.id });
   return set && set.id === X.id && after.label === 'Renamed' && after.url === 'https://one.example' && after.apiKeySet === true && after.on === true ? true : 'after: ' + short(after);
-}, 1000);
+}, test.limit.quick);
 test.run('and publishes the changed row', 0.2, function () {
   const n = SET.n, published = X.published;
   const ps = published[n] && published[n].agent;
   return published.length === n + 1 && ps && ps.row && ps.row.label === 'Renamed' ? true : 'published: ' + short(published.slice(n));
-}, 1000);
+}, test.limit.quick);
 test.run('set replaces a secret when it names one', 0.2, function () {
   if (!X.id) return NO_ROW;
   call(X.verb, { op: 'set', id: X.id, apiKey: 'sk-another' });
   return X.db.prepare('SELECT apiKey FROM "thing" WHERE id = ?').get(X.id).apiKey === 'sk-another' ? true : 'apiKey not replaced';
-}, 1000);
+}, test.limit.quick);
 
 // ── search answers the rows ranked, in one answer ──
 const SR = { item: {}, shownRow: null, striped: null };
 test.run('search with no words answers { items, more }, every row', 0.2, function () {
   const found = X.found;
   return found && Array.isArray(found.items) && typeof found.more === 'boolean' && found.items.length === 2 ? true : 'search: ' + short(found);
-}, 1000);
+}, test.limit.quick);
 // goal/G41.18, Andy: "we talked about sending whole fucking rows in search, THAT IS NOT NEEDED for a table. only the ID
 // and the fields shown in a table, that's all it needs."; "that exactly what GET is for, to bring in the rest for detail
 // panels etc...". A whole row cost some 480 bytes, and one answer held 17 of them.
@@ -171,21 +171,21 @@ test.run('each item is keyed by the row\'s id, its label carrying the id', 0.2, 
   const item = SR.item = X.found.items[0] || {};
   try { SR.shownRow = JSON.parse(item.label); } catch (e) { SR.shownRow = null; }
   return isKey(item.key) && SR.shownRow && SR.shownRow.id === item.key ? true : 'item: ' + short(item);
-}, 1000);
+}, test.limit.quick);
 test.run('and only what its list shows: by default the id, the icon and the label (goal/G41.18)', 0.2, function () {
   const shownRow = SR.shownRow;
   return shownRow && JSON.stringify(Object.keys(shownRow).sort()) === '["icon","id","label"]' ? true : 'item: ' + short(shownRow && Object.keys(shownRow));
-}, 1000);
+}, test.limit.quick);
 test.run('a search of words ranks the row that has them first', 0.2, function () {
   if (!X.id) return NO_ROW;
   const hit = call(X.verb, { op: 'search', text: 'Renamed' });
   return hit.items.length >= 1 && hit.items[0].key === X.id ? true : 'search Renamed: ' + short(hit.items.map(function (i) { return i.key; }));
-}, 1000);
+}, test.limit.quick);
 test.run('it still ranks by the fields it does not answer: a word of the url finds its row', 0.2, function () {
   if (!X.id) return NO_ROW;
   const byUrl = call(X.verb, { op: 'search', text: 'one.example' });
   return byUrl.items.length >= 1 && byUrl.items[0].key === X.id ? true : 'search one.example: ' + short(byUrl.items.map(function (i) { return i.key; }));
-}, 1000);
+}, test.limit.quick);
 // THE WHOLE ROW AS ITS GET SERVES IT (goal/G41.28; Andy, box v15: "a probability search of a dataBase table must
 // ALWAYS search the whole bloody ROW, as it is served through a single-row \"get\""): a word in a list field is found,
 // and a secret, which no get serves, is never searched.
@@ -194,7 +194,7 @@ test.run('a word in a list field its get serves finds its row: tags ["zebra"]', 
   SR.striped = call(X.verb, { op: 'add', label: 'Third', tags: ['zebra'], apiKey: 'quokkasecret' });
   const byTag = call(X.verb, { op: 'search', text: 'zebra' });
   return !!SR.striped.id && byTag.items.length >= 1 && byTag.items[0].key === SR.striped.id ? true : 'search zebra: ' + short(byTag.items.map(function (i) { return i.key; })) + ', the row ' + short(SR.striped.id);
-}, 1000);
+}, test.limit.quick);
 // A secret that ranks its row lets a search guess it word by word.
 test.run('a secret no get serves is never searched: its words find nothing', 0.8, function () {
   if (!SR.striped || !SR.striped.id) return NO_ROW;
@@ -204,7 +204,7 @@ test.run('a secret no get serves is never searched: its words find nothing', 0.8
     ? true : 'search of the secret ranked its row: ' + short(bySecret.items.slice(0, 3));
   call(X.verb, { op: 'delete', id: striped.id });
   return verdict;
-}, 1000);
+}, test.limit.quick);
 // A table names what its list shows (def.listed); its search answers the id and those fields alone. (def.shows is
 // another thing: fields computed onto every row shown, as the model's providerIcon.)
 const SL = { slim: null, sid: '' };
@@ -214,11 +214,11 @@ test.run('a table naming listed: [url] answers the id and the url, nothing else'
   const sid = SL.sid = call(slim.verb, { op: 'add', label: 'Hidden label', url: 'https://slim.example', apiKey: SECRET }).id;
   let row = null; try { row = JSON.parse((call(slim.verb, { op: 'search', text: '' }).items || [])[0].label); } catch (e) { row = null; }
   return row && row.id === sid && row.url === 'https://slim.example' && JSON.stringify(Object.keys(row).sort()) === '["id","url"]' ? true : 'item: ' + short(row);
-}, 1000);
+}, test.limit.quick);
 test.run('and get still answers the whole row', 0.2, function () {
   if (!SL.slim) return NO_TABLE;
   return call(SL.slim.verb, { op: 'get', id: SL.sid }).label === 'Hidden label' ? true : 'get: ' + short(call(SL.slim.verb, { op: 'get', id: SL.sid }));
-}, 1000);
+}, test.limit.quick);
 // A SEARCH NARROWED BY A FIELD (goal/G41.21, box v17: "showing only the models whose provider is this provider";
 // "Narrowing a pick field to one provider's models is new"): a search naming one of the table's own fields answers
 // only the rows whose field holds that value, ranked as before.
@@ -234,21 +234,21 @@ test.run('a search naming parentId answers only the rows whose parentId is it', 
   KD.b1 = call(kids.verb, { op: 'add', label: 'First of B', parentId: KD.B }).id;
   const ofA = call(kids.verb, { op: 'search', text: '', parentId: KD.A });
   return JSON.stringify(keysOf(ofA)) === JSON.stringify([KD.a1, KD.a2].sort()) ? true : 'search parentId A: ' + short(ofA);
-}, 1000);
+}, test.limit.quick);
 test.run('with words too: only its rows, ranked by the words', 0.2, function () {
   if (!KD.kids) return NO_TABLE;
   const firstOfB = call(KD.kids.verb, { op: 'search', text: 'First', parentId: KD.B });
   return JSON.stringify(keysOf(firstOfB)) === JSON.stringify([KD.b1]) ? true : 'search First of B: ' + short(firstOfB);
-}, 1000);
+}, test.limit.quick);
 test.run('a value no row holds answers no rows', 0.2, function () {
   if (!KD.kids) return NO_TABLE;
   const none = call(KD.kids.verb, { op: 'search', text: '', parentId: KD.b1 });
   return none && Array.isArray(none.items) && none.items.length === 0 && none.more === false ? true : 'search: ' + short(none);
-}, 1000);
+}, test.limit.quick);
 test.run('a search naming no field answers every row, as before', 0.2, function () {
   if (!KD.kids) return NO_TABLE;
   return call(KD.kids.verb, { op: 'search', text: '' }).items.length === 5 ? true : 'search: ' + short(call(KD.kids.verb, { op: 'search', text: '' }));
-}, 1000);
+}, test.limit.quick);
 
 // ── a table names its mandatory fields, and takes no row without them (goal/G41.21) ──
 // Andy: "NO FUKCING INVALID ROWS GET ONTO A TABLE!!!!!!!!!!!!!", "for a new row, a valid label (NOT empty) IS THE MINIMUM
@@ -263,76 +263,76 @@ test.run('an add missing a mandatory field, or with one of blanks, is refused an
   ND.blank = call(need.verb, { op: 'add', icon: '🧪', label: ' ', url: 'https://need.example' });
   ND.bare = call(need.verb, { op: 'add' });
   return [ND.missing, ND.blank, ND.bare].every(function (r) { return r.refusal && !r.id; }) && needRows() === 0 ? true : 'answers: ' + short([ND.missing, ND.blank, ND.bare]);
-}, 1000);
+}, test.limit.quick);
 test.run('the refusal names every mandatory field missing', 0.2, function () {
   if (!ND.need) return NO_TABLE;
   const missing = ND.missing, blank = ND.blank, bare = ND.bare;
   return (/icon/).test(String(missing.why)) && /label/.test(String(blank.why)) && /icon/.test(String(bare.why)) && /label/.test(String(bare.why)) && /url/.test(String(bare.why))
     ? true : 'why: ' + short([missing.why, blank.why, bare.why]);
-}, 1000);
+}, test.limit.quick);
 test.run('with them all it is added', 0.2, function () {
   if (!ND.need) return NO_TABLE;
   ND.whole = call(ND.need.verb, { op: 'add', icon: '🧪', label: 'Whole', url: 'https://need.example' });
   return isKey(ND.whole.id) && needRows() === 1 ? true : 'answer: ' + short(ND.whole);
-}, 1000);
+}, test.limit.quick);
 test.run('a change that would empty one is refused, the row kept', 0.2, function () {
   if (!ND.whole || !ND.whole.id) return NO_ROW;
   const emptied = call(ND.need.verb, { op: 'set', id: ND.whole.id, icon: '' });
   return emptied.refusal && /icon/.test(String(emptied.why)) && call(ND.need.verb, { op: 'get', id: ND.whole.id }).icon === '🧪' ? true : 'answer: ' + short(emptied);
-}, 1000);
+}, test.limit.quick);
 test.run('a change that keeps them all is taken', 0.2, function () {
   if (!ND.whole || !ND.whole.id) return NO_ROW;
   return !call(ND.need.verb, { op: 'set', id: ND.whole.id, label: 'Renamed' }).refusal ? true : 'refused';
-}, 1000);
+}, test.limit.quick);
 test.run('a table naming none takes a bare row, as before', 0.2, function () {
   if (!X.db) return NO_TABLE;
   const free = X.mod.rowTable(X.db, { name: 'free', fields: { url: 'url?' } }, function () {});
   return isKey(call(free.verb, { op: 'add' }).id) ? true : 'refused';
-}, 1000);
+}, test.limit.quick);
 
 // ── a refusal says why ──
 test.run('an op it does not know is refused, naming the ops', 0.2, function () {
   if (!X.verb) return NO_TABLE;
   const unknownOp = call(X.verb, { op: 'fly' });
   return unknownOp.refusal === 'bad-request' && /add, set, delete, get, search/.test(unknownOp.why) ? true : 'fly: ' + short(unknownOp);
-}, 1000);
+}, test.limit.quick);
 // The face's calls once reached the tables with verb among the arguments (goal/G41.4: "Not added: job takes no argument
 // verb"); the table refuses what it does not declare, and says which.
 test.run('an argument it does not declare is refused as no-such-argument, naming it', 0.2, function () {
   if (!X.verb) return NO_TABLE;
   const stray = call(X.verb, { op: 'add', verb: 'thing' });
   return stray.refusal === 'no-such-argument' && /verb/.test(stray.why) ? true : 'stray verb: ' + short(stray);
-}, 1000);
+}, test.limit.quick);
 test.run('the table\'s own check refuses with its words', 0.2, function () {
   if (!X.verb) return NO_TABLE;
   const badUrl = call(X.verb, { op: 'add', url: 'https://refused.example' });
   return badUrl.refusal === 'bad-request' && /thing: that url is refused/.test(badUrl.why) ? true : 'check: ' + short(badUrl);
-}, 1000);
+}, test.limit.quick);
 test.run('and a refused add writes no row', 0.2, function () {
   if (!X.db) return NO_TABLE;
   const before = X.db.prepare('SELECT count(*) AS n FROM "thing"').get().n;
   return before === 2 ? true : 'rows: ' + before;
-}, 1000);
+}, test.limit.quick);
 test.run('get of a row that is not there is refused no-such-row', 0.2, function () {
   if (!X.verb) return NO_TABLE;
   const missing = call(X.verb, { op: 'get', id: require(path.join(RUN, 'spirit', 'relayAuth.js')).generateIdentity('').publicKey });
   return missing.refusal === 'no-such-row' ? true : 'get missing: ' + short(missing);
-}, 1000);
+}, test.limit.quick);
 
 // ── has, label and icon ──
 test.run('has(id) says whether the row is there', 0.2, function () {
   if (!X.id) return NO_ROW;
   call(X.verb, { op: 'set', id: X.id, icon: '🧪' });
   return X.t.has(X.id) && !X.t.has('nope') ? true : 'has: ' + X.t.has(X.id) + ' ' + X.t.has('nope');
-}, 1000);
+}, test.limit.quick);
 test.run('label(id) is its label, \'\' when it is not there', 0.2, function () {
   if (!X.id) return NO_ROW;
   return X.t.label(X.id) === 'Renamed' && X.t.label('nope') === '' ? true : 'label: ' + short(X.t.label(X.id));
-}, 1000);
+}, test.limit.quick);
 test.run('icon(id) is its icon, \'\' when it is not there', 0.2, function () {
   if (!X.id) return NO_ROW;
   return X.t.icon(X.id) === '🧪' && X.t.icon('nope') === '' ? true : 'icon: ' + short(X.t.icon(X.id));
-}, 1000);
+}, test.limit.quick);
 
 // ── delete removes the row and says so ──
 const DL = { m: 0 };
@@ -341,16 +341,16 @@ test.run('delete {id} answers { id }, removes the row and tells the table\'s del
   DL.m = X.published.length;
   const del = call(X.verb, { op: 'delete', id: X.second.id });
   return del.id === X.second.id && !X.t.has(X.second.id) && X.deleted === X.second.id ? true : 'delete: ' + short(del) + ', deleted ' + short(X.deleted);
-}, 1000);
+}, test.limit.quick);
 test.run('and publishes { agent: { table, id, removed: true } }', 0.2, function () {
   if (!X.second || !X.second.id) return NO_ROW;
   const pd = X.published[DL.m] && X.published[DL.m].agent;
   return pd && pd.table === 'thing' && pd.id === X.second.id && pd.removed === true && !pd.row ? true : 'published: ' + short(X.published.slice(DL.m));
-}, 1000);
+}, test.limit.quick);
 test.run('a second delete of it is refused no-such-row', 0.2, function () {
   if (!X.second || !X.second.id) return NO_ROW;
   return call(X.verb, { op: 'delete', id: X.second.id }).refusal === 'no-such-row' ? true : 'second delete answered';
-}, 1000);
+}, test.limit.quick);
 
 // ── a table made before a field was takes the field at start ──
 const OL = { old: null, oldCols: [] };
@@ -362,19 +362,19 @@ test.run('the missing icon and named fields are added to it', 0.2, function () {
   OL.old = X.mod.rowTable(db, { name: 'old', fields: { persona: 'text?' } }, function () {});
   OL.oldCols = db.prepare('PRAGMA table_info("old")').all().map(function (c) { return c.name; });
   return OL.oldCols.indexOf('icon') !== -1 && OL.oldCols.indexOf('persona') !== -1 ? true : 'columns: ' + short(OL.oldCols);
-}, 1000);
+}, test.limit.quick);
 test.run('and its rows are kept, the new fields empty', 0.2, function () {
   const old = OL.old;
   if (!old) return NO_TABLE;
   return old.label('k') === 'Kept' && old.icon('k') === '' ? true : 'label ' + short(old.label('k')) + ', icon ' + short(old.icon('k'));
-}, 1000);
+}, test.limit.quick);
 // goal/G41.21, Andy: "ALL, drop the description for ALL tables. it does NOTHING AND IS USELESS.": a table that has one
 // from before loses it at start, its rows kept.
 test.run('its old description column is dropped at start, the row kept', 0.2, function () {
   const old = OL.old;
   if (!old) return NO_TABLE;
   return OL.oldCols.indexOf('description') === -1 && old.label('k') === 'Kept' ? true : 'columns: ' + short(OL.oldCols);
-}, 1000);
+}, test.limit.quick);
 
 // ── the rows persist in agent.db ──
 test.run('opened again on the same file, the table has its rows', 0.2, function () {
@@ -382,4 +382,4 @@ test.run('opened again on the same file, the table has its rows', 0.2, function 
   X.db.close();
   const again = X.mod.rowTable(new DatabaseSync(X.dbFile), X.def, function () {});
   return again.has(X.id) && again.label(X.id) === 'Renamed' ? true : 'has ' + again.has(X.id);
-}, 1000);
+}, test.limit.quick);

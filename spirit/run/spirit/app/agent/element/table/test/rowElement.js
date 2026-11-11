@@ -155,11 +155,11 @@ test.run('the world: the shared element runs on a window of its own, over the re
   await settle();
   AT = function () { return (((((global.window.spirit.element.spirit || {}).app || {}).agent || {}).element || {}).table || {}); };
   return true;
-}, 1000);
+}, test.limit.quick);
 test.run('before it runs, the page has no row element', 0.2, function () {
   if (!AT) return NO_WORLD;
   return !AT().rowElement ? true : 'placed: ' + short(Object.keys(AT()));
-}, 1000);
+}, test.limit.quick);
 test.run('it places spirit.element.spirit.app.agent.element.table.rowElement, with create', 0.2, async function () {
   if (!AT) return NO_WORLD;
   load(FILE);
@@ -168,14 +168,14 @@ test.run('it places spirit.element.spirit.app.agent.element.table.rowElement, wi
   // spirit.element.spirit.app.agent.element.table.rowElement.
   E.agentRow = AT().rowElement;
   return E.agentRow && typeof E.agentRow.create === 'function' ? true : 'placed: ' + short(Object.keys(AT()));
-}, 1000);
+}, test.limit.quick);
 test.run('it loads the tables\' shared element itself, as part of its tree (rule/26)', 0.2, function () {
   if (!w) return NO_WORLD;
   return w.required.indexOf('spirit/app/agent/element/table/tableElement.js') !== -1 ? true : 'required: ' + short(w.required);
-}, 1000);
+}, test.limit.quick);
 test.run('and registers no other element: agentTable is tableElement.js\'s', 0.2, function () {
   return !/E\.agentTable\s*=/.test(fs.readFileSync(FILE, 'utf8')) ? true : 'rowElement.js assigns agentTable';
-}, 1000);
+}, test.limit.quick);
 
 // ── unconfigured, the row says so and throws nothing (goal/G41.19, box v23) ──
 // The general test mounts every element by itself, handed nothing; the shared element says it is not configured.
@@ -187,12 +187,12 @@ test.run('agentRow.create(box, {}) throws nothing and says it is not configured'
   try { U.made = E.agentRow.create(U.bare, {}); } catch (e) { threw = e; }
   await settle();
   return !threw && !!U.made && /not configured/.test(U.bare.textContent) ? true : 'threw ' + short(threw && threw.message) + ', box: ' + short(U.bare.textContent);
-}, 1000);
+}, test.limit.quick);
 test.run('and its destroy leaves the box empty', 0.2, function () {
   if (!U.made || typeof U.made.destroy !== 'function') return 'the unconfigured row has no destroy';
   U.made.destroy();
   return U.bare.innerHTML === '' ? true : 'box: ' + short(U.bare.innerHTML);
-}, 1000);
+}, test.limit.quick);
 
 // ── a row's editor: from the server's get, put where the stream writes it ──
 const FIELDS = [{ field: 'label', label: 'Label', kind: 'name' }, { field: 'url', label: 'URL', kind: 'url' }, { field: 'apiKey', label: 'API key', kind: 'secret' },
@@ -209,39 +209,39 @@ test.run('with the row not in its branch, it asks provider { op: get, id }', 0.2
   r = E.agentRow.create(ed, { table: 'provider', id: 'KR', added: true, look: look, fields: FIELDS });
   await settle();
   return w.calls.length === 1 && JSON.stringify(w.calls[0].args) === JSON.stringify({ op: 'get', id: 'KR' }) ? true : 'calls: ' + short(w.calls);
-}, 1000);
+}, test.limit.quick);
 test.run('and puts the answer at <node>/agent/provider/<id>, where the stream writes it', 0.2, function () {
   if (!ed) return 'no editor: it was not made';
   return global.window.spirit.data.agent.data.row('provider', 'KR') && global.window.spirit.data.agent.data.row('provider', 'KR').label === 'Row one' ? true : 'branch: ' + short(global.window.spirit.data.agent.data.row('provider', 'KR'));
-}, 1000);
+}, test.limit.quick);
 test.run('its title row says Add while the row is new', 0.2, function () {
   if (!ed) return 'no editor: it was not made';
   return (/<b>Add<\/b>/).test(ed.innerHTML) && ed.innerHTML.indexOf('Provider') !== -1 ? true : 'title: ' + short(ed.innerHTML.slice(0, 200));
-}, 1000);
+}, test.limit.quick);
 test.run('the icon is its first field, before the ones the table names (Andy: "the detail panel\'s first input will be the icon")', 0.2, function () {
   if (!ed) return 'no editor: it was not made';
   const ids = Object.keys(ed.parts).map(function (k) { return k.replace(/^ar\d+-/, ''); });
   return ids.indexOf('icon') !== -1 && ids.indexOf('icon') < ids.indexOf('label') ? true : 'fields: ' + short(ids);
-}, 1000);
+}, test.limit.quick);
 test.run('each field shows the row: a line its value, a bool its tick, a list its words split by commas', 0.2, function () {
   if (!ed) return 'no editor: it was not made';
   return the(ed, 'label').value === 'Row one' && the(ed, 'url').value === 'https://one.example' && the(ed, 'on').checked === true && the(ed, 'tags').value === 'a, b'
     ? true : 'fields: ' + short({ label: the(ed, 'label').value, url: the(ed, 'url').value, on: the(ed, 'on').checked, tags: the(ed, 'tags').value });
-}, 1000);
+}, test.limit.quick);
 test.run('a secret is an empty password box that says only whether it is set', 0.2, function () {
   if (!ed) return 'no editor: it was not made';
   return (/type="password"/).test(the(ed, 'apiKey').tag) && the(ed, 'apiKey').value === '' && /set; type to replace/.test(the(ed, 'apiKey').tag) ? true : 'secret: ' + short(the(ed, 'apiKey').tag);
-}, 1000);
+}, test.limit.quick);
 test.run('the icon chooser is the shell\'s icon selector, on the table\'s icon while the row has none', 0.2, function () {
   if (!ed) return 'no editor: it was not made';
   const sel = w.icons[w.icons.length - 1];
   return sel && sel.value === '🏢' ? true : 'icon selector: ' + short(sel && sel.opts);
-}, 1000);
+}, test.limit.quick);
 test.run('made with iconSelector.create(the icon field, options), it stands in that field', 0.2, function () {
   if (!ed) return 'no editor: it was not made';
   const sel = w.icons[w.icons.length - 1];
   return sel && sel.container === the(ed, 'icon') && the(ed, 'icon').children.indexOf(sel) !== -1 ? true : 'icon container: ' + short(sel && sel.container && sel.container.tag);
-}, 1000);
+}, test.limit.quick);
 
 // ── the Add mode: "Add new <name>", and nothing made until every mandatory field is filled (goal/G41.21) ──
 // Andy: "with an "Add new <provider|persona|job>" button at the bottom. Only when all fields, including icon, are filled,
@@ -258,26 +258,26 @@ test.run('with no row it asks no get', 0.2, async function () {
     fields: [{ field: 'label', label: 'Label', kind: 'name' }, { field: 'url', label: 'URL', kind: 'url' }] });
   await settle(); await settle();
   return !w.calls.some(function (c) { return c.args && c.args.op === 'get'; }) ? true : 'calls: ' + short(w.calls);
-}, 1000);
+}, test.limit.quick);
 test.run('its bottom button says Add new Provider, and there is no Delete', 0.2, function () {
   if (!A.ea) return 'no Add editor: it was not made';
   const addBtnHtml = /<button[^>]*>\s*Add new Provider\s*<\/button>/.test(A.ea.innerHTML);
   return addBtnHtml && !/>\s*Delete\s*</.test(A.ea.innerHTML) ? true : 'editor: ' + short(A.ea.innerHTML.slice(-300));
-}, 1000);
+}, test.limit.quick);
 test.run('in Add mode a field changed saves nothing', 0.2, async function () {
   if (!A.ea) return 'no Add editor: it was not made';
   A.addBtn = addButtonOf(A.ea);
   the(A.ea, 'label').value = 'Fresh';
   the(A.ea, 'label').fire('change'); await settle();
   return !w.calls.some(function (c) { return c.args && (c.args.op === 'add' || c.args.op === 'set'); }) ? true : 'calls: ' + short(w.calls);
-}, 1000);
+}, test.limit.quick);
 test.run('pressed with the URL empty, it makes nothing and says the URL is missing', 0.2, async function () {
   if (!A.ea) return 'no Add editor: it was not made';
   if (A.addBtn) A.addBtn.click(); await settle();
   const said = A.ea.innerHTML + ' ' + Object.keys(A.ea.parts).map(function (k) { return String(A.ea.parts[k].textContent || ''); }).join(' ');
   return !w.calls.some(function (c) { return c.args && c.args.op === 'add'; }) && /url/i.test(said) && /not added|missing|required/i.test(said)
     ? true : 'calls ' + short(w.calls) + ', said ' + short(said.slice(-300));
-}, 1000);
+}, test.limit.quick);
 test.run('with every mandatory field filled, it adds the whole row once: provider { op: add, icon, label, url }', 0.2, async function () {
   if (!A.ea) return 'no Add editor: it was not made';
   the(A.ea, 'url').value = 'https://fresh.example';
@@ -286,13 +286,13 @@ test.run('with every mandatory field filled, it adds the whole row once: provide
   const adds = w.calls.filter(function (c) { return c.args && c.args.op === 'add'; });
   return adds.length === 1 && adds[0].table === 'provider' && adds[0].args.icon === '🏢' && adds[0].args.label === 'Fresh' && adds[0].args.url === 'https://fresh.example'
     ? true : 'calls: ' + short(w.calls);
-}, 1000);
+}, test.limit.quick);
 test.run('added, the editor is the new row\'s, its title Change', 0.2, function () {
   if (!A.ea) return 'no Add editor: it was not made';
   const verdict = /<b>Change<\/b>/.test(A.ea.innerHTML) && !/Add new Provider/.test(A.ea.innerHTML) ? true : 'editor: ' + short(A.ea.innerHTML.slice(0, 300));
   A.ra.destroy();
   return verdict;
-}, 1000);
+}, test.limit.quick);
 
 // ── the editor follows its row in spirit.data ──
 test.run('a row written to its path shows at once: nothing listens by hand', 0.2, async function () {
@@ -300,7 +300,7 @@ test.run('a row written to its path shows at once: nothing listens by hand', 0.2
   D.mergePath(rowPath('provider', 'KR'), { label: 'From the stream' });
   await settle();
   return the(ed, 'label').value === 'From the stream' ? true : 'label: ' + short(the(ed, 'label').value);
-}, 1000);
+}, test.limit.quick);
 
 // ── a field changed saves the whole row at once; there is no Save (goal/G41.21) ──
 // Andy: "and why the fuck does a row not automatically save when i make a change to a field?", and on Q2, does the Save
@@ -310,7 +310,7 @@ const sets = function () { return w.calls.filter(function (c) { return c.args &&
 test.run('the editor has no Save button', 0.2, function () {
   if (!ed) return 'no editor: it was not made';
   return !the(ed, 'save') && !/>\s*Save\s*</.test(ed.innerHTML) ? true : 'the editor still draws Save';
-}, 1000);
+}, test.limit.quick);
 test.run('changing the label saves the whole row by itself: provider { op: set, id, icon, label, url, on, tags }, the untyped secret left out', 0.2, async function () {
   if (!ed) return 'no editor: it was not made';
   w.calls.length = 0;
@@ -321,11 +321,11 @@ test.run('changing the label saves the whole row by itself: provider { op: set, 
   // "all table rows will have an icon, by default the tables icon"); a secret only when typed, so an untyped key is kept.
   return sets().length === 1 && whole.table === 'provider' && JSON.stringify(whole.args) === JSON.stringify({ op: 'set', id: 'KR', icon: '🏢', label: 'Typed', url: 'https://one.example', on: true, tags: ['a', 'b'] })
     ? true : 'calls: ' + short(w.calls);
-}, 1000);
+}, test.limit.quick);
 test.run('it draws nothing it typed into the row: the row changes only by the server\'s stream (rule/19)', 0.2, function () {
   if (!ed) return 'no editor: it was not made';
   return global.window.spirit.data.agent.data.row('provider', 'KR').label === 'From the stream' ? true : 'branch: ' + short(global.window.spirit.data.agent.data.row('provider', 'KR'));
-}, 1000);
+}, test.limit.quick);
 test.run('a tick changed saves the whole row too, the label as typed', 0.2, async function () {
   if (!ed) return 'no editor: it was not made';
   // The server takes it and its stream says so, as rowTable publishes every row it changes.
@@ -334,14 +334,14 @@ test.run('a tick changed saves the whole row too, the label as typed', 0.2, asyn
   the(ed, 'on').checked = false;
   the(ed, 'on').fire('change'); await settle();
   return sets().length === 1 && sets()[0].args.on === false && sets()[0].args.label === 'Typed' ? true : 'calls: ' + short(w.calls);
-}, 1000);
+}, test.limit.quick);
 test.run('a secret typed is saved with the row', 0.2, async function () {
   if (!ed) return 'no editor: it was not made';
   w.calls.length = 0;
   the(ed, 'apiKey').value = 'sk-new';
   the(ed, 'apiKey').fire('change'); await settle();
   return sets().length === 1 && sets()[0].args.apiKey === 'sk-new' ? true : 'calls: ' + short(w.calls);
-}, 1000);
+}, test.limit.quick);
 test.run('a refused save says the server\'s reason', 0.2, async function () {
   if (!ed) return 'no editor: it was not made';
   w.calls.length = 0;
@@ -354,7 +354,7 @@ test.run('a refused save says the server\'s reason', 0.2, async function () {
   the(ed, 'url').value = 'https://one.example';
   the(ed, 'url').fire('change'); await settle();
   return verdict;
-}, 1000);
+}, test.limit.quick);
 
 // ── Delete is an are-you-sure button; the stream says it is gone (goal/G41.21) ──
 // Andy: "and why are the 'Delete' buttons in the detail panels not armingButtons?"
@@ -364,23 +364,23 @@ test.run('its Delete button is an armingButton, loaded by the editor itself (rul
   w.answer = function () { return { id: 'KR' }; };
   return w.required.indexOf('spirit/element/armingButton.js') !== -1 && w.arming.some(function (a) { return a.button === the(ed, 'delete'); })
     ? true : 'required ' + short(w.required.filter(function (p) { return (/arming/).test(p); })) + ', arming buttons ' + w.arming.length;
-}, 1000);
+}, test.limit.quick);
 test.run('a first press of Delete deletes nothing: it arms', 0.2, async function () {
   if (!ed) return 'no editor: it was not made';
   the(ed, 'delete').click(); await settle();
   return !w.calls.some(function (c) { return c.args && c.args.op === 'delete'; }) ? true : 'calls after one press: ' + short(w.calls);
-}, 1000);
+}, test.limit.quick);
 test.run('the second press calls provider { op: delete, id }, once', 0.2, async function () {
   if (!ed) return 'no editor: it was not made';
   the(ed, 'delete').click(); await settle();
   const deletes = w.calls.filter(function (c) { return c.args && c.args.op === 'delete'; });
   return deletes.length === 1 && JSON.stringify(deletes[0].args) === JSON.stringify({ op: 'delete', id: 'KR' }) ? true : 'calls: ' + short(w.calls);
-}, 1000);
+}, test.limit.quick);
 test.run('and once the row is deleted from its branch, the editor says Deleted.', 0.2, async function () {
   if (!ed) return 'no editor: it was not made';
   D.delPath(rowPath('provider', 'KR')); await settle();
   return (/Deleted\./).test(ed.innerHTML) ? true : 'editor: ' + short(ed.innerHTML);
-}, 1000);
+}, test.limit.quick);
 
 // ── a row already in its branch is read whole by get (goal/G41.18) ──
 // A search answers only what a list shows (Andy: "only the ID and the fields shown in a table"), so a row in the branch
@@ -397,20 +397,20 @@ test.run('it asks provider { op: get, id }, though the branch holds a row', 0.2,
   r2 = E.agentRow.create(ed2, { table: 'provider', id: 'KS', added: false, look: look, fields: FIELDS });
   await settle();
   return w.calls.length === 1 && JSON.stringify(w.calls[0].args) === JSON.stringify({ op: 'get', id: 'KS' }) ? true : 'calls ' + short(w.calls);
-}, 1000);
+}, test.limit.quick);
 test.run('and the whole row goes where the stream writes it, its fields shown', 0.2, function () {
   if (!ed2) return 'no second editor: it was not made';
   return global.window.spirit.data.agent.data.row('provider', 'KS') && global.window.spirit.data.agent.data.row('provider', 'KS').url === 'https://whole.example' && the(ed2, 'url') && the(ed2, 'url').value === 'https://whole.example'
     ? true : 'branch: ' + short(global.window.spirit.data.agent.data.row('provider', 'KS'));
-}, 1000);
+}, test.limit.quick);
 test.run('it says Change when opened from the list', 0.2, function () {
   if (!ed2) return 'no second editor: it was not made';
   return the(ed2, 'label').value === 'Seated' && /<b>Change<\/b>/.test(ed2.innerHTML) ? true : 'label ' + short(the(ed2, 'label') && the(ed2, 'label').value);
-}, 1000);
+}, test.limit.quick);
 test.run('the icon chooser shows the row\'s own icon', 0.2, function () {
   if (!ed2) return 'no second editor: it was not made';
   return w.icons[w.icons.length - 1].value === '🧪' ? true : 'icon: ' + short(w.icons[w.icons.length - 1].value);
-}, 1000);
+}, test.limit.quick);
 test.run('destroyed, it empties its box and hears its row no more', 0.2, async function () {
   if (!ed2) return 'no second editor: it was not made';
   r2.destroy();
@@ -418,7 +418,7 @@ test.run('destroyed, it empties its box and hears its row no more', 0.2, async f
   const verdict = ed2.innerHTML === '' ? true : 'editor2: ' + short(ed2.innerHTML);
   if (r) r.destroy();
   return verdict;
-}, 1000);
+}, test.limit.quick);
 
 // ── a pick field narrowed to this row: of (goal/G41.21) ──
 // Box v17: "a dropdown search of the model table ... showing only the models whose provider is this provider", and
@@ -497,36 +497,36 @@ test.run('the world: the real provider and model servers on a scratch agent.db, 
   D.seatRows(BRANCH('model'), N.sctx.tables.model.verb.handler({ op: 'search', text: '' }).items);
   // Only what a search answers is in the branch, as when the model list was opened first: no row came whole on the stream.
   return true;
-}, 1000);
+}, test.limit.quick);
 test.run('its dropdown searches the model table narrowed to this row: { op: search, text, providerId: this row\'s id }', 0.2, async function () {
   if (!N.sctx) return 'no scratch agent.db: the world failed';
   N.withModels = await narrowed([N.MA]);
   return N.withModels.args && N.withModels.args.op === 'search' && N.withModels.args.text === 'claude' && N.withModels.args.providerId === N.PA ? true : 'args: ' + short(N.withModels.args);
-}, 1000);
+}, test.limit.quick);
 test.run('with a model of this provider in the model table, the Model field is shown', 0.2, function () {
   if (!N.withModels) return 'no narrowed editor: it was not made';
   return N.withModels.shown ? true : 'the Model field is not shown with a model of this provider';
-}, 1000);
+}, test.limit.quick);
 test.run('of the page\'s models, the dropdown offers this provider\'s alone, not another provider\'s', 0.2, function () {
   if (!N.withModels) return 'no narrowed editor: it was not made';
   return JSON.stringify(N.withModels.offered) === JSON.stringify([N.MA]) ? true : 'the dropdown offers ' + short(N.withModels.offered) + ' of ' + short({ mine: N.MA, theirs: N.MB });
-}, 1000);
+}, test.limit.quick);
 // Andy: "the model picker for the provider table showed a bunch of EMPTY rows": a row is drawn by what its table's
 // search answers, the model's name.
 test.run('each row it offers shows the model, as the model table answers it', 0.2, function () {
   if (!N.withModels) return 'no narrowed editor: it was not made';
   return N.withModels.cells.length > 0 && N.withModels.cells.every(function (c) { return (/claude-mine/).test(c); })
     ? true : 'rows it offers show ' + short(N.withModels.cells) + ': empty, the columns asking fields the model table does not answer';
-}, 1000);
+}, test.limit.quick);
 test.run('it asks the model table for this provider\'s models, narrowed the same way', 0.2, async function () {
   if (!N.sctx) return 'no scratch agent.db: the world failed';
   N.withNone = await narrowed([]);
   return N.withNone.calls.some(function (c) { return c.table === 'model' && c.args && c.args.op === 'search' && c.args.providerId === N.PA; }) ? true : 'calls: ' + short(N.withNone.calls);
-}, 1000);
+}, test.limit.quick);
 test.run('with none, the Model field is hidden', 0.2, function () {
   if (!N.withNone) return 'no narrowed editor: it was not made';
   return !N.withNone.shown ? true : 'the Model field is shown though the model table holds no model of this provider';
-}, 1000);
+}, test.limit.quick);
 
 // ── an output field shows, and is never picked or sent (goal/G41.21) ──
 // Andy: "In model, the fucking <provider> field is OUTPUT ONLY. I NEVER ordered a fucking picker for that.............".
@@ -543,12 +543,12 @@ test.run('it shows the provider by its label', 0.2, async function () {
   await settle(); await settle();
   const shownAll = O.eo.innerHTML + ' ' + Object.keys(O.eo.parts).map(function (k) { return String(O.eo.parts[k].textContent || '') + String(O.eo.parts[k].innerHTML || ''); }).join(' ');
   return (/Anthropic/).test(shownAll) ? true : 'shown: ' + short(shownAll.slice(-300));
-}, 1000);
+}, test.limit.quick);
 test.run('and has no picker and no input for it', 0.2, function () {
   if (!O.eo) return 'no output editor: it was not made';
   return !w.searches.slice(O.before).some(function (s) { return s.o && s.o.verb === 'provider'; }) && !/<input[^>]*id="[^"]*-providerId"/.test(O.eo.innerHTML)
     ? true : 'searches ' + short(w.searches.slice(O.before).map(function (s) { return s.o && s.o.verb; })) + ', markup ' + short(O.eo.innerHTML.slice(-300));
-}, 1000);
+}, test.limit.quick);
 test.run('a save of the row never sends it', 0.2, async function () {
   if (!O.eo) return 'no output editor: it was not made';
   the(O.eo, 'label').value = 'Renamed';
@@ -557,7 +557,7 @@ test.run('a save of the row never sends it', 0.2, async function () {
   const verdict = set && set.args.label === 'Renamed' && !('providerId' in set.args) ? true : 'calls: ' + short(w.calls);
   O.ro.destroy();
   return verdict;
-}, 1000);
+}, test.limit.quick);
 
 // ── a pick on a real job row saves, whatever else is unpicked (goal/G41.21) ──
 // Andy: "when i pick a persona, provider, or a bundle, the UI responds to ALL three of those picker changes with exactly
@@ -599,7 +599,7 @@ test.run('picking a persona, the provider not picked yet, saves the job: its per
   const afterPersona = viaTables('job', { op: 'get', id: J.JZ });
   return personaPicked && afterPersona.persona === J.PZ && !/Not saved/.test(saidNow())
     ? true : 'persona ' + short(afterPersona.persona) + ', said: ' + short((saidNow().match(/Not saved[^<]*/) || [''])[0]);
-}, 1000);
+}, test.limit.quick);
 test.run('picking a bundle saves the job too, the persona kept, and nothing says Not saved', 0.2, async function () {
   if (!J.ej) return 'no job editor: it was not made';
   const bsel = w.bundles.slice(J.bBefore).pop();
@@ -608,7 +608,7 @@ test.run('picking a bundle saves the job too, the persona kept, and nothing says
   const afterBundle = viaTables('job', { op: 'get', id: J.JZ });
   return !!bsel && String(afterBundle.bundle) === '7' && afterBundle.persona === J.PZ && !/Not saved/.test(saidNow())
     ? true : 'bundle ' + short(afterBundle.bundle) + ', said: ' + short((saidNow().match(/Not saved[^<]*/) || [''])[0]);
-}, 1000);
+}, test.limit.quick);
 test.run('picking a provider saves the job, and nothing says Not saved', 0.2, async function () {
   if (!J.ej) return 'no job editor: it was not made';
   const PV = viaTables('provider', { op: 'add', icon: '🏢', label: 'A provider', url: 'https://picked.example' }).id;
@@ -618,7 +618,7 @@ test.run('picking a provider saves the job, and nothing says Not saved', 0.2, as
     ? true : 'provider ' + short(afterProvider.provider) + ', said: ' + short((saidNow().match(/Not saved[^<]*/) || [''])[0]);
   J.rj.destroy();
   return verdict;
-}, 1000);
+}, test.limit.quick);
 
 // ── a bundle field: the bundle selector in dropdown mode (goal/G41.21) ──
 // Box v17: "The job's detail panel ... sets it with a bundleSelector in dropdown mode."
@@ -632,25 +632,25 @@ test.run('it loads the bundle selector itself (rule/26)', 0.2, async function ()
   await settle(); await settle();
   B.bsel = w.bundles[w.bundles.length - 1];
   return w.required.indexOf('spirit/element/search/bundle.js') !== -1 ? true : 'required: ' + short(w.required);
-}, 1000);
+}, test.limit.quick);
 // Andy: "why would the bundle picker show "bundle 2" for it's selection instead of the fucking label?": the field says
 // the bundle by its label, as the node has it (auth.bundle get: 7 is Reader).
 test.run('the bundle field shows the job\'s bundle by its label, not its number', 0.2, function () {
   if (!B.ed4) return 'no bundle editor: it was not made';
   const bundleSays = B.bsel ? String((B.bsel.row && B.bsel.row.label) || B.bsel.opts.placeholder || '') : '';
   return (/Reader/).test(bundleSays) && !/bundle\s*7/i.test(bundleSays) ? true : 'the bundle field shows ' + JSON.stringify(bundleSays) + ' for bundle 7, Reader';
-}, 1000);
+}, test.limit.quick);
 test.run('a bundle selector is made in the bundle field, in dropdown mode', 0.2, function () {
   if (!B.ed4) return 'no bundle editor: it was not made';
   return !!B.bsel && B.bsel.container === the(B.ed4, 'bundle') && B.bsel.opts.face !== 'pane'
     ? true : 'bundle selectors: ' + short(w.bundles.map(function (b) { return { face: b.opts.face, here: b.container === the(B.ed4, 'bundle') }; }));
-}, 1000);
+}, test.limit.quick);
 // goal/G41.25, Andy, box: "so the bundle pickers in the persona and job details will always list ALL bundles": the
 // selector is mounted for no app server (spirit/element/search/bundle.js, options.family).
 test.run('the bundle field lists every bundle: its selector is mounted for no app server', 0.2, function () {
   if (!B.ed4) return 'no bundle editor: it was not made';
   return !!B.bsel && (B.bsel.opts.family === undefined || B.bsel.opts.family === '') ? true : 'opts: ' + short(B.bsel && B.bsel.opts);
-}, 1000);
+}, test.limit.quick);
 test.run('a bundle picked saves the whole row at once: job { op: set, id, label, bundle }', 0.2, async function () {
   if (!B.bsel) return 'no bundle selector: it was not made';
   w.calls.length = 0;
@@ -659,7 +659,7 @@ test.run('a bundle picked saves the whole row at once: job { op: set, id, label,
   await settle();
   const set = w.calls.filter(function (c) { return c.args && c.args.op === 'set'; })[0];
   return set && set.table === 'job' && String(set.args.bundle) === '9' && set.args.label === 'A job' ? true : 'calls: ' + short(w.calls);
-}, 1000);
+}, test.limit.quick);
 // Andy: "persona detail: the bundle picker doesn not let me change values! (actually it does let me change it, i just
 // doesn't seem to hear the change from the server)": the row's bundle changed on the stream, the field says the new one.
 test.run('the row\'s bundle changed by the server, the field says the new one, Writer', 0.2, async function () {
@@ -670,7 +670,7 @@ test.run('the row\'s bundle changed by the server, the field says the new one, W
   const verdict = /Writer/.test(bundleSays2) && !/Reader/.test(bundleSays2) ? true : 'the bundle field says ' + JSON.stringify(bundleSays2) + ' after the stream set bundle 9, Writer';
   B.r4.destroy();
   return verdict;
-}, 1000);
+}, test.limit.quick);
 
 // Box v17: "A bundle deleted while a job names it leaves that job with no grant, and the job says so in its detail
 // panel, never silently."
@@ -692,13 +692,13 @@ test.run('a job naming a bundle asks the node for it: auth.bundle { op: get, id 
   if (!E.agentRow) return NO_ROW;
   G.goneOne = await openedJob('5');
   return G.goneOne.asked.some(function (a) { return a && a.op === 'get' && Number(a.id) === 5; }) ? true : 'asked: ' + short(G.goneOne.asked);
-}, 1000);
+}, test.limit.quick);
 test.run('a bundle the node no longer has is said in the detail panel: the bundle and that the job has no grant', 0.2, function () {
   if (!G.goneOne) return 'no job editor: it was not made';
   return (/\b5\b/).test(G.goneOne.said) && /no grant/i.test(G.goneOne.said) ? true : 'said: ' + short(G.goneOne.said);
-}, 1000);
+}, test.limit.quick);
 test.run('a bundle the node has is said as no such thing', 0.2, async function () {
   if (!E.agentRow) return NO_ROW;
   const heldOne = await openedJob('7');
   return !/no grant/i.test(heldOne.said) ? true : 'said: ' + short(heldOne.said);
-}, 1000);
+}, test.limit.quick);

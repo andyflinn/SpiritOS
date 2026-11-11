@@ -73,26 +73,26 @@ test.run('the world: the list runs on a bare window, the page\'s data set real',
   E = ((global.window.spirit.element || {}).spirit || {}).element || {};
   F = ((global.window.spirit.data || {}).fs || {}).data;
   return true;
-}, 1000);
+}, test.limit.quick);
 
 // it loads what it uses itself (rule/26), and no data script
 test.run('it requires its row element, the search element and the file viewer', 0.2, function () {
   if (!required) return 'the list never ran: the world failed';
   return ['spirit/element/search/file/rowElement.js', 'spirit/element/search.js', 'spirit/element/fstat.js'].every(function (p) { return required.indexOf(p) !== -1; }) ? true : 'required: ' + short(required);
-}, 1000);
+}, test.limit.quick);
 // goal/G41.16, Andy: "get rid of thos FUCKING data.js scripts": what the stream means for the file tree is the fs family's cache manager's (goal/G41.28).
 test.run('and no data script: the file tree\'s stream is its row element\'s', 0.2, function () {
   if (!required) return 'the list never ran: the world failed';
   return !required.some(function (p) { return /data\.js$/.test(p); }) ? true : 'required: ' + short(required);
-}, 1000);
+}, test.limit.quick);
 test.run('it loads the fs family\'s cache manager, which puts ((spirit.data || {}).fs || {}).data on the page', 0.2, function () {
   if (!managers) return 'the list never ran: the world failed';
   return managers.indexOf('fs') !== -1 && F && typeof F.file === 'function' ? true : 'managers: ' + short(managers);
-}, 1000);
+}, test.limit.quick);
 test.run('it registers spirit.element.spirit.element.search.file.listElement.create', 0.2, function () {
   if (!F || typeof F.file !== 'function') return NO_F;
   return E.search.file && E.search.file.listElement && typeof E.search.file.listElement.create === 'function' ? true : 'elements: ' + short(Object.keys(E));
-}, 1000);
+}, test.limit.quick);
 
 // a view of the node's file tree
 test.run('it draws one probabilitySearch into a fill box of its host', 0.2, async function () {
@@ -105,29 +105,29 @@ test.run('it draws one probabilitySearch into a fill box of its host', 0.2, asyn
   l = lists[0];
   if (l) o = l.o;
   return !!l && l.host === host.inner && /files-tree/.test(host.innerHTML) && /fill/.test(host.innerHTML) ? true : 'host: ' + short(host ? host.innerHTML.slice(0, 120) : host);
-}, 1000);
+}, test.limit.quick);
 test.run('it is a view of the fs family\'s file tree (spirit.data.fs.data.branch), in path order, filled as it is drawn', 0.2, function () {
   if (!l) return NO_SEARCH;
   return typeof F.branch === 'string' && F.branch !== '' && o.data === F.branch && l.refreshes === 1 && JSON.stringify(l.sorted) === '["name","asc"]' ? true : 'data ' + short(o.data) + ' (fsReads.branch ' + short(F.branch) + ')' + ', sorted ' + short(l.sorted) + ', refreshes ' + l.refreshes;
-}, 1000);
+}, test.limit.quick);
 test.run('its columns are name, size and changed', 0.2, function () {
   if (!l) return NO_SEARCH;
   return JSON.stringify((o.columns || []).map(function (c) { return c.field; })) === '["name","size","changed"]' ? true : 'columns: ' + short(o.columns);
-}, 1000);
+}, test.limit.quick);
 test.run('each row is a fileElement of its path', 0.2, function () {
   if (!l) return NO_SEARCH;
   const el = o.element({ kind: 'file' }, 'docs/a.md');
   return el && el.kind === 'file' && el.row.path === 'docs/a.md' ? true : 'element: ' + short(el);
-}, 1000);
+}, test.limit.quick);
 test.run('a picked file is shown by its path', 0.2, function () {
   if (!l) return NO_SEARCH;
   return o.name({ path: 'docs/a.md' }) === 'docs/a.md' ? true : 'name: ' + short(o.name({ path: 'docs/a.md' }));
-}, 1000);
+}, test.limit.quick);
 test.run('a pick reaches opts.pick', 0.2, function () {
   if (!l) return NO_SEARCH;
   o.pick({ path: 'docs/a.md' }, 'docs/a.md');
   return picked.length === 1 && picked[0] === 'docs/a.md' ? true : 'picked: ' + short(picked);
-}, 1000);
+}, test.limit.quick);
 
 // names from the mirror; fs.search only by contents
 let found;
@@ -135,23 +135,23 @@ test.run('a search of names asks the node nothing: the mirror answers it', 0.2, 
   if (!l) return NO_SEARCH;
   const none = await o.search(o.args('a', { in: 'names' }), 'search');
   return asked.length === 0 && none.body && none.body.items.length === 0 ? true : 'asked: ' + short(asked);
-}, 1000);
+}, test.limit.quick);
 test.run('a search by contents asks fs.search { q, contents: yes }', 0.2, async function () {
   if (!l) return NO_SEARCH;
   D.takeJob({ id: 'spirit.fs', data: { command: { op: 'createFile', path: 'docs/a.md', size: 5, modified: '2030-01-01T00:00:00Z' } } });
   found = await o.search(o.args('hello', { in: 'contents' }), 'search');
   return asked.length === 1 && asked[0].q === 'hello' && asked[0].contents === 'yes' ? true : 'asked: ' + short(asked);
-}, 1000);
+}, test.limit.quick);
 test.run('each find carries its facts from the file tree and its matched line; a folder comes without its trailing slash', 0.2, function () {
   if (!found) return 'no search by contents was made';
   const items = (found.body && found.body.items) || [];
   let first = null; try { first = JSON.parse(items[0].label); } catch (e) { first = null; }
   return first && first.path === 'docs/a.md' && first.size === 5 && first.line === 3 && items[1] && JSON.parse(items[1].label).kind === 'folder' && items[1].key === 'docs' ? true : 'items: ' + short(items);
-}, 1000);
+}, test.limit.quick);
 test.run('by contents a file ranks by the node\'s score; by names the list ranks', 0.2, function () {
   if (!l) return NO_SEARCH;
   return o.score({ path: 'docs/a.md' }, { in: 'contents' }) === 0.9 && o.score({ path: 'docs/a.md' }, { in: 'names' }) === null ? true : 'scores: ' + short([o.score({ path: 'docs/a.md' }, { in: 'contents' }), o.score({ path: 'docs/a.md' }, { in: 'names' })]);
-}, 1000);
+}, test.limit.quick);
 
 // the tree: folded folders, the app's types
 const NO_TREE = 'the list has no tree filter';
@@ -159,23 +159,23 @@ test.run('the tree filter is drawn as no button', 0.2, function () {
   if (!l) return NO_SEARCH;
   tree = (o.filters || []).filter(function (f) { return f.name === 'tree'; })[0];
   return !!tree && tree.when() === false ? true : 'filters: ' + short((o.filters || []).map(function (f) { return f.name; }));
-}, 1000);
+}, test.limit.quick);
 test.run('no words: a folder shows, what is inside a folded one does not', 0.2, function () {
   if (!tree) return NO_TREE;
   return tree.test({ path: 'docs', kind: 'folder' }) === 1 && tree.test({ path: 'docs/a.md', kind: 'file' }) === 0 ? true : 'test: ' + short([tree.test({ path: 'docs', kind: 'folder' }), tree.test({ path: 'docs/a.md', kind: 'file' })]);
-}, 1000);
+}, test.limit.quick);
 test.run('a folder\'s press opens it, and is never a pick', 0.2, function () {
   if (!tree) return NO_TREE;
   return o.fold({ kind: 'folder' }, 'docs') === true && tree.test({ path: 'docs/a.md', kind: 'file' }) === 1 ? true : 'after fold: ' + tree.test({ path: 'docs/a.md', kind: 'file' });
-}, 1000);
+}, test.limit.quick);
 test.run('opts.accept hides the files of other types, never a folder', 0.2, function () {
   if (!tree) return NO_TREE;
   return tree.test({ path: 'docs/b.png', kind: 'file' }) === 0 && tree.test({ path: 'top.md', kind: 'file' }) === 1 ? true : 'png ' + tree.test({ path: 'docs/b.png', kind: 'file' });
-}, 1000);
+}, test.limit.quick);
 test.run('a file\'s press is no fold', 0.2, function () {
   if (!tree) return NO_TREE;
   return o.fold({ kind: 'file' }, 'top.md') === false ? true : 'fold of a file answered true';
-}, 1000);
+}, test.limit.quick);
 
 // goal/G47.1, the box: "The file list has one always hidden option, \"flat\", set only in code by the app that draws the
 // list; no button shows or flips it", "With flat on: no folder rows, never the indented tree; with an empty field every
@@ -192,48 +192,48 @@ test.run('a list made with flat on draws its own search', 0.2, async function ()
   const good = !!last && last !== l && last.host === flatHost.inner;
   if (last && last !== l) { fl = last; fo = fl.o; }
   return good ? true : 'lists: ' + lists.length;
-}, 1000);
+}, test.limit.quick);
 test.run('flat draws no button: its drawn filters are those of the default list', 0.2, function () {
   if (!fl) return NO_FLAT;
   return JSON.stringify(drawn(fo)) === JSON.stringify(drawn(o)) ? true : 'drawn: ' + short(drawn(fo)) + ', default ' + short(drawn(o));
-}, 1000);
+}, test.limit.quick);
 test.run('with flat on and an empty field no folder row shows', 0.2, function () {
   if (!fl) return NO_FLAT;
   fl.typed = '';
   return !shows(fo, { path: 'docs', kind: 'folder' }) && !shows(fo, { path: 'docs/deep', kind: 'folder' }) ? true : 'a folder shows';
-}, 1000);
+}, test.limit.quick);
 test.run('with flat on and an empty field every accepted file shows, however deep, no folder opened', 0.2, function () {
   if (!fl) return NO_FLAT;
   return shows(fo, { path: 'docs/deep/a.md', kind: 'file' }) && shows(fo, { path: 'top.md', kind: 'file' }) ? true : 'deep ' + shows(fo, { path: 'docs/deep/a.md', kind: 'file' }) + ', top ' + shows(fo, { path: 'top.md', kind: 'file' });
-}, 1000);
+}, test.limit.quick);
 test.run('with flat on a file the app does not accept never shows', 0.2, function () {
   if (!fl) return NO_FLAT;
   return !shows(fo, { path: 'docs/b.png', kind: 'file' }) ? true : 'a .png shows';
-}, 1000);
+}, test.limit.quick);
 test.run('with flat on the list starts without the indented tree, so each row shows its path', 0.2, function () {
   if (!fl) return NO_FLAT;
   return !/files-tree/.test(flatHost.innerHTML) || flatHost.inner.classList.on === false ? true : 'host: ' + short(flatHost.innerHTML.slice(0, 160));
-}, 1000);
+}, test.limit.quick);
 test.run('with flat on an empty field never brings the indented tree back', 0.2, function () {
   if (!fl) return NO_FLAT;
   (flatHost.heard.input || []).forEach(function (fn) { fn(); });
   return flatHost.inner.classList.on === false ? true : 'the tree class came back on input';
-}, 1000);
+}, test.limit.quick);
 test.run('with flat on and words typed no folder row shows, and the files still do', 0.2, function () {
   if (!fl) return NO_FLAT;
   fl.typed = 'a';
   (flatHost.heard.input || []).forEach(function (fn) { fn(); });
   return !shows(fo, { path: 'docs', kind: 'folder' }) && shows(fo, { path: 'docs/deep/a.md', kind: 'file' }) ? true : 'folder ' + shows(fo, { path: 'docs', kind: 'folder' });
-}, 1000);
+}, test.limit.quick);
 test.run('with flat on a file\'s press is no fold', 0.2, function () {
   if (!fl) return NO_FLAT;
   const r = fo.fold({ kind: 'file' }, 'top.md') === false;
   fl.typed = '';
   return r ? true : 'fold of a file answered true';
-}, 1000);
+}, test.limit.quick);
 
 // flat off, the default: the list as it was
 test.run('without flat the list starts as the tree, its folders shown', 0.2, function () {
   if (!l) return NO_SEARCH;
   return /files-tree/.test(host.innerHTML) && shows(o, { path: 'docs', kind: 'folder' }) ? true : 'host: ' + short(host.innerHTML.slice(0, 160));
-}, 1000);
+}, test.limit.quick);

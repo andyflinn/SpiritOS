@@ -35,7 +35,7 @@ test.run('the world: a scratch node comes up on a copy of its own', 0.2, async f
   if (!(W.N.up && !!W.N.root)) return 'the scratch node did not come up: nothing judged';
   W.run = path.join(W.N.root, 'spirit', 'run');
   return true;
-}, 5000);
+}, test.limit.slow);
 test.after(async function () {
   const N = W.N || {};
   try { if (N.child) N.child.kill(); } catch (e) { /* gone */ }
@@ -49,7 +49,7 @@ test.run('no branch of the node\'s tree holds an FS. verb', 0.2, async function 
   const tree = (await post('api', {})).body || {};
   const withFs = Object.keys(tree).filter(function (fam) { return tree[fam] && Object.keys(tree[fam]).some(function (v) { return /^FS\./.test(v); }); });
   return (Object.keys(tree).length > 0 && withFs.length === 0) || 'branches with FS verbs: ' + short(withFs);
-}, 1000);
+}, test.limit.quick);
 
 // The box of goal/G43.23: "a family's FS.saveFile / deleteFile ... can overwrite any api.js or app code".
 function before(c) { const disk = path.join(W.run, c.run); return fs.existsSync(disk) ? fs.readFileSync(disk, 'utf8') : null; }
@@ -66,9 +66,9 @@ async function refused(c) {
   if (after !== was) { try { fs.writeFileSync(disk, was); } catch (e) { /* scratch */ } }
   return kept || c.family + '.FS on ' + c.run + ': save ' + saved.status + ' ' + short(saved.text) + ', delete ' + deleted.status + ', the file ' + (after === was ? 'unchanged' : 'CHANGED');
 }
-test.run('the world: the contact api file is there', 0.2, function () { return there(CORE[0]); }, 1000);
-test.run('contact.FS.saveFile and FS.deleteFile on the contact api file are refused, the file unchanged', 0.8, function () { return refused(CORE[0]); }, 1000);
-test.run('the world: the app api file is there', 0.2, function () { return there(CORE[1]); }, 1000);
-test.run('app.FS.saveFile and FS.deleteFile on the app api file are refused, the file unchanged', 0.8, function () { return refused(CORE[1]); }, 1000);
-test.run('the world: desk.json is there', 0.2, function () { return there(CORE[2]); }, 1000);
-test.run('desk.FS.saveFile and FS.deleteFile on desk.json are refused, the file unchanged', 0.8, function () { return refused(CORE[2]); }, 1000);
+test.run('the world: the contact api file is there', 0.2, function () { return there(CORE[0]); }, test.limit.quick);
+test.run('contact.FS.saveFile and FS.deleteFile on the contact api file are refused, the file unchanged', 0.8, function () { return refused(CORE[0]); }, test.limit.quick);
+test.run('the world: the app api file is there', 0.2, function () { return there(CORE[1]); }, test.limit.quick);
+test.run('app.FS.saveFile and FS.deleteFile on the app api file are refused, the file unchanged', 0.8, function () { return refused(CORE[1]); }, test.limit.quick);
+test.run('the world: desk.json is there', 0.2, function () { return there(CORE[2]); }, test.limit.quick);
+test.run('desk.FS.saveFile and FS.deleteFile on desk.json are refused, the file unchanged', 0.8, function () { return refused(CORE[2]); }, test.limit.quick);

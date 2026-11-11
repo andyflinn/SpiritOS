@@ -37,7 +37,7 @@ test.after(function () { try { if (X.scratch) fs.rmSync(X.scratch, { recursive: 
 test.run('it has server.js, and elementTable.js and elementRow.js in the app\'s element folder', 0.2, function () {
   const files = [path.join(DIR, 'server.js'), path.join(EL, 'elementTable.js'), path.join(EL, 'elementRow.js')];
   return files.every(function (f) { return fs.existsSync(f); }) ? true : 'missing: ' + short(files.filter(function (f) { return !fs.existsSync(f); }));
-}, 1000);
+}, test.limit.quick);
 
 // ── server.js: the table in agent.db ──
 test.run('server.js(ctx) answers the table, its verb and has', 0.2, function () {
@@ -49,7 +49,7 @@ test.run('server.js(ctx) answers the table, its verb and has', 0.2, function () 
   const t = X.t = ctx.tables.persona = require(path.join(DIR, 'server.js'))(ctx);
   X.cols = db.prepare('PRAGMA table_info("persona")').all().map(function (c) { return c.name; });
   return t && t.verb && typeof t.verb.handler === 'function' && typeof t.has === 'function' ? true : 'answered: ' + short(t && Object.keys(t));
-}, 1000);
+}, test.limit.quick);
 // Andy, box v22: "with Label and Description, and a codeMirror-field for the persona-description i give it with every prompt".
 // goal/G41.21, Andy: "and where the fuck is my bundle field in persona-table and the fucking picker for a bundle with the
 // persona?"
@@ -57,16 +57,16 @@ test.run('server.js(ctx) answers the table, its verb and has', 0.2, function () 
 // in drop down mode, that the job detail panel provides for the agent.job.provider".
 // One check per column, each its own plain title (goal/G45.6: a title names no value built into it).
 const has = function (c) { return X.cols.indexOf(c) !== -1 ? true : 'columns: ' + short(X.cols); };
-test.run('the persona table has an id column', 0.2, function () { return has('id'); }, 1000);
-test.run('the persona table has a privateKey column', 0.2, function () { return has('privateKey'); }, 1000);
-test.run('the persona table has a sealPublicKey column', 0.2, function () { return has('sealPublicKey'); }, 1000);
-test.run('the persona table has a sealPrivateKey column', 0.2, function () { return has('sealPrivateKey'); }, 1000);
-test.run('the persona table has an icon column', 0.2, function () { return has('icon'); }, 1000);
-test.run('the persona table has a label column', 0.2, function () { return has('label'); }, 1000);
-test.run('the persona table has a persona column', 0.2, function () { return has('persona'); }, 1000);
-test.run('the persona table has a bundle column', 0.2, function () { return has('bundle'); }, 1000);
-test.run('the persona table has a provider column', 0.2, function () { return has('provider'); }, 1000);
-test.run('and nothing else', 0.2, function () { return X.cols.length === 9 ? true : 'columns: ' + short(X.cols); }, 1000);
+test.run('the persona table has an id column', 0.2, function () { return has('id'); }, test.limit.quick);
+test.run('the persona table has a privateKey column', 0.2, function () { return has('privateKey'); }, test.limit.quick);
+test.run('the persona table has a sealPublicKey column', 0.2, function () { return has('sealPublicKey'); }, test.limit.quick);
+test.run('the persona table has a sealPrivateKey column', 0.2, function () { return has('sealPrivateKey'); }, test.limit.quick);
+test.run('the persona table has an icon column', 0.2, function () { return has('icon'); }, test.limit.quick);
+test.run('the persona table has a label column', 0.2, function () { return has('label'); }, test.limit.quick);
+test.run('the persona table has a persona column', 0.2, function () { return has('persona'); }, test.limit.quick);
+test.run('the persona table has a bundle column', 0.2, function () { return has('bundle'); }, test.limit.quick);
+test.run('the persona table has a provider column', 0.2, function () { return has('provider'); }, test.limit.quick);
+test.run('and nothing else', 0.2, function () { return X.cols.length === 9 ? true : 'columns: ' + short(X.cols); }, test.limit.quick);
 const B = { pid: '' };
 test.run('a persona keeps its bundle, its text as it was', 0.2, function () {
   if (!X.t) return NO_TABLE;
@@ -74,7 +74,7 @@ test.run('a persona keeps its bundle, its text as it was', 0.2, function () {
   call(X.t.verb, { op: 'set', id: B.pid, bundle: '7' });
   const got = call(X.t.verb, { op: 'get', id: B.pid });
   return got && String(got.bundle) === '7' && got.persona === 'p' ? true : 'get: ' + short(got);
-}, 1000);
+}, test.limit.quick);
 test.run('a persona keeps its provider, its bundle and text as they were (goal/G41.26)', 0.2, function () {
   if (!B.pid) return NO_ROW;
   // A provider's id is a public key, as every row's is; the persona keeps it as the job keeps its own.
@@ -83,7 +83,7 @@ test.run('a persona keeps its provider, its bundle and text as they were (goal/G
   const withP = call(X.t.verb, { op: 'get', id: B.pid });
   call(X.t.verb, { op: 'delete', id: B.pid });
   return withP && withP.provider === P && String(withP.bundle) === '7' && withP.persona === 'p' ? true : 'get: ' + short(withP);
-}, 1000);
+}, test.limit.quick);
 
 // ── server.js: a persona is its text ──
 const TEXT = 'You are careful.\nYou answer short.';
@@ -92,17 +92,17 @@ test.run('a persona is added with its text, kept as typed, lines and all', 0.2, 
   X.added = call(X.t.verb, { op: 'add', icon: '🎭', label: 'Careful', persona: TEXT });
   const got = X.added.id ? call(X.t.verb, { op: 'get', id: X.added.id }) : null;
   return got && got.persona === TEXT && got.label === 'Careful' ? true : 'get: ' + short(got);
-}, 1000);
+}, test.limit.quick);
 test.run('a set of its label keeps its text', 0.2, function () {
   if (!X.added || !X.added.id) return NO_ROW;
   call(X.t.verb, { op: 'set', id: X.added.id, label: 'Renamed' });
   return call(X.t.verb, { op: 'get', id: X.added.id }).persona === TEXT ? true : 'get: ' + short(call(X.t.verb, { op: 'get', id: X.added.id }));
-}, 1000);
+}, test.limit.quick);
 test.run('a persona deleted takes no grants: grants are a job\'s', 0.2, function () {
   if (!X.added || !X.added.id) return NO_ROW;
   const dropped = X.dropped;
   return dropped.length === 0 && (call(X.t.verb, { op: 'delete', id: X.added.id }).id === X.added.id) && dropped.length === 0 ? true : 'dropped: ' + short(dropped);
-}, 1000);
+}, test.limit.quick);
 
 // ── server.js: no invalid persona row (goal/G41.21) ──
 // Andy: "NO FUKCING INVALID ROWS GET ONTO A TABLE!!!!!!!!!!!!!"; "# mandatory fields (server AND ui) - persona: icon, label".
@@ -115,23 +115,23 @@ test.run('an add without its icon or its label, or with a label of blanks, is re
   V.noLabel = call(X.t.verb, { op: 'add', icon: '🎭' });
   const blank = call(X.t.verb, { op: 'add', icon: '🎭', label: '  ' });
   return [V.noIcon, V.noLabel, blank].every(function (r) { return r.refusal && !r.id; }) && rowsNow() === V.before ? true : 'answers: ' + short([V.noIcon, V.noLabel, blank]);
-}, 1000);
+}, test.limit.quick);
 test.run('each refusal names the field missing', 0.2, function () {
   if (!V.noIcon) return NO_TABLE;
   return (/icon/i).test(String(V.noIcon.why)) && /label/i.test(String(V.noLabel.why)) ? true : 'why: ' + short([V.noIcon.why, V.noLabel.why]);
-}, 1000);
+}, test.limit.quick);
 test.run('with its icon and its label, it is added', 0.2, function () {
   if (!X.t) return NO_TABLE;
   V.whole = call(X.t.verb, { op: 'add', icon: '🎭', label: 'Whole' });
   return V.whole.id && rowsNow() === V.before + 1 ? true : 'answer: ' + short(V.whole);
-}, 1000);
+}, test.limit.quick);
 test.run('a change that would empty its label is refused, the row kept', 0.2, function () {
   if (!V.whole || !V.whole.id) return NO_ROW;
   const emptied = call(X.t.verb, { op: 'set', id: V.whole.id, label: '' });
   const verdict = emptied.refusal && call(X.t.verb, { op: 'get', id: V.whole.id }).label === 'Whole' ? true : 'answer: ' + short(emptied);
   call(X.t.verb, { op: 'delete', id: V.whole.id });
   return verdict;
-}, 1000);
+}, test.limit.quick);
 
 // ── server.js: a search answers what the list shows (goal/G41.18) ──
 // Andy: "only the ID and the fields shown in a table, that's all it needs"; "that exactly what GET is for, to bring in
@@ -144,7 +144,7 @@ test.run('a search answers the id, the icon and the label of a row, nothing else
   try { listedRow = (call(t.verb, { op: 'search', text: 'Listed one' }).items || []).map(function (i) { return JSON.parse(i.label); }).filter(function (r) { return r.id === listedId; })[0]; } catch (e) { listedRow = null; }
   call(t.verb, { op: 'delete', id: listedId });
   return listedRow && listedRow.icon === '🧪' && listedRow.label === 'Listed one' && JSON.stringify(Object.keys(listedRow).sort()) === '["icon","id","label"]' ? true : 'found: ' + short(listedRow);
-}, 1000);
+}, test.limit.quick);
 
 // ── the page: elementTable.js and elementRow.js ──
 const detail = { open: function () {}, look: function (t2) { return { icon: '🎭', name: 'Persona', title: 'Personas', table: t2 }; } };
@@ -174,25 +174,25 @@ test.run('they place spirit.element.spirit.app.agent.element.table.persona.eleme
   const T = global.window.spirit.element.spirit.app.agent.element.table.persona || {};
   X.E = { personaTable: T.elementTable, personaRow: T.elementRow };
   return X.E.personaTable && typeof X.E.personaTable.create === 'function' && X.E.personaRow && typeof X.E.personaRow.create === 'function' ? true : 'placed: ' + short(Object.keys(T));
-}, 1000);
+}, test.limit.quick);
 test.run('elementTable.js requires the shared element and its own row element', 0.2, async function () {
   if (!X.E.personaTable || !X.E.personaRow) return NO_PAGE;
   X.list = X.E.personaTable.create(box, detail);
   await settle();
   const made = X.made;
   return made.required.indexOf('spirit/app/agent/element/table/tableElement.js') !== -1 && made.required.indexOf('spirit/app/agent/element/table/persona/elementRow.js') !== -1 ? true : 'required: ' + short(made.required);
-}, 1000);
+}, test.limit.quick);
 test.run('it builds on agentTable, in its box, for the persona table, with the detail pane and no api, and the shared Add', 0.2, function () {
   if (!X.list) return NO_PAGE;
   const made = X.made;
   const o = X.o = made.tables[0] && made.tables[0].o;
   return made.tables.length === 1 && made.tables[0].c === box && o.table === 'persona' && !('api' in o) && o.detail === detail && !o.add ? true : 'agentTable: ' + short(o && { table: o.table, add: !!o.add });
-}, 1000);
+}, test.limit.quick);
 test.run('its refresh and destroy are the shared element\'s', 0.2, function () {
   if (!X.list) return NO_PAGE;
   X.list.refresh(); X.list.destroy();
   return X.made.refreshed && X.made.destroyed ? true : 'refreshed ' + X.made.refreshed + ', destroyed ' + X.made.destroyed;
-}, 1000);
+}, test.limit.quick);
 test.run('a row it opens is a personaRow, built on agentRow, in the box it is handed, with its id and added, no api', 0.2, async function () {
   if (!X.o) return NO_PAGE;
   const made = X.made;
@@ -201,16 +201,16 @@ test.run('a row it opens is a personaRow, built on agentRow, in the box it is ha
   await settle();
   const r = X.r = made.rows[0] && made.rows[0].o;
   return made.rows.length === 1 && made.rows[0].c === into && r.table === 'persona' && !('api' in r) && r.id === 'K1' && r.added === false ? true : 'agentRow: ' + short(r && { table: r.table, id: r.id, added: r.added });
-}, 1000);
+}, test.limit.quick);
 // goal/G41.21: "# mandatory fields (server AND ui)": the row hands the shared editor its table's mandatory fields.
 test.run('it hands the editor the persona table\'s mandatory fields, [icon, label]', 0.2, function () {
   const r = X.r;
   return r && JSON.stringify(r.required) === JSON.stringify(['icon', 'label']) ? true : 'required: ' + short(r && r.required);
-}, 1000);
+}, test.limit.quick);
 test.run('its title row has the persona table\'s look', 0.2, function () {
   const r = X.r;
   return r && r.look && r.look.icon === '🎭' && r.look.table === 'persona' ? true : 'look: ' + short(r && r.look);
-}, 1000);
+}, test.limit.quick);
 // goal/G41.21: the bundle by the bundle selector in dropdown mode (kind bundle), as the job's.
 // goal/G41.26: the provider by the providerSelector in dropdown mode, the same field the job's detail has
 // (../../job/elementRow.js: { field: 'provider', kind: 'pick', pick: 'provider' }).
@@ -218,11 +218,11 @@ test.run('its fields are the label, the persona in a CodeMirror editor, its bund
   const r = X.r;
   return r && JSON.stringify(r.fields.map(function (f) { return [f.field, f.kind, f.pick || '']; })) === JSON.stringify([['label', 'name', ''], ['persona', 'code', ''], ['bundle', 'bundle', ''], ['provider', 'pick', 'provider']])
     ? true : 'fields: ' + short(r && r.fields);
-}, 1000);
+}, test.limit.quick);
 test.run('the provider is not mandatory, as the job\'s is not', 0.2, function () {
   const r = X.r;
   return r && JSON.stringify(r.required) === JSON.stringify(['icon', 'label']) ? true : 'required: ' + short(r && r.required);
-}, 1000);
+}, test.limit.quick);
 
 // ── elementRow.js loads the agent family's cache manager, which takes the persona table's rows from the stream (goal/G41.16, G41.28) ──
 // Andy: "get rid of thos FUCKING data.js scripts, DIDN't WE INSIST on the PROPER way to do this shit?": what the stream
@@ -234,14 +234,14 @@ const job = function (agent, module) { return { id: 'job-agent', module: module 
 test.run('its page files require no data script', 0.2, function () {
   if (!X.made) return NO_PAGE;
   return !X.made.required.some(function (p) { return (/data\.js$/).test(p); }) ? true : 'required: ' + short(X.made.required);
-}, 1000);
+}, test.limit.quick);
 test.run('the agent family\'s cache manager is loaded: spirit.data.agent.data.branch(\'persona\') is the home node\'s <node>/agent/persona', 0.2, function () {
   if (!X.made) return NO_PAGE;
   const DATA = global.window.spirit.data;
   const AD = X.AD = ((global.window.spirit.data || {}).agent || {}).data;
   X.BRANCH = DATA.nodeId(HOME_KEY) + '/agent/persona';
   return !!AD && typeof AD.branch === 'function' && AD.branch('persona') === X.BRANCH ? true : 'agentReads: ' + short(AD ? AD.branch('persona') : AD);
-}, 1000);
+}, test.limit.quick);
 test.run('a persona row on the stream lands at <node>/agent/persona/<id>, and the branch\'s watcher hears it', 0.2, function () {
   if (!X.AD) return NO_MANAGER;
   const DATA = global.window.spirit.data, AD = X.AD, BRANCH = X.BRANCH;
@@ -250,19 +250,19 @@ test.run('a persona row on the stream lands at <node>/agent/persona/<id>, and th
   DATA.takeJob(job({ table: 'persona', row: { id: 'KT', label: 'First', extra: 1 } }));
   off();
   return AD.row('persona', 'KT') && AD.row('persona', 'KT').label === 'First' && heard.indexOf(BRANCH + '/KT') !== -1 ? true : 'persona: ' + short(DATA.branchAt(BRANCH));
-}, 1000);
+}, test.limit.quick);
 test.run('a changed row is merged: what it names changes, what it does not stays', 0.2, function () {
   if (!X.AD) return NO_MANAGER;
   const DATA = global.window.spirit.data, AD = X.AD;
   DATA.takeJob(job({ table: 'persona', row: { id: 'KT', label: 'Renamed' } }));
   return AD.row('persona', 'KT') && AD.row('persona', 'KT').label === 'Renamed' && AD.row('persona', 'KT').extra === 1 ? true : 'row: ' + short(AD.row('persona', 'KT'));
-}, 1000);
+}, test.limit.quick);
 test.run('a row removed, by its id, is gone', 0.2, function () {
   if (!X.AD) return NO_MANAGER;
   const DATA = global.window.spirit.data, AD = X.AD;
   DATA.takeJob(job({ table: 'persona', id: 'KT', removed: true }));
   return !AD.row('persona', 'KT') && !('KT' in DATA.branchAt(X.BRANCH)) ? true : 'row: ' + short(AD.row('persona', 'KT'));
-}, 1000);
+}, test.limit.quick);
 test.run('another table\'s rows, another module\'s, and a row with no id write nothing here', 0.2, function () {
   if (!X.AD) return NO_MANAGER;
   const DATA = global.window.spirit.data;
@@ -271,4 +271,4 @@ test.run('another table\'s rows, another module\'s, and a row with no id write n
   DATA.takeJob(job({ table: 'persona', row: { id: 'KX', label: 'from the desk' } }, 'spirit.app.desk'));
   DATA.takeJob(job({ table: 'persona', row: { label: 'no id' } }));
   return JSON.stringify(DATA.branchAt(X.BRANCH)) === before ? true : 'persona: ' + short(DATA.branchAt(X.BRANCH));
-}, 1000);
+}, test.limit.quick);

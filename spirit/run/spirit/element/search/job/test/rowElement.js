@@ -42,15 +42,15 @@ test.run('the world: the row runs on a bare window', 0.2, async function () {
   E().progressBar = function (done, total, text) { return '[bar ' + done + '/' + total + ' ' + text + ']'; };
   R = E().search && E().search.job && E().search.job.rowElement;
   return true;
-}, 1000);
+}, test.limit.quick);
 test.run('it places itself at spirit.element.spirit.element.search.job.rowElement, with a create', 0.2, function () {
   if (!required) return 'the row never ran: the world failed';
   return R && typeof R.create === 'function' ? true : 'its place: ' + short(R && Object.keys(R));
-}, 1000);
+}, test.limit.quick);
 test.run('it loads what it draws with: the shared row element, the icon element, the progress bar', 0.2, function () {
   if (!R || typeof R.create !== 'function') return NO_R;
   return ['spirit/element/rowElement.js', 'spirit/element/icon.js', 'spirit/element/progressBar.js'].every(function (p) { return required.indexOf(p) !== -1; }) ? true : 'required: ' + short(required);
-}, 1000);
+}, test.limit.quick);
 
 // a job, its cells
 test.run('a row of kind job, keyed by the job\'s id, with no actions: a press opens its detail', 0.2, function () {
@@ -59,63 +59,63 @@ test.run('a row of kind job, keyed by the job\'s id, with no actions: a press op
   s = specs[0];
   paint = function (name, j) { const f = s.fields.filter(function (x) { return x.name === name; })[0]; return f ? f.paint(j) : null; };
   return s && s.kind === 'job' && s.key === 'a' && Array.isArray(s.actions) && !s.actions.length ? true : 'spec: ' + short(s && { kind: s.kind, key: s.key, actions: s.actions });
-}, 1000);
+}, test.limit.quick);
 test.run('its fields: latest, status, name, kind, progress, updated', 0.2, function () {
   if (!s) return NO_S;
   return JSON.stringify(s.fields.map(function (f) { return f.name; })) === JSON.stringify(['latest', 'status', 'name', 'kind', 'progress', 'updated']) ? true : 'fields: ' + short(s.fields.map(function (f) { return f.name; }));
-}, 1000);
+}, test.limit.quick);
 test.run('the job that changed last carries the one green dot', 0.2, function () {
   if (!s) return NO_S;
   return /●/.test(paint('latest', s.row)) ? true : 'latest: ' + short(paint('latest', s.row));
-}, 1000);
+}, test.limit.quick);
 test.run('and loses it once another job changed last: the dot follows latest(), read when painted', 0.2, function () {
   if (!s) return NO_S;
   latest = 'b';
   return paint('latest', s.row) === '' ? true : 'latest: ' + short(paint('latest', s.row));
-}, 1000);
+}, test.limit.quick);
 test.run('its status, with its glyph', 0.2, function () {
   if (!s) return NO_S;
   return /running/.test(paint('status', s.row)) && /🏃/.test(paint('status', s.row)) ? true : 'status: ' + short(paint('status', s.row));
-}, 1000);
+}, test.limit.quick);
 test.run('its name is its module, else its id', 0.2, function () {
   if (!s) return NO_S;
   return paint('name', s.row) === 'spirit.app.x' && paint('name', { id: 'z' }) === 'z' ? true : 'name: ' + short([paint('name', s.row), paint('name', { id: 'z' })]);
-}, 1000);
+}, test.limit.quick);
 test.run('its kind: the node\'s own jobs node, appServers server, a run transient', 0.2, function () {
   if (!s) return NO_S;
   return paint('kind', { kind: 'permanent' }) === 'node' && paint('kind', { kind: 'server' }) === 'server' && paint('kind', { kind: 'process' }) === 'transient' ? true
     : 'kinds: ' + short([paint('kind', { kind: 'permanent' }), paint('kind', { kind: 'server' }), paint('kind', { kind: 'process' })]);
-}, 1000);
+}, test.limit.quick);
 test.run('a job in progress draws the bar from its own app object', 0.2, function () {
   if (!s) return NO_S;
   return paint('progress', s.row) === '[bar 2/4 half]' ? true : 'progress: ' + short(paint('progress', s.row));
-}, 1000);
+}, test.limit.quick);
 test.run('a terminal job, or one with no job cycle, draws no bar', 0.2, function () {
   if (!s) return NO_S;
   return paint('progress', { status: 'completed', app: { job: { state: 'progress', done: 4, total: 4 } } }) === '' && paint('progress', { status: 'running' }) === '' ? true
     : 'progress: ' + short(paint('progress', { status: 'completed', app: { job: { state: 'progress' } } }));
-}, 1000);
+}, test.limit.quick);
 test.run('it shows when it was updated, and nothing when it never was', 0.2, function () {
   if (!s) return NO_S;
   return paint('updated', s.row) !== '' && paint('updated', { id: 'q' }) === '' ? true : 'updated: ' + short([paint('updated', s.row), paint('updated', { id: 'q' })]);
-}, 1000);
+}, test.limit.quick);
 test.run('what it paints is escaped', 0.2, function () {
   if (!s) return NO_S;
   const escaped = /&lt;/.test(paint('name', { id: '<b>' }));
   return escaped ? true : 'name: ' + short(paint('name', { id: '<b>' }));
-}, 1000);
+}, test.limit.quick);
 
 // what the list reads of it
 test.run('its rows share one index', 0.2, function () {
   if (!s) return NO_S;
   R.create({ id: 'c' });
   return indexes.length === 1 && specs[1].index === specs[0].index ? true : indexes.length + ' indexes';
-}, 1000);
+}, test.limit.quick);
 test.run('kindOf(job) for the list\'s kind filter', 0.2, function () {
   if (!R || typeof R.create !== 'function') return NO_R;
   return typeof R.kindOf === 'function' && R.kindOf({ kind: 'server' }) === 'server' ? true : 'kindOf: ' + short(R.kindOf);
-}, 1000);
+}, test.limit.quick);
 test.run('STATUS_ICON, a status\'s glyph, for the detail\'s layer', 0.2, function () {
   if (!R || typeof R.create !== 'function') return NO_R;
   return R.STATUS_ICON && R.STATUS_ICON.failed === '❌' ? true : 'STATUS_ICON: ' + short(R.STATUS_ICON);
-}, 1000);
+}, test.limit.quick);

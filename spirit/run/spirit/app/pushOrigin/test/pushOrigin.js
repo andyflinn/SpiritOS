@@ -50,7 +50,7 @@ test.run('the world: a clone with one commit its bare origin does not hold', 0.2
   const made = git(['commit', '-q', '-m', 'the commit to push'], clone);
   W.head = (git(['rev-parse', 'HEAD'], clone).stdout || '').trim();
   return made.status === 0 && !!W.head ? true : 'no commit could be made: nothing judged. ' + short(made.stderr);
-}, 3000);
+}, test.limit.slow);
 
 // Run as Run starts it: the script and nothing more, from a folder that is no repo.
 test.run('run with no argument it ends well', 0.2, function () {
@@ -58,9 +58,9 @@ test.run('run with no argument it ends well', 0.2, function () {
   const r = spawnSync(process.execPath, [W.copy], { cwd: W.tmp, encoding: 'utf8', timeout: 60000 });
   W.said = String(r.stdout || '') + String(r.stderr || '');
   return r.status === 0 ? true : 'it exited ' + r.status + ': ' + short(W.said);
-}, 3000);
+}, test.limit.slow);
 test.run('origin now holds the commit of the repo it lives in', 0.2, function () {
   if (!W.head) return 'no clone to push from: the world failed';
   const there = (git(['rev-parse', 'master'], W.origin).stdout || '').trim();
   return there === W.head ? true : 'origin holds ' + short(there || 'nothing') + ', the clone ' + W.head + '; it said ' + short(W.said);
-}, 1000);
+}, test.limit.quick);

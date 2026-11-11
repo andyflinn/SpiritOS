@@ -101,7 +101,7 @@ function read() {
 if (!arg) {
   test.run('the scan read every production module, more than a hundred files', 0.2, function () {
     return read().length > 100 || 'the scan read only ' + judged.length + ' files: it judged too little to say';
-  }, 1000);
+  }, test.limit.quick);
 }
 // Each call that breaks it named in the answer, by its file and line.
 test.run('no production module loads or requires a test file', 0.4, function () {
@@ -113,4 +113,4 @@ test.run('no production module loads or requires a test file', 0.4, function () 
     });
   });
   return !bad.length || bad.join('; ');
-}, 1000);
+}, test.limit.quick);

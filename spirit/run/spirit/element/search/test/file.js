@@ -36,19 +36,19 @@ test.run('the world: the selector runs on a window of its own', 0.2, async funct
   await settle();
   W.ran = true;
   return true;
-}, 1000);
+}, test.limit.quick);
 
 // "the selector", over its own list
 test.run('as it runs it requires its own list first', 0.2, function () {
   if (!W.ran) return 'the selector never ran: the world failed';
   return W.required[0] === LIST ? true : 'it required ' + short(W.required) + ', not ' + LIST + ' first';
-}, 1000);
+}, test.limit.quick);
 test.run('it places spirit.element.spirit.element.search.file.create, by its path', 0.2, function () {
   if (!W.ran) return 'the selector never ran: the world failed';
   const S = (((((global.window.spirit.element || {}).spirit || {}).element || {}).search || {}).file);
   W.S = S;
   return !!S && typeof S.create === 'function' ? true : 'placed: ' + short(S && Object.keys(S));
-}, 1000);
+}, test.limit.quick);
 test.run('create draws its list in the box it is handed, with the options as they are', 0.2, function () {
   if (!W.S || typeof W.S.create !== 'function') return 'no create to call: the selector placed none';
   const host = { id: 'the box' };
@@ -56,8 +56,8 @@ test.run('create draws its list in the box it is handed, with the options as the
   W.got = W.S.create(host, opts);
   W.called = true;
   return W.made.length === 1 && W.made[0].host === host && W.made[0].opts === opts ? true : 'the list was made with: ' + short(W.made);
-}, 1000);
+}, test.limit.quick);
 test.run('and answers what its list answers', 0.2, function () {
   if (!W.called) return 'create was never called';
   return W.got === W.ANSWER ? true : 'it answered ' + short(W.got);
-}, 1000);
+}, test.limit.quick);

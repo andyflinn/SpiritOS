@@ -35,28 +35,28 @@ test.run('the world: a scratch node, and a Chrome on its face page', 0.2, async 
   if (!node.up || chrome.error) return 'no scratch node or no Chrome: nothing judged. ' + short(chrome.error || '');
   await chrome.send('Page.navigate', { url: node.base + '/face.html' });
   return (await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000)) ? true : 'the face page never had spirit.ready';
-}, 6000);
+}, test.limit.slow);
 test.run('it loads through spirit.require', 0.2, async function () {
   if (!node || !node.up || !chrome || chrome.error) return NO_WORLD;
   loaded = await chrome.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/element/search/app/detailElement.js"); }).then(function () { var c = document.createElement("div"); c.id = "under-test"; document.body.appendChild(c); return "loaded"; }, function (e) { return String(e && e.message || e); })');
   return loaded === 'loaded' ? true : 'it did not load: ' + short(loaded);
-}, 1000);
+}, test.limit.quick);
 test.run('spirit.element.spirit.element.search.app.detailElement.create(host, { row }) makes a detail', 0.2, async function () {
   if (!node || !node.up || !chrome || chrome.error) return NO_WORLD;
   made = await chrome.evaluate('(function () { window.detail = spirit.element.spirit.element.search.app.detailElement.create(document.getElementById("under-test"), { row: ' + R + ' }); return !!window.detail; }())');
   return made === true ? true : 'it made no detail: ' + short(made);
-}, 1000);
+}, test.limit.quick);
 test.run('the detail shows the label', 0.2, async function () {
   if (made !== true) return 'no detail was made';
   t = String(await text());
   return t.indexOf(ROW.label) !== -1 ? true : 'the detail shows ' + short(t);
-}, 1000);
+}, test.limit.quick);
 test.run('the detail shows the icon', 0.2, async function () {
   if (made !== true) return 'no detail was made';
   return (await html()).indexOf(ROW.icon) !== -1 || /<svg|<img/.test(await html()) ? true : 'the detail has no icon: ' + short(await html());
-}, 1000);
+}, test.limit.quick);
 test.run('destroy empties its host', 0.2, async function () {
   if (made !== true) return 'no detail was made';
   const empty = await chrome.evaluate('(function () { window.detail.destroy(); return document.getElementById("under-test").children.length === 0; }())');
   return empty === true ? true : 'destroy left ' + short(await text());
-}, 1000);
+}, test.limit.quick);
