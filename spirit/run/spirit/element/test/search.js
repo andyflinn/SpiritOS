@@ -613,6 +613,22 @@ test.run('a plain choice takes its value', 0.2, function () {
   c4.fire('click', { target: filterTarget('size', 'big') });
   return (c4.shown().join() === 'a') ? true : 'shown: ' + c4.shown();
 }, test.limit.quick);
+// keepOne (goal/G47.1, the testicle search, the box: "at least one of the two is selected at all times: the only combination
+// forbidden is both off"): a multi filter that keeps its last choice on.
+let c4k = null;
+test.run('a keepOne multi choice pressed goes off while another is still on', 0.2, function () {
+  c4k = container();
+  PS.create(c4k, { search: source('s').search, server: 's', verb: 'v', columns: [{ field: 'name' }],
+    rows: function () { return [{ key: 'a', name: 'a', kind: 'x' }, { key: 'b', name: 'b', kind: 'y' }]; },
+    filters: [{ name: 'kind', multi: true, keepOne: true, choices: [{ value: 'x', word: 'X' }, { value: 'y', word: 'Y' }], test: function (row, v) { return v[row.kind] ? 0 : 1; } }] });
+  c4k.fire('click', { target: filterTarget('kind', 'x') });
+  return (c4k.shown().join() === 'b') ? true : 'shown: ' + c4k.shown();
+}, test.limit.quick);
+test.run('the last keepOne choice still on, pressed, stays on', 0.2, function () {
+  if (!c4k) return 'no list: the test before failed';
+  c4k.fire('click', { target: filterTarget('kind', 'y') });
+  return (c4k.shown().join() === 'b') ? true : 'shown: ' + c4k.shown();
+}, test.limit.quick);
 const seen = function (h) { return String(h).replace(/<[^>]*>/g, '').replace(/&[a-z]+;/g, '').replace(/\s+/g, ''); };
 const upToInput = function (c) { const h = c.innerHTML; const at = h.indexOf('id="' + c.pre() + 'text"'); return at === -1 ? null : seen(h.slice(0, h.lastIndexOf('<', at))); };
 test.run('with filters: 🗜 starts the filter row, its words follow, and 🔎 starts the search row', 0.2, async function () {

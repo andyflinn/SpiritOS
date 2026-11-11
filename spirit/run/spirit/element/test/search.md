@@ -94,6 +94,8 @@ draws and ranks.
 - **Filter buttons**:
   - A toggle flips true and false.
   - A multi choice is pressed off and on.
+  - A keepOne multi filter (goal/G47.1, the testicle search's red and green): a choice goes off while another is on; the
+    last choice still on, pressed, stays on.
   - A plain choice takes its value.
   - Each press re-ranks and asks.
 - **Its rows' icons** (goal/G41.26). Andy: *"in probablitySearch, if there is a filter row, it must start wit a '🗜'
