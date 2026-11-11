@@ -50,9 +50,18 @@ test.startTest('job/: the job table');
   // job-description that may come with a prompt".
   // goal/G41.21 (box v17): "The job table gains a field, bundle", "a second field, provider", "a third field, persona". The
   // description went in goal/G41.21 ("ALL, drop the description for ALL tables.").
-  ['id','privateKey','sealPublicKey','sealPrivateKey','icon','label','loop','job','bundle','provider','persona'].forEach(function (c) {
-    ok(cols.indexOf(c) !== -1, 'the job table has ' + c, 'columns: ' + short(cols));
-  });
+  // One check per column, each its own plain title (goal/G45.6: a title names no value built into it).
+  ok(cols.indexOf('id') !== -1, 'the job table has an id column', 'columns: ' + short(cols));
+  ok(cols.indexOf('privateKey') !== -1, 'the job table has a privateKey column', 'columns: ' + short(cols));
+  ok(cols.indexOf('sealPublicKey') !== -1, 'the job table has a sealPublicKey column', 'columns: ' + short(cols));
+  ok(cols.indexOf('sealPrivateKey') !== -1, 'the job table has a sealPrivateKey column', 'columns: ' + short(cols));
+  ok(cols.indexOf('icon') !== -1, 'the job table has an icon column', 'columns: ' + short(cols));
+  ok(cols.indexOf('label') !== -1, 'the job table has a label column', 'columns: ' + short(cols));
+  ok(cols.indexOf('loop') !== -1, 'the job table has a loop column', 'columns: ' + short(cols));
+  ok(cols.indexOf('job') !== -1, 'the job table has a job column', 'columns: ' + short(cols));
+  ok(cols.indexOf('bundle') !== -1, 'the job table has a bundle column', 'columns: ' + short(cols));
+  ok(cols.indexOf('provider') !== -1, 'the job table has a provider column', 'columns: ' + short(cols));
+  ok(cols.indexOf('persona') !== -1, 'the job table has a persona column', 'columns: ' + short(cols));
   ok(cols.length === 11, 'and nothing else', 'columns: ' + short(cols));
 
   test.subHeading('server.js: a job, its loop flag and its text');

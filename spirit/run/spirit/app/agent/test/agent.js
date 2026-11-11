@@ -115,7 +115,7 @@ test.startTest('agent.js: the Agent in spirit/app/agent/, as Andy sees it (goal/
     ok(pressed, 'the world: its row has an Activate button, and it is pressed', 'no Activate on the Agent\'s row: ' + short(await shown()));
     ok(await serverUp(N.base), 'pressed, the server answers its verbs', 'pressed, agent.debug: ' + short((await call(N.base, 'agent.DEBUG', {})).text));
     if (!answers(await call(N.base, 'agent.DEBUG', {}))) { test.fail('no server, so nothing further is judged'); return; }
-    ok(!!(await liveJob(N.base)), 'its job has the id ' + MODULE, 'no live job with that id');
+    ok(!!(await liveJob(N.base)), 'its server runs as a live job under the agent app\'s id', 'no live job with the id ' + MODULE);
     const db = path.join(s.run, 'spirit', 'state', 'agent', 'data', 'agent.db');
     ok(fs.existsSync(db), 'its rows are kept in spirit/state/agent/data/', 'no agent.db in spirit/state/agent/data/');
 
@@ -134,10 +134,16 @@ test.startTest('agent.js: the Agent in spirit/app/agent/, as Andy sees it (goal/
     };
     test.subHeading('the box: "The Agent\'s tile opens, its tables work, and its rows are there"');
     ok(await openTile(), 'its tile opens the app', 'the tile opened nothing: ' + short(await shown()));
-    for (const name of Object.keys(ROWS)) {
-      const hit = await tool(name);
-      ok(hit && await shows(ROWS[name]), 'the ' + name + ' table shows its row, ' + ROWS[name], 'the ' + name + ' tool: ' + short(await shown()));
-    }
+    // One table at a time, each check its own plain title (goal/G45.6: a title has no value built into it).
+    async function rowShows(name) { const hit = await tool(name); return { ok: !!(hit && await shows(ROWS[name])), says: 'the ' + name + ' tool: ' + short(await shown()) }; }
+    const PROVIDER_ROW = await rowShows('provider');
+    ok(PROVIDER_ROW.ok, 'the provider table shows the provider row the test planted', PROVIDER_ROW.says);
+    const MODEL_ROW = await rowShows('model');
+    ok(MODEL_ROW.ok, 'the model table shows the model row the test planted', MODEL_ROW.says);
+    const PERSONA_ROW = await rowShows('persona');
+    ok(PERSONA_ROW.ok, 'the persona table shows the persona row the test planted', PERSONA_ROW.says);
+    const JOB_ROW = await rowShows('job');
+    ok(JOB_ROW.ok, 'the job table shows the job row the test planted', JOB_ROW.says);
 
     test.subHeading('the box: "data.js takes the id spirit.app.agent, not process/js/agent."');
     // The server publishes a row on its job, under its module id; the family's data.js on the page takes it into spirit.data.
@@ -305,15 +311,27 @@ async function centreTabsPart() {
       ok((await tabs()).length === 0, 'with no tabs yet', 'tabs before anything was opened: ' + short(await tabs()));
 
       test.subHeading('each kind of row opens a closable tab, named by the box');
-      for (const k of [['provider', 'zzProvider'], ['model', 'zzModel'], ['persona', 'zzPersona'], ['job', 'zzJob']]) {
-        const words = ICON[k[0]] + ' ' + k[1];
-        const shown = await tool(k[0]);
-        await until(function () { return pressRow(k[1]); }, 6000);
+      // One kind of row at a time, each check its own plain title (goal/G45.6): its tab reads its table's icon and the row's label.
+      async function tabOpens(kind, row) {
+        const words = ICON[kind] + ' ' + row;
+        const shown = await tool(kind);
+        await until(function () { return pressRow(row); }, 6000);
         await waitTab(words);
         const t = await tabOf(words);
-        ok(shown && t.length === 1 && t[0].on, k[0] + ': a tab reading "' + words + '" opens, and is active', k[0] + ': tabs ' + short(await tabs()));
-        ok(t.length === 1 && t[0].close, 'and it has a close button', k[0] + ': no close button: ' + short(t));
+        return { opens: !!(shown && t.length === 1 && t[0].on), opensSays: kind + ': tabs ' + short(await tabs()), closable: !!(t.length === 1 && t[0].close), closableSays: kind + ': no close button: ' + short(t) };
       }
+      const PROVIDER_TAB = await tabOpens('provider', 'zzProvider');
+      ok(PROVIDER_TAB.opens, 'a provider row opens a tab named by its icon and label, and it is active', PROVIDER_TAB.opensSays);
+      ok(PROVIDER_TAB.closable, 'the provider row\'s tab has a close button', PROVIDER_TAB.closableSays);
+      const MODEL_TAB = await tabOpens('model', 'zzModel');
+      ok(MODEL_TAB.opens, 'a model row opens a tab named by its icon and label, and it is active', MODEL_TAB.opensSays);
+      ok(MODEL_TAB.closable, 'the model row\'s tab has a close button', MODEL_TAB.closableSays);
+      const PERSONA_TAB = await tabOpens('persona', 'zzPersona');
+      ok(PERSONA_TAB.opens, 'a persona row opens a tab named by its icon and label, and it is active', PERSONA_TAB.opensSays);
+      ok(PERSONA_TAB.closable, 'the persona row\'s tab has a close button', PERSONA_TAB.closableSays);
+      const JOB_TAB = await tabOpens('job', 'zzJob');
+      ok(JOB_TAB.opens, 'a job row opens a tab named by its icon and label, and it is active', JOB_TAB.opensSays);
+      ok(JOB_TAB.closable, 'the job row\'s tab has a close button', JOB_TAB.closableSays);
 
       test.subHeading('a row already open: its tab is made active, no second one');
       await tool('provider');
@@ -335,7 +353,7 @@ async function centreTabsPart() {
       const before = (await tabs()).length;
       await tool('job');
       await sleep(500);
-      ok(before >= 4 && (await tabs()).length === before, 'all ' + before + ' are still there', 'before ' + before + ', after ' + short(await tabs()));
+      ok(before >= 4 && (await tabs()).length === before, 'showing another tool closes none of the open tabs', 'before ' + before + ', after ' + short(await tabs()));
 
       test.subHeading('a chat is a tab of its own beside its persona\'s');
       await tool('chat');
@@ -343,7 +361,7 @@ async function centreTabsPart() {
       const chatWords = CHAT + ' zzPersona';
       await waitTab(chatWords);
       const chat = await tabOf(chatWords);
-      ok(chat.length === 1 && chat[0].on, 'a tab reading "' + chatWords + '" opens, and is active', 'tabs ' + short(await tabs()));
+      ok(chat.length === 1 && chat[0].on, 'a persona picked opens its chat as a tab named by the chat icon and the persona, and it is active', 'tabs ' + short(await tabs()));
       ok((await tabOf(ICON.persona + ' zzPersona')).length === 1, 'and the persona\'s own tab is still there', 'tabs ' + short(await tabs()));
 
       test.subHeading('a bundle\'s tab: its name; not the node\'s: in brackets and italic');
@@ -652,20 +670,29 @@ async function listBoxesPart() {
     test.subHeading('each tool\'s list pane');
     // goal/G41.21: the grant tool went with agent.grant.
     const want = [['provider', 'provider'], ['model', 'model'], ['persona', 'persona'], ['job', 'job']];
-    for (const t of want) {
+    // One tool at a time, each check its own plain title (goal/G45.6: a title has no value built into it).
+    async function paneFills(t) {
       const b = strip(t[0]);
-      if (!b) { test.fail('no strip button for the ' + t[0] + ' tool'); continue; }
+      if (!b) return { ok: false, says: 'no strip button for the ' + t[0] + ' tool' };
       w.document.click(b);
       await settle();
       const made = w.panes.filter(function (p) { return p.o.face !== 'dropdown' && p.o.verb === t[1] && under(p.host, app); });
-      if (!made.length) { test.fail('the ' + t[0] + ' tool drew no list pane'); continue; }
+      if (!made.length) return { ok: false, says: 'the ' + t[0] + ' tool drew no list pane' };
       const g = gaps(made[made.length - 1].host, app);
-      ok(!g.length, 'the ' + t[0] + ' tool\'s list stands in a fill box, and every box up to the app is fill too', t[0] + ': not fill: ' + g.join(' < '));
       if (t[0] === 'model') {
         const drop = w.panes.filter(function (p) { return p.o.face === 'dropdown' && p.o.verb === 'provider' && under(p.host, app); }).pop();
         modelOrder = order(app, made[made.length - 1].host, drop ? drop.host : null);
       }
+      return { ok: !g.length, says: t[0] + ': not fill: ' + g.join(' < ') };
     }
+    const PROVIDER_PANE = await paneFills(want[0]);
+    ok(PROVIDER_PANE.ok, 'the provider tool\'s list stands in a fill box, and every box up to the app is fill too', PROVIDER_PANE.says);
+    const MODEL_PANE = await paneFills(want[1]);
+    ok(MODEL_PANE.ok, 'the model tool\'s list stands in a fill box, and every box up to the app is fill too', MODEL_PANE.says);
+    const PERSONA_PANE = await paneFills(want[2]);
+    ok(PERSONA_PANE.ok, 'the persona tool\'s list stands in a fill box, and every box up to the app is fill too', PERSONA_PANE.says);
+    const JOB_PANE = await paneFills(want[3]);
+    ok(JOB_PANE.ok, 'the job tool\'s list stands in a fill box, and every box up to the app is fill too', JOB_PANE.says);
 
     test.subHeading('the 🧠 Models pane: its title row first (goal/G41.26)');
     // Andy, on G41.26: "i the left side models panel: the title row \"🧠Models\" must come before the \"from [🛖 Unsloth
@@ -678,7 +705,7 @@ async function listBoxesPart() {
     test.subHeading('every list pane the app drew');
     const all = w.panes.filter(function (p) { return p.o.face !== 'dropdown' && under(p.host, app); });
     const bad = all.map(function (p) { return { verb: p.o.verb, gaps: gaps(p.host, app) }; }).filter(function (x) { return x.gaps.length; });
-    ok(all.length >= 4 && !bad.length, 'all ' + all.length + ' list panes drawn, none in a box only as tall as its content', 'not fill: ' + short(bad));
+    ok(all.length >= 4 && !bad.length, 'every list pane the app draws stands in a fill box, none only as tall as its content', all.length + ' panes; not fill: ' + short(bad));
 
     test.subHeading('each list pane is a view of its table in the agent family\'s cache (goal/G41.28)');
     const AD = ((w.win.spirit.data || {}).agent || {}).data;

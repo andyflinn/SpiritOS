@@ -174,7 +174,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const CHAT_TOOL = L.filter(function (t) { return t && t.icon === '💬'; });
   ok(JSON.stringify(L.map(function (t) { return t && t.name; }).filter(function (n) { return LEFT.indexOf(n) !== -1; })) === JSON.stringify(LEFT) && R.length === 2 && R.some(function (t) { return t && t.name === 'server'; }) &&
     L.concat(R).every(function (t) { return t && t.name && t.icon && t.title && typeof t.mount === 'function'; }),
-    'the left strip holds one tool per table (' + TABLES.join(', ') + '), no grant; the right two tools, the server\'s and one more; each with its name, icon, title and mount',
+    'the left strip holds one tool per table, provider, model, persona and job, and no grant; the right two tools, the server\'s and one more; each with its name, icon, title and mount',
     'tools: ' + short({ left: L.map(function (t) { return t && t.name; }), right: R.map(function (t) { return t && t.name; }) }));
   ok(new Set(L.map(function (t) { return t && t.icon; })).size === L.length, 'every left tool has an icon of its own', 'icons: ' + short(L.map(function (t) { return t && t.icon; })));
   ok(!/grantsPanel|table\/grant\b|agent\.grant/.test(fs.readFileSync(FILE, 'utf8').replace(/\/\/.*$/gm, '')), 'the app names no grants panel and no grant table any more (goal/G41.21)', 'spirit/app/agent/agent.js still names the grant table or the grants panel');
@@ -186,23 +186,43 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   test.subHeading('each table\'s tool mounts that table\'s own element');
   const CODE = fs.readFileSync(FILE, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1');
   ok(!/\bapi\b/.test(CODE), 'it makes no api for its tables: each list asks agent.<table> through the spirit object itself (goal/G43.24)', 'element.js still makes or hands an api');
-  for (const name of TABLES) {
+  // One table at a time, each check its own plain title (goal/G45.6: a title has no value built into it).
+  async function mountTable(name) {
     const t = L.filter(function (x) { return x.name === name; })[0];
     const before = w.required.length;
     const made = [];
     global.window.spirit.element.spirit.app.agent.element.table[name] = { elementTable: { create: function (into, detail) { made.push({ into: into, detail: detail, handed: arguments.length }); return { refresh: function () {}, destroy: function () {} }; } } };
     const tb = box('table-' + name); t.mount(tb); await settle();
     const asked = w.required.slice(before);
-    ok(asked.indexOf('spirit/app/agent/element/table/' + name + '/elementTable.js') !== -1 && /\bfill\b/.test(tb.className),
-      'the ' + name + ' tool requires spirit/app/agent/element/table/' + name + '/elementTable.js into a fill box', 'required ' + short(asked) + ', class ' + short(tb.className));
     const d = made[0] && made[0].detail;
-    // WHAT IT NEEDS, IT REQUIRES ITSELF (goal/G43.24; Andy: "anybody can mount any element without knowing what it actually
-    // needs...."): the table is handed its box and the detail pane, no api; its list asks agent.<table> itself.
-    ok(made.length === 1 && made[0].into === tb && made[0].handed === 2 && d && typeof d.open === 'function' && typeof d.look === 'function',
-      'and creates ' + name + 'Table once in that box, with its detail pane and no api', 'created: ' + made.length + ', handed ' + (made[0] && made[0].handed) + ' arguments');
     const look = d && d.look(name);
-    ok(look && look.icon === t.icon && look.name && look.title === t.title, 'the detail pane\'s look of ' + name + ' is its tool\'s icon and title, and its one name', 'look: ' + short(look));
+    return {
+      required: asked.indexOf('spirit/app/agent/element/table/' + name + '/elementTable.js') !== -1 && /\bfill\b/.test(tb.className),
+      requiredSays: 'required ' + short(asked) + ', class ' + short(tb.className),
+      // WHAT IT NEEDS, IT REQUIRES ITSELF (goal/G43.24; Andy: "anybody can mount any element without knowing what it actually
+      // needs...."): the table is handed its box and the detail pane, no api; its list asks agent.<table> itself.
+      created: made.length === 1 && made[0].into === tb && made[0].handed === 2 && d && typeof d.open === 'function' && typeof d.look === 'function',
+      createdSays: 'created: ' + made.length + ', handed ' + (made[0] && made[0].handed) + ' arguments',
+      looks: !!(look && look.icon === t.icon && look.name && look.title === t.title),
+      looksSays: 'look: ' + short(look),
+    };
   }
+  const PROVIDER = await mountTable('provider');
+  ok(PROVIDER.required, 'the provider tool requires its own elementTable.js into a fill box', PROVIDER.requiredSays);
+  ok(PROVIDER.created, 'and creates the provider table once in that box, with its detail pane and no api', PROVIDER.createdSays);
+  ok(PROVIDER.looks, 'the detail pane\'s look of a provider is its tool\'s icon and title, and its one name', PROVIDER.looksSays);
+  const MODEL = await mountTable('model');
+  ok(MODEL.required, 'the model tool requires its own elementTable.js into a fill box', MODEL.requiredSays);
+  ok(MODEL.created, 'and creates the model table once in that box, with its detail pane and no api', MODEL.createdSays);
+  ok(MODEL.looks, 'the detail pane\'s look of a model is its tool\'s icon and title, and its one name', MODEL.looksSays);
+  const PERSONA = await mountTable('persona');
+  ok(PERSONA.required, 'the persona tool requires its own elementTable.js into a fill box', PERSONA.requiredSays);
+  ok(PERSONA.created, 'and creates the persona table once in that box, with its detail pane and no api', PERSONA.createdSays);
+  ok(PERSONA.looks, 'the detail pane\'s look of a persona is its tool\'s icon and title, and its one name', PERSONA.looksSays);
+  const JOB = await mountTable('job');
+  ok(JOB.required, 'the job tool requires its own elementTable.js into a fill box', JOB.requiredSays);
+  ok(JOB.created, 'and creates the job table once in that box, with its detail pane and no api', JOB.createdSays);
+  ok(JOB.looks, 'the detail pane\'s look of a job is its tool\'s icon and title, and its one name', JOB.looksSays);
 
   test.subHeading('💬 Select Persona: a personaSelector:pane, a persona picked opens its chat in the centre (goal/G41.26)');
   // Andy, box: "this new panel, below the title contains, for now, only a personaSelector:pane", "When the user clicks on

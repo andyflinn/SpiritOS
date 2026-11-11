@@ -373,7 +373,7 @@ test.startTest('rowElement.js: one row of the agent\'s tables, edited');
     'the dropdown offers ' + short(withModels.offered) + ' of ' + short({ mine: MA, theirs: MB }));
   // Andy: "the model picker for the provider table showed a bunch of EMPTY rows": a row is drawn by what its table's
   // search answers, the model's name.
-  ok(withModels.cells.length > 0 && withModels.cells.every(function (c) { return /claude-mine/.test(c); }), 'each row it offers shows the model, as the model table answers it: ' + short(withModels.cells),
+  ok(withModels.cells.length > 0 && withModels.cells.every(function (c) { return /claude-mine/.test(c); }), 'each row it offers shows the model, as the model table answers it',
     'rows it offers show ' + short(withModels.cells) + ': empty, the columns asking fields the model table does not answer');
   const withNone = await narrowed([]);
   ok(withNone.calls.some(function (c) { return c.table === 'model' && c.args && c.args.op === 'search' && c.args.providerId === PA; }),
@@ -467,7 +467,7 @@ test.startTest('rowElement.js: one row of the agent\'s tables, edited');
   // Andy: "why would the bundle picker show "bundle 2" for it's selection instead of the fucking label?": the field says
   // the bundle by its label, as the node has it (auth.bundle get: 7 is Reader).
   const bundleSays = bsel ? String((bsel.row && bsel.row.label) || bsel.opts.placeholder || '') : '';
-  ok(/Reader/.test(bundleSays) && !/bundle\s*7/i.test(bundleSays), 'the bundle field shows the job\'s bundle by its label: ' + bundleSays, 'the bundle field shows ' + JSON.stringify(bundleSays) + ' for bundle 7, Reader');
+  ok(/Reader/.test(bundleSays) && !/bundle\s*7/i.test(bundleSays), 'the bundle field shows the job\'s bundle by its label, not its number', 'the bundle field shows ' + JSON.stringify(bundleSays) + ' for bundle 7, Reader');
   ok(!!bsel && bsel.container === the(ed4, 'bundle') && bsel.opts.face !== 'pane', 'a bundle selector is made in the bundle field, in dropdown mode', 'bundle selectors: ' + short(w.bundles.map(function (b) { return { face: b.opts.face, here: b.container === the(ed4, 'bundle') }; })));
   // goal/G41.25, Andy, box: "so the bundle pickers in the persona and job details will always list ALL bundles": the
   // selector is mounted for no app server (spirit/element/search/bundle.js, options.family).

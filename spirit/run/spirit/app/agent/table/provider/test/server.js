@@ -52,9 +52,17 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   // Andy, box v22: "with Label and Description, URL, and API_KEY"; goal/G41.18, box v17: "if it fails, the provider row
   // will be flagged as unusable".
   // goal/G41.21 (box v17): "The provider table gains a field, model: the id of one row of the model table".
-  ['id', 'privateKey', 'sealPublicKey', 'sealPrivateKey', 'icon', 'label', 'url', 'apiKey', 'unusable', 'model'].forEach(function (c) {
-    ok(cols.indexOf(c) !== -1, 'the provider table has ' + c, 'columns: ' + short(cols));
-  });
+  // One check per column, each its own plain title (goal/G45.6: a title names no value built into it).
+  ok(cols.indexOf('id') !== -1, 'the provider table has an id column', 'columns: ' + short(cols));
+  ok(cols.indexOf('privateKey') !== -1, 'the provider table has a privateKey column', 'columns: ' + short(cols));
+  ok(cols.indexOf('sealPublicKey') !== -1, 'the provider table has a sealPublicKey column', 'columns: ' + short(cols));
+  ok(cols.indexOf('sealPrivateKey') !== -1, 'the provider table has a sealPrivateKey column', 'columns: ' + short(cols));
+  ok(cols.indexOf('icon') !== -1, 'the provider table has an icon column', 'columns: ' + short(cols));
+  ok(cols.indexOf('label') !== -1, 'the provider table has a label column', 'columns: ' + short(cols));
+  ok(cols.indexOf('url') !== -1, 'the provider table has an url column', 'columns: ' + short(cols));
+  ok(cols.indexOf('apiKey') !== -1, 'the provider table has an apiKey column', 'columns: ' + short(cols));
+  ok(cols.indexOf('unusable') !== -1, 'the provider table has an unusable column', 'columns: ' + short(cols));
+  ok(cols.indexOf('model') !== -1, 'the provider table has a model column', 'columns: ' + short(cols));
   ok(cols.length === 10, 'and nothing else', 'columns: ' + short(cols));
 
   test.subHeading('server.js: the API key never leaves the agent process');

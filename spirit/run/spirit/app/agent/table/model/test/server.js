@@ -79,9 +79,15 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(t && t.verb && typeof t.verb.handler === 'function' && typeof t.has === 'function', 'server.js(ctx) answers the table, its verb and has', 'answered: ' + short(t && Object.keys(t)));
   const cols = db.prepare('PRAGMA table_info("model")').all().map(function (c) { return c.name; });
   // Andy, box v22: "with Label and Description, provider-key, and model-name and capabilities"; then, goal/G41.21: "i decided that model, does NOT need a name field, which i also NEVER FUCKING ASKED FOR, and the label hold the model name as provided by the provider, and is output only in the models UI."
-  ['id', 'privateKey', 'sealPublicKey', 'sealPrivateKey', 'icon', 'label', 'providerId', 'capabilities'].forEach(function (c) {
-    ok(cols.indexOf(c) !== -1, 'the model table has ' + c, 'columns: ' + short(cols));
-  });
+  // One check per column, each its own plain title (goal/G45.6: a title names no value built into it).
+  ok(cols.indexOf('id') !== -1, 'the model table has an id column', 'columns: ' + short(cols));
+  ok(cols.indexOf('privateKey') !== -1, 'the model table has a privateKey column', 'columns: ' + short(cols));
+  ok(cols.indexOf('sealPublicKey') !== -1, 'the model table has a sealPublicKey column', 'columns: ' + short(cols));
+  ok(cols.indexOf('sealPrivateKey') !== -1, 'the model table has a sealPrivateKey column', 'columns: ' + short(cols));
+  ok(cols.indexOf('icon') !== -1, 'the model table has an icon column', 'columns: ' + short(cols));
+  ok(cols.indexOf('label') !== -1, 'the model table has a label column', 'columns: ' + short(cols));
+  ok(cols.indexOf('providerId') !== -1, 'the model table has a providerId column', 'columns: ' + short(cols));
+  ok(cols.indexOf('capabilities') !== -1, 'the model table has a capabilities column', 'columns: ' + short(cols));
   ok(cols.length === 8 && cols.indexOf('modelName') === -1, 'and nothing else: no model name column, the label holds it', 'columns: ' + short(cols));
 
   test.subHeading('server.js: a model names a provider that is there');

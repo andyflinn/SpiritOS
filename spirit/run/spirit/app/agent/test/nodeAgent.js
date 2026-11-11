@@ -40,7 +40,7 @@ test.startTest('agent.js: the agent server');
   ok(!fs.existsSync(path.join(path.dirname(API), 'debug.json')), 'and debug.json is gone', 'debug.json is still there');
   ok(!fs.existsSync(path.join(DIR, 'api')), 'no ./api/ folder is left (goal/G43.27)', 'the agent app still keeps an api folder');
   const verbFiles = Object.keys((family && family.verbs) || {}).filter(function (v) { const j = readJson(path.join(DIR, v + '.json')); return j && typeof j.description === 'string' && j.description.length > 0; });
-  ok(!!family && verbFiles.length === Object.keys(family.verbs).length, 'each of its verbs has its <verb>.json with a description: ' + verbFiles.join(', '), 'verb files with a description: ' + verbFiles.join(', ') + ' of ' + short(Object.keys((family && family.verbs) || {})));
+  ok(!!family && verbFiles.length === Object.keys(family.verbs).length, 'each of its verbs has its <verb>.json with a description', 'verb files with a description: ' + verbFiles.join(', ') + ' of ' + short(Object.keys((family && family.verbs) || {})));
 
   const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-agent-'));
   const state = path.join(scratch, 'state');
@@ -111,14 +111,27 @@ test.startTest('agent.js: the agent server');
       job: KEYSET.concat([/^loop$/, /^job$/, /^bundle$/, /^provider$/, /^persona$/]),
     };
     ok(Object.keys(WANT).every(function (name) { return colsOf(tableOf(name)).every(function (c) { return c.name !== 'description'; }); }), 'no agent table has a description column', 'columns: ' + short(Object.keys(WANT).map(function (n) { return [n, colsOf(tableOf(n)).map(function (c) { return c.name; })]; })));
-    Object.keys(WANT).forEach(function (name) {
+    // One table at a time, each check its own plain title (goal/G45.6: a title has no value built into it).
+    function tableSays(name) {
       const t = tableOf(name);
       const cols = colsOf(t).map(function (c) { return c.name; });
       const missing = WANT[name].filter(function (re) { return !cols.some(function (c) { return re.test(c); }); });
-      ok(!!t && !missing.length, 'a ' + name + ' table, with ' + WANT[name].map(String).join(', '), name + ': table ' + (t || 'none') + ', columns ' + short(cols) + ', missing ' + missing.map(String).join(', '));
       const pk = colsOf(t).filter(function (c) { return c.pk > 0; }).map(function (c) { return c.name; });
-      ok(!!t && pk.length === 1 && /^id$/i.test(pk[0]), name + ' is keyed by its id alone', name + ': primary key ' + short(pk));
-    });
+      return { has: !!t && !missing.length, hasSays: name + ': table ' + (t || 'none') + ', columns ' + short(cols) + ', missing ' + missing.map(String).join(', '),
+        keyed: !!t && pk.length === 1 && /^id$/i.test(pk[0]), keyedSays: name + ': primary key ' + short(pk) };
+    }
+    const PROVIDER_T = tableSays('provider');
+    ok(PROVIDER_T.has, 'a provider table, with its keys, label, url, apiKey and model', PROVIDER_T.hasSays);
+    ok(PROVIDER_T.keyed, 'the provider table is keyed by its id alone', PROVIDER_T.keyedSays);
+    const MODEL_T = tableSays('model');
+    ok(MODEL_T.has, 'a model table, with its keys, label, providerId and capabilities', MODEL_T.hasSays);
+    ok(MODEL_T.keyed, 'the model table is keyed by its id alone', MODEL_T.keyedSays);
+    const PERSONA_T = tableSays('persona');
+    ok(PERSONA_T.has, 'a persona table, with its keys, label, persona, bundle and provider', PERSONA_T.hasSays);
+    ok(PERSONA_T.keyed, 'the persona table is keyed by its id alone', PERSONA_T.keyedSays);
+    const JOB_T = tableSays('job');
+    ok(JOB_T.has, 'a job table, with its keys, label, loop, job, bundle, provider and persona', JOB_T.hasSays);
+    ok(JOB_T.keyed, 'the job table is keyed by its id alone', JOB_T.keyedSays);
     // "its rows in agent.db are dropped": the grant table the scratch agent.db held before the start is gone.
     const grantT = tableOf('grant');
     ok(!grantT, 'agent.db has no grant table: a job\'s grant is its bundle (goal/G41.21)', 'agent.db still has the table ' + grantT);

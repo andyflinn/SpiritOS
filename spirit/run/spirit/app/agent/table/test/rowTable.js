@@ -52,9 +52,17 @@ test.startTest('rowTable.js: one keyed table of agent.db and its one verb');
   test.subHeading('the table: the key set, the common fields, the named fields');
   const cols = db.prepare('PRAGMA table_info("thing")').all();
   const names = cols.map(function (c) { return c.name; });
-  ['id', 'privateKey', 'sealPublicKey', 'sealPrivateKey', 'icon', 'label', 'url', 'apiKey', 'on', 'tags'].forEach(function (c) {
-    ok(names.indexOf(c) !== -1, 'it has the column ' + c, 'columns: ' + short(names));
-  });
+  // One check per column, each its own plain title (goal/G45.6: a title names no value built into it).
+  ok(names.indexOf('id') !== -1, 'the table has an id column', 'columns: ' + short(names));
+  ok(names.indexOf('privateKey') !== -1, 'the table has a privateKey column', 'columns: ' + short(names));
+  ok(names.indexOf('sealPublicKey') !== -1, 'the table has a sealPublicKey column', 'columns: ' + short(names));
+  ok(names.indexOf('sealPrivateKey') !== -1, 'the table has a sealPrivateKey column', 'columns: ' + short(names));
+  ok(names.indexOf('icon') !== -1, 'the table has an icon column', 'columns: ' + short(names));
+  ok(names.indexOf('label') !== -1, 'the table has a label column', 'columns: ' + short(names));
+  ok(names.indexOf('url') !== -1, 'the table has an url column', 'columns: ' + short(names));
+  ok(names.indexOf('apiKey') !== -1, 'the table has an apiKey column', 'columns: ' + short(names));
+  ok(names.indexOf('on') !== -1, 'the table has an on column', 'columns: ' + short(names));
+  ok(names.indexOf('tags') !== -1, 'the table has a tags column', 'columns: ' + short(names));
   const pk = cols.filter(function (c) { return c.pk; }).map(function (c) { return c.name; });
   ok(pk.length === 1 && pk[0] === 'id', 'id is its one primary key', 'primary key: ' + short(pk));
   ok((cols.filter(function (c) { return c.name === 'on'; })[0] || {}).type === 'INTEGER', 'a bool field is kept as an INTEGER', 'on: ' + short(cols.filter(function (c) { return c.name === 'on'; })));

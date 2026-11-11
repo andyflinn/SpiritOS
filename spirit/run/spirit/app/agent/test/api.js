@@ -26,9 +26,9 @@ test.startTest('api.js: the agent\'s family at the app\'s top, a <verb>.json for
 test.subHeading('the world');
 const was = execSync('git show ' + BASE + ':spirit/run/spirit/app/agent/api/api.js', { cwd: REPO, encoding: 'utf8' });
 const VERBS = ['provider', 'model', 'persona', 'job'];
-ok(VERBS.every(function (v) { return new RegExp('\\n\\s+' + v + ':').test(was); }), 'the world: at ' + BASE + ' the agent\'s api.js one folder down declares provider, model, persona and job', 'the agent\'s api.js at ' + BASE + ' is not as read: nothing to compare with');
+ok(VERBS.every(function (v) { return new RegExp('\\n\\s+' + v + ':').test(was); }), 'the world: before the move, the agent\'s api.js one folder down declares provider, model, persona and job', 'the agent\'s api.js at ' + BASE + ' is not as read: nothing to compare with');
 const tracked = execSync('git ls-files', { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(Boolean).filter(function (f) { return fs.existsSync(path.join(REPO, f)); });
-ok(tracked.length > 100, 'the world: ' + tracked.length + ' tracked files on disk are read', 'only ' + tracked.length + ' tracked files read: nothing judged');
+ok(tracked.length > 100, 'the world: the tracked files on disk are read', 'only ' + tracked.length + ' tracked files read: nothing judged');
 
 test.subHeading('1. the agent\'s family at the app\'s top');
 const top = path.join(RUN, 'spirit', 'app', 'agent', 'api.js');
@@ -44,11 +44,14 @@ ok(!sub.length, 'no app keeps an ./api/ folder', sub.length + ' files still sit 
 
 test.subHeading('3. one <verb>.json for each of the agent\'s verbs, as spirit/job/ has');
 ok(fs.existsSync(path.join(RUN, 'spirit', 'job', 'get.json')), 'the world: spirit/job/get.json is the shape', 'no spirit/job/get.json to compare with');
-VERBS.forEach(function (v) {
-  let d = null;
-  try { d = JSON.parse(read('spirit/app/agent/' + v + '.json')); } catch (e) { d = null; }
-  ok(!!d && typeof d.description === 'string' && d.description.trim().length > 0, 'spirit/app/agent/' + v + '.json describes ' + v, 'spirit/app/agent/' + v + '.json: ' + (d ? 'no description' : 'not there, or no json'));
-});
+// One check per verb, each its own plain title (goal/G45.6).
+function verbJson(v) { let d = null; try { d = JSON.parse(read('spirit/app/agent/' + v + '.json')); } catch (e) { d = null; } return d; }
+function describes(d) { return !!d && typeof d.description === 'string' && d.description.trim().length > 0; }
+function whyNot(v) { const d = verbJson(v); return 'spirit/app/agent/' + v + '.json: ' + (d ? 'no description' : 'not there, or no json'); }
+ok(describes(verbJson('provider')), 'provider.json describes the provider verb', whyNot('provider'));
+ok(describes(verbJson('model')), 'model.json describes the model verb', whyNot('model'));
+ok(describes(verbJson('persona')), 'persona.json describes the persona verb', whyNot('persona'));
+ok(describes(verbJson('job')), 'job.json describes the job verb', whyNot('job'));
 
 test.subHeading('4. no file names spirit/app/agent/api/');
 const naming = tracked.filter(function (f) { return !SELF.test(f) && /\.(js|md|json|html|txt)$/.test(f); })

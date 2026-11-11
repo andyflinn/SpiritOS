@@ -51,9 +51,16 @@ test.startTest('persona/: the persona table');
   // persona?"
   // goal/G41.26, Andy, box: "agent.persona gains a provider field, it's detail provides the same provider-FUCKING-Selector
   // in drop down mode, that the job detail panel provides for the agent.job.provider".
-  ['id','privateKey','sealPublicKey','sealPrivateKey','icon','label','persona','bundle','provider'].forEach(function (c) {
-    ok(cols.indexOf(c) !== -1, 'the persona table has ' + c, 'columns: ' + short(cols));
-  });
+  // One check per column, each its own plain title (goal/G45.6: a title names no value built into it).
+  ok(cols.indexOf('id') !== -1, 'the persona table has an id column', 'columns: ' + short(cols));
+  ok(cols.indexOf('privateKey') !== -1, 'the persona table has a privateKey column', 'columns: ' + short(cols));
+  ok(cols.indexOf('sealPublicKey') !== -1, 'the persona table has a sealPublicKey column', 'columns: ' + short(cols));
+  ok(cols.indexOf('sealPrivateKey') !== -1, 'the persona table has a sealPrivateKey column', 'columns: ' + short(cols));
+  ok(cols.indexOf('icon') !== -1, 'the persona table has an icon column', 'columns: ' + short(cols));
+  ok(cols.indexOf('label') !== -1, 'the persona table has a label column', 'columns: ' + short(cols));
+  ok(cols.indexOf('persona') !== -1, 'the persona table has a persona column', 'columns: ' + short(cols));
+  ok(cols.indexOf('bundle') !== -1, 'the persona table has a bundle column', 'columns: ' + short(cols));
+  ok(cols.indexOf('provider') !== -1, 'the persona table has a provider column', 'columns: ' + short(cols));
   ok(cols.length === 9, 'and nothing else', 'columns: ' + short(cols));
   {
     const pid = call(t.verb, { op: 'add', icon: '🎭', label: 'With a bundle', persona: 'p' }).id;
