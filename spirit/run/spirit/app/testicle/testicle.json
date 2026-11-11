@@ -5,7 +5,8 @@
     "intrinsic": true
   },
   "mount": {
-    "element.js": true
+    "element.js": true,
+    "testicle.js": true
   },
   "shell": {
     "true": false,
@@ -13,6 +14,6 @@
     "tile": true
   },
   "node": {
-    "mount": false
+    "mount": true
   }
 }

@@ -1,0 +1,4 @@
+{
+  "description": "Whether testicle's server is doing any work: true while changes in run:// wait to be written into testicle.db or are being written, false when it is idle. It takes nothing.",
+  "request": {}
+}
