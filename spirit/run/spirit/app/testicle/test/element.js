@@ -34,6 +34,9 @@ const PLANT = {
   'spirit/zzTesticle/notes.md': '# no script\n',
   'spirit/zzTesticle/data.json': '{}\n',
   'spirit/zzTesticle/test/shown.js': '// a test, in a test/ folder\n',
+  // goal/G47.1, the UI cycle: eta has no test of its own until this test writes one; gone is removed as it is clicked.
+  'spirit/zzTesticle/eta.js': '\'use strict\';\n// eta, no test of its own yet\n',
+  'spirit/zzTesticle/gone.js': '\'use strict\';\n// gone, removed as it is clicked\n',
 };
 const SHOWN = ['spirit/zzTesticle/shown.js', 'spirit/zzTesticle/inner/alsoShown.js'];
 const HIDDEN = ['spirit/zzTesticle/notes.md', 'spirit/zzTesticle/data.json', 'spirit/zzTesticle/test/shown.js'];
@@ -63,6 +66,17 @@ async function boot(run) {
 }
 function stop(c) { return new Promise(function (r) { if (!c || c.exitCode !== null) return r(); c.once('exit', function () { r(); }); c.kill(); setTimeout(r, 6000); }); }
 
+// THE SUITES THAT CONCERN A FILE (goal/G47.1, the server cycle): its own test/<name>.js, and the general tests whose run
+// with no file argument includes it, as the scratch tree's own testModule.js lists them, run as its own process.
+function concerning(run, name) {
+  const lines = require('child_process').execFileSync(process.execPath, [path.join(run, 'spirit', 'test', 'testModule.js')], { cwd: run, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(Boolean);
+  const own = path.posix.join(path.posix.dirname(name), 'test', path.posix.basename(name));
+  const out = [];
+  if (fs.existsSync(path.join(run, own))) out.push(own);
+  lines.forEach(function (l) { const p = l.split(' '); if (p[1] === name && out.indexOf(p[0]) === -1) out.push(p[0]); });
+  return out.sort();
+}
+
 // THE PAGE'S HANDS: everything judged is what shows in #zzBox; a hidden layer never counts.
 const HANDS = '(function () {' +
   'function box() { return document.getElementById("zzBox"); }' +
@@ -80,6 +94,13 @@ const HANDS = '(function () {' +
   // What the leftmost pane holds, for a failure line: whether it is there and shown, and its first markup.
   '  leftSays: function () { var l = window.__t.left(); return l ? { shown: seen(l), html: String(l.innerHTML).slice(0, 300) } : { none: true }; },' +
   '  type: function (w) { var l = window.__t.left(); var i = l ? all("input[id$=text]", l)[0] : null; if (!i) return false; i.value = w; i.dispatchEvent(new Event("input", { bubbles: true })); return true; },' +
+  // goal/G47.1, the UI cycle: the centre's tabs (spirit/element/tabContainer.js: button.tab-button[data-tab], aria-selected,
+  // a close [data-tab-close]), the shown tab's content, and the rows a list draws there.
+  '  center: function () { var b = box(); return b ? b.querySelector("[id$=\\"center\\"]") : null; },' +
+  '  tabs: function () { var c = window.__t.center(); return c ? all("button[data-tab]", c).map(function (t) { return { name: t.getAttribute("data-tab"), label: String((t.firstChild && t.firstChild.textContent) || t.textContent || "").replace("✕", "").trim(), selected: t.getAttribute("aria-selected") === "true", closable: !!t.querySelector("[data-tab-close]") }; }) : []; },' +
+  '  shown: function () { var c = window.__t.center(); var t = c ? all(".tab-content", c)[0] : null; if (!t) return null; var kids = Array.prototype.slice.call(t.querySelectorAll("*")).filter(seen); return { text: String(t.innerText || "").trim(), first: String(t.innerText || "").trim().split("\\n")[0].trim(), rows: all("tr[data-key]", t).map(function (r) { return { key: r.getAttribute("data-key"), text: String(r.innerText || "") }; }) }; },' +
+  '  click: function (k) { var l = window.__t.left(); var r = l ? all("tr[data-key]", l).filter(function (t) { return t.getAttribute("data-key") === k; })[0] : null; if (!r) return false; r.click(); return true; },' +
+  '  closeTab: function (n) { var c = window.__t.center(); var x = c ? all("[data-tab-close]", c).filter(function (e) { return e.getAttribute("data-tab-close") === n; })[0] : null; if (!x) return false; x.click(); return true; },' +
   '  centerText: function () { var b = box(); var c = b ? b.querySelector("[id$=\\"center\\"]") : null; return c ? String(c.innerText || "").trim() : null; },' +
   '}; return "hands"; }())';
 
@@ -110,7 +131,8 @@ test.startTest('testicle/element.js: testicle\'s first-cut face, a workBench wit
   ok(/['"]spirit\/element\/workBench\.js['"]/.test(src), 'it draws with the workBench element, spirit/element/workBench.js', 'it does not require spirit/element/workBench.js');
   ok(/['"]spirit\/element\/search\/file\.js['"]/.test(src), 'its file viewer is the existing file list, spirit/element/search/file.js', 'it does not require spirit/element/search/file.js');
   ok(src !== '' && !/\.element\.search\.create\(|createElement\(['"](tr|li|table)['"]\)/.test(src), 'it makes no list of its own', 'it makes a list of its own');
-  ok(src !== '' && !/\bready\b\s*\)?\s*\.then|\.peerPost\(|\bfetch\(|XMLHttpRequest/.test(src), 'it asks the node nothing: no verb through spirit.ready, no peerPost, no fetch', 'it asks the node something itself');
+  // goal/G47.1, the UI cycle: the face asks testicle.file.get on a click, through spirit; never by itself.
+  ok(src !== '' && !/\.peerPost\(|\bfetch\(|XMLHttpRequest/.test(src), 'it asks the node only through spirit: no peerPost, no fetch', 'it asks the node something itself');
   // goal/G47.1, the box: "testicle turns flat on."
   ok(/\bflat\s*:\s*true\b/.test(src), 'it draws the file list with flat on', 'it does not hand the file list flat: true');
 
@@ -174,6 +196,71 @@ test.startTest('testicle/element.js: testicle\'s first-cut face, a workBench wit
     ok(!HIDDEN.some(function (f) { return rows.indexOf(f) !== -1; }), 'no other file shows: not a .md, not a .json, not a test in a test/ folder', 'shown, though no production script: ' + short(HIDDEN.filter(function (f) { return rows.indexOf(f) !== -1; })));
     ok(rows.indexOf('spirit/zzTesticle') === -1 && rows.indexOf('spirit/zzTesticle/inner') === -1 && rows.indexOf('spirit/zzTesticle/test') === -1, 'with words typed no folder row shows', 'folder rows: ' + short(rows.filter(function (k) { return !/\.[a-z0-9]+$/i.test(k); })));
     ok(files.length > 0 && files.every(function (k) { return /\.js$/.test(k) && k.split('/').indexOf('test') === -1; }), 'every file it lists is a .js outside any test/ folder', 'it lists ' + short(files.filter(function (k) { return !/\.js$/.test(k) || k.split('/').indexOf('test') !== -1; })));
+    // goal/G47.1, the UI cycle. The box: "When a user clicks on a production file in the left pane of the production file
+    // list", "A new tab is opened and activated in the center pane's tabContainer: the file detail", "The tab header shows
+    // the production file name without path", "The detail shows as title row the full file name, and below it a standard
+    // testicle.suite.search", "All tabs are closable", "The tab opens first, with its title line; then file.get runs, and
+    // below the title line it shows either the error file.get gives (\"not a production script\", \"no such file\") or
+    // the suite search for that file", "The UI must listen to changes on all tables it interacts with, and the server, of
+    // course, publishes changes", "the suite search is spirit/element/search/suite.js and its folder".
+    test.subHeading('the box: "A new tab is opened and activated in the center pane\'s tabContainer: the file detail"');
+    const F1 = SHOWN[0];
+    const want1 = concerning(s.run, F1);
+    ok(want1.indexOf('spirit/zzTesticle/test/shown.js') !== -1 && want1.length > 1, 'the world: shown.js is concerned by its own test and by general tests', 'testModule.js names ' + short(want1));
+    ok(await T('click(' + JSON.stringify(F1) + ')'), 'the world: a production file in the left pane is clicked', 'no row for ' + F1 + ' to click: ' + short(await T('rows()')));
+    ok(await waitFor('tabs().length === 1', 10000), 'a click on a production file opens one tab in the centre', 'tabs: ' + short(await T('tabs()')));
+    const t1 = (await T('tabs()'))[0] || {};
+    ok(t1.selected === true, 'the new tab is the active one', 'tabs: ' + short(await T('tabs()')));
+    ok(t1.label === 'shown.js', 'its header shows the file name without its path', 'header: ' + short(t1.label));
+    ok(t1.closable === true, 'its tab is closable', 'tabs: ' + short(await T('tabs()')));
+    test.subHeading('the box: "as title row the full file name, and below it a standard testicle.suite.search"');
+    ok(await waitFor('shown() && shown().first === ' + JSON.stringify(F1), 10000), 'the detail\'s title row is the full file name', 'the detail reads ' + short(await T('shown()')));
+    ok(await waitFor('shown() && shown().rows.length >= ' + want1.length, 15000), 'the world: below the title the suite search draws rows', 'the detail: ' + short(await T('shown()')));
+    const d1 = (await T('shown()')) || { rows: [] };
+    const named = function (rows, suite) { return rows.some(function (r) { return r.key === suite || r.key === F1 + '|' + suite || String(r.text).indexOf(suite) !== -1; }); };
+    const lacking = want1.filter(function (w) { return !named(d1.rows, w); });
+    ok(!lacking.length, 'below the title it lists every suite that concerns the file', 'missing: ' + short(lacking) + '; rows ' + short(d1.rows.map(function (r) { return r.key; })));
+    ok(d1.rows.length === want1.length, 'and no other: each suite once', d1.rows.length + ' rows for ' + want1.length + ' suites: ' + short(d1.rows.map(function (r) { return r.key; })));
+    // shown.js was never changed: its rows exist only if the click's file.get made them. Asked by suite.search, which makes none.
+    const rowsMade = await call(N.base, 'testicle.suite.search', { file: F1, text: '' });
+    ok(rowsMade.status === 200 && rowsMade.body && Array.isArray(rowsMade.body.items) && rowsMade.body.items.length === want1.length, 'the click made the file\'s rows: file.get ran for it', 'suite.search after the click: ' + short(rowsMade.text));
+    const srcNow = code(FACE);
+    ok(/['"]spirit\/element\/search\/suite\.js['"]/.test(srcNow) && fs.existsSync(path.join(RUN, 'spirit', 'element', 'search', 'suite.js')), 'the suite search is spirit/element/search/suite.js, which the face loads', 'the face does not load spirit/element/search/suite.js, or it is not there');
+
+    test.subHeading('the box: a second click');
+    ok(await T('click(' + JSON.stringify(F1) + ')') && await waitFor('tabs().length === 1 && tabs()[0].selected', 3000), 'a second click on the same file opens no second tab: its tab is made active', 'tabs: ' + short(await T('tabs()')));
+    const F2 = SHOWN[1];
+    ok(await T('click(' + JSON.stringify(F2) + ')') && await waitFor('tabs().length === 2', 10000), 'a click on another file opens a second tab', 'tabs: ' + short(await T('tabs()')));
+    const two = await T('tabs()');
+    ok(two.length === 2 && two.filter(function (t) { return t.selected; }).length === 1 && (two.filter(function (t) { return t.selected; })[0] || {}).label === 'alsoShown.js', 'the newest tab is the active one, and only it', 'tabs: ' + short(two));
+    ok(two.length === 2 && two.every(function (t) { return t.closable; }), 'all tabs are closable', 'tabs: ' + short(two));
+    ok(await waitFor('shown() && shown().first === ' + JSON.stringify(F2), 10000), 'the active tab shows its own file\'s detail', 'the detail reads ' + short(await T('shown()')));
+
+    test.subHeading('the box: "The UI must listen to changes on all tables it interacts with"');
+    const F3 = 'spirit/zzTesticle/eta.js';
+    ok(await T('click(' + JSON.stringify(F3) + ')') && await waitFor('shown() && shown().first === ' + JSON.stringify(F3) + ' && shown().rows.length > 0', 15000), 'the world: eta.js\'s detail lists its suites', 'the detail: ' + short(await T('shown()')));
+    const etaOwn = 'spirit/zzTesticle/test/eta.js';
+    const etaBefore = await T('shown()');
+    ok(!!etaBefore && etaBefore.first === F3 && !named(etaBefore.rows, etaOwn), 'the world: before its own test is written, eta.js lists none', 'the detail: ' + short(etaBefore));
+    fs.mkdirSync(path.join(s.run, 'spirit', 'zzTesticle', 'test'), { recursive: true });
+    fs.writeFileSync(path.join(s.run, etaOwn), '\'use strict\';\n// the new test of eta\n');
+    ok(await until(function () { return T('shown()').then(function (d) { return !!d && d.rows.some(function (r) { return r.key === etaOwn || String(r.text).indexOf(etaOwn) !== -1; }); }); }, 10000), 'a suite written for the file shows in its open detail, with no click: the detail listens, the server publishes', 'the detail after the new suite: ' + short(await T('shown()')));
+
+    test.subHeading('the box: "The tab opens first ... or the error file.get gives"');
+    const F4 = 'spirit/zzTesticle/gone.js';
+    ok((await T('rows()')).indexOf(F4) !== -1, 'the world: gone.js is listed in the left pane', 'gone.js is not listed: ' + short(await T('rows()')));
+    fs.rmSync(path.join(s.run, F4));
+    const clicked = await T('click(' + JSON.stringify(F4) + ')');
+    ok(clicked, 'the world: gone.js, removed, is still there to click', 'its row went before the click: nothing judged');
+    ok(await waitFor('tabs().some(function (t) { return t.label === "gone.js" && t.selected; })', 5000), 'its tab opens and is the active one, though file.get will refuse', 'tabs: ' + short(await T('tabs()')));
+    ok(await waitFor('shown() && shown().first === ' + JSON.stringify(F4) + ' && /no such file/.test(shown().text)', 10000), 'below the title line it shows the error file.get gives: no such file', 'the detail reads ' + short(await T('shown()')));
+    const goneShown = await T('shown()');
+    ok(!!goneShown && goneShown.first === F4 && goneShown.rows.length === 0, 'and no suite search', 'the detail: ' + short(goneShown));
+
+    test.subHeading('the box: "All tabs are closable"');
+    const before = (await T('tabs()')).length;
+    ok(await T('closeTab(' + JSON.stringify(F4) + ')') && await waitFor('tabs().length === ' + (before - 1) + ' && !tabs().some(function (t) { return t.label === "gone.js"; })', 3000), 'a tab\'s close button takes it away', 'tabs after closing gone.js: ' + short(await T('tabs()')));
+
     test.subHeading('destroy');
     const after = await c.evaluate('(function () { window.__made.destroy(); var b = document.getElementById("zzBox"); return b ? b.innerHTML : "gone"; }())');
     ok(after === '' || after === 'gone', 'destroy leaves its container empty', 'after destroy: ' + short(after).slice(0, 200));

@@ -24,7 +24,8 @@ existing file list with a filter for production *.js files: no new list."*
 **No verbs, no list of its own.**
 - `element.js` draws with the workBench element (`spirit/element/workBench.js`) and the existing file list
   (`spirit/element/search/file.js`), and makes no list of its own.
-- It asks the node nothing itself: no verb through `spirit.ready`, no `peerPost`, no `fetch`.
+- It asks the node only through spirit, never by itself: no `peerPost`, no `fetch` (goal/G47.1: a click asks
+  `testicle.file.get`).
 
 **On the page.**
 - It loads through `spirit.require` and stands at `spirit.element.spirit.app.testicle.element`; `create(container)`
@@ -38,6 +39,21 @@ existing file list with a filter for production *.js files: no new list."*
   shows, with the field empty or words typed; with the field empty files deep in the tree show, no folder opened, each
   row with its path.
 
+**The file detail** (goal/G47.1, the UI cycle). The box: *"When a user clicks on a production file in the left pane of
+the production file list"*, *"A new tab is opened and activated in the center pane's tabContainer: the file detail"*, *"The
+tab header shows the production file name without path"*, *"The detail shows as title row the full file name, and below
+it a standard testicle.suite.search"*, *"All tabs are closable"*, *"The tab opens first, with its title line; then
+file.get runs, and below the title line it shows either the error file.get gives ... or the suite search for that file"*,
+*"The UI must listen to changes on all tables it interacts with, and the server, of course, publishes changes"*, *"the
+suite search is spirit/element/search/suite.js and its folder"*.
+- A click opens one tab, active, closable, its header the file name without path; the detail's title row the full name,
+  below it every suite that concerns the file, each once. The click's `file.get` made the file's rows.
+- A second click on the same file opens no second tab; a click on another file opens a second, which alone is active and
+  shows its own detail.
+- A suite written for the file shows in its open detail with no click.
+- A file removed as it is clicked: its tab opens, active, and below the title line the error *"no such file"*, no search.
+- A tab's close button takes it away.
+
 ## What its test must try to break
 
 - A manifest with no server; a file in its folder beyond those named.
@@ -46,6 +62,9 @@ existing file list with a filter for production *.js files: no new list."*
 - A file shown that is no production script: another type, or a test.
 - Anything left in its container after destroy.
 - A folder row; the tree's look, a deep file hidden or its path hidden, while the field is empty.
+- A click that opens no tab, two tabs for one file, a header with the path, a detail missing a suite or listing one twice, a
+  detail that does not follow a new suite, an error that waits for the tab or shows a search beside it, a tab that
+  cannot be closed.
 
 Vendored libraries' scripts are no production scripts either; the fs family's mirror never holds them
 (`spirit/fileSystem.js`, `VENDORED_FOLDERS`), so the list cannot show them and the test does not ask.
