@@ -229,10 +229,14 @@ function reportToTesticle(rec) {
   } catch (e) { /* the lines are printed whatever the node says */ }
 }
 
+// THE REPORTER'S OWN TIMERS, kept as this file loads: a suite may replace the global setTimeout to speed its own waits
+// (spirit/app/desk/test/deskLoop.js does), and a test's time limit must not shrink with it.
+const ownTimeout = setTimeout;
+const ownImmediate = setImmediate;
 const queue = [];
 const afters = [];
 let started = false;
-function start() { if (!started) { started = true; setImmediate(runAll); } }
+function start() { if (!started) { started = true; ownImmediate(runAll); } }
 test.run = function (title, severity, body, limitMs) { queue.push({ title: title, severity: severity, body: body, limit: limitMs }); start(); };
 test.after = function (fn) { afters.push(fn); start(); };
 
@@ -246,7 +250,7 @@ function one(t) {
   return new Promise(function (resolve) {
     t.resolve = resolve;
     current = t;
-    const timer = setTimeout(function () { settle(t, { pass: false, crash: true, detail: 'it hung: no answer in ' + t.limit + ' ms' }); }, Number(t.limit) > 0 ? Number(t.limit) : 60000);
+    const timer = ownTimeout(function () { settle(t, { pass: false, crash: true, detail: 'it hung: no answer in ' + t.limit + ' ms' }); }, Number(t.limit) > 0 ? Number(t.limit) : 60000);
     let answered;
     try { answered = Promise.resolve(t.body()); } catch (e) { answered = Promise.reject(e); }
     answered.then(function (v) {
@@ -278,7 +282,7 @@ async function runAll() {
   }
   for (const fn of afters) { try { await fn(); } catch (e) { test.comment('test.after threw: ' + (e && e.message || e)); } }
   test.reportSuccessFailureCount();
-  await Promise.race([Promise.all(reportsLanded), new Promise(function (r) { setTimeout(r, RECORD_WAIT_MS); })]);
+  await Promise.race([Promise.all(reportsLanded), new Promise(function (r) { ownTimeout(r, RECORD_WAIT_MS); })]);
   process.exit(test.failureCount > 0 ? 1 : 0);
 }
 // A test.run result to deskVerify, under its title, while Desk's Verify still reads them (see the head of this file).

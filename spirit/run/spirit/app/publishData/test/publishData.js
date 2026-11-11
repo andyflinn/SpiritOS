@@ -16,7 +16,6 @@ const { spawnSync } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 
-function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 function code(f) { try { return fs.readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1'); } catch (e) { return ''; } }
 const HERE = path.join(RUN, 'spirit', 'app', 'publishData');
@@ -24,256 +23,348 @@ const FILE = path.join(HERE, 'publishData.js');
 const OLD = path.join(RUN, 'spirit', 'app', 'deskClient');
 function freePort() { return new Promise(function (resolve) { const s = net.createServer(); s.listen(0, '127.0.0.1', function () { const p = s.address().port; s.close(function () { resolve(p); }); }); }); }
 
-test.startTest('publishData.js: an app of its own, run by Andy with Run (goal/G43.21)');
 
-(async function () {
-  if (!fs.existsSync(FILE)) { test.fail('spirit/app/publishData/publishData.js is not there'); return; }
+// What the tests below make, each in order, read by the tests after it.
+const W = {};
 
-  test.subHeading('the node port comes from the node that starts it');
-  // A node that starts a job hands it SPIRIT_CALLBACK_URL, its own address (job.js); Run hands no argument. It is run from
-  // a folder that is no git clone, so past its arguments it stops at once, before it asks any node anything.
+// the node port comes from the node that starts it
+// A node that starts a job hands it SPIRIT_CALLBACK_URL, its own address (job.js); Run hands no argument. It is run from
+// a folder that is no git clone, so past its arguments it stops at once, before it asks any node anything.
+test.run('run with no argument it does not stop at its usage', 0.2, async function () {
+  if (!fs.existsSync(FILE)) return 'spirit/app/publishData/publishData.js is not there';
   const port = await freePort();
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-publishdata-'));
   try {
     const env = Object.assign({}, process.env, { SPIRIT_CALLBACK_URL: 'http://localhost:' + port + '/api/spirit' });
     const r = spawnSync(process.execPath, [FILE], { cwd: tmp, env: env, encoding: 'utf8', timeout: 30000 });
-    const said = String(r.stdout || '') + String(r.stderr || '');
-    ok(r.status !== 2 && !/usage:/.test(said), 'run with no argument it does not stop at its usage', 'it stopped at usage (exit ' + r.status + '): ' + short(said));
-    ok(/not in a git clone/.test(said), 'it goes on past its arguments, to its first step', 'it said ' + short(said));
+    W.said = String(r.stdout || '') + String(r.stderr || '');
+    return (r.status !== 2 && !/usage:/.test(W.said)) ? true : 'it stopped at usage (exit ' + r.status + '): ' + short(W.said);
   } finally { try { fs.rmSync(tmp, { recursive: true, force: true }); } catch (e) { /* scratch */ } }
+}, 1000);
+test.run('it goes on past its arguments, to its first step', 0.2, function () {
+  if (typeof W.said !== 'string') return 'it was not run: the test before failed';
+  return (/not in a git clone/.test(W.said)) ? true : 'it said ' + short(W.said);
+}, 1000);
 
-  test.subHeading('its files and folders');
-  // Where it looks for deskVerify's verify.db: its own line, worked out from where the script stands.
-  const line = (/const\s+VERIFY_DB\s*=\s*([^;]+);/.exec(code(FILE)) || [])[1];
-  let at = '';
+let line, at, want, readme, client;
+
+// its files and folders
+// Where it looks for deskVerify's verify.db: its own line, worked out from where the script stands.
+test.run('it reads deskVerify\'s verify.db where deskVerify keeps it, its state spirit/state/deskVerify/data/', 0.2, function () {
+  line = (/const\s+VERIFY_DB\s*=\s*([^;]+);/.exec(code(FILE)) || [])[1];
+  at = '';
   try { at = line ? new Function('path', '__dirname', 'return ' + line)(path, HERE) : ''; } catch (e) { at = 'threw ' + e.message; }
-  const want = path.join(RUN, 'spirit', 'state', 'deskVerify', 'data', 'verify.db');
-  ok(path.resolve(String(at)) === want, 'it reads deskVerify\'s verify.db where deskVerify keeps it, its state spirit/state/deskVerify/data/', 'it reads ' + short(at) + ', want ' + want);
-  let readme = null;
+  want = path.join(RUN, 'spirit', 'state', 'deskVerify', 'data', 'verify.db');
+  return (path.resolve(String(at)) === want) ? true : 'it reads ' + short(at) + ', want ' + want;
+}, 1000);
+test.run('agentReadme.js stands beside it and loads', 0.2, function () {
+  readme = null;
   try { readme = require(path.join(HERE, 'agentReadme.js')); } catch (e) { readme = null; }
-  ok(!!readme && typeof readme.write === 'function', 'agentReadme.js stands beside it and loads', 'no agentReadme.js beside it in spirit/app/publishData/');
+  return (!!readme && typeof readme.write === 'function') ? true : 'no agentReadme.js beside it in spirit/app/publishData/';
+}, 1000);
 
-  test.subHeading('Andy runs it; no agent starts it');
-  ok(!fs.existsSync(path.join(OLD, 'publishData.js')), 'the old spirit/app/deskClient/publishData.js is gone', 'spirit/app/deskClient/publishData.js is still there');
-  ok(!fs.existsSync(path.join(OLD, 'agentReadme.js')), 'the old spirit/app/deskClient/agentReadme.js is gone', 'spirit/app/deskClient/agentReadme.js is still there');
-  const client = code(path.join(OLD, 'deskClient.js'));
-  ok(!!client && !/publishData/.test(client), 'deskClient starts no publishData', 'deskClient.js still names publishData');
-}()).then(function () { return null; }, function (e) { test.fail('the test threw ' + (e && e.stack || e)); return 0; })
-  .then(async function (failExit) {
-    // The folded parts, in order, after the checks above; one count and one report for the whole file.
-    for (const part of [noSummaryPart, runPart]) {
-      try { await part(); } catch (e) { test.fail('the ' + part.name.replace(/Part$/, '') + ' part threw ' + (e && e.stack || e)); }
-    }
-    test.reportSuccessFailureCount();
-    process.exit(failExit === null ? (0) : failExit);
-  });
+// Andy runs it; no agent starts it
+test.run('the old spirit/app/deskClient/publishData.js is gone', 0.2, function () {
+  return (!fs.existsSync(path.join(OLD, 'publishData.js'))) ? true : 'spirit/app/deskClient/publishData.js is still there';
+}, 1000);
+test.run('the old spirit/app/deskClient/agentReadme.js is gone', 0.2, function () {
+  return (!fs.existsSync(path.join(OLD, 'agentReadme.js'))) ? true : 'spirit/app/deskClient/agentReadme.js is still there';
+}, 1000);
+test.run('deskClient starts no publishData', 0.2, function () {
+  client = code(path.join(OLD, 'deskClient.js'));
+  return (!!client && !/publishData/.test(client)) ? true : 'deskClient.js still names publishData';
+}, 1000);
 
 // ── THE NOSUMMARY PART (once its own file; one test file per script: spirit/test/TEST_SYSTEM.md) ──
-async function noSummaryPart() {
-  // publishData POSTS NOTHING TO THE DESK (goal/G43.22; spec: ./publishData.md, section "noSummary"): spirit/app/publishData/publishData.js.
-  // Andy, the box: "the apps and plugin system goes.", "there will only be goals, items and rules left, plus the verifier stuff
-  // can stay for now.". "publishData summary is no longer needed, i only check on github.". The tree read as it is, comments left out.
+// publishData POSTS NOTHING TO THE DESK (goal/G43.22; spec: ./publishData.md, section "noSummary"): spirit/app/publishData/publishData.js.
+// Andy, the box: "the apps and plugin system goes.", "there will only be goals, items and rules left, plus the verifier stuff
+// can stay for now.". "publishData summary is no longer needed, i only check on github.". The tree read as it is, comments left out.
+function codeNoHtml(f) { try { return fs.readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1').replace(/<!--[\s\S]*?-->/g, ''); } catch (e) { return ''; } }
 
-  const fs = require('fs');
-  const path = require('path');
-  const RUN = path.resolve(__dirname, '..', '..', '..', '..');
-  const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-
-  function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
-  function code(f) { try { return fs.readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1').replace(/<!--[\s\S]*?-->/g, ''); } catch (e) { return ''; } }
-  const DESK = path.join(RUN, 'spirit', 'app', 'desk');
-
-  test.subHeading('noSummary: publishData posts nothing to the desk (goal/G43.22)');
-
-  test.subHeading('Andy: "publishData summary is no longer needed, i only check on github."');
-  const pub = code(path.join(RUN, 'spirit', 'app', 'publishData', 'publishData.js'));
-  ok(!!pub && !/chat\.add/.test(pub), 'publishData posts nothing to the desk', 'publishData.js still posts a chat.add');
-}
+// noSummary: publishData posts nothing to the desk (goal/G43.22)
+// Andy: "publishData summary is no longer needed, i only check on github."
+test.run('publishData posts nothing to the desk', 0.2, function () {
+  const pub = codeNoHtml(path.join(RUN, 'spirit', 'app', 'publishData', 'publishData.js'));
+  return (!!pub && !/chat\.add/.test(pub)) ? true : 'publishData.js still posts a chat.add';
+}, 1000);
 
 // ── THE RUN PART (once its own file; one test file per script: spirit/test/TEST_SYSTEM.md) ──
-async function runPart() {
-  // The tests of spirit/app/publishData/publishData.js run whole, as an agent runs it, and of no other module (spec:
-  // ./publishData.md, section "run"; the box's red is ./publishData.js; goal/G41.11). The
-  // script runs as an agent runs it, its own process, in a scratch clone of the test's own with a bare origin beside it
-  // and a traffic log (spirit/state/node.db) the test writes. A preload of the test's own stands in for the spirit object:
-  // its deskClient family answers profile.get with the agent's name and logs every ask. The harness step finds no
-  // measurePlatform in the scratch clone's worktree and so runs nothing. No node, no port, no real remote.
+// The tests of spirit/app/publishData/publishData.js run whole, as an agent runs it, and of no other module (spec:
+// ./publishData.md, section "run"; the box's red is ./publishData.js; goal/G41.11). The
+// script runs as an agent runs it, its own process, in a scratch clone of the test's own with a bare origin beside it
+// and a traffic log (spirit/state/node.db) the test writes. A preload of the test's own stands in for the spirit object:
+// its deskClient family answers profile.get with the agent's name and logs every ask. The harness step finds no
+// measurePlatform in the scratch clone's worktree and so runs nothing. No node, no port, no real remote.
+const { DatabaseSync } = require('node:sqlite');
+const TMP = path.join(RUN, 'test', '_tmp_publishData');
+const PRELOAD = path.join(TMP, 'spiritStub.js');
+const LOG = path.join(TMP, 'asks.jsonl');
+const ORIGIN = path.join(TMP, 'origin.git');
+const CLONE = path.join(TMP, 'clone');
+const BARE_CLONE = path.join(TMP, 'nolog');
+const AGENT = 'test-agent';
+// The spirit object, whose one family path function names the deskClient's family (goal/G41.12).
+const SPIRIT = path.join(RUN, 'spirit', 'spirit.js');
+function shortRun(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 400); }
+function git(cwd, args) { const r = spawnSync('git', args, { cwd: cwd, encoding: 'utf8', windowsHide: true }); return { status: r.status, out: String(r.stdout || '').trim() }; }
 
-  const fs = require('fs');
-  const os = require('os');
-  const path = require('path');
-  const { spawnSync } = require('child_process');
-  const { DatabaseSync } = require('node:sqlite');
-  const RUN = path.resolve(__dirname, '../../../..');
-  const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-  const FILE = path.join(__dirname, '..', 'publishData.js');
-  const TMP = path.join(RUN, 'test', '_tmp_publishData');
-  const PRELOAD = path.join(TMP, 'spiritStub.js');
-  const LOG = path.join(TMP, 'asks.jsonl');
-  const ORIGIN = path.join(TMP, 'origin.git');
-  const CLONE = path.join(TMP, 'clone');
-  const BARE_CLONE = path.join(TMP, 'nolog');
-  const AGENT = 'test-agent';
-  // The deskClient's family as the one family path function names it (goal/G41.12).
-  const SPIRIT = path.join(RUN, 'spirit', 'spirit.js');
-  const FAMILY = require(SPIRIT).familyPath('deskClient');
+const STUB = [
+  "'use strict';",
+  "const fs = require('fs');",
+  "const Module = require('module');",
+  "const log = function (x) { fs.appendFileSync(process.env.PD_LOG, JSON.stringify(x) + '\\n'); };",
+  "const family = { desk: function (a) {",
+  "  log({ verb: 'desk', args: a });",
+  "  if (a.name === 'profile.get') return Promise.resolve({ ok: true, name: process.env.PD_NAME, nick: '' });",
+  "  return Promise.resolve({ ok: true });",
+  "} };",
+  "const familyPath = require(" + JSON.stringify(SPIRIT) + ").familyPath;",
+  "globalThis.spirit = {",
+  "  familyPath: familyPath,",
+  // goal/G43.32, decided 3: on the node a script comes back at once, by its run-root path; a branch's api.js binds it.
+  "  require: function (p) { if (!/\\/api\\.js$/.test(p)) return require(require('path').join(" + JSON.stringify(RUN) + ", p)); log({ require: p }); return Promise.resolve(family); },",
+  "  outcome: function (c) { return Promise.resolve(c).then(function (body) { return { status: 200, body: body }; }, function () { return { status: 0, body: null }; }); },",
+  "};",
+  "const realLoad = Module._load;",
+  "Module._load = function (request, parent) {",
+  "  if (/(^|[\\\\/])spirit\\.js$/.test(request) && parent && /publishData\\.js$/.test(parent.filename)) return globalThis.spirit;",
+  "  return realLoad.apply(this, arguments);",
+  "};",
+].join('\n');
 
-  function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
-  function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 400); }
-  function git(cwd, args) { const r = spawnSync('git', args, { cwd: cwd, encoding: 'utf8', windowsHide: true }); return { status: r.status, out: String(r.stdout || '').trim() }; }
-
-  const STUB = [
-    "'use strict';",
-    "const fs = require('fs');",
-    "const Module = require('module');",
-    "const log = function (x) { fs.appendFileSync(process.env.PD_LOG, JSON.stringify(x) + '\\n'); };",
-    "const family = { desk: function (a) {",
-    "  log({ verb: 'desk', args: a });",
-    "  if (a.name === 'profile.get') return Promise.resolve({ ok: true, name: process.env.PD_NAME, nick: '' });",
-    "  return Promise.resolve({ ok: true });",
-    "} };",
-    "const familyPath = require(" + JSON.stringify(SPIRIT) + ").familyPath;",
-    "globalThis.spirit = {",
-    "  familyPath: familyPath,",
-    // goal/G43.32, decided 3: on the node a script comes back at once, by its run-root path; a branch's api.js binds it.
-    "  require: function (p) { if (!/\\/api\\.js$/.test(p)) return require(require('path').join(" + JSON.stringify(RUN) + ", p)); log({ require: p }); return Promise.resolve(family); },",
-    "  outcome: function (c) { return Promise.resolve(c).then(function (body) { return { status: 200, body: body }; }, function () { return { status: 0, body: null }; }); },",
-    "};",
-    "const realLoad = Module._load;",
-    "Module._load = function (request, parent) {",
-    "  if (/(^|[\\\\/])spirit\\.js$/.test(request) && parent && /publishData\\.js$/.test(parent.filename)) return globalThis.spirit;",
-    "  return realLoad.apply(this, arguments);",
-    "};",
-  ].join('\n');
-
-  function publish(cwd, args, name) {
-    try { fs.unlinkSync(LOG); } catch (e) { /* none */ }
-    // THE TEST'S OWN WORLD (goal/G43.21): run under a node, as the verifier runs it, this suite has the node's address and job in
-    // its env, which publishData would take for its own; the script is handed neither, only what each case gives it.
-    const ownWorld = function () { const e = Object.assign({}, process.env, { PD_LOG: LOG, PD_NAME: name === undefined ? AGENT : name }); delete e.SPIRIT_CALLBACK_URL; delete e.SPIRIT_JOB_ID; return e; };
-    const r = spawnSync(process.execPath, ['-r', PRELOAD, FILE].concat(args), { cwd: cwd, encoding: 'utf8', windowsHide: true, timeout: 150000,
-      env: ownWorld() });
-    let asks = [];
-    try { asks = fs.readFileSync(LOG, 'utf8').trim().split('\n').filter(Boolean).map(function (l) { return JSON.parse(l); }); } catch (e) { asks = []; }
-    return { status: r.status, out: String(r.stdout || '').trim(), err: String(r.stderr || '').trim(), asks: asks.filter(function (a) { return a.verb; }), required: asks.filter(function (a) { return a.require; }) };
-  }
-
-  // The node's traffic log, as the node writes it: the rows publishData counts, and the rows it must not.
-  function trafficLog(clone, rows) {
-    const dir = path.join(clone, 'spirit', 'run', 'spirit', 'state');
-    fs.mkdirSync(dir, { recursive: true });
-    const db = new DatabaseSync(path.join(dir, 'node.db'));
-    db.exec('CREATE TABLE traffic (at TEXT, dir TEXT, kind TEXT, outcome TEXT, code TEXT, ms INTEGER, extra TEXT)');
-    const add = db.prepare('INSERT INTO traffic (at, dir, kind, outcome, code, ms, extra) VALUES (?, ?, ?, ?, ?, ?, ?)');
-    rows.forEach(function (r) { add.run(r[0], r[1], r[2], r[3], r[4], r[5], r[6] === null ? null : JSON.stringify(r[6])); });
-    db.close();
-  }
-  const NEW = '2999-01-01T00:00:00.000Z';
-  const ROWS = [
-    [NEW, 'in', 'reply', 'receipted', '', 30, { waitMs: 10, attempts: 1 }],
-    [NEW, 'in', 'reply', 'receipted', '', 50, { waitMs: 20, attempts: 2 }],
-    [NEW, 'in', 'reply', 'refused', 'not-granted', 40, { waitMs: 5 }],
-    [NEW, 'out', 'request', 'no-answer', '', 0, null],
-    // Not counted: a request that was answered, an incoming request, a row from before the run.
-    [NEW, 'out', 'request', 'receipted', '', 9, { waitMs: 1 }],
-    [NEW, 'in', 'request', 'receipted', '', 9, { waitMs: 1 }],
-    ['2000-01-01T00:00:00.000Z', 'in', 'reply', 'receipted', '', 99, { waitMs: 99 }],
-  ];
-
-  function setup() {
-    fs.rmSync(TMP, { recursive: true, force: true });
-    fs.mkdirSync(TMP, { recursive: true });
-    fs.writeFileSync(PRELOAD, STUB);
-    git(TMP, ['init', '-q', '--bare', '-b', 'master', ORIGIN]);
-    [CLONE, BARE_CLONE].forEach(function (c) {
-      git(TMP, ['clone', '-q', ORIGIN, c]);
-      git(c, ['config', 'user.name', 'publishData test']); git(c, ['config', 'user.email', 'publishdata@test.invalid']); git(c, ['config', 'commit.gpgsign', 'false']);
-    });
-    fs.writeFileSync(path.join(CLONE, 'README.md'), 'scratch\n');
-    fs.writeFileSync(path.join(CLONE, '.gitignore'), 'spirit/run/spirit/state/\n');
-    git(CLONE, ['add', 'README.md', '.gitignore']);
-    git(CLONE, ['commit', '-q', '-m', 'the first']);
-    git(CLONE, ['push', '-q', '-u', 'origin', 'master']);
-    git(BARE_CLONE, ['pull', '-q', 'origin', 'master']);
-    trafficLog(CLONE, ROWS);
-  }
-
-  test.subHeading('run: one measurement run per agent');
-
-  (function () {
-    setup();
-    const COMMIT = git(__dirname, ['rev-parse', '--short', 'HEAD']).out;
-
-    test.subHeading('its usage, and what it needs');
-    const u = publish(CLONE, []);
-    ok(u.status === 2 && /^usage: node publishData.js \[<port of the agent's own node>\]/.test(u.err) && u.asks.length === 0, 'no port, given or handed by its node: exit 2, its usage, nothing asked', 'exit ' + u.status + ' err ' + short(u.err));
-    const nogit = publish(os.tmpdir(), ['45440', '--only', 'packets', '--out', path.join(TMP, 'x')]);
-    ok(nogit.status === 1 && nogit.err === 'publishData: not in a git clone' && nogit.asks.length === 0, 'run outside a git clone: exit 1, saying so, nothing asked', 'exit ' + nogit.status + ' err ' + short(nogit.err));
-    const noname = publish(CLONE, ['45440', '--only', 'packets', '--out', path.join(TMP, 'x')], '');
-    ok(noname.status === 1 && /^publishData: this agent has no name at the desk yet/.test(noname.err), 'an agent with no name at the desk: exit 1, saying so', 'exit ' + noname.status + ' err ' + short(noname.err));
-    const nolog = publish(BARE_CLONE, ['45440', '--only', 'packets', '--out', path.join(TMP, 'y'), '--asks', '1']);
-    ok(nolog.status === 1 && nolog.err.indexOf('publishData: no traffic log at ' + path.join(BARE_CLONE, 'spirit', 'run', 'spirit', 'state', 'node.db')) === 0, 'a clone with no traffic log: exit 1, naming where it looked', 'exit ' + nolog.status + ' err ' + short(nolog.err));
-
-    test.subHeading('--only packets --out: N read-only desk asks, timed by the node\'s own traffic log');
-    const OUT = path.join(TMP, 'look');
-    const headBefore = git(CLONE, ['rev-parse', 'HEAD']).out;
-    const r = publish(CLONE, ['45440', '--only', 'packets', '--out', OUT, '--asks', '3']);
-    ok(r.status === 0 && r.out.split('\n').pop() === 'publishData: written to ' + OUT, 'it exits 0: written to <out>', 'exit ' + r.status + ' out ' + short(r.out) + ' err ' + short(r.err));
-    ok(r.out.indexOf('publishData: agent ' + AGENT + ', commit ' + COMMIT + ', into ' + OUT) !== -1, 'its agent is the name in its profile, its commit the tree it runs from', 'out ' + short(r.out));
-    const pg = r.asks.filter(function (a) { return a.args.name === 'profile.get'; });
-    ok(pg.length === 4 && pg.every(function (a) { return a.args.json === '{"agent":""}'; }) && r.asks.length === 4, 'one profile.get for its name, then 3 more, read-only, and nothing else asked', 'asks ' + short(r.asks));
-    ok(r.required.every(function (a) { return a.require === FAMILY; }), 'every ask through its deskClient\'s family, on the spirit object', 'required ' + short(r.required));
-    let p = null;
-    try { p = JSON.parse(fs.readFileSync(path.join(OUT, 'packets.json'), 'utf8')); } catch (e) { p = null; }
-    ok(p && p.agent === AGENT && p.commit === COMMIT && p.asks === 3 && !isNaN(Date.parse(p.measuredAt)), 'packets.json names the agent, the commit, the asks and when', 'packets ' + short(p));
-    ok(p && p.posts === 4, 'posts: the closing rows since it began (replies in, and requests out refused or unanswered)', 'posts ' + short(p && p.posts));
-    ok(p && p.waitMs.median === 10 && p.waitMs.max === 20, 'queue wait: median and worst of the rows that carry waitMs', 'waitMs ' + short(p && p.waitMs));
-    ok(p && p.flight.median === 30 && p.flight.max === 35, 'flight: each row\'s ms less its wait', 'flight ' + short(p && p.flight));
-    ok(p && p.retried === 1, 'retried: the rows that took more than one attempt', 'retried ' + short(p && p.retried));
-    ok(p && JSON.stringify(p.refusals) === JSON.stringify({ 'not-granted': 1, 'no-answer': 1 }), 'refusals counted by code, else by outcome', 'refusals ' + short(p && p.refusals));
-    const pmd = fs.existsSync(path.join(OUT, 'packets.md')) ? fs.readFileSync(path.join(OUT, 'packets.md'), 'utf8') : '';
-    ok(pmd.indexOf('# Packets: ' + AGENT) === 0 && pmd.indexOf('| queue wait (ms) | 10 | 20 |') !== -1 && pmd.indexOf('| flight (ms) | 30 | 35 |') !== -1 && pmd.indexOf('4 posts, 1 needed more than one try, refusals: {"not-granted":1,"no-answer":1}.') !== -1, 'packets.md says the same', 'packets.md ' + short(pmd));
-    const plat = fs.existsSync(path.join(OUT, 'platform.md')) ? fs.readFileSync(path.join(OUT, 'platform.md'), 'utf8') : '';
-    ok(plat.indexOf('# ' + AGENT) === 0 && plat.indexOf('| agent | ' + AGENT + ' |') !== -1 && plat.indexOf('`' + COMMIT + '`') !== -1 && plat.indexOf('| node | ' + process.version + ' |') !== -1, 'platform.md names the agent, the commit and the box', 'platform.md ' + short(plat));
-    let ts = null;
-    try { ts = JSON.parse(fs.readFileSync(path.join(OUT, 'testState.json'), 'utf8')); } catch (e) { ts = null; }
-    ok(ts && ts.agent === AGENT && ts.commit === COMMIT && ts.tests === ts.green + ts.red && Array.isArray(ts.suites) && Array.isArray(ts.reds) && ts.reds.length === ts.red && /no suite was run/.test(ts.from),
-      'testState.json: the newest row of each test in verify.db, read only, no suite run', 'testState ' + short(ts) + ' said ' + short(r.out));
-    const tsmd = fs.existsSync(path.join(OUT, 'testState.md')) ? fs.readFileSync(path.join(OUT, 'testState.md'), 'utf8') : '';
-    ok(tsmd.indexOf('# Test state: ' + AGENT) === 0 && tsmd.indexOf('| suite | tests | green | red | newest |') !== -1 && tsmd.indexOf('## Red') !== -1, 'testState.md: the suites\' table and the reds', 'testState.md ' + short(tsmd));
-    const readme = fs.existsSync(path.join(OUT, 'README.md')) ? fs.readFileSync(path.join(OUT, 'README.md'), 'utf8') : '';
-    ok(readme.indexOf('# ' + AGENT + '\n') === 0 && readme.indexOf('## Measurements') !== -1, 'the README is written beside them (agentReadme)', 'README ' + short(readme));
-    ok(r.out.indexOf('measurePlatform') === -1 && r.out.indexOf('harness and capacity') === -1, '--only packets runs no harness', 'out ' + short(r.out));
-    ok(git(CLONE, ['rev-parse', 'HEAD']).out === headBefore && r.asks.every(function (a) { return a.args.name !== 'chat.add'; }), 'and with --out nothing is committed and nothing posted', 'HEAD ' + git(CLONE, ['rev-parse', 'HEAD']).out);
-    const origDb = new DatabaseSync(path.join(CLONE, 'spirit', 'run', 'spirit', 'state', 'node.db'), { readOnly: true });
-    const rowsNow = origDb.prepare('SELECT COUNT(*) AS n FROM traffic').get().n;
-    origDb.close();
-    ok(rowsNow === ROWS.length, 'the node\'s own traffic log is read from a copy, untouched', 'rows now ' + rowsNow);
-
-    test.subHeading('the whole run: harness in a worktree, then its one folder committed, pushed and said');
-    // A traffic log that counts nothing this time: zero posts is published too.
-    fs.rmSync(path.join(CLONE, 'spirit', 'run', 'spirit', 'state'), { recursive: true, force: true });
-    trafficLog(CLONE, [ROWS[6]]);
-    fs.mkdirSync(path.join(CLONE, 'spirit', 'run', 'spirit', 'state'), { recursive: true });
-    fs.writeFileSync(path.join(CLONE, 'his-staged.txt'), 'his work in progress\n');
-    git(CLONE, ['add', 'his-staged.txt']);
-    const before = git(CLONE, ['rev-parse', 'HEAD']).out;
-    const w = publish(CLONE, ['45440', '--asks', '2']);
-    ok(w.status === 0 && w.out.split('\n').pop() === 'publishData: published agents/' + AGENT + '/', 'it exits 0: published agents/<agent>/', 'exit ' + w.status + ' out ' + short(w.out) + ' err ' + short(w.err));
-    ok(/harness and capacity in a worktree of /.test(w.out) && /measurePlatform exited /.test(w.out), 'the harness step runs measurePlatform in a worktree, and says how it ended', 'out ' + short(w.out));
-    ok(git(CLONE, ['worktree', 'list', '--porcelain']).out.split('\n').filter(function (l) { return /^worktree /.test(l); }).length === 1, 'and the worktree is removed after', 'worktrees ' + short(git(CLONE, ['worktree', 'list']).out));
-    ok(w.out.indexOf('the desk asks counted 0 posts; published as measured') !== -1, 'zero posts is published, and said aloud', 'out ' + short(w.out));
-    const head = git(CLONE, ['rev-parse', 'HEAD']).out;
-    ok(head !== before && git(CLONE, ['rev-parse', head + '^']).out === before, 'one commit on its clone', 'HEAD ' + head);
-    ok(git(CLONE, ['log', '-1', '--format=%s', head]).out === 'publish: ' + AGENT + ' at ' + COMMIT + ' (agents/' + AGENT + '/, the standing grant of goal/G4.33)', 'under the standing grant\'s message', 'message ' + short(git(CLONE, ['log', '-1', '--format=%s', head]).out));
-    const files = git(CLONE, ['diff-tree', '--no-commit-id', '--name-only', '-r', head]).out.split('\n').filter(Boolean);
-    ok(files.length > 0 && files.every(function (f) { return f.indexOf('agents/' + AGENT + '/') === 0; }), 'its files all lie in agents/<agent>/', 'committed ' + short(files));
-    ok(['packets.json', 'packets.md', 'platform.md', 'README.md'].every(function (f) { return files.indexOf('agents/' + AGENT + '/' + f) !== -1; }), 'packets, platform and README among them', 'committed ' + short(files));
-    ok(git(CLONE, ['diff', '--cached', '--name-only']).out === 'his-staged.txt', 'what he had staged stays staged, and uncommitted', 'staged ' + short(git(CLONE, ['diff', '--cached', '--name-only']).out));
-    ok(git(ORIGIN, ['rev-parse', 'refs/heads/master']).out === head, 'pushed: the origin is at its commit', 'origin ' + git(ORIGIN, ['rev-parse', 'refs/heads/master']).out);
-    // goal/G43.22, Andy: "publishData summary is no longer needed, i only check on github.": nothing is posted to the desk.
-    const post = w.asks.filter(function (a) { return a.args.name === 'chat.add'; });
-    ok(w.asks.length > 0 && post.length === 0, 'no summary line posted to Desk', 'posted ' + short(post));
-    fs.rmSync(TMP, { recursive: true, force: true });
-  }());
+function publish(cwd, args, name) {
+  try { fs.unlinkSync(LOG); } catch (e) { /* none */ }
+  // THE TEST'S OWN WORLD (goal/G43.21): run under a node, as the verifier runs it, this suite has the node's address and job in
+  // its env, which publishData would take for its own; the script is handed neither, only what each case gives it.
+  const ownWorld = function () { const e = Object.assign({}, process.env, { PD_LOG: LOG, PD_NAME: name === undefined ? AGENT : name }); delete e.SPIRIT_CALLBACK_URL; delete e.SPIRIT_JOB_ID; return e; };
+  const r = spawnSync(process.execPath, ['-r', PRELOAD, FILE].concat(args), { cwd: cwd, encoding: 'utf8', windowsHide: true, timeout: 150000,
+    env: ownWorld() });
+  let asks = [];
+  try { asks = fs.readFileSync(LOG, 'utf8').trim().split('\n').filter(Boolean).map(function (l) { return JSON.parse(l); }); } catch (e) { asks = []; }
+  return { status: r.status, out: String(r.stdout || '').trim(), err: String(r.stderr || '').trim(), asks: asks.filter(function (a) { return a.verb; }), required: asks.filter(function (a) { return a.require; }) };
 }
+
+// The node's traffic log, as the node writes it: the rows publishData counts, and the rows it must not.
+function trafficLog(clone, rows) {
+  const dir = path.join(clone, 'spirit', 'run', 'spirit', 'state');
+  fs.mkdirSync(dir, { recursive: true });
+  const db = new DatabaseSync(path.join(dir, 'node.db'));
+  db.exec('CREATE TABLE traffic (at TEXT, dir TEXT, kind TEXT, outcome TEXT, code TEXT, ms INTEGER, extra TEXT)');
+  const add = db.prepare('INSERT INTO traffic (at, dir, kind, outcome, code, ms, extra) VALUES (?, ?, ?, ?, ?, ?, ?)');
+  rows.forEach(function (r) { add.run(r[0], r[1], r[2], r[3], r[4], r[5], r[6] === null ? null : JSON.stringify(r[6])); });
+  db.close();
+}
+const NEW = '2999-01-01T00:00:00.000Z';
+const ROWS = [
+  [NEW, 'in', 'reply', 'receipted', '', 30, { waitMs: 10, attempts: 1 }],
+  [NEW, 'in', 'reply', 'receipted', '', 50, { waitMs: 20, attempts: 2 }],
+  [NEW, 'in', 'reply', 'refused', 'not-granted', 40, { waitMs: 5 }],
+  [NEW, 'out', 'request', 'no-answer', '', 0, null],
+  // Not counted: a request that was answered, an incoming request, a row from before the run.
+  [NEW, 'out', 'request', 'receipted', '', 9, { waitMs: 1 }],
+  [NEW, 'in', 'request', 'receipted', '', 9, { waitMs: 1 }],
+  ['2000-01-01T00:00:00.000Z', 'in', 'reply', 'receipted', '', 99, { waitMs: 99 }],
+];
+
+function setup() {
+  fs.rmSync(TMP, { recursive: true, force: true });
+  fs.mkdirSync(TMP, { recursive: true });
+  fs.writeFileSync(PRELOAD, STUB);
+  git(TMP, ['init', '-q', '--bare', '-b', 'master', ORIGIN]);
+  [CLONE, BARE_CLONE].forEach(function (c) {
+    git(TMP, ['clone', '-q', ORIGIN, c]);
+    git(c, ['config', 'user.name', 'publishData test']); git(c, ['config', 'user.email', 'publishdata@test.invalid']); git(c, ['config', 'commit.gpgsign', 'false']);
+  });
+  fs.writeFileSync(path.join(CLONE, 'README.md'), 'scratch\n');
+  fs.writeFileSync(path.join(CLONE, '.gitignore'), 'spirit/run/spirit/state/\n');
+  git(CLONE, ['add', 'README.md', '.gitignore']);
+  git(CLONE, ['commit', '-q', '-m', 'the first']);
+  git(CLONE, ['push', '-q', '-u', 'origin', 'master']);
+  git(BARE_CLONE, ['pull', '-q', 'origin', 'master']);
+  trafficLog(CLONE, ROWS);
+}
+// The run part's world, made by its world test.
+const WR = {};
+test.after(function () { try { fs.rmSync(TMP, { recursive: true, force: true }); } catch (e) { /* scratch */ } });
+
+// run: one measurement run per agent
+test.run('the world: a scratch clone with a bare origin beside it and a traffic log', 0.2, function () {
+  // The deskClient's family as the one family path function names it (goal/G41.12).
+  WR.FAMILY = require(SPIRIT).familyPath('deskClient');
+  setup();
+  WR.COMMIT = git(__dirname, ['rev-parse', '--short', 'HEAD']).out;
+  WR.ready = fs.existsSync(PRELOAD) && fs.existsSync(path.join(CLONE, 'README.md')) && !!WR.COMMIT;
+  return WR.ready || 'the scratch clone was not made: ' + shortRun(fs.existsSync(TMP) ? fs.readdirSync(TMP) : 'no ' + TMP);
+}, 2000);
+
+let u, nogit, noname, nolog, OUT, headBefore, r, pg, p, pmd, plat, ts, tsmd, readmeMd, origDb, rowsNow, before, w, head, files, post;
+
+// its usage, and what it needs
+test.run('no port, given or handed by its node: exit 2, its usage, nothing asked', 0.2, function () {
+  if (!WR.ready) return 'no scratch clone: the world failed';
+  u = publish(CLONE, []);
+  return (u.status === 2 && /^usage: node publishData.js \[<port of the agent's own node>\]/.test(u.err) && u.asks.length === 0) ? true : 'exit ' + u.status + ' err ' + shortRun(u.err);
+}, 1000);
+test.run('run outside a git clone: exit 1, saying so, nothing asked', 0.2, function () {
+  if (!WR.ready) return 'no scratch clone: the world failed';
+  nogit = publish(os.tmpdir(), ['45440', '--only', 'packets', '--out', path.join(TMP, 'x')]);
+  return (nogit.status === 1 && nogit.err === 'publishData: not in a git clone' && nogit.asks.length === 0) ? true : 'exit ' + nogit.status + ' err ' + shortRun(nogit.err);
+}, 1000);
+test.run('an agent with no name at the desk: exit 1, saying so', 0.2, function () {
+  if (!WR.ready) return 'no scratch clone: the world failed';
+  noname = publish(CLONE, ['45440', '--only', 'packets', '--out', path.join(TMP, 'x')], '');
+  return (noname.status === 1 && /^publishData: this agent has no name at the desk yet/.test(noname.err)) ? true : 'exit ' + noname.status + ' err ' + shortRun(noname.err);
+}, 1000);
+test.run('a clone with no traffic log: exit 1, naming where it looked', 0.2, function () {
+  if (!WR.ready) return 'no scratch clone: the world failed';
+  nolog = publish(BARE_CLONE, ['45440', '--only', 'packets', '--out', path.join(TMP, 'y'), '--asks', '1']);
+  return (nolog.status === 1 && nolog.err.indexOf('publishData: no traffic log at ' + path.join(BARE_CLONE, 'spirit', 'run', 'spirit', 'state', 'node.db')) === 0) ? true : 'exit ' + nolog.status + ' err ' + shortRun(nolog.err);
+}, 5000);
+
+// --only packets --out: N read-only desk asks, timed by the node's own traffic log
+test.run('it exits 0: written to <out>', 0.2, function () {
+  if (!WR.ready) return 'no scratch clone: the world failed';
+  OUT = path.join(TMP, 'look');
+  headBefore = git(CLONE, ['rev-parse', 'HEAD']).out;
+  r = publish(CLONE, ['45440', '--only', 'packets', '--out', OUT, '--asks', '3']);
+  return (r.status === 0 && r.out.split('\n').pop() === 'publishData: written to ' + OUT) ? true : 'exit ' + r.status + ' out ' + shortRun(r.out) + ' err ' + shortRun(r.err);
+}, 6000);
+test.run('its agent is the name in its profile, its commit the tree it runs from', 0.2, function () {
+  if (!WR.ready) return 'no scratch clone: the world failed';
+  return (r.out.indexOf('publishData: agent ' + AGENT + ', commit ' + WR.COMMIT + ', into ' + OUT) !== -1) ? true : 'out ' + shortRun(r.out);
+}, 1000);
+test.run('one profile.get for its name, then 3 more, read-only, and nothing else asked', 0.2, function () {
+  if (!WR.ready) return 'no scratch clone: the world failed';
+  pg = r.asks.filter(function (a) { return a.args.name === 'profile.get'; });
+  return (pg.length === 4 && pg.every(function (a) { return a.args.json === '{"agent":""}'; }) && r.asks.length === 4) ? true : 'asks ' + shortRun(r.asks);
+}, 1000);
+test.run('every ask through its deskClient\'s family, on the spirit object', 0.2, function () {
+  if (!WR.ready) return 'no scratch clone: the world failed';
+  return (r.required.every(function (a) { return a.require === WR.FAMILY; })) ? true : 'required ' + shortRun(r.required);
+}, 1000);
+test.run('packets.json names the agent, the commit, the asks and when', 0.2, function () {
+  if (!WR.ready) return 'no scratch clone: the world failed';
+  p = null;
+  try { p = JSON.parse(fs.readFileSync(path.join(OUT, 'packets.json'), 'utf8')); } catch (e) { p = null; }
+  return (p && p.agent === AGENT && p.commit === WR.COMMIT && p.asks === 3 && !isNaN(Date.parse(p.measuredAt))) ? true : 'packets ' + shortRun(p);
+}, 1000);
+test.run('posts: the closing rows since it began (replies in, and requests out refused or unanswered)', 0.2, function () {
+  if (!WR.ready) return 'no scratch clone: the world failed';
+  return (p && p.posts === 4) ? true : 'posts ' + shortRun(p && p.posts);
+}, 1000);
+test.run('queue wait: median and worst of the rows that carry waitMs', 0.2, function () {
+  if (!WR.ready) return 'no scratch clone: the world failed';
+  return (p && p.waitMs.median === 10 && p.waitMs.max === 20) ? true : 'waitMs ' + shortRun(p && p.waitMs);
+}, 1000);
+test.run('flight: each row\'s ms less its wait', 0.2, function () {
+  if (!WR.ready) return 'no scratch clone: the world failed';
+  return (p && p.flight.median === 30 && p.flight.max === 35) ? true : 'flight ' + shortRun(p && p.flight);
+}, 1000);
+test.run('retried: the rows that took more than one attempt', 0.2, function () {
+  if (!WR.ready) return 'no scratch clone: the world failed';
+  return (p && p.retried === 1) ? true : 'retried ' + shortRun(p && p.retried);
+}, 1000);
+test.run('refusals counted by code, else by outcome', 0.2, function () {
+  if (!WR.ready) return 'no scratch clone: the world failed';
+  return (p && JSON.stringify(p.refusals) === JSON.stringify({ 'not-granted': 1, 'no-answer': 1 })) ? true : 'refusals ' + shortRun(p && p.refusals);
+}, 1000);
+test.run('packets.md says the same', 0.2, function () {
+  if (!WR.ready) return 'no scratch clone: the world failed';
+  pmd = fs.existsSync(path.join(OUT, 'packets.md')) ? fs.readFileSync(path.join(OUT, 'packets.md'), 'utf8') : '';
+  return (pmd.indexOf('# Packets: ' + AGENT) === 0 && pmd.indexOf('| queue wait (ms) | 10 | 20 |') !== -1 && pmd.indexOf('| flight (ms) | 30 | 35 |') !== -1 && pmd.indexOf('4 posts, 1 needed more than one try, refusals: {"not-granted":1,"no-answer":1}.') !== -1) ? true : 'packets.md ' + shortRun(pmd);
+}, 1000);
+test.run('platform.md names the agent, the commit and the box', 0.2, function () {
+  if (!WR.ready) return 'no scratch clone: the world failed';
+  plat = fs.existsSync(path.join(OUT, 'platform.md')) ? fs.readFileSync(path.join(OUT, 'platform.md'), 'utf8') : '';
+  return (plat.indexOf('# ' + AGENT) === 0 && plat.indexOf('| agent | ' + AGENT + ' |') !== -1 && plat.indexOf('`' + WR.COMMIT + '`') !== -1 && plat.indexOf('| node | ' + process.version + ' |') !== -1) ? true : 'platform.md ' + shortRun(plat);
+}, 1000);
+test.run('testState.json: the newest row of each test in verify.db, read only, no suite run', 0.2, function () {
+  if (!WR.ready) return 'no scratch clone: the world failed';
+  ts = null;
+  try { ts = JSON.parse(fs.readFileSync(path.join(OUT, 'testState.json'), 'utf8')); } catch (e) { ts = null; }
+  return (ts && ts.agent === AGENT && ts.commit === WR.COMMIT && ts.tests === ts.green + ts.red && Array.isArray(ts.suites) && Array.isArray(ts.reds) && ts.reds.length === ts.red && /no suite was run/.test(ts.from)) ? true : 'testState ' + shortRun(ts) + ' said ' + shortRun(r.out);
+}, 1000);
+test.run('testState.md: the suites\' table and the reds', 0.2, function () {
+  if (!WR.ready) return 'no scratch clone: the world failed';
+  tsmd = fs.existsSync(path.join(OUT, 'testState.md')) ? fs.readFileSync(path.join(OUT, 'testState.md'), 'utf8') : '';
+  return (tsmd.indexOf('# Test state: ' + AGENT) === 0 && tsmd.indexOf('| suite | tests | green | red | newest |') !== -1 && tsmd.indexOf('## Red') !== -1) ? true : 'testState.md ' + shortRun(tsmd);
+}, 1000);
+test.run('the README is written beside them (agentReadme)', 0.2, function () {
+  if (!WR.ready) return 'no scratch clone: the world failed';
+  readmeMd = fs.existsSync(path.join(OUT, 'README.md')) ? fs.readFileSync(path.join(OUT, 'README.md'), 'utf8') : '';
+  return (readmeMd.indexOf('# ' + AGENT + '\n') === 0 && readmeMd.indexOf('## Measurements') !== -1) ? true : 'README ' + shortRun(readmeMd);
+}, 1000);
+test.run('--only packets runs no harness', 0.2, function () {
+  if (!WR.ready) return 'no scratch clone: the world failed';
+  return (r.out.indexOf('measurePlatform') === -1 && r.out.indexOf('harness and capacity') === -1) ? true : 'out ' + shortRun(r.out);
+}, 1000);
+test.run('and with --out nothing is committed and nothing posted', 0.2, function () {
+  if (!WR.ready) return 'no scratch clone: the world failed';
+  return (git(CLONE, ['rev-parse', 'HEAD']).out === headBefore && r.asks.every(function (a) { return a.args.name !== 'chat.add'; })) ? true : 'HEAD ' + git(CLONE, ['rev-parse', 'HEAD']).out;
+}, 1000);
+test.run('the node\'s own traffic log is read from a copy, untouched', 0.2, function () {
+  if (!WR.ready) return 'no scratch clone: the world failed';
+  origDb = new DatabaseSync(path.join(CLONE, 'spirit', 'run', 'spirit', 'state', 'node.db'), { readOnly: true });
+  rowsNow = origDb.prepare('SELECT COUNT(*) AS n FROM traffic').get().n;
+  origDb.close();
+  return (rowsNow === ROWS.length) ? true : 'rows now ' + rowsNow;
+}, 1000);
+
+// the whole run: harness in a worktree, then its one folder committed, pushed and said
+// A traffic log that counts nothing this time: zero posts is published too.
+test.run('it exits 0: published agents/<agent>/', 0.2, function () {
+  if (!WR.ready) return 'no scratch clone: the world failed';
+  fs.rmSync(path.join(CLONE, 'spirit', 'run', 'spirit', 'state'), { recursive: true, force: true });
+  trafficLog(CLONE, [ROWS[6]]);
+  fs.mkdirSync(path.join(CLONE, 'spirit', 'run', 'spirit', 'state'), { recursive: true });
+  fs.writeFileSync(path.join(CLONE, 'his-staged.txt'), 'his work in progress\n');
+  git(CLONE, ['add', 'his-staged.txt']);
+  before = git(CLONE, ['rev-parse', 'HEAD']).out;
+  w = publish(CLONE, ['45440', '--asks', '2']);
+  return (w.status === 0 && w.out.split('\n').pop() === 'publishData: published agents/' + AGENT + '/') ? true : 'exit ' + w.status + ' out ' + shortRun(w.out) + ' err ' + shortRun(w.err);
+}, 7000);
+test.run('the harness step runs measurePlatform in a worktree, and says how it ended', 0.2, function () {
+  if (!WR.ready) return 'no scratch clone: the world failed';
+  return (/harness and capacity in a worktree of /.test(w.out) && /measurePlatform exited /.test(w.out)) ? true : 'out ' + shortRun(w.out);
+}, 1000);
+test.run('and the worktree is removed after', 0.2, function () {
+  if (!WR.ready) return 'no scratch clone: the world failed';
+  return (git(CLONE, ['worktree', 'list', '--porcelain']).out.split('\n').filter(function (l) { return /^worktree /.test(l); }).length === 1) ? true : 'worktrees ' + shortRun(git(CLONE, ['worktree', 'list']).out);
+}, 1000);
+test.run('zero posts is published, and said aloud', 0.2, function () {
+  if (!WR.ready) return 'no scratch clone: the world failed';
+  return (w.out.indexOf('the desk asks counted 0 posts; published as measured') !== -1) ? true : 'out ' + shortRun(w.out);
+}, 1000);
+test.run('one commit on its clone', 0.2, function () {
+  if (!WR.ready) return 'no scratch clone: the world failed';
+  head = git(CLONE, ['rev-parse', 'HEAD']).out;
+  return (head !== before && git(CLONE, ['rev-parse', head + '^']).out === before) ? true : 'HEAD ' + head;
+}, 1000);
+test.run('under the standing grant\'s message', 0.2, function () {
+  if (!WR.ready) return 'no scratch clone: the world failed';
+  return (git(CLONE, ['log', '-1', '--format=%s', head]).out === 'publish: ' + AGENT + ' at ' + WR.COMMIT + ' (agents/' + AGENT + '/, the standing grant of goal/G4.33)') ? true : 'message ' + shortRun(git(CLONE, ['log', '-1', '--format=%s', head]).out);
+}, 1000);
+test.run('its files all lie in agents/<agent>/', 0.2, function () {
+  if (!WR.ready) return 'no scratch clone: the world failed';
+  files = git(CLONE, ['diff-tree', '--no-commit-id', '--name-only', '-r', head]).out.split('\n').filter(Boolean);
+  return (files.length > 0 && files.every(function (f) { return f.indexOf('agents/' + AGENT + '/') === 0; })) ? true : 'committed ' + shortRun(files);
+}, 1000);
+test.run('packets, platform and README among them', 0.2, function () {
+  if (!WR.ready) return 'no scratch clone: the world failed';
+  return (['packets.json', 'packets.md', 'platform.md', 'README.md'].every(function (f) { return files.indexOf('agents/' + AGENT + '/' + f) !== -1; })) ? true : 'committed ' + shortRun(files);
+}, 1000);
+test.run('what he had staged stays staged, and uncommitted', 0.2, function () {
+  if (!WR.ready) return 'no scratch clone: the world failed';
+  return (git(CLONE, ['diff', '--cached', '--name-only']).out === 'his-staged.txt') ? true : 'staged ' + shortRun(git(CLONE, ['diff', '--cached', '--name-only']).out);
+}, 1000);
+test.run('pushed: the origin is at its commit', 0.2, function () {
+  if (!WR.ready) return 'no scratch clone: the world failed';
+  return (git(ORIGIN, ['rev-parse', 'refs/heads/master']).out === head) ? true : 'origin ' + git(ORIGIN, ['rev-parse', 'refs/heads/master']).out;
+}, 1000);
+
+// goal/G43.22, Andy: "publishData summary is no longer needed, i only check on github.": nothing is posted to the desk.
+test.run('no summary line posted to Desk', 0.2, function () {
+  if (!WR.ready) return 'no scratch clone: the world failed';
+  post = w.asks.filter(function (a) { return a.args.name === 'chat.add'; });
+  return (w.asks.length > 0 && post.length === 0) ? true : 'posted ' + shortRun(post);
+}, 1000);

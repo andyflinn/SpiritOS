@@ -13,32 +13,38 @@ const RUN = path.resolve(__dirname, '../../../..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const EAR = path.join(__dirname, '..', 'deskAgentEar.js');
 
-function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 
-const DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'deskAgentEar-test-'));
-const PRELOAD = path.join(DIR, 'preload.js');
-// The stand-in: spirit.js answers a spirit object whose deskClient family records each ask (ASK_LOG) and answers from
-// ANSWERS, a JSON object of verb -> list of answers, each used once in turn, the last one again.
-fs.writeFileSync(PRELOAD, [
-  "'use strict';",
-  "const fs = require('fs');",
-  "const Module = require('module');",
-  "const LOG = process.env.ASK_LOG;",
-  "const ANSWERS = JSON.parse(process.env.ANSWERS || '{}');",
-  "const used = {};",
-  "function answer(verb) { const list = ANSWERS[verb] || [{ ok: true }]; const i = Math.min(used[verb] || 0, list.length - 1); used[verb] = (used[verb] || 0) + 1; return list[i]; }",
-  "const family = new Proxy({}, { get: function (t, verb) { if (verb === 'then' || typeof verb !== 'string') return undefined; return function (args) { fs.appendFileSync(LOG, JSON.stringify({ verb: String(verb), args: args }) + '\\n'); return Promise.resolve(answer(String(verb))); }; } });",
-  // familyPath, the one spirit object's own (spirit.js, goal/G41.12), read before the stand-in takes spirit.js's place:
-  // the ear asks it since then.
-  "const familyPath = require(" + JSON.stringify(path.join(RUN, 'spirit', 'spirit.js')) + ").familyPath;",
-  "const fake = { familyPath: familyPath, require: function () { return Promise.resolve(family); }, outcome: function (p) { return Promise.resolve(p).then(function (b) { return { status: 200, body: b }; }, function (e) { return { status: 500, body: { ok: false, error: String(e && e.message || e) } }; }); } };",
-  "const realLoad = Module._load;",
-  "Module._load = function (request) { if (/(^|\\/)spirit\\.js$/.test(request)) { globalThis.spirit = fake; return fake; } return realLoad.apply(this, arguments); };",
-].join('\n'));
+// The scratch folder and the stand-in, made on the first ear() a test runs, so a failure to make them lands on that test.
+let DIR = '';
+let PRELOAD = '';
+function prepare() {
+  if (DIR) return;
+  DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'deskAgentEar-test-'));
+  PRELOAD = path.join(DIR, 'preload.js');
+  // The stand-in: spirit.js answers a spirit object whose deskClient family records each ask (ASK_LOG) and answers from
+  // ANSWERS, a JSON object of verb -> list of answers, each used once in turn, the last one again.
+  fs.writeFileSync(PRELOAD, [
+    "'use strict';",
+    "const fs = require('fs');",
+    "const Module = require('module');",
+    "const LOG = process.env.ASK_LOG;",
+    "const ANSWERS = JSON.parse(process.env.ANSWERS || '{}');",
+    "const used = {};",
+    "function answer(verb) { const list = ANSWERS[verb] || [{ ok: true }]; const i = Math.min(used[verb] || 0, list.length - 1); used[verb] = (used[verb] || 0) + 1; return list[i]; }",
+    "const family = new Proxy({}, { get: function (t, verb) { if (verb === 'then' || typeof verb !== 'string') return undefined; return function (args) { fs.appendFileSync(LOG, JSON.stringify({ verb: String(verb), args: args }) + '\\n'); return Promise.resolve(answer(String(verb))); }; } });",
+    // familyPath, the one spirit object's own (spirit.js, goal/G41.12), read before the stand-in takes spirit.js's place:
+    // the ear asks it since then.
+    "const familyPath = require(" + JSON.stringify(path.join(RUN, 'spirit', 'spirit.js')) + ").familyPath;",
+    "const fake = { familyPath: familyPath, require: function () { return Promise.resolve(family); }, outcome: function (p) { return Promise.resolve(p).then(function (b) { return { status: 200, body: b }; }, function (e) { return { status: 500, body: { ok: false, error: String(e && e.message || e) } }; }); } };",
+    "const realLoad = Module._load;",
+    "Module._load = function (request) { if (/(^|\\/)spirit\\.js$/.test(request)) { globalThis.spirit = fake; return fake; } return realLoad.apply(this, arguments); };",
+  ].join('\n'));
+}
 
 let runs = 0;
 function ear(args, answers) {
+  prepare();
   runs += 1;
   const log = path.join(DIR, 'asks-' + runs + '.jsonl');
   fs.writeFileSync(log, '');
@@ -49,50 +55,84 @@ function ear(args, answers) {
   return { code: r.status, out: String(r.stdout || ''), err: String(r.stderr || ''), asks: asks };
 }
 
-test.startTest('deskAgentEar.js: the agent\'s Desk listener');
 
-(function () {
-  test.subHeading('a wake names its key, and the line to arm with next');
-  const wake = { lines: ['DESK andy chat.add {"id":"goal/G9.1","text":"wsl: hello"}'], key: 'w-17' };
-  const a = ear(['45441'], { next: [wake] });
-  const outLines = a.out.trim().split('\n');
-  ok(a.code === 0 && a.out.indexOf('wsl: hello') !== -1, 'a wait prints the wake\'s lines and exits 0', 'exit ' + a.code + ', out ' + short(a.out) + short(a.err));
-  ok(outLines[outLines.length - 1] === 'next: node deskAgentEar.js 45441 --read w-17', 'its last line is the arm to run next: next: node deskAgentEar.js <port> --read <key>', 'last line: ' + short(outLines[outLines.length - 1]));
-  const firstNext = a.asks.filter(function (x) { return x.verb === 'next'; })[0];
-  ok(!!firstNext && JSON.stringify(firstNext.args) === '{}', 'armed without --read it asks next with no key', 'asked: ' + short(a.asks));
+const W = {};
 
-  test.subHeading('the next arm names that key');
-  const b = ear(['45441', '--read', 'w-17'], { next: [{ lines: ['DESK andy chat.add {"id":"goal/G9.1","text":"wsl: after"}'], key: 'w-18' }] });
+// A wake names its key, and the line to arm with next.
+const wake = { lines: ['DESK andy chat.add {"id":"goal/G9.1","text":"wsl: hello"}'], key: 'w-17' };
+test.run('a wait prints the wake\'s lines and exits 0', 0.2, function () {
+  const a = W.a = ear(['45441'], { next: [wake] });
+  return (a.code === 0 && a.out.indexOf('wsl: hello') !== -1) || 'exit ' + a.code + ', out ' + short(a.out) + short(a.err);
+}, 1000);
+test.run('its last line is the arm to run next: next: node deskAgentEar.js <port> --read <key>', 0.2, function () {
+  if (!W.a) return 'no wait ran: the test before failed';
+  const outLines = W.a.out.trim().split('\n');
+  return outLines[outLines.length - 1] === 'next: node deskAgentEar.js 45441 --read w-17' || 'last line: ' + short(outLines[outLines.length - 1]);
+}, 1000);
+test.run('armed without --read it asks next with no key', 0.2, function () {
+  if (!W.a) return 'no wait ran: the test before failed';
+  const firstNext = W.a.asks.filter(function (x) { return x.verb === 'next'; })[0];
+  return (!!firstNext && JSON.stringify(firstNext.args) === '{}') || 'asked: ' + short(W.a.asks);
+}, 1000);
+
+// The next arm names that key.
+test.run('with --read <key> it asks next with { read: key }', 0.2, function () {
+  const b = W.b = ear(['45441', '--read', 'w-17'], { next: [{ lines: ['DESK andy chat.add {"id":"goal/G9.1","text":"wsl: after"}'], key: 'w-18' }] });
   const nexts = b.asks.filter(function (x) { return x.verb === 'next'; });
-  ok(b.code === 0 && nexts.length >= 1 && nexts[0].args && nexts[0].args.read === 'w-17', 'with --read <key> it asks next with { read: key }', 'exit ' + b.code + ', asked ' + short(b.asks) + short(b.err));
-  ok(!b.asks.some(function (x) { return x.verb === 'desk'; }), '--read is no desk verb: the desk is not asked', 'asked: ' + short(b.asks));
-  ok(/--read w-18\s*$/.test(b.out), 'and ends with the new wake\'s key', 'out: ' + short(b.out));
+  return (b.code === 0 && nexts.length >= 1 && nexts[0].args && nexts[0].args.read === 'w-17') || 'exit ' + b.code + ', asked ' + short(b.asks) + short(b.err);
+}, 1000);
+test.run('--read is no desk verb: the desk is not asked', 0.2, function () {
+  if (!W.b) return 'no arm ran: the test before failed';
+  return !W.b.asks.some(function (x) { return x.verb === 'desk'; }) || 'asked: ' + short(W.b.asks);
+}, 1000);
+test.run('and ends with the new wake\'s key', 0.2, function () {
+  if (!W.b) return 'no arm ran: the test before failed';
+  return /--read w-18\s*$/.test(W.b.out) || 'out: ' + short(W.b.out);
+}, 1000);
 
-  test.subHeading('an arm that names no key is handed the unread wake at once');
+// An arm that names no key is handed the unread wake at once.
+test.run('deskClient hands the unread wake again, and the ear prints it on the first ask', 0.2, function () {
   const c = ear(['45441'], { next: [wake] });
-  ok(c.code === 0 && c.out.indexOf('wsl: hello') !== -1 && c.asks.filter(function (x) { return x.verb === 'next'; }).length === 1, 'deskClient hands the unread wake again, and the ear prints it on the first ask', 'exit ' + c.code + ', asks ' + c.asks.length);
+  return (c.code === 0 && c.out.indexOf('wsl: hello') !== -1 && c.asks.filter(function (x) { return x.verb === 'next'; }).length === 1) || 'exit ' + c.code + ', asks ' + c.asks.length;
+}, 1000);
 
-  test.subHeading('an empty answer is asked again; a refusal ends it');
+// An empty answer is asked again; a refusal ends it.
+test.run('it asks again while the answer is empty, naming the same key each time', 0.2, function () {
   const d = ear(['45441', '--read', 'w-18'], { next: [{ lines: [] }, { lines: [] }, { lines: ['DESK a third'], key: 'w-19' }] });
   const dn = d.asks.filter(function (x) { return x.verb === 'next'; });
-  ok(d.code === 0 && dn.length === 3 && dn.every(function (x) { return x.args && x.args.read === 'w-18'; }), 'it asks again while the answer is empty, naming the same key each time', 'asks ' + short(dn) + ', exit ' + d.code);
-  // A door that timed out (504, app-did-not-answer) handed nothing: the ear waits again with the same key, never ends.
+  return (d.code === 0 && dn.length === 3 && dn.every(function (x) { return x.args && x.args.read === 'w-18'; })) || 'asks ' + short(dn) + ', exit ' + d.code;
+}, 2000);
+// A door that timed out (504, app-did-not-answer) handed nothing: the ear waits again with the same key, never ends.
+test.run('a door that timed out is asked again with the same key, and the wake that follows is printed', 0.2, function () {
   const t = ear(['45441', '--read', 'w-19'], { next: [{ ok: false, code: 'app-did-not-answer', error: 'the app server did not answer in time' }, { lines: ['DESK after the timeout'], key: 'w-20' }] });
   const tn = t.asks.filter(function (x) { return x.verb === 'next'; });
-  ok(t.code === 0 && tn.length === 2 && tn.every(function (x) { return x.args && x.args.read === 'w-19'; }) && /after the timeout/.test(t.out),
-    'a door that timed out is asked again with the same key, and the wake that follows is printed', 'exit ' + t.code + ', asks ' + short(tn) + ', err ' + short(t.err));
+  return (t.code === 0 && tn.length === 2 && tn.every(function (x) { return x.args && x.args.read === 'w-19'; }) && /after the timeout/.test(t.out)) || 'exit ' + t.code + ', asks ' + short(tn) + ', err ' + short(t.err);
+}, 2000);
+test.run('a signed-off agent is told so, exit 1', 0.2, function () {
   const e = ear(['45441'], { next: [{ ok: false, code: 'signed-off', error: 'this agent is signed off' }] });
-  ok(e.code === 1 && /signed off/.test(e.err), 'a signed-off agent is told so, exit 1', 'exit ' + e.code + ', err ' + short(e.err));
+  return (e.code === 1 && /signed off/.test(e.err)) || 'exit ' + e.code + ', err ' + short(e.err);
+}, 1000);
 
-  test.subHeading('one ask of the desk, or of deskClient, printed as it came');
+// One ask of the desk, or of deskClient, printed as it came.
+test.run('a desk verb goes through deskClient\'s desk, its answer printed', 0.2, function () {
   const f = ear(['45441', 'item.get', '{"id":"goal/G9.1"}'], { desk: [{ item: '{}', version: 3 }] });
-  ok(f.code === 0 && f.asks.length === 1 && f.asks[0].verb === 'desk' && f.asks[0].args.name === 'item.get' && JSON.parse(f.out).version === 3, 'a desk verb goes through deskClient\'s desk, its answer printed', 'exit ' + f.code + ', asks ' + short(f.asks));
+  let version = null;
+  try { version = JSON.parse(f.out).version; } catch (e) { version = null; }
+  return (f.code === 0 && f.asks.length === 1 && f.asks[0].verb === 'desk' && f.asks[0].args.name === 'item.get' && version === 3) || 'exit ' + f.code + ', asks ' + short(f.asks);
+}, 1000);
+test.run('a desk refusal ends it with exit 1', 0.2, function () {
   const g = ear(['45441', 'item.get', '{"id":"goal/G9.1"}'], { desk: [{ ok: false, code: 'refused', why: 'no' }] });
-  ok(g.code === 1, 'a desk refusal ends it with exit 1', 'exit ' + g.code);
+  return g.code === 1 || 'exit ' + g.code;
+}, 1000);
+test.run('deskClient.<verb> asks deskClient itself', 0.2, function () {
   const h = ear(['45441', 'deskClient.history.search', '{"text":""}'], { 'history.search': [{ items: [], more: false }] });
-  ok(h.code === 0 && h.asks.length === 1 && h.asks[0].verb === 'history.search', 'deskClient.<verb> asks deskClient itself', 'exit ' + h.code + ', asks ' + short(h.asks));
+  return (h.code === 0 && h.asks.length === 1 && h.asks[0].verb === 'history.search') || 'exit ' + h.code + ', asks ' + short(h.asks);
+}, 1000);
+test.run('a port that is no number gets the usage, exit 2', 0.2, function () {
   const i = ear(['nope'], {});
-  ok(i.code === 2 && /usage/.test(i.err), 'a port that is no number gets the usage, exit 2', 'exit ' + i.code);
-}());
-try { fs.rmSync(DIR, { recursive: true, force: true }); } catch (e) { /* a temp folder left behind is no failure */ }
-test.reportSuccessFailureCount();
+  return (i.code === 2 && /usage/.test(i.err)) || 'exit ' + i.code;
+}, 1000);
+
+test.after(function () {
+  try { if (DIR) fs.rmSync(DIR, { recursive: true, force: true }); } catch (e) { /* a temp folder left behind is no failure */ }
+});

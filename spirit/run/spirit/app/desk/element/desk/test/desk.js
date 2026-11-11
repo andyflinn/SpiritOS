@@ -16,24 +16,54 @@ const RUN = path.resolve(__dirname, '../../../../../..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const FILE = path.join(__dirname, '..', 'desk.js');
 
-function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 
-test.startTest('desk.js: its icons are glyphs; its are-you-sure buttons are armingButtons');
+// What each step makes, for the tests after it, in order; every scratch node and Chrome page is stopped by test.after.
+const W = {};
+const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+const short = function (x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); };
+// A scratch node and its page, stopped; called as a section ends and again by test.after.
+function stop(x) {
+  if (!x || x.stopped) return;
+  x.stopped = true;
+  const page = x.page, node = x.node || {};
+  if (page && page.kid) page.kid.kill();
+  if (node.child) node.child.kill();
+  try { if (page && page.profile) fs.rmSync(page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
+  try { if (node.root) fs.rmSync(node.root, { recursive: true, force: true }); } catch (e) { /* left */ }
+}
+// A scratch node with a Chrome page on it (debug: its DEBUG on): x.node, x.page, or a string saying what is missing.
+async function bootPage(x, debug) {
+  const chrome = H.findChrome();
+  if (!chrome) return 'no Chrome on this machine: SPIRIT_CHROME names none, and none is found by its name';
+  x.node = await H.scratchNode();
+  x.page = x.node.up && (!debug || x.node.debug) ? await H.chromePage(chrome) : null;
+  if (!x.page || x.page.error) { const why = x.page ? x.page.error : debug ? 'the scratch node did not come up with its DEBUG on' : 'the scratch node did not come up'; x.page = x.page && x.page.error ? x.page : null; return why; }
+  return '';
+}
+// A verb of the node, asked from the page as the page asks it.
+function caller(page) {
+  return function (verb, args) {
+    return page.evaluate("fetch('/api/spirit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(" + JSON.stringify({ call: verb, args: args }) + ") }).then(function (r) { return r.text(); })")
+      .then(function (t) { try { return JSON.parse(t); } catch (e) { return {}; } });
+  };
+}
+const MOUNT_DESK = "(function () { var d = document.createElement('div'); d.id = 'zzDesk'; d.style.height = '800px'; document.body.appendChild(d); return Promise.resolve(window.spirit.require('spirit/app/desk/element.js')).then(function () { window.spirit.element.spirit.app.desk.element.create(d, {}); return true; }); })()";
 
-const code = fs.readFileSync(FILE, 'utf8').replace(/\/\/[^\n]*/g, '');
-test.subHeading('no icon table, no lookup into one');
-ok(!/iconIndex|\bICON\b/.test(code), 'desk.js names no icon table', 'desk.js still names iconIndex or ICON');
-ok(!/deskIcon\(/.test(code), 'it looks no icon up by name (deskIcon is gone)', 'desk.js still calls deskIcon');
-test.subHeading('the glyphs it draws, written as they are');
-ok(code.indexOf('📁') !== -1, 'it draws 📁 as written', '📁 is not in desk.js');
-ok(code.indexOf('❌') !== -1, 'it draws ❌ as written', '❌ is not in desk.js');
-ok(code.indexOf('💻') !== -1, 'it draws 💻 as written', '💻 is not in desk.js');
-ok(code.indexOf('⚔️') !== -1, 'it draws ⚔️ as written', '⚔️ is not in desk.js');
-const rule = /var DESK_RULE_ICON = (\{[^}]*\});/.exec(code);
-let icons = null;
-try { icons = rule ? (new Function('return ' + rule[1]))() : null; } catch (e) { icons = null; }
-ok(icons && icons.proposed === '✏️' && icons.active === '🔒' && icons.deleted === '💀', 'a rule\'s status is drawn as its glyph: proposed ✏️, active 🔒, deleted 💀',
-  'DESK_RULE_ICON: ' + JSON.stringify(icons));
+// no icon table, no lookup into one
+const readCode = function () { if (W.code === undefined) W.code = fs.readFileSync(FILE, 'utf8').replace(/\/\/[^\n]*/g, ''); return W.code; };
+test.run('desk.js names no icon table', 0.2, function () { return !/iconIndex|\bICON\b/.test(readCode()) || 'desk.js still names iconIndex or ICON'; }, 1000);
+test.run('it looks no icon up by name (deskIcon is gone)', 0.2, function () { return !/deskIcon\(/.test(readCode()) || 'desk.js still calls deskIcon'; }, 1000);
+// the glyphs it draws, written as they are
+test.run('it draws 📁 as written', 0.2, function () { return readCode().indexOf('📁') !== -1 || '📁 is not in desk.js'; }, 1000);
+test.run('it draws ❌ as written', 0.2, function () { return readCode().indexOf('❌') !== -1 || '❌ is not in desk.js'; }, 1000);
+test.run('it draws 💻 as written', 0.2, function () { return readCode().indexOf('💻') !== -1 || '💻 is not in desk.js'; }, 1000);
+test.run('it draws ⚔️ as written', 0.2, function () { return readCode().indexOf('⚔️') !== -1 || '⚔️ is not in desk.js'; }, 1000);
+test.run('a rule\'s status is drawn as its glyph: proposed ✏️, active 🔒, deleted 💀', 0.2, function () {
+  const rule = /var DESK_RULE_ICON = (\{[^}]*\});/.exec(readCode());
+  let icons = null;
+  try { icons = rule ? (new Function('return ' + rule[1]))() : null; } catch (e) { icons = null; }
+  return (!!icons && icons.proposed === '✏️' && icons.active === '🔒' && icons.deleted === '💀') || 'DESK_RULE_ICON: ' + JSON.stringify(icons);
+}, 1000);
 
 // ── THE PAGE THESE TESTS DRIVE (goal/G41.9) ─────────────────────────────────────────────────────────────────────────
 // A small forgiving page: markup parsed into elements, with ids, attributes, closest and simple selectors, and a click
@@ -258,7 +288,7 @@ async function settle() { for (let i = 0; i < 30; i++) await new Promise(functio
 async function twoPress(w, find, armedSays, wantPress, what) {
   const before = w.presses().length;
   const b = find();
-  if (!b) { test.fail(what + ': no such button on the page'); return; }
+  if (!b) return { good: false, why: what + ': no such button on the page' };
   const byElement = w.made.some(function (m) { return m.button === b && m.opts && !('api' in m.opts); });
   w.document.click(b); await settle();
   const b1 = find();
@@ -271,274 +301,312 @@ async function twoPress(w, find, armedSays, wantPress, what) {
     why: what + ': ' + JSON.stringify({ madeByArmingButton: byElement, armed: armedText, askedOnFirst: firstAsked, sent: sent.map(function (s) { return s.args; }) }) };
 }
 
-(async function () {
-  test.subHeading('goal/G41.9: it loads armingButton and keeps no arming of its own');
-  const plain = raw.replace(/\/\/[^\n]*/g, '');
+// goal/G41.9: it loads armingButton and keeps no arming of its own
+test.run('it requires spirit/element/armingButton.js through spirit.require', 0.2, async function () {
   const w0 = deskWorld({ id: 'goal/G9', title: 'A goal', goal: '', status: 'open', buttons: [], design: false, blocked: [] }, []);
   await w0.mount();
-  ok(w0.required.indexOf('spirit/element/armingButton.js') !== -1, 'it requires spirit/element/armingButton.js through spirit.require', 'required: ' + JSON.stringify(w0.required));
+  return w0.required.indexOf('spirit/element/armingButton.js') !== -1 || 'required: ' + JSON.stringify(w0.required);
+}, 1000);
+test.run('nothing hand-rolled is left: no data-armed, no armUntilElsewhere, no armed flag of its own', 0.2, function () {
+  const plain = raw.replace(/\/\/[^\n]*/g, '');
   const left = ['data-armed', 'armUntilElsewhere', 'deskArmed', 'deskArmOrFire', 'deskDisarm', "classList.add('armed')"].filter(function (s) { return plain.indexOf(s) !== -1; });
-  ok(!left.length, 'nothing hand-rolled is left: no data-armed, no armUntilElsewhere, no armed flag of its own', 'still in desk.js: ' + left.join(', '));
+  return !left.length || 'still in desk.js: ' + left.join(', ');
+}, 1000);
 
-  test.subHeading('goal/G41.9: each are-you-sure, pressed twice');
-  const goal = { id: 'goal/G9', title: 'A goal', goal: '', status: 'open', buttons: ['go-all'], design: true, blocked: ['goal/G9.1'], verified: 'none' };
-  const item = { id: 'goal/G9.1', title: 'An item', goal: 'goal/G9', status: 'open', buttons: ['done'], verified: 'red', verifyFailures: ['a suite red'], claims: 1 };
-  const w = deskWorld(goal, [item]);
+// goal/G41.9: each are-you-sure, pressed twice
+const goal = { id: 'goal/G9', title: 'A goal', goal: '', status: 'open', buttons: ['go-all'], design: true, blocked: ['goal/G9.1'], verified: 'none' };
+const item = { id: 'goal/G9.1', title: 'An item', goal: 'goal/G9', status: 'open', buttons: ['done'], verified: 'red', verifyFailures: ['a suite red'], claims: 1 };
+test.run('End design mode is an arming button: the first press says "End design mode: sure?", the second sends end-design', 0.2, async function () {
+  const w = W.w = deskWorld(goal, [item]);
   await w.mount();
-  let p;
-  p = await twoPress(w, function () { return w.document.getElementById('desk-end-design'); }, function (t) { return t === 'End design mode: sure?'; }, { id: 'goal/G9', what: 'end-design' }, 'End design mode'); if (p) ok(p.good, 'End design mode is an arming button: the first press says "End design mode: sure?", the second sends end-design', p.why);
-  p = await twoPress(w, function () { return w.document.getElementById('desk-go-all'); }, function (t) { return t === 'Go all: sure?'; }, { id: 'goal/G9', what: 'go-all' }, 'Go all'); if (p) ok(p.good, 'Go all is an arming button: the first press says "Go all: sure?", the second sends go-all', p.why);
-  p = await twoPress(w, function () { return w.document.querySelector('[data-press="done"]'); }, function (t) { return /^Done anyway\? /.test(t); }, { id: 'goal/G9.1', what: 'done' }, 'Done not verified green, in its row'); if (p) ok(p.good, 'Done, in the row of an item not verified green, is an arming button: the first press asks "Done anyway?", the second sends done', p.why);
+  const p = await twoPress(w, function () { return w.document.getElementById('desk-end-design'); }, function (t) { return t === 'End design mode: sure?'; }, { id: 'goal/G9', what: 'end-design' }, 'End design mode');
+  return p.good || p.why;
+}, 1000);
+test.run('Go all is an arming button: the first press says "Go all: sure?", the second sends go-all', 0.2, async function () {
+  const w = W.w;
+  const p = await twoPress(w, function () { return w.document.getElementById('desk-go-all'); }, function (t) { return t === 'Go all: sure?'; }, { id: 'goal/G9', what: 'go-all' }, 'Go all');
+  return p.good || p.why;
+}, 1000);
+test.run('Done, in the row of an item not verified green, is an arming button: the first press asks "Done anyway?", the second sends done', 0.2, async function () {
+  const w = W.w;
+  const p = await twoPress(w, function () { return w.document.querySelector('[data-press="done"]'); }, function (t) { return DONE_ANYWAY.test(t); }, { id: 'goal/G9.1', what: 'done' }, 'Done not verified green, in its row');
+  return p.good || p.why;
+}, 1000);
+test.run('Start design mode is an arming button: the first press says "Start design mode: sure?", the second sends start-design', 0.2, async function () {
   const ws = deskWorld(Object.assign({}, goal, { design: false }), []);
   await ws.mount();
-  p = await twoPress(ws, function () { return ws.document.getElementById('desk-start-design'); }, function (t) { return t === 'Start design mode: sure?'; }, { id: 'goal/G9', what: 'start-design' }, 'Start design mode'); if (p) ok(p.good, 'Start design mode is an arming button: the first press says "Start design mode: sure?", the second sends start-design', p.why);
+  const p = await twoPress(ws, function () { return ws.document.getElementById('desk-start-design'); }, function (t) { return t === 'Start design mode: sure?'; }, { id: 'goal/G9', what: 'start-design' }, 'Start design mode');
+  return p.good || p.why;
+}, 1000);
 
-  // goal/G43.30, the box: "every Delete and every Close press in Desk (its rows, the item detail, the rule dialog) is an
-  // armingButton" (Andy: "while your mucking with desk, can you make sure that all delete and close buttons are
-  // armingButton's? box."). It ends goal/G41.9's one press for a goal with nothing open, and a done row's.
-  test.subHeading('goal/G43.30: every Close in the List is an armingButton, a goal\'s with nothing open and a done item\'s');
-  const armedNotClose = function (t) { return !!t && t !== 'Close'; };
+// goal/G43.30, the box: "every Delete and every Close press in Desk (its rows, the item detail, the rule dialog) is an
+// armingButton" (Andy: "while your mucking with desk, can you make sure that all delete and close buttons are
+// armingButton's? box."). It ends goal/G41.9's one press for a goal with nothing open, and a done row's.
+// goal/G43.30: every Close in the List is an armingButton, a goal's with nothing open and a done item's
+// Today's armed wording of Done on an item not verified green.
+const DONE_ANYWAY = /^Done anyway\? /;
+const armedNotClose = function (t) { return !!t && t !== 'Close'; };
+test.run('a goal\'s Close, with nothing under it open, is an arming button: the first press arms it, the second sends close', 0.2, async function () {
   const wc = deskWorld({ id: 'goal/G8', title: 'Done goal', goal: '', status: 'open', buttons: ['close'], design: false, blocked: [] }, []);
   await wc.mount();
-  p = await twoPress(wc, function () { return wc.document.querySelector('[data-press="close"]'); }, armedNotClose, { id: 'goal/G8', what: 'close' }, 'a goal\'s Close, nothing under it open'); if (p) ok(p.good, 'a goal\'s Close, with nothing under it open, is an arming button: the first press arms it, the second sends close', p.why);
+  const p = await twoPress(wc, function () { return wc.document.querySelector('[data-press="close"]'); }, armedNotClose, { id: 'goal/G8', what: 'close' }, 'a goal\'s Close, nothing under it open');
+  return p.good || p.why;
+}, 1000);
+test.run('a done item\'s Close, in its row, is an arming button: the first press arms it, the second sends close', 0.2, async function () {
   const wi = deskWorld({ id: 'goal/G8', title: 'A goal', goal: '', status: 'open', buttons: [], design: false, blocked: [] },
     [{ id: 'goal/G8.1', title: 'A done item', goal: 'goal/G8', status: 'done', buttons: ['close'], verified: 'green', claims: 1 }]);
   await wi.mount();
-  p = await twoPress(wi, function () { return wi.document.querySelector('[data-key="goal/G8.1"] [data-press="close"]') || wi.document.querySelector('[data-press="close"]'); }, armedNotClose, { id: 'goal/G8.1', what: 'close' }, 'a done item\'s Close, in its row'); if (p) ok(p.good, 'a done item\'s Close, in its row, is an arming button: the first press arms it, the second sends close', p.why);
+  const p = await twoPress(wi, function () { return wi.document.querySelector('[data-key="goal/G8.1"] [data-press="close"]') || wi.document.querySelector('[data-press="close"]'); }, armedNotClose, { id: 'goal/G8.1', what: 'close' }, 'a done item\'s Close, in its row');
+  return p.good || p.why;
+}, 1000);
 
-  // ── goal/G41.11: ARMED IS RED, ALSO ON THE DESIGN BUTTONS ─────────────────────────────────────────────────────────────
-  // An inline colour on Start or End design mode would beat the shell's armed red (shell.css, #app-content
-  // button[data-armed]). Their colour is a class that shell.css paints only while the button is not armed.
-  test.subHeading('goal/G41.11: Start and End design mode turn the shell\'s red when armed');
-  const css = fs.readFileSync(path.join(RUN, 'spirit', 'shell', 'shell.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
-  const wd = deskWorld(Object.assign({}, goal, { design: true }), []);
-  await wd.mount();
-  [['desk-end-design', 'End design mode'], ['desk-start-design', 'Start design mode']].forEach(function (pair) {
-    const b = wd.document.getElementById(pair[0]);
-    const style = b ? String(b.getAttribute('style') || '') : '';
-    ok(!!b && !/background/i.test(style), pair[1] + ': no inline background, which would beat the armed red', pair[1] + ': ' + (b ? 'style="' + style + '"' : 'not drawn'));
-    const classes = b ? String(b.className || '').split(/\s+/).filter(Boolean) : [];
-    // A rule of shell.css naming one of its classes, only while not armed, that paints its background.
-    const painted = classes.filter(function (c) {
-      const re = new RegExp('[^{}]*\\.' + c.replace(/[-]/g, '\\-') + '[^{}]*:not\\(\\[data-armed\\]\\)[^{}]*\\{[^}]*background', 'i');
-      return re.test(css);
-    });
-    ok(painted.length > 0, pair[1] + ': its colour comes from a class shell.css paints only while unarmed (.' + painted[0] + ':not([data-armed]))',
-      pair[1] + ': classes ' + JSON.stringify(classes) + ', none painted by shell.css under :not([data-armed])');
+// ── goal/G41.11: ARMED IS RED, ALSO ON THE DESIGN BUTTONS ─────────────────────────────────────────────────────────────
+// An inline colour on Start or End design mode would beat the shell's armed red (shell.css, #app-content
+// button[data-armed]). Their colour is a class that shell.css paints only while the button is not armed.
+// A design button: no inline background; and its class, the one the title names, painted by shell.css only while unarmed.
+const noInline = function (id, name) {
+  const b = W.wd.document.getElementById(id);
+  const style = b ? String(b.getAttribute('style') || '') : '';
+  return (!!b && !/background/i.test(style)) || name + ': ' + (b ? 'style="' + style + '"' : 'not drawn');
+};
+const paintedClass = function (id, name, want) {
+  const b = W.wd.document.getElementById(id);
+  const classes = b ? String(b.className || '').split(/\s+/).filter(Boolean) : [];
+  // A rule of shell.css naming one of its classes, only while not armed, that paints its background.
+  const painted = classes.filter(function (c) {
+    const re = new RegExp('[^{}]*\\.' + c.replace(/[-]/g, '\\-') + '[^{}]*:not\\(\\[data-armed\\]\\)[^{}]*\\{[^}]*background', 'i');
+    return re.test(W.css);
   });
-  test.subHeading('goal/G43.22: no Team and no Apps; Andy: "G0 goes, from ui and server, kept in database."');
-  {
-    const wt = deskWorld(goal, []);
-    await wt.mount();
-    const d = wt.document;
-    ok(!d.getElementById('desk-team') && !d.querySelector('[data-tab="apps"]') && !d.querySelector('[data-tab="team"]'),
-      'the page draws no Team chat, no Team tab and no Apps tab', 'still drawn: ' + JSON.stringify({ team: !!d.getElementById('desk-team'), apps: !!d.querySelector('[data-tab="apps"]'), teamTab: !!d.querySelector('[data-tab="team"]') }));
-  }
-  // ── goal/G43.3: THE LIST'S FILTERS, IN A REAL BROWSER ───────────────────────────────────────────
-  // Andy: "on the list search item.search, these two filters: [Current Goal Only] and [Goals only] MUST be mutually
-  // exclusive, both can be off, but only one of them can be active at once. so [Current Goal only] is the only filter On by
-  // default, and it MUST show the current goal when the page opens."
-  test.subHeading('goal/G43.3: /spirit/app/desk/element/desk/test/desk-opened.html: the page opened, with nothing on the stream');
-  {
-    const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
-    const chrome = H.findChrome();
-    if (!chrome) test.fail('no Chrome on this machine: SPIRIT_CHROME names none, and none is found by its name');
-    else {
-      const node = await H.scratchNode();
-      let page = null;
-      try {
-        page = node.up && node.debug ? await H.chromePage(chrome) : null;
-        if (!page || page.error) test.fail(page ? page.error : 'the scratch node did not come up with its DEBUG on');
-        else {
-          await page.send('Page.navigate', { url: node.base + '/DEBUG/spirit/app/desk/element/desk/test/desk-opened.html' });
-          await H.until(function () { return page.evaluate('typeof window.opened === "function" && !!window.spirit').then(Boolean); }, H.WAIT);
-          const read = async function (js) { try { return JSON.parse(await page.evaluate(js)); } catch (e) { return { error: String(e) }; } };
-          const o = await read('window.opened()');
-          ok(o.found === true, 'the world: the List draws its filter buttons', 'the page: ' + JSON.stringify(o));
-          ok(o.current === true && o.goals === false && o.closed === false, '[Current Goal Only] is the only filter on by default', 'at open: ' + JSON.stringify(o));
-          ok(!!o.args && o.args.currentGoalOnly === true && o.args.goalsOnly === false && o.args.includeClosed === false, 'the first search asks for the current goal alone', 'at open it asked ' + JSON.stringify(o.args));
-          ok(o.currentGoal === true && o.openItem === true, 'and the page shows the current goal and its item when it opens', 'at open: ' + JSON.stringify(o));
-          const g = await read('window.press("goalsOnly")');
-          ok(g.goals === true && g.current === false, '[Goals Only] pressed: [Current Goal Only] goes off', 'after [Goals Only]: ' + JSON.stringify(g));
-          ok(!!g.args && g.args.goalsOnly === true && g.args.currentGoalOnly === false, 'and the search asks for goals, every goal', 'it asked ' + JSON.stringify(g.args));
-          ok(g.currentGoal === true && g.olderGoal === true && g.olderItem === false && g.openItem === false, 'and the List shows the goals, no item', 'after [Goals Only]: ' + JSON.stringify(g));
-          const c = await read('window.press("current")');
-          ok(c.current === true && c.goals === false, '[Current Goal Only] pressed: [Goals Only] goes off', 'after [Current Goal Only]: ' + JSON.stringify(c));
-          ok(c.openItem === true && c.olderGoal === false && c.olderItem === false, 'and the List shows the current goal alone', 'after [Current Goal Only]: ' + JSON.stringify(c));
-          const off = await read('window.press("current")');
-          ok(off.current === false && off.goals === false, 'pressed again: both are off', 'pressed again: ' + JSON.stringify(off));
-          ok(!!off.args && off.args.currentGoalOnly === false && off.args.goalsOnly === false && off.openItem === true && off.olderItem === true, 'and the List shows every goal\'s items', 'both off: ' + JSON.stringify(off));
-        }
-      } finally {
-        if (page && page.kid) page.kid.kill();
-        if (node.child) node.child.kill();
-        try { if (page && page.profile) fs.rmSync(page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
-        try { if (node.root) fs.rmSync(node.root, { recursive: true, force: true }); } catch (e) { /* left */ }
-      }
-    }
-  }
+  return painted.indexOf(want) !== -1 || name + ': classes ' + JSON.stringify(classes) + ', painted by shell.css under :not([data-armed]): ' + JSON.stringify(painted);
+};
+test.run('End design mode: no inline background, which would beat the armed red', 0.2, async function () {
+  W.css = fs.readFileSync(path.join(RUN, 'spirit', 'shell', 'shell.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  W.wd = deskWorld(Object.assign({}, goal, { design: true }), []);
+  await W.wd.mount();
+  return noInline('desk-end-design', 'End design mode');
+}, 1000);
+test.run('End design mode: its colour comes from a class shell.css paints only while unarmed (.desk-design-end:not([data-armed]))', 0.2, function () {
+  if (!W.wd) return 'no page: the test above failed';
+  return paintedClass('desk-end-design', 'End design mode', 'desk-design-end');
+}, 1000);
+test.run('Start design mode: no inline background, which would beat the armed red', 0.2, function () {
+  if (!W.wd) return 'no page: the test above failed';
+  return noInline('desk-start-design', 'Start design mode');
+}, 1000);
+test.run('Start design mode: its colour comes from a class shell.css paints only while unarmed (.desk-design-start:not([data-armed]))', 0.2, function () {
+  if (!W.wd) return 'no page: the test above failed';
+  return paintedClass('desk-start-design', 'Start design mode', 'desk-design-start');
+}, 1000);
+// goal/G43.22: no Team and no Apps; Andy: "G0 goes, from ui and server, kept in database."
+test.run('the page draws no Team chat, no Team tab and no Apps tab', 0.2, async function () {
+  const wt = deskWorld(goal, []);
+  await wt.mount();
+  const d = wt.document;
+  return (!d.getElementById('desk-team') && !d.querySelector('[data-tab="apps"]') && !d.querySelector('[data-tab="team"]')) ||
+    'still drawn: ' + JSON.stringify({ team: !!d.getElementById('desk-team'), apps: !!d.querySelector('[data-tab="apps"]'), teamTab: !!d.querySelector('[data-tab="team"]') });
+}, 1000);
 
-  // ── ANOTHER ITEM OPENS AFTER ONE WAS CLOSED, IN A REAL BROWSER ────────────────────────────────────────────
-  // Andy: "after i closed "Fix api branches" the other items won't open for me", "all i see, when opening another item is the
-  // titlebar of that item". A scratch node with desk switched on, a goal and two items; the Desk element on its face page:
-  // the first item opened and closed with its ✕, then the second opened, which must draw its own details in the one layer.
-  test.subHeading('another item opens with its details after one was opened and closed');
-  {
-    const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
-    const chrome = H.findChrome();
-    if (!chrome) test.fail('no Chrome on this machine: SPIRIT_CHROME names none, and none is found by its name');
-    else {
-      const node = await H.scratchNode();
-      let page = null;
-      try {
-        page = node.up ? await H.chromePage(chrome) : null;
-        if (!page || page.error) test.fail(page ? page.error : 'the scratch node did not come up');
-        else {
-          await page.send('Page.navigate', { url: node.base + '/face.html' });
-          await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.require)').then(Boolean); }, H.WAIT);
-          const call = function (verb, args) {
-            return page.evaluate("fetch('/api/spirit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(" + JSON.stringify({ call: verb, args: args }) + ") }).then(function (r) { return r.text(); })")
-              .then(function (t) { try { return JSON.parse(t); } catch (e) { return {}; } });
-          };
-          await call('app.active', { key: 'desk', active: true });
-          await H.until(function () { return call('desk.items.search', { text: '' }).then(function (r) { return r.ok !== false; }); }, 40000);
-          const g = await call('desk.goal.add', { title: 'Opening goal' });
-          await call('desk.press', { id: g.id, what: 'make-current' });
-          const one = await call('desk.item.add', { goal: g.id, title: 'First opened item', blocks: '' });
-          const two = await call('desk.item.add', { goal: g.id, title: 'Second opened item', blocks: '' });
-          ok(!!g.id && !!one.id && !!two.id, 'the world: a goal and two items on the scratch desk', 'added ' + JSON.stringify([g, one, two]));
-          await page.evaluate("(function () { var d = document.createElement('div'); d.id = 'zzDesk'; d.style.height = '800px'; document.body.appendChild(d); return Promise.resolve(window.spirit.require('spirit/app/desk/element.js')).then(function () { window.spirit.element.spirit.app.desk.element.create(d, {}); return true; }); })()");
-          const open = function (title) { return page.evaluate("(function () { var all = Array.prototype.slice.call(document.querySelectorAll('#zzDesk *')).filter(function (x) { return x.textContent.indexOf(" + JSON.stringify(title) + ") !== -1 && !x.closest('.app-container'); }); if (!all.length) return false; all[all.length - 1].click(); return true; })()"); };
-          const shown = function () { return page.evaluate("(function () { var all = Array.prototype.slice.call(document.querySelectorAll('#zzDesk .app-container')); var b = all.filter(function (x) { return x.style.display !== 'none'; }).pop(); var body = b && b.querySelector('#dd-body'); return JSON.stringify({ layers: all.length, drawn: !!body && body.children.length > 0, text: b ? b.textContent : '' }); })()").then(JSON.parse); };
-          await H.until(function () { return page.evaluate("document.getElementById('zzDesk').textContent.indexOf('Second opened item') !== -1"); }, H.WAIT);
-          ok(await open('First opened item'), 'the world: the first item\'s row is in the List', 'no row for the first item');
-          await H.until(function () { return shown().then(function (s) { return s.drawn; }); }, H.WAIT);
-          const first = await shown();
-          ok(first.drawn && first.text.indexOf(one.id) !== -1, 'the first item opens with its details', 'the first: ' + JSON.stringify(first).slice(0, 200));
-          await page.evaluate("(function () { var b = Array.prototype.slice.call(document.querySelectorAll('#zzDesk .app-container')).filter(function (x) { return x.style.display !== 'none'; }).pop(); b.querySelector('.app-container-close').click(); return true; })()");
-          ok(await open('Second opened item'), 'the world: the second item\'s row is in the List', 'no row for the second item');
-          await H.until(function () { return shown().then(function (s) { return s.drawn && s.text.indexOf(two.id) !== -1; }); }, H.WAIT);
-          const second = await shown();
-          ok(second.drawn && second.text.indexOf(two.id) !== -1, 'after it was closed, the second item opens with its own details, not its title bar alone', 'the second: ' + JSON.stringify(second).slice(0, 200));
-          ok(second.layers === 1, 'every item opens in the one details layer', second.layers + ' layers');
-        }
-      } finally {
-        if (page && page.kid) page.kid.kill();
-        if (node.child) node.child.kill();
-        try { if (page && page.profile) fs.rmSync(page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
-        try { if (node.root) fs.rmSync(node.root, { recursive: true, force: true }); } catch (e) { /* left */ }
-      }
-    }
-  }
+// ── goal/G43.3: THE LIST'S FILTERS, IN A REAL BROWSER ───────────────────────────────────────────
+// Andy: "on the list search item.search, these two filters: [Current Goal Only] and [Goals only] MUST be mutually
+// exclusive, both can be off, but only one of them can be active at once. so [Current Goal only] is the only filter On by
+// default, and it MUST show the current goal when the page opens."
+// goal/G43.3: /spirit/app/desk/element/desk/test/desk-opened.html: the page opened, with nothing on the stream
+const F1 = W.f1 = {};
+const read1 = async function (js) { try { return JSON.parse(await F1.page.evaluate(js)); } catch (e) { return { error: String(e) }; } };
+const noF1 = function () { return !F1.o ? 'no page: the world failed' : ''; };
+test.run('the world: the List draws its filter buttons', 0.2, async function () {
+  const why = await bootPage(F1, true);
+  if (why) return why;
+  const page = F1.page;
+  await page.send('Page.navigate', { url: F1.node.base + '/DEBUG/spirit/app/desk/element/desk/test/desk-opened.html' });
+  await H.until(function () { return page.evaluate('typeof window.opened === "function" && !!window.spirit').then(Boolean); }, H.WAIT);
+  const o = await read1('window.opened()');
+  if (o.found === true) F1.o = o;
+  return o.found === true || 'the page: ' + JSON.stringify(o);
+}, 16000);
+test.run('[Current Goal Only] is the only filter on by default', 0.2, function () { if (noF1()) return noF1(); const o = F1.o; return (o.current === true && o.goals === false && o.closed === false) || 'at open: ' + JSON.stringify(o); }, 1000);
+test.run('the first search asks for the current goal alone', 0.2, function () { if (noF1()) return noF1(); const o = F1.o; return (!!o.args && o.args.currentGoalOnly === true && o.args.goalsOnly === false && o.args.includeClosed === false) || 'at open it asked ' + JSON.stringify(o.args); }, 1000);
+test.run('and the page shows the current goal and its item when it opens', 0.2, function () { if (noF1()) return noF1(); const o = F1.o; return (o.currentGoal === true && o.openItem === true) || 'at open: ' + JSON.stringify(o); }, 1000);
+test.run('[Goals Only] pressed: [Current Goal Only] goes off', 0.2, async function () {
+  if (noF1()) return noF1();
+  const g = F1.g = await read1('window.press("goalsOnly")');
+  return (g.goals === true && g.current === false) || 'after [Goals Only]: ' + JSON.stringify(g);
+}, 3000);
+test.run('and the search asks for goals, every goal', 0.2, function () { const g = F1.g; if (!g) return 'no press: the tests above failed'; return (!!g.args && g.args.goalsOnly === true && g.args.currentGoalOnly === false) || 'it asked ' + JSON.stringify(g.args); }, 1000);
+test.run('and the List shows the goals, no item', 0.2, function () { const g = F1.g; if (!g) return 'no press: the tests above failed'; return (g.currentGoal === true && g.olderGoal === true && g.olderItem === false && g.openItem === false) || 'after [Goals Only]: ' + JSON.stringify(g); }, 1000);
+test.run('[Current Goal Only] pressed: [Goals Only] goes off', 0.2, async function () {
+  if (noF1()) return noF1();
+  const c = F1.c = await read1('window.press("current")');
+  return (c.current === true && c.goals === false) || 'after [Current Goal Only]: ' + JSON.stringify(c);
+}, 3000);
+test.run('and the List shows the current goal alone', 0.2, function () { const c = F1.c; if (!c) return 'no press: the tests above failed'; return (c.openItem === true && c.olderGoal === false && c.olderItem === false) || 'after [Current Goal Only]: ' + JSON.stringify(c); }, 1000);
+test.run('pressed again: both are off', 0.2, async function () {
+  if (noF1()) return noF1();
+  const off = F1.off = await read1('window.press("current")');
+  return (off.current === false && off.goals === false) || 'pressed again: ' + JSON.stringify(off);
+}, 3000);
+test.run('and the List shows every goal\'s items', 0.2, function () {
+  stop(F1);
+  const off = F1.off;
+  if (!off) return 'no press: the tests above failed';
+  return (!!off.args && off.args.currentGoalOnly === false && off.args.goalsOnly === false && off.openItem === true && off.olderItem === true) || 'both off: ' + JSON.stringify(off);
+}, 1000);
 
-  // ── goal/G43.30: ON THE REAL PAGE, A CLOSE PRESSED ONCE CLOSES NOTHING ─────────────────────────────────────────
-  // The box: "A test presses each one once on the real page and finds that nothing happened", and the run status: "Desk
-  // and its detail load it from there", spirit/app/desk/element/deskRunStatus/. A scratch node with desk switched on, a
-  // goal and an item pressed done; the Desk element on its face page; every Close the List draws pressed once.
-  test.subHeading('goal/G43.30: on a real page, every Close in the List pressed once closes nothing; the run status from Desk\'s own elements');
-  {
-    const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
-    const chrome = H.findChrome();
-    if (!chrome) test.fail('no Chrome on this machine: SPIRIT_CHROME names none, and none is found by its name');
-    else {
-      const node = await H.scratchNode();
-      let page = null;
-      try {
-        page = node.up ? await H.chromePage(chrome) : null;
-        if (!page || page.error) test.fail(page ? page.error : 'the scratch node did not come up');
-        else {
-          await page.send('Page.navigate', { url: node.base + '/face.html' });
-          await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.require)').then(Boolean); }, H.WAIT);
-          const call = function (verb, args) {
-            return page.evaluate("fetch('/api/spirit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(" + JSON.stringify({ call: verb, args: args }) + ") }).then(function (r) { return r.text(); })")
-              .then(function (t) { try { return JSON.parse(t); } catch (e) { return {}; } });
-          };
-          await call('app.active', { key: 'desk', active: true });
-          await H.until(function () { return call('desk.items.search', { text: '' }).then(function (r) { return r.ok !== false; }); }, 40000);
-          const g = await call('desk.goal.add', { title: 'Closing goal' });
-          await call('desk.press', { id: g.id, what: 'make-current' });
-          const it = await call('desk.item.add', { goal: g.id, title: 'An item to close', blocks: '' });
-          await call('desk.press', { id: it.id, what: 'done' });
-          const state = async function () { const r = await call('desk.item.get', { id: it.id }); let i = r.item; if (typeof i === 'string') { try { i = JSON.parse(i); } catch (e) { i = null; } } return i || {}; };
-          const before = await state();
-          ok(!!g.id && !!it.id && before.status === 'done', 'the world: a goal and its item, done, on the scratch desk', 'the world: ' + JSON.stringify({ goal: g.id, item: it.id, status: before.status }));
-          await page.evaluate("(function () { var d = document.createElement('div'); d.id = 'zzDesk'; d.style.height = '800px'; document.body.appendChild(d); return Promise.resolve(window.spirit.require('spirit/app/desk/element.js')).then(function () { window.spirit.element.spirit.app.desk.element.create(d, {}); return true; }); })()");
-          const CLOSES = "Array.prototype.filter.call(document.querySelectorAll('#zzDesk [data-press=\"close\"]'), function (b) { return b.getClientRects().length && !b.closest('.app-container'); })";
-          ok(await H.until(function () { return page.evaluate(CLOSES + '.length > 0'); }, H.WAIT), 'the world: the List draws the done item\'s Close', 'no Close in the List: ' + String(await page.evaluate("String(document.getElementById('zzDesk').innerText).slice(0, 300)")));
-          const n = await page.evaluate(CLOSES + '.length');
-          for (let i = 0; i < n; i++) await page.evaluate('(function () { var b = ' + CLOSES + '[' + i + ']; if (b) b.click(); return !!b; })()');
-          await new Promise(function (r) { setTimeout(r, 1500); });
-          const after = await state();
-          ok(after.status === 'done', 'each Close in the List pressed once: the item is still done, nothing closed', 'after one press each the item is ' + after.status);
-          const armed = JSON.parse(await page.evaluate('JSON.stringify(' + CLOSES + '.map(function (b) { return b.hasAttribute("data-armed"); }))'));
-          ok(armed.length === n && armed.every(Boolean), 'and each Close in the List stands armed, waiting for the second press', 'after one press each, the List\'s Closes armed: ' + JSON.stringify(armed) + ' of ' + n);
-          const from = JSON.parse(await page.evaluate('JSON.stringify(performance.getEntriesByType("resource").map(function (e) { return e.name; }).filter(function (x) { return /deskRunStatus/.test(x); }))'));
-          ok(from.some(function (x) { return x.indexOf('/spirit/app/desk/element/deskRunStatus/deskRunStatus.js') !== -1; }) && !from.some(function (x) { return /\/shell\/shared\//.test(x); }),
-            'Desk loads its run status from spirit/app/desk/element/deskRunStatus/, never from shell/shared/', 'the page loaded ' + JSON.stringify(from));
-        }
-      } finally {
-        if (page && page.kid) page.kid.kill();
-        if (node.child) node.child.kill();
-        try { if (page && page.profile) fs.rmSync(page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
-        try { if (node.root) fs.rmSync(node.root, { recursive: true, force: true }); } catch (e) { /* left */ }
-      }
-    }
-  }
+// ── ANOTHER ITEM OPENS AFTER ONE WAS CLOSED, IN A REAL BROWSER ────────────────────────────────────────────
+// Andy: "after i closed "Fix api branches" the other items won't open for me", "all i see, when opening another item is the
+// titlebar of that item". A scratch node with desk switched on, a goal and two items; the Desk element on its face page:
+// the first item opened and closed with its ✕, then the second opened, which must draw its own details in the one layer.
+// another item opens with its details after one was opened and closed
+const F2 = W.f2 = {};
+const noF2 = function () { return !F2.ready ? 'no desk on a page: the world failed' : ''; };
+const open2 = function (title) { return F2.page.evaluate("(function () { var all = Array.prototype.slice.call(document.querySelectorAll('#zzDesk *')).filter(function (x) { return x.textContent.indexOf(" + JSON.stringify(title) + ") !== -1 && !x.closest('.app-container'); }); if (!all.length) return false; all[all.length - 1].click(); return true; })()"); };
+const shown2 = function () { return F2.page.evaluate("(function () { var all = Array.prototype.slice.call(document.querySelectorAll('#zzDesk .app-container')); var b = all.filter(function (x) { return x.style.display !== 'none'; }).pop(); var body = b && b.querySelector('#dd-body'); return JSON.stringify({ layers: all.length, drawn: !!body && body.children.length > 0, text: b ? b.textContent : '' }); })()").then(JSON.parse); };
+test.run('the world: a goal and two items on the scratch desk', 0.2, async function () {
+  const why = await bootPage(F2, false);
+  if (why) return why;
+  const page = F2.page;
+  await page.send('Page.navigate', { url: F2.node.base + '/face.html' });
+  await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.require)').then(Boolean); }, H.WAIT);
+  const call = caller(page);
+  await call('app.active', { key: 'desk', active: true });
+  await H.until(function () { return call('desk.items.search', { text: '' }).then(function (r) { return r.ok !== false; }); }, 40000);
+  const g = await call('desk.goal.add', { title: 'Opening goal' });
+  await call('desk.press', { id: g.id, what: 'make-current' });
+  F2.one = await call('desk.item.add', { goal: g.id, title: 'First opened item', blocks: '' });
+  F2.two = await call('desk.item.add', { goal: g.id, title: 'Second opened item', blocks: '' });
+  F2.ready = !!g.id && !!F2.one.id && !!F2.two.id;
+  return F2.ready || 'added ' + JSON.stringify([g, F2.one, F2.two]);
+}, 130000);
+test.run('the world: the first item\'s row is in the List', 0.2, async function () {
+  if (noF2()) return noF2();
+  const page = F2.page;
+  await page.evaluate(MOUNT_DESK);
+  await H.until(function () { return page.evaluate("document.getElementById('zzDesk').textContent.indexOf('Second opened item') !== -1"); }, H.WAIT);
+  return (await open2('First opened item')) || 'no row for the first item';
+}, 2000);
+test.run('the first item opens with its details', 0.2, async function () {
+  if (noF2()) return noF2();
+  await H.until(function () { return shown2().then(function (s) { return s.drawn; }); }, H.WAIT);
+  const first = await shown2();
+  return (first.drawn && first.text.indexOf(F2.one.id) !== -1) || 'the first: ' + JSON.stringify(first).slice(0, 200);
+}, 2000);
+test.run('the world: the second item\'s row is in the List', 0.2, async function () {
+  if (noF2()) return noF2();
+  await F2.page.evaluate("(function () { var b = Array.prototype.slice.call(document.querySelectorAll('#zzDesk .app-container')).filter(function (x) { return x.style.display !== 'none'; }).pop(); b.querySelector('.app-container-close').click(); return true; })()");
+  return (await open2('Second opened item')) || 'no row for the second item';
+}, 3000);
+test.run('after it was closed, the second item opens with its own details, not its title bar alone', 0.2, async function () {
+  if (noF2()) return noF2();
+  await H.until(function () { return shown2().then(function (s) { return s.drawn && s.text.indexOf(F2.two.id) !== -1; }); }, H.WAIT);
+  const second = F2.second = await shown2();
+  return (second.drawn && second.text.indexOf(F2.two.id) !== -1) || 'the second: ' + JSON.stringify(second).slice(0, 200);
+}, 2000);
+test.run('every item opens in the one details layer', 0.2, function () {
+  stop(F2);
+  const second = F2.second;
+  if (!second) return 'no second item opened: the tests above failed';
+  return second.layers === 1 || second.layers + ' layers';
+}, 1000);
 
-  test.subHeading('goal/G41.11: every list of Desk stands in a box of a stated size (rule/16)');
-  // Andy, on G41.11: "the rules list is NOT placed properly in a size-limited container.... is this the same everywhere
-  // in desk?" rule/16: every probabilitySearch is mounted in a box that states its size, class fill, inside a pane that
-  // fills its app; never in a stat-tile or a box only as tall as its content. A list
-  // drawn as a dropdown stands inline, as every dropdown in the tree does, and is not asked here.
+// ── goal/G43.30: ON THE REAL PAGE, A CLOSE PRESSED ONCE CLOSES NOTHING ─────────────────────────────────────────
+// The box: "A test presses each one once on the real page and finds that nothing happened", and the run status: "Desk
+// and its detail load it from there", spirit/app/desk/element/deskRunStatus/. A scratch node with desk switched on, a
+// goal and an item pressed done; the Desk element on its face page; every Close the List draws pressed once.
+// goal/G43.30: on a real page, every Close in the List pressed once closes nothing; the run status from Desk's own elements
+const F3 = W.f3 = {};
+const noF3 = function () { return !F3.ready ? 'no desk on a page: the world failed' : ''; };
+const CLOSES = "Array.prototype.filter.call(document.querySelectorAll('#zzDesk [data-press=\"close\"]'), function (b) { return b.getClientRects().length && !b.closest('.app-container'); })";
+const state3 = async function () { const r = await F3.call('desk.item.get', { id: F3.it.id }); let i = r.item; if (typeof i === 'string') { try { i = JSON.parse(i); } catch (e) { i = null; } } return i || {}; };
+test.run('the world: a goal and its item, done, on the scratch desk', 0.2, async function () {
+  const why = await bootPage(F3, false);
+  if (why) return why;
+  const page = F3.page;
+  await page.send('Page.navigate', { url: F3.node.base + '/face.html' });
+  await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.require)').then(Boolean); }, H.WAIT);
+  const call = F3.call = caller(page);
+  await call('app.active', { key: 'desk', active: true });
+  await H.until(function () { return call('desk.items.search', { text: '' }).then(function (r) { return r.ok !== false; }); }, 40000);
+  const g = await call('desk.goal.add', { title: 'Closing goal' });
+  await call('desk.press', { id: g.id, what: 'make-current' });
+  const it = F3.it = await call('desk.item.add', { goal: g.id, title: 'An item to close', blocks: '' });
+  await call('desk.press', { id: it.id, what: 'done' });
+  const before = await state3();
+  F3.ready = !!g.id && !!it.id && before.status === 'done';
+  return F3.ready || 'the world: ' + JSON.stringify({ goal: g.id, item: it.id, status: before.status });
+}, 130000);
+test.run('the world: the List draws the done item\'s Close', 0.2, async function () {
+  if (noF3()) return noF3();
+  const page = F3.page;
+  await page.evaluate(MOUNT_DESK);
+  const drawn = await H.until(function () { return page.evaluate(CLOSES + '.length > 0'); }, H.WAIT);
+  if (drawn) F3.drawn = true;
+  return drawn || 'no Close in the List: ' + String(await page.evaluate("String(document.getElementById('zzDesk').innerText).slice(0, 300)"));
+}, 2000);
+test.run('each Close in the List pressed once: the item is still done, nothing closed', 0.2, async function () {
+  if (!F3.drawn) return 'no Close drawn: the world failed';
+  const page = F3.page;
+  const n = F3.n = await page.evaluate(CLOSES + '.length');
+  for (let i = 0; i < n; i++) await page.evaluate('(function () { var b = ' + CLOSES + '[' + i + ']; if (b) b.click(); return !!b; })()');
+  await new Promise(function (r) { setTimeout(r, 1500); });
+  const after = await state3();
+  return after.status === 'done' || 'after one press each the item is ' + after.status;
+}, 5000);
+test.run('and each Close in the List stands armed, waiting for the second press', 0.2, async function () {
+  if (!F3.drawn) return 'no Close drawn: the world failed';
+  const armed = JSON.parse(await F3.page.evaluate('JSON.stringify(' + CLOSES + '.map(function (b) { return b.hasAttribute("data-armed"); }))'));
+  return (armed.length === F3.n && armed.every(Boolean)) || 'after one press each, the List\'s Closes armed: ' + JSON.stringify(armed) + ' of ' + F3.n;
+}, 1000);
+test.run('Desk loads its run status from spirit/app/desk/element/deskRunStatus/, never from shell/shared/', 0.2, async function () {
+  if (noF3()) { stop(F3); return noF3(); }
+  const from = JSON.parse(await F3.page.evaluate('JSON.stringify(performance.getEntriesByType("resource").map(function (e) { return e.name; }).filter(function (x) { return /deskRunStatus/.test(x); }))'));
+  stop(F3);
+  const shared = /\/shell\/shared\//;
+  return (from.some(function (x) { return x.indexOf('/spirit/app/desk/element/deskRunStatus/deskRunStatus.js') !== -1; }) && !from.some(function (x) { return shared.test(x); })) ||
+    'the page loaded ' + JSON.stringify(from);
+}, 1000);
+
+// goal/G41.11: every list of Desk stands in a box of a stated size (rule/16)
+// Andy, on G41.11: "the rules list is NOT placed properly in a size-limited container.... is this the same everywhere
+// in desk?" rule/16: every probabilitySearch is mounted in a box that states its size, class fill, inside a pane that
+// fills its app; never in a stat-tile or a box only as tall as its content. A list
+// drawn as a dropdown stands inline, as every dropdown in the tree does, and is not asked here.
+const isFill = function (n) { return (' ' + String(n.className || '') + ' ').indexOf(' fill ') !== -1; };
+const notFill = function (host) { const out = []; for (let n = host; n && n !== W.mountBox; n = n.parentNode) { if (!isFill(n)) out.push((n.id ? '#' + n.id : n.tagName || n.tag) + (n.className ? '.' + n.className : '')); } return out; };
+const fillOf = function (name, verb) {
+  const made = W.panes.filter(function (x) { return x.o.verb === verb; })[0];
+  if (!made) return name + ': no list made';
+  const gaps = notFill(made.host);
+  return (isFill(made.host) && !gaps.length) || name + ': not fill: ' + gaps.join(' < ');
+};
+test.run('the List stands in a fill box, and every box up to the app is fill too', 0.2, async function () {
   const wf = deskWorld(goal, [item]);
-  const panes = [];
+  const panes = W.panes = [];
   const realCreate = wf.win.spirit.element.spirit.element.search.create;
   wf.win.spirit.element.spirit.element.search.create = function (host, o) { if (!o || o.face !== 'dropdown') panes.push({ host: host, o: o || {} }); return realCreate(host, o); };
   await wf.mount();
-  const mountBox = wf.document.body.children[wf.document.body.children.length - 1];
+  W.mountBox = wf.document.body.children[wf.document.body.children.length - 1];
   const rulesTab = wf.document.querySelector('[data-tab="rules"]');
   if (rulesTab) { wf.document.click(rulesTab); await settle(); }
-  const isFill = function (n) { return (' ' + String(n.className || '') + ' ').indexOf(' fill ') !== -1; };
-  const notFill = function (host) { const out = []; for (let n = host; n && n !== mountBox; n = n.parentNode) { if (!isFill(n)) out.push((n.id ? '#' + n.id : n.tagName || n.tag) + (n.className ? '.' + n.className : '')); } return out; };
-  [['the List', 'items.search'], ['the Rules list', 'rules.search']].forEach(function (want) {
-    const made = panes.filter(function (x) { return x.o.verb === want[1]; })[0];
-    if (!made) { test.fail(want[0] + ': no list made'); return; }
-    const gaps = notFill(made.host);
-    const fill = isFill(made.host) && !gaps.length;
-    const why = want[0] + ': not fill: ' + gaps.join(' < ');
-    if (want[1] === 'items.search') ok(fill, 'the List stands in a fill box, and every box up to the app is fill too', why);
-    else if (want[1] === 'rules.search') ok(fill, 'the Rules list stands in a fill box, and every box up to the app is fill too', why);
-  });
-}()).catch(function (e) { test.fail('the test threw ' + (e && e.stack || e)); }).then(async function () {
-  // The parts below, each after the checks above, in order; one report for all.
-  for (const part of [['noPlugins', noPluginsPart]]) {
-    try { await part[1](); } catch (e) { test.fail('the ' + part[0] + ' part threw ' + (e && e.stack || e)); }
-  }
-  test.reportSuccessFailureCount();
-});
+  return fillOf('the List', 'items.search');
+}, 1000);
+test.run('the Rules list stands in a fill box, and every box up to the app is fill too', 0.2, function () {
+  if (!W.panes) return 'no page: the test above failed';
+  return fillOf('the Rules list', 'rules.search');
+}, 1000);
+
+// ── THE noPlugins PART ───────────────────────────────────────────────────────────────────────────────────────────
+// THE DESK PAGE WITHOUT APPS, PLUGINS AND TEAM CHAT (goal/G43.22; spec: ./desk.md, its noPlugins section): spirit/app/desk/element/desk/desk.js.
+// Andy, the box: "the apps and plugin system goes.", "there will only be goals, items and rules left, plus the verifier stuff
+// can stay for now.". Q5: "G0 goes, from ui and server, kept in database.". The tree read as it is, comments left out.
+// noPlugins: the desk page draws no Apps tab, no plugin and no team chat (goal/G43.22); Andy: "removal of plugin support.",
+// and "G0 goes, from ui and server"
+function codeOf(f) { try { return fs.readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1').replace(/<!--[\s\S]*?-->/g, ''); } catch (e) { return ''; } }
+test.run('the desk page draws no Apps tab, no plugin tab and no team chat', 0.2, function () {
+  const page = codeOf(path.join(RUN, 'spirit', 'app', 'desk', 'element', 'desk', 'desk.js'));
+  return (!!page && !/goal\/G0['"]/.test(page) && !/data-tab="apps"/.test(page) && !/plugin/i.test(page)) || 'spirit/app/desk/element/desk/desk.js still names Apps, a plugin or goal/G0';
+}, 1000);
+
+test.after(function () { stop(F1); stop(F2); stop(F3); });
 
 // THE ELEMENT NAMES SINCE goal/G43.18: a stand-in keyed by its place, 'search.contact' and so on, nested where the page has it.
 function nestSearch(o) { Object.keys(o).forEach(function (k) { if (k !== 'search' && k.indexOf('search.') !== 0) return; var v = o[k]; delete o[k]; var ks = k.split('.'); var at = o; ks.slice(0, -1).forEach(function (p) { at = at[p] = at[p] || {}; }); var last = ks[ks.length - 1]; at[last] = Object.assign(at[last] || {}, v); }); return o; }
-
-// ── THE noPlugins PART ───────────────────────────────────────────────────────────────────────────────────────────
-async function noPluginsPart() {
-  // The noPlugins part of ./desk.js.
-  // THE DESK PAGE WITHOUT APPS, PLUGINS AND TEAM CHAT (goal/G43.22; spec: ./desk.md, its noPlugins section): spirit/app/desk/element/desk/desk.js.
-  // Andy, the box: "the apps and plugin system goes.", "there will only be goals, items and rules left, plus the verifier stuff
-  // can stay for now.". Q5: "G0 goes, from ui and server, kept in database.". The tree read as it is, comments left out.
-
-  const fs = require('fs');
-  const path = require('path');
-  const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..', '..');
-  const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-
-  function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
-  function code(f) { try { return fs.readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1').replace(/<!--[\s\S]*?-->/g, ''); } catch (e) { return ''; } }
-  const DESK = path.join(RUN, 'spirit', 'app', 'desk');
-
-  test.subHeading('noPlugins: the desk page draws no Apps tab, no plugin and no team chat (goal/G43.22)');
-
-  test.subHeading('Andy: "removal of plugin support.", and "G0 goes, from ui and server"');
-  const page = code(path.join(DESK, 'element', 'desk', 'desk.js'));
-  ok(!!page && !/goal\/G0['"]/.test(page) && !/data-tab="apps"/.test(page) && !/plugin/i.test(page), 'the desk page draws no Apps tab, no plugin tab and no team chat', 'spirit/app/desk/element/desk/desk.js still names Apps, a plugin or goal/G0');
-}

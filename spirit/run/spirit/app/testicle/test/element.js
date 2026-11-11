@@ -18,7 +18,6 @@ const REPO = path.resolve(RUN, '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const { freePort, until, sleep, chromePage, findChrome } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 
-function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 function parsed(t) { try { return JSON.parse(t); } catch (e) { return null; } }
 function readJson(f) { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch (e) { return null; } }
@@ -104,170 +103,322 @@ const HANDS = '(function () {' +
   '  centerText: function () { var b = box(); var c = b ? b.querySelector("[id$=\\"center\\"]") : null; return c ? String(c.innerText || "").trim() : null; },' +
   '}; return "hands"; }())';
 
-test.startTest('testicle/element.js: testicle\'s first-cut face, a workBench with one 📁 and the production scripts (goal/G45.1)');
+// What the tests share, made by the tests in order: the scratch tree, its node, the Chrome page and what each step read.
+let own = null, id = {}, src = '', s = null, N = null, c = null, made = '', bare = [], rows = [], files = [], want1 = [], d1 = { rows: [] }, t1 = {}, two = [], etaBefore = null, clicked = false, goneShown = null, before = 0;
+const live = [];
+const NONODE = 'no scratch node: the world failed';
+const NOPAGE = 'no page: the world failed';
+const NOFACE = 'the face did not mount: the world failed';
+const T = function (expr) { return c.evaluate('window.__t.' + expr); };
+const waitFor = function (expr, ms) { return until(function () { return c.evaluate('(function () { with (window.__t) { return !!(' + expr + '); } }())'); }, ms || 10000); };
+const named = function (rows, suite) { return rows.some(function (r) { return r.key === suite || r.key === SHOWN[0] + '|' + suite || String(r.text).indexOf(suite) !== -1; }); };
+const F1 = SHOWN[0];
+const F2 = SHOWN[1];
+const F3 = 'spirit/zzTesticle/eta.js';
+const F4 = 'spirit/zzTesticle/gone.js';
+const etaOwn = 'spirit/zzTesticle/test/eta.js';
+// Whether the face is mounted on its page, else why not.
+const face = function () { return !N || !N.up ? NONODE : (!c || c.error || !c.evaluate) ? NOPAGE : made !== 'made' ? NOFACE : ''; };
 
-(async function () {
-  test.subHeading('the box: "A face-only app is its manifest and its element.js, as contact and starter are"');
-  const own = readJson(path.join(APP, 'testicle.json'));
-  ok(!!own, 'spirit/app/testicle/testicle.json is there, and JSON', 'no spirit/app/testicle/testicle.json, or no JSON');
-  const id = (own && own.identity) || {};
-  ok(typeof id.icon === 'string' && !!id.icon && typeof id.label === 'string' && !!id.label, 'it names an icon and a label', 'identity: ' + short(id));
-  // The goal box: "testicle: an intrinsic app with a server and a face".
-  ok(id.intrinsic === true, 'it is intrinsic', 'identity.intrinsic: ' + short(id.intrinsic));
-  ok(!!own && !!own.shell && own.shell.mount === true, 'it has a face: shell.mount true', 'shell: ' + short(own && own.shell));
-  // goal/G47.1, the server cycle: "The server mounts beside the face (testicle.json: node.mount true)", "The testicle
-  // server will serve one first verb, \"busy\"", and the verbs cycle: testicle.script.get and testicle.suite.search, each
-  // with its json description (Andy's rule 6). The server's own checks are ./testicle.js.
-  ok(!!own && !!own.node && own.node.mount === true, 'a server beside the face: node.mount true', 'node: ' + short(own && own.node));
+test.after(async function () {
+  try { if (c && c.kid) c.kid.kill(); } catch (e) { /* gone */ }
+  for (const k of live) await stop(k);
+  try { if (s) fs.rmSync(s.root, { recursive: true, force: true }); } catch (e) { /* scratch */ }
+});
+
+// the box: "A face-only app is its manifest and its element.js, as contact and starter are"
+test.run('spirit/app/testicle/testicle.json is there, and JSON', 0.2, function () {
+  own = readJson(path.join(APP, 'testicle.json'));
+  id = (own && own.identity) || {};
+  return !!own || 'no spirit/app/testicle/testicle.json, or no JSON';
+}, 1000);
+test.run('it names an icon and a label', 0.2, function () {
+  return (typeof id.icon === 'string' && !!id.icon && typeof id.label === 'string' && !!id.label) || 'identity: ' + short(id);
+}, 1000);
+// The goal box: "testicle: an intrinsic app with a server and a face".
+test.run('it is intrinsic', 0.2, function () {
+  return id.intrinsic === true || 'identity.intrinsic: ' + short(id.intrinsic);
+}, 1000);
+test.run('it has a face: shell.mount true', 0.2, function () {
+  return (!!own && !!own.shell && own.shell.mount === true) || 'shell: ' + short(own && own.shell);
+}, 1000);
+// goal/G47.1, the server cycle: "The server mounts beside the face (testicle.json: node.mount true)", "The testicle
+// server will serve one first verb, \"busy\"", and the verbs cycle: testicle.script.get and testicle.suite.search, each
+// with its json description (Andy's rule 6). The server's own checks are ./testicle.js.
+test.run('a server beside the face: node.mount true', 0.2, function () {
+  return (!!own && !!own.node && own.node.mount === true) || 'node: ' + short(own && own.node);
+}, 1000);
+test.run('its folder holds its manifest, its face, its server, its api.js and data.js, and a json description of each verb, busy, script.get, suite.search, test.set, test.search, red, subscribe and unsubscribe, and its test/ folder, nothing else', 0.2, function () {
   const held = fs.existsSync(APP) ? fs.readdirSync(APP).filter(function (f) { return f !== 'test'; }).sort() : [];
-  ok(JSON.stringify(held) === JSON.stringify(['api.js', 'busy.json', 'data.js', 'element.js', 'red.json', 'script.get.json', 'subscribe.json', 'suite.search.json', 'test.search.json', 'test.set.json', 'testicle.js', 'testicle.json', 'unsubscribe.json']), 'its folder holds its manifest, its face, its server, its api.js and data.js, and a json description of each verb, busy, script.get, suite.search, test.set, test.search, red, subscribe and unsubscribe, and its test/ folder, nothing else', 'its folder holds ' + short(held));
-  ok(!!own && !!own.mount && own.mount['element.js'] === true, 'its mount names element.js', 'mount: ' + short(own && own.mount));
-  // The box: "spirit/app/test/ stays the app branch's test folder".
-  ok(fs.existsSync(path.join(RUN, 'spirit', 'app', 'test')) && !fs.existsSync(path.join(RUN, 'spirit', 'app', 'test', 'test.json')), 'spirit/app/test/ stays the app branch\'s test folder, no app', 'spirit/app/test/ holds a test.json, or is gone');
+  return JSON.stringify(held) === JSON.stringify(['api.js', 'busy.json', 'data.js', 'element.js', 'red.json', 'script.get.json', 'subscribe.json', 'suite.search.json', 'test.search.json', 'test.set.json', 'testicle.js', 'testicle.json', 'unsubscribe.json']) || 'its folder holds ' + short(held);
+}, 1000);
+test.run('its mount names element.js', 0.2, function () {
+  return (!!own && !!own.mount && own.mount['element.js'] === true) || 'mount: ' + short(own && own.mount);
+}, 1000);
+// The box: "spirit/app/test/ stays the app branch's test folder".
+test.run('spirit/app/test/ stays the app branch\'s test folder, no app', 0.2, function () {
+  return (fs.existsSync(path.join(RUN, 'spirit', 'app', 'test')) && !fs.existsSync(path.join(RUN, 'spirit', 'app', 'test', 'test.json'))) || 'spirit/app/test/ holds a test.json, or is gone';
+}, 1000);
 
-  test.subHeading('the box: "calls no verbs in this round", "the existing file list ...: no new list"');
-  const src = code(FACE);
-  ok(src !== '', 'spirit/app/testicle/element.js is there', 'no spirit/app/testicle/element.js');
-  ok(/['"]spirit\/element\/workBench\.js['"]/.test(src), 'it draws with the workBench element, spirit/element/workBench.js', 'it does not require spirit/element/workBench.js');
-  ok(/['"]spirit\/element\/search\/file\.js['"]/.test(src), 'its file viewer is the existing file list, spirit/element/search/file.js', 'it does not require spirit/element/search/file.js');
-  ok(src !== '' && !/\.element\.search\.create\(|createElement\(['"](tr|li|table)['"]\)/.test(src), 'it makes no list of its own', 'it makes a list of its own');
-  // goal/G47.1, the UI cycle: the face asks testicle.script.get on a click, through spirit; never by itself.
-  ok(src !== '' && !/\.peerPost\(|\bfetch\(|XMLHttpRequest/.test(src), 'it asks the node only through spirit: no peerPost, no fetch', 'it asks the node something itself');
-  // goal/G47.1, the box: "testicle turns flat on."
-  ok(/\bflat\s*:\s*true\b/.test(src), 'it draws the file list with flat on', 'it does not hand the file list flat: true');
+// the box: "calls no verbs in this round", "the existing file list ...: no new list"
+test.run('spirit/app/testicle/element.js is there', 0.2, function () {
+  src = code(FACE);
+  return src !== '' || 'no spirit/app/testicle/element.js';
+}, 1000);
+test.run('it draws with the workBench element, spirit/element/workBench.js', 0.2, function () {
+  return (/['"]spirit\/element\/workBench\.js['"]/).test(src) || 'it does not require spirit/element/workBench.js';
+}, 1000);
+test.run('its file viewer is the existing file list, spirit/element/search/file.js', 0.2, function () {
+  return (/['"]spirit\/element\/search\/file\.js['"]/).test(src) || 'it does not require spirit/element/search/file.js';
+}, 1000);
+test.run('it makes no list of its own', 0.2, function () {
+  return (src !== '' && !/\.element\.search\.create\(|createElement\(['"](tr|li|table)['"]\)/.test(src)) || 'it makes a list of its own';
+}, 1000);
+// goal/G47.1, the UI cycle: the face asks testicle.script.get on a click, through spirit; never by itself.
+test.run('it asks the node only through spirit: no peerPost, no fetch', 0.2, function () {
+  return (src !== '' && !/\.peerPost\(|\bfetch\(|XMLHttpRequest/.test(src)) || 'it asks the node something itself';
+}, 1000);
+// goal/G47.1, the box: "testicle turns flat on."
+test.run('it draws the file list with flat on', 0.2, function () {
+  return (/\bflat\s*:\s*true\b/).test(src) || 'it does not hand the file list flat: true';
+}, 1000);
 
-  const s = scratch();
-  const live = [];
-  let c = null;
-  try {
-    const N = await boot(s.run); live.push(N.child);
-    ok(N.up, 'the world: a scratch node comes up', 'the scratch node did not come up: nothing judged');
-    if (!N.up) return;
-    const where = findChrome();
-    if (!where) { test.fail('no Chrome here: the page was not judged'); return; }
-    c = await chromePage(where);
-    if (c.error) { test.fail('Chrome: ' + c.error); return; }
-    await c.send('Page.navigate', { url: N.base + '/face.html' });
-    ok(await until(function () { return c.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000), 'the world: the face page has its spirit', 'the page has no spirit: nothing judged');
-    await c.evaluate(HANDS);
-    const T = function (expr) { return c.evaluate('window.__t.' + expr); };
-    const waitFor = function (expr, ms) { return until(function () { return c.evaluate('(function () { with (window.__t) { return !!(' + expr + '); } }())'); }, ms || 10000); };
+test.run('the world: a scratch node comes up', 0.2, async function () {
+  s = scratch();
+  N = await boot(s.run); live.push(N.child);
+  return N.up || 'the scratch node did not come up: nothing judged';
+}, 65000);
+// Chrome, opened on the node's face page: its failures are this test's.
+test.run('the world: the face page has its spirit', 0.2, async function () {
+  if (!N || !N.up) return NONODE;
+  const where = findChrome();
+  if (!where) return 'no Chrome here: the page was not judged';
+  c = await chromePage(where);
+  if (c.error) return 'Chrome: ' + c.error;
+  await c.send('Page.navigate', { url: N.base + '/face.html' });
+  return !!(await until(function () { return c.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000)) || 'the page has no spirit: nothing judged';
+}, 25000);
 
-    test.subHeading('its place: spirit.element.spirit.app.testicle.element, with a create');
-    const made = await c.evaluate('window.spirit.ready.then(function () { return window.spirit.require("spirit/app/testicle/element.js"); }).then(function () {' +
-      ' var E = ((((window.spirit.element || {}).spirit || {}).app || {}).testicle || {}).element; if (!E || typeof E.create !== "function") return "no create";' +
-      ' var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:1200px;height:800px;display:flex;"; document.body.appendChild(b);' +
-      ' window.__made = E.create(b, {}); return window.__made && typeof window.__made.destroy === "function" ? "made" : "no destroy"; }, function (e) { return "refused: " + (e && e.message || e); })');
-    ok(made === 'made', 'it loads through spirit.require and mounts with create(container), answering { destroy }', 'it did not mount: ' + short(made));
-    if (made !== 'made') return;
+// its place: spirit.element.spirit.app.testicle.element, with a create
+test.run('it loads through spirit.require and mounts with create(container), answering { destroy }', 0.2, async function () {
+  if (!N || !N.up) return NONODE;
+  if (!c || c.error || !c.evaluate) return NOPAGE;
+  await c.evaluate(HANDS);
+  made = await c.evaluate('window.spirit.ready.then(function () { return window.spirit.require("spirit/app/testicle/element.js"); }).then(function () {' +
+    ' var E = ((((window.spirit.element || {}).spirit || {}).app || {}).testicle || {}).element; if (!E || typeof E.create !== "function") return "no create";' +
+    ' var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:1200px;height:800px;display:flex;"; document.body.appendChild(b);' +
+    ' window.__made = E.create(b, {}); return window.__made && typeof window.__made.destroy === "function" ? "made" : "no destroy"; }, function (e) { return "refused: " + (e && e.message || e); })');
+  return made === 'made' || 'it did not mount: ' + short(made);
+}, 3000);
 
-    test.subHeading('the box: "a workBench with one 📁 icon"');
-    ok(await waitFor('icons("left") && icons("left").length > 0'), 'the world: the workBench\'s left strip is drawn', 'no left strip: ' + short(await T('icons("left")')));
-    const left = await T('icons("left")');
-    ok(Array.isArray(left) && left.length === 1 && /📁/.test(left[0]), 'its left strip holds exactly one icon, 📁', 'the left strip holds ' + short(left));
-    const right = await T('icons("right")');
-    ok(!right || right.length === 0, 'its right strip holds none', 'the right strip holds ' + short(right));
+// the box: "a workBench with one 📁 icon"
+test.run('the world: the workBench\'s left strip is drawn', 0.2, async function () {
+  if (face()) return face();
+  return !!(await waitFor('icons("left") && icons("left").length > 0')) || 'no left strip: ' + short(await T('icons("left")'));
+}, 13000);
+test.run('its left strip holds exactly one icon, 📁', 0.2, async function () {
+  if (face()) return face();
+  const left = await T('icons("left")');
+  return (Array.isArray(left) && left.length === 1 && /📁/.test(left[0])) || 'the left strip holds ' + short(left);
+}, 1000);
+test.run('its right strip holds none', 0.2, async function () {
+  if (face()) return face();
+  const right = await T('icons("right")');
+  return (!right || right.length === 0) || 'the right strip holds ' + short(right);
+}, 1000);
 
-    test.subHeading('the box: "it shows a file pane in the leftmost workBench pane, and nothing else"');
-    ok(await waitFor('inLeft("input[id$=text]") > 0', 15000), 'the leftmost pane shows the file list, its search field there', 'no file list in the leftmost pane: ' + short(await T('leftSays()')));
-    const centre = await T('centerText()');
-    ok(centre === null || centre === '', 'and nothing else: the centre is empty', 'the centre shows ' + short(centre));
+// the box: "it shows a file pane in the leftmost workBench pane, and nothing else"
+test.run('the leftmost pane shows the file list, its search field there', 0.2, async function () {
+  if (face()) return face();
+  return !!(await waitFor('inLeft("input[id$=text]") > 0', 15000)) || 'no file list in the leftmost pane: ' + short(await T('leftSays()'));
+}, 18000);
+test.run('and nothing else: the centre is empty', 0.2, async function () {
+  if (face()) return face();
+  const centre = await T('centerText()');
+  return (centre === null || centre === '') || 'the centre shows ' + short(centre);
+}, 1000);
 
-    // goal/G47.1, the box: "With flat on: no folder rows, never the indented tree; with an empty field every file the app
-    // accepts is listed, each with its path; typing narrows it."
-    test.subHeading('the box: "With flat on: no folder rows, never the indented tree"');
-    ok(await waitFor('rows().length > 0', 15000), 'the world: with the field empty the list draws rows', 'no rows with the field empty: ' + short(await T('leftSays()')));
-    const bare = await T('rows()');
-    // A folder's key has no extension; every production script's has .js.
-    const folders = bare.filter(function (k) { return !/\.[a-z0-9]+$/i.test(k); });
-    ok(folders.length === 0, 'with the field empty no folder row shows', 'folder rows: ' + short(folders.slice(0, 10)));
-    const deep = bare.filter(function (k) { return k.split('/').length >= 3; });
-    ok(deep.length > 0, 'with the field empty files deep in the tree show, no folder opened', 'rows: ' + short(bare.slice(0, 10)));
-    const one = deep[0] || '';
-    const said = one ? await T('rowText(' + JSON.stringify(one) + ')') : null;
-    ok(!!one && typeof said === 'string' && said.indexOf(one.slice(0, one.lastIndexOf('/') + 1)) !== -1, 'with the field empty each row shows its path', 'the row of ' + short(one) + ' reads ' + short(said));
+// goal/G47.1, the box: "With flat on: no folder rows, never the indented tree; with an empty field every file the app
+// accepts is listed, each with its path; typing narrows it."
+test.run('the world: with the field empty the list draws rows', 0.2, async function () {
+  if (face()) return face();
+  return !!(await waitFor('rows().length > 0', 15000)) || 'no rows with the field empty: ' + short(await T('leftSays()'));
+}, 18000);
+// A folder's key has no extension; every production script's has .js.
+test.run('with the field empty no folder row shows', 0.2, async function () {
+  if (face()) return face();
+  bare = (await T('rows()')) || [];
+  const folders = bare.filter(function (k) { return !/\.[a-z0-9]+$/i.test(k); });
+  return folders.length === 0 || 'folder rows: ' + short(folders.slice(0, 10));
+}, 1000);
+test.run('with the field empty files deep in the tree show, no folder opened', 0.2, function () {
+  const deep = bare.filter(function (k) { return k.split('/').length >= 3; });
+  return deep.length > 0 || 'rows: ' + short(bare.slice(0, 10));
+}, 1000);
+test.run('with the field empty each row shows its path', 0.2, async function () {
+  if (face()) return face();
+  const one = bare.filter(function (k) { return k.split('/').length >= 3; })[0] || '';
+  const said = one ? await T('rowText(' + JSON.stringify(one) + ')') : null;
+  return (!!one && typeof said === 'string' && said.indexOf(one.slice(0, one.lastIndexOf('/') + 1)) !== -1) || 'the row of ' + short(one) + ' reads ' + short(said);
+}, 1000);
 
-    test.subHeading('the box: "its file viewer showing production *.js files only"');
-    await T('type("zzTesticle")');
-    ok(await waitFor('rows().indexOf("' + SHOWN[0] + '") !== -1', 15000), 'the world: a planted production script is found by its word', 'the planted script is not listed: ' + short(await T('rows()')));
-    const rows = await T('rows()');
-    const files = rows.filter(function (k) { return /\.[a-z0-9]+$/i.test(k); });
-    ok(SHOWN.every(function (f) { return rows.indexOf(f) !== -1; }), 'every planted production *.js file shows', 'shown: ' + short(rows) + ', wanted ' + SHOWN.join(', '));
-    ok(!HIDDEN.some(function (f) { return rows.indexOf(f) !== -1; }), 'no other file shows: not a .md, not a .json, not a test in a test/ folder', 'shown, though no production script: ' + short(HIDDEN.filter(function (f) { return rows.indexOf(f) !== -1; })));
-    ok(rows.indexOf('spirit/zzTesticle') === -1 && rows.indexOf('spirit/zzTesticle/inner') === -1 && rows.indexOf('spirit/zzTesticle/test') === -1, 'with words typed no folder row shows', 'folder rows: ' + short(rows.filter(function (k) { return !/\.[a-z0-9]+$/i.test(k); })));
-    ok(files.length > 0 && files.every(function (k) { return /\.js$/.test(k) && k.split('/').indexOf('test') === -1; }), 'every file it lists is a .js outside any test/ folder', 'it lists ' + short(files.filter(function (k) { return !/\.js$/.test(k) || k.split('/').indexOf('test') !== -1; })));
-    // goal/G47.1, the UI cycle. The box: "When a user clicks on a production file in the left pane of the production file
-    // list", "A new tab is opened and activated in the center pane's tabContainer: the file detail", "The tab header shows
-    // the production file name without path", "The detail shows as title row the full file name, and below it a standard
-    // testicle.suite.search", "All tabs are closable", "The tab opens first, with its title line; then file.get runs, and
-    // below the title line it shows either the error file.get gives (\"not a production script\", \"no such file\") or
-    // the suite search for that file", "The UI must listen to changes on all tables it interacts with, and the server, of
-    // course, publishes changes", "the suite search is spirit/element/search/suite.js and its folder".
-    test.subHeading('the box: "A new tab is opened and activated in the center pane\'s tabContainer: the file detail"');
-    const F1 = SHOWN[0];
-    const want1 = concerning(s.run, F1);
-    ok(want1.indexOf('spirit/zzTesticle/test/shown.js') !== -1 && want1.length > 1, 'the world: shown.js is concerned by its own test and by general tests', 'testModule.js names ' + short(want1));
-    ok(await T('click(' + JSON.stringify(F1) + ')'), 'the world: a production file in the left pane is clicked', 'no row for ' + F1 + ' to click: ' + short(await T('rows()')));
-    ok(await waitFor('tabs().length === 1', 10000), 'a click on a production file opens one tab in the centre', 'tabs: ' + short(await T('tabs()')));
-    const t1 = (await T('tabs()'))[0] || {};
-    ok(t1.selected === true, 'the new tab is the active one', 'tabs: ' + short(await T('tabs()')));
-    ok(t1.label === 'shown.js', 'its header shows the file name without its path', 'header: ' + short(t1.label));
-    ok(t1.closable === true, 'its tab is closable', 'tabs: ' + short(await T('tabs()')));
-    test.subHeading('the box: "as title row the full file name, and below it a standard testicle.suite.search"');
-    ok(await waitFor('shown() && shown().first === ' + JSON.stringify(F1), 10000), 'the detail\'s title row is the full file name', 'the detail reads ' + short(await T('shown()')));
-    ok(await waitFor('shown() && shown().rows.length >= ' + want1.length, 15000), 'the world: below the title the suite search draws rows', 'the detail: ' + short(await T('shown()')));
-    const d1 = (await T('shown()')) || { rows: [] };
-    const named = function (rows, suite) { return rows.some(function (r) { return r.key === suite || r.key === F1 + '|' + suite || String(r.text).indexOf(suite) !== -1; }); };
-    const lacking = want1.filter(function (w) { return !named(d1.rows, w); });
-    ok(!lacking.length, 'below the title it lists every suite that concerns the file', 'missing: ' + short(lacking) + '; rows ' + short(d1.rows.map(function (r) { return r.key; })));
-    ok(d1.rows.length === want1.length, 'and no other: each suite once', d1.rows.length + ' rows for ' + want1.length + ' suites: ' + short(d1.rows.map(function (r) { return r.key; })));
-    // shown.js was never changed: its rows exist only if the click's script.get made them. Asked by suite.search, which makes none.
-    const rowsMade = await call(N.base, 'testicle.suite.search', { script: F1, text: '' });
-    ok(rowsMade.status === 200 && rowsMade.body && Array.isArray(rowsMade.body.items) && rowsMade.body.items.length === want1.length, 'the click made the script\'s rows: script.get ran for it', 'suite.search after the click: ' + short(rowsMade.text));
-    const srcNow = code(FACE);
-    ok(/['"]spirit\/element\/search\/suite\.js['"]/.test(srcNow) && fs.existsSync(path.join(RUN, 'spirit', 'element', 'search', 'suite.js')), 'the suite search is spirit/element/search/suite.js, which the face loads', 'the face does not load spirit/element/search/suite.js, or it is not there');
+// the box: "its file viewer showing production *.js files only"
+test.run('the world: a planted production script is found by its word', 0.2, async function () {
+  if (face()) return face();
+  await T('type("zzTesticle")');
+  return !!(await waitFor('rows().indexOf("' + SHOWN[0] + '") !== -1', 15000)) || 'the planted script is not listed: ' + short(await T('rows()'));
+}, 18000);
+test.run('every planted production *.js file shows', 0.2, async function () {
+  if (face()) return face();
+  rows = (await T('rows()')) || [];
+  files = rows.filter(function (k) { return /\.[a-z0-9]+$/i.test(k); });
+  return SHOWN.every(function (f) { return rows.indexOf(f) !== -1; }) || 'shown: ' + short(rows) + ', wanted ' + SHOWN.join(', ');
+}, 1000);
+test.run('no other file shows: not a .md, not a .json, not a test in a test/ folder', 0.2, function () {
+  return !HIDDEN.some(function (f) { return rows.indexOf(f) !== -1; }) || 'shown, though no production script: ' + short(HIDDEN.filter(function (f) { return rows.indexOf(f) !== -1; }));
+}, 1000);
+test.run('with words typed no folder row shows', 0.2, function () {
+  return (rows.indexOf('spirit/zzTesticle') === -1 && rows.indexOf('spirit/zzTesticle/inner') === -1 && rows.indexOf('spirit/zzTesticle/test') === -1) || 'folder rows: ' + short(rows.filter(function (k) { return !/\.[a-z0-9]+$/i.test(k); }));
+}, 1000);
+test.run('every file it lists is a .js outside any test/ folder', 0.2, function () {
+  return (files.length > 0 && files.every(function (k) { return /\.js$/.test(k) && k.split('/').indexOf('test') === -1; })) || 'it lists ' + short(files.filter(function (k) { return !/\.js$/.test(k) || k.split('/').indexOf('test') !== -1; }));
+}, 1000);
+// goal/G47.1, the UI cycle. The box: "When a user clicks on a production file in the left pane of the production file
+// list", "A new tab is opened and activated in the center pane's tabContainer: the file detail", "The tab header shows
+// the production file name without path", "The detail shows as title row the full file name, and below it a standard
+// testicle.suite.search", "All tabs are closable", "The tab opens first, with its title line; then file.get runs, and
+// below the title line it shows either the error file.get gives (\"not a production script\", \"no such file\") or
+// the suite search for that file", "The UI must listen to changes on all tables it interacts with, and the server, of
+// course, publishes changes", "the suite search is spirit/element/search/suite.js and its folder".
+// the box: "A new tab is opened and activated in the center pane's tabContainer: the file detail"
+test.run('the world: shown.js is concerned by its own test and by general tests', 0.2, function () {
+  if (!N || !N.up) return NONODE;
+  want1 = concerning(s.run, F1);
+  return (want1.indexOf('spirit/zzTesticle/test/shown.js') !== -1 && want1.length > 1) || 'testModule.js names ' + short(want1);
+}, 1000);
+test.run('the world: a production file in the left pane is clicked', 0.2, async function () {
+  if (face()) return face();
+  return !!(await T('click(' + JSON.stringify(F1) + ')')) || 'no row for ' + F1 + ' to click: ' + short(await T('rows()'));
+}, 1000);
+test.run('a click on a production file opens one tab in the centre', 0.2, async function () {
+  if (face()) return face();
+  return !!(await waitFor('tabs().length === 1', 10000)) || 'tabs: ' + short(await T('tabs()'));
+}, 13000);
+test.run('the new tab is the active one', 0.2, async function () {
+  if (face()) return face();
+  t1 = ((await T('tabs()')) || [])[0] || {};
+  return t1.selected === true || 'tabs: ' + short(await T('tabs()'));
+}, 1000);
+test.run('its header shows the file name without its path', 0.2, function () {
+  return t1.label === 'shown.js' || 'header: ' + short(t1.label);
+}, 1000);
+test.run('its tab is closable', 0.2, async function () {
+  if (face()) return face();
+  return t1.closable === true || 'tabs: ' + short(await T('tabs()'));
+}, 1000);
+// the box: "as title row the full file name, and below it a standard testicle.suite.search"
+test.run('the detail\'s title row is the full file name', 0.2, async function () {
+  if (face()) return face();
+  return !!(await waitFor('shown() && shown().first === ' + JSON.stringify(F1), 10000)) || 'the detail reads ' + short(await T('shown()'));
+}, 13000);
+test.run('the world: below the title the suite search draws rows', 0.2, async function () {
+  if (face()) return face();
+  return !!(await waitFor('shown() && shown().rows.length >= ' + want1.length, 15000)) || 'the detail: ' + short(await T('shown()'));
+}, 18000);
+test.run('below the title it lists every suite that concerns the file', 0.2, async function () {
+  if (face()) return face();
+  d1 = (await T('shown()')) || { rows: [] };
+  const lacking = want1.filter(function (w) { return !named(d1.rows, w); });
+  return !lacking.length || 'missing: ' + short(lacking) + '; rows ' + short(d1.rows.map(function (r) { return r.key; }));
+}, 1000);
+test.run('and no other: each suite once', 0.2, function () {
+  return d1.rows.length === want1.length || d1.rows.length + ' rows for ' + want1.length + ' suites: ' + short(d1.rows.map(function (r) { return r.key; }));
+}, 1000);
+// shown.js was never changed: its rows exist only if the click's script.get made them. Asked by suite.search, which makes none.
+test.run('the click made the script\'s rows: script.get ran for it', 0.2, async function () {
+  if (!N || !N.up) return NONODE;
+  const rowsMade = await call(N.base, 'testicle.suite.search', { script: F1, text: '' });
+  return (rowsMade.status === 200 && rowsMade.body && Array.isArray(rowsMade.body.items) && rowsMade.body.items.length === want1.length) || 'suite.search after the click: ' + short(rowsMade.text);
+}, 1000);
+test.run('the suite search is spirit/element/search/suite.js, which the face loads', 0.2, function () {
+  const srcNow = code(FACE);
+  return (/['"]spirit\/element\/search\/suite\.js['"]/.test(srcNow) && fs.existsSync(path.join(RUN, 'spirit', 'element', 'search', 'suite.js'))) || 'the face does not load spirit/element/search/suite.js, or it is not there';
+}, 1000);
 
-    test.subHeading('the box: a second click');
-    ok(await T('click(' + JSON.stringify(F1) + ')') && await waitFor('tabs().length === 1 && tabs()[0].selected', 3000), 'a second click on the same file opens no second tab: its tab is made active', 'tabs: ' + short(await T('tabs()')));
-    const F2 = SHOWN[1];
-    ok(await T('click(' + JSON.stringify(F2) + ')') && await waitFor('tabs().length === 2', 10000), 'a click on another file opens a second tab', 'tabs: ' + short(await T('tabs()')));
-    const two = await T('tabs()');
-    ok(two.length === 2 && two.filter(function (t) { return t.selected; }).length === 1 && (two.filter(function (t) { return t.selected; })[0] || {}).label === 'alsoShown.js', 'the newest tab is the active one, and only it', 'tabs: ' + short(two));
-    ok(two.length === 2 && two.every(function (t) { return t.closable; }), 'all tabs are closable', 'tabs: ' + short(two));
-    ok(await waitFor('shown() && shown().first === ' + JSON.stringify(F2), 10000), 'the active tab shows its own file\'s detail', 'the detail reads ' + short(await T('shown()')));
+// the box: a second click
+test.run('a second click on the same file opens no second tab: its tab is made active', 0.2, async function () {
+  if (face()) return face();
+  return (await T('click(' + JSON.stringify(F1) + ')') && !!(await waitFor('tabs().length === 1 && tabs()[0].selected', 3000))) || 'tabs: ' + short(await T('tabs()'));
+}, 5000);
+test.run('a click on another file opens a second tab', 0.2, async function () {
+  if (face()) return face();
+  return (await T('click(' + JSON.stringify(F2) + ')') && !!(await waitFor('tabs().length === 2', 10000))) || 'tabs: ' + short(await T('tabs()'));
+}, 13000);
+test.run('the newest tab is the active one, and only it', 0.2, async function () {
+  if (face()) return face();
+  two = (await T('tabs()')) || [];
+  return (two.length === 2 && two.filter(function (t) { return t.selected; }).length === 1 && (two.filter(function (t) { return t.selected; })[0] || {}).label === 'alsoShown.js') || 'tabs: ' + short(two);
+}, 1000);
+test.run('all tabs are closable', 0.2, function () {
+  return (two.length === 2 && two.every(function (t) { return t.closable; })) || 'tabs: ' + short(two);
+}, 1000);
+test.run('the active tab shows its own file\'s detail', 0.2, async function () {
+  if (face()) return face();
+  return !!(await waitFor('shown() && shown().first === ' + JSON.stringify(F2), 10000)) || 'the detail reads ' + short(await T('shown()'));
+}, 13000);
 
-    test.subHeading('the box: "The UI must listen to changes on all tables it interacts with"');
-    const F3 = 'spirit/zzTesticle/eta.js';
-    ok(await T('click(' + JSON.stringify(F3) + ')') && await waitFor('shown() && shown().first === ' + JSON.stringify(F3) + ' && shown().rows.length > 0', 15000), 'the world: eta.js\'s detail lists its suites', 'the detail: ' + short(await T('shown()')));
-    const etaOwn = 'spirit/zzTesticle/test/eta.js';
-    const etaBefore = await T('shown()');
-    ok(!!etaBefore && etaBefore.first === F3 && !named(etaBefore.rows, etaOwn), 'the world: before its own test is written, eta.js lists none', 'the detail: ' + short(etaBefore));
-    fs.mkdirSync(path.join(s.run, 'spirit', 'zzTesticle', 'test'), { recursive: true });
-    fs.writeFileSync(path.join(s.run, etaOwn), '\'use strict\';\n// the new test of eta\n');
-    ok(await until(function () { return T('shown()').then(function (d) { return !!d && d.rows.some(function (r) { return r.key === etaOwn || String(r.text).indexOf(etaOwn) !== -1; }); }); }, 10000), 'a suite written for the file shows in its open detail, with no click: the detail listens, the server publishes', 'the detail after the new suite: ' + short(await T('shown()')));
+// the box: "The UI must listen to changes on all tables it interacts with"
+test.run('the world: eta.js\'s detail lists its suites', 0.2, async function () {
+  if (face()) return face();
+  return (await T('click(' + JSON.stringify(F3) + ')') && !!(await waitFor('shown() && shown().first === ' + JSON.stringify(F3) + ' && shown().rows.length > 0', 15000))) || 'the detail: ' + short(await T('shown()'));
+}, 18000);
+test.run('the world: before its own test is written, eta.js lists none', 0.2, async function () {
+  if (face()) return face();
+  etaBefore = await T('shown()');
+  return (!!etaBefore && etaBefore.first === F3 && !named(etaBefore.rows, etaOwn)) || 'the detail: ' + short(etaBefore);
+}, 1000);
+test.run('a suite written for the file shows in its open detail, with no click: the detail listens, the server publishes', 0.2, async function () {
+  if (face()) return face();
+  fs.mkdirSync(path.join(s.run, 'spirit', 'zzTesticle', 'test'), { recursive: true });
+  fs.writeFileSync(path.join(s.run, etaOwn), '\'use strict\';\n// the new test of eta\n');
+  return !!(await until(function () { return T('shown()').then(function (d) { return !!d && d.rows.some(function (r) { return r.key === etaOwn || String(r.text).indexOf(etaOwn) !== -1; }); }); }, 10000)) || 'the detail after the new suite: ' + short(await T('shown()'));
+}, 13000);
 
-    test.subHeading('the box: "The tab opens first ... or the error script.get gives"');
-    const F4 = 'spirit/zzTesticle/gone.js';
-    ok((await T('rows()')).indexOf(F4) !== -1, 'the world: gone.js is listed in the left pane', 'gone.js is not listed: ' + short(await T('rows()')));
-    fs.rmSync(path.join(s.run, F4));
-    const clicked = await T('click(' + JSON.stringify(F4) + ')');
-    ok(clicked, 'the world: gone.js, removed, is still there to click', 'its row went before the click: nothing judged');
-    ok(await waitFor('tabs().some(function (t) { return t.label === "gone.js" && t.selected; })', 5000), 'its tab opens and is the active one, though script.get will refuse', 'tabs: ' + short(await T('tabs()')));
-    ok(await waitFor('shown() && shown().first === ' + JSON.stringify(F4) + ' && /no such file/.test(shown().text)', 10000), 'below the title line it shows the error script.get gives: no such file', 'the detail reads ' + short(await T('shown()')));
-    const goneShown = await T('shown()');
-    ok(!!goneShown && goneShown.first === F4 && goneShown.rows.length === 0, 'and no suite search', 'the detail: ' + short(goneShown));
+// the box: "The tab opens first ... or the error script.get gives"
+test.run('the world: gone.js is listed in the left pane', 0.2, async function () {
+  if (face()) return face();
+  return ((await T('rows()')) || []).indexOf(F4) !== -1 || 'gone.js is not listed: ' + short(await T('rows()'));
+}, 1000);
+test.run('the world: gone.js, removed, is still there to click', 0.2, async function () {
+  if (face()) return face();
+  fs.rmSync(path.join(s.run, F4));
+  clicked = await T('click(' + JSON.stringify(F4) + ')');
+  return !!clicked || 'its row went before the click: nothing judged';
+}, 1000);
+test.run('its tab opens and is the active one, though script.get will refuse', 0.2, async function () {
+  if (face()) return face();
+  return !!(await waitFor('tabs().some(function (t) { return t.label === "gone.js" && t.selected; })', 5000)) || 'tabs: ' + short(await T('tabs()'));
+}, 8000);
+test.run('below the title line it shows the error script.get gives: no such file', 0.2, async function () {
+  if (face()) return face();
+  return !!(await waitFor('shown() && shown().first === ' + JSON.stringify(F4) + ' && /no such file/.test(shown().text)', 10000)) || 'the detail reads ' + short(await T('shown()'));
+}, 13000);
+test.run('and no suite search', 0.2, async function () {
+  if (face()) return face();
+  goneShown = await T('shown()');
+  return (!!goneShown && goneShown.first === F4 && goneShown.rows.length === 0) || 'the detail: ' + short(goneShown);
+}, 1000);
 
-    test.subHeading('the box: "All tabs are closable"');
-    const before = (await T('tabs()')).length;
-    ok(await T('closeTab(' + JSON.stringify(F4) + ')') && await waitFor('tabs().length === ' + (before - 1) + ' && !tabs().some(function (t) { return t.label === "gone.js"; })', 3000), 'a tab\'s close button takes it away', 'tabs after closing gone.js: ' + short(await T('tabs()')));
+// the box: "All tabs are closable"
+test.run('a tab\'s close button takes it away', 0.2, async function () {
+  if (face()) return face();
+  before = ((await T('tabs()')) || []).length;
+  return (await T('closeTab(' + JSON.stringify(F4) + ')') && !!(await waitFor('tabs().length === ' + (before - 1) + ' && !tabs().some(function (t) { return t.label === "gone.js"; })', 3000))) || 'tabs after closing gone.js: ' + short(await T('tabs()'));
+}, 5000);
 
-    test.subHeading('destroy');
-    const after = await c.evaluate('(function () { window.__made.destroy(); var b = document.getElementById("zzBox"); return b ? b.innerHTML : "gone"; }())');
-    ok(after === '' || after === 'gone', 'destroy leaves its container empty', 'after destroy: ' + short(after).slice(0, 200));
-  } finally {
-    try { if (c && c.kid) c.kid.kill(); } catch (e) { /* gone */ }
-    for (const k of live) await stop(k);
-    try { fs.rmSync(s.root, { recursive: true, force: true }); } catch (e) { /* scratch */ }
-  }
-}()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
-  function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });
+// destroy
+test.run('destroy leaves its container empty', 0.2, async function () {
+  if (face()) return face();
+  const after = await c.evaluate('(function () { window.__made.destroy(); var b = document.getElementById("zzBox"); return b ? b.innerHTML : "gone"; }())');
+  return (after === '' || after === 'gone') || 'after destroy: ' + short(after).slice(0, 200);
+}, 1000);

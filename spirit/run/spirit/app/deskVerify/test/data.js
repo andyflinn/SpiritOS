@@ -12,26 +12,32 @@ const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const FILE = path.join(__dirname, '..', 'data.js');
 
-function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
+const W = {};
 
-test.startTest('data.js: deskVerify\'s data.js keeps no verifyTests branch (goal/G43.23 item 10)');
+// the family, loaded
+test.run('the world: the deskVerify family loads, with its state and flips reads', 0.2, function () {
+  try {
+    const D = require(path.join(RUN, 'spirit', 'data.js'));
+    require(FILE);
+    W.reads = D.deskVerify && D.deskVerify.data;
+  } catch (e) { return 'deskVerify\'s data.js did not load: ' + (e && e.message) + ': nothing judged'; }
+  const reads = W.reads;
+  return (reads && typeof reads.state === 'function' && typeof reads.flips === 'function') || 'the deskVerify family gave ' + short(reads && Object.getOwnPropertyNames(reads)) + ': nothing judged';
+}, 1000);
+test.run('its reads offer no tests branch (no testsBranch)', 0.2, function () {
+  const reads = W.reads;
+  if (!reads) return 'no reads: the world failed';
+  return !Object.getOwnPropertyNames(reads).some(function (k) { return /tests/i.test(k) && k !== 'flips'; }) || 'its reads still offer ' + short(Object.getOwnPropertyNames(reads).filter(function (k) { return /tests/i.test(k); }));
+}, 1000);
 
-test.subHeading('the family, loaded');
-let reads = null;
-try {
-  const D = require(path.join(RUN, 'spirit', 'data.js'));
-  require(FILE);
-  reads = D.deskVerify && D.deskVerify.data;
-} catch (e) { test.fail('deskVerify\'s data.js did not load: ' + (e && e.message) + ': nothing judged'); }
-ok(reads && typeof reads.state === 'function' && typeof reads.flips === 'function', 'the world: the deskVerify family loads, with its state and flips reads', 'the deskVerify family gave ' + short(reads && Object.getOwnPropertyNames(reads)) + ': nothing judged');
-if (reads) ok(!Object.getOwnPropertyNames(reads).some(function (k) { return /tests/i.test(k) && k !== 'flips'; }), 'its reads offer no tests branch (no testsBranch)', 'its reads still offer ' + short(Object.getOwnPropertyNames(reads).filter(function (k) { return /tests/i.test(k); })));
-
-test.subHeading('its code');
-const c = fs.readFileSync(FILE, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1');
-ok(/verifyFlips/.test(c), 'the world: its code, comments left out, still names the verifyFlips branch', 'its code holds no verifyFlips: the read saw no code, nothing judged');
-const h = c.split('\n').filter(function (l) { return /verifyTests|\btestsBranch\b|\bTESTS\b/.test(l); }).map(function (l) { return l.trim().slice(0, 100); });
-ok(!h.length, 'its code names no verifyTests branch', 'its code still keeps the verifyTests branch: ' + short(h));
-
-test.reportSuccessFailureCount();
-process.exit(0);
+// its code
+test.run('the world: its code, comments left out, still names the verifyFlips branch', 0.2, function () {
+  W.code = fs.readFileSync(FILE, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1');
+  return /verifyFlips/.test(W.code) || 'its code holds no verifyFlips: the read saw no code, nothing judged';
+}, 1000);
+test.run('its code names no verifyTests branch', 0.2, function () {
+  if (typeof W.code !== 'string') return 'no code: the world failed';
+  const h = W.code.split('\n').filter(function (l) { return /verifyTests|\btestsBranch\b|\bTESTS\b/.test(l); }).map(function (l) { return l.trim().slice(0, 100); });
+  return !h.length || 'its code still keeps the verifyTests branch: ' + short(h);
+}, 1000);

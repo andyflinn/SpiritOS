@@ -15,59 +15,68 @@ const REPO = path.resolve(RUN, '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const appClient = require(path.join(RUN, 'spirit', 'appClient.js'));
 
-function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 function code(f) { try { return fs.readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1').replace(/<!--[\s\S]*?-->/g, ''); } catch (e) { return ''; } }
 function tracked(dir) { return execSync('git ls-files -- "' + dir + '"', { cwd: REPO, encoding: 'utf8' }).split('\n').filter(Boolean); }
 const DESK = path.join(RUN, 'spirit', 'app', 'desk');
 
-test.startTest('nodeDesk.js: the desk server keeps goals, items and rules; plugins and the team chat go (goal/G43.22)');
+const W = {};
+// One of the folders: gone from git and from the disk.
+function folderGone(dir) {
+  const left = tracked(dir);
+  return (!left.length && !fs.existsSync(path.join(REPO, dir))) || dir + '/ still holds ' + short(left.length ? left : 'files on the disk');
+}
 
-(async function () {
-  test.subHeading('Andy: "removal of plugin folders."');
-  for (const dir of ['spirit/run/spirit/app/desk/plugins', 'spirit/run/spirit/app/desk/element/desk/plugins', 'spirit/run/shell/stackFrameCheckDetail']) {
-    const left = tracked(dir);
-    const gone = !left.length && !fs.existsSync(path.join(REPO, dir));
-    const why = dir + '/ still holds ' + short(left.length ? left : 'files on the disk');
-    if (dir === 'spirit/run/spirit/app/desk/plugins') ok(gone, 'the desk app\'s plugins folder is gone', why);
-    else if (dir === 'spirit/run/spirit/app/desk/element/desk/plugins') ok(gone, 'the desk element\'s plugins folder is gone', why);
-    else if (dir === 'spirit/run/shell/stackFrameCheckDetail') ok(gone, 'the old shell\'s stackFrameCheckDetail folder is gone', why);
-  }
+// Andy: "removal of plugin folders."
+test.run('the desk app\'s plugins folder is gone', 0.2, function () { return folderGone('spirit/run/spirit/app/desk/plugins'); }, 1000);
+test.run('the desk element\'s plugins folder is gone', 0.2, function () { return folderGone('spirit/run/spirit/app/desk/element/desk/plugins'); }, 1000);
+test.run('the old shell\'s stackFrameCheckDetail folder is gone', 0.2, function () { return folderGone('spirit/run/shell/stackFrameCheckDetail'); }, 1000);
 
-  test.subHeading('Andy: "removal of plugin support.", and "G0 goes, from ui and server"');
+// Andy: "removal of plugin support.", and "G0 goes, from ui and server"
+test.run('desk.js mounts no plugin and asks none for a refusal', 0.2, function () {
   const desk = code(path.join(DESK, 'nodeDesk.js'));
-  ok(!!desk && !/plugins|PLUGIN/.test(desk), 'desk.js mounts no plugin and asks none for a refusal', 'desk.js still names plugins');
-  ok(!!desk && !/goal\/G0['"]/.test(desk), 'desk.js knows no team chat goal, goal/G0', 'desk.js still names goal/G0');
+  return (!!desk && !/plugins|PLUGIN/.test(desk)) || 'desk.js still names plugins';
+}, 1000);
+test.run('desk.js knows no team chat goal, goal/G0', 0.2, function () {
+  const desk = code(path.join(DESK, 'nodeDesk.js'));
+  return (!!desk && !/goal\/G0['"]/.test(desk)) || 'desk.js still names goal/G0';
+}, 1000);
 
-  // A desk server of the tree, on a scratch state folder: what its api serves, and what a fresh one holds.
+// A desk server of the tree, on a scratch state folder: what its api serves, and what a fresh one holds.
+test.run('the world: a scratch desk answers api with its verbs, item.get among them', 0.2, async function () {
   // A unix socket's path is short (108 bytes): a long temp folder would leave the desk unable to listen.
-  const scratch = fs.mkdtempSync(path.join(process.platform === 'win32' ? os.tmpdir() : '/tmp', 'spn-'));
+  const scratch = W.scratch = fs.mkdtempSync(path.join(process.platform === 'win32' ? os.tmpdir() : '/tmp', 'spn-'));
   const state = path.join(scratch, 'state');
   fs.mkdirSync(state, { recursive: true });
   const pipe = appClient.pipePathFor(scratch, 'desk', process.platform, 'process');
   // The node makes the folder of a server's door before it starts it; so does the test.
   if (process.platform !== 'win32') fs.mkdirSync(path.dirname(pipe), { recursive: true });
-  let kid = null;
-  try {
-    kid = spawn(process.execPath, [path.join(DESK, 'desk.js'), '{}', '--pipe', pipe, '--state', state], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
-    const client2 = appClient.createAppClient({ rootDir: scratch });
-    if (typeof client2.register === 'function') client2.register('desk', pipe);
-    const ask = function (body) { return client2.ask(body).then(function (r) { return r || {}; }, function () { return {}; }); };
-    let api = {};
-    const until = Date.now() + 15000;
-    // Asked until the desk listens: before that the client answers app-not-running for it.
-    while (Date.now() < until) { const r = await ask('api'); const b = r && r.body && (r.body.desk || r.body); if (b && typeof b === 'object' && b.ok !== false && Object.keys(b).length) { api = b; break; } await new Promise(function (r2) { setTimeout(r2, 200); }); }
-    const verbs = Object.keys(api.desk || api);
-    ok(verbs.length > 5 && verbs.indexOf('item.get') !== -1, 'the world: a scratch desk answers api with its verbs, item.get among them', 'no desk answered api: nothing judged. ' + short(api));
-    const plug = verbs.filter(function (v) { return /^(stackFrameChecks|vision|fallout)\./.test(v); });
-    ok(verbs.length > 5 && !plug.length, 'its api serves no verb of a plugin', 'its api still serves ' + short(plug));
-    const g0 = await ask({ desk: { 'item.get': { id: 'goal/G0' } } });
-    const held = !!(g0.body && g0.body.item);
-    ok(verbs.length > 5 && !held, 'a fresh desk holds no goal/G0', 'a fresh desk holds goal/G0: ' + short(g0.body));
-  } finally {
-    try { if (kid) kid.kill(); } catch (e) { /* gone */ }
-    await new Promise(function (r) { setTimeout(r, 300); });
-    try { fs.rmSync(scratch, { recursive: true, force: true }); } catch (e) { /* scratch */ }
-  }
-}()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
-  function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });
+  W.kid = spawn(process.execPath, [path.join(DESK, 'desk.js'), '{}', '--pipe', pipe, '--state', state], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
+  const client2 = appClient.createAppClient({ rootDir: scratch });
+  if (typeof client2.register === 'function') client2.register('desk', pipe);
+  const ask = W.ask = function (body) { return client2.ask(body).then(function (r) { return r || {}; }, function () { return {}; }); };
+  let api = {};
+  const until = Date.now() + 15000;
+  // Asked until the desk listens: before that the client answers app-not-running for it.
+  while (Date.now() < until) { const r = await ask('api'); const b = r && r.body && (r.body.desk || r.body); if (b && typeof b === 'object' && b.ok !== false && Object.keys(b).length) { api = b; break; } await new Promise(function (r2) { setTimeout(r2, 200); }); }
+  const verbs = W.verbs = Object.keys(api.desk || api);
+  return (verbs.length > 5 && verbs.indexOf('item.get') !== -1) || 'no desk answered api: nothing judged. ' + short(api);
+}, 3000);
+test.run('its api serves no verb of a plugin', 0.2, function () {
+  const verbs = W.verbs || [];
+  const plug = verbs.filter(function (v) { return /^(stackFrameChecks|vision|fallout)\./.test(v); });
+  return (verbs.length > 5 && !plug.length) || (verbs.length > 5 ? 'its api still serves ' + short(plug) : 'no desk answered api: the world failed');
+}, 1000);
+test.run('a fresh desk holds no goal/G0', 0.2, async function () {
+  const verbs = W.verbs || [];
+  if (!(verbs.length > 5) || !W.ask) return 'no desk answered api: the world failed';
+  const g0 = await W.ask({ desk: { 'item.get': { id: 'goal/G0' } } });
+  const held = !!(g0.body && g0.body.item);
+  return !held || 'a fresh desk holds goal/G0: ' + short(g0.body);
+}, 1000);
+
+test.after(async function () {
+  try { if (W.kid) W.kid.kill(); } catch (e) { /* gone */ }
+  await new Promise(function (r) { setTimeout(r, 300); });
+  try { if (W.scratch) fs.rmSync(W.scratch, { recursive: true, force: true }); } catch (e) { /* scratch */ }
+});

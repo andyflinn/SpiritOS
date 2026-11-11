@@ -8,6 +8,8 @@
 // as they are, with no icon table, read from the module's own code. goal/G41.9: every are-you-sure it draws is an
 // armingButton, driven on a page of its own. Then goal/G41.11, G41.22 (the workBench, and in a real browser
 // ./deskDetails-opened.html), G41.28 (the verifier's run through spirit.data), G43.3 and G43.22.
+// Every test is one test.run (goal/G47.2), run in the order written, each after the one before it: what a test makes for
+// the tests after it (a page of its own, a scratch node, a Chrome page) it keeps in S.
 
 const fs = require('fs');
 const path = require('path');
@@ -16,23 +18,8 @@ const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const FILE = path.join(__dirname, '..', 'deskDetails.js');
 const KEY = /^[A-Z_]+$/;
 
-function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
-
-test.startTest('deskDetails.js: its panel icons are glyphs; its are-you-sure buttons are armingButtons');
-
-const raw = fs.readFileSync(FILE, 'utf8');
-const code = raw.replace(/\/\/[^\n]*/g, '');
-test.subHeading('the panels name their icons as glyphs');
-const at = /var DD_PANELS = (\[[\s\S]*?\n\]);/.exec(code);
-let panels = null;
-try { panels = at ? (new Function('return ' + at[1]))() : null; } catch (e) { panels = null; }
-ok(Array.isArray(panels) && panels.length >= 6, 'DD_PANELS lists its six panels', 'DD_PANELS not read: ' + (at ? 'not evaluable' : 'not found'));
-const keyed = (panels || []).filter(function (p) { return !p.icon || KEY.test(p.icon); }).map(function (p) { return p.key + ':' + p.icon; });
-ok(panels && !keyed.length, 'every panel names its icon as the glyph itself', 'panels naming a key: ' + keyed.join(', '));
-test.subHeading('the strip draws them as they are, from no table');
-ok(!/iconIndex|\bICON\b/.test(code), 'deskDetails.js names no icon table', 'deskDetails.js still names iconIndex or ICON');
-// That the strip, the workBench's (goal/G41.22), is handed each panel's glyph as it is, is asserted there: "the left
-// strip is today's panels, each its icon, in order", on what the workBench is given, not on the source.
+// What the tests make and the tests after them read: the module's code (raw, and with its comments out), its panels, the pages.
+const S = {};
 
 // ── THE PAGE THESE TESTS DRIVE (goal/G41.9) ─────────────────────────────────────────────────────────────────────────
 // A small forgiving page: markup parsed into elements, with ids, attributes, closest and simple selectors, and a click
@@ -259,7 +246,7 @@ function ddWorld(facts, checks, o) {
     delete win.spirit.required.spirit.app.desk.element.deskRunStatus.deskRunStatus;
     if (o.kept) { vm.runInContext(fs.readFileSync(path.join(RUN, VERIFY_CCM), 'utf8'), win, { filename: VERIFY_CCM }); win.spirit.data.takeJob(o.kept); }
   }
-  vm.runInContext(raw, win, { filename: FILE });
+  vm.runInContext(S.raw, win, { filename: FILE });
   const w = { document: document, made: made, asked: asked, required: required, closed: closed, api: api, win: win, benches: benches, titles: titles };
   w.open = async function () {
     // THE ELEMENT (goal/G43.27, requirement 23): made in a layer over the Desk page, handed the page's way to the node.
@@ -276,7 +263,7 @@ async function settle() { for (let i = 0; i < 30; i++) await new Promise(functio
 async function twoPress(w, find, armedSays, want, what) {
   const before = w.writes().length;
   const b = find();
-  if (!b) { test.fail(what + ': no such button in the dialog'); return; }
+  if (!b) return { good: false, why: what + ': no such button in the dialog' };
   const byElement = w.made.some(function (m) { return m.button === b && m.opts && !('api' in m.opts); });
   w.document.click(b); await settle();
   const b1 = find();
@@ -290,529 +277,704 @@ async function twoPress(w, find, armedSays, want, what) {
 }
 const byId = function (w, id) { return function () { return w.document.getElementById(id); }; };
 
-(async function () {
-  test.subHeading('goal/G41.9: it loads armingButton and keeps no arming of its own');
-  const plain = raw.replace(/\/\/[^\n]*/g, '');
-  const GOAL = { id: 'goal/G9', title: 'A goal', goal: '', status: 'open', buttons: ['done', 'go-all', 'waive', 'delete', 'close'], verified: 'red', claims: 1, blocked: ['goal/G9.1'] };
-  const w0 = ddWorld(GOAL, []);
-  await w0.open();
-  ok(w0.required.indexOf('spirit/element/armingButton.js') !== -1, 'it requires spirit/element/armingButton.js through spirit.require', 'required: ' + JSON.stringify(w0.required));
-  const left = ['data-armed', 'armUntilElsewhere', 'ddArmed', 'ddDisarm', 'armedClose', 'armedAll', "classList.add('armed')"].filter(function (s) { return plain.indexOf(s) !== -1; });
-  ok(!left.length, 'nothing hand-rolled is left: no data-armed, no armUntilElsewhere, no armed flag of its own', 'still in deskDetails.js: ' + left.join(', '));
+// The verdict of a two-press: true, or what went wrong.
+function pressed(tp) { return tp.good ? true : tp.why; }
 
-  test.subHeading('goal/G41.9: each are-you-sure of a goal, pressed twice');
-  const press = function (what) { return { name: 'desk.press', args: { id: 'goal/G9', what: what } }; };
-  let tp;
-  let w = ddWorld(GOAL, []); await w.open();
-  tp = await twoPress(w, byId(w, 'dd-done'), 'Done anyway: sure?', press('done'), 'Done not verified green'); if (tp) ok(tp.good, 'Done not verified green: an arming button saying "Done anyway: sure?" on the first press, desk.press done on the second', tp.why);
-  w = ddWorld(GOAL, []); await w.open();
-  tp = await twoPress(w, byId(w, 'dd-go-all'), 'Go all: sure?', press('go-all'), 'Go all'); if (tp) ok(tp.good, 'Go all: an arming button saying "Go all: sure?" on the first press, desk.press go-all on the second', tp.why);
-  w = ddWorld(GOAL, []); await w.open();
-  tp = await twoPress(w, byId(w, 'dd-waive'), 'Waive: sure?', press('waive'), 'Waive'); if (tp) ok(tp.good, 'Waive: an arming button saying "Waive: sure?" on the first press, desk.press waive on the second', tp.why);
-  w = ddWorld(GOAL, []); await w.open();
-  tp = await twoPress(w, byId(w, 'dd-delete'), 'Delete: sure?', { name: 'desk.item.delete', args: { id: 'goal/G9' } }, 'Delete'); if (tp) ok(tp.good, 'Delete: an arming button saying "Delete: sure?" on the first press, desk.item.delete on the second', tp.why);
-  w = ddWorld(GOAL, []); await w.open();
-  tp = await twoPress(w, byId(w, 'dd-abandon'), 'Sure? Abandon the goal', press('abandon'), 'Abandon'); if (tp) ok(tp.good, 'Abandon: an arming button saying "Sure? Abandon the goal" on the first press, desk.press abandon on the second', tp.why);
-  w = ddWorld(GOAL, []); await w.open();
-  tp = await twoPress(w, byId(w, 'dd-close'), 'are you sure? 1 open', press('close'), 'Close on a goal with an item open'); if (tp) ok(tp.good, 'Close on a goal with an item open: an arming button saying "are you sure? 1 open" on the first press, desk.press close on the second', tp.why);
+// goal/G43.30: one two-press of a Close that is armed in any words but Close's own.
+async function twoPressArmed(g, find, want, what) {
+  const before = g.writes().length;
+  const b = find();
+  if (!b) return { good: false, why: what + ': no such button in the dialog' };
+  const byElement = g.made.some(function (m) { return m.button === b && m.opts && !('api' in m.opts); });
+  g.document.click(b); await settle();
+  const b1 = find();
+  const armedText = b1 ? b1.textContent : '';
+  const firstWrote = g.writes().length - before;
+  g.document.click(b1 || b); await settle();
+  const sent = g.writes().slice(before);
+  const good = byElement && !!armedText && armedText !== 'Close' && firstWrote === 0 && sent.length === 1 && sent[0].name === want.name && JSON.stringify(sent[0].args) === JSON.stringify(want.args);
+  return { good: good,
+    why: what + ': ' + JSON.stringify({ madeByArmingButton: byElement, armed: armedText, wroteOnFirst: firstWrote, sent: sent }) };
+}
+// goal/G41.11: any write of the dialog's, its red Q's clear (chat.add "Q1: clear") among them.
+const anyWrite = function (g) { return g.asked.filter(function (a) { return /^desk\.(press|item\.delete|check\.set|chat\.add|item\.rename)$/.test(a.name); }); };
+async function twoPressAny(g, find, want, what) {
+  const before = anyWrite(g).length;
+  const b = find();
+  if (!b) return { good: false, why: what + ': no such button in the dialog' };
+  const byElement = g.made.some(function (m) { return m.button === b && m.opts && !('api' in m.opts); });
+  g.document.click(b); await settle();
+  const firstWrote = anyWrite(g).length - before;
+  const b1 = find();
+  const armed = !!(b1 && b1.hasAttribute('data-armed'));
+  g.document.click(b1 || b); await settle();
+  const sent = anyWrite(g).slice(before);
+  const good = byElement && armed && firstWrote === 0 && sent.length === 1 && sent[0].name === want.name && JSON.stringify(sent[0].args) === JSON.stringify(want.args);
+  return { good: good,
+    why: what + ': ' + JSON.stringify({ madeByArmingButton: byElement, armedAfterFirst: armed, wroteOnFirst: firstWrote, sent: sent }) };
+}
 
-  test.subHeading('goal/G41.9: an item\'s early Close, and the grants');
-  const ITEM = { id: 'goal/G9.1', title: 'An item', goal: 'goal/G9', status: 'open', buttons: ['close'], verified: 'none', blocked: [] };
-  w = ddWorld(ITEM, []); await w.open();
-  tp = await twoPress(w, byId(w, 'dd-close'), 'Close: sure?', { name: 'desk.press', args: { id: 'goal/G9.1', what: 'close' } }, 'Close on an open item'); if (tp) ok(tp.good, 'Close on an open item: an arming button saying "Close: sure?" on the first press, desk.press close on the second', tp.why);
-  // goal/G43.30, the box: "every Delete and every Close press in Desk (its rows, the item detail, the rule dialog) is an
-  // armingButton". It ends the one press of a done item's Close (desk/G3.8) and of a goal's with nothing open (goal/G6.6).
-  test.subHeading('goal/G43.30: every Close is an armingButton, a done item\'s and a goal\'s with nothing open');
-  async function twoPressArmed(g, find, want, what) {
-    const before = g.writes().length;
-    const b = find();
-    if (!b) { test.fail(what + ': no such button in the dialog'); return; }
-    const byElement = g.made.some(function (m) { return m.button === b && m.opts && !('api' in m.opts); });
-    g.document.click(b); await settle();
-    const b1 = find();
-    const armedText = b1 ? b1.textContent : '';
-    const firstWrote = g.writes().length - before;
-    g.document.click(b1 || b); await settle();
-    const sent = g.writes().slice(before);
-    const good = byElement && !!armedText && armedText !== 'Close' && firstWrote === 0 && sent.length === 1 && sent[0].name === want.name && JSON.stringify(sent[0].args) === JSON.stringify(want.args);
-    return { good: good,
-      why: what + ': ' + JSON.stringify({ madeByArmingButton: byElement, armed: armedText, wroteOnFirst: firstWrote, sent: sent }) };
-  }
-  w = ddWorld(Object.assign({}, ITEM, { status: 'done', verified: 'green' }), []); await w.open();
-  tp = await twoPressArmed(w, byId(w, 'dd-close'), { name: 'desk.press', args: { id: 'goal/G9.1', what: 'close' } }, 'Close on a done item'); if (tp) ok(tp.good, 'Close on a done item: an arming button, armed on the first press with nothing sent, desk.press close on the second', tp.why);
-  w = ddWorld({ id: 'goal/G8', title: 'A goal', goal: '', status: 'open', buttons: ['close'], verified: 'none', blocked: [] }, []); await w.open();
-  tp = await twoPressArmed(w, byId(w, 'dd-close'), { name: 'desk.press', args: { id: 'goal/G8', what: 'close' } }, 'Close on a goal with nothing open'); if (tp) ok(tp.good, 'Close on a goal with nothing open: an arming button, armed on the first press with nothing sent, desk.press close on the second', tp.why);
-  const CHECKS = [{ number: 'G1', kind: 'G', state: 'open', words: 'core grant' }, { number: 'G2', kind: 'G', state: 'open', words: 'another' }];
-  const grants = async function () { const g = ddWorld(ITEM, CHECKS); await g.open(); g.document.click(panelIcon(g, 'files')); await settle(); return g; };
-  w = await grants();
-  tp = await twoPress(w, function () { return w.document.querySelector('[data-grant="G1"]'); }, 'Grant G1: sure?', { name: 'desk.check.set', args: { id: 'goal/G9.1', check: 'G1', state: 'granted' } }, 'Grant G1'); if (tp) ok(tp.good, 'Grant G1: an arming button saying "Grant G1: sure?" on the first press, desk.check.set on the second', tp.why);
-  w = await grants();
-  tp = await twoPress(w, function () { return w.document.querySelector('[data-grant="all"]'); }, 'Grant all 2: sure?', { name: 'desk.check.set', args: { id: 'goal/G9.1', check: 'all', state: 'granted' } }, 'Grant all'); if (tp) ok(tp.good, 'Grant all: an arming button saying "Grant all 2: sure?" on the first press, desk.check.set on the second', tp.why);
+const GOAL = { id: 'goal/G9', title: 'A goal', goal: '', status: 'open', buttons: ['done', 'go-all', 'waive', 'delete', 'close'], verified: 'red', claims: 1, blocked: ['goal/G9.1'] };
+const ITEM = { id: 'goal/G9.1', title: 'An item', goal: 'goal/G9', status: 'open', buttons: ['close'], verified: 'none', blocked: [] };
+const press = function (what) { return { name: 'desk.press', args: { id: 'goal/G9', what: what } }; };
+// A dialog opened on a subject; a press of a button in it.
+async function opened(subject, checks, o) { const g = ddWorld(subject, checks || [], o); await g.open(); return g; }
+async function goalPress(id, armedSays, want, what) { const w = await opened(GOAL); return pressed(await twoPress(w, byId(w, id), armedSays, want, what)); }
 
-  // ── goal/G41.11: THE LAST ONE-PRESS BUTTONS, AND THE RENAME ───────────────────────────────────────────────────────────
-  // Andy, in the box: "the remove button for red Q's must ask: are-you-sure?", "the start-design and end-design buttons
-  // in an item must ask: are-you-sure", and "the rename input field on goal/item detail panel MUST contain the current
-  // title when it's first displayed." Each pressed through the dialog as he would.
-  test.subHeading('goal/G41.11: a red Q\'s remove asks are-you-sure');
-  // Any write of the dialog's, its red Q's clear (chat.add "Q1: clear") among them.
-  const anyWrite = function (g) { return g.asked.filter(function (a) { return /^desk\.(press|item\.delete|check\.set|chat\.add|item\.rename)$/.test(a.name); }); };
-  async function twoPressAny(g, find, want, what) {
-    const before = anyWrite(g).length;
-    const b = find();
-    if (!b) { test.fail(what + ': no such button in the dialog'); return; }
-    const byElement = g.made.some(function (m) { return m.button === b && m.opts && !('api' in m.opts); });
-    g.document.click(b); await settle();
-    const firstWrote = anyWrite(g).length - before;
-    const b1 = find();
-    const armed = !!(b1 && b1.hasAttribute('data-armed'));
-    g.document.click(b1 || b); await settle();
-    const sent = anyWrite(g).slice(before);
-    const good = byElement && armed && firstWrote === 0 && sent.length === 1 && sent[0].name === want.name && JSON.stringify(sent[0].args) === JSON.stringify(want.args);
-    return { good: good,
-      why: what + ': ' + JSON.stringify({ madeByArmingButton: byElement, armedAfterFirst: armed, wroteOnFirst: firstWrote, sent: sent }) };
-  }
-  const QS = [{ number: 'Q1', kind: 'Q', state: 'open', words: 'Shall it?' }];
-  const withQ = async function () { const g = ddWorld(ITEM, QS); await g.open(); g.document.click(panelIcon(g, 'qs')); await settle(); return g; };
-  w = await withQ();
-  tp = await twoPressAny(w, function () { return w.document.querySelector('[data-qclear="Q1"]'); }, { name: 'desk.chat.add', args: { id: 'goal/G9.1', text: 'Q1: clear' } }, 'A red Q\'s remove'); if (tp) ok(tp.good, 'A red Q\'s remove: an arming button, armed on the first press, desk.chat.add on the second', tp.why);
+// ── THE PANELS NAME THEIR ICONS AS GLYPHS ───────────────────────────────────────────────────────────────────────────
+test.run('DD_PANELS lists its six panels', 0.2, function () {
+  S.raw = fs.readFileSync(FILE, 'utf8');
+  S.code = S.raw.replace(/\/\/[^\n]*/g, '');
+  S.plain = S.code;
+  const at = /var DD_PANELS = (\[[\s\S]*?\n\]);/.exec(S.code);
+  try { S.panels = at ? (new Function('return ' + at[1]))() : null; } catch (e) { S.panels = null; }
+  return (Array.isArray(S.panels) && S.panels.length >= 6) || 'DD_PANELS not read: ' + (at ? 'not evaluable' : 'not found');
+}, 1000);
+test.run('every panel names its icon as the glyph itself', 0.2, function () {
+  const keyed = (S.panels || []).filter(function (p) { return !p.icon || KEY.test(p.icon); }).map(function (p) { return p.key + ':' + p.icon; });
+  return (!!S.panels && !keyed.length) || 'panels naming a key: ' + keyed.join(', ');
+}, 1000);
+// The strip draws them as they are, from no table.
+test.run('deskDetails.js names no icon table', 0.2, function () {
+  return !/iconIndex|\bICON\b/.test(S.code) || 'deskDetails.js still names iconIndex or ICON';
+}, 1000);
+// That the strip, the workBench's (goal/G41.22), is handed each panel's glyph as it is, is asserted there: "the left
+// strip is today's panels, each its icon, in order", on what the workBench is given, not on the source.
 
-  test.subHeading('goal/G41.11: the details panel\'s Start and End design ask are-you-sure');
-  const DESIGN = { id: 'goal/G9.2', title: 'In design', goal: 'goal/G9', status: 'open', buttons: ['end-design'], verified: 'none', blocked: [] };
-  w = ddWorld(DESIGN, []); await w.open();
-  tp = await twoPressAny(w, byId(w, 'dd-end-design'), { name: 'desk.press', args: { id: 'goal/G9.2', what: 'end-design' } }, 'End design'); if (tp) ok(tp.good, 'End design: an arming button, armed on the first press, desk.press on the second', tp.why);
-  const OUT = { id: 'goal/G9.3', title: 'Out of design', goal: 'goal/G9', status: 'open', buttons: ['start-design'], verified: 'none', blocked: [] };
-  w = ddWorld(OUT, []); await w.open();
-  tp = await twoPressAny(w, byId(w, 'dd-start-design'), { name: 'desk.press', args: { id: 'goal/G9.3', what: 'start-design' } }, 'Start design'); if (tp) ok(tp.good, 'Start design: an arming button, armed on the first press, desk.press on the second', tp.why);
+// ── goal/G41.9: IT LOADS armingButton AND KEEPS NO ARMING OF ITS OWN ────────────────────────────────────────────────
+test.run('it requires spirit/element/armingButton.js through spirit.require', 0.2, async function () {
+  const w0 = await opened(GOAL);
+  return w0.required.indexOf('spirit/element/armingButton.js') !== -1 || 'required: ' + JSON.stringify(w0.required);
+}, 1000);
+test.run('nothing hand-rolled is left: no data-armed, no armUntilElsewhere, no armed flag of its own', 0.2, function () {
+  const left = ['data-armed', 'armUntilElsewhere', 'ddArmed', 'ddDisarm', 'armedClose', 'armedAll', "classList.add('armed')"].filter(function (s) { return S.plain.indexOf(s) !== -1; });
+  return !left.length || 'still in deskDetails.js: ' + left.join(', ');
+}, 1000);
 
-  test.subHeading('goal/G41.11: the rename field opens holding the current title');
-  for (const subject of [ITEM, GOAL]) {
-    const g = ddWorld(subject, []); await g.open();
-    const rename = g.document.getElementById('dd-rename');
-    if (rename) { g.document.click(rename); await settle(); }
-    const field = g.document.getElementById('dd-name');
-    const holds = !!field && field.value === subject.title;
-    const holdsWhy = (subject.goal === '' ? 'a goal' : 'an item') + ': ' + (field ? 'the field holds "' + field.value + '"' : 'no rename field after Rename');
-    if (subject === ITEM) ok(holds, 'an item: Rename opens its field holding its title, An item', holdsWhy);
-    else if (subject === GOAL) ok(holds, 'a goal: Rename opens its field holding its title, A goal', holdsWhy);
-    // What it holds is what he edits: Save sends the title as it stands, so an untouched field renames nothing new.
-    const save = g.document.getElementById('dd-name-save');
-    if (field && save) { field.value = subject.title + ' renamed'; g.document.click(save); await settle(); }
-    const renamed = g.asked.filter(function (a) { return a.name === 'desk.item.rename'; }).pop();
-    const sends = !!renamed && renamed.args.title === subject.title + ' renamed';
-    const sendsWhy = (subject.goal === '' ? 'a goal' : 'an item') + ': renamed ' + JSON.stringify(renamed && renamed.args);
-    if (subject === ITEM) ok(sends, 'an item: Save sends the edited title', sendsWhy);
-    else if (subject === GOAL) ok(sends, 'a goal: Save sends the edited title', sendsWhy);
-  }
-  test.subHeading('goal/G41.11: the add-rule dropdown stands on top of the rules, and is always there');
-  // Andy, on G41.11: "1. the add-rule dropdown is at the bottom of a (sometimes LONG) list, and it must be on top",
-  // "2. Sometimes the dropdown does NOT appear at ALL!"
-  const RULED = Object.assign({}, ITEM, { id: 'goal/G9.5', rules: Array.from({ length: 12 }, function (x, i) { return { key: 'rule/' + (i + 1), version: 1 }; }) });
-  const walk = function (n, out) { out.push(n); (n.children || []).forEach(function (c) { walk(c, out); }); return out; };
-  const shown = function (n) { for (let p = n; p; p = p.parentNode) { if (p.hidden || (p.style && p.style.display === 'none')) return false; } return true; };
-  const inPage = function (w, n) { return walk(w.document.root, []).indexOf(n) !== -1; };
-  // A search that writes down where it was made; on the page, as spirit.require brings it, never preloaded.
-  const ruleWorld = function () {
-    const r = ddWorld(RULED, []);
-    r.searches = [];
-    const make = { create: function (host, o) { r.searches.push({ host: host, o: o || {} }); return { refresh: function () {}, destroy: function () {}, redraw: function () {}, value: '' }; } };
-    delete r.win.spirit.element.spirit.element.search;
-    const req = r.win.spirit.require;
-    r.win.spirit.require = function (p) { const q = String(p).replace(/^\/+/, ''); if (q === 'spirit/element/search.js') r.win.spirit.element.spirit.element.search = make; return req(p); };
-    return r;
-  };
-  const rulePick = function (r) { return r.searches.filter(function (x) { return x.o.verb === 'rules.search' && x.o.face === 'dropdown'; }).pop() || null; };
-  const rulesIcon = function (r) { return panelIcon(r, 'rules'); };
+// goal/G41.9: each are-you-sure of a goal, pressed twice.
+test.run('Done not verified green: an arming button saying "Done anyway: sure?" on the first press, desk.press done on the second', 0.2, function () {
+  return goalPress('dd-done', 'Done anyway: sure?', press('done'), 'Done not verified green');
+}, 1000);
+test.run('Go all: an arming button saying "Go all: sure?" on the first press, desk.press go-all on the second', 0.2, function () {
+  return goalPress('dd-go-all', 'Go all: sure?', press('go-all'), 'Go all');
+}, 1000);
+test.run('Waive: an arming button saying "Waive: sure?" on the first press, desk.press waive on the second', 0.2, function () {
+  return goalPress('dd-waive', 'Waive: sure?', press('waive'), 'Waive');
+}, 1000);
+test.run('Delete: an arming button saying "Delete: sure?" on the first press, desk.item.delete on the second', 0.2, function () {
+  return goalPress('dd-delete', 'Delete: sure?', { name: 'desk.item.delete', args: { id: 'goal/G9' } }, 'Delete');
+}, 1000);
+test.run('Abandon: an arming button saying "Sure? Abandon the goal" on the first press, desk.press abandon on the second', 0.2, function () {
+  return goalPress('dd-abandon', 'Sure? Abandon the goal', press('abandon'), 'Abandon');
+}, 1000);
+test.run('Close on a goal with an item open: an arming button saying "are you sure? 1 open" on the first press, desk.press close on the second', 0.2, function () {
+  return goalPress('dd-close', 'are you sure? 1 open', press('close'), 'Close on a goal with an item open');
+}, 1000);
+
+// goal/G41.9: an item's early Close, and the grants.
+test.run('Close on an open item: an arming button saying "Close: sure?" on the first press, desk.press close on the second', 0.2, async function () {
+  const w = await opened(ITEM);
+  return pressed(await twoPress(w, byId(w, 'dd-close'), 'Close: sure?', { name: 'desk.press', args: { id: 'goal/G9.1', what: 'close' } }, 'Close on an open item'));
+}, 1000);
+// goal/G43.30, the box: "every Delete and every Close press in Desk (its rows, the item detail, the rule dialog) is an
+// armingButton". It ends the one press of a done item's Close (desk/G3.8) and of a goal's with nothing open (goal/G6.6).
+test.run('Close on a done item: an arming button, armed on the first press with nothing sent, desk.press close on the second', 0.2, async function () {
+  const w = await opened(Object.assign({}, ITEM, { status: 'done', verified: 'green' }));
+  return pressed(await twoPressArmed(w, byId(w, 'dd-close'), { name: 'desk.press', args: { id: 'goal/G9.1', what: 'close' } }, 'Close on a done item'));
+}, 1000);
+test.run('Close on a goal with nothing open: an arming button, armed on the first press with nothing sent, desk.press close on the second', 0.2, async function () {
+  const w = await opened({ id: 'goal/G8', title: 'A goal', goal: '', status: 'open', buttons: ['close'], verified: 'none', blocked: [] });
+  return pressed(await twoPressArmed(w, byId(w, 'dd-close'), { name: 'desk.press', args: { id: 'goal/G8', what: 'close' } }, 'Close on a goal with nothing open'));
+}, 1000);
+const CHECKS = [{ number: 'G1', kind: 'G', state: 'open', words: 'core grant' }, { number: 'G2', kind: 'G', state: 'open', words: 'another' }];
+const grants = async function () { const g = await opened(ITEM, CHECKS); g.document.click(panelIcon(g, 'files')); await settle(); return g; };
+test.run('Grant G1: an arming button saying "Grant G1: sure?" on the first press, desk.check.set on the second', 0.2, async function () {
+  const w = await grants();
+  return pressed(await twoPress(w, function () { return w.document.querySelector('[data-grant="G1"]'); }, 'Grant G1: sure?', { name: 'desk.check.set', args: { id: 'goal/G9.1', check: 'G1', state: 'granted' } }, 'Grant G1'));
+}, 1000);
+test.run('Grant all: an arming button saying "Grant all 2: sure?" on the first press, desk.check.set on the second', 0.2, async function () {
+  const w = await grants();
+  return pressed(await twoPress(w, function () { return w.document.querySelector('[data-grant="all"]'); }, 'Grant all 2: sure?', { name: 'desk.check.set', args: { id: 'goal/G9.1', check: 'all', state: 'granted' } }, 'Grant all'));
+}, 1000);
+
+// ── goal/G41.11: THE LAST ONE-PRESS BUTTONS, AND THE RENAME ───────────────────────────────────────────────────────────
+// Andy, in the box: "the remove button for red Q's must ask: are-you-sure?", "the start-design and end-design buttons
+// in an item must ask: are-you-sure", and "the rename input field on goal/item detail panel MUST contain the current
+// title when it's first displayed." Each pressed through the dialog as he would.
+const QS = [{ number: 'Q1', kind: 'Q', state: 'open', words: 'Shall it?' }];
+test.run('A red Q\'s remove: an arming button, armed on the first press, desk.chat.add on the second', 0.2, async function () {
+  const w = await opened(ITEM, QS); w.document.click(panelIcon(w, 'qs')); await settle();
+  return pressed(await twoPressAny(w, function () { return w.document.querySelector('[data-qclear="Q1"]'); }, { name: 'desk.chat.add', args: { id: 'goal/G9.1', text: 'Q1: clear' } }, 'A red Q\'s remove'));
+}, 1000);
+// goal/G41.11: the details panel's Start and End design ask are-you-sure.
+test.run('End design: an arming button, armed on the first press, desk.press on the second', 0.2, async function () {
+  const w = await opened({ id: 'goal/G9.2', title: 'In design', goal: 'goal/G9', status: 'open', buttons: ['end-design'], verified: 'none', blocked: [] });
+  return pressed(await twoPressAny(w, byId(w, 'dd-end-design'), { name: 'desk.press', args: { id: 'goal/G9.2', what: 'end-design' } }, 'End design'));
+}, 1000);
+test.run('Start design: an arming button, armed on the first press, desk.press on the second', 0.2, async function () {
+  const w = await opened({ id: 'goal/G9.3', title: 'Out of design', goal: 'goal/G9', status: 'open', buttons: ['start-design'], verified: 'none', blocked: [] });
+  return pressed(await twoPressAny(w, byId(w, 'dd-start-design'), { name: 'desk.press', args: { id: 'goal/G9.3', what: 'start-design' } }, 'Start design'));
+}, 1000);
+
+// goal/G41.11: the rename field opens holding the current title. What it holds is what he edits: Save sends the title as
+// it stands, so an untouched field renames nothing new.
+async function renameOpens(subject) {
+  const g = await opened(subject);
+  S.renaming = g;
+  const rename = g.document.getElementById('dd-rename');
+  if (rename) { g.document.click(rename); await settle(); }
+  const field = g.document.getElementById('dd-name');
+  return (!!field && field.value === subject.title) || ((subject.goal === '' ? 'a goal' : 'an item') + ': ' + (field ? 'the field holds "' + field.value + '"' : 'no rename field after Rename'));
+}
+async function renameSends(subject) {
+  const g = S.renaming;
+  if (!g) return 'no dialog: the rename test before it failed';
+  const field = g.document.getElementById('dd-name');
+  const save = g.document.getElementById('dd-name-save');
+  if (field && save) { field.value = subject.title + ' renamed'; g.document.click(save); await settle(); }
+  const renamed = g.asked.filter(function (a) { return a.name === 'desk.item.rename'; }).pop();
+  return (!!renamed && renamed.args.title === subject.title + ' renamed') || ((subject.goal === '' ? 'a goal' : 'an item') + ': renamed ' + JSON.stringify(renamed && renamed.args));
+}
+test.run('an item: Rename opens its field holding its title, An item', 0.2, function () { return renameOpens(ITEM); }, 1000);
+test.run('an item: Save sends the edited title', 0.2, function () { return renameSends(ITEM); }, 1000);
+test.run('a goal: Rename opens its field holding its title, A goal', 0.2, function () { return renameOpens(GOAL); }, 1000);
+test.run('a goal: Save sends the edited title', 0.2, function () { return renameSends(GOAL); }, 1000);
+
+// goal/G41.11: the add-rule dropdown stands on top of the rules, and is always there.
+// Andy, on G41.11: "1. the add-rule dropdown is at the bottom of a (sometimes LONG) list, and it must be on top",
+// "2. Sometimes the dropdown does NOT appear at ALL!"
+const RULED = Object.assign({}, ITEM, { id: 'goal/G9.5', rules: Array.from({ length: 12 }, function (x, i) { return { key: 'rule/' + (i + 1), version: 1 }; }) });
+const walk = function (n, out) { out.push(n); (n.children || []).forEach(function (c) { walk(c, out); }); return out; };
+const shown = function (n) { for (let p = n; p; p = p.parentNode) { if (p.hidden || (p.style && p.style.display === 'none')) return false; } return true; };
+const inPage = function (w, n) { return walk(w.document.root, []).indexOf(n) !== -1; };
+// A search that writes down where it was made; on the page, as spirit.require brings it, never preloaded.
+const ruleWorld = function () {
+  const r = ddWorld(RULED, []);
+  r.searches = [];
+  const make = { create: function (host, o) { r.searches.push({ host: host, o: o || {} }); return { refresh: function () {}, destroy: function () {}, redraw: function () {}, value: '' }; } };
+  delete r.win.spirit.element.spirit.element.search;
+  const req = r.win.spirit.require;
+  r.win.spirit.require = function (p) { const q = String(p).replace(/^\/+/, ''); if (q === 'spirit/element/search.js') r.win.spirit.element.spirit.element.search = make; return req(p); };
+  return r;
+};
+const rulePick = function (r) { return r.searches.filter(function (x) { return x.o.verb === 'rules.search' && x.o.face === 'dropdown'; }).pop() || null; };
+const rulesIcon = function (r) { return panelIcon(r, 'rules'); };
+test.run('pressing the rules icon shows the add-rule dropdown, its search brought by spirit.require', 0.2, async function () {
   const rw = ruleWorld(); await rw.open();
+  S.rw = rw;
   if (rulesIcon(rw)) { rw.document.click(rulesIcon(rw)); await settle(); }
-  const pick = rulePick(rw);
-  const firstRule = rw.document.querySelector('[data-rule-remove]');
-  const order = walk(rw.document.root, []);
-  ok(!!pick && inPage(rw, pick.host) && shown(pick.host), 'pressing the rules icon shows the add-rule dropdown, its search brought by spirit.require',
-    'no dropdown shown: ' + JSON.stringify({ made: rw.searches.length, required: rw.required.filter(function (x) { return /probabilitySearch/.test(x); }) }));
-  ok(!!pick && !!firstRule && order.indexOf(pick.host) !== -1 && order.indexOf(pick.host) < order.indexOf(firstRule), 'it stands on top of the list of rules (12 rules attached), not below it',
-    'dropdown at ' + (pick ? order.indexOf(pick.host) : 'none') + ', first rule at ' + order.indexOf(firstRule));
-  const scriptTags = walk(rw.document.root, []).filter(function (n) { return n.tagName === 'SCRIPT' || n.tag === 'script'; }).filter(function (n) { return /probabilitySearch/.test(String((n.attrs && n.attrs.src) || n.src || '')); });
-  ok(!scriptTags.length, 'no hand-rolled script tag loads the search', scriptTags.length + ' script tag(s) for probabilitySearch');
-  // Away to the box and back: the dropdown is there again, every time the panel opens.
+  const pick = S.pick = rulePick(rw);
+  S.firstRule = rw.document.querySelector('[data-rule-remove]');
+  S.order = walk(rw.document.root, []);
+  return (!!pick && inPage(rw, pick.host) && shown(pick.host)) ||
+    'no dropdown shown: ' + JSON.stringify({ made: rw.searches.length, required: rw.required.filter(function (x) { return /probabilitySearch/.test(x); }) });
+}, 1000);
+test.run('it stands on top of the list of rules (12 rules attached), not below it', 0.2, function () {
+  if (!S.rw) return 'no rules panel: the test before it failed';
+  const pick = S.pick;
+  return (!!pick && !!S.firstRule && S.order.indexOf(pick.host) !== -1 && S.order.indexOf(pick.host) < S.order.indexOf(S.firstRule)) ||
+    'dropdown at ' + (pick ? S.order.indexOf(pick.host) : 'none') + ', first rule at ' + S.order.indexOf(S.firstRule);
+}, 1000);
+test.run('no hand-rolled script tag loads the search', 0.2, function () {
+  if (!S.rw) return 'no rules panel: the test before it failed';
+  const scriptTags = walk(S.rw.document.root, []).filter(function (n) { return n.tagName === 'SCRIPT' || n.tag === 'script'; }).filter(function (n) { return /probabilitySearch/.test(String((n.attrs && n.attrs.src) || n.src || '')); });
+  return !scriptTags.length || scriptTags.length + ' script tag(s) for probabilitySearch';
+}, 1000);
+// Away to the box and back: the dropdown is there again, every time the panel opens.
+test.run('away from the rules and back, the dropdown is shown again', 0.2, async function () {
+  const rw = S.rw;
+  if (!rw) return 'no rules panel: the test before it failed';
   const boxIcon = panelIcon(rw, 'box');
   if (boxIcon) { rw.document.click(boxIcon); await settle(); }
   if (rulesIcon(rw)) { rw.document.click(rulesIcon(rw)); await settle(); }
   const again = rulePick(rw);
-  ok(!!again && inPage(rw, again.host) && shown(again.host), 'away from the rules and back, the dropdown is shown again', 'after reopening: ' + JSON.stringify({ made: rw.searches.length, shown: !!again && shown(again.host) }));
-  // ── goal/G41.22: THE DETAILS PANEL IS A workBench ─────────────────────────────────────────────────────────────────────
-  // Andy, box v15: "the item panel drops appHeader", "the items ID and title, including status is shown in the shells
-  // title bar like always", "one row, the button row, at the top, using the whole width, like it is today", "just use
-  // workBench", "the left icons strip and panel, are what we have today", "the center panel us the chat", "the right
-  // panel, we leave blank"
-  const walkAll = function (n, out) { out.push(n); (n.children || []).forEach(function (c) { walkAll(c, out); }); return out; };
-  const inside = function (n, box) { for (let p = n; p; p = p.parentNode) { if (p === box) return true; } return false; };
-  // goal/G43.3: Andy: "red Q's should indicate who posted them."
-  test.subHeading('goal/G43.3: a red Q says who posted it');
-  {
-    const asker = ddWorld(ITEM, [{ number: 'Q2', kind: 'Q', state: 'open', words: 'Whose question?', placedBy: 'claude-windows', placedKey: 'KEY-CW' }]);
-    await asker.open();
-    asker.document.click(panelIcon(asker, 'qs')); await settle();
-    const qsText = asker.document.getElementById('dd-panel').textContent;
-    ok(qsText.indexOf('Whose question?') !== -1 && qsText.indexOf('claude-windows') !== -1, 'the question and its poster both show', 'the panel says: ' + JSON.stringify(qsText.slice(0, 200)));
-  }
-  // goal/G43.3: Andy: "when i add a rule to an item or goal, it will not immediately display in the rule-list."
-  test.subHeading('goal/G43.3: a rule attached shows in the open rules panel as its row comes, with nothing asked');
-  for (const open of [ITEM, { id: 'goal/G9', title: 'A goal', goal: '', status: 'open', buttons: [], verified: 'none', blocked: [] }]) {
-    const ruled = ddWorld(open, []);
-    let heard = null;
-    ruled.api.onPublished = function (fn) { heard = fn; return function () {}; };
-    await ruled.open();
-    ruled.document.click(panelIcon(ruled, 'rules')); await settle();
-    const before = ruled.document.getElementById('dd-panel').textContent;
-    const asked0 = ruled.asked.length;
-    if (heard) heard({ item: Object.assign({}, open, { rules: [{ key: 'rule/77' }] }) });
-    await settle();
-    const after = ruled.document.getElementById('dd-panel').textContent;
-    const shows = !!heard && before.indexOf('rule/77') === -1 && after.indexOf('rule/77') !== -1 && !ruled.asked.slice(asked0).some(function (a) { return a.name === 'desk.item.get'; });
-    const showsWhy = open.id + ': heard ' + !!heard + ', the panel now: ' + JSON.stringify(after.slice(0, 200));
-    if (open === ITEM) ok(shows, 'on an item, the new rule shows at once, from the row', showsWhy);
-    else if (open.id === 'goal/G9') ok(shows, 'on a goal, the new rule shows at once, from the row', showsWhy);
-  }
+  return (!!again && inPage(rw, again.host) && shown(again.host)) || 'after reopening: ' + JSON.stringify({ made: rw.searches.length, shown: !!again && shown(again.host) });
+}, 1000);
 
-  test.subHeading('goal/G41.22: no appHeader; the id, title and status in the shell\'s title bar');
-  ok(!/appHeader/.test(plain), 'deskDetails.js names no appHeader', 'deskDetails.js still names appHeader');
-  const wt = ddWorld(Object.assign({}, ITEM, { id: 'goal/G9.7', title: 'A titled item', status: 'running' }), []); await wt.open();
+// ── goal/G41.22: THE DETAILS PANEL IS A workBench ─────────────────────────────────────────────────────────────────────
+// Andy, box v15: "the item panel drops appHeader", "the items ID and title, including status is shown in the shells
+// title bar like always", "one row, the button row, at the top, using the whole width, like it is today", "just use
+// workBench", "the left icons strip and panel, are what we have today", "the center panel us the chat", "the right
+// panel, we leave blank"
+const walkAll = function (n, out) { out.push(n); (n.children || []).forEach(function (c) { walkAll(c, out); }); return out; };
+const inside = function (n, box) { for (let p = n; p; p = p.parentNode) { if (p === box) return true; } return false; };
+// goal/G43.3: Andy: "red Q's should indicate who posted them."
+test.run('the question and its poster both show', 0.2, async function () {
+  const asker = await opened(ITEM, [{ number: 'Q2', kind: 'Q', state: 'open', words: 'Whose question?', placedBy: 'claude-windows', placedKey: 'KEY-CW' }]);
+  asker.document.click(panelIcon(asker, 'qs')); await settle();
+  const qsText = asker.document.getElementById('dd-panel').textContent;
+  return (qsText.indexOf('Whose question?') !== -1 && qsText.indexOf('claude-windows') !== -1) || 'the panel says: ' + JSON.stringify(qsText.slice(0, 200));
+}, 1000);
+// goal/G43.3: Andy: "when i add a rule to an item or goal, it will not immediately display in the rule-list." A rule
+// attached shows in the open rules panel as its row comes, with nothing asked.
+async function ruleShows(open) {
+  const ruled = ddWorld(open, []);
+  let heard = null;
+  ruled.api.onPublished = function (fn) { heard = fn; return function () {}; };
+  await ruled.open();
+  ruled.document.click(panelIcon(ruled, 'rules')); await settle();
+  const before = ruled.document.getElementById('dd-panel').textContent;
+  const asked0 = ruled.asked.length;
+  if (heard) heard({ item: Object.assign({}, open, { rules: [{ key: 'rule/77' }] }) });
+  await settle();
+  const after = ruled.document.getElementById('dd-panel').textContent;
+  const shows = !!heard && before.indexOf('rule/77') === -1 && after.indexOf('rule/77') !== -1 && !ruled.asked.slice(asked0).some(function (a) { return a.name === 'desk.item.get'; });
+  return shows || open.id + ': heard ' + !!heard + ', the panel now: ' + JSON.stringify(after.slice(0, 200));
+}
+test.run('on an item, the new rule shows at once, from the row', 0.2, function () { return ruleShows(ITEM); }, 1000);
+test.run('on a goal, the new rule shows at once, from the row', 0.2, function () {
+  return ruleShows({ id: 'goal/G9', title: 'A goal', goal: '', status: 'open', buttons: [], verified: 'none', blocked: [] });
+}, 1000);
+
+// goal/G41.22: no appHeader; the id, title and status in the shell's title bar.
+test.run('deskDetails.js names no appHeader', 0.2, function () {
+  return !/appHeader/.test(S.plain) || 'deskDetails.js still names appHeader';
+}, 1000);
+test.run('the shell\'s title bar says the id, the title and the status', 0.2, async function () {
+  const wt = await opened(Object.assign({}, ITEM, { id: 'goal/G9.7', title: 'A titled item', status: 'running' }));
   const lastTitle = wt.titles[wt.titles.length - 1] || '';
-  ok(lastTitle.indexOf('goal/G9.7') !== -1 && lastTitle.indexOf('A titled item') !== -1 && lastTitle.indexOf('running') !== -1,
-    'the shell\'s title bar says the id, the title and the status', 'the title bar was given ' + JSON.stringify(wt.titles));
-  test.subHeading('goal/G41.22: one workBench, the button row above it');
-  const wb = ddWorld(ITEM, []); await wb.open();
-  ok(wb.required.indexOf('spirit/element/workBench.js') !== -1, 'it requires spirit/element/workBench.js through spirit.require', 'required: ' + JSON.stringify(wb.required));
-  const bench = wb.benches[0] || null;
-  ok(wb.benches.length === 1 && !!bench && inside(bench.container, wb.document.getElementById('dd-body')), 'it makes one workBench, inside its own body',
-    'workBenches made: ' + wb.benches.length);
+  return (lastTitle.indexOf('goal/G9.7') !== -1 && lastTitle.indexOf('A titled item') !== -1 && lastTitle.indexOf('running') !== -1) ||
+    'the title bar was given ' + JSON.stringify(wt.titles);
+}, 1000);
+// goal/G41.22: one workBench, the button row above it.
+test.run('it requires spirit/element/workBench.js through spirit.require', 0.2, async function () {
+  const wb = S.wb = await opened(ITEM);
+  S.bench = wb.benches[0] || null;
+  return wb.required.indexOf('spirit/element/workBench.js') !== -1 || 'required: ' + JSON.stringify(wb.required);
+}, 1000);
+test.run('it makes one workBench, inside its own body', 0.2, function () {
+  const wb = S.wb, bench = S.bench;
+  if (!wb) return 'no dialog: the test before it failed';
+  return (wb.benches.length === 1 && !!bench && inside(bench.container, wb.document.getElementById('dd-body'))) || 'workBenches made: ' + wb.benches.length;
+}, 1000);
+test.run('the left strip is today\'s panels, each its icon, in order', 0.2, function () {
+  const bench = S.bench;
   const leftNames = bench ? (bench.opts.left || []).map(function (t) { return t.name + ' ' + t.icon; }) : [];
-  const panelNames = (panels || []).map(function (p) { return p.key + ' ' + p.icon; });
-  ok(!!bench && JSON.stringify(leftNames) === JSON.stringify(panelNames), 'the left strip is today\'s panels, each its icon, in order',
-    'the left strip: ' + JSON.stringify(leftNames) + ', today\'s panels: ' + JSON.stringify(panelNames));
-  ok(!!bench && !(bench.opts.right || []).length, 'the right side is left blank: no tool on it', 'the right side has ' + JSON.stringify(bench && bench.opts.right));
+  const panelNames = (S.panels || []).map(function (p) { return p.key + ' ' + p.icon; });
+  return (!!bench && JSON.stringify(leftNames) === JSON.stringify(panelNames)) ||
+    'the left strip: ' + JSON.stringify(leftNames) + ', today\'s panels: ' + JSON.stringify(panelNames);
+}, 1000);
+test.run('the right side is left blank: no tool on it', 0.2, function () {
+  const bench = S.bench;
+  return (!!bench && !(bench.opts.right || []).length) || 'the right side has ' + JSON.stringify(bench && bench.opts.right);
+}, 1000);
+test.run('the button row stands above the workBench, outside it, the whole width', 0.2, function () {
+  const wb = S.wb, bench = S.bench;
+  if (!wb) return 'no dialog: the test before it failed';
   const row = wb.document.getElementById('dd-name-row');
   const benchOrder = walkAll(wb.document.root, []);
-  ok(!!row && !!bench && !inside(row, bench.root) && benchOrder.indexOf(row) < benchOrder.indexOf(bench.root), 'the button row stands above the workBench, outside it, the whole width',
-    'the button row: ' + (!row ? 'none' : !bench ? 'no workBench to stand above' : inside(row, bench.root) ? 'inside the workBench' : 'after the workBench'));
+  return (!!row && !!bench && !inside(row, bench.root) && benchOrder.indexOf(row) < benchOrder.indexOf(bench.root)) ||
+    'the button row: ' + (!row ? 'none' : !bench ? 'no workBench to stand above' : inside(row, bench.root) ? 'inside the workBench' : 'after the workBench');
+}, 1000);
+test.run('a left icon shows its panel in the workBench\'s left pane', 0.2, async function () {
+  const wb = S.wb, bench = S.bench;
+  if (!wb) return 'no dialog: the test before it failed';
   if (bench) { const qsIcon = panelIcon(wb, 'qs'); if (qsIcon) { wb.document.click(qsIcon); await settle(); } }
-  ok(!!bench && bench.shown('left') === 'qs' && !!wb.document.querySelector('[data-qclear], #dd-panel') && inside(wb.document.querySelector('[data-qclear], #dd-panel'), bench.root),
-    'a left icon shows its panel in the workBench\'s left pane', 'after the red Qs icon: ' + JSON.stringify({ shown: bench && bench.shown('left') }));
-  // goal/G43.22, Andy: "take out the chat-search do, it's not actually usable.": the centre is the chat and its input, no search.
-  test.subHeading('goal/G41.22: the centre is the chat, its input at the bottom; goal/G43.22: no chat search');
-  const centre = bench ? bench.center : null;
+  return (!!bench && bench.shown('left') === 'qs' && !!wb.document.querySelector('[data-qclear], #dd-panel') && inside(wb.document.querySelector('[data-qclear], #dd-panel'), bench.root)) ||
+    'after the red Qs icon: ' + JSON.stringify({ shown: bench && bench.shown('left') });
+}, 1000);
+// goal/G41.22: the centre is the chat, its input at the bottom; goal/G43.22, Andy: "take out the chat-search do, it's
+// not actually usable.": the centre is the chat and its input, no search.
+test.run('the chat and its input are in the workBench\'s centre', 0.2, function () {
+  const wb = S.wb;
+  if (!wb) return 'no dialog: the test before it failed';
+  const centre = S.bench ? S.bench.center : null;
   const chatLog = wb.document.getElementById('dd-chat');
   const say = wb.document.getElementById('dd-say');
-  ok(!!centre && [chatLog, say].every(function (n) { return n && inside(n, centre); }), 'the chat and its input are in the workBench\'s centre',
-    'in the centre: ' + JSON.stringify({ chat: !!(chatLog && centre && inside(chatLog, centre)), input: !!(say && centre && inside(say, centre)) }));
-  ok(!wb.document.getElementById('dd-chat-find'), 'goal/G43.22: there is no chat search', 'a chat search is still drawn');
+  return (!!centre && [chatLog, say].every(function (n) { return n && inside(n, centre); })) ||
+    'in the centre: ' + JSON.stringify({ chat: !!(chatLog && centre && inside(chatLog, centre)), input: !!(say && centre && inside(say, centre)) });
+}, 1000);
+test.run('goal/G43.22: there is no chat search', 0.2, function () {
+  if (!S.wb) return 'no dialog: the test before it failed';
+  return !S.wb.document.getElementById('dd-chat-find') || 'a chat search is still drawn';
+}, 1000);
+test.run('top to bottom: the chat, the input', 0.2, function () {
+  const wb = S.wb;
+  if (!wb) return 'no dialog: the test before it failed';
+  const chatLog = wb.document.getElementById('dd-chat');
+  const say = wb.document.getElementById('dd-say');
   const order2 = walkAll(wb.document.root, []);
-  ok(!!chatLog && !!say && order2.indexOf(chatLog) < order2.indexOf(say), 'top to bottom: the chat, the input',
-    'positions: ' + JSON.stringify({ chat: order2.indexOf(chatLog), input: order2.indexOf(say) }));
+  return (!!chatLog && !!say && order2.indexOf(chatLog) < order2.indexOf(say)) || 'positions: ' + JSON.stringify({ chat: order2.indexOf(chatLog), input: order2.indexOf(say) });
+}, 1000);
+test.run('the chat input can be sized up and down only (resize: vertical)', 0.2, function () {
+  if (!S.wb) return 'no dialog: the test before it failed';
+  const say = S.wb.document.getElementById('dd-say');
   const sayStyle = String((say && say.attrs && say.attrs.style) || '');
-  ok(/resize\s*:\s*vertical/.test(sayStyle), 'the chat input can be sized up and down only (resize: vertical)', 'the input\'s style: ' + JSON.stringify(sayStyle));
+  return /resize\s*:\s*vertical/.test(sayStyle) || 'the input\'s style: ' + JSON.stringify(sayStyle);
+}, 1000);
 
-  test.subHeading('goal/G41.22: newest line at the bottom, pinned there; the lines shown stay as they are');
-  // Andy, box v15: "scrolls upward, not downward. that means, newest lines at the bottom, pinned to the bottom, and older
-  // lines above." And G41.11, kept: "in ALL the chats, new lines are no added, THE WHOLE FUCKING THING IS REDRAWN, killing
-  // my attempted copies": a line already shown is the same element after a new line comes and after any other repaint.
-  const CHATTY = Object.assign({}, ITEM, { id: 'goal/G9.6' });
-  const L1 = { by: 'andy', at: '2026-10-27T10:00:00.000Z', text: 'the first line' };
-  const L2 = { by: 'claude-windows', at: '2026-10-27T10:01:00.000Z', text: 'the second line' };
-  const L3 = { by: 'wsl-claude', at: '2026-10-27T10:02:00.000Z', text: 'the third line' };
+// goal/G41.22: newest line at the bottom, pinned there; the lines shown stay as they are.
+// Andy, box v15: "scrolls upward, not downward. that means, newest lines at the bottom, pinned to the bottom, and older
+// lines above." And G41.11, kept: "in ALL the chats, new lines are no added, THE WHOLE FUCKING THING IS REDRAWN, killing
+// my attempted copies": a line already shown is the same element after a new line comes and after any other repaint.
+const CHATTY = Object.assign({}, ITEM, { id: 'goal/G9.6' });
+const L1 = { by: 'andy', at: '2026-10-27T10:00:00.000Z', text: 'the first line' };
+const L2 = { by: 'claude-windows', at: '2026-10-27T10:01:00.000Z', text: 'the second line' };
+const L3 = { by: 'wsl-claude', at: '2026-10-27T10:02:00.000Z', text: 'the third line' };
+const log = function () { return S.cw.document.getElementById('dd-chat'); };
+// What he sees, top to bottom: the lines in their order, turned round where a box shows them reversed (column-reverse).
+const reversed = function () { for (let p = log(); p; p = p.parentNode) { if (/flex-direction\s*:\s*column-reverse/.test(String((p.attrs && p.attrs.style) || '') + ' ' + String((p.style && p.style.flexDirection) || ''))) return true; } return false; };
+const shownNow = function () { const l = (log() ? log().children : []).filter(function (b) { return /the (first|second|third) line/.test(b.textContent); }); return reversed() ? l.slice().reverse() : l; };
+// Pinned to the bottom: a box between the lines and the centre scrolled to its end, or one showing them reversed.
+const pinned = function () { if (reversed()) return true; for (let p = log(); p && p !== S.cw.document.root; p = p.parentNode) { if (p.scrollTop >= p.scrollHeight - p.clientHeight) return true; } return false; };
+const words = function (l) { return JSON.stringify(l.map(function (b) { return b.textContent.replace(/[\s\S]*(the \w+ line)[\s\S]*/, '$1'); })); };
+test.run('it opens with the two lines, the newest at the bottom', 0.2, async function () {
   const cw = ddWorld(CHATTY, []);
-  let heard = null;
-  cw.api.onPublished = function (fn, from) { if (from === 'desk' || !heard) heard = fn; return function () {}; };
+  S.heard = null;
+  cw.api.onPublished = function (fn, from) { if (from === 'desk' || !S.heard) S.heard = fn; return function () {}; };
   const verbBefore = cw.api.verb;
   cw.api.verb = function (name, args) { if (name === 'desk.item.chat') return Promise.resolve({ status: 200, body: { chat: [L1, L2] } }); return verbBefore(name, args); };
   await cw.open();
-  const log = function () { return cw.document.getElementById('dd-chat'); };
-  // What he sees, top to bottom: the lines in their order, turned round where a box shows them reversed (column-reverse).
-  const reversed = function () { for (let p = log(); p; p = p.parentNode) { if (/flex-direction\s*:\s*column-reverse/.test(String((p.attrs && p.attrs.style) || '') + ' ' + String((p.style && p.style.flexDirection) || ''))) return true; } return false; };
-  const shownNow = function () { const l = (log() ? log().children : []).filter(function (b) { return /the (first|second|third) line/.test(b.textContent); }); return reversed() ? l.slice().reverse() : l; };
-  // Pinned to the bottom: a box between the lines and the centre scrolled to its end, or one showing them reversed.
-  const pinned = function () { if (reversed()) return true; for (let p = log(); p && p !== cw.document.root; p = p.parentNode) { if (p.scrollTop >= p.scrollHeight - p.clientHeight) return true; } return false; };
-  const words = function (l) { return JSON.stringify(l.map(function (b) { return b.textContent.replace(/[\s\S]*(the \w+ line)[\s\S]*/, '$1'); })); };
-  const before = shownNow();
-  ok(before.length === 2 && /first/.test(before[0].textContent) && /second/.test(before[1].textContent), 'it opens with the two lines, the newest at the bottom', 'top to bottom: ' + words(before));
-  ok(pinned(), 'it opens pinned to the bottom, at the newest line', 'no box of the chat is scrolled to its end');
-  if (heard) { heard({ change: 50, table: 'chat', id: CHATTY.id, row: L3 }); await settle(); }
-  const afterLine = shownNow();
-  ok(afterLine.length === 3 && /third/.test(afterLine[2].textContent), 'a new line on the stream is put in at the bottom', 'top to bottom: ' + words(afterLine));
-  ok(pinned(), 'after a new line it is pinned to the bottom still', 'no box of the chat is scrolled to its end after the new line');
-  ok(afterLine.length === 3 && afterLine[0] === before[0] && afterLine[1] === before[1], 'the two lines already shown are the same elements as before: not drawn again',
-    'drawn again: ' + JSON.stringify({ first: afterLine[0] === before[0], second: afterLine[1] === before[1] }));
-  if (heard) { heard({ change: 51, table: 'checks', id: CHATTY.id, row: { number: 'G1', kind: 'G', state: 'open', words: 'core grant' } }); await settle(); }
+  S.cw = cw;
+  const before = S.before = shownNow();
+  return (before.length === 2 && /first/.test(before[0].textContent) && /second/.test(before[1].textContent)) || 'top to bottom: ' + words(before);
+}, 1000);
+test.run('it opens pinned to the bottom, at the newest line', 0.2, function () {
+  if (!S.cw) return 'no chat: the test before it failed';
+  return pinned() || 'no box of the chat is scrolled to its end';
+}, 1000);
+test.run('a new line on the stream is put in at the bottom', 0.2, async function () {
+  if (!S.cw) return 'no chat: the test before it failed';
+  if (S.heard) { S.heard({ change: 50, table: 'chat', id: CHATTY.id, row: L3 }); await settle(); }
+  const afterLine = S.afterLine = shownNow();
+  return (afterLine.length === 3 && /third/.test(afterLine[2].textContent)) || 'top to bottom: ' + words(afterLine);
+}, 1000);
+test.run('after a new line it is pinned to the bottom still', 0.2, function () {
+  if (!S.cw) return 'no chat: the test before it failed';
+  return pinned() || 'no box of the chat is scrolled to its end after the new line';
+}, 1000);
+test.run('the two lines already shown are the same elements as before: not drawn again', 0.2, function () {
+  const before = S.before, afterLine = S.afterLine;
+  if (!before || !afterLine) return 'no chat: the tests before it failed';
+  return (afterLine.length === 3 && afterLine[0] === before[0] && afterLine[1] === before[1]) ||
+    'drawn again: ' + JSON.stringify({ first: afterLine[0] === before[0], second: afterLine[1] === before[1] });
+}, 1000);
+test.run('a change that is no chat line (a check) repaints the panel and leaves every chat line as it was', 0.2, async function () {
+  const before = S.before, afterLine = S.afterLine;
+  if (!before || !afterLine) return 'no chat: the tests before it failed';
+  if (S.heard) { S.heard({ change: 51, table: 'checks', id: CHATTY.id, row: { number: 'G1', kind: 'G', state: 'open', words: 'core grant' } }); await settle(); }
   const afterOther = shownNow();
-  ok(afterOther.length === 3 && afterOther[0] === before[0] && afterOther[1] === before[1] && afterOther[2] === afterLine[2],
-    'a change that is no chat line (a check) repaints the panel and leaves every chat line as it was', 'drawn again by a check');
-  test.subHeading('goal/G41.11: the rules panel scrolls inside its own box, the frame never cuts it off');
-  // Andy: "the rules list is NOT placed properly in a size-limited container". The left pane hides its overflow; what
-  // bounds the rules is a box of its own that scrolls, so a long list is never cut off unseen.
-  const rf = ddWorld(Object.assign({}, ITEM, { id: 'goal/G9.6', rules: Array.from({ length: 30 }, function (x, i) { return { key: 'rule/' + (i + 1), version: 1 }; }) }), []);
-  await rf.open();
+  return (afterOther.length === 3 && afterOther[0] === before[0] && afterOther[1] === before[1] && afterOther[2] === afterLine[2]) || 'drawn again by a check';
+}, 1000);
+// goal/G41.11: the rules panel scrolls inside its own box, the frame never cuts it off.
+// Andy: "the rules list is NOT placed properly in a size-limited container". The left pane hides its overflow; what
+// bounds the rules is a box of its own that scrolls, so a long list is never cut off unseen.
+test.run('the first box that bounds the rules scrolls (overflow auto), not the frame\'s hidden overflow', 0.2, async function () {
+  const rf = await opened(Object.assign({}, ITEM, { id: 'goal/G9.6', rules: Array.from({ length: 30 }, function (x, i) { return { key: 'rule/' + (i + 1), version: 1 }; }) }));
   const icon = panelIcon(rf, 'rules');
   if (icon) { rf.document.click(icon); await settle(); }
   const firstRuleRow = rf.document.querySelector('[data-rule-remove]');
   let bound = null;
   for (let n = firstRuleRow; n; n = n.parentNode) { const st = String((n.attrs && n.attrs.style) || ''); if (/overflow\s*:\s*(hidden|auto|scroll)/.test(st)) { bound = { id: n.id, style: st }; break; } }
-  ok(!!bound && /overflow\s*:\s*(auto|scroll)/.test(bound.style), 'the first box that bounds the rules scrolls (overflow auto), not the frame\'s hidden overflow', 'bounded by: ' + JSON.stringify(bound));
+  return (!!bound && /overflow\s*:\s*(auto|scroll)/.test(bound.style)) || 'bounded by: ' + JSON.stringify(bound);
+}, 1000);
 
-  // ── goal/G41.28: THE VERIFIER'S RUN, THROUGH SPIRIT.DATA ────────────────────────────────────────────────────────────
-  // Andy: "EVERY FUCKING ELEMENT is verified to make sure when it changes shit it listens to fucking update via the spirit
-  // object". The run of this item (goal/G33.6) is the verifier's own publish, kept by its family's cache manager; the
-  // dialog loads that manager itself and draws the run from spirit.data.deskVerify.data, through the shared run status.
-  test.subHeading('goal/G41.28: the verifier\'s run reaches the dialog through spirit.data');
-  const RUNNING = { id: 'goal/G9.1', title: 'An item', goal: 'goal/G9', status: 'open', buttons: [], verified: 'none', verifyRunning: true, blocked: [] };
-  const runJob = function (o2) { return Object.assign({ id: 'job_verify', type: 'publish', module: 'spirit.app.deskVerify' }, o2); };
-  const RUN1 = { doing: 'run', suite: 'spirit/run/spirit/app/info/test/element.js', index: 2, of: 4, tests: 0, expected: 0, line: '', since: '' };
-  const runShown = function (g) { const el = g.document.getElementById('dd-run'); return el ? el.textContent : ''; };
-  let v = ddWorld(RUNNING, [], { real: true }); await v.open();
-  ok(v.required.indexOf(VERIFY_CCM) !== -1 && !!((v.win.spirit.data || {}).deskVerify || {}).data, 'it loads the verifier\'s cache manager itself, spirit/app/deskVerify/data.js', 'required: ' + JSON.stringify(v.required));
+// ── goal/G41.28: THE VERIFIER'S RUN, THROUGH SPIRIT.DATA ────────────────────────────────────────────────────────────
+// Andy: "EVERY FUCKING ELEMENT is verified to make sure when it changes shit it listens to fucking update via the spirit
+// object". The run of this item (goal/G33.6) is the verifier's own publish, kept by its family's cache manager; the
+// dialog loads that manager itself and draws the run from spirit.data.deskVerify.data, through the shared run status.
+const RUNNING = { id: 'goal/G9.1', title: 'An item', goal: 'goal/G9', status: 'open', buttons: [], verified: 'none', verifyRunning: true, blocked: [] };
+const runJob = function (o2) { return Object.assign({ id: 'job_verify', type: 'publish', module: 'spirit.app.deskVerify' }, o2); };
+const RUN1 = { doing: 'run', suite: 'spirit/run/spirit/app/info/test/element.js', index: 2, of: 4, tests: 0, expected: 0, line: '', since: '' };
+const runShown = function (g) { const el = g.document.getElementById('dd-run'); return el ? el.textContent : ''; };
+test.run('it loads the verifier\'s cache manager itself, spirit/app/deskVerify/data.js', 0.2, async function () {
+  const v = S.v = await opened(RUNNING, [], { real: true });
+  return (v.required.indexOf(VERIFY_CCM) !== -1 && !!((v.win.spirit.data || {}).deskVerify || {}).data) || 'required: ' + JSON.stringify(v.required);
+}, 1000);
+test.run('a verifier publish taken into spirit.data redraws the run: its progress, its suite and how far', 0.2, async function () {
+  const v = S.v;
+  if (!v) return 'no dialog: the test before it failed';
   const runBefore = runShown(v);
   v.win.spirit.data.takeJob(runJob({ app: RUN1 })); await settle();
-  ok(/verifying element\.js, suite 2 of 4/.test(runShown(v)) && !!v.document.getElementById('dd-run') && !!v.document.getElementById('dd-run').querySelector('progress'), 'a verifier publish taken into spirit.data redraws the run: its progress, its suite and how far',
-    'the run before: "' + runBefore + '", after the publish: "' + runShown(v) + '"');
+  return (/verifying element\.js, suite 2 of 4/.test(runShown(v)) && !!v.document.getElementById('dd-run') && !!v.document.getElementById('dd-run').querySelector('progress')) ||
+    'the run before: "' + runBefore + '", after the publish: "' + runShown(v) + '"';
+}, 1000);
+test.run('the next publish redraws it again', 0.2, async function () {
+  const v = S.v;
+  if (!v) return 'no dialog: the test before it failed';
   v.win.spirit.data.takeJob(runJob({ app: Object.assign({}, RUN1, { index: 3 }) })); await settle();
-  ok(/suite 3 of 4/.test(runShown(v)), 'the next publish redraws it again', 'the run: "' + runShown(v) + '"');
-  v = ddWorld(RUNNING, [], { real: true, kept: runJob({ app: RUN1 }) }); await v.open();
-  ok(/verifying element\.js, suite 2 of 4/.test(runShown(v)), 'a run already kept in spirit.data when it opens is drawn at once', 'the run at open: "' + runShown(v) + '"');
-  v = ddWorld(RUNNING, [], { real: true }); await v.open();
+  return /suite 3 of 4/.test(runShown(v)) || 'the run: "' + runShown(v) + '"';
+}, 1000);
+test.run('a run already kept in spirit.data when it opens is drawn at once', 0.2, async function () {
+  const v = await opened(RUNNING, [], { real: true, kept: runJob({ app: RUN1 }) });
+  return /verifying element\.js, suite 2 of 4/.test(runShown(v)) || 'the run at open: "' + runShown(v) + '"';
+}, 1000);
+test.run('a publish of another node\'s verifier draws nothing here', 0.2, async function () {
+  const v = await opened(RUNNING, [], { real: true });
   v.win.spirit.data.takeJob(runJob({ fromNode: 'KEY+ANOTHER/NODE==', app: RUN1 })); await settle();
-  ok(!/verifying/.test(runShown(v)), 'a publish of another node\'s verifier draws nothing here', 'the run: "' + runShown(v) + '"');
-  v = ddWorld(RUNNING, [], { real: true }); await v.open();
+  return !/verifying/.test(runShown(v)) || 'the run: "' + runShown(v) + '"';
+}, 1000);
+test.run('a publish saying no doing draws nothing', 0.2, async function () {
+  const v = await opened(RUNNING, [], { real: true });
   v.win.spirit.data.takeJob(runJob({ app: { suite: 'x.js', index: 1, of: 2 } })); await settle();
-  ok(!/verifying/.test(runShown(v)), 'a publish saying no doing draws nothing', 'the run: "' + runShown(v) + '"');
+  return !/verifying/.test(runShown(v)) || 'the run: "' + runShown(v) + '"';
+}, 1000);
 
-  // ── goal/G41.22: OPENED ON AN ITEM, IN A REAL BROWSER ─────────────────────────────────────────────────────────────────
-  // The page above has no layout, so what fills and what scrolls is asked of Chrome (a chat short of its bottom, no left
-  // panel at open, or a box a third of its pane, pass the page above):
-  // ./deskDetails-opened.html, on a scratch node with its DEBUG on, opens the panel in the home page's app area on an item
-  // with 200 chat lines and a long box.
-  const OPENED = '/DEBUG/spirit/app/desk/element/deskDetails/test/deskDetails-opened.html';
-  test.subHeading(OPENED.slice('/DEBUG'.length) + ': opened on an item, in the home page\'s app area');
-  const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
-  const chrome = H.findChrome();
-  if (!chrome) test.fail('no Chrome on this machine: SPIRIT_CHROME names none, and none is found by its name');
-  else {
-    const node = await H.scratchNode();
-    let page = null;
-    try {
-      page = node.up && node.debug ? await H.chromePage(chrome) : null;
-      if (!page || page.error) test.fail(page ? page.error : 'the scratch node did not come up with its DEBUG on');
-      else {
-        await page.send('Page.navigate', { url: node.base + OPENED });
-        await H.until(function () { return page.evaluate('typeof window.opened === "function" && !!window.spirit').then(Boolean); }, H.WAIT);
-        const s = await page.evaluate('window.opened()').catch(function () { return ''; });
-        let m = null;
-        try { m = JSON.parse(s); } catch (e) { m = null; }
-        if (!m) test.fail('the page measured nothing: ' + String(s).slice(0, 200));
-        else {
-          ok(!m.scrolls && !!m.say && m.say.bottom <= m.window, 'the page does not scroll, and the chat input is on screen',
-            'the page scrolls, or the input is off screen: ' + JSON.stringify({ scrolls: m.scrolls, input: m.say, window: m.window }));
-          ok(!!m.chatEnd && m.chatEnd.top >= m.chatEnd.end - 1, 'the chat is pinned to its bottom: scrolled to its end',
-            'the chat is scrolled to ' + JSON.stringify(m.chatEnd));
-          ok(!!m.newest && /line 199/.test(m.newest.text) && !!m.chat && m.newest.bottom <= m.chat.bottom + 1, 'the newest line is the last, and shows whole at the bottom',
-            'the newest line: ' + JSON.stringify(m.newest) + ', the chat ends at ' + JSON.stringify(m.chat));
-          ok(!!m.leftShown && m.panelAtOpen > 0, 'at open a left panel shows, as the details did before the workBench',
-            'at open no left panel shows: ' + JSON.stringify({ shown: m.leftShown, height: m.panelAtOpen }));
-          // goal/G43.3: the box on screen is a CodeMirror with line numbers, its last stored version above it.
-          let v = null;
-          try { v = JSON.parse(await page.evaluate('window.boxView()')); } catch (e) { v = null; }
-          ok(!!v && v.codeMirror === true && v.numbers > 0, 'goal/G43.3: the box is a CodeMirror, showing line numbers', 'the box panel: ' + JSON.stringify(v));
-          ok(!!v && /\b37\b/.test(String(v.above)), 'goal/G43.3: above the box stands its last stored version', 'above the box: ' + JSON.stringify(v && v.above));
-          // goal/G43.22, Andy: "take out your search of the items text, the codeMirror search works better for editing purposes."
-          ok(!!v && v.codeMirror === true && v.find === false, 'goal/G43.22: no find field beside the box; the box is a CodeMirror, with its own search', 'the box panel: ' + JSON.stringify(v));
-          let t = null;
-          try { t = JSON.parse(await page.evaluate('window.boxTake()')); } catch (e) { t = null; }
-          ok(!!t && t.took === 1, 'goal/G43.3: going into that box takes it, as the textarea did', 'going in: ' + JSON.stringify(t));
-          ok(!!t && !!t.wrote && t.wrote.text === 'his new text' && t.wrote.version === 37, 'goal/G43.3: leaving it changed writes his text, on the version it read', 'leaving it: ' + JSON.stringify(t));
-          // goal/G43.3: Andy: "the rule-picker should default to all filters off."
-          let rp = null;
-          try { rp = JSON.parse(await page.evaluate('window.rulePick()')); } catch (e) { rp = null; }
-          ok(!!rp && rp.buttons > 0 && rp.on.length === 0, 'goal/G43.3: the rule picker opens with all its type filters off', 'the picker: ' + JSON.stringify(rp));
-          ok(!!rp && JSON.stringify(rp.afterOn) === '["code"]' && JSON.stringify(rp.afterTypes) === '["code"]', 'goal/G43.3: one type pressed: that filter alone is on, and the search asks for that type', 'after pressing code: ' + JSON.stringify(rp));
-          // EVERY LEFT PANEL USES ALL THE HEIGHT (Andy, on G41.22: "the box must use the full vertical space", "all left
-          // side panels must fucking use all available vertical space, especially the lists"): given long content, the
-          // pane never scrolls itself; the panel's own list (the box's text) scrolls, its bottom at the pane's.
-          for (const key of ['box', 'qs', 'files', 'rules', 'suites']) {
-            let p = null;
-            try { p = JSON.parse(await page.evaluate('window.panel(' + JSON.stringify(key) + ')')); } catch (e) { p = null; }
-            const full = !!p && !p.error && !p.paneScrolls && !!p.scroller && p.scroller.bottom >= p.pane.bottom - 24 && p.scroller.bottom <= p.pane.bottom + 1;
-            const fullWhy = 'the ' + key + ' panel, pressed the first time: ' + JSON.stringify(p);
-            if (key === 'box') ok(full, 'the box panel, the first time its icon is pressed, uses all the height: its list scrolls in itself, down to the bottom of the pane', fullWhy);
-            else if (key === 'qs') ok(full, 'the qs panel, the first time its icon is pressed, uses all the height: its list scrolls in itself, down to the bottom of the pane', fullWhy);
-            else if (key === 'files') ok(full, 'the files panel, the first time its icon is pressed, uses all the height: its list scrolls in itself, down to the bottom of the pane', fullWhy);
-            else if (key === 'rules') ok(full, 'the rules panel, the first time its icon is pressed, uses all the height: its list scrolls in itself, down to the bottom of the pane', fullWhy);
-            else if (key === 'suites') ok(full, 'the suites panel, the first time its icon is pressed, uses all the height: its list scrolls in itself, down to the bottom of the pane', fullWhy);
-            // THE GRANT ROW PINNED ON TOP (Andy: "the file panel must have the red gran button row pinned to the top and the
-            // file list only using the remaining vertical space"): never in the list that scrolls, and it stays put.
-            if (key === 'files') {
-              ok(!!p && p.grantInList === false && p.grantBefore === p.grantAfter && !!p.scroller && p.grantBefore < p.scroller.top,
-                'the files panel: the grant buttons stay pinned above the file list as it scrolls',
-                'the files panel\'s grant row: ' + JSON.stringify(p && { inList: p.grantInList, before: p.grantBefore, after: p.grantAfter, list: p.scroller }));
-            }
-          }
-        }
-      }
-    } finally {
-      if (page && page.kid) page.kid.kill();
-      if (node.child) node.child.kill();
-      try { if (page && page.profile) fs.rmSync(page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
-      try { if (node.root) fs.rmSync(node.root, { recursive: true, force: true }); } catch (e) { /* left */ }
-    }
-  }
+// ── goal/G41.22: OPENED ON AN ITEM, IN A REAL BROWSER ─────────────────────────────────────────────────────────────────
+// The page above has no layout, so what fills and what scrolls is asked of Chrome (a chat short of its bottom, no left
+// panel at open, or a box a third of its pane, pass the page above):
+// ./deskDetails-opened.html, on a scratch node with its DEBUG on, opens the panel in the home page's app area on an item
+// with 200 chat lines and a long box.
+const OPENED = '/DEBUG/spirit/app/desk/element/deskDetails/test/deskDetails-opened.html';
+const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+// A scratch node and its Chrome page, stopped once their tests are done, and at the end whatever happened.
+function stop(node, page) {
+  if (page && page.kid) page.kid.kill();
+  if (node && node.child) node.child.kill();
+  try { if (page && page.profile) fs.rmSync(page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
+  try { if (node && node.root) fs.rmSync(node.root, { recursive: true, force: true }); } catch (e) { /* left */ }
+}
+function stopOpened() { stop(S.node, S.page); S.node = S.page = null; }
+function stopPressing() { stop(S.scratch, S.page2); S.scratch = S.page2 = null; }
+test.after(function () { stopOpened(); stopPressing(); });
+test.run('the world: Chrome, a scratch node with its DEBUG on, and its page measuring the panel opened on an item', 0.2, async function () {
+  S.chrome = H.findChrome();
+  if (!S.chrome) return 'no Chrome on this machine: SPIRIT_CHROME names none, and none is found by its name';
+  const node = S.node = await H.scratchNode();
+  const page = S.page = node.up && node.debug ? await H.chromePage(S.chrome) : null;
+  if (!page || page.error) return page ? page.error : 'the scratch node did not come up with its DEBUG on';
+  await page.send('Page.navigate', { url: node.base + OPENED });
+  await H.until(function () { return page.evaluate('typeof window.opened === "function" && !!window.spirit').then(Boolean); }, H.WAIT);
+  const s = await page.evaluate('window.opened()').catch(function () { return ''; });
+  try { S.m = JSON.parse(s); } catch (e) { S.m = null; }
+  return !!S.m || 'the page measured nothing: ' + String(s).slice(0, 200);
+}, 12000);
+const NO_PAGE = 'no page measured: the world failed';
+test.run('the page does not scroll, and the chat input is on screen', 0.2, function () {
+  const m = S.m;
+  if (!m) return NO_PAGE;
+  return (!m.scrolls && !!m.say && m.say.bottom <= m.window) || 'the page scrolls, or the input is off screen: ' + JSON.stringify({ scrolls: m.scrolls, input: m.say, window: m.window });
+}, 1000);
+test.run('the chat is pinned to its bottom: scrolled to its end', 0.2, function () {
+  const m = S.m;
+  if (!m) return NO_PAGE;
+  return (!!m.chatEnd && m.chatEnd.top >= m.chatEnd.end - 1) || 'the chat is scrolled to ' + JSON.stringify(m.chatEnd);
+}, 1000);
+test.run('the newest line is the last, and shows whole at the bottom', 0.2, function () {
+  const m = S.m;
+  if (!m) return NO_PAGE;
+  return (!!m.newest && /line 199/.test(m.newest.text) && !!m.chat && m.newest.bottom <= m.chat.bottom + 1) ||
+    'the newest line: ' + JSON.stringify(m.newest) + ', the chat ends at ' + JSON.stringify(m.chat);
+}, 1000);
+test.run('at open a left panel shows, as the details did before the workBench', 0.2, function () {
+  const m = S.m;
+  if (!m) return NO_PAGE;
+  return (!!m.leftShown && m.panelAtOpen > 0) || 'at open no left panel shows: ' + JSON.stringify({ shown: m.leftShown, height: m.panelAtOpen });
+}, 1000);
+// goal/G43.3: the box on screen is a CodeMirror with line numbers, its last stored version above it.
+async function pageAnswer(expr) { try { return JSON.parse(await S.page.evaluate(expr)); } catch (e) { return null; } }
+test.run('goal/G43.3: the box is a CodeMirror, showing line numbers', 0.2, async function () {
+  if (!S.m) return NO_PAGE;
+  const v = S.box = await pageAnswer('window.boxView()');
+  return (!!v && v.codeMirror === true && v.numbers > 0) || 'the box panel: ' + JSON.stringify(v);
+}, 4000);
+test.run('goal/G43.3: above the box stands its last stored version', 0.2, function () {
+  if (!S.m) return NO_PAGE;
+  const v = S.box;
+  return (!!v && /\b37\b/.test(String(v.above))) || 'above the box: ' + JSON.stringify(v && v.above);
+}, 1000);
+// goal/G43.22, Andy: "take out your search of the items text, the codeMirror search works better for editing purposes."
+test.run('goal/G43.22: no find field beside the box; the box is a CodeMirror, with its own search', 0.2, function () {
+  if (!S.m) return NO_PAGE;
+  const v = S.box;
+  return (!!v && v.codeMirror === true && v.find === false) || 'the box panel: ' + JSON.stringify(v);
+}, 1000);
+test.run('goal/G43.3: going into that box takes it, as the textarea did', 0.2, async function () {
+  if (!S.m) return NO_PAGE;
+  const t = S.take = await pageAnswer('window.boxTake()');
+  return (!!t && t.took === 1) || 'going in: ' + JSON.stringify(t);
+}, 2000);
+test.run('goal/G43.3: leaving it changed writes his text, on the version it read', 0.2, function () {
+  if (!S.m) return NO_PAGE;
+  const t = S.take;
+  return (!!t && !!t.wrote && t.wrote.text === 'his new text' && t.wrote.version === 37) || 'leaving it: ' + JSON.stringify(t);
+}, 1000);
+// goal/G43.3: Andy: "the rule-picker should default to all filters off."
+test.run('goal/G43.3: the rule picker opens with all its type filters off', 0.2, async function () {
+  if (!S.m) return NO_PAGE;
+  const rp = S.rp = await pageAnswer('window.rulePick()');
+  return (!!rp && rp.buttons > 0 && rp.on.length === 0) || 'the picker: ' + JSON.stringify(rp);
+}, 7000);
+test.run('goal/G43.3: one type pressed: that filter alone is on, and the search asks for that type', 0.2, function () {
+  if (!S.m) return NO_PAGE;
+  const rp = S.rp;
+  return (!!rp && JSON.stringify(rp.afterOn) === '["code"]' && JSON.stringify(rp.afterTypes) === '["code"]') || 'after pressing code: ' + JSON.stringify(rp);
+}, 1000);
+// EVERY LEFT PANEL USES ALL THE HEIGHT (Andy, on G41.22: "the box must use the full vertical space", "all left
+// side panels must fucking use all available vertical space, especially the lists"): given long content, the
+// pane never scrolls itself; the panel's own list (the box's text) scrolls, its bottom at the pane's.
+async function fullHeight(key) {
+  if (!S.m) return NO_PAGE;
+  const p = S.panel = await pageAnswer('window.panel(' + JSON.stringify(key) + ')');
+  const full = !!p && !p.error && !p.paneScrolls && !!p.scroller && p.scroller.bottom >= p.pane.bottom - 24 && p.scroller.bottom <= p.pane.bottom + 1;
+  return full || 'the ' + key + ' panel, pressed the first time: ' + JSON.stringify(p);
+}
+test.run('the box panel, the first time its icon is pressed, uses all the height: its list scrolls in itself, down to the bottom of the pane', 0.2, function () { return fullHeight('box'); }, 3000);
+test.run('the qs panel, the first time its icon is pressed, uses all the height: its list scrolls in itself, down to the bottom of the pane', 0.2, function () { return fullHeight('qs'); }, 3000);
+test.run('the files panel, the first time its icon is pressed, uses all the height: its list scrolls in itself, down to the bottom of the pane', 0.2, function () { return fullHeight('files'); }, 4000);
+// THE GRANT ROW PINNED ON TOP (Andy: "the file panel must have the red gran button row pinned to the top and the
+// file list only using the remaining vertical space"): never in the list that scrolls, and it stays put.
+test.run('the files panel: the grant buttons stay pinned above the file list as it scrolls', 0.2, function () {
+  if (!S.m) return NO_PAGE;
+  const p = S.panel;
+  return (!!p && p.grantInList === false && p.grantBefore === p.grantAfter && !!p.scroller && p.grantBefore < p.scroller.top) ||
+    'the files panel\'s grant row: ' + JSON.stringify(p && { inList: p.grantInList, before: p.grantBefore, after: p.grantAfter, list: p.scroller });
+}, 1000);
+test.run('the rules panel, the first time its icon is pressed, uses all the height: its list scrolls in itself, down to the bottom of the pane', 0.2, function () { return fullHeight('rules'); }, 3000);
+test.run('the suites panel, the first time its icon is pressed, uses all the height: its list scrolls in itself, down to the bottom of the pane', 0.2, function () {
+  const r = fullHeight('suites');
+  return Promise.resolve(r).then(function (v) { stopOpened(); return v; });
+}, 3000);
 
-  // ── goal/G43.30: ON THE REAL PAGE, A DELETE OR A CLOSE PRESSED ONCE DOES NOTHING ─────────────────────────────────
-  // The box: "A test presses each one once on the real page and finds that nothing happened", and the run status: "Desk
-  // and its detail load it from there". A scratch node with desk on, a goal and two items: one pressed done, whose detail
-  // offers Close; one in design mode, whose detail offers Delete (goal/G9.7). Each detail opened from Desk's List.
-  test.subHeading('goal/G43.30: on a real page, the detail\'s Close and Delete pressed once do nothing; the run status from Desk\'s own elements');
-  if (chrome) {
-    const scratch = await H.scratchNode();
-    let page = null;
-    try {
-      page = scratch.up ? await H.chromePage(chrome) : null;
-      if (!page || page.error) test.fail(page ? page.error : 'the scratch node did not come up');
-      else {
-        await page.send('Page.navigate', { url: scratch.base + '/face.html' });
-        await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.require)').then(Boolean); }, H.WAIT);
-        const call = function (verb, args) {
-          return page.evaluate("fetch('/api/spirit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(" + JSON.stringify({ call: verb, args: args }) + ") }).then(function (r) { return r.text(); })")
-            .then(function (t) { try { return JSON.parse(t); } catch (e) { return {}; } });
-        };
-        const state = async function (id) { const r = await call('desk.item.get', { id: id }); let i = r.item; if (typeof i === 'string') { try { i = JSON.parse(i); } catch (e) { i = null; } } return i || {}; };
-        await call('app.active', { key: 'desk', active: true });
-        await H.until(function () { return call('desk.items.search', { text: '' }).then(function (r) { return r.ok !== false; }); }, 40000);
-        const g = await call('desk.goal.add', { title: 'Pressing goal' });
-        await call('desk.press', { id: g.id, what: 'make-current' });
-        const done = await call('desk.item.add', { goal: g.id, title: 'A done item to close', blocks: '' });
-        await call('desk.press', { id: done.id, what: 'done' });
-        const design = await call('desk.item.add', { goal: g.id, title: 'A design item to delete', blocks: '' });
-        await call('desk.press', { id: design.id, what: 'start-design' });
-        const before = { done: await state(done.id), design: await state(design.id) };
-        ok(before.done.status === 'done' && (before.design.buttons || []).indexOf('delete') !== -1, 'the world: an item done, and an item in design mode offering Delete', 'the world: ' + JSON.stringify({ done: before.done.status, designButtons: before.design.buttons }));
-        await page.evaluate("(function () { var d = document.createElement('div'); d.id = 'zzDesk'; d.style.height = '800px'; document.body.appendChild(d); return Promise.resolve(window.spirit.require('spirit/app/desk/element.js')).then(function () { window.spirit.element.spirit.app.desk.element.create(d, {}); return true; }); })()");
-        const open = function (title) { return page.evaluate("(function () { var all = Array.prototype.slice.call(document.querySelectorAll('#zzDesk *')).filter(function (x) { return x.tagName === 'TD' && x.textContent.indexOf(" + JSON.stringify(title) + ") !== -1 && !x.closest('.app-container'); }); if (!all.length) return false; all[all.length - 1].click(); return true; })()"); };
-        const btn = function (id) { return "Array.prototype.filter.call(document.querySelectorAll('#zzDesk .app-container #" + id + "'), function (b) { return b.getClientRects().length; })[0]"; };
-        const shut = function () { return page.evaluate("(function () { var c = Array.prototype.filter.call(document.querySelectorAll('#zzDesk .app-container-close'), function (x) { return x.getClientRects().length; }).pop(); if (c) c.click(); return !!c; })()"); };
-        const pressOnce = async function (title, id, what) {
-          await H.until(function () { return open(title); }, H.WAIT);
-          const there = await H.until(function () { return page.evaluate('!!' + btn(id)); }, H.WAIT);
-          const thereWhy = 'no ' + what + ' in the detail of "' + title + '": ' + String(await page.evaluate("String(document.getElementById('zzDesk').innerText).slice(0, 300)"));
-          if (title === 'A done item to close') ok(there, 'the world: the detail of "A done item to close" offers Close', thereWhy);
-          else if (title === 'A design item to delete') ok(there, 'the world: the detail of "A design item to delete" offers Delete', thereWhy);
-          if (!there) return false;
-          await page.evaluate('(function () { var b = ' + btn(id) + '; if (b) b.click(); return !!b; })()');
-          await new Promise(function (r) { setTimeout(r, 1500); });
-          return page.evaluate('(function () { var b = ' + btn(id) + '; return !!b && b.hasAttribute("data-armed"); })()');
-        };
-        const closeArmed = await pressOnce('A done item to close', 'dd-close', 'Close');
-        const afterClose = await state(done.id);
-        ok(afterClose.status === 'done', 'its Close pressed once: the item is still done, nothing closed', 'after one press of Close the item is ' + afterClose.status);
-        ok(closeArmed === true, 'and its Close stands armed, waiting for the second press', 'after one press its Close is not armed');
-        await shut();
-        const deleteArmed = await pressOnce('A design item to delete', 'dd-delete', 'Delete');
-        const afterDelete = await state(design.id);
-        // Delete closes rather than erases (goal/G9.7): nothing deleted is the same item, its status and its Delete as before.
-        ok(afterDelete.id === design.id && afterDelete.status === before.design.status && afterDelete.status !== 'closed' && (afterDelete.buttons || []).indexOf('delete') !== -1,
-          'its Delete pressed once: the item is there, its status as before and still offering Delete, nothing deleted',
-          'after one press of Delete the item is ' + JSON.stringify({ id: afterDelete.id, status: afterDelete.status, buttons: afterDelete.buttons }) + ', before ' + JSON.stringify(before.design.status));
-        ok(deleteArmed === true, 'and its Delete stands armed, waiting for the second press', 'after one press its Delete is not armed');
-        const from = JSON.parse(await page.evaluate('JSON.stringify(performance.getEntriesByType("resource").map(function (e) { return e.name; }).filter(function (x) { return /deskRunStatus/.test(x); }))'));
-        ok(from.some(function (x) { return x.indexOf('/spirit/app/desk/element/deskRunStatus/deskRunStatus.js') !== -1; }) && !from.some(function (x) { return /\/shell\/shared\//.test(x); }),
-          'the run status is loaded from spirit/app/desk/element/deskRunStatus/, never from shell/shared/', 'the page loaded ' + JSON.stringify(from));
-      }
-    } finally {
-      if (page && page.kid) page.kid.kill();
-      if (scratch.child) scratch.child.kill();
-      try { if (page && page.profile) fs.rmSync(page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
-      try { if (scratch.root) fs.rmSync(scratch.root, { recursive: true, force: true }); } catch (e) { /* left */ }
-    }
-  }
-}()).catch(function (e) { test.fail('the test threw ' + (e && e.stack || e)); }).then(async function () {
-  // The parts below, each after the checks above, in order; one report for all.
-  for (const part of [['noFind', noFindPart], ['noSharedLeftovers', noSharedLeftoversPart]]) {
-    try { await part[1](); } catch (e) { test.fail('the ' + part[0] + ' part threw ' + (e && e.stack || e)); }
-  }
-  test.reportSuccessFailureCount();
-});
+// ── goal/G43.30: ON THE REAL PAGE, A DELETE OR A CLOSE PRESSED ONCE DOES NOTHING ─────────────────────────────────
+// The box: "A test presses each one once on the real page and finds that nothing happened", and the run status: "Desk
+// and its detail load it from there". A scratch node with desk on, a goal and two items: one pressed done, whose detail
+// offers Close; one in design mode, whose detail offers Delete (goal/G9.7). Each detail opened from Desk's List.
+const call = function (verb, args) {
+  return S.page2.evaluate("fetch('/api/spirit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(" + JSON.stringify({ call: verb, args: args }) + ") }).then(function (r) { return r.text(); })")
+    .then(function (t) { try { return JSON.parse(t); } catch (e) { return {}; } });
+};
+const state = async function (id) { const r = await call('desk.item.get', { id: id }); let i = r.item; if (typeof i === 'string') { try { i = JSON.parse(i); } catch (e) { i = null; } } return i || {}; };
+const openRow = function (title) { return S.page2.evaluate("(function () { var all = Array.prototype.slice.call(document.querySelectorAll('#zzDesk *')).filter(function (x) { return x.tagName === 'TD' && x.textContent.indexOf(" + JSON.stringify(title) + ") !== -1 && !x.closest('.app-container'); }); if (!all.length) return false; all[all.length - 1].click(); return true; })()"); };
+const btn = function (id) { return "Array.prototype.filter.call(document.querySelectorAll('#zzDesk .app-container #" + id + "'), function (b) { return b.getClientRects().length; })[0]"; };
+const shut = function () { return S.page2.evaluate("(function () { var c = Array.prototype.filter.call(document.querySelectorAll('#zzDesk .app-container-close'), function (x) { return x.getClientRects().length; }).pop(); if (c) c.click(); return !!c; })()"); };
+// The detail of a row opened from the List, its button there or not.
+async function detailOffers(title, id, what) {
+  if (!S.ready) return 'no page with Desk: the world failed';
+  await H.until(function () { return openRow(title); }, H.WAIT);
+  S.there = await H.until(function () { return S.page2.evaluate('!!' + btn(id)); }, H.WAIT);
+  return S.there || 'no ' + what + ' in the detail of "' + title + '": ' + String(await S.page2.evaluate("String(document.getElementById('zzDesk').innerText).slice(0, 300)"));
+}
+// That button pressed once, if it is there: whether it then stands armed.
+async function pressOnce(id) {
+  if (!S.there) return false;
+  await S.page2.evaluate('(function () { var b = ' + btn(id) + '; if (b) b.click(); return !!b; })()');
+  await new Promise(function (r) { setTimeout(r, 1500); });
+  return S.page2.evaluate('(function () { var b = ' + btn(id) + '; return !!b && b.hasAttribute("data-armed"); })()');
+}
+test.run('the world: an item done, and an item in design mode offering Delete', 0.2, async function () {
+  stopOpened();
+  S.ready = false;
+  if (!S.chrome) return 'no Chrome on this machine: SPIRIT_CHROME names none, and none is found by its name';
+  const scratch = S.scratch = await H.scratchNode();
+  const page = S.page2 = scratch.up ? await H.chromePage(S.chrome) : null;
+  if (!page || page.error) return page ? page.error : 'the scratch node did not come up';
+  await page.send('Page.navigate', { url: scratch.base + '/face.html' });
+  await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.require)').then(Boolean); }, H.WAIT);
+  await call('app.active', { key: 'desk', active: true });
+  await H.until(function () { return call('desk.items.search', { text: '' }).then(function (r) { return r.ok !== false; }); }, 40000);
+  const g = await call('desk.goal.add', { title: 'Pressing goal' });
+  await call('desk.press', { id: g.id, what: 'make-current' });
+  const done = S.done = await call('desk.item.add', { goal: g.id, title: 'A done item to close', blocks: '' });
+  await call('desk.press', { id: done.id, what: 'done' });
+  const design = S.design = await call('desk.item.add', { goal: g.id, title: 'A design item to delete', blocks: '' });
+  await call('desk.press', { id: design.id, what: 'start-design' });
+  const before = S.beforePress = { done: await state(done.id), design: await state(design.id) };
+  await page.evaluate("(function () { var d = document.createElement('div'); d.id = 'zzDesk'; d.style.height = '800px'; document.body.appendChild(d); return Promise.resolve(window.spirit.require('spirit/app/desk/element.js')).then(function () { window.spirit.element.spirit.app.desk.element.create(d, {}); return true; }); })()");
+  S.ready = true;
+  return (before.done.status === 'done' && (before.design.buttons || []).indexOf('delete') !== -1) || 'the world: ' + JSON.stringify({ done: before.done.status, designButtons: before.design.buttons });
+}, 130000);
+test.run('the world: the detail of "A done item to close" offers Close', 0.2, function () {
+  return detailOffers('A done item to close', 'dd-close', 'Close');
+}, 2000);
+test.run('its Close pressed once: the item is still done, nothing closed', 0.2, async function () {
+  if (!S.ready) return 'no page with Desk: the world failed';
+  S.closeArmed = await pressOnce('dd-close');
+  const afterClose = await state(S.done.id);
+  return afterClose.status === 'done' || 'after one press of Close the item is ' + afterClose.status;
+}, 5000);
+test.run('and its Close stands armed, waiting for the second press', 0.2, function () {
+  return S.closeArmed === true || 'after one press its Close is not armed';
+}, 1000);
+test.run('the world: the detail of "A design item to delete" offers Delete', 0.2, async function () {
+  if (!S.ready) return 'no page with Desk: the world failed';
+  await shut();
+  return detailOffers('A design item to delete', 'dd-delete', 'Delete');
+}, 2000);
+// Delete closes rather than erases (goal/G9.7): nothing deleted is the same item, its status and its Delete as before.
+test.run('its Delete pressed once: the item is there, its status as before and still offering Delete, nothing deleted', 0.2, async function () {
+  if (!S.ready) return 'no page with Desk: the world failed';
+  S.deleteArmed = await pressOnce('dd-delete');
+  const design = S.design, before = S.beforePress;
+  const afterDelete = await state(design.id);
+  return (afterDelete.id === design.id && afterDelete.status === before.design.status && afterDelete.status !== 'closed' && (afterDelete.buttons || []).indexOf('delete') !== -1) ||
+    'after one press of Delete the item is ' + JSON.stringify({ id: afterDelete.id, status: afterDelete.status, buttons: afterDelete.buttons }) + ', before ' + JSON.stringify(before.design.status);
+}, 5000);
+test.run('and its Delete stands armed, waiting for the second press', 0.2, function () {
+  return S.deleteArmed === true || 'after one press its Delete is not armed';
+}, 1000);
+test.run('the run status is loaded from spirit/app/desk/element/deskRunStatus/, never from shell/shared/', 0.2, async function () {
+  if (!S.ready) return 'no page with Desk: the world failed';
+  const from = JSON.parse(await S.page2.evaluate('JSON.stringify(performance.getEntriesByType("resource").map(function (e) { return e.name; }).filter(function (x) { return /deskRunStatus/.test(x); }))'));
+  stopPressing();
+  return (from.some(function (x) { return x.indexOf('/spirit/app/desk/element/deskRunStatus/deskRunStatus.js') !== -1; }) && !from.some(function (x) { return x.indexOf('/shell/shared/') !== -1; })) ||
+    'the page loaded ' + JSON.stringify(from);
+}, 1000);
 
 // THE ELEMENT NAMES SINCE goal/G43.18: a stand-in keyed by its place, 'search.contact' and so on, nested where the page has it.
 function nestSearch(o) { Object.keys(o).forEach(function (k) { if (k !== 'search' && k.indexOf('search.') !== 0) return; var v = o[k]; delete o[k]; var ks = k.split('.'); var at = o; ks.slice(0, -1).forEach(function (p) { at = at[p] = at[p] || {}; }); var last = ks[ks.length - 1]; at[last] = Object.assign(at[last] || {}, v); }); return o; }
 
 // ── THE noFind PART ──────────────────────────────────────────────────────────────────────────────────────────────
-async function noFindPart() {
-  // The noFind part of ./deskDetails.js.
-  // THE ITEM DETAIL HAS NO FIND FIELD AND NO CHAT SEARCH (goal/G43.22; spec: ./deskDetails.md, its noFind section): spirit/app/desk/element/deskDetails/deskDetails.js.
-  // Andy, the box: "the apps and plugin system goes.", "there will only be goals, items and rules left, plus the verifier stuff
-  // can stay for now.". "take out your search of the items text", "take out the chat-search do, it's not actually usable.". The tree read as it is, comments left out.
-
-  const fs = require('fs');
-  const path = require('path');
-  const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..', '..');
-  const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-
-  function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
-  function code(f) { try { return fs.readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1').replace(/<!--[\s\S]*?-->/g, ''); } catch (e) { return ''; } }
-  const DESK = path.join(RUN, 'spirit', 'app', 'desk');
-
-  test.subHeading('noFind: the item detail has no find field over its box and no chat search (goal/G43.22)');
-
-  test.subHeading('Andy: "take out your search of the items text", "take out the chat-search do"');
-  const details = code(path.join(DESK, 'element', 'deskDetails', 'deskDetails.js'));
-  ok(!!details && !/data-box-find/.test(details), 'the item detail has no find field over its box', 'spirit/app/desk/element/deskDetails/deskDetails.js still draws data-box-find');
-  ok(!!details && !/dd-chat-find|ddMountChatFind/.test(details), 'the item detail has no chat search', 'spirit/app/desk/element/deskDetails/deskDetails.js still draws its chat search');
-}
+// THE ITEM DETAIL HAS NO FIND FIELD AND NO CHAT SEARCH (goal/G43.22; spec: ./deskDetails.md, its noFind section): spirit/app/desk/element/deskDetails/deskDetails.js.
+// Andy, the box: "the apps and plugin system goes.", "there will only be goals, items and rules left, plus the verifier stuff
+// can stay for now.". "take out your search of the items text", "take out the chat-search do, it's not actually usable.". The tree read as it is, comments left out.
+// noFind: the item detail has no find field over its box and no chat search (goal/G43.22).
+function codeOf(f) { try { return fs.readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1').replace(/<!--[\s\S]*?-->/g, ''); } catch (e) { return ''; } }
+const DESK = path.join(RUN, 'spirit', 'app', 'desk');
+test.run('the item detail has no find field over its box', 0.2, function () {
+  const details = S.details = codeOf(path.join(DESK, 'element', 'deskDetails', 'deskDetails.js'));
+  return (!!details && !/data-box-find/.test(details)) || 'spirit/app/desk/element/deskDetails/deskDetails.js still draws data-box-find';
+}, 1000);
+test.run('the item detail has no chat search', 0.2, function () {
+  const details = S.details;
+  return (!!details && !/dd-chat-find|ddMountChatFind/.test(details)) || 'spirit/app/desk/element/deskDetails/deskDetails.js still draws its chat search';
+}, 1000);
 
 // ── THE noSharedLeftovers PART ───────────────────────────────────────────────────────────────────────────────────
-async function noSharedLeftoversPart() {
-  // The noSharedLeftovers part of ./deskDetails.js.
-  // PLUGIN LEFTOVERS IN shell/shared (goal/G43.23, item 10, after goal/G43.22; spec: ./deskDetails.md, its noSharedLeftovers section). The box:
-  // "plugin leftovers (G43.22): deskChat.js and deskElement.js in shell/shared, loaded by nothing". They go, and their
-  // tests with them: a test that reads a file gone from the tree is stale (G43.23, Q3: "yes."). deskChat.js drew an item's
-  // chat, which the item detail, deskDetails.js, draws itself now, so their absence is judged beside it (goal/G43.28; Andy:
-  // "you WILL FUCKING PLACE TESTS WHERE THEY FUCKING BELONG"; moved from shell/shared/js/test/deskRunStatus-noDeskLeftovers.js).
-  // The tree read as it is (tracked files that are on disk). No node, no port.
-
-  const fs = require('fs');
-  const path = require('path');
-  const { execSync } = require('child_process');
-  const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..', '..');
-  const REPO = path.resolve(RUN, '..', '..');
-  const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-  const SHARED = path.join(RUN, 'shell', 'shared', 'js');
-  // This suite names the two files to say they are gone; a spec elsewhere that quotes the box's line names them too, and a
-  // quote of the box is no use of them.
-  const SELF = /spirit\/app\/desk\/element\/deskDetails\/test\/deskDetails\.(js|md)$/;
-  const BOX_LINE = /plugin leftovers \(G43\.22\): deskChat\.js and deskElement\.js in shell\/shared, loaded by nothing/g;
-
-  function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
-  function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 400); }
-
-  test.subHeading('noSharedLeftovers: deskChat.js and deskElement.js, and their tests, gone from shell/shared (goal/G43.23 item 10)');
-
-  test.subHeading('the world');
-  // Since goal/G43.30 shell/shared/ is gone with all of shell/, deskRunStatus.js moved into Desk: the folder read is the one the
-  // two leftovers stood in, and it no longer exists.
-  ok(fs.existsSync(path.join(RUN, 'spirit', 'app', 'desk', 'element', 'deskRunStatus', 'deskRunStatus.js')) && !fs.existsSync(SHARED), 'the world: deskRunStatus.js moved into Desk, and spirit/run/shell/shared/js, where the leftovers stood, is gone (goal/G43.30)', 'deskRunStatus.js not in Desk, or ' + path.relative(REPO, SHARED) + ' still there: nothing judged');
-  ok(fs.existsSync(path.join(RUN, 'spirit', 'app', 'desk', 'element', 'deskDetails', 'deskDetails.js')), 'the world: deskDetails.js, which draws an item\'s chat, is beside this test', 'no deskDetails.js beside this test: nothing judged');
-  const tracked = execSync('git ls-files', { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(Boolean)
+// PLUGIN LEFTOVERS IN shell/shared (goal/G43.23, item 10, after goal/G43.22; spec: ./deskDetails.md, its noSharedLeftovers section). The box:
+// "plugin leftovers (G43.22): deskChat.js and deskElement.js in shell/shared, loaded by nothing". They go, and their
+// tests with them: a test that reads a file gone from the tree is stale (G43.23, Q3: "yes."). deskChat.js drew an item's
+// chat, which the item detail, deskDetails.js, draws itself now, so their absence is judged beside it (goal/G43.28; Andy:
+// "you WILL FUCKING PLACE TESTS WHERE THEY FUCKING BELONG"; moved from shell/shared/js/test/deskRunStatus-noDeskLeftovers.js).
+// The tree read as it is (tracked files that are on disk). No node, no port.
+const { execSync } = require('child_process');
+const REPO = path.resolve(RUN, '..', '..');
+const SHARED = path.join(RUN, 'shell', 'shared', 'js');
+// This suite names the two files to say they are gone; a spec elsewhere that quotes the box's line names them too, and a
+// quote of the box is no use of them.
+const SELF = /spirit\/app\/desk\/element\/deskDetails\/test\/deskDetails\.(js|md)$/;
+const BOX_LINE = /plugin leftovers \(G43\.22\): deskChat\.js and deskElement\.js in shell\/shared, loaded by nothing/g;
+function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 400); }
+// noSharedLeftovers: deskChat.js and deskElement.js, and their tests, gone from shell/shared (goal/G43.23 item 10).
+// Since goal/G43.30 shell/shared/ is gone with all of shell/, deskRunStatus.js moved into Desk: the folder read is the one the
+// two leftovers stood in, and it no longer exists.
+test.run('the world: deskRunStatus.js moved into Desk, and spirit/run/shell/shared/js, where the leftovers stood, is gone (goal/G43.30)', 0.2, function () {
+  return (fs.existsSync(path.join(RUN, 'spirit', 'app', 'desk', 'element', 'deskRunStatus', 'deskRunStatus.js')) && !fs.existsSync(SHARED)) ||
+    'deskRunStatus.js not in Desk, or ' + path.relative(REPO, SHARED) + ' still there: nothing judged';
+}, 1000);
+test.run('the world: deskDetails.js, which draws an item\'s chat, is beside this test', 0.2, function () {
+  return fs.existsSync(path.join(RUN, 'spirit', 'app', 'desk', 'element', 'deskDetails', 'deskDetails.js')) || 'no deskDetails.js beside this test: nothing judged';
+}, 1000);
+test.run('the world: more than a hundred tracked files on disk are read', 0.2, function () {
+  S.tracked = execSync('git ls-files', { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(Boolean)
     .filter(function (f) { return fs.existsSync(path.join(REPO, f)); });
-  ok(tracked.length > 100, 'the world: more than a hundred tracked files on disk are read', 'only ' + tracked.length + ' tracked files read: nothing judged');
-
-  test.subHeading('the two leftovers are gone');
-  ok(!fs.existsSync(path.join(SHARED, 'deskChat.js')), 'shell/shared/js/deskChat.js is gone', 'shell/shared/js/deskChat.js is still there');
-  ok(!fs.existsSync(path.join(SHARED, 'deskElement.js')), 'shell/shared/js/deskElement.js is gone', 'shell/shared/js/deskElement.js is still there');
-
-  test.subHeading('and their tests');
-  ok(!fs.existsSync(path.join(SHARED, 'test', 'deskChat.js')), 'shell/shared/js/test/deskChat.js is gone', 'shell/shared/js/test/deskChat.js is still there');
-  ok(!fs.existsSync(path.join(SHARED, 'test', 'deskChat.md')), 'shell/shared/js/test/deskChat.md is gone', 'shell/shared/js/test/deskChat.md is still there');
-  ok(!fs.existsSync(path.join(SHARED, 'test', 'deskElement.js')), 'shell/shared/js/test/deskElement.js is gone', 'shell/shared/js/test/deskElement.js is still there');
-  ok(!fs.existsSync(path.join(SHARED, 'test', 'deskElement.md')), 'shell/shared/js/test/deskElement.md is gone', 'shell/shared/js/test/deskElement.md is still there');
-  // Any other test, or its spec, that reads or names them, the box's line quoted aside.
-  const tests = tracked.filter(function (f) { return /\.(js|md)$/.test(f) && /(^|\/)test\//.test(f) && !SELF.test(f); });
-  const naming = tests.filter(function (f) { return /\bdeskChat\.js\b|\bdeskElement\.js\b|\bcreateDeskChat\b|\bcreateDeskElement\b/.test(fs.readFileSync(path.join(REPO, f), 'utf8').replace(BOX_LINE, '')); });
-  ok(tests.length > 50, 'the world: more than fifty tests and specs are read', 'only ' + tests.length + ' tests read: nothing judged');
-  ok(!naming.length, 'no test or spec left reads or names deskChat.js, deskElement.js, createDeskChat or createDeskElement', naming.length + ' still do: ' + short(naming));
-}
+  return S.tracked.length > 100 || 'only ' + S.tracked.length + ' tracked files read: nothing judged';
+}, 1000);
+// The two leftovers are gone.
+test.run('shell/shared/js/deskChat.js is gone', 0.2, function () { return !fs.existsSync(path.join(SHARED, 'deskChat.js')) || 'shell/shared/js/deskChat.js is still there'; }, 1000);
+test.run('shell/shared/js/deskElement.js is gone', 0.2, function () { return !fs.existsSync(path.join(SHARED, 'deskElement.js')) || 'shell/shared/js/deskElement.js is still there'; }, 1000);
+// And their tests.
+test.run('shell/shared/js/test/deskChat.js is gone', 0.2, function () { return !fs.existsSync(path.join(SHARED, 'test', 'deskChat.js')) || 'shell/shared/js/test/deskChat.js is still there'; }, 1000);
+test.run('shell/shared/js/test/deskChat.md is gone', 0.2, function () { return !fs.existsSync(path.join(SHARED, 'test', 'deskChat.md')) || 'shell/shared/js/test/deskChat.md is still there'; }, 1000);
+test.run('shell/shared/js/test/deskElement.js is gone', 0.2, function () { return !fs.existsSync(path.join(SHARED, 'test', 'deskElement.js')) || 'shell/shared/js/test/deskElement.js is still there'; }, 1000);
+test.run('shell/shared/js/test/deskElement.md is gone', 0.2, function () { return !fs.existsSync(path.join(SHARED, 'test', 'deskElement.md')) || 'shell/shared/js/test/deskElement.md is still there'; }, 1000);
+// Any other test, or its spec, that reads or names them, the box's line quoted aside.
+test.run('the world: more than fifty tests and specs are read', 0.2, function () {
+  const tests = (S.tracked || []).filter(function (f) { return /\.(js|md)$/.test(f) && /(^|\/)test\//.test(f) && !SELF.test(f); });
+  S.naming = tests.filter(function (f) { return /\bdeskChat\.js\b|\bdeskElement\.js\b|\bcreateDeskChat\b|\bcreateDeskElement\b/.test(fs.readFileSync(path.join(REPO, f), 'utf8').replace(BOX_LINE, '')); });
+  return tests.length > 50 || 'only ' + tests.length + ' tests read: nothing judged';
+}, 1000);
+test.run('no test or spec left reads or names deskChat.js, deskElement.js, createDeskChat or createDeskElement', 0.2, function () {
+  const naming = S.naming || [];
+  return !naming.length || naming.length + ' still do: ' + short(naming);
+}, 1000);

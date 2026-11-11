@@ -10,15 +10,11 @@ const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 
-function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function code(f) { try { return fs.readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1').replace(/<!--[\s\S]*?-->/g, ''); } catch (e) { return ''; } }
 const DESK = path.join(RUN, 'spirit', 'app', 'desk');
 
-test.startTest('api.js: deskVerify records no Stacks door verdict (goal/G43.22)');
-
-test.subHeading('Andy: "the verifier stuff can stay for now", the Stacks verdicts not');
-const verifyApi = code(path.join(RUN, 'spirit', 'app', 'deskVerify', 'api.js'));
-ok(!!verifyApi && !/door\.record/.test(verifyApi), 'deskVerify records no Stacks door verdict', 'deskVerify\'s api still has door.record');
-
-test.reportSuccessFailureCount();
-process.exit(0);
+// Andy: "the verifier stuff can stay for now", the Stacks verdicts not.
+test.run('deskVerify records no Stacks door verdict', 0.2, function () {
+  const verifyApi = code(path.join(RUN, 'spirit', 'app', 'deskVerify', 'api.js'));
+  return (!!verifyApi && !/door\.record/.test(verifyApi)) || 'deskVerify\'s api still has door.record';
+}, 1000);
