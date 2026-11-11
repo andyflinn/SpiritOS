@@ -272,8 +272,13 @@ async function nodeRules() {
   try {
     if (!node.up) { served.forEach(function (b) { test.fail(b.dir + ': the scratch node did not come up: nothing judged'); }); return; }
     // An app's branch is served once its server runs (the owner's app.active); the node's own are served by the node.
+    // An intrinsic app is always active and the node refuses to switch it (app-intrinsic, 409): its server runs by itself,
+    // and the wait below for its branch judges that it does (goal/G47.1: testicle, the first intrinsic app with a server).
     for (const b of served) {
       if (b.kind !== 'app') continue;
+      let manifest = null;
+      try { manifest = JSON.parse(fs.readFileSync(path.join(RUN, b.dir, b.name + '.json'), 'utf8')); } catch (e) { manifest = null; }
+      if (manifest && manifest.identity && manifest.identity.intrinsic === true) continue;
       const on = await raw('app.active', { key: b.name, active: true });
       ok(on.status === 200, 'the world: its app is switched on', b.dir + ': app.active ' + b.name + ' answered ' + on.status + ' ' + short(on.text));
     }
