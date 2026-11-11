@@ -94,11 +94,12 @@ test.startTest('testicle/element.js: testicle\'s first-cut face, a workBench wit
   // The goal box: "testicle: an intrinsic app with a server and a face".
   ok(id.intrinsic === true, 'it is intrinsic', 'identity.intrinsic: ' + short(id.intrinsic));
   ok(!!own && !!own.shell && own.shell.mount === true, 'it has a face: shell.mount true', 'shell: ' + short(own && own.shell));
-  // The box: "The server, its watch and the shared modules come later", "calls no verbs in this round".
-  ok(!!own && !!own.node && own.node.mount === false && !fs.existsSync(path.join(APP, 'api.js')) && !fs.existsSync(path.join(APP, 'data.js')),
-    'no server yet: node.mount false, no api.js, no data.js', 'node: ' + short(own && own.node) + ', api.js ' + fs.existsSync(path.join(APP, 'api.js')) + ', data.js ' + fs.existsSync(path.join(APP, 'data.js')));
+  // goal/G47.1, the server cycle: "The server mounts beside the face (testicle.json: node.mount true)", "The server has
+  // no verb this cycle". The server's own checks are ./testicle.js.
+  ok(!!own && !!own.node && own.node.mount === true && !fs.existsSync(path.join(APP, 'api.js')),
+    'a server beside the face, with no verb: node.mount true, no api.js', 'node: ' + short(own && own.node) + ', api.js ' + fs.existsSync(path.join(APP, 'api.js')));
   const held = fs.existsSync(APP) ? fs.readdirSync(APP).filter(function (f) { return f !== 'test'; }).sort() : [];
-  ok(JSON.stringify(held) === JSON.stringify(['element.js', 'testicle.json']), 'its folder holds testicle.json and element.js, and its test/ folder, nothing else', 'its folder holds ' + short(held));
+  ok(JSON.stringify(held) === JSON.stringify(['element.js', 'testicle.js', 'testicle.json']), 'its folder holds testicle.json, element.js and testicle.js, and its test/ folder, nothing else', 'its folder holds ' + short(held));
   ok(!!own && !!own.mount && own.mount['element.js'] === true, 'its mount names element.js', 'mount: ' + short(own && own.mount));
   // The box: "spirit/app/test/ stays the app branch's test folder".
   ok(fs.existsSync(path.join(RUN, 'spirit', 'app', 'test')) && !fs.existsSync(path.join(RUN, 'spirit', 'app', 'test', 'test.json')), 'spirit/app/test/ stays the app branch\'s test folder, no app', 'spirit/app/test/ holds a test.json, or is gone');

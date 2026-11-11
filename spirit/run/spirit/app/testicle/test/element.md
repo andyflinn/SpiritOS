@@ -14,10 +14,10 @@ existing file list with a filter for production *.js files: no new list."*
 
 ## Requirements
 
-**A face-only app.**
+**A face, and a server beside it** (goal/G47.1, the server cycle; the server's own checks are `./testicle.md`).
 - `spirit/app/testicle/testicle.json` is there and is JSON: an icon and a label; intrinsic (the goal box: *"an intrinsic
-  app with a server and a face"*); a face, `shell.mount` true; no server yet, `node.mount` false, no `api.js`, no `data.js`.
-- Its folder holds `testicle.json` and `element.js`, and its `test/` folder, nothing else; its `mount` names `element.js`.
+  app with a server and a face"*); a face, `shell.mount` true; a server, `node.mount` true, with no verb: no `api.js`.
+- Its folder holds `testicle.json`, `element.js` and `testicle.js`, and its `test/` folder, nothing else; its `mount` names `element.js`.
 - `spirit/app/test/` stays the app branch's test folder: no `test.json` there.
 
 **No verbs, no list of its own.**
@@ -39,7 +39,7 @@ existing file list with a filter for production *.js files: no new list."*
 
 ## What its test must try to break
 
-- A manifest that gives it a server, or an `api.js` or `data.js` this round.
+- A manifest with no server, or an `api.js`: no verb this cycle.
 - A second icon on the strip, or a right strip.
 - A list of its own beside the file list, or a verb the face asks itself.
 - A file shown that is no production script: another type, or a test.
