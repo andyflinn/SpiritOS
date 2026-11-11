@@ -25,7 +25,10 @@ test.subHeading('no icon table, no lookup into one');
 ok(!/iconIndex|\bICON\b/.test(code), 'desk.js names no icon table', 'desk.js still names iconIndex or ICON');
 ok(!/deskIcon\(/.test(code), 'it looks no icon up by name (deskIcon is gone)', 'desk.js still calls deskIcon');
 test.subHeading('the glyphs it draws, written as they are');
-['📁', '❌', '💻', '⚔️'].forEach(function (g) { ok(code.indexOf(g) !== -1, 'it draws ' + g + ' as written', g + ' is not in desk.js'); });
+ok(code.indexOf('📁') !== -1, 'it draws 📁 as written', '📁 is not in desk.js');
+ok(code.indexOf('❌') !== -1, 'it draws ❌ as written', '❌ is not in desk.js');
+ok(code.indexOf('💻') !== -1, 'it draws 💻 as written', '💻 is not in desk.js');
+ok(code.indexOf('⚔️') !== -1, 'it draws ⚔️ as written', '⚔️ is not in desk.js');
 const rule = /var DESK_RULE_ICON = (\{[^}]*\});/.exec(code);
 let icons = null;
 try { icons = rule ? (new Function('return ' + rule[1]))() : null; } catch (e) { icons = null; }
@@ -264,8 +267,8 @@ async function twoPress(w, find, armedSays, wantPress, what) {
   w.document.click(b1 || b); await settle();
   const sent = w.presses().slice(before);
   const good = byElement && armedSays(armedText) && firstAsked === 0 && sent.length === 1 && sent[0].args.id === wantPress.id && sent[0].args.what === wantPress.what;
-  ok(good, what + ': an armingButton saying "' + armedText + '" on the first press, desk.press ' + wantPress.what + ' on the second',
-    what + ': ' + JSON.stringify({ madeByArmingButton: byElement, armed: armedText, askedOnFirst: firstAsked, sent: sent.map(function (s) { return s.args; }) }));
+  return { good: good,
+    why: what + ': ' + JSON.stringify({ madeByArmingButton: byElement, armed: armedText, askedOnFirst: firstAsked, sent: sent.map(function (s) { return s.args; }) }) };
 }
 
 (async function () {
@@ -282,12 +285,13 @@ async function twoPress(w, find, armedSays, wantPress, what) {
   const item = { id: 'goal/G9.1', title: 'An item', goal: 'goal/G9', status: 'open', buttons: ['done'], verified: 'red', verifyFailures: ['a suite red'], claims: 1 };
   const w = deskWorld(goal, [item]);
   await w.mount();
-  await twoPress(w, function () { return w.document.getElementById('desk-end-design'); }, function (t) { return t === 'End design mode: sure?'; }, { id: 'goal/G9', what: 'end-design' }, 'End design mode');
-  await twoPress(w, function () { return w.document.getElementById('desk-go-all'); }, function (t) { return t === 'Go all: sure?'; }, { id: 'goal/G9', what: 'go-all' }, 'Go all');
-  await twoPress(w, function () { return w.document.querySelector('[data-press="done"]'); }, function (t) { return /^Done anyway\? /.test(t); }, { id: 'goal/G9.1', what: 'done' }, 'Done not verified green, in its row');
+  let p;
+  p = await twoPress(w, function () { return w.document.getElementById('desk-end-design'); }, function (t) { return t === 'End design mode: sure?'; }, { id: 'goal/G9', what: 'end-design' }, 'End design mode'); if (p) ok(p.good, 'End design mode: an armingButton saying "End design mode: sure?" on the first press, desk.press end-design on the second', p.why);
+  p = await twoPress(w, function () { return w.document.getElementById('desk-go-all'); }, function (t) { return t === 'Go all: sure?'; }, { id: 'goal/G9', what: 'go-all' }, 'Go all'); if (p) ok(p.good, 'Go all: an armingButton saying "Go all: sure?" on the first press, desk.press go-all on the second', p.why);
+  p = await twoPress(w, function () { return w.document.querySelector('[data-press="done"]'); }, function (t) { return /^Done anyway\? /.test(t); }, { id: 'goal/G9.1', what: 'done' }, 'Done not verified green, in its row'); if (p) ok(p.good, 'Done not verified green, in its row: an armingButton asking "Done anyway?" on the first press, desk.press done on the second', p.why);
   const ws = deskWorld(Object.assign({}, goal, { design: false }), []);
   await ws.mount();
-  await twoPress(ws, function () { return ws.document.getElementById('desk-start-design'); }, function (t) { return t === 'Start design mode: sure?'; }, { id: 'goal/G9', what: 'start-design' }, 'Start design mode');
+  p = await twoPress(ws, function () { return ws.document.getElementById('desk-start-design'); }, function (t) { return t === 'Start design mode: sure?'; }, { id: 'goal/G9', what: 'start-design' }, 'Start design mode'); if (p) ok(p.good, 'Start design mode: an armingButton saying "Start design mode: sure?" on the first press, desk.press start-design on the second', p.why);
 
   // goal/G43.30, the box: "every Delete and every Close press in Desk (its rows, the item detail, the rule dialog) is an
   // armingButton" (Andy: "while your mucking with desk, can you make sure that all delete and close buttons are
@@ -296,11 +300,11 @@ async function twoPress(w, find, armedSays, wantPress, what) {
   const armedNotClose = function (t) { return !!t && t !== 'Close'; };
   const wc = deskWorld({ id: 'goal/G8', title: 'Done goal', goal: '', status: 'open', buttons: ['close'], design: false, blocked: [] }, []);
   await wc.mount();
-  await twoPress(wc, function () { return wc.document.querySelector('[data-press="close"]'); }, armedNotClose, { id: 'goal/G8', what: 'close' }, 'a goal\'s Close, nothing under it open');
+  p = await twoPress(wc, function () { return wc.document.querySelector('[data-press="close"]'); }, armedNotClose, { id: 'goal/G8', what: 'close' }, 'a goal\'s Close, nothing under it open'); if (p) ok(p.good, 'a goal\'s Close, nothing under it open: an armingButton armed on the first press, desk.press close on the second', p.why);
   const wi = deskWorld({ id: 'goal/G8', title: 'A goal', goal: '', status: 'open', buttons: [], design: false, blocked: [] },
     [{ id: 'goal/G8.1', title: 'A done item', goal: 'goal/G8', status: 'done', buttons: ['close'], verified: 'green', claims: 1 }]);
   await wi.mount();
-  await twoPress(wi, function () { return wi.document.querySelector('[data-key="goal/G8.1"] [data-press="close"]') || wi.document.querySelector('[data-press="close"]'); }, armedNotClose, { id: 'goal/G8.1', what: 'close' }, 'a done item\'s Close, in its row');
+  p = await twoPress(wi, function () { return wi.document.querySelector('[data-key="goal/G8.1"] [data-press="close"]') || wi.document.querySelector('[data-press="close"]'); }, armedNotClose, { id: 'goal/G8.1', what: 'close' }, 'a done item\'s Close, in its row'); if (p) ok(p.good, 'a done item\'s Close, in its row: an armingButton armed on the first press, desk.press close on the second', p.why);
 
   // ── goal/G41.11: ARMED IS RED, ALSO ON THE DESIGN BUTTONS ─────────────────────────────────────────────────────────────
   // An inline colour on Start or End design mode would beat the shell's armed red (shell.css, #app-content
@@ -467,7 +471,7 @@ async function twoPress(w, find, armedSays, wantPress, what) {
           const after = await state();
           ok(after.status === 'done', 'each Close in the List pressed once: the item is still done, nothing closed', 'after one press each the item is ' + after.status);
           const armed = JSON.parse(await page.evaluate('JSON.stringify(' + CLOSES + '.map(function (b) { return b.hasAttribute("data-armed"); }))'));
-          ok(armed.length === n && armed.every(Boolean), 'and each of the ' + n + ' stands armed, waiting for the second press', 'after one press each, the List\'s Closes armed: ' + JSON.stringify(armed) + ' of ' + n);
+          ok(armed.length === n && armed.every(Boolean), 'and each Close in the List stands armed, waiting for the second press', 'after one press each, the List\'s Closes armed: ' + JSON.stringify(armed) + ' of ' + n);
           const from = JSON.parse(await page.evaluate('JSON.stringify(performance.getEntriesByType("resource").map(function (e) { return e.name; }).filter(function (x) { return /deskRunStatus/.test(x); }))'));
           ok(from.some(function (x) { return x.indexOf('/spirit/app/desk/element/deskRunStatus/deskRunStatus.js') !== -1; }) && !from.some(function (x) { return /\/shell\/shared\//.test(x); }),
             'Desk loads its run status from spirit/app/desk/element/deskRunStatus/, never from shell/shared/', 'the page loaded ' + JSON.stringify(from));
@@ -500,7 +504,10 @@ async function twoPress(w, find, armedSays, wantPress, what) {
     const made = panes.filter(function (x) { return x.o.verb === want[1]; })[0];
     if (!made) { test.fail(want[0] + ': no list made'); return; }
     const gaps = notFill(made.host);
-    ok(isFill(made.host) && !gaps.length, want[0] + ' stands in a fill box, and every box up to the app is fill too', want[0] + ': not fill: ' + gaps.join(' < '));
+    const fill = isFill(made.host) && !gaps.length;
+    const why = want[0] + ': not fill: ' + gaps.join(' < ');
+    if (want[1] === 'items.search') ok(fill, 'the List stands in a fill box, and every box up to the app is fill too', why);
+    else ok(fill, 'the Rules list stands in a fill box, and every box up to the app is fill too', why);
   });
 }()).catch(function (e) { test.fail('the test threw ' + (e && e.stack || e)); }).then(async function () {
   // The parts below, each after the checks above, in order; one report for all.

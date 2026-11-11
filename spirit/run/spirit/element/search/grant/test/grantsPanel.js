@@ -191,9 +191,10 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const GP = ((E.search || {}).grant || {}).grantsPanel;
 
   test.subHeading('a shell element that loads what it uses itself (rule/26), and knows no table');
-  ['spirit/element/search/contact.js', 'spirit/element/search/bundle.js', 'spirit/element/search/api.js', 'spirit/element/search/grant.js'].forEach(function (p) {
-    ok(w.required.indexOf(p) !== -1, 'it requires ' + p, 'required: ' + short(w.required));
-  });
+  ok(w.required.indexOf('spirit/element/search/contact.js') !== -1, 'it requires spirit/element/search/contact.js', 'required: ' + short(w.required));
+  ok(w.required.indexOf('spirit/element/search/bundle.js') !== -1, 'it requires spirit/element/search/bundle.js', 'required: ' + short(w.required));
+  ok(w.required.indexOf('spirit/element/search/api.js') !== -1, 'it requires spirit/element/search/api.js', 'required: ' + short(w.required));
+  ok(w.required.indexOf('spirit/element/search/grant.js') !== -1, 'it requires spirit/element/search/grant.js', 'required: ' + short(w.required));
   ok(!w.required.some(function (p) { return /data\.js$/.test(p); }), 'and no data script', 'required: ' + short(w.required));
   // The grants table and the ID table are its caller's; the node's bundles (auth.bundle, auth.branch) are the one
   // dictionary both kinds of grant are made from, so a bundle's branches are the panel's to read.
@@ -451,9 +452,9 @@ async function authSourcePart() {
   test.subHeading('the box, 6: Grants\' data source "moves into grantsPanel"');
   const panel = code(path.join(RUN, 'spirit', 'element', 'search', 'grant', 'grantsPanel.js'));
   ok(panel.length > 0, 'the world: spirit/element/search/grant/grantsPanel.js is there', 'no grantsPanel.js: nothing judged');
-  ['search', 'grant', 'revoke'].forEach(function (v) {
-    ok(new RegExp('\\bauth\\W{1,4}' + v + '\\b').test(panel), 'Grants\' data source moves into grantsPanel: it asks auth.' + v, 'grantsPanel.js asks no auth.' + v);
-  });
+  ok(/\bauth\W{1,4}search\b/.test(panel), 'Grants\' data source moves into grantsPanel: it asks auth.search', 'grantsPanel.js asks no auth.search');
+  ok(/\bauth\W{1,4}grant\b/.test(panel), 'Grants\' data source moves into grantsPanel: it asks auth.grant', 'grantsPanel.js asks no auth.grant');
+  ok(/\bauth\W{1,4}revoke\b/.test(panel), 'Grants\' data source moves into grantsPanel: it asks auth.revoke', 'grantsPanel.js asks no auth.revoke');
   ok(/\bdata\.auth\b|cacheManager\s*\(\s*['"]auth['"]/.test(panel), 'grantsPanel holds the auth cache it reads (spirit.data.auth)', 'grantsPanel.js reads no auth cache');
 }
 
@@ -480,8 +481,8 @@ async function noWarningPart() {
 
   test.subHeading('7. no warning on a grant');
   const tracked = execSync('git ls-files', { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(Boolean).filter(function (f) { return fs.existsSync(path.join(REPO, f)); });
-  ok(tracked.length > 100, 'the world: ' + tracked.length + ' tracked files on disk are read', 'only ' + tracked.length + ' tracked files read: nothing judged');
-  ok(!fs.existsSync(path.join(RUN, 'spirit', 'auth', 'grant.warning.txt')), 'spirit/auth/grant.warning.txt is gone', 'spirit/auth/grant.warning.txt is still there');
+  ok(tracked.length > 100, 'the world: more than a hundred tracked files on disk are read', 'only ' + tracked.length + ' tracked files read: nothing judged');
+  ok(!fs.existsSync(path.join(RUN, 'spirit', 'auth', 'grant.warning.txt')), 'with no warning on a grant, spirit/auth/grant.warning.txt is gone', 'spirit/auth/grant.warning.txt is still there');
   const gp = code(read('spirit/element/search/grant/grantsPanel.js'));
   ok(gp.length > 1000, 'the world: grantsPanel.js is read', 'no grantsPanel.js: nothing judged');
   ok(!/warning\.txt|\.FS\.loadFile/.test(gp), 'grantsPanel reads no <verb>.warning.txt', 'grantsPanel still reads one');

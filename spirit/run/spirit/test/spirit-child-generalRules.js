@@ -54,13 +54,13 @@ if (!full) {
   // under spirit/; spirit/app stood there already). A file that exports nothing and speaks to window.
   const pageCode = !isSpirit && /\bwindow\b/.test(code) && !/\bmodule\.exports\b/.test(code);
   if (pageCode) {
-    test.check(name + ' is page code: node never loads it');
+    test.check('it is page code: node never loads it');
   } else if (isSpirit) {
     const sets = code.search(/\broot\.spirit\s*=|\bglobalThis\.spirit\s*=|\bglobal\.spirit\s*=/);
-    if (sets !== -1 && (!first || sets < first.at)) test.check(name + ' sets the global spirit before its first require');
+    if (sets !== -1 && (!first || sets < first.at)) test.check('it sets the global spirit before its first require');
     else test.fail(name + ' sets the global spirit ' + (sets === -1 ? 'nowhere' : 'only after its first require, ' + JSON.stringify(first.path)));
   } else if (first && /(^|\/)spirit\.js$/.test(first.path) && path.resolve(path.dirname(full), first.path) === path.join(RUN, 'spirit', 'spirit.js')) {
-    test.check(name + ' requires spirit.js first');
+    test.check('it requires spirit.js first');
   } else {
     test.fail(name + ' does not require spirit.js first' + (first ? ': its first require is ' + JSON.stringify(first.path) : ': it requires nothing'));
   }
@@ -77,7 +77,7 @@ if (!full) {
     }
     return true;
   });
-  if (!bad.length) test.check(name + ': ' + requires.length + ' require path(s), none breaks the rule');
+  if (!bad.length) test.check('none of its require paths breaks the rule');
   else bad.forEach(function (r) { test.fail('require error: ' + name + ' requires ' + JSON.stringify(r.path)); });
 }
 

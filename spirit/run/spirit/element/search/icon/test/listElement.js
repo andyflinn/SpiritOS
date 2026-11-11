@@ -87,13 +87,13 @@ test.startTest('listElement.js: the icons list reads one file (goal/G43.11)');
 (async function () {
   test.subHeading('the box: "This file: run://spirit/iconSet.json"');
   const tracked = execSync('git ls-files -- spirit/run/' + SET + ' spirit/run/' + OLD, { cwd: REPO, encoding: 'utf8' }).split('\n').filter(Boolean);
-  ok(tracked.indexOf('spirit/run/' + SET) !== -1, SET + ' is in git', SET + ' is not in git');
+  ok(tracked.indexOf('spirit/run/' + SET) !== -1, 'spirit/iconSet.json is in git', SET + ' is not in git');
   const set = parsed(source(SET)) || {};
   const glyphs = Object.keys(set);
   ok(glyphs.length > 0 && glyphs.every(function (g) { return Array.isArray(set[g]); }), 'and it is a set: each glyph with its keywords', SET + ' holds: ' + short(glyphs.length));
 
   test.subHeading('the box: "The old system set, shell/json/iconSet.json, is deleted in this item", "none uses the old file"');
-  ok(!fs.existsSync(path.join(RUN, OLD)), OLD + ' is gone', OLD + ' still stands');
+  ok(!fs.existsSync(path.join(RUN, OLD)), 'shell/json/iconSet.json is gone', OLD + ' still stands');
   ok(tracked.indexOf('spirit/run/' + OLD) === -1, 'and git no longer holds it', 'git still holds ' + OLD);
   // A glyph the set does not have, for the Icons app's own file below.
   let PLANTED = ''; for (let c = 0x1F980; c < 0x1FB00 && !PLANTED; c++) { const g = String.fromCodePoint(c); if (!glyphs.includes(g)) PLANTED = g; }
@@ -156,10 +156,10 @@ test.startTest('listElement.js: the icons list reads one file (goal/G43.11)');
     const one = await made();
     ok(one === 'made', 'the list is made', 'the list: ' + short(one));
     if (one !== 'made') return;
-    ok(await shows(lastWord, lastOnly), 'it finds the file\'s last icon by its word: ' + lastWord, 'the word ' + lastWord + ' does not find ' + lastOnly);
+    ok(await shows(lastWord, lastOnly), 'it finds the file\'s last icon by its word', 'the word ' + lastWord + ' does not find ' + lastOnly);
     ok(await lacks('planted', PLANTED), 'and not the Icons app\'s own file', 'the list finds what only the Icons app\'s file has');
     const atHome = await seen();
-    ok(atHome.SET === SET, 'its file is ' + SET, 'its SET is ' + short(atHome.SET));
+    ok(atHome.SET === SET, 'its file is spirit/iconSet.json', 'its SET is ' + short(atHome.SET));
     ok(JSON.stringify(atHome.asks) === JSON.stringify([SET]), 'it reads that file and no other, through spirit.fs.loadFile', 'it read: ' + short(atHome.asks));
 
     // goal/G43.32, Andy: "It obviously must require the fs interface so it can listen to changes in the file it loads for

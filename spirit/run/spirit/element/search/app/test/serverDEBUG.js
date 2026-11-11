@@ -131,25 +131,25 @@ test.startTest('serverDEBUG.js: a server\'s DEBUG, switched and streamed (goal/G
     await until(function () { return jobOf(N.base, 'spirit.app.' + NAME).then(function (j) { return !j; }); }, 15000);
     await make(NAME);
     await sleep(2000);
-    ok(hidden(await view(NAME)), 'for ' + LABEL + ', its server switched off, it shows nothing', 'not running: ' + short(await view(NAME)));
+    ok(hidden(await view(NAME)), 'for Zz Debug, its server switched off, it shows nothing', 'not running: ' + short(await view(NAME)));
     await call(N.base, 'app.active', { key: NAME, active: true });
     ok(await until(function () { return call(N.base, NAME + '.pid').then(function (r) { return r.status === 200; }); }, 30000), 'the world: activated again, the server answers', 'the server did not come back');
     test.subHeading('the box: "when the app is a server (node.mount==true), configured text: "turn on|off DEBUG <app-label>""');
-    ok(await until(function () { return view(NAME).then(function (v) { return !!v && /turn on DEBUG/i.test(v.text) && v.text.indexOf(LABEL) !== -1; }); }, 10000), 'running, with DEBUG off, it says turn on DEBUG ' + LABEL, 'running: ' + short(await view(NAME)));
+    ok(await until(function () { return view(NAME).then(function (v) { return !!v && /turn on DEBUG/i.test(v.text) && v.text.indexOf(LABEL) !== -1; }); }, 10000), 'running, with DEBUG off, it says turn on DEBUG Zz Debug', 'running: ' + short(await view(NAME)));
     const v0 = await view(NAME);
     ok(!!v0 && v0.buttons === 1, 'with one button to press', 'buttons: ' + short(v0));
 
     test.subHeading('the box: "it will use the OWNER-ONLYE VERB DEBUG in the appServer to do that."');
     await pressIn(NAME);
     ok(await until(function () { return call(N.base, NAME + '.DEBUG', {}).then(function (r) { return !!r.body && r.body.debug === true; }); }, 8000), 'pressed, the server\'s DEBUG {} says true', NAME + '.DEBUG {}: ' + short((await call(N.base, NAME + '.DEBUG', {})).text));
-    ok(await until(function () { return view(NAME).then(function (v) { return !!v && /turn off DEBUG/i.test(v.text); }); }, 8000), 'and it says turn off DEBUG ' + LABEL, 'after the press: ' + short(await view(NAME)));
+    ok(await until(function () { return view(NAME).then(function (v) { return !!v && /turn off DEBUG/i.test(v.text); }); }, 8000), 'and it says turn off DEBUG Zz Debug', 'after the press: ' + short(await view(NAME)));
     await call(N.base, NAME + '.DEBUG', { on: false });
     ok(await until(function () { return view(NAME).then(function (v) { return !!v && /turn on DEBUG/i.test(v.text); }); }, 8000), 'switched off elsewhere, the page follows with no reload: turn on DEBUG again', 'after DEBUG {on: false} from outside: ' + short(await view(NAME)));
 
     test.subHeading('the box: "It sits in the appSelector\'s detail, under the Activate row"');
     ok(await open(), 'the world: the page opens again', 'no page');
     const detail = await c.evaluate('spirit.ready.then(function () { return spirit.require("spirit/element/search/app/detailElement.js"); }).then(function () { var b = document.createElement("div"); b.id = "zzDetail"; document.body.appendChild(b); window.__d = spirit.element.spirit.element.search.app.detailElement.create(b, { row: { key: ' + JSON.stringify(NAME) + ', label: ' + JSON.stringify(LABEL) + ', icon: "🐛" }, panel: true }); return true; })');
-    ok(detail === true, 'the world: the detail of ' + LABEL + ' is made', 'no detail: ' + short(detail));
+    ok(detail === true, 'the world: the detail of Zz Debug is made', 'no detail: ' + short(detail));
     // The box: "changeAppIcon and changeAppLabel ... The appSelector's detail uses them": the page asks for both files.
     const asked = function () { return c.heard.filter(function (m) { return m.method === 'Network.requestWillBeSent'; }).map(function (m) { return String(m.params.request.url); }); };
     ok(await until(function () { return Promise.resolve(['changeAppIcon.js', 'changeAppLabel.js'].every(function (f) { return asked().some(function (u) { return u.indexOf('spirit/element/search/app/' + f) !== -1; }); })); }, 10000), 'the detail loads changeAppIcon.js and changeAppLabel.js', 'asked: ' + short(asked().filter(function (u) { return /appSelector/.test(u); })));

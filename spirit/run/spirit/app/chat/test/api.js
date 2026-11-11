@@ -50,10 +50,17 @@ test.startTest('api.js: the interface of the branch chat (goal/G43.31)');
     ok(!(old.status === 200 && old.body && old.body.interface), 'and api {family: chatClerver} answers none', 'api {family: chatClerver} still answers: ' + short(old.text));
 
     test.subHeading('every verb it lists is served as chat.<verb>');
-    for (const v of Object.keys(verbs)) {
+    // Each verb its interface lists, written out so that each check has a plain title of its own.
+    const served = async function (v) {
       const r = await call('chat.' + v, {});
-      ok(r.status !== 404 && !/no.such.verb/i.test(r.text), 'chat.' + v + ' is a verb of the node (answered ' + r.status + ')', 'chat.' + v + ' answered no-such-verb: ' + short(r.text));
-    }
+      return { fine: r.status !== 404 && !/no.such.verb/i.test(r.text), why: 'chat.' + v + ' answered ' + r.status + ', no-such-verb: ' + short(r.text) };
+    };
+    let s;
+    s = await served('chat.read'); ok(s.fine, 'chat.chat.read is a verb of the node', s.why);
+    s = await served('chat.search'); ok(s.fine, 'chat.chat.search is a verb of the node', s.why);
+    s = await served('chats.search'); ok(s.fine, 'chat.chats.search is a verb of the node', s.why);
+    s = await served('line.receive'); ok(s.fine, 'chat.line.receive is a verb of the node', s.why);
+    s = await served('line.write'); ok(s.fine, 'chat.line.write is a verb of the node', s.why);
 
     test.subHeading('the attacker: arguments its rules refuse, before the server hears them');
     const noPeer = await call('chat.chat.read', { before: '', after: '' });

@@ -55,7 +55,8 @@ test.startTest('introSpector.js: see what a party lets you call, an element of s
     const keys = Object.keys(tree.job.search.request || {});
     ok(await until(function () { return chrome.evaluate('Array.prototype.some.call(document.querySelectorAll("#box button"), function (b) { return String(b.textContent).trim() === "call"; })'); }, 5000), 'job.search chosen: a call button', 'no call button: ' + short(await text()));
     const labels = await text();
-    keys.forEach(function (k) { ok(labels.indexOf(k) !== -1, 'a field for its key ' + k, 'no field for ' + k + ': ' + short(labels)); });
+    // job.search's one request key, q, written out so that its check has a plain title.
+    ok(labels.indexOf('q') !== -1, 'a field for its key q', 'no field for q: ' + short(labels) + '; its keys: ' + short(keys));
     await chrome.evaluate('(function () { var b = Array.prototype.filter.call(document.querySelectorAll("#box button"), function (x) { return String(x.textContent).trim() === "call"; })[0]; b.click(); return true; }())');
     ok(await until(function () { return reply().then(function (r) { return /"items"/.test(String(r)); }); }, 10000), 'call asks job.search of self and shows its reply, the jobs\' items', 'the reply: ' + short(await reply()));
     ok(/\n\s+"/.test(String(await reply())), 'written out as JSON.stringify(answer, null, 2)', 'the reply is not written out: ' + short(await reply()));

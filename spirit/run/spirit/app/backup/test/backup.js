@@ -72,7 +72,7 @@ test.startTest('backup.js: the backup server copies the node\'s state, to the sp
     const t0 = Date.now();
     while (Date.now() - t0 < 15000 && !/ (wrote |checked|kept |the run broke)/.test(out)) await sleep(100);
     await sleep(500);
-    ok(/ (wrote |checked)/.test(out), 'the world: the backup server ran once and said so: ' + short(out.trim().split('\n').pop()),
+    ok(/ (wrote |checked)/.test(out), 'the world: the backup server ran once and said so',
       'the backup server said no run in 15 s: nothing judged. It said: ' + short(out));
 
     const homes = [homeCfg, path.join(fakeHome, '.SpiritOS')];
@@ -80,16 +80,16 @@ test.startTest('backup.js: the backup server copies the node\'s state, to the sp
 
     test.subHeading('The box: "it copies only its own state folder"');
     const desk = copied.filter(function (f) { return readText(f).indexOf(DESK_MARK) !== -1; });
-    ok(desk.length > 0, 'another process\'s state, spirit/state/desk/data/marker.json, is copied: ' + short(desk),
+    ok(desk.length > 0, 'another process\'s state, spirit/state/desk/data/marker.json, is copied',
       'spirit/state/desk/data/marker.json is not copied anywhere; the backup wrote only ' + short(copied.map(function (f) { return path.relative(scratch, f); })));
     const ndb = copied.filter(function (f) { return dbMark(f) === NODE_MARK; });
-    ok(ndb.length > 0, 'the node\'s node.db is copied, its row in the copy: ' + short(ndb),
+    ok(ndb.length > 0, 'the node\'s node.db is copied, its row in the copy',
       'spirit/state/node.db is not copied anywhere; the backup wrote only ' + short(copied.map(function (f) { return path.relative(scratch, f); })));
 
     test.subHeading('The box: "reads a config path that does not exist"');
     const inCfg = filesUnder(path.join(homeCfg, 'backups'));
     const inFallback = filesUnder(path.join(fakeHome, '.SpiritOS'));
-    ok(inCfg.length > 0 && inFallback.length === 0, 'the backup lands under the spiritHome of spirit/state/config.json (' + inCfg.length + ' files), nothing under the fallback home',
+    ok(inCfg.length > 0 && inFallback.length === 0, 'the backup lands under the spiritHome of spirit/state/config.json, nothing under the fallback home',
       'spirit/state/config.json\'s spiritHome is not used: ' + inCfg.length + ' files under it, ' + inFallback.length + ' under <home>/.SpiritOS (' + short(inFallback.map(function (f) { return path.relative(scratch, f); })) + ')');
   } finally {
     try { if (kid) kid.kill(); } catch (e) { /* gone */ }

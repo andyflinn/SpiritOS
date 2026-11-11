@@ -32,9 +32,10 @@ test.startTest('app.js: the app family, a core api beside the others (goal/G43.2
   const FILE = path.join(RUN, 'spirit', 'app.js');
   const FOLDER = path.join(RUN, 'spirit', 'app');
   ok(fs.existsSync(FILE), 'spirit/app.js is there, the family\'s core module', 'spirit/app.js is not there');
-  ['api.js', 'AGENTS.md', 'data.js', 'search.json'].forEach(function (f) {
-    ok(fs.existsSync(path.join(FOLDER, f)), 'spirit/app/' + f + ' is there, as in every core family', 'spirit/app/' + f + ' is not there');
-  });
+  ok(fs.existsSync(path.join(FOLDER, 'api.js')), 'spirit/app/api.js is there, as in every core family', 'spirit/app/api.js is not there');
+  ok(fs.existsSync(path.join(FOLDER, 'AGENTS.md')), 'spirit/app/AGENTS.md is there, as in every core family', 'spirit/app/AGENTS.md is not there');
+  ok(fs.existsSync(path.join(FOLDER, 'data.js')), 'spirit/app/data.js is there, as in every core family', 'spirit/app/data.js is not there');
+  ok(fs.existsSync(path.join(FOLDER, 'search.json')), 'spirit/app/search.json is there, as in every core family', 'spirit/app/search.json is not there');
 
   // THE ONE VERB (Andy, box: "the first verb of the app api is app.search", "no filters, just a search string").
   let api = null;
@@ -87,7 +88,7 @@ test.startTest('app.js: the app family, a core api beside the others (goal/G43.2
     // in one by one (goal/G43.13, G43.14); appSelector and test are not taken for apps.
     const onDisc = fs.readdirSync(path.join(node.root, 'spirit', 'run', 'spirit', 'app'), { withFileTypes: true }).filter(function (d) { return d.isDirectory() && fs.existsSync(path.join(node.root, 'spirit', 'run', 'spirit', 'app', d.name, d.name + '.json')); }).map(function (d) { return d.name; }).sort().join();
     const keys = (items || []).map(function (i) { return i.key; }).sort().join();
-    ok(keys === onDisc && keys.split(',').indexOf('appSelector') === -1 && keys.split(',').indexOf('test') === -1, 'the plugins are the folders with their own json (' + onDisc + '): appSelector and test are not taken for apps', 'an empty search found ' + short(keys) + ', the disc holds ' + short(onDisc));
+    ok(keys === onDisc && keys.split(',').indexOf('appSelector') === -1 && keys.split(',').indexOf('test') === -1, 'the plugins are the folders with their own json: appSelector and test are not taken for apps', 'an empty search found ' + short(keys) + ', the disc holds ' + short(onDisc));
     // goal/G43.6; Andy, box: "spirit.app also holds the family's verb, search, so no app may take the name of a verb."
     const verbNamed = path.join(node.root, 'spirit', 'run', 'spirit', 'app', 'search');
     fs.mkdirSync(verbNamed, { recursive: true });
@@ -154,10 +155,18 @@ test.startTest('app.js: the app family, a core api beside the others (goal/G43.2
     ok(!!c1 && c1.active === true, 'app.active false does not switch it off: its row still says active', 'after app.active false: ' + short(c1));
 
     test.subHeading('the box: "A key not in spirit/app is refused, so no path can be written through it."');
-    for (const bad of ['nosuchapp', '../evil', '..', 'appSelector', 'test', 'monitor/../../evil', '']) {
+    const refuses = async function (bad) {
       const r = await ask(node.base, 'app.active', { key: bad, active: true });
-      ok(r.status !== 200, 'refused: ' + JSON.stringify(bad), 'not refused: ' + JSON.stringify(bad) + ' ' + short(r.text));
-    }
+      return { fine: r.status !== 200, why: 'not refused: ' + JSON.stringify(bad) + ' ' + short(r.text) };
+    };
+    let x;
+    x = await refuses('nosuchapp'); ok(x.fine, 'refused: nosuchapp, no app', x.why);
+    x = await refuses('../evil'); ok(x.fine, 'refused: ../evil, a path up', x.why);
+    x = await refuses('..'); ok(x.fine, 'refused: .., the folder above', x.why);
+    x = await refuses('appSelector'); ok(x.fine, 'refused: appSelector, no app', x.why);
+    x = await refuses('test'); ok(x.fine, 'refused: test, a test folder', x.why);
+    x = await refuses('monitor/../../evil'); ok(x.fine, 'refused: monitor/../../evil, a path out', x.why);
+    x = await refuses(''); ok(x.fine, 'refused: an empty key', x.why);
     ok(!fs.existsSync(path.join(node.root, 'spirit', 'run', 'spirit', 'state', 'nosuchapp')) && !fs.existsSync(path.join(node.root, 'spirit', 'run', 'spirit', 'evil')) && !fs.existsSync(path.join(node.root, 'spirit', 'run', 'evil')), 'and none of them wrote anything', 'a refused key left a file');
     test.subHeading('Q4: "Do a label change and allow-as-shell go in spirit/state/<name>/node.json, through two new verbs app.label and app.shell?", Andy: "yes."');
     ok(!!verbs.label && 'key' in verbs.label && 'label' in verbs.label && fs.existsSync(path.join(RUN, 'spirit', 'app', 'label.json')), 'app.label names key and label, and has its file', 'app.label: ' + short(verbs.label));
@@ -174,12 +183,17 @@ test.startTest('app.js: the app family, a core api beside the others (goal/G43.2
     // app.shell went (goal/G43.18, Q10): whether an app may be a shell is its <name>.json's alone; spirit/test/nodeShell.js.
     ok(!verbs.shell, 'the app family has no verb shell (goal/G43.18, Q10)', 'app.shell is still a verb: ' + short(verbs.shell));
     ok(fs.readFileSync(sidecar, 'utf8') === sidecarBefore, 'neither writes <name>.json', 'agent.json was written');
-    for (const verb of ['app.icon', 'app.label']) {
-      for (const bad of ['nosuchapp', '../evil', '']) {
-        const r = await ask(node.base, verb, { key: bad, icon: '🧪', label: 'x' });
-        ok(r.status !== 200, verb + ' refuses ' + JSON.stringify(bad), verb + ' took ' + JSON.stringify(bad) + ': ' + short(r.text));
-      }
-    }
+    const refusesAs = async function (verb, bad) {
+      const r = await ask(node.base, verb, { key: bad, icon: '🧪', label: 'x' });
+      return { fine: r.status !== 200, why: verb + ' took ' + JSON.stringify(bad) + ': ' + short(r.text) };
+    };
+    let y;
+    y = await refusesAs('app.icon', 'nosuchapp'); ok(y.fine, 'app.icon refuses nosuchapp, no app', y.why);
+    y = await refusesAs('app.icon', '../evil'); ok(y.fine, 'app.icon refuses ../evil, a path up', y.why);
+    y = await refusesAs('app.icon', ''); ok(y.fine, 'app.icon refuses an empty key', y.why);
+    y = await refusesAs('app.label', 'nosuchapp'); ok(y.fine, 'app.label refuses nosuchapp, no app', y.why);
+    y = await refusesAs('app.label', '../evil'); ok(y.fine, 'app.label refuses ../evil, a path up', y.why);
+    y = await refusesAs('app.label', ''); ok(y.fine, 'app.label refuses an empty key', y.why);
     test.subHeading('the box: "spirit/state/ is not servable, so a page cannot read other apps\' state through a plain GET."');
     ok(activeIn('agent') === true, 'the file to ask for is there', 'no file to ask for');
     const got = await fetch(node.base + '/spirit/state/agent/node.json');

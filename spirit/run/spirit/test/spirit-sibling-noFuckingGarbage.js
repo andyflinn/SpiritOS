@@ -100,9 +100,9 @@ else if (MODULE) {
 test.subHeading('every file in a test folder');
 const judged = files.filter(inTestFolder);
 test.comment(judged.length + ' files in test folders read');
-if (WHOLE) ok(judged.length > 100, 'the scan read every test folder: ' + judged.length + ' files', 'the scan read only ' + judged.length + ' files: it judged too little to say');
-else if (MODULE) ok(judged.length > 0, handed + ': its own ' + judged.length + ' test files read', handed + ' has no test of its own: nothing judged');
-else ok(judged.length === 1, 'the file handed is in a test folder: ' + judged[0], arg + ' is neither a module nor a tracked file in a test folder: nothing judged');
+if (WHOLE) ok(judged.length > 100, 'the scan read every test folder, more than a hundred files', 'the scan read only ' + judged.length + ' files: it judged too little to say');
+else if (MODULE) ok(judged.length > 0, 'the module handed has test files of its own, and they are read', handed + ' has no test of its own: nothing judged');
+else ok(judged.length === 1, 'the file handed is in a test folder', arg + ' is neither a module nor a tracked file in a test folder: nothing judged');
 let broken = 0;
 judged.forEach(function (rel) {
   const why = garbage(rel);
@@ -111,7 +111,7 @@ judged.forEach(function (rel) {
   test.subHeading(rel);
   test.fail(rel + ': garbage, ' + why + ' (' + RULE + ')');
 });
-if (!broken && judged.length) ok(true, 'every file in a test folder matches a production file: ' + judged.length + ' files, none is garbage', '');
+if (!broken && judged.length) ok(true, 'every file in a test folder matches a production file: none is garbage', '');
 test.reportSuccessFailureCount();
 process.exit(0);
 
