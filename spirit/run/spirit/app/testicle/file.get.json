@@ -1,0 +1,4 @@
+{
+  "description": "A production file's row in testicle.db: {name, hash, deleted, changed}. name is the file, scoped to run://. A file with no rows yet gets its file row and a suite row, flagged needs testing, for every suite that concerns it, as a change would make them. A name that is no production script answers the error \"not a production script\"; a production script that is not there, \"no such file\".",
+  "request": { "name": "text" }
+}

@@ -29,6 +29,11 @@ const { execFile } = require('child_process');
 const { DatabaseSync } = require('node:sqlite');
 const appServer = spirit.require('spirit/appServer.js');
 const { VENDORED_FOLDERS } = spirit.require('spirit/fileSystem.js');
+const { createProbabilityBucket } = spirit.require('spirit/probabilityBucket.js');
+const { probabilityStringObjectMatch } = spirit.require('spirit/probabilityStringObjectMatch.js');
+const limits = spirit.require('spirit/limits.js');
+// What one search answer holds once its frame is counted (as the agent's tables count it, rowTable.js).
+const SEARCH_ROOM = limits.ANSWER_MAX - Buffer.byteLength(JSON.stringify({ items: [], more: false }), 'utf8');
 
 const argv = process.argv;
 function arg(name) { const at = argv.indexOf(name); return at !== -1 ? argv[at + 1] : ''; }
@@ -58,6 +63,7 @@ const Q = {
     'ON CONFLICT(file, suite) DO UPDATE SET test = 1, deleted = 0, hash = excluded.hash, changed = excluded.changed'),
   goneSuitesOfFile: db.prepare('UPDATE suite SET deleted = 1, changed = ? WHERE file = ? AND deleted = 0'),
   goneRowsOfSuite: db.prepare('UPDATE suite SET deleted = 1, changed = ? WHERE suite = ? AND deleted = 0'),
+  suitesOfFile: db.prepare('SELECT * FROM suite WHERE file = ? ORDER BY suite'),
 };
 
 function posix(p) { return String(p).split(path.sep).join('/'); }
@@ -132,10 +138,12 @@ function apply(changed, P) {
   }
 }
 
-// THE QUEUE: what changed since the last write, and whether a write is under way. busy is either.
+// THE QUEUE: what changed since the last write, and whether a write is under way. busy is either, or a file.get making
+// rows.
 const pending = new Set();
 let working = false;
 let timer = null;
+let getting = 0;
 function kick() {
   if (working || timer || !pending.size) return;
   // The changes of one moment taken together: a save is often several events.
@@ -160,11 +168,57 @@ watcher.on('all', function (event, full) {
 });
 watcher.on('error', function (e) { console.error('testicle: the watcher: ' + (e && e.message || e)); });
 
+// A file row as a verb answers it: its deleted a boolean.
+function served(row) { return { name: row.name, hash: row.hash, deleted: !!row.deleted, changed: Number(row.changed) }; }
+function refused(code) { return Object.assign(new Error(code), { refusal: code }); }
+
 appServer.serve({
   // goal/G47.1, the box: "busy": true if it is doing any work, false if it is idle.
   busy: {
     request: {}, reply: false,
-    handler: function () { return working || !!timer || pending.size > 0; },
+    handler: function () { return working || !!timer || pending.size > 0 || getting > 0; },
+  },
+  // goal/G47.1, the verbs cycle, the box: "If the argument (a filename, scoped to run://) is not a production script, it
+  // returns the error \"not a production script\"", "If the file does not exist, it returns the error \"no such file\", so
+  // the caller can tell the difference", "If the file does not have its file and suite rows, they are created
+  // automatically", "It creates them with the same code the server uses when it discovers a file change and no record
+  // exists: the suites are flagged \"needs testing\"", "The server then returns the file row."
+  'file.get': {
+    request: { name: '' }, reply: { name: '', hash: '', deleted: false, changed: 0 },
+    handler: function (a) {
+      const name = posix(String(a.name || '')).replace(/^\.?\//, '');
+      if (!/\.js$/.test(name) || isSuite(name) || name.indexOf('..') !== -1 || ignored(path.join(RUN, name))) throw refused('not-a-production-script');
+      if (!there(name)) throw refused('no-such-file');
+      const row = Q.file.get(name);
+      if (row) return served(row);
+      getting += 1;
+      return pairs().then(function (P) { apply([name], P); return served(Q.file.get(name)); })
+        .finally(function () { getting -= 1; });
+    },
+  },
+  // goal/G47.1, the verbs cycle, the box: "A standard table search response", "The file row owns its suite rows: the suite
+  // table's key is file and suite. So suite.search takes the production file and answers that file's suite rows only, each
+  // suite once, with its filename and its status; the words narrow among them", "The suite search returns both: the
+  // filename AND its status \"needs running\"". Ranked over the whole row as it is served (goal/G41.28), as the agent's
+  // tables search; with no words, all of them, by name.
+  'suite.search': {
+    request: { file: '', text: '' }, reply: { items: [], more: false },
+    handler: function (a) {
+      const words = String(a.text || '').trim();
+      const bucket = createProbabilityBucket(Infinity);
+      let n = 0;
+      Q.suitesOfFile.all(String(a.file || '')).forEach(function (r) {
+        const row = { file: r.file, suite: r.suite, test: !!r.test, status: r.test ? 'needs running' : '', deleted: !!r.deleted, outcome: r.outcome, changed: Number(r.changed) };
+        const score = words ? Number(probabilityStringObjectMatch(words, row)) || 0 : 1;
+        n += 1;
+        if (score > 0) bucket.seatFor(score * (1 - 1e-9) + 1e-9 / (1 + n), { key: r.suite, label: JSON.stringify(row) });
+      });
+      const out = bucket.serialize(null, SEARCH_ROOM);
+      return { items: out.items, more: !!out.more };
+    },
   },
 // No peer user: the owner's own test status (apiAuth/G1.10).
-});
+}, { codes: {
+  'not-a-production-script': { status: 400, text: 'not a production script' },
+  'no-such-file': { status: 404, text: 'no such file' },
+} });

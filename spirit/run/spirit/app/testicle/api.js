@@ -7,5 +7,10 @@ module.exports = {
   verbs: {
     // goal/G47.1, the box: "busy": true if it is doing any work, false if it is idle. It takes nothing.
     busy: {},
+    // goal/G47.1, the verbs cycle: a production file's row, made with its suite rows if it has none. name is the file,
+    // scoped to run://.
+    'file.get': { name: 'text' },
+    // goal/G47.1, the verbs cycle: the suite rows of one production file, the words narrowing them ('' for all).
+    'suite.search': { file: 'text', text: 'text' },
   },
 };
