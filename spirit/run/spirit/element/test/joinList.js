@@ -18,7 +18,6 @@ const FILE = path.join(RUN, 'spirit', 'element', 'joinList.js');
 const STEPS = path.join(RUN, 'spirit', 'app', 'join', 'join.json');
 const SRC = fs.existsSync(FILE) ? fs.readFileSync(FILE, 'utf8') : '';
 
-function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 const settle = async function () { for (let i = 0; i < 20; i++) await new Promise(function (r) { setImmediate(r); }); };
 
@@ -68,48 +67,63 @@ function world(join) {
   return w;
 }
 
-test.startTest('joinList.js: all of Join, its steps drawn from the spirit job');
-process.on('unhandledRejection', function (e) { test.fail('it threw where nothing caught it: ' + (e && e.message || e)); });
-
-(async function () {
-  ok(!!SRC, 'spirit/element/joinList.js is there', 'there is no spirit/element/joinList.js');
-  if (!SRC) return;
-  let steps = [];
+// What the tests make, shared by the tests after them.
+let steps, w, c, made, first, second, late, lc;
+test.run('spirit/element/joinList.js is there', 0.2, function () {
+  return (!!SRC) ? true : 'there is no spirit/element/joinList.js';
+}, 1000);
+test.run('the world: join.json has its steps', 0.2, function () {
+  steps = [];
   try { steps = JSON.parse(fs.readFileSync(STEPS, 'utf8')).steps || []; } catch (e) { steps = []; }
-  ok(steps.length > 1, 'the world: join.json has its steps', 'join.json has ' + steps.length + ' steps');
-
-  test.subHeading('it places itself, and draws the steps the spirit job says');
-  const w = world({ seated: false, contact: false });
-  ok(!!w.L && typeof w.L.create === 'function', 'it stands at spirit.element.spirit.element.joinList with create', 'no joinList.create');
-  if (!w.L) return;
-  const c = box();
-  const made = w.L.create(c, {});
-  ok(/Waiting for this node/.test(c.innerHTML), 'until the job is read it says it waits for the node', 'drawn: ' + short(c.innerHTML));
+  return (steps.length > 1) ? true : 'join.json has ' + steps.length + ' steps';
+}, 1000);
+test.run('it stands at spirit.element.spirit.element.joinList with create', 0.2, function () {
+  // it places itself, and draws the steps the spirit job says
+  w = world({ seated: false, contact: false });
+  return (!!w.L && typeof w.L.create === 'function') ? true : 'no joinList.create';
+}, 1000);
+test.run('until the job is read it says it waits for the node', 0.2, function () {
+  c = box();
+  made = w.L.create(c, {});
+  return (/Waiting for this node/.test(c.innerHTML)) ? true : 'drawn: ' + short(c.innerHTML);
+}, 1000);
+test.run('each step drawn with its name and its icon as join.json gives it', 0.2, async function () {
   await settle();
-  const first = c.host.innerHTML;
-  ok(steps.every(function (s) { return first.indexOf(s.icon) !== -1 && first.indexOf(s.name) !== -1; }), 'each step drawn with its name and its icon as join.json gives it', 'drawn: ' + short(first));
-  ok(first.indexOf('⬜') !== -1 && first.indexOf('☑️') === -1, 'nothing done: every step marked ⬜', 'marks: ' + short(first));
-  ok(w.watches === 1, 'it watches the jobs family\'s cache once', 'watches: ' + w.watches);
-
-  test.subHeading('what it watches redraws it');
+  first = c.host.innerHTML;
+  return (steps.every(function (s) { return first.indexOf(s.icon) !== -1 && first.indexOf(s.name) !== -1; })) ? true : 'drawn: ' + short(first);
+}, 1000);
+test.run('nothing done: every step marked ⬜', 0.2, function () {
+  return (first.indexOf('⬜') !== -1 && first.indexOf('☑️') === -1) ? true : 'marks: ' + short(first);
+}, 1000);
+test.run('it watches the jobs family\'s cache once', 0.2, function () {
+  return (w.watches === 1) ? true : 'watches: ' + w.watches;
+}, 1000);
+test.run('a new join on the spirit job, taken into spirit.data, redraws the steps', 0.2, async function () {
+  // what it watches redraws it
   w.publish('spirit', { id: 'spirit', data: { join: { seated: true, contact: false } } });
   await settle();
-  const second = c.host.innerHTML;
-  ok(second !== first && second.indexOf('☑️') !== -1, 'a new join on the spirit job, taken into spirit.data, redraws the steps', 'after the join changed: ' + short(second));
+  second = c.host.innerHTML;
+  return (second !== first && second.indexOf('☑️') !== -1) ? true : 'after the join changed: ' + short(second);
+}, 1000);
+test.run('another job\'s change draws nothing', 0.2, async function () {
   w.publish('spirit.app.other', { id: 'spirit.app.other', data: { join: { seated: false } } });
   await settle();
-  ok(c.host.innerHTML === second, 'another job\'s change draws nothing', 'redrawn for another job: ' + short(c.host.innerHTML));
+  return (c.host.innerHTML === second) ? true : 'redrawn for another job: ' + short(c.host.innerHTML);
+}, 1000);
+test.run('every step done, it says so, with ☑️', 0.2, async function () {
   w.publish('spirit', { id: 'spirit', data: { join: { seated: true, contact: true } } });
   await settle();
-  ok(/☑️ Every step is done\./.test(c.host.innerHTML), 'every step done, it says so, with ☑️', 'drawn: ' + short(c.host.innerHTML));
-
-  test.subHeading('destroy');
+  return (/☑️ Every step is done\./.test(c.host.innerHTML)) ? true : 'drawn: ' + short(c.host.innerHTML);
+}, 1000);
+test.run('destroy lets its watch go and empties its container', 0.2, function () {
+  // destroy
   made.destroy();
-  ok(w.released === 1 && c.innerHTML === '', 'destroy lets its watch go and empties its container', 'released ' + w.released + ', left ' + short(c.innerHTML));
-  const late = world({ seated: false });
-  const lc = box();
+  return (w.released === 1 && c.innerHTML === '') ? true : 'released ' + w.released + ', left ' + short(c.innerHTML);
+}, 1000);
+test.run('destroyed before the job is read, it keeps no watch and draws nothing', 0.2, async function () {
+  late = world({ seated: false });
+  lc = box();
   late.L.create(lc, {}).destroy();
   await settle();
-  ok(late.watches === late.released && lc.host.innerHTML === '', 'destroyed before the job is read, it keeps no watch and draws nothing', 'watches ' + late.watches + ', released ' + late.released);
-}()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
-  function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });
+  return (late.watches === late.released && lc.host.innerHTML === '') ? true : 'watches ' + late.watches + ', released ' + late.released;
+}, 1000);

@@ -16,46 +16,53 @@ const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const PLACE = 'spirit/element/installSpiritElement.js';
 const FILE = path.join(RUN, PLACE);
 
-function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 function at(root, keys) { return keys.reduce(function (o, k) { return o == null ? undefined : o[k]; }, root); }
 
-test.startTest('installSpiritElement.js: an element\'s factory placed at spirit.element.<its path> (goal/G43.32)');
-
-(async function () {
-  test.subHeading('the helper, resident in spirit.required');
-  ok(fs.existsSync(FILE), 'the helper\'s file is there', PLACE + ' is not there');
-  if (!fs.existsSync(FILE)) return;
-  const s = require(path.join(RUN, 'spirit', 'spirit.js'));
-  let install = null;
+// What the tests make, shared by the tests after them.
+let s, install, icon, back, app, outer, inner, outer2, inner2;
+test.run('the helper\'s file is there', 0.2, function () {
+  // the helper, resident in spirit.required
+  return (fs.existsSync(FILE)) ? true : PLACE + ' is not there';
+}, 1000);
+test.run('spirit.require answers the helper at once, a function', 0.2, function () {
+  s = require(path.join(RUN, 'spirit', 'spirit.js'));
+  install = null;
   try { install = s.require(PLACE); } catch (e) { install = e; }
-  ok(typeof install === 'function', 'spirit.require answers the helper at once, a function', 'spirit.require(' + PLACE + ') answered ' + short(install && install.message || typeof install));
-  ok(typeof install === 'function' && at(s.required, ['spirit', 'element', 'installSpiritElement']) === install, 'it is resident at spirit.required.spirit.element.installSpiritElement', 'spirit.required.spirit.element.installSpiritElement is ' + short(typeof at(s.required, ['spirit', 'element', 'installSpiritElement'])));
-  if (typeof install !== 'function') return;
-
-  test.subHeading('a factory at spirit.element.<its path>');
-  const icon = { create: function () { return { destroy: function () {} }; } };
-  const back = install(s, 'spirit/element/zzIcon.js', icon);
-  ok(at(s.element, ['spirit', 'element', 'zzIcon']) === icon, 'spirit/element/zzIcon.js\'s factory stands at spirit.element.spirit.element.zzIcon', 'spirit.element.spirit.element.zzIcon is ' + short(at(s.element, ['spirit', 'element', 'zzIcon'])));
-  ok(back === icon, 'and the helper answers the factory it placed', 'the helper answered ' + short(back));
-  const app = { create: function () {} };
+  return (typeof install === 'function') ? true : 'spirit.require(' + PLACE + ') answered ' + short(install && install.message || typeof install);
+}, 1000);
+test.run('it is resident at spirit.required.spirit.element.installSpiritElement', 0.2, function () {
+  return (typeof install === 'function' && at(s.required, ['spirit', 'element', 'installSpiritElement']) === install) ? true : 'spirit.required.spirit.element.installSpiritElement is ' + short(typeof at(s.required, ['spirit', 'element', 'installSpiritElement']));
+}, 1000);
+test.run('spirit/element/zzIcon.js\'s factory stands at spirit.element.spirit.element.zzIcon', 0.2, function () {
+  // a factory at spirit.element.<its path>
+  icon = { create: function () { return { destroy: function () {} }; } };
+  back = install(s, 'spirit/element/zzIcon.js', icon);
+  return (at(s.element, ['spirit', 'element', 'zzIcon']) === icon) ? true : 'spirit.element.spirit.element.zzIcon is ' + short(at(s.element, ['spirit', 'element', 'zzIcon']));
+}, 1000);
+test.run('and the helper answers the factory it placed', 0.2, function () {
+  return (back === icon) ? true : 'the helper answered ' + short(back);
+}, 1000);
+test.run('an app\'s element.js stands at spirit.element.spirit.app.zzApp.element', 0.2, function () {
+  app = { create: function () {} };
   install(s, 'spirit/app/zzApp/element.js', app);
-  ok(at(s.element, ['spirit', 'app', 'zzApp', 'element']) === app, 'an app\'s element.js stands at spirit.element.spirit.app.zzApp.element', 'spirit.element.spirit.app.zzApp.element is ' + short(at(s.element, ['spirit', 'app', 'zzApp', 'element'])));
-
-  test.subHeading('no name-space collision');
-  const outer = { create: function () {} };
-  const inner = { create: function () {} };
+  return (at(s.element, ['spirit', 'app', 'zzApp', 'element']) === app) ? true : 'spirit.element.spirit.app.zzApp.element is ' + short(at(s.element, ['spirit', 'app', 'zzApp', 'element']));
+}, 1000);
+test.run('zzSearch.js and zzSearch/zzFile.js both stand, the folder\'s placed first', 0.2, function () {
+  // no name-space collision
+  outer = { create: function () {} };
+  inner = { create: function () {} };
   install(s, 'spirit/element/zzSearch/zzFile.js', inner);
   install(s, 'spirit/element/zzSearch.js', outer);
-  ok(at(s.element, ['spirit', 'element', 'zzSearch']) === outer && at(s.element, ['spirit', 'element', 'zzSearch', 'zzFile']) === inner,
-    'zzSearch.js and zzSearch/zzFile.js both stand, the folder\'s placed first', 'one lost the other: ' + short([typeof at(s.element, ['spirit', 'element', 'zzSearch', 'create']), typeof at(s.element, ['spirit', 'element', 'zzSearch', 'zzFile'])]));
-  const outer2 = { create: function () {} };
-  const inner2 = { create: function () {} };
+  return (at(s.element, ['spirit', 'element', 'zzSearch']) === outer && at(s.element, ['spirit', 'element', 'zzSearch', 'zzFile']) === inner) ? true : 'one lost the other: ' + short([typeof at(s.element, ['spirit', 'element', 'zzSearch', 'create']), typeof at(s.element, ['spirit', 'element', 'zzSearch', 'zzFile'])]);
+}, 1000);
+test.run('zzList.js and zzList/zzRow.js both stand, the file\'s placed first', 0.2, function () {
+  outer2 = { create: function () {} };
+  inner2 = { create: function () {} };
   install(s, 'spirit/element/zzList.js', outer2);
   install(s, 'spirit/element/zzList/zzRow.js', inner2);
-  ok(at(s.element, ['spirit', 'element', 'zzList']) === outer2 && at(s.element, ['spirit', 'element', 'zzList', 'zzRow']) === inner2,
-    'zzList.js and zzList/zzRow.js both stand, the file\'s placed first', 'one lost the other: ' + short([typeof at(s.element, ['spirit', 'element', 'zzList', 'create']), typeof at(s.element, ['spirit', 'element', 'zzList', 'zzRow'])]));
-  ok(at(s.element, ['spirit', 'element', 'zzIcon']) === icon, 'and what stood before still stands', 'an earlier factory was lost');
-
-}()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
-  function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });
+  return (at(s.element, ['spirit', 'element', 'zzList']) === outer2 && at(s.element, ['spirit', 'element', 'zzList', 'zzRow']) === inner2) ? true : 'one lost the other: ' + short([typeof at(s.element, ['spirit', 'element', 'zzList', 'create']), typeof at(s.element, ['spirit', 'element', 'zzList', 'zzRow'])]);
+}, 1000);
+test.run('and what stood before still stands', 0.2, function () {
+  return (at(s.element, ['spirit', 'element', 'zzIcon']) === icon) ? true : 'an earlier factory was lost';
+}, 1000);

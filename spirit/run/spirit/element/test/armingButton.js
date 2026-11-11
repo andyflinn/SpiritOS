@@ -12,7 +12,6 @@ const RUN = path.resolve(__dirname, '../../..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const FILE = path.join(__dirname, '..', 'armingButton.js');
 
-function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 const settle = async function () { for (let i = 0; i < 10; i++) await new Promise(function (r) { setImmediate(r); }); };
 
@@ -51,112 +50,181 @@ function world() {
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(win.spirit);
   vm.createContext(win);
   if (fs.existsSync(FILE)) {
-    try { vm.runInContext(fs.readFileSync(FILE, 'utf8'), win, { filename: FILE }); } catch (e) { test.fail('it threw as it loaded: ' + e.message); }
+    try { vm.runInContext(fs.readFileSync(FILE, 'utf8'), win, { filename: FILE }); } catch (e) { throw new Error('it threw as it loaded: ' + e.message); }
   }
   return win;
 }
 const isArmed = function (b) { return b.hasAttribute('data-armed'); };
 
-test.startTest('armingButton.js: the are-you-sure button');
-
-(async function () {
-  ok(fs.existsSync(FILE), 'spirit/element/armingButton.js exists', 'there is no spirit/element/armingButton.js');
-  const win = world();
+// What the tests make, shared by the tests after them.
+let win, E, ran, box, b, threw, ran2, one, two, ran4, drawn, same, other, SRC, ran3, bare, blank, kept;
+test.run('spirit/element/armingButton.js exists', 0.2, function () {
+  return (fs.existsSync(FILE)) ? true : 'there is no spirit/element/armingButton.js';
+}, 1000);
+test.run('it adds armingButton.create(container, options) to window.spirit.element', 0.2, async function () {
+  win = world();
   await settle();
   // goal/G43.32: it stands at its path.
-  const E = ((win.spirit.element.spirit || {}).element || {}).armingButton;
-  ok(!!E && typeof E.create === 'function' && E.create.length === 2, 'it adds armingButton.create(container, options) to window.spirit.element', 'no window.spirit.element.spirit.element.armingButton.create of a container and options');
-  if (!E) return;
-
-  test.subHeading('the first press arms it, and runs nothing');
-  const ran = [];
+  E = ((win.spirit.element.spirit || {}).element || {}).armingButton;
+  return (!!E && typeof E.create === 'function' && E.create.length === 2) ? true : 'no window.spirit.element.spirit.element.armingButton.create of a container and options';
+}, 1000);
+test.run('create answers a button of type button', 0.2, function () {
+  // the first press arms it, and runs nothing
+  ran = [];
   // Box v23: "every element gets a container and appends itself".
-  const box = element('div');
-  const b = E.create(box, { label: 'Revoke', run: function () { ran.push('revoke'); return 'done'; }, title: 'take it back', className: 'gr-revoke' });
-  ok(!!b && b.tagName === 'BUTTON' && b.type === 'button', 'create answers a button of type button', 'answered ' + short(b && b.tagName));
-  if (!b) return;
-  ok(box.children.length === 1 && box.children[0] === b, 'it is appended to the container it is given', 'container holds ' + box.children.length + (box.children[0] === b ? ', the button' : ', not the button'));
-  ok(b.textContent === 'Revoke' && !isArmed(b), 'unarmed, it says its label', 'text ' + short(b.textContent) + ', armed ' + isArmed(b));
-  ok(b.title === 'take it back' && /gr-revoke/.test(b.className), 'its title and class are put on it', 'title ' + short(b.title) + ', class ' + short(b.className));
-  b.press(); await settle();
-  ok(ran.length === 0, 'a first press runs nothing', 'ran: ' + short(ran));
-  ok(isArmed(b) && b.textContent === 'Revoke? Press again', 'it is armed: data-armed, and it says Revoke? Press again', 'text ' + short(b.textContent) + ', armed ' + isArmed(b));
-  ok(docClicks.length === 1, 'and listens for a click elsewhere on the document, itself', 'document click listeners: ' + docClicks.length);
-  ok(typeof b.armed === 'function' && b.armed() === true, 'armed() says so', 'armed(): ' + short(b.armed && b.armed()));
-
-  test.subHeading('the second press runs it, once');
-  b.press(); await settle();
-  ok(ran.length === 1, 'the second press runs it once', 'ran: ' + short(ran));
-  ok(!isArmed(b) && b.textContent === 'Revoke', 'and it is back to its label', 'text ' + short(b.textContent) + ', armed ' + isArmed(b));
-  ok(docClicks.length === 0, 'disarmed, it no longer listens on the document', 'document click listeners: ' + docClicks.length);
-  b.press(); await settle();
-  ok(ran.length === 1 && isArmed(b), 'the next press arms again from scratch, running nothing', 'ran ' + ran.length + ', armed ' + isArmed(b));
-
-  test.subHeading('a click elsewhere puts it back (its own document listener)');
+  box = element('div');
+  b = E.create(box, { label: 'Revoke', run: function () { ran.push('revoke'); return 'done'; }, title: 'take it back', className: 'gr-revoke' });
+  return (!!b && b.tagName === 'BUTTON' && b.type === 'button') ? true : 'answered ' + short(b && b.tagName);
+}, 1000);
+test.run('it is appended to the container it is given', 0.2, function () {
+  return (box.children.length === 1 && box.children[0] === b) ? true : 'container holds ' + box.children.length + (box.children[0] === b ? ', the button' : ', not the button');
+}, 1000);
+test.run('unarmed, it says its label', 0.2, function () {
+  return (b.textContent === 'Revoke' && !isArmed(b)) ? true : 'text ' + short(b.textContent) + ', armed ' + isArmed(b);
+}, 1000);
+test.run('its title and class are put on it', 0.2, function () {
+  return (b.title === 'take it back' && /gr-revoke/.test(b.className)) ? true : 'title ' + short(b.title) + ', class ' + short(b.className);
+}, 1000);
+test.run('a first press runs nothing', 0.2, async function () {
+  b.press();
+  await settle();
+  return (ran.length === 0) ? true : 'ran: ' + short(ran);
+}, 1000);
+test.run('it is armed: data-armed, and it says Revoke? Press again', 0.2, function () {
+  return (isArmed(b) && b.textContent === 'Revoke? Press again') ? true : 'text ' + short(b.textContent) + ', armed ' + isArmed(b);
+}, 1000);
+test.run('and listens for a click elsewhere on the document, itself', 0.2, function () {
+  return (docClicks.length === 1) ? true : 'document click listeners: ' + docClicks.length;
+}, 1000);
+test.run('armed() says so', 0.2, function () {
+  return (typeof b.armed === 'function' && b.armed() === true) ? true : 'armed(): ' + short(b.armed && b.armed());
+}, 1000);
+test.run('the second press runs it once', 0.2, async function () {
+  // the second press runs it, once
+  b.press();
+  await settle();
+  return (ran.length === 1) ? true : 'ran: ' + short(ran);
+}, 1000);
+test.run('and it is back to its label', 0.2, function () {
+  return (!isArmed(b) && b.textContent === 'Revoke') ? true : 'text ' + short(b.textContent) + ', armed ' + isArmed(b);
+}, 1000);
+test.run('disarmed, it no longer listens on the document', 0.2, function () {
+  return (docClicks.length === 0) ? true : 'document click listeners: ' + docClicks.length;
+}, 1000);
+test.run('the next press arms again from scratch, running nothing', 0.2, async function () {
+  b.press();
+  await settle();
+  return (ran.length === 1 && isArmed(b)) ? true : 'ran ' + ran.length + ', armed ' + isArmed(b);
+}, 1000);
+test.run('a click anywhere else puts it back: no data-armed, its label, nothing run', 0.2, function () {
+  // a click elsewhere puts it back (its own document listener)
   elsewhere();
-  ok(!isArmed(b) && b.textContent === 'Revoke' && b.armed() === false && ran.length === 1, 'a click anywhere else puts it back: no data-armed, its label, nothing run', 'text ' + short(b.textContent) + ', armed ' + isArmed(b) + ', ran ' + ran.length);
-  ok(docClicks.length === 0, 'and it lets go of the document', 'document click listeners: ' + docClicks.length);
-  let threw = null;
+  return (!isArmed(b) && b.textContent === 'Revoke' && b.armed() === false && ran.length === 1) ? true : 'text ' + short(b.textContent) + ', armed ' + isArmed(b) + ', ran ' + ran.length;
+}, 1000);
+test.run('and it lets go of the document', 0.2, function () {
+  return (docClicks.length === 0) ? true : 'document click listeners: ' + docClicks.length;
+}, 1000);
+test.run('a disarm called twice is harmless', 0.2, function () {
+  threw = null;
   try { b.disarm(); b.disarm(); elsewhere(); } catch (e) { threw = e; }
-  ok(!threw && !isArmed(b), 'a disarm called twice is harmless', 'threw: ' + short(threw && threw.message));
-  b.press(); await settle();
-  ok(ran.length === 1 && isArmed(b), 'after a disarm the next press arms again, running nothing', 'ran ' + ran.length + ', armed ' + isArmed(b));
+  return (!threw && !isArmed(b)) ? true : 'threw: ' + short(threw && threw.message);
+}, 1000);
+test.run('after a disarm the next press arms again, running nothing', 0.2, async function () {
+  b.press();
+  await settle();
+  return (ran.length === 1 && isArmed(b)) ? true : 'ran ' + ran.length + ', armed ' + isArmed(b);
+}, 1000);
+test.run('disarm() puts it back from the app\'s side', 0.2, function () {
   b.disarm();
-  ok(!isArmed(b), 'disarm() puts it back from the app\'s side', 'still armed');
-
-  test.subHeading('one loaded at a time');
-  const ran2 = [];
-  const one = E.create(element('div'), { label: 'Block', armedLabel: 'Block them? Press again', run: function () { ran2.push('block'); } });
-  const two = E.create(element('div'), { label: 'Forget', run: function () { ran2.push('forget'); } });
-  one.press(); await settle();
-  ok(one.textContent === 'Block them? Press again', 'armedLabel is said when armed', 'text ' + short(one.textContent));
-  two.press(); await settle();
-  ok(isArmed(two) && !isArmed(one) && one.textContent === 'Block', 'arming one disarms the other', 'one ' + isArmed(one) + ' ' + short(one.textContent) + ', two ' + isArmed(two));
-  one.press(); await settle();
-  ok(ran2.length === 0, 'so the first, pressed again, arms anew and runs nothing', 'ran: ' + short(ran2));
-  ok(docClicks.length === 1, 'one listener on the document, for the one armed', 'document click listeners: ' + docClicks.length);
+  return (!isArmed(b)) ? true : 'still armed';
+}, 1000);
+test.run('armedLabel is said when armed', 0.2, async function () {
+  // one loaded at a time
+  ran2 = [];
+  one = E.create(element('div'), { label: 'Block', armedLabel: 'Block them? Press again', run: function () { ran2.push('block'); } });
+  two = E.create(element('div'), { label: 'Forget', run: function () { ran2.push('forget'); } });
+  one.press();
+  await settle();
+  return (one.textContent === 'Block them? Press again') ? true : 'text ' + short(one.textContent);
+}, 1000);
+test.run('arming one disarms the other', 0.2, async function () {
+  two.press();
+  await settle();
+  return (isArmed(two) && !isArmed(one) && one.textContent === 'Block') ? true : 'one ' + isArmed(one) + ' ' + short(one.textContent) + ', two ' + isArmed(two);
+}, 1000);
+test.run('so the first, pressed again, arms anew and runs nothing', 0.2, async function () {
+  one.press();
+  await settle();
+  return (ran2.length === 0) ? true : 'ran: ' + short(ran2);
+}, 1000);
+test.run('one listener on the document, for the one armed', 0.2, function () {
+  return (docClicks.length === 1) ? true : 'document click listeners: ' + docClicks.length;
+}, 1000);
+test.run('attach answers the button it was handed', 0.2, function () {
   one.disarm();
-
-  test.subHeading('attach: a button already in the page');
-  const ran4 = [];
-  const drawn = element('button'); drawn.textContent = 'Delete'; drawn.type = 'button';
-  const same = typeof E.attach === 'function' ? E.attach(drawn, { run: function () { ran4.push('delete'); } }) : null;
-  ok(same === drawn, 'attach answers the button it was handed', 'attach answered ' + short(same && same.tagName));
-  if (same) {
-    drawn.press(); await settle();
-    ok(isArmed(drawn) && drawn.textContent === 'Delete? Press again' && ran4.length === 0, 'its first press arms it, its own text the label', 'text ' + short(drawn.textContent) + ', ran ' + ran4.length);
-    drawn.press(); await settle();
-    ok(!isArmed(drawn) && drawn.textContent === 'Delete' && ran4.length === 1, 'its second press runs it, and it says Delete again', 'text ' + short(drawn.textContent) + ', ran ' + ran4.length);
-    const other = E.create(element('div'), { label: 'Waive', run: function () {} });
-    drawn.press(); await settle();
-    other.press(); await settle();
-    ok(!isArmed(drawn) && isArmed(other), 'an attached button and a made one are one loaded at a time too', 'drawn ' + isArmed(drawn) + ', other ' + isArmed(other));
-    other.disarm();
-  }
-
+  // attach: a button already in the page
+  ran4 = [];
+  drawn = element('button');
+  drawn.textContent = 'Delete';
+  drawn.type = 'button';
+  same = typeof E.attach === 'function' ? E.attach(drawn, { run: function () { ran4.push('delete'); } }) : null;
+  return (same === drawn) ? true : 'attach answered ' + short(same && same.tagName);
+}, 1000);
+test.run('its first press arms it, its own text the label', 0.2, async function () {
+  drawn.press();
+  await settle();
+  return (isArmed(drawn) && drawn.textContent === 'Delete? Press again' && ran4.length === 0) ? true : 'text ' + short(drawn.textContent) + ', ran ' + ran4.length;
+}, 1000);
+test.run('its second press runs it, and it says Delete again', 0.2, async function () {
+  drawn.press();
+  await settle();
+  return (!isArmed(drawn) && drawn.textContent === 'Delete' && ran4.length === 1) ? true : 'text ' + short(drawn.textContent) + ', ran ' + ran4.length;
+}, 1000);
+test.run('an attached button and a made one are one loaded at a time too', 0.2, async function () {
+  other = E.create(element('div'), { label: 'Waive', run: function () {} });
+  drawn.press();
+  await settle();
+  other.press();
+  await settle();
+  return (!isArmed(drawn) && isArmed(other)) ? true : 'drawn ' + isArmed(drawn) + ', other ' + isArmed(other);
+}, 1000);
+test.run('its code names no api: no hook is handed to it', 0.2, function () {
+  other.disarm();
   // WHAT IT NEEDS, IT REQUIRES ITSELF (goal/G43.24; Andy: "anybody can mount any element without knowing what it actually
   // needs...."): mounted with its container alone it arms, disarms on a click elsewhere and runs; it reads no api.
-  test.subHeading('mounted with its container alone, it does all of it');
-  const SRC = fs.readFileSync(FILE, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1');
-  ok(!/\bapi\b/.test(SRC), 'its code names no api: no hook is handed to it', 'its code still names an api');
-  const ran3 = [];
-  const bare = E.create(element('div'), { label: 'Close', run: function () { ran3.push('close'); } });
-  bare.press(); await settle();
-  ok(isArmed(bare) && ran3.length === 0, 'it arms, running nothing', 'armed ' + isArmed(bare) + ', ran ' + ran3.length);
+  // mounted with its container alone, it does all of it
+  SRC = fs.readFileSync(FILE, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1');
+  return (!/\bapi\b/.test(SRC)) ? true : 'its code still names an api';
+}, 1000);
+test.run('it arms, running nothing', 0.2, async function () {
+  ran3 = [];
+  bare = E.create(element('div'), { label: 'Close', run: function () { ran3.push('close'); } });
+  bare.press();
+  await settle();
+  return (isArmed(bare) && ran3.length === 0) ? true : 'armed ' + isArmed(bare) + ', ran ' + ran3.length;
+}, 1000);
+test.run('a click elsewhere disarms it', 0.2, function () {
   elsewhere();
-  ok(!isArmed(bare) && ran3.length === 0, 'a click elsewhere disarms it', 'armed ' + isArmed(bare) + ', ran ' + ran3.length);
-  bare.press(); await settle();
-  bare.press(); await settle();
-  ok(!isArmed(bare) && ran3.length === 1, 'and two presses run it', 'armed ' + isArmed(bare) + ', ran ' + ran3.length);
-
+  return (!isArmed(bare) && ran3.length === 0) ? true : 'armed ' + isArmed(bare) + ', ran ' + ran3.length;
+}, 1000);
+test.run('and two presses run it', 0.2, async function () {
+  bare.press();
+  await settle();
+  bare.press();
+  await settle();
+  return (!isArmed(bare) && ran3.length === 1) ? true : 'armed ' + isArmed(bare) + ', ran ' + ran3.length;
+}, 1000);
+test.run('a button drawn empty says its label as soon as it is attached', 0.2, function () {
   // A BUTTON SAYS WHAT IT DOES BEFORE IT IS PRESSED (goal/G41.30; Andy: "the button for that has nothing written on it"):
   // attach with a label, on a button drawn empty, shows that label at once, not only after its first disarm.
-  test.subHeading('attach: the label it is given shows from the start');
-  const blank = element('button');
+  // attach: the label it is given shows from the start
+  blank = element('button');
   E.attach(blank, { label: 'Give it the star', armedLabel: 'Give it the star: press again', run: function () {} });
-  ok(blank.textContent === 'Give it the star', 'a button drawn empty says its label as soon as it is attached', 'it says "' + blank.textContent + '"');
-  const kept = element('button'); kept.textContent = 'Delete';
+  return (blank.textContent === 'Give it the star') ? true : 'it says "' + blank.textContent + '"';
+}, 1000);
+test.run('with no label given, it keeps its own words', 0.2, function () {
+  kept = element('button');
+  kept.textContent = 'Delete';
   E.attach(kept, { run: function () {} });
-  ok(kept.textContent === 'Delete', 'with no label given, it keeps its own words', 'it says "' + kept.textContent + '"');
-}()).then(function () { test.reportSuccessFailureCount(); },
-  function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); });
+  return (kept.textContent === 'Delete') ? true : 'it says "' + kept.textContent + '"';
+}, 1000);

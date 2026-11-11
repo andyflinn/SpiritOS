@@ -8,7 +8,7 @@
 // an element finds its parts inside its own container, never by id across the page.
 // Its name is its reach (../../../test/TEST_SYSTEM.md): a -child- test beside spirit/element/search.js judges search.js
 // and every module in spirit/element/search/ and below. Judged in the code, comments left out: no document.getElementById,
-// document.querySelector, document.querySelectorAll or document.getElementsBy*: each one is its own red, by file and line.
+// document.querySelector, document.querySelectorAll or document.getElementsBy*: each one named, by file and line, in its one red.
 //
 // Given a file, it judges that one (as testModule.js hands it); given none, search.js and every tracked module below it.
 
@@ -55,7 +55,6 @@ function across(rel) {
 }
 function inReach(rel) { return rel === MODULE || (rel.indexOf(BELOW) === 0 && /\.js$/.test(rel) && !/(^|\/)test\//.test(rel)); }
 
-test.startTest('search-child-listRowsOwnTheirPanel.js: ' + RULE + ' (goal/G43.19)');
 let files = [];
 if (arg) {
   files = [path.relative(RUN, path.resolve(fs.existsSync(path.resolve(arg)) ? arg : path.join(RUN, arg))).split(path.sep).join('/')];
@@ -63,20 +62,21 @@ if (arg) {
   files = execFileSync('git', ['ls-files', '--', MODULE, BELOW], { cwd: RUN, encoding: 'utf8' }).split('\n').filter(Boolean)
     .map(function (f) { return f.replace(/^spirit\/run\//, ''); }).filter(function (f) { return inReach(f) && fs.existsSync(path.join(RUN, f)); });
 }
-test.subHeading('every module of search.js and below, its code read');
+// Every module of search.js and below, its code read.
 const judged = files.filter(function (f) { return inReach(f) && fs.existsSync(path.join(RUN, f)); });
-if (arg) ok(judged.length === 1, 'the world: the module asked is search.js or a module below it', arg + ' is not search.js or a module below it: nothing judged');
-else ok(judged.length > 10, 'the world: more than ten modules read', 'only ' + judged.length + ' modules read: too little to judge');
-let broken = 0;
-judged.forEach(function (rel) {
-  across(rel).forEach(function (a) {
-    broken++;
-    test.subHeading(rel);
-    test.fail(rel + ':' + a.line + ' ' + a.call + '() finds a part across the whole page (' + RULE + ')');
-  });
-});
-if (!broken && judged.length) ok(true, 'an element finds its parts inside its own container, never by id across the page: no module looks across the page', '');
-test.reportSuccessFailureCount();
-process.exit(0);
-
-function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
+if (arg) {
+  test.run('the world: the module asked is search.js or a module below it', 0.2, function () {
+    return judged.length === 1 || arg + ' is not search.js or a module below it: nothing judged';
+  }, 1000);
+} else {
+  test.run('the world: more than ten modules read', 0.2, function () {
+    return judged.length > 10 || 'only ' + judged.length + ' modules read: too little to judge';
+  }, 1000);
+}
+// Each lookup across the page is named in what the test answers, by file and line.
+test.run('an element finds its parts inside its own container, never by id across the page: no module looks across the page', 0.4, function () {
+  if (!judged.length) return 'no module judged';
+  const found = [];
+  judged.forEach(function (rel) { across(rel).forEach(function (a) { found.push(rel + ':' + a.line + ' ' + a.call + '()'); }); });
+  return !found.length || found.join(', ') + (found.length === 1 ? ' finds' : ' find') + ' a part across the whole page (' + RULE + ')';
+}, 1000);

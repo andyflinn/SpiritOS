@@ -15,7 +15,6 @@ const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fileSystem.js')).VENDORED_FOLDERS;
 const FILE = path.join(__dirname, '..', 'fstat.js');
 
-function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 const settle = async function () { for (let i = 0; i < 20; i++) await new Promise(function (r) { setImmediate(r); }); };
 function code(f) { try { return fs.readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1').replace(/<!--[\s\S]*?-->/g, ''); } catch (e) { return ''; } }
@@ -87,47 +86,65 @@ function world(o) {
   return w;
 }
 
-test.startTest('fstat.js: a file\'s info (goal/G43.17)');
-
-(async function () {
-  test.subHeading('the box: "It replaces fileViewer, which is renamed and trimmed into it, then deleted, its users naming fstat; mediaViewer goes too (Q7)"');
-  ok(fs.existsSync(FILE), 'spirit/element/fstat.js is there', 'no spirit/element/fstat.js');
-  ok(!fs.existsSync(path.join(RUN, 'spirit', 'element', 'fileViewer.js')), 'spirit/element/fileViewer.js is gone', 'spirit/element/fileViewer.js is still there');
-  ok(!fs.existsSync(path.join(RUN, 'spirit', 'element', 'mediaViewer.js')), 'spirit/element/mediaViewer.js is gone', 'spirit/element/mediaViewer.js is still there');
-  const naming = codeNaming(/fileViewer/);
-  ok(!naming.length, 'no code names fileViewer', 'naming it: ' + short(naming));
-  const media = codeNaming(/spirit\/element\/mediaViewer|element\.mediaViewer\b/);
-  ok(!media.length, 'no code loads the mediaViewer element', 'loading it: ' + short(media));
-  ok(codeNaming(/spirit\/element\/fstat\.js/).length > 0, 'its users load spirit/element/fstat.js', 'no code loads spirit/element/fstat.js');
-
-  test.subHeading('the box: "It asks nothing of the old shell, so the app a file belongs to and Open with are not in it (Q9)"');
-  const own = code(FILE);
-  ok(!!own && !/\.shell\b|renderAppOfFile|renderOpenWith|launcherId|open-with|owner-app/.test(own), 'its code names neither the old shell, the owner app nor Open with', 'fstat.js names one of them');
-
-  const w = world();
-  const V = w.E;
-  ok(!w.error && !!V && ['create', 'read', 'mimeOf', 'kindOf'].every(function (k) { return typeof V[k] === 'function'; }),
-    'it puts fstat on window.spirit.element, with create, read, mimeOf and kindOf, as fileViewer had them', 'fstat: ' + short(w.error ? String(w.error) : V && Object.keys(V)));
-  if (!V) return;
-
-  test.subHeading('mimeOf and kindOf, as they were');
-  ok(V.mimeOf('a/b.MD') === 'text/markdown' && V.mimeOf('noext') === 'application/octet-stream', 'mimeOf reads the extension, case ignored; none is application/octet-stream', 'md ' + V.mimeOf('a/b.MD') + ', none ' + V.mimeOf('noext'));
-  const kinds = { 'image/png': 'image', 'audio/mpeg': 'audio', 'video/mp4': 'video', 'text/markdown': 'code', 'application/javascript': 'code', 'application/json': 'code', 'application/octet-stream': null };
-  ok(Object.keys(kinds).every(function (m) { return V.kindOf(m) === kinds[m]; }), 'kindOf: image, audio, video, code (text, javascript, json), or null', 'kinds: ' + short(Object.keys(kinds).map(function (m) { return V.kindOf(m); })));
-
-  test.subHeading('read: through the link on a face, by the page\'s fetch at home, as it was');
-  const viaLink = world({ link: true });
-  const pieces = [];
-  const r1 = await viaLink.E.read('/notes.md', function (p) { pieces.push(p); });
-  ok(viaLink.fetched[0] && viaLink.fetched[0][0] === 'link' && viaLink.fetched[0][1] === 'notes.md' && r1.status === 200 && pieces.length === 1, 'on a face the sealed link answers it, a leading slash dropped, each piece handed on', 'fetched: ' + short(viaLink.fetched));
-  const seen = [];
-  const r2 = await V.read('docs/a b.md', function (p) { seen.push(p.length); });
-  ok(w.fetched[0] && w.fetched[0][1] === '/docs/a%20b.md' && r2.status === 200 && r2.bytes.length === 3 && short(seen) === short([2, 1]), 'at home the node\'s own GET, streamed: each chunk handed on, the bytes joined', 'fetched ' + short(w.fetched) + ', chunks ' + short(seen));
-
-  test.subHeading('create: the facts asked, no annotations (goal/G43.20), the old shell asked nothing');
+// What the tests make, shared by the tests after them.
+let naming, media, own, w, V, kinds, viaLink, pieces, r1, seen, r2;
+test.run('spirit/element/fstat.js is there', 0.2, function () {
+  // the box: "It replaces fileViewer, which is renamed and trimmed into it, then deleted, its users naming fstat; mediaViewer goes too (Q7)"
+  return (fs.existsSync(FILE)) ? true : 'no spirit/element/fstat.js';
+}, 1000);
+test.run('spirit/element/fileViewer.js is gone', 0.2, function () {
+  return (!fs.existsSync(path.join(RUN, 'spirit', 'element', 'fileViewer.js'))) ? true : 'spirit/element/fileViewer.js is still there';
+}, 1000);
+test.run('spirit/element/mediaViewer.js is gone', 0.2, function () {
+  return (!fs.existsSync(path.join(RUN, 'spirit', 'element', 'mediaViewer.js'))) ? true : 'spirit/element/mediaViewer.js is still there';
+}, 1000);
+test.run('no code names fileViewer', 0.2, function () {
+  naming = codeNaming(/fileViewer/);
+  return (!naming.length) ? true : 'naming it: ' + short(naming);
+}, 1000);
+test.run('no code loads the mediaViewer element', 0.2, function () {
+  media = codeNaming(/spirit\/element\/mediaViewer|element\.mediaViewer\b/);
+  return (!media.length) ? true : 'loading it: ' + short(media);
+}, 1000);
+test.run('its users load spirit/element/fstat.js', 0.2, function () {
+  return (codeNaming(/spirit\/element\/fstat\.js/).length > 0) ? true : 'no code loads spirit/element/fstat.js';
+}, 1000);
+test.run('its code names neither the old shell, the owner app nor Open with', 0.2, function () {
+  // the box: "It asks nothing of the old shell, so the app a file belongs to and Open with are not in it (Q9)"
+  own = code(FILE);
+  return (!!own && !/\.shell\b|renderAppOfFile|renderOpenWith|launcherId|open-with|owner-app/.test(own)) ? true : 'fstat.js names one of them';
+}, 1000);
+test.run('it puts fstat on window.spirit.element, with create, read, mimeOf and kindOf, as fileViewer had them', 0.2, function () {
+  w = world();
+  V = w.E;
+  return (!w.error && !!V && ['create', 'read', 'mimeOf', 'kindOf'].every(function (k) { return typeof V[k] === 'function'; })) ? true : 'fstat: ' + short(w.error ? String(w.error) : V && Object.keys(V));
+}, 1000);
+test.run('mimeOf reads the extension, case ignored; none is application/octet-stream', 0.2, function () {
+  // mimeOf and kindOf, as they were
+  return (V.mimeOf('a/b.MD') === 'text/markdown' && V.mimeOf('noext') === 'application/octet-stream') ? true : 'md ' + V.mimeOf('a/b.MD') + ', none ' + V.mimeOf('noext');
+}, 1000);
+test.run('kindOf: image, audio, video, code (text, javascript, json), or null', 0.2, function () {
+  kinds = { 'image/png': 'image', 'audio/mpeg': 'audio', 'video/mp4': 'video', 'text/markdown': 'code', 'application/javascript': 'code', 'application/json': 'code', 'application/octet-stream': null };
+  return (Object.keys(kinds).every(function (m) { return V.kindOf(m) === kinds[m]; })) ? true : 'kinds: ' + short(Object.keys(kinds).map(function (m) { return V.kindOf(m); }));
+}, 1000);
+test.run('on a face the sealed link answers it, a leading slash dropped, each piece handed on', 0.2, async function () {
+  // read: through the link on a face, by the page's fetch at home, as it was
+  viaLink = world({ link: true });
+  pieces = [];
+  r1 = await viaLink.E.read('/notes.md', function (p) { pieces.push(p); });
+  return (viaLink.fetched[0] && viaLink.fetched[0][0] === 'link' && viaLink.fetched[0][1] === 'notes.md' && r1.status === 200 && pieces.length === 1) ? true : 'fetched: ' + short(viaLink.fetched);
+}, 1000);
+test.run('at home the node\'s own GET, streamed: each chunk handed on, the bytes joined', 0.2, async function () {
+  seen = [];
+  r2 = await V.read('docs/a b.md', function (p) { seen.push(p.length); });
+  return (w.fetched[0] && w.fetched[0][1] === '/docs/a%20b.md' && r2.status === 200 && r2.bytes.length === 3 && short(seen) === short([2, 1])) ? true : 'fetched ' + short(w.fetched) + ', chunks ' + short(seen);
+}, 1000);
+test.run('it asks fs.stat for the file, and no annotations: they are the node\'s only', 0.2, async function () {
+  // create: the facts asked, no annotations (goal/G43.20), the old shell asked nothing
   V.create(box(), { path: 'docs/a.md' });
   await settle();
-  ok(w.asked.some(function (a) { return a[0] === 'stat' && a[1] === 'docs/a.md'; }) && !w.asked.some(function (a) { return a[0] === 'annotations'; }), 'it asks fs.stat for the file, and no annotations: they are the node\'s only', 'asked: ' + short(w.asked));
-  ok(w.shell.length === 0, 'with an old shell on the page it asks it nothing: no owner app, no Open with', 'asked of the old shell: ' + short(w.shell));
-}()).then(function () { test.reportSuccessFailureCount(); },
-  function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); });
+  return (w.asked.some(function (a) { return a[0] === 'stat' && a[1] === 'docs/a.md'; }) && !w.asked.some(function (a) { return a[0] === 'annotations'; })) ? true : 'asked: ' + short(w.asked);
+}, 1000);
+test.run('with an old shell on the page it asks it nothing: no owner app, no Open with', 0.2, function () {
+  return (w.shell.length === 0) ? true : 'asked of the old shell: ' + short(w.shell);
+}, 1000);

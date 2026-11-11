@@ -12,7 +12,6 @@ const RUN = path.resolve(__dirname, '../../..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const FILE = path.join(__dirname, '..', 'changeMyLabel.js');
 
-function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 const tick = function () { return new Promise(function (r) { setImmediate(r); }); };
 const settle = async function () { for (let i = 0; i < 20; i++) await tick(); };
@@ -100,81 +99,124 @@ function world(answer) {
 }
 const stored = function (name, args) { return { status: 200, body: { ok: true, name: String(args.name).trim() } }; };
 
-test.startTest('changeMyLabel.js: the node\'s name, changed');
-
-(async function () {
-  ok(fs.existsSync(FILE), 'spirit/element/changeMyLabel.js exists', 'there is no spirit/element/changeMyLabel.js');
-  if (!fs.existsSync(FILE)) return;
-  const w = world(stored);
-  ok(!!w.E.changeMyLabel && typeof w.E.changeMyLabel.create === 'function', 'it adds changeMyLabel.create to window.spirit.element', 'elements: ' + short(Object.keys(w.E)));
-  if (!w.E.changeMyLabel) return;
-  ok(w.required.indexOf('spirit/element/fieldInput.js') !== -1, 'it loads fieldInput itself (goal/G41.3)', 'required: ' + short(w.required));
-
-  test.subHeading('the field, marked with its rule (rule/12)');
-  const host = node('host');
-  const el = w.E.changeMyLabel.create(host);
+// What the tests make, shared by the tests after them.
+let w, host, el, input, rf, save, left, said, inSpan, spanText, nameBefore, c, N, r, h2, i2, s2;
+test.run('spirit/element/changeMyLabel.js exists', 0.2, function () {
+  return (fs.existsSync(FILE)) ? true : 'there is no spirit/element/changeMyLabel.js';
+}, 1000);
+test.run('it adds changeMyLabel.create to window.spirit.element', 0.2, function () {
+  w = world(stored);
+  return (!!w.E.changeMyLabel && typeof w.E.changeMyLabel.create === 'function') ? true : 'elements: ' + short(Object.keys(w.E));
+}, 1000);
+test.run('it loads fieldInput itself (goal/G41.3)', 0.2, function () {
+  return (w.required.indexOf('spirit/element/fieldInput.js') !== -1) ? true : 'required: ' + short(w.required);
+}, 1000);
+test.run('its input is marked data-field="label"', 0.2, async function () {
+  // the field, marked with its rule (rule/12)
+  host = node('host');
+  el = w.E.changeMyLabel.create(host);
   await settle();
-  const input = host.querySelector('[data-field="label"]');
-  const rf = w.forms[0];
+  input = host.querySelector('[data-field="label"]');
+  rf = w.forms[0];
   // Since goal/G41.27 its Save is the rowForm's button.
-  const save = rf ? rf.button : host.querySelector('[data-label="save"]');
-  const left = host.querySelector('[data-label="left"]');
-  const said = host.querySelector('[data-label="said"]');
-  ok(!!input, 'its input is marked data-field="label"', 'markup: ' + short(host.innerHTML));
-
-  test.subHeading('its form, a rowForm: ✏️ "Name" [name-input] [Save] (goal/G41.27)');
+  save = rf ? rf.button : host.querySelector('[data-label="save"]');
+  left = host.querySelector('[data-label="left"]');
+  said = host.querySelector('[data-label="said"]');
+  return (!!input) ? true : 'markup: ' + short(host.innerHTML);
+}, 1000);
+test.run('it loads the rowForm itself (rule/26)', 0.2, function () {
+  // its form, a rowForm: ✏️ "Name" [name-input] [Save] (goal/G41.27)
   // Andy, on G41.27: "Info app:\n\n[✏️] \"Name\" [name-input] [Save]\n\nthis might be in the changeMyLabel element....".
   // The box: "spirit.element.spirit.element.rowForm.create(container, { icon, button }) -> { root, span, button }", "The mounter drops
   // its form elements into span and wires the button itself", and "a line saying what a press did (a refusal, a result)
   // is the mounter's, below the bubble, not in it."
-  ok(w.required.indexOf('spirit/element/rowForm.js') !== -1, 'it loads the rowForm itself (rule/26)', 'required: ' + short(w.required));
-  ok(w.forms.length === 1 && rf.opts.icon === '✏️' && rf.opts.button === 'Save' && under(host).indexOf(rf.root) !== -1, 'its form is one rowForm in its host, its icon ✏️ and its button Save', 'rowForms: ' + short(w.forms.map(function (f) { return f.opts; })));
-  const inSpan = rf ? under(rf.span) : [];
-  const spanText = rf ? (String(rf.span.innerHTML).replace(/<[^>]*>/g, ' ') + ' ' + inSpan.map(function (k) { return k.textContent || ''; }).join(' ')).replace(/\s+/g, ' ').trim() : '';
-  const nameBefore = rf ? (rf.span.innerHTML.indexOf('Name') !== -1 && rf.span.innerHTML.indexOf('Name') < rf.span.innerHTML.indexOf('data-field="label"')) ||
+  return (w.required.indexOf('spirit/element/rowForm.js') !== -1) ? true : 'required: ' + short(w.required);
+}, 1000);
+test.run('its form is one rowForm in its host, its icon ✏️ and its button Save', 0.2, function () {
+  return (w.forms.length === 1 && rf.opts.icon === '✏️' && rf.opts.button === 'Save' && under(host).indexOf(rf.root) !== -1) ? true : 'rowForms: ' + short(w.forms.map(function (f) { return f.opts; }));
+}, 1000);
+test.run('its span says Name, then holds the name input, and nothing else', 0.2, function () {
+  inSpan = rf ? under(rf.span) : [];
+  spanText = rf ? (String(rf.span.innerHTML).replace(/<[^>]*>/g, ' ') + ' ' + inSpan.map(function (k) { return k.textContent || ''; }).join(' ')).replace(/\s+/g, ' ').trim() : '';
+  nameBefore = rf ? (rf.span.innerHTML.indexOf('Name') !== -1 && rf.span.innerHTML.indexOf('Name') < rf.span.innerHTML.indexOf('data-field="label"')) ||
     (rf.span.kids.findIndex(function (k) { return /\bName\b/.test(k.textContent || ''); }) !== -1 && rf.span.kids.findIndex(function (k) { return /\bName\b/.test(k.textContent || ''); }) < rf.span.kids.findIndex(function (k) { return k === input || under(k).indexOf(input) !== -1; })) : false;
-  ok(!!rf && inSpan.indexOf(input) !== -1 && spanText === 'Name' && nameBefore && !inSpan.some(function (k) { return /^<button|^<select/.test(k.tag) || (/^<input/.test(k.tag) && k !== input); }),
-    'its span says Name, then holds the name input, and nothing else', 'span: ' + short(spanText) + ', input in it ' + (inSpan.indexOf(input) !== -1) + ', Name first ' + nameBefore);
-  ok(!!rf && !host.querySelector('[data-label="save"]') && !/<button/.test(host.innerHTML), 'its Save is the rowForm\'s button, and it draws no Save of its own', 'markup: ' + short(host.innerHTML));
-  ok(!!rf && !!left && !!said && under(rf.root).indexOf(left) === -1 && under(rf.root).indexOf(said) === -1, 'its bytes left and its message stand below the bubble, not in it', 'in the bubble: ' + short([rf && under(rf.root).indexOf(left) !== -1, rf && under(rf.root).indexOf(said) !== -1]));
-  ok(!!save && !!left && !!said, 'it has its Save, its bytes left and its message', 'markup: ' + short(host.innerHTML));
-  if (!input || !save || !left || !said) return;
-  ok(w.attached.some(function (a) { return a.input === input && a.rule === 'name'; }), 'the input is held at its byte limit by fieldInput, the name rule', 'attached: ' + short(w.attached.map(function (a) { return a.rule; })));
-
-  test.subHeading('it shows what the node holds, and the bytes left');
+  return (!!rf && inSpan.indexOf(input) !== -1 && spanText === 'Name' && nameBefore && !inSpan.some(function (k) { return /^<button|^<select/.test(k.tag) || (/^<input/.test(k.tag) && k !== input); })) ? true : 'span: ' + short(spanText) + ', input in it ' + (inSpan.indexOf(input) !== -1) + ', Name first ' + nameBefore;
+}, 1000);
+test.run('its Save is the rowForm\'s button, and it draws no Save of its own', 0.2, function () {
+  return (!!rf && !host.querySelector('[data-label="save"]') && !/<button/.test(host.innerHTML)) ? true : 'markup: ' + short(host.innerHTML);
+}, 1000);
+test.run('its bytes left and its message stand below the bubble, not in it', 0.2, function () {
+  return (!!rf && !!left && !!said && under(rf.root).indexOf(left) === -1 && under(rf.root).indexOf(said) === -1) ? true : 'in the bubble: ' + short([rf && under(rf.root).indexOf(left) !== -1, rf && under(rf.root).indexOf(said) !== -1]);
+}, 1000);
+test.run('it has its Save, its bytes left and its message', 0.2, function () {
+  return (!!save && !!left && !!said) ? true : 'markup: ' + short(host.innerHTML);
+}, 1000);
+test.run('the input is held at its byte limit by fieldInput, the name rule', 0.2, function () {
+  return (w.attached.some(function (a) { return a.input === input && a.rule === 'name'; })) ? true : 'attached: ' + short(w.attached.map(function (a) { return a.rule; }));
+}, 1000);
+test.run('set(value) puts the stored name in the field', 0.2, function () {
+  // it shows what the node holds, and the bytes left
   el.set('Andy');
-  ok(input.value === 'Andy', 'set(value) puts the stored name in the field', 'value: ' + input.value);
-  ok(/60 left/.test(left.textContent), 'the bytes left are counted in bytes as typed', 'left: ' + left.textContent);
-  input.value = 'Andy 😀'; input.fire('input');
-  ok(/55 left/.test(left.textContent), 'an emoji costs four bytes', 'left: ' + left.textContent);
-
-  test.subHeading('Save is refused while the rule says no, and says why');
-  input.value = '   '; input.fire('input'); save.fire('click'); await settle();
-  ok(w.calls.length === 0 && said.textContent.length > 0, 'an empty name never reaches the wire, and the field says why', 'calls ' + w.calls.length + ', said: ' + said.textContent);
-
-  test.subHeading('Save asks the node, and the field shows what it stored (rule/19)');
-  input.value = '  Bob  '; input.fire('input'); save.fire('click'); await settle();
-  const c = w.calls[0];
-  ok(c && c.name === 'node.setName' && c.args.name === '  Bob  ', 'Save asks node.setName with the field as typed', 'calls: ' + short(w.calls));
-  ok(input.value === 'Bob', 'the field then shows the name the node stored', 'value: "' + input.value + '"');
-  ok(/saved/.test(said.textContent), 'and it says saved', 'said: ' + said.textContent);
-
-  test.subHeading('what it changes, it listens for: the node card in the node family\'s cache (goal/G41.28)');
-  const N = ((w.win.spirit.data || {}).node || {}).data;
-  ok((w.managers || []).indexOf('node') !== -1 && !!N && !!N.card.get() && N.card.get().name === 'Bob', 'it loads the node manager, and the name the node stored is kept in ((spirit.data || {}).node || {}).data\'s card', 'managers: ' + short(w.managers) + ', card ' + short(N && N.card.get()));
-  N.card.keep({ name: 'Eve' }); await settle();
-  ok(input.value === 'Eve', 'a name changed in the card, from elsewhere, redraws the field', 'value: "' + input.value + '"');
-  input.value = 'Carl'; input.fire('keydown', { key: 'Enter', preventDefault: function () {} }); await settle();
-  ok(w.calls.length === 2 && w.calls[1].args.name === 'Carl', 'Enter saves as Save does', 'calls: ' + short(w.calls.map(function (x) { return x.args; })));
-
-  test.subHeading('a refusal is said, and the field keeps what was typed');
-  const r = world(function () { return { status: 200, body: { ok: false, error: 'name reserved' } }; });
-  const h2 = node('host');
+  return (input.value === 'Andy') ? true : 'value: ' + input.value;
+}, 1000);
+test.run('the bytes left are counted in bytes as typed', 0.2, function () {
+  return (/60 left/.test(left.textContent)) ? true : 'left: ' + left.textContent;
+}, 1000);
+test.run('an emoji costs four bytes', 0.2, function () {
+  input.value = 'Andy 😀';
+  input.fire('input');
+  return (/55 left/.test(left.textContent)) ? true : 'left: ' + left.textContent;
+}, 1000);
+test.run('an empty name never reaches the wire, and the field says why', 0.2, async function () {
+  // Save is refused while the rule says no, and says why
+  input.value = '   ';
+  input.fire('input');
+  save.fire('click');
+  await settle();
+  return (w.calls.length === 0 && said.textContent.length > 0) ? true : 'calls ' + w.calls.length + ', said: ' + said.textContent;
+}, 1000);
+test.run('Save asks node.setName with the field as typed', 0.2, async function () {
+  // Save asks the node, and the field shows what it stored (rule/19)
+  input.value = '  Bob  ';
+  input.fire('input');
+  save.fire('click');
+  await settle();
+  c = w.calls[0];
+  return (c && c.name === 'node.setName' && c.args.name === '  Bob  ') ? true : 'calls: ' + short(w.calls);
+}, 1000);
+test.run('the field then shows the name the node stored', 0.2, function () {
+  return (input.value === 'Bob') ? true : 'value: "' + input.value + '"';
+}, 1000);
+test.run('and it says saved', 0.2, function () {
+  return (/saved/.test(said.textContent)) ? true : 'said: ' + said.textContent;
+}, 1000);
+test.run('it loads the node manager, and the name the node stored is kept in ((spirit.data || {}).node || {}).data\'s card', 0.2, function () {
+  // what it changes, it listens for: the node card in the node family's cache (goal/G41.28)
+  N = ((w.win.spirit.data || {}).node || {}).data;
+  return ((w.managers || []).indexOf('node') !== -1 && !!N && !!N.card.get() && N.card.get().name === 'Bob') ? true : 'managers: ' + short(w.managers) + ', card ' + short(N && N.card.get());
+}, 1000);
+test.run('a name changed in the card, from elsewhere, redraws the field', 0.2, async function () {
+  N.card.keep({ name: 'Eve' });
+  await settle();
+  return (input.value === 'Eve') ? true : 'value: "' + input.value + '"';
+}, 1000);
+test.run('Enter saves as Save does', 0.2, async function () {
+  input.value = 'Carl';
+  input.fire('keydown', { key: 'Enter', preventDefault: function () {} });
+  await settle();
+  return (w.calls.length === 2 && w.calls[1].args.name === 'Carl') ? true : 'calls: ' + short(w.calls.map(function (x) { return x.args; }));
+}, 1000);
+test.run('the node\'s refusal is said beside the field', 0.2, async function () {
+  // a refusal is said, and the field keeps what was typed
+  r = world(function () { return { status: 200, body: { ok: false, error: 'name reserved' } }; });
+  h2 = node('host');
   r.E.changeMyLabel.create(h2);
   await settle();
-  const i2 = h2.querySelector('[data-field="label"]');
-  const s2 = r.forms[0] ? r.forms[0].button : h2.querySelector('[data-label="save"]');
-  i2.value = 'Dana'; i2.fire('input'); s2.fire('click'); await settle();
-  ok(/name reserved/.test(h2.querySelector('[data-label="said"]').textContent) && i2.value === 'Dana', 'the node\'s refusal is said beside the field', 'said: ' + h2.querySelector('[data-label="said"]').textContent);
-}()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
-  function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });
+  i2 = h2.querySelector('[data-field="label"]');
+  s2 = r.forms[0] ? r.forms[0].button : h2.querySelector('[data-label="save"]');
+  i2.value = 'Dana';
+  i2.fire('input');
+  s2.fire('click');
+  await settle();
+  return (/name reserved/.test(h2.querySelector('[data-label="said"]').textContent) && i2.value === 'Dana') ? true : 'said: ' + h2.querySelector('[data-label="said"]').textContent;
+}, 1000);

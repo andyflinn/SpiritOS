@@ -19,7 +19,8 @@ hands it; given none, all of them.
 - **An element finds its parts inside its own container, never by id across the page**: in its code, comments left out,
   no `document.getElementById`, `document.querySelector`, `document.querySelectorAll`, or `document.getElementsBy*`
   (class name, tag name, name). A lookup inside a container (`container.querySelector`) is the way.
-- Each lookup across the page is its own check, named by its file and line.
+- Each lookup across the page is named by its file and line in what its one check answers (a test's title is steady:
+  no path or line built into it, `../../test/spirit-sibling-titleRules.js`).
 - **Never vacuous**: run over the reach, it must have read more than 10 modules; handed a file outside its reach, it is
   red.
 

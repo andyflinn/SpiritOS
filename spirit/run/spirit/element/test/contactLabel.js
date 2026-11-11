@@ -43,8 +43,8 @@ window.spirit.ready = Promise.resolve({ contact: {
     return labelRefuse ? Promise.reject(new Error(labelRefuse)) : Promise.resolve(labelAnswer); },
 } });
 window.spirit.fieldRules = { problem: function (t) { return t.length > 8 ? 'too long' : ''; } };
-vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
-const made = window.spirit.element.spirit.element.contactLabel;
+// The element, once the first test has run its file.
+let made = null;
 // Box v23: "every element gets a container and appends itself": each label here is made into a container of its own.
 const make = function (o) { return made.create(node('div'), o); };
 const tick = function () { return new Promise(function (r) { setTimeout(r, 0); }); };
@@ -54,106 +54,140 @@ const inputOf = function (root) { return root.children.filter(function (c) { ret
 const gets = function (key) { return asked.filter(function (a) { return a.verb === 'contact.get' && a.key === key; }).length; };
 const rename = function (detail) { doc.fire('contact.rename', { detail: detail }); };
 
-(async function () {
-  test.startTest('contactLabel.js: a contact\'s name by key');
-
-  test.subHeading('the element');
-  if (made && typeof made.create === 'function' && !('createContactLabel' in window.spirit.element))
-    test.check('it registers spirit.element.spirit.element.contactLabel with a create, and createContactLabel no more');
-  else { test.fail('elements: ' + JSON.stringify(Object.keys(window.spirit.element))); test.reportSuccessFailureCount(); return; }
-  const box = node('div');
-  const boxed = made.create(box, { key: 'KA', caption: 'Anna' });
-  if (box.children.length === 1 && box.children[0] === boxed && boxed.parentNode === box) test.check('create(container, options) appends the label to its container and answers it');
-  else test.fail('container holds ' + box.children.length + (box.children[0] === boxed ? ', the label' : ', not the label'));
-  const plain = make({ key: 'KA', caption: 'Anna', className: 'x' });
-  const edit = make({ key: 'KA', caption: 'Anna', editable: true });
-  if (plain.tagName === 'span' && plain.className === 'contact-label x' && edit.className === 'contact-label contact-label-editable')
-    test.check('a span, contact-label, -editable in mode 2, the caller\'s class added');
-  else test.fail('classes: ' + plain.className + ' / ' + edit.className);
-  if (plain.children[0].className === 'contact-label-text' && plain.children[1].className === 'contact-label-error' && textOf(plain) === 'Anna')
-    test.check('a text span showing the caption given, and an error span');
-  else test.fail('children: ' + JSON.stringify(plain.children.map(function (c) { return c.className; })));
-
-  test.subHeading('given no caption it asks the book, once per key, blank until it answers');
-  const b1 = make({ key: 'KB' }); const b2 = make({ key: 'KB' });
-  if (textOf(b1) === '' && textOf(b2) === '') test.check('blank while unanswered, never the key');
-  else test.fail('before the answer: ' + textOf(b1));
+// What the tests make, shared by the tests after them.
+let box, boxed, plain, edit, b1, b2, b3, a2, unknown, failed, placed, waiting, listening, input, n, lab;
+test.run('it registers spirit.element.spirit.element.contactLabel with a create, and createContactLabel no more', 0.2, function () {
+  // the element
+  vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
+  made = window.spirit.element.spirit.element.contactLabel;
+  return (made && typeof made.create === 'function' && !('createContactLabel' in window.spirit.element)) ? true : 'elements: ' + JSON.stringify(Object.keys(window.spirit.element));
+}, 1000);
+test.run('create(container, options) appends the label to its container and answers it', 0.2, function () {
+  box = node('div');
+  boxed = made.create(box, { key: 'KA', caption: 'Anna' });
+  return (box.children.length === 1 && box.children[0] === boxed && boxed.parentNode === box) ? true : 'container holds ' + box.children.length + (box.children[0] === boxed ? ', the label' : ', not the label');
+}, 1000);
+test.run('a span, contact-label, -editable in mode 2, the caller\'s class added', 0.2, function () {
+  plain = make({ key: 'KA', caption: 'Anna', className: 'x' });
+  edit = make({ key: 'KA', caption: 'Anna', editable: true });
+  return (plain.tagName === 'span' && plain.className === 'contact-label x' && edit.className === 'contact-label contact-label-editable') ? true : 'classes: ' + plain.className + ' / ' + edit.className;
+}, 1000);
+test.run('a text span showing the caption given, and an error span', 0.2, function () {
+  return (plain.children[0].className === 'contact-label-text' && plain.children[1].className === 'contact-label-error' && textOf(plain) === 'Anna') ? true : 'children: ' + JSON.stringify(plain.children.map(function (c) { return c.className; }));
+}, 1000);
+test.run('blank while unanswered, never the key', 0.2, function () {
+  // given no caption it asks the book, once per key, blank until it answers
+  b1 = make({ key: 'KB' });
+  b2 = make({ key: 'KB' });
+  return (textOf(b1) === '' && textOf(b2) === '') ? true : 'before the answer: ' + textOf(b1);
+}, 1000);
+test.run('the book\'s caption, contact.get asked once for two labels', 0.2, async function () {
   await tick();
-  if (textOf(b1) === 'Bert' && textOf(b2) === 'Bert' && gets('KB') === 1) test.check('the book\'s caption, contact.get asked once for two labels');
-  else test.fail('after the answer: ' + JSON.stringify({ text: textOf(b1), gets: gets('KB') }));
-  const b3 = make({ key: 'KB' });
-  if (textOf(b3) === 'Bert' && gets('KB') === 1) test.check('a name already known draws at once, asking nothing');
-  else test.fail('a third label: ' + JSON.stringify({ text: textOf(b3), gets: gets('KB') }));
-  const a2 = make({ key: 'KA' });
-  if (textOf(a2) === 'Anna' && gets('KA') === 0) test.check('a caption given once is known to every later label of that key');
-  else test.fail('KA after a given caption: ' + textOf(a2));
-  const unknown = make({ key: 'KU' }); const failed = make({ key: 'KX' });
+  return (textOf(b1) === 'Bert' && textOf(b2) === 'Bert' && gets('KB') === 1) ? true : 'after the answer: ' + JSON.stringify({ text: textOf(b1), gets: gets('KB') });
+}, 1000);
+test.run('a name already known draws at once, asking nothing', 0.2, function () {
+  b3 = make({ key: 'KB' });
+  return (textOf(b3) === 'Bert' && gets('KB') === 1) ? true : 'a third label: ' + JSON.stringify({ text: textOf(b3), gets: gets('KB') });
+}, 1000);
+test.run('a caption given once is known to every later label of that key', 0.2, function () {
+  a2 = make({ key: 'KA' });
+  return (textOf(a2) === 'Anna' && gets('KA') === 0) ? true : 'KA after a given caption: ' + textOf(a2);
+}, 1000);
+test.run('when the book has no name, or the ask fails, the key shows', 0.2, async function () {
+  unknown = make({ key: 'KU' });
+  failed = make({ key: 'KX' });
   await tick();
-  if (textOf(unknown) === 'KU' && textOf(failed) === 'KX') test.check('when the book has no name, or the ask fails, the key shows');
-  else test.fail('no name: ' + JSON.stringify([textOf(unknown), textOf(failed)]));
-  make({ key: 'KU' }); await tick();
-  if (gets('KU') === 2) test.check('a key the book could not name is asked again by the next label');
-  else test.fail('KU asked ' + gets('KU') + ' times');
-
-  test.subHeading('both modes hear a rename');
+  return (textOf(unknown) === 'KU' && textOf(failed) === 'KX') ? true : 'no name: ' + JSON.stringify([textOf(unknown), textOf(failed)]);
+}, 1000);
+test.run('a key the book could not name is asked again by the next label', 0.2, async function () {
+  make({ key: 'KU' });
+  await tick();
+  return (gets('KU') === 2) ? true : 'KU asked ' + gets('KU') + ' times';
+}, 1000);
+test.run('a rename of its key redraws it; other keys stand', 0.2, function () {
+  // both modes hear a rename
   rename({ key: 'KB', caption: 'Bertie' });
-  if (textOf(b1) === 'Bertie' && textOf(b3) === 'Bertie' && textOf(plain) === 'Anna') test.check('a rename of its key redraws it; other keys stand');
-  else test.fail('after a rename: ' + JSON.stringify([textOf(b1), textOf(plain)]));
-  if (textOf(make({ key: 'KB' })) === 'Bertie') test.check('a rename is known to labels made after it');
-  else test.fail('a label after the rename');
-  rename({ key: 'KB', caption: 7 }); rename(null);
-  if (textOf(b1) === 'Bertie') test.check('a rename without a text caption is ignored');
-  else test.fail('a bad rename drew ' + textOf(b1));
-  const placed = make({ key: 'KP', caption: 'P' });
-  const waiting = make({ key: 'KP', caption: 'P' });
-  placed.isConnected = true; rename({ key: 'KP', caption: 'P2' });
-  placed.isConnected = false; waiting.isConnected = false; rename({ key: 'KP', caption: 'P3' });
-  if (textOf(placed) === 'P2' && textOf(waiting) === 'P3') test.check('a label that left the page stops listening; one never placed keeps listening');
-  else test.fail('after leaving: ' + JSON.stringify([textOf(placed), textOf(waiting)]));
-  const listening = (doc.listeners['contact.rename'] || []).length;
+  return (textOf(b1) === 'Bertie' && textOf(b3) === 'Bertie' && textOf(plain) === 'Anna') ? true : 'after a rename: ' + JSON.stringify([textOf(b1), textOf(plain)]);
+}, 1000);
+test.run('a rename is known to labels made after it', 0.2, function () {
+  return (textOf(make({ key: 'KB' })) === 'Bertie') ? true : 'a label after the rename';
+}, 1000);
+test.run('a rename without a text caption is ignored', 0.2, function () {
+  rename({ key: 'KB', caption: 7 });
+  rename(null);
+  return (textOf(b1) === 'Bertie') ? true : 'a bad rename drew ' + textOf(b1);
+}, 1000);
+test.run('a label that left the page stops listening; one never placed keeps listening', 0.2, function () {
+  placed = make({ key: 'KP', caption: 'P' });
+  waiting = make({ key: 'KP', caption: 'P' });
+  placed.isConnected = true;
+  rename({ key: 'KP', caption: 'P2' });
+  placed.isConnected = false;
+  waiting.isConnected = false;
+  rename({ key: 'KP', caption: 'P3' });
+  return (textOf(placed) === 'P2' && textOf(waiting) === 'P3') ? true : 'after leaving: ' + JSON.stringify([textOf(placed), textOf(waiting)]);
+}, 1000);
+test.run('the left label\'s listener is off document', 0.2, function () {
+  listening = (doc.listeners['contact.rename'] || []).length;
   rename({ key: 'KP', caption: 'P4' });
-  if ((doc.listeners['contact.rename'] || []).length === listening && textOf(placed) === 'P2') test.check('the left label\'s listener is off document');
-  else test.fail('listeners: ' + listening);
-
-  test.subHeading('mode 1 cannot be edited; mode 2 opens an input on click');
-  if (!(plain.listeners.click || []).length) test.check('a display label has no click');
-  else test.fail('a display label listens to clicks');
+  return ((doc.listeners['contact.rename'] || []).length === listening && textOf(placed) === 'P2') ? true : 'listeners: ' + listening;
+}, 1000);
+test.run('a display label has no click', 0.2, function () {
+  // mode 1 cannot be edited; mode 2 opens an input on click
+  return (!(plain.listeners.click || []).length) ? true : 'a display label listens to clicks';
+}, 1000);
+test.run('a click opens an input holding the caption, before the error span, the text hidden', 0.2, function () {
   edit.fire('click');
-  const input = inputOf(edit);
-  if (input && input.className === 'contact-label-input' && input.value === 'Anna' && edit.children[0].hidden === true && edit.children.indexOf(input) === 1)
-    test.check('a click opens an input holding the caption, before the error span, the text hidden');
-  else test.fail('after a click: ' + JSON.stringify(edit.children.map(function (c) { return c.tagName; })));
+  input = inputOf(edit);
+  return (input && input.className === 'contact-label-input' && input.value === 'Anna' && edit.children[0].hidden === true && edit.children.indexOf(input) === 1) ? true : 'after a click: ' + JSON.stringify(edit.children.map(function (c) { return c.tagName; }));
+}, 1000);
+test.run('a second click opens no second input', 0.2, function () {
   edit.fire('click');
-  if (edit.children.filter(function (c) { return c.tagName === 'input'; }).length === 1) test.check('a second click opens no second input');
-  else test.fail('two inputs');
+  return (edit.children.filter(function (c) { return c.tagName === 'input'; }).length === 1) ? true : 'two inputs';
+}, 1000);
+test.run('Escape closes it, the text back', 0.2, function () {
   input.fire('keydown', { key: 'Escape' });
-  if (!inputOf(edit) && edit.children[0].hidden === false) test.check('Escape closes it, the text back');
-  else test.fail('after Escape');
-
-  test.subHeading('mode 2 saves on Enter: checked, asked, drawn');
+  return (!inputOf(edit) && edit.children[0].hidden === false) ? true : 'after Escape';
+}, 1000);
+test.run('an empty name asks nothing, and the input stays', 0.2, async function () {
+  // mode 2 saves on Enter: checked, asked, drawn
   edit.fire('click');
-  let n = asked.length;
-  inputOf(edit).value = '   '; inputOf(edit).fire('keydown', { key: 'Enter' }); await tick();
-  if (asked.length === n && inputOf(edit)) test.check('an empty name asks nothing, and the input stays');
-  else test.fail('an empty name asked');
-  inputOf(edit).value = 'far too long'; inputOf(edit).fire('keydown', { key: 'Enter' }); await tick();
-  if (asked.length === n && whyOf(edit) === 'too long') test.check('a name the rule refuses is said, and not asked');
-  else test.fail('a refused name: ' + whyOf(edit));
+  n = asked.length;
+  inputOf(edit).value = '   ';
+  inputOf(edit).fire('keydown', { key: 'Enter' });
+  await tick();
+  return (asked.length === n && inputOf(edit)) ? true : 'an empty name asked';
+}, 1000);
+test.run('a name the rule refuses is said, and not asked', 0.2, async function () {
+  inputOf(edit).value = 'far too long';
+  inputOf(edit).fire('keydown', { key: 'Enter' });
+  await tick();
+  return (asked.length === n && whyOf(edit) === 'too long') ? true : 'a refused name: ' + whyOf(edit);
+}, 1000);
+test.run('a refusal from the node is said, the name kept', 0.2, async function () {
   labelRefuse = 'node says no';
-  inputOf(edit).value = 'Ann'; inputOf(edit).fire('keydown', { key: 'Enter' }); await tick();
-  if (whyOf(edit) === 'node says no' && inputOf(edit) && textOf(edit) === 'Anna') test.check('a refusal from the node is said, the name kept');
-  else test.fail('a node refusal: ' + JSON.stringify([whyOf(edit), textOf(edit)]));
-  labelRefuse = null; labelAnswer = { caption: 'Annie' };
-  inputOf(edit).value = '  Ann  '; inputOf(edit).fire('keydown', { key: 'Enter' }); await tick();
-  const lab = asked[asked.length - 1];
-  if (lab.verb === 'contact.label' && lab.body.publicKey === 'KA' && lab.body.myLabel === 'Ann') test.check('a good name is trimmed and asked of contact.label by the key');
-  else test.fail('contact.label asked ' + JSON.stringify(lab));
-  if (textOf(edit) === 'Annie' && !inputOf(edit) && whyOf(edit) === '' && textOf(make({ key: 'KA' })) === 'Annie') test.check('the caption the node answers is drawn and known, the input closed, the error cleared');
-  else test.fail('after the save: ' + JSON.stringify([textOf(edit), whyOf(edit)]));
+  inputOf(edit).value = 'Ann';
+  inputOf(edit).fire('keydown', { key: 'Enter' });
+  await tick();
+  return (whyOf(edit) === 'node says no' && inputOf(edit) && textOf(edit) === 'Anna') ? true : 'a node refusal: ' + JSON.stringify([whyOf(edit), textOf(edit)]);
+}, 1000);
+test.run('a good name is trimmed and asked of contact.label by the key', 0.2, async function () {
+  labelRefuse = null;
+  labelAnswer = { caption: 'Annie' };
+  inputOf(edit).value = '  Ann  ';
+  inputOf(edit).fire('keydown', { key: 'Enter' });
+  await tick();
+  lab = asked[asked.length - 1];
+  return (lab.verb === 'contact.label' && lab.body.publicKey === 'KA' && lab.body.myLabel === 'Ann') ? true : 'contact.label asked ' + JSON.stringify(lab);
+}, 1000);
+test.run('the caption the node answers is drawn and known, the input closed, the error cleared', 0.2, function () {
+  return (textOf(edit) === 'Annie' && !inputOf(edit) && whyOf(edit) === '' && textOf(make({ key: 'KA' })) === 'Annie') ? true : 'after the save: ' + JSON.stringify([textOf(edit), whyOf(edit)]);
+}, 1000);
+test.run('an answer with no caption draws the name typed', 0.2, async function () {
   labelAnswer = {};
-  edit.fire('click'); inputOf(edit).value = 'Anja'; inputOf(edit).fire('keydown', { key: 'Enter' }); await tick();
-  if (textOf(edit) === 'Anja') test.check('an answer with no caption draws the name typed');
-  else test.fail('no caption in the answer: ' + textOf(edit));
-
-  test.reportSuccessFailureCount();
-}());
+  edit.fire('click');
+  inputOf(edit).value = 'Anja';
+  inputOf(edit).fire('keydown', { key: 'Enter' });
+  await tick();
+  return (textOf(edit) === 'Anja') ? true : 'no caption in the answer: ' + textOf(edit);
+}, 1000);

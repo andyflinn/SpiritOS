@@ -17,7 +17,6 @@ const FILE = path.join(__dirname, '..', 'rotateKey.js');
 const SRC = fs.existsSync(FILE) ? fs.readFileSync(FILE, 'utf8') : '';
 const CODE = SRC.replace(/\/\/.*$/gm, '');
 
-function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 const settle = async function () { for (let i = 0; i < 20; i++) await new Promise(function (r) { setImmediate(r); }); };
 
@@ -121,126 +120,186 @@ function world(answer) {
 }
 const rotated = function () { return { status: 200, body: { ok: true, at: 2, relays: 1 } }; };
 
-test.startTest('rotateKey.js: the rotate key dialog, an element');
-process.on('unhandledRejection', function (e) { test.fail('it threw where nothing caught it: ' + (e && e.message || e)); });
-
-(async function () {
-  ok(!!SRC, 'spirit/element/rotateKey.js is there', 'there is no spirit/element/rotateKey.js');
-  if (!SRC) return;
-
-  test.subHeading('an element mounted the new shell\'s way (goal/G43.24, requirements 7 and 8)');
-  const w = world(rotated);
+// What the tests make, shared by the tests after them.
+let w, at, E, host, made, said, missing, b, a, rot, after, slow, h2, b2, busy, no, h3, b3, again, none, h4, b4, h5,
+  b5, late, letGo, h6, m6;
+test.run('spirit/element/rotateKey.js is there', 0.2, function () {
+  return (!!SRC) ? true : 'there is no spirit/element/rotateKey.js';
+}, 1000);
+test.run('it sets spirit.element.spirit.element.rotateKey = { create }', 0.2, function () {
+  // an element mounted the new shell's way (goal/G43.24, requirements 7 and 8)
+  w = world(rotated);
   // goal/G43.32: it stands at its path.
-  const at = ((w.win.spirit.element || {}).spirit || {}).element || {};
-  const E = at.rotateKey;
-  ok(!!E && typeof E.create === 'function', 'it sets spirit.element.spirit.element.rotateKey = { create }', 'elements: ' + short(Object.keys(at)));
-  if (!E) return;
-  ok(!/\bactivateApp\b|\bspirit\.shell\b|\bcallDialog\b|\bcloseDialog\b/.test(CODE), 'no spirit.shell.activateApp, no dialog of the old shell', 'rotateKey.js still mounts or closes the old shell\'s way');
+  at = ((w.win.spirit.element || {}).spirit || {}).element || {};
+  E = at.rotateKey;
+  return (!!E && typeof E.create === 'function') ? true : 'elements: ' + short(Object.keys(at));
+}, 1000);
+test.run('no spirit.shell.activateApp, no dialog of the old shell', 0.2, function () {
+  return (!/\bactivateApp\b|\bspirit\.shell\b|\bcallDialog\b|\bcloseDialog\b/.test(CODE)) ? true : 'rotateKey.js still mounts or closes the old shell\'s way';
+}, 1000);
+test.run('it asks the node through the spirit object, spirit.node.rotateCipher, no api.verb', 0.2, function () {
   // Andy: "every fucking element gets the interfaces it needs": the node's own verb, through the spirit object, no api.verb.
-  ok(!/\.verb\s*\(/.test(CODE) && /\bnode\.rotateCipher\b/.test(CODE), 'it asks the node through the spirit object, spirit.node.rotateCipher, no api.verb', 'rotateKey.js asks through an api, or not spirit.node.rotateCipher');
-  ok(w.required.indexOf('spirit/element/armingButton.js') !== -1, 'it loads spirit/element/armingButton.js itself, through spirit.require (rule/26)', 'required: ' + short(w.required));
-
-  test.subHeading('nothing hand-rolled: the are-you-sure is the arming button\'s (goal/G41.9)');
-  ok(!/data-armed/.test(CODE), 'no data-armed of its own', 'its code still writes data-armed');
-  ok(!/armUntilElsewhere/.test(CODE), 'it calls no armUntilElsewhere itself', 'its code still calls armUntilElsewhere');
+  return (!/\.verb\s*\(/.test(CODE) && /\bnode\.rotateCipher\b/.test(CODE)) ? true : 'rotateKey.js asks through an api, or not spirit.node.rotateCipher';
+}, 1000);
+test.run('it loads spirit/element/armingButton.js itself, through spirit.require (rule/26)', 0.2, function () {
+  return (w.required.indexOf('spirit/element/armingButton.js') !== -1) ? true : 'required: ' + short(w.required);
+}, 1000);
+test.run('no data-armed of its own', 0.2, function () {
+  // nothing hand-rolled: the are-you-sure is the arming button's (goal/G41.9)
+  return (!/data-armed/.test(CODE)) ? true : 'its code still writes data-armed';
+}, 1000);
+test.run('it calls no armUntilElsewhere itself', 0.2, function () {
+  return (!/armUntilElsewhere/.test(CODE)) ? true : 'its code still calls armUntilElsewhere';
+}, 1000);
+test.run('it takes no api and hands none on', 0.2, function () {
   // Andy: "anybody can mount any element without knowing what it actually needs...." (goal/G43.24).
-  ok(!/\bapi\b/.test(CODE), 'it takes no api and hands none on', 'its code still names an api');
-  ok(!/\brkArmed\b/.test(CODE) && !/classList\.(add|remove|toggle)\(\s*['"]armed['"]/.test(CODE), 'no armed flag and no armed class of its own', 'its code still keeps an armed flag or class');
-
-  const host = node('<div>');
-  const made = E.create(host);
+  return (!/\bapi\b/.test(CODE)) ? true : 'its code still names an api';
+}, 1000);
+test.run('no armed flag and no armed class of its own', 0.2, function () {
+  return (!/\brkArmed\b/.test(CODE) && !/classList\.(add|remove|toggle)\(\s*['"]armed['"]/.test(CODE)) ? true : 'its code still keeps an armed flag or class';
+}, 1000);
+test.run('create(container), its container alone, answers { destroy() }', 0.2, async function () {
+  host = node('<div>');
+  made = E.create(host);
   await settle();
-  ok(!!made && typeof made.destroy === 'function', 'create(container), its container alone, answers { destroy() }', 'create answered ' + short(made && Object.keys(made)));
-
-  test.subHeading('its explanation first, as it is');
-  const said = words(host);
-  const missing = EXPLAINED.filter(function (l) { return said.indexOf(l) === -1; });
-  ok(!missing.length, 'it says its title, when to use it, what it does, what it costs, what it does not do, and that it is a crisis measure', 'missing: ' + short(missing) + ' in ' + short(said));
-  const b = w.button(host);
-  ok(!!b, 'and then its button', 'no button: ' + short(host.innerHTML));
-  if (!b) return;
-  ok(said.indexOf(EXPLAINED[5]) !== -1 && said.indexOf(BUTTON) > said.indexOf(EXPLAINED[5]), 'the explanation stands before the button', 'said: ' + short(said));
-
-  test.subHeading('its button, the shell\'s two-press armingButton');
-  const a = w.attached.filter(function (x) { return x.button === b; }).pop();
-  ok(!!a, 'its button is attached as an armingButton', 'attached: ' + w.attached.length);
-  if (!a) return;
-  ok(a.opts.label === BUTTON && a.opts.armedLabel === ARMED && b.textContent === BUTTON, 'it says Rotate the key, and armed Rotate the key: press again', 'label ' + short(a.opts.label) + ', armed ' + short(a.opts.armedLabel) + ', shows ' + short(b.textContent));
-  ok(!('api' in a.opts), 'the arming button is handed no api: it hears a click elsewhere itself', 'handed: ' + short(Object.keys(a.opts)));
-  ok(b.getAttribute('data-armed') === null && w.calls.length === 0, 'it starts disarmed, and nothing is rotated', 'armed ' + short(b.getAttribute('data-armed')) + ', calls ' + w.calls.length);
-  b.fire('click', { preventDefault: function () {} }); await settle();
-  ok(b.getAttribute('data-armed') === 'true' && b.textContent === ARMED && w.listening === 1, 'one press arms it: it says Rotate the key: press again, and listens for a click elsewhere', 'armed ' + short(b.getAttribute('data-armed')) + ', says ' + short(b.textContent) + ', listening ' + w.landed);
-  ok(w.calls.length === 0, 'one press rotates nothing', 'one press asked node.rotateCipher ' + w.calls.length + ' times');
-  b.disarm(); await settle();
-  ok(b.textContent === BUTTON && b.getAttribute('data-armed') === null, 'disarmed (attention moved), it says Rotate the key again', 'says ' + short(b.textContent));
-  b.fire('click', { preventDefault: function () {} }); await settle();
-  ok(w.calls.length === 0, 'and the next press only arms it again: two presses must be two presses in a row', 'asked ' + w.calls.length + ' times');
-
-  test.subHeading('the second press: one rotateCipher, the result said');
-  b.fire('click', { preventDefault: function () {} }); await settle();
-  const rot = w.calls.filter(function (c) { return c.name === 'node.rotateCipher'; });
-  ok(rot.length === 1 && rot[0].args && JSON.stringify(rot[0].args) === '{}', 'the second press asks spirit.node.rotateCipher({}) once', 'calls: ' + short(w.calls));
-  const after = words(host);
-  ok(/Rotated/.test(after) && after.indexOf('This node\'s card is now number 2, handed to 1 relay(s).') !== -1, 'it says what the node answered: Rotated, the card\'s number, and how many relays it went to', 'said: ' + short(after.slice(after.indexOf('crisis'))));
-  ok(!w.button(host), 'rotated, its button is gone: nothing to press twice again in this visit', 'a button is still drawn');
-  ok(EXPLAINED.every(function (l) { return after.indexOf(l) !== -1; }), 'and the explanation stays', 'the explanation went');
-
-  test.subHeading('while the node has not answered, the button waits');
-  const slow = world(function () { return { wait: true, body: { ok: true, at: 3, relays: 2 } }; });
-  const h2 = node('<div>');
+  return (!!made && typeof made.destroy === 'function') ? true : 'create answered ' + short(made && Object.keys(made));
+}, 1000);
+test.run('it says its title, when to use it, what it does, what it costs, what it does not do, and that it is a crisis measure', 0.2, function () {
+  // its explanation first, as it is
+  said = words(host);
+  missing = EXPLAINED.filter(function (l) { return said.indexOf(l) === -1; });
+  return (!missing.length) ? true : 'missing: ' + short(missing) + ' in ' + short(said);
+}, 1000);
+test.run('and then its button', 0.2, function () {
+  b = w.button(host);
+  return (!!b) ? true : 'no button: ' + short(host.innerHTML);
+}, 1000);
+test.run('the explanation stands before the button', 0.2, function () {
+  return (said.indexOf(EXPLAINED[5]) !== -1 && said.indexOf(BUTTON) > said.indexOf(EXPLAINED[5])) ? true : 'said: ' + short(said);
+}, 1000);
+test.run('its button is attached as an armingButton', 0.2, function () {
+  // its button, the shell's two-press armingButton
+  a = w.attached.filter(function (x) { return x.button === b; }).pop();
+  return (!!a) ? true : 'attached: ' + w.attached.length;
+}, 1000);
+test.run('it says Rotate the key, and armed Rotate the key: press again', 0.2, function () {
+  return (a.opts.label === BUTTON && a.opts.armedLabel === ARMED && b.textContent === BUTTON) ? true : 'label ' + short(a.opts.label) + ', armed ' + short(a.opts.armedLabel) + ', shows ' + short(b.textContent);
+}, 1000);
+test.run('the arming button is handed no api: it hears a click elsewhere itself', 0.2, function () {
+  return (!('api' in a.opts)) ? true : 'handed: ' + short(Object.keys(a.opts));
+}, 1000);
+test.run('it starts disarmed, and nothing is rotated', 0.2, function () {
+  return (b.getAttribute('data-armed') === null && w.calls.length === 0) ? true : 'armed ' + short(b.getAttribute('data-armed')) + ', calls ' + w.calls.length;
+}, 1000);
+test.run('one press arms it: it says Rotate the key: press again, and listens for a click elsewhere', 0.2, async function () {
+  b.fire('click', { preventDefault: function () {} });
+  await settle();
+  return (b.getAttribute('data-armed') === 'true' && b.textContent === ARMED && w.listening === 1) ? true : 'armed ' + short(b.getAttribute('data-armed')) + ', says ' + short(b.textContent) + ', listening ' + w.landed;
+}, 1000);
+test.run('one press rotates nothing', 0.2, function () {
+  return (w.calls.length === 0) ? true : 'one press asked node.rotateCipher ' + w.calls.length + ' times';
+}, 1000);
+test.run('disarmed (attention moved), it says Rotate the key again', 0.2, async function () {
+  b.disarm();
+  await settle();
+  return (b.textContent === BUTTON && b.getAttribute('data-armed') === null) ? true : 'says ' + short(b.textContent);
+}, 1000);
+test.run('and the next press only arms it again: two presses must be two presses in a row', 0.2, async function () {
+  b.fire('click', { preventDefault: function () {} });
+  await settle();
+  return (w.calls.length === 0) ? true : 'asked ' + w.calls.length + ' times';
+}, 1000);
+test.run('the second press asks spirit.node.rotateCipher({}) once', 0.2, async function () {
+  // the second press: one rotateCipher, the result said
+  b.fire('click', { preventDefault: function () {} });
+  await settle();
+  rot = w.calls.filter(function (c) { return c.name === 'node.rotateCipher'; });
+  return (rot.length === 1 && rot[0].args && JSON.stringify(rot[0].args) === '{}') ? true : 'calls: ' + short(w.calls);
+}, 1000);
+test.run('it says what the node answered: Rotated, the card\'s number, and how many relays it went to', 0.2, function () {
+  after = words(host);
+  return (/Rotated/.test(after) && after.indexOf('This node\'s card is now number 2, handed to 1 relay(s).') !== -1) ? true : 'said: ' + short(after.slice(after.indexOf('crisis')));
+}, 1000);
+test.run('rotated, its button is gone: nothing to press twice again in this visit', 0.2, function () {
+  return (!w.button(host)) ? true : 'a button is still drawn';
+}, 1000);
+test.run('and the explanation stays', 0.2, function () {
+  return (EXPLAINED.every(function (l) { return after.indexOf(l) !== -1; })) ? true : 'the explanation went';
+}, 1000);
+test.run('asked, its button is drawn disabled until the answer lands', 0.2, async function () {
+  // while the node has not answered, the button waits
+  slow = world(function () { return { wait: true, body: { ok: true, at: 3, relays: 2 } }; });
+  h2 = node('<div>');
   slow.win.spirit.element.spirit.element.rotateKey.create(h2, {});
   await settle();
-  const b2 = slow.button(h2);
-  b2.fire('click', { preventDefault: function () {} }); b2.fire('click', { preventDefault: function () {} }); await settle();
-  const busy = slow.button(h2);
-  ok(slow.calls.length === 1 && !!busy && busy.disabled === true, 'asked, its button is drawn disabled until the answer lands', 'calls ' + slow.calls.length + ', button ' + (busy ? 'disabled ' + busy.disabled : 'gone'));
+  b2 = slow.button(h2);
+  b2.fire('click', { preventDefault: function () {} });
+  b2.fire('click', { preventDefault: function () {} });
+  await settle();
+  busy = slow.button(h2);
+  return (slow.calls.length === 1 && !!busy && busy.disabled === true) ? true : 'calls ' + slow.calls.length + ', button ' + (busy ? 'disabled ' + busy.disabled : 'gone');
+}, 1000);
+test.run('and the answer, when it lands, is said', 0.2, async function () {
   if (busy) busy.fire('click', { preventDefault: function () {} });
   if (busy) busy.fire('click', { preventDefault: function () {} });
   await settle();
   if (slow.release) slow.release();
   await settle();
-  ok(slow.calls.length === 1 && /number 3, handed to 2 relay/.test(words(h2)), 'and the answer, when it lands, is said', 'calls ' + slow.calls.length + ', said ' + short(words(h2).slice(-120)));
-
-  test.subHeading('a refusal is said, and the button stays to try again');
-  const no = world(function () { return { status: 403, body: { ok: false, code: 'owner-only', error: 'owner <only>' } }; });
-  const h3 = node('<div>');
+  return (slow.calls.length === 1 && /number 3, handed to 2 relay/.test(words(h2))) ? true : 'calls ' + slow.calls.length + ', said ' + short(words(h2).slice(-120));
+}, 1000);
+test.run('the node\'s refusal is said, escaped, and nothing claims a rotation', 0.2, async function () {
+  // a refusal is said, and the button stays to try again
+  no = world(function () { return { status: 403, body: { ok: false, code: 'owner-only', error: 'owner <only>' } }; });
+  h3 = node('<div>');
   no.win.spirit.element.spirit.element.rotateKey.create(h3, {});
   await settle();
-  const b3 = no.button(h3);
-  b3.fire('click', { preventDefault: function () {} }); b3.fire('click', { preventDefault: function () {} }); await settle();
-  ok(no.calls.length === 1 && /owner &lt;only&gt;/.test(h3.innerHTML + under(h3).map(function (k) { return k.innerHTML; }).join('')) && !/Rotated/.test(words(h3)), 'the node\'s refusal is said, escaped, and nothing claims a rotation', 'said: ' + short(words(h3).slice(-120)));
-  const again = no.button(h3);
-  ok(!!again && !again.disabled && again.getAttribute('data-armed') === null && again.textContent === BUTTON, 'its button is back, disarmed', 'button: ' + short(again && { text: again.textContent, disabled: again.disabled }));
-  const none = world(function () { return { status: 0, body: null }; });
-  const h4 = node('<div>');
+  b3 = no.button(h3);
+  b3.fire('click', { preventDefault: function () {} });
+  b3.fire('click', { preventDefault: function () {} });
+  await settle();
+  return (no.calls.length === 1 && /owner &lt;only&gt;/.test(h3.innerHTML + under(h3).map(function (k) { return k.innerHTML; }).join('')) && !/Rotated/.test(words(h3))) ? true : 'said: ' + short(words(h3).slice(-120));
+}, 1000);
+test.run('its button is back, disarmed', 0.2, function () {
+  again = no.button(h3);
+  return (!!again && !again.disabled && again.getAttribute('data-armed') === null && again.textContent === BUTTON) ? true : 'button: ' + short(again && { text: again.textContent, disabled: again.disabled });
+}, 1000);
+test.run('a node that does not answer is said as no answer', 0.2, async function () {
+  none = world(function () { return { status: 0, body: null }; });
+  h4 = node('<div>');
   none.win.spirit.element.spirit.element.rotateKey.create(h4, {});
   await settle();
-  const b4 = none.button(h4);
-  b4.fire('click', { preventDefault: function () {} }); b4.fire('click', { preventDefault: function () {} }); await settle();
-  ok(/no answer/.test(words(h4)), 'a node that does not answer is said as no answer', 'said: ' + short(words(h4).slice(-80)));
-
-  test.subHeading('every create starts disarmed and without an old result');
-  const h5 = node('<div>');
+  b4 = none.button(h4);
+  b4.fire('click', { preventDefault: function () {} });
+  b4.fire('click', { preventDefault: function () {} });
+  await settle();
+  return (/no answer/.test(words(h4))) ? true : 'said: ' + short(words(h4).slice(-80));
+}, 1000);
+test.run('made again after a rotation, it shows its button, disarmed, and no result', 0.2, async function () {
+  // every create starts disarmed and without an old result
+  h5 = node('<div>');
   E.create(h5, {});
   await settle();
-  const b5 = w.button(h5);
-  ok(!!b5 && b5.getAttribute('data-armed') === null && !/Rotated/.test(words(h5)) && w.calls.length === 1, 'made again after a rotation, it shows its button, disarmed, and no result', 'button ' + !!b5 + ', said ' + short(words(h5).slice(-80)));
-
-  test.subHeading('destroy');
+  b5 = w.button(h5);
+  return (!!b5 && b5.getAttribute('data-armed') === null && !/Rotated/.test(words(h5)) && w.calls.length === 1) ? true : 'button ' + !!b5 + ', said ' + short(words(h5).slice(-80));
+}, 1000);
+test.run('destroy empties its container', 0.2, function () {
+  // destroy
   made.destroy();
-  ok(host.innerHTML === '', 'destroy empties its container', 'left: ' + short(host.innerHTML));
+  return (host.innerHTML === '') ? true : 'left: ' + short(host.innerHTML);
+}, 1000);
+test.run('destroyed before its arming button loads, it draws and attaches nothing', 0.2, async function () {
   // The arming button not yet loaded (its require held), the file run again on that window: an element destroyed before
   // it lands attaches nothing.
-  const late = world(rotated);
-  let letGo = null;
+  late = world(rotated);
+  letGo = null;
   late.hold = new Promise(function (r) { letGo = r; });
   // goal/G43.32: installSpiritElement overwrites no element that stands; the run again takes the place of a fresh page's.
   delete late.win.spirit.element.spirit.element.rotateKey;
   vm.runInContext(SRC, late.win, { filename: FILE });
-  const h6 = node('<div>');
-  const m6 = late.win.spirit.element.spirit.element.rotateKey.create(h6, {});
+  h6 = node('<div>');
+  m6 = late.win.spirit.element.spirit.element.rotateKey.create(h6, {});
   m6.destroy();
-  letGo({}); await settle();
-  ok(h6.innerHTML === '' && late.attached.length === 0, 'destroyed before its arming button loads, it draws and attaches nothing', 'left ' + short(h6.innerHTML) + ', attached ' + late.attached.length);
-}()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
-  function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });
+  letGo({});
+  await settle();
+  return (h6.innerHTML === '' && late.attached.length === 0) ? true : 'left ' + short(h6.innerHTML) + ', attached ' + late.attached.length;
+}, 1000);
