@@ -416,6 +416,47 @@ test.run('a tab\'s close button takes it away', 0.2, async function () {
   return (await T('closeTab(' + JSON.stringify(F4) + ')') && !!(await waitFor('tabs().length === ' + (before - 1) + ' && !tabs().some(function (t) { return t.label === "gone.js"; })', 3000))) || 'tabs after closing gone.js: ' + short(await T('tabs()'));
 }, test.limit.slow);
 
+// goal/G47.1, the cycle "the test table streamed, and the page showing the current tests", the box: "The testicle server
+// streams every update, to every table: on a flip, the replaced row turning current false is published too, beside the new
+// current row", "The UI then sorts out the current tests from the old ones: the page keeps test rows by their full key,
+// script|suite|test|flipped". What the page keeps is read from its own spirit.data, the test table's branch that
+// spirit/app/testicle/data.js names; nothing is asked of the node for it.
+const ETA_TEST = 'eta answers its question';
+const pageTests = function () {
+  return c.evaluate('(function () { var R = window.spirit.data.testicle && window.spirit.data.testicle.data; if (!R) return null; ' +
+    'var b = window.spirit.data.getPath(R.branch("test")) || {}; return Object.keys(b).map(function (k) { return { key: k, row: b[k] }; }); }())');
+};
+const etaRows = function (all) { return (all || []).filter(function (e) { return e.row && e.row.script === F3 && e.row.suite === etaOwn && e.row.test === ETA_TEST; }); };
+let flipSet = null, kept = null;
+test.run('the world: a test of eta.js is set passing, then failing: a flip', 0.2, async function () {
+  if (face()) return face();
+  const one = await call(N.base, 'testicle.test.set', { script: F3, suite: etaOwn, test: ETA_TEST, verified: true, severity: 0.2 });
+  await sleep(20);
+  flipSet = await call(N.base, 'testicle.test.set', { script: F3, suite: etaOwn, test: ETA_TEST, verified: false, severity: 0.2 });
+  return (one.status === 200 && flipSet.status === 200) || 'test.set: ' + one.status + ' ' + short(one.text) + '; then ' + flipSet.status + ' ' + short(flipSet.text);
+}, test.limit.quick);
+test.run('on a flip the replaced row reaches the page too, current false, beside the new current row', 0.2, async function () {
+  if (face()) return face();
+  if (!flipSet || flipSet.status !== 200) return 'no flip was set: the world failed';
+  await until(function () { return pageTests().then(function (a) { const e = etaRows(a); return e.some(function (x) { return x.row.current === false; }) && e.some(function (x) { return x.row.current === true; }); }); }, 10000);
+  kept = etaRows(await pageTests());
+  const old = kept.filter(function (x) { return x.row.current === false; });
+  const cur = kept.filter(function (x) { return x.row.current === true; });
+  return (old.length === 1 && cur.length === 1 && old[0].row.verified === true && cur[0].row.verified === false) || 'the page holds for the test: ' + short(kept);
+}, test.limit.slow);
+test.run('the page keeps every test row by its full key, script|suite|test|flipped', 0.2, async function () {
+  if (face()) return face();
+  const all = (await pageTests()) || [];
+  if (!all.length) return 'the page keeps no test row';
+  const wrong = all.filter(function (e) { return !e.row || e.key !== e.row.script + '|' + e.row.suite + '|' + e.row.test + '|' + e.row.flipped; });
+  return wrong.length === 0 || 'kept under another key: ' + short(wrong.map(function (e) { return e.key; }));
+}, test.limit.quick);
+test.run('the flipped test keeps both its rows, the replaced one and the current one, each under its own key', 0.2, function () {
+  if (face()) return face();
+  const keys = (kept || []).map(function (e) { return e.key; });
+  return (keys.length === 2 && keys[0] !== keys[1]) || 'the test\'s rows on the page: ' + short(kept);
+}, test.limit.quick);
+
 // destroy
 test.run('destroy leaves its container empty', 0.2, async function () {
   if (face()) return face();

@@ -54,6 +54,9 @@ suite search is spirit/element/search/suite.js and its folder"*.
 - A suite written for the file shows in its open detail with no click.
 - A file removed as it is clicked: its tab opens, active, and below the title line the error *"no such file"*, no search.
 - A tab's close button takes it away.
+- On a flip of a test (goal/G47.1, the cycle "the test table streamed, and the page showing the current tests"), the
+  replaced row, current false, reaches the page beside the new current row: the server publishes both.
+- The page keeps every test row by its full key, `script|suite|test|flipped`, so a flipped test keeps both its rows.
 
 ## What its test must try to break
 
@@ -66,6 +69,8 @@ suite search is spirit/element/search/suite.js and its folder"*.
 - A click that opens no tab, two tabs for one file, a header with the path, a detail missing a suite or listing one twice, a
   detail that does not follow a new suite, an error that waits for the tab or shows a search beside it, a tab that
   cannot be closed.
+- A flip whose replaced row never reaches the page, or a test row kept under a key without its flipped, the old row
+  overwritten by the new.
 
 Vendored libraries' scripts are no production scripts either; the fs family's mirror never holds them
 (`spirit/fileSystem.js`, `VENDORED_FOLDERS`), so the list cannot show them and the test does not ask.
