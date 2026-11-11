@@ -140,8 +140,9 @@ test.startTest('testicle/testicle.js: testicle\'s server keeps file and suite in
     // work, false if it is idle."
     test.subHeading('the box: "one first verb, busy"');
     const api = await call(N.base, 'api', { family: 'testicle' });
-    const verbs = Array.from(new Set(JSON.stringify(api.body || {}).match(/"(testicle\.)?[a-zA-Z.]+"\s*:/g) || [])).join(' ');
-    ok(api.status === 200 && /"(testicle\.)?busy"/.test(verbs), 'the node lists the verb testicle.busy', 'testicle\'s api: ' + short(api.body || api.text));
+    // api {family} answers { family, interface }, the interface the text of its api.js.
+    const iface = String((api.body && api.body.interface) || '');
+    ok(api.status === 200 && /\bverbs\s*:/.test(iface) && /['"]?busy['"]?\s*:/.test(iface), 'the node lists the verb testicle.busy', 'testicle\'s api: ' + short(api.body || api.text));
     await sleep(1000);
     const idle = await call(N.base, 'testicle.busy', {});
     ok(idle.status === 200 && (idle.body === false || (idle.body && idle.body.busy === false)), 'with nothing changing, busy answers false', 'busy, idle: ' + idle.status + ' ' + short(idle.text));
@@ -166,7 +167,8 @@ test.startTest('testicle/testicle.js: testicle\'s server keeps file and suite in
     ok(wantAlpha.indexOf(Z + 'test/alpha.js') !== -1 && wantAlpha.length > 1, 'the world: alpha.js is concerned by its own test and by general tests', 'testModule.js names ' + short(wantAlpha));
     ok(JSON.stringify(names(suiteRows(a1, Z + 'alpha.js'))) === JSON.stringify(wantAlpha), 'its suite rows are exactly its own test and the general tests that name it', 'rows ' + short(names(suiteRows(a1, Z + 'alpha.js'))) + ', wanted ' + short(wantAlpha));
     const ownRow = suiteRow(a1, Z + 'alpha.js', Z + 'test/alpha.js');
-    ok(!!ownRow && yes(ownRow.test), 'its suite rows are flagged test', 'test: ' + short(ownRow && ownRow.test));
+    const unflagged = suiteRows(a1, Z + 'alpha.js').filter(function (r) { return !yes(r.test); });
+    ok(suiteRows(a1, Z + 'alpha.js').length > 0 && !unflagged.length, 'every one of its suite rows is flagged test', 'not flagged: ' + short(names(unflagged)));
     ok(!!ownRow && typeof ownRow.hash === 'string' && ownRow.hash !== '' && ownRow.hash !== alpha.hash, 'a suite row holds the suite file\'s own hash', 'suite hash ' + short(ownRow && ownRow.hash) + ', file hash ' + short(alpha && alpha.hash));
     ok(!!ownRow && no(ownRow.deleted), 'a suite row is not marked deleted', 'deleted: ' + short(ownRow && ownRow.deleted));
     ok(!!ownRow && empty(ownRow.outcome), 'a suite row\'s outcome is empty: nothing runs a suite this cycle', 'outcome: ' + short(ownRow && ownRow.outcome));
@@ -206,6 +208,13 @@ test.startTest('testicle/testicle.js: testicle\'s server keeps file and suite in
     const b1 = await after();
     ok(!!suiteRow(b1, Z + 'beta.js', Z + 'test/beta.js') && !!fileRow(b1, Z + 'beta.js'), 'a suite added makes its row, and its file\'s row', 'rows of beta.js: ' + short(suiteRows(b1, Z + 'beta.js')));
 
+    // Before the general test changes: that one judges every product file, the untouched among them.
+    test.subHeading('the box: "A product file or a suite that has not changed has no row"');
+    append(Z + 'notes.md', 'no script\n');
+    const n1 = await after();
+    ok(!fileRow(n1, Z + 'notes.md'), 'a changed file that is no product script gets no row', 'a row for notes.md: ' + short(fileRow(n1, Z + 'notes.md')));
+    ok(!fileRow(n1, Z + 'epsilon.js') && !suiteRows(n1, Z + 'epsilon.js').length, 'a product file never changed, its suite never changed, has no row', 'rows for epsilon.js: ' + short([fileRow(n1, Z + 'epsilon.js'), suiteRows(n1, Z + 'epsilon.js')]));
+
     test.subHeading('the box: "When a suite ... is changed": a general test');
     const reach = judgedBy(s.run, GENERAL);
     ok(reach.length > 100, 'the world: the changed general test judges every product file', 'it judges ' + reach.length);
@@ -231,12 +240,6 @@ test.startTest('testicle/testicle.js: testicle\'s server keeps file and suite in
     ok(!!gone && yes(gone.deleted), 'one second after a product file is removed, its row is marked deleted', 'row: ' + short(gone));
     const left = suiteRows(x1, Z + 'alpha.js').filter(function (r) { return !yes(r.deleted); });
     ok(suiteRows(x1, Z + 'alpha.js').length > 0 && !left.length, 'and its suite rows are marked deleted', 'not deleted: ' + short(names(left)));
-
-    test.subHeading('the box: "A product file or a suite that has not changed has no row"');
-    append(Z + 'notes.md', 'no script\n');
-    const n1 = await after();
-    ok(!fileRow(n1, Z + 'notes.md'), 'a changed file that is no product script gets no row', 'a row for notes.md: ' + short(fileRow(n1, Z + 'notes.md')));
-    ok(!fileRow(n1, Z + 'epsilon.js') && !suiteRows(n1, Z + 'epsilon.js').length, 'a product file never changed, its suite never changed, has no row', 'rows for epsilon.js: ' + short([fileRow(n1, Z + 'epsilon.js'), suiteRows(n1, Z + 'epsilon.js')]));
   } finally {
     for (const k of live) await stop(k);
     try { fs.rmSync(s.root, { recursive: true, force: true }); } catch (e) { /* scratch */ }
