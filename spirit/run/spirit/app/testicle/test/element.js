@@ -36,6 +36,12 @@ const PLANT = {
   // goal/G47.1, the UI cycle: eta has no test of its own until this test writes one; gone is removed as it is clicked.
   'spirit/zzTesticle/eta.js': '\'use strict\';\n// eta, no test of its own yet\n',
   'spirit/zzTesticle/gone.js': '\'use strict\';\n// gone, removed as it is clicked\n',
+  // goal/G47.1, the cycle "run a suite from the script tab": iota's own test really runs, waiting a moment, then two tests.
+  'spirit/zzTesticle/iota.js': '\'use strict\';\n// iota\n',
+  'spirit/zzTesticle/test/iota.js': '\'use strict\';\nconst path = require(\'path\');\nconst test = require(path.join(__dirname, \'..\', \'..\', \'test\', \'testReport.js\'));\n' + [
+    "test.run('the world: iota waits a moment', 0.2, function () { return new Promise(function (r) { setTimeout(function () { r(true); }, 3000); }); }, test.limit.quick);",
+    "test.run('iota answers when its suite is run', 0.2, function () { return true; }, test.limit.quick);",
+  ].join('\n') + '\n',
 };
 const SHOWN = ['spirit/zzTesticle/shown.js', 'spirit/zzTesticle/inner/alsoShown.js'];
 const HIDDEN = ['spirit/zzTesticle/notes.md', 'spirit/zzTesticle/data.json', 'spirit/zzTesticle/test/shown.js'];
@@ -105,6 +111,9 @@ const HANDS = '(function () {' +
   '  pressCenter: function (k) { var c = window.__t.center(); var r = c ? all("tr[data-key]", c).filter(function (t) { return t.getAttribute("data-key") === k; })[0] : null; if (!r) return false; r.click(); return true; },' +
   '  shownKeys: function () { var c = window.__t.center(); var t = c ? all(".tab-content", c)[0] : null; return t ? all("[data-key]", t).map(function (e) { return e.getAttribute("data-key"); }) : []; },' +
   '  selectTab: function (n) { var c = window.__t.center(); var b = c ? all("button[data-tab]", c).filter(function (e) { return e.getAttribute("data-tab") === n; })[0] : null; if (!b) return false; b.click(); return true; },' +
+  // The 🏃‍♂️ of a suite row in the shown tab: whether the row's first cell holds it, a press on it, and whether it is busy.
+  '  runCell: function (k) { var c = window.__t.center(); var t = c ? all(".tab-content", c)[0] : null; var r = t ? all("tr[data-key]", t).filter(function (x) { return x.getAttribute("data-key") === k; })[0] : null; var td = r ? r.querySelector("td") : null; var b = td ? td.querySelector("button") : null; return r ? { first: td ? String(td.innerText || "").trim() : null, button: !!b, glyph: b ? String(b.innerText || "").trim() : null, disabled: b ? !!b.disabled : null } : null; },' +
+  '  runPress: function (k) { var c = window.__t.center(); var t = c ? all(".tab-content", c)[0] : null; var r = t ? all("tr[data-key]", t).filter(function (x) { return x.getAttribute("data-key") === k; })[0] : null; var b = r && r.querySelector("td") ? r.querySelector("td").querySelector("button") : null; if (!b) return false; b.click(); return true; },' +
   '  centerText: function () { var b = box(); var c = b ? b.querySelector("[id$=\\"center\\"]") : null; return c ? String(c.innerText || "").trim() : null; },' +
   '}; return "hands"; }())';
 
@@ -153,9 +162,9 @@ test.run('it has a face: shell.mount true', 0.2, function () {
 test.run('a server beside the face: node.mount true', 0.2, function () {
   return (!!own && !!own.node && own.node.mount === true) || 'node: ' + short(own && own.node);
 }, test.limit.quick);
-test.run('its folder holds its manifest, its face, its server, its api.js and data.js, and a json description of each verb, busy, script.get, suite.search, testicle.set, testicle.search, red, subscribe and unsubscribe, and its test/ folder, nothing else', 0.2, function () {
+test.run('its folder holds its manifest, its face, its server, its api.js and data.js, and a json description of each verb, busy, script.get, suite.search, testicle.set, testicle.search, red, run, subscribe and unsubscribe, and its test/ folder, nothing else', 0.2, function () {
   const held = fs.existsSync(APP) ? fs.readdirSync(APP).filter(function (f) { return f !== 'test'; }).sort() : [];
-  return JSON.stringify(held) === JSON.stringify(['api.js', 'busy.json', 'data.js', 'element.js', 'red.json', 'script.get.json', 'subscribe.json', 'suite.search.json', 'testicle.js', 'testicle.json', 'testicle.search.json', 'testicle.set.json', 'unsubscribe.json']) || 'its folder holds ' + short(held);
+  return JSON.stringify(held) === JSON.stringify(['api.js', 'busy.json', 'data.js', 'element.js', 'red.json', 'script.get.json', 'run.json', 'subscribe.json', 'suite.search.json', 'testicle.js', 'testicle.json', 'testicle.search.json', 'testicle.set.json', 'unsubscribe.json']) || 'its folder holds ' + short(held);
 }, test.limit.quick);
 test.run('its mount names element.js', 0.2, function () {
   return (!!own && !!own.mount && own.mount['element.js'] === true) || 'mount: ' + short(own && own.mount);
@@ -504,6 +513,51 @@ test.run('the detail is the test\'s history of flips: both its rows, the newest 
   await waitFor('shownKeys().indexOf(' + JSON.stringify(old.key) + ') !== -1', 10000);
   histKeys = ((await T('shownKeys()')) || []).filter(function (k) { return k === old.key || k === cur.key; });
   return (histKeys.length === 2 && histKeys[0] === cur.key && histKeys[1] === old.key) || 'the detail holds ' + short(await T('shownKeys()'));
+}, test.limit.slow);
+
+// goal/G47.1, the cycle "run a suite from the script tab", the box: "In the script detail's suite search, a 🏃‍♂️ run icon-button
+// runs that suite, for the script that was the argument for that closable tab", "The 🏃‍♂️ column is on every row of the script
+// detail tab, the first column", "The button is the busy button exactly as it is (spirit/element/busyButton.js) ... busy only
+// for that answer, never for the suite's run", "the permanent testicle search tab shows more rows by itself as suites run".
+const F5 = 'spirit/zzTesticle/iota.js';
+const iotaOwn = 'spirit/zzTesticle/test/iota.js';
+let iotaRows = [], iotaKey = '', searchBefore = 0;
+// The rows the shown tab draws, by key.
+const searchRows = function () { return T('shown()').then(function (d) { return ((d && d.rows) || []).map(function (r) { return r.key; }); }); };
+test.run('the world: iota.js\'s tab is opened, its suites listed', 0.2, async function () {
+  if (face()) return face();
+  const had = await call(N.base, 'testicle.testicle.search', { script: F5, text: '' });
+  searchBefore = ((had.body && had.body.items) || []).length;
+  if (!(await T('click(' + JSON.stringify(F5) + ')'))) return 'no row for ' + F5 + ' to click: ' + short(await T('rows()'));
+  const ok = await waitFor('shown() && shown().first === ' + JSON.stringify(F5) + ' && shown().rows.length > 0', 15000);
+  iotaRows = ok ? ((await T('shown()')) || { rows: [] }).rows : [];
+  return iotaRows.length > 0 || 'the detail: ' + short(await T('shown()'));
+}, test.limit.slow);
+test.run('every suite row of the script detail has a 🏃‍♂️ button in its first column', 0.2, async function () {
+  if (face()) return face();
+  const cells = [];
+  for (const r of iotaRows) cells.push(await T('runCell(' + JSON.stringify(r.key) + ')'));
+  const bad = cells.filter(function (x) { return !x || !x.button || !/🏃/.test(String(x.glyph || x.first)); });
+  return (cells.length > 0 && !bad.length) || 'first cells: ' + short(cells);
+}, test.limit.quick);
+test.run('the 🏃‍♂️ is the busy button, spirit/element/busyButton.js, which the suite list loads', 0.2, function () {
+  const files = ['spirit/element/search/suite.js', 'spirit/element/search/suite/listElement.js', 'spirit/element/search/suite/rowElement.js', 'spirit/app/testicle/element.js'];
+  return files.some(function (f) { return /['"]spirit\/element\/busyButton\.js['"]/.test(code(path.join(RUN, f))); }) || 'none of ' + files.join(', ') + ' loads spirit/element/busyButton.js';
+}, test.limit.quick);
+test.run('a press on iota\'s own suite\'s 🏃‍♂️ is answered at once: the button is no longer busy while the suite still runs', 0.2, async function () {
+  if (face()) return face();
+  const row = iotaRows.filter(function (r) { return r.key === iotaOwn || r.key === F5 + '|' + iotaOwn || String(r.text).indexOf('iota.js') !== -1 && String(r.text).indexOf('sibling') === -1; })[0];
+  iotaKey = row ? row.key : '';
+  if (!iotaKey || !(await T('runPress(' + JSON.stringify(iotaKey) + ')'))) return 'no 🏃‍♂️ of iota\'s own suite to press: ' + short(iotaRows);
+  const back = await until(function () { return T('runCell(' + JSON.stringify(iotaKey) + ')').then(function (x) { return !!x && x.disabled === false; }); }, 2500);
+  return !!back || 'the button after 2.5 s: ' + short(await T('runCell(' + JSON.stringify(iotaKey) + ')'));
+}, test.limit.slow);
+test.run('the suite runs: the permanent testicle search tab shows iota\'s tests by itself', 0.2, async function () {
+  if (face()) return face();
+  const first = ((await T('tabs()')) || [])[0] || {};
+  if (!first.name || !(await T('selectTab(' + JSON.stringify(first.name) + ')'))) return 'no first tab to show: ' + short(await T('tabs()'));
+  const ok = await until(function () { return searchRows().then(function (k) { return (k || []).filter(function (x) { return x.indexOf(F5 + '|' + iotaOwn + '|') === 0; }).length >= 2; }); }, 40000);
+  return (!!ok && searchBefore === 0) || 'iota\'s tests on the node before the press ' + searchBefore + '; the search tab now shows ' + short(((await searchRows()) || []).filter(function (x) { return x.indexOf(F5) === 0; }));
 }, test.limit.slow);
 
 // destroy

@@ -34,6 +34,8 @@ const APP = path.join(RUN, 'spirit', 'app', 'testicle');
 // THE PLANTED FILES, under one folder of their own. alpha has its own test; beta has none; gamma has its own test and
 // is touched only through it; epsilon and its test are never touched; notes.md is no script.
 const Z = 'spirit/zzTesticle/';
+// A planted suite's head: the product reporter, from spirit/zzTesticle/test/.
+const SUITE_HEAD = '\'use strict\';\nconst path = require(\'path\');\nconst test = require(path.join(__dirname, \'..\', \'..\', \'test\', \'testReport.js\'));\n';
 const PLANT = {
   'spirit/zzTesticle/alpha.js': '\'use strict\';\n// alpha\n',
   'spirit/zzTesticle/test/alpha.js': '\'use strict\';\n// the test of alpha\n',
@@ -49,6 +51,25 @@ const PLANT = {
   // theta and its test: no row until a test of it is set (goal/G47.1, the test cycle).
   'spirit/zzTesticle/theta.js': '\'use strict\';\n// theta\n',
   'spirit/zzTesticle/test/theta.js': '\'use strict\';\n// the test of theta\n',
+  // kappa, lambda and mu, with suites that really run and report (goal/G47.1, the cycle "run a suite from the script tab"):
+  // kappa's own test waits three seconds before its tests, lambda's has three tests in a row, mu's general test judges mu.
+  'spirit/zzTesticle/kappa.js': '\'use strict\';\n// kappa\n',
+  'spirit/zzTesticle/test/kappa.js': SUITE_HEAD + [
+    "test.run('the world: kappa waits a moment', 0.2, function () { return new Promise(function (r) { setTimeout(function () { r(true); }, 3000); }); }, test.limit.quick);",
+    "test.run('kappa answers its first', 0.2, function () { return true; }, test.limit.quick);",
+    "test.run('kappa fails its second', 0.2, function () { return 'it fails, as planted'; }, test.limit.quick);",
+    "test.run('kappa was started with no argument', 0.2, function () { return process.argv.length === 2 || 'started with ' + process.argv.slice(2).join(' '); }, test.limit.quick);",
+  ].join('\n') + '\n',
+  'spirit/zzTesticle/lambda.js': '\'use strict\';\n// lambda\n',
+  'spirit/zzTesticle/test/lambda.js': SUITE_HEAD + [
+    "test.run('lambda answers its first', 0.2, function () { return true; }, test.limit.quick);",
+    "test.run('lambda answers its second', 0.2, function () { return true; }, test.limit.quick);",
+    "test.run('lambda answers its third', 0.2, function () { return true; }, test.limit.quick);",
+  ].join('\n') + '\n',
+  'spirit/zzTesticle/mu.js': '\'use strict\';\n// mu\n',
+  'spirit/zzTesticle/test/mu-child-zzRule.js': SUITE_HEAD + [
+    "test.run('mu holds its rule', 0.2, function () { return process.argv[2] === 'spirit/zzTesticle/mu.js' || 'started with ' + process.argv.slice(2).join(' '); }, test.limit.quick);",
+  ].join('\n') + '\n',
 };
 // The kept rows of an older testicle.db, for a script not on disc, so no change of this test's touches them.
 const OLD = { name: 'spirit/zzTesticle/older.js', suite: 'spirit/zzTesticle/test/older.js', hash: 'an older hash', changed: 1700000000000 };
@@ -688,3 +709,59 @@ test.run('and its suite rows are marked deleted', 0.2, function () {
   const left = suiteRows(x1, Z + 'alpha.js').filter(function (r) { return !yes(r.deleted); });
   return (suiteRows(x1, Z + 'alpha.js').length > 0 && !left.length) || 'not deleted: ' + short(names(left));
 }, test.limit.quick);
+
+// goal/G47.1, the cycle "run a suite from the script tab", the box: "A new testicle verb, run {script, suite, testicle}", "For
+// this cycle the server answers run at once, and does not wait for the suite to complete", "testicle given: the suite runs up
+// to that test, the tests before it with it, by the reporter's --test <title>. testicle missing, as from the button: the
+// server runs the whole suite", "A general test is started with the script as its argument; a script's own test with none",
+// "Each test reports itself to testicle.testicle.set".
+const KA = Z + 'kappa.js', KAS = Z + 'test/kappa.js', LA = Z + 'lambda.js', LAS = Z + 'test/lambda.js', MU = Z + 'mu.js', MUS = Z + 'test/mu-child-zzRule.js';
+const rowOf = function (script, suite, name) { return currentOf(tables(DB), script, suite, name)[0] || null; };
+let run1 = null;
+test.run('the node lists the verb testicle.run', 0.2, async function () {
+  if (!up()) return NONODE;
+  const api = await call(N.base, 'api', { family: 'testicle' });
+  const iface = String((api.body && api.body.interface) || '');
+  return /['"]?\brun['"]?\s*:/.test(iface) || 'testicle\'s api: ' + short(iface);
+}, test.limit.quick);
+test.run('run answers at once, before its suite has ended', 0.2, async function () {
+  if (!up()) return NONODE;
+  const t0 = Date.now();
+  run1 = await call(N.base, 'testicle.run', { script: KA, suite: KAS });
+  const took = Date.now() - t0;
+  const early = rowOf(KA, KAS, 'kappa answers its first');
+  return (run1.status === 200 && took < 2500 && !early) || 'run: ' + run1.status + ' ' + short(run1.text) + ' after ' + took + ' ms; kappa\'s first already ' + short(early);
+}, test.limit.quick);
+test.run('without testicle, the whole suite runs: every test of it reports to testicle', 0.2, async function () {
+  if (!up()) return NONODE;
+  const names0 = ['the world: kappa waits a moment', 'kappa answers its first', 'kappa fails its second', 'kappa was started with no argument'];
+  const ok = await until(function () { return Promise.resolve(names0.every(function (n) { return !!rowOf(KA, KAS, n); })); }, 40000);
+  return !!ok || 'rows: ' + short(names0.map(function (n) { return [n, !!rowOf(KA, KAS, n)]; }));
+}, test.limit.slow);
+test.run('each row holds the result its test gave', 0.2, function () {
+  if (!up()) return NONODE;
+  const a = rowOf(KA, KAS, 'kappa answers its first'), b = rowOf(KA, KAS, 'kappa fails its second');
+  return (!!a && !!b && yes(a.verified) && no(b.verified)) || 'first ' + short(a) + ', second ' + short(b);
+}, test.limit.quick);
+test.run('a script\'s own test is started with no argument', 0.2, function () {
+  if (!up()) return NONODE;
+  const r = rowOf(KA, KAS, 'kappa was started with no argument');
+  return (!!r && yes(r.verified)) || 'its row: ' + short(r);
+}, test.limit.quick);
+test.run('with testicle given, the suite runs up to that test and no test after it', 0.2, async function () {
+  if (!up()) return NONODE;
+  const r = await call(N.base, 'testicle.run', { script: LA, suite: LAS, testicle: 'lambda answers its second' });
+  if (r.status !== 200) return 'run: ' + r.status + ' ' + short(r.text);
+  const ok = await until(function () { return Promise.resolve(!!rowOf(LA, LAS, 'lambda answers its second')); }, 40000);
+  await sleep(3000);
+  const one = rowOf(LA, LAS, 'lambda answers its first'), three = rowOf(LA, LAS, 'lambda answers its third');
+  return (!!ok && !!one && !three) || 'second ' + !!ok + ', first ' + short(one) + ', third ' + short(three);
+}, test.limit.slow);
+test.run('a general test is started with the script as its argument, and reports for that script', 0.2, async function () {
+  if (!up()) return NONODE;
+  const r = await call(N.base, 'testicle.run', { script: MU, suite: MUS });
+  if (r.status !== 200) return 'run: ' + r.status + ' ' + short(r.text);
+  await until(function () { return Promise.resolve(!!rowOf(MU, MUS, 'mu holds its rule')); }, 40000);
+  const m = rowOf(MU, MUS, 'mu holds its rule');
+  return (!!m && yes(m.verified)) || 'its row: ' + short(m);
+}, test.limit.slow);

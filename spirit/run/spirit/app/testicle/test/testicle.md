@@ -47,6 +47,14 @@ The box, in Andy's words where he gave them:
   only current test rows by default, unless a valid test-Title is supplied, in which case all rows will be show that
   match: \"script, suite AND title\""*): theta's first question, set passing, failing and passing, answers its three rows,
   one current, newest first, none of another test; without a title, its current row alone.
+- **run** (goal/G47.1, the cycle "run a suite from the script tab"): *"A new testicle verb, run {script, suite,
+  testicle}"*, *"For this cycle the server answers run at once"*, *"testicle given: the suite runs up to that test ... testicle
+  missing ... the whole suite"*, *"A general test is started with the script as its argument; a script's own test with
+  none"*. The scratch tree plants kappa (its own test waits three seconds, then passes one, fails one, and checks it was
+  started with no argument), lambda (three tests) and mu (a -child- general test checking it was given mu.js). The node
+  lists run; run of kappa answers within 2.5 s with none of its rows yet; then all four rows come, with their results;
+  run of lambda given its second test makes rows for the first and second, none for the third; run of mu makes mu's row,
+  passing.
   The branch and the stream are judged in the face test; the reporter's call in its own test (`spirit/test/test/testReport.js`).
   - *"This cycle does not clear a suite's needs-testing flag"*: with every test passing, the flag stays.
   - *"test.search will only return \"current\" test rows for the script/suite combination supplied ... no script in the
