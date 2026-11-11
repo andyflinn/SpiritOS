@@ -65,8 +65,8 @@ if (arg) {
 }
 test.subHeading('every module of search.js and below, its code read');
 const judged = files.filter(function (f) { return inReach(f) && fs.existsSync(path.join(RUN, f)); });
-if (arg) ok(judged.length === 1, 'the world: ' + judged[0] + ' is search.js or a module below it', arg + ' is not search.js or a module below it: nothing judged');
-else ok(judged.length > 10, 'the world: ' + judged.length + ' modules read', 'only ' + judged.length + ' modules read: too little to judge');
+if (arg) ok(judged.length === 1, 'the world: the module asked is search.js or a module below it', arg + ' is not search.js or a module below it: nothing judged');
+else ok(judged.length > 10, 'the world: more than ten modules read', 'only ' + judged.length + ' modules read: too little to judge');
 let broken = 0;
 judged.forEach(function (rel) {
   across(rel).forEach(function (a) {
@@ -75,7 +75,7 @@ judged.forEach(function (rel) {
     test.fail(rel + ':' + a.line + ' ' + a.call + '() finds a part across the whole page (' + RULE + ')');
   });
 });
-if (!broken && judged.length) ok(true, RULE + ': ' + judged.length + ' module(s), none looks across the page', '');
+if (!broken && judged.length) ok(true, 'an element finds its parts inside its own container, never by id across the page: no module looks across the page', '');
 test.reportSuccessFailureCount();
 process.exit(0);
 

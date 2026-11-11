@@ -32,7 +32,7 @@ test.startTest('the desk family api.js: the desk server\'s interface');
   const refusedAs = function (verb, args) { const r = call(verb, args); return r ? r.code : ''; };
 
   test.subHeading('its shape: verbs, each argument with its rule, no family name of its own');
-  ok(isPlain(verbs) && names.length > 0, 'it exports { verbs } with ' + names.length + ' verbs', 'exports ' + short(Object.keys(api)));
+  ok(isPlain(verbs) && names.length > 0, 'it exports a plain { verbs } table holding at least one verb', 'exports ' + short(Object.keys(api)) + ', verbs ' + short(names));
   ok(Object.keys(api).join() === 'verbs', 'it exports nothing but verbs: it names no family of its own', 'exports ' + short(Object.keys(api)));
   const badSpec = names.filter(function (v) { return !isPlain(verbs[v]); });
   ok(badSpec.length === 0, 'every verb\'s arguments are a plain object', 'not an object: ' + short(badSpec));
@@ -44,7 +44,7 @@ test.startTest('the desk family api.js: the desk server\'s interface');
       if (spirit.rules.indexOf(rule) === -1) badRule.push(v + '.' + arg + ': ' + raw);
     });
   });
-  ok(badRule.length === 0, 'every rule is one of spirit.js\'s standard (' + spirit.rules.join(', ') + '), \'?\' optional', 'unknown rules: ' + short(badRule));
+  ok(badRule.length === 0, 'every rule is one of spirit.js\'s standard rules, \'?\' optional', 'unknown rules: ' + short(badRule) + '; the standard: ' + spirit.rules.join(', '));
   ok(names.indexOf('DEBUG') === -1, 'DEBUG is appServer\'s, not listed', 'listed: ' + short(names.filter(function (v) { return v === 'DEBUG'; })));
 
   test.subHeading('every verb it lists is one the server serves');
@@ -84,7 +84,12 @@ test.startTest('the desk family api.js: the desk server\'s interface');
 
   test.subHeading('one row a write (goal/G40.3)');
   ['item.files.add', 'item.files.remove', 'item.suites.add', 'item.suites.remove'].forEach(function (v) {
-    ok(passes(v, { id: 'goal/G1.1', path: 'spirit/run/a.js' }) && refusedAs(v, { id: 'goal/G1.1', path: ['a', 'b'] }) === 'bad-request', v + ' takes one path, never a list', v + ' with a list: ' + refusedAs(v, { id: 'goal/G1.1', path: ['a', 'b'] }));
+    const one = passes(v, { id: 'goal/G1.1', path: 'spirit/run/a.js' }) && refusedAs(v, { id: 'goal/G1.1', path: ['a', 'b'] }) === 'bad-request';
+    const why = v + ' with a list: ' + refusedAs(v, { id: 'goal/G1.1', path: ['a', 'b'] });
+    if (v === 'item.files.add') ok(one, 'item.files.add takes one path, never a list', why);
+    else if (v === 'item.files.remove') ok(one, 'item.files.remove takes one path, never a list', why);
+    else if (v === 'item.suites.add') ok(one, 'item.suites.add takes one path, never a list', why);
+    else ok(one, 'item.suites.remove takes one path, never a list', why);
   });
   ok(passes('rules.search', { text: '', types: [], statuses: [] }) && refusedAs('rules.search', { text: '', types: 'a', statuses: [] }) === 'bad-request', 'rules.search: types and statuses are lists', 'types \'a\' ' + refusedAs('rules.search', { text: '', types: 'a', statuses: [] }));
   ok(refusedAs('rule.add', { type: 't', label: 'l', text: 'x'.repeat(100000) }) === 'bad-request', 'rule.add: its text passes the paragraph rule', 'a text too long: ' + refusedAs('rule.add', { type: 't', label: 'l', text: 'x'.repeat(100000) }));

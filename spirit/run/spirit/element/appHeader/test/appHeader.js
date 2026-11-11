@@ -34,12 +34,12 @@ test.startTest('appHeader.js: an app\'s header area sits right under the title b
     if (!m) { test.fail('the page measured nothing: ' + String(s).slice(0, 200)); return; }
     // RIGHT UNDER THE TITLE BAR (Andy: "a giant gap between the shells title bar and it's first row of buttons"): the
     // header is the first thing in its app's pane, at the pane's top, which starts under the title bar.
-    ok(m.paneTop >= m.titleBar && Math.abs(m.head.top - m.paneTop) <= 1, 'the header sits at the top of its app\'s pane, right under the title bar (' + m.head.top + ', the pane at ' + m.paneTop + ')',
+    ok(m.paneTop >= m.titleBar && Math.abs(m.head.top - m.paneTop) <= 1, 'the header sits at the top of its app\'s pane, right under the title bar',
       'the header is at ' + m.head.top + ', its pane starts at ' + m.paneTop + ', the title bar ends at ' + m.titleBar + ': a gap of ' + (m.head.top - m.paneTop));
-    ok(m.content >= m.head.bottom - 1, 'nothing under it is overlapped: the content starts at ' + m.content + ', the header ends at ' + m.head.bottom,
+    ok(m.content >= m.head.bottom - 1, 'nothing under it is overlapped: the content starts below the header',
       'the header ends at ' + m.head.bottom + ', over the content starting at ' + m.content);
     // IT STICKS: the pane scrolled, the header is where it was.
-    ok(m.scrolled > 0 && Math.abs(m.headAfterScroll - m.paneTop) <= 1, 'the pane scrolled by ' + m.scrolled + ', the header stays at its top',
+    ok(m.scrolled > 0 && Math.abs(m.headAfterScroll - m.paneTop) <= 1, 'the pane scrolled, the header stays at its top',
       'after the pane scrolled by ' + m.scrolled + ' the header is at ' + m.headAfterScroll + ', the pane at ' + m.paneTop);
   } finally {
     if (page && page.kid) page.kid.kill();

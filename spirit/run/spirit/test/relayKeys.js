@@ -89,7 +89,7 @@ async function noRescuePart() {
       put(path.join(run, 'spirit', 'state', 'relays.json'), relaysText);
       put(path.join(run, 'spirit', 'state', 'relayKeys.json'), keysText);
       ok(readText(path.join(run, 'spirit', 'state', 'relays.json')) === relaysText && readText(path.join(run, 'spirit', 'state', 'relayKeys.json')) === keysText,
-        'the world: spirit/state/relays.json and relayKeys.json planted in a scratch copy of ' + files.length + ' tracked files',
+        'the world: spirit/state/relays.json and relayKeys.json planted in a scratch copy of the tracked files',
         'the scratch tree was not planted: nothing judged');
 
       const port = await freePort();
@@ -98,7 +98,7 @@ async function noRescuePart() {
       const up = await until(function () {
         return fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'api', args: {} }) }).then(function (r) { return r.status === 200; });
       }, 60000);
-      ok(!!up, 'the world: the scratch node came up at ' + base, 'the scratch node did not come up in 60 s: nothing judged');
+      ok(!!up, 'the world: the scratch node came up', 'the scratch node at ' + base + ' did not come up in 60 s: nothing judged');
       if (!up) return;
       // What boot does it has done by now; a few seconds more for anything that follows the first answer.
       await sleep(3000);
@@ -115,7 +115,7 @@ async function noRescuePart() {
           rows = db.prepare('SELECT publicKey FROM seen WHERE publicKey = ?').all(RKEY);
         } finally { db.close(); }
       } catch (e) { routes = [{ error: String(e.message || e) }]; }
-      ok(routes.length === 0 && rows.length === 0, 'node.db holds no row and no route of the planted relay ' + RURL,
+      ok(routes.length === 0 && rows.length === 0, 'node.db holds no row and no route of the planted relay',
         'the boot took the planted relay into node.db: ' + short({ routes: routes, rows: rows }));
       const filesStay = readText(path.join(run, 'spirit', 'state', 'relays.json')) === relaysText && readText(path.join(run, 'spirit', 'state', 'relayKeys.json')) === keysText;
       ok(filesStay, 'spirit/state/relays.json and relayKeys.json are left as they were',

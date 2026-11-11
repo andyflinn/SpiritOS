@@ -22,12 +22,14 @@ test.startTest('api.js: the interface of the branch chat (goal/G43.31)');
   test.subHeading('the interface: verbs and their rules, and no code');
   let verbs = null;
   try { verbs = require(FILE).verbs; } catch (e) { verbs = null; }
-  ok(!!verbs && typeof verbs === 'object' && Object.keys(verbs).length > 0, 'it lists its verbs: ' + short(verbs && Object.keys(verbs)), 'api.js lists no verbs');
+  ok(!!verbs && typeof verbs === 'object' && Object.keys(verbs).length > 0, 'it lists its verbs', 'api.js lists no verbs');
   if (!verbs) return;
   ok(!/require\s*\(/.test(fs.readFileSync(FILE, 'utf8').replace(/\/\/.*$/gm, '')), 'it requires no code: it is an interface only', 'api.js requires code');
-  ['line.write', 'line.receive', 'chat.read', 'chat.search', 'chats.search'].forEach(function (v) {
-    ok(!!verbs[v], 'it lists ' + v + ', which the server serves', 'api.js lists no ' + v);
-  });
+  ok(!!verbs['line.write'], 'it lists line.write, which the server serves', 'api.js lists no line.write');
+  ok(!!verbs['line.receive'], 'it lists line.receive, which the server serves', 'api.js lists no line.receive');
+  ok(!!verbs['chat.read'], 'it lists chat.read, which the server serves', 'api.js lists no chat.read');
+  ok(!!verbs['chat.search'], 'it lists chat.search, which the server serves', 'api.js lists no chat.search');
+  ok(!!verbs['chats.search'], 'it lists chats.search, which the server serves', 'api.js lists no chats.search');
 
   const node = await H.scratchNode();
   try {

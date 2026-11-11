@@ -165,14 +165,14 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const a = w.attached.filter(function (x) { return x.button === b; }).pop();
   ok(!!a, 'its button is attached as an armingButton', 'attached: ' + w.attached.length);
   if (!a) return;
-  ok(a.opts.label === BUTTON && a.opts.armedLabel === ARMED && b.textContent === BUTTON, 'it says ' + BUTTON + ', and armed ' + ARMED, 'label ' + short(a.opts.label) + ', armed ' + short(a.opts.armedLabel) + ', shows ' + short(b.textContent));
+  ok(a.opts.label === BUTTON && a.opts.armedLabel === ARMED && b.textContent === BUTTON, 'it says Rotate the key, and armed Rotate the key: press again', 'label ' + short(a.opts.label) + ', armed ' + short(a.opts.armedLabel) + ', shows ' + short(b.textContent));
   ok(!('api' in a.opts), 'the arming button is handed no api: it hears a click elsewhere itself', 'handed: ' + short(Object.keys(a.opts)));
   ok(b.getAttribute('data-armed') === null && w.calls.length === 0, 'it starts disarmed, and nothing is rotated', 'armed ' + short(b.getAttribute('data-armed')) + ', calls ' + w.calls.length);
   b.fire('click', { preventDefault: function () {} }); await settle();
-  ok(b.getAttribute('data-armed') === 'true' && b.textContent === ARMED && w.listening === 1, 'one press arms it: it says ' + ARMED + ' and listens for a click elsewhere', 'armed ' + short(b.getAttribute('data-armed')) + ', says ' + short(b.textContent) + ', listening ' + w.landed);
+  ok(b.getAttribute('data-armed') === 'true' && b.textContent === ARMED && w.listening === 1, 'one press arms it: it says Rotate the key: press again, and listens for a click elsewhere', 'armed ' + short(b.getAttribute('data-armed')) + ', says ' + short(b.textContent) + ', listening ' + w.landed);
   ok(w.calls.length === 0, 'one press rotates nothing', 'one press asked node.rotateCipher ' + w.calls.length + ' times');
   b.disarm(); await settle();
-  ok(b.textContent === BUTTON && b.getAttribute('data-armed') === null, 'disarmed (attention moved), it says ' + BUTTON + ' again', 'says ' + short(b.textContent));
+  ok(b.textContent === BUTTON && b.getAttribute('data-armed') === null, 'disarmed (attention moved), it says Rotate the key again', 'says ' + short(b.textContent));
   b.fire('click', { preventDefault: function () {} }); await settle();
   ok(w.calls.length === 0, 'and the next press only arms it again: two presses must be two presses in a row', 'asked ' + w.calls.length + ' times');
 

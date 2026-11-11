@@ -72,12 +72,12 @@ test.startTest('introSpector.js: see what a party lets you call, an element of s
         return !!k;
       });
     });
-    ok(!!jsonCase, 'the world: a verb with a JSON field, ' + short(jsonCase), 'no verb of this node has a JSON field: not judged');
+    ok(!!jsonCase, 'the world: a verb with a JSON field', 'no verb of this node has a JSON field: not judged');
     if (jsonCase) {
       await pick(jsonCase.family, jsonCase.verb);
       await until(function () { return chrome.evaluate('!!document.getElementById("is-f-' + jsonCase.key + '") || Array.prototype.some.call(document.querySelectorAll("#box textarea"), function (t) { return t.getClientRects().length; })'); }, 5000);
       await chrome.evaluate('(function () { var t = Array.prototype.filter.call(document.querySelectorAll("#box textarea"), function (x) { return x.getClientRects().length; })[0]; if (t) { t.value = "{not json"; t.dispatchEvent(new Event("input", { bubbles: true })); } var b = Array.prototype.filter.call(document.querySelectorAll("#box button"), function (x) { return String(x.textContent).trim() === "call"; })[0]; if (b) b.click(); return !!t && !!b; }())');
-      ok(await until(function () { return reply().then(function (r) { return String(r).indexOf(jsonCase.key + ' is not JSON') !== -1; }); }, 5000), 'the reply says ' + jsonCase.key + ' is not JSON, and nothing is called', 'the reply: ' + short(await reply()));
+      ok(await until(function () { return reply().then(function (r) { return String(r).indexOf(jsonCase.key + ' is not JSON') !== -1; }); }, 5000), 'the reply says the JSON field is not JSON, and nothing is called', 'the reply, wanting ' + jsonCase.key + ' is not JSON: ' + short(await reply()));
     }
 
     test.subHeading('destroy');

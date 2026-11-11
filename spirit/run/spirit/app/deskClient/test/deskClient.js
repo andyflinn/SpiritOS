@@ -193,7 +193,10 @@ test.startTest('deskClient.js: the desk client, its cache and its wakes (goal/G4
     };
     for (const rel of ['spirit/run/spirit/app/desk/element/desk/test/desk.js', 'spirit/run/spirit/test/relay.js', 'spirit/run/spirit/test/testModule.js']) {
       const tone = await toneOf(rel);
-      ok(tone === 'test', rel + ': tone test', rel + ': tone ' + short(tone));
+      const why = rel + ': tone ' + short(tone);
+      if (rel === 'spirit/run/spirit/app/desk/element/desk/test/desk.js') ok(tone === 'test', 'the desk element\'s test desk.js has the tone test', why);
+      else if (rel === 'spirit/run/spirit/test/relay.js') ok(tone === 'test', 'the general test relay.js has the tone test', why);
+      else ok(tone === 'test', 'the general test testModule.js has the tone test', why);
     }
     const prod = await toneOf('spirit/run/spirit/app/desk/element/desk/desk.js');
     ok(prod === 'code', 'a production file under spirit/run/: tone code', 'spirit/run/spirit/app/desk/element/desk/desk.js: tone ' + short(prod));
@@ -594,7 +597,7 @@ async function chokidarPart() {
     let to = '';
     // goal/G43.32: loaded by spirit.require, by its run-root path ("spirit/jobs/chokidar/index.js"); a relative path is the old way.
     try { to = specs.length === 1 ? require.resolve(specs[0].charAt(0) === '.' ? path.resolve(path.dirname(path.join(REPO, u)), specs[0]) : path.join(RUN, specs[0])) : ''; } catch (e) { to = ''; }
-    ok(to === idxNew, u + ' requires ' + specs[0] + ', which is spirit/job/chokidar/index.js', u + ' requires ' + short(specs) + ' (resolves to ' + short(to || 'nothing') + ')');
+    ok(to === idxNew, 'it requires chokidar by a path that is spirit/job/chokidar/index.js', u + ' requires ' + short(specs) + ' (resolves to ' + short(to || 'nothing') + ')');
   });
 
   test.subHeading('4. the file watcher works as before: deskClient\'s');
@@ -616,7 +619,7 @@ async function chokidarPart() {
     "setTimeout(function () { fs.writeFileSync(path.join(dir, 'made.txt'), 'x'); }, 1500);",
     "setTimeout(function () { console.log('DEAF'); process.exit(0); }, 12000);",
   ].join('\n'), path.join(RUN, 'vendoredFolders-desk-test'));
-  ok(/^HEARD/.test(dcOut) && dcFrom.indexOf('chokidar') !== -1, 'deskClient\'s watcher (' + dcSpec + ') hears a file added', 'deskClient\'s watcher (' + short(dcSpec) + '): ' + short(dcOut));
+  ok(/^HEARD/.test(dcOut) && dcFrom.indexOf('chokidar') !== -1, 'its watcher hears a file added', 'deskClient\'s watcher (' + short(dcSpec) + '): ' + short(dcOut));
 }
 
 // ── THE NOTEAMCHAT PART (once its own file; one test file per script: spirit/test/TEST_SYSTEM.md) ──

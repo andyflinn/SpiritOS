@@ -109,11 +109,13 @@ test.startTest('codeMirror.js: the CodeMirror shell element, read and edit');
   let read = null;
   if (E) { try { read = await E.create({ id: 'host-1' }, { mode: 'read', text: 'alpha beta\ngamma beta', words: 'beta', path: 'notes.md' }); } catch (e) { test.fail('create threw: ' + e.message); } }
   await settle();
-  ok(w.required.indexOf(CM + 'lib/codemirror.js') !== -1, 'it requires ' + CM + 'lib/codemirror.js through spirit.require', 'required: ' + short(w.required));
+  ok(w.required.indexOf(CM + 'lib/codemirror.js') !== -1, 'it requires CodeMirror\'s lib/codemirror.js through spirit.require', 'required ' + short(w.required) + ', not ' + CM + 'lib/codemirror.js');
   ok(asked(w).indexOf(CM + 'mode/markdown/markdown.js') !== -1 && w.required.indexOf(CM + 'mode/markdown/markdown.js') !== -1,
     'and the mode file of the path\'s syntax (a .md file: mode/markdown/markdown.js)', 'asked: ' + short(asked(w)));
   ['lib/codemirror.css', 'theme/material-darker.css'].forEach(function (css) {
-    ok(asked(w).some(function (p) { return p.replace(/^\/+/, '') === CM + css; }), 'its stylesheet ' + css + ' is put on the page', 'asked: ' + short(asked(w)));
+    const put = asked(w).some(function (p) { return p.replace(/^\/+/, '') === CM + css; });
+    if (css === 'lib/codemirror.css') ok(put, 'its stylesheet lib/codemirror.css is put on the page', 'asked: ' + short(asked(w)));
+    else ok(put, 'its stylesheet theme/material-darker.css is put on the page', 'asked: ' + short(asked(w)));
   });
   ok(there && w.required.length > 0 && !asked(w).some(function (p) { return /index\.html/.test(p); }) && !/index\.html/.test(SRC.replace(/\/\/.*$/gm, '')),
     'nothing of it reads or asks for index.html', 'index.html asked: ' + short(asked(w).filter(function (p) { return /index\.html/.test(p); })));
@@ -170,7 +172,14 @@ test.startTest('codeMirror.js: the CodeMirror shell element, read and edit');
     let v = null;
     if (E) { try { v = await E.create({ id: p }, { mode: 'read', text: '', path: p }); } catch (e) { v = null; } }
     const c = v && v.cm;
-    ok(!!c && c.cfg.mode === syntax[p], p + ' is coloured as ' + syntax[p], p + ': ' + short(c && c.cfg.mode));
+    const coloured = !!c && c.cfg.mode === syntax[p];
+    const why = p + ': ' + short(c && c.cfg.mode);
+    if (p === 'a.mjs') ok(coloured, 'a .mjs file is coloured as javascript', why);
+    else if (p === 'a.css') ok(coloured, 'a .css file is coloured as css', why);
+    else if (p === 'a.html') ok(coloured, 'a .html file is coloured as htmlmixed', why);
+    else if (p === 'a.htm') ok(coloured, 'a .htm file is coloured as htmlmixed', why);
+    else if (p === 'a.xml') ok(coloured, 'an .xml file is coloured as xml', why);
+    else ok(coloured, 'an .svg file is coloured as xml', why);
   }
 
   test.subHeading('in a fill box it takes exactly the box (rule/16; Andy, on G41.7)');

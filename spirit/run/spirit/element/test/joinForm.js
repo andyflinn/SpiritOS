@@ -40,15 +40,23 @@ test.startTest('joinForm.js: the join form, a rowForm, in its modes');
     const code = fs.readFileSync(path.join(__dirname, '..', 'joinForm.js'), 'utf8').replace(/\/\/.*$/gm, '');
     ok(/spirit\.require\(\s*['"]spirit\/element\/rowForm\.js['"]/.test(code), 'it loads the rowForm itself (rule/26)', 'joinForm.js requires no spirit/element/rowForm.js');
     const MODES = [['Join, no seat', m.join, '➕', 'Join', 'Join a relay'], ['Change, a seat (another relay picked)', m.change, '✏️', 'Change', 'Change email address'], ['fixed to its one relay', m.fixed, '✏️', 'Change', 'Change email address']];
-    MODES.forEach(function (x) {
+    MODES.forEach(function (x, i) {
       const r = x[1] || {};
       test.subHeading(x[0]);
-      ok(r.forms === 1 && r.icon === x[2] && r.button === x[3], 'one rowForm, its icon ' + x[2] + ' and its button ' + x[3], 'forms ' + r.forms + ', icon ' + short(r.icon) + ', button ' + short(r.button));
+      const one = r.forms === 1 && r.icon === x[2] && r.button === x[3];
+      if (i === 0) ok(one, 'with no seat: one rowForm, its icon ➕ and its button Join', 'forms ' + r.forms + ', icon ' + short(r.icon) + ', button ' + short(r.button));
+      else if (i === 1) ok(one, 'with a seat: one rowForm, its icon ✏️ and its button Change', 'forms ' + r.forms + ', icon ' + short(r.icon) + ', button ' + short(r.button));
+      else ok(one, 'fixed to its one relay: one rowForm, its icon ✏️ and its button Change', 'forms ' + r.forms + ', icon ' + short(r.icon) + ', button ' + short(r.button));
       const sp = r.span || [];
       ok(sp.length === 2 && sp[0].tag === 'SELECT' && sp[1].tag === 'INPUT' && sp[1].type === 'email', 'its span holds the relay dropdown, then the email input, and nothing else', 'span: ' + short(sp));
       ok(r.forms === 1 && !/\bRelay\b|Your email|Email address/.test(r.bubbleWords || ''), 'the words Relay and Your email are gone from the bubble', 'bubble says: ' + short(r.bubbleWords));
-      ok(r.title === x[4] && r.titleAbove, 'its title, ' + x[4] + ', stands above the bubble', 'title ' + short(r.title) + ', above ' + r.titleAbove);
-      ok(r.adds === 0, 'its ' + x[3] + ' is the rowForm\'s button, the only one', 'other buttons: ' + r.adds);
+      const above = r.title === x[4] && r.titleAbove;
+      if (i === 0) ok(above, 'with no seat: its title, Join a relay, stands above the bubble', 'title ' + short(r.title) + ', above ' + r.titleAbove);
+      else if (i === 1) ok(above, 'with a seat: its title, Change email address, stands above the bubble', 'title ' + short(r.title) + ', above ' + r.titleAbove);
+      else ok(above, 'fixed to its one relay: its title, Change email address, stands above the bubble', 'title ' + short(r.title) + ', above ' + r.titleAbove);
+      if (i === 0) ok(r.adds === 0, 'with no seat: its Join is the rowForm\'s button, the only one', 'other buttons: ' + r.adds);
+      else if (i === 1) ok(r.adds === 0, 'with a seat: its Change is the rowForm\'s button, the only one', 'other buttons: ' + r.adds);
+      else ok(r.adds === 0, 'fixed to its one relay: its Change is the rowForm\'s button, the only one', 'other buttons: ' + r.adds);
     });
     const f = (m.fixed && m.fixed.span) || [];
     ok(f[0] && f[0].disabled && JSON.stringify(f[0].options) === '["wss://b.example"]', 'fixed: the dropdown holds its one relay and is fixed', 'dropdown: ' + short(f[0]));
