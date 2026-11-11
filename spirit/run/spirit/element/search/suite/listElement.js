@@ -3,8 +3,11 @@
 // THE SUITE LIST, AN ELEMENT (goal/G47.1, the UI cycle): the suites of one production file, what testicle's file detail
 // draws through the suite selector (../suite.js). Its row is ./rowElement.js; no row opens a detail.
 //
-//   spirit.element.spirit.element.search.suite.listElement.create(container, { script }) -> { destroy() }
+//   spirit.element.spirit.element.search.suite.listElement.create(container, { script, face, placeholder, all, pick }) -> { destroy() }
 //     script   the production script whose suite rows it lists, scoped to run://
+//     face, placeholder, all, pick   handed to the search as they are: the testicle search's suite selector draws it as a
+//              dropdown (goal/G47.1, the search cycle, the box: "The search has a suite selector, unselected (all) the
+//              default"); a pane, the default, otherwise
 //
 // The box: "a standard testicle.suite.search", "The file row owns its suite rows: the suite table's key is file and suite.
 // So suite.search takes the production file and answers that file's suite rows only, each suite once, with its filename
@@ -57,6 +60,11 @@
         // THE FILE'S ROWS ONLY, not drawn: the branch holds every file's suites.
         filters: [{ name: 'script', when: function () { return false; }, test: function (row) { return row && row.script === script ? 1 : 0; } }],
         element: function (row) { return S.element.spirit.element.search.suite.rowElement.create(row); },
+        face: o.face,
+        placeholder: o.placeholder,
+        all: o.all,
+        name: function (row) { return String((row && row.suite) || ''); },
+        pick: function (row, key) { if (typeof o.pick === 'function') o.pick(row, key); },
         empty: 'No suite concerns this file.',
       });
       list.sort('suite', 'asc');

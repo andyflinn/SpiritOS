@@ -94,6 +94,8 @@ const T = {
   currents: db.prepare('SELECT * FROM testicle WHERE current = 1 ORDER BY severity DESC, flipped DESC'),
   reds: db.prepare('SELECT * FROM testicle WHERE current = 1 AND verified = 0 ORDER BY severity DESC, flipped DESC'),
   row: db.prepare('SELECT * FROM testicle WHERE script = ? AND suite = ? AND test = ? AND flipped = ?'),
+  // A test's history: every row of it, the newest flip first.
+  history: db.prepare('SELECT * FROM testicle WHERE script = ? AND suite = ? AND test = ? ORDER BY flipped DESC'),
 };
 // A test row as the verbs and the stream carry it: its key its full key, script|suite|test|flipped, its booleans booleans
 // (goal/G47.1, the box: "the page keeps test rows by their full key, script|suite|test|flipped, and shows a test's current
@@ -315,14 +317,23 @@ appServer.serve({
   // combination supplied to the search. The other cases are handled accordingly: no script in the search query searches
   // tests for any script; the same for suite", "Most severe first applies to all test searches." script and suite may each
   // be left out; the words narrow among the rows, matched over the whole row as it is served.
+  // THE ONE EXCEPTION, A TEST'S HISTORY (goal/G47.1, the search cycle; Andy, amending the ruling above: "test.search will
+  // return only current test rows by default, unless a valid test-Title is supplied, in which case all rows will be show
+  // that match: \"script, suite AND title\""): given a test with its script and its suite, every row of that one test,
+  // current or not, newest flip first. A test without its script and suite is no valid title, and refused.
   'testicle.search': {
     request: { text: '' }, reply: { items: [], more: false },
     accepts: function (a) {
       if (!a || typeof a !== 'object' || Array.isArray(a) || typeof a.text !== 'string') return false;
-      return Object.keys(a).every(function (k) { return (k === 'text') || ((k === 'script' || k === 'suite') && typeof a[k] === 'string'); });
+      if (a.test !== undefined && (typeof a.script !== 'string' || typeof a.suite !== 'string' || typeof a.test !== 'string' || !a.test)) return false;
+      return Object.keys(a).every(function (k) { return (k === 'text') || ((k === 'script' || k === 'suite' || k === 'test') && typeof a[k] === 'string'); });
     },
     handler: function (a) {
       const words = String(a.text || '').trim();
+      if (a.test !== undefined) {
+        return mostSevereFirst(T.history.all(a.script, a.suite, a.test).map(testServed)
+          .filter(function (row) { return !words || (Number(probabilityStringObjectMatch(words, row)) || 0) > 0; }));
+      }
       const rows = T.currents.all().filter(function (r) { return (a.script === undefined || r.script === a.script) && (a.suite === undefined || r.suite === a.suite); })
         .map(testServed).filter(function (row) { return !words || (Number(probabilityStringObjectMatch(words, row)) || 0) > 0; });
       return mostSevereFirst(rows);

@@ -15,7 +15,8 @@ module.exports = {
     // goal/G47.1, the test-table cycle: one test's result, by itself (no bundling); severity from 0.0 to 1.0.
     'testicle.set': { script: 'text', suite: 'text', test: 'text', verified: 'bool', severity: 'number' },
     // goal/G47.1: the current test rows, most severe first; script and suite each optional, the words narrowing them.
-    'testicle.search': { script: 'text?', suite: 'text?', text: 'text' },
+    // Given a test with its script and suite, that test's every row, the newest flip first (its history).
+    'testicle.search': { script: 'text?', suite: 'text?', test: 'text?', text: 'text' },
     // goal/G47.1, G45: every failed current test, most severe first. It takes nothing.
     red: {},
     // appServer's streamPublisher (spirit/appServer.js), as agent's: the caller's key subscribes to testicle's rows, sent to

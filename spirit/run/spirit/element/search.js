@@ -43,6 +43,8 @@
 //   tile(row, key)             optional: { icon, label } of a tile, where the row's own icon and label are not (goal/G43.17,
 //                              Q14: a file's tile shows its kind's icon and its name); either left out is the row's
 //   visible(row)               false holds a row back; asked at every draw
+//   filters                    [{ name, test(row, value), when, toggle, multi, keepOne, choices }]: a multi filter's value is
+//                              the choices turned off; keepOne keeps its last choice on, a press that would turn it off ignored
 //   filters, score, rows(), fold(row, key), details(row, key, el), pick(row, key), empty   the list's own; the words
 //                              are matched against the whole row (goal/G41.28), so a list hands no matched()
 //   selectors                  [{ name, element, test(row) }]: selectors the mounter made, mounted in the 🪣 row; each
@@ -633,7 +635,13 @@
         var toggle = filters.filter(function (f) { return f.name === name && f.toggle; })[0];
         var multi = filters.filter(function (f) { return f.name === name && f.multi; })[0];
         if (toggle) values[name] = !values[name];
-        else if (multi) { if (values[name][value]) delete values[name][value]; else values[name][value] = true; }
+        else if (multi) {
+          // keepOne: the last choice still on stays on; the press that would turn it off does nothing (goal/G47.1, the search
+          // cycle, the box: "at least one of the two is selected at all times: the only combination forbidden is both off").
+          var stillOn = choicesOf(multi).filter(function (c) { return !values[name][c.value]; }).length;
+          if (values[name][value]) delete values[name][value];
+          else if (!(multi.keepOne && stillOn <= 1)) values[name][value] = true;
+        }
         else values[name] = value;
         typed();
         return;

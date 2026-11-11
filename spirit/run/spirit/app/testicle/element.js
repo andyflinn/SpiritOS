@@ -20,10 +20,17 @@
 // suite search for that file". A tab is named by the file's full path, so a second click on it makes its tab active and opens
 // no second (spirit/element/tabContainer.js add). It asks the node through spirit alone: testicle's branch, bound by its
 // api.js.
+//
+// THE TESTICLE SEARCH (goal/G47.1, the search cycle). The box: "The UI gets its first non-closable tab in the workbench centre
+// pane: the testicle search, spirit/element/search/testicle.js", "The testicle detail is a history of flips, and opens in a
+// closable tab when a test row is clicked", "the tab is the tabContainer's, closable false, first in the centre, before any
+// script's tab; the script tabs stay closable". A test's tab is named by its full key without the flip, so a second click on
+// the same test makes its tab active and opens no second.
 (function () {
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the workBench and the file list.
   var parts = Promise.all(['spirit/element/workBench.js', 'spirit/element/search/file.js', 'spirit/element/tabContainer.js',
-    'spirit/element/search/suite.js', 'spirit/app/testicle/api.js'].map(function (p) { return window.spirit.require(p); }));
+    'spirit/element/search/suite.js', 'spirit/element/search/testicle.js', 'spirit/element/search/testicle/detailElement.js',
+    'spirit/app/testicle/api.js'].map(function (p) { return window.spirit.require(p); }));
 
   function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 
@@ -75,13 +82,23 @@
         } }],
         right: [],
       });
-      // The centre: the file details, one tab each.
-      tabs = E.tabContainer.create(bench.center, { tabs: [] });
+      // The centre: the testicle search first, never closed; then the file details and the test details, one tab each.
+      tabs = E.tabContainer.create(bench.center, { tabs: [{ name: 'testicle search', label: 'Testicle search', closable: false,
+        mount: function (box) { box.className = 'fill'; return E.search.testicle.create(box, { pick: function (row) { openTest(row); } }); } }] });
     }, function () { if (!gone) container.textContent = 'testicle could not be loaded.'; });
     // A CLICK ON A PRODUCTION FILE: its tab opened and made active, at once; its detail asks script.get from there.
     function open(file) {
       if (gone || !tabs) return;
       tabs.add({ name: file, label: file.slice(file.lastIndexOf('/') + 1), closable: true, mount: function (box) { return fileDetail(box, file); } });
+    }
+    // A CLICK ON A TEST ROW: its history in a closable tab, opened and made active.
+    function openTest(row) {
+      if (gone || !tabs || !row) return;
+      var name = row.script + '|' + row.suite + '|' + row.test;
+      tabs.add({ name: name, label: String(row.test || ''), closable: true, mount: function (box) {
+        box.className = 'fill';
+        return window.spirit.element.spirit.element.search.testicle.detailElement.create(box, { script: row.script, suite: row.suite, test: row.test });
+      } });
     }
     return {
       destroy: function () {

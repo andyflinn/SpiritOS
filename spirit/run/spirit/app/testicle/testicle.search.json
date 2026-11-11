@@ -1,8 +1,9 @@
 {
-  "description": "The current test rows, one per test, a standard table search: {items, more}, each item keyed by its full key, script|suite|test|flipped, its label the row. script and suite each optional: left out, any. The words narrow among them, '' for all. Most severe first, the newest flip first among equals.",
+  "description": "The current test rows, one per test, a standard table search: {items, more}, each item keyed by its full key, script|suite|test|flipped, its label the row. script and suite each optional: left out, any. The words narrow among them, '' for all. Most severe first, the newest flip first among equals. Given a test with its script and its suite, every row of that one test instead, current or not, the newest flip first: its history (a test without its script and suite is refused).",
   "request": {
     "script": "text?",
     "suite": "text?",
+    "test": "text?",
     "text": "text"
   }
 }
