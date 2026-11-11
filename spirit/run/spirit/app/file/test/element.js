@@ -16,7 +16,6 @@ const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fileSystem.js')).VENDORED_FOLDERS;
 const { freePort, until, sleep, chromePage, findChrome } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 
-function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 function parsed(t) { try { return JSON.parse(t); } catch (e) { return null; } }
 function readJson(f) { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch (e) { return null; } }
@@ -124,210 +123,383 @@ const HANDS = '(function () {' +
   '  order: function (words) { var t = window.__t.text(); return words.map(function (w) { return t.indexOf(w); }); },' +
   '}; return "hands"; }())';
 
-test.startTest('file.js: Files in spirit/app/file/, as Andy sees it (goal/G43.17)');
+// file.js: Files in spirit/app/file/, as Andy sees it (goal/G43.17). One test.run per test (goal/G47.2).
+// What the world made, for the tests after it.
+const W = { live: [] };
+test.after(async function () {
+  W.live.forEach(function (x) { try { x.kill(); } catch (e) { /* gone */ } });
+  if (W.c && W.c.kid) { try { W.c.kid.kill(); } catch (e) { /* gone */ } }
+  await sleep(300);
+  if (W.s) { try { fs.rmSync(W.s.root, { recursive: true, force: true }); } catch (e) { /* a door still closing; the temp folder keeps it */ } }
+});
+const NO_PAGE = 'no page: the world failed';
+const OWN = function () { return readJson(path.join(APP, 'file.json')) || {}; };
 
-(async function () {
-  test.subHeading('the box: "The old shell\'s Files app moves to spirit/app/file/, and its old shell folder goes"');
-  ok(!fs.existsSync(path.join(RUN, 'shell', 'files')), 'shell/files/ is gone', 'shell/files/ is still there');
-  ok(fs.existsSync(path.join(APP, 'element.js')), 'spirit/app/file/element.js is there', 'no spirit/app/file/element.js');
+// the box: "The old shell's Files app moves to spirit/app/file/, and its old shell folder goes"
+test.run('shell/files/ is gone', 0.2, function () {
+  return !fs.existsSync(path.join(RUN, 'shell', 'files')) || 'shell/files/ is still there';
+}, 1000);
+test.run('spirit/app/file/element.js is there', 0.2, function () {
+  return fs.existsSync(path.join(APP, 'element.js')) || 'no spirit/app/file/element.js';
+}, 1000);
+test.run('no code names shell/files', 0.2, function () {
   const oldApp = codeNaming(/shell\/files\b/);
-  ok(!oldApp.length, 'no code names shell/files', 'naming it: ' + short(oldApp));
+  return !oldApp.length || 'naming it: ' + short(oldApp);
+}, 1000);
 
-  test.subHeading('the box: "file.json: icon 📁, label "Files", intrinsic true, shell.mount true, shell.tile true, node.mount false"');
-  const own = readJson(path.join(APP, 'file.json')) || {};
-  const id = own.identity || {};
-  ok(id.icon === '📁', 'its icon is 📁', 'identity.icon: ' + short(id.icon));
-  ok(id.label === 'Files', 'its label is Files', 'identity.label: ' + short(id.label));
-  ok(id.intrinsic === true, 'it is intrinsic', 'identity.intrinsic: ' + short(id.intrinsic));
-  ok(!!own.shell && own.shell.mount === true && own.shell.tile === true, 'it mounts on the shell, as a tile', 'shell: ' + short(own.shell));
-  ok(!!own.node && own.node.mount === false && !fs.existsSync(path.join(RUN, 'spirit', 'app', 'file', 'api')), 'no server: node.mount false', 'node: ' + short(own.node));
+// the box: "file.json: icon 📁, label "Files", intrinsic true, shell.mount true, shell.tile true, node.mount false"
+test.run('its icon is 📁', 0.2, function () {
+  const id = OWN().identity || {};
+  return id.icon === '📁' || 'identity.icon: ' + short(id.icon);
+}, 1000);
+test.run('its label is Files', 0.2, function () {
+  const id = OWN().identity || {};
+  return id.label === 'Files' || 'identity.label: ' + short(id.label);
+}, 1000);
+test.run('it is intrinsic', 0.2, function () {
+  const id = OWN().identity || {};
+  return id.intrinsic === true || 'identity.intrinsic: ' + short(id.intrinsic);
+}, 1000);
+test.run('it mounts on the shell, as a tile', 0.2, function () {
+  const own = OWN();
+  return !!own.shell && own.shell.mount === true && own.shell.tile === true ? true : 'shell: ' + short(own.shell);
+}, 1000);
+test.run('no server: node.mount false', 0.2, function () {
+  const own = OWN();
+  return !!own.node && own.node.mount === false && !fs.existsSync(path.join(RUN, 'spirit', 'app', 'file', 'api')) ? true : 'node: ' + short(own.node);
+}, 1000);
 
-  test.subHeading('the box: "New never requires old", and "The list of files stays where every app shares it (Q8)"');
+// the box: "New never requires old", and "The list of files stays where every app shares it (Q8)"
+test.run('no script of spirit/app/file/ names the old shell or a shell/ path', 0.2, function () {
   const mine = filesUnder(APP).filter(function (f) { return /\.js$/.test(f) && f.split(path.sep).indexOf('test') === -1; });
   const old = mine.filter(function (f) { return /shell\/|spirit\.shell\b|\.shell\./.test(code(f)); }).map(function (f) { return path.relative(RUN, f); });
-  ok(mine.length > 0 && !old.length, 'no script of spirit/app/file/ names the old shell or a shell/ path', 'naming it: ' + short(old));
-  ok(/spirit\/element\/search\/file\.js/.test(code(path.join(APP, 'element.js'))) && fs.existsSync(path.join(RUN, 'spirit', 'element', 'search', 'file.js')),
-    'file.js draws with the shared list, spirit/element/search/file.js, which stays where it is', 'file.js does not load spirit/element/search/file.js');
+  return mine.length > 0 && !old.length ? true : 'naming it: ' + short(old);
+}, 1000);
+test.run('file.js draws with the shared list, spirit/element/search/file.js, which stays where it is', 0.2, function () {
+  return (/spirit\/element\/search\/file\.js/).test(code(path.join(APP, 'element.js'))) && fs.existsSync(path.join(RUN, 'spirit', 'element', 'search', 'file.js'))
+    ? true : 'file.js does not load spirit/element/search/file.js';
+}, 1000);
 
-  const s = scratch();
-  const live = [];
-  let c = null;
-  try {
-    const N = await boot(s.run); live.push(N.child);
-    ok(N.up, 'the world: a scratch node comes up', 'the scratch node did not come up: nothing judged');
-    if (!N.up) return;
-    const where = findChrome();
-    if (!where) { test.fail('no Chrome here: the page was not judged'); return; }
-    c = await chromePage(where);
-    if (c.error) { test.fail('Chrome: ' + c.error); return; }
-    await c.send('Page.navigate', { url: N.base + '/face.html' });
-    ok(await until(function () { return c.evaluate('!!(window.spirit && window.spirit.ready && window.spirit.event)'); }, 20000), 'the world: the face shell has its spirit', 'the page has no spirit: nothing judged');
-    await c.evaluate(HANDS);
-    const T = function (expr) { return c.evaluate('window.__t.' + expr); };
-    // Every hand in expr is the page's, not only the first: "rows() ... && tiles()" asks both.
-    const waitFor = function (expr, ms) { return until(function () { return c.evaluate('(function () { with (window.__t) { return !!(' + expr + '); } }())'); }, ms || 8000); };
-    const selector = function (face) {
-      return c.evaluate('(function () { if (window.__sel) window.__sel.destroy(); var old = document.getElementById("zzBox"); if (old) old.remove(); var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.require("spirit/app/app/element.js").then(function () { window.__sel = spirit.element.spirit.app.app.element.create(b, { face: ' + JSON.stringify(face) + ' }); return "made"; }); }())');
-    };
+test.run('the world: a scratch node comes up', 0.2, async function () {
+  W.s = scratch();
+  const N = await boot(W.s.run); W.live.push(N.child);
+  W.N = N;
+  return N.up || 'the scratch node did not come up: nothing judged';
+}, 5000);
+test.run('the world: a Chrome page', 0.2, async function () {
+  if (!W.N || !W.N.up) return 'no scratch node: the world failed';
+  const where = findChrome();
+  if (!where) return 'no Chrome here: the page was not judged';
+  W.c = await chromePage(where);
+  if (W.c.error) { const e = W.c.error; W.c = null; return 'Chrome: ' + e; }
+  return true;
+}, 2000);
+test.run('the world: the face shell has its spirit', 0.2, async function () {
+  if (!W.c) return 'no Chrome page: the world failed';
+  await W.c.send('Page.navigate', { url: W.N.base + '/face.html' });
+  W.page = !!(await until(function () { return W.c.evaluate('!!(window.spirit && window.spirit.ready && window.spirit.event)'); }, 20000));
+  if (W.page) await W.c.evaluate(HANDS);
+  return W.page || 'the page has no spirit: nothing judged';
+}, 1000);
+const T = function (expr) { return W.c.evaluate('window.__t.' + expr); };
+// Every hand in expr is the page's, not only the first: "rows() ... && tiles()" asks both.
+const waitFor = function (expr, ms) { return until(function () { return W.c.evaluate('(function () { with (window.__t) { return !!(' + expr + '); } }())'); }, ms || 8000); };
+const selector = function (face) {
+  return W.c.evaluate('(function () { if (window.__sel) window.__sel.destroy(); var old = document.getElementById("zzBox"); if (old) old.remove(); var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.require("spirit/app/app/element.js").then(function () { window.__sel = spirit.element.spirit.app.app.element.create(b, { face: ' + JSON.stringify(face) + ' }); return "made"; }); }())');
+};
 
-    test.subHeading('the box: "file.js is an element, spirit.element.spirit.app.file.element.create(container) -> { destroy() }"');
-    const made = await c.evaluate('(function () { var b = document.createElement("div"); b.id = "zzOwn"; b.style.cssText = "position:absolute;left:0;top:0;width:50%;height:50%"; document.body.appendChild(b); return spirit.require("spirit/app/file/element.js").then(function () { var E = spirit.element.spirit.app.file.element; if (!E || typeof E.create !== "function") return "no spirit.element.spirit.app.file.element.create"; var m = E.create(b); if (!m || typeof m.destroy !== "function") return "create answered " + typeof m; return new Promise(function (r) { setTimeout(r, 2500); }).then(function () { var full = b.innerHTML.length > 0; m.destroy(); var empty = b.innerHTML === ""; b.remove(); return full && empty ? "ok" : "drew " + full + ", emptied " + empty; }); }, function (e) { return "load: " + e; }); }())');
-    ok(made === 'ok', 'create(container) draws into it and answers { destroy }, and destroy leaves it empty', 'the element: ' + short(made));
+// the box: "file.js is an element, spirit.element.spirit.app.file.element.create(container) -> { destroy() }"
+test.run('create(container) draws into it and answers { destroy }, and destroy leaves it empty', 0.2, async function () {
+  if (!W.page) return NO_PAGE;
+  const made = await W.c.evaluate('(function () { var b = document.createElement("div"); b.id = "zzOwn"; b.style.cssText = "position:absolute;left:0;top:0;width:50%;height:50%"; document.body.appendChild(b); return spirit.require("spirit/app/file/element.js").then(function () { var E = spirit.element.spirit.app.file.element; if (!E || typeof E.create !== "function") return "no spirit.element.spirit.app.file.element.create"; var m = E.create(b); if (!m || typeof m.destroy !== "function") return "create answered " + typeof m; return new Promise(function (r) { setTimeout(r, 2500); }).then(function () { var full = b.innerHTML.length > 0; m.destroy(); var empty = b.innerHTML === ""; b.remove(); return full && empty ? "ok" : "drew " + full + ", emptied " + empty; }); }, function (e) { return "load: " + e; }); }())');
+  return made === 'ok' || 'the element: ' + short(made);
+}, 8000);
 
-    test.subHeading('the box: intrinsic, so its tile is there with nothing pressed; the tile opens the list');
-    await selector('tiles');
-    ok(await until(function () { return c.evaluate('(document.getElementById("zzBox").innerText || "").indexOf("Files") !== -1'); }, 8000), 'the tiles show Files, with nothing pressed', 'tiles: ' + short(await T('text()')));
-    await c.evaluate('(function () { var t = Array.prototype.slice.call(document.querySelectorAll("#zzBox .app-icon")).filter(function (e) { return String(e.innerText).indexOf("Files") !== -1; })[0]; if (t) t.click(); return !!t; }())');
-    ok(await waitFor('rows().indexOf("zzFiles") !== -1', 10000), 'its tile opens the list of files, the planted folder in it', 'the app: ' + short(await T('text()')));
-    ok(barIs(await T('bars()'), '📁 Files'), 'it covers all of the tiles: one bar in view, 📁 Files', 'bars: ' + short(await T('bars()')));
-    ok(times(await T('text()'), /\bFiles\b/g) === 1, 'the box: "No title line in file": Files is named once, in its bar', 'Files named ' + times(await T('text()'), /\bFiles\b/g) + ' times: ' + short(await T('text()')));
+// the box: intrinsic, so its tile is there with nothing pressed; the tile opens the list
+test.run('the tiles show Files, with nothing pressed', 0.2, async function () {
+  if (!W.page) return NO_PAGE;
+  await selector('tiles');
+  return await until(function () { return W.c.evaluate('(document.getElementById("zzBox").innerText || "").indexOf("Files") !== -1'); }, 8000) ? true : 'tiles: ' + short(await T('text()'));
+}, 1000);
+test.run('its tile opens the list of files, the planted folder in it', 0.2, async function () {
+  if (!W.page) return NO_PAGE;
+  await W.c.evaluate('(function () { var t = Array.prototype.slice.call(document.querySelectorAll("#zzBox .app-icon")).filter(function (e) { return String(e.innerText).indexOf("Files") !== -1; })[0]; if (t) t.click(); return !!t; }())');
+  return await waitFor('rows().indexOf("zzFiles") !== -1', 10000) ? true : 'the app: ' + short(await T('text()'));
+}, 1000);
+test.run('it covers all of the tiles: one bar in view, 📁 Files', 0.2, async function () {
+  if (!W.page) return NO_PAGE;
+  return barIs(await T('bars()'), '📁 Files') || 'bars: ' + short(await T('bars()'));
+}, 1000);
+test.run('the box: "No title line in file": Files is named once, in its bar', 0.2, async function () {
+  if (!W.page) return NO_PAGE;
+  return times(await T('text()'), /\bFiles\b/g) === 1 || 'Files named ' + times(await T('text()'), /\bFiles\b/g) + ' times: ' + short(await T('text()'));
+}, 1000);
 
-    test.subHeading('the box: "the list of files as a pane, its Name, Size and Changed columns each sortable"');
-    const heads = await T('heads()');
-    ok(['Name*', 'Size*', 'Changed*'].every(function (h) { return heads.indexOf(h) !== -1; }), 'the pane has the Name, Size and Changed headers, each a sort', 'headers: ' + short(heads));
-    const before = await T('rows()');
-    await T('head("Name")');
-    await sleep(500);
-    const after = await T('rows()');
-    ok(before.length > 1 && short(after) === short(before.slice().reverse()), 'pressing Name again turns the order round', 'before ' + short(before) + ', after ' + short(after));
-    await T('head("Name")');
-    await sleep(300);
+// the box: "the list of files as a pane, its Name, Size and Changed columns each sortable"
+test.run('the pane has the Name, Size and Changed headers, each a sort', 0.2, async function () {
+  if (!W.page) return NO_PAGE;
+  const heads = await T('heads()');
+  return ['Name*', 'Size*', 'Changed*'].every(function (h) { return heads.indexOf(h) !== -1; }) || 'headers: ' + short(heads);
+}, 1000);
+test.run('pressing Name again turns the order round', 0.2, async function () {
+  if (!W.page) return NO_PAGE;
+  const before = await T('rows()');
+  await T('head("Name")');
+  await sleep(500);
+  const after = await T('rows()');
+  await T('head("Name")');
+  await sleep(300);
+  return before.length > 1 && short(after) === short(before.slice().reverse()) ? true : 'before ' + short(before) + ', after ' + short(after);
+}, 3000);
 
-    test.subHeading('the box: "the folder tree, a folder opening and closing while the search is empty"');
-    ok((await T('rows()')).indexOf('zzFiles') !== -1 && (await T('rows()')).indexOf('zzFiles/notes.txt') === -1, 'with no words a folder starts shut, its files not shown', 'rows: ' + short(await T('rows()')));
-    ok(String(await T('rowText("zzFiles")')).indexOf('📁') !== -1, 'a shut folder is 📁', 'the folder row: ' + short(await T('rowText("zzFiles")')));
-    await T('press("zzFiles")');
-    ok(await waitFor('rows().indexOf("zzFiles/notes.txt") !== -1'), 'a press opens it, and its files show', 'rows: ' + short(await T('rows()')));
-    ok(String(await T('rowText("zzFiles")')).indexOf('📂') !== -1, 'an open folder is 📂', 'the folder row: ' + short(await T('rowText("zzFiles")')));
-    ok(barIs(await T('bars()'), '📁 Files'), 'a folder\'s press opens nothing over the list', 'bars: ' + short(await T('bars()')));
+// the box: "the folder tree, a folder opening and closing while the search is empty"
+test.run('with no words a folder starts shut, its files not shown', 0.2, async function () {
+  if (!W.page) return NO_PAGE;
+  return (await T('rows()')).indexOf('zzFiles') !== -1 && (await T('rows()')).indexOf('zzFiles/notes.txt') === -1 ? true : 'rows: ' + short(await T('rows()'));
+}, 1000);
+test.run('a shut folder is 📁', 0.2, async function () {
+  if (!W.page) return NO_PAGE;
+  return String(await T('rowText("zzFiles")')).indexOf('📁') !== -1 || 'the folder row: ' + short(await T('rowText("zzFiles")'));
+}, 1000);
+test.run('a press opens it, and its files show', 0.2, async function () {
+  if (!W.page) return NO_PAGE;
+  await T('press("zzFiles")');
+  return await waitFor('rows().indexOf("zzFiles/notes.txt") !== -1') ? true : 'rows: ' + short(await T('rows()'));
+}, 1000);
+test.run('an open folder is 📂', 0.2, async function () {
+  if (!W.page) return NO_PAGE;
+  return String(await T('rowText("zzFiles")')).indexOf('📂') !== -1 || 'the folder row: ' + short(await T('rowText("zzFiles")'));
+}, 1000);
+test.run('a folder\'s press opens nothing over the list', 0.2, async function () {
+  if (!W.page) return NO_PAGE;
+  return barIs(await T('bars()'), '📁 Files') || 'bars: ' + short(await T('bars()'));
+}, 1000);
 
-    test.subHeading('the box: "A file\'s icon is by its kind, in the pane and the tiles alike"');
-    const paneIcons = {};
-    for (const k of Object.keys(ICON)) paneIcons[k] = String(await T('rowText(' + JSON.stringify(k) + ')'));
-    const paneWrong = Object.keys(ICON).filter(function (k) { return paneIcons[k].indexOf(ICON[k]) === -1; });
-    ok(!paneWrong.length, 'in the pane: text 📜, video 📹, image 🌇, audio 🔊, a folder 📁, any other file ❔', 'wrong: ' + short(paneWrong.map(function (k) { return k + ' ' + paneIcons[k]; })));
-    ok(paneIcons['zzFiles/blob.zzq'] !== 'null' && paneIcons['zzFiles/blob.zzq'].indexOf('📄') === -1, 'a file of unknown kind is no longer 📄', 'blob.zzq: ' + short(paneIcons['zzFiles/blob.zzq']));
+// the box: "A file's icon is by its kind, in the pane and the tiles alike"
+test.run('in the pane: text 📜, video 📹, image 🌇, audio 🔊, a folder 📁, any other file ❔', 0.2, async function () {
+  if (!W.page) return NO_PAGE;
+  const paneIcons = W.paneIcons = {};
+  for (const k of Object.keys(ICON)) paneIcons[k] = String(await T('rowText(' + JSON.stringify(k) + ')'));
+  const paneWrong = Object.keys(ICON).filter(function (k) { return paneIcons[k].indexOf(ICON[k]) === -1; });
+  return !paneWrong.length || 'wrong: ' + short(paneWrong.map(function (k) { return k + ' ' + paneIcons[k]; }));
+}, 1000);
+test.run('a file of unknown kind is no longer 📄', 0.2, function () {
+  if (!W.paneIcons) return NO_PAGE;
+  const blob = W.paneIcons['zzFiles/blob.zzq'];
+  return blob !== 'null' && blob.indexOf('📄') === -1 ? true : 'blob.zzq: ' + short(blob);
+}, 1000);
 
-    test.subHeading('the box: "It gains a tiles mode, with the toggle between pane and tiles"');
-    const toggled = await T('toggle()');
-    ok(toggled, 'the list has the toggle', 'no toggle: ' + short(await T('text()')));
-    ok(toggled && await waitFor('tiles().indexOf("zzFiles/notes.txt") !== -1'), 'the toggle turns the rows into tiles', 'the list: ' + short(await T('text()')));
-    const tileIcons = {};
-    for (const k of Object.keys(ICON)) tileIcons[k] = String(await T('rowText(' + JSON.stringify(k) + ')'));
-    const tileWrong = Object.keys(ICON).filter(function (k) { return tileIcons[k].indexOf(ICON[k]) === -1; });
-    ok(!tileWrong.length, 'in the tiles the same icons', 'wrong: ' + short(tileWrong.map(function (k) { return k + ' ' + tileIcons[k]; })));
-    ok(toggled && await T('toggle()') && await waitFor('rows().indexOf("zzFiles/notes.txt") !== -1 && tiles().length === 0'), 'and back to the pane', 'the list: ' + short(await T('text()')));
+// the box: "It gains a tiles mode, with the toggle between pane and tiles"
+test.run('the list has the toggle', 0.2, async function () {
+  if (!W.page) return NO_PAGE;
+  W.toggled = await T('toggle()');
+  return W.toggled || 'no toggle: ' + short(await T('text()'));
+}, 1000);
+test.run('the toggle turns the rows into tiles', 0.2, async function () {
+  if (!W.page) return NO_PAGE;
+  return W.toggled && await waitFor('tiles().indexOf("zzFiles/notes.txt") !== -1') ? true : 'the list: ' + short(await T('text()'));
+}, 1000);
+test.run('in the tiles the same icons', 0.2, async function () {
+  if (!W.page) return NO_PAGE;
+  const tileIcons = {};
+  for (const k of Object.keys(ICON)) tileIcons[k] = String(await T('rowText(' + JSON.stringify(k) + ')'));
+  const tileWrong = Object.keys(ICON).filter(function (k) { return tileIcons[k].indexOf(ICON[k]) === -1; });
+  return !tileWrong.length || 'wrong: ' + short(tileWrong.map(function (k) { return k + ' ' + tileIcons[k]; }));
+}, 1000);
+test.run('and back to the pane', 0.2, async function () {
+  if (!W.page) return NO_PAGE;
+  return W.toggled && await T('toggle()') && await waitFor('rows().indexOf("zzFiles/notes.txt") !== -1 && tiles().length === 0') ? true : 'the list: ' + short(await T('text()'));
+}, 1000);
 
-    test.subHeading('the box: "search in names or in contents, contents ranked by match"');
-    await T('type("deep")');
-    ok(await waitFor('rows().indexOf("zzFiles/inner/deep.txt") !== -1'), 'a name is found while its folder is shut', 'rows: ' + short(await T('rows()')));
-    await T('filter("in", "contents")');
-    await T('type("zzquokka")');
-    await T('search()');
-    // Nothing is cut (probabilitySearch, G43.6), so both files are in the list before the node answers: found means ranked above
-    // every file the word misses, which only the contents answer does.
-    const hits = 'rows().indexOf("zzFiles/notes.txt") !== -1 && rows().indexOf("zzFiles/inner/deep.txt") !== -1 && rows().slice(0, 3).indexOf("zzFiles/notes.txt") !== -1 && rows().slice(0, 3).indexOf("zzFiles/inner/deep.txt") !== -1';
-    ok(await waitFor(hits, 15000), 'in contents both files holding the word are found, ranked above the files it misses', 'rows: ' + short(await T('rows()')) + ', the list: ' + JSON.stringify(await T('state()')));
-    const ranked = await T('rows()');
-    const rankedAt = await T('state()');
-    ok(ranked.indexOf('zzFiles/notes.txt') !== -1 && ranked.indexOf('zzFiles/notes.txt') < ranked.indexOf('zzFiles/inner/deep.txt'), 'the file with two matches ranks above the one with one', 'rows: ' + short(ranked) + ', the list: ' + JSON.stringify(rankedAt));
+// the box: "search in names or in contents, contents ranked by match"
+test.run('a name is found while its folder is shut', 0.2, async function () {
+  if (!W.page) return NO_PAGE;
+  await T('type("deep")');
+  return await waitFor('rows().indexOf("zzFiles/inner/deep.txt") !== -1') ? true : 'rows: ' + short(await T('rows()'));
+}, 3000);
+test.run('in contents both files holding the word are found, ranked above the files it misses', 0.2, async function () {
+  if (!W.page) return NO_PAGE;
+  await T('filter("in", "contents")');
+  await T('type("zzquokka")');
+  await T('search()');
+  // Nothing is cut (probabilitySearch, G43.6), so both files are in the list before the node answers: found means ranked above
+  // every file the word misses, which only the contents answer does.
+  const hits = 'rows().indexOf("zzFiles/notes.txt") !== -1 && rows().indexOf("zzFiles/inner/deep.txt") !== -1 && rows().slice(0, 3).indexOf("zzFiles/notes.txt") !== -1 && rows().slice(0, 3).indexOf("zzFiles/inner/deep.txt") !== -1';
+  return await waitFor(hits, 15000) ? true : 'rows: ' + short(await T('rows()')) + ', the list: ' + JSON.stringify(await T('state()'));
+}, 20000);
+test.run('the file with two matches ranks above the one with one', 0.2, async function () {
+  if (!W.page) return NO_PAGE;
+  const ranked = await T('rows()');
+  const rankedAt = await T('state()');
+  return ranked.indexOf('zzFiles/notes.txt') !== -1 && ranked.indexOf('zzFiles/notes.txt') < ranked.indexOf('zzFiles/inner/deep.txt') ? true : 'rows: ' + short(ranked) + ', the list: ' + JSON.stringify(rankedAt);
+}, 1000);
 
-    test.subHeading('the box: "A contents match opens text at its line, the words marked"');
-    await T('press("zzFiles/notes.txt")');
-    ok(await waitFor('marked().length > 0', 15000), 'the text opens with the words marked', 'the layer: ' + short(await T('text()')));
-    ok((await T('marked()')).length > 0 && (await T('marked()')).every(function (m) { return /zzquokka/i.test(m); }), 'what is marked is the word searched', 'marked: ' + short(await T('marked()')));
-    ok(barIs(await T('bars()'), '✏️ Text Editor: notes.txt'), 'it covers all of Files: one bar in view, ✏️ Text Editor: notes.txt', 'bars: ' + short(await T('bars()')));
-    const overList = barIs(await T('bars()'), /notes\.txt$/);
-    ok(overList && (await T('rows()')).length === 0, 'the list is out of view while the file is over it', 'rows: ' + short(await T('rows()')));
-    ok(overList && (await T('pickers()')) === 1, 'the box: "show their whole selves with it, the file picker too, also when launched from file"', 'pickers: ' + (await T('pickers()')));
-    await T('close("notes.txt")');
-    ok(await waitFor('rows().indexOf("zzFiles/notes.txt") !== -1'), 'its ✕ shows the list again', 'the app: ' + short(await T('text()')));
-    ok((await T('rows()')).indexOf('zzFiles/notes.txt') !== -1 && (await T('words()')) === 'zzquokka', 'the list is as it was left, its words kept', 'words: ' + short(await T('words()')));
+// the box: "A contents match opens text at its line, the words marked"
+test.run('the text opens with the words marked', 0.2, async function () {
+  if (!W.page) return NO_PAGE;
+  await T('press("zzFiles/notes.txt")');
+  return await waitFor('marked().length > 0', 15000) ? true : 'the layer: ' + short(await T('text()'));
+}, 2000);
+test.run('what is marked is the word searched', 0.2, async function () {
+  if (!W.page) return NO_PAGE;
+  return (await T('marked()')).length > 0 && (await T('marked()')).every(function (m) { return /zzquokka/i.test(m); }) ? true : 'marked: ' + short(await T('marked()'));
+}, 1000);
+test.run('it covers all of Files: one bar in view, ✏️ Text Editor: notes.txt', 0.2, async function () {
+  if (!W.page) return NO_PAGE;
+  return barIs(await T('bars()'), '✏️ Text Editor: notes.txt') || 'bars: ' + short(await T('bars()'));
+}, 1000);
+test.run('the list is out of view while the file is over it', 0.2, async function () {
+  if (!W.page) return NO_PAGE;
+  W.overList = barIs(await T('bars()'), /notes\.txt$/);
+  return W.overList && (await T('rows()')).length === 0 ? true : 'rows: ' + short(await T('rows()'));
+}, 1000);
+test.run('the box: "show their whole selves with it, the file picker too, also when launched from file"', 0.2, async function () {
+  if (!W.page) return NO_PAGE;
+  return W.overList && (await T('pickers()')) === 1 ? true : 'pickers: ' + (await T('pickers()'));
+}, 1000);
+test.run('its ✕ shows the list again', 0.2, async function () {
+  if (!W.page) return NO_PAGE;
+  await T('close("notes.txt")');
+  return await waitFor('rows().indexOf("zzFiles/notes.txt") !== -1') ? true : 'the app: ' + short(await T('text()'));
+}, 1000);
+test.run('the list is as it was left, its words kept', 0.2, async function () {
+  if (!W.page) return NO_PAGE;
+  return (await T('rows()')).indexOf('zzFiles/notes.txt') !== -1 && (await T('words()')) === 'zzquokka' ? true : 'words: ' + short(await T('words()'));
+}, 1000);
 
-    test.subHeading('the box: "A press opens the file over all of file: text for text, media for video, image and audio, fstat only for a file of unknown kind (❔)"');
-    await T('type("")');
-    await T('filter("in", "names")');
-    await waitFor('rows().indexOf("zzFiles/pic.png") !== -1');
-    const opens = [['zzFiles/pic.png', 'img', '🌇'], ['zzFiles/clip.mp4', 'video', '📹'], ['zzFiles/song.mp3', 'audio', '🔊']];
-    for (const o of opens) {
-      const name = o[0].split('/').pop();
-      await T('press(' + JSON.stringify(o[0]) + ')');
-      const shown = await waitFor('count(' + JSON.stringify(o[1]) + ') > 0', 10000);
-      const opened = name + ': ' + o[1] + ' ' + (await T('count(' + JSON.stringify(o[1]) + ')')) + ', ' + short(await T('text()'));
-      if (o[1] === 'img') ok(shown, 'pic.png opens in media, as img', opened);
-      else if (o[1] === 'video') ok(shown, 'clip.mp4 opens in media, as video', opened);
-      else if (o[1] === 'audio') ok(shown, 'song.mp3 opens in media, as audio', opened);
-      const barred = shown && barIs(await T('bars()'), o[2] + ' Media Viewer: ' + name);
-      const bars = name + ': bars ' + short(await T('bars()'));
-      if (o[1] === 'img') ok(barred, 'its one bar: 🌇 Media Viewer: pic.png, the file\'s own icon (Q15)', bars);
-      else if (o[1] === 'video') ok(barred, 'its one bar: 📹 Media Viewer: clip.mp4, the file\'s own icon (Q15)', bars);
-      else if (o[1] === 'audio') ok(barred, 'its one bar: 🔊 Media Viewer: song.mp3, the file\'s own icon (Q15)', bars);
-      const whole = shown && (await T('pickers()')) === 1 && (await T('count(".CodeMirror")')) === 0;
-      const pickers = name + ': pickers ' + (await T('pickers()'));
-      if (o[1] === 'img') ok(whole, 'pic.png: its whole self, the file picker too, and no text', pickers);
-      else if (o[1] === 'video') ok(whole, 'clip.mp4: its whole self, the file picker too, and no text', pickers);
-      else if (o[1] === 'audio') ok(whole, 'song.mp3: its whole self, the file picker too, and no text', pickers);
-      const own = String(await T('text()'));
-      const apart = shown && times(own, new RegExp(name.replace('.', '\\.'), 'g')) === 1 && own.indexOf('MIME type') === -1;
-      if (o[1] === 'img') ok(apart, 'pic.png: separate from fstat: its name only in the bar, no facts', name + ': ' + short(own));
-      else if (o[1] === 'video') ok(apart, 'clip.mp4: separate from fstat: its name only in the bar, no facts', name + ': ' + short(own));
-      else if (o[1] === 'audio') ok(apart, 'song.mp3: separate from fstat: its name only in the bar, no facts', name + ': ' + short(own));
-      await T('close(' + JSON.stringify(name) + ')');
-      await waitFor('rows().length > 0');
-    }
+// the box: "A press opens the file over all of file: text for text, media for video, image and audio, fstat only for a file of
+// unknown kind (❔)". Each of the three media files: pressed, judged four ways, closed.
+async function mediaOpens(file, tag) {
+  if (!W.page) return NO_PAGE;
+  if (!W.namesBack) { await T('type("")'); await T('filter("in", "names")'); await waitFor('rows().indexOf("zzFiles/pic.png") !== -1'); W.namesBack = true; }
+  const name = file.split('/').pop();
+  await T('press(' + JSON.stringify(file) + ')');
+  W.shown = await waitFor('count(' + JSON.stringify(tag) + ') > 0', 10000);
+  return W.shown ? true : name + ': ' + tag + ' ' + (await T('count(' + JSON.stringify(tag) + ')')) + ', ' + short(await T('text()'));
+}
+async function mediaBar(name, icon) {
+  if (!W.page) return NO_PAGE;
+  return W.shown && barIs(await T('bars()'), icon + ' Media Viewer: ' + name) ? true : name + ': bars ' + short(await T('bars()'));
+}
+async function mediaWhole(name) {
+  if (!W.page) return NO_PAGE;
+  return W.shown && (await T('pickers()')) === 1 && (await T('count(".CodeMirror")')) === 0 ? true : name + ': pickers ' + (await T('pickers()'));
+}
+async function mediaApart(name) {
+  if (!W.page) return NO_PAGE;
+  const own = String(await T('text()'));
+  const apart = W.shown && times(own, new RegExp(name.replace('.', '\\.'), 'g')) === 1 && own.indexOf('MIME type') === -1;
+  await T('close(' + JSON.stringify(name) + ')');
+  await waitFor('rows().length > 0');
+  return apart ? true : name + ': ' + short(own);
+}
+test.run('pic.png opens in media, as img', 0.2, function () { return mediaOpens('zzFiles/pic.png', 'img'); }, 2000);
+test.run('its one bar: 🌇 Media Viewer: pic.png, the file\'s own icon (Q15)', 0.2, function () { return mediaBar('pic.png', '🌇'); }, 1000);
+test.run('pic.png: its whole self, the file picker too, and no text', 0.2, function () { return mediaWhole('pic.png'); }, 1000);
+test.run('pic.png: separate from fstat: its name only in the bar, no facts', 0.2, function () { return mediaApart('pic.png'); }, 1000);
+test.run('clip.mp4 opens in media, as video', 0.2, function () { return mediaOpens('zzFiles/clip.mp4', 'video'); }, 1000);
+test.run('its one bar: 📹 Media Viewer: clip.mp4, the file\'s own icon (Q15)', 0.2, function () { return mediaBar('clip.mp4', '📹'); }, 1000);
+test.run('clip.mp4: its whole self, the file picker too, and no text', 0.2, function () { return mediaWhole('clip.mp4'); }, 1000);
+test.run('clip.mp4: separate from fstat: its name only in the bar, no facts', 0.2, function () { return mediaApart('clip.mp4'); }, 1000);
+test.run('song.mp3 opens in media, as audio', 0.2, function () { return mediaOpens('zzFiles/song.mp3', 'audio'); }, 1000);
+test.run('its one bar: 🔊 Media Viewer: song.mp3, the file\'s own icon (Q15)', 0.2, function () { return mediaBar('song.mp3', '🔊'); }, 1000);
+test.run('song.mp3: its whole self, the file picker too, and no text', 0.2, function () { return mediaWhole('song.mp3'); }, 1000);
+test.run('song.mp3: separate from fstat: its name only in the bar, no facts', 0.2, function () { return mediaApart('song.mp3'); }, 1000);
 
-    test.subHeading('the box: "A picture or video is constrained as list boxes are: it fills the room it is given, never wider or taller"');
-    await T('press("zzFiles/pic.png")');
-    const drawn = await until(function () { return c.evaluate('(function () { var i = document.querySelector("#zzBox img"); return !!i && i.complete && i.naturalWidth === 2400; }())'); }, 10000);
-    ok(drawn, 'the world: the 2400 by 1600 picture is drawn', 'the picture did not load: ' + short(await T('text()')));
-    for (const size of [[300, 200], [1200, 300], [300, 900]]) {
-      const m = drawn ? await T('sized("img", ' + size[0] + ', ' + size[1] + ')') : { none: true };
-      const inside = !m.none && m.left >= -1 && m.top >= -1 && m.right >= -1 && m.bottom >= -1 && m.w > 0 && m.h > 0;
-      if (size[0] === 300 && size[1] === 200) ok(inside && m.bar, 'in a pane 300 by 200 the picture stays inside it both ways, under its bar, still in view', size.join('x') + ': ' + short(m));
-      else if (size[0] === 1200) ok(inside && m.bar, 'in a pane 1200 by 300 the picture stays inside it both ways, under its bar, still in view', size.join('x') + ': ' + short(m));
-      else if (size[0] === 300 && size[1] === 900) ok(inside && m.bar, 'in a pane 300 by 900 the picture stays inside it both ways, under its bar, still in view', size.join('x') + ': ' + short(m));
-      if (size[0] === 300 && size[1] === 200) ok(!m.none && m.fit !== 'cover', 'in a pane 300 by 200 it is shrunk, not cropped', size.join('x') + ': object-fit ' + short(m.fit));
-      else if (size[0] === 1200) ok(!m.none && m.fit !== 'cover', 'in a pane 1200 by 300 it is shrunk, not cropped', size.join('x') + ': object-fit ' + short(m.fit));
-      else if (size[0] === 300 && size[1] === 900) ok(!m.none && m.fit !== 'cover', 'in a pane 300 by 900 it is shrunk, not cropped', size.join('x') + ': object-fit ' + short(m.fit));
-    }
-    await T('unsized()');
-    await T('close("pic.png")');
-    await waitFor('rows().length > 0');
+// the box: "A picture or video is constrained as list boxes are: it fills the room it is given, never wider or taller"
+test.run('the world: the 2400 by 1600 picture is drawn', 0.2, async function () {
+  if (!W.page) return NO_PAGE;
+  await T('press("zzFiles/pic.png")');
+  W.drawn = await until(function () { return W.c.evaluate('(function () { var i = document.querySelector("#zzBox img"); return !!i && i.complete && i.naturalWidth === 2400; }())'); }, 10000);
+  return W.drawn ? true : 'the picture did not load: ' + short(await T('text()'));
+}, 1000);
+// The pane made w by h, and what the picture does in it: inside it both ways, under its bar; and shrunk, not cropped.
+async function sizedInside(w, h) {
+  if (!W.page) return NO_PAGE;
+  const m = W.m = W.drawn ? await T('sized("img", ' + w + ', ' + h + ')') : { none: true };
+  const inside = !m.none && m.left >= -1 && m.top >= -1 && m.right >= -1 && m.bottom >= -1 && m.w > 0 && m.h > 0;
+  return inside && m.bar ? true : w + 'x' + h + ': ' + short(m);
+}
+function sizedShrunk(w, h) {
+  const m = W.m || { none: true };
+  return !m.none && m.fit !== 'cover' ? true : w + 'x' + h + ': object-fit ' + short(m.fit);
+}
+test.run('in a pane 300 by 200 the picture stays inside it both ways, under its bar, still in view', 0.2, function () { return sizedInside(300, 200); }, 2000);
+test.run('in a pane 300 by 200 it is shrunk, not cropped', 0.2, function () { return sizedShrunk(300, 200); }, 1000);
+test.run('in a pane 1200 by 300 the picture stays inside it both ways, under its bar, still in view', 0.2, function () { return sizedInside(1200, 300); }, 2000);
+test.run('in a pane 1200 by 300 it is shrunk, not cropped', 0.2, function () { return sizedShrunk(1200, 300); }, 1000);
+test.run('in a pane 300 by 900 the picture stays inside it both ways, under its bar, still in view', 0.2, function () { return sizedInside(300, 900); }, 2000);
+test.run('in a pane 300 by 900 it is shrunk, not cropped', 0.2, async function () {
+  const r = sizedShrunk(300, 900);
+  if (W.page) { await T('unsized()'); await T('close("pic.png")'); await waitFor('rows().length > 0'); }
+  return r;
+}, 1000);
 
-    test.subHeading('the box: text "separate from fstat", "No title line in text", and its row "a bubble of the same kind as rowForm uses"');
-    await T('press("zzFiles/notes.txt")');
-    ok(await waitFor('count(".CodeMirror") > 0', 10000) && (await T('count("img, video, audio")')) === 0, 'notes.txt opens in text, no media', 'notes.txt: ' + short(await T('text()')));
-    const textLayer = String(await T('text()'));
-    ok(times(textLayer, /notes\.txt/g) === 1 && textLayer.indexOf('MIME type') === -1, 'its name only in the bar, no title line, no facts', 'notes.txt: ' + short(textLayer));
-    ok((await T('inBubble("Save")')) === true, 'Save sits in a bubble of the kind rowForm uses', 'Save: ' + short(await T('inBubble("Save")')));
-    ok((await T('folds("Save", 120)')) === 'ok', 'the box: "Rows are inline, not boxes: they fold": in a pane 120px wide nothing of that row goes past its edge', 'narrow: ' + short(await T('folds("Save", 120)')));
-    await T('close("notes.txt")');
-    await waitFor('rows().length > 0');
+// the box: text "separate from fstat", "No title line in text", and its row "a bubble of the same kind as rowForm uses"
+test.run('notes.txt opens in text, no media', 0.2, async function () {
+  if (!W.page) return NO_PAGE;
+  await T('press("zzFiles/notes.txt")');
+  return await waitFor('count(".CodeMirror") > 0', 10000) && (await T('count("img, video, audio")')) === 0 ? true : 'notes.txt: ' + short(await T('text()'));
+}, 1000);
+test.run('its name only in the bar, no title line, no facts', 0.2, async function () {
+  if (!W.page) return NO_PAGE;
+  const textLayer = String(await T('text()'));
+  return times(textLayer, /notes\.txt/g) === 1 && textLayer.indexOf('MIME type') === -1 ? true : 'notes.txt: ' + short(textLayer);
+}, 1000);
+test.run('Save sits in a bubble of the kind rowForm uses', 0.2, async function () {
+  if (!W.page) return NO_PAGE;
+  return (await T('inBubble("Save")')) === true || 'Save: ' + short(await T('inBubble("Save")'));
+}, 1000);
+test.run('the box: "Rows are inline, not boxes: they fold": in a pane 120px wide nothing of that row goes past its edge', 0.2, async function () {
+  if (!W.page) return NO_PAGE;
+  const folded = await T('folds("Save", 120)');
+  const r = folded === 'ok' ? true : 'narrow: ' + short(folded);
+  await T('close("notes.txt")');
+  await waitFor('rows().length > 0');
+  return r;
+}, 2000);
 
-    test.subHeading('the box: fstat, "the facts (MIME type, size, changed, created) ... No name line"; no annotations since goal/G43.20');
-    await T('press("zzFiles/blob.zzq")');
-    const facts = await waitFor('text().indexOf("MIME type") !== -1', 10000);
-    ok(facts, 'blob.zzq opens in fstat, its facts shown', 'blob.zzq: ' + short(await T('text()')));
-    ok(facts && barIs(await T('bars()'), /blob\.zzq$/), 'under one bar in view, ending in its name', 'bars: ' + short(await T('bars()')));
-    ok(facts && (await T('count(".CodeMirror, img, video, audio")')) === 0, 'fstat alone: no text and no media', 'blob.zzq: ' + short(await T('text()')));
-    ok(facts && times(await T('text()'), /blob\.zzq/g) === 1, 'no name line: blob.zzq is named once, in the bar', 'blob.zzq: ' + short(await T('text()')));
-    await waitFor('text().indexOf("Created") !== -1', 10000);
-    const fstatText = String(await T('text()'));
-    const order = ['MIME type', 'Size', 'Changed', 'Created'].map(function (w) { return fstatText.indexOf(w); });
-    ok(order.every(function (n, i) { return n !== -1 && (!i || n > order[i - 1]); }), 'top down: MIME type, size, changed, created', 'order ' + short(order) + ' in ' + short(fstatText));
-    ok(fstatText.indexOf('More Information') === -1, 'and no annotations (goal/G43.20; Andy: "ANNOTATIONS WILL BE NODE ONLY.")', 'blob.zzq: ' + short(fstatText));
-    ok(facts && !/Open with/i.test(fstatText), 'the box (Q9): no Open with in it', 'blob.zzq: ' + short(fstatText));
-    await T('close("blob.zzq")');
+// the box: fstat, "the facts (MIME type, size, changed, created) ... No name line"; no annotations since goal/G43.20
+test.run('blob.zzq opens in fstat, its facts shown', 0.2, async function () {
+  if (!W.page) return NO_PAGE;
+  await T('press("zzFiles/blob.zzq")');
+  W.facts = await waitFor('text().indexOf("MIME type") !== -1', 10000);
+  return W.facts ? true : 'blob.zzq: ' + short(await T('text()'));
+}, 1000);
+test.run('under one bar in view, ending in its name', 0.2, async function () {
+  if (!W.page) return NO_PAGE;
+  return W.facts && barIs(await T('bars()'), /blob\.zzq$/) ? true : 'bars: ' + short(await T('bars()'));
+}, 1000);
+test.run('fstat alone: no text and no media', 0.2, async function () {
+  if (!W.page) return NO_PAGE;
+  return W.facts && (await T('count(".CodeMirror, img, video, audio")')) === 0 ? true : 'blob.zzq: ' + short(await T('text()'));
+}, 1000);
+test.run('no name line: blob.zzq is named once, in the bar', 0.2, async function () {
+  if (!W.page) return NO_PAGE;
+  return W.facts && times(await T('text()'), /blob\.zzq/g) === 1 ? true : 'blob.zzq: ' + short(await T('text()'));
+}, 1000);
+test.run('top down: MIME type, size, changed, created', 0.2, async function () {
+  if (!W.page) return NO_PAGE;
+  await waitFor('text().indexOf("Created") !== -1', 10000);
+  const fstatText = W.fstatText = String(await T('text()'));
+  const order = ['MIME type', 'Size', 'Changed', 'Created'].map(function (w) { return fstatText.indexOf(w); });
+  return order.every(function (n, i) { return n !== -1 && (!i || n > order[i - 1]); }) ? true : 'order ' + short(order) + ' in ' + short(fstatText);
+}, 1000);
+test.run('and no annotations (goal/G43.20; Andy: "ANNOTATIONS WILL BE NODE ONLY.")', 0.2, function () {
+  if (W.fstatText === undefined) return NO_PAGE;
+  return W.fstatText.indexOf('More Information') === -1 || 'blob.zzq: ' + short(W.fstatText);
+}, 1000);
+test.run('the box (Q9): no Open with in it', 0.2, async function () {
+  if (W.fstatText === undefined) return NO_PAGE;
+  const r = W.facts && !/Open with/i.test(W.fstatText) ? true : 'blob.zzq: ' + short(W.fstatText);
+  await T('close("blob.zzq")');
+  return r;
+}, 1000);
 
-    test.subHeading('nothing threw on the page');
-    const thrown = c.heard.filter(function (m) { return m.method === 'Runtime.exceptionThrown'; }).map(function (m) { return (m.params.exceptionDetails.exception && m.params.exceptionDetails.exception.description) || m.params.exceptionDetails.text; });
-    ok(!thrown.length, 'no uncaught error on the page, all the way', 'thrown: ' + short(thrown));
-    await stop(N.child);
-  } finally {
-    live.forEach(function (x) { try { x.kill(); } catch (e) { /* gone */ } });
-    if (c && c.kid) { try { c.kid.kill(); } catch (e) { /* gone */ } }
-    await sleep(300);
-    try { fs.rmSync(s.root, { recursive: true, force: true }); } catch (e) { /* a door still closing; the temp folder keeps it */ }
-  }
-}()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
-  function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });
+// nothing threw on the page
+test.run('no uncaught error on the page, all the way', 0.2, async function () {
+  if (!W.c) return NO_PAGE;
+  const thrown = W.c.heard.filter(function (m) { return m.method === 'Runtime.exceptionThrown'; }).map(function (m) { return (m.params.exceptionDetails.exception && m.params.exceptionDetails.exception.description) || m.params.exceptionDetails.text; });
+  await stop(W.N.child);
+  return !thrown.length || 'thrown: ' + short(thrown);
+}, 1000);

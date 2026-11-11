@@ -15,7 +15,6 @@ const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const FILE = path.join(__dirname, '..', 'data.js');
 const SPIRIT_DATA = path.join(RUN, 'spirit', 'data.js');
 
-function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 // The sender's public key, base64 with a + and a / in it, as a node's key is.
 const SENDER = 'Ab+c/DeF0123456789abcdefghijklmnopqrstuvwxy=';
@@ -35,62 +34,99 @@ function world() {
     job: function (app, module) { D.takeJob({ id: 'j' + (++n), module: module || 'spirit.app.icons', data: {}, app: app }, SENDER); } };
 }
 
-test.startTest('data.js: what a page knows of the icon set, following the one job spirit.app.icons (goal/G43.19)');
+// data.js: what a page knows of the icon set, following the one job spirit.app.icons (goal/G43.19).
+// One test.run per test (goal/G47.2). What the world made, for the tests after it.
+let w = null;
+const NO_WORLD = 'no spirit.data.icons.data: the world failed';
+test.run('the world: spirit.data.icons.data answers rows, row and watch', 0.2, function () {
+  if (!fs.existsSync(FILE)) return 'spirit/app/icons/data.js is not there';
+  const made = world();
+  if (!made.I) return 'spirit.data.icons.data: ' + short(made.I && Object.keys(made.I));
+  w = made;
+  return typeof w.I.rows === 'function' && typeof w.I.row === 'function' && typeof w.I.watch === 'function' ? true : 'spirit.data.icons.data: ' + short(w.I && Object.keys(w.I));
+}, 1000);
 
-(function () {
-  if (!fs.existsSync(FILE)) { test.fail('spirit/app/icons/data.js is not there'); return; }
-  const w = world();
-  ok(!!w.I && typeof w.I.rows === 'function' && typeof w.I.row === 'function' && typeof w.I.watch === 'function', 'the world: spirit.data.icons.data answers rows, row and watch', 'spirit.data.icons.data: ' + short(w.I && Object.keys(w.I)));
-  if (!w.I) return;
-
-  test.subHeading('the box, 10: a run\'s publish, { icons: { row } }, is on the page');
+// the box, 10: a run's publish, { icons: { row } }, is on the page
+test.run('an added row is there, its glyph and keywords', 0.2, function () {
+  if (!w) return NO_WORLD;
   w.job({ icons: { row: { glyph: '🌀', keywords: ['cyclone', 'spin'] } } });
   const r1 = w.I.row('🌀');
-  ok(!!r1 && r1.glyph === '🌀' && JSON.stringify(r1.keywords) === '["cyclone","spin"]', 'an added row is there, its glyph and keywords', 'row(🌀): ' + short(r1));
-  ok(Object.keys(w.I.rows() || {}).indexOf('🌀') !== -1, 'and among rows()', 'rows(): ' + short(w.I.rows()));
+  return !!r1 && r1.glyph === '🌀' && JSON.stringify(r1.keywords) === '["cyclone","spin"]' ? true : 'row(🌀): ' + short(r1);
+}, 1000);
+test.run('and among rows()', 0.2, function () {
+  if (!w) return NO_WORLD;
+  return Object.keys(w.I.rows() || {}).indexOf('🌀') !== -1 || 'rows(): ' + short(w.I.rows());
+}, 1000);
+test.run('a changed row replaces it', 0.2, function () {
+  if (!w) return NO_WORLD;
   w.job({ icons: { row: { glyph: '🌀', keywords: ['storm'] } } });
-  ok(JSON.stringify((w.I.row('🌀') || {}).keywords) === '["storm"]', 'a changed row replaces it', 'after a change: ' + short(w.I.row('🌀')));
+  return JSON.stringify((w.I.row('🌀') || {}).keywords) === '["storm"]' || 'after a change: ' + short(w.I.row('🌀'));
+}, 1000);
 
-  test.subHeading('a watch follows every change, and the row gone');
-  const heard = [];
-  const off = w.I.watch(function (g, v) { heard.push([g, v ? v.keywords : undefined]); });
+// a watch follows every change, and the row gone
+const heard = [];
+let off = null;
+test.run('it hears a new row by its glyph', 0.2, function () {
+  if (!w) return NO_WORLD;
+  off = w.I.watch(function (g, v) { heard.push([g, v ? v.keywords : undefined]); });
   w.job({ icons: { row: { glyph: '🌁', keywords: ['fog'] } } });
-  ok(heard.some(function (h) { return h[0] === '🌁' && JSON.stringify(h[1]) === '["fog"]'; }), 'it hears a new row by its glyph', 'heard: ' + short(heard));
+  return heard.some(function (h) { return h[0] === '🌁' && JSON.stringify(h[1]) === '["fog"]'; }) || 'heard: ' + short(heard);
+}, 1000);
+test.run('{ icons: { glyph, removed: true } } takes the row away', 0.2, function () {
+  if (!w) return NO_WORLD;
   w.job({ icons: { glyph: '🌁', removed: true } });
-  ok(w.I.row('🌁') === null, '{ icons: { glyph, removed: true } } takes the row away', 'after removed: ' + short(w.I.row('🌁')));
-  ok(heard.some(function (h) { return h[0] === '🌁' && h[1] === undefined; }), 'and the watch hears it gone', 'heard: ' + short(heard));
-  ok(typeof off === 'function', 'a watch answers its release', 'watch answered ' + short(typeof off));
+  return w.I.row('🌁') === null || 'after removed: ' + short(w.I.row('🌁'));
+}, 1000);
+test.run('and the watch hears it gone', 0.2, function () {
+  if (!w) return NO_WORLD;
+  return heard.some(function (h) { return h[0] === '🌁' && h[1] === undefined; }) || 'heard: ' + short(heard);
+}, 1000);
+test.run('a watch answers its release', 0.2, function () {
+  if (!w) return NO_WORLD;
+  return typeof off === 'function' || 'watch answered ' + short(typeof off);
+}, 1000);
+test.run('released, it hears nothing more', 0.2, function () {
+  if (!w) return NO_WORLD;
   if (typeof off === 'function') off();
   const before = heard.length;
   w.job({ icons: { row: { glyph: '🌆', keywords: ['dusk'] } } });
-  ok(heard.length === before, 'released, it hears nothing more', 'released, it still heard ' + short(heard.slice(before)));
+  return heard.length === before || 'released, it still heard ' + short(heard.slice(before));
+}, 1000);
 
-  test.subHeading('the attacker: what is not the icons job\'s publish changes nothing');
-  const snap = function () { return JSON.stringify(w.I.rows() || {}); };
-  const was = snap();
+// the attacker: what is not the icons job's publish changes nothing
+const snap = function () { return JSON.stringify(w.I.rows() || {}); };
+let was = '';
+test.run('a row on another app\'s job, spirit.app.desk, is not taken', 0.8, function () {
+  if (!w) return NO_WORLD;
+  was = snap();
   w.job({ icons: { row: { glyph: '🌌', keywords: ['galaxy'] } } }, 'spirit.app.desk');
-  ok(w.I.row('🌌') === null && snap() === was, 'a row on another app\'s job, spirit.app.desk, is not taken', 'another job\'s row was taken: ' + short(w.I.row('🌌')));
-  const crooked = function (app) {
-    let threw = '';
-    try { w.job(app); } catch (e) { threw = String(e && e.message || e); }
-    return { fine: !threw && snap() === was, why: 'the publish ' + short(app) + (threw ? ' threw ' + threw : ' changed the rows to ' + snap()) };
-  };
-  let c;
-  c = crooked(null); ok(c.fine, 'a crooked publish of null changes nothing', c.why);
-  c = crooked('text'); ok(c.fine, 'a crooked publish of a string changes nothing', c.why);
-  c = crooked(5); ok(c.fine, 'a crooked publish of a number changes nothing', c.why);
-  c = crooked([]); ok(c.fine, 'a crooked publish of a list changes nothing', c.why);
-  c = crooked({ icons: null }); ok(c.fine, 'a crooked publish of icons that are null changes nothing', c.why);
-  c = crooked({ icons: 'x' }); ok(c.fine, 'a crooked publish of icons that are a string changes nothing', c.why);
-  c = crooked({ icons: { row: null } }); ok(c.fine, 'a crooked publish of a row that is null changes nothing', c.why);
-  c = crooked({ icons: { row: { keywords: ['no glyph'] } } }); ok(c.fine, 'a crooked publish of a row with no glyph changes nothing', c.why);
-  c = crooked({ icons: { removed: true } }); ok(c.fine, 'a crooked publish of a removal with no glyph changes nothing', c.why);
-  c = crooked({ other: { row: { glyph: '🌑' } } }); ok(c.fine, 'a crooked publish of a row under another name than icons changes nothing', c.why);
+  return w.I.row('🌌') === null && snap() === was ? true : 'another job\'s row was taken: ' + short(w.I.row('🌌'));
+}, 1000);
+const crooked = function (app) {
+  if (!w) return NO_WORLD;
+  let threw = '';
+  try { w.job(app); } catch (e) { threw = String(e && e.message || e); }
+  return !threw && snap() === was ? true : 'the publish ' + short(app) + (threw ? ' threw ' + threw : ' changed the rows to ' + snap());
+};
+test.run('a crooked publish of null changes nothing', 0.2, function () { return crooked(null); }, 1000);
+test.run('a crooked publish of a string changes nothing', 0.2, function () { return crooked('text'); }, 1000);
+test.run('a crooked publish of a number changes nothing', 0.2, function () { return crooked(5); }, 1000);
+test.run('a crooked publish of a list changes nothing', 0.2, function () { return crooked([]); }, 1000);
+test.run('a crooked publish of icons that are null changes nothing', 0.2, function () { return crooked({ icons: null }); }, 1000);
+test.run('a crooked publish of icons that are a string changes nothing', 0.2, function () { return crooked({ icons: 'x' }); }, 1000);
+test.run('a crooked publish of a row that is null changes nothing', 0.2, function () { return crooked({ icons: { row: null } }); }, 1000);
+test.run('a crooked publish of a row with no glyph changes nothing', 0.2, function () { return crooked({ icons: { row: { keywords: ['no glyph'] } } }); }, 1000);
+test.run('a crooked publish of a removal with no glyph changes nothing', 0.2, function () { return crooked({ icons: { removed: true } }); }, 1000);
+test.run('a crooked publish of a row under another name than icons changes nothing', 0.2, function () { return crooked({ other: { row: { glyph: '🌑' } } }); }, 1000);
+let r2 = null;
+test.run('keywords that are no list are never kept as one', 0.2, function () {
+  if (!w) return NO_WORLD;
   w.job({ icons: { row: { glyph: '🌒', keywords: 'not a list' } } });
-  const r2 = w.I.row('🌒');
-  ok(!r2 || Array.isArray(r2.keywords), 'keywords that are no list are never kept as one', 'row(🌒): ' + short(r2));
+  r2 = w.I.row('🌒');
+  return !r2 || Array.isArray(r2.keywords) ? true : 'row(🌒): ' + short(r2);
+}, 1000);
+test.run('removing an icon that is not there changes nothing', 0.2, function () {
+  if (!w) return NO_WORLD;
   w.job({ icons: { glyph: '🌓', removed: true } });
-  ok(snap() === was || !!r2, 'removing an icon that is not there changes nothing', 'removing a stranger changed the rows: ' + snap());
-}());
-
-test.reportSuccessFailureCount();
+  return snap() === was || !!r2 ? true : 'removing a stranger changed the rows: ' + snap();
+}, 1000);

@@ -15,7 +15,6 @@ const FILE = path.join(__dirname, '..', 'element.js');
 const SRC = fs.existsSync(FILE) ? fs.readFileSync(FILE, 'utf8') : '';
 const MANIFEST = path.join(__dirname, '..', 'starter.json');
 
-function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 const settle = async function () { for (let i = 0; i < 20; i++) await new Promise(function (r) { setImmediate(r); }); };
 
@@ -63,55 +62,89 @@ function world(card, hold) {
   return w;
 }
 
-test.startTest('starter.js: the smallest app, one element that shows its node');
-process.on('unhandledRejection', function (e) { test.fail('it threw where nothing caught it: ' + (e && e.message || e)); });
+// starter.js: the smallest app, one element that shows its node. One test.run per test (goal/G47.2).
+// What the tests made, for the tests after them.
+const W = {};
+const NO_E = 'no starter element: the first test failed';
 
-(async function () {
-  test.subHeading('1. one element');
-  const w = world({ name: 'probe-node', description: 'a node for the test' });
-  const E = ((((w.win.spirit.element || {}).spirit || {}).app || {}).starter || {}).element;
-  ok(!!E && typeof E.create === 'function', 'spirit.element.spirit.app.starter.element.create is there', 'no spirit.element.spirit.app.starter.element.create: ' + short(E && Object.keys(E)));
-  if (!E) { test.reportSuccessFailureCount(); return; }
-  const box = node('<div>');
-  const made = E.create(box, {});
-  ok(!!made && typeof made.destroy === 'function', 'create answers { destroy }', 'create answered ' + short(made));
+// 1. one element
+test.run('spirit.element.spirit.app.starter.element.create is there', 0.2, function () {
+  W.w = world({ name: 'probe-node', description: 'a node for the test' });
+  const E = ((((W.w.win.spirit.element || {}).spirit || {}).app || {}).starter || {}).element;
+  W.E = E;
+  return !!E && typeof E.create === 'function' ? true : 'no spirit.element.spirit.app.starter.element.create: ' + short(E && Object.keys(E));
+}, 1000);
+test.run('create answers { destroy }', 0.2, function () {
+  if (!W.E || typeof W.E.create !== 'function') return NO_E;
+  W.box = node('<div>');
+  const made = W.made = W.E.create(W.box, {});
+  return !!made && typeof made.destroy === 'function' ? true : 'create answered ' + short(made);
+}, 1000);
 
-  test.subHeading('2. it asks its node once');
+// 2. it asks its node once
+test.run('it asks node.card once', 0.2, async function () {
+  if (!W.box) return NO_E;
   await settle();
-  ok(w.asked.length === 1 && w.asked[0].verb === 'node.card', 'it asks node.card once', 'it asked ' + short(w.asked));
-  ok(w.required.length === 0, 'it requires nothing', 'it required ' + short(w.required));
+  return W.w.asked.length === 1 && W.w.asked[0].verb === 'node.card' ? true : 'it asked ' + short(W.w.asked);
+}, 1000);
+test.run('it requires nothing', 0.2, function () {
+  if (!W.w) return NO_E;
+  return W.w.required.length === 0 || 'it required ' + short(W.w.required);
+}, 1000);
 
-  test.subHeading('3. it shows what the card says');
-  const text = box.textContent;
-  ok(/node: probe-node/.test(text), 'the node\'s name is drawn', 'no name in ' + short(text));
-  ok(/description: a node for the test/.test(text), 'its description is drawn', 'no description in ' + short(text));
+// 3. it shows what the card says
+test.run('the node\'s name is drawn', 0.2, function () {
+  if (!W.box) return NO_E;
+  const text = W.box.textContent;
+  return /node: probe-node/.test(text) || 'no name in ' + short(text);
+}, 1000);
+test.run('its description is drawn', 0.2, function () {
+  if (!W.box) return NO_E;
+  const text = W.box.textContent;
+  return /description: a node for the test/.test(text) || 'no description in ' + short(text);
+}, 1000);
 
-  test.subHeading('4. a refusal is said');
+// 4. a refusal is said
+test.run('a refused card draws a refused row with its error', 0.2, async function () {
   const r = world(new Error('no such verb'));
   const rbox = node('<div>');
   r.win.spirit.element.spirit.app.starter.element.create(rbox, {});
   await settle();
-  ok(/refused: no such verb/.test(rbox.textContent), 'a refused card draws a refused row with its error', 'a refusal drew ' + short(rbox.textContent));
+  return /refused: no such verb/.test(rbox.textContent) || 'a refusal drew ' + short(rbox.textContent);
+}, 1000);
 
-  test.subHeading('5. destroy empties its container');
-  made.destroy();
-  ok(box.innerHTML === '' && box.kids.length === 0, 'destroy leaves the container empty', 'after destroy: ' + short(box.textContent));
+// 5. destroy empties its container
+test.run('destroy leaves the container empty', 0.2, function () {
+  if (!W.made || typeof W.made.destroy !== 'function') return NO_E;
+  W.made.destroy();
+  return W.box.innerHTML === '' && W.box.kids.length === 0 ? true : 'after destroy: ' + short(W.box.textContent);
+}, 1000);
+test.run('an answer after destroy draws nothing', 0.2, async function () {
   let release = null;
   const late = world({ name: 'late', description: 'late' }, new Promise(function (r2) { release = r2; }));
   const lbox = node('<div>');
   late.win.spirit.element.spirit.app.starter.element.create(lbox, {}).destroy();
   release();
   await settle();
-  ok(!/late/.test(lbox.textContent), 'an answer after destroy draws nothing', 'a late answer drew ' + short(lbox.textContent));
+  return !/late/.test(lbox.textContent) || 'a late answer drew ' + short(lbox.textContent);
+}, 1000);
 
-  test.subHeading('6. its starter.json is the app shape');
-  let m = null;
-  try { m = JSON.parse(fs.readFileSync(MANIFEST, 'utf8')); } catch (e) { m = null; }
+// 6. its starter.json is the app shape
+function manifest() { try { return JSON.parse(fs.readFileSync(MANIFEST, 'utf8')); } catch (e) { return null; } }
+test.run('identity: label Starter, not intrinsic', 0.2, function () {
+  const m = manifest();
   const i = (m && m.identity) || {};
-  ok(i.label === 'Starter' && i.intrinsic === false, 'identity: label Starter, not intrinsic', 'identity: ' + short(i));
-  ok(!!(m && m.mount && m.mount['element.js'] === true), 'mount names element.js', 'mount: ' + short(m && m.mount));
-  ok(!!(m && m.shell && m.shell.mount === true && m.shell.tile === true), 'a shell mount and a tile', 'shell: ' + short(m && m.shell));
-  ok(!!(m && m.node && m.node.mount === false), 'no node mount: the node starts nothing for it', 'node: ' + short(m && m.node));
-
-  test.reportSuccessFailureCount();
-})();
+  return i.label === 'Starter' && i.intrinsic === false ? true : 'identity: ' + short(i);
+}, 1000);
+test.run('mount names element.js', 0.2, function () {
+  const m = manifest();
+  return !!(m && m.mount && m.mount['element.js'] === true) || 'mount: ' + short(m && m.mount);
+}, 1000);
+test.run('a shell mount and a tile', 0.2, function () {
+  const m = manifest();
+  return !!(m && m.shell && m.shell.mount === true && m.shell.tile === true) || 'shell: ' + short(m && m.shell);
+}, 1000);
+test.run('no node mount: the node starts nothing for it', 0.2, function () {
+  const m = manifest();
+  return !!(m && m.node && m.node.mount === false) || 'node: ' + short(m && m.node);
+}, 1000);
