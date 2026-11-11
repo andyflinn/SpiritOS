@@ -41,6 +41,27 @@ The box, in Andy's words where he gave them:
   `script`, the suite table's key column `script`; an older testicle.db, its table `file` and its suite column `file`,
   is renamed in place at start, its rows kept as they were, and no table `file` is left.
 
+- **The test table, test.set, test.search and testicle.red** (goal/G47.1, the test cycle). The table is goal/G45.1's:
+  script, suite, test, flipped, current, verified, tested, judged, severity.
+  - *"Every test.set happens by itself, no bundling"*, *"test.set MUST carry severity: {script, suite, test, verified,
+    severity}"*. A set for a script with no row makes its script row and a suite row for every suite that concerns it.
+    A test set for the first time has one row, current, with its result, its severity, flipped and tested now, judged
+    at the script's hash.
+  - *"If the test does not flip, the current row is only updated with the last checked date, and, if it exists, the hash
+    of the product file"*: no new row; tested moves, flipped stays; after the script changes, judged is its new hash.
+    *"The server applies the severity to the row only if the new severity is higher than the old one"*: a lower one
+    leaves it, a higher one is applied.
+  - *"If the test flips, a new active row is created; this will keep change history"*: two rows, one current with the
+    new result; the replaced row kept, current no longer. (The severity a flipped row starts with is not asserted: the
+    box does not say whether it takes the replaced row's when that is higher.)
+  - *"This cycle does not clear a suite's needs-testing flag"*: with every test passing, the flag stays.
+  - *"test.search will only return \"current\" test rows for the script/suite combination supplied ... no script in the
+    search query searches tests for any script; the same for suite"*: `{items, more}`, the current rows only, one per
+    test; with no script, that suite's for any script; with no suite, that script's in any suite; with neither, all.
+    *"Most severe first applies to all test searches."*
+  - *"The verb red is testicle.red"*, *"search all failed, current tests, most severe first"*: every failed current test,
+    no other, most severe first.
+
 ## What its test must try to break
 
 - A row made at start, or for a file never changed; a row for a file that is no product script.
@@ -49,4 +70,6 @@ The box, in Andy's words where he gave them:
 - An older testicle.db left with its table file, or its rows lost.
 - A script.get that makes no rows, makes them unflagged, or answers anything but the file row; an error worded otherwise.
 - A suite.search answering another file's rows, a suite twice, or a suite without its status.
+- A second row on no flip, a flip without a new row or with its old row lost, a lower severity applied, a search
+  answering an old row or another script's or suite's, an order other than most severe first, a red holding a passing test.
 - Anything later than one second; a busy that never says true while it works, or stays true once idle.

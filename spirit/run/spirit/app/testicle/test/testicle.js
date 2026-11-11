@@ -47,6 +47,9 @@ const PLANT = {
   // zeta and its test are never changed: asked by testicle.script.get alone (goal/G47.1, the verbs cycle).
   'spirit/zzTesticle/zeta.js': '\'use strict\';\n// zeta, asked for, never changed\n',
   'spirit/zzTesticle/test/zeta.js': '\'use strict\';\n// the test of zeta\n',
+  // theta and its test: no row until a test of it is set (goal/G47.1, the test cycle).
+  'spirit/zzTesticle/theta.js': '\'use strict\';\n// theta\n',
+  'spirit/zzTesticle/test/theta.js': '\'use strict\';\n// the test of theta\n',
 };
 // The kept rows of an older testicle.db, for a script not on disc, so no change of this test's touches them.
 const OLD = { name: 'spirit/zzTesticle/older.js', suite: 'spirit/zzTesticle/test/older.js', hash: 'an older hash', changed: 1700000000000 };
@@ -98,8 +101,10 @@ function tables(dbFile) {
     db = new DatabaseSync(dbFile, { readOnly: true });
     const file = db.prepare('SELECT * FROM script').all();
     const suite = db.prepare('SELECT * FROM suite').all();
-    return { script: file, suite: suite };
-  } catch (e) { return { error: String(e && e.message || e), script: [], suite: [] }; }
+    let tests = [];
+    try { tests = db.prepare('SELECT * FROM test').all(); } catch (e) { tests = null; }
+    return { script: file, suite: suite, test: tests };
+  } catch (e) { return { error: String(e && e.message || e), script: [], suite: [], test: null }; }
   finally { try { if (db) db.close(); } catch (e) { /* closed */ } }
 }
 function scriptRow(t, name) { return t.script.filter(function (r) { return r.name === name; })[0] || null; }
@@ -284,6 +289,94 @@ test.startTest('testicle/testicle.js: testicle\'s server keeps file and suite in
     ok(narrow.indexOf(GENERAL) !== -1 && narrow.indexOf(Z + 'test/zeta.js') === -1, 'the words narrow among the file\'s suites', 'searched titleRules: ' + short(narrow));
     const other = items(await call(N.base, 'testicle.suite.search', { script: Z + 'gamma.js', text: '' }));
     ok(other.length > 0 && other.every(function (i) { return i.row.script === Z + 'gamma.js'; }) && other.map(suiteOf).indexOf(Z + 'test/zeta.js') === -1, 'another file\'s search answers that file\'s rows, none of the first', 'gamma.js: ' + short(other.map(function (i) { return i.row.script + ' ' + suiteOf(i); }).slice(0, 5)));
+
+    // goal/G47.1, the test cycle. The box: "The testicle.test table now needs a \"set\" verb, and a \"search\" verb", "When
+    // a test row is set, and a script row is missing, the server needs to auto-create the script/suite rows for that test",
+    // "The test table is as goal/G45.1's box specifies it", "Every test.set happens by itself, no bundling", "test.set MUST
+    // carry severity: {script, suite, test, verified, severity}. The server applies the severity to the row only if the new
+    // severity is higher than the old one", "If the test does not flip, the current row is only updated with the last
+    // checked date, and, if it exists, the hash of the product file", "If the test flips, a new active row is created; this
+    // will keep change history", "test.search will only return \"current\" test rows for the script/suite combination
+    // supplied ... no script in the search query searches tests for any script; the same for suite", "The new verb \"red\"
+    // is shorthand for: search all failed, current tests, most severe first", "Most severe first applies to all test
+    // searches", "This cycle does not clear a suite's needs-testing flag", "The verb red is testicle.red". G45.1's columns:
+    // script (file until the rename), suite, test, flipped, current, verified, tested, judged, severity.
+    test.subHeading('the box: "test.set"');
+    const TH = Z + 'theta.js';
+    const THS = Z + 'test/theta.js';
+    const testRows = function (t, script, suite, name) { return (t.test || []).filter(function (r) { return r.script === script && r.suite === suite && r.test === name; }); };
+    const currentOf = function (t, script, suite, name) { return testRows(t, script, suite, name).filter(function (r) { return yes(r.current); }); };
+    ok(!scriptRow(tables(DB), TH), 'the world: theta.js has no row before a test of it is set', 'theta.js has a row already');
+    const ts0 = Date.now();
+    const set1 = await call(N.base, 'testicle.test.set', { script: TH, suite: THS, test: 'theta answers its first question', verified: true, severity: 0.2 });
+    const k1 = tables(DB);
+    ok(set1.status === 200 && Array.isArray(k1.test), 'test.set is served, and testicle.db holds the table test', 'test.set: ' + set1.status + ' ' + short(set1.text) + '; table test ' + short(k1.test === null ? 'missing' : 'there'));
+    ok(!!scriptRow(k1, TH), 'a set for a script with no row makes its script row', 'no script row for ' + TH);
+    const wantTheta = concerning(s.run, TH);
+    ok(JSON.stringify(names(suiteRows(k1, TH))) === JSON.stringify(wantTheta), 'and a suite row for every suite that concerns it', 'rows ' + short(names(suiteRows(k1, TH))) + ', wanted ' + short(wantTheta));
+    const tr1 = currentOf(k1, TH, THS, 'theta answers its first question')[0];
+    ok(testRows(k1, TH, THS, 'theta answers its first question').length === 1 && !!tr1, 'a test set for the first time has one row, current', 'rows: ' + short(testRows(k1, TH, THS, 'theta answers its first question')));
+    ok(!!tr1 && yes(tr1.verified) && Number(tr1.severity) === 0.2, 'the row holds its result and its severity', 'row: ' + short(tr1));
+    ok(!!tr1 && Number(tr1.flipped) >= ts0 - 1000 && Number(tr1.tested) >= ts0 - 1000 && Number(tr1.tested) <= Date.now(), 'the row holds when it flipped and when it was tested, numeric UTC timestamps', 'row: ' + short(tr1));
+    ok(!!tr1 && tr1.judged === (scriptRow(k1, TH) || {}).hash && typeof tr1.judged === 'string' && tr1.judged !== '', 'the row is judged at the script\'s hash', 'judged ' + short(tr1 && tr1.judged) + ', the script\'s hash ' + short((scriptRow(k1, TH) || {}).hash));
+
+    test.subHeading('the box: "If the test does not flip, the current row is only updated"');
+    await sleep(20);
+    const ts1 = Date.now();
+    await call(N.base, 'testicle.test.set', { script: TH, suite: THS, test: 'theta answers its first question', verified: true, severity: 0.1 });
+    const k2 = tables(DB);
+    const tr2 = currentOf(k2, TH, THS, 'theta answers its first question')[0];
+    ok(testRows(k2, TH, THS, 'theta answers its first question').length === 1 && !!tr2, 'the same result again makes no new row', 'rows: ' + short(testRows(k2, TH, THS, 'theta answers its first question')));
+    ok(!!tr2 && Number(tr2.tested) >= ts1 && Number(tr2.flipped) === Number(tr1.flipped), 'the current row\'s tested moves, its flipped stays', 'before ' + short(tr1) + ', after ' + short(tr2));
+    ok(!!tr2 && Number(tr2.severity) === 0.2, 'a lower severity leaves the row\'s severity as it was', 'severity after a set of 0.1: ' + short(tr2 && tr2.severity));
+    fs.appendFileSync(path.join(s.run, TH), '// theta changed\n');
+    await sleep(1000);
+    await call(N.base, 'testicle.test.set', { script: TH, suite: THS, test: 'theta answers its first question', verified: true, severity: 0.5 });
+    const k3 = tables(DB);
+    const tr3 = currentOf(k3, TH, THS, 'theta answers its first question')[0];
+    ok(!!tr3 && tr3.judged === (scriptRow(k3, TH) || {}).hash && tr3.judged !== tr1.judged, 'with the script changed, the row is judged at its new hash', 'judged ' + short(tr3 && tr3.judged) + ', the script\'s hash ' + short((scriptRow(k3, TH) || {}).hash));
+    ok(!!tr3 && Number(tr3.severity) === 0.5, 'a higher severity is applied to the row', 'severity after a set of 0.5: ' + short(tr3 && tr3.severity));
+
+    test.subHeading('the box: "If the test flips, a new active row is created"');
+    const ts2 = Date.now();
+    await call(N.base, 'testicle.test.set', { script: TH, suite: THS, test: 'theta answers its first question', verified: false, severity: 0.6 });
+    const k4 = tables(DB);
+    const all4 = testRows(k4, TH, THS, 'theta answers its first question');
+    const cur4 = currentOf(k4, TH, THS, 'theta answers its first question');
+    ok(all4.length === 2 && cur4.length === 1, 'a flip makes a second row, and one row alone is current', 'rows: ' + short(all4));
+    ok(cur4.length === 1 && no(cur4[0].verified) && Number(cur4[0].flipped) >= ts2, 'the new current row holds the new result, flipped now', 'current: ' + short(cur4));
+    const old4 = all4.filter(function (r) { return !yes(r.current); })[0];
+    ok(!!old4 && yes(old4.verified) && Number(old4.flipped) === Number(tr1.flipped), 'the row it replaces is kept, current no longer: the history', 'the old row: ' + short(old4));
+
+    test.subHeading('the box: "This cycle does not clear a suite\'s needs-testing flag"');
+    await call(N.base, 'testicle.test.set', { script: TH, suite: THS, test: 'theta answers its first question', verified: true, severity: 0.6 });
+    const k5 = tables(DB);
+    const flag5 = suiteRow(k5, TH, THS);
+    ok(!!flag5 && yes(flag5.test), 'with every test of the suite passing, its needs-testing flag stays', 'the suite row: ' + short(flag5));
+
+    test.subHeading('the box: "test.search will only return current test rows"');
+    await call(N.base, 'testicle.test.set', { script: TH, suite: THS, test: 'theta answers its second question', verified: false, severity: 0.9 });
+    await call(N.base, 'testicle.test.set', { script: TH, suite: THS, test: 'theta answers its third question', verified: false, severity: 0.3 });
+    await call(N.base, 'testicle.test.set', { script: Z + 'gamma.js', suite: Z + 'test/gamma.js', test: 'gamma answers', verified: false, severity: 0.7 });
+    const found = function (r) { return ((r.body && r.body.items) || []).map(function (i) { return parsed(i.label) || {}; }); };
+    const sr = await call(N.base, 'testicle.test.search', { script: TH, suite: THS, text: '' });
+    const srRows = found(sr);
+    ok(sr.status === 200 && !!sr.body && Array.isArray(sr.body.items) && typeof sr.body.more === 'boolean', 'test.search answers a standard table search: items and more', 'test.search: ' + sr.status + ' ' + short(sr.text));
+    ok(srRows.length === 3 && srRows.every(function (r) { return yes(r.current) && r.script === TH && r.suite === THS; }), 'for a script and suite it answers their current tests only, one row each', 'rows: ' + short(srRows));
+    const sev = srRows.map(function (r) { return Number(r.severity); });
+    ok(sev.length === 3 && sev[0] >= sev[1] && sev[1] >= sev[2], 'test.search answers the most severe first', 'severities in order: ' + short(sev));
+    const anyScript = found(await call(N.base, 'testicle.test.search', { suite: THS, text: '' }));
+    ok(anyScript.length === 3 && anyScript.every(function (r) { return r.suite === THS && yes(r.current); }), 'with no script it searches that suite\'s tests for any script', 'rows: ' + short(anyScript));
+    const anySuite = found(await call(N.base, 'testicle.test.search', { script: Z + 'gamma.js', text: '' }));
+    ok(anySuite.length === 1 && anySuite[0].test === 'gamma answers', 'with no suite it searches that script\'s tests in any suite', 'rows: ' + short(anySuite));
+    const everyOne = found(await call(N.base, 'testicle.test.search', { text: '' }));
+    ok(everyOne.length === 4 && everyOne.every(function (r) { return yes(r.current); }), 'with neither it searches every current test', 'rows: ' + short(everyOne));
+
+    test.subHeading('the box: "The verb red is testicle.red"');
+    const red = found(await call(N.base, 'testicle.red', {}));
+    ok(red.length === 3 && red.every(function (r) { return no(r.verified) && yes(r.current); }), 'testicle.red answers every failed current test, and no other', 'rows: ' + short(red));
+    const redSev = red.map(function (r) { return Number(r.severity); });
+    ok(JSON.stringify(redSev) === JSON.stringify([0.9, 0.7, 0.3]), 'testicle.red answers the most severe first', 'severities in order: ' + short(redSev));
 
     // Before the general test changes: that one judges every product file, the untouched among them.
     test.subHeading('the box: "A product file or a suite that has not changed has no row"');
