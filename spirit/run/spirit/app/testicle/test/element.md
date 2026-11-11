@@ -33,6 +33,9 @@ existing file list with a filter for production *.js files: no new list."*
 - The list shows production `*.js` files only: a `.js` outside any `test/` folder shows; a `.md`, a `.json`, and a test in
   a `test/` folder never show.
 - `destroy()` leaves its container empty.
+- **Flat** (goal/G47.1, the box: *"testicle turns flat on."*): it draws the file list with `flat: true`. No folder row
+  shows, with the field empty or words typed; with the field empty files deep in the tree show, no folder opened, each
+  row with its path.
 
 ## What its test must try to break
 
@@ -41,6 +44,7 @@ existing file list with a filter for production *.js files: no new list."*
 - A list of its own beside the file list, or a verb the face asks itself.
 - A file shown that is no production script: another type, or a test.
 - Anything left in its container after destroy.
+- A folder row; the tree's look, a deep file hidden or its path hidden, while the field is empty.
 
 Vendored libraries' scripts are no production scripts either; the fs family's mirror never holds them
 (`spirit/fileSystem.js`, `VENDORED_FOLDERS`), so the list cannot show them and the test does not ask.

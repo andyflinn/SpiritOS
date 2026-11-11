@@ -20,9 +20,15 @@ dropdown. Its test is `./file.js`.
 - **The tree**: a filter drawn as no button. With no words a folder shows, and what is inside a folded one does not; a
   folder's press opens it and is never a pick, a file's press is no fold. `opts.accept` hides files of other types,
   never a folder.
+- **Flat** (goal/G47.1, the box: *"The file list has one always hidden option, \"flat\", set only in code by the app
+  that draws the list; no button shows or flips it"*): `opts.flat` true, set by the app, draws no button of its own. With
+  it on no folder row shows, never the indented tree; with an empty field every accepted file shows, however deep, each
+  with its path; typing narrows it. Off, the default, the list is the tree above.
 
 ## What its test must try to break
 
 - A data script, or a part counted on that it did not load.
 - A name search that asks the node; a contents search that loses its line or its score.
 - A folded folder's files shown; a folder picked; a file of another type shown.
+- With flat on: a folder row, the tree's indent (the path hidden), a deep file missing while the field is empty, a
+  button for flat. With flat off: the tree lost.

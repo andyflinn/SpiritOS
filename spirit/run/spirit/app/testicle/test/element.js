@@ -74,6 +74,8 @@ const HANDS = '(function () {' +
   '  icons: function (side) { return all("button[data-side=\\"" + side + "\\"][data-tool]").map(function (i) { return String(i.textContent || "").trim() || String(i.getAttribute("title") || ""); }); },' +
   '  left: function () { var b = box(); return b ? b.querySelector("[id$=\\"pane-left\\"]") : null; },' +
   '  rows: function () { var l = window.__t.left(); return l ? all("tr[data-key]", l).map(function (t) { return t.getAttribute("data-key"); }) : []; },' +
+  // What a row shows, as read: a part hidden by the tree's look (its path) is not in it.
+  '  rowText: function (k) { var l = window.__t.left(); var r = l ? all("tr[data-key]", l).filter(function (t) { return t.getAttribute("data-key") === k; })[0] : null; return r ? String(r.innerText || "") : null; },' +
   '  inLeft: function (sel) { var l = window.__t.left(); return l ? all(sel, l).length : 0; },' +
   // What the leftmost pane holds, for a failure line: whether it is there and shown, and its first markup.
   '  leftSays: function () { var l = window.__t.left(); return l ? { shown: seen(l), html: String(l.innerHTML).slice(0, 300) } : { none: true }; },' +
@@ -108,6 +110,8 @@ test.startTest('testicle/element.js: testicle\'s first-cut face, a workBench wit
   ok(/['"]spirit\/element\/search\/file\.js['"]/.test(src), 'its file viewer is the existing file list, spirit/element/search/file.js', 'it does not require spirit/element/search/file.js');
   ok(src !== '' && !/\.element\.search\.create\(|createElement\(['"](tr|li|table)['"]\)/.test(src), 'it makes no list of its own', 'it makes a list of its own');
   ok(src !== '' && !/\bready\b\s*\)?\s*\.then|\.peerPost\(|\bfetch\(|XMLHttpRequest/.test(src), 'it asks the node nothing: no verb through spirit.ready, no peerPost, no fetch', 'it asks the node something itself');
+  // goal/G47.1, the box: "testicle turns flat on."
+  ok(/\bflat\s*:\s*true\b/.test(src), 'it draws the file list with flat on', 'it does not hand the file list flat: true');
 
   const s = scratch();
   const live = [];
@@ -146,6 +150,20 @@ test.startTest('testicle/element.js: testicle\'s first-cut face, a workBench wit
     const centre = await T('centerText()');
     ok(centre === null || centre === '', 'and nothing else: the centre is empty', 'the centre shows ' + short(centre));
 
+    // goal/G47.1, the box: "With flat on: no folder rows, never the indented tree; with an empty field every file the app
+    // accepts is listed, each with its path; typing narrows it."
+    test.subHeading('the box: "With flat on: no folder rows, never the indented tree"');
+    ok(await waitFor('rows().length > 0', 15000), 'the world: with the field empty the list draws rows', 'no rows with the field empty: ' + short(await T('leftSays()')));
+    const bare = await T('rows()');
+    // A folder's key has no extension; every production script's has .js.
+    const folders = bare.filter(function (k) { return !/\.[a-z0-9]+$/i.test(k); });
+    ok(folders.length === 0, 'with the field empty no folder row shows', 'folder rows: ' + short(folders.slice(0, 10)));
+    const deep = bare.filter(function (k) { return k.split('/').length >= 3; });
+    ok(deep.length > 0, 'with the field empty files deep in the tree show, no folder opened', 'rows: ' + short(bare.slice(0, 10)));
+    const one = deep[0] || '';
+    const said = one ? await T('rowText(' + JSON.stringify(one) + ')') : null;
+    ok(!!one && typeof said === 'string' && said.indexOf(one.slice(0, one.lastIndexOf('/') + 1)) !== -1, 'with the field empty each row shows its path', 'the row of ' + short(one) + ' reads ' + short(said));
+
     test.subHeading('the box: "its file viewer showing production *.js files only"');
     await T('type("zzTesticle")');
     ok(await waitFor('rows().indexOf("' + SHOWN[0] + '") !== -1', 15000), 'the world: a planted production script is found by its word', 'the planted script is not listed: ' + short(await T('rows()')));
@@ -153,6 +171,7 @@ test.startTest('testicle/element.js: testicle\'s first-cut face, a workBench wit
     const files = rows.filter(function (k) { return /\.[a-z0-9]+$/i.test(k); });
     ok(SHOWN.every(function (f) { return rows.indexOf(f) !== -1; }), 'every planted production *.js file shows', 'shown: ' + short(rows) + ', wanted ' + SHOWN.join(', '));
     ok(!HIDDEN.some(function (f) { return rows.indexOf(f) !== -1; }), 'no other file shows: not a .md, not a .json, not a test in a test/ folder', 'shown, though no production script: ' + short(HIDDEN.filter(function (f) { return rows.indexOf(f) !== -1; })));
+    ok(rows.indexOf('spirit/zzTesticle') === -1 && rows.indexOf('spirit/zzTesticle/inner') === -1 && rows.indexOf('spirit/zzTesticle/test') === -1, 'with words typed no folder row shows', 'folder rows: ' + short(rows.filter(function (k) { return !/\.[a-z0-9]+$/i.test(k); })));
     ok(files.length > 0 && files.every(function (k) { return /\.js$/.test(k) && k.split('/').indexOf('test') === -1; }), 'every file it lists is a .js outside any test/ folder', 'it lists ' + short(files.filter(function (k) { return !/\.js$/.test(k) || k.split('/').indexOf('test') !== -1; })));
     test.subHeading('destroy');
     const after = await c.evaluate('(function () { window.__made.destroy(); var b = document.getElementById("zzBox"); return b ? b.innerHTML : "gone"; }())');

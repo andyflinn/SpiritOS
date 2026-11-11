@@ -115,5 +115,37 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(tree.test({ path: 'docs/b.png', kind: 'file' }) === 0 && tree.test({ path: 'top.md', kind: 'file' }) === 1, 'opts.accept hides the files of other types, never a folder', 'png ' + tree.test({ path: 'docs/b.png', kind: 'file' }));
   ok(o.fold({ kind: 'file' }, 'top.md') === false, 'a file\'s press is no fold', 'fold of a file answered true');
   void list;
+
+  // goal/G47.1, the box: "The file list has one always hidden option, \"flat\", set only in code by the app that draws the
+  // list; no button shows or flips it", "With flat on: no folder rows, never the indented tree; with an empty field every
+  // file the app accepts is listed, each with its path; typing narrows it", "With flat off, the default, the file list is
+  // as it is today".
+  test.subHeading('flat: set in code, no folders, never the tree');
+  // A row shows when every filter of the list lets it through, drawn or not (spirit/element/search.js).
+  function shows(opts, row) { return (opts.filters || []).every(function (f) { return typeof f.test !== 'function' || !!f.test(row); }); }
+  function drawn(opts) { return (opts.filters || []).filter(function (f) { return typeof f.when !== 'function' || f.when() !== false; }).map(function (f) { return f.name; }); }
+  const flatHost = hostNode();
+  E.search.file.listElement.create(flatHost, { face: 'pane', accept: '.md', flat: true });
+  await settle();
+  const fl = lists[lists.length - 1];
+  ok(!!fl && fl !== l && fl.host === flatHost.inner, 'a list made with flat on draws its own search', 'lists: ' + lists.length);
+  if (!fl || fl === l) return;
+  const fo = fl.o;
+  ok(JSON.stringify(drawn(fo)) === JSON.stringify(drawn(o)), 'flat draws no button: its drawn filters are those of the default list', 'drawn: ' + short(drawn(fo)) + ', default ' + short(drawn(o)));
+  fl.typed = '';
+  ok(!shows(fo, { path: 'docs', kind: 'folder' }) && !shows(fo, { path: 'docs/deep', kind: 'folder' }), 'with flat on and an empty field no folder row shows', 'a folder shows');
+  ok(shows(fo, { path: 'docs/deep/a.md', kind: 'file' }) && shows(fo, { path: 'top.md', kind: 'file' }), 'with flat on and an empty field every accepted file shows, however deep, no folder opened', 'deep ' + shows(fo, { path: 'docs/deep/a.md', kind: 'file' }) + ', top ' + shows(fo, { path: 'top.md', kind: 'file' }));
+  ok(!shows(fo, { path: 'docs/b.png', kind: 'file' }), 'with flat on a file the app does not accept never shows', 'a .png shows');
+  ok(!/files-tree/.test(flatHost.innerHTML) || flatHost.inner.classList.on === false, 'with flat on the list starts without the indented tree, so each row shows its path', 'host: ' + short(flatHost.innerHTML.slice(0, 160)));
+  (flatHost.heard.input || []).forEach(function (fn) { fn(); });
+  ok(flatHost.inner.classList.on === false, 'with flat on an empty field never brings the indented tree back', 'the tree class came back on input');
+  fl.typed = 'a';
+  (flatHost.heard.input || []).forEach(function (fn) { fn(); });
+  ok(!shows(fo, { path: 'docs', kind: 'folder' }) && shows(fo, { path: 'docs/deep/a.md', kind: 'file' }), 'with flat on and words typed no folder row shows, and the files still do', 'folder ' + shows(fo, { path: 'docs', kind: 'folder' }));
+  ok(fo.fold({ kind: 'file' }, 'top.md') === false, 'with flat on a file\'s press is no fold', 'fold of a file answered true');
+  fl.typed = '';
+
+  test.subHeading('flat off, the default: the list as it was');
+  ok(/files-tree/.test(host.innerHTML) && shows(o, { path: 'docs', kind: 'folder' }), 'without flat the list starts as the tree, its folders shown', 'host: ' + short(host.innerHTML.slice(0, 160)));
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });
