@@ -164,7 +164,7 @@ test.run('a server beside the face: node.mount true', 0.2, function () {
 }, test.limit.quick);
 test.run('its folder holds its manifest, its face, its server, its api.js and data.js, and a json description of each verb, busy, script.get, suite.search, testicle.set, testicle.search, red, run, subscribe and unsubscribe, and its test/ folder, nothing else', 0.2, function () {
   const held = fs.existsSync(APP) ? fs.readdirSync(APP).filter(function (f) { return f !== 'test'; }).sort() : [];
-  return JSON.stringify(held) === JSON.stringify(['api.js', 'busy.json', 'data.js', 'element.js', 'red.json', 'script.get.json', 'run.json', 'subscribe.json', 'suite.search.json', 'testicle.js', 'testicle.json', 'testicle.search.json', 'testicle.set.json', 'unsubscribe.json']) || 'its folder holds ' + short(held);
+  return JSON.stringify(held) === JSON.stringify(['api.js', 'busy.json', 'data.js', 'element.js', 'red.json', 'run.json', 'script.get.json', 'subscribe.json', 'suite.search.json', 'testicle.js', 'testicle.json', 'testicle.search.json', 'testicle.set.json', 'unsubscribe.json']) || 'its folder holds ' + short(held);
 }, test.limit.quick);
 test.run('its mount names element.js', 0.2, function () {
   return (!!own && !!own.mount && own.mount['element.js'] === true) || 'mount: ' + short(own && own.mount);
