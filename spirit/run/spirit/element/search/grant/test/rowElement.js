@@ -111,13 +111,13 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     test.subHeading('a grant of ' + t.name + ': whose, the path, Revoke');
     const el = E.search.grant.rowElement.create(t.row({ id: t.id, path: 'desk.chat<add>', label: t.label }), { grants: t.g });
     const keyed = el.kind === 'grant' && el.key === t.id + '\ndesk.chat<add>';
-    if (t.g === NODE) ok(keyed, 'it is a row element of kind grant, keyed <id>\\n<path>, the id read from the table\'s key field, key', 'el: ' + short({ kind: el.kind, key: el.key }));
-    else ok(keyed, 'it is a row element of kind grant, keyed <id>\\n<path>, the id read from the table\'s key field, job_id', 'el: ' + short({ kind: el.kind, key: el.key }));
+    if (t.g === NODE) ok(keyed, 'a node grant is a row of kind grant, keyed by its id and its path, the id read from the key field', 'el: ' + short({ kind: el.kind, key: el.key }));
+    else if (t.g === AGENT) ok(keyed, 'an agent grant is a row of kind grant, keyed by its id and its path, the id read from the job_id field', 'el: ' + short({ kind: el.kind, key: el.key }));
     const cells = {}; (el.cells() || []).forEach(function (c) { cells[c.name] = c.html; });
     ok(JSON.stringify(Object.keys(cells)) === '["name","path","revoke"]', 'its fields are name, path and revoke: Revoke the rightmost', 'fields: ' + short(Object.keys(cells)));
     const drawn = cells.name.indexOf(t.label.replace('<', '&lt;')) !== -1 && /desk\.chat&lt;add>/.test(cells.path || '') && !/<b>|<add>/.test(cells.name + cells.path);
-    if (t.g === NODE) ok(drawn, 'whose grant it is, read from the table\'s label field, label, and the path, drawn escaped', 'cells: ' + short(cells));
-    else ok(drawn, 'whose grant it is, read from the table\'s label field, job, and the path, drawn escaped', 'cells: ' + short(cells));
+    if (t.g === NODE) ok(drawn, 'a node grant shows whose grant it is, read from the label field, and its path, both drawn escaped', 'cells: ' + short(cells));
+    else if (t.g === AGENT) ok(drawn, 'an agent grant shows whose grant it is, read from the job field, and its path, both drawn escaped', 'cells: ' + short(cells));
     const hosts = { name: cell(), path: cell(), revoke: cell() };
     armed.length = 0;
     el.mount(hosts);

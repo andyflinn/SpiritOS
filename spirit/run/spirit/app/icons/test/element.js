@@ -36,7 +36,7 @@ test.startTest('element.js: the Icons face, asking its own branch and writing no
     const fresh = [];
     for (let cp = 0x1F300; cp <= 0x1FAFF && fresh.length < 6; cp++) { const g = String.fromCodePoint(cp); if (/\p{Extended_Pictographic}/u.test(g) && known.indexOf(g) === -1) fresh.push(g); }
     const sys = Object.keys(system)[0];
-    ok(fresh.length >= 4 && !!sys, 'the world: the system set, and glyphs it does not hold: ' + fresh.slice(0, 4).join(' '), 'no system set or too few free glyphs: nothing judged');
+    ok(fresh.length >= 4 && !!sys, 'the world: the system set, and four glyphs it does not hold', 'no system set or too few free glyphs: nothing judged');
     if (fresh.length < 4 || !sys) return;
 
     // The face, mounted alone in a box, as the Icons app's createApp mounts it.
@@ -62,7 +62,7 @@ test.startTest('element.js: the Icons face, asking its own branch and writing no
     if (!drew) return;
     ok(await chrome.evaluate('document.getElementById("box").innerHTML.indexOf("➕") !== -1'), 'with ➕', 'no ➕ on the add row');
     ok(await chrome.evaluate('(function () { var g = ' + field('glyph') + ', k = ' + field('keywords') + '; return !!(g.compareDocumentPosition(k) & Node.DOCUMENT_POSITION_FOLLOWING); }())'), 'the icon first, then its keywords', 'the keywords come before the icon');
-    ok(await until(function () { return rows(chrome).then(function (t) { return t.indexOf(sys) !== -1; }); }, 8000), 'the list shows the set, ' + sys + ' among it', 'the list does not show ' + sys + ': ' + short(await text(chrome)));
+    ok(await until(function () { return rows(chrome).then(function (t) { return t.indexOf(sys) !== -1; }); }, 8000), 'the list shows the set, its first glyph among it', 'the list does not show ' + sys + ': ' + short(await text(chrome)));
     await add(chrome, '', 'nothing');
     ok(await until(function () { return text(chrome).then(function (t) { return t.indexOf('paste an icon first') !== -1; }); }, 3000), 'an Add with no icon says paste an icon first', 'an empty Add said: ' + short(await text(chrome)));
     await sleep(600);
@@ -72,11 +72,11 @@ test.startTest('element.js: the Icons face, asking its own branch and writing no
     await chrome.evaluate('window.__posts = []; true');
     await add(chrome, fresh[0], 'first, one');
     const wrote = await until(function () { return Promise.resolve(JSON.stringify((json(SET) || {})[fresh[0]]) === '["first","one"]'); }, 10000);
-    ok(wrote, 'an Add writes ' + fresh[0] + ' with its keywords, split at the commas', 'after the Add the set holds ' + short((json(SET) || {})[fresh[0]]));
+    ok(wrote, 'an Add writes the new glyph with its keywords, split at the commas', 'after the Add of ' + fresh[0] + ' the set holds ' + short((json(SET) || {})[fresh[0]]));
     const p1 = await posts();
     ok(p1.some(function (p) { return /"call"\s*:\s*"icons\.icon"/.test(p); }), 'it asked icons.icon, its own branch', 'it asked: ' + short(p1));
     ok(!p1.some(function (p) { return /"call"\s*:\s*"fs\./.test(p); }), 'and nothing of the fs family', 'it asked fs: ' + short(p1.filter(function (p) { return /"fs\./.test(p); })));
-    ok(await until(function () { return rows(chrome).then(function (t) { return t.indexOf(fresh[0]) !== -1; }); }, 8000), 'the list shows ' + fresh[0] + ', no reload', 'the list never showed ' + fresh[0]);
+    ok(await until(function () { return rows(chrome).then(function (t) { return t.indexOf(fresh[0]) !== -1; }); }, 8000), 'the list shows the new glyph, no reload', 'the list never showed ' + fresh[0]);
 
     test.subHeading('Andy (G40.5): a duplicate opens the edit dialog of the icon there, and writes nothing');
     const t1 = read(SET);
@@ -92,7 +92,7 @@ test.startTest('element.js: the Icons face, asking its own branch and writing no
     test.subHeading('Andy: "the icon detail panel is supposed to open overtop of the icon app..... like contact detail"');
     const OVER = '(function () { var box = document.getElementById("box"); var b = box.getBoundingClientRect(); var l = Array.prototype.filter.call(box.querySelectorAll(".app-container"), function (c) { return c.offsetParent !== null; }).pop(); if (!l) return "no panel layer"; var r = l.getBoundingClientRect(); if (r.width < b.width - 4 || r.height < b.height - 4) return "a layer of " + Math.round(r.width) + "x" + Math.round(r.height) + " in a box of " + Math.round(b.width) + "x" + Math.round(b.height); if (String(l.textContent).indexOf(' + JSON.stringify(fresh[0]) + ') === -1) return "the layer does not show " + ' + JSON.stringify(fresh[0]) + '; var g = ' + field('glyph') + '; if (g) { var gr = g.getBoundingClientRect(); var top = document.elementFromPoint(gr.left + 2, gr.top + 2); if (top && !l.contains(top)) return "the add row is still in sight"; } return "over"; }())';
     const wasOver = await until(function () { return chrome.evaluate(OVER).then(function (v) { return v === 'over'; }); }, 5000);
-    ok(wasOver, 'the duplicate\'s dialog is a panel over the whole face, ' + fresh[0] + ' on it, the add row under it', 'the dialog: ' + short(await chrome.evaluate(OVER)));
+    ok(wasOver, 'the duplicate\'s dialog is a panel over the whole face, the glyph on it, the add row under it', 'the dialog: ' + short(await chrome.evaluate(OVER)));
     await chrome.evaluate('(function () { var c = Array.prototype.filter.call(document.querySelectorAll("#box .app-container-close"), function (x) { return x.offsetParent !== null; }).pop(); if (c) c.click(); return !!c; }())');
     const back = await until(function () { return chrome.evaluate('(function () { var g = ' + field('glyph') + '; if (!g) return false; var gr = g.getBoundingClientRect(); var top = document.elementFromPoint(gr.left + 2, gr.top + 2); return top === g || g.contains(top); }())'); }, 5000);
     ok(wasOver && back, 'its close brings the face back, the add row on top', wasOver ? 'after its close the add row is not on top: ' + short(await chrome.evaluate(OVER)) : 'no panel was open, so its close judged nothing');
@@ -131,7 +131,7 @@ test.startTest('element.js: the Icons face, asking its own branch and writing no
       ok(m2 === 'made' && await until(function () { return rows(other).then(function (t) { return t.indexOf(sys) !== -1; }); }, 10000), 'the world: a second page shows the set', 'the second page: ' + short(m2));
       await other.evaluate('window.__posts = []; true');
       await add(chrome, fresh[1], 'second');
-      ok(await until(function () { return rows(other).then(function (t) { return t.indexOf(fresh[1]) !== -1; }); }, 10000), 'the other page shows ' + fresh[1] + ', added on the first, no reload', 'the other page never showed ' + fresh[1] + ': ' + short(await text(other)));
+      ok(await until(function () { return rows(other).then(function (t) { return t.indexOf(fresh[1]) !== -1; }); }, 10000), 'the other page shows the second new glyph, added on the first, no reload', 'the other page never showed ' + fresh[1] + ': ' + short(await text(other)));
       const asked = JSON.parse(await other.evaluate('JSON.stringify(window.__posts || [])'));
       ok(!asked.some(function (p) { return /"op"\s*:\s*"search"/.test(p); }), 'and asked no search of its own for it', 'the other page searched: ' + short(asked));
       await chrome.evaluate('(function () { window.__posts = []; return true; }())');

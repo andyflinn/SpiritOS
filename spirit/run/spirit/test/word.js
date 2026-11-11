@@ -87,9 +87,29 @@ test.startTest('word.js: the reserved words, and the tree held against them (goa
     test.subHeading('check: case-insensitive, up its own path and over the hard-coded words, the lower-case word or null');
     const got = asks(run, cases.map(function (c) { return [c[1], c[2]]; }));
     if (!Array.isArray(got.answers)) test.fail('word.js answered nothing: ' + short(got));
-    else cases.forEach(function (c, i) {
-      ok(got.answers[i] === c[3], c[0] + ': check(' + c[1] + ', ' + c[2] + ') answers ' + JSON.stringify(c[3]), c[0] + ': check(' + c[1] + ', ' + c[2] + ') answered ' + short(got.answers[i]));
-    });
+    else {
+      // Each case written out, so that each check has a plain title of its own.
+      const c = cases, a = got.answers;
+      ok(a[0] === c[0][3], 'the box\'s example: the file at the path itself: checking Item at spirit.app.table.add answers item', c[0][0] + ': check(' + c[0][1] + ', ' + c[0][2] + ') answered ' + short(a[0]));
+      ok(a[1] === c[1][3], 'one level up: checking THING at spirit.app.table.add answers thing', c[1][0] + ': check(' + c[1][1] + ', ' + c[1][2] + ') answered ' + short(a[1]));
+      ok(a[2] === c[2][3], 'two levels up: checking aCtIvAtE at spirit.app.table.add answers activate', c[2][0] + ': check(' + c[2][1] + ', ' + c[2][2] + ') answered ' + short(a[2]));
+      ok(a[3] === c[3][3], 'a level with no word.json of its own still looks up: checking thing at spirit.app.table.none answers thing', c[3][0] + ': check(' + c[3][1] + ', ' + c[3][2] + ') answered ' + short(a[3]));
+      ok(a[4] === c[4][3], 'a hard-coded word, from any path, lower-cased: checking Identity at spirit.app.table.add answers identity', c[4][0] + ': check(' + c[4][1] + ', ' + c[4][2] + ') answered ' + short(a[4]));
+      ok(a[5] === c[5][3], 'a hard-coded word, at the root: checking JOB at spirit answers job', c[5][0] + ': check(' + c[5][1] + ', ' + c[5][2] + ') answered ' + short(a[5]));
+      ok(a[6] === c[6][3], 'a word lower down is not seen from above: checking thing at spirit.app answers null', c[6][0] + ': check(' + c[6][1] + ', ' + c[6][2] + ') answered ' + short(a[6]));
+      ok(a[7] === c[7][3], 'a word in another branch is not seen: checking sibling at spirit.app.table.add answers null', c[7][0] + ': check(' + c[7][1] + ', ' + c[7][2] + ') answered ' + short(a[7]));
+      ok(a[8] === c[8][3], 'a word no level holds: checking nothing at spirit.app.table.add answers null', c[8][0] + ': check(' + c[8][1] + ', ' + c[8][2] + ') answered ' + short(a[8]));
+      ok(a[9] === c[9][3], 'not a word: a digit: checking app1 at spirit.app answers null', c[9][0] + ': check(' + c[9][1] + ', ' + c[9][2] + ') answered ' + short(a[9]));
+      ok(a[10] === c[10][3], 'not a word: empty: checking an empty word at spirit.app answers null', c[10][0] + ': check(' + c[10][1] + ', ' + c[10][2] + ') answered ' + short(a[10]));
+      ok(a[11] === c[11][3], 'a word an object inherits is no reserved word: checking constructor at spirit.app answers null', c[11][0] + ': check(' + c[11][1] + ', ' + c[11][2] + ') answered ' + short(a[11]));
+      ok(a[12] === c[12][3], 'hard-coded: spirit: checking spirit at spirit answers spirit', c[12][0] + ': check(' + c[12][1] + ', ' + c[12][2] + ') answered ' + short(a[12]));
+      ok(a[13] === c[13][3], 'hard-coded: app: checking app at spirit answers app', c[13][0] + ': check(' + c[13][1] + ', ' + c[13][2] + ') answered ' + short(a[13]));
+      ok(a[14] === c[14][3], 'hard-coded: element: checking element at spirit answers element', c[14][0] + ': check(' + c[14][1] + ', ' + c[14][2] + ') answered ' + short(a[14]));
+      ok(a[15] === c[15][3], 'hard-coded: identity: checking identity at spirit answers identity', c[15][0] + ': check(' + c[15][1] + ', ' + c[15][2] + ') answered ' + short(a[15]));
+      ok(a[16] === c[16][3], 'hard-coded: job: checking job at spirit answers job', c[16][0] + ': check(' + c[16][1] + ', ' + c[16][2] + ') answered ' + short(a[16]));
+      ok(a[17] === c[17][3], 'hard-coded: data: checking data at spirit answers data', c[17][0] + ': check(' + c[17][1] + ', ' + c[17][2] + ') answered ' + short(a[17]));
+      ok(a[18] === c[18][3], 'hard-coded: search: checking search at spirit answers search', c[18][0] + ': check(' + c[18][1] + ', ' + c[18][2] + ') answered ' + short(a[18]));
+    }
     test.subHeading('a change to a word.json is seen by the next check');
     plant('app', ['activate', 'later']);
     const after = asks(run, [['spirit.app', 'later']]);
@@ -103,16 +123,19 @@ test.startTest('word.js: the reserved words, and the tree held against them (goa
     const addCases = function (heading, list) {
       test.subHeading(heading);
       const r = adds(run, list.map(function (c) { return [c[1], c[2]]; }));
-      if (!Array.isArray(r.answers)) { test.fail('add answered nothing: ' + short(r)); return; }
-      list.forEach(function (c, i) {
-        ok(r.answers[i] === c[3], c[0] + ': add(' + c[1] + ', ' + c[2] + ') answers ' + c[3], c[0] + ': add(' + c[1] + ', ' + c[2] + ') answered ' + short(r.answers[i]));
-      });
+      if (!Array.isArray(r.answers)) { test.fail('add answered nothing: ' + short(r)); return null; }
+      return r.answers;
     };
     plant('app', ['later']);
-    addCases('add: the box\'s example, "add(\'spirit.app\', \'activate\') would add the \'activate\' to run://spirit/app/word.json"', [
+    let added;
+    added = addCases('add: the box\'s example, "add(\'spirit.app\', \'activate\') would add the \'activate\' to run://spirit/app/word.json"', [
       ['a new word', 'spirit.app', 'activate', true],
       ['"a boolean \'false\' if the word already exists"', 'spirit.app', 'activate', false],
     ]);
+    if (added) {
+      ok(added[0] === true, 'a new word: adding activate at spirit.app answers true', 'a new word: add(spirit.app, activate) answered ' + short(added[0]));
+      ok(added[1] === false, '"a boolean \'false\' if the word already exists": adding activate at spirit.app answers false', '"a boolean \'false\' if the word already exists": add(spirit.app, activate) answered ' + short(added[1]));
+    }
     let app = wordsIn('app') || {};
     ok(app.activate === true, 'the word stands in spirit/app/word.json with the value true', 'spirit/app/word.json after add: ' + short(app));
     ok(app.later === true, 'the words already in that file stay', 'spirit/app/word.json lost a word: ' + short(app));
@@ -122,35 +145,61 @@ test.startTest('word.js: the reserved words, and the tree held against them (goa
     ok(Array.isArray(seen.answers) && seen.answers[2] === null, 'and not in another branch', 'check in another branch: ' + short(seen));
 
     const before = JSON.stringify([wordsIn('app'), wordsIn('app/table'), wordsIn('app/table/add')]);
-    addCases('add refuses what is no word: "\'word\' is a string containing only characters from \'a\' to \'z\'"', [
+    added = addCases('add refuses what is no word: "\'word\' is a string containing only characters from \'a\' to \'z\'"', [
       ['a digit', 'spirit.app', 'app1', false],
       ['empty', 'spirit.app', '', false],
       ['a space', 'spirit.app', 'a b', false],
       ['a dash', 'spirit.app', 'new-word', false],
     ]);
-    addCases('add refuses what check finds: "no words can be added that already exists toward the root of the tree"', [
+    if (added) {
+      ok(added[0] === false, 'a digit: adding app1 at spirit.app answers false', 'a digit: add(spirit.app, app1) answered ' + short(added[0]));
+      ok(added[1] === false, 'empty: adding an empty word at spirit.app answers false', 'empty: add(spirit.app, ) answered ' + short(added[1]));
+      ok(added[2] === false, 'a space: adding a b at spirit.app answers false', 'a space: add(spirit.app, a b) answered ' + short(added[2]));
+      ok(added[3] === false, 'a dash: adding new-word at spirit.app answers false', 'a dash: add(spirit.app, new-word) answered ' + short(added[3]));
+    }
+    added = addCases('add refuses what check finds: "no words can be added that already exists toward the root of the tree"', [
       ['a hard-coded word, in any case', 'spirit.app.table', 'IdEnTiTy', false],
       ['a word one level toward the root', 'spirit.app.table.add', 'THING', false],
       ['a word two levels toward the root', 'spirit.app.table.add', 'later', false],
     ]);
+    if (added) {
+      ok(added[0] === false, 'a hard-coded word, in any case: adding IdEnTiTy at spirit.app.table answers false', 'a hard-coded word, in any case: add(spirit.app.table, IdEnTiTy) answered ' + short(added[0]));
+      ok(added[1] === false, 'a word one level toward the root: adding THING at spirit.app.table.add answers false', 'a word one level toward the root: add(spirit.app.table.add, THING) answered ' + short(added[1]));
+      ok(added[2] === false, 'a word two levels toward the root: adding later at spirit.app.table.add answers false', 'a word two levels toward the root: add(spirit.app.table.add, later) answered ' + short(added[2]));
+    }
     // Andy's yes to cw's Q4, "If a level below already holds the word, should add refuse it, rather than let the word test go red?"
-    addCases('add refuses a word a level below holds (Q4)', [
+    added = addCases('add refuses a word a level below holds (Q4)', [
       ['one level below', 'spirit.app', 'thing', false],
       ['two levels below', 'spirit.app', 'item', false],
     ]);
+    if (added) {
+      ok(added[0] === false, 'one level below: adding thing at spirit.app answers false', 'one level below: add(spirit.app, thing) answered ' + short(added[0]));
+      ok(added[1] === false, 'two levels below: adding item at spirit.app answers false', 'two levels below: add(spirit.app, item) answered ' + short(added[1]));
+    }
     ok(JSON.stringify([wordsIn('app'), wordsIn('app/table'), wordsIn('app/table/add')]) === before, 'a refused add writes nothing', 'a refused add changed a word.json: ' + JSON.stringify([wordsIn('app'), wordsIn('app/table'), wordsIn('app/table/add')]));
 
-    addCases('add writes what no level on its path holds', [
+    added = addCases('add writes what no level on its path holds', [
       ['a word in another branch does not stop it', 'spirit.app', 'sibling', true],
       // cw, on the object's own keys: "constructor" is a to z.
       ['a word an object inherits is a word like any other', 'spirit.app', 'constructor', true],
       ['a level with no word.json yet gets one', 'spirit.fs', 'fresh', true],
     ]);
+    if (added) {
+      ok(added[0] === true, 'a word in another branch does not stop it: adding sibling at spirit.app answers true', 'a word in another branch does not stop it: add(spirit.app, sibling) answered ' + short(added[0]));
+      ok(added[1] === true, 'a word an object inherits is a word like any other: adding constructor at spirit.app answers true', 'a word an object inherits is a word like any other: add(spirit.app, constructor) answered ' + short(added[1]));
+      ok(added[2] === true, 'a level with no word.json yet gets one: adding fresh at spirit.fs answers true', 'a level with no word.json yet gets one: add(spirit.fs, fresh) answered ' + short(added[2]));
+    }
     // Andy, on Q8: "wince fucking when does add() add a MOTHERFUCKING FOLDER?" With no folder there is no level to write to.
-    addCases('add makes no folder', [['a level with no folder', 'spirit.nosuch.level', 'made', false]]);
+    added = addCases('add makes no folder', [['a level with no folder', 'spirit.nosuch.level', 'made', false]]);
+    if (added) {
+      ok(added[0] === false, 'a level with no folder: adding made at spirit.nosuch.level answers false', 'a level with no folder: add(spirit.nosuch.level, made) answered ' + short(added[0]));
+    }
     ok(!fs.existsSync(path.join(run, 'spirit', 'nosuch')), 'and spirit/nosuch stays absent', 'add made spirit/nosuch');
     // 'path.in.words', and "'word' is a string containing only characters from 'a' to 'z'": a capital is no level.
-    addCases('add takes no capitals in its path', [['a capital in the path', 'spirit.Capital', 'word', false]]);
+    added = addCases('add takes no capitals in its path', [['a capital in the path', 'spirit.Capital', 'word', false]]);
+    if (added) {
+      ok(added[0] === false, 'a capital in the path: adding word at spirit.Capital answers false', 'a capital in the path: add(spirit.Capital, word) answered ' + short(added[0]));
+    }
     ok(!fs.existsSync(path.join(run, 'spirit', 'Capital')), 'and makes no folder of it', 'add made spirit/Capital');
     app = wordsIn('app') || {};
     ok(app.sibling === true && Object.prototype.hasOwnProperty.call(app, 'constructor') && app.constructor === true, 'both words stand in spirit/app/word.json', 'spirit/app/word.json: ' + short(app));
@@ -235,11 +284,19 @@ test.startTest('word.js: the reserved words, and the tree held against them (goa
         await H.sleep(2500);
         let held = {};
         try { held = JSON.parse(await page.evaluate('JSON.stringify(' + JSON.stringify(HARD) + '.reduce(function (o, k) { o[k] = typeof window.spirit[k]; return o; }, {}))')); } catch (e) { held = {}; }
-        HARD.filter(function (w) { return w !== 'spirit'; }).forEach(function (w) {
+        // Each hard-coded word written out, so that each check has a plain title of its own.
+        const stands = function (w) {
           const onDisk = tree.some(function (e) { return path.dirname(e.rel) === '.' && stem(e.name) === w; });
           const inObject = held[w] === 'object' || held[w] === 'function';
-          ok(onDisk && inObject, w + ': spirit/' + w + ' and spirit.' + w + ' both stand', w + ': on disk ' + onDisk + ', spirit.' + w + ' is ' + short(held[w]) + ': the word and the tree contradict');
-        });
+          return { fine: onDisk && inObject, why: w + ': on disk ' + onDisk + ', spirit.' + w + ' is ' + short(held[w]) + ': the word and the tree contradict' };
+        };
+        let s;
+        s = stands('app'); ok(s.fine, 'app: spirit/app and spirit.app both stand', s.why);
+        s = stands('element'); ok(s.fine, 'element: spirit/element and spirit.element both stand', s.why);
+        s = stands('identity'); ok(s.fine, 'identity: spirit/identity and spirit.identity both stand', s.why);
+        s = stands('job'); ok(s.fine, 'job: spirit/job and spirit.job both stand', s.why);
+        s = stands('data'); ok(s.fine, 'data: spirit/data and spirit.data both stand', s.why);
+        s = stands('search'); ok(s.fine, 'search: spirit/search and spirit.search both stand', s.why);
 
         // NO ASK FOR A word.json THE PAGE KNOWS IS NOT THERE (goal/G43.32). cw, measured on Andy's node: opening Files
         // made 1821 requests, 1818 of them 404, all fs.load of a word.json (spirit/app/word.json alone 712 times). Andy:

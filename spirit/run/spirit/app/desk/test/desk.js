@@ -239,7 +239,7 @@ test.startTest('desk.js: the desk server (goal/G41.11)');
     const pushed = mine();
     const most = pushed.reduce(function (m, p) { return Math.max(m, wholeRows(p)); }, 0);
     const total = pushed.reduce(function (m, p) { return m + wholeRows(p); }, 0);
-    ok(total >= OTHER_ITEMS.length + 1 && most > 1, 'its ' + (OTHER_ITEMS.length + 1) + ' rows come several to a post, not one post a row',
+    ok(total >= OTHER_ITEMS.length + 1 && most > 1, 'its seven rows come several to a post, not one post a row',
       'rows ' + total + ' in ' + pushed.length + ' posts, the most in one post ' + most);
     ok(pushed.every(function (p) { return Buffer.byteLength(String(p.json), 'utf8') <= 16384; }), 'each post stays within one payload', 'a post of ' + short(pushed.map(function (p) { return Buffer.byteLength(String(p.json), 'utf8'); })) + ' bytes');
     await call('press', { id: GOAL.id, what: 'make-current' }, ANDY);
@@ -282,7 +282,7 @@ test.startTest('desk.js: the desk server (goal/G41.11)');
     test.subHeading('auto-cap: a box write into red offers the cap to the agents with cap on');
     const tooBig = await call('box.write', { id: 'goal/G100.4', text: 'x'.repeat(20000), version: 0 }, ANDY);
     const room = tooBig && tooBig.extra && Number(tooBig.extra.max) > 0 ? Number(tooBig.extra.max) : 0;
-    ok(room > 0, 'the desk names the room of one answer (' + room + ' bytes)', 'a box past one answer answered ' + short(tooBig));
+    ok(room > 0, 'the desk names the room of one answer', 'a box past one answer answered ' + short(tooBig));
     if (room > 0) {
       const v0 = (await facts('goal/G100.4')).version || 0;
       const small = await call('box.write', { id: 'goal/G100.4', text: 'a short box', version: v0 }, ANDY);
@@ -317,7 +317,7 @@ test.startTest('desk.js: the desk server (goal/G41.11)');
     const plainEnded = await waitEnd(FRESH.key, f0);
     const plainRows = rowsTo(FRESH.key, f0);
     const plainIds = wholeOf(plainRows).map(function (r) { return String(r.item.id); });
-    ok(plain.subscribed === true && plainEnded && memberIds.every(function (id) { return plainIds.indexOf(id) !== -1; }), 'with no since, the current goal\'s facts come whole (the goal and each of its ' + ITEMS.length + ' items)',
+    ok(plain.subscribed === true && plainEnded && memberIds.every(function (id) { return plainIds.indexOf(id) !== -1; }), 'with no since, the current goal\'s facts come whole (the goal and each of its six items)',
       'subscribed ' + short(plain) + ', ended ' + plainEnded + ', facts of ' + short(plainIds));
     ok(plainEnded && sideOf(plainRows).length === 0, 'and no side row (no chat line, check or box): nothing after a position it never named', 'side rows: ' + short(sideOf(plainRows).map(function (r) { return r.table + ' ' + r.id; })));
     const zero = node.sent.length;
@@ -387,7 +387,7 @@ test.startTest('desk.js: the desk server (goal/G41.11)');
     // box, and desk will note so in the chat."). This replaces his G9.3 and G21.1 words on a hold. ───────────────────
     test.subHeading('goal/G43.3: the desk never refuses him the box; an agent\'s update fails, and the chat says so');
     const askB = await startDesk('desk-box', [], {});
-    ok(!!askB, 'the world: a desk of its own starts', 'the desk did not start: the box is not judged');
+    ok(!!askB, 'the world: a desk of its own starts, for the box', 'the desk did not start: the box is not judged');
     if (askB) {
       await profiles(askB);
       const factsB = async function (id) { const r = await askB('item.get', { id: id }, ANDY); try { return JSON.parse(r.item); } catch (e) { return {}; } };
@@ -397,14 +397,17 @@ test.startTest('desk.js: the desk server (goal/G41.11)');
         const before = (await askB('item.box', { id: id }, ANDY)).box;
         const up = await askB('box.write', { id: id, text: 'the agent\'s update', version: v }, agent);
         const after = (await askB('item.box', { id: id }, ANDY)).box;
-        ok(up.ok === false && up.code === 'taken' && after === before, what + ': the agent\'s update fails, and the box stays his', what + ': the update answered ' + short(up) + ', the box now ' + short(after));
+        const failed = up.ok === false && up.code === 'taken' && after === before;
+        const failedWhy = what + ': the update answered ' + short(up) + ', the box now ' + short(after);
         const said = await waitFor(async function () { return (await deskLines(askB, id)).length > lines0; }, 3000);
-        ok(said, what + ': and the desk notes it in the chat', what + ': no line of the desk\'s under the item after the update failed');
+        return { failed: failed, failedWhy: failedWhy, said: said, saidWhy: what + ': no line of the desk\'s under the item after the update failed' };
       };
       await askB('box.take', { id: 'goal/G300.1' }, CW);
       const overTake = await askB('box.take', { id: 'goal/G300.1' }, ANDY);
       ok(!!overTake.change && (await factsB('goal/G300.1')).boxTaken === 'andy', 'an agent holds the box: his take is not refused, and the box is his', 'his take answered ' + short(overTake) + ', boxTaken ' + short((await factsB('goal/G300.1')).boxTaken));
-      await failsAndSays('goal/G300.1', CW, 'after his take over cw');
+      let fa = await failsAndSays('goal/G300.1', CW, 'after his take over cw');
+      ok(fa.failed, 'after his take over cw: the agent\'s update fails, and the box stays his', fa.failedWhy);
+      ok(fa.said, 'after his take over cw: and the desk notes it in the chat', fa.saidWhy);
       // The one-write hold of the cap (goal/G21.1) is an agent's hold too: "nobody else takes it meanwhile, Andy included" goes.
       const tooBigB = await askB('box.write', { id: 'goal/G300.2', text: 'x'.repeat(20000), version: 0 }, ANDY);
       const roomB = tooBigB && tooBigB.extra ? Number(tooBigB.extra.max) || 0 : 0;
@@ -414,7 +417,9 @@ test.startTest('desk.js: the desk server (goal/G41.11)');
       ok(roomB > 0 && !!bigB.change && !!heldB.change && (await factsB('goal/G300.2')).boxTaken === UBI.label, 'the world: ubi holds the box under the one-write hold of the cap', 'room ' + roomB + ', the write ' + short(bigB) + ', ubi\'s take ' + short(heldB));
       const overHold = await askB('box.take', { id: 'goal/G300.2' }, ANDY);
       ok(!!overHold.change && (await factsB('goal/G300.2')).boxTaken === 'andy', 'an agent\'s one-write hold: his take is not refused either', 'his take answered ' + short(overHold) + ', boxTaken ' + short((await factsB('goal/G300.2')).boxTaken));
-      await failsAndSays('goal/G300.2', UBI, 'after his take over ubi\'s hold');
+      fa = await failsAndSays('goal/G300.2', UBI, 'after his take over ubi\'s hold');
+      ok(fa.failed, 'after his take over ubi\'s hold: the agent\'s update fails, and the box stays his', fa.failedWhy);
+      ok(fa.said, 'after his take over ubi\'s hold: and the desk notes it in the chat', fa.saidWhy);
       const v3 = (await factsB('goal/G300.1')).version || 0;
       const hisWrite = await askB('box.write', { id: 'goal/G300.1', text: 'his own text', version: v3 }, ANDY);
       ok(!!hisWrite.change && (await askB('item.box', { id: 'goal/G300.1' }, ANDY)).box === 'his own text', 'his own write under his take lands', 'his write answered ' + short(hisWrite));
@@ -427,7 +432,7 @@ test.startTest('desk.js: the desk server (goal/G41.11)');
     test.subHeading('goal/G43.3: a red claim, and a code-done, wake every agent for the next phase');
     const worldW = gitWorld(path.join(scratch, 'git-w'));
     const askW = await startDesk('desk-wake', [], {}, undefined, worldW);
-    ok(!!askW, 'the world: a desk of its own starts', 'the desk did not start: the wake is not judged');
+    ok(!!askW, 'the world: a desk of its own starts, for the wake', 'the desk did not start: the wake is not judged');
     if (askW) {
       await profiles(askW);
       const factsW = async function (id) { const r = await askW('item.get', { id: id }, ANDY); try { return JSON.parse(r.item); } catch (e) { return {}; } };
@@ -467,7 +472,7 @@ test.startTest('desk.js: the desk server (goal/G41.11)');
     test.subHeading('goal/G43.3: alone, the agent that wrote the red takes the build itself');
     const worldL = gitWorld(path.join(scratch, 'git-l'));
     const askL = await startDesk('desk-alone', [], {}, undefined, worldL);
-    ok(!!askL, 'the world: a desk of its own starts', 'the desk did not start: alone is not judged');
+    ok(!!askL, 'the world: a desk of its own starts, for an agent alone', 'the desk did not start: alone is not judged');
     if (askL) {
       await profiles(askL);
       await ready(askL, 'goal/G300.1', CW);
@@ -486,7 +491,7 @@ test.startTest('desk.js: the desk server (goal/G41.11)');
     const LIST_GOAL = { id: 'goal/G400', title: 'The list' };
     const LIST_ITEMS = Array.from({ length: 25 }, function (x, i) { return 'goal/G400.' + (i + 1); });
     const askS = await startDesk('desk-list', [], {}, [{ goal: LIST_GOAL, items: LIST_ITEMS.map(function (id) { return { id: id, title: 'Item ' + id, blocks: [LIST_GOAL.id] }; }) }]);
-    ok(!!askS, 'the world: a desk of its own starts', 'the desk did not start: the search is not judged');
+    ok(!!askS, 'the world: a desk of its own starts, for the search', 'the desk did not start: the search is not judged');
     if (askS) {
       await profiles(askS);
       // What the List's cells, its presses and its filters read (spirit/app/desk/element/desk/desk.js deskRowCells, deskRowPresses, deskRowShown;
@@ -533,7 +538,10 @@ test.startTest('desk.js: the desk server (goal/G41.11)');
         const fromP = node.pages.length;
         const attached = await askS('item.rules.add', { id: id, rule: made.key }, ANDY);
         const reached = await waitFor(function () { return node.pages.slice(fromP).some(function (o) { return o && o.item && o.item.id === id && (o.item.rules || []).some(function (r) { return r.key === made.key; }); }); }, 3000);
-        ok(!!attached.change && reached, id + ': the row naming the new rule is published to his page', id + ': the attach ' + short(attached) + ', a row naming it published ' + reached);
+        const published = !!attached.change && reached;
+        const publishedWhy = id + ': the attach ' + short(attached) + ', a row naming it published ' + reached;
+        if (id === 'goal/G400.2') ok(published, 'on an item, goal/G400.2: the row naming the new rule is published to his page', publishedWhy);
+        else if (id === LIST_GOAL.id) ok(published, 'on a goal, goal/G400: the row naming the new rule is published to his page', publishedWhy);
       }
     }
     // ── goal/G43.3, THE AGENT BUBBLES FOLLOW THE GRANTS. Andy: "the real thing would be: the desk listens to the grants and
@@ -546,7 +554,7 @@ test.startTest('desk.js: the desk server (goal/G41.11)');
     const heldGrants = node.grants.splice(0, node.grants.length);
     node.grants.push({ key: CW.key, path: 'desk', name: CW.label }, { key: UBI.key, path: 'desk.item.get', name: UBI.label }, { key: CLIENT_ONLY.key, path: 'deskClient.streamListener', name: CLIENT_ONLY.label }, { key: OUT.key, path: 'desk.item.get', name: 'never written' });
     const askG = await startDesk('desk-grants', [], {});
-    ok(!!askG, 'the world: a desk of its own starts', 'the desk did not start: the bubbles are not judged');
+    ok(!!askG, 'the world: a desk of its own starts, for the bubbles', 'the desk did not start: the bubbles are not judged');
     if (askG) {
       await profiles(askG);
       await askG('profile.set', { agent: NOBODY.key, name: 'No Grant', nick: 'nog', included: true, cap: true }, ANDY);
@@ -588,7 +596,7 @@ test.startTest('desk.js: the desk server (goal/G41.11)');
     const MIX_GOAL = { id: 'goal/G500', title: 'Closed first' };
     const MIX_ITEMS = Array.from({ length: 45 }, function (x, i) { return 'goal/G500.' + (i + 1); });
     const askM = await startDesk('desk-mixed', [], {}, [{ goal: MIX_GOAL, items: MIX_ITEMS.map(function (id) { return { id: id, title: 'Item ' + id, blocks: [MIX_GOAL.id] }; }) }]);
-    ok(!!askM, 'the world: a desk of its own starts', 'the desk did not start: [include closed] is not judged');
+    ok(!!askM, 'the world: a desk of its own starts, for [include closed]', 'the desk did not start: [include closed] is not judged');
     if (askM) {
       await askM('press', { id: MIX_GOAL.id, what: 'end-design' }, ANDY);
       const CLOSED = MIX_ITEMS.slice(0, 40); const OPEN = MIX_ITEMS.slice(40);
@@ -655,7 +663,7 @@ test.startTest('desk.js: the desk server (goal/G41.11)');
       const h4 = worldR.push();
       const linesR = (await deskLines(askR, 'goal/G300.1')).length;
       const redR = await askR('claim', { id: 'goal/G300.1', phase: 'red', commit: h4 }, CW);
-      ok(!!h4 && !!redR.change, 'the world: a commit lands on origin, and cw\'s red claim is taken', 'go ' + short(goR) + ', the claim answered ' + short(redR));
+      ok(!!h4 && !!redR.change, 'the world: while a test run goes on, a commit lands on origin, and cw\'s red claim is taken', 'go ' + short(goR) + ', the claim answered ' + short(redR));
       const saidR = await waitFor(async function () { return (await deskLines(askR, 'goal/G300.1')).length > linesR; }, 15000);
       await sleep(1000);
       ok(saidR && !worldR.holds(h4) && worldR.head() === headR, 'a claim taken while a run goes on pulls nothing, and a line of the desk\'s under the item says so',

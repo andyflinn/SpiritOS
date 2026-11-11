@@ -233,19 +233,27 @@ ok(!threw, 'a press after destroy does nothing and throws nothing', 'press after
       let m = null;
       try { m = JSON.parse(s); } catch (e) { m = null; }
       if (!m) { test.fail(c[1] + ': the page measured nothing (' + String(s).slice(0, 200) + ')'); continue; }
-      ok(m.bench.bottom <= m.room + 1 && m.bench.height <= m.roomHeight + 1 && !m.spilt && !m.pageScrolls,
-        c[1] + ': the workBench stays inside it, ' + m.bench.height + ' of ' + m.roomHeight + ' pixels, and nothing outside scrolls',
-        c[1] + ': the workBench is ' + m.bench.height + ' pixels tall in ' + m.roomHeight + ', its bottom at ' + m.bench.bottom + ' of ' + m.room +
-          (m.spilt ? ', the container spills' : '') + (m.pageScrolls ? ', the page scrolls' : ''));
+      const kept = m.bench.bottom <= m.room + 1 && m.bench.height <= m.roomHeight + 1 && !m.spilt && !m.pageScrolls;
+      const keptWhy = c[1] + ': the workBench is ' + m.bench.height + ' pixels tall in ' + m.roomHeight + ', its bottom at ' + m.bench.bottom + ' of ' + m.room +
+        (m.spilt ? ', the container spills' : '') + (m.pageScrolls ? ', the page scrolls' : '');
+      if (c[0] === 'block') ok(kept, 'a box of 300 pixels, a plain block: the workBench stays inside it, and nothing outside scrolls', keptWhy);
+      else if (c[0] === 'flex') ok(kept, 'a box of 300 pixels, a flex column: the workBench stays inside it, and nothing outside scrolls', keptWhy);
+      else if (c[0] === 'app') ok(kept, 'the shell\'s app area, as the home page draws it: the workBench stays inside it, and nothing outside scrolls', keptWhy);
       const names = Object.keys(m.panes);
       const loose = names.filter(function (k) { return !m.panes[k].scrolls || m.panes[k].bottom > m.room + 1; });
-      ok(names.length === 3 && !loose.length, c[1] + ': the left pane, the right pane and the centre each scroll inside it',
-        c[1] + ': not scrolling inside it: ' + (names.length === 3 ? loose.join(', ') : 'panes found ' + JSON.stringify(m.panes)));
+      const scrolls = names.length === 3 && !loose.length;
+      const scrollsWhy = c[1] + ': not scrolling inside it: ' + (names.length === 3 ? loose.join(', ') : 'panes found ' + JSON.stringify(m.panes));
+      if (c[0] === 'block') ok(scrolls, 'a box of 300 pixels, a plain block: the left pane, the right pane and the centre each scroll inside it', scrollsWhy);
+      else if (c[0] === 'flex') ok(scrolls, 'a box of 300 pixels, a flex column: the left pane, the right pane and the centre each scroll inside it', scrollsWhy);
+      else if (c[0] === 'app') ok(scrolls, 'the shell\'s app area, as the home page draws it: the left pane, the right pane and the centre each scroll inside it', scrollsWhy);
       // SQUARE WHERE IT IS SHOWN (goal/G41.23; Andy: "the buttons are still not square", "the rounded shape, it that's the
       // button, id DEFINITELY NOT square"): in the shell's app area too, whose sheet gives its buttons a height of their own.
       const unsquare = (m.buttons || []).filter(function (b) { return Math.abs(b[0] - b[1]) > 1; });
-      ok((m.buttons || []).length === 2 && !unsquare.length, c[1] + ': each strip button is a square, ' + JSON.stringify(m.buttons),
-        c[1] + ': strip buttons not square, width by height: ' + JSON.stringify(m.buttons));
+      const square = (m.buttons || []).length === 2 && !unsquare.length;
+      const squareWhy = c[1] + ': strip buttons not square, width by height: ' + JSON.stringify(m.buttons);
+      if (c[0] === 'block') ok(square, 'a box of 300 pixels, a plain block: each strip button is a square', squareWhy);
+      else if (c[0] === 'flex') ok(square, 'a box of 300 pixels, a flex column: each strip button is a square', squareWhy);
+      else if (c[0] === 'app') ok(square, 'the shell\'s app area, as the home page draws it: each strip button is a square', squareWhy);
     }
 
     // THE STRIP (goal/G41.23; Andy, goal/G41.21: "this element will replace icons painting all shell elements and apps.",
@@ -256,14 +264,14 @@ ok(!threw, 'a press after destroy does nothing and throws nothing', 'press after
     const one = await strip(1);
     const many = await strip(40);
     if (!one || !many) { test.fail('the page measured no strip: ' + JSON.stringify({ one: one, many: many })); return; }
-    ok(!!many.mark && one.painted === 1 && many.painted === 40, 'each tool\'s glyph is painted through the icon element (class ' + many.mark + ')',
+    ok(!!many.mark && one.painted === 1 && many.painted === 40, 'each tool\'s glyph is painted through the icon element',
       many.mark ? 'painted through the icon element: ' + one.painted + ' of 1, ' + many.painted + ' of 40' : 'no icon element to paint through: spirit/element/icon.js made no element with a class');
-    ok(many.scrollsDown && many.bar > 0, 'forty tools scroll down the strip, its scrollbar ' + many.bar + ' pixels wide',
+    ok(many.scrollsDown && many.bar > 0, 'forty tools scroll down the strip, its scrollbar drawn',
       'forty tools: scrolls down ' + many.scrollsDown + ', scrollbar ' + many.bar + ' pixels (the case needs one drawn)');
     ok(!many.sideways && many.outside === 0, 'with its scrollbar showing, no icon is pushed sideways: nothing scrolls across, no button past the scrollbar',
       'with its scrollbar showing: scrolls across ' + many.sideways + ', ' + many.outside + ' of ' + many.buttons + ' buttons past it');
     ok(one.width === many.width && one.firstLeft === many.firstLeft && one.firstWidth === many.firstWidth,
-      'the room is kept with no scrollbar too: the strip as wide, its buttons where they were and as wide (' + one.width + ' wide, a button at ' + one.firstLeft + ', ' + one.firstWidth + ' wide)',
+      'the room is kept with no scrollbar too: the strip as wide, its buttons where they were and as wide',
       'one tool: the strip ' + one.width + ' wide, its button at ' + one.firstLeft + ', ' + one.firstWidth + ' wide; forty: ' + many.width + ', the first at ' + many.firstLeft + ', ' + many.firstWidth + ' wide');
   } finally {
     if (page && page.kid) page.kid.kill();

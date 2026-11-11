@@ -162,10 +162,12 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const NI = w.els.nodeInfo;
   ok(!!NI && typeof NI.create === 'function', 'it sets spirit.element.spirit.element.nodeInfo = { create }', 'elements: ' + short(Object.keys(w.els)));
   if (!NI) return;
-  ['spirit/element/changeMyLabel.js', 'spirit/element/changeMyDescription.js', 'spirit/element/joinForm.js', 'spirit/element/faceForm.js',
-    'spirit/element/rowForm.js', 'spirit/element/panel.js'].forEach(function (p) {
-    ok(w.required.indexOf(p) !== -1, 'it requires ' + p, 'required: ' + short(w.required));
-  });
+  ok(w.required.indexOf('spirit/element/changeMyLabel.js') !== -1, 'it requires spirit/element/changeMyLabel.js', 'required: ' + short(w.required));
+  ok(w.required.indexOf('spirit/element/changeMyDescription.js') !== -1, 'it requires spirit/element/changeMyDescription.js', 'required: ' + short(w.required));
+  ok(w.required.indexOf('spirit/element/joinForm.js') !== -1, 'it requires spirit/element/joinForm.js', 'required: ' + short(w.required));
+  ok(w.required.indexOf('spirit/element/faceForm.js') !== -1, 'it requires spirit/element/faceForm.js', 'required: ' + short(w.required));
+  ok(w.required.indexOf('spirit/element/rowForm.js') !== -1, 'it requires spirit/element/rowForm.js', 'required: ' + short(w.required));
+  ok(w.required.indexOf('spirit/element/panel.js') !== -1, 'it requires spirit/element/panel.js', 'required: ' + short(w.required));
   ok(w.required.indexOf('spirit/element/rotateKey.js') === -1, 'and the rotate key dialog only when it is opened', 'rotateKey.js required at load');
   ok(!/\bactivateApp\b|\bspirit\.shell\b|\bcallDialog\b/.test(CODE), 'no spirit.shell.activateApp, no dialog of the old shell', 'nodeInfo.js still mounts or opens the old shell\'s way');
   // Andy: "every fucking element gets the interfaces it needs": the spirit object's families, no api handed.
@@ -185,9 +187,13 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(/What this node says about itself/.test(said), 'its heading: What this node says about itself', 'says: ' + short(said));
   ok(said.indexOf('Anybody who asks this node is told these two things, whether or not you have ever met. Nothing else about this box is answered to a stranger.') !== -1,
     'and the one note before the boxes: these two are answered to anybody who asks', 'says: ' + short(said));
-  ['name', 'description', 'said', 'email', 'face', 'rotate'].forEach(function (k) {
-    ok(!!w.slot(host, k), 'a slot ' + k, 'no data-info="' + k + '": ' + short(host.kids.map(function (k2) { return k2.innerHTML; }).join('').slice(0, 200)));
-  });
+  const slotWhy = function (k) { return 'no data-info="' + k + '": ' + short(host.kids.map(function (k2) { return k2.innerHTML; }).join('').slice(0, 200)); };
+  ok(!!w.slot(host, 'name'), 'it has a slot for its name', slotWhy('name'));
+  ok(!!w.slot(host, 'description'), 'it has a slot for its description', slotWhy('description'));
+  ok(!!w.slot(host, 'said'), 'it has a slot for its said', slotWhy('said'));
+  ok(!!w.slot(host, 'email'), 'it has a slot for its email', slotWhy('email'));
+  ok(!!w.slot(host, 'face'), 'it has a slot for its face', slotWhy('face'));
+  ok(!!w.slot(host, 'rotate'), 'it has a slot for its rotate', slotWhy('rotate'));
   ok(host.innerHTML === '' && host.kids.length === 1 && /\bfill\b/.test(host.kids[0].className), 'it empties its container and draws into one fill box', 'container: ' + short({ html: host.innerHTML, kids: host.kids.length }));
 
   test.subHeading('its two fields are the two elements, handed nothing (goal/G41.6)');
@@ -618,10 +624,10 @@ async function rotatePart() {
       const alone = made === 'made' && await waitFor('says(' + JSON.stringify(EXPLAINED) + ').length === 0', 6000);
       ok(alone, 'it draws the explanation as it is', made === 'made' ? 'missing: ' + short(await T('says(' + JSON.stringify(EXPLAINED) + ')')) : 'no element: nothing judged');
       const hasButton = made === 'made' && await waitFor('buttons().indexOf(' + JSON.stringify(BUTTON) + ') !== -1', 6000);
-      ok(hasButton, 'it draws its button, ' + BUTTON, made === 'made' ? 'its buttons: ' + short(await T('buttons()')) : 'no element: nothing judged');
+      ok(hasButton, 'it draws its button, Rotate the key', made === 'made' ? 'its buttons: ' + short(await T('buttons()')) : 'no element: nothing judged');
       if (hasButton) await T('press(' + JSON.stringify(BUTTON) + ')');
       const armedAlone = hasButton && await waitFor('buttons().indexOf(' + JSON.stringify(ARMED) + ') !== -1 && count("button[data-armed]") === 1', 4000);
-      ok(armedAlone, 'one press arms it: ' + ARMED, hasButton ? 'after one press: ' + short(await T('buttons()')) : 'no button: nothing judged');
+      ok(armedAlone, 'one press arms it: it says Rotate the key: press again', hasButton ? 'after one press: ' + short(await T('buttons()')) : 'no button: nothing judged');
       ok(hasButton && (await rotations()) === 0, 'and one press rotates nothing', hasButton ? 'one press asked node.rotateCipher ' + (await rotations()) + ' times' : 'no button: nothing judged');
       await c.evaluate('(function () { try { if (window.__rk) window.__rk.destroy(); } catch (e) { /* judged above */ } var b = document.getElementById("zzOwn"); if (b) b.remove(); window.__in = "zzBox"; return true; }())');
 
@@ -637,14 +643,14 @@ async function rotatePart() {
       ok(over, 'the rotate button opens the dialog: its explanation shows', 'after the press: ' + short(await T('text()')));
       ok(over && (await T('count("[data-field=label]")')) === 0 && (await T('count("[data-field=description]")')) === 0, 'over Info: Info\'s fields are out of view', over ? 'Info still shows its fields' : 'nothing opened: nothing judged');
       const bars = await T('bars()');
-      ok(over && bars.length === 1 && short(bars) !== short(before) && (await T('count(".app-container-close")')) === 1, '"like fstat": one layer of panel.js over all of Info, one bar in view, its own (' + short(bars) + ')', over ? 'bars before ' + short(before) + ', now ' + short(bars) + ', panel.js closes in view ' + (await T('count(".app-container-close")')) : 'nothing opened: nothing judged');
+      ok(over && bars.length === 1 && short(bars) !== short(before) && (await T('count(".app-container-close")')) === 1, '"like fstat": one layer of panel.js over all of Info, one bar in view, its own', over ? 'bars before ' + short(before) + ', now ' + short(bars) + ', panel.js closes in view ' + (await T('count(".app-container-close")')) : 'nothing opened: nothing judged');
       const layerButton = over && await waitFor('buttons().indexOf(' + JSON.stringify(BUTTON) + ') !== -1', 4000);
-      ok(layerButton, 'the layer shows its button, ' + BUTTON, over ? 'its buttons: ' + short(await T('buttons()')) : 'nothing opened: nothing judged');
+      ok(layerButton, 'the layer shows its button, Rotate the key', over ? 'its buttons: ' + short(await T('buttons()')) : 'nothing opened: nothing judged');
       if (layerButton) await T('press(' + JSON.stringify(BUTTON) + ')');
       const armed = layerButton && await waitFor('buttons().indexOf(' + JSON.stringify(ARMED) + ') !== -1', 4000);
-      ok(armed, 'one press arms it: ' + ARMED, layerButton ? 'after one press: ' + short(await T('buttons()')) : 'no button: nothing judged');
+      ok(armed, 'in the layer, one press arms it: it says Rotate the key: press again', layerButton ? 'after one press: ' + short(await T('buttons()')) : 'no button: nothing judged');
       await sleep(800);
-      ok(layerButton && (await rotations()) === 0, 'and one press rotates nothing', layerButton ? 'one press asked node.rotateCipher ' + (await rotations()) + ' times' : 'no button: nothing judged');
+      ok(layerButton && (await rotations()) === 0, 'and in the layer, one press rotates nothing', layerButton ? 'one press asked node.rotateCipher ' + (await rotations()) + ' times' : 'no button: nothing judged');
       const closed = over && await T('closeLast()');
       const back = closed && await waitFor('count("[data-field=label]") === 1 && count("[data-field=description]") === 1 && says([' + JSON.stringify(EXPLAINED[1]) + ']).length === 1', 6000);
       ok(back, 'its ✕ shows Info again, the dialog out of view', closed ? 'after ✕: ' + short(await T('text()')) : 'no ✕ to press: nothing judged');

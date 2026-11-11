@@ -92,8 +92,15 @@ test.startTest('panel.js: what mounts covers its mounter (goal/G43.17)');
   ok(fs.existsSync(PANEL), 'spirit/element/panel.js is there (Q12)', 'no spirit/element/panel.js');
   Object.keys(USERS).forEach(function (u) {
     const own = code(USERS[u]);
-    ok(/spirit\/element\/panel\.js/.test(own), u + ' loads spirit/element/panel.js', u + ' does not load spirit/element/panel.js');
-    ok(!!own && !/✕|app-container/.test(own), u + ' draws no title bar or close of its own', u + ' still draws a ✕ or an app-container');
+    const loads = /spirit\/element\/panel\.js/.test(own);
+    const plain = !!own && !/✕|app-container/.test(own);
+    if (u === 'appSelector') {
+      ok(loads, 'appSelector loads spirit/element/panel.js', u + ' does not load spirit/element/panel.js');
+      ok(plain, 'appSelector draws no title bar or close of its own', u + ' still draws a ✕ or an app-container');
+    } else if (u === 'file') {
+      ok(loads, 'file loads spirit/element/panel.js', u + ' does not load spirit/element/panel.js');
+      ok(plain, 'file draws no title bar or close of its own', u + ' still draws a ✕ or an app-container');
+    }
   });
 
   // goal/G43.18, Andy: "contact details and relay details should be proper panels in the newest shell style.", and "add it to a
@@ -226,16 +233,23 @@ test.startTest('panel.js: what mounts covers its mounter (goal/G43.17)');
     const kinds = [['relay', people.filter(function (p) { return p.relay === true; })[0]], ['contact', people.filter(function (p) { return p.relay !== true; })[0]]];
     for (const k of kinds) {
       const who = k[1];
-      ok(!!who, 'the world: the node knows a ' + k[0], 'the world: no ' + k[0] + ' on the scratch node: ' + short(people));
+      const why = 'the world: no ' + k[0] + ' on the scratch node: ' + short(people);
+      if (k[0] === 'relay') ok(!!who, 'the world: the node knows a relay', why);
+      else if (k[0] === 'contact') ok(!!who, 'the world: the node knows a contact', why);
       if (!who) continue;
       await selector('tiles');
       await waitFor('tiles().indexOf("contact") !== -1', 10000);
       await T('press("contact")');
-      ok(await waitFor('bars().length === 1 && rows().indexOf(' + JSON.stringify(who.key) + ') !== -1', 10000), 'the world: Contacts opens and lists the ' + k[0], 'bars: ' + short(await T('bars()')) + ', rows: ' + short(await T('rows()')));
+      const listed = await waitFor('bars().length === 1 && rows().indexOf(' + JSON.stringify(who.key) + ') !== -1', 10000);
+      const shown = 'bars: ' + short(await T('bars()')) + ', rows: ' + short(await T('rows()'));
+      if (k[0] === 'relay') ok(listed, 'the world: Contacts opens and lists the relay', shown);
+      else if (k[0] === 'contact') ok(listed, 'the world: Contacts opens and lists the contact', shown);
       const contacts = (await T('bars()'))[0];
       const depth = await T('depth()');
       await T('openRow(' + JSON.stringify(who.key) + ')');
-      ok(await waitFor('bars().length === 1 && bars()[0] !== ' + JSON.stringify(contacts), 10000), 'the ' + k[0] + '\'s details open over Contacts under one bar of their own', 'bars: ' + short(await T('bars()')));
+      const over = await waitFor('bars().length === 1 && bars()[0] !== ' + JSON.stringify(contacts), 10000);
+      if (k[0] === 'relay') ok(over, 'the relay\'s details open over Contacts under one bar of their own', 'bars: ' + short(await T('bars()')));
+      else if (k[0] === 'contact') ok(over, 'the contact\'s details open over Contacts under one bar of their own', 'bars: ' + short(await T('bars()')));
       ok((await T('rows()')).indexOf(who.key) === -1, 'the list is out of view under them', 'rows: ' + short(await T('rows()')));
       ok((await T('depth()')) === depth, 'no page is pushed on the navigation', 'the navigation went from ' + depth + ' to ' + (await T('depth()')));
       const own = (await T('bars()'))[0];

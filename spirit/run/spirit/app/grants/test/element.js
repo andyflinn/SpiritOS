@@ -102,9 +102,9 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(!/shellCreateListSearch|api\.ui\.elements|apiBranchSelector/.test(CODE), 'nothing of the old shell: no shellCreateListSearch, no api.ui.elements, no apiBranchSelector', 'grants.js still names one');
 
   test.subHeading('a wrapper: it loads the panel, the tabs and the bundle editor, and nothing of its own (requirement 6)');
-  ['spirit/element/search/grant/grantsPanel.js', 'spirit/element/tabContainer.js', 'spirit/element/bundleEditor.js'].forEach(function (p) {
-    ok(w.required.indexOf(p) !== -1, 'it requires ' + p, 'required: ' + short(w.required));
-  });
+  ok(w.required.indexOf('spirit/element/search/grant/grantsPanel.js') !== -1, 'it requires spirit/element/search/grant/grantsPanel.js', 'required: ' + short(w.required));
+  ok(w.required.indexOf('spirit/element/tabContainer.js') !== -1, 'it requires spirit/element/tabContainer.js', 'required: ' + short(w.required));
+  ok(w.required.indexOf('spirit/element/bundleEditor.js') !== -1, 'it requires spirit/element/bundleEditor.js', 'required: ' + short(w.required));
   ok(w.required.length === 3, 'and nothing else', 'required: ' + short(w.required));
   // goal/G43.24: "Still its own: the panel's data source, auth.search and auth.grant / auth.revoke over the auth cache
   // (GR_GRANTS). It moves into grantsPanel."
@@ -150,7 +150,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const tl = ed.opts && ed.opts.tabLabel;
   ok(typeof tl === 'function' && tl({ owner: 'node', label: 'Reader' }) === 'node-Reader' && tl({ owner: 'agent', label: 'Jobs' }) === 'agent-Jobs' && tl({ label: 'Lone' }) === 'node-Lone',
     'each tab named owner-bundle (node when no owner is said)', 'tabLabel: ' + short(typeof tl === 'function' ? [tl({ owner: 'node', label: 'Reader' }), tl({ label: 'Lone' })] : tl));
-  ok(Object.keys(ed.opts).sort().join() === 'tabLabel,tabs', 'and nothing else: no api handed', 'handed: ' + short(Object.keys(ed.opts)));
+  ok(Object.keys(ed.opts).sort().join() === 'tabLabel,tabs', 'and the bundle editor is handed nothing else: no api', 'handed: ' + short(Object.keys(ed.opts)));
 
   test.subHeading('destroy');
   m.destroy();
@@ -214,7 +214,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     const all = await home('auth.bundle', { op: 'search', text: '' });
     const rows = ((all.body && all.body.items) || []).map(function (i) { return parsed(i.label) || {}; });
     const serverBundle = rows.filter(function (r) { return r.owner && r.owner !== 'node'; })[0];
-    ok(!!serverBundle, 'the world: and a server\'s bundle, ' + (serverBundle && serverBundle.label), 'no bundle of a server on the scratch node: read-only judges nothing');
+    ok(!!serverBundle, 'the world: and a server\'s bundle', 'no bundle of a server on the scratch node: read-only judges nothing');
 
     await chrome.send('Page.navigate', { url: base + '/face.html' });
     ok(await H.until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready && window.spirit.event)'); }, 20000), 'the world: the face page has its spirit', 'the page has no spirit: nothing judged');
@@ -247,7 +247,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     const WORDS = 'Delete zzOne bundle and branches';
     await waitFor(function () { return pageText().then(function (t) { return t.indexOf(WORDS) !== -1; }); });
     const paneText = await pageText();
-    ok(paneText.indexOf(WORDS) !== -1, 'it says "' + WORDS + '"', 'not said: ' + short(paneText.slice(-300)));
+    ok(paneText.indexOf(WORDS) !== -1, 'it says "Delete zzOne bundle and branches"', 'not said: ' + short(paneText.slice(-300)));
     const atBottom = await chrome.evaluate('(function () { var forms = Array.prototype.slice.call(' + IN + '(".shell-row-form")).filter(function (f) { return f.offsetParent !== null && !f.querySelector(".app-container-close"); }); var last = forms[forms.length - 1]; if (!last) return null; return { icon: last.textContent.indexOf("❌") !== -1, words: last.textContent.indexOf(' + JSON.stringify(WORDS) + ') !== -1, button: !!last.querySelector("button"), below: forms.length > 1 && forms[0].getBoundingClientRect().top < last.getBoundingClientRect().top }; }())');
     ok(!!atBottom && atBottom.icon && atBottom.words && atBottom.button && atBottom.below, 'in a rowForm below the others, ❌, the words, a button', 'the row: ' + short(atBottom));
 
@@ -298,7 +298,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
       await waitFor(function () { return shown(serverBundle.label); });
       ok(await click(serverBundle.label, '#zzBox .bundle-selector-face-pane'), 'its row opens', 'no row for ' + serverBundle.label);
       await waitFor(function () { return tabNamed(serverBundle.label).then(function (t) { return t.length === 1; }); });
-      ok((await tabNamed(serverBundle.owner + '-' + serverBundle.label)).length === 1, 'its tab names owner-bundle: ' + serverBundle.owner + '-' + serverBundle.label, 'tabs: ' + short(await tabs()));
+      ok((await tabNamed(serverBundle.owner + '-' + serverBundle.label)).length === 1, 'its tab names owner-bundle', 'tabs: ' + short(await tabs()));
       // The panel's own title bar (panel.js, ✕) is a rowForm too: it is the shell's, not the bundle's.
       const editable = await chrome.evaluate('JSON.stringify(Array.prototype.slice.call(' + IN + '(".shell-row-form")).filter(function (f) { return f.offsetParent !== null && !f.querySelector(".app-container-close"); }).map(function (f) { return f.textContent.trim().slice(0, 60); }))');
       ok(JSON.parse(editable || '[]').length === 0, 'no add form and no Delete row on it', 'forms on a read-only bundle: ' + editable);
@@ -423,61 +423,61 @@ async function wrapperPart() {
     const fileJson = readJson(path.join(RUN, 'spirit', 'app', 'file', 'file.json')) || {};
     ok(same(Object.keys(fileJson).sort(), ['identity', 'mount', 'node', 'shell']), 'the world: file.json, the form, has identity, mount, shell and node', 'file.json reads ' + short(fileJson));
     const j = readJson(path.join(APP_DIR, NAME + '.json'));
-    ok(!!j, 'the world: spirit/app/' + NAME + '/' + NAME + '.json is there and reads', 'no readable spirit/app/' + NAME + '/' + NAME + '.json: nothing judged');
+    ok(!!j, 'the world: spirit/app/grants/grants.json is there and reads', 'no readable spirit/app/' + NAME + '/' + NAME + '.json: nothing judged');
     if (j) {
-      ok(same(j.identity, { icon: WANT.icon, label: WANT.label, intrinsic: true }), NAME + '.json: identity {icon ' + WANT.icon + ', label ' + WANT.label + ', intrinsic: true}', NAME + '.json identity: ' + short(j.identity));
+      ok(same(j.identity, { icon: WANT.icon, label: WANT.label, intrinsic: true }), 'grants.json: its identity is the icon 🔒, the label Grants, and intrinsic true', NAME + '.json identity: ' + short(j.identity));
       const mount = { 'element.js': true };
-      ok(same(j.mount, mount), NAME + '.json: mount {"' + NAME + '.js": true}', NAME + '.json mount: ' + short(j.mount));
-      ok(same(j.shell, { true: false, mount: true, tile: true }), NAME + '.json: shell {true: false, mount: true, tile: true}', NAME + '.json shell: ' + short(j.shell));
-      ok(same(j.node, { mount: false }), NAME + '.json: node {mount: false}', NAME + '.json node: ' + short(j.node));
-      ok(same(Object.keys(j).sort(), Object.keys(fileJson).sort()), NAME + '.json holds what file.json holds, nothing of the old form', NAME + '.json keys: ' + short(Object.keys(j)));
-      ok(JSON.stringify(j).indexOf('"description"') === -1, 'Q1, the old description sentence: "it goes." (' + NAME + '.json)', NAME + '.json still says a description: ' + short(j.description));
+      ok(same(j.mount, mount), 'grants.json: it mounts element.js', NAME + '.json mount: ' + short(j.mount));
+      ok(same(j.shell, { true: false, mount: true, tile: true }), 'grants.json: in the shell it mounts and has a tile, and is no shell itself', NAME + '.json shell: ' + short(j.shell));
+      ok(same(j.node, { mount: false }), 'grants.json: the node mounts no server for it', NAME + '.json node: ' + short(j.node));
+      ok(same(Object.keys(j).sort(), Object.keys(fileJson).sort()), 'grants.json holds what file.json holds, nothing of the old form', NAME + '.json keys: ' + short(Object.keys(j)));
+      ok(JSON.stringify(j).indexOf('"description"') === -1, 'Q1, the old description sentence: "it goes.", and grants.json holds none', NAME + '.json still says a description: ' + short(j.description));
     }
 
     test.subHeading('the box, 6: "each app\'s <name>.js only loads spirit/element/ parts (spirit.require) and mounts them into its container"');
     const c0 = code(path.join(APP_DIR, 'element.js'));
-    ok(c0.length > 0, 'the world: spirit/app/' + NAME + '/' + NAME + '.js is there', 'no spirit/app/' + NAME + '/' + NAME + '.js: nothing judged');
+    ok(c0.length > 0, 'the world: its element.js is there', 'no spirit/app/' + NAME + '/' + NAME + '.js: nothing judged');
     if (c0) {
       // What it loads: every script it names, and every spirit.require.
       const named = (c0.match(/['"][^'"\n]*\.js['"]/g) || []).map(function (s) { return s.slice(1, -1); }).filter(function (s) { return s !== 'element.js' && s !== 'spirit/app/' + NAME + '/element.js'; }); // goal/G43.32, decided 5: its own path is where it places itself, no load
       const asks = (c0.match(/\brequire\s*\(/g) || []).length;
       const strays = named.filter(function (s) { return !/^spirit\/element\/[^]+\.js$/.test(s); });
-      ok(asks > 0 && named.length > 0 && !strays.length, NAME + '.js loads only spirit/element/ parts, through spirit.require (' + named.join(', ') + ')', asks && named.length ? NAME + '.js loads what is no element: ' + short(strays) : NAME + '.js loads nothing through spirit.require: nothing judged');
-      ok(!/\bcacheManager\s*\(/.test(c0), NAME + '.js loads no data family of its own (no cacheManager)', NAME + '.js asks a cacheManager itself');
+      ok(asks > 0 && named.length > 0 && !strays.length, 'it loads only spirit/element/ parts, through spirit.require', asks && named.length ? NAME + '.js loads what is no element: ' + short(strays) : NAME + '.js loads nothing through spirit.require: nothing judged');
+      ok(!/\bcacheManager\s*\(/.test(c0), 'it loads no data family of its own (no cacheManager)', NAME + '.js asks a cacheManager itself');
       const verbs = [/\.verb\s*\(/, /\bspirit\.outcome\b/, /\bcallDialog\b/, /\bfetch\s*\(/, /\brelay\W{1,4}status\b/, /\bnode\W{1,4}card\b/, /\bauth\W{1,4}(search|grant|revoke)\b/]
         .filter(function (re) { return re.test(c0); }).map(String);
-      ok(!verbs.length, NAME + '.js calls no verb of its own', NAME + '.js still calls: ' + short(verbs));
+      ok(!verbs.length, 'it calls no verb of its own', NAME + '.js still calls: ' + short(verbs));
       const markup = c0.match(/['"][^'"\n]*<(div|span|button|input|table|b)\b[^'"\n]*['"]/g) || [];
-      ok(!markup.length, NAME + '.js draws no markup of its own', NAME + '.js draws: ' + short(markup));
+      ok(!markup.length, 'as a wrapper, it draws no markup of its own', NAME + '.js draws: ' + short(markup));
     }
 
     test.subHeading('the box, 7: "no spirit.shell.activateApp, the old shell\'s way"');
-    ok(c0.length > 0 && !/\bactivateApp\b/.test(c0) && !/\bspirit\.shell\b/.test(c0), NAME + '.js mounts through no spirit.shell.activateApp', c0.length ? NAME + '.js still calls spirit.shell.activateApp' : 'no ' + NAME + '.js: nothing judged');
+    ok(c0.length > 0 && !/\bactivateApp\b/.test(c0) && !/\bspirit\.shell\b/.test(c0), 'it mounts through no spirit.shell.activateApp', c0.length ? NAME + '.js still calls spirit.shell.activateApp' : 'no ' + NAME + '.js: nothing judged');
 
     test.subHeading('the box, 4: "info/test/info.js and grants/test/grants.js find the run root at their new depth"');
     const own = path.join(APP_DIR, 'test', 'element.js');
-    ok(fs.existsSync(own), 'the world: spirit/app/' + NAME + '/test/' + NAME + '.js is there', 'no spirit/app/' + NAME + '/test/' + NAME + '.js: nothing judged');
+    ok(fs.existsSync(own), 'the world: its own test is there', 'no spirit/app/' + NAME + '/test/' + NAME + '.js: nothing judged');
     if (fs.existsSync(own)) {
       // This part lives in that file now: the child runs the file's own checks only (SPIRIT_TEST_OWN_ONLY), as it did when
       // this part was a file of its own, and does not run this part again.
       const r = spawnSync(process.execPath, [own], { cwd: RUN, encoding: 'utf8', timeout: 240000, env: Object.assign({}, process.env, { LAB_MASTER_PORT: process.env.LAB_MASTER_PORT || '45420', SPIRIT_TEST_OWN_ONLY: '1' }) });
       const out = String(r.stdout || '') + String(r.stderr || '');
       const lost = /Cannot find module[^\n]*/.exec(out);
-      ok(!lost && /Test completed\./.test(out), NAME + '/test/' + NAME + '.js runs from the new place: testReport.js found, its completion line printed',
+      ok(!lost && /Test completed\./.test(out), 'its own test runs from the new place: testReport.js found, its completion line printed',
         lost ? NAME + '.js: ' + short(lost[0]) : NAME + '.js printed no completion line: ' + short(out.slice(-300)));
     }
 
     test.subHeading('the box, 5: "no file names shell/info or shell/grants any more" (shell/' + NAME + ')');
     const tracked = execSync('git ls-files --cached --others --exclude-standard', { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(Boolean)
       .filter(function (f) { return MINE.indexOf(f) === -1 && fs.existsSync(path.join(REPO, f)) && fs.statSync(path.join(REPO, f)).isFile(); });
-    ok(tracked.length > 500, 'the world: the tree\'s files are read (' + tracked.length + ')', 'only ' + tracked.length + ' files read: nothing judged');
+    ok(tracked.length > 500, 'the world: more than five hundred of the tree\'s files are read', 'only ' + tracked.length + ' files read: nothing judged');
     const OLD = new RegExp('shell/' + NAME + '(?![\\w-])');
     const naming = tracked.filter(function (f) {
       let t = '';
       try { t = fs.readFileSync(path.join(REPO, f), 'utf8'); } catch (e) { return false; }
       return t.indexOf('\u0000') === -1 && OLD.test(t);
     });
-    ok(!naming.length, 'no file names shell/' + NAME, naming.length + ' files still name it: ' + naming.join(', '));
+    ok(!naming.length, 'no file names shell/grants', naming.length + ' files still name it: ' + naming.join(', '));
 
     const s = scratch();
     let N = null;
@@ -492,27 +492,27 @@ async function wrapperPart() {
       const rows = {};
       ((listed.body && listed.body.items) || []).forEach(function (i) { rows[i.key] = parsed(i.label) || {}; });
       ok(!!rows.file && rows.file.intrinsic === true, 'the world: the node lists Files, intrinsic', 'app.search: ' + short(listed.text));
-      ok(!!rows[NAME] && rows[NAME].intrinsic === true && rows[NAME].active === true, 'the node lists ' + NAME + ' intrinsic, so always active', 'app.search\'s ' + NAME + ': ' + short(rows[NAME]));
+      ok(!!rows[NAME] && rows[NAME].intrinsic === true && rows[NAME].active === true, 'the node lists grants intrinsic, so always active', 'app.search\'s ' + NAME + ': ' + short(rows[NAME]));
 
       const where = findChrome();
       if (!where) { test.fail('no Chrome here: the page was not judged'); return; }
       c = await chromePage(where);
       if (c.error) { test.fail('Chrome: ' + c.error); return; }
       await c.send('Page.navigate', { url: N.base + '/face.html' });
-      ok(await until(function () { return c.evaluate('!!(window.spirit && window.spirit.ready && window.spirit.event)'); }, 20000), 'the world: the face page has its spirit', 'the page has no spirit: nothing judged');
+      ok(await until(function () { return c.evaluate('!!(window.spirit && window.spirit.ready && window.spirit.event)'); }, 20000), 'the world: the wrapper\'s face page has its spirit', 'the page has no spirit: nothing judged');
       await c.evaluate(HANDS);
       const T = function (expr) { return c.evaluate('window.__t.' + expr); };
       const waitFor = function (expr, ms) { return until(function () { return c.evaluate('(function () { with (window.__t) { return !!(' + expr + '); } }())'); }, ms || 8000); };
 
       test.subHeading('the box, 7: "its <name>.js sets spirit.elements.<name> = { create(container, opts) -> { destroy() } }"');
       const made = await c.evaluate('(function () { var b = document.createElement("div"); b.id = "zzOwn"; b.style.cssText = "position:absolute;left:0;top:0;width:50%;height:50%"; document.body.appendChild(b); var p; try { p = spirit.require("spirit/app/' + NAME + '/element.js"); } catch (e) { return "load threw: " + e; } return Promise.resolve(p).then(function () { var E = spirit.element.spirit.app[' + JSON.stringify(NAME) + '] && spirit.element.spirit.app[' + JSON.stringify(NAME) + '].element; if (!E || typeof E.create !== "function") return "no spirit.element.spirit.app.' + NAME + '.element.create"; var m = E.create(b, {}); if (!m || typeof m.destroy !== "function") return "create answered " + typeof m; return new Promise(function (r) { setTimeout(r, 2500); }).then(function () { var drew = b.innerHTML.length > 0; m.destroy(); b.remove(); return drew ? "ok" : "it drew nothing"; }); }, function (e) { b.remove(); return "load: " + e; }); }())');
-      ok(made === 'ok', 'spirit.element.spirit.app.' + NAME + '.element.create(container, opts) draws into it and answers { destroy() }', NAME + ': ' + short(made));
+      ok(made === 'ok', 'its element\'s create draws into the container it is given and answers destroy', NAME + ': ' + short(made));
 
       test.subHeading('the box, 3: "both show in the shell as before: a tile each, and each opens as it did"');
       // The shell app, as boot.js hands it the page's app area, here in a box of its own over the page.
       const shell = await c.evaluate('(function () { var old = document.getElementById("zzBox"); if (old) old.remove(); var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.require("spirit/app/app/element.js").then(function () { window.__shell = spirit.element.spirit.app.app.element.create(b); return "made"; }, function (e) { return "load: " + e; }); }())');
       ok(shell === 'made' && await waitFor('tiles().indexOf("file") !== -1', 10000), 'the world: the shell draws its tiles, Files among them', 'the shell: ' + short(shell) + ', tiles ' + short(await T('tiles()')));
-      ok(await waitFor('tiles().indexOf("' + NAME + '") !== -1', 6000), WANT.label + ' has its tile, with nothing pressed', 'no ' + NAME + ' tile: ' + short(await T('tiles()')));
+      ok(await waitFor('tiles().indexOf("' + NAME + '") !== -1', 6000), 'Grants has its tile, with nothing pressed', 'no ' + NAME + ' tile: ' + short(await T('tiles()')));
 
       // Grants opens as it did: its Grants and Bundles tabs, the panel configured.
       const grPressed = await T('tile("grants")');
@@ -522,7 +522,7 @@ async function wrapperPart() {
       const grText = await T('text()');
       ok(grOpen && !/not configured|could not be loaded/i.test(grText), 'its Grants tab draws the grants panel, configured', grOpen ? 'Grants: ' + short(grText) : 'Grants did not open: nothing judged');
       const grBars = await T('bars()');
-      ok(grOpen && grBars.length === 1 && grBars[0] === WANT.icon + ' Grants', 'over the tiles one bar in view, ' + WANT.icon + ' Grants', grOpen ? 'bars: ' + short(grBars) : 'Grants did not open: nothing judged');
+      ok(grOpen && grBars.length === 1 && grBars[0] === WANT.icon + ' Grants', 'over the tiles one bar in view, 🔒 Grants', grOpen ? 'bars: ' + short(grBars) : 'Grants did not open: nothing judged');
 
     } finally {
       try { if (c && c.sock) c.sock.close(); } catch (e) { /* gone */ }

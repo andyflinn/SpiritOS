@@ -31,7 +31,7 @@ test.startTest('nodeDesk.js: the desk server keeps goals, items and rules; plugi
     const why = dir + '/ still holds ' + short(left.length ? left : 'files on the disk');
     if (dir === 'spirit/run/spirit/app/desk/plugins') ok(gone, 'the desk app\'s plugins folder is gone', why);
     else if (dir === 'spirit/run/spirit/app/desk/element/desk/plugins') ok(gone, 'the desk element\'s plugins folder is gone', why);
-    else ok(gone, 'the old shell\'s stackFrameCheckDetail folder is gone', why);
+    else if (dir === 'spirit/run/shell/stackFrameCheckDetail') ok(gone, 'the old shell\'s stackFrameCheckDetail folder is gone', why);
   }
 
   test.subHeading('Andy: "removal of plugin support.", and "G0 goes, from ui and server"');

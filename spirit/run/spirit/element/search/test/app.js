@@ -55,7 +55,7 @@ test.startTest('appSelector/listElement.js: the app list (goal/G43.2)');
     const own = fs.readdirSync(APPS).filter(function (n) { return fs.existsSync(path.join(APPS, n, n + '.json')); }).map(function (n) { const j = JSON.parse(fs.readFileSync(path.join(APPS, n, n + '.json'), 'utf8')); return { key: n, label: String((j.identity && j.identity.label) || n), mount: !!(j.node && j.node.mount === true) }; });
     const mounted = own.filter(function (a) { return a.mount; });
     const MOUNT = mounted[0];
-    ok(MOUNT && own.length > mounted.length, 'the tree has an app that runs on the node (' + (MOUNT && MOUNT.key) + ') and ' + (own.length - mounted.length) + ' that do not', 'nothing to judge the filter with: ' + short(own));
+    ok(MOUNT && own.length > mounted.length, 'the tree has an app that runs on the node, and apps that do not', 'nothing to judge the filter with: ' + short(own));
     if (!MOUNT) return;
     const activeOf = async function (k) { const got = await ask('app.search', { q: '' }); const r = ((got && got.items) || []).filter(function (i) { return i.key === k; })[0]; let v = null; try { v = JSON.parse(r.label); } catch (e) { /* none */ } return v ? v.active : undefined; };
     // The labels a list draws: the leaves whose text is an app's label.
@@ -73,23 +73,23 @@ test.startTest('appSelector/listElement.js: the app list (goal/G43.2)');
 
     test.subHeading('goal/G43.18: pressed, only the active apps with node.mount true stay');
     await ask('app.active', { key: MOUNT.key, active: true });
-    ok(await until(function () { return activeOf(MOUNT.key).then(function (a) { return a === true; }); }, 10000), MOUNT.label + ' is switched on', MOUNT.label + ' is not active: ' + short(await activeOf(MOUNT.key)));
+    ok(await until(function () { return activeOf(MOUNT.key).then(function (a) { return a === true; }); }, 10000), 'the app that runs on the node is switched on', MOUNT.label + ' is not active: ' + short(await activeOf(MOUNT.key)));
     await chrome.evaluate('window.servers.refresh(); true');
     // Which of the apps are active, as the node answers; the filter's set is that and node.mount, from the tree.
     const wantOn = async function () { const out = []; for (const a of mounted) { if ((await activeOf(a.key)) === true) out.push(a.label); } return out.sort(); };
     ok((await press()) === true, 'its filter can be pressed', 'no filter to press');
     let want = await wantOn();
     const on1 = await until(function () { return drawnIn('servers').then(function (d) { return JSON.stringify(d) === JSON.stringify(want); }); }, 8000);
-    ok(on1 && want.indexOf(MOUNT.label) !== -1, 'pressed, it draws ' + short(want) + ' and no other app', 'pressed, it draws ' + short(await drawnIn('servers')) + ', want ' + short(want));
+    ok(on1 && want.indexOf(MOUNT.label) !== -1, 'pressed, it draws the active apps that run on the node, and no other app', 'pressed, it draws ' + short(await drawnIn('servers')) + ', want ' + short(want));
     const plainNow = await drawnIn('plain');
-    ok(plainNow.length > want.length, 'the list without the filter still draws every app: ' + plainNow.length, 'the plain list draws ' + short(plainNow));
+    ok(plainNow.length > want.length, 'the list without the filter still draws every app', 'the plain list draws ' + short(plainNow));
     // "and active": switched off, it leaves the filter's list.
     await ask('app.active', { key: MOUNT.key, active: false });
     await until(function () { return activeOf(MOUNT.key).then(function (a) { return a === false; }); }, 10000);
     await chrome.evaluate('window.servers.refresh(); true');
     want = await wantOn();
     const off1 = await until(function () { return drawnIn('servers').then(function (d) { return d.indexOf(MOUNT.label) === -1 && JSON.stringify(d) === JSON.stringify(want); }); }, 8000);
-    ok(off1, 'switched off, ' + MOUNT.label + ' leaves it', 'switched off, it draws ' + short(await drawnIn('servers')));
+    ok(off1, 'switched off, the app leaves it', 'switched off, ' + MOUNT.label + ' is still drawn, or it draws ' + short(await drawnIn('servers')));
     ok((await press()) === true && await until(function () { return drawnIn('servers').then(function (d) { return d.length === plainNow.length; }); }, 8000), 'pressed again, every app is back', 'pressed again, it draws ' + short(await drawnIn('servers')));
   } finally {
     try { if (chrome.sock) chrome.sock.close(); } catch (e) { /* gone */ }

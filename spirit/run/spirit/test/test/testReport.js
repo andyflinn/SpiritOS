@@ -45,11 +45,17 @@ const CASES = [
   ['spirit/test/DEBUG.js', '/spirit/DEBUG'],
   ['spirit/test/spirit.js', '/spirit/spirit'],
 ];
-CASES.forEach(function (c) {
+const sentAs = function (c) {
   const recs = sent(c[0], [], true);
   const names = suitesOf(recs);
-  ok(recs.length && names.length === 1 && names[0] === c[1], c[0] + ' is sent as ' + c[1], c[0] + ' was sent as ' + short(names) + (recs.length ? '' : ' (nothing sent)'));
-});
+  return { fine: recs.length && names.length === 1 && names[0] === c[1], why: c[0] + ' was sent as ' + short(names) + (recs.length ? '' : ' (nothing sent)') };
+};
+let sa;
+sa = sentAs(CASES[0]); ok(sa.fine, 'spirit/element/test/workBench.js is sent as /spirit/element/workBench', sa.why);
+sa = sentAs(CASES[1]); ok(sa.fine, 'spirit/app/agent/table/model/test/rowElement.js is sent as /spirit/app/agent/table/model/rowElement', sa.why);
+sa = sentAs(CASES[2]); ok(sa.fine, 'spirit/app/agent/table/provider/test/rowElement.js is sent as /spirit/app/agent/table/provider/rowElement', sa.why);
+sa = sentAs(CASES[3]); ok(sa.fine, 'spirit/test/DEBUG.js is sent as /spirit/DEBUG', sa.why);
+sa = sentAs(CASES[4]); ok(sa.fine, 'spirit/test/spirit.js is sent as /spirit/spirit', sa.why);
 const twins = CASES.slice(1, 3).map(function (c) { return suitesOf(sent(c[0], [], true))[0]; });
 ok(twins[0] && twins[1] && twins[0] !== twins[1], 'two test files of one name, rowElement.js, are two names', 'both rowElement.js tests went by ' + short(twins));
 
@@ -174,7 +180,7 @@ async function verifierPart() {
       ok(fs.existsSync(path.join(tree.run, 'spirit', 'spirit.js')) && fs.existsSync(path.join(tree.run, 'spirit', 'test', 'testReport.js')),
         'the world: the scratch run tree holds spirit/test/testReport.js and spirit/spirit.js, as this tree does', 'the scratch tree is missing its files: ' + tree.run);
       ok(JSON.parse(fs.readFileSync(path.join(tree.run, 'spirit', 'state', 'environment.json'), 'utf8')).PORT === v.port && v.port !== 45441 && v.port !== 65432,
-        'the world: the scratch tree names the fake verifier\'s port ' + v.port + ', no live node', 'the scratch tree names another port');
+        'the world: the scratch tree names the fake verifier\'s port, no live node', 'the scratch tree names another port than ' + v.port);
       const r = await runProbe(tree.probe, ['--verify-port', String(v.port)]);
       ok(/SUCCESS #1\.1: one green/.test(r.out) && /FAILURE #1\.1: one red/.test(r.out) && /Test completed\./.test(r.out),
         'the world: the probe ran under --verify-port and printed its green, its red and its completion line', 'the probe did not run as a test: ' + short(r.out));
@@ -182,9 +188,9 @@ async function verifierPart() {
       test.subHeading('its results reach the verifier');
       const green = v.records.filter(function (x) { return x && x.outcome === 'green'; });
       const red = v.records.filter(function (x) { return x && x.outcome === 'red'; });
-      ok(v.records.length > 0, 'the verifier was handed ' + v.records.length + ' records', 'no result reached the verifier (it was asked: ' + short(v.asked) + ')');
-      ok(green.length === 1, 'the green reached the verifier as a green: ' + short(green[0]), 'the verifier holds ' + green.length + ' greens: ' + short(v.records));
-      ok(red.length === 1 && /one red/.test(String(red[0].failure)), 'the red reached the verifier as a red, with its failure: ' + short(red[0]),
+      ok(v.records.length > 0, 'the verifier was handed records', 'no result reached the verifier (it was asked: ' + short(v.asked) + ')');
+      ok(green.length === 1, 'the green reached the verifier as a green', 'the verifier holds ' + green.length + ' greens: ' + short(v.records));
+      ok(red.length === 1 && /one red/.test(String(red[0].failure)), 'the red reached the verifier as a red, with its failure',
         'the verifier holds ' + red.length + ' reds: ' + short(v.records));
     } finally {
       v.close();

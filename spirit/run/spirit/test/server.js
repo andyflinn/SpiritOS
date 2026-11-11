@@ -44,7 +44,7 @@ test.startTest('server.js: "/" is the face, face.html (goal/G43.30)');
     ok(settled === 'ready', 'and spirit.ready settles, as on face.html', 'spirit.ready at "/": ' + short(settled));
     const scripts = JSON.parse(await page.evaluate('JSON.stringify(Array.prototype.map.call(document.scripts, function (s) { return s.getAttribute("src") || ""; }).filter(Boolean))'));
     const faceScripts = (face.match(/src="([^"]*)"/g) || []).map(function (m) { return m.slice(5, -1); });
-    ok(JSON.stringify(scripts.slice(0, faceScripts.length)) === JSON.stringify(faceScripts), 'it loads face.html\'s own scripts, ' + short(faceScripts), 'the page at "/" loads ' + short(scripts));
+    ok(JSON.stringify(scripts.slice(0, faceScripts.length)) === JSON.stringify(faceScripts), 'it loads face.html\'s own scripts first', 'the page at "/" loads ' + short(scripts) + ', face.html names ' + short(faceScripts));
   } finally {
     if (page && page.kid) page.kid.kill();
     if (node.child) node.child.kill();
@@ -272,7 +272,7 @@ async function garbagePart() {
     test.comment('verbs that act: ' + n + ' asks over ' + actingVerbs.length + ' verbs in ' + Math.round((Date.now() - t0) / 1000) + ' s, on ' + made.length + ' throwaway node(s)');
     actingVerbs.forEach(function (name) { const x = broken[name]; if (x) test.fail('/api/spirit ' + name + ' (a verb that acts): ' + x.length + ' crashed or hung, first: ' + x[0]); });
     const fine = actingVerbs.filter(function (name) { return !broken[name]; }).length;
-    ok(fine > 0, fine + ' of the ' + actingVerbs.length + ' verbs that act took the whole garbage, bad strings, missing, extraneous and pairs, without crashing or hanging', 'no verb that acts was judged');
+    ok(fine > 0, 'the verbs that act took the whole garbage, bad strings, missing, extraneous and pairs, without crashing or hanging', 'no verb that acts was judged, of ' + actingVerbs.length);
     return made;
   }
   let actedOn = null;
@@ -317,7 +317,7 @@ async function garbagePart() {
         { why: 'a bare JSON string', head: null, type: undefined, body: '"string"' },
         { why: 'JSON null', head: null, type: undefined, body: 'null' },
         { why: 'a body cut off half-way', head: postHead('/api/spirit', 100), body: '{"call":"node.ca', keepOpen: true },
-        { why: 'a body one byte past BODY_MAX (' + (BODY_MAX + 1) + ')', head: postHead('/api/spirit', BODY_MAX + 1), body: '{"call":"node.card","args":{"x":"' + 'x'.repeat(BODY_MAX + 1 - 36) + '"}}' },
+        { why: 'a body one byte past BODY_MAX', head: postHead('/api/spirit', BODY_MAX + 1), body: '{"call":"node.card","args":{"x":"' + 'x'.repeat(BODY_MAX + 1 - 36) + '"}}' },
         { why: 'a Content-Length far past what is sent', head: postHead('/api/spirit', 10000000), body: '{}' , keepOpen: true },
         { why: 'deep nesting, 5000 levels', head: postHead('/api/spirit', Buffer.byteLength(deepJson)), body: deepJson },
         { why: 'a __proto__ key', head: null, type: undefined, body: '{"call":"node.card","args":{"__proto__":{"admin":1}}}' },
@@ -379,13 +379,14 @@ async function garbagePart() {
         });
       });
       const okVerbs = Object.keys(tree).reduce(function (n, f) { return n + Object.keys(tree[f] || {}).filter(function (v) { return !acting(f + '.' + v) && !broken[f + '.' + v]; }).length; }, 0);
-      test.check(okVerbs + ' verbs that do not act took all their garbage, pairs included, without crashing or hanging');
+      test.check('the verbs that do not act took all their garbage, pairs included, without crashing or hanging');
       if (hungAfter.length) test.fail('/api/spirit: after ' + hungAfter.length + ' batches the node did not answer a plain call within ' + (PLAIN_MS / 1000) + ' s, first after: ' + short(hungAfter[0]));
-      else test.check('/api/spirit: after every batch the node answered a plain call within ' + (PLAIN_MS / 1000) + ' s');
+      else test.check('/api/spirit: after every batch the node answered a plain call in time');
 
       test.subHeading('the node\'s door: raw requests and malformed paths');
       let killer = ''; const notThrown = [];
-      for (const r0 of RAWS) {
+      const doorAnswered = [];
+      for (const [ri, r0] of RAWS.entries()) {
         if (killer) { notThrown.push(r0.why); continue; }
         const head = r0.head || postHead('/api/spirit', Buffer.byteLength(r0.body || ''), r0.type);
         const r = await raw(base, head, r0.body, { keepOpen: r0.keepOpen });
@@ -397,8 +398,65 @@ async function garbagePart() {
         if (!alive) why = (why ? why + '; ' : '') + 'the node then did not answer a plain call within ' + (PLAIN_MS / 1000) + ' s';
         if (node.child && node.child.exitCode !== null && !killer) { killer = r0.why; why = 'IT KILLED THE NODE (exit ' + node.child.exitCode + ')'; }
         if (why) test.fail('the node\'s door, ' + r0.why + ': ' + why);
-        else test.check(r0.why + ': answered ' + (r.status || 'later') + ', and the node still answers');
+        else doorAnswered[ri] = true;
       }
+      // Each request written out, in the order thrown, so that each check has a plain title of its own.
+      if (doorAnswered[0]) test.check('a body that is not JSON: answered, and the node still answers');
+      if (doorAnswered[1]) test.check('JSON that is not an object: answered, and the node still answers');
+      if (doorAnswered[2]) test.check('a bare JSON string: answered, and the node still answers');
+      if (doorAnswered[3]) test.check('JSON null: answered, and the node still answers');
+      if (doorAnswered[4]) test.check('a body cut off half-way: answered, and the node still answers');
+      if (doorAnswered[5]) test.check('a body one byte past BODY_MAX: answered, and the node still answers');
+      if (doorAnswered[6]) test.check('a Content-Length far past what is sent: answered, and the node still answers');
+      if (doorAnswered[7]) test.check('deep nesting, 5000 levels: answered, and the node still answers');
+      if (doorAnswered[8]) test.check('a __proto__ key: answered, and the node still answers');
+      if (doorAnswered[9]) test.check('a constructor key: answered, and the node still answers');
+      if (doorAnswered[10]) test.check('call as __proto__: answered, and the node still answers');
+      if (doorAnswered[11]) test.check('call as constructor.prototype: answered, and the node still answers');
+      if (doorAnswered[12]) test.check('no Content-Type: answered, and the node still answers');
+      if (doorAnswered[13]) test.check('Content-Type text/plain: answered, and the node still answers');
+      if (doorAnswered[14]) test.check('Content-Type multipart with no boundary: answered, and the node still answers');
+      if (doorAnswered[15]) test.check('invalid UTF-8 bytes: answered, and the node still answers');
+      if (doorAnswered[16]) test.check('a request line that is not HTTP: answered, and the node still answers');
+      if (doorAnswered[17]) test.check('a header line with no colon: answered, and the node still answers');
+      if (doorAnswered[18]) test.check('GET /..: answered, and the node still answers');
+      if (doorAnswered[19]) test.check('POST /..: answered, and the node still answers');
+      if (doorAnswered[20]) test.check('GET /../../../../etc/passwd: answered, and the node still answers');
+      if (doorAnswered[21]) test.check('POST /../../../../etc/passwd: answered, and the node still answers');
+      if (doorAnswered[22]) test.check('GET /%2e%2e/%2e%2e/etc/passwd: answered, and the node still answers');
+      if (doorAnswered[23]) test.check('POST /%2e%2e/%2e%2e/etc/passwd: answered, and the node still answers');
+      if (doorAnswered[24]) test.check('GET /shell/%2f%2f..%2f..%2fetc: answered, and the node still answers');
+      if (doorAnswered[25]) test.check('POST /shell/%2f%2f..%2f..%2fetc: answered, and the node still answers');
+      if (doorAnswered[26]) test.check('GET a path of 9001 letters: answered, and the node still answers');
+      if (doorAnswered[27]) test.check('POST a path of 9001 letters: answered, and the node still answers');
+      if (doorAnswered[28]) test.check('GET /%: answered, and the node still answers');
+      if (doorAnswered[29]) test.check('POST /%: answered, and the node still answers');
+      if (doorAnswered[30]) test.check('GET /%zz: answered, and the node still answers');
+      if (doorAnswered[31]) test.check('POST /%zz: answered, and the node still answers');
+      if (doorAnswered[32]) test.check('GET /%E0%A4%A: answered, and the node still answers');
+      if (doorAnswered[33]) test.check('POST /%E0%A4%A: answered, and the node still answers');
+      if (doorAnswered[34]) test.check('GET /api/%2e%2e/spirit: answered, and the node still answers');
+      if (doorAnswered[35]) test.check('POST /api/%2e%2e/spirit: answered, and the node still answers');
+      if (doorAnswered[36]) test.check('GET //api//spirit: answered, and the node still answers');
+      if (doorAnswered[37]) test.check('POST //api//spirit: answered, and the node still answers');
+      if (doorAnswered[38]) test.check('GET /DEBUG/../../spirit/state/node.json: answered, and the node still answers');
+      if (doorAnswered[39]) test.check('POST /DEBUG/../../spirit/state/node.json: answered, and the node still answers');
+      if (doorAnswered[40]) test.check('GET /spirit/element/../../../spirit/state/identity.json: answered, and the node still answers');
+      if (doorAnswered[41]) test.check('POST /spirit/element/../../../spirit/state/identity.json: answered, and the node still answers');
+      if (doorAnswered[42]) test.check('GET /api/spirit/../../spirit/state/node.json: answered, and the node still answers');
+      if (doorAnswered[43]) test.check('POST /api/spirit/../../spirit/state/node.json: answered, and the node still answers');
+      if (doorAnswered[44]) test.check('GET /\\..\\..\\relay-state: answered, and the node still answers');
+      if (doorAnswered[45]) test.check('POST /\\..\\..\\relay-state: answered, and the node still answers');
+      if (doorAnswered[46]) test.check('GET /?%: answered, and the node still answers');
+      if (doorAnswered[47]) test.check('POST /?%: answered, and the node still answers');
+      if (doorAnswered[48]) test.check('GET /#x: answered, and the node still answers');
+      if (doorAnswered[49]) test.check('POST /#x: answered, and the node still answers');
+      if (doorAnswered[50]) test.check('GET *: answered, and the node still answers');
+      if (doorAnswered[51]) test.check('POST *: answered, and the node still answers');
+      if (doorAnswered[52]) test.check('GET /%00: answered, and the node still answers');
+      if (doorAnswered[53]) test.check('POST /%00: answered, and the node still answers');
+      if (doorAnswered[54]) test.check('GET /index.html%00.js: answered, and the node still answers');
+      if (doorAnswered[55]) test.check('POST /index.html%00.js: answered, and the node still answers');
 
       if (notThrown.length) test.fail('the node\'s door: ' + notThrown.length + ' requests not thrown, the node died at ' + killer + ': ' + short(notThrown));
       test.subHeading('the node is still running at the end');

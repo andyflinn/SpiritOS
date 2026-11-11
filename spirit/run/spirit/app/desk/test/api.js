@@ -32,7 +32,7 @@ test.startTest('the desk family api.js: the desk server\'s interface');
   const refusedAs = function (verb, args) { const r = call(verb, args); return r ? r.code : ''; };
 
   test.subHeading('its shape: verbs, each argument with its rule, no family name of its own');
-  ok(isPlain(verbs) && names.length > 0, 'it exports a plain { verbs } table holding at least one verb', 'exports ' + short(Object.keys(api)) + ', verbs ' + short(names));
+  ok(isPlain(verbs) && names.length > 0, 'it exports a table of verbs, with at least one verb in it', 'exports ' + short(Object.keys(api)) + ', verbs ' + short(names));
   ok(Object.keys(api).join() === 'verbs', 'it exports nothing but verbs: it names no family of its own', 'exports ' + short(Object.keys(api)));
   const badSpec = names.filter(function (v) { return !isPlain(verbs[v]); });
   ok(badSpec.length === 0, 'every verb\'s arguments are a plain object', 'not an object: ' + short(badSpec));
@@ -89,7 +89,7 @@ test.startTest('the desk family api.js: the desk server\'s interface');
     if (v === 'item.files.add') ok(one, 'item.files.add takes one path, never a list', why);
     else if (v === 'item.files.remove') ok(one, 'item.files.remove takes one path, never a list', why);
     else if (v === 'item.suites.add') ok(one, 'item.suites.add takes one path, never a list', why);
-    else ok(one, 'item.suites.remove takes one path, never a list', why);
+    else if (v === 'item.suites.remove') ok(one, 'item.suites.remove takes one path, never a list', why);
   });
   ok(passes('rules.search', { text: '', types: [], statuses: [] }) && refusedAs('rules.search', { text: '', types: 'a', statuses: [] }) === 'bad-request', 'rules.search: types and statuses are lists', 'types \'a\' ' + refusedAs('rules.search', { text: '', types: 'a', statuses: [] }));
   ok(refusedAs('rule.add', { type: 't', label: 'l', text: 'x'.repeat(100000) }) === 'bad-request', 'rule.add: its text passes the paragraph rule', 'a text too long: ' + refusedAs('rule.add', { type: 't', label: 'l', text: 'x'.repeat(100000) }));

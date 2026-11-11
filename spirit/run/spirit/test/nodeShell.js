@@ -85,8 +85,8 @@ test.startTest('nodeShell.js: the shell the node names (goal/G43.18)');
       const a = await call(N.base, 'node.shell', { at: where });
       const app = a.status === 200 && nameOf(a) === 'app';
       const why = 'node.shell at ' + where + ': ' + a.status + ' ' + short(a.text);
-      if (where === 'home') ok(app, 'node.shell({ at: home }) answers { name: "app" }', why);
-      else ok(app, 'node.shell({ at: face }) answers { name: "app" }', why);
+      if (where === 'home') ok(app, 'asked for the home shell, node.shell answers the app named app', why);
+      else if (where === 'face') ok(app, 'asked for the face shell, node.shell answers the app named app', why);
     }
 
     test.subHeading('"A name that is no app, or whose <name>.json does not say shell:true:true, is refused with the reason, and the shell stays"');
@@ -95,11 +95,11 @@ test.startTest('nodeShell.js: the shell the node names (goal/G43.18)');
       const said = refused(a) && !!(a.body && (a.body.error || a.body.reason));
       const why = 'node.shell home ' + bad[0] + ': ' + a.status + ' ' + short(a.text);
       if (bad[0] === 'zzNoSuchApp') ok(said, 'a name that is no app is refused, with the reason', why);
-      else ok(said, 'an app whose contact.json says shell.true false is refused, with the reason', why);
+      else if (bad[0] === 'contact') ok(said, 'an app whose contact.json says shell.true false is refused, with the reason', why);
       const stays = nameOf(await call(N.base, 'node.shell', { at: 'home' })) === 'app';
       const now = 'after ' + bad[0] + ' the home shell is ' + short(await call(N.base, 'node.shell', { at: 'home' }));
       if (bad[0] === 'zzNoSuchApp') ok(stays, 'and after the name that is no app, the home shell stays app', now);
-      else ok(stays, 'and after the app that says shell.true false, the home shell stays app', now);
+      else if (bad[0] === 'contact') ok(stays, 'and after the app that says shell.true false, the home shell stays app', now);
     }
     const at = await call(N.base, 'node.shell', { at: 'desk', name: 'zzshell' });
     ok(refused(at), 'at other than home or face is refused', 'node.shell at desk: ' + at.status + ' ' + short(at.text));

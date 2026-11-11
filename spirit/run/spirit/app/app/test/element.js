@@ -226,7 +226,7 @@ test.startTest('element.js: the app app\'s main element, the app selector (goal/
     await openPanel();
     const serverWords = await waitForm(3, function (x) { return x.words === 'Deactivate ' + monitorLabel + ' server'; });
     ok(serverWords, 'node.mount alone: Deactivate Hearing server', 'with node.mount alone: ' + short((await forms())[3]));
-    ok((await forms()).length === 4, 'and no Allow row (goal/G43.18)', 'with shell.mount false, forms: ' + short(await forms()));
+    ok((await forms()).length === 4, 'with shell.mount false, and no Allow row (goal/G43.18)', 'with shell.mount false, forms: ' + short(await forms()));
     await closePanel();
     fs.writeFileSync(disk, fileBefore);
     
@@ -281,7 +281,7 @@ test.startTest('element.js: the app app\'s main element, the app selector (goal/
         return { key: n, label: String((j.identity && j.identity.label) || n), mount: !!(j.shell && j.shell.mount === true), run: !!(j.node && j.node.run === true) };
       });
       const treeOff = tree.filter(function (a) { return !a.mount && a.key !== 'app'; });
-      ok(treeOff.length >= 1, 'the world: the tree\'s apps without shell.mount true: ' + treeOff.map(function (a) { return a.key; }).join(', '), 'every app of the tree says shell.mount true: nothing of the tree to judge');
+      ok(treeOff.length >= 1, 'the world: the tree has apps without shell.mount true', 'every app of the tree says shell.mount true: nothing of the tree to judge');
 
       await chrome.send('Page.navigate', { url: node.base + '/face.html' });
       await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
@@ -302,10 +302,22 @@ test.startTest('element.js: the app app\'s main element, the app selector (goal/
       // AN APP THAT SAYS node.run IS RUN, NEVER ACTIVE (goal/G43.21): it is a row, held inactive whatever its node.json says, so
       // two things keep its tile away; for every other app only shell.mount can.
       const runs = Object.keys(PLANT).filter(function (k) { return PLANT[k].run; }).concat(treeOff.filter(function (a) { return a.run; }).map(function (a) { return a.key; }));
-      keys.forEach(function (k) {
-        if (runs.indexOf(k) !== -1) ok(!!r[k], 'the world: ' + k + ' is a row, run only, never active', k + ' is no row at all: ' + short(r[k]));
-        else ok(!!(r[k] && r[k].active), 'the world: ' + k + ' is a row, active', k + ' is no active row, so its missing tile would judge nothing: ' + short(r[k]));
-      });
+      // Each app written out, the planted ones and the tree's without shell.mount true, so that each check has a plain title.
+      const rowWhy = function (k) { return k + ' is no row at all: ' + short(r[k]); };
+      const activeWhy = function (k) { return k + ' is no active row, so its missing tile would judge nothing: ' + short(r[k]); };
+      ok(!!(r['zzmounted'] && r['zzmounted'].active), 'the world: zzmounted is a row, active', activeWhy('zzmounted'));
+      ok(!!(r['zzmountfalse'] && r['zzmountfalse'].active), 'the world: zzmountfalse is a row, active', activeWhy('zzmountfalse'));
+      ok(!!(r['zznoshell'] && r['zznoshell'].active), 'the world: zznoshell is a row, active', activeWhy('zznoshell'));
+      ok(!!(r['zznomount'] && r['zznomount'].active), 'the world: zznomount is a row, active', activeWhy('zznomount'));
+      ok(!!(r['zzstringmount'] && r['zzstringmount'].active), 'the world: zzstringmount is a row, active', activeWhy('zzstringmount'));
+      ok(!!(r['zzonemount'] && r['zzonemount'].active), 'the world: zzonemount is a row, active', activeWhy('zzonemount'));
+      ok(!!(r['zzshellnull'] && r['zzshellnull'].active), 'the world: zzshellnull is a row, active', activeWhy('zzshellnull'));
+      ok(!!r['zzrunonly'], 'the world: zzrunonly is a row, run only, never active', rowWhy('zzrunonly'));
+      ok(!!(r['backup'] && r['backup'].active), 'the world: backup is a row, active', activeWhy('backup'));
+      ok(!!(r['deskClient'] && r['deskClient'].active), 'the world: deskClient is a row, active', activeWhy('deskClient'));
+      ok(!!(r['deskVerify'] && r['deskVerify'].active), 'the world: deskVerify is a row, active', activeWhy('deskVerify'));
+      ok(!!r['publishData'], 'the world: publishData is a row, run only, never active', rowWhy('publishData'));
+      ok(!!r['pushOrigin'], 'the world: pushOrigin is a row, run only, never active', rowWhy('pushOrigin'));
 
       const mount = function (opts) { return chrome.evaluate('(function () { var old = document.getElementById("faces"); if (old) { if (window.fsel) window.fsel.destroy(); old.remove(); } var c = document.createElement("div"); c.id = "faces"; c.style.cssText = "position:fixed;left:0;top:0;width:1200px;height:800px;display:flex;flex-direction:column;background:#111"; document.body.appendChild(c); window.fsel = spirit.element.spirit.app.app.element.create(c, ' + JSON.stringify(opts) + '); if (window.fsel.parentNode !== c) c.appendChild(window.fsel); return true; }())'); };
       // The labels drawn as tiles: every visible leaf under the tiles whose text is a label of the test's.
@@ -313,13 +325,57 @@ test.startTest('element.js: the app app\'s main element, the app selector (goal/
       const drawn = function () { return chrome.evaluate('(function () { var c = document.getElementById("faces"); if (!c) return "[]"; var want = ' + JSON.stringify(LABELS) + '; var out = []; var all = c.querySelectorAll("*"); for (var i = 0; i < all.length; i++) { var e = all[i]; if (!e.getClientRects().length) continue; var t = String(e.innerText || e.textContent || "").trim(); if (!e.children.length && want.indexOf(t) !== -1 && out.indexOf(t) === -1) out.push(t); } return JSON.stringify(out.sort()); }())').then(function (s) { try { return JSON.parse(s); } catch (e) { return []; } }); };
       const judge = async function (how) {
         const seen = await until(function () { return drawn().then(function (d) { return d.indexOf(PLANT.zzmounted.label) !== -1; }); }, 8000);
-        ok(seen, how + ': the app that says shell.mount true shows its tile', how + ': not even the mounted app shows a tile, so nothing is judged: ' + short(await drawn()));
+        const held12 = seen;
+        const why12 = how + ': not even the mounted app shows a tile, so nothing is judged: ' + short(await drawn());
+        if (how === 'tiles') ok(held12, 'tiles: the app that says shell.mount true shows its tile', why12);
+        else if (how === 'toggled tiles') ok(held12, 'toggled tiles: the app that says shell.mount true shows its tile', why12);
+        else if (how === 'the app app\'s tiles') ok(held12, 'the app app\'s tiles: the app that says shell.mount true shows its tile', why12);
         await sleep(800);
         const d = await drawn();
         Object.keys(PLANT).filter(function (k) { return !PLANT[k].tile; }).forEach(function (k) {
-          ok(d.indexOf(PLANT[k].label) === -1, how + ': ' + k + ' (' + short('shell' in PLANT[k] ? PLANT[k].shell : 'no shell part') + ') shows no tile', how + ': ' + k + ' shows a tile, its json ' + short('shell' in PLANT[k] ? PLANT[k].shell : 'no shell part'));
+          const held11 = d.indexOf(PLANT[k].label) === -1;
+          const why11 = how + ': ' + k + ' shows a tile, its json ' + short('shell' in PLANT[k] ? PLANT[k].shell : 'no shell part');
+          if (how + ': ' + k === 'tiles: zzmountfalse') ok(held11, 'tiles: zzmountfalse (shell.mount false) shows no tile', why11);
+          else if (how + ': ' + k === 'tiles: zznoshell') ok(held11, 'tiles: zznoshell (no shell part) shows no tile', why11);
+          else if (how + ': ' + k === 'tiles: zznomount') ok(held11, 'tiles: zznomount (no shell.mount) shows no tile', why11);
+          else if (how + ': ' + k === 'tiles: zzstringmount') ok(held11, 'tiles: zzstringmount (shell.mount the string true) shows no tile', why11);
+          else if (how + ': ' + k === 'tiles: zzonemount') ok(held11, 'tiles: zzonemount (shell.mount 1) shows no tile', why11);
+          else if (how + ': ' + k === 'tiles: zzshellnull') ok(held11, 'tiles: zzshellnull (shell null) shows no tile', why11);
+          else if (how + ': ' + k === 'tiles: zzrunonly') ok(held11, 'tiles: zzrunonly (run only, shell.mount false) shows no tile', why11);
+          else if (how + ': ' + k === 'toggled tiles: zzmountfalse') ok(held11, 'toggled tiles: zzmountfalse (shell.mount false) shows no tile', why11);
+          else if (how + ': ' + k === 'toggled tiles: zznoshell') ok(held11, 'toggled tiles: zznoshell (no shell part) shows no tile', why11);
+          else if (how + ': ' + k === 'toggled tiles: zznomount') ok(held11, 'toggled tiles: zznomount (no shell.mount) shows no tile', why11);
+          else if (how + ': ' + k === 'toggled tiles: zzstringmount') ok(held11, 'toggled tiles: zzstringmount (shell.mount the string true) shows no tile', why11);
+          else if (how + ': ' + k === 'toggled tiles: zzonemount') ok(held11, 'toggled tiles: zzonemount (shell.mount 1) shows no tile', why11);
+          else if (how + ': ' + k === 'toggled tiles: zzshellnull') ok(held11, 'toggled tiles: zzshellnull (shell null) shows no tile', why11);
+          else if (how + ': ' + k === 'toggled tiles: zzrunonly') ok(held11, 'toggled tiles: zzrunonly (run only, shell.mount false) shows no tile', why11);
+          else if (how + ': ' + k === 'the app app\'s tiles: zzmountfalse') ok(held11, 'the app app\'s tiles: zzmountfalse (shell.mount false) shows no tile', why11);
+          else if (how + ': ' + k === 'the app app\'s tiles: zznoshell') ok(held11, 'the app app\'s tiles: zznoshell (no shell part) shows no tile', why11);
+          else if (how + ': ' + k === 'the app app\'s tiles: zznomount') ok(held11, 'the app app\'s tiles: zznomount (no shell.mount) shows no tile', why11);
+          else if (how + ': ' + k === 'the app app\'s tiles: zzstringmount') ok(held11, 'the app app\'s tiles: zzstringmount (shell.mount the string true) shows no tile', why11);
+          else if (how + ': ' + k === 'the app app\'s tiles: zzonemount') ok(held11, 'the app app\'s tiles: zzonemount (shell.mount 1) shows no tile', why11);
+          else if (how + ': ' + k === 'the app app\'s tiles: zzshellnull') ok(held11, 'the app app\'s tiles: zzshellnull (shell null) shows no tile', why11);
+          else if (how + ': ' + k === 'the app app\'s tiles: zzrunonly') ok(held11, 'the app app\'s tiles: zzrunonly (run only, shell.mount false) shows no tile', why11);
         });
-        treeOff.forEach(function (a) { ok(d.indexOf(a.label) === -1, how + ': the tree\'s ' + a.key + ' shows no tile', how + ': the tree\'s ' + a.key + ' shows a tile without shell.mount true'); });
+        treeOff.forEach(function (a) {
+          const held10 = d.indexOf(a.label) === -1;
+          const why10 = how + ': the tree\'s ' + a.key + ' shows a tile without shell.mount true';
+          if (how + ': ' + a.key === 'tiles: backup') ok(held10, 'tiles: the tree\'s backup shows no tile', why10);
+          else if (how + ': ' + a.key === 'tiles: deskClient') ok(held10, 'tiles: the tree\'s deskClient shows no tile', why10);
+          else if (how + ': ' + a.key === 'tiles: deskVerify') ok(held10, 'tiles: the tree\'s deskVerify shows no tile', why10);
+          else if (how + ': ' + a.key === 'tiles: publishData') ok(held10, 'tiles: the tree\'s publishData shows no tile', why10);
+          else if (how + ': ' + a.key === 'tiles: pushOrigin') ok(held10, 'tiles: the tree\'s pushOrigin shows no tile', why10);
+          else if (how + ': ' + a.key === 'toggled tiles: backup') ok(held10, 'toggled tiles: the tree\'s backup shows no tile', why10);
+          else if (how + ': ' + a.key === 'toggled tiles: deskClient') ok(held10, 'toggled tiles: the tree\'s deskClient shows no tile', why10);
+          else if (how + ': ' + a.key === 'toggled tiles: deskVerify') ok(held10, 'toggled tiles: the tree\'s deskVerify shows no tile', why10);
+          else if (how + ': ' + a.key === 'toggled tiles: publishData') ok(held10, 'toggled tiles: the tree\'s publishData shows no tile', why10);
+          else if (how + ': ' + a.key === 'toggled tiles: pushOrigin') ok(held10, 'toggled tiles: the tree\'s pushOrigin shows no tile', why10);
+          else if (how + ': ' + a.key === 'the app app\'s tiles: backup') ok(held10, 'the app app\'s tiles: the tree\'s backup shows no tile', why10);
+          else if (how + ': ' + a.key === 'the app app\'s tiles: deskClient') ok(held10, 'the app app\'s tiles: the tree\'s deskClient shows no tile', why10);
+          else if (how + ': ' + a.key === 'the app app\'s tiles: deskVerify') ok(held10, 'the app app\'s tiles: the tree\'s deskVerify shows no tile', why10);
+          else if (how + ': ' + a.key === 'the app app\'s tiles: publishData') ok(held10, 'the app app\'s tiles: the tree\'s publishData shows no tile', why10);
+          else if (how + ': ' + a.key === 'the app app\'s tiles: pushOrigin') ok(held10, 'the app app\'s tiles: the tree\'s pushOrigin shows no tile', why10);
+        });
       };
 
       test.subHeading('Andy: "MAKE SURE aN APP WITHOUT shell:mount NEVER SHOWS A FUCKING TILE!": tiles from the start');
@@ -360,11 +416,28 @@ test.startTest('element.js: the app app\'s main element, the app selector (goal/
       // something in the layer it opens. The app app is left out: it hides itself from the tiles (goal/G43.18, G43.32).
       test.subHeading('Andy: "an app who claims to have a face, also actually supplies a fucking face"');
       const treeOn = tree.filter(function (a) { return a.mount && a.key !== 'app'; });
-      ok(treeOn.length >= 1, 'the world: the tree\'s apps that say shell.mount true: ' + treeOn.map(function (a) { return a.key; }).join(', '), 'no app of the tree says shell.mount true: nothing to judge');
+      ok(treeOn.length >= 1, 'the world: the tree has apps that say shell.mount true', 'no app of the tree says shell.mount true: nothing to judge');
       treeOn.forEach(function (a) {
         // Its main element, spirit/app/<name>/element.js (goal/G43.32, rule 4).
         const f = path.join(APPS, a.key, 'element.js');
-        ok(fs.existsSync(f), a.key + ': its face script spirit/app/' + a.key + '/element.js is there', a.key + ' says shell.mount true and has no spirit/app/' + a.key + '/element.js');
+        const held9 = fs.existsSync(f);
+        const why9 = a.key + ' says shell.mount true and has no spirit/app/' + a.key + '/element.js';
+        if (a.key === 'agent') ok(held9, 'agent: its face script spirit/app/agent/element.js is there', why9);
+        else if (a.key === 'chat') ok(held9, 'chat: its face script spirit/app/chat/element.js is there', why9);
+        else if (a.key === 'contact') ok(held9, 'contact: its face script spirit/app/contact/element.js is there', why9);
+        else if (a.key === 'desk') ok(held9, 'desk: its face script spirit/app/desk/element.js is there', why9);
+        else if (a.key === 'file') ok(held9, 'file: its face script spirit/app/file/element.js is there', why9);
+        else if (a.key === 'grants') ok(held9, 'grants: its face script spirit/app/grants/element.js is there', why9);
+        else if (a.key === 'icons') ok(held9, 'icons: its face script spirit/app/icons/element.js is there', why9);
+        else if (a.key === 'info') ok(held9, 'info: its face script spirit/app/info/element.js is there', why9);
+        else if (a.key === 'introSpector') ok(held9, 'introSpector: its face script spirit/app/introSpector/element.js is there', why9);
+        else if (a.key === 'job') ok(held9, 'job: its face script spirit/app/job/element.js is there', why9);
+        else if (a.key === 'join') ok(held9, 'join: its face script spirit/app/join/element.js is there', why9);
+        else if (a.key === 'media') ok(held9, 'media: its face script spirit/app/media/element.js is there', why9);
+        else if (a.key === 'monitor') ok(held9, 'monitor: its face script spirit/app/monitor/element.js is there', why9);
+        else if (a.key === 'starter') ok(held9, 'starter: its face script spirit/app/starter/element.js is there', why9);
+        else if (a.key === 'testicle') ok(held9, 'testicle: its face script spirit/app/testicle/element.js is there', why9);
+        else if (a.key === 'text') ok(held9, 'text: its face script spirit/app/text/element.js is there', why9);
       });
       await chrome.evaluate('(function () { ' + JSON.stringify(treeOn.map(function (a) { return a.key; })) + '.forEach(function (k) { try { spirit.app.activeApp({ key: k, active: true }); } catch (e) { /* the tile says */ } }); return true; }())');
       const onKeys = JSON.stringify(treeOn.map(function (a) { return a.key; }));
@@ -380,7 +453,24 @@ test.startTest('element.js: the app app\'s main element, the app selector (goal/
         // A face is drawn: the opened layer's pane holds a visible element of some size, beyond the bare pane itself.
         const drew = await until(function () { return chrome.evaluate('(function () { var c = ' + shown + '; if (!c) return false; var p = c.querySelector(".app-container-pane"); if (!p) return false; var all = p.querySelectorAll("*"); for (var i = 0; i < all.length; i++) { var r = all[i].getBoundingClientRect(); if (r.width > 4 && r.height > 4 && (String(all[i].innerText || "").trim() || /^(CANVAS|SVG|IMG|VIDEO|INPUT|TEXTAREA|BUTTON|IFRAME)$/i.test(all[i].tagName))) return true; } return false; }())'); }, 10000);
         const errs = await chrome.evaluate('JSON.stringify(window.pageErrors || [])');
-        ok(drew, a.key + ': its tile opens a face that draws', a.key + ' says shell.mount true and its tile drew no face; page errors: ' + short(errs) + '; the layer: ' + short(await chrome.evaluate('(function () { var c = ' + shown + '; return c ? c.innerHTML : "no layer shown"; }())')));
+        const held8 = drew;
+        const why8 = a.key + ' says shell.mount true and its tile drew no face; page errors: ' + short(errs) + '; the layer: ' + short(await chrome.evaluate('(function () { var c = ' + shown + '; return c ? c.innerHTML : "no layer shown"; }())'));
+        if (a.key === 'agent') ok(held8, 'agent: its tile opens a face that draws', why8);
+        else if (a.key === 'chat') ok(held8, 'chat: its tile opens a face that draws', why8);
+        else if (a.key === 'contact') ok(held8, 'contact: its tile opens a face that draws', why8);
+        else if (a.key === 'desk') ok(held8, 'desk: its tile opens a face that draws', why8);
+        else if (a.key === 'file') ok(held8, 'file: its tile opens a face that draws', why8);
+        else if (a.key === 'grants') ok(held8, 'grants: its tile opens a face that draws', why8);
+        else if (a.key === 'icons') ok(held8, 'icons: its tile opens a face that draws', why8);
+        else if (a.key === 'info') ok(held8, 'info: its tile opens a face that draws', why8);
+        else if (a.key === 'introSpector') ok(held8, 'introSpector: its tile opens a face that draws', why8);
+        else if (a.key === 'job') ok(held8, 'job: its tile opens a face that draws', why8);
+        else if (a.key === 'join') ok(held8, 'join: its tile opens a face that draws', why8);
+        else if (a.key === 'media') ok(held8, 'media: its tile opens a face that draws', why8);
+        else if (a.key === 'monitor') ok(held8, 'monitor: its tile opens a face that draws', why8);
+        else if (a.key === 'starter') ok(held8, 'starter: its tile opens a face that draws', why8);
+        else if (a.key === 'testicle') ok(held8, 'testicle: its tile opens a face that draws', why8);
+        else if (a.key === 'text') ok(held8, 'text: its tile opens a face that draws', why8);
         await chrome.evaluate('(function () { var c = ' + shown + '; var x = c && c.querySelector(".app-container-close"); if (x) x.click(); return !!x; }())');
         await until(function () { return chrome.evaluate('!' + shown); }, 5000);
       }
@@ -431,7 +521,7 @@ async function nodeRunPart() {
     });
     const runs = own.filter(function (a) { return a.run; });
     const mounts = own.filter(function (a) { return a.shell && !a.run; });
-    ok(runs.length >= 2 && mounts.length >= 1, 'the world: ' + runs.map(function (a) { return a.key; }).join(', ') + ' say node.run; ' + mounts.length + ' apps mount in the shell', 'nothing to judge with: ' + short(own));
+    ok(runs.length >= 2 && mounts.length >= 1, 'the world: publishData and pushOrigin say node.run, and apps mount in the shell', 'nothing to judge with: ' + short(own));
     if (!runs.length || !mounts.length) return;
     const PUSH = own.filter(function (a) { return a.key === 'pushOrigin'; })[0];
     const node = await scratchNode();
@@ -452,7 +542,12 @@ async function nodeRunPart() {
       await chrome.evaluate('(function () { var c = document.createElement("div"); c.id = "pane"; document.body.appendChild(c); window.pane = spirit.element.spirit.element.search.app.create(c, { face: "pane" }); return true; }())');
       await until(function () { return drawnUnder('document.getElementById("pane")').then(function (d) { return runs.every(function (a) { return has(d, a); }); }); }, 8000);
       const inPane = await drawnUnder('document.getElementById("pane")');
-      runs.forEach(function (a) { ok(has(inPane, a), 'the pane lists ' + a.label, 'the pane does not list ' + a.label + ': ' + short(inPane)); });
+      runs.forEach(function (a) {
+        const held7 = has(inPane, a);
+        const why7 = 'the pane does not list ' + a.label + ': ' + short(inPane);
+        if (a.key === 'publishData') ok(held7, 'the pane lists Publish Data', why7);
+        else if (a.key === 'pushOrigin') ok(held7, 'the pane lists Push Origin', why7);
+      });
       await chrome.evaluate('(function () { window.pane.destroy(); var c = document.getElementById("pane"); if (c) c.remove(); return true; }())');
       // The dropdown, pressed open: its list floats, so the whole page is read, with nothing else of the test on it.
       await chrome.evaluate('(function () { var c = document.createElement("div"); c.id = "drop"; document.body.appendChild(c); window.drop = spirit.element.spirit.element.search.app.create(c, { face: "dropdown" }); return true; }())');
@@ -460,8 +555,13 @@ async function nodeRunPart() {
       await chrome.evaluate('(function () { var d = window.drop, f = (d && d.list && d.list.field) || document.querySelector("#drop input, #drop [tabindex], #drop button"); if (f) f.click(); return !!f; }())');
       await until(function () { return drawnUnder('document.body').then(function (d) { return mounts.some(function (a) { return has(d, a); }); }); }, 8000);
       const inDrop = await drawnUnder('document.body');
-      ok(mounts.some(function (a) { return has(inDrop, a); }), 'the world: pressed, the dropdown lists the apps that mount (' + inDrop.length + ')', 'the dropdown listed no app at all: nothing judged. ' + short(inDrop));
-      runs.forEach(function (a) { ok(!has(inDrop, a), 'the dropdown does not list ' + a.label, 'the dropdown lists ' + a.label + ': ' + short(inDrop)); });
+      ok(mounts.some(function (a) { return has(inDrop, a); }), 'the world: pressed, the dropdown lists the apps that mount', 'the dropdown listed no app at all: nothing judged. ' + short(inDrop));
+      runs.forEach(function (a) {
+        const held6 = !has(inDrop, a);
+        const why6 = 'the dropdown lists ' + a.label + ': ' + short(inDrop);
+        if (a.key === 'publishData') ok(held6, 'the dropdown does not list Publish Data', why6);
+        else if (a.key === 'pushOrigin') ok(held6, 'the dropdown does not list Push Origin', why6);
+      });
       await chrome.evaluate('(function () { window.drop.destroy(); var c = document.getElementById("drop"); if (c) c.remove(); return true; }())');
 
       test.subHeading('Andy: "the app detail will show a run button"');
@@ -471,14 +571,17 @@ async function nodeRunPart() {
       for (const a of runs) {
         await detailOf(a);
         const shown = await until(function () { return chrome.evaluate('!!(' + runButton + ')'); }, 6000);
-        ok(shown, a.label + '\'s detail shows a Run button', a.label + '\'s detail shows no Run: ' + short(await chrome.evaluate('String(document.getElementById("detail").innerText)')));
+        const held5 = shown;
+        const why5 = a.label + '\'s detail shows no Run: ' + short(await chrome.evaluate('String(document.getElementById("detail").innerText)'));
+        if (a.key === 'publishData') ok(held5, 'Publish Data\'s detail shows a Run button', why5);
+        else if (a.key === 'pushOrigin') ok(held5, 'Push Origin\'s detail shows a Run button', why5);
       }
       const plain = mounts[0];
       await detailOf(plain);
       await sleep(1500);
       const drew = await chrome.evaluate('String(document.getElementById("detail").innerText || "").indexOf(' + JSON.stringify(plain.label) + ') !== -1');
       const noRun = await chrome.evaluate('!(' + runButton + ')');
-      ok(drew && noRun, plain.label + ', which mounts and says no node.run, shows no Run', plain.label + '\'s detail: ' + short(await chrome.evaluate('String(document.getElementById("detail").innerText)')));
+      ok(drew && noRun, 'Agent, which mounts and says no node.run, shows no Run', plain.label + '\'s detail: ' + short(await chrome.evaluate('String(document.getElementById("detail").innerText)')));
 
       // Andy: "in the app list and details: an app that only has node:run and no node:mount or shell:mount cannot be "activated"
       // show rowForms should knows that.", and "and the node should know it, too."
@@ -490,22 +593,28 @@ async function nodeRunPart() {
       const rowOf = function (label) { return '(function () { var all = document.querySelectorAll("#rows tr, #rows .list-row"); for (var i = 0; i < all.length; i++) { if (String(all[i].innerText || "").indexOf(' + JSON.stringify(label) + ') !== -1) return all[i]; } return null; }())'; };
       await chrome.evaluate('(function () { var c = document.createElement("div"); c.id = "rows"; document.body.appendChild(c); window.rows = spirit.element.spirit.element.search.app.create(c, { face: "pane" }); return true; }())');
       await until(function () { return activateUnder(rowOf(plain.label)).then(function (n) { return n > 0; }); }, 8000);
-      ok((await activateUnder(rowOf(plain.label))) > 0, 'the world: ' + plain.label + '\'s row in the app list shows Activate', plain.label + '\'s row shows no Activate: nothing judged');
+      ok((await activateUnder(rowOf(plain.label))) > 0, 'the world: Agent\'s row in the app list shows Activate', plain.label + '\'s row shows no Activate: nothing judged');
       for (const a of only) {
         // What it mounts is read from its <name>.json after the row is drawn: given the time that takes.
         await until(function () { return activateUnder(rowOf(a.label)).then(function (n) { return n === 0; }); }, 4000);
         const n = await activateUnder(rowOf(a.label));
-        ok(n === 0, a.label + '\'s row in the app list shows no Activate', a.label + '\'s row shows ' + short(n) + ' Activate buttons');
+        const held4 = n === 0;
+        const why4 = a.label + '\'s row shows ' + short(n) + ' Activate buttons';
+        if (a.key === 'publishData') ok(held4, 'Publish Data\'s row in the app list shows no Activate', why4);
+        else if (a.key === 'pushOrigin') ok(held4, 'Push Origin\'s row in the app list shows no Activate', why4);
       }
       await chrome.evaluate('(function () { window.rows.destroy(); var c = document.getElementById("rows"); if (c) c.remove(); return true; }())');
       await detailOf(plain);
-      ok(await until(function () { return activateUnder('document.getElementById("detail")').then(function (n) { return n > 0; }); }, 6000), 'the world: ' + plain.label + '\'s detail shows Activate', plain.label + '\'s detail shows no Activate: nothing judged');
+      ok(await until(function () { return activateUnder('document.getElementById("detail")').then(function (n) { return n > 0; }); }, 6000), 'the world: Agent\'s detail shows Activate', plain.label + '\'s detail shows no Activate: nothing judged');
       for (const a of only) {
         await detailOf(a);
         await until(function () { return chrome.evaluate('!!(' + runButton + ')'); }, 6000);
         await sleep(800);
         const n = await activateUnder('document.getElementById("detail")');
-        ok(n === 0, a.label + '\'s detail shows no Activate', a.label + '\'s detail shows ' + short(n) + ' Activate buttons');
+        const held3 = n === 0;
+        const why3 = a.label + '\'s detail shows ' + short(n) + ' Activate buttons';
+        if (a.key === 'publishData') ok(held3, 'Publish Data\'s detail shows no Activate', why3);
+        else if (a.key === 'pushOrigin') ok(held3, 'Push Origin\'s detail shows no Activate', why3);
       }
       test.subHeading('a press runs it, active or not');
       if (!PUSH || !PUSH.run) { test.fail('pushOrigin says no node.run: nothing to press'); return; }
@@ -534,7 +643,10 @@ async function nodeRunPart() {
         const row = ((listed && listed.items) || []).filter(function (i) { return i.key === a.key; })[0];
         let now;
         try { now = JSON.parse(row.label).active; } catch (e) { now = undefined; }
-        ok(r.status >= 400 && now !== true, 'the node refuses app.active for ' + a.key + ', and it stays inactive', 'app.active for ' + a.key + ' answered ' + r.status + ' ' + short(t) + ', active now ' + short(now));
+        const held2 = r.status >= 400 && now !== true;
+        const why2 = 'app.active for ' + a.key + ' answered ' + r.status + ' ' + short(t) + ', active now ' + short(now);
+        if (a.key === 'publishData') ok(held2, 'the node refuses app.active for publishData, and it stays inactive', why2);
+        else if (a.key === 'pushOrigin') ok(held2, 'the node refuses app.active for pushOrigin, and it stays inactive', why2);
       }
     } finally {
       try { if (chrome.sock) chrome.sock.close(); } catch (e) { /* gone */ }
@@ -605,7 +717,7 @@ async function shellPart() {
   await (async function () {
     const shellJson = readJson(path.join(RUN, 'spirit', 'app', 'app', 'app.json'));
     const SHELL_LABEL = String((shellJson && shellJson.identity && shellJson.identity.label) || '');
-    ok(!!SHELL_LABEL, 'the world: the shell app has a label, ' + SHELL_LABEL, 'spirit/app/app/app.json gives no label: ' + short(shellJson));
+    ok(!!SHELL_LABEL, 'the world: the shell app has a label', 'spirit/app/app/app.json gives no label: ' + short(shellJson));
     const LABELS = fs.readdirSync(path.join(RUN, 'spirit', 'app')).map(function (n) { const j = readJson(path.join(RUN, 'spirit', 'app', n, n + '.json')); return j && j.identity && j.identity.label; }).filter(Boolean).concat([ZZ.identity.label]);
 
     const s = scratch();
@@ -673,7 +785,7 @@ async function shellPart() {
       // "the dropdown first showing the configured home shell": the shell app, by Q12 and as set back above.
       const rowText = function (words) { return c.evaluate('(function () { var d = document.getElementById("zzDetail"); var all = Array.prototype.slice.call(d.querySelectorAll("*")); var r = all.filter(function (e) { return e.children.length && String(e.innerText || "").indexOf(' + JSON.stringify(words) + ') !== -1; }).pop(); r = r && (r.closest(".shell-row-form") || r); if (!r) return ""; var i = r.querySelector("input"); return String(r.innerText || "") + " | " + (i ? i.value : ""); }())'); };
       const homeRow = await rowText('Home shell');
-      ok(!!SHELL_LABEL && /Home shell/.test(homeRow) && homeRow.indexOf(SHELL_LABEL) !== -1 && homeRow.indexOf(ZZ.identity.label) === -1, 'its Home shell dropdown first shows the configured home shell, ' + SHELL_LABEL, 'the Home shell row: ' + short(homeRow));
+      ok(!!SHELL_LABEL && /Home shell/.test(homeRow) && homeRow.indexOf(SHELL_LABEL) !== -1 && homeRow.indexOf(ZZ.identity.label) === -1, 'its Home shell dropdown first shows the configured home shell, Shell', 'the Home shell row: ' + short(homeRow));
 
       test.subHeading('the box: "Both dropdowns list only the apps whose <name>.json says shell:true:true"');
       for (const words of ['Home shell', 'Face shell']) {
@@ -683,7 +795,10 @@ async function shellPart() {
         const seen = parsed(await c.evaluate('JSON.stringify((function () { var want = ' + JSON.stringify(LABELS) + '; var out = []; var d = document.getElementById("zzDetail"); var all = Array.prototype.slice.call(d.querySelectorAll("*")); var r = all.filter(function (e) { return e.children.length && String(e.innerText || "").indexOf(' + JSON.stringify(words) + ') !== -1; }).pop(); r = r && (r.closest(".shell-row-form") || r); Array.prototype.slice.call(r ? r.querySelectorAll("[data-key] td, li") : []).forEach(function (e) { var t = String(e.innerText || "").trim(); if ( e.offsetParent !== null && want.indexOf(t) !== -1 && out.indexOf(t) === -1) out.push(t); }); return out.sort(); }()))')) || [];
         const others = seen.filter(function (l) { return l !== SHELL_LABEL && l !== ZZ.identity.label; });
         // Q28, Andy: "no, the shell icon is now properly missing :)": the shell app leaves itself out here too.
-        ok(opened && seen.indexOf(ZZ.identity.label) !== -1 && seen.indexOf(SHELL_LABEL) === -1 && !others.length, words + ': open, it lists ' + ZZ.identity.label + ', not ' + SHELL_LABEL + ' (Q28), and no app that is no shell', words + ': opened ' + opened + ', it lists ' + short(seen));
+        const held1 = opened && seen.indexOf(ZZ.identity.label) !== -1 && seen.indexOf(SHELL_LABEL) === -1 && !others.length;
+        const why1 = words + ': opened ' + opened + ', it lists ' + short(seen);
+        if (words === 'Home shell') ok(held1, 'Home shell: open, it lists Zz Shell, not Shell (Q28), and no app that is no shell', why1);
+        else if (words === 'Face shell') ok(held1, 'Face shell: open, it lists Zz Shell, not Shell (Q28), and no app that is no shell', why1);
         await c.evaluate('document.body.click(); true');
       }
 

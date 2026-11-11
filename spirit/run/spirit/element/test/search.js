@@ -464,10 +464,18 @@ ok(M('anything', '').length === 0 && M('anything', '   ').length === 0 && M(null
     // style, the same probabilitySearch's search bubble uses.").
     const cls = b ? ((/class="([^"]*)"/.exec(b.open) || [])[1] || '').split(/\s+/).filter(Boolean) : [];
     const st = b ? ((/style="([^"]*)"/.exec(b.open) || [])[1] || '') + ';' + cls.map(function (k) { const h = new RegExp('\\.' + k.replace(/-/g, '\\-') + '\\s*\\{([^}]*)\\}').exec(SHELL_CSS); return h ? h[1] : ''; }).join(';') : '';
-    ok(!!b && /border(-color)?\s*:[^;]*currentColor/.test(st) && /background(-color)?\s*:\s*transparent/.test(st) && /border-radius\s*:/.test(st),
-      x[0] + ': the filters and the search row stand in one bubble, transparent, its border the type-face\'s colour', 'the innermost box holding both: ' + short(b && b.open));
-    ok(!!b && b.part.indexOf('id="' + pre + 'list"') === -1, x[0] + ': the list stands outside the bubble', 'the bubble holds the list');
-    ok(!!b && b.part.indexOf('id="' + pre + 'text"') < b.part.indexOf('id="' + pre + 'search"'), x[0] + ': its search row is 🔎, the input, then the search button', 'bubble: ' + short(b && b.part));
+    const bubbled = !!b && /border(-color)?\s*:[^;]*currentColor/.test(st) && /background(-color)?\s*:\s*transparent/.test(st) && /border-radius\s*:/.test(st);
+    if (x[0] === 'with filters') ok(bubbled, 'with filters: the filters and the search row stand in one bubble, transparent, its border the type-face\'s colour', 'the innermost box holding both: ' + short(b && b.open));
+    else if (x[0] === 'with none') ok(bubbled, 'with none: the filters and the search row stand in one bubble, transparent, its border the type-face\'s colour', 'the innermost box holding both: ' + short(b && b.open));
+    else if (x[0] === 'in a dropdown\'s pane') ok(bubbled, 'in a dropdown\'s pane: the filters and the search row stand in one bubble, transparent, its border the type-face\'s colour', 'the innermost box holding both: ' + short(b && b.open));
+    const outside = !!b && b.part.indexOf('id="' + pre + 'list"') === -1;
+    if (x[0] === 'with filters') ok(outside, 'with filters: the list stands outside the bubble', 'the bubble holds the list');
+    else if (x[0] === 'with none') ok(outside, 'with none: the list stands outside the bubble', 'the bubble holds the list');
+    else if (x[0] === 'in a dropdown\'s pane') ok(outside, 'in a dropdown\'s pane: the list stands outside the bubble', 'the bubble holds the list');
+    const row = !!b && b.part.indexOf('id="' + pre + 'text"') < b.part.indexOf('id="' + pre + 'search"');
+    if (x[0] === 'with filters') ok(row, 'with filters: its search row is 🔎, the input, then the search button', 'bubble: ' + short(b && b.part));
+    else if (x[0] === 'with none') ok(row, 'with none: its search row is 🔎, the input, then the search button', 'bubble: ' + short(b && b.part));
+    else if (x[0] === 'in a dropdown\'s pane') ok(row, 'in a dropdown\'s pane: its search row is 🔎, the input, then the search button', 'bubble: ' + short(b && b.part));
   });
   ok(seen(c4b.get('filters').innerHTML) === '' && !/🗜/.test(seen(c4b.innerHTML)), 'with no filters there is no filter row in the bubble', 'filters: ' + short(c4b.get('filters').innerHTML));
   L4.destroy();
@@ -1029,11 +1037,52 @@ async function folderPart() {
 
   test.subHeading('the box: "spirit/element/probabilitySearch.js becomes spirit/element/search.js", and every one of the list after it');
   const missing = THERE.filter(function (p) { return !there(p); });
-  ok(!missing.length, 'all ' + THERE.length + ' are there: search.js, and api, app, contact, file, icon, bundle, branch, grant and valued under search/', 'missing ' + missing.length + ': ' + short(missing));
-  THERE.forEach(function (p) { ok(there(p), p + ' is there', 'no ' + p); });
+  ok(!missing.length, 'all are there: search.js, and api, app, contact, file, icon, bundle, branch, grant and valued under search/', 'missing ' + missing.length + ' of ' + THERE.length + ': ' + short(missing));
+  ok(there('spirit/element/search.js'), 'spirit/element/search.js is there', 'no spirit/element/search.js');
+  ok(there('spirit/element/search/api.js'), 'spirit/element/search/api.js is there', 'no spirit/element/search/api.js');
+  ok(there('spirit/element/search/api/verb.js'), 'spirit/element/search/api/verb.js is there', 'no spirit/element/search/api/verb.js');
+  ok(there('spirit/element/search/app.js'), 'spirit/element/search/app.js is there', 'no spirit/element/search/app.js');
+  ok(there('spirit/element/search/app/rowElement.js'), 'spirit/element/search/app/rowElement.js is there', 'no spirit/element/search/app/rowElement.js');
+  ok(there('spirit/element/search/contact.js'), 'spirit/element/search/contact.js is there', 'no spirit/element/search/contact.js');
+  ok(there('spirit/element/search/contact/listElement.js'), 'spirit/element/search/contact/listElement.js is there', 'no spirit/element/search/contact/listElement.js');
+  ok(there('spirit/element/search/contact/rowElement.js'), 'spirit/element/search/contact/rowElement.js is there', 'no spirit/element/search/contact/rowElement.js');
+  ok(there('spirit/element/search/contact/detailElement.js'), 'spirit/element/search/contact/detailElement.js is there', 'no spirit/element/search/contact/detailElement.js');
+  ok(there('spirit/element/search/file.js'), 'spirit/element/search/file.js is there', 'no spirit/element/search/file.js');
+  ok(there('spirit/element/search/file/rowElement.js'), 'spirit/element/search/file/rowElement.js is there', 'no spirit/element/search/file/rowElement.js');
+  ok(there('spirit/element/search/icon.js'), 'spirit/element/search/icon.js is there', 'no spirit/element/search/icon.js');
+  ok(there('spirit/element/search/icon/listElement.js'), 'spirit/element/search/icon/listElement.js is there', 'no spirit/element/search/icon/listElement.js');
+  ok(there('spirit/element/search/icon/rowElement.js'), 'spirit/element/search/icon/rowElement.js is there', 'no spirit/element/search/icon/rowElement.js');
+  ok(there('spirit/element/search/bundle.js'), 'spirit/element/search/bundle.js is there', 'no spirit/element/search/bundle.js');
+  ok(there('spirit/element/search/bundle/listElement.js'), 'spirit/element/search/bundle/listElement.js is there', 'no spirit/element/search/bundle/listElement.js');
+  ok(there('spirit/element/search/bundle/rowElement.js'), 'spirit/element/search/bundle/rowElement.js is there', 'no spirit/element/search/bundle/rowElement.js');
+  ok(there('spirit/element/search/branch.js'), 'spirit/element/search/branch.js is there', 'no spirit/element/search/branch.js');
+  ok(there('spirit/element/search/branch/listElement.js'), 'spirit/element/search/branch/listElement.js is there', 'no spirit/element/search/branch/listElement.js');
+  ok(there('spirit/element/search/branch/rowElement.js'), 'spirit/element/search/branch/rowElement.js is there', 'no spirit/element/search/branch/rowElement.js');
+  ok(there('spirit/element/search/grant.js'), 'spirit/element/search/grant.js is there', 'no spirit/element/search/grant.js');
+  ok(there('spirit/element/search/grant/rowElement.js'), 'spirit/element/search/grant/rowElement.js is there', 'no spirit/element/search/grant/rowElement.js');
+  ok(there('spirit/element/search/valued.js'), 'spirit/element/search/valued.js is there', 'no spirit/element/search/valued.js');
 
   test.subHeading('the old names go');
-  GONE.forEach(function (p) { ok(!there(p), p + ' is gone', p + ' is still there'); });
+  ok(!there('spirit/element/probabilitySearch.js'), 'spirit/element/probabilitySearch.js is gone', 'spirit/element/probabilitySearch.js is still there');
+  ok(!there('spirit/element/appServerSelector.js'), 'spirit/element/appServerSelector.js is gone', 'spirit/element/appServerSelector.js is still there');
+  ok(!there('spirit/element/apiFamilySelector.js'), 'spirit/element/apiFamilySelector.js is gone', 'spirit/element/apiFamilySelector.js is still there');
+  ok(!there('spirit/element/apiVerbSelector.js'), 'spirit/element/apiVerbSelector.js is gone', 'spirit/element/apiVerbSelector.js is still there');
+  ok(!there('spirit/element/contactSelector.js'), 'spirit/element/contactSelector.js is gone', 'spirit/element/contactSelector.js is still there');
+  ok(!there('spirit/element/contact'), 'spirit/element/contact is gone', 'spirit/element/contact is still there');
+  ok(!there('spirit/element/files'), 'spirit/element/files is gone', 'spirit/element/files is still there');
+  ok(!there('spirit/element/iconSelector.js'), 'spirit/element/iconSelector.js is gone', 'spirit/element/iconSelector.js is still there');
+  ok(!there('spirit/element/icons'), 'spirit/element/icons is gone', 'spirit/element/icons is still there');
+  ok(!there('spirit/element/bundleSelector.js'), 'spirit/element/bundleSelector.js is gone', 'spirit/element/bundleSelector.js is still there');
+  ok(!there('spirit/element/bundleSelector'), 'spirit/element/bundleSelector is gone', 'spirit/element/bundleSelector is still there');
+  ok(!there('spirit/element/branchSelector.js'), 'spirit/element/branchSelector.js is gone', 'spirit/element/branchSelector.js is still there');
+  ok(!there('spirit/element/branchSelector'), 'spirit/element/branchSelector is gone', 'spirit/element/branchSelector is still there');
+  ok(!there('spirit/element/grantSelector'), 'spirit/element/grantSelector is gone', 'spirit/element/grantSelector is still there');
+  ok(!there('spirit/element/valued.js'), 'spirit/element/valued.js is gone', 'spirit/element/valued.js is still there');
+  ok(!there('spirit/element/contactDetails'), 'spirit/element/contactDetails is gone', 'spirit/element/contactDetails is still there');
+  ok(!there('spirit/element/relayPanel.js'), 'spirit/element/relayPanel.js is gone', 'spirit/element/relayPanel.js is still there');
+  ok(!there('spirit/element/search/contact/relayPanel.js'), 'spirit/element/search/contact/relayPanel.js is gone', 'spirit/element/search/contact/relayPanel.js is still there');
+  ok(!there('spirit/app/appSelector/listElement.js'), 'spirit/app/appSelector/listElement.js is gone', 'spirit/app/appSelector/listElement.js is still there');
+  ok(!there('spirit/app/appSelector/rowElement.js'), 'spirit/app/appSelector/rowElement.js is gone', 'spirit/app/appSelector/rowElement.js is still there');
 
   test.subHeading('the box: "the same pattern for all": under search/ a <name>.js and its <name>/ folder, each name a word');
   const top = fs.existsSync(SEARCH) ? fs.readdirSync(SEARCH, { withFileTypes: true }).filter(function (d) { return d.name !== 'test'; }) : [];
@@ -1052,7 +1101,7 @@ async function folderPart() {
     const c = path.resolve(f) === own ? ownCut(code(f)) : code(f);
     OLD.forEach(function (o) { if (new RegExp(o.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&') + '(?![A-Za-z])').test(c)) naming.push(path.relative(REPO, f) + ': ' + o); });
   });
-  ok(scripts.length > 100 && !naming.length, 'no code names an old path, in ' + scripts.length + ' scripts and their tests', naming.length + ' still name one, the first: ' + short(naming.slice(0, 8)));
+  ok(scripts.length > 100 && !naming.length, 'no code names an old path, in more than a hundred scripts and their tests', naming.length + ' of ' + scripts.length + ' still name one, the first: ' + short(naming.slice(0, 8)));
   // "apiVerbSelector.js is the verb dropdown filter: search/api/verb.js, which branch names too."
   const verbUsers = ['spirit/element/search/api.js', 'spirit/element/search/branch.js', 'spirit/element/search/branch/listElement.js']
     .filter(function (p) { return /spirit\/element\/search\/api\/verb\.js/.test(code(path.join(RUN, p))); });
@@ -1070,10 +1119,35 @@ async function folderPart() {
     try {
       await chrome.send('Page.navigate', { url: node.base + '/face.html' });
       await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
-      for (const p of THERE) {
+      // Each one written out, so that each check has a plain title of its own.
+      const loads = async function (p) {
         const got = await chrome.evaluate('window.spirit.ready.then(function () { return Promise.race([window.spirit.require(' + JSON.stringify(p) + ').then(function () { return "loaded"; }, function (e) { return "refused: " + e; }), new Promise(function (r) { setTimeout(function () { r("never answered"); }, 8000); })]); })');
-        ok(got === 'loaded', p + ' loads', p + ': ' + short(got));
-      }
+        return { fine: got === 'loaded', why: p + ': ' + short(got) };
+      };
+      let ld;
+      ld = await loads('spirit/element/search.js'); ok(ld.fine, 'spirit/element/search.js loads', ld.why);
+      ld = await loads('spirit/element/search/api.js'); ok(ld.fine, 'spirit/element/search/api.js loads', ld.why);
+      ld = await loads('spirit/element/search/api/verb.js'); ok(ld.fine, 'spirit/element/search/api/verb.js loads', ld.why);
+      ld = await loads('spirit/element/search/app.js'); ok(ld.fine, 'spirit/element/search/app.js loads', ld.why);
+      ld = await loads('spirit/element/search/app/rowElement.js'); ok(ld.fine, 'spirit/element/search/app/rowElement.js loads', ld.why);
+      ld = await loads('spirit/element/search/contact.js'); ok(ld.fine, 'spirit/element/search/contact.js loads', ld.why);
+      ld = await loads('spirit/element/search/contact/listElement.js'); ok(ld.fine, 'spirit/element/search/contact/listElement.js loads', ld.why);
+      ld = await loads('spirit/element/search/contact/rowElement.js'); ok(ld.fine, 'spirit/element/search/contact/rowElement.js loads', ld.why);
+      ld = await loads('spirit/element/search/contact/detailElement.js'); ok(ld.fine, 'spirit/element/search/contact/detailElement.js loads', ld.why);
+      ld = await loads('spirit/element/search/file.js'); ok(ld.fine, 'spirit/element/search/file.js loads', ld.why);
+      ld = await loads('spirit/element/search/file/rowElement.js'); ok(ld.fine, 'spirit/element/search/file/rowElement.js loads', ld.why);
+      ld = await loads('spirit/element/search/icon.js'); ok(ld.fine, 'spirit/element/search/icon.js loads', ld.why);
+      ld = await loads('spirit/element/search/icon/listElement.js'); ok(ld.fine, 'spirit/element/search/icon/listElement.js loads', ld.why);
+      ld = await loads('spirit/element/search/icon/rowElement.js'); ok(ld.fine, 'spirit/element/search/icon/rowElement.js loads', ld.why);
+      ld = await loads('spirit/element/search/bundle.js'); ok(ld.fine, 'spirit/element/search/bundle.js loads', ld.why);
+      ld = await loads('spirit/element/search/bundle/listElement.js'); ok(ld.fine, 'spirit/element/search/bundle/listElement.js loads', ld.why);
+      ld = await loads('spirit/element/search/bundle/rowElement.js'); ok(ld.fine, 'spirit/element/search/bundle/rowElement.js loads', ld.why);
+      ld = await loads('spirit/element/search/branch.js'); ok(ld.fine, 'spirit/element/search/branch.js loads', ld.why);
+      ld = await loads('spirit/element/search/branch/listElement.js'); ok(ld.fine, 'spirit/element/search/branch/listElement.js loads', ld.why);
+      ld = await loads('spirit/element/search/branch/rowElement.js'); ok(ld.fine, 'spirit/element/search/branch/rowElement.js loads', ld.why);
+      ld = await loads('spirit/element/search/grant.js'); ok(ld.fine, 'spirit/element/search/grant.js loads', ld.why);
+      ld = await loads('spirit/element/search/grant/rowElement.js'); ok(ld.fine, 'spirit/element/search/grant/rowElement.js loads', ld.why);
+      ld = await loads('spirit/element/search/valued.js'); ok(ld.fine, 'spirit/element/search/valued.js loads', ld.why);
     } finally {
       if (chrome && chrome.kid) chrome.kid.kill();
       if (node.child) node.child.kill();

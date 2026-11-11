@@ -257,7 +257,7 @@ test.startTest('detailElement.js: its are-you-sure buttons are armingButtons (go
   ok(!!forget, 'Forget is made by armingButton', 'armings: ' + short(w.armings.map(function (a) { return a.label; })));
   if (forget) {
     ok(!/seat|relay/i.test(String(forget.opts.armedLabel || '')), 'armed, it says nothing of seats or relays', 'armedLabel: ' + short(forget.opts.armedLabel));
-    ok(!('api' in forget.opts) && inPage(w, forget.button), 'handed no api, and in the page', 'api ' + ('api' in forget.opts) + ', in page ' + inPage(w, forget.button));
+    ok(!('api' in forget.opts) && inPage(w, forget.button), 'Forget is handed no api, and is in the page', 'api ' + ('api' in forget.opts) + ', in page ' + inPage(w, forget.button));
     const before = w.calls.length;
     const postsBefore = w.posts.length;
     if (typeof forget.opts.run === 'function') await forget.opts.run();
@@ -616,13 +616,13 @@ async function relayPart() {
   await (async function () {
     test.subHeading('nothing hand-rolled is left');
     const code = SRC.replace(/\/\/.*$/gm, '');
-    ok(!/data-armed/.test(code), 'no data-armed in its code', 'detailElement.js still reads or writes data-armed');
-    ok(!/armUntilElsewhere/.test(code), 'no armUntilElsewhere of its own', 'detailElement.js still calls armUntilElsewhere');
-    ok(!/classList\.(add|toggle)\(\s*['"]armed['"]/.test(code), 'no armed class', 'detailElement.js still sets an armed class');
+    ok(!/data-armed/.test(code), 'for a relay: no data-armed in its code', 'detailElement.js still reads or writes data-armed');
+    ok(!/armUntilElsewhere/.test(code), 'for a relay: no armUntilElsewhere of its own', 'detailElement.js still calls armUntilElsewhere');
+    ok(!/classList\.(add|toggle)\(\s*['"]armed['"]/.test(code), 'for a relay: no armed class', 'detailElement.js still sets an armed class');
 
     const w = world(OWNED, OWNED_SAID);
     test.subHeading('it loads armingButton itself (goal/G41.3)');
-    ok(w.required.indexOf('spirit/element/armingButton.js') !== -1, 'it requires spirit/element/armingButton.js through spirit.require', 'required: ' + short(w.required));
+    ok(w.required.indexOf('spirit/element/armingButton.js') !== -1, 'for a relay: it requires spirit/element/armingButton.js through spirit.require', 'required: ' + short(w.required));
     const E = w.win.spirit.element.spirit.element.search.contact.detailElement;
     ok(!!E && typeof E.create === 'function' && E.open === undefined, 'it is window.spirit.element.spirit.element.search.contact.detailElement, made by create, a relay told relay: true; no open of its own: it opens as a panel (goal/G43.18)', 'relayPanel: create ' + typeof (E && E.create) + ', open ' + typeof (E && E.open));
     if (!E) return;
@@ -636,7 +636,7 @@ async function relayPart() {
     ok(!!restart, 'Restart is made by armingButton', 'armings: ' + short(w.armings.map(function (a) { return a.label; })));
     if (restart) {
       ok(restart.opts.armedLabel === 'Restart? Every stream drops', 'armed, it says Restart? Every stream drops', 'armedLabel: ' + short(restart.opts.armedLabel));
-      ok(!('api' in restart.opts) && inPage(w, restart.button), 'handed no api, and in the page', 'api ' + ('api' in restart.opts) + ', in page ' + inPage(w, restart.button));
+      ok(!('api' in restart.opts) && inPage(w, restart.button), 'Restart is handed no api, and is in the page', 'api ' + ('api' in restart.opts) + ', in page ' + inPage(w, restart.button));
       const before = w.posts.length;
       if (typeof restart.opts.run === 'function') await restart.opts.run();
       await settle();
@@ -651,7 +651,7 @@ async function relayPart() {
     ok(!!revoke, 'an invite\'s Revoke is made by armingButton', 'armings: ' + short(w.armings.map(function (a) { return a.label; })));
     if (revoke) {
       ok(revoke.opts.armedLabel === 'Revoke saint?', 'armed, it names the invite: Revoke saint?', 'armedLabel: ' + short(revoke.opts.armedLabel));
-      ok(!('api' in revoke.opts) && inPage(w, revoke.button), 'handed no api, and in the page', 'api ' + ('api' in revoke.opts) + ', in page ' + inPage(w, revoke.button));
+      ok(!('api' in revoke.opts) && inPage(w, revoke.button), 'Revoke is handed no api, and is in the page', 'api ' + ('api' in revoke.opts) + ', in page ' + inPage(w, revoke.button));
       const before = w.posts.length;
       if (typeof revoke.opts.run === 'function') await revoke.opts.run();
       await settle();
@@ -665,7 +665,7 @@ async function relayPart() {
     ok(!!remove, 'Remove is made by armingButton', 'armings: ' + short(w.armings.map(function (a) { return a.label; })));
     if (remove) {
       ok(remove.opts.armedLabel === 'Press again to remove', 'armed, it says Press again to remove', 'armedLabel: ' + short(remove.opts.armedLabel));
-      ok(!('api' in remove.opts) && inPage(w, remove.button), 'handed no api: the button hears a click elsewhere itself', 'api ' + ('api' in remove.opts) + ', in page ' + inPage(w, remove.button));
+      ok(!('api' in remove.opts) && inPage(w, remove.button), 'Remove is handed no api: the button hears a click elsewhere itself', 'api ' + ('api' in remove.opts) + ', in page ' + inPage(w, remove.button));
       const before = w.calls.length;
       if (typeof remove.opts.run === 'function') await remove.opts.run();
       await settle();
@@ -693,7 +693,7 @@ async function relayPart() {
     ok(!!leave, 'Leave is made by armingButton', 'armings: ' + short(w3.armings.map(function (a) { return a.label; })));
     if (leave) {
       ok(leave.opts.armedLabel === 'Press again to leave', 'armed, it says Press again to leave', 'armedLabel: ' + short(leave.opts.armedLabel));
-      ok(!('api' in leave.opts) && inPage(w3, leave.button), 'handed no api: the button hears a click elsewhere itself', 'api ' + ('api' in leave.opts) + ', in page ' + inPage(w3, leave.button));
+      ok(!('api' in leave.opts) && inPage(w3, leave.button), 'Leave is handed no api: the button hears a click elsewhere itself', 'api ' + ('api' in leave.opts) + ', in page ' + inPage(w3, leave.button));
       const before = w3.calls.length;
       if (typeof leave.opts.run === 'function') await leave.opts.run();
       await settle();
@@ -754,18 +754,18 @@ async function relayPart() {
     w8.win.spirit.transport = { ask: function () {} };
     w8.open('RK2');
     await settle();
-    ok(!!w8.box && !w8.document.querySelector('.nd-own') && !starOf(w8), 'on a face (window.spirit.transport) no button is drawn', 'on a face: .nd-own ' + !!w8.document.querySelector('.nd-own'));
+    ok(!!w8.box && !w8.document.querySelector('.nd-own') && !starOf(w8), 'for a relay, on a face (window.spirit.transport) no button is drawn', 'on a face: .nd-own ' + !!w8.document.querySelector('.nd-own'));
 
     // WHAT IT NEEDS, IT REQUIRES ITSELF (goal/G43.24; Andy: "anybody can mount any element without knowing what it actually
     // needs...."): the node's verbs and its posts to the relay go through the spirit object; it is handed no api.
     test.subHeading('it asks through the spirit object, and is handed no api');
-    ok(!/\bapi\b/.test(code) && !/ndApi/.test(code), 'its code names no api', 'its code still names an api');
+    ok(!/\bapi\b/.test(code) && !/ndApi/.test(code), 'for a relay: its code names no api', 'its code still names an api');
     const panelCode = fs.readFileSync(path.join(RUN, 'spirit', 'element', 'search', 'contact', 'detailElement.js'), 'utf8').replace(/\/\/.*$/gm, '');
     const viaPeerPost = /spirit\.peerPost\(/.test(panelCode);
     const ownEncode = /packet\.encode\(/.test(panelCode);
     ok(viaPeerPost && !ownEncode, 'a post to the relay goes through spirit.peerPost, which puts it in its envelope; the panel encodes no packet of its own', 'its code: peerPost ' + viaPeerPost + ', its own encode ' + ownEncode);
     ok(w.posts.length > 0 && w.posts.every(function (p) { return p.app === 'relay' && p.key === 'RK'; }), 'each post to the relay is a packet for it through peer.post, in its envelope', 'posts: ' + short(w.posts.map(function (p) { return { app: p.app, key: p.key }; })));
-    ok(typeof w.title === 'string' && /^Relay Details/.test(w.title), 'its title goes to the layer it is drawn in (options.layer.setTitle)', 'title: ' + short(w.title));
+    ok(typeof w.title === 'string' && /^Relay Details/.test(w.title), 'for a relay: its title goes to the layer it is drawn in (options.layer.setTitle)', 'title: ' + short(w.title));
 
     // ONE DETAIL FOR EVERY KIND OF CONTACT (goal/G43.32; Andy: "the contact list already knows the difference between contact
     // types. so should the detail panel."): not told, the contact family's cache says what the row is.
@@ -1041,7 +1041,7 @@ async function relayRowStreamPart() {
       ok(farNo.status >= 400 && farNo.status < 500 && !!(farNo.body && farNo.body.code), 'listed, no seat: contact.own is refused at home, with a code', 'contact.own of a relay with no seat: ' + farNo.status + ' ' + short(farNo.text));
       ok(!(await starred(Far.relayKey)), 'and no star lands', 'a relay with no seat has a star');
       const farOwnOff = await home(N.base, 'contact.own', { key: Far.relayKey, own: false });
-      ok(!(await starred(Far.relayKey)), 'taking away a star it does not have changes nothing: ' + farOwnOff.status, 'after own false it has a star');
+      ok(!(await starred(Far.relayKey)), 'taking away a star it does not have changes nothing', 'after own false (answered ' + farOwnOff.status + ') it has a star');
       const person = require(path.join(RUN, 'spirit', 'relayAuth.js')).generateIdentity('zzPuppet').publicKey;
       await home(N.base, 'contact.block', { publicKey: person });
       const personAns = await home(N.base, 'contact.own', { key: person, own: true });

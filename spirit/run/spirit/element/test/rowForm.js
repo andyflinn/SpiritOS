@@ -50,7 +50,10 @@ test.startTest('rowForm.js: the one-row form, in a bubble');
     // "one row forms show as blocks taking up the full width of their container"
     [['in 600px', one], ['in 260px', wr]].forEach(function (x) {
       const r = x[1];
-      ok(near(r.root.left, r.container.left) && near(r.root.right, r.container.right), x[0] + ': it spans its container, edge to edge', 'root ' + short(r.root) + ', container ' + short(r.container));
+      const spans = near(r.root.left, r.container.left) && near(r.root.right, r.container.right);
+      const why = 'root ' + short(r.root) + ', container ' + short(r.container);
+      if (x[0] === 'in 600px') ok(spans, 'in 600px: it spans its container, edge to edge', why);
+      else if (x[0] === 'in 260px') ok(spans, 'in 260px: it spans its container, edge to edge', why);
     });
 
     test.subHeading('a bubble: transparent, its border the type-face\'s colour');
@@ -75,16 +78,34 @@ test.startTest('rowForm.js: the one-row form, in a bubble');
     // "the first element is always an icon shell-element, and takes the (top-) left position in the one-row form"
     [['in one row', one], ['wrapped', wr]].forEach(function (x) {
       const r = x[1];
-      ok(/\bshell-icon\b/.test(r.iconClass) && r.iconText === '🧾', x[0] + ': its first element is the icon element, the glyph it was given', 'first: ' + short([r.iconClass, r.iconText]));
-      ok(!!r.icon && near(r.icon.left, r.inner.left) && near(r.icon.top, r.inner.top, 4), x[0] + ': at the top left inside the bubble', 'icon ' + short(r.icon) + ', inside ' + short(r.inner));
+      const first = /\bshell-icon\b/.test(r.iconClass) && r.iconText === '🧾';
+      const firstWhy = 'first: ' + short([r.iconClass, r.iconText]);
+      const placed = !!r.icon && near(r.icon.left, r.inner.left) && near(r.icon.top, r.inner.top, 4);
+      const placedWhy = 'icon ' + short(r.icon) + ', inside ' + short(r.inner);
+      if (x[0] === 'in one row') {
+        ok(first, 'in one row: its first element is the icon element, the glyph it was given', firstWhy);
+        ok(placed, 'in one row: the icon at the top left inside the bubble', placedWhy);
+      } else if (x[0] === 'wrapped') {
+        ok(first, 'wrapped: its first element is the icon element, the glyph it was given', firstWhy);
+        ok(placed, 'wrapped: the icon at the top left inside the bubble', placedWhy);
+      }
     });
 
     test.subHeading('its button last, at the (bottom-) right');
     // "the last element is always a button that is positioned at the (bottom-) right for the form."
     [['in one row', one], ['wrapped', wr]].forEach(function (x) {
       const r = x[1];
-      ok(r.last && r.buttonTag === 'BUTTON' && r.buttonText === 'Grant', x[0] + ': its last element is a button with the words it was given', 'last ' + r.last + ', ' + short([r.buttonTag, r.buttonText]));
-      ok(!!r.button && near(r.button.right, r.inner.right) && near(r.button.bottom, r.inner.bottom, 4), x[0] + ': at the bottom right inside the bubble', 'button ' + short(r.button) + ', inside ' + short(r.inner));
+      const last = r.last && r.buttonTag === 'BUTTON' && r.buttonText === 'Grant';
+      const lastWhy = 'last ' + r.last + ', ' + short([r.buttonTag, r.buttonText]);
+      const placed = !!r.button && near(r.button.right, r.inner.right) && near(r.button.bottom, r.inner.bottom, 4);
+      const placedWhy = 'button ' + short(r.button) + ', inside ' + short(r.inner);
+      if (x[0] === 'in one row') {
+        ok(last, 'in one row: its last element is a button with the words it was given', lastWhy);
+        ok(placed, 'in one row: the button at the bottom right inside the bubble', placedWhy);
+      } else if (x[0] === 'wrapped') {
+        ok(last, 'wrapped: its last element is a button with the words it was given', lastWhy);
+        ok(placed, 'wrapped: the button at the bottom right inside the bubble', placedWhy);
+      }
     });
 
     test.subHeading('the span between, which takes the form elements');

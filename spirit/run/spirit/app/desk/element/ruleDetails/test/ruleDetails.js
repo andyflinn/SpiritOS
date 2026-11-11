@@ -117,7 +117,7 @@ function armingFor(w, id, label) {
 function nothingHandRolled(flag) {
   ok(!/data-armed/.test(CODE), 'no data-armed of its own: the arming button carries it', 'its code still writes data-armed');
   ok(!/armUntilElsewhere/.test(CODE), 'it hands nothing to armUntilElsewhere itself: the arming button does', 'its code still calls armUntilElsewhere');
-  ok(!new RegExp('\\b' + flag + '\\b').test(CODE), 'no armed flag of its own (' + flag + ')', 'its code still keeps ' + flag);
+  ok(!new RegExp('\\b' + flag + '\\b').test(CODE), 'no armed flag of its own', 'its code still keeps ' + flag);
   ok(!/classList\.(add|remove|toggle)\(\s*['"]armed['"]/.test(CODE) && !/armedButton/.test(CODE), 'no armed class and no armedButton helper of its own', 'its code still has an armed class or an armedButton helper');
 }
 function loadsArming(w) {
@@ -136,7 +136,7 @@ function answer(name) {
 
 (async function () {
   test.subHeading(PLACE + ': Desk\'s rule dialog, in Desk\'s own elements (goal/G43.30)');
-  ok(SRC !== '', 'it is at ' + PLACE, PLACE + ' is not there');
+  ok(SRC !== '', 'its element file is there', PLACE + ' is not there');
   if (SRC === '') return;
   test.subHeading('nothing hand-rolled is left (goal/G41.9)');
   nothingHandRolled('rdArmed');
@@ -156,18 +156,24 @@ function answer(name) {
   for (const c of cases) {
     test.subHeading(c.label + ' is an arming button');
     const a = armingFor(w, c.id, c.label);
-    ok(!!a, c.label + ' is made or attached through window.spirit.element.spirit.element.armingButton', 'arming buttons: ' + short(w.arming.map(function (x) { return x.button && x.button.id || x.opts.label; })));
+    const armingWhy = 'arming buttons: ' + short(w.arming.map(function (x) { return x.button && x.button.id || x.opts.label; }));
+    if (c.id === 'rd-activate') ok(!!a, 'Activate is an arming button', armingWhy);
+    else if (c.id === 'rd-delete') ok(!!a, 'Delete is an arming button', armingWhy);
     if (!a) continue;
     const label = a.opts.label != null ? a.opts.label : a.button.textContent;
-    ok(label === c.label && a.opts.armedLabel === c.armed, 'it says ' + c.label + ', and armed ' + c.armed, 'label ' + short(label) + ', armedLabel ' + short(a.opts.armedLabel));
+    const says = label === c.label && a.opts.armedLabel === c.armed;
+    const saysWhy = 'label ' + short(label) + ', armedLabel ' + short(a.opts.armedLabel);
+    if (c.id === 'rd-activate') ok(says, 'it says Activate, and armed Activate: sure?', saysWhy);
+    else if (c.id === 'rd-delete') ok(says, 'it says Delete, and armed Delete: sure?', saysWhy);
     ok(!('api' in a.opts), 'it is handed no api: the arming button hears a click elsewhere itself (goal/G43.24)', 'handed: ' + short(Object.keys(a.opts)));
     const before = w.calls.filter(function (x) { return x.name === 'desk.rule.version'; }).length;
     ok(typeof a.opts.run === 'function', 'it has a run', 'no run');
     if (typeof a.opts.run !== 'function') continue;
     await a.opts.run(); await settle();
     const v = w.calls.filter(function (x) { return x.name === 'desk.rule.version'; }).slice(before);
-    ok(v.length === 1 && v[0].args.key === 'rule/7' && v[0].args.status === c.status && v[0].args.text === 'the text',
-      'its run asks rule.version of this rule, status ' + c.status + ', with the text as it stands', 'asked: ' + short(v));
+    const asks = v.length === 1 && v[0].args.key === 'rule/7' && v[0].args.status === c.status && v[0].args.text === 'the text';
+    if (c.id === 'rd-activate') ok(asks, 'Activate\'s run asks rule.version of this rule, status active, with the text as it stands', 'asked: ' + short(v));
+    else if (c.id === 'rd-delete') ok(asks, 'Delete\'s run asks rule.version of this rule, status deleted, with the text as it stands', 'asked: ' + short(v));
   }
   test.subHeading('Version and Auto-attach stay plain buttons');
   ok(!armingFor(w, 'rd-version', 'Version') && !armingFor(w, 'rd-auto', 'Auto-attach'), 'only Activate and Delete arm', 'arming buttons: ' + short(w.arming.map(function (x) { return x.button && x.button.id || x.opts.label; })));
@@ -259,7 +265,7 @@ function answer(name) {
     await page.evaluate('(function () { var b = ' + DEL + '; if (b) b.click(); return !!b; })()');
     await new Promise(function (r) { setTimeout(r, 1500); });
     const after = await call('desk.rule.get', { key: key });
-    ok(!!after && after.status === before.status && after.status !== 'deleted', 'Delete pressed once deletes nothing: the rule is ' + short(after && after.status) + ' as before',
+    ok(!!after && after.status === before.status && after.status !== 'deleted', 'Delete pressed once deletes nothing: the rule stands as before',
       'after one press the rule is ' + short(after && after.status) + ', before ' + short(before && before.status));
     ok(await page.evaluate('(function () { var b = ' + DEL + '; return !!b && b.hasAttribute("data-armed"); })()'), 'and it stands armed, waiting for the second press', 'after one press its Delete is not armed');
   } finally {

@@ -43,7 +43,7 @@ test.startTest('apiAuth.js: auth.bundle and auth.branch, the node\'s bundles');
     const d = readJson(path.join(RUN, 'spirit', 'auth', v + '.json'));
     const described = d && typeof d.description === 'string' && d.description && d.request && 'op' in d.request;
     if (v === 'bundle') ok(described, 'spirit/auth/bundle.json describes the verb and its request', v + '.json: ' + short(d));
-    else ok(described, 'spirit/auth/branch.json describes the verb and its request', v + '.json: ' + short(d));
+    else if (v === 'branch') ok(described, 'spirit/auth/branch.json describes the verb and its request', v + '.json: ' + short(d));
   });
   const bj = readJson(path.join(RUN, 'spirit', 'auth', 'bundle.json'));
   ok(bj && bj.request && 'owner' in bj.request && /owner/.test(String(bj.description || '')) && !/\bset \{/.test(String(bj.description || '')), 'spirit/auth/bundle.json names the owner in its request and its description, and offers no op set {...} (goal/G41.26; its words may say set is refused)', 'bundle.json: ' + short(bj));
@@ -339,7 +339,7 @@ test.startTest('apiAuth.js: auth.bundle and auth.branch, the node\'s bundles');
     const why = 'auth.branch add of desk.' + v + ': ' + short(added);
     if (v === 'FS.loadFile') ok(refused, 'auth.branch add of desk.FS.loadFile is refused: no branch serves it', why);
     else if (v === 'FS.path') ok(refused, 'auth.branch add of desk.FS.path is refused: no branch serves it', why);
-    else ok(refused, 'auth.branch add of desk.FS.saveFile is refused: no branch serves it', why);
+    else if (v === 'FS.saveFile') ok(refused, 'auth.branch add of desk.FS.saveFile is refused: no branch serves it', why);
   }
   const moved = await call(fsAuth, 'branch', { op: 'set', id: keptId, verb: 'FS.loadFile' });
   ok(!!moved.refusal && (await call(fsAuth, 'branch', { op: 'get', id: keptId })).verb === 'chat.add',

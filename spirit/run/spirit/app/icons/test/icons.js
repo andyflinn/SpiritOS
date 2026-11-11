@@ -52,23 +52,27 @@ test.startTest('icons: the Icons app, a face and an api, run by the node per req
 
 (async function () {
   test.subHeading('the box: "a face-only app get\'s api.js, data.js, node<Name>.js, browser<Name>.js" (Q5, Q6)');
-  ['api.js', 'data.js', 'icons.js', 'nodeIcons.js', 'element.js'].forEach(function (f) {
-    ok(fs.existsSync(path.join(APP, f)), 'spirit/app/icons/' + f + ' is there', 'spirit/app/icons/' + f + ' is not there');
-  });
+  ok(fs.existsSync(path.join(APP, 'api.js')), 'spirit/app/icons/api.js is there', 'spirit/app/icons/api.js is not there');
+  ok(fs.existsSync(path.join(APP, 'data.js')), 'spirit/app/icons/data.js is there', 'spirit/app/icons/data.js is not there');
+  ok(fs.existsSync(path.join(APP, 'icons.js')), 'spirit/app/icons/icons.js is there', 'spirit/app/icons/icons.js is not there');
+  ok(fs.existsSync(path.join(APP, 'nodeIcons.js')), 'spirit/app/icons/nodeIcons.js is there', 'spirit/app/icons/nodeIcons.js is not there');
+  ok(fs.existsSync(path.join(APP, 'element.js')), 'spirit/app/icons/element.js is there', 'spirit/app/icons/element.js is not there');
   ok(!fs.existsSync(path.join(APP, 'api')), 'api.js at the app\'s top, no api/ folder (Q5)', 'spirit/app/icons/api/ stands');
   const own = json(path.join(APP, 'icons.json')) || {};
   ok(!(own.node && own.node.mount === true) && !!(own.shell && own.shell.mount === true), 'the box, 1: "icons.json keeps node mount false and shell mount true"', 'icons.json says ' + short({ node: own.node, shell: own.shell }));
   const main = code(read(path.join(APP, 'icons.js')) || '');
   // goal/G43.32: by spirit.require and its run-root path, as every script loads the tree.
   ok(/\.require\(\s*['"]spirit\/app\/icons\/nodeIcons\.js['"]\s*\)/.test(main), 'the box, 7: icons.js, run in node, spirit.requires spirit/app/icons/nodeIcons.js', 'icons.js spirit.requires no spirit/app/icons/nodeIcons.js');
-  ['icons.js', 'element.js'].forEach(function (f) {
-    const c = code(read(path.join(APP, f)) || '');
-    ok(c !== '' && !/activateApp/.test(c), f + ' mounts no longer through spirit.shell.activateApp', f + ' still calls activateApp, or is not there');
-    ok(c !== '' && !/\bfs\s*\.\s*(saveFile|save|deleteFile|delete)\b|\.saveFile\s*\(/.test(c), 'the box: "the page writes no file of its own": ' + f + ' calls no fs save or delete', f + ' still writes through the fs family, or is not there');
-  });
+  const pageCode = function (f) { return code(read(path.join(APP, f)) || ''); };
+  const ic = pageCode('icons.js'), el = pageCode('element.js');
+  const writes = /\bfs\s*\.\s*(saveFile|save|deleteFile|delete)\b|\.saveFile\s*\(/;
+  ok(ic !== '' && !/activateApp/.test(ic), 'icons.js mounts no longer through spirit.shell.activateApp', 'icons.js still calls activateApp, or is not there');
+  ok(ic !== '' && !writes.test(ic), 'the box: "the page writes no file of its own": icons.js calls no fs save or delete', 'icons.js still writes through the fs family, or is not there');
+  ok(el !== '' && !/activateApp/.test(el), 'element.js mounts no longer through spirit.shell.activateApp', 'element.js still calls activateApp, or is not there');
+  ok(el !== '' && !writes.test(el), 'the box: "the page writes no file of its own": element.js calls no fs save or delete', 'element.js still writes through the fs family, or is not there');
   let verbs = [];
   try { verbs = Object.keys(require(path.join(APP, 'api.js')).verbs || {}); } catch (e) { verbs = []; }
-  ok(verbs.length >= 1, 'the world: api.js names its verbs: ' + verbs.join(', '), 'api.js names no verbs, so no call is judged');
+  ok(verbs.length >= 1, 'the world: api.js names its verbs', 'api.js names no verbs, so no call is judged');
 
   // Desk switched on beside it: a permanent server, so the process list is shown to find a running app script.
   const node = await scratchNode({ servers: ['icons', 'desk'] });
@@ -88,7 +92,7 @@ test.startTest('icons: the Icons app, a face and an api, run by the node per req
     const CANDIDATES = [];
     for (let cp = 0x1F300; cp <= 0x1FAFF && CANDIDATES.length < 2000; cp++) { const g = String.fromCodePoint(cp); if (/\p{Extended_Pictographic}/u.test(g)) CANDIDATES.push(g); }
     const fresh = CANDIDATES.filter(function (g) { return known.indexOf(bare(g)) === -1; });
-    ok(fresh.length >= 7, 'the world: seven glyphs the system set does not hold: ' + fresh.slice(0, 7).join(' '), 'only ' + fresh.length + ' candidate glyphs are not in spirit/iconSet.json: nothing to add');
+    ok(fresh.length >= 7, 'the world: seven glyphs the system set does not hold', 'only ' + fresh.length + ' candidate glyphs are not in spirit/iconSet.json: nothing to add');
     if (fresh.length < 7) return;
     const [G1, G2, ...REST] = fresh;
     const ask = async function (call, args) {
@@ -104,7 +108,8 @@ test.startTest('icons: the Icons app, a face and an api, run by the node per req
     const tree = await ask('api', {});
     const branch = tree.body && tree.body.icons;
     ok(tree.status === 200 && !!branch, 'the api tree holds the icons branch, answered from icons.js', 'the tree: ' + tree.status + ' ' + short(tree.body && Object.keys(tree.body)));
-    verbs.forEach(function (v) { ok(JSON.stringify(branch || '').indexOf(v) !== -1, 'its branch names ' + v, 'its branch does not name ' + v + ': ' + short(branch)); });
+    // Its one verb, icon, written out so that its check has a plain title.
+    ok(JSON.stringify(branch || '').indexOf('icon') !== -1, 'its branch names icon', 'its branch does not name icon: ' + short(branch) + '; its verbs: ' + verbs.join(', '));
     ok(await until(function () { return Promise.resolve(none()); }, 3000), 'and once the tree is answered no icons.js runs', 'icons.js still runs after the tree: ' + short(iconsProcesses(node.root)));
 
     test.subHeading('the box, 10: "The node keeps one job for the app, module spirit.app.icons, open while the app is switched on"');
@@ -139,7 +144,7 @@ test.startTest('icons: the Icons app, a face and an api, run by the node per req
     test.subHeading('an Add through its tile\'s face is a run of icons.js, and the run ends');
     await add(chrome, G1, 'flamingo, bird');
     const wrote = await until(function () { return Promise.resolve(((json(SET) || {})[G1] || []).join(',') === 'flamingo,bird'); }, 10000);
-    ok(wrote, 'an Add writes ' + G1 + ' into spirit/state/icons/data/iconSet.json', 'after the Add the set holds ' + short(read(SET)));
+    ok(wrote, 'an Add writes the new glyph into spirit/state/icons/data/iconSet.json', 'after the Add of ' + G1 + ' the set holds ' + short(read(SET)));
     ok(await until(function () { return Promise.resolve(none()); }, 3000), 'and its run ended: no icons.js runs', 'icons.js still runs after the Add: ' + short(iconsProcesses(node.root)));
     await add(chrome, G2, 'giraffe');
     await until(function () { return Promise.resolve(G2 in (json(SET) || {})); }, 10000);
@@ -158,7 +163,7 @@ test.startTest('icons: the Icons app, a face and an api, run by the node per req
     const s5 = json(SET);
     ok(allFive, 'five Adds at once: all five are in the set, none lost to another\'s write', 'after five Adds at once the set holds ' + short(five.filter(function (x) { return s5 && x in s5; })));
     ok(!!s5 && G1 in s5 && G2 in s5, 'and what was there stays, the file whole JSON', 'after five at once the set is ' + short(read(SET)));
-    ok(seen >= 1 || pids >= 2, 'the world: runs of icons.js were seen while they were answered (' + seen + ' samples, ' + pids + ' pids its job named)', 'no run of icons.js was ever seen, so "one at a time" judged nothing');
+    ok(seen >= 1 || pids >= 2, 'the world: runs of icons.js were seen while they were answered', 'no run of icons.js was ever seen, so "one at a time" judged nothing (' + seen + ' samples, ' + pids + ' pids its job named)');
     ok(most <= 1, 'never two runs of icons.js at once (the box, 9)', most + ' runs of icons.js at once');
     const forged = await chrome.evaluate('window.spirit.ready.then(function (s) { return s.fs.saveFile("spirit/state/icons/data/iconSet.json", "{}"); }).then(function (r) { return JSON.stringify(r); }, function (e) { return "refused: " + String(e && e.message || e); })');
     await sleep(800);
@@ -169,7 +174,7 @@ test.startTest('icons: the Icons app, a face and an api, run by the node per req
     ok(off.status === 200, 'the world: Icons switched off', 'app.active icons false: ' + short(off));
     await sleep(1500);
     const asked = verbs.length ? await ask('icons.' + verbs[0], {}) : { text: '' };
-    ok(/app-not-served/.test(asked.text), 'icons.' + (verbs[0] || '<verb>') + ' answers app-not-served', 'switched off, icons.' + (verbs[0] || '<verb>') + ' answered ' + asked.status + ' ' + short(asked.text));
+    ok(/app-not-served/.test(asked.text), 'switched off, icons.icon answers app-not-served', 'switched off, icons.' + (verbs[0] || '<verb>') + ' answered ' + asked.status + ' ' + short(asked.text));
     const tOff = await ask('api', {});
     ok(tOff.status === 200 && !(tOff.body && tOff.body.icons), 'the api tree holds no icons branch', 'switched off, the tree still holds icons: ' + short(tOff.body && tOff.body.icons));
     const jOff = await ask('job.get', { key: 'spirit.app.icons' });

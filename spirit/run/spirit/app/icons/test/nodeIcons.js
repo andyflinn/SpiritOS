@@ -45,7 +45,7 @@ test.startTest('nodeIcons.js: the icon set, one table, written only here (goal/G
     const fresh = [];
     for (let cp = 0x1F300; cp <= 0x1FAFF && fresh.length < 20; cp++) { const g = String.fromCodePoint(cp); if (/\p{Extended_Pictographic}/u.test(g) && known.indexOf(g) === -1) fresh.push(g); }
     const sys = Object.keys(system)[0];
-    ok(fresh.length >= 12 && !!sys, 'the world: the system set, and glyphs it does not hold: ' + fresh.slice(0, 12).join(' '), 'no system set or too few free glyphs: nothing judged');
+    ok(fresh.length >= 12 && !!sys, 'the world: the system set, and twelve glyphs it does not hold', 'no system set or too few free glyphs: nothing judged');
     if (fresh.length < 12 || !sys) return;
     const up = await until(function () { return icon({ op: 'search', text: '' }).then(function (r) { return r.status === 200; }); }, 20000);
     ok(up, 'the world: icons.icon answers', 'icons.icon never answered: nothing judged');
@@ -54,7 +54,7 @@ test.startTest('nodeIcons.js: the icon set, one table, written only here (goal/G
     test.subHeading('the box: "initialized from run://spirit/iconSet.json when it does not exist yet"; reads write nothing');
     const all = await icon({ op: 'search', text: '' });
     const shown = items(all).map(function (r) { return r && r.glyph; });
-    ok(all.status === 200 && shown.indexOf(sys) !== -1, 'with no own set, search answers the system set, ' + sys + ' among it', 'search: ' + short(all.text));
+    ok(all.status === 200 && shown.indexOf(sys) !== -1, 'with no own set, search answers the system set, its first glyph among it', 'search, wanting ' + sys + ': ' + short(all.text));
     ok(items(all).every(function (r) { return r && typeof r.glyph === 'string' && Array.isArray(r.keywords); }), 'each item\'s label is a row, { glyph, keywords }', 'items: ' + short(all.body && all.body.items && all.body.items.slice(0, 3)));
     const g1 = await icon({ op: 'get', glyph: sys });
     ok(g1.status === 200 && g1.body && g1.body.row && g1.body.row.glyph === sys && JSON.stringify(g1.body.row.keywords) === JSON.stringify(system[sys]), 'get answers a system icon with its keywords', 'get ' + sys + ': ' + short(g1.text));
@@ -62,14 +62,14 @@ test.startTest('nodeIcons.js: the icon set, one table, written only here (goal/G
     ok(g0.status === 200 && g0.body && g0.body.row === null, 'get of an icon not there answers row null', 'get of a stranger: ' + short(g0.text));
     const kw = (system[sys] || [])[0];
     const byWord = await icon({ op: 'search', text: String(kw || '') });
-    ok(!!kw && items(byWord).some(function (r) { return r && r.glyph === sys; }), 'search by a keyword, ' + kw + ', finds ' + sys, 'search ' + kw + ': ' + short(byWord.text));
+    ok(!!kw && items(byWord).some(function (r) { return r && r.glyph === sys; }), 'search by a keyword of the first system glyph finds that glyph', 'search ' + kw + ', wanting ' + sys + ': ' + short(byWord.text));
     ok(!fs.existsSync(SET), 'and none of these wrote spirit/state/icons/data/iconSet.json', 'a read wrote the set: ' + short(read(SET)));
 
     test.subHeading('add: the first write begins the own set from the system set, the new icon on top');
     const a1 = await icon({ op: 'add', glyph: fresh[0], keywords: ['first', 'one'] });
     const s1 = json(SET) || {};
     ok(a1.status === 200 && a1.body && a1.body.added === true, 'add answers added', 'add: ' + short(a1.text));
-    ok(JSON.stringify(s1[fresh[0]]) === '["first","one"]', 'the set holds ' + fresh[0] + ' with its keywords', 'the set: ' + short(s1[fresh[0]]));
+    ok(JSON.stringify(s1[fresh[0]]) === '["first","one"]', 'the set holds the new glyph with its keywords', 'the set, at ' + fresh[0] + ': ' + short(s1[fresh[0]]));
     ok(Object.keys(s1)[0] === fresh[0], 'on top', 'the first icon of the set is ' + short(Object.keys(s1)[0]));
     const lost = Object.keys(system).filter(function (g) { return !(g in s1); });
     ok(!lost.length, 'every system icon is in it', lost.length + ' system icons are not: ' + short(lost.slice(0, 5)));
@@ -79,7 +79,7 @@ test.startTest('nodeIcons.js: the icon set, one table, written only here (goal/G
     test.subHeading('Andy: a duplicate "shouldn\'t work", under any spelling');
     const t1 = read(SET);
     const d1 = await icon({ op: 'add', glyph: fresh[0], keywords: ['again'] });
-    ok(d1.status === 200 && d1.body && d1.body.added === false && d1.body.known === fresh[0], 'a second add of ' + fresh[0] + ' answers added false and names it', 'a duplicate: ' + short(d1.text));
+    ok(d1.status === 200 && d1.body && d1.body.added === false && d1.body.known === fresh[0], 'a second add of the same glyph answers added false and names it', 'a duplicate of ' + fresh[0] + ': ' + short(d1.text));
     const withSel = sys.indexOf('️') === -1 ? sys + '️' : bare(sys);
     const d2 = await icon({ op: 'add', glyph: withSel, keywords: ['spelled'] });
     ok(d2.body && d2.body.added === false, 'a system icon spelled with or without its invisible selector is the same icon', 'the other spelling of ' + sys + ': ' + short(d2.text));
@@ -118,10 +118,20 @@ test.startTest('nodeIcons.js: the icon set, one table, written only here (goal/G
     const t4 = read(SET);
     const crooked = [{}, { op: 'drop', glyph: fresh[12] || 'x' }, { op: 'add' }, { op: 'add', glyph: '' }, { op: 'add', glyph: '   ' }, { op: 'add', glyph: 5 }, { op: 'add', glyph: fresh[11], keywords: 'not a list' },
       { op: 'add', glyph: fresh[11], keywords: [1, 2] }, { op: 'add', glyph: fresh[11], extra: true }, { op: 'delete' }, { op: 'set', keywords: ['x'] }];
-    for (const a of crooked) {
-      const r = await icon(a);
-      ok(r.status >= 400 && r.status < 500, 'refused: ' + short(a), short(a) + ' answered ' + r.status + ' ' + short(r.text));
-    }
+    // Each crooked call written out, so that each check has a plain title of its own.
+    const refusedCall = async function (a) { const r = await icon(a); return { fine: r.status >= 400 && r.status < 500, why: short(a) + ' answered ' + r.status + ' ' + short(r.text) }; };
+    let rc;
+    rc = await refusedCall(crooked[0]); ok(rc.fine, 'refused: no op', rc.why);
+    rc = await refusedCall(crooked[1]); ok(rc.fine, 'refused: an op it does not know, drop', rc.why);
+    rc = await refusedCall(crooked[2]); ok(rc.fine, 'refused: an add with no glyph', rc.why);
+    rc = await refusedCall(crooked[3]); ok(rc.fine, 'refused: an add with an empty glyph', rc.why);
+    rc = await refusedCall(crooked[4]); ok(rc.fine, 'refused: an add with a glyph of spaces', rc.why);
+    rc = await refusedCall(crooked[5]); ok(rc.fine, 'refused: an add with a glyph that is a number', rc.why);
+    rc = await refusedCall(crooked[6]); ok(rc.fine, 'refused: an add with keywords that are no list', rc.why);
+    rc = await refusedCall(crooked[7]); ok(rc.fine, 'refused: an add with keywords that are numbers', rc.why);
+    rc = await refusedCall(crooked[8]); ok(rc.fine, 'refused: an add with an argument it does not name', rc.why);
+    rc = await refusedCall(crooked[9]); ok(rc.fine, 'refused: a delete with no glyph', rc.why);
+    rc = await refusedCall(crooked[10]); ok(rc.fine, 'refused: a set with no glyph', rc.why);
     await sleep(300);
     ok(read(SET) === t4, 'and the set is as it was', 'a crooked call changed the set');
 
@@ -131,7 +141,7 @@ test.startTest('nodeIcons.js: the icon set, one table, written only here (goal/G
     fs.writeFileSync(SET, JSON.stringify(big));
     const cut = await icon({ op: 'search', text: '' });
     ok(cut.status === 200 && cut.body && cut.body.more === true && items(cut).length > 0 && items(cut).length < 4000, 'a search of 4000 icons answers some, and more', 'search of 4000: ' + cut.status + ' ' + short({ more: cut.body && cut.body.more, n: items(cut).length }));
-    ok(Buffer.byteLength(cut.text) <= limits.ANSWER_MAX, 'within one answer (' + limits.ANSWER_MAX + ' bytes)', 'the answer is ' + Buffer.byteLength(cut.text) + ' bytes');
+    ok(Buffer.byteLength(cut.text) <= limits.ANSWER_MAX, 'it fits in one answer', 'the answer is ' + Buffer.byteLength(cut.text) + ' bytes, past ' + limits.ANSWER_MAX);
   } finally {
     try { if (node.child) node.child.kill(); } catch (e) { /* gone */ }
     try { if (node.root) fs.rmSync(node.root, { recursive: true, force: true }); } catch (e) { /* scratch */ }

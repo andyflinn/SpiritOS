@@ -66,7 +66,7 @@ test.startTest('appClient.js: the node asks its app servers');
     if (!up) { test.fail('the scratch node or its ' + NAME + ' server did not come up: nothing judged'); return; }
     const got = await post(NAME + '.big', {});
     const back = got.body && got.body.text;
-    ok(got.status === 200 && typeof back === 'string' && back.length === SIZE, 'the owner\'s ' + NAME + '.big of ' + SIZE + ' bytes, past ANSWER_MAX (' + limits.ANSWER_MAX + '), on loopback, comes back whole',
+    ok(got.status === 200 && typeof back === 'string' && back.length === SIZE, 'the owner\'s big answer, larger than one answer may be, comes back whole on loopback',
       'the owner\'s answer of ' + SIZE + ' bytes came back ' + got.status + ': ' + (typeof back === 'string' ? back.length + ' bytes' : short(got.text)));
 
     // ── TWO KINDS OF ROW: PERMANENT AND ONE-SHOT (goal/G43.19, box v16) ──
@@ -76,13 +76,13 @@ test.startTest('appClient.js: the node asks its app servers');
     test.subHeading('the box, 3: a one-shot row, the script spirit/app/<name>/<name>.js started per call; 8: the api tree asks it too');
     let verbs = [];
     try { verbs = Object.keys(require(path.join(s.run, 'spirit', 'app', 'icons', 'api.js')).verbs || {}); } catch (e) { verbs = []; }
-    ok(verbs.length >= 1, 'the world: icons\'s api.js names its verbs: ' + verbs.join(', '), 'icons has no api.js with verbs: no one-shot row to judge');
+    ok(verbs.length >= 1, 'the world: icons\'s api.js names its verbs', 'icons has no api.js with verbs: no one-shot row to judge');
     await H.sleep(1500);
-    ok(runsOf(s.root, NAME).length === 1, 'the world: the process list finds the permanent ' + NAME + '.js running, once', 'the process list finds ' + short(runsOf(s.root, NAME)) + ' of ' + NAME + '.js, so it cannot judge a run');
+    ok(runsOf(s.root, NAME).length === 1, 'the world: the process list finds the permanent zzbig.js running, once', 'the process list finds ' + short(runsOf(s.root, NAME)) + ' of ' + NAME + '.js, so it cannot judge a run');
     ok(runsOf(s.root, 'icons').length === 0, 'icons is switched on and nothing runs icons.js: no permanent process', 'icons.js runs while nothing asks it: ' + short(runsOf(s.root, 'icons')));
     const tree = await post('api', {});
     ok(tree.status === 200 && !!(tree.body && tree.body.icons), 'the api tree holds icons, its branch asked of its one-shot row', 'the tree: ' + tree.status + ' ' + short(tree.body && Object.keys(tree.body)));
-    ok(!!(tree.body && tree.body[NAME]), 'and the permanent row, ' + NAME + ', beside it, as today', 'the tree lost ' + NAME + ': ' + short(tree.body && Object.keys(tree.body)));
+    ok(!!(tree.body && tree.body[NAME]), 'and the permanent row, zzbig, beside it, as today', 'the tree lost ' + NAME + ': ' + short(tree.body && Object.keys(tree.body)));
     ok(await H.until(function () { return Promise.resolve(runsOf(s.root, 'icons').length === 0); }, 3000), 'the run that answered the tree has ended', 'icons.js still runs after the tree was answered: ' + short(runsOf(s.root, 'icons')));
 
     test.subHeading('the box, 9: "one run per app at a time: calls to the same one-shot app wait their turn"');
@@ -91,7 +91,7 @@ test.startTest('appClient.js: the node asks its app servers');
     await H.sleep(300);
     const { most, seen, pids } = await watch.stop();
     ok(many.every(function (r) { return r.status === 200 && !!(r.body && r.body.icons); }), 'six trees asked at once: each holds the icons branch', 'answers: ' + short(many.map(function (r) { return r.status + (r.body && r.body.icons ? '+icons' : '-icons'); })));
-    ok(seen >= 1 || pids >= 2, 'the world: runs of icons.js were seen while they were answered (' + seen + ' samples, ' + pids + ' pids its job named)', 'no run of icons.js was ever seen, so "one at a time" judged nothing');
+    ok(seen >= 1 || pids >= 2, 'the world: runs of icons.js were seen while they were answered', 'no run of icons.js was ever seen, so "one at a time" judged nothing (' + seen + ' samples, ' + pids + ' pids its job named)');
     ok(most <= 1, 'never two runs of icons.js at once', most + ' runs of icons.js at once');
     ok(await H.until(function () { return Promise.resolve(runsOf(s.root, 'icons').length === 0); }, 3000), 'and none is left running', 'icons.js runs after all were answered: ' + short(runsOf(s.root, 'icons')));
 
@@ -109,7 +109,7 @@ test.startTest('appClient.js: the node asks its app servers');
     if (process.platform === 'linux') {
       const perm = runsOf(s.root, NAME).map(cmdOf).filter(Boolean);
       ok(perm.length === 1 && /spirit[\\/]appServer\.js\s/.test(perm[0]) && perm[0].indexOf(path.join('spirit', 'app', NAME, NAME + '.js')) > perm[0].indexOf('appServer.js'),
-        'the permanent ' + NAME + ' runs as spirit/appServer.js with its path', 'the permanent ' + NAME + ' runs as ' + short(perm));
+        'the permanent zzbig runs as spirit/appServer.js with its path', 'the permanent ' + NAME + ' runs as ' + short(perm));
       // A run started for the call is a pid of the icons job's that was not its pid before the call; its command line is
       // read while it runs.
       const pidNow = function () { return post('job.get', { key: 'spirit.app.icons' }).then(function (r) { return String((r.body && r.body.job && r.body.job.data && r.body.job.data.pid) || ''); }); };
@@ -130,7 +130,7 @@ test.startTest('appClient.js: the node asks its app servers');
       looking = false;
       await sampler;
       ok(bad.status === 400, 'a call that breaks icons\'s api.js (op 42, not an id) is refused 400', 'icons.icon {op: 42} answered ' + bad.status + ' ' + short(bad.text));
-      ok(fresh.length >= 1, 'and it was refused by icons\'s own run, not by the node: a run of icons started for it (pid ' + fresh.join(', ') + ')', 'no run of icons started for the bad call (the job\'s pid stayed ' + (before || 'none') + '): the node refused it itself, running the app\'s api.js');
+      ok(fresh.length >= 1, 'and it was refused by icons\'s own run, not by the node: a run of icons started for it', 'no run of icons started for the bad call (the job\'s pid stayed ' + (before || 'none') + '): the node refused it itself, running the app\'s api.js');
       ok(seenCmd.length >= 1 && seenCmd.every(function (c) { return /spirit[\\/]appServer\.js\s/.test(c); }), 'that run is spirit/appServer.js with icons\'s path', 'the one-shot ran as ' + short(seenCmd.length ? seenCmd : 'nothing seen'));
     } else test.comment('the process command lines are read on Linux only; not judged here');
   } finally {

@@ -350,11 +350,17 @@ function gateSection() {
       }); });
     });
     asks += n;
-    ok(!wrong.length, 'a request of ' + title + ' (' + keys.join(', ') + '): ' + n + ' asks, its own value passes and every garbage one is refused',
-      title + ': ' + wrong.length + ' of ' + n + ' wrong, first: ' + short(wrong.slice(0, 4)));
+    const gated = !wrong.length;
+    const gatedWhy = title + ': ' + wrong.length + ' of ' + n + ' wrong, first: ' + short(wrong.slice(0, 4));
+    if (title === 'one string') ok(gated, 'a request of one string (name): its own value passes and every garbage one is refused', gatedWhy);
+    else if (title === 'a string and a number') ok(gated, 'a request of a string and a number (id, n): its own value passes and every garbage one is refused', gatedWhy);
+    else if (title === 'three of three types') ok(gated, 'a request of three of three types (id, on, n): its own value passes and every garbage one is refused', gatedWhy);
+    else if (title === 'four, an array among them') ok(gated, 'a request of four, an array among them (id, tags, on, n): its own value passes and every garbage one is refused', gatedWhy);
+    else if (title === 'five, an object among them') ok(gated, 'a request of five, an object among them (id, text, version, on, opts): its own value passes and every garbage one is refused', gatedWhy);
+    else if (title === 'one nested two deep') ok(gated, 'a request of one nested two deep (id, where): its own value passes and every garbage one is refused', gatedWhy);
   });
   test.comment('the shared gate was asked ' + asks + ' times, in memory');
-  ok(asks > 1000, 'every permutation of the box\'s kinds was thrown at it: ' + asks + ' asks', 'only ' + asks + ' asks were made');
+  ok(asks > 1000, 'every permutation of the box\'s kinds was thrown at it, more than a thousand asks', 'only ' + asks + ' asks were made');
   // A VERB WITH A CHECK OF ITS OWN SKIPS THE GATE (appServer.js route: its own accepts() if it has one, else matches):
   // its own check is the only one, so the gate's test does not cover it; the deep garbage goes to those verbs.
   const seen = [];
@@ -573,7 +579,12 @@ async function mountPart() {
       for (const what of Object.keys(outside)) {
         const r = await startIt(outside[what]);
         await sleep(1000);
-        ok(refused(r) && !fs.existsSync(ranElsewhere), what + ' is refused, and does not run', what + ': ' + short(r.text) + ', ran: ' + fs.existsSync(ranElsewhere));
+        const stopped = refused(r) && !fs.existsSync(ranElsewhere);
+        const stoppedWhy = what + ': ' + short(r.text) + ', ran: ' + fs.existsSync(ranElsewhere);
+        if (what === 'a script of the shell') ok(stopped, 'a script of the shell is refused, and does not run', stoppedWhy);
+        else if (what === 'a file at the top of spirit/app') ok(stopped, 'a file at the top of spirit/app is refused, and does not run', stoppedWhy);
+        else if (what === 'the same path in another tree') ok(stopped, 'the same path in another tree is refused, and does not run', stoppedWhy);
+        else if (what === 'a way out of an app\'s folder') ok(stopped, 'a way out of an app\'s folder is refused, and does not run', stoppedWhy);
       }
 
       test.subHeading('the box: "It starts one only if its <name>.json says node.mount true and spirit/state/<name>/node.json says active true"');
@@ -581,7 +592,7 @@ async function mountPart() {
       ok(quietOn.status === 200, 'the world: an app with node.mount false is activated', 'app.active on quiet: ' + short(quietOn.text));
       await sleep(3000);
       ok(!(await liveJob(N.base, 'spirit.app.quiet')), 'active with node.mount false and no data.js: no server job', 'a server job for an app with node.mount false and no data.js');
-      ok(!answers(await pingOf(N.base, 'quiet')), 'and its verb is not answered', 'an app with node.mount false and no data.js answered its verb');
+      ok(!answers(await pingOf(N.base, 'quiet')), 'and the quiet app\'s verb is not answered', 'an app with node.mount false and no data.js answered its verb');
 
       const otherPlace = await call(N.base, 'job.create', { command: 'node', args: ['shell/planted.js'], type: 'the red' });
       ok(otherPlace.status >= 400 && !!otherPlace.body && otherPlace.body.code === 'not-a-process', 'a script outside spirit/app is refused by name', 'job.create on shell/planted.js: ' + short(otherPlace.text));
@@ -631,18 +642,18 @@ async function mountPart() {
 
       test.subHeading('the box: "<name> is its family name in the node\'s flat table", its family at the top of the app folder, as spirit/<family>/ has it (goal/G43.27)');
       const tree = (await call(N.base, 'api')).body || {};
-      ok(!!tree[NAME] && !!tree[NAME].ping, 'the flat table holds ' + NAME + ' with its verb', 'the flat table: ' + short(Object.keys(tree)) + ', ' + NAME + ': ' + short(tree[NAME]));
+      ok(!!tree[NAME] && !!tree[NAME].ping, 'the flat table holds probe with its verb', 'the flat table: ' + short(Object.keys(tree)) + ', ' + NAME + ': ' + short(tree[NAME]));
       const iface = (await call(N.base, 'api', { family: NAME })).body || {};
       ok(String(iface.interface || '').indexOf(INTERFACE) !== -1, 'its interface is the api.js at the top of the app folder', 'api {family}: ' + short(iface));
       // No FS set (goal/G43.20; Andy: "those owner only FS verbs are no longer needed, because not the api ID ... ARE the path to
       // all those files"): the app folder's files are spirit.fs's, by the path its id names.
       ok(!Object.keys(tree[NAME] || {}).some(function (v) { return /^FS\./.test(v); }), 'its branch carries no FS set', 'its branch: ' + short(tree[NAME]));
       const note = (await call(N.base, 'fs.load', { path: 'spirit/app/' + NAME + '/note.txt' })).body || {};
-      ok(note.text === NOTE, 'its folder is spirit/app/' + NAME + '/, read through spirit.fs by that path', 'fs.load note.txt: ' + short(note));
+      ok(note.text === NOTE, 'its folder is spirit/app/probe/, read through spirit.fs by that path', 'fs.load note.txt: ' + short(note));
 
       test.subHeading('the box: "Its module id is spirit.app.<name>", "Jobs names it so."');
       const job = await liveJob(N.base, MODULE);
-      ok(!!job, 'its server job has the module id ' + MODULE, 'no live server job with that id: ' + short((await jobsOf(N.base)).filter(function (j) { return j.kind === 'server'; }).map(function (j) { return j.module; })));
+      ok(!!job, 'its server job has the module id spirit.app.probe', 'no live server job with that id: ' + short((await jobsOf(N.base)).filter(function (j) { return j.kind === 'server'; }).map(function (j) { return j.module; })));
 
       test.subHeading('the box: "node.mount true means a server the node runs, with no arguments"');
       const own = readJson(path.join(s.run, 'spirit', 'app', NAME, NAME + '.json')) || {};
@@ -653,10 +664,10 @@ async function mountPart() {
       if (POSIX) {
         // Where the door lies is the requirement here, so its path is read and never connected to: a call goes through the node.
         const door = path.join(state(), 'door.sock');
-        ok(fs.existsSync(door) && fs.statSync(door).isSocket(), 'its door is a socket in spirit/state/' + NAME + '/', 'no socket at spirit/state/' + NAME + '/door.sock');
+        ok(fs.existsSync(door) && fs.statSync(door).isSocket(), 'its door is a socket in spirit/state/probe/', 'no socket at spirit/state/' + NAME + '/door.sock');
         ok(!fs.existsSync(path.join(state(), 'data', 'door.sock')), 'and none in its data/', 'a door in its data/');
       }
-      ok(path.resolve(String(first.state)) === path.join(state(), 'data'), 'the node hands it spirit/state/' + NAME + '/data as --state', '--state: ' + short(first.state));
+      ok(path.resolve(String(first.state)) === path.join(state(), 'data'), 'the node hands it spirit/state/probe/data as --state', '--state: ' + short(first.state));
       ok(fs.existsSync(started), 'what it writes there is on disc', 'no started.txt in its data/');
 
       test.subHeading('the box: "active is the one switch, with no separate running field"');
@@ -812,7 +823,7 @@ async function stateCachePart() {
       return { seen: readJson(seen), saved: readJson(saved) };
     };
     try {
-      ok(id.length > 10, 'the world: the sender\'s file name is its node id, ' + id.slice(0, 12) + '…', 'no node id for the sender: nothing judged');
+      ok(id.length > 10, 'the world: the sender\'s file name is its node id', 'no node id for the sender, its file name ' + short(id) + ': nothing judged');
 
       test.subHeading('"cache ... was ALWAYS supposed to go into spirit/state/<name>/cache/": read back from there');
       const inCache = await startWith(cache);
@@ -884,8 +895,10 @@ if (CHILD) {
     FAMILIES.forEach(function (n) {
       const app = path.join(RUN, 'spirit', 'app', n);
       const moved = fs.existsSync(path.join(app, 'api.js')) && !fs.existsSync(path.join(app, 'family'));
-      ok(moved, n + ': its interface is spirit/app/' + n + '/api.js, no family/ is left',
-        n + ': api.js ' + fs.existsSync(path.join(app, 'api.js')) + ', family/ ' + fs.existsSync(path.join(app, 'family')));
+      const movedWhy = n + ': api.js ' + fs.existsSync(path.join(app, 'api.js')) + ', family/ ' + fs.existsSync(path.join(app, 'family'));
+      if (n === 'backup') ok(moved, 'backup: its interface is spirit/app/backup/api.js, no family/ is left', movedWhy);
+      else if (n === 'deskClient') ok(moved, 'deskClient: its interface is spirit/app/deskClient/api.js, no family/ is left', movedWhy);
+      else if (n === 'deskVerify') ok(moved, 'deskVerify: its interface is spirit/app/deskVerify/api.js, no family/ is left', movedWhy);
     });
     // Andy, goal/G41.28: "all, KILL deskAgent!". The server goes, its folder and every file that names it.
     const namers = codeFiles(RUN, []).filter(function (f) { return f !== FILE && f !== SELF_FILE && /['"]deskAgent\/|deskAgent\.js\b/.test(fs.readFileSync(f, 'utf8')); }).map(function (f) { return path.relative(RUN, f); });

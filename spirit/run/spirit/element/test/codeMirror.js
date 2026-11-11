@@ -115,7 +115,7 @@ test.startTest('codeMirror.js: the CodeMirror shell element, read and edit');
   ['lib/codemirror.css', 'theme/material-darker.css'].forEach(function (css) {
     const put = asked(w).some(function (p) { return p.replace(/^\/+/, '') === CM + css; });
     if (css === 'lib/codemirror.css') ok(put, 'its stylesheet lib/codemirror.css is put on the page', 'asked: ' + short(asked(w)));
-    else ok(put, 'its stylesheet theme/material-darker.css is put on the page', 'asked: ' + short(asked(w)));
+    else if (css === 'theme/material-darker.css') ok(put, 'its stylesheet theme/material-darker.css is put on the page', 'asked: ' + short(asked(w)));
   });
   ok(there && w.required.length > 0 && !asked(w).some(function (p) { return /index\.html/.test(p); }) && !/index\.html/.test(SRC.replace(/\/\/.*$/gm, '')),
     'nothing of it reads or asks for index.html', 'index.html asked: ' + short(asked(w).filter(function (p) { return /index\.html/.test(p); })));
@@ -179,7 +179,7 @@ test.startTest('codeMirror.js: the CodeMirror shell element, read and edit');
     else if (p === 'a.html') ok(coloured, 'a .html file is coloured as htmlmixed', why);
     else if (p === 'a.htm') ok(coloured, 'a .htm file is coloured as htmlmixed', why);
     else if (p === 'a.xml') ok(coloured, 'an .xml file is coloured as xml', why);
-    else ok(coloured, 'an .svg file is coloured as xml', why);
+    else if (p === 'a.svg') ok(coloured, 'an .svg file is coloured as xml', why);
   }
 
   test.subHeading('in a fill box it takes exactly the box (rule/16; Andy, on G41.7)');

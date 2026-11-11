@@ -62,22 +62,20 @@ test.subHeading('the join mail goes only to a link on the asker\'s own computer'
 // port is any port, or none, there is no user name or password (nothing before an @), the path starts with \"/\"".
 const NODE = 'http://127.0.0.1:65432/face.html?app=join';
 const a = ask(NODE);
-ok(a.said.ok === true && !!a.mail && a.mail.text.indexOf(NODE) !== -1, 'the link a node sends, ' + NODE + ', is mailed', 'said ' + short(a.said) + ', mail ' + short(a.mail));
+ok(a.said.ok === true && !!a.mail && a.mail.text.indexOf(NODE) !== -1, 'the link a node sends, http://127.0.0.1:65432/face.html?app=join, is mailed', 'said ' + short(a.said) + ', mail ' + short(a.mail));
 const b = ask('http://127.0.0.1/face.html?app=join');
 ok(b.said.ok === true && !!b.mail, 'with no port, it is mailed', 'said ' + short(b.said) + ', mail ' + short(b.mail));
-[
-  ['https://127.0.0.1:65432/face.html', 'the scheme is not exactly http'],
-  ['http://localhost:65432/face.html', 'the host is not exactly 127.0.0.1'],
-  ['http://evil.com/face.html', 'the host is another site'],
-  ['http://127.0.0.1.evil.com/face.html', 'a host that only begins with 127.0.0.1 (the box: "http://127.0.0.1.evil.com/")'],
-  ['http://127.0.0.1:1@evil.com/face.html', 'a user name and password before an @, the site evil.com (the box: "http://127.0.0.1:1@evil.com/")'],
-  ['http://user@127.0.0.1:65432/face.html', 'a user name before an @, even on 127.0.0.1'],
-  ['http://127.0.0.2:65432/face.html', 'another loopback address, not exactly 127.0.0.1'],
-  ['http://evil.com/?http://127.0.0.1:65432/', '127.0.0.1 only in the query, the site evil.com'],
-].forEach(function (c) {
-  const r = ask(c[0]);
-  ok(r.said.ok === false && !r.mail, 'refused, and no mail sent: ' + c[0] + ' (' + c[1] + ')', c[0] + ': said ' + short(r.said) + ', mail ' + (r.mail ? 'sent' : 'none'));
-});
+// Each link written out, so that each check has a plain title of its own.
+const mailed = function (link) { const r = ask(link); return { fine: r.said.ok === false && !r.mail, why: link + ': said ' + short(r.said) + ', mail ' + (r.mail ? 'sent' : 'none') }; };
+let m;
+m = mailed('https://127.0.0.1:65432/face.html'); ok(m.fine, 'refused, and no mail sent: https://127.0.0.1:65432/face.html (the scheme is not exactly http)', m.why);
+m = mailed('http://localhost:65432/face.html'); ok(m.fine, 'refused, and no mail sent: http://localhost:65432/face.html (the host is not exactly 127.0.0.1)', m.why);
+m = mailed('http://evil.com/face.html'); ok(m.fine, 'refused, and no mail sent: http://evil.com/face.html (the host is another site)', m.why);
+m = mailed('http://127.0.0.1.evil.com/face.html'); ok(m.fine, 'refused, and no mail sent: http://127.0.0.1.evil.com/face.html (a host that only begins with 127.0.0.1 (the box: "http://127.0.0.1.evil.com/"))', m.why);
+m = mailed('http://127.0.0.1:1@evil.com/face.html'); ok(m.fine, 'refused, and no mail sent: http://127.0.0.1:1@evil.com/face.html (a user name and password before an @, the site evil.com (the box: "http://127.0.0.1:1@evil.com/"))', m.why);
+m = mailed('http://user@127.0.0.1:65432/face.html'); ok(m.fine, 'refused, and no mail sent: http://user@127.0.0.1:65432/face.html (a user name before an @, even on 127.0.0.1)', m.why);
+m = mailed('http://127.0.0.2:65432/face.html'); ok(m.fine, 'refused, and no mail sent: http://127.0.0.2:65432/face.html (another loopback address, not exactly 127.0.0.1)', m.why);
+m = mailed('http://evil.com/?http://127.0.0.1:65432/'); ok(m.fine, 'refused, and no mail sent: http://evil.com/?http://127.0.0.1:65432/ (127.0.0.1 only in the query, the site evil.com)', m.why);
 
 test.subHeading('the login mail carries the token, where to paste it, and no link');
 // The box: "The login-email must not carry a link, so a fake login-email cannot lead the user to a look-alike site",
@@ -104,7 +102,7 @@ const lines = text.split(/\r?\n/).map(function (l) { return l.trim(); });
 const token = lines.filter(function (l) { return /^[A-Za-z0-9_-]{16,}$/.test(l); })[0] || '';
 ok(!!login, 'asked with the member\'s own email, the relay mails a login', 'no login mail was sent');
 ok(!!token, 'the token stands on a line of its own', 'no line holds the token alone: ' + short(text));
-ok(text.indexOf(SAY) !== -1, 'it says where to paste it: "' + SAY + '"', 'the mail says: ' + short(text));
+ok(text.indexOf(SAY) !== -1, 'it says where to paste the token: into the Log in field of the face, opened by its address and never from a link', 'the mail says: ' + short(text) + ', not ' + SAY);
 ok(!!login && !/https?:\/\/|www\./i.test(text), 'it holds no link', 'the mail holds a link: ' + short(text));
 ok(!!login && !/harbour\.relay\.example|relay\.example/i.test(text), 'it does not write out the face\'s address', 'the mail names the address: ' + short(text));
 let pasted = null;
@@ -148,7 +146,7 @@ async function longSearch() {
     if (s && s.ok === false) continue;
     seated += 1;
   }
-  ok(seated === MEMBERS, MEMBERS + ' members seated and connected', 'only ' + seated + ' of ' + MEMBERS + ' members were seated and connected: the search would rank fewer rows than asked');
+  ok(seated === MEMBERS, '500 members seated and connected', 'only ' + seated + ' of ' + MEMBERS + ' members were seated and connected: the search would rank fewer rows than asked');
   const relayKey = box.relayPublicKey();
   // The longest sealed search the wire takes: from 3/4 of the payload down, until the relay takes the post.
   const sealedAsk = function (len) {
@@ -159,7 +157,7 @@ async function longSearch() {
   let len = Math.floor(limits.PAYLOAD_MAX * 3 / 4); let text = sealedAsk(len);
   while (len > 1000 && Buffer.byteLength(text, 'utf8') > limits.PAYLOAD_MAX) { len -= 250; text = sealedAsk(len); }
   test.comment('the search: ' + len + ' characters, ' + Buffer.byteLength(text, 'utf8') + ' bytes sealed, over ' + seated + ' connected members (a longer one, as the report\'s 60,000, is refused 413 by the wire)');
-  ok(len >= 12000, 'the search thrown is ' + len + ' characters, near 3/4 of the payload', 'only ' + len + ' characters fit: the search judges too little');
+  ok(len >= 12000, 'the search thrown is at least 12000 characters, near 3/4 of the payload', 'only ' + len + ' characters fit: the search judges too little');
   let last = Date.now(); let gap = 0;
   const tick = setInterval(function () { const n = Date.now(); gap = Math.max(gap, n - last); last = n; }, 5);
   const before = heard.length;
@@ -171,7 +169,7 @@ async function longSearch() {
   clearInterval(tick);
   const worst = Math.max(gap, inPost);
   ok(!!posted && posted.ok !== false, 'the relay takes the search', 'the relay refused the search: ' + short(posted));
-  ok(worst <= GAP_MS, 'while it searches, the relay keeps answering: its event loop never waited more than ' + GAP_MS + ' ms (worst ' + worst + ' ms)',
+  ok(worst <= GAP_MS, 'while it searches, the relay keeps answering: its event loop never waited more than 250 ms',
     'IT HANGS: one search of ' + len + ' characters over ' + seated + ' members held the relay\'s event loop for ' + worst + ' ms (more than ' + GAP_MS + '), every other request on the relay waiting');
   ok(answered, 'and the search is answered', 'the search was never answered within 5 s');
   try { fs.rmSync(home, { recursive: true, force: true }); } catch (e) { /* scratch */ }

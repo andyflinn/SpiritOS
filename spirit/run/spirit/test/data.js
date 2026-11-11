@@ -262,7 +262,7 @@ if (typeof D.byteCap === 'function') {
   const kept = Object.keys(T().big || {});
   const bytes = kept.reduce(function (n, k) { return n + Buffer.byteLength(k) + Buffer.byteLength(JSON.stringify(T().big[k])); }, 0);
   ok(kept.length > 0 && kept.length < 10 && kept.indexOf('10') !== -1 && kept.indexOf('1') === -1 && bytes <= 300,
-    'past the cap the oldest writes go first, the newest stay, within the cap (' + kept.length + ' kept, ' + bytes + ' bytes)', 'kept: ' + kept.join(',') + ', ' + bytes + ' bytes');
+    'past the cap the oldest writes go first, the newest stay, within the cap', 'kept: ' + kept.join(',') + ', ' + bytes + ' bytes');
   ok(shed.calls.some(function (c) { return c[0] === W('big/1') && c[1] === undefined; }), 'a row shed is told as a delete', 'heard: ' + JSON.stringify(shed.calls.slice(0, 3)));
   const oldest = kept[0];
   V.set('big/' + oldest, { body: 'y' });
@@ -373,8 +373,8 @@ function cachesPart() {
   }
   const node = inNode();
   const page = inPage();
-  ok(!node.threw && Object.keys(node).length > 0, 'in node, as appServer runs it, the rows land in spirit.data.desk.cache: ' + Object.keys(node).join(', '), 'in node: ' + short(node));
-  ok(!page.threw && Object.keys(page).length > 0, 'in a page, as a page runs it, the rows land in spirit.data.desk.cache: ' + Object.keys(page).join(', '), 'in a page: ' + short(page));
+  ok(!node.threw && Object.keys(node).length > 0, 'in node, as appServer runs it, the rows land in spirit.data.desk.cache', 'in node: ' + short(node));
+  ok(!page.threw && Object.keys(page).length > 0, 'in a page, as a page runs it, the rows land in spirit.data.desk.cache', 'in a page: ' + short(page));
   ok(!node.threw && JSON.stringify(Object.keys(node)) === JSON.stringify([SERVER_ID]) && node[SERVER_ID] && typeof node[SERVER_ID] === 'object',
     'its top level is the serving node alone, its key in base64url (Q5)', 'in node the top level is ' + short(Object.keys(node)) + ', not ' + SERVER_ID);
   ok(!node.threw && !page.threw && JSON.stringify(node) === JSON.stringify(page), 'the same rows make the same spirit.data.desk.cache in node and in a page', 'node ' + short(node) + ' against the page ' + short(page));
@@ -479,8 +479,8 @@ async function familiesPart() {
     });
     test.subHeading('the box: "with the SAME pattern": one helper of spirit.data, called with the family\'s own name');
     const helpers = Object.keys(pattern).map(function (n) { return pattern[n]; }).filter(function (h, i, all) { return all.indexOf(h) === i; });
-    ok(Object.keys(pattern).length === FAMILIES.length, 'all ' + FAMILIES.length + ' call a helper with their own name', 'these do not: ' + FAMILIES.filter(function (n) { return !pattern[n]; }).join(', '));
-    ok(helpers.length === 1, 'and it is the one helper: ' + helpers.join(), 'not one helper: ' + short(helpers));
+    ok(Object.keys(pattern).length === FAMILIES.length, 'all eighteen families call a helper with their own name', 'these do not: ' + FAMILIES.filter(function (n) { return !pattern[n]; }).join(', '));
+    ok(helpers.length === 1, 'and it is the one helper', 'not one helper: ' + short(helpers));
 
     test.subHeading('the box: "instead of spirit.<name>Data": nothing in the tree\'s code says the old names');
     const offenders = { reader: [], manager: [], module: [] };
@@ -492,8 +492,8 @@ async function familiesPart() {
     });
     const say = function (l) { return l.length + ': ' + l.slice(0, 6).join(', ') + (l.length > 6 ? ', ...' : ''); };
     ok(!offenders.reader.length, 'no code reads a spirit.<name>Data', 'code that reads a spirit.<name>Data, ' + say(offenders.reader));
-    ok(!offenders.manager.length, 'no code names ' + OLD_MANAGER, 'code that names ' + OLD_MANAGER + ', ' + say(offenders.manager));
-    ok(!offenders.module.length, 'no code names ' + OLD_MODULE, 'code that names ' + OLD_MODULE + ', ' + say(offenders.module));
+    ok(!offenders.manager.length, 'no code names the old cache manager', 'code that names ' + OLD_MANAGER + ', ' + say(offenders.manager));
+    ok(!offenders.module.length, 'no code names the old data module', 'code that names ' + OLD_MODULE + ', ' + say(offenders.module));
 
     // ── ON A PAGE ───────────────────────────────────────────────────────────────────
     const chrome = H.findChrome();
@@ -537,7 +537,7 @@ async function familiesPart() {
         ' out.apps = out.keys.filter(function (k) { return S.app[k] && typeof S.app[k].createApp === "function"; });' +
         ' return JSON.stringify(out); }); })()');
       // goal/G43.32, the box: "Monitor too: its createApp becomes its element.js, and appSelector's createApp path goes."
-      ok(Array.isArray(onApp.apps) && !onApp.apps.length && Array.isArray(onApp.keys) && onApp.keys.length > 0, 'the world: spirit.app holds ' + (onApp.keys || []).length + ' keys, and no app with a createApp (monitor\'s is its element.js)', 'on spirit.app: ' + short(onApp));
+      ok(Array.isArray(onApp.apps) && !onApp.apps.length && Array.isArray(onApp.keys) && onApp.keys.length > 0, 'the world: spirit.app holds keys, and no app with a createApp (monitor\'s is its element.js)', 'on spirit.app: ' + short(onApp));
       ok(Array.isArray(onApp.words) && !onApp.words.length, 'and no helper there is a word', 'helpers on spirit.app that are words: ' + short(onApp.words || onApp));
 
       // Q5, "Does spirit.data.<name>.cache hold a level per node, as the tree does today?", Andy: "yes."

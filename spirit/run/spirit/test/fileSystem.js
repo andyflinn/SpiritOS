@@ -36,12 +36,25 @@ function cases(p) {
 }
 
 test.subHeading('fileServable: what it refuses, it refuses in every case');
-CLOSED_READ.forEach(function (c) {
-  ok(ask('fileServable', c[0]) === false, 'refused as written: ' + c[0] + ' (' + c[1] + ')', c[0] + ' (' + c[1] + ') is servable as written: the case below judges nothing');
-  cases(c[0]).forEach(function (v) {
-    ok(ask('fileServable', v) === false, 'refused: ' + v + ' (' + c[1] + ', another case)', v + ' (' + c[1] + ', another case) is servable: on a case-insensitive disk it opens ' + c[0]);
-  });
-});
+// Each path written out, as it stands and in its other cases, so that each check has a plain title of its own.
+ok(ask('fileServable', 'spirit/state/identity.json') === false, 'fileServable refuses, as written: spirit/state/identity.json (the node\'s private key)', 'spirit/state/identity.json (the node\'s private key) is servable as written: the case below judges nothing');
+ok(ask('fileServable', 'SPIRIT/STATE/IDENTITY.JSON') === false, 'fileServable refuses, in another case: SPIRIT/STATE/IDENTITY.JSON (the node\'s private key)', 'SPIRIT/STATE/IDENTITY.JSON (the node\'s private key, another case) is servable: on a case-insensitive disk it opens spirit/state/identity.json');
+ok(ask('fileServable', 'Spirit/State/Identity.json') === false, 'fileServable refuses, in another case: Spirit/State/Identity.json (the node\'s private key)', 'Spirit/State/Identity.json (the node\'s private key, another case) is servable: on a case-insensitive disk it opens spirit/state/identity.json');
+ok(ask('fileServable', 'spirit/app/desk/spirit/state/identity.json') === false, 'fileServable refuses, as written: spirit/app/desk/spirit/state/identity.json (an app server\'s private key, at depth)', 'spirit/app/desk/spirit/state/identity.json (an app server\'s private key, at depth) is servable as written: the case below judges nothing');
+ok(ask('fileServable', 'SPIRIT/APP/DESK/SPIRIT/STATE/IDENTITY.JSON') === false, 'fileServable refuses, in another case: SPIRIT/APP/DESK/SPIRIT/STATE/IDENTITY.JSON (an app server\'s private key, at depth)', 'SPIRIT/APP/DESK/SPIRIT/STATE/IDENTITY.JSON (an app server\'s private key, at depth, another case) is servable: on a case-insensitive disk it opens spirit/app/desk/spirit/state/identity.json');
+ok(ask('fileServable', 'Spirit/App/Desk/Spirit/State/Identity.json') === false, 'fileServable refuses, in another case: Spirit/App/Desk/Spirit/State/Identity.json (an app server\'s private key, at depth)', 'Spirit/App/Desk/Spirit/State/Identity.json (an app server\'s private key, at depth, another case) is servable: on a case-insensitive disk it opens spirit/app/desk/spirit/state/identity.json');
+ok(ask('fileServable', 'spirit/app/desk/relay-state/new.json') === false, 'fileServable refuses, as written: spirit/app/desk/relay-state/new.json (a file under an old relay-state, at depth)', 'spirit/app/desk/relay-state/new.json (a file under an old relay-state, at depth) is servable as written: the case below judges nothing');
+ok(ask('fileServable', 'SPIRIT/APP/DESK/RELAY-STATE/NEW.JSON') === false, 'fileServable refuses, in another case: SPIRIT/APP/DESK/RELAY-STATE/NEW.JSON (a file under an old relay-state, at depth)', 'SPIRIT/APP/DESK/RELAY-STATE/NEW.JSON (a file under an old relay-state, at depth, another case) is servable: on a case-insensitive disk it opens spirit/app/desk/relay-state/new.json');
+ok(ask('fileServable', 'Spirit/App/Desk/Relay-State/New.json') === false, 'fileServable refuses, in another case: Spirit/App/Desk/Relay-State/New.json (a file under an old relay-state, at depth)', 'Spirit/App/Desk/Relay-State/New.json (a file under an old relay-state, at depth, another case) is servable: on a case-insensitive disk it opens spirit/app/desk/relay-state/new.json');
+ok(ask('fileServable', 'spirit/server.js') === false, 'fileServable refuses, as written: spirit/server.js (a server script)', 'spirit/server.js (a server script) is servable as written: the case below judges nothing');
+ok(ask('fileServable', 'SPIRIT/SERVER.JS') === false, 'fileServable refuses, in another case: SPIRIT/SERVER.JS (a server script)', 'SPIRIT/SERVER.JS (a server script, another case) is servable: on a case-insensitive disk it opens spirit/server.js');
+ok(ask('fileServable', 'Spirit/Server.js') === false, 'fileServable refuses, in another case: Spirit/Server.js (a server script)', 'Spirit/Server.js (a server script, another case) is servable: on a case-insensitive disk it opens spirit/server.js');
+ok(ask('fileServable', 'spirit/DEBUG/garbageArguments.js') === false, 'fileServable refuses, as written: spirit/DEBUG/garbageArguments.js (the DEBUG folder)', 'spirit/DEBUG/garbageArguments.js (the DEBUG folder) is servable as written: the case below judges nothing');
+ok(ask('fileServable', 'SPIRIT/DEBUG/GARBAGEARGUMENTS.JS') === false, 'fileServable refuses, in another case: SPIRIT/DEBUG/GARBAGEARGUMENTS.JS (the DEBUG folder)', 'SPIRIT/DEBUG/GARBAGEARGUMENTS.JS (the DEBUG folder, another case) is servable: on a case-insensitive disk it opens spirit/DEBUG/garbageArguments.js');
+ok(ask('fileServable', 'Spirit/DEBUG/GarbageArguments.js') === false, 'fileServable refuses, in another case: Spirit/DEBUG/GarbageArguments.js (the DEBUG folder)', 'Spirit/DEBUG/GarbageArguments.js (the DEBUG folder, another case) is servable: on a case-insensitive disk it opens spirit/DEBUG/garbageArguments.js');
+ok(ask('fileServable', 'spirit/app/desk/element/desk/desk.js.sidecar.json') === false, 'fileServable refuses, as written: spirit/app/desk/element/desk/desk.js.sidecar.json (a sidecar\'s own path)', 'spirit/app/desk/element/desk/desk.js.sidecar.json (a sidecar\'s own path) is servable as written: the case below judges nothing');
+ok(ask('fileServable', 'SPIRIT/APP/DESK/ELEMENT/DESK/DESK.JS.SIDECAR.JSON') === false, 'fileServable refuses, in another case: SPIRIT/APP/DESK/ELEMENT/DESK/DESK.JS.SIDECAR.JSON (a sidecar\'s own path)', 'SPIRIT/APP/DESK/ELEMENT/DESK/DESK.JS.SIDECAR.JSON (a sidecar\'s own path, another case) is servable: on a case-insensitive disk it opens spirit/app/desk/element/desk/desk.js.sidecar.json');
+ok(ask('fileServable', 'Spirit/App/Desk/Element/Desk/Desk.js.sidecar.json') === false, 'fileServable refuses, in another case: Spirit/App/Desk/Element/Desk/Desk.js.sidecar.json (a sidecar\'s own path)', 'Spirit/App/Desk/Element/Desk/Desk.js.sidecar.json (a sidecar\'s own path, another case) is servable: on a case-insensitive disk it opens spirit/app/desk/element/desk/desk.js.sidecar.json');
 
 test.subHeading('fileWritable: what it refuses, it refuses in every case');
 const CLOSED_WRITE = [
@@ -51,37 +64,51 @@ const CLOSED_WRITE = [
   ['spirit/element/icon.js', 'a core file under spirit/element'],
   ['spirit/app/desk/element/desk/desk.js.sidecar.json', 'a sidecar\'s own path'],
 ];
-CLOSED_WRITE.forEach(function (c) {
-  ok(ask('fileWritable', c[0]) === false, 'refused as written: ' + c[0] + ' (' + c[1] + ')', c[0] + ' (' + c[1] + ') is writable as written: the case below judges nothing');
-  cases(c[0]).forEach(function (v) {
-    ok(ask('fileWritable', v) === false, 'refused: ' + v + ' (' + c[1] + ', another case)', v + ' (' + c[1] + ', another case) is writable: on a case-insensitive disk it writes ' + c[0]);
-  });
-});
+// Each path written out, as it stands and in its other cases, so that each check has a plain title of its own.
+ok(ask('fileWritable', 'spirit/state/identity.json') === false, 'fileWritable refuses, as written: spirit/state/identity.json (the node\'s private key)', 'spirit/state/identity.json (the node\'s private key) is writable as written: the case below judges nothing');
+ok(ask('fileWritable', 'SPIRIT/STATE/IDENTITY.JSON') === false, 'fileWritable refuses, in another case: SPIRIT/STATE/IDENTITY.JSON (the node\'s private key)', 'SPIRIT/STATE/IDENTITY.JSON (the node\'s private key, another case) is writable: on a case-insensitive disk it writes spirit/state/identity.json');
+ok(ask('fileWritable', 'Spirit/State/Identity.json') === false, 'fileWritable refuses, in another case: Spirit/State/Identity.json (the node\'s private key)', 'Spirit/State/Identity.json (the node\'s private key, another case) is writable: on a case-insensitive disk it writes spirit/state/identity.json');
+ok(ask('fileWritable', 'spirit/state/new.json') === false, 'fileWritable refuses, as written: spirit/state/new.json (anything under relay-state)', 'spirit/state/new.json (anything under relay-state) is writable as written: the case below judges nothing');
+ok(ask('fileWritable', 'SPIRIT/STATE/NEW.JSON') === false, 'fileWritable refuses, in another case: SPIRIT/STATE/NEW.JSON (anything under relay-state)', 'SPIRIT/STATE/NEW.JSON (anything under relay-state, another case) is writable: on a case-insensitive disk it writes spirit/state/new.json');
+ok(ask('fileWritable', 'Spirit/State/New.json') === false, 'fileWritable refuses, in another case: Spirit/State/New.json (anything under relay-state)', 'Spirit/State/New.json (anything under relay-state, another case) is writable: on a case-insensitive disk it writes spirit/state/new.json');
+ok(ask('fileWritable', 'spirit/server.js') === false, 'fileWritable refuses, as written: spirit/server.js (a core file)', 'spirit/server.js (a core file) is writable as written: the case below judges nothing');
+ok(ask('fileWritable', 'SPIRIT/SERVER.JS') === false, 'fileWritable refuses, in another case: SPIRIT/SERVER.JS (a core file)', 'SPIRIT/SERVER.JS (a core file, another case) is writable: on a case-insensitive disk it writes spirit/server.js');
+ok(ask('fileWritable', 'Spirit/Server.js') === false, 'fileWritable refuses, in another case: Spirit/Server.js (a core file)', 'Spirit/Server.js (a core file, another case) is writable: on a case-insensitive disk it writes spirit/server.js');
+ok(ask('fileWritable', 'spirit/element/icon.js') === false, 'fileWritable refuses, as written: spirit/element/icon.js (a core file under spirit/element)', 'spirit/element/icon.js (a core file under spirit/element) is writable as written: the case below judges nothing');
+ok(ask('fileWritable', 'SPIRIT/ELEMENT/ICON.JS') === false, 'fileWritable refuses, in another case: SPIRIT/ELEMENT/ICON.JS (a core file under spirit/element)', 'SPIRIT/ELEMENT/ICON.JS (a core file under spirit/element, another case) is writable: on a case-insensitive disk it writes spirit/element/icon.js');
+ok(ask('fileWritable', 'Spirit/Element/Icon.js') === false, 'fileWritable refuses, in another case: Spirit/Element/Icon.js (a core file under spirit/element)', 'Spirit/Element/Icon.js (a core file under spirit/element, another case) is writable: on a case-insensitive disk it writes spirit/element/icon.js');
+ok(ask('fileWritable', 'spirit/app/desk/element/desk/desk.js.sidecar.json') === false, 'fileWritable refuses, as written: spirit/app/desk/element/desk/desk.js.sidecar.json (a sidecar\'s own path)', 'spirit/app/desk/element/desk/desk.js.sidecar.json (a sidecar\'s own path) is writable as written: the case below judges nothing');
+ok(ask('fileWritable', 'SPIRIT/APP/DESK/ELEMENT/DESK/DESK.JS.SIDECAR.JSON') === false, 'fileWritable refuses, in another case: SPIRIT/APP/DESK/ELEMENT/DESK/DESK.JS.SIDECAR.JSON (a sidecar\'s own path)', 'SPIRIT/APP/DESK/ELEMENT/DESK/DESK.JS.SIDECAR.JSON (a sidecar\'s own path, another case) is writable: on a case-insensitive disk it writes spirit/app/desk/element/desk/desk.js.sidecar.json');
+ok(ask('fileWritable', 'Spirit/App/Desk/Element/Desk/Desk.js.sidecar.json') === false, 'fileWritable refuses, in another case: Spirit/App/Desk/Element/Desk/Desk.js.sidecar.json (a sidecar\'s own path)', 'Spirit/App/Desk/Element/Desk/Desk.js.sidecar.json (a sidecar\'s own path, another case) is writable: on a case-insensitive disk it writes spirit/app/desk/element/desk/desk.js.sidecar.json');
 
 // WINDOWS SPELLINGS OF ONE FILE (goal/G41.30, the review: "Three Windows spellings still pass both checks: 8.3 short names
 // like RELAY-~1/IDENTI~1.JSO, which can reach the private key wherever short names are on; folder names ending in a
 // dot or space; and ::$DATA. The fix is to refuse any path segment with ~ plus a digit, a :, or a trailing dot or
 // space."). Windows opens the same file under each; so each is refused by both gates.
 test.subHeading('Windows spellings of a closed path are refused, for reading and for writing');
-[
-  ['RELAY-~1/IDENTI~1.JSO', 'an 8.3 short name of spirit/state/identity.json'],
-  ['SPIRIT~1/SERVER~1.JS', 'an 8.3 short name of spirit/server.js'],
-  ['relay-state./identity.json', 'a folder name ending in a dot'],
-  ['relay-state /new.json', 'a folder name ending in a space'],
-  ['spirit./server.js', 'a core folder ending in a dot'],
-  ['spirit/server.js.', 'a file name ending in a dot'],
-  ['spirit/element/icon.js ', 'a file name ending in a space'],
-  ['spirit/server.js::$DATA', 'the file\'s data stream, ::$DATA'],
-  ['spirit/state/identity.json:secret', 'a named stream, a : in the name'],
-].forEach(function (c) {
-  ok(ask('fileServable', c[0]) === false, 'not servable: ' + JSON.stringify(c[0]) + ' (' + c[1] + ')', JSON.stringify(c[0]) + ' (' + c[1] + ') is servable: on Windows it opens the closed file');
-  ok(ask('fileWritable', c[0]) === false, 'not writable: ' + JSON.stringify(c[0]) + ' (' + c[1] + ')', JSON.stringify(c[0]) + ' (' + c[1] + ') is writable: on Windows it writes the closed file');
-});
+// Each spelling written out, so that each check has a plain title of its own.
+ok(ask('fileServable', 'RELAY-~1/IDENTI~1.JSO') === false, 'not servable: "RELAY-~1/IDENTI~1.JSO" (an 8.3 short name of spirit/state/identity.json)', '"RELAY-~1/IDENTI~1.JSO" (an 8.3 short name of spirit/state/identity.json) is servable: on Windows it opens the closed file');
+ok(ask('fileWritable', 'RELAY-~1/IDENTI~1.JSO') === false, 'not writable: "RELAY-~1/IDENTI~1.JSO" (an 8.3 short name of spirit/state/identity.json)', '"RELAY-~1/IDENTI~1.JSO" (an 8.3 short name of spirit/state/identity.json) is writable: on Windows it writes the closed file');
+ok(ask('fileServable', 'SPIRIT~1/SERVER~1.JS') === false, 'not servable: "SPIRIT~1/SERVER~1.JS" (an 8.3 short name of spirit/server.js)', '"SPIRIT~1/SERVER~1.JS" (an 8.3 short name of spirit/server.js) is servable: on Windows it opens the closed file');
+ok(ask('fileWritable', 'SPIRIT~1/SERVER~1.JS') === false, 'not writable: "SPIRIT~1/SERVER~1.JS" (an 8.3 short name of spirit/server.js)', '"SPIRIT~1/SERVER~1.JS" (an 8.3 short name of spirit/server.js) is writable: on Windows it writes the closed file');
+ok(ask('fileServable', 'relay-state./identity.json') === false, 'not servable: "relay-state./identity.json" (a folder name ending in a dot)', '"relay-state./identity.json" (a folder name ending in a dot) is servable: on Windows it opens the closed file');
+ok(ask('fileWritable', 'relay-state./identity.json') === false, 'not writable: "relay-state./identity.json" (a folder name ending in a dot)', '"relay-state./identity.json" (a folder name ending in a dot) is writable: on Windows it writes the closed file');
+ok(ask('fileServable', 'relay-state /new.json') === false, 'not servable: "relay-state /new.json" (a folder name ending in a space)', '"relay-state /new.json" (a folder name ending in a space) is servable: on Windows it opens the closed file');
+ok(ask('fileWritable', 'relay-state /new.json') === false, 'not writable: "relay-state /new.json" (a folder name ending in a space)', '"relay-state /new.json" (a folder name ending in a space) is writable: on Windows it writes the closed file');
+ok(ask('fileServable', 'spirit./server.js') === false, 'not servable: "spirit./server.js" (a core folder ending in a dot)', '"spirit./server.js" (a core folder ending in a dot) is servable: on Windows it opens the closed file');
+ok(ask('fileWritable', 'spirit./server.js') === false, 'not writable: "spirit./server.js" (a core folder ending in a dot)', '"spirit./server.js" (a core folder ending in a dot) is writable: on Windows it writes the closed file');
+ok(ask('fileServable', 'spirit/server.js.') === false, 'not servable: "spirit/server.js." (a file name ending in a dot)', '"spirit/server.js." (a file name ending in a dot) is servable: on Windows it opens the closed file');
+ok(ask('fileWritable', 'spirit/server.js.') === false, 'not writable: "spirit/server.js." (a file name ending in a dot)', '"spirit/server.js." (a file name ending in a dot) is writable: on Windows it writes the closed file');
+ok(ask('fileServable', 'spirit/element/icon.js ') === false, 'not servable: "spirit/element/icon.js " (a file name ending in a space)', '"spirit/element/icon.js " (a file name ending in a space) is servable: on Windows it opens the closed file');
+ok(ask('fileWritable', 'spirit/element/icon.js ') === false, 'not writable: "spirit/element/icon.js " (a file name ending in a space)', '"spirit/element/icon.js " (a file name ending in a space) is writable: on Windows it writes the closed file');
+ok(ask('fileServable', 'spirit/server.js::$DATA') === false, 'not servable: "spirit/server.js::$DATA" (the file\'s data stream, ::$DATA)', '"spirit/server.js::$DATA" (the file\'s data stream, ::$DATA) is servable: on Windows it opens the closed file');
+ok(ask('fileWritable', 'spirit/server.js::$DATA') === false, 'not writable: "spirit/server.js::$DATA" (the file\'s data stream, ::$DATA)', '"spirit/server.js::$DATA" (the file\'s data stream, ::$DATA) is writable: on Windows it writes the closed file');
+ok(ask('fileServable', 'spirit/state/identity.json:secret') === false, 'not servable: "spirit/state/identity.json:secret" (a named stream, a : in the name)', '"spirit/state/identity.json:secret" (a named stream, a : in the name) is servable: on Windows it opens the closed file');
+ok(ask('fileWritable', 'spirit/state/identity.json:secret') === false, 'not writable: "spirit/state/identity.json:secret" (a named stream, a : in the name)', '"spirit/state/identity.json:secret" (a named stream, a : in the name) is writable: on Windows it writes the closed file');
 
 test.subHeading('what is open stays open');
-[['index.html', 'fileServable'], ['spirit/element/icon.js', 'fileServable']].forEach(function (c) {
-  ok(ask(c[1], c[0]) === true, c[1] + ' keeps ' + c[0] + ' open', c[1] + ' closed ' + c[0] + ': the fix went too wide');
-});
+ok(ask('fileServable', 'index.html') === true, 'fileServable keeps index.html open', 'fileServable closed index.html: the fix went too wide');
+ok(ask('fileServable', 'spirit/element/icon.js') === true, 'fileServable keeps spirit/element/icon.js open', 'fileServable closed spirit/element/icon.js: the fix went too wide');
 
 // THE NOPREFERENCES PART, once fileSystem-noPreferences.js.
 async function noPreferencesPart() {
@@ -147,21 +174,28 @@ function vendoredFoldersPart() {
     return arr && arr.length === VENDORED.length && arr.every(function (x) { return typeof x === 'string'; }) &&
       JSON.stringify(arr.map(trim).sort()) === JSON.stringify(VENDORED.slice().sort());
   })[0] || '';
-  ok(!!listName, 'fileSystem.js exports the vendored folders, ' + listName + ': ' + VENDORED.join(', '), 'fileSystem.js exports no list of exactly ' + VENDORED.join(', ') + ' (it exports ' + short(Object.keys(fsm)) + ')');
+  ok(!!listName, 'it exports the vendored folders, spirit/job/chokidar, spirit/job/readdirp and spirit/element/codeMirror, as one list', 'fileSystem.js exports no list of exactly ' + VENDORED.join(', ') + ' (it exports ' + short(Object.keys(fsm)) + ')');
   // Not listed in Files: the node's file scan, from spirit/run.
   const scanned = typeof fsm.scanFolder === 'function' ? fsm.scanFolder(RUN, []).map(function (e) { return path.relative(RUN, path.join(e.parentPath, e.name)).split(path.sep).join('/'); }) : [];
-  ok(scanned.indexOf('spirit/job/api.js') !== -1, 'the world: the node\'s file scan lists ' + scanned.length + ' entries, spirit/job/api.js among them', 'the scan lists ' + scanned.length + ' entries, no spirit/job/api.js: nothing judged');
-  VENDORED.forEach(function (v) {
+  ok(scanned.indexOf('spirit/job/api.js') !== -1, 'the world: the node\'s file scan lists spirit/job/api.js', 'the scan lists ' + scanned.length + ' entries, no spirit/job/api.js: nothing judged');
+  const scanOf = function (v) {
     const inside = scanned.filter(function (s) { return s === v || s.indexOf(v + '/') === 0; });
     const there = fs.existsSync(path.join(RUN, v));
-    ok(there && !inside.length, 'the file scan lists nothing of ' + v, there ? 'the file scan lists ' + inside.length + ' entries of ' + v + ', e.g. ' + short(inside.slice(0, 3)) : v + ' is not there to judge');
-  });
+    return { fine: there && !inside.length, why: there ? 'the file scan lists ' + inside.length + ' entries of ' + v + ', e.g. ' + short(inside.slice(0, 3)) : v + ' is not there to judge' };
+  };
+  let sv;
+  sv = scanOf('spirit/job/chokidar'); ok(sv.fine, 'the file scan lists nothing of spirit/job/chokidar', sv.why);
+  sv = scanOf('spirit/job/readdirp'); ok(sv.fine, 'the file scan lists nothing of spirit/job/readdirp', sv.why);
+  sv = scanOf('spirit/element/codeMirror'); ok(sv.fine, 'the file scan lists nothing of spirit/element/codeMirror', sv.why);
   // Served, never written. Andy, Q1 (the page loads CodeMirror from spirit/element/codeMirror/): "servable but not writeable."
-  ['spirit/job/chokidar/index.js', 'spirit/job/readdirp/index.js', 'spirit/element/codeMirror/lib/codemirror.js'].forEach(function (f) {
+  const servedOnly = function (f) {
     const there = fs.existsSync(path.join(RUN, f));
-    ok(there && fsm.fileServable(f) && !fsm.fileWritable(f), f + ' is servable but not writable',
-      there ? f + ': servable ' + fsm.fileServable(f) + ', writable ' + fsm.fileWritable(f) : f + ' is not there to judge');
-  });
+    return { fine: there && fsm.fileServable(f) && !fsm.fileWritable(f), why: there ? f + ': servable ' + fsm.fileServable(f) + ', writable ' + fsm.fileWritable(f) : f + ' is not there to judge' };
+  };
+  let so;
+  so = servedOnly('spirit/job/chokidar/index.js'); ok(so.fine, 'spirit/job/chokidar/index.js is servable but not writable', so.why);
+  so = servedOnly('spirit/job/readdirp/index.js'); ok(so.fine, 'spirit/job/readdirp/index.js is servable but not writable', so.why);
+  so = servedOnly('spirit/element/codeMirror/lib/codemirror.js'); ok(so.fine, 'spirit/element/codeMirror/lib/codemirror.js is servable but not writable', so.why);
   // The walkers: every tracked script that skipped node_modules at BASE, and the ones that skipped codeMirror beside it.
   const atBase = git('ls-tree -r --name-only ' + BASE).split('\n').filter(function (f) { return /\.js$/.test(f) && f.indexOf(OLD) !== 0; });
   const grepped = git('grep -l -e node_modules ' + BASE + ' -- "*.js"').split('\n').filter(Boolean).map(function (l) { return l.replace(BASE + ':', ''); });
@@ -171,14 +205,25 @@ function vendoredFoldersPart() {
   });
   // The old system's walkers under spirit/test/ went with it (e9c6cb8c, "KILL!"): what is left in the tree is judged, 16 today.
   ok(walkers.length > 10 && walkers.indexOf('spirit/run/spirit/fileSystem.js') !== -1 && walkers.indexOf('spirit/run/spirit/word.js') !== -1,
-    'the world: ' + walkers.length + ' walkers skipped node_modules at ' + BASE + ', fileSystem.js and word.js among them', 'only ' + walkers.length + ' walkers found at ' + BASE + ': nothing judged');
+    'the world: more than ten walkers skipped node_modules at the base commit, fileSystem.js and word.js among them', 'only ' + walkers.length + ' walkers found at ' + BASE + ': nothing judged');
   const CM_SKIPPERS = ['spirit/run/spirit/test/testModule.js', 'spirit/run/spirit/test/spirit-sibling-generalRules.js', 'spirit/run/spirit/test/spirit-sibling-testReachRules.js', 'spirit/run/spirit/test/test/testReport-verifier.js'];
-  walkers.forEach(function (f) {
+  // Each walker found at the base commit written out, so that each check has a plain title of its own.
+  const walks = function (f) {
     const c = code(fs.readFileSync(path.join(REPO, f), 'utf8'));
     const own = /node_modules/.test(c.replace(/shell\\?\/node_modules/g, '')) ? 'node_modules' : (CM_SKIPPERS.indexOf(f) !== -1 && /codeMirror|codemirror/.test(c) ? 'codeMirror' : '');
     const reads = !!listName && new RegExp('\\b' + listName + '\\b').test(c) && (f === 'spirit/run/spirit/fileSystem.js' || /fileSystem/.test(c));
-    ok(!own && reads, f + ': reads ' + (listName || 'the list') + ', no skip of its own', f + ': ' + (own ? 'still skips ' + own + ' itself' : '') + (own && !reads ? ', and ' : '') + (!reads ? 'does not read fileSystem.js\'s list' : ''));
-  });
+    return { fine: !own && reads, why: f + ': ' + (own ? 'still skips ' + own + ' itself' : '') + (own && !reads ? ', and ' : '') + (!reads ? 'does not read fileSystem.js\'s list' : '') };
+  };
+  let wk;
+  wk = walks('spirit/run/spirit/element/test/codeMirror.js'); ok(wk.fine, 'spirit/run/spirit/element/test/codeMirror.js: reads VENDORED_FOLDERS, no skip of its own', wk.why);
+  wk = walks('spirit/run/spirit/element/test/fstat.js'); ok(wk.fine, 'spirit/run/spirit/element/test/fstat.js: reads VENDORED_FOLDERS, no skip of its own', wk.why);
+  wk = walks('spirit/run/spirit/element/test/panel.js'); ok(wk.fine, 'spirit/run/spirit/element/test/panel.js: reads VENDORED_FOLDERS, no skip of its own', wk.why);
+  wk = walks('spirit/run/spirit/fileSystem.js'); ok(wk.fine, 'spirit/run/spirit/fileSystem.js: reads VENDORED_FOLDERS, no skip of its own', wk.why);
+  wk = walks('spirit/run/spirit/test/appServer.js'); ok(wk.fine, 'spirit/run/spirit/test/appServer.js: reads VENDORED_FOLDERS, no skip of its own', wk.why);
+  wk = walks('spirit/run/spirit/test/word.js'); ok(wk.fine, 'spirit/run/spirit/test/word.js: reads VENDORED_FOLDERS, no skip of its own', wk.why);
+  wk = walks('spirit/run/spirit/word.js'); ok(wk.fine, 'spirit/run/spirit/word.js: reads VENDORED_FOLDERS, no skip of its own', wk.why);
+  wk = walks('spirit/test/tools/inspect.js'); ok(wk.fine, 'spirit/test/tools/inspect.js: reads VENDORED_FOLDERS, no skip of its own', wk.why);
+  wk = walks('spirit/test/tools/wirePaths.js'); ok(wk.fine, 'spirit/test/tools/wirePaths.js: reads VENDORED_FOLDERS, no skip of its own', wk.why);
 }
 
 (async function () {

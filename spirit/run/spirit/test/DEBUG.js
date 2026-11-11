@@ -87,9 +87,9 @@ const GARBAGE = '/DEBUG/spirit/app/deskVerify/deskVerify/garbageArguments.json';
 
 // What a page must be: the most minimal page for one module.
 function judgePage(r, module, where) {
-  ok(r.status === 200 && /text\/html/.test(r.type), where + ': the page is answered, 200, as HTML', where + ': it answered ' + r.status + ' ' + r.type + ' ' + short(r.text));
+  ok(r.status === 200 && /text\/html/.test(r.type), 'the node: the page is answered, 200, as HTML', where + ': it answered ' + r.status + ' ' + r.type + ' ' + short(r.text));
   if (r.status !== 200) return;
-  ok(r.text.indexOf('<!--') === -1, where + ': the page has no comments', where + ': the page has a comment');
+  ok(r.text.indexOf('<!--') === -1, 'the node: the page has no comments', where + ': the page has a comment');
   const tags = r.text.match(/<script\b[^>]*>/gi) || [];
   const loading = tags.filter(function (t) { return /\bsrc\s*=/.test(t); });
   ok(loading.length === 1 && /src\s*=\s*["']\/spirit\.js["']/.test(loading[0]), where + ': one script tag loads a file, and it loads /spirit.js', where + ': the script files it loads: ' + short(loading));
@@ -137,35 +137,54 @@ async function garbageRules(gen, PAYLOAD_MAX) {
   const STRING_KEYS = Object.keys(P5).filter(function (k) { return typeof P5[k] === 'string'; });
   const badString = function (x) { return typeof x === 'string' && (/[\u0000-\u001F]|[\uD800-\uDFFF]|\.\.\/|"[\s\S]*\\|\\[\s\S]*"/.test(x) || x.length > 1000); };
   const badAlone = function (a) { return fitsShape(P5, a) && STRING_KEYS.some(function (k) { return badString(a[k]); }); };
-  ok(args5.length > 0 && args5.every(function (a) { return !fitsShape(P5, a) || badAlone(a); }), 'every entry breaks the shape, or is a bad string alone in the shape kept (' + args5.length + ' entries)',
+  ok(args5.length > 0 && args5.every(function (a) { return !fitsShape(P5, a) || badAlone(a); }), 'every entry breaks the shape, or is a bad string alone in the shape kept',
     args5.length ? 'an entry fits the shape and carries no bad string, a call a handler could act on: ' + short(args5.filter(function (a) { return fitsShape(P5, a) && !badAlone(a); })[0]) : 'no garbage was made');
-  Object.keys(P5).forEach(function (k) {
+  // Each of the five arguments written out, so that each check has a plain title of its own.
+  const kindsOf = function (k) {
     const seen = {}; plain.forEach(function (a) { if (Object.prototype.hasOwnProperty.call(a, k)) seen[kindOf(a[k])] = true; });
     const lacking = KINDS.filter(function (t) { return !seen[t]; });
-    ok(!lacking.length, 'argument ' + k + ' is filled with every type JSON.parse makes: ' + KINDS.join(', '), 'argument ' + k + ' is never a ' + lacking.join(', '));
-    ok(plain.some(function (a) { return !Object.prototype.hasOwnProperty.call(a, k); }), 'argument ' + k + ' is left out ("missing")', 'no entry leaves argument ' + k + ' out');
-  });
+    return { lacking: lacking, left: plain.some(function (a) { return !Object.prototype.hasOwnProperty.call(a, k); }) };
+  };
+  let ko;
+  ko = kindsOf('a');
+  ok(!ko.lacking.length, 'argument a is filled with every type JSON.parse makes: string, number, boolean, null, object and array', 'argument a is never a ' + ko.lacking.join(', '));
+  ok(ko.left, 'argument a is left out ("missing")', 'no entry leaves argument a out');
+  ko = kindsOf('b');
+  ok(!ko.lacking.length, 'argument b is filled with every type JSON.parse makes: string, number, boolean, null, object and array', 'argument b is never a ' + ko.lacking.join(', '));
+  ok(ko.left, 'argument b is left out ("missing")', 'no entry leaves argument b out');
+  ko = kindsOf('c');
+  ok(!ko.lacking.length, 'argument c is filled with every type JSON.parse makes: string, number, boolean, null, object and array', 'argument c is never a ' + ko.lacking.join(', '));
+  ok(ko.left, 'argument c is left out ("missing")', 'no entry leaves argument c out');
+  ko = kindsOf('d');
+  ok(!ko.lacking.length, 'argument d is filled with every type JSON.parse makes: string, number, boolean, null, object and array', 'argument d is never a ' + ko.lacking.join(', '));
+  ok(ko.left, 'argument d is left out ("missing")', 'no entry leaves argument d out');
+  ko = kindsOf('e');
+  ok(!ko.lacking.length, 'argument e is filled with every type JSON.parse makes: string, number, boolean, null, object and array', 'argument e is never a ' + ko.lacking.join(', '));
+  ok(ko.left, 'argument e is left out ("missing")', 'no entry leaves argument e out');
   ok(plain.some(function (a) { return Object.keys(a).some(function (k) { return !Object.prototype.hasOwnProperty.call(P5, k); }); }), 'an argument the verb does not declare is added ("extraneous")', 'no entry carries an extraneous argument');
   test.subHeading('every string argument, in a few sizes, containing bad characters (goal/G41.30)');
   const strings = plain.filter(function (a) { return typeof a.a === 'string'; }).map(function (a) { return a.a; });
   const lens = strings.map(function (x) { return x.length; });
   const big = Math.floor(PAYLOAD_MAX * 3 / 4);
-  [['empty', function (n) { return n === 0; }], ['one character', function (n) { return n === 1; }], ['a mid size, 2 to 1000', function (n) { return n >= 2 && n <= 1000; }],
-    ['about 3/4 of the payload (' + big + ' of PAYLOAD_MAX ' + PAYLOAD_MAX + ', within a tenth)', function (n) { return Math.abs(n - big) <= PAYLOAD_MAX / 10; }]].forEach(function (c) {
-    ok(lens.some(c[1]), 'the string argument a is supplied ' + c[0], 'its string sizes: ' + short(lens.slice().sort(function (x, y) { return x - y; })));
-  });
-  [['a NUL', /\u0000/], ['a lone surrogate', /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(^|[^\uD800-\uDBFF])[\uDC00-\uDFFF]/], ['control characters', /[\u0001-\u001F]/],
-    ['a quote and a backslash', /"[\s\S]*\\|\\[\s\S]*"/], ['a path piece, ../', /\.\.\//]].forEach(function (c) {
-    ok(strings.some(function (x) { return c[1].test(x); }), 'the string argument a is supplied containing ' + c[0], 'no string of argument a contains ' + c[0]);
-  });
+  const sizes = 'its string sizes: ' + short(lens.slice().sort(function (x, y) { return x - y; }));
+  ok(lens.some(function (n) { return n === 0; }), 'the string argument a is supplied empty', sizes);
+  ok(lens.some(function (n) { return n === 1; }), 'the string argument a is supplied as one character', sizes);
+  ok(lens.some(function (n) { return n >= 2 && n <= 1000; }), 'the string argument a is supplied in a mid size, 2 to 1000', sizes);
+  ok(lens.some(function (n) { return Math.abs(n - big) <= PAYLOAD_MAX / 10; }), 'the string argument a is supplied at about 3/4 of the payload, within a tenth', sizes + ', wanted about ' + big + ' of PAYLOAD_MAX ' + PAYLOAD_MAX);
+  ok(strings.some(function (x) { return /\u0000/.test(x); }), 'the string argument a is supplied containing a NUL', 'no string of argument a contains a NUL');
+  ok(strings.some(function (x) { return /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(^|[^\uD800-\uDBFF])[\uDC00-\uDFFF]/.test(x); }), 'the string argument a is supplied containing a lone surrogate', 'no string of argument a contains a lone surrogate');
+  ok(strings.some(function (x) { return /[\u0001-\u001F]/.test(x); }), 'the string argument a is supplied containing control characters', 'no string of argument a contains control characters');
+  ok(strings.some(function (x) { return /"[\s\S]*\\|\\[\s\S]*"/.test(x); }), 'the string argument a is supplied containing a quote and a backslash', 'no string of argument a contains a quote and a backslash');
+  ok(strings.some(function (x) { return /\.\.\//.test(x); }), 'the string argument a is supplied containing a path piece, ../', 'no string of argument a contains a path piece, ../');
   test.subHeading('a bad string alone, so it reaches the handler (goal/G41.30; Andy: "fill this gap, in this item")');
   // The shape kept: every other argument of its declared type, no undeclared argument added. Then the gate passes it on,
   // and the handler itself meets the bad string.
   const alone = args5.filter(badAlone).map(function (a) { return a.a; });
-  [['a NUL', /\u0000/], ['a lone surrogate', /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(^|[^\uD800-\uDBFF])[\uDC00-\uDFFF]/], ['control characters', /[\u0001-\u001F]/],
-    ['a quote and a backslash', /"[\s\S]*\\|\\[\s\S]*"/], ['a path piece, ../', /\.\.\//]].forEach(function (c) {
-    ok(alone.some(function (x) { return typeof x === 'string' && c[1].test(x); }), 'argument a carries ' + c[0] + ' alone, the shape kept, no undeclared argument', 'no entry keeps the shape with argument a carrying ' + c[0] + ': the gate refuses every one before a handler sees it');
-  });
+  ok(alone.some(function (x) { return typeof x === 'string' && /\u0000/.test(x); }), 'argument a carries a NUL alone, the shape kept, no undeclared argument', 'no entry keeps the shape with argument a carrying ' + 'a NUL' + ': the gate refuses every one before a handler sees it');
+  ok(alone.some(function (x) { return typeof x === 'string' && /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(^|[^\uD800-\uDBFF])[\uDC00-\uDFFF]/.test(x); }), 'argument a carries a lone surrogate alone, the shape kept, no undeclared argument', 'no entry keeps the shape with argument a carrying ' + 'a lone surrogate' + ': the gate refuses every one before a handler sees it');
+  ok(alone.some(function (x) { return typeof x === 'string' && /[\u0001-\u001F]/.test(x); }), 'argument a carries control characters alone, the shape kept, no undeclared argument', 'no entry keeps the shape with argument a carrying ' + 'control characters' + ': the gate refuses every one before a handler sees it');
+  ok(alone.some(function (x) { return typeof x === 'string' && /"[\s\S]*\\|\\[\s\S]*"/.test(x); }), 'argument a carries a quote and a backslash alone, the shape kept, no undeclared argument', 'no entry keeps the shape with argument a carrying ' + 'a quote and a backslash' + ': the gate refuses every one before a handler sees it');
+  ok(alone.some(function (x) { return typeof x === 'string' && /\.\.\//.test(x); }), 'argument a carries a path piece, ../ alone, the shape kept, no undeclared argument', 'no entry keeps the shape with argument a carrying ' + 'a path piece, ../' + ': the gate refuses every one before a handler sees it');
   ok(alone.some(function (x) { return typeof x === 'string' && Math.abs(x.length - big) <= PAYLOAD_MAX / 10; }), 'argument a carries a string of about 3/4 of the payload alone, the shape kept', 'no entry keeps the shape with argument a about 3/4 of the payload long');
   test.subHeading('pairs, not every combination (goal/G41.30)');
   // For any two arguments, every pairing of their kinds (the six types and missing) appears in at least one entry; the one
@@ -180,9 +199,14 @@ async function garbageRules(gen, PAYLOAD_MAX) {
       if (x === kindOf(proto[keys[i]]) && y === kindOf(proto[keys[j]])) continue;
       if (!list.some(function (a) { return of(a, keys[i]) === x && of(a, keys[j]) === y; })) gaps.push(keys[i] + '=' + x + ' with ' + keys[j] + '=' + y);
     }
-    ok(!gaps.length, keys.length + ' arguments: every pair of their kinds meets in at least one entry', keys.length + ' arguments: ' + gaps.length + ' pairs never met, first ' + short(gaps.slice(0, 4)));
+    const met = !gaps.length;
+    const metWhy = keys.length + ' arguments: ' + gaps.length + ' pairs never met, first ' + short(gaps.slice(0, 4));
+    if (keys.length === 2) ok(met, 'two arguments: every pair of their kinds meets in at least one entry', metWhy);
+    else if (keys.length === 3) ok(met, 'three arguments: every pair of their kinds meets in at least one entry', metWhy);
+    else if (keys.length === 4) ok(met, 'four arguments: every pair of their kinds meets in at least one entry', metWhy);
+    else if (keys.length === 5) ok(met, 'five arguments: every pair of their kinds meets in at least one entry', metWhy);
   }
-  ok(args5.length > 0 && args5.length < 200, 'and the garbage stays small: ' + args5.length + ' entries for five arguments, under 200, not every combination', 'five arguments make ' + args5.length + ' entries');
+  ok(args5.length > 0 && args5.length < 200, 'and the garbage stays small: under 200 entries for five arguments, not every combination', 'five arguments make ' + args5.length + ' entries');
 }
 
 test.startTest('/spirit/DEBUG.js: the DEBUG test routes, for node and relay alike');
@@ -191,9 +215,8 @@ test.startTest('/spirit/DEBUG.js: the DEBUG test routes, for node and relay alik
   await garbageRules(require(path.join(RUN, 'spirit', 'DEBUG', 'garbageArguments.js')), require(path.join(RUN, 'spirit', 'limits.js')).PAYLOAD_MAX);
   test.subHeading('/spirit/DEBUG.js, /spirit/DEBUG/, /shell/mount.html: its files');
   ok(fs.existsSync(path.join(RUN, 'spirit', 'DEBUG.js')), 'spirit/run/spirit/DEBUG.js is there', 'spirit/run/spirit/DEBUG.js is not there');
-  ['headLessBrowser', 'garbageArguments'].forEach(function (g) {
-    ok(fs.existsSync(path.join(RUN, 'spirit', 'DEBUG', g + '.js')), 'its generator script spirit/run/spirit/DEBUG/' + g + '.js is there', 'spirit/run/spirit/DEBUG/' + g + '.js is not there');
-  });
+  ok(fs.existsSync(path.join(RUN, 'spirit', 'DEBUG', 'headLessBrowser.js')), 'its generator script spirit/run/spirit/DEBUG/headLessBrowser.js is there', 'spirit/run/spirit/DEBUG/headLessBrowser.js is not there');
+  ok(fs.existsSync(path.join(RUN, 'spirit', 'DEBUG', 'garbageArguments.js')), 'its generator script spirit/run/spirit/DEBUG/garbageArguments.js is there', 'spirit/run/spirit/DEBUG/garbageArguments.js is not there');
   ok(!fs.existsSync(path.join(RUN, 'shell', 'mount.html')), 'shell/mount.html is gone: the page is made from the address', 'shell/mount.html is still there');
   // NO MOUNT FILES AT ALL (box v23: "no manifests at this point, because special cases can be handled by the elements
   // own test script"): every element mounts with its container alone, so no <module>-headLessBrowser.json is left.
@@ -217,7 +240,7 @@ test.startTest('/spirit/DEBUG.js: the DEBUG test routes, for node and relay alik
     test.subHeading(named(PAGE) + ', the node, DEBUG off');
     const off = await ask('127.0.0.1', N, PAGE);
     const none = await ask('127.0.0.1', N, PAGE.replace('/DEBUG/', '/NODEBUG/'));
-    ok(off.status === none.status && off.text === none.text, 'its DEBUG address answers as an address of no route (' + none.status + ')', 'DEBUG off it answered ' + off.status + ' ' + short(off.text));
+    ok(off.status === none.status && off.text === none.text, 'on the node, DEBUG off, its DEBUG address answers as an address of no route', 'DEBUG off it answered ' + off.status + ' ' + short(off.text) + ', no route answers ' + none.status);
     const offData = await ask('127.0.0.1', N, GARBAGE);
     ok(offData.status === none.status, 'and so does a garbage address', 'DEBUG off the garbage address answered ' + offData.status);
 
@@ -234,10 +257,10 @@ test.startTest('/spirit/DEBUG.js: the DEBUG test routes, for node and relay alik
     ok(upNow, 'the world: the node\'s api names the deskVerify server\'s verbs', 'the deskVerify server never came up: nothing judged');
     const g = await ask('127.0.0.1', N, GARBAGE);
     const list = json(g);
-    ok(g.status === 200 && /json/.test(g.type) && Array.isArray(list) && list.length > 0, 'the garbage is answered, 200, a JSON list of ' + (Array.isArray(list) ? list.length : 0), 'it answered ' + g.status + ' ' + g.type + ' ' + short(g.text));
+    ok(g.status === 200 && /json/.test(g.type) && Array.isArray(list) && list.length > 0, 'the garbage is answered, 200, a JSON list', 'it answered ' + g.status + ' ' + g.type + ' ' + short(g.text));
     const tree = json(await call(N, 'api')) || {};
     const verbs = Object.keys(tree.deskVerify || {});
-    ok(verbs.length > 0, 'the node\'s api lists the deskVerify server\'s ' + verbs.length + ' verbs', 'the scratch node\'s api has no deskVerify: ' + short(Object.keys(tree)));
+    ok(verbs.length > 0, 'the node\'s api lists the deskVerify server\'s verbs', 'the scratch node\'s api has no deskVerify: ' + short(Object.keys(tree)));
     if (Array.isArray(list) && list.length) {
       const named = function (v) { return list.some(function (e) { return e && typeof e === 'object' && e.call === 'deskVerify.' + v; }); };
       const unasked = verbs.filter(function (v) { return !named(v); });
@@ -267,8 +290,8 @@ test.startTest('/spirit/DEBUG.js: the DEBUG test routes, for node and relay alik
           if (!r.status || r.status >= 500 || /handler-failed/.test(r.text)) lone.push({ entry: entry, status: r.status, answer: r.text.slice(0, 80) });
         } else if (!(r.status >= 400 && r.status < 500 && b && typeof b.code === 'string' && b.code && b.code !== 'handler-failed')) wrong.push({ entry: entry, status: r.status, answer: r.text.slice(0, 80) });
       }
-      ok(!wrong.length, 'each of the ' + (list.length - keptCount) + ' that break the shape is refused with a code: a 4xx, never accepted, a 5xx or a handler failed', wrong.length + ' were not: ' + short(wrong));
-      ok(keptCount > 0 && !lone.length, 'each of the ' + keptCount + ' lone bad strings, the shape kept, is answered by its handler: never a 5xx or a handler failed', keptCount ? lone.length + ' broke it: ' + short(lone) : 'no entry keeps the shape: no lone bad string reached a handler, so nothing was judged');
+      ok(!wrong.length, 'each entry that breaks the shape is refused with a code: a 4xx, never accepted, a 5xx or a handler failed', wrong.length + ' were not: ' + short(wrong));
+      ok(keptCount > 0 && !lone.length, 'each lone bad string, the shape kept, is answered by its handler: never a 5xx or a handler failed', keptCount ? lone.length + ' broke it: ' + short(lone) : 'no entry keeps the shape: no lone bad string reached a handler, so nothing was judged');
       const still = await call(N, 'api');
       ok(still.status === 200, 'and the node still answers its api afterwards', 'afterwards its api answered ' + still.status);
     }
@@ -276,13 +299,14 @@ test.startTest('/spirit/DEBUG.js: the DEBUG test routes, for node and relay alik
     const refused = async function (p, headers, why) {
       test.subHeading(named(p) + ', the node, DEBUG on: refused, ' + why);
       const r = await ask('127.0.0.1', N, p, { headers: headers });
-      ok(r.status >= 400 && r.status < 500, 'refused: ' + why, why + ': answered ' + r.status + ' ' + short(r.text.slice(0, 120)));
+      return { fine: r.status >= 400 && r.status < 500, why: why + ': answered ' + r.status + ' ' + short(r.text.slice(0, 120)) };
     };
-    await refused('/DEBUG/spirit/element/noSuchModule/headLessBrowser.html', {}, 'no such module under spirit/run');
-    await refused('/DEBUG/spirit/element/../js/workBench/headLessBrowser.html', {}, 'a ".." in the address');
-    await refused('/DEBUG/spirit/element/workBench/noSuchGenerator.html', {}, 'no such generator script, and no such file');
-    await refused(PAGE, { 'X-Forwarded-For': '203.0.113.9' }, 'a request carrying X-Forwarded-For');
-    await refused(PAGE, { 'Forwarded': 'for=203.0.113.9' }, 'a request carrying Forwarded');
+    let rd;
+    rd = await refused('/DEBUG/spirit/element/noSuchModule/headLessBrowser.html', {}, 'no such module under spirit/run'); ok(rd.fine, 'refused: no such module under spirit/run', rd.why);
+    rd = await refused('/DEBUG/spirit/element/../js/workBench/headLessBrowser.html', {}, 'a ".." in the address'); ok(rd.fine, 'refused: a ".." in the address', rd.why);
+    rd = await refused('/DEBUG/spirit/element/workBench/noSuchGenerator.html', {}, 'no such generator script, and no such file'); ok(rd.fine, 'refused: no such generator script, and no such file', rd.why);
+    rd = await refused(PAGE, { 'X-Forwarded-For': '203.0.113.9' }, 'a request carrying X-Forwarded-For'); ok(rd.fine, 'refused: a request carrying X-Forwarded-For', rd.why);
+    rd = await refused(PAGE, { 'Forwarded': 'for=203.0.113.9' }, 'a request carrying Forwarded'); ok(rd.fine, 'refused: a request carrying Forwarded', rd.why);
     // NO GENERATOR, THEN THE EXACT FILE OF THE ADDRESS, /DEBUG LEFT OFF (box v20-v23: "DEBUG.js will, if the generator
     // implied by the URL does NOT exist, will attempt to serve the exact file implied by the URL"), and only a file
     // inside a test/ folder: an element's own test pages, ./test/<element>-<case>.html.
@@ -291,15 +315,19 @@ test.startTest('/spirit/DEBUG.js: the DEBUG test routes, for node and relay alik
     test.subHeading('/' + PAGE_FILE + ', the node, DEBUG on: the file itself');
     const served = await ask('127.0.0.1', N, '/DEBUG/' + PAGE_FILE);
     ok(served.status === 200 && served.text === own, 'a file inside a test/ folder is served as it is', '/DEBUG/' + PAGE_FILE + ' answered ' + served.status + ' ' + short(served.text.slice(0, 120)));
-    await refused('/DEBUG/spirit/element/workBench.js', {}, 'a file outside a test/ folder (the element\'s own script)');
-    await refused('/DEBUG/spirit/serveCommon.js', {}, 'a server script');
-    await refused('/DEBUG/spirit/element/test/noSuchPage.html', {}, 'no such file in a test/ folder');
-    await refused('/DEBUG/' + PAGE_FILE, { 'X-Forwarded-For': '203.0.113.9' }, 'a test file asked with X-Forwarded-For');
-    for (const p of ['/spirit/DEBUG.js', '/spirit/DEBUG/headLessBrowser.js', '/spirit/DEBUG/garbageArguments.js']) {
+    rd = await refused('/DEBUG/spirit/element/workBench.js', {}, 'a file outside a test/ folder (the element\'s own script)'); ok(rd.fine, 'refused: a file outside a test/ folder (the element\'s own script)', rd.why);
+    rd = await refused('/DEBUG/spirit/serveCommon.js', {}, 'a server script'); ok(rd.fine, 'refused: a server script', rd.why);
+    rd = await refused('/DEBUG/spirit/element/test/noSuchPage.html', {}, 'no such file in a test/ folder'); ok(rd.fine, 'refused: no such file in a test/ folder', rd.why);
+    rd = await refused('/DEBUG/' + PAGE_FILE, { 'X-Forwarded-For': '203.0.113.9' }, 'a test file asked with X-Forwarded-For'); ok(rd.fine, 'refused: a test file asked with X-Forwarded-For', rd.why);
+    const unfetched = async function (p) {
       test.subHeading(p + ', the node, DEBUG on');
       const r = await ask('127.0.0.1', N, p);
-      ok(r.status >= 400, p + ' cannot be fetched', p + ' was fetched: ' + r.status);
-    }
+      return { fine: r.status >= 400, why: p + ' was fetched: ' + r.status };
+    };
+    let uf;
+    uf = await unfetched('/spirit/DEBUG.js'); ok(uf.fine, '/spirit/DEBUG.js cannot be fetched', uf.why);
+    uf = await unfetched('/spirit/DEBUG/headLessBrowser.js'); ok(uf.fine, '/spirit/DEBUG/headLessBrowser.js cannot be fetched', uf.why);
+    uf = await unfetched('/spirit/DEBUG/garbageArguments.js'); ok(uf.fine, '/spirit/DEBUG/garbageArguments.js cannot be fetched', uf.why);
     await stop(node); node = null;
 
     // A RELAY SERVES NO APP (goal/G43.18, box v29: the login is spirit.login, no app, and a relay serves a face spirit.js and the
@@ -309,7 +337,7 @@ test.startTest('/spirit/DEBUG.js: the DEBUG test routes, for node and relay alik
     if (!relay.up) { test.fail('the scratch relay did not come up'); return; }
     const rOff = await ask('127.0.0.1', relay.port, '/DEBUG/spirit/relay/garbageArguments.json');
     const rNone = await ask('127.0.0.1', relay.port, '/NODEBUG/spirit/relay/garbageArguments.json');
-    ok(rOff.status === rNone.status && rOff.text === rNone.text, 'its DEBUG address answers as an address of no route (' + rNone.status + ')', 'DEBUG off the relay answered ' + rOff.status + ' ' + short(rOff.text));
+    ok(rOff.status === rNone.status && rOff.text === rNone.text, 'on the relay, DEBUG off, its DEBUG address answers as an address of no route', 'DEBUG off the relay answered ' + rOff.status + ' ' + short(rOff.text));
     await stop(relay); relay = null;
 
     relay = await startRelay(copy.run, true);
@@ -319,7 +347,7 @@ test.startTest('/spirit/DEBUG.js: the DEBUG test routes, for node and relay alik
     test.subHeading('/spirit/relay/garbageArguments.json, a relay, DEBUG on');
     const rg = await ask('127.0.0.1', R, '/DEBUG/spirit/relay/garbageArguments.json');
     const rlist = json(rg);
-    ok(rg.status === 200 && /json/.test(rg.type) && Array.isArray(rlist) && rlist.length > 0, 'the relay answers its own api\'s garbage, a JSON list of ' + (Array.isArray(rlist) ? rlist.length : 0), 'it answered ' + rg.status + ' ' + rg.type + ' ' + short(rg.text));
+    ok(rg.status === 200 && /json/.test(rg.type) && Array.isArray(rlist) && rlist.length > 0, 'the relay answers its own api\'s garbage, a JSON list', 'it answered ' + rg.status + ' ' + rg.type + ' ' + short(rg.text));
     test.subHeading(named(loginPage) + ', a relay, DEBUG on: refused');
     const fwd = await ask('127.0.0.1', R, loginPage, { headers: { 'X-Forwarded-For': '203.0.113.9' } });
     ok(fwd.status >= 400 && fwd.status < 500, 'refused: a request Caddy would pass on, carrying X-Forwarded-For', 'with X-Forwarded-For it answered ' + fwd.status);
@@ -327,7 +355,7 @@ test.startTest('/spirit/DEBUG.js: the DEBUG test routes, for node and relay alik
     if (!outside) test.fail('this machine has no address but loopback: a request from outside cannot be tried');
     else {
       const far = await ask(outside, R, loginPage);
-      ok(far.status >= 400 && far.status < 500, 'refused: a request not from loopback (asked at ' + outside + ')', 'asked at ' + outside + ' it answered ' + far.status);
+      ok(far.status >= 400 && far.status < 500, 'refused: a request not from loopback', 'asked at ' + outside + ' it answered ' + far.status);
     }
   } finally {
     await stop(node); await stop(relay);

@@ -27,13 +27,12 @@ test.startTest('api.js: the icons branch\'s interface, which the node checks a c
   let api = null;
   try { api = require(FILE); } catch (e) { api = null; }
   const verbs = Object.keys((api && api.verbs) || {});
-  ok(verbs.length >= 1, 'it names its verbs: ' + verbs.join(', '), 'api.js names no verbs: ' + short(api));
+  ok(verbs.length >= 1, 'it names its verbs', 'api.js names no verbs: ' + short(api));
   if (!verbs.length) return;
-  verbs.forEach(function (v) {
-    const rules = api.verbs[v] || {};
-    const bad = Object.keys(rules).filter(function (a) { return typeof rules[a] !== 'string' || !/^[a-z]+\??$/i.test(rules[a]); });
-    ok(!bad.length, v + ': each argument carries a rule, ' + short(rules), v + ': arguments without a rule: ' + short(bad));
-  });
+  // Its one verb, icon, written out so that its check has a plain title.
+  const rules = api.verbs.icon || {};
+  const bad = Object.keys(rules).filter(function (a) { return typeof rules[a] !== 'string' || !/^[a-z]+\??$/i.test(rules[a]); });
+  ok(!bad.length, 'each argument of the icon verb carries a rule', 'icon: arguments without a rule: ' + short(bad) + '; its verbs: ' + verbs.join(', '));
   ok(!/require\s*\(/.test(fs.readFileSync(FILE, 'utf8').replace(/\/\/.*$/gm, '')), 'it handles nothing: it requires no code (the box, 7)', 'api.js requires code, so it is more than an interface');
 
   const node = await scratchNode({ servers: ['icons'] });
@@ -62,7 +61,7 @@ test.startTest('api.js: the icons branch\'s interface, which the node checks a c
     const r1 = await call('icons.' + v, { op: 'search', text: '' });
     await sleep(300);
     const p2 = await lastRun();
-    ok(r0.status === 200 && r1.status === 200 && !!p1 && !!p2 && p1 !== p2, 'the world: a call it allows starts a run, and the job names a new pid each time (' + p1 + ', ' + p2 + ')', 'a good call: ' + r1.status + ' ' + short(r1.text) + '; pids ' + short([p1, p2]) + ', so a run cannot be told from none');
+    ok(r0.status === 200 && r1.status === 200 && !!p1 && !!p2 && p1 !== p2, 'the world: a call it allows starts a run, and the job names a new pid each time', 'a good call: ' + r1.status + ' ' + short(r1.text) + '; pids ' + short([p1, p2]) + ', so a run cannot be told from none');
     const crooked = [
       ['icons.zzNoSuchVerb', {}, 'a verb it does not name'],
       ['icons.' + v, { op: 'search', zzExtra: 1 }, 'an argument it does not name'],
@@ -75,15 +74,27 @@ test.startTest('api.js: the icons branch\'s interface, which the node checks a c
       const r = await call(c[0], c[1]);
       await sleep(400);
       const after = await lastRun();
-      ok(r.status >= 400 && r.status < 500, c[2] + ' is refused, ' + r.status + ' ' + String((r.body && r.body.code) || ''), c[2] + ' answered ' + r.status + ' ' + short(r.text));
-      ok(!!after && after !== before, c[2] + ': refused by a run of the app, not by the node (pid ' + before + ' -> ' + after + ')', c[2] + ': no run was started, so the node refused it (pid ' + before + ' -> ' + after + ')');
+      const refused = r.status >= 400 && r.status < 500;
+      const refusedWhy = c[2] + ' answered ' + r.status + ' ' + short(r.text);
+      if (c[2] === 'a verb it does not name') ok(refused, 'a verb it does not name is refused', refusedWhy);
+      else if (c[2] === 'an argument it does not name') ok(refused, 'an argument it does not name is refused', refusedWhy);
+      else if (c[2] === 'a glyph that is no text') ok(refused, 'a glyph that is no text is refused', refusedWhy);
+      else if (c[2] === 'keywords that are no list') ok(refused, 'keywords that are no list is refused', refusedWhy);
+      else if (c[2] === 'an op that is no id') ok(refused, 'an op that is no id is refused', refusedWhy);
+      const byRun = !!after && after !== before;
+      const byRunWhy = c[2] + ': no run was started, so the node refused it (pid ' + before + ' -> ' + after + ')';
+      if (c[2] === 'a verb it does not name') ok(byRun, 'a verb it does not name: refused by a run of the app, not by the node', byRunWhy);
+      else if (c[2] === 'an argument it does not name') ok(byRun, 'an argument it does not name: refused by a run of the app, not by the node', byRunWhy);
+      else if (c[2] === 'a glyph that is no text') ok(byRun, 'a glyph that is no text: refused by a run of the app, not by the node', byRunWhy);
+      else if (c[2] === 'keywords that are no list') ok(byRun, 'keywords that are no list: refused by a run of the app, not by the node', byRunWhy);
+      else if (c[2] === 'an op that is no id') ok(byRun, 'an op that is no id: refused by a run of the app, not by the node', byRunWhy);
     }
 
     test.subHeading('"a page binds by" it: spirit.icons.<verb> on a page');
     await chrome.send('Page.navigate', { url: node.base + '/face.html' });
     await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
     const bound = await chrome.evaluate('window.spirit.ready.then(function (s) { return typeof (s.icons && s.icons[' + JSON.stringify(v) + ']); }, function (e) { return "refused: " + String(e && e.message || e); })');
-    ok(bound === 'function', 'spirit.icons.' + v + ' is a function on a page', 'spirit.icons.' + v + ' is ' + short(bound));
+    ok(bound === 'function', 'spirit.icons.icon is a function on a page', 'spirit.icons.' + v + ' is ' + short(bound));
     const answered = await chrome.evaluate('window.spirit.ready.then(function (s) { return s.icons[' + JSON.stringify(v) + ']({ op: "search", text: "" }); }).then(function (b) { return JSON.stringify({ items: Array.isArray(b && b.items) }); }, function (e) { return "refused: " + String(e && e.message || e); })');
     ok(answered === '{"items":true}', 'and it answers a search', 'spirit.icons.' + v + ' answered ' + short(answered));
     const pageBad = await chrome.evaluate('window.spirit.ready.then(function (s) { return s.icons[' + JSON.stringify(v) + ']({ op: "search", zzExtra: 1 }); }).then(function (b) { return "answered " + JSON.stringify(b); }, function (e) { return "refused"; })');

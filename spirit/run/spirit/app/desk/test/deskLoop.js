@@ -250,7 +250,7 @@ async function readTakePart() {
       const take = started.slice(0, at).filter(function (s) { return s.kind === 'take' && body(s) && body(s).id === id; });
       const took = !!id && take.length >= 1 && take[take.length - 1].argv[1] === PORT;
       if (i === 0) ok(took, 'before its first answer is posted, its ear takes that line', 'the chat.add under ' + id + ' was posted with no line.take before it; started ' + short(started.slice(0, at + 1).map(function (s) { return s.kind + (s.argv[2] ? ' ' + s.argv[2] : ''); })));
-      else ok(took, 'before its second answer is posted, its ear takes that line', 'the chat.add under ' + id + ' was posted with no line.take before it; started ' + short(started.slice(0, at + 1).map(function (s) { return s.kind + (s.argv[2] ? ' ' + s.argv[2] : ''); })));
+      else if (i === 1) ok(took, 'before its second answer is posted, its ear takes that line', 'the chat.add under ' + id + ' was posted with no line.take before it; started ' + short(started.slice(0, at + 1).map(function (s) { return s.kind + (s.argv[2] ? ' ' + s.argv[2] : ''); })));
     });
   }()).finally(function () { console.error = realError; });
 }

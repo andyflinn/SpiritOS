@@ -285,8 +285,8 @@ async function twoPress(w, find, armedSays, want, what) {
   w.document.click(b1 || b); await settle();
   const sent = w.writes().slice(before);
   const good = byElement && armedSays === armedText && firstWrote === 0 && sent.length === 1 && sent[0].name === want.name && JSON.stringify(sent[0].args) === JSON.stringify(want.args);
-  ok(good, what + ': an armingButton saying "' + armedText + '" on the first press, ' + want.name + ' on the second',
-    what + ': ' + JSON.stringify({ madeByArmingButton: byElement, armed: armedText, wroteOnFirst: firstWrote, sent: sent }));
+  return { good: good,
+    why: what + ': ' + JSON.stringify({ madeByArmingButton: byElement, armed: armedText, wroteOnFirst: firstWrote, sent: sent }) };
 }
 const byId = function (w, id) { return function () { return w.document.getElementById(id); }; };
 
@@ -302,23 +302,24 @@ const byId = function (w, id) { return function () { return w.document.getElemen
 
   test.subHeading('goal/G41.9: each are-you-sure of a goal, pressed twice');
   const press = function (what) { return { name: 'desk.press', args: { id: 'goal/G9', what: what } }; };
+  let tp;
   let w = ddWorld(GOAL, []); await w.open();
-  await twoPress(w, byId(w, 'dd-done'), 'Done anyway: sure?', press('done'), 'Done not verified green');
+  tp = await twoPress(w, byId(w, 'dd-done'), 'Done anyway: sure?', press('done'), 'Done not verified green'); if (tp) ok(tp.good, 'Done not verified green: an arming button saying "Done anyway: sure?" on the first press, desk.press done on the second', tp.why);
   w = ddWorld(GOAL, []); await w.open();
-  await twoPress(w, byId(w, 'dd-go-all'), 'Go all: sure?', press('go-all'), 'Go all');
+  tp = await twoPress(w, byId(w, 'dd-go-all'), 'Go all: sure?', press('go-all'), 'Go all'); if (tp) ok(tp.good, 'Go all: an arming button saying "Go all: sure?" on the first press, desk.press go-all on the second', tp.why);
   w = ddWorld(GOAL, []); await w.open();
-  await twoPress(w, byId(w, 'dd-waive'), 'Waive: sure?', press('waive'), 'Waive');
+  tp = await twoPress(w, byId(w, 'dd-waive'), 'Waive: sure?', press('waive'), 'Waive'); if (tp) ok(tp.good, 'Waive: an arming button saying "Waive: sure?" on the first press, desk.press waive on the second', tp.why);
   w = ddWorld(GOAL, []); await w.open();
-  await twoPress(w, byId(w, 'dd-delete'), 'Delete: sure?', { name: 'desk.item.delete', args: { id: 'goal/G9' } }, 'Delete');
+  tp = await twoPress(w, byId(w, 'dd-delete'), 'Delete: sure?', { name: 'desk.item.delete', args: { id: 'goal/G9' } }, 'Delete'); if (tp) ok(tp.good, 'Delete: an arming button saying "Delete: sure?" on the first press, desk.item.delete on the second', tp.why);
   w = ddWorld(GOAL, []); await w.open();
-  await twoPress(w, byId(w, 'dd-abandon'), 'Sure? Abandon the goal', press('abandon'), 'Abandon');
+  tp = await twoPress(w, byId(w, 'dd-abandon'), 'Sure? Abandon the goal', press('abandon'), 'Abandon'); if (tp) ok(tp.good, 'Abandon: an arming button saying "Sure? Abandon the goal" on the first press, desk.press abandon on the second', tp.why);
   w = ddWorld(GOAL, []); await w.open();
-  await twoPress(w, byId(w, 'dd-close'), 'are you sure? 1 open', press('close'), 'Close on a goal with an item open');
+  tp = await twoPress(w, byId(w, 'dd-close'), 'are you sure? 1 open', press('close'), 'Close on a goal with an item open'); if (tp) ok(tp.good, 'Close on a goal with an item open: an arming button saying "are you sure? 1 open" on the first press, desk.press close on the second', tp.why);
 
   test.subHeading('goal/G41.9: an item\'s early Close, and the grants');
   const ITEM = { id: 'goal/G9.1', title: 'An item', goal: 'goal/G9', status: 'open', buttons: ['close'], verified: 'none', blocked: [] };
   w = ddWorld(ITEM, []); await w.open();
-  await twoPress(w, byId(w, 'dd-close'), 'Close: sure?', { name: 'desk.press', args: { id: 'goal/G9.1', what: 'close' } }, 'Close on an open item');
+  tp = await twoPress(w, byId(w, 'dd-close'), 'Close: sure?', { name: 'desk.press', args: { id: 'goal/G9.1', what: 'close' } }, 'Close on an open item'); if (tp) ok(tp.good, 'Close on an open item: an arming button saying "Close: sure?" on the first press, desk.press close on the second', tp.why);
   // goal/G43.30, the box: "every Delete and every Close press in Desk (its rows, the item detail, the rule dialog) is an
   // armingButton". It ends the one press of a done item's Close (desk/G3.8) and of a goal's with nothing open (goal/G6.6).
   test.subHeading('goal/G43.30: every Close is an armingButton, a done item\'s and a goal\'s with nothing open');
@@ -334,19 +335,19 @@ const byId = function (w, id) { return function () { return w.document.getElemen
     g.document.click(b1 || b); await settle();
     const sent = g.writes().slice(before);
     const good = byElement && !!armedText && armedText !== 'Close' && firstWrote === 0 && sent.length === 1 && sent[0].name === want.name && JSON.stringify(sent[0].args) === JSON.stringify(want.args);
-    ok(good, what + ': an armingButton saying "' + armedText + '" on the first press, ' + want.name + ' on the second',
-      what + ': ' + JSON.stringify({ madeByArmingButton: byElement, armed: armedText, wroteOnFirst: firstWrote, sent: sent }));
+    return { good: good,
+      why: what + ': ' + JSON.stringify({ madeByArmingButton: byElement, armed: armedText, wroteOnFirst: firstWrote, sent: sent }) };
   }
   w = ddWorld(Object.assign({}, ITEM, { status: 'done', verified: 'green' }), []); await w.open();
-  await twoPressArmed(w, byId(w, 'dd-close'), { name: 'desk.press', args: { id: 'goal/G9.1', what: 'close' } }, 'Close on a done item');
+  tp = await twoPressArmed(w, byId(w, 'dd-close'), { name: 'desk.press', args: { id: 'goal/G9.1', what: 'close' } }, 'Close on a done item'); if (tp) ok(tp.good, 'Close on a done item: an arming button, armed on the first press with nothing sent, desk.press close on the second', tp.why);
   w = ddWorld({ id: 'goal/G8', title: 'A goal', goal: '', status: 'open', buttons: ['close'], verified: 'none', blocked: [] }, []); await w.open();
-  await twoPressArmed(w, byId(w, 'dd-close'), { name: 'desk.press', args: { id: 'goal/G8', what: 'close' } }, 'Close on a goal with nothing open');
+  tp = await twoPressArmed(w, byId(w, 'dd-close'), { name: 'desk.press', args: { id: 'goal/G8', what: 'close' } }, 'Close on a goal with nothing open'); if (tp) ok(tp.good, 'Close on a goal with nothing open: an arming button, armed on the first press with nothing sent, desk.press close on the second', tp.why);
   const CHECKS = [{ number: 'G1', kind: 'G', state: 'open', words: 'core grant' }, { number: 'G2', kind: 'G', state: 'open', words: 'another' }];
   const grants = async function () { const g = ddWorld(ITEM, CHECKS); await g.open(); g.document.click(panelIcon(g, 'files')); await settle(); return g; };
   w = await grants();
-  await twoPress(w, function () { return w.document.querySelector('[data-grant="G1"]'); }, 'Grant G1: sure?', { name: 'desk.check.set', args: { id: 'goal/G9.1', check: 'G1', state: 'granted' } }, 'Grant G1');
+  tp = await twoPress(w, function () { return w.document.querySelector('[data-grant="G1"]'); }, 'Grant G1: sure?', { name: 'desk.check.set', args: { id: 'goal/G9.1', check: 'G1', state: 'granted' } }, 'Grant G1'); if (tp) ok(tp.good, 'Grant G1: an arming button saying "Grant G1: sure?" on the first press, desk.check.set on the second', tp.why);
   w = await grants();
-  await twoPress(w, function () { return w.document.querySelector('[data-grant="all"]'); }, 'Grant all 2: sure?', { name: 'desk.check.set', args: { id: 'goal/G9.1', check: 'all', state: 'granted' } }, 'Grant all');
+  tp = await twoPress(w, function () { return w.document.querySelector('[data-grant="all"]'); }, 'Grant all 2: sure?', { name: 'desk.check.set', args: { id: 'goal/G9.1', check: 'all', state: 'granted' } }, 'Grant all'); if (tp) ok(tp.good, 'Grant all: an arming button saying "Grant all 2: sure?" on the first press, desk.check.set on the second', tp.why);
 
   // ── goal/G41.11: THE LAST ONE-PRESS BUTTONS, AND THE RENAME ───────────────────────────────────────────────────────────
   // Andy, in the box: "the remove button for red Q's must ask: are-you-sure?", "the start-design and end-design buttons
@@ -367,21 +368,21 @@ const byId = function (w, id) { return function () { return w.document.getElemen
     g.document.click(b1 || b); await settle();
     const sent = anyWrite(g).slice(before);
     const good = byElement && armed && firstWrote === 0 && sent.length === 1 && sent[0].name === want.name && JSON.stringify(sent[0].args) === JSON.stringify(want.args);
-    ok(good, what + ': an armingButton, armed on the first press with nothing sent, ' + want.name + ' on the second',
-      what + ': ' + JSON.stringify({ madeByArmingButton: byElement, armedAfterFirst: armed, wroteOnFirst: firstWrote, sent: sent }));
+    return { good: good,
+      why: what + ': ' + JSON.stringify({ madeByArmingButton: byElement, armedAfterFirst: armed, wroteOnFirst: firstWrote, sent: sent }) };
   }
   const QS = [{ number: 'Q1', kind: 'Q', state: 'open', words: 'Shall it?' }];
   const withQ = async function () { const g = ddWorld(ITEM, QS); await g.open(); g.document.click(panelIcon(g, 'qs')); await settle(); return g; };
   w = await withQ();
-  await twoPressAny(w, function () { return w.document.querySelector('[data-qclear="Q1"]'); }, { name: 'desk.chat.add', args: { id: 'goal/G9.1', text: 'Q1: clear' } }, 'A red Q\'s remove');
+  tp = await twoPressAny(w, function () { return w.document.querySelector('[data-qclear="Q1"]'); }, { name: 'desk.chat.add', args: { id: 'goal/G9.1', text: 'Q1: clear' } }, 'A red Q\'s remove'); if (tp) ok(tp.good, 'A red Q\'s remove: an arming button, armed on the first press, desk.chat.add on the second', tp.why);
 
   test.subHeading('goal/G41.11: the details panel\'s Start and End design ask are-you-sure');
   const DESIGN = { id: 'goal/G9.2', title: 'In design', goal: 'goal/G9', status: 'open', buttons: ['end-design'], verified: 'none', blocked: [] };
   w = ddWorld(DESIGN, []); await w.open();
-  await twoPressAny(w, byId(w, 'dd-end-design'), { name: 'desk.press', args: { id: 'goal/G9.2', what: 'end-design' } }, 'End design');
+  tp = await twoPressAny(w, byId(w, 'dd-end-design'), { name: 'desk.press', args: { id: 'goal/G9.2', what: 'end-design' } }, 'End design'); if (tp) ok(tp.good, 'End design: an arming button, armed on the first press, desk.press on the second', tp.why);
   const OUT = { id: 'goal/G9.3', title: 'Out of design', goal: 'goal/G9', status: 'open', buttons: ['start-design'], verified: 'none', blocked: [] };
   w = ddWorld(OUT, []); await w.open();
-  await twoPressAny(w, byId(w, 'dd-start-design'), { name: 'desk.press', args: { id: 'goal/G9.3', what: 'start-design' } }, 'Start design');
+  tp = await twoPressAny(w, byId(w, 'dd-start-design'), { name: 'desk.press', args: { id: 'goal/G9.3', what: 'start-design' } }, 'Start design'); if (tp) ok(tp.good, 'Start design: an arming button, armed on the first press, desk.press on the second', tp.why);
 
   test.subHeading('goal/G41.11: the rename field opens holding the current title');
   for (const subject of [ITEM, GOAL]) {
@@ -389,14 +390,18 @@ const byId = function (w, id) { return function () { return w.document.getElemen
     const rename = g.document.getElementById('dd-rename');
     if (rename) { g.document.click(rename); await settle(); }
     const field = g.document.getElementById('dd-name');
-    ok(!!field && field.value === subject.title, (subject.goal === '' ? 'a goal' : 'an item') + ': Rename opens its field holding "' + subject.title + '"',
-      (subject.goal === '' ? 'a goal' : 'an item') + ': ' + (field ? 'the field holds "' + field.value + '"' : 'no rename field after Rename'));
+    const holds = !!field && field.value === subject.title;
+    const holdsWhy = (subject.goal === '' ? 'a goal' : 'an item') + ': ' + (field ? 'the field holds "' + field.value + '"' : 'no rename field after Rename');
+    if (subject === ITEM) ok(holds, 'an item: Rename opens its field holding its title, An item', holdsWhy);
+    else if (subject === GOAL) ok(holds, 'a goal: Rename opens its field holding its title, A goal', holdsWhy);
     // What it holds is what he edits: Save sends the title as it stands, so an untouched field renames nothing new.
     const save = g.document.getElementById('dd-name-save');
     if (field && save) { field.value = subject.title + ' renamed'; g.document.click(save); await settle(); }
     const renamed = g.asked.filter(function (a) { return a.name === 'desk.item.rename'; }).pop();
-    ok(!!renamed && renamed.args.title === subject.title + ' renamed', (subject.goal === '' ? 'a goal' : 'an item') + ': Save sends the edited title',
-      (subject.goal === '' ? 'a goal' : 'an item') + ': renamed ' + JSON.stringify(renamed && renamed.args));
+    const sends = !!renamed && renamed.args.title === subject.title + ' renamed';
+    const sendsWhy = (subject.goal === '' ? 'a goal' : 'an item') + ': renamed ' + JSON.stringify(renamed && renamed.args);
+    if (subject === ITEM) ok(sends, 'an item: Save sends the edited title', sendsWhy);
+    else if (subject === GOAL) ok(sends, 'a goal: Save sends the edited title', sendsWhy);
   }
   test.subHeading('goal/G41.11: the add-rule dropdown stands on top of the rules, and is always there');
   // Andy, on G41.11: "1. the add-rule dropdown is at the bottom of a (sometimes LONG) list, and it must be on top",
@@ -463,8 +468,10 @@ const byId = function (w, id) { return function () { return w.document.getElemen
     if (heard) heard({ item: Object.assign({}, open, { rules: [{ key: 'rule/77' }] }) });
     await settle();
     const after = ruled.document.getElementById('dd-panel').textContent;
-    ok(!!heard && before.indexOf('rule/77') === -1 && after.indexOf('rule/77') !== -1 && !ruled.asked.slice(asked0).some(function (a) { return a.name === 'desk.item.get'; }),
-      open.id + ': the new rule shows at once, from the row', open.id + ': heard ' + !!heard + ', the panel now: ' + JSON.stringify(after.slice(0, 200)));
+    const shows = !!heard && before.indexOf('rule/77') === -1 && after.indexOf('rule/77') !== -1 && !ruled.asked.slice(asked0).some(function (a) { return a.name === 'desk.item.get'; });
+    const showsWhy = open.id + ': heard ' + !!heard + ', the panel now: ' + JSON.stringify(after.slice(0, 200));
+    if (open === ITEM) ok(shows, 'on an item, the new rule shows at once, from the row', showsWhy);
+    else if (open.id === 'goal/G9') ok(shows, 'on a goal, the new rule shows at once, from the row', showsWhy);
   }
 
   test.subHeading('goal/G41.22: no appHeader; the id, title and status in the shell\'s title bar');
@@ -481,7 +488,7 @@ const byId = function (w, id) { return function () { return w.document.getElemen
     'workBenches made: ' + wb.benches.length);
   const leftNames = bench ? (bench.opts.left || []).map(function (t) { return t.name + ' ' + t.icon; }) : [];
   const panelNames = (panels || []).map(function (p) { return p.key + ' ' + p.icon; });
-  ok(!!bench && JSON.stringify(leftNames) === JSON.stringify(panelNames), 'the left strip is today\'s panels, each its icon, in order: ' + panelNames.join(', '),
+  ok(!!bench && JSON.stringify(leftNames) === JSON.stringify(panelNames), 'the left strip is today\'s panels, each its icon, in order',
     'the left strip: ' + JSON.stringify(leftNames) + ', today\'s panels: ' + JSON.stringify(panelNames));
   ok(!!bench && !(bench.opts.right || []).length, 'the right side is left blank: no tool on it', 'the right side has ' + JSON.stringify(bench && bench.opts.right));
   const row = wb.document.getElementById('dd-name-row');
@@ -561,7 +568,7 @@ const byId = function (w, id) { return function () { return w.document.getElemen
   const RUN1 = { doing: 'run', suite: 'spirit/run/spirit/app/info/test/element.js', index: 2, of: 4, tests: 0, expected: 0, line: '', since: '' };
   const runShown = function (g) { const el = g.document.getElementById('dd-run'); return el ? el.textContent : ''; };
   let v = ddWorld(RUNNING, [], { real: true }); await v.open();
-  ok(v.required.indexOf(VERIFY_CCM) !== -1 && !!((v.win.spirit.data || {}).deskVerify || {}).data, 'it loads the verifier\'s cache manager itself, ' + VERIFY_CCM, 'required: ' + JSON.stringify(v.required));
+  ok(v.required.indexOf(VERIFY_CCM) !== -1 && !!((v.win.spirit.data || {}).deskVerify || {}).data, 'it loads the verifier\'s cache manager itself, spirit/app/deskVerify/data.js', 'required: ' + JSON.stringify(v.required));
   const runBefore = runShown(v);
   v.win.spirit.data.takeJob(runJob({ app: RUN1 })); await settle();
   ok(/verifying element\.js, suite 2 of 4/.test(runShown(v)) && !!v.document.getElementById('dd-run') && !!v.document.getElementById('dd-run').querySelector('progress'), 'a verifier publish taken into spirit.data redraws the run: its progress, its suite and how far',
@@ -601,13 +608,13 @@ const byId = function (w, id) { return function () { return w.document.getElemen
         try { m = JSON.parse(s); } catch (e) { m = null; }
         if (!m) test.fail('the page measured nothing: ' + String(s).slice(0, 200));
         else {
-          ok(!m.scrolls && !!m.say && m.say.bottom <= m.window, 'the page does not scroll, and the chat input is on screen (its bottom ' + (m.say && m.say.bottom) + ' of ' + m.window + ')',
+          ok(!m.scrolls && !!m.say && m.say.bottom <= m.window, 'the page does not scroll, and the chat input is on screen',
             'the page scrolls, or the input is off screen: ' + JSON.stringify({ scrolls: m.scrolls, input: m.say, window: m.window }));
           ok(!!m.chatEnd && m.chatEnd.top >= m.chatEnd.end - 1, 'the chat is pinned to its bottom: scrolled to its end',
             'the chat is scrolled to ' + JSON.stringify(m.chatEnd));
           ok(!!m.newest && /line 199/.test(m.newest.text) && !!m.chat && m.newest.bottom <= m.chat.bottom + 1, 'the newest line is the last, and shows whole at the bottom',
             'the newest line: ' + JSON.stringify(m.newest) + ', the chat ends at ' + JSON.stringify(m.chat));
-          ok(!!m.leftShown && m.panelAtOpen > 0, 'at open a left panel shows (' + m.leftShown + '), as the details did before the workBench',
+          ok(!!m.leftShown && m.panelAtOpen > 0, 'at open a left panel shows, as the details did before the workBench',
             'at open no left panel shows: ' + JSON.stringify({ shown: m.leftShown, height: m.panelAtOpen }));
           // goal/G43.3: the box on screen is a CodeMirror with line numbers, its last stored version above it.
           let v = null;
@@ -631,9 +638,13 @@ const byId = function (w, id) { return function () { return w.document.getElemen
           for (const key of ['box', 'qs', 'files', 'rules', 'suites']) {
             let p = null;
             try { p = JSON.parse(await page.evaluate('window.panel(' + JSON.stringify(key) + ')')); } catch (e) { p = null; }
-            ok(!!p && !p.error && !p.paneScrolls && !!p.scroller && p.scroller.bottom >= p.pane.bottom - 24 && p.scroller.bottom <= p.pane.bottom + 1,
-              'the ' + key + ' panel, the first time its icon is pressed, uses all the height: its list scrolls in itself, down to the bottom of the pane',
-              'the ' + key + ' panel, pressed the first time: ' + JSON.stringify(p));
+            const full = !!p && !p.error && !p.paneScrolls && !!p.scroller && p.scroller.bottom >= p.pane.bottom - 24 && p.scroller.bottom <= p.pane.bottom + 1;
+            const fullWhy = 'the ' + key + ' panel, pressed the first time: ' + JSON.stringify(p);
+            if (key === 'box') ok(full, 'the box panel, the first time its icon is pressed, uses all the height: its list scrolls in itself, down to the bottom of the pane', fullWhy);
+            else if (key === 'qs') ok(full, 'the qs panel, the first time its icon is pressed, uses all the height: its list scrolls in itself, down to the bottom of the pane', fullWhy);
+            else if (key === 'files') ok(full, 'the files panel, the first time its icon is pressed, uses all the height: its list scrolls in itself, down to the bottom of the pane', fullWhy);
+            else if (key === 'rules') ok(full, 'the rules panel, the first time its icon is pressed, uses all the height: its list scrolls in itself, down to the bottom of the pane', fullWhy);
+            else if (key === 'suites') ok(full, 'the suites panel, the first time its icon is pressed, uses all the height: its list scrolls in itself, down to the bottom of the pane', fullWhy);
             // THE GRANT ROW PINNED ON TOP (Andy: "the file panel must have the red gran button row pinned to the top and the
             // file list only using the remaining vertical space"): never in the list that scrolls, and it stays put.
             if (key === 'files') {
@@ -688,7 +699,9 @@ const byId = function (w, id) { return function () { return w.document.getElemen
         const pressOnce = async function (title, id, what) {
           await H.until(function () { return open(title); }, H.WAIT);
           const there = await H.until(function () { return page.evaluate('!!' + btn(id)); }, H.WAIT);
-          ok(there, 'the world: the detail of "' + title + '" offers ' + what, 'no ' + what + ' in the detail of "' + title + '": ' + String(await page.evaluate("String(document.getElementById('zzDesk').innerText).slice(0, 300)")));
+          const thereWhy = 'no ' + what + ' in the detail of "' + title + '": ' + String(await page.evaluate("String(document.getElementById('zzDesk').innerText).slice(0, 300)"));
+          if (title === 'A done item to close') ok(there, 'the world: the detail of "A done item to close" offers Close', thereWhy);
+          else if (title === 'A design item to delete') ok(there, 'the world: the detail of "A design item to delete" offers Delete', thereWhy);
           if (!there) return false;
           await page.evaluate('(function () { var b = ' + btn(id) + '; if (b) b.click(); return !!b; })()');
           await new Promise(function (r) { setTimeout(r, 1500); });
@@ -703,7 +716,7 @@ const byId = function (w, id) { return function () { return w.document.getElemen
         const afterDelete = await state(design.id);
         // Delete closes rather than erases (goal/G9.7): nothing deleted is the same item, its status and its Delete as before.
         ok(afterDelete.id === design.id && afterDelete.status === before.design.status && afterDelete.status !== 'closed' && (afterDelete.buttons || []).indexOf('delete') !== -1,
-          'its Delete pressed once: the item is there, its status "' + afterDelete.status + '" as before and still offering Delete, nothing deleted',
+          'its Delete pressed once: the item is there, its status as before and still offering Delete, nothing deleted',
           'after one press of Delete the item is ' + JSON.stringify({ id: afterDelete.id, status: afterDelete.status, buttons: afterDelete.buttons }) + ', before ' + JSON.stringify(before.design.status));
         ok(deleteArmed === true, 'and its Delete stands armed, waiting for the second press', 'after one press its Delete is not armed');
         const from = JSON.parse(await page.evaluate('JSON.stringify(performance.getEntriesByType("resource").map(function (e) { return e.name; }).filter(function (x) { return /deskRunStatus/.test(x); }))'));
@@ -786,20 +799,20 @@ async function noSharedLeftoversPart() {
   ok(fs.existsSync(path.join(RUN, 'spirit', 'app', 'desk', 'element', 'deskDetails', 'deskDetails.js')), 'the world: deskDetails.js, which draws an item\'s chat, is beside this test', 'no deskDetails.js beside this test: nothing judged');
   const tracked = execSync('git ls-files', { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(Boolean)
     .filter(function (f) { return fs.existsSync(path.join(REPO, f)); });
-  ok(tracked.length > 100, 'the world: ' + tracked.length + ' tracked files on disk are read', 'only ' + tracked.length + ' tracked files read: nothing judged');
+  ok(tracked.length > 100, 'the world: more than a hundred tracked files on disk are read', 'only ' + tracked.length + ' tracked files read: nothing judged');
 
   test.subHeading('the two leftovers are gone');
-  ['deskChat.js', 'deskElement.js'].forEach(function (n) {
-    ok(!fs.existsSync(path.join(SHARED, n)), 'shell/shared/js/' + n + ' is gone', 'shell/shared/js/' + n + ' is still there');
-  });
+  ok(!fs.existsSync(path.join(SHARED, 'deskChat.js')), 'shell/shared/js/deskChat.js is gone', 'shell/shared/js/deskChat.js is still there');
+  ok(!fs.existsSync(path.join(SHARED, 'deskElement.js')), 'shell/shared/js/deskElement.js is gone', 'shell/shared/js/deskElement.js is still there');
 
   test.subHeading('and their tests');
-  ['deskChat.js', 'deskChat.md', 'deskElement.js', 'deskElement.md'].forEach(function (n) {
-    ok(!fs.existsSync(path.join(SHARED, 'test', n)), 'shell/shared/js/test/' + n + ' is gone', 'shell/shared/js/test/' + n + ' is still there');
-  });
+  ok(!fs.existsSync(path.join(SHARED, 'test', 'deskChat.js')), 'shell/shared/js/test/deskChat.js is gone', 'shell/shared/js/test/deskChat.js is still there');
+  ok(!fs.existsSync(path.join(SHARED, 'test', 'deskChat.md')), 'shell/shared/js/test/deskChat.md is gone', 'shell/shared/js/test/deskChat.md is still there');
+  ok(!fs.existsSync(path.join(SHARED, 'test', 'deskElement.js')), 'shell/shared/js/test/deskElement.js is gone', 'shell/shared/js/test/deskElement.js is still there');
+  ok(!fs.existsSync(path.join(SHARED, 'test', 'deskElement.md')), 'shell/shared/js/test/deskElement.md is gone', 'shell/shared/js/test/deskElement.md is still there');
   // Any other test, or its spec, that reads or names them, the box's line quoted aside.
   const tests = tracked.filter(function (f) { return /\.(js|md)$/.test(f) && /(^|\/)test\//.test(f) && !SELF.test(f); });
   const naming = tests.filter(function (f) { return /\bdeskChat\.js\b|\bdeskElement\.js\b|\bcreateDeskChat\b|\bcreateDeskElement\b/.test(fs.readFileSync(path.join(REPO, f), 'utf8').replace(BOX_LINE, '')); });
-  ok(tests.length > 50, 'the world: ' + tests.length + ' tests and specs are read', 'only ' + tests.length + ' tests read: nothing judged');
+  ok(tests.length > 50, 'the world: more than fifty tests and specs are read', 'only ' + tests.length + ' tests read: nothing judged');
   ok(!naming.length, 'no test or spec left reads or names deskChat.js, deskElement.js, createDeskChat or createDeskElement', naming.length + ' still do: ' + short(naming));
 }

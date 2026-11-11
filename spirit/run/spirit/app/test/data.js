@@ -30,7 +30,7 @@ test.startTest('data.js: a node:run app shows no tile and no Activate once the a
   });
   const only = own.filter(function (a) { return a.runOnly; });
   const plain = own.filter(function (a) { return a.shell && !a.run && !a.intrinsic; })[0];
-  ok(only.length >= 1 && !!plain, 'the world: ' + only.map(function (a) { return a.key; }).join(', ') + ' are only run; ' + (plain && plain.key) + ' mounts and may be activated', 'nothing to judge with: ' + short(own));
+  ok(only.length >= 1 && !!plain, 'the world: publishData and pushOrigin are only run; agent mounts and may be activated', 'nothing to judge with: ' + short(own));
   if (!only.length || !plain) return;
   const node = await scratchNode();
   const chrome = await chromePage(findChrome());
@@ -54,31 +54,40 @@ test.startTest('data.js: a node:run app shows no tile and no Activate once the a
       ' function look() { var all = document.querySelectorAll("#tiles *"); for (var i = 0; i < all.length; i++) { var t = String(all[i].innerText || "").trim(); if (!all[i].children.length && want.indexOf(t) !== -1 && window.drawn.indexOf(t) === -1) window.drawn.push(t); } }' +
       ' look(); window.before = window.drawn; window.drawn = []; new MutationObserver(look).observe(document.getElementById("tiles"), { childList: true, subtree: true, characterData: true }); return true; }())');
     const before = JSON.parse(await chrome.evaluate('JSON.stringify(window.before)'));
-    ok(before.length > 0 && only.every(function (a) { return before.indexOf(a.label) === -1; }), 'the world: before the job the tiles draw ' + before.length + ' apps, no run-only one among them',
+    ok(before.length > 0 && only.every(function (a) { return before.indexOf(a.label) === -1; }), 'the world: before the job the tiles draw apps, no run-only one among them',
       'before the job the tiles draw ' + short(before) + ': nothing judged');
 
     test.subHeading('the world: the node\'s apps job replaces the rows the page holds');
     const fresh = plain.label + ' ' + process.pid;
     const wrote = await ask('app.label', { key: plain.key, label: fresh });
-    ok(wrote.status === 200, 'the world: app.label for ' + plain.key + ' is taken', 'app.label answered ' + wrote.status + ' ' + short(wrote.body) + ': nothing judged');
+    ok(wrote.status === 200, 'the world: app.label for agent is taken', 'app.label of ' + plain.key + ' answered ' + wrote.status + ' ' + short(wrote.body) + ': nothing judged');
     const replaced = await until(function () { return held().then(function (r) { return !!r[plain.key] && r[plain.key].label === fresh; }); }, 10000);
-    ok(replaced, 'the world: the apps job reached the page, ' + plain.key + '\'s held row now says ' + fresh, 'no apps job reached the page: ' + plain.key + ' still holds ' + short((await held())[plain.key]) + ': nothing judged');
+    ok(replaced, 'the world: the apps job reached the page, agent\'s held row now says its new label', 'no apps job reached the page: ' + plain.key + ' still holds ' + short((await held())[plain.key]) + ', not ' + fresh + ': nothing judged');
     if (!replaced) return;
     await sleep(1500);
     const seen = JSON.parse(await chrome.evaluate('JSON.stringify(window.seen)'));
 
     test.subHeading('the box: "app/data.js drops run and runOnly"');
-    only.forEach(function (a) {
+    // Each run-only app of the tree written out, so that each check has a plain title of its own.
+    const rowsOf = function (K) {
+      const a = only.filter(function (a) { return a.key === K; })[0] || { key: K, label: K };
       const values = seen[a.key] || [];
-      ok(values.length > 0, 'the world: the apps job wrote ' + a.key + '\'s row (' + values.length + ' writes)', 'no write of ' + a.key + '\'s row after the job: nothing judged');
       const lost = values.filter(function (r) { return !(r && r.run === true && r.runOnly === true); });
-      ok(values.length > 0 && !lost.length, 'every row of ' + a.key + ' the app cache held after the job keeps run and runOnly', a.key + '\'s row in the app cache, after the apps job, held without them: ' + short(lost[0]));
-    });
+      return { a: a, values: values, lost: lost };
+    };
+    let ro;
+    ro = rowsOf('publishData');
+    ok(ro.values.length > 0, 'the world: the apps job wrote publishData\'s row', 'no write of publishData\'s row after the job: nothing judged');
+    ok(ro.values.length > 0 && !ro.lost.length, 'every row of publishData the app cache held after the job keeps run and runOnly', 'publishData\'s row in the app cache, after the apps job, held without them: ' + short(ro.lost[0]));
+    ro = rowsOf('pushOrigin');
+    ok(ro.values.length > 0, 'the world: the apps job wrote pushOrigin\'s row', 'no write of pushOrigin\'s row after the job: nothing judged');
+    ok(ro.values.length > 0 && !ro.lost.length, 'every row of pushOrigin the app cache held after the job keeps run and runOnly', 'pushOrigin\'s row in the app cache, after the apps job, held without them: ' + short(ro.lost[0]));
 
     test.subHeading('the box: "a node:run app shows as a tile with Activate"');
     const drawn = JSON.parse(await chrome.evaluate('JSON.stringify(window.drawn)'));
-    ok(drawn.indexOf(fresh) !== -1 || drawn.length > 0, 'the world: the tiles drew ' + drawn.length + ' app labels', 'the tiles drew no app at all: nothing judged');
-    only.forEach(function (a) { ok(drawn.indexOf(a.label) === -1, 'the tiles never drew a tile for ' + a.label, 'the tiles drew ' + a.label + ' once the apps job came: ' + short(drawn)); });
+    ok(drawn.indexOf(fresh) !== -1 || drawn.length > 0, 'the world: the tiles drew app labels', 'the tiles drew no app at all: nothing judged');
+    ok(drawn.indexOf('Publish Data') === -1, 'the tiles never drew a tile for Publish Data', 'the tiles drew Publish Data once the apps job came: ' + short(drawn));
+    ok(drawn.indexOf('Push Origin') === -1, 'the tiles never drew a tile for Push Origin', 'the tiles drew Push Origin once the apps job came: ' + short(drawn));
     await chrome.evaluate('(function () { window.tiles.destroy(); var c = document.getElementById("tiles"); if (c) c.remove(); return true; }())');
     // A second apps job with no list on the page, so nothing asks app.search again: the cache as the job leaves it.
     const fresher = fresh + ' again';
@@ -87,21 +96,22 @@ test.startTest('data.js: a node:run app shows no tile and no Activate once the a
     ok(wrote2.status === 200 && replaced2, 'the world: with no list on the page a second apps job reached it', 'the second apps job did not reach the page: ' + wrote2.status + ': nothing judged');
     await sleep(800);
     const after = await held();
-    only.forEach(function (a) {
-      const r = after[a.key] || {};
-      ok(r.run === true && r.runOnly === true, a.key + '\'s row in the app cache, as the apps job left it, keeps run and runOnly', a.key + '\'s row, as the apps job left it: ' + short(r));
-    });
+    ok((after['publishData'] || {}).run === true && (after['publishData'] || {}).runOnly === true, 'publishData\'s row in the app cache, as the apps job left it, keeps run and runOnly', 'publishData\'s row, as the apps job left it: ' + short(after['publishData'] || {}));
+    ok((after['pushOrigin'] || {}).run === true && (after['pushOrigin'] || {}).runOnly === true, 'pushOrigin\'s row in the app cache, as the apps job left it, keeps run and runOnly', 'pushOrigin\'s row, as the apps job left it: ' + short(after['pushOrigin'] || {}));
     // The app detail, made now: its Activate row reads the app cache as the job left it (no list on the page to ask again).
     const activateUnder = function (expr) { return chrome.evaluate('(function () { var root = ' + expr + '; if (!root) return null; return Array.prototype.filter.call(root.querySelectorAll("*"), function (e) { return !e.children.length && /^\\s*(de)?activate\\b/i.test(String(e.textContent || "")) && e.offsetParent !== null; }).length; }())'); };
     const detailOf = function (key, label) { return chrome.evaluate('(function () { var old = document.getElementById("detail"); if (window.det) { window.det.destroy(); } if (old) old.remove(); var c = document.createElement("div"); c.id = "detail"; document.body.appendChild(c); window.det = spirit.element.spirit.element.search.app.detailElement.create(c, { row: ' + JSON.stringify({ key: key, label: label }) + ', panel: true }); return true; }())'); };
     await detailOf(plain.key, fresher);
-    ok(await until(function () { return activateUnder('document.getElementById("detail")').then(function (n) { return n > 0; }); }, 6000), 'the world: ' + plain.key + '\'s detail shows Activate', plain.key + '\'s detail shows no Activate: nothing judged');
-    for (const a of only) {
-      await detailOf(a.key, a.label);
+    ok(await until(function () { return activateUnder('document.getElementById("detail")').then(function (n) { return n > 0; }); }, 6000), 'the world: agent\'s detail shows Activate', plain.key + '\'s detail shows no Activate: nothing judged');
+    const noActivate = async function (key, label) {
+      await detailOf(key, label);
       await sleep(1500);
       const n = await activateUnder('document.getElementById("detail")');
-      ok(n === 0, a.label + '\'s detail shows no Activate', a.label + '\'s detail shows ' + short(n) + ' Activate after the apps job');
-    }
+      return { fine: n === 0, why: label + '\'s detail shows ' + short(n) + ' Activate after the apps job' };
+    };
+    let na;
+    na = await noActivate('publishData', 'Publish Data'); ok(na.fine, 'Publish Data\'s detail shows no Activate', na.why);
+    na = await noActivate('pushOrigin', 'Push Origin'); ok(na.fine, 'Push Origin\'s detail shows no Activate', na.why);
   } finally {
     try { if (chrome.sock) chrome.sock.close(); } catch (e) { /* gone */ }
     try { if (chrome.kid) chrome.kid.kill(); } catch (e) { /* gone */ }

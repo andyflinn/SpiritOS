@@ -97,13 +97,13 @@ function interfaceRules() {
     // Decided 7 (the box): "Verb rules live in api.js". Each verb a declaration of its arguments, each argument's rule.
     const odd = b.verbs ? Object.keys(b.verbs).filter(function (v) { const d = b.verbs[v]; return !d || typeof d !== 'object' || Array.isArray(d) || Object.keys(d).some(function (k) { return typeof d[k] !== 'string' && !(d[k] && typeof d[k] === 'object'); }); }) : [];
     ok(!!b.mod && !b.mod.threw && !!b.verbs && !odd.length,
-      b.api + ': it loads, and declares each verb\'s arguments and their rules (' + Object.keys(b.verbs || {}).length + ' verbs)',
+      'its api.js loads, and declares each verb\'s arguments and their rules',
       b.api + ': ' + (b.mod && b.mod.threw ? 'it does not load: ' + b.mod.threw : !b.verbs ? 'it declares no verbs' : 'verbs not declared as arguments and rules: ' + short(odd)));
     // Where it stands is where its family is found (goal/G43.27: spirit/<name>/, spirit/app/<name>/, the fewest path
     // elements), and no other api.js has its name.
-    ok(familyPath(b.family) === b.api, b.api + ': it is where the family ' + b.family + ' is found', b.api + ': the family ' + b.family + ' is found at ' + short(familyPath(b.family)) + ', not here');
+    ok(familyPath(b.family) === b.api, 'its api.js is where its branch is found', b.api + ': the family ' + b.family + ' is found at ' + short(familyPath(b.family)) + ', not here');
     const twins = (byName[b.family] || []).filter(function (f) { return f !== b.api; });
-    ok(!twins.length, b.api + ': no other ' + b.family + '/api.js in the tree', b.api + ': ' + b.family + ' has another api.js: ' + short(twins));
+    ok(!twins.length, 'no other api.js of its branch in the tree', b.api + ': ' + b.family + ' has another api.js: ' + short(twins));
   });
 }
 // Required on the node, in a process of the scratch node's run root, so its spirit.js knows that node (its
@@ -116,7 +116,7 @@ function placedRules(sRun, served) {
     const g = placed[b.api] || { threw: placed.threw || 'not required' };
     const at = 'spirit.required.' + b.api.replace(/\.js$/, '').split('/').join('.');
     ok(!g.threw && g.placed && !g.unbound.length && g.same,
-      b.api + ': required on the node, it stands at ' + at + ', and binds its ' + g.verbs + ' verbs on spirit.' + b.family,
+      'its api.js, required on the node, stands at its path in spirit.required, and binds its verbs on spirit under its branch',
       b.api + ': ' + (g.threw ? 'its require threw: ' + g.threw : (!g.placed ? 'it does not stand at ' + at + '; ' : '') + (g.unbound && g.unbound.length ? 'verbs not bound: ' + short(g.unbound) + '; ' : '') + (!g.same ? 'spirit.' + b.family + ' is not what it bound' : '')));
   });
 }
@@ -137,10 +137,10 @@ function appRules() {
     try { j = JSON.parse(fs.readFileSync(path.join(RUN, at), 'utf8')); } catch (e) { j = { threw: e.message }; }
     const id = j && j.identity && typeof j.identity === 'object' ? j.identity : {};
     ok(!!j && !j.threw && typeof id.icon === 'string' && !!id.icon && typeof id.label === 'string' && !!id.label,
-      at + ': it names identity.icon and identity.label (' + id.icon + ' ' + id.label + ')',
+      'its manifest names identity.icon and identity.label',
       at + ': ' + (j && j.threw ? 'it is no JSON: ' + j.threw : 'identity is ' + short(j && j.identity)));
-    ok(!!j && !j.threw && !('kind' in j) && !('operated' in j), at + ': it has no kind or operated: the node operates the server', at + ': it holds ' + short(['kind', 'operated'].filter(function (k) { return j && k in j; })));
-    ok(familyVerbs.length > 0 && familyVerbs.indexOf(b.name) === -1, b.dir + ': its name is no verb of the app family (' + familyVerbs.join(', ') + ')', b.dir + ': ' + (familyVerbs.length ? 'it takes the name of the verb app.' + b.name : 'the app family declares no verbs: nothing judged'));
+    ok(!!j && !j.threw && !('kind' in j) && !('operated' in j), 'its manifest has no kind or operated: the node operates the server', at + ': it holds ' + short(['kind', 'operated'].filter(function (k) { return j && k in j; })));
+    ok(familyVerbs.length > 0 && familyVerbs.indexOf(b.name) === -1, 'its name is no verb of the app family', b.dir + ': ' + (familyVerbs.length ? 'it takes the name of the verb app.' + b.name : 'the app family declares no verbs: nothing judged'));
   });
 }
 
@@ -156,7 +156,7 @@ function cacheRules() {
     if (!b.api && !b.data) return;
     test.subHeading(b.dir + ': its cache');
     // Every branch with an interface has its data.js in its own folder.
-    if (b.api) ok(!!b.data, b.family + ': ' + b.dir + '/data.js is there', b.family + ': no ' + b.dir + '/data.js for ' + b.api);
+    if (b.api) ok(!!b.data, 'its data.js is there', b.family + ': no ' + b.dir + '/data.js for ' + b.api);
     if (!b.data) return;
     const m = b.data;
     const src = code(path.join(RUN, m));
@@ -166,31 +166,33 @@ function cacheRules() {
     while ((x = re.exec(src))) if (owned.indexOf(x[1]) === -1) owned.push(x[1]);
     test.comment(m + ' names the branches ' + owned.join(', '));
     owned.forEach(function (name) {
+      test.subHeading(b.dir + ': its branch ' + name);
       const pathOf = new RegExp('\\b(?:D|data)\\.(?:get|set|merge|del|watch|rows|branch|seat)\\(\\s*[\'"]' + name + '(?:/|[\'"])');
       const others = readers.filter(function (f) { return pathOf.test(code(path.join(RUN, f))); });
-      ok(!others.length, name + ': named by ' + m + ' alone; every other file asks it', name + ': its paths are named outside ' + m + ', by ' + short(others));
+      ok(!others.length, 'the branch is named by its data.js alone; every other file asks it', name + ': its paths are named outside ' + m + ', by ' + short(others));
     });
+    test.subHeading(b.dir + ': its cache, the rest');
     // ONE PATTERN (goal/G43.7, the box: "ALL ... files will be converted to "data.js" files", "using the module
     // spirit/data.js", "with the SAME pattern"; from ./data-families.js): the old file is gone, and the guard, the attach
     // and the write on spirit are spirit/data.js's, none of it rolled by the family by hand.
     const OLD_MANAGER = 'clientCache' + 'Manager';
-    ok(!has(b.dir + '/' + OLD_MANAGER + '.js'), b.dir + ': the old file is gone', b.dir + ': ' + b.dir + '/' + OLD_MANAGER + '.js still stands');
-    ok(!/Symbol\.for|function attach|\.spirit\s*=|spirit\.[A-Za-z]+Data\s*=/.test(src), m + ': rolls none of it by hand', m + ': data.js still rolls its own guard, attach or spirit write');
+    ok(!has(b.dir + '/' + OLD_MANAGER + '.js'), 'the old file is gone', b.dir + ': ' + b.dir + '/' + OLD_MANAGER + '.js still stands');
+    ok(!/Symbol\.for|function attach|\.spirit\s*=|spirit\.[A-Za-z]+Data\s*=/.test(src), 'its data.js rolls none of it by hand', m + ': data.js still rolls its own guard, attach or spirit write');
     // The one difference is the disk: no manager touches a file or the browser's storage.
     const disk = /require\(\s*['"](fs|node:fs|path)['"]\s*\)|\b(writeFile|readFile|appendFile|localStorage|sessionStorage|indexedDB)\b/.exec(src);
-    ok(!disk, m + ': it touches no file and no browser storage', m + ': it keeps its cache itself (' + (disk && disk[0]) + '), where only appServer may');
+    ok(!disk, 'its data.js touches no file and no browser storage', m + ': it keeps its cache itself (' + (disk && disk[0]) + '), where only appServer may');
     // One contract: required, it stands at spirit.data.<name> through spirit.data.makeFamily, the name it hands
     // makeFamily, never guessed from its folder.
     const named = /makeFamily\(\s*['"]([^'"]+)['"]/.exec(src);
     const name = named ? named[1] : '';
     // EVERY BRANCH IS NAMED AS ITS FOLDER (goal/G43.31; Andy: "The BRANCH name (FUCK THE TERM "Family"!!!!!!!!!!!!) is
     // motherfucking <name> in spirit/app/<name>....", and "make sure, IN THIS ITEM that family names MATCH folder names").
-    ok(name === b.name, m + ': it makes the branch ' + b.name + ', its folder\'s name', m + ': it makes the branch ' + (name || 'none') + ' in the folder ' + b.name);
+    ok(name === b.name, 'its data.js makes the branch its folder is named', m + ': it makes the branch ' + (name || 'none') + ' in the folder ' + b.name);
     let mod = null;
     try { mod = require(path.join(RUN, m)); } catch (e) { mod = { threw: e.message }; }
-    ok(!!mod && !mod.threw && (mod.cache === undefined || (mod.cache && typeof mod.cache === 'object')), m + ': it loads' + (mod && mod.cache ? ', and exports its cache rules' : ''), m + ': it exports ' + short(mod && Object.keys(mod)));
+    ok(!!mod && !mod.threw && (mod.cache === undefined || (mod.cache && typeof mod.cache === 'object')), 'its data.js loads, and exports its cache rules if it has any', m + ': it exports ' + short(mod && Object.keys(mod)));
     const f = name ? require(DATA)[name] : null;
-    ok(!!f && !!f.data && typeof f.data === 'object' && !!f.cache && typeof f.cache === 'object', m + ': in node it stands at spirit.data.' + name + ', its data and its cache, for clients to ask', m + ': spirit.data.' + name + ' is ' + short(f));
+    ok(!!f && !!f.data && typeof f.data === 'object' && !!f.cache && typeof f.cache === 'object', 'in node it stands at spirit.data under its branch, its data and its cache, for clients to ask', m + ': spirit.data.' + name + ' is ' + short(f));
     // A BRANCH'S WATCH IS CALLED watch (Andy, goal/G43.32: "that's a decision: a BRANCHE's what is called "watch"", "the
     // branch is already implied in it's containing object.", "wsl, assert this in a test for branches."): every object
     // its reads hold is a branch, its watch the member named watch and no other (watchFile, watchApp, watchRow are the
@@ -209,9 +211,9 @@ function cacheRules() {
         if (v && typeof v === 'object' && !Array.isArray(v)) walk(v, here, depth + 1);
       });
     }(f.data, '', 0));
-    ok(!others.length, m + ': no branch of spirit.data.' + name + ' names its watch other than watch' + (watches.length ? ' (' + watches.join(', ') + ')' : ''),
+    ok(!others.length, 'no branch of its data names its watch other than watch',
       m + ': spirit.data.' + name + '.data names a watch other than watch: ' + short(others));
-    ok(!told.length, m + ': no watch of spirit.data.' + name + ' is told its branch: each takes the function and at most its row',
+    ok(!told.length, 'no watch of its data is told its branch: each takes the function and at most its row',
       m + ': a watch of spirit.data.' + name + ' takes more than its row and its function, so it is told its branch: ' + short(told));
   });
 }
@@ -273,7 +275,7 @@ async function nodeRules() {
     for (const b of served) {
       if (b.kind !== 'app') continue;
       const on = await raw('app.active', { key: b.name, active: true });
-      ok(on.status === 200, b.dir + ': the world: the ' + b.name + ' app is switched on', b.dir + ': app.active ' + b.name + ' answered ' + on.status + ' ' + short(on.text));
+      ok(on.status === 200, 'the world: its app is switched on', b.dir + ': app.active ' + b.name + ' answered ' + on.status + ' ' + short(on.text));
     }
     let tree = {};
     await H.until(function () {
@@ -285,14 +287,14 @@ async function nodeRules() {
     for (const b of served) {
       test.subHeading(b.dir + ': on a node');
       const branch = tree[b.family] && typeof tree[b.family] === 'object' && tree[b.family].ok !== false ? tree[b.family] : null;
-      ok(!!branch, b.dir + ': the node\'s api tree holds the branch ' + b.family, b.dir + ': the node\'s api tree holds no branch ' + b.family + ': ' + short(tree[b.family]));
+      ok(!!branch, 'the node\'s api tree holds its branch', b.dir + ': the node\'s api tree holds no branch ' + b.family + ': ' + short(tree[b.family]));
       if (!branch) continue;
       // The interface the node serves for it is its own api.js (goal/G43.27, requirement 2: server.js familyDir looks for
       // spirit/app/<name>/api.js, appServer.js withAgents takes the app folder itself as the family folder).
       const fam = await raw('api', { family: b.family });
       const iface = fam.body && typeof fam.body.interface === 'string' ? fam.body.interface.replace(/\r\n/g, '\n') : '';
       const mine = fs.readFileSync(path.join(RUN, b.api), 'utf8').replace(/\r\n/g, '\n');
-      ok(fam.status === 200 && iface === mine, b.dir + ': the interface the node serves is ' + b.api, b.dir + ': api {family: ' + b.family + '} answered ' + fam.status + (iface ? ', an interface that is not ' + b.api : ' ' + short(fam.text)));
+      ok(fam.status === 200 && iface === mine, 'the interface the node serves is its api.js', b.dir + ': api {family: ' + b.family + '} answered ' + fam.status + (iface ? ', an interface that is not ' + b.api : ' ' + short(fam.text)));
       // It serves exactly the verbs its own api.js declares (goal/G43.20; Andy: "IN THIS ONE, OR WE'LL NEVER GET FUCKING
       // DONE.", "WSL, NOTE AND ASSERT THIS IN YOUR TESTS, IN THE PROPER PLACE, DILIGENTLY WITHOUT FUCKING CHEATING."), no
       // FS set among them. Beyond an api.js only by decision: appServer's DEBUG on every server (desk/G2.5: "DEBUG
@@ -303,8 +305,8 @@ async function nodeRules() {
       const decided = ['DEBUG'].concat(b.family === 'desk' ? ['item.rules.add', 'item.rules.remove'] : []);
       const extra = offered.filter(function (v) { return declared.indexOf(v) === -1 && decided.indexOf(v) === -1; });
       const missing = declared.filter(function (v) { return offered.indexOf(v) === -1; });
-      ok(!extra.length && !missing.length, b.dir + ': serves exactly the ' + declared.length + ' verbs of its api.js', b.dir + ': ' + (extra.length ? extra.length + ' served beyond its api.js (' + short(extra.slice(0, 6)) + ')' : '') + (missing.length ? ' ' + missing.length + ' declared and not served ' + short(missing.slice(0, 6)) : ''));
-      ok(!offered.some(function (v) { return /^FS\./.test(v); }), b.dir + ': its branch carries no FS set', b.dir + ': it carries ' + short(offered.filter(function (v) { return /^FS\./.test(v); })));
+      ok(!extra.length && !missing.length, 'it serves exactly the verbs of its api.js', b.dir + ': ' + (extra.length ? extra.length + ' served beyond its api.js (' + short(extra.slice(0, 6)) + ')' : '') + (missing.length ? ' ' + missing.length + ' declared and not served ' + short(missing.slice(0, 6)) : ''));
+      ok(!offered.some(function (v) { return /^FS\./.test(v); }), 'its branch carries no FS set', b.dir + ': it carries ' + short(offered.filter(function (v) { return /^FS\./.test(v); })));
       // EVERY BROKEN CALL IS REFUSED AT THE DOOR (goal/G41.30; Andy, of "only the spirit object checks those rules, on the
       // caller's side. A raw call to /api/spirit, the attacker's way, reaches the handler unchecked": "this needs fixing in
       // this item."; an app's in its own process, decided 9): from its declaration, a raw call over http, no spirit
@@ -324,7 +326,7 @@ async function nodeRules() {
           if (!(r.status >= 400 && r.status < 500 && typeof code === 'string' && code && code !== 'handler-failed')) wrong.push(a.verb + ': ' + a.why + ' answered ' + r.status + ' ' + short(r.text));
         });
       }
-      ok(seen === asks.length && !wrong.length, '/api/spirit ' + b.family + ': all ' + asks.length + ' broken calls refused at the door, a 4xx with a code',
+      ok(seen === asks.length && !wrong.length, '/api/spirit: all its broken calls are refused at the door, a 4xx with a code',
         '/api/spirit ' + b.family + ': ' + (seen !== asks.length ? 'only ' + seen + ' of ' + asks.length + ' thrown; ' : '') + wrong.length + ' of ' + asks.length + ' broken calls not refused; first: ' + wrong.slice(0, 3).join(' | '));
     }
 
@@ -346,16 +348,16 @@ async function nodeRules() {
       test.subHeading(b.dir + ': found by its name');
       const fetched = heard.some(function (a) { return a.url === b.data && a.status === 200; });
       const missed = heard.filter(function (a) { return /(^|\/)data\.js$/.test(a.url) && a.status === 404 && a.url.split('/').slice(-2, -1)[0] === b.family; });
-      ok(said[b.family] === 'ok' && fetched, b.dir + ': a page asking for ' + b.family + ' by its name gets ' + b.data, b.dir + ': ' + b.family + ' answered ' + short(said[b.family] || (page && page.error) || 'nothing') + ', ' + b.data + ' fetched ' + fetched);
-      ok(!missed.length, b.dir + ': no data.js of ' + b.family + ' was asked that is not there (no 404)', b.dir + ': asked and missed: ' + short(missed));
+      ok(said[b.family] === 'ok' && fetched, 'a page asking for its branch by its name gets its data.js', b.dir + ': ' + b.family + ' answered ' + short(said[b.family] || (page && page.error) || 'nothing') + ', ' + b.data + ' fetched ' + fetched);
+      ok(!missed.length, 'no data.js of its branch was asked that is not there (no 404)', b.dir + ': asked and missed: ' + short(missed));
       // The box (goal/G43.7): "spirit.data.<name>.data" and "spirit.data.<name>.cache", on the page as in node.
-      ok(both[b.family] === true, b.dir + ': on the page spirit.data.' + b.family + ' has data and cache', b.dir + ': on the page spirit.data.' + b.family + ' lacks data or cache');
+      ok(both[b.family] === true, 'on the page, spirit.data under its branch has data and cache', b.dir + ': on the page spirit.data.' + b.family + ' lacks data or cache');
     });
     // The node serves each one as a script that calls spirit.data.makeFamily (was data-caches.js, 6: "the shell can
     // introspect to find and download their clientCacheManagers.").
     for (const b of withData) {
       const got = await fetch(node.base + '/' + b.data).then(function (r) { return r.text().then(function (t) { return { status: r.status, text: t }; }); }, function () { return { status: 0, text: '' }; });
-      ok(got.status === 200 && got.text.indexOf('.makeFamily(') !== -1, b.family + ': the shell downloads its manager, /' + b.data, b.family + ': /' + b.data + ' answered ' + got.status);
+      ok(got.status === 200 && got.text.indexOf('.makeFamily(') !== -1, 'the shell downloads its data.js', b.family + ': /' + b.data + ' answered ' + got.status);
     }
   } finally {
     if (page && page.kid) try { page.kid.kill(); } catch (e) { /* gone */ }
@@ -374,7 +376,7 @@ test.startTest('spirit-sibling-branchRules.js: every rule of a branch, judged on
     return;
   }
   test.comment(TARGETS.length + ' of ' + ALL.length + ' branches: ' + TARGETS.map(function (b) { return b.dir; }).join(', '));
-  if (!asked) ok(ALL.length >= 20 && ALL.some(function (b) { return b.dir === 'spirit/app/desk'; }) && ALL.some(function (b) { return b.dir === 'spirit/fs'; }), 'the world: ' + ALL.length + ' branch folders recognized, an app\'s (desk) and a system one (fs) among them', 'only ' + short(ALL.map(function (b) { return b.dir; })) + ': nothing judged');
+  if (!asked) ok(ALL.length >= 20 && ALL.some(function (b) { return b.dir === 'spirit/app/desk'; }) && ALL.some(function (b) { return b.dir === 'spirit/fs'; }), 'the world: branch folders recognized, an app\'s (desk) and a system one (fs) among them', 'only ' + short(ALL.map(function (b) { return b.dir; })) + ': nothing judged');
   interfaceRules();
   appRules();
   cacheRules();

@@ -196,7 +196,7 @@ test.startTest('deskClient.js: the desk client, its cache and its wakes (goal/G4
       const why = rel + ': tone ' + short(tone);
       if (rel === 'spirit/run/spirit/app/desk/element/desk/test/desk.js') ok(tone === 'test', 'the desk element\'s test desk.js has the tone test', why);
       else if (rel === 'spirit/run/spirit/test/relay.js') ok(tone === 'test', 'the general test relay.js has the tone test', why);
-      else ok(tone === 'test', 'the general test testModule.js has the tone test', why);
+      else if (rel === 'spirit/run/spirit/test/testModule.js') ok(tone === 'test', 'the general test testModule.js has the tone test', why);
     }
     const prod = await toneOf('spirit/run/spirit/app/desk/element/desk/desk.js');
     ok(prod === 'code', 'a production file under spirit/run/: tone code', 'spirit/run/spirit/app/desk/element/desk/desk.js: tone ' + short(prod));

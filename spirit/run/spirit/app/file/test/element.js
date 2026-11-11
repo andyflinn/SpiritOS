@@ -253,11 +253,25 @@ test.startTest('file.js: Files in spirit/app/file/, as Andy sees it (goal/G43.17
       const name = o[0].split('/').pop();
       await T('press(' + JSON.stringify(o[0]) + ')');
       const shown = await waitFor('count(' + JSON.stringify(o[1]) + ') > 0', 10000);
-      ok(shown, name + ' opens in media, as ' + o[1], name + ': ' + o[1] + ' ' + (await T('count(' + JSON.stringify(o[1]) + ')')) + ', ' + short(await T('text()')));
-      ok(shown && barIs(await T('bars()'), o[2] + ' Media Viewer: ' + name), 'its one bar: ' + o[2] + ' Media Viewer: ' + name + ', the file\'s own icon (Q15)', name + ': bars ' + short(await T('bars()')));
-      ok(shown && (await T('pickers()')) === 1 && (await T('count(".CodeMirror")')) === 0, name + ': its whole self, the file picker too, and no text', name + ': pickers ' + (await T('pickers()')));
+      const opened = name + ': ' + o[1] + ' ' + (await T('count(' + JSON.stringify(o[1]) + ')')) + ', ' + short(await T('text()'));
+      if (o[1] === 'img') ok(shown, 'pic.png opens in media, as img', opened);
+      else if (o[1] === 'video') ok(shown, 'clip.mp4 opens in media, as video', opened);
+      else if (o[1] === 'audio') ok(shown, 'song.mp3 opens in media, as audio', opened);
+      const barred = shown && barIs(await T('bars()'), o[2] + ' Media Viewer: ' + name);
+      const bars = name + ': bars ' + short(await T('bars()'));
+      if (o[1] === 'img') ok(barred, 'its one bar: 🌇 Media Viewer: pic.png, the file\'s own icon (Q15)', bars);
+      else if (o[1] === 'video') ok(barred, 'its one bar: 📹 Media Viewer: clip.mp4, the file\'s own icon (Q15)', bars);
+      else if (o[1] === 'audio') ok(barred, 'its one bar: 🔊 Media Viewer: song.mp3, the file\'s own icon (Q15)', bars);
+      const whole = shown && (await T('pickers()')) === 1 && (await T('count(".CodeMirror")')) === 0;
+      const pickers = name + ': pickers ' + (await T('pickers()'));
+      if (o[1] === 'img') ok(whole, 'pic.png: its whole self, the file picker too, and no text', pickers);
+      else if (o[1] === 'video') ok(whole, 'clip.mp4: its whole self, the file picker too, and no text', pickers);
+      else if (o[1] === 'audio') ok(whole, 'song.mp3: its whole self, the file picker too, and no text', pickers);
       const own = String(await T('text()'));
-      ok(shown && times(own, new RegExp(name.replace('.', '\\.'), 'g')) === 1 && own.indexOf('MIME type') === -1, name + ': separate from fstat: its name only in the bar, no facts', name + ': ' + short(own));
+      const apart = shown && times(own, new RegExp(name.replace('.', '\\.'), 'g')) === 1 && own.indexOf('MIME type') === -1;
+      if (o[1] === 'img') ok(apart, 'pic.png: separate from fstat: its name only in the bar, no facts', name + ': ' + short(own));
+      else if (o[1] === 'video') ok(apart, 'clip.mp4: separate from fstat: its name only in the bar, no facts', name + ': ' + short(own));
+      else if (o[1] === 'audio') ok(apart, 'song.mp3: separate from fstat: its name only in the bar, no facts', name + ': ' + short(own));
       await T('close(' + JSON.stringify(name) + ')');
       await waitFor('rows().length > 0');
     }
@@ -269,8 +283,12 @@ test.startTest('file.js: Files in spirit/app/file/, as Andy sees it (goal/G43.17
     for (const size of [[300, 200], [1200, 300], [300, 900]]) {
       const m = drawn ? await T('sized("img", ' + size[0] + ', ' + size[1] + ')') : { none: true };
       const inside = !m.none && m.left >= -1 && m.top >= -1 && m.right >= -1 && m.bottom >= -1 && m.w > 0 && m.h > 0;
-      ok(inside && m.bar, 'in a pane ' + size[0] + ' by ' + size[1] + ' the picture stays inside it both ways, under its bar, still in view', size.join('x') + ': ' + short(m));
-      ok(!m.none && m.fit !== 'cover', 'in a pane ' + size[0] + ' by ' + size[1] + ' it is shrunk, not cropped', size.join('x') + ': object-fit ' + short(m.fit));
+      if (size[0] === 300 && size[1] === 200) ok(inside && m.bar, 'in a pane 300 by 200 the picture stays inside it both ways, under its bar, still in view', size.join('x') + ': ' + short(m));
+      else if (size[0] === 1200) ok(inside && m.bar, 'in a pane 1200 by 300 the picture stays inside it both ways, under its bar, still in view', size.join('x') + ': ' + short(m));
+      else if (size[0] === 300 && size[1] === 900) ok(inside && m.bar, 'in a pane 300 by 900 the picture stays inside it both ways, under its bar, still in view', size.join('x') + ': ' + short(m));
+      if (size[0] === 300 && size[1] === 200) ok(!m.none && m.fit !== 'cover', 'in a pane 300 by 200 it is shrunk, not cropped', size.join('x') + ': object-fit ' + short(m.fit));
+      else if (size[0] === 1200) ok(!m.none && m.fit !== 'cover', 'in a pane 1200 by 300 it is shrunk, not cropped', size.join('x') + ': object-fit ' + short(m.fit));
+      else if (size[0] === 300 && size[1] === 900) ok(!m.none && m.fit !== 'cover', 'in a pane 300 by 900 it is shrunk, not cropped', size.join('x') + ': object-fit ' + short(m.fit));
     }
     await T('unsized()');
     await T('close("pic.png")');

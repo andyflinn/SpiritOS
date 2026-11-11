@@ -286,12 +286,12 @@ async function twoPress(w, find, armedSays, wantPress, what) {
   const w = deskWorld(goal, [item]);
   await w.mount();
   let p;
-  p = await twoPress(w, function () { return w.document.getElementById('desk-end-design'); }, function (t) { return t === 'End design mode: sure?'; }, { id: 'goal/G9', what: 'end-design' }, 'End design mode'); if (p) ok(p.good, 'End design mode: an armingButton saying "End design mode: sure?" on the first press, desk.press end-design on the second', p.why);
-  p = await twoPress(w, function () { return w.document.getElementById('desk-go-all'); }, function (t) { return t === 'Go all: sure?'; }, { id: 'goal/G9', what: 'go-all' }, 'Go all'); if (p) ok(p.good, 'Go all: an armingButton saying "Go all: sure?" on the first press, desk.press go-all on the second', p.why);
-  p = await twoPress(w, function () { return w.document.querySelector('[data-press="done"]'); }, function (t) { return /^Done anyway\? /.test(t); }, { id: 'goal/G9.1', what: 'done' }, 'Done not verified green, in its row'); if (p) ok(p.good, 'Done not verified green, in its row: an armingButton asking "Done anyway?" on the first press, desk.press done on the second', p.why);
+  p = await twoPress(w, function () { return w.document.getElementById('desk-end-design'); }, function (t) { return t === 'End design mode: sure?'; }, { id: 'goal/G9', what: 'end-design' }, 'End design mode'); if (p) ok(p.good, 'End design mode is an arming button: the first press says "End design mode: sure?", the second sends end-design', p.why);
+  p = await twoPress(w, function () { return w.document.getElementById('desk-go-all'); }, function (t) { return t === 'Go all: sure?'; }, { id: 'goal/G9', what: 'go-all' }, 'Go all'); if (p) ok(p.good, 'Go all is an arming button: the first press says "Go all: sure?", the second sends go-all', p.why);
+  p = await twoPress(w, function () { return w.document.querySelector('[data-press="done"]'); }, function (t) { return /^Done anyway\? /.test(t); }, { id: 'goal/G9.1', what: 'done' }, 'Done not verified green, in its row'); if (p) ok(p.good, 'Done, in the row of an item not verified green, is an arming button: the first press asks "Done anyway?", the second sends done', p.why);
   const ws = deskWorld(Object.assign({}, goal, { design: false }), []);
   await ws.mount();
-  p = await twoPress(ws, function () { return ws.document.getElementById('desk-start-design'); }, function (t) { return t === 'Start design mode: sure?'; }, { id: 'goal/G9', what: 'start-design' }, 'Start design mode'); if (p) ok(p.good, 'Start design mode: an armingButton saying "Start design mode: sure?" on the first press, desk.press start-design on the second', p.why);
+  p = await twoPress(ws, function () { return ws.document.getElementById('desk-start-design'); }, function (t) { return t === 'Start design mode: sure?'; }, { id: 'goal/G9', what: 'start-design' }, 'Start design mode'); if (p) ok(p.good, 'Start design mode is an arming button: the first press says "Start design mode: sure?", the second sends start-design', p.why);
 
   // goal/G43.30, the box: "every Delete and every Close press in Desk (its rows, the item detail, the rule dialog) is an
   // armingButton" (Andy: "while your mucking with desk, can you make sure that all delete and close buttons are
@@ -300,11 +300,11 @@ async function twoPress(w, find, armedSays, wantPress, what) {
   const armedNotClose = function (t) { return !!t && t !== 'Close'; };
   const wc = deskWorld({ id: 'goal/G8', title: 'Done goal', goal: '', status: 'open', buttons: ['close'], design: false, blocked: [] }, []);
   await wc.mount();
-  p = await twoPress(wc, function () { return wc.document.querySelector('[data-press="close"]'); }, armedNotClose, { id: 'goal/G8', what: 'close' }, 'a goal\'s Close, nothing under it open'); if (p) ok(p.good, 'a goal\'s Close, nothing under it open: an armingButton armed on the first press, desk.press close on the second', p.why);
+  p = await twoPress(wc, function () { return wc.document.querySelector('[data-press="close"]'); }, armedNotClose, { id: 'goal/G8', what: 'close' }, 'a goal\'s Close, nothing under it open'); if (p) ok(p.good, 'a goal\'s Close, with nothing under it open, is an arming button: the first press arms it, the second sends close', p.why);
   const wi = deskWorld({ id: 'goal/G8', title: 'A goal', goal: '', status: 'open', buttons: [], design: false, blocked: [] },
     [{ id: 'goal/G8.1', title: 'A done item', goal: 'goal/G8', status: 'done', buttons: ['close'], verified: 'green', claims: 1 }]);
   await wi.mount();
-  p = await twoPress(wi, function () { return wi.document.querySelector('[data-key="goal/G8.1"] [data-press="close"]') || wi.document.querySelector('[data-press="close"]'); }, armedNotClose, { id: 'goal/G8.1', what: 'close' }, 'a done item\'s Close, in its row'); if (p) ok(p.good, 'a done item\'s Close, in its row: an armingButton armed on the first press, desk.press close on the second', p.why);
+  p = await twoPress(wi, function () { return wi.document.querySelector('[data-key="goal/G8.1"] [data-press="close"]') || wi.document.querySelector('[data-press="close"]'); }, armedNotClose, { id: 'goal/G8.1', what: 'close' }, 'a done item\'s Close, in its row'); if (p) ok(p.good, 'a done item\'s Close, in its row, is an arming button: the first press arms it, the second sends close', p.why);
 
   // ── goal/G41.11: ARMED IS RED, ALSO ON THE DESIGN BUTTONS ─────────────────────────────────────────────────────────────
   // An inline colour on Start or End design mode would beat the shell's armed red (shell.css, #app-content
@@ -507,7 +507,7 @@ async function twoPress(w, find, armedSays, wantPress, what) {
     const fill = isFill(made.host) && !gaps.length;
     const why = want[0] + ': not fill: ' + gaps.join(' < ');
     if (want[1] === 'items.search') ok(fill, 'the List stands in a fill box, and every box up to the app is fill too', why);
-    else ok(fill, 'the Rules list stands in a fill box, and every box up to the app is fill too', why);
+    else if (want[1] === 'rules.search') ok(fill, 'the Rules list stands in a fill box, and every box up to the app is fill too', why);
   });
 }()).catch(function (e) { test.fail('the test threw ' + (e && e.stack || e)); }).then(async function () {
   // The parts below, each after the checks above, in order; one report for all.
