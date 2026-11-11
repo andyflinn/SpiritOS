@@ -428,6 +428,7 @@ test.startTest('element.js: the app app\'s main element, the app selector (goal/
         else if (a.key === 'desk') ok(held9, 'desk: its face script spirit/app/desk/element.js is there', why9);
         else if (a.key === 'file') ok(held9, 'file: its face script spirit/app/file/element.js is there', why9);
         else if (a.key === 'grants') ok(held9, 'grants: its face script spirit/app/grants/element.js is there', why9);
+        else if (a.key === 'hearing') ok(held9, 'hearing: its face script spirit/app/hearing/element.js is there', why9);
         else if (a.key === 'icons') ok(held9, 'icons: its face script spirit/app/icons/element.js is there', why9);
         else if (a.key === 'info') ok(held9, 'info: its face script spirit/app/info/element.js is there', why9);
         else if (a.key === 'introSpector') ok(held9, 'introSpector: its face script spirit/app/introSpector/element.js is there', why9);
@@ -462,6 +463,7 @@ test.startTest('element.js: the app app\'s main element, the app selector (goal/
         else if (a.key === 'desk') ok(held8, 'desk: its tile opens a face that draws', why8);
         else if (a.key === 'file') ok(held8, 'file: its tile opens a face that draws', why8);
         else if (a.key === 'grants') ok(held8, 'grants: its tile opens a face that draws', why8);
+        else if (a.key === 'hearing') ok(held8, 'hearing: its tile opens a face that draws', why8);
         else if (a.key === 'icons') ok(held8, 'icons: its tile opens a face that draws', why8);
         else if (a.key === 'info') ok(held8, 'info: its tile opens a face that draws', why8);
         else if (a.key === 'introSpector') ok(held8, 'introSpector: its tile opens a face that draws', why8);
