@@ -23,10 +23,11 @@
 // severity}, the script the test tests and the suite scoped to run://, the title the key. `--test <title>` runs the
 // tests up to and including that one, and none after (the box: "the sequence is run up to the specified test").
 //
-// WHILE THE SUITES MOVE TO test.run (goal/G47.2): the old calls below (startTest, subHeading, check, fail, comment,
-// reportSuccessFailureCount) still print, and under --verify-port still reach deskVerify, keyed by their place; they report
-// nothing to testicle, having no title on a fail. A run started with --verify-port also hands each test.run result to
-// deskVerify.record, so Desk's Verify keeps working until testicle runs suites (goal/G47.1, the next cycle).
+// THE PLACE KEY IS GONE (goal/G47.2, the box: "the key by place (its sub-heading and its number) goes"): every suite says
+// its tests through test.run, so test.check, test.fail, test.subHeading and the place they were keyed by are no more.
+// test.comment prints a note, no check. A run started with --verify-port also hands each result to deskVerify.record,
+// under its title, so Desk's Verify keeps working until testicle runs suites (goal/G47.1, the next cycle; agreed with cw
+// in the item's chat).
 //
 //   const test = require('<run>/spirit/test/testReport.js');
 
@@ -94,35 +95,6 @@ function landed() {
   inTheAir--;
   if (!inTheAir && exitWith) exitWith.now(exitWith.code);
 }
-function record(title, outcome, failure) {
-  if (!VERIFY_PORT || !title) return;
-  // EVERY TEST NAME STARTS WITH THE PATH (Andy, G41.19 box v13: "EVERY MOTHERFUCKING TEST NAME in the product three
-  // STARTS WITH THE MUTHERCUCKING PATH"): the title is "/<path>/<module> <section> #<n>", read alone it names its module.
-  const rec = { suite: SUITE, title: SUITE + ' ' + String(title), outcome: outcome };
-  if (outcome === 'red' && failure) rec.failure = String(failure);
-  const name = RECORD.split('.')[0];
-  const verb = RECORD.split('.')[1];
-  try {
-    // THE TEST'S OWN SPIRIT OBJECT STAYS THE GLOBAL (goal/G41.11; found: under the verifier the deskClient suite went 19
-    // red: spirit.js, loaded here, writes itself onto the global object it finds, so it wrote over the stand-in the suite
-    // runs on). The real one is loaded for the record alone, onto no object of the test's, and whatever the test had set
-    // is put back. A test's bare window is hidden too (goal/G41.16; found: under the verifier the files list and the
-    // contacts row went red): spirit.js loads the data set, which puts itself on window.spirit when there is a window,
-    // and wrote a fresh one over the data set the test runs on.
-    // The spirit object is spirit/run/spirit/spirit.js (goal/G43.18 moved it there; goal/G43.23, the box's item 3,
-    // points this require at it again), so a product test's results reach the verifier (G40.13, G41.19).
-    const own = globalThis.spirit;
-    const ownWindow = globalThis.window;
-    globalThis.spirit = undefined;
-    globalThis.window = undefined;
-    let real = null;
-    try { real = require(path.join(__dirname, '..', 'spirit.js')); } finally { globalThis.spirit = own !== undefined ? own : (real || undefined); globalThis.window = ownWindow; }
-    family = family || real.require(real.familyPath(name));
-    inTheAir++;
-    family.then(function (f) { return f[verb](rec); }).catch(function () { /* the records are a record, not the verdict */ }).then(landed);
-  } catch (e) { /* a test whose verifier cannot be reached still reports on its lines */ }
-}
-
 function titleLine(title) {
   let t = String(title);
   if (t.length > MAX_TITLE_LENGTH) t = t.substring(0, MAX_TITLE_LENGTH - 3) + '...';
@@ -139,37 +111,15 @@ const test = {
   counter: 0,
   successCount: 0,
   failureCount: 0,
-  section: '',
-  slot: 0,
 
   startTest: function (title) {
-    this.counter++; this.successCount = this.failureCount = 0; this.section = String(title || ''); this.slot = 0;
+    this.counter++; this.successCount = this.failureCount = 0;
     console.log('\n' + STARS);
     titleLine('#' + this.counter + ' ' + title);
     console.log(STARS + '\n');
   },
-  subHeading: function (title) {
-    this.section = String(title || ''); this.slot = 0;
-    console.log('\n' + PAD_STARS);
-    titleLine(title);
-    console.log(PAD_STARS + '\n');
-  },
   comment: function (text) {
     console.log(PAD_STARS + PAD_SPACES + text);
-  },
-  key: function () {
-    this.slot = (this.slot || 0) + 1;
-    return (this.section || 'untitled') + ' #' + this.slot;
-  },
-  check: function (str, detail) {
-    this.successCount++;
-    this.comment('SUCCESS #' + this.counter + '.' + this.successCount + ': ' + str + (detail ? ' — ' + detail : '') + ' ' + ICON.SUCCESS);
-    record(this.key(), 'green');
-  },
-  fail: function (str, detail) {
-    this.failureCount++;
-    this.comment('FAILURE #' + this.counter + '.' + this.failureCount + ': ' + str + (detail ? ' — ' + detail : '') + ' ' + ICON.ERROR);
-    record(this.key(), 'red', String(str) + (detail ? ' — ' + detail : ''));
   },
   // The completion line, the one the readers parse, and the exit code saying the same.
   reportSuccessFailureCount: function () {
@@ -210,7 +160,10 @@ const SCRIPT = (function () {
   return (above === '.' ? '' : above + '/') + path.posix.basename(SUITE_FILE);
 }());
 
-// The node's testicle, through the one spirit object, loaded onto no object of the suite's (as record() above does).
+// The node's testicle, through the one spirit object. THE SUITE'S OWN SPIRIT OBJECT STAYS THE GLOBAL (goal/G41.11: spirit.js,
+// loaded here, writes itself onto the global object it finds, and once wrote over the stand-in a suite runs on): it is
+// loaded with the suite's spirit and window hidden, and whatever the suite had set is put back. A suite with none of its own
+// keeps the real one as its global (goal/G47.2: a module requiring spirit.js after a report must find it).
 let testicle = null;
 let reportsOut = 0;
 const reportsLanded = [];

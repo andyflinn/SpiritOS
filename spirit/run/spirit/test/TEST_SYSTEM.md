@@ -76,4 +76,11 @@ An item that names one file therefore gets the right tests without listing them.
 - Every test reports through `spirit/run/spirit/test/testReport.js`, the product tree's own reporter (goal/G40.13), which
   prints the lines of the old one (`spirit/test/testSupport.js`) without requiring anything of `spirit/test/`, so the
   verifier records it as it records any suite.
+- **One call per test** (goal/G47.2; Andy: *"Every test inside every suite has its unique (within the suite) title. Every
+  test supplies its severity and reports itself to testicle"*): `test.run(title, severity, body, limitMs)`, its title one
+  plain string unique in its suite, its severity 0.2 by default, 0.4 for a general rule broken, 0.8 for a security hole
+  (a crash or a hang is 0.7, set by the reporter), its time limit from its measured run time with a margin. The body
+  answers `true`, or what went wrong. Setup goes into a "the world:" test, cleanup into `test.after(fn)`. Each test is
+  reported by itself to `testicle.test.set` of the node of the checkout it runs in; `--test <title>` runs the tests up
+  to that one. `spirit-sibling-titleRules.js` holds every suite to it. Its contract: `./test/testReport.md`.
 - A product test that finds a module breaking a rule fails that module's test, not the item that brought the test.
