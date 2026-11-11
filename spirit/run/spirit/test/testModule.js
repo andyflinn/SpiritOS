@@ -12,9 +12,9 @@
 //     components), and the own tests of the modules on its line upward; never a sibling branch. Andy: "re-test all test
 //     in ./file/ child-scopes and ../ and ../../ and ../../../ but NOT ../othername/...".
 //   - A general test, ./test/<x>-child-<t>.js or ./test/<x>-sibling-<t>.js beside ./<x>.js, is one entry per file it
-//     judges, that file in `file`: -child- judges ./<x>.js and ./<x>/ and below, -sibling- ./ and below. It judges only
-//     a module with its own test (opting in: "folder without a test/ subfolder won't fail the general assertions in the
-//     parent-folders"), and on a blast radius only the changed file and the files below it.
+//     judges, that file in `file`: -child- judges ./<x>.js and ./<x>/ and below, -sibling- ./ and below. It judges every
+//     module in its reach, with its own test or without (goal/G47.1; Andy: "all general test will auto-opt in ANY
+//     applicable file."), and on a blast radius only the changed file and the files below it.
 //   - A branch-rules test, ./test/<x>-sibling-branchRules.js, is one entry per branch folder (branchesOf), the folder in
 //     `file`; on a blast radius, the branch holding the changed file.
 // It names tests and runs none: the harness and deskVerify run each entry as its own suite, a general one with its file
@@ -106,8 +106,6 @@ function testsFor(file, opts) {
   const isTest = Object.create(null);
   tree.tests.forEach(function (t) { isTest[t] = true; });
   const has = function (m) { return !!isModule[m]; };
-  // Opted in: a module with its own test.
-  const opted = tree.modules.filter(function (m) { return isTest[ownTest(m)]; });
 
   let target = '';
   if (file) {
@@ -127,11 +125,11 @@ function testsFor(file, opts) {
   // The files general tests may judge, and the plain tests to run.
   let judged;
   if (!target) {
-    judged = opted;
+    judged = tree.modules;
     tree.tests.forEach(function (t) { if (!generalOf(t, has)) add(t); });
   } else {
     const below = join(dirOf(target), path.posix.basename(target, '.js'));
-    judged = opted.filter(function (m) { return m === target || under(m, below); });
+    judged = tree.modules.filter(function (m) { return m === target || under(m, below); });
     if (isTest[ownTest(target)]) add(ownTest(target));
     tree.tests.forEach(function (t) { if (under(t, below) && !generalOf(t, has)) add(t); });
     // The line upward: each folder above the file is a module's components; that module's own test runs.

@@ -17,7 +17,7 @@
 // spirit.js itself makes the global: it sets it before its first require.
 //
 // It stands in spirit/test/ beside spirit/spirit.js since goal/G43.32, and testModule.js runs it once per module of
-// spirit/ with its own test, as it did from the run root's old test folder (./TEST_SYSTEM.md).
+// spirit/, with its own test or without since goal/G47.1 (./TEST_SYSTEM.md).
 
 const fs = require('fs');
 const path = require('path');

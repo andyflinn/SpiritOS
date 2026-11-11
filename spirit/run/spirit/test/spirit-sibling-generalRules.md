@@ -8,7 +8,7 @@ argument, as `./spirit-child-generalRules.js` does for a module:
 **Its name is its reach** (`./TEST_SYSTEM.md`; Andy: *"the NAME of the file should tell testModule.js which
 folder this it belongs to. there are some nameing standards that are supposed to tell the product test system, which
 general test must be run against which modules"*). It is a `-sibling-` test beside `spirit.js`, so `testModule.js` runs
-it for every module in `spirit/run/` and below that has its own test: `shell/` and the agent tables' pages alike
+it for every module in `spirit/run/` and below, with its own test or without (goal/G47.1): `shell/` and the agent tables' pages alike
 (goal/G41.27; Andy: *"1. The checks judge every module under spirit/run/: the test is
 spirit/run/test/spirit-sibling-generalRules.js instead of shell-child. No page moves; one test covers shell/ and the
 agent tables alike."*). It was `shell/test/boot-sibling-generalRules.js`, whose reach was `shell/` and hung on

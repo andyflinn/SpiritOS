@@ -9,7 +9,7 @@ every test in run:/ MUST MATCH a production file."*
 
 **Its name is its reach** (`./TEST_SYSTEM.md`): a `-sibling-` test named after `spirit.js` (at `spirit/spirit.js`, beside
 this test folder since goal/G43.32) judges every tracked file in a `test/` folder of `spirit/run/` and below, vendor
-code left out. `testModule.js` hands it each module with its own test: handed `spirit/spirit.js`, or nothing, it reads
+code left out. `testModule.js` hands it each module in its reach: handed `spirit/spirit.js`, or nothing, it reads
 every test folder, so garbage named after no module is told once, under spirit.js; handed another module, the files of
 the `test/` folder beside it named after it; handed a file in a test folder, that one.
 

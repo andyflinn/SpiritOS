@@ -3,8 +3,8 @@
 // spirit/run/spirit/test/spirit-sibling-searchRules.js <file>
 // THE SEARCH RULE OF A MODULE (goal/G41.28), run once per file it judges, the file its argument, as
 // ./spirit-child-generalRules.js is for a module (spec: ./spirit-sibling-searchRules.md). Its name is its reach
-// (./TEST_SYSTEM.md): a -sibling- test beside spirit.js judges every module in spirit/run/ and below that has its own
-// test, a server and a page alike.
+// (./TEST_SYSTEM.md): a -sibling- test beside spirit.js judges every module in spirit/run/ and below, a server and a
+// page alike (goal/G47.1: no opting in).
 //
 // THE WHOLE ROW, NEVER A FEW FIELDS. Andy, box v15: "a probability search of a dataBase table must ALWAYS search the
 // whole bloody ROW, as it is served through a single-row \"get\", using a probabilityStringObjectMatch.", and "the
@@ -15,7 +15,7 @@
 //
 // Given no file, it judges every module testModule.js gives it, each its own check, named by its path.
 // It stands in spirit/test/ beside spirit/spirit.js since goal/G43.32, so testModule.js hands it every module in spirit/
-// and below with its own test (./TEST_SYSTEM.md).
+// and below (./TEST_SYSTEM.md).
 
 const fs = require('fs');
 const path = require('path');

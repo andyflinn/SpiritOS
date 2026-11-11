@@ -28,7 +28,7 @@ const MODULE = 'spirit/apiDoor.js';
 test.startTest('spirit/test/testModule.js: testsFor() gives a module under spirit/run/spirit/ the general rules that judge it (goal/G43.23 item 4)');
 
 test.subHeading('the world');
-ok(GENERAL.length === 4, 'the world: spirit/test/ holds four general rule tests', 'the general rule tests found: ' + short(GENERAL));
+ok(GENERAL.length === 5, 'the world: spirit/test/ holds five general rule tests', 'the general rule tests found: ' + short(GENERAL));
 ok(fs.existsSync(path.join(RUN, 'spirit', 'spirit.js')) && !fs.existsSync(path.join(RUN, 'spirit.js')),
   'the world: spirit.js, the module they are named after, is spirit/spirit.js, and none is at the run root', 'spirit.js is not where goal/G43.18 put it');
 ok(fs.existsSync(path.join(RUN, MODULE)) && fs.existsSync(path.join(RUN, 'spirit', 'test', 'apiDoor.js')),
@@ -64,6 +64,21 @@ test.subHeading('one test file per script: no <name>-<what>.js is read');
   ok(zz.indexOf('spirit/test/zz-extra.js') === -1 && part.indexOf('spirit/test/zz-extra.js') === -1 && part.indexOf('spirit/zz/test/part-more.js') === -1,
     'no <name>-<what>.js is read, on its own script or below it', 'read: ' + short(zz.concat(part).filter(function (t) { return /-(extra|more)\.js$/.test(t); })));
   try { require('fs').rmSync(planted, { recursive: true, force: true }); } catch (e) { /* scratch */ }
+}
+
+// NO OPTING IN (goal/G47.1; Andy: "all general test will auto-opt in ANY applicable file."): a general test judges every
+// module in its reach, with its own test or without one. Judged on a planted tree of its own.
+test.subHeading('a general test judges a module with no test of its own');
+{
+  const planted = fs.mkdtempSync(path.join(require('os').tmpdir(), 'spirit-optin-'));
+  const put = function (rel) { const f = path.join(planted, rel); fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, '\n'); };
+  put('spirit/spirit.js'); put('spirit/test/spirit-sibling-zzRules.js'); put('spirit/lone.js'); put('spirit/sub/deep.js'); put('spirit/owned.js'); put('spirit/test/owned.js');
+  const whole = testsFor('', { root: planted }).filter(function (e) { return e.test === 'spirit/test/spirit-sibling-zzRules.js'; }).map(function (e) { return e.file; });
+  ok(whole.indexOf('spirit/owned.js') !== -1, 'the world: a general test judges a module with its own test', 'its entries: ' + short(whole));
+  ok(whole.indexOf('spirit/lone.js') !== -1 && whole.indexOf('spirit/sub/deep.js') !== -1, 'on the whole list a general test judges every module in its reach that has no test of its own', 'its entries: ' + short(whole));
+  const lone = testsFor('spirit/lone.js', { root: planted }).filter(function (e) { return e.test === 'spirit/test/spirit-sibling-zzRules.js'; }).map(function (e) { return e.file; });
+  ok(lone.join() === 'spirit/lone.js', 'on the blast radius of a module with no test of its own the general test judges it', 'its entries there: ' + short(lone));
+  try { fs.rmSync(planted, { recursive: true, force: true }); } catch (e) { /* scratch */ }
 }
 
 test.subHeading('the whole list');

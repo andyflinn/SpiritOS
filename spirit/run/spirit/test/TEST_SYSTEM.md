@@ -40,7 +40,7 @@ file."*): a test named after no module is garbage, and `spirit/test/spirit-sibli
 The general tests of `spirit.js` (`spirit/run/spirit/test/spirit-child-generalRules.js`, `spirit-sibling-generalRules.js`,
 `spirit-sibling-searchRules.js`, `spirit-sibling-testReachRules.js`, `spirit-sibling-noFuckingGarbage.js`) stand in
 `spirit/run/spirit/test/` beside `spirit/run/spirit/spirit.js` (goal/G43.32): `-sibling-` judges every module in
-`spirit/` and below with its own test; `-child-` of `spirit.js`, its folder's namesake, judges `spirit/spirit.js` and
+`spirit/` and below; `-child-` of `spirit.js`, its folder's namesake, judges `spirit/spirit.js` and
 `spirit/` below too.
 
 **The tools of `spirit/run/spirit/test/`** (goal/G43.32, Q2; Andy: *"We need special rules for run://spirit/test/  it will
@@ -49,10 +49,12 @@ tools, not tests and no modules. `testModule.js` lists none of them, `spirit-sib
 judge them as tests named after no module, and their own tests stay in `spirit/run/spirit/test/test/`. Every product
 test requires them from there.
 
-## Opting in
+## Every module in reach is judged
 
-A module is judged by the general tests above it only once it has its own `./test/<name>.js`. A folder without one is
-left alone, so the tree comes in one module at a time.
+A general test judges every module in its reach, with its own `./test/<name>.js` or without one (goal/G47.1; Andy: *"all
+general test will auto-opt in ANY applicable file."*). The opting in of goal/G40.6, which left a module without its own
+test alone while the tree came in, is gone. A rule that does not apply to a file says so in its own code, as the mount
+rules do for a script that places no element.
 
 ## Which tests a change runs
 

@@ -5,8 +5,7 @@ The general rules of a module (goal/G40.6), judged in its code. It runs once per
     node spirit/test/spirit-child-generalRules.js spirit/app/desk/desk.js
 
 **Its name is its reach** (`./TEST_SYSTEM.md`): a `-child-` test beside `spirit.js` judges `spirit/spirit.js` and every
-module in `spirit/` and below that has its own test. It stands in `spirit/test/` since goal/G43.32, and judges the same
-modules as it did in the run root's old test folder.
+module in `spirit/` and below, with its own test or without (goal/G47.1). It stands in `spirit/test/` since goal/G43.32.
 
 Andy: *"it will assert, the require path rule it will assert that the spirit-object becomes a global at the top of all
 modules"*; spirit.js itself is judged too: *"it must establish the global spirit object early in the code, it must

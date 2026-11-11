@@ -20,7 +20,7 @@
 //   5. a test's .js has its .md beside it, and an .md its .js;
 //   6. any other file (a laid page, a fixture) is named after a module beside the folder: <module>-<what>.<ext>.
 //
-// What it judges, by the file it is handed (testModule.js hands each module with its own test, ./TEST_SYSTEM.md):
+// What it judges, by the file it is handed (testModule.js hands each module in its reach, ./TEST_SYSTEM.md):
 //   spirit/spirit.js, the module it is named after, or none: every tracked file in a test/ folder under spirit/run, so
 //     garbage named after no module is told once, under spirit.js;
 //   another module: the files of the test/ folder beside it that are named after it (its test, its spec, its fixtures);

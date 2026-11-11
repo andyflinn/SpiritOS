@@ -6,7 +6,7 @@ The search rule of a module (goal/G41.28), judged in its code. It runs once per 
     node spirit/test/spirit-sibling-searchRules.js spirit/app/desk/desk.js
 
 **Its name is its reach** (`./TEST_SYSTEM.md`): a `-sibling-` test beside `spirit.js` judges every module in
-`spirit/run/` and below that has its own test, a server and a page alike. Given no file, it judges every module
+`spirit/run/` and below, a server and a page alike, with its own test or without (goal/G47.1). Given no file, it judges every module
 `testModule.js` gives it, each its own check, named by its path.
 
 `spirit.js` has been at `spirit/run/spirit/spirit.js` since goal/G43.18; `testModule.js` finds it there for the run
