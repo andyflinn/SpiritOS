@@ -1,32 +1,57 @@
 'use strict';
 // spirit/run/spirit/app/testicle/data.js
 // WHAT A CLIENT KNOWS OF TESTICLE'S SERVER, IN THE testicle FAMILY'S OWN FOLDER (goal/G41.28, goal/G47.1). A page loads it
-// through spirit.require; it keeps what busy last answered in that page's spirit.data, under the node that served it.
+// through spirit.cacheManager('testicle'); it runs the translator into that page's spirit.data, under the node that served
+// the rows.
 //
-// THE BRANCH IS THIS FILE'S, AND ONLY THIS FILE NAMES IT: every reader asks spirit.data.testicle.data (below).
+// THE BRANCHES ARE THIS FILE'S, AND ONLY THIS FILE NAMES THEM: every reader (the suite search, testicle's face) asks
+// spirit.data.testicle.data (below), never a branch by name.
+//   file           name -> the file row { name, hash, deleted, changed }
+//   suite          file|suite -> the suite row { key, file, suite, test, status, deleted, outcome, changed }
 //   testicleBusy   'now' -> what busy last answered, true or false
-// The server publishes no row of its own, so it translates nothing: a reader keeps what busy answered (keep).
+// goal/G47.1, the UI cycle, the box: "The UI must listen to changes on all tables it interacts with, and the server, of
+// course, publishes changes." The server publishes each row it writes, its job's app { testicle: { table, row } }
+// (testicle.js), as the agent's tables publish theirs: the row is merged into its table's branch, so a list that is a view
+// of the branch follows it. What a search answers is kept the same way (keep).
 (function () {
+  var TABLES = ['file', 'suite'];
   var BUSY = 'testicleBusy';
   var NOW = 'now';
   var D = typeof window !== 'undefined' ? window.spirit.data : require('../../spirit.js').require('spirit/data.js');
   D.makeFamily('testicle', function () {
     var HOME = D.viewAt(null, 'testicle');
-    // THE READS AND THE ONE WRITE:
-    //   keep(busy)   what busy answered, true or false; anything else lets it go
-    //   busy()       what was kept, or null
-    //   watch(fn)    fn(busy) on every change; answers its release
-    //   branch       its whole path
+    function keyOf(table, row) { return table === 'file' ? String(row.name || '') : String(row.key || (row.file && row.suite ? row.file + '|' + row.suite : '')); }
+    D.addTranslator({
+      onJob: function (job) {
+        var a = job && job.module === 'spirit.app.testicle' && job.app && job.app.testicle;
+        if (!a || TABLES.indexOf(a.table) === -1 || !a.row || typeof a.row !== 'object') return;
+        var k = keyOf(a.table, a.row);
+        if (k) D.viewAt(job.fromNode || null, 'testicle').merge(a.table + '/' + k, a.row);
+      },
+    });
+    // THE READS AND THE WRITES:
+    //   branch(table)      a table's whole path, for a list that is a view of it (probabilitySearch's data); '' for none
+    //   keep(table, rows)  rows a verb answered (suite.search's items, parsed), merged into that table's branch
+    //   suite.watch(fn), file.watch(fn)   fn(key, row) on every change of the table; answers its release. A branch's
+    //                      watch is watch (goal/G43.32).
+    //   busy: keepBusy(b) what busy answered; busy() it, or null; watchBusy(fn) fn(busy) on each change
     var testicleReads = {
-      keep: function (busy) {
+      tables: TABLES.slice(),
+      branch: function (table) { return TABLES.indexOf(String(table)) === -1 ? '' : HOME.path(String(table)); },
+      keep: function (table, rows) {
+        if (TABLES.indexOf(String(table)) === -1) return;
+        (Array.isArray(rows) ? rows : []).forEach(function (r) { var k = r && typeof r === 'object' ? keyOf(table, r) : ''; if (k) HOME.merge(table + '/' + k, r); });
+      },
+      keepBusy: function (busy) {
         if (busy === true || busy === false) HOME.set(BUSY + '/' + NOW, busy);
         else HOME.del(BUSY + '/' + NOW);
       },
       busy: function () { var b = HOME.get(BUSY + '/' + NOW); return b === true || b === false ? b : null; },
-      // The row busy() reads, and only that: what it watches is what it answers.
-      watch: function (fn) { return HOME.watch(BUSY + '/' + NOW, function () { if (typeof fn === 'function') fn(testicleReads.busy()); }); },
-      get branch() { return HOME.path(BUSY); },
+      watchBusy: function (fn) { return HOME.watch(BUSY + '/' + NOW, function () { if (typeof fn === 'function') fn(testicleReads.busy()); }); },
     };
+    TABLES.forEach(function (t) {
+      testicleReads[t] = { watch: function (fn) { return HOME.watch(t, function (whole, v) { if (typeof fn === 'function') fn(HOME.row(whole, t), v); }); } };
+    });
     return testicleReads;
   });
 }());

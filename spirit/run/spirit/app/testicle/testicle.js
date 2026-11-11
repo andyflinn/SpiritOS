@@ -64,6 +64,8 @@ const Q = {
   goneSuitesOfFile: db.prepare('UPDATE suite SET deleted = 1, changed = ? WHERE file = ? AND deleted = 0'),
   goneRowsOfSuite: db.prepare('UPDATE suite SET deleted = 1, changed = ? WHERE suite = ? AND deleted = 0'),
   suitesOfFile: db.prepare('SELECT * FROM suite WHERE file = ? ORDER BY suite'),
+  rowsOfSuite: db.prepare('SELECT * FROM suite WHERE suite = ?'),
+  suiteRow: db.prepare('SELECT * FROM suite WHERE file = ? AND suite = ?'),
 };
 
 function posix(p) { return String(p).split(path.sep).join('/'); }
@@ -108,13 +110,18 @@ function apply(changed, P) {
   const hashes = Object.create(null);
   const hash = function (rel) { if (!(rel in hashes)) hashes[rel] = hashOf(rel); return hashes[rel]; };
   // A file's row made or brought up to date, as it stands on disc.
-  const fileUp = function (file) { Q.putFile.run(file, hash(file), now); };
-  const suiteUp = function (file, suite) { Q.putSuite.run(file, suite, hash(suite), now); };
+  // What it wrote, published once the transaction stands (goal/G47.1, the UI cycle: "the server, of course, publishes
+  // changes"): every file row and every suite row it touched, as they then stand.
+  const files = new Set();
+  const written = new Map();
+  const touched = function (file, suite) { written.set(file + '|' + suite, [file, suite]); };
+  const fileUp = function (file) { Q.putFile.run(file, hash(file), now); files.add(file); };
+  const suiteUp = function (file, suite) { Q.putSuite.run(file, suite, hash(suite), now); touched(file, suite); };
   db.exec('BEGIN');
   try {
     changed.forEach(function (rel) {
       if (isSuite(rel)) {
-        if (!there(rel)) { Q.goneRowsOfSuite.run(now, rel); return; }
+        if (!there(rel)) { Q.rowsOfSuite.all(rel).forEach(function (r) { touched(r.file, r.suite); }); Q.goneRowsOfSuite.run(now, rel); return; }
         // The files it concerns: the one it is the own test of, and every file a general test judges.
         const files = (P.bySuite[rel] || []).slice();
         const own = fileOfOwnTest(rel);
@@ -122,7 +129,7 @@ function apply(changed, P) {
         files.forEach(function (file) { if (!Q.file.get(file)) fileUp(file); suiteUp(file, rel); });
         return;
       }
-      if (!there(rel)) { Q.goneFile.run(rel, now); Q.goneSuitesOfFile.run(now, rel); return; }
+      if (!there(rel)) { Q.goneFile.run(rel, now); files.add(rel); Q.suitesOfFile.all(rel).forEach(function (r) { touched(r.file, r.suite); }); Q.goneSuitesOfFile.run(now, rel); return; }
       const row = Q.file.get(rel);
       if (row && !row.deleted && row.hash === hash(rel)) return; // the same bytes: nothing changed
       fileUp(rel);
@@ -136,6 +143,8 @@ function apply(changed, P) {
     db.exec('ROLLBACK');
     throw e;
   }
+  files.forEach(function (file) { const r = Q.file.get(file); if (r) appServer.publish({ testicle: { table: 'file', row: served(r) } }); });
+  written.forEach(function (p) { const r = Q.suiteRow.get(p[0], p[1]); if (r) appServer.publish({ testicle: { table: 'suite', row: suiteServed(r) } }); });
 }
 
 // THE QUEUE: what changed since the last write, and whether a write is under way. busy is either, or a file.get making
@@ -170,6 +179,8 @@ watcher.on('error', function (e) { console.error('testicle: the watcher: ' + (e 
 
 // A file row as a verb answers it: its deleted a boolean.
 function served(row) { return { name: row.name, hash: row.hash, deleted: !!row.deleted, changed: Number(row.changed) }; }
+// A suite row as a search and the stream carry it: its key file|suite, its status "needs running" while it is flagged.
+function suiteServed(r) { return { key: r.file + '|' + r.suite, file: r.file, suite: r.suite, test: !!r.test, status: r.test ? 'needs running' : '', deleted: !!r.deleted, outcome: r.outcome, changed: Number(r.changed) }; }
 function refused(code) { return Object.assign(new Error(code), { refusal: code }); }
 
 appServer.serve({
@@ -208,17 +219,21 @@ appServer.serve({
       const bucket = createProbabilityBucket(Infinity);
       let n = 0;
       Q.suitesOfFile.all(String(a.file || '')).forEach(function (r) {
-        const row = { file: r.file, suite: r.suite, test: !!r.test, status: r.test ? 'needs running' : '', deleted: !!r.deleted, outcome: r.outcome, changed: Number(r.changed) };
+        const row = suiteServed(r);
         const score = words ? Number(probabilityStringObjectMatch(words, row)) || 0 : 1;
         n += 1;
-        if (score > 0) bucket.seatFor(score * (1 - 1e-9) + 1e-9 / (1 + n), { key: r.suite, label: JSON.stringify(row) });
+        if (score > 0) bucket.seatFor(score * (1 - 1e-9) + 1e-9 / (1 + n), { key: row.key, label: JSON.stringify(row) });
       });
       const out = bucket.serialize(null, SEARCH_ROOM);
       return { items: out.items, more: !!out.more };
     },
   },
 // No peer user: the owner's own test status (apiAuth/G1.10).
-}, { codes: {
+}, {
+  // ITS ROWS ON THE NODE'S JOB STREAM (goal/G47.1, the UI cycle), as the agent's tables publish theirs: { testicle: { table,
+  // row } }. A page starts with none and asks suite.search for what it shows.
+  publisher: { family: 'testicle', bootstrap: function () { return []; } },
+  codes: {
   'not-a-production-script': { status: 400, text: 'not a production script' },
   'no-such-file': { status: 404, text: 'no such file' },
 } });
