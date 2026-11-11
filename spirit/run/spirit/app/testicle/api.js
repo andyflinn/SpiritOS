@@ -12,5 +12,10 @@ module.exports = {
     'file.get': { name: 'text' },
     // goal/G47.1, the verbs cycle: the suite rows of one production file, the words narrowing them ('' for all).
     'suite.search': { file: 'text', text: 'text' },
+    // appServer's streamPublisher (spirit/appServer.js), as agent's: the caller's key subscribes to testicle's rows, sent to
+    // its family of that name from its position (run, since); unsubscribe stops it. Who may is the node's grant. Declared
+    // here for now (Andy, goal/G43.32: "for now, it needs to declare them in api.js").
+    subscribe: { family: 'id', run: 'text?', since: 'number?' },
+    unsubscribe: {},
   },
 };
