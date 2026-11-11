@@ -73,25 +73,27 @@ const Q = {
   suiteRow: db.prepare('SELECT * FROM suite WHERE script = ? AND suite = ?'),
 };
 
-// THE TABLE test (goal/G45.1's box; goal/G47.1, the test-table cycle). One row per flip: a test's history is its rows, its
+// THE TABLE testicle (goal/G45.1's box; goal/G47.1, the test-table cycle; renamed from test in the rename cycle, the box:
+// "The testicle test table is renamed \"testicle\""; Andy: "no fucking data-rescue missions!", so an older table test is
+// left as it is, never moved over). One row per flip: a test's history is its rows, its
 // status now its current one. The box: "If the test does not flip, the current row is only updated with the last checked
 // date, and, if it exists, the hash of the product file", "If the test flips, a new active row is created; this will keep
 // change history", "The server applies the severity to the row only if the new severity is higher than the old one" (on a
 // flip the old one is the row it replaces: a test's severity never goes down). "One index over the current rows, by
 // verified, then severity from high to low, then flipped" (G45.1): every test search reads the current rows alone.
-db.exec('CREATE TABLE IF NOT EXISTS test (script TEXT NOT NULL, suite TEXT NOT NULL, test TEXT NOT NULL, flipped INTEGER NOT NULL, ' +
+db.exec('CREATE TABLE IF NOT EXISTS testicle (script TEXT NOT NULL, suite TEXT NOT NULL, test TEXT NOT NULL, flipped INTEGER NOT NULL, ' +
   'current INTEGER NOT NULL DEFAULT 1, verified INTEGER NOT NULL, tested INTEGER NOT NULL, judged TEXT NOT NULL DEFAULT \'\', ' +
   'severity REAL NOT NULL DEFAULT 0, PRIMARY KEY (script, suite, test, flipped))');
-db.exec('CREATE INDEX IF NOT EXISTS test_current ON test (verified, severity DESC, flipped DESC) WHERE current = 1');
+db.exec('CREATE INDEX IF NOT EXISTS testicle_current ON testicle (verified, severity DESC, flipped DESC) WHERE current = 1');
 const T = {
-  current: db.prepare('SELECT * FROM test WHERE script = ? AND suite = ? AND test = ? AND current = 1'),
-  add: db.prepare('INSERT INTO test (script, suite, test, flipped, current, verified, tested, judged, severity) VALUES (?, ?, ? , ?, 1, ?, ?, ?, ?)'),
-  tested: db.prepare('UPDATE test SET tested = ?, judged = ?, severity = MAX(severity, ?) WHERE script = ? AND suite = ? AND test = ? AND flipped = ?'),
-  retire: db.prepare('UPDATE test SET current = 0 WHERE script = ? AND suite = ? AND test = ? AND flipped = ?'),
+  current: db.prepare('SELECT * FROM testicle WHERE script = ? AND suite = ? AND test = ? AND current = 1'),
+  add: db.prepare('INSERT INTO testicle (script, suite, test, flipped, current, verified, tested, judged, severity) VALUES (?, ?, ? , ?, 1, ?, ?, ?, ?)'),
+  tested: db.prepare('UPDATE testicle SET tested = ?, judged = ?, severity = MAX(severity, ?) WHERE script = ? AND suite = ? AND test = ? AND flipped = ?'),
+  retire: db.prepare('UPDATE testicle SET current = 0 WHERE script = ? AND suite = ? AND test = ? AND flipped = ?'),
   // The current rows, most severe first, the newest flip first among equals (the index's order).
-  currents: db.prepare('SELECT * FROM test WHERE current = 1 ORDER BY severity DESC, flipped DESC'),
-  reds: db.prepare('SELECT * FROM test WHERE current = 1 AND verified = 0 ORDER BY severity DESC, flipped DESC'),
-  row: db.prepare('SELECT * FROM test WHERE script = ? AND suite = ? AND test = ? AND flipped = ?'),
+  currents: db.prepare('SELECT * FROM testicle WHERE current = 1 ORDER BY severity DESC, flipped DESC'),
+  reds: db.prepare('SELECT * FROM testicle WHERE current = 1 AND verified = 0 ORDER BY severity DESC, flipped DESC'),
+  row: db.prepare('SELECT * FROM testicle WHERE script = ? AND suite = ? AND test = ? AND flipped = ?'),
 };
 // A test row as the verbs and the stream carry it: its key its full key, script|suite|test|flipped, its booleans booleans
 // (goal/G47.1, the box: "the page keeps test rows by their full key, script|suite|test|flipped, and shows a test's current
@@ -275,7 +277,7 @@ appServer.serve({
   // needs to auto-create the script/suite rows for that test". A script whose row is missing, or whose bytes changed since
   // its row, gets its rows by the same write a change makes; then the test's row. "This cycle does not clear a suite's
   // needs-testing flag."
-  'test.set': {
+  'testicle.set': {
     request: { script: '', suite: '', test: '', verified: false, severity: 0 }, reply: {},
     handler: function (a) {
       const script = posix(String(a.script || '')).replace(/^\.?\//, '');
@@ -302,9 +304,9 @@ appServer.serve({
         } catch (e) { db.exec('ROLLBACK'); throw e; }
         // On a flip the replaced row, current false now, is published too, before the new current row (goal/G47.1, the
         // box: "on a flip, the replaced row turning current false is published too, beside the new current row").
-        if (was && Number(was.flipped) !== flipped) appServer.publish({ testicle: { table: 'test', row: testServed(T.row.get(script, suite, name, Number(was.flipped))) } });
+        if (was && Number(was.flipped) !== flipped) appServer.publish({ testicle: { table: 'testicle', row: testServed(T.row.get(script, suite, name, Number(was.flipped))) } });
         const out = testServed(T.row.get(script, suite, name, flipped));
-        appServer.publish({ testicle: { table: 'test', row: out } });
+        appServer.publish({ testicle: { table: 'testicle', row: out } });
         return out;
       }).finally(function () { getting -= 1; });
     },
@@ -313,7 +315,7 @@ appServer.serve({
   // combination supplied to the search. The other cases are handled accordingly: no script in the search query searches
   // tests for any script; the same for suite", "Most severe first applies to all test searches." script and suite may each
   // be left out; the words narrow among the rows, matched over the whole row as it is served.
-  'test.search': {
+  'testicle.search': {
     request: { text: '' }, reply: { items: [], more: false },
     accepts: function (a) {
       if (!a || typeof a !== 'object' || Array.isArray(a) || typeof a.text !== 'string') return false;

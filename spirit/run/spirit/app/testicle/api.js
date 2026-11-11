@@ -13,9 +13,9 @@ module.exports = {
     // goal/G47.1, the verbs cycle: the suite rows of one production script, the words narrowing them ('' for all).
     'suite.search': { script: 'text', text: 'text' },
     // goal/G47.1, the test-table cycle: one test's result, by itself (no bundling); severity from 0.0 to 1.0.
-    'test.set': { script: 'text', suite: 'text', test: 'text', verified: 'bool', severity: 'number' },
+    'testicle.set': { script: 'text', suite: 'text', test: 'text', verified: 'bool', severity: 'number' },
     // goal/G47.1: the current test rows, most severe first; script and suite each optional, the words narrowing them.
-    'test.search': { script: 'text?', suite: 'text?', text: 'text' },
+    'testicle.search': { script: 'text?', suite: 'text?', text: 'text' },
     // goal/G47.1, G45: every failed current test, most severe first. It takes nothing.
     red: {},
     // appServer's streamPublisher (spirit/appServer.js), as agent's: the caller's key subscribes to testicle's rows, sent to

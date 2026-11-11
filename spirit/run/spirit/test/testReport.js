@@ -17,7 +17,7 @@
 //                                              fail; it may be async. A throw or a rejection fails it at 0.7, the error as
 //                                              its detail; still running at its limit, it fails as a hang at 0.7.
 //   test.after(fn)                             run once every test has run, whatever they did.
-// The tests run one at a time in the order given. Each is reported by itself to testicle.test.set of the node of the
+// The tests run one at a time in the order given. Each is reported by itself to testicle.testicle.set of the node of the
 // checkout it runs in (spirit.js reads that node's port from the checkout's spirit/state/environment.json; goal/G47.1:
 // "a checkout with no node running reports nowhere and still prints its lines"): {script, suite, test, verified,
 // severity}, the script the test tests and the suite scoped to run://, the title the key. `--test <title>` runs the
@@ -177,7 +177,7 @@ function reportToTesticle(rec) {
     try { real = require(path.join(__dirname, '..', 'spirit.js')); } finally { globalThis.spirit = own !== undefined ? own : (real || undefined); globalThis.window = ownWindow; }
     testicle = testicle || real.require(real.familyPath('testicle'));
     reportsOut += 1;
-    reportsLanded.push(Promise.resolve(testicle).then(function (f) { return f['test.set'](rec); })
+    reportsLanded.push(Promise.resolve(testicle).then(function (f) { return f['testicle.set'](rec); })
       .catch(function () { /* a checkout with no node reports nowhere */ }).then(function () { reportsOut -= 1; }));
   } catch (e) { /* the lines are printed whatever the node says */ }
 }
