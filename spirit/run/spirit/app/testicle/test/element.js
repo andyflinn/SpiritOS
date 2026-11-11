@@ -151,7 +151,7 @@ test.startTest('testicle/element.js: testicle\'s first-cut face, a workBench wit
     ok(await waitFor('rows().indexOf("' + SHOWN[0] + '") !== -1', 15000), 'the world: a planted production script is found by its word', 'the planted script is not listed: ' + short(await T('rows()')));
     const rows = await T('rows()');
     const files = rows.filter(function (k) { return /\.[a-z0-9]+$/i.test(k); });
-    ok(SHOWN.every(function (f) { return rows.indexOf(f) !== -1; }), 'every production *.js file shows: ' + SHOWN.join(', '), 'shown: ' + short(rows));
+    ok(SHOWN.every(function (f) { return rows.indexOf(f) !== -1; }), 'every planted production *.js file shows', 'shown: ' + short(rows) + ', wanted ' + SHOWN.join(', '));
     ok(!HIDDEN.some(function (f) { return rows.indexOf(f) !== -1; }), 'no other file shows: not a .md, not a .json, not a test in a test/ folder', 'shown, though no production script: ' + short(HIDDEN.filter(function (f) { return rows.indexOf(f) !== -1; })));
     ok(files.length > 0 && files.every(function (k) { return /\.js$/.test(k) && k.split('/').indexOf('test') === -1; }), 'every file it lists is a .js outside any test/ folder', 'it lists ' + short(files.filter(function (k) { return !/\.js$/.test(k) || k.split('/').indexOf('test') !== -1; })));
     test.subHeading('destroy');

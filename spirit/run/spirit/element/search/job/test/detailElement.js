@@ -56,7 +56,10 @@ test.startTest('search/job/detailElement.js: one job, the Job Monitor\'s detail,
     await mount('spirit.fs');
     ok(await until(function () { return text().then(function (t) { return t.indexOf('spirit.fs') !== -1 && /running/.test(t); }); }, 10000), 'it shows spirit.fs, running', 'it shows: ' + short(await text()));
     const t1 = await text();
-    ['Status', 'Id', 'Kind', 'Updated'].forEach(function (f) { ok(t1.indexOf(f) !== -1, 'its fact ' + f, 'no ' + f + ': ' + short(t1)); });
+    ok(t1.indexOf('Status') !== -1, 'it shows its Status fact', 'no Status: ' + short(t1));
+    ok(t1.indexOf('Id') !== -1, 'it shows its Id fact', 'no Id: ' + short(t1));
+    ok(t1.indexOf('Kind') !== -1, 'it shows its Kind fact', 'no Kind: ' + short(t1));
+    ok(t1.indexOf('Updated') !== -1, 'it shows its Updated fact', 'no Updated: ' + short(t1));
     const b1 = await buttons();
     ok(b1.indexOf('Cancel') === -1 && b1.indexOf('Delete') === -1, 'no Cancel and no Delete for it', 'its buttons: ' + short(b1));
 

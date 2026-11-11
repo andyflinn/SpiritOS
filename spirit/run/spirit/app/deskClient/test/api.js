@@ -32,7 +32,7 @@ test.startTest('the deskClient family api.js: the deskClient server\'s interface
   const refusedAs = function (verb, args) { const r = call(verb, args); return r ? r.code : ''; };
 
   test.subHeading('its shape: verbs, each argument with its rule, no family name of its own');
-  ok(isPlain(verbs) && names.length > 0, 'it exports { verbs } with ' + names.length + ' verbs: ' + names.join(', '), 'exports ' + short(Object.keys(api)));
+  ok(isPlain(verbs) && names.length > 0, 'it exports a plain { verbs } table holding at least one verb', 'exports ' + short(Object.keys(api)) + ', verbs ' + short(names));
   ok(Object.keys(api).join() === 'verbs', 'it exports nothing but verbs: it names no family of its own', 'exports ' + short(Object.keys(api)));
   const badRule = [];
   names.forEach(function (v) {

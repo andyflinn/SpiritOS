@@ -60,7 +60,7 @@ function picked(file) {
 }
 function judge(rel, file) {
   const lines = picked(file);
-  if (!lines.length) test.check(rel + ': it hands every search the row whole');
+  if (!lines.length) test.check('it hands every search the row whole');
   else test.fail(rel + ': it hands probabilityStringObjectMatch fields it picks, at line' + (lines.length > 1 ? 's ' : ' ') + lines.join(', ') + ', in place of the row as its get serves it');
 }
 

@@ -58,8 +58,8 @@ test.startTest('boot.js: the face\'s boot');
         p === 'spirit/element/search/file/rowElement.js';
     };
     const extra = paths.filter(function (p) { return !allowed(p); }).filter(function (p, i, all) { return all.indexOf(p) === i; });
-    ok(!extra.length, 'boot names no component but its own: spirit\'s libraries, the sheets and the tree\'s row (' + paths.length + ' paths read)',
-      'boot loads components that are no part of it: ' + short(extra));
+    ok(!extra.length, 'it reads no component but its own: spirit\'s libraries, the sheets and the tree\'s row',
+      'boot loads components that are no part of it, of ' + paths.length + ' paths read: ' + short(extra));
     // JOIN IS AN APP (goal/G43.26; Andy: "the join icon sits next to all other icons on a shell (SO IT's A FCUKING APP, LIKE IT
     // ALWAYS WAS)"): spirit/app/join/, a tile beside the others; boot does not load it.
     ok(!/join\/join\.js/.test(boot), 'boot does not load Join: it is an app of spirit/app/join/ (goal/G43.26)', 'boot still names join/join.js');

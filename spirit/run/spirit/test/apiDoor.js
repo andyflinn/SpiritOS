@@ -48,9 +48,10 @@ test.startTest('apiDoor.js: the gate');
   for (const grants of [['contact'], ['contact.own']]) {
     const sx = starServers();
     const rx = await answer(sx, { contact: { own: { key: 'K', own: true } } }, member(grants));
-    ok(rx && rx.body && rx.body.ok === false && rx.body.code === 'owner-only' && !sx.reached.length,
-      'a member granted ' + grants.join(', ') + ' asking contact.own is refused owner-only, and no server is asked',
-      'a member granted ' + grants.join(', ') + ' asking contact.own: ' + short(rx) + ', servers asked ' + sx.reached.length);
+    const refused = rx && rx.body && rx.body.ok === false && rx.body.code === 'owner-only' && !sx.reached.length;
+    const why = 'a member granted ' + grants.join(', ') + ' asking contact.own: ' + short(rx) + ', servers asked ' + sx.reached.length;
+    if (grants[0] === 'contact') ok(refused, 'a member granted contact asking contact.own is refused owner-only, and no server is asked', why);
+    else ok(refused, 'a member granted contact.own asking contact.own is refused owner-only, and no server is asked', why);
   }
   const sOwn = starServers();
   const ownr = await answer(sOwn, { contact: { own: { key: 'K', own: true } } }, { owner: true });

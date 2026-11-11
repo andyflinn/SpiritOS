@@ -243,12 +243,14 @@ async function readTakePart() {
     ok(L.length >= 3 && L[2].argv.join(' ') === [EAR, PORT, '--read', 'K2'].join(' '), 'and after the next wake, --read K2: always the key last handed', 'the third listen was ' + short(L[2] && L[2].argv.slice(1)));
 
     test.subHeading('it takes the line before it posts');
-    P.forEach(function (p) {
+    P.forEach(function (p, i) {
       const b = body(p);
       const id = b && b.id;
       const at = started.indexOf(p);
       const take = started.slice(0, at).filter(function (s) { return s.kind === 'take' && body(s) && body(s).id === id; });
-      ok(!!id && take.length >= 1 && take[take.length - 1].argv[1] === PORT, 'before its chat.add under ' + id + ', a line.take {id: ' + id + '} through deskAgentEar <port>', 'the chat.add under ' + id + ' was posted with no line.take before it; started ' + short(started.slice(0, at + 1).map(function (s) { return s.kind + (s.argv[2] ? ' ' + s.argv[2] : ''); })));
+      const took = !!id && take.length >= 1 && take[take.length - 1].argv[1] === PORT;
+      if (i === 0) ok(took, 'before its first answer is posted, its ear takes that line', 'the chat.add under ' + id + ' was posted with no line.take before it; started ' + short(started.slice(0, at + 1).map(function (s) { return s.kind + (s.argv[2] ? ' ' + s.argv[2] : ''); })));
+      else ok(took, 'before its second answer is posted, its ear takes that line', 'the chat.add under ' + id + ' was posted with no line.take before it; started ' + short(started.slice(0, at + 1).map(function (s) { return s.kind + (s.argv[2] ? ' ' + s.argv[2] : ''); })));
     });
   }()).finally(function () { console.error = realError; });
 }

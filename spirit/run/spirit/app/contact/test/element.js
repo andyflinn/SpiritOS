@@ -126,7 +126,7 @@ test.startTest('contact.js: Contacts in spirit/app/contact/, as Andy sees it (go
 
     test.subHeading('the box: "exactly the same as the old": its tile opens the contacts');
     await press('Contacts');
-    ok(await shows(relay.name || 'noderoutes'), 'its tile opens the app, and the contact the node knows is listed, ' + (relay.name || ''), 'the app: ' + short(await shown()));
+    ok(await shows(relay.name || 'noderoutes'), 'its tile opens the app, and the contact the node knows is listed', 'the app, wanting ' + (relay.name || 'noderoutes') + ': ' + short(await shown()));
     await press(relay.name || 'noderoutes');
     await sleep(1500);
     const detail = await shown();

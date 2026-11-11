@@ -70,11 +70,22 @@ test.startTest('data.js: what a page knows of the icon set, following the one jo
   const was = snap();
   w.job({ icons: { row: { glyph: '🌌', keywords: ['galaxy'] } } }, 'spirit.app.desk');
   ok(w.I.row('🌌') === null && snap() === was, 'a row on another app\'s job, spirit.app.desk, is not taken', 'another job\'s row was taken: ' + short(w.I.row('🌌')));
-  [null, 'text', 5, [], { icons: null }, { icons: 'x' }, { icons: { row: null } }, { icons: { row: { keywords: ['no glyph'] } } }, { icons: { removed: true } }, { other: { row: { glyph: '🌑' } } }].forEach(function (app) {
+  const crooked = function (app) {
     let threw = '';
     try { w.job(app); } catch (e) { threw = String(e && e.message || e); }
-    ok(!threw && snap() === was, 'a crooked publish, ' + short(app) + ', changes nothing', 'the publish ' + short(app) + (threw ? ' threw ' + threw : ' changed the rows to ' + snap()));
-  });
+    return { fine: !threw && snap() === was, why: 'the publish ' + short(app) + (threw ? ' threw ' + threw : ' changed the rows to ' + snap()) };
+  };
+  let c;
+  c = crooked(null); ok(c.fine, 'a crooked publish of null changes nothing', c.why);
+  c = crooked('text'); ok(c.fine, 'a crooked publish of a string changes nothing', c.why);
+  c = crooked(5); ok(c.fine, 'a crooked publish of a number changes nothing', c.why);
+  c = crooked([]); ok(c.fine, 'a crooked publish of a list changes nothing', c.why);
+  c = crooked({ icons: null }); ok(c.fine, 'a crooked publish of icons that are null changes nothing', c.why);
+  c = crooked({ icons: 'x' }); ok(c.fine, 'a crooked publish of icons that are a string changes nothing', c.why);
+  c = crooked({ icons: { row: null } }); ok(c.fine, 'a crooked publish of a row that is null changes nothing', c.why);
+  c = crooked({ icons: { row: { keywords: ['no glyph'] } } }); ok(c.fine, 'a crooked publish of a row with no glyph changes nothing', c.why);
+  c = crooked({ icons: { removed: true } }); ok(c.fine, 'a crooked publish of a removal with no glyph changes nothing', c.why);
+  c = crooked({ other: { row: { glyph: '🌑' } } }); ok(c.fine, 'a crooked publish of a row under another name than icons changes nothing', c.why);
   w.job({ icons: { row: { glyph: '🌒', keywords: 'not a list' } } });
   const r2 = w.I.row('🌒');
   ok(!r2 || Array.isArray(r2.keywords), 'keywords that are no list are never kept as one', 'row(🌒): ' + short(r2));

@@ -26,7 +26,7 @@ test.startTest('element.js: the chat app\'s element, today\'s chatter made an el
 (async function () {
   test.subHeading('its code: no old shell, no handed api');
   const src = code(FILE);
-  ok(src !== '', 'it is at ' + PLACE, PLACE + ' is not there');
+  ok(src !== '', 'its element file is there', PLACE + ' is not there');
   ok(src !== '' && !/activateApp|spirit\.shell\b/.test(src), 'it mounts through no old shell: no activateApp, no spirit.shell', 'element.js still reaches the old shell: ' + short(src.match(/activateApp|spirit\.shell\b/g)));
   ok(src !== '' && !/\bchatClerver\b/.test(src), 'and names no chatClerver: its server is the branch chat', 'element.js still names chatClerver');
 

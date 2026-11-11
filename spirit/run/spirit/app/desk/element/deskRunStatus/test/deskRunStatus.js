@@ -37,7 +37,7 @@ test.startTest('deskRunStatus.js: the verifier\'s run in an item\'s status');
 
 (async function () {
 test.subHeading(PLACE + ': it stands at spirit.required.spirit.app.desk.element.deskRunStatus.deskRunStatus');
-ok(!loaded, 'it is at ' + PLACE, PLACE + ' did not load: ' + short(loaded));
+ok(!loaded, 'its element file loads', PLACE + ' did not load: ' + short(loaded));
 ok(typeof S === 'function', 'window.spirit.required.spirit.app.desk.element.deskRunStatus.deskRunStatus is a function', 'required: ' + short(win.spirit.required));
 if (typeof S !== 'function') return;
 

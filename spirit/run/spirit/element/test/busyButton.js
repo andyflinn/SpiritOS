@@ -53,7 +53,7 @@ test.startTest('busyButton.js: the button that waits for its request');
     ok(m.waiting.disabled === true, 'it greys out: disabled while it waits', 'disabled: ' + short(m.waiting.disabled));
     ok(!!m.waiting.spin && m.waiting.spin.width > 0 && m.waiting.label === 'Ask' && m.waiting.labelLeft !== null && m.waiting.spin.right <= m.waiting.labelLeft + 1,
       'an icon shows left of its label, and the label is still said', 'waiting: ' + short(m.waiting));
-    ok(m.waiting.animation !== 'none' && m.waiting.shellSheet === true, 'the icon turns, by a keyframes rule of shell.css, the one sheet (' + m.waiting.animation + ')',
+    ok(m.waiting.animation !== 'none' && m.waiting.shellSheet === true, 'the icon turns, by a keyframes rule of shell.css, the one sheet',
       'its animation is ' + short(m.waiting.animation) + (m.waiting.animation !== 'none' ? ', no keyframes of that name in /shell.css' : ''));
     ok(m.sheets.after === m.sheets.before && m.sheets.stylesAfter === m.sheets.stylesBefore, 'and the element adds no sheet and no style of its own',
       'sheets ' + m.sheets.before + ' then ' + m.sheets.after + ', style elements ' + m.sheets.stylesBefore + ' then ' + m.sheets.stylesAfter);

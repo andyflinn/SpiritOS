@@ -38,7 +38,7 @@ test.startTest('file.js: the file selector, a thin element over its own list (go
   await settle();
 
   test.subHeading('"the selector", over its own list');
-  ok(required[0] === LIST, 'as it runs it requires its own list, ' + LIST + ', first', 'it required: ' + short(required));
+  ok(required[0] === LIST, 'as it runs it requires its own list first', 'it required ' + short(required) + ', not ' + LIST + ' first');
   const S = (((((global.window.spirit.element || {}).spirit || {}).element || {}).search || {}).file);
   ok(!!S && typeof S.create === 'function', 'it places spirit.element.spirit.element.search.file.create, by its path', 'placed: ' + short(S && Object.keys(S)));
   if (!S || typeof S.create !== 'function') return;
