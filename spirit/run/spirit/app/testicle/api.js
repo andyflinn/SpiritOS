@@ -7,11 +7,11 @@ module.exports = {
   verbs: {
     // goal/G47.1, the box: "busy": true if it is doing any work, false if it is idle. It takes nothing.
     busy: {},
-    // goal/G47.1, the verbs cycle: a production file's row, made with its suite rows if it has none. name is the file,
-    // scoped to run://.
-    'file.get': { name: 'text' },
-    // goal/G47.1, the verbs cycle: the suite rows of one production file, the words narrowing them ('' for all).
-    'suite.search': { file: 'text', text: 'text' },
+    // goal/G47.1, the verbs cycle: a production script's row, made with its suite rows if it has none. name is the script,
+    // scoped to run://. Named file.get until the rename of the table file to script.
+    'script.get': { name: 'text' },
+    // goal/G47.1, the verbs cycle: the suite rows of one production script, the words narrowing them ('' for all).
+    'suite.search': { script: 'text', text: 'text' },
     // appServer's streamPublisher (spirit/appServer.js), as agent's: the caller's key subscribes to testicle's rows, sent to
     // its family of that name from its position (run, since); unsubscribe stops it. Who may is the node's grant. Declared
     // here for now (Andy, goal/G43.32: "for now, it needs to declare them in api.js").

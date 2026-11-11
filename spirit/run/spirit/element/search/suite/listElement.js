@@ -3,8 +3,8 @@
 // THE SUITE LIST, AN ELEMENT (goal/G47.1, the UI cycle): the suites of one production file, what testicle's file detail
 // draws through the suite selector (../suite.js). Its row is ./rowElement.js; no row opens a detail.
 //
-//   spirit.element.spirit.element.search.suite.listElement.create(container, { file }) -> { destroy() }
-//     file   the production file whose suite rows it lists, scoped to run://
+//   spirit.element.spirit.element.search.suite.listElement.create(container, { script }) -> { destroy() }
+//     script   the production script whose suite rows it lists, scoped to run://
 //
 // The box: "a standard testicle.suite.search", "The file row owns its suite rows: the suite table's key is file and suite.
 // So suite.search takes the production file and answers that file's suite rows only, each suite once, with its filename
@@ -27,7 +27,7 @@
 
   function create(container, options) {
     var o = options || {};
-    var file = String(o.file || '');
+    var script = String(o.script || '');
     var gone = false;
     var list = null;
     container.innerHTML = '<div data-suites="list" class="fill"></div>';
@@ -36,7 +36,7 @@
       if (gone) return;
       var data = S.data.testicle.data;
       var ask = function (text) {
-        return Promise.resolve(S.testicle['suite.search']({ file: file, text: String(text || '') })).then(function (b) {
+        return Promise.resolve(S.testicle['suite.search']({ script: script, text: String(text || '') })).then(function (b) {
           data.keep('suite', rowsOf(b));
           return b;
         });
@@ -49,13 +49,13 @@
         },
         server: 'testicle',
         verb: 'suite.search',
-        args: function (text) { return { file: file, text: text }; },
+        args: function (text) { return { script: script, text: text }; },
         columns: [
           { field: 'suite', label: 'Suite', sort: 'text' },
           { field: 'status', label: 'Status', sort: 'text' },
         ],
         // THE FILE'S ROWS ONLY, not drawn: the branch holds every file's suites.
-        filters: [{ name: 'file', when: function () { return false; }, test: function (row) { return row && row.file === file ? 1 : 0; } }],
+        filters: [{ name: 'script', when: function () { return false; }, test: function (row) { return row && row.script === script ? 1 : 0; } }],
         element: function (row) { return S.element.spirit.element.search.suite.rowElement.create(row); },
         empty: 'No suite concerns this file.',
       });

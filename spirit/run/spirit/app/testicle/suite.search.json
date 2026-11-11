@@ -1,4 +1,7 @@
 {
-  "description": "The suite rows of one production file, a standard table search: {items, more}, each item keyed by its suite, its label the row with the suite's filename and its status, \"needs running\" while it is flagged. Only that file's rows, each suite once; the words narrow among them, '' for all.",
-  "request": { "file": "text", "text": "text" }
+  "description": "The suite rows of one production script, a standard table search: {items, more}, each item keyed by script|suite, its label the row with the suite's filename and its status, \"needs running\" while it is flagged. Only that script's rows, each suite once; the words narrow among them, '' for all.",
+  "request": {
+    "script": "text",
+    "text": "text"
+  }
 }

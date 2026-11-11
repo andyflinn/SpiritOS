@@ -4,8 +4,8 @@
 // over job/listElement.js. testicle's (goal/G47.1, the UI cycle, the box: "Since testicle is intrinsic, its elements go into
 // spirit/element/ in the standard way: the suite search is spirit/element/search/suite.js and its folder").
 //
-//   spirit.element.spirit.element.search.suite.create(container, { file }) -> { destroy() }
-//     file   the production file whose suites it lists, scoped to run://
+//   spirit.element.spirit.element.search.suite.create(container, { script }) -> { destroy() }
+//     script   the production script whose suites it lists, scoped to run://
 (function () {
   function createSuiteSelector(options) {
     var o = options || {};
@@ -16,7 +16,7 @@
     // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
     Promise.resolve(window.spirit.require('spirit/element/search/suite/listElement.js')).then(function () {
       if (gone) return;
-      made = window.spirit.element.spirit.element.search.suite.listElement.create(root, { file: o.file });
+      made = window.spirit.element.spirit.element.search.suite.listElement.create(root, { script: o.script });
     });
     root.destroy = function () {
       gone = true;
