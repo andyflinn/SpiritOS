@@ -4,7 +4,7 @@
 // The tests of spirit/app/chat/api.js, and of no other module (spec: ./api.md; goal/G43.31). The box: "nodeChat.js ...
 // its verbs as api.js lists them", and "The branch name is the folder's: chat ... the verbs are chat.<verb>". Read from
 // the disc; then on a scratch node of its own with the app switched on, the node's own answer for the branch and every
-// verb it lists asked as the owner asks it.
+// verb it lists asked as the owner asks it. One test.run per test (goal/G47.2).
 
 const fs = require('fs');
 const path = require('path');
@@ -13,65 +13,92 @@ const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 const FILE = path.join(__dirname, '..', 'api.js');
 
-function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 
-test.startTest('api.js: the interface of the branch chat (goal/G43.31)');
+// What the tests make, for the tests after them.
+const X = { verbs: null, node: null, call: null };
+const NO_NODE = 'no scratch node: the world failed';
+test.after(function () {
+  const node = X.node;
+  try { if (node && node.child) node.child.kill(); } catch (e) { /* gone */ }
+  try { if (node && node.root) fs.rmSync(node.root, { recursive: true, force: true }); } catch (e) { /* scratch */ }
+});
 
-(async function () {
-  test.subHeading('the interface: verbs and their rules, and no code');
-  let verbs = null;
-  try { verbs = require(FILE).verbs; } catch (e) { verbs = null; }
-  ok(!!verbs && typeof verbs === 'object' && Object.keys(verbs).length > 0, 'it lists its verbs', 'api.js lists no verbs');
-  if (!verbs) return;
-  ok(!/require\s*\(/.test(fs.readFileSync(FILE, 'utf8').replace(/\/\/.*$/gm, '')), 'it requires no code: it is an interface only', 'api.js requires code');
-  ok(!!verbs['line.write'], 'it lists line.write, which the server serves', 'api.js lists no line.write');
-  ok(!!verbs['line.receive'], 'it lists line.receive, which the server serves', 'api.js lists no line.receive');
-  ok(!!verbs['chat.read'], 'it lists chat.read, which the server serves', 'api.js lists no chat.read');
-  ok(!!verbs['chat.search'], 'it lists chat.search, which the server serves', 'api.js lists no chat.search');
-  ok(!!verbs['chats.search'], 'it lists chats.search, which the server serves', 'api.js lists no chats.search');
+// ── the interface: verbs and their rules, and no code ──
+test.run('it lists its verbs', 0.2, function () {
+  try { X.verbs = require(FILE).verbs; } catch (e) { X.verbs = null; }
+  return !!X.verbs && typeof X.verbs === 'object' && Object.keys(X.verbs).length > 0 ? true : 'api.js lists no verbs';
+}, 1000);
+test.run('it requires no code: it is an interface only', 0.2, function () {
+  return !/require\s*\(/.test(fs.readFileSync(FILE, 'utf8').replace(/\/\/.*$/gm, '')) ? true : 'api.js requires code';
+}, 1000);
+test.run('it lists line.write, which the server serves', 0.2, function () {
+  return X.verbs && X.verbs['line.write'] ? true : 'api.js lists no line.write';
+}, 1000);
+test.run('it lists line.receive, which the server serves', 0.2, function () {
+  return X.verbs && X.verbs['line.receive'] ? true : 'api.js lists no line.receive';
+}, 1000);
+test.run('it lists chat.read, which the server serves', 0.2, function () {
+  return X.verbs && X.verbs['chat.read'] ? true : 'api.js lists no chat.read';
+}, 1000);
+test.run('it lists chat.search, which the server serves', 0.2, function () {
+  return X.verbs && X.verbs['chat.search'] ? true : 'api.js lists no chat.search';
+}, 1000);
+test.run('it lists chats.search, which the server serves', 0.2, function () {
+  return X.verbs && X.verbs['chats.search'] ? true : 'api.js lists no chats.search';
+}, 1000);
 
-  const node = await H.scratchNode();
-  try {
-    if (!node.up) { test.fail('no scratch node: nothing judged'); return; }
-    const call = async function (name, args) {
-      const r = await fetch(node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: name, args: args || {} }) });
-      const t = await r.text(); let b = null; try { b = JSON.parse(t); } catch (e) { b = null; }
-      return { status: r.status, body: b, text: t };
-    };
-    await call('app.active', { key: 'chat', active: true });
-    const up = await H.until(function () { return call('chat.chats.search', {}).then(function (r) { return r.status === 200; }); }, 40000);
-    ok(up, 'the world: switched on, the server answers', 'chat.chats.search never answered 200: ' + short((await call('chat.chats.search', {})).text));
+test.run('the world: switched on, the server answers', 0.2, async function () {
+  const node = X.node = await H.scratchNode();
+  if (!node.up) return 'no scratch node: nothing judged';
+  X.call = async function (name, args) {
+    const r = await fetch(node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: name, args: args || {} }) });
+    const t = await r.text(); let b = null; try { b = JSON.parse(t); } catch (e) { b = null; }
+    return { status: r.status, body: b, text: t };
+  };
+  await X.call('app.active', { key: 'chat', active: true });
+  const up = await H.until(function () { return X.call('chat.chats.search', {}).then(function (r) { return r.status === 200; }); }, 40000);
+  return up ? true : 'chat.chats.search never answered 200: ' + short((await X.call('chat.chats.search', {})).text);
+}, 6000);
 
-    test.subHeading('the node finds it as the branch chat, the folder\'s name');
-    const fam = await call('api', { family: 'chat' });
-    ok(fam.status === 200 && !!fam.body && fam.body.interface === fs.readFileSync(FILE, 'utf8'), 'api {family: chat} answers spirit/app/chat/api.js, word for word', 'api {family: chat}: ' + fam.status + ' ' + short(fam.text));
-    const old = await call('api', { family: 'chatClerver' });
-    ok(!(old.status === 200 && old.body && old.body.interface), 'and api {family: chatClerver} answers none', 'api {family: chatClerver} still answers: ' + short(old.text));
+// ── the node finds it as the branch chat, the folder's name ──
+test.run('api {family: chat} answers spirit/app/chat/api.js, word for word', 0.2, async function () {
+  if (!X.call) return NO_NODE;
+  const fam = await X.call('api', { family: 'chat' });
+  return fam.status === 200 && !!fam.body && fam.body.interface === fs.readFileSync(FILE, 'utf8') ? true : 'api {family: chat}: ' + fam.status + ' ' + short(fam.text);
+}, 1000);
+test.run('and api {family: chatClerver} answers none', 0.2, async function () {
+  if (!X.call) return NO_NODE;
+  const old = await X.call('api', { family: 'chatClerver' });
+  return !(old.status === 200 && old.body && old.body.interface) ? true : 'api {family: chatClerver} still answers: ' + short(old.text);
+}, 1000);
 
-    test.subHeading('every verb it lists is served as chat.<verb>');
-    // Each verb its interface lists, written out so that each check has a plain title of its own.
-    const served = async function (v) {
-      const r = await call('chat.' + v, {});
-      return { fine: r.status !== 404 && !/no.such.verb/i.test(r.text), why: 'chat.' + v + ' answered ' + r.status + ', no-such-verb: ' + short(r.text) };
-    };
-    let s;
-    s = await served('chat.read'); ok(s.fine, 'chat.chat.read is a verb of the node', s.why);
-    s = await served('chat.search'); ok(s.fine, 'chat.chat.search is a verb of the node', s.why);
-    s = await served('chats.search'); ok(s.fine, 'chat.chats.search is a verb of the node', s.why);
-    s = await served('line.receive'); ok(s.fine, 'chat.line.receive is a verb of the node', s.why);
-    s = await served('line.write'); ok(s.fine, 'chat.line.write is a verb of the node', s.why);
+// ── every verb it lists is served as chat.<verb> ──
+// Each verb its interface lists, written out so that each check has a plain title of its own.
+const served = async function (v) {
+  if (!X.call) return NO_NODE;
+  const r = await X.call('chat.' + v, {});
+  return r.status !== 404 && !/no.such.verb/i.test(r.text) ? true : 'chat.' + v + ' answered ' + r.status + ', no-such-verb: ' + short(r.text);
+};
+test.run('chat.chat.read is a verb of the node', 0.2, function () { return served('chat.read'); }, 1000);
+test.run('chat.chat.search is a verb of the node', 0.2, function () { return served('chat.search'); }, 1000);
+test.run('chat.chats.search is a verb of the node', 0.2, function () { return served('chats.search'); }, 1000);
+test.run('chat.line.receive is a verb of the node', 0.2, function () { return served('line.receive'); }, 1000);
+test.run('chat.line.write is a verb of the node', 0.2, function () { return served('line.write'); }, 1000);
 
-    test.subHeading('the attacker: arguments its rules refuse, before the server hears them');
-    const noPeer = await call('chat.chat.read', { before: '', after: '' });
-    ok(noPeer.status === 400, 'chat.read without the peer it requires is refused 400', 'chat.read with no peer: ' + noPeer.status + ' ' + short(noPeer.body));
-    const noTo = await call('chat.line.write', { text: 'zz to nobody' });
-    ok(noTo.status === 400, 'line.write without the to it requires is refused 400', 'line.write with no to: ' + noTo.status + ' ' + short(noTo.body));
-    const stray = await call('chat.chats.search', { zz: 1 });
-    ok(stray.status === 400, 'an argument it does not list is refused 400', 'chats.search {zz: 1}: ' + stray.status + ' ' + short(stray.body));
-  } finally {
-    try { if (node.child) node.child.kill(); } catch (e) { /* gone */ }
-    try { if (node.root) fs.rmSync(node.root, { recursive: true, force: true }); } catch (e) { /* scratch */ }
-  }
-}()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
-  function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });
+// ── the attacker: arguments its rules refuse, before the server hears them ──
+test.run('chat.read without the peer it requires is refused 400', 0.2, async function () {
+  if (!X.call) return NO_NODE;
+  const noPeer = await X.call('chat.chat.read', { before: '', after: '' });
+  return noPeer.status === 400 ? true : 'chat.read with no peer: ' + noPeer.status + ' ' + short(noPeer.body);
+}, 1000);
+test.run('line.write without the to it requires is refused 400', 0.2, async function () {
+  if (!X.call) return NO_NODE;
+  const noTo = await X.call('chat.line.write', { text: 'zz to nobody' });
+  return noTo.status === 400 ? true : 'line.write with no to: ' + noTo.status + ' ' + short(noTo.body);
+}, 1000);
+test.run('an argument it does not list is refused 400', 0.2, async function () {
+  if (!X.call) return NO_NODE;
+  const stray = await X.call('chat.chats.search', { zz: 1 });
+  return stray.status === 400 ? true : 'chats.search {zz: 1}: ' + stray.status + ' ' + short(stray.body);
+}, 1000);

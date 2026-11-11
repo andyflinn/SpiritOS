@@ -3,7 +3,7 @@
 // spirit/run/spirit/app/agent/provider/anthropic/test/anthropic.js
 // The tests of spirit/app/agent/provider/anthropic/anthropic.js, and of no other module (spec: ./anthropic.md;
 // goal/G41.18). The provider is a stand-in on 127.0.0.1 that answers as Anthropic's model list does, a page at a time,
-// and keeps every request it was asked; nothing here reaches a real provider.
+// and keeps every request it was asked; nothing here reaches a real provider. One test.run per test (goal/G47.2).
 
 const fs = require('fs');
 const http = require('http');
@@ -13,7 +13,6 @@ const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 
 const FILE = path.join(__dirname, '..', 'anthropic.js');
 const KEY = 'sk-ant-api03-test-0123456789';
-function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 
 function standIn() {
@@ -38,56 +37,102 @@ function pages(req) {
   return { status: 200, body: { data: [model('claude-a', 'Claude A'), model('claude-b', 'Claude B')], has_more: true, first_id: 'claude-a', last_id: 'claude-b' } };
 }
 
-test.startTest('provider/anthropic/anthropic.js: the model list of Anthropic');
-process.on('unhandledRejection', function (e) { test.fail('it threw where nothing caught it: ' + (e && e.message || e)); });
+// What the tests make, for the tests after them.
+const X = { plugin: null, s: null, base: '', all: null, h: { headers: {}, url: '' }, denied: null };
+const NO_PLUGIN = 'no plugin: it did not load';
+const NO_STANDIN = 'no stand-in provider: it was not started';
+test.after(function () { if (X.s && X.s.server.listening) return new Promise(function (r) { X.s.server.close(r); }); });
 
-(async function () {
-  test.subHeading('its file');
-  if (!fs.existsSync(FILE)) { test.fail('spirit/app/agent/provider/anthropic/anthropic.js is not there'); return; }
-  let plugin = null;
-  try { plugin = require(FILE); } catch (e) { test.fail('it does not load: ' + e.message); return; }
-  ok(plugin && typeof plugin.models === 'function', 'it is a plugin: models(provider) -> the provider\'s model list', 'exports: ' + short(plugin && Object.keys(plugin)));
-  if (!plugin || typeof plugin.models !== 'function') return;
-  const s = await standIn();
-  const base = 'http://127.0.0.1:' + s.port;
+// ── its file ──
+test.run('it is a plugin: models(provider) -> the provider\'s model list', 0.2, function () {
+  if (!fs.existsSync(FILE)) return 'spirit/app/agent/provider/anthropic/anthropic.js is not there';
+  try { X.plugin = require(FILE); } catch (e) { return 'it does not load: ' + e.message; }
+  return X.plugin && typeof X.plugin.models === 'function' ? true : 'exports: ' + short(X.plugin && Object.keys(X.plugin));
+}, 1000);
 
-  test.subHeading('it asks GET <url>/v1/models, with its key header and its version header');
+// ── it asks GET <url>/v1/models, with its key header and its version header ──
+test.run('a GET of /v1/models for a provider at its host', 0.2, async function () {
+  if (!X.plugin || typeof X.plugin.models !== 'function') return NO_PLUGIN;
+  const s = X.s = await standIn();
+  X.base = 'http://127.0.0.1:' + s.port;
   s.answer = pages;
-  const all = await list(plugin.models, { url: base, apiKey: KEY });
-  const h = s.heard[0] || { headers: {}, url: '' };
-  ok(h.method === 'GET' && new URL(h.url, 'http://x').pathname === '/v1/models', 'a GET of /v1/models for a provider at its host', 'heard: ' + short(s.heard.map(function (x) { return x.method + ' ' + x.url; })));
-  ok(h.headers['x-api-key'] === KEY, 'the API key goes as x-api-key', 'x-api-key: ' + short(h.headers['x-api-key']));
-  ok(h.headers['anthropic-version'] === '2023-06-01', 'with anthropic-version: 2023-06-01, a fixed string and no secret', 'anthropic-version: ' + short(h.headers['anthropic-version']));
-  ok(!('authorization' in h.headers), 'and no Authorization header: the key goes one way only', 'authorization: ' + short(h.headers.authorization));
+  X.all = await list(X.plugin.models, { url: X.base, apiKey: KEY });
+  const h = X.h = s.heard[0] || { headers: {}, url: '' };
+  return h.method === 'GET' && new URL(h.url, 'http://x').pathname === '/v1/models' ? true : 'heard: ' + short(s.heard.map(function (x) { return x.method + ' ' + x.url; }));
+}, 1000);
+test.run('the API key goes as x-api-key', 0.2, function () {
+  if (!X.s) return NO_STANDIN;
+  return X.h.headers['x-api-key'] === KEY ? true : 'x-api-key: ' + short(X.h.headers['x-api-key']);
+}, 1000);
+test.run('with anthropic-version: 2023-06-01, a fixed string and no secret', 0.2, function () {
+  if (!X.s) return NO_STANDIN;
+  return X.h.headers['anthropic-version'] === '2023-06-01' ? true : 'anthropic-version: ' + short(X.h.headers['anthropic-version']);
+}, 1000);
+test.run('and no Authorization header: the key goes one way only', 0.2, function () {
+  if (!X.s) return NO_STANDIN;
+  return !('authorization' in X.h.headers) ? true : 'authorization: ' + short(X.h.headers.authorization);
+}, 1000);
 
-  test.subHeading('it reads every page');
-  ok(s.heard.length === 2 && new URL(s.heard[1].url, 'http://x').searchParams.get('after_id') === 'claude-b', 'while the answer has_more, it asks again after_id the last_id', 'heard: ' + short(s.heard.map(function (x) { return x.url; })));
-  ok(all.got && JSON.stringify(all.got) === JSON.stringify([{ modelName: 'claude-a', label: 'Claude A' }, { modelName: 'claude-b', label: 'Claude B' }, { modelName: 'claude-c', label: 'Claude C' }]),
-    'it answers every model of every page as { modelName: id, label: display_name }, in the provider\'s order', 'answered: ' + short(all));
+// ── it reads every page ──
+test.run('while the answer has_more, it asks again after_id the last_id', 0.2, function () {
+  const s = X.s;
+  if (!s) return NO_STANDIN;
+  return s.heard.length === 2 && new URL(s.heard[1].url, 'http://x').searchParams.get('after_id') === 'claude-b' ? true : 'heard: ' + short(s.heard.map(function (x) { return x.url; }));
+}, 1000);
+test.run('it answers every model of every page as { modelName: id, label: display_name }, in the provider\'s order', 0.2, function () {
+  if (!X.s) return NO_STANDIN;
+  return X.all.got && JSON.stringify(X.all.got) === JSON.stringify([{ modelName: 'claude-a', label: 'Claude A' }, { modelName: 'claude-b', label: 'Claude B' }, { modelName: 'claude-c', label: 'Claude C' }])
+    ? true : 'answered: ' + short(X.all);
+}, 1000);
 
-  test.subHeading('a trailing slash');
+// ── a trailing slash ──
+test.run('a url with a trailing slash asks the same path', 0.2, async function () {
+  const s = X.s;
+  if (!s) return NO_STANDIN;
   s.heard.length = 0;
-  const slash = await list(plugin.models, { url: base + '/', apiKey: KEY });
-  ok(s.heard.length >= 1 && new URL(s.heard[0].url, 'http://x').pathname === '/v1/models' && slash.got && slash.got.length === 3, 'a url with a trailing slash asks the same path', 'heard: ' + short(s.heard.map(function (x) { return x.url; })));
+  const slash = await list(X.plugin.models, { url: X.base + '/', apiKey: KEY });
+  return s.heard.length >= 1 && new URL(s.heard[0].url, 'http://x').pathname === '/v1/models' && slash.got && slash.got.length === 3 ? true : 'heard: ' + short(s.heard.map(function (x) { return x.url; }));
+}, 1000);
 
-  test.subHeading('a failed list is refused, and never carries the key');
-  s.answer = function () { return { status: 401, body: { type: 'error', error: { type: 'authentication_error', message: 'invalid x-api-key ' + KEY } } }; };
-  const denied = await list(plugin.models, { url: base, apiKey: KEY });
-  ok(denied.threw !== undefined, 'a provider answering 401 is refused', 'answered: ' + short(denied));
-  ok(denied.threw !== undefined && denied.threw.indexOf(KEY) === -1, 'and the refusal does not carry the key, even when the provider echoes it', 'refusal: ' + short(denied.threw));
-  s.answer = function () { return { status: 200, body: 'not json' }; };
-  ok((await list(plugin.models, { url: base, apiKey: KEY })).threw !== undefined, 'an answer that is not JSON is refused', 'not json answered');
-  s.answer = function () { return { status: 200, body: { has_more: false } }; };
-  ok((await list(plugin.models, { url: base, apiKey: KEY })).threw !== undefined, 'an answer with no data list is refused', 'no data answered');
-  s.answer = function () { return { status: 200, body: { data: [], has_more: false } }; };
-  const empty = await list(plugin.models, { url: base, apiKey: KEY });
-  ok(empty.got && Array.isArray(empty.got) && empty.got.length === 0, 'an empty list is an answer, the empty list', 'answered: ' + short(empty));
-  // A page that says has_more and gives no next id would be asked forever: it is refused instead.
+// ── a failed list is refused, and never carries the key ──
+test.run('a provider answering 401 is refused', 0.2, async function () {
+  if (!X.s) return NO_STANDIN;
+  X.s.answer = function () { return { status: 401, body: { type: 'error', error: { type: 'authentication_error', message: 'invalid x-api-key ' + KEY } } }; };
+  X.denied = await list(X.plugin.models, { url: X.base, apiKey: KEY });
+  return X.denied.threw !== undefined ? true : 'answered: ' + short(X.denied);
+}, 1000);
+// A refusal carrying the key would leak the secret to whoever reads the error.
+test.run('and the refusal does not carry the key, even when the provider echoes it', 0.8, function () {
+  if (!X.denied) return NO_STANDIN;
+  return X.denied.threw !== undefined && X.denied.threw.indexOf(KEY) === -1 ? true : 'refusal: ' + short(X.denied.threw);
+}, 1000);
+test.run('an answer that is not JSON is refused', 0.2, async function () {
+  if (!X.s) return NO_STANDIN;
+  X.s.answer = function () { return { status: 200, body: 'not json' }; };
+  return (await list(X.plugin.models, { url: X.base, apiKey: KEY })).threw !== undefined ? true : 'not json answered';
+}, 1000);
+test.run('an answer with no data list is refused', 0.2, async function () {
+  if (!X.s) return NO_STANDIN;
+  X.s.answer = function () { return { status: 200, body: { has_more: false } }; };
+  return (await list(X.plugin.models, { url: X.base, apiKey: KEY })).threw !== undefined ? true : 'no data answered';
+}, 1000);
+test.run('an empty list is an answer, the empty list', 0.2, async function () {
+  if (!X.s) return NO_STANDIN;
+  X.s.answer = function () { return { status: 200, body: { data: [], has_more: false } }; };
+  const empty = await list(X.plugin.models, { url: X.base, apiKey: KEY });
+  return empty.got && Array.isArray(empty.got) && empty.got.length === 0 ? true : 'answered: ' + short(empty);
+}, 1000);
+// A page that says has_more and gives no next id would be asked forever: it is refused instead.
+test.run('has_more with no last_id is refused, not asked again and again', 0.2, async function () {
+  const s = X.s;
+  if (!s) return NO_STANDIN;
   s.heard.length = 0;
   s.answer = function () { return { status: 200, body: { data: [model('claude-a', 'Claude A')], has_more: true } }; };
-  const loop = await list(plugin.models, { url: base, apiKey: KEY });
-  ok(loop.threw !== undefined && s.heard.length < 5, 'has_more with no last_id is refused, not asked again and again', 'answered ' + short(loop) + ', asked ' + s.heard.length + ' times');
-  await new Promise(function (r) { s.server.close(r); });
-  ok((await list(plugin.models, { url: base, apiKey: KEY })).threw !== undefined, 'a provider that cannot be reached is refused', 'unreachable answered');
-}()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
-  function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });
+  const loop = await list(X.plugin.models, { url: X.base, apiKey: KEY });
+  return loop.threw !== undefined && s.heard.length < 5 ? true : 'answered ' + short(loop) + ', asked ' + s.heard.length + ' times';
+}, 1000);
+test.run('a provider that cannot be reached is refused', 0.2, async function () {
+  if (!X.s) return NO_STANDIN;
+  await new Promise(function (r) { X.s.server.close(r); });
+  return (await list(X.plugin.models, { url: X.base, apiKey: KEY })).threw !== undefined ? true : 'unreachable answered';
+}, 1000);
