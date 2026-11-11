@@ -47,7 +47,7 @@ file.get runs, and below the title line it shows either the error file.get gives
 *"The UI must listen to changes on all tables it interacts with, and the server, of course, publishes changes"*, *"the
 suite search is spirit/element/search/suite.js and its folder"*.
 - A click opens one tab, active, closable, its header the file name without path; the detail's title row the full name,
-  below it every suite that concerns the file, each once. The click's `file.get` made the file's rows.
+  below it every suite that concerns the file, each once. The click's `script.get` made the script's rows.
 - A second click on the same file opens no second tab; a click on another file opens a second, which alone is active and
   shows its own detail.
 - A suite written for the file shows in its open detail with no click.
