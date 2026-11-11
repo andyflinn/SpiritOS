@@ -28,7 +28,7 @@ const MODULE = 'spirit/apiDoor.js';
 test.startTest('spirit/test/testModule.js: testsFor() gives a module under spirit/run/spirit/ the general rules that judge it (goal/G43.23 item 4)');
 
 test.subHeading('the world');
-ok(GENERAL.length === 5, 'the world: spirit/test/ holds five general rule tests', 'the general rule tests found: ' + short(GENERAL));
+ok(GENERAL.length === 4, 'the world: spirit/test/ holds four general rule tests, spirit-child-generalRules.js folded into spirit-sibling-generalRules.js', 'the general rule tests found: ' + short(GENERAL));
 ok(fs.existsSync(path.join(RUN, 'spirit', 'spirit.js')) && !fs.existsSync(path.join(RUN, 'spirit.js')),
   'the world: spirit.js, the module they are named after, is spirit/spirit.js, and none is at the run root', 'spirit.js is not where goal/G43.18 put it');
 ok(fs.existsSync(path.join(RUN, MODULE)) && fs.existsSync(path.join(RUN, 'spirit', 'test', 'apiDoor.js')),
@@ -43,7 +43,6 @@ const onRadius = function (g) {
   return { fine: hit.length === 1, why: g + ' is not given ' + MODULE + ' to judge; its entries: ' + short(radius.filter(function (e) { return e.test === g; })) };
 };
 let rr;
-rr = onRadius('spirit/test/spirit-child-generalRules.js'); ok(rr.fine, 'spirit/test/spirit-child-generalRules.js judges spirit/apiDoor.js on its blast radius', rr.why);
 rr = onRadius('spirit/test/spirit-sibling-generalRules.js'); ok(rr.fine, 'spirit/test/spirit-sibling-generalRules.js judges spirit/apiDoor.js on its blast radius', rr.why);
 rr = onRadius('spirit/test/spirit-sibling-searchRules.js'); ok(rr.fine, 'spirit/test/spirit-sibling-searchRules.js judges spirit/apiDoor.js on its blast radius', rr.why);
 rr = onRadius('spirit/test/spirit-sibling-testReachRules.js'); ok(rr.fine, 'spirit/test/spirit-sibling-testReachRules.js judges spirit/apiDoor.js on its blast radius', rr.why);
@@ -89,7 +88,6 @@ const onWhole = function (g) {
   return { fine: judged.some(function (e) { return e.file === MODULE; }), why: g + ' judges no module on the whole list; its entries: ' + short(all.filter(function (e) { return e.test === g; })) };
 };
 let rw;
-rw = onWhole('spirit/test/spirit-child-generalRules.js'); ok(rw.fine, 'spirit/test/spirit-child-generalRules.js judges modules on the whole list, spirit/apiDoor.js among them', rw.why);
 rw = onWhole('spirit/test/spirit-sibling-generalRules.js'); ok(rw.fine, 'spirit/test/spirit-sibling-generalRules.js judges modules on the whole list, spirit/apiDoor.js among them', rw.why);
 rw = onWhole('spirit/test/spirit-sibling-searchRules.js'); ok(rw.fine, 'spirit/test/spirit-sibling-searchRules.js judges modules on the whole list, spirit/apiDoor.js among them', rw.why);
 rw = onWhole('spirit/test/spirit-sibling-testReachRules.js'); ok(rw.fine, 'spirit/test/spirit-sibling-testReachRules.js judges modules on the whole list, spirit/apiDoor.js among them', rw.why);

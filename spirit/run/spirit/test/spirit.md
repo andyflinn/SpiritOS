@@ -6,7 +6,7 @@
 
 **spirit.js is the only JavaScript client interface to the SpiritOS core.** Every module and every page loads it
 first and does everything through it. A module whose first require is not spirit.js goes red
-(`./spirit-child-generalRules.js`).
+(`./spirit-sibling-generalRules.js`).
 
 ## Its role
 

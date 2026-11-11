@@ -1,7 +1,7 @@
 # spirit-sibling-searchRules.js
 
 The search rule of a module (goal/G41.28), judged in its code. It runs once per file, the file its argument, as
-`./spirit-child-generalRules.js` does:
+`./spirit-sibling-generalRules.js` does:
 
     node spirit/test/spirit-sibling-searchRules.js spirit/app/desk/desk.js
 

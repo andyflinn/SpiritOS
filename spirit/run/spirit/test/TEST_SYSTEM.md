@@ -37,11 +37,11 @@ module, 111 times (goal/G43.2; Andy: *"it looks to me like a lazy-funcking-ass p
 several modules end to end is a test of the module it is most about, in its `./test/<name>.js`, and runs once. **Every test matches a production file** (goal/G43.27; Andy: *"wsl: every test in run:/ MUST MATCH a production
 file."*): a test named after no module is garbage, and `spirit/test/spirit-sibling-noFuckingGarbage.js` goes red on it.
 
-The general tests of `spirit.js` (`spirit/run/spirit/test/spirit-child-generalRules.js`, `spirit-sibling-generalRules.js`,
-`spirit-sibling-searchRules.js`, `spirit-sibling-testReachRules.js`, `spirit-sibling-noFuckingGarbage.js`) stand in
-`spirit/run/spirit/test/` beside `spirit/run/spirit/spirit.js` (goal/G43.32): `-sibling-` judges every module in
-`spirit/` and below; `-child-` of `spirit.js`, its folder's namesake, judges `spirit/spirit.js` and
-`spirit/` below too.
+The general tests of `spirit.js` (`spirit/run/spirit/test/spirit-sibling-generalRules.js`,
+`spirit-sibling-searchRules.js`, `spirit-sibling-testReachRules.js`, `spirit-sibling-titleRules.js`,
+`spirit-sibling-noFuckingGarbage.js`, `spirit-sibling-branchRules.js`) stand in `spirit/run/spirit/test/` beside
+`spirit/run/spirit/spirit.js` (goal/G43.32): each judges every module in `spirit/` and below. The module rules once in
+`spirit-child-generalRules.js`, which judged the same files, are in `spirit-sibling-generalRules.js` since goal/G47.1.
 
 **The tools of `spirit/run/spirit/test/`** (goal/G43.32, Q2; Andy: *"We need special rules for run://spirit/test/  it will
 be where run://spirit/app/test/ finds it's main tools."*): `testReport.js`, `testModule.js` and `headLessChrome.js` are

@@ -1,8 +1,9 @@
 'use strict';
 
 // spirit/run/spirit/test/spirit-sibling-generalRules.js <file>
-// THE GENERAL RULES OF A SHELL APP OR ELEMENT (goal/G41.18), run once per file it judges, the file its argument, as
-// ./spirit-child-generalRules.js is for a module (spec: ./spirit-sibling-generalRules.md). ITS NAME IS ITS REACH
+// THE GENERAL RULES OF A MODULE, A SHELL APP OR AN ELEMENT (goal/G41.18; the module rules of goal/G40.6 folded in from
+// spirit-child-generalRules.js, goal/G47.1), run once per file it judges, the file its argument (spec:
+// ./spirit-sibling-generalRules.md). ITS NAME IS ITS REACH
 // (./TEST_SYSTEM.md; Andy: "the NAME of the file should tell testModule.js which folder this it belongs to"): a -sibling-
 // test beside spirit.js judges every module in spirit/run/ and below (goal/G47.1: no opting in), shell/ and the agent tables'
 // pages alike (goal/G41.27; Andy: "1. The checks judge every module under spirit/run/: the test is
@@ -363,8 +364,9 @@ function noProcessAnywhere() {
 const OLD_TEST = 'spirit/run/' + 'test/';
 const OLD_NAMED = new RegExp(OLD_TEST.replace(/\//g, '\\/') + '|run:\\/\\/?' + 'test\\/');
 // The files of run://test/ on 2026-11-10, by their place inside it; test/testReport-verifier.js and .md were folded into
-// test/testReport.js and .md since (goal/G45.1: one test file per script).
-const MOVED = ['TEST_SYSTEM.md', 'headLessChrome.js', 'testModule.js', 'testReport.js', 'spirit-child-generalRules.js',
+// test/testReport.js and .md since (goal/G45.1: one test file per script); spirit-child-generalRules.js was folded into this
+// file since (goal/G47.1).
+const MOVED = ['TEST_SYSTEM.md', 'headLessChrome.js', 'testModule.js', 'testReport.js',
   'spirit-sibling-generalRules.js', 'spirit-sibling-generalRules.md', 'spirit-sibling-noFuckingGarbage.js', 'spirit-sibling-noFuckingGarbage.md',
   'spirit-sibling-searchRules.js', 'spirit-sibling-searchRules.md', 'spirit-sibling-testReachRules.js', 'spirit-sibling-testReachRules.md',
   'test/testModule.js', 'test/testModule.md', 'test/testReport.js', 'test/testReport.md'];
@@ -467,6 +469,54 @@ function shapeBreaks(rel) {
     first = false;
   }
   return why;
+}
+// THE GENERAL RULES OF A MODULE, judged in its code (goal/G40.6; folded in from spirit-child-generalRules.js, goal/G47.1;
+// Andy: "for now, fold those two into spirit-sibling-generalRules.js"). Andy: "it will assert, the require path rule it
+// will assert that the spirit-object becomes a global at the top of all modules"; spirit.js itself is judged too: "it
+// must establish the global spirit object early in the code, it must follow the require-path restrictions we discussed."
+// THE GLOBAL EARLY: a module's first require is spirit.js, so spirit is a plain global before anything else is loaded;
+// spirit.js itself sets the global before its first require. Page code (no module.exports, speaks to window) runs on
+// the page, where spirit.js is already there, and node never loads it.
+// THE REQUIRE RULE (goal/G40's box): "a require path that starts with ../ may only add a file name, never descend into a
+// subfolder of an ancestor; any other require path starts with <module>/, the module's own children. A sibling in the
+// module's own folder is legal." A package or a node built-in is not a path; a computed path cannot be read.
+// moduleRules(full) -> { early: '' when it holds, else why; page: true for page code; bad: [require paths breaking the rule] }
+function moduleRules(full) {
+  const code = fs.readFileSync(full, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"\\])\/\/[^\n]*/g, '$1');
+  const requires = [];
+  const re = /\brequire\(\s*(['"])([^'"]+)\1\s*\)/g;
+  let m;
+  while ((m = re.exec(code))) requires.push({ at: m.index, path: m[2] });
+  const own = path.basename(full, '.js');
+  const isSpirit = path.resolve(full) === path.join(RUN, 'spirit', 'spirit.js');
+  const first = requires[0];
+  const page = !isSpirit && /\bwindow\b/.test(code) && !/\bmodule\.exports\b/.test(code);
+  let early = '';
+  if (page) early = '';
+  else if (isSpirit) {
+    const sets = code.search(/\broot\.spirit\s*=|\bglobalThis\.spirit\s*=|\bglobal\.spirit\s*=/);
+    if (sets === -1 || (first && sets > first.at)) early = 'it sets the global spirit ' + (sets === -1 ? 'nowhere' : 'only after its first require, ' + JSON.stringify(first.path));
+  } else if (!(first && /(^|\/)spirit\.js$/.test(first.path) && path.resolve(path.dirname(full), first.path) === path.join(RUN, 'spirit', 'spirit.js'))) {
+    early = 'it does not require spirit.js first' + (first ? ': its first require is ' + JSON.stringify(first.path) : ': it requires nothing');
+  }
+  const bad = requires.filter(function (r) {
+    const p = r.path;
+    if (!/^[./]/.test(p)) return false;
+    if (/^\.\.\//.test(p)) return /\//.test(p.replace(/^(\.\.\/)+/, ''));
+    if (/^\.\//.test(p)) { const rest = p.slice(2); return rest.indexOf('/') !== -1 && rest.indexOf(own + '/') !== 0; }
+    return true;
+  }).map(function (r) { return r.path; });
+  return { early: early, page: page, spirit: isSpirit, bad: bad };
+}
+function everyModuleRuled() {
+  test.subHeading('every product script: spirit.js required first, every require path a child, a sibling or an ancestor\'s file');
+  const all = productScripts();
+  ok(all.length > 100, 'the world: the product scripts are read for the module rules', 'only ' + all.length + ' product scripts found: too few to judge');
+  const ruled = all.map(function (f) { return { f: f, r: moduleRules(path.join(RUN, f)) }; });
+  const late = ruled.filter(function (x) { return x.r.early; });
+  ok(all.length > 100 && !late.length, 'every one takes spirit.js first, or is page code', late.length + ' of ' + all.length + ' do not; the first: ' + short(late.slice(0, 5).map(function (x) { return x.f + ': ' + x.r.early; })));
+  const astray = ruled.filter(function (x) { return x.r.bad.length; });
+  ok(all.length > 100 && !astray.length, 'none of their require paths breaks the require rule', astray.length + ' of ' + all.length + ' do; the first: ' + short(astray.slice(0, 5).map(function (x) { return x.f + ' requires ' + x.r.bad[0]; })));
 }
 function productScripts() {
   return require('child_process').execFileSync('git', ['ls-files'], { cwd: RUN, encoding: 'utf8' }).split('\n')
@@ -591,6 +641,7 @@ async function every() {
   oneHelper();
   runTestMoved();
   everyScriptShaped();
+  everyModuleRuled();
   iconsLoaded();
   const reach = require(path.join(RUN, 'spirit', 'test', 'testModule.js')).testsFor('').filter(function (t) { return t.test === 'spirit/test/spirit-sibling-generalRules.js' && t.file; }).map(function (t) { return t.file; });
   const files = reach.filter(kindOf);
@@ -638,6 +689,15 @@ test.startTest((full ? NAMED : 'every page module') + ': the general rules of an
     if (!why.length) test.check('it starts with \'use strict\', takes spirit first, and loads the tree only through spirit.require');
     why.forEach(function (w) { test.fail(w); });
   }
+  // The general rules of a module (moduleRules above), on any file handed, a product script or not.
+  const mr = moduleRules(full);
+  test.subHeading(NAMED + ': ' + 'the spirit object is a global before anything else is loaded');
+  if (mr.page) test.check('it is page code: node never loads it');
+  else if (mr.spirit) ok(!mr.early, 'it sets the global spirit before its first require', mr.early);
+  else ok(!mr.early, 'it requires spirit.js first', mr.early);
+  test.subHeading(NAMED + ': ' + 'every require path is a child, a sibling or an ancestor\'s file');
+  if (!mr.bad.length) test.check('none of its require paths breaks the rule');
+  else mr.bad.forEach(function (p) { test.fail('require error: it requires ' + JSON.stringify(p)); });
   if (!kindOf(rel)) { test.subHeading(NAMED); test.check('it places no element (it calls no installSpiritElement): a switch, a server or a helper, not mounted'); return; }
   // THE WHOLE ROW, NEVER A FEW FIELDS (goal/G41.28; Andy, box v15: "All client side searches will be fixed, too, and
   // search the whole row, as cached in spirit.data."): no app or element hands a search a matched(row) of its own; the

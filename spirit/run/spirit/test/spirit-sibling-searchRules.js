@@ -2,7 +2,7 @@
 
 // spirit/run/spirit/test/spirit-sibling-searchRules.js <file>
 // THE SEARCH RULE OF A MODULE (goal/G41.28), run once per file it judges, the file its argument, as
-// ./spirit-child-generalRules.js is for a module (spec: ./spirit-sibling-searchRules.md). Its name is its reach
+// ./spirit-sibling-generalRules.js is for a module (spec: ./spirit-sibling-searchRules.md). Its name is its reach
 // (./TEST_SYSTEM.md): a -sibling- test beside spirit.js judges every module in spirit/run/ and below, a server and a
 // page alike (goal/G47.1: no opting in).
 //

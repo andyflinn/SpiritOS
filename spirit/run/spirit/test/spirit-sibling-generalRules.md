@@ -1,7 +1,7 @@
 # spirit-sibling-generalRules.js
 
-The general rules of a shell app or element (goal/G41.18), judged in a real browser. It runs once per file, the file its
-argument, as `./spirit-child-generalRules.js` does for a module:
+The general rules of a module, a shell app or an element (goal/G41.18), the page rules judged in a real browser. It runs
+once per file, the file its argument:
 
     node spirit/test/spirit-sibling-generalRules.js shell/agent/agent.js
 
@@ -96,6 +96,18 @@ Box v23: *"Clean mount: with its container alone it mounts, loads its own parts,
 empty."* And *"every box inside it that scrolls keeps its height and its width when given far more than it holds; each
 box is its own check, named by the element's path and the box's id chain."*
 
+- **The general rules of a module** (goal/G40.6; folded in from `spirit-child-generalRules.js`, goal/G47.1; Andy: *"for
+  now, fold those two into spirit-sibling-generalRules.js"*), judged in its code, on every file handed, and in the run
+  given no file over every product script. Andy: *"it will assert, the require path rule it will assert that the
+  spirit-object becomes a global at the top of all modules"*; spirit.js itself: *"it must establish the global spirit
+  object early in the code, it must follow the require-path restrictions we discussed."*
+  - **The global early**: a module's first require is `spirit.js`; one that requires nothing is red. `spirit.js` sets
+    the global before its first require. Page code (no `module.exports`, speaks to `window`) is never loaded by node.
+  - **The require rule** (goal/G40's box): *"a require path that starts with ../ may only add a file name, never descend
+    into a subfolder of an ancestor; any other require path starts with <module>/, the module's own children. A sibling
+    in the module's own folder is legal."* A package or a node built-in is not a path; a computed path cannot be read.
+  - Its test must try to break it with a module requiring anything before `spirit.js`, a `spirit.js` requiring before it
+    sets the global, and a require descending into an ancestor's subfolder.
 - **It mounts cleanly:**
   - the node answers the DEBUG page for the file;
   - the file mounts on the bare page, with its container alone;
