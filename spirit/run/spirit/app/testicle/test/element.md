@@ -18,14 +18,14 @@ existing file list with a filter for production *.js files: no new list."*
 - `spirit/app/testicle/testicle.json` is there and is JSON: an icon and a label; intrinsic (the goal box: *"an intrinsic
   app with a server and a face"*); a face, `shell.mount` true; a server, `node.mount` true.
 - Its folder holds `testicle.json`, `element.js`, `testicle.js`, `api.js`, `data.js`, and a json description of each
-  verb it serves (Andy's rule 6): `busy.json`, `file.get.json`, `suite.search.json`; and its `test/` folder, nothing else; its `mount` names `element.js`.
+  verb it serves (Andy's rule 6): `busy.json`, `script.get.json`, `suite.search.json`, `subscribe.json`, `unsubscribe.json`; and its `test/` folder, nothing else; its `mount` names `element.js`.
 - `spirit/app/test/` stays the app branch's test folder: no `test.json` there.
 
 **No verbs, no list of its own.**
 - `element.js` draws with the workBench element (`spirit/element/workBench.js`) and the existing file list
   (`spirit/element/search/file.js`), and makes no list of its own.
 - It asks the node only through spirit, never by itself: no `peerPost`, no `fetch` (goal/G47.1: a click asks
-  `testicle.file.get`).
+  `testicle.script.get`).
 
 **On the page.**
 - It loads through `spirit.require` and stands at `spirit.element.spirit.app.testicle.element`; `create(container)`

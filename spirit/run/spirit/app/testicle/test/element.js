@@ -116,11 +116,11 @@ test.startTest('testicle/element.js: testicle\'s first-cut face, a workBench wit
   ok(id.intrinsic === true, 'it is intrinsic', 'identity.intrinsic: ' + short(id.intrinsic));
   ok(!!own && !!own.shell && own.shell.mount === true, 'it has a face: shell.mount true', 'shell: ' + short(own && own.shell));
   // goal/G47.1, the server cycle: "The server mounts beside the face (testicle.json: node.mount true)", "The testicle
-  // server will serve one first verb, \"busy\"", and the verbs cycle: testicle.file.get and testicle.suite.search, each
+  // server will serve one first verb, \"busy\"", and the verbs cycle: testicle.script.get and testicle.suite.search, each
   // with its json description (Andy's rule 6). The server's own checks are ./testicle.js.
   ok(!!own && !!own.node && own.node.mount === true, 'a server beside the face: node.mount true', 'node: ' + short(own && own.node));
   const held = fs.existsSync(APP) ? fs.readdirSync(APP).filter(function (f) { return f !== 'test'; }).sort() : [];
-  ok(JSON.stringify(held) === JSON.stringify(['api.js', 'busy.json', 'data.js', 'element.js', 'file.get.json', 'suite.search.json', 'testicle.js', 'testicle.json']), 'its folder holds its manifest, its face, its server, its api.js and data.js, and a json description of each verb, busy, file.get and suite.search, and its test/ folder, nothing else', 'its folder holds ' + short(held));
+  ok(JSON.stringify(held) === JSON.stringify(['api.js', 'busy.json', 'data.js', 'element.js', 'script.get.json', 'subscribe.json', 'suite.search.json', 'testicle.js', 'testicle.json', 'unsubscribe.json']), 'its folder holds its manifest, its face, its server, its api.js and data.js, and a json description of each verb, busy, script.get, suite.search, subscribe and unsubscribe, and its test/ folder, nothing else', 'its folder holds ' + short(held));
   ok(!!own && !!own.mount && own.mount['element.js'] === true, 'its mount names element.js', 'mount: ' + short(own && own.mount));
   // The box: "spirit/app/test/ stays the app branch's test folder".
   ok(fs.existsSync(path.join(RUN, 'spirit', 'app', 'test')) && !fs.existsSync(path.join(RUN, 'spirit', 'app', 'test', 'test.json')), 'spirit/app/test/ stays the app branch\'s test folder, no app', 'spirit/app/test/ holds a test.json, or is gone');
@@ -131,7 +131,7 @@ test.startTest('testicle/element.js: testicle\'s first-cut face, a workBench wit
   ok(/['"]spirit\/element\/workBench\.js['"]/.test(src), 'it draws with the workBench element, spirit/element/workBench.js', 'it does not require spirit/element/workBench.js');
   ok(/['"]spirit\/element\/search\/file\.js['"]/.test(src), 'its file viewer is the existing file list, spirit/element/search/file.js', 'it does not require spirit/element/search/file.js');
   ok(src !== '' && !/\.element\.search\.create\(|createElement\(['"](tr|li|table)['"]\)/.test(src), 'it makes no list of its own', 'it makes a list of its own');
-  // goal/G47.1, the UI cycle: the face asks testicle.file.get on a click, through spirit; never by itself.
+  // goal/G47.1, the UI cycle: the face asks testicle.script.get on a click, through spirit; never by itself.
   ok(src !== '' && !/\.peerPost\(|\bfetch\(|XMLHttpRequest/.test(src), 'it asks the node only through spirit: no peerPost, no fetch', 'it asks the node something itself');
   // goal/G47.1, the box: "testicle turns flat on."
   ok(/\bflat\s*:\s*true\b/.test(src), 'it draws the file list with flat on', 'it does not hand the file list flat: true');
@@ -221,9 +221,9 @@ test.startTest('testicle/element.js: testicle\'s first-cut face, a workBench wit
     const lacking = want1.filter(function (w) { return !named(d1.rows, w); });
     ok(!lacking.length, 'below the title it lists every suite that concerns the file', 'missing: ' + short(lacking) + '; rows ' + short(d1.rows.map(function (r) { return r.key; })));
     ok(d1.rows.length === want1.length, 'and no other: each suite once', d1.rows.length + ' rows for ' + want1.length + ' suites: ' + short(d1.rows.map(function (r) { return r.key; })));
-    // shown.js was never changed: its rows exist only if the click's file.get made them. Asked by suite.search, which makes none.
-    const rowsMade = await call(N.base, 'testicle.suite.search', { file: F1, text: '' });
-    ok(rowsMade.status === 200 && rowsMade.body && Array.isArray(rowsMade.body.items) && rowsMade.body.items.length === want1.length, 'the click made the file\'s rows: file.get ran for it', 'suite.search after the click: ' + short(rowsMade.text));
+    // shown.js was never changed: its rows exist only if the click's script.get made them. Asked by suite.search, which makes none.
+    const rowsMade = await call(N.base, 'testicle.suite.search', { script: F1, text: '' });
+    ok(rowsMade.status === 200 && rowsMade.body && Array.isArray(rowsMade.body.items) && rowsMade.body.items.length === want1.length, 'the click made the script\'s rows: script.get ran for it', 'suite.search after the click: ' + short(rowsMade.text));
     const srcNow = code(FACE);
     ok(/['"]spirit\/element\/search\/suite\.js['"]/.test(srcNow) && fs.existsSync(path.join(RUN, 'spirit', 'element', 'search', 'suite.js')), 'the suite search is spirit/element/search/suite.js, which the face loads', 'the face does not load spirit/element/search/suite.js, or it is not there');
 
@@ -246,14 +246,14 @@ test.startTest('testicle/element.js: testicle\'s first-cut face, a workBench wit
     fs.writeFileSync(path.join(s.run, etaOwn), '\'use strict\';\n// the new test of eta\n');
     ok(await until(function () { return T('shown()').then(function (d) { return !!d && d.rows.some(function (r) { return r.key === etaOwn || String(r.text).indexOf(etaOwn) !== -1; }); }); }, 10000), 'a suite written for the file shows in its open detail, with no click: the detail listens, the server publishes', 'the detail after the new suite: ' + short(await T('shown()')));
 
-    test.subHeading('the box: "The tab opens first ... or the error file.get gives"');
+    test.subHeading('the box: "The tab opens first ... or the error script.get gives"');
     const F4 = 'spirit/zzTesticle/gone.js';
     ok((await T('rows()')).indexOf(F4) !== -1, 'the world: gone.js is listed in the left pane', 'gone.js is not listed: ' + short(await T('rows()')));
     fs.rmSync(path.join(s.run, F4));
     const clicked = await T('click(' + JSON.stringify(F4) + ')');
     ok(clicked, 'the world: gone.js, removed, is still there to click', 'its row went before the click: nothing judged');
-    ok(await waitFor('tabs().some(function (t) { return t.label === "gone.js" && t.selected; })', 5000), 'its tab opens and is the active one, though file.get will refuse', 'tabs: ' + short(await T('tabs()')));
-    ok(await waitFor('shown() && shown().first === ' + JSON.stringify(F4) + ' && /no such file/.test(shown().text)', 10000), 'below the title line it shows the error file.get gives: no such file', 'the detail reads ' + short(await T('shown()')));
+    ok(await waitFor('tabs().some(function (t) { return t.label === "gone.js" && t.selected; })', 5000), 'its tab opens and is the active one, though script.get will refuse', 'tabs: ' + short(await T('tabs()')));
+    ok(await waitFor('shown() && shown().first === ' + JSON.stringify(F4) + ' && /no such file/.test(shown().text)', 10000), 'below the title line it shows the error script.get gives: no such file', 'the detail reads ' + short(await T('shown()')));
     const goneShown = await T('shown()');
     ok(!!goneShown && goneShown.first === F4 && goneShown.rows.length === 0, 'and no suite search', 'the detail: ' + short(goneShown));
 
