@@ -6,18 +6,29 @@
 // not reach into repo:/spirit/test/ at all....".
 //
 // A product test requires this file and nothing of spirit/test/. It prints the lines the old reporter
-// (spirit/test/testSupport.js) prints, the same marks in the same places, so the verifier and the old run-all read a
-// product test as they read any suite: the heading lines, one SUCCESS or FAILURE line per assertion, and the completion
-// line last, the exit code saying the same thing.
+// (spirit/test/testSupport.js) printed, the same marks in the same places: the heading lines, one SUCCESS or FAILURE line
+// per test, and the completion line last, the exit code saying the same thing.
 //
-// WHEN THE VERIFIER STARTED THE RUN (--verify-port <port>), each result goes to the node's verifier as well, one record
-// per assertion, through the one spirit object (the deskVerify family's record verb), never a fetch of its own. A test
-// run by hand posts nothing. A result's key is its place: its sub-heading and its number under it, the same for its
-// check and its fail, so a test that tips either way keeps its one key (goal/G27.14).
+// ONE CALL PER TEST (goal/G47.2; Andy: "Every test inside every suite has its unique (within the suite) title. Every test
+// supplies its severity and reports itself to testicle, with the appropriate severity if the test hangs or crashes, else
+// with the default severity. Every test holds on one single string, the title, which is supplied with the report, success
+// or failure."; its contract: ./test/testReport.md):
+//   test.run(title, severity, body, limitMs)   body() answers true to pass; false, or a string saying what went wrong, to
+//                                              fail; it may be async. A throw or a rejection fails it at 0.7, the error as
+//                                              its detail; still running at limitMs, it fails as a hang at 0.7.
+//   test.after(fn)                             run once every test has run, whatever they did.
+// The tests run one at a time in the order given. Each is reported by itself to testicle.test.set of the node of the
+// checkout it runs in (spirit.js reads that node's port from the checkout's spirit/state/environment.json; goal/G47.1:
+// "a checkout with no node running reports nowhere and still prints its lines"): {script, suite, test, verified,
+// severity}, the script the test tests and the suite scoped to run://, the title the key. `--test <title>` runs the
+// tests up to and including that one, and none after (the box: "the sequence is run up to the specified test").
 //
-//   const test = require('<run>/test/testReport.js');
-//   test.startTest(title); test.subHeading(title); test.check(words, detail?); test.fail(words, detail?);
-//   test.comment(text); test.reportSuccessFailureCount();
+// WHILE THE SUITES MOVE TO test.run (goal/G47.2): the old calls below (startTest, subHeading, check, fail, comment,
+// reportSuccessFailureCount) still print, and under --verify-port still reach deskVerify, keyed by their place; they report
+// nothing to testicle, having no title on a fail. A run started with --verify-port also hands each test.run result to
+// deskVerify.record, so Desk's Verify keeps working until testicle runs suites (goal/G47.1, the next cycle).
+//
+//   const test = require('<run>/spirit/test/testReport.js');
 
 const path = require('path');
 
@@ -172,5 +183,120 @@ const test = {
     if (this.failureCount > 0) process.exitCode = 1;
   },
 };
+
+// ── ONE CALL PER TEST (goal/G47.2) ──────────────────────────────────────────────────────────────────────────────────────
+const RUN_ROOT = path.join(__dirname, '..', '..');
+function runRel(f) {
+  const r = path.relative(RUN_ROOT, f);
+  return r && r.indexOf('..') !== 0 && !path.isAbsolute(r) ? r.split(path.sep).join('/') : '';
+}
+// The arguments this suite was run with: the file a general test judges, and --test <title>; --verify-port is the verifier's.
+const ARGV = process.argv.slice(2);
+const ONLY = ARGV.indexOf('--test') !== -1 ? String(ARGV[ARGV.indexOf('--test') + 1] || '') : null;
+const PLAIN_ARGS = ARGV.filter(function (a, i) { return a.indexOf('--') !== 0 && ARGV[i - 1] !== '--test' && ARGV[i - 1] !== '--verify-port'; });
+// The suite, scoped to run://, and the script it tests: a general test (-child-, -sibling-) the file it judges, its argument;
+// any other the module beside its test folder, <dir>/test/<name>.js testing <dir>/<name>.js.
+const SUITE_FILE = runRel(path.resolve(String(process.argv[1] || ''))) || path.basename(String(process.argv[1] || ''));
+const SCRIPT = (function () {
+  if (/-(child|sibling)-/.test(path.posix.basename(SUITE_FILE)) && PLAIN_ARGS[0]) {
+    for (const p of [path.resolve(PLAIN_ARGS[0]), path.join(RUN_ROOT, PLAIN_ARGS[0]), path.join(RUN_ROOT, '..', '..', PLAIN_ARGS[0])]) {
+      const r = runRel(p);
+      if (r && require('fs').existsSync(p)) return r;
+    }
+    return String(PLAIN_ARGS[0]);
+  }
+  const dir = path.posix.dirname(SUITE_FILE);
+  const above = path.posix.basename(dir) === 'test' ? path.posix.dirname(dir) : dir;
+  return (above === '.' ? '' : above + '/') + path.posix.basename(SUITE_FILE);
+}());
+
+// The node's testicle, through the one spirit object, loaded onto no object of the suite's (as record() above does).
+let testicle = null;
+let reportsOut = 0;
+const reportsLanded = [];
+function reportToTesticle(rec) {
+  try {
+    const own = globalThis.spirit;
+    const ownWindow = globalThis.window;
+    globalThis.spirit = undefined;
+    globalThis.window = undefined;
+    let real = null;
+    try { real = require(path.join(__dirname, '..', 'spirit.js')); } finally { globalThis.spirit = own; globalThis.window = ownWindow; }
+    testicle = testicle || real.require(real.familyPath('testicle'));
+    reportsOut += 1;
+    reportsLanded.push(Promise.resolve(testicle).then(function (f) { return f['test.set'](rec); })
+      .catch(function () { /* a checkout with no node reports nowhere */ }).then(function () { reportsOut -= 1; }));
+  } catch (e) { /* the lines are printed whatever the node says */ }
+}
+
+const queue = [];
+const afters = [];
+let started = false;
+function start() { if (!started) { started = true; setImmediate(runAll); } }
+test.run = function (title, severity, body, limitMs) { queue.push({ title: title, severity: severity, body: body, limit: limitMs }); start(); };
+test.after = function (fn) { afters.push(fn); start(); };
+
+// The test running now, so a throw or a rejection nothing caught lands on it.
+let current = null;
+function settle(t, verdict) { if (current === t && !t.done) { t.done = true; t.verdict = verdict; t.resolve(); } }
+process.on('uncaughtException', function (e) { if (current) settle(current, { pass: false, crash: true, detail: 'it crashed: ' + (e && e.message || e) }); });
+process.on('unhandledRejection', function (e) { if (current) settle(current, { pass: false, crash: true, detail: 'it crashed: ' + (e && e.message || e) }); });
+
+function one(t) {
+  return new Promise(function (resolve) {
+    t.resolve = resolve;
+    current = t;
+    const timer = setTimeout(function () { settle(t, { pass: false, crash: true, detail: 'it hung: no answer in ' + t.limit + ' ms' }); }, Number(t.limit) > 0 ? Number(t.limit) : 60000);
+    let answered;
+    try { answered = Promise.resolve(t.body()); } catch (e) { answered = Promise.reject(e); }
+    answered.then(function (v) {
+      if (v === true) settle(t, { pass: true });
+      else settle(t, { pass: false, detail: typeof v === 'string' ? v : '' });
+    }, function (e) { settle(t, { pass: false, crash: true, detail: 'it crashed: ' + (e && e.message || e) }); });
+  }).then(function () { current = null; });
+}
+
+async function runAll() {
+  test.startTest(SUITE_FILE);
+  const seen = Object.create(null);
+  const last = ONLY === null ? queue.length - 1 : queue.map(function (t) { return t.title; }).indexOf(ONLY);
+  for (let i = 0; i <= last; i++) {
+    const t = queue[i];
+    const title = String(t.title);
+    let sev = Number(t.severity);
+    if (seen[title]) { t.verdict = { pass: false, crash: true, detail: 'this title is said a second time in its suite' }; }
+    else if (typeof t.severity !== 'number' || !(sev >= 0 && sev <= 1)) { t.verdict = { pass: false, crash: true, detail: 'its severity is no number from 0.0 to 1.0: ' + String(t.severity) }; }
+    else if (typeof t.body !== 'function') { t.verdict = { pass: false, crash: true, detail: 'it has no body to run' }; }
+    else await one(t);
+    seen[title] = true;
+    const v = t.verdict || { pass: false, detail: 'it gave no answer' };
+    const severity = v.crash ? 0.7 : (sev >= 0 && sev <= 1 ? sev : 0.7);
+    if (v.pass) { test.successCount++; test.comment('SUCCESS #' + test.counter + '.' + test.successCount + ': ' + title + ' ' + ICON.SUCCESS); }
+    else { test.failureCount++; test.comment('FAILURE #' + test.counter + '.' + test.failureCount + ': ' + title + (v.detail ? ' — ' + v.detail : '') + ' ' + ICON.ERROR); }
+    reportToTesticle({ script: SCRIPT, suite: SUITE_FILE, test: title, verified: !!v.pass, severity: severity });
+    if (VERIFY_PORT) recordTitled(title, v.pass ? 'green' : 'red', v.pass ? '' : title + (v.detail ? ' — ' + v.detail : ''));
+  }
+  for (const fn of afters) { try { await fn(); } catch (e) { test.comment('test.after threw: ' + (e && e.message || e)); } }
+  test.reportSuccessFailureCount();
+  await Promise.race([Promise.all(reportsLanded), new Promise(function (r) { setTimeout(r, RECORD_WAIT_MS); })]);
+  process.exit(test.failureCount > 0 ? 1 : 0);
+}
+// A test.run result to deskVerify, under its title, while Desk's Verify still reads them (see the head of this file).
+function recordTitled(title, outcome, failure) {
+  if (!VERIFY_PORT) return;
+  const rec = { suite: SUITE, title: SUITE + ' ' + String(title), outcome: outcome };
+  if (outcome === 'red' && failure) rec.failure = String(failure);
+  try {
+    const own = globalThis.spirit;
+    const ownWindow = globalThis.window;
+    globalThis.spirit = undefined;
+    globalThis.window = undefined;
+    let real = null;
+    try { real = require(path.join(__dirname, '..', 'spirit.js')); } finally { globalThis.spirit = own; globalThis.window = ownWindow; }
+    family = family || real.require(real.familyPath(RECORD.split('.')[0]));
+    inTheAir++;
+    family.then(function (f) { return f[RECORD.split('.')[1]](rec); }).catch(function () { /* a record, not the verdict */ }).then(landed);
+  } catch (e) { /* the lines are printed whatever the verifier says */ }
+}
 
 module.exports = test;
