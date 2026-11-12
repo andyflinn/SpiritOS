@@ -81,6 +81,20 @@ The box, in Andy's words where he gave them:
     there are more"*: from 1 starts the answer after the first row. Cut, the answer with neither holds the failed first.
   - *"The verb red is testicle.red"*, *"search all failed, current tests, most severe first"*: every failed current test,
     no other, most severe first.
+  - The search fix (goal/G47.1, the box: *"Every test search answers its failed tests first, then by severity. Red,
+    green, the script and the suite go to the server with the words, so the server narrows before it cuts an answer"*;
+    the field `result`, `red` or `green`, left out for both): theta's three in the order failed 0.9, failed 0.3, passed
+    0.6. 40 passing tests of gamma at 1 and theta's quiet pass (quokka) and quiet failure (wombat) at 0 are set: with
+    nothing chosen the answer is cut, no pass comes before a failure, and the quiet failure comes before the passes;
+    `result: red` answers failures only, `green` passes only, left out both; theta, or theta's suite, with `green` finds
+    the quiet pass; "quokka" finds it; "quokka" with `red` does not; "wombat" with `red` finds the quiet failure.
+  - Every variation of every search (Andy: *"every variation of search returns ALL matching records, or AT LEAST
+    abucket full!! FOR ALL SEARCHES"*): testicle.search with nothing, a script, a suite, both, result red or green, and
+    typed words, alone and together; testicle.red; suite.search with and without a script and words; the runner idle.
+    A row matches when it is current, of the script, suite and result asked, and each word is in its title, script or
+    suite, in any case. Not cut, the answer holds every matching row; cut, it is full (the room of one answer cannot hold
+    one more of its rows) and holds matching rows first, never a row outside the script, suite or result. Page after
+    page with from, each page that says more is full, and the pages hold every matching test once.
 
 ## What its test must try to break
 
@@ -92,5 +106,6 @@ The box, in Andy's words where he gave them:
 - A suite.search answering another file's rows, a suite twice, or a suite without its status.
 - A second row on no flip, a flip without a new row or with its old row lost, a lower severity applied, a search
   answering an old row or another script's or suite's, a passed test before a failed one, an order other than most severe
-  first among each, a result filter answering the other result, a from that does not skip, a red holding a passing test.
+  first among each, a result filter answering the other result, a from that does not skip, a red holding a passing test; a cut made before the result,
+  the script, the suite or the words narrowed, so a quiet row beneath louder ones is never answered.
 - Anything later than one second; a busy that never says true while it works, or stays true once idle.

@@ -739,6 +739,245 @@ test.run('without a test title it still answers the current rows alone', 0.2, as
   return (mine.length === 1 && yes(mine[0].current)) || 'rows of theta\'s first question: ' + short(mine);
 }, test.limit.quick);
 
+// goal/G47.1, the box, the search fix (Andy: "the empty search string with no script or suite selected should already fill
+// up with more that 20 reds when i open the app!, and typing in the search bar sends requests and returns NOTHING$!",
+// "ALL, GO BOX IT, FIX IT!!!!!!!!!!"): "Every test search answers its failed tests first, then by severity. Red, green,
+// the script and the suite go to the server with the words, so the server narrows before it cuts an answer". result is
+// the field cw named for red and green ("it gains one optional field, result, red or green, left out for both").
+// THE WORLD: 40 passing tests of gamma at severity 1, with titles long enough that one answer cannot hold them all; beneath
+// them theta's quiet pass (the word quokka) and theta's quiet failure (the word wombat), both at severity 0.
+const LOUD = function (i) { return 'gamma passes loudly, number ' + i + ', with a title long enough that one answer of the search cannot hold forty of them'; };
+const QUOKKA = 'theta passes quietly, the quokka';
+const WOMBAT = 'theta fails quietly, the wombat';
+const has = function (rows, title) { return rows.some(function (r) { return r.test === title; }); };
+const ask = function (args) { return call(N.base, 'testicle.testicle.search', Object.assign({ text: '' }, args)); };
+let loud = false;
+test.run('the world: 40 passing tests of gamma at severity 1, and theta\'s quiet pass and quiet failure at severity 0', 0.2, async function () {
+  if (!up()) return NONODE;
+  const out = [];
+  for (let i = 0; i < 40; i++) out.push(await call(N.base, 'testicle.testicle.set', { script: Z + 'gamma.js', suite: Z + 'test/gamma.js', test: LOUD(i), verified: true, severity: 1 }));
+  out.push(await call(N.base, 'testicle.testicle.set', { script: TH, suite: THS, test: QUOKKA, verified: true, severity: 0 }));
+  out.push(await call(N.base, 'testicle.testicle.set', { script: TH, suite: THS, test: WOMBAT, verified: false, severity: 0 }));
+  loud = out.every(function (r) { return r.status === 200; });
+  return loud || 'testicle.set: ' + short(out.filter(function (r) { return r.status !== 200; }).map(function (r) { return r.status + ' ' + r.text; }));
+}, test.limit.slow);
+test.run('the world: with nothing chosen, the answer is cut', 0.2, async function () {
+  if (!loud) return 'the tests were not set: the world failed';
+  const r = await ask({});
+  return (r.status === 200 && !!r.body && r.body.more === true) || 'answer: ' + r.status + ' more ' + short(r.body && r.body.more) + ', ' + found(r).length + ' rows';
+}, test.limit.quick);
+test.run('with nothing chosen, a cut answer holds no passed test before a failed one', 0.2, async function () {
+  if (!loud) return 'the tests were not set: the world failed';
+  const rows = found(await ask({}));
+  const firstPass = rows.findIndex(function (r) { return yes(r.verified); });
+  const lateFail = firstPass === -1 ? -1 : rows.slice(firstPass).findIndex(function (r) { return no(r.verified); });
+  return (rows.length > 0 && no(rows[0].verified) && lateFail === -1) || 'results in order: ' + short(rows.map(function (r) { return yes(r.verified) ? 'passed' : 'failed'; }));
+}, test.limit.quick);
+// The runner's own runs add failures of their own: the answer is judged against every failed current row of the table.
+test.run('with nothing chosen, the quiet failure at severity 0 comes before 40 passed tests of severity 1', 0.2, async function () {
+  if (!loud) return 'the tests were not set: the world failed';
+  const rows = found(await ask({}));
+  const reds = (tables(DB).test || []).filter(function (r) { return yes(r.current) && no(r.verified); }).length;
+  const at = rows.findIndex(function (r) { return r.test === WOMBAT; });
+  const firstPass = rows.findIndex(function (r) { return yes(r.verified); });
+  if (firstPass === -1 && at === -1) return 'the answer holds ' + rows.length + ' failed tests and no pass; ' + reds + ' failed current rows, more than one answer holds: the quiet failure was not judged';
+  return (at !== -1 && (firstPass === -1 || at < firstPass)) || 'the quiet failure at ' + at + ', the first pass at ' + firstPass + ', of ' + rows.length + ' rows (' + reds + ' failed current rows)';
+}, test.limit.quick);
+test.run('result red answers failed tests only', 0.2, async function () {
+  if (!loud) return 'the tests were not set: the world failed';
+  const r = await ask({ result: 'red' });
+  const rows = found(r);
+  return (r.status === 200 && rows.length > 0 && rows.every(function (x) { return no(x.verified) && yes(x.current); })) || 'result red: ' + r.status + ' ' + short(rows.length ? rows.map(function (x) { return x.verified + ' ' + x.test; }) : r.text);
+}, test.limit.quick);
+test.run('result green answers passed tests only', 0.2, async function () {
+  if (!loud) return 'the tests were not set: the world failed';
+  const r = await ask({ result: 'green' });
+  const rows = found(r);
+  return (r.status === 200 && rows.length > 0 && rows.every(function (x) { return yes(x.verified) && yes(x.current); })) || 'result green: ' + r.status + ' ' + short(rows.length ? rows.map(function (x) { return x.verified + ' ' + x.test; }) : r.text);
+}, test.limit.quick);
+test.run('result left out answers failed and passed tests both', 0.2, async function () {
+  if (!loud) return 'the tests were not set: the world failed';
+  const rows = found(await ask({ script: TH }));
+  return (rows.some(function (x) { return no(x.verified); }) && rows.some(function (x) { return yes(x.verified); })) || 'theta\'s rows: ' + short(rows.map(function (x) { return x.verified + ' ' + x.test; }));
+}, test.limit.quick);
+test.run('result green narrows before the cut: theta chosen, its quiet pass is found beneath 40 louder passes', 0.2, async function () {
+  if (!loud) return 'the tests were not set: the world failed';
+  const r = await ask({ script: TH, result: 'green' });
+  const rows = found(r);
+  return (r.status === 200 && has(rows, QUOKKA) && rows.every(function (x) { return x.script === TH && yes(x.verified); })) || 'theta, green: ' + r.status + ' ' + short(rows.length ? rows.map(function (x) { return x.script + ' ' + x.verified + ' ' + x.test; }) : r.text);
+}, test.limit.quick);
+test.run('result green narrows before the cut: theta\'s suite chosen with no script, its quiet pass is found', 0.2, async function () {
+  if (!loud) return 'the tests were not set: the world failed';
+  const r = await ask({ suite: THS, result: 'green' });
+  const rows = found(r);
+  return (r.status === 200 && has(rows, QUOKKA) && rows.every(function (x) { return x.suite === THS && yes(x.verified); })) || 'theta\'s suite, green: ' + r.status + ' ' + short(rows.length ? rows.map(function (x) { return x.suite + ' ' + x.verified + ' ' + x.test; }) : r.text);
+}, test.limit.quick);
+test.run('with green alone, nothing chosen, the answer is all passes and none of them failed', 0.2, async function () {
+  if (!loud) return 'the tests were not set: the world failed';
+  const rows = found(await ask({ result: 'green' }));
+  return (rows.length > 0 && !has(rows, WOMBAT) && rows.every(function (x) { return yes(x.verified); })) || 'green alone: ' + short(rows.map(function (x) { return x.verified + ' ' + x.test; }));
+}, test.limit.quick);
+test.run('typed words narrow before the cut: "quokka" finds theta\'s quiet pass beneath 40 louder passes', 0.2, async function () {
+  if (!loud) return 'the tests were not set: the world failed';
+  const rows = found(await ask({ text: 'quokka' }));
+  return has(rows, QUOKKA) || '"quokka" found ' + short(rows.map(function (x) { return x.test; }));
+}, test.limit.quick);
+test.run('typed words and result together: "quokka" with result red finds no passed test', 0.2, async function () {
+  if (!loud) return 'the tests were not set: the world failed';
+  const r = await ask({ text: 'quokka', result: 'red' });
+  const rows = found(r);
+  return (r.status === 200 && !has(rows, QUOKKA) && rows.every(function (x) { return no(x.verified); })) || '"quokka", red: ' + r.status + ' ' + short(rows.length ? rows.map(function (x) { return x.verified + ' ' + x.test; }) : r.text);
+}, test.limit.quick);
+test.run('typed words and result together: "wombat" with result red finds theta\'s quiet failure', 0.2, async function () {
+  if (!loud) return 'the tests were not set: the world failed';
+  const r = await ask({ text: 'wombat', result: 'red' });
+  return (r.status === 200 && has(found(r), WOMBAT)) || '"wombat", red: ' + r.status + ' ' + short(found(r).map(function (x) { return x.test; }).concat(r.status === 200 ? [] : [r.text]));
+}, test.limit.quick);
+
+// EVERY VARIATION OF EVERY SEARCH, ALL ITS ROWS OR A FULL ANSWER (Andy, to wsl: "You BETTER check that every variation of
+// search returns ALL matching records, or AT LEAST abucket full!! FOR ALL SEARCHES. - ALL RECORDS if they don't fill a
+// bucket - ALL MATCHING RECORDS, if they don't fill a bucked, - AND all returned searches are FULL, if there's enough record
+// in the fucking table, - AND the string matching is either fuckings useless or used in THE MOST BRAINDEAD WAY."). The
+// rows that match are read from testicle.db itself, the runner idle so the table holds still: a test row matches when it
+// is current, of the script, the suite and the result asked, and each typed word is in its title, its script or its suite,
+// in any case. An answer is full when the room one answer has (limits.ANSWER_MAX) left after it cannot hold one more of
+// its rows. For each: not cut, it holds every matching row; cut, it is full and holds matching rows only.
+const limits = require(path.join(RUN, 'spirit', 'limits.js'));
+const ROOM = limits.ANSWER_MAX - Buffer.byteLength(JSON.stringify({ items: [], more: false }), 'utf8');
+const bytes = function (x) { return Buffer.byteLength(JSON.stringify(x), 'utf8'); };
+// next: the item the server held back, the first of the following answer (from), when the search takes from; without it,
+// the largest item the answer holds stands in for it.
+const fullAnswer = function (body, next) {
+  const its = (body && body.items) || [];
+  if (!its.length) return false;
+  const used = bytes(its) - 2;
+  const after = next ? bytes(next) : Math.max.apply(null, its.map(bytes));
+  return ROOM - used < after + 1;
+};
+// The first item of the following answer of a testicle.search, the rows already held skipped.
+const nextItem = async function (args, held) {
+  const r = await call(N.base, 'testicle.testicle.search', Object.assign({}, args, { from: held }));
+  return (r.body && r.body.items && r.body.items[0]) || null;
+};
+const wordsIn = function (row, text) {
+  const hay = [row.test, row.script, row.suite].map(function (x) { return String(x || '').toLowerCase(); }).join(' ');
+  return String(text || '').toLowerCase().split(/\s+/).filter(Boolean).every(function (w) { return hay.indexOf(w) !== -1; });
+};
+const matchingTests = function (a) {
+  return (tables(DB).test || []).filter(function (r) {
+    return yes(r.current) && (a.script === undefined || r.script === a.script) && (a.suite === undefined || r.suite === a.suite) &&
+      (a.result === undefined || (a.result === 'red' ? no(r.verified) : yes(r.verified))) && wordsIn(r, a.text);
+  });
+};
+const tkey = function (r) { return r.script + '|' + r.suite + '|' + r.test; };
+// One search judged: its answer against the rows that match.
+// allowed: the rows an answer may hold at all, the narrowing without the words (the box names no rule on what else the
+// words may find; Andy's ask is that every row they match is found).
+const judged = function (r, want, keyOf2, allowed, next) {
+  if (r.status !== 200 || !r.body || !Array.isArray(r.body.items)) return 'answer: ' + r.status + ' ' + short(r.text);
+  const rows = found(r);
+  const got = {};
+  rows.forEach(function (x) { got[keyOf2(x)] = true; });
+  const may = {};
+  (allowed || want).forEach(function (x) { may[keyOf2(x)] = true; });
+  const stray = rows.filter(function (x) { return !may[keyOf2(x)]; });
+  if (stray.length) return stray.length + ' rows answered outside the script, suite or result asked: ' + short(stray.map(keyOf2));
+  if (!r.body.more) {
+    const missing = want.filter(function (x) { return !got[keyOf2(x)]; });
+    return !missing.length || 'not cut, ' + rows.length + ' rows answered of ' + want.length + ' that match; missing ' + short(missing.map(keyOf2));
+  }
+  const missing = want.filter(function (x) { return !got[keyOf2(x)]; });
+  if (!fullAnswer(r.body, next)) return 'cut at ' + rows.length + ' rows, ' + bytes(r.body.items) + ' bytes of a room of ' + ROOM + ': not full; ' + want.length + ' match';
+  // Cut and full: of the rows that match, as many as the answer holds are in it, never fewer.
+  return (want.length - missing.length >= Math.min(rows.length, want.length)) || 'cut and full at ' + rows.length + ' rows, but only ' + (want.length - missing.length) + ' of the ' + want.length + ' that match the words are among them';
+};
+const VARIATIONS = [
+  ['nothing chosen, no words', {}],
+  ['a script', { script: TH }],
+  ['a suite', { suite: THS }],
+  ['a script and a suite', { script: TH, suite: THS }],
+  ['result red', { result: 'red' }],
+  ['result green', { result: 'green' }],
+  ['a script, result red', { script: TH, result: 'red' }],
+  ['a script, result green', { script: TH, result: 'green' }],
+  ['a suite, result green', { suite: THS, result: 'green' }],
+  ['a script and a suite, result red', { script: TH, suite: THS, result: 'red' }],
+  ['the script of 40 louder passes', { script: Z + 'gamma.js' }],
+  ['the script of 40 louder passes, result green', { script: Z + 'gamma.js', result: 'green' }],
+  ['the words "quokka"', { text: 'quokka' }],
+  ['the word "loudly", in 40 titles', { text: 'loudly' }],
+  ['the word "theta", in a script name', { text: 'theta' }],
+  ['the words "theta quietly"', { text: 'theta quietly' }],
+  ['the word "QUOKKA" in capitals', { text: 'QUOKKA' }],
+  ['the word "wombat", result red', { text: 'wombat', result: 'red' }],
+  ['the word "loudly", result red', { text: 'loudly', result: 'red' }],
+  ['the word "question", a script and a suite', { text: 'question', script: TH, suite: THS }],
+];
+test.run('the world: the runner idle, so the table holds still while every variation is asked', 0.2, async function () {
+  if (!loud) return 'the tests were not set: the world failed';
+  return (await idle(240000)) || 'the runner did not go idle';
+}, test.limit.long);
+VARIATIONS.forEach(function (v) {
+  test.run('testicle.search, ' + v[0] + ': every matching test, or a full answer of matching tests', 0.2, async function () {
+    if (!loud) return 'the tests were not set: the world failed';
+    const a = Object.assign({ text: '' }, v[1]);
+    const r = await call(N.base, 'testicle.testicle.search', a);
+    const next = r.body && r.body.more ? await nextItem(a, found(r).length) : null;
+    return judged(r, matchingTests(a), tkey, matchingTests(Object.assign({}, a, { text: '' })), next);
+  }, test.limit.quick);
+});
+// The following answers (from, the rows already held, cw's build): asked page after page, each page that says more is
+// full, and the pages together hold every matching test, each once.
+[
+  ['nothing chosen', {}],
+  ['result green', { result: 'green' }],
+  ['the word "loudly"', { text: 'loudly' }],
+].forEach(function (v) {
+  test.run('testicle.search page after page, ' + v[0] + ': each page full while there are more, every matching test once', 0.2, async function () {
+    if (!loud) return 'the tests were not set: the world failed';
+    const a = Object.assign({ text: '' }, v[1]);
+    const want = matchingTests(a);
+    const seen = {};
+    let from = 0, twice = [], pages = 0;
+    for (;;) {
+      const r = await call(N.base, 'testicle.testicle.search', Object.assign({ from: from }, a));
+      if (r.status !== 200 || !r.body || !Array.isArray(r.body.items)) return 'page ' + pages + ': ' + r.status + ' ' + short(r.text);
+      const rows = found(r);
+      pages += 1;
+      rows.forEach(function (x) { if (seen[tkey(x)]) twice.push(tkey(x)); seen[tkey(x)] = true; });
+      if (!r.body.more) break;
+      if (!fullAnswer(r.body, await nextItem(a, from + rows.length))) return 'page ' + pages + ' says more but is not full: ' + rows.length + ' rows, ' + bytes(r.body.items) + ' bytes of ' + ROOM;
+      if (!rows.length || pages > 100) return 'page ' + pages + ' says more and holds ' + rows.length + ' rows';
+      from += rows.length;
+    }
+    const missing = want.filter(function (x) { return !seen[tkey(x)]; });
+    return (!missing.length && !twice.length) || pages + ' pages; missing ' + missing.length + ' of ' + want.length + ' ' + short(missing.map(tkey)) + '; twice ' + short(twice);
+  }, test.limit.slow);
+});
+test.run('testicle.red: every failed current test, or a full answer of them', 0.2, async function () {
+  if (!loud) return 'the tests were not set: the world failed';
+  return judged(await call(N.base, 'testicle.red', {}), matchingTests({ result: 'red' }), tkey);
+}, test.limit.quick);
+// suite.search: a script's suite rows, or every suite once with no script; the words in the suite's or the script's name.
+const matchingSuites = function (script, text) {
+  const rows = (tables(DB).suite || []).filter(function (r) { return !script || r.script === script; });
+  const once = {};
+  return rows.filter(function (r) { const k = script ? r.script + '|' + r.suite : r.suite; if (once[k]) return false; once[k] = true; return wordsIn({ test: '', script: script ? r.script : '', suite: r.suite }, text); });
+};
+[
+  ['no script, no words', '', ''],
+  ['a script', TH, ''],
+  ['no script, the word "theta"', '', 'theta'],
+  ['a script, the word "theta"', TH, 'theta'],
+].forEach(function (v) {
+  test.run('suite.search, ' + v[0] + ': every matching suite, or a full answer of them', 0.2, async function () {
+    if (!loud) return 'the tests were not set: the world failed';
+    const a = v[1] ? { script: v[1], text: v[2] } : { text: v[2] };
+    const r = await call(N.base, 'testicle.suite.search', a);
+    return judged(r, matchingSuites(v[1], v[2]), function (x) { return v[1] ? x.script + '|' + x.suite : x.suite; }, matchingSuites(v[1], ''));
+  }, test.limit.quick);
+});
+
 // the box: "The verb red is testicle.red"
 test.run('testicle.red answers every failed current test, and no other', 0.2, async function () {
   if (!up()) return NONODE;
