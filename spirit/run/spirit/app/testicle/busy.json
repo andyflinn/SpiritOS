@@ -1,4 +1,4 @@
 {
-  "description": "Whether testicle's server is doing any work: true while changes in run:// wait to be written into testicle.db or are being written, while a script.get or a testicle.set makes rows, or while a suite it was asked to run is running, false when it is idle. It takes nothing. The server also streams it, {testicle: {busy}}, each time it turns, and on every row it publishes, so its own page never asks.",
+  "description": "Whether testicle's server is doing any work: true while changes in run:// wait to be written into testicle.db or are being written, while a script.get or a testicle.set makes rows, or while its runner runs a suite, false when it is idle. It takes nothing. The server also streams it, {testicle: {busy}}, each time it turns, and on every row it publishes, so its own page never asks.",
   "request": {}
 }

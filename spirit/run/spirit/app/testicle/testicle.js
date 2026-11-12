@@ -88,10 +88,13 @@ db.exec('CREATE TABLE IF NOT EXISTS testicle (script TEXT NOT NULL, suite TEXT N
   'current INTEGER NOT NULL DEFAULT 1, verified INTEGER NOT NULL, tested INTEGER NOT NULL, judged TEXT NOT NULL DEFAULT \'\', ' +
   'severity REAL NOT NULL DEFAULT 0, PRIMARY KEY (script, suite, test, flipped))');
 db.exec('CREATE INDEX IF NOT EXISTS testicle_current ON testicle (verified, severity DESC, flipped DESC) WHERE current = 1');
+// BOTH HASHES ON A TEST ROW (goal/G47.1, the box: "A testicle row carries both hashes it ran against, the script's and the
+// suite's"): judged is the script's, suiteHash the suite's. A table made before it gains the column, empty.
+if (!db.prepare('PRAGMA table_info(testicle)').all().some(function (c) { return c.name === 'suiteHash'; })) db.exec("ALTER TABLE testicle ADD COLUMN suiteHash TEXT NOT NULL DEFAULT ''");
 const T = {
   current: db.prepare('SELECT * FROM testicle WHERE script = ? AND suite = ? AND test = ? AND current = 1'),
-  add: db.prepare('INSERT INTO testicle (script, suite, test, flipped, current, verified, tested, judged, severity) VALUES (?, ?, ? , ?, 1, ?, ?, ?, ?)'),
-  tested: db.prepare('UPDATE testicle SET tested = ?, judged = ?, severity = MAX(severity, ?) WHERE script = ? AND suite = ? AND test = ? AND flipped = ?'),
+  add: db.prepare('INSERT INTO testicle (script, suite, test, flipped, current, verified, tested, judged, severity, suiteHash) VALUES (?, ?, ? , ?, 1, ?, ?, ?, ?, ?)'),
+  tested: db.prepare('UPDATE testicle SET tested = ?, judged = ?, severity = MAX(severity, ?), suiteHash = ? WHERE script = ? AND suite = ? AND test = ? AND flipped = ?'),
   retire: db.prepare('UPDATE testicle SET current = 0 WHERE script = ? AND suite = ? AND test = ? AND flipped = ?'),
   // The current rows, most severe first, the newest flip first among equals (the index's order).
   currents: db.prepare('SELECT * FROM testicle WHERE current = 1 ORDER BY severity DESC, flipped DESC'),
@@ -115,7 +118,7 @@ function statusOf(test, outcome) { return test ? 'needs running' : outcome === '
 // row"), so a flipped test's replaced row and its current row are two rows wherever they are kept.
 function testServed(r) {
   return { key: r.script + '|' + r.suite + '|' + r.test + '|' + Number(r.flipped), script: r.script, suite: r.suite, test: r.test, flipped: Number(r.flipped), current: !!r.current,
-    verified: !!r.verified, tested: Number(r.tested), judged: r.judged, severity: Number(r.severity) };
+    verified: !!r.verified, tested: Number(r.tested), judged: r.judged, suiteHash: String(r.suiteHash || ''), severity: Number(r.severity) };
 }
 
 function posix(p) { return String(p).split(path.sep).join('/'); }
@@ -133,24 +136,111 @@ function isSuite(rel) { return path.posix.basename(path.posix.dirname(rel)) === 
 function ownTestOf(file) { return path.posix.join(path.posix.dirname(file), 'test', path.posix.basename(file)); }
 function fileOfOwnTest(suite) { return path.posix.join(path.posix.dirname(path.posix.dirname(suite)), path.posix.basename(suite)); }
 
-// RUN A SUITE (goal/G47.1, the run cycle, the box: "Its work is one handler function of the server, later integrated into
-// the server's auto-test design; this cycle is not the implementation of that design", "testicle given: the suite runs up to
-// that test, the tests before it with it, by the reporter's --test <title>. testicle missing, as from the button: the server
-// runs the whole suite", "A general test is started with the script as its argument; a script's own test with none", "Each
-// test reports itself to testicle.testicle.set, as every suite does now"). The suite runs as its own process in this
-// checkout, so its reporter reports to this node. Nothing waits for it: the caller is answered at once (Andy: "for this cycle,
-// the servers will return the answer immediately, and not wait for the suite to complete.").
-function runSuite(script, suite, title) {
-  const args = [suite];
-  if (suite !== ownTestOf(script)) args.push(script);
-  if (title) args.push('--test', title);
-  running += 1;
+// THE QUEUE AND ITS ONE RUNNER (goal/G47.1, the queue cycle, the box: "The flags are the queue: every suite row flagged
+// \"needs running\" is owed one run, and there is no second list, so nothing is queued twice", "One runner: one suite
+// process at a time, never two. It starts 1 second after the last file change event; a new event pushes the start back",
+// "A job is one suite for one script, one process each", "General tests first", "A press of 🏃‍♂️ puts its suite and script
+// at the head of the queue, never a second run beside the running one", "Nobody but testicle starts runs", "Rows already
+// flagged when the server starts: the runner starts 1 second after the server starts"). A suite runs as its own process in
+// this checkout, so its reporter reports to this node: a general test given the script, an own test nothing, --test <title>
+// when a title was asked.
+const QUIET_MS = 1000;
+// THE ONE JOB LIMIT (Andy: "we say 2 minutes wait until failure"): past it the job is killed and its tests failed.
+const JOB_LIMIT_MS = 120000;
+const flaggedRows = db.prepare('SELECT script, suite FROM suite WHERE test = 1 AND deleted = 0');
+let job = null;          // { script, suite, title, scriptHash, suiteHash, started, kid, timer, killed }
+const front = [];        // [{ script, suite, title }], pressed: run first, the newest press first
+let quiet = null;
+function isGeneral(suite) { return /-(child|sibling)-/.test(path.posix.basename(suite)); }
+// A file change, a press or the start: the runner waits for one quiet second, a new event pushing it back.
+function soon() {
+  if (quiet) clearTimeout(quiet);
+  quiet = setTimeout(function () { quiet = null; nextJob(); }, QUIET_MS);
+}
+function chooseJob() {
+  while (front.length) { const f = front.shift(); if (there(f.script) && there(f.suite)) return f; }
+  const rows = flaggedRows.all().filter(function (r) { return there(r.script) && there(r.suite); });
+  // General tests first, "because they tend to get most coverage fastest" (Andy); then by name, so the order is stable.
+  rows.sort(function (a, b) { return (isGeneral(b.suite) - isGeneral(a.suite)) || (a.suite < b.suite ? -1 : a.suite > b.suite ? 1 : 0) || (a.script < b.script ? -1 : a.script > b.script ? 1 : 0); });
+  return rows.length ? { script: rows[0].script, suite: rows[0].suite, title: '' } : null;
+}
+function nextJob() {
+  if (job || quiet) return;
+  const n = chooseJob();
+  if (!n) { told(); return; }
+  // THE TWO HASHES, TAKEN AT THE START (the box: "When a run starts, the server remembers the two hashes as they stand, and
+  // until that run ends tags every result of it with them").
+  const sr = Q.script.get(n.script);
+  const ur = Q.suiteRow.get(n.script, n.suite);
+  const j = { script: n.script, suite: n.suite, title: n.title || '', scriptHash: (sr && sr.hash) || hashOf(n.script),
+    suiteHash: (ur && ur.hash) || hashOf(n.suite), started: Date.now(), kid: null, timer: null, killed: false };
+  const args = [n.suite];
+  if (n.suite !== ownTestOf(n.script)) args.push(n.script);
+  if (j.title) args.push('--test', j.title);
+  job = j;
   told();
   let done = false;
-  const end = function () { if (!done) { done = true; running -= 1; told(); } };
-  const kid = spawn(process.execPath, args, { cwd: RUN, stdio: 'ignore', windowsHide: true });
-  kid.on('error', end);
-  kid.on('exit', end);
+  const end = function () {
+    if (done) return;
+    done = true;
+    clearTimeout(j.timer);
+    if (job === j) job = null;
+    try { jobEnded(j); } catch (e) { console.error('testicle: ' + (e && e.message || e)); }
+    told();
+    setImmediate(nextJob);
+  };
+  j.kid = spawn(process.execPath, args, { cwd: RUN, stdio: 'ignore', windowsHide: true });
+  j.kid.on('error', end);
+  j.kid.on('exit', end);
+  j.timer = setTimeout(function () { killJob(j); }, JOB_LIMIT_MS);
+}
+// PAST THE LIMIT (the box: "A job that runs past 2 minutes is killed, and every test of that suite and script the server
+// knows is failed, tagged with the run's two hashes, so it is not queued again until the script or the suite changes").
+function killJob(j) {
+  if (job !== j) return;
+  j.killed = true;
+  T.ofSuite.all(j.script, j.suite).forEach(function (r) { setResult(j.script, j.suite, r.test, false, Number(r.severity) || 0, j.scriptHash, j.suiteHash); });
+  try { j.kid.kill(); } catch (e) { /* gone already */ }
+}
+// A JOB ENDED: a whole run (no title asked) that left its suite row flagged is judged now, so the flag never queues the
+// same run twice: green or still red by its rows when they are full, still red when it was killed or its report fell
+// short ("a suite that hangs before any test reported fails too, with no test rows needed"). A row flagged again during
+// the run (a change after it started) stays flagged and comes round again ("the running job is not killed, the suite comes
+// round again behind it").
+function jobEnded(j) {
+  if (j.title) return;
+  const row = Q.suiteRow.get(j.script, j.suite);
+  if (!row || row.deleted || Number(row.changed) > j.started) return;
+  if (!j.killed && suiteJudged(j.script, j.suite)) return;
+  if (!row.test && row.outcome === 'red') return;
+  judgeSuite.run('red', Date.now(), j.script, j.suite);
+  tell('suite', suiteServed(Q.suiteRow.get(j.script, j.suite)), 'updated');
+}
+// ONE TEST'S RESULT WRITTEN (testicle.set's, and a killed job's failures): no flip, the current row tested again; a flip, the
+// current row retired and a new one made (goal/G47.1, the test-table cycle), each tagged with the two hashes. On a flip the
+// replaced row, current false now, is published too, before the new current row ("on a flip, the replaced row turning
+// current false is published too, beside the new current row"). Answers the current row as served.
+function setResult(script, suite, name, verified, severity, scriptHash, suiteHash) {
+  const now = Date.now();
+  const was = T.current.get(script, suite, name);
+  let flipped = now;
+  db.exec('BEGIN');
+  try {
+    if (!was) T.add.run(script, suite, name, now, verified ? 1 : 0, now, scriptHash, severity, suiteHash);
+    else if (!!was.verified === !!verified) { flipped = Number(was.flipped); T.tested.run(now, scriptHash, severity, suiteHash, script, suite, name, flipped); }
+    else { T.retire.run(script, suite, name, Number(was.flipped)); T.add.run(script, suite, name, now, verified ? 1 : 0, now, scriptHash, Math.max(severity, Number(was.severity) || 0), suiteHash); }
+    db.exec('COMMIT');
+  } catch (e) { db.exec('ROLLBACK'); throw e; }
+  if (was && Number(was.flipped) !== flipped) tell('testicle', testServed(T.row.get(script, suite, name, Number(was.flipped))), 'updated');
+  const out = testServed(T.row.get(script, suite, name, flipped));
+  tell('testicle', out, was && Number(was.flipped) === flipped ? 'updated' : 'added');
+  return out;
+}
+// A press of 🏃‍♂️, or an agent's testicle.run: to the head of the queue, never twice.
+function press(script, suite, title) {
+  for (let i = front.length - 1; i >= 0; i--) if (front[i].script === script && front[i].suite === suite) front.splice(i, 1);
+  front.unshift({ script: script, suite: suite, title: title || '' });
+  if (!job && !quiet) nextJob();
 }
 
 // THE PAIRS testModule.js NAMES, run as its own process with no file: "<test> <file>" for a general test and the file it
@@ -227,7 +317,7 @@ function apply(changed, P) {
 //   { testicle: { table, row, change, busy } }   a row written, change 'added', 'updated' or 'deleted', busy as it stands
 //   { testicle: { busy } }                       busy turned, true on waking, false back to listening
 // Every row carries busy too, so a page that opens late finds it in the last thing the job published.
-function busyNow() { return working || !!timer || pending.size > 0 || getting > 0 || running > 0; }
+function busyNow() { return working || !!timer || pending.size > 0 || getting > 0 || !!job; }
 let busyTold = false;
 function told() {
   const b = busyNow();
@@ -237,16 +327,21 @@ function told() {
 }
 // A test of a script and suite reported: the suite row judged again from the table. Flagged, it clears once every current row
 // was tested since the flag was set (changed); judged before, its outcome follows the rows. Published when it changed.
+// FULL BY THE HASHES (the box: "A suite row is then full when every current row of that script and suite carries both hashes
+// as they are now"): flagged, it clears once every current row carries the script row's hash and the suite row's. Answers
+// whether the row is judged full.
 function suiteJudged(script, suite) {
   const row = Q.suiteRow.get(script, suite);
-  if (!row || row.deleted) return;
+  const sr = Q.script.get(script);
+  if (!row || row.deleted || !sr) return false;
   const rows = T.ofSuite.all(script, suite);
-  if (!rows.length) return;
-  if (row.test && !rows.every(function (r) { return Number(r.tested) >= Number(row.changed); })) return;
+  if (!rows.length) return false;
+  if (!rows.every(function (r) { return r.judged === sr.hash && String(r.suiteHash || '') === row.hash; })) return false;
   const outcome = rows.every(function (r) { return !!r.verified; }) ? 'green' : 'red';
-  if (!row.test && row.outcome === outcome) return;
+  if (!row.test && row.outcome === outcome) return true;
   judgeSuite.run(outcome, Date.now(), script, suite);
   tell('suite', suiteServed(Q.suiteRow.get(script, suite)), 'updated');
+  return true;
 }
 function tell(table, row, change) { appServer.publish({ testicle: { table: table, row: row, change: change, busy: busyNow() } }); }
 
@@ -256,8 +351,6 @@ const pending = new Set();
 let working = false;
 let timer = null;
 let getting = 0;
-// The suites run started and not yet ended (runSuite below): work, so busy says so.
-let running = 0;
 function kick() {
   if (working || timer || !pending.size) { told(); return; }
   // The changes of one moment taken together: a save is often several events.
@@ -280,8 +373,12 @@ watcher.on('all', function (event, full) {
   if (!rel || rel.indexOf('..') === 0 || !/\.js$/.test(rel)) return;
   pending.add(rel);
   kick();
+  // The runner waits for a quiet second after the last change (the box: "a new event pushes the start back").
+  soon();
 });
 watcher.on('error', function (e) { console.error('testicle: the watcher: ' + (e && e.message || e)); });
+// Rows already flagged at the start: the runner starts 1 second after the server starts.
+soon();
 
 // A script row as a verb answers it: its deleted a boolean.
 function served(row) { return { name: row.name, hash: row.hash, deleted: !!row.deleted, changed: Number(row.changed) }; }
@@ -298,8 +395,8 @@ function mostSevereFirst(rows) {
 function refused(code) { return Object.assign(new Error(code), { refusal: code }); }
 
 appServer.serve({
-  // goal/G47.1, the run cycle, the box: "A new testicle verb, run {script, suite, testicle}": the suite started by runSuite,
-  // answered at once. The script a production script, the suite a suite, both on disc; testicle, a test's title, optional.
+  // goal/G47.1, the run cycle, the box: "A new testicle verb, run {script, suite, testicle}"; the queue cycle: "A press of
+  // 🏃‍♂️ puts its suite and script at the head of the queue", "an agent uses the same verb the UI uses". Answered at once. The script a production script, the suite a suite, both on disc; testicle, a test's title, optional.
   run: {
     request: { script: '', suite: '' }, reply: {},
     accepts: function (a) {
@@ -312,7 +409,7 @@ appServer.serve({
       if (!/\.js$/.test(script) || isSuite(script) || script.indexOf('..') !== -1 || ignored(path.join(RUN, script))) throw refused('not-a-production-script');
       if (!/\.js$/.test(suite) || !isSuite(suite) || suite.indexOf('..') !== -1) throw refused('not-a-suite');
       if (!there(script) || !there(suite)) throw refused('no-such-file');
-      runSuite(script, suite, String(a.testicle || ''));
+      press(script, suite, String(a.testicle || ''));
       return { started: true };
     },
   },
@@ -398,22 +495,12 @@ appServer.serve({
           Q.putSuite.run(script, suite, hashOf(suite), Date.now());
           tell('suite', suiteServed(Q.suiteRow.get(script, suite)), 'added');
         }
-        const now = Date.now();
-        const judged = there(script) ? hashOf(script) : ((Q.script.get(script) || {}).hash || '');
-        const was = T.current.get(script, suite, name);
-        let flipped = now;
-        db.exec('BEGIN');
-        try {
-          if (!was) T.add.run(script, suite, name, now, a.verified ? 1 : 0, now, judged, severity);
-          else if (!!was.verified === !!a.verified) { flipped = Number(was.flipped); T.tested.run(now, judged, severity, script, suite, name, flipped); }
-          else { T.retire.run(script, suite, name, Number(was.flipped)); T.add.run(script, suite, name, now, a.verified ? 1 : 0, now, judged, Math.max(severity, Number(was.severity) || 0)); }
-          db.exec('COMMIT');
-        } catch (e) { db.exec('ROLLBACK'); throw e; }
-        // On a flip the replaced row, current false now, is published too, before the new current row (goal/G47.1, the
-        // box: "on a flip, the replaced row turning current false is published too, beside the new current row").
-        if (was && Number(was.flipped) !== flipped) tell('testicle', testServed(T.row.get(script, suite, name, Number(was.flipped))), 'updated');
-        const out = testServed(T.row.get(script, suite, name, flipped));
-        tell('testicle', out, was && Number(was.flipped) === flipped ? 'updated' : 'added');
+        // THE TWO HASHES IT IS TAGGED WITH (the box: "until that run ends tags every result of it with them"): the running job's
+        // for its own script and suite; any other result, the script and suite rows' hashes as they stand.
+        const own = job && job.script === script && job.suite === suite ? job : null;
+        const scriptHash = own ? own.scriptHash : ((Q.script.get(script) || {}).hash || hashOf(script));
+        const suiteHash = own ? own.suiteHash : ((Q.suiteRow.get(script, suite) || {}).hash || hashOf(suite));
+        const out = setResult(script, suite, name, !!a.verified, severity, scriptHash, suiteHash);
         suiteJudged(script, suite);
         return out;
       }).finally(function () { getting -= 1; told(); });
