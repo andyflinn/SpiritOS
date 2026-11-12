@@ -70,7 +70,7 @@ function createOwnerPost(opts) {
     if (!route || route.unreachable || !route.relayUrl) {
       return Promise.resolve({ ok: false, status: 503, error: 'peer not reachable' });
     }
-    return Promise.resolve(o.post(route.relayUrl, to, made.text, route.hints)).then(function (answer) {
+    return Promise.resolve(o.post(route.relayUrl, to, made.text)).then(function (answer) {
       if (!answer || !answer.ok || !answer.hash) return answer || { ok: false, status: 503, error: 'peer not reachable' };
       return new Promise(function (resolve) {
         const hash = String(answer.hash);

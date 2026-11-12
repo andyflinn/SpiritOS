@@ -93,21 +93,12 @@ function noteLabel(rootDir, publicKey, publicLabel) {
   seen(rootDir).put(publicKey, { label: label, labelRank: 4, labelAt: Date.now(), seen: was ? was.lastSeen : 0 });
 }
 
-// The relay they were met on, as a route to them through it: at hearsay, since nobody has proved it yet. A better
-// route outranks it the moment one arrives.
-function noteRelay(rootDir, publicKey, relayUrl) {
-  const url = String(relayUrl || '').replace(/\/+$/, '');
-  if (!url) return;
-  const at = spirit.require('spirit/relayKeys.js').pinned(rootDir, url);
-  if (at) seen(rootDir).putRoute(publicKey, { via: at, at: at, url: url, rank: 4, told: Date.now() });
-}
-
 // Coming to know somebody: they wrote to you, they consumed an invite of yours, a human confirmed the key, or they
 // took a seat on a relay you own. Kept. One row per key: identity is the key.
 function acquire(rootDir, peer) {
   if (!peer || !peer.publicKey) throw new Error('acquire needs publicKey');
   noteLabel(rootDir, peer.publicKey, peer.publicLabel);
-  noteRelay(rootDir, peer.publicKey, peer.relay);
+  // The relay they were met on is no route kept (goal/G47.1, box v69: "every write of a route (... a contact added)").
   return shaped(seen(rootDir).set(peer.publicKey, { keep: true }));
 }
 

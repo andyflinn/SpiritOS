@@ -60,7 +60,7 @@ function createPuppetStream(opts) {
       return;
     }
     inFlight = true;
-    Promise.resolve(o.post(route.relayUrl, p.owner, made.text, route.hints)).then(function (r) {
+    Promise.resolve(o.post(route.relayUrl, p.owner, made.text)).then(function (r) {
       if (!r || r.ok === false) say('puppet stream: ' + m + ' not posted: ' + ((r && (r.error || r.code)) || 'no answer'));
     }, function (e) {
       say('puppet stream: ' + m + ' not posted: ' + ((e && e.message) || e));

@@ -63,7 +63,7 @@ const path = require('path');
 //
 // No row ages out here, whether it was read, refused, ignored or sent;
 // this file sets no window. What bounds the log is node.db's file cap (not
-// the owner's cache cap, which counts only `seen` and `seen_routes`): Andy,
+// the owner's cache cap, which counts only `seen`): Andy,
 // 2026-10-21: "cap in to 16 MB", "learn to throw out shit, or else my box
 // is gonna grind to a hold very soon". Past nodeStore.MAX_DB_BYTES the
 // table's oldest rows are shed (nodeStore.js, shedToCap), so the log keeps

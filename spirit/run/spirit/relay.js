@@ -3466,86 +3466,15 @@ function createRelay(rootDir, deps) {
       return { ok: true, status: 200, delivered: !!landedOnPost };
     }
 
-    // ── A SIBLING IS A ROUTE TOO ─────────────────────────────────────
-    //
-    //   Andy: "when a request is made via relay to a node that is a
-    //   sibling on the same relay, the route must be streamed back to the
-    //   node as well, then stashed in contacts exactly the same as if the
-    //   post target was on a foreign node." — "because the node doesn't
-    //   KNOW it is a sibling."
-    //
-    // THAT LAST CLAUSE IS THE WHOLE ARGUMENT, and it defeats the obvious
-    // objection. It looks as though a node already knows which relay
-    // carried a local post, since it chose one. It does not: when no
-    // relay of its own names that key, `hub.handlePost` posts through
-    // whichever relay it is connected to, and THIS BOX decides whether the
-    // packet is delivered. So the delivery says so, on the `route` event:
-    // `at` is THIS relay's key, which is exactly what it means — the peer
-    // was reached here.
-    //
-    // NOT BROADCAST — to the member who asked and nobody else: a route is
-    // the asker's to keep, and everyone else's business is their own
-    // (NODE-AND-RELAY §9b).
+    // NO ROUTE EVENT AFTER AN EXCHANGE (goal/G47.1, box v69: "The relay sends no route event after an exchange"). It
+    // told both ends where the other lives, for routes the node kept for partner relays; the node keeps none now.
+    // The reply goes to the member who asked, and nobody else.
     var landed = presentNow.send(matched.requester, 'reply', {
       hash: hash,
       from: who.id,
       text: typeof text === 'string' ? text : '',
       sig: sig,
     });
-    // BOTH ENDS, because both learned something and neither can infer it.
-    //
-    //   Andy: "this must be done for requestor and replier."
-    //
-    // The asker learns where the target lives; the target learns where
-    // the asker lives, which is what it needs to reach back without a
-    // search.
-    //
-    // Neither can be inferred by the node itself: the asker did not
-    // choose this relay for this peer when it had no route to choose by,
-    // and the target never chose anything — a request simply arrived.
-    //
-    // Safe to send to anybody, because the NODE decides what to keep:
-    // The node keeps this as a route in its one table and never keeps the
-    // person (server.js onRoute; seenPeers.js), so a route about a stranger
-    // makes nobody a contact.
-    // ── AND THE LABEL RIDES WITH THE ROUTE ───────────────────────────
-    //
-    //   Andy: "streamed route updates should need to be accompanied by
-    //   updated labels."
-    //
-    // This box holds it — `senderIdentity` hands the label back beside
-    // the key — and was sending the key alone. The same shape as
-    // everything else found discarded this cycle: known at the moment of
-    // throwing away, and expensive to go back for.
-    //
-    // ONLY FOR ITS OWN MEMBERS. A relay is the authority on who is on IT.
-    //
-    // ── WHY NOT ON THE REQUEST AND THE REPLY, WHICH WOULD BE FREE ────
-    //
-    //   Andy: "we may want to (free-of-charge) stream update labels with
-    //   peerPost responses" — "which would impact post-overhead
-    //   calculations" — "not decided yet, but we are trending toward
-    //   label-key-tuplets."
-    //
-    // Tried and backed out the same day. Those packets are already
-    // travelling, so carrying the pair on them costs no EVENT — but it
-    // costs BYTES on every request and every reply, and
-    // `limits.WIRE_OVERHEAD` is 246 and measured. Adding two fields to
-    // the hot path would invalidate a measured constant, on a wire change
-    // that is not decided.
-    //
-    // A route announcement is the narrow place: it fires once per
-    // exchange between siblings, not on every packet, and the node is
-    // its only reader.
-    if (landed) {
-      var asker = senderIdentity(matched.requester);
-      presentNow.send(matched.requester, 'route', {
-        key: who.id, at: mineKey(), label: who.label || '',
-      });
-      presentNow.send(who.id, 'route', {
-        key: matched.requester, at: mineKey(), label: (asker && asker.label) || '',
-      });
-    }
     return { ok: true, status: 200, delivered: !!landed };
   }
 

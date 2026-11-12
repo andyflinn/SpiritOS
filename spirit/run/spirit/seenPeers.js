@@ -2,32 +2,22 @@
 require('./spirit.js');
 
 // spirit/run/spirit/seenPeers.js
-// WHERE THIS NODE HAS BEEN TOLD PEOPLE LIVE.
+// WHO THIS NODE HAS SEEN, AND WHAT THEY ARE CALLED.
 //
-//   Andy: "the node MUST be greedy about route acquisition and updates,
-//   the (updated) public labels must be part of it."
-//   "Any peer a node could possibly connect to, the route to it can be
-//   known to the node."
+// Fed from a search answer, a packet arriving (whatever the door then decides about the sender), a relay's member
+// announcement, and a relay named at acquisition: each says who, when, and maybe a label or presence.
 //
-// IT STARTED AS "what a search learned", which is what the title said
-// until 2026-09-21, and it is fed from four places now: a search answer,
-// a packet arriving (whatever the door then decides about the sender), a
-// relay's route announcement, and a relay named at acquisition. The
-// narrower name described the first of those and hid the rule.
-//
-// Each of those held a route and threw it away. A search knew where every
-// row lived and kept only a URL; an arrival knew the road it came in on;
-// an announcement about a stranger was dropped; an invite named a relay
-// whose key this node had pinned. A contact could arrive with an address
-// in `relays` and NOTHING in `routes`.
+// NO ROUTE IS KEPT (goal/G47.1, the cycle "the route caching goes"; Andy: "We can probably shut down the
+// \"route-caching\" crap, and your system would not suffer"). This replaces his ruling "the node MUST be greedy about
+// route acquisition": where somebody lives was kept for partner relays, which went with goal/G22.6, and nothing
+// chooses where a post goes by it. A relay's own address is on its row (relayKeys.js).
 //
 // ── THE CONTACTS ARE ROWS OF THIS ONE TABLE (goal/G40.11) ────────────
 //
 // contacts.json went into this table with goal/G40.11 (contacts.js: Andy's
 // box, v24: "seen, the shadow in node.db, is the one table."). A contact is
 // a row here flagged `keep`; a search or an arrival writes a row and never
-// keeps it — only the owner's act does (contacts.js, `set` below). Routes
-// are their own rows (0018), never a field of the person's.
+// keeps it — only the owner's act does (contacts.js, `set` below).
 //
 // ── ONE BOUND, SPACE ─────────────────────────────────────────────────
 //
@@ -90,11 +80,9 @@ require('./spirit.js');
 //   Andy: "we can easily default to a small city...."
 //
 // **A LARGE TOWN, corrected 2026-09-21.** The first figure said 93,000
-// people, from 222 bytes a row. That was a peer with NO ROUTE: cycle 3
-// moved `at` and `url` into `seen_routes`, so the row shrank to 157 bytes
-// and the measurement kept reporting it as though it were the whole
-// thing. Somebody you can actually reach costs 157 + 420 = **577 bytes**,
-// so 20 MB is about **36,000 people**.
+// people, from 222 bytes a row; with routes kept beside it a row cost 577
+// bytes, about 36,000 people in 20 MB. No route is kept since goal/G47.1,
+// so a row is back near its own 157 bytes: more people, not fewer.
 //
 // The bound does not move, because it was never meant to be reached: it
 // exists so the failure mode is chosen rather than discovered (0016), and
@@ -151,10 +139,6 @@ function createSeenPeers(opts) {
     rows.sweepToBytes(maxBytes);
   }
 
-  // `at` is the far relay's KEY, which is what a route is made of. A row
-  // with neither key nor url teaches nothing and is not kept: an entry
-  // that cannot answer the question it exists for is a row that will be
-  // consulted and found wanting.
   // ── GREEDY, WHICH MEANS NEVER BLANKING WHAT IT KNOWS ─────────────────
   //
   //   Andy: "the node MUST be greedy about route acquisition and updates,
@@ -177,24 +161,23 @@ function createSeenPeers(opts) {
   // would overwrite a rename from the relay the person is actually on,
   // simply by arriving later.
   //
-  //   HOST     1  the relay that holds them said so — label and route
-  //   PROVED   2  a signature this node checked      — route
-  //   ARRIVED  3  a packet came from there           — route
-  //   HEARSAY  4  carried by a partner               — both, weakly
+  //   HOST     1  the relay that holds them said so
+  //   PROVED   2  a signature this node checked
+  //   ARRIVED  3  a packet came from there
+  //   HEARSAY  4  second-hand, weakly
+  // (For the label alone since goal/G47.1: no route is kept.)
   //
   // The default is HEARSAY, which is the safe end: a caller that forgets
   // to say loses an argument it might have won, rather than winning one
   // it should have lost.
   function note(publicKey, what) {
     var key = String(publicKey || '').trim();
-    var at = String((what && what.at) || '').trim();
-    var url = String((what && what.url) || '').trim();
     var label = String((what && what.label) || '');
     var rank = (what && what.rank) || HEARSAY;
-    var via = String((what && what.via) || '').trim();
     var present = (what && what.present);
     var hasPresence = present === true || present === false;
-    if (!key || (!at && !url && !label && !hasPresence)) return false;
+    // Seen is always worth writing: an arrival with nothing else to say still moves lastSeen.
+    if (!key) return false;
 
     // The merge lives in the statement (nodeStore's `put`): a blank field
     // leaves what is there, a worse-ranked one is refused, and `seen` is
@@ -210,48 +193,33 @@ function createSeenPeers(opts) {
       label: label, labelRank: rank, labelAt: now, relay: !!(what && what.relay === true),
       present: hasPresence ? present : undefined, seen: now,
     });
-    // A ROUTE IS A SEPARATE ROW, because it is a separate thing: through
-    // MY door `via`, to THEIR relay `at`. A caller with a url and no `at`
-    // has told us an address and not a route, and the peer row above has
-    // already taken what that was worth.
-    if (at) rows.putRoute(key, { via: via, at: at, url: url, rank: rank, told: now });
+    // NO ROUTE IS WRITTEN (goal/G47.1, box v69: "The node keeps no route of a peer ... every write of a route (an
+    // arrival, a relay's route event, presence, a contact added)"): where somebody was heard from is not kept; the row
+    // above keeps that they were seen, and when.
     sweep();
     return true;
   }
 
   // Null rather than an empty shape, so a caller cannot act on a miss by
-  // accident.
-  // The row, with its BEST route flattened onto it. Every caller wanted
-  // one route and the shape said so; the list is there for the caller
-  // that wants to try a second door, through `routes()`.
+  // accident. No route on it (goal/G47.1): the row as it is, and when it was last seen.
   function get(publicKey) {
     var key = String(publicKey || '').trim();
     var row = rows.get(key);
     if (!row) return null;
-    var best = rows.routes(key)[0] || null;
-    return Object.assign({}, row, {
-      at: (best && best.at) || '',
-      url: (best && best.url) || '',
-      via: (best && best.via) || '',
-      seen: row.lastSeen,
-    });
+    return Object.assign({}, row, { seen: row.lastSeen });
   }
-
-  // Every way this node knows to reach somebody, best-ranked first.
-  function routes(publicKey) { return rows.routes(String(publicKey || '').trim()); }
 
   function size() { sweep(); return rows.size(); }
 
   // ── DELETING A CONTACT MUST NOT REACH IN HERE ────────────────────────
   //
   //   Andy: "a shadow route must not be dropped when a contact is
-  //   deleted."
+  //   deleted." (No route is kept since goal/G47.1; the row is what survives.)
   //
   // contacts.js's `forget` says the same thing about itself: it "takes
   // YOUR side of a relationship: not kept, no name of yours. The row
   // stays in the table". Deleting a contact is a statement about an address book, not about
-  // what this node was told — so the shadow survives, and re-adding
-  // somebody gets their route back without a search.
+  // what this node was told — so the shadow survives.
   //
   // THE OBJECTION, and why it does not land: it can look as though delete
   // should mean erase. It cannot mean that here, because the traffic log
@@ -288,7 +256,6 @@ function createSeenPeers(opts) {
   return {
     note: note,
     get: get,
-    routes: routes,
     size: size,
     forget: forget,
     reset: reset,

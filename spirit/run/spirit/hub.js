@@ -491,13 +491,8 @@ function frontDoor(rootDir, from) {
 // marked ignored (below); nothing here makes a row kept, so writing is
 // not what makes somebody heard next time.
 //
-// `relayUrl` IS WHICH ROAD THEY CAME DOWN, and it is here because R8
-// would otherwise have quietly taken it: the one routing fact this node
-// holds about a stranger, noted as a route in the shadow (below).
-// peerPost has had it all along (it is already on every traffic-log row).
-//
-// Optional, so a caller with no road to name still marks the row rather
-// than refusing to.
+// NOT THE ROAD THEY CAME DOWN (goal/G47.1, box v69: "The node keeps no route of a peer ... every write of a route (an
+// arrival ...)"): the relay a packet came through is on its traffic-log row and nowhere else.
 //
 // NOT THE LABEL, and that one really is gone. acquireFromInbox read
 // `publicLabel` off the relay's stored copy of the line; nothing stores a
@@ -506,43 +501,11 @@ function frontDoor(rootDir, from) {
 // a contact acquired by being written to is unlabelled until then, where
 // it used to be named on arrival. That is the cost of the relay not reading the payload, which
 // is the point rather than a regression.
-function remember(rootDir, from, verdict, relayUrl) {
+function remember(rootDir, from, verdict) {
   var key = String(from == null ? '' : from).trim();
   if (!key) return false;
-  var road = String(relayUrl == null ? '' : relayUrl).trim();
-  var row = { publicKey: key, publicLabel: '', relays: [] };
-  if (road) row.relay = road;
-
-  // ── THE ROAD THEY CAME IN ON IS A ROUTE ──────────────────────────────
-  //
-  //   Andy: "the node must implicitly learn routes at EVERY opportunity."
-  //
-  // This had the road all along and kept only the URL: `row.relay` lands
-  // in `relays`, which holds addresses, while `routes` — which holds
-  // relay KEYS and is what a post sends as hints — got nothing. Somebody
-  // who wrote to you was auto-added with an address and no route.
-  //
-  // The key is one lookup away: this node pinned it when it accepted that
-  // relay. And if a search already said where they live, that answer is
-  // better than the road, because it is about the PERSON rather than
-  // about the packet — so the cache is asked first.
-  var seen = shadow(rootDir).get(key);
-  var at = (seen && seen.at) || (road ? relayKeys.pinned(rootDir, road) : '') || '';
 
   try {
-    // THE ROUTE GOES TO THE SHADOW, NOT THE BOOK (0018, cycle R1). It
-    // used to be written to both; the book's copy was the one that went
-    // stale, and it was machine data in the one file that is meant to be
-    // readable. RANK ARRIVED: a packet demonstrably came from there.
-    if (at) {
-      try {
-        shadow(rootDir).note(key, {
-          at: at, url: road || '',
-          via: road ? (relayKeys.pinned(rootDir, road) || '') : '',
-          rank: require('./spirit.js').require('spirit/seenPeers.js').ARRIVED,
-        });
-      } catch (e) { /* a cache that will not take a row is not a reason to refuse somebody */ }
-    }
     // ── IGNORED IS A MARK, NOT A FORGETTING (0021) ────────────────────
     //
     //   Andy: "ignoring means only: mark this row as "ignored"."
@@ -881,7 +844,7 @@ function createHub(rootDir) {
   // opinion about reachability is exactly what serverSurface.js:848 refuses:
   // "peer.post is the only way onto the wire. A second caller is a second
   // door." An owner command needs a relay for the same reasons a post does —
-  // the same presence, the same `via` rule, the same hints — so it must ask
+  // the same presence, the same `via` rule — so it must ask
   // this rather than guess.
   //
   // PURE, AND THAT IS THE WHOLE OF THE CHANGE. It decides and returns; it does
@@ -893,7 +856,7 @@ function createHub(rootDir) {
   //      for. Present means reachable, and presence is what makes this
   //      answerable rather than a guess.
   //   2. otherwise, and ONLY when no `via` was named: the first connected
-  //      relay, carrying route hints off the shadow roll. A named `via` that
+  //      relay (no hints since goal/G47.1). A named `via` that
   //      does not name the peer is a refusal rather than a fallback, because
   //      the caller asked to measure one path.
   //   3. otherwise unreachable, which the caller reports.
@@ -908,24 +871,14 @@ function createHub(rootDir) {
     // Posting to a relay itself needs nothing special here. Its own key is in
     // the OWNER's roster and in no peer's (relay.streamRoster), so presence
     // answers for it exactly as for any peer.
-    if (where.length) return { relayUrl: where[0], hints: undefined };
+    if (where.length) return { relayUrl: where[0] };
     if (wanted) return { unreachable: true };
 
-    // ── THE HINTS COME FROM THE SHADOW (0018, cycle R1) ─────────────
-    //
-    //   Andy: "the hints are removed from the users contacts. (let's admit
-    //   it: they [are] not human-readable, in reality)"
-    //
-    // Best-ranked first, which the book could not do: its list was
-    // newest-first and had no idea who had said what.
-    var hints = shadow(rootDir).routes(to)
-      .map(function (r) { return r.at; })
-      .filter(function (at, i, all) { return at && all.indexOf(at) === i; });
+    // NO HINTS (goal/G47.1, box v69: "A post carries no hints: the node sends none"): the relay read none since
+    // partnering went (goal/G22.6), and the node keeps no route to make them from.
     var connected = router.relaysHeld();
     if (!connected.length) return { unreachable: true };
-    // The partner-availability reorder (R42) STOOD HERE; partnering is gone
-    // (goal/G22.6), and a relay no longer reads route hints at all.
-    return { relayUrl: connected[0], hints: hints.length ? hints : undefined };
+    return { relayUrl: connected[0] };
   }
 
   function handlePost(req, res, readJsonBody, deps) {
@@ -974,7 +927,7 @@ function createHub(rootDir) {
       // choice used to be interleaved with the send here, so an owner command
       // could not reach it without re-deciding — and a second opinion about
       // reachability is what serverSurface.js:848 refuses. Same presence, same
-      // `via` rule, same hints, decided in one place.
+      // `via` rule, decided in one place.
       var route = chooseRoute(router, to, (body && body.via));
       if (route.unreachable) {
         // Truthfully, and at once. Presence is what makes this answerable
@@ -1012,7 +965,7 @@ function createHub(rootDir) {
         }
         how = Object.assign({ kind: 'background' }, how);
       }
-      return sendPacket(router, route.relayUrl, to, text, route.hints, how).then(function (answer) {
+      return sendPacket(router, route.relayUrl, to, text, how).then(function (answer) {
         learnPresence(rootDir, to, answer);
         // DELIVERED MEANS THERE (goal/G2.9): an answer that crossed the wire is the relay carrying that peer now,
         // so the live table hears it at the relay the post went through. A refusal teaches the shadow (above) and
@@ -1497,47 +1450,8 @@ function createHub(rootDir) {
           relay: url,
         });
 
-        // ── THE ROUTE THE SEARCH ALREADY KNEW ────────────────────────
-        //
-        //   Andy: "in a search request, it is the node who already knows
-        //   the via field at request time." — "so all search returns
-        //   could be cached outside of contacts, and wait until they
-        //   become applicable."
-        //
-        // This is the moment it becomes applicable. Until now a contact
-        // acquired from a search arrived with an address in `relays` and
-        // nothing in `routes`, so the first post to them had no hint to
-        // send and the relay had to find them with none.
-        //
-        // AFTER `acquire`, NEVER BEFORE, because the book matched an
-        // existing row and never creates one — which is the rule that
-        // stops a relay writing into somebody's address book, and it
-        // holds here too: no search result becomes a route until a person
-        // has decided to keep the person.
-        //   Andy: "Any peer a node could possibly connect to, the route
-        //   to it can be known to the node."
-        //
-        // TWO SOURCES, IN THAT ORDER. What a search found is about the
-        // PERSON — where they live — and is preferred. Failing that, the
-        // caller named a relay to acquire from, and this node pinned that
-        // relay's key when it accepted it, so the route is one lookup
-        // away and was being thrown out. That is the invite and
-        // pasted-key path, which had no cache entry to fall back on and
-        // therefore produced a contact nobody could route to.
-        var seen = shadow(rootDir).get(publicKey);
-        var at = (seen && seen.at) || relayKeys.pinned(rootDir, url) || '';
-        // HEARSAY: the caller named this relay — an invite, a pasted key —
-        // and nobody has proved anything yet. Kept anyway, because it is
-        // the only thing anybody knows about where this person lives, and
-        // a better-sourced route will outrank it the moment one arrives.
-        if (at) {
-          try {
-            shadow(rootDir).note(publicKey, {
-              at: at, url: url || '', via: relayKeys.pinned(rootDir, url) || '',
-              rank: require('./spirit.js').require('spirit/seenPeers.js').HEARSAY,
-            });
-          } catch (e) { /* a cache that will not take a row is not a reason to refuse the contact */ }
-        }
+        // NO ROUTE TO THEM IS KEPT (goal/G47.1, box v69: "every write of a route (... a contact added)"): the relay they
+        // were acquired from is not noted as where they live.
 
         res.writeHead(201, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({
@@ -1760,8 +1674,8 @@ function createHub(rootDir) {
   // The rule is about paths, not about verbs — so a second CALLER shares
   // this function rather than reaching past it, and everything that
   // decides how a packet is shaped stays in one place.
-  function sendPacket(router, relayUrl, toKey, text, hints, how) {
-    return router.post(relayUrl, toKey, text, hints, how);
+  function sendPacket(router, relayUrl, toKey, text, how) {
+    return router.post(relayUrl, toKey, text, how);
   }
   var PATIENCE_MAX_MS = 10 * 60 * 1000;
 

@@ -792,11 +792,9 @@ function createPeerPost(opts) {
   // the waiter does is a reply with nowhere to go, and the symptom is
   // silence rather than an error.
   //
-  // `hints` (cycle 2): the relays the recipient is enrolled at, by key,
-  // from the contact row — sent beside the packet and signed on their own
-  // (relayAuth.hintMessage), so the first relay can act on them and drop
-  // them. Absent for a recipient on a relay this node holds.
-  function post(relayUrl, toKey, text, hints, how) {
+  // NO HINTS (goal/G47.1, box v69: "A post carries no hints: the node sends none, the hint signature goes"): the
+  // relay read none since partnering went (goal/G22.6), and the node keeps no route to make them from.
+  function post(relayUrl, toKey, text, how) {
     var id = me();
     if (!toKey) return Promise.resolve({ ok: false, status: 400, error: 'to required' });
     if (typeof text !== 'string' || !text) {
@@ -1038,10 +1036,6 @@ function createPeerPost(opts) {
       });
     }
 
-    var hintList = Array.isArray(hints)
-      ? hints.filter(function (k) { return typeof k === 'string' && k; }).slice(0, limits.HINTS_PER_POST)
-      : [];
-
     var body = { from: id.publicKey, to: toKey, text: sending, sig: sig };
 
     // ── HOW LONG THIS ASKER WILL WAIT, SAID OUT LOUD ────────────────
@@ -1066,11 +1060,6 @@ function createPeerPost(opts) {
       ? Math.max(0, how.budgetMs)
       : waitMs;
     body.budgetMs = budget;
-
-    if (hintList.length) {
-      body.hints = hintList;
-      body.hintSig = auth.sign(id.privateKey, auth.hintMessage(sig, hintList));
-    }
 
     // REGISTERED BEFORE IT IS QUEUED, let alone sent. A reply that arrives
     // before the waiter does is a reply with nowhere to go, and the
@@ -1441,15 +1430,12 @@ function createPeerPost(opts) {
       // floor and never before: an over-budget stranger leaves no trace
       // but a refusal in the log.
       //
-      // WHICH RELAY IT CAME DOWN goes with it: hub.remember notes the road
-      // as a route in the shadow roll (seenPeers), the only routing fact
-      // this node holds about a stranger — and it was the ring that
-      // recorded it until R8 (hub.acquireFromInbox).
-      // AND FOR A DROP TOO (0021): "ignoring means only: mark this row as
+      // NOT WHICH RELAY IT CAME DOWN (goal/G47.1, box v69: no route is kept): that is on the traffic-log row alone.
+      // FOR A DROP (0021): "ignoring means only: mark this row as
       // ignored". A stranger turned away is marked ignored on its shadow
       // row (hub.remember) — within budget only, like every other mark.
       if (remember) {
-        try { remember(body.from, verdict, relayUrl); }
+        try { remember(body.from, verdict); }
         catch (e) { /* the verdict stands */ }
       }
     }

@@ -263,7 +263,7 @@ function createPresence(opts) {
         const key = m && String(m.publicKey || m.key || '');
         if (!key) return;
         if (knows && !knows(key)) {
-          if (noteSeen) { try { noteSeen(key, { at: relayKey, url: url }); } catch (e) { /* a cache that will not take a row is not a reason to stop */ } }
+          if (noteSeen) { try { noteSeen(key, {}); } catch (e) { /* a cache that will not take a row is not a reason to stop */ } }
           return;
         }
         say(url, key, true);
@@ -335,16 +335,15 @@ function createPresence(opts) {
     // here: learn first, then decide what to draw.
     //
     // `gone` teaches nothing and is not noted: the relay has said it no
-    // longer holds a row for this key, so it is in no position to say
-    // where they live. A row already in the shadow is left alone — it may
-    // hold a route from another relay, and it leaves on the shadow's own
-    // terms (node.db's cap sheds by lastSeen; nodeStore.js).
+    // longer holds a row for this key. A row already in the shadow is left
+    // alone, and it leaves on the shadow's own terms (node.db's cap sheds by
+    // lastSeen; nodeStore.js).
     //
-    // THE ROUTE ONLY, for everybody. The proof of presence is written
+    // SEEN ONLY, for everybody; no route is kept (goal/G47.1, box v69). The proof of presence is written
     // further down by say(), for the IDs this node draws (goal/G2.9).
     if (noteSeen && !body.gone) {
       try {
-        noteSeen(body.key, { at: relayKeys.pinned(rootDir, url) || '', url: url });
+        noteSeen(body.key, {});
       } catch (e) { /* a cache that will not take a row is not a reason to stop listening */ }
     }
 

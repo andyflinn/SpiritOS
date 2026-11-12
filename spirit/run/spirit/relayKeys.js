@@ -45,9 +45,9 @@ require('./spirit.js');
 //   Andy's box, v24: "seen, the shadow in node.db, is the one table. contacts.json, the relays table and the peers
 //   table move into it and go."
 //
-// A relay is a row of seen with `relay` set, and its url is a route: "an ID's own address, a relay's or a node's on a
-// LAN, is a direct route through no relay" — via empty, at the relay's own key. That route IS the pin: "an answer
-// from a URL must come from the ID whose route it is; a new one is accepted, a different one refused and reported"
+// A relay is a row of seen with `relay` set, and its url its own address, on the row (goal/G47.1; a route until routes
+// went). That address IS the pin: "an answer from a URL must come from the ID whose address it is; a new one is
+// accepted, a different one refused and reported"
 // (check below, asked by answerRelay). The list is the rows kept ("The relays shown on screens are the relays
 // kept"), and home is every relay this node is seated on.
 //
@@ -75,15 +75,13 @@ function normalizeUrl(url) {
   return String(url == null ? '' : url).trim().replace(/\/+$/, '');
 }
 
-// RANK 1 (seenPeers.HOST): the relay's own card says it answers there, the strongest word there is.
-const OWN_ROUTE_RANK = 1;
-
 function seen(rootDir) { return nodeStore.open(rootDir).seen; }
 
-// The direct route a relay answers at: its url, or ''.
+// The address a relay answers at, on its own row (goal/G47.1, box v69: "A relay's own address stays ... kept on the
+// relay's own row, where the relay list reads it"): its url, or ''.
 function urlOf(rootDir, key) {
-  const own = seen(rootDir).routes(key).filter(function (r) { return r.via === '' && r.at === key && r.url; })[0];
-  return own ? own.url : '';
+  const r = seen(rootDir).get(String(key == null ? '' : key).trim());
+  return (r && r.url) || '';
 }
 
 // One relay as its callers read it: { key, url, label, myLabel, keep, seated, mine, blocked }, or null.
@@ -96,13 +94,11 @@ function shaped(rootDir, r, url) {
   };
 }
 
-// The relay whose direct route this url is, or null.
+// The relay whose address this url is, or null.
 function byUrl(rootDir, url) {
   const u = normalizeUrl(url);
   if (!u) return null;
-  const route = seen(rootDir).byUrl(u);
-  if (!route) return null;
-  return shaped(rootDir, seen(rootDir).get(route.publicKey), u);
+  return shaped(rootDir, seen(rootDir).byUrl(u), u);
 }
 function byKey(rootDir, key) {
   const r = seen(rootDir).get(String(key == null ? '' : key).trim());
@@ -143,8 +139,8 @@ function check(rootDir, url, publicKey) {
 // decide — this module's job was to make sure it could not happen
 // silently, and that job is done by `check`.
 //
-// The row is the relay's key, flagged relay, and the url its direct route. A changed key at the same address takes
-// the address: the old key's direct route there goes, its row stays (who that was does not change because a box was
+// The row is the relay's key, flagged relay, and the url its address. A changed key at the same address takes
+// the address: the old key loses it, its row stays (who that was does not change because a box was
 // replaced). A key that answered at another address before answers at this one now: one key is one relay.
 function accept(rootDir, url, publicKey, atMs) {
   const u = normalizeUrl(url);
@@ -152,13 +148,11 @@ function accept(rootDir, url, publicKey, atMs) {
   if (!u || !given) return false;
   const S = seen(rootDir);
   const here = S.byUrl(u);
-  const before = urlOf(rootDir, given);
   nodeStore.open(rootDir).transaction(function () {
-    if (here && here.publicKey !== given) S.dropRoute(here.publicKey, '', here.publicKey);
-    if (before && before !== u) S.dropRoute(given, '', given);
-    // First known now, when nothing knew it before: the list's order (listed) is oldest first.
-    S.set(given, { relay: true, firstSeen: atMs == null ? Date.now() : atMs });
-    S.putRoute(given, { via: '', at: given, url: u, rank: OWN_ROUTE_RANK, told: atMs == null ? Date.now() : atMs });
+    // The old key at this address loses it; its row stays.
+    if (here && here.publicKey !== given) S.set(here.publicKey, { url: '' });
+    // First known now, when nothing knew it before: the list's order (listed) is oldest first. Its address is this one.
+    S.set(given, { relay: true, url: u, firstSeen: atMs == null ? Date.now() : atMs });
   });
   return true;
 }

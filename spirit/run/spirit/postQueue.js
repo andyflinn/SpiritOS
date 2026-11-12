@@ -98,7 +98,7 @@ var BACKOFF_MAX_MS = 300000;
 // magnitude. 4 MB is 256 full-sized packets or a great many small ones,
 // and the queue does not have to care which.
 //
-// DECLARED, NOT MEASURED — like HINTS_PER_POST, and marked so nobody
+// DECLARED, NOT MEASURED, and marked so nobody
 // reads it as evidence. What must be true of it is that a legitimate
 // burst fits (a contact list is tens of small posts, not thousands of
 // full ones) and that a stuck node cannot grow without limit.

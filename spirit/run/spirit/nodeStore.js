@@ -136,10 +136,6 @@ function available() {
   catch (e) { return false; }
 }
 
-// How many ways to reach one person are worth keeping. Three, because a
-// peer on several relays is normal and the fourth-best way to reach
-// somebody has never been the one that worked.
-const MAX_ROUTES = 3;
 // THE WHOLE FILE'S CAP, and what goes past it (goal/G30.19; Andy: "cap in to 16 MB"): see shedToCap.
 const MAX_DB_BYTES = 16 * 1024 * 1024;
 const SHED_CHUNK = 256;
@@ -211,7 +207,6 @@ function keptFigures(report) {
 function open(rootDir, opts) {
   const key = path.resolve(rootDir);
   if (open_.has(key)) return open_.get(key);
-  const maxRoutes = (opts && opts.maxRoutes) || MAX_ROUTES;
 
   fs.mkdirSync(path.join(rootDir, 'spirit', 'state'), { recursive: true });
   const db = new (driver().DatabaseSync)(dbPath(rootDir));
@@ -271,9 +266,18 @@ function open(rootDir, opts) {
       face      TEXT    NOT NULL DEFAULT '',
       firstSeen INTEGER NOT NULL DEFAULT 0,
       lastSeen  INTEGER NOT NULL DEFAULT 0,
+      url       TEXT    NOT NULL DEFAULT '',
       ${SEEN_FLAGS.map(function (f) { return f + ' INTEGER NOT NULL DEFAULT 0'; }).join(',\n      ')}
     );
   `);
+  // A RELAY'S OWN ADDRESS IS ON ITS ROW (goal/G47.1, the cycle "the route caching goes", box v69: "A relay's own address
+  // stays: it is the address the node connects to, kept on the relay's own row, where the relay list reads it"). url is
+  // '' for every row but a relay's; one url is one relay (relayKeys.accept), found on seen_url. A table made before it
+  // gains the column, empty.
+  if (!db.prepare('PRAGMA table_info(seen)').all().some(function (c) { return c.name === 'url'; })) {
+    db.exec("ALTER TABLE seen ADD COLUMN url TEXT NOT NULL DEFAULT ''");
+  }
+  db.exec("CREATE INDEX IF NOT EXISTS seen_url ON seen (url) WHERE url <> ''");
   // THE FACE NAME THIS NODE HOLDS ON A RELAY, on that relay's row (Andy, 2026-10-26, goal/G40.11: "keep it, on the
   // relay's row, as the node's own fact, like myLabel"): the node set it itself (relay.face, the relay said yes). In the
   // table as it is made; no table made before it is mended (goal/G41.30, no rescue operations).
@@ -289,41 +293,16 @@ function open(rootDir, opts) {
     return 'CREATE INDEX IF NOT EXISTS seen_' + f + ' ON seen (lastSeen) WHERE ' + f + ' = 1;';
   }).join('\n') + '\nCREATE INDEX IF NOT EXISTS seen_shed ON seen (lastSeen) WHERE keep = 0 AND mine = 0;');
 
-  // ── A ROUTE IS A PAIR OF DOORS, NOT AN ADDRESS (cycle R1, R29) ────
+  // ── NO ROUTE IS KEPT (goal/G47.1, the cycle "the route caching goes") ──
   //
-  //   Andy: "peer-key / A-key / B-key — that the key?" — yes.
+  //   Andy: "There no more \"partner\" relays, and the way SpiritOS sits now, ID's need exchanging out-of-channel, by
+  //   email or what ever. We can probably shut down the \"route-caching\" crap", and "the \"routes\" aren't read by
+  //   anybody in the fucking system". The box, v69: "The node keeps no route of a peer: the table seen_routes is dropped".
   //
-  // A route is not "this peer lives at B". It is **through MY relay A, to
-  // THEIR relay B**, and the difference is operational rather than
-  // pedantic: if this node is a member of A and C, and A partners with B
-  // while C does not, then posting through C fails and through A works.
-  // Keyed by the destination alone, the working door and the useless one
-  // would be the same row and one would overwrite the other.
-  //
-  // So the key is the triple, and `via` is half the route rather than a
-  // note about where it came from. R1 said this from the start — "a route
-  // becomes { via, at, seen }" — and a later summary lost it.
-  //
-  // `via` MAY BE EMPTY, for a route learned before anything recorded which
-  // door proved it. That is a real state and not a defect: an empty `via`
-  // means "somebody told me they are at B", which is worth keeping and
-  // worth ranking below a route that names the door.
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS seen_routes (
-      publicKey TEXT    NOT NULL,
-      via       TEXT    NOT NULL DEFAULT '',
-      at        TEXT    NOT NULL,
-      url       TEXT    NOT NULL DEFAULT '',
-      rank      INTEGER NOT NULL DEFAULT 4,
-      told      INTEGER NOT NULL DEFAULT 0,
-      PRIMARY KEY (publicKey, via, at)
-    );
-    CREATE INDEX IF NOT EXISTS seen_routes_peer ON seen_routes (publicKey, rank, told DESC);
-  `);
-  // A URL IS A ROUTE (goal/G40.11): an ID's own address, a relay's or a node's on a LAN, is a direct route through no
-  // relay — via empty, at the ID itself, url the address. The route is the pin: answerRelay's check asks which ID a
-  // url's direct route belongs to, one lookup on this index.
-  db.exec("CREATE INDEX IF NOT EXISTS seen_routes_url ON seen_routes (url) WHERE url <> ''");
+  // A post goes to a relay that names its recipient, else to the first relay held (hub.js chooseRoute); no route ever
+  // chose it, and the relay reads no hints since partners went (goal/G22.6). This replaces the ruling "the node must
+  // implicitly learn routes at EVERY opportunity". A node.db made before it loses the table when it is opened.
+  db.exec('DROP TABLE IF EXISTS seen_routes');
 
   // ── THE POST QUEUE, SO AN INTENT OUTLIVES THE PROCESS (cycle R16) ───
   //
@@ -461,8 +440,8 @@ function open(rootDir, opts) {
   //     never reused, not even after the newest row is deleted;
   //   - a column for every field a row carries, all allowed empty, and
   //     `extra` for any field this list does not name, so nothing is lost;
-  //   - NOT in the cache cap above: cacheBytes counts only `seen` and
-  //     `seen_routes`, so this table never evicts anyone. Its own bound is
+  //   - NOT in the cache cap above: cacheBytes counts only `seen`, so
+  //     this table never evicts anyone. Its own bound is
   //     the file's (MAX_DB_BYTES, goal/G30.19): past it the oldest rows go
   //     (shedToCap, below).
   //
@@ -531,38 +510,9 @@ function open(rootDir, opts) {
 
   const q = {
     get: db.prepare('SELECT * FROM seen WHERE publicKey = ?'),
-    // ── RANK FIRST, RECENCY SECOND ─────────────────────────
-    //
-    // The third appearance of one pattern: the post scheduler's "class
-    // outranks age", the partner roll's "keyed outranks unkeyed", and
-    // this. A cheap claim never displaces a proven one.
-    //
-    // 1 the relay that HOLDS the peer said so   — label and route
-    // 2 proved by a signature this node checked — route
-    // 3 a packet arrived from there             — route
-    // 4 second-hand, carried by a partner       — both, weakly
-    routesFor: db.prepare(
-      'SELECT * FROM seen_routes WHERE publicKey = ? ORDER BY rank ASC, told DESC'),
-    putRoute: db.prepare(`INSERT INTO seen_routes (publicKey, via, at, url, rank, told)
-      VALUES (?, ?, ?, ?, ?, ?)
-      ON CONFLICT(publicKey, via, at) DO UPDATE SET
-        url  = CASE WHEN excluded.url <> '' THEN excluded.url ELSE seen_routes.url END,
-        rank = MIN(excluded.rank, seen_routes.rank),
-        told = excluded.told`),
-    // WORST FIRST WHEN THERE IS NO ROOM. The opposite order from the peer
-    // table's eviction, and deliberately: rows there are bounded by how
-    // many people exist, rows here by how many ways there are to reach
-    // ONE person — and the ways worth keeping are the best-ranked, not the
-    // newest.
-    trimRoutes: db.prepare(`DELETE FROM seen_routes WHERE publicKey = ? AND rowid NOT IN (
-      SELECT rowid FROM seen_routes WHERE publicKey = ? ORDER BY rank ASC, told DESC LIMIT ?)`),
-    dropRoutes: db.prepare('DELETE FROM seen_routes WHERE publicKey = ?'),
-    dropRoute: db.prepare('DELETE FROM seen_routes WHERE publicKey = ? AND via = ? AND at = ?'),
-    // THE PIN'S ONE LOOKUP (goal/G40.11): whose direct route a url is, on seen_routes_url (its WHERE repeated).
-    routeByUrl: db.prepare("SELECT * FROM seen_routes WHERE url = ? AND url <> '' AND via = '' AND at = publicKey"),
-    orphanRoutes: db.prepare(
-      'DELETE FROM seen_routes WHERE publicKey NOT IN (SELECT publicKey FROM seen)'),
-    clearRoutes: db.prepare('DELETE FROM seen_routes'),
+    // THE PIN'S ONE LOOKUP (goal/G40.11, on the row since goal/G47.1): whose address a url is, on seen_url (its WHERE
+    // repeated).
+    byUrl: db.prepare("SELECT * FROM seen WHERE url = ? AND url <> ''"),
     qPut: db.prepare(`INSERT INTO queue
       (hash, seq, relayUrl, toKey, kind, body, bytes, attempts, atWall, untilWall)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -708,7 +658,7 @@ function open(rootDir, opts) {
     // itself, and at the 1 MB floor could empty it entirely. `dbstat`
     // counts the b-tree pages of the named tables and their indexes.
     cacheBytes: db.prepare(`SELECT COALESCE(SUM(pgsize), 0) AS n FROM dbstat
-      WHERE name IN (SELECT name FROM sqlite_schema WHERE tbl_name IN ('seen', 'seen_routes'))`),
+      WHERE name IN (SELECT name FROM sqlite_schema WHERE tbl_name = 'seen')`),
   };
   // Every row with one flag true, newest first, through that flag's partial index (its WHERE is the statement's).
   const byFlag = {};
@@ -716,7 +666,8 @@ function open(rootDir, opts) {
     byFlag[f] = db.prepare('SELECT * FROM seen WHERE ' + f + ' = 1 ORDER BY lastSeen DESC');
   });
   // The fields set() may write, beside the flags: what the owner calls them and their card.
-  const SET_TEXT = ['myLabel', 'card', 'face'];
+  // url, a relay's own address (goal/G47.1), set by relayKeys.accept alone.
+  const SET_TEXT = ['myLabel', 'card', 'face', 'url'];
 
   // A ROW AS EVERY READER GETS IT: the flags as booleans, presence as null when nobody has said, so a caller cannot
   // paint somebody red on the strength of never having heard.
@@ -726,12 +677,10 @@ function open(rootDir, opts) {
       publicKey: r.publicKey, label: r.label, labelRank: r.labelRank, labelAt: r.labelAt,
       present: r.present < 0 ? null : !!r.present,
       myLabel: r.myLabel || '', card: r.card || '', face: r.face || '', firstSeen: r.firstSeen, lastSeen: r.lastSeen,
+      url: r.url || '',
     };
     SEEN_FLAGS.forEach(function (f) { out[f] = !!r[f]; });
     return out;
-  }
-  function routeRow(r) {
-    return { via: r.via, at: r.at, url: r.url, rank: r.rank, told: r.told };
   }
 
   // ── THE SHADOW STREAM'S SOURCE (goal/G40.11) ─────────────────────────
@@ -903,39 +852,10 @@ function open(rootDir, opts) {
       },
       // The rows a search lists: kept and owned (see q.listed).
       listed: function () { return q.listed.all().map(row); },
-      // ── ROUTES ───────────────────────────────────────
-      //
-      // Best-ranked first, and capped: a peer on several relays is normal
-      // and a node on several relays is normal, but the tail of a list of
-      // ways to reach one person is worth less than the head.
-      routes: function (publicKey) {
-        return q.routesFor.all(String(publicKey || '')).map(routeRow);
-      },
-      // A route with no destination teaches nothing. `via` may be empty —
-      // that is "somebody told me they are at B" and is worth keeping.
-      putRoute: function (publicKey, what) {
-        const w = what || {};
-        const key = String(publicKey || '');
-        const at = String(w.at || '').trim();
-        if (!key || !at) return false;
-        q.putRoute.run(key, String(w.via || '').trim(), at,
-          String(w.url || ''), Number(w.rank || 4), Number(w.told || 0));
-        if (maxRoutes > 0) q.trimRoutes.run(key, key, maxRoutes);
-        return true;
-      },
-      dropRoute: function (publicKey, via, at) {
-        return q.dropRoute.run(String(publicKey || ''), String(via || ''), String(at || '')).changes > 0;
-      },
-      // Whose direct route a url is: { publicKey, url, ... } of that ID, or null (the pin's one lookup).
-      byUrl: function (url) {
-        const r = q.routeByUrl.get(String(url || ''));
-        return r ? Object.assign({ publicKey: r.publicKey }, routeRow(r)) : null;
-      },
+      // Whose address a url is: the row of that relay, or null (the pin's one lookup).
+      byUrl: function (url) { return row(q.byUrl.get(String(url || ''))); },
       forget: function (publicKey) {
-        // The routes go with the peer: a row in `seen_routes` for somebody
-        // no longer in `seen` is unreachable by every reader here.
         const key = String(publicKey || '');
-        q.dropRoutes.run(key);
         return writing(key, function () { return q.del.run(key).changes > 0; });
       },
       size: function () { return q.count.get().n; },
@@ -982,13 +902,11 @@ function open(rootDir, opts) {
           const left = q.shedCount.get().n;
           if (!left || store.seen.bytes() <= cap) break;
           gone += q.overflow.run(Math.max(1, Math.ceil(left / 8))).changes;
-          q.orphanRoutes.run();
           db.exec('PRAGMA incremental_vacuum');
         }
         return gone;
       },
       clear: function () {
-        q.clearRoutes.run();
         const gone = q.clear.run().changes;
         if (gone) db.exec('PRAGMA incremental_vacuum');
         return gone;
@@ -1370,7 +1288,6 @@ function open(rootDir, opts) {
 module.exports = {
   open: open,
   MAX_DB_BYTES: MAX_DB_BYTES,
-  MAX_ROUTES: MAX_ROUTES,
   available: available,
   dbPath: dbPath,
 };

@@ -714,8 +714,13 @@ const server = http.createServer((req, res) => {
 
     if (pathname === '/api/relay/post') {
       readJsonBody(req).then(function (body) {
-        // ROUTE HINTS are no longer read (goal/G22.6): with no partner to
-        // carry to, a relay has nothing to do with them.
+        // A POST WITH HINTS IS REFUSED (goal/G47.1, box v69: "A post carries no hints: the node sends none, the hint
+        // signature goes, and the relay takes a post with hints no more"). They were not read since goal/G22.6; a
+        // wire change, so nodes and relays move together.
+        if (body && (body.hints !== undefined || body.hintSig !== undefined)) {
+          writePosted({ ok: false, status: 400, error: 'a post carries no hints' });
+          return;
+        }
         // `budgetMs` — how long the ASKER is still willing to wait, a
         // remaining duration and never a deadline. Informational: the
         // relay grants min(asked, its own ceiling), so a number from the

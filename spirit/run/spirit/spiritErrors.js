@@ -830,7 +830,7 @@ define('name-reserved', { status: 409, texts: ['name reserved by a live invite']
 
 define('bad-request', {
   status: 400, presence: NONE, retry: 'no', fault: 'caller',
-  texts: ['text required', 'to required', 'verb required', 'peer key required', 'bad hints', 'bad label',
+  texts: ['text required', 'to required', 'verb required', 'peer key required', 'a post carries no hints', 'bad label',
     'bad token', 'claim needs publicKey', 'claim needs publicKey and sig',
     'forward needs from, to, text and sig',
     'hash required', 'hash, requester and target required', 'invite label required',

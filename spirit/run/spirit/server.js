@@ -1237,20 +1237,10 @@ catch (e) {
     // And what to write down about a stranger who got through the floor.
     // Separate from the judgement on purpose: the verdict is decided
     // before the budget is checked, the row is written after.
-    // EVERY ARRIVAL IS A ROUTE, whatever the door decides about it. The
-    // URL is turned into a relay KEY here, because that is what a route
-    // is made of and this is the half that knows which keys this node has
-    // pinned.
+    // EVERY ARRIVAL IS SEEN, whatever the door decides about it; it is no route (goal/G47.1, box v69: "every write of a
+    // route (an arrival ...)" goes): the row's lastSeen moves, nothing more.
     noteSeen: function (from, relayUrl) {
-      var at = relayUrl ? relayKeys.pinned(ROOT_DIR, relayUrl) : '';
-      if (!at && !relayUrl) return;
-      // RANK ARRIVED: a packet demonstrably came from there, which proves
-      // the road and says nothing about the name.
-      spirit.require('spirit/hub.js').shadow(ROOT_DIR).note(from, {
-        at: at || '', url: relayUrl || '',
-        via: relayKeys.pinned(ROOT_DIR, relayUrl || '') || '',
-        rank: spirit.require('spirit/seenPeers.js').ARRIVED,
-      });
+      spirit.require('spirit/hub.js').shadow(ROOT_DIR).note(from, { rank: spirit.require('spirit/seenPeers.js').ARRIVED });
       // AND THE DOT HEARS THE ARRIVAL (goal/G2.9). Andy: "and every incoming request?" — a packet the relay just
       // carried in is that relay saying its sender is there now, the strongest evidence there is; the live table
       // marks the sender at that relay as a broadcast would, and the Contacts dot paints. No unit mounts this
@@ -1259,8 +1249,8 @@ catch (e) {
         try { peerRouter.heard(relayUrl, from); } catch (e) { /* a witness, never a reason to refuse the packet */ }
       }
     },
-    remember: function (from, verdict, relayUrl) {
-      return spirit.require('spirit/hub.js').remember(ROOT_DIR, from, verdict, relayUrl);
+    remember: function (from, verdict) {
+      return spirit.require('spirit/hub.js').remember(ROOT_DIR, from, verdict);
     },
     // AND WHERE AN ADMITTED PACKET GOES. The hook has existed since the
     // router landed and had no caller but a test, so until 2026-09-13 a
@@ -1370,7 +1360,7 @@ catch (e) {
     const puppetStream = spirit.require('spirit/puppetStream.js').createPuppetStream({
       puppet: spirit.require('spirit/puppetMode.js').puppetIn(ROOT_DIR, function () {}),
       route: function (to) { return hub.chooseRoute(peerRouter, to); },
-      post: function (relayUrl, toKey, text, hints) { return peerRouter.post(relayUrl, toKey, text, hints); },
+      post: function (relayUrl, toKey, text) { return peerRouter.post(relayUrl, toKey, text); },
       encode: wire.encode,
       log: function (line) { console.log(line); },
     });
@@ -1384,7 +1374,7 @@ catch (e) {
     arrivals.witness(spirit.require('spirit/apiDoor.js').createApiDoor({
       servers: nodeDoor,
       // `how` carries a background answer's mark to the queue (fileTransfer goal/G1.3).
-      post: function (relayUrl, toKey, text, how) { return peerRouter.post(relayUrl, toKey, text, undefined, how); },
+      post: function (relayUrl, toKey, text, how) { return peerRouter.post(relayUrl, toKey, text, how); },
       encode: wire.encode,
       isKnown: function (key) { return spirit.require('spirit/hub.js').frontDoor(ROOT_DIR, key) === 'known'; },
       // THE GATE'S GRANTS (apiAuth/G1.2, G1.3): a member's paths from node.db, read through apiAuth.js;
@@ -1405,7 +1395,7 @@ catch (e) {
       encode: wire.encode,
       randomId: wire.randomId,
       route: function (to) { return hub.chooseRoute(peerRouter, to); },
-      post: function (relayUrl, toKey, text, hints) { return peerRouter.post(relayUrl, toKey, text, hints); },
+      post: function (relayUrl, toKey, text) { return peerRouter.post(relayUrl, toKey, text); },
     });
     arrivals.witness(ownerPost.onArrival);
 
@@ -1437,8 +1427,8 @@ catch (e) {
         spirit.require('spirit/hub.js').shadow(ROOT_DIR).note(key, { present: what.present === true, seen: what.at });
         return;
       }
+      // Its label and presence; where it is (at, url) is no route kept (goal/G47.1).
       spirit.require('spirit/hub.js').shadow(ROOT_DIR).note(key, Object.assign({
-        via: relayKeys.pinned(ROOT_DIR, (what && what.url) || '') || '',
         rank: spirit.require('spirit/seenPeers.js').HOST,
       }, what || {}));
     },
@@ -1503,65 +1493,19 @@ catch (e) {
     //
     // `dir: 'in'` because it crossed the WAN inward, on the stream this
     // node holds to a relay it owns.
-    // -- A PROVEN ROUTE, STASHED AND NOT LOGGED ----------------------
-    //
-    //   Andy: "streamed routes should be exempt from the log, they just
-    //   miraculously get stashed on the correct contact-row."
-    //
-    // NOT CORRESPONDENCE. trafficLog is what this node sent and what it
-    // received; nobody addressed this to us. Presence is handled the same
-    // way and writes nothing either. And the log is permanent, so route
-    // chatter would grow a file that never shrinks with infrastructure
-    // nobody will read — and would leave, on every member's disk, a lasting
-    // record of what a relay's members have been looking up.
-    //
-    // A RELAY MAY IMPROVE WHAT THIS NODE KNOWS ABOUT ITS OWN CONTACTS
-    // AND MAY NEVER ADD TO THEM. `learnRoute` enforced that until
-    // 2026-09-21; routes left the book with 0018, so the route half is
-    // structural now and only the label below still needs the rule.
+    // A RELAY'S MEMBER ANNOUNCEMENT: ITS LABEL AND PRESENCE, NO ROUTE (goal/G47.1, box v69: "The relay sends no route
+    // event after an exchange. Its announcement of a member stays for what the node still uses of it, the member's
+    // label and presence, and the node writes no route from it"). Not logged: nobody addressed it to this node.
+    // A RELAY MAY IMPROVE WHAT THIS NODE KNOWS ABOUT ITS OWN CONTACTS AND MAY NEVER ADD TO THEM: the label below
+    // still keeps that rule. This replaces the ruling "the node must implicitly learn routes at EVERY opportunity".
     onRoute: function (url, body) {
-      if (!body || !body.key || !body.at) return;
-      // KEPT EVEN WHEN IT IS ABOUT A STRANGER.
-      //
-      //   Andy: "the node must implicitly learn routes at EVERY
-      //   opportunity."
-      //
-      // The book never gained a row from a relay, which is right — a
-      // relay must not be able to write into somebody's address book. But
-      // that made a route about anybody not already held simply vanish,
-      // and a relay now announces to BOTH ends of an exchange
-      // (relay.js, 2026-09-21), so a node answering a stranger learned
-      // where they live and threw it away in the same breath.
-      //
-      // So it goes to the node's own cache as well, which is bounded and
-      // is not the book (seenPeers.js). It waits there until the moment
-      // somebody is added — by hand or by writing to this node — and is
-      // spent then.
-      // The MODULE's cache, not this hub instance's — one node, one
-      // answer to "where have I lately been told somebody lives", the
-      // same reason relayRequest is taken from the module below.
-      //
-      // ── AND `via`, WHICH THIS DOOR KNEW ALL ALONG (cycle R1) ─────
-      //
-      // `onRoute(url, body)` has always been handed the relay the
-      // announcement CAME IN ON, and passed it no further. So a node on
-      // three relays could not tell which of its own doors proved a
-      // route — and a route is through MY door to THEIR relay, not an
-      // address.
-      //
-      // RANK PROVED, because this is the announcement a relay makes only
-      // after a reply signed by the target key came back through it
-      // (relay.js: "a false route cannot be verified... the bar is the
-      // signed reply"). It outranks a packet merely arriving and is
-      // outranked by the relay that holds the person.
+      if (!body || !body.key) return;
       try {
         spirit.require('spirit/hub.js').shadow(ROOT_DIR).note(body.key, {
-          at: body.at, url: url, label: body.label || '',
-          via: relayKeys.pinned(ROOT_DIR, url) || '',
+          label: body.label || '',
           rank: spirit.require('spirit/seenPeers.js').PROVED,
-          // THE WHOLE ROW (R28): a relay announcing a claim or a rename says
-          // whether the member is connected right now, and only says so
-          // when it is. Silence leaves what the node knew alone.
+          // THE WHOLE ROW (R28): a relay announcing a claim or a rename says whether the member is connected right
+          // now, and only says so when it is. Silence leaves what the node knew alone.
           present: body.present === true ? true : undefined,
         });
       } catch (e) { /* a cache that will not take a row is not a reason to stop listening */ }
@@ -1570,7 +1514,7 @@ catch (e) {
       //
       //   Andy: "the (updated) public labels must be part of it."
       //
-      // THEIR PUBLIC NAME went into the one table with the route above (goal/G40.11: the book is rows of it), so a
+      // THEIR PUBLIC NAME went into the one table with the note above (goal/G40.11: the book is rows of it), so a
       // relay improving it is that note; the owner's myLabel is untouched.
     },
 

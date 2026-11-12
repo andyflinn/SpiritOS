@@ -147,23 +147,10 @@ var WIRE_HEADROOM = 512;
 // /reply are equally reachable and were equally unbounded. One shared
 // cap sized for the largest legitimate body is simpler than four, and
 // four numbers that must agree are four numbers that can drift.
-// ── ROUTE HINTS SIT BESIDE THE PACKET, AND SO DOES THEIR BOUND (cycle 2)
-//
-//   Andy: "the MAX_PAYLOAD_SIZE excludes signatures, hashes and
-//   route-hints."
-//
-// Hints are siblings of the signed packet, dropped at the first relay
-// (design/relay/SURFACE.md §8), so they must never eat the payload. Their
-// room is added to what a socket accepts instead.
-//
-// HINTS_PER_POST is a declared number, not a measured one — Andy: "the
-// number is not vital". HINTS_MAX is measured: four 60-character keys and
-// an 88-character signature serialise to 364 bytes; 512 leaves headroom
-// for a format change without an incident.
-var HINTS_PER_POST = 4;
-var HINTS_MAX = 512;
-
-var BODY_MAX = PAYLOAD_MAX + WIRE_HEADROOM + HINTS_MAX;
+// NO ROOM FOR ROUTE HINTS (goal/G47.1, box v69: "A post carries no hints: the node sends none, the hint signature
+// goes, and the relay takes a post with hints no more"): HINTS_PER_POST and HINTS_MAX went with them, and the 512
+// bytes they added to a body with them.
+var BODY_MAX = PAYLOAD_MAX + WIRE_HEADROOM;
 
 // ── WHAT ONE PACKET COSTS ON A STREAM, AND HOW MANY MAY WAIT (R35) ─────
 //
@@ -337,8 +324,6 @@ var limitsApi = {
   fitsSealed: fitsSealed,
   WIRE_OVERHEAD: WIRE_OVERHEAD,
   WIRE_HEADROOM: WIRE_HEADROOM,
-  HINTS_PER_POST: HINTS_PER_POST,
-  HINTS_MAX: HINTS_MAX,
   BODY_MAX: BODY_MAX,
   STREAM_EVENT_MAX: STREAM_EVENT_MAX,
   STREAM_BACKLOG_MAX: STREAM_BACKLOG_MAX,
