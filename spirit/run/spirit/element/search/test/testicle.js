@@ -61,7 +61,15 @@ function scratch() {
   const on = path.join(run, 'spirit', 'state', 'testicle');
   fs.mkdirSync(on, { recursive: true });
   fs.writeFileSync(path.join(on, 'node.json'), JSON.stringify({ active: true }));
-  return { root: root, run: run };
+  // THE GENERAL SUITES TAKEN AWAY (goal/G47.1, the queue cycle): the scratch node's testicle runs every flagged suite by
+  // itself, and the real general suites, run for the planted scripts, would draw rows of their own among the planted ones.
+  // This test judges the search, not them: every general suite file keeps its name, so its reach is the same (a general
+  // test's name is its reach), and its contents become a stub that judges and reports nothing.
+  const gen = generalFor(run, A);
+  execSync('git ls-files -- spirit/run', { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(Boolean)
+    .filter(function (f) { return /(^|\/)test\/[^/]*-(sibling|child)-[^/]*\.js$/.test(f); })
+    .forEach(function (f) { fs.writeFileSync(path.join(root, f), '\'use strict\';\n// a stub in this scratch tree: it judges nothing\n'); });
+  return { root: root, run: run, gen: gen };
 }
 async function call(base, verb, args) {
   try {
@@ -150,7 +158,7 @@ test.run('the world: a scratch node comes up, testicle on', 0.2, async function 
 }, test.limit.long);
 test.run('the world: tests of the planted scripts are set on it', 0.2, async function () {
   if (!N || !N.up) return NONODE;
-  GEN = generalFor(s.run, A);
+  GEN = s.gen;
   if (!GEN) return 'no general test judges ' + A;
   const sets = [
     { script: A, suite: AS, test: LONG, verified: true, severity: 0 },
