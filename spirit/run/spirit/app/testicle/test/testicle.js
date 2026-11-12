@@ -786,3 +786,38 @@ test.run('a general test is started with the script as its argument, and reports
   const m = rowOf(MU, MUS, 'mu holds its rule');
   return (!!m && yes(m.verified)) || 'its row: ' + short(m);
 }, test.limit.slow);
+
+// goal/G47.1, the box (v57): a suite's status, the server's alone, from its own table: "needs running" when it never ran
+// (Andy: "it shows "needs running" when it never ran"), "still red" when it ran with a failed test for the script, "green" when
+// every test of it passed; a changed script shows "needs running" again (Andy: "if the script changed, then it shows "needs
+// running" again, and the flag on the row is changed"); no suite touches the flag (Andy: "the suites have NO business changing
+// the "needs running" flag on the suite rows!"). Read as suite.search serves the row.
+async function statusOf(script, suite) {
+  const all = items(await call(N.base, 'testicle.suite.search', { script: script, text: '' }));
+  const r = all.filter(function (i) { return suiteOf(i) === suite; })[0];
+  return r ? String(r.row.status) : 'no row of ' + suite + ' among ' + short(all.map(function (i) { return suiteOf(i) + ' ' + i.row.status; }));
+}
+test.run('a suite that never ran shows "needs running"', 0.2, async function () {
+  if (!up()) return NONODE;
+  const st = await statusOf(Z + 'zeta.js', Z + 'test/zeta.js');
+  return st === 'needs running' || 'zeta\'s own suite: ' + short(st);
+}, test.limit.quick);
+test.run('a suite whose every test passed shows "green"', 0.2, async function () {
+  if (!up()) return NONODE;
+  let st = null;
+  const ok = await until(function () { return statusOf(MU, MUS).then(function (x) { st = x; return x === 'green'; }); }, 10000);
+  return !!ok || 'mu\'s suite: ' + short(st);
+}, test.limit.slow);
+test.run('a suite that ran with a failed test for the script shows "still red"', 0.2, async function () {
+  if (!up()) return NONODE;
+  let st = null;
+  const ok = await until(function () { return statusOf(KA, KAS).then(function (x) { st = x; return x === 'still red'; }); }, 10000);
+  return !!ok || 'kappa\'s suite: ' + short(st);
+}, test.limit.slow);
+test.run('the script changed, its suite shows "needs running" again', 0.2, async function () {
+  if (!up()) return NONODE;
+  append(MU, '// mu, changed\n');
+  let st = null;
+  const ok = await until(function () { return statusOf(MU, MUS).then(function (x) { st = x; return x === 'needs running'; }); }, 10000);
+  return !!ok || 'mu\'s suite after mu changed: ' + short(st);
+}, test.limit.slow);

@@ -37,6 +37,10 @@ The box, in Andy's words where he gave them:
   file's suites exactly; every suite a file whose final folder is `test`; each with its status, needs running; words
   narrow them; another file's search answers none of the first's. Given no script, *"suite.search given no script
   answers that list"*, every suite, each once: the suites of every script, none twice, and a suite of two scripts once.
+- **A suite's status**, the server's alone, from its own table (goal/G47.1): *"needs running"* when it never ran (zeta's own
+  suite), *"green"* when every test of it passed (mu's general suite, after its run), *"still red"* when it ran with a failed
+  test for the script (kappa's own suite, after its run), and *"needs running"* again once the script changed (mu.js
+  changed). Andy: *"the suites have NO business changing the "needs running" flag on the suite rows!"*
 
 - **The rename** (goal/G47.1, the cycle "the test table renamed testicle"): *"The testicle test table is renamed
   \"testicle\": the table in testicle.db, its index, and the branch data.js keeps it under. The stream carries it as the
