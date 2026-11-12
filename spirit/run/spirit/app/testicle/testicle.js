@@ -305,6 +305,11 @@ appServer.serve({
   // for test with the fucking script filter blank AND a suite selected!!!"): each suite once, its script '', keyed |suite.
   'suite.search': {
     request: { script: '', text: '' }, reply: { items: [], more: false },
+    // script may be left out: no script, every suite.
+    accepts: function (a) {
+      if (!a || typeof a !== 'object' || Array.isArray(a) || typeof a.text !== 'string') return false;
+      return Object.keys(a).every(function (k) { return k === 'text' || (k === 'script' && typeof a[k] === 'string'); });
+    },
     handler: function (a) {
       const words = String(a.text || '').trim();
       const bucket = createProbabilityBucket(Infinity);
