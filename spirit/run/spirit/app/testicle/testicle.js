@@ -190,10 +190,10 @@ function nextJob() {
     done = true;
     clearTimeout(j.timer);
     if (job === j) job = null;
-    try { jobEnded(j); } catch (e) { console.error('testicle: ' + (e && e.message || e)); }
+    try { jobEnded(j); } catch (e) { logError('jobEnded ' + j.script + ' ' + j.suite, e); }
     // The next job at once, before busy is told: busy goes false only when nothing is left to run, never between two jobs
     // (the box: "whenever it goes back to listening for events it sets busy false").
-    nextJob();
+    try { nextJob(); } catch (e) { logError('nextJob', e); }
     told();
   };
   j.kid = spawn(process.execPath, args, { cwd: RUN, stdio: 'ignore', windowsHide: true });
@@ -208,12 +208,22 @@ function nextJob() {
 // again or a change moves them.
 const killed = new Map();   // script|suite -> { scriptHash, suiteHash }
 function killJob(j) {
-  if (job !== j) return;
+  if (job !== j) { logError('killJob: the job had already ended', null); return; }
   j.killed = true;
   killed.set(j.script + '|' + j.suite, { scriptHash: j.scriptHash, suiteHash: j.suiteHash });
-  T.ofSuite.all(j.script, j.suite).forEach(function (r) { setResult(j.script, j.suite, r.test, false, Number(r.severity) || 0, j.scriptHash, j.suiteHash); });
-  try { j.kid.kill(); } catch (e) { /* gone already */ }
+  try { T.ofSuite.all(j.script, j.suite).forEach(function (r) { setResult(j.script, j.suite, r.test, false, Number(r.severity) || 0, j.scriptHash, j.suiteHash); }); }
+  catch (e) { logError('killJob: failing ' + j.script + ' ' + j.suite, e); }
+  try { j.kid.kill(); } catch (e) { logError('killJob: the kill', e); }
 }
+// WHAT GOES WRONG, KEPT WHERE IT CAN BE READ (wsl's verify: "the testicle server's stderr does not reach my node.err"):
+// every error the runner meets is written to testicle.err in its state folder too, and an error nothing caught is written
+// there before the process ends.
+function logError(where, e) {
+  const line = new Date().toISOString() + ' ' + where + (e ? ': ' + ((e && e.stack) || e) : '') + '\n';
+  try { fs.appendFileSync(path.join(STATE, 'testicle.err'), line); } catch (x) { /* nowhere to write */ }
+  console.error('testicle: ' + line.trim());
+}
+process.on('uncaughtException', function (e) { logError('uncaught', e); process.exit(1); });
 // A JOB ENDED: a whole run (no title asked) that left its suite row flagged is judged now, so the flag never queues the
 // same run twice: green or still red by its rows when they are full, still red when it was killed or its report fell
 // short ("a suite that hangs before any test reported fails too, with no test rows needed"). A row flagged again during
@@ -224,7 +234,10 @@ function jobEnded(j) {
   const row = Q.suiteRow.get(j.script, j.suite);
   const sr = Q.script.get(j.script);
   // Changed during the run: the script's or the suite's hash is no longer the one the run started with.
-  if (!row || row.deleted || !sr || row.hash !== j.suiteHash || sr.hash !== j.scriptHash) return;
+  if (!row || row.deleted || !sr || row.hash !== j.suiteHash || sr.hash !== j.scriptHash) {
+    if (j.killed) logError('jobEnded: killed ' + j.script + ' ' + j.suite + ' left flagged: ' + (!row ? 'no suite row' : row.deleted ? 'deleted' : !sr ? 'no script row' : 'hashes moved'), null);
+    return;
+  }
   if (!j.killed && suiteJudged(j.script, j.suite)) return;
   if (!row.test && row.outcome === 'red') return;
   judgeSuite.run('red', Date.now(), j.script, j.suite);
