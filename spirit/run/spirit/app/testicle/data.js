@@ -17,8 +17,9 @@
 // of the branch follows it. What a search answers is kept the same way (keep).
 (function () {
   var TABLES = ['script', 'suite', 'testicle'];
-  // The monitor's one node: what the stream last said of busy and of the last change.
-  var MONITOR = 'monitor';
+  // The monitor's one row, in its own branch (spirit.data keeps rows as branch/key): what the stream last said of busy and
+  // of the last change.
+  var MONITOR = 'monitor/now';
   var D = typeof window !== 'undefined' ? window.spirit.data : require('../../spirit.js').require('spirit/data.js');
   D.makeFamily('testicle', function () {
     var HOME = D.viewAt(null, 'testicle');
