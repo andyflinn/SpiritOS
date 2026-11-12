@@ -166,6 +166,10 @@ function chooseJob() {
 }
 function nextJob() {
   if (job || quiet) return;
+  // NEVER WHILE A CHANGE IS STILL BEING WRITTEN (wsl's verify: rho killed, its row left flagged and run again): a job
+  // started then takes the hashes from before the write, the write lands, and its end reads that as a change during the
+  // run. The write's end calls for the quiet second again (apply), and the job starts after it.
+  if (working || timer || pending.size) return;
   const n = chooseJob();
   if (!n) { told(); return; }
   // THE TWO HASHES, TAKEN AT THE START (the box: "When a run starts, the server remembers the two hashes as they stand, and
@@ -379,7 +383,7 @@ function kick() {
     pending.clear();
     pairs().then(function (P) { apply(changed, P); }).then(null, function (e) {
       console.error('testicle: ' + (e && e.message || e));
-    }).then(function () { working = false; kick(); });
+    }).then(function () { working = false; kick(); if (!working && !timer && !pending.size) soon(); });
   }, 50);
   told();
 }
