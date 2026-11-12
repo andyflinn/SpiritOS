@@ -164,9 +164,47 @@ test.run('the store hands out no function that writes or reads a route', 0.2, fu
   const left = v.filter(function (name) { return ROUTE_VERBS.indexOf(name.split('.').pop()) !== -1; });
   return (v.length > 0 && !left.length) || (v.length ? 'the store still hands out ' + short(left) : 'the store hands out no function at all: nothing judged');
 }, test.limit.quick);
+// ITS RELAYS' ADDRESSES MOVE FIRST, ONCE (goal/G47.1; Andy, after his node lost both relay addresses on the drop and Desk
+// went dark: "cw, just finish what you're doing first"): a node.db made before, as a node had it, its seen table without
+// url, a relay's row and that relay's own route (via empty, at its own key), and a peer's route through it. Opened, the
+// relay's row holds its address, and the peer's row none.
+const RELAY = 'MCowBQYDK2VwAyEAOLDRELAYOLDRELAYOLDRELAYOLDRELAYOLDRELAYOLD=';
+let moved = null;
+test.run('the world: a node.db made before, a relay row and its own route in seen_routes, opened by the store', 0.2, function () {
+  try {
+    moved = fs.mkdtempSync(path.join(os.platform() === 'win32' ? os.tmpdir() : '/tmp', 'spirit-moveroute-'));
+    fs.mkdirSync(path.join(moved, 'spirit', 'state'), { recursive: true });
+    const db = new (require('node:sqlite').DatabaseSync)(path.join(moved, 'spirit', 'state', 'node.db'));
+    db.exec('PRAGMA auto_vacuum = INCREMENTAL');
+    db.exec("CREATE TABLE seen (publicKey TEXT PRIMARY KEY, label TEXT NOT NULL DEFAULT '', labelRank INTEGER NOT NULL DEFAULT 4, labelAt INTEGER NOT NULL DEFAULT 0, present INTEGER NOT NULL DEFAULT -1, myLabel TEXT NOT NULL DEFAULT '', card TEXT NOT NULL DEFAULT '', face TEXT NOT NULL DEFAULT '', firstSeen INTEGER NOT NULL DEFAULT 0, lastSeen INTEGER NOT NULL DEFAULT 0, keep INTEGER NOT NULL DEFAULT 0, mine INTEGER NOT NULL DEFAULT 0, relay INTEGER NOT NULL DEFAULT 0, ignored INTEGER NOT NULL DEFAULT 0, blocked INTEGER NOT NULL DEFAULT 0, seated INTEGER NOT NULL DEFAULT 0)");
+    db.prepare('INSERT INTO seen (publicKey, label, relay, keep, seated) VALUES (?, ?, 1, 1, 1)').run(RELAY, 'old relay');
+    db.prepare('INSERT INTO seen (publicKey, label) VALUES (?, ?)').run(KEY, 'a peer');
+    db.exec("CREATE TABLE seen_routes (publicKey TEXT NOT NULL, via TEXT NOT NULL DEFAULT '', at TEXT NOT NULL DEFAULT '', url TEXT NOT NULL DEFAULT '', rank INTEGER NOT NULL DEFAULT 9, told INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (publicKey, via, at))");
+    db.prepare('INSERT INTO seen_routes (publicKey, via, at, url, rank, told) VALUES (?, ?, ?, ?, ?, ?)').run(RELAY, '', RELAY, 'https://old.relay.example', 1, Date.now());
+    db.prepare('INSERT INTO seen_routes (publicKey, via, at, url, rank, told) VALUES (?, ?, ?, ?, ?, ?)').run(KEY, RELAY, RELAY, 'https://old.relay.example', 3, Date.now());
+    db.close();
+    const s = require(FILE).open(moved);
+    try { s.close(); } catch (e) { /* closed */ }
+  } catch (e) { return 'the store did not open it: ' + (e && e.message); }
+  return true;
+}, test.limit.quick);
+const urlOf = function (home, key) {
+  const db = new (require('node:sqlite').DatabaseSync)(path.join(home, 'spirit', 'state', 'node.db'), { readOnly: true });
+  try { const r = db.prepare('SELECT url FROM seen WHERE publicKey = ?').get(key); return r ? r.url : null; } finally { db.close(); }
+};
+test.run('a relay\'s own address moved onto its row before seen_routes went', 0.2, function () {
+  if (!moved) return 'no old store: the world failed';
+  const u = urlOf(moved, RELAY);
+  return (u === 'https://old.relay.example' && tablesOf(moved).indexOf('seen_routes') === -1) || 'the relay row\'s url: ' + short(u) + ', tables ' + short(tablesOf(moved));
+}, test.limit.quick);
+test.run('a peer\'s route moved nowhere: its row has no address', 0.2, function () {
+  if (!moved) return 'no old store: the world failed';
+  const u = urlOf(moved, KEY);
+  return u === '' || 'the peer row\'s url: ' + short(u);
+}, test.limit.quick);
 
 test.after(function () {
   void W.store;
   try { if (routeStore) routeStore.close(); } catch (e) { /* closed */ }
-  for (const d of [W.home, W.noAdmitHome, fresh, old]) { if (d) { try { fs.rmSync(d, { recursive: true, force: true }); } catch (e) { /* scratch */ } } }
+  for (const d of [W.home, W.noAdmitHome, fresh, old, moved]) { if (d) { try { fs.rmSync(d, { recursive: true, force: true }); } catch (e) { /* scratch */ } } }
 });

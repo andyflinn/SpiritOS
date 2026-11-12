@@ -34,3 +34,7 @@ Andy, G43.17: *"Didn't i say remove ALL code referencing "admit" and "hold". it 
 *"The node keeps no route of a peer: the table seen_routes is dropped, and with it every write of a route ... and every
 read"*. A fresh `node.db` has no `seen_routes` table; a `node.db` made with one holding a row has it no more once the
 store opened it; the store hands out no function that writes or reads a route.
+
+Its relays' addresses move first, once (Andy, after his node lost both on the drop: *"cw, just finish what you're doing
+first"*): a `node.db` made before, with a relay's row and its own route (via empty, at its own key) and a peer's route
+through it, opened: the relay's row holds its address and the table is gone; the peer's row holds none.

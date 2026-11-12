@@ -302,6 +302,16 @@ function open(rootDir, opts) {
   // A post goes to a relay that names its recipient, else to the first relay held (hub.js chooseRoute); no route ever
   // chose it, and the relay reads no hints since partners went (goal/G22.6). This replaces the ruling "the node must
   // implicitly learn routes at EVERY opportunity". A node.db made before it loses the table when it is opened.
+  // ITS RELAYS' ADDRESSES MOVE FIRST, ONCE (goal/G47.1; Andy, asked whether to copy them or have every node add its relays
+  // again: "cw, just finish what you're doing first", after his node lost both relay addresses on this drop and Desk went
+  // dark): a relay's own address was its direct route (via empty, at its own key), and it is the one thing in the table a
+  // node cannot do without. It goes onto the relay's row where that row has none; then the table goes.
+  if (db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'seen_routes'").get()) {
+    db.exec(`UPDATE seen SET url = (SELECT r.url FROM seen_routes r WHERE r.publicKey = seen.publicKey AND r.via = ''
+        AND r.at = r.publicKey AND r.url <> '' ORDER BY r.rank ASC, r.told DESC LIMIT 1)
+      WHERE relay = 1 AND url = '' AND EXISTS (SELECT 1 FROM seen_routes r WHERE r.publicKey = seen.publicKey AND r.via = ''
+        AND r.at = r.publicKey AND r.url <> '')`);
+  }
   db.exec('DROP TABLE IF EXISTS seen_routes');
 
   // ── THE POST QUEUE, SO AN INTENT OUTLIVES THE PROCESS (cycle R16) ───
