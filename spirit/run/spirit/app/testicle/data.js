@@ -31,6 +31,21 @@
       var last = function (p) { var s = String(p == null ? '' : p); return s.slice(s.lastIndexOf('/') + 1); };
       return Object.assign({}, row, { scriptName: last(row.script), suiteName: last(row.suite) });
     }
+    // EVERY SUITE, EACH ONCE, KEPT FROM THE STREAM (goal/G47.1, the box: "Every element of testicle's face updates itself in
+    // response to the server stream"): the rows suite.search answers with no script, keyed |suite, are made again from the
+    // suite rows the branch holds each time one of that suite streams in, as the server makes them: needs running if any of
+    // its rows is flagged, deleted only when all of them are. So the testicle search's suite selector, with all scripts,
+    // follows the stream as a script tab does.
+    function everySuite(V, suite) {
+      if (!suite) return;
+      var b = V.branch ? V.branch('suite') : null;
+      var all = Object.keys(b || {}).map(function (key) { return b[key]; }).filter(function (r) { return r && r.script && r.suite === suite; });
+      if (!all.length) return;
+      var test = all.some(function (r) { return !!r.test; });
+      var deleted = all.every(function (r) { return !!r.deleted; });
+      var changed = Math.max.apply(null, all.map(function (r) { return Number(r.changed) || 0; }));
+      V.merge('suite/|' + suite, { key: '|' + suite, script: '', suite: suite, test: test, status: test ? 'needs running' : '', deleted: deleted, outcome: '', changed: changed });
+    }
     function keyOf(table, row) { return table === 'script' ? String(row.name || '') : String(row.key || (row.script && row.suite ? row.script + '|' + row.suite : '')); }
     D.addTranslator({
       onJob: function (job) {
@@ -45,6 +60,7 @@
         var k = row ? keyOf(a.table, row) : '';
         if (k) {
           V.merge(a.table + '/' + k, kept(a.table, row));
+          if (a.table === 'suite' && row.script) everySuite(V, String(row.suite || ''));
           mon.last = { table: a.table, key: k, change: String(a.change || 'updated'), at: Date.now() };
         }
         if (Object.keys(mon).length) V.merge(MONITOR, mon);
