@@ -52,6 +52,10 @@ suite search is spirit/element/search/suite.js and its folder"*.
 - A second click on the same file opens no second tab; a click on another file opens a second, which alone is active and
   shows its own detail.
 - A suite written for the file shows in its open detail with no click.
+- Every element follows the stream (goal/G47.1): *"Every element of testicle's face updates itself in response to the
+  server stream: what the server streams, a row or busy, shows in every element drawing it, never asked again and never
+  waiting for a reload."* eta's own test removed from disc while its tab is open: its suite row, streamed deleted, leaves
+  the detail or is drawn deleted, with no click; written again, it is back.
 - The monitor row (goal/G47.1): *"testicle's face has a monitor row above the workbench. It shows first the busy status in
   icon form, 🛌 idle (sleeping), 🚶‍➡️ working, as the server streams it ... then the last change: a row added, deleted or
   updated in any of its three tables"*, *"The row has a constant height, and the message is ellipsed, never wrapped"*,

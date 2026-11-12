@@ -448,6 +448,21 @@ test.run('once its own test is written, the red name goes by itself', 0.2, async
   if (face()) return face();
   return !!(await waitFor('shown() && shown().first === ' + JSON.stringify(F3) + ' && underTitle() && !underTitle().red && underTitle().text !== ' + JSON.stringify(etaOwn), 10000)) || 'under eta.js\'s title: ' + short(await T('underTitle()'));
 }, test.limit.slow);
+// goal/G47.1, the box: "Every element of testicle's face updates itself in response to the server stream: what the server
+// streams, a row or busy, shows in every element drawing it, never asked again and never waiting for a reload" (Andy: "ADD to
+// THIS cycle, EVERY element updates itself in response to the server stream."). eta's own test removed: the server marks its
+// suite row deleted and streams it; the open detail drops it with no click.
+test.run('a suite removed from disc shows so in the open detail by itself: the deleted row streamed is drawn', 0.2, async function () {
+  if (face()) return face();
+  fs.rmSync(path.join(s.run, etaOwn), { force: true });
+  const live = function (r) { return (r.key === etaOwn || r.key === F3 + '|' + etaOwn || String(r.text).indexOf(etaOwn) !== -1) && !/deleted/i.test(String(r.text)); };
+  return !!(await until(function () { return T('shown()').then(function (d) { return !!d && d.first === F3 && d.rows.length > 0 && !d.rows.some(live); }); }, 10000)) || 'the detail after the suite is removed, its row neither gone nor drawn deleted: ' + short(await T('shown()'));
+}, test.limit.slow);
+test.run('the world: eta\'s own test is written again', 0.2, async function () {
+  if (face()) return face();
+  fs.writeFileSync(path.join(s.run, etaOwn), '\'use strict\';\n// the test of eta, again\n');
+  return !!(await until(function () { return T('shown()').then(function (d) { return !!d && d.rows.some(function (r) { return r.key === etaOwn || r.key === F3 + '|' + etaOwn || String(r.text).indexOf(etaOwn) !== -1; }); }); }, 10000)) || 'the detail: ' + short(await T('shown()'));
+}, test.limit.slow);
 
 // the box: "The tab opens first ... or the error script.get gives"
 test.run('the world: gone.js is listed in the left pane', 0.2, async function () {
