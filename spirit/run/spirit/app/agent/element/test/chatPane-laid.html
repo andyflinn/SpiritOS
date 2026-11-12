@@ -16,7 +16,9 @@
 // browser makes of it, measured. Opened by ./chatPane.js at /DEBUG/spirit/app/agent/element/test/chatPane-laid.html.
 window.laid = function () {
   return Promise.resolve().then(function () { return Promise.all([spirit.require('spirit/app/agent/element/chatPane.js'), spirit.require('spirit/app/agent/element/table/tableElement.js').catch(function () { return null; })]); }).catch(function () { return null; }).then(function () {
-    var E = (spirit.elements || {}).chatPane;
+    // Where the elements stand (goal/G43.32): spirit.element.<their path>.
+    var AG = ((((spirit.element || {}).spirit || {}).app || {}).agent || {}).element || {};
+    var E = AG.chatPane;
     var out = { made: !!E && typeof E.create === 'function' };
     if (!out.made) return JSON.stringify(out);
     // A centre pane as the workBench gives one: a box of a stated size.
@@ -48,7 +50,7 @@ window.laid = function () {
     }
     var words = deepest(centre, /Chat with/);
     out.titleSize = words ? getComputedStyle(words).fontSize : '';
-    var D = (spirit.elements || {}).agentDetail;
+    var D = (AG.table || {}).tableElement;
     if (D && typeof D.titleRow === 'function') {
       var other = document.createElement('div');
       other.innerHTML = D.titleRow({ icon: '🧠', name: 'Model', title: 'Models' }, ['Models']);

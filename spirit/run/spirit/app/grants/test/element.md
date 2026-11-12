@@ -38,7 +38,9 @@ row, named owner-bundle (Andy: *"the tabs should name owner-bundle"*), its close
 same row again makes that tab active; the close button takes the tab away and the bundle stays. The branchEditor has a
 rowForm below the others: ❌, *"Delete <bundle-name> bundle and branches"*, an arming button: one press only arms, the
 second deletes and the tab closes. A bundle deleted at the door closes its tab. A server's bundle opens read-only, with no
-form and no Delete, and the node refuses its delete. With no tabContainer configured, as in the agent app for now, the
+form and no Delete, and the node refuses its delete. Nothing makes a server's bundle any more (node-owned adds alone since
+goal/G41.32, no bundle sync since goal/G43.20), so the test plants one in the scratch node's node.db, owned by desk, as a
+node.db made before holds it. With no tabContainer configured, as in the agent app for now, the
 pane has no Edit or Delete, and a press throws nothing.
 
 ## What its test must try to break

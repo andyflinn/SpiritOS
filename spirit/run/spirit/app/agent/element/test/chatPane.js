@@ -53,8 +53,9 @@ test.run('the world: a scratch node with its DEBUG on, ./chatPane-laid.html meas
   try { m = JSON.parse(s); } catch (e) { m = null; }
   X.m = m;
   return m ? true : 'the page measured nothing: ' + JSON.stringify(s).slice(0, 300);
-}, test.limit.slow);
-test.run('it adds chatPane.create(container, { persona }) to window.spirit.elements', 0.2, function () {
+// A scratch node comes up inside this one: the long limit, as every world that boots one has (it hung at the slow one).
+}, test.limit.long);
+test.run('it adds chatPane.create(container, { persona }) at window.spirit.element.spirit.app.agent.element.chatPane', 0.2, function () {
   if (!X.m) return NO_MEASURE;
   return X.m.made ? true : 'no window.spirit.element.spirit.app.agent.element.chatPane.create';
 }, test.limit.quick);

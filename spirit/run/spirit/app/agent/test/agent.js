@@ -259,11 +259,13 @@ async function rowShows(name) { const hit = await tool(name); return { ok: !!(hi
     return (!/DEBUG state in the title bar/.test(page)) ? true : 'the page still says it';
   }, test.limit.quick);
   // ── the tile closes ──
-  test.run('closed, the app is gone from the page', 0.2, async function () {
+  // OUT OF VIEW, NOT DESTROYED (spirit/element/panel.js, the box: "HIDDEN, NOT DESTROYED (the box): what it drew stays,
+  // out of view, until the stack goes"): the ✕ hides the app's panel, so its tools stay in the page, none of them shown.
+  test.run('closed, the app is out of view', 0.2, async function () {
     if (STOP) return STOP;
 
     closed = await c.evaluate('(function () { var b = document.querySelector("#zzBox .app-container-close"); if (!b) return false; b.click(); return true; }())');
-    return (closed && await until(function () { return c.evaluate('!document.querySelector("#zzBox [data-tool=provider]")'); }, 8000)) ? true : 'closing: ' + closed;
+    return (closed && await until(function () { return c.evaluate('Array.prototype.every.call(document.querySelectorAll("#zzBox [data-tool=provider]"), function (e) { return !e.getClientRects().length; })'); }, 8000)) ? true : 'closing: ' + closed;
   }, test.limit.long);
   test.run('and it opens again', 0.2, async function () {
     if (STOP) return STOP;
@@ -818,6 +820,11 @@ async function tabOpens(kind, row) {
         // The recorder: the box each list is made in, and whether it is a dropdown.
         'search': { create: function (host, o) { panes.push({ host: host, o: o || {} }); return { refresh: function () {}, redraw: function () {}, destroy: function () {}, value: '' }; } },
         'search.contact': selector, 'search.bundle': selector, 'search.api': selector,
+        // The server tool's three (goal/G43.15): the app's icon and label and its DEBUG switch, each a rowForm on the page.
+        // A stand-in that draws a span and answers destroy, as the server panel asks of them.
+        'search.app.changeAppIcon': { create: function (c) { c.appendChild(document.createElement('span')); return { destroy: function () {} }; } },
+        'search.app.changeAppLabel': { create: function (c) { c.appendChild(document.createElement('span')); return { destroy: function () {} }; } },
+        'search.app.serverDEBUG': { create: function (c) { c.appendChild(document.createElement('span')); return { destroy: function () {} }; } },
       }) } },
       require: function (p) {
         const rel = String(p).replace(/^\/+/, '');

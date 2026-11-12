@@ -4,7 +4,8 @@ The app list (goal/G43.2), as `spirit/element/search/bundle/listElement.js` is t
 
     spirit.element.search.app.create(host, opts) -> { list, refresh(), destroy() }; opts.face, opts.pick(row, key), opts.servers, opts.shells
 
-- It draws what `app.search` finds, asking with a search string and nothing more.
+- It draws what `app.search` finds, asking with a search string and nothing more: grants, an app every node has, among them.
+- What a list draws is read from the rows that show: a row the list hides stays in the page (goal/G47.1, the search keeps its rows).
 - A press hands the row to `pick`. `refresh` asks again. `destroy` empties its host.
 - goal/G43.18, Andy: *"The app search gains a server filter, node.mount true and active ... this filter is hidden by default."* Q4: *"The programmer who uses app:search makes it visible"*, as `create(host, { servers: true })`.
   - Without `servers: true`, no filter; with it, one.

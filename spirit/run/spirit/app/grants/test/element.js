@@ -306,9 +306,20 @@ test.run('the world: three bundles of the node\'s stand', 0.2, async function ()
   B.three = await home('auth.bundle', { op: 'add', label: 'zzThree' });
   return B.one.status === 200 && B.two.status === 200 && B.three.status === 200 ? true : 'nothing judged: ' + short(B.one.text);
 }, test.limit.quick);
+// A SERVER'S BUNDLE, PLANTED (goal/G47.1, the top reds cycle): nothing makes one any more (auth.bundle adds node-owned
+// bundles alone since goal/G41.32, and the bundle sync went with goal/G43.20), so a fresh node has none; one stands only
+// in a node.db made before. Planted so, a row owned by desk with one branch, written into the scratch node's node.db,
+// which every auth.bundle read reads.
 test.run('the world: and a server\'s bundle', 0.2, async function () {
   if (!B.up) return NO_NODE;
   await home('auth.branch', { op: 'add', bundle: B.one && B.one.body && B.one.body.id, family: 'node', verb: 'card' });
+  try {
+    const db = new (require('node:sqlite').DatabaseSync)(path.join(B.s.run, 'spirit', 'state', 'node.db'));
+    db.exec('PRAGMA busy_timeout = 5000');
+    const made = db.prepare("INSERT INTO bundle (label, owner) VALUES ('zzDeskOwned', 'desk')").run();
+    db.prepare("INSERT INTO branch (bundle, family, verb) VALUES (?, 'desk', 'item.get')").run(Number(made.lastInsertRowid));
+    db.close();
+  } catch (e) { return 'a server\'s bundle could not be planted: ' + short(e && e.message); }
   const all = await home('auth.bundle', { op: 'search', text: '' });
   const rows = ((all.body && all.body.items) || []).map(function (i) { return parsed(i.label) || {}; });
   B.serverBundle = rows.filter(function (r) { return r.owner && r.owner !== 'node'; })[0];

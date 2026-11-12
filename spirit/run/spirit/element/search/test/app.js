@@ -51,7 +51,8 @@ test.run('spirit.element.spirit.element.search.app.create(host, opts) makes a li
 }, test.limit.slow);
 test.run('it draws what app.search finds', 0.2, async function () {
   if (!text) return NO_PAGE;
-  identity = JSON.parse(fs.readFileSync(path.join(RUN, 'spirit', 'app', 'server', 'server.json'), 'utf8')).identity;
+  // An app every node has: grants (the app called server, read here before, is gone from the tree).
+  identity = JSON.parse(fs.readFileSync(path.join(RUN, 'spirit', 'app', 'grants', 'grants.json'), 'utf8')).identity;
   const drawn = await until(function () { return text().then(function (x) { return x.indexOf(identity.label) !== -1; }); }, 8000);
   return drawn ? true : 'it drew ' + short(await text());
 }, test.limit.slow);
@@ -96,8 +97,9 @@ let plainB, serversB;
 test.run('without servers: true it shows no filter', 0.2, async function () {
   if (!text) return NO_PAGE;
   if (!MOUNT) return 'no app that runs on the node';
-  // The labels a list draws: the leaves whose text is an app's label.
-  drawnIn = function (id) { return chrome.evaluate('(function () { var want = ' + JSON.stringify(own.map(function (a) { return a.label; })) + '; var out = []; var all = document.getElementById(' + JSON.stringify(id) + ').querySelectorAll("*"); for (var i = 0; i < all.length; i++) { var t = String(all[i].innerText || "").trim(); if (!all[i].children.length && want.indexOf(t) !== -1 && out.indexOf(t) === -1) out.push(t); } return out.sort(); }())'); };
+  // The labels a list draws: the leaves that show whose text is an app's label (a row the list hides stays in the page,
+  // goal/G47.1, the search keeps its rows).
+  drawnIn = function (id) { return chrome.evaluate('(function () { var want = ' + JSON.stringify(own.map(function (a) { return a.label; })) + '; var out = []; var all = document.getElementById(' + JSON.stringify(id) + ').querySelectorAll("*"); for (var i = 0; i < all.length; i++) { if (!all[i].getClientRects().length) continue; var t = String(all[i].innerText || "").trim(); if (!all[i].children.length && want.indexOf(t) !== -1 && out.indexOf(t) === -1) out.push(t); } return out.sort(); }())'); };
   const filterButtons = function (id) { return chrome.evaluate('document.getElementById(' + JSON.stringify(id) + ').querySelectorAll("button[data-filter]").length'); };
   const makeList = function (id, servers) { return chrome.evaluate('(function () { var c = document.createElement("div"); c.id = ' + JSON.stringify(id) + '; document.body.appendChild(c); window[' + JSON.stringify(id) + '] = spirit.element.spirit.element.search.app.create(c, ' + (servers ? '{ face: "pane", servers: true }' : '{ face: "pane" }') + '); return true; }())'); };
   await makeList('plain', false);

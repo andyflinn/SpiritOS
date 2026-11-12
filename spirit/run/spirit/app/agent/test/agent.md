@@ -15,7 +15,7 @@ The Agent in `spirit/app/agent/`, as Andy sees it (goal/G43.13). Its test is `./
 
 ### What Andy sees
 
-- Its tile opens the app, and closes and opens again.
+- Its tile opens the app; its ✕ puts it out of view (the panel hides, never destroys: what it drew stays, none of it shown), and it opens again.
 - The provider, model, persona and job tables each show their row.
 - A row the server adds reaches the page's `spirit.data.agent` with no reload: `data.js` takes the id `spirit.app.agent`.
 - The server's tool on the right strip shows ⚙, and its panel shows the agent's icon, then its label, then serverDEBUG (goal/G43.15). Pressed, `agent.DEBUG {}` says true, the node keeps `debug` true in `spirit/state/agent/node.json`, no `config.json` of the agent's own is written, and the panel says turn off DEBUG.
@@ -54,7 +54,7 @@ goal/G41.31. The agent app's centre is a tabContainer, judged by real clicks in 
 The agent app's lists, walked from each list to the app (goal/G41.18; rule/16). Its test is the listBoxes part of `./agent.js`. The app
 runs on a small page (the one Desk's suite drives, copied) with the real workBench and table elements. The
 search element is a recorder that keeps the box each list was made in. The selectors and the agent server are
-stand-ins, the selectors in the shell's element shape, `<name>.create(container, options)` (goal/G41.19).
+stand-ins, the selectors in the shell's element shape, `<name>.create(container, options)` (goal/G41.19), the server tool's app icon, label and DEBUG switch among them.
 
 Andy, on G41.18:
 

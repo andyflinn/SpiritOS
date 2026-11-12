@@ -143,7 +143,8 @@ function createNodeSearches(opts) {
         bucket.seatFor(found.score * (1 - 1e-9) + 1e-9 / (1 + i), { key: p, label: JSON.stringify({ path: p, score: found.score, line: found.line }) });
         continue;
       }
-      var score = words ? probabilityStringObjectMatch(words, { name: f.name, path: f.relativePath }) : 0;
+      // THE ROW WHOLE (spirit-sibling-searchRules): the entry as the tree holds and serves it, never fields picked from it.
+      var score = words ? probabilityStringObjectMatch(words, f) : 0;
       if (words && !(score > 0)) continue;
       // A tie keeps the tree's order: the earlier entry a hair ahead.
       bucket.seatFor(words ? score * (1 - 1e-9) + 1e-9 / (1 + i) : 1 / (1 + i), { key: p, label: p });

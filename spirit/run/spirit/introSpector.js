@@ -151,13 +151,14 @@ function fsVerbs(dir, prefix) {
     let names = [];
     try { names = fs.readdirSync(root).sort(); } catch (e) { names = []; }
     const bucket = createProbabilityBucket(Infinity);
-    names.forEach(function (name, i) {
+    // THE ROW WHOLE (spirit-sibling-searchRules): each item as the answer serves it, { key, label }, matched as it is.
+    names.map(function (name) { return { key: name, label: name }; }).forEach(function (item, i) {
       const tie = 1e-9 / (1 + i);
-      if (!words) { bucket.seatFor(0.5 + tie, name); return; }
-      const p = Number(probabilityStringObjectMatch(words, { name: name })) || 0;
-      if (p > 0) bucket.seatFor(Math.min(1, p * (1 - 1e-6) + tie), name);
+      if (!words) { bucket.seatFor(0.5 + tie, item); return; }
+      const p = Number(probabilityStringObjectMatch(words, item)) || 0;
+      if (p > 0) bucket.seatFor(Math.min(1, p * (1 - 1e-6) + tie), item);
     });
-    const out = bucket.serialize(function (name) { return { key: name, label: name }; }, room() - 512);
+    const out = bucket.serialize(function (item) { return item; }, room() - 512);
     return { items: out.items, more: !!out.more };
   } };
   return v;
