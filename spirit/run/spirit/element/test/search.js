@@ -1592,6 +1592,25 @@ async function tilesPart() {
     // "the same ranked rows, drawn as tiles", "No column headers or sorting"
     return (plain.tiles.length === 3) ? true : short(plain.tiles.length) + ' tiles';
   }, test.limit.quick);
+  // A GRID OF TILES (goal/G47.1; Andy: "the FUCKING TILE MODE IN APP-SEARCH (OR SEARCH ITSELF) FUCKING IS NO GRID ANYMORE,
+  // EVERY FUCKING TILE IS CENTERED ON IT'S OWN FUCKING ROW!"). Three tiles in an 800 px box: side by side on one line,
+  // left to right, each standing apart from the next.
+  let tilesAt = null;
+  test.run('the world: where each tile stands in the 800 px box', 0.2, async function () {
+    if (!node || !node.up || !chrome || chrome.error) return 'no scratch node or no Chrome: the world failed';
+    tilesAt = JSON.parse(await js('JSON.stringify([].map.call(window.__box.querySelectorAll(".app-icon"), function (t) { var r = t.getBoundingClientRect(); return { top: Math.round(r.top), left: Math.round(r.left), w: Math.round(r.width), h: Math.round(r.height) }; }))'));
+    return (Array.isArray(tilesAt) && tilesAt.length === 3) || 'tiles tilesAt: ' + short(tilesAt);
+  }, test.limit.quick);
+  test.run('the tiles stand in a grid: three in an 800 px box share one line', 0.2, function () {
+    if (!tilesAt) return 'no tiles tilesAt: the world failed';
+    const tops = tilesAt.map(function (p) { return p.top; });
+    return (Math.max.apply(null, tops) - Math.min.apply(null, tops) <= 1) || 'the tiles\' tops: ' + short(tops) + ', each on a line of its own';
+  }, test.limit.quick);
+  test.run('on that line they stand left to right, apart', 0.2, function () {
+    if (!tilesAt) return 'no tiles tilesAt: the world failed';
+    const ok = tilesAt.every(function (p, i) { return i === 0 || p.left >= tilesAt[i - 1].left + tilesAt[i - 1].w; });
+    return ok || 'the tiles\' lefts and widths: ' + short(tilesAt.map(function (p) { return [p.left, p.w]; }));
+  }, test.limit.quick);
   test.run('no table, no column headers, no sort trigger', 0.2, function () {
     if (!node || !node.up || !chrome || chrome.error) return 'no scratch node or no Chrome: the world failed';
     return (plain.headers === 0 && plain.sorts === 0 && plain.tables === 0) ? true : short({ h: plain.headers, s: plain.sorts, t: plain.tables });

@@ -264,6 +264,8 @@ Andy, on Q14 *"May I change the shared search list, so the Files tiles can show 
 - The option `tile(row, key)` answers `{ icon, label }` for a tile. Either one left out is the row's own `row.icon` or `row.label`; without the option nothing changes for any other list.
 - The files list hands a file its kind's icon (fstat's `iconOf`), a folder 📁 shut and 📂 open, and the file's name.
 
+- A grid of tiles (goal/G47.1; Andy: *"the FUCKING TILE MODE IN APP-SEARCH (OR SEARCH ITSELF) FUCKING IS NO GRID ANYMORE, EVERY FUCKING TILE IS CENTERED ON IT'S OWN FUCKING ROW!"*): three tiles in an 800 px box share one line, left to right, each apart from the next.
+
 ## The search keeps its rows (goal/G47.1)
 
 The box: *"The search element (spirit/element/search.js) never redraws its list. Each row is made once and kept in the
