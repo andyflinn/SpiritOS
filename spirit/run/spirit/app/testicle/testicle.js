@@ -391,6 +391,13 @@ appServer.serve({
       getting += 1;
       told();
       return Promise.resolve(stale && there(script) ? pairs().then(function (P) { apply([script], P); }) : null).then(function () {
+        // ITS SUITE ROW, MADE IF MISSING (goal/G47.1, the box: "When a test row is set, and a script row is missing, the server
+        // needs to auto-create the script/suite rows for that test"): a suite on disc whose row for this script is not there
+        // gets it, flagged, so its status can be judged from the tests that follow.
+        if (there(suite) && !Q.suiteRow.get(script, suite)) {
+          Q.putSuite.run(script, suite, hashOf(suite), Date.now());
+          tell('suite', suiteServed(Q.suiteRow.get(script, suite)), 'added');
+        }
         const now = Date.now();
         const judged = there(script) ? hashOf(script) : ((Q.script.get(script) || {}).hash || '');
         const was = T.current.get(script, suite, name);
