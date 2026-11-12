@@ -117,6 +117,13 @@ const HANDS = '(function () {' +
   // goal/G47.1, the missing own test: the first shown element under the shown tab's title line, its text and whether it is
   // red (its colour's red well above its green and blue).
   '  underTitle: function () { var c = window.__t.center(); var t = c ? all(".tab-content", c)[0] : null; if (!t) return null; var first = String(t.innerText || "").trim().split("\\n")[0].trim(); var els = Array.prototype.slice.call(t.querySelectorAll("*")).filter(seen); var head = els.filter(function (e) { return String(e.innerText || "").trim() === first; }).pop(); if (!head) return null; var after = els.filter(function (e) { return !head.contains(e) && !e.contains(head) && (head.compareDocumentPosition(e) & 4) && String(e.innerText || "").trim(); })[0]; if (!after) return { text: "", red: false }; while (after.firstElementChild && seen(after.firstElementChild) && String(after.firstElementChild.innerText || "").trim() === String(after.innerText || "").trim()) after = after.firstElementChild; var m = String(getComputedStyle(after).color).match(/\\d+/g) || [0, 0, 0]; return { text: String(after.innerText || "").trim(), red: +m[0] > +m[1] + 60 && +m[0] > +m[2] + 60 }; },' +
+  // goal/G47.1, the monitor row: the shown element of #zzBox whose text starts with a busy icon, the widest such that does
+  // not hold the workBench's left pane; its icon, text, height and top, the left pane's top, and its message element: the
+  // deepest element holding the message, with its overflow, wrap and ellipsis.
+  '  monitor: function () { var b = box(); var l = window.__t.left(); if (!b) return null; var re = /^(🛌|🚶‍➡️)/; var cands = all("*").filter(function (e) { return re.test(String(e.innerText || "").trim()) && !(l && e.contains(l)); }); if (!cands.length) return null; var row = cands.sort(function (a, c) { return String(c.innerText).length - String(a.innerText).length; })[0]; var text = String(row.innerText || "").trim(); var icon = text.match(re)[1]; var msg = text.slice(icon.length).trim(); var me = row; Array.prototype.slice.call(row.querySelectorAll("*")).forEach(function (e) { if (msg && String(e.textContent || "").trim() === msg) me = e; }); var cs = getComputedStyle(me); var r = row.getBoundingClientRect(); return { icon: icon, message: msg, height: r.height, bottom: r.bottom, benchTop: l ? l.getBoundingClientRect().top : null, nowrap: cs.whiteSpace === "nowrap" || cs.whiteSpace === "pre", ellipsis: cs.textOverflow === "ellipsis", hidden: cs.overflow === "hidden" || cs.overflowX === "hidden", overflows: me.scrollWidth > me.clientWidth }; },' +
+  // Every icon the monitor row shows, in order, from the moment this is called.
+  '  recordIcons: function () { window.__icons = []; var last = null; var note = function () { var m = window.__t.monitor(); var i = m ? m.icon : null; if (i && i !== last) { window.__icons.push(i); last = i; } }; note(); new MutationObserver(note).observe(box(), { subtree: true, childList: true, characterData: true }); return true; },' +
+  '  icons_seen: function () { return window.__icons || []; },' +
   '  centerText: function () { var b = box(); var c = b ? b.querySelector("[id$=\\"center\\"]") : null; return c ? String(c.innerText || "").trim() : null; },' +
   '}; return "hands"; }())';
 
@@ -550,6 +557,25 @@ test.run('the detail is the test\'s history of flips: both its rows, the newest 
 // for that answer, never for the suite's run", "the permanent testicle search tab shows more rows by itself as suites run".
 const F5 = 'spirit/zzTesticle/iota.js';
 const iotaOwn = 'spirit/zzTesticle/test/iota.js';
+// goal/G47.1, the box: "testicle's face has a monitor row above the workbench. It shows first the busy status in icon form,
+// 🛌 idle (sleeping), 🚶‍➡️ working, as the server streams it ... then the last change: a row added, deleted or updated in
+// any of its three tables", "The row has a constant height, and the message is ellipsed, never wrapped", "busy is streamed by
+// the server ... the page never asks testicle.busy". Its icons are recorded from here, so iota's run below is seen.
+test.run('above the workbench, a monitor row, its first a busy icon, 🛌 or 🚶‍➡️', 0.2, async function () {
+  if (face()) return face();
+  const ok = await waitFor('monitor() && monitor().benchTop !== null && monitor().bottom <= monitor().benchTop + 0.5', 10000);
+  return !!ok || 'the monitor row: ' + short(await T('monitor()'));
+}, test.limit.slow);
+test.run('the face never asks testicle.busy: the icon is what the server streams', 0.2, function () {
+  const files = ['spirit/app/testicle/element.js', 'spirit/app/testicle/data.js'];
+  const asks = files.filter(function (f) { return /testicle\s*(\.\s*busy\b|\[\s*['"]busy['"]\s*\])/.test(code(path.join(RUN, f))); });
+  return !asks.length || short(asks) + ' asks testicle.busy';
+}, test.limit.quick);
+test.run('the world: the monitor\'s icons are recorded from here', 0.2, async function () {
+  if (face()) return face();
+  return (await T('recordIcons()')) === true || 'no recorder';
+}, test.limit.quick);
+
 let iotaRows = [], iotaKey = '', searchBefore = 0;
 // The rows the shown tab draws, by key.
 const searchRows = function () { return T('shown()').then(function (d) { return ((d && d.rows) || []).map(function (r) { return r.key; }); }); };
@@ -588,6 +614,40 @@ test.run('the suite runs: the permanent testicle search tab shows iota\'s tests 
   const ok = await until(function () { return searchRows().then(function (k) { return (k || []).filter(function (x) { return x.indexOf(F5 + '|' + iotaOwn + '|') === 0; }).length >= 2; }); }, 40000);
   return (!!ok && searchBefore === 0) || 'iota\'s tests on the node before the press ' + searchBefore + '; the search tab now shows ' + short(((await searchRows()) || []).filter(function (x) { return x.indexOf(F5) === 0; }));
 }, test.limit.slow);
+
+// The monitor row, after iota's run: the server worked while the suite it started ran (busy counts it), then slept.
+test.run('while a suite the server started runs, the monitor shows 🚶‍➡️', 0.2, async function () {
+  if (face()) return face();
+  return ((await T('icons_seen()')) || []).indexOf('🚶‍➡️') !== -1 || 'icons seen: ' + short(await T('icons_seen()'));
+}, test.limit.quick);
+test.run('once the server is back to listening, the monitor shows 🛌', 0.2, async function () {
+  if (face()) return face();
+  const ok = await waitFor('monitor() && monitor().icon === "🛌" && icons_seen().indexOf("🚶‍➡️") !== -1', 20000);
+  return !!ok || 'the monitor: ' + short(await T('monitor()')) + ', icons seen ' + short(await T('icons_seen()'));
+}, test.limit.slow);
+const LASTFILE = 'spirit/zzTesticle/zzMonitorLast.js';
+const LONGFILE = 'spirit/zzTesticle/zzMonitor' + 'Long'.repeat(60) + '.js';
+let monitorBefore = null;
+test.run('after the icon, the message is the last change: a new script\'s row', 0.2, async function () {
+  if (face()) return face();
+  fs.writeFileSync(path.join(s.run, LASTFILE), '\'use strict\';\n// a new script, for the monitor\n');
+  const ok = await waitFor('monitor() && monitor().message.indexOf("zzMonitorLast.js") !== -1', 15000);
+  monitorBefore = await T('monitor()');
+  return !!ok || 'the monitor: ' + short(monitorBefore);
+}, test.limit.slow);
+test.run('a long message leaves the row\'s height as it was', 0.2, async function () {
+  if (face()) return face();
+  if (!monitorBefore) return 'no monitor row before';
+  fs.writeFileSync(path.join(s.run, LONGFILE), '\'use strict\';\n// a script with a long name, for the monitor\n');
+  const ok = await waitFor('monitor() && monitor().message.indexOf("LongLongLong") !== -1', 15000);
+  const m = await T('monitor()');
+  return (!!ok && Math.abs(m.height - monitorBefore.height) < 0.5) || 'height before ' + monitorBefore.height + ', now ' + short(m);
+}, test.limit.slow);
+test.run('a long message is ellipsed, never wrapped', 0.2, async function () {
+  if (face()) return face();
+  const m = await T('monitor()');
+  return (!!m && m.nowrap && m.ellipsis && m.hidden && m.overflows) || 'the message: ' + short(m);
+}, test.limit.quick);
 
 // destroy
 test.run('destroy leaves its container empty', 0.2, async function () {

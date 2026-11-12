@@ -52,6 +52,13 @@ suite search is spirit/element/search/suite.js and its folder"*.
 - A second click on the same file opens no second tab; a click on another file opens a second, which alone is active and
   shows its own detail.
 - A suite written for the file shows in its open detail with no click.
+- The monitor row (goal/G47.1): *"testicle's face has a monitor row above the workbench. It shows first the busy status in
+  icon form, 🛌 idle (sleeping), 🚶‍➡️ working, as the server streams it ... then the last change: a row added, deleted or
+  updated in any of its three tables"*, *"The row has a constant height, and the message is ellipsed, never wrapped"*,
+  *"the page never asks testicle.busy"*. The row sits above the left pane, its text starting with the icon; neither the
+  face nor data.js asks testicle.busy; while iota's suite, started by its 🏃‍♂️, runs, the icon shows 🚶‍➡️, then 🛌 once
+  the server listens again; a new script's file makes the message name it; a script with a long name leaves the row's
+  height as it was, its message on one line, overflow hidden, ellipsed.
 - The missing own test (goal/G47.1): *"A script tab shows, right under its title line, the name of the script's own test in
   red when that test is missing on disc: the folder test/ beside the script, the same file name ... When the own test is
   there, nothing shows in that place. It follows the disc: once the test file is written, the red name goes by itself."*
