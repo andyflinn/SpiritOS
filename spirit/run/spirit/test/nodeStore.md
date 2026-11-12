@@ -28,3 +28,9 @@ Andy, G43.17: *"Didn't i say remove ALL code referencing "admit" and "hold". it 
 - The code of `spirit/nodeStore.js` names no admitted mark.
 - The traffic table the node's own store makes in `node.db` (opened on a scratch folder under /tmp) has no `admitted` column.
 - The file is first shown read, its code still holding a line that is surely code, so a missing file or a stripper that ate the code is red, never a vacuous green.
+
+## The route caching goes (goal/G47.1, box v69)
+
+*"The node keeps no route of a peer: the table seen_routes is dropped, and with it every write of a route ... and every
+read"*. A fresh `node.db` has no `seen_routes` table; a `node.db` made with one holding a row has it no more once the
+store opened it; the store hands out no function that writes or reads a route.

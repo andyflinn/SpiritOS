@@ -110,7 +110,63 @@ test.run('and that traffic table has no admitted column', 0.2, function () {
   return cols.indexOf('admitted') === -1 || 'the traffic table the store makes still has an admitted column';
 }, test.limit.quick);
 
+// ── THE ROUTE CACHING GOES ──
+// goal/G47.1, the cycle "the route caching goes" (box v69; Andy: "We can probably shut down the \"route-caching\" crap",
+// and "the \"routes\" aren't read by anybody in the fucking system"): "The node keeps no route of a peer: the table
+// seen_routes is dropped, and with it every write of a route (an arrival, a relay's route event, presence, a contact
+// added) and every read (the routes of a key, the best route flattened onto a seen row)". A fresh node.db, and one made
+// with a seen_routes table holding a row, as a node made before this cycle has it.
+const ROUTE_VERBS = ['putRoute', 'routes', 'trimRoutes', 'dropRoutes', 'dropRoute', 'routeByUrl', 'clearRoutes', 'route'];
+const tablesOf = function (home) {
+  const db = new (require('node:sqlite').DatabaseSync)(path.join(home, 'spirit', 'state', 'node.db'), { readOnly: true });
+  try { return db.prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all().map(function (r) { return r.name; }); } finally { db.close(); }
+};
+// Every function the store hands out, one level into each object it answers (its seen rows, its traffic, its queue).
+const verbsOf = function (store) {
+  const out = [];
+  Object.keys(store || {}).forEach(function (k) {
+    const v = store[k];
+    if (typeof v === 'function') out.push(k);
+    else if (v && typeof v === 'object') Object.keys(v).forEach(function (k2) { if (typeof v[k2] === 'function') out.push(k + '.' + k2); });
+  });
+  return out;
+};
+let fresh = null, routeStore = null, old = null;
+test.run('the world: a fresh node.db, and a node.db made before with a seen_routes table holding a row, each opened by the store', 0.2, function () {
+  try {
+    fresh = fs.mkdtempSync(path.join(os.platform() === 'win32' ? os.tmpdir() : '/tmp', 'spirit-noroute-'));
+    routeStore = require(FILE).open(fresh);
+    old = fs.mkdtempSync(path.join(os.platform() === 'win32' ? os.tmpdir() : '/tmp', 'spirit-oldroute-'));
+    fs.mkdirSync(path.join(old, 'spirit', 'state'), { recursive: true });
+    const db = new (require('node:sqlite').DatabaseSync)(path.join(old, 'spirit', 'state', 'node.db'));
+    db.exec('PRAGMA auto_vacuum = INCREMENTAL');
+    db.exec("CREATE TABLE seen_routes (publicKey TEXT NOT NULL, via TEXT NOT NULL DEFAULT '', at TEXT NOT NULL DEFAULT '', url TEXT NOT NULL DEFAULT '', rank INTEGER NOT NULL DEFAULT 9, told INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (publicKey, via, at))");
+    db.prepare('INSERT INTO seen_routes (publicKey, via, at, url, rank, told) VALUES (?, ?, ?, ?, ?, ?)').run(KEY, '', KEY, 'https://relay.example', 1, Date.now());
+    db.close();
+    const s = require(FILE).open(old);
+    try { s.close(); } catch (e) { /* closed */ }
+  } catch (e) { return 'a store did not open: ' + (e && e.message); }
+  return true;
+}, test.limit.quick);
+test.run('a fresh node.db has no seen_routes table', 0.2, function () {
+  if (!fresh) return 'no fresh store: the world failed';
+  const t = tablesOf(fresh);
+  return t.indexOf('seen_routes') === -1 || 'the fresh node.db has the tables ' + short(t);
+}, test.limit.quick);
+test.run('a node.db made with a seen_routes table has it no more once the store opened it', 0.2, function () {
+  if (!old) return 'no old store: the world failed';
+  const t = tablesOf(old);
+  return t.indexOf('seen_routes') === -1 || 'the old node.db still has the tables ' + short(t);
+}, test.limit.quick);
+test.run('the store hands out no function that writes or reads a route', 0.2, function () {
+  if (!routeStore) return 'no fresh store: the world failed';
+  const v = verbsOf(routeStore);
+  const left = v.filter(function (name) { return ROUTE_VERBS.indexOf(name.split('.').pop()) !== -1; });
+  return (v.length > 0 && !left.length) || (v.length ? 'the store still hands out ' + short(left) : 'the store hands out no function at all: nothing judged');
+}, test.limit.quick);
+
 test.after(function () {
   void W.store;
-  for (const d of [W.home, W.noAdmitHome]) { if (d) { try { fs.rmSync(d, { recursive: true, force: true }); } catch (e) { /* scratch */ } } }
+  try { if (routeStore) routeStore.close(); } catch (e) { /* closed */ }
+  for (const d of [W.home, W.noAdmitHome, fresh, old]) { if (d) { try { fs.rmSync(d, { recursive: true, force: true }); } catch (e) { /* scratch */ } } }
 });

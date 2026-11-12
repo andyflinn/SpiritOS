@@ -49,3 +49,27 @@ test.run('hub.js\'s code has no packet.decode, nor any decode of its own', 0.2, 
   });
   return !offenders.length || offenders.length + ' decode(s) in hub.js: ' + short(offenders);
 }, test.limit.quick);
+
+// THE ROUTE CACHING GOES (goal/G47.1, box v69; Andy: "We can probably shut down the \"route-caching\" crap"): "A post
+// carries no hints: the node sends none". chooseRoute answers where a post goes: a peer the node once heard a route for
+// (planted in node.db while the store still takes one), named by no relay, goes to the first relay held, with no hints.
+const PEER_KEY = 'MCowBQYDK2VwAyEAROUTEROUTEROUTEROUTEROUTEROUTEROUTEROUTEROU=';
+let chosen = null;
+test.run('the world: a scratch node that once heard a route for a peer; chooseRoute asked for that peer, one relay held', 0.2, function () {
+  const os = require('os');
+  W.routeHome = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-hub-route-'));
+  fs.mkdirSync(path.join(W.routeHome, 'spirit', 'state'), { recursive: true });
+  try {
+    const store = require(path.join(RUN, 'spirit', 'nodeStore.js')).open(W.routeHome);
+    // Planted only while the store still takes a route: after this cycle there is nothing to plant.
+    if (store.seen && typeof store.seen.putRoute === 'function') store.seen.putRoute(PEER_KEY, { via: '', at: 'https://heard.example', url: 'https://heard.example', rank: 1, told: Date.now() });
+    const hub = require(HUB).createHub(W.routeHome);
+    chosen = hub.chooseRoute({ relaysNaming: function () { return []; }, relaysHeld: function () { return ['https://held.example']; } }, PEER_KEY);
+  } catch (e) { return 'chooseRoute could not be asked: ' + (e && e.message); }
+  return (!!chosen && chosen.relayUrl === 'https://held.example') || 'chooseRoute answered ' + short(chosen);
+}, test.limit.quick);
+test.run('a post carries no hints: chooseRoute answers none for a peer whose route the node once heard', 0.2, function () {
+  if (!chosen) return 'chooseRoute was not asked: the world failed';
+  return chosen.hints === undefined || 'chooseRoute answers the hints ' + short(chosen.hints);
+}, test.limit.quick);
+test.after(function () { try { if (W.routeHome) fs.rmSync(W.routeHome, { recursive: true, force: true }); } catch (e) { /* scratch */ } });

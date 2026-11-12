@@ -8,3 +8,8 @@ Andy, G43.17: *"Didn't i say remove ALL code referencing "admit" and "hold". it 
 
 - The code of `spirit/peerPost.js` names no admitted mark.
 - The file is first shown read, its code still holding a line that is surely code, so a missing file or a stripper that ate the code is red, never a vacuous green.
+
+## The route caching goes (goal/G47.1, box v69)
+
+*"A post carries no hints: the node sends none, the hint signature goes"*. A peerPost on a scratch identity, its request
+a hand that keeps the body (sealing off): `post()` handed hints sends a body with no `hints` and no `hintSig`.

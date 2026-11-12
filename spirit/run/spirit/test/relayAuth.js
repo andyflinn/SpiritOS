@@ -67,3 +67,11 @@ test.run('after saveIdentity, the next ask has the new name', 0.2, function () {
   if (!seen) return 'the identity was not asked: the world failed';
   return seen.renamedName === 'second' || 'the name after the save: ' + short(seen.renamedName);
 }, test.limit.quick);
+
+// THE HINT SIGNATURE GOES (goal/G47.1, the cycle "the route caching goes", box v69: "A post carries no hints: the node
+// sends none, the hint signature goes, and the relay takes a post with hints no more").
+test.run('relayAuth hands out no hint signature: neither hintMessage nor hintsSigned', 0.2, function () {
+  const auth = require(AUTH);
+  const left = ['hintMessage', 'hintsSigned'].filter(function (n) { return typeof auth[n] === 'function'; });
+  return (typeof auth.loadIdentity === 'function' && !left.length) || (left.length ? 'relayAuth still hands out ' + short(left) : 'relayAuth hands out no loadIdentity: nothing judged');
+}, test.limit.quick);

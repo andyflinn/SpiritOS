@@ -8,3 +8,8 @@ The box: *"hub.js decodes packets itself, against the one decoder (G16.5)."* G16
 
 - hub.js's code has no `packet.decode`, nor any other `decode(` of its own (a TextDecoder's `decoder.decode` is bytes and aside).
 - The world: hub.js is there and its code, comments left out, still holds `packet.encode`; `arrivals.js` exports `envelopeOf`.
+
+## The route caching goes (goal/G47.1, box v69)
+
+*"A post carries no hints: the node sends none"*. A scratch node that once heard a route for a peer (planted while the
+store still takes one): `chooseRoute` for that peer, named by no relay, answers the first relay held and no hints.

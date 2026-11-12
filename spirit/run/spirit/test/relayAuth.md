@@ -19,3 +19,8 @@ counted.
 ## What its test must try to break
 
 An identity read from disc on every ask; one object shared by every caller; a save that leaves the old identity kept.
+
+## The hint signature goes (goal/G47.1, box v69)
+
+*"A post carries no hints: the node sends none, the hint signature goes, and the relay takes a post with hints no
+more."* relayAuth hands out neither `hintMessage` nor `hintsSigned`.

@@ -111,7 +111,9 @@ test.run('node.db holds no row and no route of the planted relay', 0.2, function
   try {
     const db = new DatabaseSync(W.nodeDb, { readOnly: true });
     try {
-      routes = db.prepare('SELECT publicKey, url FROM seen_routes WHERE url = ? OR publicKey = ?').all(RURL, RKEY);
+      // goal/G47.1, box v69: "the table seen_routes is dropped". Where there is none, there is no route to find.
+      const hasRoutes = db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'seen_routes'").get();
+      routes = hasRoutes ? db.prepare('SELECT publicKey, url FROM seen_routes WHERE url = ? OR publicKey = ?').all(RURL, RKEY) : [];
       rows = db.prepare('SELECT publicKey FROM seen WHERE publicKey = ?').all(RKEY);
     } finally { db.close(); }
   } catch (e) { routes = [{ error: String(e.message || e) }]; }
