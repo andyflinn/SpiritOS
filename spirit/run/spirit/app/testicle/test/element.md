@@ -52,6 +52,11 @@ suite search is spirit/element/search/suite.js and its folder"*.
 - A second click on the same file opens no second tab; a click on another file opens a second, which alone is active and
   shows its own detail.
 - A suite written for the file shows in its open detail with no click.
+- The missing own test (goal/G47.1): *"A script tab shows, right under its title line, the name of the script's own test in
+  red when that test is missing on disc: the folder test/ beside the script, the same file name ... When the own test is
+  there, nothing shows in that place. It follows the disc: once the test file is written, the red name goes by itself."*
+  alsoShown.js, with no own test, shows `spirit/zzTesticle/inner/test/alsoShown.js` in red first under its title; shown.js,
+  with its own, shows nothing red there; eta.js shows its test's name in red until the test is written, then not.
 - A file removed as it is clicked: its tab opens, active, and below the title line the error *"no such file"*, no search.
 - A tab's close button takes it away.
 - On a flip of a test (goal/G47.1, the cycle "the test table streamed, and the page showing the current tests"), the

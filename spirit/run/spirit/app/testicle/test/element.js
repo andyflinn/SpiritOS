@@ -114,6 +114,9 @@ const HANDS = '(function () {' +
   // The 🏃‍♂️ of a suite row in the shown tab: whether the row's first cell holds it, a press on it, and whether it is busy.
   '  runCell: function (k) { var c = window.__t.center(); var t = c ? all(".tab-content", c)[0] : null; var r = t ? all("tr[data-key]", t).filter(function (x) { return x.getAttribute("data-key") === k; })[0] : null; var td = r ? r.querySelector("td") : null; var b = td ? td.querySelector("button") : null; return r ? { first: td ? String(td.innerText || "").trim() : null, button: !!b, glyph: b ? String(b.innerText || "").trim() : null, disabled: b ? !!b.disabled : null } : null; },' +
   '  runPress: function (k) { var c = window.__t.center(); var t = c ? all(".tab-content", c)[0] : null; var r = t ? all("tr[data-key]", t).filter(function (x) { return x.getAttribute("data-key") === k; })[0] : null; var b = r && r.querySelector("td") ? r.querySelector("td").querySelector("button") : null; if (!b) return false; b.click(); return true; },' +
+  // goal/G47.1, the missing own test: the first shown element under the shown tab's title line, its text and whether it is
+  // red (its colour's red well above its green and blue).
+  '  underTitle: function () { var c = window.__t.center(); var t = c ? all(".tab-content", c)[0] : null; if (!t) return null; var first = String(t.innerText || "").trim().split("\\n")[0].trim(); var els = Array.prototype.slice.call(t.querySelectorAll("*")).filter(seen); var head = els.filter(function (e) { return String(e.innerText || "").trim() === first; }).pop(); if (!head) return null; var after = els.filter(function (e) { return !head.contains(e) && !e.contains(head) && (head.compareDocumentPosition(e) & 4) && String(e.innerText || "").trim(); })[0]; if (!after) return { text: "", red: false }; while (after.firstElementChild && seen(after.firstElementChild) && String(after.firstElementChild.innerText || "").trim() === String(after.innerText || "").trim()) after = after.firstElementChild; var m = String(getComputedStyle(after).color).match(/\\d+/g) || [0, 0, 0]; return { text: String(after.innerText || "").trim(), red: +m[0] > +m[1] + 60 && +m[0] > +m[2] + 60 }; },' +
   '  centerText: function () { var b = box(); var c = b ? b.querySelector("[id$=\\"center\\"]") : null; return c ? String(c.innerText || "").trim() : null; },' +
   '}; return "hands"; }())';
 
@@ -396,6 +399,24 @@ test.run('the active tab shows its own file\'s detail', 0.2, async function () {
   return !!(await waitFor('shown() && shown().first === ' + JSON.stringify(F2), 10000)) || 'the detail reads ' + short(await T('shown()'));
 }, test.limit.slow);
 
+// goal/G47.1, the box: "A script tab shows, right under its title line, the name of the script's own test in red when that
+// test is missing on disc: the folder test/ beside the script, the same file name (for spirit/app/x/x.js,
+// spirit/app/x/test/x.js) ... When the own test is there, nothing shows in that place. It follows the disc: once the test
+// file is written, the red name goes by itself" (Andy: "the script tabs, right under the title line, must show A RED test
+// file name, if the scripts "personal" test is missing."). alsoShown.js has no own test; shown.js has; eta.js gets one.
+const alsoOwn = 'spirit/zzTesticle/inner/test/alsoShown.js';
+test.run('a script with no own test shows that test\'s name in red, right under its title line', 0.2, async function () {
+  if (face()) return face();
+  return !!(await waitFor('shown() && shown().first === ' + JSON.stringify(F2) + ' && underTitle() && underTitle().text === ' + JSON.stringify(alsoOwn) + ' && underTitle().red', 10000)) || 'under alsoShown.js\'s title: ' + short(await T('underTitle()'));
+}, test.limit.slow);
+test.run('a script with its own test shows no red name under its title line', 0.2, async function () {
+  if (face()) return face();
+  if (!(await T('click(' + JSON.stringify(F1) + ')')) || !(await waitFor('shown() && shown().first === ' + JSON.stringify(F1) + ' && shown().rows.length > 0', 10000))) return 'shown.js\'s detail: ' + short(await T('shown()'));
+  await sleep(500);
+  const u = await T('underTitle()');
+  return (!!u && !u.red) || 'under shown.js\'s title: ' + short(u);
+}, test.limit.slow);
+
 // the box: "The UI must listen to changes on all tables it interacts with"
 test.run('the world: eta.js\'s detail lists its suites', 0.2, async function () {
   if (face()) return face();
@@ -406,11 +427,19 @@ test.run('the world: before its own test is written, eta.js lists none', 0.2, as
   etaBefore = await T('shown()');
   return (!!etaBefore && etaBefore.first === F3 && !named(etaBefore.rows, etaOwn)) || 'the detail: ' + short(etaBefore);
 }, test.limit.quick);
+test.run('the world: before its own test is written, eta.js shows that test\'s name in red', 0.2, async function () {
+  if (face()) return face();
+  return !!(await waitFor('underTitle() && underTitle().text === ' + JSON.stringify(etaOwn) + ' && underTitle().red', 5000)) || 'under eta.js\'s title: ' + short(await T('underTitle()'));
+}, test.limit.slow);
 test.run('a suite written for the file shows in its open detail, with no click: the detail listens, the server publishes', 0.2, async function () {
   if (face()) return face();
   fs.mkdirSync(path.join(s.run, 'spirit', 'zzTesticle', 'test'), { recursive: true });
   fs.writeFileSync(path.join(s.run, etaOwn), '\'use strict\';\n// the new test of eta\n');
   return !!(await until(function () { return T('shown()').then(function (d) { return !!d && d.rows.some(function (r) { return r.key === etaOwn || String(r.text).indexOf(etaOwn) !== -1; }); }); }, 10000)) || 'the detail after the new suite: ' + short(await T('shown()'));
+}, test.limit.slow);
+test.run('once its own test is written, the red name goes by itself', 0.2, async function () {
+  if (face()) return face();
+  return !!(await waitFor('shown() && shown().first === ' + JSON.stringify(F3) + ' && underTitle() && !underTitle().red && underTitle().text !== ' + JSON.stringify(etaOwn), 10000)) || 'under eta.js\'s title: ' + short(await T('underTitle()'));
 }, test.limit.slow);
 
 // the box: "The tab opens first ... or the error script.get gives"
