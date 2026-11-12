@@ -826,11 +826,13 @@ test.run('a script\'s own test is started with no argument', 0.2, function () {
 }, test.limit.quick);
 test.run('with testicle given, the suite runs up to that test and no test after it', 0.2, async function () {
   if (!up()) return NONODE;
-  // A first report of lambda makes its rows, flagged, and the runner then runs its whole suite (the queue cycle): lambda's whole
-  // suite is run first, so its rows are there and nothing of lambda is flagged when the run up to a test is asked. Then this run is told
+  // A first report of lambda makes its rows, flagged, and the runner then runs its whole suite (the queue cycle): lambda's rows
+  // are made and its whole suite run first, so nothing of lambda is flagged when the run up to a test is asked. Then this run is told
   // by when each row was tested: its second and its first after the press, its third not.
-  const g = await call(N.base, 'testicle.run', { script: LA, suite: LAS });
-  if (g.status !== 200) return 'the whole run: ' + g.status + ' ' + short(g.text);
+  // script.get makes lambda's rows, flagged, and the flag wakes the runner, which runs lambda's suites, its own whole. (A whole
+  // run asked before the rows are there makes them during that run, so they stay flagged and it comes round again.)
+  const g = await call(N.base, 'testicle.script.get', { name: LA });
+  if (g.status !== 200) return 'script.get: ' + g.status + ' ' + short(g.text);
   // Other suites may run meanwhile; what matters is that lambda's own suite is no longer flagged, so no whole run of it follows.
   const settled = await until(function () { const u = suiteRow(tables(DB), LA, LAS); return Promise.resolve(!!rowOf(LA, LAS, 'lambda answers its third') && !!u && !yes(u.test)); }, 150000);
   if (!settled) return 'lambda\'s own suite still flagged after its whole run: nothing judged; its row ' + short(suiteRow(tables(DB), LA, LAS));
