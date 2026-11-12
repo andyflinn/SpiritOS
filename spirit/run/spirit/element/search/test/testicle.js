@@ -6,8 +6,8 @@
 // spirit/element/search/testicle.js, with its companion folder holding its rowElement and detailElement", "a script selector,
 // unselected (all) the default", "a suite selector, unselected (all) the default", "two filters, red and green; at least one
 // of the two is selected at all times", "The test row also shows its severity, two decimal places, even for 0 and 1", "The
-// list is sortable by all its columns", "The script selector: the file search as a dropdown, production scripts only", "the
-// suite selector of the testicle search waits until a script is chosen", "The script column and the suite column show the
+// list is sortable by all its columns", "The script selector: the file search as a dropdown, production scripts only", "with
+// the script selector blank (all scripts), the suite selector lists every suite, each once", "The script column and the suite column show the
 // file name only, no path; hovering over a script or a suite shows its full name as a tooltip", "The test title is shown in
 // full", "The columns, in this order: the result first, as an icon, ❌ for a failure, ✅ for a success; severity second; the
 // title third; then the script name (no path), then the suite name (no path)", "The search is the standard search over
@@ -375,8 +375,7 @@ test.run('a script chosen narrows the rows to that script\'s tests', 0.2, async 
   return !!ok || 'scripts shown ' + short(await columnNow(3));
 }, test.limit.slow);
 
-// the box: "a suite selector, unselected (all) the default", "the suite selector of the testicle search waits until a script
-// is chosen: with all scripts, there is no suite to choose"
+// the box: "a suite selector, unselected (all) the default"
 test.run('with a script chosen, the suite selector lists that script\'s suites', 0.2, async function () {
   if (mounted()) return mounted();
   await T('openSel(1)');
@@ -407,12 +406,47 @@ test.run('the script unselected again, every script\'s tests show', 0.2, async f
   const ok = await until(function () { return columnNow(3).then(function (l) { return l.indexOf(base(A)) !== -1 && l.indexOf(base(B)) !== -1; }); }, 5000);
   return !!ok || 'scripts shown ' + short(await columnNow(3));
 }, test.limit.slow);
-test.run('with no script chosen, the suite selector offers no suite', 0.2, async function () {
+// goal/G47.1, the box: "The testicle search can search by a suite alone: with the script selector blank (all scripts), the
+// suite selector lists every suite, each once, and suite.search given no script answers that list; a suite chosen with
+// the script blank shows every test of that suite, whichever script it ran for." It replaces the line "with all scripts,
+// there is no suite to choose" (Andy: "the testicle search must be able to search for test with the fucking script filter
+// blank AND a suite selected!!!"). GEN judges both planted scripts, so it is one suite of two scripts.
+function suiteKeysOf(keys, suite) { return keys.filter(function (k) { return k === suite || String(k).slice(-(suite.length + 1)) === '|' + suite; }); }
+test.run('with no script chosen, the suite selector lists the suites of every script', 0.2, async function () {
   if (mounted()) return mounted();
   await T('openSel(1)');
-  await sleep(1000);
+  await T('typeSel(1, "zzTsearch")');
+  await waitFor('selRows(1).length > 1', 10000);
   const keys = (await T('selRows(1)')) || [];
-  return keys.length === 0 || 'with all scripts it offers ' + short(keys);
+  return (suiteKeysOf(keys, AS).length > 0 && suiteKeysOf(keys, BS).length > 0) || 'with all scripts it lists ' + short(keys);
+}, test.limit.slow);
+test.run('with no script chosen, a suite of two scripts is listed once', 0.2, async function () {
+  if (mounted()) return mounted();
+  await T('typeSel(1, ' + JSON.stringify(path.posix.basename(GEN, '.js')) + ')');
+  await waitFor('selRows(1).length > 0', 10000);
+  await sleep(500);
+  const keys = (await T('selRows(1)')) || [];
+  return suiteKeysOf(keys, GEN).length === 1 || 'with all scripts, ' + GEN + ' is listed as ' + short(suiteKeysOf(keys, GEN)) + ' among ' + short(keys);
+}, test.limit.slow);
+test.run('a suite chosen with no script shows that suite\'s tests of every script', 0.2, async function () {
+  if (mounted()) return mounted();
+  const r = await call(N.base, 'testicle.testicle.set', { script: B, suite: GEN, test: 'beta holds the general rule', verified: true, severity: 0.2 });
+  if (r.status !== 200) return 'testicle.testicle.set: ' + r.status + ' ' + short(r.text);
+  const k = suiteKeysOf((await T('selRows(1)')) || [], GEN)[0];
+  if (!k || !(await T('pickSel(1, ' + JSON.stringify(k) + ')'))) return 'no row for ' + GEN + ' to pick: ' + short(await T('selRows(1)'));
+  const ok = await until(function () {
+    return Promise.all([columnNow(3), columnNow(4)]).then(function (l) {
+      return l[1].length > 0 && l[1].every(function (v) { return v === base(GEN); }) && l[0].indexOf(base(A)) !== -1 && l[0].indexOf(base(B)) !== -1;
+    });
+  }, 10000);
+  return !!ok || 'scripts shown ' + short(await columnNow(3)) + ', suites shown ' + short(await columnNow(4));
+}, test.limit.slow);
+test.run('the suite unselected with no script, every script\'s tests show again', 0.2, async function () {
+  if (mounted()) return mounted();
+  await T('openSel(1)');
+  if (!(await T('noneSel(1)'))) return 'the suite selector has no None to unselect with';
+  const ok = await until(function () { return columnNow(4).then(function (l) { return l.indexOf(base(AS)) !== -1 && l.indexOf(base(BS)) !== -1; }); }, 5000);
+  return !!ok || 'suites shown ' + short(await columnNow(4));
 }, test.limit.slow);
 
 // the box: "a view of the testicle branch data.js keeps": a test set on the node shows by itself.

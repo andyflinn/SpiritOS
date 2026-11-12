@@ -35,7 +35,8 @@ The box, in Andy's words where he gave them:
   label the row; *"The file row owns its suite rows ... So suite.search takes the production file and answers that file's
   suite rows only, each suite once, with its filename and its status; the words narrow among them"*: with no words the
   file's suites exactly; every suite a file whose final folder is `test`; each with its status, needs running; words
-  narrow them; another file's search answers none of the first's.
+  narrow them; another file's search answers none of the first's. Given no script, *"suite.search given no script
+  answers that list"*, every suite, each once: the suites of every script, none twice, and a suite of two scripts once.
 
 - **The rename** (goal/G47.1, the cycle "the test table renamed testicle"): *"The testicle test table is renamed
   \"testicle\": the table in testicle.db, its index, and the branch data.js keeps it under. The stream carries it as the

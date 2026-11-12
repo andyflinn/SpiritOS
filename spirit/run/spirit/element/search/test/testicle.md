@@ -10,8 +10,10 @@ opens).
 
 - *"The search has a script selector, unselected (all) the default."* The script selector is the file search
   (`spirit/element/search/file.js`) as a dropdown, production scripts only.
-- *"The search has a suite selector, unselected (all) the default."* It waits until a script is chosen: with all scripts
-  there is no suite to choose.
+- *"The search has a suite selector, unselected (all) the default."* *"With the script selector blank (all scripts),
+  the suite selector lists every suite, each once ... a suite chosen with the script blank shows every test of that suite,
+  whichever script it ran for."* The suites of every script are listed; a suite of two scripts is listed once; chosen, its
+  tests of both scripts show; unselected, every suite shows again.
 - *"The search has two filters, red and green; at least one of the two is selected at all times: the only combination
   forbidden is both off."*
 - *"The columns, in this order: the result first, as an icon, ❌ for a failure, ✅ for a success; severity second; the title

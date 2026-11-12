@@ -474,6 +474,27 @@ test.run('another file\'s search answers that file\'s rows, none of the first', 
   const other = items(await call(N.base, 'testicle.suite.search', { script: Z + 'gamma.js', text: '' }));
   return (other.length > 0 && other.every(function (i) { return i.row.script === Z + 'gamma.js'; }) && other.map(suiteOf).indexOf(Z + 'test/zeta.js') === -1) || 'gamma.js: ' + short(other.map(function (i) { return i.row.script + ' ' + suiteOf(i); }).slice(0, 5));
 }, test.limit.quick);
+// goal/G47.1, the box: "with the script selector blank (all scripts), the suite selector lists every suite, each once, and
+// suite.search given no script answers that list". It replaces "suite.search keeps needing a script" (Andy: "There's
+// NOTHING wrong with searching for testicle records that only must match a suite and not a file."). GENERAL judges both
+// zeta and gamma, so it is one suite of two scripts.
+test.run('given no script, suite.search answers the suites of every script', 0.2, async function () {
+  if (!up()) return NONODE;
+  const r = await call(N.base, 'testicle.suite.search', { text: 'zzTesticle' });
+  const names = items(r).map(suiteOf);
+  return (r.status === 200 && names.indexOf(Z + 'test/zeta.js') !== -1 && names.indexOf(Z + 'test/gamma.js') !== -1) || 'no script: ' + r.status + ' ' + short(names);
+}, test.limit.quick);
+test.run('given no script, it answers each suite once', 0.2, async function () {
+  if (!up()) return NONODE;
+  const names = items(await call(N.base, 'testicle.suite.search', { text: '' })).map(suiteOf);
+  const twice = names.filter(function (n, i) { return names.indexOf(n) !== i; });
+  return (names.length > 0 && twice.length === 0) || 'answered twice: ' + short(twice.slice(0, 5)) + ' of ' + names.length;
+}, test.limit.quick);
+test.run('given no script, a suite of two scripts is answered once', 0.2, async function () {
+  if (!up()) return NONODE;
+  const names = items(await call(N.base, 'testicle.suite.search', { text: 'titleRules' })).map(suiteOf);
+  return names.filter(function (n) { return n === GENERAL; }).length === 1 || 'searched titleRules: ' + short(names);
+}, test.limit.quick);
 
 // goal/G47.1, the test cycle. The box: "The testicle.test table now needs a \"set\" verb, and a \"search\" verb", "When
 // a test row is set, and a script row is missing, the server needs to auto-create the script/suite rows for that test",
