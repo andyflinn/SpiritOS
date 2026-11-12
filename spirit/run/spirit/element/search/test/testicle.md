@@ -22,12 +22,12 @@ opens).
 - *"The script column and the suite column show the file name only, no path; hovering over a script or a suite shows its
   full name as a tooltip."* *"The test title is shown in full."*
 - *"The list is sortable by all its columns."*
-- *"The testicle search finds the reds"* (Andy: *"the empty search string with no script or suite selected should already
-  fill up with more that 20 reds when i open the app!"*): *"Every test search answers its failed tests first, then by
-  severity. Red, green, the script and the suite go to the server with the words, so the server narrows before it cuts an
-  answer; a change of any of them asks again. ... the page asks for the following answers while the server says there are
-  more, up to 100 tests. Opened with no words and no selector, the page shows the reds first, more than 20 when there are;
-  typed words show the tests they find."*
+- *"The testicle search's default equals testicle.red: all scripts, all suites, reds only, most severe first"* (Andy:
+  *"the default setting for testicle search should be EQUAL the the RED verb of testicle."*; and earlier, *"the empty
+  search string with no script or suite selected should already fill up with more that 20 reds when i open the app!, and
+  typing in the search bar sends requests and returns NOTHING$!"*). The red and green choice, the script and the suite go
+  to the server with the words, so it narrows before it cuts; one answer holds about 12 tests, so the list asks for the
+  following ones while the server says there are more, up to 100.
 
 ## What its test does
 
@@ -38,12 +38,12 @@ own, more than one answer holds. The search mounted alone in Chrome on `/face.ht
 
 - The module and its folder's two parts are there; it loads the file search.
 - It lists each test once, by its current row.
-- Opened, it shows all 30 of gamma's reds, and no ✅ row stands above a ❌ row; typed words, one of gamma's titles, show
-  that test first.
+- Opened, red is on and green off; it shows all 30 of gamma's reds, reds only, the most severe first. Then green is
+  pressed, and the checks below see both. Typed words, one of gamma's titles, show that test first.
 - Five columns per row: ❌ or ✅; `0.00`, `1.00`, `0.20`; the long title in full, not clipped; `alpha.js`, `beta.js`; the
   suite's file name; the script's and the suite's full name as the cell's tooltip.
 - Five headers, each a sort trigger; a press sorts by its column, a second press the other way.
-- red and green both on at the start; red off shows the successes alone, and then a press on green leaves it on; green off
+- red and green both on once green was pressed; red off shows the successes alone, and then a press on green leaves it on; green off
   shows the failures alone, and then a press on red leaves it on.
 - Two dropdown selectors, script first. With no script chosen every script's tests show and the suite selector offers every
   suite. The script selector lists production scripts only; a script chosen narrows the rows; its suites are listed in the

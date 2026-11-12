@@ -215,6 +215,36 @@ test.run('it loads through spirit.require and mounts with create(container), ans
   return made === 'made' || 'it did not mount: ' + short(made);
 }, test.limit.slow);
 
+// goal/G47.1, the box: "The testicle search's default equals testicle.red: all scripts, all suites, reds only, most severe
+// first" (Andy: "the default setting for testicle search should be EQUAL the the RED verb of testicle."); and earlier
+// (Andy: "the empty search string with no script or suite selected should already fill up with more that 20 reds when i
+// open the app!"). gamma's 30 reds are more than one answer holds.
+test.run('opened, red is on and green is off', 0.2, async function () {
+  if (mounted()) return mounted();
+  await waitFor('filter("red") && filter("green")', 10000);
+  const red = await T('filter("red")'), green = await T('filter("green")');
+  return (!!red && !!green && red.on && !green.on) || 'red ' + short(red) + ', green ' + short(green);
+}, test.limit.slow);
+test.run('opened, it shows more than 20 reds: every one of gamma\'s 30', 0.2, async function () {
+  if (mounted()) return mounted();
+  if (!gammaPlanted) return 'gamma\'s tests were not set: the world failed';
+  const ok = await waitFor('keys().filter(function (k) { return k.indexOf("' + Z2 + '") === 0; }).length >= ' + GAMMA_REDS, 15000);
+  return !!ok || 'gamma\'s rows shown: ' + ((await T('keys()')) || []).filter(function (k) { return k.indexOf(Z2) === 0; }).length + ' of ' + GAMMA_REDS;
+}, test.limit.slow);
+test.run('opened, it shows reds only, the most severe first', 0.2, async function () {
+  if (mounted()) return mounted();
+  const sev = await columnNow(1);
+  const icons = await columnNow(0);
+  const down = sev.every(function (v, i) { return i === 0 || Number(sev[i - 1]) >= Number(v); });
+  return (icons.length > 0 && icons.every(function (v) { return v === '❌'; }) && down) || 'results ' + short(icons.join('')) + ', severities ' + short(sev);
+}, test.limit.quick);
+test.run('the world: green pressed, both filters on', 0.2, async function () {
+  if (mounted()) return mounted();
+  await T('press("green")');
+  const ok = await waitFor('filter("green").on && filter("red").on', 5000);
+  return !!ok || 'red ' + short(await T('filter("red")')) + ', green ' + short(await T('filter("green")'));
+}, test.limit.slow);
+
 // the box: "the current rows shown"
 test.run('the world: the list draws the planted tests', 0.2, async function () {
   if (mounted()) return mounted();
@@ -238,19 +268,6 @@ test.run('the world: each planted row\'s cells are read', 0.2, async function ()
 // selected should already fill up with more that 20 reds when i open the app!, and typing in the search bar sends requests
 // and returns NOTHING$! WTF!"): "Every test search answers its failed tests first", "the page asks for the following
 // answers while the server says there are more, up to 100 tests", "typed words show the tests they find".
-test.run('opened with no words and no selector, it shows more than 20 reds: every one of gamma\'s 30', 0.2, async function () {
-  if (mounted()) return mounted();
-  if (!gammaPlanted) return 'gamma\'s tests were not set: the world failed';
-  const ok = await waitFor('keys().filter(function (k) { return k.indexOf("' + Z2 + '") === 0; }).length >= ' + GAMMA_REDS, 15000);
-  return !!ok || 'gamma\'s rows shown: ' + ((await T('keys()')) || []).filter(function (k) { return k.indexOf(Z2) === 0; }).length + ' of ' + GAMMA_REDS;
-}, test.limit.slow);
-test.run('opened, the reds come first: no ✅ row above a ❌ row', 0.2, async function () {
-  if (mounted()) return mounted();
-  const icons = ((await T('cells()')) || []).map(function (r) { return r.cells[0] ? r.cells[0].text : ''; });
-  const firstGreen = icons.indexOf('✅');
-  const lastRed = icons.lastIndexOf('❌');
-  return (lastRed !== -1 && (firstGreen === -1 || firstGreen > lastRed)) || 'the result column, top down: ' + short(icons.join(''));
-}, test.limit.quick);
 test.run('typed words show the tests they find, the best match first', 0.2, async function () {
   if (mounted()) return mounted();
   if (!gammaPlanted) return 'gamma\'s tests were not set: the world failed';
@@ -321,7 +338,7 @@ test.run('every one of its five column headers is a sort trigger', 0.2, async fu
   return (cols.length === 5 && cols.every(function (h) { return !!h.sort; })) || 'headers: ' + short(cols);
 }, test.limit.quick);
 // The order of one column's cells, of the planted rows, as drawn.
-const columnNow = async function (i) {
+async function columnNow(i) {
   const rows = ((await T('cells()')) || []).filter(function (r) { return String(r.key).indexOf(Z) === 0; });
   return rows.map(function (r) { return (r.cells[i] || {}).text; });
 };
@@ -365,7 +382,7 @@ test.run('a press on the header of the result sorts the failures and the success
 
 // the box: "two filters, red and green; at least one of the two is selected at all times: the only combination forbidden is
 // both off"
-test.run('it has the filters red and green, both on at the start', 0.2, async function () {
+test.run('it has the filters red and green, both on once green was pressed', 0.2, async function () {
   if (mounted()) return mounted();
   const red = await T('filter("red")'), green = await T('filter("green")');
   return (!!red && !!green && red.on && green.on) || 'red ' + short(red) + ', green ' + short(green);

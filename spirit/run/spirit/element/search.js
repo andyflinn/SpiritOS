@@ -44,7 +44,9 @@
 //                              Q14: a file's tile shows its kind's icon and its name); either left out is the row's
 //   visible(row)               false holds a row back; asked at every draw
 //   filters                    [{ name, test(row, value), when, toggle, multi, keepOne, choices }]: a multi filter's value is
-//                              the choices turned off; keepOne keeps its last choice on, a press that would turn it off ignored
+//                              the choices turned off; keepOne keeps its last choice on, a press that would turn it off ignored;
+//                              off, a list of a multi filter's choice values, starts those turned off (goal/G47.1: the testicle
+//                              search starts with reds only)
 //   filters, score, rows(), fold(row, key), details(row, key, el), pick(row, key), empty   the list's own; the words
 //                              are matched against the whole row (goal/G41.28), so a list hands no matched()
 //   selectors                  [{ name, element, test(row) }]: selectors the mounter made, mounted in the 🪣 row; each
@@ -165,7 +167,10 @@
     }));
     var values = Object.create(null);
     // A TOGGLE (goal/G30.19) is one button, { name, word, icon, toggle: true }, its value false until pressed.
-    filters.forEach(function (f) { values[f.name] = f.toggle ? false : f.multi ? {} : (Array.isArray(f.choices) && f.choices.length ? f.choices[0].value : ''); });
+    filters.forEach(function (f) {
+      var startOff = function () { var o2 = {}; (Array.isArray(f.off) ? f.off : []).forEach(function (v) { o2[String(v)] = true; }); return o2; };
+      values[f.name] = f.toggle ? false : f.multi ? startOff() : (Array.isArray(f.choices) && f.choices.length ? f.choices[0].value : '');
+    });
     var bucket = P().createProbabilityBucket(Infinity);
     var byKey = Object.create(null);    // key -> { key, row, at, gone, el }, the one object the bucket holds for it
     var seated = 0;

@@ -120,8 +120,10 @@
         filters: [
           // THE CURRENT ROWS ONLY, not drawn: the branch keeps a flipped test's replaced row too.
           { name: 'current', when: function () { return false; }, test: function (row) { return row && row.current === true ? 1 : 0; } },
-          // RED AND GREEN, both on at the start; one always stays on.
-          { name: 'result', multi: true, keepOne: true,
+          // RED AND GREEN, red alone on at the start; one always stays on. The default equals testicle.red (goal/G47.1, Andy:
+          // "the default setting for testicle search should be EQUAL the the RED verb of testicle. ALL scripts, ALL suites,
+          // reds only, most SERVERE FIRST DAMMIT.").
+          { name: 'result', multi: true, keepOne: true, off: ['green'],
             choices: [{ value: 'red', icon: '❌', word: 'red' }, { value: 'green', icon: '✅', word: 'green' }],
             test: function (row, off) { var o2 = off || {}; return row && (row.verified ? !o2.green : !o2.red) ? 1 : 0; } },
         ],
@@ -137,8 +139,8 @@
       var again = function () { if (list && typeof list.refresh === 'function') list.refresh(); };
       scriptSel.addEventListener('change', again);
       suiteSel.addEventListener('change', again);
-      // What the branch does not hold yet: the reds first, asked at the start.
-      ask({ text: '' }).then(null, function () { /* the list says it is empty */ });
+      // What the branch does not hold yet: the reds, asked at the start, as the filters start.
+      ask({ text: '', result: 'red' }).then(null, function () { /* the list says it is empty */ });
     }, function () { container.textContent = 'The tests could not be loaded.'; });
 
     return {
