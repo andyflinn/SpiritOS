@@ -486,15 +486,25 @@ function writeOwner(rootDir, key) {
 // The parse is done once, here, and the result thrown away — crypto
 // caches nothing for us, but a malformed key fails identically every
 // time, so proving it once at load proves it for the process.
+// KEPT IN MEMORY ONCE READ (goal/G47.1; Andy: "why is the tiny bit of memory
+// to expensive to cache the identity of the node?"): the node asked for it on
+// every owner call, a disc read and a key parse each time, on its one thread.
+// saveIdentity, the one writer of identity.json, drops what is kept, so a new
+// name or a new key is read on the next ask. Each caller gets its own copy.
+const identityKept = new Map();
+function identityFile(rootDir) { return path.join(rootDir, 'spirit', 'state', 'identity.json'); }
 function loadIdentity(rootDir) {
+  const file = identityFile(rootDir);
+  if (identityKept.has(file)) return Object.assign({}, identityKept.get(file));
   try {
-    const raw = fs.readFileSync(path.join(rootDir, 'spirit', 'state', 'identity.json'), 'utf8');
+    const raw = fs.readFileSync(file, 'utf8');
     const parsed = JSON.parse(raw);
     if (!parsed || !parsed.privateKey) return null;
     // Not a format check — an actual parse by the thing that will use it.
     // Anything this accepts, sign() accepts.
     privateKeyFromB64(parsed.privateKey);
-    return parsed;
+    identityKept.set(file, parsed);
+    return Object.assign({}, parsed);
   } catch (e) { /* none, or none usable */ }
   return null;
 }
@@ -580,10 +590,12 @@ function saveIdentity(rootDir, id) {
   // atomic on one filesystem. The temp is
   // made private before it holds the key, and protected again after.
   const tmp = file + '.tmp';
+  identityKept.delete(identityFile(rootDir));
   fs.writeFileSync(tmp, JSON.stringify(id, null, 2), { mode: 0o600 });
   protectFile(tmp);
   fs.renameSync(tmp, file);
   protectFile(file);
+  identityKept.delete(identityFile(rootDir));
 }
 
 // ── ONE IDENTITY, MADE ONCE, NEVER MADE AGAIN (goal/G22.5) ───────────

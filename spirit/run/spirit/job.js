@@ -221,11 +221,20 @@ module.exports = function installJobs(port) {
   }
   // A CORE FILE SAYS SO (goal/G30.21: "the files list thing should display core files with yellow typeface"), by the one
   // rule the commit check reads (coreFiles.js); the run folder is spirit/run of the checkout two folders up.
+  // THE FLAG IS KEPT ON THE LIST (goal/G47.1; Andy: "stick that flag on the fucking file list, then you have to check each
+  // file once with isCore()"): worked out once, when the file enters the kept list, and again for an app's files when its
+  // <name>.json changes, never as the list is sent. Asked on every send it read an app's json from disc once per file,
+  // on the node's one thread, for every page and face that connected: 17 of 45 s on Andy's node, measured.
+  function heldOf(p, full, kind) {
+    const held = statOf(full, kind);
+    if (kind === 'file' && spirit.require('spirit/coreFiles.js').isCore('spirit/run/' + p, path.resolve(RUN_ROOT, '..', '..'))) held.core = true;
+    return held;
+  }
   function commandOf(op, p, at, held) {
     const c = { op: op, path: p, at: at };
     if (held && held.size !== undefined) c.size = held.size;
     if (held && held.modified !== undefined) c.modified = held.modified;
-    if (held && held.kind === 'file' && spirit.require('spirit/coreFiles.js').isCore('spirit/run/' + p, path.resolve(RUN_ROOT, '..', '..'))) c.core = true;
+    if (held && held.core === true) c.core = true;
     return c;
   }
 
@@ -248,7 +257,7 @@ module.exports = function installJobs(port) {
 
   function startFsWatcherJob(rootDir) {
     const tree = new Map();
-    scanFolder(rootDir).forEach(function (entry) { const m = mapEntry(entry, rootDir); tree.set(m.relativePath, statOf(m.fullPath, m.kind)); });
+    scanFolder(rootDir).forEach(function (entry) { const m = mapEntry(entry, rootDir); tree.set(m.relativePath, heldOf(m.relativePath, m.fullPath, m.kind)); });
     fsTree = tree;
     // THE NODE'S FILES ARE spirit.fs (goal/G43.20).
     const job = ownJob('spirit.fs');
@@ -269,16 +278,29 @@ module.exports = function installJobs(port) {
       if (op === 'createFile' || op === 'createDirectory') {
         const kind = op === 'createDirectory' ? 'folder' : 'file';
         if (tree.has(rel) && tree.get(rel).kind === kind) return; // already held: the startup report, or a repeat
-        tree.set(rel, statOf(full, kind));
+        tree.set(rel, heldOf(rel, full, kind));
       } else if (op === 'deleteFile') {
         if (!tree.has(rel)) return;
         tree.delete(rel);
       } else if (op === 'deleteDirectory') {
         if (!tree.has(rel)) return;
         Array.from(tree.keys()).forEach(function (p) { if (p === rel || p.indexOf(rel + '/') === 0) tree.delete(p); });
-      } else tree.set(rel, statOf(full, 'file')); // a change: the new stat (a file never seen is made by it)
+      } else tree.set(rel, heldOf(rel, full, 'file')); // a change: the new stat (a file never seen is made by it)
       const held = op === 'deleteFile' || op === 'deleteDirectory' ? null : tree.get(rel);
       updateJob(job.id, { data: { command: commandOf(op, rel, new Date().toISOString(), held) } });
+      // AN APP'S <name>.json CHANGED, MADE OR GONE: whether its files are core may have changed with it (coreFiles.js reads
+      // its identity.intrinsic), so its files' flags are worked out again, and each one that turned is sent as a change.
+      const app = /^spirit\/app\/([^/]+)\/([^/]+)\.json$/.exec(rel);
+      if (app && app[1] === app[2] && op !== 'createDirectory' && op !== 'deleteDirectory') {
+        const under = 'spirit/app/' + app[1] + '/';
+        tree.forEach(function (h, p) {
+          if (h.kind !== 'file' || p.indexOf(under) !== 0 || p === rel) return;
+          const core = spirit.require('spirit/coreFiles.js').isCore('spirit/run/' + p, path.resolve(RUN_ROOT, '..', '..'));
+          if (core === (h.core === true)) return;
+          if (core) h.core = true; else delete h.core;
+          updateJob(job.id, { data: { command: commandOf('changeFile', p, new Date().toISOString(), h) } });
+        });
+      }
     });
 
     watcher.on('error', function(err) {

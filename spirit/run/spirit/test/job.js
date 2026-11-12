@@ -829,6 +829,47 @@ test.run('the fs-watcher job hears a file made in its folder (createFile made.tx
   return /^HEARD/.test(jobsOut) ? true : 'the fs-watcher job: ' + long(jobsOut);
 }, test.limit.slow);
 
+// THE CORE FLAG IS KEPT ON THE FILE LIST (goal/G47.1; Andy: "stick that flag on the fucking file list, then you have to
+// check each file once with isCore()"): the tree sent to a page that connects reads nothing from disc. Asked on every
+// send, it read an app's <name>.json once per file of that app, on the node's one thread (17 of 45 s on Andy's node).
+// The fs-watcher job on this checkout's run folder; then the tree asked twice, every read of an app's json counted.
+let treeSent = null;
+test.run('the world: the fs-watcher job on the run folder, the tree asked twice, reads of the app jsons counted', 0.2, function () {
+  // Not child(): it empties the folder it is given, and this one is the checkout's run folder, only read here.
+  const run = function (src) { const r = spawnSync(process.execPath, ['-e', src, RUN], { cwd: RUN, encoding: 'utf8', timeout: 60000 }); return String(r.stdout || '').trim() + (r.stderr ? ' | ' + String(r.stderr).trim().slice(0, 300) : ''); };
+  const out = run([
+    "const fs = require('fs'), dir = process.argv[1];",
+    "const jobs = require(" + JSON.stringify(path.join(RUN, 'spirit', 'job.js')) + ")(1);",
+    "const job = jobs.startFsWatcherJob(dir);",
+    "const read = fs.readFileSync; let reads = 0;",
+    "fs.readFileSync = function (f) { if (/[\\\\/]spirit[\\\\/]app[\\\\/][^\\\\/]+[\\\\/][^\\\\/]+\\.json$/.test(String(f))) reads += 1; return read.apply(fs, arguments); };",
+    "const first = jobs.fsTreeCommands(); const second = jobs.fsTreeCommands();",
+    "fs.readFileSync = read;",
+    "const of = function (p) { return first.filter(function (c) { return c.path === p; })[0] || null; };",
+    "console.log(JSON.stringify({ reads: reads, files: first.length, again: second.length, spirit: of('spirit/spirit.js'), noCore: of('spirit/app/icons/icons.js'), ownJson: of('spirit/app/icons/icons.json') }));",
+    "job._stop(); process.exit(0);",
+  ].join('\n'));
+  try { treeSent = JSON.parse(String(out).trim().split('\n').pop()); } catch (e) { treeSent = null; }
+  return (!!treeSent && treeSent.files > 100) || 'the tree: ' + long(out);
+}, test.limit.slow);
+test.run('the tree sent twice reads no app json from disc', 0.2, function () {
+  if (!treeSent) return 'the tree was not read: the world failed';
+  return treeSent.reads === 0 || treeSent.reads + ' reads of an app\'s json while ' + treeSent.files + ' files were sent twice';
+}, test.limit.quick);
+test.run('a core file comes with core: spirit/spirit.js', 0.2, function () {
+  if (!treeSent) return 'the tree was not read: the world failed';
+  return (!!treeSent.spirit && treeSent.spirit.core === true) || 'spirit/spirit.js: ' + long(treeSent.spirit);
+}, test.limit.quick);
+// coreFiles.js: an app's folder is core unless its <name>.json says intrinsic false, the json itself always core. icons says false.
+test.run('a file of an app whose json says intrinsic false comes without core: spirit/app/icons/icons.js', 0.2, function () {
+  if (!treeSent) return 'the tree was not read: the world failed';
+  return (!!treeSent.noCore && treeSent.noCore.core === undefined) || 'spirit/app/icons/icons.js: ' + long(treeSent.noCore);
+}, test.limit.quick);
+test.run('and its own json comes with core: spirit/app/icons/icons.json', 0.2, function () {
+  if (!treeSent) return 'the tree was not read: the world failed';
+  return (!!treeSent.ownJson && treeSent.ownJson.core === true) || 'spirit/app/icons/icons.json: ' + long(treeSent.ownJson);
+}, test.limit.quick);
+
 // 5. no file names spirit/run/node_modules any more
 test.run('no tracked file names spirit/run/node_modules', 0.2, function () {
   VL.naming = VL.tracked.filter(function (f) { return !SELF.test(f) && f.indexOf('spirit/run/brains/') !== 0 && !/\.(png|jpe?g|gif|ico|woff2?|ttf|zip|db)$/i.test(f); })
