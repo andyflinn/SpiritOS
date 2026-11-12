@@ -237,7 +237,7 @@ function told() {
 }
 // A test of a script and suite reported: the suite row judged again from the table. Flagged, it clears once every current row
 // was tested since the flag was set (changed); judged before, its outcome follows the rows. Published when it changed.
-function judged(script, suite) {
+function suiteJudged(script, suite) {
   const row = Q.suiteRow.get(script, suite);
   if (!row || row.deleted) return;
   const rows = T.ofSuite.all(script, suite);
@@ -407,7 +407,7 @@ appServer.serve({
         if (was && Number(was.flipped) !== flipped) tell('testicle', testServed(T.row.get(script, suite, name, Number(was.flipped))), 'updated');
         const out = testServed(T.row.get(script, suite, name, flipped));
         tell('testicle', out, was && Number(was.flipped) === flipped ? 'updated' : 'added');
-        judged(script, suite);
+        suiteJudged(script, suite);
         return out;
       }).finally(function () { getting -= 1; told(); });
     },
