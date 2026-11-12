@@ -44,7 +44,10 @@
       var test = all.some(function (r) { return !!r.test; });
       var deleted = all.every(function (r) { return !!r.deleted; });
       var changed = Math.max.apply(null, all.map(function (r) { return Number(r.changed) || 0; }));
-      V.merge('suite/|' + suite, { key: '|' + suite, script: '', suite: suite, test: test, status: test ? 'needs running' : '', deleted: deleted, outcome: '', changed: changed });
+      // Its outcome as the server's: red if any is, green if all are (testicle.js, everySuite and statusOf).
+      var outcome = all.some(function (r) { return r.outcome === 'red'; }) ? 'red' : all.every(function (r) { return r.outcome === 'green'; }) ? 'green' : '';
+      var status = test ? 'needs running' : outcome === 'red' ? 'still red' : outcome === 'green' ? 'green' : 'needs running';
+      V.merge('suite/|' + suite, { key: '|' + suite, script: '', suite: suite, test: test, status: status, deleted: deleted, outcome: outcome, changed: changed });
     }
     function keyOf(table, row) { return table === 'script' ? String(row.name || '') : String(row.key || (row.script && row.suite ? row.script + '|' + row.suite : '')); }
     D.addTranslator({

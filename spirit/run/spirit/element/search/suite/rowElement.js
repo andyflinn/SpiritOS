@@ -31,7 +31,8 @@
       fields: [
         { name: 'run', paint: function () { return ''; } },
         { name: 'suite', paint: function (v) { return esc(v.suite); } },
-        { name: 'status', paint: function (v) { return v.status ? '<span class="suite-status" style="color:#c00">' + esc(v.status) + '</span>' : ''; } },
+        // goal/G47.1, the box: "needs running", "still red" or "green", the server's word; green shown green, the others red.
+        { name: 'status', paint: function (v) { return v.status ? '<span class="suite-status" style="color:' + (v.status === 'green' ? '#080' : '#c00') + '">' + esc(v.status) + '</span>' : ''; } },
       ],
       actions: [],
     });

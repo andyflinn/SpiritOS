@@ -71,7 +71,7 @@ const Q = {
   suitesOfScript: db.prepare('SELECT * FROM suite WHERE script = ? ORDER BY suite'),
   // EVERY SUITE, EACH ONCE (goal/G47.1, the box: "The testicle search can search by a suite alone"): flagged if any of its
   // rows is, deleted only when all of them are.
-  everySuite: db.prepare('SELECT suite, MAX(test) AS test, MIN(deleted) AS deleted, MAX(changed) AS changed FROM suite GROUP BY suite ORDER BY suite'),
+  everySuite: db.prepare("SELECT suite, MAX(test) AS test, MIN(deleted) AS deleted, MAX(changed) AS changed, CASE WHEN SUM(outcome = 'red') > 0 THEN 'red' WHEN SUM(outcome = 'green') = COUNT(*) THEN 'green' ELSE '' END AS outcome FROM suite GROUP BY suite ORDER BY suite"),
   rowsOfSuite: db.prepare('SELECT * FROM suite WHERE suite = ?'),
   suiteRow: db.prepare('SELECT * FROM suite WHERE script = ? AND suite = ?'),
 };
@@ -99,7 +99,17 @@ const T = {
   row: db.prepare('SELECT * FROM testicle WHERE script = ? AND suite = ? AND test = ? AND flipped = ?'),
   // A test's history: every row of it, the newest flip first.
   history: db.prepare('SELECT * FROM testicle WHERE script = ? AND suite = ? AND test = ? ORDER BY flipped DESC'),
+  // The current rows of one script and suite: what its status is judged from.
+  ofSuite: db.prepare('SELECT * FROM testicle WHERE script = ? AND suite = ? AND current = 1'),
 };
+// A SUITE ROW'S STATUS, THE SERVER'S ALONE (goal/G47.1, the box: "A suite row's status, for its script: \"needs running\"
+// when it never ran; \"still red\" when it ran, but has failed tests in it for that script; \"green\" if all tests in the
+// suite passed", "\"needs running\" clears when the server has a full, successful report from the suite in its database for
+// that script", "The flag is the server's alone; no suite reports anything new and no suite touches the flag", "Full: every
+// row of that script and suite in the testicle table was tested after the flag was set; then \"green\" if every one passed,
+// \"still red\" if one failed"). Its outcome column holds 'green' or 'red' once judged; the flag, test, says needs running.
+const judgeSuite = db.prepare('UPDATE suite SET test = 0, outcome = ?, changed = ? WHERE script = ? AND suite = ?');
+function statusOf(test, outcome) { return test ? 'needs running' : outcome === 'red' ? 'still red' : outcome === 'green' ? 'green' : 'needs running'; }
 // A test row as the verbs and the stream carry it: its key its full key, script|suite|test|flipped, its booleans booleans
 // (goal/G47.1, the box: "the page keeps test rows by their full key, script|suite|test|flipped, and shows a test's current
 // row"), so a flipped test's replaced row and its current row are two rows wherever they are kept.
@@ -225,6 +235,19 @@ function told() {
   busyTold = b;
   appServer.publish({ testicle: { busy: b } });
 }
+// A test of a script and suite reported: the suite row judged again from the table. Flagged, it clears once every current row
+// was tested since the flag was set (changed); judged before, its outcome follows the rows. Published when it changed.
+function judged(script, suite) {
+  const row = Q.suiteRow.get(script, suite);
+  if (!row || row.deleted) return;
+  const rows = T.ofSuite.all(script, suite);
+  if (!rows.length) return;
+  if (row.test && !rows.every(function (r) { return Number(r.tested) >= Number(row.changed); })) return;
+  const outcome = rows.every(function (r) { return !!r.verified; }) ? 'green' : 'red';
+  if (!row.test && row.outcome === outcome) return;
+  judgeSuite.run(outcome, Date.now(), script, suite);
+  tell('suite', suiteServed(Q.suiteRow.get(script, suite)), 'updated');
+}
 function tell(table, row, change) { appServer.publish({ testicle: { table: table, row: row, change: change, busy: busyNow() } }); }
 
 // THE QUEUE: what changed since the last write, and whether a write is under way. busy is either, or a script.get making
@@ -263,7 +286,7 @@ watcher.on('error', function (e) { console.error('testicle: the watcher: ' + (e 
 // A script row as a verb answers it: its deleted a boolean.
 function served(row) { return { name: row.name, hash: row.hash, deleted: !!row.deleted, changed: Number(row.changed) }; }
 // A suite row as a search and the stream carry it: its key script|suite, its status "needs running" while it is flagged.
-function suiteServed(r) { return { key: r.script + '|' + r.suite, script: r.script, suite: r.suite, test: !!r.test, status: r.test ? 'needs running' : '', deleted: !!r.deleted, outcome: r.outcome, changed: Number(r.changed) }; }
+function suiteServed(r) { return { key: r.script + '|' + r.suite, script: r.script, suite: r.suite, test: !!r.test, status: statusOf(r.test, r.outcome), deleted: !!r.deleted, outcome: r.outcome, changed: Number(r.changed) }; }
 // Test rows, already in the order they are answered in, as one search answer: the bucket keeps that order (a row's seat
 // falls with its place), cut to what one answer holds, more saying it was cut.
 function mostSevereFirst(rows) {
@@ -384,6 +407,7 @@ appServer.serve({
         if (was && Number(was.flipped) !== flipped) tell('testicle', testServed(T.row.get(script, suite, name, Number(was.flipped))), 'updated');
         const out = testServed(T.row.get(script, suite, name, flipped));
         tell('testicle', out, was && Number(was.flipped) === flipped ? 'updated' : 'added');
+        judged(script, suite);
         return out;
       }).finally(function () { getting -= 1; told(); });
     },
