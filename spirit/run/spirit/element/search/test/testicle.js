@@ -456,7 +456,8 @@ test.run('a script chosen narrows the rows to that script\'s tests', 0.2, async 
 test.run('with a script chosen, the suite selector lists that script\'s suites', 0.2, async function () {
   if (mounted()) return mounted();
   await T('openSel(1)');
-  await waitFor('selRows(1).length > 1', 10000);
+  // The rows come as their answer lands: waited for until the two it judges are in, not merely the first two rows.
+  await waitFor('selRows(1).filter(function (k) { return k === ' + JSON.stringify(AS) + ' || k === ' + JSON.stringify(A + '|' + AS) + ' || k === ' + JSON.stringify(GEN) + ' || k === ' + JSON.stringify(A + '|' + GEN) + '; }).length >= 2', 15000);
   const keys = (await T('selRows(1)')) || [];
   const has = function (suite) { return keys.some(function (k) { return k === suite || k === A + '|' + suite; }); };
   return (has(AS) && has(GEN) && !has(BS)) || 'it lists ' + short(keys);
