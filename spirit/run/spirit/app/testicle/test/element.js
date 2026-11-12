@@ -607,6 +607,13 @@ test.run('a press on iota\'s own suite\'s 🏃‍♂️ is answered at once: the
   const back = await until(function () { return T('runCell(' + JSON.stringify(iotaKey) + ')').then(function (x) { return !!x && x.disabled === false; }); }, 2500);
   return !!back || 'the button after 2.5 s: ' + short(await T('runCell(' + JSON.stringify(iotaKey) + ')'));
 }, test.limit.slow);
+// the box: busy "stays the one answer it is today (a write, a wait, files pending, a script.get, a suite running)": iota's
+// own suite waits three seconds before its first test reports, so in that time only the suite running makes the server work.
+test.run('before any test of the suite reports, the suite running alone shows 🚶‍➡️', 0.2, async function () {
+  if (face()) return face();
+  const ok = await waitFor('monitor() && monitor().icon === "🚶‍➡️"', 2000);
+  return !!ok || 'the monitor while iota waits: ' + short(await T('monitor()'));
+}, test.limit.slow);
 test.run('the suite runs: the permanent testicle search tab shows iota\'s tests by itself', 0.2, async function () {
   if (face()) return face();
   const first = ((await T('tabs()')) || [])[0] || {};
