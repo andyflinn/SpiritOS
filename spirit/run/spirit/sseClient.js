@@ -1,4 +1,5 @@
 'use strict';
+require('./spirit.js');
 
 // spirit/run/spirit/sseClient.js
 // Reading Server-Sent Events from node, which has no client for them.

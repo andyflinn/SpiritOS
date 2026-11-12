@@ -1,4 +1,5 @@
 'use strict';
+require('./spirit.js');
 
 // spirit/run/spirit/spiritErrors.js
 // WHAT AN ERROR MEANS — ONE PLACE, FOR THE RELAY AND THE NODE ALIKE.
