@@ -4,7 +4,8 @@
 // draws through the suite selector (../suite.js). Its row is ./rowElement.js; no row opens a detail.
 //
 //   spirit.element.spirit.element.search.suite.listElement.create(container, { script, face, placeholder, all, pick }) -> { destroy() }
-//     script   the production script whose suite rows it lists, scoped to run://
+//     script   the production script whose suite rows it lists, scoped to run://; '' for every suite, each once (goal/G47.1,
+//              the box: "with the script selector blank (all scripts), the suite selector lists every suite, each once")
 //     face, placeholder, all, pick   handed to the search as they are: the testicle search's suite selector draws it as a
 //              dropdown (goal/G47.1, the search cycle, the box: "The search has a suite selector, unselected (all) the
 //              default"); a pane, the default, otherwise
@@ -67,7 +68,8 @@
         all: o.all,
         name: function (row) { return String((row && row.suite) || ''); },
         pick: function (row, key) { if (typeof o.pick === 'function') o.pick(row, key); },
-        empty: 'No suite concerns this file.',
+        // No script, every suite (goal/G47.1, the box: "The testicle search can search by a suite alone").
+        empty: script ? 'No suite concerns this file.' : 'No suite yet.',
       });
       list.sort('suite', 'asc');
       // What the branch does not hold yet: the file's rows, asked once.

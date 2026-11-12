@@ -11,7 +11,7 @@ module.exports = {
     // scoped to run://. Named file.get until the rename of the table file to script.
     'script.get': { name: 'text' },
     // goal/G47.1, the verbs cycle: the suite rows of one production script, the words narrowing them ('' for all).
-    'suite.search': { script: 'text', text: 'text' },
+    'suite.search': { script: 'text?', text: 'text' },
     // goal/G47.1, the test-table cycle: one test's result, by itself (no bundling); severity from 0.0 to 1.0.
     'testicle.set': { script: 'text', suite: 'text', test: 'text', verified: 'bool', severity: 'number' },
     // goal/G47.1: the current test rows, most severe first; script and suite each optional, the words narrowing them.

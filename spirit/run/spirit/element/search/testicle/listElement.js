@@ -7,9 +7,9 @@
 //   spirit.element.spirit.element.search.testicle.listElement.create(container, { pick }) -> { destroy() }
 //
 // The box: "The search has a script selector, unselected (all) the default", "The script selector: the file search as a
-// dropdown, production scripts only", "The search has a suite selector, unselected (all) the default", "suite.search keeps
-// needing a script, and the suite selector of the testicle search waits until a script is chosen: with all scripts, there
-// is no suite to choose", "The search has two filters, red and green; at least one of the two is selected at all times:
+// dropdown, production scripts only", "The search has a suite selector, unselected (all) the default", "The testicle
+// search can search by a suite alone: with the script selector blank (all scripts), the suite selector lists every suite,
+// each once", "The search has two filters, red and green; at least one of the two is selected at all times:
 // the only combination forbidden is both off", "The list is sortable by all its columns", "The columns, in this order: the
 // result first, as an icon, ❌ for a failure, ✅ for a success; severity second; the title third; then the script name (no
 // path), then the suite name (no path)".
@@ -50,8 +50,9 @@
     suiteSel.className = 'testicle-suite-selector';
     suiteSel.value = '';
 
-    // The suite selector follows the script chosen: a dropdown of that script's suites; with all scripts, the same dropdown
-    // with no suite to choose (suite.search answers none for no script).
+    // The suite selector follows the script chosen: a dropdown of that script's suites; with all scripts, every suite, each
+    // once, and a suite chosen then shows its tests for every script (goal/G47.1, the box: "The testicle search can search by
+    // a suite alone", in place of the search cycle's "with all scripts, there is no suite to choose").
     function drawSuites() {
       if (suiteList && typeof suiteList.destroy === 'function') suiteList.destroy();
       suiteList = null;

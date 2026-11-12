@@ -69,6 +69,9 @@ const Q = {
   goneSuitesOfScript: db.prepare('UPDATE suite SET deleted = 1, changed = ? WHERE script = ? AND deleted = 0'),
   goneRowsOfSuite: db.prepare('UPDATE suite SET deleted = 1, changed = ? WHERE suite = ? AND deleted = 0'),
   suitesOfScript: db.prepare('SELECT * FROM suite WHERE script = ? ORDER BY suite'),
+  // EVERY SUITE, EACH ONCE (goal/G47.1, the box: "The testicle search can search by a suite alone"): flagged if any of its
+  // rows is, deleted only when all of them are.
+  everySuite: db.prepare('SELECT suite, MAX(test) AS test, MIN(deleted) AS deleted, MAX(changed) AS changed FROM suite GROUP BY suite ORDER BY suite'),
   rowsOfSuite: db.prepare('SELECT * FROM suite WHERE suite = ?'),
   suiteRow: db.prepare('SELECT * FROM suite WHERE script = ? AND suite = ?'),
 };
@@ -297,13 +300,17 @@ appServer.serve({
   // suite once, with its filename and its status; the words narrow among them", "The suite search returns both: the
   // filename AND its status \"needs running\"", "suite.search takes {script, text}". Ranked over the whole row as it is served (goal/G41.28), as the agent's
   // tables search; with no words, all of them, by name.
+  // NO SCRIPT, EVERY SUITE (goal/G47.1, the box: "with the script selector blank (all scripts), the suite selector lists every
+  // suite, each once, and suite.search given no script answers that list"; Andy: "the testicle search must be able to search
+  // for test with the fucking script filter blank AND a suite selected!!!"): each suite once, its script '', keyed |suite.
   'suite.search': {
     request: { script: '', text: '' }, reply: { items: [], more: false },
     handler: function (a) {
       const words = String(a.text || '').trim();
       const bucket = createProbabilityBucket(Infinity);
+      const script = String(a.script || '');
       let n = 0;
-      Q.suitesOfScript.all(String(a.script || '')).forEach(function (r) {
+      (script ? Q.suitesOfScript.all(script) : Q.everySuite.all().map(function (r) { return Object.assign({ script: '', outcome: '' }, r); })).forEach(function (r) {
         const row = suiteServed(r);
         const score = words ? Number(probabilityStringObjectMatch(words, row)) || 0 : 1;
         n += 1;

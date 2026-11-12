@@ -41,7 +41,9 @@
     el.mount = function (hosts) {
       mount(hosts);
       var cell = hosts && hosts.run;
-      if (cell) {
+      // A row of every suite, no script (the testicle search's suite selector with all scripts): nothing to run it for, no button.
+      if (cell && !r.script) cell.innerHTML = '';
+      if (cell && r.script) {
         cell.innerHTML = '';
         cell.addEventListener('click', function (e) { if (e.target && e.target.closest && e.target.closest('button')) e.stopPropagation(); });
         // It may still be loading: made once it is in, unless the row was drawn again meanwhile.

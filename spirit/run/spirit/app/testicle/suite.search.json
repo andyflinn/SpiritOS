@@ -1,7 +1,7 @@
 {
-  "description": "The suite rows of one production script, a standard table search: {items, more}, each item keyed by script|suite, its label the row with the suite's filename and its status, \"needs running\" while it is flagged. Only that script's rows, each suite once; the words narrow among them, '' for all.",
+  "description": "The suite rows of one production script, a standard table search: {items, more}, each item keyed by script|suite, its label the row with the suite's filename and its status, \"needs running\" while it is flagged. Only that script's rows, each suite once; the words narrow among them, '' for all. With no script, every suite, each once, its script '' and its key |suite, \"needs running\" if any of its rows is flagged.",
   "request": {
-    "script": "text",
+    "script": "text?",
     "text": "text"
   }
 }
