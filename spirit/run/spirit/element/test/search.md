@@ -265,6 +265,7 @@ Andy, on Q14 *"May I change the shared search list, so the Files tiles can show 
 - The files list hands a file its kind's icon (fstat's `iconOf`), a folder 📁 shut and 📂 open, and the file's name.
 
 - A grid of tiles (goal/G47.1; Andy: *"the FUCKING TILE MODE IN APP-SEARCH (OR SEARCH ITSELF) FUCKING IS NO GRID ANYMORE, EVERY FUCKING TILE IS CENTERED ON IT'S OWN FUCKING ROW!"*): three tiles in an 800 px box share one line, left to right, each apart from the next.
+- The list stays inside its page (goal/G47.1; Andy: *"THE FUCKING LIST IS NOT CONTAINED WITHIN THE FUCKING PAGE, LIKE IT IS SUPPOSED TO, GID OR NO GRID!!!!!!!!!!!!!!"*): forty rows in a 400 by 240 px box, as tiles and as a list: nothing is drawn below the box, and the rows that do not fit scroll inside it.
 
 ## The search keeps its rows (goal/G47.1)
 

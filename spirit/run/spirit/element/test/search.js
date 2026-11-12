@@ -1611,6 +1611,36 @@ async function tilesPart() {
     const ok = tilesAt.every(function (p, i) { return i === 0 || p.left >= tilesAt[i - 1].left + tilesAt[i - 1].w; });
     return ok || 'the tiles\' lefts and widths: ' + short(tilesAt.map(function (p) { return [p.left, p.w]; }));
   }, test.limit.quick);
+  // THE LIST STAYS INSIDE ITS PAGE (goal/G47.1; Andy: "THE FUCKING LIST IS NOT CONTAINED WITHIN THE FUCKING PAGE, LIKE IT IS
+  // SUPPOSED TO, GID OR NO GRID!!!!!!!!!!!!!!"). Forty rows in a 400 by 240 px box, once as tiles, once as the list: nothing
+  // of it is drawn below the box, and the rows that do not fit are reached by scrolling inside it.
+  const contained = async function (face) {
+    return JSON.parse(await js('(function () { var d = document.body.appendChild(document.createElement("div")); d.className = "fill"; d.style.cssText = "position:fixed;left:820px;top:0;width:400px;height:240px;display:flex;flex-direction:column;background:#111"; var rows = []; for (var i = 0; i < 40; i++) rows.push({ key: "r" + i, label: "Row " + i, icon: "🅰️" }); var made = window.spirit.element.spirit.element.search.create(d, { face: ' + JSON.stringify(face) + ', rows: function () { return rows; }, columns: [{ field: "label", label: "Label" }] }); if (made.refresh) made.refresh();' +
+      ' return new Promise(function (r) { setTimeout(r, 500); }).then(function () { var box = d.getBoundingClientRect(); var lowest = 0; [].forEach.call(d.querySelectorAll("*"), function (e) { var b = e.getBoundingClientRect(); if (!b.width || !b.height) return; var cut = false; for (var p = e.parentElement; p && p !== d; p = p.parentElement) { var o = getComputedStyle(p).overflowY; if ((o === "auto" || o === "scroll" || o === "hidden") && b.bottom > p.getBoundingClientRect().bottom + 1) { cut = true; break; } } if (!cut) lowest = Math.max(lowest, Math.round(b.bottom)); });' +
+      ' var scrolls = [].some.call([d].concat([].slice.call(d.querySelectorAll("*"))), function (e) { var o = getComputedStyle(e).overflowY; return (o === "auto" || o === "scroll") && e.scrollHeight > e.clientHeight + 1; }); var out = { boxBottom: Math.round(box.bottom), lowest: lowest, scrolls: scrolls }; made.destroy(); d.remove(); return JSON.stringify(out); }); })()'));
+  };
+  let inTiles = null, inList = null;
+  test.run('the world: forty rows in a 400 by 240 px box, as tiles and as a list', 0.2, async function () {
+    if (!node || !node.up || !chrome || chrome.error) return 'no scratch node or no Chrome: the world failed';
+    try { inTiles = await contained('tiles'); inList = await contained('pane'); } catch (e) { return 'not drawn: ' + (e && e.message); }
+    return (!!inTiles && !!inList) || 'drawn: ' + short([inTiles, inList]);
+  }, test.limit.slow);
+  test.run('as tiles, nothing of the list is drawn below its box', 0.2, function () {
+    if (!inTiles) return 'not drawn: the world failed';
+    return inTiles.lowest <= inTiles.boxBottom + 1 || 'the box ends at ' + inTiles.boxBottom + ' px, the tiles reach ' + inTiles.lowest + ' px';
+  }, test.limit.quick);
+  test.run('as tiles, the rows that do not fit are reached by scrolling inside the box', 0.2, function () {
+    if (!inTiles) return 'not drawn: the world failed';
+    return inTiles.scrolls === true || 'nothing inside the box scrolls';
+  }, test.limit.quick);
+  test.run('as a list, nothing of it is drawn below its box', 0.2, function () {
+    if (!inList) return 'not drawn: the world failed';
+    return inList.lowest <= inList.boxBottom + 1 || 'the box ends at ' + inList.boxBottom + ' px, the list reaches ' + inList.lowest + ' px';
+  }, test.limit.quick);
+  test.run('as a list, the rows that do not fit are reached by scrolling inside the box', 0.2, function () {
+    if (!inList) return 'not drawn: the world failed';
+    return inList.scrolls === true || 'nothing inside the box scrolls';
+  }, test.limit.quick);
   test.run('no table, no column headers, no sort trigger', 0.2, function () {
     if (!node || !node.up || !chrome || chrome.error) return 'no scratch node or no Chrome: the world failed';
     return (plain.headers === 0 && plain.sorts === 0 && plain.tables === 0) ? true : short({ h: plain.headers, s: plain.sorts, t: plain.tables });
