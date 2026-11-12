@@ -36,6 +36,14 @@ const APP = path.join(RUN, 'spirit', 'app', 'testicle');
 const Z = 'spirit/zzTesticle/';
 // A planted suite's head: the product reporter, from spirit/zzTesticle/test/.
 const SUITE_HEAD = '\'use strict\';\nconst path = require(\'path\');\nconst test = require(path.join(__dirname, \'..\', \'..\', \'test\', \'testReport.js\'));\n';
+// A planted suite that logs: 'start' when it begins, after a wait of ms its tests, 'end' when they are all done.
+function LOGGED(name, ms, tests) {
+  return SUITE_HEAD + "const LOG = path.join(__dirname, '..', '..', '..', '..', '..', 'runlog.txt');\n" +
+    "function log(ev) { require('fs').appendFileSync(LOG, JSON.stringify({ suite: '" + name + "', ev: ev, at: Date.now() }) + '\\n'); }\n" +
+    "log('start');\n" +
+    (ms ? "test.run('the world: " + name + " waits a moment', 0.2, function () { return new Promise(function (r) { setTimeout(function () { r(true); }, " + ms + "); }); }, test.limit.quick);\n" : '') +
+    tests.join('\n') + "\ntest.after(function () { log('end'); });\n";
+}
 const PLANT = {
   'spirit/zzTesticle/alpha.js': '\'use strict\';\n// alpha\n',
   'spirit/zzTesticle/test/alpha.js': '\'use strict\';\n// the test of alpha\n',
@@ -66,6 +74,25 @@ const PLANT = {
     "test.run('lambda answers its second', 0.2, function () { return true; }, test.limit.quick);",
     "test.run('lambda answers its third', 0.2, function () { return true; }, test.limit.quick);",
   ].join('\n') + '\n',
+  // goal/G47.1, the queue cycle: suites that log their start and end to runlog.txt in the scratch root, outside the tree the
+  // server watches, so the order, the overlap and the timing of the runs the server starts can be read back.
+  'spirit/zzTesticle/nu.js': '\'use strict\';\n// nu\n',
+  'spirit/zzTesticle/test/nu.js': LOGGED('nu', 3000, ["test.run('nu answers', 0.2, function () { return true; }, test.limit.quick);"]),
+  'spirit/zzTesticle/xi.js': '\'use strict\';\n// xi\n',
+  'spirit/zzTesticle/test/xi.js': LOGGED('xi', 3000, ["test.run('xi answers', 0.2, function () { return true; }, test.limit.quick);"]),
+  'spirit/zzTesticle/pi.js': '\'use strict\';\n// pi\n',
+  'spirit/zzTesticle/test/pi.js': LOGGED('pi', 3000, ["test.run('pi answers', 0.2, function () { return true; }, test.limit.quick);"]),
+  'spirit/zzTesticle/omicron.js': '\'use strict\';\n// omicron\n',
+  'spirit/zzTesticle/test/omicron.js': LOGGED('omicron', 0, ["test.run('omicron answers', 0.2, function () { return true; }, test.limit.quick);"]),
+  'spirit/zzTesticle/tau.js': '\'use strict\';\n// tau\n',
+  'spirit/zzTesticle/test/tau.js': LOGGED('tau', 0, ["test.run('tau answers', 0.2, function () { return true; }, test.limit.quick);"]),
+  'spirit/zzTesticle/upsilon.js': '\'use strict\';\n// upsilon\n',
+  'spirit/zzTesticle/test/upsilon.js': LOGGED('upsilon', 0, ["test.run('upsilon answers', 0.2, function () { return true; }, test.limit.quick);"]),
+  // rho answers its first test, then hangs; sigma hangs before any test reports.
+  'spirit/zzTesticle/rho.js': '\'use strict\';\n// rho\n',
+  'spirit/zzTesticle/test/rho.js': LOGGED('rho', 0, ["test.run('rho answers its first', 0.2, function () { return true; }, test.limit.quick);", "test.run('rho hangs', 0.2, function () { return new Promise(function () { setInterval(function () {}, 1000); }); }, test.limit.long);"]),
+  'spirit/zzTesticle/sigma.js': '\'use strict\';\n// sigma\n',
+  'spirit/zzTesticle/test/sigma.js': SUITE_HEAD + "setInterval(function () {}, 1000);\ntest.run('the world: sigma never gets here', 0.2, function () { return new Promise(function () {}); }, test.limit.long);\n",
   'spirit/zzTesticle/mu.js': '\'use strict\';\n// mu\n',
   'spirit/zzTesticle/test/mu-child-zzRule.js': SUITE_HEAD + [
     "test.run('mu holds its rule', 0.2, function () { return process.argv[2] === 'spirit/zzTesticle/mu.js' || 'started with ' + process.argv.slice(2).join(' '); }, test.limit.quick);",
@@ -819,3 +846,147 @@ test.run('the script changed, its suite shows "needs running" again', 0.2, async
   const ok = await until(function () { return statusOf(MU, MUS).then(function (x) { st = x; return x === 'needs running'; }); }, 10000);
   return !!ok || 'mu\'s suite after mu changed: ' + short(st);
 }, test.limit.slow);
+
+// goal/G47.1, the queue cycle, the box: "The flags are the queue: every suite row flagged "needs running" is owed one run,
+// and there is no second list, so nothing is queued twice", "One runner: one suite process at a time, never two. It starts 1
+// second after the last file change event; a new event pushes the start back", "A job is one suite for one script, one
+// process each", "General tests first", "A testicle row carries both hashes it ran against, the script's and the suite's.
+// When a run starts, the server remembers the two hashes as they stand, and until that run ends tags every result of it with
+// them", "A file changed during a run flags again; the running job is not killed, the suite comes round again behind it", "A
+// job that runs past 2 minutes is killed, and every test of that suite and script the server knows is failed ... killed, it
+// shows "still red" in the script tab, so a suite that hangs before any test reported fails too", "A press of 🏃‍♂️ puts its
+// suite and script at the head of the queue, never a second run beside the running one", "Rows already flagged when the server
+// starts: the runner starts 1 second after the server starts". The planted suites log to runlog.txt (LOGGED, above).
+const NU = Z + 'nu.js', NUS = Z + 'test/nu.js', XI = Z + 'xi.js', XIS = Z + 'test/xi.js', PI = Z + 'pi.js', PIS = Z + 'test/pi.js';
+const OM = Z + 'omicron.js', OMS = Z + 'test/omicron.js', TAU = Z + 'tau.js', TAUS = Z + 'test/tau.js', UP = Z + 'upsilon.js', UPS = Z + 'test/upsilon.js';
+const RHO = Z + 'rho.js', RHOS = Z + 'test/rho.js', SIG = Z + 'sigma.js', SIGS = Z + 'test/sigma.js';
+function runlog() { try { return fs.readFileSync(path.join(s.root, 'runlog.txt'), 'utf8').split('\n').filter(Boolean).map(parsed).filter(Boolean); } catch (e) { return []; } }
+const starts = function (name) { return runlog().filter(function (l) { return l.suite === name && l.ev === 'start'; }); };
+const ends = function (name) { return runlog().filter(function (l) { return l.suite === name && l.ev === 'end'; }); };
+// A row's values, for the hashes it carries, whatever its columns are named.
+const holds = function (row, v) { return !!row && !!v && Object.keys(row).some(function (k) { return row[k] === v; }); };
+let lastChange = 0;
+test.run('the world: nu.js and xi.js change, nu.js twice, 600 ms apart', 0.2, async function () {
+  if (!up()) return NONODE;
+  append(NU, '// nu, changed\n'); append(XI, '// xi, changed\n');
+  await sleep(600);
+  append(NU, '// nu, changed again\n');
+  lastChange = Date.now();
+  return !runlog().length || 'the run log is not empty before: ' + short(runlog());
+}, test.limit.quick);
+test.run('a flagged suite runs by itself, with no run asked: nu\'s and xi\'s own suites start', 0.2, async function () {
+  if (!up()) return NONODE;
+  const ok = await until(function () { return Promise.resolve(ends('nu').length > 0 && ends('xi').length > 0); }, 90000);
+  return !!ok || 'the run log: ' + short(runlog());
+}, test.limit.long);
+test.run('the runner starts no sooner than 1 second after the last change: the second change pushed the start back', 0.2, function () {
+  if (!up()) return NONODE;
+  const t = tables(DB);
+  const first = (t.test || []).filter(function (r) { return (r.script === NU || r.script === XI) && Number(r.tested) >= lastChange - 600; }).map(function (r) { return Number(r.tested); }).sort()[0];
+  return (!!first && first >= lastChange + 1000) || 'the first result for nu or xi at ' + (first ? first - lastChange : 'none') + ' ms after the last change';
+}, test.limit.quick);
+test.run('one runner: nu\'s and xi\'s runs never overlap', 0.2, function () {
+  const a = [starts('nu')[0], ends('nu')[0]], b = [starts('xi')[0], ends('xi')[0]];
+  if (!a[0] || !a[1] || !b[0] || !b[1]) return 'the run log: ' + short(runlog());
+  return (a[1].at <= b[0].at || b[1].at <= a[0].at) || 'nu ran ' + a[0].at + '-' + a[1].at + ', xi ' + b[0].at + '-' + b[1].at;
+}, test.limit.quick);
+test.run('a suite flagged twice is owed one run: nu\'s own suite ran once', 0.2, async function () {
+  await sleep(3000);
+  return starts('nu').length === 1 || 'nu started ' + starts('nu').length + ' times';
+}, test.limit.slow);
+test.run('general tests first: every general result for nu.js came before nu\'s own suite started', 0.2, function () {
+  if (!up()) return NONODE;
+  const own0 = (starts('nu')[0] || {}).at;
+  const gen = (tables(DB).test || []).filter(function (r) { return r.script === NU && r.suite !== NUS && Number(r.tested) >= lastChange; });
+  return (!!own0 && gen.length > 0 && gen.every(function (r) { return Number(r.tested) < own0; })) || gen.length + ' general results for nu.js, ' + gen.filter(function (r) { return Number(r.tested) >= own0; }).length + ' after its own suite started';
+}, test.limit.quick);
+test.run('a result carries both hashes it ran against, the script\'s and the suite\'s', 0.2, function () {
+  if (!up()) return NONODE;
+  const t = tables(DB);
+  const r = currentOf(t, NU, NUS, 'nu answers')[0], sc = scriptRow(t, NU), su = suiteRow(t, NU, NUS);
+  return (!!r && !!sc && !!su && holds(r, sc.hash) && holds(r, su.hash)) || 'the row ' + short(r) + '; script hash ' + short(sc && sc.hash) + ', suite hash ' + short(su && su.hash);
+}, test.limit.quick);
+
+// A change during a run: the run keeps the hashes it started with, and the suite comes round again behind it.
+let piHash = '';
+test.run('the world: pi.js changes, and changes again while its own suite runs', 0.2, async function () {
+  if (!up()) return NONODE;
+  append(PI, '// pi, changed\n');
+  const ok = await until(function () { return Promise.resolve(starts('pi').length > 0); }, 60000);
+  piHash = (scriptRow(tables(DB), PI) || {}).hash || '';
+  append(PI, '// pi, changed during its run\n');
+  return (!!ok && !!piHash) || 'pi never started: ' + short(runlog());
+}, test.limit.long);
+test.run('the running job is not killed by a change: pi\'s first run ends', 0.2, async function () {
+  const ok = await until(function () { return Promise.resolve(ends('pi').length > 0); }, 30000);
+  return !!ok || 'the run log: ' + short(runlog().filter(function (l) { return l.suite === 'pi'; }));
+}, test.limit.slow);
+test.run('a result of that run carries the script\'s hash as it stood when the run started', 0.2, function () {
+  if (!up()) return NONODE;
+  const rows = testRows(tables(DB), PI, PIS, 'pi answers');
+  return rows.some(function (r) { return holds(r, piHash); }) || 'pi\'s rows ' + short(rows) + ', the hash at its start ' + short(piHash);
+}, test.limit.quick);
+test.run('the suite comes round again behind it: pi\'s own suite runs a second time, after the first ended', 0.2, async function () {
+  const ok = await until(function () { return Promise.resolve(starts('pi').length >= 2); }, 60000);
+  const e1 = (ends('pi')[0] || {}).at, s2 = (starts('pi')[1] || {}).at;
+  return (!!ok && !!e1 && s2 >= e1) || 'the run log: ' + short(runlog().filter(function (l) { return l.suite === 'pi'; }));
+}, test.limit.long);
+
+// The 🏃‍♂️'s verb puts its suite at the head of the queue: tau, asked while omicron's suites wait, runs before omicron's own.
+test.run('the world: omicron.js changes, and tau\'s own suite is asked by testicle.run', 0.2, async function () {
+  if (!up()) return NONODE;
+  append(OM, '// omicron, changed\n');
+  await sleep(1500);
+  const r = await call(N.base, 'testicle.run', { script: TAU, suite: TAUS });
+  return r.status === 200 || 'run: ' + r.status + ' ' + short(r.text);
+}, test.limit.slow);
+test.run('a suite asked by testicle.run goes to the head of the queue: tau runs before omicron\'s own suite', 0.2, async function () {
+  const ok = await until(function () { return Promise.resolve(ends('tau').length > 0 && starts('omicron').length > 0); }, 90000);
+  const t = (starts('tau')[0] || {}).at, o = (starts('omicron')[0] || {}).at;
+  return (!!ok && t < o) || 'tau started ' + t + ', omicron ' + o + ': ' + short(runlog().filter(function (l) { return l.suite === 'tau' || l.suite === 'omicron'; }));
+}, test.limit.long);
+test.run('never a second run beside the running one: tau started after every run before it ended', 0.2, function () {
+  const t = (starts('tau')[0] || {}).at;
+  const open = runlog().filter(function (l) { return l.ev === 'start' && l.suite !== 'tau' && l.at < t && !runlog().some(function (e) { return e.suite === l.suite && e.ev === 'end' && e.at >= l.at && e.at <= t; }); });
+  return (!!t && !open.length) || 'running when tau started: ' + short(open);
+}, test.limit.quick);
+
+// Rows flagged when the server starts: upsilon.js flagged, the node stopped before the runner reached it, started again.
+test.run('the world: upsilon.js is flagged, and the node stops before upsilon\'s suite runs', 0.2, async function () {
+  if (!up()) return NONODE;
+  append(UP, '// upsilon, changed\n');
+  const ok = await until(function () { return Promise.resolve(yes((suiteRow(tables(DB), UP, UPS) || {}).test)); }, 5000);
+  await stop(N.child);
+  return (!!ok && !starts('upsilon').length) || 'upsilon flagged ' + !!ok + ', its suite already started ' + starts('upsilon').length;
+}, test.limit.slow);
+test.run('with rows flagged when the server starts, the runner runs them by itself', 0.2, async function () {
+  N = await boot(s.run); live.push(N.child);
+  if (!up()) return 'the scratch node did not come up again';
+  const ok = await until(function () { return Promise.resolve(ends('upsilon').length > 0); }, 90000);
+  return !!ok || 'upsilon after the restart: ' + short(runlog().filter(function (l) { return l.suite === 'upsilon'; }));
+}, test.limit.long);
+
+// A job past 2 minutes: rho reports its first test, then hangs; sigma hangs before any test.
+test.run('the world: rho.js and sigma.js change', 0.2, async function () {
+  if (!up()) return NONODE;
+  append(RHO, '// rho, changed\n');
+  append(SIG, '// sigma, changed\n');
+  const ok = await until(function () { return Promise.resolve(starts('rho').length > 0); }, 60000);
+  return !!ok || 'rho never started: ' + short(runlog());
+}, test.limit.long);
+test.run('a job past 2 minutes is killed, and every test of it the server knows is failed', 0.2, async function () {
+  if (!up()) return NONODE;
+  const ok = await until(function () { const r = currentOf(tables(DB), RHO, RHOS, 'rho answers its first')[0]; return Promise.resolve(!!r && no(r.verified)); }, 150000);
+  return !!ok || 'rho\'s first, after 2.5 minutes: ' + short(currentOf(tables(DB), RHO, RHOS, 'rho answers its first'));
+}, test.limit.long);
+test.run('killed, its suite shows "still red"', 0.2, async function () {
+  if (!up()) return NONODE;
+  const st = await statusOf(RHO, RHOS);
+  return st === 'still red' || 'rho\'s suite: ' + short(st);
+}, test.limit.quick);
+test.run('a suite that hangs before any test reported fails too: sigma\'s suite shows "still red"', 0.2, async function () {
+  if (!up()) return NONODE;
+  let st = null;
+  const ok = await until(function () { return statusOf(SIG, SIGS).then(function (x) { st = x; return x === 'still red'; }); }, 150000);
+  return !!ok || 'sigma\'s suite: ' + short(st);
+}, test.limit.long);

@@ -37,6 +37,16 @@ The box, in Andy's words where he gave them:
   file's suites exactly; every suite a file whose final folder is `test`; each with its status, needs running; words
   narrow them; another file's search answers none of the first's. Given no script, *"suite.search given no script
   answers that list"*, every suite, each once: the suites of every script, none twice, and a suite of two scripts once.
+- **The queue** (goal/G47.1): *"The flags are the queue ... nothing is queued twice"*, *"One runner: one suite process at a
+  time, never two. It starts 1 second after the last file change event; a new event pushes the start back"*, *"General tests
+  first"*, both hashes on every result taken at the run's start, a change mid-run not killing the job and the suite coming
+  round again, *"A job that runs past 2 minutes is killed"*, the 🏃‍♂️'s testicle.run to the head of the queue, and rows
+  flagged at start run 1 s after the server starts. Planted suites log their start and end to runlog.txt in the scratch
+  root: nu and xi run by themselves, not before 1 s after the second change, never overlapping, nu once; nu.js's general
+  results all before nu's own start; nu's row holds its script's and suite's hashes; pi changed mid-run keeps its start
+  hash, ends, and runs again after; tau asked by testicle.run starts before omicron's own suite and beside no other run;
+  upsilon flagged, the node restarted, runs by itself; rho killed past 2 minutes, its first test failed, its suite still
+  red; sigma, hung before any test, still red.
 - **A suite's status**, the server's alone, from its own table (goal/G47.1): *"needs running"* when it never ran (zeta's own
   suite), *"green"* when every test of it passed (mu's general suite, after its run), *"still red"* when it ran with a failed
   test for the script (kappa's own suite, after its run), and *"needs running"* again once the script changed (mu.js
