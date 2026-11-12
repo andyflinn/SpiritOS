@@ -454,7 +454,7 @@
         var t = how.tileOf(w);
         var tileWas = entry.painted;
         if (!tileWas || tileWas.row !== rowNow || tileWas.words !== typed || tileWas.rank !== w.rank) {
-          n.title = tileTip(w.row);
+          n.title = how.tileTip(w.row);
           n.innerHTML = '<span class="icon">' + iconHtml(t.icon) + '</span>' + how.tileBar(w) + '<span class="label">' + mark(t.label) + '</span>';
           entry.painted = { row: rowNow, words: typed, rank: w.rank };
         }

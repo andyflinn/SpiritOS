@@ -80,7 +80,8 @@ suite search is spirit/element/search/suite.js and its folder"*.
 - Running a suite (goal/G47.1, the cycle "run a suite from the script tab"): every suite row of a script tab has a 🏃‍♂️ in
   its first column, the busy button (`spirit/element/busyButton.js`). A press on iota's own suite is answered at once: the
   button is no longer busy while the suite, which waits three seconds before its tests, still runs. The suite's tests then
-  show in the permanent testicle search tab by themselves.
+  show in the permanent testicle search tab by themselves, once its green filter is on: they pass, and the search opens on
+  the reds alone (*"The testicle search's default equals testicle.red"*).
 
 ## What its test must try to break
 
