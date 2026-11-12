@@ -54,3 +54,9 @@ On a real scratch relay (spirit/test/headLessChrome.js `scratchFaceRelay`), a me
 
 - A face's stream left open and silent after its node's feed went.
 - A face's stream ended by an old feed that a newer one already replaced.
+
+## The route caching goes (goal/G47.1, box v69)
+
+*"The relay sends no route event after an exchange. Its announcement of a member stays for what the node still uses of
+it, the member's label and presence"*. Two members of a scratch relay on their streams; A posts to B, B answers: from
+the answer on, neither stream hears a route event.

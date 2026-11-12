@@ -624,7 +624,46 @@ test.run('a good status still reaches the viewer as it is: 201', 0.2, async func
   return good.viewer === 201 || 'x-spirit-status 201: the viewer got ' + (good.viewer || 'nothing');
 }, test.limit.slow);
 
+// ── THE ROUTE CACHING GOES ──
+// goal/G47.1, the cycle "the route caching goes" (box v69; Andy: "the \"routes\" aren't read by anybody in the fucking
+// system, node saves then, and passes routes to the relay?"): "A post carries no hints: the node sends none, the hint
+// signature goes, and the relay takes a post with hints no more. A wire change: nodes and relays move together." A
+// scratch relay of its own; a stranger's signed card ask to the relay itself, posted once as it is and once with hints and
+// a hint signature beside it, as a node of before sent them.
+// Each post on a relay of its own: a stranger's second post within its first minute is held by its address (429), which
+// would read as a refusal of hints that is none.
+const HN = { R: null, R2: null, plain: null, hinted: null };
+const cardAsk = function (relay) {
+  const A = relay.auth;
+  const who = A.generateIdentity('hinter');
+  const text = JSON.stringify({ v: 1, body: { card: true } });
+  return { A: A, who: who, body: { from: who.publicKey, to: '', text: text, sig: A.sign(who.privateKey, A.postMessage(who.publicKey, '', text)) } };
+};
+test.run('the world: two scratch relays; a signed card ask posted to one as it is, to the other with hints beside it', 0.2, async function () {
+  HN.R = await scratchRelay({});
+  HN.R2 = await scratchRelay({});
+  if (!HN.R.up || !HN.R2.up) return 'a scratch relay did not come up: nothing judged';
+  HOST = new URL(HN.R.base).host;
+  HN.plain = await post(HN.R.base, '/api/relay/post', cardAsk(HN.R).body);
+  HOST = new URL(HN.R2.base).host;
+  const c = cardAsk(HN.R2);
+  const hints = ['MCowBQYDK2VwAyEAHINTHINTHINTHINTHINTHINTHINTHINTHINTHINTHINT='];
+  const hintSig = typeof c.A.hintMessage === 'function' ? c.A.sign(c.who.privateKey, c.A.hintMessage(c.body.sig, hints)) : 'AAAA';
+  HN.hinted = await post(HN.R2.base, '/api/relay/post', Object.assign({}, c.body, { hints: hints, hintSig: hintSig }));
+  return (!!HN.plain && !!HN.hinted && !!HN.plain.status && !!HN.hinted.status) || 'the relays answered ' + shortG([HN.plain, HN.hinted]);
+}, test.limit.slow);
+test.run('a post with no hints is taken', 0.2, function () {
+  if (!HN.plain) return 'nothing was posted: the world failed';
+  return HN.plain.status === 200 || 'the plain post: ' + HN.plain.status + ' ' + shortG(HN.plain.text);
+}, test.limit.quick);
+// Refused as a bad request (400): a hold of its address (429) or a busy relay (503) is no refusal of the hints.
+test.run('a post with hints is taken no more: refused as a bad request', 0.2, function () {
+  if (!HN.hinted) return 'nothing was posted: the world failed';
+  return HN.hinted.status === 400 || 'the post with hints: ' + HN.hinted.status + ' ' + shortG(HN.hinted.text);
+}, test.limit.quick);
+
 test.after(function () {
+  [HN.R, HN.R2].forEach(function (r) { if (r) { try { r.stop(); } catch (e) { /* gone */ } } });
   if (FP.R) { try { FP.R.stop(); } catch (e) { /* gone */ } }
   if (G.relay) {
     try { if (G.relay.child) G.relay.child.kill(); } catch (e) { /* gone */ }

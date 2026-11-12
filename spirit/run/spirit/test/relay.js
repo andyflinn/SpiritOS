@@ -304,7 +304,50 @@ test.run('and its updates reach the face again, no reload', 0.2, async function 
   return !!heard || 'the face heard ' + short(F.again.lines.join(''));
 }, test.limit.slow);
 
+// THE ROUTE CACHING GOES (goal/G47.1, box v69; Andy: "the \"routes\" aren't read by anybody in the fucking system"): "The
+// relay sends no route event after an exchange. Its announcement of a member stays for what the node still uses of it,
+// the member's label and presence". Two members of a scratch relay, each on its stream as a node connects; A posts to B,
+// B answers; what each stream hears from the answer on is kept.
+const RX = { home: null, after: null, replied: null };
+test.run('the world: two members on their streams; one posts to the other, who answers', 0.2, async function () {
+  RX.home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-relay-route-'));
+  fs.mkdirSync(path.join(RX.home, 'spirit', 'state'), { recursive: true });
+  auth.saveIdentity(RX.home, auth.generateIdentity('relay'));
+  const owner = auth.generateIdentity('owner');
+  auth.writeOwner(RX.home, owner.publicKey);
+  const box = require(path.join(RUN, 'spirit', 'relay.js')).createRelay(RX.home);
+  box.claim('owner', auth.sign(owner.privateKey, auth.claimMessage('owner')), owner.publicKey);
+  const heard = { A: [], B: [] };
+  const ids = {};
+  for (const n of ['A', 'B']) {
+    const id = ids[n] = auth.generateIdentity(n);
+    const minted = box.mint('owner', n, 7, '');
+    if (!minted || !minted.invite) return 'no invite for ' + n + ': nothing judged';
+    const c = box.claim(n, auth.sign(id.privateKey, auth.claimMessage(n)), id.publicKey, null, minted.invite.token, n);
+    if (!c || c.ok === false) return n + ' was not seated: ' + short(c);
+    const st = box.streamOpen(id.publicKey, auth.sign(id.privateKey, auth.streamMessage(id.publicKey, box.relayPublicKey())), { write: function (chunk) { heard[n].push(String(chunk)); return true; }, close: function () {} });
+    if (st && st.ok === false) return n + '\'s stream was refused: ' + short(st);
+  }
+  const text = 'hello B';
+  const posted = await Promise.resolve(box.routePost(ids.A.publicKey, ids.B.publicKey, text, auth.sign(ids.A.privateKey, auth.postMessage(ids.A.publicKey, ids.B.publicKey, text)), 3000));
+  if (!posted || !posted.hash) return 'the post was not taken: ' + short(posted);
+  const mark = { A: heard.A.length, B: heard.B.length };
+  RX.replied = box.routeReply(ids.B.publicKey, posted.hash, 'ok', auth.sign(ids.B.privateKey, auth.receiptMessage(posted.hash, 'ok')));
+  await new Promise(function (r) { setTimeout(r, 300); });
+  RX.after = { A: heard.A.slice(mark.A).join(''), B: heard.B.slice(mark.B).join('') };
+  return (!!RX.replied && RX.replied.ok === true && /event: reply/.test(RX.after.A)) || 'the exchange did not complete: reply ' + short(RX.replied) + ', A heard ' + short(RX.after.A);
+}, test.limit.slow);
+test.run('after an exchange the relay sends the asker no route event', 0.2, function () {
+  if (!RX.after) return 'no exchange: the world failed';
+  return !/event: route/.test(RX.after.A) || 'A heard after the answer: ' + short(RX.after.A);
+}, test.limit.quick);
+test.run('after an exchange the relay sends the answerer no route event', 0.2, function () {
+  if (!RX.after) return 'no exchange: the world failed';
+  return !/event: route/.test(RX.after.B) || 'B heard after the answer: ' + short(RX.after.B);
+}, test.limit.quick);
+
 test.after(function () {
+  if (RX.home) { try { fs.rmSync(RX.home, { recursive: true, force: true }); } catch (e) { /* scratch */ } }
   if (W.R) { try { fs.rmSync(W.R.home, { recursive: true, force: true }); } catch (e) { /* scratch */ } }
   if (LS.home) { try { fs.rmSync(LS.home, { recursive: true, force: true }); } catch (e) { /* scratch */ } }
   F.opened.forEach(function (f) { try { f.req.destroy(); } catch (e) { /* gone */ } });
