@@ -140,7 +140,9 @@ async function call(base, verb, args) {
 }
 async function boot(run) {
   const port = await freePort();
-  const child = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], { cwd: run, stdio: 'ignore' });
+  // The node's error output kept beside the scratch tree, node.err, so a failure inside the server is there to read.
+  const err = fs.openSync(path.join(run, '..', '..', 'node.err'), 'a');
+  const child = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], { cwd: run, stdio: ['ignore', 'ignore', err] });
   const base = 'http://127.0.0.1:' + port;
   const up = await until(function () { return call(base, 'api').then(function (r) { return r.status === 200; }); }, 60000);
   return { child: child, base: base, up: !!up };
@@ -149,6 +151,10 @@ function stop(c) { return new Promise(function (r) { if (!c || c.exitCode !== nu
 
 // THE TABLES, read as they stand, the database opened read only each time.
 function tables(dbFile) {
+  for (let i = 0; i < 20; i++) { const t = tablesOnce(dbFile); if (!t.error) return t; Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 250); }
+  return tablesOnce(dbFile);
+}
+function tablesOnce(dbFile) {
   let db = null;
   try {
     db = new DatabaseSync(dbFile, { readOnly: true });
@@ -833,9 +839,12 @@ test.run('with testicle given, the suite runs up to that test and no test after 
   // run asked before the rows are there makes them during that run, so they stay flagged and it comes round again.)
   const g = await call(N.base, 'testicle.script.get', { name: LA });
   if (g.status !== 200) return 'script.get: ' + g.status + ' ' + short(g.text);
+  // Its rows there, its whole run is put at the head of the queue, ahead of every general suite still flagged.
+  const w = await call(N.base, 'testicle.run', { script: LA, suite: LAS });
+  if (w.status !== 200) return 'the whole run: ' + w.status + ' ' + short(w.text);
   // Other suites may run meanwhile; what matters is that lambda's own suite is no longer flagged, so no whole run of it follows.
   const settled = await until(function () { const u = suiteRow(tables(DB), LA, LAS); return Promise.resolve(!!rowOf(LA, LAS, 'lambda answers its third') && !!u && !yes(u.test)); }, 150000);
-  if (!settled) return 'lambda\'s own suite still flagged after its whole run: nothing judged; its row ' + short(suiteRow(tables(DB), LA, LAS));
+  if (!settled) { const t = tables(DB); return 'lambda\'s own suite still flagged after its whole run: nothing judged; its row ' + short(suiteRow(t, LA, LAS)) + '; lambda.js\'s script row ' + short(scriptRow(t, LA)) + ', its suite rows ' + short(suiteRows(t, LA).map(function (r) { return r.suite + ' ' + r.test; })) + '; script.get answered ' + short(g.body); }
   const t0 = Date.now();
   const r = await call(N.base, 'testicle.run', { script: LA, suite: LAS, testicle: 'lambda answers its second' });
   if (r.status !== 200) return 'run: ' + r.status + ' ' + short(r.text);
@@ -1042,12 +1051,16 @@ test.run('a job past 2 minutes is killed, and every test of it the server knows 
 }, test.limit.long);
 test.run('killed, its suite shows "still red"', 0.2, async function () {
   if (!up()) return NONODE;
-  const st = await statusOf(RHO, RHOS);
-  return st === 'still red' || 'rho\'s suite: ' + short(st) + '; its row ' + short(suiteRow(tables(DB), RHO, RHOS)) + '; its tests ' + short(testRows(tables(DB), RHO, RHOS, 'rho answers its first')) + '; the log ' + short(runlog().filter(function (l) { return l.suite === 'rho'; }));
-}, test.limit.quick);
+  // The kill fails the tests first, then the process ends and the job is judged: the status follows a moment later.
+  let st = null;
+  await until(function () { return statusOf(RHO, RHOS).then(function (x) { st = x; return x === 'still red'; }); }, 20000);
+  let errs = ''; try { errs = fs.readFileSync(path.join(s.root, 'node.err'), 'utf8').split('\n').filter(function (l) { return /testicle/.test(l); }).slice(-5).join(' | '); } catch (e) { /* none */ }
+  return st === 'still red' || 'rho\'s suite: ' + short(st) + '; the node said: ' + short(errs) + '; its script row ' + short(scriptRow(tables(DB), RHO)) + '; the rows of its tests (test, current, verified, judged) ' + short(testRows(tables(DB), RHO, RHOS, 'rho answers its first').concat(testRows(tables(DB), RHO, RHOS, 'rho hangs')).map(function (r) { return [r.test, r.current, r.verified, String(r.judged).slice(0, 8), String(r.suiteHash).slice(0, 8), r.tested]; })) + '; its row ' + short(suiteRow(tables(DB), RHO, RHOS)) + '; its tests ' + short(testRows(tables(DB), RHO, RHOS, 'rho answers its first')) + '; the log ' + short(runlog().filter(function (l) { return l.suite === 'rho'; }));
+}, test.limit.slow);
 test.run('a suite that hangs before any test reported fails too: sigma\'s suite shows "still red"', 0.2, async function () {
   if (!up()) return NONODE;
   let st = null;
-  const ok = await until(function () { return statusOf(SIG, SIGS).then(function (x) { st = x; return x === 'still red'; }); }, 150000);
+  // sigma's own job comes after rho's, so it starts at most when rho's was killed, and is killed 2 minutes later.
+  const ok = await until(function () { return statusOf(SIG, SIGS).then(function (x) { st = x; return x === 'still red'; }); }, 280000);
   return !!ok || 'sigma\'s suite: ' + short(st);
 }, test.limit.long);
