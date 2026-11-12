@@ -2,7 +2,7 @@
   "identity": {
     "icon": "🧑‍⚕️",
     "label": "Testicle",
-    "intrinsic": true
+    "intrinsic": false
   },
   "mount": {
     "element.js": true,
