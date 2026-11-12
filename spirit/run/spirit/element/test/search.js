@@ -988,6 +988,212 @@ bubblePart();
 folderPart();
 popupPart();
 tilesPart();
+keptPart();
+
+// THE SEARCH KEEPS ITS ROWS (goal/G47.1, the cycle "the search keeps its rows", the box: "The search element
+// (spirit/element/search.js) never redraws its list. Each row is made once and kept in the table: a new record adds its one
+// row at its place; a changed record repaints its own row; a filter or a selector hides and shows rows; a sort or new words
+// move them", "It is the shared search element, so every search in the face gets it"; Andy: "WHY THE FUCK WOULD WOULDN't
+// you just sort the row elements? and make them invisible/visible? Do you redraw the fucking list every time a new record
+// arrives????"). In a real Chrome on a scratch node: a list of five rows, each row's <tr> marked by the page as it is first
+// drawn; then a new record, a changed record, a filter, a selector, a sort and typed words, each judged by the marks: the
+// rows that were there are the same elements, none taken out of the page.
+async function keptPart() {
+  const fs = require('fs');
+  const path = require('path');
+  const RUN = path.resolve(__dirname, '..', '..', '..');
+  const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+  const { scratchNode, chromePage, findChrome, until, sleep } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+  function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
+
+  let node, chrome, made = '';
+  const NOWORLD = 'no list: the world failed';
+  const ok = function () { return made === 'made'; };
+  const ev = function (js) { return chrome.evaluate('(function () { var K = window.__k; ' + js + ' }())'); };
+  // THE PAGE'S HANDS (window.__k): the list's rows are tr[data-key] outside the selector row; marks() names each one's mark,
+  // marking a row first seen; shown() the keys of the rows that show, top down; same(keys) whether each of those keys' row
+  // is the element first marked for it, still in the page; text(key) a row's text.
+  const HANDS = '' +
+    'var K = window.__k = { rows: [], marked: {}, n: 0, removed: [] }; ' +
+    'K.box = document.getElementById("zzKept"); ' +
+    'K.trs = function () { return Array.prototype.slice.call(K.box.querySelectorAll("tr[data-key]")).filter(function (r) { return !(r.closest && r.closest("[id$=\\"selectors\\"]")); }); }; ' +
+    'K.seen = function (e) { return !!e && e.isConnected && e.getClientRects().length > 0 && getComputedStyle(e).visibility !== "hidden" && getComputedStyle(e).display !== "none" && !e.hidden; }; ' +
+    'K.mark = function () { K.trs().forEach(function (r) { var k = r.getAttribute("data-key"); if (!K.marked[k]) { K.n += 1; r.__mark = K.n; K.marked[k] = r; } }); }; ' +
+    'K.shown = function () { return K.trs().filter(K.seen).map(function (r) { return r.getAttribute("data-key"); }); }; ' +
+    'K.same = function (keys) { return keys.filter(function (k) { var now = K.trs().filter(function (r) { return r.getAttribute("data-key") === k; })[0]; return !now || now !== K.marked[k] || !K.marked[k].isConnected; }); }; ' +
+    'K.text = function (k) { var r = K.trs().filter(function (r) { return r.getAttribute("data-key") === k; })[0]; return r ? String(r.innerText || "").trim() : null; }; ' +
+    'K.press = function (v) { var b = Array.prototype.slice.call(K.box.querySelectorAll("button[data-filter][data-value]")).filter(function (x) { return x.getAttribute("data-value") === v; })[0]; if (!b) return false; b.click(); return true; }; ' +
+    'K.sort = function (field) { var h = K.box.querySelector("th[data-sort=\\"" + field + "\\"]"); if (!h) return false; h.click(); return true; }; ' +
+    'K.type = function (w) { var t = Array.prototype.slice.call(K.box.querySelectorAll("input[id$=\\"text\\"]")).filter(function (x) { return !(x.closest && x.closest("[id$=\\"selectors\\"]")); })[0]; if (!t) return false; t.value = w; t.dispatchEvent(new Event("input", { bubbles: true })); return true; }; ' +
+    'K.pickWho = function (v) { K.who.value = v; K.who.dispatchEvent(new Event("change", { bubbles: true })); }; ' +
+    'K.table = function () { return K.box.querySelector("[id$=\\"list\\"] table") || K.box.querySelector("table"); }; ' +
+    // What the list takes out of the page: a row element removed and never put back.
+    'K.watch = function () { new MutationObserver(function (ms) { ms.forEach(function (m) { Array.prototype.forEach.call(m.removedNodes, function (x) { if (x.nodeType === 1) K.removed.push(x); }); }); }).observe(K.box, { childList: true, subtree: true }); }; ' +
+    'K.gone = function () { return K.removed.filter(function (x) { return !x.isConnected && (x.matches && (x.matches("tr[data-key], table, tbody") || x.querySelector("tr[data-key]"))); }).length; }; ' +
+    '"hands"';
+  const FIVE = [{ key: 'a', name: 'ann', who: 'x', kind: 'red', n: 5 }, { key: 'b', name: 'bob', who: 'y', kind: 'green', n: 4 },
+    { key: 'd', name: 'dan', who: 'x', kind: 'red', n: 3 }, { key: 'e', name: 'eve', who: 'y', kind: 'green', n: 2 }, { key: 'f', name: 'fay', who: 'x', kind: 'red', n: 1 }];
+  const FIVE_KEYS = FIVE.map(function (r) { return r.key; });
+
+  test.run('the world: a scratch node and a Chrome page for the kept rows', 0.2, async function () {
+    node = await scratchNode();
+    chrome = await chromePage(findChrome());
+    return (node.up && !chrome.error) ? true : 'no scratch node or no Chrome: nothing judged. ' + short(chrome.error || '');
+  }, test.limit.slow);
+  test.run('the world: a list of five rows, with a filter, a selector, two sortable columns and a search field; each row marked', 0.2, async function () {
+    if (!node || !node.up || !chrome || chrome.error) return 'no scratch node or no Chrome: the world failed';
+    await chrome.send('Page.navigate', { url: node.base + '/face.html' });
+    await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
+    made = await chrome.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/element/search.js"); }).then(function () { ' +
+      'var b = document.createElement("div"); b.id = "zzKept"; b.style.cssText = "position:absolute;left:0;top:0;width:900px;height:700px;display:flex;flex-direction:column"; document.body.appendChild(b); ' +
+      HANDS + '; ' +
+      'K.rows = ' + JSON.stringify(FIVE) + '; ' +
+      'K.who = document.createElement("span"); K.who.value = ""; ' +
+      'K.list = spirit.element.spirit.element.search.create(b, { rows: function () { return K.rows; }, columns: [{ field: "name", label: "Name", sort: "text" }, { field: "n", label: "N", sort: "number" }], ' +
+      '  filters: [{ name: "kind", multi: true, keepOne: true, choices: [{ value: "red", word: "red" }, { value: "green", word: "green" }], test: function (row, off) { var o = off || {}; return row && !o[row.kind] ? 1 : 0; } }], ' +
+      '  selectors: [{ name: "who", element: K.who, test: function (row) { return !K.who.value || row.who === K.who.value ? 1 : 0; } }] }); ' +
+      'return new Promise(function (r) { setTimeout(r, 300); }).then(function () { K.mark(); K.watch(); K.firstTable = K.table(); return K.trs().length === 5 ? "made" : "rows drawn: " + K.trs().length; }); }, function (e) { return String(e); })');
+    return ok() || 'nothing made: ' + short(made);
+  }, test.limit.slow);
+
+  // the box: "a sort or new words move them"
+  test.run('a sort moves the rows: sorted by name, the same five row elements, in the order of their names', 0.2, async function () {
+    if (!ok()) return NOWORLD;
+    if (!(await ev('return K.sort("name");'))) return 'no header for name to press';
+    await sleep(300);
+    const shown = await ev('return K.shown();');
+    const notSame = await ev('return K.same(' + JSON.stringify(FIVE_KEYS) + ');');
+    const order = shown.slice().sort(function (x, y) { return FIVE_KEYS.indexOf(x) - FIVE_KEYS.indexOf(y); });
+    return (!notSame.length && shown.length === 5 && (JSON.stringify(shown) === JSON.stringify(order) || JSON.stringify(shown) === JSON.stringify(order.slice().reverse()))) || 'shown ' + short(shown) + '; rows that are not the elements first drawn: ' + short(notSame);
+  }, test.limit.slow);
+  test.run('a sort the other way moves them back: the same five row elements, reversed', 0.2, async function () {
+    if (!ok()) return NOWORLD;
+    const before = await ev('return K.shown();');
+    await ev('return K.sort("name");');
+    await sleep(300);
+    const shown = await ev('return K.shown();');
+    const notSame = await ev('return K.same(' + JSON.stringify(FIVE_KEYS) + ');');
+    return (!notSame.length && JSON.stringify(shown) === JSON.stringify(before.slice().reverse())) || 'before ' + short(before) + ', after ' + short(shown) + '; not the elements first drawn: ' + short(notSame);
+  }, test.limit.slow);
+  test.run('the world: sorted by name, a to f', 0.2, async function () {
+    if (!ok()) return NOWORLD;
+    for (let i = 0; i < 2; i++) { const s = await ev('return K.shown();'); if (s[0] === 'a') return true; await ev('return K.sort("name");'); await sleep(300); }
+    return 'shown ' + short(await ev('return K.shown();'));
+  }, test.limit.slow);
+
+  // the box: "a new record adds its one row at its place"
+  test.run('a new record adds its one row: the five row elements already drawn stay the same', 0.2, async function () {
+    if (!ok()) return NOWORLD;
+    await ev('K.rows = K.rows.concat([{ key: "c", name: "cat", who: "y", kind: "green", n: 9 }]); K.list.redraw(); return true;');
+    await sleep(300);
+    const notSame = await ev('return K.same(' + JSON.stringify(FIVE_KEYS) + ');');
+    return !notSame.length || 'after a new record, rows that are not the elements first drawn: ' + short(notSame);
+  }, test.limit.slow);
+  test.run('the new record\'s row shows at its place: cat between bob and dan', 0.2, async function () {
+    if (!ok()) return NOWORLD;
+    const shown = await ev('return K.shown();');
+    return JSON.stringify(shown) === JSON.stringify(['a', 'b', 'c', 'd', 'e', 'f']) || 'shown ' + short(shown);
+  }, test.limit.quick);
+  test.run('the world: the new row marked', 0.2, async function () {
+    if (!ok()) return NOWORLD;
+    await ev('K.mark(); return true;');
+    return true;
+  }, test.limit.quick);
+
+  // the box: "a changed record repaints its own row"
+  test.run('a changed record repaints its own row: its new text, the same element', 0.2, async function () {
+    if (!ok()) return NOWORLD;
+    await ev('K.rows = K.rows.map(function (r) { return r.key === "d" ? Object.assign({}, r, { n: 33 }) : r; }); K.list.redraw(); return true;');
+    await sleep(300);
+    const t = await ev('return K.text("d");');
+    const notSame = await ev('return K.same(["d"]);');
+    return (/33/.test(String(t)) && !notSame.length) || 'its text ' + short(t) + ', the same element: ' + !notSame.length;
+  }, test.limit.slow);
+  test.run('a changed record leaves every other row element the same', 0.2, async function () {
+    if (!ok()) return NOWORLD;
+    const notSame = await ev('return K.same(["a", "b", "c", "e", "f"]);');
+    return !notSame.length || 'not the elements first drawn: ' + short(notSame);
+  }, test.limit.quick);
+
+  // the box: "a filter or a selector hides and shows rows"
+  test.run('a filter hides rows: green off, the green rows hidden, the red ones show', 0.2, async function () {
+    if (!ok()) return NOWORLD;
+    if (!(await ev('return K.press("green");'))) return 'no green filter to press';
+    await sleep(300);
+    const shown = await ev('return K.shown();');
+    return JSON.stringify(shown) === JSON.stringify(['a', 'd', 'f']) || 'shown ' + short(shown);
+  }, test.limit.slow);
+  test.run('a filter hides rows, it does not take them out: the six row elements are the same, the hidden ones still in the page', 0.2, async function () {
+    if (!ok()) return NOWORLD;
+    const notSame = await ev('return K.same(["a", "b", "c", "d", "e", "f"]);');
+    return !notSame.length || 'not the elements first drawn, or out of the page: ' + short(notSame);
+  }, test.limit.quick);
+  test.run('the filter turned back, the same row elements show again, in their place', 0.2, async function () {
+    if (!ok()) return NOWORLD;
+    await ev('return K.press("green");');
+    await sleep(300);
+    const shown = await ev('return K.shown();');
+    const notSame = await ev('return K.same(["a", "b", "c", "d", "e", "f"]);');
+    return (JSON.stringify(shown) === JSON.stringify(['a', 'b', 'c', 'd', 'e', 'f']) && !notSame.length) || 'shown ' + short(shown) + '; not the same: ' + short(notSame);
+  }, test.limit.slow);
+  test.run('a selector hides rows: y chosen, only y\'s rows show, every row element the same', 0.2, async function () {
+    if (!ok()) return NOWORLD;
+    await ev('K.pickWho("y"); return true;');
+    await sleep(300);
+    const shown = await ev('return K.shown();');
+    const notSame = await ev('return K.same(["a", "b", "c", "d", "e", "f"]);');
+    return (JSON.stringify(shown) === JSON.stringify(['b', 'c', 'e']) && !notSame.length) || 'shown ' + short(shown) + '; not the same: ' + short(notSame);
+  }, test.limit.slow);
+  test.run('the selector unselected, every row shows again, the same row elements', 0.2, async function () {
+    if (!ok()) return NOWORLD;
+    await ev('K.pickWho(""); return true;');
+    await sleep(300);
+    const shown = await ev('return K.shown();');
+    const notSame = await ev('return K.same(["a", "b", "c", "d", "e", "f"]);');
+    return (JSON.stringify(shown) === JSON.stringify(['a', 'b', 'c', 'd', 'e', 'f']) && !notSame.length) || 'shown ' + short(shown) + '; not the same: ' + short(notSame);
+  }, test.limit.slow);
+
+  // the box: "a sort or new words move them"
+  test.run('new words move the rows: "eve" typed, eve\'s row shows first, the same element', 0.2, async function () {
+    if (!ok()) return NOWORLD;
+    if (!(await ev('return K.type("eve");'))) return 'no search field to type in';
+    await sleep(600);
+    const shown = await ev('return K.shown();');
+    const notSame = await ev('return K.same(["e"]);');
+    return (shown[0] === 'e' && !notSame.length) || 'shown ' + short(shown) + '; eve\'s row the same element: ' + !notSame.length;
+  }, test.limit.slow);
+  test.run('with words typed, every row element kept is the same', 0.2, async function () {
+    if (!ok()) return NOWORLD;
+    const notSame = await ev('return K.same(K.shown());');
+    return !notSame.length || 'not the elements first drawn: ' + short(notSame);
+  }, test.limit.quick);
+  test.run('the words cleared, the rows move back to their order, the same elements', 0.2, async function () {
+    if (!ok()) return NOWORLD;
+    await ev('return K.type("");');
+    await sleep(600);
+    const shown = await ev('return K.shown();');
+    const notSame = await ev('return K.same(["a", "b", "c", "d", "e", "f"]);');
+    return (JSON.stringify(shown) === JSON.stringify(['a', 'b', 'c', 'd', 'e', 'f']) && !notSame.length) || 'shown ' + short(shown) + '; not the same: ' + short(notSame);
+  }, test.limit.slow);
+
+  // the box: "never redraws its list"
+  test.run('in all of this the list never redrew: its table is the one first drawn', 0.2, async function () {
+    if (!ok()) return NOWORLD;
+    return (await ev('return K.table() === K.firstTable && !!K.firstTable && K.firstTable.isConnected;')) || 'the table is not the one first drawn';
+  }, test.limit.quick);
+  test.run('in all of this no row element, no table was taken out of the page', 0.2, async function () {
+    if (!ok()) return NOWORLD;
+    const n = await ev('return K.gone();');
+    return n === 0 || n + ' row elements or tables taken out and not put back';
+  }, test.limit.quick);
+
+  test.after(function () {
+    if (chrome && chrome.kid) chrome.kid.kill();
+    if (node && node.child) node.child.kill();
+    try { if (chrome && chrome.profile) fs.rmSync(chrome.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
+    try { if (node && node.root) fs.rmSync(node.root, { recursive: true, force: true }); } catch (e) { /* left */ }
+  });
+}
 
 async function bubblePart() {
   // The bubble part (once search-bubble.js).

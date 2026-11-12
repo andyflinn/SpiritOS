@@ -262,3 +262,20 @@ Andy, on Q14 *"May I change the shared search list, so the Files tiles can show 
 
 - The option `tile(row, key)` answers `{ icon, label }` for a tile. Either one left out is the row's own `row.icon` or `row.label`; without the option nothing changes for any other list.
 - The files list hands a file its kind's icon (fstat's `iconOf`), a folder 📁 shut and 📂 open, and the file's name.
+
+## The search keeps its rows (goal/G47.1)
+
+The box: *"The search element (spirit/element/search.js) never redraws its list. Each row is made once and kept in the
+table: a new record adds its one row at its place; a changed record repaints its own row; a filter or a selector hides
+and shows rows; a sort or new words move them"*, *"It is the shared search element, so every search in the face gets
+it"*.
+
+In a real Chrome on a scratch node, a list of five rows with a filter, a selector, two sortable columns and a search
+field; the page marks each row's `<tr>` as it is first drawn. A sort, and a sort back, move the same five elements; a
+new record adds its one row between its neighbours by name, the five others the same elements; a changed record shows
+its new text in the same element, every other row the same; a filter and a selector hide rows and show them again,
+every element the same and still in the page; typed words put the best match first, the same element, and cleared,
+the rows go back. Throughout, the table is the one first drawn, and no row element or table is taken out of the page.
+
+What it must try to break: a list rebuilt from its HTML on any change; a row element made again for a key it already
+drew; a hidden row taken out of the page; a new record that redraws its neighbours.
