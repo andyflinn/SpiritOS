@@ -135,8 +135,9 @@ function runSuite(script, suite, title) {
   if (suite !== ownTestOf(script)) args.push(script);
   if (title) args.push('--test', title);
   running += 1;
+  told();
   let done = false;
-  const end = function () { if (!done) { done = true; running -= 1; } };
+  const end = function () { if (!done) { done = true; running -= 1; told(); } };
   const kid = spawn(process.execPath, args, { cwd: RUN, stdio: 'ignore', windowsHide: true });
   kid.on('error', end);
   kid.on('exit', end);
@@ -173,9 +174,12 @@ function apply(changed, P) {
   // changes"): every file row and every suite row it touched, as they then stand.
   const files = new Set();
   const written = new Map();
-  const touched = function (file, suite) { written.set(file + '|' + suite, [file, suite]); };
-  const fileUp = function (file) { Q.putScript.run(file, hash(file), now); files.add(file); };
-  const suiteUp = function (file, suite) { Q.putSuite.run(file, suite, hash(suite), now); touched(file, suite); };
+  // Whether each row was there before this write, so its publish says added or updated (deleted, by its own flag).
+  const had = Object.create(null);
+  const before = function (k, get) { if (!(k in had)) had[k] = !!get(); };
+  const touched = function (file, suite) { before('suite|' + file + '|' + suite, function () { return Q.suiteRow.get(file, suite); }); written.set(file + '|' + suite, [file, suite]); };
+  const fileUp = function (file) { before('script|' + file, function () { return Q.script.get(file); }); Q.putScript.run(file, hash(file), now); files.add(file); };
+  const suiteUp = function (file, suite) { touched(file, suite); Q.putSuite.run(file, suite, hash(suite), now); };
   db.exec('BEGIN');
   try {
     changed.forEach(function (rel) {
@@ -188,7 +192,7 @@ function apply(changed, P) {
         files.forEach(function (file) { if (!Q.script.get(file)) fileUp(file); suiteUp(file, rel); });
         return;
       }
-      if (!there(rel)) { Q.goneScript.run(rel, now); files.add(rel); Q.suitesOfScript.all(rel).forEach(function (r) { touched(r.script, r.suite); }); Q.goneSuitesOfScript.run(now, rel); return; }
+      if (!there(rel)) { before('script|' + rel, function () { return Q.script.get(rel); }); Q.goneScript.run(rel, now); files.add(rel); Q.suitesOfScript.all(rel).forEach(function (r) { touched(r.script, r.suite); }); Q.goneSuitesOfScript.run(now, rel); return; }
       const row = Q.script.get(rel);
       if (row && !row.deleted && row.hash === hash(rel)) return; // the same bytes: nothing changed
       fileUp(rel);
@@ -202,9 +206,26 @@ function apply(changed, P) {
     db.exec('ROLLBACK');
     throw e;
   }
-  files.forEach(function (file) { const r = Q.script.get(file); if (r) appServer.publish({ testicle: { table: 'script', row: served(r) } }); });
-  written.forEach(function (p) { const r = Q.suiteRow.get(p[0], p[1]); if (r) appServer.publish({ testicle: { table: 'suite', row: suiteServed(r) } }); });
+  files.forEach(function (file) { const r = Q.script.get(file); if (r) tell('script', served(r), r.deleted ? 'deleted' : had['script|' + file] ? 'updated' : 'added'); });
+  written.forEach(function (p) { const r = Q.suiteRow.get(p[0], p[1]); if (r) tell('suite', suiteServed(r), r.deleted ? 'deleted' : had['suite|' + p[0] + '|' + p[1]] ? 'updated' : 'added'); });
 }
+
+// WHAT IT STREAMS (goal/G47.1, the box: "busy is streamed by the server: whenever it wakes it sets busy true and streams it;
+// whenever it goes back to listening for events it sets busy false and streams it", "busy stays the one answer it is today
+// ..., streamed each time it changes; the page never asks testicle.busy", and the monitor row's "last change: a row added,
+// deleted or updated in any of its three tables"):
+//   { testicle: { table, row, change, busy } }   a row written, change 'added', 'updated' or 'deleted', busy as it stands
+//   { testicle: { busy } }                       busy turned, true on waking, false back to listening
+// Every row carries busy too, so a page that opens late finds it in the last thing the job published.
+function busyNow() { return working || !!timer || pending.size > 0 || getting > 0 || running > 0; }
+let busyTold = false;
+function told() {
+  const b = busyNow();
+  if (b === busyTold) return;
+  busyTold = b;
+  appServer.publish({ testicle: { busy: b } });
+}
+function tell(table, row, change) { appServer.publish({ testicle: { table: table, row: row, change: change, busy: busyNow() } }); }
 
 // THE QUEUE: what changed since the last write, and whether a write is under way. busy is either, or a script.get making
 // rows.
@@ -215,7 +236,7 @@ let getting = 0;
 // The suites run started and not yet ended (runSuite below): work, so busy says so.
 let running = 0;
 function kick() {
-  if (working || timer || !pending.size) return;
+  if (working || timer || !pending.size) { told(); return; }
   // The changes of one moment taken together: a save is often several events.
   timer = setTimeout(function () {
     timer = null;
@@ -226,6 +247,7 @@ function kick() {
       console.error('testicle: ' + (e && e.message || e));
     }).then(function () { working = false; kick(); });
   }, 50);
+  told();
 }
 
 const watcher = spirit.require('spirit/job/chokidar/index.js').watch(RUN, { ignored: ignored, ignoreInitial: true, persistent: true });
@@ -274,7 +296,7 @@ appServer.serve({
   // goal/G47.1, the box: "busy": true if it is doing any work, false if it is idle.
   busy: {
     request: {}, reply: false,
-    handler: function () { return working || !!timer || pending.size > 0 || getting > 0 || running > 0; },
+    handler: function () { return busyNow(); },
   },
   // goal/G47.1, the verbs cycle, the box: "If the argument (a filename, scoped to run://) is not a production script, it
   // returns the error \"not a production script\"", "If the file does not exist, it returns the error \"no such file\", so
@@ -291,8 +313,9 @@ appServer.serve({
       const row = Q.script.get(name);
       if (row) return served(row);
       getting += 1;
+      told();
       return pairs().then(function (P) { apply([name], P); return served(Q.script.get(name)); })
-        .finally(function () { getting -= 1; });
+        .finally(function () { getting -= 1; told(); });
     },
   },
   // goal/G47.1, the verbs cycle, the box: "A standard table search response", "The file row owns its suite rows: the suite
@@ -343,6 +366,7 @@ appServer.serve({
       if (!row && !there(script)) throw refused('no-such-file');
       const stale = !row || (there(script) && row.hash !== hashOf(script));
       getting += 1;
+      told();
       return Promise.resolve(stale && there(script) ? pairs().then(function (P) { apply([script], P); }) : null).then(function () {
         const now = Date.now();
         const judged = there(script) ? hashOf(script) : ((Q.script.get(script) || {}).hash || '');
@@ -357,11 +381,11 @@ appServer.serve({
         } catch (e) { db.exec('ROLLBACK'); throw e; }
         // On a flip the replaced row, current false now, is published too, before the new current row (goal/G47.1, the
         // box: "on a flip, the replaced row turning current false is published too, beside the new current row").
-        if (was && Number(was.flipped) !== flipped) appServer.publish({ testicle: { table: 'testicle', row: testServed(T.row.get(script, suite, name, Number(was.flipped))) } });
+        if (was && Number(was.flipped) !== flipped) tell('testicle', testServed(T.row.get(script, suite, name, Number(was.flipped))), 'updated');
         const out = testServed(T.row.get(script, suite, name, flipped));
-        appServer.publish({ testicle: { table: 'testicle', row: out } });
+        tell('testicle', out, was && Number(was.flipped) === flipped ? 'updated' : 'added');
         return out;
-      }).finally(function () { getting -= 1; });
+      }).finally(function () { getting -= 1; told(); });
     },
   },
   // goal/G47.1, the test-table cycle, the box: "test.search will only return \"current\" test rows for the script/suite
@@ -399,7 +423,8 @@ appServer.serve({
 // No peer user: the owner's own test status (apiAuth/G1.10).
 }, {
   // ITS ROWS ON THE NODE'S JOB STREAM (goal/G47.1, the UI cycle), as the agent's tables publish theirs: { testicle: { table,
-  // row } }. A page starts with none and asks suite.search for what it shows.
+  // row, change, busy } }, and busy alone when it turns (tell and told, above). A page starts with no rows and asks
+  // suite.search for what it shows.
   publisher: { family: 'testicle', bootstrap: function () { return []; } },
   codes: {
   'not-a-production-script': { status: 400, text: 'not a production script' },

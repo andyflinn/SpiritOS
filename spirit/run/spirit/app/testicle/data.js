@@ -17,6 +17,8 @@
 // of the branch follows it. What a search answers is kept the same way (keep).
 (function () {
   var TABLES = ['script', 'suite', 'testicle'];
+  // The monitor's one node: what the stream last said of busy and of the last change.
+  var MONITOR = 'monitor';
   var D = typeof window !== 'undefined' ? window.spirit.data : require('../../spirit.js').require('spirit/data.js');
   D.makeFamily('testicle', function () {
     var HOME = D.viewAt(null, 'testicle');
@@ -32,9 +34,19 @@
     D.addTranslator({
       onJob: function (job) {
         var a = job && job.module === 'spirit.app.testicle' && job.app && job.app.testicle;
-        if (!a || TABLES.indexOf(a.table) === -1 || !a.row || typeof a.row !== 'object') return;
-        var k = keyOf(a.table, a.row);
-        if (k) D.viewAt(job.fromNode || null, 'testicle').merge(a.table + '/' + k, kept(a.table, a.row));
+        if (!a || typeof a !== 'object') return;
+        var V = D.viewAt(job.fromNode || null, 'testicle');
+        // THE MONITOR (goal/G47.1, the box: the monitor row's busy "as the server streams it" and "the last change: a row
+        // added, deleted or updated in any of its three tables"): busy from whatever carries it; the last change from a row.
+        var mon = {};
+        if (typeof a.busy === 'boolean') mon.busy = a.busy;
+        var row = TABLES.indexOf(a.table) !== -1 && a.row && typeof a.row === 'object' ? a.row : null;
+        var k = row ? keyOf(a.table, row) : '';
+        if (k) {
+          V.merge(a.table + '/' + k, kept(a.table, row));
+          mon.last = { table: a.table, key: k, change: String(a.change || 'updated'), at: Date.now() };
+        }
+        if (Object.keys(mon).length) V.merge(MONITOR, mon);
       },
     });
     // THE READS AND THE WRITES:
@@ -53,6 +65,12 @@
     TABLES.forEach(function (t) {
       testicleReads[t] = { watch: function (fn) { return HOME.watch(t, function (whole, v) { if (typeof fn === 'function') fn(HOME.row(whole, t), v); }); } };
     });
+    //   monitor.get()      { busy, last: { table, key, change, at } } as the stream last told it; {} before anything came
+    //   monitor.watch(fn)  fn(monitor) on every change; answers its release
+    testicleReads.monitor = {
+      get: function () { return HOME.get(MONITOR) || {}; },
+      watch: function (fn) { return HOME.watch(MONITOR, function () { if (typeof fn === 'function') fn(HOME.get(MONITOR) || {}); }); },
+    };
     return testicleReads;
   });
 }());

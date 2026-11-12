@@ -29,6 +29,12 @@ the `test/` folder beside it named after it; handed a file in a test folder, tha
   `test/<name>-<what>.js` or `.md` beside `test/<name>.js`'s script is red, a second test file of `<name>.js`.
 - **A test and its spec together**: a `.js` has its `.md` beside it, and an `.md` its `.js`.
 - **Any other file** (a laid page, a fixture) is named after a module beside the folder: `<module>-<what>.<ext>`.
+- **Every production script has its own test** (goal/G47.1; Andy: *"spirit-sibling-noFuckingGarbage should also report
+  missing tests, and of course run for a specified script file, or all script files"*, *"damn right, every missing
+  script-companion-suite is a red at 0.2"*, *"it is ok to exclude the vendored scripts."*): one check, severity 0.2, red
+  while a production script (a tracked `.js` in no `test/` folder, vendored code left out) has no `test/<name>.js` beside
+  it, its answer naming every such script. Over the whole tree it judges every production script; handed one script,
+  that one. Handed a file in a test folder, it is not made.
 - Each garbage file is its own check, named by its path, with the reason.
 - **Never vacuous**: run over the whole tree, it must have read more than 100 files, or it is red. Handed a file that
   is not in a test folder, it is red.

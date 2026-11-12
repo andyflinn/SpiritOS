@@ -117,6 +117,25 @@ if (WHOLE) {
     return read().length === 1 || arg + ' is neither a module nor a tracked file in a test folder: nothing judged';
   }, test.limit.quick);
 }
+// MISSING TESTS (goal/G47.1, the box: "spirit-sibling-noFuckingGarbage also reports missing tests, in one check, \"every
+// production script has its own test\", severity 0.2: red while any production script has no own test, test/<name>.js
+// beside it, its answer naming every script missing one. Over the whole tree (handed nothing, or spirit.js) it judges every
+// production script; handed one script, that one", "Vendored scripts are left out of the check"; Andy: "damn right, every
+// missing script-companion-suite is a red at 0.2"). One check, not one per script: titles are fixed words (goal/G47.2).
+// A production script: a tracked .js in no test/ folder at any depth, vendored code left out. Handed a file in a test
+// folder, there is no script to judge, and the check is not made.
+const isProduction = function (rel) { return /\.js$/.test(rel) && !/(^|\/)test\//.test(rel) && !VENDORED_FOLDERS.holds(rel) && exists(rel); };
+const ownTestOf = function (rel) { return rel.replace(/([^/]+)\.js$/, 'test/$1.js'); };
+if (WHOLE || MODULE) {
+  test.run('every production script has its own test', 0.2, function () {
+    const scripts = WHOLE ? execFileSync('git', ['ls-files', '--', '.'], { cwd: RUN, encoding: 'utf8' }).split('\n').filter(Boolean).filter(isProduction) : [handed];
+    if (!scripts.length) return 'no production script found: nothing judged';
+    const missing = scripts.filter(function (rel) { return !exists(ownTestOf(rel)); });
+    test.comment(scripts.length + ' production scripts judged, ' + missing.length + ' without their own test');
+    return !missing.length || missing.length + ' of ' + scripts.length + ' have no own test: ' + missing.join(', ');
+  }, test.limit.quick);
+}
+
 // Each file that is garbage named in the answer, by its path and why.
 test.run('every file in a test folder matches a production file: none is garbage', 0.4, function () {
   if (!judged || !judged.length) return 'no file in a test folder read: nothing judged';

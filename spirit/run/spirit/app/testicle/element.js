@@ -85,15 +85,54 @@
     return /\.js$/.test(p) && !/(^|\/)test\//.test(p);
   }
 
+  // THE MONITOR ROW (goal/G47.1, the box: "testicle's face has a monitor row above the workbench. It shows first the busy
+  // status in icon form, 🛌 idle (sleeping), 🚶‍➡️ working, as the server streams it ...; then the last change: a row added,
+  // deleted or updated in any of its three tables", "The row has a constant height, and the message is ellipsed, never
+  // wrapped"). It draws what testicle's cache manager keeps of the stream (data.js, monitor), and asks the server nothing.
+  function lastWords(last) {
+    if (!last || !last.key) return '';
+    // A test row's key ends in its flip, which says nothing to a reader: left off.
+    var what = last.table === 'testicle' ? String(last.key).split('|').slice(0, 3).join(' | ') : String(last.key).split('|').join(' | ');
+    return String(last.change || 'updated') + ' ' + last.table + ': ' + what;
+  }
+  function monitorRow(row) {
+    row.innerHTML = '<span class="testicle-busy" style="flex:none;margin-right:.5em"></span><span class="testicle-last" style="flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis"></span>';
+    var icon = row.firstChild;
+    var line = row.lastChild;
+    var release = null;
+    function draw(m) {
+      var busy = !!(m && m.busy);
+      icon.textContent = busy ? '🚶‍➡️' : '🛌';
+      icon.title = busy ? 'working' : 'idle';
+      var words = lastWords(m && m.last);
+      line.textContent = words;
+      line.title = words;
+    }
+    draw({});
+    Promise.resolve(window.spirit.cacheManager('testicle')).then(function () {
+      if (release === false) return;
+      var M = window.spirit.data.testicle.data.monitor;
+      draw(M.get());
+      release = M.watch(draw);
+    });
+    return { destroy: function () { if (typeof release === 'function') release(); release = false; } };
+  }
+
   function create(container) {
     var gone = false;
     var bench = null;
     var list = null;
     var tabs = null;
+    var monitor = null;
+    container.innerHTML = '<div class="testicle-face" style="display:flex;flex-direction:column;height:100%">' +
+      '<div class="testicle-monitor" style="flex:none;display:flex;align-items:center;height:1.8em;line-height:1.8em;padding:0 .5em;overflow:hidden"></div>' +
+      '<div class="testicle-bench" style="flex:1;min-height:0;position:relative"></div></div>';
+    var benchBox = container.querySelector('.testicle-bench');
+    monitor = monitorRow(container.querySelector('.testicle-monitor'));
     parts.then(function () {
       if (gone) return;
       var E = window.spirit.element.spirit.element;
-      bench = E.workBench.create(container, {
+      bench = E.workBench.create(benchBox, {
         // One tool, the files, on the left strip, shown at start; no right strip.
         left: [{ name: 'files', icon: '📁', title: 'Production scripts', mount: function (box) {
           box.className = 'fill';
@@ -123,6 +162,8 @@
     return {
       destroy: function () {
         gone = true;
+        if (monitor) monitor.destroy();
+        monitor = null;
         if (list && typeof list.destroy === 'function') list.destroy();
         list = null;
         if (tabs && typeof tabs.destroy === 'function') tabs.destroy();
