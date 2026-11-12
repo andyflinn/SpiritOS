@@ -375,36 +375,146 @@
       var list = el('list');
       if (!list) return;
       if (snap) list.scrollTop = 0;
+      keep(list, rows, {
+        searching: searching,
+        bar: bar, cellsOf: cellsOf, tileBar: tileBar, tileTip: tileTip, tileOf: tileOf,
+      });
+    }
+
+    // THE LIST IS NEVER REDRAWN (goal/G47.1, the cycle "the search keeps its rows", the box: "The search element
+    // (spirit/element/search.js) never redraws its list. Each row is made once and kept in the table: a new record adds its
+    // one row at its place; a changed record repaints its own row; a filter or a selector hides and shows rows; a sort or new
+    // words move them"; Andy: "WHY THE FUCK WOULD WOULDN't you just sort the row elements? and make them invisible/visible?
+    // Do you redraw the fucking list every time a new record arrives????"). The table (or the tiles' grid) is made once per
+    // face; each key's row once, kept on its entry (entry.node). A draw moves the rows that show into their order, hides the
+    // rest where they stand, and repaints a row only when its record or the words changed. A row element is mounted into its
+    // cells once, when its row is made, and repaints itself from then on.
+    var held = null;                    // { face, root, head, body, note, none }: what the list is drawn into, made once
+    function make(tag, css) { var x = document.createElement(tag); if (css) x.style.cssText = css; return x; }
+    function frame(list) {
+      var face = tiles ? 'tiles' : 'pane';
+      if (held && held.face === face && held.root.parentNode === list) return held;
+      // A FACE CHANGED (pane and tiles, the toggle): the other face's rows are its own, made again for this one.
+      Object.keys(byKey).forEach(function (k) { byKey[k].node = null; byKey[k].painted = null; });
+      list.innerHTML = '';
+      var h = { face: face, note: make('div') };
+      h.note.className = 'job-manifest-note';
+      if (dropdown && o.all && !tiles) {
+        h.none = make('button', 'margin-top:0.5em');
+        h.none.id = pre + 'none';
+        h.none.type = 'button';
+        h.none.textContent = 'None';
+        list.appendChild(h.none);
+      }
       if (tiles) {
-        list.innerHTML = rows.length
-          ? '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:16px;align-content:start">' + rows.map(function (w) {
-            var cur = w.key === currentKey;
-            var t = tileOf(w);
-            return '<div class="app-icon' + (cur ? ' current' : '') + '" data-key="' + esc(w.key) + '" title="' + esc(tileTip(w.row)) + '"' + (cur ? ' style="background:rgba(255,255,255,0.12)"' : '') + '>' +
-              '<span class="icon">' + iconHtml(t.icon) + '</span>' + tileBar(w) + '<span class="label">' + mark(t.label) + '</span></div>';
-          }).join('') + '</div>'
-          : '<div class="job-manifest-note">' + esc(o.empty || 'Nothing matches.') + '</div>';
+        h.root = make('div', 'display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:16px;align-content:start');
+        h.body = h.root;
+      } else {
+        h.root = make('table');
+        h.root.className = 'jobs-table';
+        if (dropdown) h.root.style.width = 'auto';
+        h.head = make('thead');
+        h.body = make('tbody');
+        h.root.appendChild(h.head);
+        h.root.appendChild(h.body);
+      }
+      list.appendChild(h.root);
+      list.appendChild(h.note);
+      held = h;
+      return h;
+    }
+    // ONE ROW, MADE ONCE: a <tr> with a cell per column (a row element mounted into them), or a tile.
+    function rowNode(w) {
+      var entry = w.entry;
+      if (entry.node) return entry.node;
+      var n;
+      if (tiles) {
+        n = make('div');
+        n.className = 'app-icon';
+      } else {
+        n = make('tr', 'cursor:pointer');
+        columns.forEach(function (c) {
+          var td = make('td');
+          td.setAttribute('data-field', c.field);
+          if (c.align) td.setAttribute('align', c.align);
+          n.appendChild(td);
+        });
+        // EACH ROW'S ELEMENT PAINTS ITS OWN CELLS, and keeps repainting them as its subject changes: mounted once.
+        if (entry.el) {
+          var hosts = {};
+          Array.prototype.forEach.call(n.querySelectorAll('td[data-field]'), function (td) { hosts[td.getAttribute('data-field')] = td; });
+          entry.el.mount(hosts);
+        }
+      }
+      n.setAttribute('data-key', w.key);
+      entry.node = n;
+      entry.painted = null;
+      return n;
+    }
+    // A ROW'S OWN CONTENT, repainted only when its record or the words changed since it was painted last.
+    function paintRow(w, how, typed) {
+      var entry = w.entry;
+      var n = entry.node;
+      var rowNow = entry.el ? entry.el.row : entry.row;
+      if (tiles) {
+        var t = how.tileOf(w);
+        var tileWas = entry.painted;
+        if (!tileWas || tileWas.row !== rowNow || tileWas.words !== typed || tileWas.rank !== w.rank) {
+          n.title = tileTip(w.row);
+          n.innerHTML = '<span class="icon">' + iconHtml(t.icon) + '</span>' + how.tileBar(w) + '<span class="label">' + mark(t.label) + '</span>';
+          entry.painted = { row: rowNow, words: typed, rank: w.rank };
+        }
         return;
       }
-      list.innerHTML = (dropdown && o.all ? '<button id="' + pre + 'none" type="button" style="margin-top:0.5em">None</button>' : '') + (rows.length
-        ? '<table class="jobs-table"' + (dropdown ? ' style="width:auto"' : '') + '>' + headHtml(searching) + '<tbody>' + rows.map(function (w) {
-          var cur = w.key === currentKey;
-          return '<tr data-key="' + esc(w.key) + '"' + (cur ? ' class="current"' : '') + ' style="cursor:pointer' + (cur ? ';background:rgba(255,255,255,0.12)' : '') + '">' +
-            (searching ? bar(w) : '') + cellsOf(w) + '</tr>';
-        }).join('') + '</tbody></table>'
-        : '<div class="job-manifest-note">' + esc(o.empty || 'Nothing matches.') + '</div>');
-      // EACH ROW'S ELEMENT PAINTS ITS OWN CELLS, and keeps repainting them as its subject changes.
-      if (typeof list.querySelectorAll === 'function') {
-        rows.forEach(function (w) {
-          var e = w.entry.el;
-          if (!e) return;
-          var tr = list.querySelector('tr[data-key="' + (window.CSS && CSS.escape ? CSS.escape(w.key) : w.key) + '"]');
-          if (!tr) return;
-          var hosts = {};
-          Array.prototype.forEach.call(tr.querySelectorAll('td[data-field]'), function (td) { hosts[td.getAttribute('data-field')] = td; });
-          e.mount(hosts);
-        });
+      // The match column, first while words are typed: added, drawn and taken away in the row itself.
+      var first = n.firstElementChild;
+      var hasBar = !!(first && first.classList && first.classList.contains('list-rank'));
+      if (how.searching) {
+        var barHtml = how.bar(w);
+        var holder = make('tbody');
+        holder.innerHTML = '<tr>' + barHtml + '</tr>';
+        var cell = holder.firstElementChild.firstElementChild;
+        if (hasBar) n.replaceChild(cell, first); else n.insertBefore(cell, first);
+      } else if (hasBar) n.removeChild(first);
+      if (entry.el) return;
+      var was = entry.painted;
+      if (was && was.row === rowNow && was.words === typed) return;
+      var tds = n.querySelectorAll('td[data-field]');
+      columns.forEach(function (c, i) { if (tds[i]) tds[i].innerHTML = mark(valueOf(entry, c.from || c.field)); });
+      entry.painted = { row: rowNow, words: typed };
+    }
+    // Hidden by the attribute and by its own style: a tile's class (.app-icon) sets display, which beats [hidden].
+    function showNode(n, on) { n.hidden = !on; n.style.display = on ? '' : 'none'; }
+    function keep(list, rows, how) {
+      var h = frame(list);
+      if (h.head) h.head.innerHTML = headHtml(how.searching).replace(/^<thead>|<\/thead>$/g, '');
+      var typed = words();
+      var showing = Object.create(null);
+      // THE ROWS THAT SHOW, in their order: each moved to its place only when it is not there already.
+      var at = h.body.firstChild;
+      rows.forEach(function (w) {
+        var n = rowNode(w);
+        showing[w.key] = true;
+        showNode(n, true);
+        paintRow(w, how, typed);
+        var cur = w.key === currentKey;
+        if (n.classList) n.classList.toggle('current', cur);
+        n.style.background = cur ? 'rgba(255,255,255,0.12)' : '';
+        if (n !== at) h.body.insertBefore(n, at); else at = at.nextSibling;
+      });
+      // THE REST HIDDEN WHERE THEY STAND, after the rows that show; a row whose key the list no longer holds goes.
+      var child = at;
+      while (child) {
+        var next = child.nextSibling;
+        var k = child.getAttribute ? child.getAttribute('data-key') : null;
+        if (k == null || !byKey[k] || byKey[k].node !== child) h.body.removeChild(child);
+        else if (!showing[k]) showNode(child, false);
+        child = next;
       }
+      Object.keys(byKey).forEach(function (k2) { var e2 = byKey[k2]; if (e2.node && !showing[k2] && !e2.node.parentNode) { showNode(e2.node, false); h.body.appendChild(e2.node); } });
+      showNode(h.root, !!rows.length);
+      showNode(h.note, !rows.length);
+      if (!rows.length) h.note.textContent = o.empty || 'Nothing matches.';
     }
     // THE SERVER'S ANSWERS ONLY FEED THE CACHE.
     function take(answer) {
