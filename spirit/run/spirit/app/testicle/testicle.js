@@ -290,6 +290,10 @@ function apply(changed, P) {
   const touched = function (file, suite) { before('suite|' + file + '|' + suite, function () { return Q.suiteRow.get(file, suite); }); written.set(file + '|' + suite, [file, suite]); };
   const fileUp = function (file) { before('script|' + file, function () { return Q.script.get(file); }); Q.putScript.run(file, hash(file), now); files.add(file); };
   const suiteUp = function (file, suite) { touched(file, suite); Q.putSuite.run(file, suite, hash(suite), now); };
+  // A SUITE'S OWN EVENT flags a row only when it is new, was deleted, or the suite's bytes changed: an event with the same
+  // bytes (one a run's own reading can cause) never flags it again (wsl's verify: rho's row "flagged again DURING its run,
+  // rho.js not touched then", so a killed suite was owed another run, forever). A script's change flags its suites always.
+  const suiteChanged = function (file, suite) { const was = Q.suiteRow.get(file, suite); return !was || !!was.deleted || was.hash !== hash(suite); };
   db.exec('BEGIN');
   try {
     changed.forEach(function (rel) {
@@ -299,7 +303,7 @@ function apply(changed, P) {
         const files = (P.bySuite[rel] || []).slice();
         const own = fileOfOwnTest(rel);
         if (there(own) && files.indexOf(own) === -1) files.push(own);
-        files.forEach(function (file) { if (!Q.script.get(file)) fileUp(file); suiteUp(file, rel); });
+        files.forEach(function (file) { if (!Q.script.get(file)) fileUp(file); if (suiteChanged(file, rel)) suiteUp(file, rel); });
         return;
       }
       if (!there(rel)) { before('script|' + rel, function () { return Q.script.get(rel); }); Q.goneScript.run(rel, now); files.add(rel); Q.suitesOfScript.all(rel).forEach(function (r) { touched(r.script, r.suite); }); Q.goneSuitesOfScript.run(now, rel); return; }
@@ -445,6 +449,15 @@ appServer.serve({
       if (!/\.js$/.test(name) || isSuite(name) || name.indexOf('..') !== -1 || ignored(path.join(RUN, name))) throw refused('not-a-production-script');
       if (!there(name)) throw refused('no-such-file');
       const row = Q.script.get(name);
+      // ITS OWN SUITE'S ROW, MADE IF MISSING (the box: "If the file does not have its file and suite rows, they are created
+      // automatically"; wsl's verify: after script.get of lambda.js its own suite row was not there): flagged, and the runner
+      // told.
+      const own = ownTestOf(name);
+      if (row && there(own) && !Q.suiteRow.get(name, own)) {
+        Q.putSuite.run(name, own, hashOf(own), Date.now());
+        tell('suite', suiteServed(Q.suiteRow.get(name, own)), 'added');
+        soon();
+      }
       if (row) return served(row);
       getting += 1;
       told();
