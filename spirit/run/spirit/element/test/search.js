@@ -20,7 +20,66 @@ let docRemoved = 0;
 global.document = {
   addEventListener: function (type, fn) { docHeard.push(fn); },
   removeEventListener: function (type, fn) { const i = docHeard.indexOf(fn); if (i !== -1) { docHeard.splice(i, 1); docRemoved += 1; } },
+  createElement: function (tag) { return elt(tag); },
 };
+// A STAND-IN ELEMENT (goal/G47.1, the cycle "the search keeps its rows": the list makes its table and its rows as elements
+// once, and moves, hides and repaints them). Its children are kept; innerHTML set is held as text; innerHTML read is that
+// text and its children as markup, a hidden element left out: what shows, as the checks below read it.
+function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+function elt(tag) {
+  const e = { tagName: String(tag || 'div').toUpperCase(), nodeType: 1, attrs: {}, kids: [], parentNode: null, raw: '', hidden: false,
+    className: '', title: '', id: '', type: '', style: { cssText: '', display: '', background: '', width: '' } };
+  e.classList = {
+    contains: function (c) { return String(e.className).split(/\s+/).indexOf(c) !== -1; },
+    toggle: function (c, on) { const l = String(e.className).split(/\s+/).filter(Boolean).filter(function (x) { return x !== c; }); if (on) l.push(c); e.className = l.join(' '); },
+  };
+  e.setAttribute = function (k, v) { e.attrs[k] = String(v); };
+  e.getAttribute = function (k) { return k === 'id' ? (e.id || null) : Object.prototype.hasOwnProperty.call(e.attrs, k) ? e.attrs[k] : null; };
+  e.appendChild = function (k) { if (k.parentNode && k.parentNode.removeChild) k.parentNode.removeChild(k); e.kids.push(k); k.parentNode = e; return k; };
+  e.insertBefore = function (k, ref) {
+    if (!ref) return e.appendChild(k);
+    if (k.parentNode && k.parentNode.removeChild) k.parentNode.removeChild(k);
+    const i = e.kids.indexOf(ref);
+    e.kids.splice(i === -1 ? e.kids.length : i, 0, k); k.parentNode = e; return k;
+  };
+  e.removeChild = function (k) { const i = e.kids.indexOf(k); if (i !== -1) e.kids.splice(i, 1); k.parentNode = null; return k; };
+  e.replaceChild = function (k, old) { e.insertBefore(k, old); return e.removeChild(old); };
+  Object.defineProperty(e, 'firstChild', { get: function () { return e.kids[0] || null; } });
+  Object.defineProperty(e, 'firstElementChild', { get: function () { return e.kids[0] || null; } });
+  Object.defineProperty(e, 'nextSibling', { get: function () { const p = e.parentNode; if (!p || !p.kids) return null; return p.kids[p.kids.indexOf(e) + 1] || null; } });
+  Object.defineProperty(e, 'innerHTML', {
+    get: function () { return e.raw + e.kids.map(markup).join(''); },
+    set: function (v) { e.raw = String(v); e.kids.forEach(function (k) { k.parentNode = null; }); e.kids = []; },
+  });
+  Object.defineProperty(e, 'textContent', {
+    get: function () { return e.raw.replace(/<[^>]*>/g, '') + e.kids.map(function (k) { return k.textContent || ''; }).join(''); },
+    set: function (v) { e.innerHTML = esc(v); },
+  });
+  // tag[attr] and tag[attr="value"], every element under it that matches.
+  e.querySelectorAll = function (sel) {
+    const m = /^([a-z]*)(?:\[([\w-]+)(?:="([^"]*)")?\])?$/i.exec(String(sel)) || [];
+    const out = [];
+    (function walk(x) { x.kids.forEach(function (k) {
+      if (k.kids && (!m[1] || k.tagName === m[1].toUpperCase()) && (!m[2] || (k.getAttribute(m[2]) !== null && (m[3] === undefined || k.getAttribute(m[2]) === m[3])))) out.push(k);
+      if (k.kids) walk(k);
+    }); }(e));
+    return out;
+  };
+  e.querySelector = function (sel) { return e.querySelectorAll(sel)[0] || null; };
+  return e;
+}
+function markup(k) {
+  if (!k || !k.kids) return '';
+  if (k.hidden || (k.style && k.style.display === 'none')) return '';
+  const t = k.tagName.toLowerCase();
+  let a = '';
+  if (k.attrs['data-key'] !== undefined) a += ' data-key="' + esc(k.attrs['data-key']) + '"';
+  if (k.className) a += ' class="' + esc(k.className) + '"';
+  if (k.id) a += ' id="' + esc(k.id) + '"';
+  Object.keys(k.attrs).forEach(function (n) { if (n !== 'data-key') a += ' ' + n + '="' + esc(k.attrs[n]) + '"'; });
+  if (k.title) a += ' title="' + esc(k.title) + '"';
+  return '<' + t + a + '>' + k.innerHTML + '</' + t + '>';
+}
 global.window = { spirit: { probability: {
   probabilityStringObjectMatch: require(path.join(RUN, 'spirit', 'probabilityStringObjectMatch.js')).probabilityStringObjectMatch,
   createProbabilityBucket: require(path.join(RUN, 'spirit', 'probabilityBucket.js')).createProbabilityBucket,
@@ -34,12 +93,13 @@ function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x))
 const tick = function () { return new Promise(function (r) { setImmediate(r); }); };
 
 // ── the stubs ──────────────────────────────────────────────────────────────────────────────────────────────────────
+// A node per id the list draws: a stand-in element (what is appended into it, its kids: a selector the search mounts,
+// goal/G41.26, the 🪣 row; the list's table and rows).
 function node(id) {
-  return { id: id, value: '', hidden: false, focused: 0, innerHTML: '', inside: true,
-    focus: function () { this.focused += 1; }, closest: function () { return null; }, getAttribute: function () { return null; },
-    // What is appended into it: a selector the search mounts (goal/G41.26, the 🪣 row).
-    kids: [], appendChild: function (k) { this.kids.push(k); k.parentNode = this; return k; },
-    insertBefore: function (k) { this.kids.push(k); k.parentNode = this; return k; } };
+  const n = elt('div');
+  n.id = id;
+  return Object.assign(n, { value: '', focused: 0, inside: true,
+    focus: function () { this.focused += 1; }, closest: function () { return null; } });
 }
 function container() {
   const nodes = {}; const heard = {}; let html = '';

@@ -340,17 +340,11 @@
       var top = 0;
       if (searching) rows.forEach(function (w) { if (w.rank > top) top = w.rank; });
       if (snap && rows.length) currentKey = rows[0].key;
+      // The match column's cell: its number as its tooltip, its bar inside.
       function bar(w) {
         var pct = top > 0 ? Math.round((w.rank / top) * 1000) / 10 : 0;
-        return '<td class="list-rank" style="width:3em;min-width:3em" title="' + esc((top > 0 ? w.rank / top : 0).toFixed(2)) + '">' +
-          '<div style="width:3em"><div style="width:' + pct + '%;margin-left:auto;height:0;border-top:0.8em solid var(--spirit-match, rgba(130,180,240,0.55))"></div></div></td>';
-      }
-      function cellsOf(w) {
-        var e = w.entry.el;
-        return columns.map(function (c) {
-          var html = e ? '' : mark(valueOf(w.entry, c.from || c.field));
-          return '<td data-field="' + esc(c.field) + '"' + (c.align ? ' align="' + esc(c.align) + '"' : '') + '>' + html + '</td>';
-        }).join('');
+        return { title: (top > 0 ? w.rank / top : 0).toFixed(2),
+          html: '<div style="width:3em"><div style="width:' + pct + '%;margin-left:auto;height:0;border-top:0.8em solid var(--spirit-match, rgba(130,180,240,0.55))"></div></div>' };
       }
       // THE FACE TILES (goal/G43.6). Andy, box: "A tile: its image, the relevance, its label.", "The relevance is a centered,
       // horizontal bar, between the tile image and the tile label: the bar the lists draw, the same colour and number.", "With no
@@ -377,7 +371,7 @@
       if (snap) list.scrollTop = 0;
       keep(list, rows, {
         searching: searching,
-        bar: bar, cellsOf: cellsOf, tileBar: tileBar, tileTip: tileTip, tileOf: tileOf,
+        bar: bar, tileBar: tileBar, tileTip: tileTip, tileOf: tileOf,
       });
     }
 
@@ -470,11 +464,11 @@
       var first = n.firstElementChild;
       var hasBar = !!(first && first.classList && first.classList.contains('list-rank'));
       if (how.searching) {
-        var barHtml = how.bar(w);
-        var holder = make('tbody');
-        holder.innerHTML = '<tr>' + barHtml + '</tr>';
-        var cell = holder.firstElementChild.firstElementChild;
-        if (hasBar) n.replaceChild(cell, first); else n.insertBefore(cell, first);
+        var cell = hasBar ? first : make('td', 'width:3em;min-width:3em');
+        if (!hasBar) { cell.className = 'list-rank'; n.insertBefore(cell, first); }
+        var b = how.bar(w);
+        cell.title = b.title;
+        cell.innerHTML = b.html;
       } else if (hasBar) n.removeChild(first);
       if (entry.el) return;
       var was = entry.painted;
