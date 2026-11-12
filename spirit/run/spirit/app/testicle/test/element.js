@@ -53,6 +53,11 @@ function scratch() {
     .forEach(function (f) { const d = path.join(root, f); fs.mkdirSync(path.dirname(d), { recursive: true }); fs.copyFileSync(path.join(REPO, f), d); });
   const run = path.join(root, 'spirit', 'run');
   Object.keys(PLANT).forEach(function (f) { fs.mkdirSync(path.dirname(path.join(run, f)), { recursive: true }); fs.writeFileSync(path.join(run, f), PLANT[f]); });
+  // testicle turned on there, as an owner turns a server on, now that it is not intrinsic (spirit/test/headLessChrome.js
+  // scratchNode; the server's test does the same).
+  const on = path.join(run, 'spirit', 'state', 'testicle');
+  fs.mkdirSync(on, { recursive: true });
+  fs.writeFileSync(path.join(on, 'node.json'), JSON.stringify({ active: true }));
   return { root: root, run: run };
 }
 async function call(base, verb, args) {
@@ -159,9 +164,10 @@ test.run('spirit/app/testicle/testicle.json is there, and JSON', 0.2, function (
 test.run('it names an icon and a label', 0.2, function () {
   return (typeof id.icon === 'string' && !!id.icon && typeof id.label === 'string' && !!id.label) || 'identity: ' + short(id);
 }, test.limit.quick);
-// The goal box: "testicle: an intrinsic app with a server and a face".
-test.run('it is intrinsic', 0.2, function () {
-  return id.intrinsic === true || 'identity.intrinsic: ' + short(id.intrinsic);
+// Not intrinsic, for now: Andy's own commit bad27e1e, "testicle non-intrinsic for now.", in place of the goal box's "testicle:
+// an intrinsic app with a server and a face". An owner turns it on (below, in the scratch tree).
+test.run('it is not intrinsic, for now', 0.2, function () {
+  return id.intrinsic === false || 'identity.intrinsic: ' + short(id.intrinsic);
 }, test.limit.quick);
 test.run('it has a face: shell.mount true', 0.2, function () {
   return (!!own && !!own.shell && own.shell.mount === true) || 'shell: ' + short(own && own.shell);

@@ -662,9 +662,15 @@ test.run('with no suite it searches that script\'s tests in any suite', 0.2, asy
 }, test.limit.quick);
 test.run('with neither it searches every current test', 0.2, async function () {
   if (!up()) return NONODE;
-  const everyOne = found(await call(N.base, 'testicle.testicle.search', { text: '' }));
+  const ans = await call(N.base, 'testicle.testicle.search', { text: '' });
+  const everyOne = found(ans);
   // The runner adds rows of its own runs (goal/G47.1, the queue cycle): the four set here are among them, and every one is current.
   const mine = everyOne.filter(function (r) { return ['theta answers its first question', 'theta answers its second question', 'theta answers its third question', 'gamma answers'].indexOf(r.test) !== -1; });
+  // The answer fits its room (more: true when cut): cut, it holds the most severe current rows, as many as fit.
+  if (ans.body && ans.body.more) {
+    const cur = (tables(DB).test || []).filter(function (r) { return yes(r.current); }).length;
+    return (everyOne.length > 0 && everyOne.length < cur && everyOne.every(function (r) { return yes(r.current); })) || 'cut at ' + everyOne.length + ' of ' + cur + ' current rows: ' + short(everyOne.map(function (r) { return r.test; }));
+  }
   return (mine.length === 4 && everyOne.every(function (r) { return yes(r.current); })) || mine.length + ' of the four set here, ' + everyOne.filter(function (r) { return !yes(r.current); }).length + ' not current, of ' + everyOne.length + ': ' + short(mine.map(function (r) { return r.test; }));
 }, test.limit.quick);
 
@@ -701,9 +707,12 @@ test.run('testicle.red answers every failed current test, and no other', 0.2, as
   if (!up()) return NONODE;
   // The runner's own runs write while it works: red is asked once it is idle, so the table it is compared with holds still.
   await idle(240000);
-  red = found(await call(N.base, 'testicle.red', {}));
+  const redAns = await call(N.base, 'testicle.red', {});
+  red = found(redAns);
   // The runner adds failures of its own runs (goal/G47.1, the queue cycle): every failed current row of the table, no other.
   const want = (tables(DB).test || []).filter(function (r) { return yes(r.current) && no(r.verified); }).length;
+  // The answer fits its room (more: true when cut): cut, every row of it failed and current, fewer than the table holds.
+  if (redAns.body && redAns.body.more) return (red.length > 0 && red.length < want && red.every(function (r) { return no(r.verified) && yes(r.current); })) || 'cut at ' + red.length + ' of ' + want + ': ' + short(red.map(function (r) { return r.test; }));
   return (red.length === want && red.length >= 3 && red.every(function (r) { return no(r.verified) && yes(r.current); })) || want + ' failed current rows; red answered ' + short(red);
 }, test.limit.long);
 test.run('testicle.red answers the most severe first', 0.2, function () {
@@ -797,9 +806,10 @@ test.run('run answers at once, before its suite has ended', 0.2, async function 
 test.run('without testicle, the whole suite runs: every test of it reports to testicle', 0.2, async function () {
   if (!up()) return NONODE;
   const names0 = ['the world: kappa waits a moment', 'kappa answers its first', 'kappa fails its second', 'kappa was started with no argument'];
-  const ok = await until(function () { return Promise.resolve(names0.every(function (n) { return !!rowOf(KA, KAS, n); })); }, 40000);
+  // A press waits behind the running job, which may take up to its 2-minute limit (the queue cycle).
+  const ok = await until(function () { return Promise.resolve(names0.every(function (n) { return !!rowOf(KA, KAS, n); })); }, 240000);
   return !!ok || 'rows: ' + short(names0.map(function (n) { return [n, !!rowOf(KA, KAS, n)]; }));
-}, test.limit.slow);
+}, test.limit.long);
 test.run('each row holds the result its test gave', 0.2, function () {
   if (!up()) return NONODE;
   const a = rowOf(KA, KAS, 'kappa answers its first'), b = rowOf(KA, KAS, 'kappa fails its second');
@@ -812,18 +822,27 @@ test.run('a script\'s own test is started with no argument', 0.2, function () {
 }, test.limit.quick);
 test.run('with testicle given, the suite runs up to that test and no test after it', 0.2, async function () {
   if (!up()) return NONODE;
+  // A first report of lambda makes its rows, flagged, and the runner then runs its whole suite (the queue cycle): lambda's whole
+  // suite is run first, so its rows are there and nothing of lambda is flagged when the run up to a test is asked. Then this run is told
+  // by when each row was tested: its second and its first after the press, its third not.
+  const g = await call(N.base, 'testicle.run', { script: LA, suite: LAS });
+  if (g.status !== 200) return 'the whole run: ' + g.status + ' ' + short(g.text);
+  await until(function () { return Promise.resolve(!!rowOf(LA, LAS, 'lambda answers its third')); }, 90000);
+  if (!(await idle(40000))) return 'the server was not idle before the run: nothing judged';
+  const t0 = Date.now();
   const r = await call(N.base, 'testicle.run', { script: LA, suite: LAS, testicle: 'lambda answers its second' });
   if (r.status !== 200) return 'run: ' + r.status + ' ' + short(r.text);
-  const ok = await until(function () { return Promise.resolve(!!rowOf(LA, LAS, 'lambda answers its second')); }, 40000);
-  await sleep(3000);
-  const one = rowOf(LA, LAS, 'lambda answers its first'), three = rowOf(LA, LAS, 'lambda answers its third');
-  return (!!ok && !!one && !three) || 'second ' + !!ok + ', first ' + short(one) + ', third ' + short(three);
-}, test.limit.slow);
+  const since = function (name) { const x = rowOf(LA, LAS, name); return !!x && Number(x.tested) >= t0; };
+  const ok = await until(function () { return Promise.resolve(since('lambda answers its second')); }, 60000);
+  await idle(30000);
+  const three = rowOf(LA, LAS, 'lambda answers its third');
+  return (!!ok && since('lambda answers its first') && !since('lambda answers its third')) || 'second ' + !!ok + ', first ' + short(rowOf(LA, LAS, 'lambda answers its first')) + ', third ' + short(three);
+}, test.limit.long);
 test.run('a general test is started with the script as its argument, and reports for that script', 0.2, async function () {
   if (!up()) return NONODE;
   const r = await call(N.base, 'testicle.run', { script: MU, suite: MUS });
   if (r.status !== 200) return 'run: ' + r.status + ' ' + short(r.text);
-  await until(function () { return Promise.resolve(!!rowOf(MU, MUS, 'mu holds its rule')); }, 40000);
+  await until(function () { return Promise.resolve(!!rowOf(MU, MUS, 'mu holds its rule')); }, 240000);
   const m = rowOf(MU, MUS, 'mu holds its rule');
   return (!!m && yes(m.verified)) || 'its row: ' + short(m);
 }, test.limit.slow);
@@ -947,11 +966,12 @@ test.run('the running job is not killed by a change: pi\'s first run ends', 0.2,
   const ok = await until(function () { return Promise.resolve(ends('pi').length > 0); }, 30000);
   return !!ok || 'the run log: ' + short(runlog().filter(function (l) { return l.suite === 'pi'; }));
 }, test.limit.slow);
-test.run('a result of that run carries the script\'s hash as it stood when the run started', 0.2, function () {
+test.run('a result of that run carries the script\'s hash as it stood when the run started', 0.2, async function () {
   if (!up()) return NONODE;
-  const rows = testRows(tables(DB), PI, PIS, 'pi answers');
+  let rows = [];
+  await until(function () { rows = testRows(tables(DB), PI, PIS, 'pi answers'); return Promise.resolve(rows.some(function (r) { return holds(r, piHash); })); }, 20000);
   return rows.some(function (r) { return holds(r, piHash); }) || 'pi\'s rows ' + short(rows) + ', the hash at its start ' + short(piHash) + '; all rows of pi.js: ' + short((tables(DB).test || []).filter(function (r) { return r.script === PI; }));
-}, test.limit.quick);
+}, test.limit.slow);
 test.run('the suite comes round again behind it: pi\'s own suite runs a second time, after the first ended', 0.2, async function () {
   const ok = await until(function () { return Promise.resolve(starts('pi').length >= 2); }, 240000);
   const e1 = (ends('pi')[0] || {}).at, s2 = (starts('pi')[1] || {}).at;
