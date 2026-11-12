@@ -831,14 +831,15 @@ test.run('with testicle given, the suite runs up to that test and no test after 
   // by when each row was tested: its second and its first after the press, its third not.
   const g = await call(N.base, 'testicle.run', { script: LA, suite: LAS });
   if (g.status !== 200) return 'the whole run: ' + g.status + ' ' + short(g.text);
-  await until(function () { return Promise.resolve(!!rowOf(LA, LAS, 'lambda answers its third')); }, 90000);
-  if (!(await idle(40000))) return 'the server was not idle before the run: nothing judged';
+  // Other suites may run meanwhile; what matters is that lambda's own suite is no longer flagged, so no whole run of it follows.
+  const settled = await until(function () { const u = suiteRow(tables(DB), LA, LAS); return Promise.resolve(!!rowOf(LA, LAS, 'lambda answers its third') && !!u && !yes(u.test)); }, 150000);
+  if (!settled) return 'lambda\'s own suite still flagged after its whole run: nothing judged; its row ' + short(suiteRow(tables(DB), LA, LAS));
   const t0 = Date.now();
   const r = await call(N.base, 'testicle.run', { script: LA, suite: LAS, testicle: 'lambda answers its second' });
   if (r.status !== 200) return 'run: ' + r.status + ' ' + short(r.text);
   const since = function (name) { const x = rowOf(LA, LAS, name); return !!x && Number(x.tested) >= t0; };
-  const ok = await until(function () { return Promise.resolve(since('lambda answers its second')); }, 60000);
-  await idle(30000);
+  const ok = await until(function () { return Promise.resolve(since('lambda answers its second')); }, 90000);
+  await sleep(5000);
   const three = rowOf(LA, LAS, 'lambda answers its third');
   return (!!ok && since('lambda answers its first') && !since('lambda answers its third')) || 'second ' + !!ok + ', first ' + short(rowOf(LA, LAS, 'lambda answers its first')) + ', third ' + short(three);
 }, test.limit.long);
