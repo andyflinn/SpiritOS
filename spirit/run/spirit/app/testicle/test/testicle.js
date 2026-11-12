@@ -1047,15 +1047,16 @@ test.run('the world: rho.js and sigma.js change', 0.2, async function () {
 test.run('a job past 2 minutes is killed, and every test of it the server knows is failed', 0.2, async function () {
   if (!up()) return NONODE;
   const ok = await until(function () { const r = currentOf(tables(DB), RHO, RHOS, 'rho answers its first')[0]; return Promise.resolve(!!r && no(r.verified)); }, 150000);
-  return !!ok || 'rho\'s first, after 2.5 minutes: ' + short(currentOf(tables(DB), RHO, RHOS, 'rho answers its first'));
+  let errs = ''; try { errs = fs.readFileSync(path.join(s.run, 'spirit', 'state', 'testicle', 'testicle.err'), 'utf8').split('\n').filter(Boolean).slice(-8).join(' | '); } catch (e) { errs = 'no testicle.err'; }
+  return !!ok || 'rho\'s first, after 2.5 minutes: ' + short(currentOf(tables(DB), RHO, RHOS, 'rho answers its first')) + '; testicle.err: ' + errs.slice(0, 1500) + '; the log ' + short(runlog().filter(function (l) { return l.suite === 'rho'; }));
 }, test.limit.long);
 test.run('killed, its suite shows "still red"', 0.2, async function () {
   if (!up()) return NONODE;
   // The kill fails the tests first, then the process ends and the job is judged: the status follows a moment later.
   let st = null;
   await until(function () { return statusOf(RHO, RHOS).then(function (x) { st = x; return x === 'still red'; }); }, 20000);
-  let errs = ''; try { errs = fs.readFileSync(path.join(s.root, 'node.err'), 'utf8').split('\n').filter(function (l) { return /testicle/.test(l); }).slice(-5).join(' | '); } catch (e) { /* none */ }
-  return st === 'still red' || 'rho\'s suite: ' + short(st) + '; the node said: ' + short(errs) + '; its script row ' + short(scriptRow(tables(DB), RHO)) + '; the rows of its tests (test, current, verified, judged) ' + short(testRows(tables(DB), RHO, RHOS, 'rho answers its first').concat(testRows(tables(DB), RHO, RHOS, 'rho hangs')).map(function (r) { return [r.test, r.current, r.verified, String(r.judged).slice(0, 8), String(r.suiteHash).slice(0, 8), r.tested]; })) + '; its row ' + short(suiteRow(tables(DB), RHO, RHOS)) + '; its tests ' + short(testRows(tables(DB), RHO, RHOS, 'rho answers its first')) + '; the log ' + short(runlog().filter(function (l) { return l.suite === 'rho'; }));
+  let errs = ''; try { errs = fs.readFileSync(path.join(s.run, 'spirit', 'state', 'testicle', 'testicle.err'), 'utf8').split('\n').filter(Boolean).slice(-8).join(' | '); } catch (e) { errs = 'no testicle.err'; }
+  return st === 'still red' || 'rho\'s suite: ' + short(st) + '; testicle.err: ' + errs.slice(0, 1500) + '; its script row ' + short(scriptRow(tables(DB), RHO)) + '; the rows of its tests (test, current, verified, judged) ' + short(testRows(tables(DB), RHO, RHOS, 'rho answers its first').concat(testRows(tables(DB), RHO, RHOS, 'rho hangs')).map(function (r) { return [r.test, r.current, r.verified, String(r.judged).slice(0, 8), String(r.suiteHash).slice(0, 8), r.tested]; })) + '; its row ' + short(suiteRow(tables(DB), RHO, RHOS)) + '; its tests ' + short(testRows(tables(DB), RHO, RHOS, 'rho answers its first')) + '; the log ' + short(runlog().filter(function (l) { return l.suite === 'rho'; }));
 }, test.limit.slow);
 test.run('a suite that hangs before any test reported fails too: sigma\'s suite shows "still red"', 0.2, async function () {
   if (!up()) return NONODE;
