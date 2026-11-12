@@ -177,6 +177,7 @@ function nextJob() {
   const args = [n.suite];
   if (n.suite !== ownTestOf(n.script)) args.push(n.script);
   if (j.title) args.push('--test', j.title);
+  killed.delete(j.script + '|' + j.suite);
   job = j;
   told();
   let done = false;
@@ -198,9 +199,14 @@ function nextJob() {
 }
 // PAST THE LIMIT (the box: "A job that runs past 2 minutes is killed, and every test of that suite and script the server
 // knows is failed, tagged with the run's two hashes, so it is not queued again until the script or the suite changes").
+// A RESULT OF A KILLED RUN THAT COMES LATE (wsl's red, rho: its first result reached the server only after the kill) is a
+// test of that run too, and failed with it: killed keeps the run's hashes per suite and script until a run of it starts
+// again or a change moves them.
+const killed = new Map();   // script|suite -> { scriptHash, suiteHash }
 function killJob(j) {
   if (job !== j) return;
   j.killed = true;
+  killed.set(j.script + '|' + j.suite, { scriptHash: j.scriptHash, suiteHash: j.suiteHash });
   T.ofSuite.all(j.script, j.suite).forEach(function (r) { setResult(j.script, j.suite, r.test, false, Number(r.severity) || 0, j.scriptHash, j.suiteHash); });
   try { j.kid.kill(); } catch (e) { /* gone already */ }
 }
@@ -312,6 +318,8 @@ function apply(changed, P) {
   }
   files.forEach(function (file) { const r = Q.script.get(file); if (r) tell('script', served(r), r.deleted ? 'deleted' : had['script|' + file] ? 'updated' : 'added'); });
   written.forEach(function (p) { const r = Q.suiteRow.get(p[0], p[1]); if (r) tell('suite', suiteServed(r), r.deleted ? 'deleted' : had['suite|' + p[0] + '|' + p[1]] ? 'updated' : 'added'); });
+  // Whatever wrote it, a file change, a script.get or a testicle.set, a flag written wakes the runner (wsl's gap).
+  if (written.size) soon();
 }
 
 // WHAT IT STREAMS (goal/G47.1, the box: "busy is streamed by the server: whenever it wakes it sets busy true and streams it;
@@ -500,13 +508,19 @@ appServer.serve({
         if (there(suite) && !Q.suiteRow.get(script, suite)) {
           Q.putSuite.run(script, suite, hashOf(suite), Date.now());
           tell('suite', suiteServed(Q.suiteRow.get(script, suite)), 'added');
+          // A flag written here wakes the runner as a file change does (wsl's gap: "every flagged row is owed one run").
+          soon();
         }
         // THE TWO HASHES IT IS TAGGED WITH (the box: "until that run ends tags every result of it with them"): the running job's
         // for its own script and suite; any other result, the script and suite rows' hashes as they stand.
         const own = job && job.script === script && job.suite === suite ? job : null;
-        const scriptHash = own ? own.scriptHash : ((Q.script.get(script) || {}).hash || hashOf(script));
-        const suiteHash = own ? own.suiteHash : ((Q.suiteRow.get(script, suite) || {}).hash || hashOf(suite));
-        const out = setResult(script, suite, name, !!a.verified, severity, scriptHash, suiteHash);
+        let scriptHash = own ? own.scriptHash : ((Q.script.get(script) || {}).hash || hashOf(script));
+        let suiteHash = own ? own.suiteHash : ((Q.suiteRow.get(script, suite) || {}).hash || hashOf(suite));
+        // Late from a killed run, its hashes still standing: failed, as every test of that run is.
+        const late = own ? null : killed.get(script + '|' + suite);
+        const isLate = !!late && late.scriptHash === scriptHash && late.suiteHash === suiteHash;
+        if (late && !isLate) killed.delete(script + '|' + suite);
+        const out = setResult(script, suite, name, isLate ? false : !!a.verified, severity, scriptHash, suiteHash);
         suiteJudged(script, suite);
         return out;
       }).finally(function () { getting -= 1; told(); });
