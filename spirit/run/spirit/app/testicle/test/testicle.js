@@ -76,6 +76,10 @@ const PLANT = {
   ].join('\n') + '\n',
   // goal/G47.1, the queue cycle: suites that log their start and end to runlog.txt in the scratch root, outside the tree the
   // server watches, so the order, the overlap and the timing of the runs the server starts can be read back.
+  // early's own suite sorts before every general suite by name (spirit/aaTesticle/ before spirit/test/), so only the runner's
+  // general-first order puts its general suites ahead of it.
+  'spirit/aaTesticle/early.js': '\'use strict\';\n// early\n',
+  'spirit/aaTesticle/test/early.js': LOGGED('early', 0, ["test.run('early answers', 0.2, function () { return true; }, test.limit.quick);"]),
   'spirit/zzTesticle/nu.js': '\'use strict\';\n// nu\n',
   'spirit/zzTesticle/test/nu.js': LOGGED('nu', 3000, ["test.run('nu answers', 0.2, function () { return true; }, test.limit.quick);"]),
   'spirit/zzTesticle/xi.js': '\'use strict\';\n// xi\n',
@@ -896,6 +900,7 @@ test.run('the script changed, its suite shows "needs running" again', 0.2, async
 // shows "still red" in the script tab, so a suite that hangs before any test reported fails too", "A press of 🏃‍♂️ puts its
 // suite and script at the head of the queue, never a second run beside the running one", "Rows already flagged when the server
 // starts: the runner starts 1 second after the server starts". The planted suites log to runlog.txt (LOGGED, above).
+const EARLY = 'spirit/aaTesticle/early.js', EARLYS = 'spirit/aaTesticle/test/early.js';
 const NU = Z + 'nu.js', NUS = Z + 'test/nu.js', XI = Z + 'xi.js', XIS = Z + 'test/xi.js', PI = Z + 'pi.js', PIS = Z + 'test/pi.js';
 const OM = Z + 'omicron.js', OMS = Z + 'test/omicron.js', TAU = Z + 'tau.js', TAUS = Z + 'test/tau.js', UP = Z + 'upsilon.js', UPS = Z + 'test/upsilon.js';
 const RHO = Z + 'rho.js', RHOS = Z + 'test/rho.js', SIG = Z + 'sigma.js', SIGS = Z + 'test/sigma.js';
@@ -913,7 +918,7 @@ test.run('the world: the queue is worked off, the server idle', 0.2, async funct
 }, test.limit.long);
 test.run('the world: nu.js and xi.js change, nu.js twice, 600 ms apart', 0.2, async function () {
   if (!up()) return NONODE;
-  append(NU, '// nu, changed\n'); append(XI, '// xi, changed\n');
+  append(NU, '// nu, changed\n'); append(XI, '// xi, changed\n'); append(EARLY, '// early, changed\n');
   await sleep(600);
   append(NU, '// nu, changed again\n');
   lastChange = Date.now();
@@ -945,6 +950,13 @@ test.run('general tests first: every general result for nu.js came before nu\'s 
   const gen = (tables(DB).test || []).filter(function (r) { return r.script === NU && r.suite !== NUS && Number(r.tested) >= lastChange; });
   return (!!own0 && gen.length > 0 && gen.every(function (r) { return Number(r.tested) < own0; })) || gen.length + ' general results for nu.js, ' + gen.filter(function (r) { return Number(r.tested) >= own0; }).length + ' after its own suite started';
 }, test.limit.quick);
+test.run('general tests first, though the own suite sorts first by name: every general result for early.js came before early\'s own suite started', 0.2, async function () {
+  if (!up()) return NONODE;
+  await until(function () { return Promise.resolve(starts('early').length > 0); }, 120000);
+  const own0 = (starts('early')[0] || {}).at;
+  const gen = (tables(DB).test || []).filter(function (r) { return r.script === EARLY && r.suite !== EARLYS && Number(r.tested) >= lastChange; });
+  return (!!own0 && gen.length > 0 && gen.every(function (r) { return Number(r.tested) < own0; })) || 'early started ' + own0 + '; ' + gen.length + ' general results for early.js, ' + gen.filter(function (r) { return Number(r.tested) >= own0; }).length + ' after its own suite started';
+}, test.limit.long);
 test.run('a result carries both hashes it ran against, the script\'s and the suite\'s', 0.2, function () {
   if (!up()) return NONODE;
   const t = tables(DB);
