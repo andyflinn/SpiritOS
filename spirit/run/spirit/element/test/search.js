@@ -1596,6 +1596,25 @@ async function tilesPart() {
     if (!node || !node.up || !chrome || chrome.error) return 'no scratch node or no Chrome: the world failed';
     return (plain.headers === 0 && plain.sorts === 0 && plain.tables === 0) ? true : short({ h: plain.headers, s: plain.sorts, t: plain.tables });
   }, test.limit.quick);
+  // THE TILES ARE A GRID (goal/G47.1; Andy, after the kept rows: "the FUCKING TILE MODE IN APP-SEARCH (OR SEARCH ITSELF)
+  // FUCKING IS NO GRID ANYMORE, EVERY FUCKING TILE IS CENTERED ON IT'S OWN FUCKING ROW!"): in 800px, the three tiles of
+  // at least 96px each stand side by side, one row, and so after a filter or new words are drawn.
+  const sideBySide = function () {
+    return js('(function () { var ts = [].filter.call(window.__box.querySelectorAll(".app-icon"), function (t) { return t.getClientRects().length; }).map(function (t) { var r = t.getBoundingClientRect(); return { top: Math.round(r.top), left: Math.round(r.left) }; }); return JSON.stringify(ts); })()').then(JSON.parse);
+  };
+  test.run('the tiles stand side by side in a grid, not one per line', 0.2, async function () {
+    if (!node || !node.up || !chrome || chrome.error) return 'no scratch node or no Chrome: the world failed';
+    const ts = await sideBySide();
+    const oneRow = ts.length === 3 && ts.every(function (t) { return t.top === ts[0].top; }) && ts[1].left > ts[0].left && ts[2].left > ts[1].left;
+    return oneRow || 'the tiles stand at ' + short(ts);
+  }, test.limit.quick);
+  test.run('and still side by side once words were typed and cleared', 0.2, async function () {
+    if (!node || !node.up || !chrome || chrome.error) return 'no scratch node or no Chrome: the world failed';
+    await type('ga');
+    await type('');
+    const ts = await sideBySide();
+    return (ts.length === 3 && ts.every(function (t) { return t.top === ts[0].top; })) || 'after words, the tiles stand at ' + short(ts);
+  }, test.limit.slow);
   test.run('one search field', 0.2, function () {
     if (!node || !node.up || !chrome || chrome.error) return 'no scratch node or no Chrome: the world failed';
     return (plain.inputs === 1) ? true : plain.inputs + ' search fields';

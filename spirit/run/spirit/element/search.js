@@ -477,8 +477,14 @@
       columns.forEach(function (c, i) { if (tds[i]) tds[i].innerHTML = mark(valueOf(entry, c.from || c.field)); });
       entry.painted = { row: rowNow, words: typed };
     }
-    // Hidden by the attribute and by its own style: a tile's class (.app-icon) sets display, which beats [hidden].
-    function showNode(n, on) { n.hidden = !on; n.style.display = on ? '' : 'none'; }
+    // Hidden by the attribute and by its own style: a tile's class (.app-icon) sets display, which beats [hidden]. Shown
+    // again, a node gets back the display it was made with (the tiles' grid is display:grid; clearing it put every
+    // tile on its own row, Andy: "the FUCKING TILE MODE IN APP-SEARCH ... IS NO GRID ANYMORE").
+    function showNode(n, on) {
+      if (n.shownDisplay === undefined) n.shownDisplay = n.style.display === 'none' ? '' : n.style.display;
+      n.hidden = !on;
+      n.style.display = on ? n.shownDisplay : 'none';
+    }
     function keep(list, rows, how) {
       var h = frame(list);
       if (h.head) h.head.innerHTML = headHtml(how.searching).replace(/^<thead>|<\/thead>$/g, '');

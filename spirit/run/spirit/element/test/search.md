@@ -239,6 +239,7 @@ Andy, box: *"probabilitySearch gets a third face, 'tiles', beside 'pane' and 'dr
 ### Requirements
 
 - `face: 'tiles'`: one `.app-icon` tile per row, its image from `row.icon` above its label from `row.label`. No table, headers or sort triggers. One search field.
+- The tiles are a grid: side by side, never one per line, and still so after words are typed and cleared (goal/G47.1; Andy, after the kept rows: *"the FUCKING TILE MODE IN APP-SEARCH ... IS NO GRID ANYMORE"*).
 - With no words there is no bar, and its space stays: with words a tile's label stands where it stood.
 - With words the best row comes first, with a bar between image and label, horizontal and centered: `.list-rank` as the lists draw it, the same colour and number.
 - A tile the words miss stays, last, with an empty bar. Nothing is cut.
