@@ -60,8 +60,10 @@
           { field: 'suite', label: 'Suite', sort: 'text' },
           { field: 'status', label: 'Status', sort: 'text' },
         ],
-        // THE FILE'S ROWS ONLY, not drawn: the branch holds every file's suites.
-        filters: [{ name: 'script', when: function () { return false; }, test: function (row) { return row && row.script === script ? 1 : 0; } }],
+        // THE FILE'S ROWS ONLY, not drawn: the branch holds every file's suites. A suite gone from disc, its row streamed
+        // deleted, leaves the list by itself (goal/G47.1, the box: "Every element of testicle's face updates itself in
+        // response to the server stream").
+        filters: [{ name: 'script', when: function () { return false; }, test: function (row) { return row && row.script === script && !row.deleted ? 1 : 0; } }],
         element: function (row) { return S.element.spirit.element.search.suite.rowElement.create(row); },
         face: o.face,
         placeholder: o.placeholder,

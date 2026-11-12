@@ -46,16 +46,25 @@
           el.cells().map(function (c) { return '<td data-field="' + esc(c.name) + '">' + c.html + '</td>'; }).join('') + '</tr>';
       }).join('') || '<tr><td colspan="6">' + esc('No row of this test.') + '</td></tr>';
     }
+    // ITS ROWS ARE THE BRANCH'S (goal/G47.1, the box: "Every element of testicle's face updates itself in response to the
+    // server stream"): the history is asked once and kept in testicle's branch; what is drawn is every row of this test the
+    // branch holds, newest flip first, drawn again on every change the stream brings.
+    var prefix = script + '|' + suite + '|' + test + '|';
+    function fromBranch() {
+      var D = S.data.testicle.data;
+      var b = S.data.getPath(D.branch('testicle'));
+      return Object.keys(b || {}).filter(function (k) { return k.indexOf(prefix) === 0; }).map(function (k) { return b[k]; })
+        .sort(function (a, c) { return Number(c.flipped) - Number(a.flipped); });
+    }
     function ask() {
       return Promise.resolve(S.testicle['testicle.search']({ script: script, suite: suite, test: test, text: '' }))
-        .then(function (b) { draw(rowsOf(b)); }, function (e) { if (!gone) body.innerHTML = '<tr><td colspan="6">' + esc((e && e.message) || e) + '</td></tr>'; });
+        .then(function (b) { S.data.testicle.data.keep('testicle', rowsOf(b)); draw(fromBranch()); }, function (e) { if (!gone) body.innerHTML = '<tr><td colspan="6">' + esc((e && e.message) || e) + '</td></tr>'; });
     }
 
     parts.then(function () {
       if (gone) return;
       ask();
-      // A row of this test written anywhere: its history asked again.
-      release = S.data.testicle.data.testicle.watch(function (key) { if (String(key || '').indexOf(script + '|' + suite + '|' + test + '|') === 0) ask(); });
+      release = S.data.testicle.data.testicle.watch(function () { draw(fromBranch()); });
     }, function () { container.textContent = 'The history could not be loaded.'; });
 
     return {

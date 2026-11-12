@@ -100,16 +100,19 @@
     var icon = row.firstChild;
     var line = row.lastChild;
     var release = null;
+    var shown = null;
     function draw(m) {
       var busy = !!(m && m.busy);
-      icon.textContent = busy ? '🚶‍➡️' : '🛌';
+      var glyph = busy ? '🚶‍➡️' : '🛌';
+      // Through the icon element, as every pictograph is drawn (spirit/element/icon.js; the general rules).
+      var I = window.spirit.element && window.spirit.element.spirit && window.spirit.element.spirit.element.icon;
+      if (glyph !== shown && I) { icon.innerHTML = ''; I.create(icon, { glyph: glyph }); shown = glyph; }
       icon.title = busy ? 'working' : 'idle';
       var words = lastWords(m && m.last);
       line.textContent = words;
       line.title = words;
     }
-    draw({});
-    Promise.resolve(window.spirit.cacheManager('testicle')).then(function () {
+    Promise.all([window.spirit.require('spirit/element/icon.js'), window.spirit.cacheManager('testicle')]).then(function () {
       if (release === false) return;
       var M = window.spirit.data.testicle.data.monitor;
       draw(M.get());
