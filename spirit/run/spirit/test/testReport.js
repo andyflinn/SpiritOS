@@ -177,7 +177,16 @@ function reportToTesticle(rec) {
     try { real = require(path.join(__dirname, '..', 'spirit.js')); } finally { globalThis.spirit = own !== undefined ? own : (real || undefined); globalThis.window = ownWindow; }
     testicle = testicle || real.require(real.familyPath('testicle'));
     reportsOut += 1;
-    reportsLanded.push(Promise.resolve(testicle).then(function (f) { return f['testicle.set'](rec); })
+    // TRIED AGAIN, UP TO THREE TIMES, A SECOND APART (goal/G47.1, wsl's verify: "the FIRST report of a suite process is
+    // sometimes lost; every later one lands": the first goes out while spirit.js and the testicle family still load). The
+    // same result sent twice moves no flip (testicle.set), so a try that landed after all does no harm.
+    // A family that failed to load is asked for again on the next try.
+    const once = function () {
+      testicle = testicle || real.require(real.familyPath('testicle'));
+      return Promise.resolve(testicle).then(function (f) { return f['testicle.set'](rec); }, function (e) { testicle = null; throw e; });
+    };
+    const wait = function () { return new Promise(function (r) { ownTimeout(r, 1000); }); };
+    reportsLanded.push(once().catch(function () { return wait().then(once); }).catch(function () { return wait().then(once); })
       .catch(function () { /* a checkout with no node reports nowhere */ }).then(function () { reportsOut -= 1; }));
   } catch (e) { /* the lines are printed whatever the node says */ }
 }

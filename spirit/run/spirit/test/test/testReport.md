@@ -33,7 +33,7 @@ the completion line and ends the process, its exit code 1 when a test failed.
   tests after both still run. Both are reported at 0.7.
 - `test.after` runs once every test has run. The completion line counts every test; the exit code is 1 when one failed.
 - **The report**: each test to `testicle.testicle.set` of the node of its checkout (spirit.js reads the port from that
-  checkout's `spirit/state/environment.json`), once, `{script, suite, test, verified, severity}`: the script tested and
+  checkout's `spirit/state/environment.json`), once, a send that fails tried again up to three times, a second apart, `{script, suite, test, verified, severity}`: the script tested and
   the suite scoped to run://, the title as the test, the result, the severity the test gives. A failure's words never go
   into the title.
 - **A general test** reports the file it judges, its argument, as its script.
