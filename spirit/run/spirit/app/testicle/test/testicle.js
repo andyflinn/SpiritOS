@@ -505,7 +505,7 @@ test.run('given no script, a suite of two scripts is answered once', 0.2, async 
 // will keep change history", "test.search will only return \"current\" test rows for the script/suite combination
 // supplied ... no script in the search query searches tests for any script; the same for suite", "The new verb \"red\"
 // is shorthand for: search all failed, current tests, most severe first", "Most severe first applies to all test
-// searches", "This cycle does not clear a suite's needs-testing flag", "The verb red is testicle.red". G45.1's columns:
+// searches", "The verb red is testicle.red". G45.1's columns:
 // script (file until the rename), suite, test, flipped, current, verified, tested, judged, severity.
 test.run('the world: theta.js has no row before a test of it is set', 0.2, function () {
   if (!up()) return NONODE;
@@ -589,14 +589,12 @@ test.run('the row it replaces is kept, current no longer: the history', 0.2, fun
   const old4 = all4.filter(function (r) { return !yes(r.current); })[0];
   return (!!old4 && !!tr1 && yes(old4.verified) && Number(old4.flipped) === Number(tr1.flipped)) || 'the old row: ' + short(old4);
 }, test.limit.quick);
-
-// the box: "This cycle does not clear a suite's needs-testing flag"
-test.run('with every test of the suite passing, its needs-testing flag stays', 0.2, async function () {
+// theta's first question passes again: a third row of it, the history the searches below read. (Its old check, that the
+// needs-testing flag stays, went with the struck line "This cycle does not clear a suite's needs-testing flag".)
+test.run('the world: theta\'s first question passes again', 0.2, async function () {
   if (!up()) return NONODE;
-  await call(N.base, 'testicle.testicle.set', { script: TH, suite: THS, test: 'theta answers its first question', verified: true, severity: 0.6 });
-  const k5 = tables(DB);
-  const flag5 = suiteRow(k5, TH, THS);
-  return (!!flag5 && yes(flag5.test)) || 'the suite row: ' + short(flag5);
+  const r = await call(N.base, 'testicle.testicle.set', { script: TH, suite: THS, test: 'theta answers its first question', verified: true, severity: 0.6 });
+  return r.status === 200 || 'testicle.set: ' + r.status + ' ' + short(r.text);
 }, test.limit.quick);
 
 // the box: "test.search will only return current test rows"

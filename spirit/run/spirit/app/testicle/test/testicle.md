@@ -61,7 +61,6 @@ The box, in Andy's words where he gave them:
   run of lambda given its second test makes rows for the first and second, none for the third; run of mu makes mu's row,
   passing.
   The branch and the stream are judged in the face test; the reporter's call in its own test (`spirit/test/test/testReport.js`).
-  - *"This cycle does not clear a suite's needs-testing flag"*: with every test passing, the flag stays.
   - *"test.search will only return \"current\" test rows for the script/suite combination supplied ... no script in the
     search query searches tests for any script; the same for suite"*: `{items, more}`, the current rows only, one per
     test; with no script, that suite's for any script; with no suite, that script's in any suite; with neither, all.
