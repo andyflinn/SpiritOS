@@ -186,8 +186,10 @@ function nextJob() {
     clearTimeout(j.timer);
     if (job === j) job = null;
     try { jobEnded(j); } catch (e) { console.error('testicle: ' + (e && e.message || e)); }
+    // The next job at once, before busy is told: busy goes false only when nothing is left to run, never between two jobs
+    // (the box: "whenever it goes back to listening for events it sets busy false").
+    nextJob();
     told();
-    setImmediate(nextJob);
   };
   j.kid = spawn(process.execPath, args, { cwd: RUN, stdio: 'ignore', windowsHide: true });
   j.kid.on('error', end);
@@ -210,7 +212,9 @@ function killJob(j) {
 function jobEnded(j) {
   if (j.title) return;
   const row = Q.suiteRow.get(j.script, j.suite);
-  if (!row || row.deleted || Number(row.changed) > j.started) return;
+  const sr = Q.script.get(j.script);
+  // Changed during the run: the script's or the suite's hash is no longer the one the run started with.
+  if (!row || row.deleted || !sr || row.hash !== j.suiteHash || sr.hash !== j.scriptHash) return;
   if (!j.killed && suiteJudged(j.script, j.suite)) return;
   if (!row.test && row.outcome === 'red') return;
   judgeSuite.run('red', Date.now(), j.script, j.suite);
@@ -331,6 +335,8 @@ function told() {
 // as they are now"): flagged, it clears once every current row carries the script row's hash and the suite row's. Answers
 // whether the row is judged full.
 function suiteJudged(script, suite) {
+  // Never while its own job runs: the rows it has so far are not the whole run; the job's end judges it (jobEnded).
+  if (job && job.script === script && job.suite === suite) return false;
   const row = Q.suiteRow.get(script, suite);
   const sr = Q.script.get(script);
   if (!row || row.deleted || !sr) return false;
