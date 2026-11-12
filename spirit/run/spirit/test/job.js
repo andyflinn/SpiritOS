@@ -869,6 +869,62 @@ test.run('and its own json comes with core: spirit/app/icons/icons.json', 0.2, f
   if (!treeSent) return 'the tree was not read: the world failed';
   return (!!treeSent.ownJson && treeSent.ownJson.core === true) || 'spirit/app/icons/icons.json: ' + long(treeSent.ownJson);
 }, test.limit.quick);
+// THE FLAG FOLLOWS AN APP'S <name>.json (goal/G47.1, cw's fix: "again only for an app's files when its <name>.json changes";
+// Andy: "we need a red so no fool takes your fix out again"). On a scratch copy of the tracked run folder (job.js judges
+// core files of the tree it sits in): a planted app zzKept, its json saying intrinsic false, its zzKept.js not core; the
+// json changed to intrinsic true, its zzKept.js turns core, sent as a change; changed back, it is no longer core. The
+// tree is never asked to read a json as it is sent.
+let flagged = null;
+test.run('the world: a scratch tree, an app zzKept whose json turns intrinsic true and back, its file\'s core flag read after each', 0.2, function () {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-job-core-'));
+  try {
+    const REPO = path.resolve(RUN, '..', '..');
+    execSync('git ls-files -- spirit/run', { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(Boolean)
+      .filter(function (f) { return fs.existsSync(path.join(REPO, f)); })
+      .forEach(function (f) { const d = path.join(root, f); fs.mkdirSync(path.dirname(d), { recursive: true }); fs.copyFileSync(path.join(REPO, f), d); });
+    const run = path.join(root, 'spirit', 'run');
+    const app = path.join(run, 'spirit', 'app', 'zzKept');
+    fs.mkdirSync(app, { recursive: true });
+    const manifest = function (intrinsic) { return JSON.stringify({ identity: { icon: 'z', label: 'zzKept', intrinsic: intrinsic } }); };
+    fs.writeFileSync(path.join(app, 'zzKept.json'), manifest(false));
+    fs.writeFileSync(path.join(app, 'zzKept.js'), '\'use strict\';\n// zzKept\n');
+    const src = [
+      "const fs = require('fs'), path = require('path');",
+      "const run = process.argv[1];",
+      "const jobs = require(path.join(run, 'spirit', 'job.js'))(1);",
+      "const job = jobs.startFsWatcherJob(run);",
+      "const json = path.join(run, 'spirit', 'app', 'zzKept', 'zzKept.json');",
+      "const core = function () { const c = jobs.fsTreeCommands().filter(function (x) { return x.path === 'spirit/app/zzKept/zzKept.js'; })[0]; return c ? c.core === true : null; };",
+      "const wait = function (want, ms) { const end = Date.now() + ms; return new Promise(function (r) { (function tick() { const now = core(); if (now === want || Date.now() > end) return r(now); setTimeout(tick, 100); })(); }); };",
+      "const out = { before: null, turned: null, back: null };",
+      "setTimeout(async function () {",
+      "  out.before = core();",
+      "  fs.writeFileSync(json, " + JSON.stringify(manifest(true)) + ");",
+      "  out.turned = await wait(true, 10000);",
+      "  fs.writeFileSync(json, " + JSON.stringify(manifest(false)) + ");",
+      "  out.back = await wait(false, 10000);",
+      "  console.log(JSON.stringify(out));",
+      "  try { job._stop(); } catch (e) {}",
+      "  process.exit(0);",
+      "}, 3000);",
+    ].join('\n');
+    const r = spawnSync(process.execPath, ['-e', src, run], { cwd: run, encoding: 'utf8', timeout: 60000 });
+    try { flagged = JSON.parse(String(r.stdout || '').trim().split('\n').pop()); } catch (e) { flagged = null; }
+    return !!flagged || 'the child said ' + long(r.stdout) + ' ' + long(r.stderr);
+  } finally { try { fs.rmSync(root, { recursive: true, force: true }); } catch (e) { /* scratch */ } }
+}, test.limit.long);
+test.run('an app\'s file whose json says intrinsic false comes without core: zzKept.js', 0.2, function () {
+  if (!flagged) return 'the scratch tree was not watched: the world failed';
+  return flagged.before === false || 'zzKept.js before: ' + long(flagged.before);
+}, test.limit.quick);
+test.run('its json changed to intrinsic true, its file comes with core', 0.2, function () {
+  if (!flagged) return 'the scratch tree was not watched: the world failed';
+  return flagged.turned === true || 'zzKept.js after intrinsic true: ' + long(flagged.turned);
+}, test.limit.quick);
+test.run('its json changed back to intrinsic false, its file comes without core again', 0.2, function () {
+  if (!flagged) return 'the scratch tree was not watched: the world failed';
+  return flagged.back === false || 'zzKept.js after intrinsic false again: ' + long(flagged.back);
+}, test.limit.quick);
 
 // 5. no file names spirit/run/node_modules any more
 test.run('no tracked file names spirit/run/node_modules', 0.2, function () {

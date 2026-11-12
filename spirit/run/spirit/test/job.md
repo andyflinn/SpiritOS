@@ -139,7 +139,9 @@ The tree is read as it is. The watcher runs in a child process on a scratch fold
 - **The core flag is kept on the file list** (goal/G47.1; Andy: *"stick that flag on the fucking file list, then you have to
   check each file once with isCore()"*): the fs-watcher job on the run folder, its tree asked twice, reads no app's
   <name>.json from disc; spirit/spirit.js comes with core, spirit/app/icons/icons.js (its json says intrinsic false)
-  without, icons.json itself with.
+  without, icons.json itself with. The flag follows an app's json: on a scratch copy of the run folder, a planted app
+  zzKept whose json says intrinsic false has zzKept.js without core; the json changed to intrinsic true, zzKept.js comes
+  with core; changed back, without again.
 - **No file names spirit/run/node_modules.** That covers the .gitignore exception and the two installers.
 
 deskClient's use of the library is the chokidar part of `spirit/app/deskClient/test/deskClient.md`; fileSystem.js's one list of vendored folders is the vendoredFolders part of `./fileSystem.md`.
