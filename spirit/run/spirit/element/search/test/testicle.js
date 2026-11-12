@@ -255,8 +255,11 @@ test.run('typed words show the tests they find, the best match first', 0.2, asyn
   if (mounted()) return mounted();
   if (!gammaPlanted) return 'gamma\'s tests were not set: the world failed';
   if (!(await T('typeMain("gamma fails its question 17")'))) return 'no search field to type in';
-  const ok = await until(function () { return T('cells()').then(function (rows) { return !!rows && rows.length > 0 && titleOf(rows[0]) === 'gamma fails its question 17'; }); }, 10000);
-  const shown = ((await T('cells()')) || []).map(titleOf);
+  // While words are typed the list draws its match column first (spirit/element/search.js headHtml): the title is
+  // looked for among the row's cells.
+  const titled = function (row) { return !!row && row.cells.some(function (cl) { return cl.text === 'gamma fails its question 17'; }); };
+  const ok = await until(function () { return T('cells()').then(function (rows) { return !!rows && rows.length > 0 && titled(rows[0]); }); }, 10000);
+  const shown = ((await T('cells()')) || []).map(function (r) { return r.cells.map(function (cl) { return cl.text; }).join(' | '); });
   await T('typeMain("")');
   await sleep(500);
   return !!ok || 'the rows shown, top down: ' + short(shown.slice(0, 5)) + ' of ' + shown.length;
