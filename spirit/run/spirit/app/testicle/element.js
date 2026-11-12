@@ -39,8 +39,26 @@
   function fileDetail(box, file) {
     var gone = false;
     var made = null;
-    box.innerHTML = '<div class="testicle-detail fill"><div class="testicle-title">' + esc(file) + '</div><div class="testicle-below fill"></div></div>';
+    var release = null;
+    box.innerHTML = '<div class="testicle-detail fill"><div class="testicle-title">' + esc(file) + '</div>' +
+      '<div class="testicle-own-missing" style="color:#c00"></div><div class="testicle-below fill"></div></div>';
     var below = box.querySelector('.testicle-below');
+    // THE OWN TEST, IN RED WHEN MISSING (goal/G47.1, the box: "A script tab shows, right under its title line, the name of
+    // the script's own test in red when that test is missing on disc: the folder test/ beside the script, the same file
+    // name", "When the own test is there, nothing shows in that place", "once the test file is written, the red name goes by
+    // itself"). Read from the fs family's mirror of the tree, and only once the tree is whole: before that, missing is unknown.
+    var own = file.slice(0, file.lastIndexOf('/') + 1) + 'test/' + file.slice(file.lastIndexOf('/') + 1);
+    var ownLine = box.querySelector('.testicle-own-missing');
+    function drawOwn() {
+      var F = window.spirit.data && window.spirit.data.fs && window.spirit.data.fs.data;
+      if (gone || !F) return;
+      ownLine.textContent = F.ready() && !F.file(own) ? own : '';
+    }
+    Promise.resolve(window.spirit.cacheManager('fs')).then(function () {
+      if (gone) return;
+      drawOwn();
+      release = window.spirit.data.fs.data.watch(function (p) { if (!p || p === own) drawOwn(); });
+    });
     Promise.resolve(window.spirit.testicle['script.get']({ name: file })).then(function () {
       if (gone) return;
       made = window.spirit.element.spirit.element.search.suite.create(below, { script: file });
@@ -51,6 +69,8 @@
     return {
       destroy: function () {
         gone = true;
+        if (typeof release === 'function') release();
+        release = null;
         if (made && typeof made.destroy === 'function') made.destroy();
         made = null;
         box.innerHTML = '';
