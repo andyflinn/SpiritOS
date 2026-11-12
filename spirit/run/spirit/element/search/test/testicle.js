@@ -591,24 +591,41 @@ test.run('the world: a fresh page opens the search again, no words and no select
   for (let i = 0; i < 30; i++) { now = ((await results()) || []).length; if (now === last && now > 0) break; last = now; await sleep(1000); }
   return now > 0 || 'nothing shows';
 }, test.limit.long);
-test.run('opened with no words and no selector, the reds show first', 0.2, async function () {
+// goal/G47.1, the box: "The testicle search's default equals testicle.red: all scripts, all suites, reds only, most severe
+// first". Opened, the 57 reds alone; then green pressed, both on, for the checks of the following answers.
+const severities = function () { return plantedCells().then(function (rows) { return rows.map(function (r) { return Number((r.cells[1] || {}).text); }); }); };
+test.run('opened with no words and no selector, more than 20 reds show: every one of the 57, and no success', 0.2, async function () {
+  if (reopened()) return reopened();
+  const got = (await results()) || [];
+  const n = got.filter(function (v) { return v === '❌'; }).length;
+  return (n === REDS && got.length === REDS) || n + ' reds show, of ' + REDS + ', among ' + got.length + ' rows';
+}, test.limit.quick);
+test.run('opened, the reds show the most severe first', 0.2, async function () {
+  if (reopened()) return reopened();
+  const sev = (await severities()) || [];
+  return (sev.length > 0 && sev.every(function (v, i) { return i === 0 || sev[i - 1] >= v; })) || 'severities top down: ' + short(sev);
+}, test.limit.quick);
+test.run('the world: green pressed on the fresh page, both filters on', 0.2, async function () {
+  if (reopened()) return reopened();
+  await T('press("green")');
+  const ok = await waitFor('filter("green").on && filter("red").on', 5000);
+  if (!ok) return 'red ' + short(await T('filter("red")')) + ', green ' + short(await T('filter("green")'));
+  let last = -1, now = 0;
+  for (let i = 0; i < 30; i++) { now = ((await results()) || []).length; if (now === last && now > REDS) break; last = now; await sleep(1000); }
+  return now > REDS || now + ' rows show with green on';
+}, test.limit.long);
+test.run('both on, the reds show first', 0.2, async function () {
   if (reopened()) return reopened();
   const got = (await results()) || [];
   const firstPass = got.indexOf('✅');
   return (got[0] === '❌' && (firstPass === -1 || got.slice(firstPass).indexOf('❌') === -1)) || 'results in order: ' + short(got.join(''));
 }, test.limit.quick);
-test.run('opened with no words and no selector, more than 20 reds show: every one of the 57', 0.2, async function () {
-  if (reopened()) return reopened();
-  const got = (await results()) || [];
-  const n = got.filter(function (v) { return v === '❌'; }).length;
-  return n === REDS || n + ' reds show, of ' + REDS;
-}, test.limit.quick);
-test.run('the page asks for the following answers while there are more: with 171 tests, 100 show', 0.2, async function () {
+test.run('both on, the page asks for the following answers while there are more: with 171 tests, 100 show', 0.2, async function () {
   if (reopened()) return reopened();
   const n = ((await results()) || []).length;
   return n === 100 || n + ' tests show, of 171 current; wanted 100';
 }, test.limit.quick);
-test.run('opened, the quiet pass at severity 0 is not among the 100: it waits for a narrower ask', 0.2, async function () {
+test.run('both on, the quiet pass at severity 0 is not among the 100: it waits for a narrower ask', 0.2, async function () {
   if (reopened()) return reopened();
   const t = (await titles()) || [];
   return t.indexOf(QUOKKA) === -1 || 'the quiet pass shows among ' + t.length + ': the 100 are not the reds and the most severe';

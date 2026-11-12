@@ -54,7 +54,8 @@ own, more than one answer holds. The search mounted alone in Chrome on `/face.ht
   asks for the following answers while the server says there are more, up to 100 tests"*, *"Opened with no words and no
   selector, the page shows the reds first, more than 20 when there are; typed words show the tests they find"*): 110
   passing tests of beta at 1, 25 failing tests of alpha at 0.3 and alpha's quiet pass (quokka) at 0 are set, and a fresh
-  page opens the search. With gamma's 30 failures, the reds show first, all 57; 100 of the 171 show; the quiet pass is not among them. Green off
+  page opens the search. With gamma's 30 failures, opened, the 57 reds alone, the most severe first (the default equals testicle.red); green pressed, the reds
+  first, 100 of the 171 shown, the quiet pass not among them. Green off
   shows the 57 failures alone; red off shows 100 successes alone; alpha chosen, or alpha's suite chosen with no script,
   green alone, shows the quiet pass; typed "quokka" shows it, typed "fails" shows failures; the words cleared, the reds
   show first again, 100 in all.
