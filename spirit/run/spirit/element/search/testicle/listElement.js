@@ -17,8 +17,9 @@
 // A VIEW OF testicle's TEST ROWS IN spirit.data (goal/G41.28): the probability search over the testicle branch testicle's
 // cache manager keeps (spirit.data.testicle.data, spirit/app/testicle/data.js), its current rows only, by a filter not
 // drawn: the branch keeps a flipped test's replaced row beside its current one. The server publishes every row it writes,
-// so a test set anywhere shows by itself. What the branch does not hold yet is asked once, of testicle.testicle.search with
-// no words, and kept there; words ask it again. The selectors narrow on the page; the search is asked for every script.
+// so a test set anywhere shows by itself. What the branch does not hold yet is asked of testicle.testicle.search, the reds
+// first, and kept there; words, a filter or a selector ask it again, sent with what is chosen, so the server narrows before
+// it cuts; answer after answer while it says more, up to 100 tests. The page narrows the branch by the same choices.
 (function () {
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the list and its row, the two selectors, testicle's interface and its cache manager.
@@ -33,6 +34,8 @@
     var p = String((row && row.path) || '');
     return /\.js$/.test(p) && !/(^|\/)test\//.test(p);
   }
+  // THE MOST A SEARCH ASKS FOR, answer after answer (goal/G47.1, the box: "up to 100 tests").
+  var HELD_MAX = 100;
   function changed(el) { el.dispatchEvent(new Event('change', { bubbles: true })); }
 
   function create(container, options) {
@@ -67,11 +70,30 @@
     parts.then(function () {
       if (gone) return;
       var data = S.data.testicle.data;
-      var ask = function (text) {
-        return Promise.resolve(S.testicle['testicle.search']({ text: String(text || '') })).then(function (b) {
-          data.keep('testicle', rowsOf(b));
-          return b;
-        });
+      // WHAT IS CHOSEN GOES TO THE SERVER (goal/G47.1, the box: "Red, green, the script and the suite go to the server with
+      // the words, so the server narrows before it cuts an answer", "the page asks for the following answers while the
+      // server says there are more, up to 100 tests"): one answer holds about 12 tests.
+      var argsOf = function (text, values) {
+        var a = { text: String(text || '') };
+        var off = (values && values.result) || {};
+        if (off.red && !off.green) a.result = 'green';
+        if (off.green && !off.red) a.result = 'red';
+        if (scriptSel.value) a.script = String(scriptSel.value);
+        if (suiteSel.value) a.suite = String(suiteSel.value);
+        return a;
+      };
+      var ask = function (args) {
+        var items = [];
+        var part = function () {
+          return Promise.resolve(S.testicle['testicle.search'](Object.assign({}, args, items.length ? { from: items.length } : {}))).then(function (b) {
+            var got = (b && b.items) || [];
+            data.keep('testicle', rowsOf(b));
+            items = items.concat(got);
+            if (b && b.more && got.length && items.length < HELD_MAX && !gone) return part();
+            return { items: items, more: !!(b && b.more) };
+          });
+        };
+        return part();
       };
       scriptList = S.element.spirit.element.search.file.create(scriptSel, {
         face: 'dropdown', accept: production, flat: true, placeholder: 'all scripts', all: 'all scripts',
@@ -82,11 +104,11 @@
         data: data.branch('testicle'),
         // ITS OWN DATA SOURCE (goal/G43.24: the search is handed no api): testicle.testicle.search, every script.
         search: function (args) {
-          return ask((args && args.text) || '').then(function (b) { return { status: 200, body: { items: (b && b.items) || [], more: !!(b && b.more) } }; });
+          return ask(args || { text: '' }).then(function (b) { return { status: 200, body: { items: b.items, more: b.more } }; });
         },
         server: 'testicle',
         verb: 'testicle.search',
-        args: function (text) { return { text: text }; },
+        args: argsOf,
         columns: [
           { field: 'verified', label: 'Result', sort: 'number' },
           { field: 'severity', label: 'Severity', sort: 'number' },
@@ -111,8 +133,12 @@
         pick: function (row, key) { if (row && typeof o.pick === 'function') o.pick(row, key); },
         empty: 'No test matches.',
       });
-      // What the branch does not hold yet: every current row, asked once.
-      ask('').then(null, function () { /* the list says it is empty */ });
+      // A SELECTOR CHANGED ASKS AGAIN (the box: "a change of any of them asks again"); a filter press already does.
+      var again = function () { if (list && typeof list.refresh === 'function') list.refresh(); };
+      scriptSel.addEventListener('change', again);
+      suiteSel.addEventListener('change', again);
+      // What the branch does not hold yet: the reds first, asked at the start.
+      ask({ text: '' }).then(null, function () { /* the list says it is empty */ });
     }, function () { container.textContent = 'The tests could not be loaded.'; });
 
     return {

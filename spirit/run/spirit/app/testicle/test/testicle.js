@@ -656,9 +656,34 @@ test.run('testicle.search answers a standard table search: items and more', 0.2,
 test.run('for a script and suite it answers their current tests only, one row each', 0.2, function () {
   return (srRows.length === 3 && srRows.every(function (r) { return yes(r.current) && r.script === TH && r.suite === THS; })) || 'rows: ' + short(srRows);
 }, test.limit.quick);
-test.run('testicle.search answers the most severe first', 0.2, function () {
-  const sev = srRows.map(function (r) { return Number(r.severity); });
-  return (sev.length === 3 && sev[0] >= sev[1] && sev[1] >= sev[2]) || 'severities in order: ' + short(sev);
+// goal/G47.1, the box: "Every test search answers its failed tests first, then by severity." theta's three: the second
+// failed at 0.9, the third failed at 0.3, the first passed at 0.6.
+test.run('testicle.search answers the failed tests first, then the most severe first', 0.2, function () {
+  const got = srRows.map(function (r) { return (yes(r.verified) ? 'green ' : 'red ') + Number(r.severity); });
+  return JSON.stringify(got) === JSON.stringify(['red 0.9', 'red 0.3', 'green 0.6']) || 'in order: ' + short(got);
+}, test.limit.quick);
+// the box: "Red, green, the script and the suite go to the server with the words, so the server narrows before it cuts".
+test.run('result red answers the failed tests alone', 0.2, async function () {
+  if (!up()) return NONODE;
+  const r = found(await call(N.base, 'testicle.testicle.search', { script: TH, suite: THS, result: 'red', text: '' }));
+  return (r.length === 2 && r.every(function (x) { return no(x.verified); })) || 'rows: ' + short(r);
+}, test.limit.quick);
+test.run('result green answers the passed tests alone', 0.2, async function () {
+  if (!up()) return NONODE;
+  const r = found(await call(N.base, 'testicle.testicle.search', { script: TH, suite: THS, result: 'green', text: '' }));
+  return (r.length === 1 && yes(r[0].verified)) || 'rows: ' + short(r);
+}, test.limit.quick);
+test.run('a result neither red nor green is refused', 0.2, async function () {
+  if (!up()) return NONODE;
+  const r = await call(N.base, 'testicle.testicle.search', { result: 'blue', text: '' });
+  return r.status === 400 || 'answered ' + r.status + ' ' + short(r.text);
+}, test.limit.quick);
+// the box: "the page asks for the following answers while the server says there are more".
+test.run('from starts the answer after the rows already held', 0.2, async function () {
+  if (!up()) return NONODE;
+  const r = found(await call(N.base, 'testicle.testicle.search', { script: TH, suite: THS, from: 1, text: '' }));
+  const got = r.map(function (x) { return (yes(x.verified) ? 'green ' : 'red ') + Number(x.severity); });
+  return JSON.stringify(got) === JSON.stringify(['red 0.3', 'green 0.6']) || 'from 1: ' + short(got);
 }, test.limit.quick);
 test.run('with no script it searches that suite\'s tests for any script', 0.2, async function () {
   if (!up()) return NONODE;
@@ -676,10 +701,12 @@ test.run('with neither it searches every current test', 0.2, async function () {
   const everyOne = found(ans);
   // The runner adds rows of its own runs (goal/G47.1, the queue cycle): the four set here are among them, and every one is current.
   const mine = everyOne.filter(function (r) { return ['theta answers its first question', 'theta answers its second question', 'theta answers its third question', 'gamma answers'].indexOf(r.test) !== -1; });
-  // The answer fits its room (more: true when cut): cut, it holds the most severe current rows, as many as fit.
+  // The answer fits its room (more: true when cut): cut, it holds current rows, as many as fit, the failed first (Andy:
+  // "the empty search string with no script or suite selected should already fill up with more that 20 reds").
   if (ans.body && ans.body.more) {
     const cur = (tables(DB).test || []).filter(function (r) { return yes(r.current); }).length;
-    return (everyOne.length > 0 && everyOne.length < cur && everyOne.every(function (r) { return yes(r.current); })) || 'cut at ' + everyOne.length + ' of ' + cur + ' current rows: ' + short(everyOne.map(function (r) { return r.test; }));
+    const redFirst = everyOne.every(function (r, i) { return i === 0 || yes(r.verified) || no(everyOne[i - 1].verified); });
+    return (everyOne.length > 0 && everyOne.length < cur && redFirst && everyOne.every(function (r) { return yes(r.current); })) || 'cut at ' + everyOne.length + ' of ' + cur + ' current rows, the failed first ' + redFirst + ': ' + short(everyOne.map(function (r) { return r.test; }));
   }
   return (mine.length === 4 && everyOne.every(function (r) { return yes(r.current); })) || mine.length + ' of the four set here, ' + everyOne.filter(function (r) { return !yes(r.current); }).length + ' not current, of ' + everyOne.length + ': ' + short(mine.map(function (r) { return r.test; }));
 }, test.limit.quick);

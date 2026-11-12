@@ -96,8 +96,9 @@ const T = {
   add: db.prepare('INSERT INTO testicle (script, suite, test, flipped, current, verified, tested, judged, severity, suiteHash) VALUES (?, ?, ? , ?, 1, ?, ?, ?, ?, ?)'),
   tested: db.prepare('UPDATE testicle SET tested = ?, judged = ?, severity = MAX(severity, ?), suiteHash = ? WHERE script = ? AND suite = ? AND test = ? AND flipped = ?'),
   retire: db.prepare('UPDATE testicle SET current = 0 WHERE script = ? AND suite = ? AND test = ? AND flipped = ?'),
-  // The current rows, most severe first, the newest flip first among equals (the index's order).
-  currents: db.prepare('SELECT * FROM testicle WHERE current = 1 ORDER BY severity DESC, flipped DESC'),
+  // The current rows in the index's order: the failed first, then most severe first, the newest flip first among equals
+  // (goal/G47.1, the box: "Every test search answers its failed tests first, then by severity").
+  currents: db.prepare('SELECT * FROM testicle WHERE current = 1 ORDER BY verified, severity DESC, flipped DESC'),
   reds: db.prepare('SELECT * FROM testicle WHERE current = 1 AND verified = 0 ORDER BY severity DESC, flipped DESC'),
   row: db.prepare('SELECT * FROM testicle WHERE script = ? AND suite = ? AND test = ? AND flipped = ?'),
   // A test's history: every row of it, the newest flip first.
@@ -420,8 +421,10 @@ function served(row) { return { name: row.name, hash: row.hash, deleted: !!row.d
 // A suite row as a search and the stream carry it: its key script|suite, its status "needs running" while it is flagged.
 function suiteServed(r) { return { key: r.script + '|' + r.suite, script: r.script, suite: r.suite, test: !!r.test, status: statusOf(r.test, r.outcome), deleted: !!r.deleted, outcome: r.outcome, changed: Number(r.changed) }; }
 // Test rows, already in the order they are answered in, as one search answer: the bucket keeps that order (a row's seat
-// falls with its place), cut to what one answer holds, more saying it was cut.
-function mostSevereFirst(rows) {
+// falls with its place), cut to what one answer holds, more saying it was cut. from, the rows the asker already holds,
+// starts the answer after them: the following answer.
+function mostSevereFirst(all, from) {
+  const rows = from ? all.slice(from) : all;
   const bucket = createProbabilityBucket(Infinity);
   rows.forEach(function (row, i) { bucket.seatFor(1 - i / (rows.length + 1), { key: row.key, label: JSON.stringify(row) }); });
   const out = bucket.serialize(null, SEARCH_ROOM);
@@ -569,17 +572,22 @@ appServer.serve({
     accepts: function (a) {
       if (!a || typeof a !== 'object' || Array.isArray(a) || typeof a.text !== 'string') return false;
       if (a.test !== undefined && (typeof a.script !== 'string' || typeof a.suite !== 'string' || typeof a.test !== 'string' || !a.test)) return false;
-      return Object.keys(a).every(function (k) { return (k === 'text') || ((k === 'script' || k === 'suite' || k === 'test') && typeof a[k] === 'string'); });
+      if (a.result !== undefined && a.result !== 'red' && a.result !== 'green') return false;
+      if (a.from !== undefined && !(Number.isInteger(a.from) && a.from >= 0)) return false;
+      return Object.keys(a).every(function (k) { return (k === 'text') || k === 'result' || k === 'from' || ((k === 'script' || k === 'suite' || k === 'test') && typeof a[k] === 'string'); });
     },
+    // goal/G47.1, the box: "Red, green, the script and the suite go to the server with the words, so the server narrows
+    // before it cuts an answer", "the page asks for the following answers while the server says there are more": result,
+    // red or green, left out for both; from, the rows already held.
     handler: function (a) {
       const words = String(a.text || '').trim();
-      if (a.test !== undefined) {
-        return mostSevereFirst(T.history.all(a.script, a.suite, a.test).map(testServed)
-          .filter(function (row) { return !words || (Number(probabilityStringObjectMatch(words, row)) || 0) > 0; }));
-      }
+      const kept = function (row) {
+        return (a.result === undefined || row.verified === (a.result === 'green')) && (!words || (Number(probabilityStringObjectMatch(words, row)) || 0) > 0);
+      };
+      if (a.test !== undefined) return mostSevereFirst(T.history.all(a.script, a.suite, a.test).map(testServed).filter(kept), a.from);
       const rows = T.currents.all().filter(function (r) { return (a.script === undefined || r.script === a.script) && (a.suite === undefined || r.suite === a.suite); })
-        .map(testServed).filter(function (row) { return !words || (Number(probabilityStringObjectMatch(words, row)) || 0) > 0; });
-      return mostSevereFirst(rows);
+        .map(testServed).filter(kept);
+      return mostSevereFirst(rows, a.from);
     },
   },
   // goal/G47.1, the box: "The new verb \"red\" is shorthand for: search all failed, current tests, most severe first", "The

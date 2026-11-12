@@ -44,6 +44,15 @@ PLANT[B] = '\'use strict\';\n// beta\n';
 PLANT[AS] = '\'use strict\';\n// the test of alpha\n';
 PLANT[BS] = '\'use strict\';\n// the test of beta\n';
 PLANT[Z + 'notes.md'] = '# no script\n';
+// THE REDS (goal/G47.1, the box: "Opened with no words and no selector, the page shows the reds first, more than 20 when
+// there are"): gamma, in a folder of its own so the checks of the three tests above never count its rows, fails 30 tests,
+// more than one answer holds.
+const Z2 = 'spirit/zzTsearchRed/';
+const G = Z2 + 'gamma.js';
+const GS = Z2 + 'test/gamma.js';
+const GAMMA_REDS = 30;
+PLANT[G] = '\'use strict\';\n// gamma\n';
+PLANT[GS] = '\'use strict\';\n// the test of gamma\n';
 // THE TESTS SET: alpha's long title passing at 0, beta's failing at 1, alpha's flip in a general suite at 0.2, passing then
 // failing, so two rows of it are kept and one is current.
 const LONG = 'alpha answers every question it is asked, however long the question, and this title is shown in full';
@@ -117,6 +126,7 @@ const HANDS = '(function () {' +
   '  typeSel: function (i, w) { var s = sel(i); var t = s ? s.querySelector("input[id$=\\"text\\"]") : null; if (!t) return false; t.value = w; t.dispatchEvent(new Event("input", { bubbles: true })); return true; },' +
   '  selRows: function (i) { var s = sel(i); return s ? Array.prototype.slice.call(s.querySelectorAll("[id$=\\"popup\\"] tr[data-key]")).map(function (r) { return r.getAttribute("data-key"); }) : []; },' +
   '  pickSel: function (i, k) { var s = sel(i); var r = s ? Array.prototype.slice.call(s.querySelectorAll("[id$=\\"popup\\"] tr[data-key]")).filter(function (r) { return r.getAttribute("data-key") === k; })[0] : null; if (!r) return false; r.click(); return true; },' +
+  '  typeMain: function (w) { var t = all("input[id$=\\"text\\"]").filter(function (x) { return !inSel(x); })[0]; if (!t) return false; t.value = w; t.dispatchEvent(new Event("input", { bubbles: true })); return true; },' +
   '  noneSel: function (i) { var s = sel(i); var n = s ? s.querySelector("button[id$=\\"none\\"]") : null; if (!n) return false; n.click(); return true; },' +
   '}; return "hands"; }())';
 
@@ -172,6 +182,17 @@ test.run('the world: tests of the planted scripts are set on it', 0.2, async fun
   out.forEach(function (r, i) { const b = r.body || {}; if (r.status === 200 && b.key) current[i === 3 ? FLIPS : i === 0 ? LONG : i === 1 ? FAILS : 'replaced'] = b; });
   return planted || 'testicle.testicle.set: ' + short(out.map(function (r) { return r.status + ' ' + r.text; }));
 }, test.limit.slow);
+let gammaPlanted = false;
+test.run('the world: gamma\'s 30 failed tests are set on it, before the page opens', 0.2, async function () {
+  if (!N || !N.up) return NONODE;
+  const bad = [];
+  for (let i = 1; i <= GAMMA_REDS; i++) {
+    const r = await call(N.base, 'testicle.testicle.set', { script: G, suite: GS, test: 'gamma fails its question ' + i, verified: false, severity: 0.5 });
+    if (r.status !== 200) bad.push(r.status + ' ' + r.text);
+  }
+  gammaPlanted = !bad.length;
+  return gammaPlanted || 'testicle.testicle.set: ' + short(bad);
+}, test.limit.slow);
 test.run('the world: the face page has its spirit', 0.2, async function () {
   if (!N || !N.up) return NONODE;
   const where = findChrome();
@@ -212,6 +233,34 @@ test.run('the world: each planted row\'s cells are read', 0.2, async function ()
   drawn.forEach(function (r) { [LONG, FAILS, FLIPS].forEach(function (t) { if (r.cells.some(function (cl) { return cl.text === t; })) byTitle[t] = r; }); });
   return Object.keys(byTitle).length === 3 || 'rows read ' + short(drawn);
 }, test.limit.quick);
+
+// goal/G47.1, the box: "The testicle search finds the reds" (Andy: "the empty search string with no script or suite
+// selected should already fill up with more that 20 reds when i open the app!, and typing in the search bar sends requests
+// and returns NOTHING$! WTF!"): "Every test search answers its failed tests first", "the page asks for the following
+// answers while the server says there are more, up to 100 tests", "typed words show the tests they find".
+test.run('opened with no words and no selector, it shows more than 20 reds: every one of gamma\'s 30', 0.2, async function () {
+  if (mounted()) return mounted();
+  if (!gammaPlanted) return 'gamma\'s tests were not set: the world failed';
+  const ok = await waitFor('keys().filter(function (k) { return k.indexOf("' + Z2 + '") === 0; }).length >= ' + GAMMA_REDS, 15000);
+  return !!ok || 'gamma\'s rows shown: ' + ((await T('keys()')) || []).filter(function (k) { return k.indexOf(Z2) === 0; }).length + ' of ' + GAMMA_REDS;
+}, test.limit.slow);
+test.run('opened, the reds come first: no ✅ row above a ❌ row', 0.2, async function () {
+  if (mounted()) return mounted();
+  const icons = ((await T('cells()')) || []).map(function (r) { return r.cells[0] ? r.cells[0].text : ''; });
+  const firstGreen = icons.indexOf('✅');
+  const lastRed = icons.lastIndexOf('❌');
+  return (lastRed !== -1 && (firstGreen === -1 || firstGreen > lastRed)) || 'the result column, top down: ' + short(icons.join(''));
+}, test.limit.quick);
+test.run('typed words show the tests they find, the best match first', 0.2, async function () {
+  if (mounted()) return mounted();
+  if (!gammaPlanted) return 'gamma\'s tests were not set: the world failed';
+  if (!(await T('typeMain("gamma fails its question 17")'))) return 'no search field to type in';
+  const ok = await until(function () { return T('cells()').then(function (rows) { return !!rows && rows.length > 0 && titleOf(rows[0]) === 'gamma fails its question 17'; }); }, 10000);
+  const shown = ((await T('cells()')) || []).map(titleOf);
+  await T('typeMain("")');
+  await sleep(500);
+  return !!ok || 'the rows shown, top down: ' + short(shown.slice(0, 5)) + ' of ' + shown.length;
+}, test.limit.slow);
 
 // the box: "The columns, in this order: the result first, as an icon ... severity second; the title third; then the script
 // name (no path), then the suite name (no path)"

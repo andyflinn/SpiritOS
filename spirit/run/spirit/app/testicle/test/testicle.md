@@ -74,7 +74,11 @@ The box, in Andy's words where he gave them:
   - *"test.search will only return \"current\" test rows for the script/suite combination supplied ... no script in the
     search query searches tests for any script; the same for suite"*: `{items, more}`, the current rows only, one per
     test; with no script, that suite's for any script; with no suite, that script's in any suite; with neither, all.
-    *"Most severe first applies to all test searches."*
+    *"Most severe first applies to all test searches."*, since *"Every test search answers its failed tests first, then by
+    severity"*: theta's two failed tests, 0.9 then 0.3, before its passed one. *"Red, green, the script and the suite go
+    to the server with the words, so the server narrows before it cuts an answer"*: result red answers the failed alone,
+    green the passed alone, any other result is refused; *"the page asks for the following answers while the server says
+    there are more"*: from 1 starts the answer after the first row. Cut, the answer with neither holds the failed first.
   - *"The verb red is testicle.red"*, *"search all failed, current tests, most severe first"*: every failed current test,
     no other, most severe first.
 
@@ -87,5 +91,6 @@ The box, in Andy's words where he gave them:
 - A script.get that makes no rows, makes them unflagged, or answers anything but the file row; an error worded otherwise.
 - A suite.search answering another file's rows, a suite twice, or a suite without its status.
 - A second row on no flip, a flip without a new row or with its old row lost, a lower severity applied, a search
-  answering an old row or another script's or suite's, an order other than most severe first, a red holding a passing test.
+  answering an old row or another script's or suite's, a passed test before a failed one, an order other than most severe
+  first among each, a result filter answering the other result, a from that does not skip, a red holding a passing test.
 - Anything later than one second; a busy that never says true while it works, or stays true once idle.

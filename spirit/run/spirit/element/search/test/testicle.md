@@ -22,21 +22,30 @@ opens).
 - *"The script column and the suite column show the file name only, no path; hovering over a script or a suite shows its
   full name as a tooltip."* *"The test title is shown in full."*
 - *"The list is sortable by all its columns."*
+- *"The testicle search finds the reds"* (Andy: *"the empty search string with no script or suite selected should already
+  fill up with more that 20 reds when i open the app!"*): *"Every test search answers its failed tests first, then by
+  severity. Red, green, the script and the suite go to the server with the words, so the server narrows before it cuts an
+  answer; a change of any of them asks again. ... the page asks for the following answers while the server says there are
+  more, up to 100 tests. Opened with no words and no selector, the page shows the reds first, more than 20 when there are;
+  typed words show the tests they find."*
 
 ## What its test does
 
 A scratch node with testicle on; two planted scripts with their own tests; through `testicle.testicle.set` a passing test
 of alpha at severity 0 with a long title, a failing test of beta at 1, and a test of alpha in a general suite set passing,
-then failing at 0.2, so two of its rows are kept. The search mounted alone in Chrome on `/face.html`.
+then failing at 0.2, so two of its rows are kept; and 30 failing tests of gamma, a third planted script in a folder of its
+own, more than one answer holds. The search mounted alone in Chrome on `/face.html`, after all of them were set.
 
 - The module and its folder's two parts are there; it loads the file search.
 - It lists each test once, by its current row.
+- Opened, it shows all 30 of gamma's reds, and no ✅ row stands above a ❌ row; typed words, one of gamma's titles, show
+  that test first.
 - Five columns per row: ❌ or ✅; `0.00`, `1.00`, `0.20`; the long title in full, not clipped; `alpha.js`, `beta.js`; the
   suite's file name; the script's and the suite's full name as the cell's tooltip.
 - Five headers, each a sort trigger; a press sorts by its column, a second press the other way.
 - red and green both on at the start; red off shows the successes alone, and then a press on green leaves it on; green off
   shows the failures alone, and then a press on red leaves it on.
-- Two dropdown selectors, script first. With no script chosen every script's tests show and the suite selector offers no
+- Two dropdown selectors, script first. With no script chosen every script's tests show and the suite selector offers every
   suite. The script selector lists production scripts only; a script chosen narrows the rows; its suites are listed in the
   suite selector, and a suite chosen narrows them; None unselects each again.
 - A test set on the node shows in the list with no press.
@@ -47,4 +56,5 @@ then failing at 0.2, so two of its rows are kept. The search mounted alone in Ch
 A closed row's old flips listed beside its current row; a column out of order, a severity as `0` or `1`, a path in the
 script or suite column, a clipped title, a header that does not sort; both filters off; a selector that lists a test file or
 a non-script, a suite offered with no script chosen, a pick that does not narrow, a None that does not widen again; a list
-that misses a test written after it drew.
+that misses a test written after it drew; reds cut away by greens of a higher severity, a list that stops at one answer,
+typed words that show nothing.
