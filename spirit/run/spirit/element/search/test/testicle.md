@@ -50,11 +50,20 @@ own, more than one answer holds. The search mounted alone in Chrome on `/face.ht
   suite selector, and a suite chosen narrows them; None unselects each again.
 - A test set on the node shows in the list with no press.
 - destroy leaves its container empty.
+- The search fix (goal/G47.1, the box: *"Every test search answers its failed tests first, then by severity"*, *"the page
+  asks for the following answers while the server says there are more, up to 100 tests"*, *"Opened with no words and no
+  selector, the page shows the reds first, more than 20 when there are; typed words show the tests they find"*): 110
+  passing tests of beta at 1, 25 failing tests of alpha at 0.3 and alpha's quiet pass (quokka) at 0 are set, and a fresh
+  page opens the search. With gamma's 30 failures, the reds show first, all 57; 100 of the 171 show; the quiet pass is not among them. Green off
+  shows the 57 failures alone; red off shows 100 successes alone; alpha chosen, or alpha's suite chosen with no script,
+  green alone, shows the quiet pass; typed "quokka" shows it, typed "fails" shows failures; the words cleared, the reds
+  show first again, 100 in all.
 
 ## What its test must try to break
 
 A closed row's old flips listed beside its current row; a column out of order, a severity as `0` or `1`, a path in the
 script or suite column, a clipped title, a header that does not sort; both filters off; a selector that lists a test file or
 a non-script, a suite offered with no script chosen, a pick that does not narrow, a None that does not widen again; a list
-that misses a test written after it drew; reds cut away by greens of a higher severity, a list that stops at one answer,
-typed words that show nothing.
+that misses a test written after it drew; reds cut away by greens of a higher severity; a first answer of greens that hides every red; red and green filtered
+on the page alone, among the rows one answer held; a page that stops at one answer, or goes past 100; a script, a suite or
+typed words that do not ask the server again.

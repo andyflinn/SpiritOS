@@ -116,7 +116,7 @@ const HANDS = '(function () {' +
   'function sel(i) { return all("[id$=\\"selector" + i + "\\"]")[0] || null; }' +
   'window.__t = {' +
   '  keys: function () { return main().map(function (r) { return r.getAttribute("data-key"); }); },' +
-  '  cells: function () { return main().map(function (r) { return { key: r.getAttribute("data-key"), cells: Array.prototype.slice.call(r.querySelectorAll("td")).filter(seen).map(function (td) { return { text: String(td.innerText || "").trim(), tip: tipOf(td), clipped: td.scrollWidth > td.clientWidth + 1 }; }) }; }); },' +
+  '  cells: function () { return main().map(function (r) { return { key: r.getAttribute("data-key"), cells: Array.prototype.slice.call(r.querySelectorAll("td")).filter(seen).map(function (td) { return { field: td.getAttribute("data-field") || "", text: String(td.innerText || "").trim(), tip: tipOf(td), clipped: td.scrollWidth > td.clientWidth + 1 }; }) }; }); },' +
   '  heads: function () { return all("th").filter(function (h) { return !inSel(h) && seen(h); }).map(function (h) { return { text: String(h.innerText || "").trim(), sort: h.getAttribute("data-sort") }; }); },' +
   '  sortBy: function (i) { var h = all("th[data-sort]").filter(function (h) { return !inSel(h) && seen(h); })[i]; if (!h) return false; h.click(); return true; },' +
   '  filter: function (word) { var re = new RegExp(word, "i"); var b = all("button[data-filter][data-value]").filter(function (x) { return !inSel(x) && seen(x) && (re.test(x.getAttribute("data-value")) || re.test(x.innerText)); })[0]; return b ? { on: Number(getComputedStyle(b).fontWeight) >= 600 } : null; },' +
@@ -137,7 +137,8 @@ const NONODE = 'no scratch node: the world failed';
 const T = function (expr) { return c.evaluate('window.__t.' + expr); };
 const waitFor = function (expr, ms) { return until(function () { return c.evaluate('(function () { with (window.__t) { return !!(' + expr + '); } }())'); }, ms || 10000); };
 const mounted = function () { return !N || !N.up ? NONODE : (!c || c.error || !c.evaluate) ? 'no page: the world failed' : made !== 'made' ? 'the search did not mount: the world failed' : !planted ? 'no tests were set: the world failed' : ''; };
-const titleOf = function (row) { return row && row.cells && row.cells[2] ? row.cells[2].text : ''; };
+// The title cell: by its field where the list names it (while words are typed the list draws a column more), else the third.
+const titleOf = function (row) { const t = row && row.cells ? row.cells.filter(function (cl) { return cl.field === 'test'; })[0] || row.cells[2] : null; return t ? t.text : ''; };
 const keyOf = function (script, suite, title, flipped) { return script + '|' + suite + '|' + title + '|' + flipped; };
 let current = {};
 
@@ -539,6 +540,147 @@ test.run('a test set on the node shows in the list with no press', 0.2, async fu
 // destroy
 test.run('destroy leaves its container empty', 0.2, async function () {
   if (mounted()) return mounted();
+  const after = await c.evaluate('(function () { window.__made.destroy(); var b = document.getElementById("zzBox"); return b ? b.innerHTML : "gone"; }())');
+  return (after === '' || after === 'gone') || 'after destroy: ' + short(after).slice(0, 200);
+}, test.limit.quick);
+
+// goal/G47.1, the box, the search fix (Andy: "the empty search string with no script or suite selected should already fill
+// up with more that 20 reds when i open the app!, and typing in the search bar sends requests and returns NOTHING$!",
+// "ALL, GO BOX IT, FIX IT!!!!!!!!!!", and to wsl: "YOU RIGHT SOME EXHAUSTIVE FUCKING TESTS FOR THE MOTHERFUKCING SEARCH
+// NOW"): "Every test search answers its failed tests first, then by severity. Red, green, the script and the suite go to
+// the server with the words, so the server narrows before it cuts an answer; a change of any of them asks again. One
+// answer holds about 12 tests, so the page asks for the following answers while the server says there are more, up to 100
+// tests. Opened with no words and no selector, the page shows the reds first, more than 20 when there are; typed words show
+// the tests they find."
+// THE WORLD: 110 passing tests of beta at severity 1, 25 failing tests of alpha at severity 0.3, and alpha's quiet pass
+// (the word quokka) at severity 0, set before a fresh page opens, so what the page shows came from its own asks, not from
+// the stream of the sets. With what was set above (gamma's 30 failures among them), 114 passing tests and 57 failing ones
+// are current: 171, past 100. Rows of both planted folders are counted, spirit/zzTsearch/ and spirit/zzTsearchRed/.
+const LOUDB = function (i) { return 'beta passes loudly, number ' + i; };
+const REDA = function (i) { return 'alpha fails, number ' + i; };
+const QUOKKA = 'alpha passes quietly, the quokka';
+const REDS = 27 + GAMMA_REDS;
+const PLANTED = 'spirit/zzTsearch';
+const plantedCells = function () { return T('cells()').then(function (rows) { return (rows || []).filter(function (r) { return String(r.key).indexOf(PLANTED) === 0; }); }); };
+let many = false, opened = '';
+const results = function () { return plantedCells().then(function (rows) { return rows.map(function (r) { return (r.cells[0] || {}).text; }); }); };
+const titles = function () { return plantedCells().then(function (rows) { return rows.map(titleOf); }); };
+const reopened = function () { return !N || !N.up ? NONODE : !many ? 'the tests were not set: the world failed' : opened !== 'made' ? 'the search did not mount again: the world failed' : ''; };
+test.run('the world: 110 passing tests of beta at severity 1, 25 failing tests of alpha at 0.3, alpha\'s quiet pass at 0', 0.2, async function () {
+  if (!N || !N.up) return NONODE;
+  const out = [];
+  for (let i = 0; i < 110; i++) out.push(await call(N.base, 'testicle.testicle.set', { script: B, suite: BS, test: LOUDB(i), verified: true, severity: 1 }));
+  for (let i = 0; i < 25; i++) out.push(await call(N.base, 'testicle.testicle.set', { script: A, suite: AS, test: REDA(i), verified: false, severity: 0.3 }));
+  out.push(await call(N.base, 'testicle.testicle.set', { script: A, suite: AS, test: QUOKKA, verified: true, severity: 0 }));
+  many = out.every(function (r) { return r.status === 200; });
+  return many || 'testicle.testicle.set: ' + short(out.filter(function (r) { return r.status !== 200; }).map(function (r) { return r.status + ' ' + r.text; }));
+}, test.limit.long);
+test.run('the world: a fresh page opens the search again, no words and no selector', 0.2, async function () {
+  if (!many) return 'the tests were not set: the world failed';
+  if (!c || c.error || !c.evaluate) return 'no page: the world failed';
+  await c.send('Page.navigate', { url: N.base + '/face.html' });
+  if (!(await until(function () { return c.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000))) return 'the page has no spirit: nothing judged';
+  await c.evaluate(HANDS);
+  opened = await c.evaluate('window.spirit.ready.then(function () { return window.spirit.require("spirit/element/search/testicle.js"); }).then(function () {' +
+    ' var E = window.spirit.element.spirit.element.search.testicle;' +
+    ' var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:1400px;height:800px;display:flex;"; document.body.appendChild(b);' +
+    ' window.__made = E.create(b, {}); return window.__made && typeof window.__made.destroy === "function" ? "made" : "no destroy"; }, function (e) { return "refused: " + (e && e.message || e); })');
+  if (opened !== 'made') return 'it did not mount: ' + short(opened);
+  // Settled: the count of rows the same twice, a second apart.
+  let last = -1, now = 0;
+  for (let i = 0; i < 30; i++) { now = ((await results()) || []).length; if (now === last && now > 0) break; last = now; await sleep(1000); }
+  return now > 0 || 'nothing shows';
+}, test.limit.long);
+test.run('opened with no words and no selector, the reds show first', 0.2, async function () {
+  if (reopened()) return reopened();
+  const got = (await results()) || [];
+  const firstPass = got.indexOf('✅');
+  return (got[0] === '❌' && (firstPass === -1 || got.slice(firstPass).indexOf('❌') === -1)) || 'results in order: ' + short(got.join(''));
+}, test.limit.quick);
+test.run('opened with no words and no selector, more than 20 reds show: every one of the 57', 0.2, async function () {
+  if (reopened()) return reopened();
+  const got = (await results()) || [];
+  const n = got.filter(function (v) { return v === '❌'; }).length;
+  return n === REDS || n + ' reds show, of ' + REDS;
+}, test.limit.quick);
+test.run('the page asks for the following answers while there are more: with 171 tests, 100 show', 0.2, async function () {
+  if (reopened()) return reopened();
+  const n = ((await results()) || []).length;
+  return n === 100 || n + ' tests show, of 171 current; wanted 100';
+}, test.limit.quick);
+test.run('opened, the quiet pass at severity 0 is not among the 100: it waits for a narrower ask', 0.2, async function () {
+  if (reopened()) return reopened();
+  const t = (await titles()) || [];
+  return t.indexOf(QUOKKA) === -1 || 'the quiet pass shows among ' + t.length + ': the 100 are not the reds and the most severe';
+}, test.limit.quick);
+test.run('with green off, every failure shows and no success', 0.2, async function () {
+  if (reopened()) return reopened();
+  await T('press("green")');
+  const ok = await until(function () { return results().then(function (l) { return l.length === REDS && l.every(function (v) { return v === '❌'; }); }); }, 15000);
+  return !!ok || 'with green off: ' + short(((await results()) || []).join(''));
+}, test.limit.slow);
+test.run('with red off and green on, 100 successes show and no failure', 0.2, async function () {
+  if (reopened()) return reopened();
+  await T('press("green")');
+  await sleep(300);
+  await T('press("red")');
+  const ok = await until(function () { return results().then(function (l) { return l.length === 100 && l.every(function (v) { return v === '✅'; }); }); }, 15000);
+  const got = (await results()) || [];
+  return !!ok || got.length + ' show with red off: ' + short(got.join(''));
+}, test.limit.slow);
+test.run('a script chosen asks the server again: alpha chosen, green alone, its quiet pass shows', 0.2, async function () {
+  if (reopened()) return reopened();
+  await T('openSel(0)');
+  await T('typeSel(0, "zzTsearch")');
+  await waitFor('selRows(0).length > 0', 10000);
+  if (!(await T('pickSel(0, ' + JSON.stringify(A) + ')'))) return 'no row for ' + A + ' to pick: ' + short(await T('selRows(0)'));
+  const ok = await until(function () { return titles().then(function (t) { return t.indexOf(QUOKKA) !== -1; }); }, 15000);
+  const shown = await columnNow(3);
+  return (!!ok && shown.every(function (v) { return v === base(A); })) || 'with alpha chosen, green alone: ' + short(await titles());
+}, test.limit.slow);
+test.run('the script unselected and alpha\'s own suite chosen, green alone, its quiet pass shows', 0.2, async function () {
+  if (reopened()) return reopened();
+  await T('openSel(0)');
+  if (!(await T('noneSel(0)'))) return 'the script selector has no None to unselect with';
+  await sleep(500);
+  await T('openSel(1)');
+  await T('typeSel(1, "zzTsearch")');
+  await waitFor('selRows(1).length > 0', 10000);
+  const k = suiteKeysOf((await T('selRows(1)')) || [], AS)[0];
+  if (!k || !(await T('pickSel(1, ' + JSON.stringify(k) + ')'))) return 'no row for ' + AS + ' to pick: ' + short(await T('selRows(1)'));
+  const ok = await until(function () { return titles().then(function (t) { return t.indexOf(QUOKKA) !== -1; }); }, 15000);
+  const shown = await columnNow(4);
+  return (!!ok && shown.every(function (v) { return v === base(AS); })) || 'with alpha\'s suite chosen, green alone: ' + short(await titles());
+}, test.limit.slow);
+test.run('the world: the suite unselected, red and green both on', 0.2, async function () {
+  if (reopened()) return reopened();
+  await T('openSel(1)');
+  if (!(await T('noneSel(1)'))) return 'the suite selector has no None to unselect with';
+  await T('press("red")');
+  await sleep(500);
+  const red = await T('filter("red")'), green = await T('filter("green")');
+  return (!!red && !!green && red.on && green.on) || 'red ' + short(red) + ', green ' + short(green);
+}, test.limit.slow);
+test.run('typed words show the tests they find: "quokka" shows the quiet pass', 0.2, async function () {
+  if (reopened()) return reopened();
+  if (!(await T('typeMain("quokka")'))) return 'no search field to type in';
+  const ok = await until(function () { return titles().then(function (t) { return t.indexOf(QUOKKA) !== -1; }); }, 15000);
+  return !!ok || '"quokka" shows ' + short(await titles());
+}, test.limit.slow);
+test.run('typed words show the tests they find: "fails" shows failures', 0.2, async function () {
+  if (reopened()) return reopened();
+  if (!(await T('typeMain("fails")'))) return 'no search field to type in';
+  const ok = await until(function () { return titles().then(function (t) { return t.some(function (x) { return /fails/.test(x); }); }); }, 15000);
+  return !!ok || '"fails" shows ' + short(await titles());
+}, test.limit.slow);
+test.run('the words cleared, the reds show first again', 0.2, async function () {
+  if (reopened()) return reopened();
+  await T('typeMain("")');
+  const ok = await until(function () { return results().then(function (l) { return l.length === 100 && l.filter(function (v) { return v === '❌'; }).length === REDS && l[0] === '❌'; }); }, 15000);
+  return !!ok || 'with the words cleared: ' + short(((await results()) || []).join(''));
+}, test.limit.slow);
+test.run('destroy leaves the fresh search\'s container empty', 0.2, async function () {
+  if (reopened()) return reopened();
   const after = await c.evaluate('(function () { window.__made.destroy(); var b = document.getElementById("zzBox"); return b ? b.innerHTML : "gone"; }())');
   return (after === '' || after === 'gone') || 'after destroy: ' + short(after).slice(0, 200);
 }, test.limit.quick);
