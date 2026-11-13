@@ -92,16 +92,17 @@ const PLANT = {
   'spirit/zzTesticle/test/tau.js': LOGGED('tau', 0, ["test.run('tau answers', 0.2, function () { return true; }, test.limit.quick);"]),
   'spirit/zzTesticle/upsilon.js': '\'use strict\';\n// upsilon\n',
   'spirit/zzTesticle/test/upsilon.js': LOGGED('upsilon', 0, ["test.run('upsilon answers', 0.2, function () { return true; }, test.limit.quick);"]),
-  // rho answers its first test, then hangs; sigma hangs before any test reports.
+  // rho answers its first test, then hangs; sigma's first test hangs, its process kept alive. Each hang has the quick
+  // limit, so the reporter fails it there (Andy: "a single test still has the same limit!").
   'spirit/zzTesticle/rho.js': '\'use strict\';\n// rho\n',
-  'spirit/zzTesticle/test/rho.js': LOGGED('rho', 0, ["test.run('rho answers its first', 0.2, function () { return true; }, test.limit.quick);", "test.run('rho hangs', 0.2, function () { return new Promise(function () { setInterval(function () {}, 1000); }); }, test.limit.long);"]),
+  'spirit/zzTesticle/test/rho.js': LOGGED('rho', 0, ["test.run('rho answers its first', 0.2, function () { return true; }, test.limit.quick);", "test.run('rho hangs', 0.2, function () { return new Promise(function () { setInterval(function () {}, 1000); }); }, test.limit.quick);"]),
   // omega: an older classifier left it a red classifyable row in the older testicle.db (cw, after Andy's node classified
   // nothing at its start: "a red that starts on tables like these (classifier rows of an older classifier), please; empty
   // tables hid it").
   'spirit/zzTesticle/omega.js': '\'use strict\';\n// omega\n',
   'spirit/zzTesticle/test/omega.js': '\'use strict\';\n// the test of omega\n',
   'spirit/zzTesticle/sigma.js': '\'use strict\';\n// sigma\n',
-  'spirit/zzTesticle/test/sigma.js': SUITE_HEAD + "setInterval(function () {}, 1000);\ntest.run('the world: sigma never gets here', 0.2, function () { return new Promise(function () {}); }, test.limit.long);\n",
+  'spirit/zzTesticle/test/sigma.js': SUITE_HEAD + "setInterval(function () {}, 1000);\ntest.run('sigma hangs', 0.2, function () { return new Promise(function () {}); }, test.limit.quick);\n",
   'spirit/zzTesticle/phi.js': '\'use strict\';\n// phi, its suite never run\n',
   'spirit/zzTesticle/test/phi.js': '\'use strict\';\n// the test of phi\n',
   'spirit/zzTesticle/mu.js': '\'use strict\';\n// mu\n',
@@ -1469,7 +1470,10 @@ test.run('after the start, a script removed while it was down is marked deleted'
   return (!!r && yes(r.deleted)) || 'gamma: ' + short(r);
 }, test.limit.quick);
 
-// A job past 2 minutes: rho reports its first test, then hangs; sigma hangs before any test.
+// A HANG FAILS AT ITS TEST'S OWN LIMIT (goal/G47.1: testicle's job limit is 120 minutes, cw's 3cf0379b on Andy's "make the
+// limit 120 minutes"; Andy: "a single test still has the same limit!"): rho reports its first test, then hangs; sigma's
+// first test hangs while its process is kept alive. Each hang has the quick limit (10 s): the reporter fails it there, long
+// before testicle's own limit.
 test.run('the world: rho.js and sigma.js change', 0.2, async function () {
   if (!up()) return NONODE;
   append(RHO, '// rho, changed\n');
@@ -1477,25 +1481,25 @@ test.run('the world: rho.js and sigma.js change', 0.2, async function () {
   const ok = await until(function () { return Promise.resolve(starts('rho').length > 0); }, 240000);
   return !!ok || 'rho never started: ' + short(runlog());
 }, test.limit.long);
-test.run('a job past 2 minutes is killed, and every test of it the server knows is failed', 0.2, async function () {
+test.run('a test that hangs fails at its own limit: rho hangs is red, rho answers its first green', 0.2, async function () {
   if (!up()) return NONODE;
-  const ok = await until(function () { const r = currentOf(tables(DB), RHO, RHOS, 'rho answers its first')[0]; return Promise.resolve(!!r && no(r.verified)); }, 150000);
+  const ok = await until(function () { const t = tables(DB); const h = currentOf(t, RHO, RHOS, 'rho hangs')[0], f = currentOf(t, RHO, RHOS, 'rho answers its first')[0]; return Promise.resolve(!!h && no(h.verified) && !!f && yes(f.verified)); }, 120000);
   let errs = ''; try { errs = fs.readFileSync(path.join(s.run, 'spirit', 'state', 'testicle', 'testicle.err'), 'utf8').split('\n').filter(Boolean).slice(-8).join(' | '); } catch (e) { errs = 'no testicle.err'; }
-  return !!ok || 'rho\'s first, after 2.5 minutes: ' + short(currentOf(tables(DB), RHO, RHOS, 'rho answers its first')) + '; testicle.err: ' + errs.slice(0, 1500) + '; the log ' + short(runlog().filter(function (l) { return l.suite === 'rho'; }));
+  return !!ok || 'rho\'s rows after 2 minutes: ' + short(currentOf(tables(DB), RHO, RHOS, 'rho hangs').concat(currentOf(tables(DB), RHO, RHOS, 'rho answers its first'))) + '; testicle.err: ' + errs.slice(0, 1500) + '; the log ' + short(runlog().filter(function (l) { return l.suite === 'rho'; }));
 }, test.limit.long);
-test.run('killed, its suite shows "still red"', 0.2, async function () {
+test.run('its suite shows "still red"', 0.2, async function () {
   if (!up()) return NONODE;
-  // The kill fails the tests first, then the process ends and the job is judged: the status follows a moment later.
+  // The hang fails at its limit, then the reporter ends the run and the job is judged: the status follows a moment later.
   let st = null;
   await until(function () { return statusOf(RHO, RHOS).then(function (x) { st = x; return x === 'still red'; }); }, 20000);
   let errs = ''; try { errs = fs.readFileSync(path.join(s.run, 'spirit', 'state', 'testicle', 'testicle.err'), 'utf8').split('\n').filter(Boolean).slice(-8).join(' | '); } catch (e) { errs = 'no testicle.err'; }
   return st === 'still red' || 'rho\'s suite: ' + short(st) + '; testicle.err: ' + errs.slice(0, 1500) + '; its script row ' + short(scriptRow(tables(DB), RHO)) + '; the rows of its tests (test, current, verified, judged) ' + short(testRows(tables(DB), RHO, RHOS, 'rho answers its first').concat(testRows(tables(DB), RHO, RHOS, 'rho hangs')).map(function (r) { return [r.test, r.current, r.verified, String(r.judged).slice(0, 8), String(r.suiteHash).slice(0, 8), r.tested]; })) + '; its row ' + short(suiteRow(tables(DB), RHO, RHOS)) + '; its tests ' + short(testRows(tables(DB), RHO, RHOS, 'rho answers its first')) + '; the log ' + short(runlog().filter(function (l) { return l.suite === 'rho'; }));
 }, test.limit.slow);
-test.run('a suite that hangs before any test reported fails too: sigma\'s suite shows "still red"', 0.2, async function () {
+test.run('a suite whose only test hangs, its process kept alive, fails too: sigma\'s suite shows "still red"', 0.2, async function () {
   if (!up()) return NONODE;
   let st = null;
-  // sigma's own job comes after rho's, so it starts at most when rho's was killed, and is killed 2 minutes later.
-  const ok = await until(function () { return statusOf(SIG, SIGS).then(function (x) { st = x; return x === 'still red'; }); }, 280000);
+  // sigma's own job comes after rho's; its hang fails at the quick limit, its process kept alive by an interval ended.
+  const ok = await until(function () { return statusOf(SIG, SIGS).then(function (x) { st = x; return x === 'still red'; }); }, 180000);
   return !!ok || 'sigma\'s suite: ' + short(st);
 }, test.limit.long);
 
