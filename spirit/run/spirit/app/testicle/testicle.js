@@ -533,7 +533,7 @@ function busyNow() { return working || !!timer || pending.size > 0 || getting > 
 function doingNow() {
   if (!job) return '';
   if (job.classify) return 'classifying ' + job.done + ' of ' + job.scripts.length;
-  return 'running ' + path.posix.basename(job.suite) + (job.suite !== ownTestOf(job.script) ? ' for ' + job.script : '');
+  return 'running ' + path.posix.basename(job.suite) + ' for ' + job.script;
 }
 let busyTold = false;
 let doingTold = '';

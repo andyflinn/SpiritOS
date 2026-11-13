@@ -134,7 +134,7 @@ The box, in Andy's words where he gave them:
     those its script-tab row holds), at a change or at start: every such script has reClassify set again and its row
     flagged with the bytes as they are, so no class and no red of an older classifier stands.
   - the runner writes in testicle.err when it starts classifying (with the mode), and while scripts are owed a class, each
-- **What it is doing** (goal/G47.1, Andy: *"do that"*): every message carries `doing` beside `busy`: `classifying <n> of <m>` while a classifying run goes (n the scripts it has told the class of so far), `running <suite file> for <script>` while a suite runs (`for` left out for a script's own test), `` when no job runs; told again whenever it changes.
+- **What it is doing** (goal/G47.1, Andy: *"do that"*): every message carries `doing` beside `busy`: `classifying <n> of <m>` while a classifying run goes (n the scripts it has told the class of so far), `running <suite file> for <script>` while a suite runs, `` when no job runs; told again whenever it changes.
     time it waits and why, a reason once until it changes; a failed write of a moment is written there too.
 - **Which kind judges which script** (goal/G47.1, box v94, 2: *"node only scripts are tested by -general AND -node general
   tests. browser only scripts are tested by -general and -browser general tests. if a script is NOT browser only AND NOT
