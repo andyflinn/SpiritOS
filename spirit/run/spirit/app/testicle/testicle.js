@@ -160,8 +160,10 @@ function fileOfOwnTest(suite) { return path.posix.join(path.posix.dirname(path.p
 // this checkout, so its reporter reports to this node: a general test given the script, an own test nothing, --test <title>
 // when a title was asked.
 const QUIET_MS = 1000;
-// THE ONE JOB LIMIT (Andy: "we say 2 minutes wait until failure"): past it the job is killed and its tests failed.
-const JOB_LIMIT_MS = 120000;
+// THE ONE JOB LIMIT, 120 MINUTES FOR EVERY RUN (goal/G47.1, Andy: "the timelimit on long runs is stupid, testicle can already
+// stop long run... so make the mimit 120 minutes...."; it was 2 minutes a script): past it the job is killed and its tests
+// failed. A classifying run and a general test's run of many scripts have the same one limit.
+const JOB_LIMIT_MS = 120 * 60 * 1000;
 const flaggedRows = db.prepare('SELECT script, suite FROM suite WHERE test = 1 AND deleted = 0');
 let job = null;          // { script, suite, title, scriptHash, suiteHash, started, kid, timer, killed }
 const front = [];        // [{ script, suite, title }], pressed: run first, the newest press first
@@ -198,8 +200,6 @@ const CLASSIFY = 'spirit/test/scriptClassify.js';
 const CLASSIFYABLE = 'classifyable';
 // "its severity is 0.8": what a run that never classified a script fails it with.
 const CLASSIFY_SEVERITY = 0.8;
-// A classifying run's limit: its scratch node's boot, then two loads of at most 3 s for each script, with room.
-function classifyLimit(n) { return JOB_LIMIT_MS + n * 8000; }
 const toClassify = db.prepare('SELECT name, hash FROM script WHERE reClassify = 1 AND deleted = 0 ORDER BY name');
 const setClass = db.prepare('UPDATE script SET browserOnly = ?, nodeOnly = ?, reClassify = ?, changed = ? WHERE name = ?');
 const classified = db.prepare('UPDATE script SET reClassify = 0, changed = ? WHERE name = ? AND hash = ? AND reClassify = 1');
@@ -316,8 +316,7 @@ function nextJob() {
   j.kid = spawn(process.execPath, args, { cwd: RUN, stdio: 'ignore', windowsHide: true });
   j.kid.on('error', end);
   j.kid.on('exit', end);
-  // A general test's run of several scripts has the one job limit for each of them.
-  j.timer = setTimeout(function () { killJob(j); }, j.classify ? classifyLimit(j.scripts.length) : j.batch ? JOB_LIMIT_MS * j.scripts.length : JOB_LIMIT_MS);
+  j.timer = setTimeout(function () { killJob(j); }, JOB_LIMIT_MS);
 }
 // PAST THE LIMIT (the box: "A job that runs past 2 minutes is killed, and every test of that suite and script the server
 // knows is failed, tagged with the run's two hashes, so it is not queued again until the script or the suite changes").
