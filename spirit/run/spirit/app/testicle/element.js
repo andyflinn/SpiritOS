@@ -28,7 +28,7 @@
 // the same test makes its tab active and opens no second.
 (function () {
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the workBench and the file list.
-  var parts = Promise.all(['spirit/element/workBench.js', 'spirit/element/rowForm.js', 'spirit/element/search/file.js', 'spirit/element/tabContainer.js',
+  var parts = Promise.all(['spirit/element/workBench.js', 'spirit/element/search/app/rowFormToggle.js', 'spirit/element/search/file.js', 'spirit/element/tabContainer.js',
     'spirit/element/search/suite.js', 'spirit/element/search/testicle.js', 'spirit/element/search/testicle/detailElement.js',
     'spirit/app/testicle/api.js'].map(function (p) { return window.spirit.require(p); }));
   // A NODE WITH NO TESTICLE refuses its interface: create says testicle could not be loaded; the refusal is never left
@@ -98,68 +98,98 @@
     var what = last.table === 'testicle' ? String(last.key).split('|').slice(0, 3).join(' | ') : String(last.key).split('|').join(' | ');
     return String(last.change || 'updated') + ' ' + last.table + ': ' + what;
   }
+  // THE MODE AHEAD OF IT (goal/G47.1, box v80, 2: "the status display has one extra icon at the beginning: 🤖 auto / 🖖
+  // interactive, ahead of the 🛌/🚶‍➡️ icon, from the stream"): drawn from the preferences branch, which the stream keeps;
+  // what it stands at before anything streamed is asked of the preferences verb once and kept there.
   function monitorRow(row) {
-    row.innerHTML = '<span class="testicle-busy" style="flex:none;margin-right:.5em"></span><span class="testicle-last" style="flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis"></span>';
-    var icon = row.firstChild;
-    var line = row.lastChild;
+    row.innerHTML = '<span class="testicle-mode" style="flex:none;margin-right:.5em"></span><span class="testicle-busy" style="flex:none;margin-right:.5em"></span>' +
+      '<span class="testicle-last" style="flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis"></span>';
+    var mode = row.querySelector('.testicle-mode');
+    var icon = row.querySelector('.testicle-busy');
+    var line = row.querySelector('.testicle-last');
     var release = null;
+    var releaseMode = null;
     var shown = null;
+    var shownMode = null;
+    // Through the icon element, as every pictograph is drawn (spirit/element/icon.js; the general rules).
+    function paint(box, glyph) {
+      var I = window.spirit.element && window.spirit.element.spirit && window.spirit.element.spirit.element.icon;
+      if (!I) return false;
+      box.innerHTML = '';
+      I.create(box, { glyph: glyph });
+      return true;
+    }
     function draw(m) {
       var busy = !!(m && m.busy);
       var glyph = busy ? '🚶‍➡️' : '🛌';
-      // Through the icon element, as every pictograph is drawn (spirit/element/icon.js; the general rules).
-      var I = window.spirit.element && window.spirit.element.spirit && window.spirit.element.spirit.element.icon;
-      if (glyph !== shown && I) { icon.innerHTML = ''; I.create(icon, { glyph: glyph }); shown = glyph; }
+      if (glyph !== shown && paint(icon, glyph)) shown = glyph;
       icon.title = busy ? 'working' : 'idle';
       var words = lastWords(m && m.last);
       line.textContent = words;
       line.title = words;
     }
+    function drawMode(p) {
+      if (!p || typeof p.interactive !== 'boolean') return;
+      var glyph = p.interactive ? '🖖' : '🤖';
+      if (glyph !== shownMode && paint(mode, glyph)) shownMode = glyph;
+      mode.title = p.interactive ? 'interactive' : 'auto';
+    }
     Promise.all([window.spirit.require('spirit/element/icon.js'), window.spirit.cacheManager('testicle')]).then(function () {
       if (release === false) return;
-      var M = window.spirit.data.testicle.data.monitor;
-      draw(M.get());
-      release = M.watch(draw);
+      var D = window.spirit.data.testicle.data;
+      // The interface loads with the face's parts; the busy row draws before it, the mode once it is in.
+      window.spirit.require('spirit/app/testicle/api.js').then(function () {
+        if (release === false) return;
+        return Promise.resolve(window.spirit.testicle.preferences({})).then(function (p) { if (release !== false) D.preferences.keep(p); });
+      }).then(null, function () { /* no testicle here: no mode to show */ });
+      draw(D.monitor.get());
+      release = D.monitor.watch(draw);
+      drawMode(D.preferences.get());
+      releaseMode = D.preferences.watch(drawMode);
     });
-    return { destroy: function () { if (typeof release === 'function') release(); release = false; } };
+    return { destroy: function () {
+      if (typeof release === 'function') release();
+      if (typeof releaseMode === 'function') releaseMode();
+      release = false;
+      releaseMode = null;
+    } };
   }
 
   // THE CONFIGURATION PANEL (goal/G47.1, box v79, 2): "a new left-strip-icon in the UI: ⚙", "the second icon below the
   // existing one", "this icon will open a panel in the left workbech pane, titled: \"⚙ Configuration\"", "the one switch it
   // maintains in a rowForm is: interactive | auto where the default will be \"interactive\"". The switch is the preference
   // interactive (box v79, 4): asked of the preferences verb once, then followed in testicle's branch, which the stream
-  // keeps; Save sends the choice, and what a press did, a refusal, is said below the form.
+  // keeps; a press sends the other mode, and what a press did, a refusal, is said below the form.
   function configPanel(box) {
     var gone = false;
     var release = null;
     box.innerHTML = '<div class="testicle-config"><div class="testicle-title">⚙ Configuration</div><div class="testicle-config-form"></div>' +
       '<div class="testicle-config-said"></div></div>';
     var said = box.querySelector('.testicle-config-said');
-    var form = window.spirit.element.spirit.element.rowForm.create(box.querySelector('.testicle-config-form'), { icon: '⚙', button: 'Save' });
-    var mode = document.createElement('select');
-    mode.className = 'testicle-mode';
-    mode.innerHTML = '<option value="interactive">interactive</option><option value="auto">auto</option>';
-    form.span.appendChild(mode);
+    // NO SAVE (goal/G47.1, box v80, 2: "the switch is the same style form the app uses for toggles (rowFormToggle); a change
+    // is sent to the server at once, and the server streams it back, which sets the switch"): on is interactive, off auto. A
+    // press only asks; the switch moves when the branch does.
+    var shown = null;
+    function words(on) { return on ? 'interactive' : 'auto'; }
+    var toggle = window.spirit.element.spirit.element.search.app.rowFormToggle.create(box.querySelector('.testicle-config-form'), { on: true, words: '',
+      press: function () {
+        if (gone || typeof shown !== 'boolean') return;
+        said.textContent = '';
+        Promise.resolve(window.spirit.testicle.preferences({ interactive: !shown })).then(null, function (e) {
+          if (!gone) said.textContent = String((e && e.message) || e || 'preferences failed');
+        });
+      } });
     function draw(p) {
       if (gone || !p || typeof p.interactive !== 'boolean') return;
-      mode.value = p.interactive ? 'interactive' : 'auto';
+      shown = p.interactive;
+      toggle.set(shown, words(shown));
     }
-    form.button.addEventListener('click', function () {
-      if (gone) return;
-      form.button.disabled = true;
-      said.textContent = '';
-      Promise.resolve(window.spirit.testicle.preferences({ interactive: mode.value === 'interactive' })).then(function (p) {
-        if (gone) return;
-        window.spirit.data.testicle.data.preferences.keep(p);
-      }, function (e) {
-        if (!gone) said.textContent = String((e && e.message) || e || 'preferences failed');
-      }).then(function () { if (!gone) form.button.disabled = false; });
-    });
     Promise.resolve(window.spirit.cacheManager('testicle')).then(function () {
       if (gone) return;
       var P = window.spirit.data.testicle.data.preferences;
       draw(P.get());
       release = P.watch(draw);
+      // What it stands at before anything streamed: asked once, kept in the branch the switch follows.
       return Promise.resolve(window.spirit.testicle.preferences({})).then(function (p) { if (!gone) P.keep(p); });
     }).then(null, function (e) { if (!gone) said.textContent = String((e && e.message) || e || 'preferences failed'); });
     return {
