@@ -29,6 +29,8 @@ existing file list with a filter for production *.js files: no new list."*
   `testicle.script.get`).
 
 **On the page.**
+- Before any run is pressed, the world waits for testicle to go idle: its first start brings its tables up to date with
+  the scratch tree and classifies it before any run (goal/G47.1, box v95, 5; box v94, 1).
 - It loads through `spirit.require` and stands at `spirit.element.spirit.app.testicle.element`; `create(container)`
   answers `{ destroy }`.
 - A workBench whose left strip holds two icons, 📁 then ⚙ (goal/G47.1, box v79, 2: *"the second icon below the existing one"*), and whose right strip holds none.

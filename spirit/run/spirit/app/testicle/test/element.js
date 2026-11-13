@@ -607,6 +607,14 @@ test.run('the world: the monitor\'s icons are recorded from here', 0.2, async fu
   return (await T('recordIcons()')) === true || 'no recorder';
 }, test.limit.quick);
 
+// THE FIRST START CLASSIFIES THE TREE (goal/G47.1, box v95, 5 and box v94, 1: at start every script of the scratch tree gets
+// its row, and classifying comes before any run; Andy: "if the initial run takes long ... who gives a fuck!"): the press below
+// waits for that, so the world waits for testicle to go idle first.
+test.run('the world: testicle has brought its tables up to date and classified the tree, and is idle', 0.2, async function () {
+  if (face()) return face();
+  const idle = await until(function () { return call(N.base, 'testicle.testicle.busy', {}).then(function (r) { return r.status === 200 && r.body === false; }); }, 280000);
+  return !!idle || 'testicle still busy after 280 s';
+}, test.limit.long);
 let iotaRows = [], iotaKey = '', searchBefore = 0;
 // The rows the shown tab draws, by key.
 const searchRows = function () { return T('shown()').then(function (d) { return ((d && d.rows) || []).map(function (r) { return r.key; }); }); };
