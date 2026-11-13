@@ -24,6 +24,8 @@
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the list and its row, testicle's interface and its cache manager.
   var parts = Promise.all(['spirit/element/search.js', 'spirit/element/search/suite/rowElement.js', 'spirit/app/testicle/api.js']
     .map(function (p) { return S.require(p); }).concat([S.cacheManager('testicle')]));
+  // A NODE WITH NO TESTICLE refuses its interface: create says the suites could not be loaded; the refusal is never left unhandled.
+  parts.catch(function () {});
 
   function rowsOf(body) {
     return ((body && body.items) || []).map(function (i) { try { return JSON.parse(i.label); } catch (e) { return null; } }).filter(Boolean);

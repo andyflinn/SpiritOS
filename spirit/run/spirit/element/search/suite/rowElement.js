@@ -52,6 +52,9 @@
           if (button !== made) return;
           button = S.element.spirit.element.busyButton.create(cell, { label: '🏃‍♂️', title: 'run this suite', className: 'suite-run',
             run: function () { return S.testicle.run({ script: String(r.script || ''), suite: String(r.suite || '') }); } });
+        }, function () {
+          // A node with no testicle refuses its interface: nothing to run the suite with, so no button.
+          if (button === made) button = null;
         });
         button = made;
       }
