@@ -1,4 +1,5 @@
 'use strict';
+require('./spirit.js');
 
 // spirit/run/spirit/puppetStream.js
 // A PUPPET STREAMS WHAT ITS SERVERS PUBLISH TO ITS MASTER (goal/G14.5).

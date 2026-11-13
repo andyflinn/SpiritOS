@@ -1,4 +1,5 @@
 'use strict';
+if (typeof require === 'function') require('../spirit.js'); // node only: a page has the global spirit already, and no require
 
 // The owner's api tree, read for choosing — apiAuth/G1.8.
 //

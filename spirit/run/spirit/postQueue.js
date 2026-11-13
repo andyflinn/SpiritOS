@@ -1,4 +1,5 @@
 'use strict';
+require('./spirit.js');
 
 // spirit/run/spirit/postQueue.js
 // WHICH REQUEST GOES NEXT, and nothing else. No sockets, no timers, no

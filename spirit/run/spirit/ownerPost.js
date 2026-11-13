@@ -1,4 +1,5 @@
 'use strict';
+require('./spirit.js');
 // spirit/run/spirit/ownerPost.js
 // peerOwnerPost() — THE OWNER DOOR'S SENDING END (puppets/G4).
 //

@@ -1,4 +1,5 @@
 'use strict';
+if (typeof require === 'function') require('./spirit.js'); // node only: a page has the global spirit already, and no require
 
 // One peer, one file, named by the peer's WHOLE public key.
 //

@@ -1,4 +1,5 @@
 'use strict';
+if (typeof require === 'function') require('../spirit.js'); // node only: a page has the global spirit already, and no require
 // spirit/run/spirit/shell/seal.js (goal/G41.3: moved from face/seal.js unchanged)
 // THE NODE'S SEAL, IN THE BROWSER (goal/G30.11). Andy's box: "The seal is the node's own (X25519, HKDF-SHA256,
 // AES-256-GCM), done in the browser with WebCrypto." Byte for byte spirit/seal.js: ephemeral-static X25519, HKDF-SHA256

@@ -1,3 +1,4 @@
+require('../spirit.js');
 // spirit/run/spirit/DEBUG/headLessBrowser.js
 // THE BARE MOUNT PAGE OF ONE MODULE (goal/G41.19, ../test/DEBUG.md), replacing shell/mount.html. Andy: "the response will
 // be the most minimal web page, NO COMMENTS, NOTHING with a script tag <script src="/spirit.js"> and the most minimal

@@ -1,4 +1,5 @@
 'use strict';
+if (typeof require === 'function') require('./spirit.js'); // node only: a page has the global spirit already, and no require
 
 // spirit/run/spirit/fieldRules.js
 // What a text field may be — one definition, both sides of the wire.

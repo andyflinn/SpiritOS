@@ -1,4 +1,5 @@
 'use strict';
+require('./spirit.js');
 
 // spirit/run/spirit/relayStatus.js
 // WHAT A RELAY TELLS ITS OWNER ABOUT ITSELF.

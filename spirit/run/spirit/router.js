@@ -1,4 +1,5 @@
 'use strict';
+require('./spirit.js');
 
 // spirit/run/spirit/router.js
 // The relay's pending-request table: hash -> who asked, who was asked.

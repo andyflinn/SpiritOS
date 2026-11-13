@@ -1,4 +1,5 @@
 'use strict';
+require('./spirit.js');
 
 // spirit/run/spirit/apiDoor.js
 // A MEMBER ASKS THE NODE FOR 'api' — appPair/G1.3.

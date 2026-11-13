@@ -1,4 +1,5 @@
 'use strict';
+require('./spirit.js');
 
 // spirit/run/spirit/presence.js
 // Who is connected to this relay, right now. In RAM, never written to

@@ -1,4 +1,5 @@
 'use strict';
+require('./spirit.js');
 
 // spirit/run/spirit/faceRoute.js
 // WHERE A FACE NAME LIVES — public-app-server/G17, THE ROUTE.

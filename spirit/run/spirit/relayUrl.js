@@ -1,4 +1,5 @@
 'use strict';
+require('./spirit.js');
 
 // spirit/run/spirit/relayUrl.js
 // WHICH ADDRESS A RELAY MAY BE REACHED AT. It sends nothing.

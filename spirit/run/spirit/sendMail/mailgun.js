@@ -1,4 +1,5 @@
 'use strict';
+require('../spirit.js');
 
 // spirit/run/spirit/sendMail/mailgun.js
 // A sendMail DRIVER: Mailgun (goal/G30.2). Loaded by spirit/sendMail.js when spirit/state/mail.json names it,

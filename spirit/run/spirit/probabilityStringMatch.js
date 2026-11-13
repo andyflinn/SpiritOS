@@ -1,4 +1,5 @@
 'use strict';
+if (typeof require === 'function') require('./spirit.js'); // node only: a page has the global spirit already, and no require
 
 // ONE SCOPE OF ITS OWN (goal/G27.14): loaded into a page as a plain script, its names stay its own.
 (function () {
