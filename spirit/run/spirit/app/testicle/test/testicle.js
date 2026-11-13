@@ -2191,3 +2191,21 @@ test.run('and zzReA, which reported before the stop, is done: its suite row gree
   const row = suiteRow(tables(DB), RA, RGEN);
   return (!!row && row.outcome === 'green' && no(row.test)) || 'zzReA\'s row: ' + short(row);
 }, test.limit.quick);
+// Box v131: "a suite's result is NEVER assembled from testicle rows, anywhere: testicle.suite.success is the only thing that
+// writes a suite row's outcome. the old summing of test rows goes." zzSucc's suite row, set green by the verb above, is sent
+// a failing test row and a passing one by testicle.set alone: its outcome stays as the verb left it.
+test.run('a failing test row sent alone leaves the suite row\'s outcome as testicle.suite.success left it: zzSucc stays green', 0.4, async function () {
+  if (!succWorld) return 'no zzSucc: the world failed';
+  const r = await call(N.base, 'testicle.testicle.set', { script: SUC, suite: SUCS, test: 'zzSucc answers', verified: false, severity: 0.2 });
+  await sleep(1500);
+  const row = suiteRow(tables(DB), SUC, SUCS);
+  return (r.status === 200 && !!row && row.outcome === 'green') || 'testicle.set answered ' + r.status + '; the row ' + short(row);
+}, test.limit.slow);
+test.run('and testicle.suite.success {success: false} is what turns it red', 0.4, async function () {
+  if (!succWorld) return 'no zzSucc: the world failed';
+  await call(N.base, 'testicle.testicle.set', { script: SUC, suite: SUCS, test: 'zzSucc answers', verified: true, severity: 0.2 });
+  const r = await call(N.base, 'testicle.suite.success', { script: SUC, suite: SUCS, success: false });
+  await sleep(1500);
+  const row = suiteRow(tables(DB), SUC, SUCS);
+  return (r.status === 200 && !!row && row.outcome === 'red') || 'suite.success answered ' + r.status + '; the row ' + short(row);
+}, test.limit.slow);
