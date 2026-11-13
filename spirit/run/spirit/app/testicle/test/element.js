@@ -131,6 +131,9 @@ const HANDS = '(function () {' +
   // Every icon the monitor row shows, in order, from the moment this is called.
   '  recordIcons: function () { window.__icons = []; var last = null; var note = function () { var m = window.__t.monitor(); var i = m ? m.icon : null; if (i && i !== last) { window.__icons.push(i); last = i; } }; note(); new MutationObserver(note).observe(box(), { subtree: true, childList: true, characterData: true }); return true; },' +
   '  icons_seen: function () { return window.__icons || []; },' +
+  // goal/G47.1: every message the monitor row shows, in order, from the moment this is called.
+  '  recordMessages: function () { window.__msgs = []; var last = null; var note = function () { var m = window.__t.monitor(); var x = m ? m.message : null; if (x && x !== last) { window.__msgs.push(x); last = x; } }; note(); new MutationObserver(note).observe(box(), { subtree: true, childList: true, characterData: true }); return true; },' +
+  '  messages_seen: function () { return window.__msgs || []; },' +
   '  centerText: function () { var b = box(); var c = b ? b.querySelector("[id$=\\"center\\"]") : null; return c ? String(c.innerText || "").trim() : null; },' +
   '}; return "hands"; }())';
 
@@ -769,6 +772,36 @@ test.run('a set by the verb elsewhere is followed: interactive true shows the to
   const m = await waitFor('monitor() && monitor().mode === "🖖"', 10000);
   return (!!ok && !!m) || 'the toggle ' + short(await c.evaluate(TOGGLE)) + ', the monitor ' + short(await T('monitor()'));
 }, test.limit.slow);
+
+// ── WHAT TESTICLE IS DOING, SAID IN THE STATUS BAR (Andy, on cw's offer of "classifying 120 of 253" while it classifies,
+// "running <suite>" while it tests: "cw, do that", "wsl, test that this is how it's done.") ──
+const ZM = 'spirit/zzTesticle/zzMonitorRun.js', ZMS = 'spirit/zzTesticle/test/zzMonitorRun.js';
+let msgsAt = false;
+test.run('the world: the monitor row\'s messages recorded, and the classifier changed, so every script is classified again', 0.2, async function () {
+  if (face()) return face();
+  msgsAt = (await T('recordMessages()')) === true;
+  fs.appendFileSync(path.join(s.run, 'spirit', 'test', 'scriptClassify.js'), '// the classifier, changed, for the status bar\n');
+  return msgsAt || 'no recorder';
+}, test.limit.quick);
+test.run('while it classifies, the status bar says "classifying N of M", N counting up', 0.2, async function () {
+  if (!msgsAt) return 'no recorder: the world failed';
+  const ok = await waitFor('messages_seen().filter(function (m) { return /^classifying \\d+ of \\d+$/.test(m); }).length >= 2', 240000);
+  const seen = ((await T('messages_seen()')) || []).filter(function (m) { return /^classifying \d+ of \d+$/.test(m); });
+  const ns = seen.map(function (m) { return Number(/^classifying (\d+)/.exec(m)[1]); });
+  const up = ns.length >= 2 && ns.every(function (n, i) { return i === 0 || n >= ns[i - 1]; });
+  return (!!ok && up) || 'classifying messages seen: ' + short(seen.slice(0, 6));
+}, test.limit.long);
+test.run('while it runs a suite, the status bar says "running <suite> for <script>"', 0.2, async function () {
+  if (!msgsAt) return 'no recorder: the world failed';
+  fs.mkdirSync(path.join(s.run, 'spirit', 'zzTesticle', 'test'), { recursive: true });
+  fs.writeFileSync(path.join(s.run, ZMS), "'use strict';\nconst path = require('path');\nconst test = require(path.join(__dirname, '..', '..', 'test', 'testReport.js'));\ntest.run('the world: zzMonitorRun waits', 0.2, function () { return new Promise(function (r) { setTimeout(function () { r(true); }, 3000); }); }, test.limit.quick);\n");
+  fs.writeFileSync(path.join(s.run, ZM), "'use strict';\n// zzMonitorRun\n");
+  await until(function () { return call(N.base, 'testicle.suite.search', { script: ZM, text: '' }).then(function (r) { return !!(r.body && (r.body.items || []).length); }); }, 240000);
+  await call(N.base, 'testicle.run', { script: ZM, suite: ZMS });
+  const want = 'running ' + ZMS + ' for ' + ZM;
+  const ok = await waitFor('messages_seen().indexOf(' + JSON.stringify(want) + ') !== -1', 120000);
+  return !!ok || 'messages seen: ' + short(((await T('messages_seen()')) || []).slice(-6));
+}, test.limit.long);
 
 // destroy
 test.run('destroy leaves its container empty', 0.2, async function () {

@@ -193,8 +193,13 @@ function concerning(run, name) {
   const out = [];
   if (fs.existsSync(path.join(run, own))) out.push(own);
   lines.forEach(function (l) { const p = l.split(' '); if (p[1] === name && out.indexOf(p[0]) === -1) out.push(p[0]); });
+  // Every product script has a suite row of the classifier too (box v94, 1: "a \"special\" general test under its own name,
+  // with its suite row").
+  if (out.indexOf('spirit/test/scriptClassify.js') === -1) out.push('spirit/test/scriptClassify.js');
   return out.sort();
 }
+// The classifier's suite row is no test run: it is judged by classifying, never flagged "needs running".
+const notClassifier = function (r) { return r.suite !== 'spirit/test/scriptClassify.js'; };
 function judgedBy(run, suite) {
   return execFileSync(process.execPath, [path.join(run, 'spirit', 'test', 'testModule.js')], { cwd: run, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(Boolean)
     .map(function (l) { return l.split(' '); }).filter(function (p) { return p[0] === suite && p[1]; }).map(function (p) { return p[1]; });
@@ -450,7 +455,7 @@ test.run('its suite rows are exactly its own test and the general tests that nam
 test.run('every one of its suite rows is flagged test', 0.2, function () {
   if (!a1) return NONODE;
   ownRow = suiteRow(a1, Z + 'alpha.js', Z + 'test/alpha.js');
-  const unflagged = suiteRows(a1, Z + 'alpha.js').filter(function (r) { return !yes(r.test); });
+  const unflagged = suiteRows(a1, Z + 'alpha.js').filter(notClassifier).filter(function (r) { return !yes(r.test); });
   return (suiteRows(a1, Z + 'alpha.js').length > 0 && !unflagged.length) || 'not flagged: ' + short(names(unflagged));
 }, test.limit.quick);
 test.run('a suite row holds the suite file\'s own hash', 0.2, function () {
@@ -567,7 +572,7 @@ test.run('it makes a suite row for every suite that concerns the file', 0.2, fun
 }, test.limit.quick);
 test.run('every suite row it makes is flagged needs testing', 0.2, function () {
   if (!zt) return NONODE;
-  const zunflagged = suiteRows(zt, Z + 'zeta.js').filter(function (r) { return !yes(r.test); });
+  const zunflagged = suiteRows(zt, Z + 'zeta.js').filter(notClassifier).filter(function (r) { return !yes(r.test); });
   return (suiteRows(zt, Z + 'zeta.js').length > 0 && !zunflagged.length) || 'not flagged: ' + short(names(zunflagged));
 }, test.limit.quick);
 test.run('script.get of a file with rows answers its row as it stands', 0.2, async function () {
@@ -599,7 +604,7 @@ test.run('every suite it answers is a file whose final folder is test', 0.2, fun
   return (got.length > 0 && got.every(function (i) { return path.posix.basename(path.posix.dirname(suiteOf(i))) === 'test'; })) || 'suites: ' + short(got.map(suiteOf).sort());
 }, test.limit.quick);
 test.run('every suite it answers carries its status: needs running', 0.2, function () {
-  return (got.length > 0 && got.every(function (i) { return yes(i.row.test) || i.row.status === 'needs running'; })) || 'rows: ' + short(got.map(function (i) { return i.row; }).slice(0, 3));
+  return (got.length > 0 && got.filter(function (i) { return notClassifier(i.row); }).every(function (i) { return yes(i.row.test) || i.row.status === 'needs running'; })) || 'rows: ' + short(got.map(function (i) { return i.row; }).slice(0, 3));
 }, test.limit.quick);
 test.run('the words narrow among the file\'s suites', 0.2, async function () {
   if (!up()) return NONODE;
@@ -780,7 +785,8 @@ test.run('with no script it searches that suite\'s tests for any script', 0.2, a
 test.run('with no suite it searches that script\'s tests in any suite', 0.2, async function () {
   if (!up()) return NONODE;
   const anySuite = found(await call(N.base, 'testicle.testicle.search', { script: Z + 'gamma.js', text: '' }));
-  return (anySuite.length === 1 && anySuite[0].test === 'gamma answers') || 'rows: ' + short(anySuite);
+  // gamma's tests in any suite: its own test's, and the classifier's classifyable row beside it (box v94, 1).
+  return (anySuite.length >= 1 && anySuite.every(function (r) { return r.script === Z + 'gamma.js'; }) && anySuite.some(function (r) { return r.test === 'gamma answers'; }) && anySuite.every(function (r) { return r.test === 'gamma answers' || r.suite === 'spirit/test/scriptClassify.js'; })) || 'rows: ' + short(anySuite);
 }, test.limit.quick);
 test.run('with neither it searches every current test', 0.2, async function () {
   if (!up()) return NONODE;
