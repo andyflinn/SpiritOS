@@ -111,7 +111,9 @@ The box, in Andy's words where he gave them:
 - **Classification** (goal/G47.1, box v94, 1; the classifier's own contract: `spirit/test/scriptClassify.md`):
   - the verb `script.classify {script, browserOnly, nodeOnly}` sets the script row's two flags and clears its reClassify,
     unless a classifying run under way started on other bytes of it; both flags true is refused (bad-request), a name that
-    is no production script answers "not a production script", a script with no row "no such file"; it answers the row.
+    is no script (not a .js, outside run://, or ignored) answers "not a production script", a script with no row "no such file"; a
+    script in a test folder with a row of its own (a tool of the test system with a test of its own) is classified like
+    any; it answers the row.
   - *"continues classifying until all scripts are classified before moving to actual testing"*, *"interactive or not
     (auto)"*: while any script row has reClassify set, the runner's next job is `spirit/test/scriptClassify.js`, handed
     every such script, and no other suite starts, a pressed one included.

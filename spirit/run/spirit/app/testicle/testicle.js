@@ -624,6 +624,9 @@ function treeScripts() {
 // Every script already classified, swept once: its rows that its class rules out leave the tables (pruneUnfit).
 db.prepare('SELECT name FROM script WHERE deleted = 0 AND reClassify = 0 AND (browserOnly = 1 OR nodeOnly = 1)').all().forEach(function (r) { pruneUnfit(r.name); });
 (function startScan() {
+  // A SCRIPT LEFT NOT CLASSIFYABLE IS TRIED AGAIN AT EVERY START (a fault of the classifier or of the server, since fixed,
+  // reaches it so, without the script itself changing; Andy's node kept three such reds after their fix): few, cheap.
+  db.prepare('UPDATE script SET reClassify = 1 WHERE deleted = 0 AND name IN (SELECT script FROM testicle WHERE suite = ? AND current = 1 AND verified = 0)').run(CLASSIFY);
   const names = new Set(treeScripts());
   db.prepare('SELECT name FROM script WHERE deleted = 0').all().forEach(function (r) { names.add(r.name); });
   db.prepare('SELECT DISTINCT suite FROM suite WHERE deleted = 0').all().forEach(function (r) { names.add(r.suite); });
@@ -708,7 +711,9 @@ appServer.serve({
     request: { script: '', browserOnly: false, nodeOnly: false }, reply: { name: '', hash: '', deleted: false, changed: 0 },
     handler: function (a) {
       const name = posix(String(a.script || '')).replace(/^\.?\//, '');
-      if (!/\.js$/.test(name) || isSuite(name) || name.indexOf('..') !== -1 || ignored(path.join(RUN, name))) throw refused('not-a-production-script');
+      // Any script with a row of its own, a tool of the test system in a test folder among them (testReport.js and
+      // testModule.js have tests of their own, so rows): refused, those stayed not classifyable on Andy's node for ever.
+      if (!/\.js$/.test(name) || name.indexOf('..') !== -1 || ignored(path.join(RUN, name))) throw refused('not-a-production-script');
       if (a.browserOnly === true && a.nodeOnly === true) throw refused('bad-request');
       const row = Q.script.get(name);
       if (!row || row.deleted) throw refused('no-such-file');
@@ -797,7 +802,10 @@ appServer.serve({
       const script = posix(String(a.script || '')).replace(/^\.?\//, '');
       const suite = posix(String(a.suite || '')).replace(/^\.?\//, '');
       const name = String(a.test || '');
-      if (!/\.js$/.test(script) || isSuite(script) || script.indexOf('..') !== -1 || ignored(path.join(RUN, script))) throw refused('not-a-production-script');
+      // A script in a test folder with a row of its own (a tool of the test system with a test of its own: testReport.js,
+      // testModule.js) takes results as any script does; refused, its classifier result and its own tests' went nowhere.
+      const toolWithRow = isSuite(script) && !!Q.script.get(script);
+      if (!/\.js$/.test(script) || (isSuite(script) && !toolWithRow) || script.indexOf('..') !== -1 || ignored(path.join(RUN, script))) throw refused('not-a-production-script');
       if (!suite || !name) throw refused('bad-request');
       const severity = Math.max(0, Math.min(1, Number(a.severity) || 0));
       const row = Q.script.get(script);
