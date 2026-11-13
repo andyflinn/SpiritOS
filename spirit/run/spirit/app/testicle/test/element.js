@@ -612,7 +612,7 @@ test.run('the world: the monitor\'s icons are recorded from here', 0.2, async fu
 // waits for that, so the world waits for testicle to go idle first.
 test.run('the world: testicle has brought its tables up to date and classified the tree, and is idle', 0.2, async function () {
   if (face()) return face();
-  const idle = await until(function () { return call(N.base, 'testicle.testicle.busy', {}).then(function (r) { return r.status === 200 && r.body === false; }); }, 280000);
+  const idle = await until(function () { return call(N.base, 'testicle.busy', {}).then(function (r) { return r.status === 200 && r.body === false; }); }, 280000);
   return !!idle || 'testicle still busy after 280 s';
 }, test.limit.long);
 let iotaRows = [], iotaKey = '', searchBefore = 0;
