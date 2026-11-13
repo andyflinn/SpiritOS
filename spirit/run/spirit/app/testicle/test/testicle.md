@@ -125,6 +125,14 @@ The box, in Andy's words where he gave them:
   node only, it will be tested by all 3 categories."*): the runner never starts a `-node` general test for a browser-only
   script, nor a `-browser` one for a node-only script; such a suite row, met by it, is marked deleted, and the script's
   next change brings it back.
+- **The tables never stale** (goal/G47.1, box v95, 5; it replaces the server cycle's *"nothing is read at start"*): *"the
+  testicle server is non-intrinsic: it is NOT always on"*, *"the server MUST do everything it can to reflect the current
+  state of the tree"*. At start every `.js` of the tree it watches, every script its script table holds and every suite its
+  suite table holds is taken as changed, once, by the same write a change makes, before any job: a script or suite new or
+  changed while it was down gets its rows, flagged (a script reClassify true); one gone is marked deleted. *"prune suites
+  that no longer exist (mark as deleted, and not show them again), including all their test results"*: every current test
+  row of a suite row deleted is current no more, so no search shows it. *"all these adjustments streamed"*: each row
+  written is published, as a change's are.
 
 ## What its test must try to break
 

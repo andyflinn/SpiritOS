@@ -437,6 +437,17 @@ function apply(changed, P) {
   }
   files.forEach(function (file) { const r = Q.script.get(file); if (r) tell('script', served(r), r.deleted ? 'deleted' : had['script|' + file] ? 'updated' : 'added'); });
   written.forEach(function (p) { const r = Q.suiteRow.get(p[0], p[1]); if (r) tell('suite', suiteServed(r), r.deleted ? 'deleted' : had['suite|' + p[0] + '|' + p[1]] ? 'updated' : 'added'); });
+  // A SUITE THAT NO LONGER EXISTS, WITH ALL ITS TEST RESULTS (goal/G47.1, box v95, 5: "prune suites that no longer exist
+  // (mark as deleted, and not show them again), including all their test results"): every current test row of a suite row
+  // now deleted is current no more, so no search shows it; each one streamed.
+  written.forEach(function (p) {
+    const r = Q.suiteRow.get(p[0], p[1]);
+    if (!r || !r.deleted) return;
+    T.ofSuite.all(p[0], p[1]).forEach(function (t) {
+      T.retire.run(t.script, t.suite, t.test, Number(t.flipped));
+      tell('testicle', testServed(T.row.get(t.script, t.suite, t.test, Number(t.flipped))), 'updated');
+    });
+  });
   // Whatever wrote it, a file change, a script.get or a testicle.set, a flag written wakes the runner (wsl's gap).
   if (written.size) soon();
 }
@@ -510,6 +521,35 @@ watcher.on('all', function (event, full) {
   soon();
 });
 watcher.on('error', function (e) { console.error('testicle: the watcher: ' + (e && e.message || e)); });
+// THE TABLES NEVER STALE (goal/G47.1, box v95, 5): "the testicle server is non-intrinsic: it is NOT always on", "the server
+// MUST do everything it can to reflect the current state of the tree", "the server, when starting up, must prune suites
+// that no longer exist ... including all their test results", "must of course, add new suites!", "on start, before even
+// classifying, must make sure that script, suite and testicle tables reflect the current state", "all these adjustments
+// streamed". At start every script of the tree, every name its script table holds and every suite its suite table holds
+// is taken as changed, once, through the same write a change makes: a script or suite new or changed while the server was
+// down gets its rows, flagged; one gone is marked deleted, its test rows current no more. Nothing runs before that write
+// (nextJob waits for it), so classifying comes after.
+function treeScripts() {
+  const out = [];
+  (function walk(dir) {
+    let names = [];
+    try { names = fs.readdirSync(dir, { withFileTypes: true }); } catch (e) { return; }
+    names.forEach(function (d) {
+      const full = path.join(dir, d.name);
+      if (ignored(full)) return;
+      if (d.isDirectory()) walk(full);
+      else if (d.isFile() && /\.js$/.test(d.name)) out.push(posix(path.relative(RUN, full)));
+    });
+  }(RUN));
+  return out;
+}
+(function startScan() {
+  const names = new Set(treeScripts());
+  db.prepare('SELECT name FROM script WHERE deleted = 0').all().forEach(function (r) { names.add(r.name); });
+  db.prepare('SELECT DISTINCT suite FROM suite WHERE deleted = 0').all().forEach(function (r) { names.add(r.suite); });
+  names.forEach(function (n) { pending.add(n); });
+  kick();
+}());
 // Rows already flagged at the start: the runner starts 1 second after the server starts.
 soon();
 
