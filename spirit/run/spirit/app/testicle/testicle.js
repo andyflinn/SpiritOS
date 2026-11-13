@@ -426,7 +426,14 @@ function apply(changed, P) {
   try {
     changed.forEach(function (rel) {
       if (isSuite(rel)) {
-        if (!there(rel)) { Q.rowsOfSuite.all(rel).forEach(function (r) { touched(r.script, r.suite); }); Q.goneRowsOfSuite.run(now, rel); return; }
+        if (!there(rel)) {
+          Q.rowsOfSuite.all(rel).forEach(function (r) { touched(r.script, r.suite); });
+          Q.goneRowsOfSuite.run(now, rel);
+          // A row of the script table under a suite's name (a test file once judged as a script), gone with it.
+          const asScript = Q.script.get(rel);
+          if (asScript && !asScript.deleted) { before('script|' + rel, function () { return asScript; }); Q.goneScript.run(rel, now); files.add(rel); }
+          return;
+        }
         // THE CLASSIFIER CHANGED (goal/G47.1; Andy, of a script left red by a classifier since fixed: "cw?"): every script it
         // judged with other bytes is classified again, its classifier row flagged with the bytes as they are now, so a class
         // or a red from an older classifier never stands. Unchanged, nothing moves, at start too.
