@@ -314,8 +314,8 @@ test.run('nothing hand-rolled is left: no data-armed, no armUntilElsewhere, no a
 }, test.limit.quick);
 
 // goal/G41.9: each are-you-sure, pressed twice
-const goal = { id: 'goal/G9', title: 'A goal', goal: '', status: 'open', buttons: ['go-all'], design: true, blocked: ['goal/G9.1'], verified: 'none' };
-const item = { id: 'goal/G9.1', title: 'An item', goal: 'goal/G9', status: 'open', buttons: ['done'], verified: 'red', verifyFailures: ['a suite red'], claims: 1 };
+const goal = { id: 'goal/G9', title: 'A goal', goal: '', status: 'open', buttons: ['go-all'], design: true, blocked: ['goal/G9.1'] };
+const item = { id: 'goal/G9.1', title: 'An item', goal: 'goal/G9', status: 'open', buttons: ['done'], claims: 1 };
 test.run('End design mode is an arming button: the first press says "End design mode: sure?", the second sends end-design', 0.2, async function () {
   const w = W.w = deskWorld(goal, [item]);
   await w.mount();
@@ -327,10 +327,25 @@ test.run('Go all is an arming button: the first press says "Go all: sure?", the 
   const p = await twoPress(w, function () { return w.document.getElementById('desk-go-all'); }, function (t) { return t === 'Go all: sure?'; }, { id: 'goal/G9', what: 'go-all' }, 'Go all');
   return p.good || p.why;
 }, test.limit.quick);
-test.run('Done, in the row of an item not verified green, is an arming button: the first press asks "Done anyway?", the second sends done', 0.2, async function () {
+// The box: "agents still claim done, only the user gets to actually press done. No verifier involvement with desk
+// anywhere.": Done in a row is a plain press, no mark, no arming.
+test.run('Done, in an item\'s row, is a plain press: no warning mark, no arming, one press sends done', 0.2, async function () {
   const w = W.w;
-  const p = await twoPress(w, function () { return w.document.querySelector('[data-press="done"]'); }, function (t) { return DONE_ANYWAY.test(t); }, { id: 'goal/G9.1', what: 'done' }, 'Done not verified green, in its row');
-  return p.good || p.why;
+  const before = w.presses().length;
+  const b = w.document.querySelector('[data-press="done"]');
+  if (!b) return 'no Done in the row';
+  const plain = b.textContent === 'Done (1)' || b.textContent === 'Done';
+  const armed = b.hasAttribute('data-arming');
+  w.document.click(b); await settle();
+  const sent = w.presses().slice(before);
+  return (plain && !armed && sent.length === 1 && sent[0].args.id === 'goal/G9.1' && sent[0].args.what === 'done') ||
+    JSON.stringify({ label: b.textContent, arming: armed, sent: sent.map(function (s) { return s.args; }) });
+}, test.limit.quick);
+test.run('the page draws no Verifier tab and loads nothing of a verifier', 0.2, function () {
+  const w = W.w;
+  const loaded = w.required.filter(function (r) { return /verif|RunStatus/i.test(r); });
+  return (!w.document.querySelector('[data-tab="verifier"]') && !w.document.querySelector('[data-pane="verifier"]') && !loaded.length) ||
+    JSON.stringify({ tab: !!w.document.querySelector('[data-tab="verifier"]'), loaded: loaded });
 }, test.limit.quick);
 test.run('Start design mode is an arming button: the first press says "Start design mode: sure?", the second sends start-design', 0.2, async function () {
   const ws = deskWorld(Object.assign({}, goal, { design: false }), []);
@@ -343,8 +358,6 @@ test.run('Start design mode is an arming button: the first press says "Start des
 // armingButton" (Andy: "while your mucking with desk, can you make sure that all delete and close buttons are
 // armingButton's? box."). It ends goal/G41.9's one press for a goal with nothing open, and a done row's.
 // goal/G43.30: every Close in the List is an armingButton, a goal's with nothing open and a done item's
-// Today's armed wording of Done on an item not verified green.
-const DONE_ANYWAY = /^Done anyway\? /;
 const armedNotClose = function (t) { return !!t && t !== 'Close'; };
 test.run('a goal\'s Close, with nothing under it open, is an arming button: the first press arms it, the second sends close', 0.2, async function () {
   const wc = deskWorld({ id: 'goal/G8', title: 'Done goal', goal: '', status: 'open', buttons: ['close'], design: false, blocked: [] }, []);
@@ -354,7 +367,7 @@ test.run('a goal\'s Close, with nothing under it open, is an arming button: the 
 }, test.limit.quick);
 test.run('a done item\'s Close, in its row, is an arming button: the first press arms it, the second sends close', 0.2, async function () {
   const wi = deskWorld({ id: 'goal/G8', title: 'A goal', goal: '', status: 'open', buttons: [], design: false, blocked: [] },
-    [{ id: 'goal/G8.1', title: 'A done item', goal: 'goal/G8', status: 'done', buttons: ['close'], verified: 'green', claims: 1 }]);
+    [{ id: 'goal/G8.1', title: 'A done item', goal: 'goal/G8', status: 'done', buttons: ['close'], claims: 1 }]);
   await wi.mount();
   const p = await twoPress(wi, function () { return wi.document.querySelector('[data-key="goal/G8.1"] [data-press="close"]') || wi.document.querySelector('[data-press="close"]'); }, armedNotClose, { id: 'goal/G8.1', what: 'close' }, 'a done item\'s Close, in its row');
   return p.good || p.why;
@@ -509,10 +522,9 @@ test.run('every item opens in the one details layer', 0.2, function () {
 }, test.limit.quick);
 
 // ── goal/G43.30: ON THE REAL PAGE, A CLOSE PRESSED ONCE CLOSES NOTHING ─────────────────────────────────────────
-// The box: "A test presses each one once on the real page and finds that nothing happened", and the run status: "Desk
-// and its detail load it from there", spirit/app/desk/element/deskRunStatus/. A scratch node with desk switched on, a
-// goal and an item pressed done; the Desk element on its face page; every Close the List draws pressed once.
-// goal/G43.30: on a real page, every Close in the List pressed once closes nothing; the run status from Desk's own elements
+// The box: "A test presses each one once on the real page and finds that nothing happened". A scratch node with desk
+// switched on, a goal and an item pressed done; the Desk element on its face page; every Close the List draws pressed once.
+// goal/G43.30: on a real page, every Close in the List pressed once closes nothing
 const F3 = W.f3 = {};
 const noF3 = function () { return !F3.ready ? 'no desk on a page: the world failed' : ''; };
 const CLOSES = "Array.prototype.filter.call(document.querySelectorAll('#zzDesk [data-press=\"close\"]'), function (b) { return b.getClientRects().length && !b.closest('.app-container'); })";
@@ -554,15 +566,8 @@ test.run('each Close in the List pressed once: the item is still done, nothing c
 test.run('and each Close in the List stands armed, waiting for the second press', 0.2, async function () {
   if (!F3.drawn) return 'no Close drawn: the world failed';
   const armed = JSON.parse(await F3.page.evaluate('JSON.stringify(' + CLOSES + '.map(function (b) { return b.hasAttribute("data-armed"); }))'));
-  return (armed.length === F3.n && armed.every(Boolean)) || 'after one press each, the List\'s Closes armed: ' + JSON.stringify(armed) + ' of ' + F3.n;
-}, test.limit.quick);
-test.run('Desk loads its run status from spirit/app/desk/element/deskRunStatus/, never from shell/shared/', 0.2, async function () {
-  if (noF3()) { stop(F3); return noF3(); }
-  const from = JSON.parse(await F3.page.evaluate('JSON.stringify(performance.getEntriesByType("resource").map(function (e) { return e.name; }).filter(function (x) { return /deskRunStatus/.test(x); }))'));
   stop(F3);
-  const shared = /\/shell\/shared\//;
-  return (from.some(function (x) { return x.indexOf('/spirit/app/desk/element/deskRunStatus/deskRunStatus.js') !== -1; }) && !from.some(function (x) { return shared.test(x); })) ||
-    'the page loaded ' + JSON.stringify(from);
+  return (armed.length === F3.n && armed.every(Boolean)) || 'after one press each, the List\'s Closes armed: ' + JSON.stringify(armed) + ' of ' + F3.n;
 }, test.limit.quick);
 
 // goal/G41.11: every list of Desk stands in a box of a stated size (rule/16)

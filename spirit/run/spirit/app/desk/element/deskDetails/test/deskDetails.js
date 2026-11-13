@@ -7,7 +7,7 @@
 // The tests of spirit/app/desk/element/deskDetails/deskDetails.js (spec: ./deskDetails.md). goal/G41.1: its panel icons are glyphs, drawn
 // as they are, with no icon table, read from the module's own code. goal/G41.9: every are-you-sure it draws is an
 // armingButton, driven on a page of its own. Then goal/G41.11, G41.22 (the workBench, and in a real browser
-// ./deskDetails-opened.html), G41.28 (the verifier's run through spirit.data), G43.3 and G43.22.
+// ./deskDetails-opened.html), G43.3 and G43.22, and the verifier's removal (no Verify, no run, no suites, a plain Done).
 // Every test is one test.run (goal/G47.2), run in the order written, each after the one before it: what a test makes for
 // the tests after it (a page of its own, a scratch node, a Chrome page) it keeps in S.
 
@@ -191,7 +191,6 @@ function panelIcon(w, key) { return w.document.querySelector('[data-panel="' + k
 // The dialog is driven: mounted on a small page of its own, opened on an item, and each two-press button clicked twice.
 // armingButton is a working stand-in that writes down every button it is handed; the node's desk is a recorder.
 const vm = require('vm');
-const VERIFY_CCM = 'spirit/app/deskVerify/data.js';
 
 function ddWorld(facts, checks, o) {
   const document = makeDom();
@@ -222,30 +221,17 @@ function ddWorld(facts, checks, o) {
       const q = String(p).replace(/^\/+/, '');
       required.push(q);
       if (q === 'spirit/element/workBench.js') win.spirit.element.spirit.element.workBench = workBenchStub(document, benches);
-      // The verifier's cache manager and the shared run status, the real ones, where the page's data set is (below).
-      if (o && o.real && (q === VERIFY_CCM || q === 'spirit/app/desk/element/deskRunStatus/deskRunStatus.js')) vm.runInContext(fs.readFileSync(path.join(RUN, q), 'utf8'), win, { filename: q });
       return Promise.resolve({});
     },
-    // goal/G43.32: the parts stand where the dialog reads them, the elements at spirit.element.<their path>, the run status,
-    // a helper, at spirit.required.<its path>.
+    // goal/G43.32: the parts stand where the dialog reads them, the elements at spirit.element.<their path>, a helper at
+    // spirit.required.<its path>.
     element: { spirit: { app: {}, element: nestSearch({ armingButton: armingStub(document, made),
       'search': { create: function () { return { refresh: function () {}, destroy: function () {}, redraw: function () {}, value: '' }; } } }) } },
-    required: { spirit: { element: {}, app: { desk: { element: { deskRunStatus: { deskRunStatus: function () { return ''; } } } } } } },
+    required: { spirit: { element: {} } },
   };
   // A page's spirit (spirit/test/headLessChrome.js pageSpirit), so the dialog places itself by installSpiritElement as it runs.
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(win.spirit);
   vm.createContext(win);
-  // THE PAGE'S ONE DATA SET, ITS NODE KNOWN (goal/G41.28, Q10), as spirit.start leaves it before any app runs, and the
-  // run status the shared element draws, not a stand-in: what the verifier publishes reaches the page through spirit.data.
-  if (o && o.real) {
-    // A page, as spirit.js says it is in a browser: a page's stream is its own node's, and its home is never a sender's.
-    win.spirit.isBrowser = function () { return true; };
-    vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), win, { filename: 'data.js' });
-    win.spirit.node = { key: 'KEY+DESK/DETAILS==' };
-    win.spirit.data.homeNode(win.spirit.node.key);
-    delete win.spirit.required.spirit.app.desk.element.deskRunStatus.deskRunStatus;
-    if (o.kept) { vm.runInContext(fs.readFileSync(path.join(RUN, VERIFY_CCM), 'utf8'), win, { filename: VERIFY_CCM }); win.spirit.data.takeJob(o.kept); }
-  }
   vm.runInContext(S.raw, win, { filename: FILE });
   const w = { document: document, made: made, asked: asked, required: required, closed: closed, api: api, win: win, benches: benches, titles: titles };
   w.open = async function () {
@@ -314,21 +300,22 @@ async function twoPressAny(g, find, want, what) {
     why: what + ': ' + JSON.stringify({ madeByArmingButton: byElement, armedAfterFirst: armed, wroteOnFirst: firstWrote, sent: sent }) };
 }
 
-const GOAL = { id: 'goal/G9', title: 'A goal', goal: '', status: 'open', buttons: ['done', 'go-all', 'waive', 'delete', 'close'], verified: 'red', claims: 1, blocked: ['goal/G9.1'] };
-const ITEM = { id: 'goal/G9.1', title: 'An item', goal: 'goal/G9', status: 'open', buttons: ['close'], verified: 'none', blocked: [] };
+const GOAL = { id: 'goal/G9', title: 'A goal', goal: '', status: 'open', buttons: ['done', 'go-all', 'waive', 'delete', 'close'], claims: 1, blocked: ['goal/G9.1'] };
+const ITEM = { id: 'goal/G9.1', title: 'An item', goal: 'goal/G9', status: 'open', buttons: ['close'], blocked: [] };
 const press = function (what) { return { name: 'desk.press', args: { id: 'goal/G9', what: what } }; };
 // A dialog opened on a subject; a press of a button in it.
 async function opened(subject, checks, o) { const g = ddWorld(subject, checks || [], o); await g.open(); return g; }
 async function goalPress(id, armedSays, want, what) { const w = await opened(GOAL); return pressed(await twoPress(w, byId(w, id), armedSays, want, what)); }
 
 // ── THE PANELS NAME THEIR ICONS AS GLYPHS ───────────────────────────────────────────────────────────────────────────
-test.run('DD_PANELS lists its six panels', 0.2, function () {
+test.run('DD_PANELS lists its five panels: the box, the red Qs, the blocks, the files and the rules', 0.2, function () {
   S.raw = fs.readFileSync(FILE, 'utf8');
   S.code = S.raw.replace(/\/\/[^\n]*/g, '');
   S.plain = S.code;
   const at = /var DD_PANELS = (\[[\s\S]*?\n\]);/.exec(S.code);
   try { S.panels = at ? (new Function('return ' + at[1]))() : null; } catch (e) { S.panels = null; }
-  return (Array.isArray(S.panels) && S.panels.length >= 6) || 'DD_PANELS not read: ' + (at ? 'not evaluable' : 'not found');
+  const keys = Array.isArray(S.panels) ? S.panels.map(function (p) { return p.key; }) : null;
+  return (!!keys && JSON.stringify(keys) === JSON.stringify(['box', 'qs', 'blocks', 'files', 'rules'])) || 'DD_PANELS: ' + (keys ? JSON.stringify(keys) : at ? 'not evaluable' : 'not found');
 }, test.limit.quick);
 test.run('every panel names its icon as the glyph itself', 0.2, function () {
   const keyed = (S.panels || []).filter(function (p) { return !p.icon || KEY.test(p.icon); }).map(function (p) { return p.key + ':' + p.icon; });
@@ -351,10 +338,32 @@ test.run('nothing hand-rolled is left: no data-armed, no armUntilElsewhere, no a
   return !left.length || 'still in deskDetails.js: ' + left.join(', ');
 }, test.limit.quick);
 
-// goal/G41.9: each are-you-sure of a goal, pressed twice.
-test.run('Done not verified green: an arming button saying "Done anyway: sure?" on the first press, desk.press done on the second', 0.2, function () {
-  return goalPress('dd-done', 'Done anyway: sure?', press('done'), 'Done not verified green');
+// The box: "agents still claim done, only the user gets to actually press done. No verifier involvement with desk
+// anywhere.": Done is a plain press, no mark, no arming; no Verify, no run, no suites.
+test.run('Done is a plain press: no warning mark, no arming, desk.press done on the first press', 0.2, async function () {
+  const w = await opened(GOAL);
+  const b = w.document.getElementById('dd-done');
+  if (!b) return 'no Done in the dialog';
+  const label = b.textContent;
+  const armed = b.hasAttribute('data-arming');
+  const before = w.writes().length;
+  w.document.click(b); await settle();
+  const sent = w.writes().slice(before);
+  return (label === 'Done (1)' && !armed && sent.length === 1 && JSON.stringify(sent[0]) === JSON.stringify(press('done'))) ||
+    JSON.stringify({ label: label, arming: armed, sent: sent });
 }, test.limit.quick);
+test.run('no Verify button, no run and nothing of a verifier loaded, even where the facts offer verify', 0.2, async function () {
+  const w = await opened(Object.assign({}, GOAL, { buttons: GOAL.buttons.concat(['verify']) }));
+  const loaded = w.required.filter(function (r) { return /verif|RunStatus/i.test(r); });
+  return (!w.document.getElementById('dd-verify') && !w.document.getElementById('dd-run') && !loaded.length) ||
+    JSON.stringify({ verify: !!w.document.getElementById('dd-verify'), run: !!w.document.getElementById('dd-run'), loaded: loaded });
+}, test.limit.quick);
+test.run('it asks for no suites', 0.2, async function () {
+  const w = await opened(ITEM);
+  const asked = w.asked.filter(function (a) { return /suites/.test(a.name); }).map(function (a) { return a.name; });
+  return (!asked.length && !panelIcon(w, 'suites')) || JSON.stringify({ asked: asked, icon: !!panelIcon(w, 'suites') });
+}, test.limit.quick);
+// goal/G41.9: each are-you-sure of a goal, pressed twice.
 test.run('Go all: an arming button saying "Go all: sure?" on the first press, desk.press go-all on the second', 0.2, function () {
   return goalPress('dd-go-all', 'Go all: sure?', press('go-all'), 'Go all');
 }, test.limit.quick);
@@ -379,11 +388,11 @@ test.run('Close on an open item: an arming button saying "Close: sure?" on the f
 // goal/G43.30, the box: "every Delete and every Close press in Desk (its rows, the item detail, the rule dialog) is an
 // armingButton". It ends the one press of a done item's Close (desk/G3.8) and of a goal's with nothing open (goal/G6.6).
 test.run('Close on a done item: an arming button, armed on the first press with nothing sent, desk.press close on the second', 0.2, async function () {
-  const w = await opened(Object.assign({}, ITEM, { status: 'done', verified: 'green' }));
+  const w = await opened(Object.assign({}, ITEM, { status: 'done' }));
   return pressed(await twoPressArmed(w, byId(w, 'dd-close'), { name: 'desk.press', args: { id: 'goal/G9.1', what: 'close' } }, 'Close on a done item'));
 }, test.limit.quick);
 test.run('Close on a goal with nothing open: an arming button, armed on the first press with nothing sent, desk.press close on the second', 0.2, async function () {
-  const w = await opened({ id: 'goal/G8', title: 'A goal', goal: '', status: 'open', buttons: ['close'], verified: 'none', blocked: [] });
+  const w = await opened({ id: 'goal/G8', title: 'A goal', goal: '', status: 'open', buttons: ['close'], blocked: [] });
   return pressed(await twoPressArmed(w, byId(w, 'dd-close'), { name: 'desk.press', args: { id: 'goal/G8', what: 'close' } }, 'Close on a goal with nothing open'));
 }, test.limit.quick);
 const CHECKS = [{ number: 'G1', kind: 'G', state: 'open', words: 'core grant' }, { number: 'G2', kind: 'G', state: 'open', words: 'another' }];
@@ -408,11 +417,11 @@ test.run('A red Q\'s remove: an arming button, armed on the first press, desk.ch
 }, test.limit.quick);
 // goal/G41.11: the details panel's Start and End design ask are-you-sure.
 test.run('End design: an arming button, armed on the first press, desk.press on the second', 0.2, async function () {
-  const w = await opened({ id: 'goal/G9.2', title: 'In design', goal: 'goal/G9', status: 'open', buttons: ['end-design'], verified: 'none', blocked: [] });
+  const w = await opened({ id: 'goal/G9.2', title: 'In design', goal: 'goal/G9', status: 'open', buttons: ['end-design'], blocked: [] });
   return pressed(await twoPressAny(w, byId(w, 'dd-end-design'), { name: 'desk.press', args: { id: 'goal/G9.2', what: 'end-design' } }, 'End design'));
 }, test.limit.quick);
 test.run('Start design: an arming button, armed on the first press, desk.press on the second', 0.2, async function () {
-  const w = await opened({ id: 'goal/G9.3', title: 'Out of design', goal: 'goal/G9', status: 'open', buttons: ['start-design'], verified: 'none', blocked: [] });
+  const w = await opened({ id: 'goal/G9.3', title: 'Out of design', goal: 'goal/G9', status: 'open', buttons: ['start-design'], blocked: [] });
   return pressed(await twoPressAny(w, byId(w, 'dd-start-design'), { name: 'desk.press', args: { id: 'goal/G9.3', what: 'start-design' } }, 'Start design'));
 }, test.limit.quick);
 
@@ -523,7 +532,7 @@ async function ruleShows(open) {
 }
 test.run('on an item, the new rule shows at once, from the row', 0.2, function () { return ruleShows(ITEM); }, test.limit.quick);
 test.run('on a goal, the new rule shows at once, from the row', 0.2, function () {
-  return ruleShows({ id: 'goal/G9', title: 'A goal', goal: '', status: 'open', buttons: [], verified: 'none', blocked: [] });
+  return ruleShows({ id: 'goal/G9', title: 'A goal', goal: '', status: 'open', buttons: [], blocked: [] });
 }, test.limit.quick);
 
 // goal/G41.22: no appHeader; the id, title and status in the shell's title bar.
@@ -669,47 +678,6 @@ test.run('the first box that bounds the rules scrolls (overflow auto), not the f
   return (!!bound && /overflow\s*:\s*(auto|scroll)/.test(bound.style)) || 'bounded by: ' + JSON.stringify(bound);
 }, test.limit.quick);
 
-// ── goal/G41.28: THE VERIFIER'S RUN, THROUGH SPIRIT.DATA ────────────────────────────────────────────────────────────
-// Andy: "EVERY FUCKING ELEMENT is verified to make sure when it changes shit it listens to fucking update via the spirit
-// object". The run of this item (goal/G33.6) is the verifier's own publish, kept by its family's cache manager; the
-// dialog loads that manager itself and draws the run from spirit.data.deskVerify.data, through the shared run status.
-const RUNNING = { id: 'goal/G9.1', title: 'An item', goal: 'goal/G9', status: 'open', buttons: [], verified: 'none', verifyRunning: true, blocked: [] };
-const runJob = function (o2) { return Object.assign({ id: 'job_verify', type: 'publish', module: 'spirit.app.deskVerify' }, o2); };
-const RUN1 = { doing: 'run', suite: 'spirit/run/spirit/app/info/test/element.js', index: 2, of: 4, tests: 0, expected: 0, line: '', since: '' };
-const runShown = function (g) { const el = g.document.getElementById('dd-run'); return el ? el.textContent : ''; };
-test.run('it loads the verifier\'s cache manager itself, spirit/app/deskVerify/data.js', 0.2, async function () {
-  const v = S.v = await opened(RUNNING, [], { real: true });
-  return (v.required.indexOf(VERIFY_CCM) !== -1 && !!((v.win.spirit.data || {}).deskVerify || {}).data) || 'required: ' + JSON.stringify(v.required);
-}, test.limit.quick);
-test.run('a verifier publish taken into spirit.data redraws the run: its progress, its suite and how far', 0.2, async function () {
-  const v = S.v;
-  if (!v) return 'no dialog: the test before it failed';
-  const runBefore = runShown(v);
-  v.win.spirit.data.takeJob(runJob({ app: RUN1 })); await settle();
-  return (/verifying element\.js, suite 2 of 4/.test(runShown(v)) && !!v.document.getElementById('dd-run') && !!v.document.getElementById('dd-run').querySelector('progress')) ||
-    'the run before: "' + runBefore + '", after the publish: "' + runShown(v) + '"';
-}, test.limit.quick);
-test.run('the next publish redraws it again', 0.2, async function () {
-  const v = S.v;
-  if (!v) return 'no dialog: the test before it failed';
-  v.win.spirit.data.takeJob(runJob({ app: Object.assign({}, RUN1, { index: 3 }) })); await settle();
-  return /suite 3 of 4/.test(runShown(v)) || 'the run: "' + runShown(v) + '"';
-}, test.limit.quick);
-test.run('a run already kept in spirit.data when it opens is drawn at once', 0.2, async function () {
-  const v = await opened(RUNNING, [], { real: true, kept: runJob({ app: RUN1 }) });
-  return /verifying element\.js, suite 2 of 4/.test(runShown(v)) || 'the run at open: "' + runShown(v) + '"';
-}, test.limit.quick);
-test.run('a publish of another node\'s verifier draws nothing here', 0.2, async function () {
-  const v = await opened(RUNNING, [], { real: true });
-  v.win.spirit.data.takeJob(runJob({ fromNode: 'KEY+ANOTHER/NODE==', app: RUN1 })); await settle();
-  return !/verifying/.test(runShown(v)) || 'the run: "' + runShown(v) + '"';
-}, test.limit.quick);
-test.run('a publish saying no doing draws nothing', 0.2, async function () {
-  const v = await opened(RUNNING, [], { real: true });
-  v.win.spirit.data.takeJob(runJob({ app: { suite: 'x.js', index: 1, of: 2 } })); await settle();
-  return !/verifying/.test(runShown(v)) || 'the run: "' + runShown(v) + '"';
-}, test.limit.quick);
-
 // ── goal/G41.22: OPENED ON AN ITEM, IN A REAL BROWSER ─────────────────────────────────────────────────────────────────
 // The page above has no layout, so what fills and what scrolls is asked of Chrome (a chat short of its bottom, no left
 // panel at open, or a box a third of its pane, pass the page above):
@@ -820,15 +788,13 @@ test.run('the files panel: the grant buttons stay pinned above the file list as 
   return (!!p && p.grantInList === false && p.grantBefore === p.grantAfter && !!p.scroller && p.grantBefore < p.scroller.top) ||
     'the files panel\'s grant row: ' + JSON.stringify(p && { inList: p.grantInList, before: p.grantBefore, after: p.grantAfter, list: p.scroller });
 }, test.limit.quick);
-test.run('the rules panel, the first time its icon is pressed, uses all the height: its list scrolls in itself, down to the bottom of the pane', 0.2, function () { return fullHeight('rules'); }, test.limit.slow);
-test.run('the suites panel, the first time its icon is pressed, uses all the height: its list scrolls in itself, down to the bottom of the pane', 0.2, function () {
-  const r = fullHeight('suites');
+test.run('the rules panel, the first time its icon is pressed, uses all the height: its list scrolls in itself, down to the bottom of the pane', 0.2, function () {
+  const r = fullHeight('rules');
   return Promise.resolve(r).then(function (v) { stopOpened(); return v; });
 }, test.limit.slow);
 
 // ── goal/G43.30: ON THE REAL PAGE, A DELETE OR A CLOSE PRESSED ONCE DOES NOTHING ─────────────────────────────────
-// The box: "A test presses each one once on the real page and finds that nothing happened", and the run status: "Desk
-// and its detail load it from there". A scratch node with desk on, a goal and two items: one pressed done, whose detail
+// The box: "A test presses each one once on the real page and finds that nothing happened". A scratch node with desk on, a goal and two items: one pressed done, whose detail
 // offers Close; one in design mode, whose detail offers Delete (goal/G9.7). Each detail opened from Desk's List.
 const call = function (verb, args) {
   return S.page2.evaluate("fetch('/api/spirit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(" + JSON.stringify({ call: verb, args: args }) + ") }).then(function (r) { return r.text(); })")
@@ -901,14 +867,8 @@ test.run('its Delete pressed once: the item is there, its status as before and s
     'after one press of Delete the item is ' + JSON.stringify({ id: afterDelete.id, status: afterDelete.status, buttons: afterDelete.buttons }) + ', before ' + JSON.stringify(before.design.status);
 }, test.limit.slow);
 test.run('and its Delete stands armed, waiting for the second press', 0.2, function () {
-  return S.deleteArmed === true || 'after one press its Delete is not armed';
-}, test.limit.quick);
-test.run('the run status is loaded from spirit/app/desk/element/deskRunStatus/, never from shell/shared/', 0.2, async function () {
-  if (!S.ready) return 'no page with Desk: the world failed';
-  const from = JSON.parse(await S.page2.evaluate('JSON.stringify(performance.getEntriesByType("resource").map(function (e) { return e.name; }).filter(function (x) { return /deskRunStatus/.test(x); }))'));
   stopPressing();
-  return (from.some(function (x) { return x.indexOf('/spirit/app/desk/element/deskRunStatus/deskRunStatus.js') !== -1; }) && !from.some(function (x) { return x.indexOf('/shell/shared/') !== -1; })) ||
-    'the page loaded ' + JSON.stringify(from);
+  return S.deleteArmed === true || 'after one press its Delete is not armed';
 }, test.limit.quick);
 
 // THE ELEMENT NAMES SINCE goal/G43.18: a stand-in keyed by its place, 'search.contact' and so on, nested where the page has it.
@@ -935,7 +895,7 @@ test.run('the item detail has no chat search', 0.2, function () {
 // "plugin leftovers (G43.22): deskChat.js and deskElement.js in shell/shared, loaded by nothing". They go, and their
 // tests with them: a test that reads a file gone from the tree is stale (G43.23, Q3: "yes."). deskChat.js drew an item's
 // chat, which the item detail, deskDetails.js, draws itself now, so their absence is judged beside it (goal/G43.28; Andy:
-// "you WILL FUCKING PLACE TESTS WHERE THEY FUCKING BELONG"; moved from shell/shared/js/test/deskRunStatus-noDeskLeftovers.js).
+// "you WILL FUCKING PLACE TESTS WHERE THEY FUCKING BELONG"; moved from shell/shared's own test of no desk leftovers).
 // The tree read as it is (tracked files that are on disk). No node, no port.
 const { execSync } = require('child_process');
 const REPO = path.resolve(RUN, '..', '..');
@@ -946,11 +906,10 @@ const SELF = /spirit\/app\/desk\/element\/deskDetails\/test\/deskDetails\.(js|md
 const BOX_LINE = /plugin leftovers \(G43\.22\): deskChat\.js and deskElement\.js in shell\/shared, loaded by nothing/g;
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 400); }
 // noSharedLeftovers: deskChat.js and deskElement.js, and their tests, gone from shell/shared (goal/G43.23 item 10).
-// Since goal/G43.30 shell/shared/ is gone with all of shell/, deskRunStatus.js moved into Desk: the folder read is the one the
-// two leftovers stood in, and it no longer exists.
-test.run('the world: deskRunStatus.js moved into Desk, and spirit/run/shell/shared/js, where the leftovers stood, is gone (goal/G43.30)', 0.2, function () {
-  return (fs.existsSync(path.join(RUN, 'spirit', 'app', 'desk', 'element', 'deskRunStatus', 'deskRunStatus.js')) && !fs.existsSync(SHARED)) ||
-    'deskRunStatus.js not in Desk, or ' + path.relative(REPO, SHARED) + ' still there: nothing judged';
+// Since goal/G43.30 shell/shared/ is gone with all of shell/: the folder read is the one the two leftovers stood in, and it
+// no longer exists.
+test.run('the world: spirit/run/shell/shared/js, where the leftovers stood, is gone (goal/G43.30)', 0.2, function () {
+  return !fs.existsSync(SHARED) || path.relative(REPO, SHARED) + ' still there: nothing judged';
 }, test.limit.quick);
 test.run('the world: deskDetails.js, which draws an item\'s chat, is beside this test', 0.2, function () {
   return fs.existsSync(path.join(RUN, 'spirit', 'app', 'desk', 'element', 'deskDetails', 'deskDetails.js')) || 'no deskDetails.js beside this test: nothing judged';

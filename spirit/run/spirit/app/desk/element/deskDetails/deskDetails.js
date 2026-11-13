@@ -13,7 +13,7 @@
 // `buttons`, and a press goes to the server as a press, the screen waiting
 // for the server's publish. The id, title and status ride in the shell's title
 // bar; under it the button row, then a workBench: the left strip of panels (box,
-// suites, red Qs and checks, blocks, files and grants, rules), the chat in the
+// red Qs and checks, blocks, files and grants, rules), the chat in the
 // centre, the right side blank.
 
 var ddApi = null;
@@ -142,8 +142,6 @@ function ddFrame() {
     // "no rounded corners", "no margins and no padding". The status the bubble carried rides in the title bar.
     '<div id="dd-bars" style="flex:none">' +
       '<div id="dd-name-row" style="display:flex;gap:12px;flex-wrap:wrap;align-items:center"></div>' +
-      // THE RUN, WHILE THE VERIFIER RUNS THIS ITEM (goal/G33.6): the same rendering as the List's status column.
-      '<div id="dd-run"></div>' +
     '</div>' +
     // A waiting icon blinks (goal/G30.8: "the icons on the left will blink if grants, or red Q's need my attention").
     '<style>.dd-blink{animation:ddBlink 1s step-start infinite}@keyframes ddBlink{50%{opacity:.2}}</style>' +
@@ -207,7 +205,6 @@ function ddMakeBench(n) {
       ddPanelSel = name;
       ddPaint();
       if (name === 'blocks') ddLoadTargets();
-      if (name === 'suites') ddLoadSuites(ddId);
       if (name === 'rules') { ddLoadRuleNames(); ddMountRulePick(); }
     },
   });
@@ -225,48 +222,6 @@ function ddMakeBench(n) {
 // at any time").
 var DD_LABELS = { 'start-design': 'Start design', 'end-design': 'End design', go: 'Go!', done: 'Done', close: 'Close', reopen: 'Reopen' };
 
-// THE VERIFIER'S RUN OF THIS ITEM (goal/G33.6), as the List's status column shows it: the desk's fact (verifyRunning)
-// joined with deskVerify's own publish (ddRun), through the one shared rendering (spirit/app/desk/element/deskRunStatus/deskRunStatus.js).
-var ddRun = null;
-var DD_RUN_STATUS = '/spirit/app/desk/element/deskRunStatus/deskRunStatus.js';
-// The shared run status, a helper, by its place spirit.required.<its path> (goal/G43.32; Andy: "helpers with no create
-// are no fucking elements. they live in require."): undefined while it is not loaded yet.
-function ddRunStatus() {
-  return 'spirit.app.desk.element.deskRunStatus.deskRunStatus'.split('.').reduce(function (o, k) { return o == null ? undefined : o[k]; }, typeof window !== 'undefined' && window.spirit ? window.spirit.required : undefined);
-}
-function ddRunHtml() {
-  var status = ddRunStatus();
-  return typeof status === 'function' ? status(ddFacts || {}, ddRun, ddEsc) : '';
-}
-function ddHearVerifier(obj) {
-  if (!obj || typeof obj !== 'object' || typeof obj.doing !== 'string') return;
-  ddRun = obj;
-  ddSet('dd-run', ddRunHtml());
-}
-function ddLoadRunStatus() {
-  var have = ddRunStatus();
-  if (typeof have === 'function') return;
-  ddNeed(DD_RUN_STATUS).then(function () { ddSet('dd-run', ddRunHtml()); }, function () { /* the run is not drawn */ });
-}
-
-// DONE, NOT VERIFIED GREEN, CARRIES A WARNING MARK AND ARMS HERE (goal/G33.3). The box: "not verified (its suites red,
-// or no run of them yet), the Done button carries a warning mark and re-arms in the page: the first press arms it and
-// says why, the second sends Done ... Verified green, one press does it. The desk keeps no arming." The facts say it
-// (verified, verifyFailures); '' where no deskVerify answers, and then nothing is marked.
-var DD_WARN = '\u26a0';
-function ddDoneWarned(f) { return f.verified === 'red' || f.verified === 'none'; }
-function ddDoneWhy(f) {
-  return f.verified === 'red' ? 'Not verified: its suites are red: ' + (f.verifyFailures || []).join(' | ')
-    : 'Not verified: there is no run of its suites yet. Press Done again to send it anyway.';
-}
-// HIS VERIFY (goal/G33.3), right next to Done (the box: "A Verify button on the item, right next to its Done button").
-// It is never disabled: the desk asks the verifier anyway. On a goal it runs the goal's suites. It shows no busy state
-// (goal/G33.6, Andy: "please don't show verifier-busy an any verify button, i can check that for myself").
-function ddVerifyHtml(f) {
-  return '<button type="button" id="dd-verify" title="hand this to the verifier">Verify</button>';
-}
-
-
 // CLOSE BEFORE HIS GO IS ARMED, AT THE RIGHT EDGE (goal/G3.9). Andy, 2026-10-03: "A close - with arm-button is
 // available on the right edge of the button bar, before an item has received a 'go' or a 'done'", "the close-with
 // arm is only visible on the item detail". EVERY CLOSE ARMS NOW (goal/G43.30; Andy: "make sure that all delete and close
@@ -275,7 +230,6 @@ function ddEarlyClose(f) { return f.status !== 'done' && f.status !== 'closed' &
 function ddButtonsHtml() {
   var f = ddFacts || {};
   var early = ddEarlyClose(f);
-  var verifyDrawn = false;
   var html = (f.buttons || []).filter(function (b) { return DD_LABELS[b] && !(early && b === 'close'); }).map(function (b) {
     // DONE (n) (goal/G4.20 point 3). Andy: "when the done button appears it also shows number of claims [Done (2)]".
     var label = b === 'done' && Number(f.claims) > 0 ? 'Done (' + Number(f.claims) + ')' : DD_LABELS[b];
@@ -283,13 +237,7 @@ function ddButtonsHtml() {
     // must ask: are-you-sure". Armed like Waive (ddArming); the second press is ddSecondPress's.
     // AND CLOSE (goal/G43.30): every Close arms first.
     var design = b === 'start-design' || b === 'end-design' || b === 'close';
-    if (b !== 'done') return '<button type="button" id="dd-' + b + '"' + (design ? ' data-arming="' + label + ': sure?"' : '') + '>' + label + '</button>';
-    var warned = ddDoneWarned(f);
-    var done = '<button type="button" id="dd-done"' + (warned ? ' data-arming="Done anyway: sure?" title="' + ddEsc(ddDoneWhy(f)) + '"' : '') + '>' +
-      label + (warned ? ' ' + DD_WARN : '') + '</button>';
-    if ((f.buttons || []).indexOf('verify') === -1) return done;
-    verifyDrawn = true;
-    return done + ddVerifyHtml(f);
+    return '<button type="button" id="dd-' + b + '"' + (design ? ' data-arming="' + label + ': sure?"' : '') + '>' + label + '</button>';
   }).join('');
   html += ddRenaming
     ? '<label class="field-label grow">Your name for it<input type="text" id="dd-name" data-field="label" placeholder="in your own words"></label>' +
@@ -325,8 +273,6 @@ function ddButtonsHtml() {
   if ((f.buttons || []).indexOf('make-current') !== -1) {
     html += '<button type="button" id="dd-make-current">Make current goal</button>';
   }
-  // VERIFY WHERE NO DONE IS SHOWN (a goal before its items are done): at the end of the row.
-  if (!verifyDrawn && (f.buttons || []).indexOf('verify') !== -1) html += ddVerifyHtml(f);
   if (f.goal === '') {
     html += '<button type="button" id="dd-abandon" data-arming="Sure? Abandon the goal"' +
       ' style="margin-left:auto;background:#b00020;color:#fff">Abandon</button>';
@@ -351,8 +297,6 @@ function ddButtonsHtml() {
 var ddPanelSel = 'box';
 var DD_PANELS = [
   { key: 'box', icon: '📃', title: 'the box' },
-  // goal/G33.11: the suites attached to the item, read only, informational for now.
-  { key: 'suites', icon: '☑️', title: 'the suites attached to this item' },
   { key: 'qs', icon: '❌', title: 'red Qs and checks' },
   { key: 'blocks', icon: '🪠', title: 'blocks' },
   { key: 'files', icon: '📂', title: 'files and grants' },
@@ -412,7 +356,6 @@ function ddScrolls(html) { return '<div class="fill" style="min-height:0;overflo
 function ddPanelHtml() {
   if (ddPanelSel === 'qs') return ddScrolls(ddQsHtml());
   if (ddPanelSel === 'blocks') return ddScrolls(ddLinksHtml() || '<div class="job-manifest-note">A goal blocks nothing.</div>');
-  if (ddPanelSel === 'suites') return ddScrolls(ddSuitesHtml());
   if (ddPanelSel === 'rules') return ddScrolls(ddRulesHtml());
   // Andy: "the file panel must have the red gran button row pinned to the top and the file list only using the
   // remaining vertical space".
@@ -686,7 +629,6 @@ function ddSet(id, html) { var el = document.getElementById(id); if (el) el.inne
 function ddPaint() {
   var typed = ddRenaming ? ddValue('dd-name') : '';
   ddSet('dd-name-row', ddButtonsHtml());
-  ddSet('dd-run', ddRunHtml());
   var box = ddRenaming && typed && document.getElementById('dd-name');
   if (box) box.value = typed;
   ddBlinkIcons();
@@ -721,7 +663,7 @@ function ddRowKeyOf(obj) {
   if (!obj.table) return 'item|' + String((obj.item && obj.item.id) || '');
   var r = obj.row || {};
   var own = obj.removed ? String(obj.at || '') : obj.table === 'checks' ? String(r.number || '') : obj.table === 'chat' ? String(r.at || '') + '|' + String(r.by || '')
-    : obj.table === 'files' ? String(r.by || '') + '|' + String(r.path || '') : obj.table === 'claims' ? String(r.by || '') : obj.table === 'suites' ? String(r.path || '') : '';
+    : obj.table === 'files' ? String(r.by || '') + '|' + String(r.path || '') : obj.table === 'claims' ? String(r.by || '') : '';
   return obj.table + '|' + String(obj.id || '') + '|' + own;
 }
 function ddTake(obj) {
@@ -777,18 +719,6 @@ function ddTakeRow(obj) {
 }
 var ddFilesAt = -1;
 
-// THE SUITES PANEL (goal/G33.11; Andy, in the box: "An icon left of the box opens the list of suites attached to the
-// item, read only, informational for now."): item.suites.search, asked each time the icon is pressed.
-var ddSuites = null;
-var ddSuitesMore = false;
-function ddLoadSuites(id) {
-  return ddAsk('item.suites.search', { id: id, text: '' }).then(function (r) {
-    if (ddId !== id) return;
-    ddSuites = (r.items || []).map(function (p) { try { return JSON.parse(p.label).path; } catch (e) { return String(p.key); } });
-    ddSuitesMore = !!r.more;
-    ddPaint();
-  }, function () { ddSuites = []; ddSuitesMore = false; ddPaint(); });
-}
 // THE RULES PANEL (goal/G40.12, second set 1-3): the rules attached to this goal or item, each named and with its
 // delete (item.rules.remove), read from the facts; their names from the rules search, asked when the icon is pressed. The
 // add is the dropdown in the frame (dd-rule-pick), a probability search of rules.search; a pick is item.rules.add.
@@ -862,12 +792,6 @@ function ddMountRulePick() {
   };
   if (window.spirit && window.spirit.element && window.spirit.element.spirit.element.search && window.spirit.element.spirit.element.search.create) { make(); return; }
   ddNeed(DD_SEARCH).then(make, function () { el.textContent = 'The search could not be loaded.'; });
-}
-function ddSuitesHtml() {
-  if (ddSuites === null) return '<div class="job-manifest-note">Reading the suites.</div>';
-  if (!ddSuites.length) return '<div class="job-manifest-note">No suite is attached to this item.</div>';
-  return ddSuites.map(function (p) { return '<div>' + ddEsc(p) + '</div>'; }).join('') +
-    (ddSuitesMore ? '<div class="job-manifest-note">More suites than shown.</div>' : '');
 }
 
 // The files panel's list, asked on its own (goal/G32.2), and again when a write changed it.
@@ -1061,8 +985,6 @@ var ddApp = {
       // goal/G2.19: Make current goal presses at once, like Go and Reopen; it closes nothing and takes nothing back.
       if (id === 'dd-make-current') { ddPress('make-current'); return; }
       if (id === 'dd-code') { ddPress('code'); return; }
-      // goal/G33.3: Verify presses at once, whatever the switch says.
-      if (id === 'dd-verify') { ddPress('verify'); return; }
       // THE RENAME OPENS HOLDING THE TITLE (goal/G41.11). Andy: "the rename input field on goal/item detail panel MUST
       // contain the current title when it's first displayed." Set once, here; a repaint keeps what he types (ddPaint).
       if (id === 'dd-rename') {
@@ -1103,15 +1025,6 @@ var ddApp = {
     });
     // The desk server's changes, which the shell would otherwise hand only to Desk.
     if (typeof api.onPublished === 'function') api.onPublished(ddTake, 'desk');
-    // deskVerify's own run objects, for the run of this item (goal/G33.6).
-    // The verifier's run, through spirit.data (goal/G41.28): its own cache manager keeps what it publishes.
-    ddNeed('/spirit/app/deskVerify/data.js').then(function () {
-      var V = window.spirit && ((window.spirit.data || {}).deskVerify || {}).data;
-      if (!V) return;
-      V.watch(ddHearVerifier);
-      if (V.state()) ddHearVerifier(V.state());
-    }, function () { /* the run is not drawn */ });
-    ddLoadRunStatus();
   },
 
   // Every call: which item this is. Nothing stale from the last one.
@@ -1119,8 +1032,6 @@ var ddApp = {
     ddId = String((params && params.id) || '');
     // Every item opens on its box (goal/G30.8).
     ddPanelSel = 'box';
-    ddSuites = null;
-    ddSuitesMore = false;
     ddFacts = null;
     ddBox = '';
     ddBoxLoaded = false;

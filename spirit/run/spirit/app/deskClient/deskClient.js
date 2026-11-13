@@ -308,7 +308,7 @@ function news(key, text) {
   shedNews();
 }
 // Which state of a row is news: these fields, as the facts carry them.
-const STATE_FIELDS = ['status', 'phase', 'with', 'go', 'claims', 'verified', 'verifyRed', 'design', 'limbo'];
+const STATE_FIELDS = ['status', 'phase', 'with', 'go', 'claims', 'verified', 'design', 'limbo'];
 const STATE_QUIET = ['chat.add', 'agent.state', 'seen.set', 'line.take'];
 // Each item's state as last heard, so only a change of it is news (the first heard, a bootstrap's, is only noted).
 const lastState = {};
@@ -1161,33 +1161,5 @@ function watchCheckout(root) {
     }).on('error', function (e) { console.error('deskClient: the checkout watch stopped: ' + ((e && e.message) || e)); });
   } catch (e) { console.error('deskClient: the checkout cannot be watched: ' + ((e && e.message) || e)); }
 }
-// ITS OWN VERIFIER'S RUN REACHES THE DESK (goal/G43.3; Andy, the box: "the agents deskClient should relay the agents
-// deskVerifier status during a run, this will tell desk that the agent "is busy". with no held item, it shows on the agent
-// as working."). Each new line of a run goes as the status of the item it holds, which is a write, so the agent stays live;
-// with none held there is no item to say it under, so its word says it. When the run ends, its word goes back.
-let relayedLine = '';
-let relayedWorking = false;
-function relayVerifier(run) {
-  if (!run || typeof run.doing !== 'string') return;
-  let to = '';
-  try { to = deskKey(); } catch (e) { return; }
-  if (run.doing !== 'run') {
-    relayedLine = '';
-    if (relayedWorking) { relayedWorking = false; say(to, 'listening'); }
-    return;
-  }
-  const line = String(run.line || '');
-  if (line === relayedLine) return;
-  relayedLine = line;
-  const id = heldPhase();
-  if (id) { countedAsk(to, 'item.status', { id: id, word: line, tone: 'code' }).answer.catch(function () {}); return; }
-  // Said on every new line, not on the change: the word is a write, and a write is what keeps a busy agent live.
-  relayedWorking = true;
-  say(to, 'working');
-}
-// THROUGH spirit.data (goal/G43.5; Andy: "the rule covers everything"): the verifier's own cache manager keeps what it
-// publishes, the data set takes the node's stream, and this listens to the manager.
-spirit.require('spirit/app/deskVerify/data.js');
-if (globalThis.spirit && ((globalThis.spirit.data || {}).deskVerify || {}).data) globalThis.spirit.data.deskVerify.data.watch(relayVerifier);
 if (globalThis.spirit && globalThis.spirit.data && typeof globalThis.spirit.data.followStream === 'function') globalThis.spirit.data.followStream();
 gitIn(['rev-parse', '--show-toplevel'], __dirname).then(function (top) { if (top.status === 0 && top.out) watchCheckout(top.out); });

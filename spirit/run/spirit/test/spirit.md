@@ -297,7 +297,7 @@ Andy, box: *"We are ONLY moving the contents of "run://shell/js/" to "run://spir
 - The other way round too: no code reaches through `spirit.element` for an element `spirit/element/` does not define. Andy, live: *"contact detail don't load in contacts"*, because `contactDetails` asked `spirit.element` for `navigation`, which stayed on `spirit.elements`.
 - Andy's own words are never rewritten: a double-quoted part of a comment or a document is left out of that scan. `agents/` and `design/` are left out too.
 - On a real page `spirit.element` exists at start, every moved module loads from its new place, and all the moved elements stand on `spirit.element` and none on `spirit.elements`.
-- The library is `spirit/element/codeMirror.js`'s own folder: `spirit/element/test/codeMirror.md`. What stays in `shell/shared/` is `shell/shared/js/test/deskRunStatus-home.md`.
+- The library is `spirit/element/codeMirror.js`'s own folder: `spirit/element/test/codeMirror.md`.
 
 ### What else proves it
 

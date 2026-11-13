@@ -44,7 +44,7 @@ function productScripts() {
   return execFileSync('git', ['ls-files'], { cwd: RUN, encoding: 'utf8' }).split('\n')
     .filter(function (f) { return /^spirit\/.+\.js$/.test(f) && !/(^|\/)test\//.test(f) && !VENDORED_FOLDERS.holds(f) && fs.existsSync(path.join(RUN, f)); });
 }
-const given = process.argv.slice(2).filter(function (a, i, all) { return a.indexOf('--') !== 0 && all[i - 1] !== '--test' && all[i - 1] !== '--verify-port'; })
+const given = process.argv.slice(2).filter(function (a, i, all) { return a.indexOf('--') !== 0 && all[i - 1] !== '--test'; })
   .map(function (a) { return posix(a).replace(/^\.?\//, ''); });
 const SCRIPTS = given.length ? given : productScripts();
 

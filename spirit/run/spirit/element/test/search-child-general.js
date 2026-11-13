@@ -15,7 +15,7 @@ function runRel(a) {
   if (r && r.indexOf('..') !== 0 && !p.isAbsolute(r) && require('fs').existsSync(abs)) return r;
   return String(a).split(p.sep).join('/').replace(/^\.?\//, '').replace(/^spirit\/run\//, '');
 }
-const GIVEN = process.argv.slice(2).filter(function (a, i, all) { return a.indexOf('--') !== 0 && all[i - 1] !== '--verify-port' && all[i - 1] !== '--test'; }).map(runRel);
+const GIVEN = process.argv.slice(2).filter(function (a, i, all) { return a.indexOf('--') !== 0 && all[i - 1] !== '--test'; }).map(runRel);
 
 // ── folderRules (was spirit/element/test/search-child-folderRules.js) ──
 function folderRules(ARGS) {

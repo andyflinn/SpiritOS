@@ -2,7 +2,7 @@
 
 // spirit/run/spirit/test/testModule.js
 // WHICH PRODUCT TESTS TO RUN (goal/G40.6). Andy: "one file in [the run tree's test folder] testModule(path-name.js) can auto execute
-// the bast-radius tests for that one file, and then should be easy for desk or deskClient of deskVerify to automate the
+// the bast-radius tests for that one file, and then should be easy for desk or deskClient of ... to automate the
 // testing of files named in an item...", and "test module must find all /test/files.js in the run tree."
 //
 // testsFor(path, { root }) -> [{ test, file? }], every path relative to root (spirit/run/ by default), '/'-separated.
@@ -15,7 +15,7 @@
 //     judges, that file in `file`: -child- judges ./<x>.js and ./<x>/ and below, -sibling- ./ and below. It judges every
 //     module in its reach, with its own test or without (goal/G47.1; Andy: "all general test will auto-opt in ANY
 //     applicable file."), and on a blast radius only the changed file and the files below it.
-// It names tests and runs none: the harness and deskVerify run each entry as its own suite, a general one with its file
+// It names tests and runs none: testicle runs each entry as its own suite, a general one with its file
 // as the argument. Run from the command line it prints one entry a line, "<test>" or "<test> <file>".
 
 const fs = require('fs');

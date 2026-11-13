@@ -1,7 +1,0 @@
-{
-  "description": "A run handed over: suites the spirit/test paths ('spirit/run' stands for every product test), commit the hash the checkout must hold first ('' for none, else 7 to 40 lower-case hex characters). Answers {taken: true} or {busy: true} and nothing else; the outcome is read through search. Refused with no suite.",
-  "request": {
-    "suites": [],
-    "commit": ""
-  }
-}

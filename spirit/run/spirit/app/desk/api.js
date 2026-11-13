@@ -28,8 +28,7 @@ module.exports = {
     'check.add': { id: 'id', kind: 'id', words: 'text', test: 'text' },
     // check is a check's number, or 'all' for his Grant-All.
     'check.set': { id: 'id', check: 'id', state: 'id' },
-    // commit may be '' only for a plain item's build claim. No suites (goal/G40.3): a red claim names the item's suite
-    // rows, added with item.suites.add, and is refused while there are none.
+    // commit may be '' only for a plain item's build claim.
     claim: { id: 'id', phase: 'id', commit: 'text' },
     // The handler trims and refuses an empty title; it applies no label rule to a goal's.
     'goal.add': { title: 'id' },
@@ -43,17 +42,14 @@ module.exports = {
     'item.checks.search': { id: 'id', text: 'text' },
     'item.claims.search': { id: 'id', text: 'text' },
     'item.files.search': { id: 'id', text: 'text' },
-    'item.suites.search': { id: 'id', text: 'text' },
     'item.delete': { id: 'id' },
     // under '' keeps every path; the door's shape needs it sent.
     'item.files': { id: 'id', under: 'text?' },
     // One row a write (goal/G40.3): one path; no '..'. A path already there (add) or not there (remove) is refused,
-    // naming it. A suite is a spirit/test/ .js path, the red writer's. goal/G41.11, for the desk only: item.files.add takes
+    // naming it. goal/G41.11, for the desk only: item.files.add takes
     // path or paths, a list cut at one answer (the server answers added and more).
     'item.files.add': { id: 'id', path: 'text?', paths: 'list?' },
     'item.files.remove': { id: 'id', path: 'text' },
-    'item.suites.add': { id: 'id', path: 'text' },
-    'item.suites.remove': { id: 'id', path: 'text' },
     'item.get': { id: 'id' },
     'item.release': { id: 'id' },
     'item.rename': { id: 'id', title: 'text' },

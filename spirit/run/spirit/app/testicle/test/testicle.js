@@ -1903,7 +1903,7 @@ const BA = BZ + 'zzbPage.js', BB = BZ + 'zzbNode.js', BC = BZ + 'zzbBoth.js';
 const BATCH_SUITE = function (kind) {
   return "'use strict';\nconst path = require('path');\nconst test = require(path.join(__dirname, '..', '..', 'test', 'testReport.js'));\n" +
     "const LOG = path.join(__dirname, '..', '..', '..', '..', '..', 'runlog.txt');\n" +
-    "const given = process.argv.slice(2).filter(function (a, i, all) { return a.indexOf('--') !== 0 && all[i - 1] !== '--test' && all[i - 1] !== '--verify-port'; });\n" +
+    "const given = process.argv.slice(2).filter(function (a, i, all) { return a.indexOf('--') !== 0 && all[i - 1] !== '--test'; });\n" +
     "require('fs').appendFileSync(LOG, JSON.stringify({ suite: 'zzBatch-" + kind + "', ev: 'start', given: given, at: Date.now() }) + '\\n');\n" +
     "test.run('zzBatch " + kind + " answers', 0.2, function () { return true; }, test.limit.quick);\n";
 };

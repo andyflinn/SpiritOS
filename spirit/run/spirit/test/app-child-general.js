@@ -17,7 +17,7 @@
 // will process all scripts listed in the arguments that fit"): its rules judge each argument in turn, its results reported for
 // that argument (testReport's test.forScript); none given, every sub-folder.
 require('../spirit.js');
-const GIVEN = process.argv.slice(2).filter(function (a, i, all) { return a.indexOf('--') !== 0 && all[i - 1] !== '--verify-port' && all[i - 1] !== '--test'; });
+const GIVEN = process.argv.slice(2).filter(function (a, i, all) { return a.indexOf('--') !== 0 && all[i - 1] !== '--test'; });
 function appChild(ARGS) {
 const fs = require('fs');
 const path = require('path');

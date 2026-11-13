@@ -229,13 +229,12 @@ const startDesk = async function (name, records, values, sessions, world) {
   if (!on) return null;
   return function (verb, args, caller) { const q = {}; q[verb] = args; return c.ask({ desk: q }, caller).then(function (r) { return (r && r.body) || {}; }, function () { return {}; }); };
 };
-// A code item with his Go, its file and its suite listed, held by the agent: a claim of it is taken.
+// A code item with his Go and its file listed, held by the agent: a claim of it is taken.
 const ready = async function (ask, id, agent) {
   await ask('press', { id: PULL.id, what: 'end-design' }, ANDY);
   await ask('press', { id: id, what: 'code' }, ANDY);
   await ask('item.take', { id: id }, agent);
   await ask('item.files.add', { id: id, path: 'spirit/run/pulled-' + id.replace(/\W/g, '') + '.js' }, agent);
-  await ask('item.suites.add', { id: id, path: 'spirit/test/pulled.js' }, ANDY);
   return ask('press', { id: id, what: 'go' }, ANDY);
 };
 const profiles = async function (ask) {
@@ -636,9 +635,9 @@ test.run('the only agent here claims the red and takes the build, with no press 
 // goal/G43.3: items.search answers a row with what the List draws, so more rows fit
 const LIST_GOAL = { id: 'goal/G400', title: 'The list' };
 const LIST_ITEMS = Array.from({ length: 25 }, function (x, i) { return 'goal/G400.' + (i + 1); });
-// What the List's cells, its presses and its filters read (spirit/app/desk/element/desk/desk.js deskRowCells, deskRowPresses, deskRowShown;
-// spirit/app/desk/element/deskRunStatus/deskRunStatus.js), and nothing else.
-const LIST_FIELDS = ['id', 'goal', 'title', 'status', 'statusTone', 'buttons', 'verified', 'verifyFailures', 'verifyRed', 'verifyRunning', 'asks', 'alert', 'with', 'names', 'blocking', 'blocked'];
+// What the List's cells, its presses and its filters read (spirit/app/desk/element/desk/desk.js deskRowCells, deskRowPresses, deskRowShown),
+// and nothing else.
+const LIST_FIELDS = ['id', 'goal', 'title', 'status', 'statusTone', 'buttons', 'asks', 'alert', 'with', 'names', 'blocking', 'blocked'];
 // THE GOAL'S ROW DRAWS MORE (found at the verify of f181acfb): the page reads the agent bubbles, the working blink, the
 // waiting count and the design state from it (spirit/app/desk/element/desk/desk.js deskBubblesHtml, deskWorkingAgents, deskWaitingOnAndy,
 // deskDesignOn), and at open this answer is all it has.
@@ -885,37 +884,6 @@ test.run('a claim taken over a checkout with an edit of its own pulls nothing, t
   const keptE = fs.readFileSync(W.edited, 'utf8') === 'an edit of its own, not committed\n';
   return (saidE && !worldA.holds(W.h3) && worldA.head() === W.headE && keptE) ||
     'a desk line ' + saidE + ', pulled ' + worldA.holds(W.h3) + ', head moved ' + (worldA.head() !== W.headE) + ', edit kept ' + keptE;
-}, test.limit.slow);
-
-// auto pull: never while a test run goes on in it: it pulls nothing and says so under the item
-// The run the desk knows of is deskVerify's: an item handed over (verify.answer taken) whose run has not been read
-// ended (no verify.state ended since) is verifyRunning. Written into its records before it starts, as the migrate
-// replays them; a test run the desk cannot know of is no case of this test.
-const noR = 'the desk with a run going did not start: the world failed';
-test.run('the world: a desk of its own starts, a run deskVerify took on goal/G300.3 still going', 0.2, async function () {
-  if (!W.scratch) return noR;
-  W.worldR = gitWorld(path.join(W.scratch, 'git-r'));
-  W.askR = await startDesk('desk-r', [{ verb: 'verify.answer', by: 'desk', body: { id: 'goal/G300.3', taken: true, by: 'desk', key: '' } }], {}, undefined, W.worldR);
-  return !!W.askR || 'desk ' + !!W.askR;
-}, test.limit.slow);
-test.run('the world: while a test run goes on, a commit lands on origin, and cw\'s red claim is taken', 0.2, async function () {
-  if (!W.askR) return noR;
-  await profiles(W.askR);
-  const goR = await ready(W.askR, 'goal/G300.1', CW);
-  await jobsDone();
-  W.headR = W.worldR.head();
-  const h4 = W.h4 = W.worldR.push();
-  W.linesR = (await deskLines(W.askR, 'goal/G300.1')).length;
-  const redR = await W.askR('claim', { id: 'goal/G300.1', phase: 'red', commit: h4 }, CW);
-  return (!!h4 && !!redR.change) || 'go ' + short(goR) + ', the claim answered ' + short(redR);
-}, test.limit.quick);
-test.run('a claim taken while a run goes on pulls nothing, and a line of the desk\'s under the item says so', 0.2, async function () {
-  if (!W.askR || W.linesR === undefined) return noR;
-  const worldR = W.worldR;
-  const saidR = await waitFor(async function () { return (await deskLines(W.askR, 'goal/G300.1')).length > W.linesR; }, 15000);
-  await sleep(1000);
-  return (saidR && !worldR.holds(W.h4) && worldR.head() === W.headR) ||
-    'a desk line ' + saidR + ', pulled ' + worldR.holds(W.h4) + ', head moved ' + (worldR.head() !== W.headR);
 }, test.limit.slow);
 
 test.after(async function () {

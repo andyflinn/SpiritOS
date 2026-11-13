@@ -539,10 +539,6 @@ test.after(stopAll);
     if (!W1.rows) return NO_PAGE;
     return (!!(r['deskClient'] && r['deskClient'].active)) ? true : (activeWhy('deskClient'));
   }, test.limit.quick);
-  test.run('the world: deskVerify is a row, active', 0.2, async function () {
-    if (!W1.rows) return NO_PAGE;
-    return (!!(r['deskVerify'] && r['deskVerify'].active)) ? true : (activeWhy('deskVerify'));
-  }, test.limit.quick);
   test.run('the world: publishData is a row, run only, never active', 0.2, async function () {
     if (!W1.rows) return NO_PAGE;
     return (!!r['publishData']) ? true : (rowWhy('publishData'));
@@ -588,7 +584,7 @@ test.after(stopAll);
   };
   test.run('the world: every app of the tree without shell.mount true has a line of its own in this test', 0.2, function () {
     if (!treeOff) return NO_PAGE;
-    const lined = ['backup', 'deskClient', 'deskVerify', 'publishData', 'pushOrigin'];
+    const lined = ['backup', 'deskClient', 'publishData', 'pushOrigin'];
     const unlined = treeOff.filter(function (a) { return lined.indexOf(a.key) === -1; }).map(function (a) { return a.key; });
     return !unlined.length || unlined.join(', ') + ' has no line of its own in this test, so nothing judged it';
   }, test.limit.quick);
@@ -626,9 +622,6 @@ test.after(stopAll);
   }, test.limit.quick);
   test.run('tiles: the tree\'s deskClient shows no tile', 0.2, async function () {
     return ofTheTree('tiles', 'deskClient');
-  }, test.limit.quick);
-  test.run('tiles: the tree\'s deskVerify shows no tile', 0.2, async function () {
-    return ofTheTree('tiles', 'deskVerify');
   }, test.limit.quick);
   test.run('tiles: the tree\'s publishData shows no tile', 0.2, async function () {
     return ofTheTree('tiles', 'publishData');
@@ -676,9 +669,6 @@ test.after(stopAll);
   test.run('toggled tiles: the tree\'s deskClient shows no tile', 0.2, async function () {
     return ofTheTree('toggled tiles', 'deskClient');
   }, test.limit.quick);
-  test.run('toggled tiles: the tree\'s deskVerify shows no tile', 0.2, async function () {
-    return ofTheTree('toggled tiles', 'deskVerify');
-  }, test.limit.quick);
   test.run('toggled tiles: the tree\'s publishData shows no tile', 0.2, async function () {
     return ofTheTree('toggled tiles', 'publishData');
   }, test.limit.quick);
@@ -718,9 +708,6 @@ test.after(stopAll);
   }, test.limit.quick);
   test.run('the app app\'s tiles: the tree\'s deskClient shows no tile', 0.2, async function () {
     return ofTheTree('the app app\'s tiles', 'deskClient');
-  }, test.limit.quick);
-  test.run('the app app\'s tiles: the tree\'s deskVerify shows no tile', 0.2, async function () {
-    return ofTheTree('the app app\'s tiles', 'deskVerify');
   }, test.limit.quick);
   test.run('the app app\'s tiles: the tree\'s publishData shows no tile', 0.2, async function () {
     return ofTheTree('the app app\'s tiles', 'publishData');

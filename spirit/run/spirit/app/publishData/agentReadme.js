@@ -2,7 +2,7 @@
 require('../../spirit.js');
 
 // spirit/run/spirit/app/publishData/agentReadme.js
-// AN AGENT'S README IN THE MEASUREMENT TREE (goal/G33.5), written by publishData.js into agents/<agent>/. The box, Andy:
+// AN AGENT'S README IN THE MEASUREMENT TREE (goal/G33.5), written by publishData.js into platform/<platform>/. The box, Andy:
 // "The title, the agents name is fine, then MUST come under the first sub-heading, 'Machine Description', a full account
 // of the actual system the measurements were taken on, including OS/platform, total RAM and RAM used at the time the
 // agents README.md was generated, the release and identity of the installed node.js, the number of node servers running

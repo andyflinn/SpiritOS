@@ -1,13 +1,14 @@
 # spirit/app/desk/element/deskDetails/deskDetails.js
 
-An item's details page in the Desk app: the box, the suites, the red Qs, the blocks, the files and the rules, each a
-panel behind an icon on its left strip. This test covers what goal/G41.1 (box v19-v20), G41.9, G41.11, G41.22, G41.28,
-G43.3 and G43.22 require of it.
+An item's details page in the Desk app: the box, the red Qs, the blocks, the files and the rules, each a
+panel behind an icon on its left strip. This test covers what goal/G41.1 (box v19-v20), G41.9, G41.11, G41.22,
+G43.3 and G43.22 require of it, and the verifier's removal.
 
 ## Requirements (goal/G41.1)
 
 - **Icons are glyphs** (Andy: the icon set is the only source of icons on the face): each panel of `DD_PANELS` names
-  its icon as the glyph itself. The strip is the workBench's (goal/G41.22), handed each glyph as it is; that is checked
+  its icon as the glyph itself. Its panels are five, in this order: the box, the red Qs, the blocks, the files, the
+  rules. The strip is the workBench's (goal/G41.22), handed each glyph as it is; that is checked
   on what it is handed (below).
 - It reads no icon table (`iconIndex`, `ICON`).
 
@@ -25,7 +26,6 @@ the arming deskDetails.js hand-rolled.
   `ddDisarm`, `armedClose`, `armedAll`).
 - **Each two-press button is an armingButton handed the app's api**, saying today's armed wording; its first press
   writes nothing, its second writes as before:
-  - Done not verified green → `Done anyway: sure?`, then `press done`;
   - Go all → `Go all: sure?`, then `press go-all`; Waive → `Waive: sure?`, then `press waive`;
   - Delete → `Delete: sure?`, then `item.delete`; Abandon → `Sure? Abandon the goal`, then `press abandon`;
   - an early Close → `are you sure? N open` on a goal with N items open, `Close: sure?` on an open item, then `press close`;
@@ -35,6 +35,22 @@ the arming deskDetails.js hand-rolled.
 
 - A button armed by the dialog itself rather than by armingButton; a first press that already writes; an armed
   wording lost; a grant or close sent on one press.
+
+## Requirements (no verifier in desk)
+
+The box: *"Delete ..., and get rid of ... junk in desk"*, *"desk's face loses the Verifier tab, the run status (the
+... element and the List column it fills), and the verifier parts of deskDetails"*, *"agents still claim done, only the
+user gets to actually press done. No verifier involvement with desk anywhere."*
+
+- **Done is a plain press**: no warning mark, no arming; its first press sends `press done` (labelled `Done (n)` with
+  claims).
+- **No Verify button and no run**: no `dd-verify`, even where the facts' buttons offer `verify`; no `dd-run`; nothing of
+  a verifier loaded (no cache manager of one, no run status).
+- **No suites panel**: no suites icon on the strip, and the dialog asks for no suites.
+
+## What its test must try to break (no verifier in desk)
+
+- A Done that arms or carries a mark; a Verify drawn from a `verify` in the facts; a run box; a suites read or icon.
 
 ## Requirements (goal/G41.11)
 
@@ -99,7 +115,7 @@ an item with 200 chat lines and a long box. The desk is a stand-in that answers 
 - At open a left panel shows.
 - **Every left panel uses all the height** (Andy: *"the box must use the full vertical space"*, *"all left side panels
   must fucking use all available vertical space, especially the lists"*): the box, the red Qs (60), the files (150, with
-  three open grants), the rules (60) and the suites (60), each shown in turn, the first time its icon is pressed (Andy:
+  three open grants) and the rules (60), each shown in turn, the first time its icon is pressed (Andy:
   *"i want to see the panel content THE FIRST  TIME i pop in a panel, NOT the second time."*). The pane itself never
   scrolls; the panel's own list, or the box's text, scrolls in itself, its bottom at the pane's bottom. The blocks are a
   few links, not a list, and are not asked.
@@ -118,25 +134,6 @@ an item with 200 chat lines and a long box. The desk is a stand-in that answers 
   its pane; a list as tall as nothing, cut off unseen, or the pane scrolling instead of the list; grant buttons that
   scroll away with the files.
 
-## Requirements (goal/G41.28: the verifier's run, through spirit.data)
-
-Andy: *"EVERY FUCKING ELEMENT is verified to make sure when it changes shit it listens to fucking update via the spirit
-object"*. The run of this item (goal/G33.6) is the verifier's own publish, kept by its family's cache manager.
-
-- **It loads the verifier's cache manager itself**, `spirit/app/deskVerify/data.js`, through
-  `spirit.require`, and draws the run from `spirit.data.deskVerify.data`, through the shared run status
-  (`spirit/app/desk/element/deskRunStatus/deskRunStatus.js`), on the page's real data set.
-- With an item open whose facts say `verifyRunning`, a verifier publish taken into spirit.data (a job of module
-  `spirit.app.deskVerify`, its app `{ doing: 'run', suite, index, of, ... }`) redraws `#dd-run`: its progress, its suite
-  and how far (`verifying <suite>, suite <index> of <of>`); the next publish redraws it again.
-- A run already kept in spirit.data when the dialog opens is drawn at once.
-- A publish of another node's verifier draws nothing here; nor does a publish that says no `doing`.
-
-## What its test must try to break (goal/G41.28)
-
-- A run the dialog reads by itself, or not at all; a watch that hears nothing; a kept run not drawn at open.
-- Another node's verifier drawn as this node's; a publish with no `doing` drawn as a run.
-
 ## goal/G43.3: the box panel, who asked, the rules panel
 
 - *"i want the UI to allow me to search the box currently displayed: the exact content of the box on my screen, also a codeMirror box on-screen would help because it show line-numbers?"* In a real browser: the box is a CodeMirror showing line numbers. There is no search field beside it (goal/G43.22; Andy: *"take out your search of the items text, the codeMirror search works better for editing purposes."*). No server is asked. Going into the box takes it, and leaving it changed writes his text on the version it read, as the textarea did.
@@ -147,17 +144,15 @@ object"*. The run of this item (goal/G33.6) is the verifier's own publish, kept 
 
 ## Requirements (goal/G43.30)
 
-Andy: *"while your mucking with desk, can you make sure that all delete and close buttons are armingButton's? box."* The box: every Delete and every Close press in Desk (its rows, the item detail, the rule dialog) is an armingButton, and *"A test presses each one once on the real page and finds that nothing happened."* The run status: *"Desk and its detail load it from there"*, `spirit/app/desk/element/deskRunStatus/`.
+Andy: *"while your mucking with desk, can you make sure that all delete and close buttons are armingButton's? box."* The box: every Delete and every Close press in Desk (its rows, the item detail, the rule dialog) is an armingButton, and *"A test presses each one once on the real page and finds that nothing happened."*
 
 - **Every Close is an armingButton**: a done item's (desk/G3.8 pressed it at once) and a goal's with nothing open (goal/G6.6 pressed it at once), as the early Close and a goal's with items open already were. The first press arms it and writes nothing, the second presses `close`.
 - **On the real page**: a scratch node with desk on, a goal, an item pressed done and an item in design mode; each detail opened from Desk's List. The done item's Close pressed once leaves it done and stands armed; the design item's Delete pressed once leaves it there, its status as before and still offering Delete, and stands armed.
-- **The run status** is loaded from `spirit/app/desk/element/deskRunStatus/deskRunStatus.js`, never from `shell/shared/`.
 
 ## What its test must try to break (goal/G43.30)
 
 - A Close or a Delete that writes on its first press, in the stand-in or on the real page.
 - "Nothing deleted" judged on an item that is gone, or on a status that reads empty for both.
-- A run status still loaded from shell/shared/.
 
 ## The noFind part: spirit/app/desk/element/deskDetails/deskDetails.js
 
@@ -173,7 +168,7 @@ Andy, the box: *"the apps and plugin system goes."*, *"there will only be goals,
 
 goal/G43.23, item 10 (after goal/G43.22). Its test is the noSharedLeftovers part of `./deskDetails.js`: the tree read as it is, tracked
 files on disk. `deskChat.js` drew an item's chat, which the item detail, `deskDetails.js`, draws itself now, so their absence
-is judged beside it (goal/G43.28; moved from `shell/shared/js/test/deskRunStatus-noDeskLeftovers.js`).
+is judged beside it (goal/G43.28; moved from shell/shared's own test of no desk leftovers).
 
 The box: *"plugin leftovers (G43.22): deskChat.js and deskElement.js in shell/shared, loaded by nothing"*. A test that reads a file gone from the tree is stale, G43.23 Q3: *"yes."*
 
@@ -181,5 +176,4 @@ The box: *"plugin leftovers (G43.22): deskChat.js and deskElement.js in shell/sh
 
 - `spirit/run/shell/shared/js/deskChat.js` and `deskElement.js` are gone.
 - Their tests are gone: `shell/shared/js/test/deskChat.js`, `deskChat.md`, `deskElement.js`, `deskElement.md`, and no other test or spec in a `test/` folder reads or names `deskChat.js`, `deskElement.js`, `createDeskChat` or `createDeskElement`. A spec that quotes the box's line is no use of them and is not counted.
-- The world: `deskRunStatus.js` moved into Desk (`spirit/app/desk/element/deskRunStatus/`) and the folder the leftovers stood in,
-  `shell/shared/js/`, is gone with all of `shell/` (goal/G43.30); `deskDetails.js` is beside this test, and the tracked files and tests read are many, so an empty read is red.
+- The world: the folder the leftovers stood in, `shell/shared/js/`, is gone with all of `shell/` (goal/G43.30); `deskDetails.js` is beside this test, and the tracked files and tests read are many, so an empty read is red.

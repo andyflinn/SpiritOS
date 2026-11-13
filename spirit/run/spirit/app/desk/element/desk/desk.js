@@ -7,8 +7,8 @@
 //   organized, too" — "my input will be queued, any agent can adress
 //   issues in the table, respons to me under that heading".
 //
-// The face of the desk server (spirit/run/spirit/app/desk): three tabs, List, Rules and, where a deskVerify answers,
-// Verifier, then one bubble per agent the goal row names. Every read and every press is a desk.<verb> ask on the flat
+// The face of the desk server (spirit/run/spirit/app/desk): two tabs, List and Rules, then one bubble per agent the
+// goal row names. Every read and every press is a desk.<verb> ask on the flat
 // apiDoor (deskAsk); what changes arrives as the desk server's publish, kept by the desk family's cache manager in
 // spirit.data.desk.data, and the page draws from there. It keeps nothing in its own folder. A row is keyed by its full
 // id (goal/G<n> or goal/G<n>.<m>) and opens the item's dialog (spirit/app/desk/element/deskDetails).
@@ -339,7 +339,7 @@ function deskAgentProfileSave() {
   }, function (e) { deskAgentNote = 'Profile not saved: ' + ((e && e.message) || e); deskAgentDraw(); });
 }
 
-// Drawn whole, as markup: List | Rules | Verifier (where one runs), the design button, then the bubbles. No Team or
+// Drawn whole, as markup: List | Rules, the design button, then the bubbles. No Team or
 // Apps tab (goal/G43.22; Andy, the box, Q5: "G0 goes, from ui and server, kept in database.").
 function deskDrawTabs() {
   var strip = document.getElementById('desk-tabs');
@@ -349,8 +349,6 @@ function deskDrawTabs() {
   strip.innerHTML =
     deskTabButton('data-tab="list"', deskTab === 'list', 'List' + (waiting ? ' (' + waiting + ')' : '')) +
     deskTabButton('data-tab="rules"', deskTab === 'rules', 'Rules') +
-    // THE VERIFIER TAB, ONLY WHERE ONE RUNS (goal/G8.11): absent on a node with no deskVerify, as the backup line is.
-    (deskVerifier ? deskTabButton('data-tab="verifier"', deskTab === 'verifier', 'Verifier') : '') +
     // ON EVERY TAB, AFTER THE TAB HEADERS (goal/G9.8; Andy: "The [Start/End design] buttons should be displayed always").
     // Its own colour, so it looms (Andy: "so it loooms over the proceedings").
     // ITS COLOUR IS shell.css's, AND ONLY WHILE UNARMED (goal/G41.9, box v3: armed is red): an inline colour won over the
@@ -443,7 +441,7 @@ function deskRowKeyOf(obj) {
   if (!obj.table) { var it = obj.item; if (typeof it === 'string') { try { it = JSON.parse(it); } catch (e) { it = null; } } return 'item|' + String((it && it.id) || ''); }
   var r = obj.row || {};
   var own = obj.removed ? String(obj.at || '') : obj.table === 'checks' ? String(r.number || '') : obj.table === 'chat' ? String(r.at || '') + '|' + String(r.by || '')
-    : obj.table === 'files' ? String(r.by || '') + '|' + String(r.path || '') : obj.table === 'claims' ? String(r.by || '') : obj.table === 'suites' ? String(r.path || '') : '';
+    : obj.table === 'files' ? String(r.by || '') + '|' + String(r.path || '') : obj.table === 'claims' ? String(r.by || '') : '';
   return obj.table + '|' + String(obj.id || '') + '|' + own;
 }
 function deskOnPublished(obj) {
@@ -499,8 +497,6 @@ function deskOnPublished(obj) {
 // THE DESK'S TRANSLATOR (goal/G33.3, goal/G41.24): the desk family's data.js, from the node that served this page;
 // spirit.data keeps the current goal for this page and the item dialog, as deskClient keeps it in node. Loaded once.
 var DESK_DATA = '/spirit/app/desk/data.js';
-// The verifier's cache manager, its own family's (goal/G41.28).
-var DESK_VERIFY_DATA = '/spirit/app/deskVerify/data.js';
 // EVERY PART THROUGH THE ONE LOADER (goal/G41.11; rule/21: "always look for existing code", and Andy, on the add-rule
 // dropdown that sometimes never appeared: "FIX IT"): spirit.require, never a script tag of its own. It loads a part once
 // for the page and answers when it has run.
@@ -544,14 +540,6 @@ function deskForgetKept() {
   var K = typeof window !== 'undefined' && window.spirit && ((window.spirit.data || {}).desk || {}).data;
   if (K && typeof K.forgetAll === 'function') K.forgetAll();
 }
-// THE RUN IN THE STATUS COLUMN (goal/G33.6): the shared rendering the dialog uses too, loaded once by the app; a page
-// without it draws the status word alone.
-var DESK_RUN_STATUS = '/spirit/app/desk/element/deskRunStatus/deskRunStatus.js';
-function deskLoadRunStatus() {
-  var have = deskRequiredAt('spirit.app.desk.element.deskRunStatus.deskRunStatus');
-  if (typeof have === 'function') return;
-  deskNeed(DESK_RUN_STATUS).then(function () { deskDraw(); }, function () { /* the status word alone */ });
-}
 // The ids a publish changes rows of.
 function deskRowIdsOf(obj) {
   if (!obj || typeof obj !== 'object') return [];
@@ -571,15 +559,7 @@ function deskPress(id, what) {
     function (e) { deskError = 'Not pressed: ' + ((e && e.message) || e); deskDraw(); });
 }
 
-var DESK_PRESS_LABEL = { go: 'Go!', done: 'Done', close: 'Close', 'bring-back': 'Bring back', verify: 'Verify' };
-// DONE, NOT VERIFIED GREEN, CARRIES A WARNING MARK AND ARMS HERE (goal/G33.3), as the item dialog does, from the same
-// facts (verified, verifyFailures). The box: "the first press arms it and says why, the second sends Done ... Verified
-// green, one press does it. The desk keeps no arming." '' where no deskVerify answers: no mark.
-var DESK_WARN = '\u26a0';
-function deskWarnOnDone(row) { return row.verified === 'red' || row.verified === 'none'; }
-function deskWarnWhy(row) {
-  return row.verified === 'red' ? 'not verified, red: ' + (row.verifyFailures || []).join(' | ') : 'not verified: no run of its suites yet';
-}
+var DESK_PRESS_LABEL = { go: 'Go!', done: 'Done', close: 'Close', 'bring-back': 'Bring back' };
 // NOT IN A ROW: Go all sits in the tab bar (desk/G3.4), and Reopen only in the item's dialog (desk/G3.6, Andy:
 // "the Re-Open button should never be shown in the list").
 // MAKE CURRENT IS NOT IN THE ROW, THE SWORD IS (goal/G9.1). Andy, 2026-10-07: "the [make-current] button will not be
@@ -606,8 +586,8 @@ function deskInRow(row, what) {
 // button. the detail shows all available buttons.", "and go before done etc....", and "just in the list, a goal offers
 // no done or closed while items are not done or closed, the goal offers those only in the detail panel anytime". The
 // buttons offered are the item's facts, one shared state with the dialog; the row only picks the first of them in this
-// order of steps, the rest after them in the item's own order.
-var DESK_STEP_ORDER = ['go', 'verify', 'done', 'close'];
+// order of steps, the rest after them in the item's own order. No Verify any more: the desk has no verifier.
+var DESK_STEP_ORDER = ['go', 'done', 'close'];
 function deskNextPress(row) {
   var goal = row.goal === '';
   var offered = (row.buttons || []).filter(function (what) {
@@ -624,18 +604,10 @@ function deskRowPresses(row) {
   return (next ? [next] : []).map(function (what) {
     var label = DESK_PRESS_LABEL[what] || what;
     var title = '';
-    // goal/G33.3: Done not verified green: the mark, and once armed the why in its own words. data-arming is what its
-    // armingButton says armed (deskArmRow).
+    // data-arming is what its armingButton says armed (deskArmRow).
     var arming = '';
-    if (what === 'done' && deskWarnOnDone(row)) {
-      title = deskWarnWhy(row);
-      label = 'Done ' + DESK_WARN;
-      arming = 'Done anyway? ' + title;
-    }
     // EVERY CLOSE ARMS (goal/G43.30): the first press arms it, the second closes.
     if (what === 'close') arming = 'Close: sure?';
-    // goal/G33.6: no Verify shows the verifier's busy state (Andy: "please don't show verifier-busy an any verify
-    // button, i can check that for myself").
     // data-action: the List (probabilitySearch) leaves a press inside a row to its owner, this page, and opens nothing.
     return '<button type="button" data-action="press" data-press="' + deskEsc(what) + '" data-id="' + deskEsc(row.id) + '"' +
       (arming ? ' data-arming="' + deskEsc(arming) + '"' : '') + (title ? ' title="' + deskEsc(title) + '"' : '') + '>' + deskEsc(label) + '</button>';
@@ -669,14 +641,8 @@ function deskRowCells(row, presses) {
     '<td>' + deskLinks(row.blocked) + '</td>' +
     '<td style="width:16em">' + deskStatusCell(row) + '</td>');
 }
-// THE STATUS BOX (goal/G18.5, back with goal/G33.6): while the verifier runs this item, its run; otherwise the server's
-// status word, green when it says passed, red when rejected or red. Andy: "why do i no longer see the verifier run in
-// the items status column?" deskVerify knows no item, so the row joins the desk's fact (verifyRunning) with the
-// verifier's own publish (deskVerifyRun), through the one rendering the dialog uses too (spirit/app/desk/element/deskRunStatus/deskRunStatus.js).
+// THE STATUS BOX (goal/G18.5): the server's status word, green when it says passed, red when rejected or red.
 function deskStatusCell(row) {
-  var status = deskRequiredAt('spirit.app.desk.element.deskRunStatus.deskRunStatus');
-  var run = typeof status === 'function' ? status(row, deskVerifyRun, deskEsc) : '';
-  if (run) return run;
   var word = String(row.status || '');
   // A FILE THE AGENT'S CHECKOUT CHANGED (goal/G33.11), by its statusTone: red a test file, white a production file.
   var tone = String(row.statusTone || '');
@@ -1001,7 +967,6 @@ function deskLoad() {
 // cache manager (goal/G41.28), spirit.data.backup.data; the line follows its watch.
 var DESK_BACKUP_DATA = '/spirit/app/backup/data.js';
 var deskBackupWatched = null;
-var deskVerifyWatched = null;   // the verifier tab's watch, let go by destroy
 function deskBackupPaint() {
   // Its own line alone once the page is drawn (goal/G27.9: one change, one element repainted).
   var el = typeof document !== 'undefined' && document.getElementById ? document.getElementById('desk-backup') : null;
@@ -1025,272 +990,6 @@ function deskBackupHtml() {
     (deskBackup.lastCheck ? deskTime(deskBackup.lastCheck) : 'never') + ', last copy ' +
     (deskBackup.lastCopy ? deskTime(deskBackup.lastCopy) : 'never') +
     (stale ? '; something was closed since the last check' : '') + '</div>';
-}
-
-// ── THE VERIFIER TAB (goal/G8.11) ────────────────────────────────────
-//
-//   Andy, 2026-10-09: a verifier tab "that allows me to monitor a) status and progress of the running verifier,
-//   and if/when necessary, allow intervention?", then "add it".
-//
-// Drawn only where a deskVerify answers, as backup's status is: on a node
-// without one the tab is not there at all. It shows what runs now (the suite, since when), the bar, its console, and
-// Stop the run, Chores now and Run the product tests (goal/G33.3: "The Verifier tab shows only what runs now, its
-// console, and Stop."). A run of an item is started from the item: his Verify button there, or the desk itself.
-var deskVerifier = null;
-// THE ANSWER TO A PRESS IN THE TAB (goal/G18.10), said in the tab, a refusal included.
-var deskVerifyNote = '';
-function deskVerifyAsk(verb, args) {
-  return Promise.resolve(deskVia.verb('deskVerify.' + verb, args || {})).then(function (r) {
-    // A refusal says why where deskVerify gave one (Chores now, goal/G33.11).
-    if (!r || r.status !== 200 || !r.body || r.body.ok === false) throw new Error((r && r.body && r.body.extra && r.body.extra.why) || 'deskVerify did not answer');
-    return r.body;
-  });
-}
-// Asked once at mount and on every open of the tab: a node either runs one or does not.
-// THE TAB STAYS (goal/G21.3). Andy's box: "The Verifier tab stays once the page has loaded; only the first ask at load
-// decides whether a verifier runs here. A later missed answer keeps the tab and shows "not answering"." A failed ask
-// changes nothing while a verifier is known; it only marks it not answering until the next answer.
-var deskVerifyMissed = false;
-var DESK_STOP_NOTE = 'deskVerify answered: stop asked;';
-function deskAskVerifier() {
-  return deskVerifyAsk('now', {}).then(function (body) {
-    deskVerifier = body;
-    deskVerifyMissed = false;
-    deskDrawTabs();
-    deskDrawVerifier();
-  }, function () {
-    // THE TAB OPENS AT ANY TIME (goal/G40.13, box v22, point 10): a first ask that finds the verifier busy with a run still
-    // draws the tab, saying it did not answer; its next publish fills it in.
-    if (!deskVerifier) { deskVerifier = { running: { suite: '', since: '' } }; deskDrawTabs(); }
-    deskVerifyMissed = true;
-    deskDrawVerifier();
-  });
-}
-// EVERY PRESS SAYS IT WAS SENT, THEN WHAT CAME BACK (goal/G21.3). Andy's box: "Every press in the tab shows at once
-// that it was sent, then what deskVerify answered." The note is drawn before the ask goes out and replaced by the answer.
-function deskVerifyPressed(sent) {
-  deskVerifyNote = sent;
-  deskDrawVerifier();
-}
-function deskVerifyAnswered(text) {
-  deskVerifyNote = text;
-  deskDrawVerifier();
-}
-// goal/G8.12: opening the tab reads what runs, and asks for no rows (Andy: "only show the latest status").
-function deskVerifyRefresh() {
-  deskVerifyTail();
-  return deskAskVerifier();
-}
-// ── THE CONSOLE (goal/G22.3) ──────────────────────────────────────────
-//
-//   Andy, 2026-10-13: "it be even better if the verify tab showed the detailed results in a console like fashion,
-//   cleared before every new run."
-//
-// DECIDED BY ANDY: the tab shows the current run's output as deskVerify keeps it, cleared when a new run starts. Every
-// object deskVerify publishes carries consoleRun and consoleTo; when the run is new the text here is cleared, and while
-// consoleTo is past what is held here the rest is asked with `console {from}`, one answer at a time, never on a clock.
-// Kept here to DESK_CONSOLE_MAX characters, the front dropped, as deskVerify drops its own.
-var DESK_CONSOLE_MAX = 262144;
-var deskVerifyCon = { run: '', text: '', to: 0, asking: false, want: 0 };
-function deskVerifyTail() {
-  if (deskVerifyCon.asking) return;
-  deskVerifyCon.asking = true;
-  var askedRun = deskVerifyCon.run;
-  var askedFrom = deskVerifyCon.to;
-  deskVerifyAsk('console', { from: askedFrom }).then(function (b) {
-    deskVerifyCon.asking = false;
-    if (!b || typeof b.text !== 'string') return;
-    // Cleared for a new run while this ask was out: the answer is of the old one, so ask again.
-    if (deskVerifyCon.run !== askedRun) { deskVerifyTail(); return; }
-    if (String(b.run) !== askedRun) {
-      // deskVerify holds another run than this page knew: cleared, and read from its start.
-      deskVerifyCon = { run: String(b.run), text: '', to: 0, asking: false, want: 0 };
-      if (askedFrom !== 0) { deskDrawVerifier(); deskVerifyTail(); return; }
-    }
-    deskVerifyCon.text += b.text;
-    if (deskVerifyCon.text.length > DESK_CONSOLE_MAX) deskVerifyCon.text = deskVerifyCon.text.slice(deskVerifyCon.text.length - DESK_CONSOLE_MAX);
-    deskVerifyCon.to = Number(b.to) || deskVerifyCon.to;
-    deskDrawVerifier();
-    if (b.more === true || deskVerifyCon.want > deskVerifyCon.to) deskVerifyTail();
-  }, function () { deskVerifyCon.asking = false; });
-}
-// What the published object says of the console: a new run clears it at once, and output past what is held is asked.
-function deskVerifyConsoleHeard(obj) {
-  if (typeof obj.consoleRun !== 'string' || !obj.consoleRun) return;
-  if (obj.consoleRun !== deskVerifyCon.run) { deskVerifyCon = { run: obj.consoleRun, text: '', to: 0, asking: deskVerifyCon.asking, want: 0 }; deskDrawVerifier(); }
-  deskVerifyCon.want = Number(obj.consoleTo) || 0;
-  if (deskVerifyCon.want > deskVerifyCon.to) deskVerifyTail();
-}
-// THE CONSOLE IS DRAWN ONCE AND WRITTEN IN PLACE (goal/G40.13). Andy: "the rolling console area keeps jumping out of
-// sight, maybe redrawn of every waiting tick of the verifier, even if nothing changes???": the tile above it repaints
-// on every publish and tick, the console only when its text grew, and it follows the newest line only while he is
-// at its end; scrolled up, it stays where he is. It takes the height the window leaves below it ("why does not the
-// console pane use up all the space it can").
-function deskVerifyConsoleHtml() {
-  return '<div class="stat-tile wide"><div class="label">Console</div>' +
-    '<pre id="desk-verify-console" style="font-family:monospace;white-space:pre-wrap;min-height:12em;overflow:auto;margin:0.5em 0 0"></pre></div>';
-}
-function deskVerifyConsoleFit() {
-  var con = document.getElementById('desk-verify-console');
-  if (!con || typeof con.getBoundingClientRect !== 'function' || typeof window === 'undefined' || !window.innerHeight) return;
-  var scroller = document.getElementById('app-container');
-  var top = con.getBoundingClientRect().top + (scroller ? scroller.scrollTop : 0);
-  con.style.height = Math.max(192, Math.floor(window.innerHeight - top - 32)) + 'px';
-}
-function deskVerifyConsoleWrite() {
-  var con = document.getElementById('desk-verify-console');
-  if (!con || con.textContent === deskVerifyCon.text) return;
-  var atEnd = con.scrollTop + con.clientHeight >= con.scrollHeight - 8;
-  con.textContent = deskVerifyCon.text;
-  if (atEnd) con.scrollTop = con.scrollHeight;
-}
-// THE LIVE RUN (goal/G8.12), as deskVerify publishes it: the newest object only, never a log. Andy, 2026-10-09: "what
-// now is displayed as a log.. should be an updated status message underneath a progress bar", and the bar is suites
-// done plus the tests of the one running, against what that suite reported last time. A suite never measured before
-// has no total, so it shows its count and the bar stands on the suites alone - a guessed percentage would be a lie.
-var deskVerifyRun = null;
-var DESK_IDLE_MIN = 60; // the idle hour (goal/G8.4), which the countdown counts down.
-// THE BAR IS ALWAYS THERE (goal/G8.12). Andy, 2026-10-09: "just gray out the progress bar so i can see the layout,
-// and the progress bar can show the countdown live, and only go gray when that's done. but the progress bar stays
-// visible." So one bar, three states:
-//   a run      how far through the run: suites done plus the tests of the one running
-//   idle       the idle hour filling, live, from the newest desk write deskVerify published
-//   spent      the hour reached, or nothing known yet: grey, and it says why
-// A suite never measured before has no total, so the bar stands on the suites alone - a guessed percentage is a lie.
-function deskVerifyIdlePct(since) {
-  var ms = Date.now() - Date.parse(since);
-  if (isNaN(ms)) return null;
-  return Math.max(0, Math.min(100, Math.round((ms / 60000) / deskVerifyIdleMin() * 100)));
-}
-// The phase is on the bar itself, as `data-phase`: run while a check runs, countdown while the idle hour fills, done
-// when it is spent or nothing has been published - which is also when it is grey. Grey is a muted look and not a
-// hidden bar: it stays in the layout, so the tab never changes shape under him.
-function deskVerifyBarHtml(pct, phase) {
-  var grey = phase === 'done';
-  return '<div><progress id="desk-verify-bar" data-phase="' + phase + '" max="100" value="' + pct + '" style="width:100%' +
-    (grey ? ';filter:grayscale(1);opacity:0.45' : '') + '"></progress></div>';
-}
-// THE SERVER'S OWN HOUR (goal/G21.3): deskVerify publishes idleMs with every object; DESK_IDLE_MIN stands only for a
-// verifier that does not say.
-function deskVerifyIdleMin() {
-  var ms = deskVerifyRun && Number(deskVerifyRun.idleMs);
-  return ms > 0 ? ms / 60000 : DESK_IDLE_MIN;
-}
-// WHAT THE CHORES DID (goal/G21.3): the idle hour is the verifier's own (goal/G33.3), counted from the last run
-// handed to it, so the tab says what its chores did.
-function deskVerifyIdleSaid() {
-  var r = deskVerifyRun || {};
-  if (r.chores) return 'Idle time reached; the chores: ' + deskEsc(String(r.chores));
-  return 'Idle time reached; the chores are starting.';
-}
-function deskVerifyBar() {
-  var r = deskVerifyRun;
-  if (!r) return deskVerifyBarHtml(0, 'done') + '<div>Nothing measured yet on this node.</div>';
-  // IDLE IS NO RUN (goal/G33.6). Andy: "The desk verifier still thinks 'idling' is a run". Idle, the bar stands grey
-  // and empty and the tile says so; the idle hour is counted in words, below, and only on a verifier with chores.
-  if (r.doing === 'idle') return deskVerifyBarHtml(0, 'done') + '<div id="desk-verify-idle">Idle, nothing running</div>';
-  var of = Number(r.of) || 0;
-  var index = Number(r.index) || 0;
-  var done = of ? (index - 1) / of : 0;
-  var inOne = (of && Number(r.expected) > 0) ? Math.min(1, (Number(r.tests) || 0) / Number(r.expected)) / of : 0;
-  var runPct = Math.max(0, Math.min(100, Math.round((done + inOne) * 100)));
-  return deskVerifyBarHtml(runPct, 'run') +
-    '<div>Run' + (of ? ' · suite ' + index + ' of ' + of : '') + (r.suite ? ' · ' + deskEsc(r.suite) : '') + '</div>';
-}
-// IDLE, IT COUNTS DOWN (goal/G8.12). Andy: "after all is done, it should count down idle time, before it starts
-// documentation runs." The hour is measured from the last run handed to deskVerify, which it publishes as `since`.
-function deskVerifyCountdown(since) {
-  if (!since) return '';
-  var ms = Date.now() - Date.parse(since);
-  if (isNaN(ms)) return '';
-  var left = Math.ceil(deskVerifyIdleMin() - ms / 60000);
-  if (left <= 0) return '<div>' + deskVerifyIdleSaid() + '</div>';
-  return '<div>Idle in ' + left + ' min of quiet.</div>';
-}
-function deskVerifyHtml(more) {
-  if (!deskVerifier) return '<div class="job-manifest-note">No verifier runs on this node.</div>';
-  var run = deskVerifier.running || { suite: '', since: '' };
-  var live = deskVerifyRun;
-  // A RUN IS A RUN, IDLE IS NOT (goal/G33.6): the newest published object says which, else the last now.
-  var running = live ? live.doing !== 'idle' : (deskVerifier.busy === true || !!run.suite);
-  // STOP ASKED UNTIL THE RUN ENDS (goal/G21.3): the newest published object says it, else the last now.
-  var stopAsked = live ? live.stopAsked === true : deskVerifier.stopAsked === true;
-  var out = '<div class="stat-tile wide"><div class="label">' + (running ? 'Running now' : 'Verifier') + '</div>' +
-    (deskVerifyMissed ? '<div id="desk-verify-missing" class="job-manifest-note">deskVerify is not answering; the tab stays, and the next answer replaces this.</div>' : '') +
-    deskVerifyBar() +
-    (stopAsked ? '<div id="desk-verify-stopasked">Stop asked: the run ends before its next suite.</div>' : '') +
-    // ONE STATUS LINE, REPLACED (goal/G8.12): the newest published line, and nothing kept behind it.
-    (live && running ? '<div id="desk-verify-line">' + deskEsc(live.line) + '</div>' : '') +
-    // THE IDLE HOUR ONLY WHERE IT LEADS SOMEWHERE (goal/G33.6): the verifier says whether its manifest names chores.
-    (live && !running && live.hasChores === true ? deskVerifyCountdown(live.since) : '') +
-    (live && !running && live.chores ? '<div>' + deskEsc(String(live.chores)) + '</div>' : '') +
-    (!live && !running ? '<div id="desk-verify-idle">Idle, nothing running</div>' : '') +
-    (running && !live && run.suite ? '<div>Suite ' + deskEsc(run.suite) + (run.since ? ' · since ' + deskTime(run.since) : '') + '</div>' : '') +
-    (deskVerifyNote ? '<div class="job-manifest-note">' + deskEsc(deskVerifyNote) + '</div>' : '') +
-    // STOP (goal/G33.3): pressable whenever anything runs. A run is started from the item.
-    // CHORES NOW (goal/G33.11): the idle chores at once, chores.run; pressable while nothing runs, where chores are named.
-    '<div><button type="button" id="desk-verify-stop"' + (run.suite || deskVerifier.busy === true ? '' : ' disabled') + '>Stop the run</button>' +
-    ' <button type="button" id="desk-verify-chores"' + (!running && (!live || live.hasChores === true) ? '' : ' disabled') + '>Chores now</button>' +
-    (more ? ' ' + more(running) : '') + '</div>' +
-    '</div>';
-  // NO RECORDS LIST (goal/G8.12). Andy, 2026-10-09: "i want that damn log display gone. and only show the
-  // latest status." The tab shows the run and nothing else; the dataset (verify.db) is never read through the tab.
-  return out;
-}
-// THE FULL PRODUCT TEST TREE (goal/G40.13, box v22, point 9): a button in the tab's own row (Andy: "[Stop the run]
-// [Chores now] [Run the product tests]"), a run of every test the product tree holds (the suite 'spirit/run', which the
-// verifier names through testModule.js); pressable while nothing runs.
-function deskVerifyProductButton(running) {
-  return '<button type="button" id="desk-verify-product"' + (running ? ' disabled' : '') + '>Run the product tests</button>';
-}
-var deskVerifyHeadDrawn = null;
-function deskDrawVerifier() {
-  var box = document.getElementById('desk-verifier');
-  if (!box) return;
-  var head = document.getElementById('desk-verify-head');
-  // THE CONSOLE, BELOW (goal/G22.3): the current run's output, cleared at each new run.
-  if (!head || !!deskVerifier !== !!document.getElementById('desk-verify-console')) {
-    box.innerHTML = '<div id="desk-verify-head"></div>' + (deskVerifier ? deskVerifyConsoleHtml() : '');
-    head = document.getElementById('desk-verify-head');
-    deskVerifyHeadDrawn = null;
-  }
-  var html = deskVerifyHtml(deskVerifyProductButton);
-  if (html !== deskVerifyHeadDrawn) { head.innerHTML = html; deskVerifyHeadDrawn = html; deskVerifyConsoleFit(); }
-  deskVerifyConsoleWrite();
-}
-if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') window.addEventListener('resize', deskVerifyConsoleFit);
-// THE COUNTDOWN MOVES ON ITS OWN (goal/G8.12). Andy: "the progress bar can show the countdown live". Nothing is asked
-// of anybody for this - the clock is local, which is the one thing a page may read without pulling; it repaints only
-// while the tab is open and the verifier is idle, so a running verifier's bar is only ever what it published.
-var deskVerifyTick = null;
-function deskVerifyTicking(on) {
-  if (!on) {
-    if (deskVerifyTick && typeof clearInterval === 'function') clearInterval(deskVerifyTick);
-    deskVerifyTick = null;
-    return;
-  }
-  if (deskVerifyTick || typeof setInterval !== 'function') return;
-  deskVerifyTick = setInterval(function () {
-    if (deskTab !== 'verifier' || !deskVerifyRun || deskVerifyRun.doing !== 'idle') return;
-    deskDrawVerifier();
-  }, 15000);
-}
-// WHAT DESKVERIFY PUBLISHES (goal/G8.12), subscribed at mount: each object replaces the last and repaints. A run that
-// starts while the tab is closed is still the newest object when he opens it, so he sees where it stands, not nothing.
-// The tab also appears on the first object from a verifier that was not yet answering when the page opened.
-function deskVerifyEvent(obj) {
-  if (!obj || typeof obj !== 'object' || typeof obj.doing !== 'string') return;
-  deskVerifyRun = obj;
-  // A published object is an answer too: the verifier is there (goal/G21.3). The Stop's note goes once the run it
-  // stopped has ended.
-  deskVerifyMissed = false;
-  if (obj.doing === 'idle' && obj.stopAsked !== true && deskVerifyNote.indexOf(DESK_STOP_NOTE) === 0) deskVerifyNote = '';
-  if (!deskVerifier) { deskVerifier = { running: { suite: '', since: '' } }; deskDrawTabs(); }
-  deskDrawVerifier();
-  deskVerifyConsoleHeard(obj);
-  // AND THE LIST'S STATUS BOX FOLLOWS IT (goal/G18.5): the row it runs for shows the progress, and is itself again
-  // once the run is idle.
-  if (deskTab === 'list') deskDraw();
 }
 
 // THE HEADER AREA IS THE SHELL'S (goal/G6.1): the block written as #desk-bars moves into the app header, which sticks it
@@ -1369,8 +1068,6 @@ window.spirit.require('spirit/element/installSpiritElement.js').then(function ()
           '<div id="desk-rule-error" class="job-start-error"></div>' +
           '<div id="desk-rule-list" class="fill"></div>' +
         '</div></div>' +
-        // THE VERIFIER TAB'S PANE (goal/G8.11): #desk-verifier takes the whole body and every click in it.
-        '<div data-pane="verifier" hidden><div id="desk-verifier"></div></div>' +
         // AN AGENT'S PROFILE (goal/G4.23), opened from its bubble.
         '<div data-pane="agent" hidden>' +
           '<div class="stat-tile wide"><div class="label" id="desk-agent-label"></div><div id="desk-agent"></div></div>' +
@@ -1394,8 +1091,6 @@ window.spirit.require('spirit/element/installSpiritElement.js').then(function ()
       deskTab = tab;
       deskDrawGoAll();
       if (tab === 'rules') deskRulesSearch();
-      // goal/G8.11: opening the tab reads what runs; it is not pulled while it is closed.
-      if (tab === 'verifier') { deskVerifyRefresh(); deskVerifyTicking(true); deskVerifyConsoleFit(); } else deskVerifyTicking(false);
       deskDrawTabs();
     }
     // The strip is redrawn, so one listener on it, and the click may
@@ -1416,7 +1111,7 @@ window.spirit.require('spirit/element/installSpiritElement.js').then(function ()
       var press = t && t.closest && t.closest('[data-press]');
       if (press) {
         if (e.stopPropagation) e.stopPropagation();
-        // goal/G41.9: an are-you-sure (Done not verified green, goal/G33.3) is its armingButton's, never this listener's.
+        // goal/G41.9: an are-you-sure (a Close, goal/G43.30) is its armingButton's, never this listener's.
         if (press.hasAttribute && press.hasAttribute('data-arming')) return;
         deskPress(press.getAttribute('data-id'), press.getAttribute('data-press'));
         return;
@@ -1434,51 +1129,12 @@ window.spirit.require('spirit/element/installSpiritElement.js').then(function ()
       if (!t) return;
       if (t.id === 'desk-rule-add') { deskRuleAdd(); return; }
     });
-    // ONE LISTENER ON THE VERIFIER'S BODY (goal/G8.11), which is repainted: Stop, and Chores now (goal/G33.11).
-    document.getElementById('desk-verifier').addEventListener('click', function (e) {
-      var t = e && e.target;
-      if (!t) return;
-      if (t.id === 'desk-verify-chores') {
-        deskVerifyPressed('Chores now sent; waiting for deskVerify\'s answer.');
-        deskVerifyAsk('chores.run', {}).then(function () {
-          deskVerifyAnswered('deskVerify answered: the chores are running; the idle line says what they did.');
-          return deskVerifyRefresh();
-        }, function (e) {
-          deskVerifyAnswered('Chores now was not taken: ' + ((e && e.message) || e) + '.');
-          return deskVerifyRefresh();
-        });
-        return;
-      }
-      if (t.id === 'desk-verify-product') {
-        deskVerifyPressed('The product tests sent; waiting for deskVerify\'s answer.');
-        deskVerifyAsk('run', { suites: ['spirit/run'], commit: '' }).then(function () {
-          deskVerifyAnswered('deskVerify answered: the product test tree is running.');
-          return deskVerifyRefresh();
-        }, function (e) {
-          deskVerifyAnswered('The product tests were not taken: ' + ((e && e.message) || e) + '.');
-          return deskVerifyRefresh();
-        });
-        return;
-      }
-      if (t.id === 'desk-verify-stop') {
-        deskVerifyPressed('Stop sent; waiting for deskVerify\'s answer.');
-        deskVerifyAsk('stop', {}).then(function (b) {
-          deskVerifyAnswered(b && b.stopped ? DESK_STOP_NOTE + ' the run ends before its next suite.' : 'deskVerify answered: nothing was running to stop.');
-          return deskVerifyRefresh();
-        }, function (e) {
-          deskVerifyAnswered('The Stop was not taken: ' + ((e && e.message) || e) + '.');
-          return deskVerifyRefresh();
-        });
-        return;
-      }
-    });
     deskArming(document.getElementById('desk-go-all'), 'Go all: sure?', deskGoAll);
     // NO PULLING. Andy: "no pulling". The List asks once, then repaints from
     // what the desk server publishes. A shell whose api carries no onPublished (the face's) mounts it all the same,
     // without the live repaint (goal/G41.19: it mounts cleanly, "no throw even unconfigured").
     if (typeof deskVia.onPublished === 'function') deskVia.onPublished(deskOnPublished);
     deskLoadData();
-    deskLoadRunStatus();
     // BACK AFTER A GAP (Andy: "this should work without a hickup"): what was
     // published or said while the stream was down was never heard, so the
     // List and the backup line are asked for again.
@@ -1486,25 +1142,14 @@ window.spirit.require('spirit/element/installSpiritElement.js').then(function ()
     deskDraw();
     deskSearchItems();
     deskLoad();
-    // goal/G8.11: whether a verifier runs here decides whether the tab exists at all, so it is asked at mount.
-    // goal/G8.12: and from then on it listens - deskVerify publishes every change of its run, so the tab never pulls.
-    // THROUGH spirit.data (goal/G41.28; Andy: "These rules apply to ALL clients. including deskVerify"): the verifier's
-    // own cache manager keeps what it publishes, and the tab follows that (spirit.data.deskVerify.data.watch).
-    deskNeed(DESK_VERIFY_DATA).then(function () {
-      var V = window.spirit && ((window.spirit.data || {}).deskVerify || {}).data;
-      if (!V) return;
-      deskVerifyWatched = V.watch(deskVerifyEvent);
-      if (V.state()) deskVerifyEvent(V.state());
-    });
-    deskAskVerifier();
     }
     // Its own stack when its mounter hands none (panel.js), so a dialog opens over the page either way.
     if (typeof deskOpts.open !== 'function') window.spirit.require('spirit/element/panel.js').then(function () { if (!deskStack && container.firstElementChild && deskElementAt('spirit.element.panel')) deskStack = window.spirit.element.spirit.element.panel.create(container, container.firstElementChild); });
     return { destroy: function () {
       deskHeard = [];
-      // Both its watches let go (rule/8): the backup line's and the verifier tab's.
-      [deskBackupWatched, deskVerifyWatched].forEach(function (stop) { if (typeof stop === 'function') stop(); });
-      deskBackupWatched = deskVerifyWatched = null;
+      // Its watch let go (rule/8): the backup line's.
+      if (typeof deskBackupWatched === 'function') deskBackupWatched();
+      deskBackupWatched = null;
       container.innerHTML = '';
     } };
 } }); });

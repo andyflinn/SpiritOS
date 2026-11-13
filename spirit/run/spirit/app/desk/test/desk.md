@@ -42,14 +42,14 @@ folders").
   - Agreed: "it never pulls a checkout with edits of its own, or while a test run is going on in it: then it pulls
     nothing and says so under the item." Over a checkout with an uncommitted edit of a tracked file, the claim pulls
     nothing (HEAD unmoved, origin's new commit not in it), the edit stays as it was, and a line of the desk's (`by`
-    desk) lands under the claimed item. While a run deskVerify took is going on (an item's `verifyRunning`: a
-    `verify.answer` taken and no `verify.state` ended since), the same: nothing pulled, a desk line under the item.
+    desk) lands under the claimed item. The desk knows of no test run (no verifier involvement with desk anywhere),
+    so a run going on is no case it can see, and none of this test.
   - **What the build must provide** (the test's seam): the checkout it pulls is `GOAL_REPO`, the checkout the desk
     sits in, found by walking up to its `.git` (goal/G43.28, box line 9: no goalRepo is handed). The test runs each such
     desk from a copy of the run tree inside a scratch clone of a scratch bare origin, never this repo. A pull made as a node job
     (`job.create`) or in the desk itself both work: the pretend node runs the jobs it is asked to.
-    "A run going on" is the run the desk can know of, deskVerify's, seeded as a `verify.answer` record before the desk
-    starts; a test run the desk cannot see is no case of this test.
+  - A red claim needs no suite rows: the desk keeps no suite list (Andy: "the desk also loses the suite-list (useless,
+    since testicle is driven by script changes)").
 
 ## The pretend node
 
@@ -64,10 +64,9 @@ It reads the door's `{ call, args }` (goal/G41.15) and each delivery as a bundle
 - "all agents ..." or "wsl is ..." addressing anybody; an included agent left out of an ALL line.
 - A red box write that offers no cap; a cap offered to an agent with cap off; a cap offered below red.
 - A push without its end, or with two.
-- A claim that pulls over edits or during a run, or that pulls nothing and says nothing.
+- A claim that pulls over edits, or that pulls nothing and says nothing.
 - A red or build claim taken and the checkout not pulled.
-- A pull over an edit of its own (or an autostash that moves HEAD), or while deskVerify's run goes on; a refused pull
-  that says nothing under the item.
+- A pull over an edit of its own (or an autostash that moves HEAD); a refused pull that says nothing under the item.
 
 ## goal/G43.3: the box, the phase wake, the List's search, the file list
 

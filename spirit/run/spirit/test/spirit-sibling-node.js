@@ -24,7 +24,7 @@ const { spawn, execFileSync } = require('child_process');
 
 const RUN = path.join(__dirname, '..', '..');
 const ARGV = process.argv.slice(2);
-const GIVEN = ARGV.filter(function (a, i) { return a.indexOf('--') !== 0 && ARGV[i - 1] !== '--verify-port' && ARGV[i - 1] !== '--test'; })
+const GIVEN = ARGV.filter(function (a, i) { return a.indexOf('--') !== 0 && ARGV[i - 1] !== '--test'; })
   .map(function (a) { return runRel(a); });
 
 // A path as given, absolute or not, scoped to run:// (the verifier hands absolute ones).

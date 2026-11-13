@@ -1,6 +1,6 @@
 # spirit/app/starter/element.js
 
-The smallest app of the new shape (goal/G43.27; Andy: "cw, you bring deskClient and deskVerify into spirit/app/ under
+The smallest app of the new shape (goal/G43.27; Andy: "cw, you bring deskClient and ... into spirit/app/ under
 their old names, do the backup as well (and fix it) and starter as well"). Its test is `./starter.js`: the browser file
 run in node on a bare window, the node's family a stand-in that answers `node.card`.
 

@@ -16,7 +16,7 @@ stream"); Desk and deskClient move onto it.
 - **A script of `spirit/app/<name>/` has its family at its top instead**, `api.js` and one `<verb>.json` per verb beside `<name>.js`, as
   `spirit/<family>/` has it (goal/G43.27). A client's cache finds such a family's `data.js` beside `<name>.js`. Specified in `./appServerMount.md`.
 - **run://process is gone** (goal/G43.20): every server is an app of `spirit/app/`, its family at the top of its folder
-  (backup, desk, deskClient, deskVerify); no `family/` folder is left.
+  (backup, desk, deskClient); no `family/` folder is left.
 - **deskAgent is killed** (Andy, goal/G41.28: *"all, KILL deskAgent!"*): no file names the server.
 
 ### Bundles (goal/G41.12)
@@ -86,7 +86,7 @@ stream"); Desk and deskClient move onto it.
 
 ### goal/G43.20: no Bundles.json
 
-- The box: *"spirit/app/desk/deskBundles.json, deskClient/deskClientBundles.json and deskVerify/deskVerifyBundles.json
+- The box: *"spirit/app/desk/deskBundles.json, deskClient/deskClientBundles.json and ...
   are deleted. Bundles stay what they are, rows in node.db, made and changed through auth.bundle."* No app folder holds a
   `<name>Bundles.json`.
 

@@ -1,6 +1,0 @@
-{
-  "description": "The current run's console from byte from (0 when left out), one answer's room at a time; answers {run, start, from, to, more, ended, text}: to is where the next read starts, more whether output past it is held, start the first byte still held, ended whether the run is over; run changes when a new run clears it.",
-  "request": {
-    "from": 0
-  }
-}

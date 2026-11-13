@@ -11,7 +11,7 @@ require('../../spirit.js');
 // nothing is read at start", "A removed file's row is marked deleted", "Any change in files is reflected in the database
 // 1 second after it occurs", "The suites that concern a file: its own test/<name>.js, and the general tests that would
 // include that production file if they were run without a file argument", "The server takes a file's suites from
-// testModule.js, run as its own process, as deskVerify does: run with no file, it keeps the file's own test and the
+// testModule.js, run as its own process, ...: run with no file, it keeps the file's own test and the
 // general tests' entries that name that file. testModule.js does not move.", "The testicle server will serve one first
 // verb, \"busy\": it returns true if it is doing any work, false if it is idle." The columns are goal/G45.1's box.
 //

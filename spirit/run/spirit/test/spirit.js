@@ -1038,7 +1038,7 @@ function judged(file, line) {
 // and its spec, since the fold), and codeMirror's own test.
 function out(file) {
   return /^(agents|design)\//.test(file) ||
-    /spirit\/test\/spirit\.(js|md)$|spirit\/element\/test\/codeMirror\.(js|md)$|shell\/shared\/js\/test\/deskRunStatus-home\.(js|md)$/.test(file) || VENDORED_FOLDERS.holds(file) || /(^|\/)brains\//.test(file) ||
+    /spirit\/test\/spirit\.(js|md)$|spirit\/element\/test\/codeMirror\.(js|md)$/.test(file) || VENDORED_FOLDERS.holds(file) || /(^|\/)brains\//.test(file) ||
     !/\.(js|json|html|md|css|txt)$/.test(file) || file.indexOf('spirit/') !== 0;
 }
 const OLD_PATH = /\bshell\/js\b|\bshell\/node_modules\b|['"]shell['"]\s*,\s*['"]js['"]/;
@@ -1148,8 +1148,7 @@ test.run('and none of them on spirit.elements', 0.2, function () {
   const r = M.r; if (!r) return 'no page: the world failed';
   return (Array.isArray(r.onOld) && !r.onOld.length) || 'still on spirit.elements: ' + shortest(r.onOld);
 }, test.limit.quick);
-// The element drawing from spirit/element/codeMirror/ is spirit/element/test/codeMirror.js; deskRunStatus staying on
-// spirit.elements is judged in Desk's spirit/app/desk/element/deskRunStatus/test/deskRunStatus.js (goal/G43.30).
+// The element drawing from spirit/element/codeMirror/ is spirit/element/test/codeMirror.js.
 
 // ── THE FACE LOGIN PART ──
 // THE RELAY LOGIN (goal/G43.18, box v29, "The relay login"; spec: ./spirit.md, its section). Andy's box: "The relay serves a logged-out

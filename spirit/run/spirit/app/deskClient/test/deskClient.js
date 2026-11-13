@@ -96,13 +96,9 @@ globalThis.spirit = {
 globalThis.spirit.data = D;
 // What the checkout's watcher does on a file event, kept from its on('all').
 let watchAll = null;
-// The verifier's publishes, as this client hears them: its subscribers on the node's event stream.
+// The node's event stream, as this client hears it: its subscribers.
 const eventSubscribers = [];
 globalThis.spirit.event = { subscribe: function (h) { eventSubscribers.push(h); return function () {}; }, publish: function () { return Promise.resolve({}); } };
-const verifierSays = function (run) {
-  const job = { id: 'verify-job', module: 'spirit.app.deskVerify', data: {}, app: run };
-  eventSubscribers.forEach(function (h) { if (h && typeof h.onUpdate === 'function') h.onUpdate(job); });
-};
 const realLoad = Module._load;
 Module._load = function (request, parent, isMain) {
   if (/(^|\/)spirit\.js$/.test(request) && parent && parent.filename === FILE) return globalThis.spirit;
@@ -169,7 +165,6 @@ const toneOf = async function (rel) {
   const said = statusesOf(from)[0];
   return said && said.id === HELD ? said.tone : '(' + short(said) + ')';
 };
-const running = function (i) { return { doing: 'run', suite: 'spirit/test/a.js', index: i, of: 256, line: 'running a.js, suite ' + i + ' of 256', since: at() }; };
 const kept = function (name, args) { return call('desk', { name: name, json: JSON.stringify(args || {}), kept: true }).then(function (r) { return r; }, function (e) { return { threw: e.refusal || e.message }; }); };
 // A restart: a new deskClient on the same state folder, on a fresh data set.
 const restart = function () {
@@ -236,38 +231,6 @@ test.run('a production file under spirit/run/: tone code', 0.2, async function (
   return prod === 'code' || 'spirit/run/spirit/app/desk/element/desk/desk.js: tone ' + short(prod);
 }, test.limit.slow);
 
-// goal/G43.3: its own verifier's run is relayed to the desk. Andy: "the agents deskClient should relay the agents
-// deskVerifier status during a run, this will tell desk that the agent "is busy". with no held item, it shows on the agent
-// as working."
-test.run('a run under a held item: its status goes under that item', 0.2, async function () {
-  const fromRun = asksOf('item.status').length;
-  verifierSays(running(1));
-  const relayed = await waitAsk(function () { return statusesOf(fromRun).some(function (a) { return a.id === HELD && /suite 1 of 256/.test(a.word); }); }, 3000);
-  return relayed || 'the statuses asked: ' + short(statusesOf(fromRun));
-}, test.limit.slow);
-test.run('and each next suite the same', 0.2, async function () {
-  const fromRun2 = asksOf('item.status').length;
-  verifierSays(running(2));
-  const relayed2 = await waitAsk(function () { return statusesOf(fromRun2).some(function (a) { return /suite 2 of 256/.test(a.word); }); }, 3000);
-  return relayed2 || 'the statuses asked: ' + short(statusesOf(fromRun2));
-}, test.limit.slow);
-test.run('a verify it holds counts as held too', 0.2, async function () {
-  await push({ verb: 'phase.done', goal: 9, item: factsOf({ id: HELD, phase: 'verify', verifier: SELF, with: SELF, withKey: SELF_KEY, phaseWith: SELF, go: true }) });
-  await settle();
-  const fromRun3 = asksOf('item.status').length;
-  verifierSays(running(3));
-  const relayed3 = await waitAsk(function () { return statusesOf(fromRun3).some(function (a) { return a.id === HELD && /suite 3 of 256/.test(a.word); }); }, 3000);
-  return relayed3 || 'the statuses asked: ' + short(statusesOf(fromRun3));
-}, test.limit.slow);
-test.run('a run with no held item: the agent shows as working, and no item gets a status', 0.2, async function () {
-  await push({ verb: 'phase.done', goal: 9, item: factsOf({ id: HELD, phase: 'build', with: '', withKey: '', phaseWith: '', go: true }) });
-  await settle();
-  const fromIdle = asksOf('item.status').length;
-  const stateFrom = asksOf('agent.state').length;
-  verifierSays(running(4));
-  const working = await waitAsk(function () { return asksOf('agent.state').slice(stateFrom).some(function (a) { return a.args && a.args.word === 'working'; }); }, 3000);
-  return (working && statusesOf(fromIdle).length === 0) || 'agent.state asked ' + short(asksOf('agent.state').slice(stateFrom)) + ', statuses ' + short(statusesOf(fromIdle));
-}, test.limit.slow);
 
 // The cache dump: one owner-only verb, appServer's own file. goal/G41.12: the cache is appServer's, saved as
 // spirit/state/deskClient/<desk key in base64url>.json (goal/G41.28); deskClient keeps no cache file of its own, and its

@@ -34,7 +34,7 @@ const PUBLISHER = Buffer.from('KEY-DESK\xfb\xef\xbf\xfe', 'latin1').toString('ba
 const PUBLISHER_HEX = Buffer.from(PUBLISHER, 'base64').toString('hex');
 const SELF = 'KEY-CLIENT';
 // The server families (box v15, Family folders); deskAgent killed on goal/G41.28 (Andy: "all, KILL deskAgent!").
-const FAMILIES = ['backup', 'deskClient', 'deskVerify'];
+const FAMILIES = ['backup', 'deskClient', 'testicle'];
 
 const TMP = CHILD ? String(process.argv[4]) : fs.mkdtempSync(path.join(os.tmpdir(), 'appServer-test-'));
 // A server name of the test's own, so its cache folder (spirit/state/<name>/) is no real server's.
@@ -1112,10 +1112,10 @@ function ownPart() {
   }, test.limit.quick);
   test.run('familyPath(name) of an app is spirit/app/<name>/api.js (goal/G43.20)', 0.2, function () {
     const A0 = require(FILE);
-    const fp = typeof A0.familyPath === 'function' ? A0.familyPath('deskVerify') : null;
-    return fp === 'spirit/app/deskVerify/api.js' || 'familyPath(\'deskVerify\') is ' + short(fp);
+    const fp = typeof A0.familyPath === 'function' ? A0.familyPath('testicle') : null;
+    return fp === 'spirit/app/testicle/api.js' || 'familyPath(\'testicle\') is ' + short(fp);
   }, test.limit.quick);
-  // Apps of spirit/app/ since goal/G43.27 (Andy: "cw, you bring deskClient and deskVerify into spirit/app/ under their old
+  // Apps of spirit/app/ since goal/G43.27 (Andy: "cw, you bring deskClient and ... into spirit/app/ under their old
   // names, do the backup as well"): the family's interface at the top of the app folder, no family/ left.
   const moved = function (n) {
     const app = path.join(RUN, 'spirit', 'app', n);
@@ -1123,7 +1123,6 @@ function ownPart() {
   };
   test.run('backup: its interface is spirit/app/backup/api.js, no family/ is left', 0.2, function () { return moved('backup'); }, test.limit.quick);
   test.run('deskClient: its interface is spirit/app/deskClient/api.js, no family/ is left', 0.2, function () { return moved('deskClient'); }, test.limit.quick);
-  test.run('deskVerify: its interface is spirit/app/deskVerify/api.js, no family/ is left', 0.2, function () { return moved('deskVerify'); }, test.limit.quick);
   // Andy, goal/G41.28: "all, KILL deskAgent!". The server goes, its folder and every file that names it.
   test.run('and no file names the deskAgent server', 0.2, function () {
     const namers = codeFiles(RUN, []).filter(function (f) { return f !== FILE && f !== SELF_FILE && /['"]deskAgent\/|deskAgent\.js\b/.test(fs.readFileSync(f, 'utf8')); }).map(function (f) { return path.relative(RUN, f); });
@@ -1156,7 +1155,7 @@ function ownPart() {
   }, test.limit.quick);
 
   // goal/G43.20: no <name>Bundles.json is left
-  // The box: "spirit/app/desk/deskBundles.json, deskClient/deskClientBundles.json and deskVerify/deskVerifyBundles.json are
+  // The box: "spirit/app/desk/deskBundles.json, deskClient/deskClientBundles.json and ... are
   // deleted. Bundles stay what they are, rows in node.db, made and changed through auth.bundle."
   test.run('no app folder holds a <name>Bundles.json', 0.2, function () {
     const bundleFiles = jsonFiles(path.join(RUN, 'spirit', 'app'), []).filter(function (f) { return /Bundles\.json$/.test(f); }).map(function (f) { return path.relative(RUN, f); });

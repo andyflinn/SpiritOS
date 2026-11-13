@@ -95,8 +95,8 @@ test.run('publishData posts nothing to the desk', 0.2, function () {
 // ./publishData.md, section "run"; the box's red is ./publishData.js; goal/G41.11). The
 // script runs as an agent runs it, its own process, in a scratch clone of the test's own with a bare origin beside it
 // and a traffic log (spirit/state/node.db) the test writes. A preload of the test's own stands in for the spirit object:
-// its deskClient family answers profile.get with the agent's name and logs every ask. The harness step finds no
-// measurePlatform in the scratch clone's worktree and so runs nothing. No node, no port, no real remote.
+// its deskClient family answers profile.get with the agent's name and logs every ask. No harness step runs (it went
+// with the old harness). No node, no port, no real remote.
 const { DatabaseSync } = require('node:sqlite');
 const TMP = path.join(RUN, 'test', '_tmp_publishData');
 const PRELOAD = path.join(TMP, 'spiritStub.js');
@@ -335,15 +335,23 @@ test.run('it exits 0: published platform/<platform>/', 0.2, function () {
   fs.mkdirSync(path.join(CLONE, 'spirit', 'run', 'spirit', 'state'), { recursive: true });
   fs.writeFileSync(path.join(CLONE, 'his-staged.txt'), 'his work in progress\n');
   git(CLONE, ['add', 'his-staged.txt']);
+  // A tool of his in the platform folder (box v105: the folder is repo://platform/<platform>/, where his tools live),
+  // committed, then edited and not staged.
+  fs.mkdirSync(path.join(CLONE, 'platform', PLATFORM), { recursive: true });
+  fs.writeFileSync(path.join(CLONE, 'platform', PLATFORM, 'his-tool.txt'), 'his tool\n');
+  git(CLONE, ['add', 'platform/' + PLATFORM + '/his-tool.txt']);
+  git(CLONE, ['commit', '-q', '--only', '-m', 'his tool', '--', 'platform/' + PLATFORM + '/his-tool.txt']);
+  fs.appendFileSync(path.join(CLONE, 'platform', PLATFORM, 'his-tool.txt'), 'his edit\n');
   before = git(CLONE, ['rev-parse', 'HEAD']).out;
   w = publish(CLONE, ['45440', '--asks', '2']);
   return (w.status === 0 && w.out.split('\n').pop() === 'publishData: published platform/' + PLATFORM + '/') ? true : 'exit ' + w.status + ' out ' + shortRun(w.out) + ' err ' + shortRun(w.err);
 }, test.limit.slow);
-test.run('the harness step runs measurePlatform in a worktree, and says how it ended', 0.2, function () {
+// NO HARNESS STEP: it went with the old harness (Andy's commit "KILL!", e9c6cb8c, removed spirit/test/measurePlatform.js).
+test.run('no harness step: nothing runs measurePlatform', 0.2, function () {
   if (!WR.ready) return 'no scratch clone: the world failed';
-  return (/harness and capacity in a worktree of /.test(w.out) && /measurePlatform exited /.test(w.out)) ? true : 'out ' + shortRun(w.out);
+  return (w.out.indexOf('measurePlatform') === -1 && w.out.indexOf('harness and capacity') === -1) ? true : 'out ' + shortRun(w.out);
 }, test.limit.quick);
-test.run('and the worktree is removed after', 0.2, function () {
+test.run('and no worktree is left', 0.2, function () {
   if (!WR.ready) return 'no scratch clone: the world failed';
   return (git(CLONE, ['worktree', 'list', '--porcelain']).out.split('\n').filter(function (l) { return /^worktree /.test(l); }).length === 1) ? true : 'worktrees ' + shortRun(git(CLONE, ['worktree', 'list']).out);
 }, test.limit.quick);
@@ -368,6 +376,11 @@ test.run('its files all lie in platform/<platform>/, none in a folder named afte
 test.run('packets, platform and README among them', 0.2, function () {
   if (!WR.ready) return 'no scratch clone: the world failed';
   return (['packets.json', 'packets.md', 'platform.md', 'README.md'].every(function (f) { return files.indexOf('platform/' + PLATFORM + '/' + f) !== -1; })) ? true : 'committed ' + shortRun(files);
+}, test.limit.quick);
+test.run('only the files it wrote: his tool in the platform folder is not committed, his edit still there', 0.2, function () {
+  if (!WR.ready) return 'no scratch clone: the world failed';
+  const edited = fs.readFileSync(path.join(CLONE, 'platform', PLATFORM, 'his-tool.txt'), 'utf8');
+  return (files.indexOf('platform/' + PLATFORM + '/his-tool.txt') === -1 && /his edit/.test(edited)) ? true : 'committed ' + shortRun(files) + ', his tool now ' + shortRun(edited);
 }, test.limit.quick);
 test.run('what he had staged stays staged, and uncommitted', 0.2, function () {
   if (!WR.ready) return 'no scratch clone: the world failed';

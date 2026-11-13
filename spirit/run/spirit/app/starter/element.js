@@ -1,6 +1,6 @@
 'use strict';
 // spirit/run/spirit/app/starter/element.js
-// THE SMALLEST APP, IN THE SHAPE OF spirit/app/ (goal/G43.27). Andy: "cw, you bring deskClient and deskVerify into
+// THE SMALLEST APP, IN THE SHAPE OF spirit/app/ (goal/G43.27). Andy: "cw, you bring deskClient and ... into
 // spirit/app/ under their old names, do the backup as well (and fix it) and starter as well". Copy this folder to begin:
 // ./starter.json says what it is, and this file is its face.
 //

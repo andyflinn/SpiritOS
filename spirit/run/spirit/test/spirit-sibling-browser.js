@@ -41,17 +41,16 @@ const test = require(path.join(__dirname, 'testReport.js'));
 const RUN = path.join(__dirname, '..', '..');
 const REPO = path.join(RUN, '..', '..');
 const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fileSystem.js')).VENDORED_FOLDERS;
-// Its arguments: the file it judges, if any; the verifier's --verify-port <n> is the reporter's, and passed on.
+// Its arguments: the file it judges, if any.
 const ARGS = process.argv.slice(2);
-const VERIFY = ARGS.indexOf('--verify-port') !== -1 ? ARGS.slice(ARGS.indexOf('--verify-port'), ARGS.indexOf('--verify-port') + 2) : [];
-const arg = String(ARGS.filter(function (a) { return VERIFY.indexOf(a) === -1; })[0] || '');
+const arg = String(ARGS[0] || '');
 // SEVERAL SCRIPTS (box v94, 2: "else it will process all scripts listed in the arguments that fit"): each in a run of its own,
 // so each draws its own page and reports for itself.
-const GIVEN = ARGS.filter(function (a, i) { return VERIFY.indexOf(a) === -1 && a.indexOf('--') !== 0 && ARGS[i - 1] !== '--test'; });
+const GIVEN = ARGS.filter(function (a, i) { return a.indexOf('--') !== 0 && ARGS[i - 1] !== '--test'; });
 if (GIVEN.length > 1) {
   let failed = 0;
   GIVEN.forEach(function (one) {
-    const r = require('child_process').spawnSync(process.execPath, [__filename, one].concat(VERIFY), { cwd: RUN, encoding: 'utf8', maxBuffer: 1 << 26 });
+    const r = require('child_process').spawnSync(process.execPath, [__filename, one], { cwd: RUN, encoding: 'utf8', maxBuffer: 1 << 26 });
     process.stdout.write(String(r.stdout || '') + String(r.stderr || ''));
     if (r.status !== 0) failed += 1;
   });
@@ -594,7 +593,7 @@ function every() {
     const red = [];
     for (const f of E.files2) {
       const out = await new Promise(function (resolve) {
-        const kid = spawn(process.execPath, [__filename, f].concat(VERIFY), { cwd: RUN, env: Object.assign({}, process.env, { SPIRIT_MOUNT_BASE: E.node.base }), stdio: ['ignore', 'pipe', 'pipe'] });
+        const kid = spawn(process.execPath, [__filename, f], { cwd: RUN, env: Object.assign({}, process.env, { SPIRIT_MOUNT_BASE: E.node.base }), stdio: ['ignore', 'pipe', 'pipe'] });
         let text = '';
         kid.stdout.on('data', function (d) { text += d; });
         kid.stderr.on('data', function (d) { text += d; });

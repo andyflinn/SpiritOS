@@ -47,8 +47,8 @@ function scratchCopy() {
   execSync('git ls-files -- spirit/run', { cwd: REPO, encoding: 'utf8' }).split('\n').filter(Boolean)
     .filter(function (f) { return fs.existsSync(path.join(REPO, f)); })
     .forEach(function (f) { const d = path.join(root, f); fs.mkdirSync(path.dirname(d), { recursive: true }); fs.copyFileSync(path.join(REPO, f), d); });
-  // deskVerify turned on, as its owner does: the server whose garbage is asked (GARBAGE, below).
-  const state = path.join(root, 'spirit', 'run', 'spirit', 'state', 'deskVerify');
+  // testicle turned on, as its owner does: the server whose garbage is asked (GARBAGE, below).
+  const state = path.join(root, 'spirit', 'run', 'spirit', 'state', 'testicle');
   fs.mkdirSync(state, { recursive: true });
   fs.writeFileSync(path.join(state, 'node.json'), JSON.stringify({ active: true }));
   return { root: root, run: path.join(root, 'spirit', 'run') };
@@ -80,9 +80,9 @@ function outsideAddress() {
 // MUTHERCUCKING PATH"): each section is named by the address it asks, /DEBUG left off, or the file it reads.
 function named(p) { return p.indexOf('/DEBUG/') === 0 ? p.slice('/DEBUG'.length) : p; }
 const PAGE = '/DEBUG/spirit/element/workBench/headLessBrowser.html';
-// A server whose api the node serves: deskVerify, an app of spirit/app/, turned on in the scratch copy (goal/G43.20: every
+// A server whose api the node serves: testicle, an app of spirit/app/, turned on in the scratch copy (goal/G43.20: every
 // server is an app, and none runs until its owner turns it on).
-const GARBAGE = '/DEBUG/spirit/app/deskVerify/deskVerify/garbageArguments.json';
+const GARBAGE = '/DEBUG/spirit/app/testicle/testicle/garbageArguments.json';
 
 // THE GARBAGE ITSELF (goal/G41.30, the box v12): what the generator makes for one verb's request prototype, asked in
 // memory of its make(), over a stand-in server whose api is that one verb. "EVERY ARGUMENT gets tested with EVERY
@@ -391,12 +391,12 @@ test.run('the node: it names the module it mounts, spirit/element/workBench', 0.
 }, test.limit.quick);
 
 // GARBAGE, the node, DEBUG on.
-// deskVerify'S VERBS COME FROM ITS OWN SERVER (goal/G43.32, requirement 9: appServer loads the app's api.js), so its
+// testicle'S VERBS COME FROM ITS OWN SERVER (goal/G43.32, requirement 9: appServer loads the app's api.js), so its
 // garbage is asked once the node's api names them, not while its server is still starting.
-test.run('the world: the node\'s api names the deskVerify server\'s verbs', 0.2, async function () {
+test.run('the world: the node\'s api names the testicle server\'s verbs', 0.2, async function () {
   if (!node || !node.up) return 'no scratch node: the world failed';
-  upNow = await until(function () { return call(N, 'api').then(function (r) { const t = json(r) || {}; return Object.keys(t.deskVerify || {}).length > 1; }); }, 30000);
-  return (upNow) ? true : 'the deskVerify server never came up: nothing judged';
+  upNow = await until(function () { return call(N, 'api').then(function (r) { const t = json(r) || {}; return Object.keys(t.testicle || {}).length > 1; }); }, 30000);
+  return (upNow) ? true : 'the testicle server never came up: nothing judged';
 }, test.limit.quick);
 
 test.run('the garbage is answered, 200, a JSON list', 0.2, async function () {
@@ -406,16 +406,16 @@ test.run('the garbage is answered, 200, a JSON list', 0.2, async function () {
   return (g.status === 200 && /json/.test(g.type) && Array.isArray(list) && list.length > 0) ? true : 'it answered ' + g.status + ' ' + g.type + ' ' + short(g.text);
 }, test.limit.quick);
 
-test.run('the node\'s api lists the deskVerify server\'s verbs', 0.2, async function () {
+test.run('the node\'s api lists the testicle server\'s verbs', 0.2, async function () {
   if (!node || !node.up) return 'no scratch node: the world failed';
   tree = json(await call(N, 'api')) || {};
-  verbs = Object.keys(tree.deskVerify || {});
-  return (verbs.length > 0) ? true : 'the scratch node\'s api has no deskVerify: ' + short(Object.keys(tree));
+  verbs = Object.keys(tree.testicle || {});
+  return (verbs.length > 0) ? true : 'the scratch node\'s api has no testicle: ' + short(Object.keys(tree));
 }, test.limit.quick);
 
 test.run('every verb of its api has garbage of its own', 0.2, async function () {
   if (!node || !node.up) return 'no scratch node: the world failed';
-  namedIn = function (v) { return Array.isArray(list) && list.some(function (e) { return e && typeof e === 'object' && e.call === 'deskVerify.' + v; }); };
+  namedIn = function (v) { return Array.isArray(list) && list.some(function (e) { return e && typeof e === 'object' && e.call === 'testicle.' + v; }); };
   unasked = verbs.filter(function (v) { return !namedIn(v); });
   return (verbs.length && !unasked.length) ? true : 'verbs with no garbage: ' + short(unasked);
 }, test.limit.quick);
@@ -436,7 +436,7 @@ test.run('each entry that breaks the shape is refused with a code: a 4xx, never 
     if (proto === null) return v === null;
     return typeof v === typeof proto;
   };
-  kept = function (entry) { const verb = String(entry.call || '').replace(/^deskVerify\./, ''); const d = tree.deskVerify && tree.deskVerify[verb]; return !!d && sameShape(d.request, entry.args); };
+  kept = function (entry) { const verb = String(entry.call || '').replace(/^testicle\./, ''); const d = tree.testicle && tree.testicle[verb]; return !!d && sameShape(d.request, entry.args); };
   wrong = []; lone = [];
   keptCount = 0;
   for (const entry of (Array.isArray(list) ? list : [])) {

@@ -20,7 +20,7 @@ function runRel(a) {
   if (r && r.indexOf('..') !== 0 && !p.isAbsolute(r) && require('fs').existsSync(abs)) return r;
   return String(a).split(p.sep).join('/').replace(/^\.?\//, '').replace(/^spirit\/run\//, '');
 }
-const GIVEN = process.argv.slice(2).filter(function (a, i, all) { return a.indexOf('--') !== 0 && all[i - 1] !== '--verify-port' && all[i - 1] !== '--test'; }).map(runRel);
+const GIVEN = process.argv.slice(2).filter(function (a, i, all) { return a.indexOf('--') !== 0 && all[i - 1] !== '--test'; }).map(runRel);
 
 // ── branchRules (was spirit/test/spirit-sibling-branchRules.js) ─────────────────────────────────────────────────────────────────────
 function branchRules(ARGS) {
@@ -1224,9 +1224,8 @@ const test = require(path.join(__dirname, 'testReport.js'));
 const RUN = path.join(__dirname, '..', '..');
 const REPO = path.join(RUN, '..', '..');
 const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fileSystem.js')).VENDORED_FOLDERS;
-// Its arguments: the file it judges, if any; the verifier's --verify-port <n> is the reporter's, and passed on.
-const VERIFY = ARGS.indexOf('--verify-port') !== -1 ? ARGS.slice(ARGS.indexOf('--verify-port'), ARGS.indexOf('--verify-port') + 2) : [];
-const arg = String(ARGS.filter(function (a) { return VERIFY.indexOf(a) === -1; })[0] || '');
+// Its arguments: the file it judges, if any.
+const arg = String(ARGS[0] || '');
 let full = '';
 for (const p of [path.resolve(arg), path.join(RUN, arg), path.join(REPO, arg)]) {
   if (arg && fs.existsSync(p) && fs.statSync(p).isFile()) { full = p; break; }

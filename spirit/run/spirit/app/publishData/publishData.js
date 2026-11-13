@@ -1,7 +1,7 @@
 'use strict';
 
 // spirit/run/spirit/app/publishData/publishData.js (it was spirit/app/deskClient/publishData.js until goal/G43.21)
-// ONE MEASUREMENT RUN PER AGENT, ITS DATA IN agents/<agent>/ — goal/G4.33.
+// ONE MEASUREMENT RUN PER PLATFORM, ITS DATA IN platform/<platform>/ (windows, wsl or ubuntu) — goal/G4.33, goal/G47.1.
 //
 //   Andy, 2026-10-04: "so one single script for all of you puts the data into the repo"; to N: "that's a fine number"
 //   (20). The box of goal/G4.33 holds every line. It is no longer automated under deskClient: it is run by hand (below).
@@ -13,15 +13,15 @@
 // Since goal/G43.21 Andy starts it with Run in its app detail (Andy, the box: "the Andy user on each box will run those scripts
 // when he feels like it"); the port is then the starting node's own.
 //
-//   1  unless --only packets: spirit/test/measurePlatform.js --agent <agent> (harness, capacity) into agents/<agent>/
+//   1  (gone: the harness and capacity step went with the old harness, Andy's "KILL!" commit e9c6cb8c)
 //   2  N read-only desk asks (profile.get; scope.get until goal/G10.8 removed agent scopes) from this node, then their figures from its own traffic log: packets.json
 //      {posts, waitMs {median, max}, flight {median, max}, retried, refusals} and packets.md; platform.md names the
 //      agent, the commit and the box
-//   3  the test state: testState.json and testState.md, from this node's verify.db (the newest row of each test its
-//      deskVerify keeps), no suite re-run
-//   4  unless --only packets or --out: commits agents/<agent>/ (the commit check's standing grant takes a commit whose
+//   3  the test state: testState.json and testState.md, from this node's testicle.db (the current result of each test
+//      its testicle keeps), no suite re-run
+//   4  unless --only packets or --out: commits platform/<platform>/ (the commit check's standing grant takes a commit whose
 //      files all lie there); no summary goes to Desk (goal/G43.22)
-// The agent is the name Andy set in its profile (profile.get). The traffic log is read from a copy of
+// The platform is this machine's (platformName, below), never an agent's name. The traffic log is read from a copy of
 // <clone>/spirit/run/spirit/state/node.db, read only: the node holds the file open, and no verb reads that log.
 // Exits: 0 done; 1 a step failed (the reason printed); 2 usage.
 
@@ -61,7 +61,6 @@ function ask(verb, args) {
     function (e) { clearTimeout(timer); end(1, 'publishData: the node on port ' + port + ' did not answer ' + verb + ': ' + ((e && e.message) || e)); });
 }
 function desk(verb, args) { return ask('deskClient.desk', { name: verb, json: JSON.stringify(args) }); }
-function ok(r) { return r && r.status === 200 && r.body && r.body.ok !== false; }
 
 function median(a) { if (!a.length) return 0; const s = a.slice().sort(function (x, y) { return x - y; }); return s[Math.floor(s.length / 2)]; }
 function max(a) { return a.length ? Math.max.apply(null, a) : 0; }
@@ -85,36 +84,33 @@ function closingRows(clone, sinceIso) {
   }
 }
 
-// THE TEST STATE (goal/G21.3, moved here by goal/G33.3). It was written by deskVerify's idle chores into
-// agents/<agent>/ just before they ran this script; since goal/G33.3 the verifier knows no agent and no folder (the box:
-// "each chore names the folders it updates and finds its own agent, so the verifier knows neither (the test-state file
-// it writes today moves into the publish chore)"). So it is written here, from the newest row of each test in this
-// clone's verify.db, read only; no suite is run for it.
-// deskVerify keeps it in its state, spirit/state/deskVerify/data/ (goal/G43.27; Andy: "cw, it's supposed to be in
-// run:/spirit/state/deskVerify/data/ !!!!!!!!!!!!!!!!!").
-const VERIFY_DB = path.join(__dirname, '..', '..', 'state', 'deskVerify', 'data', 'verify.db');
+// THE TEST STATE (goal/G21.3; goal/G47.1, Andy: "all, publish Data uses testicle data."): written from the current
+// result of each test in this clone's testicle.db, read only; no suite is run for it. testicle keeps it in its state,
+// spirit/state/testicle/data/. One row a script and suite (a general suite judges many scripts, each its own row).
+const TESTICLE_DB = path.join(__dirname, '..', '..', 'state', 'testicle', 'data', 'testicle.db');
 function writeTestState(out, agent, commit) {
   let rows = [];
-  if (fs.existsSync(VERIFY_DB)) {
+  if (fs.existsSync(TESTICLE_DB)) {
     const { DatabaseSync } = require('node:sqlite');
-    const db = new DatabaseSync(VERIFY_DB, { readOnly: true });
+    const db = new DatabaseSync(TESTICLE_DB, { readOnly: true });
     try {
-      rows = db.prepare('SELECT suite, title, outcome, "commit" AS commitAt, at, failure FROM results WHERE rowid IN ' +
-        '(SELECT MAX(rowid) FROM results GROUP BY suite, title) ORDER BY suite, title').all();
+      rows = db.prepare('SELECT script, suite, test, verified, severity, tested FROM testicle WHERE current = 1 ORDER BY script, suite, test').all();
     } finally { db.close(); }
   }
+  const at = function (ms) { const n = Number(ms); return n > 0 ? new Date(n).toISOString() : ''; };
   const bySuite = Object.create(null);
   rows.forEach(function (r) {
-    const s = bySuite[r.suite] || (bySuite[r.suite] = { suite: r.suite, tests: 0, green: 0, red: 0, newestAt: '' });
+    const k = r.script + '|' + r.suite;
+    const s = bySuite[k] || (bySuite[k] = { script: r.script, suite: r.suite, tests: 0, green: 0, red: 0, newestAt: '' });
     s.tests += 1;
-    if (r.outcome === 'red') s.red += 1; else s.green += 1;
-    if (String(r.at) > s.newestAt) s.newestAt = String(r.at);
+    if (Number(r.verified) === 1) s.green += 1; else s.red += 1;
+    if (at(r.tested) > s.newestAt) s.newestAt = at(r.tested);
   });
-  const reds = rows.filter(function (r) { return r.outcome === 'red'; })
-    .map(function (r) { return { suite: r.suite, title: r.title, commit: r.commitAt, at: r.at, failure: r.failure || '' }; });
+  const reds = rows.filter(function (r) { return Number(r.verified) !== 1; })
+    .map(function (r) { return { script: r.script, suite: r.suite, title: r.test, severity: Number(r.severity) || 0, at: at(r.tested) }; });
   const report = {
     agent: agent, measuredAt: new Date().toISOString(), commit: commit,
-    from: 'verify.db: the newest row of each test this node\'s deskVerify keeps; no suite was run for this report',
+    from: 'testicle.db: the current result of each test this node\'s testicle keeps; no suite was run for this report',
     note: rows.length ? '' : 'no records yet',
     tests: rows.length, green: rows.length - reds.length, red: reds.length,
     suites: Object.keys(bySuite).sort().map(function (k) { return bySuite[k]; }),
@@ -122,55 +118,55 @@ function writeTestState(out, agent, commit) {
   };
   fs.writeFileSync(path.join(out, 'testState.json'), JSON.stringify(report, null, 2) + '\n');
   const md = ['# Test state: ' + agent, '',
-    '**Written ' + report.measuredAt.slice(0, 10) + ' by publishData at `' + report.commit + '`, from this node\'s verify.db; no suite was re-run.**', '',
+    '**Written ' + report.measuredAt.slice(0, 10) + ' by publishData at `' + report.commit + '`, from this node\'s testicle.db; no suite was re-run.**', '',
     report.tests + ' tests, ' + report.green + ' green, ' + report.red + ' red.' + (report.note ? ' ' + report.note + '.' : ''), '',
-    '| suite | tests | green | red | newest |', '|---|---|---|---|---|']
-    .concat(report.suites.map(function (x) { return '| ' + x.suite + ' | ' + x.tests + ' | ' + x.green + ' | ' + x.red + ' | ' + x.newestAt + ' |'; }))
+    '| script | suite | tests | green | red | newest |', '|---|---|---|---|---|---|']
+    .concat(report.suites.map(function (x) { return '| ' + x.script + ' | ' + x.suite + ' | ' + x.tests + ' | ' + x.green + ' | ' + x.red + ' | ' + x.newestAt + ' |'; }))
     .concat(['', '## Red', ''])
-    .concat(reds.length ? reds.map(function (r) { return '- `' + r.suite + '` ' + r.title + ' (`' + String(r.commit).slice(0, 8) + '`, ' + r.at + ')' + (r.failure ? ': ' + r.failure.replace(/\s+/g, ' ') : ''); }) : ['none'])
+    .concat(reds.length ? reds.map(function (r) { return '- `' + r.script + '` `' + r.suite + '` ' + r.title + ' (severity ' + r.severity + ', ' + r.at + ')'; }) : ['none'])
     .concat(['']);
   fs.writeFileSync(path.join(out, 'testState.md'), md.join('\n'));
   return report;
 }
 
-// agents/<agent>/README.md: since goal/G33.5 written by agentReadme.js (Machine Description, Summary, Measurements),
+// platform/<platform>/README.md: since goal/G33.5 written by agentReadme.js (Machine Description, Summary, Measurements),
 // with summary.json beside it, from the files themselves, so it never goes stale.
 function writeIndex(out, agent) { return spirit.require('spirit/app/publishData/agentReadme.js').write(out, agent); }
+
+// The files a run writes into its platform folder, and so the only ones it commits.
+const PUBLISHED = ['packets.json', 'packets.md', 'platform.md', 'testState.json', 'testState.md', 'README.md', 'summary.json'];
+// windows on Windows; wsl on a Linux whose kernel says Microsoft (WSL); ubuntu on any other Linux; else the platform's own name.
+function platformName() {
+  if (process.platform === 'win32') return 'windows';
+  if (process.platform === 'linux') {
+    let v = '';
+    try { v = fs.readFileSync('/proc/version', 'utf8'); } catch (e) { v = ''; }
+    return /microsoft/i.test(v + ' ' + os.release()) ? 'wsl' : 'ubuntu';
+  }
+  return process.platform;
+}
 
 async function main() {
   const top = git(['rev-parse', '--show-toplevel'], process.cwd());
   if (top.status !== 0) end(1, 'publishData: not in a git clone');
   const clone = path.resolve(top.stdout.trim());
+  // The reports name the agent that measured, as Andy set it in its pane.
   const prof = await desk('profile.get', { agent: '' });
-  const agent = ok(prof) ? String(prof.body.name || '') : '';
+  const agent = prof && prof.status === 200 && prof.body && prof.body.ok !== false ? String(prof.body.name || '') : '';
   if (!agent) end(1, 'publishData: this agent has no name at the desk yet (Andy sets it in its pane): ' + (prof && prof.text));
-  const out = outArg ? path.resolve(outArg) : path.join(clone, 'agents', agent);
+  // THE FOLDER NAMES THE PLATFORM, NOT THE AGENT (goal/G47.1, box v104: "make sure publisData simply writes to folders
+  // identifying the platform, NOT the agent, the platforms will be \"windows\", \"wsl\" and \"ubuntu\""; box v105: "the
+  // folders: repo://platform/windows/, repo://platform/wsl/, repo://platform/ubuntu/, depending on where publishData
+  // runs....").
+  const platform = platformName();
+  const out = outArg ? path.resolve(outArg) : path.join(clone, 'platform', platform);
   fs.mkdirSync(out, { recursive: true });
   // The commit of the code being measured: the tree this script runs from (in real use the agent's clone itself).
   const commit = (git(['rev-parse', '--short', 'HEAD'], __dirname).stdout || '').trim() || 'unknown';
   say('agent ' + agent + ', commit ' + commit + ', into ' + out);
 
-  // 1. HARNESS AND CAPACITY, the tests' own tool.
-  // IN A WORKTREE, NOT THE LIVE CLONE (goal/G4.33, reopened): the first publish ran the harness beside the running
-  // node, and a suite disturbed the node's own sockets (wsl-claude's lost its deskClient, 0 packet posts). So the
-  // harness runs in a temporary git worktree of the commit being published; its files come back into agents/<agent>/,
-  // and the worktree is removed.
-  if (!packetsOnly) {
-    say('harness and capacity in a worktree of ' + commit + ' (minutes)');
-    const tree = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-publish-tree-'));
-    fs.rmSync(tree, { recursive: true, force: true });
-    const added = git(['worktree', 'add', '-q', '--detach', tree, 'HEAD'], clone);
-    if (added.status !== 0) end(1, 'publishData: no worktree: ' + (added.stderr || added.stdout).trim());
-    try {
-      const m = spawnSync(process.execPath, [path.join(tree, 'spirit', 'test', 'measurePlatform.js'), '--agent', agent], { cwd: tree, stdio: 'inherit', windowsHide: true });
-      if (m.status !== 0) say('measurePlatform exited ' + m.status + '; its files say what it found');
-      const made = path.join(tree, 'agents', agent);
-      if (fs.existsSync(made)) fs.readdirSync(made).forEach(function (f) { const from = path.join(made, f); if (fs.statSync(from).isFile()) fs.copyFileSync(from, path.join(out, f)); });
-    } finally {
-      git(['worktree', 'remove', '--force', tree], clone);
-      git(['worktree', 'prune'], clone);
-    }
-  }
+  // THE HARNESS STEP WENT WITH THE OLD HARNESS (Andy's commit "KILL!", e9c6cb8c, removed spirit/test/ and its
+  // measurePlatform.js with it): the test state comes from testicle (step 3).
 
   // 2. THE PACKET FIGURES: N read-only desk asks, timed by this node's own traffic rows.
   const since = new Date(Date.now() - 1000).toISOString();
@@ -197,7 +193,7 @@ async function main() {
     '| flight (ms) | ' + packets.flight.median + ' | ' + packets.flight.max + ' |', '',
     packets.posts + ' posts, ' + packets.retried + ' needed more than one try, refusals: ' + (Object.keys(refusals).length ? JSON.stringify(refusals) : 'none') + '.', '',
   ].join('\n'));
-  if (packetsOnly || !fs.existsSync(path.join(out, 'platform.md'))) {
+  {
     fs.writeFileSync(path.join(out, 'platform.md'), [
       '# ' + agent, '', '**Measured ' + packets.measuredAt.slice(0, 10) + ', against `' + commit + '`.**', '',
       '| | |', '|---|---|',
@@ -205,7 +201,7 @@ async function main() {
       '| cpus | ' + os.cpus().length + ' |', '| ram | ' + Math.round(os.totalmem() / 1048576) + ' MB |', '',
     ].join('\n'));
   }
-  // 3. THE TEST STATE, from this node's verify.db (goal/G33.3: the publish chore writes it, not the verifier).
+  // 3. THE TEST STATE, from this node's testicle.db (goal/G47.1: "publish Data uses testicle data.").
   try {
     const rep = writeTestState(out, agent, commit);
     say('testState: ' + rep.tests + ' tests, ' + rep.red + ' red');
@@ -224,8 +220,11 @@ async function main() {
   // staged in its clone and pushed it as "publish:". `--only -- <rel>` commits <rel> alone, from a temporary index, so
   // other staged work stays staged and uncommitted; the commit check's hook sees only <rel> staged, so the standing
   // grant applies to exactly what is published. The add comes first so a file new to git is known to --only.
-  git(['add', '--', rel], clone);
-  const c = git(['commit', '-q', '--only', '-m', 'publish: ' + agent + ' at ' + commit + ' (agents/' + agent + '/, the standing grant of goal/G4.33)', '--', rel], clone);
+  // ONLY THE FILES IT WROTE (goal/G47.1, box v105): platform/<platform>/ also holds Andy's own tools for that machine
+  // (platform/README.md), and an edit of his there is never published as "publish:".
+  const wrote = PUBLISHED.filter(function (f) { return fs.existsSync(path.join(out, f)); }).map(function (f) { return rel + '/' + f; });
+  git(['add', '--'].concat(wrote), clone);
+  const c = git(['commit', '-q', '--only', '-m', 'publish: ' + agent + ' at ' + commit + ' (platform/' + platform + '/, the standing grant of goal/G4.33)', '--'].concat(wrote), clone);
   if (c.status !== 0) end(1, 'publishData: the commit was refused: ' + (c.stderr || c.stdout).trim());
   // PUSH THROUGH pushOrigin (goal/G5.1): one shared place that rebases onto origin's newest, pushes, retries on a
   // race (Andy: "tries again if someone pushed meanwhile"), stops on a clash.
@@ -234,7 +233,7 @@ async function main() {
   // pushOrigin's reason says what went wrong, the push itself or putting the clone's unsaved edits back (goal/G19.6).
   if (!pushed || !pushed.ok) end(1, 'publishData: pushOrigin did not finish: ' + ((pushed && pushed.reason) || 'unknown'));
   // NO SUMMARY TO THE DESK (goal/G43.22; Andy: "publishData summary is no longer needed, i only check on github.").
-  end(0, 'publishData: published agents/' + agent + '/');
+  end(0, 'publishData: published platform/' + platform + '/');
 }
 
 main().catch(function (e) { end(1, 'publishData: ' + ((e && e.stack) || e)); });

@@ -575,8 +575,7 @@ test.run('backup says node.mount true, starts, and answers its api', 0.2, functi
 test.run('chat says node.mount true, starts, and answers its api', 0.2, function () { return mounts('chat'); }, test.limit.quick);
 test.run('desk says node.mount true, starts, and answers its api', 0.2, function () { return mounts('desk'); }, test.limit.quick);
 test.run('deskClient says node.mount true, starts, and answers its api', 0.2, function () { return mounts('deskClient'); }, test.limit.quick);
-test.run('deskVerify says node.mount true, starts, and answers its api', 0.2, function () { return mounts('deskVerify'); }, test.limit.quick);
-const JUDGED = ['agent', 'backup', 'chat', 'desk', 'deskClient', 'deskVerify'];
+const JUDGED = ['agent', 'backup', 'chat', 'desk', 'deskClient'];
 test.run('every app that says node.mount true has a line of its own in this test', 0.2, async function () {
   const unjudged = SL.servers.filter(function (n) { return JUDGED.indexOf(n) === -1; });
   await H.sleep(3000);
@@ -600,9 +599,8 @@ test.run('spirit/state/backup/ holds only node.json, cache/, data/ and on Linux 
 test.run('spirit/state/chat/ holds only node.json, cache/, data/ and on Linux door.sock', 0.2, function () { return holdsOnly('chat'); }, test.limit.quick);
 test.run('spirit/state/desk/ holds only node.json, cache/, data/ and on Linux door.sock', 0.2, function () { return holdsOnly('desk'); }, test.limit.quick);
 test.run('spirit/state/deskClient/ holds only node.json, cache/, data/ and on Linux door.sock', 0.2, function () { return holdsOnly('deskClient'); }, test.limit.quick);
-test.run('spirit/state/deskVerify/ holds only node.json, cache/, data/ and on Linux door.sock', 0.2, function () { return holdsOnly('deskVerify'); }, test.limit.quick);
 test.run('spirit/state/testicle/ holds only node.json, cache/, data/ and on Linux door.sock', 0.2, function () { return holdsOnly('testicle'); }, test.limit.quick);
-const NAMED_FOLDERS = ['agent', 'backup', 'chat', 'desk', 'deskClient', 'deskVerify', 'testicle'];
+const NAMED_FOLDERS = ['agent', 'backup', 'chat', 'desk', 'deskClient', 'testicle'];
 test.run('every other folder of spirit/state/ holds only node.json, cache/, data/ and on Linux door.sock', 0.2, function () {
   const bad = stateFolders().filter(function (n) { return NAMED_FOLDERS.indexOf(n) === -1; }).map(holdsOnly).filter(function (v) { return v !== true; });
   return !bad.length ? true : bad.join('; ');

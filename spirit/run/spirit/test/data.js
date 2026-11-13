@@ -565,12 +565,12 @@ const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fileSystem.js')).VEND
 // Andy on Q2: "yes, of course all 19". Q1: each under the family's own name.
 const NODE_FAMILIES = ['app', 'auth', 'config', 'contact', 'event', 'fs', 'job', 'net', 'node', 'owner', 'peer', 'relay'];
 // fileServer went with run://process (goal/G43.20), so 18 are left.
-const SERVER_FAMILIES = ['agent', 'backup', 'chat', 'desk', 'deskClient', 'deskVerify'];
+const SERVER_FAMILIES = ['agent', 'backup', 'chat', 'desk', 'deskClient'];
 const FAMILIES = NODE_FAMILIES.concat(SERVER_FAMILIES);
 // A server's branch is its app's folder, spirit/app/<name>/ (goal/G43.20), named as the folder (goal/G43.31: chat, once chatClerver).
 const folderOf = function (name) { return NODE_FAMILIES.indexOf(name) !== -1 ? path.join(RUN, 'spirit', name) : path.join(RUN, 'spirit', 'app', name); };
-// The old spirit.<name>Data: chatData was the chat server's, verifyData deskVerify's.
-const OLD_READER = /(?:\b|\.)(?:agent|app|auth|backup|chat|chatClerver|config|contact|desk|deskClient|deskVerify|events|fileServer|fs|jobs|net|node|owner|peer|relay|verify)Data\b/;
+// The old spirit.<name>Data: chatData was the chat server's, verifyData the old verifier's.
+const OLD_READER = /(?:\b|\.)(?:agent|app|auth|backup|chat|chatClerver|config|contact|desk|deskClient|events|fileServer|fs|jobs|net|node|owner|peer|relay|verify)Data\b/;
 // A retired name's parts, so this file does not hold it whole.
 const OLD_MANAGER = 'clientCache' + 'Manager';
 const OLD_MODULE = 'spirit' + 'Data';

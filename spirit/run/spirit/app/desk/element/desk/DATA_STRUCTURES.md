@@ -25,7 +25,6 @@ An id is two numbers, goal and item (0 for the goal itself), shown as
 | `checks (goal, item, number)` | one Q, G, C or T check | `item.checks`, `item.checks.search`, `check.add`, `check.set` |
 | `files (goal, item, holder, path)` | one file an agent listed, with its grant status | `item.files`, `item.files.search`, `item.files.add`, `item.files.remove` |
 | `claims (goal, item, claimer)` | one agent's claim | `item.claims.search`, `claim` |
-| `suites (goal, item, path)` | one suite a Verify of the item runs | `item.suites.search`, `item.suites.add`, `item.suites.remove` |
 | `agents (agent)` | by key: its label, its last write, its word, Andy's profile of it | `agents.search`, `profile.get`, `profile.set` |
 | `rules`, `rule_drafts`, `rule_chat` | every version of every rule (the newest row per rule is the rule), his draft between versions, a rule's chat | `rules.search`, `rule.get`, `rule.add`, `rule.draft`, `rule.version` |
 | `desk_state (k)` | the desk's own few values: the change number, the current goal, the grants | — |

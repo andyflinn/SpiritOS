@@ -8,7 +8,11 @@
 |---|---|---|
 | `wsl/` | WSL on Andy's Windows box | wsl-claude |
 | `windows/` | Windows itself | the Windows Claude |
-| `linux/` | a Linux machine that is not WSL | — |
+| `ubuntu/` | a Linux machine that is not WSL | — |
+
+**Measurements** (goal/G47.1, box v105: *"repo://platform/windows/, repo://platform/wsl/, repo://platform/ubuntu/, depending
+on where publishData runs...."*): each platform folder also holds what `spirit/app/publishData/publishData.js` writes
+there on that machine, `packets.*`, `platform.md`, `testState.*` (from testicle), `README.md` and `summary.json`.
 
 **What belongs here:** small tools that make one of Andy's machines easier
 to use — things a platform lacks and he wants. **What does not:** anything

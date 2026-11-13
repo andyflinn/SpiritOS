@@ -1,7 +1,7 @@
 # spirit/app/desk/element/desk/desk.js
 
-The Desk app's page: the List of goals and items, the Rules, and the Verifier where one runs. This test covers what
-goal/G41.1 (box v19-v20), goal/G41.9, goal/G41.11, goal/G43.22 and goal/G43.3 require of it.
+The Desk app's page: the List of goals and items, and the Rules. This test covers what
+goal/G41.1 (box v19-v20), goal/G41.9, goal/G41.11, goal/G43.22, goal/G43.3 and the verifier's removal require of it.
 
 ## Requirements (goal/G41.1)
 
@@ -25,14 +25,27 @@ the arming desk.js hand-rolled.
   asks nothing, its second presses as before:
   - End design mode → `End design mode: sure?`, then `press end-design` on the goal;
   - Start design mode → `Start design mode: sure?`, then `press start-design`;
-  - Go all → `Go all: sure?`, then `press go-all` on the goal;
-  - a row's Done not verified green (`Done ⚠`) → `Done anyway? <why>`, then `press done` on that row.
+  - Go all → `Go all: sure?`, then `press go-all` on the goal.
 - A goal's Close in the List pressing at once (goal/G41.9) is ended by goal/G43.30, below.
 
 ## What its test must try to break (goal/G41.9)
 
 - A button armed by the page itself rather than by armingButton; a first press that already presses; an armed
-  wording lost; the page's own row click pressing a Done the armingButton holds.
+  wording lost.
+
+## Requirements (no verifier in desk)
+
+The box: *"Delete ..., and get rid of ... junk in desk"*, *"desk's face loses the Verifier tab, the run status (the
+... element and the List column it fills), and the verifier parts of deskDetails"*, *"agents still claim done, only the
+user gets to actually press done. No verifier involvement with desk anywhere."*
+
+- **Done in a row is a plain press**: no warning mark, no arming; one press sends `press done` on that row.
+- **No Verifier tab**: the page draws no Verifier tab or pane, and loads nothing of a verifier (no cache manager of
+  one, no run status).
+
+## What its test must try to break (no verifier in desk)
+
+- A Done that arms or carries a mark; a Verifier tab drawn; a verifier's part still loaded at mount.
 
 ## Requirements (goal/G41.11)
 
@@ -69,16 +82,14 @@ Andy: *"on the list search item.search, these two filters: [Current Goal Only] a
 
 ## Requirements (goal/G43.30)
 
-Andy: *"while your mucking with desk, can you make sure that all delete and close buttons are armingButton's? box."* The box: every Delete and every Close press in Desk (its rows, the item detail, the rule dialog) is an armingButton, and *"A test presses each one once on the real page and finds that nothing happened."* Desk's run status: *"Desk and its detail load it from there"*, `spirit/app/desk/element/deskRunStatus/`.
+Andy: *"while your mucking with desk, can you make sure that all delete and close buttons are armingButton's? box."* The box: every Delete and every Close press in Desk (its rows, the item detail, the rule dialog) is an armingButton, and *"A test presses each one once on the real page and finds that nothing happened."*
 
 - **Every Close in the List is an armingButton**: a goal's with nothing under it open, and a done item's in its row. The first press arms it and presses nothing, the second presses `close`.
 - **On the real page**: a scratch node with desk on, a goal and its item pressed done; the Desk element on the face page; each Close the List draws pressed once leaves the item done, and each stands armed.
-- **The run status** is loaded from `spirit/app/desk/element/deskRunStatus/deskRunStatus.js`, never from `shell/shared/`.
 
 ## What its test must try to break (goal/G43.30)
 
 - A Close that closes on its first press, in the stand-in or on the real page; a check of armed buttons that passes on none drawn.
-- A run status still loaded from shell/shared/.
 
 ## Requirements: an item's details open every time
 

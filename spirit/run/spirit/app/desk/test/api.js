@@ -170,14 +170,6 @@ test.run('item.files.remove takes one path, never a list', 0.2, function () {
   if (!W.api) return 'no api.js: the world failed';
   return (oneRow('item.files.remove')) ? true : oneRowWhy('item.files.remove');
 }, test.limit.quick);
-test.run('item.suites.add takes one path, never a list', 0.2, function () {
-  if (!W.api) return 'no api.js: the world failed';
-  return (oneRow('item.suites.add')) ? true : oneRowWhy('item.suites.add');
-}, test.limit.quick);
-test.run('item.suites.remove takes one path, never a list', 0.2, function () {
-  if (!W.api) return 'no api.js: the world failed';
-  return (oneRow('item.suites.remove')) ? true : oneRowWhy('item.suites.remove');
-}, test.limit.quick);
 test.run('rules.search: types and statuses are lists', 0.2, function () {
   if (!W.api) return 'no api.js: the world failed';
   return (passes('rules.search', { text: '', types: [], statuses: [] }) && refusedAs('rules.search', { text: '', types: 'a', statuses: [] }) === 'bad-request') ? true : 'types \'a\' ' + refusedAs('rules.search', { text: '', types: 'a', statuses: [] });
