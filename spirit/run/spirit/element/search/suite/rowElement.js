@@ -14,7 +14,8 @@
   var S = window.spirit = window.spirit || {};
   S.require('spirit/element/rowElement.js');
   S.require('spirit/element/busyButton.js');
-  S.require('spirit/app/testicle/api.js');
+  // A node with no testicle refuses its interface: the row draws no run button (below); the refusal is never left unhandled.
+  Promise.resolve(S.require('spirit/app/testicle/api.js')).catch(function () {});
 
   function esc(s) { return S.escapeHtml(String(s == null ? '' : s)); }
 
