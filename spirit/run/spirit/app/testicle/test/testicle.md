@@ -123,8 +123,11 @@ The box, in Andy's words where he gave them:
 - **Which kind judges which script** (goal/G47.1, box v94, 2: *"node only scripts are tested by -general AND -node general
   tests. browser only scripts are tested by -general and -browser general tests. if a script is NOT browser only AND NOT
   node only, it will be tested by all 3 categories."*): the runner never starts a `-node` general test for a browser-only
-  script, nor a `-browser` one for a node-only script; such a suite row, met by it, is marked deleted, and the script's
-  next change brings it back.
+  script, nor a `-browser` one for a node-only script, and no such row is shown (Andy: *"why do you display -sibling-node
+  suites for elements? just so they disappear when touched?"*): the moment a script is classified (`script.classify`), its
+  rows its class rules out are marked deleted and streamed, their test rows current no more; a write makes none for a
+  script whose class rules it out; at start every classified script is swept once; the runner drops one it meets. The
+  script's next change brings them back, and the class then standing decides again.
 - **The tables never stale** (goal/G47.1, box v95, 5; it replaces the server cycle's *"nothing is read at start"*): *"the
   testicle server is non-intrinsic: it is NOT always on"*, *"the server MUST do everything it can to reflect the current
   state of the tree"*. At start every `.js` of the tree it watches, every script its script table holds and every suite its

@@ -207,8 +207,11 @@ function blocked(script) { const r = T.current.get(script, CLASSIFY, CLASSIFYABL
 // WHICH KIND JUDGES WHICH SCRIPT (goal/G47.1, box v94, 2: "node only scripts are tested by -general AND -node general tests.
 // browser only scripts are tested by -general and -browser general tests. if a script is NOT browser only AND NOT node only,
 // it will be tested by all 3 categories."): a -node general test never runs for a browser-only script, a -browser one never
-// for a node-only one. Such a suite row, met by the runner, is marked deleted, so it waits for no run; the script's next
-// change brings it back, and the class then standing decides again.
+// for a node-only one, and such a suite row is never shown (Andy: "why do you display -sibling-node suites for elements?
+// just so they disappear when touched?"): the moment a script is classified its unfitting rows are marked deleted, streamed,
+// their test rows current no more (pruneUnfit); a write never makes one for a script whose class rules it out; at start
+// every classified script is swept once; the runner, meeting one, drops it too. A script's next change brings its rows
+// back, and the class then standing decides again.
 const dropRow = db.prepare('UPDATE suite SET deleted = 1, changed = ? WHERE script = ? AND suite = ? AND deleted = 0');
 function fits(script, suite) {
   const kind = (/-(?:child|sibling)-(node|browser)\.js$/.exec(path.posix.basename(suite)) || [])[1];
@@ -219,9 +222,17 @@ function fits(script, suite) {
 }
 function unfit(script, suite) {
   if (fits(script, suite)) return false;
-  if (dropRow.run(Date.now(), script, suite).changes) tell('suite', suiteServed(Q.suiteRow.get(script, suite)), 'deleted');
+  if (dropRow.run(Date.now(), script, suite).changes) {
+    tell('suite', suiteServed(Q.suiteRow.get(script, suite)), 'deleted');
+    T.ofSuite.all(script, suite).forEach(function (t) {
+      T.retire.run(t.script, t.suite, t.test, Number(t.flipped));
+      tell('testicle', testServed(T.row.get(t.script, t.suite, t.test, Number(t.flipped))), 'updated');
+    });
+  }
   return true;
 }
+// Every live suite row of one script its class rules out, dropped.
+function pruneUnfit(script) { Q.suitesOfScript.all(script).forEach(function (r) { if (!r.deleted) unfit(script, r.suite); }); }
 function chooseJob() {
   if (there(CLASSIFY)) {
     const owed = toClassify.all().filter(function (r) { return there(r.name); });
@@ -404,7 +415,8 @@ function apply(changed, P) {
   const before = function (k, get) { if (!(k in had)) had[k] = !!get(); };
   const touched = function (file, suite) { before('suite|' + file + '|' + suite, function () { return Q.suiteRow.get(file, suite); }); written.set(file + '|' + suite, [file, suite]); };
   const fileUp = function (file) { before('script|' + file, function () { return Q.script.get(file); }); Q.putScript.run(file, hash(file), now); files.add(file); };
-  const suiteUp = function (file, suite) { touched(file, suite); Q.putSuite.run(file, suite, hash(suite), now); };
+  // A row its script's class rules out is never made (box v94, 2; pruneUnfit).
+  const suiteUp = function (file, suite) { if (!fits(file, suite)) return; touched(file, suite); Q.putSuite.run(file, suite, hash(suite), now); };
   // A SUITE'S OWN EVENT flags a row only when it is new, was deleted, or the suite's bytes changed: an event with the same
   // bytes (one a run's own reading can cause) never flags it again (wsl's verify: rho's row "flagged again DURING its run,
   // rho.js not touched then", so a killed suite was owed another run, forever). A script's change flags its suites always.
@@ -543,6 +555,8 @@ function treeScripts() {
   }(RUN));
   return out;
 }
+// Every script already classified, swept once: its rows that its class rules out leave the tables (pruneUnfit).
+db.prepare('SELECT name FROM script WHERE deleted = 0 AND reClassify = 0 AND (browserOnly = 1 OR nodeOnly = 1)').all().forEach(function (r) { pruneUnfit(r.name); });
 (function startScan() {
   const names = new Set(treeScripts());
   db.prepare('SELECT name FROM script WHERE deleted = 0').all().forEach(function (r) { names.add(r.name); });
@@ -629,6 +643,9 @@ appServer.serve({
       setClass.run(a.browserOnly === true ? 1 : 0, a.nodeOnly === true ? 1 : 0, stale ? 1 : 0, Date.now(), name);
       const now = served(Q.script.get(name));
       tell('script', now, 'updated');
+      // Classified: the rows its class rules out leave at once, never shown (Andy: "why do you display -sibling-node suites
+      // for elements?").
+      pruneUnfit(name);
       return now;
     },
   },
