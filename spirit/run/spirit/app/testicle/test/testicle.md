@@ -123,12 +123,14 @@ The box, in Andy's words where he gave them:
   - Andy: *"scriptClassify NEVER runs as a normal, general TEST."*, *"ANYTIME A FUCKING FILE IS CHANGED, NO MORE TEST
     ACTIVITY TAKES PLACE, any suite running is waited for, and then AND THE FUCKING scriptClassify runs on ALL
     unclassified scripts IMMEDIATELY."*, *"THIS FUCKING HAPPENS ANDY-FUCKING-TIME a script or the Classifier changes."*:
-    the classifier has no suite row, so it is never listed, flagged, pressed or run as a suite; its result is the
-    `classifyable` test row alone; a table made before loses its classifier suite rows at start, each streamed deleted. A
-    `run` of it for a script owes that script a class, and the runner classifies it next. In interactive mode as in auto, a
-    change owes a class and the runner takes the classifier next, after the suite running.
-  - the classifier itself changed (its bytes not those its `classifyable` rows were judged with, their suiteHash), at a
-    change or at start: every such script has reClassify set again, so no class and no red of an older classifier stands.
+    the runner never runs the classifier as a suite; in interactive mode as in auto, a change owes a class and the runner
+    takes the classifier next, after the suite running. Its row in the script tab stays (Andy: *"I LIKE SEING THAT TEST
+    FUCKING LISTED IN THE SCRIPT TAG AND SEEING IT GREEN"*): made or given the classifier's bytes when a result of it
+    comes, judged green or still red from it; a `run` of it for a script (its 🏃‍♂️) owes that script a class, and the
+    runner classifies it next.
+  - the classifier itself changed (its bytes not those its `classifyable` rows were judged with, their suiteHash, or not
+    those its script-tab row holds), at a change or at start: every such script has reClassify set again and its row
+    flagged with the bytes as they are, so no class and no red of an older classifier stands.
   - the runner writes in testicle.err when it starts classifying (with the mode), and while scripts are owed a class, each
     time it waits and why, a reason once until it changes; a failed write of a moment is written there too.
 - **Which kind judges which script** (goal/G47.1, box v94, 2: *"node only scripts are tested by -general AND -node general

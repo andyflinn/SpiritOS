@@ -353,6 +353,16 @@ function jobEnded(j) {
 // the ones it started with is classified now. One it reported nothing for (the run crashed, hung, or found no Chrome) is
 // failed "classifyable" here, tagged with the run's hashes; then its reClassify is cleared, so it waits for its next change.
 // A script changed during the run keeps reClassify, and the next run takes it.
+// THE CLASSIFIER'S ROW IN THE SCRIPT TAB (Andy: "I LIKE SEING THAT TEST FUCKING LISTED IN THE SCRIPT TAG AND SEEING IT
+// GREEN"): made, brought back, or given the classifier's bytes as they are, when a result of it comes; judged from that
+// result (suiteJudged), so it shows green or still red. The runner never runs it as a suite (chooseJob); a press of it asks
+// a class for that script (run).
+function classifierRow(script, suiteHash) {
+  const was = Q.suiteRow.get(script, CLASSIFY);
+  if (was && !was.deleted && was.hash === suiteHash) return;
+  Q.putSuite.run(script, CLASSIFY, suiteHash, Date.now());
+  tell('suite', suiteServed(Q.suiteRow.get(script, CLASSIFY)), was && !was.deleted ? 'updated' : 'added');
+}
 function classifyEnded(j) {
   const now = Date.now();
   j.scripts.forEach(function (name) {
@@ -360,7 +370,9 @@ function classifyEnded(j) {
     if (!sr || sr.deleted || sr.hash !== j.hashes[name]) return;
     const row = T.current.get(name, CLASSIFY, CLASSIFYABLE);
     if (!row || Number(row.tested) < j.started || row.judged !== j.hashes[name]) {
+      classifierRow(name, j.suiteHash);
       setResult(name, CLASSIFY, CLASSIFYABLE, false, CLASSIFY_SEVERITY, j.hashes[name], j.suiteHash);
+      suiteJudged(name, CLASSIFY);
     }
     if (classified.run(now, name, j.hashes[name]).changes) tell('script', served(Q.script.get(name)), 'updated');
   });
@@ -449,16 +461,22 @@ function apply(changed, P) {
           return;
         }
         // THE CLASSIFIER CHANGED (goal/G47.1; Andy: "THIS FUCKING HAPPENS ANDY-FUCKING-TIME a script or the Classifier
-        // changes."): every script whose classifyable row was judged by other bytes of it is classified again, so a class
-        // or a red from an older classifier never stands. The classifier has no suite row (Andy: "scriptClassify NEVER runs
-        // as a normal, general TEST"): what it judged with is the suiteHash its classifyable rows carry. Unchanged, nothing
-        // moves, at start too.
+        // changes."): every script whose classifyable row was judged by other bytes of it (the suiteHash it carries), or
+        // whose classifier row in the script tab holds other bytes, is classified again, its row there flagged with the
+        // bytes as they are now; so a class or a red from an older classifier never stands. Unchanged, nothing moves, at
+        // start too. That row is shown (Andy: "I LIKE SEING THAT TEST FUCKING LISTED IN THE SCRIPT TAG AND SEEING IT
+        // GREEN"), never run as a suite (chooseJob, run).
         if (rel === CLASSIFY) {
-          classifiedBy.all(rel, hash(rel)).forEach(function (r) {
-            before('script|' + r.script, function () { return Q.script.get(r.script); });
-            if (reclassify.run(now, r.script).changes) files.add(r.script);
+          const stale = new Set(classifiedBy.all(rel, hash(rel)).map(function (r) { return r.script; }));
+          Q.rowsOfSuite.all(rel).forEach(function (r) { if (!r.deleted && r.hash !== hash(rel)) stale.add(r.script); });
+          stale.forEach(function (name) {
+            if (!Q.script.get(name)) return;
+            touched(name, rel);
+            Q.putSuite.run(name, rel, hash(rel), now);
+            before('script|' + name, function () { return Q.script.get(name); });
+            if (reclassify.run(now, name).changes) files.add(name);
           });
-          if (files.size) wake = true;
+          if (stale.size) wake = true;
           return;
         }
         // The files it concerns: the one it is the own test of, and every file a general test judges. (Named apart from
@@ -592,13 +610,6 @@ function treeScripts() {
   }(RUN));
   return out;
 }
-// THE CLASSIFIER'S OLD SUITE ROWS GO (Andy: "scriptClassify NEVER runs as a normal, general TEST."): a table made before
-// holds one per script, shown as a suite with a 🏃‍♂️; at start each is marked deleted and streamed, its classifyable test
-// row kept.
-Q.rowsOfSuite.all(CLASSIFY).forEach(function (r) {
-  if (r.deleted) return;
-  if (dropRow.run(Date.now(), r.script, CLASSIFY).changes) tell('suite', suiteServed(Q.suiteRow.get(r.script, CLASSIFY)), 'deleted');
-});
 // Every script already classified, swept once: its rows that its class rules out leave the tables (pruneUnfit).
 db.prepare('SELECT name FROM script WHERE deleted = 0 AND reClassify = 0 AND (browserOnly = 1 OR nodeOnly = 1)').all().forEach(function (r) { pruneUnfit(r.name); });
 (function startScan() {
@@ -789,7 +800,8 @@ appServer.serve({
         // gets it, flagged, so its status can be judged from the tests that follow.
         // The classifier gets none (Andy: "scriptClassify NEVER runs as a normal, general TEST."): its result is its
         // classifyable test row alone.
-        if (suite !== CLASSIFY && there(suite) && !Q.suiteRow.get(script, suite)) {
+        if (suite === CLASSIFY) classifierRow(script, job && job.classify ? job.suiteHash : hashOf(suite));
+        else if (there(suite) && !Q.suiteRow.get(script, suite)) {
           Q.putSuite.run(script, suite, hashOf(suite), Date.now());
           tell('suite', suiteServed(Q.suiteRow.get(script, suite)), 'added');
           // A flag written here wakes the runner as a file change does (wsl's gap: "every flagged row is owed one run").
@@ -807,7 +819,7 @@ appServer.serve({
         const isLate = !!late && late.scriptHash === scriptHash && late.suiteHash === suiteHash;
         if (late && !isLate) killed.delete(script + '|' + suite);
         const out = setResult(script, suite, name, isLate ? false : !!a.verified, severity, scriptHash, suiteHash);
-        if (suite !== CLASSIFY) suiteJudged(script, suite);
+        suiteJudged(script, suite);
         return out;
       }).finally(function () { getting -= 1; told(); });
     },
