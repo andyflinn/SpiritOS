@@ -271,11 +271,6 @@ function listRowVerb(verb, has, adding) {
       if (!adding && !there) throw refusedWhy('bad-request', p + ' is not on the list of ' + it.id);
       // The grant is kept in the walk, beside the list it describes, so the record decides the same everywhere.
       const body = { id: it.id, path: p, by: w.by, key: w.key };
-      // THE FILE LIST BRINGS UI RULES (goal/G40.13, box v22, point 7), decided at the write and kept in the record, so a
-      // replay brings the same: a file in spirit/run/shell/ brings every active auto-attach ui rule.
-      if (verb === 'item.files.add') {
-        if (/^spirit\/run\/shell\//.test(p.replace(/\\/g, '/'))) body.uiRules = autoAttachKeys('ui');
-      }
       return { change: write(verb, body).change };
     },
   };
@@ -310,9 +305,7 @@ function filesAddVerb(one) {
       if (climbs.length) throw refusedWhy('bad-request', 'a listed path may not contain a .. segment: ' + climbs.join(', '));
       const there = paths.filter(function (p) { return mine.indexOf(p) !== -1; });
       if (there.length) throw refusedWhy('bad-request', there.join(', ') + (there.length === 1 ? ' is' : ' are') + ' on the list of ' + it.id + ' already');
-      // goal/G40.13, as the one row's: a shell file's ui rules, decided at the write.
       const body = { id: it.id, paths: paths, by: w.by, key: w.key };
-      if (paths.some(function (p) { return /^spirit\/run\/shell\//.test(p.replace(/\\/g, '/')); })) body.uiRules = autoAttachKeys('ui');
       return { change: write('item.files.add', body).change, added: paths.length, more: !!cut.truncated };
     },
   };
@@ -1401,11 +1394,6 @@ function apply(s, r, b, item, goalOf) {
         if (it.go === true) { if (!Array.isArray(it.lateFiles)) it.lateFiles = []; if (it.lateFiles.indexOf(r.by + '|' + p) === -1) it.lateFiles.push(r.by + '|' + p); }
       });
       adds.forEach(function (p) { coreGrantAfter(it, r, p); });
-      // goal/G40.13: a shell file's ui rules join the attached.
-      if (Array.isArray(b.uiRules)) {
-        if (!Array.isArray(it.attached)) it.attached = [];
-        b.uiRules.forEach(function (k) { if (it.attached.indexOf(String(k)) === -1) it.attached.push(String(k)); });
-      }
       return;
     }
     case 'item.files.remove': {
@@ -1734,12 +1722,13 @@ function mayTake(s, it, phase, who) {
 // work are "the combination of the goals applicable phase rules (test/design/code) the current items applicable phase
 // rules", each once: design rules in design, test rules in red and verify, code rules in build; and "desk rules apply
 // to ALL phases....". Only rules active now.
-// The active auto-attach rules, at goal creation every type but ui; with type 'ui', the ui ones alone, which a shell file
-// on an item brings (goal/G40.13, box v22, point 7: "Auto-attach ui rules never come at goal creation: a new goal cannot
-// tell yet whether it will touch the UI").
-function autoAttachKeys(type) {
+// The active auto-attach rules at goal creation, every type but ui (goal/G40.13, box v22, point 7: "Auto-attach ui rules
+// never come at goal creation: a new goal cannot tell yet whether it will touch the UI"). A file list brings none either:
+// the shell/ files that did are gone since G43.30, and that code went (goal/G47.1, box v121: "delete the desk's dead
+// ui-rule code"); ui rules are enforced by the general tests instead (spirit/test/spirit-sibling-browser.js).
+function autoAttachKeys() {
   return newestRules.all().filter(function (r) {
-    return r.status === 'active' && r.autoAttach === true && (type === 'ui' ? r.type === 'ui' : r.type !== 'ui');
+    return r.status === 'active' && r.autoAttach === true && r.type !== 'ui';
   }).map(function (r) { return r.key; });
 }
 function phaseKind(s, it) {
