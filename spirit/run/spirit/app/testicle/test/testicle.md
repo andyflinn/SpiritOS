@@ -227,3 +227,6 @@ The box, in Andy's words where he gave them:
   zzdA's own suite loses one of its two tests, zzdB and its suite are written, zzdC and its suite removed. Turned on:
   the script table has zzdB and zzdC deleted; the suite table has zzdB's suite, zzdA's new hash, zzdC's suite deleted; the
   testicle table holds no current result of zzdC, and once zzdA's suite has run again, the test it lost is not current.
+- **The classifier changed while the node was down** (Andy: *"ON STARTUP THAT IS. IT MUST FUCKING START FUCKING
+  CLASSIFYING IN ANY MODE, RIGHT AT STARTUP, AND IT FUCKING DOES NOT!"*): `spirit/test/scriptClassify.js` changed while
+  down; after the start every live script's `classifyable` row is tested again.

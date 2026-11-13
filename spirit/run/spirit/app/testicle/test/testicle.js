@@ -1400,7 +1400,10 @@ test.run('the world: while the node is down, a script and its suite are added, o
   append(LA, '// changed while the node was down\n');
   fs.rmSync(path.join(s.run, KAS));
   fs.rmSync(path.join(s.run, Z + 'gamma.js'));
-  down = { laHash: changed.hash };
+  // The classifier itself changed while the node was down (Andy: "ON STARTUP THAT IS. IT MUST FUCKING START FUCKING
+  // CLASSIFYING IN ANY MODE, RIGHT AT STARTUP"): at the start every script is classified again.
+  append('spirit/test/scriptClassify.js', '// the classifier, changed while the node was down\n');
+  down = { laHash: changed.hash, at: Date.now() };
   return true;
 }, test.limit.quick);
 test.run('with rows flagged when the server starts, the runner runs them by itself', 0.2, async function () {
@@ -1408,6 +1411,12 @@ test.run('with rows flagged when the server starts, the runner runs them by itse
   if (!up()) return 'the scratch node did not come up again';
   const ok = await until(function () { return Promise.resolve(ends('upsilon').length > 0); }, 240000);
   return !!ok || 'upsilon after the restart: ' + short(runlog().filter(function (l) { return l.suite === 'upsilon'; }));
+}, test.limit.long);
+test.run('after the start, the classifier having changed while down, every live script is classified again, right away', 0.2, async function () {
+  if (!down) return 'nothing changed while down: the world failed';
+  let left = [];
+  const ok = await until(function () { const t = tables(DB); left = t.script.filter(function (r) { if (!no(r.deleted)) return false; const c = classifyRowAt(t, r.name); return !c || Number(c.tested) < down.at; }); return Promise.resolve(left.length === 0); }, 280000);
+  return !!ok || left.length + ' live scripts not classified again since the start: ' + short(left.slice(0, 5).map(function (r) { return r.name; }));
 }, test.limit.long);
 test.run('after the start, a script written while it was down has its row, and its own suite its suite row', 0.2, async function () {
   if (!down) return 'nothing changed while down: the world failed';
