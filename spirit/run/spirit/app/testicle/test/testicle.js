@@ -1649,6 +1649,30 @@ test.run('each has a suite row of spirit/test/scriptClassify.js', 0.2, function 
   const none = Object.keys(ZC).filter(function (k) { return !suiteRow(zc, ZC[k], SC); });
   return none.length === 0 || 'no classifier suite row: ' + short(none);
 }, test.limit.quick);
+// SHOWN ONLY WHERE THEY APPLY (Andy: "WSL, MAKE SURE SUITES DON'T SHOW UP WHEN THEY'RE NO APPLICATBLE TO A SCRIPT. NOW!!!!"):
+// read as the script tab reads them, suite.search for the script, at once after it is classified, not after a run or a
+// change. A -node general test applies to no browser-only script, a -browser one to no node-only script.
+const shownKinds = async function (name) { return items(await call(N.base, 'testicle.suite.search', { script: name, text: '' })).map(function (i) { return (/-(general|node|browser)\.js$/.exec(suiteOf(i)) || [])[1]; }).filter(Boolean); };
+test.run('at once after it is classified, a browser-only script\'s suite search shows no -node suite', 0.2, async function () {
+  if (!zc) return NONODE;
+  const k = await shownKinds(ZC.page);
+  return (k.indexOf('node') === -1 && k.indexOf('browser') !== -1) || 'zzcPage\'s suite search shows the kinds ' + short(k);
+}, test.limit.quick);
+test.run('at once after it is classified, a node-only script\'s suite search shows no -browser suite', 0.2, async function () {
+  if (!zc) return NONODE;
+  const k = await shownKinds(ZC.node);
+  return (k.indexOf('browser') === -1 && k.indexOf('node') !== -1) || 'zzcNode\'s suite search shows the kinds ' + short(k);
+}, test.limit.quick);
+test.run('and after a restart, a classified script still shows only the suites that apply', 0.2, async function () {
+  if (!zc) return NONODE;
+  await stop(N.child);
+  N = await boot(s.run); live.push(N.child);
+  if (!up()) return 'the scratch node did not come up again';
+  await sleep(3000);
+  const kp = await shownKinds(ZC.page), kn = await shownKinds(ZC.node);
+  return (kp.indexOf('node') === -1 && kn.indexOf('browser') === -1) || 'after the restart: zzcPage ' + short(kp) + ', zzcNode ' + short(kn);
+}, test.limit.long);
+
 test.run('classified first, tested after: each one\'s own suite reports only after its reClassify cleared', 0.2, async function () {
   if (!zc) return NONODE;
   await until(function () { return Promise.resolve(['node', 'both', 'exit'].every(function (k) { return currentOf(tables(DB), ZC[k], ownOf(ZC[k]), k + ' answers').length === 1; })); }, 240000);
@@ -1665,7 +1689,7 @@ test.run('a script whose classifyable row is red is tested in no other way: no s
 }, test.limit.long);
 
 // 2: which general tests concern which scripts, by the flags.
-const kinds = function (t, name) { return suiteRows(t, name).map(function (r) { return (/-(general|node|browser)\.js$/.exec(r.suite) || [])[1]; }).filter(Boolean); };
+const kinds = function (t, name) { return suiteRows(t, name).filter(function (r) { return !yes(r.deleted); }).map(function (r) { return (/-(general|node|browser)\.js$/.exec(r.suite) || [])[1]; }).filter(Boolean); };
 test.run('a node-only script is tested by -general and -node general tests, and no -browser one', 0.2, function () {
   if (!zc) return NONODE;
   const k = kinds(tables(DB), ZC.node);

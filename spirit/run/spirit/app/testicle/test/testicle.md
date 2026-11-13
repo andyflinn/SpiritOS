@@ -192,3 +192,7 @@ The box, in Andy's words where he gave them:
   is marked deleted with no current result, and the search shows none; the removed script is marked deleted.
 - Its test must try to break: a start that reads nothing; a vanished suite whose results still show; a changed hash left
   stale; a removed script still live.
+- **Only the suites that apply show** (Andy: *"WSL, MAKE SURE SUITES DON'T SHOW UP WHEN THEY'RE NO APPLICATBLE TO A
+  SCRIPT. NOW!!!!"*): read as the script tab reads them, `suite.search` for the script, at once after it is classified: a
+  browser-only script shows no `-node` suite, a node-only one no `-browser` suite; and the same after a restart. The kinds
+  checks read only live suite rows.
