@@ -26,6 +26,9 @@ and this file.
   while that server is on. A page refused a family's interface (*no interface for the family …*, testicle's own) ran the
   script and has loaded it: the node refused, the script did not crash.
 - No argument: every tracked product script, vendored code left out, as testicle never watches it.
+- A file in a test folder (a tool of the test system with a test of its own, `testReport.js`, `testModule.js`, or a
+  general test) is never loaded: loading a test runs it. Tests and their tools run on the node: node-only, as
+  `server.js` is.
 - *"the node side counts only a thrown error, and reads its reason"*: the child loads the script inside a try and tells
   what it caught; a process that ends with nothing caught has loaded, whatever its exit code (an app server that exits at
   once, *"no --state"*, has loaded).

@@ -27,6 +27,9 @@ const RUN = path.join(__dirname, '..', '..');
 const LOAD_MS = 3000;
 // "classify hard-codes server.js and relayServer.js as node-only": never loaded.
 const NODE_ONLY = ['spirit/server.js', 'spirit/relayServer.js'];
+// A FILE IN A TEST FOLDER IS NEVER LOADED (a tool of the test system with a test of its own, testReport.js, testModule.js,
+// or a test itself): loading a test runs it. Tests and their tools run on the node: node-only, as server.js is.
+function neverLoaded(rel) { return NODE_ONLY.indexOf(rel) !== -1 || /(^|\/)test\//.test(rel); }
 // Its own bare page, written into its scratch copy only.
 const BARE = 'zz-classify.html';
 // What a page lacks, and what the node lacks, as the error a load threw names it.
@@ -126,7 +129,7 @@ async function world() {
   // LOAD_MS): a tree's first classifying run takes seconds, not minutes, so testing is not held back by it.
   W.nodeR = Object.create(null);
   const run = path.join(W.node.root, 'spirit', 'run');
-  const todo = SCRIPTS.filter(function (rel) { return NODE_ONLY.indexOf(rel) === -1 && fs.existsSync(path.join(RUN, rel)); });
+  const todo = SCRIPTS.filter(function (rel) { return !neverLoaded(rel) && fs.existsSync(path.join(RUN, rel)); });
   let next = 0;
   await Promise.all([0, 1, 2, 3, 4, 5, 6, 7].map(async function () {
     while (next < todo.length) { const rel = todo[next++]; W.nodeR[rel] = await loadOnNode(run, rel); }
@@ -177,7 +180,7 @@ SCRIPTS.forEach(function (rel) {
     // "its severity is 0.8": the classifier failing in itself (a throw, no scratch node) fails the script at 0.8 too, as
     // a failure said, never as the reporter's crash at 0.7.
     try {
-      if (NODE_ONLY.indexOf(rel) !== -1) k = { browserOnly: false, nodeOnly: true };
+      if (neverLoaded(rel)) k = { browserOnly: false, nodeOnly: true };
       else if (!fs.existsSync(path.join(RUN, rel))) why = 'it is not there';
       else {
         const w = await world();
