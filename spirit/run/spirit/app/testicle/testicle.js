@@ -203,6 +203,7 @@ function classifyLimit(n) { return JOB_LIMIT_MS + n * 8000; }
 const toClassify = db.prepare('SELECT name, hash FROM script WHERE reClassify = 1 AND deleted = 0 ORDER BY name');
 const setClass = db.prepare('UPDATE script SET browserOnly = ?, nodeOnly = ?, reClassify = ?, changed = ? WHERE name = ?');
 const classified = db.prepare('UPDATE script SET reClassify = 0, changed = ? WHERE name = ? AND hash = ? AND reClassify = 1');
+const reclassify = db.prepare('UPDATE script SET reClassify = 1, changed = ? WHERE name = ? AND deleted = 0');
 function blocked(script) { const r = T.current.get(script, CLASSIFY, CLASSIFYABLE); return !!r && !r.verified; }
 // WHICH KIND JUDGES WHICH SCRIPT (goal/G47.1, box v94, 2: "node only scripts are tested by -general AND -node general tests.
 // browser only scripts are tested by -general and -browser general tests. if a script is NOT browser only AND NOT node only,
@@ -426,6 +427,18 @@ function apply(changed, P) {
     changed.forEach(function (rel) {
       if (isSuite(rel)) {
         if (!there(rel)) { Q.rowsOfSuite.all(rel).forEach(function (r) { touched(r.script, r.suite); }); Q.goneRowsOfSuite.run(now, rel); return; }
+        // THE CLASSIFIER CHANGED (goal/G47.1; Andy, of a script left red by a classifier since fixed: "cw?"): every script it
+        // judged with other bytes is classified again, its classifier row flagged with the bytes as they are now, so a class
+        // or a red from an older classifier never stands. Unchanged, nothing moves, at start too.
+        if (rel === CLASSIFY) {
+          Q.rowsOfSuite.all(rel).filter(function (r) { return !r.deleted && r.hash !== hash(rel); }).forEach(function (r) {
+            touched(r.script, rel);
+            Q.putSuite.run(r.script, rel, hash(rel), now);
+            before('script|' + r.script, function () { return Q.script.get(r.script); });
+            if (reclassify.run(now, r.script).changes) files.add(r.script);
+          });
+          return;
+        }
         // The files it concerns: the one it is the own test of, and every file a general test judges.
         const files = (P.bySuite[rel] || []).slice();
         const own = fileOfOwnTest(rel);

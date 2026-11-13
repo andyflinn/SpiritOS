@@ -48,6 +48,8 @@ and this file.
 - When a classifying run ends, every script of it whose bytes have not changed since it started has its reClassify
   cleared; one it reported nothing for is failed `classifyable` there, at 0.8. A script changed during the run keeps
   reClassify, and the next run takes it.
+- This file changed: every script it judged with its older bytes is classified again, so no class and no red of an older
+  classifier stands.
 
 ## What its test must try to break
 

@@ -120,6 +120,9 @@ The box, in Andy's words where he gave them:
   - a classifying run ended: each script of it unchanged since it started has its reClassify cleared; one it reported
     nothing for is failed `classifyable` at 0.8, its suite row made and judged; one changed meanwhile keeps reClassify, and
     *"another classifying run will start"*.
+  - the classifier itself changed (its bytes no longer those its rows carry), at a change or at start: every script it
+    judged with other bytes has reClassify set again and its classifier row flagged, so no class and no red of an older
+    classifier stands.
 - **Which kind judges which script** (goal/G47.1, box v94, 2: *"node only scripts are tested by -general AND -node general
   tests. browser only scripts are tested by -general and -browser general tests. if a script is NOT browser only AND NOT
   node only, it will be tested by all 3 categories."*): the runner never starts a `-node` general test for a browser-only
