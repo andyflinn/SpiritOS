@@ -179,3 +179,13 @@ The box, in Andy's words where he gave them:
 - Its test must try to break: a script left unclassified; the flags taken from the code instead of the loads; an exit read
   as a crash; a hang that never counts; a broken script still tested; a suite run before its script was classified; a
   general test of the wrong kind judging a script.
+
+## Box v95, 5: the tables are never stale
+
+- At start (it replaces "nothing is read at start"): every product script on disc has a live row; a planted script's own
+  suite has its suite row; the older row of a script no longer on disc is marked deleted.
+- While the node is down a script and its own test are written, a script changed, a suite and a script removed. After the
+  start: the new script has its row and its suite its suite row; the changed script holds its new hash; the removed suite
+  is marked deleted with no current result, and the search shows none; the removed script is marked deleted.
+- Its test must try to break: a start that reads nothing; a vanished suite whose results still show; a changed hash left
+  stale; a removed script still live.

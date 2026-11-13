@@ -314,16 +314,27 @@ test.run('the old verb testicle.test.set is no longer served', 0.2, async functi
   return (!!r.body && r.body.code === 'no-such-verb') || 'testicle.test.set answered ' + r.status + ' ' + short(r.text);
 }, test.limit.quick);
 
-// the box: "nothing is read at start"
-test.run('at start the script table holds no row beyond those kept', 0.2, function () {
+// goal/G47.1, box v95, 5: "the server on start, before even classifying, must make sure that script, suite and testicle
+// tables reflect the current state" (it replaces "nothing is read at start"). Read once the start has done its work.
+const VENDORED = require(path.join(RUN, 'spirit', 'fileSystem.js')).VENDORED_FOLDERS;
+test.run('at start every product script on disc has its row in script', 0.2, async function () {
   if (!start) return NONODE;
-  const fresh = start.script.filter(function (r) { return r.name !== OLD.name; });
-  return (!start.error && fresh.length === 0) || 'rows at start: ' + short(start.error || fresh.slice(0, 5));
+  // The scratch tree holds no git of its own: its files are the repo's list, as scratch() copied them, plus the planted.
+  const want = execSync('git ls-files -- spirit/run/spirit', { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').map(function (f) { return f.replace(/^spirit\/run\//, ''); })
+    .filter(function (f) { return /\.js$/.test(f) && !/(^|\/)test\//.test(f) && !VENDORED.holds(f) && fs.existsSync(path.join(s.run, f)); }).concat(Object.keys(PLANT).filter(function (f) { return !/(^|\/)test\//.test(f) && /\.js$/.test(f); }));
+  let missing = [];
+  await until(function () { const t = tables(DB); missing = want.filter(function (f) { const r = scriptRow(t, f); return !r || !no(r.deleted); }); return Promise.resolve(missing.length === 0); }, 120000);
+  return missing.length === 0 || missing.length + ' of ' + want.length + ' on disc have no live row: ' + short(missing.slice(0, 8));
+}, test.limit.long);
+test.run('at start a planted script\'s own suite has its suite row', 0.2, function () {
+  if (!start) return NONODE;
+  const r = suiteRow(tables(DB), Z + 'zeta.js', Z + 'test/zeta.js');
+  return (!!r && no(r.deleted)) || 'zeta\'s own suite row: ' + short(r);
 }, test.limit.quick);
-test.run('at start the suite table holds no row beyond those kept', 0.2, function () {
+test.run('at start the older row of a script no longer on disc is marked deleted', 0.2, function () {
   if (!start) return NONODE;
-  const freshSuites = start.suite.filter(function (r) { return r.script !== OLD.name; });
-  return (!start.error && freshSuites.length === 0) || 'rows at start: ' + short(start.error || freshSuites.slice(0, 5));
+  const r = scriptRow(tables(DB), OLD.name);
+  return (!!r && yes(r.deleted)) || 'the older row: ' + short(r);
 }, test.limit.quick);
 
 // ── goal/G47.1, box v79, 3: three fields on the script table ──
@@ -1353,12 +1364,58 @@ test.run('the world: upsilon.js is flagged, and the node stops before upsilon\'s
   await stop(N.child);
   return (!!ok && !starts('upsilon').length) || 'upsilon flagged ' + !!ok + ', its suite already started ' + starts('upsilon').length;
 }, test.limit.slow);
+// goal/G47.1, box v95, 5: the server is not always on, and its tables must not be stale for it. While the node is down: a
+// new script and its own test written, a script changed, a suite removed, a script removed.
+const NEWS = Z + 'zzsNew.js', NEWSS = Z + 'test/zzsNew.js';
+let down = null;
+test.run('the world: while the node is down, a script and its suite are added, one changed, a suite and a script removed', 0.2, function () {
+  if (!N || !N.child || N.child.exitCode === null) return 'the node is not down: the world failed';
+  const t = tables(DB);
+  const changed = scriptRow(t, LA), goneSuite = suiteRow(t, KA, KAS), goneScript = scriptRow(t, Z + 'gamma.js');
+  if (!changed || !goneSuite || !goneScript) return 'rows missing before: lambda ' + !!changed + ', kappa\'s own suite ' + !!goneSuite + ', gamma ' + !!goneScript;
+  put(NEWSS, SUITE_HEAD + "test.run('zzsNew answers', 0.2, function () { return true; }, test.limit.quick);\n");
+  put(NEWS, '\'use strict\';\n// written while the node was down\n');
+  append(LA, '// changed while the node was down\n');
+  fs.rmSync(path.join(s.run, KAS));
+  fs.rmSync(path.join(s.run, Z + 'gamma.js'));
+  down = { laHash: changed.hash };
+  return true;
+}, test.limit.quick);
 test.run('with rows flagged when the server starts, the runner runs them by itself', 0.2, async function () {
   N = await boot(s.run); live.push(N.child);
   if (!up()) return 'the scratch node did not come up again';
   const ok = await until(function () { return Promise.resolve(ends('upsilon').length > 0); }, 240000);
   return !!ok || 'upsilon after the restart: ' + short(runlog().filter(function (l) { return l.suite === 'upsilon'; }));
 }, test.limit.long);
+test.run('after the start, a script written while it was down has its row, and its own suite its suite row', 0.2, async function () {
+  if (!down) return 'nothing changed while down: the world failed';
+  const ok = await until(function () { const t = tables(DB); return Promise.resolve(!!scriptRow(t, NEWS) && !!suiteRow(t, NEWS, NEWSS)); }, 60000);
+  const t = tables(DB);
+  return !!ok || 'zzsNew: ' + short(scriptRow(t, NEWS)) + ', its suite ' + short(suiteRow(t, NEWS, NEWSS));
+}, test.limit.long);
+test.run('after the start, a script changed while it was down holds its new hash', 0.2, function () {
+  if (!down) return 'nothing changed while down: the world failed';
+  const r = scriptRow(tables(DB), LA);
+  return (!!r && r.hash !== down.laHash) || 'lambda: ' + short(r) + ', its hash before ' + short(down.laHash);
+}, test.limit.quick);
+test.run('after the start, a suite removed while it was down is marked deleted, and none of its results is current', 0.2, function () {
+  if (!down) return 'nothing changed while down: the world failed';
+  const t = tables(DB);
+  const r = suiteRow(t, KA, KAS);
+  const cur = (t.test || []).filter(function (x) { return x.script === KA && x.suite === KAS && yes(x.current); });
+  return (!!r && yes(r.deleted) && cur.length === 0) || 'kappa\'s own suite row ' + short(r) + ', its current results ' + cur.length;
+}, test.limit.quick);
+test.run('and the search shows its results no more', 0.2, async function () {
+  if (!down) return 'nothing changed while down: the world failed';
+  const r = await call(N.base, 'testicle.search', { script: KA, suite: KAS, text: '' });
+  const rows = found(r);
+  return (r.status === 200 && rows.length === 0) || 'testicle.search of kappa\'s own suite: ' + short(rows.slice(0, 3));
+}, test.limit.quick);
+test.run('after the start, a script removed while it was down is marked deleted', 0.2, function () {
+  if (!down) return 'nothing changed while down: the world failed';
+  const r = scriptRow(tables(DB), Z + 'gamma.js');
+  return (!!r && yes(r.deleted)) || 'gamma: ' + short(r);
+}, test.limit.quick);
 
 // A job past 2 minutes: rho reports its first test, then hangs; sigma hangs before any test.
 test.run('the world: rho.js and sigma.js change', 0.2, async function () {
