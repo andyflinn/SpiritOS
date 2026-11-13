@@ -432,8 +432,11 @@ function moduleRules(full) {
   const isSpirit = path.resolve(full) === path.join(RUN, 'spirit', 'spirit.js');
   const first = requires[0];
   const page = !isSpirit && /\bwindow\b/.test(code) && !/\bmodule\.exports\b/.test(code);
+  // AN api.js IS EXEMPT from the global early (Andy, 2026-11-13, goal/G47.1 box v72: "wsl, exempt the 20 api.js files
+  // from the require spirit.js rule, NOW."): a branch's interface, declared, requiring nothing.
+  const api = !isSpirit && path.basename(full) === 'api.js';
   let early = '';
-  if (page) early = '';
+  if (page || api) early = '';
   else if (isSpirit) {
     const sets = code.search(/\broot\.spirit\s*=|\bglobalThis\.spirit\s*=|\bglobal\.spirit\s*=/);
     if (sets === -1 || (first && sets > first.at)) early = 'it sets the global spirit ' + (sets === -1 ? 'nowhere' : 'only after its first require, ' + JSON.stringify(first.path));
@@ -447,7 +450,7 @@ function moduleRules(full) {
     if (/^\.\//.test(p)) { const rest = p.slice(2); return rest.indexOf('/') !== -1 && rest.indexOf(own + '/') !== 0; }
     return true;
   }).map(function (r) { return r.path; });
-  return { early: early, page: page, spirit: isSpirit, bad: bad };
+  return { early: early, page: page, api: api, spirit: isSpirit, bad: bad };
 }
 function productScripts() {
   return require('child_process').execFileSync('git', ['ls-files'], { cwd: RUN, encoding: 'utf8' }).split('\n')
@@ -931,6 +934,7 @@ function oneFile(P) {
   const mr = moduleRules(full);
   if (mr.page) test.run('it is page code: node never loads it', 0.4, function () { return moduleRules(full).page || 'it is no longer page code'; }, test.limit.quick);
   else if (mr.spirit) test.run('it sets the global spirit before its first require', 0.4, function () { return !moduleRules(full).early || moduleRules(full).early; }, test.limit.quick);
+  else if (mr.api) test.run('it is an api.js: exempt from requiring spirit.js first', 0.4, function () { return moduleRules(full).api || 'it is no longer an api.js'; }, test.limit.quick);
   else test.run('it requires spirit.js first', 0.4, function () { return !moduleRules(full).early || moduleRules(full).early; }, test.limit.quick);
   // <address>: every require path is a child, a sibling or an ancestor's file
   test.run('none of its require paths breaks the rule', 0.4, function () {

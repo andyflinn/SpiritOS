@@ -103,6 +103,8 @@ box is its own check, named by the element's path and the box's id chain."*
   object early in the code, it must follow the require-path restrictions we discussed."*
   - **The global early**: a module's first require is `spirit.js`; one that requires nothing is red. `spirit.js` sets
     the global before its first require. Page code (no `module.exports`, speaks to `window`) is never loaded by node.
+    A file named `api.js` is exempt (Andy, 2026-11-13, G47.1 box v72: *"wsl, exempt the 20 api.js files from the
+    require spirit.js rule, NOW."*).
   - **The require rule** (goal/G40's box): *"a require path that starts with ../ may only add a file name, never descend
     into a subfolder of an ancestor; any other require path starts with <module>/, the module's own children. A sibling
     in the module's own folder is legal."* A package or a node built-in is not a path; a computed path cannot be read.
