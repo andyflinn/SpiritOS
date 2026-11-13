@@ -7,7 +7,8 @@ Andy: *"spirit/app/publishData/publishData will be fixed to point at the correct
 ## Requirements
 
 - Run with no argument, as Run starts it, it does not stop at its usage: the node port comes from the node that starts it (`SPIRIT_CALLBACK_URL`), and it goes on to its first step.
-- It reads deskVerify's `verify.db` where deskVerify keeps it, its state `spirit/state/deskVerify/data/` (goal/G43.27).
+- It reads testicle's `testicle.db` where testicle keeps it, its state `spirit/state/testicle/data/` (Andy: *"publish Data
+  uses testicle data."*), and no other test database.
 - `agentReadme.js` stands beside it in `spirit/app/publishData/` and loads.
 - No agent starts it: `spirit/app/deskClient/publishData.js` and `agentReadme.js` are gone, and `deskClient.js` names no publishData.
 
@@ -45,8 +46,8 @@ check's standing grant for `agents/<agent>/`.
   unanswered. `packets.json` {agent, commit, measuredAt, asks, posts, waitMs {median, max}, flight {median, max} (ms
   less wait), retried (attempts > 1), refusals (by code, else outcome)} and `packets.md`. `platform.md` is written with
   --only packets, or when the harness left none.
-- **3, the test state**: `testState.json` and `testState.md` from this checkout's deskVerify verify.db, the newest row
-  of each test, read only; no suite run.
+- **3, the test state**: `testState.json` and `testState.md` from testicle's current tests, read only; no suite run. Its
+  counts are testicle's current rows: every current test, the failed ones its reds, each named with its script and suite.
 - The README and summary.json beside them (agentReadme.write).
 - With `--only packets` or `--out` it stops there: exit 0, `written to <out>`, nothing committed, nothing posted.
 - **4, otherwise**: zero posts is published too, and said; `agents/<agent>/` alone is committed (`git commit --only`,

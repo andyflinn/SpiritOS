@@ -49,13 +49,15 @@ test.run('it goes on past its arguments, to its first step', 0.2, function () {
 let line, at, want, readme, client;
 
 // its files and folders
-// Where it looks for deskVerify's verify.db: its own line, worked out from where the script stands.
-test.run('it reads deskVerify\'s verify.db where deskVerify keeps it, its state spirit/state/deskVerify/data/', 0.2, function () {
-  line = (/const\s+VERIFY_DB\s*=\s*([^;]+);/.exec(code(FILE)) || [])[1];
+// THE TEST STATE FROM TESTICLE (Andy, the cycle that deletes the desk's verifier: "publish Data uses testicle data."): it
+// reads testicle's testicle.db where testicle keeps it, its state spirit/state/testicle/data/, worked out from its own line.
+const TESTICLE_DB = path.join(RUN, 'spirit', 'state', 'testicle', 'data', 'testicle.db');
+test.run('it reads testicle\'s testicle.db where testicle keeps it, its state spirit/state/testicle/data/', 0.2, function () {
+  const lines = code(FILE).split('\n').filter(function (l) { return /const\s+\w+\s*=\s*path\.join\(__dirname[^;]*testicle\.db/.test(l); });
+  line = (/=\s*([^;]+);/.exec(lines[0] || '') || [])[1];
   at = '';
   try { at = line ? new Function('path', '__dirname', 'return ' + line)(path, HERE) : ''; } catch (e) { at = 'threw ' + e.message; }
-  want = path.join(RUN, 'spirit', 'state', 'deskVerify', 'data', 'verify.db');
-  return (path.resolve(String(at)) === want) ? true : 'it reads ' + short(at) + ', want ' + want;
+  return (path.resolve(String(at)) === TESTICLE_DB && !/verify\.db/.test(code(FILE))) ? true : 'it reads ' + short(at || 'no testicle.db line') + ', want ' + TESTICLE_DB;
 }, test.limit.quick);
 test.run('agentReadme.js stands beside it and loads', 0.2, function () {
   readme = null;
@@ -278,11 +280,21 @@ test.run('platform.md names the agent, the commit and the box', 0.2, function ()
   plat = fs.existsSync(path.join(OUT, 'platform.md')) ? fs.readFileSync(path.join(OUT, 'platform.md'), 'utf8') : '';
   return (plat.indexOf('# ' + AGENT) === 0 && plat.indexOf('| agent | ' + AGENT + ' |') !== -1 && plat.indexOf('`' + WR.COMMIT + '`') !== -1 && plat.indexOf('| node | ' + process.version + ' |') !== -1) ? true : 'platform.md ' + shortRun(plat);
 }, test.limit.quick);
-test.run('testState.json: the newest row of each test in verify.db, read only, no suite run', 0.2, function () {
+test.run('testState.json: testicle\'s current tests, read only, no suite run', 0.2, function () {
   if (!WR.ready) return 'no scratch clone: the world failed';
   ts = null;
   try { ts = JSON.parse(fs.readFileSync(path.join(OUT, 'testState.json'), 'utf8')); } catch (e) { ts = null; }
-  return (ts && ts.agent === AGENT && ts.commit === WR.COMMIT && ts.tests === ts.green + ts.red && Array.isArray(ts.suites) && Array.isArray(ts.reds) && ts.reds.length === ts.red && /no suite was run/.test(ts.from)) ? true : 'testState ' + shortRun(ts) + ' said ' + shortRun(r.out);
+  return (ts && ts.agent === AGENT && ts.commit === WR.COMMIT && ts.tests === ts.green + ts.red && Array.isArray(ts.suites) && Array.isArray(ts.reds) && ts.reds.length === ts.red && /no suite was run/.test(ts.from) && /testicle/.test(ts.from) && !/verify/i.test(ts.from)) ? true : 'testState ' + shortRun(ts) + ' said ' + shortRun(r.out);
+}, test.limit.quick);
+test.run('its counts are testicle\'s current rows: every current test, the failed ones its reds, each with its script and suite', 0.2, function () {
+  if (!ts) return 'no testState.json: the test before failed';
+  if (!fs.existsSync(TESTICLE_DB)) return 'no testicle.db at ' + TESTICLE_DB + ': nothing judged';
+  const { DatabaseSync } = require('node:sqlite');
+  const db = new DatabaseSync(TESTICLE_DB, { readOnly: true });
+  let all = 0, red = 0;
+  try { db.exec('PRAGMA busy_timeout = 5000'); all = db.prepare('SELECT COUNT(*) n FROM testicle WHERE current = 1').get().n; red = db.prepare('SELECT COUNT(*) n FROM testicle WHERE current = 1 AND verified = 0').get().n; } finally { db.close(); }
+  const named = (ts.reds || []).every(function (x) { return !!x.script && !!x.suite && !!(x.test || x.title); });
+  return (ts.tests === all && ts.red === red && named) ? true : 'testState says ' + ts.tests + ' tests, ' + ts.red + ' red; testicle.db holds ' + all + ' current, ' + red + ' failed; reds named ' + named;
 }, test.limit.quick);
 test.run('testState.md: the suites\' table and the reds', 0.2, function () {
   if (!WR.ready) return 'no scratch clone: the world failed';
