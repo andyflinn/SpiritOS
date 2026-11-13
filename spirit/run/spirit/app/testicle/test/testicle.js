@@ -1865,3 +1865,31 @@ test.run('and once zzdA\'s edited suite has run again, the test it lost is no lo
   const t = tables(DB);
   return !!ok || 'zzdA\'s rows: one ' + short(currentOf(t, DA, DAS, 'zzdA answers one')) + ', two ' + short(currentOf(t, DA, DAS, 'zzdA answers two'));
 }, test.limit.long);
+
+// ── EVERY GENERAL TEST TAKES A LIST (box v94, 2: "with no script-argument, they will process all applicable scripts. else it
+// will process all scripts listed in the arguments that fit"; Andy: "general tests ALL must accept a list as an argument,
+// RIGHT?"). In the scratch tree, two scripts that each break the rules; each general test is handed both, and its answer
+// names both: the second is judged as the first is.
+const LA1 = Z + 'zzlOne.js', LA2 = Z + 'zzlTwo.js';
+const BROKEN = "// no 'use strict', a plain require before spirit.js, and a throw at load\nconst zzFs = require('fs');\nthrow new Error('zzl broken at load ' + typeof zzFs);\n";
+const generalRun = function (suite, files) {
+  try { return execFileSync(process.execPath, [suite].concat(files), { cwd: s.run, encoding: 'utf8', timeout: 600000, maxBuffer: 1 << 26, stdio: ['ignore', 'pipe', 'pipe'] }); }
+  catch (e) { return String((e && e.stdout) || '') + String((e && e.stderr) || ''); }
+};
+const namesBoth = function (out) { const fails = String(out).split('\n').filter(function (l) { return /FAILURE/.test(l); }).join('\n'); return { one: fails.indexOf('zzlOne.js') !== -1, two: fails.indexOf('zzlTwo.js') !== -1 }; };
+let listed = false;
+test.run('the world: two broken scripts written in the scratch tree', 0.2, function () {
+  if (!s) return NONODE;
+  put(LA1, BROKEN); put(LA2, BROKEN);
+  listed = true;
+  return true;
+}, test.limit.quick);
+const bothNamed = function (suite) {
+  if (!listed) return 'not written: the world failed';
+  const out = generalRun(suite, [LA1, LA2]);
+  const b = namesBoth(out);
+  return (b.one && b.two) || 'names zzlOne ' + b.one + ', zzlTwo ' + b.two + ': ' + short(out.split('\n').filter(function (l) { return /FAILURE/.test(l); }).slice(0, 3));
+};
+test.run('spirit-sibling-general.js, handed both, names both', 0.4, function () { return bothNamed('spirit/test/spirit-sibling-general.js'); }, test.limit.long);
+test.run('spirit-sibling-node.js, handed both, names both', 0.4, function () { return bothNamed('spirit/test/spirit-sibling-node.js'); }, test.limit.long);
+test.run('spirit-sibling-browser.js, handed both, names both', 0.4, function () { return bothNamed('spirit/test/spirit-sibling-browser.js'); }, test.limit.long);

@@ -236,3 +236,7 @@ The box, in Andy's words where he gave them:
 - **Interactive mid-classifying** (Andy: *"AND IT FUCKING STOPS CLASSIFYING WHEN I GO BACK TO FUCKING ITERACTIVE
   MODE!!!!!!!!!!!!!!!!!!!"*): the classifier changed, the server is switched to interactive while it classifies again;
   every one of the six is still classified, nothing pressed.
+- **Every general test takes a list** (box v94, 2: *"else it will process all scripts listed in the arguments that fit"*;
+  Andy: *"general tests ALL must accept a list as an argument, RIGHT?"*): two scripts that each break the rules are written;
+  `spirit-sibling-general.js`, `-node.js` and `-browser.js`, each handed both, name both in their failures (one fixed
+  title per check, its answer naming each script that breaks it, goal/G47.2).

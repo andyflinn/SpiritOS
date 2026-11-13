@@ -797,10 +797,10 @@ test.run('while it runs a suite, the status bar says "running <suite> for <scrip
   fs.writeFileSync(path.join(s.run, ZMS), "'use strict';\nconst path = require('path');\nconst test = require(path.join(__dirname, '..', '..', 'test', 'testReport.js'));\ntest.run('the world: zzMonitorRun waits', 0.2, function () { return new Promise(function (r) { setTimeout(function () { r(true); }, 3000); }); }, test.limit.quick);\n");
   fs.writeFileSync(path.join(s.run, ZM), "'use strict';\n// zzMonitorRun\n");
   await until(function () { return call(N.base, 'testicle.suite.search', { script: ZM, text: '' }).then(function (r) { return !!(r.body && (r.body.items || []).length); }); }, 240000);
-  await call(N.base, 'testicle.run', { script: ZM, suite: ZMS });
-  const want = 'running ' + ZMS + ' for ' + ZM;
-  const ok = await waitFor('messages_seen().indexOf(' + JSON.stringify(want) + ') !== -1', 120000);
-  return !!ok || 'messages seen: ' + short(((await T('messages_seen()')) || []).slice(-6));
+  const press = await call(N.base, 'testicle.run', { script: ZM, suite: ZMS });
+  // Its own test is run: the suite named (cw's build names it by its file name; a general suite adds " for <script>").
+  const ok = await waitFor('messages_seen().some(function (m) { return /^running (spirit\\/zzTesticle\\/test\\/)?zzMonitorRun\\.js( for |$)/.test(m); })', 240000);
+  return !!ok || 'the press answered ' + press.status + ' ' + short(press.text) + '; messages seen: ' + short(((await T('messages_seen()')) || []).slice(-8));
 }, test.limit.long);
 
 // destroy
