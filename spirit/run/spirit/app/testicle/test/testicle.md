@@ -207,3 +207,7 @@ The box, in Andy's words where he gave them:
   chi's and psi's suites flagged and unrun, the node restarts, interactive kept; chi, changed while it was down, is
   classified with no press; psi, changed after the start, within 30 s, no press. And while interactive before the restart,
   chi written is classified with no press, its classifier suite row no longer flagged.
+- **A start on tables of an older classifier** (cw: *"a red that starts on tables like these (classifier rows of an older
+  classifier), please; empty tables hid it"*): the older testicle.db holds a red `classifyable` row an older classifier
+  left for omega.js, and a suite still waiting. At the start, interactive and nothing pressed, every live script is
+  classified, and omega's `classifyable` row is tested at this start.

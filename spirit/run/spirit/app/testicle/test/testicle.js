@@ -95,6 +95,11 @@ const PLANT = {
   // rho answers its first test, then hangs; sigma hangs before any test reports.
   'spirit/zzTesticle/rho.js': '\'use strict\';\n// rho\n',
   'spirit/zzTesticle/test/rho.js': LOGGED('rho', 0, ["test.run('rho answers its first', 0.2, function () { return true; }, test.limit.quick);", "test.run('rho hangs', 0.2, function () { return new Promise(function () { setInterval(function () {}, 1000); }); }, test.limit.long);"]),
+  // omega: an older classifier left it a red classifyable row in the older testicle.db (cw, after Andy's node classified
+  // nothing at its start: "a red that starts on tables like these (classifier rows of an older classifier), please; empty
+  // tables hid it").
+  'spirit/zzTesticle/omega.js': '\'use strict\';\n// omega\n',
+  'spirit/zzTesticle/test/omega.js': '\'use strict\';\n// the test of omega\n',
   'spirit/zzTesticle/sigma.js': '\'use strict\';\n// sigma\n',
   'spirit/zzTesticle/test/sigma.js': SUITE_HEAD + "setInterval(function () {}, 1000);\ntest.run('the world: sigma never gets here', 0.2, function () { return new Promise(function () {}); }, test.limit.long);\n",
   'spirit/zzTesticle/phi.js': '\'use strict\';\n// phi, its suite never run\n',
@@ -130,6 +135,9 @@ function scratch() {
   old.exec('CREATE TABLE suite (file TEXT NOT NULL, suite TEXT NOT NULL, test INTEGER NOT NULL DEFAULT 0, deleted INTEGER NOT NULL DEFAULT 0, hash TEXT NOT NULL DEFAULT \'\', outcome TEXT NOT NULL DEFAULT \'\', changed INTEGER NOT NULL, PRIMARY KEY (file, suite))');
   old.prepare('INSERT INTO file (name, hash, deleted, changed) VALUES (?, ?, 0, ?)').run(OLD.name, OLD.hash, OLD.changed);
   old.prepare('INSERT INTO suite (file, suite, test, deleted, hash, outcome, changed) VALUES (?, ?, 1, 0, ?, \'\', ?)').run(OLD.name, OLD.suite, OLD.hash, OLD.changed);
+  // A TESTICLE TABLE OF AN OLDER CLASSIFIER: omega.js judged not classifyable by it, a row the start finds there.
+  old.exec('CREATE TABLE testicle (script TEXT NOT NULL, suite TEXT NOT NULL, test TEXT NOT NULL, flipped INTEGER NOT NULL, current INTEGER NOT NULL DEFAULT 1, verified INTEGER NOT NULL, tested INTEGER NOT NULL, judged TEXT NOT NULL DEFAULT \'\', severity REAL NOT NULL DEFAULT 0, PRIMARY KEY (script, suite, test, flipped))');
+  old.prepare('INSERT INTO testicle (script, suite, test, flipped, current, verified, tested, judged, severity) VALUES (?, ?, ?, ?, 1, 0, ?, ?, 0.8)').run('spirit/zzTesticle/omega.js', 'spirit/test/scriptClassify.js', 'classifyable', OLD.changed, OLD.changed, 'an older classifier\'s hash');
   old.close();
   return { root: root, run: run };
 }
@@ -358,6 +366,7 @@ test.run('the older row is kept, its hash as it was, when its table gained them'
 // ── goal/G47.1, box v79, 4: the verb preferences ──
 // "preferences {} answers them all; preferences {interactive: false} sets that one and answers them all. An unknown name
 // or a wrong type is refused." "For now it supports testicle.preferences.interactive (true by default)."
+const classifyRowAt = function (t, name) { return (t.test || []).filter(function (r) { return r.script === name && r.suite === 'spirit/test/scriptClassify.js' && r.test === 'classifyable' && yes(r.current); })[0] || null; };
 const PREFS = function () { return path.join(s.run, 'spirit', 'state', 'testicle', 'data', 'preferences.json'); };
 const prefsOf = function (r) { const b = r && r.body; return (b && typeof b.preferences === 'object' && b.preferences) || b || {}; };
 let p0 = null;
@@ -383,6 +392,21 @@ test.run('interactive given a wrong type is refused, and sets nothing', 0.2, asy
   const r = await call(N.base, 'testicle.preferences', { interactive: 'no' });
   const after1 = await call(N.base, 'testicle.preferences', {});
   return ((r.status !== 200 || (r.body && r.body.ok === false)) && prefsOf(after1).interactive === true) || 'interactive "no": ' + r.status + ' ' + short(r.text) + '; then ' + short(after1.text);
+}, test.limit.quick);
+
+// A START ON TABLES OF AN OLDER CLASSIFIER, INTERACTIVE, NOTHING PRESSED (Andy: "wsl, make double sure you catch this with a
+// test."): the start brings the tables up to date and classifies every script by itself; omega.js, left red by an older
+// classifier, is tried again.
+test.run('at a start on tables of an older classifier, interactive and nothing pressed, every live script is classified', 0.2, async function () {
+  if (!start) return NONODE;
+  let left = [];
+  const ok = await until(function () { const t = tables(DB); left = t.script.filter(function (r) { return no(r.deleted) && !no(r.reClassify); }); return Promise.resolve(t.script.length > 100 && left.length === 0); }, 280000);
+  return !!ok || left.length + ' live scripts still to classify, nothing pressed: ' + short(left.slice(0, 5).map(function (r) { return r.name; }));
+}, test.limit.long);
+test.run('and the script an older classifier left red is tried again: its classifyable row tested at this start', 0.2, function () {
+  if (!start) return NONODE;
+  const r = classifyRowAt(tables(DB), Z + 'omega.js');
+  return (!!r && Number(r.tested) > 1700000000000) || 'omega\'s classifyable row: ' + short(r);
 }, test.limit.quick);
 
 // The checks that follow judge the server as it ran until now, auto (goal/G47.1, box v79, 2: "auto: the default mode until
