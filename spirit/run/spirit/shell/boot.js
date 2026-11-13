@@ -25,6 +25,10 @@
   var desktop = document.getElementById('desktop');
   var offline = document.getElementById('app-offline');
   var banner = document.getElementById('face-banner');
+  // WITHOUT ITS PAGE, NOTHING (goal/G47.1, cleaning house, wsl's judgement of -browser's "nothing it runs throws": "a page
+  // script must not crash where its parts are missing"): boot is face.html's, and a page without its area and its banner
+  // gets no stream, no shell and no throw.
+  if (!desktop || !banner) return;
   // WHERE THE PAGE STANDS, AS spirit.js FOUND IT (goal/G43.18, box v29: the login is spirit.login, the link spirit.link).
   var state = window.spirit.face || { home: true, loggedIn: true };
   var link = { up: null, loaded: false };   // up: null until first known; the keys are spirit.link's
