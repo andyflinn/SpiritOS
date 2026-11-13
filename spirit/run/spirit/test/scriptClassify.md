@@ -9,16 +9,23 @@ and this file.
 ## Requirements
 
 - Andy: *"the script MUST be classified by loading it."* Each script given (none given: every tracked product script of
-  `spirit/run/`) is loaded twice: once as a node script, in a process of its own, and once in a page, a fresh face page of
+  `spirit/run/`) is loaded twice: once as a node script, in a process of its own (eight at a time), and once in a page, a
+  fresh bare page for each script (spirit.js alone, served by its scratch node from a test folder of the copy at
+  /DEBUG/<path>; plain scripts share a page's top-level scope, so one page for all would let one break the next), of
   its own scratch node (*"it ... runs where all tests run, in its own scratch node (booted once per run)"*), in headless
   Chrome. That node runs on a copy of the tree as it stands, every file under spirit/run but the state folders and
   .git: a script not yet committed is classified too, and a test's scratch tree, with no git, classifies as well.
 - The class from the two answers:
   - a crash on the node for lack of a browser function (`window`, `document`, ...), none in the page: browser-only;
-  - a crash in the page for lack of a node function (`require`, `process`, `module`, `fs`, ...), none on the node:
-    node-only;
+  - a crash in the page for lack of a node function (`require`, `process`, `module`, `fs`, ...), or a script the node
+    will not serve to a page at all (it answers 404), none on the node: node-only;
   - no crash in either: it runs on both, neither flag;
   - anything else, a crash in both among it: not classifyable.
+- Its scratch node has every app's server on (an app whose `<name>.json` mounts on the node), testicle's left off (it would
+  classify again inside this one): an app's `data.js` asks its family's interface on a page, which a node answers only
+  while that server is on. A page refused a family's interface (*no interface for the family …*, testicle's own) ran the
+  script and has loaded it: the node refused, the script did not crash.
+- No argument: every tracked product script, vendored code left out, as testicle never watches it.
 - *"the node side counts only a thrown error, and reads its reason"*: the child loads the script inside a try and tells
   what it caught; a process that ends with nothing caught has loaded, whatever its exit code (an app server that exits at
   once, *"no --state"*, has loaded).

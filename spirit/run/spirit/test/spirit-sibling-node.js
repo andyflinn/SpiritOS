@@ -76,12 +76,16 @@ function requireOnNode(run, rel) {
     let out = '';
     kid.stdout.on('data', function (d) { out += d; });
     kid.stderr.on('data', function (d) { out += d; });
-    const t = setTimeout(function () { kid.kill('SIGKILL'); }, 20000);
+    let hung = false;
+    const t = setTimeout(function () { hung = true; kid.kill('SIGKILL'); }, 20000);
     kid.on('close', function () {
       clearTimeout(t);
       const m = /\n@@(.*)\n/.exec(out);
       let r = null; try { r = m ? JSON.parse(m[1]) : null; } catch (e) { r = null; }
-      resolve(r || { err: 'it did not finish loading', promise: false, placed: false });
+      // A PROGRAM (goal/G47.1, box v95, 1: "A process that ends with nothing caught has loaded, whatever its exit code (an app
+      // server that exits at once, \"no --state\", has loaded)"): it ended the process before saying where it stands,
+      // nothing thrown; loaded, its place not judged. Still running at the limit: a hang.
+      resolve(r || (hung ? { err: 'it did not finish loading', promise: false, placed: false } : { err: '', program: true, promise: false, placed: false }));
     });
   });
 }
@@ -105,7 +109,7 @@ if (!GIVEN.length) {
     E.nodeLoaded = []; E.nodeBad = [];
     for (const f of E.req) {
       const r = await requireOnNode(E.run, f);
-      if (r.err) continue;
+      if (r.err || r.program) continue;
       E.nodeLoaded.push(f);
       if (r.promise) E.nodeBad.push(f + ': spirit.require answered a promise, not the module at once');
       else if (!r.placed) E.nodeBad.push(f + ': nothing stands at spirit.required.' + placeKeys(f).join('.'));
@@ -123,6 +127,7 @@ if (!GIVEN.length) {
     if (!fs.existsSync(path.join(RUN, rel))) return rel + ' is not there';
     const r = await requireOnNode(E.run, rel);
     if (r.err) return 'it does not load on the node: ' + short(r.err);
+    if (r.program) { test.comment(rel + ' ends its process when loaded, nothing thrown: a program, loaded; its place is not judged'); return true; }
     if (r.promise) return 'spirit.require answered a promise, not the module at once';
     return r.placed || 'nothing stands at spirit.required.' + placeKeys(rel).join('.');
   }, test.limit.slow);

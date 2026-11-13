@@ -28,14 +28,19 @@ const LOAD_MS = 3000;
 const SEVERITY = 0.8;
 // "classify hard-codes server.js and relayServer.js as node-only": never loaded.
 const NODE_ONLY = ['spirit/server.js', 'spirit/relayServer.js'];
+// Its own bare page, written into its scratch copy only.
+const BARE = 'zz-classify.html';
 // What a page lacks, and what the node lacks, as the error a load threw names it.
-const LACKS_NODE = /\b(require|process|module|exports|__dirname|__filename|Buffer|global) is not defined\b|Cannot find module|\bfs\b.*not defined/;
+// A script the node will not serve to a page (answered 404 though it is on disc) is one a page cannot have at all.
+const LACKS_NODE = /answered 404|\b(require|process|module|exports|__dirname|__filename|Buffer|global) is not defined\b|Cannot find module|\bfs\b.*not defined/;
 const LACKS_BROWSER = /\b(window|document|navigator|location|localStorage|sessionStorage|HTMLElement|customElements|getComputedStyle) is not defined\b/;
 
 function posix(p) { return String(p).split(path.sep).join('/'); }
+// Every product script, vendored code left out, as testicle leaves it out (it never watches it).
+const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fileSystem.js')).VENDORED_FOLDERS;
 function productScripts() {
   return execFileSync('git', ['ls-files'], { cwd: RUN, encoding: 'utf8' }).split('\n')
-    .filter(function (f) { return /^spirit\/.+\.js$/.test(f) && !/(^|\/)test\//.test(f) && fs.existsSync(path.join(RUN, f)); });
+    .filter(function (f) { return /^spirit\/.+\.js$/.test(f) && !/(^|\/)test\//.test(f) && !VENDORED_FOLDERS.holds(f) && fs.existsSync(path.join(RUN, f)); });
 }
 const given = process.argv.slice(2).filter(function (a, i, all) { return a.indexOf('--') !== 0 && all[i - 1] !== '--test' && all[i - 1] !== '--verify-port'; })
   .map(function (a) { return posix(a).replace(/^\.?\//, ''); });
@@ -82,6 +87,22 @@ async function ownScratch() {
   const root = fs.mkdtempSync(path.join(require('os').tmpdir(), 'spirit-classify-'));
   const run = path.join(root, 'spirit', 'run');
   copyTree(RUN, run);
+  // EVERY APP'S SERVER ON, testicle's left off (it would classify again inside this one): an app's data.js asks its family's
+  // interface on a page, which a node answers only while that server is on; off, the page would fail for the scratch
+  // node's sake, not the script's.
+  fs.readdirSync(path.join(run, 'spirit', 'app'), { withFileTypes: true }).forEach(function (d) {
+    if (!d.isDirectory() || d.name === 'testicle') return;
+    let manifest = null;
+    try { manifest = JSON.parse(fs.readFileSync(path.join(run, 'spirit', 'app', d.name, d.name + '.json'), 'utf8')); } catch (e) { return; }
+    if (!(manifest && manifest.node && manifest.node.mount === true)) return;
+    const dir = path.join(run, 'spirit', 'state', d.name);
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, 'node.json'), JSON.stringify({ active: true }));
+  });
+  // A BARE PAGE OF ITS OWN, in the copy only (in a test folder, so its node, DEBUG on, serves it at /DEBUG/<path>): spirit.js by its script tag and nothing else (no data-spirit, so no shell
+  // boots), every error the page meets kept from its first line on.
+  fs.writeFileSync(path.join(run, 'spirit', 'test', BARE), '<!doctype html><html><head><meta charset="utf-8"><script>window.pageErrors = [];' +
+    ' window.addEventListener("error", function (e) { window.pageErrors.push(String(e.message)); });</script><script src="/spirit.js"></script></head><body></body></html>\n');
   const port = await freePort();
   const child = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], { cwd: run, stdio: 'ignore', windowsHide: true });
   const base = 'http://127.0.0.1:' + port;
@@ -101,16 +122,27 @@ async function world() {
   const chrome = findChrome();
   if (!chrome) { W.error = 'no Chrome on this machine'; return W; }
   W.page = await chromePage(chrome);
-  if (!W.page || W.page.error) { W.error = 'no Chrome page: ' + String(W.page && W.page.error); W.page = null; }
+  if (!W.page || W.page.error) { W.error = 'no Chrome page: ' + String(W.page && W.page.error); W.page = null; return W; }
+  // THE NODE SIDE FOR EVERY SCRIPT AT ONCE, EIGHT PROCESSES AT A TIME (each still a process of its own, each cut at
+  // LOAD_MS): a tree's first classifying run takes seconds, not minutes, so testing is not held back by it.
+  W.nodeR = Object.create(null);
+  const run = path.join(W.node.root, 'spirit', 'run');
+  const todo = SCRIPTS.filter(function (rel) { return NODE_ONLY.indexOf(rel) === -1 && fs.existsSync(path.join(RUN, rel)); });
+  let next = 0;
+  await Promise.all([0, 1, 2, 3, 4, 5, 6, 7].map(async function () {
+    while (next < todo.length) { const rel = todo[next++]; W.nodeR[rel] = await loadOnNode(run, rel); }
+  }));
   return W;
 }
+// THE PAGE SIDE: a fresh bare page of the scratch node for each script (plain scripts share a page's top-level scope, so
+// one page for all would let one script's names break the next), spirit started, then the script required there.
 async function loadOnPage(rel) {
   const w = await world();
   if (w.error) return { err: w.error, tool: true };
-  await w.page.send('Page.navigate', { url: w.node.base + '/face.html' });
-  const ready = await until(function () { return w.page.evaluate('!!(window.spirit && window.spirit.ready)').then(Boolean); }, WAIT);
+  await w.page.send('Page.navigate', { url: w.node.base + '/DEBUG/spirit/test/' + BARE });
+  const ready = await until(function () { return w.page.evaluate('!!(window.spirit && typeof window.spirit.require === "function")').then(Boolean); }, WAIT);
   if (!ready) return { err: 'the scratch node\'s page never got its spirit', tool: true };
-  const ask = w.page.evaluate('window.spirit.ready.then(function () { window.pageErrors = []; window.addEventListener("error", function (e) { window.pageErrors.push(String(e.message)); });' +
+  const ask = w.page.evaluate('Promise.resolve(window.spirit.start()).then(function () { window.pageErrors = [];' +
     ' return spirit.require(' + JSON.stringify(rel) + '); }).then(function () { return JSON.stringify({ err: (window.pageErrors || []).join("; ") }); },' +
     ' function (e) { return JSON.stringify({ err: String(e && e.message || e) }); })');
   const late = new Promise(function (r) { setTimeout(function () { r(null); }, LOAD_MS); });
@@ -120,7 +152,11 @@ async function loadOnPage(rel) {
 }
 
 // THE CLASS FROM THE TWO ANSWERS, or why there is none.
+// THE NODE REFUSING, NOT THE SCRIPT CRASHING: a page that ran the script and was refused a family's interface because that
+// family's server is off on the scratch node (testicle's own, which must stay off there) has loaded it.
+const REFUSED_BY_NODE = /^(?:Uncaught \(in promise\) )?(?:Error: )?no interface for the family \w+$/;
 function classOf(node, page) {
+  if (page.err && REFUSED_BY_NODE.test(String(page.err).trim())) page = { err: '' };
   if (!node.err && !page.err) return { browserOnly: false, nodeOnly: false };
   if (!node.err && page.err && !page.hung && LACKS_NODE.test(page.err)) return { browserOnly: false, nodeOnly: true };
   if (node.err && !node.hung && LACKS_BROWSER.test(node.err) && !page.err) return { browserOnly: true, nodeOnly: false };
@@ -145,8 +181,8 @@ SCRIPTS.forEach(function (rel) {
       else if (!fs.existsSync(path.join(RUN, rel))) why = 'it is not there';
       else {
         const w = await world();
-        const run = w.node && w.node.root ? path.join(w.node.root, 'spirit', 'run') : RUN;
-        const node = await loadOnNode(run, rel);
+        if (w.error) throw new Error(w.error);
+        const node = w.nodeR[rel] || await loadOnNode(path.join(w.node.root, 'spirit', 'run'), rel);
         const page = await loadOnPage(rel);
         k = classOf(node, page);
         if (!k) why = 'on the node: ' + (node.err || 'loaded') + '; in a page: ' + (page.err || 'loaded');

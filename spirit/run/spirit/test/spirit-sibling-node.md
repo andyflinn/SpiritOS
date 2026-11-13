@@ -18,7 +18,9 @@ demanding that they're placed in the spirit object according to these rules IF t
   the node and on a page*, *the world: some of them load on the node*, *on the node: all that load answer at once and stand
   at spirit.required.<path>*.
 - One script: *on the node: it loads, answers at once and stands at spirit.required.<path>*; a script that does not load
-  on the node fails it, saying why. Several scripts: each in a run of its own, each reporting for itself.
+  on the node fails it, saying why. A program, a script that ends its process when loaded with nothing thrown (an app
+  server with no --state), has loaded (box v95, 1: *"A process that ends with nothing caught has loaded, whatever its exit
+  code"*): it passes, its place not judged; on the whole tree it is left unjudged. Still loading after 20 s: a hang, red. Several scripts: each in a run of its own, each reporting for itself.
 - *"node only scripts are tested by -general AND -node general tests ... if a script is NOT browser only AND NOT node only,
   it will be tested by all 3 categories"*: testicle hands it no browser-only script.
 
