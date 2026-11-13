@@ -1781,3 +1781,60 @@ test.run('a script neither browser-only nor node-only is tested by all three kin
   const k = kinds(tables(DB), ZC.both);
   return ['general', 'node', 'browser'].every(function (x) { return k.indexOf(x) !== -1; }) || 'zzcBoth\'s general tests: ' + short(k);
 }, test.limit.quick);
+
+// ── TESTICLE TURNED OFF AND ON, ITS TABLES OUT OF STEP WITH THE TREE (Andy: "WSL, make sure that testicle related test take
+// into account that testicle can be de-activated and restarted with a database out of sync with the file-tree, this affect
+// not only scriptClassifier, it affects every single table in testicle."; box v95, 5) ──
+// Three planted scripts with their own tests, run while testicle is on. Then testicle is turned off (app.active, the node
+// staying up), and while it is off: zzdA's own suite edited, one of its two tests gone; zzdB and its suite written; zzdC
+// removed with its suite. Turned on again: script, suite and testicle tables each follow the tree.
+const DA = Z + 'zzdA.js', DAS = Z + 'test/zzdA.js', DB_ = Z + 'zzdB.js', DBS = Z + 'test/zzdB.js', DC = Z + 'zzdC.js', DCS = Z + 'test/zzdC.js';
+const twoTests = SUITE_HEAD + "test.run('zzdA answers one', 0.2, function () { return true; }, test.limit.quick);\ntest.run('zzdA answers two', 0.2, function () { return true; }, test.limit.quick);\n";
+const askedUp = async function () { const r = await call(N.base, 'testicle.busy', {}); return r.status === 200; };
+let off = null;
+test.run('the world: zzdA, zzdC and their own tests run while testicle is on', 0.2, async function () {
+  if (!up()) return NONODE;
+  put(DAS, twoTests); put(DA, '\'use strict\';\n// zzdA\n');
+  put(DCS, SUITE_HEAD + "test.run('zzdC answers', 0.2, function () { return true; }, test.limit.quick);\n"); put(DC, '\'use strict\';\n// zzdC\n');
+  const ok = await until(function () { const t = tables(DB); return Promise.resolve(currentOf(t, DA, DAS, 'zzdA answers two').length === 1 && currentOf(t, DC, DCS, 'zzdC answers').length === 1); }, 280000);
+  return !!ok || 'not run: zzdA ' + currentOf(tables(DB), DA, DAS, 'zzdA answers two').length + ', zzdC ' + currentOf(tables(DB), DC, DCS, 'zzdC answers').length;
+}, test.limit.long);
+test.run('the world: testicle is turned off, the node staying up, and the tree changes under it', 0.2, async function () {
+  if (!up()) return NONODE;
+  const r = await call(N.base, 'app.active', { key: 'testicle', active: false });
+  const gone = await until(function () { return askedUp().then(function (a) { return !a; }); }, 30000);
+  if (!gone) return 'testicle still answers after app.active false: ' + r.status + ' ' + short(r.text);
+  off = { aSuite: (suiteRow(tables(DB), DA, DAS) || {}).hash };
+  put(DAS, SUITE_HEAD + "test.run('zzdA answers one', 0.2, function () { return true; }, test.limit.quick);\n// its second test gone, while testicle was off\n");
+  put(DBS, SUITE_HEAD + "test.run('zzdB answers', 0.2, function () { return true; }, test.limit.quick);\n"); put(DB_, '\'use strict\';\n// zzdB, written while testicle was off\n');
+  fs.rmSync(path.join(s.run, DCS)); fs.rmSync(path.join(s.run, DC));
+  return true;
+}, test.limit.slow);
+test.run('turned on again, testicle answers', 0.2, async function () {
+  if (!off) return 'testicle was not turned off: the world failed';
+  await call(N.base, 'app.active', { key: 'testicle', active: true });
+  return !!(await until(askedUp, 60000)) || 'testicle does not answer after app.active true';
+}, test.limit.slow);
+test.run('the script table follows: zzdB written while off has its row, zzdC removed while off is deleted', 0.2, async function () {
+  if (!off) return 'testicle was not turned off: the world failed';
+  const ok = await until(function () { const t = tables(DB); const b = scriptRow(t, DB_), c = scriptRow(t, DC); return Promise.resolve(!!b && no(b.deleted) && !!c && yes(c.deleted)); }, 120000);
+  const t = tables(DB);
+  return !!ok || 'zzdB ' + short(scriptRow(t, DB_)) + ', zzdC ' + short(scriptRow(t, DC));
+}, test.limit.long);
+test.run('the suite table follows: zzdB\'s own suite has its row, zzdA\'s edited suite its new hash, zzdC\'s removed suite is deleted', 0.2, function () {
+  if (!off) return 'testicle was not turned off: the world failed';
+  const t = tables(DB);
+  const b = suiteRow(t, DB_, DBS), a = suiteRow(t, DA, DAS), c = suiteRow(t, DC, DCS);
+  return (!!b && no(b.deleted) && !!a && a.hash !== off.aSuite && !!c && yes(c.deleted)) || 'zzdB\'s suite ' + short(b) + '; zzdA\'s ' + short(a) + ' (before ' + short(off.aSuite) + '); zzdC\'s ' + short(c);
+}, test.limit.quick);
+test.run('the testicle table follows: zzdC\'s results are no longer current', 0.2, function () {
+  if (!off) return 'testicle was not turned off: the world failed';
+  const cur = (tables(DB).test || []).filter(function (r) { return r.script === DC && r.suite === DCS && yes(r.current); });
+  return cur.length === 0 || 'zzdC\'s current results: ' + short(cur.map(function (r) { return r.test; }));
+}, test.limit.quick);
+test.run('and once zzdA\'s edited suite has run again, the test it lost is no longer current', 0.2, async function () {
+  if (!off) return 'testicle was not turned off: the world failed';
+  const ok = await until(function () { const t = tables(DB); const one = currentOf(t, DA, DAS, 'zzdA answers one')[0]; return Promise.resolve(!!one && String(one.suiteHash || '') === String((suiteRow(t, DA, DAS) || {}).hash) && currentOf(t, DA, DAS, 'zzdA answers two').length === 0); }, 280000);
+  const t = tables(DB);
+  return !!ok || 'zzdA\'s rows: one ' + short(currentOf(t, DA, DAS, 'zzdA answers one')) + ', two ' + short(currentOf(t, DA, DAS, 'zzdA answers two'));
+}, test.limit.long);

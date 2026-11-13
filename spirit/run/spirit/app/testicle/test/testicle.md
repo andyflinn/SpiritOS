@@ -221,3 +221,9 @@ The box, in Andy's words where he gave them:
   classifier), please; empty tables hid it"*): the older testicle.db holds a red `classifyable` row an older classifier
   left for omega.js, and a suite still waiting. At the start, interactive and nothing pressed, every live script is
   classified, and omega's `classifyable` row is tested at this start.
+- **Turned off and on, every table** (Andy: *"WSL, make sure that testicle related test take into account that testicle
+  can be de-activated and restarted with a database out of sync with the file-tree, this affect not only scriptClassifier,
+  it affects every single table in testicle."*): testicle turned off by `app.active` with the node up; while it is off
+  zzdA's own suite loses one of its two tests, zzdB and its suite are written, zzdC and its suite removed. Turned on:
+  the script table has zzdB and zzdC deleted; the suite table has zzdB's suite, zzdA's new hash, zzdC's suite deleted; the
+  testicle table holds no current result of zzdC, and once zzdA's suite has run again, the test it lost is not current.
