@@ -636,7 +636,11 @@ async function session() {
   const P = { stage: 'chrome', fail: '', notes: [] };
   const chrome = findChrome();
   if (!chrome) { P.fail = 'no Chrome on this machine (set SPIRIT_CHROME to its path): the UI rules cannot be judged'; return P; }
-  const node = P.node = await scratchNode(SERVERS);
+  // ITS OWN APP'S SERVER ON TOO (goal/G47.1, cleaning, Andy's testicle's first red: spirit/app/backup/api.js never loaded,
+  // "no interface for the family backup", since backup was not turned on on the scratch node): a script of
+  // spirit/app/<name>/ is loaded with <name>'s server running, as on a node that uses it.
+  const own = (/^spirit\/app\/([^/]+)\//.exec(rel) || [])[1];
+  const node = P.node = await scratchNode({ servers: SERVERS.servers.concat(own && SERVERS.servers.indexOf(own) === -1 ? [own] : []) });
   if (!node.up) { P.fail = 'the scratch node did not come up: every rule here would blame the wrong thing'; return P; }
   if (!node.debug) { P.fail = 'the scratch node\'s DEBUG could not be switched on (node.debug)'; return P; }
   const page = P.page = await chromePage(chrome);

@@ -10,8 +10,10 @@ demanding that they're placed in the spirit object according to these rules IF t
 
 ## Requirements
 
-- Each script is required in a process of its own, in a copy of the tree (every file under spirit/run but the state
-  folders and .git), so a server script never starts on the live checkout.
+- Each script is required in a process of its own, in a copy of the tree, so a server script never starts on the live
+  checkout. The copy is a scratch node's tree (its tracked files), with the apps of the scripts handed turned on (every
+  app, handed none) and its environment naming that node's port (goal/G47.1, cleaning: an app's api.js binds its family
+  through the node, and spirit/app/backup/api.js went red "this VM has no node" in a copy without one).
 - No argument: every tracked product script but spirit.js; of those that load on the node, each answers spirit.require at
   once and stands at spirit.required.<its path> (a branch's api.js, which binds its branch, judged by its place alone); a
   script that does not load on the node is left unjudged. Titles: *the world: the product scripts, each required alone on

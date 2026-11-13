@@ -18,7 +18,6 @@
 // product script, a script that does not load on the node left unjudged. Several: each judged in this one run, its result reported for it.
 require('../spirit.js');
 const fs = require('fs');
-const os = require('os');
 const path = require('path');
 const { spawn, execFileSync } = require('child_process');
 
@@ -37,19 +36,11 @@ function runRel(a) {
 }
 
 const test = require('./testReport.js');
-const SKIP_DIRS = ['state', 'app-state', '.git'];
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 function placeKeys(rel) { return rel.replace(/\.js$/, '').split('/'); }
 function productScripts() {
   return execFileSync('git', ['ls-files'], { cwd: RUN, encoding: 'utf8' }).split('\n')
     .filter(function (f) { return /^spirit\/.+\.js$/.test(f) && !/(^|\/)test\//.test(f) && f !== 'spirit/spirit.js' && fs.existsSync(path.join(RUN, f)); });
-}
-function copyTree(from, to) {
-  fs.mkdirSync(to, { recursive: true });
-  fs.readdirSync(from, { withFileTypes: true }).forEach(function (d) {
-    if (d.isDirectory()) { if (SKIP_DIRS.indexOf(d.name) === -1) copyTree(path.join(from, d.name), path.join(to, d.name)); }
-    else if (d.isFile()) fs.copyFileSync(path.join(from, d.name), path.join(to, d.name));
-  });
 }
 function requireOnNode(run, rel) {
   return new Promise(function (resolve) {
@@ -79,10 +70,21 @@ function requireOnNode(run, rel) {
 }
 
 const E = { run: '', root: '' };
-test.run('the world: a copy of the tree to require the scripts in', 0.2, function () {
-  E.root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-node-'));
+// A COPY OF THE TREE WITH A NODE OF ITS OWN (goal/G47.1, cleaning, Andy's testicle's first red: spirit/app/backup/api.js
+// "does not load on the node: this VM has no node: spirit/state/environment.json names no port"): an app's api.js binds its
+// family through the node, so the copy is a scratch node's tree, the apps of the scripts handed turned on (every app, handed
+// none), its environment naming that node's port, as on a VM that runs one.
+const { scratchNode } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+test.run('the world: a copy of the tree to require the scripts in', 0.2, async function () {
+  const apps = (GIVEN.length ? GIVEN : execFileSync('git', ['ls-files', '--', 'spirit/app'], { cwd: RUN, encoding: 'utf8' }).split('\n'))
+    .map(function (f) { return (/^spirit\/app\/([^/]+)\//.exec(f) || [])[1]; }).filter(function (a, i, all) { return a && all.indexOf(a) === i; });
+  E.node = await scratchNode({ servers: apps });
+  if (!E.node || !E.node.up) return 'the scratch node did not come up';
+  if (!E.node.root) return 'a shared scratch node has no tree of its own to require in';
+  E.root = E.node.root;
   E.run = path.join(E.root, 'spirit', 'run');
-  copyTree(RUN, E.run);
+  const env = path.join(E.run, 'spirit', 'state', 'environment.json');
+  if (!fs.existsSync(env)) { fs.mkdirSync(path.dirname(env), { recursive: true }); fs.writeFileSync(env, JSON.stringify({ PORT: Number(new URL(E.node.base).port) })); }
   return fs.existsSync(path.join(E.run, 'spirit', 'spirit.js')) || 'the copy holds no spirit/spirit.js';
 }, test.limit.slow);
 
@@ -121,6 +123,7 @@ if (!GIVEN.length) {
   }, test.limit.slow, { script: rel });
 });
 
-test.after(function () {
+test.after(async function () {
+  if (E.node && E.node.child) { try { E.node.child.kill(); } catch (e) { /* gone */ } await new Promise(function (r) { setTimeout(r, 300); }); }
   if (E.root) try { fs.rmSync(E.root, { recursive: true, force: true }); } catch (e) { /* scratch */ }
 });
