@@ -323,7 +323,7 @@ test.run('the node\'s own traffic log is read from a copy, untouched', 0.2, func
 }, test.limit.quick);
 
 // THE FOLDER IS THE PLATFORM'S, NOT THE AGENT'S (Andy, box v104: "make sure publisData simply writes to folders identifying
-// the platform, NOT the agent, the platforms will be \"windows\", \"wsl\" and \"ubuntu\"."): agents/<platform>/, the platform
+// the platform, NOT the agent, the platforms will be \"windows\", \"wsl\" and \"ubuntu\"."): platform/<platform>/, the platform
 // this machine is: Windows, Linux under WSL, or Ubuntu; box v105: "the folders: repo://platform/windows/, repo://platform/wsl/, repo://platform/ubuntu/".
 const PLATFORM = process.platform === 'win32' ? 'windows' : (function () { try { return /microsoft/i.test(fs.readFileSync('/proc/version', 'utf8')) ? 'wsl' : 'ubuntu'; } catch (e) { return 'ubuntu'; } }());
 // the whole run: harness in a worktree, then its one folder committed, pushed and said
@@ -337,7 +337,7 @@ test.run('it exits 0: published platform/<platform>/', 0.2, function () {
   git(CLONE, ['add', 'his-staged.txt']);
   before = git(CLONE, ['rev-parse', 'HEAD']).out;
   w = publish(CLONE, ['45440', '--asks', '2']);
-  return (w.status === 0 && w.out.split('\n').pop() === 'publishData: published agents/' + PLATFORM + '/') ? true : 'exit ' + w.status + ' out ' + shortRun(w.out) + ' err ' + shortRun(w.err);
+  return (w.status === 0 && w.out.split('\n').pop() === 'publishData: published platform/' + PLATFORM + '/') ? true : 'exit ' + w.status + ' out ' + shortRun(w.out) + ' err ' + shortRun(w.err);
 }, test.limit.slow);
 test.run('the harness step runs measurePlatform in a worktree, and says how it ended', 0.2, function () {
   if (!WR.ready) return 'no scratch clone: the world failed';
