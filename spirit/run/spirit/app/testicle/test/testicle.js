@@ -1973,3 +1973,92 @@ test.run('a press in a script tab still runs a general test for that one script'
   const runs = runlog().slice(from).filter(function (l) { return l.suite === 'zzBatch-general' && l.ev === 'start'; });
   return (press.status === 200 && runs.length === 1 && sameSet(runs[0].given, [BB])) || 'press ' + press.status + ' ' + short(press.text) + '; its runs: ' + short(runs.map(function (r) { return r.given; }));
 }, test.limit.long);
+
+// ── A FIX OF A TOP RED RUNS FIRST (goal/G47.1, box v128: "a change to one of the 10 scripts holding the most severe current
+// reds (each script counted once, not each test row) stops the running suite and runs that script's red suites first; the
+// stopped run goes back flagged, its results untouched; any other change waits its turn"; Andy: "if the changed file is not
+// a top 10 fix, the run may as well continue...."). A planted folder, spirit/zzTop/: zzLong's own suite waits 40 s before its
+// one test; zzRed's own suite fails at 0.9, the most severe red of the scratch world; zzCalm's passes, no red. Each logs its
+// start and end to runlog.txt; a stopped run logs no end.
+const TZ = 'spirit/zzTop/';
+const TLONG = TZ + 'zzLong.js', TLONGS = TZ + 'test/zzLong.js', TRED = TZ + 'zzRed.js', TREDS = TZ + 'test/zzRed.js', TCALM = TZ + 'zzCalm.js', TCALMS = TZ + 'test/zzCalm.js';
+const TOP_LOG = "const LOG = path.join(__dirname, '..', '..', '..', '..', '..', 'runlog.txt');\n" +
+  "function log(name, ev) { require('fs').appendFileSync(LOG, JSON.stringify({ suite: name, ev: ev, at: Date.now() }) + '\\n'); }\n";
+let topWorld = false, longBefore = null, redChanged = 0, longStart = 0;
+test.run('the world: spirit/zzTop/ with a long suite, a suite red at 0.9 and a green one, each run once', 0.2, async function () {
+  if (!up()) return NONODE;
+  put(TLONG, '\'use strict\';\n// zzLong\n');
+  put(TRED, '\'use strict\';\n// zzRed\n');
+  put(TCALM, '\'use strict\';\n// zzCalm\n');
+  put(TLONGS, SUITE_HEAD + TOP_LOG + "log('zzLong', 'start');\n" +
+    "test.run('the world: zzLong waits 40 s', 0.2, function () { return new Promise(function (r) { setTimeout(function () { r(true); }, 40000); }); }, test.limit.slow);\n" +
+    "test.run('zzLong answers', 0.2, function () { return true; }, test.limit.quick);\ntest.after(function () { log('zzLong', 'end'); });\n");
+  put(TREDS, SUITE_HEAD + TOP_LOG + "log('zzRed', 'start');\n" +
+    "test.run('zzRed fails', 0.9, function () { return 'red, as planted'; }, test.limit.quick);\ntest.after(function () { log('zzRed', 'end'); });\n");
+  put(TCALMS, SUITE_HEAD + TOP_LOG + "log('zzCalm', 'start');\n" +
+    "test.run('zzCalm answers', 0.2, function () { return true; }, test.limit.quick);\ntest.after(function () { log('zzCalm', 'end'); });\n");
+  const ok = await until(function () { const t = tables(DB); return Promise.resolve(currentOf(t, TRED, TREDS, 'zzRed fails').length > 0 && currentOf(t, TLONG, TLONGS, 'zzLong answers').length > 0 && currentOf(t, TCALM, TCALMS, 'zzCalm answers').length > 0); }, 280000);
+  await idle(280000);
+  const red = currentOf(tables(DB), TRED, TREDS, 'zzRed fails')[0];
+  topWorld = !!ok && !!red && no(red.verified) && Number(red.severity) === 0.9;
+  return topWorld || 'zzTop not run: zzRed ' + short(red) + '; zzLong ' + short(currentOf(tables(DB), TLONG, TLONGS, 'zzLong answers'));
+}, test.limit.long);
+test.run('the world: zzLong.js changes, and zzRed.js changes while zzLong\'s own suite runs', 0.2, async function () {
+  if (!topWorld) return 'no zzTop: the world failed';
+  longBefore = currentOf(tables(DB), TLONG, TLONGS, 'zzLong answers')[0] || null;
+  const from = starts('zzLong').length;
+  append(TLONG, '// zzLong, changed\n');
+  const ok = await until(function () { return Promise.resolve(starts('zzLong').length > from); }, 280000);
+  longStart = (starts('zzLong')[from] || {}).at || 0;
+  await sleep(2000);
+  append(TRED, '// zzRed, fixed\n');
+  redChanged = Date.now();
+  return (!!ok && !!longStart) || 'zzLong\'s own suite never started: ' + short(runlog().filter(function (l) { return l.suite === 'zzLong'; }));
+}, test.limit.long);
+test.run('a change to a script holding a top red stops the running suite: zzLong\'s run ends without its end', 0.4, async function () {
+  if (!redChanged) return 'no change of zzRed: the world failed';
+  await until(function () { return Promise.resolve(runlog().some(function (l) { return l.suite === 'zzRed' && l.ev === 'start' && l.at >= redChanged; })); }, 120000);
+  const ended = ends('zzLong').some(function (l) { return l.at >= longStart && l.at <= longStart + 39000; });
+  const done = ends('zzLong').filter(function (l) { return l.at >= longStart; })[0];
+  const redAt = (runlog().filter(function (l) { return l.suite === 'zzRed' && l.ev === 'start' && l.at >= redChanged; })[0] || {}).at;
+  return (!ended && !!redAt && (!done || done.at > redAt)) || 'zzLong started ' + longStart + ', ended ' + (done && done.at) + '; zzRed started ' + redAt;
+}, test.limit.long);
+test.run('and that script\'s red suite runs first: zzRed\'s own suite starts within 30 s of its change, before zzLong\'s 40 s were up', 0.4, function () {
+  if (!redChanged) return 'no change of zzRed: the world failed';
+  const redAt = (runlog().filter(function (l) { return l.suite === 'zzRed' && l.ev === 'start' && l.at >= redChanged; })[0] || {}).at;
+  return (!!redAt && redAt - redChanged <= 30000 && redAt < longStart + 40000) || 'zzRed started ' + (redAt ? (redAt - redChanged) + ' ms after its change' : 'never') + '; zzLong started ' + longStart;
+}, test.limit.quick);
+test.run('the stopped run\'s results are untouched: zzLong\'s current row is the one from before', 0.4, function () {
+  if (!longBefore) return 'no row of zzLong before: the world failed';
+  const now = currentOf(tables(DB), TLONG, TLONGS, 'zzLong answers')[0] || null;
+  const redAt = (runlog().filter(function (l) { return l.suite === 'zzRed' && l.ev === 'start' && l.at >= redChanged; })[0] || {}).at || Date.now();
+  const touched = !!now && Number(now.tested) !== Number(longBefore.tested) && Number(now.tested) < redAt;
+  return (!!now && !touched) || 'zzLong\'s row before ' + short(longBefore) + ', now ' + short(now);
+}, test.limit.quick);
+test.run('the stopped run goes back flagged: zzLong\'s own suite runs again, after zzRed\'s', 0.4, async function () {
+  if (!redChanged) return 'no change of zzRed: the world failed';
+  const ok = await until(function () { return Promise.resolve(runlog().some(function (l) { return l.suite === 'zzLong' && l.ev === 'end' && l.at > redChanged; })); }, 280000);
+  const redAt = (runlog().filter(function (l) { return l.suite === 'zzRed' && l.ev === 'start' && l.at >= redChanged; })[0] || {}).at;
+  const again = runlog().filter(function (l) { return l.suite === 'zzLong' && l.ev === 'start' && l.at > (redAt || Infinity); })[0];
+  return (!!ok && !!again) || 'zzLong after zzRed: ' + short(runlog().filter(function (l) { return l.suite === 'zzLong' && l.at > redChanged; }));
+}, test.limit.long);
+let calmChanged = 0, longStart2 = 0;
+test.run('the world: zzLong.js changes again, and zzCalm.js, holding no red, changes while zzLong\'s own suite runs', 0.2, async function () {
+  if (!topWorld) return 'no zzTop: the world failed';
+  await idle(280000);
+  const from = starts('zzLong').length;
+  append(TLONG, '// zzLong, changed again\n');
+  const ok = await until(function () { return Promise.resolve(starts('zzLong').length > from); }, 280000);
+  longStart2 = (starts('zzLong')[from] || {}).at || 0;
+  await sleep(2000);
+  append(TCALM, '// zzCalm, changed\n');
+  calmChanged = Date.now();
+  return (!!ok && !!longStart2) || 'zzLong\'s own suite never started again: ' + short(runlog().filter(function (l) { return l.suite === 'zzLong'; }));
+}, test.limit.long);
+test.run('any other change waits its turn: zzLong\'s run ends with its end, and zzCalm\'s own suite starts after it', 0.4, async function () {
+  if (!calmChanged) return 'no change of zzCalm: the world failed';
+  const ok = await until(function () { return Promise.resolve(runlog().some(function (l) { return l.suite === 'zzCalm' && l.ev === 'start' && l.at >= calmChanged; })); }, 280000);
+  const done = ends('zzLong').filter(function (l) { return l.at >= longStart2; })[0];
+  const calmAt = (runlog().filter(function (l) { return l.suite === 'zzCalm' && l.ev === 'start' && l.at >= calmChanged; })[0] || {}).at;
+  return (!!ok && !!done && !!calmAt && calmAt >= done.at) || 'zzLong started ' + longStart2 + ', ended ' + (done && done.at) + '; zzCalm started ' + calmAt;
+}, test.limit.long);
