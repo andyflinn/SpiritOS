@@ -31,6 +31,9 @@
   var parts = Promise.all(['spirit/element/workBench.js', 'spirit/element/rowForm.js', 'spirit/element/search/file.js', 'spirit/element/tabContainer.js',
     'spirit/element/search/suite.js', 'spirit/element/search/testicle.js', 'spirit/element/search/testicle/detailElement.js',
     'spirit/app/testicle/api.js'].map(function (p) { return window.spirit.require(p); }));
+  // A NODE WITH NO TESTICLE refuses its interface: create says testicle could not be loaded; the refusal is never left
+  // unhandled.
+  parts.catch(function () {});
 
   function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 

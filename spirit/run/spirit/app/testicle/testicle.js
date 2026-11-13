@@ -53,6 +53,9 @@ const TEST_MODULE = path.join(RUN, 'spirit', 'test', 'testModule.js');
 // goal/G47.1, the box: "This cycle will also rename the \"file\" table to \"script\"", "The name changes everywhere it
 // means that table", "An existing testicle.db is renamed in place, its rows kept."
 const db = new DatabaseSync(path.join(STATE, 'testicle.db'));
+// A WRITE WAITS FOR A READER, never fails on it: a reader of testicle.db (its test, a backup) holding it for a moment made
+// a job's end throw "database is locked", and that suite was never judged.
+db.exec('PRAGMA busy_timeout = 5000');
 const tableThere = function (name) { return !!db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?").get(name); };
 if (tableThere('file') && !tableThere('script')) db.exec('ALTER TABLE file RENAME TO script');
 if (tableThere('suite') && db.prepare('PRAGMA table_info(suite)').all().some(function (c) { return c.name === 'file'; })) db.exec('ALTER TABLE suite RENAME COLUMN file TO script');
