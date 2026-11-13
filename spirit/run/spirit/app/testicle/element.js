@@ -28,7 +28,7 @@
 // the same test makes its tab active and opens no second.
 (function () {
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the workBench and the file list.
-  var parts = Promise.all(['spirit/element/workBench.js', 'spirit/element/search/file.js', 'spirit/element/tabContainer.js',
+  var parts = Promise.all(['spirit/element/workBench.js', 'spirit/element/rowForm.js', 'spirit/element/search/file.js', 'spirit/element/tabContainer.js',
     'spirit/element/search/suite.js', 'spirit/element/search/testicle.js', 'spirit/element/search/testicle/detailElement.js',
     'spirit/app/testicle/api.js'].map(function (p) { return window.spirit.require(p); }));
 
@@ -121,12 +121,61 @@
     return { destroy: function () { if (typeof release === 'function') release(); release = false; } };
   }
 
+  // THE CONFIGURATION PANEL (goal/G47.1, box v79, 2): "a new left-strip-icon in the UI: ⚙", "the second icon below the
+  // existing one", "this icon will open a panel in the left workbech pane, titled: \"⚙ Configuration\"", "the one switch it
+  // maintains in a rowForm is: interactive | auto where the default will be \"interactive\"". The switch is the preference
+  // interactive (box v79, 4): asked of the preferences verb once, then followed in testicle's branch, which the stream
+  // keeps; Save sends the choice, and what a press did, a refusal, is said below the form.
+  function configPanel(box) {
+    var gone = false;
+    var release = null;
+    box.innerHTML = '<div class="testicle-config"><div class="testicle-title">⚙ Configuration</div><div class="testicle-config-form"></div>' +
+      '<div class="testicle-config-said"></div></div>';
+    var said = box.querySelector('.testicle-config-said');
+    var form = window.spirit.element.spirit.element.rowForm.create(box.querySelector('.testicle-config-form'), { icon: '⚙', button: 'Save' });
+    var mode = document.createElement('select');
+    mode.className = 'testicle-mode';
+    mode.innerHTML = '<option value="interactive">interactive</option><option value="auto">auto</option>';
+    form.span.appendChild(mode);
+    function draw(p) {
+      if (gone || !p || typeof p.interactive !== 'boolean') return;
+      mode.value = p.interactive ? 'interactive' : 'auto';
+    }
+    form.button.addEventListener('click', function () {
+      if (gone) return;
+      form.button.disabled = true;
+      said.textContent = '';
+      Promise.resolve(window.spirit.testicle.preferences({ interactive: mode.value === 'interactive' })).then(function (p) {
+        if (gone) return;
+        window.spirit.data.testicle.data.preferences.keep(p);
+      }, function (e) {
+        if (!gone) said.textContent = String((e && e.message) || e || 'preferences failed');
+      }).then(function () { if (!gone) form.button.disabled = false; });
+    });
+    Promise.resolve(window.spirit.cacheManager('testicle')).then(function () {
+      if (gone) return;
+      var P = window.spirit.data.testicle.data.preferences;
+      draw(P.get());
+      release = P.watch(draw);
+      return Promise.resolve(window.spirit.testicle.preferences({})).then(function (p) { if (!gone) P.keep(p); });
+    }).then(null, function (e) { if (!gone) said.textContent = String((e && e.message) || e || 'preferences failed'); });
+    return {
+      destroy: function () {
+        gone = true;
+        if (typeof release === 'function') release();
+        release = null;
+        box.innerHTML = '';
+      },
+    };
+  }
+
   function create(container) {
     var gone = false;
     var bench = null;
     var list = null;
     var tabs = null;
     var monitor = null;
+    var config = null;
     container.innerHTML = '<div class="testicle-face" style="display:flex;flex-direction:column;height:100%">' +
       '<div class="testicle-monitor" style="flex:none;display:flex;align-items:center;height:1.8em;line-height:1.8em;padding:0 .5em;overflow:hidden"></div>' +
       '<div class="testicle-bench" style="flex:1;min-height:0;position:relative"></div></div>';
@@ -136,12 +185,12 @@
       if (gone) return;
       var E = window.spirit.element.spirit.element;
       bench = E.workBench.create(benchBox, {
-        // One tool, the files, on the left strip, shown at start; no right strip.
+        // The left strip: the files, shown at start, then the configuration (box v79, 2); no right strip.
         left: [{ name: 'files', icon: '📁', title: 'Production scripts', mount: function (box) {
           box.className = 'fill';
           // goal/G47.1, the box: "testicle turns flat on.": the scripts, by path, no folders.
           list = E.search.file.create(box, { face: 'pane', accept: production, flat: true, pick: function (row, key) { if (key) open(String(key)); } });
-        } }],
+        } }, { name: 'configuration', icon: '⚙', title: '⚙ Configuration', mount: function (box) { config = configPanel(box); } }],
         right: [],
       });
       // The centre: the testicle search first, never closed; then the file details and the test details, one tab each.
@@ -167,6 +216,8 @@
         gone = true;
         if (monitor) monitor.destroy();
         monitor = null;
+        if (config) config.destroy();
+        config = null;
         if (list && typeof list.destroy === 'function') list.destroy();
         list = null;
         if (tabs && typeof tabs.destroy === 'function') tabs.destroy();

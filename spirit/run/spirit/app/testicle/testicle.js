@@ -59,9 +59,20 @@ if (tableThere('suite') && db.prepare('PRAGMA table_info(suite)').all().some(fun
 db.exec('CREATE TABLE IF NOT EXISTS script (name TEXT PRIMARY KEY, hash TEXT NOT NULL DEFAULT \'\', deleted INTEGER NOT NULL DEFAULT 0, changed INTEGER NOT NULL)');
 db.exec('CREATE TABLE IF NOT EXISTS suite (script TEXT NOT NULL, suite TEXT NOT NULL, test INTEGER NOT NULL DEFAULT 0, deleted INTEGER NOT NULL DEFAULT 0, ' +
   'hash TEXT NOT NULL DEFAULT \'\', outcome TEXT NOT NULL DEFAULT \'\', changed INTEGER NOT NULL, PRIMARY KEY (script, suite))');
+// THREE FIELDS ON THE SCRIPT TABLE (goal/G47.1, box v79, 3): reClassify "this script needs re-classification.",
+// browserOnly "this script file is an ui-element and runs in the browser only", nodeOnly "this script file runs on node.js
+// only"; both false, it runs on both, and classification never sets both. "a script seen for the first time starts with
+// reClassify true" (Andy: "yes, of course."), so a table made before gains reClassify true on every row: none was ever
+// classified. "when the server (always) processes file changes, and the hash of the script changes, \"reClassify\" must
+// be set to \"true\". That field can only be reset to false by classification" (out of this cycle: nothing here resets it).
+['reClassify INTEGER NOT NULL DEFAULT 1', 'browserOnly INTEGER NOT NULL DEFAULT 0', 'nodeOnly INTEGER NOT NULL DEFAULT 0'].forEach(function (col) {
+  const name = col.split(' ')[0];
+  if (!db.prepare('PRAGMA table_info(script)').all().some(function (c) { return c.name === name; })) db.exec('ALTER TABLE script ADD COLUMN ' + col);
+});
 const Q = {
   script: db.prepare('SELECT * FROM script WHERE name = ?'),
-  putScript: db.prepare('INSERT INTO script (name, hash, deleted, changed) VALUES (?, ?, 0, ?) ON CONFLICT(name) DO UPDATE SET hash = excluded.hash, deleted = 0, changed = excluded.changed'),
+  putScript: db.prepare('INSERT INTO script (name, hash, deleted, changed, reClassify) VALUES (?, ?, 0, ?, 1) ON CONFLICT(name) DO UPDATE SET ' +
+    'reClassify = CASE WHEN script.hash <> excluded.hash THEN 1 ELSE script.reClassify END, hash = excluded.hash, deleted = 0, changed = excluded.changed'),
   goneScript: db.prepare('INSERT INTO script (name, hash, deleted, changed) VALUES (?, \'\', 1, ?) ON CONFLICT(name) DO UPDATE SET deleted = 1, changed = excluded.changed'),
   // A suite row flagged test: the suite needs running (goal/G45.1). Its outcome is kept: nothing runs a suite yet.
   putSuite: db.prepare('INSERT INTO suite (script, suite, test, deleted, hash, outcome, changed) VALUES (?, ?, 1, 0, ?, \'\', ?) ' +
@@ -153,6 +164,20 @@ let job = null;          // { script, suite, title, scriptHash, suiteHash, start
 const front = [];        // [{ script, suite, title }], pressed: run first, the newest press first
 let quiet = null;
 function isGeneral(suite) { return /-(child|sibling)-/.test(path.posix.basename(suite)); }
+// THE PREFERENCES (goal/G47.1, box v79, 2 and 4): "spirit/state/testicle/data/preferences.json", the one preference
+// interactive, "true by default": "interactive: all actions and runs are controlled by the user through the UI or through
+// api calls", "auto: the default mode until now: the server auto-processes everything". Either way "the server will flag
+// changed suites AND scripts always, in both modes": interactive holds back only the runner's own picks from the flags; a
+// press (🏃‍♂️, or testicle.run) runs as before. A file that cannot be read, or holds no boolean, is the default.
+const PREFS_FILE = path.join(STATE, 'preferences.json');
+const PREFS_DEFAULT = { interactive: true };
+function readPrefs() {
+  try {
+    const p = JSON.parse(fs.readFileSync(PREFS_FILE, 'utf8'));
+    return { interactive: typeof (p && p.interactive) === 'boolean' ? p.interactive : PREFS_DEFAULT.interactive };
+  } catch (e) { return Object.assign({}, PREFS_DEFAULT); }
+}
+let prefs = readPrefs();
 // A file change, a press or the start: the runner waits for one quiet second, a new event pushing it back.
 function soon() {
   if (quiet) clearTimeout(quiet);
@@ -160,6 +185,8 @@ function soon() {
 }
 function chooseJob() {
   while (front.length) { const f = front.shift(); if (there(f.script) && there(f.suite)) return f; }
+  // Interactive: only what was pressed runs; the flagged rows wait for a press, or for auto.
+  if (prefs.interactive) return null;
   const rows = flaggedRows.all().filter(function (r) { return there(r.script) && there(r.suite); });
   // General tests first, "because they tend to get most coverage fastest" (Andy); then by name, so the order is stable.
   rows.sort(function (a, b) { return (isGeneral(b.suite) - isGeneral(a.suite)) || (a.suite < b.suite ? -1 : a.suite > b.suite ? 1 : 0) || (a.script < b.script ? -1 : a.script > b.script ? 1 : 0); });
@@ -417,7 +444,10 @@ watcher.on('error', function (e) { console.error('testicle: the watcher: ' + (e 
 soon();
 
 // A script row as a verb answers it: its deleted a boolean.
-function served(row) { return { name: row.name, hash: row.hash, deleted: !!row.deleted, changed: Number(row.changed) }; }
+function served(row) {
+  return { name: row.name, hash: row.hash, deleted: !!row.deleted, changed: Number(row.changed), reClassify: !!row.reClassify,
+    browserOnly: !!row.browserOnly, nodeOnly: !!row.nodeOnly };
+}
 // A suite row as a search and the stream carry it: its key script|suite, its status "needs running" while it is flagged.
 function suiteServed(r) { return { key: r.script + '|' + r.suite, script: r.script, suite: r.suite, test: !!r.test, status: statusOf(r.test, r.outcome), deleted: !!r.deleted, outcome: r.outcome, changed: Number(r.changed) }; }
 // Test rows, already in the order they are answered in, as one search answer: the bucket keeps that order (a row's seat
@@ -449,6 +479,28 @@ appServer.serve({
       if (!there(script) || !there(suite)) throw refused('no-such-file');
       press(script, suite, String(a.testicle || ''));
       return { started: true };
+    },
+  },
+  // goal/G47.1, box v79, 4: "one new verb for now \"preferences\", it will manage getting and setting preferences,
+  // multiplexed, right now it will support testicle.preferences.interactive (true by default)". {} answers them all; a name
+  // given sets it and answers them all; a name it does not know, or a value of the wrong type, is refused. A set is kept in
+  // preferences.json and published, { testicle: { preferences } }, so every page follows it. Set to auto, the flagged rows
+  // are run; a run already going finishes either way.
+  preferences: {
+    request: {}, reply: { interactive: true },
+    accepts: function (a) {
+      if (!a || typeof a !== 'object' || Array.isArray(a)) return false;
+      return Object.keys(a).every(function (k) { return k === 'interactive' && typeof a[k] === 'boolean'; });
+    },
+    handler: function (a) {
+      if (typeof a.interactive === 'boolean' && a.interactive !== prefs.interactive) {
+        const next = Object.assign({}, prefs, { interactive: a.interactive });
+        fs.writeFileSync(PREFS_FILE, JSON.stringify(next, null, 2) + '\n');
+        prefs = next;
+        appServer.publish({ testicle: { preferences: Object.assign({}, prefs), busy: busyNow() } });
+        if (!prefs.interactive) soon();
+      }
+      return Object.assign({}, prefs);
     },
   },
   // goal/G47.1, the box: "busy": true if it is doing any work, false if it is idle.

@@ -1,0 +1,6 @@
+{
+  "description": "testicle's preferences, got and set by one verb, multiplexed. {} answers them all; a preference given sets it and answers them all. For now the one preference is interactive, true by default: interactive, every run is the user's, through the UI or an api call (a 🏃‍♂️ press, testicle.run); false is auto, the server runs every flagged suite by itself. In both modes the server flags changed suites and scripts. A preference it does not know, or a value of the wrong type, is refused. Kept in spirit/state/testicle/data/preferences.json; a set is streamed, {testicle: {preferences}}, so every page follows it. Set to auto, the flagged suites run; a run already going finishes either way.",
+  "request": {
+    "interactive": "bool?"
+  }
+}

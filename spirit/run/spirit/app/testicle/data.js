@@ -20,6 +20,8 @@
   // The monitor's one row, in its own branch (spirit.data keeps rows as branch/key): what the stream last said of busy and
   // of the last change.
   var MONITOR = 'monitor/now';
+  // The preferences, one row of their own: what the preferences verb answered last, or the stream told since.
+  var PREFERENCES = 'preferences/now';
   var D = typeof window !== 'undefined' ? window.spirit.data : require('../../spirit.js').require('spirit/data.js');
   D.makeFamily('testicle', function () {
     var HOME = D.viewAt(null, 'testicle');
@@ -67,6 +69,9 @@
           mon.last = { table: a.table, key: k, change: String(a.change || 'updated'), at: Date.now() };
         }
         if (Object.keys(mon).length) V.merge(MONITOR, mon);
+        // THE PREFERENCES (goal/G47.1, box v79, 4): "a set is published to testicle's subscribers, so the ⚙ panel and any
+        // other page follow it".
+        if (a.preferences && typeof a.preferences === 'object' && !Array.isArray(a.preferences)) V.merge(PREFERENCES, a.preferences);
       },
     });
     // THE READS AND THE WRITES:
@@ -90,6 +95,14 @@
     testicleReads.monitor = {
       get: function () { return HOME.get(MONITOR) || {}; },
       watch: function (fn) { return HOME.watch(MONITOR, function () { if (typeof fn === 'function') fn(HOME.get(MONITOR) || {}); }); },
+    };
+    //   preferences.get()      { interactive } as last answered or streamed; {} before anything came
+    //   preferences.keep(p)    what the preferences verb answered, kept
+    //   preferences.watch(fn)  fn(preferences) on every change; answers its release
+    testicleReads.preferences = {
+      get: function () { return HOME.get(PREFERENCES) || {}; },
+      keep: function (p) { if (p && typeof p === 'object' && !Array.isArray(p)) HOME.merge(PREFERENCES, p); },
+      watch: function (fn) { return HOME.watch(PREFERENCES, function () { if (typeof fn === 'function') fn(HOME.get(PREFERENCES) || {}); }); },
     };
     return testicleReads;
   });

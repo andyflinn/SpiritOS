@@ -42,6 +42,9 @@ sandbox
 published
 release
 preferences.json
+# testicle's verb preferences is declared by this file beside its server (goal/G47.1, box v79, 4); the preferences
+# themselves stay in its state folder, ignored.
+!spirit/run/spirit/app/testicle/preferences.json
 conversation.json
 history.json
 log.jsonl

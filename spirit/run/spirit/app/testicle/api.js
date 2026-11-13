@@ -7,6 +7,8 @@ module.exports = {
   verbs: {
     // goal/G47.1, the box: "busy": true if it is doing any work, false if it is idle. It takes nothing.
     busy: {},
+    // goal/G47.1, box v79, 4: the preferences, got and set, multiplexed; {} answers them all. For now interactive alone.
+    preferences: { interactive: 'bool?' },
     // goal/G47.1, the verbs cycle: a production script's row, made with its suite rows if it has none. name is the script,
     // scoped to run://. Named file.get until the rename of the table file to script.
     'script.get': { name: 'text' },

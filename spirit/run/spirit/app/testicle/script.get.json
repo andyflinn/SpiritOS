@@ -1,5 +1,5 @@
 {
-  "description": "A production script's row in testicle.db's script table: {name, hash, deleted, changed}. name is the script, scoped to run://. A script with no rows yet gets its script row and a suite row, flagged needs testing, for every suite that concerns it, as a change would make them. A name that is no production script answers the error \"not a production script\"; a production script that is not there, \"no such file\". It was file.get until the table file was renamed script.",
+  "description": "A production script's row in testicle.db's script table: {name, hash, deleted, changed, reClassify, browserOnly, nodeOnly}. reClassify is true for a script seen for the first time and again whenever its hash changes, and only classification sets it false; browserOnly and nodeOnly both false is a script that runs on both. name is the script, scoped to run://. A script with no rows yet gets its script row and a suite row, flagged needs testing, for every suite that concerns it, as a change would make them. A name that is no production script answers the error \"not a production script\"; a production script that is not there, \"no such file\". It was file.get until the table file was renamed script.",
   "request": {
     "name": "text"
   }
