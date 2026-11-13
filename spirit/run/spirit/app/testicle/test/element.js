@@ -192,16 +192,16 @@ test.run('its folder holds its manifest, its face, its server, its api.js and da
 // element.js only mounts them and the searches; each loads its own, mounts empty, judged by -browser"; Andy: "what you're
 // doing with this monolith style of coding, your avoiding precise quality control").
 const PARTS = path.join(APP, 'element');
-const partNames = function () { try { return fs.readdirSync(PARTS, { withFileTypes: true }).filter(function (d) { return d.isDirectory(); }).map(function (d) { return d.name; }).sort(); } catch (e) { return []; } };
-test.run('its element/ folder holds three parts, each a folder <name>/ with <name>.js in it', 0.4, function () {
-  const names = partNames();
-  const bad = names.filter(function (n) { return !fs.existsSync(path.join(PARTS, n, n + '.js')); });
-  return (names.length === 3 && !bad.length) || 'element/ holds ' + short(names) + (bad.length ? '; with no <name>.js: ' + short(bad) : '');
+// Box v135: "just spirit/app/testicle/element/<element-name>.js, its test in element/test/<element-name>.js, no folder per
+// element. the three: element/scriptDetail.js, element/statusBox.js, element/settingsPanel.js".
+const PART_NAMES = ['scriptDetail', 'settingsPanel', 'statusBox'];
+test.run('its element/ folder holds scriptDetail.js, settingsPanel.js and statusBox.js, and its test/ folder, nothing else', 0.4, function () {
+  let held = []; try { held = fs.readdirSync(PARTS).sort(); } catch (e) { held = []; }
+  return JSON.stringify(held) === JSON.stringify(['scriptDetail.js', 'settingsPanel.js', 'statusBox.js', 'test']) || 'element/ holds ' + short(held);
 }, test.limit.quick);
-test.run('each part has its own test, <name>/test/<name>.js', 0.4, function () {
-  const names = partNames();
-  const bad = names.filter(function (n) { return !fs.existsSync(path.join(PARTS, n, 'test', n + '.js')); });
-  return (names.length === 3 && !bad.length) || (names.length ? 'no own test: ' + short(bad) : 'no parts in element/');
+test.run('each part has its own test, element/test/<name>.js', 0.4, function () {
+  const bad = PART_NAMES.filter(function (n) { return !fs.existsSync(path.join(PARTS, 'test', n + '.js')); });
+  return !bad.length || 'no own test: ' + short(bad);
 }, test.limit.quick);
 test.run('its mount names element.js', 0.2, function () {
   return (!!own && !!own.mount && own.mount['element.js'] === true) || 'mount: ' + short(own && own.mount);
@@ -263,11 +263,9 @@ test.run('it loads through spirit.require and mounts with create(container), ans
 }, test.limit.slow);
 
 // Box v134: each part loads its own and stands as an element of its own, so any app can mount it.
-test.run('once the face is mounted, each part stands at spirit.element.spirit.app.testicle.element.<name>.<name> with a create', 0.4, async function () {
+test.run('once the face is mounted, each part stands at spirit.element.spirit.app.testicle.element.<name> with a create', 0.4, async function () {
   if (face()) return face();
-  const names = partNames();
-  if (names.length !== 3) return 'element/ holds ' + short(names) + ': nothing to look for';
-  const got = await c.evaluate('(function () { var n = ' + JSON.stringify(names) + '; var at = (((((window.spirit.element || {}).spirit || {}).app || {}).testicle || {}).element || {}); return n.filter(function (k) { var e = at[k] && at[k][k]; return !(e && typeof e.create === "function"); }); }())');
+  const got = await c.evaluate('(function () { var n = ' + JSON.stringify(PART_NAMES) + '; var at = (((((window.spirit.element || {}).spirit || {}).app || {}).testicle || {}).element || {}); return n.filter(function (k) { return !(at[k] && typeof at[k].create === "function"); }); }())');
   return (Array.isArray(got) && !got.length) || 'not standing with a create: ' + short(got);
 }, test.limit.slow);
 
@@ -835,8 +833,8 @@ test.run('while it runs a suite, the status bar says "running <suite> for <scrip
 // zzsThree holds.
 const ST = 'spirit/zzStatus/';
 const STS = [ST + 'zzsOne.js', ST + 'zzsTwo.js', ST + 'zzsThree.js'];
-// Box v133: "<suite>: x of n reported", then the script just reported and success or failure.
-const STATUS_RE = /^(\S*zzStatus-sibling-general\.js): (\d+) of (\d+) reported\W+(\S+?)\W+(success|failure)$/;
+// Box v134-135: "<x> of <n> reported: <script> <success|failure>" (cw: "the \"<suite>:\" was my addition, not Andy's").
+const STATUS_RE = /^()(\d+) of (\d+) reported: (\S+) (success|failure)$/;
 let statusFrom = 0;
 test.run('the world: spirit/zzStatus/ with its own -general test and three scripts, changed together', 0.2, async function () {
   if (!msgsAt) return 'no recorder: the world failed';
@@ -852,9 +850,9 @@ test.run('the world: spirit/zzStatus/ with its own -general test and three scrip
   STS.forEach(function (f) { fs.appendFileSync(path.join(s.run, f), '// changed together\n'); });
   return true;
 }, test.limit.long);
-test.run('as each script of a run reports, the status bar says "<suite>: x of n reported", the script and success or failure, x counting up to n', 0.4, async function () {
+test.run('as each script of a run reports, the status bar says "<x> of <n> reported: <script> <success|failure>", x counting up to n', 0.4, async function () {
   if (!msgsAt) return 'no recorder: the world failed';
-  const ok = await waitFor('messages_seen().slice(' + statusFrom + ').filter(function (m) { return /zzStatus-sibling-general\\.js: \\d+ of 3 reported\\W+\\S+?\\W+(success|failure)$/.test(m); }).length >= 3', 240000);
+  const ok = await waitFor('messages_seen().slice(' + statusFrom + ').filter(function (m) { return /^\\d+ of 3 reported: \\S*zzStatus\\S* (success|failure)$/.test(m); }).length >= 3', 240000);
   const seen = ((await T('messages_seen()')) || []).slice(statusFrom).filter(function (m) { return STATUS_RE.test(m) && /zzStatus/.test(m); });
   const xs = seen.map(function (m) { const x = STATUS_RE.exec(m); return Number(x[2]) + '/' + x[3]; });
   return (!!ok && JSON.stringify(xs.slice(-3)) === JSON.stringify(['1/3', '2/3', '3/3'])) || 'messages seen: ' + short(seen.slice(-6));
