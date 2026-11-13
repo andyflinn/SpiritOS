@@ -1688,6 +1688,30 @@ test.run('a script whose classifyable row is red is tested in no other way: no s
   return ran.length === 0 || 'reported: ' + short(ran.map(function (r) { return r.suite + ' ' + r.test; }));
 }, test.limit.long);
 
+// THE CLASSIFIER CHANGED, EVERY SCRIPT CLASSIFIED AGAIN (Andy, on a script left not classifyable by the classifier before
+// its fix: "wsl, note that and make sure this doesn't happen again."; cw: "when the classifier itself changes, every script
+// is classified again"). A script that failed is tried again then, though it did not change itself.
+let reTold = 0;
+test.run('when the classifier changes, a script classified before reads reClassify true again', 0.2, async function () {
+  if (!zc) return NONODE;
+  await idle(240000);
+  reTold = Date.now();
+  append(SC, '// the classifier, changed\n');
+  const ok = await until(function () { const r = scriptRow(tables(DB), ZC.node); return Promise.resolve(!!r && yes(r.reClassify)); }, 2000);
+  return !!ok || 'zzcNode after the classifier changed: ' + short(scriptRow(tables(DB), ZC.node));
+}, test.limit.slow);
+test.run('and a script that failed is tried again, though it did not change: its classifyable row tested anew', 0.2, async function () {
+  if (!reTold) return 'the classifier was not changed: the world failed';
+  const ok = await until(function () { const r = classifyRow(tables(DB), ZC.broken); return Promise.resolve(!!r && Number(r.tested) >= reTold); }, 240000);
+  return !!ok || 'zzcBroken\'s classifyable row: ' + short(classifyRow(tables(DB), ZC.broken)) + ', the classifier changed at ' + reTold;
+}, test.limit.long);
+test.run('and each one is classified again: reClassify false on every one of the six', 0.2, async function () {
+  if (!reTold) return 'the classifier was not changed: the world failed';
+  let left = [];
+  await until(function () { const t = tables(DB); left = Object.keys(ZC).filter(function (k) { const r = scriptRow(t, ZC[k]); return !r || !no(r.reClassify); }); return Promise.resolve(left.length === 0); }, 240000);
+  return left.length === 0 || 'not classified again: ' + short(left);
+}, test.limit.long);
+
 // 2: which general tests concern which scripts, by the flags.
 const kinds = function (t, name) { return suiteRows(t, name).filter(function (r) { return !yes(r.deleted); }).map(function (r) { return (/-(general|node|browser)\.js$/.exec(r.suite) || [])[1]; }).filter(Boolean); };
 test.run('a node-only script is tested by -general and -node general tests, and no -browser one', 0.2, function () {

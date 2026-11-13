@@ -199,3 +199,7 @@ The box, in Andy's words where he gave them:
   SCRIPT. NOW!!!!"*): read as the script tab reads them, `suite.search` for the script, at once after it is classified: a
   browser-only script shows no `-node` suite, a node-only one no `-browser` suite; and the same after a restart. The kinds
   checks read only live suite rows.
+- **The classifier changed, every script classified again** (Andy, on a script left red by the classifier before its fix:
+  *"wsl, note that and make sure this doesn't happen again."*): after a change of `spirit/test/scriptClassify.js` a
+  script classified before reads `reClassify` true again; a script that failed is tried again though it did not change
+  (its `classifyable` row tested anew); each of the six is classified again.
