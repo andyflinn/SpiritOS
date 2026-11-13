@@ -70,7 +70,7 @@ function loadOnNode(run, rel) {
 // ITS OWN SCRATCH NODE, ON A COPY OF THIS TREE AS IT STANDS (not git's list: a script not yet committed is classified too,
 // and a tree with no git, a test's scratch tree, has one all the same): every file under spirit/run but the node's state,
 // .git and node_modules, then spirit/server.js started there on a free port, its DEBUG on.
-const SKIP_DIRS = ['state', 'app-state', '.git', 'node_modules'];
+const SKIP_DIRS = ['state', 'app-state', '.git'];
 function copyTree(from, to) {
   fs.mkdirSync(to, { recursive: true });
   fs.readdirSync(from, { withFileTypes: true }).forEach(function (d) {

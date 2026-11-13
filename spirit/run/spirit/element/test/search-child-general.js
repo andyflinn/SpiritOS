@@ -6,7 +6,16 @@
 // the files: folderRules, listRowsOwnTheirPanel. No argument, each part judges all it applies to; each argument, that one, reported for it.
 require('../../spirit.js');
 const test = require('../../test/testReport.js');
-const GIVEN = process.argv.slice(2).filter(function (a, i, all) { return a.indexOf('--') !== 0 && all[i - 1] !== '--verify-port' && all[i - 1] !== '--test'; });
+// A path as given, absolute or not, scoped to run:// (the verifier hands absolute ones).
+const RUN_DIR = require('path').join(__dirname, '..', '..', '..');
+function runRel(a) {
+  const p = require('path');
+  const abs = p.isAbsolute(String(a)) ? String(a) : p.resolve(String(a));
+  const r = p.relative(RUN_DIR, abs).split(p.sep).join('/');
+  if (r && r.indexOf('..') !== 0 && !p.isAbsolute(r) && require('fs').existsSync(abs)) return r;
+  return String(a).split(p.sep).join('/').replace(/^\.?\//, '').replace(/^spirit\/run\//, '');
+}
+const GIVEN = process.argv.slice(2).filter(function (a, i, all) { return a.indexOf('--') !== 0 && all[i - 1] !== '--verify-port' && all[i - 1] !== '--test'; }).map(runRel);
 
 // ── folderRules (was spirit/element/test/search-child-folderRules.js) ──
 function folderRules(ARGS) {

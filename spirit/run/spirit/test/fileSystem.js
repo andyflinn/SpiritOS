@@ -185,15 +185,16 @@ test.run('spirit/job/chokidar/index.js is servable but not writable', 0.8, funct
 test.run('spirit/job/readdirp/index.js is servable but not writable', 0.8, function () { return servedOnly('spirit/job/readdirp/index.js'); }, test.limit.quick);
 test.run('spirit/element/codeMirror/lib/codemirror.js is servable but not writable', 0.8, function () { return servedOnly('spirit/element/codeMirror/lib/codemirror.js'); }, test.limit.quick);
 // The walkers: every tracked script that skipped node_modules at BASE, and the ones that skipped codeMirror beside it.
-// The old system's walkers under spirit/test/ went with it (e9c6cb8c, "KILL!"): what is left in the tree is judged, 16 today.
-test.run('the world: more than ten walkers skipped node_modules at the base commit, fileSystem.js and word.js among them', 0.2, function () {
+// The old system's walkers under spirit/test/ went with it (e9c6cb8c, "KILL!"): what is left in the tree is judged. The general
+// tests folded into three kinds (goal/G47.1, box v94, 2) took two more of them with their files: nine stand today.
+test.run('the world: more than eight walkers skipped node_modules at the base commit, fileSystem.js and word.js among them', 0.2, function () {
   const atBase = git('ls-tree -r --name-only ' + BASE).split('\n').filter(function (f) { return /\.js$/.test(f) && f.indexOf(OLD) !== 0; });
   const grepped = git('grep -l -e node_modules ' + BASE + ' -- "*.js"').split('\n').filter(Boolean).map(function (l) { return l.replace(BASE + ':', ''); });
   const walkers = grepped.filter(function (f) {
     if (atBase.indexOf(f) === -1 || f === 'spirit/test/fsWatcherCommands.js' || !fs.existsSync(path.join(REPO, f))) return false;
     return /node_modules/.test(code(execSync('git show ' + BASE + ':' + f, { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 26 })).replace(/shell\\?\/node_modules/g, ''));
   });
-  return (walkers.length > 10 && walkers.indexOf('spirit/run/spirit/fileSystem.js') !== -1 && walkers.indexOf('spirit/run/spirit/word.js') !== -1) ? true : 'only ' + walkers.length + ' walkers found at ' + BASE + ': nothing judged';
+  return (walkers.length > 8 && walkers.indexOf('spirit/run/spirit/fileSystem.js') !== -1 && walkers.indexOf('spirit/run/spirit/word.js') !== -1) ? true : 'only ' + walkers.length + ' walkers found at ' + BASE + ': nothing judged';
 }, test.limit.quick);
 const CM_SKIPPERS = ['spirit/run/spirit/test/testModule.js', 'spirit/run/spirit/test/spirit-sibling-browser.js', 'spirit/run/spirit/test/spirit-sibling-general.js', 'spirit/run/spirit/test/test/testReport-verifier.js'];
 // Each walker found at the base commit written out, so that each check has a plain title of its own.

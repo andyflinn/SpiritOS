@@ -11,7 +11,7 @@ demanding that they're placed in the spirit object according to these rules IF t
 ## Requirements
 
 - Each script is required in a process of its own, in a copy of the tree (every file under spirit/run but the state
-  folders, .git and node_modules), so a server script never starts on the live checkout.
+  folders and .git), so a server script never starts on the live checkout.
 - No argument: every tracked product script but spirit.js; of those that load on the node, each answers spirit.require at
   once and stands at spirit.required.<its path> (a branch's api.js, which binds its branch, judged by its place alone); a
   script that does not load on the node is left unjudged. Titles: *the world: the product scripts, each required alone on

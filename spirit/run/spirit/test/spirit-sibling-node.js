@@ -26,7 +26,7 @@ const RUN = path.join(__dirname, '..', '..');
 const ARGV = process.argv.slice(2);
 const VERIFY = ARGV.indexOf('--verify-port') !== -1 ? ARGV.slice(ARGV.indexOf('--verify-port'), ARGV.indexOf('--verify-port') + 2) : [];
 const GIVEN = ARGV.filter(function (a, i) { return a.indexOf('--') !== 0 && ARGV[i - 1] !== '--verify-port' && ARGV[i - 1] !== '--test'; })
-  .map(function (a) { return String(a).split(path.sep).join('/').replace(/^\.?\//, '').replace(/^spirit\/run\//, ''); });
+  .map(function (a) { return runRel(a); });
 
 // SEVERAL SCRIPTS: each in a run of its own, so each reports for itself (testReport takes its script from the argument).
 if (GIVEN.length > 1) {
@@ -39,8 +39,17 @@ if (GIVEN.length > 1) {
   process.exit(failed ? 1 : 0);
 }
 
+// A path as given, absolute or not, scoped to run:// (the verifier hands absolute ones).
+function runRel(a) {
+  const p = require('path');
+  const abs = p.isAbsolute(String(a)) ? String(a) : p.resolve(String(a));
+  const r = p.relative(RUN, abs).split(p.sep).join('/');
+  if (r && r.indexOf('..') !== 0 && !p.isAbsolute(r) && require('fs').existsSync(abs)) return r;
+  return String(a).split(p.sep).join('/').replace(/^\.?\//, '').replace(/^spirit\/run\//, '');
+}
+
 const test = require('./testReport.js');
-const SKIP_DIRS = ['state', 'app-state', '.git', 'node_modules'];
+const SKIP_DIRS = ['state', 'app-state', '.git'];
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 function placeKeys(rel) { return rel.replace(/\.js$/, '').split('/'); }
 function productScripts() {
