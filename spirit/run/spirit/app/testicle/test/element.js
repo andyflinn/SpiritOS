@@ -810,7 +810,8 @@ test.run('while it runs a suite, the status bar says "running <suite> for <scrip
 // zzsThree holds.
 const ST = 'spirit/zzStatus/';
 const STS = [ST + 'zzsOne.js', ST + 'zzsTwo.js', ST + 'zzsThree.js'];
-const STATUS_RE = /^(\d+) of (\d+) reported: (\S+) (success|failure)$/;
+// Box v133: "<suite>: x of n reported", then the script just reported and success or failure.
+const STATUS_RE = /^(\S*zzStatus-sibling-general\.js): (\d+) of (\d+) reported\W+(\S+?)\W+(success|failure)$/;
 let statusFrom = 0;
 test.run('the world: spirit/zzStatus/ with its own -general test and three scripts, changed together', 0.2, async function () {
   if (!msgsAt) return 'no recorder: the world failed';
@@ -826,18 +827,18 @@ test.run('the world: spirit/zzStatus/ with its own -general test and three scrip
   STS.forEach(function (f) { fs.appendFileSync(path.join(s.run, f), '// changed together\n'); });
   return true;
 }, test.limit.long);
-test.run('as each script of a run reports, the status bar says "x of N reported: <script> success|failure", x counting up to N', 0.4, async function () {
+test.run('as each script of a run reports, the status bar says "<suite>: x of n reported", the script and success or failure, x counting up to n', 0.4, async function () {
   if (!msgsAt) return 'no recorder: the world failed';
-  const ok = await waitFor('messages_seen().slice(' + statusFrom + ').filter(function (m) { return /^\\d+ of 3 reported: \\S+zzStatus\\S* (success|failure)$/.test(m); }).length >= 3', 240000);
+  const ok = await waitFor('messages_seen().slice(' + statusFrom + ').filter(function (m) { return /zzStatus-sibling-general\\.js: \\d+ of 3 reported\\W+\\S+?\\W+(success|failure)$/.test(m); }).length >= 3', 240000);
   const seen = ((await T('messages_seen()')) || []).slice(statusFrom).filter(function (m) { return STATUS_RE.test(m) && /zzStatus/.test(m); });
-  const xs = seen.map(function (m) { return Number(STATUS_RE.exec(m)[1]); });
-  return (!!ok && JSON.stringify(xs.slice(-3)) === JSON.stringify([1, 2, 3])) || 'messages seen: ' + short(seen.slice(-6));
+  const xs = seen.map(function (m) { const x = STATUS_RE.exec(m); return Number(x[2]) + '/' + x[3]; });
+  return (!!ok && JSON.stringify(xs.slice(-3)) === JSON.stringify(['1/3', '2/3', '3/3'])) || 'messages seen: ' + short(seen.slice(-6));
 }, test.limit.long);
 test.run('and each one names its script and its own outcome: zzsTwo failure, zzsOne and zzsThree success', 0.4, async function () {
   if (!msgsAt) return 'no recorder: the world failed';
   const seen = ((await T('messages_seen()')) || []).slice(statusFrom).filter(function (m) { return STATUS_RE.test(m) && /zzStatus/.test(m); });
   const said = {};
-  seen.forEach(function (m) { const x = STATUS_RE.exec(m); said[x[3]] = x[4]; });
+  seen.forEach(function (m) { const x = STATUS_RE.exec(m); said[x[4]] = x[5]; });
   return (said[STS[0]] === 'success' && said[STS[1]] === 'failure' && said[STS[2]] === 'success') || 'said: ' + short(said);
 }, test.limit.quick);
 
