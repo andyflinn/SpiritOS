@@ -204,6 +204,8 @@ const toClassify = db.prepare('SELECT name, hash FROM script WHERE reClassify = 
 const setClass = db.prepare('UPDATE script SET browserOnly = ?, nodeOnly = ?, reClassify = ?, changed = ? WHERE name = ?');
 const classified = db.prepare('UPDATE script SET reClassify = 0, changed = ? WHERE name = ? AND hash = ? AND reClassify = 1');
 const reclassify = db.prepare('UPDATE script SET reClassify = 1, changed = ? WHERE name = ? AND deleted = 0');
+// The scripts whose current classifyable row was judged by other bytes of the classifier than these.
+const classifiedBy = db.prepare('SELECT DISTINCT script FROM testicle WHERE suite = ? AND current = 1 AND suiteHash <> ?');
 function blocked(script) { const r = T.current.get(script, CLASSIFY, CLASSIFYABLE); return !!r && !r.verified; }
 // WHICH KIND JUDGES WHICH SCRIPT (goal/G47.1, box v94, 2: "node only scripts are tested by -general AND -node general tests.
 // browser only scripts are tested by -general and -browser general tests. if a script is NOT browser only AND NOT node only,
@@ -358,9 +360,7 @@ function classifyEnded(j) {
     if (!sr || sr.deleted || sr.hash !== j.hashes[name]) return;
     const row = T.current.get(name, CLASSIFY, CLASSIFYABLE);
     if (!row || Number(row.tested) < j.started || row.judged !== j.hashes[name]) {
-      if (!Q.suiteRow.get(name, CLASSIFY)) { Q.putSuite.run(name, CLASSIFY, j.suiteHash, now); tell('suite', suiteServed(Q.suiteRow.get(name, CLASSIFY)), 'added'); }
       setResult(name, CLASSIFY, CLASSIFYABLE, false, CLASSIFY_SEVERITY, j.hashes[name], j.suiteHash);
-      suiteJudged(name, CLASSIFY);
     }
     if (classified.run(now, name, j.hashes[name]).changes) tell('script', served(Q.script.get(name)), 'updated');
   });
@@ -423,6 +423,8 @@ function apply(changed, P) {
   // changes"): every file row and every suite row it touched, as they then stand.
   const files = new Set();
   const written = new Map();
+  // A write that owes a class (the classifier changed) wakes the runner too, with no suite row written.
+  let wake = false;
   // Whether each row was there before this write, so its publish says added or updated (deleted, by its own flag).
   const had = Object.create(null);
   const before = function (k, get) { if (!(k in had)) had[k] = !!get(); };
@@ -446,16 +448,17 @@ function apply(changed, P) {
           if (asScript && !asScript.deleted) { before('script|' + rel, function () { return asScript; }); Q.goneScript.run(rel, now); files.add(rel); }
           return;
         }
-        // THE CLASSIFIER CHANGED (goal/G47.1; Andy, of a script left red by a classifier since fixed: "cw?"): every script it
-        // judged with other bytes is classified again, its classifier row flagged with the bytes as they are now, so a class
-        // or a red from an older classifier never stands. Unchanged, nothing moves, at start too.
+        // THE CLASSIFIER CHANGED (goal/G47.1; Andy: "THIS FUCKING HAPPENS ANDY-FUCKING-TIME a script or the Classifier
+        // changes."): every script whose classifyable row was judged by other bytes of it is classified again, so a class
+        // or a red from an older classifier never stands. The classifier has no suite row (Andy: "scriptClassify NEVER runs
+        // as a normal, general TEST"): what it judged with is the suiteHash its classifyable rows carry. Unchanged, nothing
+        // moves, at start too.
         if (rel === CLASSIFY) {
-          Q.rowsOfSuite.all(rel).filter(function (r) { return !r.deleted && r.hash !== hash(rel); }).forEach(function (r) {
-            touched(r.script, rel);
-            Q.putSuite.run(r.script, rel, hash(rel), now);
+          classifiedBy.all(rel, hash(rel)).forEach(function (r) {
             before('script|' + r.script, function () { return Q.script.get(r.script); });
             if (reclassify.run(now, r.script).changes) files.add(r.script);
           });
+          if (files.size) wake = true;
           return;
         }
         // The files it concerns: the one it is the own test of, and every file a general test judges. (Named apart from
@@ -495,7 +498,7 @@ function apply(changed, P) {
     });
   });
   // Whatever wrote it, a file change, a script.get or a testicle.set, a flag written wakes the runner (wsl's gap).
-  if (written.size) soon();
+  if (written.size || wake) soon();
 }
 
 // WHAT IT STREAMS (goal/G47.1, the box: "busy is streamed by the server: whenever it wakes it sets busy true and streams it;
@@ -589,6 +592,13 @@ function treeScripts() {
   }(RUN));
   return out;
 }
+// THE CLASSIFIER'S OLD SUITE ROWS GO (Andy: "scriptClassify NEVER runs as a normal, general TEST."): a table made before
+// holds one per script, shown as a suite with a 🏃‍♂️; at start each is marked deleted and streamed, its classifyable test
+// row kept.
+Q.rowsOfSuite.all(CLASSIFY).forEach(function (r) {
+  if (r.deleted) return;
+  if (dropRow.run(Date.now(), r.script, CLASSIFY).changes) tell('suite', suiteServed(Q.suiteRow.get(r.script, CLASSIFY)), 'deleted');
+});
 // Every script already classified, swept once: its rows that its class rules out leave the tables (pruneUnfit).
 db.prepare('SELECT name FROM script WHERE deleted = 0 AND reClassify = 0 AND (browserOnly = 1 OR nodeOnly = 1)').all().forEach(function (r) { pruneUnfit(r.name); });
 (function startScan() {
@@ -635,6 +645,13 @@ appServer.serve({
       if (!/\.js$/.test(script) || isSuite(script) || script.indexOf('..') !== -1 || ignored(path.join(RUN, script))) throw refused('not-a-production-script');
       if (!/\.js$/.test(suite) || !isSuite(suite) || suite.indexOf('..') !== -1) throw refused('not-a-suite');
       if (!there(script) || !there(suite)) throw refused('no-such-file');
+      // THE CLASSIFIER IS NO SUITE TO PRESS (Andy: "scriptClassify NEVER runs as a normal, general TEST."): asked for, the
+      // script is owed a class, and the runner classifies it next, as it would after a change.
+      if (suite === CLASSIFY) {
+        if (reclassify.run(Date.now(), script).changes) tell('script', served(Q.script.get(script)), 'updated');
+        soon();
+        return { started: true };
+      }
       press(script, suite, String(a.testicle || ''));
       return { started: true };
     },
@@ -770,7 +787,9 @@ appServer.serve({
         // ITS SUITE ROW, MADE IF MISSING (goal/G47.1, the box: "When a test row is set, and a script row is missing, the server
         // needs to auto-create the script/suite rows for that test"): a suite on disc whose row for this script is not there
         // gets it, flagged, so its status can be judged from the tests that follow.
-        if (there(suite) && !Q.suiteRow.get(script, suite)) {
+        // The classifier gets none (Andy: "scriptClassify NEVER runs as a normal, general TEST."): its result is its
+        // classifyable test row alone.
+        if (suite !== CLASSIFY && there(suite) && !Q.suiteRow.get(script, suite)) {
           Q.putSuite.run(script, suite, hashOf(suite), Date.now());
           tell('suite', suiteServed(Q.suiteRow.get(script, suite)), 'added');
           // A flag written here wakes the runner as a file change does (wsl's gap: "every flagged row is owed one run").
@@ -788,7 +807,7 @@ appServer.serve({
         const isLate = !!late && late.scriptHash === scriptHash && late.suiteHash === suiteHash;
         if (late && !isLate) killed.delete(script + '|' + suite);
         const out = setResult(script, suite, name, isLate ? false : !!a.verified, severity, scriptHash, suiteHash);
-        suiteJudged(script, suite);
+        if (suite !== CLASSIFY) suiteJudged(script, suite);
         return out;
       }).finally(function () { getting -= 1; told(); });
     },
