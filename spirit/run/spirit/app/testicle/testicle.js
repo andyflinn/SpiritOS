@@ -356,6 +356,8 @@ process.on('uncaughtException', function (e) { logError('uncaught', e); process.
 // the run (a change after it started) stays flagged and comes round again ("the running job is not killed, the suite comes
 // round again behind it").
 function jobEnded(j) {
+  // STOPPED FOR A TOP RED'S FIX (box v128): its results untouched, its rows left flagged, so it comes round again.
+  if (j.stopped) return;
   if (j.classify) return classifyEnded(j);
   // A general test's run of several scripts: each script's row judged as its own run's would be.
   if (j.batch) {
@@ -427,6 +429,30 @@ function setResult(script, suite, name, verified, severity, scriptHash, suiteHas
   return out;
 }
 // A press of 🏃‍♂️, or an agent's testicle.run: to the head of the queue, never twice.
+// A FIX OF A TOP RED RUNS FIRST (goal/G47.1, box v128: "a change to one of the 10 scripts holding the most severe current
+// reds (each script counted once, not each test row) stops the running suite and runs that script's red suites first, most
+// severe first (the changed script classified again first). the stopped run goes back flagged, its results untouched, never
+// marked green. any other change waits its turn; the run continues."; Andy: "if the changed file is not a top 10 fix, the
+// run may as well continue...."). The stop is the server's own (it started the run), never an answer the test must wait for.
+const TOP_SCRIPTS = 10;
+const topScripts = db.prepare('SELECT script, MAX(severity) AS worst FROM testicle WHERE current = 1 AND verified = 0 GROUP BY script ORDER BY worst DESC, script LIMIT ' + TOP_SCRIPTS);
+const redSuitesOf = db.prepare('SELECT suite, MAX(severity) AS worst FROM testicle WHERE current = 1 AND verified = 0 AND script = ? GROUP BY suite ORDER BY worst DESC, suite');
+function topFix(rel) {
+  if (isSuite(rel) || !topScripts.all().some(function (r) { return r.script === rel; })) return;
+  // Its red suites at the head of the queue, the most severe first (the classifier, owed first, runs before them all).
+  const suites = redSuitesOf.all(rel).map(function (r) { return r.suite; }).filter(function (s) { return s !== CLASSIFY; });
+  for (let k = suites.length - 1; k >= 0; k--) {
+    for (let i = front.length - 1; i >= 0; i--) if (front[i].script === rel && front[i].suite === suites[k]) front.splice(i, 1);
+    front.unshift({ script: rel, suite: suites[k], title: '' });
+  }
+  // The running suite stopped, unless it is that script's own run.
+  const j = job;
+  if (!j || j.script === rel || j.killed || j.stopped) return;
+  j.stopped = true;
+  clearTimeout(j.timer);
+  logError('runner: stopped ' + (j.classify ? 'classifying' : j.suite + (j.batch ? ' (' + j.scripts.length + ' scripts)' : ' for ' + j.script)) + ': ' + rel + ' holds a top red and changed', null);
+  try { j.kid.kill(); } catch (e) { logError('topFix: the kill', e); }
+}
 function press(script, suite, title) {
   for (let i = front.length - 1; i >= 0; i--) if (front[i].script === script && front[i].suite === suite) front.splice(i, 1);
   front.unshift({ script: script, suite: suite, title: title || '' });
@@ -629,6 +655,7 @@ watcher.on('all', function (event, full) {
   const rel = posix(path.relative(RUN, full));
   if (!rel || rel.indexOf('..') === 0 || !/\.js$/.test(rel)) return;
   pending.add(rel);
+  try { topFix(rel); } catch (e) { logError('topFix ' + rel, e); }
   kick();
   // The runner waits for a quiet second after the last change (the box: "a new event pushes the start back").
   soon();
