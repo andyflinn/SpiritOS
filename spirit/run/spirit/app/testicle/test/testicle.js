@@ -1521,9 +1521,10 @@ test.run('the node lists the verb testicle.script.classify', 0.2, async function
 }, test.limit.quick);
 test.run('testicle.script.classify sets a script\'s browserOnly and nodeOnly', 0.2, async function () {
   if (!up()) return NONODE;
-  const r = await call(N.base, 'testicle.script.classify', { script: Z + 'alpha.js', browserOnly: true, nodeOnly: false });
-  const row = scriptRow(tables(DB), Z + 'alpha.js');
-  return (r.status === 200 && !!row && yes(row.browserOnly) && no(row.nodeOnly)) || 'classify: ' + r.status + ' ' + short(r.text) + ', alpha\'s row ' + short(row);
+  // kappa.js: on disc, its row made long before, unchanged since (alpha.js was deleted by an earlier check).
+  const r = await call(N.base, 'testicle.script.classify', { script: KA, browserOnly: true, nodeOnly: false });
+  const row = scriptRow(tables(DB), KA);
+  return (r.status === 200 && !!row && yes(row.browserOnly) && no(row.nodeOnly)) || 'classify: ' + r.status + ' ' + short(r.text) + ', kappa\'s row ' + short(row);
 }, test.limit.quick);
 test.run('the world: six scripts written, each with its own test: node, page, both, broken, hang, exit', 0.2, async function () {
   if (!up()) return NONODE;
