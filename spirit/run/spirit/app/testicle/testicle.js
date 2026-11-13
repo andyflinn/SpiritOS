@@ -251,14 +251,26 @@ function chooseJob() {
   rows.sort(function (a, b) { return (isGeneral(b.suite) - isGeneral(a.suite)) || (a.suite < b.suite ? -1 : a.suite > b.suite ? 1 : 0) || (a.script < b.script ? -1 : a.script > b.script ? 1 : 0); });
   return rows.length ? { script: rows[0].script, suite: rows[0].suite, title: '' } : null;
 }
+// WHY THE RUNNER WAITS, WRITTEN DOWN (goal/G47.1; Andy saw classifying start only when he turned interactive off, and
+// nothing said why): while scripts are owed a class, each time the runner does not start it says why in testicle.err, a
+// reason said once until it changes.
+let waitedFor = '';
+function waits(why) {
+  if (why === waitedFor) return;
+  waitedFor = why;
+  let owed = 0;
+  try { owed = toClassify.all().length; } catch (e) { owed = -1; }
+  if (owed) logError('runner waits, ' + owed + ' scripts owed a class: ' + why, null);
+}
 function nextJob() {
-  if (job || quiet) return;
+  if (job || quiet) { waits(job ? 'a job runs' : 'the quiet second'); return; }
   // NEVER WHILE A CHANGE IS STILL BEING WRITTEN (wsl's verify: rho killed, its row left flagged and run again): a job
   // started then takes the hashes from before the write, the write lands, and its end reads that as a change during the
   // run. The write's end calls for the quiet second again (apply), and the job starts after it.
-  if (working || timer || pending.size) return;
+  if (working || timer || pending.size) { waits(working ? 'a write runs' : timer ? 'a write is due' : pending.size + ' changes pending'); return; }
   const n = chooseJob();
-  if (!n) { told(); return; }
+  if (!n) { waits('nothing chosen'); told(); return; }
+  if (n.classify) logError('runner: classifying ' + n.scripts.length + ' scripts (' + (prefs.interactive ? 'interactive' : 'auto') + ')', null);
   // THE TWO HASHES, TAKEN AT THE START (the box: "When a run starts, the server remembers the two hashes as they stand, and
   // until that run ends tags every result of it with them").
   const sr = n.classify ? null : Q.script.get(n.script);
@@ -538,7 +550,7 @@ function kick() {
     const changed = Array.from(pending);
     pending.clear();
     pairs().then(function (P) { apply(changed, P); }).then(null, function (e) {
-      console.error('testicle: ' + (e && e.message || e));
+      logError('the write of a moment', e);
     }).then(function () { working = false; kick(); if (!working && !timer && !pending.size) soon(); });
   }, 50);
   told();
