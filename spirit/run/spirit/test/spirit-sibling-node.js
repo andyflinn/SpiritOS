@@ -15,29 +15,17 @@
 // "with no script-argument, they will process all applicable scripts. else it will process all scripts listed in the
 // arguments that fit"; "node only scripts are tested by -general AND -node general tests ... if a script is NOT browser only
 // AND NOT node only, it will be tested by all 3 categories": testicle hands it no browser-only script. No argument: every
-// product script, a script that does not load on the node left unjudged. Several: each in a run of its own (below).
+// product script, a script that does not load on the node left unjudged. Several: each judged in this one run, its result reported for it.
 require('../spirit.js');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { spawn, spawnSync, execFileSync } = require('child_process');
+const { spawn, execFileSync } = require('child_process');
 
 const RUN = path.join(__dirname, '..', '..');
 const ARGV = process.argv.slice(2);
-const VERIFY = ARGV.indexOf('--verify-port') !== -1 ? ARGV.slice(ARGV.indexOf('--verify-port'), ARGV.indexOf('--verify-port') + 2) : [];
 const GIVEN = ARGV.filter(function (a, i) { return a.indexOf('--') !== 0 && ARGV[i - 1] !== '--verify-port' && ARGV[i - 1] !== '--test'; })
   .map(function (a) { return runRel(a); });
-
-// SEVERAL SCRIPTS: each in a run of its own, so each reports for itself (testReport takes its script from the argument).
-if (GIVEN.length > 1) {
-  let failed = 0;
-  GIVEN.forEach(function (one) {
-    const r = spawnSync(process.execPath, [__filename, one].concat(VERIFY), { cwd: RUN, encoding: 'utf8', maxBuffer: 1 << 26 });
-    process.stdout.write(String(r.stdout || '') + String(r.stderr || ''));
-    if (r.status !== 0) failed += 1;
-  });
-  process.exit(failed ? 1 : 0);
-}
 
 // A path as given, absolute or not, scoped to run:// (the verifier hands absolute ones).
 function runRel(a) {
@@ -120,18 +108,18 @@ if (!GIVEN.length) {
     if (!E.nodeLoaded) return 'nothing required on the node: the world failed';
     return (E.nodeLoaded.length > 0 && !E.nodeBad.length) || E.nodeBad.length + ' of ' + E.nodeLoaded.length + ' do not; the first: ' + short(E.nodeBad.slice(0, 5));
   }, test.limit.quick);
-} else {
-  const rel = GIVEN[0];
+} else GIVEN.forEach(function (rel) {
+  // Each script given judged in this one run, its result reported for that script (opts.script), so a failure says which.
   test.run('on the node: it loads, answers at once and stands at spirit.required.<path>', 0.4, async function () {
     if (!E.run) return 'no copy of the tree: the world failed';
     if (!fs.existsSync(path.join(RUN, rel))) return rel + ' is not there';
     const r = await requireOnNode(E.run, rel);
-    if (r.err) return 'it does not load on the node: ' + short(r.err);
+    if (r.err) return rel + ' does not load on the node: ' + short(r.err);
     if (r.program) { test.comment(rel + ' ends its process when loaded, nothing thrown: a program, loaded; its place is not judged'); return true; }
-    if (r.promise) return 'spirit.require answered a promise, not the module at once';
-    return r.placed || 'nothing stands at spirit.required.' + placeKeys(rel).join('.');
-  }, test.limit.slow);
-}
+    if (r.promise) return rel + ': spirit.require answered a promise, not the module at once';
+    return r.placed || rel + ': nothing stands at spirit.required.' + placeKeys(rel).join('.');
+  }, test.limit.slow, { script: rel });
+});
 
 test.after(function () {
   if (E.root) try { fs.rmSync(E.root, { recursive: true, force: true }); } catch (e) { /* scratch */ }

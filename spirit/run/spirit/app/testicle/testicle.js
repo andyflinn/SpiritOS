@@ -251,7 +251,18 @@ function chooseJob() {
   const rows = flaggedRows.all().filter(function (r) { return r.suite !== CLASSIFY && there(r.script) && there(r.suite) && !blocked(r.script) && !unfit(r.script, r.suite); });
   // General tests first, "because they tend to get most coverage fastest" (Andy); then by name, so the order is stable.
   rows.sort(function (a, b) { return (isGeneral(b.suite) - isGeneral(a.suite)) || (a.suite < b.suite ? -1 : a.suite > b.suite ? 1 : 0) || (a.script < b.script ? -1 : a.script > b.script ? 1 : 0); });
-  return rows.length ? { script: rows[0].script, suite: rows[0].suite, title: '' } : null;
+  if (!rows.length) return null;
+  // A GENERAL TEST IS HANDED A LIST (goal/G47.1, box v94, 2: "else it will process all scripts listed in the arguments that
+  // fit"; Andy: "optimizing the testicle server so it gives the general tests a LIST instead of calling them one-by-one"):
+  // every flagged script of that one suite, in one run, each with its hash as the run starts.
+  if (isGeneral(rows[0].suite)) {
+    const suite = rows[0].suite;
+    const mine = rows.filter(function (r) { return r.suite === suite; });
+    const hashes = Object.create(null);
+    mine.forEach(function (r) { const sr = Q.script.get(r.script); hashes[r.script] = (sr && sr.hash) || hashOf(r.script); });
+    return { batch: true, script: '', suite: suite, title: '', scripts: mine.map(function (r) { return r.script; }), hashes: hashes };
+  }
+  return { script: rows[0].script, suite: rows[0].suite, title: '' };
 }
 // WHY THE RUNNER WAITS, WRITTEN DOWN (goal/G47.1; Andy saw classifying start only when he turned interactive off, and
 // nothing said why): while scripts are owed a class, each time the runner does not start it says why in testicle.err, a
@@ -275,16 +286,19 @@ function nextJob() {
   if (n.classify) logError('runner: classifying ' + n.scripts.length + ' scripts (' + (prefs.interactive ? 'interactive' : 'auto') + ')', null);
   // THE TWO HASHES, TAKEN AT THE START (the box: "When a run starts, the server remembers the two hashes as they stand, and
   // until that run ends tags every result of it with them").
-  const sr = n.classify ? null : Q.script.get(n.script);
-  const ur = n.classify ? null : Q.suiteRow.get(n.script, n.suite);
-  const j = { script: n.script, suite: n.suite, title: n.title || '', scriptHash: (sr && sr.hash) || (n.classify ? '' : hashOf(n.script)),
+  const many = !!(n.classify || n.batch);
+  const sr = many ? null : Q.script.get(n.script);
+  const ur = many ? null : Q.suiteRow.get(n.script, n.suite);
+  const j = { script: n.script, suite: n.suite, title: n.title || '', scriptHash: (sr && sr.hash) || (many ? '' : hashOf(n.script)),
     suiteHash: (ur && ur.hash) || hashOf(n.suite), started: Date.now(), kid: null, timer: null, killed: false,
-    classify: !!n.classify, scripts: n.scripts || [], hashes: n.hashes || null, done: 0, seen: Object.create(null) };
-  // A classifying run is given its scripts; any other run its script, when it is a general test, and the title asked.
-  const args = [n.suite].concat(j.classify ? j.scripts : []);
-  if (!j.classify && n.suite !== ownTestOf(n.script)) args.push(n.script);
+    classify: !!n.classify, batch: !!n.batch, scripts: n.scripts || [], hashes: n.hashes || null, done: 0, seen: Object.create(null) };
+  // A classifying run and a general test's run are given their scripts; any other run its script, when it is a general
+  // test, and the title asked.
+  const args = [n.suite].concat(many ? j.scripts : []);
+  if (!many && n.suite !== ownTestOf(n.script)) args.push(n.script);
   if (j.title) args.push('--test', j.title);
-  if (!j.classify) killed.delete(j.script + '|' + j.suite);
+  if (j.batch) j.scripts.forEach(function (s) { killed.delete(s + '|' + j.suite); });
+  else if (!j.classify) killed.delete(j.script + '|' + j.suite);
   job = j;
   told();
   let done = false;
@@ -302,7 +316,8 @@ function nextJob() {
   j.kid = spawn(process.execPath, args, { cwd: RUN, stdio: 'ignore', windowsHide: true });
   j.kid.on('error', end);
   j.kid.on('exit', end);
-  j.timer = setTimeout(function () { killJob(j); }, j.classify ? classifyLimit(j.scripts.length) : JOB_LIMIT_MS);
+  // A general test's run of several scripts has the one job limit for each of them.
+  j.timer = setTimeout(function () { killJob(j); }, j.classify ? classifyLimit(j.scripts.length) : j.batch ? JOB_LIMIT_MS * j.scripts.length : JOB_LIMIT_MS);
 }
 // PAST THE LIMIT (the box: "A job that runs past 2 minutes is killed, and every test of that suite and script the server
 // knows is failed, tagged with the run's two hashes, so it is not queued again until the script or the suite changes").
@@ -315,9 +330,13 @@ function killJob(j) {
   j.killed = true;
   // A classifying run killed: its end fails every script it had not classified (jobEnded).
   if (j.classify) { try { j.kid.kill(); } catch (e) { logError('killJob: the kill', e); } return; }
-  killed.set(j.script + '|' + j.suite, { scriptHash: j.scriptHash, suiteHash: j.suiteHash });
-  try { T.ofSuite.all(j.script, j.suite).forEach(function (r) { setResult(j.script, j.suite, r.test, false, Number(r.severity) || 0, j.scriptHash, j.suiteHash); }); }
-  catch (e) { logError('killJob: failing ' + j.script + ' ' + j.suite, e); }
+  // A general test's run of several scripts killed: each of them as a run of its own would be.
+  const each = j.batch ? j.scripts.map(function (s) { return { script: s, scriptHash: j.hashes[s] }; }) : [{ script: j.script, scriptHash: j.scriptHash }];
+  each.forEach(function (one) {
+    killed.set(one.script + '|' + j.suite, { scriptHash: one.scriptHash, suiteHash: j.suiteHash });
+    try { T.ofSuite.all(one.script, j.suite).forEach(function (r) { setResult(one.script, j.suite, r.test, false, Number(r.severity) || 0, one.scriptHash, j.suiteHash); }); }
+    catch (e) { logError('killJob: failing ' + one.script + ' ' + j.suite, e); }
+  });
   try { j.kid.kill(); } catch (e) { logError('killJob: the kill', e); }
 }
 // WHAT GOES WRONG, KEPT WHERE IT CAN BE READ (wsl's verify: "the testicle server's stderr does not reach my node.err"):
@@ -336,6 +355,14 @@ process.on('uncaughtException', function (e) { logError('uncaught', e); process.
 // round again behind it").
 function jobEnded(j) {
   if (j.classify) return classifyEnded(j);
+  // A general test's run of several scripts: each script's row judged as its own run's would be.
+  if (j.batch) {
+    j.scripts.forEach(function (s) {
+      try { jobEnded({ script: s, suite: j.suite, title: '', scriptHash: j.hashes[s], suiteHash: j.suiteHash, killed: j.killed }); }
+      catch (e) { logError('jobEnded ' + s + ' ' + j.suite, e); }
+    });
+    return;
+  }
   if (j.title) return;
   const row = Q.suiteRow.get(j.script, j.suite);
   const sr = Q.script.get(j.script);
@@ -533,6 +560,7 @@ function busyNow() { return working || !!timer || pending.size > 0 || getting > 
 function doingNow() {
   if (!job) return '';
   if (job.classify) return 'classifying ' + job.done + ' of ' + job.scripts.length;
+  if (job.batch) return 'running ' + path.posix.basename(job.suite) + ' for ' + (job.scripts.length === 1 ? job.scripts[0] : job.scripts.length + ' scripts');
   return 'running ' + path.posix.basename(job.suite) + ' for ' + job.script;
 }
 let busyTold = false;
@@ -553,6 +581,7 @@ function told() {
 function suiteJudged(script, suite) {
   // Never while its own job runs: the rows it has so far are not the whole run; the job's end judges it (jobEnded).
   if (job && job.script === script && job.suite === suite) return false;
+  if (job && job.batch && job.suite === suite && job.hashes[script] !== undefined) return false;
   const row = Q.suiteRow.get(script, suite);
   const sr = Q.script.get(script);
   if (!row || row.deleted || !sr) return false;
@@ -830,8 +859,11 @@ appServer.serve({
         // for its own script and suite; any other result, the script and suite rows' hashes as they stand.
         // A classifying run's result: tagged with that script's hash as the run started, and the classifier's.
         const asClassified = job && job.classify && suite === CLASSIFY && job.hashes && job.hashes[script] !== undefined ? job : null;
-        const own = asClassified || (job && job.script === script && job.suite === suite ? job : null);
-        let scriptHash = asClassified ? asClassified.hashes[script] : own ? own.scriptHash : ((Q.script.get(script) || {}).hash || hashOf(script));
+        // A general test's run of several scripts: tagged with that script's hash as the run started, and the suite's.
+        const inBatch = job && job.batch && job.suite === suite && job.hashes[script] !== undefined ? job : null;
+        const listed = asClassified || inBatch;
+        const own = listed || (job && job.script === script && job.suite === suite ? job : null);
+        let scriptHash = listed ? listed.hashes[script] : own ? own.scriptHash : ((Q.script.get(script) || {}).hash || hashOf(script));
         let suiteHash = own ? own.suiteHash : ((Q.suiteRow.get(script, suite) || {}).hash || hashOf(suite));
         // Late from a killed run, its hashes still standing: failed, as every test of that run is.
         const late = own ? null : killed.get(script + '|' + suite);

@@ -13,13 +13,18 @@
 // suite). What an element script places, a page judges in spirit-sibling-browser.js; what an api.js serves,
 // spirit-sibling-general.js (branchRules).
 
+// A LIST OF SCRIPTS (goal/G47.1, box v94, 2: "with no script-argument, they will process all applicable scripts. else it
+// will process all scripts listed in the arguments that fit"): its rules judge each argument in turn, its results reported for
+// that argument (testReport's test.forScript); none given, every sub-folder.
+require('../spirit.js');
+const GIVEN = process.argv.slice(2).filter(function (a, i, all) { return a.indexOf('--') !== 0 && all[i - 1] !== '--verify-port' && all[i - 1] !== '--test'; });
+function appChild(ARGS) {
 const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 
-const ARGS = process.argv.slice(2).filter(function (a, i, all) { return a !== '--verify-port' && all[i - 1] !== '--verify-port'; });
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 400); }
 function code(rel) { let t = ''; try { t = fs.readFileSync(path.join(RUN, rel), 'utf8'); } catch (e) { return ''; } return t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"\\])\/\/[^\n]*/g, '$1'); }
 function isFile(rel) { try { return fs.statSync(path.join(RUN, rel)).isFile(); } catch (e) { return false; } }
@@ -246,3 +251,6 @@ if (askedApp && askedApp !== BRANCH_TESTS) {
 rule0();
 appApp();
 appRules(TARGETS.filter(function (n) { return n !== BRANCH_TESTS; }).map(factsOf));
+}
+if (!GIVEN.length) appChild([]);
+else GIVEN.forEach(function (one) { require('./testReport.js').forScript(one, function () { appChild([one]); }); });

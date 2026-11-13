@@ -2,7 +2,9 @@
 
 A `-child-` general test beside `spirit/app.js` (`./TEST_SYSTEM.md`): it judges `spirit/app.js` and `spirit/app/` and
 below. Given a file, it judges the app that file is in; given none, or a file of the app branch itself, every
-sub-folder. Judged on disc, from the files and their code with comments left out; no node is started.
+sub-folder. Given several, each in turn, in one run, its results reported for that file (testReport's
+`test.forScript`; box v94, 2: *"else it will process all scripts listed in the arguments that fit"*). Judged on disc, from
+the files and their code with comments left out; no node is started.
 
 goal/G43.32. Andy, the box: *"rules for sub-folders of run://spirit/app/"*, rules 0 to 6, and of the name: *"if
 app-child-general.js works that is my decision."*
