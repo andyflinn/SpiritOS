@@ -1477,6 +1477,17 @@ test.run('interactive: its own suite is flagged needs running', 0.2, function ()
   const r = suiteRow(i1, CHI, CHIS);
   return (!!r && yes(r.test)) || 'chi\'s suite row: ' + short(r);
 }, test.limit.quick);
+// Andy: "we specified that classification and file updates happen REGARDLESS of interactive or NOT."
+test.run('interactive: the server classifies by itself, no press: chi\'s reClassify turns false', 0.2, async function () {
+  if (!i1) return NONODE;
+  const ok = await until(function () { const r = scriptRow(tables(DB), CHI); return Promise.resolve(!!r && no(r.reClassify)); }, 120000);
+  return !!ok || 'chi\'s row, interactive, two minutes on: ' + short(scriptRow(tables(DB), CHI));
+}, test.limit.long);
+test.run('interactive: the classifier\'s own suite row is no longer flagged for chi', 0.2, function () {
+  if (!i1) return NONODE;
+  const r = suiteRow(tables(DB), CHI, SC);
+  return (!!r && no(r.test)) || 'chi\'s classifier suite row: ' + short(r);
+}, test.limit.quick);
 test.run('interactive: classification never sets both browserOnly and nodeOnly', 0.2, function () {
   if (!i1) return NONODE;
   const both = i1.script.filter(function (r) { return yes(r.browserOnly) && yes(r.nodeOnly); });
