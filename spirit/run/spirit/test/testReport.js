@@ -215,6 +215,11 @@ async function runAll() {
     const title = String(t.title);
     let sev = Number(t.severity);
     const script = t.script || SCRIPT;
+    // A SCRIPT DONE (goal/G47.1, box v129-131): the first test of another script ends the one before, whose success goes
+    // out as that test starts, before it runs (a run stopped while it waits must find the one before already reported). A run
+    // with a title (--test) ran part of its suite and reports no success at all.
+    if (doing !== null && doing !== script) succeeded(doing);
+    if (doing !== script) { doing = script; held[script] = true; }
     const once = script + '|' + title;
     if (seen[once]) { t.verdict = { pass: false, crash: true, detail: 'this title is said a second time in its suite' }; }
     else if (typeof t.severity !== 'number' || !(sev >= 0 && sev <= 1)) { t.verdict = { pass: false, crash: true, detail: 'its severity is no number from 0.0 to 1.0: ' + String(t.severity) }; }
@@ -225,10 +230,6 @@ async function runAll() {
     const severity = v.crash ? 0.7 : (sev >= 0 && sev <= 1 ? sev : 0.7);
     if (v.pass) { test.successCount++; test.comment('SUCCESS #' + test.counter + '.' + test.successCount + ': ' + title + ' ' + ICON.SUCCESS); }
     else { test.failureCount++; test.comment('FAILURE #' + test.counter + '.' + test.failureCount + ': ' + title + (v.detail ? ' — ' + v.detail : '') + ' ' + ICON.ERROR); }
-    // A SCRIPT DONE (goal/G47.1, box v129-131): the first test of another script ends the one before, whose success goes
-    // out before this result. A run with a title (--test) ran part of its suite and reports no success at all.
-    if (doing !== null && doing !== script) succeeded(doing);
-    if (doing !== script) { doing = script; held[script] = true; }
     if (!v.pass) held[script] = false;
     reportToTesticle({ script: script, suite: SUITE_FILE, test: title, verified: !!v.pass, severity: severity });
   }
