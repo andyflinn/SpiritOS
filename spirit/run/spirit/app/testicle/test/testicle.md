@@ -123,3 +123,17 @@ The box, in Andy's words where he gave them:
   first among each, a result filter answering the other result, a from that does not skip, a red holding a passing test; a cut made before the result,
   the script, the suite or the words narrowed, so a quiet row beneath louder ones is never answered.
 - Anything later than one second; a busy that never says true while it works, or stays true once idle.
+
+## Box v79, 2 to 4: interactive and auto, the script columns, preferences
+
+- **The script columns** (3): the script table, made before, gains `reClassify`, `browserOnly` and `nodeOnly`; its older
+  row is kept. A script seen for the first time starts with `reClassify` true; a change of its hash sets it true again, in
+  both modes; classification never sets both `browserOnly` and `nodeOnly`.
+- **The verb `preferences`** (4): listed by the node; `{}` answers them all, `interactive` true by default; an unknown name
+  or a wrong type is refused and sets nothing; `{interactive: false}` sets it, answers them all, and is kept in
+  `spirit/state/testicle/data/preferences.json`.
+- **Interactive** (2), the default: a changed script gets its row and its suite is flagged "needs running", and nothing
+  runs by itself (five seconds idle, no test rows); a press (`testicle.run`) runs that suite and only it.
+- **Auto**: set by the verb, the server processes everything by itself: a suite flagged while interactive is run.
+- Its test must try to break: a run started by itself while interactive; a changed hash leaving `reClassify` false; an
+  unknown preference or a wrong type taken; the preference not kept in its file; auto that leaves a flagged suite unrun.

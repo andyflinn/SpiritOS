@@ -123,9 +123,8 @@ function scratch() {
   // AN OLDER testicle.db (goal/G47.1, the rename: "an existing testicle.db is renamed in place, its rows kept"): its first
   // table still named file, the suite table's key column file, one row in each.
   fs.mkdirSync(path.join(on, 'data'), { recursive: true });
-  // AUTO, as these checks judge the runner picking flagged suites by itself (goal/G47.1, box v79, 2: "auto: the default mode
-  // until now: the server auto-processes everything"); interactive, the default since, is judged with its preferences.
-  fs.writeFileSync(path.join(on, 'data', 'preferences.json'), JSON.stringify({ interactive: false }));
+  // No preferences.json: the default, interactive, is judged first; then auto is set by the verb for the runner's checks
+  // (goal/G47.1, box v79, 2 and 4), and interactive again at the end, on chi and psi.
   const old = new DatabaseSync(path.join(on, 'data', 'testicle.db'));
   old.exec('CREATE TABLE file (name TEXT PRIMARY KEY, hash TEXT NOT NULL DEFAULT \'\', deleted INTEGER NOT NULL DEFAULT 0, changed INTEGER NOT NULL)');
   old.exec('CREATE TABLE suite (file TEXT NOT NULL, suite TEXT NOT NULL, test INTEGER NOT NULL DEFAULT 0, deleted INTEGER NOT NULL DEFAULT 0, hash TEXT NOT NULL DEFAULT \'\', outcome TEXT NOT NULL DEFAULT \'\', changed INTEGER NOT NULL, PRIMARY KEY (file, suite))');
@@ -326,6 +325,62 @@ test.run('at start the suite table holds no row beyond those kept', 0.2, functio
   const freshSuites = start.suite.filter(function (r) { return r.script !== OLD.name; });
   return (!start.error && freshSuites.length === 0) || 'rows at start: ' + short(start.error || freshSuites.slice(0, 5));
 }, test.limit.quick);
+
+// ── goal/G47.1, box v79, 3: three fields on the script table ──
+// "reClassify, boolean: \"this script needs re-classification.\"", "browserOnly, boolean", "nodeOnly, boolean", "added as
+// columns; an existing script table gains them, as the test table gained suiteHash."
+const scriptColumns = function () {
+  try { const d = new DatabaseSync(DB, { readOnly: true }); const c = d.prepare('PRAGMA table_info(script)').all().map(function (r) { return r.name; }); d.close(); return c; } catch (e) { return ['unreadable: ' + (e && e.message)]; }
+};
+test.run('the script table, made before, has gained the columns reClassify, browserOnly and nodeOnly', 0.2, function () {
+  if (!up()) return NONODE;
+  const c = scriptColumns();
+  return ['reClassify', 'browserOnly', 'nodeOnly'].every(function (n) { return c.indexOf(n) !== -1; }) || 'columns: ' + short(c);
+}, test.limit.quick);
+test.run('the older row is kept as it was when its table gained them', 0.2, function () {
+  if (!up()) return NONODE;
+  const kept = scriptRow(tables(DB), OLD.name);
+  return (!!kept && kept.hash === OLD.hash && Number(kept.changed) === OLD.changed) || 'the row: ' + short(kept);
+}, test.limit.quick);
+
+// ── goal/G47.1, box v79, 4: the verb preferences ──
+// "preferences {} answers them all; preferences {interactive: false} sets that one and answers them all. An unknown name
+// or a wrong type is refused." "For now it supports testicle.preferences.interactive (true by default)."
+const PREFS = function () { return path.join(s.run, 'spirit', 'state', 'testicle', 'data', 'preferences.json'); };
+const prefsOf = function (r) { const b = r && r.body; return (b && typeof b.preferences === 'object' && b.preferences) || b || {}; };
+let p0 = null;
+test.run('the node lists the verb testicle.preferences', 0.2, async function () {
+  if (!up()) return NONODE;
+  const api = await call(N.base, 'api', { family: 'testicle' });
+  const iface = String((api.body && api.body.interface) || '');
+  return /['"]?preferences['"]?\s*:/.test(iface) || 'testicle\'s api: ' + short(iface);
+}, test.limit.quick);
+test.run('preferences {} answers them all: interactive, true by default', 0.2, async function () {
+  if (!up()) return NONODE;
+  p0 = await call(N.base, 'testicle.preferences', {});
+  return (p0.status === 200 && prefsOf(p0).interactive === true) || 'preferences {}: ' + p0.status + ' ' + short(p0.text);
+}, test.limit.quick);
+test.run('a preference it does not know is refused, and sets nothing', 0.2, async function () {
+  if (!up()) return NONODE;
+  const r = await call(N.base, 'testicle.preferences', { zzNoSuchPreference: true });
+  const after1 = await call(N.base, 'testicle.preferences', {});
+  return ((r.status !== 200 || (r.body && r.body.ok === false)) && prefsOf(after1).zzNoSuchPreference === undefined && prefsOf(after1).interactive === true) || 'an unknown name: ' + r.status + ' ' + short(r.text) + '; then ' + short(after1.text);
+}, test.limit.quick);
+test.run('interactive given a wrong type is refused, and sets nothing', 0.2, async function () {
+  if (!up()) return NONODE;
+  const r = await call(N.base, 'testicle.preferences', { interactive: 'no' });
+  const after1 = await call(N.base, 'testicle.preferences', {});
+  return ((r.status !== 200 || (r.body && r.body.ok === false)) && prefsOf(after1).interactive === true) || 'interactive "no": ' + r.status + ' ' + short(r.text) + '; then ' + short(after1.text);
+}, test.limit.quick);
+
+// The checks that follow judge the server as it ran until now, auto (goal/G47.1, box v79, 2: "auto: the default mode until
+// now"); interactive is judged at the end of this file, on chi and psi.
+test.run('the world: auto for the checks that follow, set by preferences {interactive: false}', 0.2, async function () {
+  if (!up()) return NONODE;
+  const r = await call(N.base, 'testicle.preferences', { interactive: false });
+  return (r.status === 200 && prefsOf(r).interactive === false) || 'set: ' + r.status + ' ' + short(r.text);
+}, test.limit.quick);
+
 
 // the box: "on any change of a product file it makes sure that file has its row"
 test.run('one second after a product file changes, it has its row in script', 0.2, async function () {
@@ -1333,4 +1388,96 @@ test.run('a suite that hangs before any test reported fails too: sigma\'s suite 
   // sigma's own job comes after rho's, so it starts at most when rho's was killed, and is killed 2 minutes later.
   const ok = await until(function () { return statusOf(SIG, SIGS).then(function (x) { st = x; return x === 'still red'; }); }, 280000);
   return !!ok || 'sigma\'s suite: ' + short(st);
+}, test.limit.long);
+
+// ── goal/G47.1, box v79, 2: interactive, the default ──
+// "interactive: all actions and runs are controlled by the user through the UI or through api calls." "the server will
+// flag changed suites AND scripts always, in both modes." 3: "a script seen for the first time starts with reClassify true".
+const CHI = Z + 'chi.js', CHIS = Z + 'test/chi.js', PSI = Z + 'psi.js', PSIS = Z + 'test/psi.js';
+let i1 = null;
+test.run('the world: interactive again, set by preferences {interactive: true}', 0.2, async function () {
+  if (!up()) return NONODE;
+  await idle(280000);
+  const r = await call(N.base, 'testicle.preferences', { interactive: true });
+  return (r.status === 200 && prefsOf(r).interactive === true) || 'set: ' + r.status + ' ' + short(r.text);
+}, test.limit.long);
+test.run('interactive: one second after a script changes, it has its row, reClassify true, seen for the first time', 0.2, async function () {
+  if (!up()) return NONODE;
+  // chi and psi, with their own tests, written now, while the server is interactive: chi's suite is run by a press, psi's
+  // once the server is auto.
+  put(CHIS, SUITE_HEAD + "test.run('chi answers', 0.2, function () { return true; }, test.limit.quick);\n");
+  put(PSIS, SUITE_HEAD + "test.run('psi answers', 0.2, function () { return true; }, test.limit.quick);\n");
+  put(CHI, '\'use strict\';\n// chi, written while interactive\n');
+  put(PSI, '\'use strict\';\n// psi, written while interactive\n');
+  i1 = await after();
+  const row = scriptRow(i1, CHI);
+  return (!!row && yes(row.reClassify)) || 'chi\'s row: ' + short(row);
+}, test.limit.slow);
+test.run('interactive: its own suite is flagged needs running', 0.2, function () {
+  if (!i1) return NONODE;
+  const r = suiteRow(i1, CHI, CHIS);
+  return (!!r && yes(r.test)) || 'chi\'s suite row: ' + short(r);
+}, test.limit.quick);
+test.run('interactive: classification never sets both browserOnly and nodeOnly', 0.2, function () {
+  if (!i1) return NONODE;
+  const both = i1.script.filter(function (r) { return yes(r.browserOnly) && yes(r.nodeOnly); });
+  return both.length === 0 || 'both set on ' + short(both.map(function (r) { return r.name; }));
+}, test.limit.quick);
+test.run('interactive: nothing runs by itself: five seconds on, the server is idle and no suite of chi or psi was run', 0.2, async function () {
+  if (!i1) return NONODE;
+  await sleep(5000);
+  const busy = await call(N.base, 'testicle.busy', {});
+  const t = tables(DB);
+  const ran = (t.test || []).filter(function (r) { return r.script === CHI || r.script === PSI; });
+  const still = [suiteRow(t, CHI, CHIS), suiteRow(t, PSI, PSIS)].every(function (r) { return !!r && yes(r.test); });
+  return ((busy.body === false || (busy.body && busy.body.busy === false)) && ran.length === 0 && still) || 'busy ' + short(busy.text) + ', test rows ' + ran.length + ', still flagged ' + still;
+}, test.limit.slow);
+test.run('interactive: a press (testicle.run) runs that suite, and only it', 0.2, async function () {
+  if (!i1) return NONODE;
+  const r = await call(N.base, 'testicle.run', { script: CHI, suite: CHIS });
+  const done = await until(function () { return Promise.resolve(currentOf(tables(DB), CHI, CHIS, 'chi answers').length === 1); }, 60000);
+  const psiRan = (tables(DB).test || []).filter(function (x) { return x.script === PSI; }).length;
+  return (r.status === 200 && !!done && psiRan === 0) || 'run: ' + r.status + ' ' + short(r.text) + ', chi reported ' + !!done + ', psi rows ' + psiRan;
+}, test.limit.long);
+test.run('interactive: a script whose hash changes is flagged reClassify true again', 0.2, async function () {
+  if (!i1) return NONODE;
+  const was = (scriptRow(tables(DB), CHI) || {}).hash;
+  append(CHI, '// changed again\n');
+  const t = await after();
+  const row = scriptRow(t, CHI);
+  return (!!row && row.hash !== was && yes(row.reClassify)) || 'chi\'s row: ' + short(row) + ', hash before ' + short(was);
+}, test.limit.slow);
+
+// ── auto, set by the verb ──
+let pAuto = null;
+test.run('preferences {interactive: false} sets it, and answers them all', 0.2, async function () {
+  if (!up()) return NONODE;
+  pAuto = await call(N.base, 'testicle.preferences', { interactive: false });
+  return (pAuto.status === 200 && prefsOf(pAuto).interactive === false) || 'set: ' + pAuto.status + ' ' + short(pAuto.text);
+}, test.limit.quick);
+test.run('it is kept in spirit/state/testicle/data/preferences.json', 0.2, function () {
+  if (!pAuto) return NONODE;
+  const kept = readJson(PREFS());
+  return (!!kept && kept.interactive === false) || 'preferences.json: ' + short(kept);
+}, test.limit.quick);
+test.run('preferences {} now answers interactive false', 0.2, async function () {
+  if (!pAuto) return NONODE;
+  const r = await call(N.base, 'testicle.preferences', {});
+  return prefsOf(r).interactive === false || 'preferences {}: ' + short(r.text);
+}, test.limit.quick);
+test.run('auto: the server processes everything by itself: psi\'s flagged suite is run', 0.2, async function () {
+  if (!pAuto) return NONODE;
+  const done = await until(function () { return Promise.resolve(currentOf(tables(DB), PSI, PSIS, 'psi answers').length === 1); }, 240000);
+  return !!done || 'psi\'s suite was not run: ' + short(suiteRow(tables(DB), PSI, PSIS));
+}, test.limit.long);
+test.run('auto: a changed script is still flagged reClassify true', 0.2, async function () {
+  if (!pAuto) return NONODE;
+  append(PSI, '// changed while auto\n');
+  const row = scriptRow(await after(), PSI);
+  return (!!row && yes(row.reClassify)) || 'psi\'s row: ' + short(row);
+}, test.limit.slow);
+// The runs chi and psi queued (their general suites among them) are done before the checks after these begin.
+test.run('the world: the server is idle again after chi and psi', 0.2, async function () {
+  if (!up()) return NONODE;
+  return !!(await idle(280000)) || 'still busy after chi and psi';
 }, test.limit.long);

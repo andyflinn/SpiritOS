@@ -683,6 +683,66 @@ test.run('a long message is ellipsed, never wrapped', 0.2, async function () {
   return (!!m && m.nowrap && m.ellipsis && m.hidden && m.overflows) || 'the message: ' + short(m);
 }, test.limit.quick);
 
+// ── goal/G47.1, box v79, 2 and 4: the ⚙ Configuration panel ──
+// "this icon opens a panel in the left workbench pane, titled: \"⚙ Configuration\"", "the one switch it maintains in a
+// rowForm is: interactive | auto, default \"interactive\"", "It is the preference interactive: true is interactive, false is
+// auto." 4: "a set is published to testicle's subscribers, so the ⚙ panel and any other page follow it."
+// The page's hands for it, markup-blind: the ⚙ button pressed; the left pane's text; the switch's two choices found by their
+// words; the one shown as chosen (a select's selected option, a checked radio, or the pressed, checked or bold choice).
+const GEAR = '(function () { var b = document.getElementById("zzBox"); var t = b ? Array.prototype.slice.call(b.querySelectorAll("button[data-side=\\"left\\"][data-tool]")).filter(function (i) { return /⚙/.test(String(i.textContent || "") + String(i.getAttribute("title") || "")); })[0] : null; if (!t) return false; t.click(); return true; }())';
+const MODE = '(function () { var l = window.__t.left(); if (!l) return { none: true };' +
+  ' var seen = function (e) { return !!e && e.getClientRects().length > 0 && getComputedStyle(e).visibility !== "hidden"; };' +
+  ' var els = Array.prototype.slice.call(l.querySelectorAll("*")).filter(seen);' +
+  ' var word = function (e) { return String(e.innerText || e.textContent || e.value || "").trim().toLowerCase(); };' +
+  ' var sel = els.filter(function (e) { return e.tagName === "SELECT" && Array.prototype.some.call(e.options, function (o) { return /^auto$/i.test(o.text.trim()); }); })[0];' +
+  ' if (sel) return { kind: "select", chosen: sel.options[sel.selectedIndex].text.trim().toLowerCase(), choices: Array.prototype.map.call(sel.options, function (o) { return o.text.trim().toLowerCase(); }) };' +
+  ' var opts = els.filter(function (e) { return /^(interactive|auto)$/.test(word(e)) && !Array.prototype.some.call(e.children, function (k) { return /^(interactive|auto)$/.test(word(k)); }); });' +
+  ' var on = function (e) { var i = e.querySelector("input") || (e.htmlFor && document.getElementById(e.htmlFor)) || (e.previousElementSibling && e.previousElementSibling.tagName === "INPUT" ? e.previousElementSibling : null); return (i && i.checked) || e.getAttribute("aria-pressed") === "true" || e.getAttribute("aria-checked") === "true" || e.getAttribute("aria-selected") === "true" || Number(getComputedStyle(e).fontWeight) >= 600; };' +
+  ' var chosen = opts.filter(on).map(word);' +
+  ' return { kind: "choices", choices: opts.map(word), chosen: chosen.length === 1 ? chosen[0] : chosen }; }())';
+const CHOOSE = function (w) { return '(function () { var l = window.__t.left(); if (!l) return false;' +
+  ' var sel = Array.prototype.slice.call(l.querySelectorAll("select")).filter(function (e) { return Array.prototype.some.call(e.options, function (o) { return /^auto$/i.test(o.text.trim()); }); })[0];' +
+  ' if (sel) { var o = Array.prototype.filter.call(sel.options, function (x) { return x.text.trim().toLowerCase() === ' + JSON.stringify(w) + '; })[0]; if (!o) return false; sel.value = o.value; sel.dispatchEvent(new Event("change", { bubbles: true })); return true; }' +
+  ' var e = Array.prototype.slice.call(l.querySelectorAll("*")).filter(function (x) { return String(x.innerText || x.textContent || "").trim().toLowerCase() === ' + JSON.stringify(w) + '; }).pop();' +
+  ' if (!e) return false; var i = e.querySelector("input") || (e.previousElementSibling && e.previousElementSibling.tagName === "INPUT" ? e.previousElementSibling : null); (i || e).click(); return true; }())'; };
+const prefsNow = async function () { const r = await call(N.base, 'testicle.preferences', {}); const b = r && r.body; return (b && typeof b.preferences === 'object' && b.preferences) || b || {}; };
+let gear = false;
+test.run('the world: ⚙ on the left strip is pressed', 0.2, async function () {
+  if (face()) return face();
+  gear = !!(await c.evaluate(GEAR));
+  return gear || 'no ⚙ on the left strip: ' + short(await T('icons("left")'));
+}, test.limit.quick);
+test.run('it opens a panel in the left pane, titled "⚙ Configuration"', 0.2, async function () {
+  if (!gear) return 'no ⚙ pressed: the world failed';
+  return !!(await waitFor('leftSays().shown && left().innerText.indexOf("⚙ Configuration") !== -1', 10000)) || 'the left pane: ' + short(await T('leftSays()'));
+}, test.limit.slow);
+test.run('its one switch offers interactive and auto', 0.2, async function () {
+  if (!gear) return 'no ⚙ pressed: the world failed';
+  await waitFor('left().innerText.toLowerCase().indexOf("auto") !== -1', 10000);
+  const m = await c.evaluate(MODE);
+  const ch = (m && m.choices) || [];
+  return (ch.indexOf('interactive') !== -1 && ch.indexOf('auto') !== -1) || 'the switch: ' + short(m);
+}, test.limit.slow);
+test.run('it shows interactive at the start, the default', 0.2, async function () {
+  if (!gear) return 'no ⚙ pressed: the world failed';
+  const m = await c.evaluate(MODE);
+  return (m && m.chosen === 'interactive') || 'the switch shows ' + short(m);
+}, test.limit.quick);
+test.run('auto chosen in the panel sets the preference interactive false on the node', 0.2, async function () {
+  if (!gear) return 'no ⚙ pressed: the world failed';
+  if (!(await c.evaluate(CHOOSE('auto')))) return 'no auto to choose: ' + short(await c.evaluate(MODE));
+  // A rowForm takes its row on its Save (spirit/element/rowForm.js); pressed when the panel has one.
+  await c.evaluate('(function () { var l = window.__t.left(); var b = l ? Array.prototype.slice.call(l.querySelectorAll("button")).filter(function (x) { return /^save$/i.test(String(x.innerText || x.textContent || "").trim()); })[0] : null; if (b) b.click(); return !!b; }())');
+  const ok = await until(function () { return prefsNow().then(function (p) { return p.interactive === false; }); }, 10000);
+  return !!ok || 'the node\'s preferences: ' + short(await prefsNow());
+}, test.limit.slow);
+test.run('a set by the verb elsewhere is followed by the panel: interactive true shows interactive', 0.2, async function () {
+  if (!gear) return 'no ⚙ pressed: the world failed';
+  await call(N.base, 'testicle.preferences', { interactive: true });
+  const ok = await until(function () { return c.evaluate(MODE).then(function (m) { return !!m && m.chosen === 'interactive'; }); }, 10000);
+  return !!ok || 'the switch shows ' + short(await c.evaluate(MODE));
+}, test.limit.slow);
+
 // destroy
 test.run('destroy leaves its container empty', 0.2, async function () {
   if (face()) return face();
