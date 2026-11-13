@@ -138,16 +138,20 @@ SCRIPTS.forEach(function (rel) {
   test.run('classifyable', SEVERITY, async function () {
     let k = null;
     let why = '';
-    if (NODE_ONLY.indexOf(rel) !== -1) k = { browserOnly: false, nodeOnly: true };
-    else if (!fs.existsSync(path.join(RUN, rel))) why = 'it is not there';
-    else {
-      const w = await world();
-      const run = w.node && w.node.root ? path.join(w.node.root, 'spirit', 'run') : RUN;
-      const node = await loadOnNode(run, rel);
-      const page = await loadOnPage(rel);
-      k = classOf(node, page);
-      if (!k) why = 'on the node: ' + (node.err || 'loaded') + '; in a page: ' + (page.err || 'loaded');
-    }
+    // "its severity is 0.8": the classifier failing in itself (a throw, no scratch node) fails the script at 0.8 too, as
+    // a failure said, never as the reporter's crash at 0.7.
+    try {
+      if (NODE_ONLY.indexOf(rel) !== -1) k = { browserOnly: false, nodeOnly: true };
+      else if (!fs.existsSync(path.join(RUN, rel))) why = 'it is not there';
+      else {
+        const w = await world();
+        const run = w.node && w.node.root ? path.join(w.node.root, 'spirit', 'run') : RUN;
+        const node = await loadOnNode(run, rel);
+        const page = await loadOnPage(rel);
+        k = classOf(node, page);
+        if (!k) why = 'on the node: ' + (node.err || 'loaded') + '; in a page: ' + (page.err || 'loaded');
+      }
+    } catch (e) { k = null; why = 'the classifier failed: ' + String(e && e.message || e); }
     if (!k) return 'not classifyable: ' + why;
     try { await tell(Object.assign({ script: rel }, k)); } catch (e) { return 'classified ' + JSON.stringify(k) + ', but testicle.script.classify refused it: ' + String(e && e.message || e); }
     return true;
