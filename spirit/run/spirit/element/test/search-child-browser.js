@@ -56,12 +56,17 @@ const OPTIONS = { suite: { script: 'spirit/spirit.js' } };
 const VIA_LIST = { api: true };
 // A ROW'S SHAPE WHERE THE SCRATCH NODE HOLDS NONE TO COPY (its branches and suite rows are empty on a fresh node): the fields
 // each row element reads, every text one of them the long value when planted.
-const SHAPES = { branch: { family: 'zzfamily', verb: 'zzverb' }, suite: { script: 'spirit/spirit.js', suite: 'spirit/test/zz.js', status: '' } };
+const SHAPES = { branch: { family: 'zzfamily', verb: 'zzverb' }, suite: { script: 'spirit/spirit.js', suite: 'spirit/test/zz.js', status: '' },
+  testicle: { script: 'spirit/spirit.js', suite: 'spirit/test/zz.js', test: 'zz', current: true, verified: false, severity: 0.4 } };
+// The fields a list filters its rows by, kept as they are when a row is planted (suite shows the rows of its script alone).
+const KEEP = { suite: ['script'] };
+// What a planted row must say to be shown at all: testicle's list shows current reds alone at the start (Andy: "reds only").
+const FORCE = { testicle: { current: true, verified: false }, suite: { script: OPTIONS.suite.script } };
 // A long value with no place to break: a row and a detail must wrap or clip it.
 const LONG = 'zzLongValue' + 'W'.repeat(300);
 
 // What the page does for one search, as one script: mounted, planted, measured, the details opened. Its answer is a report.
-const PAGE = String.raw`(function (name, ROWS, LONG, PANE_W, PANE_H, VIA_LIST, OPTIONS, SHAPES) {
+const PAGE = String.raw`(function (name, ROWS, LONG, PANE_W, PANE_H, VIA_LIST, OPTIONS, SHAPES, KEEP, FORCE) {
   var S = window.spirit;
   var R = { name: name, notes: [] };
   function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
@@ -90,12 +95,13 @@ const PAGE = String.raw`(function (name, ROWS, LONG, PANE_W, PANE_H, VIA_LIST, O
   }
   // A planted row: a copy of a row the branch holds, every text field of it (and of its label json) the long value.
   function plant(template, i) {
-    function longer(o, keep) { var c = {}; Object.keys(o || {}).forEach(function (k) { var v = o[k]; c[k] = typeof v === 'string' && k !== 'key' && v !== keep ? LONG + i : v; }); return c; }
+    function longer(o, keep) { var c = {}; Object.keys(o || {}).forEach(function (k) { var v = o[k]; c[k] = typeof v === 'string' && k !== 'key' && v !== keep && (KEEP[name] || []).indexOf(k) === -1 ? LONG + i : v; }); return c; }
     var row = template ? longer(template, template.key) : { label: LONG + i, name: LONG + i, title: LONG + i, text: LONG + i };
     if (template && typeof template.label === 'string' && /^\s*\{/.test(template.label)) {
       try { row.label = JSON.stringify(longer(JSON.parse(template.label), template.key)); } catch (e) { /* kept */ }
     }
     delete row.key;
+    Object.assign(row, FORCE[name] || {});
     return row;
   }
   return Promise.resolve(S.ready).then(function () {
@@ -105,7 +111,10 @@ const PAGE = String.raw`(function (name, ROWS, LONG, PANE_W, PANE_H, VIA_LIST, O
     var made = R.made = [];
     var f = S.element.spirit.element.search; var real = f.create;
     f.create = function (host, o) { var x = o || {}; made.push({ data: typeof x.data === 'string' ? x.data : '', host: host }); return real.apply(this, arguments); };
-    return S.require('spirit/element/search/' + name + '.js').then(function () { return VIA_LIST[name] ? S.require('spirit/element/search/' + name + '/listElement.js') : null; });
+    return S.require('spirit/element/search/' + name + '.js').then(function () { return VIA_LIST[name] ? S.require('spirit/element/search/' + name + '/listElement.js') : null; })
+      // THE GRANT LIST NEEDS ITS TABLE (spirit/element/search/grant/listElement.js: "opts.grants the grants table, required"):
+      // the node's own, as the Grants app hands it (grantsPanel.nodeGrants).
+      .then(function () { return name === 'grant' ? S.require('spirit/element/search/grant/grantsPanel.js').then(function () { OPTIONS.grant = { grants: S.element.spirit.element.search.grant.grantsPanel.nodeGrants }; }) : null; });
   }).then(function () {
     var box = document.createElement('div');
     box.id = 'zz-host';
@@ -130,11 +139,16 @@ const PAGE = String.raw`(function (name, ROWS, LONG, PANE_W, PANE_H, VIA_LIST, O
     try { window.zzMade = maker.create(under, Object.assign({ face: 'pane', open: stack.open }, OPTIONS[name] || {})); } catch (e) { R.fail = 'its create threw: ' + (e && e.message || e); return R; }
     return wait(1500).then(function () {
       var mine = R.made.filter(function (x) { return x.host && under.contains(x.host); });
-      var m = mine.filter(function (x) { return x.data; })[0] || null;
+      // The search's own, not a filter's search in its selector row (made first by some lists).
+      var outer = function (x) { return !(x.host && x.host.closest && x.host.closest('[id$="-selectors"]')); };
+      var m = mine.filter(function (x) { return x.data && outer(x); })[0] || mine.filter(function (x) { return x.data; })[0] || null;
       R.data = m ? m.data : '';
       var list = m ? m.host : (mine[0] ? mine[0].host : null);
       // The list: the box the probabilitySearch draws its rows in (its id ends in list), whether it scrolls or not.
-      var L = list ? list.querySelector('[id$="list"]') : null;
+      // NOT A FILTER'S OWN LIST (cw: "the branch list has a selector row (🪣) on top of its own list, and in it the family
+      // selector, a search of its own with its own list. the test takes the first [id$=\"list\"] under the host"): the list
+      // outside every probsearch-N-selectors row.
+      var L = list ? Array.prototype.filter.call(list.querySelectorAll('[id$="list"]'), function (x) { return !x.closest('[id$="-selectors"]'); })[0] || null : null;
       if (!L) { R.noList = true; return R; }
       window.zzList = L;
       var before = L.getBoundingClientRect();
@@ -233,7 +247,7 @@ const PAGE = String.raw`(function (name, ROWS, LONG, PANE_W, PANE_H, VIA_LIST, O
     corner.style.cssText = 'position:fixed;right:4px;bottom:4px';
     document.body.appendChild(corner);
     var sel = S.element.spirit.element.search[name];
-    try { sel.create(corner, { face: 'dropdown' }); } catch (e) { R.dropError = String(e && e.message || e); return R; }
+    try { sel.create(corner, Object.assign({}, OPTIONS[name] || {}, { face: 'dropdown' })); } catch (e) { R.dropError = String(e && e.message || e); return R; }
     return wait(1000).then(function () {
       var field = corner.querySelector('button[id$="field"]');
       if (!field) { R.noDropdown = true; return R; }
@@ -274,7 +288,7 @@ test.run('the world: each search mounted, planted and opened on a page of its ow
     await W.page.send('Page.navigate', { url: W.node.base + '/face.html' });
     await until(function () { return W.page.evaluate('!!(window.spirit && window.spirit.ready)').then(Boolean); }, 20000);
     let got = null;
-    try { got = await Promise.race([W.page.evaluate('Promise.resolve(' + PAGE + '(' + JSON.stringify(n) + ',' + ROWS + ',' + JSON.stringify(LONG) + ',' + PANE_W + ',' + PANE_H + ',' + JSON.stringify(VIA_LIST) + ',' + JSON.stringify(OPTIONS) + ',' + JSON.stringify(SHAPES) + ')).then(function (r) { return JSON.stringify(r); })'), sleep(60000).then(function () { return null; })]); } catch (e) { got = null; }
+    try { got = await Promise.race([W.page.evaluate('Promise.resolve(' + PAGE + '(' + JSON.stringify(n) + ',' + ROWS + ',' + JSON.stringify(LONG) + ',' + PANE_W + ',' + PANE_H + ',' + JSON.stringify(VIA_LIST) + ',' + JSON.stringify(OPTIONS) + ',' + JSON.stringify(SHAPES) + ',' + JSON.stringify(KEEP) + ',' + JSON.stringify(FORCE) + ')).then(function (r) { return JSON.stringify(r); })'), sleep(60000).then(function () { return null; })]); } catch (e) { got = null; }
     let r = null; try { r = JSON.parse(got); } catch (e) { r = null; }
     REPORTS[n] = r || { name: n, fail: 'the page answered nothing within 60 s' };
     if (REPORTS[n].fail) failed.push(n + ': ' + REPORTS[n].fail);

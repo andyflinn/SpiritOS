@@ -41,3 +41,17 @@ in a panel layer as the apps open one, its options the planted row's fields with
    pane and the closed one's pane is left as it was.
 
 Input length is checked once, in `spirit/test/spirit-sibling-browser.js`, not here.
+
+## The world each search needs to draw a list at all
+
+Found when cw checked the first reds (goal/G47.1): most were the test's, not the elements'.
+
+- The scratch node runs the testicle and grants servers; suite is given a script (`spirit/spirit.js`); grant is given the
+  node's own grants table, `grantsPanel.nodeGrants`, as the Grants app hands it.
+- api is judged by its `listElement` in pane face: its selector is two dropdowns side by side (Andy, G29.7).
+- The list judged is the search's own, never a filter's search in its `probsearch-N-selectors` row.
+- A planted row copies the server's first row once it has come (up to 8 s), or a shape of the fields its row element reads
+  where the node holds none (branch, suite, testicle). The fields a list filters by stay as they must be: suite's script is
+  the one it was given; testicle's rows are current and red, as its list shows reds alone at the start.
+- Andy, on 7: *"the testicle search must support dropdown, for other potential (program-)users."* A search that draws no
+  dropdown field when given `face: 'dropdown'` is red.
