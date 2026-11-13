@@ -581,8 +581,8 @@ test.run('every suite it answers carries its status: needs running', 0.2, functi
 }, test.limit.quick);
 test.run('the words narrow among the file\'s suites', 0.2, async function () {
   if (!up()) return NONODE;
-  const narrow = items(await call(N.base, 'testicle.suite.search', { script: Z + 'zeta.js', text: 'titleRules' })).map(suiteOf);
-  return (narrow.indexOf(GENERAL) !== -1 && narrow.indexOf(Z + 'test/zeta.js') === -1) || 'searched titleRules: ' + short(narrow);
+  const narrow = items(await call(N.base, 'testicle.suite.search', { script: Z + 'zeta.js', text: 'sibling' })).map(suiteOf);
+  return (narrow.indexOf(GENERAL) !== -1 && narrow.indexOf(Z + 'test/zeta.js') === -1) || 'searched sibling: ' + short(narrow);
 }, test.limit.quick);
 test.run('another file\'s search answers that file\'s rows, none of the first', 0.2, async function () {
   if (!up()) return NONODE;
@@ -607,8 +607,8 @@ test.run('given no script, it answers each suite once', 0.2, async function () {
 }, test.limit.quick);
 test.run('given no script, a suite of two scripts is answered once', 0.2, async function () {
   if (!up()) return NONODE;
-  const names = items(await call(N.base, 'testicle.suite.search', { text: 'titleRules' })).map(suiteOf);
-  return names.filter(function (n) { return n === GENERAL; }).length === 1 || 'searched titleRules: ' + short(names);
+  const names = items(await call(N.base, 'testicle.suite.search', { text: 'sibling' })).map(suiteOf);
+  return names.filter(function (n) { return n === GENERAL; }).length === 1 || 'searched sibling: ' + short(names);
 }, test.limit.quick);
 
 // goal/G47.1, the test cycle. The box: "The testicle.test table now needs a \"set\" verb, and a \"search\" verb", "When
@@ -986,24 +986,31 @@ test.run('the world: the runner idle, so the table holds still while every varia
   if (!loud) return 'the tests were not set: the world failed';
   return (await idle(240000)) || 'the runner did not go idle';
 }, test.limit.long);
-VARIATIONS.forEach(function (v) {
-  test.run('testicle.search, ' + v[0] + ': every matching test, or a full answer of matching tests', 0.2, async function () {
-    if (!loud) return 'the tests were not set: the world failed';
+// One test, its answer naming each variation that breaks (titles are fixed words, goal/G47.2).
+const eachOf = async function (list, one) {
+  const bad = [];
+  for (const v of list) { const r = await one(v); if (r !== true) bad.push(v[0] + ': ' + r); }
+  return bad.length === 0 || bad.length + ' of ' + list.length + ' break: ' + bad.join(' | ');
+};
+test.run('testicle.search, in each of its variations: every matching test, or a full answer of matching tests', 0.2, async function () {
+  if (!loud) return 'the tests were not set: the world failed';
+  return eachOf(VARIATIONS, async function (v) {
     const a = Object.assign({ text: '' }, v[1]);
     const r = await call(N.base, 'testicle.testicle.search', a);
     const next = r.body && r.body.more ? await nextItem(a, found(r).length) : null;
     return judged(r, matchingTests(a), tkey, matchingTests(Object.assign({}, a, { text: '' })), next);
-  }, test.limit.quick);
-});
+  });
+}, test.limit.slow);
 // The following answers (from, the rows already held, cw's build): asked page after page, each page that says more is
 // full, and the pages together hold every matching test, each once.
-[
+const PAGED = [
   ['nothing chosen', {}],
   ['result green', { result: 'green' }],
   ['the word "loudly"', { text: 'loudly' }],
-].forEach(function (v) {
-  test.run('testicle.search page after page, ' + v[0] + ': each page full while there are more, every matching test once', 0.2, async function () {
-    if (!loud) return 'the tests were not set: the world failed';
+];
+test.run('testicle.search page after page, nothing chosen, result green and the word "loudly": each page full while there are more, every matching test once', 0.2, async function () {
+  if (!loud) return 'the tests were not set: the world failed';
+  return eachOf(PAGED, async function (v) {
     const a = Object.assign({ text: '' }, v[1]);
     const want = matchingTests(a);
     const seen = {};
@@ -1021,8 +1028,8 @@ VARIATIONS.forEach(function (v) {
     }
     const missing = want.filter(function (x) { return !seen[tkey(x)]; });
     return (!missing.length && !twice.length) || pages + ' pages; missing ' + missing.length + ' of ' + want.length + ' ' + short(missing.map(tkey)) + '; twice ' + short(twice);
-  }, test.limit.slow);
-});
+  });
+}, test.limit.slow);
 test.run('testicle.red: every failed current test, or a full answer of them', 0.2, async function () {
   if (!loud) return 'the tests were not set: the world failed';
   return judged(await call(N.base, 'testicle.red', {}), matchingTests({ result: 'red' }), tkey);
@@ -1033,19 +1040,20 @@ const matchingSuites = function (script, text) {
   const once = {};
   return rows.filter(function (r) { const k = script ? r.script + '|' + r.suite : r.suite; if (once[k]) return false; once[k] = true; return wordsIn({ test: '', script: script ? r.script : '', suite: r.suite }, text); });
 };
-[
+const SUITE_ASKS = [
   ['no script, no words', '', ''],
   ['a script', TH, ''],
   ['no script, the word "theta"', '', 'theta'],
   ['a script, the word "theta"', TH, 'theta'],
-].forEach(function (v) {
-  test.run('suite.search, ' + v[0] + ': every matching suite, or a full answer of them', 0.2, async function () {
-    if (!loud) return 'the tests were not set: the world failed';
+];
+test.run('suite.search, with and without a script and words: every matching suite, or a full answer of them', 0.2, async function () {
+  if (!loud) return 'the tests were not set: the world failed';
+  return eachOf(SUITE_ASKS, async function (v) {
     const a = v[1] ? { script: v[1], text: v[2] } : { text: v[2] };
     const r = await call(N.base, 'testicle.suite.search', a);
     return judged(r, matchingSuites(v[1], v[2]), function (x) { return v[1] ? x.script + '|' + x.suite : x.suite; }, matchingSuites(v[1], ''));
-  }, test.limit.quick);
-});
+  });
+}, test.limit.slow);
 
 // the box: "The verb red is testicle.red"
 test.run('testicle.red answers every failed current test, and no other', 0.2, async function () {
