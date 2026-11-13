@@ -333,6 +333,8 @@ function killJob(j) {
   // A general test's run of several scripts killed: each of them as a run of its own would be.
   const each = j.batch ? j.scripts.map(function (s) { return { script: s, scriptHash: j.hashes[s] }; }) : [{ script: j.script, scriptHash: j.scriptHash }];
   each.forEach(function (one) {
+    // A script removed while the run went takes no failure either (as testicle.set refuses it, wsl's red 3f6832e6).
+    if (!there(one.script)) return;
     killed.set(one.script + '|' + j.suite, { scriptHash: one.scriptHash, suiteHash: j.suiteHash });
     try { T.ofSuite.all(one.script, j.suite).forEach(function (r) { setResult(one.script, j.suite, r.test, false, Number(r.severity) || 0, one.scriptHash, j.suiteHash); }); }
     catch (e) { logError('killJob: failing ' + one.script + ' ' + j.suite, e); }
@@ -523,6 +525,10 @@ function apply(changed, P) {
       const own = ownTestOf(rel);
       if (there(own) && suites.indexOf(own) === -1) suites.push(own);
       suites.forEach(function (suite) { suiteUp(rel, suite); });
+      // ITS CLASSIFIER ROW, AT ONCE (box v94, 1: "a \"special\" general test under its own name, with its suite row"; the
+      // box: the rows stand one second after a change): made with the script's own rows, not when the class comes back
+      // (classifierRow then only judges it). Never run as a suite (chooseJob).
+      if (there(CLASSIFY)) { touched(rel, CLASSIFY); Q.putSuite.run(rel, CLASSIFY, hash(CLASSIFY), now); }
     });
     db.exec('COMMIT');
   } catch (e) {
@@ -838,7 +844,10 @@ appServer.serve({
       if (!suite || !name) throw refused('bad-request');
       const severity = Math.max(0, Math.min(1, Number(a.severity) || 0));
       const row = Q.script.get(script);
-      if (!row && !there(script)) throw refused('no-such-file');
+      // A FILE NOT ON DISC TAKES NO RESULT, its row deleted or never made (wsl's red, 3f6832e6: a classifier run begun before
+      // two files were removed reported 2 s after, and their rows stood live and red for hours; the box: "A removed file's
+      // row is marked deleted").
+      if (!there(script)) throw refused('no-such-file');
       const stale = !row || (there(script) && row.hash !== hashOf(script));
       getting += 1;
       told();
