@@ -75,6 +75,52 @@ test.run('a fresh desk holds no goal/G0', 0.2, async function () {
   return !held || 'a fresh desk holds goal/G0: ' + short(g0.body);
 }, test.limit.quick);
 
+// goal/G47.1, Andy: "and desk still names deskVerify???? in my titlebar, right here? goal/G47.1 — Ad hoc cycle. (waiting
+// for deskVerify)": an older desk's item, its status written by the deleted verifier, loses that status when the desk
+// starts; an item with a status of its own keeps it.
+function startDesk() {
+  const pipe = appClient.pipePathFor(W.scratch, 'desk', process.platform, 'process');
+  W.kid = spawn(process.execPath, [path.join(DESK, 'desk.js'), '{}', '--pipe', pipe, '--state', path.join(W.scratch, 'state')], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
+}
+async function untilItem(id) {
+  const until = Date.now() + 15000;
+  while (Date.now() < until) {
+    const r = await W.ask({ desk: { 'item.get': { id: id } } });
+    const b = r && r.body && (r.body.desk || r.body);
+    if (b && b.item) return JSON.parse(b.item);
+    await new Promise(function (r2) { setTimeout(r2, 200); });
+  }
+  return null;
+}
+test.run('the world: an older desk\'s items, one waiting for deskVerify and one running, and the desk started again', 0.2, async function () {
+  if (!W.kid || !W.ask) return 'no desk answered api: the world failed';
+  W.kid.kill();
+  await new Promise(function (r) { W.kid.once('exit', r); setTimeout(r, 3000); });
+  const { DatabaseSync } = require('node:sqlite');
+  const db = new DatabaseSync(path.join(W.scratch, 'state', 'desk.db'));
+  const put = db.prepare('INSERT OR REPLACE INTO items (goal, item, creator, data) VALUES (?, ?, ?, ?)');
+  put.run(9, 0, 'andy', JSON.stringify({ id: 'goal/G9', title: 'Old goal.', goal: true, goalState: { members: ['goal/G9.1', 'goal/G9.2'] } }));
+  put.run(9, 1, 'andy', JSON.stringify({ id: 'goal/G9.1', title: 'Old item.', goal: false, goalId: 'goal/G9', status: 'waiting for deskVerify', verifyRunning: true }));
+  put.run(9, 2, 'andy', JSON.stringify({ id: 'goal/G9.2', title: 'Its sibling.', goal: false, goalId: 'goal/G9', status: 'running' }));
+  db.close();
+  startDesk();
+  W.old = await untilItem('goal/G9.1');
+  W.sibling = await untilItem('goal/G9.2');
+  return (!!W.old && !!W.sibling) || 'the desk started again answers no old item: ' + short([W.old, W.sibling]);
+}, test.limit.slow);
+test.run('the item the verifier left waiting no longer names deskVerify', 0.2, function () {
+  if (!W.old) return 'no old item: the world failed';
+  return !/deskVerify/i.test(JSON.stringify(W.old)) || 'it still names deskVerify: ' + short(W.old.status);
+}, test.limit.quick);
+test.run('its status is left empty, not a guessed one', 0.2, function () {
+  if (!W.old) return 'no old item: the world failed';
+  return W.old.status === '' || 'its status is ' + short(W.old.status);
+}, test.limit.quick);
+test.run('an item with a status of its own keeps it', 0.2, function () {
+  if (!W.sibling) return 'no sibling: the world failed';
+  return W.sibling.status === 'running' || 'its status is now ' + short(W.sibling.status);
+}, test.limit.quick);
+
 test.after(async function () {
   try { if (W.kid) W.kid.kill(); } catch (e) { /* gone */ }
   await new Promise(function (r) { setTimeout(r, 300); });

@@ -668,6 +668,9 @@ function loadState() {
     delete d.goalState;
     // The verifier's fields an older desk kept on an item go (no verifier involvement with desk anywhere).
     ['checked', 'verifyRunning', 'verifyHanded', 'verifyState', 'verifyFailures', 'verifyFailuresMore', 'verifyRed'].forEach(function (f) { delete d[f]; });
+    // So does a status it wrote, "waiting for deskVerify" (Andy, goal/G47.1: "and desk still names deskVerify???? in my
+    // titlebar"): the item is left with no status, never a guessed one.
+    if (/deskVerify/i.test(String(d.status || ''))) d.status = '';
     const it = Object.assign(blank(id, '', ''), d);
     NULL_PROTO.forEach(function (f) { it[f] = Object.assign(Object.create(null), d[f] || {}); });
     it.files = Object.create(null); it.claims = Object.create(null); it.chat = []; it.checks = []; it.box = ''; it.version = 0;
