@@ -25,7 +25,6 @@ const { until, freePort, findChrome, chromePage, WAIT } = require('./headLessChr
 const RUN = path.join(__dirname, '..', '..');
 // "a load that is not complete in 3 seconds counts as crash/hang".
 const LOAD_MS = 3000;
-const SEVERITY = 0.8;
 // "classify hard-codes server.js and relayServer.js as node-only": never loaded.
 const NODE_ONLY = ['spirit/server.js', 'spirit/relayServer.js'];
 // Its own bare page, written into its scratch copy only.
@@ -171,7 +170,8 @@ function tell(row) {
 }
 
 SCRIPTS.forEach(function (rel) {
-  test.run('classifyable', SEVERITY, async function () {
+  // "its severity is 0.8", written as the number it is (titleRules wants a severity as a number in the call).
+  test.run('classifyable', 0.8, async function () {
     let k = null;
     let why = '';
     // "its severity is 0.8": the classifier failing in itself (a throw, no scratch node) fails the script at 0.8 too, as

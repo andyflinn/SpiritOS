@@ -1532,8 +1532,9 @@ const OLD_NAMED = new RegExp(OLD_TEST.replace(/\//g, '\\/') + '|run:\\/\\/?' + '
 // test/testReport.js and .md since (goal/G45.1: one test file per script); spirit-child-generalRules.js was folded into this
 // file since (goal/G47.1).
 const MOVED = ['TEST_SYSTEM.md', 'headLessChrome.js', 'testModule.js', 'testReport.js',
-  'spirit-sibling-generalRules.js', 'spirit-sibling-generalRules.md', 'spirit-sibling-noFuckingGarbage.js', 'spirit-sibling-noFuckingGarbage.md',
-  'spirit-sibling-searchRules.js', 'spirit-sibling-searchRules.md', 'spirit-sibling-testReachRules.js', 'spirit-sibling-testReachRules.md',
+  // The general tests that moved here are three kinds since goal/G47.1, box v94, 2.
+  'spirit-sibling-general.js', 'spirit-sibling-general.md', 'spirit-sibling-node.js', 'spirit-sibling-node.md',
+  'spirit-sibling-browser.js', 'spirit-sibling-browser.md',
   'test/testModule.js', 'test/testModule.md', 'test/testReport.js', 'test/testReport.md'];
 // The tools of run://spirit/test/: tools, not tests (Q2).
 const TOOLS = ['testReport.js', 'testModule.js', 'headLessChrome.js'];
