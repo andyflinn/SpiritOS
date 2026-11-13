@@ -43,7 +43,8 @@ function peerFileNameFromKey(publicKey) {
     // Above the ASCII range a char is more than one byte; keys are
     // base64 and never get here, but a caller passing something else
     // must still round-trip rather than silently truncate.
-    if (code > 0xff) {
+    // 0xff itself takes the long form too: its byte, ff, is the mark the way back reads as "a wider char follows".
+    if (code >= 0xff) {
       out += 'ff' +
         PEER_FILE_HEX.charAt((code >> 12) & 0xf) + PEER_FILE_HEX.charAt((code >> 8) & 0xf) +
         PEER_FILE_HEX.charAt((code >> 4) & 0xf) + PEER_FILE_HEX.charAt(code & 0xf);

@@ -238,6 +238,9 @@ function packetEncode(app, body, opts) {
     return { ok: false, error: 'body is not serialisable' };
   }
   if (typeof text !== 'string') return { ok: false, error: 'body is not serialisable' };
+  // A function or a symbol as the body is dropped by JSON.stringify without a word, which would send a packet with no
+  // body: refused as what it is.
+  if (typeof JSON.stringify(body) !== 'string') return { ok: false, error: 'body is not serialisable' };
 
   // ── MEASURED IN THE UNIT THAT BINDS, NOT IN CHARACTERS ────────────
   //

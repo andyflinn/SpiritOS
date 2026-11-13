@@ -123,10 +123,11 @@ function createAnswerer(opts) {
       .then(function () { return askKey(url); })
       .then(function (answer) {
         var key = answer && answer.relayPublicKey;
-        if (typeof key !== 'string' || !key) return '';
-        if (!auth.relayKeySigned(key, answer.relaySealKey, answer.relayLabel, answer.keySig)) return '';
-        sealOf[url] = String(answer.relaySealKey);
-        return key;
+        if (typeof key !== 'string' || !key) return null;
+        if (!auth.relayKeySigned(key, answer.relaySealKey, answer.relayLabel, answer.keySig)) return null;
+        // The seal key is kept only once relayKey's pin check takes the key: a relay refused for a changed key has
+        // nothing to seal to, by its url or by its key.
+        return { key: key, seal: String(answer.relaySealKey) };
       });
   }
 
@@ -176,7 +177,8 @@ function createAnswerer(opts) {
     // against 30 KB at 201 members, and the re-check kept intact.
 
     return fetchKey(url)
-      .then(function (key) {
+      .then(function (got) {
+        var key = got && got.key;
         if (typeof key !== 'string' || !key) return '';
 
         var verdict = relayKeys.check(rootDir, url, key);
@@ -193,6 +195,7 @@ function createAnswerer(opts) {
         }
         if (verdict === 'new') relayKeys.accept(rootDir, url, key);
 
+        sealOf[url] = got.seal;
         keyOf[url] = key;
         return key;
       })

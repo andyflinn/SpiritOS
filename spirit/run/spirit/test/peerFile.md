@@ -18,8 +18,8 @@ tree. Owed since the rule *"every production script has its own test"* (goal/G47
 A name that keeps letters as letters (lossy on Windows); a name from part of the key; a decoder that half-decodes a
 foreign name; a prefix that changes and orphans the `.gitignore` line.
 
-## Red left on the code
+## The char 0xff
 
-`the char 0xff round-trips too`: `nameFromKey` writes 0xff as the byte `ff` (`code > 0xff` is false for it), and
-`keyFromName` reads `ff` as the mark of a wider char, so `'aÿb'` comes back `''`. The module's own words: *"a
+`the char 0xff round-trips too`: `keyFromName` reads the byte `ff` as the mark of a wider char, so `nameFromKey` writes
+0xff itself in the long form (`ff00ff`), and `'aÿb'` comes back whole. The module's own words: *"a
 caller passing something else must still round-trip rather than silently truncate"*. Base64 keys never hold it.

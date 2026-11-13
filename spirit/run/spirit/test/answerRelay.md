@@ -17,12 +17,12 @@ box v72). The relay's answer is planted, the pin lives in a scratch folder, the 
 - `relaySealKey(url)` and `relaySealKeyByKey(publicKey)`: the seal key from the same signed answer; nothing for a
   relay not asked, an unknown key, or no key.
 
-## Red on the code as it stands
+## A refused relay has nothing to seal to
 
-*A refused relay has nothing to seal to by its url either.* `fetchKey` writes `sealOf[url]` before `relayKey` checks
-the pin, so after a refusal for a changed key `relaySealKey(url)` answers the substitute's seal key. The comment says a
-relay that answers differently "is refused, and stays refused". `relaySealKeyByKey`, the one server.js calls, is safe
-(it goes through `keyOf`, which a refused key never reaches); `relaySealKey(url)` has no caller outside this file.
+*A refused relay has nothing to seal to by its url either.* `fetchKey` hands back the key and its seal key together, and
+`relayKey` keeps the seal key only once the pin check takes the key, so after a refusal for a changed key
+`relaySealKey(url)` answers no key, as `relaySealKeyByKey` does. The comment says a relay that answers differently "is
+refused, and stays refused".
 
 ## What its test must try to break
 

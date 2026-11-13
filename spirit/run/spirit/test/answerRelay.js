@@ -129,8 +129,8 @@ test.run('a refused relay stays refused: asked again, still no key, and nothing 
   const seal = [R.a.relaySealKeyByKey(A2.publicKey), R.a.relaySealKeyByKey(A.publicKey)];
   return (again === '' && seal.every(function (x) { return x === ''; })) || 'key ' + short(again) + ', seal keys ' + short(seal);
 }, test.limit.quick);
-// Red on the code as it stands: fetchKey records sealOf[url] before relayKey's pin check, so a relay refused for a
-// changed key still has the substitute's seal key answered by url (answerRelay.js, fetchKey: "sealOf[url] = ...").
+// The seal key is kept only once relayKey's pin check takes the key: a relay refused for a changed key has no seal key
+// answered by url either.
 test.run('a refused relay has nothing to seal to by its url either: relaySealKey answers no key for it', 0.2, function () {
   if (!R) return 'no answerer: the world failed';
   const k = R.a.relaySealKey(URL_A);

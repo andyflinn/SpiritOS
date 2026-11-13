@@ -68,8 +68,8 @@ test.run('encode refuses a missing body, and a body with a cycle in it', 0.2, fu
   const r = [P.encode('chat', undefined), P.encode('chat', cyc)];
   return (r[0].ok === false && r[0].error === 'body required' && r[1].ok === false && r[1].error === 'body is not serialisable') || 'encode: ' + short(r);
 }, test.limit.quick);
-// Red on the code as it stands: JSON.stringify drops a function body, so encode answers ok with a text that has no
-// body, which isEnvelope then says is no envelope (it would arrive as a legacy chat line). The code's own comment names
+// JSON.stringify drops a function body without a word; answered ok, its text would have no body, which isEnvelope says
+// is no envelope (it would arrive as a legacy chat line). The code's own comment names
 // the refusal: "A body with a cycle in it, or something JSON cannot express" is "body is not serialisable".
 test.run('encode refuses a body JSON cannot express (a function): never a text its own isEnvelope rejects', 0.2, function () {
   const r = P.encode('chat', function () {});

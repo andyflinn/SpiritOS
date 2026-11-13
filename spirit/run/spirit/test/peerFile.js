@@ -39,7 +39,7 @@ test.run('a char above one byte still round-trips, never truncated', 0.2, functi
   return P.keyFromName(P.nameFromKey(k)) === k || 'back: ' + short(P.keyFromName(P.nameFromKey(k)));
 }, test.limit.quick);
 // The module's own words: "a caller passing something else must still round-trip rather than silently truncate". The
-// char 0xff is written as the byte ff, which the way back reads as the mark of a char above one byte.
+// char 0xff's byte, ff, is what the way back reads as the mark of a char above one byte, so 0xff takes the long form.
 test.run('the char 0xff round-trips too: its byte is not taken for the mark of a wider char', 0.2, function () {
   const k = 'aÿb';
   return P.keyFromName(P.nameFromKey(k)) === k || 'name ' + P.nameFromKey(k) + ' comes back as ' + short(P.keyFromName(P.nameFromKey(k)));

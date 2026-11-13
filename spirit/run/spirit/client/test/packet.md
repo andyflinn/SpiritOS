@@ -24,12 +24,12 @@ in a window of its own as a page loads it. Owed since the rule *"every productio
 - In a page: `window.spirit.packet` with limits loaded first; without them, a load error naming `limits.js` and
   `packet.js`.
 
-## Red on the code as it stands
+## A body JSON cannot express
 
-*encode refuses a body JSON cannot express (a function).* `JSON.stringify` drops a function body, so `encode` answers
-`ok` with a text that has no `body`, and its own `isEnvelope` rejects that text (it would arrive as a legacy chat line).
-The comment in `encode` names the refusal: "A body with a cycle in it, or something JSON cannot express". Only the
-top-level `typeof text !== 'string'` case is caught.
+*encode refuses a body JSON cannot express (a function).* `JSON.stringify` drops a function body without a word, which
+would answer `ok` with a text that has no `body`, one its own `isEnvelope` rejects (it would arrive as a legacy chat
+line). `encode` refuses it as "body is not serialisable", as its comment names it: "A body with a cycle in it, or
+something JSON cannot express".
 
 ## What its test must try to break
 
