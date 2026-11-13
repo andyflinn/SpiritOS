@@ -11,7 +11,8 @@ and this file.
 - Andy: *"the script MUST be classified by loading it."* Each script given (none given: every tracked product script of
   `spirit/run/`) is loaded twice: once as a node script, in a process of its own, and once in a page, a fresh face page of
   its own scratch node (*"it ... runs where all tests run, in its own scratch node (booted once per run)"*), in headless
-  Chrome.
+  Chrome. That node runs on a copy of the tree as it stands, every file under spirit/run but the state folders, .git and
+  node_modules: a script not yet committed is classified too, and a test's scratch tree, with no git, classifies as well.
 - The class from the two answers:
   - a crash on the node for lack of a browser function (`window`, `document`, ...), none in the page: browser-only;
   - a crash in the page for lack of a node function (`require`, `process`, `module`, `fs`, ...), none on the node:

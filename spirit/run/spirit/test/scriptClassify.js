@@ -20,7 +20,7 @@ const fs = require('fs');
 const path = require('path');
 const { spawn, execFileSync } = require('child_process');
 const test = require('./testReport.js');
-const { until, findChrome, scratchNode, chromePage, WAIT } = require('./headLessChrome.js');
+const { until, freePort, findChrome, chromePage, WAIT } = require('./headLessChrome.js');
 
 const RUN = path.join(__dirname, '..', '..');
 // "a load that is not complete in 3 seconds counts as crash/hang".
@@ -67,11 +67,36 @@ function loadOnNode(run, rel) {
 
 // THE PAGE SIDE: a fresh face page of the scratch node, the script required there; a thrown error or one the page reported
 // is its answer; not answered in time, a hang.
+// ITS OWN SCRATCH NODE, ON A COPY OF THIS TREE AS IT STANDS (not git's list: a script not yet committed is classified too,
+// and a tree with no git, a test's scratch tree, has one all the same): every file under spirit/run but the node's state,
+// .git and node_modules, then spirit/server.js started there on a free port, its DEBUG on.
+const SKIP_DIRS = ['state', 'app-state', '.git', 'node_modules'];
+function copyTree(from, to) {
+  fs.mkdirSync(to, { recursive: true });
+  fs.readdirSync(from, { withFileTypes: true }).forEach(function (d) {
+    if (d.isDirectory()) { if (SKIP_DIRS.indexOf(d.name) === -1) copyTree(path.join(from, d.name), path.join(to, d.name)); }
+    else if (d.isFile()) fs.copyFileSync(path.join(from, d.name), path.join(to, d.name));
+  });
+}
+async function ownScratch() {
+  const root = fs.mkdtempSync(path.join(require('os').tmpdir(), 'spirit-classify-'));
+  const run = path.join(root, 'spirit', 'run');
+  copyTree(RUN, run);
+  const port = await freePort();
+  const child = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], { cwd: run, stdio: 'ignore', windowsHide: true });
+  const base = 'http://127.0.0.1:' + port;
+  const post = function (call, args) {
+    return fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: call, args: args || {} }) });
+  };
+  const up = await until(function () { return post('api').then(function (r) { return r.status === 200; }); }, 60000);
+  if (up) await post('node.debug', { debug: { on: true } }).catch(function () { /* the page loads without it */ });
+  return { root: root, base: base, child: child, up: up };
+}
 let W = null;
 async function world() {
   if (W) return W;
   W = { node: null, page: null, error: '' };
-  W.node = await scratchNode({ servers: [] });
+  W.node = await ownScratch();
   if (!W.node.up) { W.error = 'its scratch node did not come up'; return W; }
   const chrome = findChrome();
   if (!chrome) { W.error = 'no Chrome on this machine'; return W; }
