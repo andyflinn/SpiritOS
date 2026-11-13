@@ -803,6 +803,44 @@ test.run('while it runs a suite, the status bar says "running <suite> for <scrip
   return !!ok || 'the press answered ' + press.status + ' ' + short(press.text) + '; messages seen: ' + short(((await T('messages_seen()')) || []).slice(-8));
 }, test.limit.long);
 
+// ── EACH SUITE AS IT REPORTS (goal/G47.1, box v132: "testicle's status box listens to the suite table's row changes on the
+// stream and shows which suite just reported, for which script, and its outcome"; Andy: "the status box knows which suite is
+// running, and for which files, so it can exacly count x of 5 reported: + script + success|failure"). A planted
+// spirit/zzStatus/ with a -general test of its own, handed its three scripts in one run: zzsOne holds, zzsTwo fails,
+// zzsThree holds.
+const ST = 'spirit/zzStatus/';
+const STS = [ST + 'zzsOne.js', ST + 'zzsTwo.js', ST + 'zzsThree.js'];
+const STATUS_RE = /^(\d+) of (\d+) reported: (\S+) (success|failure)$/;
+let statusFrom = 0;
+test.run('the world: spirit/zzStatus/ with its own -general test and three scripts, changed together', 0.2, async function () {
+  if (!msgsAt) return 'no recorder: the world failed';
+  fs.mkdirSync(path.join(s.run, 'spirit', 'zzStatus', 'test'), { recursive: true });
+  fs.writeFileSync(path.join(s.run, ST + 'zzStatus.js'), '\'use strict\';\n// zzStatus\n');
+  STS.forEach(function (f) { fs.writeFileSync(path.join(s.run, f), '\'use strict\';\n// ' + f + '\n'); });
+  fs.writeFileSync(path.join(s.run, ST + 'test/zzStatus-sibling-general.js'), "'use strict';\nconst path = require('path');\nconst test = require(path.join(__dirname, '..', '..', 'test', 'testReport.js'));\n" +
+    "const given = process.argv.slice(2).filter(function (a, i, all) { return a.indexOf('--') !== 0 && all[i - 1] !== '--test'; });\n" +
+    "given.forEach(function (f) { test.forScript(f, function () { test.run('zzStatus holds', 0.2, function () { return /zzsTwo/.test(f) ? 'it fails, as planted' : true; }, test.limit.quick); }); });\n");
+  // Once classified and run, changed together, so one run of the general test is handed all three.
+  await until(function () { return call(N.base, 'testicle.suite.search', { script: STS[2], text: '' }).then(function (r) { return !!(r.body && (r.body.items || []).length); }); }, 240000);
+  statusFrom = ((await T('messages_seen()')) || []).length;
+  STS.forEach(function (f) { fs.appendFileSync(path.join(s.run, f), '// changed together\n'); });
+  return true;
+}, test.limit.long);
+test.run('as each script of a run reports, the status bar says "x of N reported: <script> success|failure", x counting up to N', 0.4, async function () {
+  if (!msgsAt) return 'no recorder: the world failed';
+  const ok = await waitFor('messages_seen().slice(' + statusFrom + ').filter(function (m) { return /^\\d+ of 3 reported: \\S+zzStatus\\S* (success|failure)$/.test(m); }).length >= 3', 240000);
+  const seen = ((await T('messages_seen()')) || []).slice(statusFrom).filter(function (m) { return STATUS_RE.test(m) && /zzStatus/.test(m); });
+  const xs = seen.map(function (m) { return Number(STATUS_RE.exec(m)[1]); });
+  return (!!ok && JSON.stringify(xs.slice(-3)) === JSON.stringify([1, 2, 3])) || 'messages seen: ' + short(seen.slice(-6));
+}, test.limit.long);
+test.run('and each one names its script and its own outcome: zzsTwo failure, zzsOne and zzsThree success', 0.4, async function () {
+  if (!msgsAt) return 'no recorder: the world failed';
+  const seen = ((await T('messages_seen()')) || []).slice(statusFrom).filter(function (m) { return STATUS_RE.test(m) && /zzStatus/.test(m); });
+  const said = {};
+  seen.forEach(function (m) { const x = STATUS_RE.exec(m); said[x[3]] = x[4]; });
+  return (said[STS[0]] === 'success' && said[STS[1]] === 'failure' && said[STS[2]] === 'success') || 'said: ' + short(said);
+}, test.limit.quick);
+
 // destroy
 test.run('destroy leaves its container empty', 0.2, async function () {
   if (face()) return face();
