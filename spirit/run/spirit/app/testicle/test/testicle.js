@@ -275,10 +275,11 @@ test.run('the older table file is now the table script, and no table file is lef
   try { const d0 = new DatabaseSync(DB, { readOnly: true }); names0 = d0.prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all().map(function (r) { return r.name; }); d0.close(); } catch (e) { names0 = ['unreadable: ' + (e && e.message)]; }
   return (names0.indexOf('script') !== -1 && names0.indexOf('file') === -1) || 'tables: ' + short(names0);
 }, test.limit.quick);
-test.run('the older file row is kept in script, as it was', 0.2, function () {
+// Since box v95, 5 the start marks a row of a script no longer on disc deleted: the row is kept, its hash with it.
+test.run('the older file row is kept in script, its hash as it was', 0.2, function () {
   if (!start) return NONODE;
-  const kept = scriptRow(start, OLD.name);
-  return (!!kept && kept.hash === OLD.hash && Number(kept.changed) === OLD.changed) || 'the row: ' + short(kept);
+  const kept = scriptRow(tables(DB), OLD.name);
+  return (!!kept && kept.hash === OLD.hash) || 'the row: ' + short(kept);
 }, test.limit.quick);
 test.run('the older suite row is kept, its key column now script', 0.2, function () {
   if (!start) return NONODE;
@@ -348,10 +349,10 @@ test.run('the script table, made before, has gained the columns reClassify, brow
   const c = scriptColumns();
   return ['reClassify', 'browserOnly', 'nodeOnly'].every(function (n) { return c.indexOf(n) !== -1; }) || 'columns: ' + short(c);
 }, test.limit.quick);
-test.run('the older row is kept as it was when its table gained them', 0.2, function () {
+test.run('the older row is kept, its hash as it was, when its table gained them', 0.2, function () {
   if (!up()) return NONODE;
   const kept = scriptRow(tables(DB), OLD.name);
-  return (!!kept && kept.hash === OLD.hash && Number(kept.changed) === OLD.changed) || 'the row: ' + short(kept);
+  return (!!kept && kept.hash === OLD.hash) || 'the row: ' + short(kept);
 }, test.limit.quick);
 
 // ── goal/G47.1, box v79, 4: the verb preferences ──
@@ -522,11 +523,8 @@ test.run('script.get of a production script that is not there answers the error 
   const nowhere = await call(N.base, 'testicle.script.get', { name: Z + 'nowhere.js' });
   return failed(nowhere, 'no such file') || 'script.get nowhere.js: ' + nowhere.status + ' ' + short(nowhere.text);
 }, test.limit.quick);
-test.run('the world: zeta.js, never changed, has no row before it is asked for', 0.2, function () {
-  if (!up()) return NONODE;
-  return !scriptRow(tables(DB), Z + 'zeta.js') || 'zeta.js has a row already';
-}, test.limit.quick);
-test.run('script.get of a production script with no rows makes its file row', 0.2, async function () {
+// Since box v95, 5 every script on disc has its row from the start, zeta.js among them: script.get answers it.
+test.run('script.get of a production script never changed answers with its file row there', 0.2, async function () {
   if (!up()) return NONODE;
   tz = Date.now();
   zeta = await call(N.base, 'testicle.script.get', { name: Z + 'zeta.js' });
@@ -536,7 +534,7 @@ test.run('script.get of a production script with no rows makes its file row', 0.
 }, test.limit.quick);
 test.run('and answers that file row', 0.2, function () {
   if (!zeta) return NONODE;
-  return (!!zrow && !!zeta.body && zeta.body.name === zrow.name && zeta.body.hash === zrow.hash && Number(zeta.body.changed) === Number(zrow.changed) && no(zrow.deleted) && Number(zrow.changed) >= tz - 1000) || 'answered ' + short(zeta.body) + ', the row ' + short(zrow);
+  return (!!zrow && !!zeta.body && zeta.body.name === zrow.name && zeta.body.hash === zrow.hash && Number(zeta.body.changed) === Number(zrow.changed) && no(zrow.deleted)) || 'answered ' + short(zeta.body) + ', the row ' + short(zrow);
 }, test.limit.quick);
 test.run('it makes a suite row for every suite that concerns the file', 0.2, function () {
   if (!zt) return NONODE;
@@ -622,10 +620,6 @@ test.run('given no script, a suite of two scripts is answered once', 0.2, async 
 // is shorthand for: search all failed, current tests, most severe first", "Most severe first applies to all test
 // searches", "The verb red is testicle.red". G45.1's columns:
 // script (file until the rename), suite, test, flipped, current, verified, tested, judged, severity.
-test.run('the world: theta.js has no row before a test of it is set', 0.2, function () {
-  if (!up()) return NONODE;
-  return !scriptRow(tables(DB), TH) || 'theta.js has a row already';
-}, test.limit.quick);
 test.run('testicle.set is served, and testicle.db holds the table testicle', 0.2, async function () {
   if (!up()) return NONODE;
   ts0 = Date.now();
@@ -633,7 +627,7 @@ test.run('testicle.set is served, and testicle.db holds the table testicle', 0.2
   k1 = tables(DB);
   return (set1.status === 200 && Array.isArray(k1.test)) || 'test.set: ' + set1.status + ' ' + short(set1.text) + '; table test ' + short(k1.test === null ? 'missing' : 'there');
 }, test.limit.quick);
-test.run('a set for a script with no row makes its script row', 0.2, function () {
+test.run('a set\'s script has its script row', 0.2, function () {
   if (!k1) return NONODE;
   return !!scriptRow(k1, TH) || 'no script row for ' + TH;
 }, test.limit.quick);
@@ -1081,10 +1075,6 @@ test.run('a changed file that is no product script gets no row', 0.2, async func
   n1 = await after();
   return !scriptRow(n1, Z + 'notes.md') || 'a row for notes.md: ' + short(scriptRow(n1, Z + 'notes.md'));
 }, test.limit.slow);
-test.run('a product file never changed, its suite never changed, has no row', 0.2, function () {
-  if (!n1) return NONODE;
-  return (!scriptRow(n1, Z + 'epsilon.js') && !suiteRows(n1, Z + 'epsilon.js').length) || 'rows for epsilon.js: ' + short([scriptRow(n1, Z + 'epsilon.js'), suiteRows(n1, Z + 'epsilon.js')]);
-}, test.limit.quick);
 
 // the box: "When a suite ... is changed": a general test
 test.run('the world: the changed general test judges every product file', 0.2, function () {
