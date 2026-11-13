@@ -83,6 +83,12 @@ function kindOf(file) {
   if (f === 'spirit/element/installSpiritElement.js') return '';
   try { return /\binstallSpiritElement\s*\(/.test(codeOf(fs.readFileSync(path.join(RUN, f), 'utf8'), true)) ? 'element' : ''; } catch (e) { return ''; }
 }
+// A PAGE SCRIPT IT JUDGES (goal/G47.1, box v121: "it judges the scripts scriptClassify says load in a page"; testicle hands it
+// only those): known by its path alone, no code read; whether it installs an element the bare page says (session).
+function pageScript(file) {
+  const f = String(file || '');
+  return /^spirit\/.+\.js$/.test(f) && !/(^|\/)test\//.test(f) && f !== 'spirit/element/installSpiritElement.js';
+}
 const WAIT = 20000;
 // THE SERVERS ITS PAGES STAND ON, TURNED ON (goal/G41.28): the agent tables' pages draw the agent family's cache, which
 // is there only while the agent server runs. Its owner turns it on; so does the scratch node, so its pages are judged
@@ -534,8 +540,9 @@ function every() {
   // The page modules in its reach, and the one scratch node they are judged on.
   test.run('the world: testModule.js gives it files to judge', 0.2, function () {
     const reach = require(path.join(RUN, 'spirit', 'test', 'testModule.js')).testsFor('').filter(function (t) { return t.test === 'spirit/test/spirit-sibling-browser.js' && t.file; }).map(function (t) { return t.file; });
-    E.files2 = reach.filter(kindOf);
-    test.comment('every app and element in its reach: ' + E.files2.length + ' of ' + reach.length + '; not mounted, being neither: ' + reach.filter(function (f) { return !kindOf(f); }).join(', '));
+    // Every page script in its reach, each judged by its own page (goal/G47.1, box v121: no code reading).
+    E.files2 = reach.filter(pageScript);
+    test.comment('every page script in its reach: ' + E.files2.length + ' of ' + reach.length);
     return E.files2.length > 0 || 'testModule.js gives it no file to judge';
   }, test.limit.quick);
   test.run('the world: a scratch node comes up with its DEBUG on', 0.2, async function () {
@@ -661,8 +668,51 @@ async function session() {
     .map(function (m) { return m.params.entry ? m.params.entry.text : (m.params.args || []).map(function (a) { return a.value || a.description; }).join(' '); });
   P.missing = page.heard.filter(function (m) { return m.method === 'Network.responseReceived' && m.params.response.status >= 400 && !notFile(m.params.response.url); }).map(function (m) { return m.params.response.status + ' ' + m.params.response.url.replace(node.base, ''); })
     .concat(page.heard.filter(function (m) { return m.method === 'Network.loadingFailed' && !m.params.canceled; }).map(function (m) { return 'failed ' + m.params.errorText; }));
+  // NO ELEMENT INSTALLED, KNOWN BY THE PAGE, NOT BY READING ITS CODE (goal/G47.1, box v121: "no code reading: after
+  // loading, the page looks at window.spirit.element at the script's own path, where installSpiritElement puts an element
+  // with its create (a helper goes to spirit.required)"; "with no element installed these are skipped, never counted
+  // green"): the bare page says so when nothing with a create stands there (spirit/DEBUG/headLessBrowser.js).
+  if (report && report.state === 'failed' && /places no element with a create at spirit\.element\./.test(report.error)) { P.noElement = true; P.stage = 'no element'; return P; }
   if (!report || report.state !== 'mounted') return P;
   P.stage = 'mounted';
+
+  // MOUNTED EMPTY, JUDGED AS DRAWN (goal/G47.1, box v121, before any press or typing). What create() put into its
+  // container is the element's box: the mount box's own children (Q4, "create() returns a node in some elements and a
+  // handle like { destroy() } in others (chat, desk): may the check judge the node create() puts into its container?";
+  // Andy: "wsl, yes.").
+  // 1. "its create() box declares a constraint in its computed style: overflow not visible (hidden, clip, auto, scroll);
+  //    wrapping and ellipsis only on top of that. overflow visible is red."
+  P.unbounded = JSON.parse(await page.evaluate('JSON.stringify(Array.prototype.map.call(window.spiritMount.box.children, function (el) { var cs = getComputedStyle(el); return { node: el.tagName.toLowerCase() + (el.id ? "#" + el.id : "") + (el.className && typeof el.className === "string" ? "." + el.className.trim().split(/\\s+/).join(".") : ""), x: cs.overflowX, y: cs.overflowY }; }).filter(function (b) { return b.x === "visible" || b.y === "visible"; }))'));
+  P.boxCount = await page.evaluate('window.spiritMount.box.children.length');
+  // 2. "every input in it has a maxlength."
+  const INPUTS = 'Array.prototype.filter.call(window.spiritMount.box.querySelectorAll("textarea, input"), function (el) { return el.tagName === "TEXTAREA" || /^(|text|email|search|url|tel|password|number)$/.test(el.type || ""); })';
+  const nameOf = 'function (el) { var box = window.spiritMount.box; var parts = []; for (var n = el; n && n !== box; n = n.parentNode) { if (n.id || n === el) parts.unshift(n.tagName.toLowerCase() + (n.id ? "#" + n.id : "") + (n === el && el.placeholder ? "[" + el.placeholder + "]" : "") + (n === el && el.tagName === "BUTTON" ? "[" + String(el.textContent || el.title || "").trim().slice(0, 30) + "]" : "")); } return parts.join(" > "); }';
+  P.inputCount = await page.evaluate(INPUTS + '.length');
+  P.noMax = JSON.parse(await page.evaluate('JSON.stringify(' + INPUTS + '.filter(function (el) { return !(el.maxLength > 0); }).map(' + nameOf + '))'));
+  // 3. "every input and button in it has a listener on itself or on a node between it and the mounted element's box (read
+  //    through Chrome's debugger, DOMDebugger.getEventListeners, no code reading); one on the document or window does not
+  //    count. none: red at 0.6."
+  const PRESSABLE = 'Array.prototype.concat.call([], ' + INPUTS + ', Array.prototype.slice.call(window.spiritMount.box.querySelectorAll("button")))';
+  P.pressableCount = await page.evaluate(PRESSABLE + '.length');
+  P.deaf = [];
+  for (let i = 0; i < P.pressableCount; i++) {
+    const way = await page.send('Runtime.evaluate', { expression: '(function () { var box = window.spiritMount.box; var el = ' + PRESSABLE + '[' + i + ']; var a = []; for (var n = el; n && n !== box; n = n.parentElement) a.push(n); return a; }())' });
+    const arr = way.result && way.result.result && way.result.result.objectId;
+    if (!arr) { P.deaf.push('item ' + i + ': its way up could not be read'); continue; }
+    const props = await page.send('Runtime.getProperties', { objectId: arr, ownProperties: true });
+    const nodes = ((props.result && props.result.result) || []).filter(function (p) { return /^\d+$/.test(p.name) && p.value && p.value.objectId; });
+    let heard = false;
+    for (const n of nodes) {
+      const l = await page.send('DOMDebugger.getEventListeners', { objectId: n.value.objectId });
+      if (l.result && (l.result.listeners || []).length) { heard = true; break; }
+    }
+    if (!heard) P.deaf.push(await page.evaluate('(' + nameOf + ')(' + PRESSABLE + '[' + i + '])'));
+  }
+  // 4. "no node of it carries margin, padding or gap in its style attribute, and no <style> block it adds sets them (read
+  //    from the page's style sheets)". The bare page's own <style> (html, body) is the page's, not the element's.
+  const SPACING = '/(^|;)\\s*(margin|padding|gap|row-gap|column-gap)(-[a-z-]+)?\\s*:/i';
+  P.spacedNodes = JSON.parse(await page.evaluate('JSON.stringify(Array.prototype.filter.call(window.spiritMount.box.querySelectorAll("*"), function (el) { return ' + SPACING + '.test(el.getAttribute("style") || ""); }).map(function (el) { return (' + nameOf + ')(el) + " style=\\"" + el.getAttribute("style").slice(0, 80) + "\\""; }))'));
+  P.spacedRules = JSON.parse(await page.evaluate('JSON.stringify([].concat.apply([], Array.prototype.filter.call(document.styleSheets, function (s) { var o = s.ownerNode; return o && o.tagName === "STYLE" && !/^\\s*html, body \\{ height: 100%; margin: 0; \\}/.test(o.textContent); }).map(function (s) { var out = []; try { Array.prototype.forEach.call(s.cssRules, function (r) { if (r.style && ' + SPACING + '.test(r.style.cssText)) out.push(r.selectorText + " { " + r.style.cssText.slice(0, 80) + " }"); }); } catch (e) { out.push("a style block that cannot be read: " + e.message); } return out; })))'));
 
   // EVERY BOX INSIDE IT BOUNDED, TALL AND WIDE (goal/G41.19, box v23; rule/16; Andy: "list-in-a-sized-box
   // (anything-in-a-sized-box) are really a test of the container", "any container that mounts unknown stuff inside it
@@ -797,14 +847,6 @@ function bounded(work) {
 }
 
 function oneFile(P) {
-  if (!kindOf(rel)) {
-    test.run('it places no element (it calls no installSpiritElement): a switch, a server or a helper, not mounted', 0.4, function () {
-      return !kindOf(rel) || 'it places an element after all';
-    }, test.limit.quick);
-    return;
-  }
-  const ownCode = fs.readFileSync(full, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1');
-
   // ON ITS PAGE: what the session drew, each rule said as the old checks were.
   test.run('the world: a scratch node with its DEBUG on, and a Chrome page', 0.2, function () {
     (P.notes || []).forEach(function (n) { test.comment(n); });
@@ -816,14 +858,51 @@ function oneFile(P) {
     return before() || P.debugStatus === 200 || ADDRESS + ' answered ' + P.debugStatus;
   }, test.limit.quick);
   const noMount = function () { return before() || (P.debugStatus !== 200 ? 'no DEBUG page: the world failed' : ''); };
-  test.run('it mounts by itself on a bare page: spirit.js, then this file alone', 0.4, function () {
+  // A PAGE SCRIPT THAT INSTALLS NO ELEMENT (goal/G47.1, box v121): loaded on the bare page, what it runs is judged; the
+  // element rules are skipped, said as a comment, never counted green.
+  if (P.noElement) {
+    test.run('nothing it runs throws', 0.8, function () { return noMount() || !P.thrown.length || 'thrown: ' + short(P.thrown); }, test.limit.quick);
+    test.run('every file it asks for is there', 0.4, function () { return noMount() || !P.missing.length || 'missing: ' + short(P.missing); }, test.limit.quick);
+    test.run('and it says no error on the console', 0.4, function () { return noMount() || !P.errors.length || 'console: ' + short(P.errors); }, test.limit.quick);
+    unjudged('it installs no element at spirit.element.' + rel.replace(/\.js$/, '').split('/').join('.') + ': the element rules are skipped');
+    pageAfter(P);
+    return;
+  }
+  const ownCode = fs.readFileSync(full, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1');
+  // "if it throws when mounted empty, red at 0.8; this enforces rule 26 (an element loads its own stuff)" (box v121).
+  test.run('it mounts by itself on a bare page: spirit.js, then this file alone', 0.8, function () {
     return noMount() || (!!P.report && P.report.state === 'mounted') || 'the page said: ' + short(P.report);
   }, test.limit.quick);
-  test.run('nothing it runs throws', 0.4, function () { return noMount() || !P.thrown.length || 'thrown: ' + short(P.thrown); }, test.limit.quick);
+  test.run('nothing it runs throws', 0.8, function () { return noMount() || !P.thrown.length || 'thrown: ' + short(P.thrown); }, test.limit.quick);
   test.run('every file it asks for is there', 0.4, function () { return noMount() || !P.missing.length || 'missing: ' + short(P.missing); }, test.limit.quick);
   test.run('and it says no error on the console', 0.4, function () { return noMount() || !P.errors.length || 'console: ' + short(P.errors); }, test.limit.quick);
   const mounted = P.stage === 'done';
   const notDrawn = function () { return noMount() || (!mounted ? 'it did not mount: the world failed' : ''); };
+  // MOUNTED EMPTY (goal/G47.1, box v121): the four element rules, judged as drawn before any press.
+  test.run('mounted empty, the box it puts into its container declares a constraint: overflow not visible', 0.4, function () {
+    if (notDrawn()) return notDrawn();
+    if (!P.boxCount) return 'it put nothing into its container: no box to judge';
+    return !P.unbounded.length || P.unbounded.length + ' with overflow visible: ' + short(P.unbounded.map(function (b) { return b.node + ' (overflow-x ' + b.x + ', overflow-y ' + b.y + ')'; }));
+  }, test.limit.quick);
+  if (mounted && !P.inputCount) unjudged('mounted empty, it draws no input');
+  else {
+    test.run('mounted empty, every input it draws has a maxlength', 0.4, function () {
+      if (notDrawn()) return notDrawn();
+      return !P.noMax.length || P.noMax.length + ' of ' + P.inputCount + ' have none: ' + short(P.noMax);
+    }, test.limit.quick);
+  }
+  if (mounted && !P.pressableCount) unjudged('mounted empty, it draws no input and no button');
+  else {
+    test.run('mounted empty, every input and button it draws has a listener on itself or on a node between it and its box', 0.6, function () {
+      if (notDrawn()) return notDrawn();
+      return !P.deaf.length || P.deaf.length + ' of ' + P.pressableCount + ' have none on their way up: ' + short(P.deaf);
+    }, test.limit.quick);
+  }
+  test.run('mounted empty, no node of it carries margin, padding or gap in its style attribute, and no <style> block it adds sets them', 0.4, function () {
+    if (notDrawn()) return notDrawn();
+    const bad = (P.spacedNodes || []).concat(P.spacedRules || []);
+    return !bad.length || bad.length + ' set spacing: ' + short(bad);
+  }, test.limit.quick);
   // Said when it drew a scrolling box; each box that grows named in the answer.
   if (!mounted || Object.keys(P.boxes).length) {
     // <address>: sized box <id chain>
@@ -970,6 +1049,10 @@ function oneFile(P) {
       }, test.limit.quick);
     }
   }
+  pageAfter(P);
+}
+// The page and its scratch node, gone when the file's checks are said.
+function pageAfter(P) {
   test.after(async function () {
     const page = P.page; const node = P.node;
     if (page && page.sock) try { page.sock.close(); } catch (e) { /* gone */ }
@@ -985,5 +1068,6 @@ function oneFile(P) {
 if (!arg) every();
 else if (!full) {
   test.run('the world: the file handed is there', 0.2, function () { return 'no shell app or element to judge: ' + JSON.stringify(arg); }, test.limit.quick);
-} else if (!kindOf(rel)) oneFile({ fail: '', stage: 'none' });
-else bounded(session()).then(oneFile);
+} else if (!pageScript(rel)) {
+  test.run('the world: the file handed is a page script of the tree', 0.2, function () { return 'not a script under spirit/ outside a test folder: ' + JSON.stringify(rel); }, test.limit.quick);
+} else bounded(session()).then(oneFile);

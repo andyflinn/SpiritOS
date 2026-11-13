@@ -106,6 +106,29 @@ it names no element (Andy, of the `shell/mount.html` it replaces: *"why are ther
   - `box`: the mount box;
   - `destroy`: for an element, what its create answered as destroy.
 
+### Requirements (goal/G47.1, box v121): ui rules on every page script, mounted empty
+
+Andy: *"put UI rules into run://spirit/test/spirit-sibling-browser.js, is that NOT the logical place?"*, *"isn't the
+cheapest catch-all making sure the container constraints, instead of trying to magic-up non-existing data-sets?"*
+
+- **Which scripts:** those scriptClassify says load in a page (browser-only or both); testicle hands it no other. Each is
+  loaded on the bare page, `spirit.js` alone, nothing preloaded.
+- **No code reading:** whether a script installs an element, the page says: it looks at `window.spirit.element` at the
+  script's own path, where `installSpiritElement` puts an element with its `create`. With none there, the page reports
+  "places no element with a create", what it runs is still judged (nothing thrown, no missing file, no console error), and
+  the element rules are skipped, said as a comment, never counted green.
+- **An element, mounted empty** (no made-up data), judged as drawn before any press:
+  - the box it puts into its container (Q4, Andy: *"wsl, yes."*: create() returns a node in some elements and a handle
+    like `{ destroy() }` in others) declares a constraint in its computed style: overflow not visible (hidden, clip, auto,
+    scroll); wrapping and ellipsis only on top of that. Overflow visible is red;
+  - every input it draws has a `maxlength` (*"a maxlength on the input DOES count"*);
+  - every input and button it draws has a listener on itself or on a node between it and its box, read through Chrome's
+    debugger (`DOMDebugger.getEventListeners`); one on the document or window does not count. None: red at 0.6;
+  - no node of it carries margin, padding or gap in its style attribute, and no `<style>` block it adds sets them, read
+    from the page's style sheets (the bare page's own `html, body` block is the page's);
+  - if it throws when mounted empty, red at 0.8: this enforces rule 26, an element loads its own stuff.
+- Rule 19 (state only via the server) is not enforced here.
+
 ### Requirements: what it judges per file
 
 Box v23: *"Clean mount: with its container alone it mounts, loads its own parts, throws nothing even when unconfigured
