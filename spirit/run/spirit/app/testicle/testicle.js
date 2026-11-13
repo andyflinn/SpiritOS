@@ -279,7 +279,7 @@ function nextJob() {
   const ur = n.classify ? null : Q.suiteRow.get(n.script, n.suite);
   const j = { script: n.script, suite: n.suite, title: n.title || '', scriptHash: (sr && sr.hash) || (n.classify ? '' : hashOf(n.script)),
     suiteHash: (ur && ur.hash) || hashOf(n.suite), started: Date.now(), kid: null, timer: null, killed: false,
-    classify: !!n.classify, scripts: n.scripts || [], hashes: n.hashes || null };
+    classify: !!n.classify, scripts: n.scripts || [], hashes: n.hashes || null, done: 0, seen: Object.create(null) };
   // A classifying run is given its scripts; any other run its script, when it is a general test, and the title asked.
   const args = [n.suite].concat(j.classify ? j.scripts : []);
   if (!j.classify && n.suite !== ownTestOf(n.script)) args.push(n.script);
@@ -527,12 +527,23 @@ function apply(changed, P) {
 //   { testicle: { busy } }                       busy turned, true on waking, false back to listening
 // Every row carries busy too, so a page that opens late finds it in the last thing the job published.
 function busyNow() { return working || !!timer || pending.size > 0 || getting > 0 || !!job; }
+// WHAT IT IS DOING, SAID (goal/G47.1; Andy watched the status bar's 🚶‍➡️ and could not tell classifying from testing; his
+// "do that" to: while it classifies "classifying 120 of 253", while it tests "running <suite> for <script>", nothing
+// when idle): carried on every message beside busy, and told again whenever it changes.
+function doingNow() {
+  if (!job) return '';
+  if (job.classify) return 'classifying ' + job.done + ' of ' + job.scripts.length;
+  return 'running ' + path.posix.basename(job.suite) + (job.suite !== ownTestOf(job.script) ? ' for ' + job.script : '');
+}
 let busyTold = false;
+let doingTold = '';
 function told() {
   const b = busyNow();
-  if (b === busyTold) return;
+  const d = doingNow();
+  if (b === busyTold && d === doingTold) return;
   busyTold = b;
-  appServer.publish({ testicle: { busy: b } });
+  doingTold = d;
+  appServer.publish({ testicle: { busy: b, doing: d } });
 }
 // A test of a script and suite reported: the suite row judged again from the table. Flagged, it clears once every current row
 // was tested since the flag was set (changed); judged before, its outcome follows the rows. Published when it changed.
@@ -554,7 +565,7 @@ function suiteJudged(script, suite) {
   tell('suite', suiteServed(Q.suiteRow.get(script, suite)), 'updated');
   return true;
 }
-function tell(table, row, change) { appServer.publish({ testicle: { table: table, row: row, change: change, busy: busyNow() } }); }
+function tell(table, row, change) { appServer.publish({ testicle: { table: table, row: row, change: change, busy: busyNow(), doing: doingNow() } }); }
 
 // THE QUEUE: what changed since the last write, and whether a write is under way. busy is either, or a script.get making
 // rows.
@@ -819,6 +830,8 @@ appServer.serve({
         const isLate = !!late && late.scriptHash === scriptHash && late.suiteHash === suiteHash;
         if (late && !isLate) killed.delete(script + '|' + suite);
         const out = setResult(script, suite, name, isLate ? false : !!a.verified, severity, scriptHash, suiteHash);
+        // A classifying run's count moves with each script it has said its class of (doingNow), and is told.
+        if (asClassified && !asClassified.seen[script]) { asClassified.seen[script] = true; asClassified.done += 1; told(); }
         suiteJudged(script, suite);
         return out;
       }).finally(function () { getting -= 1; told(); });

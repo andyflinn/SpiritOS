@@ -61,6 +61,8 @@
         // added, deleted or updated in any of its three tables"): busy from whatever carries it; the last change from a row.
         var mon = {};
         if (typeof a.busy === 'boolean') mon.busy = a.busy;
+        // What it is doing, as the server says it ("classifying 120 of 253", "running <suite> for <script>", '' when idle).
+        if (typeof a.doing === 'string') mon.doing = a.doing;
         var row = TABLES.indexOf(a.table) !== -1 && a.row && typeof a.row === 'object' ? a.row : null;
         var k = row ? keyOf(a.table, row) : '';
         if (k) {

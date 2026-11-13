@@ -124,7 +124,9 @@
       var glyph = busy ? '🚶‍➡️' : '🛌';
       if (glyph !== shown && paint(icon, glyph)) shown = glyph;
       icon.title = busy ? 'working' : 'idle';
-      var words = lastWords(m && m.last);
+      // WHAT IT IS DOING FIRST (goal/G47.1, Andy: "do that"): while the server classifies or tests, the line says which, as the
+      // server says it; idle, the last change, as before.
+      var words = (m && typeof m.doing === 'string' && m.doing) ? m.doing : lastWords(m && m.last);
       line.textContent = words;
       line.title = words;
     }
