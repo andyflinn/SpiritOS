@@ -242,6 +242,18 @@ const PAGE = String.raw`(function (name, ROWS, LONG, PANE_W, PANE_H, VIA_LIST, O
       });
     });
   }).then(function () {
+    // 9: THE SELECTOR ITSELF IN PANE FACE (box v123: "every search supports both pane and dropdown; a selector with only one
+    // is red"): mounted alone in a sized box, given face pane, it draws its own list there, outside any selector row.
+    var paneBox = document.createElement('div');
+    paneBox.style.cssText = 'position:fixed;left:0;top:0;width:' + PANE_W + 'px;height:' + PANE_H + 'px;display:flex;flex-direction:column;overflow:hidden';
+    document.body.appendChild(paneBox);
+    var selP = S.element.spirit.element.search[name];
+    try { selP.create(paneBox, Object.assign({}, OPTIONS[name] || {}, { face: 'pane' })); } catch (e) { R.paneError = String(e && e.message || e); }
+    return wait(1000).then(function () {
+      R.selectorPane = Array.prototype.some.call(paneBox.querySelectorAll('[id$="list"]'), function (x) { return !x.closest('[id$="-selectors"]') && x.getClientRects().length > 0; });
+      if (paneBox.parentNode) paneBox.parentNode.removeChild(paneBox);
+    });
+  }).then(function () {
     // 7: the dropdown, its field near the right and bottom edges of the window.
     var corner = document.createElement('div');
     corner.style.cssText = 'position:fixed;right:4px;bottom:4px';
@@ -382,6 +394,14 @@ test.run('7. the selector\'s dropdown stays inside the window, opened near the r
     if (d.right > d.w + 1) why.push('right ' + d.right + ' past ' + d.w);
     if (d.bottom > d.h + 1) why.push('bottom ' + d.bottom + ' past ' + d.h);
     return why.length ? 'outside the window: ' + why.join(', ') : '';
+  });
+}, test.limit.quick);
+// Box v123: "every search supports both pane and dropdown; a selector with only one is red (today testicle.js, pane only,
+// and api.js, dropdown only)". Andy: "any search must support both pane AND dropdown". The dropdown is 7's.
+test.run('9. the selector, given face pane, draws its own list in the pane', 0.4, function () {
+  return eachSearch(function (r) {
+    if (r.paneError) return 'its create threw in pane face: ' + r.paneError;
+    return r.selectorPane ? '' : 'given face pane it drew no list of its own';
   });
 }, test.limit.quick);
 test.run('8. two details open, one closed: the other still draws in its own panel (G43.19, in a page)', 0.4, function () {

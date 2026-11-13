@@ -55,3 +55,7 @@ Found when cw checked the first reds (goal/G47.1): most were the test's, not the
   the one it was given; testicle's rows are current and red, as its list shows reds alone at the start.
 - Andy, on 7: *"the testicle search must support dropdown, for other potential (program-)users."* A search that draws no
   dropdown field when given `face: 'dropdown'` is red.
+- Box v123: *"every search supports both pane and dropdown; a selector with only one is red"* (Andy: *"any search must
+  support both pane AND dropdown, it costs virtually nothing and is a good investment in future integration."*). 9: the
+  selector itself, mounted alone in a sized box and given `face: 'pane'`, draws its own list there; its dropdown is 7's.
+  api is still judged by its listElement for 1 to 6, so its list is measured while its selector is red on 9.
