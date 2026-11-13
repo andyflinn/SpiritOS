@@ -102,12 +102,15 @@ suite search is spirit/element/search/suite.js and its folder"*.
 Vendored libraries' scripts are no production scripts either; the fs family's mirror never holds them
 (`spirit/fileSystem.js`, `VENDORED_FOLDERS`), so the list cannot show them and the test does not ask.
 
-## Box v79, 2 and 4: the ⚙ Configuration panel
+## Box v79/v80, 2 and 4: the ⚙ Configuration panel, and the mode in the monitor row
 
 - The left strip holds two icons, 📁 then ⚙ below it.
-- ⚙ pressed opens a panel in the left pane titled "⚙ Configuration"; its one switch offers interactive and auto, and
-  shows interactive at the start.
-- auto chosen in the panel sets the node's preference `interactive` false; a set by the verb elsewhere (`interactive`
-  true) is followed by the panel, as a set is published to testicle's subscribers.
-- Its test must try to break: a third icon or ⚙ above 📁; a panel that shows auto by default; a choice that never reaches
-  the node; a panel that does not follow a set made elsewhere.
+- ⚙ pressed opens a panel in the left pane titled "⚙ Configuration". Its switch is the app's toggle form
+  (`rowFormToggle`): one toggle, no Save button, no select; its words say what it switches; on, 🟢, at the start
+  (interactive, the default).
+- One press of the toggle sends it at once: the node's preference `interactive` turns false with nothing else pressed;
+  the stream sets the switch (🔴) and the monitor row's mode icon (🤖).
+- A set by the verb elsewhere (`interactive` true) is followed: the toggle 🟢, the monitor 🖖.
+- The monitor row's first icon is the mode, 🖖 interactive or 🤖 auto, ahead of the busy icon 🛌 or 🚶‍➡️.
+- Its test must try to break: a Save to press or a select; a press that sends nothing until another; a switch drawn from
+  the click instead of the stream; a mode icon missing, behind the busy icon, or not following a set made elsewhere.

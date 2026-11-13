@@ -127,7 +127,7 @@ const HANDS = '(function () {' +
   // goal/G47.1, the monitor row: the shown element of #zzBox whose text starts with a busy icon, the widest such that does
   // not hold the workBench's left pane; its icon, text, height and top, the left pane's top, and its message element: the
   // deepest element holding the message, with its overflow, wrap and ellipsis.
-  '  monitor: function () { var b = box(); var l = window.__t.left(); if (!b) return null; var re = /^(🛌|🚶‍➡️)/; var cands = all("*").filter(function (e) { return re.test(String(e.innerText || "").trim()) && !(l && e.contains(l)); }); if (!cands.length) return null; var row = cands.sort(function (a, c) { return String(c.innerText).length - String(a.innerText).length; })[0]; var text = String(row.innerText || "").trim(); var icon = text.match(re)[1]; var msg = text.slice(icon.length).trim(); var me = row; Array.prototype.slice.call(row.querySelectorAll("*")).forEach(function (e) { if (msg && String(e.textContent || "").trim() === msg) me = e; }); var cs = getComputedStyle(me); var r = row.getBoundingClientRect(); return { icon: icon, message: msg, height: r.height, bottom: r.bottom, benchTop: l ? l.getBoundingClientRect().top : null, nowrap: cs.whiteSpace === "nowrap" || cs.whiteSpace === "pre", ellipsis: cs.textOverflow === "ellipsis", hidden: cs.overflow === "hidden" || cs.overflowX === "hidden", overflows: me.scrollWidth > me.clientWidth }; },' +
+  '  monitor: function () { var b = box(); var l = window.__t.left(); if (!b) return null; var re = /^(?:(🤖|🖖)\\s*)?(🛌|🚶‍➡️)/; var cands = all("*").filter(function (e) { return re.test(String(e.innerText || "").trim()) && !(l && e.contains(l)); }); if (!cands.length) return null; var row = cands.sort(function (a, c) { return String(c.innerText).length - String(a.innerText).length; })[0]; var text = String(row.innerText || "").trim(); var hit = text.match(re); var mode = hit[1] || null; var icon = hit[2]; var msg = text.slice(hit[0].length).trim(); var me = row; Array.prototype.slice.call(row.querySelectorAll("*")).forEach(function (e) { if (msg && String(e.textContent || "").trim() === msg) me = e; }); var cs = getComputedStyle(me); var r = row.getBoundingClientRect(); return { mode: mode, icon: icon, message: msg, height: r.height, bottom: r.bottom, benchTop: l ? l.getBoundingClientRect().top : null, nowrap: cs.whiteSpace === "nowrap" || cs.whiteSpace === "pre", ellipsis: cs.textOverflow === "ellipsis", hidden: cs.overflow === "hidden" || cs.overflowX === "hidden", overflows: me.scrollWidth > me.clientWidth }; },' +
   // Every icon the monitor row shows, in order, from the moment this is called.
   '  recordIcons: function () { window.__icons = []; var last = null; var note = function () { var m = window.__t.monitor(); var i = m ? m.icon : null; if (i && i !== last) { window.__icons.push(i); last = i; } }; note(); new MutationObserver(note).observe(box(), { subtree: true, childList: true, characterData: true }); return true; },' +
   '  icons_seen: function () { return window.__icons || []; },' +
@@ -590,6 +590,13 @@ test.run('above the workbench, a monitor row, its first a busy icon, 🛌 or �
   const ok = await waitFor('monitor() && monitor().benchTop !== null && monitor().bottom <= monitor().benchTop + 0.5', 10000);
   return !!ok || 'the monitor row: ' + short(await T('monitor()'));
 }, test.limit.slow);
+// goal/G47.1, box v80, 2: "the status display has one extra icon at the beginning: 🤖 auto / 🖖 interactive, ahead of the
+// 🛌/🚶‍➡️ icon, from the stream." The scratch node starts interactive, the default.
+test.run('the monitor row\'s first icon is the mode, 🖖 interactive at the start, ahead of the busy icon', 0.2, async function () {
+  if (face()) return face();
+  const ok = await waitFor('monitor() && monitor().mode === "🖖"', 10000);
+  return !!ok || 'the monitor row: ' + short(await T('monitor()'));
+}, test.limit.slow);
 test.run('the face never asks testicle.busy: the icon is what the server streams', 0.2, function () {
   const files = ['spirit/app/testicle/element.js', 'spirit/app/testicle/data.js'];
   const asks = files.filter(function (f) { return /testicle\s*(\.\s*busy\b|\[\s*['"]busy['"]\s*\])/.test(code(path.join(RUN, f))); });
@@ -690,21 +697,17 @@ test.run('a long message is ellipsed, never wrapped', 0.2, async function () {
 // The page's hands for it, markup-blind: the ⚙ button pressed; the left pane's text; the switch's two choices found by their
 // words; the one shown as chosen (a select's selected option, a checked radio, or the pressed, checked or bold choice).
 const GEAR = '(function () { var b = document.getElementById("zzBox"); var t = b ? Array.prototype.slice.call(b.querySelectorAll("button[data-side=\\"left\\"][data-tool]")).filter(function (i) { return /⚙/.test(String(i.textContent || "") + String(i.getAttribute("title") || "")); })[0] : null; if (!t) return false; t.click(); return true; }())';
-const MODE = '(function () { var l = window.__t.left(); if (!l) return { none: true };' +
+// The toggle (spirit/element/search/app/rowFormToggle.js, as the app list's): its state drawn 🟢 on or 🔴 off, the button
+// the other, its words beside. On is interactive (box: "true is interactive, false is auto").
+const TOGGLE = '(function () { var l = window.__t.left(); if (!l) return { none: true };' +
   ' var seen = function (e) { return !!e && e.getClientRects().length > 0 && getComputedStyle(e).visibility !== "hidden"; };' +
-  ' var els = Array.prototype.slice.call(l.querySelectorAll("*")).filter(seen);' +
-  ' var word = function (e) { return String(e.innerText || e.textContent || e.value || "").trim().toLowerCase(); };' +
-  ' var sel = els.filter(function (e) { return e.tagName === "SELECT" && Array.prototype.some.call(e.options, function (o) { return /^auto$/i.test(o.text.trim()); }); })[0];' +
-  ' if (sel) return { kind: "select", chosen: sel.options[sel.selectedIndex].text.trim().toLowerCase(), choices: Array.prototype.map.call(sel.options, function (o) { return o.text.trim().toLowerCase(); }) };' +
-  ' var opts = els.filter(function (e) { return /^(interactive|auto)$/.test(word(e)) && !Array.prototype.some.call(e.children, function (k) { return /^(interactive|auto)$/.test(word(k)); }); });' +
-  ' var on = function (e) { var i = e.querySelector("input") || (e.htmlFor && document.getElementById(e.htmlFor)) || (e.previousElementSibling && e.previousElementSibling.tagName === "INPUT" ? e.previousElementSibling : null); return (i && i.checked) || e.getAttribute("aria-pressed") === "true" || e.getAttribute("aria-checked") === "true" || e.getAttribute("aria-selected") === "true" || Number(getComputedStyle(e).fontWeight) >= 600; };' +
-  ' var chosen = opts.filter(on).map(word);' +
-  ' return { kind: "choices", choices: opts.map(word), chosen: chosen.length === 1 ? chosen[0] : chosen }; }())';
-const CHOOSE = function (w) { return '(function () { var l = window.__t.left(); if (!l) return false;' +
-  ' var sel = Array.prototype.slice.call(l.querySelectorAll("select")).filter(function (e) { return Array.prototype.some.call(e.options, function (o) { return /^auto$/i.test(o.text.trim()); }); })[0];' +
-  ' if (sel) { var o = Array.prototype.filter.call(sel.options, function (x) { return x.text.trim().toLowerCase() === ' + JSON.stringify(w) + '; })[0]; if (!o) return false; sel.value = o.value; sel.dispatchEvent(new Event("change", { bubbles: true })); return true; }' +
-  ' var e = Array.prototype.slice.call(l.querySelectorAll("*")).filter(function (x) { return String(x.innerText || x.textContent || "").trim().toLowerCase() === ' + JSON.stringify(w) + '; }).pop();' +
-  ' if (!e) return false; var i = e.querySelector("input") || (e.previousElementSibling && e.previousElementSibling.tagName === "INPUT" ? e.previousElementSibling : null); (i || e).click(); return true; }())'; };
+  ' var buttons = Array.prototype.slice.call(l.querySelectorAll("button")).filter(seen);' +
+  ' var txt = function (e) { return String(e.innerText || e.textContent || "").trim(); };' +
+  ' var tb = buttons.filter(function (x) { return /🟢|🔴/.test(txt(x)); });' +
+  ' var all = txt(l); var bt = tb.length ? txt(tb[0]) : "";' +
+  ' var rest = all.replace(bt, ""); var state = /🟢/.test(rest) ? "🟢" : /🔴/.test(rest) ? "🔴" : null;' +
+  ' return { toggles: tb.length, state: state, button: bt, save: buttons.some(function (x) { return /^save$/i.test(txt(x)); }), selects: l.querySelectorAll("select").length, words: rest.replace("⚙ Configuration", "").replace(/🟢|🔴/g, "").trim().toLowerCase() }; }())';
+const PRESS = '(function () { var l = window.__t.left(); var b = l ? Array.prototype.slice.call(l.querySelectorAll("button")).filter(function (x) { return /🟢|🔴/.test(String(x.innerText || x.textContent || "")); })[0] : null; if (!b) return false; b.click(); return true; }())';
 const prefsNow = async function () { const r = await call(N.base, 'testicle.preferences', {}); const b = r && r.body; return (b && typeof b.preferences === 'object' && b.preferences) || b || {}; };
 let gear = false;
 test.run('the world: ⚙ on the left strip is pressed', 0.2, async function () {
@@ -716,31 +719,45 @@ test.run('it opens a panel in the left pane, titled "⚙ Configuration"', 0.2, a
   if (!gear) return 'no ⚙ pressed: the world failed';
   return !!(await waitFor('leftSays().shown && left().innerText.indexOf("⚙ Configuration") !== -1', 10000)) || 'the left pane: ' + short(await T('leftSays()'));
 }, test.limit.slow);
-test.run('its one switch offers interactive and auto', 0.2, async function () {
+test.run('its switch is the app\'s toggle form: one toggle, no Save button, no select', 0.2, async function () {
   if (!gear) return 'no ⚙ pressed: the world failed';
-  await waitFor('left().innerText.toLowerCase().indexOf("auto") !== -1', 10000);
-  const m = await c.evaluate(MODE);
-  const ch = (m && m.choices) || [];
-  return (ch.indexOf('interactive') !== -1 && ch.indexOf('auto') !== -1) || 'the switch: ' + short(m);
+  await waitFor('left().innerText.indexOf("🟢") !== -1 || left().innerText.indexOf("🔴") !== -1', 10000);
+  const t = await c.evaluate(TOGGLE);
+  return (!!t && t.toggles === 1 && t.save === false && t.selects === 0) || 'the panel: ' + short(t);
 }, test.limit.slow);
-test.run('it shows interactive at the start, the default', 0.2, async function () {
+test.run('its words say what it switches: interactive or auto', 0.2, async function () {
   if (!gear) return 'no ⚙ pressed: the world failed';
-  const m = await c.evaluate(MODE);
-  return (m && m.chosen === 'interactive') || 'the switch shows ' + short(m);
+  const t = await c.evaluate(TOGGLE);
+  return (!!t && /interactive|auto/.test(t.words || '')) || 'the words: ' + short(t);
 }, test.limit.quick);
-test.run('auto chosen in the panel sets the preference interactive false on the node', 0.2, async function () {
+test.run('it shows interactive at the start, the default: the toggle on, 🟢', 0.2, async function () {
   if (!gear) return 'no ⚙ pressed: the world failed';
-  if (!(await c.evaluate(CHOOSE('auto')))) return 'no auto to choose: ' + short(await c.evaluate(MODE));
-  // A rowForm takes its row on its Save (spirit/element/rowForm.js); pressed when the panel has one.
-  await c.evaluate('(function () { var l = window.__t.left(); var b = l ? Array.prototype.slice.call(l.querySelectorAll("button")).filter(function (x) { return /^save$/i.test(String(x.innerText || x.textContent || "").trim()); })[0] : null; if (b) b.click(); return !!b; }())');
-  const ok = await until(function () { return prefsNow().then(function (p) { return p.interactive === false; }); }, 10000);
+  const t = await c.evaluate(TOGGLE);
+  return (!!t && t.state === '🟢') || 'the toggle: ' + short(t);
+}, test.limit.quick);
+let pressed = false;
+test.run('one press of the toggle sends it at once: the node\'s preference interactive is false, nothing else pressed', 0.2, async function () {
+  if (!gear) return 'no ⚙ pressed: the world failed';
+  pressed = !!(await c.evaluate(PRESS));
+  if (!pressed) return 'no toggle to press: ' + short(await c.evaluate(TOGGLE));
+  const ok = await until(function () { return prefsNow().then(function (p) { return p.interactive === false; }); }, 5000);
   return !!ok || 'the node\'s preferences: ' + short(await prefsNow());
 }, test.limit.slow);
-test.run('a set by the verb elsewhere is followed by the panel: interactive true shows interactive', 0.2, async function () {
+test.run('the stream sets the switch: the toggle off, 🔴', 0.2, async function () {
+  if (!pressed) return 'no toggle pressed: the world failed';
+  const ok = await until(function () { return c.evaluate(TOGGLE).then(function (t) { return !!t && t.state === '🔴'; }); }, 10000);
+  return !!ok || 'the toggle: ' + short(await c.evaluate(TOGGLE));
+}, test.limit.slow);
+test.run('and the monitor row\'s first icon follows: 🤖 auto', 0.2, async function () {
+  if (!pressed) return 'no toggle pressed: the world failed';
+  return !!(await waitFor('monitor() && monitor().mode === "🤖"', 10000)) || 'the monitor row: ' + short(await T('monitor()'));
+}, test.limit.slow);
+test.run('a set by the verb elsewhere is followed: interactive true shows the toggle on, 🟢, and the monitor 🖖', 0.2, async function () {
   if (!gear) return 'no ⚙ pressed: the world failed';
   await call(N.base, 'testicle.preferences', { interactive: true });
-  const ok = await until(function () { return c.evaluate(MODE).then(function (m) { return !!m && m.chosen === 'interactive'; }); }, 10000);
-  return !!ok || 'the switch shows ' + short(await c.evaluate(MODE));
+  const ok = await until(function () { return c.evaluate(TOGGLE).then(function (t) { return !!t && t.state === '🟢'; }); }, 10000);
+  const m = await waitFor('monitor() && monitor().mode === "🖖"', 10000);
+  return (!!ok && !!m) || 'the toggle ' + short(await c.evaluate(TOGGLE)) + ', the monitor ' + short(await T('monitor()'));
 }, test.limit.slow);
 
 // destroy
