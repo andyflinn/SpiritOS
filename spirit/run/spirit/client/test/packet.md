@@ -21,8 +21,9 @@ in a window of its own as a page loads it. Owed since the rule *"every productio
   its text the body, a non-string an empty body.
 - `decorate`: every field kept, `packet` added beside them, the message itself untouched; a chat line decorates as
   legacy.
-- In a page: `window.spirit.packet` with limits loaded first; without them, a load error naming `limits.js` and
-  `packet.js`.
+- In a page: `window.spirit.packet` with limits loaded first; without them it asks `spirit.require` for
+  `spirit/limits.js` itself and is `window.spirit.packet` once that is in (goal/G47.1, Andy: *"cw, FIX IT!"*, rule/26: what
+  it needs, it loads itself).
 
 ## A body JSON cannot express
 

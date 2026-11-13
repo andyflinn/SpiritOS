@@ -155,9 +155,21 @@ test.run('in a page, with limits loaded first, it is window.spirit.packet', 0.2,
   const r = p.encode('chat', 'x');
   return (p.MAX_TEXT === limits.SEALED_MAX && r.ok === true && /^[0-9a-f]{32}$/.test(r.envelope.id)) || 'in the page: ' + short(r);
 }, test.limit.quick);
-test.run('in a page without limits.js loaded it fails saying which script is missing', 0.2, function () {
-  const ctx = { window: { spirit: {} } };
-  let m = '';
-  try { vm.runInNewContext(fs.readFileSync(FILE, 'utf8'), ctx, { filename: FILE }); } catch (e) { m = String(e && e.message); }
-  return (/limits\.js/.test(m) && /packet\.js/.test(m)) || 'the load said: ' + short(m || 'nothing, it loaded');
+// WHAT IT NEEDS, IT LOADS ITSELF (goal/G47.1, Andy: "cw, FIX IT!"): in a page with no limits yet it asks spirit.require for
+// spirit/limits.js, and is window.spirit.packet once that is in.
+test.run('in a page without limits.js loaded it asks for spirit/limits.js itself, and is window.spirit.packet once it is in', 0.2, async function () {
+  const asked = [];
+  const win = { spirit: {} };
+  win.spirit.require = function (p) {
+    asked.push(p);
+    return Promise.resolve().then(function () { win.spirit.limits = { PAYLOAD_MAX: limits.PAYLOAD_MAX, PLAINTEXT_MAX: limits.PLAINTEXT_MAX, SEALED_MAX: limits.SEALED_MAX }; return {}; });
+  };
+  const ctx = { window: win, TextEncoder: TextEncoder, globalThis: { crypto: require('crypto').webcrypto } };
+  try { vm.runInNewContext(fs.readFileSync(FILE, 'utf8'), ctx, { filename: FILE }); }
+  catch (e) { return 'the page load threw: ' + short(e.message); }
+  const before = !!win.spirit.packet;
+  await new Promise(function (r) { setTimeout(r, 50); });
+  const p = win.spirit.packet;
+  return (asked.join() === 'spirit/limits.js' && !before && !!p && p.MAX_TEXT === limits.SEALED_MAX && p.encode('chat', 'x').ok === true) ||
+    'asked ' + short(asked) + ', defined before the limits ' + before + ', after ' + short(p && p.MAX_TEXT);
 }, test.limit.quick);

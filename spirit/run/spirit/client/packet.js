@@ -38,6 +38,11 @@ var limits = (typeof process !== 'undefined' && process.versions && process.vers
   ? require('../spirit.js').require('spirit/limits.js')
   : (typeof window !== 'undefined' ? window.spirit.limits : null);
 
+// WHAT IT NEEDS, IT LOADS ITSELF (rule/26; goal/G47.1, Andy: "cw, FIX IT!", after the classifier found this file failing
+// in a page loaded alone): in a page with no limits yet, this file asks for spirit/limits.js and defines itself once it is
+// in. A spirit.require made while this file runs is one its own require waits for (spirit.js, requireOne's collecting), so
+// whoever required packet.js finds it defined. On the node, and in a page that has the limits, it is defined at once.
+function definePacket() {
 // SAY WHICH SCRIPT IS MISSING, rather than dying on `undefined.PAYLOAD_MAX`.
 //
 // A page holding a cached copy from before limits.js existed loads
@@ -376,3 +381,7 @@ if (typeof process !== 'undefined' && process.versions && process.versions.node)
 } else if (typeof window !== 'undefined') {
   (window.spirit = window.spirit || {}).packet = packetApi;
 }
+}
+
+if ((typeof process !== 'undefined' && process.versions && process.versions.node) || limits) definePacket();
+else window.spirit.require('spirit/limits.js').then(function () { limits = window.spirit.limits; definePacket(); });
