@@ -617,17 +617,27 @@ function doingNow() {
   if (job.batch) return 'running ' + path.posix.basename(job.suite) + ' for ' + (job.scripts.length === 1 ? job.scripts[0] : job.scripts.length + ' scripts');
   return 'running ' + path.posix.basename(job.suite) + ' for ' + job.script;
 }
+// WHAT RUNS, FOR WHICH SCRIPTS (goal/G47.1, box v134-135: the status box "knows which suite is running and for which scripts,
+// and shows \"<x> of <n> reported: <script> <success|failure>\""): the running suite, its scripts and when it started, carried on every
+// message beside busy and doing, as JSON; '' when nothing runs or the classifier does.
+function runningNow() {
+  if (!job || job.classify) return '';
+  return JSON.stringify({ suite: job.suite, scripts: job.batch ? job.scripts.slice() : [job.script], started: job.started });
+}
 let busyTold = false;
 let doingTold = '';
+let runningTold = '';
 function told() {
   const b = busyNow();
   const d = doingNow();
-  if (b === busyTold && d === doingTold) return;
+  const r = runningNow();
+  if (b === busyTold && d === doingTold && r === runningTold) return;
   busyTold = b;
   doingTold = d;
-  appServer.publish({ testicle: { busy: b, doing: d } });
+  runningTold = r;
+  appServer.publish({ testicle: { busy: b, doing: d, running: r } });
 }
-function tell(table, row, change) { appServer.publish({ testicle: { table: table, row: row, change: change, busy: busyNow(), doing: doingNow() } }); }
+function tell(table, row, change) { appServer.publish({ testicle: { table: table, row: row, change: change, busy: busyNow(), doing: doingNow(), running: runningNow() } }); }
 
 // THE QUEUE: what changed since the last write, and whether a write is under way. busy is either, or a script.get making
 // rows.

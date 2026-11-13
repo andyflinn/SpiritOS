@@ -63,6 +63,8 @@
         if (typeof a.busy === 'boolean') mon.busy = a.busy;
         // What it is doing, as the server says it ("classifying 120 of 253", "running <suite> for <script>", '' when idle).
         if (typeof a.doing === 'string') mon.doing = a.doing;
+        // What runs and for which scripts (goal/G47.1, box v134-135), as JSON: {suite, scripts, started}, '' when nothing runs.
+        if (typeof a.running === 'string') mon.running = a.running;
         var row = TABLES.indexOf(a.table) !== -1 && a.row && typeof a.row === 'object' ? a.row : null;
         var k = row ? keyOf(a.table, row) : '';
         if (k) {
@@ -92,7 +94,7 @@
     TABLES.forEach(function (t) {
       testicleReads[t] = { watch: function (fn) { return HOME.watch(t, function (whole, v) { if (typeof fn === 'function') fn(HOME.row(whole, t), v); }); } };
     });
-    //   monitor.get()      { busy, last: { table, key, change, at } } as the stream last told it; {} before anything came
+    //   monitor.get()      { busy, doing, running, last: { table, key, change, at } } as the stream last told it; {} before anything came
     //   monitor.watch(fn)  fn(monitor) on every change; answers its release
     testicleReads.monitor = {
       get: function () { return HOME.get(MONITOR) || {}; },
