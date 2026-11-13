@@ -2146,3 +2146,48 @@ test.run('testicle.suite.success {success: true} sets it green, at once, whateve
   const row = suiteRow(tables(DB), SUC, SUCS);
   return (r.status === 200 && !!row && row.outcome === 'green' && no(row.test)) || 'suite.success answered ' + r.status + ' ' + short(r.text) + '; the row ' + short(row);
 }, test.limit.quick);
+
+// ── AN ABORTED RUN RE-ASSEMBLED (goal/G47.1, box v130: "a run aborted (stopped or killed): the server RE-ASSEMBLES a new run
+// at once, fresh from the flags as they stand: every script that reported its success is done and left out, the new run
+// holds only the rest"). A planted spirit/zzRe/ with a -general test of its own that logs the scripts it is handed and judges
+// them in turn: zzReA at once, zzReB after 20 s. The batch is stopped while it waits on zzReB, by a press of another suite.
+const RZ = 'spirit/zzRe/';
+const RA = RZ + 'zzReA.js', RB = RZ + 'zzReB.js', RC = RZ + 'zzReC.js', RGEN = RZ + 'test/zzRe-sibling-general.js';
+const RE_SUITE = "'use strict';\nconst path = require('path');\nconst test = require(path.join(__dirname, '..', '..', 'test', 'testReport.js'));\n" +
+  "const LOG = path.join(__dirname, '..', '..', '..', '..', '..', 'runlog.txt');\n" +
+  "const given = process.argv.slice(2).filter(function (a, i, all) { return a.indexOf('--') !== 0 && all[i - 1] !== '--test'; });\n" +
+  "require('fs').appendFileSync(LOG, JSON.stringify({ suite: 'zzRe-general', ev: 'start', given: given, at: Date.now() }) + '\\n');\n" +
+  "given.forEach(function (f) { test.forScript(f, function () { test.run('zzRe holds', 0.2, function () { return /zzReB/.test(f) ? new Promise(function (r) { setTimeout(function () { r(true); }, 20000); }) : true; }, test.limit.slow); }); });\n";
+const reRuns = function () { return runlog().filter(function (l) { return l.suite === 'zzRe-general' && l.ev === 'start'; }); };
+let reWorld = false, reFrom = 0;
+test.run('the world: spirit/zzRe/ with its own -general test and three scripts, run once', 0.2, async function () {
+  if (!up()) return NONODE;
+  put(RZ + 'zzRe.js', '\'use strict\';\n// zzRe\n');
+  [RA, RB, RC].forEach(function (f) { put(f, '\'use strict\';\n// ' + f + '\n'); });
+  put(RGEN, RE_SUITE);
+  const ok = await until(function () { return Promise.resolve(reRuns().length > 0); }, 280000);
+  await idle(280000);
+  reWorld = !!ok;
+  return reWorld || 'zzRe\'s general test never ran: ' + short(runlog().slice(-5));
+}, test.limit.long);
+test.run('the world: zzReA, zzReB and zzReC change; while the batch waits on zzReB, another suite is pressed', 0.2, async function () {
+  if (!reWorld) return 'no zzRe: the world failed';
+  reFrom = reRuns().length;
+  [RA, RB, RC].forEach(function (f) { append(f, '// changed together\n'); });
+  const ok = await until(function () { return Promise.resolve(reRuns().length > reFrom); }, 280000);
+  await sleep(5000);
+  const r = await call(N.base, 'testicle.run', { script: LA, suite: LAS });
+  return (!!ok && r.status === 200) || 'the batch started ' + !!ok + '; the press answered ' + r.status + ' ' + short(r.text);
+}, test.limit.long);
+test.run('a run stopped is re-assembled fresh from the flags: the next run is handed zzReB and zzReC, not zzReA', 0.4, async function () {
+  if (!reWorld) return 'no zzRe: the world failed';
+  const ok = await until(function () { return Promise.resolve(reRuns().length > reFrom + 1); }, 280000);
+  const runs = reRuns().slice(reFrom);
+  const first = runs[0] || {}, next = runs[1] || {};
+  return (!!ok && sameSet(first.given, [RA, RB, RC]) && sameSet(next.given, [RB, RC])) || 'its runs: ' + short(runs.map(function (x) { return x.given; }));
+}, test.limit.long);
+test.run('and zzReA, which reported before the stop, is done: its suite row green, its flag cleared', 0.4, function () {
+  if (!reWorld) return 'no zzRe: the world failed';
+  const row = suiteRow(tables(DB), RA, RGEN);
+  return (!!row && row.outcome === 'green' && no(row.test)) || 'zzReA\'s row: ' + short(row);
+}, test.limit.quick);

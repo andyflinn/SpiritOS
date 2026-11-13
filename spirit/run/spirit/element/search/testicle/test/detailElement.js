@@ -175,6 +175,30 @@ test.run('a flip set on the node shows at the top with no press', 0.2, async fun
   const ok = await until(function () { return view('zzBox').then(function (v) { return !!v && v.rows.length === 4 && v.rows[0].key === r.body.key && v.rows[0].cells[1] === '❌'; }); }, 10000);
   return !!ok || 'rows after the set ' + short(((await view('zzBox')) || {}).rows);
 }, test.limit.slow);
+// goal/G47.1, box v130: "the testicle detail has a 🏃 run button for its script and suite; a press stops the running suite
+// and runs it first, as a top-10 fix does; the detail shows its full script and suite path" (Andy: "the testicle detail
+// doesn't show the full script name"; "give me a run button on the testicle detail"). What the press does on the server is
+// testicle's own test's; here, that it asks testicle.run for this script and suite.
+test.run('it shows its full script path and its full suite path', 0.4, async function () {
+  if (mounted()) return mounted();
+  const text = await c.evaluate('String((document.getElementById("zzBox") || {}).innerText || "")');
+  return (text.indexOf(A) !== -1 && text.indexOf(AS) !== -1) || 'it shows ' + short(text).slice(0, 300) + '; wanted ' + A + ' and ' + AS;
+}, test.limit.quick);
+test.run('it has a 🏃 run button for its script and suite', 0.4, async function () {
+  if (mounted()) return mounted();
+  const n = await c.evaluate('Array.prototype.filter.call(document.getElementById("zzBox").querySelectorAll("button"), function (b) { return /🏃/.test(b.textContent || ""); }).length');
+  return n === 1 || n + ' buttons with 🏃 in it';
+}, test.limit.quick);
+test.run('a press of its 🏃 asks testicle.run for its script and suite', 0.4, async function () {
+  if (mounted()) return mounted();
+  await c.evaluate('(function () { window.zzAsked = []; var f = window.fetch; window.fetch = function (u, o) { try { window.zzAsked.push(String(o && o.body || "")); } catch (e) {} return f.apply(this, arguments); };' +
+    ' var s = XMLHttpRequest.prototype.send; XMLHttpRequest.prototype.send = function (b) { try { window.zzAsked.push(String(b || "")); } catch (e) {} return s.apply(this, arguments); };' +
+    ' var b = Array.prototype.filter.call(document.getElementById("zzBox").querySelectorAll("button"), function (x) { return /🏃/.test(x.textContent || ""); })[0]; if (b) b.click(); }())');
+  const ok = await until(function () { return c.evaluate('window.zzAsked.some(function (x) { return /"testicle\\.run"/.test(x); })'); }, 5000);
+  const asked = await c.evaluate('JSON.stringify(window.zzAsked.filter(function (x) { return /testicle\\.run/.test(x); }))');
+  let body = null; try { body = JSON.parse(JSON.parse(asked)[0]); } catch (e) { body = null; }
+  return (!!ok && !!body && body.args && body.args.script === A && body.args.suite === AS) || 'asked: ' + short(asked);
+}, test.limit.slow);
 test.run('a test with no row says so', 0.2, async function () {
   if (mounted()) return mounted();
   const m = await mount('zzNone', { script: A, suite: AS, test: 'alpha never ran this' });
