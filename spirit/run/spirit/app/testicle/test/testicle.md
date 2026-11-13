@@ -148,3 +148,21 @@ The box, in Andy's words where he gave them:
 - **Auto**: set by the verb, the server processes everything by itself: a suite flagged while interactive is run.
 - Its test must try to break: a run started by itself while interactive; a changed hash leaving `reClassify` false; an
   unknown preference or a wrong type taken; the preference not kept in its file; auto that leaves a flagged suite unrun.
+
+## Box v94: classification, and which general tests judge which scripts
+
+- **The verb** `testicle.script.classify` is listed; it sets a script's `browserOnly` and `nodeOnly`.
+- **By itself, in both modes:** six scripts written with their own tests are each classified by the server, `reClassify`
+  false on each. A changed script reads `reClassify` true within its quiet second, before the classifier clears it.
+- **By loading, the reasons read:** loads on the node, crashes in the page for lack of `require`: node-only. Crashes on the
+  node for lack of `document`, loads in the page: browser-only. Loads in both: neither. Exits on the node with nothing
+  thrown (as an app server does without `--state`): it has loaded there, so node-only. A syntax error, and a load that does
+  not finish in 3 s: not classifyable, a red `classifyable` row of `spirit/test/scriptClassify.js`, severity 0.8. A script
+  classified has no red row; each has a suite row of the classifier.
+- **Classified first:** each one's own suite reports only after its `reClassify` cleared; a script whose `classifyable` row
+  is red is tested in no other way.
+- **The kinds:** a node-only script is judged by `-general` and `-node` general tests, no `-browser` one; a browser-only by
+  `-general` and `-browser`, no `-node`; one that is neither by all three.
+- Its test must try to break: a script left unclassified; the flags taken from the code instead of the loads; an exit read
+  as a crash; a hang that never counts; a broken script still tested; a suite run before its script was classified; a
+  general test of the wrong kind judging a script.

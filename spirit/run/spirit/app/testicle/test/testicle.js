@@ -1401,7 +1401,11 @@ test.run('the world: interactive again, set by preferences {interactive: true}',
   const r = await call(N.base, 'testicle.preferences', { interactive: true });
   return (r.status === 200 && prefsOf(r).interactive === true) || 'set: ' + r.status + ' ' + short(r.text);
 }, test.limit.long);
-test.run('interactive: one second after a script changes, it has its row, reClassify true, seen for the first time', 0.2, async function () {
+// goal/G47.1, box v94, 1: the server classifies a second after the last change, interactive or not; so reClassify true is
+// read inside that quiet second, before the classifier clears it.
+const SC = 'spirit/test/scriptClassify.js';
+const quietRow = async function (name, notHash) { let row = null; await until(function () { row = scriptRow(tables(DB), name); return Promise.resolve(!!row && yes(row.reClassify) && (notHash === undefined || row.hash !== notHash)); }, 900); return row; };
+test.run('interactive: within a second of a script being written, it has its row, reClassify true, seen for the first time', 0.2, async function () {
   if (!up()) return NONODE;
   // chi and psi, with their own tests, written now, while the server is interactive: chi's suite is run by a press, psi's
   // once the server is auto.
@@ -1409,9 +1413,9 @@ test.run('interactive: one second after a script changes, it has its row, reClas
   put(PSIS, SUITE_HEAD + "test.run('psi answers', 0.2, function () { return true; }, test.limit.quick);\n");
   put(CHI, '\'use strict\';\n// chi, written while interactive\n');
   put(PSI, '\'use strict\';\n// psi, written while interactive\n');
+  const row = await quietRow(CHI);
   i1 = await after();
-  const row = scriptRow(i1, CHI);
-  return (!!row && yes(row.reClassify)) || 'chi\'s row: ' + short(row);
+  return (!!row && yes(row.reClassify)) || 'chi\'s row within the quiet second: ' + short(row || scriptRow(i1, CHI));
 }, test.limit.slow);
 test.run('interactive: its own suite is flagged needs running', 0.2, function () {
   if (!i1) return NONODE;
@@ -1428,7 +1432,8 @@ test.run('interactive: nothing runs by itself: five seconds on, the server is id
   await sleep(5000);
   const busy = await call(N.base, 'testicle.busy', {});
   const t = tables(DB);
-  const ran = (t.test || []).filter(function (r) { return r.script === CHI || r.script === PSI; });
+  // The classifier runs by itself in both modes (box v94, 1); its own rows are not a run of chi's or psi's suites.
+  const ran = (t.test || []).filter(function (r) { return (r.script === CHI || r.script === PSI) && r.suite !== SC; });
   const still = [suiteRow(t, CHI, CHIS), suiteRow(t, PSI, PSIS)].every(function (r) { return !!r && yes(r.test); });
   return ((busy.body === false || (busy.body && busy.body.busy === false)) && ran.length === 0 && still) || 'busy ' + short(busy.text) + ', test rows ' + ran.length + ', still flagged ' + still;
 }, test.limit.slow);
@@ -1436,15 +1441,14 @@ test.run('interactive: a press (testicle.run) runs that suite, and only it', 0.2
   if (!i1) return NONODE;
   const r = await call(N.base, 'testicle.run', { script: CHI, suite: CHIS });
   const done = await until(function () { return Promise.resolve(currentOf(tables(DB), CHI, CHIS, 'chi answers').length === 1); }, 60000);
-  const psiRan = (tables(DB).test || []).filter(function (x) { return x.script === PSI; }).length;
+  const psiRan = (tables(DB).test || []).filter(function (x) { return x.script === PSI && x.suite !== SC; }).length;
   return (r.status === 200 && !!done && psiRan === 0) || 'run: ' + r.status + ' ' + short(r.text) + ', chi reported ' + !!done + ', psi rows ' + psiRan;
 }, test.limit.long);
 test.run('interactive: a script whose hash changes is flagged reClassify true again', 0.2, async function () {
   if (!i1) return NONODE;
   const was = (scriptRow(tables(DB), CHI) || {}).hash;
   append(CHI, '// changed again\n');
-  const t = await after();
-  const row = scriptRow(t, CHI);
+  const row = await quietRow(CHI, was);
   return (!!row && row.hash !== was && yes(row.reClassify)) || 'chi\'s row: ' + short(row) + ', hash before ' + short(was);
 }, test.limit.slow);
 
@@ -1473,7 +1477,7 @@ test.run('auto: the server processes everything by itself: psi\'s flagged suite 
 test.run('auto: a changed script is still flagged reClassify true', 0.2, async function () {
   if (!pAuto) return NONODE;
   append(PSI, '// changed while auto\n');
-  const row = scriptRow(await after(), PSI);
+  const row = await quietRow(PSI);
   return (!!row && yes(row.reClassify)) || 'psi\'s row: ' + short(row);
 }, test.limit.slow);
 // The runs chi and psi queued (their general suites among them) are done before the checks after these begin.
@@ -1481,3 +1485,133 @@ test.run('the world: the server is idle again after chi and psi', 0.2, async fun
   if (!up()) return NONODE;
   return !!(await idle(280000)) || 'still busy after chi and psi';
 }, test.limit.long);
+
+// ── goal/G47.1, box v94, 1: classification ──
+// "every script is loaded twice, once as a node script and once in a page: a crash on the node for lack of a browser
+// function (window, document): browser-only; a crash in the page for lack of a node function (require, fs, http, crypto,
+// process): node-only; no crash in either: it runs on both, neither flag; a crash in both: unclassifyable, the red
+// classifyable row." "the node side counts only a thrown error, by its reason; an exit with nothing thrown has loaded."
+// "a load that is not complete in 3 seconds counts as crash/hang -> not classifyable." "its severity is 0.8." "the runner
+// starts no other suite for a script whose classifyable row is red." "the testicle server continues classifying until all
+// scripts are classified before moving to actual testing." 2: "node only scripts are tested by -general AND -node general
+// tests. browser only scripts are tested by -general and -browser general tests. if a script is NOT browser only AND NOT
+// node only, it will be tested by all 3 categories."
+const ZC = {
+  node: Z + 'zzcNode.js', page: Z + 'zzcPage.js', both: Z + 'zzcBoth.js',
+  broken: Z + 'zzcBroken.js', hang: Z + 'zzcHang.js', exit: Z + 'zzcExit.js',
+};
+const ZC_SRC = {
+  node: "'use strict';\nrequire('../spirit.js');\nconst fs = require('fs');\nmodule.exports = { fs: typeof fs.readFileSync };\n",
+  page: "'use strict';\ndocument.title = String(document.title);\nwindow.zzcPage = true;\n",
+  both: "'use strict';\n(function (root) { var v = { both: true }; if (typeof module === 'object' && module && module.exports) module.exports = v; else root.zzcBoth = v; }(this));\n",
+  broken: "'use strict';\nfunction ( {\n",
+  hang: "'use strict';\nwhile (true) { /* never done */ }\n",
+  exit: "'use strict';\nrequire('../spirit.js');\nconsole.error('zzcExit: no --state; the node that starts this names its state folder');\nprocess.exit(2);\n",
+};
+const ownOf = function (rel) { return path.posix.join(path.posix.dirname(rel), 'test', path.posix.basename(rel)); };
+const ownSuite = function (k) { return SUITE_HEAD + "test.run('" + k + " answers', 0.2, function () { return true; }, test.limit.quick);\n"; };
+const classifyRow = function (t, name) { return currentOf(t, name, SC, 'classifyable')[0] || null; };
+let zc = null, zcCleared = {};
+
+test.run('the node lists the verb testicle.script.classify', 0.2, async function () {
+  if (!up()) return NONODE;
+  const api = await call(N.base, 'api', { family: 'testicle' });
+  const iface = String((api.body && api.body.interface) || '');
+  return /['"]script\.classify['"]\s*:/.test(iface) || 'testicle\'s api: ' + short(iface);
+}, test.limit.quick);
+test.run('testicle.script.classify sets a script\'s browserOnly and nodeOnly', 0.2, async function () {
+  if (!up()) return NONODE;
+  const r = await call(N.base, 'testicle.script.classify', { script: Z + 'alpha.js', browserOnly: true, nodeOnly: false });
+  const row = scriptRow(tables(DB), Z + 'alpha.js');
+  return (r.status === 200 && !!row && yes(row.browserOnly) && no(row.nodeOnly)) || 'classify: ' + r.status + ' ' + short(r.text) + ', alpha\'s row ' + short(row);
+}, test.limit.quick);
+test.run('the world: six scripts written, each with its own test: node, page, both, broken, hang, exit', 0.2, async function () {
+  if (!up()) return NONODE;
+  Object.keys(ZC).forEach(function (k) { put(ownOf(ZC[k]), ownSuite(k)); put(ZC[k], ZC_SRC[k]); });
+  // Each one's classification seen as it happens: the moment its reClassify reads false.
+  const t0c = Date.now();
+  await until(function () {
+    const t = tables(DB);
+    Object.keys(ZC).forEach(function (k) { const r = scriptRow(t, ZC[k]); if (r && no(r.reClassify) && !zcCleared[k]) zcCleared[k] = Date.now(); });
+    return Promise.resolve(Object.keys(ZC).every(function (k) { return !!zcCleared[k]; }));
+  }, 120000, 100);
+  zc = tables(DB);
+  return Object.keys(zcCleared).length === 6 || 'classified after ' + (Date.now() - t0c) + ' ms: ' + short(Object.keys(zcCleared));
+}, test.limit.long);
+test.run('every one is classified by the server by itself: reClassify false on each', 0.2, function () {
+  if (!zc) return NONODE;
+  const left = Object.keys(ZC).filter(function (k) { const r = scriptRow(zc, ZC[k]); return !r || !no(r.reClassify); });
+  return left.length === 0 || 'not classified: ' + short(left.map(function (k) { return ZC[k] + ' ' + short(scriptRow(zc, ZC[k])); }));
+}, test.limit.quick);
+test.run('a script that loads on the node and crashes in the page for lack of require is node-only', 0.2, function () {
+  if (!zc) return NONODE;
+  const r = scriptRow(zc, ZC.node);
+  return (!!r && yes(r.nodeOnly) && no(r.browserOnly)) || 'zzcNode: ' + short(r);
+}, test.limit.quick);
+test.run('a script that crashes on the node for lack of document and loads in the page is browser-only', 0.2, function () {
+  if (!zc) return NONODE;
+  const r = scriptRow(zc, ZC.page);
+  return (!!r && yes(r.browserOnly) && no(r.nodeOnly)) || 'zzcPage: ' + short(r);
+}, test.limit.quick);
+test.run('a script that loads in both runs on both: neither flag', 0.2, function () {
+  if (!zc) return NONODE;
+  const r = scriptRow(zc, ZC.both);
+  return (!!r && no(r.browserOnly) && no(r.nodeOnly)) || 'zzcBoth: ' + short(r);
+}, test.limit.quick);
+test.run('a script that exits on the node with nothing thrown has loaded there: an app server comes out node-only', 0.2, function () {
+  if (!zc) return NONODE;
+  const r = scriptRow(zc, ZC.exit);
+  return (!!r && yes(r.nodeOnly) && no(r.browserOnly)) || 'zzcExit: ' + short(r);
+}, test.limit.quick);
+test.run('a script that crashes in both is not classifyable: its classifyable row is red, severity 0.8', 0.2, function () {
+  if (!zc) return NONODE;
+  const r = classifyRow(zc, ZC.broken);
+  return (!!r && no(r.verified) && Number(r.severity) === 0.8) || 'zzcBroken\'s classifyable row: ' + short(r);
+}, test.limit.quick);
+test.run('a load not complete in 3 seconds counts as a hang: not classifyable, its row red, severity 0.8', 0.2, function () {
+  if (!zc) return NONODE;
+  const r = classifyRow(zc, ZC.hang);
+  return (!!r && no(r.verified) && Number(r.severity) === 0.8) || 'zzcHang\'s classifyable row: ' + short(r);
+}, test.limit.quick);
+test.run('a script classified has no red classifyable row', 0.2, function () {
+  if (!zc) return NONODE;
+  const red = ['node', 'page', 'both', 'exit'].filter(function (k) { const r = classifyRow(zc, ZC[k]); return !zcCleared[k] || (!!r && no(r.verified)); });
+  return red.length === 0 || 'red: ' + short(red);
+}, test.limit.quick);
+test.run('each has a suite row of spirit/test/scriptClassify.js', 0.2, function () {
+  if (!zc) return NONODE;
+  const none = Object.keys(ZC).filter(function (k) { return !suiteRow(zc, ZC[k], SC); });
+  return none.length === 0 || 'no classifier suite row: ' + short(none);
+}, test.limit.quick);
+test.run('classified first, tested after: each one\'s own suite reports only after its reClassify cleared', 0.2, async function () {
+  if (!zc) return NONODE;
+  await until(function () { return Promise.resolve(['node', 'both', 'exit'].every(function (k) { return currentOf(tables(DB), ZC[k], ownOf(ZC[k]), k + ' answers').length === 1; })); }, 240000);
+  const t = tables(DB);
+  const early = ['node', 'both', 'exit'].filter(function (k) { const r = currentOf(t, ZC[k], ownOf(ZC[k]), k + ' answers')[0]; return !r || !zcCleared[k] || Number(r.tested) < zcCleared[k] - 500; });
+  return early.length === 0 || 'run before classified, or never run: ' + short(early.map(function (k) { return k + ' ' + short(currentOf(t, ZC[k], ownOf(ZC[k]), k + ' answers')[0]); }));
+}, test.limit.long);
+test.run('a script whose classifyable row is red is tested in no other way: no suite of broken or hang reports', 0.2, async function () {
+  if (!zc) return NONODE;
+  await idle(240000);
+  const t = tables(DB);
+  const ran = (t.test || []).filter(function (r) { return (r.script === ZC.broken || r.script === ZC.hang) && r.suite !== SC; });
+  return ran.length === 0 || 'reported: ' + short(ran.map(function (r) { return r.suite + ' ' + r.test; }));
+}, test.limit.long);
+
+// 2: which general tests concern which scripts, by the flags.
+const kinds = function (t, name) { return suiteRows(t, name).map(function (r) { return (/-(general|node|browser)\.js$/.exec(r.suite) || [])[1]; }).filter(Boolean); };
+test.run('a node-only script is tested by -general and -node general tests, and no -browser one', 0.2, function () {
+  if (!zc) return NONODE;
+  const k = kinds(tables(DB), ZC.node);
+  return (k.indexOf('general') !== -1 && k.indexOf('node') !== -1 && k.indexOf('browser') === -1) || 'zzcNode\'s general tests: ' + short(k);
+}, test.limit.quick);
+test.run('a browser-only script is tested by -general and -browser general tests, and no -node one', 0.2, function () {
+  if (!zc) return NONODE;
+  const k = kinds(tables(DB), ZC.page);
+  return (k.indexOf('general') !== -1 && k.indexOf('browser') !== -1 && k.indexOf('node') === -1) || 'zzcPage\'s general tests: ' + short(k);
+}, test.limit.quick);
+test.run('a script neither browser-only nor node-only is tested by all three kinds', 0.2, function () {
+  if (!zc) return NONODE;
+  const k = kinds(tables(DB), ZC.both);
+  return ['general', 'node', 'browser'].every(function (x) { return k.indexOf(x) !== -1; }) || 'zzcBoth\'s general tests: ' + short(k);
+}, test.limit.quick);

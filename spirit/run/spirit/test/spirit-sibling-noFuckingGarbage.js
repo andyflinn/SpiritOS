@@ -138,6 +138,18 @@ if (WHOLE || MODULE) {
   }, test.limit.quick);
 }
 
+// THE THREE KINDS OF GENERAL TEST (goal/G47.1, box v94, 2: "there will be, from now on only 3 types of general tests, at any
+// level of the tree: <file>-<child | sibling>-general.js, <file>-<child | sibling>-node.js, <file>-<child | sibling>-browser.js",
+// "existing general tests fold into the appropriate of the 3 new general test name-formats"). A general test is a script in
+// a test folder named <file>-child-... or <file>-sibling-...; each one read is one of the three, its .md beside it the same.
+const KINDS = /^[^/]+-(child|sibling)-(general|node|browser)\.(js|md)$/;
+test.run('every general test is <file>-<child | sibling>-<general | node | browser>.js, and no other', 0.4, function () {
+  if (!judged || !judged.length) return 'no file in a test folder read: nothing judged';
+  const general = judged.filter(function (rel) { return /-(child|sibling)-/.test(path.posix.basename(rel)); });
+  const other = general.filter(function (rel) { return !KINDS.test(path.posix.basename(rel)); });
+  return !other.length || other.length + ' general tests of another name: ' + other.join(', ');
+}, test.limit.quick);
+
 // Each file that is garbage named in the answer, by its path and why.
 test.run('every file in a test folder matches a production file: none is garbage', 0.4, function () {
   if (!judged || !judged.length) return 'no file in a test folder read: nothing judged';

@@ -48,3 +48,9 @@ the `test/` folder beside it named after it; handed a file in a test folder, tha
 - A `.js` without its `.md`, an `.md` without its `.js`.
 - A `test/<name>-<what>.js` of a script that has its one test file, `test/<name>.js`.
 - A fixture named after no module (`provider-picker.html`, where there is no `provider.js`).
+
+## The three kinds of general test (goal/G47.1, box v94, 2)
+
+- Every general test (a file in a test folder named `<file>-child-…` or `<file>-sibling-…`) is
+  `<file>-<child | sibling>-<general | node | browser>.js`, its `.md` the same, and no other name: one check, severity
+  0.4, naming each general test of another name.

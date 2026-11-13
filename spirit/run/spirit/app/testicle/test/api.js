@@ -137,3 +137,11 @@ test.run('subscribe takes the family, a non-empty id, and run and since optional
     && passes('unsubscribe', {}) && refusedAs('unsubscribe', { family: 'testicle' }) === 'no-such-argument')
     || 'subscribe {family: ""} ' + refusedAs('subscribe', { family: '' }) + ', unsubscribe {family} ' + refusedAs('unsubscribe', { family: 'testicle' });
 }, test.limit.quick);
+
+// goal/G47.1, box v94, 1: "a new verb testicle.script.classify (arguments: script, browserOnly and nodeOnly)".
+test.run('script.classify takes script, browserOnly and nodeOnly, and refuses one missing or of a wrong type', 0.2, function () {
+  if (!W.api) return NO_API;
+  const ok = { script: 'spirit/seal.js', browserOnly: false, nodeOnly: true };
+  const bad = [{ browserOnly: false, nodeOnly: true }, { script: 'spirit/seal.js', nodeOnly: true }, { script: 'spirit/seal.js', browserOnly: false }, { script: 'spirit/seal.js', browserOnly: 'no', nodeOnly: true }];
+  return (passes('script.classify', ok) && bad.every(function (b) { return !passes('script.classify', b); })) || 'script.classify: ' + short([refusedAs('script.classify', ok)].concat(bad.map(function (b) { return refusedAs('script.classify', b); })));
+}, test.limit.quick);

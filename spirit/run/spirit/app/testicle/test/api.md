@@ -24,3 +24,8 @@ v72). Required as the node reads it; each verb's arguments are judged by `spirit
 
 A verb served and not listed, or listed and not served; testicle.set letting a field go missing, a severity as text,
 or a bundle of tests; run without its suite; an argument busy or red lets through.
+
+## Box v94, 1: script.classify
+
+- The verbs include `script.classify`: it takes `script`, `browserOnly` and `nodeOnly`, each required, the two flags
+  bools, and refuses one missing or of a wrong type.
