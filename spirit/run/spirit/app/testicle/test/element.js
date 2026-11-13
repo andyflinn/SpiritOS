@@ -183,9 +183,25 @@ test.run('it has a face: shell.mount true', 0.2, function () {
 test.run('a server beside the face: node.mount true', 0.2, function () {
   return (!!own && !!own.node && own.node.mount === true) || 'node: ' + short(own && own.node);
 }, test.limit.quick);
-test.run('its folder holds its manifest, its face, its server, its api.js and data.js, and a json description of each verb, busy, preferences, script.get, script.classify, suite.search, suite.success, testicle.set, testicle.search, red, run, subscribe and unsubscribe, and its test/ folder, nothing else', 0.2, function () {
+test.run('its folder holds its manifest, its face, its server, its api.js and data.js, and a json description of each verb, busy, preferences, script.get, script.classify, suite.search, suite.success, testicle.set, testicle.search, red, run, subscribe and unsubscribe, its element/ folder and its test/ folder, nothing else', 0.2, function () {
   const held = fs.existsSync(APP) ? fs.readdirSync(APP).filter(function (f) { return f !== 'test'; }).sort() : [];
-  return JSON.stringify(held) === JSON.stringify(['api.js', 'busy.json', 'data.js', 'element.js', 'preferences.json', 'red.json', 'run.json', 'script.classify.json', 'script.get.json', 'subscribe.json', 'suite.search.json', 'suite.success.json', 'testicle.js', 'testicle.json', 'testicle.search.json', 'testicle.set.json', 'unsubscribe.json']) || 'its folder holds ' + short(held);
+  return JSON.stringify(held) === JSON.stringify(['api.js', 'busy.json', 'data.js', 'element', 'element.js', 'preferences.json', 'red.json', 'run.json', 'script.classify.json', 'script.get.json', 'subscribe.json', 'suite.search.json', 'suite.success.json', 'testicle.js', 'testicle.json', 'testicle.search.json', 'testicle.set.json', 'unsubscribe.json']) || 'its folder holds ' + short(held);
+}, test.limit.quick);
+// spirit/app/testicle/element/ PROPERLY DONE (goal/G47.1, box v134: "every part of testicle's face an element of its own in
+// element/<name>/<name>.js with its own test (the file detail, the monitor row with the status box, the settings panel);
+// element.js only mounts them and the searches; each loads its own, mounts empty, judged by -browser"; Andy: "what you're
+// doing with this monolith style of coding, your avoiding precise quality control").
+const PARTS = path.join(APP, 'element');
+const partNames = function () { try { return fs.readdirSync(PARTS, { withFileTypes: true }).filter(function (d) { return d.isDirectory(); }).map(function (d) { return d.name; }).sort(); } catch (e) { return []; } };
+test.run('its element/ folder holds three parts, each a folder <name>/ with <name>.js in it', 0.4, function () {
+  const names = partNames();
+  const bad = names.filter(function (n) { return !fs.existsSync(path.join(PARTS, n, n + '.js')); });
+  return (names.length === 3 && !bad.length) || 'element/ holds ' + short(names) + (bad.length ? '; with no <name>.js: ' + short(bad) : '');
+}, test.limit.quick);
+test.run('each part has its own test, <name>/test/<name>.js', 0.4, function () {
+  const names = partNames();
+  const bad = names.filter(function (n) { return !fs.existsSync(path.join(PARTS, n, 'test', n + '.js')); });
+  return (names.length === 3 && !bad.length) || (names.length ? 'no own test: ' + short(bad) : 'no parts in element/');
 }, test.limit.quick);
 test.run('its mount names element.js', 0.2, function () {
   return (!!own && !!own.mount && own.mount['element.js'] === true) || 'mount: ' + short(own && own.mount);
@@ -244,6 +260,15 @@ test.run('it loads through spirit.require and mounts with create(container), ans
     ' var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:1200px;height:800px;display:flex;"; document.body.appendChild(b);' +
     ' window.__made = E.create(b, {}); return window.__made && typeof window.__made.destroy === "function" ? "made" : "no destroy"; }, function (e) { return "refused: " + (e && e.message || e); })');
   return made === 'made' || 'it did not mount: ' + short(made);
+}, test.limit.slow);
+
+// Box v134: each part loads its own and stands as an element of its own, so any app can mount it.
+test.run('once the face is mounted, each part stands at spirit.element.spirit.app.testicle.element.<name>.<name> with a create', 0.4, async function () {
+  if (face()) return face();
+  const names = partNames();
+  if (names.length !== 3) return 'element/ holds ' + short(names) + ': nothing to look for';
+  const got = await c.evaluate('(function () { var n = ' + JSON.stringify(names) + '; var at = (((((window.spirit.element || {}).spirit || {}).app || {}).testicle || {}).element || {}); return n.filter(function (k) { var e = at[k] && at[k][k]; return !(e && typeof e.create === "function"); }); }())');
+  return (Array.isArray(got) && !got.length) || 'not standing with a create: ' + short(got);
 }, test.limit.slow);
 
 // the box: "a workBench with one 📁 icon"
