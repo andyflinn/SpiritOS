@@ -621,7 +621,9 @@ const searchRows = function () { return T('shown()').then(function (d) { return 
 test.run('the world: iota.js\'s tab is opened, its suites listed', 0.2, async function () {
   if (face()) return face();
   const had = await call(N.base, 'testicle.testicle.search', { script: F5, text: '' });
-  searchBefore = ((had.body && had.body.items) || []).length;
+  // iota's own suite's tests alone: its classifier row (spirit/test/scriptClassify.js, classifyable) is there from the start
+  // (goal/G47.1, box v94, 1).
+  searchBefore = ((had.body && had.body.items) || []).filter(function (i) { return String(i.key).indexOf(F5 + '|' + iotaOwn + '|') === 0; }).length;
   if (!(await T('click(' + JSON.stringify(F5) + ')'))) return 'no row for ' + F5 + ' to click: ' + short(await T('rows()'));
   const ok = await waitFor('shown() && shown().first === ' + JSON.stringify(F5) + ' && shown().rows.length > 0', 15000);
   iotaRows = ok ? ((await T('shown()')) || { rows: [] }).rows : [];
