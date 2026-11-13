@@ -203,3 +203,7 @@ The box, in Andy's words where he gave them:
   *"wsl, note that and make sure this doesn't happen again."*): after a change of `spirit/test/scriptClassify.js` a
   script classified before reads `reClassify` true again; a script that failed is tried again though it did not change
   (its `classifyable` row tested anew); each of the six is classified again.
+- **After a start, interactive, suites waiting** (Andy: *"wsl, make double sure you catch this with a test."*): with
+  chi's and psi's suites flagged and unrun, the node restarts, interactive kept; chi, changed while it was down, is
+  classified with no press; psi, changed after the start, within 30 s, no press. And while interactive before the restart,
+  chi written is classified with no press, its classifier suite row no longer flagged.

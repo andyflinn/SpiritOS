@@ -1518,6 +1518,33 @@ test.run('interactive: a script whose hash changes is flagged reClassify true ag
   return (!!row && row.hash !== was && yes(row.reClassify)) || 'chi\'s row: ' + short(row) + ', hash before ' + short(was);
 }, test.limit.slow);
 
+// AFTER A START, STILL INTERACTIVE, WITH SUITES WAITING (Andy, after his node classified nothing until he turned interactive
+// off: "wsl, make double sure you catch this with a test."; cw reproduced it from a copy of his tables: after a start
+// nothing got classified). chi's and psi's suites are flagged and unrun; the node restarts, interactive kept; a script
+// changed while it was down, and one changed after, are each classified with no press.
+test.run('the world: interactive, suites still waiting, the node stops; chi changes while it is down', 0.2, async function () {
+  if (!i1) return NONODE;
+  const waiting = [suiteRow(tables(DB), PSI, PSIS)].filter(function (r) { return !!r && yes(r.test); }).length;
+  await stop(N.child);
+  append(CHI, '// changed while the node was down, interactive\n');
+  return waiting === 1 || 'psi\'s suite not waiting before the stop: ' + short(suiteRow(tables(DB), PSI, PSIS));
+}, test.limit.slow);
+test.run('after the start, interactive still, a script changed while down is classified with no press', 0.2, async function () {
+  N = await boot(s.run); live.push(N.child);
+  if (!up()) return 'the scratch node did not come up again';
+  const p = prefsOf(await call(N.base, 'testicle.preferences', {}));
+  if (p.interactive !== true) return 'not interactive after the start: ' + short(p);
+  const ok = await until(function () { const r = scriptRow(tables(DB), CHI); return Promise.resolve(!!r && no(r.reClassify)); }, 120000);
+  return !!ok || 'chi, two minutes after the start: ' + short(scriptRow(tables(DB), CHI));
+}, test.limit.long);
+test.run('and a script changed after the start is classified with no press, within 30 seconds', 0.2, async function () {
+  if (!up()) return NONODE;
+  append(PSI, '// changed after the start, interactive\n');
+  await quietRow(PSI);
+  const ok = await until(function () { const r = scriptRow(tables(DB), PSI); return Promise.resolve(!!r && no(r.reClassify)); }, 30000);
+  return !!ok || 'psi, 30 seconds after its change: ' + short(scriptRow(tables(DB), PSI));
+}, test.limit.slow);
+
 // ── auto, set by the verb ──
 let pAuto = null;
 test.run('preferences {interactive: false} sets it, and answers them all', 0.2, async function () {
