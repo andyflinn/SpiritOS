@@ -2066,3 +2066,46 @@ test.run('any other change waits its turn: zzLong\'s run ends with its end, and 
   const calmAt = (runlog().filter(function (l) { return l.suite === 'zzCalm' && l.ev === 'start' && l.at >= calmChanged; })[0] || {}).at;
   return (!!ok && !!done && !!calmAt && calmAt >= done.at) || 'zzLong started ' + longStart2 + ', ended ' + (done && done.at) + '; zzCalm started ' + calmAt;
 }, test.limit.long);
+
+// ── A TEST A WHOLE RUN NO LONGER REPORTS STOPS BEING CURRENT (goal/G47.1, cleaning; cw, reading Andy's testicle: backup/api.js's
+// -browser rerun reported 3 tests green and skipped the 17 element checks, "but their red rows from 19:07 stay current, nobody
+// retires them, and the suite stays \"still red\"", "after a whole run (no title, not stopped, not killed), a test of that
+// script and suite the run did not report is no longer current"). A planted spirit/zzStale/: its own suite reports "stale
+// one" green and "stale two" red; then it is rewritten to report "stale one" alone.
+const SZ = 'spirit/zzStale/zzStale.js', SZS = 'spirit/zzStale/test/zzStale.js';
+let staleWorld = false;
+test.run('the world: spirit/zzStale/ whose own suite reports one test green and one red, run once', 0.2, async function () {
+  if (!up()) return NONODE;
+  put(SZ, '\'use strict\';\n// zzStale\n');
+  put(SZS, SUITE_HEAD + "test.run('stale one', 0.2, function () { return true; }, test.limit.quick);\ntest.run('stale two', 0.2, function () { return 'red, as planted'; }, test.limit.quick);\n");
+  const ok = await until(function () { const t = tables(DB); return Promise.resolve(currentOf(t, SZ, SZS, 'stale one').length > 0 && currentOf(t, SZ, SZS, 'stale two').length > 0); }, 280000);
+  await idle(280000);
+  staleWorld = !!ok;
+  return staleWorld || 'zzStale\'s rows: ' + short((tables(DB).test || []).filter(function (r) { return r.script === SZ; }));
+}, test.limit.long);
+test.run('a run with a title retires nothing: after testicle.run of "stale one" alone, "stale two" is still current', 0.4, async function () {
+  if (!staleWorld) return 'no zzStale: the world failed';
+  const before = currentOf(tables(DB), SZ, SZS, 'stale one')[0];
+  const r = await call(N.base, 'testicle.run', { script: SZ, suite: SZS, testicle: 'stale one' });
+  await until(function () { const now = currentOf(tables(DB), SZ, SZS, 'stale one')[0]; return Promise.resolve(!!now && !!before && Number(now.tested) > Number(before.tested)); }, 120000);
+  await idle(120000);
+  return (r.status === 200 && currentOf(tables(DB), SZ, SZS, 'stale two').length > 0) || 'run ' + r.status + ' ' + short(r.text) + '; stale two now ' + short(testRows(tables(DB), SZ, SZS, 'stale two'));
+}, test.limit.long);
+test.run('the world: zzStale\'s suite rewritten to report "stale one" alone, and run whole', 0.2, async function () {
+  if (!staleWorld) return 'no zzStale: the world failed';
+  const before = currentOf(tables(DB), SZ, SZS, 'stale one')[0];
+  put(SZS, SUITE_HEAD + "test.run('stale one', 0.2, function () { return true; }, test.limit.quick);\n");
+  const ok = await until(function () { const now = currentOf(tables(DB), SZ, SZS, 'stale one')[0]; return Promise.resolve(!!now && !!before && Number(now.tested) > Number(before.tested)); }, 280000);
+  await idle(280000);
+  return !!ok || 'stale one never ran again: ' + short(testRows(tables(DB), SZ, SZS, 'stale one'));
+}, test.limit.long);
+test.run('after a whole run, a test it did not report is no longer current: "stale two" has no current row', 0.4, function () {
+  if (!staleWorld) return 'no zzStale: the world failed';
+  const left = currentOf(tables(DB), SZ, SZS, 'stale two');
+  return !left.length || 'stale two still current: ' + short(left);
+}, test.limit.quick);
+test.run('and the suite\'s status follows the tests it now has: zzStale\'s own suite shows "green"', 0.4, async function () {
+  if (!staleWorld) return 'no zzStale: the world failed';
+  const st = await statusOf(SZ, SZS);
+  return st === 'green' || 'zzStale\'s suite: ' + short(st);
+}, test.limit.quick);
