@@ -12,6 +12,8 @@ module.exports = {
     // goal/G47.1, the verbs cycle: a production script's row, made with its suite rows if it has none. name is the script,
     // scoped to run://. Named file.get until the rename of the table file to script.
     'script.get': { name: 'text' },
+    // goal/G47.1, box v94, 1: the classifier's verb: a script row's two flags, browserOnly and nodeOnly, never both.
+    'script.classify': { script: 'text', browserOnly: 'bool', nodeOnly: 'bool' },
     // goal/G47.1, the verbs cycle: the suite rows of one production script, the words narrowing them ('' for all).
     'suite.search': { script: 'text?', text: 'text' },
     // goal/G47.1, the test-table cycle: one test's result, by itself (no bundling); severity from 0.0 to 1.0.

@@ -107,8 +107,19 @@ The box, in Andy's words where he gave them:
 - **Three fields on the script table** (goal/G47.1, box v79, 3): reClassify, browserOnly and nodeOnly, booleans, served
   on every script row. *"a script seen for the first time starts with reClassify true"*; a table made before gains it true
   on every row, browserOnly and nodeOnly false; *"when the server (always) processes file changes, and the hash of the
-  script changes, \"reClassify\" must be set to \"true\""*, and nothing in this server sets it false (classification is out
-  of this cycle).
+  script changes, \"reClassify\" must be set to \"true\""*. Only classification sets it false (below).
+- **Classification** (goal/G47.1, box v94, 1; the classifier's own contract: `spirit/test/scriptClassify.md`):
+  - the verb `script.classify {script, browserOnly, nodeOnly}` sets the script row's two flags and clears its reClassify,
+    unless a classifying run under way started on other bytes of it; both flags true is refused (bad-request), a name that
+    is no production script answers "not a production script", a script with no row "no such file"; it answers the row.
+  - *"continues classifying until all scripts are classified before moving to actual testing"*, *"interactive or not
+    (auto)"*: while any script row has reClassify set, the runner's next job is `spirit/test/scriptClassify.js`, handed
+    every such script, and no other suite starts, a pressed one included.
+  - *"That row prevents it from being tested in any other way"*: no suite, pressed or flagged, starts for a script whose
+    current `classifyable` row is red.
+  - a classifying run ended: each script of it unchanged since it started has its reClassify cleared; one it reported
+    nothing for is failed `classifyable` at 0.8, its suite row made and judged; one changed meanwhile keeps reClassify, and
+    *"another classifying run will start"*.
 
 ## What its test must try to break
 

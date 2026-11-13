@@ -12,8 +12,12 @@ default (0.2), general rule violation (0.4), crash/hang (0.7), security (0.8)"*.
 
 ## The call
 
-    test.run(title, severity, body, limit)
+    test.run(title, severity, body, limit, opts)
     test.after(fn)
+
+`opts.script` (optional; goal/G47.1, box v94, 1, for `spirit/test/scriptClassify.js`, which judges a list of scripts in
+one run) names the script, scoped to `run://`, that one result is reported for, in place of the suite's own; a title is
+then said once per script, and the same title for two scripts is no repeat.
 
 `body()` returns `true` to pass; `false`, or a string saying what went wrong, to fail; it may be async. `limit` is the
 test's time limit, one of the reporter's named limits, `test.limit.quick` (10 s, a test that asks and answers),

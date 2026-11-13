@@ -23,7 +23,7 @@ const W = { api: null, verbs: {}, names: [] };
 const passes = function (verb, args) { return !!W.verbs[verb] && spirit.check('testicle.' + verb, W.verbs[verb], args) === null; };
 const refusedAs = function (verb, args) { if (!W.verbs[verb]) return 'no verb ' + verb; const r = spirit.check('testicle.' + verb, W.verbs[verb], args); return r ? r.code : ''; };
 const NO_API = 'api.js did not load: the world failed';
-const VERBS = ['busy', 'preferences', 'script.get', 'suite.search', 'testicle.set', 'testicle.search', 'red', 'run', 'subscribe', 'unsubscribe'];
+const VERBS = ['busy', 'preferences', 'script.get', 'script.classify', 'suite.search', 'testicle.set', 'testicle.search', 'red', 'run', 'subscribe', 'unsubscribe'];
 const SET = { script: 'spirit/seal.js', suite: 'spirit/test/seal.js', test: 'a title', verified: true, severity: 0.2 };
 
 test.run('the world: api.js loads', 0.2, function () {
@@ -55,7 +55,7 @@ test.run('every rule is one of spirit.js\'s standard, \'?\' optional', 0.2, func
   });
   return bad.length === 0 || 'unknown rules: ' + short(bad);
 }, test.limit.quick);
-test.run('its verbs are busy, preferences, script.get, suite.search, testicle.set, testicle.search, red, run, subscribe and unsubscribe', 0.2, function () {
+test.run('its verbs are busy, preferences, script.get, script.classify, suite.search, testicle.set, testicle.search, red, run, subscribe and unsubscribe', 0.2, function () {
   if (!W.api) return NO_API;
   return W.names.slice().sort().join() === VERBS.slice().sort().join() || 'verbs ' + short(W.names);
 }, test.limit.quick);

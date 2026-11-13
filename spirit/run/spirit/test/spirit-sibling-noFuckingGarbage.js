@@ -38,7 +38,9 @@ const ARGS = process.argv.slice(2).filter(function (a, i, all) { return a !== '-
 const arg = String(ARGS[0] || '');
 const RULE = 'Andy: "every test in run:/ MUST MATCH a production file."';
 // The tools of spirit/test/ are testModule.js's one list, and TEST_SYSTEM.md is their document.
-const SPIRIT_TEST_KEEPS = require(path.join(__dirname, 'testModule.js')).TOOLS.concat(['spirit/test/TEST_SYSTEM.md']);
+// The special general tests (testModule.js's SPECIAL, goal/G47.1, box v94, 1) are kept too, each with its .md.
+const TM = require(path.join(__dirname, 'testModule.js'));
+const SPIRIT_TEST_KEEPS = TM.TOOLS.concat(['spirit/test/TEST_SYSTEM.md'], TM.SPECIAL || [], (TM.SPECIAL || []).map(function (f) { return f.replace(/\.js$/, '.md'); }));
 
 function inTestFolder(rel) { return /(^|\/)test\/[^/]+$/.test(rel) && !VENDORED_FOLDERS.holds(rel); }
 function exists(rel) { return fs.existsSync(path.join(RUN, rel)); }

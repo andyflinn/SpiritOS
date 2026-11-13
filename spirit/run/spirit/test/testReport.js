@@ -205,7 +205,14 @@ function start() { if (!started) { started = true; ownImmediate(runAll); } }
 // starts a scratch node, a desk or a Chrome page, long for one that runs a whole world end to end. A limit catches a hang,
 // not a slow machine, so each is wide; change one here and every suite follows.
 test.limit = Object.freeze({ quick: 10000, slow: 60000, long: 300000 });
-test.run = function (title, severity, body, limitMs) { queue.push({ title: title, severity: severity, body: body, limit: limitMs }); start(); };
+// A TEST OF ANOTHER SCRIPT (goal/G47.1, box v94, 1: spirit/test/scriptClassify.js, given a list of scripts, reports each one's
+// "classifyable"): opts.script, scoped to run://, names the script that one result is reported for, in place of SCRIPT;
+// a title is then said once per script.
+test.run = function (title, severity, body, limitMs, opts) {
+  const own = opts && typeof opts.script === 'string' && opts.script ? opts.script : '';
+  queue.push({ title: title, severity: severity, body: body, limit: limitMs, script: own });
+  start();
+};
 test.after = function (fn) { afters.push(fn); start(); };
 
 // The test running now, so a throw or a rejection nothing caught lands on it.
@@ -236,16 +243,18 @@ async function runAll() {
     const t = queue[i];
     const title = String(t.title);
     let sev = Number(t.severity);
-    if (seen[title]) { t.verdict = { pass: false, crash: true, detail: 'this title is said a second time in its suite' }; }
+    const script = t.script || SCRIPT;
+    const once = script + '|' + title;
+    if (seen[once]) { t.verdict = { pass: false, crash: true, detail: 'this title is said a second time in its suite' }; }
     else if (typeof t.severity !== 'number' || !(sev >= 0 && sev <= 1)) { t.verdict = { pass: false, crash: true, detail: 'its severity is no number from 0.0 to 1.0: ' + String(t.severity) }; }
     else if (typeof t.body !== 'function') { t.verdict = { pass: false, crash: true, detail: 'it has no body to run' }; }
     else await one(t);
-    seen[title] = true;
+    seen[once] = true;
     const v = t.verdict || { pass: false, detail: 'it gave no answer' };
     const severity = v.crash ? 0.7 : (sev >= 0 && sev <= 1 ? sev : 0.7);
     if (v.pass) { test.successCount++; test.comment('SUCCESS #' + test.counter + '.' + test.successCount + ': ' + title + ' ' + ICON.SUCCESS); }
     else { test.failureCount++; test.comment('FAILURE #' + test.counter + '.' + test.failureCount + ': ' + title + (v.detail ? ' — ' + v.detail : '') + ' ' + ICON.ERROR); }
-    reportToTesticle({ script: SCRIPT, suite: SUITE_FILE, test: title, verified: !!v.pass, severity: severity });
+    reportToTesticle({ script: script, suite: SUITE_FILE, test: title, verified: !!v.pass, severity: severity });
     if (VERIFY_PORT) recordTitled(title, v.pass ? 'green' : 'red', v.pass ? '' : title + (v.detail ? ' — ' + v.detail : ''));
   }
   for (const fn of afters) { try { await fn(); } catch (e) { test.comment('test.after threw: ' + (e && e.message || e)); } }

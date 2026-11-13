@@ -32,6 +32,10 @@ const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fileSystem.js')).VEND
 // run://spirit/app/test/ finds it's main tools."): tools, not tests, and no module either; their own tests stay in
 // spirit/test/test/.
 const TOOLS = ['spirit/test/testReport.js', 'spirit/test/testModule.js', 'spirit/test/headLessChrome.js'];
+// THE SPECIAL GENERAL TESTS (goal/G47.1, box v94, 1: "spirit/test/scriptClassify.js is a \"special\" general test under its
+// own name, with its suite row, always automatically executed by the server"): testicle's server runs them itself, so they
+// are no test listed here, and they are named after no module.
+const SPECIAL = ['spirit/test/scriptClassify.js'];
 
 function posix(p) { return String(p).split(path.sep).join('/'); }
 
@@ -48,7 +52,7 @@ function walk(root) {
       if (d.isDirectory()) { into(full); continue; }
       if (!d.isFile() || !/\.js$/.test(d.name)) continue;
       const rel = posix(path.relative(root, full));
-      if (TOOLS.indexOf(rel) !== -1) continue;
+      if (TOOLS.indexOf(rel) !== -1 || SPECIAL.indexOf(rel) !== -1) continue;
       if (path.basename(dir) === 'test') tests.push(rel); else modules.push(rel);
     }
   }(root));
@@ -155,7 +159,7 @@ function testsFor(file, opts) {
   return out;
 }
 
-module.exports = { testsFor: testsFor, branchesOf: branchesOf, TOOLS: TOOLS };
+module.exports = { testsFor: testsFor, branchesOf: branchesOf, TOOLS: TOOLS, SPECIAL: SPECIAL };
 
 if (require.main === module) {
   testsFor(process.argv[2] || '').forEach(function (t) { console.log(t.file ? t.test + ' ' + t.file : t.test); });
