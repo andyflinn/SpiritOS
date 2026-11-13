@@ -242,7 +242,9 @@ function rdSay() {
 var rdApp = {
   mount: function (container, api) {
     rdApi = api;
-    container.innerHTML = '<div id="rd-body" class="stack"></div>';
+    // Its box keeps what it holds inside (goal/G47.1, the box: "an element container always must constrain its children's
+    // display to its own size"; overflow not visible): a long rule scrolls in it.
+    container.innerHTML = '<div id="rd-body" class="stack fill" style="overflow:auto"></div>';
     var body = document.getElementById('rd-body');
     body.addEventListener('click', function (event) {
       var id = event.target && event.target.id;
@@ -269,10 +271,13 @@ var rdApp = {
   },
 };
 window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/desk/element/ruleDetails/ruleDetails.js', { create: function (container, opts) {
-  rdApp.mount(container, opts.via);
+  // MOUNTED EMPTY, NO THROW (goal/G47.1, the box: "an element that throws when mounted empty is a red at 0.8"): with no
+  // page's way to the node (opts.via) or no rule, it draws its empty body and opens nothing.
+  var o = opts || {};
+  rdApp.mount(container, o.via || null);
   // What it draws with, it loads itself (rule/26).
   return window.spirit.require('spirit/element/appHeader/appHeader.js').catch(function () {}).then(function () {
-    rdApp.open(opts);
+    if (o.via && o.key) rdApp.open(o);
     return { destroy: function () { container.innerHTML = ''; } };
   });
 } }); });

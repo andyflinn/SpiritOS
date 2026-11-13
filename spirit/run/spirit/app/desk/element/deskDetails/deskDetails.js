@@ -943,7 +943,9 @@ function ddLoad() {
 var ddApp = {
   mount: function (container, api) {
     ddApi = api;
-    container.innerHTML = '<div id="dd-body" class="fill" style="min-height:0"></div>';
+    // Its box keeps what it holds inside (goal/G47.1, the box: "an element container always must constrain its children's
+    // display to its own size"; overflow not visible).
+    container.innerHTML = '<div id="dd-body" class="fill" style="min-height:0;overflow:auto"></div>';
     document.getElementById('dd-body').addEventListener('click', function (event) {
       var t = event.target;
       // THE BLOCK BUBBLE (goal/G27.5): a delete on a stated block, the add, its fold.
@@ -1024,7 +1026,7 @@ var ddApp = {
       });
     });
     // The desk server's changes, which the shell would otherwise hand only to Desk.
-    if (typeof api.onPublished === 'function') api.onPublished(ddTake, 'desk');
+    if (api && typeof api.onPublished === 'function') api.onPublished(ddTake, 'desk');
   },
 
   // Every call: which item this is. Nothing stale from the last one.
@@ -1058,7 +1060,10 @@ var ddApp = {
   },
 };
 window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/desk/element/deskDetails/deskDetails.js', { create: function (container, opts) {
-  ddApp.mount(container, opts.via);
-  ddApp.open(opts);
+  // MOUNTED EMPTY, NO THROW (goal/G47.1, the box: "an element that throws when mounted empty is a red at 0.8"): with no
+  // page's way to the node (opts.via) or no item, it draws its empty body and opens nothing.
+  var o = opts || {};
+  ddApp.mount(container, o.via || null);
+  if (o.via && o.id) ddApp.open(o);
   return { destroy: function () { container.innerHTML = ''; } };
 } }); });
