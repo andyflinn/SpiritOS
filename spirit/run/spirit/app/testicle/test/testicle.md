@@ -230,3 +230,6 @@ The box, in Andy's words where he gave them:
 - **The classifier changed while the node was down** (Andy: *"ON STARTUP THAT IS. IT MUST FUCKING START FUCKING
   CLASSIFYING IN ANY MODE, RIGHT AT STARTUP, AND IT FUCKING DOES NOT!"*): `spirit/test/scriptClassify.js` changed while
   down; after the start every live script's `classifyable` row is tested again.
+- **Interactive mid-classifying** (Andy: *"AND IT FUCKING STOPS CLASSIFYING WHEN I GO BACK TO FUCKING ITERACTIVE
+  MODE!!!!!!!!!!!!!!!!!!!"*): the classifier changed, the server is switched to interactive while it classifies again;
+  every one of the six is still classified, nothing pressed.

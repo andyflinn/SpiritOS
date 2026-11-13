@@ -1766,12 +1766,24 @@ test.run('and a script that failed is tried again, though it did not change: its
   const ok = await until(function () { const r = classifyRow(tables(DB), ZC.broken); return Promise.resolve(!!r && Number(r.tested) >= reTold); }, 240000);
   return !!ok || 'zzcBroken\'s classifyable row: ' + short(classifyRow(tables(DB), ZC.broken)) + ', the classifier changed at ' + reTold;
 }, test.limit.long);
-test.run('and each one is classified again: reClassify false on every one of the six', 0.2, async function () {
+// Switched to interactive while that classifying goes on (Andy: "AND IT FUCKING STOPS CLASSIFYING WHEN I GO BACK TO FUCKING
+// ITERACTIVE MODE!!!!!!!!!!!!!!!!!!!"): it goes on, and ends, interactive.
+test.run('the world: switched to interactive while the classifying goes on', 0.2, async function () {
+  if (!reTold) return 'the classifier was not changed: the world failed';
+  const r = await call(N.base, 'testicle.preferences', { interactive: true });
+  return (r.status === 200 && prefsOf(r).interactive === true) || 'set: ' + r.status + ' ' + short(r.text);
+}, test.limit.quick);
+test.run('and each one is classified again, interactive, nothing pressed: reClassify false on every one of the six', 0.2, async function () {
   if (!reTold) return 'the classifier was not changed: the world failed';
   let left = [];
   await until(function () { const t = tables(DB); left = Object.keys(ZC).filter(function (k) { const r = scriptRow(t, ZC[k]); return !r || !no(r.reClassify); }); return Promise.resolve(left.length === 0); }, 240000);
-  return left.length === 0 || 'not classified again: ' + short(left);
+  return left.length === 0 || 'not classified again, interactive: ' + short(left);
 }, test.limit.long);
+test.run('the world: auto again, for the checks after', 0.2, async function () {
+  if (!up()) return NONODE;
+  const r = await call(N.base, 'testicle.preferences', { interactive: false });
+  return (r.status === 200 && prefsOf(r).interactive === false) || 'set: ' + r.status + ' ' + short(r.text);
+}, test.limit.quick);
 
 // 2: which general tests concern which scripts, by the flags.
 const kinds = function (t, name) { return suiteRows(t, name).filter(function (r) { return !yes(r.deleted); }).map(function (r) { return (/-(general|node|browser)\.js$/.exec(r.suite) || [])[1]; }).filter(Boolean); };
