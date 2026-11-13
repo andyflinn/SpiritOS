@@ -1893,3 +1893,68 @@ const bothNamed = function (suite) {
 test.run('spirit-sibling-general.js, handed both, names both', 0.4, function () { return bothNamed('spirit/test/spirit-sibling-general.js'); }, test.limit.long);
 test.run('spirit-sibling-node.js, handed both, names both', 0.4, function () { return bothNamed('spirit/test/spirit-sibling-node.js'); }, test.limit.long);
 test.run('spirit-sibling-browser.js, handed both, names both', 0.4, function () { return bothNamed('spirit/test/spirit-sibling-browser.js'); }, test.limit.long);
+
+// ── THE SERVER HANDS A GENERAL TEST A LIST (Andy: "WSL, write the reds for the server half of passing a list to general
+// tests."; box v94, 2: "else it will process all scripts listed in the arguments that fit"): one run of a general test for
+// every script of it that is owed one, not one run per script. A planted folder, spirit/zzBatch/, with its own general tests
+// of the three kinds, each logging the scripts it was handed, and three scripts: one browser-only, one node-only, one both.
+const BZ = 'spirit/zzBatch/';
+const BA = BZ + 'zzbPage.js', BB = BZ + 'zzbNode.js', BC = BZ + 'zzbBoth.js';
+const BATCH_SUITE = function (kind) {
+  return "'use strict';\nconst path = require('path');\nconst test = require(path.join(__dirname, '..', '..', 'test', 'testReport.js'));\n" +
+    "const LOG = path.join(__dirname, '..', '..', '..', '..', '..', 'runlog.txt');\n" +
+    "const given = process.argv.slice(2).filter(function (a, i, all) { return a.indexOf('--') !== 0 && all[i - 1] !== '--test' && all[i - 1] !== '--verify-port'; });\n" +
+    "require('fs').appendFileSync(LOG, JSON.stringify({ suite: 'zzBatch-" + kind + "', ev: 'start', given: given, at: Date.now() }) + '\\n');\n" +
+    "test.run('zzBatch " + kind + " answers', 0.2, function () { return true; }, test.limit.quick);\n";
+};
+const batchRuns = function (kind) { return runlog().filter(function (l) { return l.suite === 'zzBatch-' + kind && l.ev === 'start'; }); };
+const sameSet = function (a, b) { return JSON.stringify((a || []).slice().sort()) === JSON.stringify((b || []).slice().sort()); };
+let batched = false, batchFrom = 0;
+test.run('the world: spirit/zzBatch/ with its three kinds of general test and three scripts, classified and run once', 0.2, async function () {
+  if (!up()) return NONODE;
+  put(BZ + 'zzBatch.js', '\'use strict\';\n// zzBatch\n');
+  put(BA, '\'use strict\';\ndocument.title = String(document.title);\n');
+  put(BB, '\'use strict\';\nrequire(\'../spirit.js\');\nconst fs = require(\'fs\');\nmodule.exports = { fs: typeof fs.readFileSync };\n');
+  put(BC, '\'use strict\';\n(function (root) { var v = { both: true }; if (typeof module === \'object\' && module && module.exports) module.exports = v; else root.zzbBoth = v; }(this));\n');
+  ['general', 'node', 'browser'].forEach(function (k) { put(BZ + 'test/zzBatch-sibling-' + k + '.js', BATCH_SUITE(k)); });
+  const ok = await until(function () { const t = tables(DB); return Promise.resolve([BA, BB, BC].every(function (f) { const r = scriptRow(t, f); return !!r && no(r.reClassify); })); }, 280000);
+  await idle(280000);
+  batched = !!ok;
+  return batched || 'zzBatch\'s scripts not classified: ' + short([BA, BB, BC].map(function (f) { return scriptRow(tables(DB), f); }));
+}, test.limit.long);
+test.run('three scripts changed in one quiet second: the -general test runs once, handed all three', 0.4, async function () {
+  if (!batched) return 'no zzBatch: the world failed';
+  batchFrom = runlog().length;
+  [BA, BB, BC].forEach(function (f) { append(f, '// changed together\n'); });
+  await until(function () { return Promise.resolve(runlog().slice(batchFrom).some(function (l) { return l.suite === 'zzBatch-general'; })); }, 280000);
+  await idle(280000);
+  const runs = runlog().slice(batchFrom).filter(function (l) { return l.suite === 'zzBatch-general' && l.ev === 'start'; });
+  return (runs.length === 1 && sameSet(runs[0].given, [BA, BB, BC])) || 'its runs: ' + short(runs.map(function (r) { return r.given; }));
+}, test.limit.long);
+test.run('and the -node test runs once, handed the two that run on the node, never the browser-only one', 0.4, function () {
+  if (!batched) return 'no zzBatch: the world failed';
+  const runs = runlog().slice(batchFrom).filter(function (l) { return l.suite === 'zzBatch-node' && l.ev === 'start'; });
+  return (runs.length === 1 && sameSet(runs[0].given, [BB, BC])) || 'its runs: ' + short(runs.map(function (r) { return r.given; }));
+}, test.limit.quick);
+test.run('and the -browser test runs once, handed the two that run in a page, never the node-only one', 0.4, function () {
+  if (!batched) return 'no zzBatch: the world failed';
+  const runs = runlog().slice(batchFrom).filter(function (l) { return l.suite === 'zzBatch-browser' && l.ev === 'start'; });
+  return (runs.length === 1 && sameSet(runs[0].given, [BA, BC])) || 'its runs: ' + short(runs.map(function (r) { return r.given; }));
+}, test.limit.quick);
+test.run('one script changed later: one run of the -general test, handed that one', 0.4, async function () {
+  if (!batched) return 'no zzBatch: the world failed';
+  const from = runlog().length;
+  append(BC, '// changed alone\n');
+  await until(function () { return Promise.resolve(runlog().slice(from).some(function (l) { return l.suite === 'zzBatch-general'; })); }, 280000);
+  await idle(280000);
+  const runs = runlog().slice(from).filter(function (l) { return l.suite === 'zzBatch-general' && l.ev === 'start'; });
+  return (runs.length === 1 && sameSet(runs[0].given, [BC])) || 'its runs: ' + short(runs.map(function (r) { return r.given; }));
+}, test.limit.long);
+test.run('a press in a script tab still runs a general test for that one script', 0.4, async function () {
+  if (!batched) return 'no zzBatch: the world failed';
+  const from = runlog().length;
+  const press = await call(N.base, 'testicle.run', { script: BB, suite: BZ + 'test/zzBatch-sibling-general.js' });
+  await until(function () { return Promise.resolve(runlog().slice(from).some(function (l) { return l.suite === 'zzBatch-general'; })); }, 120000);
+  const runs = runlog().slice(from).filter(function (l) { return l.suite === 'zzBatch-general' && l.ev === 'start'; });
+  return (press.status === 200 && runs.length === 1 && sameSet(runs[0].given, [BB])) || 'press ' + press.status + ' ' + short(press.text) + '; its runs: ' + short(runs.map(function (r) { return r.given; }));
+}, test.limit.long);
