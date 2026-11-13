@@ -113,7 +113,10 @@ const SCRIPT = (function () {
 let testicle = null;
 let reportsOut = 0;
 const reportsLanded = [];
-function reportToTesticle(rec) {
+// ONE AT A TIME, IN ORDER (goal/G47.1, box v129: a general test's success for one script comes before any result of the next):
+// every report waits for the one before it to land, or to give up.
+let reportChain = Promise.resolve();
+function reportToTesticle(rec, verb) {
   try {
     const own = globalThis.spirit;
     const ownWindow = globalThis.window;
@@ -129,11 +132,14 @@ function reportToTesticle(rec) {
     // A family that failed to load is asked for again on the next try.
     const once = function () {
       testicle = testicle || real.require(real.familyPath('testicle'));
-      return Promise.resolve(testicle).then(function (f) { return f['testicle.set'](rec); }, function (e) { testicle = null; throw e; });
+      return Promise.resolve(testicle).then(function (f) { return f[verb || 'testicle.set'](rec); }, function (e) { testicle = null; throw e; });
     };
     const wait = function () { return new Promise(function (r) { ownTimeout(r, 1000); }); };
-    reportsLanded.push(once().catch(function () { return wait().then(once); }).catch(function () { return wait().then(once); })
-      .catch(function () { /* a checkout with no node reports nowhere */ }).then(function () { reportsOut -= 1; }));
+    reportChain = reportChain.then(function () {
+      return once().catch(function () { return wait().then(once); }).catch(function () { return wait().then(once); })
+        .catch(function () { /* a checkout with no node reports nowhere */ });
+    }).then(function () { reportsOut -= 1; });
+    reportsLanded.push(reportChain);
   } catch (e) { /* the lines are printed whatever the node says */ }
 }
 
@@ -193,6 +199,17 @@ async function runAll() {
   test.startTest(SUITE_FILE);
   const seen = Object.create(null);
   const last = ONLY === null ? queue.length - 1 : queue.map(function (t) { return t.title; }).indexOf(ONLY);
+  // THE SUITE'S SUCCESS FOR EACH SCRIPT (goal/G47.1, box v129-131: "the reporter reports a suite's success or failure for a
+  // script through the new verb testicle.suite.success {script, suite, success}, a general test once per script, at the time
+  // it knows"; "a suite's result is NEVER assembled from testicle rows"): success when every test it ran for that script held.
+  let doing = null;
+  const held = Object.create(null);
+  const reported = Object.create(null);
+  const succeeded = function (script) {
+    if (ONLY !== null || reported[script]) return;
+    reported[script] = true;
+    reportToTesticle({ script: script, suite: SUITE_FILE, success: held[script] !== false }, 'suite.success');
+  };
   for (let i = 0; i <= last; i++) {
     const t = queue[i];
     const title = String(t.title);
@@ -208,8 +225,14 @@ async function runAll() {
     const severity = v.crash ? 0.7 : (sev >= 0 && sev <= 1 ? sev : 0.7);
     if (v.pass) { test.successCount++; test.comment('SUCCESS #' + test.counter + '.' + test.successCount + ': ' + title + ' ' + ICON.SUCCESS); }
     else { test.failureCount++; test.comment('FAILURE #' + test.counter + '.' + test.failureCount + ': ' + title + (v.detail ? ' — ' + v.detail : '') + ' ' + ICON.ERROR); }
+    // A SCRIPT DONE (goal/G47.1, box v129-131): the first test of another script ends the one before, whose success goes
+    // out before this result. A run with a title (--test) ran part of its suite and reports no success at all.
+    if (doing !== null && doing !== script) succeeded(doing);
+    if (doing !== script) { doing = script; held[script] = true; }
+    if (!v.pass) held[script] = false;
     reportToTesticle({ script: script, suite: SUITE_FILE, test: title, verified: !!v.pass, severity: severity });
   }
+  if (doing !== null) succeeded(doing);
   for (const fn of afters) { try { await fn(); } catch (e) { test.comment('test.after threw: ' + (e && e.message || e)); } }
   test.reportSuccessFailureCount();
   await Promise.race([Promise.all(reportsLanded), new Promise(function (r) { ownTimeout(r, RECORD_WAIT_MS); })]);

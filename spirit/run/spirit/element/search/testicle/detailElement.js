@@ -13,7 +13,7 @@
 (function () {
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): its row, testicle's interface and its cache manager.
-  var parts = Promise.all(['spirit/element/search/testicle/rowElement.js', 'spirit/app/testicle/api.js']
+  var parts = Promise.all(['spirit/element/search/testicle/rowElement.js', 'spirit/app/testicle/api.js', 'spirit/element/busyButton.js']
     .map(function (p) { return S.require(p); }).concat([S.cacheManager('testicle')]));
   // A NODE WITH NO TESTICLE refuses its interface: create says the history could not be loaded; the refusal is never left unhandled.
   parts.catch(function () {});
@@ -30,9 +30,17 @@
     var test = String(o.test || '');
     var gone = false;
     var release = null;
+    // ITS PATHS AND ITS 🏃 (goal/G47.1, box v130: "the testicle detail has a 🏃 run button for its script and suite; a press
+    // stops the running suite and runs it first, as a top-10 fix does; the detail shows its full script and suite path"; Andy:
+    // "the testicle detail doesn't show the full script name"): the script's and the suite's path in full under the title, and
+    // the busy button the script tab's rows have, asking testicle.run for this script and suite.
     container.innerHTML = '<div class="testicle-history fill"><div class="testicle-title" data-history="title"></div>' +
+      '<div class="testicle-paths"><span data-history="run"></span> <span data-history="script"></span><br><span data-history="suite"></span></div>' +
       '<table class="testicle-flips" data-history="rows"><thead><tr><th>Flipped</th><th>Result</th><th>Severity</th><th>Title</th><th>Script</th><th>Suite</th></tr></thead><tbody></tbody></table></div>';
     container.querySelector('[data-history="title"]').textContent = test;
+    container.querySelector('[data-history="script"]').textContent = script;
+    container.querySelector('[data-history="suite"]').textContent = suite;
+    var runButton = null;
     var body = container.querySelector('tbody');
 
     var drawn = [];
@@ -66,6 +74,8 @@
     parts.then(function () {
       if (gone) return;
       ask();
+      if (script && suite) runButton = S.element.spirit.element.busyButton.create(container.querySelector('[data-history="run"]'), { label: '🏃‍♂️', title: 'run this suite now',
+        className: 'suite-run', run: function () { return S.testicle.run({ script: script, suite: suite }); } });
       release = S.data.testicle.data.testicle.watch(function () { draw(fromBranch()); });
     }, function () { container.textContent = 'The history could not be loaded.'; });
 
@@ -74,6 +84,8 @@
         gone = true;
         if (typeof release === 'function') release();
         release = null;
+        if (runButton && typeof runButton.destroy === 'function') runButton.destroy();
+        runButton = null;
         drawn.forEach(function (el) { if (el && typeof el.destroy === 'function') el.destroy(); });
         drawn = [];
         container.innerHTML = '';

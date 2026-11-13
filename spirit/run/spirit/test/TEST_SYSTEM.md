@@ -88,6 +88,6 @@ An item that names one file therefore gets the right tests without listing them.
   plain string unique in its suite, its severity 0.2 by default, 0.4 for a general rule broken, 0.8 for a security hole
   (a crash or a hang is 0.7, set by the reporter), its time limit one of the reporter's named limits, `test.limit.quick`, `.slow` or `.long`. The body
   answers `true`, or what went wrong. Setup goes into a "the world:" test, cleanup into `test.after(fn)`. Each test is
-  reported by itself to `testicle.testicle.set` of the node of the checkout it runs in; `--test <title>` runs the tests up
+  reported by itself to `testicle.testicle.set` of the node of the checkout it runs in, and the suite's success for each script it judged to `testicle.suite.success` once it is through with that script (none for a run with `--test`; testicle never sums a suite's result from its test rows); `--test <title>` runs the tests up
   to that one. The titleRules part of `spirit-sibling-general.js` holds every suite to it. Its contract: `./test/testReport.md`.
 - A product test that finds a module breaking a rule fails that module's test, not the item that brought the test.

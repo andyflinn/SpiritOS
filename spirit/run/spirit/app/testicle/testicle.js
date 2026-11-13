@@ -361,7 +361,7 @@ function jobEnded(j) {
   // A general test's run of several scripts: each script's row judged as its own run's would be.
   if (j.batch) {
     j.scripts.forEach(function (s) {
-      try { jobEnded({ script: s, suite: j.suite, title: '', scriptHash: j.hashes[s], suiteHash: j.suiteHash, killed: j.killed }); }
+      try { jobEnded({ script: s, suite: j.suite, title: '', scriptHash: j.hashes[s], suiteHash: j.suiteHash, killed: j.killed, started: j.started }); }
       catch (e) { logError('jobEnded ' + s + ' ' + j.suite, e); }
     });
     return;
@@ -374,8 +374,23 @@ function jobEnded(j) {
     if (j.killed) logError('jobEnded: killed ' + j.script + ' ' + j.suite + ' left flagged: ' + (!row ? 'no suite row' : row.deleted ? 'deleted' : !sr ? 'no script row' : 'hashes moved'), null);
     return;
   }
-  if (!j.killed && suiteJudged(j.script, j.suite)) return;
-  if (!row.test && row.outcome === 'red') return;
+  // A TEST A WHOLE RUN NO LONGER REPORTS STOPS BEING CURRENT (goal/G47.1, cleaning; found on Andy's testicle: backup/api.js's
+  // -browser rerun skipped 17 element checks it no longer applies, and their old red rows kept the suite "still red"): after
+  // a whole run that reported at least one test, every current row of that script and suite it did not report is current no
+  // more, each streamed. A run that reported nothing (it crashed or hung) retires nothing.
+  if (!j.killed && j.started) {
+    const rows = T.ofSuite.all(j.script, j.suite);
+    if (rows.some(function (r) { return Number(r.tested) >= j.started; })) {
+      rows.filter(function (r) { return Number(r.tested) < j.started; }).forEach(function (t) {
+        T.retire.run(t.script, t.suite, t.test, Number(t.flipped));
+        tell('testicle', testServed(T.row.get(t.script, t.suite, t.test, Number(t.flipped))), 'updated');
+      });
+    }
+  }
+  // ITS SUCCESS CAME (testicle.suite.success, box v129-131): the row is set and its flag cleared. Still flagged, the run gave
+  // none (killed, crashed, or its report fell short): still red. Never summed from its test rows (box v131: "a suite's result
+  // is NEVER assembled from testicle rows, anywhere").
+  if (!row.test) return;
   judgeSuite.run('red', Date.now(), j.script, j.suite);
   tell('suite', suiteServed(Q.suiteRow.get(j.script, j.suite)), 'updated');
 }
@@ -385,7 +400,7 @@ function jobEnded(j) {
 // A script changed during the run keeps reClassify, and the next run takes it.
 // THE CLASSIFIER'S ROW IN THE SCRIPT TAB (Andy: "I LIKE SEING THAT TEST FUCKING LISTED IN THE SCRIPT TAG AND SEEING IT
 // GREEN"): made, brought back, or given the classifier's bytes as they are, when a result of it comes; judged from that
-// result (suiteJudged), so it shows green or still red. The runner never runs it as a suite (chooseJob); a press of it asks
+// result's testicle.suite.success (or red when the run gave none), so it shows green or still red. The runner never runs it as a suite (chooseJob); a press of it asks
 // a class for that script (run).
 function classifierRow(script, suiteHash) {
   const was = Q.suiteRow.get(script, CLASSIFY);
@@ -402,7 +417,8 @@ function classifyEnded(j) {
     if (!row || Number(row.tested) < j.started || row.judged !== j.hashes[name]) {
       classifierRow(name, j.suiteHash);
       setResult(name, CLASSIFY, CLASSIFYABLE, false, CLASSIFY_SEVERITY, j.hashes[name], j.suiteHash);
-      suiteJudged(name, CLASSIFY);
+      judgeSuite.run('red', now, name, CLASSIFY);
+      tell('suite', suiteServed(Q.suiteRow.get(name, CLASSIFY)), 'updated');
     }
     if (classified.run(now, name, j.hashes[name]).changes) tell('script', served(Q.script.get(name)), 'updated');
   });
@@ -445,16 +461,23 @@ function topFix(rel) {
     front.unshift({ script: rel, suite: suites[k], title: '' });
   }
   // The running suite stopped, unless it is that script's own run.
-  const j = job;
-  if (!j || j.script === rel || j.killed || j.stopped) return;
+  if (job && job.script !== rel) stopJob(job, rel + ' holds a top red and changed');
+}
+// THE RUNNING JOB STOPPED (box v128, v130): its results untouched, its rows left flagged; its end (jobEnded) judges nothing, and
+// the next run is assembled fresh from the flags, without the scripts that already reported their success.
+function stopJob(j, why) {
+  if (!j || job !== j || j.killed || j.stopped) return;
   j.stopped = true;
   clearTimeout(j.timer);
-  logError('runner: stopped ' + (j.classify ? 'classifying' : j.suite + (j.batch ? ' (' + j.scripts.length + ' scripts)' : ' for ' + j.script)) + ': ' + rel + ' holds a top red and changed', null);
-  try { j.kid.kill(); } catch (e) { logError('topFix: the kill', e); }
+  logError('runner: stopped ' + (j.classify ? 'classifying' : j.suite + (j.batch ? ' (' + j.scripts.length + ' scripts)' : ' for ' + j.script)) + ': ' + why, null);
+  try { j.kid.kill(); } catch (e) { logError('stopJob: the kill', e); }
 }
 function press(script, suite, title) {
   for (let i = front.length - 1; i >= 0; i--) if (front[i].script === script && front[i].suite === suite) front.splice(i, 1);
   front.unshift({ script: script, suite: suite, title: title || '' });
+  // A PRESS RUNS FIRST, AS A TOP-10 FIX DOES (goal/G47.1, box v130: "a press stops the running suite and runs it first"): the
+  // running job stopped, unless it is this very run.
+  if (job && !(job.script === script && job.suite === suite)) stopJob(job, 'a press of ' + suite + ' for ' + script);
   if (!job && !quiet) nextJob();
 }
 
@@ -603,27 +626,6 @@ function told() {
   busyTold = b;
   doingTold = d;
   appServer.publish({ testicle: { busy: b, doing: d } });
-}
-// A test of a script and suite reported: the suite row judged again from the table. Flagged, it clears once every current row
-// was tested since the flag was set (changed); judged before, its outcome follows the rows. Published when it changed.
-// FULL BY THE HASHES (the box: "A suite row is then full when every current row of that script and suite carries both hashes
-// as they are now"): flagged, it clears once every current row carries the script row's hash and the suite row's. Answers
-// whether the row is judged full.
-function suiteJudged(script, suite) {
-  // Never while its own job runs: the rows it has so far are not the whole run; the job's end judges it (jobEnded).
-  if (job && job.script === script && job.suite === suite) return false;
-  if (job && job.batch && job.suite === suite && job.hashes[script] !== undefined) return false;
-  const row = Q.suiteRow.get(script, suite);
-  const sr = Q.script.get(script);
-  if (!row || row.deleted || !sr) return false;
-  const rows = T.ofSuite.all(script, suite);
-  if (!rows.length) return false;
-  if (!rows.every(function (r) { return r.judged === sr.hash && String(r.suiteHash || '') === row.hash; })) return false;
-  const outcome = rows.every(function (r) { return !!r.verified; }) ? 'green' : 'red';
-  if (!row.test && row.outcome === outcome) return true;
-  judgeSuite.run(outcome, Date.now(), script, suite);
-  tell('suite', suiteServed(Q.suiteRow.get(script, suite)), 'updated');
-  return true;
 }
 function tell(table, row, change) { appServer.publish({ testicle: { table: table, row: row, change: change, busy: busyNow(), doing: doingNow() } }); }
 
@@ -857,6 +859,34 @@ appServer.serve({
   // needs to auto-create the script/suite rows for that test". A script whose row is missing, or whose bytes changed since
   // its row, gets its rows by the same write a change makes; then the test's row. "This cycle does not clear a suite's
   // needs-testing flag."
+  // A SUITE'S SUCCESS FOR A SCRIPT (goal/G47.1, box v129-131; Andy: "replace the last tweark with the reporter reporting
+  // fucking success/failure of the suite through a new verb testicle.suite.success", "any suite, including general ones know
+  // at the TIME if it was a success"): {script, suite, success}, sent by the reporter once a suite is through with a script
+  // (a general test once per script). The suite row is set at once, green or red, its flag cleared; it is the one thing that
+  // writes a suite row's outcome ("a suite's result is NEVER assembled from testicle rows, anywhere"). A script changed since
+  // the run began keeps its flag, so the run comes round again. A partial run (--test) sends none.
+  'suite.success': {
+    request: { script: '', suite: '', success: false }, reply: {},
+    handler: function (a) {
+      const script = posix(String(a.script || '')).replace(/^\.?\//, '');
+      const suite = posix(String(a.suite || '')).replace(/^\.?\//, '');
+      const toolWithRow = isSuite(script) && !!Q.script.get(script);
+      if (!/\.js$/.test(script) || (isSuite(script) && !toolWithRow) || script.indexOf('..') !== -1 || ignored(path.join(RUN, script))) throw refused('not-a-production-script');
+      if (!suite || typeof a.success !== 'boolean') throw refused('bad-request');
+      if (!there(script)) throw refused('no-such-file');
+      // The hash the run took at its start, when this comes from the run going.
+      const ran = job && job.batch && job.suite === suite && job.hashes && job.hashes[script] !== undefined ? job.hashes[script]
+        : job && job.script === script && job.suite === suite ? job.scriptHash : null;
+      const sr = Q.script.get(script);
+      if (ran && sr && sr.hash !== ran) return {};
+      if (suite === CLASSIFY) classifierRow(script, job && job.classify ? job.suiteHash : hashOf(suite));
+      else if (there(suite) && !Q.suiteRow.get(script, suite)) Q.putSuite.run(script, suite, hashOf(suite), Date.now());
+      if (!Q.suiteRow.get(script, suite)) throw refused('no-such-file');
+      judgeSuite.run(a.success ? 'green' : 'red', Date.now(), script, suite);
+      tell('suite', suiteServed(Q.suiteRow.get(script, suite)), 'updated');
+      return {};
+    },
+  },
   'testicle.set': {
     request: { script: '', suite: '', test: '', verified: false, severity: 0 }, reply: {},
     handler: function (a) {
@@ -907,7 +937,6 @@ appServer.serve({
         const out = setResult(script, suite, name, isLate ? false : !!a.verified, severity, scriptHash, suiteHash);
         // A classifying run's count moves with each script it has said its class of (doingNow), and is told.
         if (asClassified && !asClassified.seen[script]) { asClassified.seen[script] = true; asClassified.done += 1; told(); }
-        suiteJudged(script, suite);
         return out;
       }).finally(function () { getting -= 1; told(); });
     },

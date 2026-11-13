@@ -1,0 +1,8 @@
+{
+  "description": "A suite's success or failure for one script: {script, suite, success}. The reporter (spirit/test/testReport.js) sends it once the suite is through with that script, at the time it knows: an own test once, a general test once for each script it was handed; a run with a title (--test) ran part of its suite and sends none. The suite row is set at once, outcome green for true and red for false, its flag (needs running) cleared, whatever its test rows say: it is the one thing that writes a suite row's outcome, never summed from test rows. A script changed since the run began keeps its flag, so the run comes round again. A suite row missing for a suite on disc is made. A name that is no production script answers \"not a production script\"; a script that is not there, \"no such file\".",
+  "request": {
+    "script": "text",
+    "suite": "text",
+    "success": "bool"
+  }
+}
