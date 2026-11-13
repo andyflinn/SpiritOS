@@ -324,11 +324,11 @@ test.run('the node\'s own traffic log is read from a copy, untouched', 0.2, func
 
 // THE FOLDER IS THE PLATFORM'S, NOT THE AGENT'S (Andy, box v104: "make sure publisData simply writes to folders identifying
 // the platform, NOT the agent, the platforms will be \"windows\", \"wsl\" and \"ubuntu\"."): agents/<platform>/, the platform
-// this machine is: Windows, Linux under WSL, or Ubuntu.
+// this machine is: Windows, Linux under WSL, or Ubuntu; box v105: "the folders: repo://platform/windows/, repo://platform/wsl/, repo://platform/ubuntu/".
 const PLATFORM = process.platform === 'win32' ? 'windows' : (function () { try { return /microsoft/i.test(fs.readFileSync('/proc/version', 'utf8')) ? 'wsl' : 'ubuntu'; } catch (e) { return 'ubuntu'; } }());
 // the whole run: harness in a worktree, then its one folder committed, pushed and said
 // A traffic log that counts nothing this time: zero posts is published too.
-test.run('it exits 0: published agents/<platform>/', 0.2, function () {
+test.run('it exits 0: published platform/<platform>/', 0.2, function () {
   if (!WR.ready) return 'no scratch clone: the world failed';
   fs.rmSync(path.join(CLONE, 'spirit', 'run', 'spirit', 'state'), { recursive: true, force: true });
   trafficLog(CLONE, [ROWS[6]]);
@@ -358,16 +358,16 @@ test.run('one commit on its clone', 0.2, function () {
 }, test.limit.quick);
 test.run('under the standing grant\'s message', 0.2, function () {
   if (!WR.ready) return 'no scratch clone: the world failed';
-  return (git(CLONE, ['log', '-1', '--format=%s', head]).out.indexOf('agents/' + PLATFORM + '/') !== -1) ? true : 'message ' + shortRun(git(CLONE, ['log', '-1', '--format=%s', head]).out);
+  return (git(CLONE, ['log', '-1', '--format=%s', head]).out.indexOf('platform/' + PLATFORM + '/') !== -1) ? true : 'message ' + shortRun(git(CLONE, ['log', '-1', '--format=%s', head]).out);
 }, test.limit.quick);
-test.run('its files all lie in agents/<platform>/, none in a folder named after the agent', 0.2, function () {
+test.run('its files all lie in platform/<platform>/, none in a folder named after the agent', 0.2, function () {
   if (!WR.ready) return 'no scratch clone: the world failed';
   files = git(CLONE, ['diff-tree', '--no-commit-id', '--name-only', '-r', head]).out.split('\n').filter(Boolean);
-  return (files.length > 0 && files.every(function (f) { return f.indexOf('agents/' + PLATFORM + '/') === 0; })) ? true : 'committed ' + shortRun(files);
+  return (files.length > 0 && files.every(function (f) { return f.indexOf('platform/' + PLATFORM + '/') === 0; })) ? true : 'committed ' + shortRun(files);
 }, test.limit.quick);
 test.run('packets, platform and README among them', 0.2, function () {
   if (!WR.ready) return 'no scratch clone: the world failed';
-  return (['packets.json', 'packets.md', 'platform.md', 'README.md'].every(function (f) { return files.indexOf('agents/' + PLATFORM + '/' + f) !== -1; })) ? true : 'committed ' + shortRun(files);
+  return (['packets.json', 'packets.md', 'platform.md', 'README.md'].every(function (f) { return files.indexOf('platform/' + PLATFORM + '/' + f) !== -1; })) ? true : 'committed ' + shortRun(files);
 }, test.limit.quick);
 test.run('what he had staged stays staged, and uncommitted', 0.2, function () {
   if (!WR.ready) return 'no scratch clone: the world failed';
@@ -399,7 +399,7 @@ test.run('and the origin holds its new commit on top of the other clone\'s', 0.2
   if (!w2) return 'not published again: the test before failed';
   const top = git(ORIGIN, ['rev-parse', 'refs/heads/master']).out;
   const ancestor = git(ORIGIN, ['merge-base', '--is-ancestor', moved, top]).status === 0;
-  return (top !== moved && ancestor && git(ORIGIN, ['log', '-1', '--format=%s', top]).out.indexOf('agents/' + PLATFORM + '/') !== -1) ? true : 'origin at ' + top + ', the other clone\'s ' + moved + ' its ancestor ' + ancestor;
+  return (top !== moved && ancestor && git(ORIGIN, ['log', '-1', '--format=%s', top]).out.indexOf('platform/' + PLATFORM + '/') !== -1) ? true : 'origin at ' + top + ', the other clone\'s ' + moved + ' its ancestor ' + ancestor;
 }, test.limit.quick);
 
 // goal/G43.22, Andy: "publishData summary is no longer needed, i only check on github.": nothing is posted to the desk.
