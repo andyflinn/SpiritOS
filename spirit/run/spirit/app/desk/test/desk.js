@@ -292,6 +292,38 @@ test.run('item.files.add {id, paths} lands every path of the list on the caller\
     'the bundle answered ' + short(bundle) + '; listed ' + short(listed);
 }, test.limit.quick);
 
+// THE DEAD UI-RULE CODE GOES (goal/G47.1, box v121: "delete the desk's dead ui-rule code: it attaches ui rules only for
+// files under shell/, gone since G43.30"; Andy: "delete the desk dead ui-rule."): a file listed under spirit/run/shell/
+// brings no ui rule, by a single path or in a list, though an active auto-attach ui rule stands.
+let uiRule = '';
+const rulesOf = async function (id) { const r = await call('item.get', { id: id }, ANDY); let it = r.item; try { if (typeof it === 'string') it = JSON.parse(it); } catch (e) { it = null; } return it && Array.isArray(it.rules) ? it.rules.map(function (x) { return x.key; }) : null; };
+// Written into the desk's own rules table, as his rule.version writes it: the door takes no autoAttach from a call
+// (spirit/app/desk/api.js), and the desk reads the table at each write.
+test.run('the world: an active ui rule set to attach itself', 0.2, async function () {
+  if (!W.up) return noDesk;
+  const db = new DatabaseSync(path.join(W.scratch, 'state', 'desk.db'));
+  try { db.prepare('INSERT INTO rules (rule, at, by, type, label, status, text, autoAttach) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(9001, new Date().toISOString(), 'andy', 'ui', 'zz ui rule', 'active', 'A ui rule of the test.', 1); } finally { db.close(); }
+  const found = await call('rule.get', { key: 'rule/9001' }, ANDY);
+  if (found.status === 'active' && found.autoAttach === true && found.type === 'ui') uiRule = 'rule/9001';
+  return !!uiRule || 'rule.get answered ' + short(found);
+}, test.limit.quick);
+test.run('item.files.add {id, path} of a file under spirit/run/shell/ attaches no ui rule', 0.2, async function () {
+  if (!uiRule) return 'no ui rule: the world failed';
+  await call('item.take', { id: 'goal/G100.5' }, CW);
+  const added = await call('item.files.add', { id: 'goal/G100.5', path: 'spirit/run/shell/zzOld.js' }, CW);
+  const rules = await rulesOf('goal/G100.5');
+  if (!rules) return 'item.get gave no rules; item.files.add answered ' + short(added);
+  return rules.indexOf(uiRule) === -1 || uiRule + ' is attached: ' + short(rules);
+}, test.limit.quick);
+test.run('item.files.add {id, paths} with a file under spirit/run/shell/ attaches no ui rule', 0.2, async function () {
+  if (!uiRule) return 'no ui rule: the world failed';
+  await call('item.take', { id: 'goal/G100.6' }, CW);
+  const added = await call('item.files.add', { id: 'goal/G100.6', paths: ['spirit/run/zzNew.js', 'spirit/run/shell/zzOld.js'] }, CW);
+  const rules = await rulesOf('goal/G100.6');
+  if (!rules) return 'item.get gave no rules; item.files.add answered ' + short(added);
+  return rules.indexOf(uiRule) === -1 || uiRule + ' is attached: ' + short(rules);
+}, test.limit.quick);
+
 // bundles: a goal pushed whole reaches a subscribed client as bundles of rows
 test.run('its seven rows come several to a post, not one post a row', 0.2, async function () {
   if (!W.up) return noDesk;

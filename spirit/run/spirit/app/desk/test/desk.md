@@ -5,6 +5,12 @@ The desk server: Andy's goals and items, their boxes, chats, checks and file lis
 module's behaviour is added here as its test folder grows (box v10: "The desk system scripts get their own test
 folders").
 
+## Requirements (goal/G47.1, box v121): no ui rule comes from a file list
+
+Andy: *"delete the desk dead ui-rule."* The desk attached every active auto-attach ui rule to an item when a file under
+`spirit/run/shell/` joined its list (goal/G40.13); that folder is gone since G43.30. With an active auto-attach ui rule
+standing, `item.files.add` of a file under `spirit/run/shell/`, by a single path and in a list, attaches no ui rule.
+
 ## Requirements (goal/G41.11)
 
 - **Bundles, for Desk only** (Andy: "agreed to publishing lists, FOR DESK ONLY, this is NOT a general rule"):
