@@ -68,6 +68,14 @@ const GENERAL = [
   "test.run('a general rule holds', 0.4, function () { return 'it does not'; }, 1000);",
 ].join('\n');
 
+// A GENERAL TEST JUDGING TWO SCRIPTS (goal/G47.1, box v129, testicle.suite.success): the first passes, the second fails.
+const GENERAL_TWO = [
+  "'use strict';",
+  "const test = " + REPORTER_FROM(2) + ";",
+  "test.forScript('probe/probe.js', function () { test.run('a rule per script', 0.4, function () { return true; }, 1000); });",
+  "test.forScript('probe/twice.js', function () { test.run('a rule per script', 0.4, function () { return 'it does not hold'; }, 1000); });",
+].join('\n');
+
 function scratchTree(port) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'g472-report-'));
   const run = path.join(root, 'run');
@@ -94,6 +102,7 @@ function scratchTree(port) {
   put('probe/twice.js', "'use strict';\n");
   // A general test is named <name>-sibling-<what>.js beside ./<name>.js: spirit/spirit.js is in the copy.
   put('spirit/test/spirit-sibling-zzProbeRules.js', GENERAL);
+  put('spirit/test/spirit-sibling-zzProbeTwo.js', GENERAL_TWO);
   return { root: root, run: run };
 }
 
@@ -101,6 +110,9 @@ function scratchTree(port) {
 function fakeNode() {
   const sets = [];
   const asked = [];
+  // goal/G47.1, box v129: testicle.suite.success {script, suite, success}, each kept, and every report in the order it came.
+  const successes = [];
+  const order = [];
   const iface = fs.readFileSync(path.join(RUN, 'spirit', 'app', 'testicle', 'api.js'), 'utf8');
   const server = http.createServer(function (req, res) {
     let body = '';
@@ -112,12 +124,13 @@ function fakeNode() {
       const send = function (status, obj) { res.writeHead(status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(obj)); };
       if (req.method !== 'POST' || req.url !== '/api/spirit' || !msg) return send(404, { ok: false, code: 'not-found' });
       if (msg.call === 'api' && msg.args && msg.args.family === 'testicle') return send(200, { family: 'testicle', interface: iface });
-      if (msg.call === 'testicle.testicle.set') { sets.push(msg.args); return send(200, { ok: true }); }
+      if (msg.call === 'testicle.testicle.set') { sets.push(msg.args); order.push({ verb: 'set', args: msg.args }); return send(200, { ok: true }); }
+      if (msg.call === 'testicle.suite.success') { successes.push(msg.args); order.push({ verb: 'success', args: msg.args }); return send(200, { ok: true }); }
       return send(404, { ok: false, code: 'no-such-verb' });
     });
   });
   return new Promise(function (resolve) {
-    server.listen(0, '127.0.0.1', function () { resolve({ port: server.address().port, sets: sets, asked: asked, close: function () { server.close(); } }); });
+    server.listen(0, '127.0.0.1', function () { resolve({ port: server.address().port, sets: sets, asked: asked, successes: successes, order: order, close: function () { server.close(); } }); });
   });
 }
 
@@ -136,7 +149,7 @@ function runSuite(run, rel, args) {
 }
 
 // What the scratch tree and its runs hold, shared by the tests below; each test reads it, the first ones make it.
-const W = { node: null, tree: null, probe: null, alone: null, twice: null, general: null, quiet: null, quietTree: null };
+const W = { node: null, tree: null, probe: null, alone: null, twice: null, general: null, two: null, quiet: null, quietTree: null };
 const setOf = function (title) { return ((W.node && W.node.sets) || []).filter(function (s) { return s && s.suite === 'probe/test/probe.js' && s.test === title; }); };
 const printed = function (title) { return W.probe ? W.probe.out.split('\n').filter(function (l) { return l.indexOf(': ' + title) !== -1; }) : []; };
 
@@ -222,6 +235,30 @@ test.run('a general test reports the file it judges as its script', 0.4, functio
   const g = ((W.node && W.node.sets) || []).filter(function (s) { return s && s.suite === 'spirit/test/spirit-sibling-zzProbeRules.js'; });
   return (g.length === 1 && g[0].script === 'probe/probe.js' && g[0].test === 'a general rule holds' && g[0].severity === 0.4) || 'its reports: ' + short(g);
 }, test.limit.slow);
+
+// ── A SUITE'S SUCCESS (goal/G47.1, box v129: "the reporter reports a suite's success or failure for a script through the
+// new verb testicle.suite.success {script, suite, success}, a general test once per script, at the time it knows"; Andy:
+// "any suite, including general ones know at the TIME if it was a success") ──
+const successOf = function (suite) { return ((W.node && W.node.successes) || []).filter(function (x) { return x && x.suite === suite; }); };
+test.run('a suite reports its success or failure for its script once, through testicle.suite.success', 0.4, function () {
+  const got = successOf('probe/test/probe.js');
+  return (got.length === 1 && got[0].script === 'probe/probe.js' && got[0].success === false) || 'testicle.suite.success for the probe suite: ' + short(got) + '; asked ' + short(W.node.asked.filter(function (a) { return /success/.test(String(a)); }));
+}, test.limit.quick);
+test.run('the world: a general test judging two scripts runs, handed both', 0.2, async function () {
+  W.two = await runSuite(W.tree.run, 'spirit/test/spirit-sibling-zzProbeTwo.js', ['probe/probe.js', 'probe/twice.js']);
+  return /Test completed\./.test(W.two.out) || 'it did not run: ' + short(W.two.out.slice(-300));
+}, test.limit.slow);
+test.run('a general test reports success once per script: the one that held true, the one that failed false', 0.4, function () {
+  const got = successOf('spirit/test/spirit-sibling-zzProbeTwo.js');
+  const a = got.filter(function (x) { return x.script === 'probe/probe.js'; }), b = got.filter(function (x) { return x.script === 'probe/twice.js'; });
+  return (a.length === 1 && a[0].success === true && b.length === 1 && b[0].success === false) || 'its successes: ' + short(got);
+}, test.limit.quick);
+test.run('at the time it knows: the first script\'s success comes before any result of the second script', 0.4, function () {
+  const o = ((W.node && W.node.order) || []).filter(function (x) { return x.args && x.args.suite === 'spirit/test/spirit-sibling-zzProbeTwo.js'; });
+  const first = o.findIndex(function (x) { return x.verb === 'success' && x.args.script === 'probe/probe.js'; });
+  const second = o.findIndex(function (x) { return x.verb === 'set' && x.args.script === 'probe/twice.js'; });
+  return (first !== -1 && second !== -1 && first < second) || 'the order: ' + short(o.map(function (x) { return x.verb + ' ' + x.args.script; }));
+}, test.limit.quick);
 
 // ── ONE TEST ALONE ──
 test.run('the world: the probe suite runs with one test named', 0.2, async function () {

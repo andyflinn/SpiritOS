@@ -2109,3 +2109,40 @@ test.run('and the suite\'s status follows the tests it now has: zzStale\'s own s
   const st = await statusOf(SZ, SZS);
   return st === 'green' || 'zzStale\'s suite: ' + short(st);
 }, test.limit.quick);
+
+// ── testicle.suite.success (goal/G47.1, box v129: "the reporter reports a suite's success or failure for a script through
+// the new verb testicle.suite.success {script, suite, success} ... the server sets that suite row from it at once (outcome,
+// flag cleared), no summing of test rows"; Andy: "cw, replace the last tweark with the reporter reporting fucking
+// success/failure of the suite through a new verb testicle.suite.success"). A planted spirit/zzSucc/ whose suite is
+// flagged by a change, then told by the verb, inside the runner's quiet second.
+const SUC = 'spirit/zzSucc/zzSucc.js', SUCS = 'spirit/zzSucc/test/zzSucc.js';
+let succWorld = false;
+test.run('the node lists the verb testicle.suite.success', 0.4, async function () {
+  if (!up()) return NONODE;
+  const api = await call(N.base, 'api', { family: 'testicle' });
+  const iface = String((api.body && api.body.interface) || '');
+  return /['"]suite\.success['"]\s*:/.test(iface) || 'testicle\'s api: ' + short(iface).slice(0, 200);
+}, test.limit.quick);
+test.run('the world: spirit/zzSucc/ with its own suite, run once', 0.2, async function () {
+  if (!up()) return NONODE;
+  put(SUC, '\'use strict\';\n// zzSucc\n');
+  put(SUCS, SUITE_HEAD + "test.run('zzSucc answers', 0.2, function () { return true; }, test.limit.quick);\n");
+  const ok = await until(function () { return Promise.resolve(currentOf(tables(DB), SUC, SUCS, 'zzSucc answers').length > 0); }, 280000);
+  await idle(280000);
+  succWorld = !!ok;
+  return succWorld || 'zzSucc never ran: ' + short(suiteRow(tables(DB), SUC, SUCS));
+}, test.limit.long);
+test.run('testicle.suite.success {success: false} sets that suite row at once: outcome red, its flag cleared', 0.4, async function () {
+  if (!succWorld) return 'no zzSucc: the world failed';
+  append(SUCS, '// changed, so flagged\n');
+  await until(function () { return Promise.resolve(yes((suiteRow(tables(DB), SUC, SUCS) || {}).test)); }, 900);
+  const r = await call(N.base, 'testicle.suite.success', { script: SUC, suite: SUCS, success: false });
+  const row = suiteRow(tables(DB), SUC, SUCS);
+  return (r.status === 200 && !!row && row.outcome === 'red' && no(row.test)) || 'suite.success answered ' + r.status + ' ' + short(r.text) + '; the row ' + short(row);
+}, test.limit.quick);
+test.run('testicle.suite.success {success: true} sets it green, at once, whatever its test rows say', 0.4, async function () {
+  if (!succWorld) return 'no zzSucc: the world failed';
+  const r = await call(N.base, 'testicle.suite.success', { script: SUC, suite: SUCS, success: true });
+  const row = suiteRow(tables(DB), SUC, SUCS);
+  return (r.status === 200 && !!row && row.outcome === 'green' && no(row.test)) || 'suite.success answered ' + r.status + ' ' + short(r.text) + '; the row ' + short(row);
+}, test.limit.quick);
