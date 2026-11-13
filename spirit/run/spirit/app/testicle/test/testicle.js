@@ -123,6 +123,9 @@ function scratch() {
   // AN OLDER testicle.db (goal/G47.1, the rename: "an existing testicle.db is renamed in place, its rows kept"): its first
   // table still named file, the suite table's key column file, one row in each.
   fs.mkdirSync(path.join(on, 'data'), { recursive: true });
+  // AUTO, as these checks judge the runner picking flagged suites by itself (goal/G47.1, box v79, 2: "auto: the default mode
+  // until now: the server auto-processes everything"); interactive, the default since, is judged with its preferences.
+  fs.writeFileSync(path.join(on, 'data', 'preferences.json'), JSON.stringify({ interactive: false }));
   const old = new DatabaseSync(path.join(on, 'data', 'testicle.db'));
   old.exec('CREATE TABLE file (name TEXT PRIMARY KEY, hash TEXT NOT NULL DEFAULT \'\', deleted INTEGER NOT NULL DEFAULT 0, changed INTEGER NOT NULL)');
   old.exec('CREATE TABLE suite (file TEXT NOT NULL, suite TEXT NOT NULL, test INTEGER NOT NULL DEFAULT 0, deleted INTEGER NOT NULL DEFAULT 0, hash TEXT NOT NULL DEFAULT \'\', outcome TEXT NOT NULL DEFAULT \'\', changed INTEGER NOT NULL, PRIMARY KEY (file, suite))');

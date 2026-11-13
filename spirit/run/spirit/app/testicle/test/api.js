@@ -23,7 +23,7 @@ const W = { api: null, verbs: {}, names: [] };
 const passes = function (verb, args) { return !!W.verbs[verb] && spirit.check('testicle.' + verb, W.verbs[verb], args) === null; };
 const refusedAs = function (verb, args) { if (!W.verbs[verb]) return 'no verb ' + verb; const r = spirit.check('testicle.' + verb, W.verbs[verb], args); return r ? r.code : ''; };
 const NO_API = 'api.js did not load: the world failed';
-const VERBS = ['busy', 'script.get', 'suite.search', 'testicle.set', 'testicle.search', 'red', 'run', 'subscribe', 'unsubscribe'];
+const VERBS = ['busy', 'preferences', 'script.get', 'suite.search', 'testicle.set', 'testicle.search', 'red', 'run', 'subscribe', 'unsubscribe'];
 const SET = { script: 'spirit/seal.js', suite: 'spirit/test/seal.js', test: 'a title', verified: true, severity: 0.2 };
 
 test.run('the world: api.js loads', 0.2, function () {
@@ -55,7 +55,7 @@ test.run('every rule is one of spirit.js\'s standard, \'?\' optional', 0.2, func
   });
   return bad.length === 0 || 'unknown rules: ' + short(bad);
 }, test.limit.quick);
-test.run('its verbs are busy, script.get, suite.search, testicle.set, testicle.search, red, run, subscribe and unsubscribe', 0.2, function () {
+test.run('its verbs are busy, preferences, script.get, suite.search, testicle.set, testicle.search, red, run, subscribe and unsubscribe', 0.2, function () {
   if (!W.api) return NO_API;
   return W.names.slice().sort().join() === VERBS.slice().sort().join() || 'verbs ' + short(W.names);
 }, test.limit.quick);
@@ -87,6 +87,12 @@ test.run('and testicle.js serves no verb it does not list', 0.2, function () {
 test.run('busy takes nothing', 0.2, function () {
   if (!W.api) return NO_API;
   return (passes('busy', {}) && refusedAs('busy', { now: true }) === 'no-such-argument') || 'busy {now} ' + refusedAs('busy', { now: true });
+}, test.limit.quick);
+// goal/G47.1, box v79, 4: preferences, multiplexed: {} answers them all; interactive, a boolean, sets it; nothing else.
+test.run('preferences takes nothing, or interactive as a boolean, and no other name', 0.2, function () {
+  if (!W.api) return NO_API;
+  return (passes('preferences', {}) && passes('preferences', { interactive: false }) && refusedAs('preferences', { interactive: 'no' }) !== '' && refusedAs('preferences', { auto: true }) === 'no-such-argument') ||
+    'preferences: ' + short([refusedAs('preferences', {}), refusedAs('preferences', { interactive: false }), refusedAs('preferences', { interactive: 'no' }), refusedAs('preferences', { auto: true })]);
 }, test.limit.quick);
 test.run('red takes nothing', 0.2, function () {
   if (!W.api) return NO_API;

@@ -17,6 +17,7 @@ handed in as the stream hands them; in node it is asked through `spirit.cacheMan
 - The monitor: `monitor.get()` is `{}` before anything; `busy` is what the stream last said; `last` is the last row
   published, `{ table, key, change, at }`, change `updated` when not named; `monitor.watch(fn)` is told on every change
   and answers its release.
+- The preferences (goal/G47.1, box v79, 4): `preferences.get()` is `{}` before anything, then what the stream last said, `{testicle: {preferences}}`, or what `preferences.keep(p)` kept; `preferences.watch(fn)` is told on every change and answers its release.
 - `keep(table, rows)` merges a verb's answer into the table's branch, a test row with its names; a table it has not,
   rows that are no list, or rows with no key write nothing.
 - `suite.watch`, `script.watch`, `testicle.watch` are each told `fn(key, row)` for their own table only, and answer

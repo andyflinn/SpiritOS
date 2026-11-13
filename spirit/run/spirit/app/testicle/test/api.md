@@ -6,7 +6,7 @@ v72). Required as the node reads it; each verb's arguments are judged by `spirit
 
 - `spirit.familyPath('testicle')` is this file; it exports `{ verbs }` and nothing else; every rule is one of
   `spirit.rules`.
-- Its verbs are `busy`, `script.get`, `suite.search`, `testicle.set`, `testicle.search`, `red`, `run`, `subscribe`,
+- Its verbs are `busy`, `preferences`, `script.get`, `suite.search`, `testicle.set`, `testicle.search`, `red`, `run`, `subscribe`,
   `unsubscribe`. Each is a handler of testicle.js, or, for subscribe and unsubscribe, of appServer's streamPublisher,
   which testicle.js asks for by its `publisher`; testicle.js serves no verb it does not list (*"a verb added to the
   server is added here, in the same commit"*).

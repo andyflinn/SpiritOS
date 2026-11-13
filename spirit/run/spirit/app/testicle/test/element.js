@@ -248,10 +248,11 @@ test.run('the world: the workBench\'s left strip is drawn', 0.2, async function 
   if (face()) return face();
   return !!(await waitFor('icons("left") && icons("left").length > 0')) || 'no left strip: ' + short(await T('icons("left")'));
 }, test.limit.slow);
-test.run('its left strip holds exactly one icon, 📁', 0.2, async function () {
+// goal/G47.1, box v79, 2: "a new left-strip-icon in the UI: ⚙", "the second icon below the existing one".
+test.run('its left strip holds two icons, 📁 then ⚙', 0.2, async function () {
   if (face()) return face();
   const left = await T('icons("left")');
-  return (Array.isArray(left) && left.length === 1 && /📁/.test(left[0])) || 'the left strip holds ' + short(left);
+  return (Array.isArray(left) && left.length === 2 && /📁/.test(left[0]) && /⚙/.test(left[1])) || 'the left strip holds ' + short(left);
 }, test.limit.quick);
 test.run('its right strip holds none', 0.2, async function () {
   if (face()) return face();

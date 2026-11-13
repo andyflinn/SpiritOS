@@ -31,7 +31,8 @@ existing file list with a filter for production *.js files: no new list."*
 **On the page.**
 - It loads through `spirit.require` and stands at `spirit.element.spirit.app.testicle.element`; `create(container)`
   answers `{ destroy }`.
-- A workBench whose left strip holds exactly one icon, 📁, and whose right strip holds none.
+- A workBench whose left strip holds two icons, 📁 then ⚙ (goal/G47.1, box v79, 2: *"the second icon below the existing one"*), and whose right strip holds none.
+- ⚙ opens the panel *"⚙ Configuration"* in the left pane: a rowForm (icon ⚙, button Save) holding one switch, interactive | auto, drawn from the preference interactive (asked of testicle.preferences, then followed in testicle's branch); Save sends `preferences {interactive}`, a refusal said below the form.
 - Its leftmost pane shows the file list; the centre holds the testicle search's tab alone (below).
 - The list shows production `*.js` files only: a `.js` outside any `test/` folder shows; a `.md`, a `.json`, and a test in
   a `test/` folder never show.

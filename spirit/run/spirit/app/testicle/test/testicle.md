@@ -41,7 +41,9 @@ The box, in Andy's words where he gave them:
   time, never two. It starts 1 second after the last file change event; a new event pushes the start back"*, *"General tests
   first"*, both hashes on every result taken at the run's start, a change mid-run not killing the job and the suite coming
   round again, *"A job that runs past 2 minutes is killed"*, the 🏃‍♂️'s testicle.run to the head of the queue, and rows
-  flagged at start run 1 s after the server starts. Planted suites log their start and end to runlog.txt in the scratch
+  flagged at start run 1 s after the server starts. These are auto's (goal/G47.1, box v79, 2: *"auto: the default mode until
+  now: the server auto-processes everything"*): the scratch node's preferences.json says interactive false, so the runner
+  picks flagged suites by itself. Planted suites log their start and end to runlog.txt in the scratch
   root: nu and xi run by themselves, not before 1 s after the second change, never overlapping, nu once; nu.js's general
   results all before nu's own start; nu's row holds its script's and suite's hashes; pi changed mid-run keeps its start
   hash, ends, and runs again after; tau asked by testicle.run starts before omicron's own suite and beside no other run;
@@ -95,6 +97,18 @@ The box, in Andy's words where he gave them:
     suite, in any case. Not cut, the answer holds every matching row; cut, it is full (the room of one answer cannot hold
     one more of its rows) and holds matching rows first, never a row outside the script, suite or result. Page after
     page with from, each page that says more is full, and the pages hold every matching test once.
+- **The preferences** (goal/G47.1, box v79, 2 and 4): kept in `spirit/state/testicle/data/preferences.json`; the one
+  preference *"testicle.preferences.interactive (true by default)"*, a missing or unreadable file the default. The verb
+  preferences: `{}` answers them all; `{interactive: <bool>}` sets it, writes the file, streams `{testicle: {preferences}}`
+  and answers them all; an unknown name or a value of the wrong type is refused. *"interactive: all actions and runs are
+  controlled by the user through the UI or through api calls"*: the runner runs only what testicle.run puts at the head of
+  the queue, the flagged suites wait; *"auto"*: it runs every flagged suite by itself, and set to auto the waiting ones run.
+  *"the server will flag changed suites AND scripts always, in both modes."*
+- **Three fields on the script table** (goal/G47.1, box v79, 3): reClassify, browserOnly and nodeOnly, booleans, served
+  on every script row. *"a script seen for the first time starts with reClassify true"*; a table made before gains it true
+  on every row, browserOnly and nodeOnly false; *"when the server (always) processes file changes, and the hash of the
+  script changes, \"reClassify\" must be set to \"true\""*, and nothing in this server sets it false (classification is out
+  of this cycle).
 
 ## What its test must try to break
 
