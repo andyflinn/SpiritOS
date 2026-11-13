@@ -47,11 +47,21 @@ const TARGETS = ALL ? NAMES : NAMES.filter(function (n) { return GIVEN.some(func
 const PANE_W = 640;
 const PANE_H = 420;
 const ROWS = 60;
+// WHAT A SEARCH NEEDS TO DRAW A LIST AT ALL, mounted alone (cw, checking these reds: "suite: its list shows one script's
+// suites and needs a script; mounted alone with none, it draws nothing. testicle and grant list from their servers
+// (testicle, grants), and the scratch node does not run testicle. the world should give a script and turn testicle on").
+const SERVERS = { servers: ['testicle', 'grants'] };
+const OPTIONS = { suite: { script: 'spirit/spirit.js' } };
+// Judged by its listElement, its selector drawing no pane (api: two dropdowns side by side, Andy's G29.7).
+const VIA_LIST = { api: true };
+// A ROW'S SHAPE WHERE THE SCRATCH NODE HOLDS NONE TO COPY (its branches and suite rows are empty on a fresh node): the fields
+// each row element reads, every text one of them the long value when planted.
+const SHAPES = { branch: { family: 'zzfamily', verb: 'zzverb' }, suite: { script: 'spirit/spirit.js', suite: 'spirit/test/zz.js', status: '' } };
 // A long value with no place to break: a row and a detail must wrap or clip it.
 const LONG = 'zzLongValue' + 'W'.repeat(300);
 
 // What the page does for one search, as one script: mounted, planted, measured, the details opened. Its answer is a report.
-const PAGE = String.raw`(function (name, ROWS, LONG, PANE_W, PANE_H) {
+const PAGE = String.raw`(function (name, ROWS, LONG, PANE_W, PANE_H, VIA_LIST, OPTIONS, SHAPES) {
   var S = window.spirit;
   var R = { name: name, notes: [] };
   function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
@@ -95,7 +105,7 @@ const PAGE = String.raw`(function (name, ROWS, LONG, PANE_W, PANE_H) {
     var made = R.made = [];
     var f = S.element.spirit.element.search; var real = f.create;
     f.create = function (host, o) { var x = o || {}; made.push({ data: typeof x.data === 'string' ? x.data : '', host: host }); return real.apply(this, arguments); };
-    return S.require('spirit/element/search/' + name + '.js');
+    return S.require('spirit/element/search/' + name + '.js').then(function () { return VIA_LIST[name] ? S.require('spirit/element/search/' + name + '/listElement.js') : null; });
   }).then(function () {
     var box = document.createElement('div');
     box.id = 'zz-host';
@@ -111,9 +121,13 @@ const PAGE = String.raw`(function (name, ROWS, LONG, PANE_W, PANE_H) {
     window.zzStack = stack;
     var sel = S.element.spirit.element.search[name];
     if (!sel || typeof sel.create !== 'function') { R.fail = 'spirit.element.spirit.element.search.' + name + ' has no create'; return R; }
+    // THE LIST IN PANE FACE (cw, checking these reds: "api: its selector is two dropdowns side by side by your ruling
+    // (G29.7) and takes no face: pane, so it never draws a list. the test should judge api's listElement in pane face
+    // instead"): a search whose selector draws no pane is judged by its own listElement.
+    var maker = VIA_LIST[name] && sel.listElement && typeof sel.listElement.create === 'function' ? sel.listElement : sel;
     // Only the searches it makes in its own pane count (the face page makes its own).
     R.made.length = 0;
-    try { window.zzMade = sel.create(under, { face: 'pane', open: stack.open }); } catch (e) { R.fail = 'its create threw: ' + (e && e.message || e); return R; }
+    try { window.zzMade = maker.create(under, Object.assign({ face: 'pane', open: stack.open }, OPTIONS[name] || {})); } catch (e) { R.fail = 'its create threw: ' + (e && e.message || e); return R; }
     return wait(1500).then(function () {
       var mine = R.made.filter(function (x) { return x.host && under.contains(x.host); });
       var m = mine.filter(function (x) { return x.data; })[0] || null;
@@ -127,8 +141,13 @@ const PAGE = String.raw`(function (name, ROWS, LONG, PANE_W, PANE_H) {
       R.listBefore = { h: before.height, w: before.width };
       var keysBefore = L.querySelectorAll('[data-key]').length;
       if (!R.data || !S.data || typeof S.data.setPath !== 'function') { R.noData = true; return R; }
-      var held = S.data.rowsOf(R.data) || [];
-      var template = held.filter(function (r) { return r && typeof r === 'object'; })[0] || null;
+      // A ROW OF ITS OWN SHAPE FIRST: a list whose rows read fields of their own (branch: family and verb) draws no row
+      // made of label, name, title and text alone; so the server's first answer is waited for, up to 8 s, and copied.
+      function heldRow() { return (S.data.rowsOf(R.data) || []).filter(function (r) { return r && typeof r === 'object' && !/^zz-plant-/.test(String(r.key)); })[0] || null; }
+      var t0 = Date.now();
+      function shaped() { var t = heldRow(); if (t || Date.now() - t0 > 8000) return Promise.resolve(t); return wait(250).then(shaped); }
+      return shaped().then(function (template) {
+      template = template || SHAPES[name] || null;
       R.template = !!template;
       R.planted = [];
       for (var i = 0; i < ROWS; i++) { var k = 'zz-plant-' + i; R.planted.push(k); try { S.data.setPath(R.data + '/' + k, plant(template, i)); } catch (e) { R.plantError = String(e && e.message || e); } }
@@ -156,6 +175,7 @@ const PAGE = String.raw`(function (name, ROWS, LONG, PANE_W, PANE_H) {
           R.rowWidth = row ? row.getBoundingClientRect().width : 0;
           return R;
         });
+      });
       });
     });
   }).then(function () {
@@ -241,7 +261,7 @@ test.run('the world: searches to judge, a scratch node and a Chrome page', 0.2, 
   if (!TARGETS.length) { world = 'no search to judge in ' + short(GIVEN); return world; }
   const chrome = findChrome();
   if (!chrome) { world = 'no Chrome on this machine'; return world; }
-  W.node = await scratchNode();
+  W.node = await scratchNode(SERVERS);
   if (!W.node.up) { world = 'the scratch node did not come up'; return world; }
   W.page = await chromePage(chrome);
   if (W.page.error) { world = W.page.error; return world; }
@@ -254,7 +274,7 @@ test.run('the world: each search mounted, planted and opened on a page of its ow
     await W.page.send('Page.navigate', { url: W.node.base + '/face.html' });
     await until(function () { return W.page.evaluate('!!(window.spirit && window.spirit.ready)').then(Boolean); }, 20000);
     let got = null;
-    try { got = await Promise.race([W.page.evaluate('Promise.resolve(' + PAGE + '(' + JSON.stringify(n) + ',' + ROWS + ',' + JSON.stringify(LONG) + ',' + PANE_W + ',' + PANE_H + ')).then(function (r) { return JSON.stringify(r); })'), sleep(60000).then(function () { return null; })]); } catch (e) { got = null; }
+    try { got = await Promise.race([W.page.evaluate('Promise.resolve(' + PAGE + '(' + JSON.stringify(n) + ',' + ROWS + ',' + JSON.stringify(LONG) + ',' + PANE_W + ',' + PANE_H + ',' + JSON.stringify(VIA_LIST) + ',' + JSON.stringify(OPTIONS) + ',' + JSON.stringify(SHAPES) + ')).then(function (r) { return JSON.stringify(r); })'), sleep(60000).then(function () { return null; })]); } catch (e) { got = null; }
     let r = null; try { r = JSON.parse(got); } catch (e) { r = null; }
     REPORTS[n] = r || { name: n, fail: 'the page answered nothing within 60 s' };
     if (REPORTS[n].fail) failed.push(n + ': ' + REPORTS[n].fail);
