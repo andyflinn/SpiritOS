@@ -1153,6 +1153,21 @@ test.run('and its suite rows are marked deleted', 0.2, function () {
   const left = suiteRows(x1, Z + 'alpha.js').filter(function (r) { return !yes(r.deleted); });
   return (suiteRows(x1, Z + 'alpha.js').length > 0 && !left.length) || 'not deleted: ' + short(names(left));
 }, test.limit.quick);
+// A RESULT ARRIVING AFTER THE FILE IS GONE (found on wsl's node, 2026-11-13: a classifier run that began before zzList's two
+// files were removed reported 2 s after, and their classifier rows stood live and red in his list for hours): the box's "A
+// removed file's row is marked deleted" holds for a late result too.
+let late = null;
+test.run('a result reported for a removed file is refused "no such file"', 0.2, async function () {
+  if (!x1) return NONODE;
+  late = await call(N.base, 'testicle.testicle.set', { script: Z + 'alpha.js', suite: 'spirit/test/scriptClassify.js', test: 'classifyable', verified: false, severity: 0.8 });
+  return (late.status !== 200 && /no such file/.test(late.text)) || 'testicle.set answered ' + late.status + ' ' + short(late.text);
+}, test.limit.quick);
+test.run('and every suite row of the removed file stays deleted', 0.2, async function () {
+  if (!late) return NONODE;
+  const t = await after();
+  const live = suiteRows(t, Z + 'alpha.js').filter(function (r) { return !yes(r.deleted); });
+  return (suiteRows(t, Z + 'alpha.js').length > 0 && !live.length) || 'live again: ' + short(names(live));
+}, test.limit.slow);
 
 // goal/G47.1, the cycle "run a suite from the script tab", the box: "A new testicle verb, run {script, suite, testicle}", "For
 // this cycle the server answers run at once, and does not wait for the suite to complete", "testicle given: the suite runs up
