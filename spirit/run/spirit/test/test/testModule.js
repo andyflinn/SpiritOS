@@ -5,7 +5,7 @@
 // judge no module: testModule.js looks for ./spirit.js."
 //
 // testsFor() of ../testModule.js, on this tree as it stands, read only: the general rule tests of spirit/test/
-// folder (spirit-<child|sibling>-<x>Rules.js, named after spirit.js, which is at spirit/spirit.js since goal/G43.18) are
+// folder (spirit-<child|sibling>-<general|node|browser>.js, named after spirit.js, which is at spirit/spirit.js since goal/G43.18) are
 // handed a module under spirit/run/spirit/ as the file they judge, on the module's blast radius and on the whole list.
 
 const fs = require('fs');
@@ -16,11 +16,12 @@ const { testsFor } = require(path.join(RUN, 'spirit', 'test', 'testModule.js'));
 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 400); }
 
-// The general rule tests in spirit/test/, beside spirit/spirit.js (goal/G43.32).
-// The branch rules (spirit-sibling-branchRules.js) judge branch folders, not modules: judged below, apart.
-const GENERAL = fs.readdirSync(path.join(RUN, 'spirit', 'test')).filter(function (n) { return /^spirit-(child|sibling)-\w+Rules\.js$/.test(n) && n !== 'spirit-sibling-branchRules.js'; })
+// The general tests in spirit/test/, beside spirit/spirit.js (goal/G43.32), of the three kinds since goal/G47.1, box v94, 2:
+// "there will be, from now on only 3 types of general tests, at any level of the tree: <file>-<child | sibling>-general.js,
+// <file>-<child | sibling>-node.js, <file>-<child | sibling>-browser.js".
+const KINDS = ['spirit/test/spirit-sibling-browser.js', 'spirit/test/spirit-sibling-general.js', 'spirit/test/spirit-sibling-node.js'];
+const GENERAL = fs.readdirSync(path.join(RUN, 'spirit', 'test')).filter(function (n) { return /^spirit-(child|sibling)-/.test(n) && /.js$/.test(n); })
   .map(function (n) { return 'spirit/test/' + n; }).sort();
-const BRANCH_RULES = 'spirit/test/spirit-sibling-branchRules.js';
 // The module judged: an opted-in product module under spirit/run/spirit/ (it has its own spirit/test/<name>.js).
 const MODULE = 'spirit/apiDoor.js';
 // What testsFor answers, asked once by the test that first needs it.
@@ -29,8 +30,8 @@ function radius() { return W.radius || (W.radius = testsFor(MODULE)); }
 function all() { return W.all || (W.all = testsFor('')); }
 
 // the world
-test.run('the world: spirit/test/ holds four general rule tests, spirit-child-generalRules.js folded into spirit-sibling-generalRules.js', 0.2, function () {
-  return GENERAL.length === 4 || 'the general rule tests found: ' + short(GENERAL);
+test.run('the world: spirit/test/ holds the general tests of spirit.js, of the three kinds and no other', 0.2, function () {
+  return GENERAL.join() === KINDS.join() || 'the general tests found: ' + short(GENERAL);
 }, test.limit.quick);
 test.run('the world: spirit.js, the module they are named after, is spirit/spirit.js, and none is at the run root', 0.2, function () {
   return (fs.existsSync(path.join(RUN, 'spirit', 'spirit.js')) && !fs.existsSync(path.join(RUN, 'spirit.js'))) || 'spirit.js is not where goal/G43.18 put it';
@@ -48,10 +49,9 @@ function onRadius(g) {
   const hit = radius().filter(function (e) { return e.test === g && e.file === MODULE; });
   return hit.length === 1 || g + ' is not given ' + MODULE + ' to judge; its entries: ' + short(radius().filter(function (e) { return e.test === g; }));
 }
-test.run('spirit/test/spirit-sibling-generalRules.js judges spirit/apiDoor.js on its blast radius', 0.2, function () { return onRadius('spirit/test/spirit-sibling-generalRules.js'); }, test.limit.quick);
-test.run('spirit/test/spirit-sibling-searchRules.js judges spirit/apiDoor.js on its blast radius', 0.2, function () { return onRadius('spirit/test/spirit-sibling-searchRules.js'); }, test.limit.quick);
-test.run('spirit/test/spirit-sibling-testReachRules.js judges spirit/apiDoor.js on its blast radius', 0.2, function () { return onRadius('spirit/test/spirit-sibling-testReachRules.js'); }, test.limit.quick);
-test.run('spirit/test/spirit-sibling-titleRules.js judges spirit/apiDoor.js on its blast radius', 0.2, function () { return onRadius('spirit/test/spirit-sibling-titleRules.js'); }, test.limit.quick);
+test.run('spirit/test/spirit-sibling-general.js judges spirit/apiDoor.js on its blast radius', 0.2, function () { return onRadius('spirit/test/spirit-sibling-general.js'); }, test.limit.quick);
+test.run('spirit/test/spirit-sibling-node.js judges spirit/apiDoor.js on its blast radius', 0.2, function () { return onRadius('spirit/test/spirit-sibling-node.js'); }, test.limit.quick);
+test.run('spirit/test/spirit-sibling-browser.js judges spirit/apiDoor.js on its blast radius', 0.2, function () { return onRadius('spirit/test/spirit-sibling-browser.js'); }, test.limit.quick);
 
 // ONE TEST FILE PER SCRIPT (goal/G45.1; spirit/run/spirit/test/TEST_SYSTEM.md; Andy: "there is ONE FUCKING test file in the
 // test folder per script file, and every fucking test that applies to that file must be inserted in the that one file"):
@@ -107,38 +107,26 @@ function onWhole(g) {
   const judged = all().filter(function (e) { return e.test === g && e.file; });
   return judged.some(function (e) { return e.file === MODULE; }) || g + ' judges no module on the whole list; its entries: ' + short(all().filter(function (e) { return e.test === g; }));
 }
-test.run('spirit/test/spirit-sibling-generalRules.js judges modules on the whole list, spirit/apiDoor.js among them', 0.2, function () { return onWhole('spirit/test/spirit-sibling-generalRules.js'); }, test.limit.quick);
-test.run('spirit/test/spirit-sibling-searchRules.js judges modules on the whole list, spirit/apiDoor.js among them', 0.2, function () { return onWhole('spirit/test/spirit-sibling-searchRules.js'); }, test.limit.quick);
-test.run('spirit/test/spirit-sibling-testReachRules.js judges modules on the whole list, spirit/apiDoor.js among them', 0.2, function () { return onWhole('spirit/test/spirit-sibling-testReachRules.js'); }, test.limit.quick);
-test.run('spirit/test/spirit-sibling-titleRules.js judges modules on the whole list, spirit/apiDoor.js among them', 0.2, function () { return onWhole('spirit/test/spirit-sibling-titleRules.js'); }, test.limit.quick);
+test.run('spirit/test/spirit-sibling-general.js judges modules on the whole list, spirit/apiDoor.js among them', 0.2, function () { return onWhole('spirit/test/spirit-sibling-general.js'); }, test.limit.quick);
+test.run('spirit/test/spirit-sibling-node.js judges modules on the whole list, spirit/apiDoor.js among them', 0.2, function () { return onWhole('spirit/test/spirit-sibling-node.js'); }, test.limit.quick);
+test.run('spirit/test/spirit-sibling-browser.js judges modules on the whole list, spirit/apiDoor.js among them', 0.2, function () { return onWhole('spirit/test/spirit-sibling-browser.js'); }, test.limit.quick);
 
-// THE BRANCH RULES JUDGE EACH BRANCH FOLDER ONCE (goal/G43.32; Andy: "app-branches are easily identified using the
-// patterns: spirit/app/<name>/<name>.js, spirit/app/<name>/<name>.json", "and system branches by: spirit.<name>.api.js &&
-// spirit.<name>.data.js", to Q7: "branch test only needs to associate a failure with either spirit/<name>/ or
-// spirit/app/<name>/").
-// the branch rules: one entry per branch folder
+// THE BRANCH RULES JUDGE A SCRIPT'S BRANCH FROM THE SCRIPT (goal/G47.1, box v94, 2: they are a part of
+// spirit-sibling-general.js, which is one entry per module like every general test): no entry is a branch folder.
 const { branchesOf } = require(path.join(RUN, 'spirit', 'test', 'testModule.js'));
-let branches = null;
-test.run('the world: twenty or more branch folders, read by both patterns, an app by its manifest since goal/G43.32 (spirit/app/test/ and spirit/test/ are none)', 0.2, function () {
-  branches = branchesOf(RUN).map(function (b) { return b.dir; });
-  const onDisc = [];
-  fs.readdirSync(path.join(RUN, 'spirit'), { withFileTypes: true }).forEach(function (d) { if (d.isDirectory() && fs.existsSync(path.join(RUN, 'spirit', d.name, 'api.js')) && fs.existsSync(path.join(RUN, 'spirit', d.name, 'data.js'))) onDisc.push('spirit/' + d.name); });
-  fs.readdirSync(path.join(RUN, 'spirit', 'app'), { withFileTypes: true }).forEach(function (d) { if (d.isDirectory() && fs.existsSync(path.join(RUN, 'spirit', 'app', d.name, d.name + '.json'))) onDisc.push('spirit/app/' + d.name); });
-  return (fs.existsSync(path.join(RUN, BRANCH_RULES)) && branches.length >= 20 && branches.slice().sort().join() === onDisc.sort().join() && branches.indexOf('spirit/app/test') === -1 && branches.indexOf('spirit/test') === -1) ||
-    'branchesOf: ' + short(branches) + ', the disc by both patterns: ' + short(onDisc);
+test.run('no general test is handed a branch folder, on the whole list', 0.2, function () {
+  const dirs = branchesOf(RUN).map(function (b) { return b.dir; });
+  const folders = all().filter(function (e) { return e.file && dirs.indexOf(e.file) !== -1; });
+  return (dirs.length >= 20 && !folders.length) || 'branch folders handed: ' + short(folders.slice(0, 5));
 }, test.limit.quick);
-test.run('on the whole list it has one entry per branch folder', 0.2, function () {
-  if (!branches) return 'no branch folders read: the world failed';
-  const brAll = all().filter(function (e) { return e.test === BRANCH_RULES; }).map(function (e) { return e.file; });
-  return (brAll.length === branches.length && brAll.slice().sort().join() === branches.slice().sort().join()) || 'its entries: ' + short(brAll);
+test.run('on the blast radius of spirit/app/desk/desk.js, spirit-sibling-general.js judges desk.js itself', 0.2, function () {
+  const desk = testsFor('spirit/app/desk/desk.js').filter(function (e) { return e.test === 'spirit/test/spirit-sibling-general.js'; }).map(function (e) { return e.file; });
+  return desk.join() === 'spirit/app/desk/desk.js' || 'its entries there: ' + short(desk);
 }, test.limit.quick);
-test.run('on spirit/app/desk/desk.js\'s blast radius, the one branch holding it, spirit/app/desk, not spirit/app', 0.2, function () {
-  const brDesk = testsFor('spirit/app/desk/desk.js').filter(function (e) { return e.test === BRANCH_RULES; }).map(function (e) { return e.file; });
-  return brDesk.join() === 'spirit/app/desk' || 'its entries there: ' + short(brDesk);
-}, test.limit.quick);
-test.run('a module in no branch (spirit/apiAuth.js) gets no entry of it', 0.2, function () {
-  const brNone = testsFor('spirit/apiAuth.js').filter(function (e) { return e.test === BRANCH_RULES; });
-  return !brNone.length || 'spirit/apiAuth.js gets ' + short(brNone);
+// THE SPECIAL GENERAL TESTS (goal/G47.1, box v94, 1): testicle runs spirit/test/scriptClassify.js itself; it is no test here.
+test.run('spirit/test/scriptClassify.js, the classifier, is listed as no test and handed no module', 0.2, function () {
+  const listed = all().filter(function (e) { return e.test === 'spirit/test/scriptClassify.js' || e.file === 'spirit/test/scriptClassify.js'; });
+  return (all().length > 0 && !listed.length) || 'listed: ' + short(listed);
 }, test.limit.quick);
 
 // THE TOOLS OF spirit/test/ (goal/G43.32, Q2): tools, not tests, and judged as no module; their own tests are listed.

@@ -85,7 +85,7 @@ vertically"*.
   bottom. The chat opens pinned to the bottom and stays there after a new line: a box of the chat is scrolled to its
   end, or the lines are shown reversed (`flex-direction: column-reverse`).
 - That every box of the panel is bounded, tall and wide, is the shell's general rules' check
-  (`spirit/test/spirit-sibling-generalRules.md`), which mounts this app.
+  (`spirit/test/spirit-sibling-browser.md`), which mounts this app.
 
 ### Opened on an item, in a real browser (goal/G41.22)
 

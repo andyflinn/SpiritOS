@@ -15,8 +15,6 @@
 //     judges, that file in `file`: -child- judges ./<x>.js and ./<x>/ and below, -sibling- ./ and below. It judges every
 //     module in its reach, with its own test or without (goal/G47.1; Andy: "all general test will auto-opt in ANY
 //     applicable file."), and on a blast radius only the changed file and the files below it.
-//   - A branch-rules test, ./test/<x>-sibling-branchRules.js, is one entry per branch folder (branchesOf), the folder in
-//     `file`; on a blast radius, the branch holding the changed file.
 // It names tests and runs none: the harness and deskVerify run each entry as its own suite, a general one with its file
 // as the argument. Run from the command line it prints one entry a line, "<test>" or "<test> <file>".
 
@@ -80,8 +78,6 @@ function branchesOf(root) {
   dirs('spirit/app').forEach(function (n) { if (has('spirit/app/' + n + '/' + n + '.json')) out.push({ dir: 'spirit/app/' + n, name: n, kind: 'app' }); });
   return out.sort(function (x, y) { return x.dir < y.dir ? -1 : 1; });
 }
-// A branch-rules test, ./test/<x>-sibling-branchRules.js: one entry per branch folder, not per module.
-function isBranchRules(t) { return /-sibling-branchRules\.js$/.test(path.posix.basename(t)); }
 function under(p, dir) { return dir === '' || p.indexOf(dir + '/') === 0; }
 
 // A general test's reach, or null when it is a plain test: the folder holding its test folder, the module it is named
@@ -147,13 +143,8 @@ function testsFor(file, opts) {
   tree.tests.forEach(function (t) {
     const g = generalOf(t, has);
     if (!g) return;
-    // A branch-rules test judges branch folders: every one with no path, and the one holding the path on a blast radius.
-    if (isBranchRules(t)) {
-      // The branch holding a path is the deepest one: spirit/app/desk/desk.js is desk's, not the app branch spirit/app's.
-      const holding = branchesOf(root).filter(function (b) { return target === b.dir || under(target, b.dir); }).sort(function (x, y) { return y.dir.length - x.dir.length; }).slice(0, 1);
-      (target ? holding : branchesOf(root)).forEach(function (b) { add(t, b.dir); });
-      return;
-    }
+    // The branch rules judge a script's branch from the script itself since goal/G47.1, box v94, 2 (their part of
+    // ./spirit-sibling-general.js): every general test is one entry per module, none per branch folder.
     judged.filter(g.judges).forEach(function (m) { add(t, m); });
   });
   return out;

@@ -35,17 +35,24 @@ modules reads as one result per module.
 A test that does not judge the one file it is handed is never a general test: a `-sibling-` beside `spirit.js` runs once per
 module, 111 times (goal/G43.2; Andy: *"it looks to me like a lazy-funcking-ass placement of tests"*). A test that covers
 several modules end to end is a test of the module it is most about, in its `./test/<name>.js`, and runs once. **Every test matches a production file** (goal/G43.27; Andy: *"wsl: every test in run:/ MUST MATCH a production
-file."*): a test named after no module is garbage, and `spirit/test/spirit-sibling-noFuckingGarbage.js` goes red on it.
+file."*): a test named after no module is garbage, and the garbage rule of `spirit/test/spirit-sibling-general.js` goes red
+on it.
 
-The general tests of `spirit.js` (`spirit/run/spirit/test/spirit-sibling-generalRules.js`,
-`spirit-sibling-searchRules.js`, `spirit-sibling-testReachRules.js`, `spirit-sibling-titleRules.js`,
-`spirit-sibling-noFuckingGarbage.js`, `spirit-sibling-branchRules.js`) stand in `spirit/run/spirit/test/` beside
-`spirit/run/spirit/spirit.js` (goal/G43.32): each judges every module in `spirit/` and below. The module rules once in
-`spirit-child-generalRules.js`, which judged the same files, are in `spirit-sibling-generalRules.js` since goal/G47.1.
+**Three kinds of general test** (goal/G47.1, box v94, 2): *"there will be, from now on only 3 types of general tests, at any
+level of the tree: <file>-<child | sibling>-general.js, <file>-<child | sibling>-node.js,
+<file>-<child | sibling>-browser.js"*; *"with no script-argument, they will process all applicable scripts. else it will
+process all scripts listed in the arguments that fit"*; *"node only scripts are tested by -general AND -node general tests.
+browser only scripts are tested by -general and -browser general tests. if a script is NOT browser only AND NOT node only,
+it will be tested by all 3 categories."* A script's class is testicle's (its script row's browserOnly and nodeOnly, set
+by `spirit/test/scriptClassify.js`, a special general test under its own name, `testModule.js`'s `SPECIAL`).
+
+The general tests of `spirit.js` stand in `spirit/run/spirit/test/` beside `spirit/run/spirit/spirit.js` (goal/G43.32):
+each judges every module in `spirit/` and below. `spirit-sibling-general.js` holds the rules read from a script's file,
+each part the test it was (branchRules, titleRules, noFuckingGarbage, searchRules, testReachRules).
 
 **The tools of `spirit/run/spirit/test/`** (goal/G43.32, Q2; Andy: *"We need special rules for run://spirit/test/  it will
 be where run://spirit/app/test/ finds it's main tools."*): `testReport.js`, `testModule.js` and `headLessChrome.js` are
-tools, not tests and no modules. `testModule.js` lists none of them, `spirit-sibling-noFuckingGarbage.js` does not
+tools, not tests and no modules. `testModule.js` lists none of them, the garbage rule does not
 judge them as tests named after no module, and their own tests stay in `spirit/run/spirit/test/test/`. Every product
 test requires them from there.
 
@@ -82,5 +89,5 @@ An item that names one file therefore gets the right tests without listing them.
   (a crash or a hang is 0.7, set by the reporter), its time limit one of the reporter's named limits, `test.limit.quick`, `.slow` or `.long`. The body
   answers `true`, or what went wrong. Setup goes into a "the world:" test, cleanup into `test.after(fn)`. Each test is
   reported by itself to `testicle.testicle.set` of the node of the checkout it runs in; `--test <title>` runs the tests up
-  to that one. `spirit-sibling-titleRules.js` holds every suite to it. Its contract: `./test/testReport.md`.
+  to that one. The titleRules part of `spirit-sibling-general.js` holds every suite to it. Its contract: `./test/testReport.md`.
 - A product test that finds a module breaking a rule fails that module's test, not the item that brought the test.

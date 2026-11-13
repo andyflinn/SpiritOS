@@ -1,17 +1,17 @@
 'use strict';
 
-// spirit/run/spirit/test/app-child-generalRules.js [file]
-// THE RULES FOR THE SUB-FOLDERS OF spirit/app/ (goal/G43.32; spec: ./app-child-generalRules.md). Andy, the box: "rules for
-// sub-folders of run://spirit/app/", 0 to 6, and of its name: "if app-child-generalRules.js works that is my decision." A
+// spirit/run/spirit/test/app-child-general.js [file]
+// THE RULES FOR THE SUB-FOLDERS OF spirit/app/ (goal/G43.32; spec: ./app-child-general.md). Andy, the box: "rules for
+// sub-folders of run://spirit/app/", 0 to 6, and of its name: "if app-child-general.js works that is my decision." A
 // -child- general test beside spirit/app.js (./TEST_SYSTEM.md): it judges spirit/app.js and spirit/app/ and below.
 //
-//   node spirit/test/app-child-generalRules.js spirit/app/desk/desk.js     the app the file is in
-//   node spirit/test/app-child-generalRules.js                             every sub-folder of spirit/app/
+//   node spirit/test/app-child-general.js spirit/app/desk/desk.js     the app the file is in
+//   node spirit/test/app-child-general.js                             every sub-folder of spirit/app/
 //
 // Judged on disc, from the files and the code (comments left out): no node is started. Each rule is one test over
 // every sub-folder judged, its detail naming each app's folder that breaks it (goal/G47.2: one title, unique in the
-// suite). What an element script places, a page judges in spirit-sibling-generalRules.js; what an api.js serves,
-// spirit-sibling-branchRules.js.
+// suite). What an element script places, a page judges in spirit-sibling-browser.js; what an api.js serves,
+// spirit-sibling-general.js (branchRules).
 
 const fs = require('fs');
 const path = require('path');

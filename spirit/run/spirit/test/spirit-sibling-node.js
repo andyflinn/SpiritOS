@@ -1,0 +1,124 @@
+'use strict';
+// spirit/run/spirit/test/spirit-sibling-node.js [<script> ...]
+// THE -node GENERAL TEST BESIDE spirit.js (goal/G47.1, box v94, 2: "there will be, from now on only 3 types of general
+// tests, at any level of the tree: <file>-<child | sibling>-general.js, <file>-<child | sibling>-node.js,
+// <file>-<child | sibling>-browser.js", "existing general tests fold into the appropriate of the 3 new general test
+// name-formats"). Its contract: ./spirit-sibling-node.md.
+//
+// The checks that load a script on the node: generalRules' "required alone on the node" (goal/G43.32, the box, testing
+// point 3; Andy: "a general test for any scriptFile.js is to spirit.require() it.", Q5: "I'm NOT demanding that all scripts
+// load in all environments, I'm demanding that they're placed in the spirit object according to these rules IF they are
+// required."). On the node a script answers at once and stands at spirit.required.<its path>; a branch's api.js binds its
+// branch and is judged by its place alone. Each script in a process of its own, in a copy of the tree, so a server script
+// never starts on the live checkout.
+//
+// "with no script-argument, they will process all applicable scripts. else it will process all scripts listed in the
+// arguments that fit"; "node only scripts are tested by -general AND -node general tests ... if a script is NOT browser only
+// AND NOT node only, it will be tested by all 3 categories": testicle hands it no browser-only script. No argument: every
+// product script, a script that does not load on the node left unjudged. Several: each in a run of its own (below).
+require('../spirit.js');
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
+const { spawn, spawnSync, execFileSync } = require('child_process');
+
+const RUN = path.join(__dirname, '..', '..');
+const ARGV = process.argv.slice(2);
+const VERIFY = ARGV.indexOf('--verify-port') !== -1 ? ARGV.slice(ARGV.indexOf('--verify-port'), ARGV.indexOf('--verify-port') + 2) : [];
+const GIVEN = ARGV.filter(function (a, i) { return a.indexOf('--') !== 0 && ARGV[i - 1] !== '--verify-port' && ARGV[i - 1] !== '--test'; })
+  .map(function (a) { return String(a).split(path.sep).join('/').replace(/^\.?\//, '').replace(/^spirit\/run\//, ''); });
+
+// SEVERAL SCRIPTS: each in a run of its own, so each reports for itself (testReport takes its script from the argument).
+if (GIVEN.length > 1) {
+  let failed = 0;
+  GIVEN.forEach(function (one) {
+    const r = spawnSync(process.execPath, [__filename, one].concat(VERIFY), { cwd: RUN, encoding: 'utf8', maxBuffer: 1 << 26 });
+    process.stdout.write(String(r.stdout || '') + String(r.stderr || ''));
+    if (r.status !== 0) failed += 1;
+  });
+  process.exit(failed ? 1 : 0);
+}
+
+const test = require('./testReport.js');
+const SKIP_DIRS = ['state', 'app-state', '.git', 'node_modules'];
+function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
+function placeKeys(rel) { return rel.replace(/\.js$/, '').split('/'); }
+function productScripts() {
+  return execFileSync('git', ['ls-files'], { cwd: RUN, encoding: 'utf8' }).split('\n')
+    .filter(function (f) { return /^spirit\/.+\.js$/.test(f) && !/(^|\/)test\//.test(f) && f !== 'spirit/spirit.js' && fs.existsSync(path.join(RUN, f)); });
+}
+function copyTree(from, to) {
+  fs.mkdirSync(to, { recursive: true });
+  fs.readdirSync(from, { withFileTypes: true }).forEach(function (d) {
+    if (d.isDirectory()) { if (SKIP_DIRS.indexOf(d.name) === -1) copyTree(path.join(from, d.name), path.join(to, d.name)); }
+    else if (d.isFile()) fs.copyFileSync(path.join(from, d.name), path.join(to, d.name));
+  });
+}
+function requireOnNode(run, rel) {
+  return new Promise(function (resolve) {
+    // A branch's api.js (decided 8) binds the branch, so it is waited on and judged by its place alone; every other script
+    // answers at once and stands at its place as that answer.
+    const iface = /\/api\.js$/.test(rel);
+    const probe = 'const path = require("path"); const s = require(path.join(process.cwd(), "spirit", "spirit.js"));' +
+      '(async function () { let at = null, err = "", promise = false; try { at = s.require(' + JSON.stringify(rel) + '); promise = !!(at && typeof at.then === "function"); if (' + iface + ' && promise) at = await at; } catch (e) { err = String(e && e.message || e); }' +
+      'const keys = ' + JSON.stringify(placeKeys(rel)) + '; const place = keys.reduce(function (o, k) { return o == null ? undefined : o[k]; }, s.required);' +
+      'process.stdout.write("\\n@@" + JSON.stringify({ err: err, promise: ' + iface + ' ? false : promise, placed: ' + iface + ' ? place !== undefined : place !== undefined && place === at }) + "\\n"); process.exit(0); }());';
+    const kid = spawn(process.execPath, ['-e', probe], { cwd: run, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true });
+    let out = '';
+    kid.stdout.on('data', function (d) { out += d; });
+    kid.stderr.on('data', function (d) { out += d; });
+    const t = setTimeout(function () { kid.kill('SIGKILL'); }, 20000);
+    kid.on('close', function () {
+      clearTimeout(t);
+      const m = /\n@@(.*)\n/.exec(out);
+      let r = null; try { r = m ? JSON.parse(m[1]) : null; } catch (e) { r = null; }
+      resolve(r || { err: 'it did not finish loading', promise: false, placed: false });
+    });
+  });
+}
+
+const E = { run: '', root: '' };
+test.run('the world: a copy of the tree to require the scripts in', 0.2, function () {
+  E.root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-node-'));
+  E.run = path.join(E.root, 'spirit', 'run');
+  copyTree(RUN, E.run);
+  return fs.existsSync(path.join(E.run, 'spirit', 'spirit.js')) || 'the copy holds no spirit/spirit.js';
+}, test.limit.slow);
+
+if (!GIVEN.length) {
+  // every product script, placed in spirit.required where it is required
+  test.run('the world: the product scripts, each required alone on the node and on a page', 0.2, function () {
+    E.req = productScripts();
+    return E.req.length > 100 || 'too few scripts to judge: ' + E.req.length;
+  }, test.limit.quick);
+  test.run('the world: some of them load on the node', 0.2, async function () {
+    if (!E.run || !E.req) return 'no copy of the tree: the world failed';
+    E.nodeLoaded = []; E.nodeBad = [];
+    for (const f of E.req) {
+      const r = await requireOnNode(E.run, f);
+      if (r.err) continue;
+      E.nodeLoaded.push(f);
+      if (r.promise) E.nodeBad.push(f + ': spirit.require answered a promise, not the module at once');
+      else if (!r.placed) E.nodeBad.push(f + ': nothing stands at spirit.required.' + placeKeys(f).join('.'));
+    }
+    return E.nodeLoaded.length > 0 || 'none loads on the node: nothing judged there';
+  }, test.limit.long);
+  test.run('on the node: all that load answer at once and stand at spirit.required.<path>', 0.4, function () {
+    if (!E.nodeLoaded) return 'nothing required on the node: the world failed';
+    return (E.nodeLoaded.length > 0 && !E.nodeBad.length) || E.nodeBad.length + ' of ' + E.nodeLoaded.length + ' do not; the first: ' + short(E.nodeBad.slice(0, 5));
+  }, test.limit.quick);
+} else {
+  const rel = GIVEN[0];
+  test.run('on the node: it loads, answers at once and stands at spirit.required.<path>', 0.4, async function () {
+    if (!E.run) return 'no copy of the tree: the world failed';
+    if (!fs.existsSync(path.join(RUN, rel))) return rel + ' is not there';
+    const r = await requireOnNode(E.run, rel);
+    if (r.err) return 'it does not load on the node: ' + short(r.err);
+    if (r.promise) return 'spirit.require answered a promise, not the module at once';
+    return r.placed || 'nothing stands at spirit.required.' + placeKeys(rel).join('.');
+  }, test.limit.slow);
+}
+
+test.after(function () {
+  if (E.root) try { fs.rmSync(E.root, { recursive: true, force: true }); } catch (e) { /* scratch */ }
+});

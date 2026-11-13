@@ -20,7 +20,7 @@ require('../../spirit.js');
 //   - a changed .js in a test/ folder is a suite, any other .js a product file; the node's state, .git and vendored
 //     code are never watched, and a file that is no script is let go;
 //   - the changes of one moment are taken together: testModule.js is run once, as its own process (a test file is run,
-//     never loaded: spirit-sibling-testReachRules.js), and the rows are written in one transaction.
+//     never loaded: spirit-sibling-general.js (testReachRules)), and the rows are written in one transaction.
 
 const fs = require('fs');
 const path = require('path');
@@ -204,6 +204,24 @@ const toClassify = db.prepare('SELECT name, hash FROM script WHERE reClassify = 
 const setClass = db.prepare('UPDATE script SET browserOnly = ?, nodeOnly = ?, reClassify = ?, changed = ? WHERE name = ?');
 const classified = db.prepare('UPDATE script SET reClassify = 0, changed = ? WHERE name = ? AND hash = ? AND reClassify = 1');
 function blocked(script) { const r = T.current.get(script, CLASSIFY, CLASSIFYABLE); return !!r && !r.verified; }
+// WHICH KIND JUDGES WHICH SCRIPT (goal/G47.1, box v94, 2: "node only scripts are tested by -general AND -node general tests.
+// browser only scripts are tested by -general and -browser general tests. if a script is NOT browser only AND NOT node only,
+// it will be tested by all 3 categories."): a -node general test never runs for a browser-only script, a -browser one never
+// for a node-only one. Such a suite row, met by the runner, is marked deleted, so it waits for no run; the script's next
+// change brings it back, and the class then standing decides again.
+const dropRow = db.prepare('UPDATE suite SET deleted = 1, changed = ? WHERE script = ? AND suite = ? AND deleted = 0');
+function fits(script, suite) {
+  const kind = (/-(?:child|sibling)-(node|browser)\.js$/.exec(path.posix.basename(suite)) || [])[1];
+  if (!kind) return true;
+  const sr = Q.script.get(script);
+  if (!sr) return true;
+  return kind === 'node' ? !sr.browserOnly : !sr.nodeOnly;
+}
+function unfit(script, suite) {
+  if (fits(script, suite)) return false;
+  if (dropRow.run(Date.now(), script, suite).changes) tell('suite', suiteServed(Q.suiteRow.get(script, suite)), 'deleted');
+  return true;
+}
 function chooseJob() {
   if (there(CLASSIFY)) {
     const owed = toClassify.all().filter(function (r) { return there(r.name); });
@@ -213,10 +231,10 @@ function chooseJob() {
       return { classify: true, script: '', suite: CLASSIFY, title: '', scripts: owed.map(function (r) { return r.name; }), hashes: hashes };
     }
   }
-  while (front.length) { const f = front.shift(); if (there(f.script) && there(f.suite) && !blocked(f.script)) return f; }
+  while (front.length) { const f = front.shift(); if (there(f.script) && there(f.suite) && !blocked(f.script) && !unfit(f.script, f.suite)) return f; }
   // Interactive: only what was pressed runs; the flagged rows wait for a press, or for auto.
   if (prefs.interactive) return null;
-  const rows = flaggedRows.all().filter(function (r) { return r.suite !== CLASSIFY && there(r.script) && there(r.suite) && !blocked(r.script); });
+  const rows = flaggedRows.all().filter(function (r) { return r.suite !== CLASSIFY && there(r.script) && there(r.suite) && !blocked(r.script) && !unfit(r.script, r.suite); });
   // General tests first, "because they tend to get most coverage fastest" (Andy); then by name, so the order is stable.
   rows.sort(function (a, b) { return (isGeneral(b.suite) - isGeneral(a.suite)) || (a.suite < b.suite ? -1 : a.suite > b.suite ? 1 : 0) || (a.script < b.script ? -1 : a.script > b.script ? 1 : 0); });
   return rows.length ? { script: rows[0].script, suite: rows[0].suite, title: '' } : null;

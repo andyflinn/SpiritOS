@@ -107,7 +107,7 @@ const PLANT = {
 // The kept rows of an older testicle.db, for a script not on disc, so no change of this test's touches them.
 const OLD = { name: 'spirit/zzTesticle/older.js', suite: 'spirit/zzTesticle/test/older.js', hash: 'an older hash', changed: 1700000000000 };
 // The general test changed in the scratch copy: its entries name every file of its reach.
-const GENERAL = 'spirit/test/spirit-sibling-titleRules.js';
+const GENERAL = 'spirit/test/spirit-sibling-general.js';
 
 function scratch() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-testicle-server-'));

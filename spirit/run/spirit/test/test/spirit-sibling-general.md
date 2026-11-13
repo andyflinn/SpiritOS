@@ -1,6 +1,7 @@
-# spirit/test/test/spirit-sibling-noFuckingGarbage.js
+# spirit/test/test/spirit-sibling-general.js
 
-The tests of `spirit/test/spirit-sibling-noFuckingGarbage.js`, the garbage rule, and of no other module.
+The tests of the garbage rule, the noFuckingGarbage part of `spirit/test/spirit-sibling-general.js` (goal/G47.1, box v94, 2:
+the general tests folded into three), and of no other part.
 
 ## What it asserts (goal/G47.1, the cycle "missing tests reported")
 

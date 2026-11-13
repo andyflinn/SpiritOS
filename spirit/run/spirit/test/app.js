@@ -56,7 +56,7 @@ test.run('search takes one optional search string, q, and no filters', 0.2, func
 }, test.limit.quick);
 
 // A PLUGIN'S DESCRIPTION (Andy, box: "containing identity:icon and identity:label").
-// That server.json names both is a rule of every app branch, judged in ./spirit-sibling-branchRules.js (goal/G43.32).
+// That server.json names both is a rule of every app branch, judged in ./spirit-sibling-general.js (branchRules) (goal/G43.32).
 const SERVER = path.join(FOLDER, 'server');
 let identity = null;
 try { identity = JSON.parse(fs.readFileSync(path.join(SERVER, 'server.json'), 'utf8')).identity; } catch (e) { identity = null; }

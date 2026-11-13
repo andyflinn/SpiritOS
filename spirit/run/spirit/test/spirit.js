@@ -719,8 +719,8 @@ test.run('in a process: require(spirit.js) gives spirit.data, the cache', 0.2, f
 
 // ── 8. A MODULE THAT DOES NOT LOAD spirit.js FIRST GOES RED ──────────
 // 8. a module that does not load spirit.js first goes red
-// The module rules are in spirit-sibling-generalRules.js since goal/G47.1 (spirit-child-generalRules.js folded in).
-const rule = path.join(RUN, 'spirit', 'test', 'spirit-sibling-generalRules.js');
+// The module rules are in spirit-sibling-general.js (its generalRules part) since goal/G47.1, box v94, 2.
+const rule = path.join(RUN, 'spirit', 'test', 'spirit-sibling-general.js');
 test.run('the general rules pass spirit.js itself', 0.2, function () {
   const onSpirit = spawnSync(process.execPath, [rule, 'spirit/spirit.js'], { cwd: RUN, encoding: 'utf8' });
   return (/it sets the global spirit before its first require/.test(onSpirit.stdout) && /✅:\d+/.test(onSpirit.stdout) && !/❌/.test(onSpirit.stdout)) || 'the general rules on spirit.js: ' + short(onSpirit.stdout.slice(-200));
@@ -1371,7 +1371,7 @@ test.run('the world: spirit/app/contact/ is an app folder with no api.js (Andy: 
   return (fs.existsSync(path.join(RUN, 'spirit', 'app', 'contact')) && !fs.existsSync(path.join(RUN, 'spirit', 'app', 'contact', 'api.js'))) || 'spirit/app/contact/ is not as Andy said';
 }, test.limit.quick);
 // That no branch's name has a second api.js in the tree is judged on each branch folder, as are an app's family found
-// where its api.js is and a page getting each branch's own data.js (./spirit-sibling-branchRules.js, goal/G43.32). Here,
+// where its api.js is and a page getting each branch's own data.js (./spirit-sibling-general.js (branchRules), goal/G43.32). Here,
 // the finder itself, on folders planted to break each rule.
 
 // A scratch node, then folders planted into its copy that break each rule.

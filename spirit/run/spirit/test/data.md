@@ -11,7 +11,7 @@ node.js Process like DeskClient uses the Exact same code as the browser for the 
 is the appServer serializes the cache to disk."*
 
 What every branch's `data.js` must be (there, its branches named by it alone, no disk, its contract, its watch, served
-and found by its name) is judged on each branch folder by `./spirit-sibling-branchRules.js` (goal/G43.32, Q6, Q7). Here,
+and found by its name) is judged on each branch folder by `./spirit-sibling-general.js (branchRules)` (goal/G43.32, Q6, Q7). Here,
 what judges no branch. The numbers are those of the requirements before they moved.
 
 ### Requirements
@@ -72,7 +72,7 @@ Andy, box: *"we rename it spirit/data.js and it IS the the spirit.data object."*
 ### Requirements
 
 Each family's own (its `data.js` there, the old file gone, none of it rolled by hand, `data` and `cache` in node and
-on a page) is judged on each branch folder by `./spirit-sibling-branchRules.js` since goal/G43.32. Here, what judges
+on a page) is judged on each branch folder by `./spirit-sibling-general.js (branchRules)` since goal/G43.32. Here, what judges
 no one branch: one helper for all, no old names in the code, the shape of `spirit.data` and `spirit.app`, the cache by
 node, the reads moved.
 

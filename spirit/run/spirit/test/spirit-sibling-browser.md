@@ -1,4 +1,21 @@
-# spirit-sibling-generalRules.js
+# spirit/test/spirit-sibling-browser.js
+
+The -browser general test beside spirit.js (goal/G47.1, box v94, 2: *"there will be, from now on only 3 types of general
+tests"*, *"existing general tests fold into the appropriate of the 3 new general test name-formats"*). It holds the page
+checks of generalRules, every title kept: every product script required on a page and placed at spirit.required.<path>,
+every element script's factory at spirit.element.<path>, every page module's own page green, and for a file its page:
+mounted by itself, nothing thrown, nothing missing, no console error, its box kept, its pictographs in the icon element,
+its fields stopping at their limits, its calls through spirit, its redraws, its writes, its searches, its destroy.
+The file-reading checks of generalRules are `spirit-sibling-general.js's`, its node checks `spirit-sibling-node.js's`.
+
+    node spirit/test/spirit-sibling-browser.js [<script> ...]
+
+- *"with no script-argument, they will process all applicable scripts. else it will process all scripts listed in the
+  arguments that fit"*: no argument, every page module; one script, its page; several, each in a run of its own.
+- *"browser only scripts are tested by -general and -browser general tests"*: testicle hands it no node-only script.
+
+generalRules' contract as it stood (its page parts are this test's):
+
 
 The general rules of a module, a shell app or an element (goal/G41.18), the page rules judged in a real browser. It runs
 once per file, the file its argument:
@@ -53,7 +70,7 @@ Andy, on G41.18:
   itself, to \"unit\" tests?"*
 - *"add that test: shell-child-generalRules.js"*
 
-## How it runs
+### How it runs
 
 - A scratch copy of the tracked files of `spirit/run`, on a node of its own, on a free port. Neither Andy's node nor an
   agent's is touched. A working-tree change to a tracked file is in the copy; a new file is in it once git knows it.
@@ -68,7 +85,7 @@ Andy, on G41.18:
   reports and the real layout it drew. It takes seconds per file, so it belongs to the general rules and not to an
   item's red.
 
-## The page it needs: the DEBUG page, `headLessBrowser`
+### The page it needs: the DEBUG page, `headLessBrowser`
 
 Made by the node from the address (`spirit/run/spirit/DEBUG/headLessBrowser.js`); there is no page file of its own, and
 it names no element (Andy, of the `shell/mount.html` it replaces: *"why are there elements hard-coded in there?"*).
@@ -89,7 +106,7 @@ it names no element (Andy, of the `shell/mount.html` it replaces: *"why are ther
   - `box`: the mount box;
   - `destroy`: for an element, what its create answered as destroy.
 
-## Requirements: what it judges per file
+### Requirements: what it judges per file
 
 Box v23: *"Clean mount: with its container alone it mounts, loads its own parts, throws nothing even when unconfigured
 (it says it is not configured), asks for no missing file, logs no console error, and destroy leaves the container
@@ -229,7 +246,7 @@ cuts the extra off, so nothing spills: `spirit/element/codeMirror` and `shell/te
 hold only the library's own sizer, as long as the text, and nothing is ever mounted in one; they are not asked. The
 editor's scroller still is.
 
-## What its test must try to break
+### What its test must try to break
 
 - A file that mounts only because the page preloaded something.
 - A file that asks for a file that is not there, throws, or logs an error, its options missing included.
@@ -250,22 +267,22 @@ editor's scroller still is.
 
 **The app family's selector is an element too** (goal/G43.2): `spirit/app/app/element.js` and the three files beside it in `spirit/app/appSelector/` are judged as the shell's elements are.
 
-## Requirements (goal/G43.30): run://process is named nowhere
+### Requirements (goal/G43.30): run://process is named nowhere
 
 Andy, goal/G43.20: *"that whole run://process folder NEEDS killing with ALL references to it in code, test and documentation."*; goal/G43.30: *"WSL, your tests make sure that none of the affected modules even mention "spirit/run/process/""*.
 
 - **Every file it judges** names neither `spirit/run/process` nor `run://process`, in its code or its comments: the whole text is read.
 - **Run with no file** (every module): every tracked `.js`, `.html` and `.json` of spirit/run/ outside a test folder and the vendored folders is read the same way, and none may name it; the count read is said, and none read is red.
 
-## What its test must try to break (goal/G43.30)
+### What its test must try to break (goal/G43.30)
 
 - A mention in a comment, or written `run:/process`; a module the scan skips because it is neither an app nor an element.
 
-## goal/G43.31: every branch is named as its folder
+### goal/G43.31: every branch is named as its folder
 
 Judged on each branch folder by `./spirit-sibling-branchRules.js` since goal/G43.32.
 
-## Requirements (goal/G43.32): run://test/ is moved into run://spirit/test/
+### Requirements (goal/G43.32): run://test/ is moved into run://spirit/test/
 
 Andy: *"we'll move the contents of run://test/   into run://spirit/test/ first."*; on Q2: *"We need special rules for
 run://spirit/test/  it will be where run://spirit/app/test/ finds it's main tools."*; and his concluding point: *"this move
@@ -286,14 +303,14 @@ Judged in the run with no file:
   line naming a path under run:// outside run://spirit/; a new file in run:// outside spirit/ is ignored, and a new file in
   run://spirit/ is not (`git check-ignore --no-index`).
 
-## What its test must try to break (goal/G43.32)
+### What its test must try to break (goal/G43.32)
 
 - A file left behind in the old folder, or one of the 19 that did not arrive.
 - A mention in a comment or a document, or written `run://test/`.
 - A tool listed as a test, so `noFuckingGarbage` judges it as a test named after no module.
 - A `.gitignore` line for a path under run:// that `/spirit/run/*` already covers; `run://spirit/` ignored by mistake.
 
-## Requirements (goal/G43.32, the refactor): every product script loads the tree through `spirit.require`
+### Requirements (goal/G43.32, the refactor): every product script loads the tree through `spirit.require`
 
 Andy: *"every script (other than spirit/spirit.js) must start with ... 'use strict'; 'let spirit = require(spirit) or the
 html pages <script href=spirit/spirit.js> kind of thing; all other scripts should be loaded using spirit.require()"*,
@@ -324,7 +341,7 @@ vendored code left out; with no file, all of them in one check; with a file, tha
 - **The old place is gone** (decided 6: an app's element is placed like every element, and *"the shell, the app selector,
   the file opener and the desk find it there"*): no product script names `spirit.elements` (or any `.elements`) any more.
 
-## What its test must try to break (goal/G43.32, the refactor)
+### What its test must try to break (goal/G43.32, the refactor)
 
 - A script with no `'use strict'`, or one that has it after its first statement.
 - `require('./x.js')`, `require(path.join(...))`, or `require('fs')` before `spirit.js`.

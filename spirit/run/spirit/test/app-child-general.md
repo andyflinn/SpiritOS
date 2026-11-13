@@ -1,11 +1,11 @@
-# spirit/test/app-child-generalRules.js, the rules for the sub-folders of spirit/app/
+# spirit/test/app-child-general.js, the rules for the sub-folders of spirit/app/
 
 A `-child-` general test beside `spirit/app.js` (`./TEST_SYSTEM.md`): it judges `spirit/app.js` and `spirit/app/` and
 below. Given a file, it judges the app that file is in; given none, or a file of the app branch itself, every
 sub-folder. Judged on disc, from the files and their code with comments left out; no node is started.
 
 goal/G43.32. Andy, the box: *"rules for sub-folders of run://spirit/app/"*, rules 0 to 6, and of the name: *"if
-app-child-generalRules.js works that is my decision."*
+app-child-general.js works that is my decision."*
 
 ## Requirements
 
@@ -55,5 +55,5 @@ every other sub-folder `spirit/app/<name>/`:
 - An element left in an intrinsic app's folder, or outside a non-intrinsic app's `element/`.
 - A verb served with no description file, or an app with a server and no `api.js`.
 
-What a placed element does on a page is judged by `spirit-sibling-generalRules.js`; what an `api.js` serves, by
-`spirit-sibling-branchRules.js`.
+What a placed element does on a page is judged by `spirit-sibling-browser.js`; what an `api.js` serves, by
+`spirit-sibling-general.js (branchRules)`.

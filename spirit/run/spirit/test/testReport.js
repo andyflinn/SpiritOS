@@ -201,15 +201,23 @@ let started = false;
 function start() { if (!started) { started = true; ownImmediate(runAll); } }
 // THE TIME LIMITS, CENTRAL (Andy, 2026-11-11, after limits measured on one machine hung the tests on another: "cw, change
 // the limits, i hope you have those as relatively central constants, GO!!"). Every suite gives a test one of these, never
-// a number of its own (spirit-sibling-titleRules.js judges it): quick for a test that asks and answers, slow for one that
+// a number of its own (spirit-sibling-general.js (titleRules) judges it): quick for a test that asks and answers, slow for one that
 // starts a scratch node, a desk or a Chrome page, long for one that runs a whole world end to end. A limit catches a hang,
 // not a slow machine, so each is wide; change one here and every suite follows.
 test.limit = Object.freeze({ quick: 10000, slow: 60000, long: 300000 });
 // A TEST OF ANOTHER SCRIPT (goal/G47.1, box v94, 1: spirit/test/scriptClassify.js, given a list of scripts, reports each one's
 // "classifyable"): opts.script, scoped to run://, names the script that one result is reported for, in place of SCRIPT;
 // a title is then said once per script.
+// FOR ONE SCRIPT OF SEVERAL (goal/G47.1, box v94, 2: a general test "will process all scripts listed in the arguments that
+// fit"): test.forScript(script, fn) runs fn, and every test.run it calls at once is reported for that script, as opts.script.
+let forScript = '';
+test.forScript = function (script, fn) {
+  const was = forScript;
+  forScript = String(script || '');
+  try { fn(); } finally { forScript = was; }
+};
 test.run = function (title, severity, body, limitMs, opts) {
-  const own = opts && typeof opts.script === 'string' && opts.script ? opts.script : '';
+  const own = opts && typeof opts.script === 'string' && opts.script ? opts.script : forScript;
   queue.push({ title: title, severity: severity, body: body, limit: limitMs, script: own });
   start();
 };

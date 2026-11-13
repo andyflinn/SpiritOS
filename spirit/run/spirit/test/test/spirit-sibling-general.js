@@ -1,8 +1,8 @@
 'use strict';
 
-// spirit/run/spirit/test/test/spirit-sibling-noFuckingGarbage.js
-// The tests of spirit/test/spirit-sibling-noFuckingGarbage.js, the garbage rule, and of no other module (spec:
-// ./spirit-sibling-noFuckingGarbage.md). goal/G47.1, the cycle "missing tests reported", the box:
+// spirit/run/spirit/test/test/spirit-sibling-general.js
+// The tests of the garbage rule, the noFuckingGarbage part of spirit/test/spirit-sibling-general.js (goal/G47.1, box v94, 2:
+// the general tests folded into three), and of no other part (spec: ./spirit-sibling-general.md). goal/G47.1, the cycle "missing tests reported", the box:
 // "spirit-sibling-noFuckingGarbage also reports missing tests, in one check, "every production script has its own test",
 // severity 0.2: red while any production script has no own test, test/<name>.js beside it, its answer naming every script
 // missing one. Over the whole tree (handed nothing, or spirit.js) it judges every production script; handed one script, that
@@ -23,7 +23,7 @@ const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 400); }
 
-const RULE = path.join(RUN, 'spirit', 'test', 'spirit-sibling-noFuckingGarbage.js');
+const RULE = path.join(RUN, 'spirit', 'test', 'spirit-sibling-general.js');
 const CHECK = 'every production script has its own test';
 const HAS = 'spirit/zzGarbage/has.js';
 const LACKS = 'spirit/zzGarbage/lacks.js';
@@ -39,7 +39,7 @@ let root = null, run = null;
 // The rule run in the scratch tree, handed arg or nothing: the line its check printed, or ''.
 function lineOf(arg) {
   let out = '';
-  try { out = execFileSync(process.execPath, [path.join(run, 'spirit', 'test', 'spirit-sibling-noFuckingGarbage.js')].concat(arg ? [arg] : []), { cwd: run, encoding: 'utf8', maxBuffer: 1 << 26, stdio: ['ignore', 'pipe', 'pipe'] }); } catch (e) { out = String((e && e.stdout) || ''); }
+  try { out = execFileSync(process.execPath, [path.join(run, 'spirit', 'test', 'spirit-sibling-general.js')].concat(arg ? [arg] : []), { cwd: run, encoding: 'utf8', maxBuffer: 1 << 26, stdio: ['ignore', 'pipe', 'pipe'] }); } catch (e) { out = String((e && e.stdout) || ''); }
   return out.split('\n').filter(function (l) { return /(SUCCESS|FAILURE) #/.test(l) && l.indexOf(': ' + CHECK) !== -1; })[0] || '';
 }
 const NOWORLD = 'no scratch tree: the world failed';

@@ -6,7 +6,7 @@
 
 **spirit.js is the only JavaScript client interface to the SpiritOS core.** Every module and every page loads it
 first and does everything through it. A module whose first require is not spirit.js goes red
-(`./spirit-sibling-generalRules.js`).
+(`./spirit-sibling-general.js`, its generalRules part).
 
 ## Its role
 
@@ -327,10 +327,10 @@ The tree is read as it is. The finding is judged on a real page (headless Chrome
 
 ### Requirements
 
-- **3. A second `<name>/api.js` is seen.** A family interface is any of `spirit/<name>/api.js`, `spirit/app/<name>/api.js` and `process/js/<name>/[family/]api.js`. A second relay/api.js planted into the scratch copy is seen as a duplicate. That no branch's name has two in the tree is judged on each branch folder by `./spirit-sibling-branchRules.js` (goal/G43.32).
+- **3. A second `<name>/api.js` is seen.** A family interface is any of `spirit/<name>/api.js`, `spirit/app/<name>/api.js` and `process/js/<name>/[family/]api.js`. A second relay/api.js planted into the scratch copy is seen as a duplicate. That no branch's name has two in the tree is judged on each branch folder by `./spirit-sibling-general.js (branchRules)` (goal/G43.32).
 - **2. The target needs an api.js.** A `spirit/app/contact/data.js` planted beside no api.js never runs, and contact loads `spirit/contact/data.js`.
 - **1. The fewest path elements win.** A planted `spirit/app/relay/` with its own api.js and data.js loses to `spirit/relay/`, whose data.js is the one loaded.
-- An app's family found where its api.js is, and a page getting each branch's own `data.js`, are judged on each branch folder by `./spirit-sibling-branchRules.js` (goal/G43.32).
+- An app's family found where its api.js is, and a page getting each branch's own `data.js`, are judged on each branch folder by `./spirit-sibling-general.js (branchRules)` (goal/G43.32).
 - **No data.js is asked that is not there (no 404).**
 
 ### goal/G43.20: a family's path in a process

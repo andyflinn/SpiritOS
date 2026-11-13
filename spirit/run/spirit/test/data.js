@@ -394,7 +394,7 @@ test.run('on a page there is no cap (box v17)', 0.2, function () {
 // management. The only difference is the appServer serializes the cache to disk."
 //
 // What every branch's data.js must be (1, its branches named by it alone in 2, its disk in 4, 5, 6's downloads, 8) is
-// judged on each branch folder by ./spirit-sibling-branchRules.js (goal/G43.32, Q6, Q7). Here what judges no branch:
+// judged on each branch folder by ./spirit-sibling-general.js (branchRules) (goal/G43.32, Q6, Q7). Here what judges no branch:
 //   2. one code: the browser and appServer load the same data set file, and appServer a family's cache from its own data.js;
 //   3. the same rows make the same cache: the desk's data.js and the data set, run in node as appServer
 //      runs them and in a page's window as a page runs them, are fed the same rows and end with the same spirit.data.desk.cache;
@@ -552,7 +552,7 @@ test.run('spirit.js knows where a family\'s data.js lives, so a page finds it by
   return !!/['"]data\.js['"]/.test(C.spiritJs) ? true : 'spirit.js names no data.js: a page cannot find a family\'s data.js by itself';
 }, test.limit.quick);
 // That the node serves each family's manager, and a page asking by the name gets it, is a rule of every branch, judged
-// on each branch folder in ./spirit-sibling-branchRules.js (goal/G43.32).
+// on each branch folder in ./spirit-sibling-general.js (branchRules) (goal/G43.32).
 
 // THE FAMILIES PART, once data-families.js.
 // Once spirit/run/spirit/test/data-families.js.
@@ -599,7 +599,7 @@ test.run('the old module is gone', 0.2, function () {
 
 // the box: "ALL ... files will be converted to "data.js" files"
 // Each family's own (its data.js there, the old file gone, none of it rolled by hand, data and cache in node and on a
-// page) is judged on each branch folder by ./spirit-sibling-branchRules.js (goal/G43.32). Here, that they share one helper.
+// page) is judged on each branch folder by ./spirit-sibling-general.js (branchRules) (goal/G43.32). Here, that they share one helper.
 // the box: "with the SAME pattern": one helper of spirit.data, called with the family's own name
 function patternRead() {
   if (F.pattern) return;

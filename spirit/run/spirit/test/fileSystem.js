@@ -195,7 +195,7 @@ test.run('the world: more than ten walkers skipped node_modules at the base comm
   });
   return (walkers.length > 10 && walkers.indexOf('spirit/run/spirit/fileSystem.js') !== -1 && walkers.indexOf('spirit/run/spirit/word.js') !== -1) ? true : 'only ' + walkers.length + ' walkers found at ' + BASE + ': nothing judged';
 }, test.limit.quick);
-const CM_SKIPPERS = ['spirit/run/spirit/test/testModule.js', 'spirit/run/spirit/test/spirit-sibling-generalRules.js', 'spirit/run/spirit/test/spirit-sibling-testReachRules.js', 'spirit/run/spirit/test/test/testReport-verifier.js'];
+const CM_SKIPPERS = ['spirit/run/spirit/test/testModule.js', 'spirit/run/spirit/test/spirit-sibling-browser.js', 'spirit/run/spirit/test/spirit-sibling-general.js', 'spirit/run/spirit/test/test/testReport-verifier.js'];
 // Each walker found at the base commit written out, so that each check has a plain title of its own.
 const walks = function (f) {
   const c = code(fs.readFileSync(path.join(REPO, f), 'utf8'));

@@ -7,7 +7,7 @@
 // themselves without name-space-collision", and "element scripts themselves are who installs the element factory at
 // spirit.element.<path-of-element-script>". Asked of the real spirit object in node, its own spirit.require loading the
 // helper; on a page, every element script's factory is asked at its place by the general rules
-// (spirit/test/spirit-sibling-generalRules.js, everyScriptRequired).
+// (spirit/test/spirit-sibling-node.js and spirit-sibling-browser.js, everyScriptRequired).
 
 const fs = require('fs');
 const path = require('path');
