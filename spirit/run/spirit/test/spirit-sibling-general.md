@@ -304,3 +304,9 @@ its require paths within the rule; every file that paints icons loading the icon
 spirit/run/process named; the shape; spirit.js first (or page code, or spirit.js itself); its require paths; for an
 element, no matched() of its own, its writes watched in spirit.data, no api taken from what it is handed. Its full
 contract, page parts included, is in `spirit-sibling-browser.md`.
+
+## The desk's verifier deleted (goal/G47.1, box v101)
+
+- Over the whole repository, the files outside `spirit/run` too: no tracked file names the deleted verifier, by path or by
+  content, in any case. One check, severity 0.4, naming the files that still do. The test builds the name, so it names it
+  nowhere itself.

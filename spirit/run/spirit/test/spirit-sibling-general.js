@@ -1921,4 +1921,18 @@ else oneFile({ fail: '', stage: 'none' });
 
 const PARTS = [generalRules, branchRules, titleRules, noFuckingGarbage, searchRules, testReachRules];
 if (!GIVEN.length) PARTS.forEach(function (part) { part([]); });
+// NO TRACKED FILE NAMES THE DELETED VERIFIER (goal/G47.1, box v101, the cycle that deletes the desk's verifier: no tracked
+// file names it). Over the whole repository, the files outside spirit/run too, by path and by content, in any case. The name
+// is built here, so this file names it nowhere itself.
+if (!GIVEN.length) {
+  test.run('no tracked file names the deleted verifier, by path or by content', 0.4, function () {
+    const word = ['desk', 'Verify'].join('');
+    const top = require('child_process').execFileSync('git', ['rev-parse', '--show-toplevel'], { cwd: RUN_DIR, encoding: 'utf8' }).trim();
+    let hits = '';
+    try { hits = require('child_process').execFileSync('git', ['grep', '-l', '-i', '-I', word], { cwd: top, encoding: 'utf8', maxBuffer: 1 << 26 }); } catch (e) { hits = String((e && e.stdout) || ''); }
+    const named = require('child_process').execFileSync('git', ['ls-files'], { cwd: top, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(function (f) { return f.toLowerCase().indexOf(word.toLowerCase()) !== -1; });
+    const all = hits.split('\n').filter(Boolean).concat(named).filter(function (f, i, a) { return a.indexOf(f) === i; });
+    return all.length === 0 || all.length + ' tracked files name it: ' + all.slice(0, 12).join(', ');
+  }, test.limit.slow);
+}
 else GIVEN.forEach(function (one) { test.forScript(one, function () { PARTS.forEach(function (part) { part([one]); }); }); });
