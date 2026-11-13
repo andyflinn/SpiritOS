@@ -446,11 +446,13 @@ function apply(changed, P) {
           });
           return;
         }
-        // The files it concerns: the one it is the own test of, and every file a general test judges.
-        const files = (P.bySuite[rel] || []).slice();
+        // The files it concerns: the one it is the own test of, and every file a general test judges. (Named apart from
+        // the write's own files: one name for both made every use of files above this line in the block throw, and the
+        // whole write roll back, at every start with a changed classifier or a removed test.)
+        const concerned = (P.bySuite[rel] || []).slice();
         const own = fileOfOwnTest(rel);
-        if (there(own) && files.indexOf(own) === -1) files.push(own);
-        files.forEach(function (file) { if (!Q.script.get(file)) fileUp(file); if (suiteChanged(file, rel)) suiteUp(file, rel); });
+        if (there(own) && concerned.indexOf(own) === -1) concerned.push(own);
+        concerned.forEach(function (file) { if (!Q.script.get(file)) fileUp(file); if (suiteChanged(file, rel)) suiteUp(file, rel); });
         return;
       }
       if (!there(rel)) { before('script|' + rel, function () { return Q.script.get(rel); }); Q.goneScript.run(rel, now); files.add(rel); Q.suitesOfScript.all(rel).forEach(function (r) { touched(r.script, r.suite); }); Q.goneSuitesOfScript.run(now, rel); return; }
