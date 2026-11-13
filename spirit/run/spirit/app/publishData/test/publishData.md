@@ -67,3 +67,12 @@ check's standing grant for `agents/<agent>/`.
 
 A harness that does measure (the scratch clone has no measurePlatform), a push refused, and pushOrigin's own
 behaviour, which is its own module's.
+
+## Box v104: the platform's folder, and always pushed
+
+- It publishes to `agents/<platform>/`, the platform this machine is: `windows`, `wsl` (Linux under WSL) or `ubuntu`, never
+  a folder named after the agent (Andy: *"make sure publisData simply writes to folders identifying the platform, NOT the
+  agent"*); its commit message names that folder.
+- Always and reliably pushed (Andy: *"make sure it works, commits and pushes always and reliably so."*): another clone
+  pushes a commit of its own to the origin meanwhile; published again, it exits 0, and the origin holds its new commit on
+  top of the other clone's.
