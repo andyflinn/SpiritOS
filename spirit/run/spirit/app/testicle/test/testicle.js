@@ -470,18 +470,6 @@ test.run('the world: auto for the checks that follow, set by preferences {intera
   const r = await call(N.base, 'testicle.preferences', { interactive: false });
   return (r.status === 200 && prefsOf(r).interactive === false) || 'set: ' + r.status + ' ' + short(r.text);
 }, test.limit.quick);
-// goal/G47.1, Q8, Andy: "Shall a testicle in debug mode never run testicle's own tests, only the planted temp/ worlds and its
-// three general tests?" "testicle MUST not recurse... and not run it's own tests just the dummies...". Set to auto, every
-// flagged suite in its scope runs; testicle's own tests, under spirit/app/testicle/ but not temp/, are none of them: no row
-// of theirs reaches it, and it comes to rest (a run of testicle.js would hold it busy for an hour, a lab node with it).
-const OWN_TEST = function (suite) { return /^spirit\/app\/testicle\//.test(suite) && !/^spirit\/app\/testicle\/temp\//.test(suite) && /(^|\/)test\//.test(suite) && DEBUG_GENERALS.indexOf(suite) === -1; };
-test.run('in debug mode, set to auto, it never runs testicle\'s own tests, only the dummies: none reports, and it comes to rest', 0.8, async function () {
-  if (!up()) return NONODE;
-  const rest = await idle(280000);
-  const own = (tables(DB).test || []).filter(function (r) { return OWN_TEST(r.suite) && r.suite !== 'spirit/test/scriptClassify.js'; });
-  const suites = Array.from(new Set(own.map(function (r) { return r.suite; })));
-  return (!!rest && !suites.length) || (rest ? '' : 'still busy after 280 s; ') + (suites.length ? 'its own tests reported: ' + suites.join(', ') : 'none of its own reported yet');
-}, test.limit.long);
 
 
 // the box: "on any change of a product file it makes sure that file has its row"
@@ -2293,3 +2281,19 @@ test.run('and testicle.suite.success {success: false} is what turns it red', 0.4
   const row = suiteRow(tables(DB), SUC, SUCS);
   return (r.status === 200 && !!row && row.outcome === 'red') || 'suite.success answered ' + r.status + '; the row ' + short(row);
 }, test.limit.slow);
+
+// LAST, SO THE REST OF THIS FILE JUDGES SUITES NOT RUN YET (goal/G47.1): set to auto and waited for, every flagged suite in its
+// scope runs first, alpha's empty own suite with it, and the checks after it found their suites already run.
+// goal/G47.1, Q8, Andy: "Shall a testicle in debug mode never run testicle's own tests, only the planted temp/ worlds and its
+// three general tests?" "testicle MUST not recurse... and not run it's own tests just the dummies...". Set to auto, every
+// flagged suite in its scope runs; testicle's own tests, under spirit/app/testicle/ but not temp/, are none of them: no row
+// of theirs reaches it, and it comes to rest (a run of testicle.js would hold it busy for an hour, a lab node with it).
+const OWN_TEST = function (suite) { return /^spirit\/app\/testicle\//.test(suite) && !/^spirit\/app\/testicle\/temp\//.test(suite) && /(^|\/)test\//.test(suite) && DEBUG_GENERALS.indexOf(suite) === -1; };
+test.run('in debug mode, set to auto, it never runs testicle\'s own tests, only the dummies: none reports, and it comes to rest', 0.8, async function () {
+  if (!up()) return NONODE;
+  await call(N.base, 'testicle.preferences', { interactive: false });
+  const rest = await idle(280000);
+  const own = (tables(DB).test || []).filter(function (r) { return OWN_TEST(r.suite) && r.suite !== 'spirit/test/scriptClassify.js'; });
+  const suites = Array.from(new Set(own.map(function (r) { return r.suite; })));
+  return (!!rest && !suites.length) || (rest ? '' : 'still busy after 280 s; ') + (suites.length ? 'its own tests reported: ' + suites.join(', ') : 'none of its own reported yet');
+}, test.limit.long);
