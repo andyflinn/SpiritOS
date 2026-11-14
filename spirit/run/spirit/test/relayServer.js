@@ -667,7 +667,7 @@ test.after(function () {
   if (FP.R) { try { FP.R.stop(); } catch (e) { /* gone */ } }
   if (G.relay) {
     try { if (G.relay.child) G.relay.child.kill(); } catch (e) { /* gone */ }
-    if (G.relay.root) try { fs.rmSync(G.relay.root, { recursive: true, force: true }); } catch (e) { /* scratch */ }
+    if (G.relay.root) try { require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(G.relay); } catch (e) { /* scratch */ }
   }
   if (BA.R) { try { BA.R.stop(); } catch (e) { /* gone */ } }
 });

@@ -35,7 +35,7 @@ test.after(function () {
   try { if (chrome && chrome.sock) chrome.sock.close(); } catch (e) { /* gone */ }
   try { if (chrome && chrome.kid) chrome.kid.kill(); } catch (e) { /* gone */ }
   try { if (node && node.child) node.child.kill(); } catch (e) { /* gone */ }
-  try { if (node && node.root) fs.rmSync(node.root, { recursive: true, force: true }); } catch (e) { /* scratch */ }
+  try { if (node && node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* scratch */ }
 });
 test.run('it loads through spirit.require and mounts with spirit.element.spirit.element.introSpector.create(container)', 0.2, async function () {
   if (!node || !node.up || !chrome || chrome.error) return 'no scratch node or no Chrome: nothing judged';

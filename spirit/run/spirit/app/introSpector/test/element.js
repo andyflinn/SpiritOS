@@ -28,7 +28,7 @@ test.after(function () {
   try { if (chrome.sock) chrome.sock.close(); } catch (e) { /* gone */ }
   try { if (chrome.kid) chrome.kid.kill(); } catch (e) { /* gone */ }
   try { if (node.child) node.child.kill(); } catch (e) { /* gone */ }
-  try { if (node.root) fs.rmSync(node.root, { recursive: true, force: true }); } catch (e) { /* scratch */ }
+  try { if (node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* scratch */ }
 });
 
 // the box: "same icons, shell:mount only", "both apps will be intrinsic", no api.js and no data.js

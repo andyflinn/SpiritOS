@@ -22,7 +22,7 @@ test.after(function () {
   if (chrome && chrome.kid) chrome.kid.kill();
   if (node && node.child) node.child.kill();
   try { if (chrome && chrome.profile) fs.rmSync(chrome.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
-  try { if (node && node.root) fs.rmSync(node.root, { recursive: true, force: true }); } catch (e) { /* left */ }
+  try { if (node && node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* left */ }
 });
 test.run('spirit/element/search/grant/detailElement.js is there', 0.2, function () {
   return fs.existsSync(path.join(__dirname, '..', 'detailElement.js')) ? true : 'spirit/element/search/grant/detailElement.js is not there: nothing below can pass';

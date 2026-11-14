@@ -609,7 +609,7 @@ test.after(function () {
   try { if (S.q) S.q.destroy(); } catch (e) { /* gone */ }
   S.relays.forEach(function (r) { try { r.stop(); } catch (e) { /* gone */ } });
   try { if (S.N && S.N.child) S.N.child.kill(); } catch (e) { /* gone */ }
-  try { if (S.N && S.N.root) fs.rmSync(S.N.root, { recursive: true, force: true }); } catch (e) { /* scratch */ }
+  try { if (S.N && S.N.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(S.N); } catch (e) { /* scratch */ }
   try { if (S.marks) fs.rmSync(S.marks, { recursive: true, force: true }); } catch (e) { /* scratch */ }
 });
 
@@ -1042,7 +1042,7 @@ test.after(function () {
   try { if (chrome && chrome.profile) fs.rmSync(chrome.profile, { recursive: true, force: true }); } catch (e) { /* scratch */ }
   try { if (A.R) A.R.stop(); } catch (e) { /* gone */ }
   try { if (A.N && A.N.child) A.N.child.kill(); } catch (e) { /* gone */ }
-  try { if (A.N && A.N.root) fs.rmSync(A.N.root, { recursive: true, force: true }); } catch (e) { /* scratch */ }
+  try { if (A.N && A.N.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(A.N); } catch (e) { /* scratch */ }
 });
 
 // faceHome-starApps: a star shows every app on the face (goal/G41.33, Q9).

@@ -24,7 +24,7 @@ test.after(async function () {
   try { if (chrome.kid) chrome.kid.kill(); } catch (e) { /* gone */ }
   try { if (node.child) node.child.kill(); } catch (e) { /* gone */ }
   await sleep(300);
-  try { if (node.root) fs.rmSync(node.root, { recursive: true, force: true }); } catch (e) { /* scratch */ }
+  try { if (node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* scratch */ }
   try { if (chrome.profile) fs.rmSync(chrome.profile, { recursive: true, force: true }); } catch (e) { /* scratch */ }
 });
 const NO_PAGE = 'no page: the world failed';

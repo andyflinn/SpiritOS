@@ -24,7 +24,7 @@ const seen = function () { return chrome.evaluate('(function () { var b = docume
 test.after(function () {
   try { if (node && node.child) node.child.kill(); } catch (e) { /* gone */ }
   try { if (chrome && chrome.kid) chrome.kid.kill(); } catch (e) { /* gone */ }
-  try { if (node && node.root) require('fs').rmSync(node.root, { recursive: true, force: true }); } catch (e) { /* scratch */ }
+  try { if (node && node.root) require(require('path').join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* scratch */ }
 });
 
 test.run('the world: a scratch node, and a Chrome on its face page', 0.2, async function () {

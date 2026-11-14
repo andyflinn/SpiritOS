@@ -29,7 +29,7 @@ function stop(x) {
   if (page && page.kid) page.kid.kill();
   if (node.child) node.child.kill();
   try { if (page && page.profile) fs.rmSync(page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
-  try { if (node.root) fs.rmSync(node.root, { recursive: true, force: true }); } catch (e) { /* left */ }
+  try { if (node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* left */ }
 }
 // A scratch node with a Chrome page on it (debug: its DEBUG on): x.node, x.page, or a string saying what is missing.
 async function bootPage(x, debug) {

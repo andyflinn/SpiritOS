@@ -26,7 +26,7 @@ test.after(function () {
   if (chrome && chrome.kid) chrome.kid.kill();
   if (N && N.child) N.child.kill();
   try { if (chrome && chrome.profile) fs.rmSync(chrome.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
-  try { if (N && N.root) fs.rmSync(N.root, { recursive: true, force: true }); } catch (e) { /* left */ }
+  try { if (N && N.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(N); } catch (e) { /* left */ }
 });
 test.run('the world: a scratch node, and Chrome on its face page', 0.2, async function () {
   set = parsed(fs.readFileSync(path.join(RUN, SET), 'utf8')) || {};

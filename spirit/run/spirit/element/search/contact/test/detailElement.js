@@ -888,7 +888,7 @@ test.after(async function () {
   try { if (S.R) S.R.stop(); } catch (e) { /* gone */ }
   S.others.forEach(function (o) { try { o.stop(); } catch (e) { /* gone */ } });
   try { if (S.N && S.N.child) S.N.child.kill(); } catch (e) { /* gone */ }
-  try { if (S.N && S.N.root) fs.rmSync(S.N.root, { recursive: true, force: true }); } catch (e) { /* scratch */ }
+  try { if (S.N && S.N.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(S.N); } catch (e) { /* scratch */ }
 });
 
 // a seat taken: the row says so, with no one asking

@@ -40,7 +40,7 @@ test.after(async function () {
   const N = W.N || {};
   try { if (N.child) N.child.kill(); } catch (e) { /* gone */ }
   await sleep(300);
-  try { if (N.root) fs.rmSync(N.root, { recursive: true, force: true }); } catch (e) { /* scratch */ }
+  try { if (N.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(N); } catch (e) { /* scratch */ }
 });
 
 // goal/G43.20: no branch carries an FS set.

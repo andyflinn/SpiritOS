@@ -74,4 +74,4 @@ test.run('with node.db written, the planted traffic.json is still not read', 0.2
   return !W.after.some(function (r) { return r && r.hash === OLD; }) || 'with node.db written, the log reads the old traffic.json: its row ' + OLD + ' is in what the log answers';
 }, test.limit.quick);
 
-test.after(function () { if (W.root) { try { fs.rmSync(W.root, { recursive: true, force: true }); } catch (e) { /* scratch */ } } });
+test.after(function () { if (W.root) { try { require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(W); } catch (e) { /* scratch */ } } });

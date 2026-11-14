@@ -690,7 +690,7 @@ function stop(node, page) {
   if (page && page.kid) page.kid.kill();
   if (node && node.child) node.child.kill();
   try { if (page && page.profile) fs.rmSync(page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
-  try { if (node && node.root) fs.rmSync(node.root, { recursive: true, force: true }); } catch (e) { /* left */ }
+  try { if (node && node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* left */ }
 }
 function stopOpened() { stop(S.node, S.page); S.node = S.page = null; }
 function stopPressing() { stop(S.scratch, S.page2); S.scratch = S.page2 = null; }

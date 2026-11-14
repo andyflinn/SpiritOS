@@ -355,5 +355,5 @@ test.after(function () {
   if (page && page.kid) page.kid.kill();
   if (scratch.child) scratch.child.kill();
   try { if (page && page.profile) fs.rmSync(page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
-  try { if (scratch.root) fs.rmSync(scratch.root, { recursive: true, force: true }); } catch (e) { /* left */ }
+  try { if (scratch.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(scratch); } catch (e) { /* left */ }
 });

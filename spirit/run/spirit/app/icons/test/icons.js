@@ -60,7 +60,7 @@ test.after(function () {
   }
   const node = W.node || {};
   try { if (node.child) node.child.kill(); } catch (e) { /* gone */ }
-  try { if (node.root) fs.rmSync(node.root, { recursive: true, force: true }); } catch (e) { /* scratch */ }
+  try { if (node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* scratch */ }
 });
 
 // the box: "a face-only app get's api.js, data.js, node<Name>.js, browser<Name>.js" (Q5, Q6)

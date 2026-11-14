@@ -280,7 +280,7 @@ const REPORTS = {};
 let world = '';
 test.after(async function () {
   if (W.page) { try { W.page.sock.close(); } catch (e) { /* gone */ } try { W.page.kid.kill(); } catch (e) { /* gone */ } try { fs.rmSync(W.page.profile, { recursive: true, force: true }); } catch (e) { /* scratch */ } }
-  if (W.node && !W.node.shared) { try { W.node.child.kill(); } catch (e) { /* gone */ } await sleep(300); try { fs.rmSync(W.node.root, { recursive: true, force: true }); } catch (e) { /* scratch */ } }
+  if (W.node && !W.node.shared) { try { W.node.child.kill(); } catch (e) { /* gone */ } await sleep(300); try { require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(W.node); } catch (e) { /* scratch */ } }
 });
 const W = {};
 test.run('the world: searches to judge, a scratch node and a Chrome page', 0.2, async function () {

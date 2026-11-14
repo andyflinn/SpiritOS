@@ -559,7 +559,7 @@ test.after(async function () {
   if (N.node) {
     try { if (N.node.child) N.node.child.kill(); } catch (e) { /* gone */ }
     await H.sleep(300);
-    try { if (N.node.root) fs.rmSync(N.node.root, { recursive: true, force: true }); } catch (e) { /* scratch */ }
+    try { if (N.node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(N.node); } catch (e) { /* scratch */ }
   }
 });
 }
@@ -1831,7 +1831,7 @@ function every() {
     if (E.node) {
       try { E.node.child.kill(); } catch (e) { /* gone */ }
       await sleep(300);
-      try { fs.rmSync(E.node.root, { recursive: true, force: true }); } catch (e) { /* scratch */ }
+      try { require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(E.node); } catch (e) { /* scratch */ }
     }
   });
 }

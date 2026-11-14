@@ -33,7 +33,7 @@ const NOT_UP = 'the chat server never answered';
 test.after(function () {
   const node = X.node;
   try { if (node && node.child) node.child.kill(); } catch (e) { /* gone */ }
-  try { if (node && node.root) fs.rmSync(node.root, { recursive: true, force: true }); } catch (e) { /* scratch */ }
+  try { if (node && node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* scratch */ }
 });
 
 // ── its code: no held path and no contact.accept (goal/G43.23, the checks of chatClerver-noHeld.js) ──

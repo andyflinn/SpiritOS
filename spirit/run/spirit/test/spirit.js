@@ -1486,10 +1486,10 @@ test.after(function () {
     if (x.node && x.node.child) { try { x.node.child.kill(); } catch (e) { /* gone */ } }
   }
   if (M.page && M.page.profile) { try { fs.rmSync(M.page.profile, { recursive: true, force: true }); } catch (e) { /* left */ } }
-  if (M.node && M.node.root) { try { fs.rmSync(M.node.root, { recursive: true, force: true }); } catch (e) { /* left */ } }
+  if (M.node && M.node.root) { try { require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(M.node); } catch (e) { /* left */ } }
   try { if (FL.chrome && FL.chrome.kid) FL.chrome.kid.kill(); } catch (e) { /* gone */ }
   try { if (FL.R) FL.R.stop(); } catch (e) { /* gone */ }
   try { if (FL.N && FL.N.child) FL.N.child.kill(); } catch (e) { /* gone */ }
-  try { if (FL.N && FL.N.root) fs.rmSync(FL.N.root, { recursive: true, force: true }); } catch (e) { /* scratch */ }
+  try { if (FL.N && FL.N.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(FL.N); } catch (e) { /* scratch */ }
 });
 

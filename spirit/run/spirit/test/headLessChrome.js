@@ -221,7 +221,13 @@ function freeTree(x) {
   if (typeof x.release === 'function') { try { x.release(); } catch (e) { /* freed when this process ends */ } return; }
   const run = path.resolve(x.run || path.join(String(x.root || ''), 'spirit', 'run'));
   const lab = trees.get(run);
-  if (lab) { trees.delete(run); lab.release(); }
+  if (lab) { trees.delete(run); lab.release(); return; }
+  // A test's own temp folder, no lab node: deleted, as the test did before (never a folder under repo://lab/node/).
+  const root = path.resolve(String(x.root || ''));
+  const inLab = root.split(path.sep).join('/').indexOf('/lab/node/') !== -1;
+  if (x.root && !inLab) {
+    try { fs.rmSync(root, { recursive: true, force: true }); } catch (e) { /* a door still closing */ }
+  }
 }
 
 // A SCRATCH RELAY (goal/G41.30; Andy: "The relay's door is not tested yet: there is no scratch relay helper. - close

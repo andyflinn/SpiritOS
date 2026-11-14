@@ -27,7 +27,7 @@ test.after(function () {
   if (chrome && chrome.kid) chrome.kid.kill();
   if (node.child) node.child.kill();
   try { if (chrome && chrome.profile) fs.rmSync(chrome.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
-  try { if (node.root) fs.rmSync(node.root, { recursive: true, force: true }); } catch (e) { /* left */ }
+  try { if (node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* left */ }
 });
 const NO_PAGE = 'no page: the world failed';
 const NO_MONITOR = 'no monitor on the page: the tests before failed';

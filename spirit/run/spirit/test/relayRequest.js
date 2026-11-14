@@ -216,6 +216,6 @@ test.run('relayUpload: an address assertRelayUrl refuses is said on the stream\'
 
 test.run('the world ends: the planted servers close and the scratch root is removed', 0.2, async function () {
   await Promise.all([W.relay, W.pipeServer].filter(Boolean).map(function (s) { if (s.closeAllConnections) s.closeAllConnections(); return new Promise(function (r) { s.close(function () { r(); }); }); }));
-  if (W.root) fs.rmSync(W.root, { recursive: true, force: true });
+  if (W.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(W);
   return !(W.root && fs.existsSync(W.root)) || 'scratch root left';
 }, test.limit.quick);

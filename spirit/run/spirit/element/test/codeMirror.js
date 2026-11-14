@@ -318,5 +318,5 @@ test.after(function () {
   try { if (L.page && L.page.kid) L.page.kid.kill(); } catch (e) { /* gone */ }
   try { if (L.node && L.node.child) L.node.child.kill(); } catch (e) { /* gone */ }
   try { if (L.page && L.page.profile) fs.rmSync(L.page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
-  try { if (L.node && L.node.root) fs.rmSync(L.node.root, { recursive: true, force: true }); } catch (e) { /* left */ }
+  try { if (L.node && L.node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(L.node); } catch (e) { /* left */ }
 });

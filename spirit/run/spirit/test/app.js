@@ -80,7 +80,7 @@ test.run('the world: the scratch node comes up', 0.2, async function () {
 test.after(function () {
   const node = W.node || {};
   try { if (node.child) node.child.kill(); } catch (e) { /* gone */ }
-  try { if (node.root) fs.rmSync(node.root, { recursive: true, force: true }); } catch (e) { /* scratch */ }
+  try { if (node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* scratch */ }
 });
 
 // IT GIVES THE NODE ITS API (Andy, box: "sit nicely beside all other families").

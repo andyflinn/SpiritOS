@@ -127,7 +127,7 @@ test.run('the world: a scratch node comes up', 0.2, async function () {
 test.after(function () {
   const N = P.N || {};
   try { if (N.child) N.child.kill(); } catch (e) { /* gone */ }
-  try { if (N.root) fs.rmSync(N.root, { recursive: true, force: true }); } catch (e) { /* scratch */ }
+  try { if (N.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(N); } catch (e) { /* scratch */ }
 });
 test.run('and the node writes no preferences.json', 0.2, function () {
   if (!P.N || !P.N.up || !P.N.root) return 'no scratch node: the world failed';

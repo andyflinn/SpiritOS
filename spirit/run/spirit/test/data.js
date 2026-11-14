@@ -674,7 +674,7 @@ test.after(function () {
   if (F.page && F.page.kid) F.page.kid.kill();
   if (F.node && F.node.child) F.node.child.kill();
   try { if (F.page && F.page.profile) fs.rmSync(F.page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
-  try { if (F.node && F.node.root) fs.rmSync(F.node.root, { recursive: true, force: true }); } catch (e) { /* left */ }
+  try { if (F.node && F.node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(F.node); } catch (e) { /* left */ }
 });
 
 // the box: "de-clutter": the first level of spirit holds no <name>Data

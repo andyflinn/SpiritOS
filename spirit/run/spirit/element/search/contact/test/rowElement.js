@@ -436,7 +436,7 @@ test.after(function () {
   try { if (chrome && chrome.profile) fs.rmSync(chrome.profile, { recursive: true, force: true }); } catch (e) { /* scratch */ }
   try { if (RF.R) RF.R.stop(); } catch (e) { /* gone */ }
   try { if (RF.N && RF.N.child) RF.N.child.kill(); } catch (e) { /* gone */ }
-  try { if (RF.N && RF.N.root) fs.rmSync(RF.N.root, { recursive: true, force: true }); } catch (e) { /* scratch */ }
+  try { if (RF.N && RF.N.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(RF.N); } catch (e) { /* scratch */ }
 });
 // rowElement-relayOnFace: a relay's row in Contacts opens the relay on a face, whichever came first (goal/G41.32)
 test.run('the world: a scratch node and a scratch face relay come up', 0.2, async function () {

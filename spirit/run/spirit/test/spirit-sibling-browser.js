@@ -625,7 +625,7 @@ function every() {
     if (E.node) {
       try { E.node.child.kill(); } catch (e) { /* gone */ }
       await sleep(300);
-      try { fs.rmSync(E.node.root, { recursive: true, force: true }); } catch (e) { /* scratch */ }
+      try { require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(E.node); } catch (e) { /* scratch */ }
     }
   });
 }

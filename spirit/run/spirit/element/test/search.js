@@ -1251,7 +1251,7 @@ async function keptPart() {
     if (chrome && chrome.kid) chrome.kid.kill();
     if (node && node.child) node.child.kill();
     try { if (chrome && chrome.profile) fs.rmSync(chrome.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
-    try { if (node && node.root) fs.rmSync(node.root, { recursive: true, force: true }); } catch (e) { /* left */ }
+    try { if (node && node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* left */ }
   });
 }
 
@@ -1401,7 +1401,7 @@ async function bubblePart() {
     if (page && page.kid) page.kid.kill();
     if (node && node.child) node.child.kill();
     try { if (page && page.profile) fs.rmSync(page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
-    try { if (node && node.root) fs.rmSync(node.root, { recursive: true, force: true }); } catch (e) { /* left */ }
+    try { if (node && node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* left */ }
   });
 }
 
@@ -1524,7 +1524,7 @@ async function popupPart() {
     try { if (chrome && chrome.sock) chrome.sock.close(); } catch (e) { /* gone */ }
     try { if (chrome && chrome.kid) chrome.kid.kill(); } catch (e) { /* gone */ }
     try { if (node && node.child) node.child.kill(); } catch (e) { /* gone */ }
-    try { if (node && node.root) fs.rmSync(node.root, { recursive: true, force: true }); } catch (e) { /* scratch */ }
+    try { if (node && node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* scratch */ }
   });
 }
 
@@ -1860,7 +1860,7 @@ async function tilesPart() {
     if (chrome && chrome.kid) chrome.kid.kill();
     if (node && node.child) node.child.kill();
     try { if (chrome && chrome.profile) fs.rmSync(chrome.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
-    try { if (node && node.root) fs.rmSync(node.root, { recursive: true, force: true }); } catch (e) { /* left */ }
+    try { if (node && node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* left */ }
   });
 }
 
@@ -2232,6 +2232,6 @@ async function folderPart() {
     if (chrome && chrome.kid) chrome.kid.kill();
     if (node && node.child) node.child.kill();
     try { if (chrome && chrome.profile) fs.rmSync(chrome.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
-    try { if (node && node.root) fs.rmSync(node.root, { recursive: true, force: true }); } catch (e) { /* left */ }
+    try { if (node && node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* left */ }
   });
 }

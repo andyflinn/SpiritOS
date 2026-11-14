@@ -27,7 +27,7 @@ test.after(function () {
   try { if (chrome && chrome.sock) chrome.sock.close(); } catch (e) { /* gone */ }
   try { if (chrome && chrome.kid) chrome.kid.kill(); } catch (e) { /* gone */ }
   try { if (node && node.child) node.child.kill(); } catch (e) { /* gone */ }
-  try { if (node && node.root) fs.rmSync(node.root, { recursive: true, force: true }); } catch (e) { /* scratch */ }
+  try { if (node && node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* scratch */ }
 });
 test.run('the world: a scratch node of its own, two planted apps, and Chrome on its face page', 0.2, async function () {
   node = await scratchNode();

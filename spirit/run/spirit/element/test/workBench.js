@@ -366,5 +366,5 @@ test.after(function () {
   if (CH.page && CH.page.kid) CH.page.kid.kill();
   if (CH.node && CH.node.child) CH.node.child.kill();
   try { if (CH.page && CH.page.profile) fs.rmSync(CH.page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
-  try { if (CH.node && CH.node.root) fs.rmSync(CH.node.root, { recursive: true, force: true }); } catch (e) { /* left */ }
+  try { if (CH.node && CH.node.root) require(require('path').join(__dirname, "../../test/headLessChrome.js")).freeTree(CH.node); } catch (e) { /* left */ }
 });

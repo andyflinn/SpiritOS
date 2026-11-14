@@ -297,5 +297,5 @@ test.run('with no node a suite reports nowhere and still prints its lines', 0.2,
 
 test.after(function () {
   try { if (W.node) W.node.close(); } catch (e) { /* closed */ }
-  [W.tree, W.quietTree].forEach(function (t) { try { if (t) fs.rmSync(t.root, { recursive: true, force: true }); } catch (e) { /* scratch */ } });
+  [W.tree, W.quietTree].forEach(function (t) { try { if (t) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(t); } catch (e) { /* scratch */ } });
 });

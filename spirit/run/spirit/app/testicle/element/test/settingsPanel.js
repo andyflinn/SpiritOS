@@ -49,7 +49,7 @@ test.after(function () {
   if (W.page && W.page.kid) W.page.kid.kill();
   if (W.node && W.node.child) W.node.child.kill();
   try { if (W.page && W.page.profile) fs.rmSync(W.page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
-  try { if (W.node && W.node.root) fs.rmSync(W.node.root, { recursive: true, force: true }); } catch (e) { /* left */ }
+  try { if (W.node && W.node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(W.node); } catch (e) { /* left */ }
 });
 const NOPAGE = 'no page: the world failed';
 

@@ -125,5 +125,5 @@ if (!GIVEN.length) {
 
 test.after(async function () {
   if (E.node && E.node.child) { try { E.node.child.kill(); } catch (e) { /* gone */ } await new Promise(function (r) { setTimeout(r, 300); }); }
-  if (E.root) try { fs.rmSync(E.root, { recursive: true, force: true }); } catch (e) { /* scratch */ }
+  if (E.root) try { require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(E); } catch (e) { /* scratch */ }
 });

@@ -21,7 +21,7 @@ const NO_NODE = 'no scratch node: the world failed';
 test.after(function () {
   const node = X.node;
   try { if (node && node.child) node.child.kill(); } catch (e) { /* gone */ }
-  try { if (node && node.root) fs.rmSync(node.root, { recursive: true, force: true }); } catch (e) { /* scratch */ }
+  try { if (node && node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* scratch */ }
 });
 
 // ── the interface: verbs and their rules, and no code ──

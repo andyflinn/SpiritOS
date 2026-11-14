@@ -46,6 +46,13 @@ function chEl(id) { return chParts[id] || null; }
 var chIconPart = window.spirit && typeof window.spirit.require === 'function'
   ? Promise.resolve(window.spirit.require('spirit/element/icon.js')).then(null, function () { /* the arrows stay text */ })
   : Promise.resolve();
+// THE INTERFACES IT USES, IT LOADS ITSELF (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING INTERFACES IT FUCKING
+// NEEDS"; spirit/test/spirit-sibling-browser.js): chat's own, the node's (its card) and contacts' (the peers it lists), and
+// chat's cache manager; none is left to another part having loaded it first.
+var chInterfaces = window.spirit && typeof window.spirit.require === 'function'
+  ? Promise.all(['spirit/app/chat/api.js', 'spirit/node/api.js', 'spirit/contact/api.js'].map(function (p) { return Promise.resolve(window.spirit.require(p)).catch(function () {}); })
+    .concat([typeof window.spirit.cacheManager === 'function' ? Promise.resolve(window.spirit.cacheManager('chat')).catch(function () {}) : null]))
+  : Promise.resolve();
 
 // THE LINES ARE THE chat BRANCH'S CACHE (goal/G41.28; Andy: "anything not using the new spiritData.js and it's
 // buddies clientCacheManager.js must do so in this item. no exceptions."): every line a read, a search or a send brings is
@@ -658,7 +665,7 @@ function chMount(container) {
       if (C && typeof C.forgot === 'function') chKeep(C.forgot(function () { if (chPane) chPane.refresh(); chMarkChats(); if (chPeer) chOpen(chPeer); }));
     }, function () { /* nothing kept, nothing forgotten */ });
     // This node's key, for a reply to one of its own lines.
-    Promise.resolve(window.spirit.ready).then(function (s) { return s.node.card({}); }).then(function (b) {
+    Promise.all([window.spirit.ready, chInterfaces]).then(function (r) { return r[0].node.card({}); }).then(function (b) {
       chSelf = String((b && (b.publicKey || (b.card && b.card.publicKey))) || '');
     }, function () { /* a reply to its own line then names no writer */ });
 }
