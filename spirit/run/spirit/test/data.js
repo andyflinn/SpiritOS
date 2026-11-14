@@ -352,6 +352,46 @@ test.run('so its branch is whole at once', 0.2, function () {
   return (LATE.P.get('job/a') || {}).n === 2 && (LATE.P.get('job/c') || {}).n === 1 ? true : 'jobs: ' + JSON.stringify(LATE.P.branch('job'));
 }, test.limit.quick);
 
+// goal/G47.1, Q7, Andy: "For the detail missing files, shall spirit/data.js keep the whole file list for late loaders (1), or
+// the late fs list ask the node for it (2)?" "then the choice is 1." The node's files are one job, spirit.fs, one update per
+// file (job.js:204, "data.command {op, path, at}"); a late fs mirror is handed the tree as it stands, every path once.
+const TREE = {};
+const fsJob = function (data) { return { id: 'spirit.fs', kind: 'permanent', status: 'running', data: data }; };
+test.run('a late loader of the files is handed the whole tree: every file the stream told, each path once', 0.4, function () {
+  const { P, stream } = pageCopy();
+  stream.onSnapshot([fsJob({})]);
+  stream.onUpdate(fsJob({ command: { op: 'createDirectory', path: 'spirit', at: 1 } }));
+  ['spirit/a.js', 'spirit/b.js', 'spirit/c.js'].forEach(function (f, i) { stream.onUpdate(fsJob({ command: { op: 'createFile', path: f, size: 10 + i, at: 2 + i } })); });
+  stream.onUpdate(fsJob({ command: { op: 'changeFile', path: 'spirit/a.js', size: 99, at: 9 } }));
+  stream.onUpdate(fsJob({ treeComplete: true }));
+  TREE.r = recorder();
+  P.whole.addTranslator(TREE.r.t);
+  TREE.cmds = TREE.r.got.jobs.filter(function (j) { return j.id === 'spirit.fs' && j.data && j.data.command; }).map(function (j) { return j.data.command; });
+  const paths = TREE.cmds.map(function (c) { return c.path; });
+  const a = TREE.cmds.filter(function (c) { return c.path === 'spirit/a.js'; });
+  return (['spirit', 'spirit/a.js', 'spirit/b.js', 'spirit/c.js'].every(function (f) { return paths.indexOf(f) !== -1; }) && new Set(paths).size === paths.length && a.length === 1 && a[0].size === 99)
+    || 'the late loader got ' + JSON.stringify(TREE.cmds);
+}, test.limit.quick);
+test.run('and the tree whole after them: treeComplete is handed once, after every file', 0.4, function () {
+  if (!TREE.r) return 'no late loader: the test before it failed';
+  const fs = TREE.r.got.jobs.filter(function (j) { return j.id === 'spirit.fs'; });
+  const at = fs.map(function (j) { return !!(j.data && j.data.treeComplete); });
+  const n = at.filter(Boolean).length;
+  return (n === 1 && at.lastIndexOf(true) > fs.map(function (j) { return !!(j.data && j.data.command); }).lastIndexOf(true)) || 'its spirit.fs jobs: ' + JSON.stringify(fs.map(function (j) { return j.data; }));
+}, test.limit.quick);
+test.run('a file deleted before the late loader came is not handed to it', 0.4, function () {
+  const { P, stream } = pageCopy();
+  stream.onSnapshot([fsJob({})]);
+  stream.onUpdate(fsJob({ command: { op: 'createFile', path: 'spirit/gone.js', size: 1, at: 1 } }));
+  stream.onUpdate(fsJob({ command: { op: 'createFile', path: 'spirit/kept.js', size: 1, at: 2 } }));
+  stream.onUpdate(fsJob({ command: { op: 'deleteFile', path: 'spirit/gone.js', at: 3 } }));
+  stream.onUpdate(fsJob({ treeComplete: true }));
+  const r = recorder();
+  P.whole.addTranslator(r.t);
+  const made = r.got.jobs.filter(function (j) { return j.id === 'spirit.fs' && j.data && j.data.command && /^create/.test(j.data.command.op); }).map(function (j) { return j.data.command.path; });
+  return (made.indexOf('spirit/kept.js') !== -1 && made.indexOf('spirit/gone.js') === -1) || 'created for the late loader: ' + JSON.stringify(made);
+}, test.limit.quick);
+
 // in a process the cache sheds oldest first past a byte cap; a page keeps everything
 const CAP = {};
 test.run('in a process the cache has a cap, in bytes', 0.2, function () {
