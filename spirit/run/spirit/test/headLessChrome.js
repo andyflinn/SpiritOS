@@ -187,10 +187,30 @@ function stopChild(child) { return new Promise(function (r) { if (!child || chil
 // test's own. Answers { root, run, base, port, child, up, debug, start(), stop(), restart(), release() }: stop() ends the
 // node, restart() starts it again on the same tree and port, release() frees the lab node for the next test (it is freed
 // anyway when this process ends).
+async function handed(opts) {
+  const base = process.env.SPIRIT_MOUNT_BASE;
+  const run = process.env.SPIRIT_MOUNT_RUN ? path.resolve(process.env.SPIRIT_MOUNT_RUN) : '';
+  const post = function (call, args) {
+    return fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: call, args: args || {} }) })
+      .then(function (r) { return r.json().then(function (b) { return { status: r.status, body: b }; }, function () { return { status: r.status, body: null }; }); }, function () { return { status: 0, body: null }; });
+  };
+  if (run && typeof opts.before === 'function') await opts.before(run);
+  for (const name of opts.servers || []) {
+    await post('app.active', { key: name, active: true });
+    await until(function () { return post('api', { family: name }).then(function (r) { return !!(r.body && r.body.interface); }); }, 30000);
+  }
+  const theRuns = function () { return Promise.reject(new Error('a handed node is its run\'s: ask scratchNode({ own: true }) for one to stop or restart')); };
+  return { base: base, root: run ? path.dirname(path.dirname(run)) : '', run: run, child: null, up: true, debug: true, shared: true,
+    start: function () { return Promise.resolve(true); }, stop: theRuns, restart: theRuns, release: function () { return Promise.resolve(); } };
+}
 async function scratchNode(o) {
   const opts = o || {};
-  // One node for a whole run of every file (below): the run that started this one hands its address on.
-  if (process.env.SPIRIT_MOUNT_BASE) return { base: process.env.SPIRIT_MOUNT_BASE, child: null, root: '', up: true, debug: true, shared: true };
+  // ONE NODE HANDED TO A WHOLE RUN (goal/G47.1, Q10: testicle's UI tests "share one node and one Chrome that testicle hands
+  // them"): the run that started this one names the node's address in SPIRIT_MOUNT_BASE and its tree in SPIRIT_MOUNT_RUN. A test
+  // handed one gets that node and its tree to plant in (o.before), and the servers it asks for switched on there (app.active,
+  // as its owner turns one on), waited for until each answers its interface. A test that stops or restarts its node, or
+  // starts it later or on a port of its own, gets a node of its own (o.own, o.start false, o.port): the handed one is the run's.
+  if (process.env.SPIRIT_MOUNT_BASE && opts.shared === true) return handed(opts);
   const lab = await LAB.handOut('node');
   const run = lab.run;
   trees.set(path.resolve(run), lab);

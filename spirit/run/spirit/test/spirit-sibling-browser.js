@@ -76,6 +76,7 @@ async function batch() {
         }, 30000);
       }));
       env.SPIRIT_MOUNT_BASE = node.base;
+      env.SPIRIT_MOUNT_RUN = node.run;
     };
     const bootChrome = async function () {
       const found = H.findChrome();
@@ -88,6 +89,7 @@ async function batch() {
     // only then every script's checks said, each reported for its own script; a process, spirit.js and its reports' wait are
     // paid once for the run, not once a script.
     if (env.SPIRIT_MOUNT_BASE) process.env.SPIRIT_MOUNT_BASE = env.SPIRIT_MOUNT_BASE;
+    if (env.SPIRIT_MOUNT_RUN) process.env.SPIRIT_MOUNT_RUN = env.SPIRIT_MOUNT_RUN;
     if (env.SPIRIT_CHROME_PORT) process.env.SPIRIT_CHROME_PORT = env.SPIRIT_CHROME_PORT;
     // EACH SCRIPT JUDGED AS SOON AS ITS PAGE IS DRAWN (box v144: "every result reaches testicle the moment the page knows it"):
     // the run held open while the scripts are drawn one after the other, each one's checks said, and run and reported, the
@@ -620,7 +622,7 @@ function every() {
     return E.files2.length > 0 || 'testModule.js gives it no file to judge';
   }, test.limit.quick);
   test.run('the world: a scratch node comes up with its DEBUG on', 0.2, async function () {
-    E.node = await scratchNode(SERVERS);
+    E.node = await scratchNode(Object.assign({ shared: true }, SERVERS));
     return (E.node.up && E.node.debug) || 'the scratch node did not come up with its DEBUG on: every file would blame the wrong thing';
   }, test.limit.slow);
   const NO_NODE = 'no scratch node with its DEBUG on: the world failed';
@@ -721,7 +723,7 @@ async function session() {
   // Mountable: its manifest mounts it (node.mount true); a program app (publishData, pushOrigin: node.run) mounts none.
   let ownServer = false;
   try { const m = JSON.parse(fs.readFileSync(path.join(RUN, 'spirit', 'app', own, own + '.json'), 'utf8')); ownServer = !!own && !!(m && m.node && m.node.mount === true) && fs.existsSync(path.join(RUN, 'spirit', 'app', own, own + '.js')); } catch (e) { ownServer = false; }
-  const node = P.node = await scratchNode({ servers: SERVERS.servers.concat(ownServer && SERVERS.servers.indexOf(own) === -1 ? [own] : []) });
+  const node = P.node = await scratchNode({ shared: true, servers: SERVERS.servers.concat(ownServer && SERVERS.servers.indexOf(own) === -1 ? [own] : []) });
   if (!node.up) { P.fail = 'the scratch node did not come up: every rule here would blame the wrong thing'; return P; }
   if (!node.debug) { P.fail = 'the scratch node\'s DEBUG could not be switched on (node.debug)'; return P; }
   if (ownServer) {
