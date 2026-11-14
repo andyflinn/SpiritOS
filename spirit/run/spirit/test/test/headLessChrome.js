@@ -183,9 +183,11 @@ test.run('a test that ends leaves no Chrome of its own running', 0.4, function (
 test.run('a test that is killed leaves no Chrome of its own running', 0.4, function () { return chromeGone('kill'); }, test.limit.long);
 // A NODE AND A CHROME HANDED TO A TEST (goal/G47.1, Q10, wsl: "For testicle's 10 UI test files, shall each stay its own file
 // and share one node and one Chrome that testicle hands them (1) ...?" Andy: "i pick 10.1: \"one test per file\"."). A test
-// handed both, in SPIRIT_MOUNT_BASE and SPIRIT_CHROME_PORT, asks scratchNode and chromePage as it always does: it starts no
-// node and no Chrome of its own, it is answered the handed node with its tree, so a world can plant files there, the servers
-// it asks for answering there, and a page of the handed Chrome.
+// handed both, the node in SPIRIT_MOUNT_BASE and its tree in SPIRIT_MOUNT_RUN (a node answers no verb with its tree), the
+// Chrome in SPIRIT_CHROME_PORT, asks scratchNode for the shared one (shared: true; a test that kills or restarts its node
+// keeps one of its own) and chromePage as it always does: it starts no node and no Chrome of its own, it is answered the
+// handed node with its tree, so a world can plant files there, the servers it asks for answering there, and a page of the
+// handed Chrome.
 const HANDED = {};
 test.run('the world: a node and a Chrome to hand on', 0.2, async function () {
   const H = require(HELPER);
@@ -198,12 +200,12 @@ test.run('the world: a node and a Chrome to hand on', 0.2, async function () {
 test.after(async function () { try { if (HANDED.chrome && HANDED.chrome.close) HANDED.chrome.close(); } catch (e) { /* gone */ } try { if (HANDED.node && HANDED.node.release) await HANDED.node.release(); } catch (e) { /* gone */ } });
 test.run('handed a node and a Chrome, a test\'s scratchNode and chromePage start neither, and answer the handed ones with the tree and the servers it asked for', 0.4, async function () {
   if (!HANDED.node || !HANDED.node.up || !HANDED.chrome || HANDED.chrome.error) return 'nothing handed: the world failed';
-  const code = 'const H = require(' + JSON.stringify(HELPER) + ');(async function () { const n = await H.scratchNode({ servers: ["testicle"] });' +
+  const code = 'const H = require(' + JSON.stringify(HELPER) + ');(async function () { const n = await H.scratchNode({ shared: true, servers: ["testicle"] });' +
     ' const p = await H.chromePage(H.findChrome());' +
     ' let served = false; for (let i = 0; i < 120 && !served; i++) { served = await fetch(n.base + "/api/spirit", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ call: "api", args: { family: "testicle" } }) }).then(function (r) { return r.json(); }).then(function (b) { return !!(b && b.interface); }, function () { return false; }); if (!served) await H.sleep(250); }' +
     ' const title = p && p.evaluate ? await p.evaluate("1 + 1") : null;' +
     ' console.log("@@" + JSON.stringify({ base: n.base, run: n.run || "", root: n.root || "", served: served, page: title === 2, port: p && p.port })); try { p.kid.kill(); } catch (e) {} process.exit(0); }());';
-  const kid = spawn(process.execPath, ['-e', code], { cwd: RUN, stdio: ['ignore', 'pipe', 'pipe'], env: Object.assign({}, process.env, { SPIRIT_MOUNT_BASE: HANDED.node.base, SPIRIT_CHROME_PORT: String(HANDED.chrome.port) }) });
+  const kid = spawn(process.execPath, ['-e', code], { cwd: RUN, stdio: ['ignore', 'pipe', 'pipe'], env: Object.assign({}, process.env, { SPIRIT_MOUNT_BASE: HANDED.node.base, SPIRIT_MOUNT_RUN: HANDED.node.run, SPIRIT_CHROME_PORT: String(HANDED.chrome.port) }) });
   let out = '';
   kid.stdout.on('data', function (d) { out += d; });
   const own = { nodes: new Set(), chromes: new Set() };
