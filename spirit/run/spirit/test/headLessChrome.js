@@ -375,7 +375,42 @@ function sweepProfiles() {
     w.unref();
   } catch (e) { /* swept by the next test */ }
 }
+// ONE CHROME FOR A WHOLE RUN (goal/G47.1, box v144: "run on one node and one Chrome for the whole run"): a run that judges many
+// scripts starts one Chrome by sharedChrome() and names its debugging port to the processes it starts, in SPIRIT_CHROME_PORT;
+// there chromePage opens a fresh page of that Chrome (0.1 s) in place of a Chrome of its own (0.7 s), and its kill() closes
+// only that page. Measured on Windows before: a lab node's boot 6.4 s and a Chrome 0.7 s, paid again for every script.
+async function sharedChrome(chrome) {
+  const first = await chromePage(chrome);
+  if (first.error) return first;
+  return { kid: first.kid, profile: first.profile, port: first.port, close: function () { try { first.sock.close(); } catch (e) { /* gone */ } try { first.kid.kill(); } catch (e) { /* gone */ } } };
+}
+async function pageOf(port) {
+  const made = await fetch('http://127.0.0.1:' + port + '/json/new?about:blank', { method: 'PUT' }).then(function (r) { return r.json(); }, function (e) { return { error: String(e && e.message || e) }; });
+  if (!made || !made.webSocketDebuggerUrl) return { error: 'the shared Chrome opened no page: ' + JSON.stringify(made).slice(0, 200) };
+  const close = function () { fetch('http://127.0.0.1:' + port + '/json/close/' + made.id).catch(function () { /* gone with its Chrome */ }); };
+  return Object.assign(await attach(made.webSocketDebuggerUrl), { kid: { kill: close, pid: 0 }, profile: '', port: port, shared: true });
+}
+async function attach(url) {
+  const sock = new WebSocket(url);
+  await new Promise(function (resolve, reject) { sock.onopen = resolve; sock.onerror = reject; });
+  let n = 0;
+  const waiting = {};
+  const heard = [];
+  sock.onmessage = function (m) {
+    const msg = JSON.parse(String(m.data));
+    if (msg.id && waiting[msg.id]) { waiting[msg.id](msg); delete waiting[msg.id]; } else if (msg.method) heard.push(msg);
+  };
+  const send = function (method, params) { const id = ++n; sock.send(JSON.stringify({ id: id, method: method, params: params || {} })); return new Promise(function (r) { waiting[id] = r; }); };
+  const evaluate = function (expr) {
+    return send('Runtime.evaluate', { expression: expr, returnByValue: true, awaitPromise: true }).then(function (r) {
+      return r.result && r.result.result ? r.result.result.value : undefined;
+    });
+  };
+  await send('Runtime.enable'); await send('Network.enable'); await send('Log.enable'); await send('Page.enable');
+  return { send: send, evaluate: evaluate, heard: heard, sock: sock };
+}
 async function chromePage(chrome) {
+  if (process.env.SPIRIT_CHROME_PORT) return pageOf(process.env.SPIRIT_CHROME_PORT);
   sweepProfiles();
   const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-chrome-'));
   const kid = spawn(chrome, ['--headless=new', '--remote-debugging-port=0', '--user-data-dir=' + profile, '--no-first-run', '--no-default-browser-check',
@@ -392,23 +427,7 @@ async function chromePage(chrome) {
     return fetch('http://127.0.0.1:' + port + '/json/list').then(function (r) { return r.json(); }).then(function (list) { target = list.filter(function (t) { return t.type === 'page'; })[0]; return !!target; });
   }, WAIT);
   if (!target) return { kid: kid, profile: profile, error: 'Chrome opened no page' };
-  const sock = new WebSocket(target.webSocketDebuggerUrl);
-  await new Promise(function (resolve, reject) { sock.onopen = resolve; sock.onerror = reject; });
-  let n = 0;
-  const waiting = {};
-  const heard = [];
-  sock.onmessage = function (m) {
-    const msg = JSON.parse(String(m.data));
-    if (msg.id && waiting[msg.id]) { waiting[msg.id](msg); delete waiting[msg.id]; } else if (msg.method) heard.push(msg);
-  };
-  const send = function (method, params) { const id = ++n; sock.send(JSON.stringify({ id: id, method: method, params: params || {} })); return new Promise(function (r) { waiting[id] = r; }); };
-  const evaluate = function (expr) {
-    return send('Runtime.evaluate', { expression: expr, returnByValue: true, awaitPromise: true }).then(function (r) {
-      return r.result && r.result.result ? r.result.result.value : undefined;
-    });
-  };
-  await send('Runtime.enable'); await send('Network.enable'); await send('Log.enable'); await send('Page.enable');
-  return { kid: kid, profile: profile, send: send, evaluate: evaluate, heard: heard, sock: sock };
+  return Object.assign(await attach(target.webSocketDebuggerUrl), { kid: kid, profile: profile, port: port });
 }
 
 // A FAKE PAGE'S SPIRIT, AS AN ELEMENT FINDS IT (goal/G43.32): a test that runs an element script in a world of its own
@@ -433,4 +452,4 @@ function pageSpirit(s, loaded) {
   return sp;
 }
 
-module.exports = { pageSpirit: pageSpirit, sleep: sleep, until: until, freePort: freePort, appRuns: appRuns, watchRuns: watchRuns, findChrome: findChrome, scratchNode: scratchNode, scratchTree: scratchTree, startNodeOn: startNodeOn, freeTree: freeTree, scratchRelay: scratchRelay, scratchFaceRelay: scratchFaceRelay, chromePage: chromePage, WAIT: WAIT };
+module.exports = { sharedChrome: sharedChrome, pageSpirit: pageSpirit, sleep: sleep, until: until, freePort: freePort, appRuns: appRuns, watchRuns: watchRuns, findChrome: findChrome, scratchNode: scratchNode, scratchTree: scratchTree, startNodeOn: startNodeOn, freeTree: freeTree, scratchRelay: scratchRelay, scratchFaceRelay: scratchFaceRelay, chromePage: chromePage, WAIT: WAIT };

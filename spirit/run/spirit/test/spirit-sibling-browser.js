@@ -47,14 +47,50 @@ const arg = String(ARGS[0] || '');
 // SEVERAL SCRIPTS (box v94, 2: "else it will process all scripts listed in the arguments that fit"): each in a run of its own,
 // so each draws its own page and reports for itself.
 const GIVEN = ARGS.filter(function (a, i) { return a.indexOf('--') !== 0 && ARGS[i - 1] !== '--test'; });
+// ONE NODE AND ONE CHROME FOR THE WHOLE RUN (goal/G47.1, box v144: "run on one node and one Chrome for the whole run"): booted
+// here once, with every app server the scripts of this run need on (the shared servers, and the app of each script whose
+// manifest mounts one), and named to each script's run (SPIRIT_MOUNT_BASE, SPIRIT_CHROME_PORT), which then draws its page in a
+// fresh page of that Chrome on that node. Measured on Windows before: ~10 s a script, 6.4 s of it a lab node's boot and 0.7 s
+// a Chrome, paid again for every script.
 if (GIVEN.length > 1) {
-  let failed = 0;
-  GIVEN.forEach(function (one) {
-    const r = require('child_process').spawnSync(process.execPath, [__filename, one], { cwd: RUN, encoding: 'utf8', maxBuffer: 1 << 26 });
-    process.stdout.write(String(r.stdout || '') + String(r.stderr || ''));
-    if (r.status !== 0) failed += 1;
-  });
-  process.exit(failed ? 1 : 0);
+  (async function () {
+    const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+    const mounted = function (name) {
+      try { const m = JSON.parse(fs.readFileSync(path.join(RUN, 'spirit', 'app', name, name + '.json'), 'utf8')); return !!(m && m.node && m.node.mount === true) && fs.existsSync(path.join(RUN, 'spirit', 'app', name, name + '.js')); } catch (e) { return false; }
+    };
+    const servers = ['agent'];
+    GIVEN.forEach(function (one) { const own = (/^(?:spirit\/run\/)?spirit\/app\/([^/]+)\//.exec(one.split(path.sep).join('/')) || [])[1]; if (own && mounted(own) && servers.indexOf(own) === -1) servers.push(own); });
+    const env = Object.assign({}, process.env);
+    let node = null, chrome = null;
+    if (!process.env.SPIRIT_MOUNT_BASE) {
+      node = await H.scratchNode({ servers: servers });
+      if (node.up && node.debug) {
+        // Each of its servers answering its interface before any page is drawn, as a script's own run waited for its own.
+        for (const name of servers) {
+          await H.until(function () {
+            return fetch(node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'api', args: { family: name } }) })
+              .then(function (r) { return r.json(); }).then(function (b) { return !!(b && b.interface); }, function () { return false; });
+          }, 30000);
+        }
+        env.SPIRIT_MOUNT_BASE = node.base;
+      }
+    }
+    const found = H.findChrome();
+    if (found && !process.env.SPIRIT_CHROME_PORT) {
+      chrome = await H.sharedChrome(found);
+      if (!chrome.error) env.SPIRIT_CHROME_PORT = String(chrome.port);
+    }
+    let failed = 0;
+    for (const one of GIVEN) {
+      const r = require('child_process').spawnSync(process.execPath, [__filename, one], { cwd: RUN, env: env, encoding: 'utf8', maxBuffer: 1 << 26 });
+      process.stdout.write(String(r.stdout || '') + String(r.stderr || ''));
+      if (r.status !== 0) failed += 1;
+    }
+    if (chrome && chrome.close) chrome.close();
+    if (node) await node.release();
+    process.exit(failed ? 1 : 0);
+  }());
+  return;
 }
 let full = '';
 for (const p of [path.resolve(arg), path.join(RUN, arg), path.join(REPO, arg)]) {
@@ -664,6 +700,14 @@ async function session() {
   }
   const page = P.page = await chromePage(chrome);
   if (page.error) { P.fail = page.error; return P; }
+  // SETTLED, NOT SLEPT (goal/G47.1, box v144: "no fixed sleeps in the checks: each wait ends the moment the page has settled"):
+  // nothing of the element's own on the wire (spiritWatch.out), then two frames drawn; never longer than 2 s. The fixed sleeps it
+  // replaces (500, 400, 150, 300, 200, 200 ms) were ~2.6 s a script of a run's ~10 s.
+  const quiet = async function () {
+    const t0 = Date.now();
+    while (Date.now() - t0 < 2000 && await page.evaluate('(window.spiritWatch && window.spiritWatch.out) || 0')) await sleep(20);
+    await page.evaluate('new Promise(function (r) { requestAnimationFrame(function () { requestAnimationFrame(function () { r(true); }); }); })');
+  };
 
   // it loads by itself
   // THE BARE MOUNT PAGE: spirit.js alone, then this one file, mounted by itself (rule/26: "every element loads its own
@@ -681,7 +725,7 @@ async function session() {
       report = s ? JSON.parse(s) : null; return !!report && report.state !== 'loading';
     });
   }, WAIT);
-  await sleep(500);
+  await quiet();
   P.report = report;
   P.thrown = page.heard.filter(function (m) { return m.method === 'Runtime.exceptionThrown'; }).map(function (m) { return (m.params.exceptionDetails.exception && m.params.exceptionDetails.exception.description) || m.params.exceptionDetails.text; });
   // A file asked for and not there is missing; the door's answers (a refusal answers 404 too) and the browser's own
@@ -791,7 +835,7 @@ async function session() {
   const count = await page.evaluate('window.spiritMount.box.querySelectorAll("[data-tool],[data-tab]").length');
   for (let i = 0; i < count; i++) {
     await page.evaluate('(function () { var b = window.spiritMount.box.querySelectorAll("[data-tool],[data-tab]")[' + i + ']; if (b) b.click(); }())');
-    await sleep(400);
+    await quiet();
     await probe();
     await iconProbe();
   }
@@ -827,8 +871,7 @@ async function session() {
     pressed += 1;
     // Its writes answered, or two seconds, whichever comes first.
     const t0 = Date.now();
-    await sleep(150);
-    while (Date.now() - t0 < 2000 && await page.evaluate('window.spiritWatch.out')) await sleep(100);
+    await quiet();
     await page.evaluate('window.spiritWatch.settle()');
   }
   const W = P.W = JSON.parse(await page.evaluate('JSON.stringify(window.spiritWatch || null)')) || { net: [], subs: [], writes: [], moved: [] };
@@ -852,11 +895,11 @@ async function session() {
   const closed = probed.some(function (x) { return x.redrew; }) ? 0 : await page.evaluate(DROPDOWNS + '.length');
   for (let i = 0; i < closed; i++) {
     await page.evaluate('(function () { var b = ' + DROPDOWNS + '[' + i + ']; if (b) b.click(); }())');
-    await sleep(300);
+    await quiet();
     const again = JSON.parse(await page.evaluate('Promise.resolve(window.spiritWatch.probe()).then(function (x) { return JSON.stringify(x); })'));
     probed = probed.map(function (x) { const y = again.filter(function (z) { return z.path === x.path; })[0]; return y && y.redrew ? Object.assign({}, x, { redrew: true, hidden: false }) : x; });
     await page.evaluate('document.body.click()');
-    await sleep(200);
+    await quiet();
   }
   P.probed = probed;
   P.outside = JSON.parse(await page.evaluate('JSON.stringify(window.spiritWatch && window.spiritWatch.drawnOutside ? window.spiritWatch.drawnOutside() : [])'));
@@ -864,7 +907,7 @@ async function session() {
   // EVERY ELEMENT BRINGS ITS OWN SUBSCRIPTIONS, AND LETS THEM GO (rule/8; goal/G41.27): destroyed, nothing it listened to
   // is still held.
   if (P.destroyed !== 'none') {
-    await sleep(200);
+    await quiet();
     P.after = JSON.parse(await page.evaluate('JSON.stringify((window.spiritWatch || { subs: [] }).subs)'));
   }
   P.stage = 'done';
@@ -1098,9 +1141,12 @@ function pageAfter(P) {
     const page = P.page; const node = P.node;
     if (page && page.sock) try { page.sock.close(); } catch (e) { /* gone */ }
     if (page && page.kid) try { page.kid.kill(); } catch (e) { /* gone */ }
-    if (node && !node.shared) try { node.child.kill(); } catch (e) { /* gone */ }
-    await sleep(300);
-    [node && !node.shared ? node.root : '', page && page.profile].forEach(function (d) { if (d) try { fs.rmSync(d, { recursive: true, force: true }); } catch (e) { /* scratch */ } });
+    // ITS OWN NODE FREED, NEVER DELETED (goal/G47.1: a lab node's root removed here was rebuilt by the next test); a shared
+    // node and a shared Chrome are their run's, which ends them; a page of the shared Chrome closes alone (kill, above).
+    if (node && !node.shared) {
+      try { if (typeof node.release === 'function') await node.release(); else require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* freed when this process ends */ }
+    }
+    if (page && page.profile) { await sleep(300); try { fs.rmSync(page.profile, { recursive: true, force: true }); } catch (e) { /* its watcher takes it */ } }
   });
 }
 
