@@ -7,7 +7,8 @@
 // never says how far past the limit the text went: it simply does not get there.
 //
 //   spirit.required.spirit.element.fieldInput.fits(value, rule) -> true when the rule takes it
-//   spirit.required.spirit.element.fieldInput.attach(input, rule)   rule: 'name' (64 bytes), 'description' (128), 'paragraph' (2048),
+//   spirit.required.spirit.element.fieldInput.attach(input, rule)   the input's maxlength set to the rule's bytes, and the bytes held
+//                                                     as typed; rule: 'name' (64 bytes), 'description' (128), 'paragraph' (2048),
 //                                                     'line' (1024, a chat line), 'glyph' (one glyph of at most 8 bytes)
 (function (root) {
   var E = (root.spirit = root.spirit || {}).element = root.spirit.element || {};
@@ -37,6 +38,11 @@
 
   function attach(input, rule) {
     if (!input || typeof input.addEventListener !== 'function') return input;
+    // ITS maxlength, THE RULE'S BYTES (goal/G47.1, the box: "every INPUT field must be checked for a length constraint", "a
+    // maxlength on the input DOES count as its length constraint"): a character is at least one byte, so the rule's bytes
+    // are a ceiling on its characters; the bytes themselves are held below, as they are typed. Set once the rules are in.
+    var setMax = function () { var m = limitOf(rule); if (isFinite(m)) input.maxLength = m; return isFinite(m); };
+    if (!setMax() && root.spirit && typeof root.spirit.require === 'function') Promise.resolve(root.spirit.require('spirit/fieldRules.js')).then(setMax, function () {});
     input.addEventListener('beforeinput', function (e) {
       var type = String((e && e.inputType) || '');
       if (type.indexOf('insert') !== 0) return;   // a deletion always passes

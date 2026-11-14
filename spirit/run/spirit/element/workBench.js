@@ -64,9 +64,9 @@
       // EACH BUTTON A SQUARE AROUND ITS ICON (Andy: "the icon strips in workbench don't show as square, or maybe it's the
       // buttons containing them"): its line was taller than the icon, so it stood taller than wide; its side is stated, and
       // the 44 pixel least height shell.css gives every app's button (a touch target) is lifted for it.
-      return '<div id="' + pre + 'strip-' + side + '" class="fill" style="flex:none;width:' + STRIP_WIDTH + 'px;box-sizing:border-box;overflow-x:hidden;overflow-y:auto;scrollbar-gutter:stable;align-items:center;gap:6px;padding:4px">' +
+      return '<div id="' + pre + 'strip-' + side + '" class="fill wb-strip" style="flex:none;width:' + STRIP_WIDTH + 'px;box-sizing:border-box;overflow-x:hidden;overflow-y:auto;scrollbar-gutter:stable;align-items:center">' +
         sides[side].map(function (t) {
-          return '<button type="button" data-side="' + side + '" data-tool="' + esc(t.name) + '" title="' + esc(t.title) + '" style="flex:none;font-size:20px;box-sizing:border-box;width:1.6em;height:1.6em;min-width:0;min-height:0;padding:0;display:flex;align-items:center;justify-content:center;line-height:1">' + esc(t.icon) + '</button>';
+          return '<button type="button" data-side="' + side + '" data-tool="' + esc(t.name) + '" title="' + esc(t.title) + '" class="wb-tool" style="flex:none;font-size:20px;box-sizing:border-box;width:1.6em;height:1.6em;min-width:0;min-height:0;display:flex;align-items:center;justify-content:center;line-height:1">' + esc(t.icon) + '</button>';
         }).join('') + '</div>';
     }
     // Each strip button's glyph, through the icon element once it is there; as plain text until then, or if it never
@@ -83,20 +83,21 @@
         });
       });
     }
-    var PAD = 'box-sizing:border-box;padding-left:0.5em;padding-right:0.5em';
+    // Its sides' spacing is shell.css's .wb-pad (goal/G47.1, box v109: "style issues like margin, padding and gap do NOT belong in UI scripts").
+    var PAD = 'box-sizing:border-box';
     var STRIP_WIDTH = 64;
     // A PANE IS A BOX OF A STATED SIZE (rule/16; Andy, on G41.18: "ALL lists, otherwise my took bars at the top of a
     // container keep scrolling away...."): a side pane is a column as tall as the bench (class fill, its own width kept
     // by flex: none), and each tool's box in it a fill too, so a list inside scrolls in itself under its title and
     // buttons. What overflows a tool that is no list still scrolls the pane.
-    function pane(side) { return '<div id="' + pre + 'pane-' + side + '" class="fill" style="flex:none;width:' + widths[side] + 'px;overflow:auto;' + PAD + '"></div>'; }
+    function pane(side) { return '<div id="' + pre + 'pane-' + side + '" class="fill wb-pad" style="flex:none;width:' + widths[side] + 'px;overflow:auto;' + PAD + '"></div>'; }
     function border(side) { return '<div id="' + pre + 'border-' + side + '" data-border="' + side + '" style="flex:none;width:5px;cursor:col-resize;background:var(--line, #ccc)"></div>'; }
     // ITS CONTAINER BOUNDS IT, WHATEVER THE CONTAINER IS (goal/G41.22; Andy: "workBench if, contained, needs to be
     // restreicted by its container, be that the shell app itself or another container"): a fill in a column, and its
     // container's whole height in any other box, so nothing in it grows the page.
     container.innerHTML = '<div class="fill" style="flex-direction:row;min-width:0;height:100%;max-height:100%;box-sizing:border-box">' +
       (sides.left.length ? strip('left') + pane('left') + border('left') : '') +
-      '<div id="' + pre + 'center" class="fill" style="overflow:auto;min-width:0;' + PAD + '"></div>' +
+      '<div id="' + pre + 'center" class="fill wb-pad" style="overflow:auto;min-width:0;' + PAD + '"></div>' +
       (sides.right.length ? border('right') + pane('right') + strip('right') : '') + '</div>';
     function part(name) { return container.querySelector('#' + pre + name); }
 

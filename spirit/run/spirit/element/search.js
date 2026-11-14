@@ -59,9 +59,11 @@
   // ITS LIBRARIES, IT LOADS ITSELF (rule/26; found by the shell's general test on a bare page, goal/G41.18): the string
   // and object matchers and the probability bucket, through spirit.require. Asked as this file runs, so whoever requires
   // the list is answered once they are in. And fieldInput, which holds the search words to their rule.
+  // fieldInput's load is kept: a search made before it is in attaches its words to it once it is (below).
+  var fieldInputIn = null;
   if (window.spirit && typeof window.spirit.require === 'function') {
     ['spirit/probabilityStringMatch.js', 'spirit/probabilityStringObjectMatch.js', 'spirit/probabilityBucket.js', 'spirit/element/icon.js',
-      'spirit/element/fieldInput.js', 'spirit/limits.js'].forEach(function (p) { window.spirit.require(p); });
+      'spirit/element/fieldInput.js', 'spirit/limits.js'].forEach(function (p) { var got = window.spirit.require(p); if (p === 'spirit/element/fieldInput.js') fieldInputIn = got; });
   }
   function P() { return window.spirit.probability || {}; }
   // A VERB OF A FAMILY, THROUGH THE SPIRIT OBJECT (goal/G43.24, as grantsPanel asks): family.verb called on that family as
@@ -212,7 +214,8 @@
     // every row's first control starts at the same place. The row is text, so the icon is written as the markup it made.
     // THE BUBBLE IS THE ONE SHARED STYLE (goal/G41.27; Andy, box: "The bubble is one shared style, the same
     // probabilitySearch's search bubble uses."): shell.css's .shell-bubble, the rowForm's too.
-    var ROW = 'display:flex;flex-wrap:wrap;align-items:center;gap:1em;';
+    // Every spacing of it is shell.css's, the ps-* classes (goal/G47.1, box v109: "style issues like margin, padding and gap do NOT belong in UI scripts").
+    var ROW = 'display:flex;flex-wrap:wrap;align-items:center;';
     function iconHtml(glyph) {
       var I = window.spirit.element && window.spirit.element.spirit.element.icon;
       if (!I || typeof I.create !== 'function' || typeof document === 'undefined') return '<span>' + esc(glyph) + '</span>';
@@ -224,24 +227,24 @@
       var row = filters.filter(function (f) { return typeof f.when !== 'function' || !!f.when(cachedRows()); }).map(function (f) {
         return '<span data-filter="' + esc(f.name) + '">' + choicesOf(f).map(function (c) {
           var on = f.toggle ? values[f.name] === true : f.multi ? !values[f.name][c.value] : values[f.name] === c.value;
-          return '<button type="button" data-filter="' + esc(f.name) + '" data-value="' + esc(c.value) + '" style="margin-right:1em;' +
+          return '<button type="button" data-filter="' + esc(f.name) + '" data-value="' + esc(c.value) + '" class="ps-filter" style="' +
             (on ? 'font-weight:bold;outline:1px solid currentColor' : 'opacity:0.6') + '">' + esc((c.icon ? c.icon + ' ' : '') + (c.word || '')) + '</button>';
         }).join('') + '</span>';
       }).join('');
-      return row ? '<div style="margin-bottom:0.5em;' + ROW + '">' + iconHtml('🗜') + row + '</div>' : '';
+      return row ? '<div class="ps-row ps-below" style="' + ROW + '">' + iconHtml('🗜') + row + '</div>' : '';
     }
     var paneHtml =
       // ITS OWN COLUMN (goal/G40.8): the box it is given is its mounter's, sized by it; inside, the filters and the search
       // row are fixed rows and the list takes the rest. A dropdown's pane is the same, popped up.
       '<div style="display:flex;flex-direction:column;height:100%;min-height:0;flex:1 1 auto">' +
-      '<div class="shell-bubble" style="margin-top:1em">' +
-      (selectors.length ? '<div id="' + pre + 'selectors" style="margin-bottom:0.5em;' + ROW + '">' + iconHtml('🪣') +
+      '<div class="shell-bubble ps-above">' +
+      (selectors.length ? '<div id="' + pre + 'selectors" class="ps-row ps-below" style="' + ROW + '">' + iconHtml('🪣') +
         selectors.map(function (s, i) { return '<span id="' + pre + 'selector' + i + '"></span>'; }).join('') + '</div>' : '') +
       '<div id="' + pre + 'filters">' + filterHtml() + '</div>' +
-      '<div style="' + ROW + 'flex-wrap:nowrap">' +
+      '<div class="ps-row" style="' + ROW + 'flex-wrap:nowrap">' +
         iconHtml('🔎') +
         '<span style="position:relative;display:inline-block;flex:1">' +
-          '<input id="' + pre + 'text" type="text" autocomplete="off" style="width:100%;padding-right:2em;box-sizing:border-box">' +
+          '<input id="' + pre + 'text" type="text" autocomplete="off" class="ps-text" style="width:100%;box-sizing:border-box">' +
           '<button id="' + pre + 'clear" type="button" title="Clear" style="position:absolute;right:0.3em;top:50%;transform:translateY(-50%);border:none;background:none;cursor:pointer">✕</button>' +
         '</span>' +
         '<button id="' + pre + 'search" type="button">Search</button>' +
@@ -250,7 +253,7 @@
       '</div>' +
       // EVERY LIST SCROLLS IN ITS OWN BOX (goal/G40.8, the contained-app rule: "only a list or a viewer scrolls, inside
       // itself"): a dropdown's up to 20em, a pane's list filling what its pane leaves it.
-      '<div id="' + pre + 'list" tabindex="0" style="margin-top:1em;overflow:auto;' + (dropdown ? 'max-height:20em' : 'flex:1;min-height:0') + '"></div>' +
+      '<div id="' + pre + 'list" tabindex="0" class="ps-above" style="overflow:auto;' + (dropdown ? 'max-height:20em' : 'flex:1;min-height:0') + '"></div>' +
       '</div>';
     // THE DROPDOWN IS JUST A POP-UP PANE (goal/G29.9): inline like any input, a field; the very
     // same pane pops up under it, solid, as wide as its rows up to the page.
@@ -261,7 +264,7 @@
     container.innerHTML = dropdown
       ? '<span style="position:relative;display:inline-block">' +
           '<button id="' + pre + 'field" type="button" style="text-align:left"></button>' +
-          '<div id="' + pre + 'popup" popover="manual" class="stat-tile wide" style="position:fixed;inset:auto;margin:0;color:inherit;overflow:auto;box-sizing:border-box;min-width:min(24em,calc(100vw - 16px));width:max-content;max-width:calc(100vw - 16px);z-index:10;' +
+          '<div id="' + pre + 'popup" popover="manual" class="stat-tile wide ps-popup" style="position:fixed;inset:auto;color:inherit;overflow:auto;box-sizing:border-box;min-width:min(24em,calc(100vw - 16px));width:max-content;max-width:calc(100vw - 16px);z-index:10;' +
             'background:linear-gradient(rgba(255,255,255,0.06),rgba(255,255,255,0.06)),#1a1a2e;box-shadow:0 6px 24px rgba(0,0,0,0.5)" hidden>' + paneHtml + '</div>' +
         '</span>'
       : paneHtml;
@@ -269,8 +272,14 @@
     // THE SEARCH WORDS STOP AT THEIR LIMIT (goal/G41.27; Andy: "of course search words need a limit, search words must
     // follow the description rules."): fieldInput holds them to the description rule as they are typed.
     // fieldInput is a helper, not an element: it stands at spirit.required.<its path> (goal/G43.32; Andy: "they live in require").
-    var FI = window.spirit.required && window.spirit.required.spirit && window.spirit.required.spirit.element && window.spirit.required.spirit.element.fieldInput;
-    if (FI && el('text')) FI.attach(el('text'), 'description');
+    // ITS PART, WAITED FOR (goal/G47.1; -browser: "every input it draws has a maxlength"): fieldInput was asked for as this file
+    // ran; a search made before it is in attaches once it is, never left with its words unheld.
+    function holdWords() {
+      var FI = window.spirit.required && window.spirit.required.spirit && window.spirit.required.spirit.element && window.spirit.required.spirit.element.fieldInput;
+      if (FI && live && el('text')) { FI.attach(el('text'), 'description'); return true; }
+      return false;
+    }
+    if (!holdWords()) Promise.resolve(fieldInputIn).then(holdWords, function () {});
     // The selectors mounted in their row; a pick in any of them redraws the list.
     function onSelector() { draw(); }
     selectors.forEach(function (s, i) {
@@ -344,7 +353,7 @@
       function bar(w) {
         var pct = top > 0 ? Math.round((w.rank / top) * 1000) / 10 : 0;
         return { title: (top > 0 ? w.rank / top : 0).toFixed(2),
-          html: '<div style="width:3em"><div style="width:' + pct + '%;margin-left:auto;height:0;border-top:0.8em solid var(--spirit-match, rgba(130,180,240,0.55))"></div></div>' };
+          html: '<div style="width:3em"><div class="ps-rank-right" style="width:' + pct + '%;height:0;border-top:0.8em solid var(--spirit-match, rgba(130,180,240,0.55))"></div></div>' };
       }
       // THE FACE TILES (goal/G43.6). Andy, box: "A tile: its image, the relevance, its label.", "The relevance is a centered,
       // horizontal bar, between the tile image and the tile label: the bar the lists draw, the same colour and number.", "With no
@@ -352,7 +361,7 @@
       function tileBar(w) {
         var pct = top > 0 ? Math.round((w.rank / top) * 1000) / 10 : 0;
         return '<div class="list-rank" style="width:3em;height:0.8em;flex:none"' + (searching ? ' title="' + esc((top > 0 ? w.rank / top : 0).toFixed(2)) + '"' : '') + '>' +
-          '<div style="width:' + pct + '%;margin:0 auto;height:0;border-top:0.8em solid var(--spirit-match, rgba(130,180,240,0.55))"></div></div>';
+          '<div class="ps-rank-centre" style="width:' + pct + '%;height:0;border-top:0.8em solid var(--spirit-match, rgba(130,180,240,0.55))"></div></div>';
       }
       // Andy, box: "The tooltip shows the contents of the row, one above the other", "If the object is nested, it shows the js
       // object path", "It drops the icon row: the user is hovering over it."
@@ -394,14 +403,16 @@
       var h = { face: face, note: make('div') };
       h.note.className = 'job-manifest-note';
       if (dropdown && o.all && !tiles) {
-        h.none = make('button', 'margin-top:0.5em');
+        h.none = make('button');
+        h.none.className = 'ps-none';
         h.none.id = pre + 'none';
         h.none.type = 'button';
         h.none.textContent = 'None';
         list.appendChild(h.none);
       }
       if (tiles) {
-        h.root = make('div', 'display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:16px;align-content:start');
+        h.root = make('div', 'display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));align-content:start');
+        h.root.className = 'ps-tiles';
         h.body = h.root;
       } else {
         h.root = make('table');

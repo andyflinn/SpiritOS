@@ -124,7 +124,20 @@ test.run('it never says how far past the limit: a refusal leaves the text as it 
   if (!full) return 'no input attached';
   full.type('insertText', 'bbbb');
   const keys = Object.keys(full).sort();
-  return (full.value === 'a'.repeat(64) && made === 0 && JSON.stringify(keys) === JSON.stringify(['addEventListener', 'heard', 'selectionEnd', 'selectionStart', 'type', 'value'])) || 'value ' + full.value.length + ' long, elements made ' + made + ', keys ' + short(keys);
+  // Its maxlength is the rule's, set by attach (below), no count of the excess.
+  return (full.value === 'a'.repeat(64) && made === 0 && JSON.stringify(keys) === JSON.stringify(['addEventListener', 'heard', 'maxLength', 'selectionEnd', 'selectionStart', 'type', 'value'])) || 'value ' + full.value.length + ' long, elements made ' + made + ', keys ' + short(keys);
+}, test.limit.quick);
+// goal/G47.1, the box: "every INPUT field must be checked for a length constraint", "a maxlength on the input DOES count as its
+// length constraint": attach sets the input's maxlength to its rule's bytes, a ceiling on its characters.
+test.run('attach sets the input\'s maxlength to its rule\'s bytes: name 64, description 128, paragraph 2048, line 1024, glyph 8', 0.4, function () {
+  if (!F) return NO_F;
+  const got = ['name', 'description', 'paragraph', 'line', 'glyph'].map(function (r) { return F.attach(input(''), r).maxLength; });
+  return JSON.stringify(got) === JSON.stringify([64, 128, 2048, 1024, 8]) || 'maxlengths ' + short(got);
+}, test.limit.quick);
+test.run('a rule it does not know sets no maxlength', 0.4, function () {
+  if (!F) return NO_F;
+  const i = F.attach(input(''), 'zzNoSuchRule');
+  return !('maxLength' in i) || 'maxLength ' + short(i.maxLength);
 }, test.limit.quick);
 test.run('attach of no input answers it, untouched', 0.2, function () {
   if (!F) return NO_F;

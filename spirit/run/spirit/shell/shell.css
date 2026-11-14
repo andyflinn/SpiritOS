@@ -1135,6 +1135,31 @@ details.stat-tile > summary {
    Hidden stays hidden. */
 .fill { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
 .fill[hidden] { display: none; }
+/* THE SHARED ELEMENTS' SPACING, HERE AND NOT IN THEIR SCRIPTS (goal/G47.1, box v109: "style issues like margin, padding and gap
+   do NOT belong in UI scripts: no UI script sets them"; Andy: "IF YOUR ELEMENTS DONT PASS, FIX THE FUCKING CAUSE"). Each was a
+   style attribute of its element's script, the same values. */
+/* spirit/element/workBench.js: a strip, its tool buttons, a pane's and the centre's sides. */
+.wb-strip { gap: 6px; padding: 4px; }
+/* As heavy as #app-content's and the face's button rules, which a style attribute used to beat. */
+.wb-tool, #app-content button.wb-tool, #desktop button.wb-tool { padding: 0; }
+.wb-pad { padding-left: 0.5em; padding-right: 0.5em; }
+/* spirit/element/tabContainer.js: the row of tabs. */
+.tc-tabs { gap: 6px; }
+/* spirit/element/search.js: its rows, a filter's buttons, the bubble and the list below it, the search words, the dropdown,
+   the match bar, None and the tiles. */
+.ps-row { gap: 1em; }
+.ps-below { margin-bottom: 0.5em; }
+.ps-above { margin-top: 1em; }
+.ps-filter { margin-right: 1em; }
+.ps-text, #app-content input.ps-text, #desktop input.ps-text { padding-right: 2em; }
+.ps-popup { margin: 0; }
+.ps-rank-right { margin-left: auto; }
+.ps-rank-centre { margin: 0 auto; }
+.ps-none { margin-top: 0.5em; }
+.ps-tiles { gap: 16px; }
+/* spirit/element/search/file/listElement.js: the tree's indent and its hidden path. */
+.files-tree .file-depth { display: inline-block; padding-left: calc(var(--depth) * 2em); }
+.files-tree .path-dir { display: none; }
 /* A TAB CONTAINER'S CONTENT (spirit/element/tabContainer.js; goal/G41.13, Andy: "our standard 0.5em padding", "it must occupy
    all remaining vertical space, that it must be constrained to", "a bubble of of darker green than already is on the
    page"): the height left, scrolling inside itself, in a rounded well. */

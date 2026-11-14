@@ -43,7 +43,7 @@
           (t.closable ? '<span class="tab-close" role="button" aria-label="close" data-tab-close="' + esc(t.name) + '">✕</span>' : '') + '</button>';
       }).join(' ');
     }
-    container.innerHTML = '<div class="fill"><div id="' + pre + 'tabs" style="display:flex;flex-wrap:wrap;gap:6px">' + rowHtml() + '</div>' +
+    container.innerHTML = '<div class="fill"><div id="' + pre + 'tabs" class="tc-tabs" style="display:flex;flex-wrap:wrap">' + rowHtml() + '</div>' +
       '<div id="' + pre + 'content" class="tab-content fill"></div></div>';
     function part(name) { return container.querySelector('#' + pre + name); }
 
