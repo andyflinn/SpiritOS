@@ -1452,9 +1452,18 @@ test.run('a suite asked by testicle.run goes to the head of the queue: tau runs 
   const t = (starts('tau')[0] || {}).at, o = (starts('omicron')[0] || {}).at;
   return (!!ok && t < o) || 'tau started ' + t + ', omicron ' + o + ': ' + short(runlog().filter(function (l) { return l.suite === 'tau' || l.suite === 'omicron'; }));
 }, test.limit.long);
+// A RUN THE PRESS STOPPED ENDED TOO (goal/G47.1, run.json: the press "stop[s] the run going unless it is that one"): a stopped
+// suite never logs its end, but testicle says when it stopped it, "runner: stopped <suite> ... a press of <suite>", in its
+// testicle.err; the pressed suite starts only once that run's process has exited.
+const stoppedAt = function (name) {
+  let lines = [];
+  try { lines = fs.readFileSync(path.join(s.run, 'spirit', 'state', 'testicle', 'data', 'testicle.err'), 'utf8').split('\n'); } catch (e) { return []; }
+  return lines.filter(function (l) { return l.indexOf('runner: stopped ' + Z + 'test/' + name + '.js ') !== -1; }).map(function (l) { return Date.parse(l.split(' ')[0]); }).filter(function (n) { return n > 0; });
+};
 test.run('never a second run beside the running one: tau started after every run before it ended', 0.2, function () {
   const t = (starts('tau')[0] || {}).at;
-  const open = runlog().filter(function (l) { return l.ev === 'start' && l.suite !== 'tau' && l.at < t && !runlog().some(function (e) { return e.suite === l.suite && e.ev === 'end' && e.at >= l.at && e.at <= t; }); });
+  const ended = function (l) { return runlog().some(function (e) { return e.suite === l.suite && e.ev === 'end' && e.at >= l.at && e.at <= t; }) || stoppedAt(l.suite).some(function (at) { return at >= l.at && at <= t; }); };
+  const open = runlog().filter(function (l) { return l.ev === 'start' && l.suite !== 'tau' && l.at < t && !ended(l); });
   return (!!t && !open.length) || 'running when tau started: ' + short(open);
 }, test.limit.quick);
 
