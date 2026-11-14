@@ -255,7 +255,7 @@
   // later is handed them all at once, so its branch is whole. A process's translator comes with its server, before any
   // row, so nothing is kept there.
   var translators = [];
-  var seenJobs = new Map();             // job id (and kind of news) -> the job as it now stands (a page only)
+  var seenJobs = new Map();             // job id (and kind of news, or path) -> the job as it now stands (a page only)
   // ONE OF THE NODE'S OWN JOBS CARRIES ONE KIND OF NEWS PER EVENT (goal/G43.20, box: "each event only its own news"): spirit.app
   // its app list or a face part, spirit its stats or its join steps. So such a job is kept once per kind, told by the
   // fields its data carries, and a translator registered later is handed every kind, not only the newest event.
@@ -289,10 +289,32 @@
     if (!onPage && n) homeNode = n;
     return Object.assign({}, ev, { fromNode: n });
   }
+  // A JOB WHOSE UPDATES EACH CARRY A PATH IS KEPT ONCE PER PATH (goal/G47.1, Andy: "ALL, then the choice is 1."): the node's
+  // files come as one job, spirit.fs, one update per file, and a job kept only as it last stood handed a family loaded
+  // late its last file alone, and then the tree's end, so it thought one file the whole tree (the script detail, mounted
+  // alone, called spirit/test/spirit.js missing). So the tree is kept as it stands: a file's update under its path, a
+  // file's delete taking its path out, a folder's delete every path under it; any other update of a job is kept as it
+  // last stood, moved after what came before it, so the tree's end is handed after its files.
+  function keep(job) {
+    var cmd = job.data && typeof job.data === 'object' ? job.data.command : null;
+    if (cmd && typeof cmd === 'object' && cmd.path) {
+      var at = String(job.id) + '\npath\n' + String(cmd.path);
+      if (cmd.op === 'deleteFile' || cmd.op === 'deleteDirectory') {
+        seenJobs.delete(at);
+        if (cmd.op === 'deleteDirectory') Array.from(seenJobs.keys()).forEach(function (k) { if (k.indexOf(at + '/') === 0) seenJobs.delete(k); });
+        return;
+      }
+      seenJobs.set(at, job);
+      return;
+    }
+    var k = seenKey(job);
+    seenJobs.delete(k);
+    seenJobs.set(k, job);
+  }
   // Every job is handed over, data or none: each translator reads what it needs (the jobs family keeps them whole).
   function onJob(job, from) {
     if (!job || typeof job !== 'object') return;
-    if (onPage && job.id) seenJobs.set(seenKey(job), job);
+    if (onPage && job.id) keep(job);
     if (handing()) each('onJob', stamped(job, from));
   }
   function onRename(d, from) {

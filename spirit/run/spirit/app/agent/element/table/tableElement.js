@@ -41,6 +41,10 @@
 // THE PAGE ONLY PROPOSES (rule/19: "the ui must propose all state changes to the server and only draw changes contained
 // in the servers update/change stream"): a changed field and Delete go to the server, and what an editor shows is the server's get
 // and the rows its stream then brings, never what was typed.
+// ITS OWN APP'S api.js AND data.js, LOADED AS IT RUNS (goal/G47.1, the box: an element under spirit/app/ "is red unless it
+// loaded its own app's api.js and data.js").
+if (window.spirit && typeof window.spirit.require === 'function') Promise.resolve(window.spirit.require('spirit/app/agent/api.js')).catch(function () {});
+if (window.spirit && typeof window.spirit.cacheManager === 'function') Promise.resolve(window.spirit.cacheManager('agent')).catch(function () {});
 (function () {
   var AGENT = spirit.familyPath('agent');
   var made = 0;
