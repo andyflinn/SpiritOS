@@ -67,9 +67,13 @@ async function world() {
     if (!ok) silent.push(a);
   }
   if (silent.length) { W.fail = 'app servers that never answered: ' + silent.join(', '); return; }
-  W.page = await chromePage(chrome);
-  if (W.page.error) { W.fail = W.page.error; return; }
+  // A PAGE OF ITS OWN FOR EACH SCRIPT: one that hangs leaves the shared page unusable, and every script after it failed
+  // "never finished loading" for the one before (seen on wsl's node, 2026-11-14).
+  const closePage = function () { try { if (W.page && W.page.sock) W.page.sock.close(); } catch (e) { /* gone */ } try { if (W.page && W.page.kid) W.page.kid.kill(); } catch (e) { /* gone */ } try { if (W.page && W.page.profile) fs.rmSync(W.page.profile, { recursive: true, force: true }); } catch (e) { /* scratch */ } W.page = null; };
   for (const rel of TARGETS) {
+    closePage();
+    W.page = await chromePage(chrome);
+    if (W.page.error) { W.reports[rel] = { fail: 'no Chrome page for it: ' + W.page.error }; continue; }
     const app = appOf(rel);
     await W.page.send('Page.navigate', { url: W.node.base + '/DEBUG/' + rel.replace(/\.js$/, '') + '/headLessBrowser.html' });
     let report = null;
