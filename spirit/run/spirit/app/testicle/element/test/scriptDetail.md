@@ -32,6 +32,7 @@ tab's file detail)"*). It was `fileDetail` in `../element.js`. Its test: `./scri
 
 On a scratch lab node with its DEBUG on and testicle on, the element loaded by itself on a page: it exists; with no script
 the empty box and no ask; with a production script its title, then the suite search below once `script.get` answered; a name
-that is no production script, the error below and no search; overflow not visible; destroyed, an empty container.
-
-Not judged by it yet: the own test's line in red (missing own test, and nothing shown when it is there).
+that is no production script, the error below and no search; a script planted with no own test, the own test's name in red
+right under its title, gone by itself once that test is written (box v143: *"all of testicle's elements must subscribe to
+the data they display, the testicle detail included"*); a script whose own test is there, nothing in that place; overflow
+not visible; destroyed, an empty container.

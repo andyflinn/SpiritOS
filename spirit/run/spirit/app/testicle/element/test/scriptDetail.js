@@ -78,6 +78,40 @@ test.run('a name that is no production script: below the title, the error script
   const n = await ev('window.zz.list("zzNot")');
   return (!!ok && n === 0) || 'below: ' + short(await ev('window.zz.below("zzNot")')) + ', lists ' + n;
 }, test.limit.slow);
+// Its own test in red when missing (scriptDetail.js's head, from the box: "A script tab shows, right under its title line,
+// the name of the script's own test in red when that test is missing on disc", "When the own test is there, nothing shows
+// in that place"), and box v143: "all of testicle's elements must subscribe to the data they display, the testicle detail
+// included": the own test written while the detail is open, the red name goes by itself.
+const LONE = 'spirit/zzDetail/zzLone.js', LONE_OWN = 'spirit/zzDetail/test/zzLone.js';
+const own = function (id) { return ev('(function () { var t = document.querySelector("#' + id + ' .testicle-own-missing"); return t ? { text: t.textContent, color: getComputedStyle(t).color } : null; }())'); };
+test.run('a script with no own test on disc: right under its title, the own test\'s name in red', 0.4, async function () {
+  if (!W.ok) return NOPAGE;
+  const run = path.join(W.node.root, 'spirit', 'run');
+  fs.mkdirSync(path.join(run, 'spirit', 'zzDetail'), { recursive: true });
+  fs.writeFileSync(path.join(run, LONE), "'use strict';\n// zzLone, with no own test\n");
+  await H.sleep(3000);
+  const m = await ev('window.zz.mount("zzLone", { script: "' + LONE + '" })');
+  if (m !== true) return 'mount: ' + short(m);
+  const ok = await H.until(function () { return own('zzLone').then(function (o) { return !!o && o.text === LONE_OWN; }); }, H.WAIT);
+  const o = await own('zzLone');
+  const next = await ev('(function () { var t = document.querySelector("#zzLone .testicle-title"); return t && t.nextElementSibling ? t.nextElementSibling.className : null; }())');
+  return (!!ok && /^rgb\(\s*(2[0-9]{2}|1[5-9][0-9]),\s*0,\s*0\)$/.test(o.color) && next === 'testicle-own-missing') || 'under the title: ' + short(o) + ', next to the title ' + short(next);
+}, test.limit.slow);
+test.run('its own test written while it is open: the red name goes by itself, with no new mount', 0.4, async function () {
+  if (!W.ok) return NOPAGE;
+  if (!((await own('zzLone')) || {}).text) return 'no red name to go: the test before failed';
+  const run = path.join(W.node.root, 'spirit', 'run');
+  fs.mkdirSync(path.join(run, 'spirit', 'zzDetail', 'test'), { recursive: true });
+  fs.writeFileSync(path.join(run, LONE_OWN), "'use strict';\n// the own test of zzLone\n");
+  const ok = await H.until(function () { return own('zzLone').then(function (o) { return !!o && o.text === ''; }); }, H.WAIT);
+  return !!ok || 'still under the title: ' + short(await own('zzLone'));
+}, test.limit.slow);
+test.run('a script whose own test is on disc: nothing shows in that place', 0.4, async function () {
+  if (!W.ok) return NOPAGE;
+  await H.sleep(3000);
+  const o = await own('zzSpirit');
+  return (!!o && o.text === '') || 'under spirit/spirit.js\'s title: ' + short(o);
+}, test.limit.slow);
 test.run('its box keeps what it holds inside: overflow not visible', 0.2, async function () {
   if (!W.ok) return NOPAGE;
   const o = await ev('getComputedStyle(document.querySelector("#zzSpirit .testicle-detail")).overflowY');

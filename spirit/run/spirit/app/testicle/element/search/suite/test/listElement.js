@@ -214,6 +214,24 @@ test.run('a suite row written for the script shows by itself', 0.2, async functi
   const ok = await until(function () { return view('zzGamma').then(function (v) { return keysOf(v).indexOf(C + '|' + CS) !== -1; }); }, 10000);
   return !!ok || 'rows ' + short(keysOf(await view('zzGamma')));
 }, test.limit.slow);
+// box v143: "all of testicle's elements must subscribe to the data they display": a row already drawn follows its suite
+// row as the server rewrites it, with no press and no new mount.
+const statusIn = function (id, key) { return view(id).then(function (v) { const r = ((v && v.rows) || []).filter(function (x) { return x.key === key; })[0]; return r ? r.cells[2] : null; }); };
+test.run('a drawn row follows its suite row: a success reported for it, the row shows "green" by itself', 0.4, async function () {
+  if (mounted()) return mounted();
+  const r = await call(N.base, 'testicle.suite.success', { script: C, suite: CS, success: true });
+  if (r.status !== 200) return 'testicle.suite.success: ' + r.status + ' ' + short(r.text);
+  const ok = await until(function () { return statusIn('zzGamma', C + '|' + CS).then(function (t) { return t === 'green'; }); }, 10000);
+  return !!ok || 'the row shows ' + short(await statusIn('zzGamma', C + '|' + CS));
+}, test.limit.slow);
+test.run('and a failure reported after it, the same row shows "still red" by itself', 0.4, async function () {
+  if (mounted()) return mounted();
+  const r = await call(N.base, 'testicle.suite.success', { script: C, suite: CS, success: false });
+  if (r.status !== 200) return 'testicle.suite.success: ' + r.status + ' ' + short(r.text);
+  const ok = await until(function () { return statusIn('zzGamma', C + '|' + CS).then(function (t) { return t === 'still red'; }); }, 10000);
+  const k = keysOf(await view('zzGamma')).filter(function (x) { return x === C + '|' + CS; });
+  return (!!ok && k.length === 1) || 'the row shows ' + short(await statusIn('zzGamma', C + '|' + CS)) + ', drawn ' + k.length + ' times';
+}, test.limit.slow);
 
 // "face, placeholder, all, pick   handed to the search as they are"
 test.run('as a dropdown, it shows its placeholder in its field', 0.2, async function () {

@@ -16,6 +16,8 @@ in a real Chrome.
 - With no script, every suite, each once (*"with the script selector blank (all scripts), the suite selector lists every
   suite, each once"*).
 - A script with no suite row says *No suite concerns this file.*; a suite row written for it shows by itself.
+- A drawn row follows its suite row (box v143, *"subscribe to the data they display"*): a success reported, it shows
+  *green* by itself; a failure after it, *still red*, the row drawn once.
 - As a dropdown, its placeholder shows in the field.
 - `destroy` empties its container.
 
