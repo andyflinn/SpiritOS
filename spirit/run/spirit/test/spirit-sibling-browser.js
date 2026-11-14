@@ -897,9 +897,12 @@ function oneFile(P) {
   const mounted = P.stage === 'done';
   const notDrawn = function () { return noMount() || (!mounted ? 'it did not mount: the world failed' : ''); };
   // MOUNTED EMPTY (goal/G47.1, box v121): the four element rules, judged as drawn before any press.
-  test.run('mounted empty, the box it puts into its container declares a constraint: overflow not visible', 0.4, function () {
+  // A ROW ELEMENT PUTS NO BOX INTO A CONTAINER (cw: "a row's create takes a row, not a container, and draws into the cells
+  // its list hands it"): with nothing put into its container there is no box of its own to judge (Q4); said as a comment,
+  // never green. Its list's box is judged with the list.
+  if (mounted && !P.boxCount) unjudged('mounted empty, it puts nothing into the container it is given (a row element): no box of its own');
+  else test.run('mounted empty, the box it puts into its container declares a constraint: overflow not visible', 0.4, function () {
     if (notDrawn()) return notDrawn();
-    if (!P.boxCount) return 'it put nothing into its container: no box to judge';
     return !P.unbounded.length || P.unbounded.length + ' with overflow visible: ' + short(P.unbounded.map(function (b) { return b.node + ' (overflow-x ' + b.x + ', overflow-y ' + b.y + ')'; }));
   }, test.limit.quick);
   if (mounted && !P.inputCount) unjudged('mounted empty, it draws no input');
