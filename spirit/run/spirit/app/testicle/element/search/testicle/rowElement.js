@@ -1,9 +1,9 @@
 'use strict';
-// spirit/run/spirit/element/search/testicle/rowElement.js
+// spirit/run/spirit/app/testicle/element/search/testicle/rowElement.js
 // A TEST ROW, AN ELEMENT (goal/G47.1, the search cycle): one row of testicle's test table as ./listElement.js and
 // ./detailElement.js draw it, on the shared row element (spirit/element/rowElement.js).
 //
-//   spirit.element.spirit.element.search.testicle.rowElement.create(row) -> the row element
+//   spirit.element.spirit.app.testicle.element.search.testicle.rowElement.create(row) -> the row element
 //
 // The box: "The columns, in this order: the result first, as an icon, ❌ for a failure, ✅ for a success; severity
 // second; the title third; then the script name (no path), then the suite name (no path)", "The test row also shows its
@@ -39,5 +39,5 @@
     });
   }
 
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/testicle/rowElement.js', { create: create }); });
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/testicle/element/search/testicle/rowElement.js', { create: create }); });
 }());

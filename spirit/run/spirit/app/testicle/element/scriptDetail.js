@@ -17,7 +17,7 @@
 (function () {
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the suite search and testicle's interface.
-  var parts = Promise.all(['spirit/element/search/suite.js', 'spirit/app/testicle/api.js'].map(function (p) { return S.require(p); }));
+  var parts = Promise.all(['spirit/app/testicle/element/search/suite.js', 'spirit/app/testicle/api.js'].map(function (p) { return S.require(p); }));
   // A NODE WITH NO TESTICLE refuses its interface: the detail says so below its title; the refusal is never left unhandled.
   parts.catch(function () {});
 
@@ -49,7 +49,7 @@
         return Promise.resolve(S.testicle['script.get']({ name: file }));
       }).then(function () {
         if (gone) return;
-        made = S.element.spirit.element.search.suite.create(below, { script: file });
+        made = S.element.spirit.app.testicle.element.search.suite.create(below, { script: file });
       }, function (e) {
         if (gone) return;
         below.textContent = String((e && e.message) || e || 'script.get failed');

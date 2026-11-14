@@ -1,8 +1,8 @@
-# spirit/element/search/testicle.js — the testicle search
+# spirit/app/testicle/element/search/testicle.js — the testicle search
 
 goal/G47.1, the cycle "the testicle search". testicle's list of tests: the standard search (`spirit/element/search.js`) over
 `testicle.testicle.search`, a view of the testicle branch `spirit/app/testicle/data.js` keeps, the current rows shown. Its
-folder `spirit/element/search/testicle/` holds its `rowElement.js` and its `detailElement.js`. testicle's face mounts it in
+folder `spirit/app/testicle/element/search/testicle/` holds its `rowElement.js` and its `detailElement.js`. testicle's face mounts it in
 the first, non-closable tab of its centre pane (`spirit/app/testicle/test/element.js` judges that, and the detail a test row
 opens).
 

@@ -1,7 +1,7 @@
 'use strict';
 
 // spirit/run/spirit/element/search/test/suite.js
-// The tests of spirit/element/search/suite.js, and of no other module (spec: ./suite.md). Its own test, owed since the rule
+// The tests of spirit/app/testicle/element/search/suite.js, and of no other module (spec: ./suite.md). Its own test, owed since the rule
 // "every production script has its own test" (goal/G47.1, box v72). The suite selector: a thin element over its own list,
 // ./suite/listElement.js, which it loads itself.
 //
@@ -13,7 +13,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { spawn, execSync, execFileSync } = require('child_process');
-const RUN = path.resolve(__dirname, '../../../..');
+const RUN = path.resolve(__dirname, '../../../../../..');
 const REPO = path.resolve(RUN, '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const { freePort, until, sleep, chromePage, findChrome } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
@@ -21,7 +21,7 @@ const { freePort, until, sleep, chromePage, findChrome } = require(path.join(RUN
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 function parsed(t) { try { return JSON.parse(t); } catch (e) { return null; } }
 
-const MODULE = path.join(RUN, 'spirit', 'element', 'search', 'suite.js');
+const MODULE = path.join(RUN, 'spirit', 'app', 'testicle', 'element', 'search', 'suite.js');
 // THE PLANTED SCRIPTS, under one folder of their own, each with its own test.
 const Z = 'spirit/zzSuiteSel/';
 const A = Z + 'alpha.js';
@@ -98,7 +98,7 @@ test.after(async function () {
   try { if (s) fs.rmSync(s.root, { recursive: true, force: true }); } catch (e) { /* scratch */ }
 });
 
-test.run('spirit/element/search/suite.js is there', 0.2, function () {
+test.run('spirit/app/testicle/element/search/suite.js is there', 0.2, function () {
   return fs.existsSync(MODULE) || 'no ' + path.relative(RUN, MODULE);
 }, test.limit.quick);
 test.run('the world: a scratch node comes up, testicle on', 0.2, async function () {
@@ -130,7 +130,7 @@ test.run('the world: the face page has its spirit', 0.2, async function () {
 test.run('it loads alone through spirit.require and mounts with create(container, { script, pick }), answering destroy', 0.2, async function () {
   if (!N || !N.up) return NONODE;
   if (!c || c.error || !c.evaluate) return 'no page: the world failed';
-  const loaded = await c.evaluate('window.spirit.ready.then(function () { return window.spirit.require("spirit/element/search/suite.js"); }).then(function () { return "loaded"; }, function (e) { return "refused: " + (e && e.message || e); })');
+  const loaded = await c.evaluate('window.spirit.ready.then(function () { return window.spirit.require("spirit/app/testicle/element/search/suite.js"); }).then(function () { return "loaded"; }, function (e) { return "refused: " + (e && e.message || e); })');
   if (loaded !== 'loaded') return 'it did not load: ' + short(loaded);
   made = await mount('zzBox', { script: A });
   return made === 'made' || 'it did not mount: ' + short(made);
@@ -143,10 +143,10 @@ test.run('create appends its own root to the container and answers it', 0.2, asy
   return (!!v && v.children === 1 && v.isRoot && /\bsuite-selector\b/.test(v.className)) || 'the container: ' + short(v);
 }, test.limit.quick);
 // "A THIN ELEMENT OVER ITS OWN LIST, ./suite/listElement.js, WHICH IT LOADS ITSELF (rule/26)"
-test.run('it loads its own list, spirit/element/search/suite/listElement.js', 0.2, async function () {
+test.run('it loads its own list, spirit/app/testicle/element/search/suite/listElement.js', 0.2, async function () {
   if (mounted()) return mounted();
   const ok = await until(function () { return c.evaluate('!!(((((((window.spirit.element || {}).spirit || {}).element || {}).search || {}).suite || {}).listElement || {}).create)'); }, 10000);
-  return !!ok || 'no spirit.element.spirit.element.search.suite.listElement after the selector was made';
+  return !!ok || 'no spirit.element.spirit.app.testicle.element.search.suite.listElement after the selector was made';
 }, test.limit.slow);
 test.run('its list in its root shows the suites of the script it is given, and of no other', 0.2, async function () {
   if (mounted()) return mounted();

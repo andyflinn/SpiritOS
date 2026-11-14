@@ -1,9 +1,9 @@
 'use strict';
-// spirit/run/spirit/element/search/suite/listElement.js
+// spirit/run/spirit/app/testicle/element/search/suite/listElement.js
 // THE SUITE LIST, AN ELEMENT (goal/G47.1, the UI cycle): the suites of one production file, what testicle's file detail
 // draws through the suite selector (../suite.js). Its row is ./rowElement.js; no row opens a detail.
 //
-//   spirit.element.spirit.element.search.suite.listElement.create(container, { script, face, placeholder, all, pick }) -> { destroy() }
+//   spirit.element.spirit.app.testicle.element.search.suite.listElement.create(container, { script, face, placeholder, all, pick }) -> { destroy() }
 //     script   the production script whose suite rows it lists, scoped to run://; '' for every suite, each once (goal/G47.1,
 //              the box: "with the script selector blank (all scripts), the suite selector lists every suite, each once")
 //     face, placeholder, all, pick   handed to the search as they are: the testicle search's suite selector draws it as a
@@ -22,7 +22,7 @@
 (function () {
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the list and its row, testicle's interface and its cache manager.
-  var parts = Promise.all(['spirit/element/search.js', 'spirit/element/search/suite/rowElement.js', 'spirit/app/testicle/api.js']
+  var parts = Promise.all(['spirit/element/search.js', 'spirit/app/testicle/element/search/suite/rowElement.js', 'spirit/app/testicle/api.js']
     .map(function (p) { return S.require(p); }).concat([S.cacheManager('testicle')]));
   // A NODE WITH NO TESTICLE refuses its interface: create says the suites could not be loaded; the refusal is never left unhandled.
   parts.catch(function () {});
@@ -66,7 +66,7 @@
         // deleted, leaves the list by itself (goal/G47.1, the box: "Every element of testicle's face updates itself in
         // response to the server stream").
         filters: [{ name: 'script', when: function () { return false; }, test: function (row) { return row && row.script === script && !row.deleted ? 1 : 0; } }],
-        element: function (row) { return S.element.spirit.element.search.suite.rowElement.create(row); },
+        element: function (row) { return S.element.spirit.app.testicle.element.search.suite.rowElement.create(row); },
         face: o.face,
         placeholder: o.placeholder,
         all: o.all,
@@ -90,5 +90,5 @@
     };
   }
 
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/suite/listElement.js', { create: create }); });
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/testicle/element/search/suite/listElement.js', { create: create }); });
 }());

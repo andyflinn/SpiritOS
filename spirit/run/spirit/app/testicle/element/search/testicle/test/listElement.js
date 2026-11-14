@@ -1,7 +1,7 @@
 'use strict';
 
-// spirit/run/spirit/element/search/testicle/test/listElement.js
-// The tests of spirit/element/search/testicle/listElement.js, and of no other module (spec: ./listElement.md). Its own test,
+// spirit/run/spirit/app/testicle/element/search/testicle/test/listElement.js
+// The tests of spirit/app/testicle/element/search/testicle/listElement.js, and of no other module (spec: ./listElement.md). Its own test,
 // owed since the rule "every production script has its own test" (goal/G47.1, box v72). The testicle list: every current
 // test row of testicle's test table, what the testicle search draws in the first tab of testicle's face.
 //
@@ -13,7 +13,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { spawn, execSync, execFileSync } = require('child_process');
-const RUN = path.resolve(__dirname, '../../../../..');
+const RUN = path.resolve(__dirname, '../../../../../../..');
 const REPO = path.resolve(RUN, '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const { freePort, until, sleep, chromePage, findChrome } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
@@ -21,7 +21,7 @@ const { freePort, until, sleep, chromePage, findChrome } = require(path.join(RUN
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 function parsed(t) { try { return JSON.parse(t); } catch (e) { return null; } }
 
-const MODULE = path.join(RUN, 'spirit', 'element', 'search', 'testicle', 'listElement.js');
+const MODULE = path.join(RUN, 'spirit', 'app', 'testicle', 'element', 'search', 'testicle', 'listElement.js');
 // THE PLANTED SCRIPTS, under one folder of their own, each with its own test.
 const Z = 'spirit/zzTlist/';
 const A = Z + 'alpha.js';
@@ -122,7 +122,7 @@ test.after(async function () {
   try { if (s) fs.rmSync(s.root, { recursive: true, force: true }); } catch (e) { /* scratch */ }
 });
 
-test.run('spirit/element/search/testicle/listElement.js is there', 0.2, function () {
+test.run('spirit/app/testicle/element/search/testicle/listElement.js is there', 0.2, function () {
   return fs.existsSync(MODULE) || 'no ' + path.relative(RUN, MODULE);
 }, test.limit.quick);
 test.run('the world: a scratch node comes up, testicle on', 0.2, async function () {
@@ -163,7 +163,7 @@ test.run('it loads alone through spirit.require and mounts with create(container
   if (!N || !N.up) return NONODE;
   if (!c || c.error || !c.evaluate) return 'no page: the world failed';
   await c.evaluate(HANDS);
-  made = await c.evaluate('window.spirit.ready.then(function () { return window.spirit.require("spirit/element/search/testicle/listElement.js"); }).then(function () {' +
+  made = await c.evaluate('window.spirit.ready.then(function () { return window.spirit.require("spirit/app/testicle/element/search/testicle/listElement.js"); }).then(function () {' +
     ' var E = ((((((window.spirit.element || {}).spirit || {}).element || {}).search || {}).testicle || {}).listElement); if (!E || typeof E.create !== "function") return "no create";' +
     ' var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:1400px;height:800px;display:flex;"; document.body.appendChild(b);' +
     ' window.__picked = []; window.__made = E.create(b, { pick: function (row, key) { window.__picked.push(key); } }); return window.__made && typeof window.__made.destroy === "function" ? "made" : "no destroy"; }, function (e) { return "refused: " + (e && e.message || e); })');

@@ -1,7 +1,7 @@
 'use strict';
 
-// spirit/run/spirit/element/search/testicle/test/rowElement.js
-// The tests of spirit/element/search/testicle/rowElement.js, and of no other module (spec: ./rowElement.md). Its own test,
+// spirit/run/spirit/app/testicle/element/search/testicle/test/rowElement.js
+// The tests of spirit/app/testicle/element/search/testicle/rowElement.js, and of no other module (spec: ./rowElement.md). Its own test,
 // owed since the rule "every production script has its own test" (goal/G47.1, box v72).
 //
 // A test row of testicle's test table (goal/G47.1, the search cycle). The browser file runs in node on a bare window, as
@@ -11,7 +11,7 @@
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
-const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..');
+const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..', '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const FILE = path.join(__dirname, '..', 'rowElement.js');
 
@@ -25,7 +25,7 @@ const ROW = { key: 'spirit/zz/alpha.js|spirit/zz/test/alpha.js|alpha answers <ev
   suite: 'spirit/zz/test/alpha.js', test: 'alpha answers <every> question, in full', verified: true, severity: 0, current: true };
 
 test.run('the world: the row runs on a bare window', 0.2, async function () {
-  if (!fs.existsSync(FILE)) return 'spirit/element/search/testicle/rowElement.js is not there';
+  if (!fs.existsSync(FILE)) return 'spirit/app/testicle/element/search/testicle/rowElement.js is not there';
   required = []; specs = []; indexes = [];
   global.window = { spirit: { escapeHtml: function (x) { return String(x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }, element: {} } };
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
@@ -36,10 +36,11 @@ test.run('the world: the row runs on a bare window', 0.2, async function () {
   await settle();
   const E = global.window.spirit.element.spirit.element;
   E.rowElement = { index: function (sub) { indexes.push(sub); return { id: indexes.length }; }, create: function (spec) { specs.push(spec); return { spec: spec }; } };
-  R = E.search && E.search.testicle && E.search.testicle.rowElement;
+  const TE = (((global.window.spirit.element.spirit.app || {}).testicle || {}).element || {});
+  R = TE.search && TE.search.testicle && TE.search.testicle.rowElement;
   return true;
 }, test.limit.quick);
-test.run('it places itself at spirit.element.spirit.element.search.testicle.rowElement, with a create', 0.2, function () {
+test.run('it places itself at spirit.element.spirit.app.testicle.element.search.testicle.rowElement, with a create', 0.2, function () {
   if (!required) return 'the row never ran: the world failed';
   return (R && typeof R.create === 'function') || 'its place: ' + short(R && Object.keys(R));
 }, test.limit.quick);

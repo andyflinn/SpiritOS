@@ -1,10 +1,10 @@
-# spirit/element/search/suite/rowElement.js — its own test
+# spirit/app/testicle/element/search/suite/rowElement.js — its own test
 
 A suite row of testicle's suite table (goal/G47.1, the UI cycle), with its 🏃‍♂️ (the run cycle). Owed since the rule
 *"every production script has its own test"* (goal/G47.1, box v72). The browser file runs in node on a bare window; the
 shared row element and the busy button are stand-ins, testicle's interface a recorder of the runs asked.
 
-- It stands at `spirit.element.spirit.element.search.suite.rowElement` with a `create`, and loads the shared row element,
+- It stands at `spirit.element.spirit.app.testicle.element.search.suite.rowElement` with a `create`, and loads the shared row element,
   the busy button and testicle's interface itself.
 - `create(row)`: kind `suite`, keyed by the row's key, no actions; fields `run` first (*"The 🏃‍♂️ column is on every row
   ..., the first column"*), then the suite, escaped, then its status.

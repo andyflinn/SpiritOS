@@ -1,4 +1,4 @@
-# spirit/element/search/suite/listElement.js — its own test
+# spirit/app/testicle/element/search/suite/listElement.js — its own test
 
 The suite list (goal/G47.1, the UI cycle): the suites of one production file, a view of testicle's suite rows, what
 testicle's file detail draws through the suite selector. Owed since the rule *"every production script has its own

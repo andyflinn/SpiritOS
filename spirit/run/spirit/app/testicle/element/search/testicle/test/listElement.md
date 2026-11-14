@@ -1,4 +1,4 @@
-# spirit/element/search/testicle/listElement.js — its own test
+# spirit/app/testicle/element/search/testicle/listElement.js — its own test
 
 The testicle list (goal/G47.1, the search cycle): every current test row of testicle's test table, the probability search
 over the testicle branch testicle's cache manager keeps, with a script selector (the file search as a dropdown) and a

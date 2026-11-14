@@ -1,10 +1,10 @@
 'use strict';
-// spirit/run/spirit/element/search/testicle/detailElement.js
+// spirit/run/spirit/app/testicle/element/search/testicle/detailElement.js
 // ONE TEST'S DETAIL, AN ELEMENT (goal/G47.1, the search cycle): its history of flips, what testicle's face shows in a closable
 // tab when a test row of the testicle search is clicked (the box: "The testicle detail is a history of flips, and opens in a
 // closable tab when a test row is clicked").
 //
-//   spirit.element.spirit.element.search.testicle.detailElement.create(container, { script, suite, test }) -> { destroy() }
+//   spirit.element.spirit.app.testicle.element.search.testicle.detailElement.create(container, { script, suite, test }) -> { destroy() }
 //
 // The box: "testicle.search answers the current rows by default; given a valid test title, {script, suite, test, text}, it
 // answers every row matching that script, suite and title, current or not, newest first. A test's history in its detail
@@ -13,7 +13,7 @@
 (function () {
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): its row, testicle's interface and its cache manager.
-  var parts = Promise.all(['spirit/element/search/testicle/rowElement.js', 'spirit/app/testicle/api.js', 'spirit/element/busyButton.js']
+  var parts = Promise.all(['spirit/app/testicle/element/search/testicle/rowElement.js', 'spirit/app/testicle/api.js', 'spirit/element/busyButton.js']
     .map(function (p) { return S.require(p); }).concat([S.cacheManager('testicle')]));
   // A NODE WITH NO TESTICLE refuses its interface: create says the history could not be loaded; the refusal is never left unhandled.
   parts.catch(function () {});
@@ -49,7 +49,7 @@
       drawn.forEach(function (el) { if (el && typeof el.destroy === 'function') el.destroy(); });
       drawn = [];
       body.innerHTML = rows.map(function (r) {
-        var el = S.element.spirit.element.search.testicle.rowElement.create(r);
+        var el = S.element.spirit.app.testicle.element.search.testicle.rowElement.create(r);
         drawn.push(el);
         var when = r.flipped ? new Date(Number(r.flipped)).toISOString().replace('T', ' ').slice(0, 19) : '';
         return '<tr data-key="' + esc(r.key) + '"><td data-field="flipped">' + esc(when) + '</td>' +
@@ -93,5 +93,5 @@
     };
   }
 
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/testicle/detailElement.js', { create: create }); });
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/testicle/element/search/testicle/detailElement.js', { create: create }); });
 }());

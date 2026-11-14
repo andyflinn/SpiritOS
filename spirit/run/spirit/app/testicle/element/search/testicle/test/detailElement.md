@@ -1,4 +1,4 @@
-# spirit/element/search/testicle/detailElement.js — its own test
+# spirit/app/testicle/element/search/testicle/detailElement.js — its own test
 
 One test's detail (goal/G47.1, the search cycle): its history of flips, what testicle's face shows in a closable tab when a
 test row is clicked. Owed since the rule *"every production script has its own test"* (goal/G47.1, box v72). The world

@@ -1,10 +1,10 @@
 'use strict';
-// spirit/run/spirit/element/search/testicle/listElement.js
+// spirit/run/spirit/app/testicle/element/search/testicle/listElement.js
 // THE TESTICLE LIST, AN ELEMENT (goal/G47.1, the search cycle): every current test row of testicle's test table, what the
 // testicle search (../testicle.js) draws in the first, non-closable tab of testicle's face. Its row is ./rowElement.js; a
 // row clicked is handed to pick, and testicle's face opens its detail (./detailElement.js) in a closable tab.
 //
-//   spirit.element.spirit.element.search.testicle.listElement.create(container, { pick }) -> { destroy() }
+//   spirit.element.spirit.app.testicle.element.search.testicle.listElement.create(container, { pick }) -> { destroy() }
 //
 // The box: "The search has a script selector, unselected (all) the default", "The script selector: the file search as a
 // dropdown, production scripts only", "The search has a suite selector, unselected (all) the default", "The testicle
@@ -23,8 +23,8 @@
 (function () {
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the list and its row, the two selectors, testicle's interface and its cache manager.
-  var parts = Promise.all(['spirit/element/search.js', 'spirit/element/search/testicle/rowElement.js', 'spirit/element/search/file.js',
-    'spirit/element/search/suite.js', 'spirit/app/testicle/api.js'].map(function (p) { return S.require(p); }).concat([S.cacheManager('testicle')]));
+  var parts = Promise.all(['spirit/element/search.js', 'spirit/app/testicle/element/search/testicle/rowElement.js', 'spirit/element/search/file.js',
+    'spirit/app/testicle/element/search/suite.js', 'spirit/app/testicle/api.js'].map(function (p) { return S.require(p); }).concat([S.cacheManager('testicle')]));
   // A NODE WITH NO TESTICLE refuses its interface: create says the tests could not be loaded; the refusal is never left unhandled.
   parts.catch(function () {});
 
@@ -63,7 +63,7 @@
       suiteList = null;
       suiteSel.innerHTML = '';
       suiteSel.value = '';
-      suiteList = S.element.spirit.element.search.suite.create(suiteSel, {
+      suiteList = S.element.spirit.app.testicle.element.search.suite.create(suiteSel, {
         script: scriptSel.value, face: 'dropdown', placeholder: 'all suites', all: 'all suites',
         pick: function (row) { suiteSel.value = row && row.suite ? String(row.suite) : ''; changed(suiteSel); },
       });
@@ -133,7 +133,7 @@
           { name: 'script', element: scriptSel, test: function (row) { return !scriptSel.value || (row && row.script === scriptSel.value) ? 1 : 0; } },
           { name: 'suite', element: suiteSel, test: function (row) { return !suiteSel.value || (row && row.suite === suiteSel.value) ? 1 : 0; } },
         ],
-        element: function (row) { return S.element.spirit.element.search.testicle.rowElement.create(row); },
+        element: function (row) { return S.element.spirit.app.testicle.element.search.testicle.rowElement.create(row); },
         pick: function (row, key) { if (row && typeof o.pick === 'function') o.pick(row, key); },
         empty: 'No test matches.',
       });
@@ -155,5 +155,5 @@
     };
   }
 
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/testicle/listElement.js', { create: create }); });
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/testicle/element/search/testicle/listElement.js', { create: create }); });
 }());

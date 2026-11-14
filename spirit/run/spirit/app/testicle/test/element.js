@@ -300,9 +300,9 @@ test.run('at the start the centre holds one tab, the testicle search, and it is 
   const tabs0 = (await T('tabs()')) || [];
   return (tabs0.length === 1 && tabs0[0].closable === false) || 'tabs: ' + short(tabs0);
 }, test.limit.slow);
-test.run('its tab shows the testicle search, spirit/element/search/testicle.js, which the face loads', 0.2, async function () {
+test.run('its tab shows the testicle search, spirit/app/testicle/element/search/testicle.js, which the face loads', 0.2, async function () {
   if (face()) return face();
-  const loaded = /['"]spirit\/element\/search\/testicle\.js['"]/.test(code(FACE));
+  const loaded = /['"]spirit\/app\/testicle\/element\/search\/testicle\.js['"]/.test(code(FACE));
   const there = await c.evaluate('!!(((((window.spirit.element || {}).spirit || {}).element || {}).search || {}).testicle)');
   return (loaded && there && !!(await waitFor('shown() !== null && inCenter("input[id$=text]") > 0', 10000))) || 'loaded by the face ' + loaded + ', on the page ' + there + ', the tab shows ' + short(await T('shown()'));
 }, test.limit.slow);
@@ -358,7 +358,7 @@ test.run('every file it lists is a .js outside any test/ folder', 0.2, function 
 // testicle.suite.search", "All tabs are closable", "The tab opens first, with its title line; then file.get runs, and
 // below the title line it shows either the error file.get gives (\"not a production script\", \"no such file\") or
 // the suite search for that file", "The UI must listen to changes on all tables it interacts with, and the server, of
-// course, publishes changes", "the suite search is spirit/element/search/suite.js and its folder".
+// course, publishes changes", "the suite search is spirit/app/testicle/element/search/suite.js and its folder".
 // the box: "A new tab is opened and activated in the center pane's tabContainer: the file detail"
 test.run('the world: shown.js is concerned by its own test and by general tests', 0.2, function () {
   if (!N || !N.up) return NONODE;
@@ -409,9 +409,9 @@ test.run('the click made the script\'s rows: script.get ran for it', 0.2, async 
   const rowsMade = await call(N.base, 'testicle.suite.search', { script: F1, text: '' });
   return (rowsMade.status === 200 && rowsMade.body && Array.isArray(rowsMade.body.items) && rowsMade.body.items.length === want1.length) || 'suite.search after the click: ' + short(rowsMade.text);
 }, test.limit.quick);
-test.run('the suite search is spirit/element/search/suite.js, which the face loads', 0.2, function () {
+test.run('the suite search is spirit/app/testicle/element/search/suite.js, which the face loads', 0.2, function () {
   const srcNow = code(FACE);
-  return (/['"]spirit\/element\/search\/suite\.js['"]/.test(srcNow) && fs.existsSync(path.join(RUN, 'spirit', 'element', 'search', 'suite.js'))) || 'the face does not load spirit/element/search/suite.js, or it is not there';
+  return (/['"]spirit\/app\/testicle\/element\/search\/suite\.js['"]/.test(srcNow) && fs.existsSync(path.join(RUN, 'spirit', 'app', 'testicle', 'element', 'search', 'suite.js'))) || 'the face does not load spirit/app/testicle/element/search/suite.js, or it is not there';
 }, test.limit.quick);
 
 // the box: a second click
@@ -663,7 +663,7 @@ test.run('every suite row of the script detail has a 🏃‍♂️ button in its
   return (cells.length > 0 && !bad.length) || 'first cells: ' + short(cells);
 }, test.limit.quick);
 test.run('the 🏃‍♂️ is the busy button, spirit/element/busyButton.js, which the suite list loads', 0.2, function () {
-  const files = ['spirit/element/search/suite.js', 'spirit/element/search/suite/listElement.js', 'spirit/element/search/suite/rowElement.js', 'spirit/app/testicle/element.js'];
+  const files = ['spirit/app/testicle/element/search/suite.js', 'spirit/app/testicle/element/search/suite/listElement.js', 'spirit/app/testicle/element/search/suite/rowElement.js', 'spirit/app/testicle/element.js'];
   return files.some(function (f) { return /['"]spirit\/element\/busyButton\.js['"]/.test(code(path.join(RUN, f))); }) || 'none of ' + files.join(', ') + ' loads spirit/element/busyButton.js';
 }, test.limit.quick);
 test.run('a press on iota\'s own suite\'s 🏃‍♂️ is answered at once: the button is no longer busy while the suite still runs', 0.2, async function () {

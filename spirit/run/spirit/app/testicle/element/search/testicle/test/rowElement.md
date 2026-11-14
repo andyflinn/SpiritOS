@@ -1,10 +1,10 @@
-# spirit/element/search/testicle/rowElement.js — its own test
+# spirit/app/testicle/element/search/testicle/rowElement.js — its own test
 
 A test row of testicle's test table (goal/G47.1, the search cycle), as the testicle list and the detail draw it, on the
 shared row element. Owed since the rule *"every production script has its own test"* (goal/G47.1, box v72). The browser
 file runs in node on a bare window; the shared row element is a stand-in keeping the spec it is handed.
 
-- It stands at `spirit.element.spirit.element.search.testicle.rowElement` with a `create`, and loads
+- It stands at `spirit.element.spirit.app.testicle.element.search.testicle.rowElement` with a `create`, and loads
   `spirit/element/rowElement.js` itself.
 - `create(row)`: kind `testicle`, keyed by the row's full key, no actions; rows share one index.
 - The box: *"The columns, in this order: the result first, as an icon, ❌ for a failure, ✅ for a success; severity second;

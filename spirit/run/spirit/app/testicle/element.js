@@ -22,14 +22,14 @@
 // api.js.
 //
 // THE TESTICLE SEARCH (goal/G47.1, the search cycle). The box: "The UI gets its first non-closable tab in the workbench centre
-// pane: the testicle search, spirit/element/search/testicle.js", "The testicle detail is a history of flips, and opens in a
+// pane: the testicle search, spirit/app/testicle/element/search/testicle.js", "The testicle detail is a history of flips, and opens in a
 // closable tab when a test row is clicked", "the tab is the tabContainer's, closable false, first in the centre, before any
 // script's tab; the script tabs stay closable". A test's tab is named by its full key without the flip, so a second click on
 // the same test makes its tab active and opens no second.
 (function () {
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the workBench and the file list.
   var parts = Promise.all(['spirit/element/workBench.js', 'spirit/element/search/app/rowFormToggle.js', 'spirit/element/search/file.js', 'spirit/element/tabContainer.js',
-    'spirit/element/search/suite.js', 'spirit/element/search/testicle.js', 'spirit/element/search/testicle/detailElement.js',
+    'spirit/app/testicle/element/search/suite.js', 'spirit/app/testicle/element/search/testicle.js', 'spirit/app/testicle/element/search/testicle/detailElement.js',
     'spirit/app/testicle/api.js',
     // ITS OWN PARTS, EACH AN ELEMENT (goal/G47.1, box v134-135: "element.js keeps only the face: it mounts those elements and the
     // searches, nothing drawn of its own").
@@ -72,7 +72,7 @@
       });
       // The centre: the testicle search first, never closed; then the file details and the test details, one tab each.
       tabs = E.tabContainer.create(bench.center, { tabs: [{ name: 'testicle search', label: 'Testicle search', closable: false,
-        mount: function (box) { box.className = 'fill'; return E.search.testicle.create(box, { pick: function (row) { openTest(row); } }); } }] });
+        mount: function (box) { box.className = 'fill'; return T.search.testicle.create(box, { pick: function (row) { openTest(row); } }); } }] });
     }, function () { if (!gone) container.textContent = 'testicle could not be loaded.'; });
     // A CLICK ON A PRODUCTION FILE: its tab opened and made active, at once; its detail asks script.get from there.
     function open(file) {
@@ -85,7 +85,7 @@
       var name = row.script + '|' + row.suite + '|' + row.test;
       tabs.add({ name: name, label: String(row.test || ''), closable: true, mount: function (box) {
         box.className = 'fill';
-        return window.spirit.element.spirit.element.search.testicle.detailElement.create(box, { script: row.script, suite: row.suite, test: row.test });
+        return window.spirit.element.spirit.app.testicle.element.search.testicle.detailElement.create(box, { script: row.script, suite: row.suite, test: row.test });
       } });
     }
     return {

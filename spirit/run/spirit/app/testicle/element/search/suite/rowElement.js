@@ -1,5 +1,5 @@
 'use strict';
-// spirit/run/spirit/element/search/suite/rowElement.js
+// spirit/run/spirit/app/testicle/element/search/suite/rowElement.js
 // A SUITE ROW, AN ELEMENT (goal/G47.1, the UI cycle): one suite row of testicle's suite table as ./listElement.js draws it, on
 // the shared row element (spirit/element/rowElement.js). Its fields: the suite's filename, and its status, "needs running"
 // while the row is flagged, shown red (the box: "the filename AND its status \"needs running\", which will be shown as red
@@ -9,7 +9,7 @@
 // each row's button running its own suite", "The button is the busy button exactly as it is"): the first field, a busy button
 // in its cell asking testicle.run {script, suite} for the row's own script and suite; busy until run answers, nothing after.
 //
-//   spirit.element.spirit.element.search.suite.rowElement.create(row) -> the row element
+//   spirit.element.spirit.app.testicle.element.search.suite.rowElement.create(row) -> the row element
 (function () {
   var S = window.spirit = window.spirit || {};
   S.require('spirit/element/rowElement.js');
@@ -64,5 +64,5 @@
     return el;
   }
 
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/suite/rowElement.js', { create: create }); });
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/testicle/element/search/suite/rowElement.js', { create: create }); });
 }());
