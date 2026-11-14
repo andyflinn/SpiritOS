@@ -39,6 +39,9 @@
 //                              are the dropdown's. Or 'tiles' (goal/G43.6): the same ranked rows, each row.icon above
 //                              the relevance above row.label, the row itself in the tooltip; no headers, no sorting
 //   toggle                     true: a button after Search flips pane and tiles, the words kept (goal/G43.9); never on a dropdown
+//   order(a, b)                optional: the owner's order of two rows while no words are typed and no column is sorted, in
+//                              place of the order the rows came (goal/G47.1: testicle's reds first, the most severe first)
+//   most                       optional: the most rows shown, the first of that order (goal/G47.1: testicle's "up to 100 tests")
 //   onFace(face)               told the new face, 'pane' or 'tiles', before the list draws
 //   tile(row, key)             optional: { icon, label } of a tile, where the row's own icon and label are not (goal/G43.17,
 //                              Q14: a file's tile shows its kind's icon and its name); either left out is the row's
@@ -146,7 +149,8 @@
     } else {
       // VIEWED: a column sort when one is chosen, else the order rows came.
       var col = s.sort && (s.columns || []).filter(function (c) { return c.field === s.sort.field && c.sort; })[0];
-      var cmp = col ? compareBy(col, s.sort.direction) : function (a, b) { return a.at - b.at; };
+      var own = typeof s.order === 'function' ? function (a, b) { return s.order(a.el ? a.el.row : a.row, b.el ? b.el.row : b.row) || a.at - b.at; } : null;
+      var cmp = col ? compareBy(col, s.sort.direction) : own || function (a, b) { return a.at - b.at; };
       list.sort(function (a, b) { return cmp(a.e, b.e); });
       list.forEach(function (x) { x.rank = x.f; });
     }
@@ -349,7 +353,8 @@
       // Its owner may hold some rows back (o.visible; appSelector's tiles show active apps alone, goal/G43.9).
       if (typeof o.visible === 'function') entries = entries.filter(function (e) { return o.visible(e.row); });
       var searching = !!words();
-      var rows = order(entries, { words: words(), values: values, filters: filters, sort: sortBy, columns: columns, score: o.score });
+      var rows = order(entries, { words: words(), values: values, filters: filters, sort: sortBy, columns: columns, score: o.score, order: o.order });
+      if (Number(o.most) > 0) rows = rows.slice(0, Number(o.most));
       shown = rows;
       var top = 0;
       if (searching) rows.forEach(function (w) { if (w.rank > top) top = w.rank; });

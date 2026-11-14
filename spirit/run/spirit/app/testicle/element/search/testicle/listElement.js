@@ -133,6 +133,11 @@
           { name: 'script', element: scriptSel, test: function (row) { return !scriptSel.value || (row && row.script === scriptSel.value) ? 1 : 0; } },
           { name: 'suite', element: suiteSel, test: function (row) { return !suiteSel.value || (row && row.suite === suiteSel.value) ? 1 : 0; } },
         ],
+        // ITS ORDER IS testicle.red's, AND IT SHOWS UP TO 100 (goal/G47.1, Andy: "reds only, most SERVERE FIRST DAMMIT.", the
+        // box: "up to 100 tests"): with no words and no column sorted, the reds first, then the most severe first; the branch
+        // holds more than the answers did (each answer's rows, and every row the stream brings), so what is shown is cut there.
+        order: function (a, b) { return (a.verified ? 1 : 0) - (b.verified ? 1 : 0) || Number(b.severity || 0) - Number(a.severity || 0); },
+        most: HELD_MAX,
         element: function (row) { return S.element.spirit.app.testicle.element.search.testicle.rowElement.create(row); },
         pick: function (row, key) { if (row && typeof o.pick === 'function') o.pick(row, key); },
         empty: 'No test matches.',
