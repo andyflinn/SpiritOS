@@ -86,7 +86,7 @@ const view = function (id) {
     ' keys: Array.prototype.map.call(b.querySelectorAll("tr[data-key]"), function (r) { return r.getAttribute("data-key"); }) }; }())');
 };
 const mount = function (id, opts) {
-  return c.evaluate('(function () { var E = (((((window.spirit.element || {}).spirit || {}).element || {}).search || {}).suite); if (!E || typeof E.create !== "function") return "no create";' +
+  return c.evaluate('(function () { var E = (((((((window.spirit.element || {}).spirit || {}).app || {}).testicle || {}).element || {}).search || {}).suite); if (!E || typeof E.create !== "function") return "no create";' +
     ' var b = document.createElement("div"); b.id = ' + JSON.stringify(id) + '; b.style.cssText = "width:1200px;height:400px;display:flex;"; document.body.appendChild(b); window.__picked = window.__picked || [];' +
     ' var o = ' + JSON.stringify(opts) + '; o.pick = function (row, key) { window.__picked.push(key); };' +
     ' window[' + JSON.stringify(id) + '] = E.create(b, o); return window[' + JSON.stringify(id) + '] && typeof window[' + JSON.stringify(id) + '].destroy === "function" ? "made" : "no destroy"; }())');
@@ -145,7 +145,7 @@ test.run('create appends its own root to the container and answers it', 0.2, asy
 // "A THIN ELEMENT OVER ITS OWN LIST, ./suite/listElement.js, WHICH IT LOADS ITSELF (rule/26)"
 test.run('it loads its own list, spirit/app/testicle/element/search/suite/listElement.js', 0.2, async function () {
   if (mounted()) return mounted();
-  const ok = await until(function () { return c.evaluate('!!(((((((window.spirit.element || {}).spirit || {}).element || {}).search || {}).suite || {}).listElement || {}).create)'); }, 10000);
+  const ok = await until(function () { return c.evaluate('!!(((((((((window.spirit.element || {}).spirit || {}).app || {}).testicle || {}).element || {}).search || {}).suite || {}).listElement || {}).create)'); }, 10000);
   return !!ok || 'no spirit.element.spirit.app.testicle.element.search.suite.listElement after the selector was made';
 }, test.limit.slow);
 test.run('its list in its root shows the suites of the script it is given, and of no other', 0.2, async function () {

@@ -34,7 +34,10 @@ test.run('the world: the row runs on a bare window', 0.2, async function () {
   global.window.spirit.require = function (p) { required.push(String(p)); return own.apply(this, arguments); };
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
-  const E = global.window.spirit.element.spirit.element;
+  // The intrinsic elements' place, where its stand-ins go; the row, an app's element since the move to spirit/app/testicle/, no longer
+  // makes it by placing itself under it.
+  const SE = global.window.spirit.element.spirit;
+  const E = SE.element = SE.element || {};
   E.rowElement = { index: function (sub) { indexes.push(sub); return { id: indexes.length }; }, create: function (spec) { specs.push(spec); return { spec: spec }; } };
   const TE = (((global.window.spirit.element.spirit.app || {}).testicle || {}).element || {});
   R = TE.search && TE.search.testicle && TE.search.testicle.rowElement;

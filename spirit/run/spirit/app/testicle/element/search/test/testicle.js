@@ -210,7 +210,7 @@ test.run('it loads through spirit.require and mounts with create(container), ans
   if (!c || c.error || !c.evaluate) return 'no page: the world failed';
   await c.evaluate(HANDS);
   made = await c.evaluate('window.spirit.ready.then(function () { return window.spirit.require("spirit/app/testicle/element/search/testicle.js"); }).then(function () {' +
-    ' var E = (((((window.spirit.element || {}).spirit || {}).element || {}).search || {}).testicle); if (!E || typeof E.create !== "function") return "no create";' +
+    ' var E = (((((((window.spirit.element || {}).spirit || {}).app || {}).testicle || {}).element || {}).search || {}).testicle); if (!E || typeof E.create !== "function") return "no create";' +
     ' var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:1400px;height:800px;display:flex;"; document.body.appendChild(b);' +
     ' window.__made = E.create(b, {}); return window.__made && typeof window.__made.destroy === "function" ? "made" : "no destroy"; }, function (e) { return "refused: " + (e && e.message || e); })');
   return made === 'made' || 'it did not mount: ' + short(made);

@@ -303,7 +303,7 @@ test.run('at the start the centre holds one tab, the testicle search, and it is 
 test.run('its tab shows the testicle search, spirit/app/testicle/element/search/testicle.js, which the face loads', 0.2, async function () {
   if (face()) return face();
   const loaded = /['"]spirit\/app\/testicle\/element\/search\/testicle\.js['"]/.test(code(FACE));
-  const there = await c.evaluate('!!(((((window.spirit.element || {}).spirit || {}).element || {}).search || {}).testicle)');
+  const there = await c.evaluate('!!(((((((window.spirit.element || {}).spirit || {}).app || {}).testicle || {}).element || {}).search || {}).testicle)');
   return (loaded && there && !!(await waitFor('shown() !== null && inCenter("input[id$=text]") > 0', 10000))) || 'loaded by the face ' + loaded + ', on the page ' + there + ', the tab shows ' + short(await T('shown()'));
 }, test.limit.slow);
 
