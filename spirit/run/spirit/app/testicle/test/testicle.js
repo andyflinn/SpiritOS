@@ -161,7 +161,7 @@ async function boot(run) {
   const up = await until(function () { return call(base, 'api').then(function (r) { return r.status === 200; }); }, 60000);
   return { child: child, base: base, up: !!up };
 }
-function stop(c) { return new Promise(function (r) { if (!c || c.exitCode !== null) return r(); c.once('exit', function () { r(); }); c.kill(); setTimeout(r, 6000); }); }
+function stop(c) { return new Promise(function (r) { if (!c || c.exitCode !== null || c.signalCode !== null) return r(); c.once('exit', function () { r(); }); c.kill(); setTimeout(r, 6000); }); }
 
 // THE TABLES, read as they stand, the database opened read only each time.
 function tables(dbFile) {
@@ -1471,7 +1471,9 @@ test.run('the world: upsilon.js is flagged, and the node stops before upsilon\'s
 const NEWS = Z + 'zzsNew.js', NEWSS = Z + 'test/zzsNew.js';
 let down = null;
 test.run('the world: while the node is down, a script and its suite are added, one changed, a suite and a script removed', 0.2, function () {
-  if (!N || !N.child || N.child.exitCode === null) return 'the node is not down: the world failed';
+  // DOWN IS ENDED BY ANY MEANS (goal/G47.1): a process ended by a signal, as stop() ends it, keeps exitCode null and sets
+  // signalCode, so exitCode alone read the stopped node as up and failed this world every time.
+  if (!N || !N.child || (N.child.exitCode === null && N.child.signalCode === null)) return 'the node is not down: the world failed';
   const t = tables(DB);
   const changed = scriptRow(t, LA), goneSuite = suiteRow(t, KA, KAS), goneScript = scriptRow(t, Z + 'gamma.js');
   if (!changed || !goneSuite || !goneScript) return 'rows missing before: lambda ' + !!changed + ', kappa\'s own suite ' + !!goneSuite + ', gamma ' + !!goneScript;
