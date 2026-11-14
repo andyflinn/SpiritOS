@@ -20,7 +20,8 @@ const path = require('path');
 const { execFileSync } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-const { until, sleep, findChrome, scratchNode, chromePage } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+const { until, findChrome, scratchNode, chromePage } = H;
 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 400); }
 const ARGV = process.argv.slice(2);
@@ -41,10 +42,21 @@ function cleanup() {
   test.after(async function () {
     try { if (W.page && W.page.sock) W.page.sock.close(); } catch (e) { /* gone */ }
     try { if (W.page && W.page.kid) W.page.kid.kill(); } catch (e) { /* gone */ }
-    try { if (W.node && W.node.child && !W.node.shared) W.node.child.kill(); } catch (e) { /* gone */ }
-    await sleep(300);
-    [W.node && !W.node.shared ? W.node.root : '', W.page && W.page.profile].forEach(function (d) { if (d) try { fs.rmSync(d, { recursive: true, force: true }); } catch (e) { /* scratch */ } });
+    try { if (W.chrome && W.chrome.close) W.chrome.close(); } catch (e) { /* gone */ }
+    if (W.node && W.node.release) await W.node.release();
   });
+}
+
+// THE LIMITS (goal/G47.1, box v144: "only a hung page is reloaded: a main page that does not answer within 1 s is hung; a
+// script's load waits as long as the page still answers", "no fixed sleeps in the checks: each wait ends the moment the page
+// has settled"): each one a limit, ended early by what it waits for.
+const HANG_MS = 1000;
+const LOAD_LIMIT_MS = 20000;
+const SETTLE_LIMIT_MS = 2000;
+// Whether the page answers at all within HANG_MS: a script that never ends holds the page's one thread.
+function answers(page) {
+  return Promise.race([Promise.resolve(page.evaluate('1')).then(function () { return true; }, function () { return true; }),
+    new Promise(function (r) { setTimeout(function () { r(false); }, HANG_MS); })]);
 }
 
 // THE PAGES FIRST, THE TESTS AFTER: which scripts install an element only the page can say, and a test is said only for
@@ -54,7 +66,10 @@ async function world() {
   const chrome = findChrome();
   if (!chrome) { W.fail = 'no Chrome on this machine'; return; }
   const apps = Array.from(new Set(TARGETS.map(appOf))).filter(hasServer);
+  // ITS CHROME STARTED WHILE THE NODE BOOTS: the two wait on nothing of each other.
+  const chromeStarted = process.env.SPIRIT_CHROME_PORT ? Promise.resolve(null) : H.sharedChrome(chrome);
   W.node = await scratchNode({ servers: apps });
+  W.chrome = await chromeStarted;
   if (!W.node.up || !W.node.debug) { W.fail = 'the scratch node did not come up with its DEBUG on'; return; }
   // Every app server judged answers its interface before any page is opened (Andy: "a server MUST be mounted if a
   // mountable server exists in that app folder before a test is conducted").
@@ -67,53 +82,75 @@ async function world() {
     if (!ok) silent.push(a);
   }
   if (silent.length) { W.fail = 'app servers that never answered: ' + silent.join(', '); return; }
-  // A PAGE OF ITS OWN FOR EACH SCRIPT: one that hangs leaves the shared page unusable, and every script after it failed
-  // "never finished loading" for the one before (seen on wsl's node, 2026-11-14).
+  // ONE CHROME FOR THE WHOLE RUN (box v144: "run on one node and one Chrome for the whole run"): a fresh page of it per script,
+  // so one that hangs is closed alone (spirit/test/headLessChrome.js sharedChrome; chromePage opens a page of it).
+  if (W.chrome) {
+    if (W.chrome.error) { W.fail = 'no Chrome: ' + W.chrome.error; return; }
+    process.env.SPIRIT_CHROME_PORT = String(W.chrome.port);
+  }
+  test.run('the world: scripts under spirit/app/ to judge, a scratch node with their apps\' servers on, and a Chrome page', 0.2, function () { return true; }, test.limit.quick);
+  W.worldSaid = true;
   const closePage = function () { try { if (W.page && W.page.sock) W.page.sock.close(); } catch (e) { /* gone */ } try { if (W.page && W.page.kid) W.page.kid.kill(); } catch (e) { /* gone */ } try { if (W.page && W.page.profile) fs.rmSync(W.page.profile, { recursive: true, force: true }); } catch (e) { /* scratch */ } W.page = null; };
   for (const rel of TARGETS) {
     closePage();
     W.page = await chromePage(chrome);
     if (W.page.error) { W.reports[rel] = { fail: 'no Chrome page for it: ' + W.page.error }; continue; }
     const app = appOf(rel);
-    await W.page.send('Page.navigate', { url: W.node.base + '/DEBUG/' + rel.replace(/\.js$/, '') + '/headLessBrowser.html' });
+    W.page.send('Page.navigate', { url: W.node.base + '/DEBUG/' + rel.replace(/\.js$/, '') + '/headLessBrowser.html' });
     let report = null;
-    await until(function () {
-      return W.page.evaluate('JSON.stringify(window.spiritMount ? { state: window.spiritMount.state, error: String(window.spiritMount.error || "") } : null)').then(function (x) {
-        try { report = x ? JSON.parse(x) : null; } catch (e) { report = null; }
-        return !!report && report.state !== 'loading';
-      });
-    }, 20000);
-    if (!report || report.state === 'loading') { W.reports[rel] = { fail: rel + ': its page never finished loading in 20 s' }; continue; }
+    let hung = false;
+    await until(async function () {
+      if (!(await answers(W.page))) { hung = true; return true; }
+      const x = await W.page.evaluate('JSON.stringify(window.spiritMount ? { state: window.spiritMount.state, error: String(window.spiritMount.error || "") } : null)');
+      try { report = x ? JSON.parse(x) : null; } catch (e) { report = null; }
+      return !!report && report.state !== 'loading';
+    }, LOAD_LIMIT_MS);
+    if (hung) { W.reports[rel] = { fail: rel + ': its page hung: it gave no answer in ' + (HANG_MS / 1000) + ' s' }; judge(rel); continue; }
+    if (!report || report.state === 'loading') { W.reports[rel] = { fail: rel + ': its page never finished loading in ' + (LOAD_LIMIT_MS / 1000) + ' s' }; judge(rel); continue; }
     if (report.state === 'failed') {
       W.reports[rel] = /places no element with a create/.test(report.error) ? { none: true } : { fail: 'it did not mount: ' + report.error };
+      judge(rel);
       continue;
     }
-    // What it loads as it mounts, given a moment; on a bare page all of it is its own.
-    await sleep(1500);
+    // What it loads as it mounts, until all it owes stands there or SETTLE_LIMIT_MS have passed; on a bare page all of it is
+    // its own.
     const keys = JSON.stringify(owed(app).map(function (n) { return ['spirit', 'app', app, n]; }));
-    const held = await W.page.evaluate('(function () { var r = (window.spirit && window.spirit.required) || {}; return ' + keys + '.filter(function (k) { return k.reduce(function (o, x) { return o == null ? undefined : o[x]; }, r) !== undefined; }).map(function (k) { return k[3]; }); }())');
-    W.reports[rel] = { held: Array.isArray(held) ? held : [], owed: owed(app) };
+    let held = [];
+    await until(async function () {
+      const h = await W.page.evaluate('(function () { var r = (window.spirit && window.spirit.required) || {}; return ' + keys + '.filter(function (k) { return k.reduce(function (o, x) { return o == null ? undefined : o[x]; }, r) !== undefined; }).map(function (k) { return k[3]; }); }())');
+      held = Array.isArray(h) ? h : [];
+      return held.length === owed(app).length;
+    }, SETTLE_LIMIT_MS);
+    W.reports[rel] = { held: held, owed: owed(app) };
+    judge(rel);
   }
+  closePage();
 }
 
+// EACH SCRIPT JUDGED THE MOMENT ITS PAGE IS READ (box v144: "every result reaches testicle the moment the page knows it"): its
+// test said at once, for its own script (test.forScript), while the run is held open (test.hold).
+function judge(rel) {
+  const r = W.reports[rel];
+  if (r && r.none) { test.comment(rel + ': it installs no element, not judged'); return; }
+  if (r && r.owed && !r.owed.length) { test.comment(rel + ': its app holds no api.js and no data.js, nothing owed'); return; }
+  test.forScript(rel, function () {
+    test.run('mounted alone with its app\'s server on, it loaded its own app\'s api.js and data.js', 0.8, function () {
+      if (W.fail) return 'no page: ' + W.fail;
+      if (!r) return 'it was not opened: the world failed';
+      if (r.fail) return r.fail;
+      const missing = r.owed.filter(function (n) { return r.held.indexOf(n) === -1; });
+      return !missing.length || rel + ' did not load ' + missing.map(function (n) { return 'spirit/app/' + appOf(rel) + '/' + n + '.js'; }).join(' and ') + ' itself: it leans on its mounter';
+    }, test.limit.quick);
+  });
+}
+
+test.hold();
 world().then(null, function (e) { W.fail = 'the world crashed: ' + (e && e.stack || e); }).then(function () {
-  test.run('the world: scripts under spirit/app/ to judge, a scratch node with their apps\' servers on, and a Chrome page', 0.2, function () {
+  if (!W.worldSaid) test.run('the world: scripts under spirit/app/ to judge, a scratch node with their apps\' servers on, and a Chrome page', 0.2, function () {
     return !W.fail || W.fail;
   }, test.limit.quick);
-  // One title, reported for each script that installs an element (test.forScript).
-  TARGETS.forEach(function (rel) {
-    const r = W.reports[rel];
-    if (r && r.none) { test.comment(rel + ': it installs no element, not judged'); return; }
-    if (r && r.owed && !r.owed.length) { test.comment(rel + ': its app holds no api.js and no data.js, nothing owed'); return; }
-    test.forScript(rel, function () {
-      test.run('mounted alone with its app\'s server on, it loaded its own app\'s api.js and data.js', 0.8, function () {
-        if (W.fail) return 'no page: ' + W.fail;
-        if (!r) return 'it was not opened: the world failed';
-        if (r.fail) return r.fail;
-        const missing = r.owed.filter(function (n) { return r.held.indexOf(n) === -1; });
-        return !missing.length || rel + ' did not load ' + missing.map(function (n) { return 'spirit/app/' + appOf(rel) + '/' + n + '.js'; }).join(' and ') + ' itself: it leans on its mounter';
-      }, test.limit.quick);
-    });
-  });
+  // A script the world never reached, after it failed, is said too, red for that reason.
+  TARGETS.forEach(function (rel) { if (!(rel in W.reports) && W.fail) judge(rel); });
   cleanup();
+  test.release();
 });

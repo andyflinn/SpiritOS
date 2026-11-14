@@ -25,8 +25,9 @@ const HANG = 'spirit/app/testicle/zzBrowserHang.js';
 // least 80% less test time" (the before measured on spirit-sibling-browser.js, the same shape).
 const BEFORE_S = process.platform === 'win32' ? 10 : 3.7;
 
-// Every process descended from pid, with its command line (Linux: /proc; elsewhere wmic is not asked, and the counts are
-// not judged).
+// Every process descended from pid, with its command line (Linux: ps; elsewhere the counts are not judged). The run's own:
+// a node it started is counted, what that node's servers start in their turn is not (the scratch node's testicle classifies
+// at its start, with a node and a Chrome of its own).
 function descendants(pid) {
   if (process.platform !== 'linux') return null;
   let rows = [];
@@ -35,7 +36,7 @@ function descendants(pid) {
   const args = {};
   rows.forEach(function (l) { const m = /^\s*(\d+)\s+(\d+)\s+(.*)$/.exec(l); if (!m) return; (kids[m[2]] = kids[m[2]] || []).push(m[1]); args[m[1]] = m[3]; });
   const out = [];
-  const walk = function (p) { (kids[p] || []).forEach(function (k) { out.push({ pid: k, args: args[k] }); walk(k); }); };
+  const walk = function (p) { (kids[p] || []).forEach(function (k) { out.push({ pid: k, args: args[k] }); if (!/spirit\/server\.js --port/.test(args[k])) walk(k); }); };
   walk(String(pid));
   return out;
 }
