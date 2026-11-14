@@ -112,9 +112,10 @@ Andy: *"put UI rules into run://spirit/test/spirit-sibling-browser.js, is that N
 cheapest catch-all making sure the container constraints, instead of trying to magic-up non-existing data-sets?"*
 
 - **Which scripts:** those scriptClassify says load in a page (browser-only or both); testicle hands it no other. Each is
-  loaded on the bare page, `spirit.js` alone, nothing preloaded, on a scratch node running its own app's server when it
-  is a script of `spirit/app/<name>/` (cleaning: `spirit/app/backup/api.js` never loaded, "no interface for the family
-  backup").
+  loaded on the bare page, `spirit.js` alone, nothing preloaded. An app-owned script, of `spirit/app/<name>/`, whose app
+  folder holds its server `spirit/app/<name>/<name>.js`, is judged on a scratch node with that server turned on, the page
+  opened only once the server answers its interface (Andy: *"a server MUST be mounted if a mountable server exists in that
+  app folder before a test is conducted"*); one that does not come up in 30 s fails the world, never the element.
 - **No code reading:** whether a script installs an element, the page says: it looks at `window.spirit.element` at the
   script's own path, where `installSpiritElement` puts an element with its `create`. With none there, the page reports
   "places no element with a create", what it runs is still judged (nothing thrown, no missing file, no console error), and

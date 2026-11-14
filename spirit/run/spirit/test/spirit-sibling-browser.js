@@ -639,10 +639,24 @@ async function session() {
   // ITS OWN APP'S SERVER ON TOO (goal/G47.1, cleaning, Andy's testicle's first red: spirit/app/backup/api.js never loaded,
   // "no interface for the family backup", since backup was not turned on on the scratch node): a script of
   // spirit/app/<name>/ is loaded with <name>'s server running, as on a node that uses it.
+  // APP-OWNED ELEMENTS, THEIR SERVER STARTED FIRST (goal/G47.1; Andy: "for any element in a spirit/app/<name>/<name>.json
+  // folder\" a server MUST be mounted if a mountable server exists in that app folder before a test is conducted", "wsl,
+  // quickly fix the -browser.js general test to account for app-owned elements and the required server start when
+  // necessary"): an app whose folder holds its server, spirit/app/<name>/<name>.js, is turned on, and the page is opened only
+  // once that server answers its interface; one that never does fails the world, never the element.
   const own = (/^spirit\/app\/([^/]+)\//.exec(rel) || [])[1];
-  const node = P.node = await scratchNode({ servers: SERVERS.servers.concat(own && SERVERS.servers.indexOf(own) === -1 ? [own] : []) });
+  const ownServer = !!own && fs.existsSync(path.join(RUN, 'spirit', 'app', own, own + '.js'));
+  const node = P.node = await scratchNode({ servers: SERVERS.servers.concat(ownServer && SERVERS.servers.indexOf(own) === -1 ? [own] : []) });
   if (!node.up) { P.fail = 'the scratch node did not come up: every rule here would blame the wrong thing'; return P; }
   if (!node.debug) { P.fail = 'the scratch node\'s DEBUG could not be switched on (node.debug)'; return P; }
+  if (ownServer) {
+    const served = await until(function () {
+      return fetch(node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'api', args: { family: own } }) })
+        .then(function (r) { return r.json(); }).then(function (b) { return !!(b && b.interface); }, function () { return false; });
+    }, 30000);
+    if (!served) { P.fail = 'its app\'s server, spirit/app/' + own + '/' + own + '.js, did not come up on the scratch node in 30 s: nothing of it judged'; return P; }
+    P.notes.push('its app\'s server ' + own + ' answers its interface');
+  }
   const page = P.page = await chromePage(chrome);
   if (page.error) { P.fail = page.error; return P; }
 
