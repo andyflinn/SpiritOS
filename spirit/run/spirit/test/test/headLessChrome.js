@@ -22,14 +22,16 @@ const tempCopies = function () { try { return fs.readdirSync(os.tmpdir()).filter
 
 // A CHILD THAT ASKS FOR ONE (a test, as testicle runs it): it prints what it was handed, holds it for holdMs, and ends.
 // what: 'node' (scratchNode) or 'relay' (scratchRelay). plant: a file it leaves in the handed node's spirit/state/.
-function ask(what, holdMs, plant) {
-  const code = 'const H = require(' + JSON.stringify(HELPER) + ');' +
+function ask(what, holdMs, plant, from) {
+  // from: the run root of another tree to ask from (its own headLessChrome.js, run inside it); the checkout's by default.
+  const fromRun = from || RUN;
+  const code = 'const H = require(' + JSON.stringify(path.join(fromRun, 'spirit', 'test', 'headLessChrome.js')) + ');' +
     '(async function () { const n = await H.' + (what === 'relay' ? 'scratchRelay({ debug: true })' : 'scratchNode()') + ';' +
     ' const run = n.run || (n.root ? require("path").join(n.root, "spirit", "run") : "");' +
     (plant ? ' try { require("fs").mkdirSync(require("path").join(run, "spirit", "state"), { recursive: true }); require("fs").writeFileSync(require("path").join(run, "spirit", "state", ' + JSON.stringify(plant) + '), "left by a test"); } catch (e) {}' : '') +
     ' process.stdout.write("\\n@@" + JSON.stringify({ root: n.root || "", run: run, base: n.base || "", up: !!n.up, debug: !!n.debug }) + "\\n");' +
     ' setTimeout(function () { process.exit(0); }, ' + Number(holdMs || 0) + '); }()).catch(function (e) { process.stdout.write("\\n@@" + JSON.stringify({ error: String(e && e.message || e) }) + "\\n"); process.exit(1); });';
-  const kid = spawn(process.execPath, ['-e', code], { cwd: RUN, stdio: ['ignore', 'pipe', 'pipe'] });
+  const kid = spawn(process.execPath, ['-e', code], { cwd: fromRun, stdio: ['ignore', 'pipe', 'pipe'] });
   let out = '';
   const got = new Promise(function (resolve) {
     kid.stdout.on('data', function (d) { out += d; const m = /\n@@(.*)\n/.exec(out); if (m) { try { resolve(JSON.parse(m[1])); } catch (e) { resolve({ error: m[1] }); } } });
@@ -145,6 +147,28 @@ test.run('no lab node is left locked once its holders ended', 0.2, async functio
   return !left.length || 'still locked by a live process: ' + left.join(', ');
 }, test.limit.quick);
 // "the tests that start relays (scratchRelay, scratchFaceRelay) use lab's two relays, reset like the nodes"
+// ASKED FROM INSIDE A LAB NODE (cw, on G47.1: "run from inside a lab node, headLessChrome now brings the node it hands out
+// into line with the tree it runs in (what differs copied, what that tree lacks removed)"; the classifier asks from testicle's
+// own scratch tree, whose planted scripts are in no commit): a node asked from a lab node's tree holds that tree's files.
+test.run('asked from inside a lab node\'s tree, scratchNode hands out another node in line with that tree: its new file there, its removed file gone', 0.4, async function () {
+  const host = ask('node', 90000);
+  const h = await within(host.got, 120000);
+  if (!h || h === 'waiting' || h.error) { host.kid.kill(); return 'no lab node to ask from: ' + short(h); }
+  const planted = path.join(h.run, 'spirit', 'zzFromLabTree.js');
+  const gone = path.join(h.run, 'spirit', 'word.js');
+  try { fs.writeFileSync(planted, "'use strict';\n// planted in a lab node's tree\n"); fs.rmSync(gone, { force: true }); } catch (e) { host.kid.kill(); return 'could not change the host tree: ' + short(e.message); }
+  const inner = ask('node', 500, '', h.run);
+  const n = await within(inner.got, 120000);
+  await inner.ended;
+  host.kid.kill();
+  await host.ended;
+  if (!n || n === 'waiting' || n.error) return 'nothing handed out from inside: ' + short(n);
+  const bad = [];
+  if (n.root === h.root) bad.push('it handed out the very node it runs in');
+  if (!fs.existsSync(path.join(n.run, 'spirit', 'zzFromLabTree.js'))) bad.push('the file planted in that tree is not in it');
+  if (fs.existsSync(path.join(n.run, 'spirit', 'word.js'))) bad.push('the file removed from that tree is still in it');
+  return !bad.length || bad.join('; ') + ' (' + n.root + ')';
+}, test.limit.long);
 test.run('scratchRelay hands out one of lab\'s two relays, under repo://lab/node/; two asked at once are two different relays', 0.4, async function () {
   const a = ask('relay', 3000), b = ask('relay', 3000);
   const ra = await within(a.got, 120000), rb = await within(b.got, 120000);
