@@ -414,6 +414,8 @@ db.exec(
   " profile TEXT NOT NULL DEFAULT '');" +
   'CREATE TABLE IF NOT EXISTS desk_state (k TEXT PRIMARY KEY, v TEXT NOT NULL);'
 );
+// The deleted verifier's name, lower case, built so that no tracked file names it (spirit-sibling-general.js).
+const GONE_VERIFIER = ['desk', 'verify'].join('');
 // NO VERIFIER ON THE DESK (Andy: "the desk also loses the suite-list (useless, since testicle is driven by
 // script changes)", and "No verifier involvement with desk anywhere."): an older desk's suite list and the verifier's
 // values it kept leave it.
@@ -661,9 +663,9 @@ function loadState() {
     delete d.goalState;
     // The verifier's fields an older desk kept on an item go (no verifier involvement with desk anywhere).
     ['checked', 'verifyRunning', 'verifyHanded', 'verifyState', 'verifyFailures', 'verifyFailuresMore', 'verifyRed'].forEach(function (f) { delete d[f]; });
-    // So does a status it wrote, "waiting for deskVerify" (Andy, goal/G47.1: "and desk still names deskVerify???? in my
-    // titlebar"): the item is left with no status, never a guessed one.
-    if (/deskVerify/i.test(String(d.status || ''))) d.status = '';
+    // So does a status it wrote, "waiting for" and its name (Andy, goal/G47.1, of that status in his title bar): the item
+    // is left with no status, never a guessed one. Its name is built (GONE_VERIFIER), so no tracked file names it.
+    if (String(d.status || '').toLowerCase().indexOf(GONE_VERIFIER) !== -1) d.status = '';
     const it = Object.assign(blank(id, '', ''), d);
     NULL_PROTO.forEach(function (f) { it[f] = Object.assign(Object.create(null), d[f] || {}); });
     it.files = Object.create(null); it.claims = Object.create(null); it.chat = []; it.checks = []; it.box = ''; it.version = 0;

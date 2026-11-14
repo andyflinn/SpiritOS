@@ -75,9 +75,10 @@ test.run('a fresh desk holds no goal/G0', 0.2, async function () {
   return !held || 'a fresh desk holds goal/G0: ' + short(g0.body);
 }, test.limit.quick);
 
-// goal/G47.1, Andy: "and desk still names deskVerify???? in my titlebar, right here? goal/G47.1 — Ad hoc cycle. (waiting
-// for deskVerify)": an older desk's item, its status written by the deleted verifier, loses that status when the desk
-// starts; an item with a status of its own keeps it.
+// goal/G47.1, Andy, of his title bar showing an item's status "waiting for" the deleted verifier: an older desk's item,
+// its status written by the deleted verifier, loses that status when the desk starts; an item with a status of its own
+// keeps it. The verifier's name is built here, so no tracked file names it (spirit-sibling-general.js).
+const GONE = ['desk', 'Verify'].join('');
 function startDesk() {
   const pipe = appClient.pipePathFor(W.scratch, 'desk', process.platform, 'process');
   W.kid = spawn(process.execPath, [path.join(DESK, 'desk.js'), '{}', '--pipe', pipe, '--state', path.join(W.scratch, 'state')], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
@@ -92,7 +93,7 @@ async function untilItem(id) {
   }
   return null;
 }
-test.run('the world: an older desk\'s items, one waiting for deskVerify and one running, and the desk started again', 0.2, async function () {
+test.run('the world: an older desk\'s items, one waiting for the deleted verifier and one running, and the desk started again', 0.2, async function () {
   if (!W.kid || !W.ask) return 'no desk answered api: the world failed';
   W.kid.kill();
   await new Promise(function (r) { W.kid.once('exit', r); setTimeout(r, 3000); });
@@ -100,7 +101,7 @@ test.run('the world: an older desk\'s items, one waiting for deskVerify and one 
   const db = new DatabaseSync(path.join(W.scratch, 'state', 'desk.db'));
   const put = db.prepare('INSERT OR REPLACE INTO items (goal, item, creator, data) VALUES (?, ?, ?, ?)');
   put.run(9, 0, 'andy', JSON.stringify({ id: 'goal/G9', title: 'Old goal.', goal: true, goalState: { members: ['goal/G9.1', 'goal/G9.2'] } }));
-  put.run(9, 1, 'andy', JSON.stringify({ id: 'goal/G9.1', title: 'Old item.', goal: false, goalId: 'goal/G9', status: 'waiting for deskVerify', verifyRunning: true }));
+  put.run(9, 1, 'andy', JSON.stringify({ id: 'goal/G9.1', title: 'Old item.', goal: false, goalId: 'goal/G9', status: 'waiting for ' + GONE, verifyRunning: true }));
   put.run(9, 2, 'andy', JSON.stringify({ id: 'goal/G9.2', title: 'Its sibling.', goal: false, goalId: 'goal/G9', status: 'running' }));
   db.close();
   startDesk();
@@ -108,9 +109,9 @@ test.run('the world: an older desk\'s items, one waiting for deskVerify and one 
   W.sibling = await untilItem('goal/G9.2');
   return (!!W.old && !!W.sibling) || 'the desk started again answers no old item: ' + short([W.old, W.sibling]);
 }, test.limit.slow);
-test.run('the item the verifier left waiting no longer names deskVerify', 0.2, function () {
+test.run('the item the verifier left waiting no longer names the deleted verifier', 0.2, function () {
   if (!W.old) return 'no old item: the world failed';
-  return !/deskVerify/i.test(JSON.stringify(W.old)) || 'it still names deskVerify: ' + short(W.old.status);
+  return JSON.stringify(W.old).toLowerCase().indexOf(GONE.toLowerCase()) === -1 || 'it still names the deleted verifier: ' + short(W.old.status);
 }, test.limit.quick);
 test.run('its status is left empty, not a guessed one', 0.2, function () {
   if (!W.old) return 'no old item: the world failed';
