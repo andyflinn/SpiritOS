@@ -153,6 +153,34 @@ test.run('no lab node is left locked once its holders ended', 0.2, async functio
   const left = LOCKS().filter(function (n) { let pid = ''; try { pid = fs.readFileSync(path.join(LAB_NODES, n), 'utf8').trim(); process.kill(Number(pid), 0); return true; } catch (e) { return false; } });
   return !left.length || 'still locked by a live process: ' + left.join(', ');
 }, test.limit.quick);
+// A TEST'S CHROME ENDS WITH THE TEST (goal/G47.1, Q9, wsl: "Shall a test's headless Chrome end when its test ends, even a
+// test that is killed?" Andy: "anything that leaves 77 useless chromes running must be fixed."). A child opens a page with chromePage, says its Chrome's pid, and ends: by itself, or killed.
+function chromeChild(end) {
+  const code = 'const H = require(' + JSON.stringify(HELPER) + ');(async function () { const p = await H.chromePage(H.findChrome());' +
+    ' process.stdout.write("\\n@@" + JSON.stringify({ pid: p.kid && p.kid.pid, error: p.error || "" }) + "\\n");' +
+    (end === 'exit' ? ' setTimeout(function () { process.exit(0); }, 300);' : ' setInterval(function () {}, 1000);') + ' }());';
+  const kid = spawn(process.execPath, ['-e', code], { cwd: RUN, stdio: ['ignore', 'pipe', 'pipe'] });
+  let out = '';
+  const got = new Promise(function (resolve) {
+    kid.stdout.on('data', function (d) { out += d; const m = /\n@@(.*)\n/.exec(out); if (m) { try { resolve(JSON.parse(m[1])); } catch (e) { resolve({ error: m[1] }); } } });
+    kid.on('close', function () { resolve(null); });
+  });
+  return { got: got, kid: kid, ended: new Promise(function (r) { kid.on('close', r); }) };
+}
+const alive = function (pid) { try { process.kill(pid, 0); return true; } catch (e) { return false; } };
+const chromeGone = async function (end) {
+  const c = chromeChild(end);
+  const r = await within(c.got, 60000);
+  if (!r || r === 'waiting' || r.error || !r.pid) { try { c.kid.kill('SIGKILL'); } catch (e) { /* gone */ } return 'no Chrome opened: ' + short(r); }
+  if (end === 'kill') c.kid.kill('SIGTERM');
+  await within(c.ended, 15000);
+  let gone = false;
+  for (let i = 0; i < 20 && !gone; i++) { gone = !alive(r.pid); if (!gone) await sleep(250); }
+  if (!gone) { try { process.kill(r.pid, 'SIGKILL'); } catch (e) { /* gone */ } }
+  return gone || 'its Chrome, pid ' + r.pid + ', still runs 5 s after its test ' + (end === 'exit' ? 'ended' : 'was killed');
+};
+test.run('a test that ends leaves no Chrome of its own running', 0.4, function () { return chromeGone('exit'); }, test.limit.long);
+test.run('a test that is killed leaves no Chrome of its own running', 0.4, function () { return chromeGone('kill'); }, test.limit.long);
 // "the tests that start relays (scratchRelay, scratchFaceRelay) use lab's two relays, reset like the nodes"
 // ASKED FROM INSIDE A LAB NODE (cw, on G47.1: "run from inside a lab node, headLessChrome now brings the node it hands out
 // into line with the tree it runs in (what differs copied, what that tree lacks removed)"; the classifier asks from testicle's
