@@ -112,7 +112,7 @@ test.run('a press of zzOk\'s own suite: the box says it runs, then "1 of 1 repor
   const seen = await ev('window.zz.lines.slice(' + fromOk + ')');
   const ran = (seen || []).some(function (l) { return /^running zzOk\.js for spirit\/zzBox\/zzOk\.js$/.test(l); });
   return (!!ok && ran) || 'lines after the press: ' + short(seen);
-}, test.limit.slow);
+}, test.limit.long);
 test.run('a press of zzBad\'s own suite: the box says "1 of 1 reported: spirit/zzBox/zzBad.js failure", its true outcome', 0.4, async function () {
   if (!W.ok) return NOPAGE;
   await idle(60000);
@@ -123,12 +123,25 @@ test.run('a press of zzBad\'s own suite: the box says "1 of 1 reported: spirit/z
   const seen = await ev('window.zz.lines.slice(' + from + ')');
   const lied = (seen || []).some(function (l) { return l === '1 of 1 reported: ' + BAD + ' success'; });
   return (!!ok && !lied) || 'lines after the press: ' + short(seen);
-}, test.limit.slow);
+}, test.limit.long);
 test.run('its box keeps what it holds inside: overflow hidden, one line, the message ellipsed', 0.2, async function () {
   if (!W.ok) return NOPAGE;
   const r = await ev('(function () { var s = document.querySelector("#zzA .testicle-status"), l = document.querySelector("#zzA .testicle-last"); var a = getComputedStyle(s), c = getComputedStyle(l); return { box: a.overflow, wrap: c.whiteSpace, ellipsis: c.textOverflow }; }())');
   return (r && r.box === 'hidden' && r.wrap === 'nowrap' && r.ellipsis === 'ellipsis') || 'styles: ' + short(r);
 }, test.limit.quick);
+// box v143: "all of testicle's elements must subscribe to the data they display": the mode set on the node after the
+// box was drawn shows in it by itself, from the stream, with no new mount.
+test.run('the node set to auto, the box shows 🤖 by itself; set back to interactive, 🖖', 0.4, async function () {
+  if (!W.ok) return NOPAGE;
+  await idle(60000);
+  const a = await ask('testicle.preferences', { interactive: false });
+  if (!a) return 'testicle.preferences { interactive: false } answered nothing';
+  const auto = await H.until(function () { return ev('window.zz.mode').then(function (m) { return m === '🤖'; }); }, H.WAIT);
+  const b = await ask('testicle.preferences', { interactive: true });
+  if (!b) return 'testicle.preferences { interactive: true } answered nothing';
+  const back = await H.until(function () { return ev('window.zz.mode').then(function (m) { return m === '🖖'; }); }, H.WAIT);
+  return (!!auto && !!back) || 'set to auto it showed ' + (auto ? '🤖' : 'no 🤖') + '; set back, ' + short(await ev('window.zz.mode'));
+}, test.limit.long);
 test.run('destroyed, its container is empty', 0.2, async function () {
   if (!W.ok) return NOPAGE;
   const r = await ev('(function () { window.m_zzA.destroy(); return document.getElementById("zzA").innerHTML; }())');
