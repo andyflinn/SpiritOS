@@ -181,6 +181,58 @@ const chromeGone = async function (end) {
 };
 test.run('a test that ends leaves no Chrome of its own running', 0.4, function () { return chromeGone('exit'); }, test.limit.long);
 test.run('a test that is killed leaves no Chrome of its own running', 0.4, function () { return chromeGone('kill'); }, test.limit.long);
+// A NODE AND A CHROME HANDED TO A TEST (goal/G47.1, Q10, wsl: "For testicle's 10 UI test files, shall each stay its own file
+// and share one node and one Chrome that testicle hands them (1) ...?" Andy: "i pick 10.1: \"one test per file\"."). A test
+// handed both, in SPIRIT_MOUNT_BASE and SPIRIT_CHROME_PORT, asks scratchNode and chromePage as it always does: it starts no
+// node and no Chrome of its own, it is answered the handed node with its tree, so a world can plant files there, the servers
+// it asks for answering there, and a page of the handed Chrome.
+const HANDED = {};
+test.run('the world: a node and a Chrome to hand on', 0.2, async function () {
+  const H = require(HELPER);
+  HANDED.node = await H.scratchNode();
+  if (!HANDED.node.up) return 'no node to hand on: nothing judged';
+  HANDED.chrome = await H.sharedChrome(H.findChrome());
+  if (HANDED.chrome.error) return 'no Chrome to hand on: ' + short(HANDED.chrome.error);
+  return true;
+}, test.limit.slow);
+test.after(async function () { try { if (HANDED.chrome && HANDED.chrome.close) HANDED.chrome.close(); } catch (e) { /* gone */ } try { if (HANDED.node && HANDED.node.release) await HANDED.node.release(); } catch (e) { /* gone */ } });
+test.run('handed a node and a Chrome, a test\'s scratchNode and chromePage start neither, and answer the handed ones with the tree and the servers it asked for', 0.4, async function () {
+  if (!HANDED.node || !HANDED.node.up || !HANDED.chrome || HANDED.chrome.error) return 'nothing handed: the world failed';
+  const code = 'const H = require(' + JSON.stringify(HELPER) + ');(async function () { const n = await H.scratchNode({ servers: ["testicle"] });' +
+    ' const p = await H.chromePage(H.findChrome());' +
+    ' let served = false; for (let i = 0; i < 120 && !served; i++) { served = await fetch(n.base + "/api/spirit", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ call: "api", args: { family: "testicle" } }) }).then(function (r) { return r.json(); }).then(function (b) { return !!(b && b.interface); }, function () { return false; }); if (!served) await H.sleep(250); }' +
+    ' const title = p && p.evaluate ? await p.evaluate("1 + 1") : null;' +
+    ' console.log("@@" + JSON.stringify({ base: n.base, run: n.run || "", root: n.root || "", served: served, page: title === 2, port: p && p.port })); try { p.kid.kill(); } catch (e) {} process.exit(0); }());';
+  const kid = spawn(process.execPath, ['-e', code], { cwd: RUN, stdio: ['ignore', 'pipe', 'pipe'], env: Object.assign({}, process.env, { SPIRIT_MOUNT_BASE: HANDED.node.base, SPIRIT_CHROME_PORT: String(HANDED.chrome.port) }) });
+  let out = '';
+  kid.stdout.on('data', function (d) { out += d; });
+  const own = { nodes: new Set(), chromes: new Set() };
+  let ended = false;
+  const done = new Promise(function (r) { kid.on('close', function () { ended = true; r(); }); });
+  const t0 = Date.now();
+  while (!ended && Date.now() - t0 < 60000) {
+    try {
+      const rows = execFileSync('ps', ['-eo', 'pid=,ppid=,args='], { encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n');
+      const kids = {}, args = {};
+      rows.forEach(function (l) { const m = /^\s*(\d+)\s+(\d+)\s+(.*)$/.exec(l); if (m) { (kids[m[2]] = kids[m[2]] || []).push(m[1]); args[m[1]] = m[3]; } });
+      const walk = function (p) { (kids[p] || []).forEach(function (k) { if (/spirit\/server\.js --port/.test(args[k])) own.nodes.add(k); else if (/chrome/.test(args[k]) && /--headless/.test(args[k]) && !/--type=/.test(args[k])) own.chromes.add(k); walk(k); }); };
+      walk(String(kid.pid));
+    } catch (e) { /* not Linux: the counts stay empty */ }
+    await sleep(200);
+  }
+  if (!ended) { try { kid.kill('SIGKILL'); } catch (e) { /* gone */ } await done; }
+  const m = /@@(.*)/.exec(out);
+  let r = null; try { r = m ? JSON.parse(m[1]) : null; } catch (e) { r = null; }
+  if (!r) return 'the test handed them said nothing: ' + short(out);
+  const bad = [];
+  if (own.nodes.size) bad.push('it started ' + own.nodes.size + ' node(s) of its own');
+  if (own.chromes.size) bad.push('it started ' + own.chromes.size + ' Chrome(s) of its own');
+  if (r.base !== HANDED.node.base) bad.push('its node is ' + r.base + ', not the handed ' + HANDED.node.base);
+  if (path.resolve(String(r.run || '.')) !== path.resolve(HANDED.node.run)) bad.push('its tree is ' + short(r.run) + ', not the handed node\'s ' + HANDED.node.run);
+  if (!r.served) bad.push('the testicle server it asked for does not answer on the handed node');
+  if (!r.page || String(r.port) !== String(HANDED.chrome.port)) bad.push('its page is not one of the handed Chrome: port ' + short(r.port));
+  return !bad.length || bad.join('; ');
+}, test.limit.long);
 // "the tests that start relays (scratchRelay, scratchFaceRelay) use lab's two relays, reset like the nodes"
 // ASKED FROM INSIDE A LAB NODE (cw, on G47.1: "run from inside a lab node, headLessChrome now brings the node it hands out
 // into line with the tree it runs in (what differs copied, what that tree lacks removed)"; the classifier asks from testicle's

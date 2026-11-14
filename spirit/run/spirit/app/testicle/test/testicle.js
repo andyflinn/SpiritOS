@@ -2304,6 +2304,42 @@ test.run('and testicle.suite.success {success: false} is what turns it red', 0.4
   return (r.status === 200 && !!row && row.outcome === 'red') || 'suite.success answered ' + r.status + '; the row ' + short(row);
 }, test.limit.slow);
 
+// ONE NODE AND ONE CHROME HANDED TO THE SUITES IT RUNS (goal/G47.1, Q10, wsl: "For testicle's 10 UI test files, shall each
+// stay its own file and share one node and one Chrome that testicle hands them (1) ...?" Andy: "i pick 10.1: \"one test per
+// file\"."). Two planted suites that open their pages as a UI test does (spirit/test/headLessChrome.js), each pressed, write
+// down what they were handed (SPIRIT_MOUNT_BASE and SPIRIT_CHROME_PORT): a node that answers and a Chrome that answers, the
+// same for both.
+const ENVA = Z + 'zzEnvA.js', ENVAS = Z + 'test/zzEnvA.js', ENVB = Z + 'zzEnvB.js', ENVBS = Z + 'test/zzEnvB.js';
+const envSuite = function (name) {
+  return SUITE_HEAD + "require(path.join(__dirname, '..', '..', '..', '..', '..', 'test', 'headLessChrome.js'));\n" +
+    "require('fs').writeFileSync(path.join(__dirname, '" + name + ".env.json'), JSON.stringify({ base: process.env.SPIRIT_MOUNT_BASE || '', chrome: process.env.SPIRIT_CHROME_PORT || '' }));\n" +
+    "test.run('" + name + " answers', 0.2, function () { return true; }, test.limit.quick);\n";
+};
+const envOf = function (name) { try { return JSON.parse(fs.readFileSync(path.join(s.run, Z, 'test', name + '.env.json'), 'utf8')); } catch (e) { return null; } };
+let handed = null;
+test.run('the world: two planted UI suites, each pressed, write down what testicle handed them', 0.2, async function () {
+  if (!up()) return NONODE;
+  put(ENVA, '\'use strict\';\n// zzEnvA\n'); put(ENVAS, envSuite('zzEnvA'));
+  put(ENVB, '\'use strict\';\n// zzEnvB\n'); put(ENVBS, envSuite('zzEnvB'));
+  await until(function () { const t = tables(DB); return Promise.resolve(!!suiteRow(t, ENVA, ENVAS) && !!suiteRow(t, ENVB, ENVBS)); }, 30000);
+  await call(N.base, 'testicle.run', { script: ENVA, suite: ENVAS });
+  await until(function () { return Promise.resolve(!!envOf('zzEnvA')); }, 60000);
+  await call(N.base, 'testicle.run', { script: ENVB, suite: ENVBS });
+  await until(function () { return Promise.resolve(!!envOf('zzEnvB')); }, 60000);
+  handed = { a: envOf('zzEnvA'), b: envOf('zzEnvB') };
+  return (!!handed.a && !!handed.b) || 'what they were handed: ' + short(handed);
+}, test.limit.long);
+test.run('testicle hands the suites it runs a node that answers, and a Chrome that answers', 0.4, async function () {
+  if (!handed || !handed.a) return 'no suite wrote down what it was handed: the world failed';
+  const node = !!handed.a.base && await fetch(handed.a.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'api', args: {} }) }).then(function (r) { return r.status === 200; }, function () { return false; });
+  const chrome = !!handed.a.chrome && await fetch('http://127.0.0.1:' + handed.a.chrome + '/json/version').then(function (r) { return r.status === 200; }, function () { return false; });
+  return (node && chrome) || 'handed ' + short(handed.a) + ': the node answers ' + node + ', the Chrome answers ' + chrome;
+}, test.limit.slow);
+test.run('and the same node and the same Chrome to the next suite it runs', 0.4, function () {
+  if (!handed || !handed.a || !handed.b) return 'no suite wrote down what it was handed: the world failed';
+  return (!!handed.a.base && !!handed.a.chrome && handed.a.base === handed.b.base && handed.a.chrome === handed.b.chrome) || 'zzEnvA ' + short(handed.a) + ', zzEnvB ' + short(handed.b);
+}, test.limit.quick);
+
 // LAST, SO THE REST OF THIS FILE JUDGES SUITES NOT RUN YET (goal/G47.1): set to auto and waited for, every flagged suite in its
 // scope runs first, alpha's empty own suite with it, and the checks after it found their suites already run.
 // goal/G47.1, Q8, Andy: "Shall a testicle in debug mode never run testicle's own tests, only the planted temp/ worlds and its
