@@ -118,7 +118,7 @@ const MOST_BYTES = Math.max.apply(null, Object.keys(FIELD_RULES).filter(function
 //           no read verb);
 //   moved: what the box changed while a write was out, other than a busy mark, a button's disabled state or fine print.
 const WATCH = String.raw`(function () {
-  var W = window.spiritWatch = { net: [], subs: [], writes: [], moved: [], out: 0, searches: [] };
+  var W = window.spiritWatch = { net: [], subs: [], writes: [], moved: [], out: 0, searches: [], families: [] };
   var SPIRIT = /(\/spirit\.js|spirit-interface\/|spirit\/client\/|spirit\/data\.js|shell\/boot\.js)$/;
   function frames() { return String(new Error().stack || '').split('\n').slice(1).map(function (l) { return l.trim(); }).filter(function (l) { return l.indexOf('spiritWatch.js') === -1 && /^at /.test(l); }); }
   function file(f) { var m = /\(?([^()\s]+?):\d+:\d+\)?$/.exec(f); return m ? m[1].replace(/^https?:\/\/[^/]+/, '') : ''; }
@@ -169,6 +169,9 @@ const WATCH = String.raw`(function () {
   window.fetch = function (url, o) {
     W.net.push(Object.assign({ kind: 'fetch', url: String(url) }, caller()));
     // A write is the module's: made with its code on the way, spirit carrying it.
+    // EVERY FAMILY IT CALLS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING INTERFACES IT FUCKING NEEDS"): the
+    // family of each call its code made, read or write, spirit's own asks (the stream, an interface) left out.
+    if (moduleMade()) { try { var cb = JSON.parse(String((o && o.body) || '')); var fam = cb && typeof cb.call === 'string' && cb.call !== 'api' && cb.call !== 'event.subscribe' ? cb.call.split('.')[0] : ''; if (fam && W.families.indexOf(fam) === -1) W.families.push(fam); } catch (e) { /* no call */ } }
     var w = moduleMade() ? isWrite(o && o.body) : null;
     if (!w) return realFetch.apply(this, arguments);
     W.writes.push(w); opened();
@@ -829,6 +832,13 @@ async function session() {
     await page.evaluate('window.spiritWatch.settle()');
   }
   const W = P.W = JSON.parse(await page.evaluate('JSON.stringify(window.spiritWatch || null)')) || { net: [], subs: [], writes: [], moved: [] };
+  // THE FAMILIES IT USES, AND WHETHER IT LOADED THEIR INTERFACES ITSELF (Andy: "JUST BECAUSE api branches are intrinsic doesn't
+  // fucking mean the browser has interfaces for them already loaded, EVERY FUCKING ELEMENT REQUIRES THE FUCKING INTERFACES IT
+  // FUCKING NEEDS"): the families it called, and those whose spirit.data branches it watched; on a bare page each one's api.js
+  // (spirit/<family>/api.js or spirit/app/<family>/api.js) stands in spirit.required only if this file loaded it.
+  P.usedFamilies = (W.families || []).slice();
+  (W.subs || []).forEach(function (x) { if (x.mine && x.kind === 'data.watch' && x.path) { const f = String(x.path).split('/')[1]; if (f && P.usedFamilies.indexOf(f) === -1) P.usedFamilies.push(f); } });
+  P.unloaded = JSON.parse(await page.evaluate('JSON.stringify(' + JSON.stringify(P.usedFamilies) + '.filter(function (f) { var r = (window.spirit && window.spirit.required) || {}; var s = r.spirit || {}; return !((s[f] && s[f].api) || (s.app && s.app[f] && s.app[f].api)); }))'));
   P.notes.push('pressed ' + pressed + ' buttons; ' + W.net.length + ' calls on the wire; ' + W.writes.length + ' writes; ' + W.subs.length + ' subscriptions');
 
   // AND ITS WATCHING REDRAWS IT (goal/G41.28; Andy: "YOUR TEST WILL MAKE SURE THAT THE CACHING AND LISTENING IS DONE TO
@@ -1003,6 +1013,14 @@ function oneFile(P) {
     test.run('a change written into what it watches redraws it', 0.4, function () {
       if (notDrawn()) return notDrawn();
       return seenProbe.some(function (x) { return x.redrew; }) || 'it watches ' + seenProbe.map(function (x) { return x.path; }).join(', ') + ' and redraws for none of them';
+    }, test.limit.quick);
+  }
+  // <address>: every interface it needs, it requires itself
+  if (mounted && !(P.usedFamilies || []).length) unjudged('it calls and watches no family');
+  else {
+    test.run('every family it calls or watches, it required that family\'s interface itself', 0.8, function () {
+      if (notDrawn()) return notDrawn();
+      return !P.unloaded.length || 'it uses ' + P.unloaded.join(', ') + ' with no api.js of it in spirit.required: it leans on what another part loaded';
     }, test.limit.quick);
   }
   // <address>: what it changes, it listens for through spirit.data

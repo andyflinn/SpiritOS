@@ -79,7 +79,7 @@ async function world() {
         return !!report && report.state !== 'loading';
       });
     }, 20000);
-    if (!report || report.state === 'loading') { W.reports[rel] = { fail: 'its page never finished loading' }; continue; }
+    if (!report || report.state === 'loading') { W.reports[rel] = { fail: rel + ': its page never finished loading in 20 s' }; continue; }
     if (report.state === 'failed') {
       W.reports[rel] = /places no element with a create/.test(report.error) ? { none: true } : { fail: 'it did not mount: ' + report.error };
       continue;
