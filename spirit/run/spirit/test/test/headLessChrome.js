@@ -100,19 +100,26 @@ test.run('lab resets a node before each test: a file a test left in its spirit/s
   }
   return 'the node ' + l.root + ' was not handed out again in six asks';
 }, test.limit.long);
+// goal/G47.1, Q6, Andy: "Shall lab hold 6 personal nodes instead of 3, since testicle.js starves on 3 while my testicle
+// classifies?" "YES."
+const PERSONAL = ['personal1', 'personal2', 'personal3', 'personal4', 'personal5', 'personal6'];
+test.run('lab holds six personal nodes, personal1 to personal6, and its two relays', 0.4, function () {
+  let P = null; try { P = require(path.join(REPO, 'lab', 'labNodes.js')).POOLS; } catch (e) { return 'lab/labNodes.js does not load: ' + (e && e.message); }
+  return (!!P && JSON.stringify(P.node) === JSON.stringify(PERSONAL) && JSON.stringify(P.relay) === JSON.stringify(['relay1', 'relay2'])) || 'its pools: ' + short(P);
+}, test.limit.quick);
 // "a lock file per lab node, one test on it at a time; a test that finds every lab node taken waits"
-test.run('one test per lab node at a time: with the three personal nodes held, a fourth ask waits, and is handed one when a holder ends', 0.4, async function () {
-  const holders = [ask('node', 25000), ask('node', 25000), ask('node', 25000)];
+test.run('one test per lab node at a time: with the six personal nodes held, a seventh ask waits, and is handed one when a holder ends', 0.4, async function () {
+  const holders = PERSONAL.map(function () { return ask('node', 25000); });
   const held = await Promise.all(holders.map(function (h) { return within(h.got, 120000); }));
-  if (held.some(function (h) { return !h || h === 'waiting' || h.error; })) return 'three were not handed out: ' + short(held);
+  if (held.some(function (h) { return !h || h === 'waiting' || h.error; })) return 'six were not handed out: ' + short(held);
   const roots = held.map(function (h) { return h.root; });
-  if (new Set(roots).size !== 3) return 'three holders share a node: ' + short(roots);
+  if (new Set(roots).size !== PERSONAL.length) return 'six holders share a node: ' + short(roots);
   const fourth = ask('node', 500);
   const early = await within(fourth.got, 5000);
-  if (early !== 'waiting') { holders.forEach(function (h) { h.kid.kill(); }); return 'the fourth was answered while all three were held: ' + short(early); }
+  if (early !== 'waiting') { holders.forEach(function (h) { h.kid.kill(); }); return 'the seventh was answered while all six were held: ' + short(early); }
   const late = await within(fourth.got, 60000);
   await Promise.all(holders.map(function (h) { return h.ended; }));
-  return (!!late && late !== 'waiting' && !late.error && roots.indexOf(late.root) !== -1) || 'after a holder ended the fourth got ' + short(late);
+  return (!!late && late !== 'waiting' && !late.error && roots.indexOf(late.root) !== -1) || 'after a holder ended the seventh got ' + short(late);
 }, test.limit.long);
 // THE HELPERS A TEST'S OWN WORLD USES (goal/G47.3, the build; ./headLessChrome.md): scratchTree takes one lab node and
 // no more, startNodeOn starts a node only on a tree lab handed out, freeTree frees a node and deletes nothing.
