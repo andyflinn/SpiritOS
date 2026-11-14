@@ -245,7 +245,13 @@ function chooseJob() {
       return { classify: true, script: '', suite: CLASSIFY, title: '', scripts: owed.map(function (r) { return r.name; }), hashes: hashes };
     }
   }
-  while (front.length) { const f = front.shift(); if (there(f.script) && there(f.suite) && !blocked(f.script) && !unfit(f.script, f.suite)) return f; }
+  while (front.length) {
+    const f = front.shift();
+    // A STOPPED BATCH RE-ASSEMBLED (box v130: "a run aborted (stopped or killed): the server RE-ASSEMBLES a new run at once, fresh
+    // from the flags as they stand"): its suite's rows still flagged, the scripts that reported their success left out.
+    if (f.resume) { const again = batchOf(f.suite); if (again) return again; continue; }
+    if (there(f.script) && there(f.suite) && !blocked(f.script) && !unfit(f.script, f.suite)) return f;
+  }
   // Interactive: only what was pressed runs; the flagged rows wait for a press, or for auto.
   if (prefs.interactive) return null;
   const rows = flaggedRows.all().filter(function (r) { return r.suite !== CLASSIFY && there(r.script) && there(r.suite) && !blocked(r.script) && !unfit(r.script, r.suite); });
@@ -255,14 +261,17 @@ function chooseJob() {
   // A GENERAL TEST IS HANDED A LIST (goal/G47.1, box v94, 2: "else it will process all scripts listed in the arguments that
   // fit"; Andy: "optimizing the testicle server so it gives the general tests a LIST instead of calling them one-by-one"):
   // every flagged script of that one suite, in one run, each with its hash as the run starts.
-  if (isGeneral(rows[0].suite)) {
-    const suite = rows[0].suite;
-    const mine = rows.filter(function (r) { return r.suite === suite; });
-    const hashes = Object.create(null);
-    mine.forEach(function (r) { const sr = Q.script.get(r.script); hashes[r.script] = (sr && sr.hash) || hashOf(r.script); });
-    return { batch: true, script: '', suite: suite, title: '', scripts: mine.map(function (r) { return r.script; }), hashes: hashes };
-  }
+  if (isGeneral(rows[0].suite)) return batchOf(rows[0].suite);
   return { script: rows[0].script, suite: rows[0].suite, title: '' };
+}
+// One general test's run of every script still flagged for it, each with its hash as the run starts; null when none is.
+function batchOf(suite) {
+  const mine = flaggedRows.all().filter(function (r) { return r.suite === suite && there(r.script) && there(r.suite) && !blocked(r.script) && !unfit(r.script, r.suite); })
+    .sort(function (a, b) { return a.script < b.script ? -1 : a.script > b.script ? 1 : 0; });
+  if (!mine.length) return null;
+  const hashes = Object.create(null);
+  mine.forEach(function (r) { const sr = Q.script.get(r.script); hashes[r.script] = (sr && sr.hash) || hashOf(r.script); });
+  return { batch: true, script: '', suite: suite, title: '', scripts: mine.map(function (r) { return r.script; }), hashes: hashes };
 }
 // WHY THE RUNNER WAITS, WRITTEN DOWN (goal/G47.1; Andy saw classifying start only when he turned interactive off, and
 // nothing said why): while scripts are owed a class, each time the runner does not start it says why in testicle.err, a
@@ -471,6 +480,10 @@ function stopJob(j, why) {
   clearTimeout(j.timer);
   logError('runner: stopped ' + (j.classify ? 'classifying' : j.suite + (j.batch ? ' (' + j.scripts.length + ' scripts)' : ' for ' + j.script)) + ': ' + why, null);
   try { j.kid.kill(); } catch (e) { logError('stopJob: the kill', e); }
+  // QUEUED AGAIN, BEHIND WHAT STOPPED IT (box v130), in interactive as in auto: a batch to be assembled fresh from its flags, a
+  // single run as it was; a classifying run needs none, its scripts still owe their class.
+  if (j.batch) front.push({ resume: true, script: '', suite: j.suite, title: '' });
+  else if (!j.classify) front.push({ script: j.script, suite: j.suite, title: j.title || '' });
 }
 function press(script, suite, title) {
   for (let i = front.length - 1; i >= 0; i--) if (front[i].script === script && front[i].suite === suite) front.splice(i, 1);
