@@ -204,7 +204,12 @@ function ownSuite(suite) {
   return DEBUG && s.indexOf(DEBUG_SCOPE) === 0 && s.indexOf(DEBUG_SCOPE + 'temp/') !== 0 && /(^|\/)test\//.test(s) &&
     !/^spirit\/app\/testicle\/test\/testicle-sibling-(general|node|browser)\.js$/.test(s);
 }
-function onTheWay(rel) { return !DEBUG || !rel || DEBUG_SCOPE.indexOf(rel + '/') === 0 || String(rel).indexOf(DEBUG_SCOPE) === 0; }
+// The classifier too, and the folders on the way to it (goal/G47.1, found by testicle.js's "when the classifier changes, a
+// script classified before reads reClassify true again"): inScope counts it in, but in debug mode its change was never heard,
+// spirit/test/ being off the way to the scope; nothing else of spirit/test/ is.
+function onTheWay(rel) {
+  return !DEBUG || !rel || DEBUG_SCOPE.indexOf(rel + '/') === 0 || String(rel).indexOf(DEBUG_SCOPE) === 0 || rel === CLASSIFY || CLASSIFY.indexOf(rel + '/') === 0;
+}
 if (DEBUG) console.error('testicle: debug mode, its scope ' + DEBUG_SCOPE);
 // A file change, a press or the start: the runner waits for one quiet second, a new event pushing it back.
 function soon() {
