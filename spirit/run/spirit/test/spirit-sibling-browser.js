@@ -62,24 +62,28 @@ async function batch() {
     GIVEN.forEach(function (one) { const own = (/^(?:spirit\/run\/)?spirit\/app\/([^/]+)\//.exec(one.split(path.sep).join('/')) || [])[1]; if (own && mounted(own) && servers.indexOf(own) === -1) servers.push(own); });
     const env = Object.assign({}, process.env);
     let node = null, chrome = null;
-    if (!process.env.SPIRIT_MOUNT_BASE) {
+    // THE NODE AND THE CHROME STARTED SIDE BY SIDE (goal/G47.1, box v144's 80%): neither needs the other, so a run waits for
+    // the slower of the two, not for both one after the other.
+    const bootNode = async function () {
+      if (process.env.SPIRIT_MOUNT_BASE) return;
       node = await H.scratchNode({ servers: servers });
-      if (node.up && node.debug) {
-        // Each of its servers answering its interface before any page is drawn, as a script's own run waited for its own.
-        for (const name of servers) {
-          await H.until(function () {
-            return fetch(node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'api', args: { family: name } }) })
-              .then(function (r) { return r.json(); }).then(function (b) { return !!(b && b.interface); }, function () { return false; });
-          }, 30000);
-        }
-        env.SPIRIT_MOUNT_BASE = node.base;
-      }
-    }
-    const found = H.findChrome();
-    if (found && !process.env.SPIRIT_CHROME_PORT) {
+      if (!(node.up && node.debug)) return;
+      // Each of its servers answering its interface before any page is drawn, as a script's own run waited for its own.
+      await Promise.all(servers.map(function (name) {
+        return H.until(function () {
+          return fetch(node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'api', args: { family: name } }) })
+            .then(function (r) { return r.json(); }).then(function (b) { return !!(b && b.interface); }, function () { return false; });
+        }, 30000);
+      }));
+      env.SPIRIT_MOUNT_BASE = node.base;
+    };
+    const bootChrome = async function () {
+      const found = H.findChrome();
+      if (!found || process.env.SPIRIT_CHROME_PORT) return;
       chrome = await H.sharedChrome(found);
       if (!chrome.error) env.SPIRIT_CHROME_PORT = String(chrome.port);
-    }
+    };
+    await Promise.all([bootNode(), bootChrome()]);
     // EACH SCRIPT IN THIS PROCESS (goal/G47.1, box v144): its page drawn on the shared node and Chrome, one after the other, and
     // only then every script's checks said, each reported for its own script; a process, spirit.js and its reports' wait are
     // paid once for the run, not once a script.
@@ -947,7 +951,8 @@ async function session() {
 // The session, bounded: one that has not finished in PAGE_MS fails its world, as a hang does.
 // A HUNG PAGE IS GIVEN UP AT ONCE (goal/G47.1, box v144: "only a hung page is reloaded: a main page that does not answer within 1 s
 // is hung"): while a script's page is drawn it is asked twice a second for an answer; one it does not give within 1 s ends that
-// script's session as hung, its page closed, and the run goes on with the next script. Before, a script that never ended held
+// script's session as hung, its page closed (its renderer with it; box v144: "only a hung page is reloaded"), and the run goes
+// on with the next script in the same Chrome. Before, a script that never ended held
 // the whole run for PAGE_MS.
 // The page is asked every PING_MS, and one that gives no answer in HANG_MS is hung (limits, not waits).
 const PING_MS = 500;
@@ -966,7 +971,7 @@ function hungPage(gen) {
       // busy with the checks' own long reads (typing past every field, probing every box), and busy is not hung.
       if (P && P.page && P.page.evaluate && P.stage === 'debug page') {
         const answered = await Promise.race([Promise.resolve(P.page.evaluate('1')).then(function () { return true; }, function () { return true; }), new Promise(function (r) { setTimeout(function () { r(false); }, HANG_MS); })]);
-        if (!answered && gen === drawingGen && drawing === P && P.stage === 'debug page') { try { P.page.kid.kill(); } catch (e) { /* gone */ } if (P.page.shared) await require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).renewChrome(); resolve({ stage: P.stage, fail: 'the page of ' + rel + ' hung: it gave no answer in ' + (HANG_MS / 1000) + ' s while ' + P.stage }); return; }
+        if (!answered && gen === drawingGen && drawing === P && P.stage === 'debug page') { try { P.page.kid.kill(); } catch (e) { /* gone */ } resolve({ stage: P.stage, fail: 'the page of ' + rel + ' hung: it gave no answer in ' + (HANG_MS / 1000) + ' s while ' + P.stage }); return; }
       }
       if (gen === drawingGen) setTimeout(tick, PING_MS); else resolve(null);
     };
