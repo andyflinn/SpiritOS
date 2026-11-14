@@ -1803,6 +1803,26 @@ test.run('and after a restart, a classified script still shows only the suites t
   const kp = await shownKinds(ZC.page), kn = await shownKinds(ZC.node);
   return (kp.indexOf('node') === -1 && kn.indexOf('browser') === -1) || 'after the restart: zzcPage ' + short(kp) + ', zzcNode ' + short(kn);
 }, test.limit.long);
+// A RESULT OF A SUITE THAT DOES NOT APPLY (Andy: "MAKE SURE SUITES DON'T SHOW UP WHEN THEY'RE NO APPLICATBLE TO A SCRIPT";
+// found on wsl's node, 2026-11-14: a -browser suite run by hand on two node-only scripts, relayServer.js and sseClient.js,
+// reported to testicle, and their red rows stood current there for a day, though testicle never runs that suite on them):
+// a result sent for a classified node-only script under a -browser suite is refused, and leaves no row.
+test.run('a -browser result for a node-only script is refused, and no current row of it stands', 0.4, async function () {
+  if (!zc) return NONODE;
+  const browserSuite = 'spirit/app/testicle/test/testicle-sibling-browser.js';
+  const r = await call(N.base, 'testicle.testicle.set', { script: ZC.node, suite: browserSuite, test: 'zzc not applicable', verified: false, severity: 0.8 });
+  await sleep(1000);
+  const t = tables(DB);
+  const rows = currentOf(t, ZC.node, browserSuite, 'zzc not applicable');
+  const srow = suiteRow(t, ZC.node, browserSuite);
+  const shown = (await shownKinds(ZC.node)).indexOf('browser') !== -1;
+  const bad = [];
+  if (r.status === 200) bad.push('testicle.set answered 200');
+  if (rows.length) bad.push('a current row stands: ' + short(rows[0]));
+  if (srow && no(srow.deleted)) bad.push('a suite row of it stands: ' + short(srow));
+  if (shown) bad.push('its suite search shows a -browser suite');
+  return !bad.length || bad.join('; ');
+}, test.limit.slow);
 
 test.run('classified first, tested after: each one\'s own suite reports only after its reClassify cleared', 0.2, async function () {
   if (!zc) return NONODE;
