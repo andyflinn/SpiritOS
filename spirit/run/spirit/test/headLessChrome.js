@@ -332,10 +332,26 @@ async function scratchFaceRelay(o) {
 }
 
 // Headless Chrome on a scratch profile, and one page of it over the debugging protocol.
+// A TEST'S CHROME ENDS WITH THE TEST (goal/G47.1, Q9, Andy: "anything that leaves 77 useless chromes running must be
+// fixed."). A test that ends without closing its page, or is killed, never runs its own cleanup, so a watcher of its own,
+// a process apart, asks twice a second whether the test still lives; once it is gone, it ends that Chrome and deletes its
+// profile. A Chrome that ends first ends its watcher too.
+function watchChrome(kid, profile) {
+  if (!kid || !kid.pid) return;
+  const code = 'const [test, chrome, profile] = process.argv.slice(1); const alive = function (p) { try { process.kill(Number(p), 0); return true; } catch (e) { return false; } };' +
+    ' const t = setInterval(function () { if (!alive(chrome)) { clearInterval(t); return; } if (alive(test)) return; clearInterval(t);' +
+    ' try { process.kill(Number(chrome), "SIGTERM"); } catch (e) {}' +
+    ' setTimeout(function () { try { process.kill(Number(chrome), "SIGKILL"); } catch (e) {} try { require("fs").rmSync(profile, { recursive: true, force: true }); } catch (e) {} }, 2000); }, 500);';
+  try {
+    const w = spawn(process.execPath, ['-e', code, String(process.pid), String(kid.pid), profile], { stdio: 'ignore', detached: true, windowsHide: true });
+    w.unref();
+  } catch (e) { /* no watcher: the test's own cleanup is all there is */ }
+}
 async function chromePage(chrome) {
   const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-chrome-'));
   const kid = spawn(chrome, ['--headless=new', '--remote-debugging-port=0', '--user-data-dir=' + profile, '--no-first-run', '--no-default-browser-check',
-    '--window-size=1280,800', 'about:blank'], { stdio: ['ignore', 'ignore', 'pipe'] });
+    '--window-size=1280,800', 'about:blank'], { stdio: ['ignore', 'ignore', 'pipe'], windowsHide: true });
+  watchChrome(kid, profile);
   let err = '';
   kid.stderr.on('data', function (d) { err += String(d); });
   let ws = '';
