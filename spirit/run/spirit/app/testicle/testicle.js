@@ -1026,6 +1026,13 @@ appServer.serve({
       if (a.test !== undefined) return mostSevereFirst(T.history.all(a.script, a.suite, a.test).map(testServed).filter(kept), a.from);
       const rows = T.currents.all().filter(function (r) { return (a.script === undefined || r.script === a.script) && (a.suite === undefined || r.suite === a.suite); })
         .map(testServed).filter(kept);
+      // WITH WORDS, THE BEST MATCH FIRST (goal/G47.1; testicle.js: "cut and full: of the rows that match, as many as the answer
+      // holds are in it"): an answer cut by its room held the most severe of the rows the words touched at all, so a test
+      // matching every word fell below ones matching one. The match orders them, the most severe first among equals.
+      if (words) {
+        const score = new Map(rows.map(function (r) { return [r, Number(probabilityStringObjectMatch(words, r)) || 0]; }));
+        rows.sort(function (x, y) { return score.get(y) - score.get(x); });
+      }
       return mostSevereFirst(rows, a.from);
     },
   },
