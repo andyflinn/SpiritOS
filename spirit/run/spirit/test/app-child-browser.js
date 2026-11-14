@@ -111,7 +111,7 @@ world().then(null, function (e) { W.fail = 'the world crashed: ' + (e && e.stack
         if (!r) return 'it was not opened: the world failed';
         if (r.fail) return r.fail;
         const missing = r.owed.filter(function (n) { return r.held.indexOf(n) === -1; });
-        return !missing.length || 'it did not load ' + missing.map(function (n) { return 'spirit/app/' + appOf(rel) + '/' + n + '.js'; }).join(' and ') + ' itself: it leans on its mounter';
+        return !missing.length || rel + ' did not load ' + missing.map(function (n) { return 'spirit/app/' + appOf(rel) + '/' + n + '.js'; }).join(' and ') + ' itself: it leans on its mounter';
       }, test.limit.quick);
     });
   });
