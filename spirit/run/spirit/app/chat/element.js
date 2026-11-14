@@ -367,7 +367,7 @@ function chApplyStyle() {
 
 // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the contact selector (its peer pane) and the contact label, before it
 // mounts, so no shell has to have put them on the page.
-var chElements = Promise.all(['spirit/element/search/contact.js', 'spirit/element/contactLabel.js'].map(function (p) { return spirit.require(p); }));
+var chElements = Promise.all(['spirit/element/search/contact.js', 'spirit/element/contactLabel.js', 'spirit/element/fieldInput.js'].map(function (p) { return spirit.require(p); }));
 
 // AN ELEMENT (goal/G43.31): made in the pane the app selector's tile hands it; no old shell's activateApp.
 function chCreate(container) {
@@ -403,32 +403,35 @@ function chMount(container) {
       if (id) chParts[id] = e;
       return e;
     }
+    // ITS SPACING IS shell.css's (goal/G47.1, box v109: "style issues like margin, padding and gap do NOT belong in UI
+    // scripts: no UI script sets them"): gap, padding and margin of every class below stand there, the same values.
     var css = make('style');
     css.textContent =
-      '.ch-app { display: flex; gap: 12px; height: calc(100vh - 120px); min-height: 320px; }' +
-      '.ch-left { flex: 0 0 auto; display: flex; flex-direction: column; gap: 12px; overflow: hidden; }' +
+      // overflow hidden: the box it puts in its container declares its constraint (-browser, goal/G47.1).
+      '.ch-app { display: flex; height: calc(100vh - 120px); min-height: 320px; overflow: hidden; }' +
+      '.ch-left { flex: 0 0 auto; display: flex; flex-direction: column; overflow: hidden; }' +
       '.ch-right { flex: 0 0 auto; overflow-y: auto; opacity: 0.6; font-size: 13px; }' +
       '.ch-divider { flex: 0 0 6px; cursor: col-resize; background: rgba(255, 255, 255, 0.12); border-radius: 3px; touch-action: none; }' +
       '.ch-divider:hover { background: rgba(255, 255, 255, 0.3); }' +
       // A folded pane and its boundary: [hidden] would lose to the panes' own display: flex.
       '.ch-app [hidden] { display: none !important; }' +
       '.ch-fold { flex: 0 0 auto; align-self: flex-start; background: none; border: none; cursor: pointer; font-size: 16px; }' +
-      '.ch-centre { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }' +
-      '.ch-title { display: flex; align-items: center; gap: 12px; font-size: 18px; font-weight: 600; }' +
+      '.ch-centre { flex: 1; min-width: 0; display: flex; flex-direction: column; }' +
+      '.ch-title { display: flex; align-items: center; font-size: 18px; font-weight: 600; }' +
       '.ch-title-name { flex: 1; min-width: 0; }' +
       '.ch-title-count { font-size: 13px; font-weight: 400; opacity: 0.75; }' +
-      '.ch-lines { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; outline: none; }' +
-      '.ch-line { padding: 4px 8px; border-radius: 8px; cursor: pointer; }' +
+      '.ch-lines { flex: 1; overflow-y: auto; display: flex; flex-direction: column; outline: none; }' +
+      '.ch-line { border-radius: 8px; cursor: pointer; }' +
       '.ch-line.current { outline: 1px solid #5b8def; }' +
-      '.ch-quote { font-size: 12px; opacity: 0.7; border-left: 3px solid #5b8def; padding-left: 6px; margin-bottom: 2px; }' +
+      '.ch-quote { font-size: 12px; opacity: 0.7; border-left: 3px solid #5b8def; }' +
       '.ch-text { white-space: pre-wrap; word-break: break-word; }' +
-      '.ch-meta { font-size: 11px; opacity: 0.6; margin-left: 8px; }' +
-      '.ch-style-plain .ch-line { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }' +
+      '.ch-meta { font-size: 11px; opacity: 0.6; }' +
+      '.ch-style-plain .ch-line { display: flex; align-items: baseline; flex-wrap: wrap; }' +
       '.ch-style-plain .ch-mine .ch-text { font-weight: 500; }' +
       '.ch-style-bubbles .ch-line { max-width: 70%; }' +
       '.ch-style-bubbles .ch-mine { align-self: flex-end; background: #0f3460; }' +
       '.ch-style-bubbles .ch-theirs { align-self: flex-start; background: #2a2f3a; }' +
-      '.ch-style-bubbles .ch-meta { display: block; text-align: right; margin-left: 0; }' +
+      '.ch-style-bubbles .ch-meta { display: block; text-align: right; }' +
       '.ch-input { width: 100%; min-height: 3em; resize: vertical; font: inherit; }' +
       '.ch-status { font-size: 13px; color: #ff8080; }' +
       '.ch-status:empty { display: none; }';
@@ -459,6 +462,8 @@ function chMount(container) {
     centre.appendChild(make('div', 'ch-status', 'ch-status'));
     var input = make('textarea', 'ch-input', 'ch-input', { placeholder: 'Enter sends, Shift+Enter a new line' });
     input.disabled = true;
+    // ITS LIMIT, fieldInput's chat line (1024 bytes; goal/G47.1, -browser: "every input it draws has a maxlength").
+    spirit.required.spirit.element.fieldInput.attach(input, 'line');
     centre.appendChild(input);
     root.appendChild(centre);
     root.appendChild(make('div', 'ch-divider-right', 'ch-divider', { 'data-divider': 'right', title: 'drag to resize' }));

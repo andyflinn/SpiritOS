@@ -1160,6 +1160,17 @@ details.stat-tile > summary {
 /* spirit/element/search/file/listElement.js: the tree's indent and its hidden path. */
 .files-tree .file-depth { display: inline-block; padding-left: calc(var(--depth) * 2em); }
 .files-tree .path-dir { display: none; }
+/* spirit/app/chat/element.js: its panes, the title, the lines, a quote and a line's meta (goal/G47.1, box v109, as above). */
+.ch-app { gap: 12px; }
+.ch-left { gap: 12px; }
+.ch-centre { gap: 8px; }
+.ch-title { gap: 12px; }
+.ch-lines { gap: 4px; }
+.ch-line { padding: 4px 8px; }
+.ch-quote { padding-left: 6px; margin-bottom: 2px; }
+.ch-meta { margin-left: 8px; }
+.ch-style-plain .ch-line { gap: 8px; }
+.ch-style-bubbles .ch-meta { margin-left: 0; }
 /* A TAB CONTAINER'S CONTENT (spirit/element/tabContainer.js; goal/G41.13, Andy: "our standard 0.5em padding", "it must occupy
    all remaining vertical space, that it must be constrained to", "a bubble of of darker green than already is on the
    page"): the height left, scrolling inside itself, in a rounded well. */
