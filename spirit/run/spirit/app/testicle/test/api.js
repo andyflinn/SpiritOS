@@ -23,7 +23,9 @@ const W = { api: null, verbs: {}, names: [] };
 const passes = function (verb, args) { return !!W.verbs[verb] && spirit.check('testicle.' + verb, W.verbs[verb], args) === null; };
 const refusedAs = function (verb, args) { if (!W.verbs[verb]) return 'no verb ' + verb; const r = spirit.check('testicle.' + verb, W.verbs[verb], args); return r ? r.code : ''; };
 const NO_API = 'api.js did not load: the world failed';
-const VERBS = ['busy', 'preferences', 'script.get', 'script.classify', 'suite.search', 'testicle.set', 'testicle.search', 'red', 'run', 'subscribe', 'unsubscribe'];
+// suite.success since box v129-131 (Andy: "the reporter reporting fucking success/failure of the suite through a new verb
+// testicle.suite.success").
+const VERBS = ['busy', 'preferences', 'script.get', 'script.classify', 'suite.search', 'testicle.set', 'suite.success', 'testicle.search', 'red', 'run', 'subscribe', 'unsubscribe'];
 const SET = { script: 'spirit/seal.js', suite: 'spirit/test/seal.js', test: 'a title', verified: true, severity: 0.2 };
 
 test.run('the world: api.js loads', 0.2, function () {
@@ -55,7 +57,7 @@ test.run('every rule is one of spirit.js\'s standard, \'?\' optional', 0.2, func
   });
   return bad.length === 0 || 'unknown rules: ' + short(bad);
 }, test.limit.quick);
-test.run('its verbs are busy, preferences, script.get, script.classify, suite.search, testicle.set, testicle.search, red, run, subscribe and unsubscribe', 0.2, function () {
+test.run('its verbs are busy, preferences, script.get, script.classify, suite.search, testicle.set, suite.success, testicle.search, red, run, subscribe and unsubscribe', 0.2, function () {
   if (!W.api) return NO_API;
   return W.names.slice().sort().join() === VERBS.slice().sort().join() || 'verbs ' + short(W.names);
 }, test.limit.quick);
@@ -124,6 +126,14 @@ test.run('testicle.search takes its words, required; script, suite, test, result
   return (passes('testicle.search', { text: '' }) && passes('testicle.search', { script: 'a', suite: 'b', test: 'c', result: 'red', from: 10, text: '' })
     && refusedAs('testicle.search', { script: 'a' }) === 'bad-request' && refusedAs('testicle.search', { text: '', from: '10' }) === 'bad-request')
     || 'testicle.search {script} ' + refusedAs('testicle.search', { script: 'a' }) + ', {from: "10"} ' + refusedAs('testicle.search', { text: '', from: '10' });
+}, test.limit.quick);
+// goal/G47.1, box v129-131: {script, suite, success}, a suite's success or failure for one script.
+test.run('suite.success takes script, suite and success a true or false, all required', 0.2, function () {
+  if (!W.api) return NO_API;
+  const ok = { script: 'spirit/seal.js', suite: 'spirit/test/seal.js', success: true };
+  const without = Object.keys(ok).filter(function (k) { const a = Object.assign({}, ok); delete a[k]; return refusedAs('suite.success', a) !== 'bad-request'; });
+  return (passes('suite.success', ok) && without.length === 0 && refusedAs('suite.success', Object.assign({}, ok, { success: 'yes' })) === 'bad-request')
+    || 'suite.success: ' + short([refusedAs('suite.success', ok), without, refusedAs('suite.success', Object.assign({}, ok, { success: 'yes' }))]);
 }, test.limit.quick);
 // goal/G47.1, the run cycle: one suite run for one script, testicle (a test's title) to run up to it.
 test.run('run takes a script and a suite, required, and a test\'s title, optional', 0.2, function () {
