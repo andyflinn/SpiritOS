@@ -75,7 +75,8 @@
     var off = null;
 
     host.innerHTML =
-      '<div class="stack" style="overflow:auto">' +
+      // Its host's height, scrolling inside it (goal/G47.1, -browser: "it keeps its height and its width when given far more than it holds").
+      '<div class="stack" style="height:100%;overflow:auto">' +
         '<div class="stat-tile wide" data-job="head"></div>' +
         '<div class="stat-tile wide"><div class="job-manifest-note" data-job="window">Events</div>' +
           '<div class="job-log-panel" data-job="log" style="height:33vh;max-height:33vh;overflow:auto"></div></div>' +
