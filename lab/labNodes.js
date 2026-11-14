@@ -28,7 +28,9 @@ const LAB_REPO = path.join(LAB, 'repo');
 const NODES = path.join(LAB, 'node');
 const BRANCH = 'lab/snapshot';
 // "two relays and three "personal" nodes"
-const POOLS = { node: ['personal1', 'personal2', 'personal3'], relay: ['relay1', 'relay2'] };
+// Then six (goal/G47.1, Q6: "Shall lab hold 6 personal nodes", Andy: "Q6: clear"): a classifier holding two of three
+// starved every test that needed one.
+const POOLS = { node: ['personal1', 'personal2', 'personal3', 'personal4', 'personal5', 'personal6'], relay: ['relay1', 'relay2'] };
 
 const sleepSync = function (ms) { Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms); };
 const sleep = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
