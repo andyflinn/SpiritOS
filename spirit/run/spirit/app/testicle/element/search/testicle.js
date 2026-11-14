@@ -20,6 +20,9 @@
     var o = options || {};
     var root = document.createElement('div');
     root.className = 'testicle-search fill';
+    // Its box keeps what it holds inside (goal/G47.1, the box: "an element container always must constrain its children's display to
+    // its own size"; overflow not visible): its list scrolls in itself, a dropdown's pop-up stands in the page's top layer.
+    root.style.overflow = 'hidden';
     var made = null;
     var gone = false;
     // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
