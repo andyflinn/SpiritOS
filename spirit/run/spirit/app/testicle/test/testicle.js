@@ -1716,12 +1716,12 @@ const ZC = {
   broken: Z + 'zzcBroken.js', hang: Z + 'zzcHang.js', exit: Z + 'zzcExit.js',
 };
 const ZC_SRC = {
-  node: "'use strict';\nrequire('../spirit.js');\nconst fs = require('fs');\nmodule.exports = { fs: typeof fs.readFileSync };\n",
+  node: "'use strict';\nrequire('../../../../spirit.js');\nconst fs = require('fs');\nmodule.exports = { fs: typeof fs.readFileSync };\n",
   page: "'use strict';\ndocument.title = String(document.title);\nwindow.zzcPage = true;\n",
   both: "'use strict';\n(function (root) { var v = { both: true }; if (typeof module === 'object' && module && module.exports) module.exports = v; else root.zzcBoth = v; }(this));\n",
   broken: "'use strict';\nfunction ( {\n",
   hang: "'use strict';\nwhile (true) { /* never done */ }\n",
-  exit: "'use strict';\nrequire('../spirit.js');\nconsole.error('zzcExit: no --state; the node that starts this names its state folder');\nprocess.exit(2);\n",
+  exit: "'use strict';\nrequire('../../../../spirit.js');\nconsole.error('zzcExit: no --state; the node that starts this names its state folder');\nprocess.exit(2);\n",
 };
 const ownOf = function (rel) { return path.posix.join(path.posix.dirname(rel), 'test', path.posix.basename(rel)); };
 const ownSuite = function (k) { return SUITE_HEAD + "test.run('" + k + " answers', 0.2, function () { return true; }, test.limit.quick);\n"; };
@@ -2017,7 +2017,7 @@ test.run('the world: spirit/app/testicle/temp/zzBatch/ with its three kinds of g
   if (!up()) return NONODE;
   put(BZ + 'zzBatch.js', '\'use strict\';\n// zzBatch\n');
   put(BA, '\'use strict\';\ndocument.title = String(document.title);\n');
-  put(BB, '\'use strict\';\nrequire(\'../spirit.js\');\nconst fs = require(\'fs\');\nmodule.exports = { fs: typeof fs.readFileSync };\n');
+  put(BB, '\'use strict\';\nrequire(\'../../../../spirit.js\');\nconst fs = require(\'fs\');\nmodule.exports = { fs: typeof fs.readFileSync };\n');
   put(BC, '\'use strict\';\n(function (root) { var v = { both: true }; if (typeof module === \'object\' && module && module.exports) module.exports = v; else root.zzbBoth = v; }(this));\n');
   ['general', 'node', 'browser'].forEach(function (k) { put(BZ + 'test/zzBatch-sibling-' + k + '.js', BATCH_SUITE(k)); });
   const ok = await until(function () { const t = tables(DB); return Promise.resolve([BA, BB, BC].every(function (f) { const r = scriptRow(t, f); return !!r && no(r.reClassify); })); }, 280000);
