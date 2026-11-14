@@ -10,6 +10,7 @@
 // agent's is touched.
 
 const fs = require('fs');
+const { DatabaseSync } = require('node:sqlite');
 const os = require('os');
 const path = require('path');
 const { spawn, execSync } = require('child_process');
@@ -852,6 +853,13 @@ test.run('the world: spirit/zzStatus/ with its own -general test and three scrip
   // runs what is flagged by itself, then the mode it had is put back.
   const pref = await call(N.base, 'testicle.preferences', {});
   statusWasInteractive = !!(pref.body && pref.body.interactive);
+  // ONLY ITS OWN BATCH IS OWED (Andy: "every transaction can be read from a fucking stream on that scratch node, it's
+  // database can be read from that scratch node"): in auto a fresh scratch testicle runs every flagged suite of the whole
+  // tree, and the page hung. The scratch testicle's database is this test's own: once testicle is idle, every flag but
+  // zzStatus's is cleared, so auto runs the zzStatus batch alone.
+  await until(function () { return call(N.base, 'testicle.busy').then(function (r) { return r.status === 200 && r.body === false; }); }, 240000);
+  const sdb = new DatabaseSync(path.join(s.run, 'spirit', 'state', 'testicle', 'data', 'testicle.db'));
+  try { sdb.prepare("UPDATE suite SET test = 0 WHERE deleted = 0 AND script NOT LIKE 'spirit/zzStatus/%'").run(); } finally { sdb.close(); }
   const auto = await call(N.base, 'testicle.preferences', { interactive: false });
   STS.forEach(function (f) { fs.appendFileSync(path.join(s.run, f), '// changed together\n'); });
   return auto.status === 200 || 'testicle.preferences answered ' + auto.status + ' ' + short(auto.text);
