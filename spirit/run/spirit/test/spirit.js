@@ -912,6 +912,27 @@ function cAsk(call, args) {
   return fetch(C.node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: call, args: args || {} }) })
     .then(function (r) { return r.json().then(function (b) { return { status: r.status, body: b }; }, function () { return { status: r.status, body: null }; }); }, function (e) { return { status: 0, body: String(e) }; });
 }
+// ── THE PAGE'S STREAM COMES BACK AFTER ITS NODE RESTARTS (goal/G47.1, cleaning; Andy: "AND OF COURSE THE FUCKING SHELL NEVER
+// EVER FUCKING RECONNECTS AFTER A FUCKING RESTART OF THE NODE..."). A face page on a lab node, a subscriber of spirit.event
+// counting what the page's one stream hands it; the node restarted on the same port. The stream must come back by itself.
+// On the file's own lab node and page (L, part 9 above): a test file holds lab nodes for its whole run, so asking another
+// would wait for one of its own; the restart is the last thing done to L.node.
+const RC = { before: 0 };
+test.run('the world: a face page, its stream handing a subscriber the node\'s snapshot', 0.2, async function () {
+  if (!L.page || !L.node || !L.node.up) return NO_LAZY;
+  await L.page.send('Page.navigate', { url: L.node.base + '/face.html' });
+  await H.until(function () { return L.page.evaluate('!!(window.spirit && window.spirit.ready)'); }, 30000);
+  await L.page.evaluate('window.spirit.ready.then(function () { window.zzHeard = 0; window.spirit.event.subscribe({ onSnapshot: function () { window.zzHeard += 1; }, onUpdate: function () { window.zzHeard += 1; } }); return true; })');
+  const ok = await H.until(function () { return L.page.evaluate('(window.zzHeard || 0) > 0'); }, 20000);
+  RC.before = await L.page.evaluate('window.zzHeard || 0');
+  return !!ok || 'the stream handed the subscriber nothing';
+}, test.limit.slow);
+test.run('after its node restarts on the same port, the page\'s stream comes back by itself: the subscriber hears the node again within 60 s', 0.8, async function () {
+  if (!RC.before) return 'no page with a live stream: the world failed';
+  await L.node.restart();
+  const back = await H.until(function () { return L.page.evaluate('(window.zzHeard || 0) > ' + RC.before); }, 60000);
+  return !!back || 'heard ' + (await L.page.evaluate('window.zzHeard || 0')) + ' times, ' + RC.before + ' before the restart: the stream never came back';
+}, test.limit.slow);
 test.run('the world: a scratch node is up', 0.2, async function () {
   // The page of section 9 and its node are let go first.
   if (L.page && L.page.kid) L.page.kid.kill();
@@ -1471,3 +1492,4 @@ test.after(function () {
   try { if (FL.N && FL.N.child) FL.N.child.kill(); } catch (e) { /* gone */ }
   try { if (FL.N && FL.N.root) fs.rmSync(FL.N.root, { recursive: true, force: true }); } catch (e) { /* scratch */ }
 });
+
