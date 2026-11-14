@@ -8,6 +8,11 @@
 //     script   the production script whose suites it lists, scoped to run://
 //     face, placeholder, all, pick   handed to its list as they are (./suite/listElement.js)
 (function () {
+  // ITS APP'S INTERFACE AND DATA, IT LOADS ITSELF (goal/G47.1, box v142: "all of testicle's elements must subscribe to the data they
+  // display"; box v140; rule 26): testicle's api.js and its cache manager, data.js, which the page's one stream feeds; mounted
+  // alone, on a page nothing else loaded them on, it has them.
+  if (window.spirit && typeof window.spirit.require === 'function') Promise.resolve(window.spirit.require('spirit/app/testicle/api.js')).catch(function () {});
+  if (window.spirit && typeof window.spirit.cacheManager === 'function') Promise.resolve(window.spirit.cacheManager('testicle')).catch(function () {});
   function createSuiteSelector(options) {
     var o = options || {};
     var root = document.createElement('div');

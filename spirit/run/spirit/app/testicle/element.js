@@ -27,6 +27,11 @@
 // script's tab; the script tabs stay closable". A test's tab is named by its full key without the flip, so a second click on
 // the same test makes its tab active and opens no second.
 (function () {
+  // ITS APP'S INTERFACE AND DATA, IT LOADS ITSELF (goal/G47.1, box v142: "all of testicle's elements must subscribe to the data they
+  // display"; box v140; rule 26): testicle's api.js and its cache manager, data.js, which the page's one stream feeds; mounted
+  // alone, on a page nothing else loaded them on, it has them.
+  if (window.spirit && typeof window.spirit.require === 'function') Promise.resolve(window.spirit.require('spirit/app/testicle/api.js')).catch(function () {});
+  if (window.spirit && typeof window.spirit.cacheManager === 'function') Promise.resolve(window.spirit.cacheManager('testicle')).catch(function () {});
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the workBench and the file list.
   var parts = Promise.all(['spirit/element/workBench.js', 'spirit/element/search/app/rowFormToggle.js', 'spirit/element/search/file.js', 'spirit/element/tabContainer.js',
     'spirit/app/testicle/element/search/suite.js', 'spirit/app/testicle/element/search/testicle.js', 'spirit/app/testicle/element/search/testicle/detailElement.js',
