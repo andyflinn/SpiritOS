@@ -894,6 +894,10 @@ appServer.serve({
       const script = String(a.script || '');
       let n = 0;
       (script ? Q.suitesOfScript.all(script) : Q.everySuite.all().map(function (r) { return Object.assign({ script: '', outcome: '' }, r); })).forEach(function (r) {
+        // A DELETED ROW IS NOT SHOWN (goal/G47.1, Andy: "MAKE SURE SUITES DON'T SHOW UP WHEN THEY'RE NO APPLICATBLE TO A
+        // SCRIPT"; pruneUnfit: "never shown"): a suite its script's class rules out, or one gone from disc, stays deleted
+        // in the table and out of every answer.
+        if (r.deleted) return;
         const row = suiteServed(r);
         const score = words ? Number(probabilityStringObjectMatch(words, row)) || 0 : 1;
         n += 1;
