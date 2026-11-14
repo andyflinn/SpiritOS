@@ -32,7 +32,9 @@ const inReach = function (rel) { return !!appOf(rel) && !/(^|\/)test\//.test(rel
 const TARGETS = (GIVEN.length ? GIVEN : execFileSync('git', ['ls-files', '--', 'spirit/app'], { cwd: RUN, encoding: 'utf8' }).split('\n')).filter(inReach);
 // What an app owes its elements: its api.js and data.js, where its folder holds them.
 const owed = function (app) { return ['api', 'data'].filter(function (n) { return fs.existsSync(path.join(RUN, 'spirit', 'app', app, n + '.js')); }); };
-const hasServer = function (app) { return fs.existsSync(path.join(RUN, 'spirit', 'app', app, app + '.js')); };
+// A MOUNTABLE SERVER: its manifest mounts one (spirit/app/<name>/<name>.json node.mount true, as testicle's); an app whose
+// <name>.js is a program it runs (publishData, pushOrigin: node.run) mounts none, and serves no interface to wait for.
+const hasServer = function (app) { try { const m = JSON.parse(fs.readFileSync(path.join(RUN, 'spirit', 'app', app, app + '.json'), 'utf8')); return !!(m && m.node && m.node.mount === true) && fs.existsSync(path.join(RUN, 'spirit', 'app', app, app + '.js')); } catch (e) { return false; } };
 
 const W = { node: null, page: null, fail: '', reports: {} };
 function cleanup() {

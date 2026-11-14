@@ -645,7 +645,9 @@ async function session() {
   // necessary"): an app whose folder holds its server, spirit/app/<name>/<name>.js, is turned on, and the page is opened only
   // once that server answers its interface; one that never does fails the world, never the element.
   const own = (/^spirit\/app\/([^/]+)\//.exec(rel) || [])[1];
-  const ownServer = !!own && fs.existsSync(path.join(RUN, 'spirit', 'app', own, own + '.js'));
+  // Mountable: its manifest mounts it (node.mount true); a program app (publishData, pushOrigin: node.run) mounts none.
+  let ownServer = false;
+  try { const m = JSON.parse(fs.readFileSync(path.join(RUN, 'spirit', 'app', own, own + '.json'), 'utf8')); ownServer = !!own && !!(m && m.node && m.node.mount === true) && fs.existsSync(path.join(RUN, 'spirit', 'app', own, own + '.js')); } catch (e) { ownServer = false; }
   const node = P.node = await scratchNode({ servers: SERVERS.servers.concat(ownServer && SERVERS.servers.indexOf(own) === -1 ? [own] : []) });
   if (!node.up) { P.fail = 'the scratch node did not come up: every rule here would blame the wrong thing'; return P; }
   if (!node.debug) { P.fail = 'the scratch node\'s DEBUG could not be switched on (node.debug)'; return P; }
