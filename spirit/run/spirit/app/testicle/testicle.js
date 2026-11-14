@@ -195,6 +195,15 @@ const DEBUG_SCOPE = 'spirit/app/testicle/';
 const DEBUG = (function () { try { return JSON.parse(fs.readFileSync(PREFS_FILE, 'utf8')).debug === true; } catch (e) { return false; } }());
 function inScope(rel) { return !DEBUG || rel === CLASSIFY || String(rel).indexOf(DEBUG_SCOPE) === 0; }
 // A folder on the way to the scope, or in it, is walked and watched; in debug mode nothing else.
+// IN DEBUG MODE IT NEVER RECURSES (goal/G47.1, Q8, Andy: "testicle MUST not recurse... and not run it's own tests just the
+// dummies..."): a suite of testicle's own, a test under its folder but not temp/, never runs; the three dumb general tests
+// (test/testicle-sibling-*.js) and the planted temp/ worlds do. Its own test of testicle would otherwise run testicle's whole
+// suite again, and hold the node and a lab node busy for an hour.
+function ownSuite(suite) {
+  const s = String(suite || '');
+  return DEBUG && s.indexOf(DEBUG_SCOPE) === 0 && s.indexOf(DEBUG_SCOPE + 'temp/') !== 0 && /(^|\/)test\//.test(s) &&
+    !/^spirit\/app\/testicle\/test\/testicle-sibling-(general|node|browser)\.js$/.test(s);
+}
 function onTheWay(rel) { return !DEBUG || !rel || DEBUG_SCOPE.indexOf(rel + '/') === 0 || String(rel).indexOf(DEBUG_SCOPE) === 0; }
 if (DEBUG) console.error('testicle: debug mode, its scope ' + DEBUG_SCOPE);
 // A file change, a press or the start: the runner waits for one quiet second, a new event pushing it back.
@@ -264,11 +273,11 @@ function chooseJob() {
     // A STOPPED BATCH RE-ASSEMBLED (box v130: "a run aborted (stopped or killed): the server RE-ASSEMBLES a new run at once, fresh
     // from the flags as they stand"): its suite's rows still flagged, the scripts that reported their success left out.
     if (f.resume) { const again = batchOf(f.suite); if (again) return again; continue; }
-    if (there(f.script) && there(f.suite) && !blocked(f.script) && !unfit(f.script, f.suite)) return f;
+    if (there(f.script) && there(f.suite) && !ownSuite(f.suite) && !blocked(f.script) && !unfit(f.script, f.suite)) return f;
   }
   // Interactive: only what was pressed runs; the flagged rows wait for a press, or for auto.
   if (prefs.interactive) return null;
-  const rows = flaggedRows.all().filter(function (r) { return r.suite !== CLASSIFY && there(r.script) && there(r.suite) && !blocked(r.script) && !unfit(r.script, r.suite); });
+  const rows = flaggedRows.all().filter(function (r) { return r.suite !== CLASSIFY && there(r.script) && there(r.suite) && !ownSuite(r.suite) && !blocked(r.script) && !unfit(r.script, r.suite); });
   // General tests first, "because they tend to get most coverage fastest" (Andy); then by name, so the order is stable.
   rows.sort(function (a, b) { return (isGeneral(b.suite) - isGeneral(a.suite)) || (a.suite < b.suite ? -1 : a.suite > b.suite ? 1 : 0) || (a.script < b.script ? -1 : a.script > b.script ? 1 : 0); });
   if (!rows.length) return null;
@@ -280,7 +289,7 @@ function chooseJob() {
 }
 // One general test's run of every script still flagged for it, each with its hash as the run starts; null when none is.
 function batchOf(suite) {
-  const mine = flaggedRows.all().filter(function (r) { return r.suite === suite && there(r.script) && there(r.suite) && !blocked(r.script) && !unfit(r.script, r.suite); })
+  const mine = flaggedRows.all().filter(function (r) { return r.suite === suite && there(r.script) && there(r.suite) && !ownSuite(r.suite) && !blocked(r.script) && !unfit(r.script, r.suite); })
     .sort(function (a, b) { return a.script < b.script ? -1 : a.script > b.script ? 1 : 0; });
   if (!mine.length) return null;
   const hashes = Object.create(null);
