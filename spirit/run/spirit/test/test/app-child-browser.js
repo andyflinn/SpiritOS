@@ -76,7 +76,8 @@ test.run('the world: the general test run on six elements, the hang among them, 
   while (!ended && Date.now() - W.startAt < 240000) {
     (descendants(kid.pid) || []).forEach(function (p) {
       if (/spirit\/server\.js --port/.test(p.args)) W.nodes.add(p.pid);
-      if (/chrome/.test(p.args) && /--headless/.test(p.args) && /--user-data-dir=/.test(p.args)) W.chromes.add(p.pid);
+      // One Chrome is its browser process; its zygotes, renderers and utilities carry --type=.
+      if (/chrome/.test(p.args) && /--headless/.test(p.args) && /--user-data-dir=/.test(p.args) && !/--type=/.test(p.args)) W.chromes.add(p.pid);
     });
     if (base && !W.firstAt && (await newestTested(base, ELEMENTS[0])) > W.startAt) W.firstAt = Date.now();
     await sleep(250);
