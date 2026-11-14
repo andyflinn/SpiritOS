@@ -947,6 +947,10 @@ appServer.serve({
       const toolWithRow = isSuite(script) && !!Q.script.get(script);
       if (!/\.js$/.test(script) || (isSuite(script) && !toolWithRow) || script.indexOf('..') !== -1 || ignored(path.join(RUN, script))) throw refused('not-a-production-script');
       if (!suite || !name) throw refused('bad-request');
+      // A RESULT OF A SUITE THAT DOES NOT APPLY TO THE SCRIPT IS REFUSED (goal/G47.1, Andy: "MAKE SURE SUITES DON'T SHOW UP WHEN
+      // THEY'RE NO APPLICATBLE TO A SCRIPT"; wsl's red cac1e222): a -browser suite's for a node-only script, a -node suite's for
+      // a browser-only one, refused before any row is made, so neither a test row nor a suite row of it stands.
+      if (!fits(script, suite)) throw refused('not-applicable');
       const severity = Math.max(0, Math.min(1, Number(a.severity) || 0));
       const row = Q.script.get(script);
       // A FILE NOT ON DISC TAKES NO RESULT, its row deleted or never made (wsl's red, 3f6832e6: a classifier run begun before
@@ -1036,4 +1040,6 @@ appServer.serve({
   codes: {
   'not-a-production-script': { status: 400, text: 'not a production script' },
   'no-such-file': { status: 404, text: 'no such file' },
+  // A -browser suite's result for a node-only script, a -node suite's for a browser-only one (testicle.set, above).
+  'not-applicable': { status: 409, text: 'this suite does not apply to this script' },
 } });
