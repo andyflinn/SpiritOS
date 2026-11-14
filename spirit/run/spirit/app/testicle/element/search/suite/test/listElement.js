@@ -192,11 +192,20 @@ test.run('with no script, it lists every suite, each once: the general suite of 
   if (mounted()) return mounted();
   const m = await mount('zzAll', { script: '' });
   if (m !== 'made') return 'it did not mount: ' + short(m);
-  const want = ['|' + AS, '|' + BS, '|' + GEN];
-  const ok = await until(function () { return view('zzAll').then(function (v) { const k = keysOf(v); return want.every(function (x) { return k.indexOf(x) !== -1; }); }); }, 15000);
-  const k = keysOf(await view('zzAll'));
-  const gens = k.filter(function (x) { return x.slice(-GEN.length) === GEN; });
-  return (!!ok && gens.length === 1 && new Set(k).size === k.length) || 'rows ' + short(k);
+  // A node's every suite is more than one answer holds (a lab node is the whole tree; Andy: "I'll barely read through the
+  // last 10"): what shows is each suite once, and words narrow to the planted ones ("the words narrow among them").
+  await until(function () { return view('zzAll').then(function (v) { return keysOf(v).length > 0; }); }, 15000);
+  const shown = keysOf(await view('zzAll'));
+  const type = function (w) { return c.evaluate('(function () { var t = document.querySelector("#zzAll input[id$=\\"text\\"]"); if (!t) return false; t.value = ' + JSON.stringify(w) + '; t.dispatchEvent(new Event("input", { bubbles: true })); return true; }())'); };
+  const shows = function (want) { return until(function () { return view('zzAll').then(function (v) { const k = keysOf(v); return want.every(function (x) { return k.indexOf(x) !== -1; }); }); }, 15000); };
+  if ((await type('zzSuiteList')) !== true) return 'no words field in the list';
+  const own = await shows(['|' + AS, '|' + BS]);
+  const k1 = keysOf(await view('zzAll'));
+  await type(base(GEN));
+  const gen = await shows(['|' + GEN]);
+  const k2 = keysOf(await view('zzAll'));
+  const gens = k2.filter(function (x) { return x === '|' + GEN; });
+  return (shown.length > 0 && new Set(shown).size === shown.length && !!own && new Set(k1).size === k1.length && !!gen && gens.length === 1) || 'shown ' + shown.length + ' (' + (shown.length - new Set(shown).size) + ' twice); "zzSuiteList": ' + short(k1) + '; "' + base(GEN) + '": ' + short(k2);
 }, test.limit.slow);
 
 // "The server publishes every row it writes, so a suite written for the file shows by itself"
