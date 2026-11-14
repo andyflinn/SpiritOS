@@ -1274,10 +1274,13 @@ test.run('with testicle given, the suite runs up to that test and no test after 
   const g = await call(N.base, 'testicle.script.get', { name: LA });
   if (g.status !== 200) return 'script.get: ' + g.status + ' ' + short(g.text);
   // Its rows there, its whole run is put at the head of the queue, ahead of every general suite still flagged.
+  const tw = Date.now();
   const w = await call(N.base, 'testicle.run', { script: LA, suite: LAS });
   if (w.status !== 200) return 'the whole run: ' + w.status + ' ' + short(w.text);
   // Other suites may run meanwhile; what matters is that lambda's own suite is no longer flagged, so no whole run of it follows.
-  const settled = await until(function () { const u = suiteRow(tables(DB), LA, LAS); return Promise.resolve(!!rowOf(LA, LAS, 'lambda answers its third') && !!u && !yes(u.test)); }, 150000);
+  // THIS whole run's third (goal/G47.1): planted at the start, lambda's suite has already run once by itself in auto, so a
+  // third row from then let the wait end at once, and the whole run asked here landed after the run up to a test.
+  const settled = await until(function () { const u = suiteRow(tables(DB), LA, LAS); const third = rowOf(LA, LAS, 'lambda answers its third'); return Promise.resolve(!!third && Number(third.tested) >= tw && !!u && !yes(u.test)); }, 150000);
   if (!settled) { const t = tables(DB); return 'lambda\'s own suite still flagged after its whole run: nothing judged; its row ' + short(suiteRow(t, LA, LAS)) + '; lambda.js\'s script row ' + short(scriptRow(t, LA)) + ', its suite rows ' + short(suiteRows(t, LA).map(function (r) { return r.suite + ' ' + r.test; })) + '; script.get answered ' + short(g.body); }
   const t0 = Date.now();
   const r = await call(N.base, 'testicle.run', { script: LA, suite: LAS, testicle: 'lambda answers its second' });
