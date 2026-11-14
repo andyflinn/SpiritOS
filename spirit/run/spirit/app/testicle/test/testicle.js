@@ -12,7 +12,7 @@
 // cycle", "The suites that concern a file: its own test/<name>.js, and the general tests that would include that
 // production file if they were run without a file argument". The tables' columns are goal/G45.1's box.
 //
-// A real node on a scratch copy of the tracked files, planted files of its own under spirit/zzTesticle/, testicle
+// A real node on a scratch copy of the tracked files, planted files of its own under spirit/app/testicle/temp/zzTesticle/, testicle
 // turned on there. Every change is made on disc by this test, and testicle.db is read exactly one second later.
 // Neither Andy's node nor an agent's is touched.
 
@@ -35,87 +35,88 @@ function readJson(f) { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } ca
 const APP = path.join(RUN, 'spirit', 'app', 'testicle');
 // THE PLANTED FILES, under one folder of their own. alpha has its own test; beta has none; gamma has its own test and
 // is touched only through it; epsilon and its test are never touched; notes.md is no script.
-const Z = 'spirit/zzTesticle/';
-// A planted suite's head: the product reporter, from spirit/zzTesticle/test/.
-const SUITE_HEAD = '\'use strict\';\nconst path = require(\'path\');\nconst test = require(path.join(__dirname, \'..\', \'..\', \'test\', \'testReport.js\'));\n';
+const Z = 'spirit/app/testicle/temp/zzTesticle/';
+// A planted suite's head: the product reporter, from spirit/app/testicle/temp/zzTesticle/test/.
+const SUITE_HEAD = '\'use strict\';\nconst path = require(\'path\');\nconst test = require(path.join(__dirname, \'..\', \'..\', \'..\', \'..\', \'..\', \'test\', \'testReport.js\'));\n';
 // A planted suite that logs: 'start' when it begins, after a wait of ms its tests, 'end' when they are all done.
 function LOGGED(name, ms, tests) {
-  return SUITE_HEAD + "const LOG = path.join(__dirname, '..', '..', '..', '..', '..', 'runlog.txt');\n" +
+  return SUITE_HEAD + "const LOG = path.join(__dirname, '..', '..', '..', '..', '..', '..', '..', '..', 'runlog.txt');\n" +
     "function log(ev) { require('fs').appendFileSync(LOG, JSON.stringify({ suite: '" + name + "', ev: ev, at: Date.now() }) + '\\n'); }\n" +
     "log('start');\n" +
     (ms ? "test.run('the world: " + name + " waits a moment', 0.2, function () { return new Promise(function (r) { setTimeout(function () { r(true); }, " + ms + "); }); }, test.limit.quick);\n" : '') +
     tests.join('\n') + "\ntest.after(function () { log('end'); });\n";
 }
 const PLANT = {
-  'spirit/zzTesticle/alpha.js': '\'use strict\';\n// alpha\n',
-  'spirit/zzTesticle/test/alpha.js': '\'use strict\';\n// the test of alpha\n',
-  'spirit/zzTesticle/beta.js': '\'use strict\';\n// beta, no test of its own\n',
-  'spirit/zzTesticle/gamma.js': '\'use strict\';\n// gamma\n',
-  'spirit/zzTesticle/test/gamma.js': '\'use strict\';\n// the test of gamma\n',
-  'spirit/zzTesticle/epsilon.js': '\'use strict\';\n// epsilon, never touched\n',
-  'spirit/zzTesticle/test/epsilon.js': '\'use strict\';\n// the test of epsilon, never touched\n',
-  'spirit/zzTesticle/notes.md': '# no script\n',
+  'spirit/app/testicle/temp/zzTesticle/alpha.js': '\'use strict\';\n// alpha\n',
+  'spirit/app/testicle/temp/zzTesticle/test/alpha.js': '\'use strict\';\n// the test of alpha\n',
+  'spirit/app/testicle/temp/zzTesticle/beta.js': '\'use strict\';\n// beta, no test of its own\n',
+  'spirit/app/testicle/temp/zzTesticle/gamma.js': '\'use strict\';\n// gamma\n',
+  'spirit/app/testicle/temp/zzTesticle/test/gamma.js': '\'use strict\';\n// the test of gamma\n',
+  'spirit/app/testicle/temp/zzTesticle/epsilon.js': '\'use strict\';\n// epsilon, never touched\n',
+  'spirit/app/testicle/temp/zzTesticle/test/epsilon.js': '\'use strict\';\n// the test of epsilon, never touched\n',
+  'spirit/app/testicle/temp/zzTesticle/notes.md': '# no script\n',
   // zeta and its test are never changed: asked by testicle.script.get alone (goal/G47.1, the verbs cycle).
-  'spirit/zzTesticle/zeta.js': '\'use strict\';\n// zeta, asked for, never changed\n',
-  'spirit/zzTesticle/test/zeta.js': '\'use strict\';\n// the test of zeta\n',
+  'spirit/app/testicle/temp/zzTesticle/zeta.js': '\'use strict\';\n// zeta, asked for, never changed\n',
+  'spirit/app/testicle/temp/zzTesticle/test/zeta.js': '\'use strict\';\n// the test of zeta\n',
   // theta and its test: no row until a test of it is set (goal/G47.1, the test cycle).
-  'spirit/zzTesticle/theta.js': '\'use strict\';\n// theta\n',
-  'spirit/zzTesticle/test/theta.js': '\'use strict\';\n// the test of theta\n',
+  'spirit/app/testicle/temp/zzTesticle/theta.js': '\'use strict\';\n// theta\n',
+  'spirit/app/testicle/temp/zzTesticle/test/theta.js': '\'use strict\';\n// the test of theta\n',
   // kappa, lambda and mu, with suites that really run and report (goal/G47.1, the cycle "run a suite from the script tab"):
   // kappa's own test waits three seconds before its tests, lambda's has three tests in a row, mu's general test judges mu.
-  'spirit/zzTesticle/kappa.js': '\'use strict\';\n// kappa\n',
-  'spirit/zzTesticle/test/kappa.js': SUITE_HEAD + [
+  'spirit/app/testicle/temp/zzTesticle/kappa.js': '\'use strict\';\n// kappa\n',
+  'spirit/app/testicle/temp/zzTesticle/test/kappa.js': SUITE_HEAD + [
     "test.run('the world: kappa waits a moment', 0.2, function () { return new Promise(function (r) { setTimeout(function () { r(true); }, 3000); }); }, test.limit.quick);",
     "test.run('kappa answers its first', 0.2, function () { return true; }, test.limit.quick);",
     "test.run('kappa fails its second', 0.2, function () { return 'it fails, as planted'; }, test.limit.quick);",
     "test.run('kappa was started with no argument', 0.2, function () { return process.argv.length === 2 || 'started with ' + process.argv.slice(2).join(' '); }, test.limit.quick);",
   ].join('\n') + '\n',
-  'spirit/zzTesticle/lambda.js': '\'use strict\';\n// lambda\n',
-  'spirit/zzTesticle/test/lambda.js': SUITE_HEAD + [
+  'spirit/app/testicle/temp/zzTesticle/lambda.js': '\'use strict\';\n// lambda\n',
+  'spirit/app/testicle/temp/zzTesticle/test/lambda.js': SUITE_HEAD + [
     "test.run('lambda answers its first', 0.2, function () { return true; }, test.limit.quick);",
     "test.run('lambda answers its second', 0.2, function () { return true; }, test.limit.quick);",
     "test.run('lambda answers its third', 0.2, function () { return true; }, test.limit.quick);",
   ].join('\n') + '\n',
   // goal/G47.1, the queue cycle: suites that log their start and end to runlog.txt in the scratch root, outside the tree the
   // server watches, so the order, the overlap and the timing of the runs the server starts can be read back.
-  // early's own suite sorts before every general suite by name (spirit/aaTesticle/ before spirit/test/), so only the runner's
+  // early's own suite sorts before every general suite by name (spirit/app/testicle/temp/aaTesticle/ before spirit/test/), so only the runner's
   // general-first order puts its general suites ahead of it.
-  'spirit/aaTesticle/early.js': '\'use strict\';\n// early\n',
-  'spirit/aaTesticle/test/early.js': LOGGED('early', 0, ["test.run('early answers', 0.2, function () { return true; }, test.limit.quick);"]),
-  'spirit/zzTesticle/nu.js': '\'use strict\';\n// nu\n',
-  'spirit/zzTesticle/test/nu.js': LOGGED('nu', 3000, ["test.run('nu answers', 0.2, function () { return true; }, test.limit.quick);"]),
-  'spirit/zzTesticle/xi.js': '\'use strict\';\n// xi\n',
-  'spirit/zzTesticle/test/xi.js': LOGGED('xi', 3000, ["test.run('xi answers', 0.2, function () { return true; }, test.limit.quick);"]),
-  'spirit/zzTesticle/pi.js': '\'use strict\';\n// pi\n',
-  'spirit/zzTesticle/test/pi.js': LOGGED('pi', 3000, ["test.run('pi answers', 0.2, function () { return true; }, test.limit.quick);"]),
-  'spirit/zzTesticle/omicron.js': '\'use strict\';\n// omicron\n',
-  'spirit/zzTesticle/test/omicron.js': LOGGED('omicron', 0, ["test.run('omicron answers', 0.2, function () { return true; }, test.limit.quick);"]),
-  'spirit/zzTesticle/tau.js': '\'use strict\';\n// tau\n',
-  'spirit/zzTesticle/test/tau.js': LOGGED('tau', 0, ["test.run('tau answers', 0.2, function () { return true; }, test.limit.quick);"]),
-  'spirit/zzTesticle/upsilon.js': '\'use strict\';\n// upsilon\n',
-  'spirit/zzTesticle/test/upsilon.js': LOGGED('upsilon', 0, ["test.run('upsilon answers', 0.2, function () { return true; }, test.limit.quick);"]),
+  'spirit/app/testicle/temp/aaTesticle/early.js': '\'use strict\';\n// early\n',
+  'spirit/app/testicle/temp/aaTesticle/test/early.js': LOGGED('early', 0, ["test.run('early answers', 0.2, function () { return true; }, test.limit.quick);"]),
+  'spirit/app/testicle/temp/zzTesticle/nu.js': '\'use strict\';\n// nu\n',
+  'spirit/app/testicle/temp/zzTesticle/test/nu.js': LOGGED('nu', 3000, ["test.run('nu answers', 0.2, function () { return true; }, test.limit.quick);"]),
+  'spirit/app/testicle/temp/zzTesticle/xi.js': '\'use strict\';\n// xi\n',
+  'spirit/app/testicle/temp/zzTesticle/test/xi.js': LOGGED('xi', 3000, ["test.run('xi answers', 0.2, function () { return true; }, test.limit.quick);"]),
+  'spirit/app/testicle/temp/zzTesticle/pi.js': '\'use strict\';\n// pi\n',
+  'spirit/app/testicle/temp/zzTesticle/test/pi.js': LOGGED('pi', 3000, ["test.run('pi answers', 0.2, function () { return true; }, test.limit.quick);"]),
+  'spirit/app/testicle/temp/zzTesticle/omicron.js': '\'use strict\';\n// omicron\n',
+  'spirit/app/testicle/temp/zzTesticle/test/omicron.js': LOGGED('omicron', 0, ["test.run('omicron answers', 0.2, function () { return true; }, test.limit.quick);"]),
+  'spirit/app/testicle/temp/zzTesticle/tau.js': '\'use strict\';\n// tau\n',
+  'spirit/app/testicle/temp/zzTesticle/test/tau.js': LOGGED('tau', 0, ["test.run('tau answers', 0.2, function () { return true; }, test.limit.quick);"]),
+  'spirit/app/testicle/temp/zzTesticle/upsilon.js': '\'use strict\';\n// upsilon\n',
+  'spirit/app/testicle/temp/zzTesticle/test/upsilon.js': LOGGED('upsilon', 0, ["test.run('upsilon answers', 0.2, function () { return true; }, test.limit.quick);"]),
   // rho answers its first test, then hangs; sigma's first test hangs, its process kept alive. Each hang has the quick
   // limit, so the reporter fails it there (Andy: "a single test still has the same limit!").
-  'spirit/zzTesticle/rho.js': '\'use strict\';\n// rho\n',
-  'spirit/zzTesticle/test/rho.js': LOGGED('rho', 0, ["test.run('rho answers its first', 0.2, function () { return true; }, test.limit.quick);", "test.run('rho hangs', 0.2, function () { return new Promise(function () { setInterval(function () {}, 1000); }); }, test.limit.quick);"]),
+  'spirit/app/testicle/temp/zzTesticle/rho.js': '\'use strict\';\n// rho\n',
+  'spirit/app/testicle/temp/zzTesticle/test/rho.js': LOGGED('rho', 0, ["test.run('rho answers its first', 0.2, function () { return true; }, test.limit.quick);", "test.run('rho hangs', 0.2, function () { return new Promise(function () { setInterval(function () {}, 1000); }); }, test.limit.quick);"]),
   // omega: an older classifier left it a red classifyable row in the older testicle.db (cw, after Andy's node classified
   // nothing at its start: "a red that starts on tables like these (classifier rows of an older classifier), please; empty
   // tables hid it").
-  'spirit/zzTesticle/omega.js': '\'use strict\';\n// omega\n',
-  'spirit/zzTesticle/test/omega.js': '\'use strict\';\n// the test of omega\n',
-  'spirit/zzTesticle/sigma.js': '\'use strict\';\n// sigma\n',
-  'spirit/zzTesticle/test/sigma.js': SUITE_HEAD + "setInterval(function () {}, 1000);\ntest.run('sigma hangs', 0.2, function () { return new Promise(function () {}); }, test.limit.quick);\n",
-  'spirit/zzTesticle/phi.js': '\'use strict\';\n// phi, its suite never run\n',
-  'spirit/zzTesticle/test/phi.js': '\'use strict\';\n// the test of phi\n',
-  'spirit/zzTesticle/mu.js': '\'use strict\';\n// mu\n',
-  'spirit/zzTesticle/test/mu-child-zzRule.js': SUITE_HEAD + [
-    "test.run('mu holds its rule', 0.2, function () { return process.argv[2] === 'spirit/zzTesticle/mu.js' || 'started with ' + process.argv.slice(2).join(' '); }, test.limit.quick);",
+  'spirit/app/testicle/temp/zzTesticle/omega.js': '\'use strict\';\n// omega\n',
+  'spirit/app/testicle/temp/zzTesticle/test/omega.js': '\'use strict\';\n// the test of omega\n',
+  'spirit/app/testicle/temp/zzTesticle/sigma.js': '\'use strict\';\n// sigma\n',
+  'spirit/app/testicle/temp/zzTesticle/test/sigma.js': SUITE_HEAD + "setInterval(function () {}, 1000);\ntest.run('sigma hangs', 0.2, function () { return new Promise(function () {}); }, test.limit.quick);\n",
+  'spirit/app/testicle/temp/zzTesticle/phi.js': '\'use strict\';\n// phi, its suite never run\n',
+  'spirit/app/testicle/temp/zzTesticle/test/phi.js': '\'use strict\';\n// the test of phi\n',
+  'spirit/app/testicle/temp/zzTesticle/mu.js': '\'use strict\';\n// mu\n',
+  'spirit/app/testicle/temp/zzTesticle/test/mu-child-zzRule.js': SUITE_HEAD + [
+    "test.run('mu holds its rule', 0.2, function () { return process.argv[2] === 'spirit/app/testicle/temp/zzTesticle/mu.js' || 'started with ' + process.argv.slice(2).join(' '); }, test.limit.quick);",
   ].join('\n') + '\n',
 };
 // The kept rows of an older testicle.db, for a script not on disc, so no change of this test's touches them.
-const OLD = { name: 'spirit/zzTesticle/older.js', suite: 'spirit/zzTesticle/test/older.js', hash: 'an older hash', changed: 1700000000000 };
+const OLD = { name: 'spirit/app/testicle/temp/zzTesticle/older.js', suite: 'spirit/app/testicle/temp/zzTesticle/test/older.js', hash: 'an older hash', changed: 1700000000000 };
 // The general test changed in the scratch copy: its entries name every file of its reach.
-const GENERAL = 'spirit/test/spirit-sibling-general.js';
+// In debug mode (box v143) the general tests testicle sees are its own three, beside testicle.js.
+const GENERAL = 'spirit/app/testicle/test/testicle-sibling-general.js';
 
 function scratch() {
   const root = LABH.scratchTree().root;
@@ -128,8 +129,11 @@ function scratch() {
   // AN OLDER testicle.db (goal/G47.1, the rename: "an existing testicle.db is renamed in place, its rows kept"): its first
   // table still named file, the suite table's key column file, one row in each.
   fs.mkdirSync(path.join(on, 'data'), { recursive: true });
-  // No preferences.json: the default, interactive, is judged first; then auto is set by the verb for the runner's checks
-  // (goal/G47.1, box v79, 2 and 4), and interactive again at the end, on chi and psi.
+  // DEBUG MODE, written before the node starts (goal/G47.1, box v143: "testicle has a debug mode, set only by
+  // ./test/testicle.js (a preference it writes on its scratch node, no verb)"): its preferences.json holds debug and nothing
+  // else, so the default, interactive, is still judged first; then auto is set by the verb for the runner's checks (goal/G47.1,
+  // box v79, 2 and 4), and interactive again at the end, on chi and psi.
+  fs.writeFileSync(path.join(on, 'data', 'preferences.json'), JSON.stringify({ debug: true }));
   const old = new DatabaseSync(path.join(on, 'data', 'testicle.db'));
   old.exec('CREATE TABLE file (name TEXT PRIMARY KEY, hash TEXT NOT NULL DEFAULT \'\', deleted INTEGER NOT NULL DEFAULT 0, changed INTEGER NOT NULL)');
   old.exec('CREATE TABLE suite (file TEXT NOT NULL, suite TEXT NOT NULL, test INTEGER NOT NULL DEFAULT 0, deleted INTEGER NOT NULL DEFAULT 0, hash TEXT NOT NULL DEFAULT \'\', outcome TEXT NOT NULL DEFAULT \'\', changed INTEGER NOT NULL, PRIMARY KEY (file, suite))');
@@ -137,7 +141,7 @@ function scratch() {
   old.prepare('INSERT INTO suite (file, suite, test, deleted, hash, outcome, changed) VALUES (?, ?, 1, 0, ?, \'\', ?)').run(OLD.name, OLD.suite, OLD.hash, OLD.changed);
   // A TESTICLE TABLE OF AN OLDER CLASSIFIER: omega.js judged not classifyable by it, a row the start finds there.
   old.exec('CREATE TABLE testicle (script TEXT NOT NULL, suite TEXT NOT NULL, test TEXT NOT NULL, flipped INTEGER NOT NULL, current INTEGER NOT NULL DEFAULT 1, verified INTEGER NOT NULL, tested INTEGER NOT NULL, judged TEXT NOT NULL DEFAULT \'\', severity REAL NOT NULL DEFAULT 0, PRIMARY KEY (script, suite, test, flipped))');
-  old.prepare('INSERT INTO testicle (script, suite, test, flipped, current, verified, tested, judged, severity) VALUES (?, ?, ?, ?, 1, 0, ?, ?, 0.8)').run('spirit/zzTesticle/omega.js', 'spirit/test/scriptClassify.js', 'classifyable', OLD.changed, OLD.changed, 'an older classifier\'s hash');
+  old.prepare('INSERT INTO testicle (script, suite, test, flipped, current, verified, tested, judged, severity) VALUES (?, ?, ?, ?, 1, 0, ?, ?, 0.8)').run('spirit/app/testicle/temp/zzTesticle/omega.js', 'spirit/test/scriptClassify.js', 'classifyable', OLD.changed, OLD.changed, 'an older classifier\'s hash');
   old.close();
   return { root: root, run: run };
 }
@@ -192,7 +196,9 @@ function concerning(run, name) {
   const own = path.posix.join(path.posix.dirname(name), 'test', path.posix.basename(name));
   const out = [];
   if (fs.existsSync(path.join(run, own))) out.push(own);
-  lines.forEach(function (l) { const p = l.split(' '); if (p[1] === name && out.indexOf(p[0]) === -1) out.push(p[0]); });
+  // IN DEBUG MODE (box v143: "testicle operates as if run://spirit/app/testicle/ were ALL the testables of the whole node",
+  // "in debug mode these are the only general tests testicle sees"): only suites under spirit/app/testicle/ concern a file.
+  lines.forEach(function (l) { const p = l.split(' '); if (p[1] === name && out.indexOf(p[0]) === -1 && /^spirit\/app\/testicle\//.test(p[0])) out.push(p[0]); });
   // Every product script has a suite row of the classifier too (box v94, 1: "a \"special\" general test under its own name,
   // with its suite row").
   if (out.indexOf('spirit/test/scriptClassify.js') === -1) out.push('spirit/test/scriptClassify.js');
@@ -256,6 +262,46 @@ test.run('the world: a scratch node comes up', 0.2, async function () {
   N = await boot(s.run); live.push(N.child);
   return N.up || 'the scratch node did not come up: nothing judged';
 }, test.limit.long);
+
+// ── DEBUG MODE (goal/G47.1, box v143): "in it testicle operates as if run://spirit/app/testicle/ were ALL the testables of the
+// whole node", "its general tests there: spirit/app/testicle/test/testicle-sibling-general.js, testicle-sibling-node.js and
+// testicle-sibling-browser.js, each with a dumb test or two; in debug mode these are the only general tests testicle sees",
+// "the classifier (spirit/test/scriptClassify.js) is still used, but in debug mode only called with scripts in
+// spirit/app/testicle/", "the planted scripts go to a .gitignored run://spirit/app/testicle/temp/". Andy: "that sounds to
+// my like an almost 10x speedup....".
+const DEBUG_GENERALS = ['general', 'node', 'browser'].map(function (k) { return 'spirit/app/testicle/test/testicle-sibling-' + k + '.js'; });
+test.run('testicle\'s three general tests are there, testicle-sibling-general.js, -node.js and -browser.js, each with a test', 0.4, function () {
+  const bad = DEBUG_GENERALS.filter(function (g) { let c = ''; try { c = fs.readFileSync(path.join(RUN, g), 'utf8'); } catch (e) { return true; } return !/test\.run\(/.test(c); });
+  return !bad.length || 'missing or with no test: ' + bad.join(', ');
+}, test.limit.quick);
+test.run('.gitignore keeps spirit/app/testicle/temp/ out of git, and git holds nothing under it', 0.4, function () {
+  let ignored = false;
+  try { execFileSync('git', ['check-ignore', '-q', 'spirit/run/spirit/app/testicle/temp/zzProbe/x.js'], { cwd: REPO }); ignored = true; } catch (e) { ignored = false; }
+  const held = execFileSync('git', ['ls-files', '--', 'spirit/run/spirit/app/testicle/temp'], { cwd: REPO, encoding: 'utf8' }).split('\n').filter(Boolean);
+  return (ignored && !held.length) || (ignored ? '' : 'spirit/app/testicle/temp/ is not git-ignored') + (held.length ? ' git holds ' + held.length + ' files under it' : '');
+}, test.limit.quick);
+test.run('no zz folder is in the tree: git holds no spirit/zz... and no spirit/aa... folder', 0.4, function () {
+  const held = execFileSync('git', ['ls-files', '--', 'spirit/run/spirit'], { cwd: REPO, encoding: 'utf8' }).split('\n').filter(function (f) { return /^spirit\/run\/spirit\/(zz|aa)[A-Za-z]*\//.test(f); });
+  return !held.length || held.length + ' tracked: ' + held.slice(0, 5).join(', ');
+}, test.limit.quick);
+test.run('in debug mode, once the start is worked off, testicle\'s scripts are only those under spirit/app/testicle/', 0.4, async function () {
+  if (!up()) return NONODE;
+  await idle(280000);
+  const out = tables(DB).script.filter(function (r) { return no(r.deleted) && !/^spirit\/app\/testicle\//.test(r.name) && r.name !== OLD.name; });
+  return !out.length || out.length + ' scripts outside it: ' + out.slice(0, 5).map(function (r) { return r.name; }).join(', ');
+}, test.limit.long);
+test.run('and its general suites are only testicle-sibling-general.js, -node.js and -browser.js, and the planted worlds\' own', 0.4, function () {
+  if (!up()) return NONODE;
+  const gens = Array.from(new Set(tables(DB).suite.filter(function (r) { return no(r.deleted) && /-(child|sibling)-(general|node|browser)\.js$/.test(r.suite); }).map(function (r) { return r.suite; })));
+  const out = gens.filter(function (g) { return DEBUG_GENERALS.indexOf(g) === -1 && !/^spirit\/app\/testicle\/temp\//.test(g); });
+  return (gens.length > 0 && !out.length) || (gens.length ? 'general suites outside it: ' + out.join(', ') : 'no general suite at all');
+}, test.limit.quick);
+test.run('and the classifier judged only scripts under spirit/app/testicle/', 0.4, function () {
+  if (!up()) return NONODE;
+  const rows = (tables(DB).test || []).filter(function (r) { return r.suite === 'spirit/test/scriptClassify.js' && yes(r.current); });
+  const out = rows.filter(function (r) { return !/^spirit\/app\/testicle\//.test(r.script) && r.script !== 'spirit/app/testicle/temp/zzTesticle/omega.js'; });
+  return (rows.length > 0 && !out.length) || (rows.length ? out.length + ' classified outside it: ' + out.slice(0, 5).map(function (r) { return r.script; }).join(', ') : 'nothing classified');
+}, test.limit.quick);
 
 // the box: "testicle.db sits in testicle's state folder"
 test.run('testicle.db is made in its state folder, spirit/state/testicle/data/, with its tables file and suite', 0.2, async function () {
@@ -1290,7 +1336,7 @@ test.run('the script changed, its suite shows "needs running" again', 0.2, async
 // shows "still red" in the script tab, so a suite that hangs before any test reported fails too", "A press of 🏃‍♂️ puts its
 // suite and script at the head of the queue, never a second run beside the running one", "Rows already flagged when the server
 // starts: the runner starts 1 second after the server starts". The planted suites log to runlog.txt (LOGGED, above).
-const EARLY = 'spirit/aaTesticle/early.js', EARLYS = 'spirit/aaTesticle/test/early.js';
+const EARLY = 'spirit/app/testicle/temp/aaTesticle/early.js', EARLYS = 'spirit/app/testicle/temp/aaTesticle/test/early.js';
 const NU = Z + 'nu.js', NUS = Z + 'test/nu.js', XI = Z + 'xi.js', XIS = Z + 'test/xi.js', PI = Z + 'pi.js', PIS = Z + 'test/pi.js';
 const OM = Z + 'omicron.js', OMS = Z + 'test/omicron.js', TAU = Z + 'tau.js', TAUS = Z + 'test/tau.js', UP = Z + 'upsilon.js', UPS = Z + 'test/upsilon.js';
 const RHO = Z + 'rho.js', RHOS = Z + 'test/rho.js', SIG = Z + 'sigma.js', SIGS = Z + 'test/sigma.js';
@@ -1908,19 +1954,19 @@ const bothNamed = function (suite) {
   const b = namesBoth(out);
   return (b.one && b.two) || 'names zzlOne ' + b.one + ', zzlTwo ' + b.two + ': ' + short(out.split('\n').filter(function (l) { return /FAILURE/.test(l); }).slice(0, 3));
 };
-test.run('spirit-sibling-general.js, handed both, names both', 0.4, function () { return bothNamed('spirit/test/spirit-sibling-general.js'); }, test.limit.long);
-test.run('spirit-sibling-node.js, handed both, names both', 0.4, function () { return bothNamed('spirit/test/spirit-sibling-node.js'); }, test.limit.long);
-test.run('spirit-sibling-browser.js, handed both, names both', 0.4, function () { return bothNamed('spirit/test/spirit-sibling-browser.js'); }, test.limit.long);
+test.run('testicle-sibling-general.js, handed both, names both', 0.4, function () { return bothNamed('spirit/app/testicle/test/testicle-sibling-general.js'); }, test.limit.long);
+test.run('testicle-sibling-node.js, handed both, names both', 0.4, function () { return bothNamed('spirit/app/testicle/test/testicle-sibling-node.js'); }, test.limit.long);
+test.run('testicle-sibling-browser.js, handed both, names both', 0.4, function () { return bothNamed('spirit/app/testicle/test/testicle-sibling-browser.js'); }, test.limit.long);
 
 // ── THE SERVER HANDS A GENERAL TEST A LIST (Andy: "WSL, write the reds for the server half of passing a list to general
 // tests."; box v94, 2: "else it will process all scripts listed in the arguments that fit"): one run of a general test for
-// every script of it that is owed one, not one run per script. A planted folder, spirit/zzBatch/, with its own general tests
+// every script of it that is owed one, not one run per script. A planted folder, spirit/app/testicle/temp/zzBatch/, with its own general tests
 // of the three kinds, each logging the scripts it was handed, and three scripts: one browser-only, one node-only, one both.
-const BZ = 'spirit/zzBatch/';
+const BZ = 'spirit/app/testicle/temp/zzBatch/';
 const BA = BZ + 'zzbPage.js', BB = BZ + 'zzbNode.js', BC = BZ + 'zzbBoth.js';
 const BATCH_SUITE = function (kind) {
-  return "'use strict';\nconst path = require('path');\nconst test = require(path.join(__dirname, '..', '..', 'test', 'testReport.js'));\n" +
-    "const LOG = path.join(__dirname, '..', '..', '..', '..', '..', 'runlog.txt');\n" +
+  return "'use strict';\nconst path = require('path');\nconst test = require(path.join(__dirname, '..', '..', '..', '..', '..', 'test', 'testReport.js'));\n" +
+    "const LOG = path.join(__dirname, '..', '..', '..', '..', '..', '..', '..', '..', 'runlog.txt');\n" +
     "const given = process.argv.slice(2).filter(function (a, i, all) { return a.indexOf('--') !== 0 && all[i - 1] !== '--test'; });\n" +
     "require('fs').appendFileSync(LOG, JSON.stringify({ suite: 'zzBatch-" + kind + "', ev: 'start', given: given, at: Date.now() }) + '\\n');\n" +
     "test.run('zzBatch " + kind + " answers', 0.2, function () { return true; }, test.limit.quick);\n";
@@ -1928,7 +1974,7 @@ const BATCH_SUITE = function (kind) {
 const batchRuns = function (kind) { return runlog().filter(function (l) { return l.suite === 'zzBatch-' + kind && l.ev === 'start'; }); };
 const sameSet = function (a, b) { return JSON.stringify((a || []).slice().sort()) === JSON.stringify((b || []).slice().sort()); };
 let batched = false, batchFrom = 0;
-test.run('the world: spirit/zzBatch/ with its three kinds of general test and three scripts, classified and run once', 0.2, async function () {
+test.run('the world: spirit/app/testicle/temp/zzBatch/ with its three kinds of general test and three scripts, classified and run once', 0.2, async function () {
   if (!up()) return NONODE;
   put(BZ + 'zzBatch.js', '\'use strict\';\n// zzBatch\n');
   put(BA, '\'use strict\';\ndocument.title = String(document.title);\n');
@@ -1980,15 +2026,15 @@ test.run('a press in a script tab still runs a general test for that one script'
 // ── A FIX OF A TOP RED RUNS FIRST (goal/G47.1, box v128: "a change to one of the 10 scripts holding the most severe current
 // reds (each script counted once, not each test row) stops the running suite and runs that script's red suites first; the
 // stopped run goes back flagged, its results untouched; any other change waits its turn"; Andy: "if the changed file is not
-// a top 10 fix, the run may as well continue...."). A planted folder, spirit/zzTop/: zzLong's own suite waits 40 s before its
+// a top 10 fix, the run may as well continue...."). A planted folder, spirit/app/testicle/temp/zzTop/: zzLong's own suite waits 40 s before its
 // one test; zzRed's own suite fails at 0.9, the most severe red of the scratch world; zzCalm's passes, no red. Each logs its
 // start and end to runlog.txt; a stopped run logs no end.
-const TZ = 'spirit/zzTop/';
+const TZ = 'spirit/app/testicle/temp/zzTop/';
 const TLONG = TZ + 'zzLong.js', TLONGS = TZ + 'test/zzLong.js', TRED = TZ + 'zzRed.js', TREDS = TZ + 'test/zzRed.js', TCALM = TZ + 'zzCalm.js', TCALMS = TZ + 'test/zzCalm.js';
-const TOP_LOG = "const LOG = path.join(__dirname, '..', '..', '..', '..', '..', 'runlog.txt');\n" +
+const TOP_LOG = "const LOG = path.join(__dirname, '..', '..', '..', '..', '..', '..', '..', '..', 'runlog.txt');\n" +
   "function log(name, ev) { require('fs').appendFileSync(LOG, JSON.stringify({ suite: name, ev: ev, at: Date.now() }) + '\\n'); }\n";
 let topWorld = false, longBefore = null, redChanged = 0, longStart = 0;
-test.run('the world: spirit/zzTop/ with a long suite, a suite red at 0.9 and a green one, each run once', 0.2, async function () {
+test.run('the world: spirit/app/testicle/temp/zzTop/ with a long suite, a suite red at 0.9 and a green one, each run once', 0.2, async function () {
   if (!up()) return NONODE;
   put(TLONG, '\'use strict\';\n// zzLong\n');
   put(TRED, '\'use strict\';\n// zzRed\n');
@@ -2069,11 +2115,11 @@ test.run('any other change waits its turn: zzLong\'s run ends with its end, and 
 // ── A TEST A WHOLE RUN NO LONGER REPORTS STOPS BEING CURRENT (goal/G47.1, cleaning; cw, reading Andy's testicle: backup/api.js's
 // -browser rerun reported 3 tests green and skipped the 17 element checks, "but their red rows from 19:07 stay current, nobody
 // retires them, and the suite stays \"still red\"", "after a whole run (no title, not stopped, not killed), a test of that
-// script and suite the run did not report is no longer current"). A planted spirit/zzStale/: its own suite reports "stale
+// script and suite the run did not report is no longer current"). A planted spirit/app/testicle/temp/zzStale/: its own suite reports "stale
 // one" green and "stale two" red; then it is rewritten to report "stale one" alone.
-const SZ = 'spirit/zzStale/zzStale.js', SZS = 'spirit/zzStale/test/zzStale.js';
+const SZ = 'spirit/app/testicle/temp/zzStale/zzStale.js', SZS = 'spirit/app/testicle/temp/zzStale/test/zzStale.js';
 let staleWorld = false;
-test.run('the world: spirit/zzStale/ whose own suite reports one test green and one red, run once', 0.2, async function () {
+test.run('the world: spirit/app/testicle/temp/zzStale/ whose own suite reports one test green and one red, run once', 0.2, async function () {
   if (!up()) return NONODE;
   put(SZ, '\'use strict\';\n// zzStale\n');
   put(SZS, SUITE_HEAD + "test.run('stale one', 0.2, function () { return true; }, test.limit.quick);\ntest.run('stale two', 0.2, function () { return 'red, as planted'; }, test.limit.quick);\n");
@@ -2112,9 +2158,9 @@ test.run('and the suite\'s status follows the tests it now has: zzStale\'s own s
 // ── testicle.suite.success (goal/G47.1, box v129: "the reporter reports a suite's success or failure for a script through
 // the new verb testicle.suite.success {script, suite, success} ... the server sets that suite row from it at once (outcome,
 // flag cleared), no summing of test rows"; Andy: "cw, replace the last tweark with the reporter reporting fucking
-// success/failure of the suite through a new verb testicle.suite.success"). A planted spirit/zzSucc/ whose suite is
+// success/failure of the suite through a new verb testicle.suite.success"). A planted spirit/app/testicle/temp/zzSucc/ whose suite is
 // flagged by a change, then told by the verb, inside the runner's quiet second.
-const SUC = 'spirit/zzSucc/zzSucc.js', SUCS = 'spirit/zzSucc/test/zzSucc.js';
+const SUC = 'spirit/app/testicle/temp/zzSucc/zzSucc.js', SUCS = 'spirit/app/testicle/temp/zzSucc/test/zzSucc.js';
 let succWorld = false;
 test.run('the node lists the verb testicle.suite.success', 0.4, async function () {
   if (!up()) return NONODE;
@@ -2122,7 +2168,7 @@ test.run('the node lists the verb testicle.suite.success', 0.4, async function (
   const iface = String((api.body && api.body.interface) || '');
   return /['"]suite\.success['"]\s*:/.test(iface) || 'testicle\'s api: ' + short(iface).slice(0, 200);
 }, test.limit.quick);
-test.run('the world: spirit/zzSucc/ with its own suite, run once', 0.2, async function () {
+test.run('the world: spirit/app/testicle/temp/zzSucc/ with its own suite, run once', 0.2, async function () {
   if (!up()) return NONODE;
   put(SUC, '\'use strict\';\n// zzSucc\n');
   put(SUCS, SUITE_HEAD + "test.run('zzSucc answers', 0.2, function () { return true; }, test.limit.quick);\n");
@@ -2148,18 +2194,18 @@ test.run('testicle.suite.success {success: true} sets it green, at once, whateve
 
 // ── AN ABORTED RUN RE-ASSEMBLED (goal/G47.1, box v130: "a run aborted (stopped or killed): the server RE-ASSEMBLES a new run
 // at once, fresh from the flags as they stand: every script that reported its success is done and left out, the new run
-// holds only the rest"). A planted spirit/zzRe/ with a -general test of its own that logs the scripts it is handed and judges
+// holds only the rest"). A planted spirit/app/testicle/temp/zzRe/ with a -general test of its own that logs the scripts it is handed and judges
 // them in turn: zzReA at once, zzReB after 20 s. The batch is stopped while it waits on zzReB, by a press of another suite.
-const RZ = 'spirit/zzRe/';
+const RZ = 'spirit/app/testicle/temp/zzRe/';
 const RA = RZ + 'zzReA.js', RB = RZ + 'zzReB.js', RC = RZ + 'zzReC.js', RGEN = RZ + 'test/zzRe-sibling-general.js';
-const RE_SUITE = "'use strict';\nconst path = require('path');\nconst test = require(path.join(__dirname, '..', '..', 'test', 'testReport.js'));\n" +
-  "const LOG = path.join(__dirname, '..', '..', '..', '..', '..', 'runlog.txt');\n" +
+const RE_SUITE = "'use strict';\nconst path = require('path');\nconst test = require(path.join(__dirname, '..', '..', '..', '..', '..', 'test', 'testReport.js'));\n" +
+  "const LOG = path.join(__dirname, '..', '..', '..', '..', '..', '..', '..', '..', 'runlog.txt');\n" +
   "const given = process.argv.slice(2).filter(function (a, i, all) { return a.indexOf('--') !== 0 && all[i - 1] !== '--test'; });\n" +
   "require('fs').appendFileSync(LOG, JSON.stringify({ suite: 'zzRe-general', ev: 'start', given: given, at: Date.now() }) + '\\n');\n" +
   "given.forEach(function (f) { test.forScript(f, function () { test.run('zzRe holds', 0.2, function () { return /zzReB/.test(f) ? new Promise(function (r) { setTimeout(function () { r(true); }, 20000); }) : true; }, test.limit.slow); }); });\n";
 const reRuns = function () { return runlog().filter(function (l) { return l.suite === 'zzRe-general' && l.ev === 'start'; }); };
 let reWorld = false, reFrom = 0;
-test.run('the world: spirit/zzRe/ with its own -general test and three scripts, run once', 0.2, async function () {
+test.run('the world: spirit/app/testicle/temp/zzRe/ with its own -general test and three scripts, run once', 0.2, async function () {
   if (!up()) return NONODE;
   put(RZ + 'zzRe.js', '\'use strict\';\n// zzRe\n');
   [RA, RB, RC].forEach(function (f) { put(f, '\'use strict\';\n// ' + f + '\n'); });

@@ -245,3 +245,18 @@ The box, in Andy's words where he gave them:
   the scripts it was handed) and three scripts, one browser-only, one node-only, one both. Changed in one quiet second: the
   `-general` test runs once, handed all three; `-node` once, handed the two that run on the node; `-browser` once, handed
   the two that run in a page. One changed later: one run, that one. A press in a script tab still runs it for one script.
+
+## Debug mode (goal/G47.1, box v143)
+
+Andy: *"the testicle tests set the testicle server to \"debug\". in debug mode, the testicle server limits its scope to
+\"run://spirit/app/testicle/ and only operates as if that were ALL the testables in the whole node"*.
+
+- The test writes `{ debug: true }` into its scratch node's `spirit/state/testicle/data/preferences.json` before the node
+  starts; no verb sets it, and Andy's own testicle, with no debug set, sees the whole tree as before.
+- `spirit/app/testicle/test/testicle-sibling-general.js`, `-node.js` and `-browser.js` are there, each with a test: in debug
+  mode the only general tests testicle sees, beside the planted worlds' own.
+- In debug mode, once the start is worked off, testicle's scripts are only those under `spirit/app/testicle/`, and the
+  classifier judged only those.
+- Every planted world lives under the git-ignored `spirit/app/testicle/temp/` (`.gitignore` keeps it out, git holds nothing
+  there); no `spirit/zz...` or `spirit/aa...` folder is in the tree.
+- The suites that concern a file, in the checks, are only those under `spirit/app/testicle/` (and the classifier's).
