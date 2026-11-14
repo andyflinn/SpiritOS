@@ -710,7 +710,7 @@ test.run('once the server is back to listening, the monitor shows 🛌', 0.2, as
 }, test.limit.slow);
 const LASTFILE = 'spirit/zzTesticle/zzMonitorLast.js';
 const LONGFILE = 'spirit/zzTesticle/zzMonitor' + 'Long'.repeat(60) + '.js';
-let monitorBefore = null;
+let monitorBefore = null, monitorLong = null;
 test.run('after the icon, the message is the last change: a new script\'s row', 0.2, async function () {
   if (face()) return face();
   fs.writeFileSync(path.join(s.run, LASTFILE), '\'use strict\';\n// a new script, for the monitor\n');
@@ -724,12 +724,15 @@ test.run('a long message leaves the row\'s height as it was', 0.2, async functio
   fs.writeFileSync(path.join(s.run, LONGFILE), '\'use strict\';\n// a script with a long name, for the monitor\n');
   const ok = await waitFor('monitor() && monitor().message.indexOf("LongLongLong") !== -1', 15000);
   const m = await T('monitor()');
+  // Read while the long message shows: the classifying of the new script follows it and puts a short one there.
+  monitorLong = ok && m && m.message.indexOf('LongLongLong') !== -1 ? m : null;
   return (!!ok && Math.abs(m.height - monitorBefore.height) < 0.5) || 'height before ' + monitorBefore.height + ', now ' + short(m);
 }, test.limit.slow);
 test.run('a long message is ellipsed, never wrapped', 0.2, async function () {
   if (face()) return face();
-  const m = await T('monitor()');
-  return (!!m && m.nowrap && m.ellipsis && m.hidden && m.overflows) || 'the message: ' + short(m);
+  const m = monitorLong;
+  if (!m) return 'the long message was never read: the check before failed';
+  return (m.nowrap && m.ellipsis && m.hidden && m.overflows) || 'the message: ' + short(m);
 }, test.limit.quick);
 
 // ── goal/G47.1, box v79, 2 and 4: the ⚙ Configuration panel ──
