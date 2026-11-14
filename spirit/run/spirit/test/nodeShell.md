@@ -1,6 +1,6 @@
 # The shell the node names
 
-goal/G43.18, box v29, *The shell*. Its test is `./nodeShell.js`: the tree, then a real node on a scratch copy of the tracked files, with a shell-worthy app of the test's own (`zzshell`, its `<name>.json` saying `shell.true` true), asked at its own loopback door and started again. The page side is `spirit/app/shell/test/shell.js`.
+goal/G43.18, box v29, *The shell*. Its test is `./nodeShell.js`: the tree, then a real node on a lab node reset to the files under test (goal/G47.3), with a shell-worthy app of the test's own (`zzshell`, its `<name>.json` saying `shell.true` true), asked at its own loopback door and started again. The page side is `spirit/app/shell/test/shell.js`.
 
 ## Requirements
 

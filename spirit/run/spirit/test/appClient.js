@@ -11,6 +11,8 @@ const os = require('os');
 const path = require('path');
 const { spawn, execSync } = require('child_process');
 const RUN = path.resolve(__dirname, '../..');
+// Every node this test uses is one of lab's (goal/G47.3): its tree by scratchTree, its node by startNodeOn.
+const LABH = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 const REPO = path.resolve(RUN, '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
@@ -26,10 +28,7 @@ const SIZE = limits.ANSWER_MAX + 4000;
 
 // The scratch copy: the tracked files of spirit/run, and the throwaway app, turned on as its owner turns one on.
 function scratch() {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-appClient-'));
-  execSync('git ls-files -- spirit/run', { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(Boolean)
-    .filter(function (f) { return fs.existsSync(path.join(REPO, f)); })
-    .forEach(function (f) { const d = path.join(root, f); fs.mkdirSync(path.dirname(d), { recursive: true }); fs.copyFileSync(path.join(REPO, f), d); });
+  const root = LABH.scratchTree().root;
   const run = path.join(root, 'spirit', 'run');
   const dir = path.join(run, 'spirit', 'app', NAME);
   fs.mkdirSync(dir, { recursive: true });
@@ -60,7 +59,7 @@ function noNode() { return W.up ? null : 'no scratch node: the world failed'; }
 test.run('the world: the scratch node and its zzbig server come up', 0.2, async function () {
   W.s = scratch();
   const port = await H.freePort();
-  W.child = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], { cwd: W.s.run, stdio: 'ignore' });
+  W.child = LABH.startNodeOn(W.s.run, port);
   W.base = 'http://127.0.0.1:' + port;
   W.up = await H.until(function () { return post(NAME + '.big', {}).then(function (r) { return r.status === 200; }); }, 60000);
   return W.up || 'the scratch node or its ' + NAME + ' server did not come up: nothing judged';
@@ -68,7 +67,7 @@ test.run('the world: the scratch node and its zzbig server come up', 0.2, async 
 test.after(async function () {
   try { if (W.child) W.child.kill(); } catch (e) { /* gone */ }
   await H.sleep(500);
-  try { if (W.s) fs.rmSync(W.s.root, { recursive: true, force: true }); } catch (e) { /* scratch */ }
+  try { if (W.s) LABH.freeTree(W.s); } catch (e) { /* scratch */ }
 });
 test.run('the owner\'s big answer, larger than one answer may be, comes back whole on loopback', 0.2, async function () {
   if (noNode()) return noNode();

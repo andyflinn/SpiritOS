@@ -13,6 +13,8 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '../../..');
+// Every node this test uses is one of lab's (goal/G47.3): its tree by scratchTree, its node by startNodeOn.
+const LABH = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const FILE = path.join(__dirname, '..', 'nodeInfo.js');
 const SRC = fs.existsSync(FILE) ? fs.readFileSync(FILE, 'utf8') : '';
@@ -653,8 +655,7 @@ function rotatePart() {
       .split('\n').filter(Boolean).filter(function (f) { return fs.existsSync(path.join(REPO, f)) && fs.statSync(path.join(REPO, f)).isFile(); });
   }
   function scratch() {
-    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-rk-'));
-    treeFiles().forEach(function (f) { const d = path.join(root, f); fs.mkdirSync(path.dirname(d), { recursive: true }); fs.copyFileSync(path.join(REPO, f), d); });
+    const root = LABH.scratchTree().root;
     return { root: root, run: path.join(root, 'spirit', 'run') };
   }
   async function call(base, verb, args) {
@@ -666,7 +667,7 @@ function rotatePart() {
   }
   async function boot(run) {
     const port = await freePort();
-    const child = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], { cwd: run, stdio: 'ignore' });
+    const child = LABH.startNodeOn(run, port);
     const base = 'http://127.0.0.1:' + port;
     const up = await until(function () { return call(base, 'api').then(function (r) { return r.status === 200; }); }, 60000);
     return { child: child, base: base, up: !!up };
@@ -900,6 +901,6 @@ function rotatePart() {
     try { if (c && c.sock) c.sock.close(); } catch (e) { /* gone */ }
     try { if (c && c.kid) c.kid.kill(); } catch (e) { /* gone */ }
     if (N) await stop(N.child);
-    try { if (s) fs.rmSync(s.root, { recursive: true, force: true }); } catch (e) { /* scratch */ }
+    try { if (s) LABH.freeTree(s); } catch (e) { /* scratch */ }
   });
 }

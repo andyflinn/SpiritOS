@@ -22,6 +22,8 @@ const path = require('path');
 const { spawn, execSync, execFileSync } = require('child_process');
 const { DatabaseSync } = require('node:sqlite');
 const RUN = path.resolve(__dirname, '../../../..');
+// Every node this test uses is one of lab's (goal/G47.3): its tree by scratchTree, its node by startNodeOn.
+const LABH = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 const REPO = path.resolve(RUN, '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const { freePort, until, sleep } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
@@ -116,10 +118,7 @@ const OLD = { name: 'spirit/zzTesticle/older.js', suite: 'spirit/zzTesticle/test
 const GENERAL = 'spirit/test/spirit-sibling-general.js';
 
 function scratch() {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-testicle-server-'));
-  execSync('git ls-files -- spirit/run', { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(Boolean)
-    .filter(function (f) { return fs.existsSync(path.join(REPO, f)); })
-    .forEach(function (f) { const d = path.join(root, f); fs.mkdirSync(path.dirname(d), { recursive: true }); fs.copyFileSync(path.join(REPO, f), d); });
+  const root = LABH.scratchTree().root;
   const run = path.join(root, 'spirit', 'run');
   Object.keys(PLANT).forEach(function (f) { fs.mkdirSync(path.dirname(path.join(run, f)), { recursive: true }); fs.writeFileSync(path.join(run, f), PLANT[f]); });
   // testicle turned on there, as an owner turns a server on (spirit/test/headLessChrome.js scratchNode).
@@ -153,7 +152,7 @@ async function boot(run) {
   const port = await freePort();
   // The node's error output kept beside the scratch tree, node.err, so a failure inside the server is there to read.
   const err = fs.openSync(path.join(run, '..', '..', 'node.err'), 'a');
-  const child = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], { cwd: run, stdio: ['ignore', 'ignore', err] });
+  const child = LABH.startNodeOn(run, port, { stdio: ['ignore', 'ignore', err] });
   const base = 'http://127.0.0.1:' + port;
   const up = await until(function () { return call(base, 'api').then(function (r) { return r.status === 200; }); }, 60000);
   return { child: child, base: base, up: !!up };
@@ -236,7 +235,7 @@ let sr = null, srRows = [], red = [], n1 = null, reach = [], seen = [], r1 = nul
 
 test.after(async function () {
   for (const k of live) await stop(k);
-  try { if (s) fs.rmSync(s.root, { recursive: true, force: true }); } catch (e) { /* scratch */ }
+  try { if (s) LABH.freeTree(s); } catch (e) { /* scratch */ }
 });
 
 // the box: "The server mounts beside the face (testicle.json: node.mount true)"

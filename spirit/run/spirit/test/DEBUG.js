@@ -12,6 +12,8 @@ const http = require('http');
 const path = require('path');
 const { spawn, execSync, execFileSync } = require('child_process');
 const RUN = path.resolve(__dirname, '../..');
+// Every node this test uses is one of lab's (goal/G47.3): its tree by scratchTree, its node by startNodeOn.
+const LABH = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 const REPO = path.join(RUN, '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 
@@ -43,10 +45,7 @@ function json(r) { try { return JSON.parse(r.text); } catch (e) { return undefin
 
 // The scratch copy: the tracked files of spirit/run as they are in the working tree.
 function scratchCopy() {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-debug-'));
-  execSync('git ls-files -- spirit/run', { cwd: REPO, encoding: 'utf8' }).split('\n').filter(Boolean)
-    .filter(function (f) { return fs.existsSync(path.join(REPO, f)); })
-    .forEach(function (f) { const d = path.join(root, f); fs.mkdirSync(path.dirname(d), { recursive: true }); fs.copyFileSync(path.join(REPO, f), d); });
+  const root = LABH.scratchTree().root;
   // testicle turned on, as its owner does: the server whose garbage is asked (GARBAGE, below).
   const state = path.join(root, 'spirit', 'run', 'spirit', 'state', 'testicle');
   fs.mkdirSync(state, { recursive: true });
@@ -55,7 +54,7 @@ function scratchCopy() {
 }
 async function startNode(run) {
   const port = await freePort();
-  const child = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], { cwd: run, stdio: 'ignore' });
+  const child = LABH.startNodeOn(run, port);
   const up = await until(function () { return call(port, 'api').then(function (r) { return r.status === 200; }); }, 60000);
   return { port: port, child: child, up: up };
 }
@@ -601,5 +600,5 @@ test.run('refused: a request not from loopback', 0.8, async function () {
 
 test.after(async function () {
   await stop(node); await stop(relay);
-  try { if (copy) fs.rmSync(copy.root, { recursive: true, force: true }); } catch (e) { /* scratch */ }
+  try { if (copy) LABH.freeTree(copy); } catch (e) { /* scratch */ }
 });

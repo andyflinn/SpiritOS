@@ -132,7 +132,7 @@ Andy: "easily changed, no?"
 
 ## The mount part: the node starts a server from spirit/app/<name>/
 
-The node starts a server from `spirit/app/<name>/` (goal/G43.12). Its test, once `./appServer-mount.js`, is a section of `./appServer.js`. A real node runs on a scratch copy of the tracked files, with throwaway apps planted in that copy (`probe`, `quiet` with `node.mount` false and no `data.js`, so no one-shot app either (goal/G43.19, box v16, 2), `always` intrinsic). The tree's own server app (`agent`) is not what it judges. Nothing is kept in the repo.
+The node starts a server from `spirit/app/<name>/` (goal/G43.12). Its test, once `./appServer-mount.js`, is a section of `./appServer.js`. A real node runs on a lab node reset to the files under test (goal/G47.3), with throwaway apps planted in that copy (`probe`, `quiet` with `node.mount` false and no `data.js`, so no one-shot app either (goal/G43.19, box v16, 2), `always` intrinsic). The tree's own server app (`agent`) is not what it judges. Nothing is kept in the repo.
 
 Andy: *"JUST loading functional server and associating the <name> as "familiy" name, in the new namespace"*.
 
@@ -186,7 +186,7 @@ Andy: *"JUST loading functional server and associating the <name> as "familiy" n
 goal/G43.20, its box. Its test, once `./appServer-stateCache.js`, is a section of `./appServer.js`. Andy: *"cache, which is written by spirit/appServer.js was ALWAYS supposed to go into
 spirit/state/<name>/cache/"*, and *"NO FUCKING RESCUE CODE, MOVE YOUR OWN deskClient cache where it belongs."*
 
-A throwaway follower app planted in a scratch copy of the tracked files, run as the node runs a server: a stream with
+A throwaway follower app planted in a lab node reset to the files under test (goal/G47.3), run as the node runs a server: a stream with
 its cache on, following a sender whose family has a data.js here (desk). What it kept is read back at its start; then its
 `saveCaches` (deskClient's `cache.dump`) writes it again. Never a live node.
 

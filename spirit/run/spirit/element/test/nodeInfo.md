@@ -90,7 +90,7 @@ Andy: *"i just moved them, didn't fix the manifest."*, *"no i want those apps to
 
 ## The rotate key dialog, an element over Info
 
-goal/G43.24, requirement 8. Its test is the rotate part of `./nodeInfo.js` (once `./nodeInfo-rotate.js`): the tree read as it is, then a real node on a scratch copy of the tree's files (tracked and new, not ignored) and real clicks in a real Chrome on `/face.html`, Info opened from its tile in the shell app. No key is rotated: the page's `node.rotateCipher` is replaced by a recorder that refuses, and the node's card is compared before and after. The dialog's own test moves to `./rotateKey.js`; this one judges the move and the opening.
+goal/G43.24, requirement 8. Its test is the rotate part of `./nodeInfo.js` (once `./nodeInfo-rotate.js`): the tree read as it is, then a real node on a lab node reset to the files under test (goal/G47.3) (tracked and new, not ignored) and real clicks in a real Chrome on `/face.html`, Info opened from its tile in the shell app. No key is rotated: the page's `node.rotateCipher` is replaced by a recorder that refuses, and the node's card is compared before and after. The dialog's own test moves to `./rotateKey.js`; this one judges the move and the opening.
 
 Andy, on "Info's rotate button opens the old shell's dialog": *"not good."* *"do it right!"* And: *"it's just a panel that opens exactly overtop of the calling panel, new-shell-style."*, *"like fstat"*.
 

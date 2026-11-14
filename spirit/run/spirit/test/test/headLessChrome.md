@@ -24,5 +24,22 @@ moves at once"*. Each hand-out is asked from a child process of its own, as a te
   different relays (Andy: *"i specifically wanted two of them so that we can test members of one relay talking to members of
   another."*).
 
+## The helpers a test's own world uses (goal/G47.3, the build)
+
+Tests that made their world in plain functions, copying the tree and starting `spirit/server.js` themselves, moved onto lab
+with three helpers, so every node a test uses is one of lab's:
+
+- **`scratchTree()`**: a lab node reset to the files under test, no node on it yet, handed out without a promise (it waits
+  by blocking while every node is taken). Answers `{ root, run, name, release() }`. One call takes one lab node, never more.
+- **`startNodeOn(run, port, o)`**: `spirit/server.js` started on such a tree's `spirit/run` on the test's port, the child
+  answered at once (`o.stdio`, `o.windowsHide` as spawn's). A `run` lab did not hand out to this process is refused.
+- **`freeTree(x)`**: what a test did with its scratch root (deleted it) becomes freeing the lab node; nothing is deleted, lab
+  resets it for the next test.
+
+`scratchNode(o)` also takes `o.before(run)` (plant before the node starts), `o.start: false` (no node yet), `o.port`, and
+answers `start()`, `stop()`, `restart()`, `release()`. Lab itself is `repo://lab/labNodes.js`: lab's repo `repo://lab/repo/`,
+the nodes `repo://lab/node/<name>/`, their locks `<name>.lock` (the holder's pid), a node a holder started noted in
+`<name>.pid`; a reset removes even a file whose name passes Windows' old path limit.
+
 The layout of `repo://lab/` itself (labMaster moved there, the old test folder's leftovers gone, `.gitignore`, no test starting
 `spirit/server.js` itself) is judged by `../spirit-sibling-general.js` over the whole repository.

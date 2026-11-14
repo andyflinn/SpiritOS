@@ -22,7 +22,7 @@ node spirit/test/identityPerception.js
 ## labMaster (laptop)
 
 ```
-node spirit/test/labMaster/labMaster.js
+node lab/labMaster.js
 ```
 
 Panel: `http://127.0.0.1:65420` (`LAB_MASTER_PORT` names another; the harness uses 45420).

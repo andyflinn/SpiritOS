@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-// spirit/test/tools/inspect.js
+// lab/tools/inspect.js
 // ASK THE TREE A QUESTION, WITH A COMMAND THAT NEVER CHANGES.
 //
 // NAMED inspect AND NOT ask: spirit/run/shell/shared/ask.js is the app's
@@ -21,7 +21,7 @@
 // dialog. The rule: WORK THAT WILL BE REPEATED LIVES AT A PATH, NOT IN A
 // STRING.
 //
-//     node spirit/test/tools/inspect.js
+//     node lab/tools/inspect.js
 //
 // The question lives in a file. One approval, once, for every question
 // after it.
@@ -38,8 +38,8 @@
 const fs = require('fs');
 const path = require('path');
 
-const REPO = path.join(__dirname, '..', '..', '..');
-const VENDORED_FOLDERS = require('../../run/spirit/fileSystem.js').VENDORED_FOLDERS;
+const REPO = path.join(__dirname, '..', '..');
+const VENDORED_FOLDERS = require('../../spirit/run/spirit/fileSystem.js').VENDORED_FOLDERS;
 
 // The box says where its own askbox is: the environment, then the box
 // file, then this file's last resort.

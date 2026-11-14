@@ -14,6 +14,8 @@ const path = require('path');
 const vm = require('vm');
 // spirit/app/info/test/ -> the run root, four up.
 const RUN = path.resolve(__dirname, '../../../..');
+// Every node this test uses is one of lab's (goal/G47.3): its tree by scratchTree, its node by startNodeOn.
+const LABH = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const FILE = path.join(__dirname, '..', 'element.js');
 const SRC = fs.existsSync(FILE) ? fs.readFileSync(FILE, 'utf8') : '';
@@ -187,8 +189,7 @@ function treeFiles() {
     .split('\n').filter(Boolean).filter(function (f) { return fs.existsSync(path.join(REPO, f)) && fs.statSync(path.join(REPO, f)).isFile(); });
 }
 function scratch() {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-info-'));
-  treeFiles().forEach(function (f) { const d = path.join(root, f); fs.mkdirSync(path.dirname(d), { recursive: true }); fs.copyFileSync(path.join(REPO, f), d); });
+  const root = LABH.scratchTree().root;
   return { root: root, run: path.join(root, 'spirit', 'run') };
 }
 async function call(base, verb, args) {
@@ -200,7 +201,7 @@ async function call(base, verb, args) {
 }
 async function boot(run) {
   const port = await H.freePort();
-  const child = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], { cwd: run, stdio: 'ignore' });
+  const child = LABH.startNodeOn(run, port);
   const base = 'http://127.0.0.1:' + port;
   const up = await H.until(function () { return call(base, 'api').then(function (r) { return r.status === 200; }); }, 60000);
   return { child: child, base: base, up: !!up };
@@ -234,7 +235,7 @@ if (!process.env.SPIRIT_TEST_OWN_ONLY) {
     try { if (R.c && R.c.sock) R.c.sock.close(); } catch (e) { /* gone */ }
     try { if (R.c && R.c.kid) R.c.kid.kill(); } catch (e) { /* gone */ }
     if (R.N) await stop(R.N.child);
-    if (R.s) { try { fs.rmSync(R.s.root, { recursive: true, force: true }); } catch (e) { /* scratch */ } }
+    if (R.s) { try { LABH.freeTree(R.s); } catch (e) { /* scratch */ } }
   });
 
   // wrapper: Info in spirit/app/, a wrapper mounted the new shell's way (goal/G43.24)

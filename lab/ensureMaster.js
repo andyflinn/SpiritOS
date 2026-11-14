@@ -1,6 +1,6 @@
 'use strict';
 
-// spirit/test/labMaster/ensureMaster.js
+// lab/ensureMaster.js
 // Bring the lab control plane up, if it is not already.
 //
 // ── WHY THIS IS ITS OWN FILE ─────────────────────────────────────────
@@ -31,7 +31,7 @@ const { spawn } = require('child_process');
 const labPaths = require('./labPaths');
 const MASTER = labPaths.MASTER;
 const REPO_ROOT = labPaths.REPO_ROOT;
-const SCRIPT = 'spirit/test/labMaster/labMaster.js';
+const SCRIPT = 'lab/labMaster.js';
 
 // Long enough for a cold node process on a laptop that is also running
 // five other suites, short enough that a labMaster which is never coming

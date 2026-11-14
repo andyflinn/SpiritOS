@@ -1,6 +1,6 @@
 'use strict';
 
-// spirit/test/tools/wirePaths.js
+// lab/tools/wirePaths.js
 // EVERY CALL STACK INSIDE OUR OWN CODE THAT REACHES THE WIRE, RANKED.
 //
 //   Andy, 2026-09-24, having crossed out his own first two ideas to get
@@ -45,7 +45,7 @@
 //
 // ── TWO MODES, ONE FILE ─────────────────────────────────────────────
 //
-//   node spirit/test/tools/wirePaths.js      run the harness, then report
+//   node lab/tools/wirePaths.js      run the harness, then report
 //
 // Preloaded into every suite process with `--require`, it is the probe;
 // run directly, it is the runner. ONE FILE, because a probe and a
@@ -54,9 +54,9 @@
 const fs = require('fs');
 const path = require('path');
 
-const REPO = path.resolve(__dirname, '..', '..', '..');
+const REPO = path.resolve(__dirname, '..', '..');
 const SELF = path.resolve(__filename);
-const VENDORED_FOLDERS = require('../../run/spirit/fileSystem.js').VENDORED_FOLDERS;
+const VENDORED_FOLDERS = require('../../spirit/run/spirit/fileSystem.js').VENDORED_FOLDERS;
 
 // ── THE BOTTOMS AN INTERFACE MAY FUNNEL INTO ────────────────────────
 //

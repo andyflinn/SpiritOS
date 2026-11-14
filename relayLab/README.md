@@ -6,7 +6,7 @@ Not `bash/`. Not labMaster.
 |---|---|---|
 | `bash/` | `*.sh` host verbs | spirit-3 only, after SSH |
 | `relayLab/` | `*.js` + tickets | Windows work machine **and** spirit-3 (`node` is on both) |
-| `spirit/test/labMaster/` | multi-node lab | laptop only |
+| `lab/` | multi-node lab | laptop only |
 
 ## Run
 

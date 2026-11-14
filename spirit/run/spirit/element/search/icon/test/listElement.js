@@ -11,6 +11,8 @@ const path = require('path');
 const http = require('http');
 const { execSync, spawn } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..');
+// Every node this test uses is one of lab's (goal/G47.3): its tree by scratchTree, its node by startNodeOn.
+const LABH = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 const REPO = path.resolve(RUN, '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const { scratchNode, scratchFaceRelay, chromePage, findChrome, until, sleep } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
@@ -130,7 +132,7 @@ test.after(async function () {
   if (N && N.child) N.child.kill();
   if (R && R.stop) await R.stop();
   try { if (chrome && chrome.profile) fs.rmSync(chrome.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
-  try { if (N && N.root) fs.rmSync(N.root, { recursive: true, force: true }); } catch (e) { /* left */ }
+  try { if (N && N.root) LABH.freeTree(N); } catch (e) { /* left */ }
 });
 test.run('the world: a scratch node, a scratch relay and Chrome', 0.2, async function () {
   const where = findChrome();
@@ -229,7 +231,7 @@ test.run('the world: the node gone and back, the page open', 0.2, async function
   N.child.kill();
   await until(function () { return Promise.resolve(N.child.exitCode !== null); }, 8000);
   await sleep(2000);
-  N.child = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], { cwd: path.join(N.root, 'spirit', 'run'), stdio: 'ignore' });
+  N.child = LABH.startNodeOn(N.run, port);
   const back = await until(function () { return home(N.base, 'node.card').then(function (r) { return r.status === 200; }, function () { return false; }); }, 30000);
   return !!back ? true : 'the node did not come back: nothing judged';
 }, test.limit.slow);

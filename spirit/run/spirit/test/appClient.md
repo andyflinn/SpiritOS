@@ -15,7 +15,7 @@ live in run://spirit/state/<name>/, owned by the node."* Judged in `./appServerM
 The ruling cw built to, for a manager bigger than one answer: the owner's call that came in on loopback is marked, and
 appClient and appServer let that one answer past `ANSWER_MAX`; every other answer stays bounded.
 
-- The owner, on loopback, asks a throwaway app server planted in a scratch copy for a text past `ANSWER_MAX`: it
+- The owner, on loopback, asks a throwaway app server planted in a lab node (goal/G47.3) for a text past `ANSWER_MAX`: it
   comes back whole, every byte (no branch carries an FS set since goal/G43.20, so no server folder is read through one).
 - Not tested here yet: the same answer asked through the relay is refused `app-answer-too-large`. It needs a relay in
   the test.

@@ -211,5 +211,5 @@ test.run('spirit/run/spirit/fileSystem.js: reads VENDORED_FOLDERS, no skip of it
 test.run('spirit/run/spirit/test/appServer.js: reads VENDORED_FOLDERS, no skip of its own', 0.2, function () { return walks('spirit/run/spirit/test/appServer.js'); }, test.limit.quick);
 test.run('spirit/run/spirit/test/word.js: reads VENDORED_FOLDERS, no skip of its own', 0.2, function () { return walks('spirit/run/spirit/test/word.js'); }, test.limit.quick);
 test.run('spirit/run/spirit/word.js: reads VENDORED_FOLDERS, no skip of its own', 0.2, function () { return walks('spirit/run/spirit/word.js'); }, test.limit.quick);
-test.run('spirit/test/tools/inspect.js: reads VENDORED_FOLDERS, no skip of its own', 0.2, function () { return walks('spirit/test/tools/inspect.js'); }, test.limit.quick);
-test.run('spirit/test/tools/wirePaths.js: reads VENDORED_FOLDERS, no skip of its own', 0.2, function () { return walks('spirit/test/tools/wirePaths.js'); }, test.limit.quick);
+test.run('lab/tools/inspect.js: reads VENDORED_FOLDERS, no skip of its own', 0.2, function () { return walks('lab/tools/inspect.js'); }, test.limit.quick);
+test.run('lab/tools/wirePaths.js: reads VENDORED_FOLDERS, no skip of its own', 0.2, function () { return walks('lab/tools/wirePaths.js'); }, test.limit.quick);

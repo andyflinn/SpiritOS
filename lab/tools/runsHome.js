@@ -1,6 +1,6 @@
 'use strict';
 
-// spirit/test/tools/runsHome.js
+// lab/tools/runsHome.js
 // A test node runs a server (goal/G30.20): where a module runs is its manifest's runs, so a suite that wants one of
 // its scratch node's servers started writes 'home' into that manifest. Never the tree's own manifests: a scratch node
 // whose folder is the checkout's spirit/run is refused, unless its manifest already says home.
@@ -10,7 +10,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const TREE = fs.realpathSync(path.join(__dirname, '..', '..', 'run'));
+const TREE = fs.realpathSync(path.join(__dirname, '..', '..', 'spirit', 'run'));
 
 module.exports = function runsHome(root, modulePath) {
   const name = String(modulePath).split('/').pop();

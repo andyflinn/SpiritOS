@@ -13,7 +13,7 @@
 # running this twice changes nothing. Every process is started detached:
 # closing VS Code does not take a node with it.
 #
-#   1. labMaster        127.0.0.1:65420   (spirit/test/labMaster)
+#   1. labMaster        127.0.0.1:65420   (lab)
 #   2. Andy's work node 127.0.0.1:65432   (through labMaster, its permanent row)
 #   3. claude-windows   127.0.0.1:45440   (D:\SpiritOS-agent-claude — the
 #                                           Windows agent's own node, AGENT.md)
@@ -54,7 +54,7 @@ foreach ($k in 'GROK_API_KEY', 'GROK_MANAGEMENT_KEY', 'ANTHROPIC_API_KEY') {
 # 1. labMaster
 if (Listening 65420) { Write-Output 'labMaster: already running' }
 else {
-  Start-Process -FilePath $node -ArgumentList 'spirit/test/labMaster/labMaster.js' -WorkingDirectory $repo -WindowStyle Hidden | Out-Null
+  Start-Process -FilePath $node -ArgumentList 'lab/labMaster.js' -WorkingDirectory $repo -WindowStyle Hidden | Out-Null
   Write-Output ('labMaster: ' + $(if (WaitFor 65420 20) { 'started' } else { 'DID NOT COME UP' }))
 }
 

@@ -11,6 +11,8 @@ const os = require('os');
 const path = require('path');
 const { spawn, execSync } = require('child_process');
 const RUN = path.resolve(__dirname, '../../../..');
+// Every node this test uses is one of lab's (goal/G47.3): its tree by scratchTree, its node by startNodeOn.
+const LABH = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 const REPO = path.resolve(RUN, '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const { freePort, until, sleep, chromePage, findChrome } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
@@ -27,15 +29,12 @@ function readJson(f) { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } ca
 function code(f) { try { return fs.readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1'); } catch (e) { return ''; } }
 
 function scratch() {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-' + NAME + '-'));
-  execSync('git ls-files -- spirit/run', { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(Boolean)
-    .filter(function (f) { return fs.existsSync(path.join(REPO, f)); })
-    .forEach(function (f) { const d = path.join(root, f); fs.mkdirSync(path.dirname(d), { recursive: true }); fs.copyFileSync(path.join(REPO, f), d); });
+  const root = LABH.scratchTree().root;
   return { root: root, run: path.join(root, 'spirit', 'run') };
 }
 async function boot(run) {
   const port = await freePort();
-  const child = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], { cwd: run, stdio: 'ignore' });
+  const child = LABH.startNodeOn(run, port);
   const base = 'http://127.0.0.1:' + port;
   const up = await until(function () { return fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'api', args: {} }) }).then(function (r) { return r.status === 200; }, function () { return false; }); }, 60000);
   return { child: child, base: base, up: !!up };
@@ -50,7 +49,7 @@ test.after(async function () {
   if (W.child) { try { W.child.kill(); } catch (e) { /* gone */ } }
   if (W.c && W.c.kid) { try { W.c.kid.kill(); } catch (e) { /* gone */ } }
   await sleep(300);
-  if (W.s) { try { fs.rmSync(W.s.root, { recursive: true, force: true }); } catch (e) { /* a door still closing; the temp folder keeps it */ } }
+  if (W.s) { try { LABH.freeTree(W.s); } catch (e) { /* a door still closing; the temp folder keeps it */ } }
 });
 
 // the box: "Four elements: file, fstat, text and media", and "New never requires old"

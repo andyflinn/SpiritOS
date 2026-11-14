@@ -16,7 +16,7 @@ What this node knows of the relays it has met. This test holds one part of it (g
 
 ## No relayKeys importOld on a booted node
 
-goal/G43.23, item 7: `spirit/relayKeys.js`'s part. Its test is a section of `./relayKeys.js`: a real node (`spirit/server.js`) booted on a scratch copy of the tracked files of `spirit/run` under /tmp, the old relay files planted in it. Neither Andy's node nor an agent's is touched.
+goal/G43.23, item 7: `spirit/relayKeys.js`'s part. Its test is a section of `./relayKeys.js`: a real node (`spirit/server.js`) booted on a lab node reset to the files under test (goal/G47.3) under /tmp, the old relay files planted in it. Neither Andy's node nor an agent's is touched.
 
 The box: *"old-data rescue still runs (G41.30): relayKeys importOld, shellMove, the old traffic.json, routingTable.json, invites.json, the cycle-3 relay.db owner column."*
 

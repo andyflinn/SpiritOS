@@ -59,11 +59,11 @@ master_answers() { curl -s -m 2 -o /dev/null -w '%{http_code}' "http://127.0.0.1
 PORT=65420
 if listening $PORT; then
   echo "Andy's labMaster :$PORT already running"
-elif [ ! -f "$ANDY/spirit/test/labMaster/labMaster.js" ]; then
+elif [ ! -f "$ANDY/lab/labMaster.js" ]; then
   echo "Andy's labMaster :$PORT DID NOT COME UP (no checkout at $ANDY)"
 else
   # From his checkout, so its work row is his node's home. Log gitignored.
-  setsid -f env -C "$ANDY" "$NODE_BIN" spirit/test/labMaster/labMaster.js \
+  setsid -f env -C "$ANDY" "$NODE_BIN" lab/labMaster.js \
     >> "$ANDY/labmaster.log" 2>&1 < /dev/null
   if wait_for master $PORT "master_answers $PORT"; then
     echo "Andy's labMaster :$PORT started"

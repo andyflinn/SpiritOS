@@ -112,6 +112,37 @@ test.run('one test per lab node at a time: with the three personal nodes held, a
   await Promise.all(holders.map(function (h) { return h.ended; }));
   return (!!late && late !== 'waiting' && !late.error && roots.indexOf(late.root) !== -1) || 'after a holder ended the fourth got ' + short(late);
 }, test.limit.long);
+// THE HELPERS A TEST'S OWN WORLD USES (goal/G47.3, the build; ./headLessChrome.md): scratchTree takes one lab node and
+// no more, startNodeOn starts a node only on a tree lab handed out, freeTree frees a node and deletes nothing.
+function inChild(code, ms) {
+  const kid = spawn(process.execPath, ['-e', 'const H = require(' + JSON.stringify(HELPER) + ');' + code], { cwd: RUN, stdio: ['ignore', 'pipe', 'pipe'] });
+  let out = '';
+  kid.stdout.on('data', function (d) { out += d; });
+  return within(new Promise(function (r) { kid.on('close', function () { const m = /@@(.*)/.exec(out); try { r(m ? JSON.parse(m[1]) : { error: out.slice(-300) }); } catch (e) { r({ error: out.slice(-300) }); } }); }), ms);
+}
+const LOCKS = function () { try { return fs.readdirSync(LAB_NODES).filter(function (n) { return /^personal\d+\.lock$/.test(n); }); } catch (e) { return []; } };
+test.run('scratchTree takes one lab node and no more, and a node asked after it is another one', 0.4, async function () {
+  const r = await inChild('const t = H.scratchTree(); const locks = require("fs").readdirSync(' + JSON.stringify(LAB_NODES) + ').filter(function (n) { return /^personal\\d+\\.lock$/.test(n); }); H.scratchNode({ start: false }).then(function (n) { console.log("@@" + JSON.stringify({ tree: t.root, locks: locks.length, node: n.root })); process.exit(0); });', 120000);
+  if (!r || r === 'waiting' || r.error) return 'nothing handed out: ' + short(r);
+  return (r.locks === 1 && under(r.tree, LAB_NODES) && under(r.node, LAB_NODES) && r.tree !== r.node) || 'locks taken by one scratchTree: ' + r.locks + ', tree ' + r.tree + ', node ' + r.node;
+}, test.limit.long);
+test.run('startNodeOn starts a node on a tree lab handed out, and refuses a run it did not hand out', 0.4, async function () {
+  const r = await inChild('const t = H.scratchTree(); let refused = ""; try { H.startNodeOn(' + JSON.stringify(RUN) + ', 1); } catch (e) { refused = e.message; }' +
+    ' H.freePort().then(function (port) { const c = H.startNodeOn(t.run, port); return H.until(function () { return fetch("http://127.0.0.1:" + port + "/api/spirit", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ call: "api", args: {} }) }).then(function (x) { return x.status === 200; }); }, 60000).then(function (up) { c.kill(); console.log("@@" + JSON.stringify({ up: up, refused: refused })); process.exit(0); }); });', 120000);
+  if (!r || r === 'waiting' || r.error) return 'nothing judged: ' + short(r);
+  return (r.up === true && /no lab node/.test(r.refused)) || 'up ' + r.up + ', the checkout\'s own run refused: ' + short(r.refused);
+}, test.limit.long);
+test.run('freeTree frees the lab node and deletes nothing: its tree is still there, its lock gone', 0.4, async function () {
+  const r = await inChild('const t = H.scratchTree(); const lock = require("path").join(' + JSON.stringify(LAB_NODES) + ', t.name + ".lock"); const held = require("fs").existsSync(lock); H.freeTree({ root: t.root, run: t.run });' +
+    ' console.log("@@" + JSON.stringify({ held: held, lock: require("fs").existsSync(lock), tree: require("fs").existsSync(require("path").join(t.run, "spirit", "server.js")) })); setTimeout(function () { process.exit(0); }, 200);', 120000);
+  if (!r || r === 'waiting' || r.error) return 'nothing judged: ' + short(r);
+  return (r.held === true && r.lock === false && r.tree === true) || 'held ' + r.held + ', lock after free ' + r.lock + ', tree still there ' + r.tree;
+}, test.limit.long);
+test.run('no lab node is left locked once its holders ended', 0.2, async function () {
+  await sleep(500);
+  const left = LOCKS().filter(function (n) { let pid = ''; try { pid = fs.readFileSync(path.join(LAB_NODES, n), 'utf8').trim(); process.kill(Number(pid), 0); return true; } catch (e) { return false; } });
+  return !left.length || 'still locked by a live process: ' + left.join(', ');
+}, test.limit.quick);
 // "the tests that start relays (scratchRelay, scratchFaceRelay) use lab's two relays, reset like the nodes"
 test.run('scratchRelay hands out one of lab\'s two relays, under repo://lab/node/; two asked at once are two different relays', 0.4, async function () {
   const a = ask('relay', 3000), b = ask('relay', 3000);

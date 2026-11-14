@@ -50,7 +50,7 @@ goal/G43.20, its box. Andy: *"they're supposed to identify a "route" in the spir
 (spirit.app.<name>)"*, *"a job cannot start if it is already running"*, and *"cw, box that only jobs in the app folder
 with node:run:true can be started with jobs.create"*.
 
-A real node on a scratch copy of the tracked files, desk switched on; throwaway apps planted in that copy (`zzRun`, a run
+A real node on a lab node reset to the files under test (goal/G47.3), desk switched on; throwaway apps planted in that copy (`zzRun`, a run
 app; `zzMount`, an app without node run) and a script in no app folder. Never a live node.
 
 ### Requirements
@@ -92,7 +92,7 @@ fucking cheat with the fucking tests!!!!!!!!!!!!!!!!!!!!"*, *"put those in spiri
 node."*, *"cache, which is written by spirit/appServer.js was ALWAYS supposed to go into spirit/state/<name>/cache/"*,
 *"app data, which is written by the app, was ALWAYS supposed to go into spirit/state/<name>/data/"*.
 
-A real node on a scratch copy of the tracked files with no `run:/process` and no `relay-state` in it; every app whose
+A real node on a lab node reset to the files under test (goal/G47.3) with no `run:/process` and no `relay-state` in it; every app whose
 `<name>.json` says `node.mount` true switched on, read from the app folders (Andy: *"where is the test that verifies that
 an app who claims to be mountable, ACTUALLY can be mounted?"*), each judged on its own: it starts and answers its api.
 Never a live node.
@@ -139,7 +139,7 @@ The tree is read as it is. The watcher runs in a child process on a scratch fold
 - **The core flag is kept on the file list** (goal/G47.1; Andy: *"stick that flag on the fucking file list, then you have to
   check each file once with isCore()"*): the fs-watcher job on the run folder, its tree asked twice, reads no app's
   <name>.json from disc; spirit/spirit.js comes with core, spirit/app/icons/icons.js (its json says intrinsic false)
-  without, icons.json itself with. The flag follows an app's json: on a scratch copy of the run folder, a planted app
+  without, icons.json itself with. The flag follows an app's json: on a lab node reset to the files under test (goal/G47.3), a planted app
   zzKept whose json says intrinsic false has zzKept.js without core; the json changed to intrinsic true, zzKept.js comes
   with core; changed back, without again.
 - **No file names spirit/run/node_modules.** That covers the .gitignore exception and the two installers.

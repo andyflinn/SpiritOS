@@ -29,7 +29,7 @@ its wrapper part (below).
 
 ## The wrapper part: spirit/app/info/element.js: Info, a wrapper mounted the new shell's way
 
-goal/G43.24, requirements 1 to 7, for Info. Its test is the wrapper part of `./element.js`: the tree read as it is, `./element.js` run (its own checks, not this part again), then a real node on a scratch copy of the tree's files (tracked and new, not ignored) and real clicks in a real Chrome on `/face.html`, on the shell app (`spirit/app/app/element.js`) as boot.js draws it.
+goal/G43.24, requirements 1 to 7, for Info. Its test is the wrapper part of `./element.js`: the tree read as it is, `./element.js` run (its own checks, not this part again), then a real node on a lab node reset to the files under test (goal/G47.3) (tracked and new, not ignored) and real clicks in a real Chrome on `/face.html`, on the shell app (`spirit/app/app/element.js`) as boot.js draws it.
 
 Andy: *"i just moved them, didn't fix the manifest."* (4f01465b: shell/info is spirit/app/info/, shell/grants is spirit/app/grants/), *"no i want those apps to basically be wrappers for spirit/element/ things...."*, and *"box that these apps must mount in the new format of the new shell."*
 

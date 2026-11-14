@@ -2,7 +2,7 @@
 
 testicle is the test app (goal/G45): a robot that keeps the product tree's test status. This item, goal/G45.1, builds only
 its first-cut face; its server, its watch and its database come later, and no table is made or filled here. Its test is
-`./element.js`: a real node on a scratch copy of the tracked files, with planted files of every kind the face must tell
+`./element.js`: a real node on a lab node reset to the files under test (goal/G47.3), with planted files of every kind the face must tell
 apart, and the face mounted in a real Chrome on `/face.html`.
 
 The box: *"a first-cut face of testicle: a workBench with one 📁 icon, its file viewer showing production *.js files

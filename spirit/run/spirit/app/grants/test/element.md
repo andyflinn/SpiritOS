@@ -32,7 +32,7 @@ panel's `grantsPanel.nodeGrants` since goal/G43.24, and what the panel draws and
 
 ## goal/G41.32, in a real browser on a scratch node
 
-On a scratch copy of the tree's files, the Grants app opened from its tile in the shell app on `/face.html`, the box's
+On a lab node reset to the files under test (goal/G47.3), the Grants app opened from its tile in the shell app on `/face.html`, the box's
 bundle lines judged by real clicks: no Edit or Delete in the pane; a row pressed opens a closable tab in the app's own tab
 row, named owner-bundle (Andy: *"the tabs should name owner-bundle"*), its close button small and on the tab's right; the
 same row again makes that tab active; the close button takes the tab away and the bundle stays. The branchEditor has a
@@ -52,7 +52,7 @@ pane has no Edit or Delete, and a press throws nothing.
 
 ## The wrapper part: spirit/app/grants/element.js: Grants, a wrapper mounted the new shell's way
 
-goal/G43.24, requirements 1 to 7, for Grants. Its test is the wrapper part of `./element.js`: the tree read as it is, `./element.js` run (its own checks, not this part again), then a real node on a scratch copy of the tree's files (tracked and new, not ignored) and real clicks in a real Chrome on `/face.html`, on the shell app (`spirit/app/app/element.js`) as boot.js draws it.
+goal/G43.24, requirements 1 to 7, for Grants. Its test is the wrapper part of `./element.js`: the tree read as it is, `./element.js` run (its own checks, not this part again), then a real node on a lab node reset to the files under test (goal/G47.3) (tracked and new, not ignored) and real clicks in a real Chrome on `/face.html`, on the shell app (`spirit/app/app/element.js`) as boot.js draws it.
 
 Andy: *"i just moved them, didn't fix the manifest."* (4f01465b: shell/info is spirit/app/info/, shell/grants is spirit/app/grants/), *"no i want those apps to basically be wrappers for spirit/element/ things...."*, and *"box that these apps must mount in the new format of the new shell."*
 

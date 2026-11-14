@@ -13,7 +13,7 @@ The lab suites are in `spirit/test/`: [`labLifecycle.js`](../labLifecycle.js),
 ## Running the lab by hand
 
 ```
-node spirit/test/labMaster/labMaster.js        the panel on :65420
+node lab/labMaster.js        the panel on :65420
 ```
 
 (`labPopulate.js`, which built a whole world in one command, went as a
@@ -84,7 +84,7 @@ Two things worth knowing:
   first. It does not say which port is the problem, so check before
   running it.
 - **Stop nodes by LISTENING PORT, not by matching the command line.**
-  labMaster is launched with a relative path (`spirit/test/labMaster/…`),
+  labMaster is launched with a relative path (`lab/…`),
   so a filter on `SpiritOS` matches every node but that one — which is
   the one holding 65420.
 

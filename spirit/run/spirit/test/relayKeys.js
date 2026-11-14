@@ -11,6 +11,8 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..');
+// Every node this test uses is one of lab's (goal/G47.3): its tree by scratchTree, its node by startNodeOn.
+const LABH = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const relayKeys = require(path.join(RUN, 'spirit', 'relayKeys.js'));
 const nodeStore = require(path.join(RUN, 'spirit', 'nodeStore.js'));
@@ -75,10 +77,7 @@ const RKEY = 'rescue-relay-key-' + process.pid;
 const relaysText = JSON.stringify([{ url: RURL, label: 'rescue relay' }]);
 const keysText = JSON.stringify({ [RURL]: { publicKey: RKEY, acceptedAt: '2026-01-01T00:00:00.000Z' } });
 test.run('the world: spirit/state/relays.json and relayKeys.json planted in a scratch copy of the tracked files', 0.2, function () {
-  W.root = fs.mkdtempSync(path.join(os.tmpdir(), 'nr-keys-'));
-  const files = execSync('git ls-files -- spirit/run', { cwd: REPO, encoding: 'utf8' }).split('\n').filter(Boolean)
-    .filter(function (f) { return fs.existsSync(path.join(REPO, f)); });
-  files.forEach(function (f) { const d = path.join(W.root, f); fs.mkdirSync(path.dirname(d), { recursive: true }); fs.copyFileSync(path.join(REPO, f), d); });
+  W.root = LABH.scratchTree().root;
   W.run = path.join(W.root, 'spirit', 'run');
   put(path.join(W.run, 'spirit', 'state', 'relays.json'), relaysText);
   put(path.join(W.run, 'spirit', 'state', 'relayKeys.json'), keysText);
@@ -88,7 +87,7 @@ test.run('the world: spirit/state/relays.json and relayKeys.json planted in a sc
 test.run('the world: the scratch node came up', 0.2, async function () {
   if (!W.run) return 'no scratch tree: the world failed';
   const port = await freePort();
-  W.child = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], { cwd: W.run, stdio: 'ignore' });
+  W.child = LABH.startNodeOn(W.run, port);
   const base = 'http://127.0.0.1:' + port;
   W.up = !!(await until(function () {
     return fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'api', args: {} }) }).then(function (r) { return r.status === 200; });
@@ -130,5 +129,5 @@ test.after(async function () {
   if (W.home) { try { fs.rmSync(W.home, { recursive: true, force: true }); } catch (e) { /* scratch */ } }
   try { if (W.child) W.child.kill(); } catch (e) { /* gone */ }
   await sleep(500);
-  if (W.root) { try { fs.rmSync(W.root, { recursive: true, force: true }); } catch (e) { /* scratch */ } }
+  if (W.root) { try { LABH.freeTree(W); } catch (e) { /* scratch */ } }
 });

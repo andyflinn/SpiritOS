@@ -176,3 +176,9 @@ app-state/
 # vault), so no line above names a path there.
 /spirit/run/*
 !/spirit/run/spirit/
+
+# THE LAB (goal/G47.3, the box: "repo://lab/node/ is .gitignored"; "lab has its own local repo, inside a .gitignored
+# repo://lab/<name>/"): lab's own repo, lab/repo/, and its nodes and relays, lab/node/, made on this machine by
+# lab/labNodes.js and never shared. Their lock and pid files live there too.
+/lab/node/
+/lab/repo/

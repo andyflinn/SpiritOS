@@ -3,7 +3,7 @@
 # facts about one machine and the whole point of it is that they are NOT
 # shared: a file at a shared path is not shared if its contents name one box.
 #
-# WHY IT EXISTS. Every question `spirit/test/tools/box.js` asks is otherwise
+# WHY IT EXISTS. Every question `lab/tools/box.js` asks is otherwise
 # answered by an environment variable, and on a box where nothing sets them
 # the suites stand down — so the one run that produces the board does not
 # exercise what it was written to exercise. wsl-claude, 2026-09-24, having
@@ -24,7 +24,7 @@
 # vault lives in Andy's checkout, and only the box can say so.
 # vault = /home/andy/SpiritOS/spirit/run/brains
 
-# Where `spirit/test/tools/say.js` reads the message it is about to send.
+# Where `lab/tools/say.js` reads the message it is about to send.
 # outbox = /home/andy/.../scratchpad/outbox.txt
 
 # A NOTE ON PATH DIALECT, learned by getting it wrong: this file is read by

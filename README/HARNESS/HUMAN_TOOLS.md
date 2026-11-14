@@ -43,21 +43,16 @@ The lab suites, which spawn real relays and nodes, are in the harness since
 2026-09-15 (`runAll.js`, *THE LAB SUITES ARE IN THE HARNESS*); `runAll.js`
 starts labMaster before the first lane.
 
-`visualScenarios.js` always runs last, on purpose: it reads the other
-suites off disk, so it should be answering for the tree as the run leaves
-it.
-
 The world builder this page also described, `spirit/test/labPopulate.js`, was
-deleted as a stale test in goal/G43.23 (885f1ab5). The worlds it built,
-`spirit/test/visual/*.visual.json`, stay; `visualScenarios.js` and
-`presenceShow.js` read them.
+deleted as a stale test in goal/G43.23 (885f1ab5). The worlds it built went
+in goal/G47.3, with nothing left to read them.
 
 ---
 
 ## 2. The lab panel
 
 ```
-node spirit/test/labMaster/labMaster.js
+node lab/labMaster.js
 ```
 
 Panel: **`http://localhost:65420`** — fixed bookmark, bound to loopback.
@@ -115,11 +110,11 @@ suites have run in `npm test` since that day (above).
 
 - **`natterIntrinsic.js` — 2 red** in `npm test`. Pre-existing; reproduces
   identically at `fbf9ebf`, before the current run of work started.
-- **Nothing in `spirit/test/labMaster/*.test.js` is run by `npm test`.**
+- **Nothing in `lab/*.test.js` is run by `npm test`.**
   `runAll.js` reads only files sitting *directly* in `spirit/test/`. Five
   of those six lab tests were already red before the ring was deleted, and
   nothing would have told anybody. Numbers in
-  `spirit/test/labMaster/STATE.md`.
+  `lab/STATE.md`.
 - **`liveFrontDoor.js` fails before it starts:**
   `could not build the lab: mint alfa: lab owner could not open a stream: 403`.
   That is `labWorld.build`, not the front door it is meant to test. (The

@@ -1,7 +1,7 @@
 'use strict';
 
 // Local lab control plane. Always http://127.0.0.1:65420
-// Not copied into fake nodes (lives under spirit/test/).
+// Not copied into fake nodes (lives in repo://lab/, goal/G47.3).
 //
 // What it is, why each guard is here and the HTTP surface:
 //   design/cleanup/2026-09-11-labmaster.md
@@ -29,7 +29,7 @@ let runLock = ''; // who holds the one-run-per-host lock (goal/G8.9), '' when fr
 const LAB_PORT_MIN = labPaths.LAB_PORT_MIN;
 const LAB_PORT_MAX = labPaths.LAB_PORT_MAX;
 
-const REPO_ROOT = path.join(__dirname, '..', '..', '..');
+const REPO_ROOT = path.join(__dirname, '..');
 const WORK_HOME = path.join(REPO_ROOT, 'spirit', 'run');
 
 // ── WHERE A LAB NODE LIVES, AND WHY IT IS NOT %TEMP% ─────────────────
@@ -953,7 +953,7 @@ async function postToRelayVia(nodeUrl, relayUrl, body) {
   // GET /api/relay/key).
   let key = '';
   try {
-    const card = await require('../relayDoor').relayKeyOf(relayUrl);
+    const card = await require(path.join(REPO_ROOT, 'spirit', 'test', 'relayDoor')).relayKeyOf(relayUrl);
     key = (card && card.relayPublicKey) || '';
   } catch (e) { key = ''; }
   if (!key) return { ok: false, status: 0, body: null, text: 'relay did not say what its key is' };
@@ -1060,7 +1060,7 @@ async function liveWorldReport(peerNode, peerName) {
   // (goal/G43.23), so this finds no seat the node holds now.
   // Reachable when it answers a card ask on its one door (goal/G22.6 closed
   // GET /api/relay/key).
-  const up = !!(await require('../relayDoor').relayKeyOf(LIVE_RELAY).catch(function () { return null; }));
+  const up = !!(await require(path.join(REPO_ROOT, 'spirit', 'test', 'relayDoor')).relayKeyOf(LIVE_RELAY).catch(function () { return null; }));
 
   function seatedAt(home, url) {
     const book = readJson(path.join(home, 'spirit', 'state', 'relayKeys.json'), {});
@@ -1183,7 +1183,7 @@ async function buildLiveWorld(body) {
   // wrong, the claim below answers `409 key already claimed` and says so,
   // which is the relay's own answer rather than a list to search.
   // A card ask on its one door (goal/G22.6 closed GET /api/relay/key).
-  const liveKey = await require('../relayDoor').relayKeyOf(LIVE_RELAY).catch(function () { return null; });
+  const liveKey = await require(path.join(REPO_ROOT, 'spirit', 'test', 'relayDoor')).relayKeyOf(LIVE_RELAY).catch(function () { return null; });
   if (!liveKey) return { status: 502, error: 'spirit-3 did not answer a card ask' };
 
   const peerBook = readJson(
@@ -1193,7 +1193,7 @@ async function buildLiveWorld(body) {
   if (already) {
     steps.push(peerName + ' already has a row on spirit-3');
   } else {
-    const auth = require('../../run/spirit/relayAuth');
+    const auth = require(path.join(REPO_ROOT, 'spirit', 'run', 'spirit', 'relayAuth'));
     // ASKED OF THE WORK NODE, not of spirit-3 directly.
     //
     // /api/relay/invite is gone (decision 0010): a mint is a post to the
@@ -1216,7 +1216,7 @@ async function buildLiveWorld(body) {
     }
     // A claim is a post on the relay's one door, sealed to the key the card
     // ask learnt (goal/G22.6 closed POST /api/relay/claim).
-    const joined = await require('../relayDoor').claimOnDoor(LIVE_RELAY, peerId, {
+    const joined = await require(path.join(REPO_ROOT, 'spirit', 'test', 'relayDoor')).claimOnDoor(LIVE_RELAY, peerId, {
       name: peerName,
       sig: auth.sign(peerId.privateKey, auth.claimMessage(peerName)),
       invite: token,

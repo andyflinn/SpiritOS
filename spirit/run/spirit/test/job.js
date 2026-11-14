@@ -17,6 +17,8 @@ const os = require('os');
 const path = require('path');
 const { spawn, execSync, spawnSync } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..');
+// Every node this test uses is one of lab's (goal/G47.3): its tree by scratchTree, its node by startNodeOn.
+const LABH = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 const REPO = path.resolve(RUN, '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
@@ -27,7 +29,7 @@ function long(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).
 const WAIT_MS = 1500;
 function stop(node) {
   try { if (node && node.child) node.child.kill(); } catch (e) { /* gone */ }
-  try { if (node && node.root) fs.rmSync(node.root, { recursive: true, force: true }); } catch (e) { /* scratch */ }
+  try { if (node && node.root) LABH.freeTree(node); } catch (e) { /* scratch */ }
 }
 
 // ── job.create starts this node's processes, and no other program (goal/G41.30, RH1) ──
@@ -536,21 +538,18 @@ const answersApi = function (name) {
 
 // stateLayout: spirit/state/<name>/ holds node.json, cache/, data/ and door.sock, and nothing else; no relay-state, no process (goal/G43.20)
 test.run('the world: the node starts on a tree with no run:/process folder', 0.2, async function () {
-  if (RT.node && RT.node.child) RT.node.child.kill();
+  if (RT.node) { LABH.freeTree(RT.node); RT.node = null; }
   SL.servers = fs.readdirSync(APPS).filter(function (n) {
     try { const j = JSON.parse(fs.readFileSync(path.join(APPS, n, n + '.json'), 'utf8')); return !!(j.node && j.node.mount === true); } catch (e) { return false; }
   });
-  // A scratch copy of the tracked files, its run:/process taken out before the node starts.
-  SL.root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-state-layout-'));
-  execSync('git ls-files -- spirit/run', { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(Boolean)
-    .filter(function (f) { return fs.existsSync(path.join(REPO, f)); })
-    .forEach(function (f) { const d = path.join(SL.root, f); fs.mkdirSync(path.dirname(d), { recursive: true }); fs.copyFileSync(path.join(REPO, f), d); });
+  // A lab node's tree (goal/G47.3), its run:/process taken out before the node starts.
+  SL.root = LABH.scratchTree().root;
   SL.run = path.join(SL.root, 'spirit', 'run');
   SL.state = path.join(SL.run, 'spirit', 'state');
   fs.rmSync(path.join(SL.run, 'process'), { recursive: true, force: true });
   fs.rmSync(path.join(SL.run, 'relay-state'), { recursive: true, force: true });
   SL.port = await H.freePort();
-  SL.child = spawn(process.execPath, ['spirit/server.js', '--port', String(SL.port)], { cwd: SL.run, stdio: 'ignore' });
+  SL.child = LABH.startNodeOn(SL.run, SL.port);
   SL.base = 'http://127.0.0.1:' + SL.port;
   const up = await H.until(function () { return sask('api', {}).then(function (r) { return r.status === 200; }); }, 60000);
   return up ? true : 'the node did not come up with no run:/process';
@@ -558,7 +557,7 @@ test.run('the world: the node starts on a tree with no run:/process folder', 0.2
 test.after(async function () {
   try { if (SL.child) SL.child.kill(); } catch (e) { /* gone */ }
   await H.sleep(500);
-  try { if (SL.root) fs.rmSync(SL.root, { recursive: true, force: true }); } catch (e) { /* scratch */ }
+  try { if (SL.root) LABH.freeTree(SL); } catch (e) { /* scratch */ }
 });
 
 // the node starts its apps with no process/ folder
@@ -659,7 +658,7 @@ test.run('backup switched off and on: the layout holds, nothing out of place', 0
 test.run('the node comes back after a kill', 0.2, async function () {
   try { SL.child.kill('SIGKILL'); } catch (e) { /* gone */ }
   await H.sleep(1500);
-  SL.child = spawn(process.execPath, ['spirit/server.js', '--port', String(SL.port)], { cwd: SL.run, stdio: 'ignore' });
+  SL.child = LABH.startNodeOn(SL.run, SL.port);
   const back = await H.until(function () { return sask('api', {}).then(function (r) { return r.status === 200; }); }, 60000);
   return back ? true : 'the node did not come back';
 }, test.limit.slow);
@@ -874,12 +873,9 @@ test.run('and its own json comes with core: spirit/app/icons/icons.json', 0.2, f
 // tree is never asked to read a json as it is sent.
 let flagged = null;
 test.run('the world: a scratch tree, an app zzKept whose json turns intrinsic true and back, its file\'s core flag read after each', 0.2, function () {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-job-core-'));
+  const tree = LABH.scratchTree();
+  const root = tree.root;
   try {
-    const REPO = path.resolve(RUN, '..', '..');
-    execSync('git ls-files -- spirit/run', { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(Boolean)
-      .filter(function (f) { return fs.existsSync(path.join(REPO, f)); })
-      .forEach(function (f) { const d = path.join(root, f); fs.mkdirSync(path.dirname(d), { recursive: true }); fs.copyFileSync(path.join(REPO, f), d); });
     const run = path.join(root, 'spirit', 'run');
     const app = path.join(run, 'spirit', 'app', 'zzKept');
     fs.mkdirSync(app, { recursive: true });
@@ -909,7 +905,7 @@ test.run('the world: a scratch tree, an app zzKept whose json turns intrinsic tr
     const r = spawnSync(process.execPath, ['-e', src, run], { cwd: run, encoding: 'utf8', timeout: 60000 });
     try { flagged = JSON.parse(String(r.stdout || '').trim().split('\n').pop()); } catch (e) { flagged = null; }
     return !!flagged || 'the child said ' + long(r.stdout) + ' ' + long(r.stderr);
-  } finally { try { fs.rmSync(root, { recursive: true, force: true }); } catch (e) { /* scratch */ } }
+  } finally { LABH.freeTree(tree); }
 }, test.limit.long);
 test.run('an app\'s file whose json says intrinsic false comes without core: zzKept.js', 0.2, function () {
   if (!flagged) return 'the scratch tree was not watched: the world failed';

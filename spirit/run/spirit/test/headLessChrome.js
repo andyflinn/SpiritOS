@@ -95,46 +95,117 @@ function findChrome() {
   return '';
 }
 
-// A scratch copy of the tracked files of spirit/run, its node started on a free port. o.servers names app servers turned
-// on before it starts, as their owner turns one on: an app of spirit/app/<name>/ runs by active in
-// spirit/state/<name>/node.json (goal/G43.12, spirit/job.js), every server being one since goal/G43.20.
+// THE LAB NODES (goal/G47.3, the box: "the move: headLessChrome.js scratchNode hands out a reset lab node instead of a
+// fresh copy"): every node and relay a test uses is one of lab's, in the git-ignored repo://lab/node/, handed out by
+// lab/labNodes.js, holding the files under test, reset before it is handed out, one test on it at a time.
+// Found where it lives: repo://lab/ of the checkout, or, run from inside a lab node (repo://lab/node/<name>/), the lab that
+// node belongs to. Loaded when a node is first asked for, so a test using only the page helpers needs no lab.
+let LAB_MODULE = null;
+const LAB = {
+  get: function () {
+    if (LAB_MODULE) return LAB_MODULE;
+    const own = path.join(REPO, 'lab', 'labNodes.js');
+    const outer = path.join(REPO, '..', '..', 'labNodes.js');
+    const at = fs.existsSync(own) ? own : (path.basename(path.dirname(REPO)) === 'node' && fs.existsSync(outer)) ? outer : '';
+    if (!at) throw new Error('no lab: neither ' + own + ' nor a lab around ' + REPO);
+    LAB_MODULE = require(at);
+    return LAB_MODULE;
+  },
+  handOut: function (kind) { return LAB.get().handOut(kind); },
+  handOutSync: function (kind) { return LAB.get().handOutSync(kind); },
+};
+
+// A node started on a lab node's tree on a free port (or o.port), until it answers, its DEBUG on by the node's own verb (the
+// DEBUG page is answered only then). Answers { child, base, port, up, debug }.
+async function startNode(lab, port) {
+  const at = port || await freePort();
+  const child = spawn(process.execPath, ['spirit/server.js', '--port', String(at)], { cwd: lab.run, stdio: 'ignore' });
+  lab.started(child.pid);
+  const base = 'http://127.0.0.1:' + at;
+  const up = await until(function () {
+    return fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'api', args: {} }) }).then(function (r) { return r.status === 200; });
+  }, 60000);
+  const debug = up ? await fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'node.debug', args: { debug: { on: true } } }) })
+    .then(function (r) { return r.json(); }).then(function (b) { return !!(b && b.debug === true); }, function () { return false; }) : false;
+  return { child: child, base: base, port: at, up: up, debug: debug };
+}
+function stopChild(child) { return new Promise(function (r) { if (!child || child.exitCode !== null) return r(); child.once('exit', function () { r(); }); try { child.kill(); } catch (e) { r(); } setTimeout(r, 6000); }); }
+
+// A lab node, reset to the files under test, its node started. o.servers names app servers turned on before it starts, as
+// their owner turns one on: an app of spirit/app/<name>/ runs by active in spirit/state/<name>/node.json (goal/G43.12,
+// spirit/job.js), every server being one since goal/G43.20. o.before(run), when given, plants what the test needs in the
+// tree before the node starts; o.start false hands out the tree with no node, for start() later; o.port a port of the
+// test's own. Answers { root, run, base, port, child, up, debug, start(), stop(), restart(), release() }: stop() ends the
+// node, restart() starts it again on the same tree and port, release() frees the lab node for the next test (it is freed
+// anyway when this process ends).
 async function scratchNode(o) {
+  const opts = o || {};
   // One node for a whole run of every file (below): the run that started this one hands its address on.
   if (process.env.SPIRIT_MOUNT_BASE) return { base: process.env.SPIRIT_MOUNT_BASE, child: null, root: '', up: true, debug: true, shared: true };
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-shell-child-'));
-  const files = execSync('git ls-files -- spirit/run', { cwd: REPO, encoding: 'utf8' }).split('\n').filter(Boolean)
-    .filter(function (f) { return fs.existsSync(path.join(REPO, f)); });
-  files.forEach(function (f) { const d = path.join(root, f); fs.mkdirSync(path.dirname(d), { recursive: true }); fs.copyFileSync(path.join(REPO, f), d); });
-  const run = path.join(root, 'spirit', 'run');
-  ((o && o.servers) || []).forEach(function (name) {
+  const lab = await LAB.handOut('node');
+  const run = lab.run;
+  trees.set(path.resolve(run), lab);
+  (opts.servers || []).forEach(function (name) {
     const dir = path.join(run, 'spirit', 'state', name);
     fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(path.join(dir, 'node.json'), JSON.stringify({ active: true }));
   });
-  const port = await freePort();
-  const child = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], { cwd: run, stdio: 'ignore' });
-  const base = 'http://127.0.0.1:' + port;
-  const up = await until(function () {
-    return fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'api', args: {} }) }).then(function (r) { return r.status === 200; });
-  }, 60000);
-  // ITS DEBUG ON, by the node's own verb: the DEBUG page is answered only then.
-  const debug = up ? await fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'node.debug', args: { debug: { on: true } } }) })
-    .then(function (r) { return r.json(); }).then(function (b) { return !!(b && b.debug === true); }, function () { return false; }) : false;
-  return { root: root, base: base, child: child, up: up, debug: debug };
+  if (typeof opts.before === 'function') await opts.before(run);
+  const n = { root: lab.root, run: run, name: lab.name, base: '', port: opts.port || 0, child: null, up: false, debug: false };
+  n.start = async function () {
+    const s = await startNode(lab, n.port);
+    Object.assign(n, s);
+    return n.up;
+  };
+  n.stop = function () { const c = n.child; n.up = false; return stopChild(c); };
+  n.restart = async function () { await n.stop(); return n.start(); };
+  n.release = async function () { await n.stop(); lab.release(); };
+  if (opts.start !== false) await n.start();
+  return n;
+}
+
+// THE TREE ONLY, FOR A TEST THAT MAKES ITS WORLD IN PLAIN FUNCTIONS (goal/G47.3): a lab node reset to the files under test,
+// no node on it yet, handed out without a promise. Answers { root, run, release() }; the test plants what it needs in run
+// and starts its node there by startNodeOn, as often as it restarts it. Freed when this process ends.
+const trees = new Map();
+function scratchTree() {
+  const lab = LAB.handOutSync('node');
+  trees.set(path.resolve(lab.run), lab);
+  return { root: lab.root, run: lab.run, name: lab.name, release: function () { trees.delete(path.resolve(lab.run)); lab.release(); } };
+}
+// THE NODE ON IT: spirit/server.js on that tree's spirit/run on the port the test chose, the child answered at once, as a
+// test's own spawn did (o.stdio as spawn's, 'ignore' unless given). Only a tree lab handed out to this process: every node
+// a test uses is one of lab's (the box: "the lab nodes are to satisfy the testing needs").
+function startNodeOn(run, port, o) {
+  const lab = trees.get(path.resolve(run));
+  if (!lab) throw new Error('startNodeOn: ' + run + ' is no lab node handed out by scratchTree');
+  const child = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], Object.assign({ cwd: lab.run, stdio: 'ignore' }, (o && o.stdio) ? { stdio: o.stdio } : {}, (o && o.windowsHide) ? { windowsHide: true } : {}));
+  lab.started(child.pid);
+  return child;
+}
+
+// A TEST DONE WITH ITS LAB NODE frees it, never deletes it: lab resets it for the next test (the box: "the lab nodes made
+// once, instead of one copy of the tree per test run"). x is what scratchTree, scratchNode or a test's own world named
+// { root, run } handed it; anything else is left alone.
+function freeTree(x) {
+  if (!x) return;
+  if (typeof x.release === 'function') { try { x.release(); } catch (e) { /* freed when this process ends */ } return; }
+  const run = path.resolve(x.run || path.join(String(x.root || ''), 'spirit', 'run'));
+  const lab = trees.get(run);
+  if (lab) { trees.delete(run); lab.release(); }
 }
 
 // A SCRATCH RELAY (goal/G41.30; Andy: "The relay's door is not tested yet: there is no scratch relay helper. - close
-// this gap, dammit!"): a scratch copy of the tracked files of spirit/run, a relay identity planted and an owner written
-// as a relay is installed (o.owner, an identity of relayAuth's; one is made when none is given), its face domain
-// (o.faceDomain, spirit/state/face.json), and relayServer.js started on a free port with its spirit object's DEBUG on
-// when o.debug, until it answers. Never a live relay.
+// this gap, dammit!"): one of lab's two relays (goal/G47.3; Andy: "i specifically wanted two of them so that we can test
+// members of one relay talking to members of another."), reset to the files under test, a relay identity planted and an
+// owner written as a relay is installed (o.owner, an identity of relayAuth's; one is made when none is given), its face
+// domain (o.faceDomain, spirit/state/face.json), and relayServer.js started on a free port with its spirit object's DEBUG
+// on when o.debug, until it answers. Never a live relay.
 async function scratchRelay(o) {
   const opts = o || {};
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-relay-child-'));
-  const files = execSync('git ls-files -- spirit/run', { cwd: REPO, encoding: 'utf8' }).split('\n').filter(Boolean)
-    .filter(function (f) { return fs.existsSync(path.join(REPO, f)); });
-  files.forEach(function (f) { const d = path.join(root, f); fs.mkdirSync(path.dirname(d), { recursive: true }); fs.copyFileSync(path.join(REPO, f), d); });
-  const run = path.join(root, 'spirit', 'run');
+  const lab = await LAB.handOut('relay');
+  const root = lab.root;
+  const run = lab.run;
   const auth = require(path.join(run, 'spirit', 'relayAuth.js'));
   auth.nameIdentity(run, 'relay');
   const owner = opts.owner || auth.generateIdentity('owner');
@@ -144,13 +215,15 @@ async function scratchRelay(o) {
   const port = await freePort();
   const code = 'require("./spirit/spirit.js").debug(' + (opts.debug ? 'true' : 'false') + '); process.argv[1] = require("path").resolve("spirit/relayServer.js"); require("./spirit/relayServer.js");';
   const child = spawn(process.execPath, ['-e', code], { cwd: run, stdio: 'ignore', env: Object.assign({}, process.env, { PORT: String(port) }) });
+  lab.started(child.pid);
   const base = 'http://127.0.0.1:' + port;
   const up = await until(function () { return fetch(base + '/').then(function (r) { return r.status > 0; }); }, 30000);
-  return { root: root, run: run, base: base, port: port, child: child, up: up, owner: owner, auth: auth };
+  return { root: root, run: run, base: base, port: port, child: child, up: up, owner: owner, auth: auth, name: lab.name,
+    release: async function () { await stopChild(child); lab.release(); } };
 }
 
-// A SCRATCH RELAY WITH FACES (goal/G41.30): scratchRelay's copy, its real relayServer.js and relay.js in a child of their
-// own, so a crash is seen and harms nothing. Members named in o.members are seated by the relay's own join, each with a
+// A SCRATCH RELAY WITH FACES (goal/G41.30): one of lab's two relays as scratchRelay's, its real relayServer.js and relay.js
+// in a child of their own, so a crash is seen and harms nothing. Members named in o.members are seated by the relay's own join, each with a
 // face, its node present (a stream whose lines come back as { stream: name, line }), logged in by its emailed token.
 // Answers { base, port, child, root, auth, relayKey, members: { <name>: { publicKey, privateKey, sid, host } },
 // lines: [{ stream, line }], stop() }, or up false.
@@ -158,11 +231,9 @@ async function scratchFaceRelay(o) {
   const opts = o || {};
   const domain = opts.faceDomain || 'relay.example';
   const names = opts.members || ['harbour', 'quay'];
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-relay-face-'));
-  const files = execSync('git ls-files -- spirit/run', { cwd: REPO, encoding: 'utf8' }).split('\n').filter(Boolean)
-    .filter(function (f) { return fs.existsSync(path.join(REPO, f)); });
-  files.forEach(function (f) { const d = path.join(root, f); fs.mkdirSync(path.dirname(d), { recursive: true }); fs.copyFileSync(path.join(REPO, f), d); });
-  const run = path.join(root, 'spirit', 'run');
+  const lab = await LAB.handOut('relay');
+  const root = lab.root;
+  const run = lab.run;
   const auth = require(path.join(run, 'spirit', 'relayAuth.js'));
   auth.nameIdentity(run, 'relay');
   // Its owner: o.ownerKey, a real node's key that this relay then calls its owner, or a stranger made here.
@@ -187,6 +258,7 @@ async function scratchFaceRelay(o) {
     ' process.on("message", function (m) { if (m && m.setFace) { store.members.setFace(m.setFace[0], m.setFace[1], m.setFace[2]); process.send({ faceSet: m.setFace[1] }); } });' +
     ' process.send({ ready: out });';
   let child = spawn(process.execPath, ['-e', code], { cwd: run, stdio: ['ignore', 'ignore', 'ignore', 'ipc'], env: Object.assign({}, process.env, { PORT: String(port) }) });
+  lab.started(child.pid);
   const base = 'http://127.0.0.1:' + port;
   const lines = [];
   // Every mail the relay sent, for a real node joining it and a face logging in (spirit/test/faceHome.js).
@@ -202,10 +274,12 @@ async function scratchFaceRelay(o) {
       auth.writeOwner(run, key);
       ready = null;
       child = spawn(process.execPath, ['-e', code], { cwd: run, stdio: ['ignore', 'ignore', 'ignore', 'ipc'], env: Object.assign({}, process.env, { PORT: String(port) }) });
+      lab.started(child.pid);
       child.on('message', hear);
       return until(function () { return ready ? fetch(base + '/').then(function (r) { return r.status > 0; }) : false; }, 30000);
     },
-    stop: function () { try { child.kill(); } catch (e) { /* gone */ } try { fs.rmSync(root, { recursive: true, force: true }); } catch (e) { /* scratch */ } } };
+    // Its relay ended and the lab relay freed: lab resets it before the next test, nothing is deleted here.
+    stop: function () { try { child.kill(); } catch (e) { /* gone */ } lab.release(); } };
 }
 
 // Headless Chrome on a scratch profile, and one page of it over the debugging protocol.
@@ -265,4 +339,4 @@ function pageSpirit(s, loaded) {
   return sp;
 }
 
-module.exports = { pageSpirit: pageSpirit, sleep: sleep, until: until, freePort: freePort, appRuns: appRuns, watchRuns: watchRuns, findChrome: findChrome, scratchNode: scratchNode, scratchRelay: scratchRelay, scratchFaceRelay: scratchFaceRelay, chromePage: chromePage, WAIT: WAIT };
+module.exports = { pageSpirit: pageSpirit, sleep: sleep, until: until, freePort: freePort, appRuns: appRuns, watchRuns: watchRuns, findChrome: findChrome, scratchNode: scratchNode, scratchTree: scratchTree, startNodeOn: startNodeOn, freeTree: freeTree, scratchRelay: scratchRelay, scratchFaceRelay: scratchFaceRelay, chromePage: chromePage, WAIT: WAIT };

@@ -44,7 +44,7 @@ the module's name without extension; the generator script's name without `.js`, 
   - What the page does when it runs is judged by the first user, the shell's general rules
     (`spirit/run/spirit/test/spirit-sibling-browser.md`).
 - **garbageArguments**, data: status 200, a JSON type, a list. Each entry is a body for the api door as it is, made
-  from the verbs and argument shapes the server's api answers. For a module whose api the node serves (the testicle server, turned on in the scratch copy,
+  from the verbs and argument shapes the server's api answers. For a module whose api the node serves (the testicle server, turned on in the lab node,
   `/DEBUG/spirit/app/testicle/testicle/garbageArguments.json`):
   - at least one entry for every verb of that module's api;
   - every entry that breaks its verb's shape, thrown at the node's api door (`POST /api/spirit`), is answered with a
@@ -117,7 +117,7 @@ node, DEBUG on`.
 
 ## How it is tried
 
-A scratch copy of the tracked files of `spirit/run`, on servers of their own, on free ports: some verbs change or
+A lab node reset to the files under test (goal/G47.3), on servers of their own, on free ports: some verbs change or
 delete things, so neither Andy's node nor an agent's is touched.
 
 - The node: `spirit/server.js`, its DEBUG switched by its own verb, `node.debug { debug: { on } }`.

@@ -19,6 +19,8 @@ const http = require('http');
 const Module = require('module');
 const { spawnSync } = require('child_process');
 const RUN = path.resolve(__dirname, '../..');
+// Every node this test uses is one of lab's (goal/G47.3): its tree by scratchTree, its node by startNodeOn.
+const LABH = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 const FILE = path.join(__dirname, '..', 'appServer.js');
 const SELF_FILE = __filename;
 const TRANSLATOR = path.join(RUN, 'spirit', 'app', 'desk', 'data.js');
@@ -482,10 +484,7 @@ function mountPart() {
     ].join('\n') + '\n');
   }
   function scratch() {
-    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-app-mount-'));
-    execSync('git ls-files -- spirit/run', { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(Boolean)
-      .filter(function (f) { return fs.existsSync(path.join(REPO, f)); })
-      .forEach(function (f) { const d = path.join(root, f); fs.mkdirSync(path.dirname(d), { recursive: true }); fs.copyFileSync(path.join(REPO, f), d); });
+    const root = LABH.scratchTree().root;
     const run = path.join(root, 'spirit', 'run');
     plantApp(run, NAME, true);
     plantApp(run, 'quiet', false);
@@ -517,7 +516,7 @@ function mountPart() {
   }
   async function boot(run) {
     const port = await freePort();
-    const child = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], { cwd: run, stdio: 'ignore' });
+    const child = LABH.startNodeOn(run, port);
     const base = 'http://127.0.0.1:' + port;
     const up = await until(function () { return call(base, 'api').then(function (r) { return r.status === 200; }); }, 60000);
     return { child: child, base: base, up: !!up };
@@ -559,7 +558,7 @@ function mountPart() {
     live.forEach(function (c) { try { c.kill(); } catch (e) { /* gone */ } });
     if (chrome && chrome.kid) { try { chrome.kid.kill(); } catch (e) { /* gone */ } }
     await new Promise(function (r) { setTimeout(r, 300); });
-    if (s) { try { fs.rmSync(s.root, { recursive: true, force: true }); } catch (e) { /* a door still closing; the temp folder keeps it */ } }
+    if (s) { try { LABH.freeTree(s); } catch (e) { /* a door still closing; the temp folder keeps it */ } }
   });
 
   test.run('the world: a scratch node comes up', 0.2, async function () {

@@ -1094,7 +1094,7 @@ ignored, and being ignored teaches the habit of scrolling past.
 The technique is the **stack-frame probe**: instrument the bottom
 function an interface funnels into, capture the call stack at every
 arrival, keep only the frames in our own code, and report the distinct
-routes. `spirit/test/tools/wirePaths.js` is the first one, built to his
+routes. `lab/tools/wirePaths.js` is the first one, built to his
 specification — *"a ranked summary of all call paths to that bottom. you
 two will spot a culprit in a jiffie"*, *"only the call points in our own
 code"*, and the two-scope filter that made the finding legible: **the

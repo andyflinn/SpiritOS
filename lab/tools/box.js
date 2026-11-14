@@ -1,6 +1,6 @@
 'use strict';
 
-// spirit/test/tools/box.js
+// lab/tools/box.js
 // WHICH BOX IS THIS, AND WHICH AGENT IS ITS AGENT — resolved, never guessed.
 //
 // Read by vaultGuardBattery.js and runAll.js.
@@ -74,7 +74,7 @@ function measure() {
 // Andy's ~/.bashrc or his settings — which are HIS files, and would spend
 // one of his decisions on a thing the tree can hold.
 function spiritbox() {
-  const p = path.join(__dirname, '..', '..', '..', '.spiritbox');
+  const p = path.join(__dirname, '..', '..', '.spiritbox');
   let raw = '';
   try { raw = fs.readFileSync(p, 'utf8'); } catch (e) { return {}; }
   const out = {};
@@ -108,7 +108,7 @@ function isVault(p) {
 function vaultFrom(start, box) {
   const declared = String(process.env.SPIRIT_VAULT || box.vault || '').trim();
   if (declared) return isVault(declared) ? path.resolve(declared) : null;
-  const p = path.join(start, '..', '..', 'run', 'brains');
+  const p = path.join(start, '..', '..', 'spirit', 'run', 'brains');
   return isVault(p) ? path.resolve(p) : null;
 }
 

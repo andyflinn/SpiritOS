@@ -15,6 +15,8 @@ const os = require('os');
 const path = require('path');
 const { spawn, execSync } = require('child_process');
 const RUN = path.resolve(__dirname, '../../../..');
+// Every node this test uses is one of lab's (goal/G47.3): its tree by scratchTree, its node by startNodeOn.
+const LABH = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 const REPO = path.resolve(RUN, '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const { freePort, until, sleep, chromePage, findChrome } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
@@ -27,10 +29,7 @@ const MODULE = 'spirit.app.agent';
 const ROWS = { provider: 'zzProvider', model: 'zzModel', persona: 'zzPersona', job: 'zzJob' };
 
 function scratch() {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-agent-'));
-  execSync('git ls-files -- spirit/run', { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(Boolean)
-    .filter(function (f) { return fs.existsSync(path.join(REPO, f)); })
-    .forEach(function (f) { const d = path.join(root, f); fs.mkdirSync(path.dirname(d), { recursive: true }); fs.copyFileSync(path.join(REPO, f), d); });
+  const root = LABH.scratchTree().root;
   return { root: root, run: path.join(root, 'spirit', 'run') };
 }
 async function call(base, verb, args) {
@@ -42,7 +41,7 @@ async function call(base, verb, args) {
 }
 async function boot(run) {
   const port = await freePort();
-  const child = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], { cwd: run, stdio: 'ignore' });
+  const child = LABH.startNodeOn(run, port);
   const base = 'http://127.0.0.1:' + port;
   const up = await until(function () { return call(base, 'api').then(function (r) { return r.status === 200; }); }, 60000);
   return { child: child, base: base, up: !!up };
@@ -71,7 +70,7 @@ function filesUnder(dir) {
     (live || []).forEach(function (x) { try { x.kill(); } catch (e) { /* gone */ } });
     if (c && c.kid) { try { c.kid.kill(); } catch (e) { /* gone */ } }
     await sleep(300);
-    try { fs.rmSync(s && s.root, { recursive: true, force: true }); } catch (e) { /* a door still closing; the temp folder keeps it */ }
+    try { LABH.freeTree(s); } catch (e) { /* a door still closing; the temp folder keeps it */ }
   });
   test.run('the world: a scratch node comes up', 0.2, async function () {
     if (STOP) return STOP;
@@ -384,7 +383,7 @@ async function rowShows(name) { const hit = await tool(name); return { ok: !!(hi
     try { if (c && c.sock) c.sock.close(); if (c && c.kid) c.kid.kill(); } catch (e) { /* gone */ }
     try { if (c && c.profile) fs.rmSync(c.profile, { recursive: true, force: true }); } catch (e) { /* scratch */ }
     try { if (N && N.child) N.child.kill(); } catch (e) { /* gone */ }
-    try { if (N && N.root) fs.rmSync(N.root, { recursive: true, force: true }); } catch (e) { /* scratch */ }
+    try { if (N && N.root) LABH.freeTree(N); } catch (e) { /* scratch */ }
   });
   test.run('the agent server answers, and a provider stands', 0.2, async function () {
     if (STOP) return STOP;

@@ -1,6 +1,6 @@
 # spirit/element/search/app/serverDEBUG.js
 
-A server's DEBUG, as a rowFormToggle (goal/G43.15). Its test is `./serverDEBUG.js`: a real node on a scratch copy of the tracked files, with a throwaway server app planted before it boots, and a real Chrome on its face page.
+A server's DEBUG, as a rowFormToggle (goal/G43.15). Its test is `./serverDEBUG.js`: a real node on a lab node reset to the files under test (goal/G47.3), with a throwaway server app planted before it boots, and a real Chrome on its face page.
 
 ## Requirements
 

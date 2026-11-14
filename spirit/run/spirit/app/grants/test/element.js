@@ -18,6 +18,8 @@ const vm = require('vm');
 const { spawn, execSync } = require('child_process');
 // spirit/app/grants/test/ -> the run root, four up.
 const RUN = path.resolve(__dirname, '../../../..');
+// Every node this test uses is one of lab's (goal/G47.3): its tree by scratchTree, its node by startNodeOn.
+const LABH = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 const REPO = path.resolve(RUN, '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const FILE = path.join(__dirname, '..', 'element.js');
@@ -79,8 +81,7 @@ function treeFiles() {
     .split('\n').filter(Boolean).filter(function (f) { return fs.existsSync(path.join(REPO, f)) && fs.statSync(path.join(REPO, f)).isFile(); });
 }
 function scratch() {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-grants-'));
-  treeFiles().forEach(function (f) { const d = path.join(root, f); fs.mkdirSync(path.dirname(d), { recursive: true }); fs.copyFileSync(path.join(REPO, f), d); });
+  const root = LABH.scratchTree().root;
   return { root: root, run: path.join(root, 'spirit', 'run') };
 }
 function stop(c) { return new Promise(function (r) { if (!c || c.exitCode !== null) return r(); c.once('exit', function () { r(); }); c.kill(); setTimeout(r, 6000); }); }
@@ -260,7 +261,7 @@ async function closeBundleWorld() {
   try { if (chrome && chrome.sock) chrome.sock.close(); if (chrome && chrome.kid) chrome.kid.kill(); } catch (e) { /* gone */ }
   try { if (chrome && chrome.profile) fs.rmSync(chrome.profile, { recursive: true, force: true }); } catch (e) { /* scratch */ }
   await stop(B.child);
-  if (B.s) { try { fs.rmSync(B.s.root, { recursive: true, force: true }); } catch (e) { /* scratch */ } }
+  if (B.s) { try { LABH.freeTree(B.s); } catch (e) { /* scratch */ } }
 }
 test.after(closeBundleWorld);
 const home = async function (verb, args) {
@@ -285,7 +286,7 @@ const NO_PAGE = 'no Grants app on the page: the world failed';
 test.run('the world: a scratch node comes up for the bundle lines', 0.2, async function () {
   B.s = scratch();
   const port = await H.freePort();
-  B.child = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], { cwd: B.s.run, stdio: 'ignore' });
+  B.child = LABH.startNodeOn(B.s.run, port);
   B.base = 'http://127.0.0.1:' + port;
   B.up = !!(await H.until(function () { return home('api').then(function (r) { return r.status === 200; }); }, 60000));
   return B.up || 'the scratch node did not come up: nothing judged';
@@ -565,7 +566,7 @@ async function wcall(base, verb, args) {
 }
 async function wboot(run) {
   const port = await H.freePort();
-  const child = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], { cwd: run, stdio: 'ignore' });
+  const child = LABH.startNodeOn(run, port);
   const base = 'http://127.0.0.1:' + port;
   const up = await H.until(function () { return wcall(base, 'api').then(function (r) { return r.status === 200; }); }, 60000);
   return { child: child, base: base, up: !!up };
@@ -597,7 +598,7 @@ if (!process.env.SPIRIT_TEST_OWN_ONLY) {
     try { if (R.c && R.c.sock) R.c.sock.close(); } catch (e) { /* gone */ }
     try { if (R.c && R.c.kid) R.c.kid.kill(); } catch (e) { /* gone */ }
     if (R.N) await stop(R.N.child);
-    if (R.s) { try { fs.rmSync(R.s.root, { recursive: true, force: true }); } catch (e) { /* scratch */ } }
+    if (R.s) { try { LABH.freeTree(R.s); } catch (e) { /* scratch */ } }
   });
 
   // wrapper: Grants in spirit/app/, a wrapper mounted the new shell's way (goal/G43.24)

@@ -23,6 +23,8 @@ const test = require('./testReport.js');
 const { until, freePort, findChrome, chromePage, WAIT } = require('./headLessChrome.js');
 
 const RUN = path.join(__dirname, '..', '..');
+// Every node this test uses is one of lab's (goal/G47.3): its tree by scratchTree, its node by startNodeOn.
+const LABH = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 // "a load that is not complete in 3 seconds counts as crash/hang".
 const LOAD_MS = 3000;
 // "classify hard-codes server.js and relayServer.js as node-only": never loaded.
@@ -74,21 +76,11 @@ function loadOnNode(run, rel) {
 
 // THE PAGE SIDE: a fresh face page of the scratch node, the script required there; a thrown error or one the page reported
 // is its answer; not answered in time, a hang.
-// ITS OWN SCRATCH NODE, ON A COPY OF THIS TREE AS IT STANDS (not git's list: a script not yet committed is classified too,
-// and a tree with no git, a test's scratch tree, has one all the same): every file under spirit/run but the node's state,
-// .git and node_modules, then spirit/server.js started there on a free port, its DEBUG on.
-const SKIP_DIRS = ['state', 'app-state', '.git'];
-function copyTree(from, to) {
-  fs.mkdirSync(to, { recursive: true });
-  fs.readdirSync(from, { withFileTypes: true }).forEach(function (d) {
-    if (d.isDirectory()) { if (SKIP_DIRS.indexOf(d.name) === -1) copyTree(path.join(from, d.name), path.join(to, d.name)); }
-    else if (d.isFile()) fs.copyFileSync(path.join(from, d.name), path.join(to, d.name));
-  });
-}
+// ITS OWN SCRATCH NODE, ON A LAB NODE (goal/G47.3) HOLDING THIS TREE AS IT STANDS (its commit and its uncommitted edits, so a
+// script not yet committed is classified too), then spirit/server.js started there on a free port, its DEBUG on.
 async function ownScratch() {
-  const root = fs.mkdtempSync(path.join(require('os').tmpdir(), 'spirit-classify-'));
+  const root = LABH.scratchTree().root;
   const run = path.join(root, 'spirit', 'run');
-  copyTree(RUN, run);
   // EVERY APP'S SERVER ON, testicle's left off (it would classify again inside this one): an app's data.js asks its family's
   // interface on a page, which a node answers only while that server is on; off, the page would fail for the scratch
   // node's sake, not the script's.
@@ -106,7 +98,7 @@ async function ownScratch() {
   fs.writeFileSync(path.join(run, 'spirit', 'test', BARE), '<!doctype html><html><head><meta charset="utf-8"><script>window.pageErrors = [];' +
     ' window.addEventListener("error", function (e) { window.pageErrors.push(String(e.message)); });</script><script src="/spirit.js"></script></head><body></body></html>\n');
   const port = await freePort();
-  const child = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], { cwd: run, stdio: 'ignore', windowsHide: true });
+  const child = LABH.startNodeOn(run, port, { windowsHide: true });
   const base = 'http://127.0.0.1:' + port;
   const post = function (call, args) {
     return fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: call, args: args || {} }) });
@@ -203,5 +195,5 @@ test.after(function () {
   try { if (W.page && W.page.kid) W.page.kid.kill(); } catch (e) { /* gone */ }
   try { if (W.page && W.page.profile) fs.rmSync(W.page.profile, { recursive: true, force: true }); } catch (e) { /* scratch */ }
   try { if (W.node && W.node.child) W.node.child.kill(); } catch (e) { /* gone */ }
-  try { if (W.node && W.node.root) setTimeout(function () { try { fs.rmSync(W.node.root, { recursive: true, force: true }); } catch (e) { /* busy */ } }, 1000); } catch (e) { /* scratch */ }
+  try { if (W.node && W.node.root) setTimeout(function () { try { LABH.freeTree(W.node); } catch (e) { /* busy */ } }, 1000); } catch (e) { /* scratch */ }
 });

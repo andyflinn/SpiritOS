@@ -1,6 +1,6 @@
 # spirit/app/file/element.js
 
-Files in `spirit/app/file/`, as Andy sees it (goal/G43.17). Its test is `./file.js`: the tree read as it is, then a real node on a scratch copy of the tracked files with a planted folder `zzFiles/`, and real clicks in a real Chrome on the appSelector, on the face shell Andy uses, `/face.html`.
+Files in `spirit/app/file/`, as Andy sees it (goal/G43.17). Its test is `./file.js`: the tree read as it is, then a real node on a lab node reset to the files under test (goal/G47.3) with a planted folder `zzFiles/`, and real clicks in a real Chrome on the appSelector, on the face shell Andy uses, `/face.html`.
 
 Andy: *"file should be the same as files is. i don't want to loose all the nice stuff files has..."*
 

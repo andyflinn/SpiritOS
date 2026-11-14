@@ -1,6 +1,6 @@
 # spirit/element/panel.js
 
-What mounts covers its mounter (goal/G43.17; Q12, Andy: *"yes."* to `panel`, in `spirit/element/panel.js`). Its test is `./panel.js`: the tree read as it is, then a real node on a scratch copy of the tracked files, and real clicks in a real Chrome on the appSelector, on `/face.html`.
+What mounts covers its mounter (goal/G43.17; Q12, Andy: *"yes."* to `panel`, in `spirit/element/panel.js`). Its test is `./panel.js`: the tree read as it is, then a real node on a lab node reset to the files under test (goal/G47.3), and real clicks in a real Chrome on the appSelector, on `/face.html`.
 
 ## Requirements
 

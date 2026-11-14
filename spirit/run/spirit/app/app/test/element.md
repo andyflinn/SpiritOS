@@ -64,7 +64,7 @@ Andy, the box: *"spirit app search will list these jobs (node:run) only in pane 
 
 ## The shell part: The shell app, and a shell that replaces itself
 
-goal/G43.18, box v29, *The shell* and *Join*. Its test is `./shell.js`: a real node on a scratch copy of the tracked files, with a shell-worthy app of the test's own (`zzshell`, which draws one line and knows nothing of Join), and real clicks in a real Chrome on `/face.html` at home. The verb itself is judged by `spirit/test/nodeShell.js`.
+goal/G43.18, box v29, *The shell* and *Join*. Its test is `./shell.js`: a real node on a lab node reset to the files under test (goal/G47.3), with a shell-worthy app of the test's own (`zzshell`, which draws one line and knows nothing of Join), and real clicks in a real Chrome on `/face.html` at home. The verb itself is judged by `spirit/test/nodeShell.js`.
 
 ### Requirements
 

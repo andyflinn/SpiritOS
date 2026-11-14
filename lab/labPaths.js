@@ -1,6 +1,6 @@
 'use strict';
 
-// spirit/test/labMaster/labPaths.js
+// lab/labPaths.js
 // WHICH labMaster, AND WHERE ITS THINGS LIVE — one answer, for labMaster
 // itself and for every suite that finds its nodes on disk.
 //
@@ -58,7 +58,7 @@ const PORT_SPAN = 30;
 const HARNESS = PORT !== DEFAULT_PORT;
 const SUFFIX = HARNESS ? '-' + PORT : '';
 
-const REPO_ROOT = path.join(__dirname, '..', '..', '..');
+const REPO_ROOT = path.join(__dirname, '..');
 
 module.exports = {
   DEFAULT_PORT: DEFAULT_PORT,
