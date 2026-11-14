@@ -568,6 +568,18 @@ function apply(changed, P) {
   // bytes (one a run's own reading can cause) never flags it again (wsl's verify: rho's row "flagged again DURING its run,
   // rho.js not touched then", so a killed suite was owed another run, forever). A script's change flags its suites always.
   const suiteChanged = function (file, suite) { const was = Q.suiteRow.get(file, suite); return !was || !!was.deleted || was.hash !== hash(suite); };
+  // A SCRIPT'S ROW AND EVERY SUITE ROW IT IS OWED: its own test and each general test that judges it, then its classifier row.
+  const scriptUp = function (rel) {
+    fileUp(rel);
+    const suites = (P.byFile[rel] || []).slice();
+    const own = ownTestOf(rel);
+    if (there(own) && suites.indexOf(own) === -1) suites.push(own);
+    suites.forEach(function (suite) { suiteUp(rel, suite); });
+    // ITS CLASSIFIER ROW, AT ONCE (box v94, 1: "a \"special\" general test under its own name, with its suite row"; the
+    // box: the rows stand one second after a change): made with the script's own rows, not when the class comes back
+    // (classifierRow then only judges it). Never run as a suite (chooseJob).
+    if (there(CLASSIFY)) { touched(rel, CLASSIFY); Q.putSuite.run(rel, CLASSIFY, hash(CLASSIFY), now); }
+  };
   db.exec('BEGIN');
   try {
     changed.forEach(function (rel) {
@@ -605,21 +617,16 @@ function apply(changed, P) {
         const concerned = (P.bySuite[rel] || []).slice();
         const own = fileOfOwnTest(rel);
         if (there(own) && concerned.indexOf(own) === -1) concerned.push(own);
-        concerned.forEach(function (file) { if (!Q.script.get(file)) fileUp(file); if (suiteChanged(file, rel)) suiteUp(file, rel); });
+        // A SCRIPT WITH NO ROW YET GETS ALL ITS ROWS HERE (goal/G47.1, found by testicle.js's "at once after it is classified"):
+        // its own test written before it made its row with that one suite, and the script's own change then found the same
+        // bytes and stopped, so it never got its general suites until it changed again.
+        concerned.forEach(function (file) { if (!Q.script.get(file)) scriptUp(file); if (suiteChanged(file, rel)) suiteUp(file, rel); });
         return;
       }
       if (!there(rel)) { before('script|' + rel, function () { return Q.script.get(rel); }); Q.goneScript.run(rel, now); files.add(rel); Q.suitesOfScript.all(rel).forEach(function (r) { touched(r.script, r.suite); }); Q.goneSuitesOfScript.run(now, rel); return; }
       const row = Q.script.get(rel);
       if (row && !row.deleted && row.hash === hash(rel)) return; // the same bytes: nothing changed
-      fileUp(rel);
-      const suites = (P.byFile[rel] || []).slice();
-      const own = ownTestOf(rel);
-      if (there(own) && suites.indexOf(own) === -1) suites.push(own);
-      suites.forEach(function (suite) { suiteUp(rel, suite); });
-      // ITS CLASSIFIER ROW, AT ONCE (box v94, 1: "a \"special\" general test under its own name, with its suite row"; the
-      // box: the rows stand one second after a change): made with the script's own rows, not when the class comes back
-      // (classifierRow then only judges it). Never run as a suite (chooseJob).
-      if (there(CLASSIFY)) { touched(rel, CLASSIFY); Q.putSuite.run(rel, CLASSIFY, hash(CLASSIFY), now); }
+      scriptUp(rel);
     });
     db.exec('COMMIT');
   } catch (e) {
