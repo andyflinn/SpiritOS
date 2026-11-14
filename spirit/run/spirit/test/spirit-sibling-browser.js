@@ -52,8 +52,8 @@ const GIVEN = ARGS.filter(function (a, i) { return a.indexOf('--') !== 0 && ARGS
 // manifest mounts one), and named to each script's run (SPIRIT_MOUNT_BASE, SPIRIT_CHROME_PORT), which then draws its page in a
 // fresh page of that Chrome on that node. Measured on Windows before: ~10 s a script, 6.4 s of it a lab node's boot and 0.7 s
 // a Chrome, paid again for every script.
-if (GIVEN.length > 1) {
-  (async function () {
+async function batch() {
+  {
     const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
     const mounted = function (name) {
       try { const m = JSON.parse(fs.readFileSync(path.join(RUN, 'spirit', 'app', name, name + '.json'), 'utf8')); return !!(m && m.node && m.node.mount === true) && fs.existsSync(path.join(RUN, 'spirit', 'app', name, name + '.js')); } catch (e) { return false; }
@@ -80,28 +80,53 @@ if (GIVEN.length > 1) {
       chrome = await H.sharedChrome(found);
       if (!chrome.error) env.SPIRIT_CHROME_PORT = String(chrome.port);
     }
-    let failed = 0;
+    // EACH SCRIPT IN THIS PROCESS (goal/G47.1, box v144): its page drawn on the shared node and Chrome, one after the other, and
+    // only then every script's checks said, each reported for its own script; a process, spirit.js and its reports' wait are
+    // paid once for the run, not once a script.
+    if (env.SPIRIT_MOUNT_BASE) process.env.SPIRIT_MOUNT_BASE = env.SPIRIT_MOUNT_BASE;
+    if (env.SPIRIT_CHROME_PORT) process.env.SPIRIT_CHROME_PORT = env.SPIRIT_CHROME_PORT;
+    // EACH SCRIPT JUDGED AS SOON AS ITS PAGE IS DRAWN (box v144: "every result reaches testicle the moment the page knows it"):
+    // the run held open while the scripts are drawn one after the other, each one's checks said, and run and reported, the
+    // moment its page is done.
+    test.hold();
     for (const one of GIVEN) {
-      const r = require('child_process').spawnSync(process.execPath, [__filename, one], { cwd: RUN, env: env, encoding: 'utf8', maxBuffer: 1 << 26 });
-      process.stdout.write(String(r.stdout || '') + String(r.stderr || ''));
-      if (r.status !== 0) failed += 1;
+      useScript(one);
+      const d = { rel: rel, full: full };
+      d.P = d.full && pageScript(d.rel) ? await bounded(session()) : null;
+      // Its page closed at once: its checks read only what the drawing kept, and twenty pages left open slowed the later ones
+      // past their mount (seen: three never mounted, two read as hung).
+      if (d.P && d.P.page) { try { if (d.P.page.sock) d.P.page.sock.close(); } catch (e) { /* gone */ } try { if (d.P.page.kid) d.P.page.kid.kill(); } catch (e) { /* gone */ } }
+      useScript(d.full || d.rel);
+      test.forScript(d.rel, function () {
+        if (!d.full) test.run('the world: the file handed is there', 0.2, function () { return 'no shell app or element to judge: ' + JSON.stringify(d.rel); }, test.limit.quick);
+        else if (!d.P) test.run('the world: the file handed is a page script of the tree', 0.2, function () { return 'not a script under spirit/ outside a test folder: ' + JSON.stringify(d.rel); }, test.limit.quick);
+        else oneFile(d.P);
+      });
     }
-    if (chrome && chrome.close) chrome.close();
-    if (node) await node.release();
-    process.exit(failed ? 1 : 0);
-  }());
-  return;
+    test.after(async function () {
+      if (chrome && chrome.close) chrome.close();
+      if (node) await node.release();
+    });
+    test.release();
+  }
 }
 let full = '';
 for (const p of [path.resolve(arg), path.join(RUN, arg), path.join(REPO, arg)]) {
   if (arg && fs.existsSync(p) && fs.statSync(p).isFile()) { full = p; break; }
 }
-const rel = full ? path.relative(RUN, full).split(path.sep).join('/') : arg;
+let rel = full ? path.relative(RUN, full).split(path.sep).join('/') : arg;
 // EVERY TEST NAME STARTS WITH THE PATH (goal/G41.19; Andy: "please start the test descriptions always with the exact URL
 // to the server, without \"/DEBUG\" service", and, box v13, "EVERY MOTHERFUCKING TEST NAME in the product three STARTS
 // WITH THE MUTHERCUCKING PATH"): each section is named by the address this file's page is opened at, /DEBUG left off.
-const ADDRESS = '/DEBUG/' + rel.replace(/\.js$/, '') + '/headLessBrowser.html';
-const NAMED = ADDRESS.slice('/DEBUG'.length);
+let ADDRESS = '/DEBUG/' + rel.replace(/\.js$/, '') + '/headLessBrowser.html';
+// ONE SCRIPT OF A BATCH AT A TIME (goal/G47.1, box v144): the file, its path and its page's address, set for each script a
+// batch draws and judges in this one process.
+function useScript(a) {
+  full = '';
+  for (const p of [path.resolve(a), path.join(RUN, a), path.join(REPO, a)]) { if (a && fs.existsSync(p) && fs.statSync(p).isFile()) { full = p; break; } }
+  rel = full ? path.relative(RUN, full).split(path.sep).join('/') : a;
+  ADDRESS = '/DEBUG/' + rel.replace(/\.js$/, '') + '/headLessBrowser.html';
+}
 // WHAT IS MOUNTED IS KNOWN BY ITS PATH (goal/G41.19, box v17; Andy: "the test knows bloody fucking well if a scripts is
 // an app (from the path pattern), why the fuck would would it need manifests for standard patterns?",
 // "the test knows fucking well, which are elements scripts in ./shell/js/"): an app is shell/<app>/<app>.js, an element any script
@@ -154,6 +179,8 @@ const MOST_BYTES = Math.max.apply(null, Object.keys(FIELD_RULES).filter(function
 //           no read verb);
 //   moved: what the box changed while a write was out, other than a busy mark, a button's disabled state or fine print.
 const WATCH = String.raw`(function () {
+  // The longest a probe waits for a redraw before it says none came (a limit, not a wait: its redraw ends it).
+  var PROBE_LIMIT_MS = 1000;
   var W = window.spiritWatch = { net: [], subs: [], writes: [], moved: [], out: 0, searches: [], families: [] };
   var SPIRIT = /(\/spirit\.js|spirit-interface\/|spirit\/client\/|spirit\/data\.js|shell\/boot\.js)$/;
   function frames() { return String(new Error().stack || '').split('\n').slice(1).map(function (l) { return l.trim(); }).filter(function (l) { return l.indexOf('spiritWatch.js') === -1 && /^at /.test(l); }); }
@@ -211,7 +238,7 @@ const WATCH = String.raw`(function () {
     var w = moduleMade() ? isWrite(o && o.body) : null;
     if (!w) return realFetch.apply(this, arguments);
     W.writes.push(w); opened();
-    return realFetch.apply(this, arguments).then(function (r) { setTimeout(closed, 0); return r; }, function (e) { setTimeout(closed, 0); throw e; });
+    return realFetch.apply(this, arguments).then(function (r) { Promise.resolve().then(closed); return r; }, function (e) { Promise.resolve().then(closed); throw e; });
   };
   var xo = XMLHttpRequest.prototype.open;
   XMLHttpRequest.prototype.open = function (m, url) { W.net.push(Object.assign({ kind: 'XMLHttpRequest', url: String(url) }, caller())); return xo.apply(this, arguments); };
@@ -262,7 +289,10 @@ const WATCH = String.raw`(function () {
         var before = whole && typeof D.getPath === 'function' ? D.getPath(at) : undefined;
         var mark = 'zzprobe' + i;
         var changed = 0;
-        var mo = new MutationObserver(function (l) { changed += l.length; });
+        // ENDED BY ITS REDRAW (box v144: no fixed sleeps): the wait ends at the first change of its box; one that never
+        // redraws is given up at the limit, PROBE_LIMIT_MS, red.
+        var redrawn = null;
+        var mo = new MutationObserver(function (l) { changed += l.length; if (redrawn) redrawn(); });
         mo.observe(box, { subtree: true, childList: true, attributes: true, characterData: true });
         // A row that is there keeps its shape, each of its text fields marked, so a reader that checks its fields still
         // takes it; a new row is the marked fields alone.
@@ -272,7 +302,7 @@ const WATCH = String.raw`(function () {
           Object.keys(probe).forEach(function (k) { if (typeof probe[k] === 'string') probe[k] = mark; });
         }
         try { D.setPath(at, probe); } catch (e) { /* the branch refused it */ }
-        return new Promise(function (r) { setTimeout(r, 1000); }).then(function () {
+        return new Promise(function (r) { redrawn = r; setTimeout(r, PROBE_LIMIT_MS); }).then(function () {
           mo.disconnect();
           try { if (whole && before !== undefined) D.setPath(at, before); else D.delPath(at); } catch (e) { /* left */ }
           out.push({ path: p, redrew: changed > 0 });
@@ -549,7 +579,8 @@ function requireOnNode(run, rel) {
     let out = '';
     kid.stdout.on('data', function (d) { out += d; });
     kid.stderr.on('data', function (d) { out += d; });
-    const t = setTimeout(function () { kid.kill('SIGKILL'); }, 20000);
+    // A node load that has not ended by KILL_LIMIT_MS is ended (a limit, not a wait: its own end ends it first).
+    const t = setTimeout(function () { kid.kill('SIGKILL'); }, KILL_LIMIT_MS);
     kid.on('close', function () {
       clearTimeout(t);
       const m = /\n@@(.*)\n/.exec(out);
@@ -659,9 +690,8 @@ function every() {
   test.after(async function () {
     if (E.page) { try { if (E.page.kid) E.page.kid.kill(); } catch (e) { /* gone */ } }
     if (E.node) {
-      try { E.node.child.kill(); } catch (e) { /* gone */ }
-      await sleep(300);
-      try { require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(E.node); } catch (e) { /* scratch */ }
+      // Its node stopped and its lab node freed, by the node's own release: it waits for the node to end, no fixed time.
+      try { await E.node.release(); } catch (e) { /* freed when this process ends */ }
     }
   });
 }
@@ -699,13 +729,14 @@ async function session() {
     P.notes.push('its app\'s server ' + own + ' answers its interface');
   }
   const page = P.page = await chromePage(chrome);
+  drawing = P;
   if (page.error) { P.fail = page.error; return P; }
   // SETTLED, NOT SLEPT (goal/G47.1, box v144: "no fixed sleeps in the checks: each wait ends the moment the page has settled"):
   // nothing of the element's own on the wire (spiritWatch.out), then two frames drawn; never longer than 2 s. The fixed sleeps it
   // replaces (500, 400, 150, 300, 200, 200 ms) were ~2.6 s a script of a run's ~10 s.
   const quiet = async function () {
     const t0 = Date.now();
-    while (Date.now() - t0 < 2000 && await page.evaluate('(window.spiritWatch && window.spiritWatch.out) || 0')) await sleep(20);
+    while (Date.now() - t0 < QUIET_LIMIT_MS && await page.evaluate('(window.spiritWatch && window.spiritWatch.out) || 0')) await sleep(QUIET_POLL_MS);
     await page.evaluate('new Promise(function (r) { requestAnimationFrame(function () { requestAnimationFrame(function () { r(true); }); }); })');
   };
 
@@ -914,12 +945,45 @@ async function session() {
   return P;
 }
 // The session, bounded: one that has not finished in PAGE_MS fails its world, as a hang does.
+// A HUNG PAGE IS GIVEN UP AT ONCE (goal/G47.1, box v144: "only a hung page is reloaded: a main page that does not answer within 1 s
+// is hung"): while a script's page is drawn it is asked twice a second for an answer; one it does not give within 1 s ends that
+// script's session as hung, its page closed, and the run goes on with the next script. Before, a script that never ended held
+// the whole run for PAGE_MS.
+// The page is asked every PING_MS, and one that gives no answer in HANG_MS is hung (limits, not waits).
+const PING_MS = 500;
+// quiet(): asked every QUIET_POLL_MS whether its calls are back, at most QUIET_LIMIT_MS; a node load ended at KILL_LIMIT_MS.
+const QUIET_POLL_MS = 20;
+const QUIET_LIMIT_MS = 2000;
+const KILL_LIMIT_MS = 20000;
+const HANG_MS = 1000;
+let drawing = null;
+let drawingGen = 0;
+function hungPage(gen) {
+  return new Promise(function (resolve) {
+    const tick = async function () {
+      const P = drawing;
+      // Only while its script loads (stage debug page, from its address set until it mounts): after that the page's thread is
+      // busy with the checks' own long reads (typing past every field, probing every box), and busy is not hung.
+      if (P && P.page && P.page.evaluate && P.stage === 'debug page') {
+        const answered = await Promise.race([Promise.resolve(P.page.evaluate('1')).then(function () { return true; }, function () { return true; }), new Promise(function (r) { setTimeout(function () { r(false); }, HANG_MS); })]);
+        if (!answered && gen === drawingGen && drawing === P && P.stage === 'debug page') { try { P.page.kid.kill(); } catch (e) { /* gone */ } if (P.page.shared) await require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).renewChrome(); resolve({ stage: P.stage, fail: 'the page of ' + rel + ' hung: it gave no answer in ' + (HANG_MS / 1000) + ' s while ' + P.stage }); return; }
+      }
+      if (gen === drawingGen) setTimeout(tick, PING_MS); else resolve(null);
+    };
+    setTimeout(tick, PING_MS);
+  });
+}
 function bounded(work) {
-  return Promise.race([work.then(null, function (e) { return { stage: 'chrome', fail: 'it crashed: ' + (e && e.stack || e) }; }),
-    new Promise(function (r) { setTimeout(function () { r({ stage: 'chrome', fail: 'it hung: the page session took more than ' + (PAGE_MS / 1000) + ' s' }); }, PAGE_MS); })]);
+  drawing = null;
+  const gen = ++drawingGen;
+  const stall = hungPage(gen).then(function (h) { return h || new Promise(function () { /* the session ended first */ }); });
+  return Promise.race([work.then(null, function (e) { return { stage: 'chrome', fail: 'it crashed: ' + (e && e.stack || e) }; }), stall,
+    new Promise(function (r) { setTimeout(function () { r({ stage: 'chrome', fail: 'it hung: the page session took more than ' + (PAGE_MS / 1000) + ' s' }); }, PAGE_MS); })]).then(function (P) { drawing = null; if (gen === drawingGen) drawingGen += 1; return P; });
 }
 
 function oneFile(P) {
+  // Its own script, kept: in a batch, rel, full and ADDRESS move on to the next script before its checks run.
+  const ownRel = rel, ownFull = full, ownAddress = ADDRESS;
   // ON ITS PAGE: what the session drew, each rule said as the old checks were.
   test.run('the world: a scratch node with its DEBUG on, and a Chrome page', 0.2, function () {
     (P.notes || []).forEach(function (n) { test.comment(n); });
@@ -928,7 +992,7 @@ function oneFile(P) {
   const before = function () { return P.fail ? 'no page: the world failed' : ''; };
   // <address>: it loads by itself
   test.run('the node answers its DEBUG page for it', 0.4, function () {
-    return before() || P.debugStatus === 200 || ADDRESS + ' answered ' + P.debugStatus;
+    return before() || P.debugStatus === 200 || ownAddress + ' answered ' + P.debugStatus;
   }, test.limit.quick);
   const noMount = function () { return before() || (P.debugStatus !== 200 ? 'no DEBUG page: the world failed' : ''); };
   // A PAGE SCRIPT THAT INSTALLS NO ELEMENT (goal/G47.1, box v121): loaded on the bare page, what it runs is judged; the
@@ -937,11 +1001,11 @@ function oneFile(P) {
     test.run('with no element installed, nothing it runs throws', 0.8, function () { return noMount() || !P.thrown.length || 'thrown: ' + short(P.thrown); }, test.limit.quick);
     test.run('with no element installed, every file it asks for is there', 0.4, function () { return noMount() || !P.missing.length || 'missing: ' + short(P.missing); }, test.limit.quick);
     test.run('with no element installed, it says no error on the console', 0.4, function () { return noMount() || !P.errors.length || 'console: ' + short(P.errors); }, test.limit.quick);
-    unjudged('it installs no element at spirit.element.' + rel.replace(/\.js$/, '').split('/').join('.') + ': the element rules are skipped');
+    unjudged('it installs no element at spirit.element.' + ownRel.replace(/\.js$/, '').split('/').join('.') + ': the element rules are skipped');
     pageAfter(P);
     return;
   }
-  const ownCode = fs.readFileSync(full, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1');
+  const ownCode = fs.readFileSync(ownFull, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1');
   // "if it throws when mounted empty, red at 0.8; this enforces rule 26 (an element loads its own stuff)" (box v121).
   test.run('it mounts by itself on a bare page: spirit.js, then this file alone', 0.8, function () {
     return noMount() || (!!P.report && P.report.state === 'mounted') || 'the page said: ' + short(P.report);
@@ -1042,12 +1106,12 @@ function oneFile(P) {
   const seenProbe = probed.filter(function (x) { return !x.hidden; });
   if (mounted && !probed.length) unjudged('it watches no spirit.data path');
   else if (mounted && !seenProbe.length) unjudged('it shows nothing on this page, so there is nothing to redraw');
-  else if (mounted && OWN_PROOF[rel] && !seenProbe.some(function (x) { return x.redrew; })) {
+  else if (mounted && OWN_PROOF[ownRel] && !seenProbe.some(function (x) { return x.redrew; })) {
     // PROVED IN ITS OWN TEST (Andy, Q24: "Shall deskDetails' own test be the proof that it redraws from the verifier,
     // since the page sweep opens no item?" "yes."): what it watches draws only for an item open, and this page opens
     // none. Its own test is run here, and the check is green only if its own redraw check passed.
     test.run('what it watches redraws it, proved in its own test', 0.4, function () {
-      const p = OWN_PROOF[rel];
+      const p = OWN_PROOF[ownRel];
       const said = require('child_process').spawnSync(process.execPath, [path.join(RUN, p.test)], { cwd: RUN, encoding: 'utf8', timeout: 120000 }).stdout || '';
       return said.split('\n').some(function (l) { return /SUCCESS/.test(l) && l.indexOf(p.check) !== -1; }) || 'its own test (' + p.test + ') did not pass: ' + p.check;
     }, test.limit.long);
@@ -1095,7 +1159,7 @@ function oneFile(P) {
   // ONE EXCEPTION, DEFERRED, AND STILL RED (Andy, the box: "the only exception is introspector, deferred for network-scope
   // design reasons."): the probability search keeps rows of its own for introSpector's selectors over another node, so
   // its own page, mounted bare, still makes one. The red names the deferral; it is not met, so it is not green.
-    const DEFERRED = rel === 'spirit/element/search.js' || rel === 'spirit/element/introSpector.js' || rel === 'spirit/app/introSpector/element.js' ?' (introSpector\'s deferral, the box: "the only exception is introspector, deferred for network-scope design reasons.")' : '';
+    const DEFERRED = ownRel === 'spirit/element/search.js' || ownRel === 'spirit/element/introSpector.js' || ownRel === 'spirit/app/introSpector/element.js' ?' (introSpector\'s deferral, the box: "the only exception is introspector, deferred for network-scope design reasons.")' : '';
   if (mounted && !made.length) unjudged('it makes no search');
   else {
     test.run('its searches are each made with a spirit.data branch, no rows of their own', 0.4, function () {
@@ -1146,13 +1210,15 @@ function pageAfter(P) {
     if (node && !node.shared) {
       try { if (typeof node.release === 'function') await node.release(); else require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* freed when this process ends */ }
     }
-    if (page && page.profile) { await sleep(300); try { fs.rmSync(page.profile, { recursive: true, force: true }); } catch (e) { /* its watcher takes it */ } }
+    // Its own Chrome's profile, once that Chrome has ended (its watcher deletes it too, should a file still be held).
+    if (page && page.profile) { if (page.kid && page.kid.exitCode === null && page.kid.signalCode === null && page.kid.once) await new Promise(function (r) { page.kid.once('exit', r); }); try { fs.rmSync(page.profile, { recursive: true, force: true }); } catch (e) { /* its watcher takes it */ } }
   });
 }
 
 // What it judges: given no file, the tree and every page module; given a file, that file. A page module's page is drawn
 // before its rules are said (session above), so a rule its page gives nothing to judge is never said green.
-if (!arg) every();
+if (GIVEN.length > 1) batch();
+else if (!arg) every();
 else if (!full) {
   test.run('the world: the file handed is there', 0.2, function () { return 'no shell app or element to judge: ' + JSON.stringify(arg); }, test.limit.quick);
 } else if (!pageScript(rel)) {

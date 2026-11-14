@@ -168,10 +168,20 @@ test.forScript = function (script, fn) {
   forScript = String(script || '');
   try { fn(); } finally { forScript = was; }
 };
+// A RUN THAT TAKES TESTS WHILE IT RUNS (goal/G47.1, box v144: "every result reaches testicle the moment the page knows it"): a
+// suite that draws one script after another holds the run open (test.hold), says each script's tests as soon as they are
+// known, and lets it end (test.release); its tests run, and report, as they come. A suite that never holds runs as before:
+// what it said before the first turn, then the end.
+let holds = 0;
+let woken = null;
+function wake() { if (woken) { const w = woken; woken = null; w(); } }
+test.hold = function () { holds += 1; start(); };
+test.release = function () { holds = Math.max(0, holds - 1); wake(); };
 test.run = function (title, severity, body, limitMs, opts) {
   const own = opts && typeof opts.script === 'string' && opts.script ? opts.script : forScript;
   queue.push({ title: title, severity: severity, body: body, limit: limitMs, script: own });
   start();
+  wake();
 };
 test.after = function (fn) { afters.push(fn); start(); };
 
@@ -198,7 +208,8 @@ function one(t) {
 async function runAll() {
   test.startTest(SUITE_FILE);
   const seen = Object.create(null);
-  const last = ONLY === null ? queue.length - 1 : queue.map(function (t) { return t.title; }).indexOf(ONLY);
+  // The last test to run: the queue's end, or the one asked by title; while the run is held, the queue as it grows.
+  const lastOf = function () { return ONLY === null ? queue.length - 1 : queue.map(function (t) { return t.title; }).indexOf(ONLY); };
   // THE SUITE'S SUCCESS FOR EACH SCRIPT (goal/G47.1, box v129-131: "the reporter reports a suite's success or failure for a
   // script through the new verb testicle.suite.success {script, suite, success}, a general test once per script, at the time
   // it knows"; "a suite's result is NEVER assembled from testicle rows"): success when every test it ran for that script held.
@@ -210,7 +221,9 @@ async function runAll() {
     reported[script] = true;
     reportToTesticle({ script: script, suite: SUITE_FILE, success: held[script] !== false }, 'suite.success');
   };
-  for (let i = 0; i <= last; i++) {
+  for (let i = 0; ; i++) {
+    while (i > lastOf() && holds > 0) await new Promise(function (r) { woken = r; });
+    if (i > lastOf()) break;
     const t = queue[i];
     const title = String(t.title);
     let sev = Number(t.severity);

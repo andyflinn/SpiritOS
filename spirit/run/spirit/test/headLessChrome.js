@@ -379,12 +379,39 @@ function sweepProfiles() {
 // scripts starts one Chrome by sharedChrome() and names its debugging port to the processes it starts, in SPIRIT_CHROME_PORT;
 // there chromePage opens a fresh page of that Chrome (0.1 s) in place of a Chrome of its own (0.7 s), and its kill() closes
 // only that page. Measured on Windows before: a lab node's boot 6.4 s and a Chrome 0.7 s, paid again for every script.
+let ownShared = null;
 async function sharedChrome(chrome) {
+  const was = process.env.SPIRIT_CHROME_PORT;
+  delete process.env.SPIRIT_CHROME_PORT;
   const first = await chromePage(chrome);
+  if (was !== undefined) process.env.SPIRIT_CHROME_PORT = was;
   if (first.error) return first;
-  return { kid: first.kid, profile: first.profile, port: first.port, close: function () { try { first.sock.close(); } catch (e) { /* gone */ } try { first.kid.kill(); } catch (e) { /* gone */ } } };
+  ownShared = { kid: first.kid, profile: first.profile, port: first.port, chrome: chrome, close: function () { try { first.sock.close(); } catch (e) { /* gone */ } try { first.kid.kill(); } catch (e) { /* gone */ } } };
+  return ownShared;
 }
-async function pageOf(port) {
+// A SHARED CHROME THAT WILL NOT SERVE IS REPLACED (goal/G47.1, box v144: "only a hung page is reloaded"): one this process started,
+// after a page of it hung or would not open, is ended and a fresh one started in its place, its port named anew for every page
+// opened after. Answers the new port, or '' when there is none.
+async function renewChrome() {
+  const old = ownShared;
+  if (!old) return '';
+  old.close();
+  const fresh = await sharedChrome(old.chrome);
+  if (fresh.error) { delete process.env.SPIRIT_CHROME_PORT; return ''; }
+  process.env.SPIRIT_CHROME_PORT = String(fresh.port);
+  return String(fresh.port);
+}
+// A page that will not open within OPEN_LIMIT_MS (found on Windows: the 15th page of one Chrome never came) renews the Chrome
+// once, when this process owns it.
+const OPEN_LIMIT_MS = 5000;
+async function pageOf(port, again) {
+  const late = new Promise(function (r) { setTimeout(function () { r(null); }, OPEN_LIMIT_MS); });
+  const opened = await Promise.race([openPage(port), late]);
+  if (opened && !opened.error) return opened;
+  if (!again && ownShared && String(ownShared.port) === String(port)) { const p = await renewChrome(); if (p) return pageOf(p, true); }
+  return opened || { error: 'the shared Chrome opened no page in ' + (OPEN_LIMIT_MS / 1000) + ' s' };
+}
+async function openPage(port) {
   const made = await fetch('http://127.0.0.1:' + port + '/json/new?about:blank', { method: 'PUT' }).then(function (r) { return r.json(); }, function (e) { return { error: String(e && e.message || e) }; });
   if (!made || !made.webSocketDebuggerUrl) return { error: 'the shared Chrome opened no page: ' + JSON.stringify(made).slice(0, 200) };
   const close = function () { fetch('http://127.0.0.1:' + port + '/json/close/' + made.id).catch(function () { /* gone with its Chrome */ }); };
@@ -452,4 +479,4 @@ function pageSpirit(s, loaded) {
   return sp;
 }
 
-module.exports = { sharedChrome: sharedChrome, pageSpirit: pageSpirit, sleep: sleep, until: until, freePort: freePort, appRuns: appRuns, watchRuns: watchRuns, findChrome: findChrome, scratchNode: scratchNode, scratchTree: scratchTree, startNodeOn: startNodeOn, freeTree: freeTree, scratchRelay: scratchRelay, scratchFaceRelay: scratchFaceRelay, chromePage: chromePage, WAIT: WAIT };
+module.exports = { sharedChrome: sharedChrome, renewChrome: renewChrome, pageSpirit: pageSpirit, sleep: sleep, until: until, freePort: freePort, appRuns: appRuns, watchRuns: watchRuns, findChrome: findChrome, scratchNode: scratchNode, scratchTree: scratchTree, startNodeOn: startNodeOn, freeTree: freeTree, scratchRelay: scratchRelay, scratchFaceRelay: scratchFaceRelay, chromePage: chromePage, WAIT: WAIT };
