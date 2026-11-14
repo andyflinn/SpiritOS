@@ -116,6 +116,8 @@ const HANDS = '(function () {' +
   '  shownKeys: function () { var c = window.__t.center(); var t = c ? all(".tab-content", c)[0] : null; return t ? all("[data-key]", t).map(function (e) { return e.getAttribute("data-key"); }) : []; },' +
   // A filter of the shown tab turned on: its button pressed when it is not bold (spirit/element/search.js draws a choice on bold).
   '  filterOn: function (v) { var c = window.__t.center(); var t = c ? all(".tab-content", c)[0] : null; var b = t ? all("button[data-filter][data-value]", t).filter(function (x) { return x.getAttribute("data-value") === v; })[0] : null; if (!b) return false; if (Number(getComputedStyle(b).fontWeight) < 600) b.click(); return true; },' +
+  // Words typed into the shown tab's own search field.
+  '  typeCenter: function (w) { var c = window.__t.center(); var t = c ? all(".tab-content", c)[0] : null; var i = t ? all("input[id$=text]", t)[0] : null; if (!i) return false; i.value = w; i.dispatchEvent(new Event("input", { bubbles: true })); return true; },' +
   '  selectTab: function (n) { var c = window.__t.center(); var b = c ? all("button[data-tab]", c).filter(function (e) { return e.getAttribute("data-tab") === n; })[0] : null; if (!b) return false; b.click(); return true; },' +
   // The 🏃‍♂️ of a suite row in the shown tab: whether the row's first cell holds it, a press on it, and whether it is busy.
   '  runCell: function (k) { var c = window.__t.center(); var t = c ? all(".tab-content", c)[0] : null; var r = t ? all("tr[data-key]", t).filter(function (x) { return x.getAttribute("data-key") === k; })[0] : null; var td = r ? r.querySelector("td") : null; var b = td ? td.querySelector("button") : null; return r ? { first: td ? String(td.innerText || "").trim() : null, button: !!b, glyph: b ? String(b.innerText || "").trim() : null, disabled: b ? !!b.disabled : null } : null; },' +
@@ -689,6 +691,9 @@ test.run('the suite runs: the permanent testicle search tab shows iota\'s tests 
   // iota's two tests pass, and the search opens on the reds alone (goal/G47.1, the box: "The testicle search's default
   // equals testicle.red: all scripts, all suites, reds only, most severe first"): green turned on, so they can show.
   if (!(await T('filterOn("green")'))) return 'no green filter in the search tab';
+  // A scratch node's whole tree holds more green rows than one answer: the words narrow to iota's (testicle.search,
+  // spirit/app/testicle/api.js: "the words narrowing them").
+  if (!(await T('typeCenter("zzTesticle/test/iota")'))) return 'no search field in the search tab';
   const ok = await until(function () { return searchRows().then(function (k) { return (k || []).filter(function (x) { return x.indexOf(F5 + '|' + iotaOwn + '|') === 0; }).length >= 2; }); }, 40000);
   return (!!ok && searchBefore === 0) || 'iota\'s tests on the node before the press ' + searchBefore + '; the search tab now shows ' + short(((await searchRows()) || []).filter(function (x) { return x.indexOf(F5) === 0; }));
 }, test.limit.slow);
