@@ -320,9 +320,10 @@ test.run('the node lists the verb testicle.busy', 0.2, async function () {
 }, test.limit.quick);
 test.run('with nothing changing, busy answers false', 0.2, async function () {
   if (!up()) return NONODE;
-  await sleep(1000);
-  const idle = await call(N.base, 'testicle.busy', {});
-  return (idle.status === 200 && (idle.body === false || (idle.body && idle.body.busy === false))) || 'busy, idle: ' + idle.status + ' ' + short(idle.text);
+  // Nothing changes once the start is worked off; idle is busy false twice, two seconds apart (idle(), above).
+  const quiet = await idle(50000);
+  const r = await call(N.base, 'testicle.busy', {});
+  return (!!quiet && r.status === 200 && (r.body === false || (r.body && r.body.busy === false))) || 'busy, idle: ' + r.status + ' ' + short(r.text);
 }, test.limit.slow);
 
 // goal/G47.1, the rename: "the table script; the suite table's key column script", "an existing testicle.db is renamed
@@ -381,7 +382,8 @@ test.run('at start every product script on disc has its row in script', 0.2, asy
   if (!start) return NONODE;
   // The scratch tree holds no git of its own: its files are the repo's list, as scratch() copied them, plus the planted.
   const want = execSync('git ls-files -- spirit/run/spirit', { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').map(function (f) { return f.replace(/^spirit\/run\//, ''); })
-    .filter(function (f) { return /\.js$/.test(f) && !/(^|\/)test\//.test(f) && !VENDORED.holds(f) && fs.existsSync(path.join(s.run, f)); }).concat(Object.keys(PLANT).filter(function (f) { return !/(^|\/)test\//.test(f) && /\.js$/.test(f); }));
+    // In debug mode (box v143) "as if run://spirit/app/testicle/ were ALL the testables of the whole node": only those.
+    .filter(function (f) { return /^spirit\/app\/testicle\//.test(f) && /\.js$/.test(f) && !/(^|\/)test\//.test(f) && !VENDORED.holds(f) && fs.existsSync(path.join(s.run, f)); }).concat(Object.keys(PLANT).filter(function (f) { return !/(^|\/)test\//.test(f) && /\.js$/.test(f); }));
   let missing = [];
   await until(function () { const t = tables(DB); missing = want.filter(function (f) { const r = scriptRow(t, f); return !r || !no(r.deleted); }); return Promise.resolve(missing.length === 0); }, 120000);
   return missing.length === 0 || missing.length + ' of ' + want.length + ' on disc have no live row: ' + short(missing.slice(0, 8));
@@ -451,7 +453,8 @@ test.run('interactive given a wrong type is refused, and sets nothing', 0.2, asy
 test.run('at a start on tables of an older classifier, interactive and nothing pressed, every live script is classified', 0.2, async function () {
   if (!start) return NONODE;
   let left = [];
-  const ok = await until(function () { const t = tables(DB); left = t.script.filter(function (r) { return no(r.deleted) && !no(r.reClassify); }); return Promise.resolve(t.script.length > 100 && left.length === 0); }, 280000);
+  const ok = await until(function () { const t = tables(DB); left = t.script.filter(function (r) { return no(r.deleted) && !no(r.reClassify); }); return Promise.resolve(t.script.filter(function (r) { return no(r.deleted); }).length > 0 && left.length === 0); }, 280000);
+  // In debug mode (box v143) the live scripts are those under spirit/app/testicle/, a few dozen, never the whole tree's hundreds.
   return !!ok || left.length + ' live scripts still to classify, nothing pressed: ' + short(left.slice(0, 5).map(function (r) { return r.name; }));
 }, test.limit.long);
 test.run('and the script an older classifier left red is tried again: its classifyable row tested at this start', 0.2, function () {
@@ -467,6 +470,18 @@ test.run('the world: auto for the checks that follow, set by preferences {intera
   const r = await call(N.base, 'testicle.preferences', { interactive: false });
   return (r.status === 200 && prefsOf(r).interactive === false) || 'set: ' + r.status + ' ' + short(r.text);
 }, test.limit.quick);
+// goal/G47.1, Q8, Andy: "Shall a testicle in debug mode never run testicle's own tests, only the planted temp/ worlds and its
+// three general tests?" "testicle MUST not recurse... and not run it's own tests just the dummies...". Set to auto, every
+// flagged suite in its scope runs; testicle's own tests, under spirit/app/testicle/ but not temp/, are none of them: no row
+// of theirs reaches it, and it comes to rest (a run of testicle.js would hold it busy for an hour, a lab node with it).
+const OWN_TEST = function (suite) { return /^spirit\/app\/testicle\//.test(suite) && !/^spirit\/app\/testicle\/temp\//.test(suite) && /(^|\/)test\//.test(suite) && DEBUG_GENERALS.indexOf(suite) === -1; };
+test.run('in debug mode, set to auto, it never runs testicle\'s own tests, only the dummies: none reports, and it comes to rest', 0.8, async function () {
+  if (!up()) return NONODE;
+  const rest = await idle(280000);
+  const own = (tables(DB).test || []).filter(function (r) { return OWN_TEST(r.suite) && r.suite !== 'spirit/test/scriptClassify.js'; });
+  const suites = Array.from(new Set(own.map(function (r) { return r.suite; })));
+  return (!!rest && !suites.length) || (rest ? '' : 'still busy after 280 s; ') + (suites.length ? 'its own tests reported: ' + suites.join(', ') : 'none of its own reported yet');
+}, test.limit.long);
 
 
 // the box: "on any change of a product file it makes sure that file has its row"
@@ -1156,7 +1171,11 @@ test.run('a changed file that is no product script gets no row', 0.2, async func
 test.run('the world: the changed general test judges every product file', 0.2, function () {
   if (!up()) return NONODE;
   reach = judgedBy(s.run, GENERAL);
-  return reach.length > 100 || 'it judges ' + reach.length;
+  // In debug mode (box v143) every product file is every product script under spirit/app/testicle/, the planted among them.
+  const walk = function (rel) { let out = []; fs.readdirSync(path.join(s.run, rel), { withFileTypes: true }).forEach(function (e) { const r = rel + '/' + e.name; if (e.isDirectory()) { if (e.name !== 'test') out = out.concat(walk(r)); } else if (/\.js$/.test(e.name)) out.push(r); }); return out; };
+  const want = walk('spirit/app/testicle');
+  const missed = want.filter(function (f) { return reach.indexOf(f) === -1; });
+  return (want.length > 0 && !missed.length) || 'it judges ' + reach.length + ' of ' + want.length + ', not ' + short(missed.slice(0, 5));
 }, test.limit.quick);
 test.run('while it works on a changed general test, busy answers true', 0.2, async function () {
   if (!up()) return NONODE;
