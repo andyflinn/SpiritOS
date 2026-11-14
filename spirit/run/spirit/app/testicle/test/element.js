@@ -194,9 +194,11 @@ const PARTS = path.join(APP, 'element');
 // Box v135: "just spirit/app/testicle/element/<element-name>.js, its test in element/test/<element-name>.js, no folder per
 // element. the three: element/scriptDetail.js, element/statusBox.js, element/settingsPanel.js".
 const PART_NAMES = ['scriptDetail', 'settingsPanel', 'statusBox'];
-test.run('its element/ folder holds scriptDetail.js, settingsPanel.js and statusBox.js, and its test/ folder, nothing else', 0.4, function () {
+// And the searches, moved there by Andy (6eb9e4f5, d94d6e08, 1db7136e; box v141: "spirit/app/testicle/element/search/suite.js
+// and ./suite/, testicle.js and ./testicle/").
+test.run('its element/ folder holds scriptDetail.js, settingsPanel.js and statusBox.js, its search/ folder and its test/ folder, nothing else', 0.4, function () {
   let held = []; try { held = fs.readdirSync(PARTS).sort(); } catch (e) { held = []; }
-  return JSON.stringify(held) === JSON.stringify(['scriptDetail.js', 'settingsPanel.js', 'statusBox.js', 'test']) || 'element/ holds ' + short(held);
+  return JSON.stringify(held) === JSON.stringify(['scriptDetail.js', 'search', 'settingsPanel.js', 'statusBox.js', 'test']) || 'element/ holds ' + short(held);
 }, test.limit.quick);
 test.run('each part has its own test, element/test/<name>.js', 0.4, function () {
   const bad = PART_NAMES.filter(function (n) { return !fs.existsSync(path.join(PARTS, 'test', n + '.js')); });
