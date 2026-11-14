@@ -1,9 +1,9 @@
 'use strict';
 
 // spirit/run/spirit/element/search/test/testicle.js
-// The tests of spirit/element/search/testicle.js, the testicle search, and of the parts in its folder, and of no other module
+// The tests of spirit/app/testicle/element/search/testicle.js, the testicle search, and of the parts in its folder, and of no other module
 // (spec: ./testicle.md; goal/G47.1, the cycle "the testicle search"). The box: "the testicle search,
-// spirit/element/search/testicle.js, with its companion folder holding its rowElement and detailElement", "a script selector,
+// spirit/app/testicle/element/search/testicle.js, with its companion folder holding its rowElement and detailElement", "a script selector,
 // unselected (all) the default", "a suite selector, unselected (all) the default", "two filters, red and green; at least one
 // of the two is selected at all times", "The test row also shows its severity, two decimal places, even for 0 and 1", "The
 // list is sortable by all its columns", "The script selector: the file search as a dropdown, production scripts only", "with
@@ -21,7 +21,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { spawn, execSync, execFileSync } = require('child_process');
-const RUN = path.resolve(__dirname, '../../../..');
+const RUN = path.resolve(__dirname, '../../../../../..');
 const REPO = path.resolve(RUN, '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const { freePort, until, sleep, chromePage, findChrome } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
@@ -30,8 +30,8 @@ function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x))
 function parsed(t) { try { return JSON.parse(t); } catch (e) { return null; } }
 function code(f) { try { return fs.readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"\\])\/\/[^\n]*/g, '$1'); } catch (e) { return ''; } }
 
-const MODULE = path.join(RUN, 'spirit', 'element', 'search', 'testicle.js');
-const FOLDER = path.join(RUN, 'spirit', 'element', 'search', 'testicle');
+const MODULE = path.join(RUN, 'spirit', 'app', 'testicle', 'element', 'search', 'testicle.js');
+const FOLDER = path.join(RUN, 'spirit', 'app', 'testicle', 'element', 'search', 'testicle');
 // THE PLANTED SCRIPTS, under one folder of their own, each with its own test.
 const Z = 'spirit/zzTsearch/';
 const A = Z + 'alpha.js';
@@ -148,11 +148,11 @@ test.after(async function () {
   try { if (s) fs.rmSync(s.root, { recursive: true, force: true }); } catch (e) { /* scratch */ }
 });
 
-// the box: "spirit/element/search/testicle.js, with its companion folder holding its rowElement and detailElement"
-test.run('spirit/element/search/testicle.js is there', 0.2, function () {
+// the box: "spirit/app/testicle/element/search/testicle.js, with its companion folder holding its rowElement and detailElement"
+test.run('spirit/app/testicle/element/search/testicle.js is there', 0.2, function () {
   return fs.existsSync(MODULE) || 'no ' + path.relative(RUN, MODULE);
 }, test.limit.quick);
-test.run('its folder spirit/element/search/testicle/ holds its rowElement.js and its detailElement.js', 0.2, function () {
+test.run('its folder spirit/app/testicle/element/search/testicle/ holds its rowElement.js and its detailElement.js', 0.2, function () {
   const held = fs.existsSync(FOLDER) ? fs.readdirSync(FOLDER) : [];
   return (held.indexOf('rowElement.js') !== -1 && held.indexOf('detailElement.js') !== -1) || 'its folder holds ' + short(held);
 }, test.limit.quick);
@@ -204,12 +204,12 @@ test.run('the world: the face page has its spirit', 0.2, async function () {
   return !!(await until(function () { return c.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000)) || 'the page has no spirit: nothing judged';
 }, test.limit.long);
 
-// its place: spirit.element.spirit.element.search.testicle, with a create
+// its place: spirit.element.spirit.app.testicle.element.search.testicle, with a create
 test.run('it loads through spirit.require and mounts with create(container), answering destroy', 0.2, async function () {
   if (!N || !N.up) return NONODE;
   if (!c || c.error || !c.evaluate) return 'no page: the world failed';
   await c.evaluate(HANDS);
-  made = await c.evaluate('window.spirit.ready.then(function () { return window.spirit.require("spirit/element/search/testicle.js"); }).then(function () {' +
+  made = await c.evaluate('window.spirit.ready.then(function () { return window.spirit.require("spirit/app/testicle/element/search/testicle.js"); }).then(function () {' +
     ' var E = (((((window.spirit.element || {}).spirit || {}).element || {}).search || {}).testicle); if (!E || typeof E.create !== "function") return "no create";' +
     ' var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:1400px;height:800px;display:flex;"; document.body.appendChild(b);' +
     ' window.__made = E.create(b, {}); return window.__made && typeof window.__made.destroy === "function" ? "made" : "no destroy"; }, function (e) { return "refused: " + (e && e.message || e); })');
@@ -581,8 +581,8 @@ test.run('the world: a fresh page opens the search again, no words and no select
   await c.send('Page.navigate', { url: N.base + '/face.html' });
   if (!(await until(function () { return c.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000))) return 'the page has no spirit: nothing judged';
   await c.evaluate(HANDS);
-  opened = await c.evaluate('window.spirit.ready.then(function () { return window.spirit.require("spirit/element/search/testicle.js"); }).then(function () {' +
-    ' var E = window.spirit.element.spirit.element.search.testicle;' +
+  opened = await c.evaluate('window.spirit.ready.then(function () { return window.spirit.require("spirit/app/testicle/element/search/testicle.js"); }).then(function () {' +
+    ' var E = window.spirit.element.spirit.app.testicle.element.search.testicle;' +
     ' var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:1400px;height:800px;display:flex;"; document.body.appendChild(b);' +
     ' window.__made = E.create(b, {}); return window.__made && typeof window.__made.destroy === "function" ? "made" : "no destroy"; }, function (e) { return "refused: " + (e && e.message || e); })');
   if (opened !== 'made') return 'it did not mount: ' + short(opened);
