@@ -879,9 +879,9 @@ function oneFile(P) {
   // A PAGE SCRIPT THAT INSTALLS NO ELEMENT (goal/G47.1, box v121): loaded on the bare page, what it runs is judged; the
   // element rules are skipped, said as a comment, never counted green.
   if (P.noElement) {
-    test.run('nothing it runs throws', 0.8, function () { return noMount() || !P.thrown.length || 'thrown: ' + short(P.thrown); }, test.limit.quick);
-    test.run('every file it asks for is there', 0.4, function () { return noMount() || !P.missing.length || 'missing: ' + short(P.missing); }, test.limit.quick);
-    test.run('and it says no error on the console', 0.4, function () { return noMount() || !P.errors.length || 'console: ' + short(P.errors); }, test.limit.quick);
+    test.run('with no element installed, nothing it runs throws', 0.8, function () { return noMount() || !P.thrown.length || 'thrown: ' + short(P.thrown); }, test.limit.quick);
+    test.run('with no element installed, every file it asks for is there', 0.4, function () { return noMount() || !P.missing.length || 'missing: ' + short(P.missing); }, test.limit.quick);
+    test.run('with no element installed, it says no error on the console', 0.4, function () { return noMount() || !P.errors.length || 'console: ' + short(P.errors); }, test.limit.quick);
     unjudged('it installs no element at spirit.element.' + rel.replace(/\.js$/, '').split('/').join('.') + ': the element rules are skipped');
     pageAfter(P);
     return;
