@@ -1933,5 +1933,51 @@ if (!GIVEN.length) {
     const all = hits.split('\n').filter(Boolean).concat(named).filter(function (f, i, a) { return a.indexOf(f) === i; });
     return all.length === 0 || all.length + ' tracked files name it: ' + all.slice(0, 12).join(', ');
   }, test.limit.slow);
+  // THE LAB REDRAWN (goal/G47.3, the box: "labMaster lives in repo://lab/ (today repo://spirit/test/labMaster/)",
+  // "repo://lab/node/ is .gitignored", "its tools (box.js, inspect.js, runsHome.js, wirePaths.js) move with labMaster to
+  // repo://lab/", "fixtures/jobCallbackFixture.js is used by nobody and goes", "visual/*.json have no reader left ... so they
+  // go, with the stale lines naming them in README/HARNESS/HUMAN_TOOLS.md", "not every node-starting test goes through
+  // scratchNode ... those move onto scratchNode as part of this"). Judged over the whole repository, from git.
+  const fs = require('fs');
+  const path = require('path');
+  const top = function () { return require('child_process').execFileSync('git', ['rev-parse', '--show-toplevel'], { cwd: RUN_DIR, encoding: 'utf8' }).trim(); };
+  const trackedAll = function () { return require('child_process').execFileSync('git', ['ls-files'], { cwd: top(), encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(Boolean); };
+  test.run('labMaster lives in repo://lab/, its parts with it, and nothing is left of spirit/test/labMaster/', 0.4, function () {
+    const all = trackedAll();
+    const want = ['labMaster.js', 'ensureMaster.js', 'labPaths.js', 'labMastPanel.html', 'BONES.md', 'STATE.md'];
+    const inLab = all.filter(function (f) { return /^lab\//.test(f); }).map(function (f) { return f.split('/').pop(); });
+    const missing = want.filter(function (n) { return inLab.indexOf(n) === -1; });
+    const left = all.filter(function (f) { return /^spirit\/test\/labMaster\//.test(f); });
+    return (!missing.length && !left.length) || (missing.length ? 'not in lab/: ' + missing.join(', ') : '') + (left.length ? (missing.length ? '; ' : '') + 'still in spirit/test/labMaster/: ' + left.length + ' files' : '');
+  }, test.limit.slow);
+  test.run('the old test folder\'s tools are in repo://lab/, its unused fixture and its visual json are gone', 0.4, function () {
+    const all = trackedAll();
+    const tools = ['box.js', 'inspect.js', 'runsHome.js', 'wirePaths.js'];
+    const inLab = all.filter(function (f) { return /^lab\//.test(f); }).map(function (f) { return f.split('/').pop(); });
+    const bad = tools.filter(function (n) { return inLab.indexOf(n) === -1; }).map(function (n) { return n + ' not in lab/'; })
+      .concat(all.filter(function (f) { return /^spirit\/test\/(tools|fixtures|visual)\//.test(f); }).map(function (f) { return f + ' still there'; }));
+    return !bad.length || bad.join('; ');
+  }, test.limit.slow);
+  test.run('.gitignore keeps repo://lab/node/ out of git, and git holds nothing under it', 0.4, function () {
+    let ignored = false;
+    try { require('child_process').execFileSync('git', ['check-ignore', '-q', 'lab/node/zzProbe/x.js'], { cwd: top() }); ignored = true; } catch (e) { ignored = false; }
+    const held = trackedAll().filter(function (f) { return /^lab\/node\//.test(f); });
+    return (ignored && !held.length) || (ignored ? '' : 'lab/node/ is not git-ignored') + (held.length ? ' git holds ' + held.length + ' files under it' : '');
+  }, test.limit.slow);
+  test.run('README/HARNESS/HUMAN_TOOLS.md names neither visualScenarios.js nor presenceShow.js', 0.4, function () {
+    let t = ''; try { t = fs.readFileSync(path.join(top(), 'README', 'HARNESS', 'HUMAN_TOOLS.md'), 'utf8'); } catch (e) { return 'no README/HARNESS/HUMAN_TOOLS.md'; }
+    const named = ['visualScenarios.js', 'presenceShow.js'].filter(function (n) { return t.indexOf(n) !== -1; });
+    return !named.length || 'it still names ' + named.join(' and ');
+  }, test.limit.quick);
+  // Every node a test uses is handed out by scratchNode (headLessChrome.js, the one helper that starts spirit/server.js).
+  test.run('no test starts spirit/server.js itself: every node a test uses comes from scratchNode', 0.4, function () {
+    const own = trackedAll().filter(function (f) { return /^spirit\/run\/.*\/test\/[^/]+\.js$/.test(f) && !/\/test\/headLessChrome\.js$/.test(f) && !/\/test\/test\/headLessChrome\.js$/.test(f); });
+    const starting = own.filter(function (f) {
+      let c = ''; try { c = fs.readFileSync(path.join(top(), f), 'utf8'); } catch (e) { return false; }
+      c = c.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1');
+      return /spawn\s*\([^;]*['"]spirit\/server\.js['"]/.test(c) || /spawn\s*\([^;]*path\.join\([^;]*['"]server\.js['"]/.test(c);
+    });
+    return !starting.length || starting.length + ' start it themselves: ' + starting.map(function (f) { return f.replace(/^spirit\/run\//, ''); }).join(', ');
+  }, test.limit.slow);
 }
 else GIVEN.forEach(function (one) { test.forScript(one, function () { PARTS.forEach(function (part) { part([one]); }); }); });
