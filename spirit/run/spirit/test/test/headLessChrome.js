@@ -122,7 +122,8 @@ function inChild(code, ms) {
 }
 const LOCKS = function () { try { return fs.readdirSync(LAB_NODES).filter(function (n) { return /^personal\d+\.lock$/.test(n); }); } catch (e) { return []; } };
 test.run('scratchTree takes one lab node and no more, and a node asked after it is another one', 0.4, async function () {
-  const r = await inChild('const t = H.scratchTree(); const locks = require("fs").readdirSync(' + JSON.stringify(LAB_NODES) + ').filter(function (n) { return /^personal\\d+\\.lock$/.test(n); }); H.scratchNode({ start: false }).then(function (n) { console.log("@@" + JSON.stringify({ tree: t.root, locks: locks.length, node: n.root })); process.exit(0); });', 120000);
+  // The locks this process holds (its pid in them): a lock file a dead holder left is not this process's.
+  const r = await inChild('const fs = require("fs"); const t = H.scratchTree(); const locks = fs.readdirSync(' + JSON.stringify(LAB_NODES) + ').filter(function (n) { if (!/^personal\\d+\\.lock$/.test(n)) return false; try { return fs.readFileSync(require("path").join(' + JSON.stringify(LAB_NODES) + ', n), "utf8").trim() === String(process.pid); } catch (e) { return false; } }); H.scratchNode({ start: false }).then(function (n) { console.log("@@" + JSON.stringify({ tree: t.root, locks: locks.length, node: n.root })); process.exit(0); });', 120000);
   if (!r || r === 'waiting' || r.error) return 'nothing handed out: ' + short(r);
   return (r.locks === 1 && under(r.tree, LAB_NODES) && under(r.node, LAB_NODES) && r.tree !== r.node) || 'locks taken by one scratchTree: ' + r.locks + ', tree ' + r.tree + ', node ' + r.node;
 }, test.limit.long);

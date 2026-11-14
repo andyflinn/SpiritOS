@@ -39,18 +39,24 @@ function git(args, opts) {
 function labGit(args) { return git(['--git-dir=' + path.join(LAB_REPO, '.git'), '--work-tree=' + REPO].concat(args), { cwd: REPO }); }
 function alive(pid) { if (!pid) return false; try { process.kill(Number(pid), 0); return true; } catch (e) { return e.code === 'EPERM'; } }
 
-// A short lock of the whole lab, for making the repo and a snapshot (one index): taken by 'wx', stale when its holder ended.
+// A SHORT LOCK OF THE WHOLE LAB: making the repo, a snapshot (one index), and every decision on a node's lock are taken
+// under it, so two processes never both break the same stale node lock (wsl found that on Linux: two holders handed one
+// node). Taken by 'wx'. It is held for moments, so it is stale only when its holder has ended AND it is older than
+// LAB_LOCK_STALE_MS: a lock another process has just written is never taken for the dead one it replaced.
+const LAB_LOCK_STALE_MS = 30000;
+function tryLabLock(at) {
+  try { fs.writeFileSync(at, String(process.pid), { flag: 'wx' }); return true; } catch (e) {
+    if (e.code !== 'EEXIST') throw e;
+    let pid = ''; let age = 0;
+    try { pid = fs.readFileSync(at, 'utf8').trim(); age = Date.now() - fs.statSync(at).mtimeMs; } catch (r) { return false; }
+    if (pid && !alive(pid) && age > LAB_LOCK_STALE_MS) { try { fs.unlinkSync(at); } catch (r) { /* another took it */ } }
+    return false;
+  }
+}
 async function withLabLock(fn) {
   fs.mkdirSync(NODES, { recursive: true });
   const at = path.join(NODES, '.lab.lock');
-  for (;;) {
-    try { fs.writeFileSync(at, String(process.pid), { flag: 'wx' }); break; } catch (e) {
-      if (e.code !== 'EEXIST') throw e;
-      let pid = ''; try { pid = fs.readFileSync(at, 'utf8').trim(); } catch (r) { continue; }
-      if (pid && !alive(pid)) { try { fs.unlinkSync(at); } catch (r) { /* another took it */ } continue; }
-      await sleep(100);
-    }
-  }
+  while (!tryLabLock(at)) await sleep(50);
   try { return await fn(); } finally { try { fs.unlinkSync(at); } catch (e) { /* gone */ } }
 }
 
@@ -82,9 +88,11 @@ function snapshotUnlocked() {
 }
 function snapshot() { return withLabLock(snapshotUnlocked); }
 
-// THE LOCK OF ONE LAB NODE. take(kind) waits until a node of the pool is free, and answers its name.
+// THE LOCK OF ONE LAB NODE. take(kind) waits until a node of the pool is free, and answers its name. tryLock is only ever
+// called under the lab lock (firstFree), so breaking a lock whose holder ended is one process's decision.
 function lockPath(name) { return path.join(NODES, name + '.lock'); }
 function pidPath(name) { return path.join(NODES, name + '.pid'); }
+function firstFree(pool) { return pool.find(tryLock) || ''; }
 function tryLock(name) {
   const at = lockPath(name);
   try { fs.writeFileSync(at, String(process.pid), { flag: 'wx' }); return true; } catch (e) {
@@ -100,7 +108,8 @@ async function take(kind) {
   if (!pool) throw new Error('no lab pool ' + kind);
   fs.mkdirSync(NODES, { recursive: true });
   for (;;) {
-    for (const name of pool) if (tryLock(name)) return name;
+    const name = await withLabLock(function () { return firstFree(pool); });
+    if (name) return name;
     await sleep(250);
   }
 }
@@ -178,14 +187,7 @@ async function handOut(kind) {
 function withLabLockSync(fn) {
   fs.mkdirSync(NODES, { recursive: true });
   const at = path.join(NODES, '.lab.lock');
-  for (;;) {
-    try { fs.writeFileSync(at, String(process.pid), { flag: 'wx' }); break; } catch (e) {
-      if (e.code !== 'EEXIST') throw e;
-      let pid = ''; try { pid = fs.readFileSync(at, 'utf8').trim(); } catch (r) { continue; }
-      if (pid && !alive(pid)) { try { fs.unlinkSync(at); } catch (r) { /* another took it */ } continue; }
-      sleepSync(100);
-    }
-  }
+  while (!tryLabLock(at)) sleepSync(50);
   try { return fn(); } finally { try { fs.unlinkSync(at); } catch (e) { /* gone */ } }
 }
 function handOutSync(kind) {
@@ -194,8 +196,8 @@ function handOutSync(kind) {
   if (!pool) throw new Error('no lab pool ' + kind);
   fs.mkdirSync(NODES, { recursive: true });
   let name = '';
-  // One node taken, the first free one: find stops at it (filter would lock every free node of the pool).
-  while (!name) { name = pool.find(tryLock) || ''; if (!name) sleepSync(250); }
+  // One node taken, the first free one (find stops at it; filter would lock every free node of the pool), under the lab lock.
+  while (!name) { name = withLabLockSync(function () { return firstFree(pool); }); if (!name) sleepSync(250); }
   held.add(name);
   try {
     stopNode(name);
