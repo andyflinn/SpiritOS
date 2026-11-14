@@ -336,18 +336,40 @@ async function scratchFaceRelay(o) {
 // fixed."). A test that ends without closing its page, or is killed, never runs its own cleanup, so a watcher of its own,
 // a process apart, asks twice a second whether the test still lives; once it is gone, it ends that Chrome and deletes its
 // profile. A Chrome that ends first ends its watcher too.
+// ITS PROFILE GOES WITH IT, EITHER WAY (goal/G47.1, Andy: "make sure with spirit/test/headLessChrome.js that no chromes are left
+// cluttering my machine."; found on his Windows machine: 2274 spirit-chrome-* profiles left in TEMP): a Chrome that ended
+// first left its profile behind, and on Windows a profile is still locked for a moment after its Chrome is killed, so the one
+// delete a test did failed. The watcher deletes it once its Chrome is gone, trying again for ten seconds.
 function watchChrome(kid, profile) {
   if (!kid || !kid.pid) return;
-  const code = 'const [test, chrome, profile] = process.argv.slice(1); const alive = function (p) { try { process.kill(Number(p), 0); return true; } catch (e) { return false; } };' +
-    ' const t = setInterval(function () { if (!alive(chrome)) { clearInterval(t); return; } if (alive(test)) return; clearInterval(t);' +
+  const code = 'const [test, chrome, profile] = process.argv.slice(1); const fs = require("fs"); const alive = function (p) { try { process.kill(Number(p), 0); return true; } catch (e) { return false; } };' +
+    ' const rm = function (n) { try { fs.rmSync(profile, { recursive: true, force: true }); } catch (e) {} if (fs.existsSync(profile) && n < 20) setTimeout(function () { rm(n + 1); }, 500); };' +
+    ' const t = setInterval(function () { if (!alive(chrome)) { clearInterval(t); rm(0); return; } if (alive(test)) return; clearInterval(t);' +
     ' try { process.kill(Number(chrome), "SIGTERM"); } catch (e) {}' +
-    ' setTimeout(function () { try { process.kill(Number(chrome), "SIGKILL"); } catch (e) {} try { require("fs").rmSync(profile, { recursive: true, force: true }); } catch (e) {} }, 2000); }, 500);';
+    ' setTimeout(function () { try { process.kill(Number(chrome), "SIGKILL"); } catch (e) {} rm(0); }, 2000); }, 500);';
   try {
     const w = spawn(process.execPath, ['-e', code, String(process.pid), String(kid.pid), profile], { stdio: 'ignore', detached: true, windowsHide: true });
     w.unref();
   } catch (e) { /* no watcher: the test's own cleanup is all there is */ }
 }
+// THE PROFILES LEFT BEFORE, SWEPT (the same finding): once per test process, a process apart deletes every spirit-chrome-*
+// profile older than an hour. No test's Chrome lives that long (a job is killed at two minutes); a locked one stays for the
+// next sweep.
+let swept = false;
+function sweepProfiles() {
+  if (swept) return;
+  swept = true;
+  const code = 'const fs = require("fs"); const path = require("path"); const dir = process.argv[1]; const old = Date.now() - 3600000;' +
+    ' let names = []; try { names = fs.readdirSync(dir); } catch (e) {}' +
+    ' names.forEach(function (n) { if (n.indexOf("spirit-chrome-") !== 0) return; const p = path.join(dir, n);' +
+    ' try { if (fs.statSync(p).mtimeMs < old) fs.rmSync(p, { recursive: true, force: true }); } catch (e) {} });';
+  try {
+    const w = spawn(process.execPath, ['-e', code, os.tmpdir()], { stdio: 'ignore', detached: true, windowsHide: true });
+    w.unref();
+  } catch (e) { /* swept by the next test */ }
+}
 async function chromePage(chrome) {
+  sweepProfiles();
   const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-chrome-'));
   const kid = spawn(chrome, ['--headless=new', '--remote-debugging-port=0', '--user-data-dir=' + profile, '--no-first-run', '--no-default-browser-check',
     '--window-size=1280,800', 'about:blank'], { stdio: ['ignore', 'ignore', 'pipe'], windowsHide: true });
