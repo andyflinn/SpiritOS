@@ -356,7 +356,7 @@ module.exports = function installJobs(port) {
   function startProcessJob(command, args, options) {
     options = options || {};
     // Its id is its app's route, spirit.app.<name> (goal/G43.20): a second start while it runs is refused here.
-    const p = appOf(appScriptOf(args), options.cwd);
+    const p = appOf(appScriptOf(args, options.cwd), options.cwd);
     const route = 'spirit.app.' + (p ? p.name : '');
     const job = createJob('process', route, {
       command: command,
@@ -415,7 +415,7 @@ module.exports = function installJobs(port) {
     const operated = options.operated === 'user' ? 'user' : 'node';
     const restart = operated === 'node';
     // Its id is its app's route, spirit.app.<name>, read off its script's path (goal/G43.20).
-    const p = appOf(appScriptOf(args), options.cwd);
+    const p = appOf(appScriptOf(args, options.cwd), options.cwd);
     const route = 'spirit.app.' + (p ? p.name : '');
     const job = createJob('server', route, {
       command: command,
@@ -502,9 +502,15 @@ module.exports = function installJobs(port) {
   // it included. The one reading of a script's path, for whether it may run and for the route its job is.
   // THE APP'S SCRIPT OF A START (goal/G43.32): every app server runs as spirit/appServer.js with the app's script after it,
   // so the script is the argument after appServer.js when that comes first.
-  function appScriptOf(args) {
+  // ONLY THIS NODE'S OWN appServer.js (RH1, the daily re-review: "A commit added a check that only looks at how the first
+  // argument ends, and anyone who can call jobs.create can get arbitrary code past it. The fix is to require that argument
+  // to be exactly the node's own spirit/appServer.js."): a first argument that merely ends in spirit/appServer.js is no
+  // app server, so it is checked as the script itself, and refused.
+  const OWN_APP_SERVER = path.join(path.resolve(__dirname, '..'), 'spirit', 'appServer.js');
+  function sameFile(a, b) { return process.platform === 'win32' ? a.toLowerCase() === b.toLowerCase() : a === b; }
+  function appScriptOf(args, cwd) {
     const a = args || [];
-    return typeof a[0] === 'string' && /(^|[\/\\])spirit[\/\\]appServer\.js$/.test(a[0]) ? a[1] : a[0];
+    return typeof a[0] === 'string' && sameFile(path.resolve(cwd || process.cwd(), a[0]), OWN_APP_SERVER) ? a[1] : a[0];
   }
   // Andy: "The node starts every app server, one-shot and long-running alike, as appServer.js with the app's path" (the box,
   // decided 9): appServer requires the app's script and checks each call by its api.js, in the app's own process.
@@ -523,7 +529,7 @@ module.exports = function installJobs(port) {
   }
   function startJob(command, args, options) {
     options = options || {};
-    const p = appOf(appScriptOf(args), options.cwd);
+    const p = appOf(appScriptOf(args, options.cwd), options.cwd);
     const own = (command === process.execPath || command === 'node') && !!p && path.relative(path.resolve(__dirname, '..'), p.root) === '';
     if (!own) throw refused('not-a-process', 'only an app\'s own script of this node starts');
     if (!appRuns(p.root, p.name)) throw refused('process-not-included', 'process not included on this node: ' + p.name, p.name);
