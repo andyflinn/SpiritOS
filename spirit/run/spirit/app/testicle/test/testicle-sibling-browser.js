@@ -20,5 +20,8 @@ function mine() {
   return out;
 }
 function one(rel) { test.run(rel + ': ' + "it holds no NUL byte, so a page can load it as text", 0.2, function () { try { return fs.readFileSync(path.join(RUN, rel)).indexOf(0) === -1 || 'it holds a NUL byte'; } catch (e) { return String(e && e.message || e); } }, test.limit.quick); }
-if (!GIVEN.length) mine().forEach(one);
-else GIVEN.forEach(function (rel) { test.forScript(rel, function () { one(rel); }); });
+// A SECOND DUMB CHECK, ONE A BROKEN SCRIPT FAILS (goal/G47.1; box v143: "each with a dumb test or two"; ./testicle.js: "handed
+// both, names both"): read as text, never loaded.
+function two(rel) { test.run(rel + ': ' + "it throws nothing at its top level", 0.2, function () { try { return !/^throw\b/m.test(fs.readFileSync(path.join(RUN, rel), 'utf8')) || 'a line of it starts with throw'; } catch (e) { return String(e && e.message || e); } }, test.limit.quick); }
+if (!GIVEN.length) mine().forEach(function (rel) { one(rel); two(rel); });
+else GIVEN.forEach(function (rel) { test.forScript(rel, function () { one(rel); two(rel); }); });

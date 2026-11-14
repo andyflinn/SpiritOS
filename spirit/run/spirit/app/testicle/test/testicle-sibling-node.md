@@ -7,7 +7,7 @@ and below (`spirit/test/testModule.js`).
 
     node spirit/app/testicle/test/testicle-sibling-node.js [<script> ...]
 
-One test a script: *node reads it as a script: node --check passes*. Given scripts, each is judged and its result reported for it (`test.forScript`), so a
+Two tests a script: *node reads it as a script: node --check passes*, and *its first plain require is spirit.js*, read as text (a broken script fails it). Given scripts, each is judged and its result reported for it (`test.forScript`), so a
 run handed two names both; given none, every product script under `spirit/app/testicle/` (not its `test/` or `temp/`).
 
 It is there for testicle's debug mode (`./testicle.md`): in it, the general tests testicle sees are this one and its two

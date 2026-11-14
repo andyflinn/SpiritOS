@@ -20,5 +20,8 @@ function mine() {
   return out;
 }
 function one(rel) { test.run(rel + ': ' + "it is a script on disc", 0.2, function () { try { return fs.statSync(path.join(RUN, rel)).isFile() || 'not a file on disc'; } catch (e) { return String(e && e.message || e); } }, test.limit.quick); }
-if (!GIVEN.length) mine().forEach(one);
-else GIVEN.forEach(function (rel) { test.forScript(rel, function () { one(rel); }); });
+// A SECOND DUMB CHECK, ONE A BROKEN SCRIPT FAILS (goal/G47.1; box v143: "each with a dumb test or two"; ./testicle.js: "handed
+// both, names both"): read as text, never loaded.
+function two(rel) { test.run(rel + ': ' + "'use strict' heads it", 0.2, function () { try { const s = fs.readFileSync(path.join(RUN, rel), 'utf8').split(/\r?\n/).filter(function (l) { return l.trim() && !/^\s*\/\//.test(l); })[0] || ''; return /^\s*['"]use strict['"];?\s*$/.test(s) || 'its first line of code is not \'use strict\''; } catch (e) { return String(e && e.message || e); } }, test.limit.quick); }
+if (!GIVEN.length) mine().forEach(function (rel) { one(rel); two(rel); });
+else GIVEN.forEach(function (rel) { test.forScript(rel, function () { one(rel); two(rel); }); });
