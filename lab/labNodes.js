@@ -35,7 +35,7 @@ const POOLS = { node: ['personal1', 'personal2', 'personal3', 'personal4', 'pers
 const sleepSync = function (ms) { Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms); };
 const sleep = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
 function git(args, opts) {
-  return execFileSync('git', args, Object.assign({ encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], maxBuffer: 1 << 26 }, opts || {})).trim();
+  return execFileSync('git', args, Object.assign({ windowsHide: true, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], maxBuffer: 1 << 26 }, opts || {})).trim();
 }
 // Lab's own git, its work tree the checkout: what it reads, it reads from disk; what it writes goes to lab's repo only.
 function labGit(args) { return git(['--git-dir=' + path.join(LAB_REPO, '.git'), '--work-tree=' + REPO].concat(args), { cwd: REPO }); }

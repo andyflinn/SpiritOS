@@ -238,8 +238,8 @@ function portScanText() {
   let out = '';
   try {
     out = process.platform === 'win32'
-      ? execSync('netstat -ano', { encoding: 'utf8' })
-      : execSync('ss -tlnp', { encoding: 'utf8' });
+      ? execSync('netstat -ano', { encoding: 'utf8', windowsHide: true })
+      : execSync('ss -tlnp', { encoding: 'utf8', windowsHide: true });
   } catch (e) { out = ''; }
   portScan = { at: now, text: out };
   return out;
@@ -278,7 +278,7 @@ function killPids(pids) {
   pids.forEach(function (pid) {
     try {
       if (process.platform === 'win32') {
-        execSync('taskkill /F /PID ' + pid, { stdio: 'ignore' });
+        execSync('taskkill /F /PID ' + pid, { stdio: 'ignore', windowsHide: true });
       } else {
         process.kill(pid, 'SIGTERM');
       }
@@ -381,7 +381,7 @@ const ORIGIN_FALLBACK = 'https://github.com/andyflinn/SpiritOS';
 function originUrl() {
   try {
     const url = execSync('git config --get remote.origin.url', {
-      cwd: REPO_ROOT, encoding: 'utf8',
+      cwd: REPO_ROOT, encoding: 'utf8', windowsHide: true,
     }).trim();
     return url || ORIGIN_FALLBACK;
   } catch (err) {
@@ -390,7 +390,7 @@ function originUrl() {
 }
 
 function git(args, cwd) {
-  return execSync('git ' + args, { cwd: cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  return execSync('git ' + args, { cwd: cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true });
 }
 
 function isClone(targetRoot) {
@@ -412,6 +412,7 @@ function copyTrackedSpirit(id, keepState) {
 
   const relativePaths = execSync('git ls-files -- spirit ":!spirit/test"', {
     cwd: REPO_ROOT,
+    windowsHide: true,
     encoding: 'utf8',
   }).split('\n').filter(Boolean);
 
@@ -612,7 +613,10 @@ function startNode(node) {
     try { fs.mkdirSync(own, { recursive: true }); } catch (e) { /* the node says why */ }
     env = Object.assign({}, process.env, { HOME: own, USERPROFILE: own });
   }
+  // NO WINDOW FOR ANY SUBPROCESS (Andy, after Restart labMaster: "now my windowsdektop, ps flashig cone windows constanty"):
+  // a restarted labMaster runs detached with no console, so a child without windowsHide gets a console window of its own.
   const child = spawn(process.execPath, args, {
+    windowsHide: true,
     cwd: home,
     env: env,
     stdio: 'inherit',
