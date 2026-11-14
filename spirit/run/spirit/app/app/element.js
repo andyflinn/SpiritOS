@@ -26,6 +26,9 @@
 // THROUGH panel (goal/G43.17, spirit/element/panel.js): a closed app or detail is hidden, not destroyed, so pressing it again
 // shows it as it was left (Q3: "yes."). A launched app switched off leaves the view and stays loaded until the shell boots
 // again (Q11: "it only must disappear from view. it won't be loaded on the next shell-boot.").
+// THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
+// INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
+if (window.spirit && typeof window.spirit.require === 'function') ['spirit/app/api.js'].forEach(function (p) { Promise.resolve(window.spirit.require(p)).catch(function () {}); });
 (function () {
   // AN APP'S MAIN ELEMENT BY THE APP'S NAME (goal/G43.32, rule 4): spirit/app/<name>/element.js, placed at
   // spirit.element.spirit.app.<name>.element.

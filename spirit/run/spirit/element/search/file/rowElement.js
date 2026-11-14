@@ -11,6 +11,9 @@
 // Actions: open (the viewer the page hands in, ctx.open, or the text launcher) and remove (fs.delete). An action asks
 // and paints nothing: the spirit.fs job's own event repaints, or marks the row gone. expandInfo asks fs.stat, once;
 // no annotations, which are the node's only (goal/G43.20).
+// THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
+// INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
+if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/api.js'].forEach(function (p) { Promise.resolve(window.spirit.require(p)).catch(function () {}); });
 (function () {
   var E = (window.spirit = window.spirit || {}).element = window.spirit.element || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree...."): its tree, through spirit.require.

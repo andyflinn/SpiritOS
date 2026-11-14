@@ -7,6 +7,9 @@
 //
 // WHO PAINTS, LISTENS (Andy, G41.32): one watch on spirit.data.app.data for every app row on the page, each change to the rows
 // of that key. A row asks nothing of its own; what it shows is what the stream said.
+// THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
+// INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
+if (window.spirit && typeof window.spirit.require === 'function') ['spirit/app/api.js'].forEach(function (p) { Promise.resolve(window.spirit.require(p)).catch(function () {}); });
 (function () {
   // On spirit.element since goal/G43.18, as its file is in spirit/element/search/app/.
   var E = (window.spirit = window.spirit || {}).element = window.spirit.element || {};

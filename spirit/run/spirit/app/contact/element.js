@@ -9,6 +9,9 @@
 // and whose rows open a person's or a relay's details, and the Add a relay fold, whose one call is relay.add. Nothing
 // else here calls the node.
 
+// THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
+// INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
+if (window.spirit && typeof window.spirit.require === 'function') ['spirit/contact/api.js'].forEach(function (p) { Promise.resolve(window.spirit.require(p)).catch(function () {}); });
 var contactsEscapeHtml = spirit.escapeHtml;
 
 // NO CHOICE ABOUT STRANGERS (goal/G43.17): the node ignores them always, and keeps their id only in its log. Andy: "so NO,
@@ -48,7 +51,7 @@ function contactsRefresh() {
 // through spirit.require, the list bringing its own. goal/G41.23: its rows' marks are icons (Andy: "this element will
 // replace icons painting all shell elements and apps."), so the icon element comes with the list.
 // And the panel stack, for a contact's or a relay's details when the mounter hands none (goal/G43.18).
-var contactsParts = Promise.all([spirit.require('spirit/element/search/contact/listElement.js'), spirit.require('spirit/element/icon.js'), spirit.require('spirit/element/panel.js')]);
+var contactsParts = Promise.all([spirit.require('spirit/element/search/contact/listElement.js'), spirit.require('spirit/element/icon.js'), spirit.require('spirit/element/panel.js'), spirit.require('spirit/element/fieldInput.js')]);
 
 function contactCreate(container, options) {
     var gone = false;
@@ -84,6 +87,8 @@ function contactCreate(container, options) {
     // ADD A RELAY (goal/G30.7, from Natter): relay.add asks the relay for its card and lists it; the node notes it as a
     // relay peer, so the list above finds it. The rule on the address is the wire's (hub.assertRelayUrl), asked here so
     // a typo costs no round trip.
+    // The private label holds to the label rule (goal/G47.1, -browser: every input has a maxlength).
+    window.spirit.required.spirit.element.fieldInput.attach(document.getElementById('contacts-relay-label'), 'name');
     document.getElementById('contacts-relay-add').addEventListener('click', function () {
       var out = document.getElementById('contacts-relay-add-out');
       var label = String(document.getElementById('contacts-relay-label').value || '').trim();

@@ -9,6 +9,9 @@
 // The field is marked with its rule (rule/12, data-field="description") and held at the description rule's byte limit
 // by fieldInput, the bytes left beside it (fieldRules.describeRemaining), counted in bytes as typed. Save asks here first
 // (fieldRules.describeProblem); then node.setDescription, and the field shows what the node STORED (rule/19).
+// THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
+// INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
+if (window.spirit && typeof window.spirit.require === 'function') ['spirit/node/api.js'].forEach(function (p) { Promise.resolve(window.spirit.require(p)).catch(function () {}); });
 (function (root) {
   var E = (root.spirit = root.spirit || {}).element = root.spirit.element || {};
   // WHAT IT USES, IT LOADS ITSELF (goal/G41.3): fieldInput, through spirit.require.

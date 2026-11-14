@@ -9,6 +9,9 @@
 // the bytes left beside it, counted in bytes as typed: an emoji costs four. Save asks here first and the wire is not
 // troubled when the rule already says no (spirit/fieldRules.js, the rule the node checks with). Then node.setName, and the
 // field shows what the node STORED, not what was typed (rule/19): the node normalises what it keeps.
+// THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
+// INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
+if (window.spirit && typeof window.spirit.require === 'function') ['spirit/node/api.js'].forEach(function (p) { Promise.resolve(window.spirit.require(p)).catch(function () {}); });
 (function (root) {
   var E = (root.spirit = root.spirit || {}).element = root.spirit.element || {};
   // WHAT IT USES, IT LOADS ITSELF (goal/G41.3): fieldInput, through spirit.require.

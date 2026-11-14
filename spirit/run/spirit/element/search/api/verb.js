@@ -24,6 +24,8 @@
     options = options || {};
     var root = document.createElement('span');
     root.className = 'api-verb-selector' + (options.className ? ' ' + options.className : '');
+    // Its box declares its constraint (goal/G47.1, -browser): what it holds stays inside; a dropdown's list is a popover, above it.
+    if (root.style) root.style.overflow = 'hidden';
     root.hidden = true;
     root.value = '';
     var tree = null;

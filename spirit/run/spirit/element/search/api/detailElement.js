@@ -23,6 +23,8 @@
     var gone = false;
     var box = document.createElement('div');
     box.className = 'api-family-detail';
+    // Its box declares its constraint (goal/G47.1, -browser): what it holds stays inside; a dropdown's list is a popover, above it.
+    if (box.style) box.style.overflow = 'hidden';
     host.appendChild(box);
     parts.then(function () {
       if (gone) return;

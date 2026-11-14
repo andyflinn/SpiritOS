@@ -17,6 +17,9 @@
 // sees the others read-only"): its branches, no add form, no Delete. The node refuses them as well.
 // An Add left at All Verbs is the empty verb, all of the family. The node checks the family and verb against its api
 // tree and refuses a family and verb the bundle holds already; a refusal is said in the page in the node's words.
+// THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
+// INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
+if (window.spirit && typeof window.spirit.require === 'function') ['spirit/auth/api.js'].forEach(function (p) { Promise.resolve(window.spirit.require(p)).catch(function () {}); });
 (function () {
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.require.
   var parts = Promise.all(['spirit/element/search/api.js', 'spirit/element/search/branch.js', 'spirit/element/rowForm.js'].map(function (p) {

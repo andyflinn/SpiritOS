@@ -20,6 +20,10 @@
 //   NO GRANT TOOL (goal/G41.21, box v17: "agent.grant is removed altogether: its table, its server, and the Grants tool
 //   in the left strip. A job's grant is its bundle"). THE BUNDLE EDITOR IN THE RIGHT STRIP ("The right strip gets its
 //   first real tool: the bundle editor"): spirit/element/bundleEditor.js, beside the agent server's DEBUG box.
+// THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
+// INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
+// Each by its family's name, its path spirit.familyPath's (the family app).
+if (window.spirit && typeof window.spirit.require === 'function' && typeof window.spirit.familyPath === 'function') ['app'].forEach(function (n) { Promise.resolve(window.spirit.require(window.spirit.familyPath(n))).catch(function () {}); });
 (function () {
   // one: the table's name as a detail pane's title row says it ("[Table-Icon] \"Add | Change\" [Table-name]").
   var TABLES = [

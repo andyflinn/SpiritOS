@@ -112,8 +112,15 @@ async function take(kind, skip) {
   for (;;) {
     const name = await withLabLock(function () { return firstFree(pool); });
     if (name) return name;
+    selfStarved(kind, pool);
     await sleep(250);
   }
+}
+// A HOLDER OF THE WHOLE POOL WAITS FOR NOTHING (goal/G47.1: spirit/element/test/search.js made four worlds, each on a lab node it
+// frees only after every test has run, and the fourth waited forever for one of three): it is told so, at once.
+function selfStarved(kind, pool) {
+  if (!pool.every(function (n) { return held.has(n); })) return;
+  throw new Error('this test holds every lab ' + kind + ' (' + pool.join(', ') + ') and asks for one more: free one first');
 }
 const held = new Set();
 function release(name) {
@@ -216,7 +223,7 @@ function handOutSync(kind) {
     if (!pool.length) throw last || new Error('no lab node of ' + kind + ' could be reset');
     let name = '';
     // One node taken, the first free one (find stops at it; filter would lock every free node of the pool), under the lab lock.
-    while (!name) { name = withLabLockSync(function () { return firstFree(pool); }); if (!name) sleepSync(250); }
+    while (!name) { name = withLabLockSync(function () { return firstFree(pool); }); if (!name) { selfStarved(kind, pool); sleepSync(250); } }
     held.add(name);
     try {
       stopNode(name);

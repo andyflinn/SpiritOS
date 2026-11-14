@@ -24,6 +24,9 @@
 //     options.table, options.key, options.label, options.data   an ID table of the shadow roll's shape (goal/G41.13), its
 //                         rows the list's own of that table (the grants panel's ID selectors)
 //     options.placeholder, options.all, options.empty, options.className   handed to the list or its root
+// THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
+// INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
+if (window.spirit && typeof window.spirit.require === 'function') ['spirit/contact/api.js'].forEach(function (p) { Promise.resolve(window.spirit.require(p)).catch(function () {}); });
 (function () {
   function createContactSelector(options) {
     var o = options || {};
@@ -32,6 +35,8 @@
     // A LIST GETS A BOX OF A STATED SIZE (rule/16): the pane face fills the box it is mounted in, its list scrolling inside.
     root.className = 'contact-selector ' + (isPane ? 'contact-selector-face-pane fill' : 'contact-selector-face-dropdown') +
       (o.className ? ' ' + o.className : '');
+    // Its box declares its constraint (goal/G47.1, -browser): what it holds stays inside; a dropdown's list is a popover, above it.
+    if (root.style) root.style.overflow = 'hidden';
     root.value = '';
     root.row = null;
     var made = null;

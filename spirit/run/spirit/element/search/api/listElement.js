@@ -59,6 +59,8 @@
     var isPane = options.face === 'pane';
     var root = document.createElement('div');
     root.className = 'app-server-selector' + (options.className ? ' ' + options.className : '');
+    // Its box declares its constraint (goal/G47.1, -browser): what it holds stays inside; a dropdown's list is a popover, above it.
+    if (root.style) root.style.overflow = 'hidden';
     // An input control stands inline, never a block of its own (goal/G29.7: server and verb side by side); a pane is a block.
     root.style.display = isPane ? 'block' : 'inline-block';
     var host = document.createElement('span');

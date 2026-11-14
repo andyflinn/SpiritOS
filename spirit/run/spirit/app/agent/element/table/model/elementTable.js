@@ -7,6 +7,9 @@
 // no longer spit out a list, and simply update the agent.model table"): a rowForm since goal/G41.27, ❓
 // [providerSelector:dropdown] [Ask], the model list below it following the updated table by the stream. A refusal is said on one line, the provider's reason.
 //   spirit.element.spirit.app.agent.element.table.model.elementTable.create(container, detail) -> { refresh, destroy }   detail: the page's detail pane (../tableElement.js)
+// THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
+// INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
+if (window.spirit && typeof window.spirit.require === 'function') ['spirit/app/agent/api.js'].forEach(function (p) { Promise.resolve(window.spirit.require(p)).catch(function () {}); });
 (function () {
   var made = 0;
   window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/agent/element/table/model/elementTable.js', {
@@ -56,7 +59,8 @@
       });
       return {
         refresh: function () { if (table) table.refresh(); },
-        destroy: function () { gone = true; if (drop) drop.destroy(); if (table) table.destroy(); },
+        // Its own box emptied too: the outer fill is its own, not the shared table's (goal/G47.1, -browser: "destroyed, its box is empty").
+        destroy: function () { gone = true; if (drop) drop.destroy(); if (table) table.destroy(); container.innerHTML = ''; },
       };
     },
   }); });

@@ -13,6 +13,9 @@
 //
 // Beside the dropdown, the shell the node names now (node.shell({ at })), by its label; a pick is held until Set, an
 // armingButton, whose second press asks the node, node.shell({ at, name }), and the row says what the node answered.
+// THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
+// INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
+if (window.spirit && typeof window.spirit.require === 'function') ['spirit/app/api.js'].forEach(function (p) { Promise.resolve(window.spirit.require(p)).catch(function () {}); });
 (function () {
   window.spirit.require('spirit/element/rowForm.js');
   window.spirit.require('spirit/element/armingButton.js');

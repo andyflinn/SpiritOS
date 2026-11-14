@@ -15,6 +15,9 @@
 // while a field in the list has focus, it waits until the focus leaves, so nothing he is typing is wiped. It writes no
 // state of its own.
 // WHAT IT NEEDS, IT GETS ITSELF (goal/G43.24, requirement 9): the spirit object's families, no api handed.
+// THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
+// INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
+if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/api.js','spirit/relay/api.js','spirit/job/api.js','spirit/contact/api.js'].forEach(function (p) { Promise.resolve(window.spirit.require(p)).catch(function () {}); });
 (function () {
   var S = window.spirit = window.spirit || {};
   var STEPS = 'spirit/app/join/join.json';
@@ -35,7 +38,8 @@
     var offs = [];
     var made = [];
     container.innerHTML =
-      '<div class="stack">' +
+      // Scrolling inside its container (goal/G47.1, -browser: the box it puts there declares its constraint).
+      '<div class="stack" style="height:100%;overflow:auto">' +
         '<div class="stat-tile wide"><div class="label">Becoming a SpiritOS participant</div>' +
           '<div class="job-manifest-note">A few steps, from joining a relay to opening your node from anywhere.</div></div>' +
         '<div class="join-list"><div class="job-manifest-note">Waiting for this node to say where you stand…</div></div>' +

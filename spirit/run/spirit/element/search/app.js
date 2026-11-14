@@ -9,6 +9,9 @@
 //   spirit.element.spirit.element.search.app.create(container, options) -> the list's { list, refresh(), destroy() }
 //     options        handed to the list as they are (face, toggle, onFace, visible, pick, servers, shells); the list is drawn in the container itself, so a
 //                    pane fills the box it is given
+// THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
+// INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
+if (window.spirit && typeof window.spirit.require === 'function') ['spirit/app/api.js'].forEach(function (p) { Promise.resolve(window.spirit.require(p)).catch(function () {}); });
 (function () {
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): its list, as this file runs, so a caller's require waits for it.
   window.spirit.require('spirit/element/search/app/listElement.js');

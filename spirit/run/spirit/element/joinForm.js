@@ -18,9 +18,14 @@
 // dropdown and the email in its span, Join or Change its button, the line of what was sent below it. The icon follows the
 // mode as the words do; a change of relay that changes the mode draws the form again, with its new icon and words.
 
+// THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
+// INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
+if (window.spirit && typeof window.spirit.require === 'function') ['spirit/contact/api.js'].forEach(function (p) { Promise.resolve(window.spirit.require(p)).catch(function () {}); });
 (function () {
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the rowForm, asked as this file runs.
   if (window.spirit && typeof window.spirit.require === 'function') window.spirit.require('spirit/element/rowForm.js');
+  // Its email field's limit, fieldInput's email rule (goal/G47.1, -browser: "every input it draws has a maxlength").
+  if (window.spirit && typeof window.spirit.require === 'function') window.spirit.require('spirit/element/fieldInput.js');
   // IT ESCAPES WITH spirit.escapeHtml (goal/G43.24; Andy: "every element that accesses ANY api must require them
   // themselves"): no escape is handed to it.
   function esc(s) { return window.spirit.escapeHtml(s == null ? '' : s); }
@@ -64,6 +69,8 @@
         list.map(function (r) { return '<option value="' + escape(r.url) + '"' + (r === picked ? ' selected' : '') + '>' + escape(r.label || r.url) + '</option>'; }).join('') +
       '</select>' +
       '<input type="email" class="sp-join-email" placeholder="your email" autocomplete="email" value="' + escape(w.email) + '">';
+    var FI = window.spirit.required && window.spirit.required.spirit && window.spirit.required.spirit.element && window.spirit.required.spirit.element.fieldInput;
+    if (FI) FI.attach(f.span.querySelector('.sp-join-email'), 'email');
   }
 
   function send(opts) {

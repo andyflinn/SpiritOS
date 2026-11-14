@@ -8,6 +8,9 @@
 //
 // The state is the server's job's, data.debug, as the node streams it (appServer.js puts it there on every change), read from
 // the jobs family's cache; a press asks the server's DEBUG {on}, and the job's next change redraws it.
+// THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
+// INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
+if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/api.js','spirit/app/api.js','spirit/job/api.js'].forEach(function (p) { Promise.resolve(window.spirit.require(p)).catch(function () {}); });
 (function () {
   window.spirit.require('spirit/element/search/app/rowFormToggle.js');
   window.spirit.cacheManager('app');

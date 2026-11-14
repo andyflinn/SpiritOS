@@ -41,6 +41,9 @@
 // name the fields of a row's label json its ID and its label are in; without them the item's key is the ID and the row's
 // label (or name) its label. opts.data the branch its caller keeps them in. No table, or the contacts' own, is the contacts.
 // A table's rows are no contacts: each is a plain row of its label, with no contact filters and nothing to open.
+// THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
+// INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
+if (window.spirit && typeof window.spirit.require === 'function') ['spirit/contact/api.js'].forEach(function (p) { Promise.resolve(window.spirit.require(p)).catch(function () {}); });
 (function () {
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree...."): its tree, through spirit.require.
   if (window.spirit.require) ['spirit/element/search/contact/rowElement.js', 'spirit/element/search.js', 'spirit/element/rowElement.js'].forEach(function (p) { window.spirit.require(p); });

@@ -87,7 +87,7 @@
     var l = look || {};
     // Set as a title, bigger than the lines below it (Andy: "the type face of the list and detail title rows should be a
     // bit more title-like a bit bigger").
-    return '<div class="agent-title" style="display:flex;align-items:center;gap:1em;font-size:1.3em;font-weight:600">' + iconHtml(l.icon || '', 1.2) +
+    return '<div class="agent-title" style="display:flex;align-items:center;font-size:1.3em;font-weight:600">' + iconHtml(l.icon || '', 1.2) +
       words.map(function (w, i) { return i === 0 && words.length > 1 ? '<b>' + esc(w) + '</b>' : '<span>' + esc(w) + '</span>'; }).join('') + '</div>';
   }
   //   ONE FIELD A LINE ("the simple input lines, take up all the with availabe, with only the 1em between the inputs
@@ -95,7 +95,7 @@
   //   pane's right edge.
   var STRETCH = 'width:100%;box-sizing:border-box';
   function fieldLine(labelHtml, inputHtml) {
-    return '<div style="margin-top:1em;display:flex;align-items:center;gap:1em"><span style="flex:none">' + labelHtml + '</span>' +
+    return '<div class="agent-line" style="display:flex;align-items:center"><span style="flex:none">' + labelHtml + '</span>' +
       '<div style="flex:1 1 0;min-width:0">' + inputHtml + '</div></div>';
   }
   // EVERY LIST SHOWS A ROW BY ITS ICON AND ITS LABEL, AND NOTHING ELSE (Andy: "the list in the left side pane then will
@@ -152,7 +152,7 @@
     var look = o.detail && o.detail.look ? o.detail.look(o.table) : { name: o.table };
     var buttons = Array.isArray(o.buttons) ? o.buttons : [];
     container.innerHTML = '<div class="fill">' + titleRow(look, [look.title || look.name || o.table]) +
-      '<div style="margin-top:1em">' + (o.add === false ? '' : '<button type="button" id="' + pre + 'add">Add a ' + esc(o.table) + '</button> ') +
+      '<div class="agent-block">' + (o.add === false ? '' : '<button type="button" id="' + pre + 'add">Add a ' + esc(o.table) + '</button> ') +
       buttons.map(function (b, i) { return '<button type="button" id="' + pre + 'button' + i + '">' + esc(b.label) + '</button> '; }).join('') +
       '<span id="' + pre + 'note"></span></div>' +
       '<div id="' + pre + 'list" class="fill" style="min-height:12em"></div></div>';

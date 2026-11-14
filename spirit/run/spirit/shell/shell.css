@@ -1171,6 +1171,14 @@ details.stat-tile > summary {
 .ch-meta { margin-left: 8px; }
 .ch-style-plain .ch-line { gap: 8px; }
 .ch-style-bubbles .ch-meta { margin-left: 0; }
+/* spirit/app/desk/element/desk/desk.js: its tab strip (goal/G47.1, box v109, as above). */
+#desk-tabs { gap: 12px; }
+/* spirit/app/agent/element/table/: a table's or a row's title, a field's line and a block under it (goal/G47.1, box v109). */
+.agent-title { gap: 1em; }
+.agent-line { margin-top: 1em; gap: 1em; }
+.agent-block { margin-top: 1em; }
+/* spirit/element/search/api.js: the server and verb selectors side by side (goal/G47.1, box v109). */
+.api-family-selector { gap: 1em; }
 /* A TAB CONTAINER'S CONTENT (spirit/element/tabContainer.js; goal/G41.13, Andy: "our standard 0.5em padding", "it must occupy
    all remaining vertical space, that it must be constrained to", "a bubble of of darker green than already is on the
    page"): the height left, scrolling inside itself, in a rounded well. */

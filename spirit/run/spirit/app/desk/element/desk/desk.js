@@ -21,8 +21,13 @@
 // ITS APP'S INTERFACE AND DATA, IT LOADS ITSELF (goal/G47.1, box v142: "all of testicle's elements must subscribe to the
 // data they display", and spirit/test/app-child-browser.js for every element under spirit/app/; rule/26): desk's api.js and its
 // cache manager, data.js, which the page's one stream feeds; mounted alone, on a page nothing else loaded them on, it has them.
+// THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
+// INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
+if (window.spirit && typeof window.spirit.require === 'function') ['spirit/app/backup/api.js'].forEach(function (p) { Promise.resolve(window.spirit.require(p)).catch(function () {}); });
 if (window.spirit && typeof window.spirit.require === 'function') Promise.resolve(window.spirit.require('spirit/app/desk/api.js')).catch(function () {});
 if (window.spirit && typeof window.spirit.cacheManager === 'function') Promise.resolve(window.spirit.cacheManager('desk')).catch(function () {});
+// Its fields' limits, fieldInput's (rule/26: what it draws with, it loads itself), in its tree so it is in before create.
+if (window.spirit && typeof window.spirit.require === 'function') Promise.resolve(window.spirit.require('spirit/element/fieldInput.js')).catch(function () {});
 var deskOpts = {};
 var deskStack = null;
 function deskVerbCall(name, args) {
@@ -1038,7 +1043,7 @@ window.spirit.require('spirit/element/installSpiritElement.js').then(function ()
       // goal (his answer to G9.6 Q1).
       '<div id="desk-bars">' +
         // GO ALL at the right of the tab bar, on the List tab only (desk/G3.4).
-        '<div style="display:flex;align-items:center"><div id="desk-tabs" style="flex:1;display:flex;gap:12px;flex-wrap:wrap;align-items:center"></div>' +
+        '<div style="display:flex;align-items:center"><div id="desk-tabs" style="flex:1;display:flex;flex-wrap:wrap;align-items:center"></div>' +
           '<button type="button" id="desk-go-all" hidden>Go all</button></div>' +
       '</div>' +
       // EVERY LIST IN A BOX OF A STATED SIZE (goal/G41.11, rule/16): the List and the Rules list each in a fill box, and
@@ -1079,6 +1084,13 @@ window.spirit.require('spirit/element/installSpiritElement.js').then(function ()
           '<div class="stat-tile wide"><div class="label">Profile</div><div id="desk-agent-picker"></div></div>' +
         '</div>' +
       '</div>';
+    // EVERY FIELD STOPS AT ITS LIMIT (goal/G47.1, -browser): the goal title "subject to label rules" (goal/G9.11), the
+    // rule's label the label rule and its text a paragraph (rule.add.json).
+    var FI = window.spirit.required && window.spirit.required.spirit && window.spirit.required.spirit.element && window.spirit.required.spirit.element.fieldInput;
+    if (FI) [['desk-goal-title', 'name'], ['desk-rule-label', 'name'], ['desk-rule-text', 'paragraph']].forEach(function (f) {
+      var el = container.querySelector('#' + f[0]);
+      if (el) FI.attach(el, f[1]);
+    });
     deskHeader();
     // goal/G41.23: every icon that stands alone in the page, through the icon element (deskGlyph).
     deskWatchIcons(container);

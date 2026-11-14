@@ -30,6 +30,8 @@
     var root = document.createElement('div');
     root.className = 'bundle-selector ' + (isPane ? 'bundle-selector-face-pane' : 'bundle-selector-face-dropdown') +
       (options.className ? ' ' + options.className : '');
+    // Its box declares its constraint (goal/G47.1, -browser): what it holds stays inside; a dropdown's list is a popover, above it.
+    if (root.style) root.style.overflow = 'hidden';
     root.value = '';
     root.row = null;
     var made = null;

@@ -13,6 +13,9 @@
 // job 'bundles' ({ table: 'branch', row }, gone when deleted, a bundle's branches each gone with it); the auth family's
 // cache manager (below) puts it into spirit.data.auth.data.branches, and every branch row on the page repaints from there
 // through its kind's index. A row asks and draws nothing of its own (rule/19).
+// THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
+// INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
+if (window.spirit && typeof window.spirit.require === 'function') ['spirit/auth/api.js'].forEach(function (p) { Promise.resolve(window.spirit.require(p)).catch(function () {}); });
 (function () {
   var E = (window.spirit = window.spirit || {}).element = window.spirit.element || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.require.

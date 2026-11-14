@@ -44,11 +44,13 @@
     options = options || {};
     var root = document.createElement('div');
     root.className = 'api-family-selector' + (options.className ? ' ' + options.className : '');
+    // Its box declares its constraint (goal/G47.1, -browser): what it holds stays inside; a dropdown's list is a popover, above it.
+    if (root.style) root.style.overflow = 'hidden';
     // SIDE BY SIDE (goal/G29.7; Andy, 2026-10-18: "get those two selector, server and verb NEXT to each other, not
     // stacked"): the pair is one inline row in the line it stands in.
     root.style.display = 'inline-flex';
     root.style.alignItems = 'center';
-    root.style.gap = '1em';
+    // Their gap, 1em, is shell.css's .api-family-selector (goal/G47.1, box v109).
     root.family = '';
     root.verb = '';
     root.value = '';

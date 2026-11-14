@@ -8,6 +8,9 @@
 //
 // It follows the app's row in spirit.data.app (the row's active and intrinsic); a press asks the node, spirit.app.activeApp, and
 // the row the stream then brings redraws it. Its words name what the app mounts, from its <name>.json: face, server, or both.
+// THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
+// INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
+if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/api.js','spirit/app/api.js'].forEach(function (p) { Promise.resolve(window.spirit.require(p)).catch(function () {}); });
 (function () {
   window.spirit.require('spirit/element/search/app/rowFormToggle.js');
   window.spirit.cacheManager('app');

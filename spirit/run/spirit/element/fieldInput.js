@@ -9,14 +9,15 @@
 //   spirit.required.spirit.element.fieldInput.fits(value, rule) -> true when the rule takes it
 //   spirit.required.spirit.element.fieldInput.attach(input, rule)   the input's maxlength set to the rule's bytes, and the bytes held
 //                                                     as typed; rule: 'name' (64 bytes), 'description' (128), 'paragraph' (2048),
-//                                                     'line' (1024, a chat line), 'glyph' (one glyph of at most 8 bytes)
+//                                                     'line' (1024, a chat line), 'glyph' (one glyph of at most 8 bytes),
+//                                                     'email' (254, fieldRules' email rule, goal/G40.10)
 (function (root) {
   var E = (root.spirit = root.spirit || {}).element = root.spirit.element || {};
   // THE RULES IT HOLDS TO, IT LOADS ITSELF (rule/26; goal/G41.27, found by the general UI test: on a bare page, without
   // the boot's list, it held nothing). Asked as this file runs, so whoever requires it is answered once they are in.
   if (root.spirit && typeof root.spirit.require === 'function') root.spirit.require('spirit/fieldRules.js');
   var LIMIT = { name: 'MAX_BYTES', description: 'DESCRIPTION_MAX_BYTES', paragraph: 'PARAGRAPH_MAX_BYTES', line: 'LINE_MAX_BYTES',
-    glyph: 'GLYPH_MAX_BYTES' };
+    glyph: 'GLYPH_MAX_BYTES', email: 'EMAIL_MAX_BYTES' };
 
   function rules() { return (root.spirit && root.spirit.fieldRules) || null; }
   function bytes(s) {

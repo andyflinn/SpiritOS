@@ -19,6 +19,9 @@
   var E = (window.spirit = window.spirit || {}).element = window.spirit.element || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree...."): its tree, through spirit.require.
   if (window.spirit.require) window.spirit.require('spirit/element/rowElement.js');
+  // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
+  // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
+  if (window.spirit && typeof window.spirit.require === 'function') ['spirit/contact/api.js'].forEach(function (p) { Promise.resolve(window.spirit.require(p)).catch(function () {}); });
   // ITS DOT AND ITS MARK ARE THE ICON ELEMENT (goal/G41.23; Andy, goal/G41.21: "this element will replace icons painting
   // all shell elements and apps."): an icon that stands alone, loaded here too.
   var iconReady = Promise.resolve(window.spirit.require ? window.spirit.require('spirit/element/icon.js') : null).then(null, function () { /* the glyph stays as text */ });

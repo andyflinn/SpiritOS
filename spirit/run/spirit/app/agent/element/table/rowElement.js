@@ -15,6 +15,8 @@
 (function () {
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the tables' shared element, whose helpers it uses.
   spirit.require('spirit/app/agent/element/table/tableElement.js');
+  // And fieldInput, which holds a name or a description field to its rule (goal/G47.1: without it the label took 4096 bytes).
+  spirit.require('spirit/element/fieldInput.js');
   var made = 0;
   function A() { return window.spirit.element.spirit.app.agent.element.table.tableElement; }
   function esc(s) { return A().esc(s); }
@@ -105,6 +107,10 @@
       if (f.kind === 'list') v = Array.isArray(v) ? v.join(', ') : '';
       return '<input type="text" id="' + id + '" style="' + STRETCH + '" value="' + esc(v) + '">';
     }
+    function dropIcons() {
+      Object.keys(icons).forEach(function (k) { if (icons[k] && typeof icons[k].destroy === 'function') icons[k].destroy(); });
+      icons = {};
+    }
     function paint() {
       if (gone) return;
       Object.keys(picks).forEach(function (k) { picks[k].destroy(); });
@@ -112,8 +118,9 @@
       Object.keys(bundles).forEach(function (k) { if (bundles[k] && typeof bundles[k].destroy === 'function') bundles[k].destroy(); });
       bundles = {};
       editors = {};
-      icons = {};
-      if (!row) { container.innerHTML = '<div class="fill">' + head() + '<div style="margin-top:1em">' + esc(note || 'Loading…') + '</div></div>'; return; }
+      // Each icon picker lets its watches go too (goal/G47.1, -browser: "destroyed, it lets every subscription it made go").
+      dropIcons();
+      if (!row) { container.innerHTML = '<div class="fill">' + head() + '<div class="agent-block">' + esc(note || 'Loading…') + '</div></div>'; return; }
       var simple = fields.filter(function (f) { return f.kind !== 'code'; });
       var code = fields.filter(function (f) { return f.kind === 'code'; });
       // THE CODE FIELD TAKES THE FREE HEIGHT (Andy: "the codeMirror pane in details must not be allowed to move the
@@ -125,8 +132,8 @@
           var line = fieldLine('<label for="' + pre + f.field + '">' + esc(f.label) + '</label>', cell(f, row[f.field]));
           return f.of && !(narrowCount[f.field] > 0) ? line.replace('<div ', '<div hidden ') : line;
         }).join('') +
-        code.map(function (f) { return '<div style="margin-top:1em">' + esc(f.label) + '</div><div class="text-view fill" id="' + pre + f.field + '"></div>'; }).join('') +
-        '<div style="margin-top:1em">' + (adding ? '<button type="button" id="' + pre + 'addnew">Add new ' + esc((o.look && o.look.name) || o.table) + '</button>'
+        code.map(function (f) { return '<div class="agent-block">' + esc(f.label) + '</div><div class="text-view fill" id="' + pre + f.field + '"></div>'; }).join('') +
+        '<div class="agent-block">' + (adding ? '<button type="button" id="' + pre + 'addnew">Add new ' + esc((o.look && o.look.name) || o.table) + '</button>'
           : '<button type="button" id="' + pre + 'delete">Delete</button>') + ' <span id="' + pre + 'note">' + esc(note) + '</span></div></div>';
       fields.forEach(function (f) {
         var el = input(f);
@@ -315,7 +322,7 @@
     });
     }
     if (adding) { row = {}; paint(); } else attach();
-    return { destroy: function () { gone = true; unwatch(); Object.keys(picks).forEach(function (k) { picks[k].destroy(); }); Object.keys(bundles).forEach(function (k) { if (bundles[k] && typeof bundles[k].destroy === 'function') bundles[k].destroy(); }); container.innerHTML = ''; } };
+    return { destroy: function () { gone = true; unwatch(); dropIcons(); Object.keys(picks).forEach(function (k) { picks[k].destroy(); }); Object.keys(bundles).forEach(function (k) { if (bundles[k] && typeof bundles[k].destroy === 'function') bundles[k].destroy(); }); container.innerHTML = ''; } };
   }
 
   window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/agent/element/table/rowElement.js', { create: createRow }); });

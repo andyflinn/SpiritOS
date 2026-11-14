@@ -14,6 +14,9 @@
 // A VIEW OF THE auth FAMILY'S BUNDLES (goal/G41.14, G41.28; Andy: "EVERY FUCKING element MUST FUCKING LISTING to anything that changes their
 // data set"): auth.bundle's search seats its rows there, and the node's stream keeps them current through the auth
 // family's cache manager (spirit/auth/data.js), so a bundle added, renamed or deleted anywhere shows in every list.
+// THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
+// INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
+if (window.spirit && typeof window.spirit.require === 'function') ['spirit/auth/api.js'].forEach(function (p) { Promise.resolve(window.spirit.require(p)).catch(function () {}); });
 (function () {
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.require.
   if (window.spirit.require) ['spirit/element/search.js', 'spirit/element/search/bundle/rowElement.js'].forEach(function (p) { window.spirit.require(p); });

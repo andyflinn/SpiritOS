@@ -236,7 +236,7 @@
     var paneHtml =
       // ITS OWN COLUMN (goal/G40.8): the box it is given is its mounter's, sized by it; inside, the filters and the search
       // row are fixed rows and the list takes the rest. A dropdown's pane is the same, popped up.
-      '<div style="display:flex;flex-direction:column;height:100%;min-height:0;flex:1 1 auto">' +
+      '<div style="display:flex;flex-direction:column;height:100%;min-height:0;flex:1 1 auto;overflow:hidden">' +
       '<div class="shell-bubble ps-above">' +
       (selectors.length ? '<div id="' + pre + 'selectors" class="ps-row ps-below" style="' + ROW + '">' + iconHtml('🪣') +
         selectors.map(function (s, i) { return '<span id="' + pre + 'selector' + i + '"></span>'; }).join('') + '</div>' : '') +
@@ -269,6 +269,9 @@
         '</span>'
       : paneHtml;
     if (dropdown) { var p0 = el('popup'); if (p0) p0.hidden = true; }
+    // ITS LISTENERS ON ITS OWN BOX (goal/G47.1, -browser: every input and button has a listener on itself or between it and the box
+    // it puts into its container): the one root it draws, never the container it was handed, which is its mounter's.
+    var own = container.firstElementChild || container;
     // THE SEARCH WORDS STOP AT THEIR LIMIT (goal/G41.27; Andy: "of course search words need a limit, search words must
     // follow the description rules."): fieldInput holds them to the description rule as they are typed.
     // fieldInput is a helper, not an element: it stands at spirit.required.<its path> (goal/G43.32; Andy: "they live in require").
@@ -686,7 +689,7 @@
       sortBy = { field: field, direction: direction === 'desc' ? 'desc' : 'asc' };
       draw();
     }
-    container.addEventListener('input', function (e) { var t = e && e.target; if (t && t.id === pre + 'text') typed(); });
+    own.addEventListener('input', function (e) { var t = e && e.target; if (t && t.id === pre + 'text') typed(); });
     // THE KEYS ON THE WHOLE LIST (goal/G40.8; Andy: "the up/down/home/end/pageUp/pageDown keys ... should always work, on
     // the whole search list, if the search input string is activated or not"). Heard on the search itself, and on the
     // page while this list is on screen and nothing else that takes typing has the focus.
@@ -721,7 +724,7 @@
     }
     // A press or a key inside the 🪣 row is its selector's own, never this list's.
     function inSelectors(t) { var row = selectors.length ? el('selectors') : null; return !!(row && t && typeof row.contains === 'function' && row.contains(t)); }
-    container.addEventListener('keydown', function (e) {
+    own.addEventListener('keydown', function (e) {
       var stop = function () { if (typeof e.preventDefault === 'function') e.preventDefault(); };
       if (inSelectors(e && e.target)) return;
       if (onKeys(e)) return;
@@ -733,7 +736,7 @@
         if (currentKey != null && byKey[currentKey]) { stop(); pressRow(byKey[currentKey]); return; }
       }
     });
-    container.addEventListener('click', function (e) {
+    own.addEventListener('click', function (e) {
       var t = e && e.target;
       if (!t || inSelectors(t)) return;
       if (t.id === pre + 'field') { setOpen(!open); return; }

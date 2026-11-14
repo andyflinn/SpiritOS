@@ -146,8 +146,21 @@ function syncTree(from, to) {
 
 // A node started on a lab node's tree on a free port (or o.port), until it answers, its DEBUG on by the node's own verb (the
 // DEBUG page is answered only then). Answers { child, base, port, up, debug }.
+// A LAB NODE'S HOME IS IN ITS OWN TREE (goal/G47.1, wsl: "every scratch node's backup writes into the real
+// ~/.SpiritOS/backups (374 folders)"): spirit/state/config.json's spiritHome, the one setting backup reads for where it
+// copies to (spirit/app/backup/backup.js spiritHome), set to <tree>/.spiritHome unless the test set one; the reset clears it.
+function homeInTree(run) {
+  const file = path.join(run, 'spirit', 'state', 'config.json');
+  let cfg = {};
+  try { cfg = JSON.parse(fs.readFileSync(file, 'utf8')) || {}; } catch (e) { cfg = {}; }
+  if (cfg.spiritHome) return;
+  cfg.spiritHome = path.join(path.dirname(path.dirname(run)), '.spiritHome');
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, JSON.stringify(cfg, null, 2));
+}
 async function startNode(lab, port) {
   const at = port || await freePort();
+  homeInTree(lab.run);
   const child = spawn(process.execPath, ['spirit/server.js', '--port', String(at)], { cwd: lab.run, stdio: 'ignore' });
   lab.started(child.pid);
   const base = 'http://127.0.0.1:' + at;
@@ -208,6 +221,7 @@ function scratchTree() {
 function startNodeOn(run, port, o) {
   const lab = trees.get(path.resolve(run));
   if (!lab) throw new Error('startNodeOn: ' + run + ' is no lab node handed out by scratchTree');
+  homeInTree(lab.run);
   const child = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], Object.assign({ cwd: lab.run, stdio: 'ignore' }, (o && o.stdio) ? { stdio: o.stdio } : {}, (o && o.windowsHide) ? { windowsHide: true } : {}));
   lab.started(child.pid);
   return child;

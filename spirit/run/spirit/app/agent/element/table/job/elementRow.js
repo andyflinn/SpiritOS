@@ -4,6 +4,9 @@
 // answer and its stream only (rule/19). Built on the tables' row element (../rowElement.js).
 //   spirit.element.spirit.app.agent.element.table.job.elementRow.create(container, id, added, detail) -> { destroy }   added: just made by Add; detail: the
 //   page's detail pane, whose look(table) gives the title row its icon and name
+// THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
+// INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
+if (window.spirit && typeof window.spirit.require === 'function') ['spirit/app/agent/api.js'].forEach(function (p) { Promise.resolve(window.spirit.require(p)).catch(function () {}); });
 (function () {
   // Its table's rows are the agent family's cache (goal/G41.28): the family's own data.js
   // (spirit/app/agent/data.js) translates them into the table's branch; it is loaded here, with
