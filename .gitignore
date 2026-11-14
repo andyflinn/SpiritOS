@@ -182,3 +182,7 @@ app-state/
 # lab/labNodes.js and never shared. Their lock and pid files live there too.
 /lab/node/
 /lab/repo/
+
+# TESTICLE'S PLANTED WORLDS (goal/G47.1, box v143: "no spirit/zzTesticle/ or other zz folder in the tree: the planted scripts
+# go to a .gitignored run://spirit/app/testicle/temp/"): what testicle's own test plants on its scratch node.
+/spirit/run/spirit/app/testicle/temp/

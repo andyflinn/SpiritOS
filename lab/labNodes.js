@@ -103,9 +103,11 @@ function tryLock(name) {
     try { fs.writeFileSync(at, String(process.pid), { flag: 'wx' }); return true; } catch (r) { return false; }
   }
 }
-async function take(kind) {
-  const pool = POOLS[kind];
-  if (!pool) throw new Error('no lab pool ' + kind);
+// skip: nodes this ask found broken; with every node of the pool skipped, it answers '' at once.
+async function take(kind, skip) {
+  const pool = (POOLS[kind] || []).filter(function (n) { return !skip || skip.indexOf(n) === -1; });
+  if (!POOLS[kind]) throw new Error('no lab pool ' + kind);
+  if (!pool.length) return '';
   fs.mkdirSync(NODES, { recursive: true });
   for (;;) {
     const name = await withLabLock(function () { return firstFree(pool); });
@@ -135,7 +137,13 @@ function stopNode(name) {
 function addWorktree(dir, sha) {
   const registered = function () { try { return git(['-C', LAB_REPO, 'worktree', 'list', '--porcelain']).split('\n').some(function (l) { return /^worktree /.test(l) && path.resolve(l.replace(/^worktree /, '')) === path.resolve(dir); }); } catch (e) { return false; } };
   try { git(['-C', LAB_REPO, 'worktree', 'prune']); } catch (e) { /* none */ }
-  if (registered()) git(['-C', LAB_REPO, 'worktree', 'remove', '--force', dir]);
+  // A WORKTREE LEFT LOCKED (goal/G47.1; found on Andy's node: an add cut off leaves its folder gone and its entry "locked",
+  // and a locked worktree is removed only with --force twice): unlocked first, then removed with both, so the node is made again.
+  if (registered()) {
+    try { git(['-C', LAB_REPO, 'worktree', 'unlock', dir]); } catch (e) { /* it was not locked */ }
+    git(['-C', LAB_REPO, 'worktree', 'remove', '--force', '--force', dir]);
+  }
+  try { git(['-C', LAB_REPO, 'worktree', 'prune']); } catch (e) { /* none */ }
   if (fs.existsSync(dir)) fs.rmSync(dir, { recursive: true, force: true });
   git(['-C', LAB_REPO, 'worktree', 'add', '-q', '--detach', dir, sha]);
 }
@@ -171,15 +179,22 @@ async function reset(name, sha) {
 
 // HAND OUT ONE: a free node of the pool (waiting while all are taken), reset to the files under test. Answers
 // { name, root, run, release(), started(pid) }; the caller starts its node there and names its pid by started().
+// A NODE THAT CANNOT BE RESET is left for this ask and the next free one taken (goal/G47.1: one broken node failed nearly every
+// test on Andy's node, it being always the first free); only when every node of the pool fails does the ask fail, with why.
 async function handOut(kind) {
   const sha = await snapshot();
-  const name = await take(kind);
-  held.add(name);
-  try {
-    const root = await reset(name, sha);
-    return { name: name, root: root, run: path.join(root, 'spirit', 'run'), sha: sha,
-      started: function (pid) { noteNode(name, pid); }, release: function () { release(name); } };
-  } catch (e) { release(name); throw e; }
+  const skip = [];
+  let last = null;
+  for (;;) {
+    const name = await take(kind, skip);
+    if (!name) throw last || new Error('no lab node of ' + kind + ' could be reset');
+    held.add(name);
+    try {
+      const root = await reset(name, sha);
+      return { name: name, root: root, run: path.join(root, 'spirit', 'run'), sha: sha,
+        started: function (pid) { noteNode(name, pid); }, release: function () { release(name); } };
+    } catch (e) { release(name); last = e; skip.push(name); console.error('lab: ' + name + ' could not be reset, the next node taken: ' + String(e && e.message || e).slice(0, 300)); }
+  }
 }
 
 // THE SAME, WITHOUT A PROMISE, for a test whose world is made in plain functions: it waits by blocking, which a test asking
@@ -192,21 +207,26 @@ function withLabLockSync(fn) {
 }
 function handOutSync(kind) {
   const sha = withLabLockSync(snapshotUnlocked);
-  const pool = POOLS[kind];
-  if (!pool) throw new Error('no lab pool ' + kind);
+  if (!POOLS[kind]) throw new Error('no lab pool ' + kind);
   fs.mkdirSync(NODES, { recursive: true });
-  let name = '';
-  // One node taken, the first free one (find stops at it; filter would lock every free node of the pool), under the lab lock.
-  while (!name) { name = withLabLockSync(function () { return firstFree(pool); }); if (!name) sleepSync(250); }
-  held.add(name);
-  try {
-    stopNode(name);
-    const dir = path.join(NODES, name);
-    if (!fs.existsSync(path.join(dir, '.git'))) withLabLockSync(function () { addWorktree(dir, sha); });
-    else resetTree(name, dir, sha);
-    return { name: name, root: dir, run: path.join(dir, 'spirit', 'run'), sha: sha,
-      started: function (pid) { noteNode(name, pid); }, release: function () { release(name); } };
-  } catch (e) { release(name); throw e; }
+  const skip = [];
+  let last = null;
+  for (;;) {
+    const pool = POOLS[kind].filter(function (n) { return skip.indexOf(n) === -1; });
+    if (!pool.length) throw last || new Error('no lab node of ' + kind + ' could be reset');
+    let name = '';
+    // One node taken, the first free one (find stops at it; filter would lock every free node of the pool), under the lab lock.
+    while (!name) { name = withLabLockSync(function () { return firstFree(pool); }); if (!name) sleepSync(250); }
+    held.add(name);
+    try {
+      stopNode(name);
+      const dir = path.join(NODES, name);
+      if (!fs.existsSync(path.join(dir, '.git'))) withLabLockSync(function () { addWorktree(dir, sha); });
+      else resetTree(name, dir, sha);
+      return { name: name, root: dir, run: path.join(dir, 'spirit', 'run'), sha: sha,
+        started: function (pid) { noteNode(name, pid); }, release: function () { release(name); } };
+    } catch (e) { release(name); last = e; skip.push(name); console.error('lab: ' + name + ' could not be reset, the next node taken: ' + String(e && e.message || e).slice(0, 300)); }
+  }
 }
 
 module.exports = { handOut: handOut, handOutSync: handOutSync, snapshot: snapshot, POOLS: POOLS, LAB: LAB, NODES: NODES, LAB_REPO: LAB_REPO, BRANCH: BRANCH };

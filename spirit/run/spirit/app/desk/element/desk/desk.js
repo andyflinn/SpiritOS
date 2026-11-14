@@ -18,6 +18,11 @@
 // built here from the one spirit object, a family's verb asked through it, its escape, the desk server's publishes heard on
 // the stream through the data set's translator (the desk family's cache manager keeps them first), and a dialog opened as a
 // layer over the page through panel.js (the mounter's open, or the page's own stack).
+// ITS APP'S INTERFACE AND DATA, IT LOADS ITSELF (goal/G47.1, box v142: "all of testicle's elements must subscribe to the
+// data they display", and spirit/test/app-child-browser.js for every element under spirit/app/; rule/26): desk's api.js and its
+// cache manager, data.js, which the page's one stream feeds; mounted alone, on a page nothing else loaded them on, it has them.
+if (window.spirit && typeof window.spirit.require === 'function') Promise.resolve(window.spirit.require('spirit/app/desk/api.js')).catch(function () {});
+if (window.spirit && typeof window.spirit.cacheManager === 'function') Promise.resolve(window.spirit.cacheManager('desk')).catch(function () {});
 var deskOpts = {};
 var deskStack = null;
 function deskVerbCall(name, args) {

@@ -108,12 +108,41 @@ const LAB = {
     const outer = path.join(REPO, '..', '..', 'labNodes.js');
     const at = fs.existsSync(own) ? own : (path.basename(path.dirname(REPO)) === 'node' && fs.existsSync(outer)) ? outer : '';
     if (!at) throw new Error('no lab: neither ' + own + ' nor a lab around ' + REPO);
+    LAB.nested = at !== own;
     LAB_MODULE = require(at);
     return LAB_MODULE;
   },
-  handOut: function (kind) { return LAB.get().handOut(kind); },
-  handOutSync: function (kind) { return LAB.get().handOutSync(kind); },
+  nested: false,
+  handOut: function (kind) { return LAB.get().handOut(kind).then(LAB.own); },
+  handOutSync: function (kind) { return LAB.own(LAB.get().handOutSync(kind)); },
+  // RUN FROM INSIDE A LAB NODE, THE NODE HANDED OUT HOLDS THIS TREE (goal/G47.1; cw found it in testicle's own test in debug
+  // mode: the scripts it planted in its own tree never reached the classifier's node, so nothing was classified). Lab's
+  // snapshot is the outer checkout; the files under test here are this tree, the ones a test planted in it too (ignored by
+  // git or not). So every file of this spirit/run that differs is copied over, and one this tree lacks is removed; the node's
+  // state is not touched (lab has just reset it).
+  own: function (lab) {
+    if (LAB.nested) syncTree(RUN, lab.run);
+    return lab;
+  },
 };
+const SYNC_SKIP = ['state', 'app-state', '.git', 'node_modules'];
+function syncTree(from, to) {
+  const walk = function (dir, fn) {
+    let names = [];
+    try { names = fs.readdirSync(dir, { withFileTypes: true }); } catch (e) { return; }
+    names.forEach(function (d) { if (d.isDirectory()) { if (SYNC_SKIP.indexOf(d.name) === -1) walk(path.join(dir, d.name), fn); } else if (d.isFile()) fn(path.join(dir, d.name)); });
+  };
+  walk(from, function (src) {
+    const dst = path.join(to, path.relative(from, src));
+    let same = false;
+    try { const a = fs.statSync(src), b = fs.statSync(dst); same = a.size === b.size && fs.readFileSync(src).equals(fs.readFileSync(dst)); } catch (e) { same = false; }
+    if (!same) { fs.mkdirSync(path.dirname(dst), { recursive: true }); fs.copyFileSync(src, dst); }
+  });
+  walk(to, function (dst) {
+    const src = path.join(from, path.relative(to, dst));
+    if (!fs.existsSync(src)) { try { fs.rmSync(dst, { force: true }); } catch (e) { /* the next reset takes it */ } }
+  });
+}
 
 // A node started on a lab node's tree on a free port (or o.port), until it answers, its DEBUG on by the node's own verb (the
 // DEBUG page is answered only then). Answers { child, base, port, up, debug }.

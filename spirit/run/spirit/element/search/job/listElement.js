@@ -42,7 +42,7 @@
     var stack = null;
     var openOver = typeof o.open === 'function' ? o.open : function (k, spec) { return stack ? stack.open(k, spec) : Promise.resolve(null); };
 
-    container.innerHTML = '<div data-jobs="list" class="fill"></div>';
+    container.innerHTML = '<div data-jobs="list" class="fill" style="overflow:hidden"></div>';
 
     function rowOf(row) { return J().rowElement.create(row, { latest: function () { return latest; } }); }
 

@@ -16,6 +16,9 @@
     var o = options || {};
     var root = document.createElement('div');
     root.className = 'job-selector fill';
+    // Its box keeps what it holds inside (the box: "an element container always must constrain its children's display to its own
+    // size"; spirit-sibling-browser.js: overflow not visible).
+    root.style.overflow = 'hidden';
     var made = null;
     var gone = false;
     // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).

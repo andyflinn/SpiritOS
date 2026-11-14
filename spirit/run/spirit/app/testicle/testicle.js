@@ -138,12 +138,13 @@ function testServed(r) {
 
 function posix(p) { return String(p).split(path.sep).join('/'); }
 function hashOf(rel) { try { return crypto.createHash('sha256').update(fs.readFileSync(path.join(RUN, rel))).digest('hex'); } catch (e) { return ''; } }
-function there(rel) { try { return fs.statSync(path.join(RUN, rel)).isFile(); } catch (e) { return false; } }
+// In debug mode a file outside its scope is not there (DEBUG, below).
+function there(rel) { if (!inScope(posix(rel))) return false; try { return fs.statSync(path.join(RUN, rel)).isFile(); } catch (e) { return false; } }
 // Never watched: the node's state (this database among it), .git, and vendored code, as testModule.js skips them.
 function ignored(full) {
   const rel = posix(path.relative(RUN, path.resolve(full)));
   if (!rel || rel.indexOf('..') === 0) return false;
-  return rel.split('/').some(function (part) { return part === 'state' || part === 'app-state' || part === '.git'; }) || VENDORED_FOLDERS.holds(path.join(RUN, rel));
+  return rel.split('/').some(function (part) { return part === 'state' || part === 'app-state' || part === '.git'; }) || VENDORED_FOLDERS.holds(path.join(RUN, rel)) || !onTheWay(rel);
 }
 // A suite is a .js in a test/ folder; any other .js is a product file.
 function isSuite(rel) { return path.posix.basename(path.posix.dirname(rel)) === 'test'; }
@@ -183,6 +184,19 @@ function readPrefs() {
   } catch (e) { return Object.assign({}, PREFS_DEFAULT); }
 }
 let prefs = readPrefs();
+// DEBUG MODE (goal/G47.1, box v143: "testicle has a debug mode, set only by ./test/testicle.js (a preference it writes on its
+// scratch node, no verb): in it testicle operates as if run://spirit/app/testicle/ were ALL the testables of the whole node";
+// Andy: "the testicle tests set the testicle server to \"debug\""): debug true in preferences.json, read once at start, never
+// set nor answered by a verb. In it a file outside spirit/app/testicle/ is not there (there) and never watched (ignored), so
+// testicle's scripts, its general suites and the classifier's scripts are only testicle's own; the classifier itself,
+// spirit/test/scriptClassify.js, is still used ("still used, but in debug mode only called with scripts in
+// spirit/app/testicle/"). With no debug set, as on Andy's node and an agent's, the whole tree, as before.
+const DEBUG_SCOPE = 'spirit/app/testicle/';
+const DEBUG = (function () { try { return JSON.parse(fs.readFileSync(PREFS_FILE, 'utf8')).debug === true; } catch (e) { return false; } }());
+function inScope(rel) { return !DEBUG || rel === CLASSIFY || String(rel).indexOf(DEBUG_SCOPE) === 0; }
+// A folder on the way to the scope, or in it, is walked and watched; in debug mode nothing else.
+function onTheWay(rel) { return !DEBUG || !rel || DEBUG_SCOPE.indexOf(rel + '/') === 0 || String(rel).indexOf(DEBUG_SCOPE) === 0; }
+if (DEBUG) console.error('testicle: debug mode, its scope ' + DEBUG_SCOPE);
 // A file change, a press or the start: the runner waits for one quiet second, a new event pushing it back.
 function soon() {
   if (quiet) clearTimeout(quiet);
@@ -505,6 +519,8 @@ function pairs() {
       const tests = Object.create(null);
       String(out).split('\n').filter(Boolean).forEach(function (l) {
         const p = l.split(' ');
+        // In debug mode only the pairs inside its scope: its general tests testicle's own three and the planted worlds'.
+        if (!inScope(p[0]) || (p[1] && !inScope(p[1]))) return;
         tests[p[0]] = true;
         if (!p[1]) return;
         (byFile[p[1]] = byFile[p[1]] || []).push(p[0]);
@@ -781,7 +797,8 @@ appServer.serve({
     handler: function (a) {
       if (typeof a.interactive === 'boolean' && a.interactive !== prefs.interactive) {
         const next = Object.assign({}, prefs, { interactive: a.interactive });
-        fs.writeFileSync(PREFS_FILE, JSON.stringify(next, null, 2) + '\n');
+        // Debug mode, set in the file by its test, stays there; no verb answers it.
+        fs.writeFileSync(PREFS_FILE, JSON.stringify(Object.assign(DEBUG ? { debug: true } : {}, next), null, 2) + '\n');
         prefs = next;
         appServer.publish({ testicle: { preferences: Object.assign({}, prefs), busy: busyNow() } });
         if (!prefs.interactive) soon();

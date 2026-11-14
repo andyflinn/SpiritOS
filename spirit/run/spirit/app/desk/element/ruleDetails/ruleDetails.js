@@ -16,6 +16,11 @@
 // when it changes shit it listens to fucking update via the spirit object"): what rule.get and item.chat answered is kept
 // in spirit.data.desk.data, and the dialog draws from its watches; each of his writes comes back there, never by asking again.
 
+// ITS APP'S INTERFACE AND DATA, IT LOADS ITSELF (goal/G47.1, box v142: "all of testicle's elements must subscribe to the
+// data they display", and spirit/test/app-child-browser.js for every element under spirit/app/; rule/26): desk's api.js and its
+// cache manager, data.js, which the page's one stream feeds; mounted alone, on a page nothing else loaded them on, it has them.
+if (window.spirit && typeof window.spirit.require === 'function') Promise.resolve(window.spirit.require('spirit/app/desk/api.js')).catch(function () {});
+if (window.spirit && typeof window.spirit.cacheManager === 'function') Promise.resolve(window.spirit.cacheManager('desk')).catch(function () {});
 var rdApi = null;
 var rdKey = '';
 var rdRule = null;           // the rule as the server last said it

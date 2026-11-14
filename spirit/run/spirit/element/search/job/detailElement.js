@@ -28,8 +28,11 @@
 // came meanwhile. It repaints when its job changes there.
 (function () {
   var S = window.spirit = window.spirit || {};
-  // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the Extract box's codeMirror and the jobs family's cache manager.
-  var parts = Promise.all([S.require('spirit/element/codeMirror.js'), S.cacheManager('job')]);
+  // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the Extract box's codeMirror, the jobs family's cache manager, and the
+  // jobs family's interface, spirit/job/api.js, whose cancel and delete its buttons call (Andy, goal/G47.1: "JUST BECAUSE api
+  // branches are intrinsic doesn't fucking mean the browser has interfaces for them already loaded, EVERY FUCKING ELEMENT
+  // REQUIRES THE FUCKING INTERFACES IT FUCKING NEEDS").
+  var parts = Promise.all([S.require('spirit/element/codeMirror.js'), S.cacheManager('job'), S.require('spirit/job/api.js')]);
 
   function esc(s) { return S.escapeHtml(String(s == null ? '' : s)); }
 
@@ -72,7 +75,7 @@
     var off = null;
 
     host.innerHTML =
-      '<div class="stack">' +
+      '<div class="stack" style="overflow:auto">' +
         '<div class="stat-tile wide" data-job="head"></div>' +
         '<div class="stat-tile wide"><div class="job-manifest-note" data-job="window">Events</div>' +
           '<div class="job-log-panel" data-job="log" style="height:33vh;max-height:33vh;overflow:auto"></div></div>' +
@@ -144,12 +147,12 @@
       function failed(word) { return function (e) { console.error(word + ' failed', e); }; }
       if (what === 'cancel') {
         // It stays open: the next event shows the job stop.
-        Promise.resolve(S.ready).then(function (s) { return s.job.cancel({ id: id }); }).then(null, failed('cancel'));
+        Promise.all([S.ready, parts]).then(function (r) { return r[0].job.cancel({ id: id }); }).then(null, failed('cancel'));
         return;
       }
       if (what === 'delete') {
         // IT GOES WITH THE JOB: once it is deleted there is nobody left to show, so back to the list.
-        Promise.resolve(S.ready).then(function (s) { return s.job.delete({ id: id }); }).then(function () {
+        Promise.all([S.ready, parts]).then(function (r) { return r[0].job.delete({ id: id }); }).then(function () {
           if (typeof o.close === 'function') o.close();
         }, failed('delete'));
       }
