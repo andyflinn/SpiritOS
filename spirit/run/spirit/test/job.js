@@ -128,6 +128,29 @@ test.run('refused with a code: a second script in a node run app\'s folder', 0.8
   return refused('helper');
 }, test.limit.slow);
 test.run('and it never ran: a second script in a node run app\'s folder', 0.8, function () { return neverRan('helper'); }, test.limit.quick);
+// RH1 OPEN AGAIN (goal/G47.1, Andy's daily re-review): "A commit added a check that only looks at how the first argument
+// ends, and anyone who can call jobs.create can get arbitrary code past it. The fix is to require that argument to be
+// exactly the node's own spirit/appServer.js." Each first argument here ends in spirit/appServer.js and is not this
+// node's own; the app after it is a real node run app, so only the first argument can refuse it.
+const ownRunApp = function () {
+  plant('spirit/app/zzRun/zzRun.js', mark('runAgain'));
+  fs.writeFileSync(path.join(J.run, 'spirit/app/zzRun/zzRun.json'), JSON.stringify({ identity: { label: 'zz' }, node: { run: true } }));
+  return 'spirit/app/zzRun/zzRun.js';
+};
+test.run('refused with a code: a spirit/appServer.js outside this node\'s tree, before a node run app', 0.8, async function () {
+  const fake = path.join(J.marks, 'elsewhere', 'spirit', 'appServer.js');
+  fs.mkdirSync(path.dirname(fake), { recursive: true });
+  fs.writeFileSync(fake, script(mark('fakeOutside')));
+  RC.fakeOutside = await refusedCase('a spirit/appServer.js outside this node\'s tree', mark('fakeOutside'), { command: process.execPath, args: [fake, ownRunApp()] });
+  return refused('fakeOutside');
+}, test.limit.slow);
+test.run('and it never ran: a spirit/appServer.js outside this node\'s tree, before a node run app', 0.8, function () { return neverRan('fakeOutside'); }, test.limit.quick);
+test.run('refused with a code: a spirit/appServer.js planted inside an app folder of this node, before a node run app', 0.8, async function () {
+  const fake = plant('spirit/app/zzRun/spirit/appServer.js', mark('fakeInside'));
+  RC.fakeInside = await refusedCase('a spirit/appServer.js planted inside an app folder', mark('fakeInside'), { command: process.execPath, args: [fake, ownRunApp()] });
+  return refused('fakeInside');
+}, test.limit.slow);
+test.run('and it never ran: a spirit/appServer.js planted inside an app folder of this node, before a node run app', 0.8, function () { return neverRan('fakeInside'); }, test.limit.quick);
 
 // GOAL/G41.33. THE BOX: "Console output goes to null by default, at the source, for every process. Only DEBUG turns it
 // on. A crash is no exception: the exit code is enough to tell us to fix it, and we debug it by hand." Andy: "an
