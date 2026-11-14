@@ -58,7 +58,7 @@
         args: function (text) { return { script: script, text: text }; },
         columns: [
           // goal/G47.1, the run cycle: the 🏃‍♂️ column first, no sort.
-          { field: 'run', label: '🏃‍♂️' },
+          { field: 'run', icon: '🏃‍♂️' },
           { field: 'suite', label: 'Suite', sort: 'text' },
           { field: 'status', label: 'Status', sort: 'text' },
         ],

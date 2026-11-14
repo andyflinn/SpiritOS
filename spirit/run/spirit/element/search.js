@@ -327,6 +327,8 @@
       if (!entry.el) { try { entry.el = o.element(entry.row, entry.key) || null; } catch (e) { entry.el = null; } }
       return entry.el;
     }
+    // A COLUMN MAY BE AN ICON (goal/G47.1, -browser: "every pictograph it draws lies inside the icon element"): c.icon, drawn
+    // by the icon element in place of a label.
     function headHtml(searching) {
       if (!columns.length) return '';
       return '<thead><tr>' + (searching ? '<th></th>' : '') + columns.map(function (c) {
@@ -335,7 +337,7 @@
         // A HEADER IS A SORT TRIGGER (the box), and only while the search field is empty.
         var trigger = c.sort && !searching ? ' data-sort="' + esc(c.field) + '" style="cursor:pointer' + (c.width ? ';width:' + esc(c.width) : '') + '"'
           : (c.width ? ' style="width:' + esc(c.width) + '"' : '');
-        return '<th' + trigger + (c.align ? ' align="' + esc(c.align) + '"' : '') + '>' + esc(c.label != null ? c.label : c.field) + arrow + '</th>';
+        return '<th' + trigger + (c.align ? ' align="' + esc(c.align) + '"' : '') + '>' + (c.icon ? iconHtml(c.icon) : esc(c.label != null ? c.label : c.field)) + arrow + '</th>';
       }).join('') + '</tr></thead>';
     }
     function draw() {
