@@ -1241,7 +1241,10 @@ test.run('run answers at once, before its suite has ended', 0.2, async function 
   const t0 = Date.now();
   run1 = await call(N.base, 'testicle.run', { script: KA, suite: KAS });
   const took = Date.now() - t0;
-  const early = rowOf(KA, KAS, 'kappa answers its first');
+  // A row of THIS run, tested after the press (as the lambda check tells them): planted at the start, kappa's own suite has
+  // already run once by itself in auto, and that earlier row is no sign the answer waited for this run.
+  const mine = rowOf(KA, KAS, 'kappa answers its first');
+  const early = mine && Number(mine.tested) >= t0 ? mine : null;
   return (run1.status === 200 && took < 2500 && !early) || 'run: ' + run1.status + ' ' + short(run1.text) + ' after ' + took + ' ms; kappa\'s first already ' + short(early);
 }, test.limit.quick);
 test.run('without testicle, the whole suite runs: every test of it reports to testicle', 0.2, async function () {
@@ -1361,6 +1364,9 @@ test.run('the world: the queue is worked off, the server idle', 0.2, async funct
 }, test.limit.long);
 test.run('the world: nu.js and xi.js change, nu.js twice, 600 ms apart', 0.2, async function () {
   if (!up()) return NONODE;
+  // THE LOG STARTS HERE (goal/G47.1): the planted suites are written at the start, so in auto each has run once by itself
+  // before this world; what the checks below judge is only what these changes start.
+  try { fs.writeFileSync(path.join(s.root, 'runlog.txt'), ''); } catch (e) { return 'the run log could not be emptied: ' + String(e && e.message || e); }
   append(NU, '// nu, changed\n'); append(XI, '// xi, changed\n'); append(EARLY, '// early, changed\n');
   await sleep(600);
   append(NU, '// nu, changed again\n');
