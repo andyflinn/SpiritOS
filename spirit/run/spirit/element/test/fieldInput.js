@@ -134,6 +134,13 @@ test.run('attach sets the input\'s maxlength to its rule\'s bytes: name 64, desc
   const got = ['name', 'description', 'paragraph', 'line', 'glyph'].map(function (r) { return F.attach(input(''), r).maxLength; });
   return JSON.stringify(got) === JSON.stringify([64, 128, 2048, 1024, 8]) || 'maxlengths ' + short(got);
 }, test.limit.quick);
+// goal/G47.1, cw's fix of join's email field: fieldInput takes fieldRules' email rule (fieldRules.js: "THE EMAIL RULE
+// (goal/G40.10, box v20; Andy: \"no fieldRules.js for emails?\", and \"254\")").
+test.run('the email rule is fieldRules\' 254 bytes: 254 fit, 255 do not, and attach sets maxlength 254', 0.4, function () {
+  if (!F) return NO_F;
+  const got = [F.fits('a'.repeat(254), 'email'), F.fits('a'.repeat(255), 'email'), F.attach(input(''), 'email').maxLength];
+  return JSON.stringify(got) === JSON.stringify([true, false, 254]) || '254 fit, 255 fit, maxlength: ' + short(got);
+}, test.limit.quick);
 test.run('a rule it does not know sets no maxlength', 0.4, function () {
   if (!F) return NO_F;
   const i = F.attach(input(''), 'zzNoSuchRule');

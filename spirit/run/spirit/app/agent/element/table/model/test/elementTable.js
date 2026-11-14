@@ -235,11 +235,13 @@ test.run('its refresh refreshes the shared table', 0.2, function () {
 }, test.limit.quick);
 test.run('its destroy destroys the provider dropdown and the shared table', 0.2, function () {
   if (!E.made || !E.t || !E.d) return NOT_MADE;
+  // Its note found before: since -browser's rule a destroy empties the box (cw), so after it the note is no longer in it.
+  E.note = E.box.querySelector('#' + E.t.container.id.replace(/list$/, 'said'));
   E.made.destroy();
   return (E.t.destroyed === true && E.d.destroyed === true) || 'destroyed: table ' + E.t.destroyed + ', dropdown ' + E.d.destroyed;
 }, test.limit.quick);
 test.run('a refusal after its destroy says nothing', 0.2, async function () {
-  const note = E.t && E.box.querySelector('#' + E.t.container.id.replace(/list$/, 'said'));
+  const note = E.note;
   if (!note) return 'no note to judge';
   note.textContent = '';
   W.answer = new Error('late');

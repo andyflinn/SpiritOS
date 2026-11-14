@@ -189,7 +189,10 @@ test.run('and escapes what it shows', 0.2, function () {
 test.run('fieldLine(label, input): the label, 1em, then the input to the right edge', 0.2, function () {
   if (!E.agentTable || !AD.titleRow) return NO_TABLE;
   const fl = AD.fieldLine('L', '<input>');
-  return (/display:flex/).test(fl) && /gap:1em/.test(fl) && /flex:1 1 0/.test(fl) ? true : 'fieldLine: ' + short(fl);
+  // The 1em is shell.css's .agent-line (box v109: spacing lives in shell.css, never in an element's style attribute).
+  let css = ''; try { css = fs.readFileSync(path.join(RUN, 'spirit', 'shell', 'shell.css'), 'utf8'); } catch (e) { css = ''; }
+  const rule = (/\.agent-line\s*\{([^}]*)\}/.exec(css) || [])[1] || '';
+  return (/display:flex/).test(fl) && /class="agent-line"/.test(fl) && !/gap:/.test(fl) && /gap:\s*1em/.test(rule) && /flex:1 1 0/.test(fl) ? true : 'fieldLine: ' + short(fl) + '; .agent-line in shell.css: ' + short(rule);
 }, test.limit.quick);
 test.run('branchOf(table) is the home node\'s <node>/agent/<table>, as ((spirit.data || {}).agent || {}).data names it (goal/G41.28)', 0.2, function () {
   if (!E.agentTable || !AD.titleRow) return NO_TABLE;
