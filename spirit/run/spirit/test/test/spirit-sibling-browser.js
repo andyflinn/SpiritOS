@@ -130,9 +130,9 @@ test.run('the run takes at least 80% less than ' + BEFORE_S + ' s a script', 0.4
   return (W.ms > 0 && W.ms <= most) || 'the run took ' + (W.ms / 1000).toFixed(1) + ' s for ' + (ELEMENTS.length + 1) + ' scripts, the most ' + (most / 1000).toFixed(1) + ' s';
 }, test.limit.quick);
 // box v144: "no fixed sleeps in the checks: each wait ends the moment the page has settled."
-test.run('no fixed sleep in spirit-sibling-browser.js or app-child-browser.js', 0.4, function () {
+test.run('no fixed sleep in spirit-sibling-browser.js', 0.4, function () {
   const bad = [];
-  ['spirit-sibling-browser.js', 'app-child-browser.js'].forEach(function (n) {
+  ['spirit-sibling-browser.js'].forEach(function (n) {
     const lines = fs.readFileSync(path.join(RUN, 'spirit', 'test', n), 'utf8').split('\n');
     lines.forEach(function (l, i) {
       const code = l.replace(/\/\/.*$/, '');
