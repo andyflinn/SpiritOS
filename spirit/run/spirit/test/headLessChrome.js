@@ -134,9 +134,16 @@ function syncTree(from, to) {
   };
   walk(from, function (src) {
     const dst = path.join(to, path.relative(from, src));
+    // THE SAME BY SIZE AND TIME (goal/G47.1: reading both copies of every file took 2.5 s a sync, on every nested start, the
+    // classifier's among them): a copy takes its source's time, so a file left alone compares equal without being read.
     let same = false;
-    try { const a = fs.statSync(src), b = fs.statSync(dst); same = a.size === b.size && fs.readFileSync(src).equals(fs.readFileSync(dst)); } catch (e) { same = false; }
-    if (!same) { fs.mkdirSync(path.dirname(dst), { recursive: true }); fs.copyFileSync(src, dst); }
+    let a = null;
+    try { a = fs.statSync(src); const b = fs.statSync(dst); same = a.size === b.size && Math.floor(a.mtimeMs) === Math.floor(b.mtimeMs); } catch (e) { same = false; }
+    if (!same) {
+      fs.mkdirSync(path.dirname(dst), { recursive: true });
+      fs.copyFileSync(src, dst);
+      try { if (a) fs.utimesSync(dst, a.atime, a.mtime); } catch (e) { /* compared by content next time it differs */ }
+    }
   });
   walk(to, function (dst) {
     const src = path.join(from, path.relative(to, dst));

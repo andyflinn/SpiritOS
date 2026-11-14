@@ -81,6 +81,16 @@ function loadOnNode(run, rel) {
 async function ownScratch() {
   const root = LABH.scratchTree().root;
   const run = path.join(root, 'spirit', 'run');
+  // EVERY SCRIPT IT CLASSIFIES, AS IT STANDS ON DISC (goal/G47.1, found on testicle.js's planted scripts): lab's tree holds
+  // the tracked files, so a script git does not track (a new one, or one under a .gitignored folder) was missing there:
+  // on the node it "loaded", in the page it answered 404, and it came out node-only without ever being loaded.
+  SCRIPTS.forEach(function (rel) {
+    const from = path.join(RUN, rel);
+    if (!fs.existsSync(from)) return;
+    const to = path.join(run, rel);
+    fs.mkdirSync(path.dirname(to), { recursive: true });
+    fs.copyFileSync(from, to);
+  });
   // EVERY APP'S SERVER ON, testicle's left off (it would classify again inside this one): an app's data.js asks its family's
   // interface on a page, which a node answers only while that server is on; off, the page would fail for the scratch
   // node's sake, not the script's.
@@ -130,9 +140,19 @@ async function world() {
 }
 // THE PAGE SIDE: a fresh bare page of the scratch node for each script (plain scripts share a page's top-level scope, so
 // one page for all would let one script's names break the next), spirit started, then the script required there.
+function freshPage(w) {
+  const old = w.page;
+  w.page = null;
+  try { if (old && old.kid) old.kid.kill(); } catch (e) { /* gone */ }
+  try { if (old && old.profile) setTimeout(function () { try { fs.rmSync(old.profile, { recursive: true, force: true }); } catch (e) { /* its watcher takes it */ } }, 1000); } catch (e) { /* scratch */ }
+}
 async function loadOnPage(rel) {
   const w = await world();
   if (w.error) return { err: w.error, tool: true };
+  if (!w.page) {
+    w.page = await chromePage(findChrome());
+    if (!w.page || w.page.error) { const why = 'no Chrome page: ' + String(w.page && w.page.error); w.page = null; return { err: why, tool: true }; }
+  }
   await w.page.send('Page.navigate', { url: w.node.base + '/DEBUG/spirit/test/' + BARE });
   const ready = await until(function () { return w.page.evaluate('!!(window.spirit && typeof window.spirit.require === "function")').then(Boolean); }, WAIT);
   if (!ready) return { err: 'the scratch node\'s page never got its spirit', tool: true };
@@ -141,7 +161,10 @@ async function loadOnPage(rel) {
     ' function (e) { return JSON.stringify({ err: String(e && e.message || e) }); })');
   const late = new Promise(function (r) { setTimeout(function () { r(null); }, LOAD_MS); });
   const got = await Promise.race([ask, late]);
-  if (got === null) return { err: 'it did not finish loading in ' + LOAD_MS + ' ms', hung: true };
+  // A HUNG PAGE IS NOT REUSED (goal/G47.1, found on testicle.js's planted zzcHang): a script that never ends holds the page's
+  // one thread for good, so every script after it "never got its spirit" and none of them was classified. Its Chrome ends,
+  // and the next script gets a Chrome of its own.
+  if (got === null) { freshPage(w); return { err: 'it did not finish loading in ' + LOAD_MS + ' ms', hung: true }; }
   try { return JSON.parse(got); } catch (e) { return { err: 'the page answered ' + String(got).slice(0, 200) }; }
 }
 
