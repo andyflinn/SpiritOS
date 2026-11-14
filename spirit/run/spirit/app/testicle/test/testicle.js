@@ -1532,7 +1532,7 @@ test.run('after the start, a suite removed while it was down is marked deleted, 
 }, test.limit.quick);
 test.run('and the search shows its results no more', 0.2, async function () {
   if (!down) return 'nothing changed while down: the world failed';
-  const r = await call(N.base, 'testicle.search', { script: KA, suite: KAS, text: '' });
+  const r = await call(N.base, 'testicle.testicle.search', { script: KA, suite: KAS, text: '' });
   const rows = found(r);
   return (r.status === 200 && rows.length === 0) || 'testicle.search of kappa\'s own suite: ' + short(rows.slice(0, 3));
 }, test.limit.quick);
