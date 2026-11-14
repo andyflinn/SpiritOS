@@ -19,8 +19,10 @@
 // newest one named with its outcome.
 (function () {
   var S = window.spirit = window.spirit || {};
-  // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the icon element; the cache manager below.
-  var parts = Promise.all([S.require('spirit/element/icon.js'), S.cacheManager('testicle')]);
+  // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26; Andy: "the fucking status box must require the fucking api and make sure the
+  // fucking data.js is installed"): the icon element, spirit.data, testicle's interface and testicle's cache manager, its
+  // data.js, which the page's one stream feeds. Mounted alone, it gets its data by itself.
+  var parts = Promise.all([S.require('spirit/element/icon.js'), S.require('spirit/data.js'), S.require('spirit/app/testicle/api.js'), S.cacheManager('testicle')]);
   parts.catch(function () {});
 
   // The last change, in words: a test row's key ends in its flip, which says nothing to a reader, so it is left off.
@@ -75,9 +77,26 @@
       if (glyph !== shown && paint(icon, glyph)) shown = glyph;
       icon.title = busy ? 'working' : 'idle';
       var run = runningOf(m);
+      if (run) askRun(run);
       var words = (run && reportedWords(run)) || ((m && typeof m.doing === 'string' && m.doing) ? m.doing : lastWords(m && m.last));
       line.textContent = words;
       line.title = words;
+    }
+    // A RUN SEEN FOR THE FIRST TIME: its scripts' suite rows asked once (suite.search, each script), so a box mounted while it
+    // runs counts the scripts that reported before it was there; the stream brings every one after.
+    var asked = '';
+    function askRun(run) {
+      var id = run.suite + '|' + run.started;
+      if (id === asked) return;
+      asked = id;
+      var name = run.suite.slice(run.suite.lastIndexOf('/') + 1);
+      run.scripts.forEach(function (script) {
+        Promise.resolve(S.testicle['suite.search']({ script: script, text: name })).then(function (b) {
+          if (gone) return;
+          var rows = ((b && b.items) || []).map(function (i) { try { return JSON.parse(i.label); } catch (e) { return null; } }).filter(Boolean);
+          S.data.testicle.data.keep('suite', rows);
+        }, function () {});
+      });
     }
     function drawMode(p) {
       if (gone || !p || typeof p.interactive !== 'boolean') return;
@@ -88,11 +107,8 @@
     parts.then(function () {
       if (gone) return;
       var D = S.data.testicle.data;
-      // The interface loads after the row draws; the mode once it is in.
-      S.require('spirit/app/testicle/api.js').then(function () {
-        if (gone) return;
-        return Promise.resolve(S.testicle.preferences({})).then(function (p) { if (!gone) D.preferences.keep(p); });
-      }).then(null, function () { /* no testicle here: no mode to show */ });
+      // The mode it stands at, asked once; the stream keeps it after.
+      Promise.resolve(S.testicle.preferences({})).then(function (p) { if (!gone) D.preferences.keep(p); }, function () {});
       draw();
       release = D.monitor.watch(draw);
       releaseSuite = D.suite.watch(draw);
