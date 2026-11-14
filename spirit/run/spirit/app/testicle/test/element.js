@@ -835,7 +835,7 @@ const ST = 'spirit/zzStatus/';
 const STS = [ST + 'zzsOne.js', ST + 'zzsTwo.js', ST + 'zzsThree.js'];
 // Box v134-135: "<x> of <n> reported: <script> <success|failure>" (cw: "the \"<suite>:\" was my addition, not Andy's").
 const STATUS_RE = /^()(\d+) of (\d+) reported: (\S+) (success|failure)$/;
-let statusFrom = 0;
+let statusFrom = 0, statusWasInteractive = true;
 test.run('the world: spirit/zzStatus/ with its own -general test and three scripts, changed together', 0.2, async function () {
   if (!msgsAt) return 'no recorder: the world failed';
   fs.mkdirSync(path.join(s.run, 'spirit', 'zzStatus', 'test'), { recursive: true });
@@ -847,8 +847,14 @@ test.run('the world: spirit/zzStatus/ with its own -general test and three scrip
   // Once classified and run, changed together, so one run of the general test is handed all three.
   await until(function () { return call(N.base, 'testicle.suite.search', { script: STS[2], text: '' }).then(function (r) { return !!(r.body && (r.body.items || []).length); }); }, 240000);
   statusFrom = ((await T('messages_seen()')) || []).length;
+  // AUTO FOR THIS STEP (cw, on 8d47da7c: "the scratch testicle is interactive, nothing pressed, so after classifying every
+  // zzStatus suite row stayed \"needs running\""; a press runs a general test for one script, never the three): testicle
+  // runs what is flagged by itself, then the mode it had is put back.
+  const pref = await call(N.base, 'testicle.preferences', {});
+  statusWasInteractive = !!(pref.body && pref.body.interactive);
+  const auto = await call(N.base, 'testicle.preferences', { interactive: false });
   STS.forEach(function (f) { fs.appendFileSync(path.join(s.run, f), '// changed together\n'); });
-  return true;
+  return auto.status === 200 || 'testicle.preferences answered ' + auto.status + ' ' + short(auto.text);
 }, test.limit.long);
 test.run('as each script of a run reports, the status bar says "<x> of <n> reported: <script> <success|failure>", x counting up to n', 0.4, async function () {
   if (!msgsAt) return 'no recorder: the world failed';
@@ -863,6 +869,11 @@ test.run('and each one names its script and its own outcome: zzsTwo failure, zzs
   const said = {};
   seen.forEach(function (m) { const x = STATUS_RE.exec(m); said[x[4]] = x[5]; });
   return (said[STS[0]] === 'success' && said[STS[1]] === 'failure' && said[STS[2]] === 'success') || 'said: ' + short(said);
+}, test.limit.quick);
+test.run('the world: testicle\'s mode put back as it was before zzStatus', 0.2, async function () {
+  if (!msgsAt) return 'no recorder: the world failed';
+  const r = await call(N.base, 'testicle.preferences', { interactive: statusWasInteractive });
+  return r.status === 200 || 'testicle.preferences answered ' + r.status + ' ' + short(r.text);
 }, test.limit.quick);
 
 // destroy
