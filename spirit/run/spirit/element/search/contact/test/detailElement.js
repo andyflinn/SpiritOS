@@ -1060,18 +1060,25 @@ test.run('pressed, it opens and holds its button', 0.2, async function () {
   return opened === true || 'the star opened: ' + short(opened);
 }, test.limit.quick);
 
-// Andy: "the folding panel "A face name" should actually show the faceForm, unless the relay is "starred"", "that's one bug,
-// and one design change.", "bug: "A face name" doesn't show the faceForm.", "change: don't show it if the relay is starred...".
-// TURNED ROUND SINCE: goal/G43.18's box (v29), Andy: "on the home node, NO face is offered (faceForm hides itself) for a
-// relay without star." relayPanel's ndFaceHtml asks faceForm.offers, which offers a starred relay only, so the fold
-// shows only when starred: the checks below assert G41.32's rule and fail against it.
-// "A face name" shows the faceForm, unless the relay is starred
+// "A FACE NAME" SHOWS ONLY FOR A STARRED RELAY (goal/G43.18's box, v29, Andy: "on the home node, NO face is offered
+// (faceForm hides itself) for a relay without star."). It replaced goal/G41.32's "unless the relay is starred", which
+// these checks asserted until goal/G47.1 (Q12, Andy: "fix it."). The relay here is a member's, with no star at first.
 const faceHead = 'Array.prototype.slice.call(document.querySelectorAll("#zzPanel .nd-fold")).filter(function (h) { return h.textContent.indexOf("A face name") !== -1; })[0]';
 const hasFaceHead = function () { return S.chrome.evaluate('!!(' + faceHead + ')'); };
-test.run('with no star, its fold stands', 0.2, async function () {
+test.run('with no star, no "A face name" fold', 0.2, async function () {
+  if (!S.chrome) return NO_CHROME;
+  await sleep(1000);
+  return !(await hasFaceHead()) || 'with no star, "A face name" is there: ' + short(await panelText());
+}, test.limit.slow);
+test.run('the star on, at home', 0.2, async function () {
+  if (!S.up) return NO_NODE;
+  const sOn = await home(S.N.base, 'contact.own', { key: S.key, own: true });
+  return sOn.status === 200 || 'contact.own: ' + sOn.status + ' ' + short(sOn.text);
+}, test.limit.quick);
+test.run('starred: the fold comes, with no reload', 0.2, async function () {
   if (!S.chrome) return NO_CHROME;
   await until(hasFaceHead, 5000);
-  return (await hasFaceHead()) || 'no "A face name" fold: ' + short(await panelText());
+  return (await hasFaceHead()) || 'starred, no "A face name" fold: ' + short(await panelText());
 }, test.limit.slow);
 test.run('opened, it holds the faceForm: its field and its button', 0.2, async function () {
   if (!S.chrome) return NO_CHROME;
@@ -1080,25 +1087,15 @@ test.run('opened, it holds the faceForm: its field and its button', 0.2, async f
   const drawn = await S.chrome.evaluate('(function () { var f = document.querySelector("#zzPanel .nd-face-form"); return f ? { input: !!f.querySelector("input"), button: !!f.querySelector("button"), text: f.textContent.slice(0, 80) } : null; }())');
   return (!!drawn && drawn.input && drawn.button) || 'the fold holds: ' + short(drawn);
 }, test.limit.slow);
-test.run('the star on, at home', 0.2, async function () {
-  if (!S.up) return NO_NODE;
-  const sOn = await home(S.N.base, 'contact.own', { key: S.key, own: true });
-  return sOn.status === 200 || 'contact.own: ' + sOn.status + ' ' + short(sOn.text);
-}, test.limit.quick);
-test.run('starred: the fold is gone, with no reload', 0.2, async function () {
-  if (!S.chrome) return NO_CHROME;
-  await until(function () { return hasFaceHead().then(function (h) { return !h; }); }, 5000);
-  return !(await hasFaceHead()) || 'starred, "A face name" is still there';
-}, test.limit.slow);
 test.run('the star off, at home', 0.2, async function () {
   if (!S.up) return NO_NODE;
   const sOff = await home(S.N.base, 'contact.own', { key: S.key, own: false });
   return sOff.status === 200 || 'contact.own false: ' + sOff.status + ' ' + short(sOff.text);
 }, test.limit.quick);
-test.run('and it comes back', 0.2, async function () {
+test.run('and the fold is gone again', 0.2, async function () {
   if (!S.chrome) return NO_CHROME;
-  await until(hasFaceHead, 5000);
-  return (await hasFaceHead()) || 'the star off, "A face name" did not come back';
+  await until(function () { return hasFaceHead().then(function (h) { return !h; }); }, 5000);
+  return !(await hasFaceHead()) || 'the star off, "A face name" is still there';
 }, test.limit.slow);
 
 // it listens, shown or hidden, and asks no one again
@@ -1169,12 +1166,10 @@ test.run('a later change neither throws nor paints', 0.2, async function () {
   return (!threw.length && now.indexOf('zzNameThree') === -1) || 'after destroy: ' + short(threw) + ' ' + short(now);
 }, test.limit.slow);
 
-// THE FACE FORM OFFERS MEMBERS' RELAYS WITH NO STAR (goal/G41.32; Andy: "show only relays in the relay-dropdown that the node is
-// a member of AND are not starred.", "if there are no relays that satisfy the requirement, don't display the form at all.",
-// "faceForm provides that check as a function", "info-app: don't show the faceForm, if the faceForm says it shouldn't be
-// displayed"; and of following the rows with no read: "agreed."). This node sits on two relays here, neither starred.
-// TURNED ROUND SINCE: goal/G43.18's box (v29), Andy: "on the home node, NO face is offered (faceForm hides itself) for a
-// relay without star." faceForm.js offers a starred relay only, so the checks below assert G41.32's rule and fail against it.
+// THE FACE FORM OFFERS A STARRED RELAY ONLY (goal/G43.18's box, v29, Andy: "on the home node, NO face is offered (faceForm
+// hides itself) for a relay without star."), with goal/G41.32's "faceForm provides that check as a function", "if there are
+// no relays that satisfy the requirement, don't display the form at all" and, of following the rows with no read,
+// "agreed.". Turned to v29's rule in goal/G47.1 (Q12, Andy: "fix it."). This node sits on two relays here.
 // the face form: its check, as a function
 const NO_OFFERS = 'no faceForm.offers';
 test.run('faceForm.offers(relays) is there', 0.2, async function () {
@@ -1185,64 +1180,68 @@ test.run('faceForm.offers(relays) is there', 0.2, async function () {
   S.check = await S.chrome.evaluate('Promise.resolve(window.spirit.require("spirit/element/faceForm.js")).then(function () { var F = window.spirit.element.spirit.element.faceForm; if (!F || typeof F.offers !== "function") return null; var u = "http://x"; return { member: F.offers([{ url: u, claimed: true, mine: false }]), owner: F.offers([{ url: u, owned: true, mine: false }]), starred: F.offers([{ url: u, claimed: true, mine: true }]), stranger: F.offers([{ url: u, claimed: false, owned: false, mine: false }]), none: F.offers([]), one: F.offers([{ url: u, claimed: true, mine: true }, { url: "http://y", claimed: true, mine: false }]) }; })');
   return !!S.check || NO_OFFERS;
 }, test.limit.slow);
-test.run('true for a relay this node is a member of or owns, with no star', 0.2, function () {
+test.run('true for a starred relay, alone or beside one with no star', 0.2, function () {
   if (!S.check) return NO_OFFERS;
-  return (S.check.member === true && S.check.owner === true && S.check.one === true) || 'offers: ' + short(S.check);
+  return (S.check.starred === true && S.check.one === true) || 'offers: ' + short(S.check);
 }, test.limit.quick);
-test.run('false for a starred relay, one it holds no seat on, and for none', 0.2, function () {
+test.run('false for a relay with no star, a member\'s or an owner\'s, for one it holds no seat on, and for none', 0.2, function () {
   if (!S.check) return NO_OFFERS;
-  return (S.check.starred === false && S.check.stranger === false && S.check.none === false) || 'offers: ' + short(S.check);
+  return (S.check.member === false && S.check.owner === false && S.check.stranger === false && S.check.none === false) || 'offers: ' + short(S.check);
 }, test.limit.quick);
 
-// Info: the form offers members' relays with no star, and follows the star with no reload
+// Info: the form offers the starred relays, and follows the star with no reload
 const options = function () { return S.chrome.evaluate('JSON.stringify(Array.prototype.slice.call(document.querySelectorAll("[data-info=\\"face\\"] .sp-face-relay option")).map(function (o) { return o.value; }))').then(function (t) { return JSON.parse(t || '[]'); }); };
 const tileShown = function () { return S.chrome.evaluate('(function () { var b = document.querySelector("[data-info=\\"face\\"]"); return !!b && b.offsetParent !== null && !!b.querySelector(".sp-face-relay"); }())'); };
 const emptyTile = function () { return S.chrome.evaluate('(function () { var b = document.querySelector("[data-info=\\"face\\"]"); return !!b && b.offsetParent !== null; }())'); };
 const infoReads = function () { return S.chrome.heard.filter(function (m) { return m.method === 'Network.requestWillBeSent' && /"call":"(relay\.(status|get)|contact\.search)"/.test(String((m.params.request || {}).postData || '')); }).length; };
 const NO_OTHER = 'no second relay';
-test.run('neither starred: it offers both', 0.2, async function () {
+test.run('neither starred: no form, and no empty tile left in Info', 0.2, async function () {
   if (!S.chrome) return NO_CHROME;
   if (!S.Other) return NO_OTHER;
   await S.chrome.evaluate('(function () { var e = Array.prototype.slice.call(document.querySelectorAll("*")).filter(function (x) { return x.offsetParent !== null && !x.children.length && x.textContent.trim() === "Info"; })[0]; if (e) e.click(); }())');
-  await until(function () { return options().then(function (o) { return o.length >= 2; }); }, 8000);
-  const both = await options();
-  return (both.indexOf(S.R.base) !== -1 && both.indexOf(S.Other.base) !== -1) || 'it offers: ' + short(both);
+  await sleep(3000);
+  return (!(await tileShown()) && !(await emptyTile())) || 'with neither starred: form ' + (await tileShown()) + ', its tile ' + (await emptyTile());
 }, test.limit.long);
-test.run('one starred, no reload: it is gone from the dropdown, the other stays', 0.2, async function () {
+test.run('one starred, no reload: the form comes, offering that relay alone', 0.2, async function () {
   if (!S.chrome) return NO_CHROME;
   if (!S.Other) return NO_OTHER;
   S.readsBefore = infoReads();
   await home(S.N.base, 'contact.own', { key: S.key, own: true });
-  await until(function () { return options().then(function (o) { return o.indexOf(S.R.base) === -1; }); }, 5000);
-  const oneLeft = await options();
-  return (oneLeft.indexOf(S.R.base) === -1 && oneLeft.indexOf(S.Other.base) !== -1) || 'it offers: ' + short(oneLeft);
+  await until(function () { return options().then(function (o) { return o.indexOf(S.R.base) !== -1; }); }, 5000);
+  const one = await options();
+  return ((await tileShown()) && one.indexOf(S.R.base) !== -1 && one.indexOf(S.Other.base) === -1) || 'form ' + (await tileShown()) + ', it offers ' + short(one);
 }, test.limit.slow);
 test.run('and the form followed the row, reading nothing', 0.2, function () {
   if (S.readsBefore === undefined) return NO_CHROME;
   return infoReads() === S.readsBefore || (infoReads() - S.readsBefore) + ' reads for one star';
 }, test.limit.quick);
-test.run('both starred: no form, and no empty tile left in Info', 0.2, async function () {
+test.run('both starred: it offers both', 0.2, async function () {
   if (!S.chrome) return NO_CHROME;
   if (!S.Other) return NO_OTHER;
   await home(S.N.base, 'contact.own', { key: S.Other.relayKey, own: true });
-  await until(function () { return emptyTile().then(function (t) { return !t; }); }, 5000);
-  return (!(await tileShown()) && !(await emptyTile())) || 'with both starred: form ' + (await tileShown()) + ', its tile ' + (await emptyTile());
+  await until(function () { return options().then(function (o) { return o.length >= 2; }); }, 5000);
+  const both = await options();
+  return (both.indexOf(S.R.base) !== -1 && both.indexOf(S.Other.base) !== -1) || 'it offers: ' + short(both);
 }, test.limit.slow);
-test.run('one star off: the form is back, offering that relay', 0.2, async function () {
+test.run('one star off: it is gone from the dropdown, the other stays', 0.2, async function () {
   if (!S.chrome) return NO_CHROME;
   if (!S.Other) return NO_OTHER;
   await home(S.N.base, 'contact.own', { key: S.Other.relayKey, own: false });
-  await until(tileShown, 5000);
-  const offeredBack = await options();
-  return ((await tileShown()) && offeredBack.indexOf(S.Other.base) !== -1 && offeredBack.indexOf(S.R.base) === -1) || 'form ' + (await tileShown()) + ', it offers ' + short(offeredBack);
+  await until(function () { return options().then(function (o) { return o.indexOf(S.Other.base) === -1; }); }, 5000);
+  const left = await options();
+  return (left.indexOf(S.Other.base) === -1 && left.indexOf(S.R.base) !== -1) || 'it offers: ' + short(left);
 }, test.limit.quick);
 
 // A RELAY THIS NODE IS NOT A MEMBER OF CANNOT BE STARRED (goal/G41.32; Andy: "a relay I'm not a member of can not be starred
 // (relays i own automatically give me membership)"). At the node's own door, so no screen can get round it.
 // only a relay this node is a member of or owns can be starred
 const NO_FAR = 'no third relay';
+// THE LAB HOLDS TWO RELAYS (lab/labNodes.js, POOLS.relay): a relay whose checks are over is stopped and its lab relay freed
+// before the next is asked for, the first, S.R, kept for the whole file.
+const freeRelay = function (r) { if (!r) return; try { r.stop(); } catch (e) { /* gone */ } S.others = S.others.filter(function (o) { return o !== r; }); };
 test.run('a third relay comes up', 0.2, async function () {
   if (!S.up) return NO_NODE;
+  freeRelay(S.Other);
   S.Far = await scratchFaceRelay({ members: [] });
   S.others.push(S.Far);
   return !!S.Far.up || 'the third relay did not come up: nothing judged';
@@ -1318,6 +1317,7 @@ test.run('and cannot be put back', 0.2, async function () {
 const NO_OWN = 'no relay naming this node its owner';
 test.run('a relay naming this node its owner comes up', 0.2, async function () {
   if (!S.up) return NO_NODE;
+  freeRelay(S.Far);
   S.Own = await scratchFaceRelay({ members: [], ownerKey: S.me });
   S.others.push(S.Own);
   return !!S.Own.up || 'it did not come up: nothing judged';

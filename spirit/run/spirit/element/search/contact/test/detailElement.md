@@ -119,13 +119,15 @@ stream, a real Chrome.
 - **A report goes on the relay event, whole, and never on a row**: rows reach every face, starred or not, and a report lists invites.
 - **A relay's detail** is the one contact detail, `spirit/element/search/contact/detailElement.js`, `create(host, { key, relay: true })` (goal/G43.32).
 - **The star is a folding panel like the others** (Andy: *"must use the same heading and style al all the other folding panels in relayPanel"*): the same heading, tile and fold mark, shut as it arrives, holding its button when opened.
-- **"A face name" shows the faceForm, unless the relay is starred** (Andy: *"the folding panel "A face name" should actually show the faceForm, unless the relay is "starred""*): opened, it holds the form's field and button; the star on, the fold goes with no reload; off, it comes back. Judged on boot.js's shell at /face.html, the one he uses.
-  **Turned round since**, as the face form below: relayPanel's fold asks `faceForm.offers`, so since goal/G43.18 (box v29) it
-  shows only on a starred relay. This requirement and its checks still assert the old rule, so they fail against the code.
-- **The face form offers relays this node is a member of or owns, with no star** (Andy, in the chat; his line on who owns is read as today's filter), and `faceForm.offers(relays)` says whether it has any.
-  **Turned round since**: goal/G43.18's box (v29), Andy: *"on the home node, NO face is offered (faceForm hides itself) for a
-  relay without star."* `spirit/element/faceForm.js` follows that: it offers a starred relay only. This requirement and its
-  checks (the face form's check, and Info following the star) still assert G41.32's rule, so they fail against the code. In Info, a star pressed at home takes that relay from the dropdown with no reload and no read; every relay starred, there is no form and no empty tile; a star off brings it back.
+- **"A face name" shows only on a starred relay** (goal/G43.18's box, v29, Andy: *"on the home node, NO face is offered
+  (faceForm hides itself) for a relay without star."*; it replaced goal/G41.32's *"unless the relay is starred"*, and these
+  checks were turned to it in goal/G47.1, Q12, Andy: *"fix it."*): with no star, no fold; the star on, the fold comes with no
+  reload, and opened it holds the form's field and button; the star off, it goes again. Judged on boot.js's shell at /face.html.
+- **The face form offers the starred relays only**, and `faceForm.offers(relays)` says whether it has any: true for a starred
+  relay, alone or beside one with no star; false for a member's or an owner's relay with no star, one it holds no seat on, and
+  none. In Info it follows the star with no reload and no read: neither starred, no form and no empty tile; one starred, it
+  offers that one alone; both, both; one star off, that one goes.
+- **The lab holds two relays** (`lab/labNodes.js`): a relay whose checks are over is stopped and freed before the next is asked for.
 - **A relay this node is not a member of cannot be starred** (Andy: *"a relay I'm not a member of can not be starred (relays i own automatically give me membership)"*): `contact.own` refuses it at the node with a code, its panel offers no star; a member can; leaving takes the star away, and it cannot be put back; an owned relay can.
 - **The contact list marks a relay** (Andy: *"print its label in bold-italic"*): a relay's label is bold and italic, a person's is not.
 - **It listens, shown or hidden**: a change is painted with no further `relay.status` or `relay.get`. **It follows only its row.**
