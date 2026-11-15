@@ -30,7 +30,7 @@ Format: **term** — aliases — meaning.
 
 **Caddy** — TLS front — On spirit-3, public `:443` / `:80` for `spirit.andyflinn.com`. Terminates TLS. Forwards to 127.0.0.1:65430.
 
-**spirit.andyflinn.com** — public URL, relay URL — The HTTPS name personal nodes put in `relays.json`.
+**spirit.andyflinn.com** — public URL, relay URL — The HTTPS name of the public relay; a personal node keeps it as a relay row in `node.db`.
 
 **Lab relay** — fake relay, temp relay — A `--relay` on the laptop (often 65410 / 65430 in temp) for tests. Not spirit-3.
 
@@ -46,13 +46,11 @@ Format: **term** — aliases — meaning.
 
 > **Its receive path is BROKEN as of 2026-09-15** and is awaiting a retrofit. It polled `/api/hub/inbox`, which R8 deleted, and its `api.onPacket` handler is an empty stub. Andy's call, taken knowingly: *"I'd rather see apps breaking than apps faking."* Sending already moved to `/api/hub/post`.
 
-**Natter** — relays.json, relay list — The list of public relays this personal node uses (`app/natter/relays.json`). First URL is what hub calls today. A row carries an **owner badge** when this node’s local public key matches the owner on that relay. Natter is an **intrinsic shell app**: it lives in the **Spirit group**, has no location control, and the App Builder cannot overwrite its script or manifest — a node with no relay list can reach nobody at all. Keeps its last public row (`canRemoveRelay`).
-
 **Owner badge** — owned row — The Natter mark meaning *this node’s key is `owner` on that relay*. Zero, one, or several rows may carry it. It is what unlocks create-invitation in Relay Chat. Decided (Andy): the badge is a **signed status 200** on that Natter URL — no extra endpoint unless one proves necessary. The same probe answers *"is this label still mine?"* off the public roll (`claimedLabel`), which is where Natter's binding check went when R8 deleted the signed inbox read it used.
 
 **Hub** — hub.js — Personal-node code that signs and forwards claim, post and invite to a relay over HTTPS (or loopback HTTP for a lab relay). It forwarded `send` and `inbox` until R8 (2026-09-15).
 
-**Contacts book** — contacts.js, perception book — the shadow table in `node.db` on a **personal** node (`contacts.json` until goal/G40.11) (whoBook / `who.json` until 2026-09-18). publicKey, publicLabel, myLabel, relays[], acquiredVia. Never uploaded.
+**Contacts book** — contacts.js, perception book — the shadow table in `node.db` on a **personal** node (whoBook / `who.json` until 2026-09-18). publicKey, publicLabel, myLabel, relays[], acquiredVia. Never uploaded.
 
 **fileServer** — gone with run://process (goal/G43.20) — The node's intrinsic server for files (fileTransfer goal/G1): at most 32, one folder each, named by the file's **id**, `verb-` and its sha256 in base64url. push, pull, fetch, status and delete are the owner's alone; a peer granted a file's id may ask its verb for **info** and **chunks**, nothing else.
 
@@ -82,7 +80,7 @@ Format: **term** — aliases — meaning.
 
 **Partner** — the other end, for a relay — *Relays have partners.* Another **relay**, promoted by an owner and pinned by its relay key (`partners.json`). Never a person: a relay's counterpart is a box like itself, which is why partnership survives banning the human who owns it.
 
-**Member** — an enrolled row — Who claimed a name on a relay. A relay *has* members; it does not have peers. Note `routingTable.json` still calls this map `peers`, and the public roll still answers `{ "peers": [...] }` — naming them from the node's vantage rather than the relay's, and the one place the tree contradicts the line above.
+**Member** — an enrolled row — Who claimed a name on a relay. A relay *has* members; it does not have peers.
 
 **Roll** — member roll, `GET /api/relay/who` — The list a relay keeps of the members enrolled on it. **It was `census` until 2026-09-23** — Andy: *"i hate the word census now, but for the relay it's true... the relay can't falsify the record in the member roll (not census)?"*, then *"we loose census from the dictionary."* A census is something a counter performs on a population; a roll is a list a body keeps of its own members and is answerable for — and cycle 10 makes it answerable in writing, since a roll entry now carries the cipher key everything sent to that member is sealed to. Renamed inside cycle 10's flag day. `acquiredVia: "roll"` is also the **lowest contact rank** — seen on a roll is not knowing somebody — and rows on disc still reading `"census"` fall through to it (`contacts.js`, `acquiredVia`). A file's count ledger is a **tally**, never a roll (`oneDoor.js`, `cycleCitations.js`).
 
@@ -94,13 +92,13 @@ Format: **term** — aliases — meaning.
 
 ## Allow and invites
 
-**Allow list** — allow.json — Who *may* claim. **Two modes: `open`** (no file — a relay before its first claim) **and `keys`**. `names` was a third and went on 2026-09-15: nothing in the tree ever wrote one, and the two gates that gave it meaning died with the ring. Not the same as who has claimed, which is `routingTable.json`.
+**Allow list** — allow.json — Who *may* claim. **Two modes: `open`** (no file — a relay before its first claim) **and `keys`**. `names` was a third and went on 2026-09-15: nothing in the tree ever wrote one, and the two gates that gave it meaning died with the ring. Not the same as who has claimed, which is the members table of `relay.db`.
 
 **Names-mode** — names allow list — Only listed strings. Not what live Kamatera runs any more (see Keys-mode).
 
-**Keys-mode** — keys allow list — After first-claim-is-owner. Extra claims need a live **invite** (cycle 4). Owner key may reclaim without invite if `routingTable.json` was lost. **Live Kamatera runs this since the cutover on 2026-09-07, owner `andy`.**
+**Keys-mode** — keys allow list — After first-claim-is-owner. Extra claims need a live **invite** (cycle 4). Owner key may reclaim without invite if its member row was lost. **Live Kamatera runs this since the cutover on 2026-09-07, owner `andy`.**
 
-**Invite** — invite row — `{ token, label, expiresAt, invitedBy, consumedAt }` in `invites.json`.
+**Invite** — invite row — `{ token, label, expiresAt, invitedBy, consumedAt }` in the invites table of `relay.db`.
 
 **Token** — invite token, secret — Random hex. Friend needs this plus the label unless we later mint a speakable token.
 
@@ -379,7 +377,7 @@ does not negotiate with you.**
 | 65432 | public relay |
 | 65430 | something the browser should open |
 | harness | `./bash/status` or probe |
-| allow list | the claimed peers in `routingTable.json` |
+| allow list | the claimed members in `relay.db` |
 | token | public label |
 | owner | anyone who claimed |
 | Natter | Relay Chat |

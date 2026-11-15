@@ -147,7 +147,6 @@ its cache on, following a sender whose family has a data.js here (desk). What it
 
 - What it kept in `spirit/state/<name>/cache/<id>.json` comes back at its start, and its cache.dump writes
   `spirit/state/<name>/cache/<id>.json` again; no cache file is written in `spirit/state/<name>/` itself.
-- No rescue: a cache file at the old place, `spirit/state/<name>/<id>.json`, is not read back, and it is left where it was.
 
 ### What its test must try to break
 

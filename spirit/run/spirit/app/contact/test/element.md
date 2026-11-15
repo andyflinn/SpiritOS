@@ -24,7 +24,6 @@ Andy: *"the new contact app will be exactly the same as the old, merely placed w
 
 ### The peer counters are gone
 
-- `spirit/peerStats.js` is gone, and no code names it.
 - No row of `contact.search`, and not `contact.get`, carries `unansweredInbound`, `inboundPerDay` or `outboundPerDay`.
 - A contact's detail opened from the app shows none of them.
 

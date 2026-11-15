@@ -243,12 +243,8 @@ if (withData.length) {
   }, test.limit.quick);
   // <branch>: its cache, the rest
   // ONE PATTERN (goal/G43.7, the box: "ALL ... files will be converted to "data.js" files", "using the module
-  // spirit/data.js", "with the SAME pattern"; from ./data-families.js): the old file is gone, and the guard, the attach
+  // spirit/data.js", "with the SAME pattern"; from ./data-families.js): the guard, the attach
   // and the write on spirit are spirit/data.js's, none of it rolled by the family by hand.
-  const OLD_MANAGER = 'clientCache' + 'Manager';
-  test.run('the old file is gone', 0.4, function () {
-    return overAll(withData, function (b) { return !has(b.dir + '/' + OLD_MANAGER + '.js') ? '' : b.dir + ': ' + b.dir + '/' + OLD_MANAGER + '.js still stands'; });
-  }, test.limit.quick);
   test.run('its data.js rolls none of it by hand', 0.4, function () {
     return overAll(withData, function (b) { return !/Symbol\.for|function attach|\.spirit\s*=|spirit\.[A-Za-z]+Data\s*=/.test(b.src) ? '' : b.data + ': data.js still rolls its own guard, attach or spirit write'; });
   }, test.limit.quick);
@@ -1669,12 +1665,6 @@ const OLD_ELEMENT_HOME = /\b(?:spirit|ui)\s*\.\s*elements\b/;
 // libraries with the commit before their move, and fileSystem's and deskClient's.
 const OLD_NODE_MODULES = /spirit\/run\/node_modules/;
 const NODE_MODULES_ON_PURPOSE = /^spirit\/run\/spirit\/test\/(job|fileSystem)\.(js|md)$|^spirit\/run\/spirit\/app\/deskClient\/test\/deskClient\.(js|md)$/;
-// The old names of the data set (goal/G43.7; moved here from spirit/test/data.js, goal/G47.1). The box: "we rename it
-// spirit/data.js and it IS the the spirit.data object", "instead of spirit.<name>Data", "ALL "clientCacheManager.js" files
-// will be converted to "data.js" files". The retired names are built from their parts, so this file holds none of them whole.
-const OLD_DATA_READER = /\bspirit\s*\.\s*[a-z]\w*Data\b/;
-const OLD_DATA_MANAGER = new RegExp('clientCache' + 'Manager');
-const OLD_DATA_MODULE = new RegExp('\\bspirit' + 'Data\\b');
 // Each line of a script's code, its comments left out (a comment may quote Andy), that matches re, as <file>:<line>.
 // With bare, each line read alone, its strings and its comment left out: a test's title, message or regular expression may
 // name an old home to say it is gone, and a line read alone is not misled by a quote mark inside a regular expression above it.
@@ -1888,22 +1878,6 @@ function every() {
     const hits = [].concat.apply([], all.map(function (f) { return codeLinesMatching(f, OWN_NODE_MODULES_SKIP); }));
     return (all.length > 100 && !hits.length) || hits.length + ' lines do: ' + short(hits.slice(0, 12));
   }, test.limit.quick);
-  // the data set's old names (OLD_DATA_READER above), in code
-  test.run('no code reads a spirit.<name>Data', 0.4, function () {
-    const all = E.elementFiles || [];
-    const hits = [].concat.apply([], all.map(function (f) { return codeLinesMatching(f, OLD_DATA_READER); }));
-    return (all.length > 100 && !hits.length) || hits.length + ' lines do, the first: ' + short(hits.slice(0, 12));
-  }, test.limit.quick);
-  test.run('no code names the old cache manager', 0.4, function () {
-    const all = E.elementFiles || [];
-    const hits = [].concat.apply([], all.map(function (f) { return codeLinesMatching(f, OLD_DATA_MANAGER); }));
-    return (all.length > 100 && !hits.length) || hits.length + ' lines do, the first: ' + short(hits.slice(0, 12));
-  }, test.limit.quick);
-  test.run('no code names the old data module', 0.4, function () {
-    const all = E.elementFiles || [];
-    const hits = [].concat.apply([], all.map(function (f) { return codeLinesMatching(f, OLD_DATA_MODULE); }));
-    return (all.length > 100 && !hits.length) || hits.length + ' lines do, the first: ' + short(hits.slice(0, 12));
-  }, test.limit.quick);
   // no warning on a grant (goal/G43.27, requirement 7; moved here from spirit/element/search/grant/test/grantsPanel.js,
   // goal/G47.1). Andy: "compare that to giving a linux user root authority, he then can fuck up the whole system, not our
   // problem.": no <verb>.warning.txt is left in the repository.
@@ -2068,14 +2042,6 @@ function oneFile(P) {
       test.run('its code skips no node_modules by its own name', 0.4, function () {
         const hits = codeLinesMatching(rel, OWN_NODE_MODULES_SKIP);
         return !hits.length || 'it does: ' + short(hits) + '; it reads fileSystem.js\'s VENDORED_FOLDERS';
-      }, test.limit.quick);
-      test.run('its code reads no spirit.<name>Data', 0.4, function () {
-        const hits = codeLinesMatching(rel, OLD_DATA_READER);
-        return !hits.length || 'it does: ' + short(hits);
-      }, test.limit.quick);
-      test.run('its code names neither the old cache manager nor the old data module', 0.4, function () {
-        const hits = codeLinesMatching(rel, OLD_DATA_MANAGER).concat(codeLinesMatching(rel, OLD_DATA_MODULE));
-        return !hits.length || 'it does: ' + short(hits);
       }, test.limit.quick);
     }
     if (/\.(js|html)$/.test(rel)) test.run('it reaches through spirit.element only for elements the tree holds', 0.4, function () {

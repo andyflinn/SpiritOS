@@ -97,7 +97,7 @@ Caddy  -- HTTP 127.0.0.1:65430 -->  node --relay
 ```
 
 - The companion UI never opens the public host.
-- `relays.json` on a personal node must be `https://spirit.andyflinn.com`.
+- A personal node's relay row must be `https://spirit.andyflinn.com`.
 - `hub.js` on a personal node must use HTTPS and refuse a remote `http://` URL.
 - Port **65430** is internal. ufw **denies** it from the internet.
 - Port **80** exists only so Caddy can redirect and complete Let’s Encrypt http-01.
@@ -368,7 +368,7 @@ does not need `chmod`.
 
 On the **laptop**, after the box is on HTTPS: a personal node adds the relay
 by its `https://` address (its relays are rows of the node's shadow roll,
-`seen` in `node.db`, since goal/G40.11; Natter's `relays.json` is long gone),
+`seen` in `node.db`),
 and the node's outbound socket (`spirit/run/spirit/relayRequest.js`, through
 `assertRelayUrl` in `relayUrl.js`) refuses a remote `http://` address.
 

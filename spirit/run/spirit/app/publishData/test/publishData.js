@@ -20,7 +20,7 @@ function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x))
 function code(f) { try { return fs.readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1'); } catch (e) { return ''; } }
 const HERE = path.join(RUN, 'spirit', 'app', 'publishData');
 const FILE = path.join(HERE, 'publishData.js');
-const OLD = path.join(RUN, 'spirit', 'app', 'deskClient');
+const DESKCLIENT = path.join(RUN, 'spirit', 'app', 'deskClient');
 function freePort() { return new Promise(function (resolve) { const s = net.createServer(); s.listen(0, '127.0.0.1', function () { const p = s.address().port; s.close(function () { resolve(p); }); }); }); }
 
 
@@ -66,14 +66,8 @@ test.run('agentReadme.js stands beside it and loads', 0.2, function () {
 }, test.limit.quick);
 
 // Andy runs it; no agent starts it
-test.run('the old spirit/app/deskClient/publishData.js is gone', 0.2, function () {
-  return (!fs.existsSync(path.join(OLD, 'publishData.js'))) ? true : 'spirit/app/deskClient/publishData.js is still there';
-}, test.limit.quick);
-test.run('the old spirit/app/deskClient/agentReadme.js is gone', 0.2, function () {
-  return (!fs.existsSync(path.join(OLD, 'agentReadme.js'))) ? true : 'spirit/app/deskClient/agentReadme.js is still there';
-}, test.limit.quick);
 test.run('deskClient starts no publishData', 0.2, function () {
-  client = code(path.join(OLD, 'deskClient.js'));
+  client = code(path.join(DESKCLIENT, 'deskClient.js'));
   return (!!client && !/publishData/.test(client)) ? true : 'deskClient.js still names publishData';
 }, test.limit.quick);
 

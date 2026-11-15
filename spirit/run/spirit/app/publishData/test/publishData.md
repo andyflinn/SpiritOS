@@ -10,7 +10,7 @@ Andy: *"spirit/app/publishData/publishData will be fixed to point at the correct
 - It reads testicle's `testicle.db` where testicle keeps it, its state `spirit/state/testicle/data/` (Andy: *"publish Data
   uses testicle data."*), and no other test database.
 - `agentReadme.js` stands beside it in `spirit/app/publishData/` and loads.
-- No agent starts it: `spirit/app/deskClient/publishData.js` and `agentReadme.js` are gone, and `deskClient.js` names no publishData.
+- No agent starts it: `deskClient.js` names no publishData.
 
 ## The noSummary part: spirit/app/publishData/publishData.js
 

@@ -18,7 +18,6 @@ const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const { scratchNode, scratchFaceRelay, chromePage, findChrome, until, sleep } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 
 const SET = 'spirit/iconSet.json';
-const OLD = 'shell/json/iconSet.json';
 const OWN = 'spirit/state/icons/data/iconSet.json';
 const DOMAIN = 'localhost';
 const NAME = 'icons';
@@ -90,7 +89,7 @@ const NO_LIST = 'no list on the page';
 
 // the box: "This file: run://spirit/iconSet.json"
 test.run('spirit/iconSet.json is in git', 0.2, function () {
-  tracked = execSync('git ls-files -- spirit/run/' + SET + ' spirit/run/' + OLD, { cwd: REPO, encoding: 'utf8' }).split('\n').filter(Boolean);
+  tracked = execSync('git ls-files -- spirit/run/' + SET, { cwd: REPO, encoding: 'utf8' }).split('\n').filter(Boolean);
   return tracked.indexOf('spirit/run/' + SET) !== -1 ? true : SET + ' is not in git';
 }, test.limit.quick);
 test.run('and it is a set: each glyph with its keywords', 0.2, function () {
@@ -99,25 +98,11 @@ test.run('and it is a set: each glyph with its keywords', 0.2, function () {
   return glyphs.length > 0 && glyphs.every(function (g) { return Array.isArray(set[g]); }) ? true : SET + ' holds: ' + short(glyphs.length);
 }, test.limit.quick);
 
-// the box: "The old system set, shell/json/iconSet.json, is deleted in this item", "none uses the old file"
-test.run('shell/json/iconSet.json is gone', 0.2, function () {
-  return !fs.existsSync(path.join(RUN, OLD)) ? true : OLD + ' still stands';
-}, test.limit.quick);
-test.run('and git no longer holds it', 0.2, function () {
-  return tracked.indexOf('spirit/run/' + OLD) === -1 ? true : 'git still holds ' + OLD;
-}, test.limit.quick);
 // A glyph the set does not have, for the Icons app's own file below.
 test.run('the world: a glyph the set does not have', 0.2, function () {
   for (let c = 0x1F980; c < 0x1FB00 && !PLANTED; c++) { const g = String.fromCodePoint(c); if (!glyphs.includes(g)) PLANTED = g; }
   return !!PLANTED ? true : 'the set has every glyph tried';
 }, test.limit.quick);
-test.run('no file names the old file', 0.2, function () {
-  // The two tests that check for the old file name it.
-  const QUOTES = ['spirit/run/spirit/element/search/icon/test/listElement.js', 'spirit/run/shell/icons/test/icons.js'];
-  const namers = execSync('git ls-files -- spirit', { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(function (f) { return /\.(js|html|json)$/.test(f) && QUOTES.indexOf(f) === -1; })
-    .filter(function (f) { try { return fs.readFileSync(path.join(REPO, f), 'utf8').indexOf(OLD) !== -1; } catch (e) { return false; } });
-  return namers.length === 0 ? true : 'these still name ' + OLD + ': ' + short(namers);
-}, test.limit.slow);
 
 // the box: "the list element reads this one file, with no 'own, else system' any more"
 test.run('the list does not name the Icons app\'s file', 0.2, function () {

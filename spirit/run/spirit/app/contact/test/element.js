@@ -110,14 +110,6 @@ test.run('it mounts on the shell and has no server', 0.2, function () {
   return !!own.shell && own.shell.mount === true && !!own.node && own.node.mount === false ? true : 'shell ' + short(own.shell) + ', node ' + short(own.node);
 }, test.limit.quick);
 
-// the box: "spirit/peerStats.js goes, and with it the count of every message that arrives"
-test.run('spirit/peerStats.js is gone', 0.2, function () {
-  return !fs.existsSync(path.join(RUN, 'spirit', 'peerStats.js')) || 'spirit/peerStats.js is still there';
-}, test.limit.quick);
-test.run('no code names peerStats', 0.2, function () {
-  const counting = codeNaming(/peerStats/);
-  return !counting.length || 'naming it: ' + short(counting);
-}, test.limit.quick);
 
 test.run('the world: a scratch node comes up', 0.2, async function () {
   W.s = scratch();

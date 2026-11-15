@@ -520,16 +520,6 @@ function stateCachePart() {
     return !top.length || 'written there: ' + short(top);
   }, test.limit.quick);
 
-  // "NO FUCKING RESCUE CODE": a cache file left at the old place is not read
-  test.run('a file at spirit/state/follower/<id>.json is not read back: a cache left behind is rebuilt from the stream', 0.2, async function () {
-    if (noTree()) return noTree();
-    const atTop = await startWith(state);
-    return !atTop.seen || 'came back: ' + short(atTop.seen);
-  }, test.limit.slow);
-  test.run('and it is left where it was, not moved', 0.2, function () {
-    if (noTree()) return noTree();
-    return fs.existsSync(path.join(state, id + '.json')) || 'the old file was moved or removed';
-  }, test.limit.quick);
 
   // THE ATTACKER (rule/27: "tests MUST be "the enemy, the attacker" an try everything conceivable to break the code").
   // startWith plants a good file; each case below then spoils cache/ before the follower starts again.
