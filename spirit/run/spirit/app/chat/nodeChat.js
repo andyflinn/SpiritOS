@@ -1,6 +1,6 @@
 'use strict';
 
-// spirit/run/spirit/app/chat/nodeChat.js (was chatClerver.js; goal/G43.31: the branch is chat, as its folder, Andy: "The BRANCH
+// spirit/run/spirit/app/chat/nodeChat.js (goal/G43.31: the branch is chat, as its folder, Andy: "The BRANCH
 // name ... is motherfucking <name> in spirit/app/<name>...."). Loaded by ./chat.js in a node. Its contract and its test:
 // ./test/nodeChat.md and ./test/nodeChat.js.
 // THE CHAT SERVER — goal/G4. Faceless and p2p: every node that takes part runs one, and each holds its own record of

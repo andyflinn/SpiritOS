@@ -29,6 +29,6 @@ say "5. probe"
 
 echo
 ok "cutover attempted."
-echo "    personal nodes should set app/natter/relays.json url to"
+echo "    personal nodes add the relay as"
 echo "    https://$DOMAIN"
 echo "    hub.js must use https for that URL (separate code change)."

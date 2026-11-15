@@ -1053,8 +1053,7 @@ catch (e) {
   settings.problems.forEach(function (why) { console.warn('spirit/state/node.json: ' + why); });
 }());
 
-// THE BOOK'S ROUTES AND MARKS WERE MOVED HERE AT BOOT (cycle R1, 0021) until goal/G40.11: contacts are rows of the one
-// table now, and a row's flags are its marks. No old contacts.json is moved in (goal/G41.30, nodeStore.js).
+// CONTACTS ARE ROWS OF THE ONE TABLE (goal/G40.11), and a row's flags are its marks.
 
 // THE PERSONAL NODE'S BOOT. It read `if (!relayMode)` until cycle 0; a
 // relay is booted by relayServer.js now, so this block always runs.
@@ -1111,8 +1110,7 @@ catch (e) {
   //
   // NODE STATE since goal/G16.3, so no app decides where this node talks;
   // a relay row of node.db's one table since goal/G40.11, where this asserts
-  // the one seed row, noderoutes.net, by key. An old relays.json or
-  // relayKeys.json is not read (goal/G43.23).
+  // the one seed row, noderoutes.net, by key.
   try { ownerBadge.ensureRelays(ROOT_DIR); }
   catch (e) { /* nor a relay list */ }
 
@@ -2016,7 +2014,7 @@ const startEmail = common.emailFromArgs(process.argv.slice(2));
 common.answerClientErrors(server);
 server.listen(port, BIND_HOST, () => {
   hub.joinAtStart(startEmail, { router: peerRouter, port: Number(port) || spirit.DEFAULT_SPIRIT_PORT, probe: spirit.require('spirit/hub.js').relayKeyAsk(peerRouter) })
-    .catch(function (e) { return { lines: ['The join at start broke: ' + ((e && e.message) || e) + '. Join from Natter instead.'] }; })
+    .catch(function (e) { return { lines: ['The join at start broke: ' + ((e && e.message) || e) + '. Join from Contacts instead.'] }; })
     .then(function (r) {
       (r.lines || []).forEach(function (line) { console.log(line); });
       console.log(`node is listening on 127.0.0.1:${port}`);

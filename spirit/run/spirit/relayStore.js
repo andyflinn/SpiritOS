@@ -8,9 +8,7 @@ require('./spirit.js');
 //   a DISC-client." — cycle 3, design/cycles/2026-09-19-disc-and-owner-
 //   token-cycle-3.md; design/principles/NODE-AND-RELAY.md, Build sequence.
 //
-// Until cycle 3 the relay held its whole roll in a map, read it whole at
-// boot, and rewrote routingTable.json whole on every change. Now disc is
-// the only copy: every question is a query, and nothing is resident that
+// Disc is the only copy: every question is a query, and nothing is resident that
 // current activity does not need (standing rule: RAM, the most expensive
 // resource, managed with utmost care).
 //

@@ -755,9 +755,8 @@ define('url-not-listed', {
   // No path, for the reason no-relay-url gives (goal/G16.3).
   texts: ['url not in the relay list of this node'],
 });
-// relay.remove refusing the last public relay (goal/G16.3): the rule the
-// Natter screen always obeyed, asked by the node (ownerBadge.removalRefusal)
-// now that the node is the list's only writer.
+// relay.remove refusing the last public relay (goal/G16.3), asked by the
+// node (ownerBadge.removalRefusal), the list's only writer.
 define('last-public-relay', {
   status: 409, presence: NONE, retry: 'no', fault: 'caller',
   texts: ['this node must keep one public relay'],

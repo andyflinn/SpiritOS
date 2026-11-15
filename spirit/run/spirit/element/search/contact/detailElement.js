@@ -698,7 +698,7 @@ function ndWhyNotGreen() {
     '<div>It is running and reachable. It simply has no row in your name, ' +
       'so this node cannot send through it or be reached on it.</div>' +
     '<div class="muted">Rows are not self-service: whoever owns this relay ' +
-      'mints an invite and gives you the token, and Natter claims a name with ' +
+      'mints an invite and gives you the token, and you claim a name with ' +
       'it. Until then the relay is listed here and does nothing for you.</div>');
 }
 
@@ -747,7 +747,7 @@ function ndRefusedHtml(refused) {
     '</div>';
 }
 
-// WHETHER THIS RELAY MAY COME OFF THE LIST, asked here (goal/G30.7, Natter retired): the one rule the node enforces too,
+// WHETHER THIS RELAY MAY COME OFF THE LIST, asked here (goal/G30.7): the one rule the node enforces too,
 // ownerBadge.removalRefusal, over the list's rows as ndLoad holds them (owned, claimed). '' when it may.
 function ndRemoveRefusal() {
   var badge = window.spirit && window.spirit.ownerBadge;
@@ -811,7 +811,7 @@ function ndLeave(button) {
   });
 }
 
-// Two presses (an armingButton), then relay.remove, here (goal/G30.7: Natter, which performed it, is gone). The node
+// Two presses (an armingButton), then relay.remove, here (goal/G30.7). The node
 // asks the same rule.
 function ndRemove() {
   if (ndRemoveRefusal()) return;
@@ -1292,16 +1292,6 @@ function ndOwnerGroupHtml(inner) {
 // if it is wanted, contactsDetails is where Andy put per-contact
 // functionality, and it is a button beside Forget rather than a panel.
 //
-// ── "WHEN SOMEBODY NEW JOINS" ────────────────────────────────────────
-//
-// The auto-add policy, and it was dead before it stopped making sense.
-// `autoAdd` was written to relays.json by this panel and read back by
-// this panel, and by nothing else in the tree — no node module ever
-// looked at it, so no newcomer was ever added or not added because of
-// it. Andy is right twice: it is superseded by members becoming contacts
-// on their own, and it never did anything.
-
-
 // ── WHAT THIS BOX CALLS ITSELF ──────────────────────────────────────
 //
 //   Andy: "the owner should be able to change the public label of his
@@ -1573,7 +1563,7 @@ function ndInvitePanel() {
 }
 
 // TAKING THIS RELAY OFF THE LIST is ndRemoveHtml above, here since
-// goal/G30.7 (Natter retired), asking the same rule the node enforces:
+// goal/G30.7, asking the same rule the node enforces:
 // ownerBadge.removalRefusal.
 
 // ---- painting --------------------------------------------------------
@@ -1599,7 +1589,7 @@ function ndInvitePanel() {
 //
 // It did not, and nothing was broken: the roll carried the new name to
 // the browser correctly and NOTHING DREW IT. Every caption on this
-// screen came from the caller's relays.json — the reader's private
+// screen came from the caller's own relay list — the reader's private
 // shorthand — so publishing a name changed a field nobody displayed.
 //
 // THE ORDER IS THE OPPOSITE OF A CONTACT'S, and the difference is real.
@@ -1704,7 +1694,7 @@ function ndMountForms(body) {
 
 // TAKING A SEAT ON THIS RELAY, and `url: ndUrl` is the whole reason this
 // can be here — the screen is which relay, so the claim is aimed rather
-// than landing on relays.json[0].
+// than landing on the first relay listed.
 //
 // AND THE URL NEED NOT BE LISTED YET (goal/G16.3): the claim is what puts
 // a relay on the node's own list, so hub.handleClaim aims at a named url

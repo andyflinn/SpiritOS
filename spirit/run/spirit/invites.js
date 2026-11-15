@@ -1,9 +1,8 @@
 'use strict';
 require('./spirit.js');
 
-// The relay's invites — the `invites` table in spirit/state/relay.db since
-// cycle 3 (relayStore.js). It was spirit/state/invites.json until then; a
-// relay that still has that file imports it once (D8). A row:
+// The relay's invites — the `invites` table in spirit/state/relay.db
+// (relayStore.js). A row:
 //
 //   { "token": "hex", "label": "saint",
 //     "expiresAt": "2026-09-20T00:00:00.000Z", "invitedBy": "andy" }
@@ -163,18 +162,15 @@ function revokeInvite(rootDir, label) {
 }
 
 // The other half of "cannot forget": an expired invite is refused for
-// ever but was never removed, so invites.json only grew. Nothing
-// dangerous — every row needed the owner's signature to exist — but a box
-// alone in the jungle that can only accumulate is one that eventually
-// cannot be read.
+// ever, and swept here, so the table does not only grow. A box alone in
+// the jungle that can only accumulate is one that eventually cannot be read.
 //
 // Swept on write rather than on a timer: the only moments this file
 // matters are the moments something touches it.
 function sweepExpired(rootDir, nowMs) {
   const now = nowMs == null ? Date.now() : nowMs;
   // Spent invites are deleted when spent, so an expired one is the only
-  // kind left to sweep. (Rows the old `consume` stamped instead of deleting
-  // were D4; the one-time import (D8) does not carry them.)
+  // kind left to sweep.
   return relayStore.open(rootDir).invites.sweepExpired(new Date(now).toISOString());
 }
 

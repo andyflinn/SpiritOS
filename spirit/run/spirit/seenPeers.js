@@ -14,8 +14,7 @@ require('./spirit.js');
 //
 // ── THE CONTACTS ARE ROWS OF THIS ONE TABLE (goal/G40.11) ────────────
 //
-// contacts.json went into this table with goal/G40.11 (contacts.js: Andy's
-// box, v24: "seen, the shadow in node.db, is the one table."). A contact is
+// Andy's box, v24: "seen, the shadow in node.db, is the one table." A contact is
 // a row here flagged `keep`; a search or an arrival writes a row and never
 // keeps it — only the owner's act does (contacts.js, `set` below).
 //

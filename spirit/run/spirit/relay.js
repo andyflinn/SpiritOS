@@ -33,25 +33,11 @@ const relayLimits = spirit.require('spirit/relayLimits.js');
 // describe the code that is running, not the code on disk.
 const RUNNING = spirit.require('spirit/buildStamp.js').resolve(path.join(__dirname, '..'));
 
-// THE RING IS GONE (R8, 2026-09-15), and this is the whole of what it
-// was: `send()` into a 200-entry `messages` array persisted inside
-// routingTable.json, read back by polling `GET /api/relay/inbox`.
-//
-//   Andy: "the ring was a lie all along. it was unable to promise
-//   reliable delivery anyways, because it dropped entries on overflow."
-//
-// Store-and-forward is only worth the storing if the store holds. That
-// one was 200 entries GLOBAL — one array for every peer on the box,
-// filtered per reader at read time — so it was worse than unreliable:
-// a peer sending 200 messages TO THEMSELVES silently evicted every other
-// peer's undelivered mail, and nothing anywhere was told. It offered a
-// guarantee it could not make and could not even notice breaking, which
-// is why decision 0006 sentenced it and why the deletion needed no
-// migration (design/andy/relayStorage.md: "they are all noise").
-//
-// The router's answer to the same problem is to make no promise it
-// cannot keep: delivered down a held stream, or refused at once. There
-// is now one transport on this box and it is that one.
+// NO STORE-AND-FORWARD (decision 0006). Andy: "the ring was a lie all
+// along. it was unable to promise reliable delivery anyways, because it
+// dropped entries on overflow." The router makes no promise it cannot
+// keep: delivered down a held stream, or refused at once. There is one
+// transport on this box and it is that one.
 //
 // What a routed request may carry — ONE number, shared with the browser
 // that pre-checks it (limits.js). It used to say 16384 here while
@@ -134,7 +120,7 @@ var lever = spirit.require('spirit/lever.js');
 // streams per megabyte of the RAM the owner configured. 16 was declared as
 // a placeholder in cycle 1; R15 then measured ~58-63 KB a stream on Windows
 // and ~42 KB on Linux in the process alone, i.e. 16-24 a megabyte — so 16
-// holds, on the careful side, and README/CAPACITY.md is where it is argued.
+// holds, on the careful side.
 var STREAMS_PER_MB = 16;
 
 // A SEAT IS THREE STREAMS (goal/G30.15, Andy: "we want to be as sure as possible that we can serve all our members
@@ -197,9 +183,7 @@ var STRANGER_BAN_START_MS = 1000;
 //   Andy: "we already have packet delivery, that should be the bootstrap
 //   for rate-management, there we get first measurements."
 //
-// DUMB ON PURPOSE, and temporary. CAPACITY.md's governor divides measured
-// headroom and publishes the result; this is the backstop that holds the
-// door until there is something in the ring to divide. A number chosen
+// DUMB ON PURPOSE. A number chosen
 // to bound a runaway and to be invisible to a person: ten a second is far
 // past human, and far below what a loop can do.
 //
@@ -220,16 +204,8 @@ var RATE_KEY_SWEEP_AT = 1000;
 //   Andy: "storage is actually moved from RAM to DISC, and RAM must become
 //   a DISC-client."
 //
-// routingTable.json STOOD HERE — read whole at boot into a map, rewritten
-// whole on every claim, rename and removal. The roll and the invites are
-// tables in spirit/state/relay.db now (relayStore.js), and
-// every question about them is a query. An old routingTable.json is not
-// read (D8, eliminated by goal/G43.23; design/DEPRECATIONS.md).
-//
-// Before that, mailbox.json was this file's name, and the read of the old
-// name was deleted once spirit-3 had written the new one (2026-09-13). The
-// same discipline holds: data on somebody's box is renamed and kept, never
-// deleted by a boot.
+// The roll and the invites are tables in spirit/state/relay.db
+// (relayStore.js), and every question about them is a query.
 
 // A HOP'S SHARE OF THE BUDGET (HOP_MARGIN_MS), the partner liveness window
 // (PARTNER_QUIET_MS) and the injected `deps.askPartner` STOOD HERE. This relay
@@ -390,10 +366,8 @@ function createRelay(rootDir, deps) {
   //   Andy: "a relay's capacity is primarily governed by its own RAM and
   //   by its network bandwidth" — and "there we get first measurements".
   //
-  // A fixed ring of what this box actually moved. It exists so the
-  // governor in CAPACITY.md can be built against observation instead of
-  // against a guess, and it starts filling from ordinary member-to-member
-  // traffic today, long before any partner delivery exists.
+  // A fixed ring of what this box actually moved, filled from ordinary
+  // member-to-member traffic.
   //
   // AGGREGATE ONLY, NEVER PER-PEER. The same ring kept per member would be
   // a record of who talks how much and when — what this system refuses to
@@ -441,8 +415,7 @@ function createRelay(rootDir, deps) {
 
   // One slot per second of wall clock, overwriting the oldest. `bytes` is
   // what crossed in that second; `posts` is how many; `peak` is the most
-  // outstanding routes seen — the RAM meter beside the bandwidth one,
-  // since CAPACITY.md's governor reads several and not a fixed pair.
+  // outstanding routes seen — the RAM meter beside the bandwidth one.
   //
   // A PARTNER COUNT stood beside these (the share of work that crossed a
   // partnership); it went with the partner budget (goal/G22.6).
@@ -1061,8 +1034,8 @@ function createRelay(rootDir, deps) {
   //   relay... it lives in the json file on the relay that holds the
   //   relay's key: key and label are a pair, in keyed mode."
   //
-  // WHICH IS WHY IT IS HERE AND NOT IN routingTable.json. That file is
-  // `peers` and nothing else — decision 0006, a relay stores nothing on
+  // WHICH IS WHY IT IS HERE AND NOT IN relay.db, which holds members
+  // and invites and nothing else — decision 0006, a relay stores nothing on
   // anyone's BEHALF, and spirit/test/labPersistence.js now asserts the
   // shape. A relay's own name is not held on anyone's behalf; it is the
   // other half of its own identity, and identity.json has carried a
@@ -1500,8 +1473,8 @@ function createRelay(rootDir, deps) {
 
     // Consume BEFORE the write, and only write if the row actually
     // burned. The other order — persist the peer, then consume — leaves a
-    // claimed name behind a still-live token whenever the write to
-    // invites.json fails, which is the one failure a one-shot token
+    // claimed name behind a still-live token whenever the write of the
+    // invite fails, which is the one failure a one-shot token
     // cannot survive. Everything that can refuse this claim has already
     // run, so a burn here is not spent on a claim that then 409s.
     if (inviteRow) {
@@ -1805,32 +1778,6 @@ function createRelay(rootDir, deps) {
     };
   }
 
-  // send() AND inbox() STOOD HERE — 193 lines, and they were the ring.
-  //
-  //   send()   signed by LABEL (auth.sendMessage), pushed into a 200-entry
-  //            global `messages` array, persisted into routingTable.json,
-  //            answered 201 whether or not the far end existed
-  //   inbox()  polled that array back out, filtered per reader, marking
-  //            nothing and deleting nothing
-  //
-  // Deleted by R8 on 2026-09-15. What replaces them is already here and
-  // is 198 lines to their 193: routePost / routeReply below, the router
-  // table in router.js, and the held stream. The difference is not size,
-  // it is that the router DELIVERS OR REFUSES (decision 0006) instead of
-  // promising a store that could not hold.
-  //
-  // Nothing was migrated. Andy inspected what spirit-3's ring was holding
-  // first — 77 entries, 15 of them telemetry from a console that no
-  // longer exists — and ruled: "they are all noise"
-  // (design/andy/relayStorage.md). The one-time import (relayStore.js,
-  // D8) does not carry `messages`, so a relay upgrading in place shed its
-  // mail there.
-  //
-  // consoleExchange went before them, on 2026-09-13: 56 lines reached
-  // THROUGH send(), and not peer transport at all. See relayStatus.js for
-  // what replaced what it told an owner, and decision 0007 for why that
-  // is more than the console ever managed.
-  //
   // THIS IS NOT A GAP TO FILL. An app that wants store-and-forward wants
   // it on a NODE, which keeps its own traffic log and is entitled to; a
   // relay that kept one would be holding everybody's messages — the
@@ -2034,7 +1981,7 @@ function createRelay(rootDir, deps) {
     var mine = store.members.get(who.publicKey);
     if (!mine) return { ok: false, status: 404, error: 'no such peer' };
     var email = mine.emailVerified ? mine.email : '';
-    if (!email) return { ok: false, status: 400, error: 'no verified email on file for this member: add an email address in Natter first' };
+    if (!email) return { ok: false, status: 400, error: 'no verified email on file for this member: add an email address in Contacts first' };
     var holder = store.members.byFace(name);
     if (holder && holder.publicKey !== who.publicKey) return { ok: false, status: 409, error: 'that face name is held by another member' };
     var wrote = guardWrite('face name', function () { return store.members.setFace(who.publicKey, name, email); });
@@ -3795,8 +3742,7 @@ function createRelay(rootDir, deps) {
       seats: snap.seats,
       present: presentNow.present(),
       routes: routes.size(),
-      // WHAT THIS BOX ACTUALLY MOVED, so the governor in CAPACITY.md can
-      // be built against observation. Aggregate and derived on the way
+      // WHAT THIS BOX ACTUALLY MOVED. Aggregate and derived on the way
       // out; the ring itself never leaves this process.
       meter: meterRead(),
       // AND WHAT IT IS CURRENTLY ALLOWING. Grok: "starting cap is

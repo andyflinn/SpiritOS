@@ -109,7 +109,7 @@ function dbPath(rootDir) {
 }
 
 // The node log's fields, in the order trafficLog.js writes them, each with
-// the type it has held on Andy's node (traffic.jsonl surveyed 2026-09-28):
+// the type it holds:
 // text, a number, or true/false stored as 1/0. Typed, so an index on hash or
 // at holds the plain value and a lookup compares it plainly (wsl-claude,
 // before transport/R19.4). A value that does not have its column's type,
@@ -248,10 +248,7 @@ function open(rootDir, opts) {
   // A CARD IS KEPT ONLY SIGNED BY THE ROW'S ID (contacts.setCard checks it); any other is refused and nothing of it
   // kept. TIMES ARE MILLISECONDS, unlike relay.db's ISO strings: they are compared and ordered on the shedding path.
   // `present` is three-valued: -1 nobody has said, 0 said absent, 1 said present.
-  //
-  // NO OLD STORE IS MOVED IN (goal/G41.30; Andy: "let's get rid of those \"rescue operations\""): the one-time move of
-  // goal/G40.11 (the old seen, the relays and peers tables, contacts.json) is gone. Pre-alpha, a node made before it
-  // starts with this table new.
+
   const SEEN_FLAGS = ['keep', 'mine', 'relay', 'ignored', 'blocked', 'seated'];
   const GRANT_NAME = "COALESCE(NULLIF(s.myLabel, ''), s.label, '')";
   db.exec(`

@@ -3,13 +3,13 @@ require('./spirit.js');
 
 // spirit/run/spirit/contacts.js — the owner's acts on the one table.
 //
-// ── IT WAS contacts.json UNTIL goal/G40.11 ──────────────────────────
+// ── THE ONE TABLE (goal/G40.11) ──────────────────────────────────────
 //
 //   Andy's box, v24: "seen, the shadow in node.db, is the one table. contacts.json, the relays table and the peers
 //   table move into it and go."
 //
 // A contact is a row of seen flagged `keep`: "a chosen contact, never shed". Somebody refused is `blocked`; a relay or a puppet the owner starred is `mine` (hub.handleOwn, the one writer of it,
-// goal/G41.30). The file is gone and nothing moves it in any more (goal/G41.30); this module keeps the rules the book had, as acts on those flags.
+// goal/G41.30). This module keeps the owner's rules, as acts on those flags.
 // Perception only. Lives on a personal node, never on a --relay.
 //
 // A contact row, as every reader here gets it:

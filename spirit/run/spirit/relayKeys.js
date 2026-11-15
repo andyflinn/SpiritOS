@@ -55,9 +55,6 @@ require('./spirit.js');
 // given"). The name a relay calls this node by is the node's own name, pushed to every relay (nodeCard.setName,
 // Info's rename); the email is the node's to type, never stored. So seatLabel answers that name for a relay this
 // node is seated on, and nothing here records more of a seat than `seated`.
-//
-// relayKeys.json and relays.json, the stores before goal/G19.15, are not read: the one table is the record (goal/G43.23,
-// the box's item 7; Andy, goal/G41.30: "let's get rid of those "rescue operations"").
 
 const fs = require('fs');
 const path = require('path');

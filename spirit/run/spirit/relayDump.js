@@ -4,9 +4,8 @@ require('./spirit.js');
 // spirit/run/spirit/relayDump.js
 // WHAT A RELAY HOLDS, ASKED OVER SSH — read-only, until cycle 4's monitor.
 //
-// Cycle 3 moved the relay's data into spirit/state/relay.db (relayStore.js),
-// so `cat routingTable.json` no longer answers anything. This is what an
-// owner types instead:
+// The relay's data is in spirit/state/relay.db (relayStore.js). This is
+// what an owner types to read it:
 //
 //   node spirit/relayDump.js                 counts: members, invites   (from spirit/run)
 //   node spirit/relayDump.js key <publicKey> one member

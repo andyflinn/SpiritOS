@@ -99,21 +99,15 @@ function removalRefusal(relays, url) {
 
 // ── THE LIST IS THE NODE'S OWN STATE (goal/G16.3) ────────────────────
 //
-// It was the Natter app's file: writable through fs by any shell app, so
-// an app decided where this node claims, connects and searches, and a
-// node whose Natter folder was emptied quietly pointed at Andy's relay
-// again. It is the node's own state now (in node.db, below), which the fs
-// write gate refuses every app and every page. The node is its only
-// writer: ensureRelays seeds it, a successful claim adds to it (addRelay)
-// and relay.remove takes from it (removeRelay).
+// No app decides where this node claims, connects and searches: the list
+// is the node's own state (in node.db, below), which the fs write gate
+// refuses every app and every page. The node is its only writer:
+// ensureRelays seeds it, a successful claim adds to it (addRelay) and
+// relay.remove takes from it (removeRelay).
 //
 //   Andy, 2026-10-10: "Q4: Do you approve two new commands on the node,
 //   list relays and remove relay, with a successful claim adding its
 //   relay? yes."
-//
-// NO MIGRATION from the old file, on purpose: moving a node's existing
-// list over is asked of Andy separately, and the node does not read the
-// app's folder even once.
 //
 // IN node.db SINCE goal/G19.15, AND IN THE ONE TABLE SINCE goal/G40.11: the list is the relays kept (seen rows
 // flagged relay and keep), which relayKeys.js reads and writes.
@@ -134,15 +128,7 @@ function configuredUrls(rootDir) {
 //
 // The seed is noderoutes.net, asserted at every boot (goal/G19.15, below).
 //
-// THIS IS THE OTHER HALF OF UNTRACKING IT. relays.json used to ship in
-// git with two relays in it, and that is why `git reset --hard` reverted
-// a node's own list on every update — the complaint this all came from.
-// Untracking it fixed that and left a new hole: a fresh clone had no
-// relays at all and opened to an empty Natter.
-//
-// The difference between the two, and it is the whole argument: a list
-// SHIPPED IN GIT is code, so it comes back on every update and cannot be
-// edited away. A list WRITTEN BY THE NODE is the node's own state — it
+// A list WRITTEN BY THE NODE is the node's own state — it
 // is created once, into a gap, and from then on it belongs to whoever
 // runs the box. Nothing ever overwrites it again.
 //
@@ -245,7 +231,7 @@ function removeRelay(rootDir, url, opts) {
 // `status\n<name>` with no minute in it — the only credential in the
 // system that could not expire — and it travelled on a QUERY STRING,
 // where `relay.streamSignatureFrom` refuses its sibling outright. It was
-// fired at every relay in relays.json, including boxes this node holds
+// fired at every relay in the list, including boxes this node holds
 // no row on.
 //
 // Deleting it fixes that by removing it rather than by patching it, and
@@ -312,7 +298,7 @@ function summarize(rows) {
 // So this now signs NOTHING. A node asking which relays it is on, and
 // which of those it owns, makes no credential of any kind and reveals
 // nothing it did not already publish. That is the right shape for a
-// question asked on a timer against every URL in relays.json, including
+// question asked on a timer against every relay in the list, including
 // boxes this node has no relationship with.
 // `name` WAS THE SECOND ARGUMENT and is gone (R3). It existed to build
 // `statusPath(rootDir, name)` — a signature over a LABEL, to prove a KEY

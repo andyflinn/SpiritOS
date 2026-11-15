@@ -35,7 +35,7 @@ const path = require('path');
 
 // The shipped default, and Andy's number: "20 MBytes = 10 jpeg images
 // from a modern cell phone". About 36,000 reachable people (577 bytes
-// each, measured) — README/CAPACITY.md.
+// each, measured).
 const DEFAULT_CACHE_MAX_MB = 20;
 
 // THE FLOOR, stated rather than discovered. An empty node.db is ~20 KB and

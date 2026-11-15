@@ -1762,7 +1762,7 @@ function createPeerPost(opts) {
     var s = servicesByUrl[String(relayUrl || '').replace(/\/+$/, '')];
     return { sendMail: !!(s && s.sendMail), face: !!(s && s.face) };
   }
-  // AND ITS PUBLIC LABEL, as its last card said (goal/G30.7): Natter shows the label it would change (Andy, 2026-10-20:
+  // AND ITS PUBLIC LABEL, as its last card said (goal/G30.7): the relay's panel shows the label it would change (Andy, 2026-10-20:
   // "This input field must show the current public label of this relay"). In memory only, beside the services.
   var labelByUrl = Object.create(null);
   function labelOf(relayUrl) { return String(labelByUrl[String(relayUrl || '').replace(/\/+$/, '')] || ''); }

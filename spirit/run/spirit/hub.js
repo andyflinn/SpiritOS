@@ -650,17 +650,9 @@ function createHub(rootDir) {
 
   // CLAIMING HAPPENS ON ONE RELAY, AND NOW IT SAYS WHICH.
   //
-  // This used `withRelay` — relays.json[0], whatever the caller meant —
-  // while invite, rename and remove-peer had all moved to
-  // `withChosenRelay`. Claim was the last route that could not be aimed,
-  // and Natter's claim form carried a comment admitting it: the heading
-  // named relays[0] because "a URL box would be a control whose every
-  // other value is silently ignored."
-  //
-  // That is why the claim form could not live on a relay's own screen. A
-  // Claim button on spirit-3's panel that quietly claimed on the lab row
-  // is worse than no button. With the form moving to natterDetails
-  // (2026-09-15) the aim has to be real.
+  // A claim is aimed at the relay the caller names, as invite, rename and
+  // remove-peer are: a Claim button on one relay's panel that claimed on
+  // another would be worse than no button.
   //
   // Not a new switch — the switch is `ownerBadge.chooseUrl`, which has
   // decided this for three other doors since invites landed. Since
@@ -1063,7 +1055,7 @@ function createHub(rootDir) {
   // invented here would not be in the relay's invites and would refuse
   // the very claim it was made for. The relay is what mints.
   //
-  // Which mailbox is the caller's to say, not relays.json[0]'s to assume.
+  // Which mailbox is the caller's to say, not the first relay's to assume.
   // A node may own several; minting on the first one listed would put the
   // token on a mailbox the friend was never being invited to, and the
   // owner would not find out until the claim failed somewhere else.
@@ -1362,22 +1354,9 @@ function createHub(rootDir) {
       //   Andy: "now we need to be able to add foreign peers to contacts,
       //   peer post to foreign peers require that."
       //
-      // This asked `withRelay`, which is `urls[0]` — the first row in
-      // relays.json, whatever the question was. So a key that is real and
-      // enrolled on a PARTNER could never be confirmed: it is not on this
-      // relay's roll, and 404 was the honest answer to the wrong
-      // question.
-      //
-      // The caller names the relay now. What is checked is exactly what
-      // was checked before — the key must be listed on that roll, so a
-      // stale page or a mistyped paste still cannot write a row for
-      // somebody who is not there. Only the source moves, from "the first
-      // relay in the file" to "the one the caller was looking at".
-      //
-      // NOT A WIDENING, and this is why it needs no gate: a person could
-      // already add any relay to relays.json and acquire from it. All
-      // this removes is the requirement to JOIN a relay in order to
-      // confirm a key that is on it.
+      // The caller names the relay. The key must be listed on that roll, so
+      // a stale page or a mistyped paste cannot write a row for somebody who
+      // is not there.
       //
       // `relay: url` is written on the row below, so where a contact was
       // found is recorded rather than inferred later.
@@ -1600,66 +1579,6 @@ function createHub(rootDir) {
   // design: you verify OWNERSHIP against `ownerKey`, and you
   // capture the RELAY's own key to pin for a later forward hop. On
   // spirit-3 those are …fXD+0c= and …bCAsCR4=.
-  // ── WHO IS OVER THERE ────────────────────────────────────────────────
-  // (Of handleRoster, deleted 2026-09-17, below: nothing here reads a roll.)
-  //
-  //   Andy: "we want to prove that with a partnership more peer id's can
-  //   be visible for every node bound to either partner."
-  //
-  // The roll of a relay this node is NOT on. Public, unauthenticated,
-  // the same page `handlePartnerCheck` above already reads — this just
-  // hands back the roster instead of a verdict about one key.
-  //
-  // WHY THE NODE AND NOT THE RELAY. Item 8: the node fetches, the relay
-  // stores the conclusion. A relay caching its partners' members and
-  // answering searches is tier three and needs a cache, a lifetime and a
-  // budget. Reading a public page needs none of those, and it is enough
-  // to SEE — which is the whole of what this step claims.
-  //
-  // NOT A PROXY. It fetches one fixed path, returns only what a roll
-  // carries, and `assertRelayUrl` applies as everywhere else. A caller
-  // that wants an arbitrary url has `net.fetch` and its own refusals.
-  // ── handleRoster STOOD HERE (`relay.roster`), DELETED 2026-09-17 ───
-  //
-  // It fetched a named relay's whole public roll so natterDetails could
-  // tabulate who a partner holds. That panel is gone (see the tombstone
-  // in natterDetails.js) and this had no other caller.
-  //
-  // It was the one roll reader that genuinely wanted a LIST, and so the
-  // one that would have needed paging designed for it. It turned out to
-  // want a list for a screen nobody needed — which is worth remembering
-  // the next time a caller looks like it needs a bigger answer.
-
-  // ── EVERYBODY THIS NODE CAN SEE AND DOES NOT YET KNOW ────────────────
-  // (Of handleCandidates, deleted 2026-09-17, below. Since goal/G43.17 the
-  // network tier of contact.search streams such rows instead.)
-  //
-  //   Andy: "Natter, of course, will not be the place to add contacts,
-  //   this must fit seamlessly into contacts itself, and the list there
-  //   must present peers that are not yet in the contacts list from our
-  //   bound relay or other relays."
-  //
-  // Contacts saw ONE relay when this was written: `peer.list` was
-  // `withRelay`, which was `urls[0]`. So "people you could add" meant "people on the first row of
-  // relays.json", and everybody on the second relay — let alone on a
-  // partner — was invisible in the place a person actually goes looking.
-  //
-  // THE FAN-OUT BELONGS HERE, not in the app. The browser would need one
-  // request per relay plus one per partner, and natterDetails would grow a
-  // second copy of the same arithmetic. Later this becomes one `search` to
-  // each relay (PARTNERS.md, tier three) and the app does not change: it
-  // asks this verb either way.
-  //
-  // Three hops, and only the middle one needs a signature:
-  //
-  //   1. each configured relay's roll      public GET
-  //   2. ask it who it partners with         signed post, any member may
-  //   3. each partner's roll               public GET
-  //
-  // WHAT IS SUBTRACTED is anybody already known — `contactBook.contacts()` is
-  // every row that arrived by more than a roll sighting. A candidate is
-  // precisely somebody visible and not yet known, which is the list the
-  // question asks for and nothing more.
   // ── THE ONE DOOR ONTO THE WIRE ───────────────────────────────────────
   //
   // `router.post` is called here and nowhere else in this file, and
@@ -1669,8 +1588,6 @@ function createHub(rootDir) {
   //   the only way onto the wire. A second caller is a second door,
   //   whether or not a route has been wired to it yet."
   //
-  // Which it caught immediately when handleCandidates grew its own call
-  // (that verb is gone, but the rule it proved is not).
   // The rule is about paths, not about verbs — so a second CALLER shares
   // this function rather than reaching past it, and everything that
   // decides how a packet is shaped stays in one place.
@@ -1832,36 +1749,6 @@ function createHub(rootDir) {
     }));
   }
 
-
-  // ── handleCandidates STOOD HERE, AND TOOK THE LAST WHOLE-ROLL ────
-  //     FAN-OUT WITH IT (2026-09-17)
-  //
-  //   Andy: "we can kill the roll getting in the partner
-  //   communications. we already are working with search concepts only
-  //   there... nothing should break, contacts also uses search now."
-  //
-  // `peer.candidates` answered "everybody visible from here and not yet
-  // known" by fetching EVERY roll whole — this node's relays and each
-  // of their partners — and subtracting what the contactBook already had.
-  // It was the worst roll reader in the tree and the only one with no
-  // narrow form, because not knowing the keys was the entire point of
-  // it: at a thousand members across five partners, six times 147 KB in
-  // one call.
-  //
-  // IT HAD NO CALLER. The note that used to stand above it said it
-  // "stays for the small case and for the 'who is here' question, and
-  // [peer.search] is what the app should use once a relay is real" — and
-  // the app moved. Contacts painted that panel from `peer.search`
-  // (contacts.js, contactsAsk('peer.search')), and says so itself
-  // twenty lines earlier: "anything that wanted it should want
-  // peer.search instead." What remained was a route, an export, a
-  // surface assertion and one stale comment, which between them made a
-  // dead verb look alive.
-  //
-  // Nothing replaces it. contact.search's network tier (walkRelays, above;
-  // peer.search went with goal/G30.19) asks each relay who matches rather
-  // than downloading each relay, which is the same question with a bound
-  // on the answer.
 
   // PARTNERING AS A PERMISSION IS GONE (Andy's decision, goal/G22.6): no
   // relay keeps a partner roll any more, so what this answers promotes
@@ -2211,8 +2098,8 @@ function createHub(rootDir) {
     409: 'This node already holds a seat there; start it without --email.',
     429: 'Wait a minute, then start the node again.',
     502: 'Check the network, then start the node again.',
-    503: 'This relay takes no join by email: ask its owner for an invite and claim a seat with it in Natter.',
-    507: 'Ask its owner for room, or join another relay from Natter.',
+    503: 'This relay takes no join by email: ask its owner for an invite and claim a seat with it in Contacts.',
+    507: 'Ask its owner for room, or join another relay from Contacts.',
   };
   function joinAtStart(email, deps) {
     var mail = String(email || '').trim();
@@ -2222,7 +2109,7 @@ function createHub(rootDir) {
     if (seated.length) return Promise.resolve({ lines: [] });
     var url = String((deps && deps.keptUrl) || ownerBadge.KEPT_RELAY.url).replace(/\/+$/, '');
     var host = url.replace(/^https?:\/\//, '');
-    function refusedLine(status, why) { return { lines: [host + ' did not start the join: ' + why + '. ' + (JOIN_NEXT[status] || 'Start the node again, or join a relay from Natter.')] }; }
+    function refusedLine(status, why) { return { lines: [host + ' did not start the join: ' + why + '. ' + (JOIN_NEXT[status] || 'Start the node again, or join a relay from Contacts.')] }; }
     // THE CARD FIRST (goal/G30.2): a relay whose card does not say services.sendMail takes no join by email, so the
     // node says so without asking it to join.
     var router = deps && deps.router;
@@ -2329,23 +2216,13 @@ function createHub(rootDir) {
   function statusFor(res, name, deps) {
     // THE KEY, and since R3 it is the only thing probe asks with.
     //
-    // It was once possible to call this WITHOUT a key and still get
-    // `owned`, because owning was decided by a signed status 200 and only
-    // `claimed` needed a roll match. That asymmetry cost a real bug —
-    // three arguments here meant `claimed` was never set on any row, and
-    // Natter's `owned || claimed` quietly collapsed to `owned`, so every
-    // relay this node was merely BOUND to drew no panel at all. The same
-    // omission the device timer above carries a comment about: "the whole
-    // feature stopped at the owner for want of one word."
-    //
-    // The asymmetry is gone rather than fixed twice. Both answers come
-    // from the roll, by key, so a caller without a key gets nothing —
-    // which is the truth, and is now unmistakable.
+    // Both answers come from the roll, by key, so a caller without a key
+    // gets nothing.
     //
     // `name` no longer travels at all: it was there to sign a LABEL to
     // prove a KEY owned a box (ownerBadge, statusPath). It is still read
     // off the body above, because it is echoed back to the browser as
-    // `name` below and Natter uses it as the label to display.
+    // `name` below, the label the page displays.
     var me = auth.loadIdentity(rootDir);
     ownerBadge.probe(rootDir, relayKeyAsk(deps && deps.router), me.publicKey)
       .then(function (summary) {
@@ -2357,9 +2234,8 @@ function createHub(rootDir) {
           name: name,
           rows: summary.rows,
           ownedUrls: summary.ownedUrls,
-          // The rows this node HAS, owned or not — the set Natter opens a
-          // panel for. Already computed by summarize() and simply never
-          // sent, so the browser had to infer it and could not.
+          // The rows this node HAS, owned or not — the set the page opens a
+          // panel for.
           claimedUrls: summary.claimedUrls,
           mustPick: summary.mustPick,
           // WHAT EACH OWNED RELAY LAST SAID ABOUT ITSELF, pushed down

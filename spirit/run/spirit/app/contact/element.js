@@ -69,7 +69,7 @@ function contactCreate(container, options) {
       '<div class="fill">' +
       // THE ONE LIST (goal/G30.19): the book, the shadow and the network, with a filter instead of two folds.
       '<div id="contacts-book" class="fill"></div>' +
-      // ADD A RELAY, moved here from Natter (goal/G30.7; Andy, 2026-10-20: "putting the add-relay into contacts, in a
+      // ADD A RELAY (goal/G30.7; Andy, 2026-10-20: "putting the add-relay into contacts, in a
       // folding-panel, right below \"Find someone on the network\""). relay.add lists it on its card's answer; the label
       // is this node's private caption, never on the wire.
       '<details class="stat-tile wide" name="contacts-panels" id="contacts-relay-add-section">' +
@@ -84,7 +84,7 @@ function contactCreate(container, options) {
       '<div class="job-manifest-note" id="contacts-status"></div>' +
       '</div>';
 
-    // ADD A RELAY (goal/G30.7, from Natter): relay.add asks the relay for its card and lists it; the node notes it as a
+    // ADD A RELAY (goal/G30.7): relay.add asks the relay for its card and lists it; the node notes it as a
     // relay peer, so the list above finds it. The rule on the address is the wire's (hub.assertRelayUrl), asked here so
     // a typo costs no round trip.
     // The private label holds to the label rule (goal/G47.1, -browser: every input has a maxlength).
