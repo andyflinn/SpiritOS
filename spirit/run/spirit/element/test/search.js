@@ -1105,6 +1105,8 @@ async function keptPart() {
   test.run('the world: a scratch node and a Chrome page for the kept rows', 0.2, async function () {
     await freeWorlds();
     node = await scratchNode();
+    // Its free registered once it holds a node, so the next world's freeWorlds lets this one go.
+    WORLDS.push(function () { return free(); });
     chrome = await chromePage(findChrome());
     return (node.up && !chrome.error) ? true : 'no scratch node or no Chrome: nothing judged. ' + short(chrome.error || '');
   }, test.limit.slow);
@@ -1263,7 +1265,6 @@ async function keptPart() {
     try { if (chrome && chrome.profile) fs.rmSync(chrome.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
     try { if (node && typeof node.release === 'function') await node.release(); else if (node && node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* left */ }
   };
-  WORLDS.push(free);
   test.after(free);
 }
 
@@ -1294,6 +1295,8 @@ async function bubblePart() {
     if (!chrome) return 'no Chrome: the world failed';
     await freeWorlds();
     node = await H.scratchNode();
+    // Its free registered once it holds a node, so the next world's freeWorlds lets this one go.
+    WORLDS.push(function () { return free(); });
     page = null;
     return (node.up && node.debug) ? true : 'the scratch node did not come up with its DEBUG on';
   }, test.limit.slow);
@@ -1418,7 +1421,6 @@ async function bubblePart() {
     try { if (page && page.profile) fs.rmSync(page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
     try { if (node && typeof node.release === 'function') await node.release(); else if (node && node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* left */ }
   };
-  WORLDS.push(free);
   test.after(free);
 }
 
@@ -1445,6 +1447,8 @@ async function popupPart() {
     // search-popup: a search dropdown's list floats above everything, one at a time (goal/G43.18)
     await freeWorlds();
     node = await scratchNode();
+    // Its free registered once it holds a node, so the next world's freeWorlds lets this one go.
+    WORLDS.push(function () { return free(); });
     chrome = await chromePage(findChrome());
     return (node.up && !chrome.error) ? true : 'no scratch node or no Chrome: nothing judged. ' + short(chrome.error || '');
   }, test.limit.slow);
@@ -1546,7 +1550,6 @@ async function popupPart() {
     try { if (node && node.child) node.child.kill(); } catch (e) { /* gone */ }
     try { if (node && typeof node.release === 'function') await node.release(); else if (node && node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* scratch */ }
   };
-  WORLDS.push(free);
   test.after(free);
 }
 
@@ -1592,6 +1595,8 @@ async function tilesPart() {
   test.run('the world: a scratch node and a Chrome page for the tiles', 0.2, async function () {
     await freeWorlds();
     node = await scratchNode();
+    // Its free registered once it holds a node, so the next world's freeWorlds lets this one go.
+    WORLDS.push(function () { return free(); });
     chrome = await chromePage(findChrome());
     return (node.up && !chrome.error) ? true : 'no scratch node or no Chrome: nothing judged. ' + short(chrome.error || '');
   }, test.limit.slow);
@@ -1887,7 +1892,6 @@ async function tilesPart() {
     try { if (chrome && chrome.profile) fs.rmSync(chrome.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
     try { if (node && typeof node.release === 'function') await node.release(); else if (node && node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* left */ }
   };
-  WORLDS.push(free);
   test.after(free);
 }
 
@@ -2131,6 +2135,8 @@ async function folderPart() {
     ({ scratchNode, chromePage, findChrome, until } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')));
     await freeWorlds();
     node = await scratchNode();
+    // Its free registered once it holds a node, so the next world's freeWorlds lets this one go.
+    WORLDS.push(function () { return free(); });
     chrome = await chromePage(findChrome());
     return (node.up && !chrome.error) ? true : 'no scratch node or no Chrome: nothing judged. ' + short(chrome.error || '');
   }, test.limit.slow);
@@ -2264,7 +2270,6 @@ async function folderPart() {
     try { if (chrome && chrome.profile) fs.rmSync(chrome.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
     try { if (node && typeof node.release === 'function') await node.release(); else if (node && node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* left */ }
   };
-  WORLDS.push(free);
   test.after(free);
 }
 
@@ -2280,6 +2285,8 @@ async function reconnectPart() {
   test.run('the world: a search on a scratch node\'s face page, asking through its own search, refreshed as its mounter does, its first answer drawn', 0.2, async function () {
     await freeWorlds();
     node = await scratchNode();
+    // Its free registered once it holds a node, so the next world's freeWorlds lets this one go.
+    WORLDS.push(function () { return free(); });
     chrome = await chromePage(findChrome());
     if (!node.up || chrome.error) return 'no scratch node or no Chrome: nothing judged. ' + short(chrome.error || '');
     await chrome.send('Page.navigate', { url: node.base + '/face.html' });
@@ -2312,6 +2319,5 @@ async function reconnectPart() {
     if (chrome && chrome.kid) chrome.kid.kill();
     try { if (node && typeof node.release === 'function') await node.release(); } catch (e) { /* freed when this process ends */ }
   };
-  WORLDS.push(free);
   test.after(free);
 }
