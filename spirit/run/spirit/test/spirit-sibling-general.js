@@ -1678,7 +1678,7 @@ function codeLinesMatching(rel, re, bare) {
   try { src = fs.readFileSync(path.join(RUN, rel), 'utf8'); } catch (e) { return []; }
   const hits = [];
   const lines = bare ? src.split('\n').map(function (l) {
-    return l.replace(/'(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"|`(?:[^`\\\n]|\\.)*`/g, "''").replace(/\/(?:[^\/\\\n]|\\.)+\/[gimsuy]*/g, 'RE').replace(/\/\/.*$/, '').replace(/^\s*\*.*$/, '');
+    return l.replace(/'(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"|`(?:[^`\\\n]|\\.)*`/g, "''").replace(/\/\/.*$/, '').replace(/\/(?:[^\/\\\n]|\\.)+\/[gimsuy]*/g, 'RE').replace(/^\s*\*.*$/, '');
   }) : codeOf(src, false).split('\n');
   lines.forEach(function (line, i) { if (re.test(line)) hits.push(rel + ':' + (i + 1)); });
   return hits;
