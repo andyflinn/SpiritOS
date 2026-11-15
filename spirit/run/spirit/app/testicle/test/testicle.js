@@ -2355,3 +2355,94 @@ test.run('in debug mode, set to auto, it never runs testicle\'s own tests, only 
   const suites = Array.from(new Set(own.map(function (r) { return r.suite; })));
   return (!!rest && !suites.length) || (rest ? '' : 'still busy after 280 s; ') + (suites.length ? 'its own tests reported: ' + suites.join(', ') : 'none of its own reported yet');
 }, test.limit.long);
+
+// ── A RUN KILLED AT ITS TIME LIMIT (goal/G47.1, box v154, "testicle: a run killed at its time limit") ──
+// Andy: "make sure that a run aborted due to time-limit does not mark ALL assiciated suites as failed, andmust recompute the
+// run.", "I was talking about the 120 minute RUN limit. that is NOT the same as a hang in a test", "I'd agree to failing the
+// suite currently running", and "A suite that succeeds against a script and it's hash, MUST remain as success in the suite
+// table. otherwise the run exceeding 120 minutes will NEVER pass". A world of its own: a scratch copy whose testicle.js has a
+// run limit of 60 s in place of 120 minutes (the one line, JOB_LIMIT_MS, changed in the copy alone), three planted scripts
+// that one general run is handed in their order, and a copy of testicle's own -general test in which the second, bHang.js,
+// has a test that works on, inside its own test limit (test.limit.long, 5 minutes), past the run's 60 s: the run limit fires
+// first, so it is no hang in a test (cw). aOk.js reports before it; cLater.js is never reached.
+{
+  const LIMIT_LINE = 'const JOB_LIMIT_MS = 120 * 60 * 1000;';
+  const SHORT_LIMIT_MS = 60000;
+  const GENERAL_LINE = 'else GIVEN.forEach(function (rel) { test.forScript(rel, function () { one(rel); two(rel); }); });';
+  const AOK = 'spirit/app/testicle/temp/zzLimit/aOk.js';
+  const BHANG = 'spirit/app/testicle/temp/zzLimit/bHang.js';
+  const CLATER = 'spirit/app/testicle/temp/zzLimit/cLater.js';
+  const L = { s: null, N: null, DB: '', planted: '', aOkBefore: null, killed: false };
+  const NOLIMITWORLD = 'no scratch node with the short run limit: the world failed';
+  const limitUp = function () { return !!L.N && L.N.up; };
+  const generalRow = function (t, script) { return suiteRow(t, script, GENERAL); };
+  const testRows = function (t, script) { return (t.test || []).filter(function (r) { return r.script === script && r.suite === GENERAL && yes(r.current); }); };
+  test.after(async function () {
+    if (L.N) await stop(L.N.child);
+    try { if (L.s) LABH.freeTree(L.s); } catch (e) { /* scratch */ }
+  });
+  test.run('the world: a scratch copy with a run limit of 60 s, three planted scripts, and a general test that works past it on the second', 0.2, async function () {
+    const root = LABH.scratchTree().root;
+    const run = path.join(root, 'spirit', 'run');
+    L.s = { root: root, run: run };
+    const server = path.join(run, 'spirit', 'app', 'testicle', 'testicle.js');
+    const serverSrc = fs.readFileSync(server, 'utf8');
+    if (serverSrc.indexOf(LIMIT_LINE) === -1) return 'testicle.js holds no line ' + LIMIT_LINE + ': the run limit cannot be shortened in the copy';
+    fs.writeFileSync(server, serverSrc.replace(LIMIT_LINE, 'const JOB_LIMIT_MS = ' + SHORT_LIMIT_MS + ';'));
+    const general = path.join(run, GENERAL);
+    const generalSrc = fs.readFileSync(general, 'utf8');
+    if (generalSrc.indexOf(GENERAL_LINE) === -1) return GENERAL + ' holds no line ' + GENERAL_LINE + ': nothing to plant';
+    fs.writeFileSync(general, generalSrc.replace(GENERAL_LINE, "else GIVEN.forEach(function (rel) { test.forScript(rel, function () { if (/zzLimit\\/bHang\\.js$/.test(rel)) test.run(rel + ': it works on past the run limit', 0.2, function () { return new Promise(function (r) { setTimeout(function () { r(true); }, 240000); }); }, test.limit.long); else { one(rel); two(rel); } }); });"));
+    [AOK, BHANG, CLATER].forEach(function (f) { fs.mkdirSync(path.dirname(path.join(run, f)), { recursive: true }); fs.writeFileSync(path.join(run, f), '\'use strict\';\n// ' + path.basename(f) + ', planted for the run limit\n'); });
+    const on = path.join(run, 'spirit', 'state', 'testicle');
+    fs.mkdirSync(path.join(on, 'data'), { recursive: true });
+    fs.writeFileSync(path.join(on, 'node.json'), JSON.stringify({ active: true }));
+    fs.writeFileSync(path.join(on, 'data', 'preferences.json'), JSON.stringify({ debug: true }));
+    L.DB = path.join(on, 'data', 'testicle.db');
+    L.N = await boot(run);
+    if (!L.N.up) return NOLIMITWORLD;
+    const auto = await call(L.N.base, 'testicle.preferences', { interactive: false });
+    return auto.status === 200 || 'testicle.preferences {interactive: false}: ' + auto.status + ' ' + short(auto.text);
+  }, test.limit.long);
+  test.run('the world: aOk.js reports its success in the run before the limit', 0.2, async function () {
+    if (!limitUp()) return NOLIMITWORLD;
+    const done = await until(function () { const r = generalRow(tables(L.DB), AOK); return Promise.resolve(!!r && r.outcome === 'green' && no(r.test)); }, 240000);
+    const t = tables(L.DB);
+    L.aOkBefore = { row: generalRow(t, AOK), tests: testRows(t, AOK) };
+    return (!!done && L.aOkBefore.tests.length > 0 && L.aOkBefore.tests.every(function (r) { return yes(r.verified); })) || 'aOk.js under ' + GENERAL + ': ' + short(L.aOkBefore);
+  }, test.limit.long);
+  test.run('the world: the run is killed at its limit while bHang.js works on', 0.2, async function () {
+    if (!L.aOkBefore || !L.aOkBefore.row) return 'aOk.js reported nothing: the world failed';
+    // Past the 60 s limit from the run's start, with a margin: bHang.js's test answers only after 240 s, so the run is
+    // still on it when the limit fires. bHang.js reported no success before that.
+    await sleep(SHORT_LIMIT_MS + 15000);
+    const r = generalRow(tables(L.DB), BHANG);
+    L.killed = !(r && r.outcome === 'green');
+    return L.killed || 'bHang.js turned green before the limit: its test did not work on: ' + short(r);
+  }, test.limit.long);
+  test.run('a suite that succeeded against a script and its hash stays a success in the suite table: aOk.js still green', 0.8, function () {
+    if (!L.killed) return 'no kill: the world failed';
+    const r = generalRow(tables(L.DB), AOK);
+    return (!!r && r.outcome === 'green' && r.hash === L.aOkBefore.row.hash) || 'aOk.js\'s suite row after the kill: ' + short(r);
+  }, test.limit.quick);
+  test.run('and the tests it reported keep their results: every one of aOk.js\'s rows still passed', 0.8, function () {
+    if (!L.killed) return 'no kill: the world failed';
+    const rows = testRows(tables(L.DB), AOK);
+    return (rows.length > 0 && rows.every(function (r) { return yes(r.verified); })) || 'aOk.js\'s test rows after the kill: ' + short(rows.map(function (r) { return { test: r.test, verified: r.verified }; }));
+  }, test.limit.quick);
+  test.run('the suite running at the kill fails: bHang.js red', 0.4, function () {
+    if (!L.killed) return 'no kill: the world failed';
+    const r = generalRow(tables(L.DB), BHANG);
+    return (!!r && r.outcome === 'red') || 'bHang.js\'s suite row after the kill: ' + short(r);
+  }, test.limit.quick);
+  test.run('a suite the run never reached is not failed by the kill: no red test row of cLater.js', 0.8, function () {
+    if (!L.killed) return 'no kill: the world failed';
+    const reds = testRows(tables(L.DB), CLATER).filter(function (r) { return no(r.verified); });
+    return !reds.length || 'cLater.js failed by the kill: ' + short(reds.map(function (r) { return r.test; }));
+  }, test.limit.quick);
+  test.run('and the run is computed again: cLater.js runs in a new run and its suite row turns green', 0.8, async function () {
+    if (!L.killed) return 'no kill: the world failed';
+    const ran = await until(function () { const r = generalRow(tables(L.DB), CLATER); return Promise.resolve(!!r && r.outcome === 'green' && no(r.test)); }, 180000);
+    return !!ran || 'cLater.js\'s suite row: ' + short(generalRow(tables(L.DB), CLATER));
+  }, test.limit.long);
+}

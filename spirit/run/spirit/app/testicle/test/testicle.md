@@ -260,3 +260,13 @@ Andy: *"the testicle tests set the testicle server to \"debug\". in debug mode, 
 - Every planted world lives under the git-ignored `spirit/app/testicle/temp/` (`.gitignore` keeps it out, git holds nothing
   there); no `spirit/zz...` or `spirit/aa...` folder is in the tree.
 - The suites that concern a file, in the checks, are only those under `spirit/app/testicle/` (and the classifier's).
+
+## A run killed at its time limit (goal/G47.1, box v154)
+
+Andy: *"make sure that a run aborted due to time-limit does not mark ALL assiciated suites as failed, andmust recompute the run."*, *"I was talking about the 120 minute RUN limit. that is NOT the same as a hang in a test"*, *"I'd agree to failing the suite currently running"*, and *"A suite that succeeds against a script and it's hash, MUST remain as success in the suite table. otherwise the run exceeding 120 minutes will NEVER pass"*.
+
+Its world is its own: a scratch copy whose testicle.js has a run limit of 60 s in place of 120 minutes (the one `JOB_LIMIT_MS` line, changed in the copy alone), three planted scripts under `temp/zzLimit/` that one run of the `-general` test is handed in order, and a copy of that test in which `bHang.js`'s test works on past the run limit, inside its own test limit (5 minutes), so the run limit fires first and it is no hang in a test.
+
+- `aOk.js`, reported before the kill: its suite row stays green on the same hash, and each of its test rows still passed.
+- `bHang.js`, the suite running at the kill: red.
+- `cLater.js`, never reached: no test row of it is failed by the kill, and a new run is computed for it, its suite row turning green.
