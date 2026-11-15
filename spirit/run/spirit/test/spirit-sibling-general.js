@@ -1649,6 +1649,66 @@ function productScripts() {
   return require('child_process').execFileSync('git', ['ls-files'], { cwd: RUN, encoding: 'utf8' }).split('\n')
     .filter(function (f) { return /^spirit\/.+\.js$/.test(f) && !/(^|\/)test\//.test(f) && !VENDORED_FOLDERS.holds(f) && fs.existsSync(path.join(RUN, f)); });
 }
+// THE ELEMENTS' OLD HOMES (goal/G43.5, the element move; moved here from spirit/test/spirit.js, goal/G47.1, Andy: "1, 2 and
+// 3 Belong in spirit/test/spirit.js", "the rest belong in motherfucking spirit-sibling-general/browser/node respectively").
+// The move's box: "We are ONLY moving the contents of "run://shell/js/" to "run://spirit/element/"", "all UI code in the
+// product tree that references the moved element files, must be changed to correct those references. both file-location
+// AND the home in spirit.element (singular)": "uncluding tests". And the other way round, found live (Andy: "contact detail
+// don't load in contacts"): nothing reaches through spirit.element for an element spirit/element/ does not define. Since
+// goal/G43.32 every element stands at spirit.element.<its path>, so that is a path to a script or folder of the tree.
+const OLD_ELEMENT_PATH = /\bshell\/js\b|\bshell\/node_modules\b|['"]shell['"]\s*,\s*['"]js['"]/;
+const OLD_ELEMENT_HOME = /\bspirit\s*\.\s*elements\b/;
+// The files these rules read: what git tracks under spirit/, code, tests and documents, vendored code and this test's own
+// files left out (they name the old homes to find them).
+function elementRuleFiles() {
+  return gitIn(RUN, ['ls-files']).filter(function (f) {
+    return /^spirit\//.test(f) && /\.(js|html|md|css|txt|json)$/.test(f) && !VENDORED_FOLDERS.holds(f) && SELF.indexOf(path.basename(f)) === -1 && fs.existsSync(path.join(RUN, f));
+  });
+}
+// A file as these rules judge it, every offset kept: "Andy's words are never rewritten", so a double-quoted part of a
+// comment or of a document is left out, a quote over several lines too; code is judged whole, its strings with it.
+function unquoted(rel, src) {
+  const blank = function (q) { return q.replace(/[^\n]/g, ' '); };
+  if (!/\.(js|html)$/.test(rel)) return /\.(md|txt)$/.test(rel) ? src.replace(/"[^"]*"/g, blank) : src;
+  const code = codeOf(src, false);
+  let comments = '';
+  for (let i = 0; i < src.length; i++) comments += (code[i] === src[i] || src[i] === '\n') ? (src[i] === '\n' ? '\n' : ' ') : src[i];
+  const said = comments.replace(/"[^"]*"/g, blank);
+  let out = '';
+  for (let i = 0; i < src.length; i++) out += said[i] !== ' ' && said[i] !== '\n' ? said[i] : code[i];
+  return out;
+}
+// Each line of the file that matches re, as <file>:<line>.
+function linesMatching(rel, re) {
+  let src = '';
+  try { src = fs.readFileSync(path.join(RUN, rel), 'utf8'); } catch (e) { return []; }
+  const hits = [];
+  unquoted(rel, src).split('\n').forEach(function (line, i) { if (re.test(line)) hits.push(rel + ':' + (i + 1)); });
+  return hits;
+}
+// Where the code (comments left out) reaches through spirit.element for what the tree does not hold: spirit.element.<keys>
+// stands for a script <keys>.js or a folder <keys>/ of the run tree, its members after it. No element is named here: the
+// tree answers. spirit.required.<path> is another tree, not judged by this rule.
+function strayElementReaches(rel) {
+  if (!/\.(js|html)$/.test(rel)) return [];
+  let src = '';
+  try { src = fs.readFileSync(path.join(RUN, rel), 'utf8'); } catch (e) { return []; }
+  const stray = [];
+  codeOf(src, false).split('\n').forEach(function (line, i) {
+    const re = /(?<![\w$]\s*\.\s*)(?<![\w$])(?:(?:window|self)\s*\.\s*)?spirit\s*\.\s*element((?:\s*\.\s*[A-Za-z_$][\w$]*)+)/g;
+    let m = null;
+    while ((m = re.exec(line))) {
+      const keys = m[1].split('.').map(function (k) { return k.trim(); }).filter(Boolean);
+      let found = false;
+      for (let n = keys.length; n > 0 && !found; n--) {
+        const at = path.join.apply(path, [RUN].concat(keys.slice(0, n)));
+        found = fs.existsSync(at + '.js') || (n === keys.length && fs.existsSync(at) && fs.statSync(at).isDirectory());
+      }
+      if (!found) stray.push(rel + ':' + (i + 1) + ' spirit.element.' + keys.join('.'));
+    }
+  });
+  return stray;
+}
 // EVERY PRODUCT SCRIPT, PLACED WHERE IT IS REQUIRED (goal/G43.32, the box, testing point 3; Andy: "a general test for
 // any scriptFile.js is to spirit.require() it.", Q5: "doesn't spirit.require() only load a script, store it at
 // spirit.required.<path>  and run it once.", "element scripts themselves are who installs the element factory at
@@ -1723,6 +1783,26 @@ function every() {
   test.run('no product script reads or writes the old spirit.elements: every element is found at spirit.element.<its path>', 0.4, function () {
     const old = productScripts().filter(function (f) { return /\.elements\b/.test(codeOf(fs.readFileSync(path.join(RUN, f), 'utf8'), true)); });
     return !old.length || old.length + ' still name spirit.elements: ' + short(old.slice(0, 8));
+  }, test.limit.quick);
+  // the element move: no file names an element's old homes, none reaches through spirit.element for what the tree lacks
+  test.run('the world: the files are read for the elements\' old homes, tests and documents included', 0.2, function () {
+    E.elementFiles = elementRuleFiles();
+    return E.elementFiles.length > 100 || 'only ' + E.elementFiles.length + ' files found: too few to judge';
+  }, test.limit.quick);
+  test.run('no code, test or document names shell/js', 0.4, function () {
+    const all = E.elementFiles || [];
+    const hits = [].concat.apply([], all.map(function (f) { return linesMatching(f, OLD_ELEMENT_PATH); }));
+    return (all.length > 100 && !hits.length) || hits.length + ' lines name it, the first: ' + short(hits.slice(0, 12));
+  }, test.limit.quick);
+  test.run('no code, test or document reaches an element through spirit.elements', 0.4, function () {
+    const all = E.elementFiles || [];
+    const hits = [].concat.apply([], all.map(function (f) { return linesMatching(f, OLD_ELEMENT_HOME); }));
+    return (all.length > 100 && !hits.length) || hits.length + ' lines do, the first: ' + short(hits.slice(0, 12));
+  }, test.limit.quick);
+  test.run('no code reaches through spirit.element for an element the tree does not hold', 0.4, function () {
+    const all = E.elementFiles || [];
+    const stray = [].concat.apply([], all.map(strayElementReaches));
+    return (all.length > 100 && !stray.length) || stray.length + ' do: ' + short(stray.slice(0, 12));
   }, test.limit.quick);
 
   // run://test/ is moved into run://spirit/test/
@@ -1844,6 +1924,21 @@ function oneFile(P) {
   test.run('it names neither spirit/run/process nor run://process, in code or comment', 0.4, function () {
     return !namesProcess(rel) || 'it mentions spirit/run/process: ' + short((fs.readFileSync(full, 'utf8').match(PROCESS_NAMED) || [])[0]);
   }, test.limit.quick);
+  // the element move (elementRuleFiles above): its old homes, and spirit.element only for what the tree holds
+  if (SELF.indexOf(path.basename(rel)) === -1) {
+    test.run('it names no shell/js', 0.4, function () {
+      const hits = linesMatching(rel, OLD_ELEMENT_PATH);
+      return !hits.length || 'it names it: ' + short(hits.slice(0, 12));
+    }, test.limit.quick);
+    test.run('it reaches no element through spirit.elements', 0.4, function () {
+      const hits = linesMatching(rel, OLD_ELEMENT_HOME);
+      return !hits.length || 'it does: ' + short(hits.slice(0, 12));
+    }, test.limit.quick);
+    if (/\.(js|html)$/.test(rel)) test.run('it reaches through spirit.element only for elements the tree holds', 0.4, function () {
+      const stray = strayElementReaches(rel);
+      return !stray.length || 'it does: ' + short(stray.slice(0, 12));
+    }, test.limit.quick);
+  }
   // goal/G43.32: a product script holds the shape (everyScriptShaped), each reason named in its answer.
   if (/^spirit\/.+\.js$/.test(rel) && !/(^|\/)test\//.test(rel) && !VENDORED_FOLDERS.holds(rel)) {
     // <address>: use strict, spirit first, the tree only through spirit.require

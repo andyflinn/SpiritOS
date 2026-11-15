@@ -34,13 +34,17 @@ PLANT['spirit/zzGarbage/test/has.js'] = '\'use strict\';\n// the test of has\n';
 PLANT['spirit/zzGarbage/test/has.md'] = '# the test of has\n';
 PLANT[LACKS] = '\'use strict\';\n// lacks, no test of its own\n';
 PLANT[VENDORED] = '\'use strict\';\n// a vendored script, no test of its own\n';
+// A module whose first require is not spirit.js (goal/G47.1; moved here from spirit/test/spirit.js: Andy, "11. is
+// spirit-sibling-general"). Planted inside the tree, where the general test judges.
+const LATE = 'spirit/zzGarbage/late.js';
+PLANT[LATE] = '\'use strict\';\nconst fs = require(\'fs\');\nrequire(\'../spirit.js\');\n';
 
 let root = null, run = null;
 // The rule run in the scratch tree, handed arg or nothing: the line its check printed, or ''.
-function lineOf(arg) {
+function lineOf(arg, check) {
   let out = '';
   try { out = execFileSync(process.execPath, [path.join(run, 'spirit', 'test', 'spirit-sibling-general.js')].concat(arg ? [arg] : []), { cwd: run, encoding: 'utf8', maxBuffer: 1 << 26, stdio: ['ignore', 'pipe', 'pipe'] }); } catch (e) { out = String((e && e.stdout) || ''); }
-  return out.split('\n').filter(function (l) { return /(SUCCESS|FAILURE) #/.test(l) && l.indexOf(': ' + CHECK) !== -1; })[0] || '';
+  return out.split('\n').filter(function (l) { return /(SUCCESS|FAILURE) #/.test(l) && l.indexOf(': ' + (check || CHECK)) !== -1; })[0] || '';
 }
 const NOWORLD = 'no scratch tree: the world failed';
 
@@ -55,7 +59,7 @@ test.run('the world: a scratch tree of the tracked files, the planted scripts wi
   Object.keys(PLANT).forEach(function (f) { fs.mkdirSync(path.dirname(path.join(run, f)), { recursive: true }); fs.writeFileSync(path.join(run, f), PLANT[f]); });
   execSync('git init -q && git add -A', { cwd: root, stdio: 'ignore' });
   const listed = execSync('git ls-files -- spirit/run/spirit/zzGarbage', { cwd: root, encoding: 'utf8' }).split('\n').filter(Boolean);
-  return listed.length === 4 || 'the scratch index lists ' + short(listed);
+  return listed.length === 5 || 'the scratch index lists ' + short(listed);
 }, test.limit.long);
 
 // the box: "in one check, "every production script has its own test", severity 0.2"
@@ -97,4 +101,17 @@ test.run('handed a script with no own test, the check is red, naming that script
   if (!run) return NOWORLD;
   const l = lineOf(LACKS);
   return (/FAILURE #/.test(l) && l.indexOf(LACKS) !== -1) || 'the check printed ' + short(l || 'nothing');
+}, test.limit.slow);
+
+// the module rule (spirit.md, "A module whose first require is not spirit.js goes red"): handed spirit.js, green; handed a
+// module that requires fs first, red, naming that require
+test.run('the general rules pass spirit.js itself: it sets the global spirit before its first require', 0.2, function () {
+  if (!run) return NOWORLD;
+  const l = lineOf('spirit/spirit.js', 'it sets the global spirit before its first require');
+  return /SUCCESS #/.test(l) || 'the check printed ' + short(l || 'nothing');
+}, test.limit.slow);
+test.run('a module whose first require is not spirit.js goes red', 0.2, function () {
+  if (!run) return NOWORLD;
+  const l = lineOf(LATE, 'it requires spirit.js first');
+  return (/FAILURE #/.test(l) && /does not require spirit\.js first/.test(l) && l.indexOf('"fs"') !== -1) || 'the check printed ' + short(l || 'nothing');
 }, test.limit.slow);

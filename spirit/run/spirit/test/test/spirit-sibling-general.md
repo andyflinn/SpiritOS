@@ -29,3 +29,10 @@ node.
 - A whole-tree run that stays green with a script missing its test, or misses that script in its answer, or names a script
   that has its test, or a vendored one.
 - A run handed one script that judges anything else, or not that script.
+
+## The module rule, tried
+
+Moved here from `spirit/test/spirit.js` (goal/G47.1; Andy: *"11. is spirit-sibling-general"*). In the same scratch tree, a planted `spirit/zzGarbage/late.js` requires `fs` before `spirit.js`.
+
+- Handed `spirit/spirit.js`, the rule "it sets the global spirit before its first require" is green.
+- Handed `late.js`, "it requires spirit.js first" is red, and its answer names the first require, `"fs"`.
