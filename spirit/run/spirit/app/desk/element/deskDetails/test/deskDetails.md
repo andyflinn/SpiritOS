@@ -164,16 +164,6 @@ Andy, the box: *"the apps and plugin system goes."*, *"there will only be goals,
 
 - Andy: *"take out your search of the items text"*, *"take out the chat-search do, it's not actually usable."*: the item detail has no find field over its box and no chat search.
 
-## The noSharedLeftovers part: deskChat.js and deskElement.js gone from shell/shared
+## The noSharedLeftovers part: dropped
 
-goal/G43.23, item 10 (after goal/G43.22). Its test is the noSharedLeftovers part of `./deskDetails.js`: the tree read as it is, tracked
-files on disk. `deskChat.js` drew an item's chat, which the item detail, `deskDetails.js`, draws itself now, so their absence
-is judged beside it (goal/G43.28; moved from shell/shared's own test of no desk leftovers).
-
-The box: *"plugin leftovers (G43.22): deskChat.js and deskElement.js in shell/shared, loaded by nothing"*. A test that reads a file gone from the tree is stale, G43.23 Q3: *"yes."*
-
-### Requirements
-
-- `spirit/run/shell/shared/js/deskChat.js` and `deskElement.js` are gone.
-- Their tests are gone: `shell/shared/js/test/deskChat.js`, `deskChat.md`, `deskElement.js`, `deskElement.md`, and no other test or spec in a `test/` folder reads or names `deskChat.js`, `deskElement.js`, `createDeskChat` or `createDeskElement`. A spec that quotes the box's line is no use of them and is not counted.
-- The world: the folder the leftovers stood in, `shell/shared/js/`, is gone with all of `shell/` (goal/G43.30); `deskDetails.js` is beside this test, and the tracked files and tests read are many, so an empty read is red.
+The plugin leftovers once in `shell/shared` (goal/G43.23, item 10): `shell/` is gone with all it held, and a require of a file that is not there is `spirit/test/spirit-sibling-general.js`'s. Their checks are dropped (goal/G47.1).

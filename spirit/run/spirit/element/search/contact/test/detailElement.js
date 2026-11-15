@@ -981,12 +981,6 @@ test.run('the row says the new label', 0.2, async function () {
 }, test.limit.quick);
 
 // a relay's detail: the contact detail, configured with its row
-test.run('spirit/element/search/contact/detailElement.js is there', 0.2, function () {
-  return fs.existsSync(path.join(RUN, 'spirit/element/search/contact/detailElement.js')) || 'no spirit/element/search/contact/detailElement.js';
-}, test.limit.quick);
-test.run('and natterDetails is gone', 0.2, function () {
-  return !fs.existsSync(path.join(RUN, 'spirit/element/natterDetails')) || 'spirit/element/natterDetails is still there';
-}, test.limit.quick);
 test.run('detailElement.create(host, { key, relay: true }) draws it', 0.2, async function () {
   if (!S.up) return NO_NODE;
   const where = findChrome();

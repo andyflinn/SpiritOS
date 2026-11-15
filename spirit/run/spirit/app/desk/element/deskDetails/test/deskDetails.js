@@ -890,50 +890,5 @@ test.run('the item detail has no chat search', 0.2, function () {
   return (!!details && !/dd-chat-find|ddMountChatFind/.test(details)) || 'spirit/app/desk/element/deskDetails/deskDetails.js still draws its chat search';
 }, test.limit.quick);
 
-// ── THE noSharedLeftovers PART ───────────────────────────────────────────────────────────────────────────────────
-// PLUGIN LEFTOVERS IN shell/shared (goal/G43.23, item 10, after goal/G43.22; spec: ./deskDetails.md, its noSharedLeftovers section). The box:
-// "plugin leftovers (G43.22): deskChat.js and deskElement.js in shell/shared, loaded by nothing". They go, and their
-// tests with them: a test that reads a file gone from the tree is stale (G43.23, Q3: "yes."). deskChat.js drew an item's
-// chat, which the item detail, deskDetails.js, draws itself now, so their absence is judged beside it (goal/G43.28; Andy:
-// "you WILL FUCKING PLACE TESTS WHERE THEY FUCKING BELONG"; moved from shell/shared's own test of no desk leftovers).
-// The tree read as it is (tracked files that are on disk). No node, no port.
-const { execSync } = require('child_process');
-const REPO = path.resolve(RUN, '..', '..');
-const SHARED = path.join(RUN, 'shell', 'shared', 'js');
-// This suite names the two files to say they are gone; a spec elsewhere that quotes the box's line names them too, and a
-// quote of the box is no use of them.
-const SELF = /spirit\/app\/desk\/element\/deskDetails\/test\/deskDetails\.(js|md)$/;
-const BOX_LINE = /plugin leftovers \(G43\.22\): deskChat\.js and deskElement\.js in shell\/shared, loaded by nothing/g;
-function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 400); }
-// noSharedLeftovers: deskChat.js and deskElement.js, and their tests, gone from shell/shared (goal/G43.23 item 10).
-// Since goal/G43.30 shell/shared/ is gone with all of shell/: the folder read is the one the two leftovers stood in, and it
-// no longer exists.
-test.run('the world: spirit/run/shell/shared/js, where the leftovers stood, is gone (goal/G43.30)', 0.2, function () {
-  return !fs.existsSync(SHARED) || path.relative(REPO, SHARED) + ' still there: nothing judged';
-}, test.limit.quick);
-test.run('the world: deskDetails.js, which draws an item\'s chat, is beside this test', 0.2, function () {
-  return fs.existsSync(path.join(RUN, 'spirit', 'app', 'desk', 'element', 'deskDetails', 'deskDetails.js')) || 'no deskDetails.js beside this test: nothing judged';
-}, test.limit.quick);
-test.run('the world: more than a hundred tracked files on disk are read', 0.2, function () {
-  S.tracked = execSync('git ls-files', { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(Boolean)
-    .filter(function (f) { return fs.existsSync(path.join(REPO, f)); });
-  return S.tracked.length > 100 || 'only ' + S.tracked.length + ' tracked files read: nothing judged';
-}, test.limit.quick);
-// The two leftovers are gone.
-test.run('shell/shared/js/deskChat.js is gone', 0.2, function () { return !fs.existsSync(path.join(SHARED, 'deskChat.js')) || 'shell/shared/js/deskChat.js is still there'; }, test.limit.quick);
-test.run('shell/shared/js/deskElement.js is gone', 0.2, function () { return !fs.existsSync(path.join(SHARED, 'deskElement.js')) || 'shell/shared/js/deskElement.js is still there'; }, test.limit.quick);
-// And their tests.
-test.run('shell/shared/js/test/deskChat.js is gone', 0.2, function () { return !fs.existsSync(path.join(SHARED, 'test', 'deskChat.js')) || 'shell/shared/js/test/deskChat.js is still there'; }, test.limit.quick);
-test.run('shell/shared/js/test/deskChat.md is gone', 0.2, function () { return !fs.existsSync(path.join(SHARED, 'test', 'deskChat.md')) || 'shell/shared/js/test/deskChat.md is still there'; }, test.limit.quick);
-test.run('shell/shared/js/test/deskElement.js is gone', 0.2, function () { return !fs.existsSync(path.join(SHARED, 'test', 'deskElement.js')) || 'shell/shared/js/test/deskElement.js is still there'; }, test.limit.quick);
-test.run('shell/shared/js/test/deskElement.md is gone', 0.2, function () { return !fs.existsSync(path.join(SHARED, 'test', 'deskElement.md')) || 'shell/shared/js/test/deskElement.md is still there'; }, test.limit.quick);
-// Any other test, or its spec, that reads or names them, the box's line quoted aside.
-test.run('the world: more than fifty tests and specs are read', 0.2, function () {
-  const tests = (S.tracked || []).filter(function (f) { return /\.(js|md)$/.test(f) && /(^|\/)test\//.test(f) && !SELF.test(f); });
-  S.naming = tests.filter(function (f) { return /\bdeskChat\.js\b|\bdeskElement\.js\b|\bcreateDeskChat\b|\bcreateDeskElement\b/.test(fs.readFileSync(path.join(REPO, f), 'utf8').replace(BOX_LINE, '')); });
-  return tests.length > 50 || 'only ' + tests.length + ' tests read: nothing judged';
-}, test.limit.quick);
-test.run('no test or spec left reads or names deskChat.js, deskElement.js, createDeskChat or createDeskElement', 0.2, function () {
-  const naming = S.naming || [];
-  return !naming.length || naming.length + ' still do: ' + short(naming);
-}, test.limit.quick);
+// The plugin leftovers once in shell/shared (goal/G43.23, item 10): shell/ is gone, and a require of a file that is not there
+// is spirit/test/spirit-sibling-general.js's, so their checks are dropped (goal/G47.1).
