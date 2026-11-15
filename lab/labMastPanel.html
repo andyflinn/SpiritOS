@@ -235,13 +235,6 @@
       }).catch(function (e) { setStatus('refresh failed: ' + e.message); });
     }
 
-    // THE LIVE WORLD. Sequential by nature — it mints, claims, restarts and
-    // waits for a stream — so the button disables itself and reports each
-    // step as the server did it rather than pretending to be instant.
-    //
-    // Every line it prints is something that happened, in order. A failure
-    // stops at the step that failed and says which, because "it did not
-    // work" is the least useful thing a control plane can tell you.
     // RESTART LABMASTER: one press, nothing is lost by it. The answer comes
     // before it goes; the three-second poll then reaches the new one, and a
     // poll that fails meanwhile only says so in the status line.
