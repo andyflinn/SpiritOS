@@ -115,3 +115,58 @@ test.run('a module whose first require is not spirit.js goes red', 0.2, function
   const l = lineOf(LATE, 'it requires spirit.js first');
   return (/FAILURE #/.test(l) && /does not require spirit\.js first/.test(l) && l.indexOf('"fs"') !== -1) || 'the check printed ' + short(l || 'nothing');
 }, test.limit.slow);
+
+// THE BRANCH PART USES THE NODE ITS RUN IS HANDED (goal/G47.1; Andy: "are the tests not ordered in the general test so that all
+// tests requiring a scratch node can use the same one?", then "fix it, with red and code"): handed a list, the rule ran every
+// part once a script, and its branch part booted a node of its own for each. Here it is handed a node, as testicle hands one
+// (SPIRIT_MOUNT_BASE, SPIRIT_MOUNT_RUN), at an address in front of a real scratch node that counts what reaches it, and two
+// scripts in two branches: their node worlds come up, and the calls they make reach the handed node.
+{
+  const http = require('http');
+  const LABH = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+  const SCRIPTS = ['spirit/app/backup/api.js', 'spirit/app/chat/api.js'];
+  const H = { node: null, proxy: null, base: '', reached: 0, out: '' };
+  test.after(async function () {
+    try { if (H.proxy) H.proxy.close(); } catch (e) { /* closed */ }
+    try { if (H.node && H.node.child) H.node.child.kill(); } catch (e) { /* gone */ }
+    try { if (H.node && typeof H.node.release === 'function') await H.node.release(); } catch (e) { /* freed as this process ends */ }
+  });
+  test.run('the world: a scratch node, and an address in front of it that counts what reaches it', 0.2, async function () {
+    H.node = await LABH.scratchNode();
+    if (!H.node.up) return 'the scratch node did not come up: nothing judged';
+    H.proxy = http.createServer(function (req, res) {
+      H.reached += 1;
+      const chunks = [];
+      req.on('data', function (c) { chunks.push(c); });
+      req.on('end', function () {
+        const body = Buffer.concat(chunks);
+        fetch(H.node.base + req.url, { method: req.method, headers: { 'content-type': req.headers['content-type'] || 'application/json' }, body: req.method === 'GET' || req.method === 'HEAD' ? undefined : body })
+          .then(function (r) { return r.arrayBuffer().then(function (b) { res.writeHead(r.status, { 'content-type': r.headers.get('content-type') || 'application/json' }); res.end(Buffer.from(b)); }); })
+          .catch(function (e) { res.writeHead(502); res.end(String(e && e.message)); });
+      });
+    });
+    await new Promise(function (r) { H.proxy.listen(0, '127.0.0.1', r); });
+    H.base = 'http://127.0.0.1:' + H.proxy.address().port;
+    return true;
+  }, test.limit.slow);
+  test.run('the world: the rule run on two scripts in two branches, handed that node as testicle hands one', 0.2, async function () {
+    if (!H.base) return 'no handed node: the world failed';
+    const env = Object.assign({}, process.env, { SPIRIT_MOUNT_BASE: H.base, SPIRIT_MOUNT_RUN: H.node.run });
+    H.out = await new Promise(function (resolve) {
+      const kid = require('child_process').spawn(process.execPath, [RULE].concat(SCRIPTS), { cwd: RUN, env: env, stdio: ['ignore', 'pipe', 'pipe'] });
+      let out = '';
+      kid.stdout.on('data', function (d) { out += d; });
+      kid.stderr.on('data', function (d) { out += d; });
+      const timer = setTimeout(function () { try { kid.kill(); } catch (e) { /* gone */ } }, 280000);
+      kid.on('exit', function () { clearTimeout(timer); resolve(out); });
+    });
+    return /Test completed/.test(H.out) || 'the rule printed no completion line: ' + short(H.out.slice(-300));
+  }, test.limit.long);
+  test.run('each script\'s node world comes up', 0.4, function () {
+    const up = H.out.split('\n').filter(function (l) { return /SUCCESS #.*: the world: a scratch node comes up/.test(l); }).length;
+    return up === SCRIPTS.length || up + ' of ' + SCRIPTS.length + ' node worlds came up: ' + short(H.out.split('\n').filter(function (l) { return /a scratch node comes up/.test(l); }));
+  }, test.limit.quick);
+  test.run('and they use the node they are handed: their calls reach it', 0.8, function () {
+    return H.reached > 0 || 'nothing reached the handed node: the branch part booted a node of its own';
+  }, test.limit.quick);
+}

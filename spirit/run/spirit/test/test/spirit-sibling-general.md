@@ -36,3 +36,12 @@ Moved here from `spirit/test/spirit.js` (goal/G47.1; Andy: *"11. is spirit-sibli
 
 - Handed `spirit/spirit.js`, the rule "it sets the global spirit before its first require" is green.
 - Handed `late.js`, "it requires spirit.js first" is red, and its answer names the first require, `"fs"`.
+
+## The branch part uses the node its run is handed
+
+goal/G47.1. Andy: *"are the tests not ordered in the general test so that all tests requiring a scratch node can use the same one?"*, then *"fix it, with red and code"*. Handed a list, the rule runs every part once a script; its branch part booted a node of its own for each.
+
+The rule is run on `spirit/app/backup/api.js` and `spirit/app/chat/api.js`, handed a node as testicle hands one (`SPIRIT_MOUNT_BASE`, `SPIRIT_MOUNT_RUN`): an address in front of a real scratch node that counts what reaches it.
+
+- Each script's node world comes up.
+- Their calls reach the handed node. Red on the rule before f558fe34: nothing reached it.
