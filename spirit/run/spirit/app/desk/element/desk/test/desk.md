@@ -115,5 +115,3 @@ Andy, the box: *"the apps and plugin system goes."*, *"there will only be goals,
 ### Requirements
 
 - Andy (Q5): *"G0 goes, from ui and server, kept in database."*: the desk page names no `goal/G0` and no plugin, and draws no Apps tab and no plugin tab.
-
-- desk.js keeps no reconnect hook of its own (box v148: "Desk's own reconnect hook, which never runs, goes").
