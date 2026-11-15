@@ -65,3 +65,19 @@ test.run('a member granted contact is served its tree without contact.own', 0.8,
   const cVerbs = Object.keys((starTree && starTree.body && starTree.body.contact) || {});
   return (cVerbs.indexOf('get') !== -1 && cVerbs.indexOf('own') === -1) ? true : 'its tree: ' + short(starTree && starTree.body);
 }, test.limit.quick);
+
+// A REGISTERED SERVER GOES BY ITS NAME (goal/G43.12, the box: "No gate changes for a caller: once a server is registered, the
+// door and the grants go by its name."; moved here from ./appServer.js's mount part, goal/G47.1: it judges this gate).
+{
+  const NAME = 'probe';
+  const reached = [];
+  const probeServers = { ask: function (a) { reached.push(a); return a === 'api' ? { status: 200, body: { [NAME]: { ping: {} } } } : { status: 200, body: { ok: true } }; } };
+  test.run('a member without a grant is refused, and no server is asked', 0.8, async function () {
+    const stranger = await answer(probeServers, { [NAME]: { ping: {} } }, member([]));
+    return (!!stranger && !!stranger.body && stranger.body.ok === false && reached.length === 0) || 'a member without a grant: ' + short(stranger) + ', asked ' + reached.length;
+  }, test.limit.quick);
+  test.run('a member granted <name>.ping reaches it', 0.2, async function () {
+    const granted = await answer(probeServers, { [NAME]: { ping: {} } }, member([NAME + '.ping']));
+    return (!!granted && granted.status === 200 && reached.length === 1) || 'a member granted: ' + short(granted) + ', asked ' + reached.length;
+  }, test.limit.quick);
+}

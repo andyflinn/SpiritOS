@@ -23,3 +23,7 @@ to all those files, that's why they are now completely redundant."*
 - A server asked before the refusal.
 - An FS verb left in a member's tree.
 - The owner refused.
+
+## A registered server goes by its name
+
+goal/G43.12, the box: *"No gate changes for a caller: once a server is registered, the door and the grants go by its name."* (once in `./appServer.js`'s mount part, goal/G47.1). For a server `probe`: a member with no grant asking `probe.ping` is refused and no server is asked; a member granted `probe.ping` reaches it.
