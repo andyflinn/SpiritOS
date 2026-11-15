@@ -113,9 +113,19 @@ test.run('a press of zzOk\'s own suite: the box says it runs, then "1 of 1 repor
   if (!r || r.started !== true) return 'the press answered ' + short(r);
   const ok = await H.until(function () { return ev('window.zz.lines.slice(' + fromOk + ')').then(function (l) { return holds(l, '1 of 1 reported: ' + OK + ' ✅'); }); }, 120000);
   const seen = await ev('window.zz.lines.slice(' + fromOk + ')');
+  W.okSeen = seen || [];
   const ran = (seen || []).some(function (l) { return /^running zzOk\.js for spirit\/zzBox\/zzOk\.js$/.test(l); });
   return (!!ok && ran) || 'lines after the press: ' + short(seen);
 }, test.limit.long);
+// EACH TEST SAID AS IT IS REPORTED (Andy, watching "running testicle.js for spirit/app/testicle/testicle.js": "Does NOT report
+// what it's doing!"): while its suite runs, the running line names the test reported and its result as an icon.
+const namesTest = function (lines, suite, title, icon) {
+  return (lines || []).some(function (l) { return String(l).indexOf('running ' + suite) === 0 && String(l).indexOf(title) !== -1 && String(l).indexOf(icon) !== -1; });
+};
+test.run('while zzOk\'s suite runs, its running line names the test reported, "zzOk holds", with ✅', 0.4, function () {
+  if (!W.okSeen) return 'no press of zzOk: the check before failed';
+  return namesTest(W.okSeen, 'zzOk.js for spirit/zzBox/zzOk.js', 'zzOk holds', '✅') || 'lines after the press: ' + short(W.okSeen);
+}, test.limit.quick);
 test.run('a press of zzBad\'s own suite: the box says "1 of 1 reported: spirit/zzBox/zzBad.js ❌", its true outcome', 0.4, async function () {
   if (!W.ok) return NOPAGE;
   await idle(60000);
@@ -125,8 +135,13 @@ test.run('a press of zzBad\'s own suite: the box says "1 of 1 reported: spirit/z
   const ok = await H.until(function () { return ev('window.zz.lines.slice(' + from + ')').then(function (l) { return holds(l, '1 of 1 reported: ' + BAD + ' ❌'); }); }, 120000);
   const seen = await ev('window.zz.lines.slice(' + from + ')');
   const lied = holds(seen, '1 of 1 reported: ' + BAD + ' ✅');
+  W.badSeen = seen || [];
   return (!!ok && !lied) || 'lines after the press: ' + short(seen);
 }, test.limit.long);
+test.run('while zzBad\'s suite runs, its running line names the test reported, "zzBad fails", with ❌ and never ✅', 0.4, function () {
+  if (!W.badSeen) return 'no press of zzBad: the check before failed';
+  return (namesTest(W.badSeen, 'zzBad.js for spirit/zzBox/zzBad.js', 'zzBad fails', '❌') && !namesTest(W.badSeen, 'zzBad.js for spirit/zzBox/zzBad.js', 'zzBad fails', '✅')) || 'lines after the press: ' + short(W.badSeen);
+}, test.limit.quick);
 test.run('its box keeps what it holds inside: overflow hidden, one line, the message ellipsed', 0.2, async function () {
   if (!W.ok) return NOPAGE;
   const r = await ev('(function () { var s = document.querySelector("#zzA .testicle-status"), l = document.querySelector("#zzA .testicle-last"); var a = getComputedStyle(s), c = getComputedStyle(l); return { box: a.overflow, wrap: c.whiteSpace, ellipsis: c.textOverflow }; }())');
