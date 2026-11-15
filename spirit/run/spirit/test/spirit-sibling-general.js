@@ -387,8 +387,12 @@ async function treeOf() {
 }
 function branchIn(b) { const t = N.tree || {}; return t[b.family] && typeof t[b.family] === 'object' && t[b.family].ok !== false ? t[b.family] : null; }
 if (served.length) {
+  // THE NODE TESTICLE HANDS THE RUN (goal/G47.1; Andy: "are the tests not ordered in the general test so that all tests
+  // requiring a scratch node can use the same one?"): handed a list, every part runs once a script, so a node of its own
+  // would boot once a branch; the node testicle hands its run (shared: true, as -browser.js takes it) serves them all. Run
+  // by hand, with none handed, it gets one of its own.
   test.run('the world: a scratch node comes up', 0.2, async function () {
-    N.node = await H.scratchNode();
+    if (!N.node) N.node = await H.scratchNode({ shared: true });
     return N.node.up || NO_NODE;
   }, test.limit.slow);
   // An app's branch is served once its server runs (the owner's app.active); the node's own are served by the node.
@@ -556,7 +560,9 @@ if (served.length) {
 
 test.after(async function () {
   if (N.page && N.page.kid) try { N.page.kid.kill(); } catch (e) { /* gone */ }
-  if (N.node) {
+  // A handed node is the run's: let go, never stopped and its tree never freed.
+  if (N.node && N.node.shared) { try { await N.node.release(); } catch (e) { /* the run's */ } }
+  else if (N.node) {
     try { if (N.node.child) N.node.child.kill(); } catch (e) { /* gone */ }
     await H.sleep(300);
     try { if (N.node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(N.node); } catch (e) { /* scratch */ }
