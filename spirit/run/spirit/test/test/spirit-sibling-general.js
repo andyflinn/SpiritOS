@@ -125,7 +125,7 @@ test.run('a module whose first require is not spirit.js goes red', 0.2, function
   const http = require('http');
   const LABH = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
   const SCRIPTS = ['spirit/app/backup/api.js', 'spirit/app/chat/api.js'];
-  const H = { node: null, proxy: null, base: '', reached: 0, out: '' };
+  const H = { node: null, proxy: null, base: '', reached: 0, out: '', bodies: '' };
   test.after(async function () {
     try { if (H.proxy) H.proxy.close(); } catch (e) { /* closed */ }
     try { if (H.node && H.node.child) H.node.child.kill(); } catch (e) { /* gone */ }
@@ -140,6 +140,7 @@ test.run('a module whose first require is not spirit.js goes red', 0.2, function
       req.on('data', function (c) { chunks.push(c); });
       req.on('end', function () {
         const body = Buffer.concat(chunks);
+        H.bodies += req.url + ' ' + body.toString('utf8') + '\n';
         fetch(H.node.base + req.url, { method: req.method, headers: { 'content-type': req.headers['content-type'] || 'application/json' }, body: req.method === 'GET' || req.method === 'HEAD' ? undefined : body })
           .then(function (r) { return r.arrayBuffer().then(function (b) { res.writeHead(r.status, { 'content-type': r.headers.get('content-type') || 'application/json' }); res.end(Buffer.from(b)); }); })
           .catch(function (e) { res.writeHead(502); res.end(String(e && e.message)); });
@@ -166,7 +167,10 @@ test.run('a module whose first require is not spirit.js goes red', 0.2, function
     const up = H.out.split('\n').filter(function (l) { return /SUCCESS #.*: the world: a scratch node comes up/.test(l); }).length;
     return up === SCRIPTS.length || up + ' of ' + SCRIPTS.length + ' node worlds came up: ' + short(H.out.split('\n').filter(function (l) { return /a scratch node comes up/.test(l); }));
   }, test.limit.quick);
-  test.run('and they use the node they are handed: their calls reach it', 0.8, function () {
-    return H.reached > 0 || 'nothing reached the handed node: the branch part booted a node of its own';
+  // Each script's own: a run where the first used the handed node and the second booted its own would still have reached it
+  // (cw's review), so each branch must be named in what reached it, backup's calls and chat's.
+  test.run('and each uses the node it is handed: calls naming backup and calls naming chat both reach it', 0.8, function () {
+    const named = ['backup', 'chat'].filter(function (b) { return new RegExp('"' + b + '[".]').test(H.bodies); });
+    return named.length === 2 || 'what reached the handed node names ' + (named.length ? named.join(' and ') + ' only' : 'neither') + ' (' + H.reached + ' calls): a branch part booted a node of its own';
   }, test.limit.quick);
 }
