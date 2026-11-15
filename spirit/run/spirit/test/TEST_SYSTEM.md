@@ -9,6 +9,24 @@ Product tests are the **permanent** assertions about SpiritOS: its design intent
 the rules of quality and style. A test that only checks an item's job got done is not one of them, and sheds out once
 this system runs beside the old one.
 
+## A test has one string: its title
+
+Andy, goal/G47.1: *"THERE'S ONLY ONE SINGLE MOTHERFUCKING STRING/TITLE ASSOCIATED WITH A TEST, IF IT FUCKING FAILS, THAT IS
+FUCKING ENOUGH TO PINPOINT WHAT HAPPENED"*, *"EVERY MOTHERFUCKING TEST REPONDS WITH SUCCESS OR FAILURE AND / PLUS / INCLUDING
+THE MOTHERFUCKING TITLE OF THE MOTHERFUCKING TEST"*, and *"ALL FAILURE STRING WILL BE FUCKING KILLED IN EVERY MOTHERFUCKING TEST
+IN THE WHOLE MOTHERFUCKING TREE"*.
+
+- **A test has exactly one string: its title.** Its title says what it asserts, and a red title is the whole report of
+  what failed. No other string belongs to a test.
+- **A test answers success or failure, and nothing else.** Its body returns `true` (success) or `false` (failure). It
+  returns no text: no reason, no value it saw, no "what went wrong". A test that wants to say more says it in its title.
+- **The runner registers the result with the title alone.** `testReport.js` hands testicle the script, the suite, the
+  title and success or failure; script, suite and title are the testicle row's key. It prints the title and its mark,
+  ✅ or ❌, and nothing beside it: no message, no number. Any text a body still returns is thrown away, unread.
+- **A crash or a hang is a failure under its title**, like any other: the error is not kept.
+- **No failure string in any test, anywhere in the tree.** A test written with one is wrong, and is fixed by taking
+  the string out, never by keeping it.
+
 ## Where they live
 
 Any folder may hold several code files. A module `./<name>.js` keeps its component modules in `./<name>/` beside it.
@@ -87,7 +105,7 @@ An item that names one file therefore gets the right tests without listing them.
   test supplies its severity and reports itself to testicle"*): `test.run(title, severity, body, limit)`, its title one
   plain string unique in its suite, its severity 0.2 by default, 0.4 for a general rule broken, 0.8 for a security hole
   (a crash or a hang is 0.7, set by the reporter), its time limit one of the reporter's named limits, `test.limit.quick`, `.slow` or `.long`. The body
-  answers `true`, or what went wrong. Setup goes into a "the world:" test, cleanup into `test.after(fn)`. Each test is
+  answers `true` or `false`, nothing else (below, *A test has one string: its title*). Setup goes into a "the world:" test, cleanup into `test.after(fn)`. Each test is
   reported by itself to `testicle.testicle.set` of the node of the checkout it runs in, and the suite's success for each script it judged to `testicle.suite.success` once it is through with that script (none for a run with `--test`; testicle never sums a suite's result from its test rows); `--test <title>` runs the tests up
   to that one. The titleRules part of `spirit-sibling-general.js` holds every suite to it. Its contract: `./test/testReport.md`.
 - A product test that finds a module breaking a rule fails that module's test, not the item that brought the test.
