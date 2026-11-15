@@ -48,7 +48,7 @@ check's standing grant for `platform/<platform>/`.
   less wait), retried (attempts > 1), refusals (by code, else outcome)} and `packets.md`. `platform.md` is written every run.
 - **3, the test state**: `testState.json` and `testState.md` from testicle's current tests, read only; no suite run. Its
   counts are testicle's current rows: every current test, the failed ones its reds, each named with its script and suite.
-- The README and summary.json beside them (agentReadme.write).
+- The README beside them: its layout is box v170's, below.
 - With `--only packets` or `--out` it stops there: exit 0, `written to <out>`, nothing committed, nothing posted.
 - **4, otherwise**: zero posts is published too, and said; of `platform/<platform>/` only the files it wrote are committed, never a tool of his in that folder (`git commit --only`,
   so what the agent had staged stays staged and uncommitted), message `publish: <agent> at <commit> (platform/<platform>/,
@@ -60,7 +60,7 @@ check's standing grant for `platform/<platform>/`.
 - A row counted that is not a closing row, or one from before the run.
 - Medians, worsts, retries or refusals miscounted.
 - A look (--out, --only packets) that commits or posts.
-- A publish that commits his staged work, or anything outside platform/<platform>/, or a tool of his there.
+- A publish that commits his staged work, or anything outside platform/<platform>/ but platform/README.md, or a tool of his there.
 - The node's own traffic log written.
 
 ### Not tested
@@ -76,3 +76,30 @@ behaviour, which is its own module's.
 - Always and reliably pushed (Andy: *"make sure it works, commits and pushes always and reliably so."*): another clone
   pushes a commit of its own to the origin meanwhile; published again, it exits 0, and the origin holds its new commit on
   top of the other clone's.
+
+## Box v170: the platform's README, and platform/README.md (goal/G47.1)
+
+The box, in Andy's words, judged on what a run writes:
+
+- `platform/<name>/README.md`, in this order: the title `# Info and Measurements on <platform-name>`; the paragraph
+  `Measurements were taken on **<Weekday>, <Month> <day-number-in-month>, <four-digit-year>** for repository commit **<commit-id>**`
+  (the run's day, the commit of the tree it runs from); `## The Machine the Measurements come from` with six bullets,
+  `- **<label>**: <value>`, each from node.js's system info: OS/Platform, OS Version, Node.js Version, Total RAM (MB or GB,
+  within 5% of `os.totalmem()`), CPU (its model and its number of cores), Architecture (`os.arch()`).
+- `## Summary`, four bullets in this order: *"A SpiritOS relay given 512 Megabytes of RAM can hold live streams for
+  <number-of-users> simultaneously."* (by the relay's own rule: more than 0, and no more than `relay.allowanceFor(512, 0)` in
+  seats of `SEAT_STREAMS`); *"A SpiritOS node at rest uses <MB> MB of RAM."*; *"A call to a node on its own machine answers in
+  <ms> ms, the slowest in <ms> ms."* (the median no more than the slowest); *"A card request through a relay takes <ms> ms,
+  the slowest <ms> ms; sealing and signing take <ms> ms of it."* (the sealing and signing more than 0 and no more than the
+  median).
+- No raw numbers: no json it writes holds a list of 100 numbers or more.
+- `## Details`, after Summary, its bullets links to documents beside the README: the first `testState.md`, then a document
+  of the general tests (each general suite, the number of production files it judges, its green and red counts), and below
+  it a document of the own suites (each production script with its own suite, its green and red counts).
+- `testState.md` starts with the ten scripts with the most severe reds (fewer when fewer have reds), the most severe first,
+  no script twice, none left out that has a more severe red than one listed; each line the script, its most severe red
+  (severity, test and suite) and its count of reds. Judged against the reds its `testState.json` holds.
+- A publish commits `platform/README.md` beside its folder, and nothing else outside it: its title *"Measurements exists for
+  the following platforms"*, then one bullet per platform folder, `- [<name>](<name>/README.md)`, and nothing else. The
+  test plants another platform's folder, published before, and both are listed.
+- A run starts its own lab nodes and a lab relay, so the runs have the long limit.

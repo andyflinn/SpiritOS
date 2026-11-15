@@ -863,6 +863,34 @@ test.run('a person\'s row: it draws a person\'s details, reading the person (con
   return wp.calls.some(function (c) { return c.name === 'contact.get' && c.body && c.body.key === 'KP'; }) || 'calls: ' + callNames(wp.calls);
 }, test.limit.quick);
 
+// ── BOX v170, THE RELAY'S CAPACITY: ONE FIGURE (goal/G47.1) ──
+// The box: "The relay detail shows of its capacity one figure: how many members it can serve with the RAM it is given. The
+// rows Streams, Members a megabyte, At rest and Free go." The facts it draws of a relay's report (ndGovernorFacts), taken
+// from the file and run alone on a report that holds every part of its capacity.
+const CAP_REPORT = { capacity: { atRestMB: 40, streams: { nodes: 2, faces: 1, feeds: 1 }, streamKB: 60, freeMB: 400, ramLimitMB: 512, membersPerMB: 5, seatStreams: 3, members: 2717 } };
+const CAP = { rows: null };
+test.run('the world: the facts it draws of a relay\'s report, its capacity whole', 0.2, function () {
+  const at = SRC.indexOf('function ndGovernorFacts(');
+  if (at === -1) return 'detailElement.js has no ndGovernorFacts: nothing judged';
+  let depth = 0, end = -1;
+  for (let i = SRC.indexOf('{', at); i < SRC.length; i++) { if (SRC[i] === '{') depth++; else if (SRC[i] === '}' && --depth === 0) { end = i + 1; break; } }
+  try { CAP.rows = vm.runInNewContext('(' + SRC.slice(at, end) + ')', {})(JSON.parse(JSON.stringify(CAP_REPORT))); } catch (e) { return 'it threw: ' + (e && e.message); }
+  return (Array.isArray(CAP.rows) && CAP.rows.length > 0) || 'it drew no rows: ' + short(CAP.rows);
+}, test.limit.quick);
+test.run('no row Streams, Members a megabyte, At rest or Free', 0.2, function () {
+  if (!CAP.rows) return 'no rows drawn: the world failed';
+  const gone = ['Streams', 'Members a megabyte', 'At rest', 'Free'];
+  const left = CAP.rows.filter(function (r) { return gone.indexOf(r[0]) !== -1; }).map(function (r) { return r[0]; });
+  return !left.length || 'still drawn: ' + short(left);
+}, test.limit.quick);
+test.run('of its capacity one figure: the members it can serve with the RAM it is given', 0.2, function () {
+  if (!CAP.rows) return 'no rows drawn: the world failed';
+  const c = CAP_REPORT.capacity;
+  const told = [c.atRestMB, c.streamKB, c.freeMB, c.ramLimitMB, c.membersPerMB, c.members].map(String);
+  const capacity = CAP.rows.filter(function (r) { return told.some(function (v) { return new RegExp('\\b' + v + '\\b').test(String(r[1])); }); });
+  return (capacity.length === 1 && new RegExp('\\b' + c.members + '\\b').test(String(capacity[0][1]))) || 'its capacity rows: ' + short(capacity);
+}, test.limit.quick);
+
 // ── THE RELAY ROW STREAM PART (once detailElement-relayRowStream.js, and relayPanel-rowStream.js until goal/G43.32, when the
 // relay panel went into the contact detail) ──────────────────────────────────────────────────────────────────────────
 // WHO PAINTS, LISTENS (goal/G41.32; Andy, Q13: "every row's data, wherever it's visible must update instantly: who paints,

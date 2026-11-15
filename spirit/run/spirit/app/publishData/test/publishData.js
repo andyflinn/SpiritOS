@@ -133,7 +133,7 @@ function publish(cwd, args, name) {
   // THE TEST'S OWN WORLD (goal/G43.21): run under a node, as the verifier runs it, this suite has the node's address and job in
   // its env, which publishData would take for its own; the script is handed neither, only what each case gives it.
   const ownWorld = function () { const e = Object.assign({}, process.env, { PD_LOG: LOG, PD_NAME: name === undefined ? AGENT : name }); delete e.SPIRIT_CALLBACK_URL; delete e.SPIRIT_JOB_ID; return e; };
-  const r = spawnSync(process.execPath, ['-r', PRELOAD, FILE].concat(args), { cwd: cwd, encoding: 'utf8', windowsHide: true, timeout: 150000,
+  const r = spawnSync(process.execPath, ['-r', PRELOAD, FILE].concat(args), { cwd: cwd, encoding: 'utf8', windowsHide: true, timeout: 280000,
     env: ownWorld() });
   let asks = [];
   try { asks = fs.readFileSync(LOG, 'utf8').trim().split('\n').filter(Boolean).map(function (l) { return JSON.parse(l); }); } catch (e) { asks = []; }
@@ -224,7 +224,7 @@ test.run('it exits 0: written to <out>', 0.2, function () {
   headBefore = git(CLONE, ['rev-parse', 'HEAD']).out;
   r = publish(CLONE, ['45440', '--only', 'packets', '--out', OUT, '--asks', '3']);
   return (r.status === 0 && r.out.split('\n').pop() === 'publishData: written to ' + OUT) ? true : 'exit ' + r.status + ' out ' + shortRun(r.out) + ' err ' + shortRun(r.err);
-}, test.limit.slow);
+}, test.limit.long);
 test.run('its agent is the name in its profile, its commit the tree it runs from', 0.2, function () {
   if (!WR.ready) return 'no scratch clone: the world failed';
   return (r.out.indexOf('publishData: agent ' + AGENT + ', commit ' + WR.COMMIT + ', into ' + OUT) !== -1) ? true : 'out ' + shortRun(r.out);
@@ -295,10 +295,179 @@ test.run('testState.md: the suites\' table and the reds', 0.2, function () {
   tsmd = fs.existsSync(path.join(OUT, 'testState.md')) ? fs.readFileSync(path.join(OUT, 'testState.md'), 'utf8') : '';
   return (tsmd.indexOf('# Test state: ' + AGENT) === 0 && tsmd.indexOf('| suite | tests | green | red | newest |') !== -1 && tsmd.indexOf('## Red') !== -1) ? true : 'testState.md ' + shortRun(tsmd);
 }, test.limit.quick);
-test.run('the README is written beside them (agentReadme)', 0.2, function () {
+// ── BOX v170, publishData: the platform's README (goal/G47.1; Andy: "platform/<name>/README.md", "the title: \"# Info and
+// Measurements on <platform-name>\"", "about the box: \"## The Machine the Measurements come from\"", "Then come the
+// measurements under the title \"## Summary\""; the box: "in this order"). Judged on the README the run above wrote.
+const PLATFORM = process.platform === 'win32' ? 'windows' : (function () { try { return /microsoft/i.test(fs.readFileSync('/proc/version', 'utf8')) ? 'wsl' : 'ubuntu'; } catch (e) { return 'ubuntu'; } }());
+let RL = [];
+// The README's lines, blank ones left out, and the bullets that follow a heading, up to the next heading.
+const bulletsUnder = function (heading) {
+  const i = RL.indexOf(heading);
+  if (i === -1) return null;
+  const out = [];
+  for (let k = i + 1; k < RL.length && !/^#/.test(RL[k]); k++) if (/^- /.test(RL[k])) out.push(RL[k]);
+  return out;
+};
+const numberIn = function (x) { return Number(String(x).replace(/,/g, '')); };
+test.run('the README is written beside them, its title "# Info and Measurements on <platform-name>"', 0.2, function () {
   if (!WR.ready) return 'no scratch clone: the world failed';
   readmeMd = fs.existsSync(path.join(OUT, 'README.md')) ? fs.readFileSync(path.join(OUT, 'README.md'), 'utf8') : '';
-  return (readmeMd.indexOf('# ' + AGENT + '\n') === 0 && readmeMd.indexOf('## Measurements') !== -1) ? true : 'README ' + shortRun(readmeMd);
+  RL = readmeMd.split('\n').map(function (l) { return l.trim(); }).filter(Boolean);
+  return RL[0] === '# Info and Measurements on ' + PLATFORM || 'its first line: ' + shortRun(RL[0]);
+}, test.limit.quick);
+// The box: "one short paragraph: \"Measurements were taken on **<Weekday>, <Month> <day-number-in-month>, <four-digit-year>**
+// for repository commit **<commit-id>**\"". The day is the run's, here or in UTC.
+test.run('then: Measurements were taken on **<Weekday>, <Month> <day>, <year>** for repository commit **<commit-id>**', 0.2, function () {
+  if (!RL.length) return 'no README: the test before failed';
+  const day = function (utc) { return new Date().toLocaleDateString('en-US', Object.assign({ weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }, utc ? { timeZone: 'UTC' } : {})); };
+  const want = [day(false), day(true)].map(function (d) { return 'Measurements were taken on **' + d + '** for repository commit **' + WR.COMMIT + '**'; });
+  return want.indexOf(RL[1]) !== -1 || 'its second line: ' + shortRun(RL[1]) + ', want ' + shortRun(want[0]);
+}, test.limit.quick);
+test.run('then the heading "## The Machine the Measurements come from"', 0.2, function () {
+  if (!RL.length) return 'no README: the test before failed';
+  return RL[2] === '## The Machine the Measurements come from' || 'its third line: ' + shortRun(RL[2]);
+}, test.limit.quick);
+// The six bullets, each "- **<label>**: <value>", the values node.js's system info on this machine.
+let MACH = null;
+test.run('under it six bullets: OS/Platform, OS Version, Node.js Version, Total RAM, CPU, Architecture, in that order', 0.2, function () {
+  if (!RL.length) return 'no README: the test before failed';
+  const b = bulletsUnder('## The Machine the Measurements come from') || [];
+  const labels = ['OS/Platform', 'OS Version', 'Node.js Version', 'Total RAM', 'CPU', 'Architecture'];
+  MACH = {};
+  b.forEach(function (l) { const m = /^- \*\*([^*]+)\*\*: (.+)$/.exec(l); if (m) MACH[m[1]] = m[2]; });
+  const got = b.map(function (l) { return (/^- \*\*([^*]+)\*\*:/.exec(l) || [])[1] || l; });
+  return JSON.stringify(got) === JSON.stringify(labels) || 'its bullets: ' + shortRun(got);
+}, test.limit.quick);
+test.run('OS/Platform is node.js\'s name of this system', 0.2, function () {
+  if (!MACH) return 'no machine bullets: the test before failed';
+  const v = String(MACH['OS/Platform'] || '');
+  return (v.indexOf(os.type()) !== -1 || v.indexOf(os.platform()) !== -1) || 'OS/Platform: ' + shortRun(v) + ', node.js says ' + os.type() + ' (' + os.platform() + ')';
+}, test.limit.quick);
+test.run('OS Version is node.js\'s release of this system', 0.2, function () {
+  if (!MACH) return 'no machine bullets: the test before failed';
+  const v = String(MACH['OS Version'] || '');
+  return (v.indexOf(os.release()) !== -1 || (typeof os.version === 'function' && v.indexOf(os.version()) !== -1)) || 'OS Version: ' + shortRun(v) + ', node.js says ' + os.release();
+}, test.limit.quick);
+test.run('Node.js Version is this node.js\'s', 0.2, function () {
+  if (!MACH) return 'no machine bullets: the test before failed';
+  return String(MACH['Node.js Version'] || '').indexOf(process.version) !== -1 || 'Node.js Version: ' + shortRun(MACH['Node.js Version']) + ', want ' + process.version;
+}, test.limit.quick);
+test.run('Total RAM is this machine\'s, in MB or GB', 0.2, function () {
+  if (!MACH) return 'no machine bullets: the test before failed';
+  const m = /([\d.,]+)\s*(MB|GB)/.exec(String(MACH['Total RAM'] || ''));
+  const bytes = m ? numberIn(m[1]) * (m[2] === 'GB' ? 1073741824 : 1048576) : 0;
+  return (bytes > 0 && Math.abs(bytes - os.totalmem()) / os.totalmem() < 0.05) || 'Total RAM: ' + shortRun(MACH['Total RAM']) + ', node.js says ' + Math.round(os.totalmem() / 1048576) + ' MB';
+}, test.limit.quick);
+test.run('CPU is its model and its number of cores', 0.2, function () {
+  if (!MACH) return 'no machine bullets: the test before failed';
+  const v = String(MACH.CPU || '');
+  const cpus = os.cpus();
+  const model = String((cpus[0] && cpus[0].model) || '').trim().replace(/\s+/g, ' ');
+  return (!!model && v.replace(/\s+/g, ' ').indexOf(model) !== -1 && new RegExp('\\b' + cpus.length + '\\b').test(v.replace(model, ''))) || 'CPU: ' + shortRun(v) + ', node.js says ' + model + ', ' + cpus.length + ' cores';
+}, test.limit.quick);
+test.run('Architecture is node.js\'s (x64, arm64)', 0.2, function () {
+  if (!MACH) return 'no machine bullets: the test before failed';
+  return String(MACH.Architecture || '').trim() === os.arch() || 'Architecture: ' + shortRun(MACH.Architecture) + ', want ' + os.arch();
+}, test.limit.quick);
+// "## Summary", its four lines in the box's order, and nothing else: "no raw numbers".
+let SUM = null;
+test.run('then "## Summary", after the machine, with four bullets', 0.2, function () {
+  if (!RL.length) return 'no README: the test before failed';
+  SUM = bulletsUnder('## Summary');
+  return (!!SUM && RL.indexOf('## Summary') > RL.indexOf('## The Machine the Measurements come from') && SUM.length === 4) || 'Summary at ' + RL.indexOf('## Summary') + ', its bullets ' + shortRun(SUM);
+}, test.limit.quick);
+// "computed by the relay's own rule": no more than the relay allows in 512 MB with nothing of it at rest, in seats.
+test.run('first: "A SpiritOS relay given 512 Megabytes of RAM can hold live streams for <number-of-users> simultaneously."', 0.2, function () {
+  if (!SUM) return 'no Summary: the test before failed';
+  const m = /^- A SpiritOS relay given 512 Megabytes of RAM can hold live streams for ([\d,]+) simultaneously\.$/.exec(SUM[0] || '');
+  const relay = require(path.join(RUN, 'spirit', 'relay.js'));
+  const most = Math.floor(relay.allowanceFor(512, 0) / relay.SEAT_STREAMS);
+  return (!!m && numberIn(m[1]) > 0 && numberIn(m[1]) <= most) || 'the first bullet: ' + shortRun(SUM[0]) + '; the relay\'s rule allows at most ' + most;
+}, test.limit.quick);
+test.run('second: "A SpiritOS node at rest uses <MB> MB of RAM."', 0.2, function () {
+  if (!SUM) return 'no Summary: the test before failed';
+  const m = /^- A SpiritOS node at rest uses ([\d.,]+) MB of RAM\.$/.exec(SUM[1] || '');
+  return (!!m && numberIn(m[1]) > 0 && numberIn(m[1]) < os.totalmem() / 1048576) || 'the second bullet: ' + shortRun(SUM[1]);
+}, test.limit.quick);
+test.run('third: "A call to a node on its own machine answers in <ms> ms, the slowest in <ms> ms."', 0.2, function () {
+  if (!SUM) return 'no Summary: the test before failed';
+  const m = /^- A call to a node on its own machine answers in ([\d.]+) ms, the slowest in ([\d.]+) ms\.$/.exec(SUM[2] || '');
+  return (!!m && Number(m[1]) > 0 && Number(m[1]) <= Number(m[2])) || 'the third bullet: ' + shortRun(SUM[2]);
+}, test.limit.quick);
+test.run('fourth: "A card request through a relay takes <ms> ms, the slowest <ms> ms; sealing and signing take <ms> ms of it."', 0.2, function () {
+  if (!SUM) return 'no Summary: the test before failed';
+  const m = /^- A card request through a relay takes ([\d.]+) ms, the slowest ([\d.]+) ms; sealing and signing take ([\d.]+) ms of it\.$/.exec(SUM[3] || '');
+  return (!!m && Number(m[1]) > 0 && Number(m[1]) <= Number(m[2]) && Number(m[3]) > 0 && Number(m[3]) <= Number(m[1])) || 'the fourth bullet: ' + shortRun(SUM[3]);
+}, test.limit.quick);
+// "no raw numbers: no iteration of a measurement is published, only these lines": no file it wrote holds a list of 100
+// numbers or more.
+test.run('no raw numbers: no file it wrote holds the iterations of a measurement', 0.2, function () {
+  if (!WR.ready) return 'no scratch clone: the world failed';
+  const long = function (v) { return Array.isArray(v) ? (v.length >= 100 && v.every(function (x) { return typeof x === 'number'; })) || v.some(long) : (!!v && typeof v === 'object' && Object.keys(v).some(function (k) { return long(v[k]); })); };
+  const json = fs.existsSync(OUT) ? fs.readdirSync(OUT).filter(function (f) { return /\.json$/.test(f); }) : [];
+  const holding = json.filter(function (f) { try { return long(JSON.parse(fs.readFileSync(path.join(OUT, f), 'utf8'))); } catch (e) { return false; } });
+  return (json.length > 0 && !holding.length) || (json.length ? 'they hold the iterations: ' + holding.join(', ') : 'it wrote no json: nothing judged');
+}, test.limit.quick);
+// "## Details", its bullets links to documents beside the README: first testState.md, the general tests, below those the own
+// suites.
+let LINKS = null;
+test.run('then "## Details", after Summary, its bullets links to documents beside the README, the first testState.md', 0.2, function () {
+  if (!RL.length) return 'no README: the test before failed';
+  const b = bulletsUnder('## Details');
+  LINKS = (b || []).map(function (l) { return (/^- .*\]\(([^)]+)\)/.exec(l) || [])[1] || ''; });
+  const missing = LINKS.filter(function (f) { return !f || !fs.existsSync(path.join(OUT, f)); });
+  return (!!b && RL.indexOf('## Details') > RL.indexOf('## Summary') && LINKS.length >= 3 && LINKS[0] === 'testState.md' && !missing.length) || 'Details at ' + RL.indexOf('## Details') + ', its links ' + shortRun(LINKS) + (missing.length ? ', not beside it: ' + shortRun(missing) : '');
+}, test.limit.quick);
+// A document's lines that name a suite and carry counts.
+const GENERAL_SUITE = /-(child|sibling)-(general|node|browser)\.js\b/;
+const linkedDoc = function (f) { try { return fs.readFileSync(path.join(OUT, f), 'utf8').split('\n'); } catch (e) { return []; } };
+const firstDocWith = function (pick) { for (let i = 1; i < (LINKS || []).length; i++) if (linkedDoc(LINKS[i]).some(pick)) return i; return -1; };
+const generalLine = function (l) { return GENERAL_SUITE.test(l) && (l.match(/\b\d+\b/g) || []).length >= 3; };
+const ownLine = function (l) { return /\/test\/[\w.-]+\.js\b/.test(l) && !GENERAL_SUITE.test(l) && (l.match(/\b\d+\b/g) || []).length >= 2; };
+test.run('a document of the general tests: each general suite, the number of production files it judges, and its green and red counts', 0.2, function () {
+  if (!LINKS) return 'no Details: the test before failed';
+  const i = firstDocWith(generalLine);
+  return i > 0 || 'no linked document lists a general suite with three counts: ' + shortRun(LINKS);
+}, test.limit.quick);
+test.run('below it, a document of the own suites: each production script with its own suite, and its green and red counts', 0.2, function () {
+  if (!LINKS) return 'no Details: the test before failed';
+  const g = firstDocWith(generalLine);
+  const o = firstDocWith(ownLine);
+  return (g > 0 && o > g) || 'the general tests\' document at ' + g + ', the own suites\' at ' + o + ' of ' + shortRun(LINKS);
+}, test.limit.quick);
+// "testState.md starts with the ten scripts with the most severe reds, the most severe first, each one line: the script,
+// its most severe red (severity, test and suite) and its count of reds." Judged against the reds its testState.json holds.
+test.run('testState.md starts with the ten scripts with the most severe reds, the most severe first', 0.2, function () {
+  if (!ts || !tsmd) return 'no testState: the tests before failed';
+  const by = {};
+  (ts.reds || []).forEach(function (x) { const b = by[x.script] || (by[x.script] = { script: x.script, max: -1, count: 0, reds: [] }); b.count += 1; b.reds.push(x); if (Number(x.severity) > b.max) b.max = Number(x.severity); });
+  const all = Object.keys(by).map(function (k) { return by[k]; });
+  if (!all.length) return 'testicle holds no red: nothing judged';
+  const want = Math.min(10, all.length);
+  const top = tsmd.split('\n').slice(1).map(function (l) { return l.trim(); }).filter(Boolean).slice(0, want);
+  const listed = top.map(function (l) { return all.filter(function (b) { return l.indexOf(b.script) !== -1; }).sort(function (a, b) { return b.script.length - a.script.length; })[0] || null; });
+  if (listed.some(function (b) { return !b; })) return 'its first lines do not each name a script with reds: ' + shortRun(top);
+  const ordered = listed.every(function (b, i) { return i === 0 || listed[i - 1].max >= b.max; });
+  const unlisted = all.filter(function (b) { return listed.indexOf(b) === -1; });
+  const highest = listed.every(function (b) { return unlisted.every(function (u) { return u.max <= b.max; }); });
+  const distinct = new Set(listed.map(function (b) { return b.script; })).size === listed.length;
+  return (ordered && highest && distinct) || 'its first lines: ' + shortRun(top);
+}, test.limit.quick);
+test.run('each line: the script, its most severe red (severity, test and suite) and its count of reds', 0.2, function () {
+  if (!ts || !tsmd) return 'no testState: the tests before failed';
+  const by = {};
+  (ts.reds || []).forEach(function (x) { const b = by[x.script] || (by[x.script] = { script: x.script, max: -1, count: 0, reds: [] }); b.count += 1; b.reds.push(x); if (Number(x.severity) > b.max) b.max = Number(x.severity); });
+  const all = Object.keys(by).map(function (k) { return by[k]; });
+  if (!all.length) return 'testicle holds no red: nothing judged';
+  const top = tsmd.split('\n').slice(1).map(function (l) { return l.trim(); }).filter(Boolean).slice(0, Math.min(10, all.length));
+  const bad = top.filter(function (l) {
+    const b = all.filter(function (x) { return l.indexOf(x.script) !== -1; }).sort(function (a, c) { return c.script.length - a.script.length; })[0];
+    if (!b) return true;
+    const rest = l.replace(b.script, '');
+    const worst = b.reds.filter(function (x) { return Number(x.severity) === b.max && rest.indexOf(x.suite) !== -1 && rest.indexOf(x.title) !== -1; });
+    return !worst.length || rest.indexOf(String(b.max)) === -1 || !new RegExp('\\b' + b.count + '\\b').test(rest.replace(worst[0].suite, '').replace(worst[0].title, ''));
+  });
+  return !bad.length || 'these lines lack the script, its most severe red or its count: ' + shortRun(bad);
 }, test.limit.quick);
 test.run('--only packets runs no harness', 0.2, function () {
   if (!WR.ready) return 'no scratch clone: the world failed';
@@ -319,7 +488,7 @@ test.run('the node\'s own traffic log is read from a copy, untouched', 0.2, func
 // THE FOLDER IS THE PLATFORM'S, NOT THE AGENT'S (Andy, box v104: "make sure publisData simply writes to folders identifying
 // the platform, NOT the agent, the platforms will be \"windows\", \"wsl\" and \"ubuntu\"."): platform/<platform>/, the platform
 // this machine is: Windows, Linux under WSL, or Ubuntu; box v105: "the folders: repo://platform/windows/, repo://platform/wsl/, repo://platform/ubuntu/".
-const PLATFORM = process.platform === 'win32' ? 'windows' : (function () { try { return /microsoft/i.test(fs.readFileSync('/proc/version', 'utf8')) ? 'wsl' : 'ubuntu'; } catch (e) { return 'ubuntu'; } }());
+const OTHER = ['windows', 'wsl', 'ubuntu'].filter(function (x) { return x !== PLATFORM; })[0];
 // the whole run: harness in a worktree, then its one folder committed, pushed and said
 // A traffic log that counts nothing this time: zero posts is published too.
 test.run('it exits 0: published platform/<platform>/', 0.2, function () {
@@ -336,10 +505,16 @@ test.run('it exits 0: published platform/<platform>/', 0.2, function () {
   git(CLONE, ['add', 'platform/' + PLATFORM + '/his-tool.txt']);
   git(CLONE, ['commit', '-q', '--only', '-m', 'his tool', '--', 'platform/' + PLATFORM + '/his-tool.txt']);
   fs.appendFileSync(path.join(CLONE, 'platform', PLATFORM, 'his-tool.txt'), 'his edit\n');
+  // ANOTHER PLATFORM'S FOLDER, published from its own machine before (box v170: platform/README.md holds "one bullet per
+  // platform folder (windows, wsl, ubuntu)").
+  fs.mkdirSync(path.join(CLONE, 'platform', OTHER), { recursive: true });
+  fs.writeFileSync(path.join(CLONE, 'platform', OTHER, 'README.md'), '# Info and Measurements on ' + OTHER + '\n');
+  git(CLONE, ['add', 'platform/' + OTHER + '/README.md']);
+  git(CLONE, ['commit', '-q', '--only', '-m', 'the other platform', '--', 'platform/' + OTHER + '/README.md']);
   before = git(CLONE, ['rev-parse', 'HEAD']).out;
   w = publish(CLONE, ['45440', '--asks', '2']);
   return (w.status === 0 && w.out.split('\n').pop() === 'publishData: published platform/' + PLATFORM + '/') ? true : 'exit ' + w.status + ' out ' + shortRun(w.out) + ' err ' + shortRun(w.err);
-}, test.limit.slow);
+}, test.limit.long);
 // NO HARNESS STEP: it went with the old harness (Andy's commit "KILL!", e9c6cb8c, removed spirit/test/measurePlatform.js).
 test.run('no harness step: nothing runs measurePlatform', 0.2, function () {
   if (!WR.ready) return 'no scratch clone: the world failed';
@@ -362,14 +537,34 @@ test.run('under the standing grant\'s message', 0.2, function () {
   if (!WR.ready) return 'no scratch clone: the world failed';
   return (git(CLONE, ['log', '-1', '--format=%s', head]).out.indexOf('platform/' + PLATFORM + '/') !== -1) ? true : 'message ' + shortRun(git(CLONE, ['log', '-1', '--format=%s', head]).out);
 }, test.limit.quick);
-test.run('its files all lie in platform/<platform>/, none in a folder named after the agent', 0.2, function () {
+// Box v170: "on the platform it runs on, it adds that platform's folder and files, and its line in platform/README.md".
+test.run('its files all lie in platform/<platform>/, but for platform/README.md, none in a folder named after the agent', 0.2, function () {
   if (!WR.ready) return 'no scratch clone: the world failed';
   files = git(CLONE, ['diff-tree', '--no-commit-id', '--name-only', '-r', head]).out.split('\n').filter(Boolean);
-  return (files.length > 0 && files.every(function (f) { return f.indexOf('platform/' + PLATFORM + '/') === 0; })) ? true : 'committed ' + shortRun(files);
+  return (files.length > 0 && files.every(function (f) { return f.indexOf('platform/' + PLATFORM + '/') === 0 || f === 'platform/README.md'; })) ? true : 'committed ' + shortRun(files);
 }, test.limit.quick);
 test.run('packets, platform and README among them', 0.2, function () {
   if (!WR.ready) return 'no scratch clone: the world failed';
   return (['packets.json', 'packets.md', 'platform.md', 'README.md'].every(function (f) { return files.indexOf('platform/' + PLATFORM + '/' + f) !== -1; })) ? true : 'committed ' + shortRun(files);
+}, test.limit.quick);
+// BOX v170: "platform/README.md holds the title \"Measurements exists for the following platforms\" and one bullet per
+// platform folder (windows, wsl, ubuntu), each a link to that folder's README.md, and nothing else."
+let PR = null;
+test.run('platform/README.md is committed with them', 0.2, function () {
+  if (!WR.ready) return 'no scratch clone: the world failed';
+  PR = fs.existsSync(path.join(CLONE, 'platform', 'README.md')) ? fs.readFileSync(path.join(CLONE, 'platform', 'README.md'), 'utf8').split('\n').map(function (l) { return l.trim(); }).filter(Boolean) : null;
+  return (files.indexOf('platform/README.md') !== -1 && !!PR) || 'committed ' + shortRun(files) + (PR ? '' : ', and no platform/README.md');
+}, test.limit.quick);
+test.run('its title: "Measurements exists for the following platforms"', 0.2, function () {
+  if (!PR) return 'no platform/README.md: the test before failed';
+  return /^(#+\s*)?Measurements exists for the following platforms$/.test(PR[0] || '') || 'its first line: ' + shortRun(PR[0]);
+}, test.limit.quick);
+test.run('then one bullet per platform folder, this one and the other, each a link to that folder\'s README.md, and nothing else', 0.2, function () {
+  if (!PR) return 'no platform/README.md: the test before failed';
+  const rest = PR.slice(1);
+  const named = rest.map(function (l) { const m = /^- \[(windows|wsl|ubuntu)\]\((windows|wsl|ubuntu)\/README\.md\)$/.exec(l); return m && m[1] === m[2] ? m[1] : null; });
+  const want = [PLATFORM, OTHER].sort();
+  return (named.every(Boolean) && JSON.stringify(named.slice().sort()) === JSON.stringify(want)) || 'its lines after the title: ' + shortRun(rest) + ', want one link each to ' + want.join(' and ');
 }, test.limit.quick);
 test.run('only the files it wrote: his tool in the platform folder is not committed, his edit still there', 0.2, function () {
   if (!WR.ready) return 'no scratch clone: the world failed';
@@ -401,7 +596,7 @@ test.run('published again, it exits 0 though the origin moved on', 0.2, function
   if (!moved) return 'the origin did not move: the world failed';
   w2 = publish(CLONE, ['45440', '--asks', '1']);
   return (w2.status === 0) ? true : 'exit ' + w2.status + ' out ' + shortRun(w2.out) + ' err ' + shortRun(w2.err);
-}, test.limit.slow);
+}, test.limit.long);
 test.run('and the origin holds its new commit on top of the other clone\'s', 0.2, function () {
   if (!w2) return 'not published again: the test before failed';
   const top = git(ORIGIN, ['rev-parse', 'refs/heads/master']).out;

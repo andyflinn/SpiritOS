@@ -134,3 +134,10 @@ stream, a real Chrome.
 ### What its test must try to break
 
 - A panel that re-reads on a nudge. A panel that stops while hidden. A report on a row, reaching a face with no star.
+
+## Box v170: the relay's capacity, one figure (goal/G47.1)
+
+The box: *"The relay detail shows of its capacity one figure: how many members it can serve with the RAM it is given. The
+rows Streams, Members a megabyte, At rest and Free go."* The facts the panel draws of a relay's report (`ndGovernorFacts`),
+taken from the file and run alone on a report holding every part of its capacity: no row Streams, Members a megabyte,
+At rest or Free, and of the capacity's figures exactly one row, the members it serves.
