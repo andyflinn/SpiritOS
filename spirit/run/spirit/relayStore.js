@@ -266,10 +266,15 @@ function build(rootDir, db, key) {
     inviteSweep: db.prepare('DELETE FROM invites WHERE expiresAt < ?'),
   };
 
-  // The face statements are prepared on first use: a read-only store opened on a relay.db from before the face
-  // columns cannot add them, and preparing a statement that names a missing column would throw at open.
-  const faceQ = {};
-  function faceStmt(name, sql) { return faceQ[name] || (faceQ[name] = db.prepare(sql)); }
+  // The face statements.
+  const faceQ = {
+    byFace: db.prepare('SELECT * FROM members WHERE faceName = ? LIMIT 1'),
+    set: db.prepare('UPDATE members SET faceName = ?, faceEmail = ? WHERE publicKey = ?'),
+    email: db.prepare('UPDATE members SET email = ?, emailVerified = 1 WHERE publicKey = ?'),
+    loginsGet: db.prepare('SELECT faceLogins FROM members WHERE publicKey = ?'),
+    loginsSet: db.prepare('UPDATE members SET faceLogins = ? WHERE publicKey = ?'),
+    loginsBy: db.prepare("SELECT * FROM members WHERE instr(faceLogins, ?) > 0 LIMIT 1"),
+  };
 
   function member(row) {
     if (!row) return null;
@@ -354,30 +359,30 @@ function build(rootDir, db, key) {
         return q.memberDel.run(String(publicKey || '')).changes > 0;
       },
       // Who holds a face name (already lowercased by the caller), or null.
-      byFace: function (name) { return member(faceStmt('byFace', 'SELECT * FROM members WHERE faceName = ? LIMIT 1').get(String(name || ''))); },
+      byFace: function (name) { return member(faceQ.byFace.get(String(name || ''))); },
       // The face name and email of one member. True when written; false when the name is held by another member
       // (the unique index refuses it) or the member is not on the roll.
       setFace: function (publicKey, name, email) {
-        try { return faceStmt('set', 'UPDATE members SET faceName = ?, faceEmail = ? WHERE publicKey = ?').run(String(name || ''), String(email || ''), String(publicKey || '')).changes > 0; }
+        try { return faceQ.set.run(String(name || ''), String(email || ''), String(publicKey || '')).changes > 0; }
         catch (e) { if (/UNIQUE/i.test(String(e && e.message))) return false; throw e; }
       },
       // The email a confirmed join code proved, written verified. True when the member is on the roll.
       setEmail: function (publicKey, email) {
-        return faceStmt('email', 'UPDATE members SET email = ?, emailVerified = 1 WHERE publicKey = ?').run(String(email || ''), String(publicKey || '')).changes > 0;
+        return faceQ.email.run(String(email || ''), String(publicKey || '')).changes > 0;
       },
       // The member's face logins, one per device: [{ hash, until }] (goal/G30.15).
       faceLogins: function (publicKey) {
-        const row = faceStmt('loginsGet', 'SELECT faceLogins FROM members WHERE publicKey = ?').get(String(publicKey || ''));
+        const row = faceQ.loginsGet.get(String(publicKey || ''));
         try { const list = JSON.parse((row && row.faceLogins) || '[]'); return Array.isArray(list) ? list : []; } catch (e) { return []; }
       },
       setFaceLogins: function (publicKey, list) {
-        return faceStmt('loginsSet', 'UPDATE members SET faceLogins = ? WHERE publicKey = ?').run(JSON.stringify(Array.isArray(list) ? list : []), String(publicKey || '')).changes > 0;
+        return faceQ.loginsSet.run(JSON.stringify(Array.isArray(list) ? list : []), String(publicKey || '')).changes > 0;
       },
       // The member holding a login with this cookie hash, or null.
       byFaceLogin: function (hash) {
         const h = String(hash || '');
         if (!h) return null;
-        return member(faceStmt('loginsBy', "SELECT * FROM members WHERE instr(faceLogins, ?) > 0 LIMIT 1").get('"' + h + '"'));
+        return member(faceQ.loginsBy.get('"' + h + '"'));
       },
     },
 

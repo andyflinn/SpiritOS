@@ -104,8 +104,8 @@ The box, in Andy's words where he gave them:
   the queue, the flagged suites wait; *"auto"*: it runs every flagged suite by itself, and set to auto the waiting ones run.
   *"the server will flag changed suites AND scripts always, in both modes."*
 - **Three fields on the script table** (goal/G47.1, box v79, 3): reClassify, browserOnly and nodeOnly, booleans, served
-  on every script row. *"a script seen for the first time starts with reClassify true"*; a table made before gains it true
-  on every row, browserOnly and nodeOnly false; *"when the server (always) processes file changes, and the hash of the
+  on every script row. *"a script seen for the first time starts with reClassify true"*, browserOnly and nodeOnly false;
+  *"when the server (always) processes file changes, and the hash of the
   script changes, \"reClassify\" must be set to \"true\""*. Only classification sets it false (below).
 - **Classification** (goal/G47.1, box v94, 1; the classifier's own contract: `spirit/test/scriptClassify.md`):
   - the verb `script.classify {script, browserOnly, nodeOnly}` sets the script row's two flags and clears its reClassify,

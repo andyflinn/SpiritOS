@@ -352,30 +352,6 @@ test.run('a second delete of it is refused no-such-row', 0.2, function () {
   return call(X.verb, { op: 'delete', id: X.second.id }).refusal === 'no-such-row' ? true : 'second delete answered';
 }, test.limit.quick);
 
-// ── a table made before a field was takes the field at start ──
-const OL = { old: null, oldCols: [] };
-test.run('the missing icon and named fields are added to it', 0.2, function () {
-  if (!X.db) return NO_TABLE;
-  const db = X.db;
-  db.exec('CREATE TABLE "old" (id TEXT PRIMARY KEY, privateKey TEXT NOT NULL, sealPublicKey TEXT NOT NULL, sealPrivateKey TEXT NOT NULL, label TEXT NOT NULL DEFAULT \'\', description TEXT NOT NULL DEFAULT \'\')');
-  db.prepare('INSERT INTO "old" (id, privateKey, sealPublicKey, sealPrivateKey, label) VALUES (?, ?, ?, ?, ?)').run('k', 'p', 's', 'sp', 'Kept');
-  OL.old = X.mod.rowTable(db, { name: 'old', fields: { persona: 'text?' } }, function () {});
-  OL.oldCols = db.prepare('PRAGMA table_info("old")').all().map(function (c) { return c.name; });
-  return OL.oldCols.indexOf('icon') !== -1 && OL.oldCols.indexOf('persona') !== -1 ? true : 'columns: ' + short(OL.oldCols);
-}, test.limit.quick);
-test.run('and its rows are kept, the new fields empty', 0.2, function () {
-  const old = OL.old;
-  if (!old) return NO_TABLE;
-  return old.label('k') === 'Kept' && old.icon('k') === '' ? true : 'label ' + short(old.label('k')) + ', icon ' + short(old.icon('k'));
-}, test.limit.quick);
-// goal/G41.21, Andy: "ALL, drop the description for ALL tables. it does NOTHING AND IS USELESS.": a table that has one
-// from before loses it at start, its rows kept.
-test.run('its old description column is dropped at start, the row kept', 0.2, function () {
-  const old = OL.old;
-  if (!old) return NO_TABLE;
-  return OL.oldCols.indexOf('description') === -1 && old.label('k') === 'Kept' ? true : 'columns: ' + short(OL.oldCols);
-}, test.limit.quick);
-
 // ── the rows persist in agent.db ──
 test.run('opened again on the same file, the table has its rows', 0.2, function () {
   if (!X.db) return NO_TABLE;

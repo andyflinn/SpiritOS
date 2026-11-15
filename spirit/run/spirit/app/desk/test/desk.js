@@ -41,21 +41,38 @@ const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAdeskProductTestOwnerAAAAAAAAAA
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 
-// A DESK'S WORLD BEFORE IT STARTS: the old session record of each goal, which the desk migrates into its tables at start
-// (its migrate), ids as written, the last goal current, its items out of design.
+// A DESK'S WORLD BEFORE IT STARTS, in today's tables as the desk writes them: each goal and its items, ids as written,
+// the goal in design, its items out of design, the last goal current. The desk reads them at start; no old file is
+// moved in (Andy, goal/G47.1: "old files or tables should not be mended, THE SHOULD BE FUCKING KILLED AND ELIMINATED
+// FOREVER!"), and a verb cannot make a goal of a chosen number.
 function seed(stateDir, sessions) {
   fs.mkdirSync(stateDir, { recursive: true });
   const db = new DatabaseSync(path.join(stateDir, 'desk.db'));
-  db.exec("CREATE TABLE IF NOT EXISTS records (n INTEGER PRIMARY KEY AUTOINCREMENT, at TEXT NOT NULL, verb TEXT NOT NULL, by TEXT NOT NULL, body TEXT NOT NULL, key TEXT NOT NULL DEFAULT '')");
-  const add = db.prepare('INSERT INTO records (at, verb, by, key, body) VALUES (?, ?, ?, ?, ?)');
+  db.exec("CREATE TABLE IF NOT EXISTS items (goal INTEGER NOT NULL, item INTEGER NOT NULL, creator TEXT NOT NULL, special INTEGER NOT NULL DEFAULT 0, at TEXT NOT NULL DEFAULT '', data TEXT NOT NULL," +
+    ' change INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (goal, item));' +
+    'CREATE TABLE IF NOT EXISTS desk_state (k TEXT PRIMARY KEY, v TEXT NOT NULL);');
+  const add = db.prepare("INSERT INTO items (goal, item, creator, special, at, data, change) VALUES (?, ?, 'andy', 0, ?, ?, ?)");
+  const nums = function (id) { const m = /^goal\/G(\d+)(?:\.(\d+))?$/.exec(id); return [Number(m[1]), Number(m[2] || 0)]; };
   let t = Date.now() - 60000;
-  sessions.forEach(function (s) { t += 10; add.run(new Date(t).toISOString(), 'session.set', 'andy', '', JSON.stringify({ session: s })); });
-  db.close();
-}
-// A record of the desk's own, written into its db before it starts beside the sessions (the migrate replays it).
-function seedRecord(stateDir, verb, by, body) {
-  const db = new DatabaseSync(path.join(stateDir, 'desk.db'));
-  db.prepare('INSERT INTO records (at, verb, by, key, body) VALUES (?, ?, ?, ?, ?)').run(new Date().toISOString(), verb, by, '', JSON.stringify(body));
+  let n = 0;
+  sessions.forEach(function (s) {
+    t += 10;
+    const at = new Date(t).toISOString();
+    const ids = s.items.map(function (x) { return String(x.id); });
+    const g = nums(s.goal.id);
+    n += 1;
+    add.run(g[0], g[1], at, JSON.stringify({ id: s.goal.id, title: s.goal.title, goal: true, goalId: '', made: 'andy', at: at,
+      goalState: { design: true, abandoned: false, members: ids } }), n);
+    s.items.forEach(function (x) {
+      const k = nums(String(x.id));
+      n += 1;
+      add.run(k[0], k[1], at, JSON.stringify({ id: String(x.id), title: String(x.title || ''), goal: false, goalId: s.goal.id, made: 'andy',
+        blocks: (Array.isArray(x.blocks) ? x.blocks : [x.blocks || s.goal.id]).map(String), design: false }), n);
+    });
+  });
+  const state = db.prepare('INSERT INTO desk_state (k, v) VALUES (?, ?) ON CONFLICT(k) DO UPDATE SET v = excluded.v');
+  state.run('change', JSON.stringify(n));
+  state.run('current', JSON.stringify(sessions.length ? String(sessions[sessions.length - 1].goal.id) : ''));
   db.close();
 }
 // A SCRATCH GIT WORLD, never this checkout's (goal/G41.22): a bare origin, the desk's checkout cloned from it, and another
@@ -211,13 +228,12 @@ const lastOf = function (rows) { return rows[rows.length - 1]; };
 // A DESK IN A SCRATCH GIT WORLD RUNS FROM INSIDE IT (goal/G43.28, box line 9; Andy: "desk fucking well knows which repo
 // it sits in"): world given, the run tree is copied into its checkout, so the desk finds that checkout by walking up to
 // its .git, as it finds Andy's; it is handed no repo. Without a world it runs from the scratch copy, no checkout.
-const startDesk = async function (name, records, values, sessions, world) {
+const startDesk = async function (name, values, sessions, world) {
   if (!W.node || !W.SERVER) return null;
   const root = path.join(W.scratch, name);
   const server = world ? runCopy(path.join(world.checkout, 'spirit', 'run'), W.node.server.address().port) : W.SERVER;
   const st = path.join(root, 'state');
   seed(st, sessions || [pullSession]);
-  records.forEach(function (r) { seedRecord(st, r.verb, r.by, r.body); });
   const p = appClient.pipePathFor(root, 'desk', process.platform, 'process');
   if (process.platform !== 'win32') fs.mkdirSync(path.dirname(p), { recursive: true });
   const c = appClient.createAppClient({ rootDir: root });
@@ -513,7 +529,7 @@ const noB = 'the desk did not start: the box is not judged';
 test.run('the world: a desk of its own starts, for the box', 0.2, async function () {
   // The main desk's own subscriber is stopped here, as before: the cases below each run a desk of their own.
   try { if (W.kid) W.kid.kill(); } catch (e) { /* gone */ }
-  W.askB = await startDesk('desk-box', [], {});
+  W.askB = await startDesk('desk-box', {});
   if (W.askB) await profiles(W.askB);
   return !!W.askB || noB;
 }, test.limit.slow);
@@ -577,7 +593,7 @@ const noW = 'the desk did not start: the wake is not judged';
 test.run('the world: a desk of its own starts, for the wake', 0.2, async function () {
   if (!W.scratch) return noW;
   W.worldW = gitWorld(path.join(W.scratch, 'git-w'));
-  W.askW = await startDesk('desk-wake', [], {}, undefined, W.worldW);
+  W.askW = await startDesk('desk-wake', {}, undefined, W.worldW);
   if (W.askW) {
     await profiles(W.askW);
     await W.askW('subscribe', { family: 'deskClient' }, CW);
@@ -645,7 +661,7 @@ const noL = 'the desk did not start: alone is not judged';
 test.run('the world: a desk of its own starts, for an agent alone', 0.2, async function () {
   if (!W.scratch) return noL;
   W.worldL = gitWorld(path.join(W.scratch, 'git-l'));
-  W.askL = await startDesk('desk-alone', [], {}, undefined, W.worldL);
+  W.askL = await startDesk('desk-alone', {}, undefined, W.worldL);
   return !!W.askL || noL;
 }, test.limit.slow);
 test.run('the only agent here claims the red and takes the build, with no press of his', 0.2, async function () {
@@ -677,7 +693,7 @@ const GOAL_FIELDS = ['live', 'agents', 'working', 'waiting', 'design', 'excluded
 const search = async function (ask, o) { const r = await ask('items.search', Object.assign({ text: '', currentGoalOnly: true, goalsOnly: false, includeClosed: false }, o || {}), ANDY); return { more: r.more === true, rows: (r.items || []).map(function (x) { try { return JSON.parse(x.label); } catch (e) { return {}; } }), keys: (r.items || []).map(function (x) { return x.key; }) }; };
 const noS = 'the desk did not start: the search is not judged';
 test.run('the world: a desk of its own starts, for the search', 0.2, async function () {
-  W.askS = await startDesk('desk-list', [], {}, [{ goal: LIST_GOAL, items: LIST_ITEMS.map(function (id) { return { id: id, title: 'Item ' + id, blocks: [LIST_GOAL.id] }; }) }]);
+  W.askS = await startDesk('desk-list', {}, [{ goal: LIST_GOAL, items: LIST_ITEMS.map(function (id) { return { id: id, title: 'Item ' + id, blocks: [LIST_GOAL.id] }; }) }]);
   if (W.askS) await profiles(W.askS);
   return !!W.askS || noS;
 }, test.limit.slow);
@@ -769,7 +785,7 @@ test.run('the world: a desk of its own starts, for the bubbles', 0.2, async func
   const node = W.node;
   W.heldGrants = node.grants.splice(0, node.grants.length);
   node.grants.push({ key: CW.key, path: 'desk', name: CW.label }, { key: UBI.key, path: 'desk.item.get', name: UBI.label }, { key: CLIENT_ONLY.key, path: 'deskClient.streamListener', name: CLIENT_ONLY.label }, { key: OUT.key, path: 'desk.item.get', name: 'never written' });
-  W.askG = await startDesk('desk-grants', [], {});
+  W.askG = await startDesk('desk-grants', {});
   if (W.askG) {
     await profiles(W.askG);
     await W.askG('profile.set', { agent: NOBODY.key, name: 'No Grant', nick: 'nog', included: true, cap: true }, ANDY);
@@ -837,7 +853,7 @@ const noM = 'the desk did not start: [include closed] is not judged';
 test.run('the world: a desk of its own starts, for [include closed]', 0.2, async function () {
   // The grants of the bubbles' case put back, as they were before it.
   if (W.node && W.heldGrants) { W.node.grants.splice(0, W.node.grants.length); W.heldGrants.forEach(function (g) { W.node.grants.push(g); }); }
-  W.askM = await startDesk('desk-mixed', [], {}, [{ goal: MIX_GOAL, items: MIX_ITEMS.map(function (id) { return { id: id, title: 'Item ' + id, blocks: [MIX_GOAL.id] }; }) }]);
+  W.askM = await startDesk('desk-mixed', {}, [{ goal: MIX_GOAL, items: MIX_ITEMS.map(function (id) { return { id: id, title: 'Item ' + id, blocks: [MIX_GOAL.id] }; }) }]);
   return !!W.askM || noM;
 }, test.limit.slow);
 test.run('the world: 40 closed items, the oldest; without the filter only the 5 open show', 0.2, async function () {
@@ -865,7 +881,7 @@ const noA = 'the desk on a scratch checkout did not start: the world failed';
 test.run('the world: a desk of its own starts on a scratch checkout of a scratch origin', 0.2, async function () {
   if (!W.scratch) return noA;
   const worldA = W.worldA = gitWorld(path.join(W.scratch, 'git-a'));
-  W.askA = await startDesk('desk-a', [], {}, undefined, worldA);
+  W.askA = await startDesk('desk-a', {}, undefined, worldA);
   return (!!W.askA && !!worldA.head()) || 'desk ' + !!W.askA + ', checkout at ' + short(worldA.head());
 }, test.limit.slow);
 test.run('the world: a commit lands on origin, and cw\'s red claim is taken', 0.2, async function () {

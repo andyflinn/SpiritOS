@@ -44,8 +44,6 @@ Its test is `./rowTable.js`.
   - A refused add writes no row.
 - `has(id)`, `label(id)` and `icon(id)` say whether the row is there, and give its label and its icon, `''` when it is
   not there.
-- A table made before a field was gets the field at start, empty, and its rows are kept: the icon came after the first
-  tables.
 - The rows persist in `agent.db`.
 
 ## Requirements (goal/G41.21, box v17)
@@ -79,8 +77,7 @@ through a single-row "get", using a probabilityStringObjectMatch."*
 - An add refused, by the table's check or a stray argument, that writes a row anyway.
 - An argument it does not declare taken in silence. The face's calls once carried `verb` ("Not added: job takes no
   argument verb").
-- An old table that loses its rows, or never gets the new field.
 - A narrowed search answering another row's rows, or refusing the field.
 - A row made, or emptied, without a mandatory field; a refusal that does not name it.
-- A description column made, or kept from before.
+- A description column made.
 - A search that matches only the string fields, or a few by name; one that searches a secret.

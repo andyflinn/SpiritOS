@@ -100,7 +100,7 @@ test.run('the model table has a label column', 0.2, function () { return has('la
 test.run('the model table has a providerId column', 0.2, function () { return has('providerId'); }, test.limit.quick);
 test.run('the model table has a capabilities column', 0.2, function () { return has('capabilities'); }, test.limit.quick);
 test.run('and nothing else: no model name column, the label holds it', 0.2, function () {
-  return X.cols.length === 8 && X.cols.indexOf('modelName') === -1 ? true : 'columns: ' + short(X.cols);
+  return X.cols.length === 8 ? true : 'columns: ' + short(X.cols);
 }, test.limit.quick);
 
 // ── server.js: a model names a provider that is there ──

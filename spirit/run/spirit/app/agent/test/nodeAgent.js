@@ -229,7 +229,7 @@ test.run('model {add} keys its own row, naming its provider by the provider\'s i
   const modelAdd = await ask('model', { op: 'add', label: 'test-model-1', providerId: R.pid, capabilities: ['text'] });
   const mid = modelAdd.body && modelAdd.body.id;
   const mrow = rowOf(tableOf('model'), mid);
-  return isKey(mid) && mid !== R.pid && !!mrow && mrow.providerId === R.pid && mrow.label === 'test-model-1' && !('modelName' in mrow) ? true : 'answer ' + short(modelAdd.body || modelAdd) + ', row ' + short(mrow);
+  return isKey(mid) && mid !== R.pid && !!mrow && mrow.providerId === R.pid && mrow.label === 'test-model-1' ? true : 'answer ' + short(modelAdd.body || modelAdd) + ', row ' + short(mrow);
 }, test.limit.quick);
 test.run('job {add} and persona {add} each answer a key of their own', 0.2, async function () {
   if (!X.up) return NOT_UP;

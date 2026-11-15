@@ -20,9 +20,6 @@ require('../../../../spirit.js');
 const { rowTable } = spirit.require('spirit/app/agent/table/rowTable.js');
 
 module.exports = function (ctx) {
-  // An agent.db from before keeps a model's name in modelName: it becomes the label, before that column goes.
-  const cols = ctx.db.prepare('PRAGMA table_info("model")').all().map(function (c) { return c.name; });
-  if (cols.indexOf('modelName') !== -1) ctx.db.exec('UPDATE "model" SET label = modelName WHERE modelName <> \'\'');
   const table = rowTable(ctx.db, {
     name: 'model',
     fields: { providerId: 'key?', capabilities: 'list?' },
