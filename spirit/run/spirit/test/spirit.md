@@ -339,3 +339,5 @@ The box: *"a family is found as spirit/<name>/api.js or spirit/app/<name>/api.js
 falls back to process/js/<name>"*. In a process, `spirit.familyPath` gives a system family's own `spirit/<name>/api.js`
 (fs), an app's `spirit/app/<name>/api.js` (desk, agent), and no path it gives names `process/js`, a name of no family's
 included.
+
+- A stream with no event for 5 s is reset (box v148): the node paused, the page opens a new event.subscribe by itself within 6.5 s; it cancels the silent one first (the old request ended before the new one was sent); and it says the stream is down (onConnection false).

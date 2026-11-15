@@ -91,3 +91,5 @@ node, the reads moved.
 ### Assumed by this test
 
 The box names no helper, so the test finds it by its call: a function called with the family's name as a string. A row of another node is written through `spirit.data.viewAt(node, family)`, and the page node comes from `spirit.data.homeNode()`, the builder's names.
+
+- On a reconnect the cache stays (box v148; Andy: "THE FUCKING CACHE IS NOT WIPED OUT."): what a search seated is still there after a second snapshot, and the snapshot's jobs bring it up to date.

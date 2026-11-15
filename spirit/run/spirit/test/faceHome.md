@@ -122,3 +122,5 @@ the relayOnFace part of `spirit/element/search/contact/test/rowElement.js`).
 - A star that shows the two apps named and misses another.
 - A face with no star that shows them too.
 - A tile that is drawn and dies when pressed.
+
+- A quiet face stream carries a beat each second (box v148): in 4 s with nothing to send, no gap between its writes to the relay is longer than 1.5 s.

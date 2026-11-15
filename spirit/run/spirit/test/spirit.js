@@ -1493,3 +1493,57 @@ test.after(function () {
   try { if (FL.N && FL.N.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(FL.N); } catch (e) { /* scratch */ }
 });
 
+
+// ── A STREAM GONE SILENT IS RESET (goal/G47.1, box v148: "5 seconds without a spirit event, the stream resets: the page's
+// stream reader stamps the time of every byte that comes in, beats included, and checks each second; after 5 s of nothing
+// it cancels that stream first, so the dead one holds no connection, says the stream is down, and opens a new one at once.") ──
+// A page on a scratch node, the node paused (SIGSTOP): its socket stays open and nothing comes, as on Andy's frozen tab
+// (cw: "the node is sending and the socket is open, but your page stopped taking what arrives"). Within the 5 s and a
+// second's grace, the page sends a new event.subscribe of its own; then the node goes on (SIGCONT).
+const SIL = {};
+test.run('the world: a page on a scratch node, its stream open', 0.2, async function () {
+  if (process.platform === 'win32') { SIL.skip = 'a node is paused on Linux only: nothing judged here'; return true; }
+  SIL.node = await H.scratchNode();
+  if (!SIL.node.up) return 'no scratch node: nothing judged';
+  SIL.page = await H.chromePage(H.findChrome());
+  if (!SIL.page || SIL.page.error) return 'no headless page: ' + short(SIL.page && SIL.page.error);
+  await SIL.page.send('Page.navigate', { url: SIL.node.base + '/face.html' });
+  if (!(await H.until(function () { return SIL.page.evaluate('!!(window.spirit && window.spirit.ready)'); }, 30000))) return 'the page never stood';
+  await SIL.page.evaluate('window.zzConn = []; window.spirit.event.subscribe({ onConnection: function (u) { window.zzConn.push(u); } }); true');
+  return true;
+}, test.limit.slow);
+test.after(async function () {
+  try { if (SIL.node && SIL.node.child) process.kill(SIL.node.child.pid, 'SIGCONT'); } catch (e) { /* gone */ }
+  try { if (SIL.page && SIL.page.kid) SIL.page.kid.kill(); } catch (e) { /* gone */ }
+  try { if (SIL.node && SIL.node.release) await SIL.node.release(); } catch (e) { /* gone */ }
+});
+const subscribeIds = function () { return SIL.page.heard.filter(function (m) { return m.method === 'Network.requestWillBeSent' && /event\.subscribe/.test(String(m.params.request.postData || '')); }).map(function (m) { return m.params.requestId; }); };
+const subscribes = function () { return subscribeIds().length; };
+// When a request of the page ended, by its id: finished or failed (a cancelled read fails it), in the order Chrome said them.
+const endedAt = function (id) { let at = -1; SIL.page.heard.forEach(function (m, i) { if ((m.method === 'Network.loadingFinished' || m.method === 'Network.loadingFailed') && m.params.requestId === id && at < 0) at = i; }); return at; };
+const sentAt = function (id) { let at = -1; SIL.page.heard.forEach(function (m, i) { if (m.method === 'Network.requestWillBeSent' && m.params.requestId === id && at < 0) at = i; }); return at; };
+test.run('a stream with no event for 5 s is reset: the page opens a new one by itself', 0.8, async function () {
+  if (SIL.skip) return SIL.skip;
+  if (!SIL.page || !SIL.node || !SIL.node.child) return 'no page: the world failed';
+  await H.sleep(1500);
+  const before = subscribes();
+  SIL.old = subscribeIds()[before - 1];
+  SIL.conn = Number(await SIL.page.evaluate('window.zzConn.length'));
+  process.kill(SIL.node.child.pid, 'SIGSTOP');
+  const reset = await H.until(function () { return Promise.resolve(subscribes() > before); }, 6500);
+  SIL.fresh = subscribeIds()[before];
+  SIL.saidDown = (await SIL.page.evaluate('window.zzConn.slice(' + SIL.conn + ')')) || [];
+  process.kill(SIL.node.child.pid, 'SIGCONT');
+  return !!reset || 'the node silent for 6.5 s, the page opened no new stream: ' + before + ' event.subscribe before, ' + subscribes() + ' after';
+}, test.limit.slow);
+test.run('it cancels the silent stream first: the old one ended before the new one was sent', 0.8, function () {
+  if (SIL.skip) return SIL.skip;
+  if (!SIL.old || !SIL.fresh) return 'no new stream: the check before failed';
+  const ended = endedAt(SIL.old), sent = sentAt(SIL.fresh);
+  return (ended >= 0 && ended < sent) || 'the old stream ' + (ended < 0 ? 'never ended' : 'ended after the new one was sent') + ': it still holds its connection';
+}, test.limit.quick);
+test.run('and it says the stream is down: onConnection false before the new one', 0.8, function () {
+  if (SIL.skip) return SIL.skip;
+  if (!SIL.saidDown) return 'no page: the world failed';
+  return SIL.saidDown.indexOf(false) !== -1 || 'onConnection said ' + JSON.stringify(SIL.saidDown) + ' while the node was silent';
+}, test.limit.quick);

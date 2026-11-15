@@ -1055,6 +1055,7 @@ folderPart();
 popupPart();
 tilesPart();
 keptPart();
+reconnectPart();
 
 // THE SEARCH KEEPS ITS ROWS (goal/G47.1, the cycle "the search keeps its rows", the box: "The search element
 // (spirit/element/search.js) never redraws its list. Each row is made once and kept in the table: a new record adds its one
@@ -2267,3 +2268,50 @@ async function folderPart() {
   test.after(free);
 }
 
+// ── WHAT CHANGED WHILE DOWN COMES IN (goal/G47.1, box v148: "on a reconnect every search a page shows (the shared search element,
+// spirit/element/search.js) runs once more and its answer is merged into the cache, in that one place for every app") ──
+// One search on a scratch node's face page, asking through its own search: what it asks is counted, and it answers a row. The
+// node restarted under it: once the page's stream is back, the search asks once more by itself, nothing typed, and the row its
+// new answer brings is drawn beside the one it held.
+async function reconnectPart() {
+  const { scratchNode, chromePage, findChrome, until, sleep } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+  function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
+  let node, chrome, made, asked0 = 0;
+  test.run('the world: a search on a scratch node\'s face page, asking through its own search, refreshed as its mounter does, its first answer drawn', 0.2, async function () {
+    await freeWorlds();
+    node = await scratchNode();
+    chrome = await chromePage(findChrome());
+    if (!node.up || chrome.error) return 'no scratch node or no Chrome: nothing judged. ' + short(chrome.error || '');
+    await chrome.send('Page.navigate', { url: node.base + '/face.html' });
+    await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
+    made = await chrome.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/element/search.js"); }).then(function () { ' +
+      'window.__r = { asked: 0 }; var b = document.createElement("div"); b.id = "zz-r"; b.style.cssText = "width:400px;height:300px"; document.body.appendChild(b); ' +
+      'window.__r.h = spirit.element.spirit.element.search.create(b, { verb: "zz.search", columns: [{ field: "name", label: "Name" }], name: function (r) { return r.name; }, ' +
+      '  search: function () { window.__r.asked += 1; var n = window.__r.asked; return Promise.resolve({ status: 200, body: { items: [{ key: "k" + n, label: JSON.stringify({ name: "answer " + n }) }], more: false } }); } }); ' +
+      'window.__r.h.refresh(); return "made"; }, function (e) { return String(e); })');
+    if (made !== 'made') return 'nothing made: ' + short(made);
+    const first = await until(function () { return chrome.evaluate('window.__r.asked >= 1 && document.body.innerText.indexOf("answer 1") !== -1'); }, 10000);
+    asked0 = await chrome.evaluate('window.__r.asked');
+    return !!first || 'the search never drew its first answer: asked ' + asked0;
+  }, test.limit.slow);
+  test.run('the node restarted under it: once the stream is back, the search asks once more by itself, nothing typed', 0.8, async function () {
+    if (made !== 'made') return 'no search: the world failed';
+    await node.restart();
+    if (!node.up) return 'the node did not come up again: nothing judged';
+    const again = await until(function () { return chrome.evaluate('window.__r.asked > ' + asked0); }, 15000);
+    return !!again || 'after the restart the search asked ' + (await chrome.evaluate('window.__r.asked')) + ' time(s), as before: it never ran again';
+  }, test.limit.slow);
+  test.run('and its new answer is merged: the row it held and the row it brought are both drawn', 0.8, async function () {
+    if (made !== 'made') return 'no search: the world failed';
+    const text = String(await chrome.evaluate('document.body.innerText'));
+    return (text.indexOf('answer 1') !== -1 && text.indexOf('answer 2') !== -1) || 'the search draws: ' + short(text);
+  }, test.limit.quick);
+  const free = async function () {
+    if (free.done) return;
+    free.done = true;
+    if (chrome && chrome.kid) chrome.kid.kill();
+    try { if (node && typeof node.release === 'function') await node.release(); } catch (e) { /* freed when this process ends */ }
+  };
+  WORLDS.push(free);
+  test.after(free);
+}

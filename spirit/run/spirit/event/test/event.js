@@ -81,6 +81,30 @@ test.run('the world: a server with event.subscribe on it', 0.2, async function (
   return !!W.port || 'the server has no port';
 }, test.limit.quick);
 
+// A QUIET NODE IS NEVER TAKEN FOR DEAD (goal/G47.1, box v148: "the node beats each second when it has nothing else to send, on
+// the page's stream (spirit/event/event.js, every 20 s today)"). One stream open on a node with nothing to send, its bytes timed
+// as they come for 4 s: no gap between two of them is longer than 1.5 s.
+test.run('a quiet stream hears a beat each second: no gap of more than 1.5 s in 4 s', 0.8, async function () {
+  if (!W.port) return NO_SERVER;
+  const times = [];
+  const t0 = Date.now();
+  const s = await new Promise(function (resolve, reject) {
+    const req = http.request({ port: W.port, host: '127.0.0.1', method: 'POST', path: '/' }, function (res) {
+      res.on('data', function () { times.push(Date.now()); });
+      res.on('error', function () { /* closed below */ });
+      resolve({ req: req, res: res });
+    });
+    req.on('error', reject);
+    req.end(JSON.stringify({ call: 'event.subscribe', args: {} }));
+  });
+  s.req.on('error', function () {});
+  await sleep(4000);
+  s.req.destroy();
+  const marks = [t0].concat(times).concat([t0 + 4000]);
+  let worst = 0;
+  for (let i = 1; i < marks.length; i++) worst = Math.max(worst, marks[i] - marks[i - 1]);
+  return worst <= 1500 || 'in 4 s of quiet the longest gap was ' + worst + ' ms (' + times.length + ' writes)';
+}, test.limit.slow);
 // an open stream holds its heartbeat and its listeners, and hears every event
 test.run('one stream open: one heartbeat, one listener on the jobs', 0.2, async function () {
   if (!W.port) return NO_SERVER;

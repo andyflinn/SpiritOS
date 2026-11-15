@@ -283,3 +283,5 @@ the rows go back. Throughout, the table is the one first drawn, and no row eleme
 
 What it must try to break: a list rebuilt from its HTML on any change; a row element made again for a key it already
 drew; a hidden row taken out of the page; a new record that redraws its neighbours.
+
+- On a reconnect a search runs once more by itself (box v148): a search on a scratch node's page, the node restarted, asks again with nothing typed, and its new row is drawn beside the one it held.

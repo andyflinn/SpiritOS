@@ -181,6 +181,27 @@ test.run('face-open starts the stream', 0.2, function () {
   return streaming || 'face-open from my face\'s relay started no stream';
 }, test.limit.quick);
 
+// A QUIET NODE IS NEVER TAKEN FOR DEAD ON A FACE (goal/G47.1, box v148: "the node beats each second when it has nothing else to
+// send, on the page's stream ... and on a face's (spirit/faceHome.js, none today)"). A face's stream open on a node with nothing
+// to send, what it writes to the relay timed for 4 s: no gap between two writes is longer than 1.5 s.
+test.run('a quiet face stream carries a beat each second: no gap of more than 1.5 s in 4 s', 0.8, async function () {
+  const w = starredWorld();
+  try { w.home.open(MINE, ''); } catch (e) { return 'face-open threw: ' + short(e && e.message); }
+  const u = w.uploads['/api/relay/face/stream'];
+  if (!u) return 'face-open started no stream: nothing judged';
+  await settle();
+  const times = [];
+  const write = u.write;
+  u.write = function (c) { times.push(Date.now()); return write.call(u, c); };
+  const t0 = Date.now();
+  await sleep(4000);
+  try { w.home.close(MINE); } catch (e) { /* the stand-in's */ }
+  const marks = [t0].concat(times).concat([t0 + 4000]);
+  let worst = 0;
+  for (let i = 1; i < marks.length; i++) worst = Math.max(worst, marks[i] - marks[i - 1]);
+  return worst <= 1500 || 'in 4 s of quiet the longest gap on the face\'s stream was ' + worst + ' ms (' + times.length + ' writes)';
+}, test.limit.slow);
+
 // Every verb the families declare, from their own declarations.
 const allFamilies = function () {
   const dirs = function (d) { return fs.readdirSync(path.join(RUN, d), { withFileTypes: true }).filter(function (e) { return e.isDirectory(); }).map(function (e) { return e.name; }); };

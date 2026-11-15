@@ -615,3 +615,10 @@ test.after(function () { stop(F1); stop(F2); stop(F3); });
 
 // THE ELEMENT NAMES SINCE goal/G43.18: a stand-in keyed by its place, 'search.contact' and so on, nested where the page has it.
 function nestSearch(o) { Object.keys(o).forEach(function (k) { if (k !== 'search' && k.indexOf('search.') !== 0) return; var v = o[k]; delete o[k]; var ks = k.split('.'); var at = o; ks.slice(0, -1).forEach(function (p) { at = at[p] = at[p] || {}; }); var last = ks[ks.length - 1]; at[last] = Object.assign(at[last] || {}, v); }); return o; }
+
+// DESK'S OWN RECONNECT HOOK GOES (goal/G47.1, box v148: "on a reconnect every search a page shows ... runs once more ..., in that
+// one place for every app; Desk's own reconnect hook, which never runs, goes"). Read as code, its comments left out.
+test.run('desk.js keeps no reconnect hook of its own', 0.4, function () {
+  const c = String(fs.readFileSync(FILE, 'utf8')).replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
+  return !/onReconnect/.test(c) || 'desk.js still hooks onReconnect: ' + short((c.match(/[^\n]*onReconnect[^\n]*/) || [''])[0].trim());
+}, test.limit.quick);

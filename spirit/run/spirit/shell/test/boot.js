@@ -146,3 +146,15 @@ test.run('every app manifest names its icon as the glyph itself', 0.2, function 
   });
   return !keyed.length || keyed.length + ' manifests name a key: ' + short(keyed);
 }, test.limit.quick);
+
+// ONE PLACE ONLY MANAGES THE STREAM (goal/G47.1, box v148: "spirit.js, which holds the page's one stream (spirit.event);
+// spirit/shell/boot.js keeps no stream loop of its own and opens the face's stream through spirit.js, handing only the face's
+// address and its line format"). Read as code, its comments left out.
+test.run('boot.js keeps no stream loop of its own: it reads no stream body and fetches no /face/stream itself', 0.8, function () {
+  const c = code('spirit/shell/boot.js');
+  if (c == null) return NO_BOOT;
+  const bad = [];
+  if (/\.getReader\s*\(/.test(c)) bad.push('it reads a stream body itself (getReader)');
+  if (/fetch\s*\(\s*['"`]\/face\/stream/.test(c)) bad.push('it fetches /face/stream itself');
+  return !bad.length || bad.join('; ');
+}, test.limit.quick);

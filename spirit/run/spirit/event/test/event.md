@@ -15,3 +15,5 @@ Andy, goal/G43.3, the box: *"no leftover timers after a stream closes, and a rec
 ## What this suite does not judge
 
 The receipt time. It depends on the network and the node a receipt crosses, and a suite must never reach a real node, so *"under 0.5 seconds"* is measured on a real node when this item is verified, from that node's traffic log (`kind` reply, `outcome` receipted, `ms`).
+
+- A quiet stream hears a beat each second (box v148): in 4 s with nothing to send, no gap between its writes is longer than 1.5 s.

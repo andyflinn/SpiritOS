@@ -47,3 +47,5 @@ PAGE_FILES). spirit.js loads it on a face page. It boots only itself, the stream
 
 - A desktop, a link or a join step of boot's own.
 - An old face/ path left in boot, spirit.js or face.html.
+
+- boot.js keeps no stream loop of its own (box v148): it reads no stream body and fetches no /face/stream itself.
