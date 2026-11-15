@@ -330,7 +330,8 @@ function nextJob() {
   const ur = many ? null : Q.suiteRow.get(n.script, n.suite);
   const j = { script: n.script, suite: n.suite, title: n.title || '', scriptHash: (sr && sr.hash) || (many ? '' : hashOf(n.script)),
     suiteHash: (ur && ur.hash) || hashOf(n.suite), started: Date.now(), kid: null, timer: null, killed: false,
-    classify: !!n.classify, batch: !!n.batch, scripts: n.scripts || [], hashes: n.hashes || null, done: 0, seen: Object.create(null) };
+    classify: !!n.classify, batch: !!n.batch, scripts: n.scripts || [], hashes: n.hashes || null, done: 0, seen: Object.create(null),
+    reported: Object.create(null) };
   // A classifying run and a general test's run are given their scripts; any other run its script, when it is a general
   // test, and the title asked.
   const args = [n.suite].concat(many ? j.scripts : []);
@@ -413,20 +414,40 @@ function dropWorld() {
 // test of that run too, and failed with it: killed keeps the run's hashes per suite and script until a run of it starts
 // again or a change moves them.
 const killed = new Map();   // script|suite -> { scriptHash, suiteHash }
+// A KILL THROWS OUT NOTHING REPORTED (goal/G47.1, box v154; Andy: "i don't understand why any kill of a run, regardless of
+// cause, would throw out any results duly reported?", "A suite that succeeds against a script and it's hash, MUST remain as
+// success in the suite table. otherwise the run exceeding 120 minutes will NEVER pass", "I'd agree to failing the suite
+// currently running"). Once a run was one suite on one script, and its kill failed every test it knew of; a general test's
+// run of many scripts then failed every one of them, those already through included. Now: a script whose success came in
+// this run is left as it reported; the script the run was on is failed, in the tests that gave no answer in this run, and
+// its suite row (jobEnded); a script not yet started is not judged, it stays flagged and a new run is built for it at once.
+// The script the run is on: the last one a result came from, unless its success is in; else the first not through, in the
+// order the run was handed them.
+function scriptAt(j) {
+  if (!j.batch) return j.reported[j.script] ? '' : j.script;
+  if (j.last && j.last.script && !j.reported[j.last.script]) return j.last.script;
+  for (const s of j.scripts) if (!j.reported[s]) return s;
+  return '';
+}
 function killJob(j) {
   if (job !== j) { logError('killJob: the job had already ended', null); return; }
   j.killed = true;
   // A classifying run killed: its end fails every script it had not classified (jobEnded).
   if (j.classify) { try { j.kid.kill(); } catch (e) { logError('killJob: the kill', e); } return; }
-  // A general test's run of several scripts killed: each of them as a run of its own would be.
-  const each = j.batch ? j.scripts.map(function (s) { return { script: s, scriptHash: j.hashes[s] }; }) : [{ script: j.script, scriptHash: j.scriptHash }];
-  each.forEach(function (one) {
-    // A script removed while the run went takes no failure either (as testicle.set refuses it, wsl's red 3f6832e6).
-    if (!there(one.script)) return;
-    killed.set(one.script + '|' + j.suite, { scriptHash: one.scriptHash, suiteHash: j.suiteHash });
-    try { T.ofSuite.all(one.script, j.suite).forEach(function (r) { setResult(one.script, j.suite, r.test, false, Number(r.severity) || 0, one.scriptHash, j.suiteHash); }); }
-    catch (e) { logError('killJob: failing ' + one.script + ' ' + j.suite, e); }
-  });
+  const at = scriptAt(j);
+  j.killedAt = at;
+  // A script removed while the run went takes no failure either (as testicle.set refuses it, wsl's red 3f6832e6).
+  if (at && there(at)) {
+    const scriptHash = j.batch ? j.hashes[at] : j.scriptHash;
+    killed.set(at + '|' + j.suite, { scriptHash: scriptHash, suiteHash: j.suiteHash });
+    try {
+      T.ofSuite.all(at, j.suite).filter(function (r) { return !(Number(r.tested) >= j.started); })
+        .forEach(function (r) { setResult(at, j.suite, r.test, false, Number(r.severity) || 0, scriptHash, j.suiteHash); });
+    } catch (e) { logError('killJob: failing ' + at + ' ' + j.suite, e); }
+  }
+  logError('runner: killed ' + j.suite + (j.batch ? ' (' + j.scripts.length + ' scripts) at ' + (at || 'no script') : ' for ' + j.script) + ' past ' + JOB_LIMIT_MS + ' ms', null);
+  // The scripts not yet through, built into a new run from the flags (batchOf), behind what is queued.
+  if (j.batch) front.push({ resume: true, script: '', suite: j.suite, title: '' });
   try { j.kid.kill(); } catch (e) { logError('killJob: the kill', e); }
 }
 // WHAT GOES WRONG, KEPT WHERE IT CAN BE READ (wsl's verify: "the testicle server's stderr does not reach my node.err"):
@@ -447,9 +468,10 @@ function jobEnded(j) {
   // STOPPED FOR A TOP RED'S FIX (box v128): its results untouched, its rows left flagged, so it comes round again.
   if (j.stopped) return;
   if (j.classify) return classifyEnded(j);
-  // A general test's run of several scripts: each script's row judged as its own run's would be.
+  // A general test's run of several scripts: each script's row judged as its own run's would be. Killed, only the script
+  // it was on is judged (killJob): the ones through are judged already, the ones not started stay flagged for the new run.
   if (j.batch) {
-    j.scripts.forEach(function (s) {
+    j.scripts.filter(function (s) { return !j.killed || s === j.killedAt; }).forEach(function (s) {
       try { jobEnded({ script: s, suite: j.suite, title: '', scriptHash: j.hashes[s], suiteHash: j.suiteHash, killed: j.killed, started: j.started }); }
       catch (e) { logError('jobEnded ' + s + ' ' + j.suite, e); }
     });
@@ -1000,6 +1022,8 @@ appServer.serve({
       if (suite === CLASSIFY) classifierRow(script, job && job.classify ? job.suiteHash : hashOf(suite));
       else if (there(suite) && !Q.suiteRow.get(script, suite)) Q.putSuite.run(script, suite, hashOf(suite), Date.now());
       if (!Q.suiteRow.get(script, suite)) throw refused('no-such-file');
+      // Said by the run going: a kill of it leaves this script as it reported (killJob).
+      if (ran && job && job.suite === suite && job.reported) job.reported[script] = true;
       judgeSuite.run(a.success ? 'green' : 'red', Date.now(), script, suite);
       tell('suite', suiteServed(Q.suiteRow.get(script, suite)), 'updated');
       return {};
