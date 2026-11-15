@@ -50,98 +50,11 @@ history.json
 log.jsonl
 spirit/currentIssues.md
 
-# Desk's record as Desk once kept it in its own folder (desk/G1.O10, Andy:
-# "yes"). From desk/G1.4 the desk server imports these into desk.db, in
-# relay-state/process/desk/, and removes them; tracked, every checkout that
-# pulled would import Andy's record into its own desk.db, and every planted
-# test node would boot with it. D5: "any appServer state is none of git's
-# business". Past commits still hold them.
-spirit/run/spirit/app/desk/element/desk/log/
-spirit/run/spirit/app/desk/element/desk/voice/
-spirit/run/spirit/app/desk/element/desk/state.json
-spirit/run/spirit/app/desk/element/desk/seen.json
-
-# Personal media that ended up in a folder named test/pix rather than real
-# test fixtures — unreferenced by any code or test (verified), 20MB.
-spirit/test/pix
-
-# Per-process relay state: allow.json and identity.json —
-# the last of which holds an Ed25519 PRIVATE KEY. relayAuth.js's header has
-# always said these "live on that process's spirit/run home, never in git",
-# but until now nothing enforced it. This is not hypothetical once a relay
-# runs on a public host and actually has an identity: a single `git add -A`
-# would stage the key, and because both setupRelayFakes.js and labMaster's
-# copyTrackedSpirit build node homes from `git ls-files`, a committed key
-# would then be sprayed into every fake node in the lab.
-# Unanchored on purpose — matches spirit/run/relay-state/ and any other
-# node home's copy, wherever it ends up.
-relay-state/
-# The companion of relay-state and its future replacement (goal/G43's box: "repo://spirit/run/spirit/state/", ".gitignored").
+# The node's state (goal/G43's box: "repo://spirit/run/spirit/state/", ".gitignored").
 spirit/run/spirit/state/
-
-# Relay Chat's remembered binding (chat 1): which public label this node
-# claimed, so a reload does not ask again. Per-node session state, like
-# relay-state above and preferences.json — never product code, and
-# meaningless in another clone. It also must not reach the lab:
-# setupRelayFakes.js builds fake nodes from `git ls-files`, so a
-# committed session.json would hand every fake node Andy's label.
-# Unanchored, to match the file wherever an app folder ends up.
-session.json
 
 loop.json
 configuration.json
-
-# Relay Chat's remembered view (chat 6): who was selected, which filter,
-# and how far each conversation had been read. Same class as
-# session.json above — this node's state about itself, never product
-# code, and it names peer keys, so it must not reach the lab either.
-view.json
-
-# Relay Chat's settings (chat settings cycle): what this node has decided
-# about mail from people it has not added, and the labels it has minted
-# invites for. Same class as session.json and view.json above — this
-# node's own state, meaningless in another clone, and it must not reach
-# the lab either, since setupRelayFakes.js builds fake nodes from
-# `git ls-files`.
-prefs.json
-
-# Scratch a person made while trying the Text Editor out. Not product
-# code and not this node's state either — just a file somebody typed in
-# to see whether saving worked. Unanchored, like the names above,
-# because the next one will be made wherever the editor was pointed.
-notes.txt
-
-# The labels this node has minted invites for (natterRememberMinted).
-# Same class as session.json, view.json and prefs.json above: this node's
-# own state, meaningless in another clone. It also names people — a label
-# is what somebody will be called on a mailbox once they claim — and it
-# must not reach the lab, since setupRelayFakes.js builds fake nodes from
-# `git ls-files`.
-#
-# The token is deliberately NOT in it: that is the secret, spoken down a
-# phone and never written here. This is the half that lets an owner
-# recognise the key when it turns up on their census.
-minted.json
-
-# Anything js/peerFile.js names: one file per peer, wherever an app
-# keeps them. Chat logs are the first (app/relayChat/logs/, also caught
-# by the bare `logs` rule above); whatever comes next is the reason this
-# is a pattern rather than a path.
-#
-# Data belonging to a peer is personal by definition — the mailbox keeps
-# messages by recipient and grows no sender copy, so the record of a
-# conversation lives on the node that took part in it. It must not reach
-# the lab either: setupRelayFakes.js builds fake nodes from
-# `git ls-files`.
-#
-# The prefix is what makes one line enough, and it is why session.json
-# is listed separately above: that is one file about this node, not a
-# file about a peer.
-**/peerfile-*.json
-
-# Desk's own log (AGENTS-UI.md): Andy's conversation with the agents, kept
-# by the app in its own folder because "they must keep their own logs".
-# His words, never pushed.
 
 NEXT_PROMPT.md
 
@@ -159,10 +72,6 @@ NEXT_PROMPT.md
 # in the root is exactly what makes somebody reach for the shortcut.
 node.out
 node.err
-
-# Per-app state (G12): code is replaced by deployment, state is not.
-# Same reason relay-state is ignored above.
-app-state/
 
 # What one box says about itself (see .spiritbox.example). Machine facts,
 # never shared: the file exists so a box can stop re-typing them.

@@ -57,7 +57,6 @@ require('./spirit.js');
 // and the only thing between the two is the gate in note() below.
 
 const fs = require('fs');
-const path = require('path');
 
 // NO AGE LIMIT, AND A SIZE CAP (goal/G30.19).
 //
@@ -69,39 +68,26 @@ const path = require('path');
 // table's oldest rows are shed (nodeStore.js, shedToCap), so the log keeps
 // the newest traffic that fits.
 //
-// IT IS NEVER REWRITTEN ON EVERY PACKET. A write adds one row and is
-// O(1): since transport/R19.3 a row into node.db's `traffic` table
-// (below), and only when node.db cannot be had, one JSON line appended
-// to traffic.jsonl. Nothing above this file knows where the rows live
-// (spirit/test/storeOwnership.js).
+// IT IS NEVER REWRITTEN ON EVERY PACKET. A write adds one row to node.db's
+// `traffic` table and is O(1). Nothing above this file knows where the rows
+// live (spirit/test/storeOwnership.js).
 
-// One JSON object per line. The extension says so, which matters for a
-// file somebody is meant to be able to open and read.
-function logPath(rootDir) {
-  return path.join(rootDir, 'spirit', 'state', 'traffic.jsonl');
-}
-
-// Unreadable, missing or malformed all read as no history. A log that can
-// crash the thing it is observing is worse than no log — and this is
-// called on the path a packet takes, so a throw here would break the
-// delivery it was only supposed to witness.
-//
-// A MALFORMED LINE IS SKIPPED, not fatal, and that is the property an
-// append-only file is chosen for: a torn write at the end of the file
-// costs the one row that was being written, never the year behind it.
-// The whole-file rewrite it replaced had the opposite failure — atomic,
-// but all-or-nothing over everything.
 // ── THE TABLE IN node.db (transport/R19.3) ────────────────────────────
 //
 //   Andy, 2026-09-28: "Moving the node log into machine-side database",
 //   and rule 1 of that plan: nothing above trafficLog.js changes.
 //
-// Every new row goes into node.db's `traffic` table, which nodeStore.js
-// owns; this file still decides what a row is and is the only one that
-// reads it. A traffic.jsonl is written only when node.db cannot be opened
-// at all, and is read beside the table. An old file is never imported
-// (Andy, goal/G47.1: "old files or tables should not be mended, THE SHOULD
-// BE FUCKING KILLED AND ELIMINATED FOREVER!").
+// Every row goes into node.db's `traffic` table, which nodeStore.js owns;
+// this file still decides what a row is and is the only one that reads it.
+// THE TABLE IS THE ONLY STORE: no side file is written when node.db cannot
+// be had, and none is read (Andy, goal/G47.1: "old files or tables should not
+// be mended, THE SHOULD BE FUCKING KILLED AND ELIMINATED FOREVER!", and "ALL,
+// GO" on the fallback file's going). A node with no node.db logs nothing.
+//
+// Unreadable or missing reads as no history. A log that can crash the thing
+// it is observing is worse than no log — and this is called on the path a
+// packet takes, so a throw here would break the delivery it was only
+// supposed to witness.
 //
 // `create` is false for reads: asking what the log holds must never be
 // what brings a database into existence.
@@ -116,46 +102,22 @@ function table(rootDir, create) {
 }
 
 function readAll(rootDir) {
-  var rows = readFile(rootDir);
   var t = table(rootDir, false);
-  var tableRows = [];
+  var rows = [];
   if (t) {
-    try { tableRows = t.all(); } catch (e) { /* the file's rows still stand */ }
+    try { rows = t.all(); } catch (e) { rows = []; }
   }
-  if (!tableRows.length) return rows;
-  // ORDER BY `at`, ALWAYS. stamp() makes it unique and increasing across
-  // both stores, so this is the order rows were written in, even if node.db
-  // once failed to open and some went to the file (wsl-claude).
-  // The sort is stable: a batch of marks sharing one stamp keeps its order.
-  return rows.concat(tableRows).sort(function (a, b) {
+  // ORDER BY `at`, ALWAYS. stamp() makes it unique and increasing, so this is
+  // the order rows were written in. The sort is stable: a batch of marks
+  // sharing one stamp keeps its order.
+  return rows.sort(function (a, b) {
     var x = String(a && a.at || ''), y = String(b && b.at || '');
     return x < y ? -1 : x > y ? 1 : 0;
   });
 }
 
-function readFile(rootDir) {
-  var raw = null;
-  try { raw = fs.readFileSync(logPath(rootDir), 'utf8'); }
-  catch (e) { raw = null; }
-
-  // No traffic.jsonl, no rows from a file. The shape before it, traffic.json,
-  // is not read (goal/G43.23, the box's item 7; Andy, goal/G41.30: "let's
-  // get rid of those "rescue operations"").
-  if (raw === null) return [];
-
-  var rows = [];
-  raw.split('\n').forEach(function (line) {
-    if (!line) return;
-    try {
-      var row = JSON.parse(line);
-      if (row && typeof row === 'object') rows.push(row);
-    } catch (e) { /* a torn line costs itself and nothing else */ }
-  });
-  return rows;
-}
-
 // The set of hashes a live page has already been handed. Marks are rows
-// too — `mark: 'taken'` — so the file stays append-only and a delivery
+// too — `mark: 'taken'` — so the log stays append-only and a delivery
 // never rewrites the packet it delivered.
 function takenSet(rows) {
   var seen = Object.create(null);
@@ -178,40 +140,12 @@ function historyOf(rootDir) {
   });
 }
 
-// ONE LINE, APPENDED. No read, no rewrite, no temp file: the cost of
-// writing a packet down does not grow with how many are already there.
+// ONE ROW, ADDED. No read, no rewrite: the cost of writing a packet down
+// does not grow with how many are already there. With no node.db to be
+// had, nothing is written.
 function append(rootDir, row) {
-  // Into the table (transport/R19.3); the file only if node.db can't be had.
   var t = table(rootDir, true);
-  if (t) { t.add(row); return; }
-  var dir = path.dirname(logPath(rootDir));
-  try { fs.mkdirSync(dir, { recursive: true }); } catch (e) { /* already there */ }
-
-  // A NEWLINE FIRST, IF THE FILE DOES NOT ALREADY END IN ONE.
-  //
-  // This is the append-only failure mode, and it is not hypothetical: a
-  // torn write is precisely a file that stops mid-line, and surviving
-  // one is why this store is append-only at all. Appending straight
-  // onto it would glue the next row to the broken one and lose BOTH --
-  // turning a one-row loss into a two-row loss, at the moment something
-  // is already wrong.
-  //
-  // One byte is read to find out. Still O(1), and it buys the property
-  // the whole design rests on: damage stops at the row it happened to.
-  var needsBreak = false;
-  try {
-    var size = fs.statSync(logPath(rootDir)).size;
-    if (size > 0) {
-      var fd = fs.openSync(logPath(rootDir), 'r');
-      try {
-        var tail = Buffer.alloc(1);
-        fs.readSync(fd, tail, 0, 1, size - 1);
-        needsBreak = tail.toString('utf8') !== '\n';
-      } finally { fs.closeSync(fd); }
-    }
-  } catch (e) { /* no file yet, or unreadable: nothing to break away from */ }
-
-  fs.appendFileSync(logPath(rootDir), (needsBreak ? '\n' : '') + JSON.stringify(row) + '\n');
+  if (t) t.add(row);
 }
 
 // opts: { rootDir, relayMode, now }
@@ -263,10 +197,6 @@ function createTrafficLog(opts) {
   function highestWritten() {
     var high = 0;
     try {
-      readFile(rootDir).forEach(function (row) {
-        var t = row && row.at ? Date.parse(row.at) : 0;
-        if (t > high) high = t;
-      });
       // The table's newest row carries its highest stamp (transport/R19.4):
       // one indexed look, not a read of every row.
       var tb = table(rootDir, false);
@@ -280,9 +210,7 @@ function createTrafficLog(opts) {
   //
   // Each reader that wants a few rows asks node.db for exactly those, by
   // the partial index made for it, instead of reading every row and
-  // filtering. A traffic.jsonl's rows are still merged in: one is there
-  // when its import failed or node.db could not be opened.
-  // The answers are the same as filtering read(): its suite checks both.
+  // filtering. The answers are the same as filtering read().
   function sinceIso(ms) { return ms ? new Date(ms).toISOString() : ''; }
   function byTime(a, b) { return Date.parse(a.at) - Date.parse(b.at); }
   // Folds `takenAt` onto rows from their marks, as historyOf does.
@@ -295,12 +223,11 @@ function createTrafficLog(opts) {
       return out;
     });
   }
-  // Every row, file and table, that carries this hash: marks included.
-  function rowsFor(hash, fileRows) {
+  // Every row that carries this hash: marks included.
+  function rowsFor(hash) {
     var tb = table(rootDir, false);
-    var fromTable = [];
-    if (tb) { try { fromTable = tb.byHash(hash); } catch (e) { fromTable = []; } }
-    return fileRows.filter(function (r) { return r && r.hash === hash; }).concat(fromTable);
+    if (!tb) return [];
+    try { return tb.byHash(hash); } catch (e) { return []; }
   }
 
   function stamp() {
@@ -469,55 +396,32 @@ function createTrafficLog(opts) {
     var o = opts || {};
     var since = typeof o.since === 'string' ? Date.parse(o.since) : 0;
     var limit = Number(o.limit) > 0 ? Math.min(Number(o.limit), 500) : 200;
-    var fileRows = readFile(rootDir);
-    var marks = takenSet(fileRows);
-    var rows = fileRows.filter(function (row) {
-      if (!row || row.mark || row.dir !== 'in' || row.outcome !== 'delivered') return false;
-      if (!since) return true;
-      var at = Date.parse(row.at);
-      return at > 0 && at > since;
-    });
+    var marks = Object.create(null);
     var tb = table(rootDir, false);
-    if (tb) {
-      try { rows = rows.concat(tb.arrivals(sinceIso(since), limit)); } catch (e) { /* the file's rows still stand */ }
-    }
+    if (!tb) return [];
+    var rows = [];
+    try { rows = tb.arrivals(sinceIso(since), limit); } catch (e) { rows = []; }
     rows.sort(byTime);
     rows = rows.slice(0, limit);
-    // Their marks, which since the table may sit there even for a file row:
-    // one look by the hash index per row handed back.
-    if (tb) {
-      rows.forEach(function (row) {
-        if (!row.hash || marks[row.hash]) return;
-        try {
-          tb.byHash(row.hash).forEach(function (m) { if (m.mark === 'taken') marks[row.hash] = m.at || true; });
-        } catch (e) { /* unmarked, then */ }
-      });
-    }
+    // Their marks: one look by the hash index per row handed back.
+    rows.forEach(function (row) {
+      if (!row.hash || marks[row.hash]) return;
+      try {
+        tb.byHash(row.hash).forEach(function (m) { if (m.mark === 'taken') marks[row.hash] = m.at || true; });
+      } catch (e) { /* unmarked, then */ }
+    });
     return foldTaken(rows, marks);
   }
 
   // EVERY ARRIVAL NOT YET TAKEN, oldest first (goal/G4.31): delivered inbound rows with no taken mark, what a stream
   // replays when it opens. It touches only those rows (the table's untaken query, through its indexes), never the
   // whole log: arrivals.js once read() everything here, about a second per desk ask on a long-lived node. The table
-  // answers only the last day's (nodeStore BACKLOG_MS, goal/G30.19). Rows still in a legacy file are folded in, their
-  // marks looked up as arrivals() does.
-  // DISCREPANCY WITH ANDY's RULES: goal/G30.19 (nodeStore.js, the comment on traffic `untaken`: "I don't go clean a room
-  // my mother tld me to clean 60 years ago") makes an untaken packet older than a day no longer waiting work; the legacy
-  // file's rows below are folded in with no age limit, so an old untaken row still in traffic.jsonl is replayed.
+  // answers only the last day's (nodeStore BACKLOG_MS, goal/G30.19).
   function untaken() {
-    var fileRows = readFile(rootDir);
-    var marks = takenSet(fileRows);
     var tb = table(rootDir, false);
-    var rows = fileRows.filter(function (row) { return row && !row.mark && row.dir === 'in' && row.outcome === 'delivered' && !(row.hash && marks[row.hash]); });
-    if (tb) {
-      rows = rows.filter(function (row) {
-        if (!row.hash) return true;
-        try { return !tb.byHash(row.hash).some(function (m) { return m.mark === 'taken'; }); } catch (e) { return true; }
-      });
-      try {
-        rows = rows.concat(tb.untaken().filter(function (row) { return !(row.hash && marks[row.hash]); }));
-      } catch (e) { /* the file's rows still stand */ }
-    }
+    if (!tb) return [];
+    var rows = [];
+    try { rows = tb.untaken(); } catch (e) { rows = []; }
     return rows.sort(byTime);
   }
 
@@ -542,16 +446,10 @@ function createTrafficLog(opts) {
     var o = opts || {};
     var since = typeof o.since === 'string' ? Date.parse(o.since) : 0;
     var limit = Number(o.limit) > 0 ? Math.min(Number(o.limit), 500) : 200;
-    var rows = readFile(rootDir).filter(function (row) {
-      if (!row || row.mark || row.kind !== 'owner') return false;
-      if (!since) return true;
-      var at = Date.parse(row.at);
-      return at > 0 && at > since;
-    });
     var tb = table(rootDir, false);
-    if (tb) {
-      try { rows = rows.concat(tb.owner(sinceIso(since), limit)); } catch (e) { /* the file's rows still stand */ }
-    }
+    if (!tb) return [];
+    var rows = [];
+    try { rows = tb.owner(sinceIso(since), limit); } catch (e) { rows = []; }
     rows.sort(byTime);
     return rows.slice(0, limit);
   }
@@ -562,7 +460,7 @@ function createTrafficLog(opts) {
   function byHash(hash) {
     var want = String(hash || '');
     if (!want) return null;
-    var all = rowsFor(want, readFile(rootDir));
+    var all = rowsFor(want);
     var marks = takenSet(all);
     // The latest by time.
     var rows = all.filter(function (row) { return row && !row.mark; }).sort(byTime);
@@ -594,9 +492,8 @@ function createTrafficLog(opts) {
     try {
       // Only the rows carrying the wanted hashes, by the hash index
       // (transport/R19.4), not every row the node ever logged.
-      var fileRows = readFile(rootDir);
       var rows = [];
-      Object.keys(want).forEach(function (h) { rows = rows.concat(rowsFor(h, fileRows)); });
+      Object.keys(want).forEach(function (h) { rows = rows.concat(rowsFor(h)); });
       var already = takenSet(rows);
       var eligible = Object.create(null);
       rows.forEach(function (row) {
@@ -620,16 +517,11 @@ function createTrafficLog(opts) {
   }
 
   // HOW MANY BYTES THE LOG USES (transport/R19.2). Andy, 2026-09-28: "go."
-  // on the log answering this itself, so nothing outside it has to know it
-  // is a file: measureCapacity used to stat traffic.jsonl directly. The
-  // answer is the table's pages in node.db (transport/R19) plus any
-  // traffic.jsonl still there. Callers ask the log; only the log knows where it lives.
+  // on the log answering this itself. The answer is the table's pages in  // node.db (transport/R19). Callers ask the log; only the log knows where it lives.
   function size() {
-    var n = 0;
-    try { n += fs.statSync(logPath(rootDir)).size; } catch (e) { /* no file: nothing from it */ }
     var t = table(rootDir, false);
-    if (t) { try { n += t.bytes(); } catch (e) { /* unmeasurable: the file's part stands */ } }
-    return n;
+    if (!t) return 0;
+    try { return t.bytes(); } catch (e) { return 0; }
   }
 
   return {
@@ -650,5 +542,4 @@ function createTrafficLog(opts) {
 
 module.exports = {
   createTrafficLog: createTrafficLog,
-  logPath: logPath,
 };

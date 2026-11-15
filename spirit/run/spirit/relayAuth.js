@@ -361,26 +361,6 @@ function generateIdentity(name) {
   };
 }
 
-// ── AN IDENTITY FROM BEFORE THIS CYCLE GAINS A SEAL KEY ─────────────
-//
-// Every node in existence predates cycle 10, including Andy's own and
-// both agents'. They keep their identity — the key IS the identity and
-// regenerating it would make them strangers to every relay they are
-// enrolled at — and gain the second pair in place.
-//
-// The caller saves and says so; this function only decides. Returns null
-// when nothing was needed, so a start that changes nothing prints
-// nothing.
-function withSealKey(id) {
-  if (!id || !id.privateKey) return null;
-  if (id.sealPublicKey && id.sealPrivateKey) return null;
-  const seal = crypto.generateKeyPairSync('x25519');
-  return Object.assign({}, id, {
-    sealPublicKey: seal.publicKey.export({ type: 'spki', format: 'der' }).toString('base64'),
-    sealPrivateKey: seal.privateKey.export({ type: 'pkcs8', format: 'der' }).toString('base64'),
-  });
-}
-
 function privateKeyFromB64(b64) {
   return crypto.createPrivateKey({
     key: Buffer.from(b64, 'base64'),
@@ -618,22 +598,15 @@ function nameFor(stored, given) {
 function ensureIdentity(rootDir) {
   var existing = loadIdentity(rootDir);
   if (existing && existing.privateKey && existing.publicKey) {
-    // IN PLACE, KEEPING THE IDENTITY (cycle 10, R2). Every node alive
-    // predates sealing, and its Ed25519 key IS its identity — every relay
-    // it is enrolled at knows it by that key, so regenerating would make
-    // it a stranger. It gains the second pair and stays itself.
+    // AN IDENTITY IS NEVER MENDED: one made before sealing, with no seal key, is not given one (Andy, goal/G47.1:
+    // "old files or tables should not be mended, THE SHOULD BE FUCKING KILLED AND ELIMINATED FOREVER!"). Its card has
+    // no cipher key, and it is deleted by hand.
     var next = existing;
-    var grown = withSealKey(existing);
-    if (grown) next = grown;
     var stored = typeof next.name === 'string' ? next.name.trim() : '';
     var wanted = nameFor(next.name, '');
     if (wanted !== stored) next = Object.assign({}, next, { name: wanted });
     if (next === existing) return existing;
     saveIdentity(rootDir, next);
-    if (grown) {
-      try { console.log('    identity gained a seal key (cycle 10) — the signing key is unchanged'); }
-      catch (e) { /* nowhere to say it */ }
-    }
     return next;
   }
   var id = generateIdentity(nameFor('', ''));
@@ -738,7 +711,6 @@ module.exports = {
   relayKeySigned,
   receiptSignatureOk,
   generateIdentity,
-  withSealKey,
   sign,
   verify,
   commandMessage,

@@ -81,11 +81,8 @@ var PACKET_MAX_TEXT = limits.PLAINTEXT_MAX;
 //
 // SEALED_MAX is derived from PAYLOAD_MAX in limits.js rather than written
 // down beside it (Andy's principle, 2026-09-26: "certain fixed values
-// ("constants") must be derived from underlying constants"). A cached page
-// from before it existed would get `undefined`, and comparing a number
-// against undefined is always false — a silent removal of this check — so
-// it falls back to the older figure rather than to nothing.
-var SEALED_LIMIT = typeof limits.SEALED_MAX === 'number' ? limits.SEALED_MAX : PACKET_MAX_TEXT;
+// ("constants") must be derived from underlying constants").
+var SEALED_LIMIT = limits.SEALED_MAX;
 
 // DUAL TARGET, so no Buffer. See the note at the top of this file: this
 // runs in the browser from a <script> tag as well as under node, and

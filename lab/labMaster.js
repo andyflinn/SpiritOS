@@ -496,14 +496,7 @@ function updateNode(id) {
 // overwrite them. Everything else in a home is code and comes from git.
 const NODE_STATE = [
   // spirit/state holds node.db, whose relays table is the node's relay list (relayKeys.js).
-  path.join('spirit', 'run', 'relay-state'),
   path.join('spirit', 'run', 'spirit', 'state'),
-  // shell/natter and shell/contacts are not in the tree any more; `carryState` skips what is not there, so these
-  // three entries are silent no-ops.
-  path.join('spirit', 'run', 'shell', 'natter', 'session.json'),
-  path.join('spirit', 'run', 'shell', 'natter', 'minted.json'),
-  path.join('spirit', 'run', 'shell', 'contacts'),
-  path.join('spirit', 'run', 'shell', 'shared'),
 ];
 
 function carryState(fromRoot, toRoot) {

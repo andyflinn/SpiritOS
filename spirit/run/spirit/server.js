@@ -1081,24 +1081,7 @@ catch (e) {
   // Personal mode only, which is what this block is. A relay's
   // identity.json holds its public label and it answers `answerSelf`; it
   // has no card and must not grow one by accident.
-  // ── AN IDENTITY FROM BEFORE CYCLE 10 GAINS ITS SEAL KEY AT BOOT ────
-  //
-  // R2 verifies: "an identity from before this cycle gains a seal key on
-  // FIRST START and says so". `ensureIdentity` grows the second keypair in
-  // place; on a node nothing at boot called it once, so a node that
-  // already held its seat never grew one.
-  //
-  // WHAT THAT COST, measured between the two agent nodes on 2026-09-24:
-  // both updated to the flag-day tag, both booted clean, and both served
-  // a card with sealKey "". A card with no cipher key is nothing to seal
-  // to, so each refused to post to the other — correctly, and for ever,
-  // because nothing in a running node would ever have grown the key.
-  //
-  // NOTHING HERE CALLS IT NOW (goal/G22.5, Andy 2026-10-13): relayAuth.js
-  // ensures the identity of the spirit/run it sits in on its FIRST LOAD —
-  // keys, seal key and a default name — and this file requires it (through
-  // hub.js) long before it listens. No other component makes or checks for
-  // one.
+  // THE IDENTITY is relayAuth.js's, ensured on its first load (goal/G22.5); an old one is never mended there.
   // THE END OF A DOWNTIME (cycle-11/C3). Andy: "a re-start row documents the
   // downtime?", "... the end-of-a-downtime". Everything between the last
   // row and this one reads "this node was not running", not "nothing
