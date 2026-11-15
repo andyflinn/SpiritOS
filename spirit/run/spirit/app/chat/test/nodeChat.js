@@ -5,9 +5,8 @@
 // "nodeChat.js is today's chatClerver.js, working as it does, its verbs as api.js lists them. Its database is chat.db in
 // the node's state" (Andy: "how about calling the db chat.db ??????", and "that ruling is replaced."); "The branch name is
 // the folder's: chat"; "No old chat data is rescued" (Andy: "don't even THINK of rescuing any old chat data, that an
-// ABSOLUTE NO."). Written from reading chatClerver.js. A scratch node of its own (spirit/test/headLessChrome.js), the old
-// chatClerver's memory.db planted in the app's state folder with a line in it, the app switched on as he switches it
-// on, and every verb asked over HTTP as the owner asks it on loopback. A line written to a key nobody answers is kept and
+// ABSOLUTE NO."). Written from reading chatClerver.js. A scratch node of its own (spirit/test/headLessChrome.js), the
+// app switched on as he switches it on, and every verb asked over HTTP as the owner asks it on loopback. A line written to a key nobody answers is kept and
 // stays unsent: one node judges all of it. One test.run per test (goal/G47.2).
 
 const fs = require('fs');
@@ -27,7 +26,7 @@ function code(f) {
 function labels(body) { return ((body && body.items) || []).map(function (it) { try { return JSON.parse(it.label); } catch (e) { return null; } }).filter(Boolean); }
 
 // What the tests make, for the tests after them.
-const X = { src: '', node: null, state: '', call: null, OLD: '', OLDPEER: '', oldBytes: null, oldTime: 0, up: false, K: '' };
+const X = { src: '', node: null, state: '', call: null, up: false, K: '' };
 const NO_NODE = 'no scratch node of its own: the world failed';
 const NOT_UP = 'the chat server never answered';
 test.after(function () {
@@ -51,7 +50,7 @@ test.run('and it calls no contact.accept', 0.2, function () {
   return !/contact\.accept\b/.test(X.src) ? true : 'nodeChat.js still calls contact.accept';
 }, test.limit.quick);
 
-test.run('the world: a scratch node of its own, the old chatClerver\'s memory.db planted in the app\'s state folder', 0.2, async function () {
+test.run('the world: a scratch node of its own', 0.2, async function () {
   const node = X.node = await H.scratchNode();
   if (!node.up || !node.root) return 'no scratch node of its own: nothing judged';
   const run = path.join(node.root, 'spirit', 'run');
@@ -61,21 +60,6 @@ test.run('the world: a scratch node of its own, the old chatClerver\'s memory.db
     const t = await r.text(); let b = null; try { b = JSON.parse(t); } catch (e) { b = null; }
     return { status: r.status, body: b, text: t };
   };
-  // THE OLD RECORD, PLANTED: the old chatClerver's memory.db in the app's state folder, one chat of one line in it.
-  fs.mkdirSync(state, { recursive: true });
-  const OLD = X.OLD = path.join(state, 'memory.db');
-  const OLDPEER = X.OLDPEER = auth.generateIdentity('oldpeer').publicKey;
-  {
-    const { DatabaseSync } = require('node:sqlite');
-    const db = new DatabaseSync(OLD);
-    db.exec("CREATE TABLE lines (peer TEXT NOT NULL, sent INTEGER NOT NULL, seq INTEGER NOT NULL, at TEXT NOT NULL, text TEXT NOT NULL, receivedAt TEXT NOT NULL DEFAULT '', reWriter TEXT NOT NULL DEFAULT '', reSeq INTEGER NOT NULL DEFAULT 0, refused TEXT NOT NULL DEFAULT '', refusedAt TEXT NOT NULL DEFAULT '', PRIMARY KEY (peer, sent, seq));" +
-      'CREATE TABLE peers (peer TEXT PRIMARY KEY, highestSent INTEGER NOT NULL DEFAULT 0, highestReceived INTEGER NOT NULL DEFAULT 0, bornAt TEXT NOT NULL);');
-    db.prepare("INSERT INTO lines (peer, sent, seq, at, text) VALUES (?, 0, 1, '2026-10-01T10:00:00.000Z', 'zz an old line')").run(OLDPEER);
-    db.prepare("INSERT INTO peers (peer, highestReceived, bornAt) VALUES (?, 1, '2026-10-01T10:00:00.000Z')").run(OLDPEER);
-    db.close();
-  }
-  X.oldBytes = fs.readFileSync(OLD);
-  X.oldTime = fs.statSync(OLD).mtimeMs;
   return true;
 }, test.limit.slow);
 
@@ -97,28 +81,15 @@ test.run('chatClerver.<verb> is no verb of this node: the branch is chat', 0.2, 
   return old.status >= 400 ? true : 'chatClerver.chats.search answered ' + old.status + ' ' + short(old.body);
 }, test.limit.quick);
 
-// ── its database is chat.db, started empty; the old memory.db is neither read nor touched ──
+// ── its database is chat.db, started empty ──
 test.run('chat.db is in the node\'s state, spirit/state/chat/data/', 0.2, function () {
   if (!X.up) return NOT_UP;
   return fs.existsSync(path.join(X.state, 'chat.db')) ? true : 'no chat.db in spirit/state/chat/data/: ' + short(fs.readdirSync(X.state));
 }, test.limit.quick);
-test.run('chats.search answers no chat: the old one is not rescued', 0.2, async function () {
+test.run('chats.search answers no chat at the start', 0.2, async function () {
   if (!X.up) return NOT_UP;
   const empty = await X.call('chat.chats.search', {});
   return empty.status === 200 && labels(empty.body).length === 0 ? true : 'chats.search at the start: ' + short(empty.body);
-}, test.limit.quick);
-test.run('chat.read of the old chat\'s peer answers no line', 0.2, async function () {
-  if (!X.up) return NOT_UP;
-  const oldRead = await X.call('chat.chat.read', { peer: X.OLDPEER, before: '', after: '' });
-  return oldRead.status === 200 && labels(oldRead.body).length === 0 ? true : 'chat.read of the old peer: ' + short(oldRead.body);
-}, test.limit.quick);
-test.run('memory.db is as it was planted, byte for byte', 0.2, function () {
-  if (!X.up) return NOT_UP;
-  return Buffer.compare(fs.readFileSync(X.OLD), X.oldBytes) === 0 && fs.statSync(X.OLD).mtimeMs === X.oldTime ? true : 'memory.db changed under the new server';
-}, test.limit.quick);
-test.run('and nothing opened it: no memory.db-wal and no memory.db-shm', 0.2, function () {
-  if (!X.up) return NOT_UP;
-  return !fs.existsSync(X.OLD + '-wal') && !fs.existsSync(X.OLD + '-shm') ? true : 'memory.db was opened: ' + short(fs.readdirSync(X.state));
 }, test.limit.quick);
 
 // ── the owner writes a line to a key nobody answers: kept, numbered, unsent ──

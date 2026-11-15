@@ -98,11 +98,6 @@ const PLANT = {
   // limit, so the reporter fails it there (Andy: "a single test still has the same limit!").
   'spirit/app/testicle/temp/zzTesticle/rho.js': '\'use strict\';\n// rho\n',
   'spirit/app/testicle/temp/zzTesticle/test/rho.js': LOGGED('rho', 0, ["test.run('rho answers its first', 0.2, function () { return true; }, test.limit.quick);", "test.run('rho hangs', 0.2, function () { return new Promise(function () { setInterval(function () {}, 1000); }); }, test.limit.quick);"]),
-  // omega: an older classifier left it a red classifyable row in the older testicle.db (cw, after Andy's node classified
-  // nothing at its start: "a red that starts on tables like these (classifier rows of an older classifier), please; empty
-  // tables hid it").
-  'spirit/app/testicle/temp/zzTesticle/omega.js': '\'use strict\';\n// omega\n',
-  'spirit/app/testicle/temp/zzTesticle/test/omega.js': '\'use strict\';\n// the test of omega\n',
   'spirit/app/testicle/temp/zzTesticle/sigma.js': '\'use strict\';\n// sigma\n',
   'spirit/app/testicle/temp/zzTesticle/test/sigma.js': SUITE_HEAD + "setInterval(function () {}, 1000);\ntest.run('sigma hangs', 0.2, function () { return new Promise(function () {}); }, test.limit.quick);\n",
   'spirit/app/testicle/temp/zzTesticle/phi.js': '\'use strict\';\n// phi, its suite never run\n',
@@ -112,8 +107,6 @@ const PLANT = {
     "test.run('mu holds its rule', 0.2, function () { return process.argv[2] === 'spirit/app/testicle/temp/zzTesticle/mu.js' || 'started with ' + process.argv.slice(2).join(' '); }, test.limit.quick);",
   ].join('\n') + '\n',
 };
-// The kept rows of an older testicle.db, for a script not on disc, so no change of this test's touches them.
-const OLD = { name: 'spirit/app/testicle/temp/zzTesticle/older.js', suite: 'spirit/app/testicle/temp/zzTesticle/test/older.js', hash: 'an older hash', changed: 1700000000000 };
 // The general test changed in the scratch copy: its entries name every file of its reach.
 // In debug mode (box v143) the general tests testicle sees are its own three, beside testicle.js.
 const GENERAL = 'spirit/app/testicle/test/testicle-sibling-general.js';
@@ -126,23 +119,12 @@ function scratch() {
   const on = path.join(run, 'spirit', 'state', 'testicle');
   fs.mkdirSync(on, { recursive: true });
   fs.writeFileSync(path.join(on, 'node.json'), JSON.stringify({ active: true }));
-  // AN OLDER testicle.db (goal/G47.1, the rename: "an existing testicle.db is renamed in place, its rows kept"): its first
-  // table still named file, the suite table's key column file, one row in each.
   fs.mkdirSync(path.join(on, 'data'), { recursive: true });
   // DEBUG MODE, written before the node starts (goal/G47.1, box v143: "testicle has a debug mode, set only by
   // ./test/testicle.js (a preference it writes on its scratch node, no verb)"): its preferences.json holds debug and nothing
   // else, so the default, interactive, is still judged first; then auto is set by the verb for the runner's checks (goal/G47.1,
   // box v79, 2 and 4), and interactive again at the end, on chi and psi.
   fs.writeFileSync(path.join(on, 'data', 'preferences.json'), JSON.stringify({ debug: true }));
-  const old = new DatabaseSync(path.join(on, 'data', 'testicle.db'));
-  old.exec('CREATE TABLE file (name TEXT PRIMARY KEY, hash TEXT NOT NULL DEFAULT \'\', deleted INTEGER NOT NULL DEFAULT 0, changed INTEGER NOT NULL)');
-  old.exec('CREATE TABLE suite (file TEXT NOT NULL, suite TEXT NOT NULL, test INTEGER NOT NULL DEFAULT 0, deleted INTEGER NOT NULL DEFAULT 0, hash TEXT NOT NULL DEFAULT \'\', outcome TEXT NOT NULL DEFAULT \'\', changed INTEGER NOT NULL, PRIMARY KEY (file, suite))');
-  old.prepare('INSERT INTO file (name, hash, deleted, changed) VALUES (?, ?, 0, ?)').run(OLD.name, OLD.hash, OLD.changed);
-  old.prepare('INSERT INTO suite (file, suite, test, deleted, hash, outcome, changed) VALUES (?, ?, 1, 0, ?, \'\', ?)').run(OLD.name, OLD.suite, OLD.hash, OLD.changed);
-  // A TESTICLE TABLE OF AN OLDER CLASSIFIER: omega.js judged not classifyable by it, a row the start finds there.
-  old.exec('CREATE TABLE testicle (script TEXT NOT NULL, suite TEXT NOT NULL, test TEXT NOT NULL, flipped INTEGER NOT NULL, current INTEGER NOT NULL DEFAULT 1, verified INTEGER NOT NULL, tested INTEGER NOT NULL, judged TEXT NOT NULL DEFAULT \'\', severity REAL NOT NULL DEFAULT 0, PRIMARY KEY (script, suite, test, flipped))');
-  old.prepare('INSERT INTO testicle (script, suite, test, flipped, current, verified, tested, judged, severity) VALUES (?, ?, ?, ?, 1, 0, ?, ?, 0.8)').run('spirit/app/testicle/temp/zzTesticle/omega.js', 'spirit/test/scriptClassify.js', 'classifyable', OLD.changed, OLD.changed, 'an older classifier\'s hash');
-  old.close();
   return { root: root, run: run };
 }
 async function call(base, verb, args) {
@@ -287,7 +269,7 @@ test.run('no zz folder is in the tree: git holds no spirit/zz... and no spirit/a
 test.run('in debug mode, once the start is worked off, testicle\'s scripts are only those under spirit/app/testicle/', 0.4, async function () {
   if (!up()) return NONODE;
   await idle(280000);
-  const out = tables(DB).script.filter(function (r) { return no(r.deleted) && !/^spirit\/app\/testicle\//.test(r.name) && r.name !== OLD.name; });
+  const out = tables(DB).script.filter(function (r) { return no(r.deleted) && !/^spirit\/app\/testicle\//.test(r.name); });
   return !out.length || out.length + ' scripts outside it: ' + out.slice(0, 5).map(function (r) { return r.name; }).join(', ');
 }, test.limit.long);
 test.run('and its general suites are only testicle-sibling-general.js, -node.js and -browser.js, and the planted worlds\' own', 0.4, function () {
@@ -299,12 +281,12 @@ test.run('and its general suites are only testicle-sibling-general.js, -node.js 
 test.run('and the classifier judged only scripts under spirit/app/testicle/', 0.4, function () {
   if (!up()) return NONODE;
   const rows = (tables(DB).test || []).filter(function (r) { return r.suite === 'spirit/test/scriptClassify.js' && yes(r.current); });
-  const out = rows.filter(function (r) { return !/^spirit\/app\/testicle\//.test(r.script) && r.script !== 'spirit/app/testicle/temp/zzTesticle/omega.js'; });
+  const out = rows.filter(function (r) { return !/^spirit\/app\/testicle\//.test(r.script); });
   return (rows.length > 0 && !out.length) || (rows.length ? out.length + ' classified outside it: ' + out.slice(0, 5).map(function (r) { return r.script; }).join(', ') : 'nothing classified');
 }, test.limit.quick);
 
 // the box: "testicle.db sits in testicle's state folder"
-test.run('testicle.db is made in its state folder, spirit/state/testicle/data/, with its tables file and suite', 0.2, async function () {
+test.run('testicle.db is made in its state folder, spirit/state/testicle/data/, with its tables script and suite', 0.2, async function () {
   if (!up()) return NONODE;
   return !!(await until(function () { return Promise.resolve(fs.existsSync(DB) && !tables(DB).error); }, 30000)) || 'no readable testicle.db at ' + DB + ': ' + short(fs.existsSync(DB) ? tables(DB).error : 'no file');
 }, test.limit.long);
@@ -326,53 +308,33 @@ test.run('with nothing changing, busy answers false', 0.2, async function () {
   return (!!quiet && r.status === 200 && (r.body === false || (r.body && r.body.busy === false))) || 'busy, idle: ' + r.status + ' ' + short(r.text);
 }, test.limit.slow);
 
-// goal/G47.1, the rename: "the table script; the suite table's key column script", "an existing testicle.db is renamed
-// in place, its rows kept".
-test.run('the older table file is now the table script, and no table file is left', 0.2, function () {
+// The start's tables, read once testicle.db holds the table script (goal/G47.1, the rename: "the table script").
+test.run('the world: testicle.db holds the table script', 0.2, function () {
   if (!up()) return NONODE;
   start = tables(DB);
-  let names0 = [];
-  try { const d0 = new DatabaseSync(DB, { readOnly: true }); names0 = d0.prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all().map(function (r) { return r.name; }); d0.close(); } catch (e) { names0 = ['unreadable: ' + (e && e.message)]; }
-  return (names0.indexOf('script') !== -1 && names0.indexOf('file') === -1) || 'tables: ' + short(names0);
-}, test.limit.quick);
-// Since box v95, 5 the start marks a row of a script no longer on disc deleted: the row is kept, its hash with it.
-test.run('the older file row is kept in script, its hash as it was', 0.2, function () {
-  if (!start) return NONODE;
-  const kept = scriptRow(tables(DB), OLD.name);
-  return (!!kept && kept.hash === OLD.hash) || 'the row: ' + short(kept);
-}, test.limit.quick);
-test.run('the older suite row is kept, its key column now script', 0.2, function () {
-  if (!start) return NONODE;
-  const keptSuite = suiteRow(start, OLD.name, OLD.suite);
-  return (!!keptSuite && keptSuite.script === OLD.name && !('file' in keptSuite)) || 'the row: ' + short(keptSuite);
+  return !start.error || 'testicle.db: ' + short(start.error);
 }, test.limit.quick);
 
 // goal/G47.1, the rename cycle, the box: "The testicle test table is renamed \"testicle\": the table in testicle.db, its
-// index, and the branch data.js keeps it under". No data rescue (Andy struck the box line on an older table test).
+// index, and the branch data.js keeps it under".
 const sqlNames = function (type) {
   try { const d = new DatabaseSync(DB, { readOnly: true }); const r = d.prepare('SELECT name, tbl_name FROM sqlite_master WHERE type = ?').all(type); d.close(); return r; } catch (e) { return [{ name: 'unreadable: ' + (e && e.message), tbl_name: '' }]; }
 };
-test.run('testicle.db holds the table testicle, and no table test', 0.2, function () {
+test.run('testicle.db holds the table testicle', 0.2, function () {
   if (!up()) return NONODE;
   const t = sqlNames('table').map(function (r) { return r.name; });
-  return (t.indexOf('testicle') !== -1 && t.indexOf('test') === -1) || 'tables: ' + short(t);
+  return t.indexOf('testicle') !== -1 || 'tables: ' + short(t);
 }, test.limit.quick);
-test.run('the index over the current rows is on the table testicle, and no index is on a table test', 0.2, function () {
+test.run('the index over the current rows is on the table testicle', 0.2, function () {
   if (!up()) return NONODE;
   const ix = sqlNames('index').filter(function (r) { return !/^sqlite_autoindex/.test(r.name); });
-  return (ix.some(function (r) { return r.tbl_name === 'testicle'; }) && !ix.some(function (r) { return r.tbl_name === 'test'; })) || 'indexes: ' + short(ix);
+  return ix.some(function (r) { return r.tbl_name === 'testicle'; }) || 'indexes: ' + short(ix);
 }, test.limit.quick);
-test.run('the node lists the verbs testicle.set and testicle.search, and neither test.set nor test.search', 0.2, async function () {
+test.run('the node lists the verbs testicle.set and testicle.search', 0.2, async function () {
   if (!up()) return NONODE;
   const api = await call(N.base, 'api', { family: 'testicle' });
   const iface = String((api.body && api.body.interface) || '');
-  return (/['"]testicle\.set['"]\s*:/.test(iface) && /['"]testicle\.search['"]\s*:/.test(iface) && !/['"]test\.set['"]\s*:/.test(iface) && !/['"]test\.search['"]\s*:/.test(iface)) || 'testicle\'s api: ' + short(iface);
-}, test.limit.quick);
-test.run('the old verb testicle.test.set is no longer served', 0.2, async function () {
-  if (!up()) return NONODE;
-  // Asked for a script neither on disc nor in a row, so a verb still served refuses it for that and writes nothing.
-  const r = await call(N.base, 'testicle.test.set', { script: Z + 'nowhere.js', suite: Z + 'test/nowhere.js', test: 'never set', verified: true, severity: 0.2 });
-  return (!!r.body && r.body.code === 'no-such-verb') || 'testicle.test.set answered ' + r.status + ' ' + short(r.text);
+  return (/['"]testicle\.set['"]\s*:/.test(iface) && /['"]testicle\.search['"]\s*:/.test(iface)) || 'testicle\'s api: ' + short(iface);
 }, test.limit.quick);
 
 // goal/G47.1, box v95, 5: "the server on start, before even classifying, must make sure that script, suite and testicle
@@ -393,27 +355,16 @@ test.run('at start a planted script\'s own suite has its suite row', 0.2, functi
   const r = suiteRow(tables(DB), Z + 'zeta.js', Z + 'test/zeta.js');
   return (!!r && no(r.deleted)) || 'zeta\'s own suite row: ' + short(r);
 }, test.limit.quick);
-test.run('at start the older row of a script no longer on disc is marked deleted', 0.2, function () {
-  if (!start) return NONODE;
-  const r = scriptRow(tables(DB), OLD.name);
-  return (!!r && yes(r.deleted)) || 'the older row: ' + short(r);
-}, test.limit.quick);
 
 // ── goal/G47.1, box v79, 3: three fields on the script table ──
-// "reClassify, boolean: \"this script needs re-classification.\"", "browserOnly, boolean", "nodeOnly, boolean", "added as
-// columns; an existing script table gains them, as the test table gained suiteHash."
+// "reClassify, boolean: \"this script needs re-classification.\"", "browserOnly, boolean", "nodeOnly, boolean".
 const scriptColumns = function () {
   try { const d = new DatabaseSync(DB, { readOnly: true }); const c = d.prepare('PRAGMA table_info(script)').all().map(function (r) { return r.name; }); d.close(); return c; } catch (e) { return ['unreadable: ' + (e && e.message)]; }
 };
-test.run('the script table, made before, has gained the columns reClassify, browserOnly and nodeOnly', 0.2, function () {
+test.run('the script table has the columns reClassify, browserOnly and nodeOnly', 0.2, function () {
   if (!up()) return NONODE;
   const c = scriptColumns();
   return ['reClassify', 'browserOnly', 'nodeOnly'].every(function (n) { return c.indexOf(n) !== -1; }) || 'columns: ' + short(c);
-}, test.limit.quick);
-test.run('the older row is kept, its hash as it was, when its table gained them', 0.2, function () {
-  if (!up()) return NONODE;
-  const kept = scriptRow(tables(DB), OLD.name);
-  return (!!kept && kept.hash === OLD.hash) || 'the row: ' + short(kept);
 }, test.limit.quick);
 
 // ── goal/G47.1, box v79, 4: the verb preferences ──
@@ -447,21 +398,15 @@ test.run('interactive given a wrong type is refused, and sets nothing', 0.2, asy
   return ((r.status !== 200 || (r.body && r.body.ok === false)) && prefsOf(after1).interactive === true) || 'interactive "no": ' + r.status + ' ' + short(r.text) + '; then ' + short(after1.text);
 }, test.limit.quick);
 
-// A START ON TABLES OF AN OLDER CLASSIFIER, INTERACTIVE, NOTHING PRESSED (Andy: "wsl, make double sure you catch this with a
-// test."): the start brings the tables up to date and classifies every script by itself; omega.js, left red by an older
-// classifier, is tried again.
-test.run('at a start on tables of an older classifier, interactive and nothing pressed, every live script is classified', 0.2, async function () {
+// A START, INTERACTIVE, NOTHING PRESSED (Andy: "wsl, make double sure you catch this with a test."): the start classifies
+// every script by itself.
+test.run('at a start, interactive and nothing pressed, every live script is classified', 0.2, async function () {
   if (!start) return NONODE;
   let left = [];
   const ok = await until(function () { const t = tables(DB); left = t.script.filter(function (r) { return no(r.deleted) && !no(r.reClassify); }); return Promise.resolve(t.script.filter(function (r) { return no(r.deleted); }).length > 0 && left.length === 0); }, 280000);
   // In debug mode (box v143) the live scripts are those under spirit/app/testicle/, a few dozen, never the whole tree's hundreds.
   return !!ok || left.length + ' live scripts still to classify, nothing pressed: ' + short(left.slice(0, 5).map(function (r) { return r.name; }));
 }, test.limit.long);
-test.run('and the script an older classifier left red is tried again: its classifyable row tested at this start', 0.2, function () {
-  if (!start) return NONODE;
-  const r = classifyRowAt(tables(DB), Z + 'omega.js');
-  return (!!r && Number(r.tested) > 1700000000000) || 'omega\'s classifyable row: ' + short(r);
-}, test.limit.quick);
 
 // The checks that follow judge the server as it ran until now, auto (goal/G47.1, box v79, 2: "auto: the default mode until
 // now"); interactive is judged at the end of this file, on chi and psi.

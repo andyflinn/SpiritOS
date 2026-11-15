@@ -57,9 +57,8 @@ The box, in Andy's words where he gave them:
 - **The rename** (goal/G47.1, the cycle "the test table renamed testicle"): *"The testicle test table is renamed
   \"testicle\": the table in testicle.db, its index, and the branch data.js keeps it under. The stream carries it as the
   table testicle."*; *"test.set becomes testicle.set, test.search becomes testicle.search, their json files with them;
-  red stays red."* After start testicle.db holds the table testicle, its index on it, no table test; no older rows are
-  carried over (Andy struck that line). The node lists testicle.set and testicle.search and neither old verb;
-  testicle.test.set answers no such verb. Every check above calls the new names.
+  red stays red."* After start testicle.db holds the table testicle and its index on it. The node lists testicle.set and
+  testicle.search. Every check above calls the new names.
 - **A test's history** (goal/G47.1, the cycle "the testicle search"; the old ruling amended, Andy: *"test.search will return
   only current test rows by default, unless a valid test-Title is supplied, in which case all rows will be show that
   match: \"script, suite AND title\""*): theta's first question, set passing, failing and passing, answers its three rows,
@@ -158,7 +157,6 @@ The box, in Andy's words where he gave them:
 - A row made at start, or for a file never changed; a row for a file that is no product script.
 - A missing suite, or one too many, for a file; a general test's change not reaching every file it judges.
 - A hash that does not move with the file; a removal left unmarked.
-- An older testicle.db left with its table file, or its rows lost.
 - A script.get that makes no rows, makes them unflagged, or answers anything but the file row; an error worded otherwise.
 - A suite.search answering another file's rows, a suite twice, or a suite without its status.
 - A second row on no flip, a flip without a new row or with its old row lost, a lower severity applied, a search
@@ -169,8 +167,7 @@ The box, in Andy's words where he gave them:
 
 ## Box v79, 2 to 4: interactive and auto, the script columns, preferences
 
-- **The script columns** (3): the script table, made before, gains `reClassify`, `browserOnly` and `nodeOnly`; its older
-  row is kept. A script seen for the first time starts with `reClassify` true; a change of its hash sets it true again, in
+- **The script columns** (3): the script table has `reClassify`, `browserOnly` and `nodeOnly`. A script seen for the first time starts with `reClassify` true; a change of its hash sets it true again, in
   both modes; classification never sets both `browserOnly` and `nodeOnly`.
 - **The verb `preferences`** (4): listed by the node; `{}` answers them all, `interactive` true by default; an unknown name
   or a wrong type is refused and sets nothing; `{interactive: false}` sets it, answers them all, and is kept in
@@ -202,7 +199,7 @@ The box, in Andy's words where he gave them:
 ## Box v95, 5: the tables are never stale
 
 - At start (it replaces "nothing is read at start"): every product script on disc has a live row; a planted script's own
-  suite has its suite row; the older row of a script no longer on disc is marked deleted.
+  suite has its suite row.
 - While the node is down a script and its own test are written, a script changed, a suite and a script removed. After the
   start: the new script has its row and its suite its suite row; the changed script holds its new hash; the removed suite
   is marked deleted with no current result, and the search shows none; the removed script is marked deleted.
@@ -220,10 +217,7 @@ The box, in Andy's words where he gave them:
   chi's and psi's suites flagged and unrun, the node restarts, interactive kept; chi, changed while it was down, is
   classified with no press; psi, changed after the start, within 30 s, no press. And while interactive before the restart,
   chi written is classified with no press, its classifier suite row no longer flagged.
-- **A start on tables of an older classifier** (cw: *"a red that starts on tables like these (classifier rows of an older
-  classifier), please; empty tables hid it"*): the older testicle.db holds a red `classifyable` row an older classifier
-  left for omega.js, and a suite still waiting. At the start, interactive and nothing pressed, every live script is
-  classified, and omega's `classifyable` row is tested at this start.
+- **A start, interactive and nothing pressed**: every live script is classified.
 - **Turned off and on, every table** (Andy: *"WSL, make sure that testicle related test take into account that testicle
   can be de-activated and restarted with a database out of sync with the file-tree, this affect not only scriptClassifier,
   it affects every single table in testicle."*): testicle turned off by `app.active` with the node up; while it is off

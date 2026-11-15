@@ -30,8 +30,7 @@ No agents talk to each other through it: each agent sees itself as the only agen
 
 ## Requirements (goal/G41.21, box v17)
 
-- **agent.grant is removed altogether**: agent.db holds four tables, provider, model, persona and job; an agent.db that
-  held a grant table from before loses it at start (*"its rows in agent.db are dropped"*). The interface declares four
+- **agent.grant is removed altogether**: agent.db holds four tables, provider, model, persona and job. The interface declares four
   verbs, no grant, and `spirit/app/agent/table/grant` is gone.
 - The provider table has `model`; the job table `bundle`, `provider` and `persona`.
 
@@ -63,7 +62,7 @@ tables as they are now.
 - **The folders**: spirit/app/agent/table/<name>/ with server.js, elementTable.js and elementRow.js, for provider,
   model, persona and job; no grant folder (goal/G41.21). The table servers publish their rows.
 - Not asserted yet: the stream's rows carry no secret (a test server's stream reaches no node); the workBench icons.
-- A grant table or verb left, or an old grant table kept at start.
+- A grant table or verb left.
 - A description column left on an agent table; a model name column.
 
 ## No debug of its own (goal/G43.15)

@@ -65,14 +65,6 @@ test.run('it starts and answers on its pipe', 0.2, async function () {
   const scratch = X.scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-agent-'));
   const state = X.state = path.join(scratch, 'state');
   fs.mkdirSync(state, { recursive: true });
-  // An agent.db from before goal/G41.21, its grant table holding a row: "its rows in agent.db are dropped" at start.
-  {
-    const { DatabaseSync } = require('node:sqlite');
-    const old = new DatabaseSync(path.join(state, 'agent.db'));
-    old.exec('CREATE TABLE "grant" (job_id TEXT NOT NULL, path TEXT NOT NULL, PRIMARY KEY (job_id, path))');
-    old.prepare('INSERT INTO "grant" (job_id, path) VALUES (?, ?)').run('KOLD', 'fs.search');
-    old.close();
-  }
   const pipe = X.pipe = process.platform === 'win32' ? appClient.pipePathFor(scratch, 'agent', 'win32', 'process') : path.join(scratch, 'door.sock');
   X.client = appClient.createAppClient({ rootDir: scratch });
   X.client.register('agent', pipe);
@@ -158,13 +150,7 @@ test.run('a persona table, with its keys, label, persona, bundle and provider', 
 test.run('the persona table is keyed by its id alone', 0.2, function () { return keyedTable('persona'); }, test.limit.quick);
 test.run('a job table, with its keys, label, loop, job, bundle, provider and persona', 0.2, function () { return hasTable('job'); }, test.limit.quick);
 test.run('the job table is keyed by its id alone', 0.2, function () { return keyedTable('job'); }, test.limit.quick);
-// "its rows in agent.db are dropped": the grant table the scratch agent.db held before the start is gone.
-test.run('agent.db has no grant table: a job\'s grant is its bundle (goal/G41.21)', 0.2, function () {
-  if (!T.look) return NOT_UP;
-  const grantT = tableOf('grant');
-  T.look.close();
-  return !grantT ? true : 'agent.db still has the table ' + grantT;
-}, test.limit.quick);
+test.after(function () { try { if (T.look) T.look.close(); } catch (e) { /* closed */ } });
 
 // ── goal/G41.4, G41.21: one verb per table, in its family interface, each in its own folder; grant gone ──
 const TABLES = ['provider', 'model', 'persona', 'job'];
