@@ -14,7 +14,6 @@ const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const { scratchNode, chromePage, findChrome, until } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 
-function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 function read(f) { try { return fs.readFileSync(f, 'utf8'); } catch (e) { return null; } }
 function json(f) { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch (e) { return null; } }
@@ -23,8 +22,6 @@ const bare = function (g) { return String(g || '').replace(/[︎️]/g, ''); };
 // element.js: the Icons face, asking its own branch and writing no file (goal/G43.19).
 // One test.run per test (goal/G47.2). What the world made, for the tests after it.
 const W = {};
-const NO_WORLD = 'no scratch node, Chrome or free glyphs: the world failed';
-const NO_FACE = 'the face did not mount: the world failed';
 test.after(function () {
   [W.chrome, W.other].forEach(function (c) {
     if (!c) return;
@@ -64,10 +61,10 @@ test.run('the world: a scratch node with Icons switched on, and a Chrome page', 
   W.node = await scratchNode({ servers: ['icons'] });
   W.chrome = await chromePage(findChrome());
   W.up = !!(W.node.up && !W.chrome.error && W.node.root);
-  return W.up || 'no scratch node of its own or no Chrome: nothing judged. ' + short(W.chrome.error || '');
+  return W.up || false;
 }, test.limit.slow);
 test.run('the world: the system set, and four glyphs it does not hold', 0.2, function () {
-  if (!W.up) return 'no scratch node of its own or no Chrome: the world failed';
+  if (!W.up) return false;
   const run = path.join(W.node.root, 'spirit', 'run');
   W.SET = path.join(run, 'spirit', 'state', 'icons', 'data', 'iconSet.json');
   const system = json(path.join(run, 'spirit', 'iconSet.json')) || {};
@@ -77,175 +74,175 @@ test.run('the world: the system set, and four glyphs it does not hold', 0.2, fun
   W.sys = Object.keys(system)[0];
   W.ready = fresh.length >= 4 && !!W.sys;
   W.fresh = fresh;
-  return W.ready || 'no system set or too few free glyphs: nothing judged';
+  return W.ready || false;
 }, test.limit.quick);
 test.run('it loads through spirit.require and mounts with spirit.element.spirit.app.icons.element.create(container)', 0.2, async function () {
-  if (!W.ready) return NO_WORLD;
+  if (!W.ready) return false;
   const made = await mount(W.chrome);
   W.mounted = made === 'made';
-  return W.mounted || 'it did not mount: ' + short(made);
+  return W.mounted || false;
 }, test.limit.quick);
 
 // Andy (G41.27): "[➕] [an icon:paste] [keywords, comma separated][Add]"
 test.run('its add row: an icon to paste, its keywords, comma separated, and Add', 0.2, async function () {
-  if (!W.mounted) return NO_FACE;
+  if (!W.mounted) return false;
   W.drew = !!(await until(function () { return W.chrome.evaluate('!!' + field('glyph') + ' && !!' + field('keywords') + ' && !!' + button('Add')); }, 10000));
-  return W.drew || 'no add row: ' + short(await text(W.chrome)) + ' errors ' + short(await W.chrome.evaluate('JSON.stringify(window.pageErrors)'));
+  return W.drew || false;
 }, test.limit.quick);
 test.run('with ➕', 0.2, async function () {
-  if (!W.drew) return 'no add row';
-  return await W.chrome.evaluate('document.getElementById("box").innerHTML.indexOf("➕") !== -1') ? true : 'no ➕ on the add row';
+  if (!W.drew) return false;
+  return await W.chrome.evaluate('document.getElementById("box").innerHTML.indexOf("➕") !== -1') ? true : false;
 }, test.limit.quick);
 test.run('the icon first, then its keywords', 0.2, async function () {
-  if (!W.drew) return 'no add row';
-  return await W.chrome.evaluate('(function () { var g = ' + field('glyph') + ', k = ' + field('keywords') + '; return !!(g.compareDocumentPosition(k) & Node.DOCUMENT_POSITION_FOLLOWING); }())') ? true : 'the keywords come before the icon';
+  if (!W.drew) return false;
+  return await W.chrome.evaluate('(function () { var g = ' + field('glyph') + ', k = ' + field('keywords') + '; return !!(g.compareDocumentPosition(k) & Node.DOCUMENT_POSITION_FOLLOWING); }())') ? true : false;
 }, test.limit.quick);
 test.run('the list shows the set, its first glyph among it', 0.2, async function () {
-  if (!W.drew) return 'no add row';
-  return await until(function () { return rows(W.chrome).then(function (t) { return t.indexOf(W.sys) !== -1; }); }, 8000) ? true : 'the list does not show ' + W.sys + ': ' + short(await text(W.chrome));
+  if (!W.drew) return false;
+  return await until(function () { return rows(W.chrome).then(function (t) { return t.indexOf(W.sys) !== -1; }); }, 8000) ? true : false;
 }, test.limit.quick);
 test.run('an Add with no icon says paste an icon first', 0.2, async function () {
-  if (!W.drew) return 'no add row';
+  if (!W.drew) return false;
   await add(W.chrome, '', 'nothing');
-  return await until(function () { return text(W.chrome).then(function (t) { return t.indexOf('paste an icon first') !== -1; }); }, 3000) ? true : 'an empty Add said: ' + short(await text(W.chrome));
+  return await until(function () { return text(W.chrome).then(function (t) { return t.indexOf('paste an icon first') !== -1; }); }, 3000) ? true : false;
 }, test.limit.quick);
 test.run('and writes nothing', 0.2, async function () {
-  if (!W.drew) return 'no add row';
+  if (!W.drew) return false;
   await sleep(600);
-  return !fs.existsSync(W.SET) || 'an empty Add wrote the set';
+  return !fs.existsSync(W.SET) || false;
 }, test.limit.quick);
 
 // the box: "the page asks icons through its api branch ... the page writes no file of its own"
 test.run('an Add writes the new glyph with its keywords, split at the commas', 0.2, async function () {
-  if (!W.drew) return 'no add row';
+  if (!W.drew) return false;
   await W.chrome.evaluate('window.__posts = []; true');
   await add(W.chrome, W.fresh[0], 'first, one');
   const wrote = await until(function () { return Promise.resolve(JSON.stringify(inSet()[W.fresh[0]]) === '["first","one"]'); }, 10000);
   W.p1 = await posts();
-  return wrote ? true : 'after the Add of ' + W.fresh[0] + ' the set holds ' + short(inSet()[W.fresh[0]]);
+  return wrote ? true : false;
 }, test.limit.quick);
 test.run('it asked icons.icon, its own branch', 0.2, function () {
-  if (!W.p1) return 'no Add was made';
-  return W.p1.some(function (p) { return (/"call"\s*:\s*"icons\.icon"/).test(p); }) || 'it asked: ' + short(W.p1);
+  if (!W.p1) return false;
+  return W.p1.some(function (p) { return (/"call"\s*:\s*"icons\.icon"/).test(p); }) || false;
 }, test.limit.quick);
 test.run('and nothing of the fs family', 0.2, function () {
-  if (!W.p1) return 'no Add was made';
-  return !W.p1.some(function (p) { return (/"call"\s*:\s*"fs\./).test(p); }) || 'it asked fs: ' + short(W.p1.filter(function (p) { return (/"fs\./).test(p); }));
+  if (!W.p1) return false;
+  return !W.p1.some(function (p) { return (/"call"\s*:\s*"fs\./).test(p); }) || false;
 }, test.limit.quick);
 test.run('the list shows the new glyph, no reload', 0.2, async function () {
-  if (!W.drew) return 'no add row';
-  return await until(function () { return rows(W.chrome).then(function (t) { return t.indexOf(W.fresh[0]) !== -1; }); }, 8000) ? true : 'the list never showed ' + W.fresh[0];
+  if (!W.drew) return false;
+  return await until(function () { return rows(W.chrome).then(function (t) { return t.indexOf(W.fresh[0]) !== -1; }); }, 8000) ? true : false;
 }, test.limit.quick);
 
 // Andy (G40.5): a duplicate opens the edit dialog of the icon there, and writes nothing
 test.run('its dialog opens, its keywords in it, with Remove', 0.2, async function () {
-  if (!W.drew) return 'no add row';
+  if (!W.drew) return false;
   W.t1 = read(W.SET);
   await add(W.chrome, W.fresh[0], 'again');
   const opened = await until(function () { return W.chrome.evaluate('(function () { var k = Array.prototype.filter.call(document.querySelectorAll("#box input"), function (i) { return i.getClientRects().length && !/icon|keyword/i.test(String(i.placeholder || "")); })[0]; return !!k && /first/.test(k.value) && !!' + button('Remove this icon') + '; }())'); }, 5000);
-  return opened ? true : 'no dialog of ' + W.fresh[0] + ': ' + short(await text(W.chrome));
+  return opened ? true : false;
 }, test.limit.quick);
 test.run('and the set is not written', 0.2, function () {
-  if (!W.drew) return 'no add row';
-  return read(W.SET) === W.t1 || 'a duplicate changed the set';
+  if (!W.drew) return false;
+  return read(W.SET) === W.t1 || false;
 }, test.limit.quick);
 
 // Andy: "the icon detail panel is supposed to open overtop of the icon app..... like contact detail"
 test.run('the duplicate\'s dialog is a panel over the whole face, the glyph on it, the add row under it', 0.2, async function () {
-  if (!W.drew) return 'no add row';
+  if (!W.drew) return false;
   W.wasOver = !!(await until(function () { return W.chrome.evaluate(OVER()).then(function (v) { return v === 'over'; }); }, 5000));
-  return W.wasOver || 'the dialog: ' + short(await W.chrome.evaluate(OVER()));
+  return W.wasOver || false;
 }, test.limit.quick);
 test.run('its close brings the face back, the add row on top', 0.2, async function () {
-  if (!W.drew) return 'no add row';
+  if (!W.drew) return false;
   await W.chrome.evaluate('(function () { var c = Array.prototype.filter.call(document.querySelectorAll("#box .app-container-close"), function (x) { return x.offsetParent !== null; }).pop(); if (c) c.click(); return !!c; }())');
   const back = await until(function () { return W.chrome.evaluate('(function () { var g = ' + field('glyph') + '; if (!g) return false; var gr = g.getBoundingClientRect(); var top = document.elementFromPoint(gr.left + 2, gr.top + 2); return top === g || g.contains(top); }())'); }, 5000);
-  return W.wasOver && back ? true : (W.wasOver ? 'after its close the add row is not on top: ' + short(await W.chrome.evaluate(OVER())) : 'no panel was open, so its close judged nothing');
+  return W.wasOver && back ? true : false;
 }, test.limit.quick);
 // Pressing the icon's row in the list opens it the same way.
 test.run('a press on its row opens it over the face too', 0.2, async function () {
-  if (!W.drew) return 'no add row';
+  if (!W.drew) return false;
   await W.chrome.evaluate('(function () { var rows = Array.prototype.filter.call(document.querySelectorAll("#box tr, #box .list-row"), function (r) { return r.getClientRects().length && String(r.textContent).indexOf(' + JSON.stringify(W.fresh[0]) + ') !== -1; }); var hit = rows[0]; if (!hit) return false; var leaf = Array.prototype.filter.call(hit.querySelectorAll("*"), function (e) { return !e.children.length && e.getClientRects().length; })[0] || hit; leaf.click(); return true; }())');
-  return await until(function () { return W.chrome.evaluate(OVER()).then(function (v) { return v === 'over'; }); }, 5000) ? true : 'a press on its row: ' + short(await W.chrome.evaluate(OVER()));
+  return await until(function () { return W.chrome.evaluate(OVER()).then(function (v) { return v === 'over'; }); }, 5000) ? true : false;
 }, test.limit.quick);
 
 // an icon opened: its keywords saved as they change, and Remove
 test.run('a change of its keywords writes them', 0.2, async function () {
-  if (!W.drew) return 'no add row';
+  if (!W.drew) return false;
   await W.chrome.evaluate('(function () { var k = Array.prototype.filter.call(document.querySelectorAll("#box input"), function (i) { return i.getClientRects().length && !/icon|keyword/i.test(String(i.placeholder || "")); })[0]; k.value = "changed, again"; k.dispatchEvent(new Event("change", { bubbles: true })); return true; }())');
-  return await until(function () { return Promise.resolve(JSON.stringify(inSet()[W.fresh[0]]) === '["changed","again"]'); }, 8000) ? true : 'after the change the set holds ' + short(inSet()[W.fresh[0]]);
+  return await until(function () { return Promise.resolve(JSON.stringify(inSet()[W.fresh[0]]) === '["changed","again"]'); }, 8000) ? true : false;
 }, test.limit.quick);
 test.run('Andy: "delete should be an armingButton": a first press arms Remove', 0.2, async function () {
-  if (!W.drew) return 'no add row';
+  if (!W.drew) return false;
   await W.chrome.evaluate('(function () { var b = ' + REMOVE + '; if (b) b.click(); return !!b; }())');
   await sleep(1200);
   W.wasArmed = await armed();
-  return W.wasArmed ? true : 'a first press of Remove did not arm it: ' + short(await W.chrome.evaluate('(function () { var b = ' + REMOVE + '; return b ? b.outerHTML : "no Remove"; }())'));
+  return W.wasArmed ? true : false;
 }, test.limit.slow);
 test.run('and removes nothing', 0.2, function () {
-  if (!W.drew) return 'no add row';
-  return W.fresh[0] in inSet() || 'a single press of Remove took ' + W.fresh[0] + ' out of the set';
+  if (!W.drew) return false;
+  return W.fresh[0] in inSet() || false;
 }, test.limit.quick);
 test.run('a click elsewhere disarms it ("the button must reset, back to its original state")', 0.2, async function () {
-  if (!W.drew) return 'no add row';
+  if (!W.drew) return false;
   await W.chrome.evaluate('(function () { var b = ' + REMOVE + '; var l = b && b.closest(".app-container"); var t = (l && (l.querySelector(".panel-heading") || l.querySelector("label"))) || document.body; t.click(); return true; }())');
   await sleep(500);
-  return W.wasArmed && !(await armed()) ? true : (W.wasArmed ? 'after a click elsewhere Remove is still armed' : 'Remove never armed, so disarming judged nothing');
+  return W.wasArmed && !(await armed()) ? true : false;
 }, test.limit.quick);
 test.run('and still nothing is removed', 0.2, function () {
-  if (!W.drew) return 'no add row';
-  return W.fresh[0] in inSet() || 'disarming took ' + W.fresh[0] + ' out of the set';
+  if (!W.drew) return false;
+  return W.fresh[0] in inSet() || false;
 }, test.limit.quick);
 test.run('a second press removes it from the set', 0.2, async function () {
-  if (!W.drew) return 'no add row';
+  if (!W.drew) return false;
   await W.chrome.evaluate('(function () { var b = ' + REMOVE + '; if (b) b.click(); return !!b; }())');
   await sleep(300);
   await W.chrome.evaluate('(function () { var b = ' + REMOVE + '; if (b) b.click(); return !!b; }())');
-  return await until(function () { return Promise.resolve(!(W.fresh[0] in inSet())); }, 8000) ? true : 'after two presses the set still holds ' + W.fresh[0];
+  return await until(function () { return Promise.resolve(!(W.fresh[0] in inSet())); }, 8000) ? true : false;
 }, test.limit.quick);
 test.run('and its dialog closes', 0.2, async function () {
-  if (!W.drew) return 'no add row';
-  return await until(function () { return W.chrome.evaluate('!' + REMOVE); }, 5000) ? true : 'its dialog stayed after Remove';
+  if (!W.drew) return false;
+  return await until(function () { return W.chrome.evaluate('!' + REMOVE); }, 5000) ? true : false;
 }, test.limit.quick);
 test.run('the list lets it go, no reload', 0.2, async function () {
-  if (!W.drew) return 'no add row';
-  return await until(function () { return rows(W.chrome).then(function (t) { return t.indexOf(W.fresh[0]) === -1; }); }, 8000) ? true : 'the list still shows ' + W.fresh[0] + ': ' + short(await rows(W.chrome));
+  if (!W.drew) return false;
+  return await until(function () { return rows(W.chrome).then(function (t) { return t.indexOf(W.fresh[0]) === -1; }); }, 8000) ? true : false;
 }, test.limit.quick);
 
 // the box, 10: "data.js on every open page follows that one job": a second page
 test.run('the world: a second page shows the set', 0.2, async function () {
-  if (!W.drew) return 'no add row';
+  if (!W.drew) return false;
   const other = await chromePage(findChrome());
-  if (other.error) return 'no second Chrome: the other page is not judged. ' + short(other.error);
+  if (other.error) return false;
   W.other = other;
   const m2 = await mount(other);
   W.second = m2 === 'made' && !!(await until(function () { return rows(other).then(function (t) { return t.indexOf(W.sys) !== -1; }); }, 10000));
-  return W.second || 'the second page: ' + short(m2);
+  return W.second || false;
 }, test.limit.slow);
 test.run('the other page shows the second new glyph, added on the first, no reload', 0.2, async function () {
-  if (!W.second) return 'no second page: the world failed';
+  if (!W.second) return false;
   await W.other.evaluate('window.__posts = []; true');
   await add(W.chrome, W.fresh[1], 'second');
-  return await until(function () { return rows(W.other).then(function (t) { return t.indexOf(W.fresh[1]) !== -1; }); }, 10000) ? true : 'the other page never showed ' + W.fresh[1] + ': ' + short(await text(W.other));
+  return await until(function () { return rows(W.other).then(function (t) { return t.indexOf(W.fresh[1]) !== -1; }); }, 10000) ? true : false;
 }, test.limit.quick);
 test.run('and asked no search of its own for it', 0.2, async function () {
-  if (!W.second) return 'no second page: the world failed';
+  if (!W.second) return false;
   const asked = JSON.parse(await W.other.evaluate('JSON.stringify(window.__posts || [])'));
-  return !asked.some(function (p) { return (/"op"\s*:\s*"search"/).test(p); }) || 'the other page searched: ' + short(asked);
+  return !asked.some(function (p) { return (/"op"\s*:\s*"search"/).test(p); }) || false;
 }, test.limit.quick);
 test.run('an icon deleted elsewhere leaves the other page too', 0.2, async function () {
-  if (!W.second) return 'no second page: the world failed';
+  if (!W.second) return false;
   await W.chrome.evaluate('(function () { window.__posts = []; return true; }())');
   await W.other.evaluate('window.__posts = []; true');
   await icondelete(W.node, W.fresh[1]);
-  return await until(function () { return rows(W.other).then(function (t) { return t.indexOf(W.fresh[1]) === -1; }); }, 10000) ? true : 'the other page still shows ' + W.fresh[1];
+  return await until(function () { return rows(W.other).then(function (t) { return t.indexOf(W.fresh[1]) === -1; }); }, 10000) ? true : false;
 }, test.limit.quick);
 
 // destroy
 test.run('destroy empties its container', 0.2, async function () {
-  if (!W.mounted) return NO_FACE;
+  if (!W.mounted) return false;
   const empty = await W.chrome.evaluate('(function () { window.made.destroy(); return document.getElementById("box").children.length === 0; }())');
-  return empty === true || 'destroy left ' + short(await text(W.chrome));
+  return empty === true || false;
 }, test.limit.quick);
 
 // A delete asked of the node directly, as another page or peer would.

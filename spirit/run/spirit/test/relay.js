@@ -11,8 +11,6 @@ const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 
-function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
-
 // A relay on a scratch folder: its identity planted as the relay keeps it (relayAuth beside it), its face domain
 // relay.example, its mail kept.
 function scratchRelay() {
@@ -52,11 +50,9 @@ function ask(link) {
   try { said = W.R.relay.join(who.publicKey, 'asker' + n + '@example.org', link, ''); } catch (e) { said = { ok: false, error: String(e && e.message || e) }; }
   return { said: said || {}, mail: W.R.mails.length > before ? W.R.mails[W.R.mails.length - 1] : null };
 }
-const NO_RELAY = 'no scratch relay: the world failed';
-
 test.run('the world: a scratch relay, its mail kept', 0.2, function () {
   W.R = scratchRelay();
-  return !!(W.R && W.R.relay) || 'the scratch relay was not made';
+  return !!(W.R && W.R.relay);
 }, test.limit.quick);
 
 // the join mail goes only to a link on the asker's own computer
@@ -67,20 +63,20 @@ test.run('the world: a scratch relay, its mail kept', 0.2, function () {
 // A refusal not made is a relay that sends phishing mail for anyone: 0.8.
 const NODE = 'http://127.0.0.1:65432/face.html?app=join';
 test.run('the link a node sends, http://127.0.0.1:65432/face.html?app=join, is mailed', 0.2, function () {
-  if (!W.R) return NO_RELAY;
+  if (!W.R) return false;
   const a = ask(NODE);
-  return (a.said.ok === true && !!a.mail && a.mail.text.indexOf(NODE) !== -1) || 'said ' + short(a.said) + ', mail ' + short(a.mail);
+  return (a.said.ok === true && !!a.mail && a.mail.text.indexOf(NODE) !== -1) || false;
 }, test.limit.quick);
 test.run('with no port, it is mailed', 0.2, function () {
-  if (!W.R) return NO_RELAY;
+  if (!W.R) return false;
   const b = ask('http://127.0.0.1/face.html?app=join');
-  return (b.said.ok === true && !!b.mail) || 'said ' + short(b.said) + ', mail ' + short(b.mail);
+  return (b.said.ok === true && !!b.mail) || false;
 }, test.limit.quick);
 // Each link written out, so that each check has a plain title of its own.
 const mailed = function (link) {
-  if (!W.R) return NO_RELAY;
+  if (!W.R) return false;
   const r = ask(link);
-  return (r.said.ok === false && !r.mail) || link + ': said ' + short(r.said) + ', mail ' + (r.mail ? 'sent' : 'none');
+  return (r.said.ok === false && !r.mail) || false;
 };
 test.run('refused, and no mail sent: https://127.0.0.1:65432/face.html (the scheme is not exactly http)', 0.8, function () { return mailed('https://127.0.0.1:65432/face.html'); }, test.limit.quick);
 test.run('refused, and no mail sent: http://localhost:65432/face.html (the host is not exactly 127.0.0.1)', 0.8, function () { return mailed('http://localhost:65432/face.html'); }, test.limit.quick);
@@ -97,9 +93,9 @@ test.run('refused, and no mail sent: http://evil.com/?http://127.0.0.1:65432/ (1
 // \"Open your face by typing its address or from your bookmark, never from a link in a mail, and paste this token into
 // its Log in field.\"", and "it does not write out the face's address either".
 const SAY = 'Open your face by typing its address or from your bookmark, never from a link in a mail, and paste this token into its Log in field.';
-const L = { login: null, text: '', token: '', why: '' };
+const L = { login: null, text: '', token: '' };
 test.run('asked with the member\'s own email, the relay mails a login', 0.2, function () {
-  if (!W.R) return NO_RELAY;
+  if (!W.R) return false;
   const R = W.R;
   const bert = auth.generateIdentity('bert');
   try {
@@ -112,25 +108,25 @@ test.run('asked with the member\'s own email, the relay mails a login', 0.2, fun
     const before = R.mails.length;
     R.relay.faceLogin('harbour', 'bert@example.org');
     L.login = R.mails.length > before ? R.mails[R.mails.length - 1] : null;
-  } catch (e) { L.login = null; L.why = 'the face member could not be made: ' + (e && e.message || e); }
+  } catch (e) { L.login = null; }
   L.text = String((L.login && L.login.text) || '');
   const lines = L.text.split(/\r?\n/).map(function (l) { return l.trim(); });
   L.token = lines.filter(function (l) { return /^[A-Za-z0-9_-]{16,}$/.test(l); })[0] || '';
-  return !!L.login || L.why || 'no login mail was sent';
+  return !!L.login;
 }, test.limit.quick);
-test.run('the token stands on a line of its own', 0.2, function () { return !!L.token || 'no line holds the token alone: ' + short(L.text); }, test.limit.quick);
+test.run('the token stands on a line of its own', 0.2, function () { return !!L.token; }, test.limit.quick);
 test.run('it says where to paste the token: into the Log in field of the face, opened by its address and never from a link', 0.2, function () {
-  return L.text.indexOf(SAY) !== -1 || 'the mail says: ' + short(L.text) + ', not ' + SAY;
+  return L.text.indexOf(SAY) !== -1;
 }, test.limit.quick);
-test.run('it holds no link', 0.8, function () { return (!!L.login && !/https?:\/\/|www\./i.test(L.text)) || 'the mail holds a link: ' + short(L.text); }, test.limit.quick);
+test.run('it holds no link', 0.8, function () { return (!!L.login && !/https?:\/\/|www\./i.test(L.text)); }, test.limit.quick);
 test.run('it does not write out the face\'s address', 0.2, function () {
-  return (!!L.login && !/harbour\.relay\.example|relay\.example/i.test(L.text)) || 'the mail names the address: ' + short(L.text);
+  return (!!L.login && !/harbour\.relay\.example|relay\.example/i.test(L.text));
 }, test.limit.quick);
 test.run('the token, pasted into the Log in field, logs in', 0.2, function () {
-  if (!W.R) return NO_RELAY;
+  if (!W.R) return false;
   let pasted = null;
   try { pasted = L.token ? W.R.relay.faceLogin('harbour', L.token) : null; } catch (e) { pasted = null; }
-  return (!!pasted && pasted.loggedIn === true) || 'faceLogin with the token: ' + short(pasted);
+  return (!!pasted && pasted.loggedIn === true);
 }, test.limit.quick);
 
 // A LONG SEARCH MUST NOT STOP THE RELAY (goal/G41.30; the box: "the server MUST not CRASH or HANG", "an attacker trying
@@ -165,10 +161,10 @@ test.run('500 members seated and connected', 0.2, function () {
     if (st && st.ok === false) continue;
     LS.seated += 1;
   }
-  return LS.seated === MEMBERS || 'only ' + LS.seated + ' of ' + MEMBERS + ' members were seated and connected: the search would rank fewer rows than asked';
+  return LS.seated === MEMBERS;
 }, test.limit.long);
 test.run('the search thrown is at least 12000 characters, near 3/4 of the payload', 0.2, function () {
-  if (!LS.box || !LS.asker) return 'no relay with members: the world failed';
+  if (!LS.box || !LS.asker) return false;
   const limits = require(path.join(RUN, 'spirit', 'limits.js'));
   const seal = require(path.join(RUN, 'spirit', 'seal.js'));
   const box = LS.box;
@@ -183,10 +179,10 @@ test.run('the search thrown is at least 12000 characters, near 3/4 of the payloa
   while (len > 1000 && Buffer.byteLength(text, 'utf8') > limits.PAYLOAD_MAX) { len -= 250; text = sealedAsk(len); }
   LS.len = len; LS.text = text;
   test.comment('the search: ' + len + ' characters, ' + Buffer.byteLength(text, 'utf8') + ' bytes sealed, over ' + LS.seated + ' connected members (a longer one, as the report\'s 60,000, is refused 413 by the wire)');
-  return len >= 12000 || 'only ' + len + ' characters fit: the search judges too little';
+  return len >= 12000;
 }, test.limit.quick);
 test.run('the relay takes the search', 0.2, async function () {
-  if (!LS.text) return 'no search made: the world failed';
+  if (!LS.text) return false;
   const box = LS.box; const asker = LS.asker; const relayKey = box.relayPublicKey(); const text = LS.text;
   let last = Date.now(); let gap = 0;
   const tick = setInterval(function () { const t = Date.now(); gap = Math.max(gap, t - last); last = t; }, 5);
@@ -198,15 +194,15 @@ test.run('the relay takes the search', 0.2, async function () {
   clearInterval(tick);
   LS.worst = Math.max(gap, inPost);
   LS.ran = true;
-  return (!!LS.posted && LS.posted.ok !== false) || 'the relay refused the search: ' + short(LS.posted);
+  return (!!LS.posted && LS.posted.ok !== false);
 }, test.limit.slow);
 test.run('while it searches, the relay keeps answering: its event loop never waited more than 250 ms', 0.2, function () {
-  if (!LS.ran) return 'the search was never posted: the world failed';
-  return LS.worst <= GAP_MS || 'IT HANGS: one search of ' + LS.len + ' characters over ' + LS.seated + ' members held the relay\'s event loop for ' + LS.worst + ' ms (more than ' + GAP_MS + '), every other request on the relay waiting';
+  if (!LS.ran) return false;
+  return LS.worst <= GAP_MS;
 }, test.limit.quick);
 test.run('and the search is answered', 0.2, function () {
-  if (!LS.ran) return 'the search was never posted: the world failed';
-  return LS.answered || 'the search was never answered within 5 s';
+  if (!LS.ran) return false;
+  return LS.answered === true;
 }, test.limit.quick);
 
 // THE FACE COMES BACK BY ITSELF (goal/G43.30; Andy: "ALL, I had to, several times, refresh my new face, because it
@@ -218,7 +214,6 @@ test.run('and the search is answered', 0.2, function () {
 const http = require('http');
 const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 const F = { R: null, M: null, opened: [], face: null, one: null, two: null, again: null, three: null, opensNow: 0 };
-const NO_FACE_RELAY = 'no scratch face relay: the world failed';
 // The face's own stream, as its page opens it: GET /face/stream, its login cookie, on its own host.
 function openFace() {
   return new Promise(function (resolve) {
@@ -252,26 +247,26 @@ function wait(fn, ms) { return H.until(function () { return Promise.resolve(fn()
 // a home node's feed gone: the relay ends its face's stream, so the face opens it again
 test.run('the world: a scratch relay, harbour seated with a face, its node present and its face logged in', 0.2, async function () {
   F.R = await H.scratchFaceRelay({ members: ['harbour'] });
-  if (!F.R.up) return 'the scratch relay did not come up';
+  if (!F.R.up) return false;
   F.M = F.R.members.harbour;
   return true;
 }, test.limit.slow);
 test.run('the face opens its stream, and the home node hears face-open', 0.2, async function () {
-  if (!F.M) return NO_FACE_RELAY;
+  if (!F.M) return false;
   const opensBefore = faceOpens();
   F.face = await openFace();
-  return (await wait(function () { return faceOpens() > opensBefore; }) && !F.face.ended) || 'the face stream: ' + F.face.status + ', face-open heard ' + (faceOpens() - opensBefore) + ' times';
+  return (await wait(function () { return faceOpens() > opensBefore; }) && !F.face.ended) || false;
 }, test.limit.slow);
 test.run('the world: the home node\'s feed reaches the face', 0.2, async function () {
-  if (!F.face) return NO_FACE_RELAY;
+  if (!F.face) return false;
   F.one = feed();
   F.one.write(JSON.stringify({ event: 'zz-first', data: {} }) + '\n');
-  return !!(await wait(function () { return F.face.lines.join('').indexOf('zz-first') !== -1; })) || 'the face heard ' + short(F.face.lines.join(''));
+  return !!(await wait(function () { return F.face.lines.join('').indexOf('zz-first') !== -1; })) || false;
 }, test.limit.slow);
 
 // the attacker: a feed replaced by a newer one goes, and the face's stream stays
 test.run('the old feed cut, the face\'s stream stays open and the newer feed still reaches it', 0.2, async function () {
-  if (!F.one) return NO_FACE_RELAY;
+  if (!F.one) return false;
   const face = F.face;
   F.two = feed();
   F.two.write(JSON.stringify({ event: 'zz-second', data: {} }) + '\n');
@@ -279,29 +274,28 @@ test.run('the old feed cut, the face\'s stream stays open and the newer feed sti
   F.one.destroy();
   await new Promise(function (r) { setTimeout(r, 1500); });
   F.two.write(JSON.stringify({ event: 'zz-third', data: {} }) + '\n');
-  return (!face.ended && !!(await wait(function () { return face.lines.join('').indexOf('zz-third') !== -1; }))) ||
-    'after the replaced feed went: ' + JSON.stringify({ ended: face.ended, heard: face.lines.join('').slice(-200) });
+  return (!face.ended && !!(await wait(function () { return face.lines.join('').indexOf('zz-third') !== -1; }))) || false;
 }, test.limit.slow);
 
 // the feed into the face goes, as when the home node goes away
 test.run('the relay ends the face\'s stream: the face sees it end, and retries', 0.2, async function () {
-  if (!F.two) return NO_FACE_RELAY;
+  if (!F.two) return false;
   F.two.destroy();
-  return !!(await wait(function () { return F.face.ended; }, 8000)) || 'the face\'s stream stayed open, silent, after its node\'s feed went: the face never retries';
+  return !!(await wait(function () { return F.face.ended; }, 8000)) || false;
 }, test.limit.slow);
 test.run('the face opens its stream again, and the home node hears face-open once more', 0.2, async function () {
-  if (!F.M) return NO_FACE_RELAY;
+  if (!F.M) return false;
   const opensNow = faceOpens();
   F.again = await openFace();
-  return (await wait(function () { return faceOpens() > opensNow; }) && !F.again.ended) || 'the face\'s new stream: ' + F.again.status + ', face-open heard ' + (faceOpens() - opensNow) + ' times';
+  return (await wait(function () { return faceOpens() > opensNow; }) && !F.again.ended) || false;
 }, test.limit.slow);
 test.run('and its updates reach the face again, no reload', 0.2, async function () {
-  if (!F.again) return NO_FACE_RELAY;
+  if (!F.again) return false;
   F.three = feed();
   F.three.write(JSON.stringify({ event: 'zz-back', data: {} }) + '\n');
   const heard = await wait(function () { return F.again.lines.join('').indexOf('zz-back') !== -1; });
   F.three.destroy();
-  return !!heard || 'the face heard ' + short(F.again.lines.join(''));
+  return !!heard || false;
 }, test.limit.slow);
 
 // THE ROUTE CACHING GOES (goal/G47.1, box v69; Andy: "the \"routes\" aren't read by anybody in the fucking system"): "The
@@ -322,28 +316,28 @@ test.run('the world: two members on their streams; one posts to the other, who a
   for (const n of ['A', 'B']) {
     const id = ids[n] = auth.generateIdentity(n);
     const minted = box.mint('owner', n, 7, '');
-    if (!minted || !minted.invite) return 'no invite for ' + n + ': nothing judged';
+    if (!minted || !minted.invite) return false;
     const c = box.claim(n, auth.sign(id.privateKey, auth.claimMessage(n)), id.publicKey, null, minted.invite.token, n);
-    if (!c || c.ok === false) return n + ' was not seated: ' + short(c);
+    if (!c || c.ok === false) return false;
     const st = box.streamOpen(id.publicKey, auth.sign(id.privateKey, auth.streamMessage(id.publicKey, box.relayPublicKey())), { write: function (chunk) { heard[n].push(String(chunk)); return true; }, close: function () {} });
-    if (st && st.ok === false) return n + '\'s stream was refused: ' + short(st);
+    if (st && st.ok === false) return false;
   }
   const text = 'hello B';
   const posted = await Promise.resolve(box.routePost(ids.A.publicKey, ids.B.publicKey, text, auth.sign(ids.A.privateKey, auth.postMessage(ids.A.publicKey, ids.B.publicKey, text)), 3000));
-  if (!posted || !posted.hash) return 'the post was not taken: ' + short(posted);
+  if (!posted || !posted.hash) return false;
   const mark = { A: heard.A.length, B: heard.B.length };
   RX.replied = box.routeReply(ids.B.publicKey, posted.hash, 'ok', auth.sign(ids.B.privateKey, auth.receiptMessage(posted.hash, 'ok')));
   await new Promise(function (r) { setTimeout(r, 300); });
   RX.after = { A: heard.A.slice(mark.A).join(''), B: heard.B.slice(mark.B).join('') };
-  return (!!RX.replied && RX.replied.ok === true && /event: reply/.test(RX.after.A)) || 'the exchange did not complete: reply ' + short(RX.replied) + ', A heard ' + short(RX.after.A);
+  return (!!RX.replied && RX.replied.ok === true && /event: reply/.test(RX.after.A)) || false;
 }, test.limit.slow);
 test.run('after an exchange the relay sends the asker no route event', 0.2, function () {
-  if (!RX.after) return 'no exchange: the world failed';
-  return !/event: route/.test(RX.after.A) || 'A heard after the answer: ' + short(RX.after.A);
+  if (!RX.after) return false;
+  return !/event: route/.test(RX.after.A) || false;
 }, test.limit.quick);
 test.run('after an exchange the relay sends the answerer no route event', 0.2, function () {
-  if (!RX.after) return 'no exchange: the world failed';
-  return !/event: route/.test(RX.after.B) || 'B heard after the answer: ' + short(RX.after.B);
+  if (!RX.after) return false;
+  return !/event: route/.test(RX.after.B) || false;
 }, test.limit.quick);
 
 test.after(function () {

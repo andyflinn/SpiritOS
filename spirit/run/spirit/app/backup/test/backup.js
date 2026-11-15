@@ -15,7 +15,6 @@ const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const SCRIPT = path.join(RUN, 'spirit', 'app', 'backup', 'backup.js');
 
-function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 function filesUnder(dir) {
   const out = [];
@@ -63,7 +62,7 @@ test.run('the world: spirit/state/ holds node.db with its row, desk/data/marker.
   db.exec('PRAGMA journal_mode = DELETE'); db.exec('CREATE TABLE mark (v TEXT)'); db.prepare('INSERT INTO mark (v) VALUES (?)').run(NODE_MARK); db.close();
   fs.writeFileSync(path.join(state, 'config.json'), JSON.stringify({ spiritHome: W.homeCfg }));
   return dbMark(path.join(state, 'node.db')) === NODE_MARK && readText(path.join(state, 'desk', 'data', 'marker.json')).indexOf(DESK_MARK) !== -1
-    ? true : 'the scratch state was not planted: nothing judged';
+    ? true : false;
 }, test.limit.quick);
 
 test.run('the world: the backup server ran once and said so', 0.2, async function () {
@@ -80,25 +79,24 @@ test.run('the world: the backup server ran once and said so', 0.2, async functio
   await sleep(500);
   const homes = [W.homeCfg, path.join(W.fakeHome, '.SpiritOS')];
   W.copied = [].concat.apply([], homes.map(function (h) { return filesUnder(path.join(h, 'backups')); }));
-  return / (wrote |checked)/.test(out) ? true : 'the backup server said no run in 15 s: nothing judged. It said: ' + short(out);
+  return / (wrote |checked)/.test(out) ? true : false;
 }, test.limit.slow);
 
 // The box: "it copies only its own state folder"
 test.run('another process\'s state, spirit/state/desk/data/marker.json, is copied', 0.2, function () {
   const copied = W.copied || [];
   const desk = copied.filter(function (f) { return readText(f).indexOf(DESK_MARK) !== -1; });
-  return desk.length > 0 ? true : 'spirit/state/desk/data/marker.json is not copied anywhere; the backup wrote only ' + short(copied.map(function (f) { return path.relative(W.scratch, f); }));
+  return desk.length > 0 ? true : false;
 }, test.limit.quick);
 test.run('the node\'s node.db is copied, its row in the copy', 0.2, function () {
   const copied = W.copied || [];
   const ndb = copied.filter(function (f) { return dbMark(f) === NODE_MARK; });
-  return ndb.length > 0 ? true : 'spirit/state/node.db is not copied anywhere; the backup wrote only ' + short(copied.map(function (f) { return path.relative(W.scratch, f); }));
+  return ndb.length > 0 ? true : false;
 }, test.limit.quick);
 
 // The box: "reads a config path that does not exist"
 test.run('the backup lands under the spiritHome of spirit/state/config.json, nothing under the fallback home', 0.2, function () {
   const inCfg = filesUnder(path.join(W.homeCfg, 'backups'));
   const inFallback = filesUnder(path.join(W.fakeHome, '.SpiritOS'));
-  return inCfg.length > 0 && inFallback.length === 0 ? true
-    : 'spirit/state/config.json\'s spiritHome is not used: ' + inCfg.length + ' files under it, ' + inFallback.length + ' under <home>/.SpiritOS (' + short(inFallback.map(function (f) { return path.relative(W.scratch, f); })) + ')';
+  return inCfg.length > 0 && inFallback.length === 0 ? true : false;
 }, test.limit.quick);

@@ -5,17 +5,16 @@
 // same lines as today. the verifier reads it unchanged.", "BUT, i want the product test system to be independent and
 // not reach into repo:/spirit/test/ at all....".
 //
-// A product test requires this file and nothing of spirit/test/. It prints the lines the old reporter
-// (spirit/test/testSupport.js) printed, the same marks in the same places: the heading lines, one SUCCESS or FAILURE line
-// per test, and the completion line last, the exit code saying the same thing.
+// A product test requires this file and nothing of spirit/test/. It prints the heading lines, one line per test, its title
+// and its mark (✅ or ❌), and the completion line last, the exit code saying the same thing.
 //
 // ONE CALL PER TEST (goal/G47.2; Andy: "Every test inside every suite has its unique (within the suite) title. Every test
 // supplies its severity and reports itself to testicle, with the appropriate severity if the test hangs or crashes, else
 // with the default severity. Every test holds on one single string, the title, which is supplied with the report, success
 // or failure."; its contract: ./test/testReport.md):
-//   test.run(title, severity, body, limit)     limit is test.limit.quick, .slow or .long (below). body() answers true to pass; false, or a string saying what went wrong, to
-//                                              fail; it may be async. A throw or a rejection fails it at 0.7, the error as
-//                                              its detail; still running at its limit, it fails as a hang at 0.7.
+//   test.run(title, severity, body, limit)     limit is test.limit.quick, .slow or .long (below). body() answers true to pass, false to fail; it
+//                                              may be async. A throw or a rejection fails it at 0.7; still running at its
+//                                              limit, it fails as a hang at 0.7.
 //   test.after(fn)                             run once every test has run, whatever they did.
 // The tests run one at a time in the order given. Each is reported by itself to testicle.testicle.set of the node of the
 // checkout it runs in (spirit.js reads that node's port from the checkout's spirit/state/environment.json; goal/G47.1:
@@ -188,20 +187,23 @@ test.after = function (fn) { afters.push(fn); start(); };
 // The test running now, so a throw or a rejection nothing caught lands on it.
 let current = null;
 function settle(t, verdict) { if (current === t && !t.done) { t.done = true; t.verdict = verdict; t.resolve(); } }
-process.on('uncaughtException', function (e) { if (current) settle(current, { pass: false, crash: true, detail: 'it crashed: ' + (e && e.message || e) }); });
-process.on('unhandledRejection', function (e) { if (current) settle(current, { pass: false, crash: true, detail: 'it crashed: ' + (e && e.message || e) }); });
+// A TEST'S ONE STRING IS ITS TITLE (goal/G47.1, Andy: "A TEST ANSWERS SUCCESS OR FAILURE WITH IT's FUCKING TITLE STRING, THE
+// FUCKING FAILURE STRING GETS DELETED FROM EVERY FUCKING TEST", and "THE TEST RUNNER DISREGARD ANY FUCKING MESSAGES FROM THE
+// TEST AND REGISTER THE FUCKING RESULT WITH THE FUCKING TEST FUCKING TITLE"): a verdict is pass or fail, a crash or a hang a
+// fail at 0.7; no text goes with it, printed or reported.
+process.on('uncaughtException', function () { if (current) settle(current, { pass: false, crash: true }); });
+process.on('unhandledRejection', function () { if (current) settle(current, { pass: false, crash: true }); });
 
 function one(t) {
   return new Promise(function (resolve) {
     t.resolve = resolve;
     current = t;
-    const timer = ownTimeout(function () { settle(t, { pass: false, crash: true, detail: 'it hung: no answer in ' + t.limit + ' ms' }); }, Number(t.limit) > 0 ? Number(t.limit) : 60000);
+    const timer = ownTimeout(function () { settle(t, { pass: false, crash: true }); }, Number(t.limit) > 0 ? Number(t.limit) : 60000);
     let answered;
     try { answered = Promise.resolve(t.body()); } catch (e) { answered = Promise.reject(e); }
     answered.then(function (v) {
-      if (v === true) settle(t, { pass: true });
-      else settle(t, { pass: false, detail: typeof v === 'string' ? v : '' });
-    }, function (e) { settle(t, { pass: false, crash: true, detail: 'it crashed: ' + (e && e.message || e) }); });
+      settle(t, { pass: v === true });
+    }, function () { settle(t, { pass: false, crash: true }); });
   }).then(function () { current = null; });
 }
 
@@ -232,17 +234,19 @@ async function runAll() {
     // out as that test starts, before it runs (a run stopped while it waits must find the one before already reported). A run
     // with a title (--test) ran part of its suite and reports no success at all.
     if (doing !== null && doing !== script) succeeded(doing);
-    if (doing !== script) { doing = script; held[script] = true; }
+    // THE SCRIPT, AS A HEADING, where it changes: the script is part of the testicle row's key (script, suite, title), so
+    // the lines under it are its tests, each its title and its mark.
+    if (doing !== script) { doing = script; held[script] = true; test.comment(script); }
     const once = script + '|' + title;
-    if (seen[once]) { t.verdict = { pass: false, crash: true, detail: 'this title is said a second time in its suite' }; }
-    else if (typeof t.severity !== 'number' || !(sev >= 0 && sev <= 1)) { t.verdict = { pass: false, crash: true, detail: 'its severity is no number from 0.0 to 1.0: ' + String(t.severity) }; }
-    else if (typeof t.body !== 'function') { t.verdict = { pass: false, crash: true, detail: 'it has no body to run' }; }
+    // A title said twice, a severity that is no number from 0.0 to 1.0, or no body: a fail at 0.7, as a crash is.
+    if (seen[once] || typeof t.severity !== 'number' || !(sev >= 0 && sev <= 1) || typeof t.body !== 'function') t.verdict = { pass: false, crash: true };
     else await one(t);
     seen[once] = true;
-    const v = t.verdict || { pass: false, detail: 'it gave no answer' };
+    const v = t.verdict || { pass: false };
     const severity = v.crash ? 0.7 : (sev >= 0 && sev <= 1 ? sev : 0.7);
-    if (v.pass) { test.successCount++; test.comment('SUCCESS #' + test.counter + '.' + test.successCount + ': ' + title + ' ' + ICON.SUCCESS); }
-    else { test.failureCount++; test.comment('FAILURE #' + test.counter + '.' + test.failureCount + ': ' + title + (v.detail ? ' — ' + v.detail : '') + ' ' + ICON.ERROR); }
+    // Its line: the title and its mark, nothing else.
+    if (v.pass) { test.successCount++; test.comment(title + ' ' + ICON.SUCCESS); }
+    else { test.failureCount++; test.comment(title + ' ' + ICON.ERROR); }
     if (!v.pass) held[script] = false;
     reportToTesticle({ script: script, suite: SUITE_FILE, test: title, verified: !!v.pass, severity: severity });
   }

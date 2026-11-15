@@ -21,7 +21,6 @@ const RUN = path.resolve(__dirname, '..', '..', '..');
 const REPO = path.resolve(RUN, '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 
-function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 400); }
 
 const RULE = path.join(RUN, 'spirit', 'test', 'spirit-sibling-general.js');
 const CHECK = 'every production script has its own test';
@@ -40,13 +39,21 @@ const LATE = 'spirit/zzGarbage/late.js';
 PLANT[LATE] = '\'use strict\';\nconst fs = require(\'fs\');\nrequire(\'../spirit.js\');\n';
 
 let root = null, run = null;
-// The rule run in the scratch tree, handed arg or nothing: the line its check printed, or ''.
+// The rule run in the scratch tree, handed arg or nothing: its check as printed (spirit/test/testReport.js prints each test
+// as its title and its mark, under its script's heading), { red, script }, or null when the check printed nothing.
 function lineOf(arg, check) {
   let out = '';
   try { out = execFileSync(process.execPath, [path.join(run, 'spirit', 'test', 'spirit-sibling-general.js')].concat(arg ? [arg] : []), { cwd: run, encoding: 'utf8', maxBuffer: 1 << 26, stdio: ['ignore', 'pipe', 'pipe'] }); } catch (e) { out = String((e && e.stdout) || ''); }
-  return out.split('\n').filter(function (l) { return /(SUCCESS|FAILURE) #/.test(l) && l.indexOf(': ' + (check || CHECK)) !== -1; })[0] || '';
+  let script = '';
+  let found = null;
+  out.split('\n').forEach(function (l) {
+    const t = l.replace(/^\*+\s*/, '').trim();
+    const m = /^(.*) ([✅❌])$/.exec(t);
+    if (!m) { if (t && !/^\*|Test completed/.test(t)) script = t; return; }
+    if (!found && m[1] === (check || CHECK)) found = { red: m[2] === '❌', script: script };
+  });
+  return found;
 }
-const NOWORLD = 'no scratch tree: the world failed';
 
 test.after(function () { try { if (root) fs.rmSync(root, { recursive: true, force: true }); } catch (e) { /* scratch */ } });
 
@@ -59,61 +66,52 @@ test.run('the world: a scratch tree of the tracked files, the planted scripts wi
   Object.keys(PLANT).forEach(function (f) { fs.mkdirSync(path.dirname(path.join(run, f)), { recursive: true }); fs.writeFileSync(path.join(run, f), PLANT[f]); });
   execSync('git init -q && git add -A', { cwd: root, stdio: 'ignore' });
   const listed = execSync('git ls-files -- spirit/run/spirit/zzGarbage', { cwd: root, encoding: 'utf8' }).split('\n').filter(Boolean);
-  return listed.length === 5 || 'the scratch index lists ' + short(listed);
+  return listed.length === 5 || false;
 }, test.limit.long);
 
 // the box: "in one check, "every production script has its own test", severity 0.2"
 test.run('the rule holds the check "every production script has its own test", at severity 0.2', 0.2, function () {
   const src = fs.readFileSync(RULE, 'utf8');
-  return /test\.run\(\s*'every production script has its own test'\s*,\s*0\.2\s*,/.test(src) || 'no test.run(\'' + CHECK + '\', 0.2, ...) in ' + path.relative(RUN, RULE);
+  return /test\.run\(\s*'every production script has its own test'\s*,\s*0\.2\s*,/.test(src) || false;
 }, test.limit.quick);
 
 // the box: "Over the whole tree (handed nothing, or spirit.js) it judges every production script", "red while any
 // production script has no own test ... its answer naming every script missing one", "Vendored scripts are left out"
-let whole = '';
+// A test's one string is its title (goal/G47.1): the check answers red or green, and names no script in a text.
 test.run('over the whole tree, with a script missing its own test, the check is red', 0.2, function () {
-  if (!run) return NOWORLD;
-  whole = lineOf('');
-  return /FAILURE #/.test(whole) || 'the check printed ' + short(whole || 'nothing');
+  if (!run) return false;
+  const l = lineOf('');
+  return (!!l && l.red) || false;
 }, test.limit.slow);
-test.run('its answer names the script missing its own test', 0.2, function () {
-  return whole.indexOf(LACKS) !== -1 || 'the line: ' + short(whole || 'nothing');
-}, test.limit.quick);
-test.run('its answer names no script that has its own test', 0.2, function () {
-  return (!!whole && whole.indexOf(HAS) === -1) || 'the line: ' + short(whole || 'nothing');
-}, test.limit.quick);
-test.run('its answer names no vendored script', 0.2, function () {
-  return (!!whole && whole.indexOf('zzVendored.js') === -1 && whole.indexOf('spirit/element/codeMirror/') === -1 && whole.indexOf('spirit/job/chokidar/') === -1 && whole.indexOf('spirit/job/readdirp/') === -1) || 'the line names a vendored script: ' + short(whole || 'nothing');
-}, test.limit.quick);
 test.run('handed spirit.js, it judges the whole tree the same', 0.2, function () {
-  if (!run) return NOWORLD;
+  if (!run) return false;
   const l = lineOf('spirit/spirit.js');
-  return (/FAILURE #/.test(l) && l.indexOf(LACKS) !== -1) || 'the check printed ' + short(l || 'nothing');
+  return (!!l && l.red) || false;
 }, test.limit.slow);
 
 // the box: "handed one script, that one, by the same check"
 test.run('handed a script with its own test, the check is green', 0.2, function () {
-  if (!run) return NOWORLD;
+  if (!run) return false;
   const l = lineOf(HAS);
-  return /SUCCESS #/.test(l) || 'the check printed ' + short(l || 'nothing');
+  return (!!l && !l.red) || false;
 }, test.limit.slow);
-test.run('handed a script with no own test, the check is red, naming that script', 0.2, function () {
-  if (!run) return NOWORLD;
+test.run('handed a script with no own test, the check is red, under that script', 0.2, function () {
+  if (!run) return false;
   const l = lineOf(LACKS);
-  return (/FAILURE #/.test(l) && l.indexOf(LACKS) !== -1) || 'the check printed ' + short(l || 'nothing');
+  return (!!l && l.red && l.script.indexOf(LACKS) !== -1) || false;
 }, test.limit.slow);
 
 // the module rule (spirit.md, "A module whose first require is not spirit.js goes red"): handed spirit.js, green; handed a
 // module that requires fs first, red, naming that require
 test.run('the general rules pass spirit.js itself: it sets the global spirit before its first require', 0.2, function () {
-  if (!run) return NOWORLD;
+  if (!run) return false;
   const l = lineOf('spirit/spirit.js', 'it sets the global spirit before its first require');
-  return /SUCCESS #/.test(l) || 'the check printed ' + short(l || 'nothing');
+  return (!!l && !l.red) || false;
 }, test.limit.slow);
 test.run('a module whose first require is not spirit.js goes red', 0.2, function () {
-  if (!run) return NOWORLD;
+  if (!run) return false;
   const l = lineOf(LATE, 'it requires spirit.js first');
-  return (/FAILURE #/.test(l) && /does not require spirit\.js first/.test(l) && l.indexOf('"fs"') !== -1) || 'the check printed ' + short(l || 'nothing');
+  return (!!l && l.red && l.script.indexOf(LATE) !== -1) || false;
 }, test.limit.slow);
 
 // THE BRANCH PART USES THE NODE ITS RUN IS HANDED (goal/G47.1; Andy: "are the tests not ordered in the general test so that all
@@ -133,7 +131,7 @@ test.run('a module whose first require is not spirit.js goes red', 0.2, function
   });
   test.run('the world: a scratch node, and an address in front of it that counts what reaches it', 0.2, async function () {
     H.node = await LABH.scratchNode();
-    if (!H.node.up) return 'the scratch node did not come up: nothing judged';
+    if (!H.node.up) return false;
     H.proxy = http.createServer(function (req, res) {
       H.reached += 1;
       const chunks = [];
@@ -151,7 +149,7 @@ test.run('a module whose first require is not spirit.js goes red', 0.2, function
     return true;
   }, test.limit.slow);
   test.run('the world: the rule run on two scripts in two branches, handed that node as testicle hands one', 0.2, async function () {
-    if (!H.base) return 'no handed node: the world failed';
+    if (!H.base) return false;
     const env = Object.assign({}, process.env, { SPIRIT_MOUNT_BASE: H.base, SPIRIT_MOUNT_RUN: H.node.run });
     H.out = await new Promise(function (resolve) {
       const kid = require('child_process').spawn(process.execPath, [RULE].concat(SCRIPTS), { cwd: RUN, env: env, stdio: ['ignore', 'pipe', 'pipe'] });
@@ -161,16 +159,16 @@ test.run('a module whose first require is not spirit.js goes red', 0.2, function
       const timer = setTimeout(function () { try { kid.kill(); } catch (e) { /* gone */ } }, 280000);
       kid.on('exit', function () { clearTimeout(timer); resolve(out); });
     });
-    return /Test completed/.test(H.out) || 'the rule printed no completion line: ' + short(H.out.slice(-300));
+    return /Test completed/.test(H.out) || false;
   }, test.limit.long);
   test.run('each script\'s node world comes up', 0.4, function () {
-    const up = H.out.split('\n').filter(function (l) { return /SUCCESS #.*: the world: a scratch node comes up/.test(l); }).length;
-    return up === SCRIPTS.length || up + ' of ' + SCRIPTS.length + ' node worlds came up: ' + short(H.out.split('\n').filter(function (l) { return /a scratch node comes up/.test(l); }));
+    const up = H.out.split('\n').filter(function (l) { return /the world: a scratch node comes up ✅\s*$/.test(l); }).length;
+    return up === SCRIPTS.length || false;
   }, test.limit.quick);
   // Each script's own: a run where the first used the handed node and the second booted its own would still have reached it
   // (cw's review), so each branch must be named in what reached it, backup's calls and chat's.
   test.run('and each uses the node it is handed: calls naming backup and calls naming chat both reach it', 0.8, function () {
     const named = ['backup', 'chat'].filter(function (b) { return new RegExp('"' + b + '[".]').test(H.bodies); });
-    return named.length === 2 || 'what reached the handed node names ' + (named.length ? named.join(' and ') + ' only' : 'neither') + ' (' + H.reached + ' calls): a branch part booted a node of its own';
+    return named.length === 2 || false;
   }, test.limit.quick);
 }

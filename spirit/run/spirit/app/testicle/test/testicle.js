@@ -28,7 +28,6 @@ const REPO = path.resolve(RUN, '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const { freePort, until, sleep } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 
-function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 function parsed(t) { try { return JSON.parse(t); } catch (e) { return null; } }
 function readJson(f) { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch (e) { return null; } }
 
@@ -197,7 +196,6 @@ function names(rows) { return rows.map(function (r) { return r.suite; }).sort();
 // What the tests share, made by the tests in order: the scratch tree, its node, and what each step read.
 let own = null, s = null, N = null, DB = '';
 const live = [];
-const NONODE = 'no scratch node: the world failed';
 const up = function () { return !!(N && N.up); };
 const put = function (rel, text) { fs.mkdirSync(path.dirname(path.join(s.run, rel)), { recursive: true }); fs.writeFileSync(path.join(s.run, rel), text); };
 const append = function (rel, text) { fs.appendFileSync(path.join(s.run, rel), text); };
@@ -229,20 +227,20 @@ test.after(async function () {
 // the box: "The server mounts beside the face (testicle.json: node.mount true)"
 test.run('its manifest mounts a server: node.mount true', 0.2, function () {
   own = readJson(path.join(APP, 'testicle.json'));
-  return (!!own && !!own.node && own.node.mount === true) || 'node: ' + short(own && own.node);
+  return (!!own && !!own.node && own.node.mount === true) || false;
 }, test.limit.quick);
 test.run('its mount names testicle.js beside element.js', 0.2, function () {
-  return (!!own && !!own.mount && own.mount['testicle.js'] === true && own.mount['element.js'] === true) || 'mount: ' + short(own && own.mount);
+  return (!!own && !!own.mount && own.mount['testicle.js'] === true && own.mount['element.js'] === true) || false;
 }, test.limit.quick);
 test.run('spirit/app/testicle/testicle.js is there', 0.2, function () {
-  return fs.existsSync(path.join(APP, 'testicle.js')) || 'no spirit/app/testicle/testicle.js';
+  return fs.existsSync(path.join(APP, 'testicle.js')) || false;
 }, test.limit.quick);
 
 test.run('the world: a scratch node comes up', 0.2, async function () {
   s = scratch();
   DB = path.join(s.run, 'spirit', 'state', 'testicle', 'data', 'testicle.db');
   N = await boot(s.run); live.push(N.child);
-  return N.up || 'the scratch node did not come up: nothing judged';
+  return N.up || false;
 }, test.limit.long);
 
 // ── DEBUG MODE (goal/G47.1, box v143): "in it testicle operates as if run://spirit/app/testicle/ were ALL the testables of the
@@ -254,65 +252,65 @@ test.run('the world: a scratch node comes up', 0.2, async function () {
 const DEBUG_GENERALS = ['general', 'node', 'browser'].map(function (k) { return 'spirit/app/testicle/test/testicle-sibling-' + k + '.js'; });
 test.run('testicle\'s three general tests are there, testicle-sibling-general.js, -node.js and -browser.js, each with a test', 0.4, function () {
   const bad = DEBUG_GENERALS.filter(function (g) { let c = ''; try { c = fs.readFileSync(path.join(RUN, g), 'utf8'); } catch (e) { return true; } return !/test\.run\(/.test(c); });
-  return !bad.length || 'missing or with no test: ' + bad.join(', ');
+  return !bad.length || false;
 }, test.limit.quick);
 test.run('.gitignore keeps spirit/app/testicle/temp/ out of git, and git holds nothing under it', 0.4, function () {
   let ignored = false;
   try { execFileSync('git', ['check-ignore', '-q', 'spirit/run/spirit/app/testicle/temp/zzProbe/x.js'], { cwd: REPO }); ignored = true; } catch (e) { ignored = false; }
   const held = execFileSync('git', ['ls-files', '--', 'spirit/run/spirit/app/testicle/temp'], { cwd: REPO, encoding: 'utf8' }).split('\n').filter(Boolean);
-  return (ignored && !held.length) || (ignored ? '' : 'spirit/app/testicle/temp/ is not git-ignored') + (held.length ? ' git holds ' + held.length + ' files under it' : '');
+  return (ignored && !held.length) || false;
 }, test.limit.quick);
 test.run('no zz folder is in the tree: git holds no spirit/zz... and no spirit/aa... folder', 0.4, function () {
   const held = execFileSync('git', ['ls-files', '--', 'spirit/run/spirit'], { cwd: REPO, encoding: 'utf8' }).split('\n').filter(function (f) { return /^spirit\/run\/spirit\/(zz|aa)[A-Za-z]*\//.test(f); });
-  return !held.length || held.length + ' tracked: ' + held.slice(0, 5).join(', ');
+  return !held.length || false;
 }, test.limit.quick);
 test.run('in debug mode, once the start is worked off, testicle\'s scripts are only those under spirit/app/testicle/', 0.4, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   await idle(280000);
   const out = tables(DB).script.filter(function (r) { return no(r.deleted) && !/^spirit\/app\/testicle\//.test(r.name); });
-  return !out.length || out.length + ' scripts outside it: ' + out.slice(0, 5).map(function (r) { return r.name; }).join(', ');
+  return !out.length || false;
 }, test.limit.long);
 test.run('and its general suites are only testicle-sibling-general.js, -node.js and -browser.js, and the planted worlds\' own', 0.4, function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   const gens = Array.from(new Set(tables(DB).suite.filter(function (r) { return no(r.deleted) && /-(child|sibling)-(general|node|browser)\.js$/.test(r.suite); }).map(function (r) { return r.suite; })));
   const out = gens.filter(function (g) { return DEBUG_GENERALS.indexOf(g) === -1 && !/^spirit\/app\/testicle\/temp\//.test(g); });
-  return (gens.length > 0 && !out.length) || (gens.length ? 'general suites outside it: ' + out.join(', ') : 'no general suite at all');
+  return (gens.length > 0 && !out.length) || false;
 }, test.limit.quick);
 test.run('and the classifier judged only scripts under spirit/app/testicle/', 0.4, function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   const rows = (tables(DB).test || []).filter(function (r) { return r.suite === 'spirit/test/scriptClassify.js' && yes(r.current); });
   const out = rows.filter(function (r) { return !/^spirit\/app\/testicle\//.test(r.script); });
-  return (rows.length > 0 && !out.length) || (rows.length ? out.length + ' classified outside it: ' + out.slice(0, 5).map(function (r) { return r.script; }).join(', ') : 'nothing classified');
+  return (rows.length > 0 && !out.length) || false;
 }, test.limit.quick);
 
 // the box: "testicle.db sits in testicle's state folder"
 test.run('testicle.db is made in its state folder, spirit/state/testicle/data/, with its tables script and suite', 0.2, async function () {
-  if (!up()) return NONODE;
-  return !!(await until(function () { return Promise.resolve(fs.existsSync(DB) && !tables(DB).error); }, 30000)) || 'no readable testicle.db at ' + DB + ': ' + short(fs.existsSync(DB) ? tables(DB).error : 'no file');
+  if (!up()) return false;
+  return !!(await until(function () { return Promise.resolve(fs.existsSync(DB) && !tables(DB).error); }, 30000)) || false;
 }, test.limit.long);
 
 // goal/G47.1, the box: "The testicle server will serve one first verb, \"busy\": it returns true if it is doing any
 // work, false if it is idle."
 test.run('the node lists the verb testicle.busy', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   const api = await call(N.base, 'api', { family: 'testicle' });
   // api {family} answers { family, interface }, the interface the text of its api.js.
   const iface = String((api.body && api.body.interface) || '');
-  return (api.status === 200 && /\bverbs\s*:/.test(iface) && /['"]?busy['"]?\s*:/.test(iface)) || 'testicle\'s api: ' + short(api.body || api.text);
+  return (api.status === 200 && /\bverbs\s*:/.test(iface) && /['"]?busy['"]?\s*:/.test(iface)) || false;
 }, test.limit.quick);
 test.run('with nothing changing, busy answers false', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   // Nothing changes once the start is worked off; idle is busy false twice, two seconds apart (idle(), above).
   const quiet = await idle(50000);
   const r = await call(N.base, 'testicle.busy', {});
-  return (!!quiet && r.status === 200 && (r.body === false || (r.body && r.body.busy === false))) || 'busy, idle: ' + r.status + ' ' + short(r.text);
+  return (!!quiet && r.status === 200 && (r.body === false || (r.body && r.body.busy === false))) || false;
 }, test.limit.slow);
 
 // The start's tables, read once testicle.db holds the table script (goal/G47.1, the rename: "the table script").
 test.run('the world: testicle.db holds the table script', 0.2, function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   start = tables(DB);
-  return !start.error || 'testicle.db: ' + short(start.error);
+  return !start.error || false;
 }, test.limit.quick);
 
 // goal/G47.1, the rename cycle, the box: "The testicle test table is renamed \"testicle\": the table in testicle.db, its
@@ -321,39 +319,39 @@ const sqlNames = function (type) {
   try { const d = new DatabaseSync(DB, { readOnly: true }); const r = d.prepare('SELECT name, tbl_name FROM sqlite_master WHERE type = ?').all(type); d.close(); return r; } catch (e) { return [{ name: 'unreadable: ' + (e && e.message), tbl_name: '' }]; }
 };
 test.run('testicle.db holds the table testicle', 0.2, function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   const t = sqlNames('table').map(function (r) { return r.name; });
-  return t.indexOf('testicle') !== -1 || 'tables: ' + short(t);
+  return t.indexOf('testicle') !== -1 || false;
 }, test.limit.quick);
 test.run('the index over the current rows is on the table testicle', 0.2, function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   const ix = sqlNames('index').filter(function (r) { return !/^sqlite_autoindex/.test(r.name); });
-  return ix.some(function (r) { return r.tbl_name === 'testicle'; }) || 'indexes: ' + short(ix);
+  return ix.some(function (r) { return r.tbl_name === 'testicle'; }) || false;
 }, test.limit.quick);
 test.run('the node lists the verbs testicle.set and testicle.search', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   const api = await call(N.base, 'api', { family: 'testicle' });
   const iface = String((api.body && api.body.interface) || '');
-  return (/['"]testicle\.set['"]\s*:/.test(iface) && /['"]testicle\.search['"]\s*:/.test(iface)) || 'testicle\'s api: ' + short(iface);
+  return (/['"]testicle\.set['"]\s*:/.test(iface) && /['"]testicle\.search['"]\s*:/.test(iface)) || false;
 }, test.limit.quick);
 
 // goal/G47.1, box v95, 5: "the server on start, before even classifying, must make sure that script, suite and testicle
 // tables reflect the current state" (it replaces "nothing is read at start"). Read once the start has done its work.
 const VENDORED = require(path.join(RUN, 'spirit', 'fileSystem.js')).VENDORED_FOLDERS;
 test.run('at start every product script on disc has its row in script', 0.2, async function () {
-  if (!start) return NONODE;
+  if (!start) return false;
   // The scratch tree holds no git of its own: its files are the repo's list, as scratch() copied them, plus the planted.
   const want = execSync('git ls-files -- spirit/run/spirit', { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').map(function (f) { return f.replace(/^spirit\/run\//, ''); })
     // In debug mode (box v143) "as if run://spirit/app/testicle/ were ALL the testables of the whole node": only those.
     .filter(function (f) { return /^spirit\/app\/testicle\//.test(f) && /\.js$/.test(f) && !/(^|\/)test\//.test(f) && !VENDORED.holds(f) && fs.existsSync(path.join(s.run, f)); }).concat(Object.keys(PLANT).filter(function (f) { return !/(^|\/)test\//.test(f) && /\.js$/.test(f); }));
   let missing = [];
   await until(function () { const t = tables(DB); missing = want.filter(function (f) { const r = scriptRow(t, f); return !r || !no(r.deleted); }); return Promise.resolve(missing.length === 0); }, 120000);
-  return missing.length === 0 || missing.length + ' of ' + want.length + ' on disc have no live row: ' + short(missing.slice(0, 8));
+  return missing.length === 0 || false;
 }, test.limit.long);
 test.run('at start a planted script\'s own suite has its suite row', 0.2, function () {
-  if (!start) return NONODE;
+  if (!start) return false;
   const r = suiteRow(tables(DB), Z + 'zeta.js', Z + 'test/zeta.js');
-  return (!!r && no(r.deleted)) || 'zeta\'s own suite row: ' + short(r);
+  return (!!r && no(r.deleted)) || false;
 }, test.limit.quick);
 
 // ── goal/G47.1, box v79, 3: three fields on the script table ──
@@ -362,9 +360,9 @@ const scriptColumns = function () {
   try { const d = new DatabaseSync(DB, { readOnly: true }); const c = d.prepare('PRAGMA table_info(script)').all().map(function (r) { return r.name; }); d.close(); return c; } catch (e) { return ['unreadable: ' + (e && e.message)]; }
 };
 test.run('the script table has the columns reClassify, browserOnly and nodeOnly', 0.2, function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   const c = scriptColumns();
-  return ['reClassify', 'browserOnly', 'nodeOnly'].every(function (n) { return c.indexOf(n) !== -1; }) || 'columns: ' + short(c);
+  return ['reClassify', 'browserOnly', 'nodeOnly'].every(function (n) { return c.indexOf(n) !== -1; }) || false;
 }, test.limit.quick);
 
 // ── goal/G47.1, box v79, 4: the verb preferences ──
@@ -375,155 +373,155 @@ const PREFS = function () { return path.join(s.run, 'spirit', 'state', 'testicle
 const prefsOf = function (r) { const b = r && r.body; return (b && typeof b.preferences === 'object' && b.preferences) || b || {}; };
 let p0 = null;
 test.run('the node lists the verb testicle.preferences', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   const api = await call(N.base, 'api', { family: 'testicle' });
   const iface = String((api.body && api.body.interface) || '');
-  return /['"]?preferences['"]?\s*:/.test(iface) || 'testicle\'s api: ' + short(iface);
+  return /['"]?preferences['"]?\s*:/.test(iface) || false;
 }, test.limit.quick);
 test.run('preferences {} answers them all: interactive, true by default', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   p0 = await call(N.base, 'testicle.preferences', {});
-  return (p0.status === 200 && prefsOf(p0).interactive === true) || 'preferences {}: ' + p0.status + ' ' + short(p0.text);
+  return (p0.status === 200 && prefsOf(p0).interactive === true) || false;
 }, test.limit.quick);
 test.run('a preference it does not know is refused, and sets nothing', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   const r = await call(N.base, 'testicle.preferences', { zzNoSuchPreference: true });
   const after1 = await call(N.base, 'testicle.preferences', {});
-  return ((r.status !== 200 || (r.body && r.body.ok === false)) && prefsOf(after1).zzNoSuchPreference === undefined && prefsOf(after1).interactive === true) || 'an unknown name: ' + r.status + ' ' + short(r.text) + '; then ' + short(after1.text);
+  return ((r.status !== 200 || (r.body && r.body.ok === false)) && prefsOf(after1).zzNoSuchPreference === undefined && prefsOf(after1).interactive === true) || false;
 }, test.limit.quick);
 test.run('interactive given a wrong type is refused, and sets nothing', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   const r = await call(N.base, 'testicle.preferences', { interactive: 'no' });
   const after1 = await call(N.base, 'testicle.preferences', {});
-  return ((r.status !== 200 || (r.body && r.body.ok === false)) && prefsOf(after1).interactive === true) || 'interactive "no": ' + r.status + ' ' + short(r.text) + '; then ' + short(after1.text);
+  return ((r.status !== 200 || (r.body && r.body.ok === false)) && prefsOf(after1).interactive === true) || false;
 }, test.limit.quick);
 
 // A START, INTERACTIVE, NOTHING PRESSED (Andy: "wsl, make double sure you catch this with a test."): the start classifies
 // every script by itself.
 test.run('at a start, interactive and nothing pressed, every live script is classified', 0.2, async function () {
-  if (!start) return NONODE;
+  if (!start) return false;
   let left = [];
   const ok = await until(function () { const t = tables(DB); left = t.script.filter(function (r) { return no(r.deleted) && !no(r.reClassify); }); return Promise.resolve(t.script.filter(function (r) { return no(r.deleted); }).length > 0 && left.length === 0); }, 280000);
   // In debug mode (box v143) the live scripts are those under spirit/app/testicle/, a few dozen, never the whole tree's hundreds.
-  return !!ok || left.length + ' live scripts still to classify, nothing pressed: ' + short(left.slice(0, 5).map(function (r) { return r.name; }));
+  return !!ok || false;
 }, test.limit.long);
 
 // The checks that follow judge the server as it ran until now, auto (goal/G47.1, box v79, 2: "auto: the default mode until
 // now"); interactive is judged at the end of this file, on chi and psi.
 test.run('the world: auto for the checks that follow, set by preferences {interactive: false}', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   const r = await call(N.base, 'testicle.preferences', { interactive: false });
-  return (r.status === 200 && prefsOf(r).interactive === false) || 'set: ' + r.status + ' ' + short(r.text);
+  return (r.status === 200 && prefsOf(r).interactive === false) || false;
 }, test.limit.quick);
 
 
 // the box: "on any change of a product file it makes sure that file has its row"
 test.run('one second after a product file changes, it has its row in script', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   t0 = Date.now();
   append(Z + 'alpha.js', '// changed once\n');
   a1 = await after();
   alpha = scriptRow(a1, Z + 'alpha.js');
-  return !!alpha || 'no row for ' + Z + 'alpha.js: ' + short(a1.error || a1.script);
+  return !!alpha || false;
 }, test.limit.slow);
 test.run('the row holds the file\'s hash', 0.2, function () {
-  return (!!alpha && typeof alpha.hash === 'string' && alpha.hash !== '') || 'hash: ' + short(alpha && alpha.hash);
+  return (!!alpha && typeof alpha.hash === 'string' && alpha.hash !== '') || false;
 }, test.limit.quick);
 test.run('the row is not marked deleted', 0.2, function () {
-  return (!!alpha && no(alpha.deleted)) || 'deleted: ' + short(alpha && alpha.deleted);
+  return (!!alpha && no(alpha.deleted)) || false;
 }, test.limit.quick);
 test.run('the row\'s changed is a numeric UTC timestamp of that change', 0.2, function () {
-  return (!!alpha && Number(alpha.changed) >= t0 - 1000 && Number(alpha.changed) <= Date.now()) || 'changed: ' + short(alpha && alpha.changed) + ', the change at ' + t0;
+  return (!!alpha && Number(alpha.changed) >= t0 - 1000 && Number(alpha.changed) <= Date.now()) || false;
 }, test.limit.quick);
 
 // the box: "and a suite row for every suite that concerns it"
 test.run('the world: alpha.js is concerned by its own test and by general tests', 0.2, function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   wantAlpha = concerning(s.run, Z + 'alpha.js');
-  return (wantAlpha.indexOf(Z + 'test/alpha.js') !== -1 && wantAlpha.length > 1) || 'testModule.js names ' + short(wantAlpha);
+  return (wantAlpha.indexOf(Z + 'test/alpha.js') !== -1 && wantAlpha.length > 1) || false;
 }, test.limit.quick);
 test.run('its suite rows are exactly its own test and the general tests that name it', 0.2, function () {
-  if (!a1) return NONODE;
-  return JSON.stringify(names(suiteRows(a1, Z + 'alpha.js'))) === JSON.stringify(wantAlpha) || 'rows ' + short(names(suiteRows(a1, Z + 'alpha.js'))) + ', wanted ' + short(wantAlpha);
+  if (!a1) return false;
+  return JSON.stringify(names(suiteRows(a1, Z + 'alpha.js'))) === JSON.stringify(wantAlpha) || false;
 }, test.limit.quick);
 test.run('every one of its suite rows is flagged test', 0.2, function () {
-  if (!a1) return NONODE;
+  if (!a1) return false;
   ownRow = suiteRow(a1, Z + 'alpha.js', Z + 'test/alpha.js');
   const unflagged = suiteRows(a1, Z + 'alpha.js').filter(notClassifier).filter(function (r) { return !yes(r.test); });
-  return (suiteRows(a1, Z + 'alpha.js').length > 0 && !unflagged.length) || 'not flagged: ' + short(names(unflagged));
+  return (suiteRows(a1, Z + 'alpha.js').length > 0 && !unflagged.length) || false;
 }, test.limit.quick);
 test.run('a suite row holds the suite file\'s own hash', 0.2, function () {
-  return (!!ownRow && typeof ownRow.hash === 'string' && ownRow.hash !== '' && ownRow.hash !== alpha.hash) || 'suite hash ' + short(ownRow && ownRow.hash) + ', file hash ' + short(alpha && alpha.hash);
+  return (!!ownRow && typeof ownRow.hash === 'string' && ownRow.hash !== '' && ownRow.hash !== alpha.hash) || false;
 }, test.limit.quick);
 test.run('a suite row is not marked deleted', 0.2, function () {
-  return (!!ownRow && no(ownRow.deleted)) || 'deleted: ' + short(ownRow && ownRow.deleted);
+  return (!!ownRow && no(ownRow.deleted)) || false;
 }, test.limit.quick);
 test.run('a suite row\'s outcome is empty: nothing runs a suite this cycle', 0.2, function () {
-  return (!!ownRow && empty(ownRow.outcome)) || 'outcome: ' + short(ownRow && ownRow.outcome);
+  return (!!ownRow && empty(ownRow.outcome)) || false;
 }, test.limit.quick);
 test.run('a suite row\'s changed is a numeric UTC timestamp', 0.2, function () {
-  return (!!ownRow && Number(ownRow.changed) >= t0 - 1000 && Number(ownRow.changed) <= Date.now()) || 'changed: ' + short(ownRow && ownRow.changed);
+  return (!!ownRow && Number(ownRow.changed) >= t0 - 1000 && Number(ownRow.changed) <= Date.now()) || false;
 }, test.limit.quick);
 
 // the box: "When a suite or a product file is changed ... the server adjusts the two tables"
 test.run('a product file changed again gets its new hash', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   t1 = Date.now();
   append(Z + 'alpha.js', '// changed twice\n');
   a2 = await after();
   alpha2 = scriptRow(a2, Z + 'alpha.js');
-  return (!!alpha2 && !!alpha && alpha2.hash !== alpha.hash) || 'hash before ' + short(alpha && alpha.hash) + ', after ' + short(alpha2 && alpha2.hash);
+  return (!!alpha2 && !!alpha && alpha2.hash !== alpha.hash) || false;
 }, test.limit.slow);
 test.run('and its changed moves to that change', 0.2, function () {
-  return (!!alpha2 && Number(alpha2.changed) >= t1) || 'changed: ' + short(alpha2 && alpha2.changed) + ', the change at ' + t1;
+  return (!!alpha2 && Number(alpha2.changed) >= t1) || false;
 }, test.limit.quick);
 test.run('a file keeps one row', 0.2, function () {
-  if (!a2) return NONODE;
-  return a2.script.filter(function (r) { return r.name === Z + 'alpha.js'; }).length === 1 || 'rows for alpha.js: ' + a2.script.filter(function (r) { return r.name === Z + 'alpha.js'; }).length;
+  if (!a2) return false;
+  return a2.script.filter(function (r) { return r.name === Z + 'alpha.js'; }).length === 1 || false;
 }, test.limit.quick);
 test.run('a suite changed gets its new hash on its rows', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   t2 = Date.now();
   append(Z + 'test/alpha.js', '// the suite changed\n');
   a3 = await after();
   ownRow3 = suiteRow(a3, Z + 'alpha.js', Z + 'test/alpha.js');
-  return (!!ownRow3 && !!ownRow && ownRow3.hash !== ownRow.hash) || 'suite hash before ' + short(ownRow && ownRow.hash) + ', after ' + short(ownRow3 && ownRow3.hash);
+  return (!!ownRow3 && !!ownRow && ownRow3.hash !== ownRow.hash) || false;
 }, test.limit.slow);
 test.run('and its rows are flagged test, changed at that change', 0.2, function () {
-  return (!!ownRow3 && yes(ownRow3.test) && Number(ownRow3.changed) >= t2) || 'row: ' + short(ownRow3);
+  return (!!ownRow3 && yes(ownRow3.test) && Number(ownRow3.changed) >= t2) || false;
 }, test.limit.quick);
 
 // the box: "When a suite ... is changed or added": a suite of a file with no row yet
 test.run('a changed suite makes its row for the file it concerns', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   append(Z + 'test/gamma.js', '// the suite of gamma changed\n');
   g1 = await after();
-  return !!suiteRow(g1, Z + 'gamma.js', Z + 'test/gamma.js') || 'suite rows of gamma.js: ' + short(suiteRows(g1, Z + 'gamma.js'));
+  return !!suiteRow(g1, Z + 'gamma.js', Z + 'test/gamma.js') || false;
 }, test.limit.slow);
 test.run('and that file has its row in script', 0.2, function () {
-  if (!g1) return NONODE;
-  return !!scriptRow(g1, Z + 'gamma.js') || 'no row for ' + Z + 'gamma.js';
+  if (!g1) return false;
+  return !!scriptRow(g1, Z + 'gamma.js') || false;
 }, test.limit.quick);
 
 // the box: "changed or added": a new product file
 test.run('a product file added has its row one second later', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   put(Z + 'delta.js', '\'use strict\';\n// delta, new\n');
   d1 = await after();
-  return !!scriptRow(d1, Z + 'delta.js') || 'no row for ' + Z + 'delta.js';
+  return !!scriptRow(d1, Z + 'delta.js') || false;
 }, test.limit.slow);
 test.run('with a suite row for every general test that names it', 0.2, function () {
-  if (!d1) return NONODE;
+  if (!d1) return false;
   wantDelta = concerning(s.run, Z + 'delta.js');
-  return (wantDelta.length > 0 && JSON.stringify(names(suiteRows(d1, Z + 'delta.js'))) === JSON.stringify(wantDelta)) || 'rows ' + short(names(suiteRows(d1, Z + 'delta.js'))) + ', wanted ' + short(wantDelta);
+  return (wantDelta.length > 0 && JSON.stringify(names(suiteRows(d1, Z + 'delta.js'))) === JSON.stringify(wantDelta)) || false;
 }, test.limit.quick);
 
 // the box: "changed or added": a new suite
 test.run('a suite added makes its row, and its file\'s row', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   put(Z + 'test/beta.js', '\'use strict\';\n// the new test of beta\n');
   b1 = await after();
-  return (!!suiteRow(b1, Z + 'beta.js', Z + 'test/beta.js') && !!scriptRow(b1, Z + 'beta.js')) || 'rows of beta.js: ' + short(suiteRows(b1, Z + 'beta.js'));
+  return (!!suiteRow(b1, Z + 'beta.js', Z + 'test/beta.js') && !!scriptRow(b1, Z + 'beta.js')) || false;
 }, test.limit.slow);
 
 // goal/G47.1, the verbs cycle: testicle.script.get. The box: "If the argument (a filename, scoped to run://) is not a
@@ -532,48 +530,48 @@ test.run('a suite added makes its row, and its file\'s row', 0.2, async function
 // creates them with the same code the server uses when it discovers a file change and no record exists: the suites are
 // flagged \"needs testing\"", "The server then returns the file row." Its argument is the file row's key, name.
 test.run('script.get of a file that is no script answers the error "not a production script"', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   const md = await call(N.base, 'testicle.script.get', { name: Z + 'notes.md' });
-  return failed(md, 'not a production script') || 'script.get notes.md: ' + md.status + ' ' + short(md.text);
+  return failed(md, 'not a production script') || false;
 }, test.limit.quick);
 test.run('script.get of a script in a test folder answers the error "not a production script"', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   const asTest = await call(N.base, 'testicle.script.get', { name: Z + 'test/zeta.js' });
-  return failed(asTest, 'not a production script') || 'script.get test/zeta.js: ' + asTest.status + ' ' + short(asTest.text);
+  return failed(asTest, 'not a production script') || false;
 }, test.limit.quick);
 test.run('script.get of a production script that is not there answers the error "no such file"', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   const nowhere = await call(N.base, 'testicle.script.get', { name: Z + 'nowhere.js' });
-  return failed(nowhere, 'no such file') || 'script.get nowhere.js: ' + nowhere.status + ' ' + short(nowhere.text);
+  return failed(nowhere, 'no such file') || false;
 }, test.limit.quick);
 // Since box v95, 5 every script on disc has its row from the start, zeta.js among them: script.get answers it.
 test.run('script.get of a production script never changed answers with its file row there', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   tz = Date.now();
   zeta = await call(N.base, 'testicle.script.get', { name: Z + 'zeta.js' });
   zt = tables(DB);
   zrow = scriptRow(zt, Z + 'zeta.js');
-  return (zeta.status === 200 && !!zrow) || 'script.get zeta.js: ' + zeta.status + ' ' + short(zeta.text) + '; its row ' + short(zrow);
+  return (zeta.status === 200 && !!zrow) || false;
 }, test.limit.quick);
 test.run('and answers that file row', 0.2, function () {
-  if (!zeta) return NONODE;
-  return (!!zrow && !!zeta.body && zeta.body.name === zrow.name && zeta.body.hash === zrow.hash && Number(zeta.body.changed) === Number(zrow.changed) && no(zrow.deleted)) || 'answered ' + short(zeta.body) + ', the row ' + short(zrow);
+  if (!zeta) return false;
+  return (!!zrow && !!zeta.body && zeta.body.name === zrow.name && zeta.body.hash === zrow.hash && Number(zeta.body.changed) === Number(zrow.changed) && no(zrow.deleted)) || false;
 }, test.limit.quick);
 test.run('it makes a suite row for every suite that concerns the file', 0.2, function () {
-  if (!zt) return NONODE;
+  if (!zt) return false;
   wantZeta = concerning(s.run, Z + 'zeta.js');
-  return (wantZeta.indexOf(Z + 'test/zeta.js') !== -1 && JSON.stringify(names(suiteRows(zt, Z + 'zeta.js'))) === JSON.stringify(wantZeta)) || 'rows ' + short(names(suiteRows(zt, Z + 'zeta.js'))) + ', wanted ' + short(wantZeta);
+  return (wantZeta.indexOf(Z + 'test/zeta.js') !== -1 && JSON.stringify(names(suiteRows(zt, Z + 'zeta.js'))) === JSON.stringify(wantZeta)) || false;
 }, test.limit.quick);
 test.run('every suite row it makes is flagged needs testing', 0.2, function () {
-  if (!zt) return NONODE;
+  if (!zt) return false;
   const zunflagged = suiteRows(zt, Z + 'zeta.js').filter(notClassifier).filter(function (r) { return !yes(r.test); });
-  return (suiteRows(zt, Z + 'zeta.js').length > 0 && !zunflagged.length) || 'not flagged: ' + short(names(zunflagged));
+  return (suiteRows(zt, Z + 'zeta.js').length > 0 && !zunflagged.length) || false;
 }, test.limit.quick);
 test.run('script.get of a file with rows answers its row as it stands', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   const known = await call(N.base, 'testicle.script.get', { name: Z + 'gamma.js' });
   const grow = scriptRow(tables(DB), Z + 'gamma.js');
-  return (known.status === 200 && !!grow && !!known.body && known.body.name === grow.name && known.body.hash === grow.hash) || 'answered ' + short(known.body) + ', the row ' + short(grow);
+  return (known.status === 200 && !!grow && !!known.body && known.body.name === grow.name && known.body.hash === grow.hash) || false;
 }, test.limit.quick);
 
 // goal/G47.1, the verbs cycle: testicle.suite.search. The box: "A standard table search response", "The file row owns
@@ -582,54 +580,54 @@ test.run('script.get of a file with rows answers its row as it stands', 0.2, asy
 // files, each with test as the final folder it is in", "The suite search returns both: the filename AND its status
 // \"needs running\"". The standard answer: {items: [{key, label}], more}, each label the row as JSON.
 test.run('suite.search answers a standard table search: items and more', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   all = await call(N.base, 'testicle.suite.search', { script: Z + 'zeta.js', text: '' });
   got = items(all);
-  return (all.status === 200 && !!all.body && Array.isArray(all.body.items) && typeof all.body.more === 'boolean') || 'suite.search: ' + all.status + ' ' + short(all.text);
+  return (all.status === 200 && !!all.body && Array.isArray(all.body.items) && typeof all.body.more === 'boolean') || false;
 }, test.limit.quick);
 test.run('with no words it answers the file\'s suites, each once, and no other', 0.2, function () {
   const gotNames = got.map(suiteOf).sort();
-  return JSON.stringify(gotNames) === JSON.stringify(wantZeta) || 'answered ' + short(gotNames) + ', wanted ' + short(wantZeta);
+  return JSON.stringify(gotNames) === JSON.stringify(wantZeta) || false;
 }, test.limit.quick);
 test.run('every row it answers is the given script\'s', 0.2, function () {
-  return (got.length > 0 && got.every(function (i) { return i.row.script === Z + 'zeta.js'; })) || 'scripts: ' + short(got.map(function (i) { return i.row.script; }));
+  return (got.length > 0 && got.every(function (i) { return i.row.script === Z + 'zeta.js'; })) || false;
 }, test.limit.quick);
 test.run('every suite it answers is a file whose final folder is test', 0.2, function () {
-  return (got.length > 0 && got.every(function (i) { return path.posix.basename(path.posix.dirname(suiteOf(i))) === 'test'; })) || 'suites: ' + short(got.map(suiteOf).sort());
+  return (got.length > 0 && got.every(function (i) { return path.posix.basename(path.posix.dirname(suiteOf(i))) === 'test'; })) || false;
 }, test.limit.quick);
 test.run('every suite it answers carries its status: needs running', 0.2, function () {
-  return (got.length > 0 && got.filter(function (i) { return notClassifier(i.row); }).every(function (i) { return yes(i.row.test) || i.row.status === 'needs running'; })) || 'rows: ' + short(got.map(function (i) { return i.row; }).slice(0, 3));
+  return (got.length > 0 && got.filter(function (i) { return notClassifier(i.row); }).every(function (i) { return yes(i.row.test) || i.row.status === 'needs running'; })) || false;
 }, test.limit.quick);
 test.run('the words narrow among the file\'s suites', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   const narrow = items(await call(N.base, 'testicle.suite.search', { script: Z + 'zeta.js', text: 'sibling' })).map(suiteOf);
-  return (narrow.indexOf(GENERAL) !== -1 && narrow.indexOf(Z + 'test/zeta.js') === -1) || 'searched sibling: ' + short(narrow);
+  return (narrow.indexOf(GENERAL) !== -1 && narrow.indexOf(Z + 'test/zeta.js') === -1) || false;
 }, test.limit.quick);
 test.run('another file\'s search answers that file\'s rows, none of the first', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   const other = items(await call(N.base, 'testicle.suite.search', { script: Z + 'gamma.js', text: '' }));
-  return (other.length > 0 && other.every(function (i) { return i.row.script === Z + 'gamma.js'; }) && other.map(suiteOf).indexOf(Z + 'test/zeta.js') === -1) || 'gamma.js: ' + short(other.map(function (i) { return i.row.script + ' ' + suiteOf(i); }).slice(0, 5));
+  return (other.length > 0 && other.every(function (i) { return i.row.script === Z + 'gamma.js'; }) && other.map(suiteOf).indexOf(Z + 'test/zeta.js') === -1) || false;
 }, test.limit.quick);
 // goal/G47.1, the box: "with the script selector blank (all scripts), the suite selector lists every suite, each once, and
 // suite.search given no script answers that list". It replaces "suite.search keeps needing a script" (Andy: "There's
 // NOTHING wrong with searching for testicle records that only must match a suite and not a file."). GENERAL judges both
 // zeta and gamma, so it is one suite of two scripts.
 test.run('given no script, suite.search answers the suites of every script', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   const r = await call(N.base, 'testicle.suite.search', { text: 'zzTesticle' });
   const names = items(r).map(suiteOf);
-  return (r.status === 200 && names.indexOf(Z + 'test/zeta.js') !== -1 && names.indexOf(Z + 'test/gamma.js') !== -1) || 'no script: ' + r.status + ' ' + short(names);
+  return (r.status === 200 && names.indexOf(Z + 'test/zeta.js') !== -1 && names.indexOf(Z + 'test/gamma.js') !== -1) || false;
 }, test.limit.quick);
 test.run('given no script, it answers each suite once', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   const names = items(await call(N.base, 'testicle.suite.search', { text: '' })).map(suiteOf);
   const twice = names.filter(function (n, i) { return names.indexOf(n) !== i; });
-  return (names.length > 0 && twice.length === 0) || 'answered twice: ' + short(twice.slice(0, 5)) + ' of ' + names.length;
+  return (names.length > 0 && twice.length === 0) || false;
 }, test.limit.quick);
 test.run('given no script, a suite of two scripts is answered once', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   const names = items(await call(N.base, 'testicle.suite.search', { text: 'sibling' })).map(suiteOf);
-  return names.filter(function (n) { return n === GENERAL; }).length === 1 || 'searched sibling: ' + short(names);
+  return names.filter(function (n) { return n === GENERAL; }).length === 1 || false;
 }, test.limit.quick);
 
 // goal/G47.1, the test cycle. The box: "The testicle.test table now needs a \"set\" verb, and a \"search\" verb", "When
@@ -644,146 +642,146 @@ test.run('given no script, a suite of two scripts is answered once', 0.2, async 
 // searches", "The verb red is testicle.red". G45.1's columns:
 // script (file until the rename), suite, test, flipped, current, verified, tested, judged, severity.
 test.run('testicle.set is served, and testicle.db holds the table testicle', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   ts0 = Date.now();
   set1 = await call(N.base, 'testicle.testicle.set', { script: TH, suite: THS, test: 'theta answers its first question', verified: true, severity: 0.2 });
   k1 = tables(DB);
-  return (set1.status === 200 && Array.isArray(k1.test)) || 'test.set: ' + set1.status + ' ' + short(set1.text) + '; table test ' + short(k1.test === null ? 'missing' : 'there');
+  return (set1.status === 200 && Array.isArray(k1.test)) || false;
 }, test.limit.quick);
 test.run('a set\'s script has its script row', 0.2, function () {
-  if (!k1) return NONODE;
-  return !!scriptRow(k1, TH) || 'no script row for ' + TH;
+  if (!k1) return false;
+  return !!scriptRow(k1, TH) || false;
 }, test.limit.quick);
 test.run('and a suite row for every suite that concerns it', 0.2, function () {
-  if (!k1) return NONODE;
+  if (!k1) return false;
   wantTheta = concerning(s.run, TH);
-  return JSON.stringify(names(suiteRows(k1, TH))) === JSON.stringify(wantTheta) || 'rows ' + short(names(suiteRows(k1, TH))) + ', wanted ' + short(wantTheta);
+  return JSON.stringify(names(suiteRows(k1, TH))) === JSON.stringify(wantTheta) || false;
 }, test.limit.quick);
 test.run('a test set for the first time has one row, current', 0.2, function () {
-  if (!k1) return NONODE;
+  if (!k1) return false;
   tr1 = currentOf(k1, TH, THS, 'theta answers its first question')[0];
-  return (testRows(k1, TH, THS, 'theta answers its first question').length === 1 && !!tr1) || 'rows: ' + short(testRows(k1, TH, THS, 'theta answers its first question'));
+  return (testRows(k1, TH, THS, 'theta answers its first question').length === 1 && !!tr1) || false;
 }, test.limit.quick);
 test.run('the row holds its result and its severity', 0.2, function () {
-  return (!!tr1 && yes(tr1.verified) && Number(tr1.severity) === 0.2) || 'row: ' + short(tr1);
+  return (!!tr1 && yes(tr1.verified) && Number(tr1.severity) === 0.2) || false;
 }, test.limit.quick);
 test.run('the row holds when it flipped and when it was tested, numeric UTC timestamps', 0.2, function () {
-  return (!!tr1 && Number(tr1.flipped) >= ts0 - 1000 && Number(tr1.tested) >= ts0 - 1000 && Number(tr1.tested) <= Date.now()) || 'row: ' + short(tr1);
+  return (!!tr1 && Number(tr1.flipped) >= ts0 - 1000 && Number(tr1.tested) >= ts0 - 1000 && Number(tr1.tested) <= Date.now()) || false;
 }, test.limit.quick);
 test.run('the row is judged at the script\'s hash', 0.2, function () {
-  if (!k1) return NONODE;
-  return (!!tr1 && tr1.judged === (scriptRow(k1, TH) || {}).hash && typeof tr1.judged === 'string' && tr1.judged !== '') || 'judged ' + short(tr1 && tr1.judged) + ', the script\'s hash ' + short((scriptRow(k1, TH) || {}).hash);
+  if (!k1) return false;
+  return (!!tr1 && tr1.judged === (scriptRow(k1, TH) || {}).hash && typeof tr1.judged === 'string' && tr1.judged !== '') || false;
 }, test.limit.quick);
 
 // the box: "If the test does not flip, the current row is only updated"
 test.run('the same result again makes no new row', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   await sleep(20);
   ts1 = Date.now();
   await call(N.base, 'testicle.testicle.set', { script: TH, suite: THS, test: 'theta answers its first question', verified: true, severity: 0.1 });
   k2 = tables(DB);
   tr2 = currentOf(k2, TH, THS, 'theta answers its first question')[0];
-  return (testRows(k2, TH, THS, 'theta answers its first question').length === 1 && !!tr2) || 'rows: ' + short(testRows(k2, TH, THS, 'theta answers its first question'));
+  return (testRows(k2, TH, THS, 'theta answers its first question').length === 1 && !!tr2) || false;
 }, test.limit.quick);
 test.run('the current row\'s tested moves, its flipped stays', 0.2, function () {
-  return (!!tr2 && !!tr1 && Number(tr2.tested) >= ts1 && Number(tr2.flipped) === Number(tr1.flipped)) || 'before ' + short(tr1) + ', after ' + short(tr2);
+  return (!!tr2 && !!tr1 && Number(tr2.tested) >= ts1 && Number(tr2.flipped) === Number(tr1.flipped)) || false;
 }, test.limit.quick);
 test.run('a lower severity leaves the row\'s severity as it was', 0.2, function () {
-  return (!!tr2 && Number(tr2.severity) === 0.2) || 'severity after a set of 0.1: ' + short(tr2 && tr2.severity);
+  return (!!tr2 && Number(tr2.severity) === 0.2) || false;
 }, test.limit.quick);
 test.run('with the script changed, the row is judged at its new hash', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   fs.appendFileSync(path.join(s.run, TH), '// theta changed\n');
   await sleep(1000);
   await call(N.base, 'testicle.testicle.set', { script: TH, suite: THS, test: 'theta answers its first question', verified: true, severity: 0.5 });
   k3 = tables(DB);
   tr3 = currentOf(k3, TH, THS, 'theta answers its first question')[0];
-  return (!!tr3 && !!tr1 && tr3.judged === (scriptRow(k3, TH) || {}).hash && tr3.judged !== tr1.judged) || 'judged ' + short(tr3 && tr3.judged) + ', the script\'s hash ' + short((scriptRow(k3, TH) || {}).hash);
+  return (!!tr3 && !!tr1 && tr3.judged === (scriptRow(k3, TH) || {}).hash && tr3.judged !== tr1.judged) || false;
 }, test.limit.slow);
 test.run('a higher severity is applied to the row', 0.2, function () {
-  return (!!tr3 && Number(tr3.severity) === 0.5) || 'severity after a set of 0.5: ' + short(tr3 && tr3.severity);
+  return (!!tr3 && Number(tr3.severity) === 0.5) || false;
 }, test.limit.quick);
 
 // the box: "If the test flips, a new active row is created"
 test.run('a flip makes a second row, and one row alone is current', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   ts2 = Date.now();
   await call(N.base, 'testicle.testicle.set', { script: TH, suite: THS, test: 'theta answers its first question', verified: false, severity: 0.6 });
   k4 = tables(DB);
   all4 = testRows(k4, TH, THS, 'theta answers its first question');
   cur4 = currentOf(k4, TH, THS, 'theta answers its first question');
-  return (all4.length === 2 && cur4.length === 1) || 'rows: ' + short(all4);
+  return (all4.length === 2 && cur4.length === 1) || false;
 }, test.limit.quick);
 test.run('the new current row holds the new result, flipped now', 0.2, function () {
-  return (cur4.length === 1 && no(cur4[0].verified) && Number(cur4[0].flipped) >= ts2) || 'current: ' + short(cur4);
+  return (cur4.length === 1 && no(cur4[0].verified) && Number(cur4[0].flipped) >= ts2) || false;
 }, test.limit.quick);
 test.run('the row it replaces is kept, current no longer: the history', 0.2, function () {
   const old4 = all4.filter(function (r) { return !yes(r.current); })[0];
-  return (!!old4 && !!tr1 && yes(old4.verified) && Number(old4.flipped) === Number(tr1.flipped)) || 'the old row: ' + short(old4);
+  return (!!old4 && !!tr1 && yes(old4.verified) && Number(old4.flipped) === Number(tr1.flipped)) || false;
 }, test.limit.quick);
 // theta's first question passes again: a third row of it, the history the searches below read. (Its old check, that the
 // needs-testing flag stays, went with the struck line "This cycle does not clear a suite's needs-testing flag".)
 test.run('the world: theta\'s first question passes again', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   const r = await call(N.base, 'testicle.testicle.set', { script: TH, suite: THS, test: 'theta answers its first question', verified: true, severity: 0.6 });
-  return r.status === 200 || 'testicle.set: ' + r.status + ' ' + short(r.text);
+  return r.status === 200 || false;
 }, test.limit.quick);
 
 // the box: "test.search will only return current test rows"
 test.run('testicle.search answers a standard table search: items and more', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   await call(N.base, 'testicle.testicle.set', { script: TH, suite: THS, test: 'theta answers its second question', verified: false, severity: 0.9 });
   await call(N.base, 'testicle.testicle.set', { script: TH, suite: THS, test: 'theta answers its third question', verified: false, severity: 0.3 });
   await call(N.base, 'testicle.testicle.set', { script: Z + 'gamma.js', suite: Z + 'test/gamma.js', test: 'gamma answers', verified: false, severity: 0.7 });
   sr = await call(N.base, 'testicle.testicle.search', { script: TH, suite: THS, text: '' });
   srRows = found(sr);
-  return (sr.status === 200 && !!sr.body && Array.isArray(sr.body.items) && typeof sr.body.more === 'boolean') || 'test.search: ' + sr.status + ' ' + short(sr.text);
+  return (sr.status === 200 && !!sr.body && Array.isArray(sr.body.items) && typeof sr.body.more === 'boolean') || false;
 }, test.limit.quick);
 test.run('for a script and suite it answers their current tests only, one row each', 0.2, function () {
-  return (srRows.length === 3 && srRows.every(function (r) { return yes(r.current) && r.script === TH && r.suite === THS; })) || 'rows: ' + short(srRows);
+  return (srRows.length === 3 && srRows.every(function (r) { return yes(r.current) && r.script === TH && r.suite === THS; })) || false;
 }, test.limit.quick);
 // goal/G47.1, the box: "Every test search answers its failed tests first, then by severity." theta's three: the second
 // failed at 0.9, the third failed at 0.3, the first passed at 0.6.
 test.run('testicle.search answers the failed tests first, then the most severe first', 0.2, function () {
   const got = srRows.map(function (r) { return (yes(r.verified) ? 'green ' : 'red ') + Number(r.severity); });
-  return JSON.stringify(got) === JSON.stringify(['red 0.9', 'red 0.3', 'green 0.6']) || 'in order: ' + short(got);
+  return JSON.stringify(got) === JSON.stringify(['red 0.9', 'red 0.3', 'green 0.6']) || false;
 }, test.limit.quick);
 // the box: "Red, green, the script and the suite go to the server with the words, so the server narrows before it cuts".
 test.run('result red answers the failed tests alone', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   const r = found(await call(N.base, 'testicle.testicle.search', { script: TH, suite: THS, result: 'red', text: '' }));
-  return (r.length === 2 && r.every(function (x) { return no(x.verified); })) || 'rows: ' + short(r);
+  return (r.length === 2 && r.every(function (x) { return no(x.verified); })) || false;
 }, test.limit.quick);
 test.run('result green answers the passed tests alone', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   const r = found(await call(N.base, 'testicle.testicle.search', { script: TH, suite: THS, result: 'green', text: '' }));
-  return (r.length === 1 && yes(r[0].verified)) || 'rows: ' + short(r);
+  return (r.length === 1 && yes(r[0].verified)) || false;
 }, test.limit.quick);
 test.run('a result neither red nor green is refused', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   const r = await call(N.base, 'testicle.testicle.search', { result: 'blue', text: '' });
-  return r.status === 400 || 'answered ' + r.status + ' ' + short(r.text);
+  return r.status === 400 || false;
 }, test.limit.quick);
 // the box: "the page asks for the following answers while the server says there are more".
 test.run('from starts the answer after the rows already held', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   const r = found(await call(N.base, 'testicle.testicle.search', { script: TH, suite: THS, from: 1, text: '' }));
   const got = r.map(function (x) { return (yes(x.verified) ? 'green ' : 'red ') + Number(x.severity); });
-  return JSON.stringify(got) === JSON.stringify(['red 0.3', 'green 0.6']) || 'from 1: ' + short(got);
+  return JSON.stringify(got) === JSON.stringify(['red 0.3', 'green 0.6']) || false;
 }, test.limit.quick);
 test.run('with no script it searches that suite\'s tests for any script', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   const anyScript = found(await call(N.base, 'testicle.testicle.search', { suite: THS, text: '' }));
-  return (anyScript.length === 3 && anyScript.every(function (r) { return r.suite === THS && yes(r.current); })) || 'rows: ' + short(anyScript);
+  return (anyScript.length === 3 && anyScript.every(function (r) { return r.suite === THS && yes(r.current); })) || false;
 }, test.limit.quick);
 test.run('with no suite it searches that script\'s tests in any suite', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   const anySuite = found(await call(N.base, 'testicle.testicle.search', { script: Z + 'gamma.js', text: '' }));
   // gamma's tests in any suite: its own test's, and the classifier's classifyable row beside it (box v94, 1).
-  return (anySuite.length >= 1 && anySuite.every(function (r) { return r.script === Z + 'gamma.js'; }) && anySuite.some(function (r) { return r.test === 'gamma answers'; }) && anySuite.every(function (r) { return r.test === 'gamma answers' || r.suite === 'spirit/test/scriptClassify.js'; })) || 'rows: ' + short(anySuite);
+  return (anySuite.length >= 1 && anySuite.every(function (r) { return r.script === Z + 'gamma.js'; }) && anySuite.some(function (r) { return r.test === 'gamma answers'; }) && anySuite.every(function (r) { return r.test === 'gamma answers' || r.suite === 'spirit/test/scriptClassify.js'; })) || false;
 }, test.limit.quick);
 test.run('with neither it searches every current test', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   const ans = await call(N.base, 'testicle.testicle.search', { text: '' });
   const everyOne = found(ans);
   // The runner adds rows of its own runs (goal/G47.1, the queue cycle): the four set here are among them, and every one is current.
@@ -793,9 +791,9 @@ test.run('with neither it searches every current test', 0.2, async function () {
   if (ans.body && ans.body.more) {
     const cur = (tables(DB).test || []).filter(function (r) { return yes(r.current); }).length;
     const redFirst = everyOne.every(function (r, i) { return i === 0 || yes(r.verified) || no(everyOne[i - 1].verified); });
-    return (everyOne.length > 0 && everyOne.length < cur && redFirst && everyOne.every(function (r) { return yes(r.current); })) || 'cut at ' + everyOne.length + ' of ' + cur + ' current rows, the failed first ' + redFirst + ': ' + short(everyOne.map(function (r) { return r.test; }));
+    return (everyOne.length > 0 && everyOne.length < cur && redFirst && everyOne.every(function (r) { return yes(r.current); })) || false;
   }
-  return (mine.length === 4 && everyOne.every(function (r) { return yes(r.current); })) || mine.length + ' of the four set here, ' + everyOne.filter(function (r) { return !yes(r.current); }).length + ' not current, of ' + everyOne.length + ': ' + short(mine.map(function (r) { return r.test; }));
+  return (mine.length === 4 && everyOne.every(function (r) { return yes(r.current); })) || false;
 }, test.limit.quick);
 
 // goal/G47.1, the cycle "the testicle search", the old ruling amended (Andy: "test.search will return only current test rows
@@ -804,26 +802,26 @@ test.run('with neither it searches every current test', 0.2, async function () {
 // failing, then passing again: three rows, one current.
 let hist = [];
 test.run('given a test title, testicle.search answers every row of that test, current or not', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   hist = found(await call(N.base, 'testicle.testicle.search', { script: TH, suite: THS, test: 'theta answers its first question', text: '' }));
   const all = testRows(tables(DB), TH, THS, 'theta answers its first question');
-  return (all.length === 3 && hist.length === 3 && hist.filter(function (r) { return yes(r.current); }).length === 1) || 'rows answered ' + short(hist) + '; rows kept ' + all.length;
+  return (all.length === 3 && hist.length === 3 && hist.filter(function (r) { return yes(r.current); }).length === 1) || false;
 }, test.limit.quick);
 test.run('those rows come newest first', 0.2, function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   const f = hist.map(function (r) { return Number(r.flipped); });
-  return (f.length === 3 && f[0] > f[1] && f[1] > f[2]) || 'flipped in order ' + short(f);
+  return (f.length === 3 && f[0] > f[1] && f[1] > f[2]) || false;
 }, test.limit.quick);
 test.run('and only rows of that script, suite and title', 0.2, function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   const other = hist.filter(function (r) { return r.script !== TH || r.suite !== THS || r.test !== 'theta answers its first question'; });
-  return (hist.length > 0 && !other.length) || 'rows of another test: ' + short(other);
+  return (hist.length > 0 && !other.length) || false;
 }, test.limit.quick);
 test.run('without a test title it still answers the current rows alone', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   const cur = found(await call(N.base, 'testicle.testicle.search', { script: TH, suite: THS, text: '' }));
   const mine = cur.filter(function (r) { return r.test === 'theta answers its first question'; });
-  return (mine.length === 1 && yes(mine[0].current)) || 'rows of theta\'s first question: ' + short(mine);
+  return (mine.length === 1 && yes(mine[0].current)) || false;
 }, test.limit.quick);
 
 // goal/G47.1, the box, the search fix (Andy: "the empty search string with no script or suite selected should already fill
@@ -840,85 +838,85 @@ const has = function (rows, title) { return rows.some(function (r) { return r.te
 const ask = function (args) { return call(N.base, 'testicle.testicle.search', Object.assign({ text: '' }, args)); };
 let loud = false;
 test.run('the world: 40 passing tests of gamma at severity 1, and theta\'s quiet pass and quiet failure at severity 0', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   const out = [];
   for (let i = 0; i < 40; i++) out.push(await call(N.base, 'testicle.testicle.set', { script: Z + 'gamma.js', suite: Z + 'test/gamma.js', test: LOUD(i), verified: true, severity: 1 }));
   out.push(await call(N.base, 'testicle.testicle.set', { script: TH, suite: THS, test: QUOKKA, verified: true, severity: 0 }));
   out.push(await call(N.base, 'testicle.testicle.set', { script: TH, suite: THS, test: WOMBAT, verified: false, severity: 0 }));
   loud = out.every(function (r) { return r.status === 200; });
-  return loud || 'testicle.set: ' + short(out.filter(function (r) { return r.status !== 200; }).map(function (r) { return r.status + ' ' + r.text; }));
+  return loud || false;
 }, test.limit.slow);
 test.run('the world: with nothing chosen, the answer is cut', 0.2, async function () {
-  if (!loud) return 'the tests were not set: the world failed';
+  if (!loud) return false;
   const r = await ask({});
-  return (r.status === 200 && !!r.body && r.body.more === true) || 'answer: ' + r.status + ' more ' + short(r.body && r.body.more) + ', ' + found(r).length + ' rows';
+  return (r.status === 200 && !!r.body && r.body.more === true) || false;
 }, test.limit.quick);
 test.run('with nothing chosen, a cut answer holds no passed test before a failed one', 0.2, async function () {
-  if (!loud) return 'the tests were not set: the world failed';
+  if (!loud) return false;
   const rows = found(await ask({}));
   const firstPass = rows.findIndex(function (r) { return yes(r.verified); });
   const lateFail = firstPass === -1 ? -1 : rows.slice(firstPass).findIndex(function (r) { return no(r.verified); });
-  return (rows.length > 0 && no(rows[0].verified) && lateFail === -1) || 'results in order: ' + short(rows.map(function (r) { return yes(r.verified) ? 'passed' : 'failed'; }));
+  return (rows.length > 0 && no(rows[0].verified) && lateFail === -1) || false;
 }, test.limit.quick);
 // The runner's own runs add failures of their own: the answer is judged against every failed current row of the table.
 test.run('with nothing chosen, the quiet failure at severity 0 comes before 40 passed tests of severity 1', 0.2, async function () {
-  if (!loud) return 'the tests were not set: the world failed';
+  if (!loud) return false;
   const rows = found(await ask({}));
   const reds = (tables(DB).test || []).filter(function (r) { return yes(r.current) && no(r.verified); }).length;
   const at = rows.findIndex(function (r) { return r.test === WOMBAT; });
   const firstPass = rows.findIndex(function (r) { return yes(r.verified); });
-  if (firstPass === -1 && at === -1) return 'the answer holds ' + rows.length + ' failed tests and no pass; ' + reds + ' failed current rows, more than one answer holds: the quiet failure was not judged';
-  return (at !== -1 && (firstPass === -1 || at < firstPass)) || 'the quiet failure at ' + at + ', the first pass at ' + firstPass + ', of ' + rows.length + ' rows (' + reds + ' failed current rows)';
+  if (firstPass === -1 && at === -1) return false;
+  return (at !== -1 && (firstPass === -1 || at < firstPass)) || false;
 }, test.limit.quick);
 test.run('result red answers failed tests only', 0.2, async function () {
-  if (!loud) return 'the tests were not set: the world failed';
+  if (!loud) return false;
   const r = await ask({ result: 'red' });
   const rows = found(r);
-  return (r.status === 200 && rows.length > 0 && rows.every(function (x) { return no(x.verified) && yes(x.current); })) || 'result red: ' + r.status + ' ' + short(rows.length ? rows.map(function (x) { return x.verified + ' ' + x.test; }) : r.text);
+  return (r.status === 200 && rows.length > 0 && rows.every(function (x) { return no(x.verified) && yes(x.current); })) || false;
 }, test.limit.quick);
 test.run('result green answers passed tests only', 0.2, async function () {
-  if (!loud) return 'the tests were not set: the world failed';
+  if (!loud) return false;
   const r = await ask({ result: 'green' });
   const rows = found(r);
-  return (r.status === 200 && rows.length > 0 && rows.every(function (x) { return yes(x.verified) && yes(x.current); })) || 'result green: ' + r.status + ' ' + short(rows.length ? rows.map(function (x) { return x.verified + ' ' + x.test; }) : r.text);
+  return (r.status === 200 && rows.length > 0 && rows.every(function (x) { return yes(x.verified) && yes(x.current); })) || false;
 }, test.limit.quick);
 test.run('result left out answers failed and passed tests both', 0.2, async function () {
-  if (!loud) return 'the tests were not set: the world failed';
+  if (!loud) return false;
   const rows = found(await ask({ script: TH }));
-  return (rows.some(function (x) { return no(x.verified); }) && rows.some(function (x) { return yes(x.verified); })) || 'theta\'s rows: ' + short(rows.map(function (x) { return x.verified + ' ' + x.test; }));
+  return (rows.some(function (x) { return no(x.verified); }) && rows.some(function (x) { return yes(x.verified); })) || false;
 }, test.limit.quick);
 test.run('result green narrows before the cut: theta chosen, its quiet pass is found beneath 40 louder passes', 0.2, async function () {
-  if (!loud) return 'the tests were not set: the world failed';
+  if (!loud) return false;
   const r = await ask({ script: TH, result: 'green' });
   const rows = found(r);
-  return (r.status === 200 && has(rows, QUOKKA) && rows.every(function (x) { return x.script === TH && yes(x.verified); })) || 'theta, green: ' + r.status + ' ' + short(rows.length ? rows.map(function (x) { return x.script + ' ' + x.verified + ' ' + x.test; }) : r.text);
+  return (r.status === 200 && has(rows, QUOKKA) && rows.every(function (x) { return x.script === TH && yes(x.verified); })) || false;
 }, test.limit.quick);
 test.run('result green narrows before the cut: theta\'s suite chosen with no script, its quiet pass is found', 0.2, async function () {
-  if (!loud) return 'the tests were not set: the world failed';
+  if (!loud) return false;
   const r = await ask({ suite: THS, result: 'green' });
   const rows = found(r);
-  return (r.status === 200 && has(rows, QUOKKA) && rows.every(function (x) { return x.suite === THS && yes(x.verified); })) || 'theta\'s suite, green: ' + r.status + ' ' + short(rows.length ? rows.map(function (x) { return x.suite + ' ' + x.verified + ' ' + x.test; }) : r.text);
+  return (r.status === 200 && has(rows, QUOKKA) && rows.every(function (x) { return x.suite === THS && yes(x.verified); })) || false;
 }, test.limit.quick);
 test.run('with green alone, nothing chosen, the answer is all passes and none of them failed', 0.2, async function () {
-  if (!loud) return 'the tests were not set: the world failed';
+  if (!loud) return false;
   const rows = found(await ask({ result: 'green' }));
-  return (rows.length > 0 && !has(rows, WOMBAT) && rows.every(function (x) { return yes(x.verified); })) || 'green alone: ' + short(rows.map(function (x) { return x.verified + ' ' + x.test; }));
+  return (rows.length > 0 && !has(rows, WOMBAT) && rows.every(function (x) { return yes(x.verified); })) || false;
 }, test.limit.quick);
 test.run('typed words narrow before the cut: "quokka" finds theta\'s quiet pass beneath 40 louder passes', 0.2, async function () {
-  if (!loud) return 'the tests were not set: the world failed';
+  if (!loud) return false;
   const rows = found(await ask({ text: 'quokka' }));
-  return has(rows, QUOKKA) || '"quokka" found ' + short(rows.map(function (x) { return x.test; }));
+  return has(rows, QUOKKA) || false;
 }, test.limit.quick);
 test.run('typed words and result together: "quokka" with result red finds no passed test', 0.2, async function () {
-  if (!loud) return 'the tests were not set: the world failed';
+  if (!loud) return false;
   const r = await ask({ text: 'quokka', result: 'red' });
   const rows = found(r);
-  return (r.status === 200 && !has(rows, QUOKKA) && rows.every(function (x) { return no(x.verified); })) || '"quokka", red: ' + r.status + ' ' + short(rows.length ? rows.map(function (x) { return x.verified + ' ' + x.test; }) : r.text);
+  return (r.status === 200 && !has(rows, QUOKKA) && rows.every(function (x) { return no(x.verified); })) || false;
 }, test.limit.quick);
 test.run('typed words and result together: "wombat" with result red finds theta\'s quiet failure', 0.2, async function () {
-  if (!loud) return 'the tests were not set: the world failed';
+  if (!loud) return false;
   const r = await ask({ text: 'wombat', result: 'red' });
-  return (r.status === 200 && has(found(r), WOMBAT)) || '"wombat", red: ' + r.status + ' ' + short(found(r).map(function (x) { return x.test; }).concat(r.status === 200 ? [] : [r.text]));
+  return (r.status === 200 && has(found(r), WOMBAT)) || false;
 }, test.limit.quick);
 
 // EVERY VARIATION OF EVERY SEARCH, ALL ITS ROWS OR A FULL ANSWER (Andy, to wsl: "You BETTER check that every variation of
@@ -961,22 +959,22 @@ const tkey = function (r) { return r.script + '|' + r.suite + '|' + r.test; };
 // allowed: the rows an answer may hold at all, the narrowing without the words (the box names no rule on what else the
 // words may find; Andy's ask is that every row they match is found).
 const judged = function (r, want, keyOf2, allowed, next) {
-  if (r.status !== 200 || !r.body || !Array.isArray(r.body.items)) return 'answer: ' + r.status + ' ' + short(r.text);
+  if (r.status !== 200 || !r.body || !Array.isArray(r.body.items)) return false;
   const rows = found(r);
   const got = {};
   rows.forEach(function (x) { got[keyOf2(x)] = true; });
   const may = {};
   (allowed || want).forEach(function (x) { may[keyOf2(x)] = true; });
   const stray = rows.filter(function (x) { return !may[keyOf2(x)]; });
-  if (stray.length) return stray.length + ' rows answered outside the script, suite or result asked: ' + short(stray.map(keyOf2));
+  if (stray.length) return false;
   if (!r.body.more) {
     const missing = want.filter(function (x) { return !got[keyOf2(x)]; });
-    return !missing.length || 'not cut, ' + rows.length + ' rows answered of ' + want.length + ' that match; missing ' + short(missing.map(keyOf2));
+    return !missing.length || false;
   }
   const missing = want.filter(function (x) { return !got[keyOf2(x)]; });
-  if (!fullAnswer(r.body, next)) return 'cut at ' + rows.length + ' rows, ' + bytes(r.body.items) + ' bytes of a room of ' + ROOM + ': not full; ' + want.length + ' match';
+  if (!fullAnswer(r.body, next)) return false;
   // Cut and full: of the rows that match, as many as the answer holds are in it, never fewer.
-  return (want.length - missing.length >= Math.min(rows.length, want.length)) || 'cut and full at ' + rows.length + ' rows, but only ' + (want.length - missing.length) + ' of the ' + want.length + ' that match the words are among them';
+  return (want.length - missing.length >= Math.min(rows.length, want.length)) || false;
 };
 const VARIATIONS = [
   ['nothing chosen, no words', {}],
@@ -1001,17 +999,17 @@ const VARIATIONS = [
   ['the word "question", a script and a suite', { text: 'question', script: TH, suite: THS }],
 ];
 test.run('the world: the runner idle, so the table holds still while every variation is asked', 0.2, async function () {
-  if (!loud) return 'the tests were not set: the world failed';
-  return (await idle(240000)) || 'the runner did not go idle';
+  if (!loud) return false;
+  return (await idle(240000)) || false;
 }, test.limit.long);
 // One test, its answer naming each variation that breaks (titles are fixed words, goal/G47.2).
 const eachOf = async function (list, one) {
   const bad = [];
   for (const v of list) { const r = await one(v); if (r !== true) bad.push(v[0] + ': ' + r); }
-  return bad.length === 0 || bad.length + ' of ' + list.length + ' break: ' + bad.join(' | ');
+  return bad.length === 0 || false;
 };
 test.run('testicle.search, in each of its variations: every matching test, or a full answer of matching tests', 0.2, async function () {
-  if (!loud) return 'the tests were not set: the world failed';
+  if (!loud) return false;
   return eachOf(VARIATIONS, async function (v) {
     const a = Object.assign({ text: '' }, v[1]);
     const r = await call(N.base, 'testicle.testicle.search', a);
@@ -1027,7 +1025,7 @@ const PAGED = [
   ['the word "loudly"', { text: 'loudly' }],
 ];
 test.run('testicle.search page after page, nothing chosen, result green and the word "loudly": each page full while there are more, every matching test once', 0.2, async function () {
-  if (!loud) return 'the tests were not set: the world failed';
+  if (!loud) return false;
   return eachOf(PAGED, async function (v) {
     const a = Object.assign({ text: '' }, v[1]);
     const want = matchingTests(a);
@@ -1035,21 +1033,21 @@ test.run('testicle.search page after page, nothing chosen, result green and the 
     let from = 0, twice = [], pages = 0;
     for (;;) {
       const r = await call(N.base, 'testicle.testicle.search', Object.assign({ from: from }, a));
-      if (r.status !== 200 || !r.body || !Array.isArray(r.body.items)) return 'page ' + pages + ': ' + r.status + ' ' + short(r.text);
+      if (r.status !== 200 || !r.body || !Array.isArray(r.body.items)) return false;
       const rows = found(r);
       pages += 1;
       rows.forEach(function (x) { if (seen[tkey(x)]) twice.push(tkey(x)); seen[tkey(x)] = true; });
       if (!r.body.more) break;
-      if (!fullAnswer(r.body, await nextItem(a, from + rows.length))) return 'page ' + pages + ' says more but is not full: ' + rows.length + ' rows, ' + bytes(r.body.items) + ' bytes of ' + ROOM;
-      if (!rows.length || pages > 100) return 'page ' + pages + ' says more and holds ' + rows.length + ' rows';
+      if (!fullAnswer(r.body, await nextItem(a, from + rows.length))) return false;
+      if (!rows.length || pages > 100) return false;
       from += rows.length;
     }
     const missing = want.filter(function (x) { return !seen[tkey(x)]; });
-    return (!missing.length && !twice.length) || pages + ' pages; missing ' + missing.length + ' of ' + want.length + ' ' + short(missing.map(tkey)) + '; twice ' + short(twice);
+    return (!missing.length && !twice.length) || false;
   });
 }, test.limit.slow);
 test.run('testicle.red: every failed current test, or a full answer of them', 0.2, async function () {
-  if (!loud) return 'the tests were not set: the world failed';
+  if (!loud) return false;
   return judged(await call(N.base, 'testicle.red', {}), matchingTests({ result: 'red' }), tkey);
 }, test.limit.quick);
 // suite.search: a script's suite rows, or every suite once with no script; the words in the suite's or the script's name.
@@ -1065,7 +1063,7 @@ const SUITE_ASKS = [
   ['a script, the word "theta"', TH, 'theta'],
 ];
 test.run('suite.search, with and without a script and words: every matching suite, or a full answer of them', 0.2, async function () {
-  if (!loud) return 'the tests were not set: the world failed';
+  if (!loud) return false;
   return eachOf(SUITE_ASKS, async function (v) {
     const a = v[1] ? { script: v[1], text: v[2] } : { text: v[2] };
     const r = await call(N.base, 'testicle.suite.search', a);
@@ -1075,7 +1073,7 @@ test.run('suite.search, with and without a script and words: every matching suit
 
 // the box: "The verb red is testicle.red"
 test.run('testicle.red answers every failed current test, and no other', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   // The runner's own runs write while it works: red is asked once it is idle, so the table it is compared with holds still.
   await idle(240000);
   const redAns = await call(N.base, 'testicle.red', {});
@@ -1083,88 +1081,88 @@ test.run('testicle.red answers every failed current test, and no other', 0.2, as
   // The runner adds failures of its own runs (goal/G47.1, the queue cycle): every failed current row of the table, no other.
   const want = (tables(DB).test || []).filter(function (r) { return yes(r.current) && no(r.verified); }).length;
   // The answer fits its room (more: true when cut): cut, every row of it failed and current, fewer than the table holds.
-  if (redAns.body && redAns.body.more) return (red.length > 0 && red.length < want && red.every(function (r) { return no(r.verified) && yes(r.current); })) || 'cut at ' + red.length + ' of ' + want + ': ' + short(red.map(function (r) { return r.test; }));
-  return (red.length === want && red.length >= 3 && red.every(function (r) { return no(r.verified) && yes(r.current); })) || want + ' failed current rows; red answered ' + short(red);
+  if (redAns.body && redAns.body.more) return (red.length > 0 && red.length < want && red.every(function (r) { return no(r.verified) && yes(r.current); })) || false;
+  return (red.length === want && red.length >= 3 && red.every(function (r) { return no(r.verified) && yes(r.current); })) || false;
 }, test.limit.long);
 test.run('testicle.red answers the most severe first', 0.2, function () {
   const redSev = red.map(function (r) { return Number(r.severity); });
-  return (redSev.length >= 3 && redSev.every(function (v, i) { return i === 0 || redSev[i - 1] >= v; })) || 'severities in order: ' + short(redSev);
+  return (redSev.length >= 3 && redSev.every(function (v, i) { return i === 0 || redSev[i - 1] >= v; })) || false;
 }, test.limit.quick);
 
 // Before the general test changes: that one judges every product file, the untouched among them.
 // the box: "A product file or a suite that has not changed has no row"
 test.run('a changed file that is no product script gets no row', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   append(Z + 'notes.md', 'no script\n');
   n1 = await after();
-  return !scriptRow(n1, Z + 'notes.md') || 'a row for notes.md: ' + short(scriptRow(n1, Z + 'notes.md'));
+  return !scriptRow(n1, Z + 'notes.md') || false;
 }, test.limit.slow);
 
 // the box: "When a suite ... is changed": a general test
 test.run('the world: the changed general test judges every product file', 0.2, function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   reach = judgedBy(s.run, GENERAL);
   // In debug mode (box v143) every product file is every product script under spirit/app/testicle/, the planted among them.
   const walk = function (rel) { let out = []; fs.readdirSync(path.join(s.run, rel), { withFileTypes: true }).forEach(function (e) { const r = rel + '/' + e.name; if (e.isDirectory()) { if (e.name !== 'test') out = out.concat(walk(r)); } else if (/\.js$/.test(e.name)) out.push(r); }); return out; };
   const want = walk('spirit/app/testicle');
   const missed = want.filter(function (f) { return reach.indexOf(f) === -1; });
-  return (want.length > 0 && !missed.length) || 'it judges ' + reach.length + ' of ' + want.length + ', not ' + short(missed.slice(0, 5));
+  return (want.length > 0 && !missed.length) || false;
 }, test.limit.quick);
 test.run('while it works on a changed general test, busy answers true', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   append(GENERAL, '// a general test changed\n');
   // While it does that work, busy answers true; asked over and over in that second, it says so at least once.
   seen = [];
   const stopAt = Date.now() + 1000;
   while (Date.now() < stopAt) { const b = await call(N.base, 'testicle.busy', {}); seen.push(b.body === true || (b.body && b.body.busy === true)); }
   r1 = tables(DB);
-  return seen.indexOf(true) !== -1 || 'busy asked ' + seen.length + ' times in that second, never true';
+  return seen.indexOf(true) !== -1 || false;
 }, test.limit.slow);
 test.run('once that work is done, busy answers false again', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   // The runner works off what the changes flagged before it is idle (goal/G47.1, the queue cycle).
   let done = null;
   const ok = await until(function () { return call(N.base, 'testicle.busy', {}).then(function (r) { done = r; return r.status === 200 && (r.body === false || (r.body && r.body.busy === false)); }); }, 240000);
-  return !!ok || 'busy after: ' + (done && done.status) + ' ' + short(done && done.text);
+  return !!ok || false;
 }, test.limit.long);
 test.run('one second after a general test changes, every file it judges has its suite row for it', 0.2, function () {
-  if (!r1) return NONODE;
+  if (!r1) return false;
   const missing = reach.filter(function (f) { return !suiteRow(r1, f, GENERAL); });
-  return (reach.length > 0 && !missing.length) || missing.length + ' of ' + reach.length + ' have none, the first: ' + short(missing.slice(0, 5));
+  return (reach.length > 0 && !missing.length) || false;
 }, test.limit.quick);
 test.run('and every one of those files has its row in script', 0.2, function () {
-  if (!r1) return NONODE;
+  if (!r1) return false;
   const unfiled = reach.filter(function (f) { return !scriptRow(r1, f); });
-  return (reach.length > 0 && !unfiled.length) || unfiled.length + ' of ' + reach.length + ' have none, the first: ' + short(unfiled.slice(0, 5));
+  return (reach.length > 0 && !unfiled.length) || false;
 }, test.limit.quick);
 
 // the box: "A removed file's row is marked deleted"
 test.run('one second after a product file is removed, its row is marked deleted', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   fs.rmSync(path.join(s.run, Z + 'alpha.js'));
   x1 = await after();
   const gone = scriptRow(x1, Z + 'alpha.js');
-  return (!!gone && yes(gone.deleted)) || 'row: ' + short(gone);
+  return (!!gone && yes(gone.deleted)) || false;
 }, test.limit.slow);
 test.run('and its suite rows are marked deleted', 0.2, function () {
-  if (!x1) return NONODE;
+  if (!x1) return false;
   const left = suiteRows(x1, Z + 'alpha.js').filter(function (r) { return !yes(r.deleted); });
-  return (suiteRows(x1, Z + 'alpha.js').length > 0 && !left.length) || 'not deleted: ' + short(names(left));
+  return (suiteRows(x1, Z + 'alpha.js').length > 0 && !left.length) || false;
 }, test.limit.quick);
 // A RESULT ARRIVING AFTER THE FILE IS GONE (found on wsl's node, 2026-11-13: a classifier run that began before zzList's two
 // files were removed reported 2 s after, and their classifier rows stood live and red in his list for hours): the box's "A
 // removed file's row is marked deleted" holds for a late result too.
 let late = null;
 test.run('a result reported for a removed file is refused "no such file"', 0.2, async function () {
-  if (!x1) return NONODE;
+  if (!x1) return false;
   late = await call(N.base, 'testicle.testicle.set', { script: Z + 'alpha.js', suite: 'spirit/test/scriptClassify.js', test: 'classifyable', verified: false, severity: 0.8 });
-  return (late.status !== 200 && /no such file/.test(late.text)) || 'testicle.set answered ' + late.status + ' ' + short(late.text);
+  return (late.status !== 200 && /no such file/.test(late.text)) || false;
 }, test.limit.quick);
 test.run('and every suite row of the removed file stays deleted', 0.2, async function () {
-  if (!late) return NONODE;
+  if (!late) return false;
   const t = await after();
   const live = suiteRows(t, Z + 'alpha.js').filter(function (r) { return !yes(r.deleted); });
-  return (suiteRows(t, Z + 'alpha.js').length > 0 && !live.length) || 'live again: ' + short(names(live));
+  return (suiteRows(t, Z + 'alpha.js').length > 0 && !live.length) || false;
 }, test.limit.slow);
 
 // goal/G47.1, the cycle "run a suite from the script tab", the box: "A new testicle verb, run {script, suite, testicle}", "For
@@ -1176,13 +1174,13 @@ const KA = Z + 'kappa.js', KAS = Z + 'test/kappa.js', LA = Z + 'lambda.js', LAS 
 const rowOf = function (script, suite, name) { return currentOf(tables(DB), script, suite, name)[0] || null; };
 let run1 = null;
 test.run('the node lists the verb testicle.run', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   const api = await call(N.base, 'api', { family: 'testicle' });
   const iface = String((api.body && api.body.interface) || '');
-  return /['"]?\brun['"]?\s*:/.test(iface) || 'testicle\'s api: ' + short(iface);
+  return /['"]?\brun['"]?\s*:/.test(iface) || false;
 }, test.limit.quick);
 test.run('run answers at once, before its suite has ended', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   const t0 = Date.now();
   run1 = await call(N.base, 'testicle.run', { script: KA, suite: KAS });
   const took = Date.now() - t0;
@@ -1190,59 +1188,59 @@ test.run('run answers at once, before its suite has ended', 0.2, async function 
   // already run once by itself in auto, and that earlier row is no sign the answer waited for this run.
   const mine = rowOf(KA, KAS, 'kappa answers its first');
   const early = mine && Number(mine.tested) >= t0 ? mine : null;
-  return (run1.status === 200 && took < 2500 && !early) || 'run: ' + run1.status + ' ' + short(run1.text) + ' after ' + took + ' ms; kappa\'s first already ' + short(early);
+  return (run1.status === 200 && took < 2500 && !early) || false;
 }, test.limit.quick);
 test.run('without testicle, the whole suite runs: every test of it reports to testicle', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   const names0 = ['the world: kappa waits a moment', 'kappa answers its first', 'kappa fails its second', 'kappa was started with no argument'];
   // A press waits behind the running job, which may take up to its 2-minute limit (the queue cycle).
   const ok = await until(function () { return Promise.resolve(names0.every(function (n) { return !!rowOf(KA, KAS, n); })); }, 240000);
-  return !!ok || 'rows: ' + short(names0.map(function (n) { return [n, !!rowOf(KA, KAS, n)]; }));
+  return !!ok || false;
 }, test.limit.long);
 test.run('each row holds the result its test gave', 0.2, function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   const a = rowOf(KA, KAS, 'kappa answers its first'), b = rowOf(KA, KAS, 'kappa fails its second');
-  return (!!a && !!b && yes(a.verified) && no(b.verified)) || 'first ' + short(a) + ', second ' + short(b);
+  return (!!a && !!b && yes(a.verified) && no(b.verified)) || false;
 }, test.limit.quick);
 test.run('a script\'s own test is started with no argument', 0.2, function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   const r = rowOf(KA, KAS, 'kappa was started with no argument');
-  return (!!r && yes(r.verified)) || 'its row: ' + short(r);
+  return (!!r && yes(r.verified)) || false;
 }, test.limit.quick);
 test.run('with testicle given, the suite runs up to that test and no test after it', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   // A first report of lambda makes its rows, flagged, and the runner then runs its whole suite (the queue cycle): lambda's rows
   // are made and its whole suite run first, so nothing of lambda is flagged when the run up to a test is asked. Then this run is told
   // by when each row was tested: its second and its first after the press, its third not.
   // script.get makes lambda's rows, flagged, and the flag wakes the runner, which runs lambda's suites, its own whole. (A whole
   // run asked before the rows are there makes them during that run, so they stay flagged and it comes round again.)
   const g = await call(N.base, 'testicle.script.get', { name: LA });
-  if (g.status !== 200) return 'script.get: ' + g.status + ' ' + short(g.text);
+  if (g.status !== 200) return false;
   // Its rows there, its whole run is put at the head of the queue, ahead of every general suite still flagged.
   const tw = Date.now();
   const w = await call(N.base, 'testicle.run', { script: LA, suite: LAS });
-  if (w.status !== 200) return 'the whole run: ' + w.status + ' ' + short(w.text);
+  if (w.status !== 200) return false;
   // Other suites may run meanwhile; what matters is that lambda's own suite is no longer flagged, so no whole run of it follows.
   // THIS whole run's third (goal/G47.1): planted at the start, lambda's suite has already run once by itself in auto, so a
   // third row from then let the wait end at once, and the whole run asked here landed after the run up to a test.
   const settled = await until(function () { const u = suiteRow(tables(DB), LA, LAS); const third = rowOf(LA, LAS, 'lambda answers its third'); return Promise.resolve(!!third && Number(third.tested) >= tw && !!u && !yes(u.test)); }, 150000);
-  if (!settled) { const t = tables(DB); return 'lambda\'s own suite still flagged after its whole run: nothing judged; its row ' + short(suiteRow(t, LA, LAS)) + '; lambda.js\'s script row ' + short(scriptRow(t, LA)) + ', its suite rows ' + short(suiteRows(t, LA).map(function (r) { return r.suite + ' ' + r.test; })) + '; script.get answered ' + short(g.body); }
+  if (!settled) return false;
   const t0 = Date.now();
   const r = await call(N.base, 'testicle.run', { script: LA, suite: LAS, testicle: 'lambda answers its second' });
-  if (r.status !== 200) return 'run: ' + r.status + ' ' + short(r.text);
+  if (r.status !== 200) return false;
   const since = function (name) { const x = rowOf(LA, LAS, name); return !!x && Number(x.tested) >= t0; };
   const ok = await until(function () { return Promise.resolve(since('lambda answers its second')); }, 90000);
   await sleep(5000);
   const three = rowOf(LA, LAS, 'lambda answers its third');
-  return (!!ok && since('lambda answers its first') && !since('lambda answers its third')) || 'second ' + !!ok + ', first ' + short(rowOf(LA, LAS, 'lambda answers its first')) + ', third ' + short(three);
+  return (!!ok && since('lambda answers its first') && !since('lambda answers its third')) || false;
 }, test.limit.long);
 test.run('a general test is started with the script as its argument, and reports for that script', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   const r = await call(N.base, 'testicle.run', { script: MU, suite: MUS });
-  if (r.status !== 200) return 'run: ' + r.status + ' ' + short(r.text);
+  if (r.status !== 200) return false;
   await until(function () { return Promise.resolve(!!rowOf(MU, MUS, 'mu holds its rule')); }, 240000);
   const m = rowOf(MU, MUS, 'mu holds its rule');
-  return (!!m && yes(m.verified)) || 'its row: ' + short(m);
+  return (!!m && yes(m.verified)) || false;
 }, test.limit.slow);
 
 // goal/G47.1, the box (v57): a suite's status, the server's alone, from its own table: "needs running" when it never ran
@@ -1253,35 +1251,35 @@ test.run('a general test is started with the script as its argument, and reports
 async function statusOf(script, suite) {
   const all = items(await call(N.base, 'testicle.suite.search', { script: script, text: '' }));
   const r = all.filter(function (i) { return suiteOf(i) === suite; })[0];
-  return r ? String(r.row.status) : 'no row of ' + suite + ' among ' + short(all.map(function (i) { return suiteOf(i) + ' ' + i.row.status; }));
+  return r ? String(r.row.status) : '';
 }
 test.run('a suite that never ran shows "needs running"', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   // The runner runs every flagged suite a second after the last change (the queue cycle): a suite never run is one just
   // flagged, read inside that second. phi and its own test are planted and touched here first.
   append(Z + 'phi.js', '// phi, changed\n');
   let st = null;
   const ok = await until(function () { return statusOf(Z + 'phi.js', Z + 'test/phi.js').then(function (x) { st = x; return x === 'needs running'; }); }, 900);
-  return !!ok || 'phi\'s own suite, within the quiet second: ' + short(st);
+  return !!ok || false;
 }, test.limit.quick);
 test.run('a suite whose every test passed shows "green"', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   let st = null;
   const ok = await until(function () { return statusOf(MU, MUS).then(function (x) { st = x; return x === 'green'; }); }, 10000);
-  return !!ok || 'mu\'s suite: ' + short(st);
+  return !!ok || false;
 }, test.limit.slow);
 test.run('a suite that ran with a failed test for the script shows "still red"', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   let st = null;
   const ok = await until(function () { return statusOf(KA, KAS).then(function (x) { st = x; return x === 'still red'; }); }, 10000);
-  return !!ok || 'kappa\'s suite: ' + short(st);
+  return !!ok || false;
 }, test.limit.slow);
 test.run('the script changed, its suite shows "needs running" again', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   append(MU, '// mu, changed\n');
   let st = null;
   const ok = await until(function () { return statusOf(MU, MUS).then(function (x) { st = x; return x === 'needs running'; }); }, 10000);
-  return !!ok || 'mu\'s suite after mu changed: ' + short(st);
+  return !!ok || false;
 }, test.limit.slow);
 
 // goal/G47.1, the queue cycle, the box: "The flags are the queue: every suite row flagged "needs running" is owed one run,
@@ -1306,99 +1304,99 @@ const holds = function (row, v) { return !!row && !!v && Object.keys(row).some(f
 let lastChange = 0;
 // Every flagged suite of what came before is worked off first: the queue checks start from an idle server.
 test.run('the world: the queue is worked off, the server idle', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   const ok = await idle(280000);
-  return !!ok || 'still busy after 280 s';
+  return !!ok || false;
 }, test.limit.long);
 test.run('the world: nu.js and xi.js change, nu.js twice, 600 ms apart', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   // THE LOG STARTS HERE (goal/G47.1): the planted suites are written at the start, so in auto each has run once by itself
   // before this world; what the checks below judge is only what these changes start.
-  try { fs.writeFileSync(path.join(s.root, 'runlog.txt'), ''); } catch (e) { return 'the run log could not be emptied: ' + String(e && e.message || e); }
+  try { fs.writeFileSync(path.join(s.root, 'runlog.txt'), ''); } catch (e) { return false; }
   append(NU, '// nu, changed\n'); append(XI, '// xi, changed\n'); append(EARLY, '// early, changed\n');
   await sleep(600);
   append(NU, '// nu, changed again\n');
   lastChange = Date.now();
-  return !runlog().length || 'the run log is not empty before: ' + short(runlog());
+  return !runlog().length || false;
 }, test.limit.quick);
 test.run('a flagged suite runs by itself, with no run asked: nu\'s and xi\'s own suites start', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   const ok = await until(function () { return Promise.resolve(ends('nu').length > 0 && ends('xi').length > 0); }, 240000);
-  return !!ok || 'the run log: ' + short(runlog());
+  return !!ok || false;
 }, test.limit.long);
 test.run('the runner starts no sooner than 1 second after the last change: the second change pushed the start back', 0.2, function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   const t = tables(DB);
   const first = (t.test || []).filter(function (r) { return (r.script === NU || r.script === XI) && Number(r.tested) >= lastChange - 600; }).map(function (r) { return Number(r.tested); }).sort()[0];
-  return (!!first && first >= lastChange + 1000) || 'the first result for nu or xi at ' + (first ? first - lastChange : 'none') + ' ms after the last change';
+  return (!!first && first >= lastChange + 1000) || false;
 }, test.limit.quick);
 test.run('one runner: nu\'s and xi\'s runs never overlap', 0.2, function () {
   const a = [starts('nu')[0], ends('nu')[0]], b = [starts('xi')[0], ends('xi')[0]];
-  if (!a[0] || !a[1] || !b[0] || !b[1]) return 'the run log: ' + short(runlog());
-  return (a[1].at <= b[0].at || b[1].at <= a[0].at) || 'nu ran ' + a[0].at + '-' + a[1].at + ', xi ' + b[0].at + '-' + b[1].at;
+  if (!a[0] || !a[1] || !b[0] || !b[1]) return false;
+  return (a[1].at <= b[0].at || b[1].at <= a[0].at) || false;
 }, test.limit.quick);
 test.run('a suite flagged twice is owed one run: nu\'s own suite ran once', 0.2, async function () {
   await sleep(3000);
-  return starts('nu').length === 1 || 'nu started ' + starts('nu').length + ' times';
+  return starts('nu').length === 1 || false;
 }, test.limit.slow);
 test.run('general tests first: every general result for nu.js came before nu\'s own suite started', 0.2, function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   const own0 = (starts('nu')[0] || {}).at;
   const gen = (tables(DB).test || []).filter(function (r) { return r.script === NU && r.suite !== NUS && Number(r.tested) >= lastChange; });
-  return (!!own0 && gen.length > 0 && gen.every(function (r) { return Number(r.tested) < own0; })) || gen.length + ' general results for nu.js, ' + gen.filter(function (r) { return Number(r.tested) >= own0; }).length + ' after its own suite started';
+  return (!!own0 && gen.length > 0 && gen.every(function (r) { return Number(r.tested) < own0; })) || false;
 }, test.limit.quick);
 test.run('general tests first, though the own suite sorts first by name: every general result for early.js came before early\'s own suite started', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   await until(function () { return Promise.resolve(starts('early').length > 0); }, 120000);
   const own0 = (starts('early')[0] || {}).at;
   const gen = (tables(DB).test || []).filter(function (r) { return r.script === EARLY && r.suite !== EARLYS && Number(r.tested) >= lastChange; });
-  return (!!own0 && gen.length > 0 && gen.every(function (r) { return Number(r.tested) < own0; })) || 'early started ' + own0 + '; ' + gen.length + ' general results for early.js, ' + gen.filter(function (r) { return Number(r.tested) >= own0; }).length + ' after its own suite started';
+  return (!!own0 && gen.length > 0 && gen.every(function (r) { return Number(r.tested) < own0; })) || false;
 }, test.limit.long);
 test.run('a result carries both hashes it ran against, the script\'s and the suite\'s', 0.2, function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   const t = tables(DB);
   const r = currentOf(t, NU, NUS, 'nu answers')[0], sc = scriptRow(t, NU), su = suiteRow(t, NU, NUS);
-  return (!!r && !!sc && !!su && holds(r, sc.hash) && holds(r, su.hash)) || 'the row ' + short(r) + '; script hash ' + short(sc && sc.hash) + ', suite hash ' + short(su && su.hash);
+  return (!!r && !!sc && !!su && holds(r, sc.hash) && holds(r, su.hash)) || false;
 }, test.limit.quick);
 
 // A change during a run: the run keeps the hashes it started with, and the suite comes round again behind it.
 let piHash = '';
 test.run('the world: pi.js changes, and changes again while its own suite runs', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   append(PI, '// pi, changed\n');
   const ok = await until(function () { return Promise.resolve(starts('pi').length > 0); }, 240000);
   piHash = (scriptRow(tables(DB), PI) || {}).hash || '';
   append(PI, '// pi, changed during its run\n');
-  return (!!ok && !!piHash) || 'pi never started: ' + short(runlog());
+  return (!!ok && !!piHash) || false;
 }, test.limit.long);
 test.run('the running job is not killed by a change: pi\'s first run ends', 0.2, async function () {
   const ok = await until(function () { return Promise.resolve(ends('pi').length > 0); }, 30000);
-  return !!ok || 'the run log: ' + short(runlog().filter(function (l) { return l.suite === 'pi'; }));
+  return !!ok || false;
 }, test.limit.slow);
 test.run('a result of that run carries the script\'s hash as it stood when the run started', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   let rows = [];
   await until(function () { rows = testRows(tables(DB), PI, PIS, 'pi answers'); return Promise.resolve(rows.some(function (r) { return holds(r, piHash); })); }, 20000);
-  return rows.some(function (r) { return holds(r, piHash); }) || 'pi\'s rows ' + short(rows) + ', the hash at its start ' + short(piHash) + '; all rows of pi.js: ' + short((tables(DB).test || []).filter(function (r) { return r.script === PI; }));
+  return rows.some(function (r) { return holds(r, piHash); }) || false;
 }, test.limit.slow);
 test.run('the suite comes round again behind it: pi\'s own suite runs a second time, after the first ended', 0.2, async function () {
   const ok = await until(function () { return Promise.resolve(starts('pi').length >= 2); }, 240000);
   const e1 = (ends('pi')[0] || {}).at, s2 = (starts('pi')[1] || {}).at;
-  return (!!ok && !!e1 && s2 >= e1) || 'the run log: ' + short(runlog().filter(function (l) { return l.suite === 'pi'; }));
+  return (!!ok && !!e1 && s2 >= e1) || false;
 }, test.limit.long);
 
 // The 🏃‍♂️'s verb puts its suite at the head of the queue: tau, asked while omicron's suites wait, runs before omicron's own.
 test.run('the world: omicron.js changes, and tau\'s own suite is asked by testicle.run', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   append(OM, '// omicron, changed\n');
   await sleep(1500);
   const r = await call(N.base, 'testicle.run', { script: TAU, suite: TAUS });
-  return r.status === 200 || 'run: ' + r.status + ' ' + short(r.text);
+  return r.status === 200 || false;
 }, test.limit.slow);
 test.run('a suite asked by testicle.run goes to the head of the queue: tau runs before omicron\'s own suite', 0.2, async function () {
   const ok = await until(function () { return Promise.resolve(ends('tau').length > 0 && starts('omicron').length > 0); }, 240000);
   const t = (starts('tau')[0] || {}).at, o = (starts('omicron')[0] || {}).at;
-  return (!!ok && t < o) || 'tau started ' + t + ', omicron ' + o + ': ' + short(runlog().filter(function (l) { return l.suite === 'tau' || l.suite === 'omicron'; }));
+  return (!!ok && t < o) || false;
 }, test.limit.long);
 // A RUN THE PRESS STOPPED ENDED TOO (goal/G47.1, run.json: the press "stop[s] the run going unless it is that one"): a stopped
 // suite never logs its end, but testicle says when it stopped it, "runner: stopped <suite> ... a press of <suite>", in its
@@ -1412,16 +1410,16 @@ test.run('never a second run beside the running one: tau started after every run
   const t = (starts('tau')[0] || {}).at;
   const ended = function (l) { return runlog().some(function (e) { return e.suite === l.suite && e.ev === 'end' && e.at >= l.at && e.at <= t; }) || stoppedAt(l.suite).some(function (at) { return at >= l.at && at <= t; }); };
   const open = runlog().filter(function (l) { return l.ev === 'start' && l.suite !== 'tau' && l.at < t && !ended(l); });
-  return (!!t && !open.length) || 'running when tau started: ' + short(open);
+  return (!!t && !open.length) || false;
 }, test.limit.quick);
 
 // Rows flagged when the server starts: upsilon.js flagged, the node stopped before the runner reached it, started again.
 test.run('the world: upsilon.js is flagged, and the node stops before upsilon\'s suite runs', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   append(UP, '// upsilon, changed\n');
   const ok = await until(function () { return Promise.resolve(yes((suiteRow(tables(DB), UP, UPS) || {}).test)); }, 5000);
   await stop(N.child);
-  return (!!ok && !starts('upsilon').length) || 'upsilon flagged ' + !!ok + ', its suite already started ' + starts('upsilon').length;
+  return (!!ok && !starts('upsilon').length) || false;
 }, test.limit.slow);
 // goal/G47.1, box v95, 5: the server is not always on, and its tables must not be stale for it. While the node is down: a
 // new script and its own test written, a script changed, a suite removed, a script removed.
@@ -1430,10 +1428,10 @@ let down = null;
 test.run('the world: while the node is down, a script and its suite are added, one changed, a suite and a script removed', 0.2, function () {
   // DOWN IS ENDED BY ANY MEANS (goal/G47.1): a process ended by a signal, as stop() ends it, keeps exitCode null and sets
   // signalCode, so exitCode alone read the stopped node as up and failed this world every time.
-  if (!N || !N.child || (N.child.exitCode === null && N.child.signalCode === null)) return 'the node is not down: the world failed';
+  if (!N || !N.child || (N.child.exitCode === null && N.child.signalCode === null)) return false;
   const t = tables(DB);
   const changed = scriptRow(t, LA), goneSuite = suiteRow(t, KA, KAS), goneScript = scriptRow(t, Z + 'gamma.js');
-  if (!changed || !goneSuite || !goneScript) return 'rows missing before: lambda ' + !!changed + ', kappa\'s own suite ' + !!goneSuite + ', gamma ' + !!goneScript;
+  if (!changed || !goneSuite || !goneScript) return false;
   put(NEWSS, SUITE_HEAD + "test.run('zzsNew answers', 0.2, function () { return true; }, test.limit.quick);\n");
   put(NEWS, '\'use strict\';\n// written while the node was down\n');
   append(LA, '// changed while the node was down\n');
@@ -1447,44 +1445,44 @@ test.run('the world: while the node is down, a script and its suite are added, o
 }, test.limit.quick);
 test.run('with rows flagged when the server starts, the runner runs them by itself', 0.2, async function () {
   N = await boot(s.run); live.push(N.child);
-  if (!up()) return 'the scratch node did not come up again';
+  if (!up()) return false;
   const ok = await until(function () { return Promise.resolve(ends('upsilon').length > 0); }, 240000);
-  return !!ok || 'upsilon after the restart: ' + short(runlog().filter(function (l) { return l.suite === 'upsilon'; }));
+  return !!ok || false;
 }, test.limit.long);
 test.run('after the start, the classifier having changed while down, every live script is classified again, right away', 0.2, async function () {
-  if (!down) return 'nothing changed while down: the world failed';
+  if (!down) return false;
   let left = [];
   const ok = await until(function () { const t = tables(DB); left = t.script.filter(function (r) { if (!no(r.deleted)) return false; const c = classifyRowAt(t, r.name); return !c || Number(c.tested) < down.at; }); return Promise.resolve(left.length === 0); }, 280000);
-  return !!ok || left.length + ' live scripts not classified again since the start: ' + short(left.slice(0, 5).map(function (r) { return r.name; }));
+  return !!ok || false;
 }, test.limit.long);
 test.run('after the start, a script written while it was down has its row, and its own suite its suite row', 0.2, async function () {
-  if (!down) return 'nothing changed while down: the world failed';
+  if (!down) return false;
   const ok = await until(function () { const t = tables(DB); return Promise.resolve(!!scriptRow(t, NEWS) && !!suiteRow(t, NEWS, NEWSS)); }, 60000);
   const t = tables(DB);
-  return !!ok || 'zzsNew: ' + short(scriptRow(t, NEWS)) + ', its suite ' + short(suiteRow(t, NEWS, NEWSS));
+  return !!ok || false;
 }, test.limit.long);
 test.run('after the start, a script changed while it was down holds its new hash', 0.2, function () {
-  if (!down) return 'nothing changed while down: the world failed';
+  if (!down) return false;
   const r = scriptRow(tables(DB), LA);
-  return (!!r && r.hash !== down.laHash) || 'lambda: ' + short(r) + ', its hash before ' + short(down.laHash);
+  return (!!r && r.hash !== down.laHash) || false;
 }, test.limit.quick);
 test.run('after the start, a suite removed while it was down is marked deleted, and none of its results is current', 0.2, function () {
-  if (!down) return 'nothing changed while down: the world failed';
+  if (!down) return false;
   const t = tables(DB);
   const r = suiteRow(t, KA, KAS);
   const cur = (t.test || []).filter(function (x) { return x.script === KA && x.suite === KAS && yes(x.current); });
-  return (!!r && yes(r.deleted) && cur.length === 0) || 'kappa\'s own suite row ' + short(r) + ', its current results ' + cur.length;
+  return (!!r && yes(r.deleted) && cur.length === 0) || false;
 }, test.limit.quick);
 test.run('and the search shows its results no more', 0.2, async function () {
-  if (!down) return 'nothing changed while down: the world failed';
+  if (!down) return false;
   const r = await call(N.base, 'testicle.testicle.search', { script: KA, suite: KAS, text: '' });
   const rows = found(r);
-  return (r.status === 200 && rows.length === 0) || 'testicle.search of kappa\'s own suite: ' + short(rows.slice(0, 3));
+  return (r.status === 200 && rows.length === 0) || false;
 }, test.limit.quick);
 test.run('after the start, a script removed while it was down is marked deleted', 0.2, function () {
-  if (!down) return 'nothing changed while down: the world failed';
+  if (!down) return false;
   const r = scriptRow(tables(DB), Z + 'gamma.js');
-  return (!!r && yes(r.deleted)) || 'gamma: ' + short(r);
+  return (!!r && yes(r.deleted)) || false;
 }, test.limit.quick);
 
 // A HANG FAILS AT ITS TEST'S OWN LIMIT (goal/G47.1: testicle's job limit is 120 minutes, cw's 3cf0379b on Andy's "make the
@@ -1492,32 +1490,30 @@ test.run('after the start, a script removed while it was down is marked deleted'
 // first test hangs while its process is kept alive. Each hang has the quick limit (10 s): the reporter fails it there, long
 // before testicle's own limit.
 test.run('the world: rho.js and sigma.js change', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   append(RHO, '// rho, changed\n');
   append(SIG, '// sigma, changed\n');
   const ok = await until(function () { return Promise.resolve(starts('rho').length > 0); }, 240000);
-  return !!ok || 'rho never started: ' + short(runlog());
+  return !!ok || false;
 }, test.limit.long);
 test.run('a test that hangs fails at its own limit: rho hangs is red, rho answers its first green', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   const ok = await until(function () { const t = tables(DB); const h = currentOf(t, RHO, RHOS, 'rho hangs')[0], f = currentOf(t, RHO, RHOS, 'rho answers its first')[0]; return Promise.resolve(!!h && no(h.verified) && !!f && yes(f.verified)); }, 120000);
-  let errs = ''; try { errs = fs.readFileSync(path.join(s.run, 'spirit', 'state', 'testicle', 'data', 'testicle.err'), 'utf8').split('\n').filter(Boolean).slice(-8).join(' | '); } catch (e) { errs = 'no testicle.err'; }
-  return !!ok || 'rho\'s rows after 2 minutes: ' + short(currentOf(tables(DB), RHO, RHOS, 'rho hangs').concat(currentOf(tables(DB), RHO, RHOS, 'rho answers its first'))) + '; testicle.err: ' + errs.slice(0, 1500) + '; the log ' + short(runlog().filter(function (l) { return l.suite === 'rho'; }));
+  return !!ok || false;
 }, test.limit.long);
 test.run('its suite shows "still red"', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   // The hang fails at its limit, then the reporter ends the run and the job is judged: the status follows a moment later.
   let st = null;
   await until(function () { return statusOf(RHO, RHOS).then(function (x) { st = x; return x === 'still red'; }); }, 20000);
-  let errs = ''; try { errs = fs.readFileSync(path.join(s.run, 'spirit', 'state', 'testicle', 'data', 'testicle.err'), 'utf8').split('\n').filter(Boolean).slice(-8).join(' | '); } catch (e) { errs = 'no testicle.err'; }
-  return st === 'still red' || 'rho\'s suite: ' + short(st) + '; testicle.err: ' + errs.slice(0, 1500) + '; its script row ' + short(scriptRow(tables(DB), RHO)) + '; the rows of its tests (test, current, verified, judged) ' + short(testRows(tables(DB), RHO, RHOS, 'rho answers its first').concat(testRows(tables(DB), RHO, RHOS, 'rho hangs')).map(function (r) { return [r.test, r.current, r.verified, String(r.judged).slice(0, 8), String(r.suiteHash).slice(0, 8), r.tested]; })) + '; its row ' + short(suiteRow(tables(DB), RHO, RHOS)) + '; its tests ' + short(testRows(tables(DB), RHO, RHOS, 'rho answers its first')) + '; the log ' + short(runlog().filter(function (l) { return l.suite === 'rho'; }));
+  return st === 'still red' || false;
 }, test.limit.slow);
 test.run('a suite whose only test hangs, its process kept alive, fails too: sigma\'s suite shows "still red"', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   let st = null;
   // sigma's own job comes after rho's; its hang fails at the quick limit, its process kept alive by an interval ended.
   const ok = await until(function () { return statusOf(SIG, SIGS).then(function (x) { st = x; return x === 'still red'; }); }, 180000);
-  return !!ok || 'sigma\'s suite: ' + short(st);
+  return !!ok || false;
 }, test.limit.long);
 
 // ── goal/G47.1, box v79, 2: interactive, the default ──
@@ -1526,17 +1522,17 @@ test.run('a suite whose only test hangs, its process kept alive, fails too: sigm
 const CHI = Z + 'chi.js', CHIS = Z + 'test/chi.js', PSI = Z + 'psi.js', PSIS = Z + 'test/psi.js';
 let i1 = null;
 test.run('the world: interactive again, set by preferences {interactive: true}', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   await idle(280000);
   const r = await call(N.base, 'testicle.preferences', { interactive: true });
-  return (r.status === 200 && prefsOf(r).interactive === true) || 'set: ' + r.status + ' ' + short(r.text);
+  return (r.status === 200 && prefsOf(r).interactive === true) || false;
 }, test.limit.long);
 // goal/G47.1, box v94, 1: the server classifies a second after the last change, interactive or not; so reClassify true is
 // read inside that quiet second, before the classifier clears it.
 const SC = 'spirit/test/scriptClassify.js';
 const quietRow = async function (name, notHash) { let row = null; await until(function () { row = scriptRow(tables(DB), name); return Promise.resolve(!!row && yes(row.reClassify) && (notHash === undefined || row.hash !== notHash)); }, 900); return row; };
 test.run('interactive: within a second of a script being written, it has its row, reClassify true, seen for the first time', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   // chi and psi, with their own tests, written now, while the server is interactive: chi's suite is run by a press, psi's
   // once the server is auto.
   put(CHIS, SUITE_HEAD + "test.run('chi answers', 0.2, function () { return true; }, test.limit.quick);\n");
@@ -1545,52 +1541,52 @@ test.run('interactive: within a second of a script being written, it has its row
   put(PSI, '\'use strict\';\n// psi, written while interactive\n');
   const row = await quietRow(CHI);
   i1 = await after();
-  return (!!row && yes(row.reClassify)) || 'chi\'s row within the quiet second: ' + short(row || scriptRow(i1, CHI));
+  return (!!row && yes(row.reClassify)) || false;
 }, test.limit.slow);
 test.run('interactive: its own suite is flagged needs running', 0.2, function () {
-  if (!i1) return NONODE;
+  if (!i1) return false;
   const r = suiteRow(i1, CHI, CHIS);
-  return (!!r && yes(r.test)) || 'chi\'s suite row: ' + short(r);
+  return (!!r && yes(r.test)) || false;
 }, test.limit.quick);
 // Andy: "we specified that classification and file updates happen REGARDLESS of interactive or NOT."
 test.run('interactive: the server classifies by itself, no press: chi\'s reClassify turns false', 0.2, async function () {
-  if (!i1) return NONODE;
+  if (!i1) return false;
   const ok = await until(function () { const r = scriptRow(tables(DB), CHI); return Promise.resolve(!!r && no(r.reClassify)); }, 120000);
-  return !!ok || 'chi\'s row, interactive, two minutes on: ' + short(scriptRow(tables(DB), CHI));
+  return !!ok || false;
 }, test.limit.long);
 test.run('interactive: the classifier\'s own suite row is no longer flagged for chi', 0.2, function () {
-  if (!i1) return NONODE;
+  if (!i1) return false;
   const r = suiteRow(tables(DB), CHI, SC);
-  return (!!r && no(r.test)) || 'chi\'s classifier suite row: ' + short(r);
+  return (!!r && no(r.test)) || false;
 }, test.limit.quick);
 test.run('interactive: classification never sets both browserOnly and nodeOnly', 0.2, function () {
-  if (!i1) return NONODE;
+  if (!i1) return false;
   const both = i1.script.filter(function (r) { return yes(r.browserOnly) && yes(r.nodeOnly); });
-  return both.length === 0 || 'both set on ' + short(both.map(function (r) { return r.name; }));
+  return both.length === 0 || false;
 }, test.limit.quick);
 test.run('interactive: nothing runs by itself: five seconds on, the server is idle and no suite of chi or psi was run', 0.2, async function () {
-  if (!i1) return NONODE;
+  if (!i1) return false;
   await sleep(5000);
   const busy = await call(N.base, 'testicle.busy', {});
   const t = tables(DB);
   // The classifier runs by itself in both modes (box v94, 1); its own rows are not a run of chi's or psi's suites.
   const ran = (t.test || []).filter(function (r) { return (r.script === CHI || r.script === PSI) && r.suite !== SC; });
   const still = [suiteRow(t, CHI, CHIS), suiteRow(t, PSI, PSIS)].every(function (r) { return !!r && yes(r.test); });
-  return ((busy.body === false || (busy.body && busy.body.busy === false)) && ran.length === 0 && still) || 'busy ' + short(busy.text) + ', test rows ' + ran.length + ', still flagged ' + still;
+  return ((busy.body === false || (busy.body && busy.body.busy === false)) && ran.length === 0 && still) || false;
 }, test.limit.slow);
 test.run('interactive: a press (testicle.run) runs that suite, and only it', 0.2, async function () {
-  if (!i1) return NONODE;
+  if (!i1) return false;
   const r = await call(N.base, 'testicle.run', { script: CHI, suite: CHIS });
   const done = await until(function () { return Promise.resolve(currentOf(tables(DB), CHI, CHIS, 'chi answers').length === 1); }, 60000);
   const psiRan = (tables(DB).test || []).filter(function (x) { return x.script === PSI && x.suite !== SC; }).length;
-  return (r.status === 200 && !!done && psiRan === 0) || 'run: ' + r.status + ' ' + short(r.text) + ', chi reported ' + !!done + ', psi rows ' + psiRan;
+  return (r.status === 200 && !!done && psiRan === 0) || false;
 }, test.limit.long);
 test.run('interactive: a script whose hash changes is flagged reClassify true again', 0.2, async function () {
-  if (!i1) return NONODE;
+  if (!i1) return false;
   const was = (scriptRow(tables(DB), CHI) || {}).hash;
   append(CHI, '// changed again\n');
   const row = await quietRow(CHI, was);
-  return (!!row && row.hash !== was && yes(row.reClassify)) || 'chi\'s row: ' + short(row) + ', hash before ' + short(was);
+  return (!!row && row.hash !== was && yes(row.reClassify)) || false;
 }, test.limit.slow);
 
 // AFTER A START, STILL INTERACTIVE, WITH SUITES WAITING (Andy, after his node classified nothing until he turned interactive
@@ -1598,60 +1594,60 @@ test.run('interactive: a script whose hash changes is flagged reClassify true ag
 // nothing got classified). chi's and psi's suites are flagged and unrun; the node restarts, interactive kept; a script
 // changed while it was down, and one changed after, are each classified with no press.
 test.run('the world: interactive, suites still waiting, the node stops; chi changes while it is down', 0.2, async function () {
-  if (!i1) return NONODE;
+  if (!i1) return false;
   const waiting = [suiteRow(tables(DB), PSI, PSIS)].filter(function (r) { return !!r && yes(r.test); }).length;
   await stop(N.child);
   append(CHI, '// changed while the node was down, interactive\n');
-  return waiting === 1 || 'psi\'s suite not waiting before the stop: ' + short(suiteRow(tables(DB), PSI, PSIS));
+  return waiting === 1 || false;
 }, test.limit.slow);
 test.run('after the start, interactive still, a script changed while down is classified with no press', 0.2, async function () {
   N = await boot(s.run); live.push(N.child);
-  if (!up()) return 'the scratch node did not come up again';
+  if (!up()) return false;
   const p = prefsOf(await call(N.base, 'testicle.preferences', {}));
-  if (p.interactive !== true) return 'not interactive after the start: ' + short(p);
+  if (p.interactive !== true) return false;
   const ok = await until(function () { const r = scriptRow(tables(DB), CHI); return Promise.resolve(!!r && no(r.reClassify)); }, 120000);
-  return !!ok || 'chi, two minutes after the start: ' + short(scriptRow(tables(DB), CHI));
+  return !!ok || false;
 }, test.limit.long);
 test.run('and a script changed after the start is classified with no press, within 30 seconds', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   append(PSI, '// changed after the start, interactive\n');
   await quietRow(PSI);
   const ok = await until(function () { const r = scriptRow(tables(DB), PSI); return Promise.resolve(!!r && no(r.reClassify)); }, 30000);
-  return !!ok || 'psi, 30 seconds after its change: ' + short(scriptRow(tables(DB), PSI));
+  return !!ok || false;
 }, test.limit.slow);
 
 // ── auto, set by the verb ──
 let pAuto = null;
 test.run('preferences {interactive: false} sets it, and answers them all', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   pAuto = await call(N.base, 'testicle.preferences', { interactive: false });
-  return (pAuto.status === 200 && prefsOf(pAuto).interactive === false) || 'set: ' + pAuto.status + ' ' + short(pAuto.text);
+  return (pAuto.status === 200 && prefsOf(pAuto).interactive === false) || false;
 }, test.limit.quick);
 test.run('it is kept in spirit/state/testicle/data/preferences.json', 0.2, function () {
-  if (!pAuto) return NONODE;
+  if (!pAuto) return false;
   const kept = readJson(PREFS());
-  return (!!kept && kept.interactive === false) || 'preferences.json: ' + short(kept);
+  return (!!kept && kept.interactive === false) || false;
 }, test.limit.quick);
 test.run('preferences {} now answers interactive false', 0.2, async function () {
-  if (!pAuto) return NONODE;
+  if (!pAuto) return false;
   const r = await call(N.base, 'testicle.preferences', {});
-  return prefsOf(r).interactive === false || 'preferences {}: ' + short(r.text);
+  return prefsOf(r).interactive === false || false;
 }, test.limit.quick);
 test.run('auto: the server processes everything by itself: psi\'s flagged suite is run', 0.2, async function () {
-  if (!pAuto) return NONODE;
+  if (!pAuto) return false;
   const done = await until(function () { return Promise.resolve(currentOf(tables(DB), PSI, PSIS, 'psi answers').length === 1); }, 240000);
-  return !!done || 'psi\'s suite was not run: ' + short(suiteRow(tables(DB), PSI, PSIS));
+  return !!done || false;
 }, test.limit.long);
 test.run('auto: a changed script is still flagged reClassify true', 0.2, async function () {
-  if (!pAuto) return NONODE;
+  if (!pAuto) return false;
   append(PSI, '// changed while auto\n');
   const row = await quietRow(PSI);
-  return (!!row && yes(row.reClassify)) || 'psi\'s row: ' + short(row);
+  return (!!row && yes(row.reClassify)) || false;
 }, test.limit.slow);
 // The runs chi and psi queued (their general suites among them) are done before the checks after these begin.
 test.run('the world: the server is idle again after chi and psi', 0.2, async function () {
-  if (!up()) return NONODE;
-  return !!(await idle(280000)) || 'still busy after chi and psi';
+  if (!up()) return false;
+  return !!(await idle(280000)) || false;
 }, test.limit.long);
 
 // ── goal/G47.1, box v94, 1: classification ──
@@ -1682,20 +1678,20 @@ const classifyRow = function (t, name) { return currentOf(t, name, SC, 'classify
 let zc = null, zcCleared = {};
 
 test.run('the node lists the verb testicle.script.classify', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   const api = await call(N.base, 'api', { family: 'testicle' });
   const iface = String((api.body && api.body.interface) || '');
-  return /['"]script\.classify['"]\s*:/.test(iface) || 'testicle\'s api: ' + short(iface);
+  return /['"]script\.classify['"]\s*:/.test(iface) || false;
 }, test.limit.quick);
 test.run('testicle.script.classify sets a script\'s browserOnly and nodeOnly', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   // kappa.js: on disc, its row made long before, unchanged since (alpha.js was deleted by an earlier check).
   const r = await call(N.base, 'testicle.script.classify', { script: KA, browserOnly: true, nodeOnly: false });
   const row = scriptRow(tables(DB), KA);
-  return (r.status === 200 && !!row && yes(row.browserOnly) && no(row.nodeOnly)) || 'classify: ' + r.status + ' ' + short(r.text) + ', kappa\'s row ' + short(row);
+  return (r.status === 200 && !!row && yes(row.browserOnly) && no(row.nodeOnly)) || false;
 }, test.limit.quick);
 test.run('the world: six scripts written, each with its own test: node, page, both, broken, hang, exit', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   Object.keys(ZC).forEach(function (k) { put(ownOf(ZC[k]), ownSuite(k)); put(ZC[k], ZC_SRC[k]); });
   // Each one's classification seen as it happens: the moment its reClassify reads false.
   const t0c = Date.now();
@@ -1705,84 +1701,82 @@ test.run('the world: six scripts written, each with its own test: node, page, bo
     return Promise.resolve(Object.keys(ZC).every(function (k) { return !!zcCleared[k]; }));
   }, 120000, 100);
   zc = tables(DB);
-  // Why it waited, as testicle says it (its testicle.err, in its state's data folder).
-  let errs = ''; try { errs = fs.readFileSync(path.join(s.run, 'spirit', 'state', 'testicle', 'data', 'testicle.err'), 'utf8').split('\n').filter(Boolean).slice(-8).join(' | '); } catch (e) { errs = 'no testicle.err'; }
-  return Object.keys(zcCleared).length === 6 || 'classified after ' + (Date.now() - t0c) + ' ms: ' + short(Object.keys(zcCleared)) + '; testicle.err: ' + errs.slice(0, 1500);
+  return Object.keys(zcCleared).length === 6 || false;
 }, test.limit.long);
 test.run('every one is classified by the server by itself: reClassify false on each', 0.2, function () {
-  if (!zc) return NONODE;
+  if (!zc) return false;
   const left = Object.keys(ZC).filter(function (k) { const r = scriptRow(zc, ZC[k]); return !r || !no(r.reClassify); });
-  return left.length === 0 || 'not classified: ' + short(left.map(function (k) { return ZC[k] + ' ' + short(scriptRow(zc, ZC[k])); }));
+  return left.length === 0 || false;
 }, test.limit.quick);
 test.run('a script that loads on the node and crashes in the page for lack of require is node-only', 0.2, function () {
-  if (!zc) return NONODE;
+  if (!zc) return false;
   const r = scriptRow(zc, ZC.node);
-  return (!!r && yes(r.nodeOnly) && no(r.browserOnly)) || 'zzcNode: ' + short(r);
+  return (!!r && yes(r.nodeOnly) && no(r.browserOnly)) || false;
 }, test.limit.quick);
 test.run('a script that crashes on the node for lack of document and loads in the page is browser-only', 0.2, function () {
-  if (!zc) return NONODE;
+  if (!zc) return false;
   const r = scriptRow(zc, ZC.page);
-  return (!!r && yes(r.browserOnly) && no(r.nodeOnly)) || 'zzcPage: ' + short(r);
+  return (!!r && yes(r.browserOnly) && no(r.nodeOnly)) || false;
 }, test.limit.quick);
 test.run('a script that loads in both runs on both: neither flag', 0.2, function () {
-  if (!zc) return NONODE;
+  if (!zc) return false;
   const r = scriptRow(zc, ZC.both);
-  return (!!r && no(r.browserOnly) && no(r.nodeOnly)) || 'zzcBoth: ' + short(r);
+  return (!!r && no(r.browserOnly) && no(r.nodeOnly)) || false;
 }, test.limit.quick);
 test.run('a script that exits on the node with nothing thrown has loaded there: an app server comes out node-only', 0.2, function () {
-  if (!zc) return NONODE;
+  if (!zc) return false;
   const r = scriptRow(zc, ZC.exit);
-  return (!!r && yes(r.nodeOnly) && no(r.browserOnly)) || 'zzcExit: ' + short(r);
+  return (!!r && yes(r.nodeOnly) && no(r.browserOnly)) || false;
 }, test.limit.quick);
 test.run('a script that crashes in both is not classifyable: its classifyable row is red, severity 0.8', 0.2, function () {
-  if (!zc) return NONODE;
+  if (!zc) return false;
   const r = classifyRow(zc, ZC.broken);
-  return (!!r && no(r.verified) && Number(r.severity) === 0.8) || 'zzcBroken\'s classifyable row: ' + short(r);
+  return (!!r && no(r.verified) && Number(r.severity) === 0.8) || false;
 }, test.limit.quick);
 test.run('a load not complete in 3 seconds counts as a hang: not classifyable, its row red, severity 0.8', 0.2, function () {
-  if (!zc) return NONODE;
+  if (!zc) return false;
   const r = classifyRow(zc, ZC.hang);
-  return (!!r && no(r.verified) && Number(r.severity) === 0.8) || 'zzcHang\'s classifyable row: ' + short(r);
+  return (!!r && no(r.verified) && Number(r.severity) === 0.8) || false;
 }, test.limit.quick);
 test.run('a script classified has no red classifyable row', 0.2, function () {
-  if (!zc) return NONODE;
+  if (!zc) return false;
   const red = ['node', 'page', 'both', 'exit'].filter(function (k) { const r = classifyRow(zc, ZC[k]); return !zcCleared[k] || (!!r && no(r.verified)); });
-  return red.length === 0 || 'red: ' + short(red);
+  return red.length === 0 || false;
 }, test.limit.quick);
 test.run('each has a suite row of spirit/test/scriptClassify.js', 0.2, function () {
-  if (!zc) return NONODE;
+  if (!zc) return false;
   const none = Object.keys(ZC).filter(function (k) { return !suiteRow(zc, ZC[k], SC); });
-  return none.length === 0 || 'no classifier suite row: ' + short(none);
+  return none.length === 0 || false;
 }, test.limit.quick);
 // SHOWN ONLY WHERE THEY APPLY (Andy: "WSL, MAKE SURE SUITES DON'T SHOW UP WHEN THEY'RE NO APPLICATBLE TO A SCRIPT. NOW!!!!"):
 // read as the script tab reads them, suite.search for the script, at once after it is classified, not after a run or a
 // change. A -node general test applies to no browser-only script, a -browser one to no node-only script.
 const shownKinds = async function (name) { return items(await call(N.base, 'testicle.suite.search', { script: name, text: '' })).map(function (i) { return (/-(general|node|browser)\.js$/.exec(suiteOf(i)) || [])[1]; }).filter(Boolean); };
 test.run('at once after it is classified, a browser-only script\'s suite search shows no -node suite', 0.2, async function () {
-  if (!zc) return NONODE;
+  if (!zc) return false;
   const k = await shownKinds(ZC.page);
-  return (k.indexOf('node') === -1 && k.indexOf('browser') !== -1) || 'zzcPage\'s suite search shows the kinds ' + short(k);
+  return (k.indexOf('node') === -1 && k.indexOf('browser') !== -1) || false;
 }, test.limit.quick);
 test.run('at once after it is classified, a node-only script\'s suite search shows no -browser suite', 0.2, async function () {
-  if (!zc) return NONODE;
+  if (!zc) return false;
   const k = await shownKinds(ZC.node);
-  return (k.indexOf('browser') === -1 && k.indexOf('node') !== -1) || 'zzcNode\'s suite search shows the kinds ' + short(k);
+  return (k.indexOf('browser') === -1 && k.indexOf('node') !== -1) || false;
 }, test.limit.quick);
 test.run('and after a restart, a classified script still shows only the suites that apply', 0.2, async function () {
-  if (!zc) return NONODE;
+  if (!zc) return false;
   await stop(N.child);
   N = await boot(s.run); live.push(N.child);
-  if (!up()) return 'the scratch node did not come up again';
+  if (!up()) return false;
   await sleep(3000);
   const kp = await shownKinds(ZC.page), kn = await shownKinds(ZC.node);
-  return (kp.indexOf('node') === -1 && kn.indexOf('browser') === -1) || 'after the restart: zzcPage ' + short(kp) + ', zzcNode ' + short(kn);
+  return (kp.indexOf('node') === -1 && kn.indexOf('browser') === -1) || false;
 }, test.limit.long);
 // A RESULT OF A SUITE THAT DOES NOT APPLY (Andy: "MAKE SURE SUITES DON'T SHOW UP WHEN THEY'RE NO APPLICATBLE TO A SCRIPT";
 // found on wsl's node, 2026-11-14: a -browser suite run by hand on two node-only scripts, relayServer.js and sseClient.js,
 // reported to testicle, and their red rows stood current there for a day, though testicle never runs that suite on them):
 // a result sent for a classified node-only script under a -browser suite is refused, and leaves no row.
 test.run('a -browser result for a node-only script is refused, and no current row of it stands', 0.4, async function () {
-  if (!zc) return NONODE;
+  if (!zc) return false;
   const browserSuite = 'spirit/app/testicle/test/testicle-sibling-browser.js';
   const r = await call(N.base, 'testicle.testicle.set', { script: ZC.node, suite: browserSuite, test: 'zzc not applicable', verified: false, severity: 0.8 });
   await sleep(1000);
@@ -1790,27 +1784,22 @@ test.run('a -browser result for a node-only script is refused, and no current ro
   const rows = currentOf(t, ZC.node, browserSuite, 'zzc not applicable');
   const srow = suiteRow(t, ZC.node, browserSuite);
   const shown = (await shownKinds(ZC.node)).indexOf('browser') !== -1;
-  const bad = [];
-  if (r.status === 200) bad.push('testicle.set answered 200');
-  if (rows.length) bad.push('a current row stands: ' + short(rows[0]));
-  if (srow && no(srow.deleted)) bad.push('a suite row of it stands: ' + short(srow));
-  if (shown) bad.push('its suite search shows a -browser suite');
-  return !bad.length || bad.join('; ');
+  return (r.status !== 200 && !rows.length && !(srow && no(srow.deleted)) && !shown) || false;
 }, test.limit.slow);
 
 test.run('classified first, tested after: each one\'s own suite reports only after its reClassify cleared', 0.2, async function () {
-  if (!zc) return NONODE;
+  if (!zc) return false;
   await until(function () { return Promise.resolve(['node', 'both', 'exit'].every(function (k) { return currentOf(tables(DB), ZC[k], ownOf(ZC[k]), k + ' answers').length === 1; })); }, 240000);
   const t = tables(DB);
   const early = ['node', 'both', 'exit'].filter(function (k) { const r = currentOf(t, ZC[k], ownOf(ZC[k]), k + ' answers')[0]; return !r || !zcCleared[k] || Number(r.tested) < zcCleared[k] - 500; });
-  return early.length === 0 || 'run before classified, or never run: ' + short(early.map(function (k) { return k + ' ' + short(currentOf(t, ZC[k], ownOf(ZC[k]), k + ' answers')[0]); }));
+  return early.length === 0 || false;
 }, test.limit.long);
 test.run('a script whose classifyable row is red is tested in no other way: no suite of broken or hang reports', 0.2, async function () {
-  if (!zc) return NONODE;
+  if (!zc) return false;
   await idle(240000);
   const t = tables(DB);
   const ran = (t.test || []).filter(function (r) { return (r.script === ZC.broken || r.script === ZC.hang) && r.suite !== SC; });
-  return ran.length === 0 || 'reported: ' + short(ran.map(function (r) { return r.suite + ' ' + r.test; }));
+  return ran.length === 0 || false;
 }, test.limit.long);
 
 // THE CLASSIFIER CHANGED, EVERY SCRIPT CLASSIFIED AGAIN (Andy, on a script left not classifyable by the classifier before
@@ -1818,53 +1807,53 @@ test.run('a script whose classifyable row is red is tested in no other way: no s
 // is classified again"). A script that failed is tried again then, though it did not change itself.
 let reTold = 0;
 test.run('when the classifier changes, a script classified before reads reClassify true again', 0.2, async function () {
-  if (!zc) return NONODE;
+  if (!zc) return false;
   await idle(240000);
   reTold = Date.now();
   append(SC, '// the classifier, changed\n');
   const ok = await until(function () { const r = scriptRow(tables(DB), ZC.node); return Promise.resolve(!!r && yes(r.reClassify)); }, 2000);
-  return !!ok || 'zzcNode after the classifier changed: ' + short(scriptRow(tables(DB), ZC.node));
+  return !!ok || false;
 }, test.limit.slow);
 test.run('and a script that failed is tried again, though it did not change: its classifyable row tested anew', 0.2, async function () {
-  if (!reTold) return 'the classifier was not changed: the world failed';
+  if (!reTold) return false;
   const ok = await until(function () { const r = classifyRow(tables(DB), ZC.broken); return Promise.resolve(!!r && Number(r.tested) >= reTold); }, 240000);
-  return !!ok || 'zzcBroken\'s classifyable row: ' + short(classifyRow(tables(DB), ZC.broken)) + ', the classifier changed at ' + reTold;
+  return !!ok || false;
 }, test.limit.long);
 // Switched to interactive while that classifying goes on (Andy: "AND IT FUCKING STOPS CLASSIFYING WHEN I GO BACK TO FUCKING
 // ITERACTIVE MODE!!!!!!!!!!!!!!!!!!!"): it goes on, and ends, interactive.
 test.run('the world: switched to interactive while the classifying goes on', 0.2, async function () {
-  if (!reTold) return 'the classifier was not changed: the world failed';
+  if (!reTold) return false;
   const r = await call(N.base, 'testicle.preferences', { interactive: true });
-  return (r.status === 200 && prefsOf(r).interactive === true) || 'set: ' + r.status + ' ' + short(r.text);
+  return (r.status === 200 && prefsOf(r).interactive === true) || false;
 }, test.limit.quick);
 test.run('and each one is classified again, interactive, nothing pressed: reClassify false on every one of the six', 0.2, async function () {
-  if (!reTold) return 'the classifier was not changed: the world failed';
+  if (!reTold) return false;
   let left = [];
   await until(function () { const t = tables(DB); left = Object.keys(ZC).filter(function (k) { const r = scriptRow(t, ZC[k]); return !r || !no(r.reClassify); }); return Promise.resolve(left.length === 0); }, 240000);
-  return left.length === 0 || 'not classified again, interactive: ' + short(left);
+  return left.length === 0 || false;
 }, test.limit.long);
 test.run('the world: auto again, for the checks after', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   const r = await call(N.base, 'testicle.preferences', { interactive: false });
-  return (r.status === 200 && prefsOf(r).interactive === false) || 'set: ' + r.status + ' ' + short(r.text);
+  return (r.status === 200 && prefsOf(r).interactive === false) || false;
 }, test.limit.quick);
 
 // 2: which general tests concern which scripts, by the flags.
 const kinds = function (t, name) { return suiteRows(t, name).filter(function (r) { return !yes(r.deleted); }).map(function (r) { return (/-(general|node|browser)\.js$/.exec(r.suite) || [])[1]; }).filter(Boolean); };
 test.run('a node-only script is tested by -general and -node general tests, and no -browser one', 0.2, function () {
-  if (!zc) return NONODE;
+  if (!zc) return false;
   const k = kinds(tables(DB), ZC.node);
-  return (k.indexOf('general') !== -1 && k.indexOf('node') !== -1 && k.indexOf('browser') === -1) || 'zzcNode\'s general tests: ' + short(k);
+  return (k.indexOf('general') !== -1 && k.indexOf('node') !== -1 && k.indexOf('browser') === -1) || false;
 }, test.limit.quick);
 test.run('a browser-only script is tested by -general and -browser general tests, and no -node one', 0.2, function () {
-  if (!zc) return NONODE;
+  if (!zc) return false;
   const k = kinds(tables(DB), ZC.page);
-  return (k.indexOf('general') !== -1 && k.indexOf('browser') !== -1 && k.indexOf('node') === -1) || 'zzcPage\'s general tests: ' + short(k);
+  return (k.indexOf('general') !== -1 && k.indexOf('browser') !== -1 && k.indexOf('node') === -1) || false;
 }, test.limit.quick);
 test.run('a script neither browser-only nor node-only is tested by all three kinds', 0.2, function () {
-  if (!zc) return NONODE;
+  if (!zc) return false;
   const k = kinds(tables(DB), ZC.both);
-  return ['general', 'node', 'browser'].every(function (x) { return k.indexOf(x) !== -1; }) || 'zzcBoth\'s general tests: ' + short(k);
+  return ['general', 'node', 'browser'].every(function (x) { return k.indexOf(x) !== -1; }) || false;
 }, test.limit.quick);
 
 // ── TESTICLE TURNED OFF AND ON, ITS TABLES OUT OF STEP WITH THE TREE (Andy: "WSL, make sure that testicle related test take
@@ -1878,17 +1867,17 @@ const twoTests = SUITE_HEAD + "test.run('zzdA answers one', 0.2, function () { r
 const askedUp = async function () { const r = await call(N.base, 'testicle.busy', {}); return r.status === 200; };
 let off = null;
 test.run('the world: zzdA, zzdC and their own tests run while testicle is on', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   put(DAS, twoTests); put(DA, '\'use strict\';\n// zzdA\n');
   put(DCS, SUITE_HEAD + "test.run('zzdC answers', 0.2, function () { return true; }, test.limit.quick);\n"); put(DC, '\'use strict\';\n// zzdC\n');
   const ok = await until(function () { const t = tables(DB); return Promise.resolve(currentOf(t, DA, DAS, 'zzdA answers two').length === 1 && currentOf(t, DC, DCS, 'zzdC answers').length === 1); }, 280000);
-  return !!ok || 'not run: zzdA ' + currentOf(tables(DB), DA, DAS, 'zzdA answers two').length + ', zzdC ' + currentOf(tables(DB), DC, DCS, 'zzdC answers').length;
+  return !!ok || false;
 }, test.limit.long);
 test.run('the world: testicle is turned off, the node staying up, and the tree changes under it', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   const r = await call(N.base, 'app.active', { key: 'testicle', active: false });
   const gone = await until(function () { return askedUp().then(function (a) { return !a; }); }, 30000);
-  if (!gone) return 'testicle still answers after app.active false: ' + r.status + ' ' + short(r.text);
+  if (!gone) return false;
   off = { aSuite: (suiteRow(tables(DB), DA, DAS) || {}).hash };
   put(DAS, SUITE_HEAD + "test.run('zzdA answers one', 0.2, function () { return true; }, test.limit.quick);\n// its second test gone, while testicle was off\n");
   put(DBS, SUITE_HEAD + "test.run('zzdB answers', 0.2, function () { return true; }, test.limit.quick);\n"); put(DB_, '\'use strict\';\n// zzdB, written while testicle was off\n');
@@ -1896,32 +1885,32 @@ test.run('the world: testicle is turned off, the node staying up, and the tree c
   return true;
 }, test.limit.slow);
 test.run('turned on again, testicle answers', 0.2, async function () {
-  if (!off) return 'testicle was not turned off: the world failed';
+  if (!off) return false;
   await call(N.base, 'app.active', { key: 'testicle', active: true });
-  return !!(await until(askedUp, 60000)) || 'testicle does not answer after app.active true';
+  return !!(await until(askedUp, 60000)) || false;
 }, test.limit.slow);
 test.run('the script table follows: zzdB written while off has its row, zzdC removed while off is deleted', 0.2, async function () {
-  if (!off) return 'testicle was not turned off: the world failed';
+  if (!off) return false;
   const ok = await until(function () { const t = tables(DB); const b = scriptRow(t, DB_), c = scriptRow(t, DC); return Promise.resolve(!!b && no(b.deleted) && !!c && yes(c.deleted)); }, 120000);
   const t = tables(DB);
-  return !!ok || 'zzdB ' + short(scriptRow(t, DB_)) + ', zzdC ' + short(scriptRow(t, DC));
+  return !!ok || false;
 }, test.limit.long);
 test.run('the suite table follows: zzdB\'s own suite has its row, zzdA\'s edited suite its new hash, zzdC\'s removed suite is deleted', 0.2, function () {
-  if (!off) return 'testicle was not turned off: the world failed';
+  if (!off) return false;
   const t = tables(DB);
   const b = suiteRow(t, DB_, DBS), a = suiteRow(t, DA, DAS), c = suiteRow(t, DC, DCS);
-  return (!!b && no(b.deleted) && !!a && a.hash !== off.aSuite && !!c && yes(c.deleted)) || 'zzdB\'s suite ' + short(b) + '; zzdA\'s ' + short(a) + ' (before ' + short(off.aSuite) + '); zzdC\'s ' + short(c);
+  return (!!b && no(b.deleted) && !!a && a.hash !== off.aSuite && !!c && yes(c.deleted)) || false;
 }, test.limit.quick);
 test.run('the testicle table follows: zzdC\'s results are no longer current', 0.2, function () {
-  if (!off) return 'testicle was not turned off: the world failed';
+  if (!off) return false;
   const cur = (tables(DB).test || []).filter(function (r) { return r.script === DC && r.suite === DCS && yes(r.current); });
-  return cur.length === 0 || 'zzdC\'s current results: ' + short(cur.map(function (r) { return r.test; }));
+  return cur.length === 0 || false;
 }, test.limit.quick);
 test.run('and once zzdA\'s edited suite has run again, the test it lost is no longer current', 0.2, async function () {
-  if (!off) return 'testicle was not turned off: the world failed';
+  if (!off) return false;
   const ok = await until(function () { const t = tables(DB); const one = currentOf(t, DA, DAS, 'zzdA answers one')[0]; return Promise.resolve(!!one && String(one.suiteHash || '') === String((suiteRow(t, DA, DAS) || {}).hash) && currentOf(t, DA, DAS, 'zzdA answers two').length === 0); }, 280000);
   const t = tables(DB);
-  return !!ok || 'zzdA\'s rows: one ' + short(currentOf(t, DA, DAS, 'zzdA answers one')) + ', two ' + short(currentOf(t, DA, DAS, 'zzdA answers two'));
+  return !!ok || false;
 }, test.limit.long);
 
 // ── EVERY GENERAL TEST TAKES A LIST (box v94, 2: "with no script-argument, they will process all applicable scripts. else it
@@ -1934,19 +1923,21 @@ const generalRun = function (suite, files) {
   try { return execFileSync(process.execPath, [suite].concat(files), { cwd: s.run, encoding: 'utf8', timeout: 600000, maxBuffer: 1 << 26, stdio: ['ignore', 'pipe', 'pipe'] }); }
   catch (e) { return String((e && e.stdout) || '') + String((e && e.stderr) || ''); }
 };
-const namesBoth = function (out) { const fails = String(out).split('\n').filter(function (l) { return /FAILURE/.test(l); }).join('\n'); return { one: fails.indexOf('zzlOne.js') !== -1, two: fails.indexOf('zzlTwo.js') !== -1 }; };
+// A script red in the run's print: a red line (its title and ❌) under that script's heading (spirit/test/testReport.js).
+const redUnder = function (out, name) { let under = false; return String(out).split('\n').some(function (l) { if (!/[✅❌]\s*$/.test(l)) { under = l.indexOf(name) !== -1; return false; } return under && /❌\s*$/.test(l); }); };
+const namesBoth = function (out) { return { one: redUnder(out, 'zzlOne.js'), two: redUnder(out, 'zzlTwo.js') }; };
 let listed = false;
 test.run('the world: two broken scripts written in the scratch tree', 0.2, function () {
-  if (!s) return NONODE;
+  if (!s) return false;
   put(LA1, BROKEN); put(LA2, BROKEN);
   listed = true;
   return true;
 }, test.limit.quick);
 const bothNamed = function (suite) {
-  if (!listed) return 'not written: the world failed';
+  if (!listed) return false;
   const out = generalRun(suite, [LA1, LA2]);
   const b = namesBoth(out);
-  return (b.one && b.two) || 'names zzlOne ' + b.one + ', zzlTwo ' + b.two + ': ' + short(out.split('\n').filter(function (l) { return /FAILURE/.test(l); }).slice(0, 3));
+  return (b.one && b.two) || false;
 };
 test.run('testicle-sibling-general.js, handed both, names both', 0.4, function () { return bothNamed('spirit/app/testicle/test/testicle-sibling-general.js'); }, test.limit.long);
 test.run('testicle-sibling-node.js, handed both, names both', 0.4, function () { return bothNamed('spirit/app/testicle/test/testicle-sibling-node.js'); }, test.limit.long);
@@ -1969,7 +1960,7 @@ const batchRuns = function (kind) { return runlog().filter(function (l) { return
 const sameSet = function (a, b) { return JSON.stringify((a || []).slice().sort()) === JSON.stringify((b || []).slice().sort()); };
 let batched = false, batchFrom = 0;
 test.run('the world: spirit/app/testicle/temp/zzBatch/ with its three kinds of general test and three scripts, classified and run once', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   put(BZ + 'zzBatch.js', '\'use strict\';\n// zzBatch\n');
   put(BA, '\'use strict\';\ndocument.title = String(document.title);\n');
   put(BB, '\'use strict\';\nrequire(\'../../../../spirit.js\');\nconst fs = require(\'fs\');\nmodule.exports = { fs: typeof fs.readFileSync };\n');
@@ -1978,43 +1969,43 @@ test.run('the world: spirit/app/testicle/temp/zzBatch/ with its three kinds of g
   const ok = await until(function () { const t = tables(DB); return Promise.resolve([BA, BB, BC].every(function (f) { const r = scriptRow(t, f); return !!r && no(r.reClassify); })); }, 280000);
   await idle(280000);
   batched = !!ok;
-  return batched || 'zzBatch\'s scripts not classified: ' + short([BA, BB, BC].map(function (f) { return scriptRow(tables(DB), f); }));
+  return batched || false;
 }, test.limit.long);
 test.run('three scripts changed in one quiet second: the -general test runs once, handed all three', 0.4, async function () {
-  if (!batched) return 'no zzBatch: the world failed';
+  if (!batched) return false;
   batchFrom = runlog().length;
   [BA, BB, BC].forEach(function (f) { append(f, '// changed together\n'); });
   await until(function () { return Promise.resolve(runlog().slice(batchFrom).some(function (l) { return l.suite === 'zzBatch-general'; })); }, 280000);
   await idle(280000);
   const runs = runlog().slice(batchFrom).filter(function (l) { return l.suite === 'zzBatch-general' && l.ev === 'start'; });
-  return (runs.length === 1 && sameSet(runs[0].given, [BA, BB, BC])) || 'its runs: ' + short(runs.map(function (r) { return r.given; }));
+  return (runs.length === 1 && sameSet(runs[0].given, [BA, BB, BC])) || false;
 }, test.limit.long);
 test.run('and the -node test runs once, handed the two that run on the node, never the browser-only one', 0.4, function () {
-  if (!batched) return 'no zzBatch: the world failed';
+  if (!batched) return false;
   const runs = runlog().slice(batchFrom).filter(function (l) { return l.suite === 'zzBatch-node' && l.ev === 'start'; });
-  return (runs.length === 1 && sameSet(runs[0].given, [BB, BC])) || 'its runs: ' + short(runs.map(function (r) { return r.given; }));
+  return (runs.length === 1 && sameSet(runs[0].given, [BB, BC])) || false;
 }, test.limit.quick);
 test.run('and the -browser test runs once, handed the two that run in a page, never the node-only one', 0.4, function () {
-  if (!batched) return 'no zzBatch: the world failed';
+  if (!batched) return false;
   const runs = runlog().slice(batchFrom).filter(function (l) { return l.suite === 'zzBatch-browser' && l.ev === 'start'; });
-  return (runs.length === 1 && sameSet(runs[0].given, [BA, BC])) || 'its runs: ' + short(runs.map(function (r) { return r.given; }));
+  return (runs.length === 1 && sameSet(runs[0].given, [BA, BC])) || false;
 }, test.limit.quick);
 test.run('one script changed later: one run of the -general test, handed that one', 0.4, async function () {
-  if (!batched) return 'no zzBatch: the world failed';
+  if (!batched) return false;
   const from = runlog().length;
   append(BC, '// changed alone\n');
   await until(function () { return Promise.resolve(runlog().slice(from).some(function (l) { return l.suite === 'zzBatch-general'; })); }, 280000);
   await idle(280000);
   const runs = runlog().slice(from).filter(function (l) { return l.suite === 'zzBatch-general' && l.ev === 'start'; });
-  return (runs.length === 1 && sameSet(runs[0].given, [BC])) || 'its runs: ' + short(runs.map(function (r) { return r.given; }));
+  return (runs.length === 1 && sameSet(runs[0].given, [BC])) || false;
 }, test.limit.long);
 test.run('a press in a script tab still runs a general test for that one script', 0.4, async function () {
-  if (!batched) return 'no zzBatch: the world failed';
+  if (!batched) return false;
   const from = runlog().length;
   const press = await call(N.base, 'testicle.run', { script: BB, suite: BZ + 'test/zzBatch-sibling-general.js' });
   await until(function () { return Promise.resolve(runlog().slice(from).some(function (l) { return l.suite === 'zzBatch-general'; })); }, 120000);
   const runs = runlog().slice(from).filter(function (l) { return l.suite === 'zzBatch-general' && l.ev === 'start'; });
-  return (press.status === 200 && runs.length === 1 && sameSet(runs[0].given, [BB])) || 'press ' + press.status + ' ' + short(press.text) + '; its runs: ' + short(runs.map(function (r) { return r.given; }));
+  return (press.status === 200 && runs.length === 1 && sameSet(runs[0].given, [BB])) || false;
 }, test.limit.long);
 
 // ── A FIX OF A TOP RED RUNS FIRST (goal/G47.1, box v128: "a change to one of the 10 scripts holding the most severe current
@@ -2029,7 +2020,7 @@ const TOP_LOG = "const LOG = path.join(__dirname, '..', '..', '..', '..', '..', 
   "function log(name, ev) { require('fs').appendFileSync(LOG, JSON.stringify({ suite: name, ev: ev, at: Date.now() }) + '\\n'); }\n";
 let topWorld = false, longBefore = null, redChanged = 0, longStart = 0;
 test.run('the world: spirit/app/testicle/temp/zzTop/ with a long suite, a suite red at 0.9 and a green one, each run once', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   put(TLONG, '\'use strict\';\n// zzLong\n');
   put(TRED, '\'use strict\';\n// zzRed\n');
   put(TCALM, '\'use strict\';\n// zzCalm\n');
@@ -2044,10 +2035,10 @@ test.run('the world: spirit/app/testicle/temp/zzTop/ with a long suite, a suite 
   await idle(280000);
   const red = currentOf(tables(DB), TRED, TREDS, 'zzRed fails')[0];
   topWorld = !!ok && !!red && no(red.verified) && Number(red.severity) === 0.9;
-  return topWorld || 'zzTop not run: zzRed ' + short(red) + '; zzLong ' + short(currentOf(tables(DB), TLONG, TLONGS, 'zzLong answers'));
+  return topWorld || false;
 }, test.limit.long);
 test.run('the world: zzLong.js changes, and zzRed.js changes while zzLong\'s own suite runs', 0.2, async function () {
-  if (!topWorld) return 'no zzTop: the world failed';
+  if (!topWorld) return false;
   longBefore = currentOf(tables(DB), TLONG, TLONGS, 'zzLong answers')[0] || null;
   const from = starts('zzLong').length;
   append(TLONG, '// zzLong, changed\n');
@@ -2056,38 +2047,38 @@ test.run('the world: zzLong.js changes, and zzRed.js changes while zzLong\'s own
   await sleep(2000);
   append(TRED, '// zzRed, fixed\n');
   redChanged = Date.now();
-  return (!!ok && !!longStart) || 'zzLong\'s own suite never started: ' + short(runlog().filter(function (l) { return l.suite === 'zzLong'; }));
+  return (!!ok && !!longStart) || false;
 }, test.limit.long);
 test.run('a change to a script holding a top red stops the running suite: zzLong\'s run ends without its end', 0.4, async function () {
-  if (!redChanged) return 'no change of zzRed: the world failed';
+  if (!redChanged) return false;
   await until(function () { return Promise.resolve(runlog().some(function (l) { return l.suite === 'zzRed' && l.ev === 'start' && l.at >= redChanged; })); }, 120000);
   const ended = ends('zzLong').some(function (l) { return l.at >= longStart && l.at <= longStart + 39000; });
   const done = ends('zzLong').filter(function (l) { return l.at >= longStart; })[0];
   const redAt = (runlog().filter(function (l) { return l.suite === 'zzRed' && l.ev === 'start' && l.at >= redChanged; })[0] || {}).at;
-  return (!ended && !!redAt && (!done || done.at > redAt)) || 'zzLong started ' + longStart + ', ended ' + (done && done.at) + '; zzRed started ' + redAt;
+  return (!ended && !!redAt && (!done || done.at > redAt)) || false;
 }, test.limit.long);
 test.run('and that script\'s red suite runs first: zzRed\'s own suite starts within 30 s of its change, before zzLong\'s 40 s were up', 0.4, function () {
-  if (!redChanged) return 'no change of zzRed: the world failed';
+  if (!redChanged) return false;
   const redAt = (runlog().filter(function (l) { return l.suite === 'zzRed' && l.ev === 'start' && l.at >= redChanged; })[0] || {}).at;
-  return (!!redAt && redAt - redChanged <= 30000 && redAt < longStart + 40000) || 'zzRed started ' + (redAt ? (redAt - redChanged) + ' ms after its change' : 'never') + '; zzLong started ' + longStart;
+  return (!!redAt && redAt - redChanged <= 30000 && redAt < longStart + 40000) || false;
 }, test.limit.quick);
 test.run('the stopped run\'s results are untouched: zzLong\'s current row is the one from before', 0.4, function () {
-  if (!longBefore) return 'no row of zzLong before: the world failed';
+  if (!longBefore) return false;
   const now = currentOf(tables(DB), TLONG, TLONGS, 'zzLong answers')[0] || null;
   const redAt = (runlog().filter(function (l) { return l.suite === 'zzRed' && l.ev === 'start' && l.at >= redChanged; })[0] || {}).at || Date.now();
   const touched = !!now && Number(now.tested) !== Number(longBefore.tested) && Number(now.tested) < redAt;
-  return (!!now && !touched) || 'zzLong\'s row before ' + short(longBefore) + ', now ' + short(now);
+  return (!!now && !touched) || false;
 }, test.limit.quick);
 test.run('the stopped run goes back flagged: zzLong\'s own suite runs again, after zzRed\'s', 0.4, async function () {
-  if (!redChanged) return 'no change of zzRed: the world failed';
+  if (!redChanged) return false;
   const ok = await until(function () { return Promise.resolve(runlog().some(function (l) { return l.suite === 'zzLong' && l.ev === 'end' && l.at > redChanged; })); }, 280000);
   const redAt = (runlog().filter(function (l) { return l.suite === 'zzRed' && l.ev === 'start' && l.at >= redChanged; })[0] || {}).at;
   const again = runlog().filter(function (l) { return l.suite === 'zzLong' && l.ev === 'start' && l.at > (redAt || Infinity); })[0];
-  return (!!ok && !!again) || 'zzLong after zzRed: ' + short(runlog().filter(function (l) { return l.suite === 'zzLong' && l.at > redChanged; }));
+  return (!!ok && !!again) || false;
 }, test.limit.long);
 let calmChanged = 0, longStart2 = 0;
 test.run('the world: zzLong.js changes again, and zzCalm.js, holding no red, changes while zzLong\'s own suite runs', 0.2, async function () {
-  if (!topWorld) return 'no zzTop: the world failed';
+  if (!topWorld) return false;
   await idle(280000);
   const from = starts('zzLong').length;
   append(TLONG, '// zzLong, changed again\n');
@@ -2096,14 +2087,14 @@ test.run('the world: zzLong.js changes again, and zzCalm.js, holding no red, cha
   await sleep(2000);
   append(TCALM, '// zzCalm, changed\n');
   calmChanged = Date.now();
-  return (!!ok && !!longStart2) || 'zzLong\'s own suite never started again: ' + short(runlog().filter(function (l) { return l.suite === 'zzLong'; }));
+  return (!!ok && !!longStart2) || false;
 }, test.limit.long);
 test.run('any other change waits its turn: zzLong\'s run ends with its end, and zzCalm\'s own suite starts after it', 0.4, async function () {
-  if (!calmChanged) return 'no change of zzCalm: the world failed';
+  if (!calmChanged) return false;
   const ok = await until(function () { return Promise.resolve(runlog().some(function (l) { return l.suite === 'zzCalm' && l.ev === 'start' && l.at >= calmChanged; })); }, 280000);
   const done = ends('zzLong').filter(function (l) { return l.at >= longStart2; })[0];
   const calmAt = (runlog().filter(function (l) { return l.suite === 'zzCalm' && l.ev === 'start' && l.at >= calmChanged; })[0] || {}).at;
-  return (!!ok && !!done && !!calmAt && calmAt >= done.at) || 'zzLong started ' + longStart2 + ', ended ' + (done && done.at) + '; zzCalm started ' + calmAt;
+  return (!!ok && !!done && !!calmAt && calmAt >= done.at) || false;
 }, test.limit.long);
 
 // ── A TEST A WHOLE RUN NO LONGER REPORTS STOPS BEING CURRENT (goal/G47.1, cleaning; cw, reading Andy's testicle: backup/api.js's
@@ -2114,39 +2105,39 @@ test.run('any other change waits its turn: zzLong\'s run ends with its end, and 
 const SZ = 'spirit/app/testicle/temp/zzStale/zzStale.js', SZS = 'spirit/app/testicle/temp/zzStale/test/zzStale.js';
 let staleWorld = false;
 test.run('the world: spirit/app/testicle/temp/zzStale/ whose own suite reports one test green and one red, run once', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   put(SZ, '\'use strict\';\n// zzStale\n');
   put(SZS, SUITE_HEAD + "test.run('stale one', 0.2, function () { return true; }, test.limit.quick);\ntest.run('stale two', 0.2, function () { return 'red, as planted'; }, test.limit.quick);\n");
   const ok = await until(function () { const t = tables(DB); return Promise.resolve(currentOf(t, SZ, SZS, 'stale one').length > 0 && currentOf(t, SZ, SZS, 'stale two').length > 0); }, 280000);
   await idle(280000);
   staleWorld = !!ok;
-  return staleWorld || 'zzStale\'s rows: ' + short((tables(DB).test || []).filter(function (r) { return r.script === SZ; }));
+  return staleWorld || false;
 }, test.limit.long);
 test.run('a run with a title retires nothing: after testicle.run of "stale one" alone, "stale two" is still current', 0.4, async function () {
-  if (!staleWorld) return 'no zzStale: the world failed';
+  if (!staleWorld) return false;
   const before = currentOf(tables(DB), SZ, SZS, 'stale one')[0];
   const r = await call(N.base, 'testicle.run', { script: SZ, suite: SZS, testicle: 'stale one' });
   await until(function () { const now = currentOf(tables(DB), SZ, SZS, 'stale one')[0]; return Promise.resolve(!!now && !!before && Number(now.tested) > Number(before.tested)); }, 120000);
   await idle(120000);
-  return (r.status === 200 && currentOf(tables(DB), SZ, SZS, 'stale two').length > 0) || 'run ' + r.status + ' ' + short(r.text) + '; stale two now ' + short(testRows(tables(DB), SZ, SZS, 'stale two'));
+  return (r.status === 200 && currentOf(tables(DB), SZ, SZS, 'stale two').length > 0) || false;
 }, test.limit.long);
 test.run('the world: zzStale\'s suite rewritten to report "stale one" alone, and run whole', 0.2, async function () {
-  if (!staleWorld) return 'no zzStale: the world failed';
+  if (!staleWorld) return false;
   const before = currentOf(tables(DB), SZ, SZS, 'stale one')[0];
   put(SZS, SUITE_HEAD + "test.run('stale one', 0.2, function () { return true; }, test.limit.quick);\n");
   const ok = await until(function () { const now = currentOf(tables(DB), SZ, SZS, 'stale one')[0]; return Promise.resolve(!!now && !!before && Number(now.tested) > Number(before.tested)); }, 280000);
   await idle(280000);
-  return !!ok || 'stale one never ran again: ' + short(testRows(tables(DB), SZ, SZS, 'stale one'));
+  return !!ok || false;
 }, test.limit.long);
 test.run('after a whole run, a test it did not report is no longer current: "stale two" has no current row', 0.4, function () {
-  if (!staleWorld) return 'no zzStale: the world failed';
+  if (!staleWorld) return false;
   const left = currentOf(tables(DB), SZ, SZS, 'stale two');
-  return !left.length || 'stale two still current: ' + short(left);
+  return !left.length || false;
 }, test.limit.quick);
 test.run('and the suite\'s status follows the tests it now has: zzStale\'s own suite shows "green"', 0.4, async function () {
-  if (!staleWorld) return 'no zzStale: the world failed';
+  if (!staleWorld) return false;
   const st = await statusOf(SZ, SZS);
-  return st === 'green' || 'zzStale\'s suite: ' + short(st);
+  return st === 'green' || false;
 }, test.limit.quick);
 
 // ── testicle.suite.success (goal/G47.1, box v129: "the reporter reports a suite's success or failure for a script through
@@ -2157,33 +2148,33 @@ test.run('and the suite\'s status follows the tests it now has: zzStale\'s own s
 const SUC = 'spirit/app/testicle/temp/zzSucc/zzSucc.js', SUCS = 'spirit/app/testicle/temp/zzSucc/test/zzSucc.js';
 let succWorld = false;
 test.run('the node lists the verb testicle.suite.success', 0.4, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   const api = await call(N.base, 'api', { family: 'testicle' });
   const iface = String((api.body && api.body.interface) || '');
-  return /['"]suite\.success['"]\s*:/.test(iface) || 'testicle\'s api: ' + short(iface).slice(0, 200);
+  return /['"]suite\.success['"]\s*:/.test(iface) || false;
 }, test.limit.quick);
 test.run('the world: spirit/app/testicle/temp/zzSucc/ with its own suite, run once', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   put(SUC, '\'use strict\';\n// zzSucc\n');
   put(SUCS, SUITE_HEAD + "test.run('zzSucc answers', 0.2, function () { return true; }, test.limit.quick);\n");
   const ok = await until(function () { return Promise.resolve(currentOf(tables(DB), SUC, SUCS, 'zzSucc answers').length > 0); }, 280000);
   await idle(280000);
   succWorld = !!ok;
-  return succWorld || 'zzSucc never ran: ' + short(suiteRow(tables(DB), SUC, SUCS));
+  return succWorld || false;
 }, test.limit.long);
 test.run('testicle.suite.success {success: false} sets that suite row at once: outcome red, its flag cleared', 0.4, async function () {
-  if (!succWorld) return 'no zzSucc: the world failed';
+  if (!succWorld) return false;
   append(SUCS, '// changed, so flagged\n');
   await until(function () { return Promise.resolve(yes((suiteRow(tables(DB), SUC, SUCS) || {}).test)); }, 900);
   const r = await call(N.base, 'testicle.suite.success', { script: SUC, suite: SUCS, success: false });
   const row = suiteRow(tables(DB), SUC, SUCS);
-  return (r.status === 200 && !!row && row.outcome === 'red' && no(row.test)) || 'suite.success answered ' + r.status + ' ' + short(r.text) + '; the row ' + short(row);
+  return (r.status === 200 && !!row && row.outcome === 'red' && no(row.test)) || false;
 }, test.limit.quick);
 test.run('testicle.suite.success {success: true} sets it green, at once, whatever its test rows say', 0.4, async function () {
-  if (!succWorld) return 'no zzSucc: the world failed';
+  if (!succWorld) return false;
   const r = await call(N.base, 'testicle.suite.success', { script: SUC, suite: SUCS, success: true });
   const row = suiteRow(tables(DB), SUC, SUCS);
-  return (r.status === 200 && !!row && row.outcome === 'green' && no(row.test)) || 'suite.success answered ' + r.status + ' ' + short(r.text) + '; the row ' + short(row);
+  return (r.status === 200 && !!row && row.outcome === 'green' && no(row.test)) || false;
 }, test.limit.quick);
 
 // ── AN ABORTED RUN RE-ASSEMBLED (goal/G47.1, box v130: "a run aborted (stopped or killed): the server RE-ASSEMBLES a new run
@@ -2200,53 +2191,53 @@ const RE_SUITE = "'use strict';\nconst path = require('path');\nconst test = req
 const reRuns = function () { return runlog().filter(function (l) { return l.suite === 'zzRe-general' && l.ev === 'start'; }); };
 let reWorld = false, reFrom = 0;
 test.run('the world: spirit/app/testicle/temp/zzRe/ with its own -general test and three scripts, run once', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   put(RZ + 'zzRe.js', '\'use strict\';\n// zzRe\n');
   [RA, RB, RC].forEach(function (f) { put(f, '\'use strict\';\n// ' + f + '\n'); });
   put(RGEN, RE_SUITE);
   const ok = await until(function () { return Promise.resolve(reRuns().length > 0); }, 280000);
   await idle(280000);
   reWorld = !!ok;
-  return reWorld || 'zzRe\'s general test never ran: ' + short(runlog().slice(-5));
+  return reWorld || false;
 }, test.limit.long);
 test.run('the world: zzReA, zzReB and zzReC change; while the batch waits on zzReB, another suite is pressed', 0.2, async function () {
-  if (!reWorld) return 'no zzRe: the world failed';
+  if (!reWorld) return false;
   reFrom = reRuns().length;
   [RA, RB, RC].forEach(function (f) { append(f, '// changed together\n'); });
   const ok = await until(function () { return Promise.resolve(reRuns().length > reFrom); }, 280000);
   await sleep(5000);
   const r = await call(N.base, 'testicle.run', { script: LA, suite: LAS });
-  return (!!ok && r.status === 200) || 'the batch started ' + !!ok + '; the press answered ' + r.status + ' ' + short(r.text);
+  return (!!ok && r.status === 200) || false;
 }, test.limit.long);
 test.run('a run stopped is re-assembled fresh from the flags: the next run is handed zzReB and zzReC, not zzReA', 0.4, async function () {
-  if (!reWorld) return 'no zzRe: the world failed';
+  if (!reWorld) return false;
   const ok = await until(function () { return Promise.resolve(reRuns().length > reFrom + 1); }, 280000);
   const runs = reRuns().slice(reFrom);
   const first = runs[0] || {}, next = runs[1] || {};
-  return (!!ok && sameSet(first.given, [RA, RB, RC]) && sameSet(next.given, [RB, RC])) || 'its runs: ' + short(runs.map(function (x) { return x.given; }));
+  return (!!ok && sameSet(first.given, [RA, RB, RC]) && sameSet(next.given, [RB, RC])) || false;
 }, test.limit.long);
 test.run('and zzReA, which reported before the stop, is done: its suite row green, its flag cleared', 0.4, function () {
-  if (!reWorld) return 'no zzRe: the world failed';
+  if (!reWorld) return false;
   const row = suiteRow(tables(DB), RA, RGEN);
-  return (!!row && row.outcome === 'green' && no(row.test)) || 'zzReA\'s row: ' + short(row);
+  return (!!row && row.outcome === 'green' && no(row.test)) || false;
 }, test.limit.quick);
 // Box v131: "a suite's result is NEVER assembled from testicle rows, anywhere: testicle.suite.success is the only thing that
 // writes a suite row's outcome. the old summing of test rows goes." zzSucc's suite row, set green by the verb above, is sent
 // a failing test row and a passing one by testicle.set alone: its outcome stays as the verb left it.
 test.run('a failing test row sent alone leaves the suite row\'s outcome as testicle.suite.success left it: zzSucc stays green', 0.4, async function () {
-  if (!succWorld) return 'no zzSucc: the world failed';
+  if (!succWorld) return false;
   const r = await call(N.base, 'testicle.testicle.set', { script: SUC, suite: SUCS, test: 'zzSucc answers', verified: false, severity: 0.2 });
   await sleep(1500);
   const row = suiteRow(tables(DB), SUC, SUCS);
-  return (r.status === 200 && !!row && row.outcome === 'green') || 'testicle.set answered ' + r.status + '; the row ' + short(row);
+  return (r.status === 200 && !!row && row.outcome === 'green') || false;
 }, test.limit.slow);
 test.run('and testicle.suite.success {success: false} is what turns it red', 0.4, async function () {
-  if (!succWorld) return 'no zzSucc: the world failed';
+  if (!succWorld) return false;
   await call(N.base, 'testicle.testicle.set', { script: SUC, suite: SUCS, test: 'zzSucc answers', verified: true, severity: 0.2 });
   const r = await call(N.base, 'testicle.suite.success', { script: SUC, suite: SUCS, success: false });
   await sleep(1500);
   const row = suiteRow(tables(DB), SUC, SUCS);
-  return (r.status === 200 && !!row && row.outcome === 'red') || 'suite.success answered ' + r.status + '; the row ' + short(row);
+  return (r.status === 200 && !!row && row.outcome === 'red') || false;
 }, test.limit.slow);
 
 // ONE NODE AND ONE CHROME HANDED TO THE SUITES IT RUNS (goal/G47.1, Q10, wsl: "For testicle's 10 UI test files, shall each
@@ -2263,7 +2254,7 @@ const envSuite = function (name) {
 const envOf = function (name) { try { return JSON.parse(fs.readFileSync(path.join(s.run, Z, 'test', name + '.env.json'), 'utf8')); } catch (e) { return null; } };
 let handed = null;
 test.run('the world: two planted UI suites, each pressed, write down what testicle handed them', 0.2, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   put(ENVA, '\'use strict\';\n// zzEnvA\n'); put(ENVAS, envSuite('zzEnvA'));
   put(ENVB, '\'use strict\';\n// zzEnvB\n'); put(ENVBS, envSuite('zzEnvB'));
   await until(function () { const t = tables(DB); return Promise.resolve(!!suiteRow(t, ENVA, ENVAS) && !!suiteRow(t, ENVB, ENVBS)); }, 30000);
@@ -2272,17 +2263,17 @@ test.run('the world: two planted UI suites, each pressed, write down what testic
   await call(N.base, 'testicle.run', { script: ENVB, suite: ENVBS });
   await until(function () { return Promise.resolve(!!envOf('zzEnvB')); }, 60000);
   handed = { a: envOf('zzEnvA'), b: envOf('zzEnvB') };
-  return (!!handed.a && !!handed.b) || 'what they were handed: ' + short(handed);
+  return (!!handed.a && !!handed.b) || false;
 }, test.limit.long);
 test.run('testicle hands the suites it runs a node that answers, and a Chrome that answers', 0.4, async function () {
-  if (!handed || !handed.a) return 'no suite wrote down what it was handed: the world failed';
+  if (!handed || !handed.a) return false;
   const node = !!handed.a.base && await fetch(handed.a.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'api', args: {} }) }).then(function (r) { return r.status === 200; }, function () { return false; });
   const chrome = !!handed.a.chrome && await fetch('http://127.0.0.1:' + handed.a.chrome + '/json/version').then(function (r) { return r.status === 200; }, function () { return false; });
-  return (node && chrome) || 'handed ' + short(handed.a) + ': the node answers ' + node + ', the Chrome answers ' + chrome;
+  return (node && chrome) || false;
 }, test.limit.slow);
 test.run('and the same node and the same Chrome to the next suite it runs', 0.4, function () {
-  if (!handed || !handed.a || !handed.b) return 'no suite wrote down what it was handed: the world failed';
-  return (!!handed.a.base && !!handed.a.chrome && handed.a.base === handed.b.base && handed.a.chrome === handed.b.chrome) || 'zzEnvA ' + short(handed.a) + ', zzEnvB ' + short(handed.b);
+  if (!handed || !handed.a || !handed.b) return false;
+  return (!!handed.a.base && !!handed.a.chrome && handed.a.base === handed.b.base && handed.a.chrome === handed.b.chrome) || false;
 }, test.limit.quick);
 
 // LAST, SO THE REST OF THIS FILE JUDGES SUITES NOT RUN YET (goal/G47.1): set to auto and waited for, every flagged suite in its
@@ -2293,12 +2284,12 @@ test.run('and the same node and the same Chrome to the next suite it runs', 0.4,
 // of theirs reaches it, and it comes to rest (a run of testicle.js would hold it busy for an hour, a lab node with it).
 const OWN_TEST = function (suite) { return /^spirit\/app\/testicle\//.test(suite) && !/^spirit\/app\/testicle\/temp\//.test(suite) && /(^|\/)test\//.test(suite) && DEBUG_GENERALS.indexOf(suite) === -1; };
 test.run('in debug mode, set to auto, it never runs testicle\'s own tests, only the dummies: none reports, and it comes to rest', 0.8, async function () {
-  if (!up()) return NONODE;
+  if (!up()) return false;
   await call(N.base, 'testicle.preferences', { interactive: false });
   const rest = await idle(280000);
   const own = (tables(DB).test || []).filter(function (r) { return OWN_TEST(r.suite) && r.suite !== 'spirit/test/scriptClassify.js'; });
   const suites = Array.from(new Set(own.map(function (r) { return r.suite; })));
-  return (!!rest && !suites.length) || (rest ? '' : 'still busy after 280 s; ') + (suites.length ? 'its own tests reported: ' + suites.join(', ') : 'none of its own reported yet');
+  return (!!rest && !suites.length) || false;
 }, test.limit.long);
 
 // ── A RUN KILLED AT ITS TIME LIMIT (goal/G47.1, box v154, "testicle: a run killed at its time limit") ──
@@ -2318,7 +2309,6 @@ test.run('in debug mode, set to auto, it never runs testicle\'s own tests, only 
   const BHANG = 'spirit/app/testicle/temp/zzLimit/bHang.js';
   const CLATER = 'spirit/app/testicle/temp/zzLimit/cLater.js';
   const L = { s: null, N: null, DB: '', planted: '', aOkBefore: null, killed: false };
-  const NOLIMITWORLD = 'no scratch node with the short run limit: the world failed';
   const limitUp = function () { return !!L.N && L.N.up; };
   const generalRow = function (t, script) { return suiteRow(t, script, GENERAL); };
   const testRows = function (t, script) { return (t.test || []).filter(function (r) { return r.script === script && r.suite === GENERAL && yes(r.current); }); };
@@ -2332,11 +2322,11 @@ test.run('in debug mode, set to auto, it never runs testicle\'s own tests, only 
     L.s = { root: root, run: run };
     const server = path.join(run, 'spirit', 'app', 'testicle', 'testicle.js');
     const serverSrc = fs.readFileSync(server, 'utf8');
-    if (serverSrc.indexOf(LIMIT_LINE) === -1) return 'testicle.js holds no line ' + LIMIT_LINE + ': the run limit cannot be shortened in the copy';
+    if (serverSrc.indexOf(LIMIT_LINE) === -1) return false;
     fs.writeFileSync(server, serverSrc.replace(LIMIT_LINE, 'const JOB_LIMIT_MS = ' + SHORT_LIMIT_MS + ';'));
     const general = path.join(run, GENERAL);
     const generalSrc = fs.readFileSync(general, 'utf8');
-    if (generalSrc.indexOf(GENERAL_LINE) === -1) return GENERAL + ' holds no line ' + GENERAL_LINE + ': nothing to plant';
+    if (generalSrc.indexOf(GENERAL_LINE) === -1) return false;
     fs.writeFileSync(general, generalSrc.replace(GENERAL_LINE, "else GIVEN.forEach(function (rel) { test.forScript(rel, function () { if (/zzLimit\\/bHang\\.js$/.test(rel)) test.run(rel + ': it works on past the run limit', 0.2, function () { return new Promise(function (r) { setTimeout(function () { r(true); }, 240000); }); }, test.limit.long); else { one(rel); two(rel); } }); });"));
     [AOK, BHANG, CLATER].forEach(function (f) { fs.mkdirSync(path.dirname(path.join(run, f)), { recursive: true }); fs.writeFileSync(path.join(run, f), '\'use strict\';\n// ' + path.basename(f) + ', planted for the run limit\n'); });
     const on = path.join(run, 'spirit', 'state', 'testicle');
@@ -2345,52 +2335,52 @@ test.run('in debug mode, set to auto, it never runs testicle\'s own tests, only 
     fs.writeFileSync(path.join(on, 'data', 'preferences.json'), JSON.stringify({ debug: true }));
     L.DB = path.join(on, 'data', 'testicle.db');
     L.N = await boot(run);
-    if (!L.N.up) return NOLIMITWORLD;
+    if (!L.N.up) return false;
     const auto = await call(L.N.base, 'testicle.preferences', { interactive: false });
-    return auto.status === 200 || 'testicle.preferences {interactive: false}: ' + auto.status + ' ' + short(auto.text);
+    return auto.status === 200 || false;
   }, test.limit.long);
   test.run('the world: aOk.js reports its success in the run before the limit', 0.2, async function () {
-    if (!limitUp()) return NOLIMITWORLD;
+    if (!limitUp()) return false;
     const done = await until(function () { const r = generalRow(tables(L.DB), AOK); return Promise.resolve(!!r && r.outcome === 'green' && no(r.test)); }, 240000);
     const t = tables(L.DB);
     L.aOkBefore = { row: generalRow(t, AOK), tests: testRows(t, AOK) };
-    return (!!done && L.aOkBefore.tests.length > 0 && L.aOkBefore.tests.every(function (r) { return yes(r.verified); })) || 'aOk.js under ' + GENERAL + ': ' + short(L.aOkBefore);
+    return (!!done && L.aOkBefore.tests.length > 0 && L.aOkBefore.tests.every(function (r) { return yes(r.verified); })) || false;
   }, test.limit.long);
   test.run('the world: the run is killed at its limit while bHang.js works on', 0.2, async function () {
-    if (!L.aOkBefore || !L.aOkBefore.row) return 'aOk.js reported nothing: the world failed';
+    if (!L.aOkBefore || !L.aOkBefore.row) return false;
     // Past the 60 s limit from the run's start, with a margin: bHang.js's test answers only after 240 s, so the run is
     // still on it when the limit fires. bHang.js reported no success before that.
     await sleep(SHORT_LIMIT_MS + 15000);
     const r = generalRow(tables(L.DB), BHANG);
     L.killed = !(r && r.outcome === 'green');
-    return L.killed || 'bHang.js turned green before the limit: its test did not work on: ' + short(r);
+    return L.killed || false;
   }, test.limit.long);
   test.run('a suite that succeeded against a script and its hash stays a success in the suite table: aOk.js still green', 0.8, function () {
-    if (!L.killed) return 'no kill: the world failed';
+    if (!L.killed) return false;
     const r = generalRow(tables(L.DB), AOK);
-    return (!!r && r.outcome === 'green' && r.hash === L.aOkBefore.row.hash) || 'aOk.js\'s suite row after the kill: ' + short(r);
+    return (!!r && r.outcome === 'green' && r.hash === L.aOkBefore.row.hash) || false;
   }, test.limit.quick);
   test.run('and the tests it reported keep their results: every one of aOk.js\'s rows still passed', 0.8, function () {
-    if (!L.killed) return 'no kill: the world failed';
+    if (!L.killed) return false;
     const rows = testRows(tables(L.DB), AOK);
-    return (rows.length > 0 && rows.every(function (r) { return yes(r.verified); })) || 'aOk.js\'s test rows after the kill: ' + short(rows.map(function (r) { return { test: r.test, verified: r.verified }; }));
+    return (rows.length > 0 && rows.every(function (r) { return yes(r.verified); })) || false;
   }, test.limit.quick);
   test.run('the suite running at the kill fails: bHang.js red', 0.4, function () {
-    if (!L.killed) return 'no kill: the world failed';
+    if (!L.killed) return false;
     const r = generalRow(tables(L.DB), BHANG);
-    return (!!r && r.outcome === 'red') || 'bHang.js\'s suite row after the kill: ' + short(r);
+    return (!!r && r.outcome === 'red') || false;
   }, test.limit.quick);
   test.run('a suite the run never reached is not failed by the kill: cLater.js\'s suite row is not red, and none of its test rows', 0.8, function () {
-    if (!L.killed) return 'no kill: the world failed';
+    if (!L.killed) return false;
     const t = tables(L.DB);
     const r = generalRow(t, CLATER);
     const reds = testRows(t, CLATER).filter(function (x) { return no(x.verified); });
     // Its suite row is there (the run was handed it); red would be the kill's verdict on a suite that never ran.
-    return (!!r && r.outcome !== 'red' && !reds.length) || 'cLater.js after the kill: its suite row ' + short(r) + ', red test rows ' + short(reds.map(function (x) { return x.test; }));
+    return (!!r && r.outcome !== 'red' && !reds.length) || false;
   }, test.limit.quick);
   test.run('and the run is computed again: cLater.js runs in a new run and its suite row turns green', 0.8, async function () {
-    if (!L.killed) return 'no kill: the world failed';
+    if (!L.killed) return false;
     const ran = await until(function () { const r = generalRow(tables(L.DB), CLATER); return Promise.resolve(!!r && r.outcome === 'green' && no(r.test)); }, 180000);
-    return !!ran || 'cLater.js\'s suite row: ' + short(generalRow(tables(L.DB), CLATER));
+    return !!ran || false;
   }, test.limit.long);
 }

@@ -16,18 +16,15 @@ const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const FILE = path.join(__dirname, '..', 'element.js');
 const DESK = 'spirit/app/desk/element/desk/desk.js';
 
-function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 function load(file) { vm.runInThisContext(fs.readFileSync(file, 'utf8'), { filename: file }); }
 const tick = function () { return new Promise(function (r) { setImmediate(r); }); };
 const settle = async function () { for (let i = 0; i < 10; i++) await tick(); };
 const at = function (place) { return String(place).split('.').reduce(function (o, k) { return o == null ? undefined : o[k]; }, global.window.spirit.element); };
 
 const W = { required: [], made: [] };
-const NO_WORLD = 'no page: the world failed';
-const NOT_PLACED = 'no desk element: it was not placed';
 
 test.run('the world: the file runs on a window of its own, the Desk page a stand-in placed as the page places it', 0.2, async function () {
-  if (!fs.existsSync(FILE)) return 'spirit/app/desk/element.js is not there';
+  if (!fs.existsSync(FILE)) return false;
   global.window = { spirit: { elements: {}, get element() { return this.elements; }, set element(v) { this.elements = v; }, isBrowser: function () { return false; } } };
   global.spirit = global.window.spirit;
   const helper = require(path.join(RUN, 'spirit', 'element', 'installSpiritElement.js'));
@@ -42,44 +39,44 @@ test.run('the world: the file runs on a window of its own, the Desk page a stand
   return true;
 }, test.limit.quick);
 test.run('before it runs, the page has no desk element', 0.2, function () {
-  if (!W.up) return NO_WORLD;
-  return at('spirit.app.desk.element') === undefined || 'placed already: ' + short(Object.keys(at('spirit.app.desk.element') || {}));
+  if (!W.up) return false;
+  return at('spirit.app.desk.element') === undefined || false;
 }, test.limit.quick);
 test.run('it places spirit.element.spirit.app.desk.element, with create', 0.2, async function () {
-  if (!W.up) return NO_WORLD;
+  if (!W.up) return false;
   load(FILE);
   await settle();
   W.E = at('spirit.app.desk.element');
-  return (!!W.E && typeof W.E.create === 'function') || 'placed ' + short(W.E && Object.keys(W.E));
+  return (!!W.E && typeof W.E.create === 'function') || false;
 }, test.limit.quick);
 // "It draws the Desk page ... which it requires itself."
 test.run('it asks for the Desk page itself, spirit/app/desk/element/desk/desk.js', 0.2, function () {
-  if (!W.up) return NO_WORLD;
-  return W.required.indexOf(DESK) !== -1 || 'required ' + short(W.required);
+  if (!W.up) return false;
+  return W.required.indexOf(DESK) !== -1 || false;
 }, test.limit.quick);
 test.run('and the Desk page keeps its own place beside it, spirit.element.spirit.app.desk.element.desk.desk', 0.2, function () {
-  if (!W.E) return NOT_PLACED;
+  if (!W.E) return false;
   const d = at('spirit.app.desk.element.desk.desk');
-  return (!!d && typeof d.create === 'function') || 'the Desk page is ' + short(d);
+  return (!!d && typeof d.create === 'function') || false;
 }, test.limit.quick);
 test.run('create(container, { title, open }) draws the Desk page in that container, handing it the same title and open', 0.2, function () {
-  if (!W.E) return NOT_PLACED;
+  if (!W.E) return false;
   const c = { id: 'box' };
   const open = function () {};
   const opts = { title: 'Desk', open: open };
   W.answer = W.E.create(c, opts);
   const m = W.made[W.made.length - 1];
-  return (!!m && m.container === c && m.opts.title === 'Desk' && m.opts.open === open) || 'the Desk page was handed ' + short(m && { container: m.container, opts: Object.keys(m.opts || {}) });
+  return (!!m && m.container === c && m.opts.title === 'Desk' && m.opts.open === open) || false;
 }, test.limit.quick);
 test.run('it answers what the Desk page answers, its destroy with it', 0.2, function () {
-  if (!W.answer) return 'create answered nothing';
+  if (!W.answer) return false;
   const m = W.made[W.made.length - 1];
   W.answer.destroy();
-  return (W.answer === m && m.destroyed === true) || 'answered ' + short(W.answer);
+  return (W.answer === m && m.destroyed === true) || false;
 }, test.limit.quick);
 test.run('handed no options, the Desk page is handed {}', 0.2, function () {
-  if (!W.E) return NOT_PLACED;
+  if (!W.E) return false;
   W.E.create({ id: 'bare' });
   const m = W.made[W.made.length - 1];
-  return (!!m && m.opts && typeof m.opts === 'object' && Object.keys(m.opts).length === 0) || 'handed ' + short(m && m.opts);
+  return (!!m && m.opts && typeof m.opts === 'object' && Object.keys(m.opts).length === 0) || false;
 }, test.limit.quick);

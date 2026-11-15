@@ -43,8 +43,6 @@ function handler(seen) {
   };
 }
 const W = { relay: null, base: null, seen: [], pipe: null, pipeServer: null, pipeSeen: [], root: null, dead: null };
-const NO_RELAY = 'no planted relay: the world failed';
-const NO_PIPE = 'no planted app server: the world failed';
 
 // Counting sockets opened: http.request and https.request are what relayRequest's lib.request resolves to at call time.
 function counted(fn) {
@@ -68,19 +66,19 @@ test.run('the world: a planted relay on 127.0.0.1 port 0, an app server on its p
   await new Promise(function (r) { probe.listen(0, '127.0.0.1', r); });
   W.dead = probe.address().port;
   await new Promise(function (r) { probe.close(r); });
-  return (!!W.relay.address() && !!W.pipeServer.listening) || 'the planted servers did not listen';
+  return (!!W.relay.address() && !!W.pipeServer.listening) || false;
 }, test.limit.quick);
 
 // ── relayRequest ──
 test.run('relayRequest: the method, the path and the JSON body reach the relay, and the answer is { status, text }', 0.2, async function () {
-  if (!W.base) return NO_RELAY;
+  if (!W.base) return false;
   const n = W.seen.length;
   const a = await R.relayRequest(W.base, 'POST', '/post?x=1', { hello: 'world' });
   const s = W.seen[n] || {};
-  return (a.status === 200 && a.text === 'echo POST /post?x=1 {"hello":"world"}' && s.method === 'POST' && s.url === '/post?x=1' && short(Object.keys(a).sort()) === short(['status', 'text'])) || short({ a: a, s: s });
+  return (a.status === 200 && a.text === 'echo POST /post?x=1 {"hello":"world"}' && s.method === 'POST' && s.url === '/post?x=1' && short(Object.keys(a).sort()) === short(['status', 'text'])) || false;
 }, test.limit.quick);
 test.run('relayRequest: Host is the target\'s own, set explicitly (server.js checks it), with JSON type and the body\'s length', 0.2, async function () {
-  if (!W.base) return NO_RELAY;
+  if (!W.base) return false;
   const n = W.seen.length;
   // Explicitly: on loopback Node would write the same Host itself, so the options handed to http.request are read too.
   let given = null;
@@ -89,110 +87,110 @@ test.run('relayRequest: Host is the target\'s own, set explicitly (server.js che
   try { await R.relayRequest(W.base, 'POST', '/h', { a: 'é' }); } finally { http.request = h0; }
   const h = (W.seen[n] || {}).headers || {};
   const host = '127.0.0.1:' + W.relay.address().port;
-  return (given && given.Host === host && h.host === host && h['content-type'] === 'application/json' && h['content-length'] === String(Buffer.byteLength('{"a":"é"}'))) || short({ given: given, wire: h });
+  return (given && given.Host === host && h.host === host && h['content-type'] === 'application/json' && h['content-length'] === String(Buffer.byteLength('{"a":"é"}'))) || false;
 }, test.limit.quick);
 test.run('relayRequest: the caller\'s extra headers ride along', 0.2, async function () {
-  if (!W.base) return NO_RELAY;
+  if (!W.base) return false;
   const n = W.seen.length;
   await R.relayRequest(W.base, 'GET', '/x', null, { 'X-Spirit-Sig': 'sig1' });
   const s = W.seen[n] || {};
-  return (s.headers && s.headers['x-spirit-sig'] === 'sig1' && s.body === '') || short(s);
+  return (s.headers && s.headers['x-spirit-sig'] === 'sig1' && s.body === '') || false;
 }, test.limit.quick);
 test.run('relayRequest: a refusal is an answer, never a throw', 0.2, async function () {
-  if (!W.base) return NO_RELAY;
+  if (!W.base) return false;
   const r = await caught(R.relayRequest(W.base, 'GET', '/refuse'));
-  return (r.value && r.value.status === 404 && r.value.text === '{"code":"no-such"}') || short(r.error ? String(r.error.message) : r.value);
+  return (r.value && r.value.status === 404 && r.value.text === '{"code":"no-such"}') || false;
 }, test.limit.quick);
 test.run('relayRequest: a character split across two chunks arrives whole (one reader, bytes decoded once)', 0.2, async function () {
-  if (!W.base) return NO_RELAY;
+  if (!W.base) return false;
   const a = await R.relayRequest(W.base, 'GET', '/split');
-  return a.text === 'grüß' || short(a);
+  return a.text === 'grüß' || false;
 }, test.limit.quick);
 test.run('relayRequest: plain http to a host not loopback, a bad address, or another scheme is refused before any socket opens', 0.2, async function () {
   const got = await counted(function () {
     return Promise.all([caught(R.relayRequest('http://example.com', 'GET', '/')), caught(R.relayRequest('ftp://127.0.0.1', 'GET', '/')), caught(R.relayRequest('not a url', 'GET', '/'))]);
   });
   const msgs = got.v.map(function (r) { return r.error ? String(r.error.message) : 'answered'; });
-  return (got.n === 0 && /must be https/.test(msgs[0]) && /must be https/.test(msgs[1]) && /bad relay url/.test(msgs[2])) || short({ sockets: got.n, msgs: msgs });
+  return (got.n === 0 && /must be https/.test(msgs[0]) && /must be https/.test(msgs[1]) && /bad relay url/.test(msgs[2])) || false;
 }, test.limit.quick);
 test.run('relayRequest: no answer at all rejects (nothing listening)', 0.2, async function () {
-  if (!W.dead) return NO_RELAY;
+  if (!W.dead) return false;
   const r = await caught(R.relayRequest('http://127.0.0.1:' + W.dead, 'GET', '/'));
-  return (!!r.error && !r.value) || 'answered ' + short(r.value);
+  return (!!r.error && !r.value) || false;
 }, test.limit.quick);
 test.run('relayRequest: a deadline, said as relay-did-not-answer, for a relay that holds the socket', 0.2, async function () {
-  if (!W.base) return NO_RELAY;
+  if (!W.base) return false;
   const t = Date.now();
   const r = await caught(R.relayRequest(W.base, 'GET', '/hold', null, null, { timeoutMs: 300 }));
-  return (r.error && r.error.code === 'relay-did-not-answer' && Date.now() - t < 3000) || short(r.error ? { code: r.error.code, ms: Date.now() - t } : r.value);
+  return (r.error && r.error.code === 'relay-did-not-answer' && Date.now() - t < 3000) || false;
 }, test.limit.quick);
 test.run('relayRequest: a deadline, not an idle timer: a relay dribbling a byte at a time is cut too', 0.2, async function () {
-  if (!W.base) return NO_RELAY;
+  if (!W.base) return false;
   const r = await caught(R.relayRequest(W.base, 'GET', '/dribble', null, null, { timeoutMs: 400 }));
-  return (r.error && r.error.code === 'relay-did-not-answer') || short(r.error ? r.error.code : r.value);
+  return (r.error && r.error.code === 'relay-did-not-answer') || false;
 }, test.limit.quick);
 test.run('relayRequest: the deadline is 30 s by default, peerPost\'s public patience', 0.2, function () {
-  return R.RELAY_ANSWER_DEADLINE_MS === 30000 || short(R.RELAY_ANSWER_DEADLINE_MS);
+  return R.RELAY_ANSWER_DEADLINE_MS === 30000 || false;
 }, test.limit.quick);
 test.run('relayRequest: an answer past answerMax is refused by name, relay-answer-too-large', 0.2, async function () {
-  if (!W.base) return NO_RELAY;
+  if (!W.base) return false;
   const r = await caught(R.relayRequest(W.base, 'GET', '/big', null, null, { answerMax: 100 }));
-  return (r.error && r.error.code === 'relay-answer-too-large') || short(r.error ? r.error.code : r.value && r.value.text.length);
+  return (r.error && r.error.code === 'relay-answer-too-large') || false;
 }, test.limit.quick);
 test.run('relayRequest: by default an answer is bounded by limits.BODY_MAX (Andy: "ALWAYS bounded by MAX_PAYLOAD")', 0.2, async function () {
-  if (!W.base) return NO_RELAY;
+  if (!W.base) return false;
   const over = await caught(R.relayRequest(W.base, 'GET', '/huge'));
   const under = await caught(R.relayRequest(W.base, 'GET', '/big'));
-  return (over.error && over.error.code === 'relay-answer-too-large' && under.value && under.value.text.length === 2000) || short({ over: over.error ? over.error.code : 'answered', under: under.error ? under.error.code : 'ok' });
+  return (over.error && over.error.code === 'relay-answer-too-large' && under.value && under.value.text.length === 2000) || false;
 }, test.limit.quick);
 
 // ── pipeRequest ──
 test.run('pipeRequest: { status, text, type } from the app server on its pipe, the method upper-cased', 0.2, async function () {
-  if (!W.pipeServer) return NO_PIPE;
+  if (!W.pipeServer) return false;
   const n = W.pipeSeen.length;
   const a = await R.pipeRequest(W.pipe, 'post', '/verb', 'body text', { type: 'text/plain' });
   const s = W.pipeSeen[n] || {};
-  return (a.status === 200 && a.text === 'echo POST /verb body text' && a.type === 'text/plain; charset=utf-8' && s.method === 'POST' && a.kind === undefined) || short({ a: a, s: s.method });
+  return (a.status === 200 && a.text === 'echo POST /verb body text' && a.type === 'text/plain; charset=utf-8' && s.method === 'POST' && a.kind === undefined) || false;
 }, test.limit.quick);
 test.run('pipeRequest: only the content type crosses, Host localhost, no cookie or forwarded address of its own', 0.2, async function () {
-  if (!W.pipeServer) return NO_PIPE;
+  if (!W.pipeServer) return false;
   const n = W.pipeSeen.length;
   await R.pipeRequest(W.pipe, 'POST', '/h', 'x', { type: 'application/json' });
   const h = (W.pipeSeen[n] || {}).headers || {};
   const keys = Object.keys(h).filter(function (k) { return k !== 'connection'; }).sort();
-  return (h.host === 'localhost' && h['content-type'] === 'application/json' && short(keys) === short(['content-length', 'content-type', 'host'])) || short(h);
+  return (h.host === 'localhost' && h['content-type'] === 'application/json' && short(keys) === short(['content-length', 'content-type', 'host'])) || false;
 }, test.limit.quick);
 test.run('pipeRequest: the caller\'s own headers ride along (apiAuth/G1.13)', 0.2, async function () {
-  if (!W.pipeServer) return NO_PIPE;
+  if (!W.pipeServer) return false;
   const n = W.pipeSeen.length;
   await R.pipeRequest(W.pipe, 'GET', '/h', null, { headers: { 'X-Spirit-Caller': 'k1' } });
   const h = (W.pipeSeen[n] || {}).headers || {};
-  return h['x-spirit-caller'] === 'k1' || short(h);
+  return h['x-spirit-caller'] === 'k1' || false;
 }, test.limit.quick);
 test.run('pipeRequest: the server\'s background mark comes back as kind background (fileTransfer goal/G1.3)', 0.2, async function () {
-  if (!W.pipeServer) return NO_PIPE;
+  if (!W.pipeServer) return false;
   const a = await R.pipeRequest(W.pipe, 'GET', '/background');
-  return (a.kind === 'background' && a.text === 'later') || short(a);
+  return (a.kind === 'background' && a.text === 'later') || false;
 }, test.limit.quick);
 test.run('pipeRequest: nothing on the pipe is refused app-not-running, never a throw', 0.2, async function () {
-  if (!W.root) return NO_PIPE;
+  if (!W.root) return false;
   const r = await caught(R.pipeRequest(pipePathFor(W.root, 'nobody', process.platform), 'GET', '/'));
-  return (r.value && r.value.refused === 'app-not-running') || short(r.error ? String(r.error.message) : r.value);
+  return (r.value && r.value.refused === 'app-not-running') || false;
 }, test.limit.quick);
 test.run('pipeRequest: an app that does not finish in time is refused app-did-not-answer, dribbling or silent', 0.2, async function () {
-  if (!W.pipeServer) return NO_PIPE;
+  if (!W.pipeServer) return false;
   const got = await Promise.all([caught(R.pipeRequest(W.pipe, 'GET', '/hold', null, { timeoutMs: 300 })), caught(R.pipeRequest(W.pipe, 'GET', '/dribble', null, { timeoutMs: 400 }))]);
-  return got.every(function (r) { return r.value && r.value.refused === 'app-did-not-answer'; }) || short(got.map(function (r) { return r.value || String(r.error); }));
+  return got.every(function (r) { return r.value && r.value.refused === 'app-did-not-answer'; }) || false;
 }, test.limit.quick);
 test.run('pipeRequest: an answer past answerMax is refused app-answer-too-large, with its bytes and the cap', 0.2, async function () {
-  if (!W.pipeServer) return NO_PIPE;
+  if (!W.pipeServer) return false;
   const a = await R.pipeRequest(W.pipe, 'GET', '/big', null, { answerMax: 100 });
-  return (a.refused === 'app-answer-too-large' && a.max === 100 && a.bytes > 100) || short(a);
+  return (a.refused === 'app-answer-too-large' && a.max === 100 && a.bytes > 100) || false;
 }, test.limit.quick);
 
 // ── relayUpload ──
 test.run('relayUpload: a streamed POST, chunked, octet-stream, Host the target\'s, the writes arriving whole', 0.2, async function () {
-  if (!W.base) return NO_RELAY;
+  if (!W.base) return false;
   const n = W.seen.length;
   const req = R.relayUpload(W.base, '/face/upload', { 'X-Spirit-Sig': 's' });
   const answered = new Promise(function (r) { req.on('response', function (res) { r(res.statusCode); }); req.on('error', function () { r('error'); }); });
@@ -204,18 +202,18 @@ test.run('relayUpload: a streamed POST, chunked, octet-stream, Host the target\'
   const s = W.seen[n] || {};
   const h = s.headers || {};
   return (status === 200 && s.method === 'POST' && s.url === '/face/upload' && s.body === 'part one, part two' && h['transfer-encoding'] === 'chunked' &&
-    h['content-type'] === 'application/octet-stream' && h.host === '127.0.0.1:' + W.relay.address().port && h['x-spirit-sig'] === 's' && !('content-length' in h)) || short({ status: status, s: s });
+    h['content-type'] === 'application/octet-stream' && h.host === '127.0.0.1:' + W.relay.address().port && h['x-spirit-sig'] === 's' && !('content-length' in h)) || false;
 }, test.limit.quick);
 test.run('relayUpload: an address assertRelayUrl refuses is said on the stream\'s error, and no socket opens', 0.2, async function () {
   const got = await counted(function () {
     const req = R.relayUpload('http://example.com', '/face/upload');
     return new Promise(function (r) { req.on('error', function (e) { r(String(e && e.message)); }); setTimeout(function () { r('no error said'); }, 1000); });
   });
-  return (got.n === 0 && /must be https/.test(got.v)) || short(got);
+  return (got.n === 0 && /must be https/.test(got.v)) || false;
 }, test.limit.quick);
 
 test.run('the world ends: the planted servers close and the scratch root is removed', 0.2, async function () {
   await Promise.all([W.relay, W.pipeServer].filter(Boolean).map(function (s) { if (s.closeAllConnections) s.closeAllConnections(); return new Promise(function (r) { s.close(function () { r(); }); }); }));
   if (W.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(W);
-  return !(W.root && fs.existsSync(W.root)) || 'scratch root left';
+  return !(W.root && fs.existsSync(W.root)) || false;
 }, test.limit.quick);

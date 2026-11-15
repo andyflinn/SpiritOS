@@ -16,7 +16,6 @@ const FILE = path.join(__dirname, '..', 'api.js');
 require(path.join(RUN, 'spirit', 'spirit.js'));
 const spirit = globalThis.spirit;
 
-function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 const isPlain = function (v) { return v !== null && typeof v === 'object' && !Array.isArray(v); };
 // A peer's public key as the key rule takes one, and one it does not.
 const KEY = 'MCowBQYDK2VwAyEA' + 'configApiTest'.padEnd(43, 'A') + '=';
@@ -71,42 +70,40 @@ const W = { api: null, verbs: {}, names: [], mounted: null };
 const call = function (verb, args) { return spirit.check('config.' + verb, W.verbs[verb], args); };
 const passes = function (verb, args) { return !!W.verbs[verb] && call(verb, args) === null; };
 const refusedAs = function (verb, args) { if (!W.verbs[verb]) return 'no verb ' + verb; const r = call(verb, args); return r ? r.code : 'passed'; };
-const NO_API = 'api.js did not load: the world failed';
-const NO_MOUNT = 'no table the node mounts for config was read: the world failed';
 
 test.run('the world: api.js loads as the node hands it, its text run with module and exports alone', 0.2, function () {
   try {
     const m = { exports: {} };
     new Function('module', 'exports', fs.readFileSync(FILE, 'utf8'))(m, m.exports);
     W.api = m.exports;
-  } catch (e) { return 'api.js threw as it ran: ' + e.message; }
+  } catch (e) { return false; }
   W.verbs = (W.api && W.api.verbs) || {};
   W.names = Object.keys(W.verbs);
   return true;
 }, test.limit.quick);
 test.run('the world: server.js mounts the config family', 0.2, function () {
-  try { W.mounted = mounted('config'); } catch (e) { return 'server.js could not be read: ' + e.message; }
-  return !!W.mounted || 'server.js holds no loopbackVerbs.mount(\'config\', ...)';
+  try { W.mounted = mounted('config'); } catch (e) { return false; }
+  return !!W.mounted || false;
 }, test.limit.quick);
 
 // its shape: verbs, each argument with its rule, no family name of its own (goal/G32.3: the node maps it)
 test.run('it exports its table of verbs and nothing else: it names no family of its own', 0.2, function () {
-  if (!W.api) return NO_API;
-  return Object.keys(W.api).join() === 'verbs' || 'exports ' + short(Object.keys(W.api));
+  if (!W.api) return false;
+  return Object.keys(W.api).join() === 'verbs' || false;
 }, test.limit.quick);
 
 // goal/G30.20, Andy: "keep the config family for later use."
 test.run('it declares no verb: the family is kept empty for later use', 0.2, function () {
-  if (!W.api) return NO_API;
-  return (isPlain(W.verbs) && W.names.length === 0) || 'verbs ' + short(W.names);
+  if (!W.api) return false;
+  return (isPlain(W.verbs) && W.names.length === 0) || false;
 }, test.limit.quick);
 test.run('and the node mounts none for it', 0.2, function () {
-  if (!W.mounted) return NO_MOUNT;
-  return Object.keys(W.mounted).length === 0 || 'mounted ' + short(Object.keys(W.mounted));
+  if (!W.mounted) return false;
+  return Object.keys(W.mounted).length === 0 || false;
 }, test.limit.quick);
 // slim/G1.3: "Its two verbs, config.searchModules and config.setModules, went with the include list they read and set"
 test.run('searchModules and setModules went with the include list they read and set', 0.2, function () {
-  if (!W.api) return NO_API;
+  if (!W.api) return false;
   const left = ['searchModules', 'setModules'].filter(function (v) { return Object.prototype.hasOwnProperty.call(W.verbs, v); });
-  return left.length === 0 || 'still declared: ' + short(left);
+  return left.length === 0 || false;
 }, test.limit.quick);

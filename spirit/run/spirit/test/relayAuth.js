@@ -19,8 +19,6 @@ const RUN = path.resolve(__dirname, '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const AUTH = path.join(RUN, 'spirit', 'relayAuth.js');
 
-function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
-
 let root = '', seen = null;
 test.after(function () { try { if (root) fs.rmSync(root, { recursive: true, force: true }); } catch (e) { /* scratch */ } });
 
@@ -49,23 +47,23 @@ test.run('the world: a scratch node identity, asked fifty times, saved anew, ask
   ].join('\n');
   const r = spawnSync(process.execPath, ['-e', src, root], { cwd: RUN, encoding: 'utf8', timeout: 60000 });
   try { seen = JSON.parse(String(r.stdout || '').trim().split('\n').pop()); } catch (e) { seen = null; }
-  return !!seen || 'the child said ' + short(r.stdout) + ' ' + short(r.stderr);
+  return !!seen || false;
 }, test.limit.slow);
 test.run('asked fifty times, the identity is read from disc once', 0.2, function () {
-  if (!seen) return 'the identity was not asked: the world failed';
-  return seen.fifty === 1 || 'identity.json was read ' + seen.fifty + ' times for fifty asks';
+  if (!seen) return false;
+  return seen.fifty === 1 || false;
 }, test.limit.quick);
 test.run('each caller gets its own copy: a caller changing what it was given changes nothing the next caller gets', 0.2, function () {
-  if (!seen) return 'the identity was not asked: the world failed';
-  return seen.own === true || 'a caller\'s change reached the next caller';
+  if (!seen) return false;
+  return seen.own === true || false;
 }, test.limit.quick);
 test.run('after saveIdentity, the next ask reads identity.json again', 0.2, function () {
-  if (!seen) return 'the identity was not asked: the world failed';
-  return seen.readAfterSave === 1 || 'identity.json read ' + seen.readAfterSave + ' times on the first ask after a save';
+  if (!seen) return false;
+  return seen.readAfterSave === 1 || false;
 }, test.limit.quick);
 test.run('after saveIdentity, the next ask has the new name', 0.2, function () {
-  if (!seen) return 'the identity was not asked: the world failed';
-  return seen.renamedName === 'second' || 'the name after the save: ' + short(seen.renamedName);
+  if (!seen) return false;
+  return seen.renamedName === 'second' || false;
 }, test.limit.quick);
 
 // THE HINT SIGNATURE GOES (goal/G47.1, the cycle "the route caching goes", box v69: "A post carries no hints: the node
@@ -73,5 +71,5 @@ test.run('after saveIdentity, the next ask has the new name', 0.2, function () {
 test.run('relayAuth hands out no hint signature: neither hintMessage nor hintsSigned', 0.2, function () {
   const auth = require(AUTH);
   const left = ['hintMessage', 'hintsSigned'].filter(function (n) { return typeof auth[n] === 'function'; });
-  return (typeof auth.loadIdentity === 'function' && !left.length) || (left.length ? 'relayAuth still hands out ' + short(left) : 'relayAuth hands out no loadIdentity: nothing judged');
+  return (typeof auth.loadIdentity === 'function' && !left.length) || false;
 }, test.limit.quick);

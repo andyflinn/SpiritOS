@@ -22,7 +22,6 @@ const AGENT = familyPath('agent');
 // The page's own node, as node.card answers it: a public key in base64, its + and / kept, so the data set names it in
 // base64url (spirit.data.nodeId).
 const HOME_KEY = 'MCowBQYDK2VwAyEA+home/node+key/for+the+page/test0000000=';
-function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 function load(file) { vm.runInThisContext(fs.readFileSync(file, 'utf8'), { filename: file }); }
 const tick = function () { return new Promise(function (r) { setImmediate(r); }); };
 const settle = async function () { for (let i = 0; i < 10; i++) await tick(); };
@@ -89,12 +88,10 @@ let PE = null;
 let rowPath = null;
 let BRANCH = null;
 const E = {};
-const NO_WORLD = 'no page: the world failed';
-const NO_ROW = 'no row element: it was not placed';
 
 // ── its file ──
 test.run('the world: the shared element runs on a window of its own, over the real spirit.data', 0.2, async function () {
-  if (!fs.existsSync(FILE)) return 'spirit/app/agent/element/table/rowElement.js is not there';
+  if (!fs.existsSync(FILE)) return false;
   w = world();
   global.window = { spirit: { get element() { return this.elements; }, elements: {}, familyPath: familyPath, isBrowser: function () { return false; } } };
   global.spirit = global.window.spirit;
@@ -157,41 +154,41 @@ test.run('the world: the shared element runs on a window of its own, over the re
   return true;
 }, test.limit.quick);
 test.run('before it runs, the page has no row element', 0.2, function () {
-  if (!AT) return NO_WORLD;
-  return !AT().rowElement ? true : 'placed: ' + short(Object.keys(AT()));
+  if (!AT) return false;
+  return !AT().rowElement ? true : false;
 }, test.limit.quick);
 test.run('it places spirit.element.spirit.app.agent.element.table.rowElement, with create', 0.2, async function () {
-  if (!AT) return NO_WORLD;
+  if (!AT) return false;
   load(FILE);
   await settle();
   // One file, one element (goal/G41.28; the general test: a file registers one element). goal/G43.32: at its path,
   // spirit.element.spirit.app.agent.element.table.rowElement.
   E.agentRow = AT().rowElement;
-  return E.agentRow && typeof E.agentRow.create === 'function' ? true : 'placed: ' + short(Object.keys(AT()));
+  return E.agentRow && typeof E.agentRow.create === 'function' ? true : false;
 }, test.limit.quick);
 test.run('it loads the tables\' shared element itself, as part of its tree (rule/26)', 0.2, function () {
-  if (!w) return NO_WORLD;
-  return w.required.indexOf('spirit/app/agent/element/table/tableElement.js') !== -1 ? true : 'required: ' + short(w.required);
+  if (!w) return false;
+  return w.required.indexOf('spirit/app/agent/element/table/tableElement.js') !== -1 ? true : false;
 }, test.limit.quick);
 test.run('and registers no other element: agentTable is tableElement.js\'s', 0.2, function () {
-  return !/E\.agentTable\s*=/.test(fs.readFileSync(FILE, 'utf8')) ? true : 'rowElement.js assigns agentTable';
+  return !/E\.agentTable\s*=/.test(fs.readFileSync(FILE, 'utf8')) ? true : false;
 }, test.limit.quick);
 
 // ── unconfigured, the row says so and throws nothing (goal/G41.19, box v23) ──
 // The general test mounts every element by itself, handed nothing; the shared element says it is not configured.
 const U = { bare: null, made: null };
 test.run('agentRow.create(box, {}) throws nothing and says it is not configured', 0.2, async function () {
-  if (!E.agentRow) return NO_ROW;
+  if (!E.agentRow) return false;
   U.bare = box('bare');
   let threw = null;
   try { U.made = E.agentRow.create(U.bare, {}); } catch (e) { threw = e; }
   await settle();
-  return !threw && !!U.made && /not configured/.test(U.bare.textContent) ? true : 'threw ' + short(threw && threw.message) + ', box: ' + short(U.bare.textContent);
+  return !threw && !!U.made && /not configured/.test(U.bare.textContent) ? true : false;
 }, test.limit.quick);
 test.run('and its destroy leaves the box empty', 0.2, function () {
-  if (!U.made || typeof U.made.destroy !== 'function') return 'the unconfigured row has no destroy';
+  if (!U.made || typeof U.made.destroy !== 'function') return false;
   U.made.destroy();
-  return U.bare.innerHTML === '' ? true : 'box: ' + short(U.bare.innerHTML);
+  return U.bare.innerHTML === '' ? true : false;
 }, test.limit.quick);
 
 // ── a row's editor: from the server's get, put where the stream writes it ──
@@ -202,45 +199,45 @@ const look = { icon: '🏢', name: 'Provider' };
 let ed = null;
 let r = null;
 test.run('with the row not in its branch, it asks provider { op: get, id }', 0.2, async function () {
-  if (!E.agentRow) return NO_ROW;
+  if (!E.agentRow) return false;
   w.calls.length = 0;
   w.answer = function (table, a) { return a.op === 'get' ? Object.assign({}, ROW) : { id: 'KR' }; };
   ed = box('editor');
   r = E.agentRow.create(ed, { table: 'provider', id: 'KR', added: true, look: look, fields: FIELDS });
   await settle();
-  return w.calls.length === 1 && JSON.stringify(w.calls[0].args) === JSON.stringify({ op: 'get', id: 'KR' }) ? true : 'calls: ' + short(w.calls);
+  return w.calls.length === 1 && JSON.stringify(w.calls[0].args) === JSON.stringify({ op: 'get', id: 'KR' }) ? true : false;
 }, test.limit.quick);
 test.run('and puts the answer at <node>/agent/provider/<id>, where the stream writes it', 0.2, function () {
-  if (!ed) return 'no editor: it was not made';
-  return global.window.spirit.data.agent.data.row('provider', 'KR') && global.window.spirit.data.agent.data.row('provider', 'KR').label === 'Row one' ? true : 'branch: ' + short(global.window.spirit.data.agent.data.row('provider', 'KR'));
+  if (!ed) return false;
+  return global.window.spirit.data.agent.data.row('provider', 'KR') && global.window.spirit.data.agent.data.row('provider', 'KR').label === 'Row one' ? true : false;
 }, test.limit.quick);
 test.run('its title row says Add while the row is new', 0.2, function () {
-  if (!ed) return 'no editor: it was not made';
-  return (/<b>Add<\/b>/).test(ed.innerHTML) && ed.innerHTML.indexOf('Provider') !== -1 ? true : 'title: ' + short(ed.innerHTML.slice(0, 200));
+  if (!ed) return false;
+  return (/<b>Add<\/b>/).test(ed.innerHTML) && ed.innerHTML.indexOf('Provider') !== -1 ? true : false;
 }, test.limit.quick);
 test.run('the icon is its first field, before the ones the table names (Andy: "the detail panel\'s first input will be the icon")', 0.2, function () {
-  if (!ed) return 'no editor: it was not made';
+  if (!ed) return false;
   const ids = Object.keys(ed.parts).map(function (k) { return k.replace(/^ar\d+-/, ''); });
-  return ids.indexOf('icon') !== -1 && ids.indexOf('icon') < ids.indexOf('label') ? true : 'fields: ' + short(ids);
+  return ids.indexOf('icon') !== -1 && ids.indexOf('icon') < ids.indexOf('label') ? true : false;
 }, test.limit.quick);
 test.run('each field shows the row: a line its value, a bool its tick, a list its words split by commas', 0.2, function () {
-  if (!ed) return 'no editor: it was not made';
+  if (!ed) return false;
   return the(ed, 'label').value === 'Row one' && the(ed, 'url').value === 'https://one.example' && the(ed, 'on').checked === true && the(ed, 'tags').value === 'a, b'
-    ? true : 'fields: ' + short({ label: the(ed, 'label').value, url: the(ed, 'url').value, on: the(ed, 'on').checked, tags: the(ed, 'tags').value });
+    ? true : false;
 }, test.limit.quick);
 test.run('a secret is an empty password box that says only whether it is set', 0.2, function () {
-  if (!ed) return 'no editor: it was not made';
-  return (/type="password"/).test(the(ed, 'apiKey').tag) && the(ed, 'apiKey').value === '' && /set; type to replace/.test(the(ed, 'apiKey').tag) ? true : 'secret: ' + short(the(ed, 'apiKey').tag);
+  if (!ed) return false;
+  return (/type="password"/).test(the(ed, 'apiKey').tag) && the(ed, 'apiKey').value === '' && /set; type to replace/.test(the(ed, 'apiKey').tag) ? true : false;
 }, test.limit.quick);
 test.run('the icon chooser is the shell\'s icon selector, on the table\'s icon while the row has none', 0.2, function () {
-  if (!ed) return 'no editor: it was not made';
+  if (!ed) return false;
   const sel = w.icons[w.icons.length - 1];
-  return sel && sel.value === '🏢' ? true : 'icon selector: ' + short(sel && sel.opts);
+  return sel && sel.value === '🏢' ? true : false;
 }, test.limit.quick);
 test.run('made with iconSelector.create(the icon field, options), it stands in that field', 0.2, function () {
-  if (!ed) return 'no editor: it was not made';
+  if (!ed) return false;
   const sel = w.icons[w.icons.length - 1];
-  return sel && sel.container === the(ed, 'icon') && the(ed, 'icon').children.indexOf(sel) !== -1 ? true : 'icon container: ' + short(sel && sel.container && sel.container.tag);
+  return sel && sel.container === the(ed, 'icon') && the(ed, 'icon').children.indexOf(sel) !== -1 ? true : false;
 }, test.limit.quick);
 
 // ── the Add mode: "Add new <name>", and nothing made until every mandatory field is filled (goal/G41.21) ──
@@ -250,56 +247,56 @@ test.run('made with iconSelector.create(the icon field, options), it stands in t
 const A = { ea: null, ra: null, addBtn: null };
 const addButtonOf = function (b) { return Object.keys(b.parts).filter(function (k) { return new RegExp('id="' + k + '"[^>]*>\\s*Add new Provider').test(b.innerHTML); }).map(function (k) { return b.parts[k]; })[0] || null; };
 test.run('with no row it asks no get', 0.2, async function () {
-  if (!E.agentRow) return NO_ROW;
+  if (!E.agentRow) return false;
   w.calls.length = 0;
   w.answer = function (table, a) { return a.op === 'add' ? { id: 'KADD' } : (a.op === 'get' ? { id: 'KADD', icon: '🏢', label: 'Fresh', url: 'https://fresh.example' } : { id: 'KADD' }); };
   A.ea = box('adding');
   A.ra = E.agentRow.create(A.ea, { table: 'provider', id: '', added: true, look: look, required: ['icon', 'label', 'url'],
     fields: [{ field: 'label', label: 'Label', kind: 'name' }, { field: 'url', label: 'URL', kind: 'url' }] });
   await settle(); await settle();
-  return !w.calls.some(function (c) { return c.args && c.args.op === 'get'; }) ? true : 'calls: ' + short(w.calls);
+  return !w.calls.some(function (c) { return c.args && c.args.op === 'get'; }) ? true : false;
 }, test.limit.quick);
 test.run('its bottom button says Add new Provider, and there is no Delete', 0.2, function () {
-  if (!A.ea) return 'no Add editor: it was not made';
+  if (!A.ea) return false;
   const addBtnHtml = /<button[^>]*>\s*Add new Provider\s*<\/button>/.test(A.ea.innerHTML);
-  return addBtnHtml && !/>\s*Delete\s*</.test(A.ea.innerHTML) ? true : 'editor: ' + short(A.ea.innerHTML.slice(-300));
+  return addBtnHtml && !/>\s*Delete\s*</.test(A.ea.innerHTML) ? true : false;
 }, test.limit.quick);
 test.run('in Add mode a field changed saves nothing', 0.2, async function () {
-  if (!A.ea) return 'no Add editor: it was not made';
+  if (!A.ea) return false;
   A.addBtn = addButtonOf(A.ea);
   the(A.ea, 'label').value = 'Fresh';
   the(A.ea, 'label').fire('change'); await settle();
-  return !w.calls.some(function (c) { return c.args && (c.args.op === 'add' || c.args.op === 'set'); }) ? true : 'calls: ' + short(w.calls);
+  return !w.calls.some(function (c) { return c.args && (c.args.op === 'add' || c.args.op === 'set'); }) ? true : false;
 }, test.limit.quick);
 test.run('pressed with the URL empty, it makes nothing and says the URL is missing', 0.2, async function () {
-  if (!A.ea) return 'no Add editor: it was not made';
+  if (!A.ea) return false;
   if (A.addBtn) A.addBtn.click(); await settle();
   const said = A.ea.innerHTML + ' ' + Object.keys(A.ea.parts).map(function (k) { return String(A.ea.parts[k].textContent || ''); }).join(' ');
   return !w.calls.some(function (c) { return c.args && c.args.op === 'add'; }) && /url/i.test(said) && /not added|missing|required/i.test(said)
-    ? true : 'calls ' + short(w.calls) + ', said ' + short(said.slice(-300));
+    ? true : false;
 }, test.limit.quick);
 test.run('with every mandatory field filled, it adds the whole row once: provider { op: add, icon, label, url }', 0.2, async function () {
-  if (!A.ea) return 'no Add editor: it was not made';
+  if (!A.ea) return false;
   the(A.ea, 'url').value = 'https://fresh.example';
   const addBtn2 = addButtonOf(A.ea) || A.addBtn;
   if (addBtn2) addBtn2.click(); await settle(); await settle();
   const adds = w.calls.filter(function (c) { return c.args && c.args.op === 'add'; });
   return adds.length === 1 && adds[0].table === 'provider' && adds[0].args.icon === '🏢' && adds[0].args.label === 'Fresh' && adds[0].args.url === 'https://fresh.example'
-    ? true : 'calls: ' + short(w.calls);
+    ? true : false;
 }, test.limit.quick);
 test.run('added, the editor is the new row\'s, its title Change', 0.2, function () {
-  if (!A.ea) return 'no Add editor: it was not made';
-  const verdict = /<b>Change<\/b>/.test(A.ea.innerHTML) && !/Add new Provider/.test(A.ea.innerHTML) ? true : 'editor: ' + short(A.ea.innerHTML.slice(0, 300));
+  if (!A.ea) return false;
+  const verdict = /<b>Change<\/b>/.test(A.ea.innerHTML) && !/Add new Provider/.test(A.ea.innerHTML) ? true : false;
   A.ra.destroy();
   return verdict;
 }, test.limit.quick);
 
 // ── the editor follows its row in spirit.data ──
 test.run('a row written to its path shows at once: nothing listens by hand', 0.2, async function () {
-  if (!ed) return 'no editor: it was not made';
+  if (!ed) return false;
   D.mergePath(rowPath('provider', 'KR'), { label: 'From the stream' });
   await settle();
-  return the(ed, 'label').value === 'From the stream' ? true : 'label: ' + short(the(ed, 'label').value);
+  return the(ed, 'label').value === 'From the stream' ? true : false;
 }, test.limit.quick);
 
 // ── a field changed saves the whole row at once; there is no Save (goal/G41.21) ──
@@ -308,11 +305,11 @@ test.run('a row written to its path shows at once: nothing listens by hand', 0.2
 // necessary."
 const sets = function () { return w.calls.filter(function (c) { return c.args && c.args.op === 'set'; }); };
 test.run('the editor has no Save button', 0.2, function () {
-  if (!ed) return 'no editor: it was not made';
-  return !the(ed, 'save') && !/>\s*Save\s*</.test(ed.innerHTML) ? true : 'the editor still draws Save';
+  if (!ed) return false;
+  return !the(ed, 'save') && !/>\s*Save\s*</.test(ed.innerHTML) ? true : false;
 }, test.limit.quick);
 test.run('changing the label saves the whole row by itself: provider { op: set, id, icon, label, url, on, tags }, the untyped secret left out', 0.2, async function () {
-  if (!ed) return 'no editor: it was not made';
+  if (!ed) return false;
   w.calls.length = 0;
   the(ed, 'label').value = 'Typed';
   the(ed, 'label').fire('change'); await settle();
@@ -320,36 +317,36 @@ test.run('changing the label saves the whole row by itself: provider { op: set, 
   // The whole row as the editor shows it: every field, the icon its chooser shows (the table's while the row has none:
   // "all table rows will have an icon, by default the tables icon"); a secret only when typed, so an untyped key is kept.
   return sets().length === 1 && whole.table === 'provider' && JSON.stringify(whole.args) === JSON.stringify({ op: 'set', id: 'KR', icon: '🏢', label: 'Typed', url: 'https://one.example', on: true, tags: ['a', 'b'] })
-    ? true : 'calls: ' + short(w.calls);
+    ? true : false;
 }, test.limit.quick);
 test.run('it draws nothing it typed into the row: the row changes only by the server\'s stream (rule/19)', 0.2, function () {
-  if (!ed) return 'no editor: it was not made';
-  return global.window.spirit.data.agent.data.row('provider', 'KR').label === 'From the stream' ? true : 'branch: ' + short(global.window.spirit.data.agent.data.row('provider', 'KR'));
+  if (!ed) return false;
+  return global.window.spirit.data.agent.data.row('provider', 'KR').label === 'From the stream' ? true : false;
 }, test.limit.quick);
 test.run('a tick changed saves the whole row too, the label as typed', 0.2, async function () {
-  if (!ed) return 'no editor: it was not made';
+  if (!ed) return false;
   // The server takes it and its stream says so, as rowTable publishes every row it changes.
   D.mergePath(rowPath('provider', 'KR'), { label: 'Typed' }); await settle();
   w.calls.length = 0;
   the(ed, 'on').checked = false;
   the(ed, 'on').fire('change'); await settle();
-  return sets().length === 1 && sets()[0].args.on === false && sets()[0].args.label === 'Typed' ? true : 'calls: ' + short(w.calls);
+  return sets().length === 1 && sets()[0].args.on === false && sets()[0].args.label === 'Typed' ? true : false;
 }, test.limit.quick);
 test.run('a secret typed is saved with the row', 0.2, async function () {
-  if (!ed) return 'no editor: it was not made';
+  if (!ed) return false;
   w.calls.length = 0;
   the(ed, 'apiKey').value = 'sk-new';
   the(ed, 'apiKey').fire('change'); await settle();
-  return sets().length === 1 && sets()[0].args.apiKey === 'sk-new' ? true : 'calls: ' + short(w.calls);
+  return sets().length === 1 && sets()[0].args.apiKey === 'sk-new' ? true : false;
 }, test.limit.quick);
 test.run('a refused save says the server\'s reason', 0.2, async function () {
-  if (!ed) return 'no editor: it was not made';
+  if (!ed) return false;
   w.calls.length = 0;
   w.answer = function () { return refused('provider: url must be a url'); };
   the(ed, 'url').value = 'not a url';
   the(ed, 'url').fire('change'); await settle();
   const verdict = /Not saved: provider: url must be a url/.test(ed.innerHTML + ' ' + String((the(ed, 'note') || {}).textContent || ''))
-    ? true : 'note: ' + short(ed.innerHTML.slice(-200));
+    ? true : false;
   w.answer = function () { return { id: 'KR' }; };
   the(ed, 'url').value = 'https://one.example';
   the(ed, 'url').fire('change'); await settle();
@@ -359,27 +356,27 @@ test.run('a refused save says the server\'s reason', 0.2, async function () {
 // ── Delete is an are-you-sure button; the stream says it is gone (goal/G41.21) ──
 // Andy: "and why are the 'Delete' buttons in the detail panels not armingButtons?"
 test.run('its Delete button is an armingButton, loaded by the editor itself (rule/26)', 0.2, function () {
-  if (!ed) return 'no editor: it was not made';
+  if (!ed) return false;
   w.calls.length = 0;
   w.answer = function () { return { id: 'KR' }; };
   return w.required.indexOf('spirit/element/armingButton.js') !== -1 && w.arming.some(function (a) { return a.button === the(ed, 'delete'); })
-    ? true : 'required ' + short(w.required.filter(function (p) { return (/arming/).test(p); })) + ', arming buttons ' + w.arming.length;
+    ? true : false;
 }, test.limit.quick);
 test.run('a first press of Delete deletes nothing: it arms', 0.2, async function () {
-  if (!ed) return 'no editor: it was not made';
+  if (!ed) return false;
   the(ed, 'delete').click(); await settle();
-  return !w.calls.some(function (c) { return c.args && c.args.op === 'delete'; }) ? true : 'calls after one press: ' + short(w.calls);
+  return !w.calls.some(function (c) { return c.args && c.args.op === 'delete'; }) ? true : false;
 }, test.limit.quick);
 test.run('the second press calls provider { op: delete, id }, once', 0.2, async function () {
-  if (!ed) return 'no editor: it was not made';
+  if (!ed) return false;
   the(ed, 'delete').click(); await settle();
   const deletes = w.calls.filter(function (c) { return c.args && c.args.op === 'delete'; });
-  return deletes.length === 1 && JSON.stringify(deletes[0].args) === JSON.stringify({ op: 'delete', id: 'KR' }) ? true : 'calls: ' + short(w.calls);
+  return deletes.length === 1 && JSON.stringify(deletes[0].args) === JSON.stringify({ op: 'delete', id: 'KR' }) ? true : false;
 }, test.limit.quick);
 test.run('and once the row is deleted from its branch, the editor says Deleted.', 0.2, async function () {
-  if (!ed) return 'no editor: it was not made';
+  if (!ed) return false;
   D.delPath(rowPath('provider', 'KR')); await settle();
-  return (/Deleted\./).test(ed.innerHTML) ? true : 'editor: ' + short(ed.innerHTML);
+  return (/Deleted\./).test(ed.innerHTML) ? true : false;
 }, test.limit.quick);
 
 // ── a row already in its branch is read whole by get (goal/G41.18) ──
@@ -389,33 +386,33 @@ test.run('and once the row is deleted from its branch, the editor says Deleted.'
 let ed2 = null;
 let r2 = null;
 test.run('it asks provider { op: get, id }, though the branch holds a row', 0.2, async function () {
-  if (!E.agentRow) return NO_ROW;
+  if (!E.agentRow) return false;
   w.calls.length = 0;
   w.answer = function (table, a) { return a.op === 'get' ? { id: 'KS', icon: '🧪', label: 'Seated', url: 'https://whole.example', apiKeySet: false } : { id: 'KS' }; };
   D.setPath(rowPath('provider', 'KS'), { id: 'KS', icon: '🧪', label: 'Seated' });
   ed2 = box('editor2');
   r2 = E.agentRow.create(ed2, { table: 'provider', id: 'KS', added: false, look: look, fields: FIELDS });
   await settle();
-  return w.calls.length === 1 && JSON.stringify(w.calls[0].args) === JSON.stringify({ op: 'get', id: 'KS' }) ? true : 'calls ' + short(w.calls);
+  return w.calls.length === 1 && JSON.stringify(w.calls[0].args) === JSON.stringify({ op: 'get', id: 'KS' }) ? true : false;
 }, test.limit.quick);
 test.run('and the whole row goes where the stream writes it, its fields shown', 0.2, function () {
-  if (!ed2) return 'no second editor: it was not made';
+  if (!ed2) return false;
   return global.window.spirit.data.agent.data.row('provider', 'KS') && global.window.spirit.data.agent.data.row('provider', 'KS').url === 'https://whole.example' && the(ed2, 'url') && the(ed2, 'url').value === 'https://whole.example'
-    ? true : 'branch: ' + short(global.window.spirit.data.agent.data.row('provider', 'KS'));
+    ? true : false;
 }, test.limit.quick);
 test.run('it says Change when opened from the list', 0.2, function () {
-  if (!ed2) return 'no second editor: it was not made';
-  return the(ed2, 'label').value === 'Seated' && /<b>Change<\/b>/.test(ed2.innerHTML) ? true : 'label ' + short(the(ed2, 'label') && the(ed2, 'label').value);
+  if (!ed2) return false;
+  return the(ed2, 'label').value === 'Seated' && /<b>Change<\/b>/.test(ed2.innerHTML) ? true : false;
 }, test.limit.quick);
 test.run('the icon chooser shows the row\'s own icon', 0.2, function () {
-  if (!ed2) return 'no second editor: it was not made';
-  return w.icons[w.icons.length - 1].value === '🧪' ? true : 'icon: ' + short(w.icons[w.icons.length - 1].value);
+  if (!ed2) return false;
+  return w.icons[w.icons.length - 1].value === '🧪' ? true : false;
 }, test.limit.quick);
 test.run('destroyed, it empties its box and hears its row no more', 0.2, async function () {
-  if (!ed2) return 'no second editor: it was not made';
+  if (!ed2) return false;
   r2.destroy();
   D.mergePath(rowPath('provider', 'KS'), { label: 'After' }); await settle();
-  const verdict = ed2.innerHTML === '' ? true : 'editor2: ' + short(ed2.innerHTML);
+  const verdict = ed2.innerHTML === '' ? true : false;
   if (r) r.destroy();
   return verdict;
 }, test.limit.quick);
@@ -458,7 +455,7 @@ const narrowed = async function (models) {
 };
 test.after(function () { if (N.scratchDb) fs.rmSync(N.scratchDb, { recursive: true, force: true }); });
 test.run('the world: the real provider and model servers on a scratch agent.db, the model table\'s search seated in the page\'s branch', 0.2, function () {
-  if (!E.agentRow) return NO_ROW;
+  if (!E.agentRow) return false;
   // WHAT THE DROPDOWN SHOWS (Andy: "the model picker in provider details of course shows models at all, when it must show
   // models from that provider"): the list is a view of its rows (its data branch, or rows()), filtered and ranked by the
   // real list's own heart, probabilitySearch.order, the state it is made with.
@@ -499,40 +496,40 @@ test.run('the world: the real provider and model servers on a scratch agent.db, 
   return true;
 }, test.limit.quick);
 test.run('its dropdown searches the model table narrowed to this row: { op: search, text, providerId: this row\'s id }', 0.2, async function () {
-  if (!N.sctx) return 'no scratch agent.db: the world failed';
+  if (!N.sctx) return false;
   N.withModels = await narrowed([N.MA]);
-  return N.withModels.args && N.withModels.args.op === 'search' && N.withModels.args.text === 'claude' && N.withModels.args.providerId === N.PA ? true : 'args: ' + short(N.withModels.args);
+  return N.withModels.args && N.withModels.args.op === 'search' && N.withModels.args.text === 'claude' && N.withModels.args.providerId === N.PA ? true : false;
 }, test.limit.quick);
 test.run('with a model of this provider in the model table, the Model field is shown', 0.2, function () {
-  if (!N.withModels) return 'no narrowed editor: it was not made';
-  return N.withModels.shown ? true : 'the Model field is not shown with a model of this provider';
+  if (!N.withModels) return false;
+  return N.withModels.shown ? true : false;
 }, test.limit.quick);
 test.run('of the page\'s models, the dropdown offers this provider\'s alone, not another provider\'s', 0.2, function () {
-  if (!N.withModels) return 'no narrowed editor: it was not made';
-  return JSON.stringify(N.withModels.offered) === JSON.stringify([N.MA]) ? true : 'the dropdown offers ' + short(N.withModels.offered) + ' of ' + short({ mine: N.MA, theirs: N.MB });
+  if (!N.withModels) return false;
+  return JSON.stringify(N.withModels.offered) === JSON.stringify([N.MA]) ? true : false;
 }, test.limit.quick);
 // Andy: "the model picker for the provider table showed a bunch of EMPTY rows": a row is drawn by what its table's
 // search answers, the model's name.
 test.run('each row it offers shows the model, as the model table answers it', 0.2, function () {
-  if (!N.withModels) return 'no narrowed editor: it was not made';
+  if (!N.withModels) return false;
   return N.withModels.cells.length > 0 && N.withModels.cells.every(function (c) { return (/claude-mine/).test(c); })
-    ? true : 'rows it offers show ' + short(N.withModels.cells) + ': empty, the columns asking fields the model table does not answer';
+    ? true : false;
 }, test.limit.quick);
 test.run('it asks the model table for this provider\'s models, narrowed the same way', 0.2, async function () {
-  if (!N.sctx) return 'no scratch agent.db: the world failed';
+  if (!N.sctx) return false;
   N.withNone = await narrowed([]);
-  return N.withNone.calls.some(function (c) { return c.table === 'model' && c.args && c.args.op === 'search' && c.args.providerId === N.PA; }) ? true : 'calls: ' + short(N.withNone.calls);
+  return N.withNone.calls.some(function (c) { return c.table === 'model' && c.args && c.args.op === 'search' && c.args.providerId === N.PA; }) ? true : false;
 }, test.limit.quick);
 test.run('with none, the Model field is hidden', 0.2, function () {
-  if (!N.withNone) return 'no narrowed editor: it was not made';
-  return !N.withNone.shown ? true : 'the Model field is shown though the model table holds no model of this provider';
+  if (!N.withNone) return false;
+  return !N.withNone.shown ? true : false;
 }, test.limit.quick);
 
 // ── an output field shows, and is never picked or sent (goal/G41.21) ──
 // Andy: "In model, the fucking <provider> field is OUTPUT ONLY. I NEVER ordered a fucking picker for that.............".
 const O = { eo: null, ro: null, before: 0 };
 test.run('it shows the provider by its label', 0.2, async function () {
-  if (!E.agentRow) return NO_ROW;
+  if (!E.agentRow) return false;
   D.setPath(rowPath('provider', 'KOUT'), { id: 'KOUT', icon: '🅰', label: 'Anthropic' });
   w.calls.length = 0;
   w.answer = function (table, a) { return a.op === 'get' ? { id: 'KM', icon: '🧠', label: 'A model', providerId: 'KOUT' } : { id: 'KM' }; };
@@ -542,19 +539,19 @@ test.run('it shows the provider by its label', 0.2, async function () {
     fields: [{ field: 'label', label: 'Label', kind: 'name' }, { field: 'providerId', label: 'Provider', kind: 'output', pick: 'provider' }] });
   await settle(); await settle();
   const shownAll = O.eo.innerHTML + ' ' + Object.keys(O.eo.parts).map(function (k) { return String(O.eo.parts[k].textContent || '') + String(O.eo.parts[k].innerHTML || ''); }).join(' ');
-  return (/Anthropic/).test(shownAll) ? true : 'shown: ' + short(shownAll.slice(-300));
+  return (/Anthropic/).test(shownAll) ? true : false;
 }, test.limit.quick);
 test.run('and has no picker and no input for it', 0.2, function () {
-  if (!O.eo) return 'no output editor: it was not made';
+  if (!O.eo) return false;
   return !w.searches.slice(O.before).some(function (s) { return s.o && s.o.verb === 'provider'; }) && !/<input[^>]*id="[^"]*-providerId"/.test(O.eo.innerHTML)
-    ? true : 'searches ' + short(w.searches.slice(O.before).map(function (s) { return s.o && s.o.verb; })) + ', markup ' + short(O.eo.innerHTML.slice(-300));
+    ? true : false;
 }, test.limit.quick);
 test.run('a save of the row never sends it', 0.2, async function () {
-  if (!O.eo) return 'no output editor: it was not made';
+  if (!O.eo) return false;
   the(O.eo, 'label').value = 'Renamed';
   the(O.eo, 'label').fire('change'); await settle();
   const set = w.calls.filter(function (c) { return c.args && c.args.op === 'set'; })[0];
-  const verdict = set && set.args.label === 'Renamed' && !('providerId' in set.args) ? true : 'calls: ' + short(w.calls);
+  const verdict = set && set.args.label === 'Renamed' && !('providerId' in set.args) ? true : false;
   O.ro.destroy();
   return verdict;
 }, test.limit.quick);
@@ -577,7 +574,7 @@ const pickIn = function (table, key) {
   return true;
 };
 test.run('picking a persona, the provider not picked yet, saves the job: its persona is the one picked, and nothing says Not saved', 0.2, async function () {
-  if (!N.sctx) return 'no scratch agent.db: the world failed';
+  if (!N.sctx) return false;
   // In node, as above.
   const pageSpiritAgain = global.spirit;
   global.spirit = require(path.join(RUN, 'spirit', 'spirit.js'));
@@ -598,24 +595,24 @@ test.run('picking a persona, the provider not picked yet, saves the job: its per
   const personaPicked = pickIn('persona', J.PZ); await settle(); await settle();
   const afterPersona = viaTables('job', { op: 'get', id: J.JZ });
   return personaPicked && afterPersona.persona === J.PZ && !/Not saved/.test(saidNow())
-    ? true : 'persona ' + short(afterPersona.persona) + ', said: ' + short((saidNow().match(/Not saved[^<]*/) || [''])[0]);
+    ? true : false;
 }, test.limit.quick);
 test.run('picking a bundle saves the job too, the persona kept, and nothing says Not saved', 0.2, async function () {
-  if (!J.ej) return 'no job editor: it was not made';
+  if (!J.ej) return false;
   const bsel = w.bundles.slice(J.bBefore).pop();
   if (bsel) { bsel.value = 7; bsel.row = { id: 7, label: 'Reader' }; (bsel.heard.change || []).forEach(function (fn) { fn({ target: bsel }); }); }
   await settle(); await settle();
   const afterBundle = viaTables('job', { op: 'get', id: J.JZ });
   return !!bsel && String(afterBundle.bundle) === '7' && afterBundle.persona === J.PZ && !/Not saved/.test(saidNow())
-    ? true : 'bundle ' + short(afterBundle.bundle) + ', said: ' + short((saidNow().match(/Not saved[^<]*/) || [''])[0]);
+    ? true : false;
 }, test.limit.quick);
 test.run('picking a provider saves the job, and nothing says Not saved', 0.2, async function () {
-  if (!J.ej) return 'no job editor: it was not made';
+  if (!J.ej) return false;
   const PV = viaTables('provider', { op: 'add', icon: '🏢', label: 'A provider', url: 'https://picked.example' }).id;
   const providerPicked = pickIn('provider', PV); await settle(); await settle();
   const afterProvider = viaTables('job', { op: 'get', id: J.JZ });
   const verdict = providerPicked && afterProvider.provider === PV && !/Not saved/.test(saidNow())
-    ? true : 'provider ' + short(afterProvider.provider) + ', said: ' + short((saidNow().match(/Not saved[^<]*/) || [''])[0]);
+    ? true : false;
   J.rj.destroy();
   return verdict;
 }, test.limit.quick);
@@ -624,50 +621,50 @@ test.run('picking a provider saves the job, and nothing says Not saved', 0.2, as
 // Box v17: "The job's detail panel ... sets it with a bundleSelector in dropdown mode."
 const B = { ed4: null, r4: null, bsel: null };
 test.run('it loads the bundle selector itself (rule/26)', 0.2, async function () {
-  if (!E.agentRow) return NO_ROW;
+  if (!E.agentRow) return false;
   w.calls.length = 0;
   w.answer = function (table, a) { return a.op === 'get' ? { id: 'KJ', icon: '', label: 'A job', bundle: '7' } : { id: 'KJ' }; };
   B.ed4 = box('bundle');
   B.r4 = E.agentRow.create(B.ed4, { table: 'job', id: 'KJ', added: false, look: look, fields: [{ field: 'label', label: 'Label', kind: 'name' }, { field: 'bundle', label: 'Bundle', kind: 'bundle' }] });
   await settle(); await settle();
   B.bsel = w.bundles[w.bundles.length - 1];
-  return w.required.indexOf('spirit/element/search/bundle.js') !== -1 ? true : 'required: ' + short(w.required);
+  return w.required.indexOf('spirit/element/search/bundle.js') !== -1 ? true : false;
 }, test.limit.quick);
 // Andy: "why would the bundle picker show "bundle 2" for it's selection instead of the fucking label?": the field says
 // the bundle by its label, as the node has it (auth.bundle get: 7 is Reader).
 test.run('the bundle field shows the job\'s bundle by its label, not its number', 0.2, function () {
-  if (!B.ed4) return 'no bundle editor: it was not made';
+  if (!B.ed4) return false;
   const bundleSays = B.bsel ? String((B.bsel.row && B.bsel.row.label) || B.bsel.opts.placeholder || '') : '';
-  return (/Reader/).test(bundleSays) && !/bundle\s*7/i.test(bundleSays) ? true : 'the bundle field shows ' + JSON.stringify(bundleSays) + ' for bundle 7, Reader';
+  return (/Reader/).test(bundleSays) && !/bundle\s*7/i.test(bundleSays) ? true : false;
 }, test.limit.quick);
 test.run('a bundle selector is made in the bundle field, in dropdown mode', 0.2, function () {
-  if (!B.ed4) return 'no bundle editor: it was not made';
+  if (!B.ed4) return false;
   return !!B.bsel && B.bsel.container === the(B.ed4, 'bundle') && B.bsel.opts.face !== 'pane'
-    ? true : 'bundle selectors: ' + short(w.bundles.map(function (b) { return { face: b.opts.face, here: b.container === the(B.ed4, 'bundle') }; }));
+    ? true : false;
 }, test.limit.quick);
 // goal/G41.25, Andy, box: "so the bundle pickers in the persona and job details will always list ALL bundles": the
 // selector is mounted for no app server (spirit/element/search/bundle.js, options.family).
 test.run('the bundle field lists every bundle: its selector is mounted for no app server', 0.2, function () {
-  if (!B.ed4) return 'no bundle editor: it was not made';
-  return !!B.bsel && (B.bsel.opts.family === undefined || B.bsel.opts.family === '') ? true : 'opts: ' + short(B.bsel && B.bsel.opts);
+  if (!B.ed4) return false;
+  return !!B.bsel && (B.bsel.opts.family === undefined || B.bsel.opts.family === '') ? true : false;
 }, test.limit.quick);
 test.run('a bundle picked saves the whole row at once: job { op: set, id, label, bundle }', 0.2, async function () {
-  if (!B.bsel) return 'no bundle selector: it was not made';
+  if (!B.bsel) return false;
   w.calls.length = 0;
   B.bsel.value = 9; B.bsel.row = { id: 9, label: 'Reader' };
   (B.bsel.heard.change || []).forEach(function (fn) { fn({ target: B.bsel }); });
   await settle();
   const set = w.calls.filter(function (c) { return c.args && c.args.op === 'set'; })[0];
-  return set && set.table === 'job' && String(set.args.bundle) === '9' && set.args.label === 'A job' ? true : 'calls: ' + short(w.calls);
+  return set && set.table === 'job' && String(set.args.bundle) === '9' && set.args.label === 'A job' ? true : false;
 }, test.limit.quick);
 // Andy: "persona detail: the bundle picker doesn not let me change values! (actually it does let me change it, i just
 // doesn't seem to hear the change from the server)": the row's bundle changed on the stream, the field says the new one.
 test.run('the row\'s bundle changed by the server, the field says the new one, Writer', 0.2, async function () {
-  if (!B.ed4) return 'no bundle editor: it was not made';
+  if (!B.ed4) return false;
   D.mergePath(rowPath('job', 'KJ'), { bundle: '9' }); await settle(); await settle();
   const bsel2 = w.bundles[w.bundles.length - 1];
   const bundleSays2 = bsel2 ? String((bsel2.row && bsel2.row.label) || bsel2.opts.placeholder || '') : '';
-  const verdict = /Writer/.test(bundleSays2) && !/Reader/.test(bundleSays2) ? true : 'the bundle field says ' + JSON.stringify(bundleSays2) + ' after the stream set bundle 9, Writer';
+  const verdict = /Writer/.test(bundleSays2) && !/Reader/.test(bundleSays2) ? true : false;
   B.r4.destroy();
   return verdict;
 }, test.limit.quick);
@@ -689,16 +686,16 @@ const openedJob = async function (bundle) {
 };
 const G = { goneOne: null };
 test.run('a job naming a bundle asks the node for it: auth.bundle { op: get, id }', 0.2, async function () {
-  if (!E.agentRow) return NO_ROW;
+  if (!E.agentRow) return false;
   G.goneOne = await openedJob('5');
-  return G.goneOne.asked.some(function (a) { return a && a.op === 'get' && Number(a.id) === 5; }) ? true : 'asked: ' + short(G.goneOne.asked);
+  return G.goneOne.asked.some(function (a) { return a && a.op === 'get' && Number(a.id) === 5; }) ? true : false;
 }, test.limit.quick);
 test.run('a bundle the node no longer has is said in the detail panel: the bundle and that the job has no grant', 0.2, function () {
-  if (!G.goneOne) return 'no job editor: it was not made';
-  return (/\b5\b/).test(G.goneOne.said) && /no grant/i.test(G.goneOne.said) ? true : 'said: ' + short(G.goneOne.said);
+  if (!G.goneOne) return false;
+  return (/\b5\b/).test(G.goneOne.said) && /no grant/i.test(G.goneOne.said) ? true : false;
 }, test.limit.quick);
 test.run('a bundle the node has is said as no such thing', 0.2, async function () {
-  if (!E.agentRow) return NO_ROW;
+  if (!E.agentRow) return false;
   const heldOne = await openedJob('7');
-  return !/no grant/i.test(heldOne.said) ? true : 'said: ' + short(heldOne.said);
+  return !/no grant/i.test(heldOne.said) ? true : false;
 }, test.limit.quick);

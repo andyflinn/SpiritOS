@@ -16,7 +16,6 @@ const net = require('net');
 const limits = require(path.join(RUN, 'spirit', 'limits.js'));
 const { sleep, scratchNode } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 
-function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 
 // What the tests share: the scratch node of "/" and its Chrome page, then the garbage's nodes, made by "the world:" tests.
 const W = { node: null, page: null, face: '', r: null, body: '', ready: false };
@@ -31,48 +30,48 @@ function letGo(node, page) {
 test.run('the world: a scratch node comes up', 0.2, async function () {
   W.node = await H.scratchNode();
   W.face = fs.readFileSync(FACE, 'utf8');
-  return W.node.up || 'the scratch node did not come up: nothing judged';
+  return W.node.up || false;
 }, test.limit.slow);
 test.run('"/" answers 200', 0.2, async function () {
-  if (!W.node || !W.node.up) return 'no scratch node: the world failed';
+  if (!W.node || !W.node.up) return false;
   W.r = await fetch(W.node.base + '/');
   W.body = await W.r.text();
-  return W.r.status === 200 || '"/" answered ' + W.r.status;
+  return W.r.status === 200 || false;
 }, test.limit.quick);
 test.run('as text/html', 0.2, function () {
-  if (!W.r) return 'nothing asked: the world failed';
-  return /^text\/html/.test(String(W.r.headers.get('content-type'))) || 'its content type is ' + short(W.r.headers.get('content-type'));
+  if (!W.r) return false;
+  return /^text\/html/.test(String(W.r.headers.get('content-type'))) || false;
 }, test.limit.quick);
 test.run('its body is spirit/shell/face.html as it stands on the disc', 0.2, function () {
-  if (!W.r) return 'nothing asked: the world failed';
-  return W.body === W.face || 'its body is not face.html: ' + short(W.body.slice(0, 200));
+  if (!W.r) return false;
+  return W.body === W.face || false;
 }, test.limit.quick);
 
 // opened in a real Chrome, "/" is the face: the spirit object, ready
 test.run('the world: a Chrome page opens at "/"', 0.2, async function () {
-  if (!W.node || !W.node.up) return 'no scratch node: the world failed';
+  if (!W.node || !W.node.up) return false;
   const chrome = H.findChrome();
-  if (!chrome) return 'no Chrome on this machine: SPIRIT_CHROME names none, and none is found by its name';
+  if (!chrome) return false;
   W.page = await H.chromePage(chrome);
-  if (!W.page || W.page.error) return W.page ? W.page.error : 'no Chrome page';
+  if (!W.page || W.page.error) return false;
   await W.page.send('Page.navigate', { url: W.node.base + '/' });
   return true;
 }, test.limit.quick);
 test.run('the page at "/" has the spirit object', 0.2, async function () {
-  if (!W.page || W.page.error) return 'no Chrome page: the world failed';
+  if (!W.page || W.page.error) return false;
   W.ready = await H.until(function () { return W.page.evaluate('!!(window.spirit && window.spirit.ready)').then(Boolean); }, H.WAIT);
-  return !!W.ready || 'no spirit object at "/"';
+  return !!W.ready || false;
 }, test.limit.long);
 test.run('and spirit.ready settles, as on face.html', 0.2, async function () {
-  if (!W.ready) return 'no spirit object: the world failed';
+  if (!W.ready) return false;
   const settled = await W.page.evaluate('window.spirit.ready.then(function () { return "ready"; }, function (e) { return "refused: " + String(e && e.message || e); })');
-  return settled === 'ready' || 'spirit.ready at "/": ' + short(settled);
+  return settled === 'ready' || false;
 }, test.limit.quick);
 test.run('it loads face.html\'s own scripts first', 0.2, async function () {
-  if (!W.page || W.page.error) return 'no Chrome page: the world failed';
+  if (!W.page || W.page.error) return false;
   const scripts = JSON.parse(await W.page.evaluate('JSON.stringify(Array.prototype.map.call(document.scripts, function (s) { return s.getAttribute("src") || ""; }).filter(Boolean))'));
   const faceScripts = (W.face.match(/src="([^"]*)"/g) || []).map(function (m) { return m.slice(5, -1); });
-  return JSON.stringify(scripts.slice(0, faceScripts.length)) === JSON.stringify(faceScripts) || 'the page at "/" loads ' + short(scripts) + ', face.html names ' + short(faceScripts);
+  return JSON.stringify(scripts.slice(0, faceScripts.length)) === JSON.stringify(faceScripts) || false;
 }, test.limit.quick);
 
 // ── THE GARBAGE PART ──
@@ -217,16 +216,16 @@ function call(base, body) {
   const b = Buffer.from(typeof body === 'string' ? body : JSON.stringify(body), 'utf8');
   return raw(base, postHead('/api/spirit', b.length), b);
 }
-// A crash or a hang, as the box says it: no answer, a server error, or a handler that failed.
+// A crash or a hang, as the box says it: no answer, a server error, or a handler that failed. true when it broke.
 function broke(r) {
-  if (!r || r.hung) return 'it hung: no answer in ' + (ASK_MS / 1000) + ' s';
-  if (r.error) return 'the connection failed: ' + r.error;
-  if (!r.status) return 'no status line';
+  if (!r || r.hung) return true;
+  if (r.error) return true;
+  if (!r.status) return true;
   // A 502 or 503 that says why (a relay or a peer not reachable on a scratch node) is an answer; a 500, a 504 (its own
   // time ran out) or a 5xx saying nothing is the server breaking.
-  if (r.status >= 500 && !((r.status === 502 || r.status === 503) && /"(code|error)"\s*:/.test(r.text))) return 'it answered ' + r.status + ': ' + shortG(r.text);
-  if (/handler-failed|the handler failed/.test(r.text)) return 'the handler failed: ' + shortG(r.text);
-  return '';
+  if (r.status >= 500 && !((r.status === 502 || r.status === 503) && /"(code|error)"\s*:/.test(r.text))) return true;
+  if (/handler-failed|the handler failed/.test(r.text)) return true;
+  return false;
 }
 
 // garbage: the attacker's garbage at every door (goal/G41.30)
@@ -250,12 +249,11 @@ async function upNode() {
   return { node: node, base: base, plain: plain, missing: missing };
 }
 const G = { node: null, base: '', plain: null, tree: null, asks: [], RAWS: [], readingAsks: [], actingAsks: [], actingVerbs: [], killer: '', made: [] };
-const NO_GARBAGE_NODE = 'no scratch node for the garbage: the world failed';
 test.run('the world: the garbage\'s scratch node comes up, every app server it turned on named in its api', 0.2, async function () {
   // The node and the page of "/" are let go first.
   letGo(W.node, W.page); W.node = null; W.page = null;
   const node = G.node = await scratchNode({ servers: SERVERS });
-  if (!node.up) return 'the scratch node did not come up: every check here would blame the wrong thing';
+  if (!node.up) return false;
   const base = G.base = node.base;
   HOST = new URL(base).host;
   G.plain = async function () { const r = await raw(base, postHead('/api/spirit', 24), '{"call":"api","args":{}}', { ms: PLAIN_MS }); return r && r.status === 200; };
@@ -270,7 +268,7 @@ test.run('the world: the garbage\'s scratch node comes up, every app server it t
   }
   // The api answer can be longer than the first 300 bytes kept: ask it whole once.
   tree = G.tree = await fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'api', args: {} }) }).then(function (r) { return r.json(); }).catch(function () { return null; });
-  if (!tree || typeof tree !== 'object') { G.tree = null; return 'the node\'s api answer could not be read: nothing to introspect'; }
+  if (!tree || typeof tree !== 'object') { G.tree = null; return false; }
   test.comment('families: ' + Object.keys(tree).join(', '));
   // 1) EVERY VERB, BAD ARGUMENTS (the box, rule 3 and "bad arguments").
   Object.keys(tree).forEach(function (fam) {
@@ -317,7 +315,7 @@ test.run('the world: the garbage\'s scratch node comes up, every app server it t
   G.actingVerbs = G.actingAsks.map(function (a) { return a.name; }).filter(function (n, k, l) { return l.indexOf(n) === k; });
   test.comment('it will make ' + G.asks.length + ' asks of bad arguments over ' + Object.keys(tree).length + ' families (' + G.asks.filter(function (a) { return a.pair; }).length + ' of them pairs): ' + G.readingAsks.length + ' here, ' + G.actingAsks.length + ' to the ' + G.actingVerbs.length + ' verbs that act, on a throwaway node of their own; and ' + RAWS.length + ' raw requests, each batch of ' + BATCH + ' followed by a plain call');
   const missingServers = SERVERS.filter(function (s) { return !tree[s]; });
-  return !missingServers.length || 'the scratch node came up without ' + missingServers.join(', ') + ': their verbs would be judged on nothing';
+  return !missingServers.length || false;
 }, test.limit.long);
 
 // THROWN, BATCH BY BATCH: each ask judged; after each batch the node answers a plain call within PLAIN_MS.
@@ -325,8 +323,8 @@ const hungAfter = [];
 let thrown = false;
 // /api/spirit: every verb takes bad arguments without crashing or hanging
 test.run('the verbs that do not act took all their garbage, pairs included, without crashing or hanging', 0.2, async function () {
-  if (!G.tree) return NO_GARBAGE_NODE;
-  const broken = {};   // name -> [why]
+  if (!G.tree) return false;
+  const broken = {};   // name -> true, when it broke
   let refused = 0; let answered = 0; const statuses = {}; const sample = {}; const mislabelled = {}; const tookIt = {};
   const t0 = Date.now();
   for (let i = 0; i < G.readingAsks.length; i += BATCH) {
@@ -337,10 +335,10 @@ test.run('the verbs that do not act took all their garbage, pairs included, with
       const why = broke(r);
       if ((r.status === 502 || r.status === 503) && !why) mislabelled[a.name] = (mislabelled[a.name] || 0) + 1;
       statuses[r.status || 0] = (statuses[r.status || 0] || 0) + 1; if (!sample[r.status]) sample[r.status] = a.name + ' ' + a.why + ' -> ' + shortG(r.text).slice(0, 120);
-      if (why) (broken[a.name] = broken[a.name] || []).push(a.why + ': ' + why);
+      if (why) broken[a.name] = true;
       else if (r.status === 200 && !/"ok":false/.test(r.text)) { answered++; const fam = a.name.split('.')[0]; tookIt[fam] = (tookIt[fam] || 0) + 1; } else refused++;
     });
-    if (!(await G.plain())) hungAfter.push(batch.map(function (a) { return a.name; }).filter(function (n, k, l) { return l.indexOf(n) === k; }).join(', '));
+    if (!(await G.plain())) hungAfter.push(i);
   }
   thrown = true;
   test.comment('bad arguments: ' + refused + ' refused, ' + answered + ' answered (a lenient verb may take garbage as a real call), in ' + Math.round((Date.now() - t0) / 1000) + ' s; by status ' + JSON.stringify(statuses));
@@ -348,33 +346,31 @@ test.run('the verbs that do not act took all their garbage, pairs included, with
   test.comment('garbage answered 200, by family (a lenient check, not a crash): ' + JSON.stringify(tookIt));
   if (Object.keys(mislabelled).length) test.comment('bad arguments answered 502 or 503 with a reason, not 400: ' + JSON.stringify(mislabelled));
   Object.keys(sample).forEach(function (st) { test.comment('a ' + st + ': ' + sample[st]); });
-  // Each verb that broke named in the answer: the verbs are what the node's api names, so no title can be written out per verb.
-  const bad = Object.keys(broken).map(function (name) { return '/api/spirit ' + name + ': ' + broken[name].length + ' crashed or hung, first: ' + broken[name][0]; });
-  return !bad.length || bad.join('; ');
+  return Object.keys(broken).length === 0;
 }, test.limit.slow);
 test.run('/api/spirit: after every batch the node answered a plain call in time', 0.2, function () {
-  if (!thrown) return 'no garbage thrown: the world failed';
-  return !hungAfter.length || '/api/spirit: after ' + hungAfter.length + ' batches the node did not answer a plain call within ' + (PLAIN_MS / 1000) + ' s, first after: ' + shortG(hungAfter[0]);
+  if (!thrown) return false;
+  return hungAfter.length === 0;
 }, test.limit.quick);
 
 // the node's door: raw requests and malformed paths
 // Each request written out, in the order thrown, so that each check has a plain title of its own. A request is thrown by
 // its own test; once one killed the node, the ones after it are not thrown, and say so.
 async function door(ri) {
-  if (!G.tree) return NO_GARBAGE_NODE;
+  if (!G.tree) return false;
   const r0 = G.RAWS[ri];
-  if (G.killer) return 'the node\'s door, ' + r0.why + ': not thrown, the node died at ' + G.killer;
+  if (G.killer) return false;
   const node = G.node;
   const head = r0.head || postHead('/api/spirit', Buffer.byteLength(r0.body || ''), r0.type);
   const r = await raw(G.base, head, r0.body, { keepOpen: r0.keepOpen });
   // A body cut off, or longer than it says, is left waiting by any server until its own time runs out: the node may
   // hold it, but it must still answer everybody else.
-  let why = r0.keepOpen && r.hung ? '' : broke(r);
+  let why = r0.keepOpen && r.hung ? false : broke(r);
   let alive = await G.plain();
   if (!alive) { await sleep(500); alive = await G.plain(); }
-  if (!alive) why = (why ? why + '; ' : '') + 'the node then did not answer a plain call within ' + (PLAIN_MS / 1000) + ' s';
-  if (node.child && node.child.exitCode !== null && !G.killer) { G.killer = r0.why; why = 'IT KILLED THE NODE (exit ' + node.child.exitCode + ')'; }
-  return !why || 'the node\'s door, ' + r0.why + ': ' + why;
+  if (!alive) why = true;
+  if (node.child && node.child.exitCode !== null && !G.killer) { G.killer = r0.why; why = true; }
+  return !why;
 }
 test.run('a body that is not JSON: answered, and the node still answers', 0.2, function () { return door(0); }, test.limit.slow);
 test.run('JSON that is not an object: answered, and the node still answers', 0.2, function () { return door(1); }, test.limit.slow);
@@ -435,9 +431,9 @@ test.run('POST /index.html%00.js: answered, and the node still answers', 0.2, fu
 
 // the node is still running at the end
 test.run('the scratch node is still running and answers', 0.2, async function () {
-  if (!G.tree) return NO_GARBAGE_NODE;
+  if (!G.tree) return false;
   const node = G.node;
-  return (node.child && node.child.exitCode === null && await G.plain()) || 'the scratch node ' + (node.child && node.child.exitCode !== null ? 'exited with ' + node.child.exitCode : 'does not answer');
+  return (node.child && node.child.exitCode === null && await G.plain()) || false;
 }, test.limit.slow);
 
 // THE VERBS THAT ACT, ON A THROWAWAY NODE OF THEIR OWN: node A is let go first. Verb by verb, each verb's garbage in
@@ -446,15 +442,15 @@ test.run('the scratch node is still running and answers', 0.2, async function ()
 // /api/spirit: every verb that acts takes the whole garbage, on a throwaway node, without crashing or hanging
 let B = null;
 test.run('the world: the throwaway node for the verbs that act comes up, every app server it turned on named in its api', 0.2, async function () {
-  if (!G.tree) return NO_GARBAGE_NODE;
+  if (!G.tree) return false;
   try { if (G.node.child) G.node.child.kill(); } catch (e) { /* gone */ }
   B = await upNode(); G.made.push(B.node);
-  if (!B.plain) return 'the throwaway node for the verbs that act did not come up';
+  if (!B.plain) return false;
   HOST = new URL(B.base).host;
-  return !B.missing.length || 'the throwaway node for the verbs that act came up without ' + B.missing.join(', ') + ': their verbs would be judged on nothing';
+  return !B.missing.length || false;
 }, test.limit.long);
 test.run('the verbs that act took the whole garbage, bad strings, missing, extraneous and pairs, without crashing or hanging', 0.2, async function () {
-  if (!B || !B.plain) return 'no throwaway node: the world failed';
+  if (!B || !B.plain) return false;
   const actingAsks = G.actingAsks; const actingVerbs = G.actingVerbs;
   const broken = {}; const killedBy = []; const fresh = []; let n = 0; const t0 = Date.now();
   for (const name of actingVerbs) {
@@ -463,17 +459,16 @@ test.run('the verbs that act took the whole garbage, bad strings, missing, extra
       const batch = mine.slice(i, i + BATCH);
       const got = await Promise.all(batch.map(function (a) { return call(B.base, { call: a.name, args: a.args }); }));
       n += batch.length;
-      got.forEach(function (r, j) { const why = broke(r); if (why) (broken[name] = broken[name] || []).push(batch[j].why + ': ' + why); });
+      got.forEach(function (r) { if (broke(r)) broken[name] = true; });
       let alive = await B.plain();
       if (!alive) { await sleep(500); alive = await B.plain(); }
       if (!alive) {
-        const dead = B.node.child && B.node.child.exitCode !== null;
-        (broken[name] = broken[name] || []).push((dead ? 'IT KILLED THE NODE (exit ' + B.node.child.exitCode + ')' : 'the node then did not answer a plain call within ' + (PLAIN_MS / 1000) + ' s') + ', in the batch from ' + shortG(batch[0].why) + ' to ' + shortG(batch[batch.length - 1].why) + ', args of the first: ' + shortG(batch[0].args).slice(0, 160));
+        broken[name] = true;
         killedBy.push(name);
         try { if (B.node.child) B.node.child.kill(); } catch (e) { /* gone */ }
         B = await upNode(); G.made.push(B.node);
-        if (!B.plain) return 'a fresh throwaway node did not come up after ' + name;
-        if (B.missing.length) fresh.push('a fresh throwaway node after ' + name + ' came up without ' + B.missing.join(', ') + ': their verbs would be judged on nothing');
+        if (!B.plain) return false;
+        if (B.missing.length) fresh.push(name);
         HOST = new URL(B.base).host;
         break;
       }
@@ -482,11 +477,10 @@ test.run('the verbs that act took the whole garbage, bad strings, missing, extra
   test.comment('verbs that act: ' + n + ' asks over ' + actingVerbs.length + ' verbs in ' + Math.round((Date.now() - t0) / 1000) + ' s, on ' + G.made.length + ' throwaway node(s)');
   // THE RELAY'S DOOR is thrown at by relayGarbage.js now; the comment line below, saying it is owed, is stale.
   test.comment('the relay\'s door is not thrown at yet: owed, see garbage.md');
-  // Each verb that broke named in the answer: the verbs are what the node's api names, so no title can be written out per verb.
-  const bad = actingVerbs.filter(function (name) { return broken[name]; }).map(function (name) { return '/api/spirit ' + name + ' (a verb that acts): ' + broken[name].length + ' crashed or hung, first: ' + broken[name][0]; });
+  const bad = actingVerbs.filter(function (name) { return broken[name]; });
   const fine = actingVerbs.length - bad.length;
-  if (fine <= 0) return 'no verb that acts was judged, of ' + actingVerbs.length;
-  return !(bad.length || fresh.length) || bad.concat(fresh).join('; ');
+  if (fine <= 0) return false;
+  return !(bad.length || fresh.length);
 }, test.limit.long);
 
 test.after(function () {

@@ -277,24 +277,24 @@ const PAGE = String.raw`(function (name, ROWS, LONG, PANE_W, PANE_H, VIA_LIST, O
 
 // What each search reported, the page sessions first.
 const REPORTS = {};
-let world = '';
+let world = false;
 test.after(async function () {
   if (W.page) { try { W.page.sock.close(); } catch (e) { /* gone */ } try { W.page.kid.kill(); } catch (e) { /* gone */ } try { fs.rmSync(W.page.profile, { recursive: true, force: true }); } catch (e) { /* scratch */ } }
   if (W.node && !W.node.shared) { try { W.node.child.kill(); } catch (e) { /* gone */ } await sleep(300); try { require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(W.node); } catch (e) { /* scratch */ } }
 });
 const W = {};
 test.run('the world: searches to judge, a scratch node and a Chrome page', 0.2, async function () {
-  if (!TARGETS.length) { world = 'no search to judge in ' + short(GIVEN); return world; }
+  if (!TARGETS.length) { world = true; return false; }
   const chrome = findChrome();
-  if (!chrome) { world = 'no Chrome on this machine'; return world; }
+  if (!chrome) { world = true; return false; }
   W.node = await scratchNode(SERVERS);
-  if (!W.node.up) { world = 'the scratch node did not come up'; return world; }
+  if (!W.node.up) { world = true; return false; }
   W.page = await chromePage(chrome);
-  if (W.page.error) { world = W.page.error; return world; }
+  if (W.page.error) { world = true; return false; }
   return true;
 }, test.limit.slow);
 test.run('the world: each search mounted, planted and opened on a page of its own', 0.2, async function () {
-  if (world) return 'no page: ' + world;
+  if (world) return false;
   const failed = [];
   for (const n of TARGETS) {
     await W.page.send('Page.navigate', { url: W.node.base + '/face.html' });
@@ -303,62 +303,55 @@ test.run('the world: each search mounted, planted and opened on a page of its ow
     try { got = await Promise.race([W.page.evaluate('Promise.resolve(' + PAGE + '(' + JSON.stringify(n) + ',' + ROWS + ',' + JSON.stringify(LONG) + ',' + PANE_W + ',' + PANE_H + ',' + JSON.stringify(VIA_LIST) + ',' + JSON.stringify(OPTIONS) + ',' + JSON.stringify(SHAPES) + ',' + JSON.stringify(KEEP) + ',' + JSON.stringify(FORCE) + ')).then(function (r) { return JSON.stringify(r); })'), sleep(60000).then(function () { return null; })]); } catch (e) { got = null; }
     let r = null; try { r = JSON.parse(got); } catch (e) { r = null; }
     REPORTS[n] = r || { name: n, fail: 'the page answered nothing within 60 s' };
-    if (REPORTS[n].fail) failed.push(n + ': ' + REPORTS[n].fail);
+    if (REPORTS[n].fail) failed.push(n);
     test.comment(n + ': ' + short(REPORTS[n]));
   }
-  return !failed.length || failed.join('; ');
+  return !failed.length || false;
 }, test.limit.long);
 
-// Each check: what it finds wrong in search n, '' when n keeps it, or { skip } when n gives it nothing to judge.
+// Each check: true when search n breaks it, false when n keeps it, or { skip } when n gives it nothing to judge.
 function eachSearch(why) {
-  if (world) return 'no page: ' + world;
+  if (world) return false;
   const judged = []; const bad = [];
   TARGETS.forEach(function (n) {
     const r = REPORTS[n];
-    if (!r) { bad.push(n + ': no report'); return; }
-    if (r.fail) { bad.push(n + ': ' + r.fail); return; }
+    if (!r) { bad.push(n); return; }
+    if (r.fail) { bad.push(n); return; }
     const w = why(r);
     if (w && typeof w === 'object' && w.skip) { test.comment(n + ': not judged: ' + w.skip); return; }
     judged.push(n);
-    if (w) bad.push(n + ': ' + w);
+    if (w) bad.push(n);
   });
-  if (bad.length) return bad.join('; ');
-  return judged.length > 0 || 'no search could be judged by it';
+  if (bad.length) return false;
+  return judged.length > 0 || false;
 }
 const listOf = function (r) { return r.noList ? { skip: 'it drew no list' } : r.noData ? { skip: 'its search is made with no spirit.data branch to plant rows in' } : null; };
-const plantedOf = function (r) { return listOf(r) || (!r.drawn ? 'none of the ' + ROWS + ' rows planted in ' + r.data + ' is drawn (the branch holds ' + r.held + ' of them; ' + r.textHits + ' parts of the list show the planted value)' : null); };
+const plantedOf = function (r) { return listOf(r) || !r.drawn; };
 
 test.run('1. the list\'s box has a stated size, from its pane, not its rows (rule 16)', 0.4, function () {
   return eachSearch(function (r) {
     const pre = plantedOf(r); if (pre) return pre;
-    const why = [];
-    if (Math.abs(r.listAfter.h - r.listBefore.h) > 1) why.push('its height went from ' + r.listBefore.h + ' to ' + r.listAfter.h + ' with ' + r.drawn + ' rows more');
-    if (r.listAfter.bottom > r.pane.bottom + 1) why.push('it reaches past its pane');
-    return why.join(', ');
+    return Math.abs(r.listAfter.h - r.listBefore.h) > 1 || r.listAfter.bottom > r.pane.bottom + 1;
   });
 }, test.limit.quick);
 test.run('2. the list scrolls: the box keeps its size, scrollHeight > clientHeight', 0.4, function () {
   return eachSearch(function (r) {
     const pre = plantedOf(r); if (pre) return pre;
-    const why = [];
-    if (Math.abs(r.listAfter.h - r.listBefore.h) > 1) why.push('its box did not keep its size');
-    if (!(r.scrolls.sh > r.scrolls.ch)) why.push('scrollHeight ' + r.scrolls.sh + ', clientHeight ' + r.scrolls.ch + ' with ' + r.drawn + ' rows planted');
-    if (!/auto|scroll/.test(r.scrolls.y)) why.push('it does not scroll: overflow-y ' + r.scrolls.y + ', its rows spill past it');
-    return why.join(', ');
+    return Math.abs(r.listAfter.h - r.listBefore.h) > 1 || !(r.scrolls.sh > r.scrolls.ch) || !/auto|scroll/.test(r.scrolls.y);
   });
 }, test.limit.quick);
 test.run('3. scrolling the list, its title and buttons stay at the top', 0.4, function () {
   return eachSearch(function (r) {
     const pre = plantedOf(r); if (pre) return pre;
     if (!r.fixedCount) return { skip: 'it draws no title button or field outside its list' };
-    return r.moved.length ? r.moved.length + ' moved: ' + short(r.moved) : '';
+    return r.moved.length > 0;
   });
 }, test.limit.quick);
 test.run('4. a planted long value in a row wraps or clips, nothing past the row\'s edge', 0.4, function () {
   return eachSearch(function (r) {
     const pre = plantedOf(r); if (pre) return pre;
-    if (r.rowSpill === null) return 'the first planted row is not drawn';
-    return r.rowSpill.length ? r.rowSpill.length + ' show past the row\'s edge: ' + short(r.rowSpill.slice(0, 4)) : '';
+    if (r.rowSpill === null) return true;
+    return r.rowSpill.length > 0;
   });
 }, test.limit.quick);
 const detailOf = function (r) {
@@ -370,46 +363,36 @@ const detailOf = function (r) {
 test.run('5. the detail keeps a planted long value inside its panel, and scrolls when taller', 0.4, function () {
   return eachSearch(function (r) {
     const pre = detailOf(r); if (pre) return pre;
-    const why = [];
-    if (r.detailSpill.length) why.push(r.detailSpill.length + ' show past its panel: ' + short(r.detailSpill.slice(0, 4)));
-    if (r.detailTaller && r.detailNoScroll.length) why.push('taller than its panel and nothing scrolls: ' + short(r.detailNoScroll));
-    return why.join('; ');
+    return r.detailSpill.length > 0 || (!!r.detailTaller && r.detailNoScroll.length > 0);
   });
 }, test.limit.quick);
 test.run('6. the detail\'s title bar stays pinned when it scrolls', 0.4, function () {
   return eachSearch(function (r) {
     const pre = detailOf(r); if (pre) return pre;
-    if (!r.detailScrolls) return 'made far taller than its panel, nothing in its layer scrolls';
-    return r.barMoved ? 'its title bar moved when the detail was scrolled' : '';
+    if (!r.detailScrolls) return true;
+    return !!r.barMoved;
   });
 }, test.limit.quick);
 test.run('7. the selector\'s dropdown stays inside the window, opened near the right and bottom edges', 0.4, function () {
   return eachSearch(function (r) {
-    if (r.dropError) return 'its dropdown create threw: ' + r.dropError;
-    if (r.noDropdown) return 'given face dropdown it drew no dropdown field';
-    if (r.dropNotOpen) return 'its dropdown did not open when its field was pressed';
-    const d = r.drop; const why = [];
-    if (d.left < -1) why.push('left ' + d.left);
-    if (d.top < -1) why.push('top ' + d.top);
-    if (d.right > d.w + 1) why.push('right ' + d.right + ' past ' + d.w);
-    if (d.bottom > d.h + 1) why.push('bottom ' + d.bottom + ' past ' + d.h);
-    return why.length ? 'outside the window: ' + why.join(', ') : '';
+    if (r.dropError) return true;
+    if (r.noDropdown) return true;
+    if (r.dropNotOpen) return true;
+    const d = r.drop;
+    return d.left < -1 || d.top < -1 || d.right > d.w + 1 || d.bottom > d.h + 1;
   });
 }, test.limit.quick);
 // Box v123: "every search supports both pane and dropdown; a selector with only one is red (today testicle.js, pane only,
 // and api.js, dropdown only)". Andy: "any search must support both pane AND dropdown". The dropdown is 7's.
 test.run('9. the selector, given face pane, draws its own list in the pane', 0.4, function () {
   return eachSearch(function (r) {
-    if (r.paneError) return 'its create threw in pane face: ' + r.paneError;
-    return r.selectorPane ? '' : 'given face pane it drew no list of its own';
+    if (r.paneError) return true;
+    return !r.selectorPane;
   });
 }, test.limit.quick);
 test.run('8. two details open, one closed: the other still draws in its own panel (G43.19, in a page)', 0.4, function () {
   return eachSearch(function (r) {
     const pre = detailOf(r); if (pre) return pre;
-    const why = [];
-    if (!r.secondDrew) why.push('the second detail drew nothing in its own panel');
-    if (r.firstTouched) why.push('the closed first detail\'s panel changed when the second opened');
-    return why.join(', ');
+    return !r.secondDrew || !!r.firstTouched;
   });
 }, test.limit.quick);

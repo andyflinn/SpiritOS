@@ -191,23 +191,20 @@ SCRIPTS.forEach(function (rel) {
   // "its severity is 0.8", written as the number it is (titleRules wants a severity as a number in the call).
   test.run('classifyable', 0.8, async function () {
     let k = null;
-    let why = '';
     // "its severity is 0.8": the classifier failing in itself (a throw, no scratch node) fails the script at 0.8 too, as
     // a failure said, never as the reporter's crash at 0.7.
     try {
       if (neverLoaded(rel)) k = { browserOnly: false, nodeOnly: true };
-      else if (!fs.existsSync(path.join(RUN, rel))) why = 'it is not there';
-      else {
+      else if (fs.existsSync(path.join(RUN, rel))) {
         const w = await world();
         if (w.error) throw new Error(w.error);
         const node = w.nodeR[rel] || await loadOnNode(path.join(w.node.root, 'spirit', 'run'), rel);
         const page = await loadOnPage(rel);
         k = classOf(node, page);
-        if (!k) why = 'on the node: ' + (node.err || 'loaded') + '; in a page: ' + (page.err || 'loaded');
       }
-    } catch (e) { k = null; why = 'the classifier failed: ' + String(e && e.message || e); }
-    if (!k) return 'not classifyable: ' + why;
-    try { await tell(Object.assign({ script: rel }, k)); } catch (e) { return 'classified ' + JSON.stringify(k) + ', but testicle.script.classify refused it: ' + String(e && e.message || e); }
+    } catch (e) { k = null; }
+    if (!k) return false;
+    try { await tell(Object.assign({ script: rel }, k)); } catch (e) { return false; }
     return true;
   // The first one boots the scratch node and Chrome; each load inside it is cut at LOAD_MS.
   }, test.limit.long, { script: rel });

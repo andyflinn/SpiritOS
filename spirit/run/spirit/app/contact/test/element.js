@@ -18,7 +18,6 @@ const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fileSystem.js')).VENDORED_FOLDERS;
 const { freePort, until, sleep, chromePage, findChrome } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 
-function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 function parsed(t) { try { return JSON.parse(t); } catch (e) { return null; } }
 function readJson(f) { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch (e) { return null; } }
 // Every file under a folder.
@@ -66,48 +65,46 @@ test.after(async function () {
   await sleep(300);
   if (W.s) { try { LABH.freeTree(W.s); } catch (e) { /* a door still closing; the temp folder keeps it */ } }
 });
-const NO_NODE = 'no scratch node: the world failed';
-const NO_PAGE = 'no page: the world failed';
 
 // the box: "the folder spirit/element/contacts/ needs to be renamed spirit/element/search/contact/"
 test.run('spirit/element/contacts/ is gone', 0.2, function () {
-  return !fs.existsSync(path.join(RUN, 'spirit', 'element', 'contacts')) || 'spirit/element/contacts/ is still there';
+  return !fs.existsSync(path.join(RUN, 'spirit', 'element', 'contacts')) || false;
 }, test.limit.quick);
 test.run('spirit/element/search/contact/ holds listElement.js and rowElement.js', 0.2, function () {
-  return ['listElement.js', 'rowElement.js'].every(function (f) { return fs.existsSync(path.join(RUN, 'spirit', 'element', 'search', 'contact', f)); }) || 'spirit/element/search/contact/ lacks one of them';
+  return ['listElement.js', 'rowElement.js'].every(function (f) { return fs.existsSync(path.join(RUN, 'spirit', 'element', 'search', 'contact', f)); }) || false;
 }, test.limit.quick);
 test.run('no code names spirit/element/contacts/', 0.2, function () {
   const oldElement = codeNaming(/spirit\/element\/contacts\//);
-  return !oldElement.length || 'naming it: ' + short(oldElement);
+  return !oldElement.length || false;
 }, test.limit.quick);
 
 // the box: "the new contact app will be exactly the same as the old, merely placed where it now belongs"
 test.run('shell/contacts/ is gone', 0.2, function () {
-  return !fs.existsSync(path.join(RUN, 'shell', 'contacts')) || 'shell/contacts/ is still there';
+  return !fs.existsSync(path.join(RUN, 'shell', 'contacts')) || false;
 }, test.limit.quick);
 test.run('spirit/app/contact/element.js is there', 0.2, function () {
-  return fs.existsSync(path.join(APP, 'element.js')) || 'no spirit/app/contact/element.js';
+  return fs.existsSync(path.join(APP, 'element.js')) || false;
 }, test.limit.quick);
 test.run('no code names shell/contacts', 0.2, function () {
   const oldApp = codeNaming(/shell\/contacts\b/);
-  return !oldApp.length || 'naming it: ' + short(oldApp);
+  return !oldApp.length || false;
 }, test.limit.quick);
 const OWN = function () { return readJson(path.join(APP, 'contact.json')) || {}; };
 test.run('its icon is 🤩 (Andy: "icon for new contact app: 🤩")', 0.2, function () {
   const id = OWN().identity || {};
-  return id.icon === '🤩' || 'identity.icon: ' + short(id.icon);
+  return id.icon === '🤩' || false;
 }, test.limit.quick);
 test.run('its label is Contacts, as the old app\'s name', 0.2, function () {
   const id = OWN().identity || {};
-  return id.label === 'Contacts' || 'identity.label: ' + short(id.label);
+  return id.label === 'Contacts' || false;
 }, test.limit.quick);
 test.run('it is intrinsic (the box: "Contacts is always on today, so it is always on in spirit/app too")', 0.2, function () {
   const id = OWN().identity || {};
-  return id.intrinsic === true || 'identity.intrinsic: ' + short(id.intrinsic);
+  return id.intrinsic === true || false;
 }, test.limit.quick);
 test.run('it mounts on the shell and has no server', 0.2, function () {
   const own = OWN();
-  return !!own.shell && own.shell.mount === true && !!own.node && own.node.mount === false ? true : 'shell ' + short(own.shell) + ', node ' + short(own.node);
+  return !!own.shell && own.shell.mount === true && !!own.node && own.node.mount === false ? true : false;
 }, test.limit.quick);
 
 
@@ -115,34 +112,34 @@ test.run('the world: a scratch node comes up', 0.2, async function () {
   W.s = scratch();
   const N = await boot(W.s.run); W.live.push(N.child);
   W.N = N;
-  return N.up || 'the scratch node did not come up: nothing judged';
+  return N.up || false;
 }, test.limit.slow);
 
 // the box: "A contact row no longer carries unansweredInbound, inboundPerDay or outboundPerDay"
 test.run('the world: the node knows a contact', 0.2, async function () {
-  if (!W.N || !W.N.up) return NO_NODE;
+  if (!W.N || !W.N.up) return false;
   const found = await call(W.N.base, 'contact.search', { q: '' });
   W.items = (found.body && found.body.items) || [];
   W.relay = W.items.map(function (i) { return Object.assign({ key: i.key }, parsed(i.label) || {}); }).filter(function (r) { return r.name; })[0] || {};
-  return W.items.length > 0 || 'contact.search: ' + short(found.text);
+  return W.items.length > 0 || false;
 }, test.limit.quick);
 test.run('no row of contact.search carries them', 0.2, function () {
-  if (!W.items) return NO_NODE;
-  return W.items.every(function (i) { const r = parsed(i.label) || {}; return COUNTERS.every(function (k) { return !(k in r); }); }) || 'rows: ' + short(W.items);
+  if (!W.items) return false;
+  return W.items.every(function (i) { const r = parsed(i.label) || {}; return COUNTERS.every(function (k) { return !(k in r); }); }) || false;
 }, test.limit.quick);
 test.run('nor does contact.get', 0.2, async function () {
-  if (!W.N || !W.N.up) return NO_NODE;
+  if (!W.N || !W.N.up) return false;
   const got = await call(W.N.base, 'contact.get', { key: (W.relay || {}).key });
   const person = (got.body && (got.body.person || got.body)) || {};
-  return got.status === 200 && COUNTERS.every(function (k) { return !(k in person); }) ? true : 'contact.get: ' + short(got.text);
+  return got.status === 200 && COUNTERS.every(function (k) { return !(k in person); }) ? true : false;
 }, test.limit.quick);
 
 test.run('the world: a Chrome page', 0.2, async function () {
-  if (!W.N || !W.N.up) return NO_NODE;
+  if (!W.N || !W.N.up) return false;
   const where = findChrome();
-  if (!where) return 'no Chrome here: the page was not judged';
+  if (!where) return false;
   W.c = await chromePage(where);
-  if (W.c.error) { const e = W.c.error; W.c = null; return 'Chrome: ' + e; }
+  if (W.c.error) { W.c = null; return false; }
   return true;
 }, test.limit.quick);
 // The shell Andy uses, /face.html, where the shell app (spirit/app/app/element.js) runs the appSelector (boot.js loads what an app's pages open with).
@@ -156,58 +153,58 @@ const press = function (words) {
   return W.c.evaluate('(function () { var box = document.getElementById("zzBox"); var all = Array.prototype.slice.call(box.querySelectorAll("*")).filter(function (e) { return e.offsetParent !== null && String(e.innerText || "").trim().indexOf(' + JSON.stringify(words) + ') !== -1 && !Array.prototype.some.call(e.children, function (k) { return String(k.innerText || "").indexOf(' + JSON.stringify(words) + ') !== -1; }); }); if (!all.length) return false; all[0].click(); return true; }())');
 };
 test.run('the world: the face shell has its spirit', 0.2, async function () {
-  if (!W.c) return 'no Chrome page: the world failed';
+  if (!W.c) return false;
   await W.c.send('Page.navigate', { url: W.N.base + '/face.html' });
   W.page = !!(await until(function () { return W.c.evaluate('!!(window.spirit && window.spirit.ready && window.spirit.event)'); }, 20000));
-  return W.page || 'the page has no spirit: nothing judged';
+  return W.page || false;
 }, test.limit.quick);
 
 // the box: "intrinsic true: the app is always active": its tile is there with nothing pressed
 test.run('the tiles show Contacts, with nothing pressed', 0.2, async function () {
-  if (!W.page) return NO_PAGE;
+  if (!W.page) return false;
   await selector('tiles');
-  return await shows('Contacts') ? true : 'tiles: ' + short(await shown());
+  return await shows('Contacts') ? true : false;
 }, test.limit.quick);
 
 // the box: "exactly the same as the old": its tile opens the contacts
 test.run('its tile opens the app, and the contact the node knows is listed', 0.2, async function () {
-  if (!W.page) return NO_PAGE;
+  if (!W.page) return false;
   const relay = W.relay || {};
   await press('Contacts');
-  return await shows(relay.name || 'noderoutes') ? true : 'the app, wanting ' + (relay.name || 'noderoutes') + ': ' + short(await shown());
+  return await shows(relay.name || 'noderoutes') ? true : false;
 }, test.limit.quick);
 test.run('the box: "a contact\'s detail no longer shows them"', 0.2, async function () {
-  if (!W.page) return NO_PAGE;
+  if (!W.page) return false;
   await press((W.relay || {}).name || 'noderoutes');
   await sleep(1500);
   const detail = await shown();
-  return !/Unanswered inbound|Inbound rate|Outbound rate/.test(detail) || 'the detail: ' + short(detail);
+  return !/Unanswered inbound|Inbound rate|Outbound rate/.test(detail) || false;
 }, test.limit.slow);
 
 // the box: "In the appSelector's detail an intrinsic app has no row to activate or deactivate it"
 test.run('its detail shows no Activate and no Deactivate', 0.2, async function () {
-  if (!W.page) return NO_PAGE;
+  if (!W.page) return false;
   await selector('pane');
   await shows('Contacts');
   await press('Contacts');
   await sleep(2000);
   const panel = await shown();
-  return panel.indexOf('Contacts') !== -1 && !/Activate|Deactivate/.test(panel) ? true : 'its detail: ' + short(panel);
+  return panel.indexOf('Contacts') !== -1 && !/Activate|Deactivate/.test(panel) ? true : false;
 }, test.limit.slow);
 
 // the box: "app.active does not switch it off"
 test.run('after app.active false, its tile is still there', 0.2, async function () {
-  if (!W.page) return NO_PAGE;
+  if (!W.page) return false;
   await call(W.N.base, 'app.active', { key: 'contact', active: false });
   await selector('tiles');
   await sleep(1500);
-  return (await shown()).indexOf('Contacts') !== -1 || 'tiles: ' + short(await shown());
+  return (await shown()).indexOf('Contacts') !== -1 || false;
 }, test.limit.slow);
 
 // nothing threw on the page
 test.run('no uncaught error on the page, all the way', 0.2, async function () {
-  if (!W.c) return NO_PAGE;
+  if (!W.c) return false;
   const thrown = W.c.heard.filter(function (m) { return m.method === 'Runtime.exceptionThrown'; }).map(function (m) { return (m.params.exceptionDetails.exception && m.params.exceptionDetails.exception.description) || m.params.exceptionDetails.text; });
   await stop(W.N.child);
-  return !thrown.length || 'thrown: ' + short(thrown);
+  return !thrown.length || false;
 }, test.limit.quick);

@@ -39,7 +39,6 @@ const { execFileSync } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 
-function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 400); }
 function code(rel) { let t = ''; try { t = fs.readFileSync(path.join(RUN, rel), 'utf8'); } catch (e) { return ''; } return t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"\\])\/\/[^\n]*/g, '$1'); }
 function isFile(rel) { try { return fs.statSync(path.join(RUN, rel)).isFile(); } catch (e) { return false; } }
 
@@ -67,44 +66,43 @@ const NO_DETAIL = ['branch', 'icon', 'suite'];
 
 // EACH RULE ONE TEST, OVER EVERY SEARCH JUDGED (goal/G47.2): a title is steady, so no search's name is built into it; the
 // searches that break a rule are named in what its test answers.
-// What a rule finds wrong in search n, or '' when n keeps it.
-function eachSearch(why) {
-  if (!TARGETS.length) return 'no search to judge';
-  const bad = TARGETS.map(why).filter(Boolean);
-  return !bad.length || bad.join('; ');
+// True when every search keeps the rule: broken(n) answers true for a search n that breaks it.
+function eachSearch(broken) {
+  if (!TARGETS.length) return false;
+  const bad = TARGETS.filter(broken);
+  return !bad.length || false;
 }
-const partWhy = function (f) { return f + ': ' + (isFile(f) ? 'places no create by its path' : 'is not there'); };
 
 // The searches.
 test.run('the world: eight or more searches, valued exempt', 0.2, function () {
-  return NAMES.length >= 8 || 'only ' + short(NAMES) + ': nothing to judge';
+  return NAMES.length >= 8 || false;
 }, test.limit.quick);
 test.run('the job branch has its search, spirit/element/search/job.js', 0.4, function () {
-  return NAMES.indexOf('job') !== -1 || 'no search of the job branch: ' + SEARCH + '/job.js';
+  return NAMES.indexOf('job') !== -1 || false;
 }, test.limit.quick);
 test.run('the job list and its detail no longer stand in spirit/element/', 0.4, function () {
   const astray = ['spirit/element/job.js', 'spirit/element/jobDetail.js'].filter(isFile);
-  return !astray.length || short(astray) + ' still stand';
+  return !astray.length || false;
 }, test.limit.quick);
 // Each search: SEARCH/<n>.js, its selector, and SEARCH/<n>/ holding its listElement, rowElement and detailElement.
 test.run('its selector is an element placed by its path', 0.4, function () {
-  return eachSearch(function (n) { const sel = SEARCH + '/' + n + '.js'; return isFile(sel) && placesItself(sel) ? '' : partWhy(sel); });
+  return eachSearch(function (n) { const sel = SEARCH + '/' + n + '.js'; return !(isFile(sel) && placesItself(sel)); });
 }, test.limit.quick);
 test.run('its listElement is placed by its path', 0.4, function () {
-  return eachSearch(function (n) { const f = SEARCH + '/' + n + '/listElement.js'; return isFile(f) && placesItself(f) ? '' : partWhy(f); });
+  return eachSearch(function (n) { const f = SEARCH + '/' + n + '/listElement.js'; return !(isFile(f) && placesItself(f)); });
 }, test.limit.quick);
 test.run('its rowElement is placed by its path', 0.4, function () {
-  return eachSearch(function (n) { const f = SEARCH + '/' + n + '/rowElement.js'; return isFile(f) && placesItself(f) ? '' : partWhy(f); });
+  return eachSearch(function (n) { const f = SEARCH + '/' + n + '/rowElement.js'; return !(isFile(f) && placesItself(f)); });
 }, test.limit.quick);
 // Only where there is a search to judge by it: a detail where one opens, none where none does.
 if (TARGETS.some(function (n) { return NO_DETAIL.indexOf(n) === -1; })) {
   test.run('its detailElement is placed by its path', 0.4, function () {
-    return eachSearch(function (n) { const f = SEARCH + '/' + n + '/detailElement.js'; return NO_DETAIL.indexOf(n) !== -1 || (isFile(f) && placesItself(f)) ? '' : partWhy(f); });
+    return eachSearch(function (n) { const f = SEARCH + '/' + n + '/detailElement.js'; return !(NO_DETAIL.indexOf(n) !== -1 || (isFile(f) && placesItself(f))); });
   }, test.limit.quick);
 }
 if (TARGETS.some(function (n) { return NO_DETAIL.indexOf(n) !== -1; })) {
   test.run('it has no detail, since none is ever opened', 0.4, function () {
-    return eachSearch(function (n) { const f = SEARCH + '/' + n + '/detailElement.js'; return NO_DETAIL.indexOf(n) === -1 || !isFile(f) ? '' : f + ': stands, though no ' + n + ' row ever opens a detail'; });
+    return eachSearch(function (n) { const f = SEARCH + '/' + n + '/detailElement.js'; return !(NO_DETAIL.indexOf(n) === -1 || !isFile(f)); });
   }, test.limit.quick);
 }
 // ONE LIST, SHARED BY POPUP AND LIST MODES (Andy: "all, any search-unit has ONE list shared by popup and list modes."): the
@@ -112,14 +110,13 @@ if (TARGETS.some(function (n) { return NO_DETAIL.indexOf(n) !== -1; })) {
 test.run('its selector draws its own listElement.js', 0.4, function () {
   return eachSearch(function (n) {
     const sel = SEARCH + '/' + n + '.js'; const dir = SEARCH + '/' + n; const c = code(sel);
-    return new RegExp("['\"]" + dir.replace(/\//g, '\\/') + "\\/listElement\\.js['\"]").test(c) && new RegExp('\\.search\\.' + n + '\\.listElement\\.create\\(').test(c)
-      ? '' : sel + ': it does not draw ' + dir + '/listElement.js';
+    return !(new RegExp("['\"]" + dir.replace(/\//g, '\\/') + "\\/listElement\\.js['\"]").test(c) && new RegExp('\\.search\\.' + n + '\\.listElement\\.create\\(').test(c));
   });
 }, test.limit.quick);
 test.run('and its selector makes no list of its own', 0.4, function () {
   return eachSearch(function (n) {
     const sel = SEARCH + '/' + n + '.js';
-    return !/\.element\.search\.create\(|createElement\(['"](button|tr|li)['"]\)/.test(code(sel)) ? '' : sel + ': it makes a list of its own beside its listElement.js';
+    return /\.element\.search\.create\(|createElement\(['"](button|tr|li)['"]\)/.test(code(sel));
   });
 }, test.limit.quick);
 
@@ -130,20 +127,20 @@ test.run('and its selector makes no list of its own', 0.4, function () {
 // Beside the searches, in spirit/element/ itself, no panel and no detail of a list: panel.js is the generic stack, no list's.
 test.run('no list\'s panel or detail stands beside the searches in spirit/element/', 0.4, function () {
   const loose = TREE.filter(function (f) { return (/^spirit\/element\/[^/]+\.js$/).test(f) && (/(Panel|Detail|Details)\.js$/).test(f); });
-  return !loose.length || short(loose) + ' still stand in spirit/element/';
+  return !loose.length || false;
 }, test.limit.quick);
 const GRANTS = SEARCH + '/grant/grantsPanel.js';
 test.run('the grants panel stands in the grant search, placed by its path', 0.4, function () {
-  return (isFile(GRANTS) && placesItself(GRANTS)) || partWhy(GRANTS);
+  return (isFile(GRANTS) && placesItself(GRANTS)) || false;
 }, test.limit.quick);
 // One detail for every kind of contact: a relay's blocks are drawn by the contact detail, and the row opens nothing else.
 const RELAY = SEARCH + '/contact/relayPanel.js';
 test.run('no second contact detail: the relay panel is gone into the contact detail', 0.4, function () {
-  return !isFile(RELAY) || RELAY + ' still stands';
+  return !isFile(RELAY) || false;
 }, test.limit.quick);
 test.run('a contact row opens the contact detail alone, whatever the contact is', 0.4, function () {
   return (!/relayPanel/.test(code(SEARCH + '/contact/rowElement.js')) && /contact\/detailElement\.js/.test(code(SEARCH + '/contact/rowElement.js'))) ||
-    SEARCH + '/contact/rowElement.js still opens relayPanel, or not the contact detail';
+    false;
 }, test.limit.quick);
 }
 
@@ -172,7 +169,6 @@ const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const arg = String(ARGS[0] || '');
 const MODULE = 'spirit/element/search.js';
 const BELOW = 'spirit/element/search/';
-const RULE = 'an element finds its parts inside its own container, never by id across the page';
 
 // The code with its comments blanked, line breaks kept, so a line number stays a line number. Strings are kept whole.
 function code(src) {
@@ -215,19 +211,18 @@ if (arg) {
 const judged = files.filter(function (f) { return inReach(f) && fs.existsSync(path.join(RUN, f)); });
 if (arg) {
   test.run('the world: the module asked is search.js or a module below it', 0.2, function () {
-    return judged.length === 1 || arg + ' is not search.js or a module below it: nothing judged';
+    return judged.length === 1 || false;
   }, test.limit.quick);
 } else {
   test.run('the world: more than ten modules read', 0.2, function () {
-    return judged.length > 10 || 'only ' + judged.length + ' modules read: too little to judge';
+    return judged.length > 10 || false;
   }, test.limit.quick);
 }
 // Each lookup across the page is named in what the test answers, by file and line.
 test.run('an element finds its parts inside its own container, never by id across the page: no module looks across the page', 0.4, function () {
-  if (!judged.length) return 'no module judged';
-  const found = [];
-  judged.forEach(function (rel) { across(rel).forEach(function (a) { found.push(rel + ':' + a.line + ' ' + a.call + '()'); }); });
-  return !found.length || found.join(', ') + (found.length === 1 ? ' finds' : ' find') + ' a part across the whole page (' + RULE + ')';
+  if (!judged.length) return false;
+  const found = judged.filter(function (rel) { return across(rel).length > 0; });
+  return !found.length || false;
 }, test.limit.quick);
 }
 

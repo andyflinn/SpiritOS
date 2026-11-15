@@ -13,14 +13,11 @@ const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 const FILE = path.join(__dirname, '..', 'chatPane.js');
 
-function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 const near = function (a, b) { return typeof a === 'number' && typeof b === 'number' && Math.abs(a - b) <= 2; };
 
 const ADDRESS = '/DEBUG/spirit/app/agent/element/test/chatPane-laid.html';
 // What the tests make, for the tests after them.
 const X = { node: null, page: null, m: null };
-const NO_MEASURE = 'the page measured nothing: the world failed';
-const NOT_MADE = 'no chat pane was made';
 test.after(function () {
   const page = X.page, node = X.node;
   if (page && page.kid) page.kid.kill();
@@ -30,39 +27,39 @@ test.after(function () {
 });
 
 test.run('spirit/app/agent/element/chatPane.js exists', 0.2, function () {
-  return fs.existsSync(FILE) ? true : 'there is no spirit/app/agent/element/chatPane.js';
+  return fs.existsSync(FILE) ? true : false;
 }, test.limit.quick);
 // Andy, box: "NO component from \"desk\" will be used."
 test.run('it uses no component of the desk: its code names none', 0.2, function () {
   const code = fs.existsSync(FILE) ? fs.readFileSync(FILE, 'utf8').replace(/\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '') : '';
-  return fs.existsSync(FILE) && !/desk/i.test(code) ? true : 'chatPane.js names the desk';
+  return fs.existsSync(FILE) && !/desk/i.test(code) ? true : false;
 }, test.limit.quick);
 
 // ── /spirit/app/agent/element/test/chatPane-laid.html: the chat pane in a centre of 500 by 400 ──
 test.run('the world: a scratch node with its DEBUG on, ./chatPane-laid.html measured in Chrome', 0.2, async function () {
   const chrome = H.findChrome();
-  if (!chrome) return 'no Chrome on this machine: SPIRIT_CHROME names none, and none is found by its name';
+  if (!chrome) return false;
   const node = X.node = await H.scratchNode();
-  if (!node.up || !node.debug) return 'the scratch node did not come up with its DEBUG on';
+  if (!node.up || !node.debug) return false;
   const page = X.page = await H.chromePage(chrome);
-  if (page.error) return page.error;
+  if (page.error) return false;
   await page.send('Page.navigate', { url: node.base + ADDRESS });
   await H.until(function () { return page.evaluate('typeof window.laid === "function" && !!window.spirit').then(Boolean); }, H.WAIT);
   const s = await page.evaluate('window.laid()').catch(function () { return ''; });
   let m = null;
   try { m = JSON.parse(s); } catch (e) { m = null; }
   X.m = m;
-  return m ? true : 'the page measured nothing: ' + JSON.stringify(s).slice(0, 300);
+  return m ? true : false;
 // A scratch node comes up inside this one: the long limit, as every world that boots one has (it hung at the slow one).
 }, test.limit.long);
 test.run('it adds chatPane.create(container, { persona }) at window.spirit.element.spirit.app.agent.element.chatPane', 0.2, function () {
-  if (!X.m) return NO_MEASURE;
-  return X.m.made ? true : 'no window.spirit.element.spirit.app.agent.element.chatPane.create';
+  if (!X.m) return false;
+  return X.m.made ? true : false;
 }, test.limit.quick);
 test.run('create answers the pane, drawn into the container it is given (goal/G41.19)', 0.2, function () {
   const m = X.m;
-  if (!m || !m.made) return NOT_MADE;
-  return m.answered && m.appended ? true : 'made: ' + short({ answered: m.answered, appended: m.appended });
+  if (!m || !m.made) return false;
+  return m.answered && m.appended ? true : false;
 }, test.limit.quick);
 
 // ── its title, pinned to the top ──
@@ -70,30 +67,30 @@ test.run('create answers the pane, drawn into the container it is given (goal/G4
 // The title row sets its icon apart from its words by its own gap, as every pane title does, so a space there is not asked.
 test.run('its title is 💬 Chat with <the persona\'s label>', 0.2, function () {
   const m = X.m;
-  if (!m || !m.made) return NOT_MADE;
-  return m.titleText.replace(/^💬\s*/, '💬 ') === '💬 Chat with Ada <the reviewer>' ? true : 'title: ' + short(m.titleText);
+  if (!m || !m.made) return false;
+  return m.titleText.replace(/^💬\s*/, '💬 ') === '💬 Chat with Ada <the reviewer>' ? true : false;
 }, test.limit.quick);
 test.run('the label escaped', 0.2, function () {
   const m = X.m;
-  if (!m || !m.made) return NOT_MADE;
-  return (/Ada &lt;the reviewer&gt;/).test(m.titleHtml) ? true : 'title: ' + short(m.titleHtml);
+  if (!m || !m.made) return false;
+  return (/Ada &lt;the reviewer&gt;/).test(m.titleHtml) ? true : false;
 }, test.limit.quick);
 test.run('the title is at the top of the centre', 0.2, function () {
   const m = X.m;
-  if (!m || !m.made) return NOT_MADE;
-  return !!m.title && near(m.title.top, m.centre.top) ? true : 'title ' + short(m.title) + ', centre ' + short(m.centre);
+  if (!m || !m.made) return false;
+  return !!m.title && near(m.title.top, m.centre.top) ? true : false;
 }, test.limit.quick);
 // Andy, on G41.26: "the title row in the chat panel (center or workBench) must have the same font size as all other
 // pane-titles in the agent UI".
 test.run('the page draws a pane title of the agent tables to measure against', 0.2, function () {
   const m = X.m;
-  if (!m || !m.made) return NOT_MADE;
-  return m.paneTitleSize ? true : 'no agentDetail.titleRow on the page';
+  if (!m || !m.made) return false;
+  return m.paneTitleSize ? true : false;
 }, test.limit.quick);
 test.run('its title has the font size of every other pane title of the agent UI', 0.2, function () {
   const m = X.m;
-  if (!m || !m.made) return NOT_MADE;
-  return !!m.titleSize && m.titleSize === m.paneTitleSize ? true : 'chat title ' + short(m.titleSize) + ', pane title ' + short(m.paneTitleSize);
+  if (!m || !m.made) return false;
+  return !!m.titleSize && m.titleSize === m.paneTitleSize ? true : false;
 }, test.limit.quick);
 
 // ── its input row, pinned to the bottom ──
@@ -101,26 +98,26 @@ test.run('its title has the font size of every other pane title of the agent UI'
 // button on the right edge of that row."
 test.run('the input row is at the bottom of the centre', 0.2, function () {
   const m = X.m;
-  if (!m || !m.made) return NOT_MADE;
-  return !!m.row && near(m.row.bottom, m.centre.bottom) ? true : 'row ' + short(m.row) + ', centre ' + short(m.centre);
+  if (!m || !m.made) return false;
+  return !!m.row && near(m.row.bottom, m.centre.bottom) ? true : false;
 }, test.limit.quick);
 test.run('its Send button is at the row\'s right edge, the input line left of it', 0.2, function () {
   const m = X.m;
-  if (!m || !m.made) return NOT_MADE;
-  return !!m.send && !!m.row && near(m.send.right, m.row.right) && !!m.input && m.input.right <= m.send.left + 1 ? true : 'input ' + short(m.input) + ', send ' + short(m.send) + ', row ' + short(m.row);
+  if (!m || !m.made) return false;
+  return !!m.send && !!m.row && near(m.send.right, m.row.right) && !!m.input && m.input.right <= m.send.left + 1 ? true : false;
 }, test.limit.quick);
 
 // ── the log fills the space between, and scrolls ──
 // "the space between the Title row and the Chat input row is filled by an upward scrolling chat log."
 test.run('the log fills from below the title to above the input row', 0.2, function () {
   const m = X.m;
-  if (!m || !m.made) return NOT_MADE;
-  return !!m.log && !!m.title && !!m.row && near(m.log.top, m.title.bottom) && near(m.log.bottom, m.row.top) && m.log.h > 0 ? true : 'log ' + short(m.log) + ', title ' + short(m.title) + ', row ' + short(m.row);
+  if (!m || !m.made) return false;
+  return !!m.log && !!m.title && !!m.row && near(m.log.top, m.title.bottom) && near(m.log.bottom, m.row.top) && m.log.h > 0 ? true : false;
 }, test.limit.quick);
 test.run('and scrolls in itself', 0.2, function () {
   const m = X.m;
-  if (!m || !m.made) return NOT_MADE;
-  return (/^(auto|scroll)$/).test(m.logOverflow) ? true : 'its overflow-y is ' + short(m.logOverflow);
+  if (!m || !m.made) return false;
+  return (/^(auto|scroll)$/).test(m.logOverflow) ? true : false;
 }, test.limit.quick);
 
 // ── Enter and Shift+Enter ──
@@ -128,16 +125,16 @@ test.run('and scrolls in itself', 0.2, function () {
 // scope ("how the chat will work, is oos for this item"): Enter is the send, so its newline is held back.
 test.run('the input line takes a newline: a textarea', 0.2, function () {
   const m = X.m;
-  if (!m || !m.made) return NOT_MADE;
-  return m.multiLine ? true : 'it is ' + short(m.inputTag);
+  if (!m || !m.made) return false;
+  return m.multiLine ? true : false;
 }, test.limit.quick);
 test.run('Enter is held back from the line: it is the send', 0.2, function () {
   const m = X.m;
-  if (!m || !m.made) return NOT_MADE;
-  return m.enterHeld === true ? true : 'Enter went into the line';
+  if (!m || !m.made) return false;
+  return m.enterHeld === true ? true : false;
 }, test.limit.quick);
 test.run('Shift+Enter is left to the line, which adds the newline', 0.2, function () {
   const m = X.m;
-  if (!m || !m.made) return NOT_MADE;
-  return m.shiftHeld === false ? true : 'Shift+Enter was held back';
+  if (!m || !m.made) return false;
+  return m.shiftHeld === false ? true : false;
 }, test.limit.quick);

@@ -35,8 +35,6 @@ const RUN = path.resolve(__dirname, '..', '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fileSystem.js')).VENDORED_FOLDERS;
 
-function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 400); }
-
 // THE PLANTED SUITES, each a file of the scratch tree, its tests through test.run.
 const REPORTER_FROM = function (depth) { return "require(require('path').join(__dirname, " + new Array(depth + 1).join("'..', ") + "'spirit', 'test', 'testReport.js'))"; };
 const PROBE = [
@@ -151,89 +149,103 @@ function runSuite(run, rel, args) {
 // What the scratch tree and its runs hold, shared by the tests below; each test reads it, the first ones make it.
 const W = { node: null, tree: null, probe: null, alone: null, twice: null, general: null, two: null, quiet: null, quietTree: null };
 const setOf = function (title) { return ((W.node && W.node.sets) || []).filter(function (s) { return s && s.suite === 'probe/test/probe.js' && s.test === title; }); };
-const printed = function (title) { return W.probe ? W.probe.out.split('\n').filter(function (l) { return l.indexOf(': ' + title) !== -1; }) : []; };
+// A TEST'S LINE IS ITS TITLE AND ITS MARK (goal/G47.1, Andy: "A TEST ANSWERS SUCCESS OR FAILURE WITH IT's FUCKING TITLE
+// STRING, THE FUCKING FAILURE STRING GETS DELETED FROM EVERY FUCKING TEST"): the mark a run printed after a title, '' when none.
+const markIn = function (out, title) {
+  let mark = '';
+  String(out || '').split('\n').forEach(function (l) { const t = l.replace(/^\*+\s*/, '').trim(); if (t === title + ' ✅' || t === title + ' ❌') mark = t.slice(-1); });
+  return mark;
+};
+const passed = function (title) { return !!W.probe && markIn(W.probe.out, title) === '✅'; };
+const failed = function (title) { return !!W.probe && markIn(W.probe.out, title) === '❌'; };
 
 test.run('the world: a fake node and a scratch tree with planted suites stand up', 0.2, async function () {
   W.node = await fakeNode();
   W.tree = scratchTree(W.node.port);
-  return fs.existsSync(path.join(W.tree.run, 'probe', 'test', 'probe.js')) && W.node.port > 0 || 'no scratch tree or no fake node';
+  return fs.existsSync(path.join(W.tree.run, 'probe', 'test', 'probe.js')) && W.node.port > 0 || false;
 }, test.limit.slow);
 
 test.run('the world: the probe suite runs to its end', 0.2, async function () {
   W.probe = await runSuite(W.tree.run, 'probe/test/probe.js');
-  return /Test completed\./.test(W.probe.out) || 'the probe did not end with its completion line: ' + short(W.probe.out.slice(-400));
+  return /Test completed\./.test(W.probe.out) || false;
 }, test.limit.slow);
 
 // ── A TEST'S RESULT ──
-test.run('a body returning true passes, printed under its title', 0.2, function () {
-  return printed('it passes').some(function (l) { return /SUCCESS/.test(l); }) || 'printed: ' + short(printed('it passes'));
+test.run('a body returning true passes, its title printed with ✅', 0.2, function () {
+  return passed('it passes');
 }, test.limit.quick);
-test.run('a body returning a string fails, its title printed with the string as detail', 0.2, function () {
-  return printed('it fails with what went wrong').some(function (l) { return /FAILURE/.test(l) && /the count was 3, not 4/.test(l); }) || 'printed: ' + short(printed('it fails with what went wrong'));
+test.run('a body returning a string fails, its title printed with ❌', 0.2, function () {
+  return failed('it fails with what went wrong');
 }, test.limit.quick);
-test.run('a body returning false fails under its title', 0.2, function () {
-  return printed('it fails with false').some(function (l) { return /FAILURE/.test(l); }) || 'printed: ' + short(printed('it fails with false'));
+test.run('the string a body returns is printed nowhere', 0.2, function () {
+  return (!!W.probe && W.probe.out.indexOf('the count was 3, not 4') === -1) || false;
+}, test.limit.quick);
+test.run('a body returning false fails, its title printed with ❌', 0.2, function () {
+  return failed('it fails with false');
 }, test.limit.quick);
 
 // ── A CRASH AND A HANG ──
-test.run('a body that throws fails under its own title, the error as detail', 0.2, function () {
-  return printed('it throws').some(function (l) { return /FAILURE/.test(l) && /a thrown boom/.test(l); }) || 'printed: ' + short(printed('it throws'));
+test.run('a body that throws fails, its title printed with ❌', 0.2, function () {
+  return failed('it throws');
 }, test.limit.quick);
-test.run('a body that rejects fails under its own title, the error as detail', 0.2, function () {
-  return printed('it rejects').some(function (l) { return /FAILURE/.test(l) && /a rejected boom/.test(l); }) || 'printed: ' + short(printed('it rejects'));
+test.run('a body that rejects fails, its title printed with ❌', 0.2, function () {
+  return failed('it rejects');
 }, test.limit.quick);
-test.run('a body past its time limit fails under its own title as a hang', 0.2, function () {
-  return printed('it never answers').some(function (l) { return /FAILURE/.test(l); }) || 'printed: ' + short(printed('it never answers'));
+test.run('the error a body throws or rejects with is printed nowhere', 0.2, function () {
+  return (!!W.probe && !/a thrown boom|a rejected boom/.test(W.probe.out)) || false;
+}, test.limit.quick);
+test.run('a body past its time limit fails, its title printed with ❌', 0.2, function () {
+  return failed('it never answers');
 }, test.limit.quick);
 test.run('a module loading the spirit object after a report finds it global', 0.2, function () {
-  return printed('the spirit object stays global after a report').some(function (l) { return /SUCCESS/.test(l); }) || 'printed: ' + short(printed('the spirit object stays global after a report'));
+  return passed('the spirit object stays global after a report');
 }, test.limit.quick);
 test.run('the tests after a crash and a hang still run', 0.2, function () {
-  return printed('it passes after a hang').some(function (l) { return /SUCCESS/.test(l); }) || 'printed: ' + short(printed('it passes after a hang'));
+  return passed('it passes after a hang');
 }, test.limit.quick);
 test.run('test.after runs once every test has run', 0.2, function () {
-  return fs.existsSync(path.join(W.tree.run, 'probe', 'test', 'after.txt')) || 'no after.txt';
+  return fs.existsSync(path.join(W.tree.run, 'probe', 'test', 'after.txt')) || false;
 }, test.limit.quick);
 test.run('the completion line counts every test, and the exit code says a test failed', 0.2, function () {
-  return (/✅:3\s+❌:6/.test(W.probe.out) && W.probe.code === 1) || 'completion: ' + short((W.probe.out.match(/Test completed[^\n]*/) || [''])[0]) + ', exit ' + W.probe.code;
+  return (/✅:3\s+❌:6/.test(W.probe.out) && W.probe.code === 1) || false;
 }, test.limit.quick);
 
 // ── THE REPORT ──
 test.run('each test is reported to testicle.testicle.set of the node of its checkout, once', 0.2, function () {
   const titles = ['it passes', 'the spirit object stays global after a report', 'it fails with what went wrong', 'it fails with false', 'it throws', 'it rejects', 'it never answers', 'a security check', 'it passes after a hang'];
   const counts = titles.map(function (t) { return setOf(t).length; });
-  return counts.every(function (n) { return n === 1; }) || 'sets per title ' + short(counts) + '; asked ' + short(W.node.asked.slice(0, 12));
+  return counts.every(function (n) { return n === 1; }) || false;
 }, test.limit.slow);
 test.run('a report carries the tested script and the suite, scoped to run://', 0.2, function () {
   const s = setOf('it passes')[0] || {};
-  return (s.script === 'probe/probe.js' && s.suite === 'probe/test/probe.js') || 'the report: ' + short(s);
+  return (s.script === 'probe/probe.js' && s.suite === 'probe/test/probe.js') || false;
 }, test.limit.quick);
 test.run('a report carries the title as the test, and the result', 0.2, function () {
   const p = setOf('it passes')[0] || {};
   const f = setOf('it fails with what went wrong')[0] || {};
-  return (p.test === 'it passes' && p.verified === true && f.test === 'it fails with what went wrong' && f.verified === false) || 'reports: ' + short([p, f]);
+  return (p.test === 'it passes' && p.verified === true && f.test === 'it fails with what went wrong' && f.verified === false) || false;
 }, test.limit.quick);
 test.run('a failure\'s words stay out of its test title', 0.2, function () {
-  return !((W.node && W.node.sets) || []).some(function (s) { return /the count was 3|boom/.test(String(s && s.test)); }) || 'a title holds failure words: ' + short(W.node.sets.map(function (s) { return s.test; }));
+  return !((W.node && W.node.sets) || []).some(function (s) { return /the count was 3|boom/.test(String(s && s.test)); }) || false;
 }, test.limit.quick);
 test.run('a report carries the severity the test gives', 0.2, function () {
   const p = setOf('it passes')[0] || {};
   const sec = setOf('a security check')[0] || {};
-  return (p.severity === 0.2 && sec.severity === 0.8) || 'severities: ' + short([p.severity, sec.severity]);
+  return (p.severity === 0.2 && sec.severity === 0.8) || false;
 }, test.limit.quick);
 test.run('a crash and a hang are reported at 0.7', 0.2, function () {
   const sev = ['it throws', 'it rejects', 'it never answers'].map(function (t) { return (setOf(t)[0] || {}).severity; });
-  return JSON.stringify(sev) === JSON.stringify([0.7, 0.7, 0.7]) || 'severities: ' + short(sev);
+  return JSON.stringify(sev) === JSON.stringify([0.7, 0.7, 0.7]) || false;
 }, test.limit.quick);
 
 // ── A GENERAL TEST ──
 test.run('the world: a general test runs with the file it judges', 0.2, async function () {
   W.general = await runSuite(W.tree.run, 'spirit/test/spirit-sibling-zzProbeRules.js', ['probe/probe.js']);
-  return /Test completed\./.test(W.general.out) || 'it did not run: ' + short(W.general.out.slice(-300));
+  return /Test completed\./.test(W.general.out) || false;
 }, test.limit.slow);
 test.run('a general test reports the file it judges as its script', 0.4, function () {
   const g = ((W.node && W.node.sets) || []).filter(function (s) { return s && s.suite === 'spirit/test/spirit-sibling-zzProbeRules.js'; });
-  return (g.length === 1 && g[0].script === 'probe/probe.js' && g[0].test === 'a general rule holds' && g[0].severity === 0.4) || 'its reports: ' + short(g);
+  return (g.length === 1 && g[0].script === 'probe/probe.js' && g[0].test === 'a general rule holds' && g[0].severity === 0.4) || false;
 }, test.limit.slow);
 
 // ── A SUITE'S SUCCESS (goal/G47.1, box v129: "the reporter reports a suite's success or failure for a script through the
@@ -242,22 +254,22 @@ test.run('a general test reports the file it judges as its script', 0.4, functio
 const successOf = function (suite) { return ((W.node && W.node.successes) || []).filter(function (x) { return x && x.suite === suite; }); };
 test.run('a suite reports its success or failure for its script once, through testicle.suite.success', 0.4, function () {
   const got = successOf('probe/test/probe.js');
-  return (got.length === 1 && got[0].script === 'probe/probe.js' && got[0].success === false) || 'testicle.suite.success for the probe suite: ' + short(got) + '; asked ' + short(W.node.asked.filter(function (a) { return /success/.test(String(a)); }));
+  return (got.length === 1 && got[0].script === 'probe/probe.js' && got[0].success === false) || false;
 }, test.limit.quick);
 test.run('the world: a general test judging two scripts runs, handed both', 0.2, async function () {
   W.two = await runSuite(W.tree.run, 'spirit/test/spirit-sibling-zzProbeTwo.js', ['probe/probe.js', 'probe/twice.js']);
-  return /Test completed\./.test(W.two.out) || 'it did not run: ' + short(W.two.out.slice(-300));
+  return /Test completed\./.test(W.two.out) || false;
 }, test.limit.slow);
 test.run('a general test reports success once per script: the one that held true, the one that failed false', 0.4, function () {
   const got = successOf('spirit/test/spirit-sibling-zzProbeTwo.js');
   const a = got.filter(function (x) { return x.script === 'probe/probe.js'; }), b = got.filter(function (x) { return x.script === 'probe/twice.js'; });
-  return (a.length === 1 && a[0].success === true && b.length === 1 && b[0].success === false) || 'its successes: ' + short(got);
+  return (a.length === 1 && a[0].success === true && b.length === 1 && b[0].success === false) || false;
 }, test.limit.quick);
 test.run('at the time it knows: the first script\'s success comes before any result of the second script', 0.4, function () {
   const o = ((W.node && W.node.order) || []).filter(function (x) { return x.args && x.args.suite === 'spirit/test/spirit-sibling-zzProbeTwo.js'; });
   const first = o.findIndex(function (x) { return x.verb === 'success' && x.args.script === 'probe/probe.js'; });
   const second = o.findIndex(function (x) { return x.verb === 'set' && x.args.script === 'probe/twice.js'; });
-  return (first !== -1 && second !== -1 && first < second) || 'the order: ' + short(o.map(function (x) { return x.verb + ' ' + x.args.script; }));
+  return (first !== -1 && second !== -1 && first < second) || false;
 }, test.limit.quick);
 
 // ── ONE TEST ALONE ──
@@ -265,24 +277,24 @@ test.run('the world: the probe suite runs with one test named', 0.2, async funct
   const before = W.node.sets.length;
   W.alone = await runSuite(W.tree.run, 'probe/test/probe.js', ['--test', 'it fails with false']);
   W.alone.sets = W.node.sets.slice(before);
-  return /Test completed\./.test(W.alone.out) || 'it did not run: ' + short(W.alone.out.slice(-300));
+  return /Test completed\./.test(W.alone.out) || false;
 }, test.limit.slow);
 test.run('one test named runs the sequence up to it, and no test after it', 0.2, function () {
   const ran = W.alone.sets.map(function (s) { return s.test; });
-  return JSON.stringify(ran) === JSON.stringify(['it passes', 'the spirit object stays global after a report', 'it fails with what went wrong', 'it fails with false']) || 'it ran ' + short(ran);
+  return JSON.stringify(ran) === JSON.stringify(['it passes', 'the spirit object stays global after a report', 'it fails with what went wrong', 'it fails with false']) || false;
 }, test.limit.slow);
 
 // ── A TITLE TWICE, A SEVERITY OUT OF RANGE ──
 test.run('the world: a suite saying a title twice runs', 0.2, async function () {
   W.twice = await runSuite(W.tree.run, 'probe/test/twice.js');
-  return /Test completed\./.test(W.twice.out) || 'it did not run: ' + short(W.twice.out.slice(-300));
+  return /Test completed\./.test(W.twice.out) || false;
 }, test.limit.slow);
 test.run('a title said twice in a suite fails the second time', 0.2, function () {
-  const lines = W.twice.out.split('\n').filter(function (l) { return l.indexOf(': one title') !== -1; });
-  return (lines.length === 2 && /SUCCESS/.test(lines[0]) && /FAILURE/.test(lines[1])) || 'printed: ' + short(lines);
+  const lines = W.twice.out.split('\n').map(function (l) { return l.replace(/^\*+\s*/, '').trim(); }).filter(function (t) { return t === 'one title ✅' || t === 'one title ❌'; });
+  return (lines.length === 2 && lines[0] === 'one title ✅' && lines[1] === 'one title ❌') || false;
 }, test.limit.quick);
 test.run('a severity outside 0.0 to 1.0 fails its test', 0.2, function () {
-  return W.twice.out.split('\n').some(function (l) { return /FAILURE/.test(l) && l.indexOf(': a severity out of range') !== -1; }) || 'printed: ' + short(W.twice.out.slice(-400));
+  return markIn(W.twice.out, 'a severity out of range') === '❌';
 }, test.limit.quick);
 
 // ── NO NODE ──
@@ -292,7 +304,7 @@ test.run('the world: a checkout with no node runs the probe suite', 0.2, async f
   return true;
 }, test.limit.slow);
 test.run('with no node a suite reports nowhere and still prints its lines', 0.2, function () {
-  return (/SUCCESS[^\n]*: it passes/.test(W.quiet.out) && /Test completed\./.test(W.quiet.out)) || 'printed: ' + short(W.quiet.out.slice(-400));
+  return (markIn(W.quiet.out, 'it passes') === '✅' && /Test completed\./.test(W.quiet.out)) || false;
 }, test.limit.quick);
 
 test.after(function () {

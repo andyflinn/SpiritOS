@@ -18,7 +18,6 @@ const SRC = fs.existsSync(FILE) ? fs.readFileSync(FILE, 'utf8') : '';
 const CODE = SRC.replace(/\/\/.*$/gm, '');
 const KEY = /^[A-Z_]+$/;
 
-function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 const settle = async function () { for (let i = 0; i < 20; i++) await new Promise(function (r) { setImmediate(r); }); };
 
 function world(o) {
@@ -48,87 +47,86 @@ function container() { return { innerHTML: '<p>left over</p>', textContent: '' }
 
 // join.js: the Join app, a wrapper of joinList. One test.run per test (goal/G47.2). What the tests made, for the tests after them.
 const W = {};
-const NO_JOIN = 'no join.create: the test before failed';
 
 test.run('spirit/app/join/element.js is there', 0.2, function () {
-  return !!SRC || 'there is no spirit/app/join/element.js';
+  return !!SRC || false;
 }, test.limit.quick);
 
 // join.json names every icon as a glyph (goal/G41.1)
 const MANIFEST = function () { try { return JSON.parse(fs.readFileSync(path.join(DIR, 'join.json'), 'utf8')); } catch (e) { return null; } };
 test.run('join.json has its steps', 0.2, function () {
   const steps = (MANIFEST() || {}).steps || [];
-  return steps.length > 0 || 'join.json has no steps';
+  return steps.length > 0 || false;
 }, test.limit.quick);
 test.run('every step names its icon as the glyph itself', 0.2, function () {
   const steps = (MANIFEST() || {}).steps || [];
   const keyed = steps.filter(function (s) { return !s.icon || KEY.test(s.icon); }).map(function (s) { return s.until + ':' + s.icon; });
-  return !keyed.length || 'steps naming a key or nothing: ' + keyed.join(', ');
+  return !keyed.length || false;
 }, test.limit.quick);
 test.run('its own icon, identity.icon, is a glyph too', 0.2, function () {
   const manifest = MANIFEST();
   const own = manifest && manifest.identity && manifest.identity.icon;
-  return !!own && !KEY.test(own) ? true : 'join.json identity.icon: ' + short(own);
+  return !!own && !KEY.test(own) ? true : false;
 }, test.limit.quick);
 
 // mounted the new shell's way, a wrapper that loads joinList and nothing of its own
 test.run('it sets spirit.element.spirit.app.join.element = { create }', 0.2, function () {
-  if (!SRC) return 'there is no spirit/app/join/element.js';
+  if (!SRC) return false;
   W.w = world();
-  return !!W.w.J && typeof W.w.J.create === 'function' ? true : 'no join.create';
+  return !!W.w.J && typeof W.w.J.create === 'function' ? true : false;
 }, test.limit.quick);
 test.run('no spirit.shell.activateApp, the old shell\'s way', 0.2, function () {
-  return !(/\bactivateApp\b|\bspirit\.shell\b/).test(CODE) || 'join.js still mounts through spirit.shell';
+  return !(/\bactivateApp\b|\bspirit\.shell\b/).test(CODE) || false;
 }, test.limit.quick);
 test.run('it requires spirit/element/joinList.js, and only that', 0.2, function () {
-  if (!W.w || !W.w.J) return NO_JOIN;
-  return JSON.stringify(W.w.required) === '["spirit/element/joinList.js"]' || 'required: ' + short(W.w.required);
+  if (!W.w || !W.w.J) return false;
+  return JSON.stringify(W.w.required) === '["spirit/element/joinList.js"]' || false;
 }, test.limit.quick);
 test.run('it names no icon table', 0.2, function () {
-  return !(/iconIndex|\bICON\b/).test(CODE) || 'join.js still names iconIndex or ICON';
+  return !(/iconIndex|\bICON\b/).test(CODE) || false;
 }, test.limit.quick);
 
 // create(container): joinList made in the container
 test.run('create answers { destroy() }', 0.2, function () {
-  if (!W.w || !W.w.J) return NO_JOIN;
+  if (!W.w || !W.w.J) return false;
   W.box = container();
   W.m = W.w.J.create(W.box, {});
-  return !!W.m && typeof W.m.destroy === 'function' ? true : 'create answered ' + short(W.m && Object.keys(W.m));
+  return !!W.m && typeof W.m.destroy === 'function' ? true : false;
 }, test.limit.quick);
 test.run('it empties its container', 0.2, function () {
-  if (!W.box) return 'nothing created: the test before failed';
-  return W.box.innerHTML === '' || 'left: ' + short(W.box.innerHTML);
+  if (!W.box) return false;
+  return W.box.innerHTML === '' || false;
 }, test.limit.quick);
 test.run('it makes joinList in its container', 0.2, async function () {
-  if (!W.box) return 'nothing created: the test before failed';
+  if (!W.box) return false;
   await settle();
-  return W.w.made.length === 1 && W.w.made[0].host === W.box ? true : 'made: ' + W.w.made.length;
+  return W.w.made.length === 1 && W.w.made[0].host === W.box ? true : false;
 }, test.limit.quick);
 
 // destroy
 test.run('destroy destroys joinList and empties its container', 0.2, function () {
-  if (!W.m || typeof W.m.destroy !== 'function') return 'nothing to destroy: create answered none';
+  if (!W.m || typeof W.m.destroy !== 'function') return false;
   W.m.destroy();
-  return W.w.destroyed === 1 && W.box.innerHTML === '' ? true : 'destroyed ' + W.w.destroyed + ', left ' + short(W.box.innerHTML);
+  return W.w.destroyed === 1 && W.box.innerHTML === '' ? true : false;
 }, test.limit.quick);
 test.run('destroyed before joinList loads, nothing is made', 0.2, async function () {
-  if (!SRC) return 'there is no spirit/app/join/element.js';
+  if (!SRC) return false;
   let letGo = null;
   const late = world({ held: new Promise(function (r) { letGo = r; }) });
-  if (!late.J) return 'no join.create';
+  if (!late.J) return false;
   late.J.create(container(), {}).destroy();
   letGo();
   await settle();
-  return late.made.length === 0 || 'made ' + late.made.length;
+  return late.made.length === 0 || false;
 }, test.limit.quick);
 
 // joinList refused
 test.run('it says Join could not be loaded.', 0.2, async function () {
-  if (!SRC) return 'there is no spirit/app/join/element.js';
+  if (!SRC) return false;
   const no = world({ refuse: true });
-  if (!no.J) return 'no join.create';
+  if (!no.J) return false;
   const box3 = container();
   no.J.create(box3, {});
   await settle();
-  return box3.textContent === 'Join could not be loaded.' && no.made.length === 0 ? true : 'said: ' + short(box3.textContent);
+  return box3.textContent === 'Join could not be loaded.' && no.made.length === 0 ? true : false;
 }, test.limit.quick);

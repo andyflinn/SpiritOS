@@ -12,7 +12,6 @@ const RUN = path.resolve(__dirname, '../../..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const FILE = path.join(__dirname, '..', 'changeMyLabel.js');
 
-function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 const tick = function () { return new Promise(function (r) { setImmediate(r); }); };
 const settle = async function () { for (let i = 0; i < 20; i++) await tick(); };
 
@@ -102,14 +101,14 @@ const stored = function (name, args) { return { status: 200, body: { ok: true, n
 // What the tests make, shared by the tests after them.
 let w, host, el, input, rf, save, left, said, inSpan, spanText, nameBefore, c, N, r, h2, i2, s2;
 test.run('spirit/element/changeMyLabel.js exists', 0.2, function () {
-  return (fs.existsSync(FILE)) ? true : 'there is no spirit/element/changeMyLabel.js';
+  return (fs.existsSync(FILE)) ? true : false;
 }, test.limit.quick);
 test.run('it adds changeMyLabel.create to window.spirit.element', 0.2, function () {
   w = world(stored);
-  return (!!w.E.changeMyLabel && typeof w.E.changeMyLabel.create === 'function') ? true : 'elements: ' + short(Object.keys(w.E));
+  return (!!w.E.changeMyLabel && typeof w.E.changeMyLabel.create === 'function') ? true : false;
 }, test.limit.quick);
 test.run('it loads fieldInput itself (goal/G41.3)', 0.2, function () {
-  return (w.required.indexOf('spirit/element/fieldInput.js') !== -1) ? true : 'required: ' + short(w.required);
+  return (w.required.indexOf('spirit/element/fieldInput.js') !== -1) ? true : false;
 }, test.limit.quick);
 test.run('its input is marked data-field="label"', 0.2, async function () {
   // the field, marked with its rule (rule/12)
@@ -122,7 +121,7 @@ test.run('its input is marked data-field="label"', 0.2, async function () {
   save = rf ? rf.button : host.querySelector('[data-label="save"]');
   left = host.querySelector('[data-label="left"]');
   said = host.querySelector('[data-label="said"]');
-  return (!!input) ? true : 'markup: ' + short(host.innerHTML);
+  return (!!input) ? true : false;
 }, test.limit.quick);
 test.run('it loads the rowForm itself (rule/26)', 0.2, function () {
   // its form, a rowForm: ✏️ "Name" [name-input] [Save] (goal/G41.27)
@@ -130,42 +129,42 @@ test.run('it loads the rowForm itself (rule/26)', 0.2, function () {
   // The box: "spirit.element.spirit.element.rowForm.create(container, { icon, button }) -> { root, span, button }", "The mounter drops
   // its form elements into span and wires the button itself", and "a line saying what a press did (a refusal, a result)
   // is the mounter's, below the bubble, not in it."
-  return (w.required.indexOf('spirit/element/rowForm.js') !== -1) ? true : 'required: ' + short(w.required);
+  return (w.required.indexOf('spirit/element/rowForm.js') !== -1) ? true : false;
 }, test.limit.quick);
 test.run('its form is one rowForm in its host, its icon ✏️ and its button Save', 0.2, function () {
-  return (w.forms.length === 1 && rf.opts.icon === '✏️' && rf.opts.button === 'Save' && under(host).indexOf(rf.root) !== -1) ? true : 'rowForms: ' + short(w.forms.map(function (f) { return f.opts; }));
+  return (w.forms.length === 1 && rf.opts.icon === '✏️' && rf.opts.button === 'Save' && under(host).indexOf(rf.root) !== -1) ? true : false;
 }, test.limit.quick);
 test.run('its span says Name, then holds the name input, and nothing else', 0.2, function () {
   inSpan = rf ? under(rf.span) : [];
   spanText = rf ? (String(rf.span.innerHTML).replace(/<[^>]*>/g, ' ') + ' ' + inSpan.map(function (k) { return k.textContent || ''; }).join(' ')).replace(/\s+/g, ' ').trim() : '';
   nameBefore = rf ? (rf.span.innerHTML.indexOf('Name') !== -1 && rf.span.innerHTML.indexOf('Name') < rf.span.innerHTML.indexOf('data-field="label"')) ||
     (rf.span.kids.findIndex(function (k) { return /\bName\b/.test(k.textContent || ''); }) !== -1 && rf.span.kids.findIndex(function (k) { return /\bName\b/.test(k.textContent || ''); }) < rf.span.kids.findIndex(function (k) { return k === input || under(k).indexOf(input) !== -1; })) : false;
-  return (!!rf && inSpan.indexOf(input) !== -1 && spanText === 'Name' && nameBefore && !inSpan.some(function (k) { return /^<button|^<select/.test(k.tag) || (/^<input/.test(k.tag) && k !== input); })) ? true : 'span: ' + short(spanText) + ', input in it ' + (inSpan.indexOf(input) !== -1) + ', Name first ' + nameBefore;
+  return (!!rf && inSpan.indexOf(input) !== -1 && spanText === 'Name' && nameBefore && !inSpan.some(function (k) { return /^<button|^<select/.test(k.tag) || (/^<input/.test(k.tag) && k !== input); })) ? true : false;
 }, test.limit.quick);
 test.run('its Save is the rowForm\'s button, and it draws no Save of its own', 0.2, function () {
-  return (!!rf && !host.querySelector('[data-label="save"]') && !/<button/.test(host.innerHTML)) ? true : 'markup: ' + short(host.innerHTML);
+  return (!!rf && !host.querySelector('[data-label="save"]') && !/<button/.test(host.innerHTML)) ? true : false;
 }, test.limit.quick);
 test.run('its bytes left and its message stand below the bubble, not in it', 0.2, function () {
-  return (!!rf && !!left && !!said && under(rf.root).indexOf(left) === -1 && under(rf.root).indexOf(said) === -1) ? true : 'in the bubble: ' + short([rf && under(rf.root).indexOf(left) !== -1, rf && under(rf.root).indexOf(said) !== -1]);
+  return (!!rf && !!left && !!said && under(rf.root).indexOf(left) === -1 && under(rf.root).indexOf(said) === -1) ? true : false;
 }, test.limit.quick);
 test.run('it has its Save, its bytes left and its message', 0.2, function () {
-  return (!!save && !!left && !!said) ? true : 'markup: ' + short(host.innerHTML);
+  return (!!save && !!left && !!said) ? true : false;
 }, test.limit.quick);
 test.run('the input is held at its byte limit by fieldInput, the name rule', 0.2, function () {
-  return (w.attached.some(function (a) { return a.input === input && a.rule === 'name'; })) ? true : 'attached: ' + short(w.attached.map(function (a) { return a.rule; }));
+  return (w.attached.some(function (a) { return a.input === input && a.rule === 'name'; })) ? true : false;
 }, test.limit.quick);
 test.run('set(value) puts the stored name in the field', 0.2, function () {
   // it shows what the node holds, and the bytes left
   el.set('Andy');
-  return (input.value === 'Andy') ? true : 'value: ' + input.value;
+  return (input.value === 'Andy') ? true : false;
 }, test.limit.quick);
 test.run('the bytes left are counted in bytes as typed', 0.2, function () {
-  return (/60 left/.test(left.textContent)) ? true : 'left: ' + left.textContent;
+  return (/60 left/.test(left.textContent)) ? true : false;
 }, test.limit.quick);
 test.run('an emoji costs four bytes', 0.2, function () {
   input.value = 'Andy 😀';
   input.fire('input');
-  return (/55 left/.test(left.textContent)) ? true : 'left: ' + left.textContent;
+  return (/55 left/.test(left.textContent)) ? true : false;
 }, test.limit.quick);
 test.run('an empty name never reaches the wire, and the field says why', 0.2, async function () {
   // Save is refused while the rule says no, and says why
@@ -173,7 +172,7 @@ test.run('an empty name never reaches the wire, and the field says why', 0.2, as
   input.fire('input');
   save.fire('click');
   await settle();
-  return (w.calls.length === 0 && said.textContent.length > 0) ? true : 'calls ' + w.calls.length + ', said: ' + said.textContent;
+  return (w.calls.length === 0 && said.textContent.length > 0) ? true : false;
 }, test.limit.quick);
 test.run('Save asks node.setName with the field as typed', 0.2, async function () {
   // Save asks the node, and the field shows what it stored (rule/19)
@@ -182,29 +181,29 @@ test.run('Save asks node.setName with the field as typed', 0.2, async function (
   save.fire('click');
   await settle();
   c = w.calls[0];
-  return (c && c.name === 'node.setName' && c.args.name === '  Bob  ') ? true : 'calls: ' + short(w.calls);
+  return (c && c.name === 'node.setName' && c.args.name === '  Bob  ') ? true : false;
 }, test.limit.quick);
 test.run('the field then shows the name the node stored', 0.2, function () {
-  return (input.value === 'Bob') ? true : 'value: "' + input.value + '"';
+  return (input.value === 'Bob') ? true : false;
 }, test.limit.quick);
 test.run('and it says saved', 0.2, function () {
-  return (/saved/.test(said.textContent)) ? true : 'said: ' + said.textContent;
+  return (/saved/.test(said.textContent)) ? true : false;
 }, test.limit.quick);
 test.run('it loads the node manager, and the name the node stored is kept in ((spirit.data || {}).node || {}).data\'s card', 0.2, function () {
   // what it changes, it listens for: the node card in the node family's cache (goal/G41.28)
   N = ((w.win.spirit.data || {}).node || {}).data;
-  return ((w.managers || []).indexOf('node') !== -1 && !!N && !!N.card.get() && N.card.get().name === 'Bob') ? true : 'managers: ' + short(w.managers) + ', card ' + short(N && N.card.get());
+  return ((w.managers || []).indexOf('node') !== -1 && !!N && !!N.card.get() && N.card.get().name === 'Bob') ? true : false;
 }, test.limit.quick);
 test.run('a name changed in the card, from elsewhere, redraws the field', 0.2, async function () {
   N.card.keep({ name: 'Eve' });
   await settle();
-  return (input.value === 'Eve') ? true : 'value: "' + input.value + '"';
+  return (input.value === 'Eve') ? true : false;
 }, test.limit.quick);
 test.run('Enter saves as Save does', 0.2, async function () {
   input.value = 'Carl';
   input.fire('keydown', { key: 'Enter', preventDefault: function () {} });
   await settle();
-  return (w.calls.length === 2 && w.calls[1].args.name === 'Carl') ? true : 'calls: ' + short(w.calls.map(function (x) { return x.args; }));
+  return (w.calls.length === 2 && w.calls[1].args.name === 'Carl') ? true : false;
 }, test.limit.quick);
 test.run('the node\'s refusal is said beside the field', 0.2, async function () {
   // a refusal is said, and the field keeps what was typed
@@ -218,5 +217,5 @@ test.run('the node\'s refusal is said beside the field', 0.2, async function () 
   i2.fire('input');
   s2.fire('click');
   await settle();
-  return (/name reserved/.test(h2.querySelector('[data-label="said"]').textContent) && i2.value === 'Dana') ? true : 'said: ' + h2.querySelector('[data-label="said"]').textContent;
+  return (/name reserved/.test(h2.querySelector('[data-label="said"]').textContent) && i2.value === 'Dana') ? true : false;
 }, test.limit.quick);

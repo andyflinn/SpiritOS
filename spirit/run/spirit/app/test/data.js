@@ -12,7 +12,6 @@ const RUN = path.resolve(__dirname, '..', '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const { scratchNode, chromePage, findChrome, until, sleep } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 
-function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 const APPS = path.join(RUN, 'spirit', 'app');
 
 // data.js: a node:run app shows no tile and no Activate once the apps job has replaced its row (goal/G43.23, item 9).
@@ -27,8 +26,6 @@ test.after(async function () {
   try { if (node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* scratch */ }
   try { if (chrome.profile) fs.rmSync(chrome.profile, { recursive: true, force: true }); } catch (e) { /* scratch */ }
 });
-const NO_PAGE = 'no page: the world failed';
-const NO_JOB = 'no apps job reached the page: the world failed';
 const ask = async function (verb, args) { const r = await fetch(W.node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) }); try { return { status: r.status, body: JSON.parse(await r.text()) }; } catch (e) { return { status: r.status, body: null }; } };
 const held = function () { return W.chrome.evaluate('JSON.stringify(spirit.data.app.data.rows())').then(function (t) { try { return JSON.parse(t) || {}; } catch (e) { return {}; } }); };
 // Each run-only app of the tree written out, so that each check has a plain title of its own.
@@ -45,7 +42,7 @@ const noActivate = async function (key, label) {
   await detailOf(key, label);
   await sleep(1500);
   const n = await activateUnder('document.getElementById("detail")');
-  return { fine: n === 0, why: label + '\'s detail shows ' + short(n) + ' Activate after the apps job' };
+  return n === 0;
 };
 
 test.run('the world: publishData and pushOrigin are only run; agent mounts and may be activated', 0.2, function () {
@@ -61,26 +58,26 @@ test.run('the world: publishData and pushOrigin are only run; agent mounts and m
   W.only = own.filter(function (a) { return a.runOnly; });
   W.plain = own.filter(function (a) { return a.shell && !a.run && !a.intrinsic; })[0];
   W.apps = W.only.length >= 1 && !!W.plain;
-  return W.apps || 'nothing to judge with: ' + short(own);
+  return W.apps || false;
 }, test.limit.quick);
 test.run('the world: a scratch node and a Chrome page on its face', 0.2, async function () {
-  if (!W.apps) return 'no apps to judge with: the world failed';
+  if (!W.apps) return false;
   W.node = await scratchNode();
   W.chrome = await chromePage(findChrome());
-  if (!W.node.up || W.chrome.error) return 'no scratch node or no Chrome: nothing judged. ' + short(W.chrome.error || '');
+  if (!W.node.up || W.chrome.error) return false;
   await W.chrome.send('Page.navigate', { url: W.node.base + '/face.html' });
   await until(function () { return W.chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
   W.up = true;
   return true;
 }, test.limit.slow);
 test.run('the world: the app search and the app detail load', 0.2, async function () {
-  if (!W.up) return NO_PAGE;
+  if (!W.up) return false;
   const loaded = await W.chrome.evaluate('window.spirit.ready.then(function () { return Promise.all([spirit.require("spirit/element/search/app.js"), spirit.require("spirit/element/search/app/detailElement.js")]); }).then(function () { return "loaded"; }, function (e) { return String(e && e.message || e); })');
   W.loaded = loaded === 'loaded';
-  return W.loaded || 'they did not load: ' + short(loaded);
+  return W.loaded || false;
 }, test.limit.quick);
 test.run('the world: before the job the tiles draw apps, no run-only one among them', 0.2, async function () {
-  if (!W.loaded) return NO_PAGE;
+  if (!W.loaded) return false;
   const chrome = W.chrome, only = W.only, plain = W.plain;
   // The app list in tiles mode, drawn, so the cache holds every row app.search answered, and kept on the page while the job comes.
   await chrome.evaluate('(function () { var c = document.createElement("div"); c.id = "tiles"; document.body.appendChild(c); window.tiles = spirit.element.spirit.element.search.app.create(c, { face: "tiles" }); return true; }())');
@@ -95,21 +92,21 @@ test.run('the world: before the job the tiles draw apps, no run-only one among t
     ' look(); window.before = window.drawn; window.drawn = []; new MutationObserver(look).observe(document.getElementById("tiles"), { childList: true, subtree: true, characterData: true }); return true; }())');
   const before = JSON.parse(await chrome.evaluate('JSON.stringify(window.before)'));
   W.watching = true;
-  return before.length > 0 && only.every(function (a) { return before.indexOf(a.label) === -1; }) ? true : 'before the job the tiles draw ' + short(before) + ': nothing judged';
+  return before.length > 0 && only.every(function (a) { return before.indexOf(a.label) === -1; }) ? true : false;
 }, test.limit.slow);
 
 // the world: the node's apps job replaces the rows the page holds
 test.run('the world: app.label for agent is taken', 0.2, async function () {
-  if (!W.watching) return NO_PAGE;
+  if (!W.watching) return false;
   W.fresh = W.plain.label + ' ' + process.pid;
   const wrote = await ask('app.label', { key: W.plain.key, label: W.fresh });
-  return wrote.status === 200 ? true : 'app.label of ' + W.plain.key + ' answered ' + wrote.status + ' ' + short(wrote.body) + ': nothing judged';
+  return wrote.status === 200 ? true : false;
 }, test.limit.quick);
 test.run('the world: the apps job reached the page, agent\'s held row now says its new label', 0.2, async function () {
-  if (!W.fresh) return NO_PAGE;
+  if (!W.fresh) return false;
   const plain = W.plain, fresh = W.fresh;
   const replaced = await until(function () { return held().then(function (r) { return !!r[plain.key] && r[plain.key].label === fresh; }); }, 10000);
-  if (!replaced) return 'no apps job reached the page: ' + plain.key + ' still holds ' + short((await held())[plain.key]) + ', not ' + fresh + ': nothing judged';
+  if (!replaced) return false;
   await sleep(1500);
   W.seen = JSON.parse(await W.chrome.evaluate('JSON.stringify(window.seen)'));
   return true;
@@ -117,40 +114,40 @@ test.run('the world: the apps job reached the page, agent\'s held row now says i
 
 // the box: "app/data.js drops run and runOnly"
 test.run('the world: the apps job wrote publishData\'s row', 0.2, function () {
-  if (!W.seen) return NO_JOB;
-  return rowsOf('publishData').values.length > 0 || 'no write of publishData\'s row after the job: nothing judged';
+  if (!W.seen) return false;
+  return rowsOf('publishData').values.length > 0 || false;
 }, test.limit.quick);
 test.run('every row of publishData the app cache held after the job keeps run and runOnly', 0.2, function () {
-  if (!W.seen) return NO_JOB;
+  if (!W.seen) return false;
   const ro = rowsOf('publishData');
-  return ro.values.length > 0 && !ro.lost.length ? true : 'publishData\'s row in the app cache, after the apps job, held without them: ' + short(ro.lost[0]);
+  return ro.values.length > 0 && !ro.lost.length ? true : false;
 }, test.limit.quick);
 test.run('the world: the apps job wrote pushOrigin\'s row', 0.2, function () {
-  if (!W.seen) return NO_JOB;
-  return rowsOf('pushOrigin').values.length > 0 || 'no write of pushOrigin\'s row after the job: nothing judged';
+  if (!W.seen) return false;
+  return rowsOf('pushOrigin').values.length > 0 || false;
 }, test.limit.quick);
 test.run('every row of pushOrigin the app cache held after the job keeps run and runOnly', 0.2, function () {
-  if (!W.seen) return NO_JOB;
+  if (!W.seen) return false;
   const ro = rowsOf('pushOrigin');
-  return ro.values.length > 0 && !ro.lost.length ? true : 'pushOrigin\'s row in the app cache, after the apps job, held without them: ' + short(ro.lost[0]);
+  return ro.values.length > 0 && !ro.lost.length ? true : false;
 }, test.limit.quick);
 
 // the box: "a node:run app shows as a tile with Activate"
 test.run('the world: the tiles drew app labels', 0.2, async function () {
-  if (!W.seen) return NO_JOB;
+  if (!W.seen) return false;
   W.drawn = JSON.parse(await W.chrome.evaluate('JSON.stringify(window.drawn)'));
-  return W.drawn.indexOf(W.fresh) !== -1 || W.drawn.length > 0 ? true : 'the tiles drew no app at all: nothing judged';
+  return W.drawn.indexOf(W.fresh) !== -1 || W.drawn.length > 0 ? true : false;
 }, test.limit.quick);
 test.run('the tiles never drew a tile for Publish Data', 0.2, function () {
-  if (!W.drawn) return NO_JOB;
-  return W.drawn.indexOf('Publish Data') === -1 || 'the tiles drew Publish Data once the apps job came: ' + short(W.drawn);
+  if (!W.drawn) return false;
+  return W.drawn.indexOf('Publish Data') === -1 || false;
 }, test.limit.quick);
 test.run('the tiles never drew a tile for Push Origin', 0.2, function () {
-  if (!W.drawn) return NO_JOB;
-  return W.drawn.indexOf('Push Origin') === -1 || 'the tiles drew Push Origin once the apps job came: ' + short(W.drawn);
+  if (!W.drawn) return false;
+  return W.drawn.indexOf('Push Origin') === -1 || false;
 }, test.limit.quick);
 test.run('the world: with no list on the page a second apps job reached it', 0.2, async function () {
-  if (!W.seen) return NO_JOB;
+  if (!W.seen) return false;
   const plain = W.plain;
   await W.chrome.evaluate('(function () { window.tiles.destroy(); var c = document.getElementById("tiles"); if (c) c.remove(); return true; }())');
   // A second apps job with no list on the page, so nothing asks app.search again: the cache as the job leaves it.
@@ -159,30 +156,28 @@ test.run('the world: with no list on the page a second apps job reached it', 0.2
   const replaced2 = await until(function () { return held().then(function (r) { return !!r[plain.key] && r[plain.key].label === fresher; }); }, 10000);
   await sleep(800);
   W.after = await held();
-  return wrote2.status === 200 && replaced2 ? true : 'the second apps job did not reach the page: ' + wrote2.status + ': nothing judged';
+  return wrote2.status === 200 && replaced2 ? true : false;
 }, test.limit.slow);
 test.run('publishData\'s row in the app cache, as the apps job left it, keeps run and runOnly', 0.2, function () {
-  if (!W.after) return NO_JOB;
+  if (!W.after) return false;
   const r = W.after['publishData'] || {};
-  return r.run === true && r.runOnly === true ? true : 'publishData\'s row, as the apps job left it: ' + short(r);
+  return r.run === true && r.runOnly === true ? true : false;
 }, test.limit.quick);
 test.run('pushOrigin\'s row in the app cache, as the apps job left it, keeps run and runOnly', 0.2, function () {
-  if (!W.after) return NO_JOB;
+  if (!W.after) return false;
   const r = W.after['pushOrigin'] || {};
-  return r.run === true && r.runOnly === true ? true : 'pushOrigin\'s row, as the apps job left it: ' + short(r);
+  return r.run === true && r.runOnly === true ? true : false;
 }, test.limit.quick);
 test.run('the world: agent\'s detail shows Activate', 0.2, async function () {
-  if (!W.after) return NO_JOB;
+  if (!W.after) return false;
   await detailOf(W.plain.key, W.fresher);
-  return await until(function () { return activateUnder('document.getElementById("detail")').then(function (n) { return n > 0; }); }, 6000) ? true : W.plain.key + '\'s detail shows no Activate: nothing judged';
+  return await until(function () { return activateUnder('document.getElementById("detail")').then(function (n) { return n > 0; }); }, 6000) ? true : false;
 }, test.limit.quick);
 test.run('Publish Data\'s detail shows no Activate', 0.2, async function () {
-  if (!W.after) return NO_JOB;
-  const na = await noActivate('publishData', 'Publish Data');
-  return na.fine || na.why;
+  if (!W.after) return false;
+  return await noActivate('publishData', 'Publish Data');
 }, test.limit.slow);
 test.run('Push Origin\'s detail shows no Activate', 0.2, async function () {
-  if (!W.after) return NO_JOB;
-  const na = await noActivate('pushOrigin', 'Push Origin');
-  return na.fine || na.why;
+  if (!W.after) return false;
+  return await noActivate('pushOrigin', 'Push Origin');
 }, test.limit.slow);

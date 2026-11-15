@@ -58,7 +58,6 @@ const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fileSystem.js')).VEND
 
 const ASK_MS = 8000;
 const BATCH = 10;
-function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 400); }
 // A file tracked but not on disk reads as empty, so a deletion not yet committed is judged and never crashes the report.
 function code(file) { let t = ''; try { t = fs.readFileSync(file, 'utf8'); } catch (e) { return ''; } return t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"\\])\/\/[^\n]*/g, '$1'); }
 function has(rel) { try { return fs.statSync(path.join(RUN, rel)).isFile(); } catch (e) { return false; } }
@@ -110,11 +109,11 @@ const out = {};
 }());
 `;
 
-// A rule judged on every branch it applies to: what each breaks, '' when it keeps it. The answer names each that breaks it.
+// A rule judged on every branch it applies to: each judge answers true when its branch keeps it, false when it breaks it.
 function overAll(list, judge) {
-  const bad = [];
-  list.forEach(function (b) { const why = judge(b); if (why) bad.push(why); });
-  return !bad.length || bad.join('; ');
+  let ok = true;
+  list.forEach(function (b) { if (!judge(b)) ok = false; });
+  return ok;
 }
 const withApi = TARGETS.filter(function (b) { return !!b.api; });
 const apps = TARGETS.filter(function (b) { return b.kind === 'app'; });
@@ -123,12 +122,12 @@ const withData = TARGETS.filter(function (b) { return !!b.data; });
 // the branches
 if (asked) {
   test.run('the world: the folder handed is a branch folder', 0.2, function () {
-    return TARGETS.length > 0 || asked + ' is no branch folder: a system branch is spirit/<name>/ with api.js and data.js, an app branch spirit/app/<name>/ with <name>.js and <name>.json';
+    return TARGETS.length > 0;
   }, test.limit.quick);
 } else {
   test.run('the world: branch folders recognized, an app\'s (desk) and a system one (fs) among them', 0.2, function () {
     test.comment(TARGETS.length + ' of ' + ALL.length + ' branches: ' + TARGETS.map(function (b) { return b.dir; }).join(', '));
-    return (ALL.length >= 20 && ALL.some(function (b) { return b.dir === 'spirit/app/desk'; }) && ALL.some(function (b) { return b.dir === 'spirit/fs'; })) || 'only ' + short(ALL.map(function (b) { return b.dir; })) + ': nothing judged';
+    return (ALL.length >= 20 && ALL.some(function (b) { return b.dir === 'spirit/app/desk'; }) && ALL.some(function (b) { return b.dir === 'spirit/fs'; })) || false;
   }, test.limit.quick);
 }
 TARGETS.forEach(function (b) {
@@ -152,19 +151,18 @@ if (withApi.length) {
   test.run('its api.js loads, and declares each verb\'s arguments and their rules', 0.4, function () {
     return overAll(withApi, function (b) {
       const odd = b.verbs ? Object.keys(b.verbs).filter(function (v) { const d = b.verbs[v]; return !d || typeof d !== 'object' || Array.isArray(d) || Object.keys(d).some(function (k) { return typeof d[k] !== 'string' && !(d[k] && typeof d[k] === 'object'); }); }) : [];
-      return (!!b.mod && !b.mod.threw && !!b.verbs && !odd.length) ? '' :
-        b.api + ': ' + (b.mod && b.mod.threw ? 'it does not load: ' + b.mod.threw : !b.verbs ? 'it declares no verbs' : 'verbs not declared as arguments and rules: ' + short(odd));
+      return !!b.mod && !b.mod.threw && !!b.verbs && !odd.length;
     });
   }, test.limit.quick);
   // Where it stands is where its family is found (goal/G43.27: spirit/<name>/, spirit/app/<name>/, the fewest path
   // elements), and no other api.js has its name.
   test.run('its api.js is where its branch is found', 0.4, function () {
-    return overAll(withApi, function (b) { return familyPath(b.family) === b.api ? '' : b.api + ': the family ' + b.family + ' is found at ' + short(familyPath(b.family)) + ', not here'; });
+    return overAll(withApi, function (b) { return familyPath(b.family) === b.api; });
   }, test.limit.quick);
   test.run('no other api.js of its branch in the tree', 0.4, function () {
     return overAll(withApi, function (b) {
       const twins = (byName[b.family] || []).filter(function (f) { return f !== b.api; });
-      return !twins.length ? '' : b.api + ': ' + b.family + ' has another api.js: ' + short(twins);
+      return !twins.length;
     });
   }, test.limit.quick);
 }
@@ -183,21 +181,20 @@ if (apps.length) {
     return overAll(apps, function (b) {
       const j = manifestOf(b);
       const id = j && j.identity && typeof j.identity === 'object' ? j.identity : {};
-      return (!!j && !j.threw && typeof id.icon === 'string' && !!id.icon && typeof id.label === 'string' && !!id.label) ? '' :
-        b.dir + '/' + b.name + '.json: ' + (j && j.threw ? 'it is no JSON: ' + j.threw : 'identity is ' + short(j && j.identity));
+      return !!j && !j.threw && typeof id.icon === 'string' && !!id.icon && typeof id.label === 'string' && !!id.label;
     });
   }, test.limit.quick);
   test.run('its manifest has no kind or operated: the node operates the server', 0.4, function () {
     return overAll(apps, function (b) {
       const j = manifestOf(b);
-      return (!!j && !j.threw && !('kind' in j) && !('operated' in j)) ? '' : b.dir + '/' + b.name + '.json: it holds ' + short(['kind', 'operated'].filter(function (k) { return j && k in j; }));
+      return !!j && !j.threw && !('kind' in j) && !('operated' in j);
     });
   }, test.limit.quick);
   test.run('its name is no verb of the app family', 0.4, function () {
     let familyVerbs = [];
     try { familyVerbs = Object.keys(require(path.join(RUN, 'spirit', 'app', 'api.js')).verbs || {}); } catch (e) { familyVerbs = []; }
     return overAll(apps, function (b) {
-      return (familyVerbs.length > 0 && familyVerbs.indexOf(b.name) === -1) ? '' : b.dir + ': ' + (familyVerbs.length ? 'it takes the name of the verb app.' + b.name : 'the app family declares no verbs: nothing judged');
+      return familyVerbs.length > 0 && familyVerbs.indexOf(b.name) === -1;
     });
   }, test.limit.quick);
 }
@@ -211,7 +208,7 @@ const DATA = path.join(RUN, 'spirit', 'data.js');
 if (withApi.length) {
   // <branch>: its cache
   test.run('its data.js is there', 0.4, function () {
-    return overAll(withApi, function (b) { return b.data ? '' : b.family + ': no ' + b.dir + '/data.js for ' + b.api; });
+    return overAll(withApi, function (b) { return !!b.data; });
   }, test.limit.quick);
 }
 if (withData.length) {
@@ -234,11 +231,10 @@ if (withData.length) {
     const readers = tracked.filter(function (f) { return /\.js$/.test(f) && !/\/test\/|\/vendor\//.test(f) && !VENDORED_FOLDERS.holds(f) && managers.indexOf(f) === -1; });
     const readerCode = readers.map(function (f) { return { f: f, c: code(path.join(RUN, f)) }; });
     return overAll(owning, function (b) {
-      return b.owned.map(function (name) {
+      return b.owned.every(function (name) {
         const pathOf = new RegExp('\\b(?:D|data)\\.(?:get|set|merge|del|watch|rows|branch|seat)\\(\\s*[\'"]' + name + '(?:/|[\'"])');
-        const others = readerCode.filter(function (r) { return pathOf.test(r.c); }).map(function (r) { return r.f; });
-        return others.length ? b.dir + ': ' + name + ': its paths are named outside ' + b.data + ', by ' + short(others) : '';
-      }).filter(Boolean).join('; ');
+        return !readerCode.some(function (r) { return pathOf.test(r.c); });
+      });
     });
   }, test.limit.quick);
   // <branch>: its cache, the rest
@@ -246,13 +242,13 @@ if (withData.length) {
   // spirit/data.js", "with the SAME pattern"; from ./data-families.js): the guard, the attach
   // and the write on spirit are spirit/data.js's, none of it rolled by the family by hand.
   test.run('its data.js rolls none of it by hand', 0.4, function () {
-    return overAll(withData, function (b) { return !/Symbol\.for|function attach|\.spirit\s*=|spirit\.[A-Za-z]+Data\s*=/.test(b.src) ? '' : b.data + ': data.js still rolls its own guard, attach or spirit write'; });
+    return overAll(withData, function (b) { return !/Symbol\.for|function attach|\.spirit\s*=|spirit\.[A-Za-z]+Data\s*=/.test(b.src); });
   }, test.limit.quick);
   // The one difference is the disk: no manager touches a file or the browser's storage.
   test.run('its data.js touches no file and no browser storage', 0.4, function () {
     return overAll(withData, function (b) {
       const disk = /require\(\s*['"](fs|node:fs|path)['"]\s*\)|\b(writeFile|readFile|appendFile|localStorage|sessionStorage|indexedDB)\b/.exec(b.src);
-      return !disk ? '' : b.data + ': it keeps its cache itself (' + (disk && disk[0]) + '), where only appServer may';
+      return !disk;
     });
   }, test.limit.quick);
   // One contract: required, it stands at spirit.data.<name> through spirit.data.makeFamily, the name it hands
@@ -260,20 +256,20 @@ if (withData.length) {
   // EVERY BRANCH IS NAMED AS ITS FOLDER (goal/G43.31; Andy: "The BRANCH name (FUCK THE TERM "Family"!!!!!!!!!!!!) is
   // motherfucking <name> in spirit/app/<name>....", and "make sure, IN THIS ITEM that family names MATCH folder names").
   test.run('its data.js makes the branch its folder is named', 0.4, function () {
-    return overAll(withData, function (b) { return b.made === b.name ? '' : b.data + ': it makes the branch ' + (b.made || 'none') + ' in the folder ' + b.name; });
+    return overAll(withData, function (b) { return b.made === b.name; });
   }, test.limit.quick);
   test.run('its data.js loads, and exports its cache rules if it has any', 0.4, function () {
     return overAll(withData, function (b) {
       let mod = null;
       try { mod = require(path.join(RUN, b.data)); } catch (e) { mod = { threw: e.message }; }
-      return (!!mod && !mod.threw && (mod.cache === undefined || (mod.cache && typeof mod.cache === 'object'))) ? '' : b.data + ': it exports ' + short(mod && Object.keys(mod));
+      return (!!mod && !mod.threw && (mod.cache === undefined || (mod.cache && typeof mod.cache === 'object'))) ? true : false;
     });
   }, test.limit.quick);
   function familyOf(b) { try { return b.made ? require(DATA)[b.made] : null; } catch (e) { return null; } }
   test.run('in node it stands at spirit.data under its branch, its data and its cache, for clients to ask', 0.4, function () {
     return overAll(withData, function (b) {
       const f = familyOf(b);
-      return (!!f && !!f.data && typeof f.data === 'object' && !!f.cache && typeof f.cache === 'object') ? '' : b.data + ': spirit.data.' + b.made + ' is ' + short(f);
+      return (!!f && !!f.data && typeof f.data === 'object' && !!f.cache && typeof f.cache === 'object') ? true : false;
     });
   }, test.limit.quick);
   // A BRANCH'S WATCH IS CALLED watch (Andy, goal/G43.32: "that's a decision: a BRANCHE's what is called "watch"", "the
@@ -301,15 +297,15 @@ if (withData.length) {
   test.run('no branch of its data names its watch other than watch', 0.4, function () {
     return overAll(withData, function (b) {
       const w = watchesOf(b);
-      if (!w) return b.data + ': no reads to judge at spirit.data.' + b.made;
-      return !w.others.length ? '' : b.data + ': spirit.data.' + b.made + '.data names a watch other than watch: ' + short(w.others);
+      if (!w) return false;
+      return !w.others.length;
     });
   }, test.limit.quick);
   test.run('no watch of its data is told its branch: each takes the function and at most its row', 0.4, function () {
     return overAll(withData, function (b) {
       const w = watchesOf(b);
-      if (!w) return b.data + ': no reads to judge at spirit.data.' + b.made;
-      return !w.told.length ? '' : b.data + ': a watch of spirit.data.' + b.made + ' takes more than its row and its function, so it is told its branch: ' + short(w.told);
+      if (!w) return false;
+      return !w.told.length;
     });
   }, test.limit.quick);
 }
@@ -369,7 +365,6 @@ function raw(call, args) {
       function (e) { return { status: 0, body: null, text: c.signal.aborted ? 'no answer in ' + (ASK_MS / 1000) + ' s' : String(e && e.message) }; })
     .then(function (r) { clearTimeout(timer); return r; });
 }
-const NO_NODE = 'the scratch node did not come up: nothing judged';
 function up() { return !!N.node && N.node.up; }
 // The branch the node's api tree holds for b, waited for once.
 async function treeOf() {
@@ -389,57 +384,54 @@ if (served.length) {
   // by hand, with none handed, it gets one of its own.
   test.run('the world: a scratch node comes up', 0.2, async function () {
     if (!N.node) N.node = await H.scratchNode({ shared: true });
-    return N.node.up || NO_NODE;
+    return N.node.up || false;
   }, test.limit.slow);
   // An app's branch is served once its server runs (the owner's app.active); the node's own are served by the node.
   if (switched.length) {
     test.run('the world: its app is switched on', 0.2, async function () {
-      if (!up()) return NO_NODE;
-      const bad = [];
+      if (!up()) return false;
+      let ok = true;
       for (const b of switched) {
         const on = await raw('app.active', { key: b.name, active: true });
-        if (on.status !== 200) bad.push(b.dir + ': app.active ' + b.name + ' answered ' + on.status + ' ' + short(on.text));
+        if (on.status !== 200) ok = false;
       }
-      return !bad.length || bad.join('; ');
+      return ok;
     }, test.limit.quick);
   }
   // required on the node
   // Required on the node, in a process of the scratch node's run root, so its spirit.js knows that node (its
   // environment.json): the test stands without a node of the checkout's own.
   test.run('its api.js, required on the node, stands at its path in spirit.required, and binds its verbs on spirit under its branch', 0.4, async function () {
-    if (!up()) return NO_NODE;
+    if (!up()) return false;
     await treeOf();
     const sRun = path.join(N.node.root, 'spirit', 'run');
     const ran = spawnSync(process.execPath, ['-e', PLACED, sRun, JSON.stringify(served.map(function (b) { return b.api; }))], { cwd: sRun, encoding: 'utf8', timeout: 120000 });
     let placed = {};
-    try { placed = JSON.parse(String(ran.stdout || '').trim().split('\n').pop()); } catch (e) { placed = { threw: short(ran.stdout || ran.stderr) }; }
+    try { placed = JSON.parse(String(ran.stdout || '').trim().split('\n').pop()); } catch (e) { placed = { threw: true }; }
     return overAll(served, function (b) {
-      const g = placed[b.api] || { threw: placed.threw || 'not required' };
-      const at = 'spirit.required.' + b.api.replace(/\.js$/, '').split('/').join('.');
-      return (!g.threw && g.placed && !g.unbound.length && g.same) ? '' :
-        b.api + ': ' + (g.threw ? 'its require threw: ' + g.threw : (!g.placed ? 'it does not stand at ' + at + '; ' : '') + (g.unbound && g.unbound.length ? 'verbs not bound: ' + short(g.unbound) + '; ' : '') + (!g.same ? 'spirit.' + b.family + ' is not what it bound' : ''));
+      const g = placed[b.api] || { threw: true };
+      return (!g.threw && g.placed && !g.unbound.length && g.same) ? true : false;
     });
   }, test.limit.long);
   // <branch>: on a node
   test.run('the node\'s api tree holds its branch', 0.4, async function () {
-    if (!up()) return NO_NODE;
+    if (!up()) return false;
     await treeOf();
-    return overAll(served, function (b) { return branchIn(b) ? '' : b.dir + ': the node\'s api tree holds no branch ' + b.family + ': ' + short((N.tree || {})[b.family]); });
+    return overAll(served, function (b) { return !!branchIn(b); });
   }, test.limit.quick);
-  const noBranch = function (b) { return b.dir + ': the node\'s api tree holds no branch ' + b.family + ': nothing judged'; };
   // The interface the node serves for it is its own api.js (goal/G43.27, requirement 2: server.js familyDir looks for
   // spirit/app/<name>/api.js, appServer.js withAgents takes the app folder itself as the family folder).
   test.run('the interface the node serves is its api.js', 0.4, async function () {
-    if (!up()) return NO_NODE;
-    const bad = [];
+    if (!up()) return false;
+    let ok = true;
     for (const b of served) {
-      if (!branchIn(b)) { bad.push(noBranch(b)); continue; }
+      if (!branchIn(b)) { ok = false; continue; }
       const fam = await raw('api', { family: b.family });
       const iface = fam.body && typeof fam.body.interface === 'string' ? fam.body.interface.replace(/\r\n/g, '\n') : '';
       const mine = fs.readFileSync(path.join(RUN, b.api), 'utf8').replace(/\r\n/g, '\n');
-      if (!(fam.status === 200 && iface === mine)) bad.push(b.dir + ': api {family: ' + b.family + '} answered ' + fam.status + (iface ? ', an interface that is not ' + b.api : ' ' + short(fam.text)));
+      if (!(fam.status === 200 && iface === mine)) ok = false;
     }
-    return !bad.length || bad.join('; ');
+    return ok;
   }, test.limit.quick);
   // It serves exactly the verbs its own api.js declares (goal/G43.20; Andy: "IN THIS ONE, OR WE'LL NEVER GET FUCKING
   // DONE.", "WSL, NOTE AND ASSERT THIS IN YOUR TESTS, IN THE PROPER PLACE, DILIGENTLY WITHOUT FUCKING CHEATING."), no
@@ -447,25 +439,25 @@ if (served.length) {
   // auto-verb supplied by appServer is approved."), and desk's item.rules.add and item.rules.remove, his alone and left
   // out of its api.js on purpose (goal/G40.12, desk's api.js header).
   test.run('it serves exactly the verbs of its api.js', 0.4, function () {
-    if (!up()) return NO_NODE;
+    if (!up()) return false;
     return overAll(served, function (b) {
       const branch = branchIn(b);
-      if (!branch) return noBranch(b);
+      if (!branch) return false;
       const declared = Object.keys(b.verbs);
       const offered = Object.keys(branch);
       const decided = ['DEBUG'].concat(b.family === 'desk' ? ['item.rules.add', 'item.rules.remove'] : []);
       const extra = offered.filter(function (v) { return declared.indexOf(v) === -1 && decided.indexOf(v) === -1; });
       const missing = declared.filter(function (v) { return offered.indexOf(v) === -1; });
-      return (!extra.length && !missing.length) ? '' : b.dir + ': ' + (extra.length ? extra.length + ' served beyond its api.js (' + short(extra.slice(0, 6)) + ')' : '') + (missing.length ? ' ' + missing.length + ' declared and not served ' + short(missing.slice(0, 6)) : '');
+      return (!extra.length && !missing.length) ? true : false;
     });
   }, test.limit.quick);
   test.run('its branch carries no FS set', 0.4, function () {
-    if (!up()) return NO_NODE;
+    if (!up()) return false;
     return overAll(served, function (b) {
       const branch = branchIn(b);
-      if (!branch) return noBranch(b);
+      if (!branch) return false;
       const fs_ = Object.keys(branch).filter(function (v) { return /^FS\./.test(v); });
-      return !fs_.length ? '' : b.dir + ': it carries ' + short(fs_);
+      return !fs_.length;
     });
   }, test.limit.quick);
   // EVERY BROKEN CALL IS REFUSED AT THE DOOR (goal/G41.30; Andy, of "only the spirit object checks those rules, on the
@@ -478,25 +470,25 @@ if (served.length) {
   served.filter(function (b) { return thrownAt.indexOf(b) === -1; }).forEach(function (b) { test.comment(b.dir + ': it declares no verb, so no call to break'); });
   if (thrownAt.length) {
     test.run('/api/spirit: all its broken calls are refused at the door, a 4xx with a code', 0.4, async function () {
-      if (!up()) return NO_NODE;
-      const bad = [];
+      if (!up()) return false;
+      let ok = true;
       for (const b of thrownAt) {
-        if (!branchIn(b)) { bad.push(noBranch(b)); continue; }
+        if (!branchIn(b)) { ok = false; continue; }
         const asks = broken(b);
-        const wrong = [];
+        let wrong = 0;
         let seen = 0;
         for (let i = 0; i < asks.length; i += BATCH) {
           const batch = asks.slice(i, i + BATCH);
           const got = await Promise.all(batch.map(function (a) { return raw(a.fam + '.' + a.verb, a.args); }));
-          got.forEach(function (r, j) {
-            const a = batch[j]; seen += 1;
+          got.forEach(function (r) {
+            seen += 1;
             const c = r.body && r.body.code;
-            if (!(r.status >= 400 && r.status < 500 && typeof c === 'string' && c && c !== 'handler-failed')) wrong.push(a.verb + ': ' + a.why + ' answered ' + r.status + ' ' + short(r.text));
+            if (!(r.status >= 400 && r.status < 500 && typeof c === 'string' && c && c !== 'handler-failed')) wrong += 1;
           });
         }
-        if (!(seen === asks.length && !wrong.length)) bad.push('/api/spirit ' + b.family + ': ' + (seen !== asks.length ? 'only ' + seen + ' of ' + asks.length + ' thrown; ' : '') + wrong.length + ' of ' + asks.length + ' broken calls not refused; first: ' + wrong.slice(0, 3).join(' | '));
+        if (!(seen === asks.length && !wrong)) ok = false;
       }
-      return !bad.length || bad.join('; ');
+      return ok;
     }, test.limit.slow);
   }
 
@@ -506,10 +498,10 @@ if (served.length) {
   const found = served.filter(function (b) { return b.data; });
   if (found.length) {
     test.run('the world: a page on the scratch node asks for each branch by its name', 0.2, async function () {
-      if (!up()) return NO_NODE;
+      if (!up()) return false;
       // The node's other checks are done; the page asks last.
       const page = N.page = await H.chromePage(H.findChrome());
-      if (!page || page.error) return 'no Chrome page: ' + short(page && page.error);
+      if (!page || page.error) return false;
       await page.send('Page.navigate', { url: N.node.base + '/' });
       await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.ready)'); }, 30000);
       N.got = await page.evaluate('Promise.resolve(window.spirit.ready).then(function () { return Promise.all(' + JSON.stringify(found.map(function (b) { return b.family; })) + '.map(function (n) { return window.spirit.cacheManager(n).then(function () { var f = (window.spirit.data || {})[n]; return [n, "ok", !!f && typeof f.data === "object" && typeof f.cache === "object"]; }, function (e) { return [n, String((e && e.message) || e), false]; }); })); })');
@@ -520,36 +512,36 @@ if (served.length) {
     const both = function () { const o = {}; (N.got || []).forEach(function (r) { o[r[0]] = r[2]; }); return o; };
     // <branch>: found by its name
     test.run('a page asking for its branch by its name gets its data.js', 0.4, function () {
-      if (!N.got) return 'no page asked: the world failed';
+      if (!N.got) return false;
       const s_ = said();
       return overAll(found, function (b) {
         const fetched = N.heard.some(function (a) { return a.url === b.data && a.status === 200; });
-        return (s_[b.family] === 'ok' && fetched) ? '' : b.dir + ': ' + b.family + ' answered ' + short(s_[b.family] || (N.page && N.page.error) || 'nothing') + ', ' + b.data + ' fetched ' + fetched;
+        return (s_[b.family] === 'ok' && fetched) ? true : false;
       });
     }, test.limit.quick);
     test.run('no data.js of its branch was asked that is not there (no 404)', 0.4, function () {
-      if (!N.got) return 'no page asked: the world failed';
+      if (!N.got) return false;
       return overAll(found, function (b) {
         const missed = N.heard.filter(function (a) { return /(^|\/)data\.js$/.test(a.url) && a.status === 404 && a.url.split('/').slice(-2, -1)[0] === b.family; });
-        return !missed.length ? '' : b.dir + ': asked and missed: ' + short(missed);
+        return !missed.length;
       });
     }, test.limit.quick);
     // The box (goal/G43.7): "spirit.data.<name>.data" and "spirit.data.<name>.cache", on the page as in node.
     test.run('on the page, spirit.data under its branch has data and cache', 0.4, function () {
-      if (!N.got) return 'no page asked: the world failed';
+      if (!N.got) return false;
       const b_ = both();
-      return overAll(found, function (b) { return b_[b.family] === true ? '' : b.dir + ': on the page spirit.data.' + b.family + ' lacks data or cache'; });
+      return overAll(found, function (b) { return b_[b.family] === true; });
     }, test.limit.quick);
     // The node serves each one as a script that calls spirit.data.makeFamily (was data-caches.js, 6: "the shell can
     // introspect to find and download their clientCacheManagers.").
     test.run('the shell downloads its data.js', 0.4, async function () {
-      if (!up()) return NO_NODE;
-      const bad = [];
+      if (!up()) return false;
+      let ok = true;
       for (const b of found) {
         const got = await fetch(N.node.base + '/' + b.data).then(function (r) { return r.text().then(function (t) { return { status: r.status, text: t }; }); }, function () { return { status: 0, text: '' }; });
-        if (!(got.status === 200 && got.text.indexOf('.makeFamily(') !== -1)) bad.push(b.family + ': /' + b.data + ' answered ' + got.status);
+        if (!(got.status === 200 && got.text.indexOf('.makeFamily(') !== -1)) ok = false;
       }
-      return !bad.length || bad.join('; ');
+      return ok;
     }, test.limit.quick);
   }
 }
@@ -600,7 +592,6 @@ const RUN = path.resolve(__dirname, '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fileSystem.js')).VENDORED_FOLDERS;
 
-function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 600); }
 // The tools of spirit/test/ are no suites (spirit/test/testModule.js TOOLS).
 const TOOLS = ['spirit/test/testReport.js', 'spirit/test/testModule.js', 'spirit/test/headLessChrome.js'];
 
@@ -765,63 +756,60 @@ const PLANTED = [
 const P = judge(PLANTED);
 const values = P.titles.map(function (t) { return t.value; });
 test.run('it finds every test of a planted suite, and none in a comment', 0.2, function () {
-  return P.titles.length === 13 || 'found ' + short(P.titles.map(function (t) { return t.text; }));
+  return P.titles.length === 13 || false;
 }, test.limit.quick);
 test.run('a quoted string and a plain template are plain titles', 0.2, function () {
-  return (values[0] === 'the count is one' && values[1] === 'the field is shown' && values[2] === 'the row is drawn') || short(values.slice(0, 3));
+  return (values[0] === 'the count is one' && values[1] === 'the field is shown' && values[2] === 'the row is drawn') || false;
 }, test.limit.quick);
 test.run('a joined string, a template with ${} and a bare name are built titles', 0.2, function () {
-  return (P.built.length === 3 && P.built.every(function (t) { return /scripts|\$\{n\}|^words$/.test(t.text); })) || short(P.built.map(function (t) { return t.text; }));
+  return (P.built.length === 3 && P.built.every(function (t) { return /scripts|\$\{n\}|^words$/.test(t.text); })) || false;
 }, test.limit.quick);
 test.run('commas inside a body or a regular expression do not split its arguments', 0.2, function () {
-  return (values.indexOf('a call with commas inside its body') !== -1 && values.indexOf('a regular expression with a comma') !== -1) || short(values);
+  return (values.indexOf('a call with commas inside its body') !== -1 && values.indexOf('a regular expression with a comma') !== -1) || false;
 }, test.limit.quick);
 test.run('a title said twice in one suite is found', 0.2, function () {
-  return (P.twice.length === 1 && P.twice[0].value === 'the count is one') || short(P.twice);
+  return (P.twice.length === 1 && P.twice[0].value === 'the count is one') || false;
 }, test.limit.quick);
 test.run('a severity that is no number from 0.0 to 1.0 is found', 0.2, function () {
-  return (P.severity.length === 2 && P.severity.every(function (t) { return /a severity that is no number|a severity past one/.test(t.text); })) || short(P.severity.map(function (t) { return t.text; }));
+  return (P.severity.length === 2 && P.severity.every(function (t) { return /a severity that is no number|a severity past one/.test(t.text); })) || false;
 }, test.limit.quick);
 test.run('a test with no time limit, or a number of its own, is found', 0.2, function () {
-  return (P.limit.length === 2 && /no time limit/.test(P.limit[0].text) && /its own number/.test(P.limit[1].text)) || short(P.limit.map(function (t) { return t.text; }));
+  return (P.limit.length === 2 && /no time limit/.test(P.limit[0].text) && /its own number/.test(P.limit[1].text)) || false;
 }, test.limit.quick);
 test.run('a helper ok of its own, test.check, test.fail and reportSuccessFailureCount are found as old calls', 0.2, function () {
-  return JSON.stringify(P.old.map(function (o) { return o.text; })) === JSON.stringify(['function ok', 'test.check', 'test.fail', 'test.reportSuccessFailureCount']) || short(P.old);
+  return JSON.stringify(P.old.map(function (o) { return o.text; })) === JSON.stringify(['function ok', 'test.check', 'test.fail', 'test.reportSuccessFailureCount']) || false;
 }, test.limit.quick);
 
 // ── THE SUITES ASKED ────────────────────────────────────────────────────────────────────────────────────────────────────
 const asked = ARGS[0] ? String(ARGS[0]).replace(/\\/g, '/').replace(/^\.\//, '').replace(/^spirit\/run\//, '') : '';
 const SUITES = suitesFor(asked, tree());
 const results = SUITES.map(function (f) { let src = ''; try { src = fs.readFileSync(path.join(RUN, f), 'utf8'); } catch (e) { src = ''; } return { file: f, r: judge(src) }; });
-const first = function (list, part, show) { return short(list.slice(0, 4).map(function (x) { return x.file + ':' + show(x.r[part][0]); })); };
-const count = function (list, part) { return list.reduce(function (n, x) { return n + x.r[part].length; }, 0); };
-
 test.run('the world: there are suites to judge', 0.2, function () {
-  return SUITES.length > 0 || 'no suite to judge in ' + (asked || 'the tree');
+  return SUITES.length > 0 || false;
 }, test.limit.quick);
 test.run('every suite says its tests through test.run', 0.2, function () {
   const none = results.filter(function (x) { return !x.r.titles.length; });
-  return !none.length || none.length + ' of ' + SUITES.length + ' suites hold no test.run; the first: ' + short(none.slice(0, 6).map(function (x) { return x.file; }));
+  return !none.length || false;
 }, test.limit.slow);
 test.run('no suite keeps an old way of saying a check', 0.2, function () {
   const old = results.filter(function (x) { return x.r.old.length; });
-  return !old.length || count(old, 'old') + ' in ' + old.length + ' suites; the first: ' + first(old, 'old', function (o) { return o.line + ' ' + o.text; });
+  return !old.length || false;
 }, test.limit.slow);
 test.run('every title is one plain string, nothing built into it', 0.2, function () {
   const built = results.filter(function (x) { return x.r.built.length; });
-  return !built.length || count(built, 'built') + ' in ' + built.length + ' suites; the first: ' + first(built, 'built', function (t) { return t.line + ' ' + t.text; });
+  return !built.length || false;
 }, test.limit.slow);
 test.run('no suite says one title twice', 0.2, function () {
   const twice = results.filter(function (x) { return x.r.twice.length; });
-  return !twice.length || count(twice, 'twice') + ' in ' + twice.length + ' suites; the first: ' + first(twice, 'twice', function (t) { return t.line + ' ' + t.value; });
+  return !twice.length || false;
 }, test.limit.slow);
 test.run('every test gives its severity, a number from 0.0 to 1.0', 0.2, function () {
   const bad = results.filter(function (x) { return x.r.severity.length; });
-  return !bad.length || count(bad, 'severity') + ' in ' + bad.length + ' suites; the first: ' + first(bad, 'severity', function (t) { return t.line + ' ' + t.text; });
+  return !bad.length || false;
 }, test.limit.slow);
 test.run('every test gives its time limit, one of the reporter\'s named limits', 0.2, function () {
   const bad = results.filter(function (x) { return x.r.limit.length; });
-  return !bad.length || count(bad, 'limit') + ' in ' + bad.length + ' suites; the first: ' + first(bad, 'limit', function (t) { return t.line + ' ' + t.text; });
+  return !bad.length || false;
 }, test.limit.slow);
 }
 
@@ -863,7 +851,6 @@ const test = require(path.join(__dirname, 'testReport.js'));
 const RUN = path.join(__dirname, '..', '..');
 const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fileSystem.js')).VENDORED_FOLDERS;
 const arg = String(ARGS[0] || '');
-const RULE = 'Andy: "every test in run:/ MUST MATCH a production file."';
 // The tools of spirit/test/ are testModule.js's one list, and TEST_SYSTEM.md is their document.
 // The special general tests (testModule.js's SPECIAL, goal/G47.1, box v94, 1) are kept too, each with its .md.
 const TM = require(path.join(__dirname, 'testModule.js'));
@@ -876,7 +863,7 @@ function modulesIn(dir) {
   try { return fs.readdirSync(path.join(RUN, dir)).filter(function (n) { return /\.js$/.test(n) && fs.statSync(path.join(RUN, dir, n)).isFile(); }).map(function (n) { return n.slice(0, -3); }); } catch (e) { return []; }
 }
 
-// Why a file of a test folder is garbage, or '' when the test system binds it.
+// Whether a file of a test folder is garbage: true when it is, false when the test system binds it.
 function garbage(rel) {
   const at = rel.lastIndexOf('test/');
   const dir = rel.slice(0, at).replace(/\/$/, '');          // the folder the test/ folder sits in
@@ -887,29 +874,28 @@ function garbage(rel) {
   const general = stem.match(/^(.+?)-(child|sibling)-.+$/);
   // test/<name>-<what>.js: a second test file of <name>.js, which one test file per script forbids (goal/G45.1).
   const named = !general && stem.indexOf('-') > 0 ? stem.slice(0, stem.indexOf('-')) : '';
-  const second = function () { return 'a second test file of ' + named + '.js: one test file per script, its tests go into test/' + named + '.js'; };
   // 2. spirit/test/'s tools and their document.
-  if (SPIRIT_TEST_KEEPS.indexOf(rel) !== -1) return '';
+  if (SPIRIT_TEST_KEEPS.indexOf(rel) !== -1) return false;
   // 3. A test folder inside a test folder: the tests of the files beside it, nothing else.
   if (/(^|\/)test$/.test(dir)) {
-    if (!m) return 'not a test: no .js or .md';
-    if (!exists(dir + '/' + stem + '.js') && named && exists(dir + '/' + named + '.js')) return second();
-    if (!exists(dir + '/' + stem + '.js')) return 'no ' + dir + '/' + stem + '.js beside this test folder: a test here tests a file of ' + dir + '/, and no other';
-    return exists(twin) ? '' : (m[2] === 'js' ? 'no ' + path.basename(twin) + ' beside it: the test has no spec' : 'no ' + path.basename(twin) + ' beside it: a spec with no test');
+    if (!m) return true;
+    if (!exists(dir + '/' + stem + '.js') && named && exists(dir + '/' + named + '.js')) return true;
+    if (!exists(dir + '/' + stem + '.js')) return true;
+    return !exists(twin);
   }
   // 1. A test folder belongs to a module.
   const modules = modulesIn(dir);
-  if (!modules.length) return 'no module in ' + dir + '/: a test folder belongs to the module beside it';
+  if (!modules.length) return true;
   // 4. A test matches a production file; 5. a test and its spec, together.
   if (m) {
-    if (!general && modules.indexOf(stem) === -1 && named && modules.indexOf(named) !== -1) return second();
+    if (!general && modules.indexOf(stem) === -1 && named && modules.indexOf(named) !== -1) return true;
     const of = general ? general[1] : stem;
-    if (modules.indexOf(of) === -1) return 'no ' + (dir ? dir + '/' : '') + of + '.js: ' + (general ? 'a general test of a module that is not beside the folder' : 'a test that matches no production file');
-    return exists(twin) ? '' : (m[2] === 'js' ? 'no ' + path.basename(twin) + ' beside it: the test has no spec' : 'no ' + path.basename(twin) + ' beside it: a spec with no test');
+    if (modules.indexOf(of) === -1) return true;
+    return !exists(twin);
   }
   // 6. A laid page or a fixture, named after a module beside the folder.
   const owner = modules.filter(function (n) { return file.indexOf(n + '-') === 0; })[0];
-  return owner ? '' : 'named after no module beside the folder: a fixture is <module>-<what>.<ext>';
+  return !owner;
 }
 
 const tracked = function () {
@@ -935,15 +921,15 @@ function read() {
 // The world, as the file handed says what is judged: the whole tree, one module's test files, or one file.
 if (WHOLE) {
   test.run('the scan read every test folder, more than a hundred files', 0.2, function () {
-    return read().length > 100 || 'the scan read only ' + judged.length + ' files: it judged too little to say';
+    return read().length > 100 || false;
   }, test.limit.quick);
 } else if (MODULE) {
   test.run('the module handed has test files of its own, and they are read', 0.2, function () {
-    return read().length > 0 || handed + ' has no test of its own: nothing judged';
+    return read().length > 0 || false;
   }, test.limit.quick);
 } else {
   test.run('the file handed is in a test folder', 0.2, function () {
-    return read().length === 1 || arg + ' is neither a module nor a tracked file in a test folder: nothing judged';
+    return read().length === 1 || false;
   }, test.limit.quick);
 }
 // MISSING TESTS (goal/G47.1, the box: "spirit-sibling-noFuckingGarbage also reports missing tests, in one check, \"every
@@ -958,10 +944,10 @@ const ownTestOf = function (rel) { return rel.replace(/([^/]+)\.js$/, 'test/$1.j
 if (WHOLE || MODULE) {
   test.run('every production script has its own test', 0.2, function () {
     const scripts = WHOLE ? execFileSync('git', ['ls-files', '--', '.'], { cwd: RUN, encoding: 'utf8' }).split('\n').filter(Boolean).filter(isProduction) : [handed];
-    if (!scripts.length) return 'no production script found: nothing judged';
+    if (!scripts.length) return false;
     const missing = scripts.filter(function (rel) { return !exists(ownTestOf(rel)); });
     test.comment(scripts.length + ' production scripts judged, ' + missing.length + ' without their own test');
-    return !missing.length || missing.length + ' of ' + scripts.length + ' have no own test: ' + missing.join(', ');
+    return !missing.length || false;
   }, test.limit.quick);
 }
 
@@ -971,17 +957,15 @@ if (WHOLE || MODULE) {
 // a test folder named <file>-child-... or <file>-sibling-...; each one read is one of the three, its .md beside it the same.
 const KINDS = /^[^/]+-(child|sibling)-(general|node|browser)\.(js|md)$/;
 test.run('every general test is <file>-<child | sibling>-<general | node | browser>.js, and no other', 0.4, function () {
-  if (!judged || !judged.length) return 'no file in a test folder read: nothing judged';
+  if (!judged || !judged.length) return false;
   const general = judged.filter(function (rel) { return /-(child|sibling)-/.test(path.posix.basename(rel)); });
   const other = general.filter(function (rel) { return !KINDS.test(path.posix.basename(rel)); });
-  return !other.length || other.length + ' general tests of another name: ' + other.join(', ');
+  return !other.length || false;
 }, test.limit.quick);
 
-// Each file that is garbage named in the answer, by its path and why.
 test.run('every file in a test folder matches a production file: none is garbage', 0.4, function () {
-  if (!judged || !judged.length) return 'no file in a test folder read: nothing judged';
-  const bad = judged.map(function (rel) { const why = garbage(rel); return why ? rel + ': garbage, ' + why + ' (' + RULE + ')' : ''; }).filter(Boolean);
-  return !bad.length || bad.join('; ');
+  if (!judged || !judged.length) return false;
+  return !judged.some(garbage);
 }, test.limit.quick);
 }
 
@@ -1045,26 +1029,24 @@ function picked(file) {
   }
   return out;
 }
-// What breaks the rule in one module, or '' when every search it makes takes the row whole.
-function judge(rel, file) {
-  const lines = picked(file);
-  return !lines.length ? '' : rel + ': it hands probabilityStringObjectMatch fields it picks, at line' + (lines.length > 1 ? 's ' : ' ') + lines.join(', ') + ', in place of the row as its get serves it';
+// Whether one module keeps the rule: true when every search it makes takes the row whole.
+function judge(file) {
+  return !picked(file).length;
 }
 
 // The modules it judges: the one handed, or every module testModule.js gives it.
 let reach = null;
 test.run('the world: there is a module to judge', 0.2, function () {
-  if (arg && !full) return 'no module to judge: ' + JSON.stringify(arg);
+  if (arg && !full) return false;
   if (full) { reach = [path.relative(RUN, full).split(path.sep).join('/')]; return true; }
   reach = require(path.join(RUN, 'spirit', 'test', 'testModule.js')).testsFor('').filter(function (t) { return t.test === 'spirit/test/spirit-sibling-general.js' && t.file; }).map(function (t) { return t.file; });
   test.comment('every module in its reach: ' + reach.length);
-  return reach.length > 0 || 'testModule.js gives it no file to judge';
+  return reach.length > 0 || false;
 }, test.limit.quick);
-// <file>: its searches match the whole row. Given no file, each module that breaks it is named in the answer.
+// <file>: its searches match the whole row.
 test.run('it hands every search the row whole', 0.4, function () {
-  if (!reach || !reach.length) return 'no module to judge: the world failed';
-  const bad = reach.map(function (f) { return judge(f, path.join(RUN, f)); }).filter(Boolean);
-  return !bad.length || bad.join('; ');
+  if (!reach || !reach.length) return false;
+  return reach.every(function (f) { return judge(path.join(RUN, f)); });
 }, test.limit.quick);
 }
 
@@ -1172,19 +1154,12 @@ function read() {
 // every production module, its code read
 if (!arg) {
   test.run('the scan read every production module, more than a hundred files', 0.2, function () {
-    return read().length > 100 || 'the scan read only ' + judged.length + ' files: it judged too little to say';
+    return read().length > 100 || false;
   }, test.limit.quick);
 }
-// Each call that breaks it named in the answer, by its file and line.
 test.run('no production module loads or requires a test file', 0.4, function () {
   if (!judged) read();
-  const bad = [];
-  judged.forEach(function (rel) {
-    reaches(rel).forEach(function (r) {
-      bad.push(rel + ':' + r.line + ' ' + r.call + '() loads ' + r.path + ', a test file (the box: "no production module loads or requires any test file, with the exception of DEBUG.js.")');
-    });
-  });
-  return !bad.length || bad.join('; ');
+  return judged.every(function (rel) { return reaches(rel).length === 0; });
 }, test.limit.quick);
 }
 
@@ -1473,7 +1448,6 @@ const WATCH = String.raw`(function () {
 // can be: in the code, or on a page that gives it something. So a rule is said (its test.run) only when its page gave it
 // something to judge (goal/G47.2: every test one test.run); the rest are said as comments.
 function unjudged(what) { test.comment('not judged on this page: ' + what); }
-function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 // The scratch node and headless Chrome, shared with any test that opens a page (spirit/test/headLessChrome.js).
 const { sleep, until, findChrome, scratchNode, chromePage } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 
@@ -1572,16 +1546,16 @@ function codeOf(src, bare) {
   }
   return out;
 }
-// Why a product script breaks the shape, one reason a break; [] when it holds.
+// Whether a product script breaks the shape: true when it does, false when it holds.
 function shapeBreaks(rel) {
-  const why = [];
   const stem = path.posix.basename(rel, '.js');
-  if (stem.indexOf('.') !== -1) why.push('its name holds a dot of its own (' + path.posix.basename(rel) + '): "just rename the bloody script"');
+  // Its name holds a dot of its own: "just rename the bloody script".
+  if (stem.indexOf('.') !== -1) return true;
   let src = '';
-  try { src = fs.readFileSync(path.join(RUN, rel), 'utf8'); } catch (e) { return ['it cannot be read']; }
+  try { src = fs.readFileSync(path.join(RUN, rel), 'utf8'); } catch (e) { return true; }
   const code = codeOf(src);
-  if (!/^\s*(['"])use strict\1\s*;/.test(code)) why.push('it does not start with \'use strict\';');
-  if (rel === 'spirit/spirit.js') return why;
+  if (!/^\s*(['"])use strict\1\s*;/.test(code)) return true;
+  if (rel === 'spirit/spirit.js') return false;
   // Every plain require: the first takes spirit.js; any other names one of node's own modules.
   const bare = codeOf(src, true);
   const re = /(^|[^.\w$])require\s*\(/g;
@@ -1593,13 +1567,12 @@ function shapeBreaks(rel) {
     const lit = /^(['"])([^'"]*)\1$/.exec(arg);
     const named = lit ? lit[2] : '';
     const spiritJs = /(^|\/)spirit\.js$/.test(named) || /['"]spirit\.js['"]\s*\)?$/.test(arg);
-    const line = code.slice(0, m.index).split('\n').length;
     if (spiritJs) { first = false; continue; }
     if (!first && lit && (BUILTIN.indexOf(named) !== -1 || BUILTIN.indexOf(named.replace(/^node:/, '')) !== -1)) continue;
-    why.push(first ? 'its first load is not spirit.js: require(' + arg.slice(0, 80) + ') at line ' + line : 'it loads require(' + arg.slice(0, 80) + ') at line ' + line + ', not through spirit.require');
-    first = false;
+    // Its first load is not spirit.js, or it loads a module plainly, not through spirit.require.
+    return true;
   }
-  return why;
+  return false;
 }
 // THE GENERAL RULES OF A MODULE, judged in its code (goal/G40.6; folded in from spirit-child-generalRules.js, goal/G47.1;
 // Andy: "for now, fold those two into spirit-sibling-generalRules.js"). Andy: "it will assert, the require path rule it
@@ -1611,7 +1584,7 @@ function shapeBreaks(rel) {
 // THE REQUIRE RULE (goal/G40's box): "a require path that starts with ../ may only add a file name, never descend into a
 // subfolder of an ancestor; any other require path starts with <module>/, the module's own children. A sibling in the
 // module's own folder is legal." A package or a node built-in is not a path; a computed path cannot be read.
-// moduleRules(full) -> { early: '' when it holds, else why; page: true for page code; bad: [require paths breaking the rule] }
+// moduleRules(full) -> { early: false when it holds, true when it breaks; page: true for page code; bad: [require paths breaking the rule] }
 function moduleRules(full) {
   const code = fs.readFileSync(full, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"\\])\/\/[^\n]*/g, '$1');
   const requires = [];
@@ -1626,17 +1599,20 @@ function moduleRules(full) {
   // THE RULE (Andy, 2026-11-13, goal/G47.1 box v73, replacing his api.js exemption of v72: "if a module requires
   // anything, it must require spirit.js first. Other modules are required using spirit.require(), unless they are
   // native node.js modules."). A module that requires nothing holds it.
-  let early = '';
-  if (page || !requires.length) early = '';
+  let early = false;
+  if (page || !requires.length) early = false;
   else if (isSpirit) {
+    // It sets the global spirit nowhere, or only after its first require.
     const sets = code.search(/\broot\.spirit\s*=|\bglobalThis\.spirit\s*=|\bglobal\.spirit\s*=/);
-    if (sets === -1 || (first && sets > first.at)) early = 'it sets the global spirit ' + (sets === -1 ? 'nowhere' : 'only after its first require, ' + JSON.stringify(first.path));
+    if (sets === -1 || (first && sets > first.at)) early = true;
   } else if (!(/(^|\/)spirit\.js$/.test(first.path) && path.resolve(path.dirname(full), first.path) === path.join(RUN, 'spirit', 'spirit.js'))) {
-    early = 'it does not require spirit.js first: its first require is ' + JSON.stringify(first.path);
+    // It does not require spirit.js first.
+    early = true;
   } else {
+    // It requires another module plainly, not through spirit.require(): only node's own modules are required plainly.
     const native = function (p) { return BUILTIN.indexOf(p) !== -1 || BUILTIN.indexOf(p.replace(/^node:/, '')) !== -1; };
     const other = requires.slice(1).filter(function (r) { return !native(r.path) && !/(^|\/)spirit\.js$/.test(r.path); })[0];
-    if (other) early = 'it requires ' + JSON.stringify(other.path) + ', not through spirit.require(): only node\'s own modules are required plainly';
+    if (other) early = true;
   }
   const bad = requires.filter(function (r) {
     const p = r.path;
@@ -1813,8 +1789,6 @@ function placedByHand() {
     return /\bspirit\.elements?\s*(\.\s*[\w$]+\s*)*=(?!=)|\bspirit\.elements?\s*(\.\s*[\w$]+\s*)*\[[^\]]*\]\s*=(?!=)|Object\.assign\s*\([^)]*\bspirit\.elements?\b/.test(code);
   });
 }
-// What each rule broke, named in its answer: '' when none did.
-function listed(bad) { return !bad.length || bad.join('; '); }
 
 // ── GIVEN NO FILE: THE TREE'S RULES, THEN EVERY PAGE MODULE ─────────────────────────────────────────────────────────────
 function every() {
@@ -1822,68 +1796,68 @@ function every() {
   const E = {};
   test.run('the world: the modules are read', 0.2, function () {
     E.tracked = require('child_process').execFileSync('git', ['ls-files'], { cwd: RUN, encoding: 'utf8' }).split('\n').filter(function (f) { return /\.(js|html|json)$/.test(f) && !/(^|\/)test\//.test(f); });
-    return E.tracked.length > 0 || 'git ls-files gave no module to read';
+    return E.tracked.length > 0 || false;
   }, test.limit.quick);
   test.run('none of them names spirit/run/process or run://process, in code or comment', 0.4, function () {
     const named = processNamers();
-    return (!!E.tracked && E.tracked.length > 0 && !named.length) || named.length + ' still name it: ' + short(named);
+    return (!!E.tracked && E.tracked.length > 0 && !named.length) || false;
   }, test.limit.quick);
 
   // elements are placed by installSpiritElement alone
   test.run('spirit/element/installSpiritElement.js is there', 0.4, function () {
-    return fs.existsSync(path.join(RUN, 'spirit', 'element', 'installSpiritElement.js')) || 'there is no spirit/element/installSpiritElement.js';
+    return fs.existsSync(path.join(RUN, 'spirit', 'element', 'installSpiritElement.js')) || false;
   }, test.limit.quick);
   test.run('no product script puts an element on spirit.element or spirit.elements by hand', 0.4, function () {
     const hand = placedByHand();
-    return !hand.length || hand.length + ' still do: ' + short(hand.slice(0, 8));
+    return !hand.length || false;
   }, test.limit.quick);
   // Decided 6: an app's element is placed like every element, "the shell, the app selector, the file opener and the desk
   // find it there"; so nothing reads an element at the old place, spirit.elements.<name>, any more.
   test.run('no product script reads or writes the old spirit.elements: every element is found at spirit.element.<its path>', 0.4, function () {
     const old = productScripts().filter(function (f) { return /\.elements\b/.test(codeOf(fs.readFileSync(path.join(RUN, f), 'utf8'), true)); });
-    return !old.length || old.length + ' still name spirit.elements: ' + short(old.slice(0, 8));
+    return !old.length || false;
   }, test.limit.quick);
   // the element move: no file names an element's old homes, none reaches through spirit.element for what the tree lacks
   test.run('the world: the files are read for the elements\' old homes, tests and documents included', 0.2, function () {
     E.elementFiles = elementRuleFiles();
-    return E.elementFiles.length > 100 || 'only ' + E.elementFiles.length + ' files found: too few to judge';
+    return E.elementFiles.length > 100 || false;
   }, test.limit.quick);
   test.run('no code, test or document names shell/js', 0.4, function () {
     const all = E.elementFiles || [];
     const hits = [].concat.apply([], all.map(function (f) { return linesMatching(f, OLD_ELEMENT_PATH); }));
-    return (all.length > 100 && !hits.length) || hits.length + ' lines name it, the first: ' + short(hits.slice(0, 12));
+    return (all.length > 100 && !hits.length) || false;
   }, test.limit.quick);
   test.run('no code reaches an element through spirit.elements', 0.4, function () {
     const all = E.elementFiles || [];
     const hits = [].concat.apply([], all.map(function (f) { return codeLinesMatching(f, OLD_ELEMENT_HOME, true); }));
-    return (all.length > 100 && !hits.length) || hits.length + ' lines do, the first: ' + short(hits.slice(0, 12));
+    return (all.length > 100 && !hits.length) || false;
   }, test.limit.quick);
   // no run://node_modules (goal/G43.25; moved here from spirit/test/job.js, goal/G47.1). Andy: "can we hide those suckers in
   // spirit/jobs/ for now? without the damn node_modules container?". Over the whole repository, install/ too.
   test.run('no tracked file of the repository names spirit/run/node_modules', 0.4, function () {
     const naming = gitIn(REPO, ['ls-files']).filter(function (f) { return !NODE_MODULES_ON_PURPOSE.test(f) && SELF.indexOf(path.basename(f)) === -1 && f.indexOf('spirit/run/brains/') !== 0 && !/\.(png|jpe?g|gif|ico|woff2?|ttf|zip|db)$/i.test(f) && fs.existsSync(path.join(REPO, f)); })
       .filter(function (f) { return OLD_NODE_MODULES.test(fs.readFileSync(path.join(REPO, f), 'utf8')); });
-    return !naming.length || naming.length + ' still do: ' + short(naming);
+    return !naming.length || false;
   }, test.limit.quick);
   test.run('.gitignore holds no exception for spirit/run/node_modules', 0.4, function () {
-    return !/run\/node_modules/.test(fs.readFileSync(path.join(REPO, '.gitignore'), 'utf8')) || '.gitignore still names it';
+    return !/run\/node_modules/.test(fs.readFileSync(path.join(REPO, '.gitignore'), 'utf8')) || false;
   }, test.limit.quick);
   test.run('every spirit.require of a written path names a file that exists', 0.4, function () {
     const all = E.elementFiles || [];
     const missing = [].concat.apply([], all.map(missingRequires));
-    return (all.length > 100 && !missing.length) || missing.length + ' do not: ' + short(missing.slice(0, 12));
+    return (all.length > 100 && !missing.length) || false;
   }, test.limit.quick);
   test.run('no code skips node_modules by its own name: every walker reads fileSystem.js\'s VENDORED_FOLDERS', 0.4, function () {
     const all = E.elementFiles || [];
     const hits = [].concat.apply([], all.map(function (f) { return codeLinesMatching(f, OWN_NODE_MODULES_SKIP); }));
-    return (all.length > 100 && !hits.length) || hits.length + ' lines do: ' + short(hits.slice(0, 12));
+    return (all.length > 100 && !hits.length) || false;
   }, test.limit.quick);
   // no warning on a grant (goal/G43.27, requirement 7; moved here from spirit/element/search/grant/test/grantsPanel.js,
   // goal/G47.1). Andy: "compare that to giving a linux user root authority, he then can fuck up the whole system, not our
   // problem.": no <verb>.warning.txt is left in the repository.
   test.run('no <verb>.warning.txt is left', 0.4, function () {
     const warns = gitIn(REPO, ['ls-files']).filter(function (f) { return /\.warning\.txt$/.test(f); });
-    return !warns.length || warns.length + ' are: ' + short(warns);
+    return !warns.length || false;
   }, test.limit.quick);
   // the search elements' pattern (goal/G43.18; moved here from spirit/element/test/search.js, goal/G47.1). Andy: "all
   // "probabilitySearch" elements follow the EXACT SAME PATTERN.", and the box: "Every search element in spirit/element/
@@ -1893,94 +1867,94 @@ function every() {
     const at = path.join(RUN, 'spirit', 'element', 'search');
     const top = fs.existsSync(at) ? fs.readdirSync(at, { withFileTypes: true }).filter(function (d) { return d.name !== 'test'; }) : [];
     const odd = top.filter(function (d) { return d.isDirectory() ? !/^[a-z]+$/.test(d.name) || !fs.existsSync(path.join(at, d.name + '.js')) : !/^[a-z]+\.(js|md)$/.test(d.name); }).map(function (d) { return d.name; });
-    return (top.length > 0 && !odd.length) || (top.length ? 'off the pattern: ' + short(odd) : 'no spirit/element/search/');
+    return (top.length > 0 && !odd.length) || false;
   }, test.limit.quick);
   test.run('no code reaches through spirit.element for an element the tree does not hold', 0.4, function () {
     const all = E.elementFiles || [];
     const stray = [].concat.apply([], all.map(strayElementReaches));
-    return (all.length > 100 && !stray.length) || stray.length + ' do: ' + short(stray.slice(0, 12));
+    return (all.length > 100 && !stray.length) || false;
   }, test.limit.quick);
 
   // run://test/ is moved into run://spirit/test/
   test.run('run://test/ holds no tracked file', 0.4, function () {
     const left = gitIn(RUN, ['ls-files', '--', 'test/']);
-    return !left.length || left.length + ' still tracked there: ' + short(left);
+    return !left.length || false;
   }, test.limit.quick);
   test.run('run://spirit/test/ holds all the moved files, test/test/ included', 0.4, function () {
     const missing = MOVED.filter(function (f) { return !fs.existsSync(path.join(RUN, 'spirit', 'test', f)); });
-    return !missing.length || missing.length + ' are not there: ' + short(missing);
+    return !missing.length || false;
   }, test.limit.quick);
   // nothing under spirit/run/ names run://test/
   test.run('the world: the files are read, tests and documents included', 0.2, function () {
     E.files = gitIn(RUN, ['ls-files']).filter(function (f) {
       return /\.(js|md|html|json)$/.test(f) && !VENDORED_FOLDERS.holds(f) && SELF.indexOf(path.basename(f)) === -1 && fs.existsSync(path.join(RUN, f));
     });
-    return E.files.length > 0 || 'git ls-files gave no file to read';
+    return E.files.length > 0 || false;
   }, test.limit.quick);
   test.run('none of them names the old run://test/, in code, comment or document', 0.4, function () {
     const files = E.files || [];
     const naming = files.filter(function (f) { try { return OLD_NAMED.test(fs.readFileSync(path.join(RUN, f), 'utf8')); } catch (e) { return false; } });
-    return (files.length > 0 && !naming.length) || naming.length + ' still name it: ' + short(naming);
+    return (files.length > 0 && !naming.length) || false;
   }, test.limit.quick);
   // run://spirit/test/'s tools are not tests
   test.run('the world: testModule.js lists tests', 0.2, function () {
     const moduleAt = [path.join(RUN, 'spirit', 'test', 'testModule.js'), path.join(RUN, 'test', 'testModule.js')].filter(function (p) { return fs.existsSync(p); })[0];
     E.listed = moduleAt ? require(moduleAt).testsFor('').map(function (t) { return t.test; }) : [];
-    return E.listed.length > 0 || 'no testModule.js to ask';
+    return E.listed.length > 0 || false;
   }, test.limit.quick);
   test.run('testModule.js lists none of testReport.js, testModule.js and headLessChrome.js as a test', 0.4, function () {
     const all = E.listed || [];
     const toolsListed = all.filter(function (t) { return TOOLS.indexOf(path.posix.basename(t)) !== -1 && /^(spirit\/)?test\/[^/]+$/.test(t); });
-    return (all.length > 0 && !toolsListed.length) || 'it lists them as tests: ' + short(toolsListed);
+    return (all.length > 0 && !toolsListed.length) || false;
   }, test.limit.quick);
   // git ignores run:// except run://spirit/
   function ignoreLines() { return fs.readFileSync(path.join(REPO, '.gitignore'), 'utf8').split(/\r?\n/).map(function (l) { return l.trim(); }).filter(function (l) { return l && l[0] !== '#'; }); }
   test.run('.gitignore holds /spirit/run/* and !/spirit/run/spirit/', 0.4, function () {
     const lines = ignoreLines();
-    return (lines.indexOf('/spirit/run/*') !== -1 && lines.indexOf('!/spirit/run/spirit/') !== -1) || 'it lacks ' + short(['/spirit/run/*', '!/spirit/run/spirit/'].filter(function (l) { return lines.indexOf(l) === -1; }));
+    return (lines.indexOf('/spirit/run/*') !== -1 && lines.indexOf('!/spirit/run/spirit/') !== -1) || false;
   }, test.limit.quick);
   test.run('no other line names a path under run:// outside run://spirit/, since run://* covers it', 0.4, function () {
     const dead = ignoreLines().filter(function (l) {
       const p = l.replace(/^!/, '').replace(/^\//, '');
       return p.indexOf('spirit/run/') === 0 && p.indexOf('spirit/run/spirit/') !== 0 && l !== '/spirit/run/*';
     });
-    return !dead.length || dead.length + ' left: ' + short(dead);
+    return !dead.length || false;
   }, test.limit.quick);
   test.run('a new file in run:// outside spirit/ is ignored', 0.4, function () {
     const outside = 'spirit/run/zz-g4332-not-tracked.txt';
-    return ignoredByGit(outside) || 'git does not ignore ' + outside;
+    return ignoredByGit(outside) || false;
   }, test.limit.quick);
   test.run('a new file in run://spirit/ is not ignored', 0.4, function () {
     const inside = 'spirit/run/spirit/zz-g4332-not-tracked.txt';
-    return !ignoredByGit(inside) || 'git ignores ' + inside;
+    return !ignoredByGit(inside) || false;
   }, test.limit.quick);
 
   // every product script: use strict, spirit first, the tree only through spirit.require
   test.run('the world: the product scripts are read (tests and vendored code left out)', 0.2, function () {
     E.scripts = productScripts();
-    return E.scripts.length > 100 || 'only ' + E.scripts.length + ' product scripts found: too few to judge';
+    return E.scripts.length > 100 || false;
   }, test.limit.quick);
   test.run('all of them hold the shape', 0.4, function () {
     const all = E.scripts || [];
-    const broken = all.map(function (f) { return { f: f, why: shapeBreaks(f) }; }).filter(function (x) { return x.why.length; });
-    return (all.length > 100 && !broken.length) || broken.length + ' of ' + all.length + ' do not; the first: ' + short(broken.slice(0, 5).map(function (x) { return x.f + ': ' + x.why[0]; }));
+    const broken = all.filter(shapeBreaks);
+    return (all.length > 100 && !broken.length) || false;
   }, test.limit.quick);
 
   // every product script: spirit.js required first, every require path a child, a sibling or an ancestor's file
   test.run('the world: the product scripts are read for the module rules', 0.2, function () {
     const all = productScripts();
     E.ruled = all.map(function (f) { return { f: f, r: moduleRules(path.join(RUN, f)) }; });
-    return all.length > 100 || 'only ' + all.length + ' product scripts found: too few to judge';
+    return all.length > 100 || false;
   }, test.limit.quick);
   test.run('every one takes spirit.js first, or is page code', 0.4, function () {
     const ruled = E.ruled || [];
     const late = ruled.filter(function (x) { return x.r.early; });
-    return (ruled.length > 100 && !late.length) || late.length + ' of ' + ruled.length + ' do not; the first: ' + short(late.slice(0, 5).map(function (x) { return x.f + ': ' + x.r.early; }));
+    return (ruled.length > 100 && !late.length) || false;
   }, test.limit.quick);
   test.run('none of their require paths breaks the require rule', 0.4, function () {
     const ruled = E.ruled || [];
     const astray = ruled.filter(function (x) { return x.r.bad.length; });
-    return (ruled.length > 100 && !astray.length) || astray.length + ' of ' + ruled.length + ' do; the first: ' + short(astray.slice(0, 5).map(function (x) { return x.f + ' requires ' + x.r.bad[0]; }));
+    return (ruled.length > 100 && !astray.length) || false;
   }, test.limit.quick);
 
   // every shell file that paints an icon loads the icon element
@@ -1990,14 +1964,13 @@ function every() {
   test.comment(painting.length + ' shell files paint icons: ' + painting.join(', '));
   test.comment('glyphs among words only, read by hand: ' + Object.keys(TEXT_ONLY).map(function (f) { return f + ' (' + TEXT_ONLY[f] + ')'; }).join('; '));
   if (painting.length) {
-    // Each file that breaks it named in the answer, by its path.
     test.run('it paints icons, and loads the icon element or hands them to one that does', 0.4, function () {
-      return listed(painting.filter(function (f) {
+      return !painting.some(function (f) {
         const src = fs.readFileSync(path.join(RUN, f), 'utf8');
         // A file that hands its glyphs to the one-row form (goal/G41.27) paints them through it: rowForm loads the icon element
         // itself (rule/26).
         return src.indexOf('spirit/element/icon.js') === -1 && src.indexOf('spirit/element/rowForm.js') === -1;
-      }).map(function (f) { return f + ': it paints icons and never loads spirit/element/icon.js'; }));
+      });
     }, test.limit.quick);
   }
 
@@ -2018,57 +1991,57 @@ function oneFile(P) {
   // goal/G43.30: every file judged here, app, element or neither, mentions no spirit/run/process (noProcessAnywhere).
   // <address>: it mentions no spirit/run/process
   test.run('it names neither spirit/run/process nor run://process, in code or comment', 0.4, function () {
-    return !namesProcess(rel) || 'it mentions spirit/run/process: ' + short((fs.readFileSync(full, 'utf8').match(PROCESS_NAMED) || [])[0]);
+    return !namesProcess(rel) || false;
   }, test.limit.quick);
   // the element move (elementRuleFiles above): its old homes, and spirit.element only for what the tree holds
   if (SELF.indexOf(path.basename(rel)) === -1) {
     test.run('it names no shell/js', 0.4, function () {
       const hits = linesMatching(rel, OLD_ELEMENT_PATH);
-      return !hits.length || 'it names it: ' + short(hits.slice(0, 12));
+      return !hits.length || false;
     }, test.limit.quick);
     test.run('its code reaches no element through spirit.elements', 0.4, function () {
       const hits = codeLinesMatching(rel, OLD_ELEMENT_HOME, true);
-      return !hits.length || 'it does: ' + short(hits.slice(0, 12));
+      return !hits.length || false;
     }, test.limit.quick);
     if (!NODE_MODULES_ON_PURPOSE.test('spirit/run/' + rel)) test.run('it names no spirit/run/node_modules', 0.4, function () {
       const hits = linesMatching(rel, OLD_NODE_MODULES);
-      return !hits.length || 'it names it: ' + short(hits.slice(0, 12));
+      return !hits.length || false;
     }, test.limit.quick);
     if (/\.(js|html)$/.test(rel)) {
       test.run('every spirit.require of a written path in it names a file that exists', 0.4, function () {
         const missing = missingRequires(rel);
-        return !missing.length || 'it asks for what is not there: ' + short(missing);
+        return !missing.length || false;
       }, test.limit.quick);
       test.run('its code skips no node_modules by its own name', 0.4, function () {
         const hits = codeLinesMatching(rel, OWN_NODE_MODULES_SKIP);
-        return !hits.length || 'it does: ' + short(hits) + '; it reads fileSystem.js\'s VENDORED_FOLDERS';
+        return !hits.length || false;
       }, test.limit.quick);
     }
     if (/\.(js|html)$/.test(rel)) test.run('it reaches through spirit.element only for elements the tree holds', 0.4, function () {
       const stray = strayElementReaches(rel);
-      return !stray.length || 'it does: ' + short(stray.slice(0, 12));
+      return !stray.length || false;
     }, test.limit.quick);
   }
-  // goal/G43.32: a product script holds the shape (everyScriptShaped), each reason named in its answer.
+  // goal/G43.32: a product script holds the shape (everyScriptShaped).
   if (/^spirit\/.+\.js$/.test(rel) && !/(^|\/)test\//.test(rel) && !VENDORED_FOLDERS.holds(rel)) {
     // <address>: use strict, spirit first, the tree only through spirit.require
     test.run('it starts with \'use strict\', takes spirit first, and loads the tree only through spirit.require', 0.4, function () {
-      return listed(shapeBreaks(rel));
+      return !shapeBreaks(rel);
     }, test.limit.quick);
   }
   // The general rules of a module (moduleRules above), on any file handed, a product script or not.
   // <address>: the spirit object is a global before anything else is loaded
   const mr = moduleRules(full);
-  if (mr.page) test.run('it is page code: node never loads it', 0.4, function () { return moduleRules(full).page || 'it is no longer page code'; }, test.limit.quick);
-  else if (mr.spirit) test.run('it sets the global spirit before its first require', 0.4, function () { return !moduleRules(full).early || moduleRules(full).early; }, test.limit.quick);
-  else test.run('it requires spirit.js first', 0.4, function () { return !moduleRules(full).early || moduleRules(full).early; }, test.limit.quick);
+  if (mr.page) test.run('it is page code: node never loads it', 0.4, function () { return moduleRules(full).page || false; }, test.limit.quick);
+  else if (mr.spirit) test.run('it sets the global spirit before its first require', 0.4, function () { return !moduleRules(full).early; }, test.limit.quick);
+  else test.run('it requires spirit.js first', 0.4, function () { return !moduleRules(full).early; }, test.limit.quick);
   // <address>: every require path is a child, a sibling or an ancestor's file
   test.run('none of its require paths breaks the rule', 0.4, function () {
-    return listed(moduleRules(full).bad.map(function (p) { return 'require error: it requires ' + JSON.stringify(p); }));
+    return !moduleRules(full).bad.length;
   }, test.limit.quick);
   if (!kindOf(rel)) {
     test.run('it places no element (it calls no installSpiritElement): a switch, a server or a helper, not mounted', 0.4, function () {
-      return !kindOf(rel) || 'it places an element after all';
+      return !kindOf(rel) || false;
     }, test.limit.quick);
     return;
   }
@@ -2079,7 +2052,7 @@ function oneFile(P) {
   if (rel !== 'spirit/element/search.js') {
     // <address>: its searches match the whole row
     test.run('it hands no search a matched() of its own', 0.4, function () {
-      return !/\bmatched\s*:/.test(ownCode) || 'it hands a search matched(), a few fields in place of the whole row';
+      return !/\bmatched\s*:/.test(ownCode) || false;
     }, test.limit.quick);
   }
   // WHAT IT CHANGES, IT LISTENS FOR, IN ITS CODE (goal/G41.28; Andy: "EVERY FUCKING ELEMENT is verified to make sure when
@@ -2097,7 +2070,7 @@ function oneFile(P) {
     if (!writes) unjudged('its code sends no write');
     else {
       test.run('it sends writes and watches spirit.data', 0.4, function () {
-        return (/\.watch\s*\(/.test(own) || /\bdata\s*:\s*(?:['"][\w.\/-]+['"]|[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)+)/.test(own)) || 'it sends writes (' + writes[0].replace(/\s+/g, ' ') + ') and its code watches nothing in spirit.data';
+        return (/\.watch\s*\(/.test(own) || /\bdata\s*:\s*(?:['"][\w.\/-]+['"]|[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)+)/.test(own)) || false;
       }, test.limit.quick);
     }
   }
@@ -2109,7 +2082,7 @@ function oneFile(P) {
   test.run('it takes no api from what it is handed', 0.4, function () {
     const own = ownCode;
     const handed = own.match(/\b(?:opts|options|o|op)\s*\.\s*api\b|(?<![.\w$])api\s*\.\s*(?:verb|escapeHtml)\b/g) || [];
-    return !handed.length || 'it uses an api handed to it: ' + short(handed.filter(function (h, i) { return handed.indexOf(h) === i; }));
+    return !handed.length || false;
   }, test.limit.quick);
 
 }
@@ -2119,7 +2092,7 @@ function oneFile(P) {
 
 // What it judges: given no file, the tree; given a file, that file's code (its page is spirit-sibling-browser.js's).
 if (!arg) every();
-else if (!full) test.run('the world: the file handed is there', 0.2, function () { return 'no file to judge: ' + JSON.stringify(arg); }, test.limit.quick);
+else if (!full) test.run('the world: the file handed is there', 0.2, function () { return false; }, test.limit.quick);
 else oneFile({ fail: '', stage: 'none' });
 }
 
@@ -2136,7 +2109,7 @@ if (!GIVEN.length) {
     try { hits = require('child_process').execFileSync('git', ['grep', '-l', '-i', '-I', word], { cwd: top, encoding: 'utf8', maxBuffer: 1 << 26 }); } catch (e) { hits = String((e && e.stdout) || ''); }
     const named = require('child_process').execFileSync('git', ['ls-files'], { cwd: top, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(function (f) { return f.toLowerCase().indexOf(word.toLowerCase()) !== -1; });
     const all = hits.split('\n').filter(Boolean).concat(named).filter(function (f, i, a) { return a.indexOf(f) === i; });
-    return all.length === 0 || all.length + ' tracked files name it: ' + all.slice(0, 12).join(', ');
+    return all.length === 0 || false;
   }, test.limit.slow);
   // THE LAB REDRAWN (goal/G47.3, the box: "labMaster lives in repo://lab/ (today repo://spirit/test/labMaster/)",
   // "repo://lab/node/ is .gitignored", "its tools (box.js, inspect.js, runsHome.js, wirePaths.js) move with labMaster to
@@ -2153,26 +2126,26 @@ if (!GIVEN.length) {
     const inLab = all.filter(function (f) { return /^lab\//.test(f); }).map(function (f) { return f.split('/').pop(); });
     const missing = want.filter(function (n) { return inLab.indexOf(n) === -1; });
     const left = all.filter(function (f) { return /^spirit\/test\/labMaster\//.test(f); });
-    return (!missing.length && !left.length) || (missing.length ? 'not in lab/: ' + missing.join(', ') : '') + (left.length ? (missing.length ? '; ' : '') + 'still in spirit/test/labMaster/: ' + left.length + ' files' : '');
+    return (!missing.length && !left.length) || false;
   }, test.limit.slow);
   test.run('the old test folder\'s tools are in repo://lab/, its unused fixture and its visual json are gone', 0.4, function () {
     const all = trackedAll();
     const tools = ['box.js', 'inspect.js', 'runsHome.js', 'wirePaths.js'];
     const inLab = all.filter(function (f) { return /^lab\//.test(f); }).map(function (f) { return f.split('/').pop(); });
-    const bad = tools.filter(function (n) { return inLab.indexOf(n) === -1; }).map(function (n) { return n + ' not in lab/'; })
-      .concat(all.filter(function (f) { return /^spirit\/test\/(tools|fixtures|visual)\//.test(f); }).map(function (f) { return f + ' still there'; }));
-    return !bad.length || bad.join('; ');
+    const bad = tools.filter(function (n) { return inLab.indexOf(n) === -1; })
+      .concat(all.filter(function (f) { return /^spirit\/test\/(tools|fixtures|visual)\//.test(f); }));
+    return !bad.length;
   }, test.limit.slow);
   test.run('.gitignore keeps repo://lab/node/ out of git, and git holds nothing under it', 0.4, function () {
     let ignored = false;
     try { require('child_process').execFileSync('git', ['check-ignore', '-q', 'lab/node/zzProbe/x.js'], { cwd: top() }); ignored = true; } catch (e) { ignored = false; }
     const held = trackedAll().filter(function (f) { return /^lab\/node\//.test(f); });
-    return (ignored && !held.length) || (ignored ? '' : 'lab/node/ is not git-ignored') + (held.length ? ' git holds ' + held.length + ' files under it' : '');
+    return (ignored && !held.length) || false;
   }, test.limit.slow);
   test.run('README/HARNESS/HUMAN_TOOLS.md names neither visualScenarios.js nor presenceShow.js', 0.4, function () {
-    let t = ''; try { t = fs.readFileSync(path.join(top(), 'README', 'HARNESS', 'HUMAN_TOOLS.md'), 'utf8'); } catch (e) { return 'no README/HARNESS/HUMAN_TOOLS.md'; }
+    let t = ''; try { t = fs.readFileSync(path.join(top(), 'README', 'HARNESS', 'HUMAN_TOOLS.md'), 'utf8'); } catch (e) { return false; }
     const named = ['visualScenarios.js', 'presenceShow.js'].filter(function (n) { return t.indexOf(n) !== -1; });
-    return !named.length || 'it still names ' + named.join(' and ');
+    return !named.length || false;
   }, test.limit.quick);
   // Every node a test uses is handed out by scratchNode (headLessChrome.js, the one helper that starts spirit/server.js).
   test.run('no test starts spirit/server.js itself: every node a test uses comes from scratchNode', 0.4, function () {
@@ -2182,7 +2155,7 @@ if (!GIVEN.length) {
       c = c.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1');
       return /spawn\s*\([^;]*['"]spirit\/server\.js['"]/.test(c) || /spawn\s*\([^;]*path\.join\([^;]*['"]server\.js['"]/.test(c);
     });
-    return !starting.length || starting.length + ' start it themselves: ' + starting.map(function (f) { return f.replace(/^spirit\/run\//, ''); }).join(', ');
+    return !starting.length || false;
   }, test.limit.slow);
 }
 else GIVEN.forEach(function (one) { test.forScript(one, function () { PARTS.forEach(function (part) { part([one]); }); }); });

@@ -14,7 +14,6 @@ const FILE = path.join(__dirname, '..', 'api.js');
 require(path.join(RUN, 'spirit', 'spirit.js'));
 const spirit = globalThis.spirit;
 
-function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 const isPlain = function (v) { return v !== null && typeof v === 'object' && !Array.isArray(v); };
 const KEY = 'MCowBQYDK2VwAyEA' + 'deskClientApiTest'.padEnd(43, 'A') + '=';
 
@@ -23,7 +22,6 @@ const W = { api: null, verbs: {}, names: [] };
 const call = function (verb, args) { return spirit.check(verb, W.verbs[verb], args); };
 const passes = function (verb, args) { return call(verb, args) === null; };
 const refusedAs = function (verb, args) { const r = call(verb, args); return r ? r.code : ''; };
-const NO_API = 'api.js did not load: the world failed';
 
 test.run('the world: api.js loads', 0.2, function () {
   W.api = require(FILE);
@@ -34,15 +32,15 @@ test.run('the world: api.js loads', 0.2, function () {
 
 // its shape: verbs, each argument with its rule, no family name of its own
 test.run('it exports a table of verbs, with at least one verb in it', 0.2, function () {
-  if (!W.api) return NO_API;
-  return (isPlain(W.verbs) && W.names.length > 0) || 'exports ' + short(Object.keys(W.api)) + ', verbs ' + short(W.names);
+  if (!W.api) return false;
+  return (isPlain(W.verbs) && W.names.length > 0) || false;
 }, test.limit.quick);
 test.run('it exports nothing but verbs: it names no family of its own', 0.2, function () {
-  if (!W.api) return NO_API;
-  return Object.keys(W.api).join() === 'verbs' || 'exports ' + short(Object.keys(W.api));
+  if (!W.api) return false;
+  return Object.keys(W.api).join() === 'verbs' || false;
 }, test.limit.quick);
 test.run('every rule is one of spirit.js\'s standard, \'?\' optional', 0.2, function () {
-  if (!W.api) return NO_API;
+  if (!W.api) return false;
   const badRule = [];
   W.names.forEach(function (v) {
     if (!isPlain(W.verbs[v])) { badRule.push(v + ': not an object'); return; }
@@ -52,63 +50,63 @@ test.run('every rule is one of spirit.js\'s standard, \'?\' optional', 0.2, func
       if (spirit.rules.indexOf(rule) === -1) badRule.push(v + '.' + arg + ': ' + raw);
     });
   });
-  return badRule.length === 0 || 'unknown rules: ' + short(badRule);
+  return badRule.length === 0 || false;
 }, test.limit.quick);
 
 // every verb it lists is one the server serves
 test.run('each is a handler of deskClient.js, or appServer\'s streamListener (deskClient follows the desk\'s stream)', 0.2, function () {
-  if (!W.api) return NO_API;
+  if (!W.api) return false;
   const source = ['spirit/app/deskClient/deskClient.js', 'spirit/appServer.js'].map(function (f) { return fs.readFileSync(path.join(RUN, f), 'utf8'); }).join('\n');
   const esc = function (s) { return s.replace(/[.$]/g, '\\$&'); };
   const unserved = W.names.filter(function (v) { return !new RegExp('[\'"]' + esc(v) + '[\'"]\\s*:|^\\s*' + esc(v) + '\\s*:|\\ball\\.' + esc(v) + '\\s*=', 'm').test(source); });
-  return unserved.length === 0 || 'no handler for: ' + short(unserved);
+  return unserved.length === 0 || false;
 }, test.limit.quick);
 test.run('deskClient serves with a stream, so appServer adds its streamListener', 0.2, function () {
-  return (/\bstream\s*:\s*\{/).test(fs.readFileSync(path.join(RUN, 'spirit/app/deskClient/deskClient.js'), 'utf8')) || 'deskClient.js names no stream for appServer.serve';
+  return (/\bstream\s*:\s*\{/).test(fs.readFileSync(path.join(RUN, 'spirit/app/deskClient/deskClient.js'), 'utf8')) || false;
 }, test.limit.quick);
 
 // each verb's arguments, as the handlers take them
 test.run('next: read optional, the key of the wake the agent last read, a text', 0.2, function () {
-  if (!W.api) return NO_API;
-  return (passes('next', {}) && passes('next', { read: 'w-1' }) && refusedAs('next', { read: 1 }) === 'bad-request') || 'next {read: 1} ' + refusedAs('next', { read: 1 });
+  if (!W.api) return false;
+  return (passes('next', {}) && passes('next', { read: 'w-1' }) && refusedAs('next', { read: 1 }) === 'bad-request') || false;
 }, test.limit.quick);
 test.run('and next refuses anything else', 0.2, function () {
-  if (!W.api) return NO_API;
-  return refusedAs('next', { wait: 1 }) === 'no-such-argument' || 'next {wait} ' + refusedAs('next', { wait: 1 });
+  if (!W.api) return false;
+  return refusedAs('next', { wait: 1 }) === 'no-such-argument' || false;
 }, test.limit.quick);
 test.run('cache.dump takes no path: it is refused before it leaves', 0.2, function () {
-  if (!W.api) return NO_API;
-  return (passes('cache.dump', {}) && refusedAs('cache.dump', { path: '../x.json' }) === 'no-such-argument') || 'cache.dump {path} ' + refusedAs('cache.dump', { path: '../x.json' });
+  if (!W.api) return false;
+  return (passes('cache.dump', {}) && refusedAs('cache.dump', { path: '../x.json' }) === 'no-such-argument') || false;
 }, test.limit.quick);
 test.run('desk: kept optional, true or false', 0.2, function () {
-  if (!W.api) return NO_API;
-  return (passes('desk', { name: 'item.get', json: '{}', kept: true }) && refusedAs('desk', { name: 'item.get', kept: 'yes' }) === 'bad-request') || 'kept \'yes\' ' + refusedAs('desk', { name: 'item.get', kept: 'yes' });
+  if (!W.api) return false;
+  return (passes('desk', { name: 'item.get', json: '{}', kept: true }) && refusedAs('desk', { name: 'item.get', kept: 'yes' }) === 'bad-request') || false;
 }, test.limit.quick);
 test.run('desk: the desk verb by name, its json optional (\'{}\' when left out)', 0.2, function () {
-  if (!W.api) return NO_API;
-  return (passes('desk', { name: 'item.get', json: '{"id":"goal/G1.1"}' }) && passes('desk', { name: 'work.open' })) || short(call('desk', { name: 'work.open' }));
+  if (!W.api) return false;
+  return (passes('desk', { name: 'item.get', json: '{"id":"goal/G1.1"}' }) && passes('desk', { name: 'work.open' })) || false;
 }, test.limit.quick);
 test.run('a desk ask with no verb named is refused', 0.2, function () {
-  if (!W.api) return NO_API;
-  return (refusedAs('desk', { name: '' }) === 'bad-request' && refusedAs('desk', { json: '{}' }) === 'bad-request') || 'name \'\' ' + refusedAs('desk', { name: '' });
+  if (!W.api) return false;
+  return (refusedAs('desk', { name: '' }) === 'bad-request' && refusedAs('desk', { json: '{}' }) === 'bad-request') || false;
 }, test.limit.quick);
 test.run('its json is a JSON text, not an object', 0.2, function () {
-  if (!W.api) return NO_API;
-  return refusedAs('desk', { name: 'item.get', json: { id: 'x' } }) === 'bad-request' || 'json object: ' + refusedAs('desk', { name: 'item.get', json: { id: 'x' } });
+  if (!W.api) return false;
+  return refusedAs('desk', { name: 'item.get', json: { id: 'x' } }) === 'bad-request' || false;
 }, test.limit.quick);
 test.run('setDesk takes the desk node\'s key, a peer\'s public key, and needs it', 0.2, function () {
-  if (!W.api) return NO_API;
-  return (passes('setDesk', { key: KEY }) && refusedAs('setDesk', { key: 'not-a-key' }) === 'bad-request' && refusedAs('setDesk', {}) === 'bad-request') || 'a bad key: ' + refusedAs('setDesk', { key: 'not-a-key' });
+  if (!W.api) return false;
+  return (passes('setDesk', { key: KEY }) && refusedAs('setDesk', { key: 'not-a-key' }) === 'bad-request' && refusedAs('setDesk', {}) === 'bad-request') || false;
 }, test.limit.quick);
 test.run('signoff and clearSignoff: agent optional', 0.2, function () {
-  if (!W.api) return NO_API;
-  return (passes('signoff', {}) && passes('signoff', { agent: 'claude-windows' }) && passes('clearSignoff', {}) && passes('clearSignoff', { agent: '' })) || short(call('signoff', {}));
+  if (!W.api) return false;
+  return (passes('signoff', {}) && passes('signoff', { agent: 'claude-windows' }) && passes('clearSignoff', {}) && passes('clearSignoff', { agent: '' })) || false;
 }, test.limit.quick);
 test.run('history.search: text optional, a text when sent', 0.2, function () {
-  if (!W.api) return NO_API;
-  return (passes('history.search', {}) && passes('history.search', { text: 'x' }) && refusedAs('history.search', { text: 3 }) === 'bad-request') || 'text 3: ' + refusedAs('history.search', { text: 3 });
+  if (!W.api) return false;
+  return (passes('history.search', {}) && passes('history.search', { text: 'x' }) && refusedAs('history.search', { text: 3 }) === 'bad-request') || false;
 }, test.limit.quick);
 test.run('streamListener needs its one row, as JSON text', 0.2, function () {
-  if (!W.api) return NO_API;
-  return (passes('streamListener', { json: '{"verb":"x"}' }) && refusedAs('streamListener', {}) === 'bad-request') || 'streamListener {}: ' + refusedAs('streamListener', {});
+  if (!W.api) return false;
+  return (passes('streamListener', { json: '{"verb":"x"}' }) && refusedAs('streamListener', {}) === 'bad-request') || false;
 }, test.limit.quick);

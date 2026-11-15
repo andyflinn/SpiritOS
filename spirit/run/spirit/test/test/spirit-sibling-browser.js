@@ -14,7 +14,6 @@ const RUN = path.resolve(__dirname, '..', '..', '..');
 const SUBJECT = path.join(RUN, 'spirit', 'test', 'spirit-sibling-browser.js');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 
-function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 
 const ELEMENTS = ['spirit/element/busyButton.js', 'spirit/element/progressBar.js', 'spirit/element/panel.js', 'spirit/element/icon.js',
@@ -61,7 +60,7 @@ test.after(function () { try { fs.rmSync(path.join(RUN, HANG), { force: true });
 test.run('the world: a planted script that never ends', 0.2, function () {
   const f = path.join(RUN, HANG);
   fs.writeFileSync(f, '\'use strict\';\n// planted by spirit/test/test/spirit-sibling-browser.js: it never ends\nfor (;;) { /* hang */ }\n');
-  return fs.existsSync(f) || 'could not plant ' + HANG;
+  return fs.existsSync(f) || false;
 }, test.limit.quick);
 test.run('the world: the general test run on six elements, the hang among them, watched from outside', 0.2, async function () {
   const list = ELEMENTS.slice(0, 2).concat([HANG]).concat(ELEMENTS.slice(2));
@@ -99,37 +98,38 @@ test.run('the world: the general test run on six elements, the hang among them, 
 // box v144: "spirit/test/spirit-sibling-browser.js and spirit/test/app-child-browser.js run on one node and one Chrome for
 // the whole run"
 test.run('the run ends by itself, within four minutes', 0.4, function () {
-  return (!!W.list && !W.hung) || 'still going after four minutes: ended by the test';
+  return (!!W.list && !W.hung) || false;
 }, test.limit.quick);
 test.run('the whole run starts one node', 0.4, function () {
-  if (process.platform !== 'linux') return 'its processes are counted on Linux only: nothing judged here';
-  return W.nodes.size === 1 || 'nodes started for one run: ' + W.nodes.size;
+  if (process.platform !== 'linux') return false;
+  return W.nodes.size === 1 || false;
 }, test.limit.quick);
 test.run('the whole run starts one Chrome', 0.4, function () {
-  if (process.platform !== 'linux') return 'its processes are counted on Linux only: nothing judged here';
-  return W.chromes.size === 1 || 'Chromes started for one run: ' + W.chromes.size;
+  if (process.platform !== 'linux') return false;
+  return W.chromes.size === 1 || false;
 }, test.limit.quick);
 // box v144: "only a hung page is reloaded: a main page that does not answer within 1 s is hung; a script's load waits as
 // long as the page still answers."
 test.run('every element after the hung script is judged: its results stand in testicle from this run', 0.4, function () {
-  if (!testicleBase()) return 'no node this checkout reports to: nothing judged';
-  if (!W.tested) return 'no run: the world failed';
+  if (!testicleBase()) return false;
+  if (!W.tested) return false;
   const after = ELEMENTS.slice(2).filter(function (f) { return !(W.tested[f] > W.startAt); });
-  return after.length === 0 || 'no result from this run after the hang: ' + short(after);
+  return after.length === 0 || false;
 }, test.limit.quick);
 test.run('and the hung script is judged red', 0.4, function () {
-  const named = W.out.split('\n').filter(function (l) { return /FAILURE/.test(l) && l.indexOf('zzBrowserHang') !== -1; });
-  return named.length > 0 || 'no red names the hung script';
+  // A red line (its title and ❌) under the hung script's heading (spirit/test/testReport.js).
+  let under = false;
+  return W.out.split('\n').some(function (l) { if (!/[✅❌]\s*$/.test(l)) { under = l.indexOf('zzBrowserHang') !== -1; return false; } return under && /❌\s*$/.test(l); });
 }, test.limit.quick);
 // box v144: "every result reaches testicle the moment the page knows it"
 test.run('the first element\'s result stands in testicle while the run still goes', 0.4, function () {
-  if (!testicleBase()) return 'no node this checkout reports to: nothing judged';
-  return (W.firstAt > 0 && W.firstAt < W.endAt) || 'first result in testicle at ' + (W.firstAt ? (W.firstAt - W.startAt) + ' ms' : 'never') + ', the run ended at ' + W.ms + ' ms';
+  if (!testicleBase()) return false;
+  return (W.firstAt > 0 && W.firstAt < W.endAt) || false;
 }, test.limit.quick);
 // box v144: "the target: at least 80% less test time"
 test.run('the run takes at least 80% less than ' + BEFORE_S + ' s a script', 0.4, function () {
   const most = 0.2 * BEFORE_S * 1000 * (ELEMENTS.length + 1);
-  return (W.ms > 0 && W.ms <= most) || 'the run took ' + (W.ms / 1000).toFixed(1) + ' s for ' + (ELEMENTS.length + 1) + ' scripts, the most ' + (most / 1000).toFixed(1) + ' s';
+  return (W.ms > 0 && W.ms <= most) || false;
 }, test.limit.quick);
 // box v144: "no fixed sleeps in the checks: each wait ends the moment the page has settled."
 test.run('no fixed sleep in spirit-sibling-browser.js', 0.4, function () {
@@ -141,5 +141,5 @@ test.run('no fixed sleep in spirit-sibling-browser.js', 0.4, function () {
       if (/\bsleep\s*\(\s*\d/.test(code) || /setTimeout\s*\([^,]*,\s*\d+\s*\)/.test(code)) bad.push(n + ':' + (i + 1));
     });
   });
-  return bad.length === 0 || bad.length + ' fixed sleeps: ' + short(bad);
+  return bad.length === 0 || false;
 }, test.limit.quick);

@@ -16,7 +16,6 @@ const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const FILE = path.join(__dirname, '..', 'data.js');
 const SPIRIT_DATA = path.join(RUN, 'spirit', 'data.js');
 
-function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 // The node's public key, base64 with a + and a / in it, as a node's key is.
 const HOME_KEY = 'Ab+c/DeF0123456789abcdefghijklmnopqrstuvwxy=';
 
@@ -34,76 +33,75 @@ function world() {
 const STATUS = { lastCheck: '2026-11-13T09:00:00.000Z', lastCopy: '2026-11-13T08:00:00.000Z', lastError: '' };
 
 const W = {};
-const NO_WORLD = 'no spirit.data.backup.data: the world failed';
 
 test.run('the world: in a window, beside the real spirit.data, it stands at spirit.data.backup.data', 0.2, function () {
-  try { Object.assign(W, world()); } catch (e) { return 'it threw: ' + short(e && e.message); }
-  return !!W.B || 'spirit.data.backup is ' + short(W.D && W.D.backup);
+  try { Object.assign(W, world()); } catch (e) { return false; }
+  return !!W.B || false;
 }, test.limit.quick);
 test.run('its reads are keep, status, watch and branch', 0.2, function () {
-  if (!W.B) return NO_WORLD;
-  return (['keep', 'status', 'watch'].every(function (f) { return typeof W.B[f] === 'function'; }) && typeof W.B.branch === 'string') || 'reads ' + short(Object.keys(W.B));
+  if (!W.B) return false;
+  return (['keep', 'status', 'watch'].every(function (f) { return typeof W.B[f] === 'function'; }) && typeof W.B.branch === 'string') || false;
 }, test.limit.quick);
 test.run('before anything is kept, status() is null', 0.2, function () {
-  if (!W.B) return NO_WORLD;
-  return W.B.status() === null || 'status ' + short(W.B.status());
+  if (!W.B) return false;
+  return W.B.status() === null || false;
 }, test.limit.quick);
 // THE BRANCH IS THIS FILE'S, AND ONLY THIS FILE NAMES IT: backupStatus, under the node that served it.
 test.run('its branch is <node>/backup/backupStatus, under the node that served it', 0.2, function () {
-  if (!W.B) return NO_WORLD;
-  return W.B.branch === W.D.nodeId(HOME_KEY) + '/backup/backupStatus' || 'branch ' + short(W.B.branch);
+  if (!W.B) return false;
+  return W.B.branch === W.D.nodeId(HOME_KEY) + '/backup/backupStatus' || false;
 }, test.limit.quick);
 test.run('keep(status) keeps what status.get answered, and status() answers it', 0.2, function () {
-  if (!W.B) return NO_WORLD;
+  if (!W.B) return false;
   W.B.keep(Object.assign({}, STATUS));
   const s = W.B.status();
-  return (!!s && s.lastCheck === STATUS.lastCheck && s.lastCopy === STATUS.lastCopy) || 'status ' + short(s);
+  return (!!s && s.lastCheck === STATUS.lastCheck && s.lastCopy === STATUS.lastCopy) || false;
 }, test.limit.quick);
 test.run('it is kept at <branch>/now, in the data set', 0.2, function () {
-  if (!W.B) return NO_WORLD;
+  if (!W.B) return false;
   const s = W.D.getPath(W.B.branch + '/now');
-  return (!!s && s.lastCheck === STATUS.lastCheck) || 'at ' + W.B.branch + '/now: ' + short(s);
+  return (!!s && s.lastCheck === STATUS.lastCheck) || false;
 }, test.limit.quick);
 test.run('watch(fn) is told the status on every change', 0.2, function () {
-  if (!W.B) return NO_WORLD;
+  if (!W.B) return false;
   const heard = [];
   W.release = W.B.watch(function (s) { heard.push(s); });
   W.heard = heard;
   W.B.keep(Object.assign({}, STATUS, { lastError: 'disk full' }));
-  return (heard.length === 1 && heard[0] && heard[0].lastError === 'disk full') || 'heard ' + short(heard);
+  return (heard.length === 1 && heard[0] && heard[0].lastError === 'disk full') || false;
 }, test.limit.quick);
 test.run('a refusal kept lets the status go: status() is null, and the watch is told null', 0.2, function () {
-  if (!W.heard) return 'no watch: the test before it failed';
+  if (!W.heard) return false;
   W.B.keep({ ok: false, error: 'refused' });
-  return (W.B.status() === null && W.heard.length === 2 && W.heard[1] === null) || 'status ' + short(W.B.status()) + ', heard ' + short(W.heard);
+  return (W.B.status() === null && W.heard.length === 2 && W.heard[1] === null) || false;
 }, test.limit.quick);
 test.run('nothing kept lets it go too', 0.2, function () {
-  if (!W.B) return NO_WORLD;
+  if (!W.B) return false;
   W.B.keep(Object.assign({}, STATUS));
   W.B.keep(null);
-  return W.B.status() === null || 'status ' + short(W.B.status());
+  return W.B.status() === null || false;
 }, test.limit.quick);
 test.run('watch answers its release: released, it is told nothing more', 0.2, function () {
-  if (typeof W.release !== 'function') return 'watch answered no release';
+  if (typeof W.release !== 'function') return false;
   const n = W.heard.length;
   W.release();
   W.B.keep(Object.assign({}, STATUS));
-  return W.heard.length === n || 'heard after release: ' + short(W.heard.slice(n));
+  return W.heard.length === n || false;
 }, test.limit.quick);
 // "The server publishes no row of its own, so it translates nothing."
 test.run('it translates nothing: a job of the backup on the stream writes nothing', 0.2, function () {
-  if (!W.B) return NO_WORLD;
+  if (!W.B) return false;
   const w = world();
   w.D.takeJob({ id: 'j1', module: 'spirit.app.backup', data: {}, app: { backup: { status: STATUS } } }, HOME_KEY);
   const kept = w.D.branchAt(w.D.nodeId(HOME_KEY) + '/backup');
-  return (w.B.status() === null && Object.keys(kept).length === 0) || 'kept ' + short(kept);
+  return (w.B.status() === null && Object.keys(kept).length === 0) || false;
 }, test.limit.quick);
 
 // ── in node, as appServer asks for it ──
 test.run('in node, spirit.cacheManager(\'backup\') loads it, and it stands at spirit.data.backup.data', 0.2, async function () {
   require(path.join(RUN, 'spirit', 'spirit.js'));
   const s = globalThis.spirit;
-  try { await s.cacheManager('backup'); } catch (e) { return 'cacheManager(backup) refused: ' + short(e && e.message); }
+  try { await s.cacheManager('backup'); } catch (e) { return false; }
   const B = s.data && s.data.backup && s.data.backup.data;
-  return (!!B && typeof B.status === 'function' && typeof B.keep === 'function') || 'spirit.data.backup is ' + short(s.data && s.data.backup);
+  return (!!B && typeof B.status === 'function' && typeof B.keep === 'function') || false;
 }, test.limit.quick);

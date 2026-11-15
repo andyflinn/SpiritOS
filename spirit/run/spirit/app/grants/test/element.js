@@ -26,7 +26,6 @@ const FILE = path.join(__dirname, '..', 'element.js');
 const SRC = fs.existsSync(FILE) ? fs.readFileSync(FILE, 'utf8') : '';
 const CODE = SRC.replace(/\/\/.*$/gm, '');
 
-function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 function parsed(t) { try { return JSON.parse(t); } catch (e) { return null; } }
 const settle = async function () { for (let i = 0; i < 20; i++) await new Promise(function (r) { setImmediate(r); }); };
 
@@ -90,157 +89,153 @@ function stop(c) { return new Promise(function (r) { if (!c || c.exitCode !== nu
 // grants.js: the Grants app, a wrapper of the grants panel and the bundle editor.
 // What each test made, for the tests after it: U on the bare window, B in the browser.
 const U = {};
-const NO_APP = 'no spirit.element.spirit.app.grants.element: the tests before failed';
 
 test.run('spirit/app/grants/element.js is there', 0.2, function () {
-  return !!SRC || 'there is no spirit/app/grants/element.js';
+  return !!SRC || false;
 }, test.limit.quick);
 
 // mounted the new shell's way (goal/G43.24, requirement 7)
 test.run('it sets spirit.element.spirit.app.grants.element = { create }', 0.2, function () {
-  if (!SRC) return 'there is no spirit/app/grants/element.js';
+  if (!SRC) return false;
   U.w = world();
   U.G = U.w.els.grants;
-  return !!U.G && typeof U.G.create === 'function' ? true : 'elements: ' + short(Object.keys(U.w.els));
+  return !!U.G && typeof U.G.create === 'function' ? true : false;
 }, test.limit.quick);
 test.run('no spirit.shell.activateApp, the old shell\'s way', 0.2, function () {
-  if (!SRC) return 'there is no spirit/app/grants/element.js';
-  return !/\bactivateApp\b|\bspirit\.shell\b/.test(CODE) || 'grants.js still mounts through spirit.shell';
+  if (!SRC) return false;
+  return !/\bactivateApp\b|\bspirit\.shell\b/.test(CODE) || false;
 }, test.limit.quick);
 test.run('nothing of the old shell: no shellCreateListSearch, no api.ui.elements, no apiBranchSelector', 0.2, function () {
-  if (!SRC) return 'there is no spirit/app/grants/element.js';
-  return !/shellCreateListSearch|api\.ui\.elements|apiBranchSelector/.test(CODE) || 'grants.js still names one';
+  if (!SRC) return false;
+  return !/shellCreateListSearch|api\.ui\.elements|apiBranchSelector/.test(CODE) || false;
 }, test.limit.quick);
 
 // a wrapper: it loads the panel, the tabs and the bundle editor, and nothing of its own (requirement 6)
 test.run('it requires spirit/element/search/grant/grantsPanel.js', 0.2, function () {
-  if (!U.w) return NO_APP;
-  return U.w.required.indexOf('spirit/element/search/grant/grantsPanel.js') !== -1 || 'required: ' + short(U.w.required);
+  if (!U.w) return false;
+  return U.w.required.indexOf('spirit/element/search/grant/grantsPanel.js') !== -1 || false;
 }, test.limit.quick);
 test.run('it requires spirit/element/tabContainer.js', 0.2, function () {
-  if (!U.w) return NO_APP;
-  return U.w.required.indexOf('spirit/element/tabContainer.js') !== -1 || 'required: ' + short(U.w.required);
+  if (!U.w) return false;
+  return U.w.required.indexOf('spirit/element/tabContainer.js') !== -1 || false;
 }, test.limit.quick);
 test.run('it requires spirit/element/bundleEditor.js', 0.2, function () {
-  if (!U.w) return NO_APP;
-  return U.w.required.indexOf('spirit/element/bundleEditor.js') !== -1 || 'required: ' + short(U.w.required);
+  if (!U.w) return false;
+  return U.w.required.indexOf('spirit/element/bundleEditor.js') !== -1 || false;
 }, test.limit.quick);
 test.run('and nothing else', 0.2, function () {
-  if (!U.w) return NO_APP;
-  return U.w.required.length === 3 || 'required: ' + short(U.w.required);
+  if (!U.w) return false;
+  return U.w.required.length === 3 || false;
 }, test.limit.quick);
 // goal/G43.24: "Still its own: the panel's data source, auth.search and auth.grant / auth.revoke over the auth cache
 // (GR_GRANTS). It moves into grantsPanel."
 test.run('it asks nothing itself: no verb, no api, no auth verb, no cache of its own', 0.2, function () {
-  if (!SRC) return 'there is no spirit/app/grants/element.js';
-  return !/\.verb\s*\(|\bapi\b|\bauth\.|\bcacheManager\b|\bspirit\.data\b|\boutcome\b|\bfetch\s*\(/.test(CODE) || 'grants.js still asks or keeps something of its own';
+  if (!SRC) return false;
+  return !/\.verb\s*\(|\bapi\b|\bauth\.|\bcacheManager\b|\bspirit\.data\b|\boutcome\b|\bfetch\s*\(/.test(CODE) || false;
 }, test.limit.quick);
 test.run('it draws nothing itself: no markup, no list, no selector of its own', 0.2, function () {
-  if (!SRC) return 'there is no spirit/app/grants/element.js';
+  if (!SRC) return false;
   return !/['"][^'"\n]*<(div|span|button|input|table|b)\b/.test(CODE) && !/createElement|probabilitySearch|grantList|[cC]ontactSelector|[bB]undleSelector/.test(CODE)
-    ? true : 'grants.js still draws or builds something of its own';
+    ? true : false;
 }, test.limit.quick);
 
 test.run('create(container, opts) answers { destroy() }', 0.2, function () {
-  if (!U.G || typeof U.G.create !== 'function') return NO_APP;
+  if (!U.G || typeof U.G.create !== 'function') return false;
   U.box = node('<container>');
   U.box.innerHTML = '<p>left over</p>';
   U.m = U.G.create(U.box, {});
-  return !!U.m && typeof U.m.destroy === 'function' ? true : 'create answered ' + short(U.m && Object.keys(U.m));
+  return !!U.m && typeof U.m.destroy === 'function' ? true : false;
 }, test.limit.quick);
 test.run('it empties its container', 0.2, async function () {
-  if (!U.box) return 'create was never called';
+  if (!U.box) return false;
   const left = U.box.innerHTML;
   await settle();
-  return left === '' || 'left: ' + short(left);
+  return left === '' || false;
 }, test.limit.quick);
 
 // two tabs: Grants, the grants panel; Bundles, the bundle editor (goal/G41.13)
 test.run('one tabContainer, in its container', 0.2, function () {
-  if (!U.box) return 'create was never called';
+  if (!U.box) return false;
   U.tabs = U.w.tabs[0];
   U.list = U.tabs ? (U.tabs.opts.tabs || []) : [];
-  return U.w.tabs.length === 1 && U.tabs.host === U.box ? true : 'tabContainers: ' + U.w.tabs.length;
+  return U.w.tabs.length === 1 && U.tabs.host === U.box ? true : false;
 }, test.limit.quick);
 test.run('its tabs: grants (Grants), then bundles (Bundles)', 0.2, function () {
   const list = U.list || [];
-  return JSON.stringify(list.map(function (t) { return [t.name, t.label]; })) === '[["grants","Grants"],["bundles","Bundles"]]' ? true : 'tabs: ' + short(list.map(function (t) { return [t.name, t.label]; }));
+  return JSON.stringify(list.map(function (t) { return [t.name, t.label]; })) === '[["grants","Grants"],["bundles","Bundles"]]' ? true : false;
 }, test.limit.quick);
-const NO_TABS = 'no two tabs to mount: the tests before failed';
 function twoTabs() { return !!U.list && U.list.length === 2 && typeof U.list[0].mount === 'function' && typeof U.list[1].mount === 'function'; }
 test.run('the Grants tab is the grants panel, made in the tab\'s box and answered to it', 0.2, function () {
-  if (!twoTabs()) return NO_TABS;
+  if (!twoTabs()) return false;
   const gbox = node('<grants-tab>');
   const gp = U.list[0].mount(gbox);
   U.p = U.w.panels[0];
-  return U.w.panels.length === 1 && U.p.host === gbox && gp === U.p ? true : 'panels: ' + U.w.panels.length;
+  return U.w.panels.length === 1 && U.p.host === gbox && gp === U.p ? true : false;
 }, test.limit.quick);
 
 // the app configures the panel: the contacts, and the node's grants (goal/G41.16)
 // Andy: "the callers (Grants and agent shell apps should boody well know how to configure the damn grantsPanel element".
-const NO_PANEL = 'no grants panel made: the tests before failed';
 test.run('its ID table is the contacts\', loopback://api/contact/search', 0.2, function () {
-  if (!U.p) return NO_PANEL;
-  return U.p.cfg.ids && U.p.cfg.ids.table === 'loopback://api/contact/search' ? true : 'ids: ' + short(U.p.cfg.ids);
+  if (!U.p) return false;
+  return U.p.cfg.ids && U.p.cfg.ids.table === 'loopback://api/contact/search' ? true : false;
 }, test.limit.quick);
 test.run('its grants table is the node\'s, the one the panel offers by name: grantsPanel.nodeGrants', 0.2, function () {
-  if (!U.p) return NO_PANEL;
-  return U.p.cfg.grants === U.w.NODE_GRANTS || 'grants: ' + short(U.p.cfg.grants);
+  if (!U.p) return false;
+  return U.p.cfg.grants === U.w.NODE_GRANTS || false;
 }, test.limit.quick);
 // Andy: "every fucking element gets the interfaces it needs".
 test.run('and nothing else: no api handed', 0.2, function () {
-  if (!U.p) return NO_PANEL;
-  return Object.keys(U.p.cfg).sort().join() === 'grants,ids' || 'handed: ' + short(Object.keys(U.p.cfg));
+  if (!U.p) return false;
+  return Object.keys(U.p.cfg).sort().join() === 'grants,ids' || false;
 }, test.limit.quick);
 
 // the Bundles tab: the bundle editor, opening its tabs in this tab row (goal/G41.32)
-const NO_EDITOR = 'no bundle editor made: the tests before failed';
 test.run('the Bundles tab is the bundle editor, made in the tab\'s box', 0.2, function () {
-  if (!twoTabs()) return NO_TABS;
+  if (!twoTabs()) return false;
   const bbox = node('<bundles-tab>');
   const be = U.list[1].mount(bbox);
   U.ed = U.w.editors[0];
-  return U.w.editors.length === 1 && U.ed.host === bbox && be === U.ed ? true : 'editors: ' + U.w.editors.length;
+  return U.w.editors.length === 1 && U.ed.host === bbox && be === U.ed ? true : false;
 }, test.limit.quick);
 // Andy: "in the Grants app, this will be the grant app's tabContainer."
 test.run('handed the app\'s own tabContainer to open each bundle\'s tab in', 0.2, function () {
-  if (!U.ed) return NO_EDITOR;
-  return U.ed.opts && U.ed.opts.tabs === U.tabs ? true : 'tabs handed: ' + (U.ed.opts && U.ed.opts.tabs === U.tabs);
+  if (!U.ed) return false;
+  return U.ed.opts && U.ed.opts.tabs === U.tabs ? true : false;
 }, test.limit.quick);
 // Andy: "Grants: <owner>-<bundle>."
 test.run('each tab named owner-bundle (node when no owner is said)', 0.2, function () {
-  if (!U.ed) return NO_EDITOR;
+  if (!U.ed) return false;
   const tl = U.ed.opts && U.ed.opts.tabLabel;
   return typeof tl === 'function' && tl({ owner: 'node', label: 'Reader' }) === 'node-Reader' && tl({ owner: 'agent', label: 'Jobs' }) === 'agent-Jobs' && tl({ label: 'Lone' }) === 'node-Lone'
-    ? true : 'tabLabel: ' + short(typeof tl === 'function' ? [tl({ owner: 'node', label: 'Reader' }), tl({ label: 'Lone' })] : tl);
+    ? true : false;
 }, test.limit.quick);
 test.run('and the bundle editor is handed nothing else: no api', 0.2, function () {
-  if (!U.ed) return NO_EDITOR;
-  return Object.keys(U.ed.opts).sort().join() === 'tabLabel,tabs' || 'handed: ' + short(Object.keys(U.ed.opts));
+  if (!U.ed) return false;
+  return Object.keys(U.ed.opts).sort().join() === 'tabLabel,tabs' || false;
 }, test.limit.quick);
 
 // destroy
 test.run('destroy destroys its tabs and empties its container', 0.2, function () {
-  if (!U.m || !U.tabs) return 'no app made with its tabs: the tests before failed';
+  if (!U.m || !U.tabs) return false;
   U.m.destroy();
-  return U.tabs.destroyed === 1 && U.box.innerHTML === '' ? true : 'tabs destroyed ' + U.tabs.destroyed + ', left ' + short(U.box.innerHTML);
+  return U.tabs.destroyed === 1 && U.box.innerHTML === '' ? true : false;
 }, test.limit.quick);
 test.run('destroyed before its elements load, nothing is made', 0.2, async function () {
-  if (!SRC) return 'there is no spirit/app/grants/element.js';
+  if (!SRC) return false;
   let letGo = null;
   const late = world({ held: new Promise(function (r) { letGo = r; }) });
   const box2 = node('<container>');
   const m2 = late.els.grants.create(box2, {});
   m2.destroy(); letGo(); await settle();
-  return late.tabs.length === 0 || 'tabContainers made: ' + late.tabs.length;
+  return late.tabs.length === 0 || false;
 }, test.limit.quick);
 test.run('an element refused: Grants could not be loaded.', 0.2, async function () {
-  if (!SRC) return 'there is no spirit/app/grants/element.js';
+  if (!SRC) return false;
   const no = world({ refuse: ['spirit/element/bundleEditor.js'] });
   const box3 = node('<container>');
   no.els.grants.create(box3, {});
   await settle();
-  return box3.textContent === 'Grants could not be loaded.' && no.tabs.length === 0 ? true : 'said: ' + short(box3.textContent);
+  return box3.textContent === 'Grants could not be loaded.' && no.tabs.length === 0 ? true : false;
 }, test.limit.quick);
 
 // GOAL/G41.32, IN A REAL BROWSER ON A SCRATCH NODE. THE BOX: "the bundleSelector:pane looses both the 'Edit' button and the
@@ -280,8 +275,6 @@ const IN = 'document.getElementById("zzBox").querySelectorAll';
 const tabs = function () { return B.chrome.evaluate('JSON.stringify(Array.prototype.slice.call(' + IN + '(".tab-button")).filter(function (b) { return b.offsetParent !== null; }).map(function (b) { return { text: b.textContent.trim(), on: b.getAttribute("aria-selected") === "true" }; }))').then(function (t) { return JSON.parse(t || '[]'); }); };
 const tabNamed = async function (label) { return (await tabs()).filter(function (t) { return t.text.indexOf(label) !== -1; }); };
 const waitFor = function (fn, ms) { return H.until(fn, ms || 5000); };
-const NO_NODE = 'no scratch node: the world failed';
-const NO_PAGE = 'no Grants app on the page: the world failed';
 
 test.run('the world: a scratch node comes up for the bundle lines', 0.2, async function () {
   B.s = scratch();
@@ -289,30 +282,30 @@ test.run('the world: a scratch node comes up for the bundle lines', 0.2, async f
   B.child = LABH.startNodeOn(B.s.run, port);
   B.base = 'http://127.0.0.1:' + port;
   B.up = !!(await H.until(function () { return home('api').then(function (r) { return r.status === 200; }); }, 60000));
-  return B.up || 'the scratch node did not come up: nothing judged';
+  return B.up || false;
 }, test.limit.slow);
 test.run('the world: a Chrome page for the bundle lines', 0.2, async function () {
-  if (!B.up) return NO_NODE;
+  if (!B.up) return false;
   const where = H.findChrome();
-  if (!where) return 'no Chrome here: nothing judged';
+  if (!where) return false;
   const c = await H.chromePage(where);
-  if (c.error) return 'Chrome: ' + c.error;
+  if (c.error) return false;
   B.chrome = c;
   return true;
 }, test.limit.quick);
 test.run('the world: three bundles of the node\'s stand', 0.2, async function () {
-  if (!B.up) return NO_NODE;
+  if (!B.up) return false;
   B.one = await home('auth.bundle', { op: 'add', label: 'zzOne' });
   B.two = await home('auth.bundle', { op: 'add', label: 'zzTwo' });
   B.three = await home('auth.bundle', { op: 'add', label: 'zzThree' });
-  return B.one.status === 200 && B.two.status === 200 && B.three.status === 200 ? true : 'nothing judged: ' + short(B.one.text);
+  return B.one.status === 200 && B.two.status === 200 && B.three.status === 200 ? true : false;
 }, test.limit.quick);
 // A SERVER'S BUNDLE, PLANTED (goal/G47.1, the top reds cycle): nothing makes one any more (auth.bundle adds node-owned
 // bundles alone since goal/G41.32, and the bundle sync went with goal/G43.20), so a fresh node has none; one stands only
 // in a node.db made before. Planted so, a row owned by desk with one branch, written into the scratch node's node.db,
 // which every auth.bundle read reads.
 test.run('the world: and a server\'s bundle', 0.2, async function () {
-  if (!B.up) return NO_NODE;
+  if (!B.up) return false;
   await home('auth.branch', { op: 'add', bundle: B.one && B.one.body && B.one.body.id, family: 'node', verb: 'card' });
   try {
     const db = new (require('node:sqlite').DatabaseSync)(path.join(B.s.run, 'spirit', 'state', 'node.db'));
@@ -320,124 +313,124 @@ test.run('the world: and a server\'s bundle', 0.2, async function () {
     const made = db.prepare("INSERT INTO bundle (label, owner) VALUES ('zzDeskOwned', 'desk')").run();
     db.prepare("INSERT INTO branch (bundle, family, verb) VALUES (?, 'desk', 'item.get')").run(Number(made.lastInsertRowid));
     db.close();
-  } catch (e) { return 'a server\'s bundle could not be planted: ' + short(e && e.message); }
+  } catch (e) { return false; }
   const all = await home('auth.bundle', { op: 'search', text: '' });
   const rows = ((all.body && all.body.items) || []).map(function (i) { return parsed(i.label) || {}; });
   B.serverBundle = rows.filter(function (r) { return r.owner && r.owner !== 'node'; })[0];
-  return !!B.serverBundle || 'no bundle of a server on the scratch node: read-only judges nothing';
+  return !!B.serverBundle || false;
 }, test.limit.quick);
 test.run('the world: the face page has its spirit', 0.2, async function () {
-  if (!B.chrome) return 'no Chrome page: the world failed';
+  if (!B.chrome) return false;
   await B.chrome.send('Page.navigate', { url: B.base + '/face.html' });
   B.page = !!(await H.until(function () { return B.chrome.evaluate('!!(window.spirit && window.spirit.ready && window.spirit.event)'); }, 20000));
-  return B.page || 'the page has no spirit: nothing judged';
+  return B.page || false;
 }, test.limit.quick);
 // The shell app, as boot.js hands it the page's app area, here in a box of its own over the page.
 test.run('the world: the shell app is drawn', 0.2, async function () {
-  if (!B.page) return 'no page: the world failed';
+  if (!B.page) return false;
   const made = await B.chrome.evaluate('(function () { var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.require("spirit/app/app/element.js").then(function () { window.__shell = spirit.element.spirit.app.app.element.create(b); return "made"; }, function (e) { return "load: " + e; }); }())');
   B.shell = made === 'made';
-  return B.shell || 'the shell: ' + short(made);
+  return B.shell || false;
 }, test.limit.quick);
 test.run('the Grants app\'s tile is pressed', 0.2, async function () {
-  if (!B.shell) return 'no shell app: the world failed';
+  if (!B.shell) return false;
   B.tile = !!(await waitFor(function () { return B.chrome.evaluate('(function () { var t = document.querySelector("#zzBox .app-icon[data-key=grants]"); if (!t || t.offsetParent === null) return false; t.click(); return true; }())'); }, 15000));
-  return B.tile || 'no Grants tile: nothing judged';
+  return B.tile || false;
 }, test.limit.quick);
 test.run('its Bundles tab is pressed', 0.2, async function () {
-  if (!B.tile) return NO_PAGE;
+  if (!B.tile) return false;
   await waitFor(function () { return tabNamed('Bundles').then(function (t) { return t.length > 0; }); }, 10000);
   const pressed = await click('Bundles', '#zzBox .tab-button') || await click('Bundles');
   await waitFor(function () { return shown('zzOne'); }, 8000);
-  return pressed || 'no Bundles tab: nothing judged';
+  return pressed || false;
 }, test.limit.quick);
 
 // goal/G41.32: the pane has no Edit and no Delete
 test.run('the pane lists the bundles', 0.2, async function () {
-  if (!B.tile) return NO_PAGE;
-  return await shown('zzOne') || 'zzOne is not listed: ' + short(await pageText());
+  if (!B.tile) return false;
+  return await shown('zzOne') || false;
 }, test.limit.quick);
 test.run('no Edit button', 0.2, async function () {
-  if (!B.tile) return NO_PAGE;
-  return !(await shown('Edit')) || 'an Edit button is still there';
+  if (!B.tile) return false;
+  return !(await shown('Edit')) || false;
 }, test.limit.quick);
 test.run('no Delete button', 0.2, async function () {
-  if (!B.tile) return NO_PAGE;
-  return !(await shown('Delete')) || 'a Delete button is still there';
+  if (!B.tile) return false;
+  return !(await shown('Delete')) || false;
 }, test.limit.quick);
 
 // goal/G41.32: a row pressed opens its tab, in the app's own tab row
 test.run('the app has its two tabs', 0.2, async function () {
-  if (!B.tile) return NO_PAGE;
-  return (await tabs()).length === 2 || 'tabs: ' + short(await tabs());
+  if (!B.tile) return false;
+  return (await tabs()).length === 2 || false;
 }, test.limit.quick);
 test.run('zzOne is pressed', 0.2, async function () {
-  if (!B.tile) return NO_PAGE;
+  if (!B.tile) return false;
   const pressed = await click('zzOne');
   await waitFor(function () { return tabNamed('zzOne').then(function (t) { return t.length > 0; }); });
-  return pressed || 'no row to press';
+  return pressed || false;
 }, test.limit.quick);
 test.run('a tab for it opens, and is active', 0.2, async function () {
-  if (!B.tile) return NO_PAGE;
+  if (!B.tile) return false;
   const tOne = await tabNamed('zzOne');
-  return tOne.length === 1 && tOne[0].on ? true : 'tabs: ' + short(await tabs());
+  return tOne.length === 1 && tOne[0].on ? true : false;
 }, test.limit.quick);
 // Andy, on what he saw: "the tabs should name owner-bundle".
 test.run('the tab names owner-bundle: node-zzOne', 0.2, async function () {
-  if (!B.tile) return NO_PAGE;
+  if (!B.tile) return false;
   const tOne = await tabNamed('zzOne');
-  return tOne.length === 1 && tOne[0].text.indexOf('node-zzOne') !== -1 ? true : 'tabs: ' + short(await tabs());
+  return tOne.length === 1 && tOne[0].text.indexOf('node-zzOne') !== -1 ? true : false;
 }, test.limit.quick);
 test.run('its close button is small, on the tab\'s right side', 0.2, async function () {
-  if (!B.tile) return NO_PAGE;
+  if (!B.tile) return false;
   const place = await B.chrome.evaluate('(function () { var c = document.querySelector("#zzBox [data-tab-close]"); if (!c) return null; var b = c.closest(".tab-button") || c.parentElement; var r = c.getBoundingClientRect(), o = b.getBoundingClientRect(); return { right: r.right <= o.right + 1 && r.left > o.left + (o.width / 3), small: r.width <= o.width / 2 }; }())');
-  return !!place && place.right && place.small ? true : 'close button: ' + short(place);
+  return !!place && place.right && place.small ? true : false;
 }, test.limit.quick);
 
 // goal/G41.32: the branchEditor's Delete row
 const WORDS = 'Delete zzOne bundle and branches';
 test.run('it says "Delete zzOne bundle and branches"', 0.2, async function () {
-  if (!B.tile) return NO_PAGE;
+  if (!B.tile) return false;
   await waitFor(function () { return pageText().then(function (t) { return t.indexOf(WORDS) !== -1; }); });
   const paneText = await pageText();
-  return paneText.indexOf(WORDS) !== -1 || 'not said: ' + short(paneText.slice(-300));
+  return paneText.indexOf(WORDS) !== -1 || false;
 }, test.limit.quick);
 test.run('in a rowForm below the others, ❌, the words, a button', 0.2, async function () {
-  if (!B.tile) return NO_PAGE;
+  if (!B.tile) return false;
   const atBottom = await B.chrome.evaluate('(function () { var forms = Array.prototype.slice.call(' + IN + '(".shell-row-form")).filter(function (f) { return f.offsetParent !== null && !f.querySelector(".app-container-close"); }); var last = forms[forms.length - 1]; if (!last) return null; return { icon: last.textContent.indexOf("❌") !== -1, words: last.textContent.indexOf(' + JSON.stringify(WORDS) + ') !== -1, button: !!last.querySelector("button"), below: forms.length > 1 && forms[0].getBoundingClientRect().top < last.getBoundingClientRect().top }; }())');
-  return !!atBottom && atBottom.icon && atBottom.words && atBottom.button && atBottom.below ? true : 'the row: ' + short(atBottom);
+  return !!atBottom && atBottom.icon && atBottom.words && atBottom.button && atBottom.below ? true : false;
 }, test.limit.quick);
 
 // goal/G41.32: a bundle already open: its tab is made active
 test.run('back to the Bundles tab', 0.2, async function () {
-  if (!B.tile) return NO_PAGE;
-  return await click('Bundles', '#zzBox .tab-button') || await click('Bundles') || 'no way back to the Bundles tab';
+  if (!B.tile) return false;
+  return await click('Bundles', '#zzBox .tab-button') || await click('Bundles') || false;
 }, test.limit.quick);
 test.run('zzOne pressed again: no second tab, its tab is active', 0.2, async function () {
-  if (!B.tile) return NO_PAGE;
+  if (!B.tile) return false;
   await waitFor(function () { return shown('zzTwo'); });
   await click('zzOne', '#zzBox .bundle-selector-face-pane');
   await H.sleep(800);
   const again = await tabNamed('zzOne');
-  return again.length === 1 && again[0].on ? true : 'tabs: ' + short(await tabs());
+  return again.length === 1 && again[0].on ? true : false;
 }, test.limit.slow);
 
 // goal/G41.32: the close button takes the tab away, the bundle stays
 test.run('the tab is gone', 0.2, async function () {
-  if (!B.tile) return NO_PAGE;
+  if (!B.tile) return false;
   const closed = await B.chrome.evaluate('(function () { var c = Array.prototype.slice.call(' + IN + '("[data-tab-close]"))[0]; if (!c) return false; c.click(); return true; }())');
   await waitFor(function () { return tabNamed('zzOne').then(function (t) { return t.length === 0; }); });
-  return closed === true && (await tabNamed('zzOne')).length === 0 ? true : 'tabs: ' + short(await tabs());
+  return closed === true && (await tabNamed('zzOne')).length === 0 ? true : false;
 }, test.limit.quick);
 test.run('the bundle is there', 0.2, async function () {
-  if (!B.one || !B.one.body) return NO_NODE;
-  return (await home('auth.bundle', { op: 'get', id: B.one.body.id })).status === 200 || 'closing a tab deleted the bundle';
+  if (!B.one || !B.one.body) return false;
+  return (await home('auth.bundle', { op: 'get', id: B.one.body.id })).status === 200 || false;
 }, test.limit.quick);
 
 // goal/G41.32: the Delete row deletes, by the arming button, and the tab closes
 const DELBTN = 'Array.prototype.slice.call(' + IN + '(".shell-row-form")).filter(function (f) { return f.offsetParent !== null && f.textContent.indexOf("Delete zzTwo") !== -1; })[0]';
 test.run('one press only arms: the bundle stays', 0.2, async function () {
-  if (!B.tile || !B.two || !B.two.body) return NO_PAGE;
+  if (!B.tile || !B.two || !B.two.body) return false;
   await click('Bundles', '#zzBox .tab-button');
   await waitFor(function () { return shown('zzTwo'); });
   await click('zzTwo', '#zzBox .bundle-selector-face-pane');
@@ -445,94 +438,93 @@ test.run('one press only arms: the bundle stays', 0.2, async function () {
   B.hadTwo = (await tabNamed('zzTwo')).length === 1;
   const pressedOnce = await B.chrome.evaluate('(function () { var f = ' + DELBTN + '; var b = f && f.querySelector("button"); if (!b) return false; b.click(); return true; }())');
   await H.sleep(500);
-  return pressedOnce === true && (await home('auth.bundle', { op: 'get', id: B.two.body.id })).status === 200 ? true : 'one press: pressed ' + pressedOnce + ', the bundle answered ' + (await home('auth.bundle', { op: 'get', id: B.two.body.id })).status;
+  return pressedOnce === true && (await home('auth.bundle', { op: 'get', id: B.two.body.id })).status === 200 ? true : false;
 }, test.limit.quick);
 test.run('the second press deletes it', 0.2, async function () {
-  if (!B.tile || !B.two || !B.two.body) return NO_PAGE;
+  if (!B.tile || !B.two || !B.two.body) return false;
   await B.chrome.evaluate('(function () { var f = ' + DELBTN + '; var b = f && f.querySelector("button"); if (b) b.click(); }())');
   await waitFor(function () { return home('auth.bundle', { op: 'get', id: B.two.body.id }).then(function (a) { return a.status !== 200; }); });
-  return (await home('auth.bundle', { op: 'get', id: B.two.body.id })).status !== 200 || 'the bundle is still there after two presses';
+  return (await home('auth.bundle', { op: 'get', id: B.two.body.id })).status !== 200 || false;
 }, test.limit.quick);
 test.run('and its tab closes', 0.2, async function () {
-  if (!B.tile) return NO_PAGE;
+  if (!B.tile) return false;
   await waitFor(function () { return tabNamed('zzTwo').then(function (t) { return t.length === 0; }); });
-  return B.hadTwo && (await tabNamed('zzTwo')).length === 0 ? true : (B.hadTwo ? 'tabs: ' + short(await tabs()) : 'zzTwo never had a tab: nothing judged');
+  return B.hadTwo && (await tabNamed('zzTwo')).length === 0 ? true : false;
 }, test.limit.quick);
 
 // goal/G41.32: a bundle deleted elsewhere closes its tab
 test.run('zzThree has its tab', 0.2, async function () {
-  if (!B.tile) return NO_PAGE;
+  if (!B.tile) return false;
   await click('Bundles', '#zzBox .tab-button');
   await waitFor(function () { return shown('zzThree'); });
   await click('zzThree', '#zzBox .bundle-selector-face-pane');
   await waitFor(function () { return tabNamed('zzThree').then(function (t) { return t.length === 1; }); });
   B.hadThree = (await tabNamed('zzThree')).length === 1;
-  return B.hadThree || 'tabs: ' + short(await tabs());
+  return B.hadThree || false;
 }, test.limit.quick);
 test.run('deleted at the door, its tab closes by itself', 0.2, async function () {
-  if (!B.tile || !B.three || !B.three.body) return NO_PAGE;
+  if (!B.tile || !B.three || !B.three.body) return false;
   await home('auth.bundle', { op: 'delete', id: B.three.body.id });
   await waitFor(function () { return tabNamed('zzThree').then(function (t) { return t.length === 0; }); });
-  return B.hadThree && (await tabNamed('zzThree')).length === 0 ? true : (B.hadThree ? 'the tab stayed: ' + short(await tabs()) : 'zzThree never had a tab: nothing judged');
+  return B.hadThree && (await tabNamed('zzThree')).length === 0 ? true : false;
 }, test.limit.quick);
 
 // goal/G41.32: a server's bundle is read-only. With no server's bundle on the scratch node these fail, as the world before them.
-const NO_SERVER_BUNDLE = 'no bundle of a server on the scratch node: the world failed';
 test.run('its row opens', 0.2, async function () {
-  if (!B.tile) return NO_PAGE;
-  if (!B.serverBundle) return NO_SERVER_BUNDLE;
+  if (!B.tile) return false;
+  if (!B.serverBundle) return false;
   await click('Bundles', '#zzBox .tab-button');
   await waitFor(function () { return shown(B.serverBundle.label); });
   const opened = await click(B.serverBundle.label, '#zzBox .bundle-selector-face-pane');
   await waitFor(function () { return tabNamed(B.serverBundle.label).then(function (t) { return t.length === 1; }); });
-  return opened || 'no row for ' + B.serverBundle.label;
+  return opened || false;
 }, test.limit.quick);
 test.run('its tab names owner-bundle', 0.2, async function () {
-  if (!B.serverBundle) return NO_SERVER_BUNDLE;
-  return (await tabNamed(B.serverBundle.owner + '-' + B.serverBundle.label)).length === 1 || 'tabs: ' + short(await tabs());
+  if (!B.serverBundle) return false;
+  return (await tabNamed(B.serverBundle.owner + '-' + B.serverBundle.label)).length === 1 || false;
 }, test.limit.quick);
 // The panel's own title bar (panel.js, ✕) is a rowForm too: it is the shell's, not the bundle's.
 test.run('no add form and no Delete row on it', 0.2, async function () {
-  if (!B.serverBundle) return NO_SERVER_BUNDLE;
+  if (!B.serverBundle) return false;
   const editable = await B.chrome.evaluate('JSON.stringify(Array.prototype.slice.call(' + IN + '(".shell-row-form")).filter(function (f) { return f.offsetParent !== null && !f.querySelector(".app-container-close"); }).map(function (f) { return f.textContent.trim().slice(0, 60); }))');
-  return JSON.parse(editable || '[]').length === 0 || 'forms on a read-only bundle: ' + editable;
+  return JSON.parse(editable || '[]').length === 0 || false;
 }, test.limit.quick);
 test.run('and no Delete on its branches', 0.2, async function () {
-  if (!B.serverBundle) return NO_SERVER_BUNDLE;
+  if (!B.serverBundle) return false;
   const delBtns = await B.chrome.evaluate('Array.prototype.slice.call(' + IN + '("button")).filter(function (b) { return b.offsetParent !== null && /delete/i.test(b.textContent); }).length');
-  return delBtns === 0 || delBtns + ' Delete buttons on a read-only bundle';
+  return delBtns === 0 || false;
 }, test.limit.quick);
 test.run('its branches are there to read, under its label', 0.2, async function () {
-  if (!B.serverBundle) return NO_SERVER_BUNDLE;
-  return (await pageText()).indexOf(B.serverBundle.label) !== -1 || 'the page does not name it';
+  if (!B.serverBundle) return false;
+  return (await pageText()).indexOf(B.serverBundle.label) !== -1 || false;
 }, test.limit.quick);
 test.run('and the node refuses its delete at the door, with a code', 0.8, async function () {
-  if (!B.serverBundle) return NO_SERVER_BUNDLE;
+  if (!B.serverBundle) return false;
   const refused = await home('auth.bundle', { op: 'delete', id: B.serverBundle.id });
-  return refused.status >= 400 && refused.status < 500 && !!(refused.body && refused.body.code) ? true : 'auth.bundle delete of a server\'s bundle: ' + refused.status + ' ' + short(refused.text);
+  return refused.status >= 400 && refused.status < 500 && !!(refused.body && refused.body.code) ? true : false;
 }, test.limit.quick);
 
 // goal/G41.32: with no tabContainer configured, the pane lists and a press throws nothing
 // "in the agent app, this will be the tabContainer in the center tab of the workBench, oos for this item. and Edit/Delete
 // in the bundleSelector:pane go anyway."
 test.run('no Edit or Delete there either', 0.2, async function () {
-  if (!B.page) return 'no page: the world failed';
+  if (!B.page) return false;
   B.mark = B.chrome.heard.length;
   await B.chrome.evaluate('Promise.resolve(window.spirit.require("spirit/element/bundleEditor.js")).then(function () { var h = document.createElement("div"); h.id = "zzAgentLike"; h.style.cssText = "position:absolute;left:0;top:0;width:100%;height:300px;background:#fff;z-index:10000"; document.body.appendChild(h); window.spirit.element.spirit.element.bundleEditor.create(h, {}); return true; })');
   await waitFor(function () { return B.chrome.evaluate('(function () { ' + LEAF + ' return !!leaf("zzOne", "#zzAgentLike"); }())'); }, 5000);
   const noBtn = await B.chrome.evaluate('Array.prototype.slice.call(document.querySelectorAll("#zzAgentLike button")).filter(function (b) { return /^(Edit|Delete)$/.test(b.textContent.trim()); }).length');
-  return noBtn === 0 || noBtn + ' Edit or Delete buttons with no tabContainer';
+  return noBtn === 0 || false;
 }, test.limit.quick);
 test.run('a row there is pressed', 0.2, async function () {
-  if (!B.page) return 'no page: the world failed';
+  if (!B.page) return false;
   const pressed = await click('zzOne', '#zzAgentLike');
   await H.sleep(500);
-  return pressed || 'no zzOne row with no tabContainer: ' + short(await B.chrome.evaluate('(document.getElementById("zzAgentLike") || {}).innerText || ""'));
+  return pressed || false;
 }, test.limit.quick);
 test.run('a press on a row throws nothing', 0.2, function () {
-  if (!B.page) return 'no page: the world failed';
-  const threw = B.chrome.heard.slice(B.mark).filter(function (x) { return x.method === 'Runtime.exceptionThrown'; }).map(function (x) { return x.params.exceptionDetails.text + ' ' + short((x.params.exceptionDetails.exception || {}).description || ''); });
-  return !threw.length || 'it threw: ' + threw.slice(0, 2).join(' | ');
+  if (!B.page) return false;
+  const threw = B.chrome.heard.slice(B.mark).filter(function (x) { return x.method === 'Runtime.exceptionThrown'; });
+  return !threw.length || false;
 }, test.limit.quick);
 
 // ── THE WRAPPER PART (once its own file; one test file per script: spirit/test/TEST_SYSTEM.md) ──
@@ -581,8 +573,6 @@ const HANDS = '(function () {' +
 const R = {};
 const T = function (expr) { return R.c.evaluate('window.__t.' + expr); };
 const wwaitFor = function (expr, ms) { return H.until(function () { return R.c.evaluate('(function () { with (window.__t) { return !!(' + expr + '); } }())'); }, ms || 8000); };
-const R_NO_NODE = 'no scratch node for the wrapper: the world failed';
-const R_NO_PAGE = 'no wrapper page: the world failed';
 
 {
   test.after(async function () {
@@ -596,72 +586,70 @@ const R_NO_PAGE = 'no wrapper page: the world failed';
   // the box, 1: "each app has its <name>.json in the spirit/app form, as icons.json and file.json have it"
   test.run('the world: file.json, the form, has identity, mount, shell and node', 0.2, function () {
     R.fileJson = readJson(path.join(RUN, 'spirit', 'app', 'file', 'file.json')) || {};
-    return same(Object.keys(R.fileJson).sort(), ['identity', 'mount', 'node', 'shell']) || 'file.json reads ' + short(R.fileJson);
+    return same(Object.keys(R.fileJson).sort(), ['identity', 'mount', 'node', 'shell']) || false;
   }, test.limit.quick);
   test.run('the world: spirit/app/grants/grants.json is there and reads', 0.2, function () {
     R.j = readJson(path.join(APP_DIR, NAME + '.json'));
-    return !!R.j || 'no readable spirit/app/' + NAME + '/' + NAME + '.json: nothing judged';
+    return !!R.j || false;
   }, test.limit.quick);
-  const NO_JSON = 'no grants.json: the world failed';
   test.run('grants.json: its identity is the icon 🔒, the label Grants, and intrinsic true', 0.2, function () {
-    if (!R.j) return NO_JSON;
-    return same(R.j.identity, { icon: WANT.icon, label: WANT.label, intrinsic: true }) || NAME + '.json identity: ' + short(R.j.identity);
+    if (!R.j) return false;
+    return same(R.j.identity, { icon: WANT.icon, label: WANT.label, intrinsic: true }) || false;
   }, test.limit.quick);
   test.run('grants.json: it mounts element.js', 0.2, function () {
-    if (!R.j) return NO_JSON;
-    return same(R.j.mount, { 'element.js': true }) || NAME + '.json mount: ' + short(R.j.mount);
+    if (!R.j) return false;
+    return same(R.j.mount, { 'element.js': true }) || false;
   }, test.limit.quick);
   test.run('grants.json: in the shell it mounts and has a tile, and is no shell itself', 0.2, function () {
-    if (!R.j) return NO_JSON;
-    return same(R.j.shell, { true: false, mount: true, tile: true }) || NAME + '.json shell: ' + short(R.j.shell);
+    if (!R.j) return false;
+    return same(R.j.shell, { true: false, mount: true, tile: true }) || false;
   }, test.limit.quick);
   test.run('grants.json: the node mounts no server for it', 0.2, function () {
-    if (!R.j) return NO_JSON;
-    return same(R.j.node, { mount: false }) || NAME + '.json node: ' + short(R.j.node);
+    if (!R.j) return false;
+    return same(R.j.node, { mount: false }) || false;
   }, test.limit.quick);
   test.run('grants.json holds what file.json holds, nothing of the old form', 0.2, function () {
-    if (!R.j) return NO_JSON;
-    return same(Object.keys(R.j).sort(), Object.keys(R.fileJson).sort()) || NAME + '.json keys: ' + short(Object.keys(R.j));
+    if (!R.j) return false;
+    return same(Object.keys(R.j).sort(), Object.keys(R.fileJson).sort()) || false;
   }, test.limit.quick);
   test.run('Q1, the old description sentence: "it goes.", and grants.json holds none', 0.2, function () {
-    if (!R.j) return NO_JSON;
-    return JSON.stringify(R.j).indexOf('"description"') === -1 || NAME + '.json still says a description: ' + short(R.j.description);
+    if (!R.j) return false;
+    return JSON.stringify(R.j).indexOf('"description"') === -1 || false;
   }, test.limit.quick);
 
   // the box, 6: "each app's <name>.js only loads spirit/element/ parts (spirit.require) and mounts them into its container"
   test.run('the world: its element.js is there', 0.2, function () {
     R.c0 = code(path.join(APP_DIR, 'element.js'));
-    return R.c0.length > 0 || 'no spirit/app/' + NAME + '/' + NAME + '.js: nothing judged';
+    return R.c0.length > 0 || false;
   }, test.limit.quick);
-  const NO_CODE = 'no element.js: the world failed';
   test.run('it loads only spirit/element/ parts, through spirit.require', 0.2, function () {
-    if (!R.c0) return NO_CODE;
+    if (!R.c0) return false;
     // What it loads: every script it names, and every spirit.require.
     const named = (R.c0.match(/['"][^'"\n]*\.js['"]/g) || []).map(function (s) { return s.slice(1, -1); }).filter(function (s) { return s !== 'element.js' && s !== 'spirit/app/' + NAME + '/element.js'; }); // goal/G43.32, decided 5: its own path is where it places itself, no load
     const asks = (R.c0.match(/\brequire\s*\(/g) || []).length;
     const strays = named.filter(function (s) { return !/^spirit\/element\/[^]+\.js$/.test(s); });
-    return asks > 0 && named.length > 0 && !strays.length ? true : (asks && named.length ? NAME + '.js loads what is no element: ' + short(strays) : NAME + '.js loads nothing through spirit.require: nothing judged');
+    return asks > 0 && named.length > 0 && !strays.length ? true : false;
   }, test.limit.quick);
   test.run('it loads no data family of its own (no cacheManager)', 0.2, function () {
-    if (!R.c0) return NO_CODE;
-    return !/\bcacheManager\s*\(/.test(R.c0) || NAME + '.js asks a cacheManager itself';
+    if (!R.c0) return false;
+    return !/\bcacheManager\s*\(/.test(R.c0) || false;
   }, test.limit.quick);
   test.run('it calls no verb of its own', 0.2, function () {
-    if (!R.c0) return NO_CODE;
+    if (!R.c0) return false;
     const verbs = [/\.verb\s*\(/, /\bspirit\.outcome\b/, /\bcallDialog\b/, /\bfetch\s*\(/, /\brelay\W{1,4}status\b/, /\bnode\W{1,4}card\b/, /\bauth\W{1,4}(search|grant|revoke)\b/]
       .filter(function (re) { return re.test(R.c0); }).map(String);
-    return !verbs.length || NAME + '.js still calls: ' + short(verbs);
+    return !verbs.length || false;
   }, test.limit.quick);
   test.run('as a wrapper, it draws no markup of its own', 0.2, function () {
-    if (!R.c0) return NO_CODE;
+    if (!R.c0) return false;
     const markup = R.c0.match(/['"][^'"\n]*<(div|span|button|input|table|b)\b[^'"\n]*['"]/g) || [];
-    return !markup.length || NAME + '.js draws: ' + short(markup);
+    return !markup.length || false;
   }, test.limit.quick);
 
   // the box, 7: "no spirit.shell.activateApp, the old shell's way"
   test.run('it mounts through no spirit.shell.activateApp', 0.2, function () {
     const c0 = R.c0 || '';
-    return c0.length > 0 && !/\bactivateApp\b/.test(c0) && !/\bspirit\.shell\b/.test(c0) ? true : (c0.length ? NAME + '.js still calls spirit.shell.activateApp' : 'no ' + NAME + '.js: nothing judged');
+    return c0.length > 0 && !/\bactivateApp\b/.test(c0) && !/\bspirit\.shell\b/.test(c0) ? true : false;
   }, test.limit.quick);
 
   // Its own test running from its new place, and no file naming its old shell/ folder (the box, 4 and 5): the move is long
@@ -671,74 +659,74 @@ const R_NO_PAGE = 'no wrapper page: the world failed';
     await closeBundleWorld();
     R.s = scratch();
     R.N = await wboot(R.s.run);
-    return R.N.up || 'the scratch node did not come up: nothing judged';
+    return R.N.up || false;
   }, test.limit.slow);
 
   // the box, 2: intrinsic "as spirit/app apps say it": the node says so
   test.run('the world: the node lists Files, intrinsic', 0.2, async function () {
-    if (!R.N || !R.N.up) return R_NO_NODE;
+    if (!R.N || !R.N.up) return false;
     const listed = await wcall(R.N.base, 'app.search', { q: '' });
     R.rows = {};
     ((listed.body && listed.body.items) || []).forEach(function (i) { R.rows[i.key] = parsed(i.label) || {}; });
-    return !!R.rows.file && R.rows.file.intrinsic === true ? true : 'app.search: ' + short(listed.text);
+    return !!R.rows.file && R.rows.file.intrinsic === true ? true : false;
   }, test.limit.quick);
   test.run('the node lists grants intrinsic, so always active', 0.2, function () {
-    if (!R.rows) return R_NO_NODE;
-    return !!R.rows[NAME] && R.rows[NAME].intrinsic === true && R.rows[NAME].active === true ? true : 'app.search\'s ' + NAME + ': ' + short(R.rows[NAME]);
+    if (!R.rows) return false;
+    return !!R.rows[NAME] && R.rows[NAME].intrinsic === true && R.rows[NAME].active === true ? true : false;
   }, test.limit.quick);
 
   test.run('the world: the wrapper\'s Chrome page', 0.2, async function () {
-    if (!R.N || !R.N.up) return R_NO_NODE;
+    if (!R.N || !R.N.up) return false;
     const where = H.findChrome();
-    if (!where) return 'no Chrome here: the page was not judged';
+    if (!where) return false;
     const c = await H.chromePage(where);
-    if (c.error) return 'Chrome: ' + c.error;
+    if (c.error) return false;
     R.c = c;
     return true;
   }, test.limit.quick);
   test.run('the world: the wrapper\'s face page has its spirit', 0.2, async function () {
-    if (!R.c) return 'no Chrome page: the world failed';
+    if (!R.c) return false;
     await R.c.send('Page.navigate', { url: R.N.base + '/face.html' });
     R.page = !!(await H.until(function () { return R.c.evaluate('!!(window.spirit && window.spirit.ready && window.spirit.event)'); }, 20000));
     if (R.page) await R.c.evaluate(HANDS);
-    return R.page || 'the page has no spirit: nothing judged';
+    return R.page || false;
   }, test.limit.quick);
 
   // the box, 7: "its <name>.js sets spirit.elements.<name> = { create(container, opts) -> { destroy() } }"
   test.run('its element\'s create draws into the container it is given and answers destroy', 0.2, async function () {
-    if (!R.page) return R_NO_PAGE;
+    if (!R.page) return false;
     const made = await R.c.evaluate('(function () { var b = document.createElement("div"); b.id = "zzOwn"; b.style.cssText = "position:absolute;left:0;top:0;width:50%;height:50%"; document.body.appendChild(b); var p; try { p = spirit.require("spirit/app/' + NAME + '/element.js"); } catch (e) { return "load threw: " + e; } return Promise.resolve(p).then(function () { var E = spirit.element.spirit.app[' + JSON.stringify(NAME) + '] && spirit.element.spirit.app[' + JSON.stringify(NAME) + '].element; if (!E || typeof E.create !== "function") return "no spirit.element.spirit.app.' + NAME + '.element.create"; var m = E.create(b, {}); if (!m || typeof m.destroy !== "function") return "create answered " + typeof m; return new Promise(function (r) { setTimeout(r, 2500); }).then(function () { var drew = b.innerHTML.length > 0; m.destroy(); b.remove(); return drew ? "ok" : "it drew nothing"; }); }, function (e) { b.remove(); return "load: " + e; }); }())');
-    return made === 'ok' || NAME + ': ' + short(made);
+    return made === 'ok' || false;
   }, test.limit.slow);
 
   // the box, 3: "both show in the shell as before: a tile each, and each opens as it did"
   // The shell app, as boot.js hands it the page's app area, here in a box of its own over the page.
   test.run('the world: the shell draws its tiles, Files among them', 0.2, async function () {
-    if (!R.page) return R_NO_PAGE;
+    if (!R.page) return false;
     const shell = await R.c.evaluate('(function () { var old = document.getElementById("zzBox"); if (old) old.remove(); var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.require("spirit/app/app/element.js").then(function () { window.__shell = spirit.element.spirit.app.app.element.create(b); return "made"; }, function (e) { return "load: " + e; }); }())');
-    return shell === 'made' && await wwaitFor('tiles().indexOf("file") !== -1', 10000) ? true : 'the shell: ' + short(shell) + ', tiles ' + short(await T('tiles()'));
+    return shell === 'made' && await wwaitFor('tiles().indexOf("file") !== -1', 10000) ? true : false;
   }, test.limit.quick);
   test.run('Grants has its tile, with nothing pressed', 0.2, async function () {
-    if (!R.page) return R_NO_PAGE;
-    return await wwaitFor('tiles().indexOf("' + NAME + '") !== -1', 6000) ? true : 'no ' + NAME + ' tile: ' + short(await T('tiles()'));
+    if (!R.page) return false;
+    return await wwaitFor('tiles().indexOf("' + NAME + '") !== -1', 6000) ? true : false;
   }, test.limit.quick);
 
   // Grants opens as it did: its Grants and Bundles tabs, the panel configured.
   test.run('Grants\' tile opens Grants: its Grants and Bundles tabs', 0.2, async function () {
-    if (!R.page) return R_NO_PAGE;
+    if (!R.page) return false;
     const grPressed = await T('tile("grants")');
     R.grOpen = grPressed && await wwaitFor('tabs().indexOf("Grants") !== -1 && tabs().indexOf("Bundles") !== -1', 10000);
-    return R.grOpen ? true : (grPressed ? 'Grants shows: ' + short(await T('text()')) + ', tabs ' + short(await T('tabs()')) : 'no Grants tile to press: nothing judged');
+    return R.grOpen ? true : false;
   }, test.limit.quick);
   test.run('its Grants tab draws the grants panel, configured', 0.2, async function () {
-    if (!R.page) return R_NO_PAGE;
+    if (!R.page) return false;
     await H.sleep(1500);
     const grText = await T('text()');
-    return R.grOpen && !/not configured|could not be loaded/i.test(grText) ? true : (R.grOpen ? 'Grants: ' + short(grText) : 'Grants did not open: nothing judged');
+    return R.grOpen && !/not configured|could not be loaded/i.test(grText) ? true : false;
   }, test.limit.slow);
   test.run('over the tiles one bar in view, 🔒 Grants', 0.2, async function () {
-    if (!R.page) return R_NO_PAGE;
+    if (!R.page) return false;
     const grBars = await T('bars()');
-    return R.grOpen && grBars.length === 1 && grBars[0] === WANT.icon + ' Grants' ? true : (R.grOpen ? 'bars: ' + short(grBars) : 'Grants did not open: nothing judged');
+    return R.grOpen && grBars.length === 1 && grBars[0] === WANT.icon + ' Grants' ? true : false;
   }, test.limit.quick);
 }

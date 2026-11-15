@@ -16,7 +16,6 @@ const FILE = path.join(__dirname, '..', 'api.js');
 require(path.join(RUN, 'spirit', 'spirit.js'));
 const spirit = globalThis.spirit;
 
-function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 const isPlain = function (v) { return v !== null && typeof v === 'object' && !Array.isArray(v); };
 // A peer's public key as the key rule takes one, and one it does not.
 const KEY = 'MCowBQYDK2VwAyEA' + 'jobApiTest'.padEnd(43, 'A') + '=';
@@ -71,74 +70,71 @@ const W = { api: null, verbs: {}, names: [], mounted: null };
 const call = function (verb, args) { return spirit.check('job.' + verb, W.verbs[verb], args); };
 const passes = function (verb, args) { return !!W.verbs[verb] && call(verb, args) === null; };
 const refusedAs = function (verb, args) { if (!W.verbs[verb]) return 'no verb ' + verb; const r = call(verb, args); return r ? r.code : 'passed'; };
-const NO_API = 'api.js did not load: the world failed';
-const NO_MOUNT = 'no table the node mounts for job was read: the world failed';
 
 test.run('the world: api.js loads as the node hands it, its text run with module and exports alone', 0.2, function () {
   try {
     const m = { exports: {} };
     new Function('module', 'exports', fs.readFileSync(FILE, 'utf8'))(m, m.exports);
     W.api = m.exports;
-  } catch (e) { return 'api.js threw as it ran: ' + e.message; }
+  } catch (e) { return false; }
   W.verbs = (W.api && W.api.verbs) || {};
   W.names = Object.keys(W.verbs);
   return true;
 }, test.limit.quick);
 test.run('the world: server.js mounts the job family', 0.2, function () {
-  try { W.mounted = mounted('job'); } catch (e) { return 'server.js could not be read: ' + e.message; }
-  return !!W.mounted || 'server.js holds no loopbackVerbs.mount(\'job\', ...)';
+  try { W.mounted = mounted('job'); } catch (e) { return false; }
+  return !!W.mounted || false;
 }, test.limit.quick);
 
 // its shape: verbs, each argument with its rule, no family name of its own (goal/G32.3: the node maps it)
 test.run('it exports its table of verbs and nothing else: it names no family of its own', 0.2, function () {
-  if (!W.api) return NO_API;
-  return Object.keys(W.api).join() === 'verbs' || 'exports ' + short(Object.keys(W.api));
+  if (!W.api) return false;
+  return Object.keys(W.api).join() === 'verbs' || false;
 }, test.limit.quick);
 test.run('every verb\'s arguments are a plain object, each rule one of spirit.js\'s standard rules, \'?\' optional', 0.2, function () {
-  if (!W.api) return NO_API;
-  if (!isPlain(W.verbs)) return 'verbs is ' + short(W.verbs);
-  if (!W.names.length) return 'no verb declared: nothing judged';
-  const bad = [];
-  W.names.forEach(function (v) {
-    if (!isPlain(W.verbs[v])) { bad.push(v + ': not an object'); return; }
-    Object.keys(W.verbs[v]).forEach(function (arg) {
+  if (!W.api) return false;
+  if (!isPlain(W.verbs)) return false;
+  if (!W.names.length) return false;
+  const bad = W.names.filter(function (v) {
+    if (!isPlain(W.verbs[v])) return true;
+    return Object.keys(W.verbs[v]).some(function (arg) {
       const raw = String(W.verbs[v][arg]);
       const rule = raw.charAt(raw.length - 1) === '?' ? raw.slice(0, -1) : raw;
-      if (spirit.rules.indexOf(rule) === -1) bad.push(v + '.' + arg + ': ' + raw);
+      return spirit.rules.indexOf(rule) === -1;
     });
   });
-  return bad.length === 0 || 'not standard: ' + short(bad) + '; the standard: ' + spirit.rules.join(', ');
+  return bad.length === 0 || false;
 }, test.limit.quick);
 
 // "every verb the node mounts for this family, each argument with its rule": the declaration and the table are one
 test.run('it declares every verb the node mounts for the family, and no other', 0.2, function () {
-  if (!W.api) return NO_API;
-  if (!W.mounted) return NO_MOUNT;
+  if (!W.api) return false;
+  if (!W.mounted) return false;
   const node = Object.keys(W.mounted).sort();
   const here = W.names.slice().sort();
-  if (!node.length) return 'the node mounts no verb for the family: nothing judged';
-  return JSON.stringify(node) === JSON.stringify(here) || 'mounted ' + short(node) + ', declared ' + short(here);
+  if (!node.length) return false;
+  return JSON.stringify(node) === JSON.stringify(here) || false;
 }, test.limit.quick);
 test.run('each verb takes the arguments its handler\'s request carries, and no other', 0.2, function () {
-  if (!W.api) return NO_API;
-  if (!W.mounted) return NO_MOUNT;
+  if (!W.api) return false;
+  if (!W.mounted) return false;
   const judged = W.names.filter(function (v) { return Array.isArray(W.mounted[v]); });
-  if (!judged.length) return 'no mounted verb names its request: nothing judged';
+  if (!judged.length) return false;
   const off = judged.filter(function (v) { return JSON.stringify(W.mounted[v].slice().sort()) !== JSON.stringify(Object.keys(W.verbs[v]).sort()); });
-  return off.length === 0 || off.map(function (v) { return v + ': request ' + short(W.mounted[v]) + ', declared ' + short(Object.keys(W.verbs[v])); }).join('; ');
+  return off.length === 0 || false;
 }, test.limit.quick);
 
 test.run('search\'s q is optional', 0.2, function () {
-  if (!W.api) return NO_API;
-  return (passes('search', {}) && passes('search', { q: 'spirit' })) || short(call('search', {}));
+  if (!W.api) return false;
+  return (passes('search', {}) && passes('search', { q: 'spirit' })) || false;
 }, test.limit.quick);
 test.run('get, cancel and delete name the job, never by an empty name', 0.2, function () {
-  if (!W.api) return NO_API;
+  if (!W.api) return false;
   const ok = passes('get', { key: 'spirit.fs' }) && passes('cancel', { id: 'j1' }) && passes('delete', { id: 'j1' });
   const no = refusedAs('get', { key: '' }) === 'bad-request' && refusedAs('cancel', { id: '' }) === 'bad-request' && refusedAs('delete', {}) === 'bad-request';
-  return (ok && no) || 'cancel \'\' ' + refusedAs('cancel', { id: '' }) + ', delete {} ' + refusedAs('delete', {});
+  return (ok && no) || false;
 }, test.limit.quick);
 test.run('create needs a command; its args are a list, its type a text, both optional', 0.2, function () {
-  if (!W.api) return NO_API;
-  return (passes('create', { command: 'node' }) && passes('create', { command: 'node', args: ['a.js'], type: 'server' }) && refusedAs('create', {}) === 'bad-request' && refusedAs('create', { command: 'node', args: 'a.js' }) === 'bad-request') || 'create args \'a.js\' ' + refusedAs('create', { command: 'node', args: 'a.js' });
+  if (!W.api) return false;
+  return (passes('create', { command: 'node' }) && passes('create', { command: 'node', args: ['a.js'], type: 'server' }) && refusedAs('create', {}) === 'bad-request' && refusedAs('create', { command: 'node', args: 'a.js' }) === 'bad-request') || false;
 }, test.limit.quick);

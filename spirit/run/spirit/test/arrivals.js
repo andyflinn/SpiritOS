@@ -12,7 +12,6 @@ const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 
-function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 // A file's code, comments blanked (line numbers kept); null when the file is not there.
 function code(file) {
   if (!fs.existsSync(file)) return null;
@@ -34,11 +33,11 @@ const F = path.join(RUN, 'spirit', 'arrivals.js');
 // The world: the file is there and its code, comments left out, still holds a line that is surely code.
 test.run('the world: the file is read, and its code, comments left out, still holds a line of code', 0.2, function () {
   const c = code(F);
-  if (c === null) return path.relative(RUN, F) + ' is not there: nothing judged';
-  return /module\.exports/.test(c) || path.relative(RUN, F) + '\'s code holds no /module\\.exports/: the comment stripper ate it, nothing judged';
+  if (c === null) return false;
+  return /module\.exports/.test(c) || false;
 }, test.limit.quick);
 test.run('arrivals.js\'s code names no admitted mark', 0.2, function () {
   const h = hits(F, /admit/i);
-  if (h === null) return 'arrivals.js is not there: the world failed';
-  return !h.length || 'arrivals.js\'s code still marks or reads admitted: ' + short(h);
+  if (h === null) return false;
+  return !h.length || false;
 }, test.limit.quick);

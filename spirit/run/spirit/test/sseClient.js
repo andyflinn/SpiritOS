@@ -14,7 +14,6 @@ const RUN = path.resolve(__dirname, '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const { connect } = require(path.join(RUN, 'spirit', 'sseClient.js'));
 
-function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 const settle = function () { return new Promise(function (r) { setTimeout(r, 50); }); };
 // A response whose body is the chunks given, then its end (or none: held open).
 function streamed(chunks, end) {
@@ -47,29 +46,29 @@ let A = null;
 test.run('the world: a stream of two events, a heartbeat between them, then its end', 0.2, async function () {
   A = client([streamed([':hb\n\n', 'event: route\ndata: {"key":"k1"}\n\n', ':\n\n', 'event: note\ndata: line one\ndata: line two\n\n'])]);
   await settle();
-  return A.fetched.length >= 1 || 'nothing was fetched';
+  return A.fetched.length >= 1 || false;
 }, test.limit.quick);
 test.run('it fetches its url with the headers its function gives', 0.2, function () {
-  if (!A) return 'no stream: the world failed';
+  if (!A) return false;
   const f = A.fetched[0] || {};
-  return (f.url === 'https://relay.example/stream' && f.headers && f.headers['X-Spirit-Sig'] === 'sig0') || 'fetched ' + short(f);
+  return (f.url === 'https://relay.example/stream' && f.headers && f.headers['X-Spirit-Sig'] === 'sig0') || false;
 }, test.limit.quick);
 test.run('an open stream is said once', 0.2, function () {
-  if (!A) return 'no stream: the world failed';
-  return A.opens === 1 || 'onOpen said ' + A.opens + ' times';
+  if (!A) return false;
+  return A.opens === 1 || false;
 }, test.limit.quick);
 test.run('each event comes with its name, JSON data parsed', 0.2, function () {
-  if (!A) return 'no stream: the world failed';
+  if (!A) return false;
   const e = A.events[0] || {};
-  return (e.event === 'route' && e.data && e.data.key === 'k1') || 'the first event: ' + short(e);
+  return (e.event === 'route' && e.data && e.data.key === 'k1') || false;
 }, test.limit.quick);
 test.run('data lines of one event are joined, and a heartbeat is no event', 0.2, function () {
-  if (!A) return 'no stream: the world failed';
-  return (A.events.length === 2 && A.events[1].event === 'note' && A.events[1].data === 'line one\nline two') || 'events: ' + short(A.events);
+  if (!A) return false;
+  return (A.events.length === 2 && A.events[1].event === 'note' && A.events[1].data === 'line one\nline two') || false;
 }, test.limit.quick);
 test.run('a stream that ends is said as ended, and a reconnect is asked after the first wait', 0.2, function () {
-  if (!A) return 'no stream: the world failed';
-  return ((A.closes[0] || {}).reason === 'ended' && A.timers.length >= 1 && A.timers[0].ms === 1000) || 'closes ' + short(A.closes) + ', timers ' + short(A.timers.map(function (t) { return t.ms; }));
+  if (!A) return false;
+  return ((A.closes[0] || {}).reason === 'ended' && A.timers.length >= 1 && A.timers[0].ms === 1000) || false;
 }, test.limit.quick);
 
 // ── refusals ──
@@ -77,22 +76,22 @@ test.run('a refusal is said with its status, and the code and error of its JSON 
   const said = client([{ ok: false, status: 403, headers: { get: function () { return null; } }, text: function () { return Promise.resolve('{"code":"bad-stream-signature","error":"bad stream signature"}'); } }]);
   await settle();
   const c = said.closes[0] || {};
-  return (c.reason === 'refused: 403' && c.detail && c.detail.status === 403 && c.detail.code === 'bad-stream-signature' && c.detail.error === 'bad stream signature') || 'closes ' + short(said.closes);
+  return (c.reason === 'refused: 403' && c.detail && c.detail.status === 403 && c.detail.code === 'bad-stream-signature' && c.detail.error === 'bad stream signature') || false;
 }, test.limit.quick);
 test.run('a refusal with Retry-After waits that long before it asks again', 0.2, async function () {
   const said = client([{ ok: false, status: 503, headers: { get: function (h) { return h === 'retry-after' ? '5' : null; } }, text: function () { return Promise.resolve(''); } }]);
   await settle();
-  return (said.timers[0] || {}).ms === 5000 || 'waits ' + short(said.timers.map(function (t) { return t.ms; }));
+  return (said.timers[0] || {}).ms === 5000 || false;
 }, test.limit.quick);
 test.run('a 429 with no Retry-After waits at least twenty seconds', 0.2, async function () {
   const said = client([{ ok: false, status: 429, headers: { get: function () { return null; } }, text: function () { return Promise.resolve(''); } }]);
   await settle();
-  return (said.timers[0] || {}).ms >= 20000 || 'waits ' + short(said.timers.map(function (t) { return t.ms; }));
+  return (said.timers[0] || {}).ms >= 20000 || false;
 }, test.limit.quick);
 test.run('a fetch that throws is said as unreachable, and asked again', 0.2, async function () {
   const said = client([function () { return Promise.reject(new Error('ECONNREFUSED')); }]);
   await settle();
-  return (/^unreachable: ECONNREFUSED/.test((said.closes[0] || {}).reason) && said.timers.length === 1) || 'closes ' + short(said.closes);
+  return (/^unreachable: ECONNREFUSED/.test((said.closes[0] || {}).reason) && said.timers.length === 1) || false;
 }, test.limit.quick);
 
 // ── the backoff, clingy and capped ──
@@ -101,18 +100,18 @@ test.run('each failed attempt doubles the wait, capped at eight seconds', 0.2, a
   for (let i = 0; i < 5; i++) { await settle(); const t = said.timers[i]; if (t) t.fn(); }
   await settle();
   const waits = said.timers.map(function (t) { return t.ms; }).slice(0, 5);
-  return JSON.stringify(waits) === JSON.stringify([1000, 2000, 4000, 8000, 8000]) || 'waits ' + short(waits);
+  return JSON.stringify(waits) === JSON.stringify([1000, 2000, 4000, 8000, 8000]) || false;
 }, test.limit.quick);
 test.run('the wait is spread by its randomness, between half and all of it', 0.2, async function () {
   const said = client([function () { return Promise.reject(new Error('down')); }], { randomImpl: function () { return 0; } });
   await settle();
-  return (said.timers[0] || {}).ms === 500 || 'the first wait with randomness 0: ' + short(said.timers.map(function (t) { return t.ms; }));
+  return (said.timers[0] || {}).ms === 500 || false;
 }, test.limit.quick);
 test.run('bytes read set the wait back to the first', 0.2, async function () {
   const said = client([function () { return Promise.reject(new Error('down')); }, streamed(['event: x\ndata: 1\n\n'])]);
   await settle(); said.timers[0].fn(); await settle();
   const waits = said.timers.map(function (t) { return t.ms; });
-  return (waits[0] === 1000 && waits[1] === 1000) || 'waits ' + short(waits);
+  return (waits[0] === 1000 && waits[1] === 1000) || false;
 }, test.limit.quick);
 
 // ── idle, and close ──
@@ -128,10 +127,10 @@ test.run('silence past its idle wait aborts the stream, which is said and asked 
   }, idleTimeoutImpl: function (fn) { idle = fn; return 1; } };
   const said = client([], held);
   await settle();
-  if (typeof idle !== 'function') return 'no idle wait was set';
+  if (typeof idle !== 'function') return false;
   idle();
   await settle();
-  return (said.closes.length === 1 && /read failed|ended/.test(said.closes[0].reason) && said.timers.length === 1) || 'closes ' + short(said.closes) + ', timers ' + said.timers.length;
+  return (said.closes.length === 1 && /read failed|ended/.test(said.closes[0].reason) && said.timers.length === 1) || false;
 }, test.limit.quick);
 test.run('close stops it: a retry already due fetches nothing more', 0.2, async function () {
   const said = client([function () { return Promise.reject(new Error('down')); }]);
@@ -140,5 +139,5 @@ test.run('close stops it: a retry already due fetches nothing more', 0.2, async 
   const before = said.fetched.length;
   if (said.timers[0]) said.timers[0].fn();
   await settle();
-  return said.fetched.length === before || 'fetched ' + (said.fetched.length - before) + ' more after close';
+  return said.fetched.length === before || false;
 }, test.limit.quick);

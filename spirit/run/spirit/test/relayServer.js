@@ -10,7 +10,6 @@ const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '../..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 200); }
 const http = require('http');
 const net = require('net');
 const { sleep, scratchRelay, scratchFaceRelay } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
@@ -29,7 +28,7 @@ try { map = mapSrc ? new Function('common', 'return ' + mapSrc + ';')(common) : 
 
 // where its face files come from
 test.run('its face files are read from the run root, each by its file (FACE_DIR)', 0.2, function () {
-  return (!!dir && path.relative(RUN, dir) === '') || 'FACE_DIR is ' + (dir ? path.relative(RUN, dir) : 'not found in the source');
+  return (!!dir && path.relative(RUN, dir) === '') || false;
 }, test.limit.quick);
 
 // the addresses it serves
@@ -38,19 +37,19 @@ test.run('its face files are read from the run root, each by its file (FACE_DIR)
 const WANT = ['/spirit.js', '/shell/seal.js', '/shell/favicon.svg'];
 const keys = map ? Object.keys(map).sort() : [];
 test.run('its map serves exactly /spirit.js, /shell/seal.js and /shell/favicon.svg', 0.2, function () {
-  return (!!map && JSON.stringify(keys) === JSON.stringify(WANT.slice().sort())) || 'its map serves ' + JSON.stringify(keys);
+  return (!!map && JSON.stringify(keys) === JSON.stringify(WANT.slice().sort())) || false;
 }, test.limit.quick);
 test.run('no address under /face/ serves a file any more', 0.2, function () {
   const old = keys.filter(function (k) { return k.indexOf('/face/') === 0; });
-  return (!!map && !old.length) || 'old addresses still served: ' + JSON.stringify(old);
+  return (!!map && !old.length) || false;
 }, test.limit.quick);
 test.run('every file the map names is there', 0.2, function () {
   const missing = map && dir ? keys.filter(function (k) { return !fs.existsSync(path.join(dir, map[k])); }) : keys;
-  return (!!map && !!dir && !missing.length) || 'files not there: ' + JSON.stringify(missing.map(function (k) { return k + ' -> ' + (map ? map[k] : '?'); }));
+  return (!!map && !!dir && !missing.length) || false;
 }, test.limit.quick);
 test.run('each address is served from its file, as the node serves it (serveCommon.pageFile)', 0.2, function () {
   const named = map ? keys.every(function (k) { return map[k] === common.pageFile(k); }) : false;
-  return named || 'an address and its file differ: ' + JSON.stringify(map);
+  return named || false;
 }, test.limit.quick);
 
 // goal/G41.19, Andy: "LOAD IT WITH A FUCKING SCRIPT TAG!": the relay hands face.html and spirit.js over as they are on
@@ -82,19 +81,19 @@ test.run('asked with /?<token>, it serves face.html', 0.2, function () {
     served = route({ method: 'GET' }, '/', new URL('https://harbour.relay.example/?' + TOKEN), { faceLogin: function (n, t) { asked.logins.push([n, t]); return { loggedIn: true, session: 'S' }; } },
       function (res, sid) { asked.cookies.push(sid); }, function (res, st, file) { asked.sent.push(file); }, { name: 'harbour' }, {}, common);
   }
-  return (!!route && served === true && asked.sent[0] === common.pageFile('face.html')) || (route ? 'served ' + served + ', sent ' + JSON.stringify(asked.sent) : 'the face page\'s route was not found in the source');
+  return (!!route && served === true && asked.sent[0] === common.pageFile('face.html')) || false;
 }, test.limit.quick);
 // A token in an address that logs in is a login by a link: 0.8.
 test.run('and logs nobody in: no faceLogin asked, no login cookie set', 0.8, function () {
-  return (!!route && asked.logins.length === 0 && asked.cookies.length === 0) || 'faceLogin asked ' + JSON.stringify(asked.logins) + ', cookies ' + JSON.stringify(asked.cookies);
+  return (!!route && asked.logins.length === 0 && asked.cookies.length === 0) || false;
 }, test.limit.quick);
 test.run('the relay serves face.html byte for byte as it is on disk', 0.2, async function () {
   const got = await sent(common.pageFile('face.html'));
-  return (!!got && got.equals(fs.readFileSync(path.join(RUN, 'spirit', 'shell', 'face.html')))) || 'the relay serves face.html changed, or its faceSend was not found';
+  return (!!got && got.equals(fs.readFileSync(path.join(RUN, 'spirit', 'shell', 'face.html')))) || false;
 }, test.limit.quick);
 test.run('the relay serves /spirit.js, from spirit/spirit.js, byte for byte', 0.2, async function () {
   const got = await sent(map && map['/spirit.js'] || common.pageFile('spirit.js'));
-  return (!!got && got.equals(fs.readFileSync(path.join(RUN, 'spirit', 'spirit.js')))) || 'the relay does not serve spirit/spirit.js as it is';
+  return (!!got && got.equals(fs.readFileSync(path.join(RUN, 'spirit', 'spirit.js')))) || false;
 }, test.limit.quick);
 
 // A PAGE ON ANOTHER MEMBER'S FACE CANNOT DRIVE A LOGGED-IN OWNER'S NODE (goal/G41.30, the review, RC2: "a page on any
@@ -106,7 +105,6 @@ test.run('the relay serves /spirit.js, from spirit/spirit.js, byte for byte', 0.
 // POST /face/call and /face/api: only the face's own page
 // A page of another face let in is an unauthorized caller driving the owner's node: each refusal 0.8.
 const FP = { R: null };
-const NO_FACES = 'no scratch relay with faces: the world failed';
 function faceEvents(from) { return FP.R.lines.slice(from).filter(function (l) { return /^event: face\n/.test(l.line); }); }
 // One POST as a browser sends it: answered, or still waiting after a moment, which is the call gone on to the node.
 function facePost(p, o) {
@@ -125,47 +123,47 @@ function facePost(p, o) {
 }
 const JSONT = 'application/json';
 function own() { return 'https://' + FP.R.members.harbour.host; }
-async function faceRefused(name, o) {
-  if (!FP.R || !FP.R.up) return NO_FACES;
+async function faceRefused(o) {
+  if (!FP.R || !FP.R.up) return false;
   const from = FP.R.lines.length;
   const r = await facePost('/face/call', o);
   await sleep(100);
   const ev = faceEvents(from);
-  return (r.status >= 400 && r.status < 500 && !ev.length) || '/face/call ' + name + ': answered ' + (r.status || 'nothing yet') + ', ' + ev.length + ' face event(s) sent to ' + short(ev.map(function (l) { return l.stream; }));
+  return (r.status >= 400 && r.status < 500 && !ev.length) || false;
 }
 test.run('a scratch relay with two faces, present and logged in', 0.2, async function () {
   FP.R = await scratchFaceRelay();
-  return (FP.R.up && !!FP.R.members.harbour && !!FP.R.members.quay) || 'the scratch relay with faces did not come up: nothing judged';
+  return (FP.R.up && !!FP.R.members.harbour && !!FP.R.members.quay) || false;
 }, test.limit.slow);
 test.run('/face/call refused, a 4xx and no face event: an Origin of another face', 0.8, function () {
-  if (!FP.R || !FP.R.up) return NO_FACES;
-  return faceRefused('an Origin of another face', { origin: 'https://' + FP.R.members.quay.host, type: JSONT });
+  if (!FP.R || !FP.R.up) return false;
+  return faceRefused({ origin: 'https://' + FP.R.members.quay.host, type: JSONT });
 }, test.limit.quick);
-test.run('/face/call refused, a 4xx and no face event: no Origin', 0.8, function () { return faceRefused('no Origin', { type: JSONT }); }, test.limit.quick);
+test.run('/face/call refused, a 4xx and no face event: no Origin', 0.8, function () { return faceRefused({ type: JSONT }); }, test.limit.quick);
 test.run('/face/call refused, a 4xx and no face event: text/plain, a form a page sends with no preflight', 0.8, function () {
-  if (!FP.R || !FP.R.up) return NO_FACES;
-  return faceRefused('text/plain, a form a page sends with no preflight', { origin: own(), type: 'text/plain' });
+  if (!FP.R || !FP.R.up) return false;
+  return faceRefused({ origin: own(), type: 'text/plain' });
 }, test.limit.quick);
 test.run('/face/call refused, a 4xx and no face event: another member\'s session at this face\'s host', 0.8, function () {
-  if (!FP.R || !FP.R.up) return NO_FACES;
-  return faceRefused('another member\'s session at this face\'s host', { origin: own(), type: JSONT, sid: FP.R.members.quay.sid });
+  if (!FP.R || !FP.R.up) return false;
+  return faceRefused({ origin: own(), type: JSONT, sid: FP.R.members.quay.sid });
 }, test.limit.quick);
 test.run('the face\'s own page, its Origin and json, still reaches its node', 0.2, async function () {
-  if (!FP.R || !FP.R.up) return NO_FACES;
+  if (!FP.R || !FP.R.up) return false;
   const from = FP.R.lines.length;
   await facePost('/face/call', { origin: own(), type: JSONT, body: '{"call":"node.card","args":{}}' });
   const ev = faceEvents(from);
-  return (ev.length === 1 && ev[0].stream === 'harbour') || 'its own page: ' + ev.length + ' face event(s), to ' + short(ev.map(function (l) { return l.stream; }));
+  return (ev.length === 1 && ev[0].stream === 'harbour') || false;
 }, test.limit.slow);
 test.run('/face/api refused, a 4xx: an Origin of another face', 0.8, async function () {
-  if (!FP.R || !FP.R.up) return NO_FACES;
+  if (!FP.R || !FP.R.up) return false;
   const api = await facePost('/face/api', { origin: 'https://' + FP.R.members.quay.host, type: JSONT, body: '{"verb":"state"}' });
-  return (api.status >= 400 && api.status < 500) || '/face/api with an Origin of another face answered ' + api.status;
+  return (api.status >= 400 && api.status < 500) || false;
 }, test.limit.quick);
 test.run('the face\'s own page still reaches /face/api', 0.2, async function () {
-  if (!FP.R || !FP.R.up) return NO_FACES;
+  if (!FP.R || !FP.R.up) return false;
   const apiOwn = await facePost('/face/api', { origin: own(), type: JSONT, body: '{"verb":"state"}' });
-  return apiOwn.status === 200 || '/face/api from its own page answered ' + apiOwn.status;
+  return apiOwn.status === 200 || false;
 }, test.limit.quick);
 
 // ── THE GARBAGE PART ──
@@ -182,8 +180,6 @@ const PLAIN_MS = 3000;
 const BATCH = 20;
 const FACE_DOMAIN = 'relay.example';
 let HOST = '';
-
-function shortG(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 240); }
 
 // RAW OVER A BARE SOCKET: the request as written, nothing normalised. Answers { status, text } or { hung } or { error }.
 function raw(base, head, body, opts) {
@@ -212,19 +208,18 @@ function post(base, p, body, host) {
 }
 // A crash or a hang, as the box says it: no answer, a server error, or a handler that failed. A relay that says it is
 // busy and when to come back (a 503 with retryAfterMs, its capacity refusal: "CAPACITY IS A REFUSAL, NEVER A DROP") has
-// answered; any other 5xx is the relay breaking.
+// answered; any other 5xx is the relay breaking. True when it broke.
 function broke(r) {
-  if (!r || r.hung) return 'it hung: no answer in ' + (ASK_MS / 1000) + ' s';
-  if (r.error) return 'the connection failed: ' + r.error;
-  if (!r.status) return 'no status line';
-  if (r.status >= 500 && !(r.status === 503 && /retryAfterMs/.test(r.text))) return 'it answered ' + r.status + ': ' + shortG(r.text);
-  if (/handler-failed|the handler failed/.test(r.text)) return 'the handler failed: ' + shortG(r.text);
-  return '';
+  if (!r || r.hung) return true;
+  if (r.error) return true;
+  if (!r.status) return true;
+  if (r.status >= 500 && !(r.status === 503 && /retryAfterMs/.test(r.text))) return true;
+  if (/handler-failed|the handler failed/.test(r.text)) return true;
+  return false;
 }
 
 // garbage: the attacker's garbage at the relay's door (goal/G41.30)
-const G = { relay: null, base: '', plain: null, list: null, verbs: {}, RAWS: [], ASKS: [], killer: '', hungAfter: [], thrown: false };
-const NO_RELAY = 'no scratch relay for the garbage: the world failed';
+const G = { relay: null, base: '', plain: null, list: null, verbs: {}, RAWS: [], ASKS: [], killer: false, hungAfter: [], thrown: false };
 function signed(id, text) {
   const A = G.relay.auth;
   const m = A.postMessage(id.publicKey, '', text);
@@ -234,7 +229,7 @@ test.run('the world: a scratch relay comes up and hands its garbage list', 0.2, 
   // The relay with faces is let go first.
   if (FP.R) { FP.R.stop(); FP.R = null; }
   const relay = G.relay = await scratchRelay({ debug: true, faceDomain: FACE_DOMAIN });
-  if (!relay.up) return 'the scratch relay did not come up: every check here would blame the wrong thing';
+  if (!relay.up) return false;
   const base = G.base = relay.base;
   HOST = new URL(base).host;
   const FACE_HOST = 'harbour.' + FACE_DOMAIN;
@@ -245,7 +240,7 @@ test.run('the world: a scratch relay comes up and hands its garbage list', 0.2, 
   // relay's api tree), each entry the ask's body { body: { <verb>: args } }.
   let list = null;
   try { list = await fetch(base + '/DEBUG/spirit/relay/garbageArguments.json').then(function (r) { return r.json(); }); } catch (e) { list = null; }
-  if (!Array.isArray(list) || !list.length) return '/spirit/relay/garbageArguments.json: the relay gave no garbage list: nothing to introspect';
+  if (!Array.isArray(list) || !list.length) return false;
   G.list = list;
   const verbs = G.verbs;
   list.forEach(function (e) { Object.keys((e && e.body) || {}).forEach(function (v) { verbs[v] = true; }); });
@@ -267,26 +262,26 @@ test.run('the world: a scratch relay comes up and hands its garbage list', 0.2, 
   const POSTS = ['/api/relay/post', '/api/relay/reply', '/api/relay/face/answer', '/api/relay/face/stream'];
   const RAWS = G.RAWS;
   POSTS.forEach(function (p) {
-    BODIES.forEach(function (b) { RAWS.push({ why: 'POST ' + p + ', ' + b[0], run: function () { return post(base, p, b[1]); } }); });
-    RAWS.push({ why: 'POST ' + p + ', no Content-Type', run: function () { return raw(base, postHead(p, 2, null), '{}'); } });
-    RAWS.push({ why: 'POST ' + p + ', Content-Type text/plain', run: function () { return raw(base, postHead(p, 2, 'text/plain'), '{}'); } });
-    RAWS.push({ why: 'POST ' + p + ', a body cut off half-way', run: function () { return raw(base, postHead(p, 100), '{"from":"x', { keepOpen: true }); }, waits: true });
-    RAWS.push({ why: 'POST ' + p + ', one byte past BODY_MAX (' + (BODY_MAX + 1) + ')', run: function () { return raw(base, postHead(p, BODY_MAX + 1), '{"t":"' + 'x'.repeat(BODY_MAX + 1 - 8) + '"}'); } });
-    RAWS.push({ why: 'POST ' + p + ', a Content-Length far past what is sent', run: function () { return raw(base, postHead(p, 10000000), '{}', { keepOpen: true }); }, waits: true });
+    BODIES.forEach(function (b) { RAWS.push({ run: function () { return post(base, p, b[1]); } }); });
+    RAWS.push({ run: function () { return raw(base, postHead(p, 2, null), '{}'); } });
+    RAWS.push({ run: function () { return raw(base, postHead(p, 2, 'text/plain'), '{}'); } });
+    RAWS.push({ run: function () { return raw(base, postHead(p, 100), '{"from":"x', { keepOpen: true }); }, waits: true });
+    RAWS.push({ run: function () { return raw(base, postHead(p, BODY_MAX + 1), '{"t":"' + 'x'.repeat(BODY_MAX + 1 - 8) + '"}'); } });
+    RAWS.push({ run: function () { return raw(base, postHead(p, 10000000), '{}', { keepOpen: true }); }, waits: true });
   });
   // The face's own routes, asked under a face's host (goal/G30.9), a face this relay does not serve.
   ['/face/api', '/face/call'].forEach(function (p) {
-    BODIES.slice(0, 8).forEach(function (b) { RAWS.push({ why: 'POST ' + p + ' (face host), ' + b[0], run: function () { return post(base, p, b[1], FACE_HOST); } }); });
+    BODIES.slice(0, 8).forEach(function (b) { RAWS.push({ run: function () { return post(base, p, b[1], FACE_HOST); } }); });
   });
   ['/face/allowed?domain=' + encodeURIComponent('\u0000'), '/face/allowed?domain=' + 'a'.repeat(9000), '/face/file?path=..%2f..%2frelay-state', '/face/stream'].forEach(function (p) {
-    RAWS.push({ why: 'GET ' + shortG(p).slice(0, 60) + ' (face host)', run: function () { return raw(base, getHead(p, FACE_HOST), ''); } });
+    RAWS.push({ run: function () { return raw(base, getHead(p, FACE_HOST), ''); } });
   });
   // The members' stream, with garbage in its signature and key.
   ['/api/relay/stream', '/api/relay/stream?sig=garbage&key=%00', '/api/relay/stream?sig=' + 'a'.repeat(9000), '/api/relay/stream?key=__proto__'].forEach(function (p) {
-    RAWS.push({ why: 'GET ' + shortG(p).slice(0, 60), run: function () { return raw(base, getHead(p, null, 'X-Spirit-Sig: garbage\r\n'), '', { keepOpen: true }); }, waits: true });
+    RAWS.push({ run: function () { return raw(base, getHead(p, null, 'X-Spirit-Sig: garbage\r\n'), '', { keepOpen: true }); }, waits: true });
   });
-  RAWS.push({ why: 'a request line that is not HTTP', run: function () { return raw(base, 'GARBAGE /api/relay/post NOPE\r\n\r\n', ''); } });
-  RAWS.push({ why: 'a header line with no colon', run: function () { return raw(base, 'POST /api/relay/post HTTP/1.1\r\nHost 127.0.0.1\r\nContent-Length: 2\r\n\r\n', '{}'); } });
+  RAWS.push({ run: function () { return raw(base, 'GARBAGE /api/relay/post NOPE\r\n\r\n', ''); } });
+  RAWS.push({ run: function () { return raw(base, 'POST /api/relay/post HTTP/1.1\r\nHost 127.0.0.1\r\nContent-Length: 2\r\n\r\n', '{}'); } });
   // 3) MALFORMED PATHS, GET AND POST, at the relay's host and at a face's (the box, rule 2: "malformed paths").
   const PATHS = ['/..', '/../../../../etc/passwd', '/%2e%2e/%2e%2e/etc/passwd', '/shell/%2f%2f..%2f..%2fetc', '/' + 'a'.repeat(9000), '/%', '/%zz',
     '/%E0%A4%A', '/api/%2e%2e/relay/post', '//api//relay//post', '/DEBUG/../../spirit/state/identity.json', '/shell/../../spirit/state/relay.db',
@@ -295,8 +290,8 @@ test.run('the world: a scratch relay comes up and hands its garbage list', 0.2, 
     '/%00', '/face.html%00.js', '/shell/boot.js%00'];
   [HOST, FACE_HOST].forEach(function (h) {
     PATHS.forEach(function (p) {
-      RAWS.push({ why: 'GET ' + shortG(p).slice(0, 60) + (h === FACE_HOST ? ' (face host)' : ''), run: function () { return raw(base, getHead(p, h), ''); } });
-      RAWS.push({ why: 'POST ' + shortG(p).slice(0, 60) + (h === FACE_HOST ? ' (face host)' : ''), run: function () { return raw(base, postHead(p, 2, undefined, h), '{}'); } });
+      RAWS.push({ run: function () { return raw(base, getHead(p, h), ''); } });
+      RAWS.push({ run: function () { return raw(base, postHead(p, 2, undefined, h), '{}'); } });
     });
   });
   // Each verb's garbage, signed by the relay's owner, so it passes the door and reaches the verb (the deepest a caller
@@ -311,7 +306,7 @@ test.run('the world: a scratch relay comes up and hands its garbage list', 0.2, 
 // THE VERBS, BATCH BY BATCH.
 // /api/relay/post: every relay verb takes bad arguments without crashing or hanging
 test.run('/api/relay/post: the relay verbs took all their garbage without crashing or hanging', 0.2, async function () {
-  if (!G.list) return NO_RELAY;
+  if (!G.list) return false;
   const relay = G.relay; const base = G.base; const ASKS = G.ASKS;
   const broken = {}; const statuses = {};
   for (let i = 0; i < ASKS.length && !G.killer; i += BATCH) {
@@ -321,24 +316,22 @@ test.run('/api/relay/post: the relay verbs took all their garbage without crashi
       const a = batch[j];
       const name = Object.keys(a.e.body || {})[0] || '?';
       statuses[r.status || 0] = (statuses[r.status || 0] || 0) + 1;
-      const why = broke(r);
-      if (why) (broken[name] = broken[name] || []).push(a.who + ', ' + shortG(a.e.body[name]).slice(0, 60) + ': ' + why);
+      if (broke(r)) broken[name] = true;
     });
-    if (relay.child.exitCode !== null) { G.killer = 'the batch from ask ' + i + ' (' + shortG(batch.map(function (a) { return Object.keys(a.e.body || {})[0]; })) + ')'; break; }
+    if (relay.child.exitCode !== null) { G.killer = true; break; }
     if (!(await G.plain())) G.hungAfter.push(i);
   }
   G.thrown = true;
   test.comment('by status: ' + JSON.stringify(statuses));
   // Each verb that broke named in the answer: the verbs are what the relay's garbage list names, so no title can be
   // written out per verb.
-  const bad = Object.keys(G.verbs).filter(function (v) { return broken[v]; }).map(function (v) { return '/api/relay/post ' + v + ': ' + broken[v].length + ' crashed or hung, first: ' + broken[v][0]; });
-  if (G.killer) bad.push('/api/relay/post: THE RELAY DIED (exit ' + relay.child.exitCode + ') at ' + G.killer);
-  return !bad.length || bad.join('; ');
+  const bad = Object.keys(G.verbs).filter(function (v) { return broken[v]; });
+  return (!bad.length && !G.killer) || false;
 }, test.limit.slow);
 test.run('/api/relay/post: after every batch the relay answered a plain request in time', 0.2, function () {
-  if (!G.thrown) return 'no garbage thrown: the world failed';
-  if (G.killer) return '/api/relay/post: THE RELAY DIED (exit ' + G.relay.child.exitCode + ') at ' + G.killer;
-  return !G.hungAfter.length || '/api/relay/post: after ' + G.hungAfter.length + ' batches the relay did not answer a plain request within ' + (PLAIN_MS / 1000) + ' s';
+  if (!G.thrown) return false;
+  if (G.killer) return false;
+  return !G.hungAfter.length || false;
 }, test.limit.quick);
 
 // THE RAW REQUESTS, ONE BY ONE.
@@ -346,19 +339,19 @@ test.run('/api/relay/post: after every batch the relay answered a plain request 
 // Each request written out, in the order thrown, so that each check has a plain title of its own. A request is thrown by
 // its own test; once one killed the relay, the ones after it are not thrown, and say so.
 async function door(ri) {
-  if (!G.list) return NO_RELAY;
+  if (!G.list) return false;
   const r0 = G.RAWS[ri];
   const relay = G.relay;
-  if (G.killer) return 'the relay\'s door, ' + r0.why + ': not thrown, the relay died at ' + G.killer;
+  if (G.killer) return false;
   const r = await r0.run();
   // A body cut off, or a held stream, may be held by the relay until its own time runs out: it must still answer
   // everybody else.
-  let why = r0.waits && r.hung ? '' : broke(r);
+  let bad = r0.waits && r.hung ? false : broke(r);
   let alive = await G.plain();
   if (!alive) { await sleep(500); alive = await G.plain(); }
-  if (!alive) why = (why ? why + '; ' : '') + 'the relay then did not answer a plain request within ' + (PLAIN_MS / 1000) + ' s';
-  if (relay.child.exitCode !== null && !G.killer) { G.killer = r0.why; why = 'IT KILLED THE RELAY (exit ' + relay.child.exitCode + ')'; }
-  return !why || 'the relay\'s door, ' + r0.why + ': ' + why;
+  if (!alive) bad = true;
+  if (relay.child.exitCode !== null && !G.killer) { G.killer = true; bad = true; }
+  return !bad || false;
 }
 test.run('POST /api/relay/post, not JSON: answered, and the relay still answers', 0.2, function () { return door(0); }, test.limit.slow);
 test.run('POST /api/relay/post, JSON that is not an object: answered, and the relay still answers', 0.2, function () { return door(1); }, test.limit.slow);
@@ -541,9 +534,9 @@ test.run('POST /shell/boot.js%00 (face host): answered, and the relay still answ
 
 // the relay is still running at the end
 test.run('the scratch relay is still running and answers', 0.2, async function () {
-  if (!G.list) return NO_RELAY;
+  if (!G.list) return false;
   const relay = G.relay;
-  return (relay.child.exitCode === null && await G.plain()) || 'the scratch relay ' + (relay.child.exitCode !== null ? 'exited with ' + relay.child.exitCode : 'does not answer');
+  return (relay.child.exitCode === null && await G.plain()) || false;
 }, test.limit.slow);
 
 // ONE HEADER MUST NOT CRASH THE RELAY (goal/G41.30, the review, RH3: "any member with a face can crash a relay with one
@@ -576,25 +569,24 @@ async function answered(headers) {
   await raw(R.base, head, 'x', { ms: 3000 });
   return { viewer: await viewer };
 }
-const NO_FACE = 'no scratch relay with a face: the world failed';
 // A dead relay is replaced, so each bad status is judged alone.
 async function ready() { return !!BA.R && !!BA.R.up && (BA.R.child.exitCode === null || await fresh()); }
 async function badStatus(status) {
-  if (!BA.R || !BA.R.up) return NO_FACE;
-  if (!(await ready())) return 'a fresh scratch relay did not come up';
+  if (!BA.R || !BA.R.up) return false;
+  if (!(await ready())) return false;
   BA.got[status] = await answered({ 'X-Spirit-Status': status, 'X-Spirit-Type': 'text/plain' });
   await sleep(100);
-  return BA.R.child.exitCode === null || 'x-spirit-status ' + status + ': IT KILLED THE RELAY (exit ' + BA.R.child.exitCode + ')';
+  return BA.R.child.exitCode === null || false;
 }
 function viewerGot(status) {
   const got = BA.got[status];
-  if (!got) return 'x-spirit-status ' + status + ': not answered: the world failed';
-  return got.viewer === 502 || 'x-spirit-status ' + status + ': the viewer got ' + (got.viewer || 'nothing') + (got.noCall ? ' (no call reached the member)' : '');
+  if (!got) return false;
+  return got.viewer === 502 || false;
 }
 test.run('a scratch relay with a face, present and logged in', 0.2, async function () {
   // The garbage's relay is let go first.
   if (G.relay) { try { if (G.relay.child) G.relay.child.kill(); } catch (e) { /* gone */ } }
-  return (await fresh()) || 'the scratch relay with a face did not come up: nothing judged';
+  return (await fresh()) || false;
 }, test.limit.slow);
 test.run('x-spirit-status 99: the relay is still running', 0.2, function () { return badStatus('99'); }, test.limit.slow);
 test.run('x-spirit-status 99: the viewer gets 502', 0.2, function () { return viewerGot('99'); }, test.limit.quick);
@@ -611,17 +603,17 @@ test.run('x-spirit-status 600: the viewer gets 502', 0.2, function () { return v
 test.run('x-spirit-status 1.5: the relay is still running', 0.2, function () { return badStatus('1.5'); }, test.limit.slow);
 test.run('x-spirit-status 1.5: the viewer gets 502', 0.2, function () { return viewerGot('1.5'); }, test.limit.quick);
 test.run('a bad x-spirit-type: the relay is still running', 0.2, async function () {
-  if (!BA.R || !BA.R.up) return NO_FACE;
-  if (!(await ready())) return 'a fresh scratch relay did not come up';
-  const type = await answered({ 'X-Spirit-Status': '200', 'X-Spirit-Type': 'text/\x7fbad' });
+  if (!BA.R || !BA.R.up) return false;
+  if (!(await ready())) return false;
+  await answered({ 'X-Spirit-Status': '200', 'X-Spirit-Type': 'text/\x7fbad' });
   await sleep(100);
-  return BA.R.child.exitCode === null || 'a bad x-spirit-type: IT KILLED THE RELAY (exit ' + BA.R.child.exitCode + '), the viewer got ' + type.viewer;
+  return BA.R.child.exitCode === null || false;
 }, test.limit.slow);
 test.run('a good status still reaches the viewer as it is: 201', 0.2, async function () {
-  if (!BA.R || !BA.R.up) return NO_FACE;
-  if (!(await ready())) return 'a fresh scratch relay did not come up';
+  if (!BA.R || !BA.R.up) return false;
+  if (!(await ready())) return false;
   const good = await answered({ 'X-Spirit-Status': '201', 'X-Spirit-Type': 'text/plain' });
-  return good.viewer === 201 || 'x-spirit-status 201: the viewer got ' + (good.viewer || 'nothing');
+  return good.viewer === 201 || false;
 }, test.limit.slow);
 
 // ── THE ROUTE CACHING GOES ──
@@ -642,7 +634,7 @@ const cardAsk = function (relay) {
 test.run('the world: two scratch relays; a signed card ask posted to one as it is, to the other with hints beside it', 0.2, async function () {
   HN.R = await scratchRelay({});
   HN.R2 = await scratchRelay({});
-  if (!HN.R.up || !HN.R2.up) return 'a scratch relay did not come up: nothing judged';
+  if (!HN.R.up || !HN.R2.up) return false;
   HOST = new URL(HN.R.base).host;
   HN.plain = await post(HN.R.base, '/api/relay/post', cardAsk(HN.R).body);
   HOST = new URL(HN.R2.base).host;
@@ -650,16 +642,16 @@ test.run('the world: two scratch relays; a signed card ask posted to one as it i
   const hints = ['MCowBQYDK2VwAyEAHINTHINTHINTHINTHINTHINTHINTHINTHINTHINTHINT='];
   const hintSig = typeof c.A.hintMessage === 'function' ? c.A.sign(c.who.privateKey, c.A.hintMessage(c.body.sig, hints)) : 'AAAA';
   HN.hinted = await post(HN.R2.base, '/api/relay/post', Object.assign({}, c.body, { hints: hints, hintSig: hintSig }));
-  return (!!HN.plain && !!HN.hinted && !!HN.plain.status && !!HN.hinted.status) || 'the relays answered ' + shortG([HN.plain, HN.hinted]);
+  return (!!HN.plain && !!HN.hinted && !!HN.plain.status && !!HN.hinted.status) || false;
 }, test.limit.slow);
 test.run('a post with no hints is taken', 0.2, function () {
-  if (!HN.plain) return 'nothing was posted: the world failed';
-  return HN.plain.status === 200 || 'the plain post: ' + HN.plain.status + ' ' + shortG(HN.plain.text);
+  if (!HN.plain) return false;
+  return HN.plain.status === 200 || false;
 }, test.limit.quick);
 // Refused as a bad request (400): a hold of its address (429) or a busy relay (503) is no refusal of the hints.
 test.run('a post with hints is taken no more: refused as a bad request', 0.2, function () {
-  if (!HN.hinted) return 'nothing was posted: the world failed';
-  return HN.hinted.status === 400 || 'the post with hints: ' + HN.hinted.status + ' ' + shortG(HN.hinted.text);
+  if (!HN.hinted) return false;
+  return HN.hinted.status === 400 || false;
 }, test.limit.quick);
 
 test.after(function () {

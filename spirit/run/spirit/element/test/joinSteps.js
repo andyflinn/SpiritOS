@@ -14,10 +14,7 @@ const RUN = path.resolve(__dirname, '..', '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const FILE = path.join(RUN, 'spirit', 'element', 'joinSteps.js');
 
-function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
-
 let J = null;
-const NO_J = 'joinSteps placed nothing: the world failed';
 const MANIFEST = JSON.parse(fs.readFileSync(path.join(RUN, 'spirit', 'app', 'join', 'join.json'), 'utf8')).steps;
 const FACE = [{ until: 'face', name: 'Your face' }, { until: 'opened', name: 'Open it' }];
 const STEPS = MANIFEST.concat(FACE);
@@ -31,58 +28,58 @@ test.run('the world: it runs on a window of its own and places itself at spirit.
   vm.createContext(win);
   vm.runInContext(fs.readFileSync(FILE, 'utf8'), win, { filename: FILE });
   J = ((win.spirit.required.spirit || {}).element || {}).joinSteps;
-  return (!!J && ['fromJob', 'done', 'current', 'linkRelay'].every(function (k) { return typeof J[k] === 'function'; })) || 'placed: ' + short(J && Object.keys(J));
+  return (!!J && ['fromJob', 'done', 'current', 'linkRelay'].every(function (k) { return typeof J[k] === 'function'; })) || false;
 }, test.limit.quick);
 
 // fromJob
 test.run('fromJob answers the job\'s facts, with whether the face link was opened', 0.2, function () {
-  if (!J) return NO_J;
+  if (!J) return false;
   const f = J.fromJob({ seated: 1, relayUrl: 'https://r.example', contact: 'yes', face: 'f1', faceUrl: 'https://r.example/f1', extra: 'no' }, true);
-  return JSON.stringify(f) === JSON.stringify({ seated: true, relayUrl: 'https://r.example', contact: true, face: 'f1', faceUrl: 'https://r.example/f1', opened: true }) || 'facts: ' + short(f);
+  return JSON.stringify(f) === JSON.stringify({ seated: true, relayUrl: 'https://r.example', contact: true, face: 'f1', faceUrl: 'https://r.example/f1', opened: true }) || false;
 }, test.limit.quick);
 test.run('fromJob of no job answers every fact false or empty', 0.2, function () {
-  if (!J) return NO_J;
+  if (!J) return false;
   const f = J.fromJob(null);
-  return JSON.stringify(f) === JSON.stringify(facts()) || 'facts: ' + short(f);
+  return JSON.stringify(f) === JSON.stringify(facts()) || false;
 }, test.limit.quick);
 
 // done: "The node keeps no email since goal/G40.11 (box v24), so a seat is what step 1 ends on."
 test.run('step 1 (until email) is done by a seat, the node keeping no email', 0.2, function () {
-  if (!J) return NO_J;
+  if (!J) return false;
   const one = MANIFEST[0];
-  return (one.until === 'email' && J.done(one, facts({ seated: true })) === true && J.done(one, facts()) === false) || 'step 1 done: ' + short([J.done(one, facts({ seated: true })), J.done(one, facts())]);
+  return (one.until === 'email' && J.done(one, facts({ seated: true })) === true && J.done(one, facts()) === false) || false;
 }, test.limit.quick);
 test.run('each step is done by its own fact: contact, face, opened', 0.2, function () {
-  if (!J) return NO_J;
+  if (!J) return false;
   const bad = [['contact', { contact: true }], ['face', { face: 'f' }], ['opened', { opened: true }]].filter(function (p) {
     const s = { until: p[0] };
     return J.done(s, facts(p[1])) !== true || J.done(s, facts()) !== false;
   });
-  return !bad.length || 'not done by its fact: ' + short(bad);
+  return !bad.length || false;
 }, test.limit.quick);
 test.run('a step with an end it does not know is never done', 0.2, function () {
-  if (!J) return NO_J;
-  return J.done({ until: 'nothing' }, facts({ seated: true, contact: true, face: 'f', opened: true })) === false || 'done';
+  if (!J) return false;
+  return J.done({ until: 'nothing' }, facts({ seated: true, contact: true, face: 'f', opened: true })) === false || false;
 }, test.limit.quick);
 
 // current: "Find someone is optional (box: "it never blocks the steps after it")"
 test.run('current answers the first step not done', 0.2, function () {
-  if (!J) return NO_J;
-  return nameOf(J.current(STEPS, facts())) === 'Join' || 'current: ' + short(J.current(STEPS, facts()));
+  if (!J) return false;
+  return nameOf(J.current(STEPS, facts())) === 'Join' || false;
 }, test.limit.quick);
 test.run('Find someone is optional: never the open step, and it never blocks the steps after it', 0.2, function () {
-  if (!J) return NO_J;
+  if (!J) return false;
   const now = J.current(STEPS, facts({ seated: true }));
-  return (MANIFEST[1].optional === true && nameOf(now) === 'Your face') || 'current once seated: ' + short(now);
+  return (MANIFEST[1].optional === true && nameOf(now) === 'Your face') || false;
 }, test.limit.quick);
 test.run('current answers null once every step that counts is done, Find someone left undone', 0.2, function () {
-  if (!J) return NO_J;
+  if (!J) return false;
   const now = J.current(STEPS, facts({ seated: true, face: 'f', opened: true }));
-  return now === null || 'current: ' + short(now);
+  return now === null || false;
 }, test.limit.quick);
 test.run('current of no list answers null', 0.2, function () {
-  if (!J) return NO_J;
-  return J.current(null, facts()) === null || 'current: ' + short(J.current(null, facts()));
+  if (!J) return false;
+  return J.current(null, facts()) === null || false;
 }, test.limit.quick);
 
 // linkRelay: goal/G40.11, a relay a row keyed by its ID, its url on its label; goal/G40.10, never the first one listed
@@ -93,16 +90,16 @@ const ITEMS = [
   { key: 'broken', label: '{not json' },
 ];
 test.run('linkRelay answers the url of the relay the link names by its key', 0.2, function () {
-  if (!J) return NO_J;
-  return J.linkRelay('named', ITEMS) === 'https://named.example' || 'answered ' + short(J.linkRelay('named', ITEMS));
+  if (!J) return false;
+  return J.linkRelay('named', ITEMS) === 'https://named.example' || false;
 }, test.limit.quick);
 test.run('linkRelay answers \'\' for a key no relay is listed under, never the first one listed', 0.2, function () {
-  if (!J) return NO_J;
+  if (!J) return false;
   const got = [J.linkRelay('nobody', ITEMS), J.linkRelay('', ITEMS), J.linkRelay('named', null)];
-  return JSON.stringify(got) === JSON.stringify(['', '', '']) || 'answered ' + short(got);
+  return JSON.stringify(got) === JSON.stringify(['', '', '']) || false;
 }, test.limit.quick);
 test.run('linkRelay answers \'\' for a row that is no relay, or whose label is not JSON', 0.2, function () {
-  if (!J) return NO_J;
+  if (!J) return false;
   const got = [J.linkRelay('person', ITEMS), J.linkRelay('broken', ITEMS)];
-  return JSON.stringify(got) === JSON.stringify(['', '']) || 'answered ' + short(got);
+  return JSON.stringify(got) === JSON.stringify(['', '']) || false;
 }, test.limit.quick);

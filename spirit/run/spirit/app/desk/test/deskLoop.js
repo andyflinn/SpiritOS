@@ -20,7 +20,6 @@ const FILE = path.join(__dirname, '..', 'deskLoop.js');
 const EAR = path.join(__dirname, '..', 'deskAgentEar.js');
 const MANUAL = fs.readFileSync(path.join(__dirname, '..', 'deskLoopManual.md'), 'utf8').trim();
 
-function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 400); }
 const settle = async function () { for (let i = 0; i < 20; i++) await new Promise(function (r) { setImmediate(r); }); };
 const sleep = function (ms) { return new Promise(function (r) { realSetTimeout(r, ms); }); };
 const realSetTimeout = setTimeout;
@@ -92,7 +91,7 @@ test.run('no port, no command, or a port that is no number: exit 2 with its usag
   const u2 = childProcess.spawnSync(process.execPath, [FILE, PORT], { encoding: 'utf8', windowsHide: true, timeout: 30000 });
   const u3 = childProcess.spawnSync(process.execPath, [FILE, 'abc', COMMAND], { encoding: 'utf8', windowsHide: true, timeout: 30000 });
   const USAGE = 'usage: node deskLoop.js <port of the agent\'s own node> <command> [args...]';
-  return ([u1, u2, u3].every(function (u) { return u.status === 2 && String(u.stderr).trim() === USAGE; })) ? true : short([u1.status, u2.status, u3.status, String(u1.stderr)]);
+  return ([u1, u2, u3].every(function (u) { return u.status === 2 && String(u.stderr).trim() === USAGE; })) ? true : false;
 }, test.limit.quick);
 
 test.run('the world: deskLoop.js loads and runs the script of its programs', 0.2, async function () {
@@ -110,7 +109,7 @@ test.run('the world: deskLoop.js loads and runs the script of its programs', 0.2
   script.posts.push(0, 0, 1);
 
   process.argv = [process.argv[0], FILE, PORT, COMMAND].concat(ARGS);
-  try { require(FILE); } catch (e) { return 'deskLoop.js threw as it loaded: ' + e.message; }
+  try { require(FILE); } catch (e) { return false; }
   await until(function () { return of('listen').length >= 5; }, 15000);
   await settle();
   W.L = of('listen');
@@ -123,108 +122,108 @@ test.run('the world: deskLoop.js loads and runs the script of its programs', 0.2
 
 // it listens through its own deskAgentEar, and listens again
 test.run('each listen is deskAgentEar.js <port>, run by this node.js', 0.2, function () {
-  if (!W.L) return 'no run of the loop: the world failed';
+  if (!W.L) return false;
   const L = W.L, N = W.N, M = W.M, P = W.P;
-  return (L.length >= 5 && L.every(function (s) { return s.argv[0] === EAR && s.argv[1] === PORT; })) ? true : 'listens ' + short(L.map(function (s) { return s.argv; }));
+  return (L.length >= 5 && L.every(function (s) { return s.argv[0] === EAR && s.argv[1] === PORT; })) ? true : false;
 }, test.limit.quick);
 test.run('its stdout read, its stderr to ours, no window', 0.2, function () {
-  if (!W.L) return 'no run of the loop: the world failed';
+  if (!W.L) return false;
   const L = W.L, N = W.N, M = W.M, P = W.P;
-  return (L.every(function (s) { return s.opts && s.opts.stdio && s.opts.stdio[0] === 'ignore' && s.opts.stdio[1] === 'pipe' && s.opts.stdio[2] === 'inherit' && s.opts.windowsHide === true; })) ? true : 'opts ' + short(L[0] && L[0].opts);
+  return (L.every(function (s) { return s.opts && s.opts.stdio && s.opts.stdio[0] === 'ignore' && s.opts.stdio[1] === 'pipe' && s.opts.stdio[2] === 'inherit' && s.opts.windowsHide === true; })) ? true : false;
 }, test.limit.quick);
 test.run('a refused listen is said, with what it printed, and waited out', 0.2, function () {
-  if (!W.L) return 'no run of the loop: the world failed';
+  if (!W.L) return false;
   const L = W.L, N = W.N, M = W.M, P = W.P;
-  return (said.some(function (s) { return s === 'deskLoop: the listener ended 1: deskAgentEar: unblocked; listening again in 10 s'; })) ? true : 'said ' + short(said);
+  return (said.some(function (s) { return s === 'deskLoop: the listener ended 1: deskAgentEar: unblocked; listening again in 10 s'; })) ? true : false;
 }, test.limit.quick);
 test.run('a listen that printed nothing is waited out too', 0.2, function () {
-  if (!W.L) return 'no run of the loop: the world failed';
+  if (!W.L) return false;
   const L = W.L, N = W.N, M = W.M, P = W.P;
-  return (said.some(function (s) { return s === 'deskLoop: the listener ended 0; listening again in 10 s'; })) ? true : 'said ' + short(said);
+  return (said.some(function (s) { return s === 'deskLoop: the listener ended 0; listening again in 10 s'; })) ? true : false;
 }, test.limit.quick);
 test.run('each time lines come, the nick is read from the desk: profile.get {agent: \'\'}, through deskAgentEar', 0.2, function () {
-  if (!W.L) return 'no run of the loop: the world failed';
+  if (!W.L) return false;
   const L = W.L, N = W.N, M = W.M, P = W.P;
-  return (N.length === 2 && N[0].argv.slice(1).join(' ') === PORT + ' profile.get {"agent":""}') ? true : 'nick asks ' + short(N.map(function (s) { return s.argv; }));
+  return (N.length === 2 && N[0].argv.slice(1).join(' ') === PORT + ' profile.get {"agent":""}') ? true : false;
 }, test.limit.quick);
 
 
 // only his lines for its nick are handed over, one at a time
 test.run('four of the lines are its: his chat.add starting "<nick>:", the nick read case-blind', 0.2, function () {
-  if (!W.L) return 'no run of the loop: the world failed';
+  if (!W.L) return false;
   const L = W.L, N = W.N, M = W.M, P = W.P;
-  return (M.length === 4) ? true : 'model runs: ' + M.length + ' ' + short(M.map(function (s) { return s.argv[s.argv.length - 1].slice(-60); }));
+  return (M.length === 4) ? true : false;
 }, test.limit.quick);
 test.run('the command runs with its args plus one more', 0.2, function () {
-  if (!W.L) return 'no run of the loop: the world failed';
+  if (!W.L) return false;
   const L = W.L, N = W.N, M = W.M, P = W.P;
-  return (M.length >= 1 && M[0].argv.slice(0, ARGS.length).join(' ') === ARGS.join(' ') && M[0].argv.length === ARGS.length + 1) ? true : 'argv ' + short(M[0] && M[0].argv.slice(0, -1));
+  return (M.length >= 1 && M[0].argv.slice(0, ARGS.length).join(' ') === ARGS.join(' ') && M[0].argv.length === ARGS.length + 1) ? true : false;
 }, test.limit.quick);
 test.run('that one: deskLoopManual.md, a blank line, and the line as deskAgentEar printed it', 0.2, function () {
-  if (!W.L) return 'no run of the loop: the world failed';
+  if (!W.L) return false;
   const L = W.L, N = W.N, M = W.M, P = W.P;
-  return (M.length >= 1 && last(M[0]) === MANUAL + '\n\n' + mine1) ? true : 'handed ' + short(M[0] && last(M[0]).slice(-200));
+  return (M.length >= 1 && last(M[0]) === MANUAL + '\n\n' + mine1) ? true : false;
 }, test.limit.quick);
 test.run('another agent\'s line, a box write, a line for another nick, one with no id or no json: none handed over', 0.2, function () {
-  if (!W.L) return 'no run of the loop: the world failed';
+  if (!W.L) return false;
   const L = W.L, N = W.N, M = W.M, P = W.P;
-  return (M.map(last).every(function (a) { return [mine1, mine2, mine3, mine4].some(function (m) { return a.slice(-m.length) === m; }); })) ? true : 'handed ' + short(M.map(function (s) { return last(s).slice(-80); }));
+  return (M.map(last).every(function (a) { return [mine1, mine2, mine3, mine4].some(function (m) { return a.slice(-m.length) === m; }); })) ? true : false;
 }, test.limit.quick);
 test.run('each hand-over is said by its item and the command\'s name', 0.2, function () {
-  if (!W.L) return 'no run of the loop: the world failed';
+  if (!W.L) return false;
   const L = W.L, N = W.N, M = W.M, P = W.P;
-  return (said.some(function (s) { return s === 'deskLoop: handing a line under goal/G1.2 to opencode.exe'; })) ? true : 'said ' + short(said);
+  return (said.some(function (s) { return s === 'deskLoop: handing a line under goal/G1.2 to opencode.exe'; })) ? true : false;
 }, test.limit.quick);
 
 
 // the final answer is posted under the line's item, never its thinking
 test.run('three answers are posted (one run gave none)', 0.2, function () {
-  if (!W.L) return 'no run of the loop: the world failed';
+  if (!W.L) return false;
   const L = W.L, N = W.N, M = W.M, P = W.P;
-  return (P.length === 3) ? true : 'posts ' + short(P.map(function (s) { return s.argv.slice(2); }));
+  return (P.length === 3) ? true : false;
 }, test.limit.quick);
 test.run('the stop step\'s text, after the leaked reasoning (<channel|>), trimmed, under the line\'s item', 0.2, function () {
-  if (!W.L) return 'no run of the loop: the world failed';
+  if (!W.L) return false;
   const L = W.L, N = W.N, M = W.M, P = W.P;
-  return (P.length >= 1 && P[0].argv[2] === 'chat.add' && body(P[0]).id === 'goal/G1.2' && body(P[0]).text === 'Red is the failing test.') ? true : 'posted ' + short(P[0] && P[0].argv);
+  return (P.length >= 1 && P[0].argv[2] === 'chat.add' && body(P[0]).id === 'goal/G1.2' && body(P[0]).text === 'Red is the failing test.') ? true : false;
 }, test.limit.quick);
 test.run('with no stop, the last step\'s text', 0.2, function () {
-  if (!W.L) return 'no run of the loop: the world failed';
+  if (!W.L) return false;
   const L = W.L, N = W.N, M = W.M, P = W.P;
-  return (P.length >= 2 && body(P[1]).id === 'goal/G1.4' && body(P[1]).text === 'last step') ? true : 'posted ' + short(P[1] && P[1].argv);
+  return (P.length >= 2 && body(P[1]).id === 'goal/G1.4' && body(P[1]).text === 'last step') ? true : false;
 }, test.limit.quick);
 test.run('a run with no text posts nothing, and says so', 0.2, function () {
-  if (!W.L) return 'no run of the loop: the world failed';
+  if (!W.L) return false;
   const L = W.L, N = W.N, M = W.M, P = W.P;
-  return (said.some(function (s) { return s === 'deskLoop: opencode.exe ended 3 with no answer to post'; })) ? true : 'said ' + short(said);
+  return (said.some(function (s) { return s === 'deskLoop: opencode.exe ended 3 with no answer to post'; })) ? true : false;
 }, test.limit.quick);
 test.run('a post refused is said, with why', 0.2, function () {
-  if (!W.L) return 'no run of the loop: the world failed';
+  if (!W.L) return false;
   const L = W.L, N = W.N, M = W.M, P = W.P;
-  return (said.some(function (s) { return s === 'deskLoop: the answer was not posted under goal/G1.5: refused: not yours'; })) ? true : 'said ' + short(said);
+  return (said.some(function (s) { return s === 'deskLoop: the answer was not posted under goal/G1.5: refused: not yours'; })) ? true : false;
 }, test.limit.quick);
 test.run('its window sees each event as it comes: a tool by its input, a text by its words', 0.2, function () {
-  if (!W.L) return 'no run of the loop: the world failed';
+  if (!W.L) return false;
   const L = W.L, N = W.N, M = W.M, P = W.P;
-  return (said.some(function (s) { return s === '  [bash] {"command":"ls"}'; }) && said.some(function (s) { return s === '  thinking aloud'; })) ? true : 'said ' + short(said);
+  return (said.some(function (s) { return s === '  [bash] {"command":"ls"}'; }) && said.some(function (s) { return s === '  thinking aloud'; })) ? true : false;
 }, test.limit.quick);
 test.run('and Desk sees none of it', 0.2, function () {
-  if (!W.L) return 'no run of the loop: the world failed';
+  if (!W.L) return false;
   const L = W.L, N = W.N, M = W.M, P = W.P;
-  return (P.every(function (s) { return body(s).text.indexOf('thinking aloud') === -1 && body(s).text.indexOf('my reasoning') === -1; })) ? true : 'posted ' + short(P.map(body));
+  return (P.every(function (s) { return body(s).text.indexOf('thinking aloud') === -1 && body(s).text.indexOf('my reasoning') === -1; })) ? true : false;
 }, test.limit.quick);
 
 
 // no nick: nothing is its
 test.run('with the nick \'\' the line for gemma is passed over, and it listens again', 0.2, function () {
-  if (!W.L) return 'no run of the loop: the world failed';
+  if (!W.L) return false;
   const L = W.L, N = W.N, M = W.M, P = W.P;
-  return (N.length === 2 && M.length === 4) ? true : 'model runs ' + M.length + ', nick asks ' + N.length;
+  return (N.length === 2 && M.length === 4) ? true : false;
 }, test.limit.quick);
 test.run('it never ends by itself: a fifth listen is under way', 0.2, function () {
-  if (!W.L) return 'no run of the loop: the world failed';
+  if (!W.L) return false;
   const L = W.L, N = W.N, M = W.M, P = W.P;
-  return (L.length === 5) ? true : 'listens ' + L.length;
+  return (L.length === 5) ? true : false;
 }, test.limit.quick);
 
 // ── THE readTake PART ────────────────────────────────────────────────────────────────────────────────────────────
@@ -280,16 +279,16 @@ function readTakeWorld() {
   script.models.push({ out: answer('one'), code: 0 }, { out: answer('two'), code: 0 });
   process.argv = [process.argv[0], FILE, PORT, COMMAND];
 }
-// Before its answer i is posted, its ear took that line: '' if so, else what was started instead.
+// Before its answer i is posted, its ear took that line: true if so, else false.
 function tookBefore(i) {
   const p = RT.P[i];
-  if (!p) return 'there is no answer ' + (i + 1) + ' posted';
+  if (!p) return false;
   const b = RT.body(p);
   const id = b && b.id;
   const at = RT.started.indexOf(p);
   const take = RT.started.slice(0, at).filter(function (s) { return s.kind === 'take' && RT.body(s) && RT.body(s).id === id; });
   const took = !!id && take.length >= 1 && take[take.length - 1].argv[1] === PORT;
-  return took ? '' : 'the chat.add under ' + id + ' was posted with no line.take before it; started ' + short(RT.started.slice(0, at + 1).map(function (s) { return s.kind + (s.argv[2] ? ' ' + s.argv[2] : ''); }));
+  return took ? true : false;
 }
 
 // readTake: deskLoop re-arms the ear with --read <key> and takes the line before it posts (goal/G43.23 item 11)
@@ -303,38 +302,38 @@ test.run('the world: the loop listened three times (two wakes, then a third list
     // In one file with ./deskLoop.js above, deskLoop.js is loaded already, and it took spawn as it loaded: it is loaded afresh, so this
     // part's stand-in is the spawn it takes. The loop above waits on a listen that never ends, and starts nothing more.
     delete require.cache[require.resolve(FILE)];
-    try { require(FILE); } catch (e) { return 'deskLoop.js threw as it loaded: ' + e.message; }
+    try { require(FILE); } catch (e) { return false; }
     await until(function () { return RT.of('listen').length >= 3; }, 15000);
     await settle();
   } finally { console.error = realError; }
   RT.L = RT.of('listen');
   RT.P = RT.of('post');
   const L = RT.L, said = RT.said;
-  return (L.length === 3) ? true : 'listens: ' + L.length + ' ' + short(L.map(function (s) { return s.argv.slice(1); })) + '; said ' + short(said);
+  return (L.length === 3) ? true : false;
 }, test.limit.quick);
 test.run('the world: both lines were handed over and both answers posted, so the take before each is judged', 0.2, function () {
-  if (!RT.L) return 'no run of the loop: the readTake world failed';
+  if (!RT.L) return false;
   const L = RT.L, P = RT.P, said = RT.said, of = RT.of;
-  return (of('model').length === 2 && P.length === 2) ? true : 'model runs ' + of('model').length + ', posts ' + P.length + ': nothing judged';
+  return (of('model').length === 2 && P.length === 2) ? true : false;
 }, test.limit.quick);
 
 test.run('after a wake whose next names K1, it listens as deskAgentEar.js <port> --read K1', 0.2, function () {
-  if (!RT.L) return 'no run of the loop: the readTake world failed';
+  if (!RT.L) return false;
   const L = RT.L, P = RT.P, said = RT.said, of = RT.of;
-  return (L.length >= 2 && L[1].argv.join(' ') === [EAR, PORT, '--read', 'K1'].join(' ')) ? true : 'the second listen was ' + short(L[1] && L[1].argv.slice(1));
+  return (L.length >= 2 && L[1].argv.join(' ') === [EAR, PORT, '--read', 'K1'].join(' ')) ? true : false;
 }, test.limit.quick);
 test.run('and after the next wake, --read K2: always the key last handed', 0.2, function () {
-  if (!RT.L) return 'no run of the loop: the readTake world failed';
+  if (!RT.L) return false;
   const L = RT.L, P = RT.P, said = RT.said, of = RT.of;
-  return (L.length >= 3 && L[2].argv.join(' ') === [EAR, PORT, '--read', 'K2'].join(' ')) ? true : 'the third listen was ' + short(L[2] && L[2].argv.slice(1));
+  return (L.length >= 3 && L[2].argv.join(' ') === [EAR, PORT, '--read', 'K2'].join(' ')) ? true : false;
 }, test.limit.quick);
 
 // it takes the line before it posts
 test.run('before its first answer is posted, its ear takes that line', 0.2, function () {
-  if (!RT.P) return 'no run of the loop: the readTake world failed';
-  return tookBefore(0) || true;
+  if (!RT.P) return false;
+  return tookBefore(0);
 }, test.limit.quick);
 test.run('before its second answer is posted, its ear takes that line', 0.2, function () {
-  if (!RT.P) return 'no run of the loop: the readTake world failed';
-  return tookBefore(1) || true;
+  if (!RT.P) return false;
+  return tookBefore(1);
 }, test.limit.quick);

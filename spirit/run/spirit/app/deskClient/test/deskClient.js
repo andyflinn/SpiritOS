@@ -19,7 +19,6 @@ const FILE = path.join(__dirname, '..', 'deskClient.js');
 const familyPath = require(path.join(RUN, 'spirit', 'spirit.js')).familyPath;
 const API = path.join(__dirname, '..', 'api.js');
 
-function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 const settle = async function () { for (let i = 0; i < 30; i++) await new Promise(function (r) { setImmediate(r); }); };
 
 const SELF = 'wsl-claude';
@@ -157,13 +156,12 @@ const statusesOf = function (from) { return asksOf('item.status').slice(from).ma
 const waitAsk = async function (fn, ms) { for (let i = 0; i < ms / 50; i++) { await settle(); if (fn()) return true; await new Promise(function (r) { setTimeout(r, 50); }); } return !!fn(); };
 const HELD = 'goal/G9.60';
 const CHECKOUT = path.resolve(RUN, '..', '..');
-const NOT_SERVED = 'deskClient serves nothing: the world failed';
 const toneOf = async function (rel) {
   const from = asksOf('item.status').length;
   watchAll('change', path.join(CHECKOUT, rel));
   await waitAsk(function () { return statusesOf(from).length > 0; }, 4000);
   const said = statusesOf(from)[0];
-  return said && said.id === HELD ? said.tone : '(' + short(said) + ')';
+  return said && said.id === HELD ? said.tone : null;
 };
 const kept = function (name, args) { return call('desk', { name: name, json: JSON.stringify(args || {}), kept: true }).then(function (r) { return r; }, function (e) { return { threw: e.refusal || e.message }; }); };
 // A restart: a new deskClient on the same state folder, on a fresh data set.
@@ -185,7 +183,7 @@ test.after(function () { try { fs.rmSync(STATE, { recursive: true, force: true }
 
 test.run('it serves its verbs and follows the desk\'s stream', 0.2, async function () {
   require(FILE);
-  if (!(!!served && !!served.verbs.next && !!served.opts.stream)) return 'served: ' + short(served && Object.keys(served.verbs));
+  if (!(!!served && !!served.verbs.next && !!served.opts.stream)) return false;
   await call('setDesk', { key: DESK });
   desk.answers['work.open'] = { items: [], more: false };
   // What the desk holds of the item from the start: its file list and its checks.
@@ -205,30 +203,30 @@ test.run('it serves its verbs and follows the desk\'s stream', 0.2, async functi
 // modified, they should show up as red file-status in desk. product tests are the test folders under spirit/run/."
 test.run('the world: the client watches its checkout', 0.2, async function () {
   await waitAsk(function () { return !!watchAll; }, 5000);
-  return !!watchAll || 'no watcher was set: the file status is not judged';
+  return !!watchAll || false;
 }, test.limit.slow);
 test.run('the desk element\'s test desk.js has the tone test', 0.2, async function () {
-  if (!watchAll) return 'no watcher: the world failed';
+  if (!watchAll) return false;
   const rel = 'spirit/run/spirit/app/desk/element/desk/test/desk.js';
   const tone = await toneOf(rel);
-  return tone === 'test' || rel + ': tone ' + short(tone);
+  return tone === 'test' || false;
 }, test.limit.slow);
 test.run('the general test relay.js has the tone test', 0.2, async function () {
-  if (!watchAll) return 'no watcher: the world failed';
+  if (!watchAll) return false;
   const rel = 'spirit/run/spirit/test/relay.js';
   const tone = await toneOf(rel);
-  return tone === 'test' || rel + ': tone ' + short(tone);
+  return tone === 'test' || false;
 }, test.limit.slow);
 test.run('the general test testModule.js has the tone test', 0.2, async function () {
-  if (!watchAll) return 'no watcher: the world failed';
+  if (!watchAll) return false;
   const rel = 'spirit/run/spirit/test/testModule.js';
   const tone = await toneOf(rel);
-  return tone === 'test' || rel + ': tone ' + short(tone);
+  return tone === 'test' || false;
 }, test.limit.slow);
 test.run('a production file under spirit/run/: tone code', 0.2, async function () {
-  if (!watchAll) return 'no watcher: the world failed';
+  if (!watchAll) return false;
   const prod = await toneOf('spirit/run/spirit/app/desk/element/desk/desk.js');
-  return prod === 'code' || 'spirit/run/spirit/app/desk/element/desk/desk.js: tone ' + short(prod);
+  return prod === 'code' || false;
 }, test.limit.slow);
 
 
@@ -237,35 +235,35 @@ test.run('a production file under spirit/run/: tone code', 0.2, async function (
 // cache.dump asks appServer to save now (Andy, goal/G41.15: "the 3 cache.json checks look for the cache in appServer's own
 // file, as G41.12 put it").
 test.run('deskClient serves cache.dump', 0.2, function () {
-  if (!served) return NOT_SERVED;
-  return !!verb('cache.dump') || 'no cache.dump among ' + short(Object.keys(served.verbs));
+  if (!served) return false;
+  return !!verb('cache.dump') || false;
 }, test.limit.quick);
 test.run('its family interface names cache.dump', 0.2, function () {
   const apiText = fs.existsSync(API) ? fs.readFileSync(API, 'utf8') : '';
-  return (/['"]?cache\.dump['"]?\s*:/).test(apiText) || 'api.js does not name cache.dump';
+  return (/['"]?cache\.dump['"]?\s*:/).test(apiText) || false;
 }, test.limit.quick);
 test.run('a caller who is not the owner is refused, and nothing is saved', 0.8, async function () {
   V.before = fs.readdirSync(STATE).sort();
   let refusedStranger = null;
   try { await call('cache.dump', {}, STRANGER); } catch (e) { refusedStranger = e.refusal || e.message; }
-  return (refusedStranger === 'not-owner' && cacheSaves === 0) || 'stranger: ' + short(refusedStranger) + ', saves ' + cacheSaves;
+  return (refusedStranger === 'not-owner' && cacheSaves === 0) || false;
 }, test.limit.quick);
 test.run('with no cache kept yet, the dump is refused not-saved', 0.2, async function () {
   let none = null;
   try { none = await call('cache.dump', {}); } catch (e) { none = { threw: e.refusal || e.message }; }
-  return (none && none.threw === 'not-saved') || 'answer: ' + short(none);
+  return (none && none.threw === 'not-saved') || false;
 }, test.limit.quick);
 test.run('the owner\'s dump asks appServer to save its cache now, and answers appServer\'s file and its bytes', 0.2, async function () {
   cacheAnswer = [{ file: D.nodeId(DESK) + '.json', bytes: 1234 }];
   let r = null;
   try { r = await call('cache.dump', { path: '../elsewhere.json' }); } catch (e) { r = { threw: e.refusal || e.message }; }
-  return (r && r.file === cacheAnswer[0].file && r.bytes === 1234 && cacheSaves === 2) || 'answer: ' + short(r) + ', saves ' + cacheSaves;
+  return (r && r.file === cacheAnswer[0].file && r.bytes === 1234 && cacheSaves === 2) || false;
 }, test.limit.quick);
 test.run('deskClient writes no cache file of its own, whatever the caller names: no cache.json, nothing elsewhere', 0.2, function () {
   const before = V.before || [];
   const after = fs.readdirSync(STATE).sort();
   const newFiles = after.filter(function (f) { return before.indexOf(f) === -1; });
-  return (newFiles.length === 0 && after.indexOf('cache.json') === -1 && !fs.existsSync(path.join(path.dirname(STATE), 'elsewhere.json'))) || 'new files: ' + short(newFiles) + ', state: ' + short(after);
+  return (newFiles.length === 0 && after.indexOf('cache.json') === -1 && !fs.existsSync(path.join(path.dirname(STATE), 'elsewhere.json'))) || false;
 }, test.limit.quick);
 
 // The cache, whole from the first push: the agent's reads ask the desk nothing.
@@ -278,20 +276,18 @@ test.run('item.files of a current-goal item is answered from the cache, the desk
   V.checksAsked = asksOf('item.checks').length;
   const files = await ask('item.files', { id: ITEM });
   V.checks = await ask('item.checks', { id: ITEM });
-  return (asksOf('item.files').length === filesAsked && files && Array.isArray(files.files) && files.files.some(function (f) { return f.path === 'spirit/run/a.js'; })) ||
-    'asked ' + (asksOf('item.files').length - filesAsked) + ' time(s); answer ' + short(files);
+  return (asksOf('item.files').length === filesAsked && files && Array.isArray(files.files) && files.files.some(function (f) { return f.path === 'spirit/run/a.js'; })) || false;
 }, test.limit.quick);
 test.run('item.checks the same', 0.2, function () {
   const checks = V.checks;
-  return (asksOf('item.checks').length === V.checksAsked && checks && Array.isArray(checks.checks) && checks.checks.some(function (c) { return c.number === 'G1'; })) ||
-    'asked ' + (asksOf('item.checks').length - V.checksAsked) + ' time(s); answer ' + short(checks);
+  return (asksOf('item.checks').length === V.checksAsked && checks && Array.isArray(checks.checks) && checks.checks.some(function (c) { return c.number === 'G1'; })) || false;
 }, test.limit.quick);
 
 // A kept read: cache only, never the desk.
 test.run('the desk verb takes kept beside name and json', 0.2, function () {
-  if (!served) return NOT_SERVED;
+  if (!served) return false;
   const deskDecl = verb('desk') && verb('desk').request;
-  return (!!deskDecl && Object.prototype.hasOwnProperty.call(deskDecl, 'kept')) || 'request: ' + short(deskDecl);
+  return (!!deskDecl && Object.prototype.hasOwnProperty.call(deskDecl, 'kept')) || false;
 }, test.limit.quick);
 test.run('a kept item.get answers the item\'s facts, with current (the current goal) and self (its own agent) beside them', 0.2, async function () {
   V.before3 = desk.asks.length;
@@ -300,24 +296,24 @@ test.run('a kept item.get answers the item\'s facts, with current (the current g
   V.kChecks = await kept('item.checks', { id: ITEM });
   let kItem = {};
   try { kItem = JSON.parse((kGet && kGet.item) || '{}'); } catch (e) { kItem = {}; }
-  return (kItem.id === ITEM && kGet.current === GOAL && kGet.self === SELF) || 'answer: ' + short(kGet);
+  return (kItem.id === ITEM && kGet.current === GOAL && kGet.self === SELF) || false;
 }, test.limit.quick);
 test.run('a kept item.files answers {files, filesMore}, a kept item.checks {checks}', 0.2, function () {
   const kFiles = V.kFiles, kChecks = V.kChecks;
-  return (kFiles && Array.isArray(kFiles.files) && kFiles.filesMore === false && kChecks && Array.isArray(kChecks.checks)) || 'files ' + short(kFiles) + ', checks ' + short(kChecks);
+  return (kFiles && Array.isArray(kFiles.files) && kFiles.filesMore === false && kChecks && Array.isArray(kChecks.checks)) || false;
 }, test.limit.quick);
 test.run('a kept read the cache cannot answer is refused not-kept, saying why', 0.2, async function () {
   const kMiss = await kept('item.files', { id: 'goal/G9.99' });
   V.kNotRead = await kept('history.search', {});
-  return (kMiss && kMiss.ok === false && kMiss.code === 'not-kept' && !!kMiss.why) || 'answer: ' + short(kMiss);
+  return (kMiss && kMiss.ok === false && kMiss.code === 'not-kept' && !!kMiss.why) || false;
 }, test.limit.quick);
 test.run('and so is a verb that is no kept read', 0.2, function () {
   const kNotRead = V.kNotRead;
-  return (kNotRead && kNotRead.ok === false && kNotRead.code === 'not-kept') || 'answer: ' + short(kNotRead);
+  return (kNotRead && kNotRead.ok === false && kNotRead.code === 'not-kept') || false;
 }, test.limit.quick);
 test.run('no kept read asks the desk', 0.2, function () {
-  if (V.before3 === undefined) return 'no kept read was made: the test before failed';
-  return desk.asks.length === V.before3 || 'the desk was asked: ' + short(desk.asks.slice(V.before3).map(function (x) { return x.verb; }));
+  if (V.before3 === undefined) return false;
+  return desk.asks.length === V.before3 || false;
 }, test.limit.quick);
 
 // The cache, current: a part the desk moves is answered as moved.
@@ -328,13 +324,13 @@ test.run('after the desk moves the box to v6, item.box answers v6 from the cache
   await settle();
   const boxAsked = asksOf('item.box').length;
   const box = await ask('item.box', { id: ITEM });
-  return (first && first.version === 5 && box && box.version === 6 && box.box === 'box text v6' && asksOf('item.box').length === boxAsked) || 'first ' + short(first) + ', then ' + short(box);
+  return (first && first.version === 5 && box && box.version === 6 && box.box === 'box text v6' && asksOf('item.box').length === boxAsked) || false;
 }, test.limit.quick);
 test.run('a file the desk adds later is in the kept list', 0.2, async function () {
   await push({ table: 'files', id: ITEM, goal: 9, row: { path: 'spirit/run/b.js', by: OTHER, core: true } });
   await settle();
   const files2 = await ask('item.files', { id: ITEM });
-  return (files2 && Array.isArray(files2.files) && files2.files.some(function (f) { return f.path === 'spirit/run/b.js'; })) || 'files: ' + short(files2);
+  return (files2 && Array.isArray(files2.files) && files2.files.some(function (f) { return f.path === 'spirit/run/b.js'; })) || false;
 }, test.limit.quick);
 
 // A grant wakes every agent that placed a G, and the holder of the phase.
@@ -346,7 +342,7 @@ test.run('a G placed by another agent, granted on the item whose phase this agen
   await push({ table: 'checks', id: ITEM, goal: 9, by: 'andy', row: { number: 'G1', kind: 'G', state: 'granted', placedBy: OTHER, placedKey: OTHER_KEY } });
   await settle();
   const g1 = await next();
-  return (has(g1, 'DESK') && has(g1, '"check":"G1"') && has(g1, 'granted')) || 'wake: ' + short(g1);
+  return (has(g1, 'DESK') && has(g1, '"check":"G1"') && has(g1, 'granted')) || false;
 }, test.limit.quick);
 test.run('a G this agent placed, granted on an item another holds, wakes it', 0.2, async function () {
   // On an item it does not hold, its own G granted wakes it too.
@@ -354,7 +350,7 @@ test.run('a G this agent placed, granted on an item another holds, wakes it', 0.
   await push({ table: 'checks', id: ITEM2, goal: 9, by: 'andy', row: { number: 'G2', kind: 'G', state: 'granted', placedBy: SELF, placedKey: SELF_KEY } });
   await settle();
   const g2 = await next();
-  return (has(g2, 'DESK') && has(g2, '"check":"G2"')) || 'wake: ' + short(g2);
+  return (has(g2, 'DESK') && has(g2, '"check":"G2"')) || false;
 }, test.limit.quick);
 
 // A take with no answer wakes nobody (one line, one agent).
@@ -367,12 +363,12 @@ test.run('his line addressed to this agent wakes it', 0.2, async function () {
   await push({ table: 'chat', id: ITEM3, goal: 9, to: [SELF_KEY], row: { at: at(), by: 'andy', text: 'wsl: a line for you alone' } });
   await settle();
   V.taken = await next();
-  return has(V.taken, 'a line for you alone') || 'wake: ' + short(V.taken);
+  return has(V.taken, 'a line for you alone') || false;
 }, test.limit.quick);
 test.run('a line for whoever takes it, whose take got no answer, is not handed over as this agent\'s', 0.2, function () {
   delete desk.answers['line.take'];
   const taken = V.taken || {};
-  return !(taken.lines || []).some(function (l) { return /^DESK/.test(l) && l.indexOf('a line for whoever takes it') !== -1; }) || 'wake: ' + short(taken);
+  return !(taken.lines || []).some(function (l) { return /^DESK/.test(l) && l.indexOf('a line for whoever takes it') !== -1; }) || false;
 }, test.limit.quick);
 
 // No wake is lost: what does not fit, or waits while the agent is busy, comes with the next wait.
@@ -399,18 +395,18 @@ test.run('the line meant for it is handed over', 0.2, async function () {
     r = await next(r.key);
   }
   V.lastWait = r;
-  return got.some(function (l) { return l.indexOf('the trigger') !== -1; }) || 'got ' + got.length + ' lines';
+  return got.some(function (l) { return l.indexOf('the trigger') !== -1; }) || false;
 }, test.limit.quick);
 test.run('more than one answer holds: the first says more', 0.2, function () {
-  return V.firstMore === true || 'first answer had no more';
+  return V.firstMore === true || false;
 }, test.limit.quick);
 test.run('every one of the 250 lines that came while it was busy is handed over, over as many waits as it takes: none dropped by a cap, none cut and lost', 0.2, async function () {
   const got = V.got || [];
   const missing = (V.sent || []).filter(function (s) { return !got.some(function (l) { return l.indexOf(s) !== -1; }); });
   // Whatever the last wait handed is read: its key comes back, so the queue is clear for what follows.
   if (V.lastWait && V.lastWait.key) await next(V.lastWait.key);
-  if (!V.sent) return 'no lines were sent: the test before failed';
-  return missing.length === 0 || missing.length + ' of 250 never handed over (first missing: ' + short(missing[0]) + ')';
+  if (!V.sent) return false;
+  return missing.length === 0 || false;
 }, test.limit.long);
 
 // A wake is dropped only once read: the next wait names its key (Andy, goal/G41: "make the red assert it").
@@ -418,25 +414,25 @@ test.run('a wake carries its key', 0.2, async function () {
   await push({ table: 'chat', id: ITEM4, goal: 9, to: [SELF_KEY], row: { at: at(), by: 'andy', text: 'wsl: read me first' } });
   await settle();
   const w1 = V.w1 = await next();
-  return (has(w1, 'read me first') && typeof (w1 && w1.key) === 'string' && w1.key.length > 0) || 'wake: ' + short(w1);
+  return (has(w1, 'read me first') && typeof (w1 && w1.key) === 'string' && w1.key.length > 0) || false;
 }, test.limit.quick);
 test.run('a wait that names no key gets the unread wake again at once, under the same key', 0.2, async function () {
   const w1 = V.w1 || {};
   const t2 = Date.now();
   const w2 = await next();
-  return (has(w2, 'read me first') && w2.key === w1.key && Date.now() - t2 < 3000) || 'second wait: ' + short(w2) + ' after ' + (Date.now() - t2) + ' ms';
+  return (has(w2, 'read me first') && w2.key === w1.key && Date.now() - t2 < 3000) || false;
 }, test.limit.quick);
 test.run('a wait that names an older key gets the unread wake again', 0.2, async function () {
   const w1 = V.w1 || {};
   const w3 = await next('an older key');
-  return (has(w3, 'read me first') && w3.key === w1.key) || 'third wait: ' + short(w3);
+  return (has(w3, 'read me first') && w3.key === w1.key) || false;
 }, test.limit.quick);
 test.run('naming its key drops the wake: the next wait hands only what came after, under a new key', 0.2, async function () {
   const w1 = V.w1 || {};
   await push({ table: 'chat', id: ITEM4, goal: 9, to: [SELF_KEY], row: { at: at(), by: 'andy', text: 'wsl: and then this' } });
   await settle();
   const w4 = V.w4 = await next(w1.key);
-  return (has(w4, 'and then this') && !has(w4, 'read me first') && w4.key && w4.key !== w1.key) || 'fourth wait: ' + short(w4);
+  return (has(w4, 'and then this') && !has(w4, 'read me first') && w4.key && w4.key !== w1.key) || false;
 }, test.limit.quick);
 
 // The desk's line addressed to the cap agents wakes them, with no take, and entitles them to the box.
@@ -448,14 +444,14 @@ test.run('the desk\'s line whose to holds its key wakes it as its own, asking no
   await push({ table: 'chat', id: ITEM4, goal: 9, to: [SELF_KEY], row: { at: at(), by: 'desk', text: 'the box of goal/G9.4 turned red; the cap is offered' } });
   await settle();
   const c1 = V.c1 = await next(b1.key);
-  return (has(c1, 'DESK desk chat.add') && has(c1, 'the cap is offered') && asksOf('line.take').length === takesBefore) || 'answer: ' + short(c1) + ', takes ' + (asksOf('line.take').length - takesBefore);
+  return (has(c1, 'DESK desk chat.add') && has(c1, 'the cap is offered') && asksOf('line.take').length === takesBefore) || false;
 }, test.limit.quick);
 test.run('and its box.take there passes the gate, entitled by that line', 0.2, async function () {
   const getsBefore = asksOf('item.get').length;
   const boxTakes = asksOf('box.take').length;
   let took = null;
   try { took = await ask('box.take', { id: ITEM4 }); } catch (e) { took = { threw: e.refusal || e.message }; }
-  return (asksOf('box.take').length === boxTakes + 1 && asksOf('item.get').length === getsBefore) || 'answer: ' + short(took);
+  return (asksOf('box.take').length === boxTakes + 1 && asksOf('item.get').length === getsBefore) || false;
 }, test.limit.quick);
 
 // ── THE FLOOD (Andy, goal/G41.11: "and we MUST look more precisely at performance again"; "deskClient keeps it's cache
@@ -474,7 +470,7 @@ test.run('a wait after a silence hands its line and does not subscribe again', 0
   const s1 = await next(readKey);
   if (s1 && s1.key) readKey = s1.key;
   V.readKey = readKey;
-  return (has(s1, 'after a silence') && subscribes === subsBefore) || 'subscribes asked: ' + (subscribes - subsBefore) + ', answer ' + short(s1);
+  return (has(s1, 'after a silence') && subscribes === subsBefore) || false;
 }, test.limit.quick);
 
 // A goal pushed whole again asks the desk nothing it already keeps.
@@ -485,8 +481,7 @@ test.run('no item.files or item.checks is asked again for items whose lists the 
   await push({ verb: 'goal.whole', goal: 9, item: factsOf() });
   await push({ verb: 'goal.whole', goal: 9, item: factsOf({ id: ITEM4 }) });
   await settle();
-  return (asksOf('item.files').length === filesBefore && asksOf('item.checks').length === checksBefore) ||
-    'asked again: item.files ' + (asksOf('item.files').length - filesBefore) + ', item.checks ' + (asksOf('item.checks').length - checksBefore);
+  return (asksOf('item.files').length === filesBefore && asksOf('item.checks').length === checksBefore) || false;
 }, test.limit.quick);
 
 // A waiting wake is handed at once, even while the desk is slow.
@@ -505,26 +500,26 @@ test.run('the line is handed within 3 s, never held behind a slow job ask or a s
   delete desk.answers['work.open'];
   delete desk.answers['agent.state'];
   if (s5 && s5.key) V.readKey = s5.key;
-  return (has(s5, 'while the desk is slow') && handedIn < 3000) || 'handed in ' + handedIn + ' ms: ' + short(s5);
+  return (has(s5, 'while the desk is slow') && handedIn < 3000) || false;
 }, test.limit.quick);
 
 // ── THE POSITION, THE SAVED CACHE AND THE SWEEP (goal/G41.11) ──────────────────────────────────────────────────────
 // goal/G41.12: saving is appServer's (within 10 ms of each row, spirit/test/appServer.js); deskClient only switches it on.
 // The cache is appServer's: deskClient switches it on and saves nothing itself.
 test.run('deskClient follows the desk\'s stream with the cache switch on', 0.2, function () {
-  if (!served) return NOT_SERVED;
-  return (served.opts.stream && served.opts.stream.cache === true) || 'stream: ' + short(served.opts.stream && { cache: served.opts.stream.cache });
+  if (!served) return false;
+  return (served.opts.stream && served.opts.stream.cache === true) || false;
 }, test.limit.quick);
 // goal/G41.24, Andy: "deskClient can get it form its own disc": its translator is the desk family's data.js.
 test.run('its stream\'s translator is spirit/app/desk/data.js, from its own disc', 0.2, function () {
-  if (!served) return NOT_SERVED;
-  return (served.opts.stream && path.resolve(String(served.opts.stream.translator || '')) === CCM) || 'translator: ' + short(served.opts.stream && served.opts.stream.translator);
+  if (!served) return false;
+  return (served.opts.stream && path.resolve(String(served.opts.stream.translator || '')) === CCM) || false;
 }, test.limit.quick);
 test.run('a row lands in the data set, and deskClient writes no cache.json of its own', 0.2, async function () {
   await push({ verb: 'goal.whole', goal: 9, item: factsOf({ id: 'goal/G9.6', title: 'saved soon' }) });
   await settle();
   await new Promise(function (r) { setTimeout(r, 40); });
-  return (!!DD().item('goal/G9.6') && !fs.existsSync(path.join(STATE, 'cache.json'))) || 'held: ' + !!DD().item('goal/G9.6') + ', cache.json: ' + fs.existsSync(path.join(STATE, 'cache.json'));
+  return (!!DD().item('goal/G9.6') && !fs.existsSync(path.join(STATE, 'cache.json'))) || false;
 }, test.limit.quick);
 
 // goal/G41.15, Andy: "deskClient keeps what it cached outside the current goal; a push of one goal never drops another's",
@@ -532,8 +527,8 @@ test.run('a row lands in the data set, and deskClient writes no cache.json of it
 // (spirit/test/appServer.js); deskClient names nothing for it to replace and sweeps nothing itself.
 // A push drops nothing deskClient kept: it names nothing to replace, and sweeps nothing.
 test.run('deskClient names nothing for a push to replace (no renews)', 0.2, function () {
-  if (!served) return NOT_SERVED;
-  return !(served.opts.stream && 'renews' in served.opts.stream) || 'stream: ' + short(served.opts.stream && Object.keys(served.opts.stream));
+  if (!served) return false;
+  return !(served.opts.stream && 'renews' in served.opts.stream) || false;
 }, test.limit.quick);
 test.run('an item the push leaves out stays kept, beside the ones it carries', 0.2, async function () {
   await push({ verb: 'goal.whole', goal: 9, item: factsOf({ id: ITEM7, title: 'left out of the next push' }) });
@@ -545,15 +540,14 @@ test.run('an item the push leaves out stays kept, beside the ones it carries', 0
   await push({ verb: 'goal.whole', goal: 9, item: factsOf() });
   await push({ verb: 'goal.whole', goal: 9, item: factsOf({ id: ITEM4 }) });
   await settle();
-  return (!!DD().item(ITEM7) && !!DD().item(ITEM) && !!DD().item(ITEM4)) || short({ item7: !!DD().item(ITEM7), item: !!DD().item(ITEM), item4: !!DD().item(ITEM4) });
+  return (!!DD().item(ITEM7) && !!DD().item(ITEM) && !!DD().item(ITEM4)) || false;
 }, test.limit.quick);
 test.run('and another goal\'s items stay kept', 0.2, function () {
-  return !!DD().item(OTHER_GOAL_ITEM) || 'goal/G8.1: ' + short(DD().item(OTHER_GOAL_ITEM));
+  return !!DD().item(OTHER_GOAL_ITEM) || false;
 }, test.limit.quick);
 test.run('the push makes its goal current; the change heard and a kept file list are never swept', 0.2, function () {
   const partAfter = DD().part(ITEM);
-  return (DD().current() === GOAL && DD().change() > 0 && !!V.partBefore && !!partAfter && Array.isArray(partAfter.files)) ||
-    short({ current: DD().current(), change: DD().change(), part: partAfter && Object.keys(partAfter) });
+  return (DD().current() === GOAL && DD().change() > 0 && !!V.partBefore && !!partAfter && Array.isArray(partAfter.files)) || false;
 }, test.limit.quick);
 
 // goal/G41.12: reading the cache back, and the position (run, n) a subscribe carries, are appServer's
@@ -568,17 +562,17 @@ test.run('it subscribes to the desk it knew, family desk, and names no position 
   require(FILE);
   await settle();
   const firstSub = subscribeArgs[0];
-  return (!!served && !!firstSub && firstSub.key === DESK && firstSub.family === 'desk' && firstSub.since === undefined) || 'subscribes: ' + short(subscribeArgs);
+  return (!!served && !!firstSub && firstSub.key === DESK && firstSub.family === 'desk' && firstSub.since === undefined) || false;
 }, test.limit.quick);
 test.run('setDesk naming the same desk subscribes to it again', 0.2, async function () {
   subscribeArgs.length = 0;
   await call('setDesk', { key: DESK });
-  return (subscribeArgs.length === 1 && subscribeArgs[0].key === DESK && subscribeArgs[0].since === undefined) || 'subscribes: ' + short(subscribeArgs);
+  return (subscribeArgs.length === 1 && subscribeArgs[0].key === DESK && subscribeArgs[0].since === undefined) || false;
 }, test.limit.quick);
 test.run('setDesk naming another desk subscribes to that one', 0.2, async function () {
   subscribeArgs.length = 0;
   await call('setDesk', { key: 'KEY-ANOTHER-DESK' });
-  const said = (subscribeArgs.length === 1 && subscribeArgs[0].key === 'KEY-ANOTHER-DESK') || 'subscribes: ' + short(subscribeArgs);
+  const said = (subscribeArgs.length === 1 && subscribeArgs[0].key === 'KEY-ANOTHER-DESK') || false;
   await call('setDesk', { key: DESK });
   return said;
 }, test.limit.quick);
@@ -591,10 +585,10 @@ test.run('a line addressed to it, handed in the catch-up, wakes it', 0.2, async 
   await settle();
   const caught = V.caught = await next();
   V.read = (caught && caught.key) || '';
-  return has(caught, 'missed while down') || 'wake: ' + short(caught);
+  return has(caught, 'missed while down') || false;
 }, test.limit.quick);
 test.run('a line addressed to another agent in the catch-up is neither its own nor its news', 0.2, function () {
-  return !has(V.caught, 'for the other agent only') || 'wake: ' + short(V.caught);
+  return !has(V.caught, 'for the other agent only') || false;
 }, test.limit.quick);
 
 // ── goal/G41.22: EVERY WAKE NOT YET READ COMES BACK IN ONE, NONE LOST AND NONE TWICE, ALSO AFTER A RESTART ─────────────
@@ -616,18 +610,18 @@ test.run('the next wake hands, once each, the wake handed but never read and the
   await settle();
   const wC = await next(wA && wA.key);
   if (!(count(wC, 'wake A') === 1 && count(wC, 'wake B') === 1 && count(wC, 'wake C') === 1)) {
-    return 'three wakes nobody read are not handed in one answer, each line once: A ' + short(wA) + ', B ' + short(wB) + ', C ' + short(wC);
+    return false;
   }
   await push(line(ITEM4, 'wsl: wake D', at()));
   await settle();
   const wD = await next(wC && wC.key);
-  if (!(count(wD, 'wake D') === 1 && !has(wD, 'wake A') && !has(wD, 'wake B') && !has(wD, 'wake C'))) return 'reading with its key does not acknowledge them all: ' + short(wD);
+  if (!(count(wD, 'wake D') === 1 && !has(wD, 'wake A') && !has(wD, 'wake B') && !has(wD, 'wake C'))) return false;
   read = (wD && wD.key) || read;
   // The restart.
   await push(line(ITEM4, 'wsl: handed, never read', at()));
   await settle();
   const wE = await next(read);
-  if (!has(wE, 'handed, never read')) return 'set up: the wake to leave unread is not handed: ' + short(wE);
+  if (!has(wE, 'handed, never read')) return false;
   const rowF = line(ITEM4, 'wsl: came while it was down to restart', at());
   await push(rowF);
   await settle();
@@ -642,11 +636,11 @@ test.run('the next wake hands, once each, the wake handed but never read and the
   await settle();
   // The agent read D and armed with its key before the restart; its listener asks with that key.
   const wAfter = V.wAfter = await next(read);
-  return (count(wAfter, 'handed, never read') === 1 && count(wAfter, 'came while it was down') === 1) || 'wake: ' + short(wAfter);
+  return (count(wAfter, 'handed, never read') === 1 && count(wAfter, 'came while it was down') === 1) || false;
 }, test.limit.quick);
 test.run('and nothing it already read comes back', 0.2, function () {
   const wAfter = V.wAfter;
-  return (!!wAfter && Array.isArray(wAfter.lines) && wAfter.lines.length > 0 && !has(wAfter, 'wake D') && !has(wAfter, 'wake A')) || 'wake: ' + short(wAfter);
+  return (!!wAfter && Array.isArray(wAfter.lines) && wAfter.lines.length > 0 && !has(wAfter, 'wake D') && !has(wAfter, 'wake A')) || false;
 }, test.limit.quick);
 
 // ── THE CHOKIDAR PART (once its own file; one test file per script: spirit/test/TEST_SYSTEM.md) ──
@@ -658,7 +652,6 @@ test.run('and nothing it already read comes back', 0.2, function () {
 const REPO = path.resolve(RUN, '..', '..');
 const CHOKIDAR_USER = 'spirit/run/spirit/app/deskClient/deskClient.js';
 function codeOf(text) { return String(text).replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1'); }
-function shortLong(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 400); }
 // 3. the two users require it by path: deskClient.js here, job.js in spirit/test/job.js
 test.run('it requires chokidar by a path that is spirit/job/chokidar/index.js', 0.2, function () {
   const idxNew = path.join(REPO, 'spirit/run/spirit/job/', 'chokidar', 'index.js');
@@ -668,7 +661,7 @@ test.run('it requires chokidar by a path that is spirit/job/chokidar/index.js', 
   let to = '';
   // goal/G43.32: loaded by spirit.require, by its run-root path ("spirit/jobs/chokidar/index.js"); a relative path is the old way.
   try { to = specs.length === 1 ? require.resolve(specs[0].charAt(0) === '.' ? path.resolve(path.dirname(path.join(REPO, u)), specs[0]) : path.join(RUN, specs[0])) : ''; } catch (e) { to = ''; }
-  return to === idxNew || u + ' requires ' + shortLong(specs) + ' (resolves to ' + shortLong(to || 'nothing') + ')';
+  return to === idxNew || false;
 }, test.limit.quick);
 // 4. the file watcher works as before: deskClient's. Scratch folders inside spirit/run (scanFolder refuses anything outside
 // it, as fsWatcherCommands.js says), removed after.
@@ -679,7 +672,7 @@ test.run('its watcher hears a file added', 0.2, function () {
     fs.mkdirSync(dir, { recursive: true });
     const r = spawnSync(process.execPath, ['-e', src, dir], { cwd: RUN, encoding: 'utf8', timeout: 30000 });
     fs.rmSync(dir, { recursive: true, force: true });
-    return String(r.stdout || '').trim() + (r.stderr ? ' | ' + String(r.stderr).trim().slice(0, 300) : '');
+    return String(r.stdout || '').trim();
   }
   // deskClient's watch of its clone: what deskClient requires, watching a folder, hears a file added.
   const dcSpec = (codeOf(fs.readFileSync(path.join(REPO, CHOKIDAR_USER), 'utf8')).match(/require\(\s*['"]([^'"]*chokidar[^'"]*)['"]\s*\)/) || [])[1] || '';
@@ -691,7 +684,7 @@ test.run('its watcher hears a file added', 0.2, function () {
     "setTimeout(function () { fs.writeFileSync(path.join(dir, 'made.txt'), 'x'); }, 1500);",
     "setTimeout(function () { console.log('DEAF'); process.exit(0); }, 12000);",
   ].join('\n'), path.join(RUN, 'vendoredFolders-desk-test'));
-  return (/^HEARD/.test(dcOut) && dcFrom.indexOf('chokidar') !== -1) || 'deskClient\'s watcher (' + shortLong(dcSpec) + '): ' + shortLong(dcOut);
+  return (/^HEARD/.test(dcOut) && dcFrom.indexOf('chokidar') !== -1) || false;
 }, test.limit.slow);
 
 // ── THE NOTEAMCHAT PART (once its own file; one test file per script: spirit/test/TEST_SYSTEM.md) ──
@@ -702,5 +695,5 @@ test.run('its watcher hears a file added', 0.2, function () {
 test.run('deskClient wakes nobody on a team chat line', 0.2, function () {
   let client = '';
   try { client = fs.readFileSync(path.join(RUN, 'spirit', 'app', 'deskClient', 'deskClient.js'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1').replace(/<!--[\s\S]*?-->/g, ''); } catch (e) { client = ''; }
-  return (!!client && !/goal\/G0['"]/.test(client)) || 'deskClient.js still names goal/G0';
+  return (!!client && !/goal\/G0['"]/.test(client)) || false;
 }, test.limit.quick);

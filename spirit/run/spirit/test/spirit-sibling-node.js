@@ -36,7 +36,6 @@ function runRel(a) {
 }
 
 const test = require('./testReport.js');
-function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 function placeKeys(rel) { return rel.replace(/\.js$/, '').split('/'); }
 function productScripts() {
   return execFileSync('git', ['ls-files'], { cwd: RUN, encoding: 'utf8' }).split('\n')
@@ -79,47 +78,47 @@ test.run('the world: a copy of the tree to require the scripts in', 0.2, async f
   const apps = (GIVEN.length ? GIVEN : execFileSync('git', ['ls-files', '--', 'spirit/app'], { cwd: RUN, encoding: 'utf8' }).split('\n'))
     .map(function (f) { return (/^spirit\/app\/([^/]+)\//.exec(f) || [])[1]; }).filter(function (a, i, all) { return a && all.indexOf(a) === i; });
   E.node = await scratchNode({ servers: apps });
-  if (!E.node || !E.node.up) return 'the scratch node did not come up';
-  if (!E.node.root) return 'a shared scratch node has no tree of its own to require in';
+  if (!E.node || !E.node.up) return false;
+  if (!E.node.root) return false;
   E.root = E.node.root;
   E.run = path.join(E.root, 'spirit', 'run');
   const env = path.join(E.run, 'spirit', 'state', 'environment.json');
   if (!fs.existsSync(env)) { fs.mkdirSync(path.dirname(env), { recursive: true }); fs.writeFileSync(env, JSON.stringify({ PORT: Number(new URL(E.node.base).port) })); }
-  return fs.existsSync(path.join(E.run, 'spirit', 'spirit.js')) || 'the copy holds no spirit/spirit.js';
+  return fs.existsSync(path.join(E.run, 'spirit', 'spirit.js')) || false;
 }, test.limit.slow);
 
 if (!GIVEN.length) {
   // every product script, placed in spirit.required where it is required
   test.run('the world: the product scripts, each required alone on the node and on a page', 0.2, function () {
     E.req = productScripts();
-    return E.req.length > 100 || 'too few scripts to judge: ' + E.req.length;
+    return E.req.length > 100 || false;
   }, test.limit.quick);
   test.run('the world: some of them load on the node', 0.2, async function () {
-    if (!E.run || !E.req) return 'no copy of the tree: the world failed';
+    if (!E.run || !E.req) return false;
     E.nodeLoaded = []; E.nodeBad = [];
     for (const f of E.req) {
       const r = await requireOnNode(E.run, f);
       if (r.err || r.program) continue;
       E.nodeLoaded.push(f);
-      if (r.promise) E.nodeBad.push(f + ': spirit.require answered a promise, not the module at once');
-      else if (!r.placed) E.nodeBad.push(f + ': nothing stands at spirit.required.' + placeKeys(f).join('.'));
+      if (r.promise) E.nodeBad.push(f);
+      else if (!r.placed) E.nodeBad.push(f);
     }
-    return E.nodeLoaded.length > 0 || 'none loads on the node: nothing judged there';
+    return E.nodeLoaded.length > 0 || false;
   }, test.limit.long);
   test.run('on the node: all that load answer at once and stand at spirit.required.<path>', 0.4, function () {
-    if (!E.nodeLoaded) return 'nothing required on the node: the world failed';
-    return (E.nodeLoaded.length > 0 && !E.nodeBad.length) || E.nodeBad.length + ' of ' + E.nodeLoaded.length + ' do not; the first: ' + short(E.nodeBad.slice(0, 5));
+    if (!E.nodeLoaded) return false;
+    return (E.nodeLoaded.length > 0 && !E.nodeBad.length) || false;
   }, test.limit.quick);
 } else GIVEN.forEach(function (rel) {
   // Each script given judged in this one run, its result reported for that script (opts.script), so a failure says which.
   test.run('on the node: it loads, answers at once and stands at spirit.required.<path>', 0.4, async function () {
-    if (!E.run) return 'no copy of the tree: the world failed';
-    if (!fs.existsSync(path.join(RUN, rel))) return rel + ' is not there';
+    if (!E.run) return false;
+    if (!fs.existsSync(path.join(RUN, rel))) return false;
     const r = await requireOnNode(E.run, rel);
-    if (r.err) return rel + ' does not load on the node: ' + short(r.err);
+    if (r.err) return false;
     if (r.program) { test.comment(rel + ' ends its process when loaded, nothing thrown: a program, loaded; its place is not judged'); return true; }
-    if (r.promise) return rel + ': spirit.require answered a promise, not the module at once';
-    return r.placed || rel + ': nothing stands at spirit.required.' + placeKeys(rel).join('.');
+    if (r.promise) return false;
+    return r.placed || false;
   }, test.limit.slow, { script: rel });
 });
 

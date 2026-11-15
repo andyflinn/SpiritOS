@@ -21,7 +21,6 @@ const FILE = path.join(__dirname, '..', 'element.js');
 const SRC = fs.existsSync(FILE) ? fs.readFileSync(FILE, 'utf8') : '';
 const CODE = SRC.replace(/\/\/.*$/gm, '');
 
-function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 const settle = async function () { for (let i = 0; i < 20; i++) await new Promise(function (r) { setImmediate(r); }); };
 
 function node(tag) {
@@ -63,98 +62,97 @@ function world(o) {
 
 // info.js: the Info app, a wrapper of nodeInfo. What each test made, for the tests after it.
 const U = {};
-const NO_APP = 'no spirit.element.spirit.app.info.element: the tests before failed';
 
 test.run('spirit/app/info/element.js is there', 0.2, function () {
-  return !!SRC || 'there is no spirit/app/info/element.js';
+  return !!SRC || false;
 }, test.limit.quick);
 
 // mounted the new shell's way (goal/G43.24, requirement 7)
 test.run('it sets spirit.element.spirit.app.info.element = { create }', 0.2, function () {
-  if (!SRC) return 'there is no spirit/app/info/element.js';
+  if (!SRC) return false;
   U.w = world();
   U.I = U.w.els.info;
-  return !!U.I && typeof U.I.create === 'function' ? true : 'elements: ' + short(Object.keys(U.w.els));
+  return !!U.I && typeof U.I.create === 'function' ? true : false;
 }, test.limit.quick);
 test.run('no spirit.shell.activateApp, the old shell\'s way', 0.2, function () {
-  if (!SRC) return 'there is no spirit/app/info/element.js';
-  return !/\bactivateApp\b|\bspirit\.shell\b/.test(CODE) || 'info.js still mounts through spirit.shell';
+  if (!SRC) return false;
+  return !/\bactivateApp\b|\bspirit\.shell\b/.test(CODE) || false;
 }, test.limit.quick);
 
 // a wrapper: it loads nodeInfo, and nothing of its own (requirement 6)
 test.run('it requires spirit/element/nodeInfo.js, and only that', 0.2, function () {
-  if (!U.w) return NO_APP;
-  return JSON.stringify(U.w.required) === '["spirit/element/nodeInfo.js"]' || 'required: ' + short(U.w.required);
+  if (!U.w) return false;
+  return JSON.stringify(U.w.required) === '["spirit/element/nodeInfo.js"]' || false;
 }, test.limit.quick);
 test.run('it asks nothing itself: no verb, no api, no cache, no relay, no card', 0.2, function () {
-  if (!SRC) return 'there is no spirit/app/info/element.js';
-  return !/\.verb\s*\(|\bapi\b|\boutcome\b|\bcacheManager\b|\brelay\b|\bnode\.card\b|\bcallDialog\b|\bfetch\s*\(/.test(CODE) || 'info.js still asks something of its own';
+  if (!SRC) return false;
+  return !/\.verb\s*\(|\bapi\b|\boutcome\b|\bcacheManager\b|\brelay\b|\bnode\.card\b|\bcallDialog\b|\bfetch\s*\(/.test(CODE) || false;
 }, test.limit.quick);
 test.run('it draws no markup of its own', 0.2, function () {
-  if (!SRC) return 'there is no spirit/app/info/element.js';
-  return !/['"][^'"\n]*<(div|span|button|input|b)\b/.test(CODE) && !/createElement/.test(CODE) ? true : 'info.js draws markup of its own';
+  if (!SRC) return false;
+  return !/['"][^'"\n]*<(div|span|button|input|b)\b/.test(CODE) && !/createElement/.test(CODE) ? true : false;
 }, test.limit.quick);
 
 // create(container, { open }): nodeInfo mounted into the container, handed the mounter's stack
 test.run('create answers { destroy() }', 0.2, function () {
-  if (!U.I || typeof U.I.create !== 'function') return NO_APP;
+  if (!U.I || typeof U.I.create !== 'function') return false;
   U.box = node('<container>');
   U.box.innerHTML = '<p>left over</p>';
   U.open = function () {};
   U.m = U.I.create(U.box, { open: U.open });
-  return !!U.m && typeof U.m.destroy === 'function' ? true : 'create answered ' + short(U.m && Object.keys(U.m));
+  return !!U.m && typeof U.m.destroy === 'function' ? true : false;
 }, test.limit.quick);
 test.run('it empties its container', 0.2, async function () {
-  if (!U.box) return 'create was never called';
+  if (!U.box) return false;
   const left = U.box.innerHTML;
   await settle();
-  return left === '' || 'left: ' + short(left);
+  return left === '' || false;
 }, test.limit.quick);
 test.run('it makes nodeInfo in its container', 0.2, function () {
-  if (!U.box) return 'create was never called';
-  return U.w.made.length === 1 && U.w.made[0].host === U.box ? true : 'made: ' + U.w.made.length;
+  if (!U.box) return false;
+  return U.w.made.length === 1 && U.w.made[0].host === U.box ? true : false;
 }, test.limit.quick);
 test.run('handed { open }, the stack its mounter opens layers in, and nothing else', 0.2, function () {
-  if (!U.box) return 'create was never called';
+  if (!U.box) return false;
   const made = U.w.made[0];
-  return made && made.opts && made.opts.open === U.open && Object.keys(made.opts).join() === 'open' ? true : 'handed: ' + short(made && made.opts);
+  return made && made.opts && made.opts.open === U.open && Object.keys(made.opts).join() === 'open' ? true : false;
 }, test.limit.quick);
 test.run('made with no opts, nodeInfo gets no open, and keeps its own stack', 0.2, async function () {
-  if (!SRC) return 'there is no spirit/app/info/element.js';
+  if (!SRC) return false;
   const w2 = world();
   const box2 = node('<container>');
   w2.els.info.create(box2);
   await settle();
-  return w2.made.length === 1 && w2.made[0].opts && w2.made[0].opts.open === undefined ? true : 'handed: ' + short(w2.made[0] && w2.made[0].opts);
+  return w2.made.length === 1 && w2.made[0].opts && w2.made[0].opts.open === undefined ? true : false;
 }, test.limit.quick);
 
 // destroy
 test.run('destroy destroys nodeInfo and empties its container', 0.2, function () {
-  if (!U.m) return 'create was never called';
+  if (!U.m) return false;
   U.m.destroy();
-  return U.w.destroyed === 1 && U.box.innerHTML === '' ? true : 'destroyed ' + U.w.destroyed + ', left ' + short(U.box.innerHTML);
+  return U.w.destroyed === 1 && U.box.innerHTML === '' ? true : false;
 }, test.limit.quick);
 test.run('the world: made while nodeInfo is still loading', 0.2, function () {
-  if (!SRC) return 'there is no spirit/app/info/element.js';
+  if (!SRC) return false;
   U.late = world({ held: new Promise(function (r) { U.letGo = r; }) });
   U.box3 = node('<container>');
   U.m3 = U.late.els.info ? U.late.els.info.create(U.box3, {}) : null;
-  return !!U.m3 || 'no info.create on a loading page';
+  return !!U.m3 || false;
 }, test.limit.quick);
 test.run('destroyed before nodeInfo loads, nothing is made', 0.2, async function () {
-  if (!U.m3) return 'nothing made while loading: the world failed';
+  if (!U.m3) return false;
   U.m3.destroy(); U.letGo(); await settle();
-  return U.late.made.length === 0 && U.box3.innerHTML === '' ? true : 'made ' + U.late.made.length;
+  return U.late.made.length === 0 && U.box3.innerHTML === '' ? true : false;
 }, test.limit.quick);
 
 // nodeInfo refused
 test.run('it says Info could not be loaded.', 0.2, async function () {
-  if (!SRC) return 'there is no spirit/app/info/element.js';
+  if (!SRC) return false;
   const no = world({ refuse: true });
   const box4 = node('<container>');
   no.els.info.create(box4, {});
   await settle();
-  return box4.textContent === 'Info could not be loaded.' && no.made.length === 0 ? true : 'said: ' + short(box4.textContent);
+  return box4.textContent === 'Info could not be loaded.' && no.made.length === 0 ? true : false;
 }, test.limit.quick);
 
 // ── THE WRAPPER PART (once its own file; one test file per script: spirit/test/TEST_SYSTEM.md) ──
@@ -218,9 +216,6 @@ const HANDS = '(function () {' +
 const R = {};
 const T = function (expr) { return R.c.evaluate('window.__t.' + expr); };
 const waitFor = function (expr, ms) { return H.until(function () { return R.c.evaluate('(function () { with (window.__t) { return !!(' + expr + '); } }())'); }, ms || 8000); };
-const R_NO_NODE = 'no scratch node: the world failed';
-const R_NO_PAGE = 'no page: the world failed';
-const NOT_OPEN = 'Info did not open: nothing judged';
 
 {
   test.after(async function () {
@@ -234,77 +229,75 @@ const NOT_OPEN = 'Info did not open: nothing judged';
   // the box, 1: "each app has its <name>.json in the spirit/app form, as icons.json and file.json have it"
   test.run('the world: file.json, the form, has identity, mount, shell and node', 0.2, function () {
     R.fileJson = readJson(path.join(RUN, 'spirit', 'app', 'file', 'file.json')) || {};
-    return same(Object.keys(R.fileJson).sort(), ['identity', 'mount', 'node', 'shell']) || 'file.json reads ' + short(R.fileJson);
+    return same(Object.keys(R.fileJson).sort(), ['identity', 'mount', 'node', 'shell']) || false;
   }, test.limit.quick);
   test.run('the world: spirit/app/info/info.json is there and reads', 0.2, function () {
     R.j = readJson(path.join(APP_DIR, NAME + '.json'));
-    return !!R.j || 'no readable spirit/app/' + NAME + '/' + NAME + '.json: nothing judged';
+    return !!R.j || false;
   }, test.limit.quick);
-  const NO_JSON = 'no info.json: the world failed';
   test.run('info.json: its identity is the icon ℹ️, the label Info, and intrinsic true', 0.2, function () {
-    if (!R.j) return NO_JSON;
-    return same(R.j.identity, { icon: WANT.icon, label: WANT.label, intrinsic: true }) || NAME + '.json identity: ' + short(R.j.identity);
+    if (!R.j) return false;
+    return same(R.j.identity, { icon: WANT.icon, label: WANT.label, intrinsic: true }) || false;
   }, test.limit.quick);
   test.run('info.json: it mounts element.js', 0.2, function () {
-    if (!R.j) return NO_JSON;
-    return same(R.j.mount, { 'element.js': true }) || NAME + '.json mount: ' + short(R.j.mount);
+    if (!R.j) return false;
+    return same(R.j.mount, { 'element.js': true }) || false;
   }, test.limit.quick);
   test.run('info.json: in the shell it mounts and has a tile, and is no shell itself', 0.2, function () {
-    if (!R.j) return NO_JSON;
-    return same(R.j.shell, { true: false, mount: true, tile: true }) || NAME + '.json shell: ' + short(R.j.shell);
+    if (!R.j) return false;
+    return same(R.j.shell, { true: false, mount: true, tile: true }) || false;
   }, test.limit.quick);
   test.run('info.json: the node mounts no server for it', 0.2, function () {
-    if (!R.j) return NO_JSON;
-    return same(R.j.node, { mount: false }) || NAME + '.json node: ' + short(R.j.node);
+    if (!R.j) return false;
+    return same(R.j.node, { mount: false }) || false;
   }, test.limit.quick);
   test.run('info.json holds what file.json holds, nothing of the old form', 0.2, function () {
-    if (!R.j) return NO_JSON;
-    return same(Object.keys(R.j).sort(), Object.keys(R.fileJson).sort()) || NAME + '.json keys: ' + short(Object.keys(R.j));
+    if (!R.j) return false;
+    return same(Object.keys(R.j).sort(), Object.keys(R.fileJson).sort()) || false;
   }, test.limit.quick);
   test.run('Q1, the old description sentence: "it goes.", and info.json holds none', 0.2, function () {
-    if (!R.j) return NO_JSON;
-    return JSON.stringify(R.j).indexOf('"description"') === -1 || NAME + '.json still says a description: ' + short(R.j.description);
+    if (!R.j) return false;
+    return JSON.stringify(R.j).indexOf('"description"') === -1 || false;
   }, test.limit.quick);
 
   // the box, 6: "each app's <name>.js only loads spirit/element/ parts (spirit.require) and mounts them into its container"
   test.run('the world: its element.js is there', 0.2, function () {
     R.c0 = code(path.join(APP_DIR, 'element.js'));
-    return R.c0.length > 0 || 'no spirit/app/' + NAME + '/' + NAME + '.js: nothing judged';
+    return R.c0.length > 0 || false;
   }, test.limit.quick);
-  const NO_CODE = 'no element.js: the world failed';
   test.run('it loads only spirit/element/ parts, through spirit.require', 0.2, function () {
-    if (!R.c0) return NO_CODE;
+    if (!R.c0) return false;
     // What it loads: every script it names, and every spirit.require.
     const named = (R.c0.match(/['"][^'"\n]*\.js['"]/g) || []).map(function (s) { return s.slice(1, -1); }).filter(function (s) { return s !== 'element.js' && s !== 'spirit/app/' + NAME + '/element.js'; }); // goal/G43.32, decided 5: its own path is where it places itself, no load
     const asks = (R.c0.match(/\brequire\s*\(/g) || []).length;
     const strays = named.filter(function (s) { return !/^spirit\/element\/[^]+\.js$/.test(s); });
-    return asks > 0 && named.length > 0 && !strays.length ? true : (asks && named.length ? NAME + '.js loads what is no element: ' + short(strays) : NAME + '.js loads nothing through spirit.require: nothing judged');
+    return asks > 0 && named.length > 0 && !strays.length ? true : false;
   }, test.limit.quick);
   test.run('it loads no data family of its own (no cacheManager)', 0.2, function () {
-    if (!R.c0) return NO_CODE;
-    return !/\bcacheManager\s*\(/.test(R.c0) || NAME + '.js asks a cacheManager itself';
+    if (!R.c0) return false;
+    return !/\bcacheManager\s*\(/.test(R.c0) || false;
   }, test.limit.quick);
   test.run('it calls no verb of its own', 0.2, function () {
-    if (!R.c0) return NO_CODE;
+    if (!R.c0) return false;
     const verbs = [/\.verb\s*\(/, /\bspirit\.outcome\b/, /\bcallDialog\b/, /\bfetch\s*\(/, /\brelay\W{1,4}status\b/, /\bnode\W{1,4}card\b/, /\bauth\W{1,4}(search|grant|revoke)\b/]
       .filter(function (re) { return re.test(R.c0); }).map(String);
-    return !verbs.length || NAME + '.js still calls: ' + short(verbs);
+    return !verbs.length || false;
   }, test.limit.quick);
   test.run('as a wrapper, it draws no markup of its own', 0.2, function () {
-    if (!R.c0) return NO_CODE;
+    if (!R.c0) return false;
     const markup = R.c0.match(/['"][^'"\n]*<(div|span|button|input|table|b)\b[^'"\n]*['"]/g) || [];
-    return !markup.length || NAME + '.js draws: ' + short(markup);
+    return !markup.length || false;
   }, test.limit.quick);
   // Info: "They move into one new element, spirit/element/nodeInfo.js (Q2)".
   test.run('info.js loads spirit/element/nodeInfo.js', 0.2, function () {
     const LOADS = /['"]spirit\/element\/nodeInfo\.js['"]/;
-    return LOADS.test(R.c0 || '') || 'info.js does not load spirit/element/nodeInfo.js';
+    return LOADS.test(R.c0 || '') || false;
   }, test.limit.quick);
 
   // the box, 7: "no spirit.shell.activateApp, the old shell's way"
   test.run('it mounts through no spirit.shell.activateApp', 0.2, function () {
     const c0 = R.c0 || '';
-    return c0.length > 0 && !/\bactivateApp\b/.test(c0) && !/\bspirit\.shell\b/.test(c0) ? true : (c0.length ? NAME + '.js still calls spirit.shell.activateApp' : 'no ' + NAME + '.js: nothing judged');
+    return c0.length > 0 && !/\bactivateApp\b/.test(c0) && !/\bspirit\.shell\b/.test(c0) ? true : false;
   }, test.limit.quick);
 
   // Its own test running from its new place, and no file naming its old shell/ folder (the box, 4 and 5): the move is long
@@ -313,81 +306,81 @@ const NOT_OPEN = 'Info did not open: nothing judged';
   test.run('the world: a scratch node comes up', 0.2, async function () {
     R.s = scratch();
     R.N = await boot(R.s.run);
-    return R.N.up || 'the scratch node did not come up: nothing judged';
+    return R.N.up || false;
   }, test.limit.slow);
 
   // the box, 2: intrinsic "as spirit/app apps say it": the node says so
   test.run('the world: the node lists Files, intrinsic', 0.2, async function () {
-    if (!R.N || !R.N.up) return R_NO_NODE;
+    if (!R.N || !R.N.up) return false;
     const listed = await call(R.N.base, 'app.search', { q: '' });
     R.rows = {};
     ((listed.body && listed.body.items) || []).forEach(function (i) { R.rows[i.key] = parsed(i.label) || {}; });
-    return !!R.rows.file && R.rows.file.intrinsic === true ? true : 'app.search: ' + short(listed.text);
+    return !!R.rows.file && R.rows.file.intrinsic === true ? true : false;
   }, test.limit.quick);
   test.run('the node lists info intrinsic, so always active', 0.2, function () {
-    if (!R.rows) return R_NO_NODE;
-    return !!R.rows[NAME] && R.rows[NAME].intrinsic === true && R.rows[NAME].active === true ? true : 'app.search\'s ' + NAME + ': ' + short(R.rows[NAME]);
+    if (!R.rows) return false;
+    return !!R.rows[NAME] && R.rows[NAME].intrinsic === true && R.rows[NAME].active === true ? true : false;
   }, test.limit.quick);
 
   test.run('the world: a Chrome page', 0.2, async function () {
-    if (!R.N || !R.N.up) return R_NO_NODE;
+    if (!R.N || !R.N.up) return false;
     const where = H.findChrome();
-    if (!where) return 'no Chrome here: the page was not judged';
+    if (!where) return false;
     const c = await H.chromePage(where);
-    if (c.error) return 'Chrome: ' + c.error;
+    if (c.error) return false;
     R.c = c;
     return true;
   }, test.limit.quick);
   test.run('the world: the face page has its spirit', 0.2, async function () {
-    if (!R.c) return 'no Chrome page: the world failed';
+    if (!R.c) return false;
     await R.c.send('Page.navigate', { url: R.N.base + '/face.html' });
     R.page = !!(await H.until(function () { return R.c.evaluate('!!(window.spirit && window.spirit.ready && window.spirit.event)'); }, 20000));
     if (R.page) await R.c.evaluate(HANDS);
-    return R.page || 'the page has no spirit: nothing judged';
+    return R.page || false;
   }, test.limit.quick);
 
   // the box, 7: "its <name>.js sets spirit.elements.<name> = { create(container, opts) -> { destroy() } }"
   test.run('its element\'s create draws into the container it is given and answers destroy', 0.2, async function () {
-    if (!R.page) return R_NO_PAGE;
+    if (!R.page) return false;
     const made = await R.c.evaluate('(function () { var b = document.createElement("div"); b.id = "zzOwn"; b.style.cssText = "position:absolute;left:0;top:0;width:50%;height:50%"; document.body.appendChild(b); var p; try { p = spirit.require("spirit/app/' + NAME + '/element.js"); } catch (e) { return "load threw: " + e; } return Promise.resolve(p).then(function () { var E = spirit.element.spirit.app[' + JSON.stringify(NAME) + '] && spirit.element.spirit.app[' + JSON.stringify(NAME) + '].element; if (!E || typeof E.create !== "function") return "no spirit.element.spirit.app.' + NAME + '.element.create"; var m = E.create(b, {}); if (!m || typeof m.destroy !== "function") return "create answered " + typeof m; return new Promise(function (r) { setTimeout(r, 2500); }).then(function () { var drew = b.innerHTML.length > 0; m.destroy(); b.remove(); return drew ? "ok" : "it drew nothing"; }); }, function (e) { b.remove(); return "load: " + e; }); }())');
-    return made === 'ok' || NAME + ': ' + short(made);
+    return made === 'ok' || false;
   }, test.limit.slow);
 
   // the box, 3: "both show in the shell as before: a tile each, and each opens as it did"
   // The shell app, as boot.js hands it the page's app area, here in a box of its own over the page.
   test.run('the world: the shell draws its tiles, Files among them', 0.2, async function () {
-    if (!R.page) return R_NO_PAGE;
+    if (!R.page) return false;
     const shell = await R.c.evaluate('(function () { var old = document.getElementById("zzBox"); if (old) old.remove(); var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.require("spirit/app/app/element.js").then(function () { window.__shell = spirit.element.spirit.app.app.element.create(b); return "made"; }, function (e) { return "load: " + e; }); }())');
-    return shell === 'made' && await waitFor('tiles().indexOf("file") !== -1', 10000) ? true : 'the shell: ' + short(shell) + ', tiles ' + short(await T('tiles()'));
+    return shell === 'made' && await waitFor('tiles().indexOf("file") !== -1', 10000) ? true : false;
   }, test.limit.quick);
   test.run('Info has its tile, with nothing pressed', 0.2, async function () {
-    if (!R.page) return R_NO_PAGE;
-    return await waitFor('tiles().indexOf("' + NAME + '") !== -1', 6000) ? true : 'no ' + NAME + ' tile: ' + short(await T('tiles()'));
+    if (!R.page) return false;
+    return await waitFor('tiles().indexOf("' + NAME + '") !== -1', 6000) ? true : false;
   }, test.limit.quick);
 
   // Info opens as it did: its name and description fields, and the rotate button.
   test.run('Info\'s tile opens Info: its name and its description field', 0.2, async function () {
-    if (!R.page) return R_NO_PAGE;
+    if (!R.page) return false;
     const infoPressed = await T('tile("info")');
     R.infoOpen = !!(infoPressed && await waitFor('count("[data-field=label]") === 1 && count("[data-field=description]") === 1', 10000));
-    return R.infoOpen ? true : (infoPressed ? 'Info shows: ' + short(await T('text()')) : 'no Info tile to press: nothing judged');
+    return R.infoOpen ? true : false;
   }, test.limit.quick);
   test.run('Info shows its Rotate this node\'s cipher key button', 0.2, async function () {
-    if (!R.infoOpen) return NOT_OPEN;
-    return await waitFor('buttons().some(function (b) { return /^Rotate this node.s cipher key$/.test(b); })', 6000) ? true : 'Info\'s buttons: ' + short(await T('buttons()'));
+    if (!R.infoOpen) return false;
+    return await waitFor('buttons().some(function (b) { return /^Rotate this node.s cipher key$/.test(b); })', 6000) ? true : false;
   }, test.limit.quick);
   test.run('over the tiles one bar in view, ℹ️ Info', 0.2, async function () {
-    if (!R.infoOpen) return NOT_OPEN;
+    if (!R.infoOpen) return false;
     const infoBars = await T('bars()');
-    return infoBars.length === 1 && infoBars[0] === WANT.icon + ' Info' ? true : 'bars: ' + short(infoBars);
+    return infoBars.length === 1 && infoBars[0] === WANT.icon + ' Info' ? true : false;
   }, test.limit.quick);
   test.run('Info says nothing could not be loaded', 0.2, async function () {
-    if (!R.infoOpen) return NOT_OPEN;
-    return !/could not be loaded/i.test(await T('text()')) || 'Info: ' + short(await T('text()'));
+    if (!R.infoOpen) return false;
+    return !/could not be loaded/i.test(await T('text()')) || false;
   }, test.limit.quick);
   test.run('the world: Info\'s ✕ shows the tiles again', 0.2, async function () {
-    if (!R.infoOpen) return NOT_OPEN;
+    if (!R.infoOpen) return false;
     await T('close("Info")');
-    return await waitFor('tiles().indexOf("info") !== -1', 6000) ? true : 'after ✕: ' + short(await T('text()'));
+    return await waitFor('tiles().indexOf("info") !== -1', 6000) ? true : false;
   }, test.limit.quick);
 }

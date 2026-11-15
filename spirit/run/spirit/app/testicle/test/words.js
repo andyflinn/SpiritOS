@@ -14,7 +14,6 @@ const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const REL = 'spirit/app/testicle/words.js';
 
-function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 400); }
 // A script's code with its comments left out, so a comment quoting the box is not a phrase built.
 function codeOf(text) { return String(text).replace(/\/\*[\s\S]*?\*\//g, '').split('\n').map(function (l) { return l.replace(/(^|[^:'"])\/\/.*$/, '$1'); }).join('\n'); }
 const OTHERS = execFileSync('git', ['ls-files', '--', 'spirit/app/testicle'], { cwd: RUN, encoding: 'utf8' }).split('\n')
@@ -29,10 +28,10 @@ const BUILT = [
 ];
 
 test.run('spirit/app/testicle/words.js is there', 0.4, function () {
-  return fs.existsSync(path.join(RUN, REL)) || 'there is no ' + REL;
+  return fs.existsSync(path.join(RUN, REL)) || false;
 }, test.limit.quick);
 test.run('the world: testicle\'s other scripts, read as text', 0.2, function () {
-  return OTHERS.length > 3 || 'too few scripts of testicle to read: ' + short(OTHERS);
+  return OTHERS.length > 3 || false;
 }, test.limit.quick);
 test.run('no other script of testicle builds a result icon or a status phrase itself', 0.8, function () {
   const bad = [];
@@ -40,10 +39,10 @@ test.run('no other script of testicle builds a result icon or a status phrase it
     const code = codeOf(fs.readFileSync(path.join(RUN, f), 'utf8'));
     BUILT.forEach(function (b) { if (b.re.test(code)) bad.push(f + ': ' + b.what); });
   });
-  return bad.length === 0 || bad.length + ' built outside words.js: ' + short(bad);
+  return bad.length === 0 || false;
 }, test.limit.quick);
 test.run('the server, the status box and the result row each require words.js', 0.8, function () {
   const need = ['spirit/app/testicle/testicle.js', 'spirit/app/testicle/element/statusBox.js', 'spirit/app/testicle/element/search/testicle/rowElement.js'];
   const not = need.filter(function (f) { try { return fs.readFileSync(path.join(RUN, f), 'utf8').indexOf('spirit/app/testicle/words.js') === -1; } catch (e) { return true; } });
-  return not.length === 0 || 'not requiring ' + REL + ': ' + short(not);
+  return not.length === 0 || false;
 }, test.limit.quick);

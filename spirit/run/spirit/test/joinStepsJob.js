@@ -30,72 +30,71 @@ function plantedJobs() {
 const URL_ = 'https://relay.example';
 const RELAY_KEY = 'relay-key-' + process.pid;
 const W = { root: null, jobs: null, made: null, me: '' };
-const NO_WORLD = 'no scratch node: the world failed';
 
 test.run('the world: a scratch node root with an identity of its own, and nothing else', 0.2, function () {
   W.root = fs.mkdtempSync(path.join(os.tmpdir(), 'nr-join-'));
-  try { auth.saveIdentity(W.root, auth.generateIdentity('joiner')); W.me = auth.loadIdentity(W.root).publicKey; } catch (e) { W.root = null; return 'no identity: ' + String(e && e.message); }
-  return !!W.me || (W.root = null, 'no identity read back');
+  try { auth.saveIdentity(W.root, auth.generateIdentity('joiner')); W.me = auth.loadIdentity(W.root).publicKey; } catch (e) { W.root = null; return false; }
+  return !!W.me || (W.root = null, false);
 }, test.limit.quick);
 
 // ── facts ──
 test.run('facts on a node with nothing: not seated, no relay, no contact, no face; no email field', 0.2, function () {
-  if (!W.root) return NO_WORLD;
+  if (!W.root) return false;
   const f = J.facts(W.root);
-  return short(f) === short({ seated: false, relayUrl: '', contact: false, face: '', faceUrl: '' }) || 'facts: ' + short(f);
+  return short(f) === short({ seated: false, relayUrl: '', contact: false, face: '', faceUrl: '' }) || false;
 }, test.limit.quick);
 test.run('create publishes those facts at once, as news of spirit, kind join, { join } and nothing else', 0.2, function () {
-  if (!W.root) return NO_WORLD;
+  if (!W.root) return false;
   W.jobs = plantedJobs();
   W.made = J.create(W.root, W.jobs);
   const s = W.jobs.said[0] || {};
-  return (W.jobs.said.length === 1 && s.id === 'spirit' && s.kind === 'join' && short(Object.keys(s.data || {})) === '["join"]' && s.data.join.seated === false && W.made.job.data === s.data) || 'said: ' + short(W.jobs.said);
+  return (W.jobs.said.length === 1 && s.id === 'spirit' && s.kind === 'join' && short(Object.keys(s.data || {})) === '["join"]' && s.data.join.seated === false && W.made.job.data === s.data) || false;
 }, test.limit.quick);
 test.run('refresh with nothing changed publishes nothing and answers false', 0.2, function () {
-  if (!W.made) return 'no job made: the world failed';
+  if (!W.made) return false;
   const did = W.made.refresh('nothing');
-  return (did === false && W.jobs.said.length === 1) || 'refresh answered ' + did + ', said ' + W.jobs.said.length;
+  return (did === false && W.jobs.said.length === 1) || false;
 }, test.limit.quick);
 test.run('a relay listed and not seated: its url is the relay, still not seated', 0.2, function () {
-  if (!W.root) return NO_WORLD;
+  if (!W.root) return false;
   ownerBadge.addRelay(W.root, URL_, 'example', RELAY_KEY);
   const f = J.facts(W.root);
-  return (f.seated === false && f.relayUrl === URL_) || 'facts: ' + short(f);
+  return (f.seated === false && f.relayUrl === URL_) || false;
 }, test.limit.quick);
 test.run('refresh after a change publishes once and answers true', 0.2, function () {
-  if (!W.made) return 'no job made: the world failed';
+  if (!W.made) return false;
   const did = W.made.refresh('relay listed');
   const last = W.jobs.said[W.jobs.said.length - 1] || {};
-  return (did === true && W.jobs.said.length === 2 && last.kind === 'join' && last.data.join.relayUrl === URL_) || 'refresh answered ' + did + ', said ' + short(W.jobs.said);
+  return (did === true && W.jobs.said.length === 2 && last.kind === 'join' && last.data.join.relayUrl === URL_) || false;
 }, test.limit.quick);
 test.run('a seat held there: seated', 0.2, function () {
-  if (!W.root) return NO_WORLD;
+  if (!W.root) return false;
   relayKeys.accept(W.root, URL_, RELAY_KEY);
   relayKeys.seat(W.root, URL_);
   const f = J.facts(W.root);
-  return (f.seated === true && f.relayUrl === URL_ && f.face === '') || 'facts: ' + short(f);
+  return (f.seated === true && f.relayUrl === URL_ && f.face === '') || false;
 }, test.limit.quick);
 test.run('a face kept on that relay: the face name, and https://<face>.<relay host>', 0.2, function () {
-  if (!W.root) return NO_WORLD;
+  if (!W.root) return false;
   relayKeys.keepFace(W.root, URL_, 'andy');
   const f = J.facts(W.root);
-  return (f.face === 'andy' && f.faceUrl === 'https://andy.relay.example') || 'facts: ' + short(f);
+  return (f.face === 'andy' && f.faceUrl === 'https://andy.relay.example') || false;
 }, test.limit.quick);
 test.run('contact: the relay and the node itself kept are no contact; anyone else kept is', 0.2, function () {
-  if (!W.root) return NO_WORLD;
+  if (!W.root) return false;
   contacts.acquire(W.root, { publicKey: RELAY_KEY });
   contacts.acquire(W.root, { publicKey: W.me });
   const before = J.facts(W.root).contact;
   contacts.acquire(W.root, { publicKey: 'friend-key-' + process.pid, publicLabel: 'friend' });
   const after = J.facts(W.root).contact;
-  return (before === false && after === true) || 'contact before ' + before + ', after ' + after;
+  return (before === false && after === true) || false;
 }, test.limit.quick);
 test.run('the made job\'s facts() reads the records now, as facts(rootDir) does', 0.2, function () {
-  if (!W.made) return 'no job made: the world failed';
-  return short(W.made.facts()) === short(J.facts(W.root)) || 'facts(): ' + short(W.made.facts());
+  if (!W.made) return false;
+  return short(W.made.facts()) === short(J.facts(W.root)) || false;
 }, test.limit.quick);
 test.run('facts never throw: a root with no records answers the empty facts', 0.2, function () {
   let f;
-  try { f = J.facts(path.join(os.tmpdir(), 'nr-join-none-' + process.pid)); } catch (e) { return 'threw: ' + String(e && e.message); }
-  return (f.seated === false && f.contact === false && f.relayUrl === '') || 'facts: ' + short(f);
+  try { f = J.facts(path.join(os.tmpdir(), 'nr-join-none-' + process.pid)); } catch (e) { return false; }
+  return (f.seated === false && f.contact === false && f.relayUrl === '') || false;
 }, test.limit.quick);

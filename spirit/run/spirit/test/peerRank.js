@@ -21,42 +21,42 @@ function many(n) { const out = []; for (let i = 0; i < n; i += 1) out.push({ pub
 test.run('no words, or *, is anyone: every row, in the order given', 0.2, function () {
   const a = labels(P.rank(ROWS, '')), b = labels(P.rank(ROWS, '*'));
   const want = ['zebra', 'andy flinn', 'bob', 'andy'];
-  return (short(a) === short(want) && short(b) === short(want)) || 'anyone: ' + short([a, b]);
+  return (short(a) === short(want) && short(b) === short(want)) || false;
 }, test.limit.quick);
 test.run('one relay answers 32 rows at most (SLOTS), and says more when one was turned away', 0.2, function () {
   const r = P.rank(many(40), '');
-  return (P.SLOTS === 32 && r.rows.length === 32 && r.more === true && r.rows[0].publicLabel === 'peer 0') || 'SLOTS ' + P.SLOTS + ', rows ' + r.rows.length + ', more ' + r.more;
+  return (P.SLOTS === 32 && r.rows.length === 32 && r.more === true && r.rows[0].publicLabel === 'peer 0') || false;
 }, test.limit.quick);
 test.run('slots given caps the list; a list that fits says no more', 0.2, function () {
   const r = P.rank(ROWS, '*', 2), all = P.rank(ROWS, '*', 4);
-  return (short(labels(r)) === short(['zebra', 'andy flinn']) && r.more === true && all.rows.length === 4 && all.more === false) || 'capped: ' + short([r, all]);
+  return (short(labels(r)) === short(['zebra', 'andy flinn']) && r.more === true && all.rows.length === 4 && all.more === false) || false;
 }, test.limit.quick);
 
 // ── words ──
 test.run('with words, a row that does not match is left out', 0.2, function () {
   const got = labels(P.rank(ROWS, 'andy'));
-  return (got.length > 0 && got.indexOf('zebra') === -1) || 'andy: ' + short(got);
+  return (got.length > 0 && got.indexOf('zebra') === -1) || false;
 }, test.limit.quick);
 test.run('the best match comes first: the row that is the words, before one that holds them', 0.2, function () {
   const got = labels(P.rank(ROWS, 'andy'));
-  return (got[0] === 'andy' && got.indexOf('andy flinn') > 0) || 'andy: ' + short(got);
+  return (got[0] === 'andy' && got.indexOf('andy flinn') > 0) || false;
 }, test.limit.quick);
 test.run('the whole row as it is served is matched, not its label alone (goal/G41.28)', 0.2, function () {
   const got = labels(P.rank(ROWS, 'andytown'));
-  return got.indexOf('bob') !== -1 || 'andytown: ' + short(got);
+  return got.indexOf('bob') !== -1 || false;
 }, test.limit.quick);
 test.run('equal matches keep the order the rows came in', 0.2, function () {
   const rows = [{ publicLabel: 'twin', n: 'a' }, { publicLabel: 'twin', n: 'b' }, { publicLabel: 'twin', n: 'c' }];
   const got = P.rank(rows, 'twin').rows.map(function (r) { return r.n; });
-  return short(got) === short(['a', 'b', 'c']) || 'twins: ' + short(got);
+  return short(got) === short(['a', 'b', 'c']) || false;
 }, test.limit.quick);
 test.run('the rows come back untouched: the very rows offered', 0.2, function () {
   const r = P.rank(ROWS, 'andy');
-  return (r.rows.length > 0 && r.rows.every(function (x) { return ROWS.indexOf(x) !== -1; }) && !('score' in r.rows[0])) || 'rows: ' + short(r.rows);
+  return (r.rows.length > 0 && r.rows.every(function (x) { return ROWS.indexOf(x) !== -1; }) && !('score' in r.rows[0])) || false;
 }, test.limit.quick);
 test.run('no rows, or an empty row among them, is no failure', 0.2, function () {
   const a = P.rank(null, 'andy'), b = P.rank([null, { publicLabel: 'andy' }], '*');
-  return (a.rows.length === 0 && a.more === false && b.rows.length === 1) || 'answers: ' + short([a, b]);
+  return (a.rows.length === 0 && a.more === false && b.rows.length === 1) || false;
 }, test.limit.quick);
 
 // ── fed in slices (goal/G41.30) ──
@@ -65,11 +65,11 @@ test.run('a ranker fed a page at a time answers what rank answers fed once', 0.2
   const r = P.ranker('andy', 3);
   for (let i = 0; i < rows.length; i += 7) r.add(rows.slice(i, i + 7));
   const sliced = r.result(), once = P.rank(rows, 'andy', 3);
-  return (sliced.rows.length > 0 && short(sliced) === short(once)) || 'sliced ' + short(sliced) + ' once ' + short(once);
+  return (sliced.rows.length > 0 && short(sliced) === short(once)) || false;
 }, test.limit.quick);
 test.run('fed in slices, anyone keeps the order across the slices', 0.2, function () {
   const r = P.ranker('', 5);
   r.add(many(3)); r.add(ROWS);
   const got = labels(r.result());
-  return short(got) === short(['peer 0', 'peer 1', 'peer 2', 'zebra', 'andy flinn']) || 'order: ' + short(got);
+  return short(got) === short(['peer 0', 'peer 1', 'peer 2', 'zebra', 'andy flinn']) || false;
 }, test.limit.quick);

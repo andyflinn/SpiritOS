@@ -19,22 +19,25 @@ default (0.2), general rule violation (0.4), crash/hang (0.7), security (0.8)"*.
 one run) names the script, scoped to `run://`, that one result is reported for, in place of the suite's own; a title is
 then said once per script, and the same title for two scripts is no repeat.
 
-`body()` returns `true` to pass; `false`, or a string saying what went wrong, to fail; it may be async. `limit` is the
+`body()` returns `true` to pass and `false` to fail; it may be async. A test's one string is its title (goal/G47.1, Andy:
+*"A TEST ANSWERS SUCCESS OR FAILURE WITH IT's FUCKING TITLE STRING, THE FUCKING FAILURE STRING GETS DELETED FROM EVERY FUCKING
+TEST"*): anything a body returns but `true` is a fail, and its text is thrown away, printed and reported nowhere. `limit` is the
 test's time limit, one of the reporter's named limits, `test.limit.quick` (10 s, a test that asks and answers),
 `.slow` (60 s, one that starts a scratch node, a desk or a Chrome page) or `.long` (300 s, a whole world end to end);
 they sit in the reporter alone, so one change there moves every suite (Andy, 2026-11-11: *"i hope you have those as
 relatively central constants"*). A limit catches a hang, not a slow machine. `test.after(fn)` runs once every test has run, whatever
-they did. The tests run one at a time in the order given; the reporter prints a line for each, reports each, then prints
-the completion line and ends the process, its exit code 1 when a test failed.
+they did. The tests run one at a time in the order given; the reporter prints the script as a heading where it changes,
+a line for each test, its title and its mark (✅ or ❌), reports each, then prints the completion line and ends the
+process, its exit code 1 when a test failed.
 
 ## Requirements
 
-- A body returning true passes, printed under its title; returning a string fails, its title printed with the string as
-  detail; returning false fails.
-- **A crash and a hang** (*"a throw or a rejection, that test fails at 0.7 under its own title, the error as detail, and
-  the next runs"*; *"each test raced against its own time limit ... 0.7 under its title"*): a body that throws or rejects
-  fails under its title, the error as detail; a body still running at its limit fails under its title as a hang; the
-  tests after both still run. Both are reported at 0.7.
+- A body returning true passes, its title printed with ✅; returning a string or false fails, its title printed with ❌.
+  The string is printed nowhere.
+- **A crash and a hang** (*"a throw or a rejection, that test fails at 0.7 under its own title ... and the next runs"*;
+  *"each test raced against its own time limit ... 0.7 under its title"*): a body that throws, rejects or is still running
+  at its limit fails, its title printed with ❌, the error printed nowhere; the tests after both still run. Both are
+  reported at 0.7.
 - `test.after` runs once every test has run. The completion line counts every test; the exit code is 1 when one failed.
 - **The report**: each test to `testicle.testicle.set` of the node of its checkout (spirit.js reads the port from that
   checkout's `spirit/state/environment.json`), once, a send that fails tried again up to three times, a second apart, `{script, suite, test, verified, severity}`: the script tested and

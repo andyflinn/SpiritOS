@@ -15,44 +15,42 @@ const FILE = path.join(__dirname, '..', 'api.js');
 require(path.join(RUN, 'spirit', 'spirit.js'));
 const spirit = globalThis.spirit;
 
-function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 const isPlain = function (v) { return v !== null && typeof v === 'object' && !Array.isArray(v); };
 
 const W = { api: null, verbs: {}, names: [] };
 const refusedAs = function (verb, args) { if (!W.verbs[verb]) return 'no verb ' + verb; const r = spirit.check('backup.' + verb, W.verbs[verb], args); return r ? r.code : ''; };
-const NO_API = 'api.js did not load: the world failed';
 
 test.run('the world: api.js loads', 0.2, function () {
-  try { W.api = require(FILE); } catch (e) { return 'api.js threw: ' + short(e && e.message); }
+  try { W.api = require(FILE); } catch (e) { return false; }
   W.verbs = W.api.verbs || {};
   W.names = Object.keys(W.verbs);
   return true;
 }, test.limit.quick);
 test.run('spirit.familyPath(\'backup\') finds it here', 0.2, function () {
-  return path.join(RUN, spirit.familyPath('backup')) === FILE || 'familyPath(backup) is ' + short(spirit.familyPath('backup'));
+  return path.join(RUN, spirit.familyPath('backup')) === FILE || false;
 }, test.limit.quick);
 // "The node answers this text to api {family} without the server hearing of it, and maps it to its name: it names no family of its own."
 test.run('it exports a table of verbs and nothing else: it names no family of its own', 0.2, function () {
-  if (!W.api) return NO_API;
-  return (Object.keys(W.api).join() === 'verbs' && isPlain(W.verbs)) || 'exports ' + short(Object.keys(W.api));
+  if (!W.api) return false;
+  return (Object.keys(W.api).join() === 'verbs' && isPlain(W.verbs)) || false;
 }, test.limit.quick);
 test.run('its one verb is status.get', 0.2, function () {
-  if (!W.api) return NO_API;
-  return W.names.join() === 'status.get' || 'verbs ' + short(W.names);
+  if (!W.api) return false;
+  return W.names.join() === 'status.get' || false;
 }, test.limit.quick);
 // "A verb added to the server is added here, in the same commit."
 test.run('each verb it lists is a handler of backup.js, and backup.js serves no verb it does not list', 0.2, function () {
-  if (!W.api) return NO_API;
+  if (!W.api) return false;
   const src = fs.readFileSync(path.join(RUN, 'spirit', 'app', 'backup', 'backup.js'), 'utf8');
   const at = src.indexOf('appServer.serve(');
-  if (at === -1) return 'backup.js serves nothing: nothing to compare with';
+  if (at === -1) return false;
   const served = []; const re = /\n {2}'?([a-zA-Z.]+)'?:\s*\{\s*\n\s*request:/g; let m;
   const block = src.slice(at);
   while ((m = re.exec(block))) served.push(m[1]);
-  return served.length > 0 && served.slice().sort().join() === W.names.slice().sort().join() ? true : 'served ' + short(served) + ', listed ' + short(W.names);
+  return served.length > 0 && served.slice().sort().join() === W.names.slice().sort().join() ? true : false;
 }, test.limit.quick);
 // "The last check, copy and error; it takes nothing."
 test.run('status.get takes nothing: {} passes, any argument is refused before it leaves', 0.2, function () {
-  if (!W.api) return NO_API;
-  return (refusedAs('status.get', {}) === '' && refusedAs('status.get', { since: 1 }) === 'no-such-argument') || 'status.get {} ' + refusedAs('status.get', {}) + ', {since} ' + refusedAs('status.get', { since: 1 });
+  if (!W.api) return false;
+  return (refusedAs('status.get', {}) === '' && refusedAs('status.get', { since: 1 }) === 'no-such-argument') || false;
 }, test.limit.quick);

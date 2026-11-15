@@ -11,7 +11,6 @@ const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 
 const FILE = path.join(__dirname, '..', 'detailElement.js');
-function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 const tick = function () { return new Promise(function (r) { setImmediate(r); }); };
 const settle = async function () { for (let i = 0; i < 20; i++) await tick(); };
 function node(tag) {
@@ -25,10 +24,9 @@ const TREE = { fs: { search: { request: { q: '' } }, loadFile: { request: { path
 
 // One test.run per test (goal/G47.2). What the world and the tests make, for the tests after them.
 let required, asked, D, host, made, html, none, odd;
-const NO_D = 'no detail element: the world failed';
 
 test.run('the world: the detail runs on a bare window, the real api tree reader beside it', 0.2, async function () {
-  if (!fs.existsSync(FILE)) return 'spirit/element/search/api/detailElement.js is not there';
+  if (!fs.existsSync(FILE)) return false;
   required = [];
   asked = [];
   global.document = { createElement: node };
@@ -45,62 +43,62 @@ test.run('the world: the detail runs on a bare window, the real api tree reader 
   return true;
 }, test.limit.quick);
 test.run('it places itself at spirit.element.spirit.element.search.api.detailElement, with a create', 0.2, function () {
-  return D && typeof D.create === 'function' ? true : 'its place: ' + short(D && Object.keys(D));
+  return D && typeof D.create === 'function' ? true : false;
 }, test.limit.quick);
 test.run('it loads the api tree reader itself', 0.2, function () {
-  if (!required) return NO_D;
-  return required.indexOf('spirit/client/apiTreeIndex.js') !== -1 ? true : 'required: ' + short(required);
+  if (!required) return false;
+  return required.indexOf('spirit/client/apiTreeIndex.js') !== -1 ? true : false;
 }, test.limit.quick);
 
 // a family's verbs, read from the tree it is handed
 test.run('it lists each verb the family serves, as its path, sorted', 0.2, async function () {
-  if (!D || typeof D.create !== 'function') return NO_D;
+  if (!D || typeof D.create !== 'function') return false;
   host = node('div');
   made = D.create(host, { family: 'fs', tree: TREE });
   await settle();
   const box = host.children[0];
   html = box ? box.innerHTML : '';
-  return !!box && /fs\.loadFile/.test(html) && /fs\.search/.test(html) && html.indexOf('fs.loadFile') < html.indexOf('fs.search') ? true : 'drawn: ' + short(html);
+  return !!box && /fs\.loadFile/.test(html) && /fs\.search/.test(html) && html.indexOf('fs.loadFile') < html.indexOf('fs.search') ? true : false;
 }, test.limit.quick);
 test.run('each with the fields its request takes', 0.2, function () {
-  if (html === undefined) return NO_D;
-  return /\{ q \}/.test(html) && /\{ path \}/.test(html) ? true : 'drawn: ' + short(html);
+  if (html === undefined) return false;
+  return /\{ q \}/.test(html) && /\{ path \}/.test(html) ? true : false;
 }, test.limit.quick);
 test.run('the owner\'s DEBUG is not shown: no verb offered', 0.2, function () {
-  if (html === undefined) return NO_D;
-  return !/DEBUG/.test(html) ? true : 'drawn: ' + short(html);
+  if (html === undefined) return false;
+  return !/DEBUG/.test(html) ? true : false;
 }, test.limit.quick);
 test.run('it asks nothing: what it shows is the tree it is handed', 0.2, function () {
-  if (!asked || html === undefined) return NO_D;
-  return !asked.length ? true : 'asked: ' + short(asked);
+  if (!asked || html === undefined) return false;
+  return !asked.length ? true : false;
 }, test.limit.quick);
 test.run('a family that did not answer shows it has no verbs', 0.2, async function () {
-  if (!D || typeof D.create !== 'function') return NO_D;
+  if (!D || typeof D.create !== 'function') return false;
   none = node('div');
   D.create(none, { family: 'broken', tree: TREE });
   D.create(node('div'), { family: 'gone', tree: null });
   await settle();
-  return none.children[0] && /no verbs/.test(none.children[0].innerHTML) ? true : 'drawn: ' + short(none.children[0] && none.children[0].innerHTML);
+  return none.children[0] && /no verbs/.test(none.children[0].innerHTML) ? true : false;
 }, test.limit.quick);
 test.run('what it paints is escaped', 0.2, async function () {
-  if (!D || typeof D.create !== 'function') return NO_D;
+  if (!D || typeof D.create !== 'function') return false;
   odd = node('div');
   D.create(odd, { family: '<b>', tree: { '<b>': { 'x<y': { request: {} } } } });
   await settle();
-  return odd.children[0] && !/<b>/.test(odd.children[0].innerHTML) ? true : 'drawn: ' + short(odd.children[0] && odd.children[0].innerHTML);
+  return odd.children[0] && !/<b>/.test(odd.children[0].innerHTML) ? true : false;
 }, test.limit.quick);
 
 // destroy
 test.run('destroy takes it out of its host', 0.2, function () {
-  if (!made) return NO_D;
+  if (!made) return false;
   made.destroy();
-  return host.children.length === 0 ? true : 'host holds ' + host.children.length;
+  return host.children.length === 0 ? true : false;
 }, test.limit.quick);
 test.run('one destroyed before it drew draws nothing', 0.2, async function () {
-  if (!D || typeof D.create !== 'function') return NO_D;
+  if (!D || typeof D.create !== 'function') return false;
   const late = node('div');
   const gone = D.create(late, { family: 'fs', tree: TREE });
   gone.destroy();
   await settle();
-  return late.children.length === 0 ? true : 'host holds ' + late.children.length;
+  return late.children.length === 0 ? true : false;
 }, test.limit.quick);

@@ -23,7 +23,6 @@ const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 const { until, findChrome, scratchNode, chromePage } = H;
 
-function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 400); }
 const ARGV = process.argv.slice(2);
 const GIVEN = ARGV.filter(function (a, i) { return a.indexOf('--') !== 0 && ARGV[i - 1] !== '--test'; })
   .map(function (a) { return String(a).split(path.sep).join('/').replace(/^\.?\//, '').replace(/^spirit\/run\//, ''); });
@@ -37,7 +36,7 @@ const owed = function (app) { return ['api', 'data'].filter(function (n) { retur
 // <name>.js is a program it runs (publishData, pushOrigin: node.run) mounts none, and serves no interface to wait for.
 const hasServer = function (app) { try { const m = JSON.parse(fs.readFileSync(path.join(RUN, 'spirit', 'app', app, app + '.json'), 'utf8')); return !!(m && m.node && m.node.mount === true) && fs.existsSync(path.join(RUN, 'spirit', 'app', app, app + '.js')); } catch (e) { return false; } };
 
-const W = { node: null, page: null, fail: '', reports: {} };
+const W = { node: null, page: null, fail: false, reports: {} };
 function cleanup() {
   test.after(async function () {
     try { if (W.page && W.page.sock) W.page.sock.close(); } catch (e) { /* gone */ }
@@ -62,15 +61,15 @@ function answers(page) {
 // THE PAGES FIRST, THE TESTS AFTER: which scripts install an element only the page can say, and a test is said only for
 // one that does (a script with no element, or an app owing nothing, is a comment, never a green).
 async function world() {
-  if (!TARGETS.length) { W.fail = 'no script under spirit/app/ to judge in ' + short(GIVEN); return; }
+  if (!TARGETS.length) { W.fail = true; return; }
   const chrome = findChrome();
-  if (!chrome) { W.fail = 'no Chrome on this machine'; return; }
+  if (!chrome) { W.fail = true; return; }
   const apps = Array.from(new Set(TARGETS.map(appOf))).filter(hasServer);
   // ITS CHROME STARTED WHILE THE NODE BOOTS: the two wait on nothing of each other.
   const chromeStarted = process.env.SPIRIT_CHROME_PORT ? Promise.resolve(null) : H.sharedChrome(chrome);
   W.node = await scratchNode({ servers: apps });
   W.chrome = await chromeStarted;
-  if (!W.node.up || !W.node.debug) { W.fail = 'the scratch node did not come up with its DEBUG on'; return; }
+  if (!W.node.up || !W.node.debug) { W.fail = true; return; }
   // Every app server judged answers its interface before any page is opened (Andy: "a server MUST be mounted if a
   // mountable server exists in that app folder before a test is conducted").
   const silent = [];
@@ -81,11 +80,11 @@ async function world() {
     }, 30000);
     if (!ok) silent.push(a);
   }
-  if (silent.length) { W.fail = 'app servers that never answered: ' + silent.join(', '); return; }
+  if (silent.length) { W.fail = true; return; }
   // ONE CHROME FOR THE WHOLE RUN (box v144: "run on one node and one Chrome for the whole run"): a fresh page of it per script,
   // so one that hangs is closed alone (spirit/test/headLessChrome.js sharedChrome; chromePage opens a page of it).
   if (W.chrome) {
-    if (W.chrome.error) { W.fail = 'no Chrome: ' + W.chrome.error; return; }
+    if (W.chrome.error) { W.fail = true; return; }
     process.env.SPIRIT_CHROME_PORT = String(W.chrome.port);
   }
   test.run('the world: scripts under spirit/app/ to judge, a scratch node with their apps\' servers on, and a Chrome page', 0.2, function () { return true; }, test.limit.quick);
@@ -94,7 +93,7 @@ async function world() {
   for (const rel of TARGETS) {
     closePage();
     W.page = await chromePage(chrome);
-    if (W.page.error) { W.reports[rel] = { fail: 'no Chrome page for it: ' + W.page.error }; continue; }
+    if (W.page.error) { W.reports[rel] = { fail: true }; continue; }
     const app = appOf(rel);
     W.page.send('Page.navigate', { url: W.node.base + '/DEBUG/' + rel.replace(/\.js$/, '') + '/headLessBrowser.html' });
     let report = null;
@@ -105,10 +104,10 @@ async function world() {
       try { report = x ? JSON.parse(x) : null; } catch (e) { report = null; }
       return !!report && report.state !== 'loading';
     }, LOAD_LIMIT_MS);
-    if (hung) { W.reports[rel] = { fail: rel + ': its page hung: it gave no answer in ' + (HANG_MS / 1000) + ' s' }; judge(rel); continue; }
-    if (!report || report.state === 'loading') { W.reports[rel] = { fail: rel + ': its page never finished loading in ' + (LOAD_LIMIT_MS / 1000) + ' s' }; judge(rel); continue; }
+    if (hung) { W.reports[rel] = { fail: true }; judge(rel); continue; }
+    if (!report || report.state === 'loading') { W.reports[rel] = { fail: true }; judge(rel); continue; }
     if (report.state === 'failed') {
-      W.reports[rel] = /places no element with a create/.test(report.error) ? { none: true } : { fail: 'it did not mount: ' + report.error };
+      W.reports[rel] = /places no element with a create/.test(report.error) ? { none: true } : { fail: true };
       judge(rel);
       continue;
     }
@@ -135,19 +134,19 @@ function judge(rel) {
   if (r && r.owed && !r.owed.length) { test.comment(rel + ': its app holds no api.js and no data.js, nothing owed'); return; }
   test.forScript(rel, function () {
     test.run('mounted alone with its app\'s server on, it loaded its own app\'s api.js and data.js', 0.8, function () {
-      if (W.fail) return 'no page: ' + W.fail;
-      if (!r) return 'it was not opened: the world failed';
-      if (r.fail) return r.fail;
+      if (W.fail) return false;
+      if (!r) return false;
+      if (r.fail) return false;
       const missing = r.owed.filter(function (n) { return r.held.indexOf(n) === -1; });
-      return !missing.length || rel + ' did not load ' + missing.map(function (n) { return 'spirit/app/' + appOf(rel) + '/' + n + '.js'; }).join(' and ') + ' itself: it leans on its mounter';
+      return !missing.length || false;
     }, test.limit.quick);
   });
 }
 
 test.hold();
-world().then(null, function (e) { W.fail = 'the world crashed: ' + (e && e.stack || e); }).then(function () {
+world().then(null, function () { W.fail = true; }).then(function () {
   if (!W.worldSaid) test.run('the world: scripts under spirit/app/ to judge, a scratch node with their apps\' servers on, and a Chrome page', 0.2, function () {
-    return !W.fail || W.fail;
+    return !W.fail || false;
   }, test.limit.quick);
   // A script the world never reached, after it failed, is said too, red for that reason.
   TARGETS.forEach(function (rel) { if (!(rel in W.reports) && W.fail) judge(rel); });

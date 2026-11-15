@@ -20,10 +20,9 @@ function said(root, args) { const lines = []; const code = D.run(root, args, fun
 function key(n) { return 'MCowBQYDK2VwAyEA' + (String(n) + 'A'.repeat(43)).slice(0, 43) + '='; }
 const OWNER = key('owner');
 const W = { root: null, empty: null };
-const NO_WORLD = 'no relay.db on the scratch root: the world failed';
 
 test.run('the world: a relay.db with 12 members holding the label "crowd", one "solo" and the owner, and two invites', 0.2, function () {
-  if (!relayStore.available()) return 'node:sqlite is not available: nothing judged';
+  if (!relayStore.available()) return false;
   W.root = fs.mkdtempSync(path.join(os.tmpdir(), 'relayDump-'));
   W.empty = fs.mkdtempSync(path.join(os.tmpdir(), 'relayDump-empty-'));
   const s = relayStore.open(W.root);
@@ -35,67 +34,67 @@ test.run('the world: a relay.db with 12 members holding the label "crowd", one "
   s.invites.add({ token: 'secret-token-2', label: 'ben', expiresAt: '2099-01-01T00:00:00.000Z', invitedBy: '' });
   s.close();
   fs.writeFileSync(path.join(W.root, 'spirit', 'state', 'owner.json'), JSON.stringify({ owner: OWNER }));
-  return fs.existsSync(path.join(W.root, 'spirit', 'state', 'relay.db')) || NO_WORLD;
+  return fs.existsSync(path.join(W.root, 'spirit', 'state', 'relay.db')) || false;
 }, test.limit.quick);
 
 test.run('with no verb it says counts only: members and invites', 0.2, function () {
-  if (!W.root) return NO_WORLD;
+  if (!W.root) return false;
   const r = said(W.root, []);
-  return (r.code === 0 && short(r.lines) === short(['members   15', 'invites   2'])) || short(r);
+  return (r.code === 0 && short(r.lines) === short(['members   15', 'invites   2'])) || false;
 }, test.limit.quick);
 test.run('key: one member, as JSON', 0.2, function () {
-  if (!W.root) return NO_WORLD;
+  if (!W.root) return false;
   const r = said(W.root, ['key', key('solo')]);
   let m = null; try { m = JSON.parse(r.lines.join('\n')); } catch (e) { m = null; }
-  return (r.code === 0 && m && m.publicKey === key('solo') && m.publicLabel === 'solo') || short(r);
+  return (r.code === 0 && m && m.publicKey === key('solo') && m.publicLabel === 'solo') || false;
 }, test.limit.quick);
 test.run('key: an unknown key says so, exit 1', 0.2, function () {
-  if (!W.root) return NO_WORLD;
+  if (!W.root) return false;
   const r = said(W.root, ['key', key('nobody')]);
-  return (r.code === 1 && short(r.lines) === short(['no member with that key'])) || short(r);
+  return (r.code === 1 && short(r.lines) === short(['no member with that key'])) || false;
 }, test.limit.quick);
 test.run('label: never a whole-roll print: at most 10 holders, and it says the first 10 were shown', 0.2, function () {
-  if (!W.root) return NO_WORLD;
+  if (!W.root) return false;
   const r = said(W.root, ['label', 'crowd']);
   const rows = r.lines.filter(function (l) { return /^member /.test(l); });
-  return (r.code === 0 && rows.length === 10 && r.lines[r.lines.length - 1] === '(first 10 shown)') || short(r);
+  return (r.code === 0 && rows.length === 10 && r.lines[r.lines.length - 1] === '(first 10 shown)') || false;
 }, test.limit.quick);
 test.run('label: the owner is owner.json\'s one key, not a mark on a row', 0.2, function () {
-  if (!W.root) return NO_WORLD;
+  if (!W.root) return false;
   const r = said(W.root, ['label', 'andy']);
   const own = r.lines.filter(function (l) { return l.indexOf('owner  andy  ' + OWNER) === 0; });
   const mem = r.lines.filter(function (l) { return l.indexOf('member andy  ' + key('m-andy')) === 0; });
-  return (r.code === 0 && own.length === 1 && mem.length === 1 && r.lines.length === 2) || short(r);
+  return (r.code === 0 && own.length === 1 && mem.length === 1 && r.lines.length === 2) || false;
 }, test.limit.quick);
 test.run('label: nobody holding it says so, exit 1', 0.2, function () {
-  if (!W.root) return NO_WORLD;
+  if (!W.root) return false;
   const r = said(W.root, ['label', 'zed']);
-  return (r.code === 1 && short(r.lines) === short(['nobody holds that label'])) || short(r);
+  return (r.code === 1 && short(r.lines) === short(['nobody holds that label'])) || false;
 }, test.limit.quick);
 test.run('no invite token is ever printed', 0.2, function () {
-  if (!W.root) return NO_WORLD;
+  if (!W.root) return false;
   const all = [said(W.root, []), said(W.root, ['label', 'ann']), said(W.root, ['key', 'secret-token-1'])].map(function (r) { return r.lines.join('\n'); }).join('\n');
-  return all.indexOf('secret-token') === -1 || 'a token was printed: ' + short(all);
+  return all.indexOf('secret-token') === -1 || false;
 }, test.limit.quick);
 test.run('an unknown verb, or a verb without its argument, says the usage, exit 1', 0.2, function () {
-  if (!W.root) return NO_WORLD;
+  if (!W.root) return false;
   const got = [said(W.root, ['roll']), said(W.root, ['key']), said(W.root, ['label'])];
-  return got.every(function (r) { return r.code === 1 && r.lines.length === 1 && /^usage: /.test(r.lines[0]); }) || short(got);
+  return got.every(function (r) { return r.code === 1 && r.lines.length === 1 && /^usage: /.test(r.lines[0]); }) || false;
 }, test.limit.quick);
 test.run('no relay.db under the root says so, exit 1, and makes none (read-only)', 0.2, function () {
-  if (!W.empty) return NO_WORLD;
+  if (!W.empty) return false;
   const r = said(W.empty, []);
-  return (r.code === 1 && /^no relay\.db under /.test(r.lines[0]) && !fs.existsSync(path.join(W.empty, 'spirit', 'state', 'relay.db'))) || short(r);
+  return (r.code === 1 && /^no relay\.db under /.test(r.lines[0]) && !fs.existsSync(path.join(W.empty, 'spirit', 'state', 'relay.db'))) || false;
 }, test.limit.quick);
 test.run('the dump writes nothing: the relay.db is byte for byte as before', 0.2, function () {
-  if (!W.root) return NO_WORLD;
+  if (!W.root) return false;
   const f = path.join(W.root, 'spirit', 'state', 'relay.db');
   const before = fs.readFileSync(f);
   said(W.root, []); said(W.root, ['label', 'crowd']); said(W.root, ['key', OWNER]);
-  return Buffer.compare(before, fs.readFileSync(f)) === 0 || 'relay.db changed';
+  return Buffer.compare(before, fs.readFileSync(f)) === 0 || false;
 }, test.limit.quick);
 test.run('the world ends: the scratch roots are removed', 0.2, function () {
   try { relayStore.closeAll(); } catch (e) { /* none open */ }
   [W.root, W.empty].forEach(function (d) { if (d) fs.rmSync(d, { recursive: true, force: true }); });
-  return !(W.root && fs.existsSync(W.root)) || 'scratch root left';
+  return !(W.root && fs.existsSync(W.root)) || false;
 }, test.limit.quick);

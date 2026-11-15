@@ -45,13 +45,13 @@ test.run('a changed app object of an app\'s job is posted to the owner, at the r
   await settle();
   const p = t.posts[0] || { sent: {} };
   return (t.posts.length === 1 && p.relay === 'https://relay.example' && p.to === OWNER && p.sent.type === 'published' &&
-    short(p.sent.body) === short({ module: 'spirit.app.chat', app: { unread: 2 } })) || 'posts ' + short(t.posts);
+    short(p.sent.body) === short({ module: 'spirit.app.chat', app: { unread: 2 } })) || false;
 }, test.limit.quick);
 test.run('every app server\'s objects, always: two apps both posted, no verb or subscription asked', 0.2, async function () {
   const t = stream();
   t.s.onJob(job('spirit.app.chat', { a: 1 })); await settle();
   t.s.onJob(job('spirit.app.desk', { b: 1 })); await settle();
-  return short(sent(t)) === short(['spirit.app.chat={"a":1}', 'spirit.app.desk={"b":1}']) || 'sent ' + short(sent(t));
+  return short(sent(t)) === short(['spirit.app.chat={"a":1}', 'spirit.app.desk={"b":1}']) || false;
 }, test.limit.quick);
 
 // ── what is not posted ──
@@ -60,26 +60,26 @@ test.run('the same object again (a job-updated for a log line) is not posted', 0
   t.s.onJob(job('spirit.app.chat', { a: 1 })); await settle();
   t.s.onJob(job('spirit.app.chat', { a: 1 })); await settle();
   t.s.onJob(job('spirit.app.chat', { a: 2 })); await settle();
-  return short(sent(t)) === short(['spirit.app.chat={"a":1}', 'spirit.app.chat={"a":2}']) || 'sent ' + short(sent(t));
+  return short(sent(t)) === short(['spirit.app.chat={"a":1}', 'spirit.app.chat={"a":2}']) || false;
 }, test.limit.quick);
 test.run('a job with no app object (none, an array, a string) is not posted', 0.2, async function () {
   const t = stream();
   [undefined, null, [1], 'text', 5].forEach(function (a) { t.s.onJob(job('spirit.app.chat', a)); });
   await settle();
-  return t.posts.length === 0 || 'sent ' + short(sent(t));
+  return t.posts.length === 0 || false;
 }, test.limit.quick);
 test.run('anything that is no app\'s (spirit.app.<name>) is not posted', 0.2, async function () {
   const t = stream();
   ['spirit.contact', 'spirit.app', 'spirit.app.chat.sub', 'other.app.chat', '', null].forEach(function (m) { t.s.onJob(job(m, { a: 1 })); });
   t.s.onJob(null);
   await settle();
-  return t.posts.length === 0 || 'sent ' + short(sent(t));
+  return t.posts.length === 0 || false;
 }, test.limit.quick);
 test.run('nothing is posted from a node that is not a puppet', 0.2, async function () {
   const t = stream({ puppet: false });
   t.s.onJob(job('spirit.app.chat', { a: 1 }));
   await settle();
-  return t.posts.length === 0 || 'sent ' + short(sent(t));
+  return t.posts.length === 0 || false;
 }, test.limit.quick);
 
 // ── only while the master is reachable ──
@@ -92,20 +92,20 @@ test.run('unreachable: no post, no log line, nothing queued; the next change tri
   t.state.reachable = true;
   t.s.onJob(job('spirit.app.chat', { a: 2 }));
   await settle();
-  return (before.posts === 0 && before.log === 0 && short(sent(t)) === short(['spirit.app.chat={"a":2}'])) || 'while unreachable ' + short(before) + ', then sent ' + short(sent(t));
+  return (before.posts === 0 && before.log === 0 && short(sent(t)) === short(['spirit.app.chat={"a":2}'])) || false;
 }, test.limit.quick);
 test.run('a relay that refuses is one line in the log, and that object is not posted again', 0.2, async function () {
   const t = stream({ answer: { ok: false, error: 'over quota' } });
   t.s.onJob(job('spirit.app.chat', { a: 1 })); await settle();
   t.s.onJob(job('spirit.app.chat', { a: 1 })); await settle();
-  return (t.posts.length === 1 && t.log.length === 1 && /spirit\.app\.chat not posted: over quota/.test(t.log[0])) || 'posts ' + t.posts.length + ', log ' + short(t.log);
+  return (t.posts.length === 1 && t.log.length === 1 && /spirit\.app\.chat not posted: over quota/.test(t.log[0])) || false;
 }, test.limit.quick);
 test.run('a post that throws is one line in the log, and the stream goes on', 0.2, async function () {
   let n = 0;
   const t = stream({ answer: function () { n += 1; return n === 1 ? Promise.reject(new Error('socket hang up')) : Promise.resolve({ ok: true }); } });
   t.s.onJob(job('spirit.app.chat', { a: 1 })); await settle();
   t.s.onJob(job('spirit.app.chat', { a: 2 })); await settle();
-  return (t.posts.length === 2 && t.log.length === 1 && /socket hang up/.test(t.log[0])) || 'posts ' + t.posts.length + ', log ' + short(t.log);
+  return (t.posts.length === 2 && t.log.length === 1 && /socket hang up/.test(t.log[0])) || false;
 }, test.limit.quick);
 test.run('an object that cannot be packed is one line in the log, and the next module is still posted', 0.2, async function () {
   const t = stream({ hold: true, encode: function (type, body) { return body.app.big ? null : { text: JSON.stringify({ type: type, body: body }) }; } });
@@ -113,7 +113,7 @@ test.run('an object that cannot be packed is one line in the log, and the next m
   t.s.onJob(job('spirit.app.big', { big: true }));
   t.s.onJob(job('spirit.app.desk', { b: 1 }));
   t.release(); await settle();
-  return (short(sent(t)) === short(['spirit.app.first={"a":1}', 'spirit.app.desk={"b":1}']) && t.log.length === 1 && /could not be packed/.test(t.log[0])) || 'sent ' + short(sent(t)) + ', log ' + short(t.log);
+  return (short(sent(t)) === short(['spirit.app.first={"a":1}', 'spirit.app.desk={"b":1}']) && t.log.length === 1 && /could not be packed/.test(t.log[0])) || false;
 }, test.limit.quick);
 
 // ── serialized at the source ──
@@ -124,7 +124,7 @@ test.run('one post in flight at a time: nothing more is posted until the one out
   await settle();
   const during = t.posts.length;
   t.release(); await settle();
-  return (during === 1 && t.posts.length === 2) || 'in flight ' + during + ', after return ' + t.posts.length;
+  return (during === 1 && t.posts.length === 2) || false;
 }, test.limit.quick);
 test.run('a burst collapses: a module publishing meanwhile keeps only its newest object', 0.2, async function () {
   const t = stream({ hold: true });
@@ -134,7 +134,7 @@ test.run('a burst collapses: a module publishing meanwhile keeps only its newest
   t.s.onJob(job('spirit.app.chat', { a: 4 }));
   t.release(); await settle();
   t.release(); await settle();
-  return short(sent(t)) === short(['spirit.app.chat={"a":1}', 'spirit.app.chat={"a":4}']) || 'sent ' + short(sent(t));
+  return short(sent(t)) === short(['spirit.app.chat={"a":1}', 'spirit.app.chat={"a":4}']) || false;
 }, test.limit.quick);
 test.run('modules keep the order they first came in', 0.2, async function () {
   const t = stream({ hold: true });
@@ -143,7 +143,7 @@ test.run('modules keep the order they first came in', 0.2, async function () {
   t.s.onJob(job('spirit.app.c', { x: 1 }));
   t.s.onJob(job('spirit.app.b', { x: 2 }));
   for (let i = 0; i < 4; i += 1) { t.release(); await settle(); }
-  return short(sent(t)) === short(['spirit.app.first={"x":1}', 'spirit.app.b={"x":2}', 'spirit.app.c={"x":1}']) || 'sent ' + short(sent(t));
+  return short(sent(t)) === short(['spirit.app.first={"x":1}', 'spirit.app.b={"x":2}', 'spirit.app.c={"x":1}']) || false;
 }, test.limit.quick);
 test.run('the route lost while objects wait: what was waiting is dropped, not posted later', 0.2, async function () {
   const t = stream({ hold: true });
@@ -156,9 +156,9 @@ test.run('the route lost while objects wait: what was waiting is dropped, not po
   t.s.onJob(job('spirit.app.d', { x: 1 }));
   t.release(); await settle();
   t.release(); await settle();
-  return short(sent(t)) === short(['spirit.app.first={"x":1}', 'spirit.app.d={"x":1}']) || 'sent ' + short(sent(t));
+  return short(sent(t)) === short(['spirit.app.first={"x":1}', 'spirit.app.d={"x":1}']) || false;
 }, test.limit.quick);
 test.run('the module answers createPuppetStream alone, with onJob its one door', 0.2, function () {
   const keys = Object.keys(S.createPuppetStream({}));
-  return (short(Object.keys(S)) === short(['createPuppetStream']) && short(keys) === short(['onJob'])) || 'exports ' + short(Object.keys(S)) + ', stream ' + short(keys);
+  return (short(Object.keys(S)) === short(['createPuppetStream']) && short(keys) === short(['onJob'])) || false;
 }, test.limit.quick);

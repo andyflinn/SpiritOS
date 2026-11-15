@@ -17,7 +17,6 @@ const { createAnswerer } = require(path.join(RUN, 'spirit', 'answerRelay.js'));
 const auth = require(path.join(RUN, 'spirit', 'relayAuth.js'));
 const relayKeys = require(path.join(RUN, 'spirit', 'relayKeys.js'));
 
-function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 // A relay's key statement, signed by the identity it names, over both keys and the label (cycle 10, R9).
 function statement(id, label) {
   return { relayPublicKey: id.publicKey, relaySealKey: id.sealPublicKey, relayLabel: label, keySig: auth.sign(id.privateKey, auth.relayKeyMessage(id.publicKey, id.sealPublicKey, label)) };
@@ -45,33 +44,33 @@ let got = null;
 test.run('the world: a relay never met answers its signed key statement', 0.2, async function () {
   W = answerer(ROOT, { [URL_A]: statement(A, 'a'), [URL_B]: statement(B, 'b') });
   got = await W.a.relayKey(URL_A);
-  return W.asked.length === 1 || 'asked ' + short(W.asked);
+  return W.asked.length === 1 || false;
 }, test.limit.quick);
 test.run('relayKey answers the relay\'s own public key', 0.2, function () {
-  if (!W) return 'no answerer: the world failed';
-  return got === A.publicKey || 'relayKey: ' + short(got);
+  if (!W) return false;
+  return got === A.publicKey || false;
 }, test.limit.quick);
 test.run('trust on first use: a relay nobody has met is accepted and its key pinned on disc', 0.2, function () {
-  if (!W) return 'no answerer: the world failed';
-  return relayKeys.pinned(ROOT, URL_A) === A.publicKey || 'pinned: ' + short(relayKeys.pinned(ROOT, URL_A));
+  if (!W) return false;
+  return relayKeys.pinned(ROOT, URL_A) === A.publicKey || false;
 }, test.limit.quick);
 test.run('one fetch per run: asked again, it answers the same key without asking the relay', 0.2, async function () {
-  if (!W) return 'no answerer: the world failed';
+  if (!W) return false;
   const again = await W.a.relayKey(URL_A);
-  return (again === A.publicKey && W.asked.length === 1) || 'answered ' + short(again) + ', asked ' + W.asked.length + ' times';
+  return (again === A.publicKey && W.asked.length === 1) || false;
 }, test.limit.quick);
 test.run('relaySealKey answers the key a post to that relay is sealed to, from the same signed answer', 0.2, function () {
-  if (!W) return 'no answerer: the world failed';
-  return W.a.relaySealKey(URL_A) === A.sealPublicKey || 'relaySealKey: ' + short(W.a.relaySealKey(URL_A));
+  if (!W) return false;
+  return W.a.relaySealKey(URL_A) === A.sealPublicKey || false;
 }, test.limit.quick);
 test.run('relaySealKeyByKey answers the same seal key, asked by the relay\'s identity', 0.2, function () {
-  if (!W) return 'no answerer: the world failed';
-  return W.a.relaySealKeyByKey(A.publicKey) === A.sealPublicKey || 'relaySealKeyByKey: ' + short(W.a.relaySealKeyByKey(A.publicKey));
+  if (!W) return false;
+  return W.a.relaySealKeyByKey(A.publicKey) === A.sealPublicKey || false;
 }, test.limit.quick);
 test.run('a seal key is never learned on its own: a relay not yet asked, an unknown key and no key answer nothing', 0.2, function () {
-  if (!W) return 'no answerer: the world failed';
+  if (!W) return false;
   const r = [W.a.relaySealKey(URL_B), W.a.relaySealKeyByKey(B.publicKey), W.a.relaySealKeyByKey(''), W.a.relaySealKeyByKey(null)];
-  return r.every(function (x) { return x === ''; }) || 'answered ' + short(r);
+  return r.every(function (x) { return x === ''; }) || false;
 }, test.limit.quick);
 
 // ── an answer that does not verify yields no key at all ──
@@ -80,7 +79,7 @@ test.run('a statement whose seal key was swapped after signing yields no key, no
   const forged = Object.assign(statement(A, 'a'), { relaySealKey: B.sealPublicKey });
   const s = answerer(root, { [URL_A]: forged });
   const k = await s.a.relayKey(URL_A);
-  return (k === '' && !relayKeys.pinned(root, URL_A) && s.a.relaySealKey(URL_A) === '' && s.a.relaySealKeyByKey(A.publicKey) === '') || 'key ' + short(k) + ', pinned ' + short(relayKeys.pinned(root, URL_A)) + ', seal ' + short(s.a.relaySealKey(URL_A));
+  return (k === '' && !relayKeys.pinned(root, URL_A) && s.a.relaySealKey(URL_A) === '' && s.a.relaySealKeyByKey(A.publicKey) === '') || false;
 }, test.limit.quick);
 test.run('an unsigned statement, one with its label changed, and one with no key each yield no key', 0.2, async function () {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-answerrelay-'));
@@ -88,64 +87,64 @@ test.run('an unsigned statement, one with its label changed, and one with no key
   const relabelled = Object.assign(statement(A, 'a'), { relayLabel: 'not-a' });
   const s = answerer(root, { 'https://u.example': unsigned, 'https://l.example': relabelled, 'https://n.example': { ok: true } });
   const r = [await s.a.relayKey('https://u.example'), await s.a.relayKey('https://l.example'), await s.a.relayKey('https://n.example')];
-  return r.every(function (x) { return x === ''; }) || 'keys: ' + short(r);
+  return r.every(function (x) { return x === ''; }) || false;
 }, test.limit.quick);
 test.run('a relay that does not answer (askKey rejects or throws) yields no key, and relayKey never rejects', 0.2, async function () {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-answerrelay-'));
   const s = answerer(root, { 'https://down.example': function () { return Promise.reject(new Error('ECONNREFUSED')); }, 'https://boom.example': function () { throw new Error('boom'); } });
   let r;
   try { r = [await s.a.relayKey('https://down.example'), await s.a.relayKey('https://boom.example')]; }
-  catch (e) { return 'relayKey rejected: ' + short(e && e.message); }
-  return r.every(function (x) { return x === ''; }) || 'keys: ' + short(r);
+  catch (e) { return false; }
+  return r.every(function (x) { return x === ''; }) || false;
 }, test.limit.quick);
 
 // ── a restart: the pin outlives the process, and is re-checked ──
 test.run('after a restart the relay is asked again, though its key is pinned: the re-check is once per process', 0.2, async function () {
-  if (!W) return 'no answerer: the world failed';
+  if (!W) return false;
   const s = answerer(ROOT, { [URL_A]: statement(A, 'a') });
   const k = await s.a.relayKey(URL_A);
-  return (k === A.publicKey && s.asked.length === 1) || 'key ' + short(k) + ', asked ' + s.asked.length + ' times';
+  return (k === A.publicKey && s.asked.length === 1) || false;
 }, test.limit.quick);
 let R = null;
 let rk = null;
 test.run('a relay answering with another key than the pin is refused: no key', 0.2, async function () {
-  if (!W) return 'no answerer: the world failed';
+  if (!W) return false;
   R = answerer(ROOT, { [URL_A]: statement(A2, 'a') });
   rk = await R.a.relayKey(URL_A);
-  return rk === '' || 'the changed key was answered: ' + short(rk);
+  return rk === '' || false;
 }, test.limit.quick);
 test.run('the refusal is said out loud: onKeyChanged(url, the pinned key, the key answered)', 0.2, function () {
-  if (!R) return 'no answerer: the world failed';
+  if (!R) return false;
   const c = R.changed[0] || {};
-  return (R.changed.length === 1 && c.url === URL_A && c.was === A.publicKey && c.now === A2.publicKey) || 'onKeyChanged: ' + short(R.changed);
+  return (R.changed.length === 1 && c.url === URL_A && c.was === A.publicKey && c.now === A2.publicKey) || false;
 }, test.limit.quick);
 test.run('a refusal never moves the pin: only a deliberate accept does', 0.2, function () {
-  if (!R) return 'no answerer: the world failed';
-  return relayKeys.pinned(ROOT, URL_A) === A.publicKey || 'pinned: ' + short(relayKeys.pinned(ROOT, URL_A));
+  if (!R) return false;
+  return relayKeys.pinned(ROOT, URL_A) === A.publicKey || false;
 }, test.limit.quick);
 test.run('a refused relay stays refused: asked again, still no key, and nothing to seal to by its key', 0.2, async function () {
-  if (!R) return 'no answerer: the world failed';
+  if (!R) return false;
   const again = await R.a.relayKey(URL_A);
   const seal = [R.a.relaySealKeyByKey(A2.publicKey), R.a.relaySealKeyByKey(A.publicKey)];
-  return (again === '' && seal.every(function (x) { return x === ''; })) || 'key ' + short(again) + ', seal keys ' + short(seal);
+  return (again === '' && seal.every(function (x) { return x === ''; })) || false;
 }, test.limit.quick);
 // The seal key is kept only once relayKey's pin check takes the key: a relay refused for a changed key has no seal key
 // answered by url either.
 test.run('a refused relay has nothing to seal to by its url either: relaySealKey answers no key for it', 0.2, function () {
-  if (!R) return 'no answerer: the world failed';
+  if (!R) return false;
   const k = R.a.relaySealKey(URL_A);
-  return k === '' || 'relaySealKey answers the refused relay\'s seal key: ' + short(k);
+  return k === '' || false;
 }, test.limit.quick);
 test.run('onKeyChanged is a witness, never a participant: one that throws changes nothing', 0.2, async function () {
-  if (!W) return 'no answerer: the world failed';
+  if (!W) return false;
   const s = answerer(ROOT, { [URL_A]: statement(A2, 'a') }, { onKeyChanged: function () { throw new Error('the panel broke'); } });
   let k;
-  try { k = await s.a.relayKey(URL_A); } catch (e) { return 'relayKey rejected: ' + short(e && e.message); }
-  return (k === '' && relayKeys.pinned(ROOT, URL_A) === A.publicKey) || 'key ' + short(k);
+  try { k = await s.a.relayKey(URL_A); } catch (e) { return false; }
+  return (k === '' && relayKeys.pinned(ROOT, URL_A) === A.publicKey) || false;
 }, test.limit.quick);
 test.run('with no onKeyChanged given, a changed key is still refused', 0.2, async function () {
-  if (!W) return 'no answerer: the world failed';
+  if (!W) return false;
   const s = answerer(ROOT, { [URL_A]: statement(A2, 'a') }, { onKeyChanged: undefined });
   const k = await s.a.relayKey(URL_A);
-  return k === '' || 'key ' + short(k);
+  return k === '' || false;
 }, test.limit.quick);

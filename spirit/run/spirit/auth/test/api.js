@@ -16,7 +16,6 @@ const FILE = path.join(__dirname, '..', 'api.js');
 require(path.join(RUN, 'spirit', 'spirit.js'));
 const spirit = globalThis.spirit;
 
-function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 const isPlain = function (v) { return v !== null && typeof v === 'object' && !Array.isArray(v); };
 // A peer's public key as the key rule takes one, and one it does not.
 const KEY = 'MCowBQYDK2VwAyEA' + 'authApiTest'.padEnd(43, 'A') + '=';
@@ -71,33 +70,31 @@ const W = { api: null, verbs: {}, names: [], mounted: null };
 const call = function (verb, args) { return spirit.check('auth.' + verb, W.verbs[verb], args); };
 const passes = function (verb, args) { return !!W.verbs[verb] && call(verb, args) === null; };
 const refusedAs = function (verb, args) { if (!W.verbs[verb]) return 'no verb ' + verb; const r = call(verb, args); return r ? r.code : 'passed'; };
-const NO_API = 'api.js did not load: the world failed';
-const NO_MOUNT = 'no table the node mounts for auth was read: the world failed';
 
 test.run('the world: api.js loads as the node hands it, its text run with module and exports alone', 0.2, function () {
   try {
     const m = { exports: {} };
     new Function('module', 'exports', fs.readFileSync(FILE, 'utf8'))(m, m.exports);
     W.api = m.exports;
-  } catch (e) { return 'api.js threw as it ran: ' + e.message; }
+  } catch (e) { return false; }
   W.verbs = (W.api && W.api.verbs) || {};
   W.names = Object.keys(W.verbs);
   return true;
 }, test.limit.quick);
 test.run('the world: server.js mounts the auth family', 0.2, function () {
-  try { W.mounted = mounted('auth'); } catch (e) { return 'server.js could not be read: ' + e.message; }
-  return !!W.mounted || 'server.js holds no loopbackVerbs.mount(\'auth\', ...)';
+  try { W.mounted = mounted('auth'); } catch (e) { return false; }
+  return !!W.mounted || false;
 }, test.limit.quick);
 
 // its shape: verbs, each argument with its rule, no family name of its own (goal/G32.3: the node maps it)
 test.run('it exports its table of verbs and nothing else: it names no family of its own', 0.2, function () {
-  if (!W.api) return NO_API;
-  return Object.keys(W.api).join() === 'verbs' || 'exports ' + short(Object.keys(W.api));
+  if (!W.api) return false;
+  return Object.keys(W.api).join() === 'verbs' || false;
 }, test.limit.quick);
 test.run('every verb\'s arguments are a plain object, each rule one of spirit.js\'s standard rules, \'?\' optional', 0.2, function () {
-  if (!W.api) return NO_API;
-  if (!isPlain(W.verbs)) return 'verbs is ' + short(W.verbs);
-  if (!W.names.length) return 'no verb declared: nothing judged';
+  if (!W.api) return false;
+  if (!isPlain(W.verbs)) return false;
+  if (!W.names.length) return false;
   const bad = [];
   W.names.forEach(function (v) {
     if (!isPlain(W.verbs[v])) { bad.push(v + ': not an object'); return; }
@@ -107,56 +104,56 @@ test.run('every verb\'s arguments are a plain object, each rule one of spirit.js
       if (spirit.rules.indexOf(rule) === -1) bad.push(v + '.' + arg + ': ' + raw);
     });
   });
-  return bad.length === 0 || 'not standard: ' + short(bad) + '; the standard: ' + spirit.rules.join(', ');
+  return bad.length === 0 || false;
 }, test.limit.quick);
 
 // "every verb the node mounts for this family, each argument with its rule": the declaration and the table are one
 test.run('it declares every verb the node mounts for the family, and no other', 0.2, function () {
-  if (!W.api) return NO_API;
-  if (!W.mounted) return NO_MOUNT;
+  if (!W.api) return false;
+  if (!W.mounted) return false;
   const node = Object.keys(W.mounted).sort();
   const here = W.names.slice().sort();
-  if (!node.length) return 'the node mounts no verb for the family: nothing judged';
-  return JSON.stringify(node) === JSON.stringify(here) || 'mounted ' + short(node) + ', declared ' + short(here);
+  if (!node.length) return false;
+  return JSON.stringify(node) === JSON.stringify(here) || false;
 }, test.limit.quick);
 test.run('each verb takes the arguments its handler\'s request carries, and no other', 0.2, function () {
-  if (!W.api) return NO_API;
-  if (!W.mounted) return NO_MOUNT;
+  if (!W.api) return false;
+  if (!W.mounted) return false;
   const judged = W.names.filter(function (v) { return Array.isArray(W.mounted[v]); });
-  if (!judged.length) return 'no mounted verb names its request: nothing judged';
+  if (!judged.length) return false;
   const off = judged.filter(function (v) { return JSON.stringify(W.mounted[v].slice().sort()) !== JSON.stringify(Object.keys(W.verbs[v]).sort()); });
-  return off.length === 0 || off.map(function (v) { return v + ': request ' + short(W.mounted[v]) + ', declared ' + short(Object.keys(W.verbs[v])); }).join('; ');
+  return off.length === 0 || false;
 }, test.limit.quick);
 
 // a grant names a peer by its key and a path
 test.run('query, grant, revoke and peer name the peer by its public key', 0.2, function () {
-  if (!W.api) return NO_API;
+  if (!W.api) return false;
   const ok = passes('query', { key: KEY, path: 'spirit/fs' }) && passes('grant', { key: KEY, path: 'spirit/fs' }) && passes('revoke', { key: KEY, path: 'spirit/fs' }) && passes('peer', { key: KEY });
   const no = ['query', 'grant', 'revoke'].every(function (v) { return refusedAs(v, { key: NOT_KEY, path: 'spirit/fs' }) === 'bad-request'; }) && refusedAs('peer', { key: NOT_KEY }) === 'bad-request';
-  return (ok && no) || 'grant with a key ' + short(call('grant', { key: KEY, path: 'spirit/fs' })) + ', with no key ' + refusedAs('grant', { key: NOT_KEY, path: 'spirit/fs' });
+  return (ok && no) || false;
 }, test.limit.quick);
 test.run('relabel takes a key and a label the name rule passes', 0.2, function () {
-  if (!W.api) return NO_API;
-  return (passes('relabel', { key: KEY, label: 'Bob' }) && refusedAs('relabel', { key: KEY, label: 'x'.repeat(300) }) === 'bad-request') || 'a label of 300: ' + refusedAs('relabel', { key: KEY, label: 'x'.repeat(300) });
+  if (!W.api) return false;
+  return (passes('relabel', { key: KEY, label: 'Bob' }) && refusedAs('relabel', { key: KEY, label: 'x'.repeat(300) }) === 'bad-request') || false;
 }, test.limit.quick);
 test.run('search\'s text is optional', 0.2, function () {
-  if (!W.api) return NO_API;
-  return (passes('search', {}) && passes('search', { text: 'bob' })) || short(call('search', {}));
+  if (!W.api) return false;
+  return (passes('search', {}) && passes('search', { text: 'bob' })) || false;
 }, test.limit.quick);
 // goal/G41.14: one flat verb per table, op one of add, set, delete, get and search; the node checks the rest per op
 test.run('bundle and branch are one verb per table, its op needed, the rest left to the node per op', 0.2, function () {
-  if (!W.api) return NO_API;
+  if (!W.api) return false;
   const ops = ['add', 'set', 'delete', 'get', 'search'];
   const ok = ops.every(function (op) { return passes('bundle', { op: op }) && passes('branch', { op: op }); });
   const no = refusedAs('bundle', {}) === 'bad-request' && refusedAs('branch', { op: '' }) === 'bad-request';
-  return (ok && no) || 'bundle {} ' + refusedAs('bundle', {}) + ', branch op \'\' ' + refusedAs('branch', { op: '' }) + ', ops alone pass: ' + ok;
+  return (ok && no) || false;
 }, test.limit.quick);
 test.run('a bundle and a branch are named by a number', 0.2, function () {
-  if (!W.api) return NO_API;
-  return (passes('bundle', { op: 'get', id: 3 }) && refusedAs('bundle', { op: 'get', id: '3' }) === 'bad-request' && passes('branch', { op: 'add', bundle: 3, family: 'fs', verb: 'load' }) && refusedAs('branch', { op: 'add', bundle: '3' }) === 'bad-request') || 'bundle id \'3\' ' + refusedAs('bundle', { op: 'get', id: '3' });
+  if (!W.api) return false;
+  return (passes('bundle', { op: 'get', id: 3 }) && refusedAs('bundle', { op: 'get', id: '3' }) === 'bad-request' && passes('branch', { op: 'add', bundle: 3, family: 'fs', verb: 'load' }) && refusedAs('branch', { op: 'add', bundle: '3' }) === 'bad-request') || false;
 }, test.limit.quick);
 // goal/G41.25: "changes to the auth.bundle verb for the addition of the \"owner\" field are approved by andy"
 test.run('bundle takes an owner, any text: one that is not valid the node reads as node', 0.2, function () {
-  if (!W.api) return NO_API;
-  return (passes('bundle', { op: 'add', label: 'friends', owner: 'no such owner' }) && passes('bundle', { op: 'search', owner: '' }) && refusedAs('bundle', { op: 'add', owner: 7 }) === 'bad-request') || 'owner \'no such owner\': ' + short(call('bundle', { op: 'add', label: 'friends', owner: 'no such owner' }));
+  if (!W.api) return false;
+  return (passes('bundle', { op: 'add', label: 'friends', owner: 'no such owner' }) && passes('bundle', { op: 'search', owner: '' }) && refusedAs('bundle', { op: 'add', owner: 7 }) === 'bad-request') || false;
 }, test.limit.quick);

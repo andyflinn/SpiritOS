@@ -21,7 +21,6 @@ const AGENT_FAMILY = familyPath('agent');
 // goal/G41.21 (box v17): "agent.grant is removed altogether: its table, its server, and the Grants tool in the left strip".
 const TABLES = ['provider', 'model', 'persona', 'job'];
 
-function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 function readJson(file) { try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch (e) { return null; } }
 const tick = function () { return new Promise(function (r) { setImmediate(r); }); };
 const settle = async function () { for (let i = 0; i < 10; i++) await tick(); };
@@ -138,35 +137,32 @@ function load(w) {
 
 // What the tests make, for the tests after them.
 const X = { w: null, def: null, made0: null, wb: null, L: [], R: [], CHAT_TOOL: [], SERVER_TOOL: null, BUNDLE_TOOL: null };
-const NO_APP = 'no app element: it did not load';
-const NO_BENCH = 'no workBench: the app made none';
-const NO_TOOLS = 'no right tools: the app made other than two';
 
 // ── its files ──
 test.run('its manifest has the new shape: it mounts on the node and on the shell', 0.2, function () {
-  if (!fs.existsSync(FILE)) return 'spirit/app/agent/element.js is not there';
+  if (!fs.existsSync(FILE)) return false;
   const manifest = readJson(path.join(DIR, 'agent.json')) || {};
-  return manifest.node && manifest.node.mount === true && manifest.shell && manifest.shell.mount === true && !('server' in manifest) ? true : 'agent.json: ' + short(manifest);
+  return manifest.node && manifest.node.mount === true && manifest.shell && manifest.shell.mount === true && !('server' in manifest) ? true : false;
 }, test.limit.quick);
 
 // ── it mounts one workBench into a box of the whole app area ──
 // The box: "spirit.element.spirit.app.agent.element.create(container) answers { destroy() }", "Its activateApp goes". This window has no shell, so a call to it throws.
 test.run('it is an element: spirit.element.spirit.app.agent.element has create', 0.2, function () {
-  if (!fs.existsSync(FILE)) return 'spirit/app/agent/element.js is not there';
+  if (!fs.existsSync(FILE)) return false;
   X.w = world();
   let loadError = null;
   try { X.def = load(X.w); } catch (e) { loadError = e; }
-  return !loadError && X.def && typeof X.def.create === 'function' ? true : 'loading: ' + (loadError ? loadError.message : 'no spirit.element.spirit.app.agent.element.create');
+  return !loadError && X.def && typeof X.def.create === 'function' ? true : false;
 }, test.limit.quick);
 test.run('create answers { destroy() }', 0.2, async function () {
-  if (!X.def || typeof X.def.create !== 'function') return NO_APP;
+  if (!X.def || typeof X.def.create !== 'function') return false;
   X.app = box('app');
   X.made0 = X.def.create(X.app);
   await settle();
-  return !!X.made0 && typeof X.made0.destroy === 'function' ? true : 'create answered: ' + short(X.made0);
+  return !!X.made0 && typeof X.made0.destroy === 'function' ? true : false;
 }, test.limit.quick);
 test.run('it creates one workBench', 0.2, function () {
-  if (!X.w) return NO_APP;
+  if (!X.w) return false;
   const w = X.w;
   if (w.created.length) {
     X.wb = w.created[0];
@@ -176,43 +172,43 @@ test.run('it creates one workBench', 0.2, function () {
     X.SERVER_TOOL = X.R.filter(function (t) { return t.name === 'server'; })[0];
     X.BUNDLE_TOOL = X.R.filter(function (t) { return t.name !== 'server'; })[0];
   }
-  return w.created.length === 1 ? true : 'workBench.create calls: ' + w.created.length;
+  return w.created.length === 1 ? true : false;
 }, test.limit.quick);
 test.run('the box it hands the workBench takes the shell\'s fill class', 0.2, function () {
-  if (!X.wb) return NO_BENCH;
+  if (!X.wb) return false;
   const into = X.wb.into || {};
-  return (/\bfill\b/).test(String(into.className || '')) || (into === X.app && false) ? true : 'the box: ' + short(into.tag || into.className || (into === X.app ? 'the container itself, unsized' : typeof into));
+  return (/\bfill\b/).test(String(into.className || '')) || (into === X.app && false) ? true : false;
 }, test.limit.quick);
 // One per table of agent.db (goal/G41.4, box v22: "every one of these tables will come with a
 // left-edge icon that puts up a panel in the left-side tool-display of the workBench UI used in this app").
 // goal/G41.26, Andy, box: "the left site icon strip gains a [chat] icon, that opens the following, NEW panel, titled:
 // \"💬 Select Persona\"". Its place in the strip is not said; it is the one left tool that is not a table's.
 test.run('the left strip holds one tool per table, provider, model, persona and job, and no grant; the right two tools, the server\'s and one more; each with its name, icon, title and mount', 0.2, function () {
-  if (!X.wb) return NO_BENCH;
+  if (!X.wb) return false;
   const L = X.L, R = X.R, LEFT = TABLES.slice();
   return JSON.stringify(L.map(function (t) { return t && t.name; }).filter(function (n) { return LEFT.indexOf(n) !== -1; })) === JSON.stringify(LEFT) && R.length === 2 && R.some(function (t) { return t && t.name === 'server'; }) &&
     L.concat(R).every(function (t) { return t && t.name && t.icon && t.title && typeof t.mount === 'function'; })
-    ? true : 'tools: ' + short({ left: L.map(function (t) { return t && t.name; }), right: R.map(function (t) { return t && t.name; }) });
+    ? true : false;
 }, test.limit.quick);
 test.run('every left tool has an icon of its own', 0.2, function () {
-  if (!X.wb) return NO_BENCH;
+  if (!X.wb) return false;
   const L = X.L;
-  return new Set(L.map(function (t) { return t && t.icon; })).size === L.length ? true : 'icons: ' + short(L.map(function (t) { return t && t.icon; }));
+  return new Set(L.map(function (t) { return t && t.icon; })).size === L.length ? true : false;
 }, test.limit.quick);
 test.run('the app names no grants panel and no grant table any more (goal/G41.21)', 0.2, function () {
-  return !/grantsPanel|table\/grant\b|agent\.grant/.test(fs.readFileSync(FILE, 'utf8').replace(/\/\/.*$/gm, '')) ? true : 'spirit/app/agent/agent.js still names the grant table or the grants panel';
+  return !/grantsPanel|table\/grant\b|agent\.grant/.test(fs.readFileSync(FILE, 'utf8').replace(/\/\/.*$/gm, '')) ? true : false;
 }, test.limit.quick);
 test.run('and one more left tool: 💬, titled Select Persona (goal/G41.26)', 0.2, function () {
-  if (!X.wb) return NO_BENCH;
+  if (!X.wb) return false;
   const CHAT_TOOL = X.CHAT_TOOL;
-  return CHAT_TOOL.length === 1 && CHAT_TOOL[0].icon === '💬' && CHAT_TOOL[0].title === 'Select Persona' ? true : 'other left tools: ' + short(CHAT_TOOL.map(function (t) { return { name: t.name, icon: t.icon, title: t.title }; }));
+  return CHAT_TOOL.length === 1 && CHAT_TOOL[0].icon === '💬' && CHAT_TOOL[0].title === 'Select Persona' ? true : false;
 }, test.limit.quick);
 
 // ── each table's tool mounts that table's own element ──
 const CODE = fs.readFileSync(FILE, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1');
 test.run('it makes no api for its tables: each list asks agent.<table> through the spirit object itself (goal/G43.24)', 0.2, function () {
-  if (X.R.length !== 2) return NO_TOOLS;
-  return !/\bapi\b/.test(CODE) ? true : 'element.js still makes or hands an api';
+  if (X.R.length !== 2) return false;
+  return !/\bapi\b/.test(CODE) ? true : false;
 }, test.limit.quick);
 // One table at a time, each check its own plain title (goal/G45.6: a title has no value built into it).
 async function mountTable(name) {
@@ -227,44 +223,41 @@ async function mountTable(name) {
   const look = d && d.look(name);
   return {
     required: asked.indexOf('spirit/app/agent/element/table/' + name + '/elementTable.js') !== -1 && /\bfill\b/.test(tb.className),
-    requiredSays: 'required ' + short(asked) + ', class ' + short(tb.className),
     // WHAT IT NEEDS, IT REQUIRES ITSELF (goal/G43.24; Andy: "anybody can mount any element without knowing what it actually
     // needs...."): the table is handed its box and the detail pane, no api; its list asks agent.<table> itself.
     created: made.length === 1 && made[0].into === tb && made[0].handed === 2 && d && typeof d.open === 'function' && typeof d.look === 'function',
-    createdSays: 'created: ' + made.length + ', handed ' + (made[0] && made[0].handed) + ' arguments',
     looks: !!(look && look.icon === t.icon && look.name && look.title === t.title),
-    looksSays: 'look: ' + short(look),
   };
 }
 const MT = {};
 test.run('the provider tool requires its own elementTable.js into a fill box', 0.2, async function () {
-  if (X.R.length !== 2) return NO_TOOLS;
+  if (X.R.length !== 2) return false;
   MT.provider = await mountTable('provider');
-  return MT.provider.required ? true : MT.provider.requiredSays;
+  return MT.provider.required ? true : false;
 }, test.limit.quick);
-test.run('and creates the provider table once in that box, with its detail pane and no api', 0.2, function () { if (!MT.provider) return NO_TOOLS; return MT.provider.created ? true : MT.provider.createdSays; }, test.limit.quick);
-test.run('the detail pane\'s look of a provider is its tool\'s icon and title, and its one name', 0.2, function () { if (!MT.provider) return NO_TOOLS; return MT.provider.looks ? true : MT.provider.looksSays; }, test.limit.quick);
+test.run('and creates the provider table once in that box, with its detail pane and no api', 0.2, function () { if (!MT.provider) return false; return MT.provider.created ? true : false; }, test.limit.quick);
+test.run('the detail pane\'s look of a provider is its tool\'s icon and title, and its one name', 0.2, function () { if (!MT.provider) return false; return MT.provider.looks ? true : false; }, test.limit.quick);
 test.run('the model tool requires its own elementTable.js into a fill box', 0.2, async function () {
-  if (X.R.length !== 2) return NO_TOOLS;
+  if (X.R.length !== 2) return false;
   MT.model = await mountTable('model');
-  return MT.model.required ? true : MT.model.requiredSays;
+  return MT.model.required ? true : false;
 }, test.limit.quick);
-test.run('and creates the model table once in that box, with its detail pane and no api', 0.2, function () { if (!MT.model) return NO_TOOLS; return MT.model.created ? true : MT.model.createdSays; }, test.limit.quick);
-test.run('the detail pane\'s look of a model is its tool\'s icon and title, and its one name', 0.2, function () { if (!MT.model) return NO_TOOLS; return MT.model.looks ? true : MT.model.looksSays; }, test.limit.quick);
+test.run('and creates the model table once in that box, with its detail pane and no api', 0.2, function () { if (!MT.model) return false; return MT.model.created ? true : false; }, test.limit.quick);
+test.run('the detail pane\'s look of a model is its tool\'s icon and title, and its one name', 0.2, function () { if (!MT.model) return false; return MT.model.looks ? true : false; }, test.limit.quick);
 test.run('the persona tool requires its own elementTable.js into a fill box', 0.2, async function () {
-  if (X.R.length !== 2) return NO_TOOLS;
+  if (X.R.length !== 2) return false;
   MT.persona = await mountTable('persona');
-  return MT.persona.required ? true : MT.persona.requiredSays;
+  return MT.persona.required ? true : false;
 }, test.limit.quick);
-test.run('and creates the persona table once in that box, with its detail pane and no api', 0.2, function () { if (!MT.persona) return NO_TOOLS; return MT.persona.created ? true : MT.persona.createdSays; }, test.limit.quick);
-test.run('the detail pane\'s look of a persona is its tool\'s icon and title, and its one name', 0.2, function () { if (!MT.persona) return NO_TOOLS; return MT.persona.looks ? true : MT.persona.looksSays; }, test.limit.quick);
+test.run('and creates the persona table once in that box, with its detail pane and no api', 0.2, function () { if (!MT.persona) return false; return MT.persona.created ? true : false; }, test.limit.quick);
+test.run('the detail pane\'s look of a persona is its tool\'s icon and title, and its one name', 0.2, function () { if (!MT.persona) return false; return MT.persona.looks ? true : false; }, test.limit.quick);
 test.run('the job tool requires its own elementTable.js into a fill box', 0.2, async function () {
-  if (X.R.length !== 2) return NO_TOOLS;
+  if (X.R.length !== 2) return false;
   MT.job = await mountTable('job');
-  return MT.job.required ? true : MT.job.requiredSays;
+  return MT.job.required ? true : false;
 }, test.limit.quick);
-test.run('and creates the job table once in that box, with its detail pane and no api', 0.2, function () { if (!MT.job) return NO_TOOLS; return MT.job.created ? true : MT.job.createdSays; }, test.limit.quick);
-test.run('the detail pane\'s look of a job is its tool\'s icon and title, and its one name', 0.2, function () { if (!MT.job) return NO_TOOLS; return MT.job.looks ? true : MT.job.looksSays; }, test.limit.quick);
+test.run('and creates the job table once in that box, with its detail pane and no api', 0.2, function () { if (!MT.job) return false; return MT.job.created ? true : false; }, test.limit.quick);
+test.run('the detail pane\'s look of a job is its tool\'s icon and title, and its one name', 0.2, function () { if (!MT.job) return false; return MT.job.looks ? true : false; }, test.limit.quick);
 
 // ── 💬 Select Persona: a personaSelector:pane, a persona picked opens its chat in the centre (goal/G41.26) ──
 // Andy, box: "this new panel, below the title contains, for now, only a personaSelector:pane", "When the user clicks on
@@ -273,11 +266,9 @@ test.run('the detail pane\'s look of a job is its tool\'s icon and title, and it
 // (spirit/app/agent/element/table/tableElement.js, agentDetail.search); the chat pane is spirit/app/agent/element/chatPane.js, tested in
 // its own file.
 const C = { sels: [], chats: [], prevDetail: null, cb: null, asked: [], sel: null };
-const NO_CHAT_TOOL = 'no 💬 tool: the app made none';
-const NO_PICK = 'no personaSelector:pane with a pick';
 test.run('its mount loads the agent tables\' element itself (rule/26)', 0.2, async function () {
-  if (X.R.length !== 2) return NO_TOOLS;
-  if (X.CHAT_TOOL.length !== 1) return NO_CHAT_TOOL;
+  if (X.R.length !== 2) return false;
+  if (X.CHAT_TOOL.length !== 1) return false;
   const w = X.w;
   C.prevDetail = global.window.spirit.element.spirit.app.agent.element.table.tableElement;
   global.window.spirit.element.spirit.app.agent.element.table.tableElement = Object.assign({}, C.prevDetail || {}, { branchOf: function (table) { return 'agent/' + table; },
@@ -289,49 +280,49 @@ test.run('its mount loads the agent tables\' element itself (rule/26)', 0.2, asy
   C.cb = box('chat'); X.CHAT_TOOL[0].mount(C.cb); await settle();
   C.asked = w.required.slice(before);
   C.sel = C.sels[0];
-  return C.asked.indexOf('spirit/app/agent/element/table/tableElement.js') !== -1 ? true : 'required: ' + short(C.asked);
+  return C.asked.indexOf('spirit/app/agent/element/table/tableElement.js') !== -1 ? true : false;
 }, test.limit.quick);
 test.run('its panel is titled 💬 Select Persona', 0.2, function () {
   const cb = C.cb;
-  if (!cb) return NO_CHAT_TOOL;
-  return (/class="agent-title"/).test(cb.innerHTML) && cb.innerHTML.indexOf('💬') !== -1 && /Select Persona/.test(cb.innerHTML) ? true : 'panel: ' + short(cb.innerHTML);
+  if (!cb) return false;
+  return (/class="agent-title"/).test(cb.innerHTML) && cb.innerHTML.indexOf('💬') !== -1 && /Select Persona/.test(cb.innerHTML) ? true : false;
 }, test.limit.quick);
 test.run('below the title, only a personaSelector:pane: the persona table\'s search in pane mode, handed no api', 0.2, function () {
-  if (!C.cb) return NO_CHAT_TOOL;
+  if (!C.cb) return false;
   const sels = C.sels, sel = C.sel;
   return sels.length === 1 && sel.o && sel.o.table === 'persona' && !('api' in sel.o) && sel.more.face === 'pane' && typeof sel.more.pick === 'function'
-    ? true : 'selectors: ' + short(sels.map(function (x) { return { table: x.o && x.o.table, face: x.more.face }; }));
+    ? true : false;
 }, test.limit.quick);
 test.run('in a box of its own, not over the title, with no Add', 0.2, function () {
-  if (!C.cb) return NO_CHAT_TOOL;
+  if (!C.cb) return false;
   const sel = C.sel, cb = C.cb;
-  return !!sel && !!sel.host && sel.host !== cb && !/Add a persona/.test(cb.innerHTML) ? true : 'panel: ' + short(cb.innerHTML);
+  return !!sel && !!sel.host && sel.host !== cb && !/Add a persona/.test(cb.innerHTML) ? true : false;
 }, test.limit.quick);
 test.run('a persona picked loads spirit/app/agent/element/chatPane.js', 0.2, async function () {
   const sel = C.sel;
-  if (!sel || typeof sel.more.pick !== 'function') return NO_PICK;
+  if (!sel || typeof sel.more.pick !== 'function') return false;
   const w = X.w;
   const cBefore = w.required.length;
   sel.more.pick({ id: 'KA', label: 'Ada <the reviewer>' }, 'KA'); await settle();
-  return w.required.slice(cBefore).indexOf('spirit/app/agent/element/chatPane.js') !== -1 ? true : 'required: ' + short(w.required.slice(cBefore));
+  return w.required.slice(cBefore).indexOf('spirit/app/agent/element/chatPane.js') !== -1 ? true : false;
 }, test.limit.quick);
 test.run('the centre holds the tabContainer', 0.2, function () {
-  if (!C.sel || typeof C.sel.more.pick !== 'function') return NO_PICK;
+  if (!C.sel || typeof C.sel.more.pick !== 'function') return false;
   const w = X.w;
-  return w.tabsInto === X.wb.center ? true : 'tabs in: ' + short(w.tabsInto && w.tabsInto.tag);
+  return w.tabsInto === X.wb.center ? true : false;
 }, test.limit.quick);
 test.run('and opens the chat pane in a tab of the workBench\'s centre, for that persona', 0.2, function () {
-  if (!C.sel || typeof C.sel.more.pick !== 'function') return NO_PICK;
+  if (!C.sel || typeof C.sel.more.pick !== 'function') return false;
   const chats = C.chats;
   const tab = X.w.tabs.filter(function (t) { return t.name === 'chat/KA'; })[0];
   return chats.length === 1 && !!tab && chats[0].into === tab.box && chats[0].opts.persona && chats[0].opts.persona.id === 'KA' && chats[0].opts.persona.label === 'Ada <the reviewer>'
-    ? true : 'chat panes: ' + short(chats.map(function (c) { return { persona: c.opts.persona }; }));
+    ? true : false;
 }, test.limit.quick);
 test.run('another persona picked opens its own chat in a tab beside the first (goal/G41.31)', 0.2, async function () {
-  if (!C.sel || typeof C.sel.more.pick !== 'function') return NO_PICK;
+  if (!C.sel || typeof C.sel.more.pick !== 'function') return false;
   const chats = C.chats;
   C.sel.more.pick({ id: 'KB', label: 'Bea' }, 'KB'); await settle();
-  const verdict = chats.length === 2 && chats[0].destroyed !== true && chats[1].opts.persona.id === 'KB' ? true : 'chat panes: ' + short(chats.map(function (c) { return { id: c.opts.persona && c.opts.persona.id, destroyed: !!c.destroyed }; }));
+  const verdict = chats.length === 2 && chats[0].destroyed !== true && chats[1].opts.persona.id === 'KB' ? true : false;
   global.window.spirit.element.spirit.app.agent.element.table.tableElement = C.prevDetail;
   delete global.window.spirit.element.spirit.app.agent.element.chatPane;
   return verdict;
@@ -342,34 +333,34 @@ test.run('another persona picked opens its own chat in a tab beside the first (g
 // spirit/element/bundleEditor.js now.
 const BE = { asked: [], editors: [], bb: null };
 test.run('its mount requires spirit/element/bundleEditor.js', 0.2, async function () {
-  if (!X.BUNDLE_TOOL) return NO_TOOLS;
+  if (!X.BUNDLE_TOOL) return false;
   const w = X.w;
   const before = w.required.length;
   global.window.spirit.element.spirit.element.bundleEditor = { create: function (into, cfg) { BE.editors.push({ into: into, cfg: cfg || {} }); return { destroy: function () {} }; } };
   BE.bb = box('bundles'); X.BUNDLE_TOOL.mount(BE.bb); await settle();
   BE.asked = w.required.slice(before);
   delete global.window.spirit.element.spirit.element.bundleEditor;
-  return BE.asked.indexOf('spirit/element/bundleEditor.js') !== -1 ? true : 'required: ' + short(BE.asked);
+  return BE.asked.indexOf('spirit/element/bundleEditor.js') !== -1 ? true : false;
 }, test.limit.quick);
 test.run('and makes the bundle editor in the box it is handed, handed no api', 0.2, function () {
-  if (!BE.bb) return NO_TOOLS;
+  if (!BE.bb) return false;
   const editors = BE.editors;
-  return editors.length === 1 && editors[0].into === BE.bb && !('api' in editors[0].cfg) ? true : 'bundle editors: ' + editors.length + ', handed ' + short(editors[0] && Object.keys(editors[0].cfg));
+  return editors.length === 1 && editors[0].into === BE.bb && !('api' in editors[0].cfg) ? true : false;
 }, test.limit.quick);
 
 // ── the box: "The tick box showDebug goes, with its use of relay-state/shell/agent/config.json" ──
 const source = fs.readFileSync(FILE, 'utf8').replace(/\/\/.*$/gm, '');
 test.run('the app\'s code names no showDebug, no relay-state and no title of the old shell', 0.2, function () {
-  if (X.R.length !== 2) return NO_TOOLS;
-  return !/showDebug/.test(source) && !/relay-state/.test(source) && !/setScreenTitle/.test(source) ? true : 'element.js still names one';
+  if (X.R.length !== 2) return false;
+  return !/showDebug/.test(source) && !/relay-state/.test(source) && !/setScreenTitle/.test(source) ? true : false;
 }, test.limit.quick);
 test.run('and no activateApp', 0.2, function () {
-  if (X.R.length !== 2) return NO_TOOLS;
-  return !/activateApp/.test(source) ? true : 'element.js still names activateApp';
+  if (X.R.length !== 2) return false;
+  return !/activateApp/.test(source) ? true : false;
 }, test.limit.quick);
 test.run('opening the app saves no file', 0.2, function () {
-  if (X.R.length !== 2) return NO_TOOLS;
-  return !X.w.saves.length ? true : 'saved: ' + short(X.w.saves);
+  if (X.R.length !== 2) return false;
+  return !X.w.saves.length ? true : false;
 }, test.limit.quick);
 
 // goal/G43.15, Andy: "WHY WOULD THE FUCKING agent server have a separate debug switch, it belongs to the node, and should work like
@@ -377,12 +368,12 @@ test.run('opening the app saves no file', 0.2, function () {
 // ── the box: "On the agent's right icon strip, the server's tool takes ⚙ instead of 🐞, and its panel shows serverDEBUG" ──
 const SD = { debugs: [], made: [], callsBefore: 0, rb: null };
 test.run('the server\'s tool on the right strip takes ⚙', 0.2, function () {
-  if (X.R.length !== 2) return NO_TOOLS;
+  if (X.R.length !== 2) return false;
   const SERVER_TOOL = X.SERVER_TOOL;
-  return !!SERVER_TOOL && /⚙/.test(String(SERVER_TOOL.icon)) && !/🐞/.test(String(SERVER_TOOL.icon)) ? true : 'its icon: ' + short(SERVER_TOOL && SERVER_TOOL.icon);
+  return !!SERVER_TOOL && /⚙/.test(String(SERVER_TOOL.icon)) && !/🐞/.test(String(SERVER_TOOL.icon)) ? true : false;
 }, test.limit.quick);
 test.run('its mount loads spirit/element/search/app/serverDEBUG.js through spirit.require', 0.2, async function () {
-  if (!X.SERVER_TOOL) return NO_TOOLS;
+  if (!X.SERVER_TOOL) return false;
   const w = X.w;
   global.window.spirit.element.spirit.element.search.app.serverDEBUG = { create: function (into, o) { SD.debugs.push({ into: into, o: o || {} }); SD.made.push('serverDEBUG'); return { destroy: function () {} }; } };
   // goal/G43.15, the box: "the agent's ⚙ panel shows both above serverDEBUG".
@@ -392,37 +383,37 @@ test.run('its mount loads spirit/element/search/app/serverDEBUG.js through spiri
   delete global.window.spirit.element.spirit.element.search.app.serverDEBUG;
   delete global.window.spirit.element.spirit.element.search.app.changeAppIcon;
   delete global.window.spirit.element.spirit.element.search.app.changeAppLabel;
-  return w.required.indexOf('spirit/element/search/app/serverDEBUG.js') !== -1 ? true : 'required: ' + short(w.required);
+  return w.required.indexOf('spirit/element/search/app/serverDEBUG.js') !== -1 ? true : false;
 }, test.limit.quick);
 test.run('and makes serverDEBUG for the agent', 0.2, function () {
-  if (!SD.rb) return NO_TOOLS;
-  return SD.debugs.length === 1 && SD.debugs[0].o.key === 'agent' ? true : 'serverDEBUGs: ' + short(SD.debugs.map(function (d) { return { here: d.into === SD.rb, key: d.o.key }; }));
+  if (!SD.rb) return false;
+  return SD.debugs.length === 1 && SD.debugs[0].o.key === 'agent' ? true : false;
 }, test.limit.quick);
 test.run('it draws no checkbox of its own', 0.2, function () {
-  if (!SD.rb) return NO_TOOLS;
-  return SD.rb.inputs.length === 0 ? true : 'inputs: ' + SD.rb.inputs.length;
+  if (!SD.rb) return false;
+  return SD.rb.inputs.length === 0 ? true : false;
 }, test.limit.quick);
 test.run('and calls no debug verb of the agent\'s', 0.2, function () {
-  if (!SD.rb) return NO_TOOLS;
-  return X.w.calls.length === SD.callsBefore ? true : 'debug calls: ' + short(X.w.calls.slice(SD.callsBefore));
+  if (!SD.rb) return false;
+  return X.w.calls.length === SD.callsBefore ? true : false;
 }, test.limit.quick);
 test.run('the app\'s code calls no agent debug verb', 0.2, function () {
-  if (X.R.length !== 2) return NO_TOOLS;
-  return !/\.debug\(/.test(source) ? true : 'element.js still calls .debug(';
+  if (X.R.length !== 2) return false;
+  return !/\.debug\(/.test(source) ? true : false;
 }, test.limit.quick);
 test.run('its mount loads changeAppIcon.js and changeAppLabel.js', 0.2, function () {
-  if (!SD.rb) return NO_TOOLS;
+  if (!SD.rb) return false;
   const w = X.w;
-  return ['spirit/element/search/app/changeAppIcon.js', 'spirit/element/search/app/changeAppLabel.js'].every(function (p) { return w.required.indexOf(p) !== -1; }) ? true : 'required: ' + short(w.required);
+  return ['spirit/element/search/app/changeAppIcon.js', 'spirit/element/search/app/changeAppLabel.js'].every(function (p) { return w.required.indexOf(p) !== -1; }) ? true : false;
 }, test.limit.quick);
 test.run('and makes the icon, then the label, for the agent, above serverDEBUG', 0.2, function () {
-  if (!SD.rb) return NO_TOOLS;
-  return JSON.stringify(SD.made) === JSON.stringify(['changeAppIcon:agent', 'changeAppLabel:agent', 'serverDEBUG']) ? true : 'made, in order: ' + short(SD.made);
+  if (!SD.rb) return false;
+  return JSON.stringify(SD.made) === JSON.stringify(['changeAppIcon:agent', 'changeAppLabel:agent', 'serverDEBUG']) ? true : false;
 }, test.limit.quick);
 
 // ── it bootstraps its own components ──
 test.run('with no workBench on the page it loads spirit/element/workBench.js through spirit.require, then builds one', 0.2, async function () {
-  if (X.R.length !== 2) return NO_TOOLS;
+  if (X.R.length !== 2) return false;
   const w3 = world();
   const required = [];
   const def3 = load(w3);
@@ -430,7 +421,7 @@ test.run('with no workBench on the page it loads spirit/element/workBench.js thr
   global.window.spirit.element.spirit.element = {};
   global.window.spirit.require = function (p) { required.push(String(p)); global.window.spirit.element.spirit.element.workBench = w3.workBench; global.window.spirit.element.spirit.element.tabContainer = w3.tabContainer; return Promise.resolve(true); };
   def3.create(box('app3')); await settle();
-  return required.indexOf('spirit/element/workBench.js') !== -1 && w3.created.length === 1 ? true : 'required ' + short(required) + ', workbenches ' + w3.created.length;
+  return required.indexOf('spirit/element/workBench.js') !== -1 && w3.created.length === 1 ? true : false;
 }, test.limit.quick);
 
 // ── THE PARTS ON A REAL PAGE (goal/G47.1) ──────────────────────────────────────────────────────────────────────────────
@@ -470,14 +461,14 @@ test.run('with no workBench on the page it loads spirit/element/workBench.js thr
   const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
   const { scratchNode, chromePage, findChrome, sleep, until } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 
-  function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
   function parsed(t) { try { return JSON.parse(t); } catch (e) { return null; } }
   const ICON = { provider: '🧪', model: '🧬', persona: '🧙', job: '🧰' };
   const CHAT = '💬';
 
   // ── centreTabs: the agent app's centre is closable tabs (goal/G41.31) ──
 
-  let STOP = '';
+  // True once an earlier test of this part failed: nothing after it is judged.
+  let STOP = false;
   let N, c, home, P, M, Pe, J, B, where, LEAF, press, appOpen, CENTRE, tabs, tabOf, tool, pressRow, waitTab, PROVIDER_TAB, MODEL_TAB, PERSONA_TAB, JOB_TAB, again, stacked, before, chatWords, chat, styleOf, closed, hadPersona, opened, afterClose, hadJob, hadBundle, fresh, filled, saved, onlyOne, threw;
   test.after(async function () {
     try { if (c && c.sock) c.sock.close(); if (c && c.kid) c.kid.kill(); } catch (e) { /* gone */ }
@@ -486,10 +477,10 @@ test.run('with no workBench on the page it loads spirit/element/workBench.js thr
     try { if (N && N.root) LABH.freeTree(N); } catch (e) { /* scratch */ }
   });
   test.run('the agent server answers, and a provider stands', 0.2, async function () {
-    if (STOP) return STOP;
+    if (STOP) return false;
       N = await scratchNode();
       c = null;
-    if (!N.up) { STOP = 'the scratch node did not come up: nothing judged'; return STOP; }
+    if (!N.up) { STOP = true; return false; }
     home = async function (verb, args) {
       const r = await fetch(N.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) });
       const text = await r.text();
@@ -499,27 +490,27 @@ test.run('with no workBench on the page it loads spirit/element/workBench.js thr
     await home('app.active', { key: 'agent', active: true });
     P = null;
     await until(function () { return home('agent.provider', { op: 'add', icon: ICON.provider, label: 'zzProvider', url: 'http://192.0.2.1:9/' }).then(function (a) { P = a; return a.status === 200 && !!(a.body && a.body.id); }); }, 20000);
-    return (!!(P && P.body && P.body.id)) ? true : 'nothing judged: ' + short(P && P.text);
+    return (!!(P && P.body && P.body.id)) ? true : false;
   }, test.limit.slow);
   test.run('and a model, a persona and a job', 0.2, async function () {
-    if (STOP) return STOP;
-    if (!(P && P.body && P.body.id)) { STOP = 'nothing judged: an earlier test of this part failed'; return STOP; }
+    if (STOP) return false;
+    if (!(P && P.body && P.body.id)) { STOP = true; return false; }
     M = await home('agent.model', { op: 'add', icon: ICON.model, label: 'zzModel', providerId: P.body.id });
     Pe = await home('agent.persona', { op: 'add', icon: ICON.persona, label: 'zzPersona', persona: 'zz', bundle: 'zz', provider: P.body.id });
     J = await home('agent.job', { op: 'add', icon: ICON.job, label: 'zzJob', job: 'zz', bundle: 'zz', provider: P.body.id, persona: Pe.body && Pe.body.id });
-    return (M.status === 200 && Pe.status === 200 && J.status === 200) ? true : 'nothing judged: ' + short([M.text, Pe.text, J.text]);
+    return (M.status === 200 && Pe.status === 200 && J.status === 200) ? true : false;
   }, test.limit.quick);
   test.run('and a bundle of the node\'s', 0.2, async function () {
-    if (STOP) return STOP;
+    if (STOP) return false;
     B = await home('auth.bundle', { op: 'add', label: 'zzNodeBundle' });
-    return (B.status === 200) ? true : 'auth.bundle: ' + short(B.text);
+    return (B.status === 200) ? true : false;
   }, test.limit.quick);
   test.run('the Agent app opens', 0.2, async function () {
-    if (STOP) return STOP;
+    if (STOP) return false;
     where = findChrome();
-    if (!where) { STOP = 'no Chrome here: nothing judged'; return STOP; }
+    if (!where) { STOP = true; return false; }
     c = await chromePage(where);
-    if (c.error) { STOP = 'Chrome: ' + c.error; return STOP; }
+    if (c.error) { STOP = true; return false; }
     await c.send('Page.navigate', { url: N.base + '/face.html' });
     await until(function () { return c.evaluate('!!(window.spirit && window.spirit.event)'); }, 20000);
     LEAF = 'function leaf(w, within) { var root = within ? document.querySelector(within) : document; if (!root) return null; return Array.prototype.slice.call(root.querySelectorAll("*")).filter(function (e) { return e.offsetParent !== null && e.textContent.trim() === w && !Array.prototype.some.call(e.children, function (k) { return k.textContent.trim() === w; }); })[0] || null; }';
@@ -529,12 +520,12 @@ test.run('with no workBench on the page it loads spirit/element/workBench.js thr
     await until(function () { return press('Agent'); }, 20000);
     await until(function () { return c.evaluate('!!document.querySelector("[data-tool=provider]")'); }, 10000);
     appOpen = await c.evaluate('!!document.querySelector("[data-tool=provider]")');
-    return (appOpen) ? true : 'no Agent app, nothing judged: ' + short(await c.evaluate('document.body.innerText'));
+    return (appOpen) ? true : false;
   }, test.limit.slow);
   // ── a tabContainer stands in the centre, from the start ──
   test.run('with nothing opened, it is there', 0.2, async function () {
-    if (STOP) return STOP;
-    if (!appOpen) { STOP = 'nothing judged: an earlier test of this part failed'; return STOP; }
+    if (STOP) return false;
+    if (!appOpen) { STOP = true; return false; }
     CENTRE = '[id$="center"]';
     tabs = function () { return c.evaluate('JSON.stringify(Array.prototype.slice.call(document.querySelectorAll(' + JSON.stringify(CENTRE + ' .tab-button') + ')).map(function (b) { return { text: b.textContent.replace(/✕/g, "").replace(/\\s+/g, " ").trim(), on: b.getAttribute("aria-selected") === "true", close: !!b.querySelector("[data-tab-close]") }; }))').then(function (t) { return parsed(t) || []; }); };
     tabOf = async function (words) { return (await tabs()).filter(function (t) { return t.text === words; }); };
@@ -544,11 +535,11 @@ test.run('with no workBench on the page it loads spirit/element/workBench.js thr
     pressRow = function (label) { return c.evaluate('(function () { var all = Array.prototype.slice.call(document.querySelectorAll("*")).filter(function (e) { return e.offsetParent !== null && !e.closest(' + JSON.stringify(CENTRE) + ') && e.textContent.trim() === ' + JSON.stringify(label) + ' && !Array.prototype.some.call(e.children, function (k) { return k.textContent.trim() === ' + JSON.stringify(label) + '; }); }); if (!all[0]) return false; all[0].click(); return true; }())'); };
     waitTab = function (words) { return until(function () { return tabOf(words).then(function (t) { return t.length > 0; }); }, 6000); };
 
-    return (await c.evaluate('!!document.querySelector(' + JSON.stringify(CENTRE + ' .tab-content') + ')')) ? true : 'no tabContainer in the centre';
+    return (await c.evaluate('!!document.querySelector(' + JSON.stringify(CENTRE + ' .tab-content') + ')')) ? true : false;
   }, test.limit.quick);
   test.run('with no tabs yet', 0.2, async function () {
-    if (STOP) return STOP;
-    return ((await tabs()).length === 0) ? true : 'tabs before anything was opened: ' + short(await tabs());
+    if (STOP) return false;
+    return ((await tabs()).length === 0) ? true : false;
   }, test.limit.quick);
   // ── each kind of row opens a closable tab, named by the box ──
 async function tabOpens(kind, row) {
@@ -557,59 +548,59 @@ async function tabOpens(kind, row) {
   await until(function () { return pressRow(row); }, 6000);
   await waitTab(words);
   const t = await tabOf(words);
-  return { opens: !!(shown && t.length === 1 && t[0].on), opensSays: kind + ': tabs ' + short(await tabs()), closable: !!(t.length === 1 && t[0].close), closableSays: kind + ': no close button: ' + short(t) };
+  return { opens: !!(shown && t.length === 1 && t[0].on), closable: !!(t.length === 1 && t[0].close) };
 }
   test.run('a provider row opens a tab named by its icon and label, and it is active', 0.2, async function () {
-    if (STOP) return STOP;
+    if (STOP) return false;
 
     // One kind of row at a time, each check its own plain title (goal/G45.6): its tab reads its table's icon and the row's label.
     PROVIDER_TAB = await tabOpens('provider', 'zzProvider');
-    return (PROVIDER_TAB.opens) ? true : PROVIDER_TAB.opensSays;
+    return (PROVIDER_TAB.opens) ? true : false;
   }, test.limit.quick);
   test.run('the provider row\'s tab has a close button', 0.2, async function () {
-    if (STOP) return STOP;
-    return (PROVIDER_TAB.closable) ? true : PROVIDER_TAB.closableSays;
+    if (STOP) return false;
+    return (PROVIDER_TAB.closable) ? true : false;
   }, test.limit.quick);
   test.run('a model row opens a tab named by its icon and label, and it is active', 0.2, async function () {
-    if (STOP) return STOP;
+    if (STOP) return false;
     MODEL_TAB = await tabOpens('model', 'zzModel');
-    return (MODEL_TAB.opens) ? true : MODEL_TAB.opensSays;
+    return (MODEL_TAB.opens) ? true : false;
   }, test.limit.quick);
   test.run('the model row\'s tab has a close button', 0.2, async function () {
-    if (STOP) return STOP;
-    return (MODEL_TAB.closable) ? true : MODEL_TAB.closableSays;
+    if (STOP) return false;
+    return (MODEL_TAB.closable) ? true : false;
   }, test.limit.quick);
   test.run('a persona row opens a tab named by its icon and label, and it is active', 0.2, async function () {
-    if (STOP) return STOP;
+    if (STOP) return false;
     PERSONA_TAB = await tabOpens('persona', 'zzPersona');
-    return (PERSONA_TAB.opens) ? true : PERSONA_TAB.opensSays;
+    return (PERSONA_TAB.opens) ? true : false;
   }, test.limit.quick);
   test.run('the persona row\'s tab has a close button', 0.2, async function () {
-    if (STOP) return STOP;
-    return (PERSONA_TAB.closable) ? true : PERSONA_TAB.closableSays;
+    if (STOP) return false;
+    return (PERSONA_TAB.closable) ? true : false;
   }, test.limit.quick);
   test.run('a job row opens a tab named by its icon and label, and it is active', 0.2, async function () {
-    if (STOP) return STOP;
+    if (STOP) return false;
     JOB_TAB = await tabOpens('job', 'zzJob');
-    return (JOB_TAB.opens) ? true : JOB_TAB.opensSays;
+    return (JOB_TAB.opens) ? true : false;
   }, test.limit.quick);
   test.run('the job row\'s tab has a close button', 0.2, async function () {
-    if (STOP) return STOP;
-    return (JOB_TAB.closable) ? true : JOB_TAB.closableSays;
+    if (STOP) return false;
+    return (JOB_TAB.closable) ? true : false;
   }, test.limit.quick);
   // ── a row already open: its tab is made active, no second one ──
   test.run('the provider\'s tab is active again, and alone', 0.2, async function () {
-    if (STOP) return STOP;
+    if (STOP) return false;
 
     await tool('provider');
     await until(function () { return pressRow('zzProvider'); }, 6000);
     await sleep(500);
     again = await tabOf(ICON.provider + ' zzProvider');
-    return (again.length === 1 && again[0].on) ? true : 'tabs ' + short(await tabs());
+    return (again.length === 1 && again[0].on) ? true : false;
   }, test.limit.quick);
   // ── a tab has one listener on its row, and lets go of it when it closes ──
   test.run('three more presses on an open row add no listener', 0.2, async function () {
-    if (STOP) return STOP;
+    if (STOP) return false;
 
     // Who listens, listens once: a press on a row that has its tab adds no second listener, and closing a tab lets go of its own.
     // A row's listeners are counted where the tab and its editor ask for them: the agent family's cache, its table's watch(id, fn) (goal/G43.32:
@@ -617,69 +608,69 @@ async function tabOpens(kind, row) {
     await c.evaluate('(function () { var A = window.spirit.data.agent.data; window.__live = 0; window.__rowPath = ' + JSON.stringify('/' + P.body.id) + '; A.tables.forEach(function (t) { var B = A[t]; var made = B.watch; B.watch = function (id, fn) { var mine = typeof id === "string" && "/" + id === window.__rowPath; var off = made.call(B, id, fn); if (!mine) return off; window.__live++; var done = false; return function () { if (!done) { done = true; window.__live--; } return off(); }; }; }); return true; }())');
     for (let i = 0; i < 3; i++) { await pressRow('zzProvider'); await sleep(250); }
     stacked = await c.evaluate('window.__live');
-    return (stacked === 0) ? true : stacked + ' more listeners on that row after three presses';
+    return (stacked === 0) ? true : false;
   }, test.limit.slow);
   // ── the tabs stay when the left tool changes ──
   test.run('showing another tool closes none of the open tabs', 0.2, async function () {
-    if (STOP) return STOP;
+    if (STOP) return false;
 
     before = (await tabs()).length;
     await tool('job');
     await sleep(500);
-    return (before >= 4 && (await tabs()).length === before) ? true : 'before ' + before + ', after ' + short(await tabs());
+    return (before >= 4 && (await tabs()).length === before) ? true : false;
   }, test.limit.quick);
   // ── a chat is a tab of its own beside its persona's ──
   test.run('a persona picked opens its chat as a tab named by the chat icon and the persona, and it is active', 0.2, async function () {
-    if (STOP) return STOP;
+    if (STOP) return false;
 
     await tool('chat');
     await until(function () { return pressRow('zzPersona'); }, 6000);
     chatWords = CHAT + ' zzPersona';
     await waitTab(chatWords);
     chat = await tabOf(chatWords);
-    return (chat.length === 1 && chat[0].on) ? true : 'tabs ' + short(await tabs());
+    return (chat.length === 1 && chat[0].on) ? true : false;
   }, test.limit.quick);
   test.run('and the persona\'s own tab is still there', 0.2, async function () {
-    if (STOP) return STOP;
-    return ((await tabOf(ICON.persona + ' zzPersona')).length === 1) ? true : 'tabs ' + short(await tabs());
+    if (STOP) return false;
+    return ((await tabOf(ICON.persona + ' zzPersona')).length === 1) ? true : false;
   }, test.limit.quick);
   // ── a bundle's tab: its name; not the node's: in brackets and italic ──
   test.run('a node\'s bundle: "zzNodeBundle" alone', 0.2, async function () {
-    if (STOP) return STOP;
+    if (STOP) return false;
 
     await tool('bundles');
     await until(function () { return pressRow('zzNodeBundle'); }, 6000);
     await waitTab('zzNodeBundle');
-    return ((await tabOf('zzNodeBundle')).length === 1) ? true : 'tabs ' + short(await tabs());
+    return ((await tabOf('zzNodeBundle')).length === 1) ? true : false;
   }, test.limit.quick);
   test.run('in plain print', 0.2, async function () {
-    if (STOP) return STOP;
+    if (STOP) return false;
     styleOf = function (words) { return c.evaluate('(function () { var b = Array.prototype.slice.call(document.querySelectorAll(' + JSON.stringify(CENTRE + ' .tab-button') + ')).filter(function (x) { return x.textContent.indexOf(' + JSON.stringify(words) + ') !== -1; })[0]; if (!b) return null; var all = [b].concat(Array.prototype.slice.call(b.querySelectorAll("*"))); return all.some(function (e) { return e.textContent.indexOf(' + JSON.stringify(words) + ') !== -1 && getComputedStyle(e).fontStyle === "italic"; }); }())'); };
-    return ((await styleOf('zzNodeBundle')) === false) ? true : 'a node\'s bundle: italic ' + (await styleOf('zzNodeBundle'));
+    return ((await styleOf('zzNodeBundle')) === false) ? true : false;
   }, test.limit.quick);
   // ── a label changed anywhere: its tab says so ──
   test.run('the model\'s header follows its row', 0.2, async function () {
-    if (STOP) return STOP;
+    if (STOP) return false;
 
     await home('agent.model', { op: 'set', id: M.body.id, label: 'zzModelTwo' });
     await waitTab(ICON.model + ' zzModelTwo');
-    return ((await tabOf(ICON.model + ' zzModelTwo')).length === 1 && (await tabOf(ICON.model + ' zzModel')).length === 0) ? true : 'tabs ' + short(await tabs());
+    return ((await tabOf(ICON.model + ' zzModelTwo')).length === 1 && (await tabOf(ICON.model + ' zzModel')).length === 0) ? true : false;
   }, test.limit.quick);
   // ── the close button takes a tab away, and the row stays ──
   test.run('its tab is gone', 0.2, async function () {
-    if (STOP) return STOP;
+    if (STOP) return false;
 
     closed = await c.evaluate('(function () { var b = Array.prototype.slice.call(document.querySelectorAll(' + JSON.stringify(CENTRE + ' .tab-button') + ')).filter(function (x) { return x.textContent.indexOf("zzModelTwo") !== -1; })[0]; var k = b && b.querySelector("[data-tab-close]"); if (!k) return false; k.click(); return true; }())');
     await until(function () { return tabOf(ICON.model + ' zzModelTwo').then(function (t) { return !t.length; }); }, 4000);
-    return (closed === true && (await tabOf(ICON.model + ' zzModelTwo')).length === 0) ? true : 'tabs ' + short(await tabs());
+    return (closed === true && (await tabOf(ICON.model + ' zzModelTwo')).length === 0) ? true : false;
   }, test.limit.quick);
   test.run('the model is still there', 0.2, async function () {
-    if (STOP) return STOP;
-    return ((await home('agent.model', { op: 'get', id: M.body.id })).status === 200) ? true : 'closing its tab deleted the model';
+    if (STOP) return false;
+    return ((await home('agent.model', { op: 'get', id: M.body.id })).status === 200) ? true : false;
   }, test.limit.quick);
   // ── a closed tab listens no more ──
   test.run("opened again, the listeners of the tab and of its editor, one each", 0.2, async function () {
-    if (STOP) return STOP;
+    if (STOP) return false;
 
     await c.evaluate('window.__rowPath = ' + JSON.stringify('/' + Pe.body.id) + '; window.__live = 0; 1');
     await tool('persona');
@@ -693,65 +684,65 @@ async function tabOpens(kind, row) {
     await until(function () { return tabOf(ICON.persona + ' zzPersona').then(function (t) { return !t.length; }); }, 4000);
     afterClose = await c.evaluate('window.__live');
     // Two, each once: the tab follows its row, and the row's own editor (agentRow) watches the same path to repaint itself.
-    return (hadPersona && opened === 2) ? true : 'it had a tab ' + hadPersona + ', then ' + opened + ' listeners';
+    return (hadPersona && opened === 2) ? true : false;
   }, test.limit.quick);
   test.run('closed, none', 0.2, async function () {
-    if (STOP) return STOP;
-    return (afterClose === 0) ? true : afterClose + ' listeners after its tab closed';
+    if (STOP) return false;
+    return (afterClose === 0) ? true : false;
   }, test.limit.quick);
   // ── a row deleted elsewhere closes its tab ──
   test.run('the job\'s tab closes itself', 0.2, async function () {
-    if (STOP) return STOP;
+    if (STOP) return false;
 
     hadJob = (await tabOf(ICON.job + ' zzJob')).length === 1;
     await home('agent.job', { op: 'delete', id: J.body.id });
     await until(function () { return tabOf(ICON.job + ' zzJob').then(function (t) { return !t.length; }); }, 5000);
-    return (hadJob && (await tabOf(ICON.job + ' zzJob')).length === 0) ? true : hadJob ? 'the tab stayed: ' + short(await tabs()) : 'it never had a tab: nothing judged';
+    return (hadJob && (await tabOf(ICON.job + ' zzJob')).length === 0) ? true : false;
   }, test.limit.quick);
   test.run('the bundle\'s too', 0.2, async function () {
-    if (STOP) return STOP;
+    if (STOP) return false;
     hadBundle = (await tabOf('zzNodeBundle')).length === 1;
     await home('auth.bundle', { op: 'delete', id: B.body.id });
     await until(function () { return tabOf('zzNodeBundle').then(function (t) { return !t.length; }); }, 5000);
-    return (hadBundle && (await tabOf('zzNodeBundle')).length === 0) ? true : hadBundle ? 'the tab stayed: ' + short(await tabs()) : 'it never had a tab: nothing judged';
+    return (hadBundle && (await tabOf('zzNodeBundle')).length === 0) ? true : false;
   }, test.limit.quick);
   // ── Add: "new <row-type>*", until it is saved; then it is that row's tab ──
   test.run('a tab reading "new provider*" opens, and is active', 0.2, async function () {
-    if (STOP) return STOP;
+    if (STOP) return false;
 
     await tool('provider');
     await until(function () { return press('Add a provider'); }, 6000);
     await waitTab('new provider*');
     fresh = await tabOf('new provider*');
-    return (fresh.length === 1 && fresh[0].on) ? true : 'tabs ' + short(await tabs());
+    return (fresh.length === 1 && fresh[0].on) ? true : false;
   }, test.limit.quick);
   test.run('its fields are filled', 0.2, async function () {
-    if (STOP) return STOP;
+    if (STOP) return false;
     filled = await c.evaluate('(function () { var box = Array.prototype.slice.call(document.querySelectorAll(' + JSON.stringify(CENTRE + ' .tab-content > *') + ')).filter(function (x) { return !x.hidden; })[0]; if (!box) return "no box"; var inputs = Array.prototype.slice.call(box.querySelectorAll("input")); var set = function (word, v) { var i = inputs.filter(function (x) { return x.id.slice(-word.length - 1) === "-" + word.toLowerCase(); })[0]; if (!i) return false; i.value = v; i.dispatchEvent(new Event("input", { bubbles: true })); i.dispatchEvent(new Event("change", { bubbles: true })); return true; }; return set("Label", "zzSaved") && set("URL", "http://192.0.2.2:9/") ? "ok" : "fields: " + box.textContent.slice(0, 200); }())');
-    return (filled === 'ok') ? true : 'the form: ' + short(filled);
+    return (filled === 'ok') ? true : false;
   }, test.limit.quick);
   test.run('saved: its header is the row\'s', 0.2, async function () {
-    if (STOP) return STOP;
+    if (STOP) return false;
     await press('Add new Provider');
     await until(function () { return tabs().then(function (ts) { return ts.some(function (t) { return t.text.indexOf('zzSaved') !== -1; }); }); }, 6000);
     saved = (await tabs()).filter(function (t) { return t.text.indexOf('zzSaved') !== -1; });
-    return (saved.length === 1 && saved[0].on) ? true : 'tabs ' + short(await tabs());
+    return (saved.length === 1 && saved[0].on) ? true : false;
   }, test.limit.quick);
   test.run('and "new provider*" is gone', 0.2, async function () {
-    if (STOP) return STOP;
-    return ((await tabOf('new provider*')).length === 0) ? true : 'tabs ' + short(await tabs());
+    if (STOP) return false;
+    return ((await tabOf('new provider*')).length === 0) ? true : false;
   }, test.limit.quick);
   test.run('pressing that row in the list activates it: no second tab', 0.2, async function () {
-    if (STOP) return STOP;
+    if (STOP) return false;
     await until(function () { return pressRow('zzSaved'); }, 6000);
     await sleep(600);
     onlyOne = (await tabs()).filter(function (t) { return t.text.indexOf('zzSaved') !== -1; });
-    return (onlyOne.length === 1 && onlyOne[0].on) ? true : 'tabs ' + short(await tabs());
+    return (onlyOne.length === 1 && onlyOne[0].on) ? true : false;
   }, test.limit.quick);
   test.run('nothing threw in the page', 0.2, async function () {
-    if (STOP) return STOP;
-    threw = c.heard.filter(function (m) { return m.method === 'Runtime.exceptionThrown'; }).map(function (m) { return m.params.exceptionDetails.text + ' ' + short((m.params.exceptionDetails.exception || {}).description || ''); });
-    return (!threw.length) ? true : 'the page threw: ' + threw.slice(0, 2).join(' | ');
+    if (STOP) return false;
+    threw = c.heard.filter(function (m) { return m.method === 'Runtime.exceptionThrown'; });
+    return (!threw.length) ? true : false;
   }, test.limit.quick);
 }
 
@@ -771,7 +762,6 @@ async function tabOpens(kind, row) {
   const familyPath = require(path.join(RUN, 'spirit', 'spirit.js')).familyPath;
 
   const FILE = path.join(__dirname, '..', 'element.js');
-  function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
   const settle = async function () { for (let i = 0; i < 30; i++) await new Promise(function (r) { setImmediate(r); }); };
 
   // ── THE PAGE ──────────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -965,28 +955,29 @@ async function tabOpens(kind, row) {
 
   // THE ELEMENT NAMES SINCE goal/G43.18: a stand-in keyed by its place, 'search.contact' and so on, nested where the page has it.
   function nestSearch(o) { Object.keys(o).forEach(function (k) { if (k !== 'search' && k.indexOf('search.') !== 0) return; var v = o[k]; delete o[k]; var ks = k.split('.'); var at = o; ks.slice(0, -1).forEach(function (p) { at = at[p] = at[p] || {}; }); var last = ks[ks.length - 1]; at[last] = Object.assign(at[last] || {}, v); }); return o; }
-  let STOP = '';
+  // True once an earlier test of this part failed: nothing after it is judged.
+  let STOP = false;
   let w, app, modelOrder, order, strip, want, PROVIDER_PANE, MODEL_PANE, PERSONA_PANE, JOB_PANE, mo, all, bad, AD, off;
   // ── each tool's list pane ──
 async function paneFills(t) {
   const b = strip(t[0]);
-  if (!b) return { ok: false, says: 'no strip button for the ' + t[0] + ' tool' };
+  if (!b) return { ok: false };
   w.document.click(b);
   await settle();
   const made = w.panes.filter(function (p) { return p.o.face !== 'dropdown' && p.o.verb === t[1] && under(p.host, app); });
-  if (!made.length) return { ok: false, says: 'the ' + t[0] + ' tool drew no list pane' };
+  if (!made.length) return { ok: false };
   const g = gaps(made[made.length - 1].host, app);
   if (t[0] === 'model') {
     const drop = w.panes.filter(function (p) { return p.o.face === 'dropdown' && p.o.verb === 'provider' && under(p.host, app); }).pop();
     modelOrder = order(app, made[made.length - 1].host, drop ? drop.host : null);
   }
-  return { ok: !g.length, says: t[0] + ': not fill: ' + g.join(' < ') };
+  return { ok: !g.length };
 }
   let READY = null;
   // The app mounted once, its tools then shown one at a time; what it throws where nothing catches it lands on this test.
   test.run('the world: the app on a small page, the real workBench and table elements in it', 0.2, function () {
-    if (STOP) return STOP;
-    if (!fs.existsSync(FILE)) { STOP = 'spirit/app/agent/element.js is not there'; return STOP; }
+    if (STOP) return false;
+    if (!fs.existsSync(FILE)) { STOP = true; return false; }
     READY = (async function () {
       // Andy, on G41.18: "the lists violate: rule/16 — A list gets a box of a stated size. Files and contacts do it right,
       // agents must as well."; "ALL lists, otherwise my took bars at the top of a container keep scrolling away...."; "when a
@@ -1019,59 +1010,59 @@ async function paneFills(t) {
     return READY.then(function () { return true; });
   }, test.limit.quick);
   test.run('the provider tool\'s list stands in a fill box, and every box up to the app is fill too', 0.2, async function () {
-    if (STOP) return STOP;
-    if (!READY) return 'no app: the world failed';
+    if (STOP) return false;
+    if (!READY) return false;
     await READY;
     PROVIDER_PANE = await paneFills(want[0]);
-    return (PROVIDER_PANE.ok) ? true : PROVIDER_PANE.says;
+    return (PROVIDER_PANE.ok) ? true : false;
   }, test.limit.quick);
   test.run('the model tool\'s list stands in a fill box, and every box up to the app is fill too', 0.2, async function () {
-    if (STOP) return STOP;
+    if (STOP) return false;
     MODEL_PANE = await paneFills(want[1]);
-    return (MODEL_PANE.ok) ? true : MODEL_PANE.says;
+    return (MODEL_PANE.ok) ? true : false;
   }, test.limit.quick);
   test.run('the persona tool\'s list stands in a fill box, and every box up to the app is fill too', 0.2, async function () {
-    if (STOP) return STOP;
+    if (STOP) return false;
     PERSONA_PANE = await paneFills(want[2]);
-    return (PERSONA_PANE.ok) ? true : PERSONA_PANE.says;
+    return (PERSONA_PANE.ok) ? true : false;
   }, test.limit.quick);
   test.run('the job tool\'s list stands in a fill box, and every box up to the app is fill too', 0.2, async function () {
-    if (STOP) return STOP;
+    if (STOP) return false;
     JOB_PANE = await paneFills(want[3]);
-    return (JOB_PANE.ok) ? true : JOB_PANE.says;
+    return (JOB_PANE.ok) ? true : false;
   }, test.limit.quick);
   // ── the 🧠 Models pane: its title row first (goal/G41.26) ──
   test.run('the pane draws one 🧠 Models title row', 0.2, async function () {
-    if (STOP) return STOP;
+    if (STOP) return false;
 
     // Andy, on G41.26: "i the left side models panel: the title row \"🧠Models\" must come before the \"from [🛖 Unsloth
     // Studio ▾] [Ask] row."
     mo = modelOrder || {};
-    return (mo.titles === 1) ? true : 'title rows saying Models: ' + mo.titles;
+    return (mo.titles === 1) ? true : false;
   }, test.limit.quick);
   test.run('the title row comes before the Ask row, its providerSelector:dropdown', 0.2, async function () {
-    if (STOP) return STOP;
-    return (mo.title !== -1 && mo.from !== -1 && mo.title < mo.from) ? true : 'title at ' + mo.title + ', from at ' + mo.from;
+    if (STOP) return false;
+    return (mo.title !== -1 && mo.from !== -1 && mo.title < mo.from) ? true : false;
   }, test.limit.quick);
   test.run('and the model list after it', 0.2, async function () {
-    if (STOP) return STOP;
-    return (mo.from !== -1 && mo.list !== -1 && mo.from < mo.list) ? true : 'from at ' + mo.from + ', list at ' + mo.list;
+    if (STOP) return false;
+    return (mo.from !== -1 && mo.list !== -1 && mo.from < mo.list) ? true : false;
   }, test.limit.quick);
   // ── every list pane the app drew ──
   test.run('every list pane the app draws stands in a fill box, none only as tall as its content', 0.2, async function () {
-    if (STOP) return STOP;
+    if (STOP) return false;
 
     all = w.panes.filter(function (p) { return p.o.face !== 'dropdown' && under(p.host, app); });
-    bad = all.map(function (p) { return { verb: p.o.verb, gaps: gaps(p.host, app) }; }).filter(function (x) { return x.gaps.length; });
-    return (all.length >= 4 && !bad.length) ? true : all.length + ' panes; not fill: ' + short(bad);
+    bad = all.filter(function (p) { return gaps(p.host, app).length; });
+    return (all.length >= 4 && !bad.length) ? true : false;
   }, test.limit.quick);
   // ── each list pane is a view of its table in the agent family's cache (goal/G41.28) ──
   test.run('every list pane is handed its table\'s branch, spirit.data.agent.data.branch(table)', 0.2, async function () {
-    if (STOP) return STOP;
+    if (STOP) return false;
 
     AD = ((w.win.spirit.data || {}).agent || {}).data;
-    off = all.filter(function (p) { return !AD || !p.o.data || p.o.data !== AD.branch(p.o.verb); }).map(function (p) { return { verb: p.o.verb, data: p.o.data }; });
-    return (!!AD && all.length >= 4 && !off.length) ? true : 'agentReads ' + !!AD + ', not its branch: ' + short(off);
+    off = all.filter(function (p) { return !AD || !p.o.data || p.o.data !== AD.branch(p.o.verb); });
+    return (!!AD && all.length >= 4 && !off.length) ? true : false;
   }, test.limit.quick);
 }
 }

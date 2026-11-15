@@ -17,7 +17,6 @@ const LABH = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 const REPO = path.join(RUN, '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 
-function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 const sleep = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
 async function until(fn, ms) { const end = Date.now() + ms; while (Date.now() < end) { try { if (await fn()) return true; } catch (e) { /* not yet */ } await sleep(250); } return false; }
 function freePort() { return new Promise(function (resolve) { const s = net.createServer(); s.listen(0, '127.0.0.1', function () { const p = s.address().port; s.close(function () { resolve(p); }); }); }); }
@@ -125,16 +124,15 @@ async function pairsMet(proto) {
   const list = (await entries(proto)).filter(function (a) { return a !== null && typeof a === 'object' && !Array.isArray(a); });
   const keys = Object.keys(proto);
   const of = function (a, k) { return Object.prototype.hasOwnProperty.call(a, k) ? kindOf(a[k]) : 'missing'; };
-  const gaps = [];
   for (let i = 0; i < keys.length; i++) for (let j = i + 1; j < keys.length; j++) for (const x of PK) for (const y of PK) {
     if (x === kindOf(proto[keys[i]]) && y === kindOf(proto[keys[j]])) continue;
-    if (!list.some(function (a) { return of(a, keys[i]) === x && of(a, keys[j]) === y; })) gaps.push(keys[i] + '=' + x + ' with ' + keys[j] + '=' + y);
+    if (!list.some(function (a) { return of(a, keys[i]) === x && of(a, keys[j]) === y; })) return false;
   }
-  return !gaps.length ? true : keys.length + ' arguments: ' + gaps.length + ' pairs never met, first ' + short(gaps.slice(0, 4));
+  return true;
 }
 
 // Every test's names, shared down the sequence: each test assigns what later ones read.
-let gen, PAYLOAD_MAX, args5, plain, pairs0, pairs1, pairs2, pairs3, node, relay, pageR, pageTags, pageLoading, namedIn, wrong, lone, outside, far, STRING_KEYS, badString, badAlone, kindsOf, seen, lacking, strings, lens, big, sizes, alone, manifests, loaded, copy, N, off, none, offData, on, upNow, g, list, tree, verbs, unasked, sameShape, kept, keptCount, still, refused, PAGE_FILE, own, served, unfetched, rOff, rNone, R, loginPage, rg, rlist, fwd, ko, rd, uf;
+let gen, PAYLOAD_MAX, args5, plain, pairs0, pairs1, pairs2, pairs3, node, relay, pageR, pageTags, pageLoading, namedIn, wrong, lone, outside, far, STRING_KEYS, badString, badAlone, kindsOf, seen, lacking, strings, lens, big, alone, manifests, loaded, copy, N, off, none, offData, on, upNow, g, list, tree, verbs, unasked, sameShape, kept, keptCount, still, refused, PAGE_FILE, own, served, unfetched, rOff, rNone, R, loginPage, rg, rlist, fwd, ko, rd, uf;
 
 test.run('every entry breaks the shape, or is a bad string alone in the shape kept', 0.2, async function () {
   gen = require(path.join(RUN, 'spirit', 'DEBUG', 'garbageArguments.js'));
@@ -145,7 +143,7 @@ test.run('every entry breaks the shape, or is a bad string alone in the shape ke
   STRING_KEYS = Object.keys(P5).filter(function (k) { return typeof P5[k] === 'string'; });
   badString = function (x) { return typeof x === 'string' && (/[\u0000-\u001F]|[\uD800-\uDFFF]|\.\.\/|"[\s\S]*\\|\\[\s\S]*"/.test(x) || x.length > 1000); };
   badAlone = function (a) { return fitsShape(P5, a) && STRING_KEYS.some(function (k) { return badString(a[k]); }); };
-  return (args5.length > 0 && args5.every(function (a) { return !fitsShape(P5, a) || badAlone(a); })) ? true : args5.length ? 'an entry fits the shape and carries no bad string, a call a handler could act on: ' + short(args5.filter(function (a) { return fitsShape(P5, a) && !badAlone(a); })[0]) : 'no garbage was made';
+  return (args5.length > 0 && args5.every(function (a) { return !fitsShape(P5, a) || badAlone(a); })) ? true : false;
 }, test.limit.quick);
 
 // Each of the five arguments written out, so that each check has a plain title of its own.
@@ -156,51 +154,51 @@ test.run('argument a is filled with every type JSON.parse makes: string, number,
   return { lacking: lacking, left: plain.some(function (a) { return !Object.prototype.hasOwnProperty.call(a, k); }) };
   };
   ko = kindsOf('a');
-  return (!ko.lacking.length) ? true : 'argument a is never a ' + ko.lacking.join(', ');
+  return (!ko.lacking.length) ? true : false;
 }, test.limit.quick);
 
 test.run('argument a is left out ("missing")', 0.2, async function () {
-  return (ko.left) ? true : 'no entry leaves argument a out';
+  return (ko.left) ? true : false;
 }, test.limit.quick);
 
 test.run('argument b is filled with every type JSON.parse makes: string, number, boolean, null, object and array', 0.2, async function () {
   ko = kindsOf('b');
-  return (!ko.lacking.length) ? true : 'argument b is never a ' + ko.lacking.join(', ');
+  return (!ko.lacking.length) ? true : false;
 }, test.limit.quick);
 
 test.run('argument b is left out ("missing")', 0.2, async function () {
-  return (ko.left) ? true : 'no entry leaves argument b out';
+  return (ko.left) ? true : false;
 }, test.limit.quick);
 
 test.run('argument c is filled with every type JSON.parse makes: string, number, boolean, null, object and array', 0.2, async function () {
   ko = kindsOf('c');
-  return (!ko.lacking.length) ? true : 'argument c is never a ' + ko.lacking.join(', ');
+  return (!ko.lacking.length) ? true : false;
 }, test.limit.quick);
 
 test.run('argument c is left out ("missing")', 0.2, async function () {
-  return (ko.left) ? true : 'no entry leaves argument c out';
+  return (ko.left) ? true : false;
 }, test.limit.quick);
 
 test.run('argument d is filled with every type JSON.parse makes: string, number, boolean, null, object and array', 0.2, async function () {
   ko = kindsOf('d');
-  return (!ko.lacking.length) ? true : 'argument d is never a ' + ko.lacking.join(', ');
+  return (!ko.lacking.length) ? true : false;
 }, test.limit.quick);
 
 test.run('argument d is left out ("missing")', 0.2, async function () {
-  return (ko.left) ? true : 'no entry leaves argument d out';
+  return (ko.left) ? true : false;
 }, test.limit.quick);
 
 test.run('argument e is filled with every type JSON.parse makes: string, number, boolean, null, object and array', 0.2, async function () {
   ko = kindsOf('e');
-  return (!ko.lacking.length) ? true : 'argument e is never a ' + ko.lacking.join(', ');
+  return (!ko.lacking.length) ? true : false;
 }, test.limit.quick);
 
 test.run('argument e is left out ("missing")', 0.2, async function () {
-  return (ko.left) ? true : 'no entry leaves argument e out';
+  return (ko.left) ? true : false;
 }, test.limit.quick);
 
 test.run('an argument the verb does not declare is added ("extraneous")', 0.2, async function () {
-  return (plain.some(function (a) { return Object.keys(a).some(function (k) { return !Object.prototype.hasOwnProperty.call(P5, k); }); })) ? true : 'no entry carries an extraneous argument';
+  return (plain.some(function (a) { return Object.keys(a).some(function (k) { return !Object.prototype.hasOwnProperty.call(P5, k); }); })) ? true : false;
 }, test.limit.quick);
 
 // Every string argument, in a few sizes, containing bad characters (goal/G41.30).
@@ -208,40 +206,39 @@ test.run('the string argument a is supplied empty', 0.2, async function () {
   strings = plain.filter(function (a) { return typeof a.a === 'string'; }).map(function (a) { return a.a; });
   lens = strings.map(function (x) { return x.length; });
   big = Math.floor(PAYLOAD_MAX * 3 / 4);
-  sizes = 'its string sizes: ' + short(lens.slice().sort(function (x, y) { return x - y; }));
-  return (lens.some(function (n) { return n === 0; })) ? true : sizes;
+  return (lens.some(function (n) { return n === 0; })) ? true : false;
 }, test.limit.quick);
 
 test.run('the string argument a is supplied as one character', 0.2, async function () {
-  return (lens.some(function (n) { return n === 1; })) ? true : sizes;
+  return (lens.some(function (n) { return n === 1; })) ? true : false;
 }, test.limit.quick);
 
 test.run('the string argument a is supplied in a mid size, 2 to 1000', 0.2, async function () {
-  return (lens.some(function (n) { return n >= 2 && n <= 1000; })) ? true : sizes;
+  return (lens.some(function (n) { return n >= 2 && n <= 1000; })) ? true : false;
 }, test.limit.quick);
 
 test.run('the string argument a is supplied at about 3/4 of the payload, within a tenth', 0.2, async function () {
-  return (lens.some(function (n) { return Math.abs(n - big) <= PAYLOAD_MAX / 10; })) ? true : sizes + ', wanted about ' + big + ' of PAYLOAD_MAX ' + PAYLOAD_MAX;
+  return (lens.some(function (n) { return Math.abs(n - big) <= PAYLOAD_MAX / 10; })) ? true : false;
 }, test.limit.quick);
 
 test.run('the string argument a is supplied containing a NUL', 0.2, async function () {
-  return (strings.some(function (x) { return /\u0000/.test(x); })) ? true : 'no string of argument a contains a NUL';
+  return (strings.some(function (x) { return /\u0000/.test(x); })) ? true : false;
 }, test.limit.quick);
 
 test.run('the string argument a is supplied containing a lone surrogate', 0.2, async function () {
-  return (strings.some(function (x) { return /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(^|[^\uD800-\uDBFF])[\uDC00-\uDFFF]/.test(x); })) ? true : 'no string of argument a contains a lone surrogate';
+  return (strings.some(function (x) { return /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(^|[^\uD800-\uDBFF])[\uDC00-\uDFFF]/.test(x); })) ? true : false;
 }, test.limit.quick);
 
 test.run('the string argument a is supplied containing control characters', 0.2, async function () {
-  return (strings.some(function (x) { return /[\u0001-\u001F]/.test(x); })) ? true : 'no string of argument a contains control characters';
+  return (strings.some(function (x) { return /[\u0001-\u001F]/.test(x); })) ? true : false;
 }, test.limit.quick);
 
 test.run('the string argument a is supplied containing a quote and a backslash', 0.2, async function () {
-  return (strings.some(function (x) { return /"[\s\S]*\\|\\[\s\S]*"/.test(x); })) ? true : 'no string of argument a contains a quote and a backslash';
+  return (strings.some(function (x) { return /"[\s\S]*\\|\\[\s\S]*"/.test(x); })) ? true : false;
 }, test.limit.quick);
 
 test.run('the string argument a is supplied containing a path piece, ../', 0.2, async function () {
-  return (strings.some(function (x) { return /\.\.\//.test(x); })) ? true : 'no string of argument a contains a path piece, ../';
+  return (strings.some(function (x) { return /\.\.\//.test(x); })) ? true : false;
 }, test.limit.quick);
 
 // A bad string alone, so it reaches the handler (goal/G41.30; Andy: "fill this gap, in this item").
@@ -249,27 +246,27 @@ test.run('the string argument a is supplied containing a path piece, ../', 0.2, 
 // and the handler itself meets the bad string.
 test.run('argument a carries a NUL alone, the shape kept, no undeclared argument', 0.2, async function () {
   alone = args5.filter(badAlone).map(function (a) { return a.a; });
-  return (alone.some(function (x) { return typeof x === 'string' && /\u0000/.test(x); })) ? true : 'no entry keeps the shape with argument a carrying ' + 'a NUL' + ': the gate refuses every one before a handler sees it';
+  return (alone.some(function (x) { return typeof x === 'string' && /\u0000/.test(x); })) ? true : false;
 }, test.limit.quick);
 
 test.run('argument a carries a lone surrogate alone, the shape kept, no undeclared argument', 0.2, async function () {
-  return (alone.some(function (x) { return typeof x === 'string' && /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(^|[^\uD800-\uDBFF])[\uDC00-\uDFFF]/.test(x); })) ? true : 'no entry keeps the shape with argument a carrying ' + 'a lone surrogate' + ': the gate refuses every one before a handler sees it';
+  return (alone.some(function (x) { return typeof x === 'string' && /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(^|[^\uD800-\uDBFF])[\uDC00-\uDFFF]/.test(x); })) ? true : false;
 }, test.limit.quick);
 
 test.run('argument a carries control characters alone, the shape kept, no undeclared argument', 0.2, async function () {
-  return (alone.some(function (x) { return typeof x === 'string' && /[\u0001-\u001F]/.test(x); })) ? true : 'no entry keeps the shape with argument a carrying ' + 'control characters' + ': the gate refuses every one before a handler sees it';
+  return (alone.some(function (x) { return typeof x === 'string' && /[\u0001-\u001F]/.test(x); })) ? true : false;
 }, test.limit.quick);
 
 test.run('argument a carries a quote and a backslash alone, the shape kept, no undeclared argument', 0.2, async function () {
-  return (alone.some(function (x) { return typeof x === 'string' && /"[\s\S]*\\|\\[\s\S]*"/.test(x); })) ? true : 'no entry keeps the shape with argument a carrying ' + 'a quote and a backslash' + ': the gate refuses every one before a handler sees it';
+  return (alone.some(function (x) { return typeof x === 'string' && /"[\s\S]*\\|\\[\s\S]*"/.test(x); })) ? true : false;
 }, test.limit.quick);
 
 test.run('argument a carries a path piece, ../ alone, the shape kept, no undeclared argument', 0.2, async function () {
-  return (alone.some(function (x) { return typeof x === 'string' && /\.\.\//.test(x); })) ? true : 'no entry keeps the shape with argument a carrying ' + 'a path piece, ../' + ': the gate refuses every one before a handler sees it';
+  return (alone.some(function (x) { return typeof x === 'string' && /\.\.\//.test(x); })) ? true : false;
 }, test.limit.quick);
 
 test.run('argument a carries a string of about 3/4 of the payload alone, the shape kept', 0.2, async function () {
-  return (alone.some(function (x) { return typeof x === 'string' && Math.abs(x.length - big) <= PAYLOAD_MAX / 10; })) ? true : 'no entry keeps the shape with argument a about 3/4 of the payload long';
+  return (alone.some(function (x) { return typeof x === 'string' && Math.abs(x.length - big) <= PAYLOAD_MAX / 10; })) ? true : false;
 }, test.limit.quick);
 
 // Pairs, not every combination (goal/G41.30).
@@ -277,50 +274,50 @@ test.run('argument a carries a string of about 3/4 of the payload alone, the sha
 // pairing left out is both arguments of their own type, which with nothing else wrong would be a call a handler acts on.
 test.run('two arguments: every pair of their kinds meets in at least one entry', 0.2, async function () {
   pairs0 = await pairsMet(PROTOS[0]);
-  return (pairs0 === true) ? true : pairs0;
+  return (pairs0 === true) ? true : false;
 }, test.limit.quick);
 
 test.run('three arguments: every pair of their kinds meets in at least one entry', 0.2, async function () {
   pairs1 = await pairsMet(PROTOS[1]);
-  return (pairs1 === true) ? true : pairs1;
+  return (pairs1 === true) ? true : false;
 }, test.limit.quick);
 
 test.run('four arguments: every pair of their kinds meets in at least one entry', 0.2, async function () {
   pairs2 = await pairsMet(PROTOS[2]);
-  return (pairs2 === true) ? true : pairs2;
+  return (pairs2 === true) ? true : false;
 }, test.limit.quick);
 
 test.run('five arguments: every pair of their kinds meets in at least one entry', 0.2, async function () {
   pairs3 = await pairsMet(PROTOS[3]);
-  return (pairs3 === true) ? true : pairs3;
+  return (pairs3 === true) ? true : false;
 }, test.limit.quick);
 
 test.run('and the garbage stays small: under 200 entries for five arguments, not every combination', 0.2, async function () {
-  return (args5.length > 0 && args5.length < 200) ? true : 'five arguments make ' + args5.length + ' entries';
+  return (args5.length > 0 && args5.length < 200) ? true : false;
 }, test.limit.quick);
 
 // /spirit/DEBUG.js, /spirit/DEBUG/, /shell/mount.html: its files.
 test.run('spirit/run/spirit/DEBUG.js is there', 0.2, async function () {
-  return (fs.existsSync(path.join(RUN, 'spirit', 'DEBUG.js'))) ? true : 'spirit/run/spirit/DEBUG.js is not there';
+  return (fs.existsSync(path.join(RUN, 'spirit', 'DEBUG.js'))) ? true : false;
 }, test.limit.quick);
 
 test.run('its generator script spirit/run/spirit/DEBUG/headLessBrowser.js is there', 0.2, async function () {
-  return (fs.existsSync(path.join(RUN, 'spirit', 'DEBUG', 'headLessBrowser.js'))) ? true : 'spirit/run/spirit/DEBUG/headLessBrowser.js is not there';
+  return (fs.existsSync(path.join(RUN, 'spirit', 'DEBUG', 'headLessBrowser.js'))) ? true : false;
 }, test.limit.quick);
 
 test.run('its generator script spirit/run/spirit/DEBUG/garbageArguments.js is there', 0.2, async function () {
-  return (fs.existsSync(path.join(RUN, 'spirit', 'DEBUG', 'garbageArguments.js'))) ? true : 'spirit/run/spirit/DEBUG/garbageArguments.js is not there';
+  return (fs.existsSync(path.join(RUN, 'spirit', 'DEBUG', 'garbageArguments.js'))) ? true : false;
 }, test.limit.quick);
 
 test.run('shell/mount.html is gone: the page is made from the address', 0.2, async function () {
-  return (!fs.existsSync(path.join(RUN, 'shell', 'mount.html'))) ? true : 'shell/mount.html is still there';
+  return (!fs.existsSync(path.join(RUN, 'shell', 'mount.html'))) ? true : false;
 }, test.limit.quick);
 
 // NO MOUNT FILES AT ALL (box v23: "no manifests at this point, because special cases can be handled by the elements
 // own test script"): every element mounts with its container alone, so no <module>-headLessBrowser.json is left.
 test.run('no mount file is left: every element mounts with its container alone', 0.2, async function () {
   manifests = execSync('git ls-files -- spirit/run', { cwd: REPO, encoding: 'utf8' }).split('\n').filter(function (f) { return /-headLessBrowser\.json$/.test(f) && fs.existsSync(path.join(REPO, f)); });
-  return (!manifests.length) ? true : 'mount files still there: ' + short(manifests);
+  return (!manifests.length) ? true : false;
 }, test.limit.quick);
 
 // serveCommon requires it: loaded in a child, DEBUG.js is among the modules loaded.
@@ -330,93 +327,93 @@ test.run('serveCommon.js requires DEBUG.js', 0.2, async function () {
   // Started by its path as an argument, not through a shell: on Windows node lives under "Program Files".
   loaded = execFileSync(process.execPath, ['-e', 'require("./spirit/serveCommon.js"); console.log(Object.keys(require.cache).join("\\n"))'], { cwd: RUN, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 20000 });
   } catch (e) { loaded = String(e.stdout || ''); }
-  return (loaded.split('\n').some(function (f) { return path.resolve(f) === path.join(RUN, 'spirit', 'DEBUG.js'); })) ? true : 'serveCommon.js does not load DEBUG.js';
+  return (loaded.split('\n').some(function (f) { return path.resolve(f) === path.join(RUN, 'spirit', 'DEBUG.js'); })) ? true : false;
 }, test.limit.quick);
 
 test.run('the world: the scratch node comes up', 0.2, async function () {
   copy = scratchCopy();
   node = await startNode(copy.run);
-  return (node.up) ? true : 'the scratch node did not come up: every check here would blame the wrong thing';
+  return (node.up) ? true : false;
 }, test.limit.slow);
 
 test.run('on the node, DEBUG off, its DEBUG address answers as an address of no route', 0.8, async function () {
-  if (!node || !node.up) return 'no scratch node: the world failed';
+  if (!node || !node.up) return false;
   N = node.port;
   // PAGE, the node, DEBUG off.
   off = await ask('127.0.0.1', N, PAGE);
   none = await ask('127.0.0.1', N, PAGE.replace('/DEBUG/', '/NODEBUG/'));
-  return (off.status === none.status && off.text === none.text) ? true : 'DEBUG off it answered ' + off.status + ' ' + short(off.text) + ', no route answers ' + none.status;
+  return (off.status === none.status && off.text === none.text) ? true : false;
 }, test.limit.quick);
 
 test.run('and so does a garbage address', 0.8, async function () {
-  if (!node || !node.up) return 'no scratch node: the world failed';
+  if (!node || !node.up) return false;
   offData = await ask('127.0.0.1', N, GARBAGE);
-  return (offData.status === none.status) ? true : 'DEBUG off the garbage address answered ' + offData.status;
+  return (offData.status === none.status) ? true : false;
 }, test.limit.quick);
 
 test.run('the scratch node\'s DEBUG is switched on, by node.debug', 0.2, async function () {
-  if (!node || !node.up) return 'no scratch node: the world failed';
+  if (!node || !node.up) return false;
   on = json(await call(N, 'node.debug', { debug: { on: true } }));
-  return (on && on.debug === true) ? true : 'node.debug answered ' + short(on);
+  return (on && on.debug === true) ? true : false;
 }, test.limit.quick);
 
 // PAGE, the node, DEBUG on.
 test.run('the node: the page is answered, 200, as HTML', 0.2, async function () {
-  if (!node || !node.up) return 'no scratch node: the world failed';
+  if (!node || !node.up) return false;
   pageR = await ask('127.0.0.1', N, PAGE);
-  return (pageR.status === 200 && /text\/html/.test(pageR.type)) ? true : 'the node: it answered ' + pageR.status + ' ' + pageR.type + ' ' + short(pageR.text);
+  return (pageR.status === 200 && /text\/html/.test(pageR.type)) ? true : false;
 }, test.limit.quick);
 
 test.run('the node: the page has no comments', 0.2, async function () {
-  if (!node || !node.up) return 'no scratch node: the world failed';
-  return (pageR.status === 200 && pageR.text.indexOf('<!--') === -1) ? true : 'the node: the page has a comment, or is not answered';
+  if (!node || !node.up) return false;
+  return (pageR.status === 200 && pageR.text.indexOf('<!--') === -1) ? true : false;
 }, test.limit.quick);
 
 test.run('the node: one script tag loads a file, and it loads /spirit.js', 0.2, async function () {
-  if (!node || !node.up) return 'no scratch node: the world failed';
+  if (!node || !node.up) return false;
   pageTags = pageR.text.match(/<script\b[^>]*>/gi) || [];
   pageLoading = pageTags.filter(function (t) { return /\bsrc\s*=/.test(t); });
-  return (pageR.status === 200 && pageLoading.length === 1 && /src\s*=\s*["']\/spirit\.js["']/.test(pageLoading[0])) ? true : 'the node: the script files it loads: ' + short(pageLoading);
+  return (pageR.status === 200 && pageLoading.length === 1 && /src\s*=\s*["']\/spirit\.js["']/.test(pageLoading[0])) ? true : false;
 }, test.limit.quick);
 
 test.run('the node: /spirit.js comes before any other script', 0.2, async function () {
-  if (!node || !node.up) return 'no scratch node: the world failed';
-  return (pageR.status === 200 && pageTags.length && /src\s*=\s*["']\/spirit\.js["']/.test(pageTags[0])) ? true : 'the node: its first script is ' + short(pageTags[0]);
+  if (!node || !node.up) return false;
+  return (pageR.status === 200 && pageTags.length && /src\s*=\s*["']\/spirit\.js["']/.test(pageTags[0])) ? true : false;
 }, test.limit.quick);
 
 test.run('the node: it names the module it mounts, spirit/element/workBench', 0.2, async function () {
-  if (!node || !node.up) return 'no scratch node: the world failed';
-  return (pageR.status === 200 && pageR.text.indexOf('spirit/element/workBench') !== -1) ? true : 'the node: spirit/element/workBench is not named in the page';
+  if (!node || !node.up) return false;
+  return (pageR.status === 200 && pageR.text.indexOf('spirit/element/workBench') !== -1) ? true : false;
 }, test.limit.quick);
 
 // GARBAGE, the node, DEBUG on.
 // testicle'S VERBS COME FROM ITS OWN SERVER (goal/G43.32, requirement 9: appServer loads the app's api.js), so its
 // garbage is asked once the node's api names them, not while its server is still starting.
 test.run('the world: the node\'s api names the testicle server\'s verbs', 0.2, async function () {
-  if (!node || !node.up) return 'no scratch node: the world failed';
+  if (!node || !node.up) return false;
   upNow = await until(function () { return call(N, 'api').then(function (r) { const t = json(r) || {}; return Object.keys(t.testicle || {}).length > 1; }); }, 30000);
-  return (upNow) ? true : 'the testicle server never came up: nothing judged';
+  return (upNow) ? true : false;
 }, test.limit.quick);
 
 test.run('the garbage is answered, 200, a JSON list', 0.2, async function () {
-  if (!node || !node.up) return 'no scratch node: the world failed';
+  if (!node || !node.up) return false;
   g = await ask('127.0.0.1', N, GARBAGE);
   list = json(g);
-  return (g.status === 200 && /json/.test(g.type) && Array.isArray(list) && list.length > 0) ? true : 'it answered ' + g.status + ' ' + g.type + ' ' + short(g.text);
+  return (g.status === 200 && /json/.test(g.type) && Array.isArray(list) && list.length > 0) ? true : false;
 }, test.limit.quick);
 
 test.run('the node\'s api lists the testicle server\'s verbs', 0.2, async function () {
-  if (!node || !node.up) return 'no scratch node: the world failed';
+  if (!node || !node.up) return false;
   tree = json(await call(N, 'api')) || {};
   verbs = Object.keys(tree.testicle || {});
-  return (verbs.length > 0) ? true : 'the scratch node\'s api has no testicle: ' + short(Object.keys(tree));
+  return (verbs.length > 0) ? true : false;
 }, test.limit.quick);
 
 test.run('every verb of its api has garbage of its own', 0.2, async function () {
-  if (!node || !node.up) return 'no scratch node: the world failed';
+  if (!node || !node.up) return false;
   namedIn = function (v) { return Array.isArray(list) && list.some(function (e) { return e && typeof e === 'object' && e.call === 'testicle.' + v; }); };
   unasked = verbs.filter(function (v) { return !namedIn(v); });
-  return (verbs.length && !unasked.length) ? true : 'verbs with no garbage: ' + short(unasked);
+  return (verbs.length && !unasked.length) ? true : false;
 }, test.limit.quick);
 
 // A LONE BAD STRING IS A REAL CALL (goal/G41.30; Andy: "fill this gap, in this item"; cw: "loadFile of the path
@@ -424,7 +421,7 @@ test.run('every verb of its api has garbage of its own', 0.2, async function () 
 // which may answer it; its pass is the box's, "the server MUST not CRASH or HANG": answered, never a 5xx or a
 // handler failed. An entry that breaks the shape is refused at the gate, a 4xx with a code.
 test.run('each entry that breaks the shape is refused with a code: a 4xx, never accepted, a 5xx or a handler failed', 0.8, async function () {
-  if (!node || !node.up) return 'no scratch node: the world failed';
+  if (!node || !node.up) return false;
   sameShape = function (proto, v) {
     if (proto && typeof proto === 'object' && !Array.isArray(proto)) {
       if (!v || typeof v !== 'object' || Array.isArray(v)) return false;
@@ -446,110 +443,110 @@ test.run('each entry that breaks the shape is refused with a code: a 4xx, never 
       if (!r.status || r.status >= 500 || /handler-failed/.test(r.text)) lone.push({ entry: entry, status: r.status, answer: r.text.slice(0, 80) });
     } else if (!(r.status >= 400 && r.status < 500 && b && typeof b.code === 'string' && b.code && b.code !== 'handler-failed')) wrong.push({ entry: entry, status: r.status, answer: r.text.slice(0, 80) });
   }
-  return (!wrong.length) ? true : wrong.length + ' were not: ' + short(wrong);
+  return (!wrong.length) ? true : false;
 }, test.limit.slow);
 
 test.run('each lone bad string, the shape kept, is answered by its handler: never a 5xx or a handler failed', 0.2, async function () {
-  if (!node || !node.up) return 'no scratch node: the world failed';
-  return (keptCount > 0 && !lone.length) ? true : keptCount ? lone.length + ' broke it: ' + short(lone) : 'no entry keeps the shape: no lone bad string reached a handler, so nothing was judged';
+  if (!node || !node.up) return false;
+  return (keptCount > 0 && !lone.length) ? true : false;
 }, test.limit.quick);
 
 test.run('and the node still answers its api afterwards', 0.2, async function () {
-  if (!node || !node.up) return 'no scratch node: the world failed';
+  if (!node || !node.up) return false;
   still = await call(N, 'api');
-  return (still.status === 200) ? true : 'afterwards its api answered ' + still.status;
+  return (still.status === 200) ? true : false;
 }, test.limit.quick);
 
 test.run('refused: no such module under spirit/run', 0.8, async function () {
-  if (!node || !node.up) return 'no scratch node: the world failed';
-  refused = async function (p, headers, why) {
+  if (!node || !node.up) return false;
+  refused = async function (p, headers) {
     const r = await ask('127.0.0.1', N, p, { headers: headers });
-    return { fine: r.status >= 400 && r.status < 500, why: why + ': answered ' + r.status + ' ' + short(r.text.slice(0, 120)) };
+    return { fine: r.status >= 400 && r.status < 500 };
   };
-  rd = await refused('/DEBUG/spirit/element/noSuchModule/headLessBrowser.html', {}, 'no such module under spirit/run');
-  return (rd.fine) ? true : rd.why;
+  rd = await refused('/DEBUG/spirit/element/noSuchModule/headLessBrowser.html', {});
+  return (rd.fine) ? true : false;
 }, test.limit.quick);
 
 test.run('refused: a ".." in the address', 0.8, async function () {
-  if (!node || !node.up) return 'no scratch node: the world failed';
-  rd = await refused('/DEBUG/spirit/element/../js/workBench/headLessBrowser.html', {}, 'a ".." in the address');
-  return (rd.fine) ? true : rd.why;
+  if (!node || !node.up) return false;
+  rd = await refused('/DEBUG/spirit/element/../js/workBench/headLessBrowser.html', {});
+  return (rd.fine) ? true : false;
 }, test.limit.quick);
 
 test.run('refused: no such generator script, and no such file', 0.8, async function () {
-  if (!node || !node.up) return 'no scratch node: the world failed';
-  rd = await refused('/DEBUG/spirit/element/workBench/noSuchGenerator.html', {}, 'no such generator script, and no such file');
-  return (rd.fine) ? true : rd.why;
+  if (!node || !node.up) return false;
+  rd = await refused('/DEBUG/spirit/element/workBench/noSuchGenerator.html', {});
+  return (rd.fine) ? true : false;
 }, test.limit.quick);
 
 test.run('refused: a request carrying X-Forwarded-For', 0.8, async function () {
-  if (!node || !node.up) return 'no scratch node: the world failed';
-  rd = await refused(PAGE, { 'X-Forwarded-For': '203.0.113.9' }, 'a request carrying X-Forwarded-For');
-  return (rd.fine) ? true : rd.why;
+  if (!node || !node.up) return false;
+  rd = await refused(PAGE, { 'X-Forwarded-For': '203.0.113.9' });
+  return (rd.fine) ? true : false;
 }, test.limit.quick);
 
 test.run('refused: a request carrying Forwarded', 0.8, async function () {
-  if (!node || !node.up) return 'no scratch node: the world failed';
-  rd = await refused(PAGE, { 'Forwarded': 'for=203.0.113.9' }, 'a request carrying Forwarded');
-  return (rd.fine) ? true : rd.why;
+  if (!node || !node.up) return false;
+  rd = await refused(PAGE, { 'Forwarded': 'for=203.0.113.9' });
+  return (rd.fine) ? true : false;
 }, test.limit.quick);
 
 // NO GENERATOR, THEN THE EXACT FILE OF THE ADDRESS, /DEBUG LEFT OFF (box v20-v23: "DEBUG.js will, if the generator
 // implied by the URL does NOT exist, will attempt to serve the exact file implied by the URL"), and only a file
 // inside a test/ folder: an element's own test pages, ./test/<element>-<case>.html.
 test.run('a file inside a test/ folder is served as it is', 0.2, async function () {
-  if (!node || !node.up) return 'no scratch node: the world failed';
+  if (!node || !node.up) return false;
   PAGE_FILE = 'spirit/element/test/workBench.md';
   own = fs.readFileSync(path.join(RUN, PAGE_FILE), 'utf8');
   // /PAGE_FILE, the node, DEBUG on: the file itself.
   served = await ask('127.0.0.1', N, '/DEBUG/' + PAGE_FILE);
-  return (served.status === 200 && served.text === own) ? true : '/DEBUG/' + PAGE_FILE + ' answered ' + served.status + ' ' + short(served.text.slice(0, 120));
+  return (served.status === 200 && served.text === own) ? true : false;
 }, test.limit.quick);
 
 test.run('refused: a file outside a test/ folder (the element\'s own script)', 0.8, async function () {
-  if (!node || !node.up) return 'no scratch node: the world failed';
-  rd = await refused('/DEBUG/spirit/element/workBench.js', {}, 'a file outside a test/ folder (the element\'s own script)');
-  return (rd.fine) ? true : rd.why;
+  if (!node || !node.up) return false;
+  rd = await refused('/DEBUG/spirit/element/workBench.js', {});
+  return (rd.fine) ? true : false;
 }, test.limit.quick);
 
 test.run('refused: a server script', 0.8, async function () {
-  if (!node || !node.up) return 'no scratch node: the world failed';
-  rd = await refused('/DEBUG/spirit/serveCommon.js', {}, 'a server script');
-  return (rd.fine) ? true : rd.why;
+  if (!node || !node.up) return false;
+  rd = await refused('/DEBUG/spirit/serveCommon.js', {});
+  return (rd.fine) ? true : false;
 }, test.limit.quick);
 
 test.run('refused: no such file in a test/ folder', 0.8, async function () {
-  if (!node || !node.up) return 'no scratch node: the world failed';
-  rd = await refused('/DEBUG/spirit/element/test/noSuchPage.html', {}, 'no such file in a test/ folder');
-  return (rd.fine) ? true : rd.why;
+  if (!node || !node.up) return false;
+  rd = await refused('/DEBUG/spirit/element/test/noSuchPage.html', {});
+  return (rd.fine) ? true : false;
 }, test.limit.quick);
 
 test.run('refused: a test file asked with X-Forwarded-For', 0.8, async function () {
-  if (!node || !node.up) return 'no scratch node: the world failed';
-  rd = await refused('/DEBUG/' + PAGE_FILE, { 'X-Forwarded-For': '203.0.113.9' }, 'a test file asked with X-Forwarded-For');
-  return (rd.fine) ? true : rd.why;
+  if (!node || !node.up) return false;
+  rd = await refused('/DEBUG/' + PAGE_FILE, { 'X-Forwarded-For': '203.0.113.9' });
+  return (rd.fine) ? true : false;
 }, test.limit.quick);
 
 test.run('/spirit/DEBUG.js cannot be fetched', 0.8, async function () {
-  if (!node || !node.up) return 'no scratch node: the world failed';
+  if (!node || !node.up) return false;
   unfetched = async function (p) {
     const r = await ask('127.0.0.1', N, p);
-    return { fine: r.status >= 400, why: p + ' was fetched: ' + r.status };
+    return { fine: r.status >= 400 };
   };
   uf = await unfetched('/spirit/DEBUG.js');
-  return (uf.fine) ? true : uf.why;
+  return (uf.fine) ? true : false;
 }, test.limit.quick);
 
 test.run('/spirit/DEBUG/headLessBrowser.js cannot be fetched', 0.8, async function () {
-  if (!node || !node.up) return 'no scratch node: the world failed';
+  if (!node || !node.up) return false;
   uf = await unfetched('/spirit/DEBUG/headLessBrowser.js');
-  return (uf.fine) ? true : uf.why;
+  return (uf.fine) ? true : false;
 }, test.limit.quick);
 
 test.run('/spirit/DEBUG/garbageArguments.js cannot be fetched', 0.8, async function () {
-  if (!node || !node.up) return 'no scratch node: the world failed';
+  if (!node || !node.up) return false;
   uf = await unfetched('/spirit/DEBUG/garbageArguments.js');
-  return (uf.fine) ? true : uf.why;
+  return (uf.fine) ? true : false;
 }, test.limit.quick);
 
 test.run('the world: the scratch relay comes up, DEBUG off', 0.2, async function () {
@@ -558,44 +555,44 @@ test.run('the world: the scratch relay comes up, DEBUG off', 0.2, async function
   // seal alone), so its DEBUG answers are judged on its own api's garbage.
   // /spirit/relay/garbageArguments.json, a relay, DEBUG off.
   relay = await startRelay(copy.run, false);
-  return (relay.up) ? true : 'the scratch relay did not come up';
+  return (relay.up) ? true : false;
 }, test.limit.slow);
 
 test.run('on the relay, DEBUG off, its DEBUG address answers as an address of no route', 0.8, async function () {
-  if (!relay || !relay.up) return 'no scratch relay: the world failed';
+  if (!relay || !relay.up) return false;
   rOff = await ask('127.0.0.1', relay.port, '/DEBUG/spirit/relay/garbageArguments.json');
   rNone = await ask('127.0.0.1', relay.port, '/NODEBUG/spirit/relay/garbageArguments.json');
-  return (rOff.status === rNone.status && rOff.text === rNone.text) ? true : 'DEBUG off the relay answered ' + rOff.status + ' ' + short(rOff.text);
+  return (rOff.status === rNone.status && rOff.text === rNone.text) ? true : false;
 }, test.limit.quick);
 
 test.run('the world: the scratch relay comes up, DEBUG on', 0.2, async function () {
   await stop(relay); relay = null;
   relay = await startRelay(copy.run, true);
-  return (relay.up) ? true : 'the scratch relay did not come up';
+  return (relay.up) ? true : false;
 }, test.limit.slow);
 
 test.run('the relay answers its own api\'s garbage, a JSON list', 0.2, async function () {
-  if (!relay || !relay.up) return 'no scratch relay: the world failed';
+  if (!relay || !relay.up) return false;
   R = relay.port;
   loginPage = '/DEBUG/spirit/relay/garbageArguments.json';
   // /spirit/relay/garbageArguments.json, a relay, DEBUG on.
   rg = await ask('127.0.0.1', R, '/DEBUG/spirit/relay/garbageArguments.json');
   rlist = json(rg);
-  return (rg.status === 200 && /json/.test(rg.type) && Array.isArray(rlist) && rlist.length > 0) ? true : 'it answered ' + rg.status + ' ' + rg.type + ' ' + short(rg.text);
+  return (rg.status === 200 && /json/.test(rg.type) && Array.isArray(rlist) && rlist.length > 0) ? true : false;
 }, test.limit.quick);
 
 // loginPage, a relay, DEBUG on: refused.
 test.run('refused: a request Caddy would pass on, carrying X-Forwarded-For', 0.8, async function () {
-  if (!relay || !relay.up) return 'no scratch relay: the world failed';
+  if (!relay || !relay.up) return false;
   fwd = await ask('127.0.0.1', R, loginPage, { headers: { 'X-Forwarded-For': '203.0.113.9' } });
-  return (fwd.status >= 400 && fwd.status < 500) ? true : 'with X-Forwarded-For it answered ' + fwd.status;
+  return (fwd.status >= 400 && fwd.status < 500) ? true : false;
 }, test.limit.quick);
 
 test.run('refused: a request not from loopback', 0.8, async function () {
-  if (!relay || !relay.up) return 'no scratch relay: the world failed';
+  if (!relay || !relay.up) return false;
   outside = outsideAddress();
   far = outside ? await ask(outside, R, loginPage) : null;
-  return (!!far && far.status >= 400 && far.status < 500) ? true : outside ? 'asked at ' + outside + ' it answered ' + far.status : 'this machine has no address but loopback: a request from outside cannot be tried';
+  return (!!far && far.status >= 400 && far.status < 500) ? true : false;
 }, test.limit.quick);
 
 test.after(async function () {

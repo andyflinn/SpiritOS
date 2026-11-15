@@ -43,51 +43,51 @@ const R = S.report({
 // ── liveInvites ──
 test.run('liveInvites: a token is live if it is unused and unexpired, and has a label', 0.2, function () {
   const live = S.liveInvites(INVITES, NOW).map(function (r) { return r.token; });
-  return short(live) === short(['tok-live']) || 'live ' + short(live);
+  return short(live) === short(['tok-live']) || false;
 }, test.limit.quick);
 test.run('liveInvites: no array is no invite', 0.2, function () {
   const got = [S.liveInvites(null, NOW), S.liveInvites({}, NOW)];
-  return (got[0].length === 0 && got[1].length === 0) || short(got);
+  return (got[0].length === 0 && got[1].length === 0) || false;
 }, test.limit.quick);
 
 // ── report ──
 test.run('report: who and what the relay is: owner, mode, key, version', 0.2, function () {
-  return (R.owner === 'andy' && R.mode === 'public' && R.key === 'relay-key' && R.version === 'v9') || short(R);
+  return (R.owner === 'andy' && R.mode === 'public' && R.key === 'relay-key' && R.version === 'v9') || false;
 }, test.limit.quick);
 test.run('report: presence travels beside the roster, both numbers (7 connected out of 3 is a thing to see)', 0.2, function () {
   const arr = S.report({ snapshot: { peers: ['x', 'y', 'z'] }, present: ['a', 'b', 'c', 'd', 'e', 'f', 'g'] });
-  return (R.peers === 7 && R.present === 2 && arr.peers === 3 && arr.present === 7) || short({ peers: R.peers, present: R.present, arr: [arr.peers, arr.present] });
+  return (R.peers === 7 && R.present === 2 && arr.peers === 3 && arr.present === 7) || false;
 }, test.limit.quick);
 test.run('report: routes in flight', 0.2, function () {
-  return R.routes === 4 || 'routes ' + short(R.routes);
+  return R.routes === 4 || false;
 }, test.limit.quick);
 test.run('report: invites are labels, expiry and inviter, never the token itself (a token is a credential)', 0.2, function () {
   const text = JSON.stringify(R);
   return (R.invites.length === 1 && R.invites[0].label === 'ann' && R.invites[0].expiresAt === '2026-11-20T00:00:00.000Z' && R.invites[0].invitedBy === 'owner' &&
-    text.indexOf('tok-') === -1 && !('token' in R.invites[0])) || 'invites ' + short(R.invites);
+    text.indexOf('tok-') === -1 && !('token' in R.invites[0])) || false;
 }, test.limit.quick);
 test.run('report: memory as rss, heapUsed and heapTotal, and uptime in whole seconds, from the process figures handed in', 0.2, function () {
-  return (R.memory.rss === 5000 && R.memory.heapUsed === 2000 && R.memory.heapTotal === 3000 && R.uptimeSec === 61) || short({ memory: R.memory, up: R.uptimeSec });
+  return (R.memory.rss === 5000 && R.memory.heapUsed === 2000 && R.memory.heapTotal === 3000 && R.uptimeSec === 61) || false;
 }, test.limit.quick);
 test.run('report: the bounds, the binding one, the seats and the capacity pass through whole', 0.2, function () {
   return (R.ramLimitMB === 256 && R.discLimitMB === 64 && R.discUsedMB === 1 && R.binding === 'disc' &&
     short(R.seats) === short({ held: 1, outstanding: 2, allowance: 9, free: 6 }) && R.capacity.freeMB === 100 &&
-    R.meter.bytes === 10 && R.caps.members === 3) || short(R);
+    R.meter.bytes === 10 && R.caps.members === 3) || false;
 }, test.limit.quick);
 test.run('report: the capture time is the one passed through, not a clock read here', 0.2, function () {
-  return R.at === '2026-11-13T08:59:00.000Z' || 'at ' + short(R.at);
+  return R.at === '2026-11-13T08:59:00.000Z' || false;
 }, test.limit.quick);
 test.run('report: what the relay did not report is absent, not zeroed ("not told yet" is not "nothing to tell")', 0.2, function () {
   const bare = S.report({ now: NOW });
   const absent = ['meter', 'caps', 'ramLimitMB', 'discLimitMB', 'discUsedMB', 'binding', 'seats', 'capacity', 'levers'].filter(function (k) { return bare[k] !== undefined; });
-  return absent.length === 0 || 'present on a bare report: ' + short(absent.map(function (k) { return [k, bare[k]]; }));
+  return absent.length === 0 || false;
 }, test.limit.quick);
 test.run('report: with nothing handed in, the counts are zero and the lists empty, nothing throws', 0.2, function () {
   const bare = S.report();
-  return (bare.peers === 0 && bare.present === 0 && bare.routes === 0 && bare.invites.length === 0 && bare.memory.rss === 0 && bare.uptimeSec === 0) || short(bare);
+  return (bare.peers === 0 && bare.present === 0 && bare.routes === 0 && bare.invites.length === 0 && bare.memory.rss === 0 && bare.uptimeSec === 0) || false;
 }, test.limit.quick);
 test.run('report: the invites are judged by the clock handed in, not the machine\'s', 0.2, function () {
   const later = S.report({ now: Date.parse('2026-12-01T00:00:00.000Z'), invites: INVITES });
   const earlier = S.report({ now: Date.parse('2026-10-01T00:00:00.000Z'), invites: INVITES });
-  return (later.invites.length === 0 && earlier.invites.length === 2) || short({ later: later.invites, earlier: earlier.invites });
+  return (later.invites.length === 0 && earlier.invites.length === 2) || false;
 }, test.limit.quick);

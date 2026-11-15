@@ -322,7 +322,7 @@ function gateSection() {
       n += 1;
       const passed = A.matches(shape, made(shape, set));
       const should = !garbage(shape, set);
-      if (passed !== should) wrong.push((should ? 'refused ' : 'passed ') + JSON.stringify(set));
+      if (passed !== should) wrong.push(set);
     }
     ask({});
     // Each key, each kind.
@@ -348,11 +348,11 @@ function gateSection() {
         else if (kind === 'extraneous') args[k][inner + 'Extra'] = 'garbage';
         else args[k][inner] = valueOf(kind);
         const should = kind !== 'missing' && kind !== 'extraneous' && kind === kindOf(shape[k][inner]);
-        if (A.matches(shape, args) !== should) wrong.push((should ? 'refused ' : 'passed ') + k + '.' + inner + ' ' + kind);
+        if (A.matches(shape, args) !== should) wrong.push(args);
       }); });
     });
     asks += n;
-    return !wrong.length || title + ': ' + wrong.length + ' of ' + n + ' wrong, first: ' + short(wrong.slice(0, 4));
+    return !wrong.length || false;
   }
   test.run('a request of one string (name): its own value passes and every garbage one is refused', 0.2, function () { return judge('one string'); }, test.limit.quick);
   test.run('a request of a string and a number (id, n): its own value passes and every garbage one is refused', 0.2, function () { return judge('a string and a number'); }, test.limit.quick);
@@ -362,7 +362,7 @@ function gateSection() {
   test.run('a request of one nested two deep (id, where): its own value passes and every garbage one is refused', 0.2, function () { return judge('one nested two deep'); }, test.limit.quick);
   test.run('every permutation of the box\'s kinds was thrown at it, more than a thousand asks', 0.2, function () {
     test.comment('the shared gate was asked ' + asks + ' times, in memory');
-    return asks > 1000 || 'only ' + asks + ' asks were made';
+    return asks > 1000 || false;
   }, test.limit.quick);
   // A VERB WITH A CHECK OF ITS OWN SKIPS THE GATE (appServer.js route: its own accepts() if it has one, else matches):
   // its own check is the only one, so the gate's test does not cover it; the deep garbage goes to those verbs.
@@ -374,11 +374,11 @@ function gateSection() {
       shared: { request: { id: '' }, reply: {}, handler: function () { return {}; } },
     });
     G.r = await Promise.all([s.route({ own: { garbage: 12345 } }), s.route({ shared: { garbage: 12345 } })]);
-    return (G.seen.length === 1 && G.r[0].status === 200) || 'own check asked ' + G.seen.length + ', status ' + G.r[0].status;
+    return (G.seen.length === 1 && G.r[0].status === 200) || false;
   }, test.limit.quick);
   test.run('a verb with no check of its own is refused that garbage by the gate', 0.2, function () {
-    if (!G.r) return 'no answers to judge: the test before failed';
-    return (!!G.r[1].body && G.r[1].body.code === 'no-such-argument') || 'shared: ' + short(G.r[1]);
+    if (!G.r) return false;
+    return (!!G.r[1].body && G.r[1].body.code === 'no-such-argument') || false;
   }, test.limit.quick);
 }
 
@@ -404,7 +404,6 @@ function agentsFilePart() {
   const path = require('path');
   const RUN = path.resolve(__dirname, '..', '..');
 
-  function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 400); }
   // Line ends aside: a Windows checkout (autocrlf) holds CRLF where git holds LF.
   function read(rel) { const f = path.join(RUN, rel); return fs.existsSync(f) ? fs.readFileSync(f, 'utf8').replace(/\r\n/g, '\n') : ''; }
 
@@ -414,10 +413,10 @@ function agentsFilePart() {
     putBackTheRealSpirit();
     const as = read('spirit/appServer.js');
     block = (as.match(/AGENTS: AN APP'S RULES FOR AGENTS[\s\S]*?\n\n/) || [''])[0];
-    return block.length > 100 || 'no AGENTS paragraph in appServer.js: nothing judged';
+    return block.length > 100 || false;
   }, test.limit.quick);
   test.run('it says AGENTS.md is read with spirit.fs.loadFile at its path', 0.2, function () {
-    return (/spirit\.fs\.loadFile/.test(block) && !/family's FS|FS\.loadFile \{path: "AGENTS\.md"\}/.test(block)) || 'it still says: ' + short((block.match(/.*FS.*/g) || []).join(' / '));
+    return (/spirit\.fs\.loadFile/.test(block) && !/family's FS|FS\.loadFile \{path: "AGENTS\.md"\}/.test(block)) || false;
   }, test.limit.quick);
 }
 
@@ -440,7 +439,6 @@ function stateCachePart() {
   const REPO = path.resolve(RUN, '..', '..');
   let until, sleep;
 
-  function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
   function readJson(f) { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch (e) { return null; } }
   const NAME = 'follower';
   // A sender whose family has a data.js on the node: desk's (spirit/app/desk/data.js), so what is kept of it comes back.
@@ -471,7 +469,7 @@ function stateCachePart() {
     try { kid.kill(); } catch (e) { /* gone */ }
     return { seen: readJson(seen), saved: readJson(saved) };
   };
-  const noTree = function () { return !id ? 'no scratch tree: the world failed' : ''; };
+  const noTree = function () { return !id; };
   test.run('the world: the sender\'s file name is its node id', 0.2, function () {
     putBackTheRealSpirit();
     ({ until, sleep } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')));
@@ -499,25 +497,25 @@ function stateCachePart() {
     state = path.join(run, 'spirit', 'state', NAME);
     cache = path.join(state, 'cache');
     if (nodeId.length > 10) id = nodeId;
-    return nodeId.length > 10 || 'no node id for the sender, its file name ' + short(nodeId) + ': nothing judged';
+    return nodeId.length > 10 || false;
   }, test.limit.quick);
 
   // "cache ... was ALWAYS supposed to go into spirit/state/<name>/cache/": read back from there
   let inCache = null;
   test.run('what it kept in spirit/state/follower/cache/ comes back at its start', 0.2, async function () {
-    if (noTree()) return noTree();
+    if (noTree()) return false;
     inCache = await startWith(cache);
-    return (!!inCache.seen && inCache.seen.kept === cache) || 'came back: ' + short(inCache.seen);
+    return (!!inCache.seen && inCache.seen.kept === cache) || false;
   }, test.limit.slow);
   test.run('and its cache.dump writes it there again, spirit/state/follower/cache/<id>.json', 0.2, function () {
-    if (!inCache) return 'the follower did not start: the test before failed';
+    if (!inCache) return false;
     const wrote = Array.isArray(inCache.saved) ? inCache.saved.map(function (f) { return f.file; }) : [];
-    return (wrote.indexOf(id + '.json') !== -1 && fs.existsSync(path.join(cache, id + '.json'))) || 'saved: ' + short(inCache.saved);
+    return (wrote.indexOf(id + '.json') !== -1 && fs.existsSync(path.join(cache, id + '.json'))) || false;
   }, test.limit.quick);
   test.run('no cache file is written in spirit/state/follower/ itself', 0.2, function () {
-    if (noTree()) return noTree();
+    if (noTree()) return false;
     const top = fs.existsSync(state) ? fs.readdirSync(state).filter(function (f) { return /\.json$/.test(f) && f !== 'node.json'; }) : [];
-    return !top.length || 'written there: ' + short(top);
+    return !top.length || false;
   }, test.limit.quick);
 
 
@@ -541,31 +539,31 @@ function stateCachePart() {
   const OTHER = 'MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=';
   // the attacker: a file named for one sender, holding another's key
   test.run('it is not read: a file is read only under its own sender\'s name', 0.8, async function () {
-    if (noTree()) return noTree();
+    if (noTree()) return false;
     const swapped = await spoiled(function () { fs.writeFileSync(path.join(cache, id + '.json'), JSON.stringify({ key: OTHER, family: FAMILY, run: 'r', n: 1, rows: [{ kept: 'swapped' }] })); });
-    return (swapped.up && !swapped.seen) || 'came back: ' + short(swapped.seen);
+    return (swapped.up && !swapped.seen) || false;
   }, test.limit.slow);
   // the attacker: only a half-written .tmp, as a kill leaves it
   test.run('a .tmp is never read back', 0.2, async function () {
-    if (noTree()) return noTree();
+    if (noTree()) return false;
     const half = await spoiled(function () { fs.writeFileSync(path.join(cache, id + '.json.tmp'), JSON.stringify({ key: SENDER, family: FAMILY, run: 'r', n: 1, rows: [{ kept: 'half' }] })); });
-    return (half.up && !half.seen) || 'came back: ' + short(half.seen);
+    return (half.up && !half.seen) || false;
   }, test.limit.slow);
   // the attacker: a cache file that is no JSON, and one that is JSON of the wrong shape
   test.run('a broken file: the server still starts, reads nothing back, and saves', 0.2, async function () {
-    if (noTree()) return noTree();
+    if (noTree()) return false;
     const broken = await spoiled(function () { fs.writeFileSync(path.join(cache, id + '.json'), '{"key": "' + SENDER + '", "rows": [ {"kept": '); });
-    return (broken.up && !broken.seen && Array.isArray(broken.saved)) || 'up ' + broken.up + ', seen ' + short(broken.seen) + ', saved ' + short(broken.saved);
+    return (broken.up && !broken.seen && Array.isArray(broken.saved)) || false;
   }, test.limit.slow);
   test.run('rows that are no list: nothing read back, and the server saves on', 0.2, async function () {
-    if (noTree()) return noTree();
+    if (noTree()) return false;
     const shape = await spoiled(function () { fs.writeFileSync(path.join(cache, id + '.json'), JSON.stringify({ key: SENDER, family: FAMILY, run: 7, n: -3, rows: 'not a list' })); });
-    return (shape.up && !shape.seen && Array.isArray(shape.saved)) || 'up ' + shape.up + ', seen ' + short(shape.seen);
+    return (shape.up && !shape.seen && Array.isArray(shape.saved)) || false;
   }, test.limit.slow);
   test.run('and after all of it spirit/state/follower/ holds nothing beside cache/ (and its socket)', 0.2, function () {
-    if (noTree()) return noTree();
+    if (noTree()) return false;
     const strays = fs.existsSync(state) ? fs.readdirSync(state).filter(function (f) { return ['cache', 'data', 'node.json', 'door.sock'].indexOf(f) === -1; }) : [];
-    return !strays.length || 'also there: ' + short(strays);
+    return !strays.length || false;
   }, test.limit.quick);
 }
 
@@ -574,25 +572,25 @@ function ownPart() {
   // the family path: one function, in appServer (box v15)
   test.run('appServer exports familyPath', 0.2, function () {
     const A0 = require(FILE);
-    return typeof A0.familyPath === 'function' || 'appServer has no familyPath export: ' + typeof A0.familyPath;
+    return typeof A0.familyPath === 'function' || false;
   }, test.limit.quick);
   test.run('familyPath(name) of an app is spirit/app/<name>/api.js (goal/G43.20)', 0.2, function () {
     const A0 = require(FILE);
     const fp = typeof A0.familyPath === 'function' ? A0.familyPath('testicle') : null;
-    return fp === 'spirit/app/testicle/api.js' || 'familyPath(\'testicle\') is ' + short(fp);
+    return fp === 'spirit/app/testicle/api.js' || false;
   }, test.limit.quick);
   // Apps of spirit/app/ since goal/G43.27 (Andy: "cw, you bring deskClient and ... into spirit/app/ under their old
   // names, do the backup as well"): the family's interface at the top of the app folder, no family/ left.
   const moved = function (n) {
     const app = path.join(RUN, 'spirit', 'app', n);
-    return (fs.existsSync(path.join(app, 'api.js')) && !fs.existsSync(path.join(app, 'family'))) || n + ': api.js ' + fs.existsSync(path.join(app, 'api.js')) + ', family/ ' + fs.existsSync(path.join(app, 'family'));
+    return (fs.existsSync(path.join(app, 'api.js')) && !fs.existsSync(path.join(app, 'family'))) || false;
   };
   test.run('backup: its interface is spirit/app/backup/api.js, no family/ is left', 0.2, function () { return moved('backup'); }, test.limit.quick);
   test.run('deskClient: its interface is spirit/app/deskClient/api.js, no family/ is left', 0.2, function () { return moved('deskClient'); }, test.limit.quick);
   // Andy, goal/G41.28: "all, KILL deskAgent!". The server goes, its folder and every file that names it.
   test.run('and no file names the deskAgent server', 0.2, function () {
     const namers = codeFiles(RUN, []).filter(function (f) { return f !== FILE && f !== SELF_FILE && /['"]deskAgent\/|deskAgent\.js\b/.test(fs.readFileSync(f, 'utf8')); }).map(function (f) { return path.relative(RUN, f); });
-    return namers.length === 0 || namers.length + ' files still name it: ' + namers.join(', ');
+    return namers.length === 0 || false;
   }, test.limit.quick);
   // No file but appServer writes a family path: no <name>.family, no family/api.js, no join onto 'family'. This file
   // routes by the pattern and is left out; so are appServer.js and spirit.js: the browser cannot load appServer, so
@@ -606,7 +604,7 @@ function ownPart() {
       const t = fs.readFileSync(f, 'utf8');
       return FAMILY_PATH_WRITTEN.some(function (re) { return re.test(t); });
     }).map(function (f) { return path.relative(RUN, f); });
-    return writers.length === 0 || writers.length + ' files write one: ' + writers.join(', ');
+    return writers.length === 0 || false;
   }, test.limit.quick);
 
   // goal/G41.24: DEPENDENCIES is gone
@@ -617,7 +615,7 @@ function ownPart() {
       const t = fs.readFileSync(f, 'utf8');
       return /DEPENDENCIES/.test(t) || /\bdependencies\s*:/.test(t) || /opts\.dependencies|withDependencies|checkDependencies/.test(t);
     }).map(function (f) { return path.relative(RUN, f); });
-    return named.length === 0 || named.length + ' still do: ' + named.join(', ');
+    return named.length === 0 || false;
   }, test.limit.quick);
 
   // goal/G43.20: no <name>Bundles.json is left
@@ -625,55 +623,55 @@ function ownPart() {
   // deleted. Bundles stay what they are, rows in node.db, made and changed through auth.bundle."
   test.run('no app folder holds a <name>Bundles.json', 0.2, function () {
     const bundleFiles = jsonFiles(path.join(RUN, 'spirit', 'app'), []).filter(function (f) { return /Bundles\.json$/.test(f); }).map(function (f) { return path.relative(RUN, f); });
-    return bundleFiles.length === 0 || 'still there: ' + bundleFiles.join(', ');
+    return bundleFiles.length === 0 || false;
   }, test.limit.quick);
 
   // what goes (box v15)
   test.run('the desk has no bundled() of its own', 0.2, function () {
     const deskJs = fs.readFileSync(path.join(RUN, 'spirit', 'app', 'desk', 'nodeDesk.js'), 'utf8');
-    return !/function\s+bundled\s*\(/.test(deskJs) || 'desk.js still defines bundled()';
+    return !/function\s+bundled\s*\(/.test(deskJs) || false;
   }, test.limit.quick);
   test.run('deskClient keeps no cache.json of its own', 0.2, function () {
     const clientJs = fs.readFileSync(path.join(RUN, 'spirit', 'app', 'deskClient', 'deskClient.js'), 'utf8');
-    return !/cache\.json/.test(clientJs) || 'deskClient.js still names cache.json';
+    return !/cache\.json/.test(clientJs) || false;
   }, test.limit.quick);
 
   // ── one process: a client following its own publisher ──────────────────────────────────────────────────────────
   // goal/G41.24: the desk's translator is its family's data.js; the stream checks below follow it.
   const O = { A: null, s: null, D: null };
   const has = function (n) { return hasIn(O.D, n); };
-  const noServer = function () { return !O.D || !O.s || typeof O.s.subscribe !== 'function' ? 'no server with its client half: the world failed' : ''; };
+  const noServer = function () { return !O.D || !O.s || typeof O.s.subscribe !== 'function'; };
   test.run('the world: the desk\'s translator, spirit/app/desk/data.js, is there', 0.2, function () {
-    return fs.existsSync(TRANSLATOR) || 'the desk\'s translator, spirit/app/desk/data.js, is not there: the stream checks wait on it';
+    return fs.existsSync(TRANSLATOR) || false;
   }, test.limit.quick);
   test.run('it serves, keeps a data set and has its client half (subscribe)', 0.2, async function () {
     const { A, s, D } = start({}, { logMax: 5 });
     O.A = A; O.s = s; O.D = D;
     await tick(100);
-    return (!!D && typeof D.getPath === 'function' && !!s && typeof s.subscribe === 'function') || 'data ' + typeof (D && D.getPath) + ', subscribe ' + typeof (s && s.subscribe);
+    return (!!D && typeof D.getPath === 'function' && !!s && typeof s.subscribe === 'function') || false;
   }, test.limit.quick);
 
   // the first subscribe: a full push
   test.run('a subscribe follows the publisher\'s key and asks its family to subscribe it', 0.2, async function () {
-    if (noServer()) return noServer();
+    if (noServer()) return false;
     bootstrap = [row(GOAL), row(item(1)), row(item(2))];
     const first = await O.s.subscribe(PUBLISHER, NAME);
     await tick(300);
     return (first === true && asked.some(function (a) { return a.verb === 'subscribe' && a.key === PUBLISHER; }) && asked.some(function (a) { return a.verb === 'auth.grant'; }))
-      || 'answered ' + short(first) + ', asked ' + short(asked);
+      || false;
   }, test.limit.quick);
   test.run('the bootstrap lands in the cache: both items', 0.2, function () {
-    if (noServer()) return noServer();
-    return (has(1) && has(2)) || short({ one: itemOf('goal/G9.1'), two: itemOf('goal/G9.2') });
+    if (noServer()) return false;
+    return (has(1) && has(2)) || false;
   }, test.limit.quick);
   test.run('every delivery is a bundle: one JSON array of rows in one peerPost', 0.2, function () {
-    return (posts.length > 0 && posts.every(Array.isArray)) || 'deliveries: ' + short(posts);
+    return (posts.length > 0 && posts.every(Array.isArray)) || false;
   }, test.limit.quick);
 
   // rows that back up go as bundles (box v15)
   let before = 0;
   test.run('twenty rows published, twenty landed', 0.2, async function () {
-    if (noServer()) return noServer();
+    if (noServer()) return false;
     before = posts.length;
     gate.held = true;
     O.A.publish(row(item(10)));
@@ -683,17 +681,17 @@ function ownPart() {
     release();
     await tick(800);
     const landed = []; for (let i = 10; i < 30; i++) if (has(i)) landed.push(i);
-    return landed.length === 20 || 'landed: ' + short(landed);
+    return landed.length === 20 || false;
   }, test.limit.slow);
   test.run('nineteen rows backed up behind a held one went in a bundle, not one peerPost each', 0.2, function () {
-    if (noServer()) return noServer();
-    return posts.length - before <= 3 || (posts.length - before) + ' peerPosts for 20 rows';
+    if (noServer()) return false;
+    return posts.length - before <= 3 || false;
   }, test.limit.quick);
 
   // the position: a subscribe again is handed what came after it, no push (box v15)
   let again = null;
   test.run('dropped by a refused delivery, it subscribes again and is handed the rows it missed', 0.2, async function () {
-    if (noServer()) return noServer();
+    if (noServer()) return false;
     before = bootstraps;
     gate.refuse = true;
     O.A.publish(row(item(30)));
@@ -707,20 +705,20 @@ function ownPart() {
     bootstrap = [row(GOAL), row(item(1))];
     again = await O.s.subscribe(PUBLISHER, NAME);
     await tick(500);
-    return (again === true && has(30) && has(31) && has(32)) || 'answered ' + short(again) + ', items 30-32: ' + [has(30), has(31), has(32)].join(' ');
+    return (again === true && has(30) && has(31) && has(32)) || false;
   }, test.limit.slow);
   test.run('a row addressed to another key is left out of what it is handed', 0.2, function () {
-    if (noServer()) return noServer();
-    return (again === true && has(32) && !has(33)) || 'item 33, addressed to another key: ' + has(33);
+    if (noServer()) return false;
+    return (again === true && has(32) && !has(33)) || false;
   }, test.limit.quick);
   test.run('the sender\'s log answers it: no bootstrap, and the cache is not replaced', 0.2, function () {
-    if (noServer()) return noServer();
-    return (bootstraps === before && has(2)) || 'bootstraps ' + before + ' -> ' + bootstraps + ', item 2 kept: ' + has(2);
+    if (noServer()) return false;
+    return (bootstraps === before && has(2)) || false;
   }, test.limit.quick);
   test.run('the subscribe again carries the position the client holds', 0.2, function () {
     const subArgs = asked.filter(function (a) { return a.verb === 'subscribe'; }).map(function (a) { return a.args; });
     const last = subArgs[subArgs.length - 1] || {};
-    return (subArgs.length >= 2 && JSON.stringify(last) !== JSON.stringify(subArgs[0])) || 'subscribes: ' + short(subArgs);
+    return (subArgs.length >= 2 && JSON.stringify(last) !== JSON.stringify(subArgs[0])) || false;
   }, test.limit.quick);
 
   // goal/G41.15, Andy: "make sure the deskClient doesn't loose cached info outside the current goal", Q1: "nothing
@@ -728,7 +726,7 @@ function ownPart() {
   // precedence, and the client's place in the stream moves to that push".
   // older than the bounded log: a full push takes precedence and drops nothing (goal/G41.15)
   test.run('nine rows missed past a log of five: the sender pushes in full', 0.2, async function () {
-    if (noServer()) return noServer();
+    if (noServer()) return false;
     before = bootstraps;
     gate.refuse = true;
     O.A.publish(row(item(40)));
@@ -739,25 +737,25 @@ function ownPart() {
     bootstrap = [row(GOAL), row(item(1, { title: 'item 1, pushed' }))];
     await O.s.subscribe(PUBLISHER, NAME);
     await tick(600);
-    return bootstraps === before + 1 || 'bootstraps ' + before + ' -> ' + bootstraps;
+    return bootstraps === before + 1 || false;
   }, test.limit.slow);
   test.run('the push takes precedence: a row it carries replaces the one kept', 0.2, function () {
-    if (noServer()) return noServer();
+    if (noServer()) return false;
     const one1 = itemOf('goal/G9.1');
-    return (!!one1 && one1.title === 'item 1, pushed') || 'item 1: ' + short(one1);
+    return (!!one1 && one1.title === 'item 1, pushed') || false;
   }, test.limit.quick);
   test.run('and drops nothing it does not carry: items the push leaves out stay kept', 0.2, function () {
-    if (noServer()) return noServer();
-    return (has(2) && has(30)) || 'item 2 ' + has(2) + ', item 30 ' + has(30);
+    if (noServer()) return false;
+    return (has(2) && has(30)) || false;
   }, test.limit.quick);
   test.run('a row never delivered is not invented by the push', 0.2, function () {
-    if (noServer()) return noServer();
-    return !has(45) || 'item 45 ' + has(45);
+    if (noServer()) return false;
+    return !has(45) || false;
   }, test.limit.quick);
   // The read-pointer: the push landed, so the client stands at the push's number; a subscribe again is answered from
   // the log, with no second push and nothing from before it.
   test.run('its place in the stream moved to the push: subscribed again, it is handed nothing older and pushed nothing again', 0.2, async function () {
-    if (noServer()) return noServer();
+    if (noServer()) return false;
     const pushedAt = bootstraps;
     const subsBefore = asked.filter(function (a) { return a.verb === 'subscribe'; }).length;
     await O.s.subscribe(PUBLISHER, NAME);
@@ -767,7 +765,7 @@ function ownPart() {
     const ends = [].concat.apply([], posts.filter(Array.isArray)).filter(function (e) { return e && e.full === true && e.end === true; });
     const pushEnd = ends[ends.length - 1] || {};
     return (asked.filter(function (a) { return a.verb === 'subscribe'; }).length === subsBefore + 1 && bootstraps === pushedAt && lastSub.since === pushEnd.n && lastSub.run === pushEnd.run)
-      || 'bootstraps ' + pushedAt + ' -> ' + bootstraps + ', subscribed with ' + short(lastSub) + ', the push ended at ' + short(pushEnd);
+      || false;
   }, test.limit.quick);
 
   // goal/G41.22, Andy: "take the 3 seconds out, appServer.js calls peerPost in the most basic way": a subscriber that
@@ -776,7 +774,7 @@ function ownPart() {
   // a late answer is no drop: a delivery is a plain peerPost (goal/G41.22)
   const L = { subs: 0, boots: 0, posts: 0 };
   test.run('held 4 s, past the old 3 s, the rows still land: none is dropped', 0.2, async function () {
-    if (noServer()) return noServer();
+    if (noServer()) return false;
     L.subs = asked.filter(function (a) { return a.verb === 'subscribe'; }).length;
     L.boots = bootstraps;
     L.posts = posts.length;
@@ -788,23 +786,23 @@ function ownPart() {
     await tick(4000);
     release();
     await tick(400);
-    return (has(60) && has(61) && has(62)) || 'items 60-62: ' + [has(60), has(61), has(62)].join(' ');
+    return (has(60) && has(61) && has(62)) || false;
   }, test.limit.slow);
   test.run('what piled up while the first was out goes in one bundle after it', 0.2, function () {
-    if (noServer()) return noServer();
+    if (noServer()) return false;
     const sentLate = posts.slice(L.posts).filter(Array.isArray);
-    return (sentLate.length === 2 && sentLate[1].length === 2) || 'bundles after the hold: ' + short(sentLate.map(function (b) { return b.length; }));
+    return (sentLate.length === 2 && sentLate[1].length === 2) || false;
   }, test.limit.quick);
   test.run('the subscriber was never dropped: the next row comes with no subscribe again and no push', 0.2, async function () {
-    if (noServer()) return noServer();
+    if (noServer()) return false;
     O.A.publish(row(item(63)));
     await tick(300);
     const subs = asked.filter(function (a) { return a.verb === 'subscribe'; }).length;
     return (has(63) && bootstraps === L.boots && subs === L.subs)
-      || 'item 63 ' + has(63) + ', subscribes ' + L.subs + ' -> ' + subs + ', bootstraps ' + L.boots + ' -> ' + bootstraps;
+      || false;
   }, test.limit.quick);
   test.run('appServer.js races no delivery and no subscribe against a clock of its own', 0.2, function () {
-    return !/FAST_MS|Promise\.race/.test(fs.readFileSync(FILE, 'utf8')) || 'appServer.js still names FAST_MS or Promise.race';
+    return !/FAST_MS|Promise\.race/.test(fs.readFileSync(FILE, 'utf8')) || false;
   }, test.limit.quick);
 
   // ── restarts and the cache switch: each a process of its own ───────────────────────────────────────────────────
@@ -813,55 +811,55 @@ function ownPart() {
   test.run('a client with the cache switch on takes the push', 0.2, function () {
     clearCache('cacheProbe');
     C.one = runChild('first', 'cacheProbe');
-    return (C.one.subscribed === true && !!C.one.one && !!C.one.two) || short(C.one);
+    return (C.one.subscribed === true && !!C.one.one && !!C.one.two) || false;
   }, test.limit.quick);
   test.run('it saves the cache as spirit/state/<client>/<sender key>.json (goal/G41.28, box v19)', 0.2, function () {
     const file = cacheFile('cacheProbe');
     let text = '';
     try { text = fs.readFileSync(file, 'utf8'); } catch (e) { text = ''; }
-    return text.indexOf('item 2') !== -1 || path.relative(RUN, file) + ': ' + (text ? short(text) : 'no file');
+    return text.indexOf('item 2') !== -1 || false;
   }, test.limit.quick);
   test.run('its spirit.data holds the cache under the sender\'s key, and nothing beside it at the top (box v19)', 0.2, function () {
     const one = C.one || {};
-    return (!!one.byNode && one.byNode.length === 1 && !!one.top && one.top.length === 1) || 'at the top of spirit.data: ' + short(one.top);
+    return (!!one.byNode && one.byNode.length === 1 && !!one.top && one.top.length === 1) || false;
   }, test.limit.quick);
   test.run('and under the sender\'s key, the family: <key>.desk', 0.2, function () {
     const one = C.one || {};
-    return (Array.isArray(one.family) && one.family.indexOf('desk') !== -1) || 'under the key: ' + short(one.family);
+    return (Array.isArray(one.family) && one.family.indexOf('desk') !== -1) || false;
   }, test.limit.quick);
   test.run('started again, it reads its cache back before it subscribes', 0.2, function () {
     C.two = runChild('restart', 'cacheProbe');
-    return (!!C.two.readOne && !!C.two.readTwo) || short(C.two);
+    return (!!C.two.readOne && !!C.two.readTwo) || false;
   }, test.limit.slow);
   test.run('a sender of a new run pushes in full: its rows take precedence, and a kept row it does not carry stays (goal/G41.15)', 0.2, function () {
     const two = C.two || {};
-    return (two.subscribed === true && two.title === 'item 1, renamed' && !!two.two) || short(two);
+    return (two.subscribed === true && two.title === 'item 1, renamed' && !!two.two) || false;
   }, test.limit.quick);
   test.run('without the switch no cache file is kept', 0.2, function () {
     clearCache('cacheOff');
     runChild('off', 'cacheOff');
-    return !fs.existsSync(cacheFile('cacheOff')) || 'cache file found: ' + path.relative(RUN, cacheFile('cacheOff'));
+    return !fs.existsSync(cacheFile('cacheOff')) || false;
   }, test.limit.quick);
   test.run('a sender whose family has no folder on this node is not cached', 0.2, function () {
     clearCache('cacheNoFam');
     runChild('nofamily', 'cacheNoFam', 'noSuchServer');
-    return !fs.existsSync(cacheFile('cacheNoFam')) || 'cache file found: ' + path.relative(RUN, cacheFile('cacheNoFam'));
+    return !fs.existsSync(cacheFile('cacheNoFam')) || false;
   }, test.limit.quick);
   test.run('within the limit the cache keeps every goal the sender sends, no filtering on the client side', 0.2, function () {
     clearCache('cacheEvery');
     const every = runChild('every', 'cacheEvery');
-    return (Array.isArray(every.g9) && every.g9.length === 3 && Array.isArray(every.g10) && every.g10.length === 3) || short(every);
+    return (Array.isArray(every.g9) && every.g9.length === 3 && Array.isArray(every.g10) && every.g10.length === 3) || false;
   }, test.limit.slow);
   test.run('the cache keeps to the limit the client sets', 0.2, function () {
     clearCache('cacheLimit');
     C.full = runChild('limit', 'cacheLimit');
     let size = -1;
     try { size = fs.statSync(cacheFile('cacheLimit')).size; } catch (e) { size = -1; }
-    return (size > 0 && size <= 3500) || 'cache file of ' + size + ' bytes for a limit of 3500';
+    return (size > 0 && size <= 3500) || false;
   }, test.limit.slow);
   test.run('past the limit the goal untouched longest goes whole, the other is kept whole (Andy, Q2)', 0.2, function () {
     const full = C.full || {};
-    return (Array.isArray(full.g9) && full.g9.length === 0 && Array.isArray(full.g10) && full.g10.length === 10) || short(full);
+    return (Array.isArray(full.g9) && full.g9.length === 0 && Array.isArray(full.g10) && full.g10.length === 10) || false;
   }, test.limit.quick);
   // One goal: the item untouched longest goes, its chat with it; the newest stay (Andy, Q2).
   test.run('one goal past the limit: the items untouched longest go whole, the newest stay, the goal stays', 0.2, function () {
@@ -869,19 +867,19 @@ function ownPart() {
     C.items = runChild('items', 'cacheItems');
     const kept = Array.isArray(C.items.items) ? C.items.items : [];
     const prefixGone = kept.length > 0 && kept.length < 10 && kept.every(function (n, i) { return n === 10 - kept.length + 1 + i; });
-    return (!!C.items.goal && prefixGone) || short(C.items);
+    return (!!C.items.goal && prefixGone) || false;
   }, test.limit.slow);
   test.run('an item shed goes lock, stock and barrel: its chat with it', 0.2, function () {
     const items = C.items || {};
     const kept = Array.isArray(items.items) ? items.items : [];
-    return (kept.indexOf(1) === -1 && Array.isArray(items.chat) && items.chat.length === 0) || short(items);
+    return (kept.indexOf(1) === -1 && Array.isArray(items.chat) && items.chat.length === 0) || false;
   }, test.limit.quick);
   test.run('one goal with one item past the limit: the oldest chat lines go, the item and the newest lines stay', 0.2, function () {
     clearCache('cacheChat');
     const chat = runChild('chat', 'cacheChat');
     const lines = Array.isArray(chat.chat) ? chat.chat : [];
     const newest = lines.length > 0 && lines.length < 30 && lines.every(function (n, i) { return n === 30 - lines.length + 1 + i; });
-    return (!!chat.goal && Array.isArray(chat.items) && chat.items.length === 1 && newest) || short(chat);
+    return (!!chat.goal && Array.isArray(chat.items) && chat.items.length === 1 && newest) || false;
   }, test.limit.slow);
 }
 

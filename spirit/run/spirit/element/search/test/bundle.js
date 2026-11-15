@@ -13,7 +13,6 @@ const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 
 const FILE = path.join(__dirname, '..', 'bundle.js');
-function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 const tick = function () { return new Promise(function (r) { setImmediate(r); }); };
 const settle = async function () { for (let i = 0; i < 20; i++) await tick(); };
 
@@ -28,11 +27,9 @@ function element(tag) {
 // One test.run per test (goal/G47.2). What the world and the tests make, for the tests after them.
 // An element that counts on what it did not load throws inside a promise: the reporter fails the test it ran in.
 let SRC, code, lists, required, E, made, box, root, list;
-const NO_MADE = 'no bundle selector with a create: the world failed';
-const NO_LIST = 'no list was drawn';
 
 test.run('the world: the selector runs on a bare window', 0.2, async function () {
-  if (!fs.existsSync(FILE)) return 'spirit/element/search/bundle.js is not there';
+  if (!fs.existsSync(FILE)) return false;
   SRC = fs.readFileSync(FILE, 'utf8');
   code = SRC.replace(/\/\/.*$/gm, '');
   lists = [];
@@ -63,43 +60,43 @@ test.run('the world: the selector runs on a bare window', 0.2, async function ()
 }, test.limit.quick);
 // goal/G40.8: the old shell's list search is forbidden on the face.
 test.run('it names nothing of the old shell\'s list search (goal/G40.8)', 0.2, function () {
-  if (!code) return 'no bundle.js read: the world failed';
+  if (!code) return false;
   const names = /shellCreateListSearch|listSearch\.js/.test(code);
-  return !names ? true : 'bundleSelector.js names shellCreateListSearch or listSearch.js';
+  return !names ? true : false;
 }, test.limit.quick);
 test.run('it registers spirit.element.spirit.element.search.bundle with a create, beside the shell\'s other selectors, and createBundleSelector no more', 0.2, function () {
-  if (!E) return 'the selector never ran: the world failed';
-  return made && typeof made.create === 'function' && !('createBundleSelector' in E) ? true : 'elements: ' + short(Object.keys(E));
+  if (!E) return false;
+  return made && typeof made.create === 'function' && !('createBundleSelector' in E) ? true : false;
 }, test.limit.quick);
 
 // a thin selector over its own list (rule/26; the contactSelector's pattern)
 // Box v23: "every element gets a container and appends itself".
 test.run('create(container, options) appends its root to its container and answers it', 0.2, async function () {
-  if (!made || typeof made.create !== 'function') return NO_MADE;
+  if (!made || typeof made.create !== 'function') return false;
   box = element('div');
   root = made.create(box, { placeholder: 'choose a bundle…' });
   await settle();
   list = lists[0];
-  return box.children.length === 1 && box.children[0] === root ? true : 'container holds ' + box.children.length + (box.children[0] === root ? ', the root' : ', not the root');
+  return box.children.length === 1 && box.children[0] === root ? true : false;
 }, test.limit.quick);
 test.run('on a bare page it requires its list, spirit/element/search/bundle/listElement.js', 0.2, function () {
-  if (!required) return 'the selector never ran: the world failed';
-  return required.indexOf('spirit/element/search/bundle/listElement.js') !== -1 ? true : 'required: ' + short(required);
+  if (!required) return false;
+  return required.indexOf('spirit/element/search/bundle/listElement.js') !== -1 ? true : false;
 }, test.limit.quick);
 test.run('it answers its root at once, class bundle-selector, nothing chosen: value \'\', row null', 0.2, function () {
-  if (!box) return NO_MADE;
-  return root && root.value === '' && root.row === null && /\bbundle-selector\b/.test(root.className) ? true : 'root: ' + short(root && { value: root.value, row: root.row, className: root.className });
+  if (!box) return false;
+  return root && root.value === '' && root.row === null && /\bbundle-selector\b/.test(root.className) ? true : false;
 }, test.limit.quick);
 test.run('its list is drawn into its root, a dropdown by default, its placeholder handed on', 0.2, function () {
-  if (!box) return NO_MADE;
-  return list && list.host === root && list.o.face === 'dropdown' && list.o.placeholder === 'choose a bundle…' ? true : 'list: ' + short(list && { face: list.o.face, placeholder: list.o.placeholder, inRoot: list.host === root });
+  if (!box) return false;
+  return list && list.host === root && list.o.face === 'dropdown' && list.o.placeholder === 'choose a bundle…' ? true : false;
 }, test.limit.quick);
 // goal/G41.26: "the Label should now just be an output": editable is no option, so none is handed on.
 test.run('face pane is the list itself; its columns are handed to it, and no editable', 0.2, async function () {
-  if (!list) return NO_LIST;
+  if (!list) return false;
   made.create(element('div'), { face: 'pane', columns: ['label', 'edit', 'delete'], editable: true }); await settle();
   const pane = lists[1] && lists[1].o;
-  return pane && pane.face === 'pane' && JSON.stringify(pane.columns) === '["label","edit","delete"]' && !pane.editable ? true : 'pane: ' + short(pane);
+  return pane && pane.face === 'pane' && JSON.stringify(pane.columns) === '["label","edit","delete"]' && !pane.editable ? true : false;
 }, test.limit.quick);
 
 // goal/G41.25: mounted for an app server
@@ -107,35 +104,35 @@ test.run('face pane is the list itself; its columns are handed to it, and no edi
 // the bundleSelector IS configured for an appServer, then it will only list bundles \"owned\" by that Appserver". The
 // listing is its list's (search/bundle/listElement.js), so the family is handed to it.
 test.run('create(container, { family }) hands the family to its list', 0.2, async function () {
-  if (!list) return NO_LIST;
+  if (!list) return false;
   made.create(element('div'), { family: 'agent' }); await settle();
   const forAgent = lists[2] && lists[2].o;
-  return forAgent && forAgent.family === 'agent' ? true : 'list: ' + short(forAgent);
+  return forAgent && forAgent.family === 'agent' ? true : false;
 }, test.limit.quick);
 test.run('mounted for no app server, it hands its list no family', 0.2, function () {
-  if (!list) return NO_LIST;
-  return !('family' in list.o) || list.o.family === undefined || list.o.family === '' ? true : 'list: ' + short(list.o);
+  if (!list) return false;
+  return !('family' in list.o) || list.o.family === undefined || list.o.family === '' ? true : false;
 }, test.limit.quick);
 
 // a pick
 test.run('a pick sets .value to the bundle\'s id, a number, and .row to the bundle', 0.2, function () {
-  if (!list) return NO_LIST;
+  if (!list) return false;
   list.o.pick({ id: 7, label: 'Reader' }, '7');
-  return root.value === 7 && root.row && root.row.id === 7 && root.row.label === 'Reader' ? true : 'root: ' + short({ value: root.value, row: root.row });
+  return root.value === 7 && root.row && root.row.id === 7 && root.row.label === 'Reader' ? true : false;
 }, test.limit.quick);
 test.run('and says so with one bubbling change', 0.2, function () {
-  if (!list) return NO_LIST;
+  if (!list) return false;
   const e = root.events[root.events.length - 1];
-  return e && e.type === 'change' && e.bubbles === true ? true : 'events: ' + short(root.events);
+  return e && e.type === 'change' && e.bubbles === true ? true : false;
 }, test.limit.quick);
 test.run('a clear picks nothing: value \'\' again', 0.2, function () {
-  if (!list) return NO_LIST;
+  if (!list) return false;
   list.o.pick(null, '');
-  return root.value === '' && root.row === null ? true : 'root: ' + short({ value: root.value, row: root.row });
+  return root.value === '' && root.row === null ? true : false;
 }, test.limit.quick);
 test.run('refresh() asks again', 0.2, function () {
-  if (!list) return NO_LIST;
+  if (!list) return false;
   const before = list.refreshed;
   root.refresh();
-  return list.refreshed === before + 1 ? true : 'refreshed: ' + list.refreshed;
+  return list.refreshed === before + 1 ? true : false;
 }, test.limit.quick);

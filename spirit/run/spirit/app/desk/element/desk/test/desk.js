@@ -20,7 +20,6 @@ const FILE = path.join(__dirname, '..', 'desk.js');
 // What each step makes, for the tests after it, in order; every scratch node and Chrome page is stopped by test.after.
 const W = {};
 const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
-const short = function (x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); };
 // A scratch node and its page, stopped; called as a section ends and again by test.after.
 function stop(x) {
   if (!x || x.stopped) return;
@@ -31,14 +30,14 @@ function stop(x) {
   try { if (page && page.profile) fs.rmSync(page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
   try { if (node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* left */ }
 }
-// A scratch node with a Chrome page on it (debug: its DEBUG on): x.node, x.page, or a string saying what is missing.
+// A scratch node with a Chrome page on it (debug: its DEBUG on): x.node, x.page; true when both are there, else false.
 async function bootPage(x, debug) {
   const chrome = H.findChrome();
-  if (!chrome) return 'no Chrome on this machine: SPIRIT_CHROME names none, and none is found by its name';
+  if (!chrome) return false;
   x.node = await H.scratchNode();
   x.page = x.node.up && (!debug || x.node.debug) ? await H.chromePage(chrome) : null;
-  if (!x.page || x.page.error) { const why = x.page ? x.page.error : debug ? 'the scratch node did not come up with its DEBUG on' : 'the scratch node did not come up'; x.page = x.page && x.page.error ? x.page : null; return why; }
-  return '';
+  if (!x.page || x.page.error) { x.page = x.page && x.page.error ? x.page : null; return false; }
+  return true;
 }
 // A verb of the node, asked from the page as the page asks it.
 function caller(page) {
@@ -51,18 +50,18 @@ const MOUNT_DESK = "(function () { var d = document.createElement('div'); d.id =
 
 // no icon table, no lookup into one
 const readCode = function () { if (W.code === undefined) W.code = fs.readFileSync(FILE, 'utf8').replace(/\/\/[^\n]*/g, ''); return W.code; };
-test.run('desk.js names no icon table', 0.2, function () { return !/iconIndex|\bICON\b/.test(readCode()) || 'desk.js still names iconIndex or ICON'; }, test.limit.quick);
-test.run('it looks no icon up by name (deskIcon is gone)', 0.2, function () { return !/deskIcon\(/.test(readCode()) || 'desk.js still calls deskIcon'; }, test.limit.quick);
+test.run('desk.js names no icon table', 0.2, function () { return !/iconIndex|\bICON\b/.test(readCode()) || false; }, test.limit.quick);
+test.run('it looks no icon up by name (deskIcon is gone)', 0.2, function () { return !/deskIcon\(/.test(readCode()) || false; }, test.limit.quick);
 // the glyphs it draws, written as they are
-test.run('it draws 📁 as written', 0.2, function () { return readCode().indexOf('📁') !== -1 || '📁 is not in desk.js'; }, test.limit.quick);
-test.run('it draws ❌ as written', 0.2, function () { return readCode().indexOf('❌') !== -1 || '❌ is not in desk.js'; }, test.limit.quick);
-test.run('it draws 💻 as written', 0.2, function () { return readCode().indexOf('💻') !== -1 || '💻 is not in desk.js'; }, test.limit.quick);
-test.run('it draws ⚔️ as written', 0.2, function () { return readCode().indexOf('⚔️') !== -1 || '⚔️ is not in desk.js'; }, test.limit.quick);
+test.run('it draws 📁 as written', 0.2, function () { return readCode().indexOf('📁') !== -1 || false; }, test.limit.quick);
+test.run('it draws ❌ as written', 0.2, function () { return readCode().indexOf('❌') !== -1 || false; }, test.limit.quick);
+test.run('it draws 💻 as written', 0.2, function () { return readCode().indexOf('💻') !== -1 || false; }, test.limit.quick);
+test.run('it draws ⚔️ as written', 0.2, function () { return readCode().indexOf('⚔️') !== -1 || false; }, test.limit.quick);
 test.run('a rule\'s status is drawn as its glyph: proposed ✏️, active 🔒, deleted 💀', 0.2, function () {
   const rule = /var DESK_RULE_ICON = (\{[^}]*\});/.exec(readCode());
   let icons = null;
   try { icons = rule ? (new Function('return ' + rule[1]))() : null; } catch (e) { icons = null; }
-  return (!!icons && icons.proposed === '✏️' && icons.active === '🔒' && icons.deleted === '💀') || 'DESK_RULE_ICON: ' + JSON.stringify(icons);
+  return (!!icons && icons.proposed === '✏️' && icons.active === '🔒' && icons.deleted === '💀') || false;
 }, test.limit.quick);
 
 // ── THE PAGE THESE TESTS DRIVE (goal/G41.9) ─────────────────────────────────────────────────────────────────────────
@@ -285,10 +284,10 @@ async function settle() { for (let i = 0; i < 30; i++) await new Promise(functio
 
 // One two-press button, clicked twice: made by armingButton (handed no api: it hears a click elsewhere itself, goal/G43.24),
 // saying today's armed wording, asking nothing on the first press and the press on the second.
-async function twoPress(w, find, armedSays, wantPress, what) {
+async function twoPress(w, find, armedSays, wantPress) {
   const before = w.presses().length;
   const b = find();
-  if (!b) return { good: false, why: what + ': no such button on the page' };
+  if (!b) return { good: false };
   const byElement = w.made.some(function (m) { return m.button === b && m.opts && !('api' in m.opts); });
   w.document.click(b); await settle();
   const b1 = find();
@@ -297,20 +296,19 @@ async function twoPress(w, find, armedSays, wantPress, what) {
   w.document.click(b1 || b); await settle();
   const sent = w.presses().slice(before);
   const good = byElement && armedSays(armedText) && firstAsked === 0 && sent.length === 1 && sent[0].args.id === wantPress.id && sent[0].args.what === wantPress.what;
-  return { good: good,
-    why: what + ': ' + JSON.stringify({ madeByArmingButton: byElement, armed: armedText, askedOnFirst: firstAsked, sent: sent.map(function (s) { return s.args; }) }) };
+  return { good: good };
 }
 
 // goal/G41.9: it loads armingButton and keeps no arming of its own
 test.run('it requires spirit/element/armingButton.js through spirit.require', 0.2, async function () {
   const w0 = deskWorld({ id: 'goal/G9', title: 'A goal', goal: '', status: 'open', buttons: [], design: false, blocked: [] }, []);
   await w0.mount();
-  return w0.required.indexOf('spirit/element/armingButton.js') !== -1 || 'required: ' + JSON.stringify(w0.required);
+  return w0.required.indexOf('spirit/element/armingButton.js') !== -1 || false;
 }, test.limit.quick);
 test.run('nothing hand-rolled is left: no data-armed, no armUntilElsewhere, no armed flag of its own', 0.2, function () {
   const plain = raw.replace(/\/\/[^\n]*/g, '');
   const left = ['data-armed', 'armUntilElsewhere', 'deskArmed', 'deskArmOrFire', 'deskDisarm', "classList.add('armed')"].filter(function (s) { return plain.indexOf(s) !== -1; });
-  return !left.length || 'still in desk.js: ' + left.join(', ');
+  return !left.length || false;
 }, test.limit.quick);
 
 // goal/G41.9: each are-you-sure, pressed twice
@@ -319,13 +317,13 @@ const item = { id: 'goal/G9.1', title: 'An item', goal: 'goal/G9', status: 'open
 test.run('End design mode is an arming button: the first press says "End design mode: sure?", the second sends end-design', 0.2, async function () {
   const w = W.w = deskWorld(goal, [item]);
   await w.mount();
-  const p = await twoPress(w, function () { return w.document.getElementById('desk-end-design'); }, function (t) { return t === 'End design mode: sure?'; }, { id: 'goal/G9', what: 'end-design' }, 'End design mode');
-  return p.good || p.why;
+  const p = await twoPress(w, function () { return w.document.getElementById('desk-end-design'); }, function (t) { return t === 'End design mode: sure?'; }, { id: 'goal/G9', what: 'end-design' });
+  return p.good || false;
 }, test.limit.quick);
 test.run('Go all is an arming button: the first press says "Go all: sure?", the second sends go-all', 0.2, async function () {
   const w = W.w;
-  const p = await twoPress(w, function () { return w.document.getElementById('desk-go-all'); }, function (t) { return t === 'Go all: sure?'; }, { id: 'goal/G9', what: 'go-all' }, 'Go all');
-  return p.good || p.why;
+  const p = await twoPress(w, function () { return w.document.getElementById('desk-go-all'); }, function (t) { return t === 'Go all: sure?'; }, { id: 'goal/G9', what: 'go-all' });
+  return p.good || false;
 }, test.limit.quick);
 // The box: "agents still claim done, only the user gets to actually press done. No verifier involvement with desk
 // anywhere.": Done in a row is a plain press, no mark, no arming.
@@ -333,25 +331,23 @@ test.run('Done, in an item\'s row, is a plain press: no warning mark, no arming,
   const w = W.w;
   const before = w.presses().length;
   const b = w.document.querySelector('[data-press="done"]');
-  if (!b) return 'no Done in the row';
+  if (!b) return false;
   const plain = b.textContent === 'Done (1)' || b.textContent === 'Done';
   const armed = b.hasAttribute('data-arming');
   w.document.click(b); await settle();
   const sent = w.presses().slice(before);
-  return (plain && !armed && sent.length === 1 && sent[0].args.id === 'goal/G9.1' && sent[0].args.what === 'done') ||
-    JSON.stringify({ label: b.textContent, arming: armed, sent: sent.map(function (s) { return s.args; }) });
+  return (plain && !armed && sent.length === 1 && sent[0].args.id === 'goal/G9.1' && sent[0].args.what === 'done') || false;
 }, test.limit.quick);
 test.run('the page draws no Verifier tab and loads nothing of a verifier', 0.2, function () {
   const w = W.w;
   const loaded = w.required.filter(function (r) { return /verif|RunStatus/i.test(r); });
-  return (!w.document.querySelector('[data-tab="verifier"]') && !w.document.querySelector('[data-pane="verifier"]') && !loaded.length) ||
-    JSON.stringify({ tab: !!w.document.querySelector('[data-tab="verifier"]'), loaded: loaded });
+  return (!w.document.querySelector('[data-tab="verifier"]') && !w.document.querySelector('[data-pane="verifier"]') && !loaded.length) || false;
 }, test.limit.quick);
 test.run('Start design mode is an arming button: the first press says "Start design mode: sure?", the second sends start-design', 0.2, async function () {
   const ws = deskWorld(Object.assign({}, goal, { design: false }), []);
   await ws.mount();
-  const p = await twoPress(ws, function () { return ws.document.getElementById('desk-start-design'); }, function (t) { return t === 'Start design mode: sure?'; }, { id: 'goal/G9', what: 'start-design' }, 'Start design mode');
-  return p.good || p.why;
+  const p = await twoPress(ws, function () { return ws.document.getElementById('desk-start-design'); }, function (t) { return t === 'Start design mode: sure?'; }, { id: 'goal/G9', what: 'start-design' });
+  return p.good || false;
 }, test.limit.quick);
 
 // goal/G43.30, the box: "every Delete and every Close press in Desk (its rows, the item detail, the rule dialog) is an
@@ -362,27 +358,27 @@ const armedNotClose = function (t) { return !!t && t !== 'Close'; };
 test.run('a goal\'s Close, with nothing under it open, is an arming button: the first press arms it, the second sends close', 0.2, async function () {
   const wc = deskWorld({ id: 'goal/G8', title: 'Done goal', goal: '', status: 'open', buttons: ['close'], design: false, blocked: [] }, []);
   await wc.mount();
-  const p = await twoPress(wc, function () { return wc.document.querySelector('[data-press="close"]'); }, armedNotClose, { id: 'goal/G8', what: 'close' }, 'a goal\'s Close, nothing under it open');
-  return p.good || p.why;
+  const p = await twoPress(wc, function () { return wc.document.querySelector('[data-press="close"]'); }, armedNotClose, { id: 'goal/G8', what: 'close' });
+  return p.good || false;
 }, test.limit.quick);
 test.run('a done item\'s Close, in its row, is an arming button: the first press arms it, the second sends close', 0.2, async function () {
   const wi = deskWorld({ id: 'goal/G8', title: 'A goal', goal: '', status: 'open', buttons: [], design: false, blocked: [] },
     [{ id: 'goal/G8.1', title: 'A done item', goal: 'goal/G8', status: 'done', buttons: ['close'], claims: 1 }]);
   await wi.mount();
-  const p = await twoPress(wi, function () { return wi.document.querySelector('[data-key="goal/G8.1"] [data-press="close"]') || wi.document.querySelector('[data-press="close"]'); }, armedNotClose, { id: 'goal/G8.1', what: 'close' }, 'a done item\'s Close, in its row');
-  return p.good || p.why;
+  const p = await twoPress(wi, function () { return wi.document.querySelector('[data-key="goal/G8.1"] [data-press="close"]') || wi.document.querySelector('[data-press="close"]'); }, armedNotClose, { id: 'goal/G8.1', what: 'close' });
+  return p.good || false;
 }, test.limit.quick);
 
 // ── goal/G41.11: ARMED IS RED, ALSO ON THE DESIGN BUTTONS ─────────────────────────────────────────────────────────────
 // An inline colour on Start or End design mode would beat the shell's armed red (shell.css, #app-content
 // button[data-armed]). Their colour is a class that shell.css paints only while the button is not armed.
 // A design button: no inline background; and its class, the one the title names, painted by shell.css only while unarmed.
-const noInline = function (id, name) {
+const noInline = function (id) {
   const b = W.wd.document.getElementById(id);
   const style = b ? String(b.getAttribute('style') || '') : '';
-  return (!!b && !/background/i.test(style)) || name + ': ' + (b ? 'style="' + style + '"' : 'not drawn');
+  return (!!b && !/background/i.test(style)) || false;
 };
-const paintedClass = function (id, name, want) {
+const paintedClass = function (id, want) {
   const b = W.wd.document.getElementById(id);
   const classes = b ? String(b.className || '').split(/\s+/).filter(Boolean) : [];
   // A rule of shell.css naming one of its classes, only while not armed, that paints its background.
@@ -390,33 +386,32 @@ const paintedClass = function (id, name, want) {
     const re = new RegExp('[^{}]*\\.' + c.replace(/[-]/g, '\\-') + '[^{}]*:not\\(\\[data-armed\\]\\)[^{}]*\\{[^}]*background', 'i');
     return re.test(W.css);
   });
-  return painted.indexOf(want) !== -1 || name + ': classes ' + JSON.stringify(classes) + ', painted by shell.css under :not([data-armed]): ' + JSON.stringify(painted);
+  return painted.indexOf(want) !== -1 || false;
 };
 test.run('End design mode: no inline background, which would beat the armed red', 0.2, async function () {
   W.css = fs.readFileSync(path.join(RUN, 'spirit', 'shell', 'shell.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
   W.wd = deskWorld(Object.assign({}, goal, { design: true }), []);
   await W.wd.mount();
-  return noInline('desk-end-design', 'End design mode');
+  return noInline('desk-end-design');
 }, test.limit.quick);
 test.run('End design mode: its colour comes from a class shell.css paints only while unarmed (.desk-design-end:not([data-armed]))', 0.2, function () {
-  if (!W.wd) return 'no page: the test above failed';
-  return paintedClass('desk-end-design', 'End design mode', 'desk-design-end');
+  if (!W.wd) return false;
+  return paintedClass('desk-end-design', 'desk-design-end');
 }, test.limit.quick);
 test.run('Start design mode: no inline background, which would beat the armed red', 0.2, function () {
-  if (!W.wd) return 'no page: the test above failed';
-  return noInline('desk-start-design', 'Start design mode');
+  if (!W.wd) return false;
+  return noInline('desk-start-design');
 }, test.limit.quick);
 test.run('Start design mode: its colour comes from a class shell.css paints only while unarmed (.desk-design-start:not([data-armed]))', 0.2, function () {
-  if (!W.wd) return 'no page: the test above failed';
-  return paintedClass('desk-start-design', 'Start design mode', 'desk-design-start');
+  if (!W.wd) return false;
+  return paintedClass('desk-start-design', 'desk-design-start');
 }, test.limit.quick);
 // goal/G43.22: no Team and no Apps; Andy: "G0 goes, from ui and server, kept in database."
 test.run('the page draws no Team chat, no Team tab and no Apps tab', 0.2, async function () {
   const wt = deskWorld(goal, []);
   await wt.mount();
   const d = wt.document;
-  return (!d.getElementById('desk-team') && !d.querySelector('[data-tab="apps"]') && !d.querySelector('[data-tab="team"]')) ||
-    'still drawn: ' + JSON.stringify({ team: !!d.getElementById('desk-team'), apps: !!d.querySelector('[data-tab="apps"]'), teamTab: !!d.querySelector('[data-tab="team"]') });
+  return (!d.getElementById('desk-team') && !d.querySelector('[data-tab="apps"]') && !d.querySelector('[data-tab="team"]')) || false;
 }, test.limit.quick);
 
 // ── goal/G43.3: THE LIST'S FILTERS, IN A REAL BROWSER ───────────────────────────────────────────
@@ -426,43 +421,42 @@ test.run('the page draws no Team chat, no Team tab and no Apps tab', 0.2, async 
 // goal/G43.3: /spirit/app/desk/element/desk/test/desk-opened.html: the page opened, with nothing on the stream
 const F1 = W.f1 = {};
 const read1 = async function (js) { try { return JSON.parse(await F1.page.evaluate(js)); } catch (e) { return { error: String(e) }; } };
-const noF1 = function () { return !F1.o ? 'no page: the world failed' : ''; };
+const noF1 = function () { return !F1.o; };
 test.run('the world: the List draws its filter buttons', 0.2, async function () {
-  const why = await bootPage(F1, true);
-  if (why) return why;
+  if (!(await bootPage(F1, true))) return false;
   const page = F1.page;
   await page.send('Page.navigate', { url: F1.node.base + '/DEBUG/spirit/app/desk/element/desk/test/desk-opened.html' });
   await H.until(function () { return page.evaluate('typeof window.opened === "function" && !!window.spirit').then(Boolean); }, H.WAIT);
   const o = await read1('window.opened()');
   if (o.found === true) F1.o = o;
-  return o.found === true || 'the page: ' + JSON.stringify(o);
+  return o.found === true || false;
 }, test.limit.slow);
-test.run('[Current Goal Only] is the only filter on by default', 0.2, function () { if (noF1()) return noF1(); const o = F1.o; return (o.current === true && o.goals === false && o.closed === false) || 'at open: ' + JSON.stringify(o); }, test.limit.quick);
-test.run('the first search asks for the current goal alone', 0.2, function () { if (noF1()) return noF1(); const o = F1.o; return (!!o.args && o.args.currentGoalOnly === true && o.args.goalsOnly === false && o.args.includeClosed === false) || 'at open it asked ' + JSON.stringify(o.args); }, test.limit.quick);
-test.run('and the page shows the current goal and its item when it opens', 0.2, function () { if (noF1()) return noF1(); const o = F1.o; return (o.currentGoal === true && o.openItem === true) || 'at open: ' + JSON.stringify(o); }, test.limit.quick);
+test.run('[Current Goal Only] is the only filter on by default', 0.2, function () { if (noF1()) return false; const o = F1.o; return (o.current === true && o.goals === false && o.closed === false) || false; }, test.limit.quick);
+test.run('the first search asks for the current goal alone', 0.2, function () { if (noF1()) return false; const o = F1.o; return (!!o.args && o.args.currentGoalOnly === true && o.args.goalsOnly === false && o.args.includeClosed === false) || false; }, test.limit.quick);
+test.run('and the page shows the current goal and its item when it opens', 0.2, function () { if (noF1()) return false; const o = F1.o; return (o.currentGoal === true && o.openItem === true) || false; }, test.limit.quick);
 test.run('[Goals Only] pressed: [Current Goal Only] goes off', 0.2, async function () {
-  if (noF1()) return noF1();
+  if (noF1()) return false;
   const g = F1.g = await read1('window.press("goalsOnly")');
-  return (g.goals === true && g.current === false) || 'after [Goals Only]: ' + JSON.stringify(g);
+  return (g.goals === true && g.current === false) || false;
 }, test.limit.slow);
-test.run('and the search asks for goals, every goal', 0.2, function () { const g = F1.g; if (!g) return 'no press: the tests above failed'; return (!!g.args && g.args.goalsOnly === true && g.args.currentGoalOnly === false) || 'it asked ' + JSON.stringify(g.args); }, test.limit.quick);
-test.run('and the List shows the goals, no item', 0.2, function () { const g = F1.g; if (!g) return 'no press: the tests above failed'; return (g.currentGoal === true && g.olderGoal === true && g.olderItem === false && g.openItem === false) || 'after [Goals Only]: ' + JSON.stringify(g); }, test.limit.quick);
+test.run('and the search asks for goals, every goal', 0.2, function () { const g = F1.g; if (!g) return false; return (!!g.args && g.args.goalsOnly === true && g.args.currentGoalOnly === false) || false; }, test.limit.quick);
+test.run('and the List shows the goals, no item', 0.2, function () { const g = F1.g; if (!g) return false; return (g.currentGoal === true && g.olderGoal === true && g.olderItem === false && g.openItem === false) || false; }, test.limit.quick);
 test.run('[Current Goal Only] pressed: [Goals Only] goes off', 0.2, async function () {
-  if (noF1()) return noF1();
+  if (noF1()) return false;
   const c = F1.c = await read1('window.press("current")');
-  return (c.current === true && c.goals === false) || 'after [Current Goal Only]: ' + JSON.stringify(c);
+  return (c.current === true && c.goals === false) || false;
 }, test.limit.slow);
-test.run('and the List shows the current goal alone', 0.2, function () { const c = F1.c; if (!c) return 'no press: the tests above failed'; return (c.openItem === true && c.olderGoal === false && c.olderItem === false) || 'after [Current Goal Only]: ' + JSON.stringify(c); }, test.limit.quick);
+test.run('and the List shows the current goal alone', 0.2, function () { const c = F1.c; if (!c) return false; return (c.openItem === true && c.olderGoal === false && c.olderItem === false) || false; }, test.limit.quick);
 test.run('pressed again: both are off', 0.2, async function () {
-  if (noF1()) return noF1();
+  if (noF1()) return false;
   const off = F1.off = await read1('window.press("current")');
-  return (off.current === false && off.goals === false) || 'pressed again: ' + JSON.stringify(off);
+  return (off.current === false && off.goals === false) || false;
 }, test.limit.slow);
 test.run('and the List shows every goal\'s items', 0.2, function () {
   stop(F1);
   const off = F1.off;
-  if (!off) return 'no press: the tests above failed';
-  return (!!off.args && off.args.currentGoalOnly === false && off.args.goalsOnly === false && off.openItem === true && off.olderItem === true) || 'both off: ' + JSON.stringify(off);
+  if (!off) return false;
+  return (!!off.args && off.args.currentGoalOnly === false && off.args.goalsOnly === false && off.openItem === true && off.olderItem === true) || false;
 }, test.limit.quick);
 
 // ── ANOTHER ITEM OPENS AFTER ONE WAS CLOSED, IN A REAL BROWSER ────────────────────────────────────────────
@@ -471,12 +465,11 @@ test.run('and the List shows every goal\'s items', 0.2, function () {
 // the first item opened and closed with its ✕, then the second opened, which must draw its own details in the one layer.
 // another item opens with its details after one was opened and closed
 const F2 = W.f2 = {};
-const noF2 = function () { return !F2.ready ? 'no desk on a page: the world failed' : ''; };
+const noF2 = function () { return !F2.ready; };
 const open2 = function (title) { return F2.page.evaluate("(function () { var all = Array.prototype.slice.call(document.querySelectorAll('#zzDesk *')).filter(function (x) { return x.textContent.indexOf(" + JSON.stringify(title) + ") !== -1 && !x.closest('.app-container'); }); if (!all.length) return false; all[all.length - 1].click(); return true; })()"); };
 const shown2 = function () { return F2.page.evaluate("(function () { var all = Array.prototype.slice.call(document.querySelectorAll('#zzDesk .app-container')); var b = all.filter(function (x) { return x.style.display !== 'none'; }).pop(); var body = b && b.querySelector('#dd-body'); return JSON.stringify({ layers: all.length, drawn: !!body && body.children.length > 0, text: b ? b.textContent : '' }); })()").then(JSON.parse); };
 test.run('the world: a goal and two items on the scratch desk', 0.2, async function () {
-  const why = await bootPage(F2, false);
-  if (why) return why;
+  if (!(await bootPage(F2, false))) return false;
   const page = F2.page;
   await page.send('Page.navigate', { url: F2.node.base + '/face.html' });
   await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.require)').then(Boolean); }, H.WAIT);
@@ -488,37 +481,37 @@ test.run('the world: a goal and two items on the scratch desk', 0.2, async funct
   F2.one = await call('desk.item.add', { goal: g.id, title: 'First opened item', blocks: '' });
   F2.two = await call('desk.item.add', { goal: g.id, title: 'Second opened item', blocks: '' });
   F2.ready = !!g.id && !!F2.one.id && !!F2.two.id;
-  return F2.ready || 'added ' + JSON.stringify([g, F2.one, F2.two]);
+  return F2.ready || false;
 }, test.limit.long);
 test.run('the world: the first item\'s row is in the List', 0.2, async function () {
-  if (noF2()) return noF2();
+  if (noF2()) return false;
   const page = F2.page;
   await page.evaluate(MOUNT_DESK);
   await H.until(function () { return page.evaluate("document.getElementById('zzDesk').textContent.indexOf('Second opened item') !== -1"); }, H.WAIT);
-  return (await open2('First opened item')) || 'no row for the first item';
+  return (await open2('First opened item')) || false;
 }, test.limit.quick);
 test.run('the first item opens with its details', 0.2, async function () {
-  if (noF2()) return noF2();
+  if (noF2()) return false;
   await H.until(function () { return shown2().then(function (s) { return s.drawn; }); }, H.WAIT);
   const first = await shown2();
-  return (first.drawn && first.text.indexOf(F2.one.id) !== -1) || 'the first: ' + JSON.stringify(first).slice(0, 200);
+  return (first.drawn && first.text.indexOf(F2.one.id) !== -1) || false;
 }, test.limit.quick);
 test.run('the world: the second item\'s row is in the List', 0.2, async function () {
-  if (noF2()) return noF2();
+  if (noF2()) return false;
   await F2.page.evaluate("(function () { var b = Array.prototype.slice.call(document.querySelectorAll('#zzDesk .app-container')).filter(function (x) { return x.style.display !== 'none'; }).pop(); b.querySelector('.app-container-close').click(); return true; })()");
-  return (await open2('Second opened item')) || 'no row for the second item';
+  return (await open2('Second opened item')) || false;
 }, test.limit.slow);
 test.run('after it was closed, the second item opens with its own details, not its title bar alone', 0.2, async function () {
-  if (noF2()) return noF2();
+  if (noF2()) return false;
   await H.until(function () { return shown2().then(function (s) { return s.drawn && s.text.indexOf(F2.two.id) !== -1; }); }, H.WAIT);
   const second = F2.second = await shown2();
-  return (second.drawn && second.text.indexOf(F2.two.id) !== -1) || 'the second: ' + JSON.stringify(second).slice(0, 200);
+  return (second.drawn && second.text.indexOf(F2.two.id) !== -1) || false;
 }, test.limit.quick);
 test.run('every item opens in the one details layer', 0.2, function () {
   stop(F2);
   const second = F2.second;
-  if (!second) return 'no second item opened: the tests above failed';
-  return second.layers === 1 || second.layers + ' layers';
+  if (!second) return false;
+  return second.layers === 1 || false;
 }, test.limit.quick);
 
 // ── goal/G43.30: ON THE REAL PAGE, A CLOSE PRESSED ONCE CLOSES NOTHING ─────────────────────────────────────────
@@ -526,12 +519,11 @@ test.run('every item opens in the one details layer', 0.2, function () {
 // switched on, a goal and an item pressed done; the Desk element on its face page; every Close the List draws pressed once.
 // goal/G43.30: on a real page, every Close in the List pressed once closes nothing
 const F3 = W.f3 = {};
-const noF3 = function () { return !F3.ready ? 'no desk on a page: the world failed' : ''; };
+const noF3 = function () { return !F3.ready; };
 const CLOSES = "Array.prototype.filter.call(document.querySelectorAll('#zzDesk [data-press=\"close\"]'), function (b) { return b.getClientRects().length && !b.closest('.app-container'); })";
 const state3 = async function () { const r = await F3.call('desk.item.get', { id: F3.it.id }); let i = r.item; if (typeof i === 'string') { try { i = JSON.parse(i); } catch (e) { i = null; } } return i || {}; };
 test.run('the world: a goal and its item, done, on the scratch desk', 0.2, async function () {
-  const why = await bootPage(F3, false);
-  if (why) return why;
+  if (!(await bootPage(F3, false))) return false;
   const page = F3.page;
   await page.send('Page.navigate', { url: F3.node.base + '/face.html' });
   await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.require)').then(Boolean); }, H.WAIT);
@@ -544,30 +536,30 @@ test.run('the world: a goal and its item, done, on the scratch desk', 0.2, async
   await call('desk.press', { id: it.id, what: 'done' });
   const before = await state3();
   F3.ready = !!g.id && !!it.id && before.status === 'done';
-  return F3.ready || 'the world: ' + JSON.stringify({ goal: g.id, item: it.id, status: before.status });
+  return F3.ready || false;
 }, test.limit.long);
 test.run('the world: the List draws the done item\'s Close', 0.2, async function () {
-  if (noF3()) return noF3();
+  if (noF3()) return false;
   const page = F3.page;
   await page.evaluate(MOUNT_DESK);
   const drawn = await H.until(function () { return page.evaluate(CLOSES + '.length > 0'); }, H.WAIT);
   if (drawn) F3.drawn = true;
-  return drawn || 'no Close in the List: ' + String(await page.evaluate("String(document.getElementById('zzDesk').innerText).slice(0, 300)"));
+  return drawn || false;
 }, test.limit.quick);
 test.run('each Close in the List pressed once: the item is still done, nothing closed', 0.2, async function () {
-  if (!F3.drawn) return 'no Close drawn: the world failed';
+  if (!F3.drawn) return false;
   const page = F3.page;
   const n = F3.n = await page.evaluate(CLOSES + '.length');
   for (let i = 0; i < n; i++) await page.evaluate('(function () { var b = ' + CLOSES + '[' + i + ']; if (b) b.click(); return !!b; })()');
   await new Promise(function (r) { setTimeout(r, 1500); });
   const after = await state3();
-  return after.status === 'done' || 'after one press each the item is ' + after.status;
+  return after.status === 'done' || false;
 }, test.limit.slow);
 test.run('and each Close in the List stands armed, waiting for the second press', 0.2, async function () {
-  if (!F3.drawn) return 'no Close drawn: the world failed';
+  if (!F3.drawn) return false;
   const armed = JSON.parse(await F3.page.evaluate('JSON.stringify(' + CLOSES + '.map(function (b) { return b.hasAttribute("data-armed"); }))'));
   stop(F3);
-  return (armed.length === F3.n && armed.every(Boolean)) || 'after one press each, the List\'s Closes armed: ' + JSON.stringify(armed) + ' of ' + F3.n;
+  return (armed.length === F3.n && armed.every(Boolean)) || false;
 }, test.limit.quick);
 
 // goal/G41.11: every list of Desk stands in a box of a stated size (rule/16)
@@ -576,12 +568,12 @@ test.run('and each Close in the List stands armed, waiting for the second press'
 // fills its app; never in a stat-tile or a box only as tall as its content. A list
 // drawn as a dropdown stands inline, as every dropdown in the tree does, and is not asked here.
 const isFill = function (n) { return (' ' + String(n.className || '') + ' ').indexOf(' fill ') !== -1; };
-const notFill = function (host) { const out = []; for (let n = host; n && n !== W.mountBox; n = n.parentNode) { if (!isFill(n)) out.push((n.id ? '#' + n.id : n.tagName || n.tag) + (n.className ? '.' + n.className : '')); } return out; };
-const fillOf = function (name, verb) {
+const notFill = function (host) { const out = []; for (let n = host; n && n !== W.mountBox; n = n.parentNode) { if (!isFill(n)) out.push(n); } return out; };
+const fillOf = function (verb) {
   const made = W.panes.filter(function (x) { return x.o.verb === verb; })[0];
-  if (!made) return name + ': no list made';
+  if (!made) return false;
   const gaps = notFill(made.host);
-  return (isFill(made.host) && !gaps.length) || name + ': not fill: ' + gaps.join(' < ');
+  return (isFill(made.host) && !gaps.length) || false;
 };
 test.run('the List stands in a fill box, and every box up to the app is fill too', 0.2, async function () {
   const wf = deskWorld(goal, [item]);
@@ -592,11 +584,11 @@ test.run('the List stands in a fill box, and every box up to the app is fill too
   W.mountBox = wf.document.body.children[wf.document.body.children.length - 1];
   const rulesTab = wf.document.querySelector('[data-tab="rules"]');
   if (rulesTab) { wf.document.click(rulesTab); await settle(); }
-  return fillOf('the List', 'items.search');
+  return fillOf('items.search');
 }, test.limit.quick);
 test.run('the Rules list stands in a fill box, and every box up to the app is fill too', 0.2, function () {
-  if (!W.panes) return 'no page: the test above failed';
-  return fillOf('the Rules list', 'rules.search');
+  if (!W.panes) return false;
+  return fillOf('rules.search');
 }, test.limit.quick);
 
 // ── THE noPlugins PART ───────────────────────────────────────────────────────────────────────────────────────────
@@ -608,7 +600,7 @@ test.run('the Rules list stands in a fill box, and every box up to the app is fi
 function codeOf(f) { try { return fs.readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1').replace(/<!--[\s\S]*?-->/g, ''); } catch (e) { return ''; } }
 test.run('the desk page draws no Apps tab, no plugin tab and no team chat', 0.2, function () {
   const page = codeOf(path.join(RUN, 'spirit', 'app', 'desk', 'element', 'desk', 'desk.js'));
-  return (!!page && !/goal\/G0['"]/.test(page) && !/data-tab="apps"/.test(page) && !/plugin/i.test(page)) || 'spirit/app/desk/element/desk/desk.js still names Apps, a plugin or goal/G0';
+  return (!!page && !/goal\/G0['"]/.test(page) && !/data-tab="apps"/.test(page) && !/plugin/i.test(page)) || false;
 }, test.limit.quick);
 
 test.after(function () { stop(F1); stop(F2); stop(F3); });

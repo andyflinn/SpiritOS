@@ -21,7 +21,6 @@ const REPO = path.resolve(RUN, '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const { freePort, until, sleep, chromePage, findChrome } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 
-function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 function parsed(t) { try { return JSON.parse(t); } catch (e) { return null; } }
 function readJson(f) { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch (e) { return null; } }
 
@@ -64,7 +63,7 @@ function filesUnder(dir) {
 
 // ── THE Agent PART ────────────────────────────────────────
 {
-  let STOP = '';
+  let STOP = false;
   let s, live, c, N, where, open, selector, shown, shows, press, pressInstaller, tool, pressed, db, P, M, Pe, J, openTile, PROVIDER_ROW, MODEL_ROW, PERSONA_ROW, JOB_ROW, added, liveId, onPage, serverIcon, debugRow, panelRows, kept, page, closed, deact, sidecars, code, old, thrown;
   test.after(async function () {
     (live || []).forEach(function (x) { try { x.kill(); } catch (e) { /* gone */ } });
@@ -73,29 +72,29 @@ function filesUnder(dir) {
     try { LABH.freeTree(s); } catch (e) { /* a door still closing; the temp folder keeps it */ }
   });
   test.run('the world: a scratch node comes up', 0.2, async function () {
-    if (STOP) return STOP;
+    if (STOP) return false;
       s = scratch();
       live = [];
       c = null;
     N = await boot(s.run); live.push(N.child);
-    return (N.up) ? true : 'the scratch node did not come up: nothing judged';
+    return (N.up) ? true : false;
   }, test.limit.slow);
   test.run('the world: the page has its spirit', 0.2, async function () {
-    if (STOP) return STOP;
-    if (!N.up) { STOP = 'nothing judged: an earlier test of this part failed'; return STOP; }
+    if (STOP) return false;
+    if (!N.up) { STOP = true; return false; }
     where = findChrome();
-    if (!where) { STOP = 'no Chrome here: nothing judged'; return STOP; }
+    if (!where) { STOP = true; return false; }
     c = await chromePage(where);
-    if (c.error) { STOP = 'Chrome: ' + c.error; return STOP; }
+    if (c.error) { STOP = true; return false; }
     open = async function () {
       await c.send('Page.navigate', { url: N.base + '/' });
       return until(function () { return c.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
     };
-    return (await open()) ? true : 'the page has no spirit: nothing judged';
+    return (await open()) ? true : false;
   }, test.limit.slow);
   // ── the box: active is its one switch; before it nothing runs ──
   test.run('not active: no server job', 0.2, async function () {
-    if (STOP) return STOP;
+    if (STOP) return false;
     // The appSelector, as the shell app makes it, over the page. A second call replaces the first.
     selector = function (face) {
       return c.evaluate('(function () { if (window.__sel) window.__sel.destroy(); var old = document.getElementById("zzBox"); if (old) old.remove(); var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999"; document.body.appendChild(b); return spirit.require("spirit/app/app/element.js").then(function () { window.__sel = spirit.element.spirit.app.app.element.create(b, { face: ' + JSON.stringify(face) + ' }); return "made"; }); }())');
@@ -114,59 +113,59 @@ function filesUnder(dir) {
     };
     tool = function (name) { return c.evaluate('(function () { var b = document.querySelector("#zzBox [data-tool=' + name + ']"); if (!b) return false; if (!b.hasAttribute("data-current")) b.click(); return true; }())'); };
 
-    return (!(await liveJob(N.base))) ? true : 'a server job before Activate';
+    return (!(await liveJob(N.base))) ? true : false;
   }, test.limit.quick);
   test.run('not active: its verbs are not answered', 0.2, async function () {
-    if (STOP) return STOP;
-    return (!answers(await call(N.base, 'agent.DEBUG', {}))) ? true : 'its verb answered before Activate';
+    if (STOP) return false;
+    return (!answers(await call(N.base, 'agent.DEBUG', {}))) ? true : false;
   }, test.limit.quick);
   test.run('its row is in the appSelector\'s pane', 0.2, async function () {
-    if (STOP) return STOP;
+    if (STOP) return false;
     await selector('pane');
-    return (await shows('Agent')) ? true : 'the pane: ' + short(await shown());
+    return (await shows('Agent')) ? true : false;
   }, test.limit.quick);
   test.run('and no tile yet', 0.2, async function () {
-    if (STOP) return STOP;
+    if (STOP) return false;
     await selector('tiles');
     await sleep(1500);
-    return ((await shown()).indexOf('Agent') === -1) ? true : 'tiles: ' + short(await shown());
+    return ((await shown()).indexOf('Agent') === -1) ? true : false;
   }, test.limit.slow);
   // ── the box: "Activate in the appSelector, and the server starts." ──
   test.run('the world: its row has an Activate button, and it is pressed', 0.2, async function () {
-    if (STOP) return STOP;
+    if (STOP) return false;
 
     await selector('pane');
     await shows('Agent');
     pressed = await until(function () { return pressInstaller().then(function (t) { return t === 'Activate'; }); }, 10000);
-    return (pressed) ? true : 'no Activate on the Agent\'s row: ' + short(await shown());
+    return (pressed) ? true : false;
   }, test.limit.quick);
   test.run('pressed, the server answers its verbs', 0.2, async function () {
-    if (STOP) return STOP;
-    return (await serverUp(N.base)) ? true : 'pressed, agent.debug: ' + short((await call(N.base, 'agent.DEBUG', {})).text);
+    if (STOP) return false;
+    return (await serverUp(N.base)) ? true : false;
   }, test.limit.quick);
   test.run('its server runs as a live job under the agent app\'s id', 0.2, async function () {
-    if (STOP) return STOP;
-    if (!answers(await call(N.base, 'agent.DEBUG', {}))) { STOP = 'no server, so nothing further is judged'; return STOP; }
-    return (!!(await liveJob(N.base))) ? true : 'no live job with the id ' + MODULE;
+    if (STOP) return false;
+    if (!answers(await call(N.base, 'agent.DEBUG', {}))) { STOP = true; return false; }
+    return (!!(await liveJob(N.base))) ? true : false;
   }, test.limit.quick);
   test.run('its rows are kept in spirit/state/agent/data/', 0.2, async function () {
-    if (STOP) return STOP;
+    if (STOP) return false;
     db = path.join(s.run, 'spirit', 'state', 'agent', 'data', 'agent.db');
-    return (fs.existsSync(db)) ? true : 'no agent.db in spirit/state/agent/data/';
+    return (fs.existsSync(db)) ? true : false;
   }, test.limit.quick);
   test.run('the world: the server takes a provider, a model, a persona and a job', 0.2, async function () {
-    if (STOP) return STOP;
+    if (STOP) return false;
 
     // Rows for the tables to show, made by the server's verbs as they ever were.
     P = await call(N.base, 'agent.provider', { op: 'add', icon: '🧪', label: ROWS.provider, url: 'http://192.0.2.1:9/' });
     M = await call(N.base, 'agent.model', { op: 'add', icon: '🧬', label: ROWS.model, providerId: P.body && P.body.id });
     Pe = await call(N.base, 'agent.persona', { op: 'add', icon: '🧙', label: ROWS.persona, persona: 'zz', bundle: 'zz', provider: P.body && P.body.id });
     J = await call(N.base, 'agent.job', { op: 'add', icon: '🧰', label: ROWS.job, job: 'zz', bundle: 'zz', provider: P.body && P.body.id, persona: Pe.body && Pe.body.id });
-    return ([P, M, Pe, J].every(function (r) { return r.status === 200 && r.body && r.body.id; })) ? true : 'rows: ' + short([P.text, M.text, Pe.text, J.text]);
+    return ([P, M, Pe, J].every(function (r) { return r.status === 200 && r.body && r.body.id; })) ? true : false;
   }, test.limit.quick);
   // ── the box: "The Agent's tile opens, its tables work, and its rows are there" ──
   test.run('its tile opens the app', 0.2, async function () {
-    if (STOP) return STOP;
+    if (STOP) return false;
 
     openTile = async function () {
       await selector('tiles');
@@ -174,179 +173,179 @@ function filesUnder(dir) {
       await press('Agent');
       return until(function () { return c.evaluate('!!document.querySelector("#zzBox [data-tool=provider]")'); }, 15000);
     };
-    return (await openTile()) ? true : 'the tile opened nothing: ' + short(await shown());
+    return (await openTile()) ? true : false;
   }, test.limit.quick);
-async function rowShows(name) { const hit = await tool(name); return { ok: !!(hit && await shows(ROWS[name])), says: 'the ' + name + ' tool: ' + short(await shown()) }; }
+async function rowShows(name) { const hit = await tool(name); return !!(hit && await shows(ROWS[name])); }
   test.run('the provider table shows the provider row the test planted', 0.2, async function () {
-    if (STOP) return STOP;
+    if (STOP) return false;
     // One table at a time, each check its own plain title (goal/G45.6: a title has no value built into it).
     PROVIDER_ROW = await rowShows('provider');
-    return (PROVIDER_ROW.ok) ? true : PROVIDER_ROW.says;
+    return (PROVIDER_ROW) ? true : false;
   }, test.limit.quick);
   test.run('the model table shows the model row the test planted', 0.2, async function () {
-    if (STOP) return STOP;
+    if (STOP) return false;
     MODEL_ROW = await rowShows('model');
-    return (MODEL_ROW.ok) ? true : MODEL_ROW.says;
+    return (MODEL_ROW) ? true : false;
   }, test.limit.quick);
   test.run('the persona table shows the persona row the test planted', 0.2, async function () {
-    if (STOP) return STOP;
+    if (STOP) return false;
     PERSONA_ROW = await rowShows('persona');
-    return (PERSONA_ROW.ok) ? true : PERSONA_ROW.says;
+    return (PERSONA_ROW) ? true : false;
   }, test.limit.quick);
   test.run('the job table shows the job row the test planted', 0.2, async function () {
-    if (STOP) return STOP;
+    if (STOP) return false;
     JOB_ROW = await rowShows('job');
-    return (JOB_ROW.ok) ? true : JOB_ROW.says;
+    return (JOB_ROW) ? true : false;
   }, test.limit.quick);
   // ── the box: "data.js takes the id spirit.app.agent, not process/js/agent." ──
   test.run('the world: the server adds a provider', 0.2, async function () {
-    if (STOP) return STOP;
+    if (STOP) return false;
 
     // The server publishes a row on its job, under its module id; the family's data.js on the page takes it into spirit.data.
     added = await call(N.base, 'agent.provider', { op: 'add', icon: '🧪', label: 'zzLive', url: 'http://192.0.2.2:9/' });
     liveId = added.body && added.body.id;
-    return (!!liveId) ? true : 'agent.provider add: ' + short(added.text);
+    return (!!liveId) ? true : false;
   }, test.limit.quick);
   test.run('it reaches the page\'s spirit.data.agent with no reload', 0.2, async function () {
-    if (STOP) return STOP;
+    if (STOP) return false;
     onPage = function () { return c.evaluate('(function () { var r = spirit.data.agent && spirit.data.agent.data && spirit.data.agent.data.row("provider", ' + JSON.stringify(String(liveId)) + '); return r ? r.label : ""; }())'); };
-    return (!!liveId && await until(function () { return onPage().then(function (l) { return l === 'zzLive'; }); }, 8000)) ? true : 'on the page: ' + short(await onPage());
+    return (!!liveId && await until(function () { return onPage().then(function (l) { return l === 'zzLive'; }); }, 8000)) ? true : false;
   }, test.limit.quick);
   // ── goal/G43.15, the box: "On the agent's right icon strip, the server's tool takes ⚙ instead of 🐞, and its panel shows serverDEBUG" ──
   test.run('the server\'s tool shows ⚙', 0.2, async function () {
-    if (STOP) return STOP;
+    if (STOP) return false;
 
     // goal/G43.15: the agent's own switch went; its server tool shows serverDEBUG, which switches appServer's DEBUG, kept by the node.
     serverIcon = await c.evaluate('(function () { var b = document.querySelector("#zzBox [data-tool=server]"); return b ? String(b.textContent || "").trim() : null; }())');
-    return (/⚙/.test(String(serverIcon)) && !/🐞/.test(String(serverIcon))) ? true : 'its icon: ' + short(serverIcon);
+    return (/⚙/.test(String(serverIcon)) && !/🐞/.test(String(serverIcon))) ? true : false;
   }, test.limit.quick);
   test.run('its panel shows serverDEBUG: turn on DEBUG Agent', 0.2, async function () {
-    if (STOP) return STOP;
+    if (STOP) return false;
     await tool('server');
     debugRow = function () { return c.evaluate('(function () { var rows = Array.prototype.slice.call(document.querySelectorAll("#zzBox .shell-row-form")).filter(function (r) { return /DEBUG/.test(String(r.innerText || "")) && r.getBoundingClientRect().height > 0; }); return rows.length ? String(rows[0].innerText || "").replace(/\\s+/g, " ").trim() : ""; }())'); };
-    return (await until(function () { return debugRow().then(function (t) { return /turn on DEBUG/i.test(t) && /Agent/.test(t); }); }, 10000)) ? true : 'its panel: ' + short(await debugRow());
+    return (await until(function () { return debugRow().then(function (t) { return /turn on DEBUG/i.test(t) && /Agent/.test(t); }); }, 10000)) ? true : false;
   }, test.limit.quick);
   test.run('above it, the agent\'s icon, then its label', 0.2, async function () {
-    if (STOP) return STOP;
+    if (STOP) return false;
     // goal/G43.15, the box: "the agent's ⚙ panel shows both above serverDEBUG": its visible rows, in order.
     panelRows = function () { return c.evaluate('(function () { var d = Array.prototype.filter.call(document.querySelectorAll("#zzBox .shell-row-form"), function (r) { return /DEBUG/.test(String(r.innerText || "")) && r.getBoundingClientRect().height > 0; })[0]; if (!d) return []; var p = d.parentElement; while (p && p.querySelectorAll(".shell-row-form").length < 3) p = p.parentElement; if (!p) return []; return Array.prototype.filter.call(p.querySelectorAll(".shell-row-form"), function (r) { return r.getBoundingClientRect().height > 0; }).map(function (r) { return String(r.innerText || "").replace(/\\s+/g, " ").trim(); }); }())'); };
-    return (await until(function () { return panelRows().then(function (rows) { var i = rows.findIndex(function (t) { return /^✏️? ?Icon/.test(t) || /Icon/.test(t); }), l = rows.findIndex(function (t) { return /Label/.test(t); }), d = rows.findIndex(function (t) { return /DEBUG/.test(t); }); return i !== -1 && l !== -1 && d !== -1 && i < l && l < d; }); }, 10000)) ? true : 'its panel: ' + short(await panelRows());
+    return (await until(function () { return panelRows().then(function (rows) { var i = rows.findIndex(function (t) { return /^✏️? ?Icon/.test(t) || /Icon/.test(t); }), l = rows.findIndex(function (t) { return /Label/.test(t); }), d = rows.findIndex(function (t) { return /DEBUG/.test(t); }); return i !== -1 && l !== -1 && d !== -1 && i < l && l < d; }); }, 10000)) ? true : false;
   }, test.limit.quick);
   test.run('pressed, the agent\'s DEBUG is on', 0.2, async function () {
-    if (STOP) return STOP;
+    if (STOP) return false;
     await c.evaluate('(function () { var rows = Array.prototype.slice.call(document.querySelectorAll("#zzBox .shell-row-form")).filter(function (r) { return /DEBUG/.test(String(r.innerText || "")); }); if (rows[0]) rows[0].querySelector("button").click(); return 1; }())');
-    return (await until(function () { return call(N.base, 'agent.DEBUG', {}).then(function (r) { return !!r.body && r.body.debug === true; }); }, 8000)) ? true : 'agent.DEBUG {}: ' + short((await call(N.base, 'agent.DEBUG', {})).text);
+    return (await until(function () { return call(N.base, 'agent.DEBUG', {}).then(function (r) { return !!r.body && r.body.debug === true; }); }, 8000)) ? true : false;
   }, test.limit.quick);
   test.run('and the node keeps it in spirit/state/agent/node.json', 0.2, async function () {
-    if (STOP) return STOP;
+    if (STOP) return false;
     kept = path.join(s.run, 'spirit', 'state', 'agent', 'node.json');
-    return (await until(function () { return Promise.resolve((readJson(kept) || {}).debug === true); }, 8000)) ? true : 'node.json: ' + short(readJson(kept));
+    return (await until(function () { return Promise.resolve((readJson(kept) || {}).debug === true); }, 8000)) ? true : false;
   }, test.limit.quick);
   test.run('no config.json of the agent\'s own is written', 0.2, async function () {
-    if (STOP) return STOP;
-    return (!fs.existsSync(path.join(s.run, 'spirit', 'state', 'agent', 'data', 'config.json'))) ? true : 'spirit/state/agent/data/config.json is there';
+    if (STOP) return false;
+    return (!fs.existsSync(path.join(s.run, 'spirit', 'state', 'agent', 'data', 'config.json'))) ? true : false;
   }, test.limit.quick);
   test.run('and its panel says turn off DEBUG', 0.2, async function () {
-    if (STOP) return STOP;
-    return (await until(function () { return debugRow().then(function (t) { return /turn off DEBUG/i.test(t); }); }, 8000)) ? true : 'its panel: ' + short(await debugRow());
+    if (STOP) return false;
+    return (await until(function () { return debugRow().then(function (t) { return /turn off DEBUG/i.test(t); }); }, 8000)) ? true : false;
   }, test.limit.quick);
   // ── the box: "The tick box showDebug goes, with its use of relay-state/shell/agent/config.json" ──
   test.run('the tick box is not on the page', 0.2, async function () {
-    if (STOP) return STOP;
+    if (STOP) return false;
 
     page = await c.evaluate('document.getElementById("zzBox").innerText').then(String);
-    return (!/DEBUG state in the title bar/.test(page)) ? true : 'the page still says it';
+    return (!/DEBUG state in the title bar/.test(page)) ? true : false;
   }, test.limit.quick);
   // ── the tile closes ──
   // OUT OF VIEW, NOT DESTROYED (spirit/element/panel.js, the box: "HIDDEN, NOT DESTROYED (the box): what it drew stays,
   // out of view, until the stack goes"): the ✕ hides the app's panel, so its tools stay in the page, none of them shown.
   test.run('closed, the app is out of view', 0.2, async function () {
-    if (STOP) return STOP;
+    if (STOP) return false;
 
     closed = await c.evaluate('(function () { var b = document.querySelector("#zzBox .app-container-close"); if (!b) return false; b.click(); return true; }())');
-    return (closed && await until(function () { return c.evaluate('Array.prototype.every.call(document.querySelectorAll("#zzBox [data-tool=provider]"), function (e) { return !e.getClientRects().length; })'); }, 8000)) ? true : 'closing: ' + closed;
+    return (closed && await until(function () { return c.evaluate('Array.prototype.every.call(document.querySelectorAll("#zzBox [data-tool=provider]"), function (e) { return !e.getClientRects().length; })'); }, 8000)) ? true : false;
   }, test.limit.long);
   test.run('and it opens again', 0.2, async function () {
-    if (STOP) return STOP;
-    return (await openTile()) ? true : 'it did not open again: ' + short(await shown());
+    if (STOP) return false;
+    return (await openTile()) ? true : false;
   }, test.limit.quick);
   // ── the box: "Deactivate, and the server stops and the tile goes." ──
   test.run('the world: its row has a Deactivate button, and it is pressed', 0.2, async function () {
-    if (STOP) return STOP;
+    if (STOP) return false;
 
     await selector('pane');
     await shows('Agent');
     deact = await until(function () { return pressInstaller().then(function (t) { return t === 'Deactivate'; }); }, 10000);
-    return (deact) ? true : 'no Deactivate on the Agent\'s row: ' + short(await shown());
+    return (deact) ? true : false;
   }, test.limit.quick);
   test.run('pressed, the server stops', 0.2, async function () {
-    if (STOP) return STOP;
-    return (await until(function () { return liveJob(N.base).then(function (j) { return !j; }); }, 15000)) ? true : 'a live server job stayed';
+    if (STOP) return false;
+    return (await until(function () { return liveJob(N.base).then(function (j) { return !j; }); }, 15000)) ? true : false;
   }, test.limit.quick);
   test.run('and its verbs are not answered', 0.2, async function () {
-    if (STOP) return STOP;
-    return (!answers(await call(N.base, 'agent.DEBUG', {}))) ? true : 'its verb answered after Deactivate';
+    if (STOP) return false;
+    return (!answers(await call(N.base, 'agent.DEBUG', {}))) ? true : false;
   }, test.limit.quick);
   test.run('its row stays in the pane', 0.2, async function () {
-    if (STOP) return STOP;
-    return (await shows('Agent')) ? true : 'the pane: ' + short(await shown());
+    if (STOP) return false;
+    return (await shows('Agent')) ? true : false;
   }, test.limit.quick);
   test.run('and its tile goes', 0.2, async function () {
-    if (STOP) return STOP;
+    if (STOP) return false;
     await selector('tiles');
     await sleep(1500);
-    return ((await shown()).indexOf('Agent') === -1) ? true : 'tiles: ' + short(await shown());
+    return ((await shown()).indexOf('Agent') === -1) ? true : false;
   }, test.limit.slow);
   // ── the box: "its rows are there, from the same spirit/state/agent/data/": through a restart, active again ──
   test.run('a restarted node starts it', 0.2, async function () {
-    if (STOP) return STOP;
+    if (STOP) return false;
 
     await call(N.base, 'app.active', { key: 'agent', active: true });
     await serverUp(N.base);
     if (N) await stop(N.child);
     N = await boot(s.run); live.push(N.child);
-    return (N.up && await serverUp(N.base)) ? true : 'a restarted node did not start it';
+    return (N.up && await serverUp(N.base)) ? true : false;
   }, test.limit.slow);
   test.run('its tile opens', 0.2, async function () {
-    if (STOP) return STOP;
+    if (STOP) return false;
     await open();
-    return (await openTile()) ? true : 'its tile did not open: ' + short(await shown());
+    return (await openTile()) ? true : false;
   }, test.limit.slow);
   test.run('and the row made before is there', 0.2, async function () {
-    if (STOP) return STOP;
+    if (STOP) return false;
     await tool('provider');
-    return (await shows(ROWS.provider)) ? true : 'the provider tool: ' + short(await shown());
+    return (await shows(ROWS.provider)) ? true : false;
   }, test.limit.quick);
   // ── the box: "The agent has no sidecar. Nothing in this item reads, writes or tests one" ──
   test.run('after all that, no sidecar of the agent stands anywhere', 0.2, async function () {
-    if (STOP) return STOP;
+    if (STOP) return false;
 
     sidecars = filesUnder(path.join(s.run, 'spirit', 'state')).concat(filesUnder(path.join(s.run, 'spirit', 'app', 'agent')))
       .filter(function (f) { return /agent[^/\\]*\.sidecar\.json$/.test(f) });
-    return (!sidecars.length) ? true : 'sidecars: ' + short(sidecars);
+    return (!sidecars.length) ? true : false;
   }, test.limit.quick);
   test.run('and no code or test of the agent names one', 0.2, async function () {
-    if (STOP) return STOP;
+    if (STOP) return false;
     code = filesUnder(path.join(RUN, 'spirit', 'app', 'agent')).filter(function (f) { return /\.js$/.test(f); })
       .filter(function (f) { return /sidecar/i.test(fs.readFileSync(f, 'utf8').replace(/\/\/.*$/gm, '')); }).map(function (f) { return path.relative(RUN, f); })
       .filter(function (f) { return f !== path.relative(RUN, __filename); });
-    return (!code.length) ? true : 'naming one: ' + short(code);
+    return (!code.length) ? true : false;
   }, test.limit.quick);
   // ── the box: "The agent's files name their new paths." ──
   test.run('no code of the agent names its old folders', 0.2, async function () {
-    if (STOP) return STOP;
+    if (STOP) return false;
 
     old = filesUnder(path.join(RUN, 'spirit', 'app', 'agent')).filter(function (f) { return /\.(js|html)$/.test(f) && f.split(path.sep).indexOf('test') === -1; })
       .filter(function (f) { return /process\/js\/agent|shell\/agent/.test(fs.readFileSync(f, 'utf8').replace(/\/\/.*$/gm, '')); }).map(function (f) { return path.relative(RUN, f); })
       .filter(function (f) { return f !== path.relative(RUN, __filename); });
-    return (!old.length) ? true : 'naming them: ' + short(old);
+    return (!old.length) ? true : false;
   }, test.limit.quick);
   // ── nothing threw on the page ──
   test.run('no uncaught error on the page, all the way', 0.2, async function () {
-    if (STOP) return STOP;
+    if (STOP) return false;
 
     thrown = c.heard.filter(function (m) { return m.method === 'Runtime.exceptionThrown'; }).map(function (m) { return (m.params.exceptionDetails.exception && m.params.exceptionDetails.exception.description) || m.params.exceptionDetails.text; });
-    return (!thrown.length) ? true : 'thrown: ' + short(thrown);
+    return (!thrown.length) ? true : false;
   }, test.limit.quick);
   // (left after the last check)
   test.after(async function () {

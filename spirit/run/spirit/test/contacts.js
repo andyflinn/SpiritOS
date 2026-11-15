@@ -17,7 +17,6 @@ const nodeCard = require(path.join(RUN, 'spirit', 'nodeCard.js'));
 const auth = require(path.join(RUN, 'spirit', 'relayAuth.js'));
 const { scratchNode } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 
-function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 
 // A card signed by that key, naming an owner.
 function cardOf(id, owner, at) {
@@ -40,20 +39,20 @@ test.run('the card is kept', 0.2, function () {
   W.seen.set(W.puppet.publicKey, { keep: true });
   const said = contacts.setCard(W.home, W.puppet.publicKey, cardOf(W.puppet, W.me.publicKey, 1));
   W.row = W.seen.get(W.puppet.publicKey) || {};
-  return (said.ok === true && !!W.row.card) || 'setCard: ' + short(said) + ', card kept ' + !!W.row.card;
+  return (said.ok === true && !!W.row.card) || false;
 }, test.limit.quick);
 test.run('and sets no star: anyone can sign a card naming this node', 0.8, function () {
-  if (!W.row) return 'no card set: the test before it failed';
-  return !W.row.mine || 'the card set the star: ' + short({ mine: W.row.mine });
+  if (!W.row) return false;
+  return !W.row.mine || false;
 }, test.limit.quick);
 // A card naming another owner.
 test.run('takes no star away: only the button does', 0.8, function () {
-  if (!W.seen) return 'no store: the first test failed';
+  if (!W.seen) return false;
   const seen = W.seen;
   seen.set(W.puppet.publicKey, { mine: true });
   const other = auth.generateIdentity('other');
   const said2 = contacts.setCard(W.home, W.puppet.publicKey, cardOf(W.puppet, other.publicKey, 2));
-  return (said2.ok === true && !!(seen.get(W.puppet.publicKey) || {}).mine) || 'setCard ' + short(said2) + ', mine ' + (seen.get(W.puppet.publicKey) || {}).mine;
+  return (said2.ok === true && !!(seen.get(W.puppet.publicKey) || {}).mine) || false;
 }, test.limit.quick);
 
 // /api/spirit contact.own: the button's verb.
@@ -65,10 +64,10 @@ const call = async function (name, args) {
 // The star, as the list reads it: contact.search with its yes-filter, whatever else the row is.
 const mine = async function () { const g = await call('contact.search', { q: '', mine: 'yes' }); return ((g.body && g.body.items) || []).some(function (i) { return i.key === W.KEY; }); };
 const refused = function (r) { return r.status >= 400 && r.status < 500 && !!(r.body && r.body.code) && r.body.code !== 'no-such-verb' && r.body.code !== 'no-such-family'; };
-function noNode() { return W.node && W.node.up ? null : 'no scratch node: the world failed'; }
+function noNode() { return !(W.node && W.node.up); }
 test.run('the world: the scratch node comes up', 0.2, async function () {
   W.node = await scratchNode();
-  return W.node.up || 'the scratch node did not come up: nothing judged';
+  return W.node.up || false;
 }, test.limit.slow);
 test.after(function () {
   try { if (W.home) fs.rmSync(W.home, { recursive: true, force: true }); } catch (e) { /* scratch */ }
@@ -77,42 +76,42 @@ test.after(function () {
   try { if (node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* scratch */ }
 });
 test.run('a row is there to star', 0.2, async function () {
-  if (noNode()) return noNode();
+  if (noNode()) return false;
   W.KEY = auth.generateIdentity('a contact').publicKey;
   const made = await call('contact.block', { publicKey: W.KEY, publicLabel: 'a contact' });
   await call('contact.unblock', { publicKey: W.KEY });
-  return (made.status >= 200 && made.status < 300) || 'contact.block: ' + made.status + ' ' + short(made.text);
+  return (made.status >= 200 && made.status < 300) || false;
 }, test.limit.quick);
 test.run('a new row has no star', 0.2, async function () {
-  if (noNode()) return noNode();
-  return await mine() === false || 'before: ' + (await mine());
+  if (noNode()) return false;
+  return await mine() === false || false;
 }, test.limit.quick);
 test.run('contact.own {key, own: true} is answered', 0.2, async function () {
-  if (noNode()) return noNode();
+  if (noNode()) return false;
   const on = await call('contact.own', { key: W.KEY, own: true });
-  return (on.status >= 200 && on.status < 300) || 'contact.own true: ' + on.status + ' ' + short(on.text);
+  return (on.status >= 200 && on.status < 300) || false;
 }, test.limit.quick);
 test.run('and puts the star on', 0.2, async function () {
-  if (noNode()) return noNode();
-  return await mine() === true || 'after own true: ' + (await mine());
+  if (noNode()) return false;
+  return await mine() === true || false;
 }, test.limit.quick);
 test.run('contact.own {key, own: false} takes it away', 0.2, async function () {
-  if (noNode()) return noNode();
+  if (noNode()) return false;
   const off = await call('contact.own', { key: W.KEY, own: false });
-  return (off.status >= 200 && off.status < 300 && await mine() === false) || 'contact.own false: ' + off.status + ', mine ' + (await mine());
+  return (off.status >= 200 && off.status < 300 && await mine() === false) || false;
 }, test.limit.quick);
 test.run('a key with no row is refused with a code', 0.2, async function () {
-  if (noNode()) return noNode();
+  if (noNode()) return false;
   const unknown = await call('contact.own', { key: auth.generateIdentity('nobody').publicKey, own: true });
-  return refused(unknown) || 'unknown key: ' + unknown.status + ' ' + short(unknown.text);
+  return refused(unknown) || false;
 }, test.limit.quick);
 test.run('own that is not true or false is refused, and nothing changes', 0.2, async function () {
-  if (noNode()) return noNode();
+  if (noNode()) return false;
   const notBool = await call('contact.own', { key: W.KEY, own: 'yes' });
-  return (refused(notBool) && await mine() === false) || 'own "yes": ' + notBool.status + ' ' + short(notBool.text);
+  return (refused(notBool) && await mine() === false) || false;
 }, test.limit.quick);
 test.run('a key of the wrong type is refused', 0.2, async function () {
-  if (noNode()) return noNode();
+  if (noNode()) return false;
   const badKey = await call('contact.own', { key: 12345, own: true });
-  return refused(badKey) || 'key 12345: ' + badKey.status + ' ' + short(badKey.text);
+  return refused(badKey) || false;
 }, test.limit.quick);

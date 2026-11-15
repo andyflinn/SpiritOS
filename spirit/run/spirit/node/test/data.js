@@ -16,7 +16,6 @@ const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const FILE = path.join(__dirname, '..', 'data.js');
 const SPIRIT_DATA = path.join(RUN, 'spirit', 'data.js');
 
-function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 const same = function (a, b) { return JSON.stringify(a) === JSON.stringify(b); };
 // Two nodes' public keys, base64 with a + and a / in them, as a node's key is.
 const SENDER = 'Ab+c/DeF0123456789abcdefghijklmnopqrstuvwxy=';
@@ -57,7 +56,6 @@ function pageWorld() {
 
 // What the tests make, each in order, read by the tests after it.
 let w = null;
-const NO_WORLD = 'no world: the file did not run beside spirit.data';
 
 test.run('in node, found by the family\'s name (spirit.cacheManager), it stands at spirit.data.node.data', 0.2, async function () {
   require(path.join(RUN, 'spirit', 'spirit.js'));
@@ -65,75 +63,75 @@ test.run('in node, found by the family\'s name (spirit.cacheManager), it stands 
   let threw = null;
   try { await S.cacheManager('node'); } catch (e) { threw = e; }
   const X = S.data && S.data['node'] && S.data['node'].data;
-  return (!threw && !!X && typeof X === 'object') || 'cacheManager(\'node\') ' + (threw ? 'refused: ' + threw.message : 'answered, and spirit.data.node.data is ' + short(X));
+  return (!threw && !!X && typeof X === 'object') || false;
 }, test.limit.quick);
 test.run('the world: run beside spirit.data, it makes its family there', 0.2, function () {
-  try { w = world(); } catch (e) { w = null; return 'it threw as it ran: ' + e.message; }
-  return (!!w.X && typeof w.X === 'object') || 'spirit.data.node.data is ' + short(w.X);
+  try { w = world(); } catch (e) { w = null; return false; }
+  return (!!w.X && typeof w.X === 'object') || false;
 }, test.limit.quick);
 
 
 // A process knows its node by the rows it took; here, as a page knows it from node.card, it is told.
 test.run('the world: its home node is known', 0.2, function () {
-  if (!w) return NO_WORLD;
-  return w.D.homeNode(SENDER) === w.D.nodeId(SENDER) || 'homeNode ' + short(w.D.homeNode());
+  if (!w) return false;
+  return w.D.homeNode(SENDER) === w.D.nodeId(SENDER) || false;
 }, test.limit.quick);
 // A planted apiTreeIndex: servers(tree) and verbs(tree, name), read off the tree it is handed.
 const INDEX = { servers: function (t) { return Object.keys(t.families || {}); }, verbs: function (t, n) { return t.families[n] || []; } };
 const TREE = { families: { fs: ['load', 'save'], node: ['card'] } };
 
 test.run('card.keep keeps node.card\'s answer: its name and description', 0.2, function () {
-  if (!w) return NO_WORLD;
+  if (!w) return false;
   w.X.card.keep({ ok: true, name: 'Andy', description: 'his box', publicKey: 'k', descriptionMax: 140 });
-  return same(w.X.card.get(), { name: 'Andy', description: 'his box' }) || short(w.X.card.get());
+  return same(w.X.card.get(), { name: 'Andy', description: 'his box' }) || false;
 }, test.limit.quick);
 test.run('a field a save stored is merged into the card', 0.2, function () {
-  if (!w) return NO_WORLD;
+  if (!w) return false;
   w.X.card.keep({ description: 'his new box' });
-  return same(w.X.card.get(), { name: 'Andy', description: 'his new box' }) || short(w.X.card.get());
+  return same(w.X.card.get(), { name: 'Andy', description: 'his new box' }) || false;
 }, test.limit.quick);
 test.run('an answer that is not ok, or no object, keeps nothing', 0.2, function () {
-  if (!w) return NO_WORLD;
+  if (!w) return false;
   w.X.card.keep({ ok: false, name: 'Refused' });
   w.X.card.keep('Andy');
   w.X.card.keep(null);
-  return same(w.X.card.get(), { name: 'Andy', description: 'his new box' }) || short(w.X.card.get());
+  return same(w.X.card.get(), { name: 'Andy', description: 'his new box' }) || false;
 }, test.limit.quick);
 test.run('card.watch(fn) hears the card on every change, and nothing once released', 0.2, function () {
-  if (!w) return NO_WORLD;
+  if (!w) return false;
   const heard = [];
   const off = w.X.card.watch(function (c) { heard.push(c && c.name); });
   w.X.card.keep({ name: 'Andrew' });
   off();
   w.X.card.keep({ name: 'Drew' });
-  return same(heard, ['Andrew']) || 'heard ' + short(heard);
+  return same(heard, ['Andrew']) || false;
 }, test.limit.quick);
 test.run('a name saved alone keeps the description', 0.2, function () {
-  if (!w) return NO_WORLD;
-  return same(w.X.card.get(), { name: 'Drew', description: 'his new box' }) || short(w.X.card.get());
+  if (!w) return false;
+  return same(w.X.card.get(), { name: 'Drew', description: 'his new box' }) || false;
 }, test.limit.quick);
 test.run('keepTree keeps each family the index reads, and each of its verbs as family.verb', 0.2, function () {
-  if (!w) return NO_WORLD;
+  if (!w) return false;
   w.X.keepTree(TREE, INDEX);
-  return (same(Object.keys(w.X.families()).sort(), ['fs', 'node']) && same(w.X.families().fs, { name: 'fs' }) && same(Object.keys(w.X.verbs()).sort(), ['fs.load', 'fs.save', 'node.card']) && same(w.X.verbs()['fs.load'], { family: 'fs', name: 'load' })) || short([w.X.families(), w.X.verbs()]);
+  return (same(Object.keys(w.X.families()).sort(), ['fs', 'node']) && same(w.X.families().fs, { name: 'fs' }) && same(Object.keys(w.X.verbs()).sort(), ['fs.load', 'fs.save', 'node.card']) && same(w.X.verbs()['fs.load'], { family: 'fs', name: 'load' })) || false;
 }, test.limit.quick);
 test.run('the tree read again replaces both branches whole', 0.2, function () {
-  if (!w) return NO_WORLD;
+  if (!w) return false;
   w.X.keepTree({ families: { fs: ['load'] } }, INDEX);
-  return (same(Object.keys(w.X.families()), ['fs']) && same(Object.keys(w.X.verbs()), ['fs.load'])) || short([Object.keys(w.X.families()), Object.keys(w.X.verbs())]);
+  return (same(Object.keys(w.X.families()), ['fs']) && same(Object.keys(w.X.verbs()), ['fs.load'])) || false;
 }, test.limit.quick);
 test.run('with no index it keeps nothing', 0.2, function () {
-  if (!w) return NO_WORLD;
+  if (!w) return false;
   w.X.keepTree(TREE);
-  return same(Object.keys(w.X.verbs()), ['fs.load']) || short(Object.keys(w.X.verbs()));
+  return same(Object.keys(w.X.verbs()), ['fs.load']) || false;
 }, test.limit.quick);
 test.run('no tree is a tree with no families', 0.2, function () {
-  if (!w) return NO_WORLD;
+  if (!w) return false;
   w.X.keepTree(null, INDEX);
-  return (Object.keys(w.X.families()).length === 0 && Object.keys(w.X.verbs()).length === 0) || short(w.X.families());
+  return (Object.keys(w.X.families()).length === 0 && Object.keys(w.X.verbs()).length === 0) || false;
 }, test.limit.quick);
 test.run('treeBranch and verbsBranch are the two branches\' whole paths', 0.2, function () {
-  if (!w) return NO_WORLD;
+  if (!w) return false;
   const t = w.X.treeBranch, v = w.X.verbsBranch;
-  return (typeof t === 'string' && typeof v === 'string' && t !== v && t.indexOf('/node/') !== -1 && v.indexOf('/node/') !== -1) || short([t, v]);
+  return (typeof t === 'string' && typeof v === 'string' && t !== v && t.indexOf('/node/') !== -1 && v.indexOf('/node/') !== -1) || false;
 }, test.limit.quick);

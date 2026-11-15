@@ -12,7 +12,6 @@ const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 
-function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 // A file's code, comments blanked (line numbers kept); null when the file is not there.
 function code(file) {
   if (!fs.existsSync(file)) return null;
@@ -34,13 +33,12 @@ const f = path.join(RUN, 'spirit', 'peerPost.js');
 // The world: the file is there and its code, comments left out, still holds a line that is surely code.
 test.run('the world: the file is read, and its code, comments left out, still holds a line of code', 0.2, function () {
   const c = code(f);
-  return (c !== null && /module\.exports/.test(c)) ||
-    (c === null ? path.relative(RUN, f) + ' is not there: nothing judged' : path.relative(RUN, f) + '\'s code holds no /module\\.exports/: the comment stripper ate it, nothing judged');
+  return (c !== null && /module\.exports/.test(c)) || false;
 }, test.limit.quick);
 test.run('peerPost.js\'s code names no admitted mark', 0.2, function () {
   const h = hits(f, /admit/i);
-  if (h === null) return 'peerPost.js is not there: nothing judged';
-  return !h.length || 'peerPost.js\'s code still marks or reads admitted: ' + short(h);
+  if (h === null) return false;
+  return !h.length || false;
 }, test.limit.quick);
 
 // THE ROUTE CACHING GOES (goal/G47.1, box v69; Andy: "the \"routes\" aren't read by anybody in the fucking system, node
@@ -60,14 +58,14 @@ test.run('the world: a post handed hints, the body that leaves for the relay kep
     await Promise.race([Promise.resolve(pp.post('https://relay.example', auth.generateIdentity('peer').publicKey, 'hello', ['https://heard.example'])),
       new Promise(function (r) { setTimeout(r, 3000); })]);
     posted = bodies.filter(function (b) { return b && b.text === 'hello'; })[0] || null;
-  } catch (e) { return 'the post could not be made: ' + (e && e.message); } finally { try { fs.rmSync(home, { recursive: true, force: true }); } catch (e) { /* scratch */ } }
-  return !!posted || 'no body left for the relay';
+  } catch (e) { return false; } finally { try { fs.rmSync(home, { recursive: true, force: true }); } catch (e) { /* scratch */ } }
+  return !!posted || false;
 }, test.limit.slow);
 test.run('a post carries no hints', 0.2, function () {
-  if (!posted) return 'no body was kept: the world failed';
-  return posted.hints === undefined || 'the post carries the hints ' + short(posted.hints);
+  if (!posted) return false;
+  return posted.hints === undefined || false;
 }, test.limit.quick);
 test.run('a post carries no hint signature', 0.2, function () {
-  if (!posted) return 'no body was kept: the world failed';
-  return posted.hintSig === undefined || 'the post carries a hint signature';
+  if (!posted) return false;
+  return posted.hintSig === undefined || false;
 }, test.limit.quick);

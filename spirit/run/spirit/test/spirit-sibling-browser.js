@@ -104,8 +104,8 @@ async function batch() {
       if (d.P && d.P.page) { try { if (d.P.page.sock) d.P.page.sock.close(); } catch (e) { /* gone */ } try { if (d.P.page.kid) d.P.page.kid.kill(); } catch (e) { /* gone */ } }
       useScript(d.full || d.rel);
       test.forScript(d.rel, function () {
-        if (!d.full) test.run('the world: the file handed is there', 0.2, function () { return 'no shell app or element to judge: ' + JSON.stringify(d.rel); }, test.limit.quick);
-        else if (!d.P) test.run('the world: the file handed is a page script of the tree', 0.2, function () { return 'not a script under spirit/ outside a test folder: ' + JSON.stringify(d.rel); }, test.limit.quick);
+        if (!d.full) test.run('the world: the file handed is there', 0.2, function () { return false; }, test.limit.quick);
+        else if (!d.P) test.run('the world: the file handed is a page script of the tree', 0.2, function () { return false; }, test.limit.quick);
         else oneFile(d.P);
       });
     }
@@ -382,7 +382,6 @@ const WATCH = String.raw`(function () {
 // can be: in the code, or on a page that gives it something. So a rule is said (its test.run) only when its page gave it
 // something to judge (goal/G47.2: every test one test.run); the rest are said as comments.
 function unjudged(what) { test.comment('not judged on this page: ' + what); }
-function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 // The scratch node and headless Chrome, shared with any test that opens a page (spirit/test/headLessChrome.js).
 const { sleep, until, findChrome, scratchNode, chromePage } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 
@@ -605,8 +604,8 @@ function placedByHand() {
     return /\bspirit\.elements?\s*(\.\s*[\w$]+\s*)*=(?!=)|\bspirit\.elements?\s*(\.\s*[\w$]+\s*)*\[[^\]]*\]\s*=(?!=)|Object\.assign\s*\([^)]*\bspirit\.elements?\b/.test(code);
   });
 }
-// What each rule broke, named in its answer: '' when none did.
-function listed(bad) { return !bad.length || bad.join('; '); }
+// True when no rule broke.
+function listed(bad) { return !bad.length; }
 
 // ── GIVEN NO FILE: THE TREE'S RULES, THEN EVERY PAGE MODULE ─────────────────────────────────────────────────────────────
 function every() {
@@ -619,26 +618,25 @@ function every() {
     // Every page script in its reach, each judged by its own page (goal/G47.1, box v121: no code reading).
     E.files2 = reach.filter(pageScript);
     test.comment('every page script in its reach: ' + E.files2.length + ' of ' + reach.length);
-    return E.files2.length > 0 || 'testModule.js gives it no file to judge';
+    return E.files2.length > 0 || false;
   }, test.limit.quick);
   test.run('the world: a scratch node comes up with its DEBUG on', 0.2, async function () {
     E.node = await scratchNode(Object.assign({ shared: true }, SERVERS));
-    return (E.node.up && E.node.debug) || 'the scratch node did not come up with its DEBUG on: every file would blame the wrong thing';
+    return (E.node.up && E.node.debug) || false;
   }, test.limit.slow);
-  const NO_NODE = 'no scratch node with its DEBUG on: the world failed';
   const nodeUp = function () { return !!E.node && E.node.up && E.node.debug; };
 
   // every product script, placed in spirit.required where it is required
   test.run('the world: the product scripts, each required alone on the node and on a page', 0.2, function () {
     E.req = productScripts().filter(function (f) { return f !== 'spirit/spirit.js'; });
-    return E.req.length > 100 || 'too few scripts to judge: ' + E.req.length;
+    return E.req.length > 100 || false;
   }, test.limit.quick);
   test.run('the world: some of them load on a page', 0.2, async function () {
-    if (!nodeUp()) return NO_NODE;
+    if (!nodeUp()) return false;
     const chrome = findChrome();
-    if (!chrome) return 'no Chrome on this machine: nothing judged on a page';
+    if (!chrome) return false;
     const page = E.page = await chromePage(chrome);
-    if (!page || page.error) return 'no Chrome page: ' + short(page && page.error);
+    if (!page || page.error) return false;
     E.pageLoaded = []; E.pageBad = []; E.noFactory = [];
     E.elements = E.req.filter(isElementScript);
     for (const f of E.req) {
@@ -649,30 +647,30 @@ function every() {
         '.then(function () { var k = ' + keys + '; var at = function (root) { return k.reduce(function (o, x) { return o == null ? undefined : o[x]; }, root); };' +
         ' var el = at(spirit.element); return JSON.stringify({ err: (window.pageErrors || []).join("; "), placed: at(spirit.required) !== undefined, factory: !!el && typeof el.create === "function" }); },' +
         ' function (e) { return JSON.stringify({ err: String(e && e.message || e), placed: false, factory: false }); })');
-      let r = null; try { r = JSON.parse(got); } catch (e) { r = { err: 'the page answered ' + short(got), placed: false, factory: false }; }
-      if (r.err) { if (E.elements.indexOf(f) !== -1) E.noFactory.push(f + ' (it did not load: ' + r.err.slice(0, 80) + ')'); continue; }
+      let r = null; try { r = JSON.parse(got); } catch (e) { r = { err: true, placed: false, factory: false }; }
+      if (r.err) { if (E.elements.indexOf(f) !== -1) E.noFactory.push(f); continue; }
       E.pageLoaded.push(f);
-      if (!r.placed) E.pageBad.push(f + ': nothing stands at spirit.required.' + placeKeys(f).join('.'));
+      if (!r.placed) E.pageBad.push(f);
       if (E.elements.indexOf(f) !== -1 && !r.factory) E.noFactory.push(f);
     }
     try { if (page.kid) page.kid.kill(); } catch (e) { /* gone */ }
     try { if (page.profile) fs.rmSync(page.profile, { recursive: true, force: true }); } catch (e) { /* scratch */ }
-    return E.pageLoaded.length > 0 || 'none loads on a page: nothing judged there';
+    return E.pageLoaded.length > 0 || false;
   }, test.limit.long);
   test.run('on a page: all that load stand at spirit.required.<path>', 0.4, function () {
-    if (!E.pageLoaded) return 'nothing required on a page: the world failed';
-    return (E.pageLoaded.length > 0 && !E.pageBad.length) || E.pageBad.length + ' of ' + E.pageLoaded.length + ' do not; the first: ' + short(E.pageBad.slice(0, 5));
+    if (!E.pageLoaded) return false;
+    return (E.pageLoaded.length > 0 && !E.pageBad.length) || false;
   }, test.limit.quick);
   test.run('every element script has its factory at spirit.element.<its path>, by its own installSpiritElement', 0.4, function () {
-    if (!E.pageLoaded) return 'nothing required on a page: the world failed';
-    return (E.elements.length > 0 && !E.noFactory.length) || (E.elements.length ? E.noFactory.length + ' of ' + E.elements.length + ' have none there: ' + short(E.noFactory.slice(0, 5)) : 'no script calls installSpiritElement: no element is placed by its path');
+    if (!E.pageLoaded) return false;
+    return (E.elements.length > 0 && !E.noFactory.length) || false;
   }, test.limit.quick);
 
   // Each page module in a run of its own, so each is recorded under its own module (spirit/test/testReport.js); each page
   // that is not green named in the answer, by its address.
   test.run('its page is green', 0.4, async function () {
-    if (!nodeUp()) return NO_NODE;
-    if (!E.files2 || !E.files2.length) return 'testModule.js gives it no file to judge: the world failed';
+    if (!nodeUp()) return false;
+    if (!E.files2 || !E.files2.length) return false;
     const red = [];
     for (const f of E.files2) {
       const out = await new Promise(function (resolve) {
@@ -684,11 +682,9 @@ function every() {
       });
       const greens = Number((/✅:(\d+)/.exec(out) || [])[1] || 0);
       const reds = Number((/❌:(\d+)/.exec(out) || [])[1] || 0);
-      // A FAILURE line is its title, then ' — ' and what went wrong (spirit/test/testReport.js).
-      const first = (/FAILURE #[\d.]+: ([^\n]*)/.exec(out) || [])[1] || '';
       const at = '/' + f.replace(/\.js$/, '') + '/headLessBrowser.html';
       test.comment(at + ': ' + reds + ' red, ' + greens + ' green');
-      if (!(reds === 0 && greens > 0)) red.push(at + ': ' + reds + ' red, ' + greens + ' green; first: ' + first.slice(0, 200));
+      if (!(reds === 0 && greens > 0)) red.push(at);
     }
     return listed(red);
   }, test.limit.long);
@@ -708,9 +704,9 @@ function every() {
 // it, and every rule after it fails on it, so nothing is skipped in silence.
 const PAGE_MS = 300000;
 async function session() {
-  const P = { stage: 'chrome', fail: '', notes: [] };
+  const P = { stage: 'chrome', fail: false, notes: [] };
   const chrome = findChrome();
-  if (!chrome) { P.fail = 'no Chrome on this machine (set SPIRIT_CHROME to its path): the UI rules cannot be judged'; return P; }
+  if (!chrome) { P.fail = true; return P; }
   // ITS OWN APP'S SERVER ON TOO (goal/G47.1, cleaning, Andy's testicle's first red: spirit/app/backup/api.js never loaded,
   // "no interface for the family backup", since backup was not turned on on the scratch node): a script of
   // spirit/app/<name>/ is loaded with <name>'s server running, as on a node that uses it.
@@ -724,19 +720,19 @@ async function session() {
   let ownServer = false;
   try { const m = JSON.parse(fs.readFileSync(path.join(RUN, 'spirit', 'app', own, own + '.json'), 'utf8')); ownServer = !!own && !!(m && m.node && m.node.mount === true) && fs.existsSync(path.join(RUN, 'spirit', 'app', own, own + '.js')); } catch (e) { ownServer = false; }
   const node = P.node = await scratchNode({ shared: true, servers: SERVERS.servers.concat(ownServer && SERVERS.servers.indexOf(own) === -1 ? [own] : []) });
-  if (!node.up) { P.fail = 'the scratch node did not come up: every rule here would blame the wrong thing'; return P; }
-  if (!node.debug) { P.fail = 'the scratch node\'s DEBUG could not be switched on (node.debug)'; return P; }
+  if (!node.up) { P.fail = true; return P; }
+  if (!node.debug) { P.fail = true; return P; }
   if (ownServer) {
     const served = await until(function () {
       return fetch(node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'api', args: { family: own } }) })
         .then(function (r) { return r.json(); }).then(function (b) { return !!(b && b.interface); }, function () { return false; });
     }, 30000);
-    if (!served) { P.fail = 'its app\'s server, spirit/app/' + own + '/' + own + '.js, did not come up on the scratch node in 30 s: nothing of it judged'; return P; }
+    if (!served) { P.fail = true; return P; }
     P.notes.push('its app\'s server ' + own + ' answers its interface');
   }
   const page = P.page = await chromePage(chrome);
   drawing = P;
-  if (page.error) { P.fail = page.error; return P; }
+  if (page.error) { P.fail = true; return P; }
   // SETTLED, NOT SLEPT (goal/G47.1, box v144: "no fixed sleeps in the checks: each wait ends the moment the page has settled"):
   // nothing of the element's own on the wire (spiritWatch.out), then two frames drawn; never longer than 2 s. The fixed sleeps it
   // replaces (500, 400, 150, 300, 200, 200 ms) were ~2.6 s a script of a run's ~10 s.
@@ -973,7 +969,7 @@ function hungPage(gen) {
       // busy with the checks' own long reads (typing past every field, probing every box), and busy is not hung.
       if (P && P.page && P.page.evaluate && P.stage === 'debug page') {
         const answered = await Promise.race([Promise.resolve(P.page.evaluate('1')).then(function () { return true; }, function () { return true; }), new Promise(function (r) { setTimeout(function () { r(false); }, HANG_MS); })]);
-        if (!answered && gen === drawingGen && drawing === P && P.stage === 'debug page') { try { P.page.kid.kill(); } catch (e) { /* gone */ } resolve({ stage: P.stage, fail: 'the page of ' + rel + ' hung: it gave no answer in ' + (HANG_MS / 1000) + ' s while ' + P.stage }); return; }
+        if (!answered && gen === drawingGen && drawing === P && P.stage === 'debug page') { try { P.page.kid.kill(); } catch (e) { /* gone */ } resolve({ stage: P.stage, fail: true }); return; }
       }
       if (gen === drawingGen) setTimeout(tick, PING_MS); else resolve(null);
     };
@@ -984,30 +980,30 @@ function bounded(work) {
   drawing = null;
   const gen = ++drawingGen;
   const stall = hungPage(gen).then(function (h) { return h || new Promise(function () { /* the session ended first */ }); });
-  return Promise.race([work.then(null, function (e) { return { stage: 'chrome', fail: 'it crashed: ' + (e && e.stack || e) }; }), stall,
-    new Promise(function (r) { setTimeout(function () { r({ stage: 'chrome', fail: 'it hung: the page session took more than ' + (PAGE_MS / 1000) + ' s' }); }, PAGE_MS); })]).then(function (P) { drawing = null; if (gen === drawingGen) drawingGen += 1; return P; });
+  return Promise.race([work.then(null, function () { return { stage: 'chrome', fail: true }; }), stall,
+    new Promise(function (r) { setTimeout(function () { r({ stage: 'chrome', fail: true }); }, PAGE_MS); })]).then(function (P) { drawing = null; if (gen === drawingGen) drawingGen += 1; return P; });
 }
 
 function oneFile(P) {
   // Its own script, kept: in a batch, rel, full and ADDRESS move on to the next script before its checks run.
-  const ownRel = rel, ownFull = full, ownAddress = ADDRESS;
+  const ownRel = rel, ownFull = full;
   // ON ITS PAGE: what the session drew, each rule said as the old checks were.
   test.run('the world: a scratch node with its DEBUG on, and a Chrome page', 0.2, function () {
     (P.notes || []).forEach(function (n) { test.comment(n); });
-    return !P.fail || P.fail;
+    return !P.fail || false;
   }, test.limit.quick);
-  const before = function () { return P.fail ? 'no page: the world failed' : ''; };
+  const before = function () { return !!P.fail; };
   // <address>: it loads by itself
   test.run('the node answers its DEBUG page for it', 0.4, function () {
-    return before() || P.debugStatus === 200 || ownAddress + ' answered ' + P.debugStatus;
+    return !before() && P.debugStatus === 200;
   }, test.limit.quick);
-  const noMount = function () { return before() || (P.debugStatus !== 200 ? 'no DEBUG page: the world failed' : ''); };
+  const noMount = function () { return before() || P.debugStatus !== 200; };
   // A PAGE SCRIPT THAT INSTALLS NO ELEMENT (goal/G47.1, box v121): loaded on the bare page, what it runs is judged; the
   // element rules are skipped, said as a comment, never counted green.
   if (P.noElement) {
-    test.run('with no element installed, nothing it runs throws', 0.8, function () { return noMount() || !P.thrown.length || 'thrown: ' + short(P.thrown); }, test.limit.quick);
-    test.run('with no element installed, every file it asks for is there', 0.4, function () { return noMount() || !P.missing.length || 'missing: ' + short(P.missing); }, test.limit.quick);
-    test.run('with no element installed, it says no error on the console', 0.4, function () { return noMount() || !P.errors.length || 'console: ' + short(P.errors); }, test.limit.quick);
+    test.run('with no element installed, nothing it runs throws', 0.8, function () { return !noMount() && !P.thrown.length; }, test.limit.quick);
+    test.run('with no element installed, every file it asks for is there', 0.4, function () { return !noMount() && !P.missing.length; }, test.limit.quick);
+    test.run('with no element installed, it says no error on the console', 0.4, function () { return !noMount() && !P.errors.length; }, test.limit.quick);
     unjudged('it installs no element at spirit.element.' + ownRel.replace(/\.js$/, '').split('/').join('.') + ': the element rules are skipped');
     pageAfter(P);
     return;
@@ -1015,74 +1011,69 @@ function oneFile(P) {
   const ownCode = fs.readFileSync(ownFull, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1');
   // "if it throws when mounted empty, red at 0.8; this enforces rule 26 (an element loads its own stuff)" (box v121).
   test.run('it mounts by itself on a bare page: spirit.js, then this file alone', 0.8, function () {
-    return noMount() || (!!P.report && P.report.state === 'mounted') || 'the page said: ' + short(P.report);
+    return !noMount() && !!P.report && P.report.state === 'mounted';
   }, test.limit.quick);
-  test.run('nothing it runs throws', 0.8, function () { return noMount() || !P.thrown.length || 'thrown: ' + short(P.thrown); }, test.limit.quick);
-  test.run('every file it asks for is there', 0.4, function () { return noMount() || !P.missing.length || 'missing: ' + short(P.missing); }, test.limit.quick);
-  test.run('and it says no error on the console', 0.4, function () { return noMount() || !P.errors.length || 'console: ' + short(P.errors); }, test.limit.quick);
+  test.run('nothing it runs throws', 0.8, function () { return !noMount() && !P.thrown.length; }, test.limit.quick);
+  test.run('every file it asks for is there', 0.4, function () { return !noMount() && !P.missing.length; }, test.limit.quick);
+  test.run('and it says no error on the console', 0.4, function () { return !noMount() && !P.errors.length; }, test.limit.quick);
   const mounted = P.stage === 'done';
-  const notDrawn = function () { return noMount() || (!mounted ? 'it did not mount: the world failed' : ''); };
+  const notDrawn = function () { return noMount() || !mounted; };
   // MOUNTED EMPTY (goal/G47.1, box v121): the four element rules, judged as drawn before any press.
   // A ROW ELEMENT PUTS NO BOX INTO A CONTAINER (cw: "a row's create takes a row, not a container, and draws into the cells
   // its list hands it"): with nothing put into its container there is no box of its own to judge (Q4); said as a comment,
   // never green. Its list's box is judged with the list.
   if (mounted && !P.boxCount) unjudged('mounted empty, it puts nothing into the container it is given (a row element): no box of its own');
   else test.run('mounted empty, the box it puts into its container declares a constraint: overflow not visible', 0.4, function () {
-    if (notDrawn()) return notDrawn();
-    return !P.unbounded.length || P.unbounded.length + ' with overflow visible: ' + short(P.unbounded.map(function (b) { return b.node + ' (overflow-x ' + b.x + ', overflow-y ' + b.y + ')'; }));
+    if (notDrawn()) return false;
+    return !P.unbounded.length || false;
   }, test.limit.quick);
   if (mounted && !P.inputCount) unjudged('mounted empty, it draws no input');
   else {
     test.run('mounted empty, every input it draws has a maxlength', 0.4, function () {
-      if (notDrawn()) return notDrawn();
-      return !P.noMax.length || P.noMax.length + ' of ' + P.inputCount + ' have none: ' + short(P.noMax);
+      if (notDrawn()) return false;
+      return !P.noMax.length || false;
     }, test.limit.quick);
   }
   if (mounted && !P.pressableCount) unjudged('mounted empty, it draws no input and no button');
   else {
     test.run('mounted empty, every input and button it draws has a listener on itself or on a node between it and its box', 0.6, function () {
-      if (notDrawn()) return notDrawn();
-      return !P.deaf.length || P.deaf.length + ' of ' + P.pressableCount + ' have none on their way up: ' + short(P.deaf);
+      if (notDrawn()) return false;
+      return !P.deaf.length || false;
     }, test.limit.quick);
   }
   test.run('mounted empty, no node of it carries margin, padding or gap in its style attribute, and no <style> block it adds sets them', 0.4, function () {
-    if (notDrawn()) return notDrawn();
+    if (notDrawn()) return false;
     const bad = (P.spacedNodes || []).concat(P.spacedRules || []);
-    return !bad.length || bad.length + ' set spacing: ' + short(bad);
+    return !bad.length || false;
   }, test.limit.quick);
   // Said when it drew a scrolling box; each box that grows named in the answer.
   if (!mounted || Object.keys(P.boxes).length) {
     // <address>: sized box <id chain>
     test.run('it keeps its height and its width when given far more than it holds', 0.4, function () {
-      if (notDrawn()) return notDrawn();
-      return listed(Object.keys(P.boxes).map(function (k) {
+      if (notDrawn()) return false;
+      return listed(Object.keys(P.boxes).filter(function (k) {
         const p = P.boxes[k];
-        const why = [];
-        if (!p.tall.kept) why.push('it grows taller with its content');
-        if (!p.wide.kept) why.push('it grows wider with its content');
-        if (!p.tall.inside || !p.wide.inside) why.push('it reaches past the mount box');
-        if (p.tall.spilt || p.wide.spilt) why.push('the mount box overflows');
-        return why.length ? k + ': ' + why.join('; ') : '';
-      }).filter(Boolean));
+        return !p.tall.kept || !p.wide.kept || !p.tall.inside || !p.wide.inside || p.tall.spilt || p.wide.spilt;
+      }));
     }, test.limit.quick);
   }
   // <address>: every icon it paints is the icon element
   test.run('every pictograph it draws lies inside the icon element', 0.4, function () {
-    if (notDrawn()) return notDrawn();
-    return (!!P.iconMark && !P.loose.length) || (P.iconMark ? P.loose.length + ' drawn outside the icon element: ' + short(P.loose.slice(0, 5)) : 'no icon element to paint through: spirit/element/icon.js made no element with a class');
+    if (notDrawn()) return false;
+    return (!!P.iconMark && !P.loose.length) || false;
   }, test.limit.quick);
   // <address>: its box never grows
   test.run('it never grows its box, and the page never scrolls sideways', 0.4, function () {
-    if (notDrawn()) return notDrawn();
-    return P.spills === false || 'its box overflows, or the page scrolls sideways';
+    if (notDrawn()) return false;
+    return P.spills === false || false;
   }, test.limit.quick);
   // <address>: every field it draws stops at its limit
   if (mounted && !P.fields.length) unjudged('it draws no text field');
   else {
     test.run('every field it draws stops at its limit, typed past it', 0.4, function () {
-      if (notDrawn()) return notDrawn();
+      if (notDrawn()) return false;
       const free = P.fields.filter(function (f) { return f.kept > MOST_BYTES; });
-      return !free.length || free.length + ' kept more than any rule allows: ' + short(free.map(function (f) { return f.at + ' kept ' + f.kept; }));
+      return !free.length || false;
     }, test.limit.quick);
   }
   const W = (P.W) || { net: [], subs: [], writes: [], moved: [], searches: [] };
@@ -1091,14 +1082,13 @@ function oneFile(P) {
   // was made by spirit's own code.
   // <address>: all it sends goes through spirit
   test.run('every call it puts on the wire goes through spirit', 0.4, function () {
-    if (notDrawn()) return notDrawn();
+    if (notDrawn()) return false;
     const own = W.net.filter(function (c) { return !c.spirit; });
     // OUTSIDE goal/G41.28, AND STILL RED (Andy, G41.28: "WSL will drop Q23 from this item, and mark those two related reds as
     // outside it"): login fetches its steps file before the page has a link to its node, and the file viewer fetches a
-    // file at home piece by piece. Each red names that it is outside the item; it is not met, so it is not green.
+    // file at home piece by piece. It is not met, so it is not green.
     // shell/login/login.js is no longer in the tree; the file viewer's spirit/element/fstat.js is.
-    const OUTSIDE = own.some(function (c) { return /^(shell\/login\/login|spirit\/element\/fstat)\.js$/.test(String(c.file || '')); }) ? ' (outside goal/G41.28, Andy: "WSL will drop Q23 from this item, and mark those two related reds as outside it")' : '';
-    return !own.length || own.length + ' made by itself: ' + short(own.map(function (c) { return c.kind + ' ' + c.url.replace(P.node.base, '') + ' from ' + (c.file || 'an unnamed script'); })) + OUTSIDE;
+    return !own.length || false;
   }, test.limit.quick);
 
   // WHO ASKS FOR A CHANGE LISTENS FOR IT (goal/G41.27; Andy: "elements that change things, also subscribe to the changes
@@ -1120,31 +1110,30 @@ function oneFile(P) {
     test.run('what it watches redraws it, proved in its own test', 0.4, function () {
       const p = OWN_PROOF[ownRel];
       const said = require('child_process').spawnSync(process.execPath, [path.join(RUN, p.test)], { cwd: RUN, encoding: 'utf8', timeout: 120000 }).stdout || '';
-      return said.split('\n').some(function (l) { return /SUCCESS/.test(l) && l.indexOf(p.check) !== -1; }) || 'its own test (' + p.test + ') did not pass: ' + p.check;
+      return said.split('\n').some(function (l) { return /SUCCESS/.test(l) && l.indexOf(p.check) !== -1; }) || false;
     }, test.limit.long);
   }
   else {
     test.run('a change written into what it watches redraws it', 0.4, function () {
-      if (notDrawn()) return notDrawn();
-      return seenProbe.some(function (x) { return x.redrew; }) || 'it watches ' + seenProbe.map(function (x) { return x.path; }).join(', ') + ' and redraws for none of them';
+      if (notDrawn()) return false;
+      return seenProbe.some(function (x) { return x.redrew; }) || false;
     }, test.limit.quick);
   }
   // <address>: every interface it needs, it requires itself
   if (mounted && !(P.usedFamilies || []).length) unjudged('it calls and watches no family');
   else {
     test.run('every family it calls or watches, it required that family\'s interface itself', 0.8, function () {
-      if (notDrawn()) return notDrawn();
-      return !P.unloaded.length || 'it uses ' + P.unloaded.join(', ') + ' with no api.js of it in spirit.required: it leans on what another part loaded';
+      if (notDrawn()) return false;
+      return !P.unloaded.length || false;
     }, test.limit.quick);
   }
   // <address>: what it changes, it listens for through spirit.data
   if (mounted && !W.writes.length) unjudged('its presses sent no write (its code is judged for it, above)');
   else {
     test.run('it sent writes and watches spirit.data paths for them', 0.4, function () {
-      if (notDrawn()) return notDrawn();
+      if (notDrawn()) return false;
       const watching = W.subs.filter(function (x) { return x.mine && x.live && x.kind === 'data.watch'; }).length;
-      const raw = W.subs.filter(function (x) { return x.mine && x.live && x.kind !== 'data.watch'; }).length;
-      return watching > 0 || 'it sent ' + short(W.writes) + ' and watches no spirit.data path' + (raw ? '; it listens to the raw stream ' + raw + ' times instead' : '');
+      return watching > 0 || false;
     }, test.limit.quick);
   }
   // IT DRAWS ONLY WHAT THE STREAM SAYS (rule/19; goal/G41.27, the box: "after a press, until the stream answers, an
@@ -1154,8 +1143,8 @@ function oneFile(P) {
   if (mounted && !W.writes.length) unjudged('its presses sent no write');
   else {
     test.run('while its writes were out it changed only busy marks, disabled buttons and fine print', 0.4, function () {
-      if (notDrawn()) return notDrawn();
-      return !W.moved.length || W.moved.length + ' changes while a write was out: ' + short(W.moved.slice(0, 6));
+      if (notDrawn()) return false;
+      return !W.moved.length || false;
     }, test.limit.quick);
   }
   // EVERY SEARCH FROM SPIRIT.DATA (goal/G41.28; Andy, box v15: "general test for screen objects will make sure that all
@@ -1165,14 +1154,14 @@ function oneFile(P) {
   const made = W.searches || [];
   // ONE EXCEPTION, DEFERRED, AND STILL RED (Andy, the box: "the only exception is introspector, deferred for network-scope
   // design reasons."): the probability search keeps rows of its own for introSpector's selectors over another node, so
-  // its own page, mounted bare, still makes one. The red names the deferral; it is not met, so it is not green.
-    const DEFERRED = ownRel === 'spirit/element/search.js' || ownRel === 'spirit/element/introSpector.js' || ownRel === 'spirit/app/introSpector/element.js' ?' (introSpector\'s deferral, the box: "the only exception is introspector, deferred for network-scope design reasons.")' : '';
+  // its own page, mounted bare, still makes one (spirit/element/search.js, spirit/element/introSpector.js,
+  // spirit/app/introSpector/element.js); it is not met, so it is not green.
   if (mounted && !made.length) unjudged('it makes no search');
   else {
     test.run('its searches are each made with a spirit.data branch, no rows of their own', 0.4, function () {
-      if (notDrawn()) return notDrawn();
+      if (notDrawn()) return false;
       const off = made.filter(function (x) { return !x.data || x.rows; });
-      return !off.length || off.length + ' not from spirit.data: ' + short(off.map(function (x) { return (x.verb || 'a search') + (x.data ? '' : ' with no data branch') + (x.rows ? ' fed by its own rows()' : ''); })) + DEFERRED;
+      return !off.length || false;
     }, test.limit.quick);
   }
   // "and draws only rows that branch holds": every row a search shows, after its tools and buttons are pressed, is a
@@ -1182,25 +1171,25 @@ function oneFile(P) {
   if (mounted && !drew) unjudged('its searches draw no row');
   else {
     test.run('every row its searches draw is a row their spirit.data branch holds', 0.4, function () {
-      if (notDrawn()) return notDrawn();
+      if (notDrawn()) return false;
       const strays = outside.filter(function (x) { return x.outside.length; });
-      return !strays.length || strays.length + ' searches draw rows their branch does not hold: ' + short(strays.map(function (x) { return (x.verb || 'a search') + ' on ' + x.data + ': ' + x.outside.join(', '); }));
+      return !strays.length || false;
     }, test.limit.quick);
   }
   // <address>: destroy leaves its box empty
-  if (mounted && P.destroyed === 'none') test.run('it has no destroy of its own (an app is closed by the face)', 0.4, function () { return P.destroyed === 'none' || 'after destroy its box still holds what it drew'; }, test.limit.quick);
+  if (mounted && P.destroyed === 'none') test.run('it has no destroy of its own (an app is closed by the face)', 0.4, function () { return P.destroyed === 'none' || false; }, test.limit.quick);
   else {
     test.run('destroyed, its box is empty', 0.4, function () {
-      if (notDrawn()) return notDrawn();
-      return P.destroyed === 'empty' || 'after destroy its box still holds what it drew';
+      if (notDrawn()) return false;
+      return P.destroyed === 'empty' || false;
     }, test.limit.quick);
     const mine = (P.after || []).filter(function (x) { return x.mine; });
     if (mounted && !mine.length) unjudged('it made no subscription');
     else {
       test.run('destroyed, it lets every subscription it made go', 0.4, function () {
-        if (notDrawn()) return notDrawn();
+        if (notDrawn()) return false;
         const held = mine.filter(function (x) { return x.live; });
-        return !held.length || held.length + ' still held after destroy: ' + short(held.map(function (x) { return x.kind; }));
+        return !held.length || false;
       }, test.limit.quick);
     }
   }
@@ -1227,7 +1216,7 @@ function pageAfter(P) {
 if (GIVEN.length > 1) batch();
 else if (!arg) every();
 else if (!full) {
-  test.run('the world: the file handed is there', 0.2, function () { return 'no shell app or element to judge: ' + JSON.stringify(arg); }, test.limit.quick);
+  test.run('the world: the file handed is there', 0.2, function () { return false; }, test.limit.quick);
 } else if (!pageScript(rel)) {
-  test.run('the world: the file handed is a page script of the tree', 0.2, function () { return 'not a script under spirit/ outside a test folder: ' + JSON.stringify(rel); }, test.limit.quick);
+  test.run('the world: the file handed is a page script of the tree', 0.2, function () { return false; }, test.limit.quick);
 } else bounded(session()).then(oneFile);

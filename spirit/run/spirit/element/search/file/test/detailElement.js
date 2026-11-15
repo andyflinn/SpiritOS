@@ -12,7 +12,6 @@ const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const { scratchNode, chromePage, findChrome, until } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 
-function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 400); }
 // A file every tree holds, of a known size.
 const PATH = 'spirit/spirit.js';
 
@@ -31,31 +30,31 @@ test.after(function () {
 
 test.run('spirit/element/search/file/detailElement.js is there', 0.2, function () {
   code = fs.existsSync(SRC) ? fs.readFileSync(SRC, 'utf8').replace(/\/\/[^\n]*/g, '') : '';
-  return !!code || 'spirit/element/search/file/detailElement.js is not there: nothing below can pass';
+  return !!code || false;
 }, test.limit.quick);
 test.run('it draws with fstat, which it loads itself', 0.2, function () {
-  return /spirit\/element\/fstat\.js/.test(code) && /fstat\.create\(/.test(code) ? true : 'it does not load spirit/element/fstat.js and draw with it';
+  return /spirit\/element\/fstat\.js/.test(code) && /fstat\.create\(/.test(code) ? true : false;
 }, test.limit.quick);
 test.run('the world: a scratch node, and a Chrome on its face page', 0.2, async function () {
   node = await scratchNode();
   chrome = await chromePage(findChrome());
-  if (!node.up || chrome.error) return 'no scratch node or no Chrome: nothing judged. ' + short(chrome.error || '');
+  if (!node.up || chrome.error) return false;
   await chrome.send('Page.navigate', { url: node.base + '/face.html' });
-  return (await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000)) ? true : 'the face page never had spirit.ready';
+  return (await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000)) ? true : false;
 }, test.limit.slow);
 test.run('it loads on a page, at spirit.element.spirit.element.search.file.detailElement, and makes its detail', 0.2, async function () {
-  if (!node || !node.up || !chrome || chrome.error) return 'no scratch node or no Chrome: the world failed';
+  if (!node || !node.up || !chrome || chrome.error) return false;
   made = await js('window.spirit.ready.then(function () { return window.spirit.require("spirit/element/search/file/detailElement.js"); }).then(function () { var E = (((((window.spirit.element || {}).spirit || {}).element || {}).search || {}).file || {}).detailElement; if (!E || typeof E.create !== "function") return "no create"; var b = document.body.appendChild(document.createElement("div")); b.id = "zzDetail"; window.__made = E.create(b, { path: ' + JSON.stringify(PATH) + ' }); return "made"; }, function (e) { return "ERR " + e; })');
-  return made === 'made' ? true : 'mounting it: ' + short(made);
+  return made === 'made' ? true : false;
 }, test.limit.quick);
 // fstat's facts: the MIME type at once, then the size once fs.stat answers.
 test.run('it shows the file\'s info: its MIME type and its size', 0.2, async function () {
-  if (made !== 'made') return 'no detail was made';
+  if (made !== 'made') return false;
   const shown = await until(function () { return text().then(function (t) { return /javascript/i.test(t) && /\d/.test(t); }); }, 10000);
-  return shown ? true : 'the detail shows: ' + short(await text());
+  return shown ? true : false;
 }, test.limit.quick);
 test.run('destroy leaves its host empty', 0.2, async function () {
-  if (made !== 'made') return 'no detail was made';
+  if (made !== 'made') return false;
   const after = await js('(function () { window.__made.destroy(); return document.getElementById("zzDetail").children.length; })()');
-  return after === 0 ? true : 'after destroy it holds ' + short(after) + ' children';
+  return after === 0 ? true : false;
 }, test.limit.quick);

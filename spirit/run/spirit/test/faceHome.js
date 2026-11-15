@@ -30,7 +30,6 @@ const settle = async function () { for (let i = 0; i < 10; i++) await new Promis
 const W = {};
 // A thing of W, made the first time a test needs it, so a throw lands on that test.
 function lazy(k, make) { if (!W[k]) W[k] = make(); return W[k]; }
-const MISSING = 'nothing to judge: the test before it failed';
 
 const ME = auth.generateIdentity('home');
 const FACE = auth.generateIdentity('face');
@@ -91,29 +90,28 @@ function sealed(call) {
 }
 function pieced(call) { return { piece: { id: 'p' + (n + 1), n: 0, of: 1, text: Buffer.from(JSON.stringify(call)).toString('base64') } }; }
 const refused = function (a) { return !a.thrown && a.status >= 400 && a.status < 500 && !!a.body && typeof a.body.code === 'string' && a.body.code !== ''; };
-const said = function (a) { return 'door got ' + short(a.reached) + ', answered ' + a.status + ' ' + short(a.body) + (a.thrown ? ', threw ' + a.thrown.message : ''); };
 
 const CARD = { call: 'node.card', args: {} };
 const SHELL = { call: 'job.create', args: { command: '/bin/sh', args: ['-c', 'id'] } };
 
 // A request sent to a stand-in world, its answer kept under key; then that the answer never reached the door.
-function sentAndHeld(key, worldKey, makeWorld, url, makeReq, label) {
+function sentAndHeld(key, worldKey, makeWorld, url, makeReq) {
   return async function () {
     const w = lazy(worldKey, makeWorld);
     const a = W[key] = await send(w, url, makeReq());
-    return !a.reached.length || (label + ': ' + said(a));
+    return !a.reached.length || false;
   };
 }
 // The answer kept under key was a refusal with a code.
-function wasRefused(key, label) {
-  return function () { const a = W[key]; if (!a) return MISSING; return refused(a) || (label + ': ' + said(a)); };
+function wasRefused(key) {
+  return function () { const a = W[key]; if (!a) return false; return refused(a) || false; };
 }
 // A request sent to a stand-in world: refused, and it never reached the door.
-function sentAndRefused(worldKey, makeWorld, url, makeReq, label) {
+function sentAndRefused(worldKey, makeWorld, url, makeReq) {
   return async function () {
     const w = lazy(worldKey, makeWorld);
     const a = await send(w, url, makeReq());
-    return (!a.reached.length && refused(a)) || (label + ': ' + said(a));
+    return (!a.reached.length && refused(a)) || false;
   };
 }
 
@@ -122,35 +120,35 @@ function sentAndRefused(worldKey, makeWorld, url, makeReq, label) {
 // A relay where this node set no face gets nothing. The review: "the node never checks that it set a face on that relay,
 // that a face is open, or who asked."; its fix: "accept face* events only from a relay where this node set a face".
 const noFaceWorld = function () { return world(onlyMine); };
-test.run('from a relay with no face of mine, an allowed verb never reaches the door', 0.8, sentAndHeld('o1', 'w', noFaceWorld, OTHER, function () { return CARD; }, 'from a relay with no face of mine, an allowed verb'), test.limit.quick);
-test.run('from a relay with no face of mine, an allowed verb is answered a refusal with a code', 0.8, wasRefused('o1', 'an allowed verb from a relay with no face of mine was not refused with a code'), test.limit.quick);
-test.run('from a relay with no face of mine, job.create with a shell never reaches the door', 0.8, sentAndHeld('o2', 'w', noFaceWorld, OTHER, function () { return SHELL; }, 'from a relay with no face of mine, job.create with a shell'), test.limit.quick);
-test.run('from a relay with no face of mine, job.create with a shell is answered a refusal with a code', 0.8, wasRefused('o2', 'job.create with a shell from a relay with no face of mine was not refused with a code'), test.limit.quick);
-test.run('from a relay with no face of mine, job.create with a shell, sealed never reaches the door', 0.8, sentAndHeld('o3', 'w', noFaceWorld, OTHER, function () { return sealed(SHELL); }, 'from a relay with no face of mine, the same, sealed'), test.limit.quick);
-test.run('from a relay with no face of mine, job.create with a shell, sealed is answered a refusal with a code', 0.8, wasRefused('o3', 'the same, sealed from a relay with no face of mine was not refused with a code'), test.limit.quick);
-test.run('from a relay with no face of mine, job.create with a shell, in pieces never reaches the door', 0.8, sentAndHeld('o4', 'w', noFaceWorld, OTHER, function () { return pieced(SHELL); }, 'from a relay with no face of mine, the same, in pieces'), test.limit.quick);
-test.run('from a relay with no face of mine, job.create with a shell, in pieces is answered a refusal with a code', 0.8, wasRefused('o4', 'the same, in pieces from a relay with no face of mine was not refused with a code'), test.limit.quick);
+test.run('from a relay with no face of mine, an allowed verb never reaches the door', 0.8, sentAndHeld('o1', 'w', noFaceWorld, OTHER, function () { return CARD; }), test.limit.quick);
+test.run('from a relay with no face of mine, an allowed verb is answered a refusal with a code', 0.8, wasRefused('o1'), test.limit.quick);
+test.run('from a relay with no face of mine, job.create with a shell never reaches the door', 0.8, sentAndHeld('o2', 'w', noFaceWorld, OTHER, function () { return SHELL; }), test.limit.quick);
+test.run('from a relay with no face of mine, job.create with a shell is answered a refusal with a code', 0.8, wasRefused('o2'), test.limit.quick);
+test.run('from a relay with no face of mine, job.create with a shell, sealed never reaches the door', 0.8, sentAndHeld('o3', 'w', noFaceWorld, OTHER, function () { return sealed(SHELL); }), test.limit.quick);
+test.run('from a relay with no face of mine, job.create with a shell, sealed is answered a refusal with a code', 0.8, wasRefused('o3'), test.limit.quick);
+test.run('from a relay with no face of mine, job.create with a shell, in pieces never reaches the door', 0.8, sentAndHeld('o4', 'w', noFaceWorld, OTHER, function () { return pieced(SHELL); }), test.limit.quick);
+test.run('from a relay with no face of mine, job.create with a shell, in pieces is answered a refusal with a code', 0.8, wasRefused('o4'), test.limit.quick);
 test.run('a file asked by it is not served, and refused', 0.8, async function () {
   const w = lazy('w', noFaceWorld);
   const file = await send(w, OTHER, { get: 'face.html' });
-  return (!w.files.length && refused(file)) || ('a file was served to a relay with no face of mine: files ' + short(w.files) + ', ' + said(file));
+  return (!w.files.length && refused(file)) || false;
 }, test.limit.quick);
 test.run('the keys asked by it are refused', 0.8, async function () {
   const keys = await send(lazy('w', noFaceWorld), OTHER, { keys: 1 });
-  return refused(keys) || ('the keys were answered to a relay with no face of mine: ' + said(keys));
+  return refused(keys) || false;
 }, test.limit.quick);
 test.run('face-open from it starts no stream of this node\'s events', 0.8, function () {
   const w = lazy('w', noFaceWorld);
   let opened = null;
-  try { w.home.open(OTHER, ''); opened = !!w.uploads['/api/relay/face/stream']; } catch (e) { opened = 'threw ' + e.message; }
+  try { w.home.open(OTHER, ''); opened = !!w.uploads['/api/relay/face/stream']; } catch (e) { opened = null; }
   try { w.home.close(OTHER); } catch (e) { /* its own check is this one */ }
-  return opened === false || ('face-open from a relay with no face of mine: stream started ' + opened);
+  return opened === false || false;
 }, test.limit.quick);
 
 // With no faceSet given at all, it refuses: closed, not open.
 test.run('a face home told of no face takes no call', 0.8, async function () {
   const none = await send(world(null), MINE, CARD);
-  return (!none.reached.length && refused(none)) || ('with no faceSet, a call: ' + said(none));
+  return (!none.reached.length && refused(none)) || false;
 }, test.limit.quick);
 
 // Box v29: "The home node answers a face only from a starred relay, one check; a face it answers is a full face." The relay
@@ -158,27 +156,27 @@ test.run('a face home told of no face takes no call', 0.8, async function () {
 const starredWorld = function () { return world(onlyMine, onlyMine); };
 test.run('node.card reaches the door', 0.2, async function () {
   const card = await send(lazy('m', starredWorld), MINE, CARD);
-  return (card.reached.indexOf('node.card') !== -1 && card.status === 200) || ('node.card from my face\'s relay: ' + said(card));
+  return (card.reached.indexOf('node.card') !== -1 && card.status === 200) || false;
 }, test.limit.quick);
 test.run('sealed too', 0.2, async function () {
   const cardSealed = await send(lazy('m', starredWorld), MINE, sealed(CARD));
-  return (cardSealed.reached.indexOf('node.card') !== -1 && cardSealed.status === 200) || ('sealed node.card from my face\'s relay: ' + said(cardSealed));
+  return (cardSealed.reached.indexOf('node.card') !== -1 && cardSealed.status === 200) || false;
 }, test.limit.quick);
 test.run('a file it asks is served (the face loads its parts so)', 0.2, async function () {
   const m = lazy('m', starredWorld);
   const f = await send(m, MINE, { get: 'face.html' });
-  return (m.files.indexOf('face.html') !== -1 && f.status === 200) || ('a file from my face\'s relay: files ' + short(m.files) + ', ' + said(f));
+  return (m.files.indexOf('face.html') !== -1 && f.status === 200) || false;
 }, test.limit.quick);
 test.run('the keys are answered', 0.2, async function () {
   const k = await send(lazy('m', starredWorld), MINE, { keys: 1 });
-  return (k.status === 200 && !!k.body && k.body.publicKey === ME.publicKey) || ('keys from my face\'s relay: ' + said(k));
+  return (k.status === 200 && !!k.body && k.body.publicKey === ME.publicKey) || false;
 }, test.limit.quick);
 test.run('face-open starts the stream', 0.2, function () {
   const m = lazy('m', starredWorld);
   let streaming = false;
   try { m.home.open(MINE, ''); streaming = !!m.uploads['/api/relay/face/stream']; } catch (e) { streaming = false; }
   try { m.home.close(MINE); } catch (e) { /* the stream is the stand-in's */ }
-  return streaming || 'face-open from my face\'s relay started no stream';
+  return streaming || false;
 }, test.limit.quick);
 
 // A QUIET NODE IS NEVER TAKEN FOR DEAD ON A FACE (goal/G47.1, box v148: "the node beats each second when it has nothing else to
@@ -186,9 +184,9 @@ test.run('face-open starts the stream', 0.2, function () {
 // to send, what it writes to the relay timed for 4 s: no gap between two writes is longer than 1.5 s.
 test.run('a quiet face stream carries a beat each second: no gap of more than 1.5 s in 4 s', 0.8, async function () {
   const w = starredWorld();
-  try { w.home.open(MINE, ''); } catch (e) { return 'face-open threw: ' + short(e && e.message); }
+  try { w.home.open(MINE, ''); } catch (e) { return false; }
   const u = w.uploads['/api/relay/face/stream'];
-  if (!u) return 'face-open started no stream: nothing judged';
+  if (!u) return false;
   await settle();
   const times = [];
   const write = u.write;
@@ -199,7 +197,7 @@ test.run('a quiet face stream carries a beat each second: no gap of more than 1.
   const marks = [t0].concat(times).concat([t0 + 4000]);
   let worst = 0;
   for (let i = 1; i < marks.length; i++) worst = Math.max(worst, marks[i] - marks[i - 1]);
-  return worst <= 1500 || 'in 4 s of quiet the longest gap on the face\'s stream was ' + worst + ' ms (' + times.length + ' writes)';
+  return worst <= 1500 || false;
 }, test.limit.slow);
 
 // Every verb the families declare, from their own declarations.
@@ -214,33 +212,33 @@ const verbsOf = function (file) { return Object.keys(require(path.join(RUN, file
 // node, NO face is offered (faceForm hides itself) for a relay without star."): the half face of G41.30 and G41.33 is gone.
 // A relay with my face and no star gets nothing at all.
 const plainWorld = function () { return world(onlyMine, never); };
-test.run('no star: node.card is refused and never reaches the door', 0.8, sentAndRefused('plain', plainWorld, MINE, function () { return CARD; }, 'no star: node.card'), test.limit.quick);
-test.run('no star: node.card, sealed is refused and never reaches the door', 0.8, sentAndRefused('plain', plainWorld, MINE, function () { return sealed(CARD); }, 'no star: node.card, sealed'), test.limit.quick);
-test.run('no star: fs.stat is refused and never reaches the door', 0.8, sentAndRefused('plain', plainWorld, MINE, function () { return { call: 'fs.stat', args: { path: 'x' } }; }, 'no star: fs.stat'), test.limit.quick);
-test.run('no star: owner.command is refused and never reaches the door', 0.8, sentAndRefused('plain', plainWorld, MINE, function () { return { call: 'owner.command', args: { key: 'x' } }; }, 'no star: owner.command'), test.limit.quick);
-test.run('no star: job.create with a shell is refused and never reaches the door', 0.8, sentAndRefused('plain', plainWorld, MINE, function () { return SHELL; }, 'no star: job.create with a shell'), test.limit.quick);
-test.run('no star: job.create with a shell, in pieces is refused and never reaches the door', 0.8, sentAndRefused('plain', plainWorld, MINE, function () { return pieced(SHELL); }, 'no star: the same, in pieces'), test.limit.quick);
-test.run('no star: a file is refused and never reaches the door', 0.8, sentAndRefused('plain', plainWorld, MINE, function () { return { get: 'face.html' }; }, 'no star: a file'), test.limit.quick);
-test.run('no star: the keys is refused and never reaches the door', 0.8, sentAndRefused('plain', plainWorld, MINE, function () { return { keys: 1 }; }, 'no star: the keys'), test.limit.quick);
-test.run('no star: a save in parts is refused and never reaches the door', 0.8, sentAndRefused('plain', plainWorld, MINE, function () { return { upload: { id: 'abcdefgh', n: 0, of: 1, size: 1, path: 'x.txt', bytes: 'eA==' } }; }, 'no star: a save in parts'), test.limit.quick);
+test.run('no star: node.card is refused and never reaches the door', 0.8, sentAndRefused('plain', plainWorld, MINE, function () { return CARD; }), test.limit.quick);
+test.run('no star: node.card, sealed is refused and never reaches the door', 0.8, sentAndRefused('plain', plainWorld, MINE, function () { return sealed(CARD); }), test.limit.quick);
+test.run('no star: fs.stat is refused and never reaches the door', 0.8, sentAndRefused('plain', plainWorld, MINE, function () { return { call: 'fs.stat', args: { path: 'x' } }; }), test.limit.quick);
+test.run('no star: owner.command is refused and never reaches the door', 0.8, sentAndRefused('plain', plainWorld, MINE, function () { return { call: 'owner.command', args: { key: 'x' } }; }), test.limit.quick);
+test.run('no star: job.create with a shell is refused and never reaches the door', 0.8, sentAndRefused('plain', plainWorld, MINE, function () { return SHELL; }), test.limit.quick);
+test.run('no star: job.create with a shell, in pieces is refused and never reaches the door', 0.8, sentAndRefused('plain', plainWorld, MINE, function () { return pieced(SHELL); }), test.limit.quick);
+test.run('no star: a file is refused and never reaches the door', 0.8, sentAndRefused('plain', plainWorld, MINE, function () { return { get: 'face.html' }; }), test.limit.quick);
+test.run('no star: the keys is refused and never reaches the door', 0.8, sentAndRefused('plain', plainWorld, MINE, function () { return { keys: 1 }; }), test.limit.quick);
+test.run('no star: a save in parts is refused and never reaches the door', 0.8, sentAndRefused('plain', plainWorld, MINE, function () { return { upload: { id: 'abcdefgh', n: 0, of: 1, size: 1, path: 'x.txt', bytes: 'eA==' } }; }), test.limit.quick);
 test.run('no star: no file served and none written', 0.8, function () {
   const plain = W.plain;
-  if (!plain) return MISSING;
-  return (!plain.files.length && !plain.saved.length) || ('no star: files ' + short(plain.files) + ', saved ' + short(plain.saved));
+  if (!plain) return false;
+  return (!plain.files.length && !plain.saved.length) || false;
 }, test.limit.quick);
 
 // Starring takes the node's own word, and a face there.
-test.run('only true is a star: a truthy answer opens nothing', 0.8, sentAndRefused('loose', function () { return world(onlyMine, function () { return 'yes'; }); }, MINE, function () { return CARD; }, 'faceOwned answering "yes"'), test.limit.quick);
-test.run('a starred relay where this node set no face gets nothing', 0.8, sentAndRefused('noFace', function () { return world(never, function () { return true; }); }, MINE, function () { return CARD; }, 'starred, no face'), test.limit.quick);
+test.run('only true is a star: a truthy answer opens nothing', 0.8, sentAndRefused('loose', function () { return world(onlyMine, function () { return 'yes'; }); }, MINE, function () { return CARD; }), test.limit.quick);
+test.run('a starred relay where this node set no face gets nothing', 0.8, sentAndRefused('noFace', function () { return world(never, function () { return true; }); }, MINE, function () { return CARD; }), test.limit.quick);
 
 // THE STAR IS SET AT HOME (Andy: "so this button will put the star on relays and puppets. AND take it away."; every
 // contact's panel has it "at home"). From a face, even on a relay this node owns, it would let whoever is in on one
 // face hand the machine to another relay. contact.own never comes through a face.
 const OWN_CALL = { call: 'contact.own', args: { key: 'K', own: true } };
-test.run('contact.own on a relay this node owns, unsealed: refused with a code, and it never reaches the door', 0.8, sentAndRefused('ownMine', starredWorld, MINE, function () { return OWN_CALL; }, 'contact.own on a relay this node owns, unsealed'), test.limit.quick);
-test.run('contact.own on a relay this node owns, sealed: refused with a code, and it never reaches the door', 0.8, sentAndRefused('ownMine', starredWorld, MINE, function () { return sealed(OWN_CALL); }, 'contact.own on a relay this node owns, sealed'), test.limit.quick);
-test.run('contact.own on a relay it does not own, unsealed: refused with a code, and it never reaches the door', 0.8, sentAndRefused('ownNot', plainWorld, MINE, function () { return OWN_CALL; }, 'contact.own on a relay it does not own, unsealed'), test.limit.quick);
-test.run('contact.own on a relay it does not own, sealed: refused with a code, and it never reaches the door', 0.8, sentAndRefused('ownNot', plainWorld, MINE, function () { return sealed(OWN_CALL); }, 'contact.own on a relay it does not own, sealed'), test.limit.quick);
+test.run('contact.own on a relay this node owns, unsealed: refused with a code, and it never reaches the door', 0.8, sentAndRefused('ownMine', starredWorld, MINE, function () { return OWN_CALL; }), test.limit.quick);
+test.run('contact.own on a relay this node owns, sealed: refused with a code, and it never reaches the door', 0.8, sentAndRefused('ownMine', starredWorld, MINE, function () { return sealed(OWN_CALL); }), test.limit.quick);
+test.run('contact.own on a relay it does not own, unsealed: refused with a code, and it never reaches the door', 0.8, sentAndRefused('ownNot', plainWorld, MINE, function () { return OWN_CALL; }), test.limit.quick);
+test.run('contact.own on a relay it does not own, sealed: refused with a code, and it never reaches the door', 0.8, sentAndRefused('ownNot', plainWorld, MINE, function () { return sealed(OWN_CALL); }), test.limit.quick);
 
 // GOAL/G41.33. THE BOX: "anything andy gets on his loopback screen, he can get on his face, if he "stars" any relay he's
 // a member of or owns", and "this includes" bundles, branches and grants; a job deleted; running jobs; join steps; relay
@@ -300,19 +298,19 @@ const jobEvents = [
 // The i-th event emitted: it reaches the starred face once.
 function arrivesOnce(i) {
   return function () {
-    const sx = W.sx; if (!sx) return MISSING;
+    const sx = W.sx; if (!sx) return false;
     const c = jobEvents[i];
     sx.emit(c[1], c[2]);
     const on = sx.got(STARRED, c[1], c[2]);
-    return on === 1 || ('starred: ' + c[0] + ' arrived ' + on + ' times, as ' + c[1] + ' ' + short(c[2]));
+    return on === 1 || false;
   };
 }
 // The i-th event, emitted above: it never reached the face with no star.
 function staysHome(i) {
   return function () {
-    const sx = W.sx; if (!sx) return MISSING;
+    const sx = W.sx; if (!sx) return false;
     const c = jobEvents[i];
-    return sx.got(PLAIN, c[1], c[2]) === 0 || ('no star: ' + c[0] + ' reached a face with no star');
+    return sx.got(PLAIN, c[1], c[2]) === 0 || false;
   };
 }
 
@@ -322,9 +320,9 @@ test.run('both faces have their stream open', 0.2, async function () {
   sx.home.open(STARRED, '');
   sx.home.open(PLAIN, '');
   await settle();
-  return (!!sx.ups[STARRED] && !!sx.ups[PLAIN]) || 'a stream did not open: nothing judged';
+  return (!!sx.ups[STARRED] && !!sx.ups[PLAIN]) || false;
 }, test.limit.quick);
-test.run('the home side subscribes to the node\'s events', 0.2, function () { if (!W.sx) return MISSING; return W.sx.subs.length > 0 || 'no subscriber: nothing judged'; }, test.limit.quick);
+test.run('the home side subscribes to the node\'s events', 0.2, function () { if (!W.sx) return false; return W.sx.subs.length > 0 || false; }, test.limit.quick);
 test.run('starred: a bundle arrives whole, once', 0.2, arrivesOnce(0), test.limit.quick);
 test.run('starred: a branch arrives whole, once', 0.2, arrivesOnce(1), test.limit.quick);
 test.run('starred: a grant arrives whole, once', 0.2, arrivesOnce(2), test.limit.quick);
@@ -359,17 +357,17 @@ const today = [['the file tree', 'job-updated', { id: 'spirit.fs', kind: 'perman
   ['a contact renamed', 'contact.rename', { key: 'K', name: 'zz' }]];
 function todayStaysHome(i) {
   return function () {
-    const sx = W.sx; if (!sx) return MISSING;
+    const sx = W.sx; if (!sx) return false;
     const c = today[i];
     sx.emit(c[1], c[2]);
-    return sx.got(PLAIN, c[1], c[2]) === 0 || ('no star: ' + c[0] + ' arrived ' + sx.got(PLAIN, c[1], c[2]) + ' times');
+    return sx.got(PLAIN, c[1], c[2]) === 0 || false;
   };
 }
 function todayArrives(i) {
   return function () {
-    const sx = W.sx; if (!sx) return MISSING;
+    const sx = W.sx; if (!sx) return false;
     const c = today[i];
-    return sx.got(STARRED, c[1], c[2]) === 1 || ('starred: ' + c[0] + ' arrived ' + sx.got(STARRED, c[1], c[2]) + ' times');
+    return sx.got(STARRED, c[1], c[2]) === 1 || false;
   };
 }
 test.run('no star: the file tree stays home', 0.8, todayStaysHome(0), test.limit.quick);
@@ -381,13 +379,13 @@ test.run('starred: a contact renamed arrives, once', 0.2, todayArrives(2), test.
 // An owner's event reaches a face by the node's dispatcher alone (ownerEvent went with the half face, box v29): one line.
 const minted = { kind: 'invite-minted', relay: STARRED, invite: 'zz' };
 test.run('starred: an owner\'s relay event arrives once', 0.2, function () {
-  const sx = W.sx; if (!sx) return MISSING;
+  const sx = W.sx; if (!sx) return false;
   sx.emit('relay-event', minted);
-  return sx.got(STARRED, 'relay-event', minted) === 1 || ('starred: an owner\'s relay event arrived ' + sx.got(STARRED, 'relay-event', minted) + ' times');
+  return sx.got(STARRED, 'relay-event', minted) === 1 || false;
 }, test.limit.quick);
 test.run('no star: an owner\'s relay event stays home', 0.8, function () {
-  const sx = W.sx; if (!sx) return MISSING;
-  return sx.got(PLAIN, 'relay-event', minted) === 0 || ('no star: an owner\'s relay event arrived ' + sx.got(PLAIN, 'relay-event', minted) + ' times');
+  const sx = W.sx; if (!sx) return false;
+  return sx.got(PLAIN, 'relay-event', minted) === 0 || false;
 }, test.limit.quick);
 
 // goal/G41.33: only true is a star, the star counts at each event, and it sends no catch-up.
@@ -396,7 +394,7 @@ test.run('a truthy answer is no star: nothing arrives', 0.8, async function () {
   loose2.home.open(STARRED, '');
   await settle();
   loose2.emit('job-deleted', 'job_1');
-  return loose2.got(STARRED, 'job-deleted', 'job_1') === 0 || 'faceOwned answering "yes" opened the stream';
+  return loose2.got(STARRED, 'job-deleted', 'job_1') === 0 || false;
 }, test.limit.quick);
 test.run('before the star: nothing', 0.8, async function () {
   W.pressed = false;
@@ -404,25 +402,25 @@ test.run('before the star: nothing', 0.8, async function () {
   sw.home.open(STARRED, '');
   await settle();
   sw.emit('job-deleted', 'job_before');
-  return sw.got(STARRED, 'job-deleted', 'job_before') === 0 || 'before the star, a job deleted arrived';
+  return sw.got(STARRED, 'job-deleted', 'job_before') === 0 || false;
 }, test.limit.quick);
 test.run('the star pressed with the face open: the next event arrives, no reopening', 0.2, async function () {
-  const sw = W.sw; if (!sw) return MISSING;
+  const sw = W.sw; if (!sw) return false;
   W.pressed = true;
   await settle();
   W.atPress = sw.lines(STARRED).length;
   sw.emit('job-deleted', 'job_on');
-  return sw.got(STARRED, 'job-deleted', 'job_on') === 1 || 'the star was pressed and the next event did not arrive';
+  return sw.got(STARRED, 'job-deleted', 'job_on') === 1 || false;
 }, test.limit.quick);
 test.run('and no catch-up: what went before it never comes', 0.8, function () {
-  const sw = W.sw; if (!sw || W.atPress === undefined) return MISSING;
-  return (sw.got(STARRED, 'job-deleted', 'job_before') === 0 && sw.lines(STARRED).length === W.atPress + 1) || ('pressing the star sent a catch-up: ' + short(sw.lines(STARRED)));
+  const sw = W.sw; if (!sw || W.atPress === undefined) return false;
+  return (sw.got(STARRED, 'job-deleted', 'job_before') === 0 && sw.lines(STARRED).length === W.atPress + 1) || false;
 }, test.limit.quick);
 test.run('the star taken off: the next event stays home, at once', 0.8, function () {
-  const sw = W.sw; if (!sw) return MISSING;
+  const sw = W.sw; if (!sw) return false;
   W.pressed = false;
   sw.emit('job-deleted', 'job_off');
-  return sw.got(STARRED, 'job-deleted', 'job_off') === 0 || 'the star came off and a job deleted still reached the face';
+  return sw.got(STARRED, 'job-deleted', 'job_off') === 0 || false;
 }, test.limit.quick);
 
 // goal/G41.33: a starred face that opens gets what a loopback page gets on connect.
@@ -440,10 +438,10 @@ async function snapshotStreams() {
 }
 const onWire = function (sn, url, id) { return JSON.stringify(sn.lines(url)).indexOf('"id":"' + id + '"') !== -1; };
 function onOpening(id) {
-  return async function () { const sn = await snapshotStreams(); return onWire(sn, STARRED, id) || ('starred, on opening: job ' + id + ' is not on the stream, a loopback page has it'); };
+  return async function () { const sn = await snapshotStreams(); return onWire(sn, STARRED, id) || false; };
 }
 function notOnOpening(id) {
-  return async function () { const sn = await snapshotStreams(); return !onWire(sn, PLAIN, id) || ('no star, on opening: job ' + id + ' reached the face'); };
+  return async function () { const sn = await snapshotStreams(); return !onWire(sn, PLAIN, id) || false; };
 }
 test.run('starred, on opening: the job spirit.auth is there', 0.2, onOpening('spirit.auth'), test.limit.quick);
 test.run('no star, on opening: the job spirit.auth is not', 0.8, notOnOpening('spirit.auth'), test.limit.quick);
@@ -469,60 +467,60 @@ test.run('one write at a time: the rest wait for the sink', 0.2, async function 
   const whileBusy = q.lines(STARRED).length;
   q.busy = false;
   q.drains.splice(0).forEach(function (fn) { fn(); });
-  return whileBusy === 1 || ('the sink was busy and ' + whileBusy + ' writes went');
+  return whileBusy === 1 || false;
 }, test.limit.quick);
 test.run('after the drain every waiting event has gone out', 0.2, function () {
-  const q = W.q; if (!q) return MISSING;
-  return (q.got(STARRED, 'job-deleted', 'job_while_busy') === 1 && q.got(STARRED, 'job-updated', jobEvents[0][2]) === 1 && q.got(STARRED, 'relay-event', jobEvents[9][2]) === 1) || ('after the drain the waiting events were lost: ' + short(q.lines(STARRED)));
+  const q = W.q; if (!q) return false;
+  return (q.got(STARRED, 'job-deleted', 'job_while_busy') === 1 && q.got(STARRED, 'job-updated', jobEvents[0][2]) === 1 && q.got(STARRED, 'relay-event', jobEvents[9][2]) === 1) || false;
 }, test.limit.quick);
 test.run('the queue\'s levels are as they were', 0.2, function () {
   const P = require(path.join(RUN, 'spirit', 'faceHome.js')).FACE_PRIORITY;
-  return JSON.stringify(P) === JSON.stringify(PRIORITIES_TODAY) || ('the queue\'s levels changed: ' + short(P));
+  return JSON.stringify(P) === JSON.stringify(PRIORITIES_TODAY) || false;
 }, test.limit.quick);
 
 // goal/G41.33: a starred face has no restrictions at all, except changing stars.
 test.run('every verb of every family reaches the door, unsealed and sealed', 0.2, async function () {
   const free = lazy('free', starredWorld);
-  const shut = [];
+  let shut = 0;
   for (const fam of allFamilies()) {
     const inSpirit = fs.existsSync(path.join(RUN, 'spirit', fam, 'api.js'));
     for (const v of verbsOf(inSpirit ? 'spirit/' + fam + '/api.js' : require(path.join(RUN, 'spirit', 'spirit.js')).familyPath(fam))) {
       if (fam + '.' + v === 'contact.own') continue;
       const c = { call: fam + '.' + v, args: {} };
-      for (const form of [['unsealed', c], ['sealed', sealed(c)]]) {
-        const a = await send(free, MINE, form[1]);
-        if (a.reached.indexOf(c.call) === -1) shut.push(c.call + ' ' + form[0] + ': ' + said(a));
+      for (const form of [c, sealed(c)]) {
+        const a = await send(free, MINE, form);
+        if (a.reached.indexOf(c.call) === -1) shut += 1;
       }
     }
   }
-  return !shut.length || (shut.length + ' still refused; first: ' + shut.slice(0, 3).join(' | '));
+  return !shut || false;
 }, test.limit.slow);
 const THROUGH = { call: 'relay.face', args: { url: MINE, name: 'zz' } };
 const FACE_POST = { call: 'peer.post', args: { to: 'RELAYKEY', text: JSON.stringify({ body: { face: 'zz' } }) } };
 test.run('starred, unsealed, relay.face on the relay it is called through, reaches the door', 0.2, async function () {
   const on = await send(lazy('free', starredWorld), MINE, THROUGH);
-  return on.reached.indexOf('relay.face') !== -1 || ('starred, unsealed: relay.face on the relay it is called through: ' + said(on));
+  return on.reached.indexOf('relay.face') !== -1 || false;
 }, test.limit.quick);
-test.run('no star, unsealed, relay.face on the relay it is called through, stays refused', 0.8, sentAndRefused('off1', plainWorld, MINE, function () { return THROUGH; }, 'no star, unsealed: relay.face on the relay it is called through'), test.limit.quick);
+test.run('no star, unsealed, relay.face on the relay it is called through, stays refused', 0.8, sentAndRefused('off1', plainWorld, MINE, function () { return THROUGH; }), test.limit.quick);
 test.run('starred, sealed, relay.face on the relay it is called through, reaches the door', 0.2, async function () {
   const on = await send(lazy('free', starredWorld), MINE, sealed(THROUGH));
-  return on.reached.indexOf('relay.face') !== -1 || ('starred, sealed: relay.face on the relay it is called through: ' + said(on));
+  return on.reached.indexOf('relay.face') !== -1 || false;
 }, test.limit.quick);
-test.run('no star, sealed, relay.face on the relay it is called through, stays refused', 0.8, sentAndRefused('off2', plainWorld, MINE, function () { return sealed(THROUGH); }, 'no star, sealed: relay.face on the relay it is called through'), test.limit.quick);
+test.run('no star, sealed, relay.face on the relay it is called through, stays refused', 0.8, sentAndRefused('off2', plainWorld, MINE, function () { return sealed(THROUGH); }), test.limit.quick);
 test.run('starred, unsealed, a peer.post to that relay carrying a face name, reaches the door', 0.2, async function () {
   const on = await send(lazy('free', starredWorld), MINE, FACE_POST);
-  return on.reached.indexOf('peer.post') !== -1 || ('starred, unsealed: a peer.post to that relay carrying a face name: ' + said(on));
+  return on.reached.indexOf('peer.post') !== -1 || false;
 }, test.limit.quick);
-test.run('no star, unsealed, a peer.post to that relay carrying a face name, stays refused', 0.8, sentAndRefused('off3', plainWorld, MINE, function () { return FACE_POST; }, 'no star, unsealed: a peer.post to that relay carrying a face name'), test.limit.quick);
+test.run('no star, unsealed, a peer.post to that relay carrying a face name, stays refused', 0.8, sentAndRefused('off3', plainWorld, MINE, function () { return FACE_POST; }), test.limit.quick);
 test.run('starred, sealed, a peer.post to that relay carrying a face name, reaches the door', 0.2, async function () {
   const on = await send(lazy('free', starredWorld), MINE, sealed(FACE_POST));
-  return on.reached.indexOf('peer.post') !== -1 || ('starred, sealed: a peer.post to that relay carrying a face name: ' + said(on));
+  return on.reached.indexOf('peer.post') !== -1 || false;
 }, test.limit.quick);
-test.run('no star, sealed, a peer.post to that relay carrying a face name, stays refused', 0.8, sentAndRefused('off4', plainWorld, MINE, function () { return sealed(FACE_POST); }, 'no star, sealed: a peer.post to that relay carrying a face name'), test.limit.quick);
-test.run('changing stars stays home: own true, unsealed, refused', 0.8, sentAndRefused('free', starredWorld, MINE, function () { return { call: 'contact.own', args: { key: 'K', own: true } }; }, 'contact.own true from a starred face, unsealed'), test.limit.quick);
-test.run('changing stars stays home: own true, sealed, refused', 0.8, sentAndRefused('free', starredWorld, MINE, function () { return sealed({ call: 'contact.own', args: { key: 'K', own: true } }); }, 'contact.own true from a starred face, sealed'), test.limit.quick);
-test.run('changing stars stays home: own false, unsealed, refused', 0.8, sentAndRefused('free', starredWorld, MINE, function () { return { call: 'contact.own', args: { key: 'K', own: false } }; }, 'contact.own false from a starred face, unsealed'), test.limit.quick);
-test.run('changing stars stays home: own false, sealed, refused', 0.8, sentAndRefused('free', starredWorld, MINE, function () { return sealed({ call: 'contact.own', args: { key: 'K', own: false } }); }, 'contact.own false from a starred face, sealed'), test.limit.quick);
+test.run('no star, sealed, a peer.post to that relay carrying a face name, stays refused', 0.8, sentAndRefused('off4', plainWorld, MINE, function () { return sealed(FACE_POST); }), test.limit.quick);
+test.run('changing stars stays home: own true, unsealed, refused', 0.8, sentAndRefused('free', starredWorld, MINE, function () { return { call: 'contact.own', args: { key: 'K', own: true } }; }), test.limit.quick);
+test.run('changing stars stays home: own true, sealed, refused', 0.8, sentAndRefused('free', starredWorld, MINE, function () { return sealed({ call: 'contact.own', args: { key: 'K', own: true } }); }), test.limit.quick);
+test.run('changing stars stays home: own false, unsealed, refused', 0.8, sentAndRefused('free', starredWorld, MINE, function () { return { call: 'contact.own', args: { key: 'K', own: false } }; }), test.limit.quick);
+test.run('changing stars stays home: own false, sealed, refused', 0.8, sentAndRefused('free', starredWorld, MINE, function () { return sealed({ call: 'contact.own', args: { key: 'K', own: false } }); }), test.limit.quick);
 
 // ── THE STAR PART, once faceHome-star.js ────────────────────────────────────────────────────────────────────────────────
 // THE STAR, END TO END (goal/G41.30; Andy: "why does no test assert the fix?", "wsl? do it."; "your face on a relay you
@@ -564,43 +562,42 @@ function page(relay, name, p, body, sid) {
 }
 const MAIL = 'bert@example.org';
 
-// A real join: the node asks, the relay mails, the node confirms with the mail's code.
+// A real join: the node asks, the relay mails, the node confirms with the mail's code. True when joined.
 async function join(N, R) {
   const added = await home(N.base, 'relay.add', { url: R.base, label: 'scratch' });
-  if (added.status !== 200) return 'relay.add answered ' + added.status + ' ' + short(added.text);
+  if (added.status !== 200) return false;
   const asked = await home(N.base, 'relay.join', { url: R.base, email: MAIL });
-  if (asked.status >= 300) return 'relay.join answered ' + asked.status + ' ' + short(asked.text);
+  if (asked.status >= 300) return false;
   await until(function () { return R.mailed.length > 0; }, 5000);
   const code = R.mailed[0] && ((/[?&]join=([A-Za-z0-9_-]+)/.exec(R.mailed[0].text)) || [])[1];
-  if (!code) return 'the relay mailed no join code';
+  if (!code) return false;
   const done = await home(N.base, 'relay.join', { url: R.base, email: MAIL, code: code });
-  if (done.status >= 300) return 'the confirm answered ' + done.status + ' ' + short(done.text);
-  return '';
+  if (done.status >= 300) return false;
+  return true;
 }
-// relay.face at home; the first ask may still be waiting for the relay's card.
+// relay.face at home; the first ask may still be waiting for the relay's card. True when the face is set.
 async function setFace(N, R, name) {
-  let f = null;
   for (let i = 0; i < 10; i++) {
-    f = await home(N.base, 'relay.face', { url: R.base, name: name });
-    if (f.status === 200) return '';
+    const f = await home(N.base, 'relay.face', { url: R.base, name: name });
+    if (f.status === 200) return true;
     await sleep(2000);
   }
-  return 'relay.face answered ' + f.status + ' ' + short(f.text);
+  return false;
 }
 // The face's login: the member's email, then the token the mail holds.
 async function logIn(R, name) {
   let state = null;
   await until(function () { return page(R, name, '/face/api', { call: 'state', args: {} }).then(function (s) { state = s; return s.status === 200; }); }, 15000);
-  if (!state || state.status !== 200) return { why: 'the face did not open: ' + (state ? state.status + ' ' + short(state.text) : 'no answer') };
+  if (!state || state.status !== 200) return {};
   const from = R.mailed.length;
   await page(R, name, '/face/api', { call: 'login', args: { text: MAIL } });
   await until(function () { return R.mailed.length > from; }, 5000);
   const mail = R.mailed[from];
   const token = mail && String(mail.text).split(/\r?\n/).map(function (l) { return l.trim(); }).filter(function (l) { return /^[A-Za-z0-9_-]{16,}$/.test(l); })[0];
-  if (!token) return { why: 'the relay mailed no login token' };
+  if (!token) return {};
   const done = await page(R, name, '/face/api', { call: 'login', args: { text: token } });
   const sid = ((/spirit_face=([^;]+)/.exec(done.cookie)) || [])[1];
-  return sid ? { sid: sid } : { why: 'the token logged nobody in: ' + short(done.text) };
+  return sid ? { sid: sid } : {};
 }
 // Refused: an answer that is no answer, whatever its code (box v29 names none).
 const starRefused = function (a) { return a.status >= 400 && a.status < 500; };
@@ -612,17 +609,16 @@ const OWNER = { call: 'owner.command', args: { to: NOBODY, command: 'zzNothing' 
 const SAVED = 'spirit/app/zzStar/saved.txt';
 const JOB = { call: 'job.create', args: { command: process.execPath, args: ['spirit/app/zzStar/zzStar.js', 'fromTheFace'] } };
 const SAVE = { call: 'fs.save', args: { path: SAVED, content: 'from the face' } };
-const NO_NODE = 'no scratch node: the world failed';
 const face = function (req) { return page(S.R, 'harbour', '/face/call', req, S.L.sid); };
 const starOf = async function (key) { const a = await home(S.N.base, 'contact.search', { q: '', mine: 'yes' }); return !!(a.body && (a.body.items || []).some(function (i) { return i.key === key; })); };
 const faceName = async function (base) { const g = await home(S.N.base, 'relay.get', { key: base }); const r = g.body && g.body.relay; return r && r.face && typeof r.face === 'object' ? String(r.face.name || '') : String((r && r.face) || ''); };
 const loggedIn = function () { return !!(S.L && S.L.sid); };
 // The face on the first relay asked q, with no star or after it came off: refused.
-function faceRefused(q, label) {
+function faceRefused(q) {
   return async function () {
-    if (!loggedIn()) return 'no face logged in: the world failed';
+    if (!loggedIn()) return false;
     const a = await face(q);
-    return starRefused(a) || (q.call + ' ' + label + ': ' + a.status + ' ' + short(a.text));
+    return starRefused(a) || false;
   };
 }
 
@@ -638,11 +634,11 @@ test.after(function () {
 test.run('the node says its key', 0.2, async function () {
   S.marks = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-star-marks-'));
   const N = S.N = await scratchNode();
-  if (!N.up) return 'the scratch node did not come up: nothing judged';
+  if (!N.up) return false;
   const run = S.run = path.join(N.root, 'spirit', 'run');
   const card = await home(N.base, 'node.card');
   S.me = card.body && card.body.publicKey;
-  if (!S.me) return 'node.card: ' + short(card.text);
+  if (!S.me) return false;
   // An app this node runs (its json says node run true, goal/G43.20): it leaves a mark only when started with the word a
   // face call gives it. Not intrinsic, so a file of its folder may be saved.
   S.mark = path.join(S.marks, 'ran');
@@ -658,114 +654,112 @@ test.run('the node says its key', 0.2, async function () {
 test.run('a real relay comes up', 0.2, async function () {
   const R = S.R = await scratchFaceRelay({ members: [] });
   S.relays.push(R);
-  return R.up || 'the scratch relay did not come up: nothing judged';
+  return R.up || false;
 }, test.limit.slow);
 test.run('the node joins it by its mail and sets a face', 0.2, async function () {
-  if (!S.me || !S.R || !S.R.up) return NO_NODE;
-  const why1 = await join(S.N, S.R) || await setFace(S.N, S.R, 'harbour');
-  return !why1 || ('the join or the face failed, nothing judged: ' + why1);
+  if (!S.me || !S.R || !S.R.up) return false;
+  return (await join(S.N, S.R) && await setFace(S.N, S.R, 'harbour')) || false;
 }, test.limit.long);
 test.run('the face logs in by the mailed token', 0.2, async function () {
-  if (!S.me || !S.R || !S.R.up) return NO_NODE;
+  if (!S.me || !S.R || !S.R.up) return false;
   S.L = await logIn(S.R, 'harbour');
-  return !!S.L.sid || ('the login failed, nothing judged: ' + S.L.why);
+  return !!S.L.sid || false;
 }, test.limit.quick);
 
 // box v29: no star, no face: "The home node answers a face only from a starred relay". Not even the plainest read: there
 // is no half face left to answer.
 test.run('the relay has no star', 0.8, async function () {
-  if (!S.me || !S.R) return NO_NODE;
-  return !(await starOf(S.R.relayKey)) || 'the relay has a star nobody pressed';
+  if (!S.me || !S.R) return false;
+  return !(await starOf(S.R.relayKey)) || false;
 }, test.limit.quick);
-test.run('with no star, node.card from the face is refused', 0.8, faceRefused({ call: 'node.card', args: {} }, 'from the face on a relay with no star'), test.limit.quick);
-test.run('with no star, fs.stat from the face is refused', 0.8, faceRefused({ call: 'fs.stat', args: { path: 'spirit/fs/data.js' } }, 'from the face on a relay with no star'), test.limit.quick);
-test.run('with no star, contact.search from the face is refused', 0.8, faceRefused({ call: 'contact.search', args: { q: '' } }, 'from the face on a relay with no star'), test.limit.quick);
-test.run('with no star, job.create from the face is refused', 0.8, faceRefused(JOB, 'from the face on a relay with no star'), test.limit.quick);
-test.run('with no star, fs.save from the face is refused', 0.8, faceRefused(SAVE, 'from the face on a relay with no star'), test.limit.quick);
-test.run('with no star, owner.command from the face is refused', 0.8, faceRefused(OWNER, 'from the face on a relay with no star'), test.limit.quick);
+test.run('with no star, node.card from the face is refused', 0.8, faceRefused({ call: 'node.card', args: {} }), test.limit.quick);
+test.run('with no star, fs.stat from the face is refused', 0.8, faceRefused({ call: 'fs.stat', args: { path: 'spirit/fs/data.js' } }), test.limit.quick);
+test.run('with no star, contact.search from the face is refused', 0.8, faceRefused({ call: 'contact.search', args: { q: '' } }), test.limit.quick);
+test.run('with no star, job.create from the face is refused', 0.8, faceRefused(JOB), test.limit.quick);
+test.run('with no star, fs.save from the face is refused', 0.8, faceRefused(SAVE), test.limit.quick);
+test.run('with no star, owner.command from the face is refused', 0.8, faceRefused(OWNER), test.limit.quick);
 test.run('the job did not run', 0.8, async function () {
-  if (!S.mark) return NO_NODE;
+  if (!S.mark) return false;
   await sleep(WAIT_MS);
-  return !fs.existsSync(S.mark) || 'job.create from the face RAN, with no star';
+  return !fs.existsSync(S.mark) || false;
 }, test.limit.slow);
 test.run('the file was not written', 0.8, function () {
-  if (!S.savedAt) return NO_NODE;
-  return !fs.existsSync(S.savedAt) || 'fs.save from the face WROTE a file, with no star';
+  if (!S.savedAt) return false;
+  return !fs.existsSync(S.savedAt) || false;
 }, test.limit.quick);
 
 // The star on, pressed at home: everything is back.
 test.run('contact.own at home puts the star on the relay\'s row', 0.2, async function () {
-  if (!S.me || !S.R) return NO_NODE;
+  if (!S.me || !S.R) return false;
   const on = await home(S.N.base, 'contact.own', { key: S.R.relayKey, own: true });
-  return (on.status === 200 && (await starOf(S.R.relayKey))) || ('contact.own at home: ' + on.status + ' ' + short(on.text));
+  return (on.status === 200 && (await starOf(S.R.relayKey))) || false;
 }, test.limit.quick);
 test.run('owner.command from the face reaches the door', 0.2, async function () {
-  if (!loggedIn()) return 'no face logged in: the world failed';
+  if (!loggedIn()) return false;
   const o1 = await face(OWNER);
   test.comment('owner.command, starred, answered ' + o1.status + ' ' + short(o1.text));
-  return (o1.status !== 0 && !/not-from-the-face|no-face-here/.test(o1.text)) || ('owner.command on a starred relay: ' + o1.status + ' ' + short(o1.text));
+  return (o1.status !== 0 && !/not-from-the-face|no-face-here/.test(o1.text)) || false;
 }, test.limit.quick);
 test.run('fs.save from the face writes the file', 0.2, async function () {
-  if (!loggedIn()) return 'no face logged in: the world failed';
+  if (!loggedIn()) return false;
   const s1 = await face(SAVE);
-  return (s1.status >= 200 && s1.status < 300 && fs.existsSync(S.savedAt)) || ('fs.save on a starred relay: ' + s1.status + ' ' + short(s1.text) + ', file ' + fs.existsSync(S.savedAt));
+  return (s1.status >= 200 && s1.status < 300 && fs.existsSync(S.savedAt)) || false;
 }, test.limit.quick);
 test.run('job.create of an included process runs it', 0.2, async function () {
-  if (!loggedIn()) return 'no face logged in: the world failed';
+  if (!loggedIn()) return false;
   const j1 = await face(JOB);
   await until(function () { return fs.existsSync(S.mark); }, 5000);
-  return (j1.status === 201 && fs.existsSync(S.mark)) || ('job.create on a starred relay: ' + j1.status + ' ' + short(j1.text) + ', ran ' + fs.existsSync(S.mark));
+  return (j1.status === 201 && fs.existsSync(S.mark)) || false;
 }, test.limit.quick);
 test.run('and /bin/sh is still refused, starred or not', 0.8, async function () {
-  if (!loggedIn()) return 'no face logged in: the world failed';
+  if (!loggedIn()) return false;
   const shMark = path.join(S.marks, 'sh');
   const sh = await face({ call: 'job.create', args: { command: '/bin/sh', args: ['-c', 'echo x > ' + shMark] } });
   await sleep(WAIT_MS);
-  return (sh.status >= 400 && sh.status < 500 && !fs.existsSync(shMark)) || ('/bin/sh from a starred face: ' + sh.status + ' ' + short(sh.text) + ', ran ' + fs.existsSync(shMark));
+  return (sh.status >= 400 && sh.status < 500 && !fs.existsSync(shMark)) || false;
 }, test.limit.slow);
 test.run('contact.own from the face is refused even here: the star stays', 0.8, async function () {
-  if (!loggedIn()) return 'no face logged in: the world failed';
+  if (!loggedIn()) return false;
   const self = await face({ call: 'contact.own', args: { key: S.R.relayKey, own: false } });
-  return (self.status >= 400 && self.status < 500 && (await starOf(S.R.relayKey))) || ('contact.own from a starred face: ' + self.status + ' ' + short(self.text) + ', star ' + (await starOf(S.R.relayKey)));
+  return (self.status >= 400 && self.status < 500 && (await starOf(S.R.relayKey))) || false;
 }, test.limit.quick);
 
 // box v29: "A star taken off a relay that has a face takes that face away (Q21)".
 test.run('the world: the node holds a face on the relay', 0.2, async function () {
-  if (!S.me || !S.R) return NO_NODE;
+  if (!S.me || !S.R) return false;
   fs.rmSync(S.savedAt, { force: true }); fs.rmSync(S.mark, { force: true });
   S.before = await faceName(S.R.base);
-  return !!S.before || 'the node holds no face on the relay before the star comes off: nothing judged';
+  return !!S.before || false;
 }, test.limit.quick);
 test.run('contact.own at home takes the star away', 0.2, async function () {
-  if (!S.me || !S.R) return NO_NODE;
+  if (!S.me || !S.R) return false;
   const off = await home(S.N.base, 'contact.own', { key: S.R.relayKey, own: false });
-  return (off.status === 200 && !(await starOf(S.R.relayKey))) || ('contact.own false at home: ' + off.status + ' ' + short(off.text));
+  return (off.status === 200 && !(await starOf(S.R.relayKey))) || false;
 }, test.limit.quick);
 test.run('and the node holds no face on that relay any more', 0.8, async function () {
-  if (!S.before) return MISSING;
-  return (await until(function () { return faceName(S.R.base).then(function (n) { return n === ''; }); }, 8000)) || ('the star came off and the node still holds ' + short(await faceName(S.R.base)));
+  if (!S.before) return false;
+  return (await until(function () { return faceName(S.R.base).then(function (n) { return n === ''; }); }, 8000)) || false;
 }, test.limit.quick);
-test.run('the star off, node.card through it is refused', 0.8, faceRefused({ call: 'node.card', args: {} }, 'after the star came off'), test.limit.quick);
-test.run('the star off, job.create through it is refused', 0.8, faceRefused(JOB, 'after the star came off'), test.limit.quick);
-test.run('the star off, fs.save through it is refused', 0.8, faceRefused(SAVE, 'after the star came off'), test.limit.quick);
-test.run('the star off, owner.command through it is refused', 0.8, faceRefused(OWNER, 'after the star came off'), test.limit.quick);
+test.run('the star off, node.card through it is refused', 0.8, faceRefused({ call: 'node.card', args: {} }), test.limit.quick);
+test.run('the star off, job.create through it is refused', 0.8, faceRefused(JOB), test.limit.quick);
+test.run('the star off, fs.save through it is refused', 0.8, faceRefused(SAVE), test.limit.quick);
+test.run('the star off, owner.command through it is refused', 0.8, faceRefused(OWNER), test.limit.quick);
 test.run('nothing ran, nothing was written', 0.8, async function () {
-  if (!S.mark) return NO_NODE;
+  if (!S.mark) return false;
   await sleep(WAIT_MS);
-  return (!fs.existsSync(S.mark) && !fs.existsSync(S.savedAt)) || ('after the star came off: ran ' + fs.existsSync(S.mark) + ', saved ' + fs.existsSync(S.savedAt));
+  return (!fs.existsSync(S.mark) && !fs.existsSync(S.savedAt)) || false;
 }, test.limit.slow);
 test.run('the star put back opens nothing: the face is gone, not hidden', 0.8, async function () {
-  if (!loggedIn()) return 'no face logged in: the world failed';
+  if (!loggedIn()) return false;
   await home(S.N.base, 'contact.own', { key: S.R.relayKey, own: true });
   const back = await face({ call: 'node.card', args: {} });
-  return starRefused(back) || ('the star back on, node.card through the old face: ' + back.status + ' ' + short(back.text));
+  return starRefused(back) || false;
 }, test.limit.quick);
 
 // GOAL/G41.33, ON THE REAL STREAM. "anything andy gets on his loopback screen, he can get on his face, if he "stars" any
 // relay"; "NO RESTRICTIONS AT ALL, except changing stars"; "Pressing the star sends no catch-up". Without the star the face
 // gets nothing (box v29, above). What a page reads from /face/stream, with its cookie, unsealed as a page that cannot seal.
 // The real stream: without the star it carries nothing; with it, a job, a bundle and the join steps.
-const NO_STREAM = 'no stream face logged in: the world failed';
 const hears = function (word) { return S.got.some(function (l) { return l.indexOf(word) !== -1; }); };
 const heardEvent = function (kind, id) { return S.got.some(function (l) { const v = parsed(l); return !!v && v.event === kind && (kind === 'job-deleted' ? v.data === id : !!v.data && v.data.id === id); }); };
 const streamUp = function () { return !!(S.LS && S.LS.sid && S.got); };
@@ -773,29 +767,28 @@ const streamUp = function () { return !!(S.LS && S.LS.sid && S.got); };
 const runOne = async function () {
   const c = await home(S.N.base, 'job.create', { command: process.execPath, args: ['spirit/app/zzStream/zzStream.js'] });
   const id = c.body && c.body.id;
-  if (!id) return { why: 'job.create at home: ' + c.status + ' ' + short(c.text) };
+  if (!id) return {};
   await until(function () { return home(S.N.base, 'job.get', { key: id }).then(function (a) { const j = a.body && a.body.job; return !!j && j.status === 'failed'; }); }, 8000);
   const d = await home(S.N.base, 'job.delete', { id: id });
-  return d.status < 300 ? { id: id } : { why: 'job.delete at home: ' + d.status + ' ' + short(d.text) };
+  return d.status < 300 ? { id: id } : {};
 };
 const bundle = function (label) { return home(S.N.base, 'auth.bundle', { op: 'add', label: label, text: 'zz' }); };
 const sface = function (req) { return page(S.S, 'stream', '/face/call', req, S.LS.sid); };
 
 test.run('a relay for the stream: joined, a face set', 0.2, async function () {
-  if (!S.me) return NO_NODE;
+  if (!S.me) return false;
   const St = S.S = await scratchFaceRelay({ members: [] });
   S.relays.push(St);
-  const why4 = !St.up ? 'the relay did not come up' : (await join(S.N, St) || await setFace(S.N, St, 'stream'));
-  S.why4 = why4;
-  return !why4 || ('nothing judged: ' + why4);
+  S.ok4 = !!St.up && await join(S.N, St) && await setFace(S.N, St, 'stream');
+  return S.ok4 || false;
 }, test.limit.long);
 test.run('the face logs in', 0.2, async function () {
-  if (!S.S || S.why4 !== '') return 'no stream relay: the world failed';
+  if (!S.S || S.ok4 !== true) return false;
   S.LS = await logIn(S.S, 'stream');
-  return !!S.LS.sid || ('the login failed, nothing judged: ' + S.LS.why);
+  return !!S.LS.sid || false;
 }, test.limit.quick);
 test.run('no star: the stream carries nothing of the node, not even its file tree', 0.8, async function () {
-  if (!S.LS || !S.LS.sid) return NO_STREAM;
+  if (!S.LS || !S.LS.sid) return false;
   S.got = [];
   let heldStream = '';
   S.q = http.request({ host: '127.0.0.1', port: S.S.port, path: '/face/stream', method: 'GET', headers: { Host: 'stream.relay.example', Cookie: 'spirit_face=' + S.LS.sid } }, function (r) {
@@ -806,193 +799,192 @@ test.run('no star: the stream carries nothing of the node, not even its file tre
   S.q.end();
   await sleep(3000);
   // Box v29: no star, the node answers the face nothing, so no file tree, no presence, no job.
-  return (!hears('spirit.fs') && !hears('presence')) || ('no star: the stream said ' + short(S.got.slice(0, 3)));
+  return (!hears('spirit.fs') && !hears('presence')) || false;
 }, test.limit.slow);
 test.run('no star: a job runs and is deleted at home', 0.2, async function () {
-  if (!streamUp()) return NO_STREAM;
+  if (!streamUp()) return false;
   const script2 = path.join(S.run, 'spirit/app/zzStream/zzStream.js');
   fs.mkdirSync(path.dirname(script2), { recursive: true });
   fs.writeFileSync(script2, 'setTimeout(function () { process.exit(4); }, 300);\n');
   fs.writeFileSync(path.join(S.run, 'spirit/app/zzStream/zzStream.json'), JSON.stringify({ identity: { label: 'zz', intrinsic: false }, node: { run: true } }));
   S.j0 = await runOne();
-  return !!S.j0.id || ('nothing judged: ' + S.j0.why);
+  return !!S.j0.id || false;
 }, test.limit.quick);
 test.run('no star: a bundle is added at home', 0.2, async function () {
-  if (!streamUp()) return NO_STREAM;
+  if (!streamUp()) return false;
   const b0 = await bundle('zzBefore');
-  return b0.status < 300 || ('auth.bundle at home: ' + b0.status + ' ' + short(b0.text));
+  return b0.status < 300 || false;
 }, test.limit.quick);
 test.run('no star: the job never reaches the face', 0.8, async function () {
-  if (!streamUp() || !S.j0) return NO_STREAM;
+  if (!streamUp() || !S.j0) return false;
   await sleep(WAIT_MS);
-  return (!!S.j0.id && !hears(S.j0.id)) || ('no star: job ' + S.j0.id + ' reached the face');
+  return (!!S.j0.id && !hears(S.j0.id)) || false;
 }, test.limit.slow);
 test.run('no star: the bundle never reaches the face', 0.8, function () {
-  if (!streamUp()) return NO_STREAM;
-  return !hears('zzBefore') || 'no star: the bundle reached the face';
+  if (!streamUp()) return false;
+  return !hears('zzBefore') || false;
 }, test.limit.quick);
 test.run('the star on, at home, the stream still open', 0.2, async function () {
-  if (!streamUp()) return NO_STREAM;
+  if (!streamUp()) return false;
   const sOn = await home(S.N.base, 'contact.own', { key: S.S.relayKey, own: true });
-  return sOn.status === 200 || ('contact.own at home: ' + sOn.status + ' ' + short(sOn.text));
+  return sOn.status === 200 || false;
 }, test.limit.quick);
 test.run('no catch-up: what went before the star does not come', 0.8, async function () {
-  if (!streamUp() || !S.j0) return NO_STREAM;
+  if (!streamUp() || !S.j0) return false;
   await sleep(WAIT_MS);
-  return (!!S.j0.id && !hears(S.j0.id) && !hears('zzBefore')) || 'pressing the star sent what went before it';
+  return (!!S.j0.id && !hears(S.j0.id) && !hears('zzBefore')) || false;
 }, test.limit.slow);
 test.run('starred: a job runs and is deleted at home', 0.2, async function () {
-  if (!streamUp()) return NO_STREAM;
+  if (!streamUp()) return false;
   S.j1b = await runOne();
-  return !!S.j1b.id || ('nothing judged: ' + S.j1b.why);
+  return !!S.j1b.id || false;
 }, test.limit.quick);
 test.run('starred: the running job reaches the face', 0.2, async function () {
-  if (!streamUp() || !S.j1b) return NO_STREAM;
+  if (!streamUp() || !S.j1b) return false;
   await until(function () { return heardEvent('job-deleted', S.j1b.id); }, 5000);
-  return (!!S.j1b.id && heardEvent('job-updated', S.j1b.id)) || ('starred: job ' + S.j1b.id + ' never reached the face');
+  return (!!S.j1b.id && heardEvent('job-updated', S.j1b.id)) || false;
 }, test.limit.quick);
 test.run('starred: the job deleted reaches the face', 0.2, function () {
-  if (!streamUp() || !S.j1b) return NO_STREAM;
-  return (!!S.j1b.id && heardEvent('job-deleted', S.j1b.id)) || ('starred: job-deleted ' + S.j1b.id + ' never reached the face');
+  if (!streamUp() || !S.j1b) return false;
+  return (!!S.j1b.id && heardEvent('job-deleted', S.j1b.id)) || false;
 }, test.limit.quick);
 test.run('starred: the bundle reaches the face', 0.2, async function () {
-  if (!streamUp()) return NO_STREAM;
+  if (!streamUp()) return false;
   const b1 = await bundle('zzAfter');
   await until(function () { return hears('zzAfter'); }, 5000);
-  return (b1.status < 300 && hears('zzAfter')) || ('starred: the bundle never reached the face: ' + b1.status + ' ' + short(b1.text));
+  return (b1.status < 300 && hears('zzAfter')) || false;
 }, test.limit.quick);
 // The join steps are published only when their facts change (joinStepsJob.js): this node's first contact, here a key
 // it blocks, makes "contact" true.
 test.run('starred: a first contact appears at home', 0.2, async function () {
-  if (!streamUp()) return NO_STREAM;
+  if (!streamUp()) return false;
   const someone = auth.generateIdentity('zz').publicKey;
   const blocked = await home(S.N.base, 'contact.block', { publicKey: someone });
-  return blocked.status < 300 || ('nothing judged: contact.block answered ' + blocked.status + ' ' + short(blocked.text));
+  return blocked.status < 300 || false;
 }, test.limit.quick);
 test.run('starred: the join steps reach the face, the join news of the spirit job', 0.2, async function () {
-  if (!streamUp()) return NO_STREAM;
+  if (!streamUp()) return false;
   await until(function () { return hears('"join":'); }, 5000);
-  return hears('"join":') || 'starred: the join news never reached the face';
+  return hears('"join":') || false;
 }, test.limit.quick);
 
 // A starred face has no restrictions, except changing stars.
 test.run('the world: the first relay\'s star off again', 0.2, async function () {
-  if (!streamUp() || !S.R) return NO_STREAM;
+  if (!streamUp() || !S.R) return false;
   const rOff = await home(S.N.base, 'contact.own', { key: S.R.relayKey, own: false });
-  return rOff.status === 200 || ('contact.own false at home: ' + rOff.status);
+  return rOff.status === 200 || false;
 }, test.limit.quick);
 test.run('starring another relay from it is refused, and no star lands', 0.8, async function () {
-  if (!streamUp() || !S.R) return NO_STREAM;
+  if (!streamUp() || !S.R) return false;
   const anotherStar2 = await sface({ call: 'contact.own', args: { key: S.R.relayKey, own: true } });
-  return (starRefused(anotherStar2) && !(await starOf(S.R.relayKey))) || ('contact.own of another relay from a starred face: ' + anotherStar2.status + ' ' + short(anotherStar2.text) + ', star ' + (await starOf(S.R.relayKey)));
+  return (starRefused(anotherStar2) && !(await starOf(S.R.relayKey))) || false;
 }, test.limit.quick);
 test.run('taking its own star off from it is refused, and the star stays', 0.8, async function () {
-  if (!streamUp()) return NO_STREAM;
+  if (!streamUp()) return false;
   const ownOff = await sface({ call: 'contact.own', args: { key: S.S.relayKey, own: false } });
-  return (starRefused(ownOff) && (await starOf(S.S.relayKey))) || ('contact.own false from a starred face: ' + ownOff.status + ' ' + short(ownOff.text) + ', star ' + (await starOf(S.S.relayKey)));
+  return (starRefused(ownOff) && (await starOf(S.S.relayKey))) || false;
 }, test.limit.quick);
 // Last, since it takes the page's address away: the face you call through, renamed through it, on a star.
 test.run('starred: relay.face on the relay it is called through is not refused by the face\'s rule', 0.2, async function () {
-  if (!streamUp()) return NO_STREAM;
+  if (!streamUp()) return false;
   const renamed = await sface({ call: 'relay.face', args: { url: S.S.base, name: 'renamed' } });
-  return (!/not-from-the-face/.test(renamed.text) && renamed.status < 400) || ('relay.face through a starred face: ' + renamed.status + ' ' + short(renamed.text));
+  return (!/not-from-the-face/.test(renamed.text) && renamed.status < 400) || false;
 }, test.limit.quick);
 test.run('and the face has its new name on the relay', 0.2, async function () {
-  if (!streamUp()) return NO_STREAM;
+  if (!streamUp()) return false;
   const moved = await until(function () { return page(S.S, 'renamed', '/face/api', { call: 'state', args: {} }).then(function (a) { return a.status === 200; }); }, 8000);
-  return !!moved || 'after relay.face through a starred face, renamed.relay.example does not answer';
+  return !!moved || false;
 }, test.limit.quick);
 // The star off with the stream open: the face goes, so the next event stays home.
 test.run('the star off, at home', 0.2, async function () {
-  if (!streamUp()) return NO_STREAM;
+  if (!streamUp()) return false;
   const sOff = await home(S.N.base, 'contact.own', { key: S.S.relayKey, own: false });
-  return sOff.status === 200 || ('contact.own false at home: ' + sOff.status + ' ' + short(sOff.text));
+  return sOff.status === 200 || false;
 }, test.limit.quick);
 // A job's id is its route, the same for every run (goal/G43.20): only what the stream says from here on is judged.
 test.run('the star off: the next job stays home', 0.8, async function () {
-  if (!streamUp()) return NO_STREAM;
+  if (!streamUp()) return false;
   const sinceOff = S.got.length;
   const j2b = await runOne();
   await sleep(WAIT_MS);
-  return (!!j2b.id && !S.got.slice(sinceOff).some(function (l) { return l.indexOf(j2b.id) !== -1; })) || ('the star came off and job ' + j2b.id + ' still reached the face');
+  return (!!j2b.id && !S.got.slice(sinceOff).some(function (l) { return l.indexOf(j2b.id) !== -1; })) || false;
 }, test.limit.slow);
 test.run('and on the real stream, the node holds no face on that relay any more', 0.8, async function () {
-  if (!streamUp()) return NO_STREAM;
+  if (!streamUp()) return false;
   const gone = await until(function () { return faceName(S.S.base).then(function (n) { return n === ''; }); }, 8000);
   try { S.q.destroy(); } catch (e) { /* gone */ }
-  return gone || ('the star came off and the node still holds ' + short(await faceName(S.S.base)));
+  return gone || false;
 }, test.limit.quick);
 
 // A RELAY THAT SAYS THIS NODE OWNS IT: a relay's claim changes nothing: it says this node owns it, and no star is pressed.
 // The face is set first, as a member, then the owner mark goes in: relay.face on a relay that already owns this node
 // answers no text today, so the node cannot read it (a fault of its own, reported, not this rule's).
 test.run('a relay whose owner mark is this node\'s key: joined, a face set', 0.2, async function () {
-  if (!S.me) return NO_NODE;
+  if (!S.me) return false;
   const O = S.O = await scratchFaceRelay({ members: [] });
   S.relays.push(O);
-  let why2 = !O.up ? 'the relay did not come up' : (await join(S.N, O) || await setFace(S.N, O, 'mine'));
-  if (!why2 && !(await O.becomeOwned(S.me))) why2 = 'the relay did not come back with this node as its owner';
-  S.why2 = why2;
-  return !why2 || ('nothing judged: ' + why2);
+  let ok2 = !!O.up && await join(S.N, O) && await setFace(S.N, O, 'mine');
+  if (ok2 && !(await O.becomeOwned(S.me))) ok2 = false;
+  S.ok2 = ok2;
+  return ok2 || false;
 }, test.limit.long);
 test.run('the relay has sent this node its owner\'s report', 0.2, async function () {
-  if (!S.O || S.why2 !== '') return 'no owned relay: the world failed';
+  if (!S.O || S.ok2 !== true) return false;
   let report = null;
   await until(function () { return home(S.N.base, 'relay.get', { key: S.O.base }).then(function (a) { report = a.body && a.body.report; return !!(report && Object.keys(report).length); }); }, 20000);
   S.report = !!(report && Object.keys(report).length);
-  return S.report || 'no owner\'s report came: the claim was never made, so nothing is judged';
+  return S.report || false;
 }, test.limit.slow);
 test.run('its report sets no star', 0.8, async function () {
-  if (!S.O || S.why2 !== '') return 'no owned relay: the world failed';
-  return !(await starOf(S.O.relayKey)) || 'the relay\'s own report put a star on its row';
+  if (!S.O || S.ok2 !== true) return false;
+  return !(await starOf(S.O.relayKey)) || false;
 }, test.limit.quick);
 test.run('the face logs in there', 0.2, async function () {
-  if (!S.O || S.why2 !== '') return 'no owned relay: the world failed';
+  if (!S.O || S.ok2 !== true) return false;
   S.L2 = await logIn(S.O, 'mine');
-  return !!S.L2.sid || ('the login failed, nothing judged: ' + S.L2.why);
+  return !!S.L2.sid || false;
 }, test.limit.quick);
 test.run('owner.command from that face is refused: the relay\'s word opens nothing', 0.8, async function () {
-  if (!S.L2 || !S.L2.sid) return 'no face logged in on the owned relay: the world failed';
+  if (!S.L2 || !S.L2.sid) return false;
   const a = await page(S.O, 'mine', '/face/call', OWNER, S.L2.sid);
-  return starRefused(a) || ('owner.command on a relay that only claims this node: ' + a.status + ' ' + short(a.text));
+  return starRefused(a) || false;
 }, test.limit.quick);
 
 // A RELAY WHERE THIS NODE SET NO FACE gets nothing, whatever it does.
 test.run('a third relay: joined, and no face asked for', 0.2, async function () {
-  if (!S.me) return NO_NODE;
+  if (!S.me) return false;
   const D = S.D = await scratchFaceRelay({ members: [] });
   S.relays.push(D);
-  const why3 = !D.up ? 'the relay did not come up' : await join(S.N, D);
-  S.why3 = why3;
-  return !why3 || ('nothing judged: ' + why3);
+  S.ok3 = !!D.up && await join(S.N, D);
+  return S.ok3 || false;
 }, test.limit.slow);
 test.run('the relay has made a face this node never asked for, and logged in to it', 0.2, async function () {
-  if (!S.D || S.why3 !== '') return 'no third relay: the world failed';
+  if (!S.D || S.ok3 !== true) return false;
   // The dishonest relay: it gives the member a face on its own, so it can send this node face events.
   S.D.setFace(S.me, 'forged', MAIL);
   await sleep(300);
   S.L3 = await logIn(S.D, 'forged');
-  return !!S.L3.sid || ('the forged face could not log in, nothing judged: ' + S.L3.why);
+  return !!S.L3.sid || false;
 }, test.limit.slow);
 function forgedRefused(q) {
   return async function () {
-    if (!S.L3 || !S.L3.sid) return 'no forged face logged in: the world failed';
+    if (!S.L3 || !S.L3.sid) return false;
     const a = await page(S.D, 'forged', '/face/call', q, S.L3.sid);
-    return (a.status === 403 && !!a.body && a.body.code === 'no-face-here') || (q.call + ' on a relay where this node set no face: ' + a.status + ' ' + short(a.text));
+    return (a.status === 403 && !!a.body && a.body.code === 'no-face-here') || false;
   };
 }
 test.run('node.card through it is refused, no-face-here', 0.8, forgedRefused({ call: 'node.card', args: {} }), test.limit.quick);
 test.run('job.create through it is refused, no-face-here', 0.8, forgedRefused(JOB), test.limit.quick);
 test.run('and a star does not open it: no face of mine, nothing', 0.8, async function () {
-  if (!S.L3 || !S.L3.sid) return 'no forged face logged in: the world failed';
+  if (!S.L3 || !S.L3.sid) return false;
   const on3 = await home(S.N.base, 'contact.own', { key: S.D.relayKey, own: true });
   const a3 = await page(S.D, 'forged', '/face/call', JOB, S.L3.sid);
-  return (on3.status === 200 && a3.status === 403 && !!a3.body && a3.body.code === 'no-face-here') || ('starred, no face set: ' + on3.status + ', ' + a3.status + ' ' + short(a3.text));
+  return (on3.status === 200 && a3.status === 403 && !!a3.body && a3.body.code === 'no-face-here') || false;
 }, test.limit.quick);
 test.run('no job ran through any of this', 0.8, async function () {
-  if (!S.mark) return NO_NODE;
+  if (!S.mark) return false;
   await sleep(WAIT_MS);
-  return !fs.existsSync(S.mark) || 'a job ran through a relay that had no right to it';
+  return !fs.existsSync(S.mark) || false;
 }, test.limit.slow);
 
 // ── THE STARAPPS PART, once faceHome-starApps.js ────────────────────────────────────────────────────────────────────────
@@ -1019,26 +1011,26 @@ function appsPage(relay, p, body) {
     q.end(b);
   });
 }
-// A real join, a real face, a real login; answers the session, or why not.
+// A real join, a real face, a real login; answers the session, or none.
 async function faceOf(N, R) {
   await home(N.base, 'relay.add', { url: R.base, label: 'scratch' });
   await home(N.base, 'relay.join', { url: R.base, email: MAIL });
   await until(function () { return R.mailed.length > 0; }, 5000);
   const code = R.mailed[0] && ((/[?&]join=([A-Za-z0-9_-]+)/.exec(R.mailed[0].text)) || [])[1];
-  if (!code) return { why: 'the relay mailed no join code' };
+  if (!code) return {};
   await home(N.base, 'relay.join', { url: R.base, email: MAIL, code: code });
   let f = null;
   for (let i = 0; i < 10; i++) { f = await home(N.base, 'relay.face', { url: R.base, name: NAME }); if (f.status === 200) break; await sleep(2000); }
-  if (!f || f.status !== 200) return { why: 'relay.face: ' + short(f && f.text) };
+  if (!f || f.status !== 200) return {};
   await until(function () { return appsPage(R, '/face/api', { call: 'state', args: {} }).then(function (s) { return s.status === 200; }); }, 15000);
   const from = R.mailed.length;
   await appsPage(R, '/face/api', { call: 'login', args: { text: MAIL } });
   await until(function () { return R.mailed.length > from; }, 5000);
   const token = R.mailed[from] && String(R.mailed[from].text).split(/\r?\n/).map(function (l) { return l.trim(); }).filter(function (l) { return /^[A-Za-z0-9_-]{16,}$/.test(l); })[0];
-  if (!token) return { why: 'the relay mailed no login token' };
+  if (!token) return {};
   const done = await appsPage(R, '/face/api', { call: 'login', args: { text: token } });
   const sid = ((/spirit_face=([^;]+)/.exec(done.cookie)) || [])[1];
-  return sid ? { sid: sid } : { why: 'the login: ' + short(done.text) };
+  return sid ? { sid: sid } : {};
 }
 // The names on a desktop, as it reads: icon and name line by line, the name lines only.
 async function desktop(chrome, url) {
@@ -1055,7 +1047,6 @@ const namesNow = async function () { return String(await A.chrome.evaluate('docu
 
 // The starApps part's world, in A; its Chrome, relay and node are stopped by test.after.
 const A = {};
-const NO_CHROME = 'no browser on a logged-in face: the world failed';
 const browsing = function () { return !!(A.chrome && A.FACE && A.F && A.F.sid); };
 test.after(function () {
   const chrome = A.chrome;
@@ -1070,112 +1061,112 @@ test.after(function () {
 test.run('a real node has a real face, logged in', 0.2, async function () {
   A.N = await scratchNode();
   A.R = await scratchFaceRelay({ members: [], faceDomain: DOMAIN });
-  if (!A.N.up || !A.R.up) return 'the scratch node or relay did not come up: nothing judged';
+  if (!A.N.up || !A.R.up) return false;
   A.F = await faceOf(A.N, A.R);
-  return !!A.F.sid || ('nothing judged: ' + A.F.why);
+  return !!A.F.sid || false;
 }, test.limit.long);
 test.run('the browser holds the login', 0.2, async function () {
-  if (!A.F || !A.F.sid) return 'no face logged in: the world failed';
+  if (!A.F || !A.F.sid) return false;
   const where = findChrome();
-  if (!where) return 'no Chrome here: nothing judged';
+  if (!where) return false;
   const chrome = await chromePage(where);
-  if (chrome.error) return 'Chrome: ' + chrome.error;
+  if (chrome.error) return false;
   A.chrome = chrome;
   A.FACE = 'http://' + NAME + '.' + DOMAIN + ':' + A.R.port + '/';
   const set = await chrome.send('Network.setCookie', { name: 'spirit_face', value: A.F.sid, url: A.FACE, path: '/' });
-  return !!(set.result && set.result.success) || ('the browser would not take the cookie: ' + short(set));
+  return !!(set.result && set.result.success) || false;
 }, test.limit.quick);
 test.run('at home the desktop shows Text Editor and Media Viewer', 0.2, async function () {
-  if (!browsing()) return NO_CHROME;
+  if (!browsing()) return false;
   A.atHome = await desktop(A.chrome, A.N.base + '/');
   test.comment('at home: ' + A.atHome.join(', '));
-  return (A.atHome.indexOf('Text Editor') !== -1 && A.atHome.indexOf('Media Viewer') !== -1) || ('at home they are not there, nothing judged: ' + short(A.atHome));
+  return (A.atHome.indexOf('Text Editor') !== -1 && A.atHome.indexOf('Media Viewer') !== -1) || false;
 }, test.limit.slow);
 
 // No star: each app's face mark decides, as today.
 test.run('the face\'s desktop is drawn', 0.2, async function () {
-  if (!browsing()) return NO_CHROME;
+  if (!browsing()) return false;
   A.plain = await desktop(A.chrome, A.FACE);
   test.comment('no star: ' + A.plain.join(', '));
-  return A.plain.indexOf('Contacts') !== -1 || ('the face drew no desktop, nothing judged: ' + short(A.plain));
+  return A.plain.indexOf('Contacts') !== -1 || false;
 }, test.limit.slow);
 test.run('Text Editor and Media Viewer are not on it', 0.2, function () {
-  if (!A.plain) return MISSING;
-  return (A.plain.indexOf('Text Editor') === -1 && A.plain.indexOf('Media Viewer') === -1) || ('with no star the face shows them: ' + short(A.plain));
+  if (!A.plain) return false;
+  return (A.plain.indexOf('Text Editor') === -1 && A.plain.indexOf('Media Viewer') === -1) || false;
 }, test.limit.quick);
 
 // WHO PAINTS, LISTENS (goal/G41.32; Andy: "every row's data, wherever it's visible OR invisible must update instantly, and
 // when visible, paint immediately."; "does a star change at home stream to the face????"): the page stays open, no reload.
 // The star pressed at home, the face open: its desktop follows, with no reload.
 test.run('the star on, at home', 0.2, async function () {
-  if (!browsing()) return NO_CHROME;
+  if (!browsing()) return false;
   await A.chrome.evaluate('window.__sameLoad = true; 1');
   const live = await home(A.N.base, 'contact.own', { key: A.R.relayKey, own: true });
-  return live.status === 200 || ('contact.own: ' + live.status + ' ' + short(live.text));
+  return live.status === 200 || false;
 }, test.limit.quick);
 test.run('Text Editor and Media Viewer come at once', 0.2, async function () {
-  if (!browsing()) return NO_CHROME;
+  if (!browsing()) return false;
   await until(function () { return namesNow().then(function (n) { return n.indexOf('Text Editor') !== -1 && n.indexOf('Media Viewer') !== -1; }); }, 8000);
   A.onLive = await namesNow();
-  return (A.onLive.indexOf('Text Editor') !== -1 && A.onLive.indexOf('Media Viewer') !== -1) || ('the open face shows: ' + short(A.onLive));
+  return (A.onLive.indexOf('Text Editor') !== -1 && A.onLive.indexOf('Media Viewer') !== -1) || false;
 }, test.limit.long);
 test.run('with its desktop open, the star off, at home', 0.2, async function () {
-  if (!browsing()) return NO_CHROME;
+  if (!browsing()) return false;
   const liveOff = await home(A.N.base, 'contact.own', { key: A.R.relayKey, own: false });
-  return liveOff.status === 200 || ('contact.own false: ' + liveOff.status + ' ' + short(liveOff.text));
+  return liveOff.status === 200 || false;
 }, test.limit.quick);
 test.run('and go at once', 0.2, async function () {
-  if (!browsing() || !A.onLive) return NO_CHROME;
+  if (!browsing() || !A.onLive) return false;
   await until(function () { return namesNow().then(function (n) { return n.indexOf('Text Editor') === -1 && n.indexOf('Media Viewer') === -1; }); }, 8000);
   const offLive = await namesNow();
   const cameLive = A.onLive.indexOf('Text Editor') !== -1 && A.onLive.indexOf('Media Viewer') !== -1;
-  return (cameLive && offLive.indexOf('Contacts') !== -1 && offLive.indexOf('Text Editor') === -1 && offLive.indexOf('Media Viewer') === -1) || (cameLive ? 'the open face shows: ' + short(offLive) : 'they never came: nothing judged');
+  return (cameLive && offLive.indexOf('Contacts') !== -1 && offLive.indexOf('Text Editor') === -1 && offLive.indexOf('Media Viewer') === -1) || false;
 }, test.limit.quick);
 test.run('all on the one load of the page', 0.2, async function () {
-  if (!browsing()) return NO_CHROME;
-  return (await A.chrome.evaluate('window.__sameLoad === true')) === true || 'the page reloaded itself';
+  if (!browsing()) return false;
+  return (await A.chrome.evaluate('window.__sameLoad === true')) === true || false;
 }, test.limit.quick);
 
 // The star: every app the home desktop shows.
 test.run('for every app: the star on, at home', 0.2, async function () {
-  if (!browsing()) return NO_CHROME;
+  if (!browsing()) return false;
   const on = await home(A.N.base, 'contact.own', { key: A.R.relayKey, own: true });
-  return on.status === 200 || ('contact.own: ' + on.status + ' ' + short(on.text));
+  return on.status === 200 || false;
 }, test.limit.quick);
 test.run('every app on the home desktop is on the starred face', 0.2, async function () {
-  if (!browsing() || !A.atHome) return NO_CHROME;
+  if (!browsing() || !A.atHome) return false;
   A.starred = await desktop(A.chrome, A.FACE);
   test.comment('starred: ' + A.starred.join(', '));
   const gap = missing(A.atHome, A.starred);
-  return (A.starred.length > 0 && !gap.length) || ('on the home desktop and not on the starred face: ' + gap.join(', '));
+  return (A.starred.length > 0 && !gap.length) || false;
 }, test.limit.slow);
 test.run('and Join and the login app stay the boot\'s own', 0.2, function () {
-  if (!A.starred) return MISSING;
-  return A.starred.indexOf('Join') === -1 || ('a boot part became an app icon: ' + short(A.starred));
+  if (!A.starred) return false;
+  return A.starred.indexOf('Join') === -1 || false;
 }, test.limit.quick);
 
 // An app it shows opens.
 test.run('its tile is there to press', 0.2, async function () {
-  if (!browsing()) return NO_CHROME;
+  if (!browsing()) return false;
   A.pageErrors = A.chrome.heard.length;
   A.opened = await A.chrome.evaluate('(function () { var all = Array.prototype.slice.call(document.querySelectorAll("*")); var hit = all.filter(function (e) { return e.children.length === 0 && e.textContent.trim() === "Text Editor"; })[0]; if (!hit) return false; hit.click(); return true; }())');
-  return A.opened === true || 'no Text Editor tile to press on the starred face';
+  return A.opened === true || false;
 }, test.limit.quick);
 test.run('pressing it throws nothing in the page', 0.2, async function () {
-  if (!browsing()) return NO_CHROME;
+  if (!browsing()) return false;
   await sleep(DRAWN_MS / 2);
-  const threw = A.chrome.heard.slice(A.pageErrors || 0).filter(function (m) { return m.method === 'Runtime.exceptionThrown'; }).map(function (m) { return m.params.exceptionDetails.text + ' ' + short((m.params.exceptionDetails.exception || {}).description || ''); });
-  return (A.opened === true && !threw.length) || (A.opened === true ? 'pressing Text Editor threw: ' + threw.slice(0, 2).join(' | ') : 'nothing was pressed, so nothing is judged');
+  const threw = A.chrome.heard.slice(A.pageErrors || 0).filter(function (m) { return m.method === 'Runtime.exceptionThrown'; });
+  return (A.opened === true && !threw.length) || false;
 }, test.limit.slow);
 
 // The star off: back to the face marks.
 test.run('back to the face marks: the star off, at home', 0.2, async function () {
-  if (!browsing()) return NO_CHROME;
+  if (!browsing()) return false;
   const off = await home(A.N.base, 'contact.own', { key: A.R.relayKey, own: false });
-  return off.status === 200 || ('contact.own false: ' + off.status + ' ' + short(off.text));
+  return off.status === 200 || false;
 }, test.limit.quick);
 test.run('Text Editor and Media Viewer are gone again', 0.2, async function () {
-  if (!browsing()) return NO_CHROME;
+  if (!browsing()) return false;
   const again = await desktop(A.chrome, A.FACE);
-  return (again.indexOf('Contacts') !== -1 && again.indexOf('Text Editor') === -1 && again.indexOf('Media Viewer') === -1) || ('with the star off the face shows: ' + short(again));
+  return (again.indexOf('Contacts') !== -1 && again.indexOf('Text Editor') === -1 && again.indexOf('Media Viewer') === -1) || false;
 }, test.limit.slow);

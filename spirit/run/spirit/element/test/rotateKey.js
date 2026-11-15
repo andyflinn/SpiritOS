@@ -17,7 +17,6 @@ const FILE = path.join(__dirname, '..', 'rotateKey.js');
 const SRC = fs.existsSync(FILE) ? fs.readFileSync(FILE, 'utf8') : '';
 const CODE = SRC.replace(/\/\/.*$/gm, '');
 
-function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 const settle = async function () { for (let i = 0; i < 20; i++) await new Promise(function (r) { setImmediate(r); }); };
 
 // The explanation and the button "as they are" (the box, 8): the words of the dialog it was, read as the page reads them.
@@ -124,7 +123,7 @@ const rotated = function () { return { status: 200, body: { ok: true, at: 2, rel
 let w, at, E, host, made, said, missing, b, a, rot, after, slow, h2, b2, busy, no, h3, b3, again, none, h4, b4, h5,
   b5, late, letGo, h6, m6;
 test.run('spirit/element/rotateKey.js is there', 0.2, function () {
-  return (!!SRC) ? true : 'there is no spirit/element/rotateKey.js';
+  return (!!SRC) ? true : false;
 }, test.limit.quick);
 test.run('it sets spirit.element.spirit.element.rotateKey = { create }', 0.2, function () {
   // an element mounted the new shell's way (goal/G43.24, requirements 7 and 8)
@@ -132,99 +131,99 @@ test.run('it sets spirit.element.spirit.element.rotateKey = { create }', 0.2, fu
   // goal/G43.32: it stands at its path.
   at = ((w.win.spirit.element || {}).spirit || {}).element || {};
   E = at.rotateKey;
-  return (!!E && typeof E.create === 'function') ? true : 'elements: ' + short(Object.keys(at));
+  return (!!E && typeof E.create === 'function') ? true : false;
 }, test.limit.quick);
 test.run('no spirit.shell.activateApp, no dialog of the old shell', 0.2, function () {
-  return (!/\bactivateApp\b|\bspirit\.shell\b|\bcallDialog\b|\bcloseDialog\b/.test(CODE)) ? true : 'rotateKey.js still mounts or closes the old shell\'s way';
+  return (!/\bactivateApp\b|\bspirit\.shell\b|\bcallDialog\b|\bcloseDialog\b/.test(CODE)) ? true : false;
 }, test.limit.quick);
 test.run('it asks the node through the spirit object, spirit.node.rotateCipher, no api.verb', 0.2, function () {
   // Andy: "every fucking element gets the interfaces it needs": the node's own verb, through the spirit object, no api.verb.
-  return (!/\.verb\s*\(/.test(CODE) && /\bnode\.rotateCipher\b/.test(CODE)) ? true : 'rotateKey.js asks through an api, or not spirit.node.rotateCipher';
+  return (!/\.verb\s*\(/.test(CODE) && /\bnode\.rotateCipher\b/.test(CODE)) ? true : false;
 }, test.limit.quick);
 test.run('it loads spirit/element/armingButton.js itself, through spirit.require (rule/26)', 0.2, function () {
-  return (w.required.indexOf('spirit/element/armingButton.js') !== -1) ? true : 'required: ' + short(w.required);
+  return (w.required.indexOf('spirit/element/armingButton.js') !== -1) ? true : false;
 }, test.limit.quick);
 test.run('no data-armed of its own', 0.2, function () {
   // nothing hand-rolled: the are-you-sure is the arming button's (goal/G41.9)
-  return (!/data-armed/.test(CODE)) ? true : 'its code still writes data-armed';
+  return (!/data-armed/.test(CODE)) ? true : false;
 }, test.limit.quick);
 test.run('it calls no armUntilElsewhere itself', 0.2, function () {
-  return (!/armUntilElsewhere/.test(CODE)) ? true : 'its code still calls armUntilElsewhere';
+  return (!/armUntilElsewhere/.test(CODE)) ? true : false;
 }, test.limit.quick);
 test.run('it takes no api and hands none on', 0.2, function () {
   // Andy: "anybody can mount any element without knowing what it actually needs...." (goal/G43.24).
-  return (!/\bapi\b/.test(CODE)) ? true : 'its code still names an api';
+  return (!/\bapi\b/.test(CODE)) ? true : false;
 }, test.limit.quick);
 test.run('no armed flag and no armed class of its own', 0.2, function () {
-  return (!/\brkArmed\b/.test(CODE) && !/classList\.(add|remove|toggle)\(\s*['"]armed['"]/.test(CODE)) ? true : 'its code still keeps an armed flag or class';
+  return (!/\brkArmed\b/.test(CODE) && !/classList\.(add|remove|toggle)\(\s*['"]armed['"]/.test(CODE)) ? true : false;
 }, test.limit.quick);
 test.run('create(container), its container alone, answers { destroy() }', 0.2, async function () {
   host = node('<div>');
   made = E.create(host);
   await settle();
-  return (!!made && typeof made.destroy === 'function') ? true : 'create answered ' + short(made && Object.keys(made));
+  return (!!made && typeof made.destroy === 'function') ? true : false;
 }, test.limit.quick);
 test.run('it says its title, when to use it, what it does, what it costs, what it does not do, and that it is a crisis measure', 0.2, function () {
   // its explanation first, as it is
   said = words(host);
   missing = EXPLAINED.filter(function (l) { return said.indexOf(l) === -1; });
-  return (!missing.length) ? true : 'missing: ' + short(missing) + ' in ' + short(said);
+  return (!missing.length) ? true : false;
 }, test.limit.quick);
 test.run('and then its button', 0.2, function () {
   b = w.button(host);
-  return (!!b) ? true : 'no button: ' + short(host.innerHTML);
+  return (!!b) ? true : false;
 }, test.limit.quick);
 test.run('the explanation stands before the button', 0.2, function () {
-  return (said.indexOf(EXPLAINED[5]) !== -1 && said.indexOf(BUTTON) > said.indexOf(EXPLAINED[5])) ? true : 'said: ' + short(said);
+  return (said.indexOf(EXPLAINED[5]) !== -1 && said.indexOf(BUTTON) > said.indexOf(EXPLAINED[5])) ? true : false;
 }, test.limit.quick);
 test.run('its button is attached as an armingButton', 0.2, function () {
   // its button, the shell's two-press armingButton
   a = w.attached.filter(function (x) { return x.button === b; }).pop();
-  return (!!a) ? true : 'attached: ' + w.attached.length;
+  return (!!a) ? true : false;
 }, test.limit.quick);
 test.run('it says Rotate the key, and armed Rotate the key: press again', 0.2, function () {
-  return (a.opts.label === BUTTON && a.opts.armedLabel === ARMED && b.textContent === BUTTON) ? true : 'label ' + short(a.opts.label) + ', armed ' + short(a.opts.armedLabel) + ', shows ' + short(b.textContent);
+  return (a.opts.label === BUTTON && a.opts.armedLabel === ARMED && b.textContent === BUTTON) ? true : false;
 }, test.limit.quick);
 test.run('the arming button is handed no api: it hears a click elsewhere itself', 0.2, function () {
-  return (!('api' in a.opts)) ? true : 'handed: ' + short(Object.keys(a.opts));
+  return (!('api' in a.opts)) ? true : false;
 }, test.limit.quick);
 test.run('it starts disarmed, and nothing is rotated', 0.2, function () {
-  return (b.getAttribute('data-armed') === null && w.calls.length === 0) ? true : 'armed ' + short(b.getAttribute('data-armed')) + ', calls ' + w.calls.length;
+  return (b.getAttribute('data-armed') === null && w.calls.length === 0) ? true : false;
 }, test.limit.quick);
 test.run('one press arms it: it says Rotate the key: press again, and listens for a click elsewhere', 0.2, async function () {
   b.fire('click', { preventDefault: function () {} });
   await settle();
-  return (b.getAttribute('data-armed') === 'true' && b.textContent === ARMED && w.listening === 1) ? true : 'armed ' + short(b.getAttribute('data-armed')) + ', says ' + short(b.textContent) + ', listening ' + w.landed;
+  return (b.getAttribute('data-armed') === 'true' && b.textContent === ARMED && w.listening === 1) ? true : false;
 }, test.limit.quick);
 test.run('one press rotates nothing', 0.2, function () {
-  return (w.calls.length === 0) ? true : 'one press asked node.rotateCipher ' + w.calls.length + ' times';
+  return (w.calls.length === 0) ? true : false;
 }, test.limit.quick);
 test.run('disarmed (attention moved), it says Rotate the key again', 0.2, async function () {
   b.disarm();
   await settle();
-  return (b.textContent === BUTTON && b.getAttribute('data-armed') === null) ? true : 'says ' + short(b.textContent);
+  return (b.textContent === BUTTON && b.getAttribute('data-armed') === null) ? true : false;
 }, test.limit.quick);
 test.run('and the next press only arms it again: two presses must be two presses in a row', 0.2, async function () {
   b.fire('click', { preventDefault: function () {} });
   await settle();
-  return (w.calls.length === 0) ? true : 'asked ' + w.calls.length + ' times';
+  return (w.calls.length === 0) ? true : false;
 }, test.limit.quick);
 test.run('the second press asks spirit.node.rotateCipher({}) once', 0.2, async function () {
   // the second press: one rotateCipher, the result said
   b.fire('click', { preventDefault: function () {} });
   await settle();
   rot = w.calls.filter(function (c) { return c.name === 'node.rotateCipher'; });
-  return (rot.length === 1 && rot[0].args && JSON.stringify(rot[0].args) === '{}') ? true : 'calls: ' + short(w.calls);
+  return (rot.length === 1 && rot[0].args && JSON.stringify(rot[0].args) === '{}') ? true : false;
 }, test.limit.quick);
 test.run('it says what the node answered: Rotated, the card\'s number, and how many relays it went to', 0.2, function () {
   after = words(host);
-  return (/Rotated/.test(after) && after.indexOf('This node\'s card is now number 2, handed to 1 relay(s).') !== -1) ? true : 'said: ' + short(after.slice(after.indexOf('crisis')));
+  return (/Rotated/.test(after) && after.indexOf('This node\'s card is now number 2, handed to 1 relay(s).') !== -1) ? true : false;
 }, test.limit.quick);
 test.run('rotated, its button is gone: nothing to press twice again in this visit', 0.2, function () {
-  return (!w.button(host)) ? true : 'a button is still drawn';
+  return (!w.button(host)) ? true : false;
 }, test.limit.quick);
 test.run('and the explanation stays', 0.2, function () {
-  return (EXPLAINED.every(function (l) { return after.indexOf(l) !== -1; })) ? true : 'the explanation went';
+  return (EXPLAINED.every(function (l) { return after.indexOf(l) !== -1; })) ? true : false;
 }, test.limit.quick);
 test.run('asked, its button is drawn disabled until the answer lands', 0.2, async function () {
   // while the node has not answered, the button waits
@@ -237,7 +236,7 @@ test.run('asked, its button is drawn disabled until the answer lands', 0.2, asyn
   b2.fire('click', { preventDefault: function () {} });
   await settle();
   busy = slow.button(h2);
-  return (slow.calls.length === 1 && !!busy && busy.disabled === true) ? true : 'calls ' + slow.calls.length + ', button ' + (busy ? 'disabled ' + busy.disabled : 'gone');
+  return (slow.calls.length === 1 && !!busy && busy.disabled === true) ? true : false;
 }, test.limit.quick);
 test.run('and the answer, when it lands, is said', 0.2, async function () {
   if (busy) busy.fire('click', { preventDefault: function () {} });
@@ -245,7 +244,7 @@ test.run('and the answer, when it lands, is said', 0.2, async function () {
   await settle();
   if (slow.release) slow.release();
   await settle();
-  return (slow.calls.length === 1 && /number 3, handed to 2 relay/.test(words(h2))) ? true : 'calls ' + slow.calls.length + ', said ' + short(words(h2).slice(-120));
+  return (slow.calls.length === 1 && /number 3, handed to 2 relay/.test(words(h2))) ? true : false;
 }, test.limit.quick);
 test.run('the node\'s refusal is said, escaped, and nothing claims a rotation', 0.2, async function () {
   // a refusal is said, and the button stays to try again
@@ -257,11 +256,11 @@ test.run('the node\'s refusal is said, escaped, and nothing claims a rotation', 
   b3.fire('click', { preventDefault: function () {} });
   b3.fire('click', { preventDefault: function () {} });
   await settle();
-  return (no.calls.length === 1 && /owner &lt;only&gt;/.test(h3.innerHTML + under(h3).map(function (k) { return k.innerHTML; }).join('')) && !/Rotated/.test(words(h3))) ? true : 'said: ' + short(words(h3).slice(-120));
+  return (no.calls.length === 1 && /owner &lt;only&gt;/.test(h3.innerHTML + under(h3).map(function (k) { return k.innerHTML; }).join('')) && !/Rotated/.test(words(h3))) ? true : false;
 }, test.limit.quick);
 test.run('its button is back, disarmed', 0.2, function () {
   again = no.button(h3);
-  return (!!again && !again.disabled && again.getAttribute('data-armed') === null && again.textContent === BUTTON) ? true : 'button: ' + short(again && { text: again.textContent, disabled: again.disabled });
+  return (!!again && !again.disabled && again.getAttribute('data-armed') === null && again.textContent === BUTTON) ? true : false;
 }, test.limit.quick);
 test.run('a node that does not answer is said as no answer', 0.2, async function () {
   none = world(function () { return { status: 0, body: null }; });
@@ -272,7 +271,7 @@ test.run('a node that does not answer is said as no answer', 0.2, async function
   b4.fire('click', { preventDefault: function () {} });
   b4.fire('click', { preventDefault: function () {} });
   await settle();
-  return (/no answer/.test(words(h4))) ? true : 'said: ' + short(words(h4).slice(-80));
+  return (/no answer/.test(words(h4))) ? true : false;
 }, test.limit.quick);
 test.run('made again after a rotation, it shows its button, disarmed, and no result', 0.2, async function () {
   // every create starts disarmed and without an old result
@@ -280,12 +279,12 @@ test.run('made again after a rotation, it shows its button, disarmed, and no res
   E.create(h5, {});
   await settle();
   b5 = w.button(h5);
-  return (!!b5 && b5.getAttribute('data-armed') === null && !/Rotated/.test(words(h5)) && w.calls.length === 1) ? true : 'button ' + !!b5 + ', said ' + short(words(h5).slice(-80));
+  return (!!b5 && b5.getAttribute('data-armed') === null && !/Rotated/.test(words(h5)) && w.calls.length === 1) ? true : false;
 }, test.limit.quick);
 test.run('destroy empties its container', 0.2, function () {
   // destroy
   made.destroy();
-  return (host.innerHTML === '') ? true : 'left: ' + short(host.innerHTML);
+  return (host.innerHTML === '') ? true : false;
 }, test.limit.quick);
 test.run('destroyed before its arming button loads, it draws and attaches nothing', 0.2, async function () {
   // The arming button not yet loaded (its require held), the file run again on that window: an element destroyed before
@@ -301,5 +300,5 @@ test.run('destroyed before its arming button loads, it draws and attaches nothin
   m6.destroy();
   letGo({});
   await settle();
-  return (h6.innerHTML === '' && late.attached.length === 0) ? true : 'left ' + short(h6.innerHTML) + ', attached ' + late.attached.length;
+  return (h6.innerHTML === '' && late.attached.length === 0) ? true : false;
 }, test.limit.quick);

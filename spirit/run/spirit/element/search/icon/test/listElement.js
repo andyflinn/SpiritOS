@@ -22,7 +22,6 @@ const OWN = 'spirit/state/icons/data/iconSet.json';
 const DOMAIN = 'localhost';
 const NAME = 'icons';
 const MAIL = 'bert@example.org';
-function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 function parsed(t) { try { return JSON.parse(t); } catch (e) { return null; } }
 function source(rel) { try { return fs.readFileSync(path.join(RUN, rel), 'utf8'); } catch (e) { return ''; } }
 
@@ -43,26 +42,26 @@ function facePost(relay, p, body) {
     q.end(b);
   });
 }
-// A real join, a real face, a real login; answers the session, or why not.
+// A real join, a real face, a real login; answers the session, or none.
 async function faceOf(N, R) {
   await home(N.base, 'relay.add', { url: R.base, label: 'scratch' });
   await home(N.base, 'relay.join', { url: R.base, email: MAIL });
   await until(function () { return R.mailed.length > 0; }, 5000);
   const code = R.mailed[0] && ((/[?&]join=([A-Za-z0-9_-]+)/.exec(R.mailed[0].text)) || [])[1];
-  if (!code) return { why: 'the relay mailed no join code' };
+  if (!code) return {};
   await home(N.base, 'relay.join', { url: R.base, email: MAIL, code: code });
   let f = null;
   for (let i = 0; i < 10; i++) { f = await home(N.base, 'relay.face', { url: R.base, name: NAME }); if (f.status === 200) break; await sleep(2000); }
-  if (!f || f.status !== 200) return { why: 'relay.face: ' + short(f && f.text) };
+  if (!f || f.status !== 200) return {};
   await until(function () { return facePost(R, '/face/api', { call: 'state', args: {} }).then(function (s) { return s.status === 200; }); }, 15000);
   const from = R.mailed.length;
   await facePost(R, '/face/api', { call: 'login', args: { text: MAIL } });
   await until(function () { return R.mailed.length > from; }, 5000);
   const token = R.mailed[from] && String(R.mailed[from].text).split(/\r?\n/).map(function (l) { return l.trim(); }).filter(function (l) { return /^[A-Za-z0-9_-]{16,}$/.test(l); })[0];
-  if (!token) return { why: 'the relay mailed no login token' };
+  if (!token) return {};
   const done = await facePost(R, '/face/api', { call: 'login', args: { text: token } });
   const sid = ((/spirit_face=([^;]+)/.exec(done.cookie)) || [])[1];
-  return sid ? { sid: sid } : { why: 'the login: ' + short(done.text) };
+  return sid ? { sid: sid } : {};
 }
 
 // A list made in a box of the page, every read and every watch of the set kept. Answers what the page has asked so far.
@@ -84,32 +83,30 @@ const FINDS = function (word) {
 
 // What the world and the tests make, for the tests after them.
 let tracked = [], set = {}, glyphs = [], PLANTED = '', N, R, chrome, open, made, seen, lastOnly, lastWord, shows, empty, lacks, one, atHome, F, FACE;
-const NO_PAGE = 'no page: the world failed';
-const NO_LIST = 'no list on the page';
 
 // the box: "This file: run://spirit/iconSet.json"
 test.run('spirit/iconSet.json is in git', 0.2, function () {
   tracked = execSync('git ls-files -- spirit/run/' + SET, { cwd: REPO, encoding: 'utf8' }).split('\n').filter(Boolean);
-  return tracked.indexOf('spirit/run/' + SET) !== -1 ? true : SET + ' is not in git';
+  return tracked.indexOf('spirit/run/' + SET) !== -1 ? true : false;
 }, test.limit.quick);
 test.run('and it is a set: each glyph with its keywords', 0.2, function () {
   set = parsed(source(SET)) || {};
   glyphs = Object.keys(set);
-  return glyphs.length > 0 && glyphs.every(function (g) { return Array.isArray(set[g]); }) ? true : SET + ' holds: ' + short(glyphs.length);
+  return glyphs.length > 0 && glyphs.every(function (g) { return Array.isArray(set[g]); }) ? true : false;
 }, test.limit.quick);
 
 // A glyph the set does not have, for the Icons app's own file below.
 test.run('the world: a glyph the set does not have', 0.2, function () {
   for (let c = 0x1F980; c < 0x1FB00 && !PLANTED; c++) { const g = String.fromCodePoint(c); if (!glyphs.includes(g)) PLANTED = g; }
-  return !!PLANTED ? true : 'the set has every glyph tried';
+  return !!PLANTED ? true : false;
 }, test.limit.quick);
 
 // the box: "the list element reads this one file, with no 'own, else system' any more"
 test.run('the list does not name the Icons app\'s file', 0.2, function () {
-  return source('spirit/element/search/icon/listElement.js').indexOf(OWN) === -1 ? true : 'the list still names ' + OWN;
+  return source('spirit/element/search/icon/listElement.js').indexOf(OWN) === -1 ? true : false;
 }, test.limit.quick);
 test.run('nor does the row element, comment included', 0.2, function () {
-  return source('spirit/element/search/icon/rowElement.js').indexOf(OWN) === -1 ? true : 'the row element still names ' + OWN;
+  return source('spirit/element/search/icon/rowElement.js').indexOf(OWN) === -1 ? true : false;
 }, test.limit.quick);
 
 test.after(async function () {
@@ -121,17 +118,17 @@ test.after(async function () {
 });
 test.run('the world: a scratch node, a scratch relay and Chrome', 0.2, async function () {
   const where = findChrome();
-  if (!where) return 'no Chrome on this machine: nothing judged in a page';
-  if (!PLANTED || !glyphs.length) return 'no set read, or no glyph to plant';
+  if (!where) return false;
+  if (!PLANTED || !glyphs.length) return false;
   N = await scratchNode();
   R = await scratchFaceRelay({ members: [], faceDomain: DOMAIN });
-  if (!N.up || !R.up) return 'the scratch node or relay did not come up: nothing judged';
+  if (!N.up || !R.up) return false;
   // The Icons app's own file, as a node has it: the list must not read it.
   const own = path.join(N.root, 'spirit', 'run', OWN);
   fs.mkdirSync(path.dirname(own), { recursive: true });
   fs.writeFileSync(own, JSON.stringify({ [PLANTED]: ['planted'] }));
   const c = await chromePage(where);
-  if (c.error) { if (c.kid) chrome = c; return 'Chrome: ' + c.error; }
+  if (c.error) { if (c.kid) chrome = c; return false; }
   chrome = c;
   open = async function (url) {
     await chrome.send('Page.navigate', { url: url });
@@ -164,134 +161,134 @@ test.run('the world: a scratch node, a scratch relay and Chrome', 0.2, async fun
 
 // at home
 test.run('the list is made', 0.2, async function () {
-  if (!open) return NO_PAGE;
+  if (!open) return false;
   await open(N.base + '/face.html');
   one = await made();
-  return one === 'made' ? true : 'the list: ' + short(one);
+  return one === 'made' ? true : false;
 }, test.limit.slow);
 test.run('it finds the file\'s last icon by its word', 0.2, async function () {
-  if (one !== 'made') return NO_LIST;
-  return (await shows(lastWord, lastOnly)) ? true : 'the word ' + lastWord + ' does not find ' + lastOnly;
+  if (one !== 'made') return false;
+  return (await shows(lastWord, lastOnly)) ? true : false;
 }, test.limit.long);
 test.run('and not the Icons app\'s own file', 0.2, async function () {
-  if (one !== 'made') return NO_LIST;
-  return (await lacks('planted', PLANTED)) ? true : 'the list finds what only the Icons app\'s file has';
+  if (one !== 'made') return false;
+  return (await lacks('planted', PLANTED)) ? true : false;
 }, test.limit.slow);
 test.run('its file is spirit/iconSet.json', 0.2, async function () {
-  if (one !== 'made') return NO_LIST;
+  if (one !== 'made') return false;
   atHome = await seen();
-  return atHome.SET === SET ? true : 'its SET is ' + short(atHome.SET);
+  return atHome.SET === SET ? true : false;
 }, test.limit.slow);
 test.run('it reads that file and no other, through spirit.fs.loadFile', 0.2, function () {
-  if (!atHome) return NO_LIST;
-  return JSON.stringify(atHome.asks) === JSON.stringify([SET]) ? true : 'it read: ' + short(atHome.asks);
+  if (!atHome) return false;
+  return JSON.stringify(atHome.asks) === JSON.stringify([SET]) ? true : false;
 }, test.limit.quick);
 
 // goal/G43.32, Andy: "It obviously must require the fs interface so it can listen to changes in the file it loads for
 // it's icon list....": no longer a constant.
 // the fs family's: kept in its cache, the file followed, read once for every list
 test.run('the list watches the file\'s row, and the fs tree for a reconnect', 0.2, function () {
-  if (!atHome) return NO_LIST;
-  return JSON.stringify(atHome.watches.slice().sort()) === JSON.stringify([SET, 'the tree']) ? true : 'it watches: ' + short(atHome.watches);
+  if (!atHome) return false;
+  return JSON.stringify(atHome.watches.slice().sort()) === JSON.stringify([SET, 'the tree']) ? true : false;
 }, test.limit.quick);
 test.run('the rows stay after the stream connects', 0.2, async function () {
-  if (one !== 'made') return NO_LIST;
+  if (one !== 'made') return false;
   await chrome.evaluate('window.__sameLoad = true; 1');
   await sleep(4000);
-  return (await shows(lastWord, lastOnly)) ? true : 'after the stream connects the list no longer finds ' + lastOnly;
+  return (await shows(lastWord, lastOnly)) ? true : false;
 }, test.limit.slow);
 test.run('a second list on the page has them too', 0.2, async function () {
-  if (one !== 'made') return NO_LIST;
+  if (one !== 'made') return false;
   const two = await made();
-  return two === 'made' && await shows(lastWord, lastOnly) ? true : 'the second list: ' + short(two);
+  return two === 'made' && await shows(lastWord, lastOnly) ? true : false;
 }, test.limit.slow);
 test.run('and the file was read once', 0.2, async function () {
-  if (one !== 'made') return NO_LIST;
+  if (one !== 'made') return false;
   const asks = (await seen()).asks;
-  return asks.length === 1 ? true : 'reads: ' + short(asks);
+  return asks.length === 1 ? true : false;
 }, test.limit.slow);
 test.run('the world: the node gone and back, the page open', 0.2, async function () {
-  if (one !== 'made') return NO_LIST;
+  if (one !== 'made') return false;
   const port = Number(new URL(N.base).port);
   N.child.kill();
   await until(function () { return Promise.resolve(N.child.exitCode !== null); }, 8000);
   await sleep(2000);
   N.child = LABH.startNodeOn(N.run, port);
   const back = await until(function () { return home(N.base, 'node.card').then(function (r) { return r.status === 200; }, function () { return false; }); }, 30000);
-  return !!back ? true : 'the node did not come back: nothing judged';
+  return !!back ? true : false;
 }, test.limit.slow);
 test.run('the rows are still there after the reconnect', 0.2, async function () {
-  if (one !== 'made') return NO_LIST;
+  if (one !== 'made') return false;
   await sleep(6000);
-  return (await shows(lastWord, lastOnly)) ? true : 'after the reconnect the list no longer finds ' + lastOnly;
+  return (await shows(lastWord, lastOnly)) ? true : false;
 }, test.limit.long);
 // spirit.data forgets on a reconnect, the set with it; the push sets the file's row again, and the two lists read it once.
 test.run('read once more for the reconnect, once for both lists', 0.2, async function () {
-  if (one !== 'made') return NO_LIST;
+  if (one !== 'made') return false;
   const asks = (await seen()).asks;
-  return asks.length === 2 ? true : 'reads: ' + short(asks);
+  return asks.length === 2 ? true : false;
 }, test.limit.slow);
 test.run('all on the one load of the page', 0.2, async function () {
-  if (one !== 'made') return NO_LIST;
-  return (await chrome.evaluate('window.__sameLoad === true')) === true ? true : 'the page reloaded itself';
+  if (one !== 'made') return false;
+  return (await chrome.evaluate('window.__sameLoad === true')) === true ? true : false;
 }, test.limit.slow);
 
 // a changed file reaches the open page
 test.run('the open page has the changed file, no reload', 0.2, async function () {
-  if (one !== 'made') return NO_LIST;
+  if (one !== 'made') return false;
   fs.writeFileSync(path.join(N.root, 'spirit', 'run', SET), JSON.stringify(Object.assign({}, set, { [PLANTED]: ['committedword'] })));
-  return (await shows('committedword', PLANTED)) ? true : 'the open page does not take the changed file';
+  return (await shows('committedword', PLANTED)) ? true : false;
 }, test.limit.long);
 test.run('on the same load of the page', 0.2, async function () {
-  if (one !== 'made') return NO_LIST;
-  return (await chrome.evaluate('window.__sameLoad === true')) === true ? true : 'the page reloaded itself';
+  if (one !== 'made') return false;
+  return (await chrome.evaluate('window.__sameLoad === true')) === true ? true : false;
 }, test.limit.slow);
 test.run('and the file put back, it has it no more', 0.2, async function () {
-  if (one !== 'made') return NO_LIST;
+  if (one !== 'made') return false;
   fs.writeFileSync(path.join(N.root, 'spirit', 'run', SET), JSON.stringify(set));
   await chrome.evaluate(FINDS('committedword'));
-  return !!(await until(function () { return chrome.evaluate('window.__box.innerText').then(function (x) { return String(x).indexOf(PLANTED) === -1; }); }, 6000)) ? true : 'the open page keeps a glyph the file no longer has';
+  return !!(await until(function () { return chrome.evaluate('window.__box.innerText').then(function (x) { return String(x).indexOf(PLANTED) === -1; }); }, 6000)) ? true : false;
 }, test.limit.long);
 
 // on a real face
 test.run('a real node has a real face, logged in', 0.2, async function () {
-  if (!open) return NO_PAGE;
+  if (!open) return false;
   F = await faceOf(N, R);
-  return !!F.sid ? true : 'nothing judged on a face: ' + F.why;
+  return !!F.sid ? true : false;
 }, test.limit.long);
 test.run('a face with no star is refused', 0.2, async function () {
-  if (!F || !F.sid) return 'no face: nothing judged';
+  if (!F || !F.sid) return false;
   FACE = 'http://' + NAME + '.' + DOMAIN + ':' + R.port + '/';
   await chrome.send('Network.setCookie', { name: 'spirit_face', value: F.sid, url: FACE, path: '/' });
   await open(FACE);
   await sleep(2000);
   const refused = await chrome.evaluate('window.spirit.ready.then(function (s) { return s.fs.loadFile(' + JSON.stringify(SET) + '); }).then(function () { return "read"; }, function (e) { return String(e && (e.code || e.message)); })');
-  return refused !== 'read' ? true : 'a face with no star read the file';
+  return refused !== 'read' ? true : false;
 }, test.limit.long);
 test.run('and its list has no rows', 0.2, async function () {
-  if (!FACE) return 'no face: nothing judged';
-  return (await made()) === 'made' && await empty(lastWord) ? true : 'a list on a face with no star has rows';
+  if (!FACE) return false;
+  return (await made()) === 'made' && await empty(lastWord) ? true : false;
 }, test.limit.slow);
 
 // the box: "A read that is refused is not kept, so a face that gets its star can read it later."
 test.run('the star on, the page open', 0.2, async function () {
-  if (!FACE) return 'no face: nothing judged';
+  if (!FACE) return false;
   const star = await home(N.base, 'contact.own', { key: R.relayKey, own: true });
-  return star.status === 200 ? true : 'contact.own: ' + star.status + ' ' + short(star.text);
+  return star.status === 200 ? true : false;
 }, test.limit.slow);
 test.run('a new list on the same page has the set', 0.2, async function () {
-  if (!FACE) return 'no face: nothing judged';
+  if (!FACE) return false;
   await sleep(2000);
-  return (await made()) === 'made' && await shows(lastWord, lastOnly) ? true : 'a new list on the starred face does not find ' + lastOnly;
+  return (await made()) === 'made' && await shows(lastWord, lastOnly) ? true : false;
 }, test.limit.long);
 test.run('and a fresh starred face has it', 0.2, async function () {
-  if (!FACE) return 'no face: nothing judged';
+  if (!FACE) return false;
   await open(FACE);
   await sleep(2000);
-  return (await made()) === 'made' && await shows(lastWord, lastOnly) ? true : 'a fresh starred face does not find ' + lastOnly;
+  return (await made()) === 'made' && await shows(lastWord, lastOnly) ? true : false;
 }, test.limit.long);
 test.run('through the one read', 0.2, async function () {
-  if (!FACE) return 'no face: nothing judged';
+  if (!FACE) return false;
   const asks = (await seen()).asks;
-  return JSON.stringify(asks) === JSON.stringify([SET]) ? true : 'it read: ' + short(asks);
+  return JSON.stringify(asks) === JSON.stringify([SET]) ? true : false;
 }, test.limit.slow);

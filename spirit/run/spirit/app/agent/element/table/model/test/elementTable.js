@@ -23,7 +23,6 @@ const ROW = 'spirit/app/agent/element/table/model/elementRow.js';
 const AGENT = familyPath('agent');
 const PARTS = ['spirit/element/search.js', 'spirit/element/busyButton.js', 'spirit/element/rowForm.js'];
 
-function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 function load(file) { vm.runInThisContext(fs.readFileSync(file, 'utf8'), { filename: file }); }
 const tick = function () { return new Promise(function (r) { setImmediate(r); }); };
 const settle = async function () { for (let i = 0; i < 10; i++) await tick(); };
@@ -104,167 +103,164 @@ function world() {
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(global.window.spirit);
 }
 const detail = { look: function (t) { return { icon: '🧠', name: t }; } };
-const NO_WORLD = 'no page: the world failed';
-const NOT_PLACED = 'no model table element: it was not placed';
-const NOT_MADE = 'no shared table was made: create failed';
 const E = {};
-const ask = function () { const b = W.busy[W.busy.length - 1]; return b && b.o && typeof b.o.run === 'function' ? b.o.run() : 'no run'; };
+const ask = function () { const b = W.busy[W.busy.length - 1]; return b && b.o && typeof b.o.run === 'function' ? b.o.run() : false; };
 
 test.run('the world: the file runs on a window of its own, its parts stand-ins placed as the page places them', 0.2, function () {
-  if (!fs.existsSync(FILE)) return 'spirit/app/agent/element/table/model/elementTable.js is not there';
+  if (!fs.existsSync(FILE)) return false;
   world();
   W.up = true;
   return true;
 }, test.limit.quick);
 test.run('before it runs, the page has no model table element', 0.2, function () {
-  if (!W.up) return NO_WORLD;
-  return at('spirit.app.agent.element.table.model.elementTable') === undefined || 'placed already';
+  if (!W.up) return false;
+  return at('spirit.app.agent.element.table.model.elementTable') === undefined || false;
 }, test.limit.quick);
 test.run('it places spirit.element.spirit.app.agent.element.table.model.elementTable, with create', 0.2, async function () {
-  if (!W.up) return NO_WORLD;
+  if (!W.up) return false;
   load(FILE);
   await settle();
   E.table = at('spirit.app.agent.element.table.model.elementTable');
-  return (!!E.table && typeof E.table.create === 'function') || 'placed ' + short(E.table && Object.keys(E.table));
+  return (!!E.table && typeof E.table.create === 'function') || false;
 }, test.limit.quick);
 
 // ── create(container, detail) ──
 test.run('create(container, detail) makes the tables\' shared element in its list', 0.2, async function () {
-  if (!E.table) return NOT_PLACED;
+  if (!E.table) return false;
   E.box = node('div', { id: 'box' });
   E.made = E.table.create(E.box, detail);
   await settle();
   E.t = W.tables[W.tables.length - 1];
-  return (!!E.t && E.t.container !== E.box && !!E.box.querySelector('#' + E.t.container.id) && /list$/.test(E.t.container.id)) || 'made ' + short(E.t && E.t.container.id);
+  return (!!E.t && E.t.container !== E.box && !!E.box.querySelector('#' + E.t.container.id) && /list$/.test(E.t.container.id)) || false;
 }, test.limit.quick);
 // "WHAT IT USES, IT LOADS ITSELF (rule/26): the shared element, its row, the search, the busyButton and the rowForm."
 test.run('it loads what it uses itself: the shared element, its row editor, the search, the busyButton and the rowForm (rule/26)', 0.2, function () {
-  if (!W.up) return NO_WORLD;
+  if (!W.up) return false;
   const missing = [SHARED, ROW].concat(PARTS).filter(function (p) { return W.required.indexOf(p) === -1; });
-  return missing.length === 0 || 'not asked: ' + short(missing);
+  return missing.length === 0 || false;
 }, test.limit.quick);
 test.run('the shared element is told its table, model, and the page\'s detail pane', 0.2, function () {
-  if (!E.t) return NOT_MADE;
-  return (E.t.o.table === 'model' && E.t.o.detail === detail) || 'told ' + short({ table: E.t.o.table, detail: E.t.o.detail === detail });
+  if (!E.t) return false;
+  return (E.t.o.table === 'model' && E.t.o.detail === detail) || false;
 }, test.limit.quick);
 // Andy, on G41.18: "get RID of [Add a Model] button in the left panes model mode. NOT required."
 test.run('it has no Add: a model comes from its provider\'s list (goal/G41.18)', 0.2, function () {
-  if (!E.t) return NOT_MADE;
-  return E.t.o.add === false || 'add ' + short(E.t.o.add);
+  if (!E.t) return false;
+  return E.t.o.add === false || false;
 }, test.limit.quick);
 // goal/G41.18, box v17: the list shows "[icon] \"model-name\"", the provider's icon the server sends with the row.
 test.run('its list shows [icon] "model-name": the provider\'s icon the server sends with the row, then the model, sorted as text', 0.2, function () {
-  if (!E.t) return NOT_MADE;
+  if (!E.t) return false;
   const c = E.t.o.columns || [];
-  return (c.length === 2 && c[0].field === 'icon' && c[0].from === 'providerIcon' && c[1].field === 'label' && c[1].label === 'Model' && c[1].sort === 'text') || 'columns ' + short(c);
+  return (c.length === 2 && c[0].field === 'icon' && c[0].from === 'providerIcon' && c[1].field === 'label' && c[1].label === 'Model' && c[1].sort === 'text') || false;
 }, test.limit.quick);
 test.run('a row picked opens in the model row editor: row(box, id, added) makes elementRow.create(box, id, added, detail) and answers it', 0.2, function () {
-  if (!E.t) return NOT_MADE;
-  if (typeof E.t.o.row !== 'function') return 'the shared element was handed no row';
+  if (!E.t) return false;
+  if (typeof E.t.o.row !== 'function') return false;
   const b = { id: 'detail-box' };
   const got = E.t.o.row(b, 'M7', false);
   const r = W.rows[W.rows.length - 1];
-  return (!!r && got === r && r.box === b && r.id === 'M7' && r.added === false && r.detail === detail) || 'made ' + short(r && { id: r.id, added: r.added });
+  return (!!r && got === r && r.box === b && r.id === 'M7' && r.added === false && r.detail === detail) || false;
 }, test.limit.quick);
 
 // ── the Ask form (goal/G41.26, goal/G41.27; Andy: "agent: left panel. \n\n[❓] [Pick a provider ▾] [Ask]") ──
 test.run('the Ask form is a rowForm: ❓, its button Ask', 0.2, function () {
-  if (!E.t) return NOT_MADE;
+  if (!E.t) return false;
   const f = W.forms[W.forms.length - 1];
   E.f = f;
-  return (!!f && f.o.icon === '❓' && f.o.button === 'Ask' && /form$/.test(f.container.id)) || 'rowForm ' + short(f && { o: f.o, in: f.container.id });
+  return (!!f && f.o.icon === '❓' && f.o.button === 'Ask' && /form$/.test(f.container.id)) || false;
 }, test.limit.quick);
 test.run('in its span, the providerSelector in dropdown mode: the provider table\'s search, "Pick a provider"', 0.2, function () {
-  if (!E.f) return 'no rowForm was made';
+  if (!E.f) return false;
   const d = W.drops[W.drops.length - 1];
   E.d = d;
-  return (!!d && d.host === E.f.span && d.o.table === 'provider' && d.face.face === 'dropdown' && d.face.placeholder === 'Pick a provider') || 'dropdown ' + short(d && { o: d.o, face: d.face, inSpan: d.host === E.f.span });
+  return (!!d && d.host === E.f.span && d.o.table === 'provider' && d.face.face === 'dropdown' && d.face.placeholder === 'Pick a provider') || false;
 }, test.limit.quick);
 // Andy, on G41.26: "the title row \"🧠Models\" must come before the \"from [🛖 Unsloth Studio ▾] [Ask] row."
 test.run('the title row comes first: the form, then its note, moved in under the shared table\'s title', 0.2, function () {
-  if (!E.f) return 'no rowForm was made';
+  if (!E.f) return false;
   const kids = E.t.container.children.map(function (c) { return c.id ? c.id.replace(/^mt\d+-/, '') : c.className; });
-  return JSON.stringify(kids) === JSON.stringify(['agent-title', 'form', 'said', 'agent-list']) || 'the list holds ' + short(kids);
+  return JSON.stringify(kids) === JSON.stringify(['agent-title', 'form', 'said', 'agent-list']) || false;
 }, test.limit.quick);
 // ASK WAITS AS A BUSY BUTTON (goal/G41.23).
 test.run('Ask is a busy button on the rowForm\'s button', 0.2, function () {
-  if (!E.f) return 'no rowForm was made';
+  if (!E.f) return false;
   const b = W.busy[W.busy.length - 1];
-  return (!!b && b.button === E.f.button && typeof b.o.run === 'function') || 'busyButton ' + short(b && { onButton: b.button === E.f.button });
+  return (!!b && b.button === E.f.button && typeof b.o.run === 'function') || false;
 }, test.limit.quick);
 test.run('with no provider picked, Ask asks nothing', 0.2, function () {
-  if (!E.d) return 'no dropdown was made';
+  if (!E.d) return false;
   E.d.value = '';
   const r = ask();
-  return (r === null && W.asks.length === 0) || 'run answered ' + short(r) + ', asked ' + short(W.asks);
+  return (r === null && W.asks.length === 0) || false;
 }, test.limit.quick);
 // Andy, box: "the [Ask] button will no longer spit out a list, and simply update the agent.model table".
 test.run('with one picked, Ask asks the provider table: provider { op: ask, id }, which updates the model table', 0.2, async function () {
-  if (!E.d) return 'no dropdown was made';
+  if (!E.d) return false;
   E.d.value = 'P1';
   W.answer = { items: [{ id: 'x' }] };
   await ask();
   await settle();
   const note = E.box.querySelector('#' + E.t.container.id.replace(/list$/, 'said'));
-  return (W.asks.length === 1 && JSON.stringify(W.asks[0]) === JSON.stringify({ op: 'ask', id: 'P1' }) && !!note && note.textContent === '') || 'asked ' + short(W.asks) + ', said ' + short(note && note.textContent);
+  return (W.asks.length === 1 && JSON.stringify(W.asks[0]) === JSON.stringify({ op: 'ask', id: 'P1' }) && !!note && note.textContent === '') || false;
 }, test.limit.quick);
 // "A refusal is said on one line, the provider's reason."
 test.run('a refusal is said on one line, the provider\'s reason, as the shared element words it', 0.2, async function () {
-  if (!E.d) return 'no dropdown was made';
+  if (!E.d) return false;
   W.answer = new Error('the provider is down');
   await ask();
   await settle();
   const note = E.box.querySelector('#' + E.t.container.id.replace(/list$/, 'said'));
-  return (!!note && note.textContent === 'the reason: the provider is down') || 'said ' + short(note && note.textContent);
+  return (!!note && note.textContent === 'the reason: the provider is down') || false;
 }, test.limit.quick);
 test.run('and the next Ask clears it', 0.2, async function () {
   const note = E.t && E.box.querySelector('#' + E.t.container.id.replace(/list$/, 'said'));
-  if (!note) return 'no note to judge';
+  if (!note) return false;
   W.answer = {};
   const p = ask();
   const cleared = note.textContent === '';
   await p; await settle();
-  return cleared || 'said ' + short(note.textContent);
+  return cleared || false;
 }, test.limit.quick);
 
 // ── refresh and destroy ──
 test.run('its refresh refreshes the shared table', 0.2, function () {
-  if (!E.made || !E.t) return NOT_MADE;
+  if (!E.made || !E.t) return false;
   E.made.refresh();
-  return E.t.refreshed === 1 || 'refreshed ' + E.t.refreshed;
+  return E.t.refreshed === 1 || false;
 }, test.limit.quick);
 test.run('its destroy destroys the provider dropdown and the shared table', 0.2, function () {
-  if (!E.made || !E.t || !E.d) return NOT_MADE;
+  if (!E.made || !E.t || !E.d) return false;
   // Its note found before: since -browser's rule a destroy empties the box (cw), so after it the note is no longer in it.
   E.note = E.box.querySelector('#' + E.t.container.id.replace(/list$/, 'said'));
   E.made.destroy();
-  return (E.t.destroyed === true && E.d.destroyed === true) || 'destroyed: table ' + E.t.destroyed + ', dropdown ' + E.d.destroyed;
+  return (E.t.destroyed === true && E.d.destroyed === true) || false;
 }, test.limit.quick);
 test.run('a refusal after its destroy says nothing', 0.2, async function () {
   const note = E.note;
-  if (!note) return 'no note to judge';
+  if (!note) return false;
   note.textContent = '';
   W.answer = new Error('late');
   await ask(); await settle();
-  return note.textContent === '' || 'said ' + short(note.textContent);
+  return note.textContent === '' || false;
 }, test.limit.quick);
 test.run('each table it makes has ids of its own: a second one names no part the first does', 0.2, async function () {
-  if (!E.table || !E.t) return NOT_PLACED;
+  if (!E.table || !E.t) return false;
   const b2 = node('div', { id: 'box2' });
   E.table.create(b2, detail);
   await settle();
   const t2 = W.tables[W.tables.length - 1];
-  return (t2 !== E.t && !!t2.container.id && t2.container.id !== E.t.container.id) || 'ids ' + short([E.t.container.id, t2 && t2.container.id]);
+  return (t2 !== E.t && !!t2.container.id && t2.container.id !== E.t.container.id) || false;
 }, test.limit.quick);
 test.run('before its parts have loaded, refresh throws nothing; destroyed then, it makes no table', 0.2, async function () {
-  if (!E.table) return NOT_PLACED;
+  if (!E.table) return false;
   let open = null;
   W.held = { promise: new Promise(function (r) { open = r; }) };
   const n = W.tables.length;
   const early = E.table.create(node('div', { id: 'box3' }), detail);
-  try { early.refresh(); } catch (e) { W.held = null; return 'refresh threw ' + short(e && e.message); }
+  try { early.refresh(); } catch (e) { W.held = null; return false; }
   early.destroy();
   open(true); W.held = null;
   await settle();
-  return W.tables.length === n || 'made ' + (W.tables.length - n) + ' after its destroy';
+  return W.tables.length === n || false;
 }, test.limit.quick);

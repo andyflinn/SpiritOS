@@ -12,8 +12,6 @@ const RUN = path.resolve(__dirname, '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const { scratchNode, sleep } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 
-function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
-
 // A node family's api.js, and an app's own <name>.json, core whatever it says (goal/G43.14). The desk app is turned on.
 const CORE = [
   { family: 'contact', path: 'api.js', run: 'spirit/contact/api.js' },
@@ -28,11 +26,11 @@ const post = function (call, args) {
     .then(function (r) { return r.text().then(function (t) { let body = null; try { body = JSON.parse(t); } catch (e) { /* judged as text */ } return { status: r.status, body: body, text: t }; }); },
       function (e) { return { status: 0, body: null, text: String(e && e.message) }; });
 };
-function noNode() { return W.N && W.N.up && W.N.root ? null : 'no scratch node: the world failed'; }
+function noNode() { return !(W.N && W.N.up && W.N.root); }
 
 test.run('the world: a scratch node comes up on a copy of its own', 0.2, async function () {
   W.N = await scratchNode({ servers: ['desk'] });
-  if (!(W.N.up && !!W.N.root)) return 'the scratch node did not come up: nothing judged';
+  if (!(W.N.up && !!W.N.root)) return false;
   W.run = path.join(W.N.root, 'spirit', 'run');
   return true;
 }, test.limit.slow);
@@ -45,26 +43,26 @@ test.after(async function () {
 
 // goal/G43.20: no branch carries an FS set.
 test.run('no branch of the node\'s tree holds an FS. verb', 0.2, async function () {
-  if (noNode()) return noNode();
+  if (noNode()) return false;
   const tree = (await post('api', {})).body || {};
   const withFs = Object.keys(tree).filter(function (fam) { return tree[fam] && Object.keys(tree[fam]).some(function (v) { return /^FS\./.test(v); }); });
-  return (Object.keys(tree).length > 0 && withFs.length === 0) || 'branches with FS verbs: ' + short(withFs);
+  return (Object.keys(tree).length > 0 && withFs.length === 0) || false;
 }, test.limit.quick);
 
 // The box of goal/G43.23: "a family's FS.saveFile / deleteFile ... can overwrite any api.js or app code".
 function before(c) { const disk = path.join(W.run, c.run); return fs.existsSync(disk) ? fs.readFileSync(disk, 'utf8') : null; }
-function there(c) { if (noNode()) return noNode(); return before(c) !== null || c.run + ' is missing: nothing judged'; }
+function there(c) { if (noNode()) return false; return before(c) !== null || false; }
 async function refused(c) {
-  if (noNode()) return noNode();
+  if (noNode()) return false;
   const disk = path.join(W.run, c.run);
   const was = before(c);
-  if (was === null) return c.run + ' is missing: the world failed';
+  if (was === null) return false;
   const saved = await post(c.family + '.FS.saveFile', { path: c.path, content: '// overwritten by introSpector.js\n' });
   const deleted = await post(c.family + '.FS.deleteFile', { path: c.path });
   const after = fs.existsSync(disk) ? fs.readFileSync(disk, 'utf8') : null;
   const kept = saved.status >= 400 && deleted.status >= 400 && after === was;
   if (after !== was) { try { fs.writeFileSync(disk, was); } catch (e) { /* scratch */ } }
-  return kept || c.family + '.FS on ' + c.run + ': save ' + saved.status + ' ' + short(saved.text) + ', delete ' + deleted.status + ', the file ' + (after === was ? 'unchanged' : 'CHANGED');
+  return kept || false;
 }
 test.run('the world: the contact api file is there', 0.2, function () { return there(CORE[0]); }, test.limit.quick);
 test.run('contact.FS.saveFile and FS.deleteFile on the contact api file are refused, the file unchanged', 0.8, function () { return refused(CORE[0]); }, test.limit.quick);

@@ -15,11 +15,9 @@ const RUN = path.resolve(__dirname, '..', '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const FILE = path.join(RUN, 'spirit', 'element', 'progressBar.js');
 
-function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 const settle = async function () { for (let i = 0; i < 20; i++) await new Promise(function (r) { setImmediate(r); }); };
 
 let P = null;
-const NO_P = 'progressBar placed nothing: the world failed';
 const tagOf = function (html) { return (/<progress[^>]*>/.exec(html) || [''])[0]; };
 const wordsOf = function (html) { return ((/<span class="job-manifest-note">([^<]*)<\/span>/.exec(html)) || [null, null])[1]; };
 
@@ -32,37 +30,37 @@ test.run('the world: it runs on a window of its own and places itself at spirit.
   vm.runInContext(fs.readFileSync(FILE, 'utf8'), win, { filename: FILE });
   await settle();
   P = ((win.spirit.element.spirit || {}).element || {}).progressBar;
-  return typeof P === 'function' || 'placed: ' + short(typeof P);
+  return typeof P === 'function' || false;
 }, test.limit.quick);
 
 // the box: "progressBar: one shared shell element drawn from (done, total, text)"
 test.run('done of total: a progress tag with max the total and value the done, the words done/total and the text', 0.2, function () {
-  if (!P) return NO_P;
+  if (!P) return false;
   const h = P(3, 10, 'files');
-  return (/max="10"/.test(tagOf(h)) && /value="3"/.test(tagOf(h)) && wordsOf(h) === '3/10 files' && /^<span class="progress-bar">/.test(h)) || 'drawn: ' + short(h);
+  return (/max="10"/.test(tagOf(h)) && /value="3"/.test(tagOf(h)) && wordsOf(h) === '3/10 files' && /^<span class="progress-bar">/.test(h)) || false;
 }, test.limit.quick);
 test.run('with no text the words are done/total alone', 0.2, function () {
-  if (!P) return NO_P;
-  return wordsOf(P(1, 2)) === '1/2' || 'drawn: ' + short(P(1, 2));
+  if (!P) return false;
+  return wordsOf(P(1, 2)) === '1/2' || false;
 }, test.limit.quick);
 // the box: "total 0 shows indeterminate"
 test.run('total 0 shows indeterminate: a progress tag with no value, and the text alone', 0.2, function () {
-  if (!P) return NO_P;
+  if (!P) return false;
   const h = P(5, 0, 'waiting');
-  return (!/value=/.test(tagOf(h)) && !/max=/.test(tagOf(h)) && tagOf(h) !== '' && wordsOf(h) === 'waiting') || 'drawn: ' + short(h);
+  return (!/value=/.test(tagOf(h)) && !/max=/.test(tagOf(h)) && tagOf(h) !== '' && wordsOf(h) === 'waiting') || false;
 }, test.limit.quick);
 test.run('total 0 and no text: the bar alone, no words', 0.2, function () {
-  if (!P) return NO_P;
+  if (!P) return false;
   const h = P(0, 0);
-  return (tagOf(h) !== '' && wordsOf(h) === null) || 'drawn: ' + short(h);
+  return (tagOf(h) !== '' && wordsOf(h) === null) || false;
 }, test.limit.quick);
 test.run('the bar never runs past the total, nor below 0', 0.2, function () {
-  if (!P) return NO_P;
+  if (!P) return false;
   const over = tagOf(P(12, 10)), under = tagOf(P(-4, 10));
-  return (/value="10"/.test(over) && /value="0"/.test(under)) || 'drawn: ' + short([over, under]);
+  return (/value="10"/.test(over) && /value="0"/.test(under)) || false;
 }, test.limit.quick);
 test.run('the text is escaped, never markup', 0.2, function () {
-  if (!P) return NO_P;
+  if (!P) return false;
   const h = P(1, 2, '<b>"x" & y</b>');
-  return (h.indexOf('<b>') === -1 && h.indexOf('&lt;b&gt;&quot;x&quot; &amp; y&lt;/b&gt;') !== -1) || 'drawn: ' + short(h);
+  return (h.indexOf('<b>') === -1 && h.indexOf('&lt;b&gt;&quot;x&quot; &amp; y&lt;/b&gt;') !== -1) || false;
 }, test.limit.quick);
