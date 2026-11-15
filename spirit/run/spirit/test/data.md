@@ -93,3 +93,4 @@ node, the reads moved.
 The box names no helper, so the test finds it by its call: a function called with the family's name as a string. A row of another node is written through `spirit.data.viewAt(node, family)`, and the page node comes from `spirit.data.homeNode()`, the builder's names.
 
 - On a reconnect the cache stays (box v148; Andy: "THE FUCKING CACHE IS NOT WIPED OUT."): what a search seated is still there after a second snapshot, and the snapshot's jobs bring it up to date.
+- `whenReconnected(fn)` (box v148: on a reconnect every search a page shows runs once more): fn is told each time the page's stream comes back, so a search hears it without taking the node's stream itself (only this file does); answers its release. Not judged by this test: spirit/element/test/search.js judges a search asked again after a node restart.

@@ -794,6 +794,12 @@
     if (dropdown && typeof document !== 'undefined' && typeof document.addEventListener === 'function') document.addEventListener('click', outside);
     if (typeof o.published === 'function') off = o.published(function () { ask(); });
     var unwatch = o.data && window.spirit && window.spirit.data ? window.spirit.data.watchPath(o.data, function () { draw(); }) : null;
+    // WHAT CHANGED WHILE DOWN COMES IN (goal/G47.1, the box, "Reload Problems with the face": "on a reconnect every search a
+    // page shows (the shared search element, spirit/element/search.js) runs once more and its answer is merged into the
+    // cache, in that one place for every app"): the cache, which alone takes the node's stream, says the stream came back,
+    // and the search it shows is asked again.
+    var D0 = window.spirit && window.spirit.data;
+    var unreconnect = D0 && typeof D0.whenReconnected === 'function' ? D0.whenReconnected(function () { if (live) ask(); }) : null;
 
     self.refresh = function () { draw(); ask(); };
     self.redraw = function () { draw(); };
@@ -805,6 +811,7 @@
       selectors.forEach(function (s) { if (typeof s.element.removeEventListener === 'function') s.element.removeEventListener('change', onSelector); });
       if (typeof off === 'function') off();
       if (typeof unwatch === 'function') unwatch();
+      if (typeof unreconnect === 'function') unreconnect();
       if (dropdown && typeof document !== 'undefined' && typeof document.removeEventListener === 'function') document.removeEventListener('click', outside);
       floating(false);
       if (sized) sized.disconnect();

@@ -194,9 +194,18 @@ over them.
   optional: `onConnection(up)`, `onSnapshot(jobs)` (the jobs as they stand), `onUpdate(job)`, `onDelete(id)`,
   `onPacket(message)`, `onRelayEvent(row)`, `onContactRename(row)`, `onReconnect()`. One that subscribes later is
   handed the jobs as they stand and told the stream is up. It opens once the page has parsed, comes back by itself
-  2 s after it ends, and closes when nobody is left. On a face it hands the handlers to the face's link
-  (`window.spirit.transport.events`). **Answers** the unsubscribe.
+  2 s after it ends, and at once after 5 s with nothing in it (readStream, below), and closes when nobody is left. On a
+  face it hands the handlers to the face's link (`window.spirit.transport.events`). **Answers** the unsubscribe.
 - **`publish(obj)`**, in node: below, with the job.
+
+### `readStream(o)`: the one reader of every stream (goal/G47.1, box v148)
+
+The node's own stream (above) and a face's (shell/boot.js) are both read by it, and nowhere else. `o.open(signal)` answers
+the stream's response, or `o.url()` names its address and it is fetched here; `o.lines` reads lines (a face's), else
+server-sent events; `o.unit(text)` gets each in order, a promise waited for before the next; `o.any` reads the body
+whatever the status (a face's refusal is a line); `o.onUp(again)`, `o.onDown()`; `o.retryMs` the wait after an end (2 s).
+Every byte, a beat as well, stamps the time; after 5 s of nothing the stream is cancelled first, said down, and opened
+again at once. A unit that throws does not end the reading. **Answers** `{ stop(), again(ms) }`.
 
 ### On a page only: `start()`, `ready`
 

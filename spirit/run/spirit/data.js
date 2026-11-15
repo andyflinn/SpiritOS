@@ -417,8 +417,19 @@
   // keeps them (onRelay), as everything else on that stream does.
   var sp = root.spirit;
   function relayEvent(ev) { each('onRelay', ev); }
+  // A RECONNECT, SAID TO WHOEVER ASKS (goal/G47.1, the box, "Reload Problems with the face": "on a reconnect every search a
+  // page shows ... runs once more"): the searches hear it here, since only this file takes the node's stream (spirit/test/data.js,
+  // "no client takes the node's stream itself"). whenReconnected(fn) answers its release.
+  var reconnected = [];
+  function whenReconnected(fn) {
+    if (typeof fn !== 'function') return function () {};
+    reconnected.push(fn);
+    return function () { reconnected = reconnected.filter(function (x) { return x !== fn; }); };
+  }
+  function onReconnect() { reconnected.slice().forEach(function (fn) { try { fn(); } catch (e) { /* one reader's fault */ } }); }
+  api.whenReconnected = whenReconnected;
   if (onPage && sp.event && typeof sp.event.subscribe === 'function') {
-    sp.event.subscribe({ onSnapshot: onSnapshot, onUpdate: onJob, onDelete: function (id) { onGone(id); }, onContactRename: onRename, onRelayEvent: relayEvent });
+    sp.event.subscribe({ onSnapshot: onSnapshot, onUpdate: onJob, onDelete: function (id) { onGone(id); }, onContactRename: onRename, onRelayEvent: relayEvent, onReconnect: onReconnect });
   }
   // A SERVER THAT NEEDS ITS OWN NODE'S EVENTS ASKS FOR THEM HERE (goal/G43.5; Andy: "the rule covers everything, apps,
   // element"; spirit/test/spirit-branches.js: only data.js takes the node's stream). A server is otherwise fed by its streamListener

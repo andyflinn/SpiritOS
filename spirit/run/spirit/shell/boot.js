@@ -82,13 +82,19 @@
   var linkJobs = {};
   var presence = {};
   var streamStopped = false;
-  var retry = null;
+  var stream = null;
+  var here = false;
 
+  // A FACE SAYS ITS RECONNECT AS THE NODE'S OWN STREAM DOES (spirit.event's onReconnect; goal/G47.1, the box: on a reconnect
+  // every search a page shows runs once more): up again after having been up is a reconnect.
+  var stoodBefore = false;
   function setConnected(up) {
     if (link.up === up) return;
     link.up = up;
     if (offline) offline.hidden = !!up;
     subscribers.slice().forEach(function (h) { if (h.onConnection) { try { h.onConnection(up); } catch (e) { /* one app's fault */ } } });
+    if (up && stoodBefore) subscribers.slice().forEach(function (h) { if (h.onReconnect) { try { h.onReconnect(); } catch (e) { /* one app's fault */ } } });
+    if (up) stoodBefore = true;
   }
   function jobsList() { return Object.keys(linkJobs).map(function (k) { return linkJobs[k]; }); }
   function update(job) {
@@ -125,55 +131,56 @@
       // A contact renamed at home (goal/G30.19): to the kernel's subscribers, as the loopback stream hands it.
       subscribers.slice().forEach(function (h) { if (h.onContactRename) { try { h.onContactRename(ev.data); } catch (e) { /* one app's fault */ } } });
     } else if (ev.event === 'taken') {
-      streamStopped = true;
+      stopStream();
       setConnected(false);
-      say('This face was taken by another device.', { label: 'Connect here', run: function () { say(''); streamStopped = false; openStream(true); } });
+      say('This face was taken by another device.', { label: 'Connect here', run: connectHere });
     }
   }
-  function later() {
-    if (streamStopped || retry) return;
-    retry = setTimeout(function () { retry = null; openStream(false); }, 5000);
+  // THE FACE'S STREAM, READ BY THE ONE READER (goal/G47.1, the box, "Reload Problems with the face": boot.js "keeps no stream
+  // loop of its own and opens the face's stream through spirit.js, handing only the face's address and its line format").
+  // spirit.readStream opens it, reads it line by line, resets it after 5 s of nothing and opens it again after an end; what
+  // is the face's own stays here: its address (its sealing key, a Connect here press), its sealed lines, and what a
+  // refusal on it means (elsewhere: wait for the press; 401: log in again; anything else: the reader asks again).
+  function stopStream() {
+    streamStopped = true;
+    if (stream) { var s = stream; stream = null; s.stop(); }
   }
-  function openStream(here) {
-    if (state.home) return;
+  function connectHere() { say(''); here = true; openStream(); }
+  function line(l) {
     var L = spirit.link;
-    var q = [];
-    if (L.sealed) q.push('key=' + encodeURIComponent(L.key.publicKey));
-    if (here) q.push('here=1');
-    var chain = Promise.resolve();
-    var held = '';
-    function line(l) {
-      var got = null;
-      try { got = JSON.parse(l); } catch (e) { return Promise.resolve(); }
-      if (got && got.type === 'refused') {
-        streamStopped = true;
-        if (got.code === 'face-elsewhere') {
-          setConnected(false);
-          say('Your face is open on another device; connecting here ends it there.', { label: 'Connect here', run: function () { say(''); streamStopped = false; openStream(true); } });
-        } else if (got.status === 401) { window.location.reload(); } else { setConnected(false); streamStopped = false; later(); }
-        return Promise.resolve();
-      }
-      setConnected(true);
-      if (!L.sealed) { deliver(got); return Promise.resolve(); }
-      return spirit.seal.open(L.key.privateKey, L.key.publicKey, L.node.publicKey, L.key.publicKey, got)
-        .then(function (o) { if (o) deliver(JSON.parse(o.text)); });
+    var got = null;
+    try { got = JSON.parse(l); } catch (e) { return Promise.resolve(); }
+    if (got && got.type === 'refused') {
+      if (got.code === 'face-elsewhere') {
+        stopStream();
+        setConnected(false);
+        say('Your face is open on another device; connecting here ends it there.', { label: 'Connect here', run: connectHere });
+      } else if (got.status === 401) { window.location.reload(); } else setConnected(false);
+      return Promise.resolve();
     }
-    fetch('/face/stream' + (q.length ? '?' + q.join('&') : ''), { credentials: 'same-origin' }).then(function (r) {
-      var reader = r.body.getReader();
-      var decoder = new TextDecoder();
-      function pump() {
-        return reader.read().then(function (step) {
-          if (step.done) return;
-          held += decoder.decode(step.value, { stream: true });
-          var parts = held.split('\n');
-          held = parts.pop();
-          parts.filter(Boolean).forEach(function (l) { chain = chain.then(function () { return line(l); }); });
-          return pump();
-        });
-      }
-      return pump();
-    }).then(function () { return chain; }, function () { return chain; }).then(function () {
-      if (!streamStopped) { setConnected(false); later(); }
+    setConnected(true);
+    if (!L.sealed) { deliver(got); return Promise.resolve(); }
+    return spirit.seal.open(L.key.privateKey, L.key.publicKey, L.node.publicKey, L.key.publicKey, got)
+      .then(function (o) { if (o) deliver(JSON.parse(o.text)); });
+  }
+  function openStream() {
+    if (state.home || stream) return;
+    streamStopped = false;
+    stream = spirit.readStream({
+      lines: true,
+      any: true,
+      retryMs: 5000,
+      // The face's address, asked at each open: its sealing key, and here once after a Connect here press.
+      url: function () {
+        var L = spirit.link;
+        var q = [];
+        if (L.sealed) q.push('key=' + encodeURIComponent(L.key.publicKey));
+        if (here) q.push('here=1');
+        here = false;
+        return '/face/stream' + (q.length ? '?' + q.join('&') : '');
+      },
+      unit: line,
+      onDown: function () { if (!streamStopped) setConnected(false); },
     });
   }
 
@@ -262,7 +269,7 @@
       }
       Object.assign(window.spirit.shell = window.spirit.shell || {}, { factRow: factRow });
       link.loaded = true;
-      openStream(false);
+      openStream();
       joinFromLink();
       return loadShell();
     }, function (e) {

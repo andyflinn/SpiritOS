@@ -268,8 +268,9 @@ test.run('nothing in spirit.js but isNode() and isBrowser() asks where it runs',
 }, test.limit.quick);
 // data: the cache, spirit.data (goal/G41.3); familyPath: the one family path function (goal/G41.12); cacheManager: a
 // family's data.js, found by the folder shape and loaded (goal/G43.27) (goal/G41.28, Andy: "the shell can introspect to find and
-// download their clientCacheManagers").
-const MEMBERS = ['DEFAULT_SPIRIT_PORT', 'MIME_TYPES', 'VERSION', 'cacheManager', 'check', 'data', 'debug', 'error', 'escapeHtml', 'event', 'familyPath', 'formatBytes', 'isBrowser', 'isLoopback', 'isNode', 'job', 'node', 'outcome', 'peerPost', 'require', 'rules', 'tree'];
+// download their clientCacheManagers"); readStream: the one reader of every stream a page has (goal/G47.1, the box, "Reload
+// Problems with the face": "one place only manages the stream ... spirit.js").
+const MEMBERS = ['DEFAULT_SPIRIT_PORT', 'MIME_TYPES', 'VERSION', 'cacheManager', 'check', 'data', 'debug', 'error', 'escapeHtml', 'event', 'familyPath', 'formatBytes', 'isBrowser', 'isLoopback', 'isNode', 'job', 'node', 'outcome', 'peerPost', 'readStream', 'require', 'rules', 'tree'];
 test.run('in node the instance holds exactly its members, and the families it binds', 0.2, function () {
   return JSON.stringify(Object.keys(s).filter(function (k) { return typeof s[k] !== 'object' || ['MIME_TYPES', 'data', 'event', 'job', 'node'].indexOf(k) !== -1 || Array.isArray(s[k]); }).sort()) === JSON.stringify(MEMBERS) ||
     'in node the instance holds ' + short(Object.keys(s).sort());
@@ -282,11 +283,14 @@ test.run('no factory, no transport and no second object handed out, in node or o
 }, test.limit.quick);
 // THE NODE IN TWO PLACES, THE RELAY'S FACE ROUTES IN THREE (goal/G43.18, Q22: the link home moved into spirit.js; box v29: the
 // login is spirit.login): post and get to the node; the login's /face/api, and the link's /face/call, whole and piece by piece.
-test.run('one post and one get reach the node, post(verb, args) and get(path); the other three are the relay\'s face routes, the login and the link', 0.2, function () {
+// AND ONE STREAM BY ITS ADDRESS (goal/G47.1, the box, "Reload Problems with the face": boot.js "opens the face's stream through
+// spirit.js, handing only the face's address"): readStream fetches the address it is handed, o.url().
+test.run('one post and one get reach the node, post(verb, args) and get(path); the other three are the relay\'s face routes, the login and the link; one more is the stream reader\'s, by its address', 0.2, function () {
   const fetches = (code.match(/\bfetch\(/g) || []).length;
   const toFace = (code.match(/\bfetch\('\/face\/(api|call)'/g) || []).length;
-  return (fetches === 5 && toFace === 3 && /function post\(verb, args(, how)?\)/.test(code) && /function get\(path\)/.test(code)) ||
-    'spirit.js reaches the network in ' + fetches + ' places, ' + toFace + ' of them the face routes, or has no post(verb, args) and get(path)';
+  const byAddress = (code.match(/\bfetch\(o\.url\(\)/g) || []).length;
+  return (fetches === 6 && toFace === 3 && byAddress === 1 && /function post\(verb, args(, how)?\)/.test(code) && /function get\(path\)/.test(code)) ||
+    'spirit.js reaches the network in ' + fetches + ' places, ' + toFace + ' of them the face routes, ' + byAddress + ' the stream reader\'s, or has no post(verb, args) and get(path)';
 }, test.limit.quick);
 
 // ── 2. IN NODE: spirit.js's OWN ──────────────────────────────────────

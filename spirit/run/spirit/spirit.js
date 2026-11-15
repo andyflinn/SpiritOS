@@ -175,7 +175,7 @@
     var payload = { call: String(verb), args: args || {} };
     var headers = { 'Content-Type': 'application/json' };
     Object.keys((how && how.headers) || {}).forEach(function (k) { headers[k] = how.headers[k]; });
-    var asked = fetch(door() + '/api/spirit', { method: 'POST', headers: headers, body: JSON.stringify(payload) });
+    var asked = fetch(door() + '/api/spirit', { method: 'POST', headers: headers, body: JSON.stringify(payload), signal: (how && how.signal) || undefined });
     if (how && how.stream) return asked;
     return asked.then(function (r) { return r.text().then(function (x) { return { status: r.status, text: x, body: parse(x) }; }); });
   }
@@ -640,13 +640,12 @@
   // told the stream is up. It comes back by itself (Andy, 2026-09-30: "this should work without a hickup."): an end or an
   // error is said (onConnection false), it opens again, and the first open after being down is said (onReconnect).
   // handlers: onSnapshot(jobs), onUpdate(job), onDelete(id), onPacket(message), onRelayEvent(row), onContactRename(row),
-  // onConnection(up), onReconnect(). On a face the events come down the face's own link (window.spirit.transport.events).
+  // onConnection(up), onReconnect(). On a face the events come down the face's own link (window.spirit.transport.events),
+  // which reads its stream through readStream below, as this one does.
   // Answers the unsubscribe; the stream closes when nobody is left.
   var streamSubs = [];
-  var streamReader = null;
-  var streamOpening = false;
+  var streamHandle = null;
   var streamUp = false;
-  var streamDown = false;
   var streamWaiting = false;
   var streamJobs = new Map();
   function tellStream(name, arg) {
@@ -654,29 +653,112 @@
       if (typeof h[name] === 'function') { try { h[name](arg); } catch (e) { /* one subscriber's fault */ } }
     });
   }
-  // The events one response carries, kind and data, to each(kind, data); answers when the stream ends.
-  function readEvents(reader, each) {
-    var dec = new TextDecoder();
-    var buf = '';
-    return new Promise(function (resolve, reject) {
-      function pump() {
-        reader.read().then(function (chunk) {
-          if (chunk.done) { resolve(); return; }
-          buf += dec.decode(chunk.value, { stream: true });
-          var i;
-          while ((i = buf.indexOf('\n\n')) !== -1) {
-            var block = buf.slice(0, i); buf = buf.slice(i + 2);
-            var ev = /(?:^|\n)event: (.*)/.exec(block); var da = /(?:^|\n)data: (.*)/.exec(block);
-            if (!ev || !da) continue;
-            var data; try { data = JSON.parse(da[1]); } catch (e) { continue; }
-            each(ev[1], data);
-          }
-          pump();
-        }, reject);
+
+  // ── ONE READER FOR EVERY STREAM A PAGE HAS: readStream(o) (goal/G47.1, the box, "Reload Problems with the face") ──────
+  // The box: "5 seconds without a spirit event, the stream resets", "one place only manages the stream, the right one
+  // before the preferred one: spirit.js", and spirit/shell/boot.js "keeps no stream loop of its own and opens the face's
+  // stream through spirit.js, handing only the face's address and its line format". So the node's own stream (below) and a
+  // face's (boot.js) are both read here, and nowhere else: open, read, the silence rule, the cancel, the open again.
+  //   o.open(signal)  -> a fetch's promise, the stream's response; the signal cancels it
+  //   o.url()         or the stream's address, asked at each open, fetched here (a face's: boot.js hands only that)
+  //   o.lines         true: the units are lines (a face's); else server-sent events, a unit each block ending in a blank line
+  //   o.unit(text)    each unit in order; one answering a promise is waited for before the next (a face's sealed lines)
+  //   o.onUp(again)   the response stands; again is true when a stream stood before it
+  //   o.onDown()      the stream is gone, said once until it stands again
+  //   o.retryMs       the wait before opening again after an end or an error (2 s by default)
+  //   o.any           read the body whatever the status (a face's stream says its refusal in it)
+  // Answers { stop(), again(ms) }: stop ends it for good, again(ms) drops the stream now and opens one after ms.
+  // THE SILENCE RULE (the box): every byte that comes in, a beat as well, stamps the time; a check each second, and after
+  // SILENT_MS of nothing the stream is cancelled first, so the dead one holds no connection, said down, and opened again at
+  // once. A unit that throws is that unit's fault: the reading goes on (a throw inside the read once ended it silently,
+  // the stream open and nothing read, nothing asked again).
+  var SILENT_MS = 5000;
+  function readStream(o) {
+    var stopped = false;
+    var now = null;   // the attempt standing: { ctrl, reader }
+    var last = 0;
+    var up = false;
+    var stood = false;
+    var told = false;
+    var retry = null;
+    // The timers of the world it runs in (a page, a process, a suite's bare window, which may have none: then no check).
+    var every = typeof root.setInterval === 'function' ? root.setInterval.bind(root) : (typeof setInterval === 'function' ? setInterval : null);
+    var check = every ? every(function () { if (!stopped && now && Date.now() - last >= SILENT_MS) end(now, 0); }, 1000) : null;
+    if (check && typeof check.unref === 'function') check.unref();
+    function say(name, arg) { if (typeof o[name] === 'function') { try { o[name](arg); } catch (e) { /* the caller's fault */ } } }
+    function end(t, wait) {
+      if (t !== now) return;
+      now = null;
+      try { if (t.ctrl) t.ctrl.abort(); } catch (e) { /* gone */ }
+      if (t.reader) { try { t.reader.cancel().catch(function () { /* gone */ }); } catch (e) { /* gone */ } }
+      if (up || !told) { told = true; say('onDown'); }
+      up = false;
+      if (stopped) return;
+      retry = setTimeout(function () { retry = null; open(); }, wait == null ? (o.retryMs || 2000) : wait);
+    }
+    function units(t) {
+      var sep = o.lines ? '\n' : '\n\n';
+      var dec = new TextDecoder();
+      var buf = '';
+      var chain = Promise.resolve();
+      function hand(u) {
+        if (!o.lines) { try { o.unit(u); } catch (e) { /* that unit's fault */ } return; }
+        chain = chain.then(function () { return o.unit(u); }).then(null, function () { /* that unit's fault */ });
       }
-      pump();
-    });
+      return new Promise(function (resolve, reject) {
+        function pump() {
+          t.reader.read().then(function (chunk) {
+            if (t !== now) { resolve(); return; }
+            if (chunk.done) { chain.then(resolve); return; }
+            last = Date.now();
+            buf += dec.decode(chunk.value, { stream: true });
+            var i;
+            while ((i = buf.indexOf(sep)) !== -1) {
+              var u = buf.slice(0, i);
+              buf = buf.slice(i + sep.length);
+              if (u) hand(u);
+            }
+            pump();
+          }).then(null, reject);
+        }
+        pump();
+      });
+    }
+    function open() {
+      if (stopped || now) return;
+      var t = now = { ctrl: typeof AbortController === 'function' ? new AbortController() : null, reader: null };
+      last = Date.now();
+      var signal = t.ctrl ? t.ctrl.signal : undefined;
+      Promise.resolve().then(function () {
+        return typeof o.url === 'function' ? fetch(o.url(), { credentials: 'same-origin', signal: signal }) : o.open(signal);
+      }).then(function (r) {
+        if (t !== now) { try { if (r && r.body) r.body.cancel(); } catch (e) { /* gone */ } return; }
+        // o.any: the body is read whatever the status, for a stream that says its refusal in it (a face's: the relay's
+        // refused line).
+        if (!r || !r.body || (!r.ok && !o.any)) throw refusal('no-stream', 'the stream was answered ' + (r && r.status));
+        t.reader = r.body.getReader();
+        last = Date.now();
+        up = true;
+        told = false;
+        say('onUp', stood);
+        stood = true;
+        return units(t);
+      }).then(function () { end(t); }, function () { end(t); });
+    }
+    open();
+    return {
+      stop: function () {
+        stopped = true;
+        if (check) { if (typeof root.clearInterval === 'function') root.clearInterval(check); else clearInterval(check); }
+        if (retry) { clearTimeout(retry); retry = null; }
+        var t = now;
+        now = null;
+        if (t) { try { if (t.ctrl) t.ctrl.abort(); } catch (e) { /* gone */ } if (t.reader) { try { t.reader.cancel().catch(function () { /* gone */ }); } catch (e) { /* gone */ } } }
+      },
+      again: function (ms) { if (stopped) return; if (now) end(now, ms); else if (!retry) retry = setTimeout(function () { retry = null; open(); }, ms || 0); },
+    };
   }
+  self.readStream = readStream;
   function onStreamEvent(kind, data) {
     if (kind === 'snapshot') {
       var jobs = (data && data.jobs) || [];
@@ -693,28 +775,24 @@
     else if (kind === 'relay-event') tellStream('onRelayEvent', data);
     else if (kind === 'contact.rename') tellStream('onContactRename', data);
   }
+  // The node's own stream, through the one reader: its events are server-sent, a block each.
   function openStream() {
-    streamOpening = true;
-    var lost = function () {
-      streamReader = null;
-      streamOpening = false;
-      if (!streamDown) tellStream('onConnection', false);
-      streamUp = false;
-      streamDown = true;
-      if (streamSubs.length) setTimeout(function () { if (!streamReader && !streamOpening && streamSubs.length) openStream(); }, 2000);
-    };
     // A PROCESS IS NOT A PAGE (goal/G43.3, as peerPost says it below; goal/G16.9): it witnesses the packets and takes none, or
     // it would eat the waiting lines of its node's owner.
-    post('event.subscribe', {}, isNode() ? { stream: true, headers: { 'X-Spirit-Reader': 'server' } } : { stream: true }).then(function (r) {
-      if (!r || !r.ok || !r.body) throw refusal('no-stream', 'the node answered ' + (r && r.status));
-      streamReader = r.body.getReader();
-      streamOpening = false;
-      streamUp = true;
-      tellStream('onConnection', true);
-      if (streamDown) tellStream('onReconnect');
-      streamDown = false;
-      return readEvents(streamReader, onStreamEvent);
-    }).then(lost, lost);
+    var headers = isNode() ? { 'X-Spirit-Reader': 'server' } : {};
+    streamHandle = readStream({
+      open: function (signal) { return post('event.subscribe', {}, { stream: true, headers: headers, signal: signal }); },
+      unit: function (block) {
+        var ev = /(?:^|\n)event: (.*)/.exec(block);
+        var da = /(?:^|\n)data: (.*)/.exec(block);
+        if (!ev || !da) return;
+        var data;
+        try { data = JSON.parse(da[1]); } catch (e) { return; }
+        onStreamEvent(ev[1], data);
+      },
+      onUp: function (again) { streamUp = true; tellStream('onConnection', true); if (again) tellStream('onReconnect'); },
+      onDown: function () { streamUp = false; tellStream('onConnection', false); },
+    });
   }
   function subscribeEvents(handlers) {
     var h = handlers || {};
@@ -724,18 +802,18 @@
     // OPENED ONCE THE PAGE HAS PARSED: every subscriber its scripts make (the shell, the page's mirror) is then in
     // place before the first event, so none of them misses the file tree a connecting page is handed.
     var doc = root.document;
-    if (!streamReader && !streamOpening && !streamWaiting) {
+    if (!streamHandle && !streamWaiting) {
       if (doc && doc.readyState === 'loading') {
         streamWaiting = true;
-        doc.addEventListener('DOMContentLoaded', function () { streamWaiting = false; if (streamSubs.length && !streamReader && !streamOpening) openStream(); });
+        doc.addEventListener('DOMContentLoaded', function () { streamWaiting = false; if (streamSubs.length && !streamHandle) openStream(); });
       } else openStream();
-    } else if (streamReader) {
+    } else if (streamHandle && streamUp) {
       if (h.onSnapshot) { try { h.onSnapshot(Array.from(streamJobs.values())); } catch (e) { /* one subscriber's fault */ } }
-      if (streamUp && h.onConnection) { try { h.onConnection(true); } catch (e) { /* one subscriber's fault */ } }
+      if (h.onConnection) { try { h.onConnection(true); } catch (e) { /* one subscriber's fault */ } }
     }
     return function unsubscribe() {
       streamSubs = streamSubs.filter(function (x) { return x !== h; });
-      if (!streamSubs.length && streamReader) { var r = streamReader; streamReader = null; r.cancel().catch(function () { /* gone */ }); }
+      if (!streamSubs.length && streamHandle) { var s = streamHandle; streamHandle = null; streamUp = false; s.stop(); }
     };
   }
   self.event = { subscribe: subscribeEvents };
