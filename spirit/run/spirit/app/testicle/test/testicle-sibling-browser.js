@@ -19,9 +19,9 @@ function mine() {
   (function walk(rel) { fs.readdirSync(path.join(RUN, rel), { withFileTypes: true }).forEach(function (d) { const r = rel + d.name; if (d.isDirectory()) { if (d.name !== 'test' && d.name !== 'temp') walk(r + '/'); } else if (/\.js$/.test(d.name)) out.push(r); }); }(SCOPE));
   return out;
 }
-function one(rel) { test.run(rel + ': ' + "it holds no NUL byte, so a page can load it as text", 0.2, function () { try { return fs.readFileSync(path.join(RUN, rel)).indexOf(0) === -1 || false; } catch (e) { return false; } }, test.limit.quick); }
+function one(rel) { test.run("it holds no NUL byte, so a page can load it as text", 0.2, function () { try { return fs.readFileSync(path.join(RUN, rel)).indexOf(0) === -1 || false; } catch (e) { return false; } }, test.limit.quick); }
 // A SECOND DUMB CHECK, ONE A BROKEN SCRIPT FAILS (goal/G47.1; box v143: "each with a dumb test or two"; ./testicle.js: "handed
 // both, names both"): read as text, never loaded.
-function two(rel) { test.run(rel + ': ' + "it throws nothing at its top level", 0.2, function () { try { return !/^throw\b/m.test(fs.readFileSync(path.join(RUN, rel), 'utf8')) || false; } catch (e) { return false; } }, test.limit.quick); }
-if (!GIVEN.length) mine().forEach(function (rel) { one(rel); two(rel); });
+function two(rel) { test.run("it throws nothing at its top level", 0.2, function () { try { return !/^throw\b/m.test(fs.readFileSync(path.join(RUN, rel), 'utf8')) || false; } catch (e) { return false; } }, test.limit.quick); }
+if (!GIVEN.length) mine().forEach(function (rel) { test.forScript(rel, function () { one(rel); two(rel); }); });
 else GIVEN.forEach(function (rel) { test.forScript(rel, function () { one(rel); two(rel); }); });

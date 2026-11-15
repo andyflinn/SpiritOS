@@ -128,7 +128,7 @@ test.run('the first element\'s result stands in testicle while the run still goe
   return (W.firstAt > 0 && W.firstAt < W.endAt) || false;
 }, test.limit.quick);
 // box v144: "the target: at least 80% less test time"
-test.run('the run takes at least 80% less than ' + BEFORE_S + ' s a script', 0.4, function () {
+test.run('the run takes at least 80% less than the time measured before', 0.4, function () {
   const most = 0.2 * BEFORE_S * 1000 * (ELEMENTS.length + 1);
   return (W.ms > 0 && W.ms <= most) || false;
 }, test.limit.quick);

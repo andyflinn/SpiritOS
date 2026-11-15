@@ -19,9 +19,9 @@ function mine() {
   (function walk(rel) { fs.readdirSync(path.join(RUN, rel), { withFileTypes: true }).forEach(function (d) { const r = rel + d.name; if (d.isDirectory()) { if (d.name !== 'test' && d.name !== 'temp') walk(r + '/'); } else if (/\.js$/.test(d.name)) out.push(r); }); }(SCOPE));
   return out;
 }
-function one(rel) { test.run(rel + ': ' + "it is a script on disc", 0.2, function () { try { return fs.statSync(path.join(RUN, rel)).isFile() || false; } catch (e) { return false; } }, test.limit.quick); }
+function one(rel) { test.run("it is a script on disc", 0.2, function () { try { return fs.statSync(path.join(RUN, rel)).isFile() || false; } catch (e) { return false; } }, test.limit.quick); }
 // A SECOND DUMB CHECK, ONE A BROKEN SCRIPT FAILS (goal/G47.1; box v143: "each with a dumb test or two"; ./testicle.js: "handed
 // both, names both"): read as text, never loaded.
-function two(rel) { test.run(rel + ': ' + "'use strict' heads it", 0.2, function () { try { const s = fs.readFileSync(path.join(RUN, rel), 'utf8').split(/\r?\n/).filter(function (l) { return l.trim() && !/^\s*\/\//.test(l); })[0] || ''; return /^\s*['"]use strict['"];?\s*$/.test(s) || false; } catch (e) { return false; } }, test.limit.quick); }
-if (!GIVEN.length) mine().forEach(function (rel) { one(rel); two(rel); });
+function two(rel) { test.run("'use strict' heads it", 0.2, function () { try { const s = fs.readFileSync(path.join(RUN, rel), 'utf8').split(/\r?\n/).filter(function (l) { return l.trim() && !/^\s*\/\//.test(l); })[0] || ''; return /^\s*['"]use strict['"];?\s*$/.test(s) || false; } catch (e) { return false; } }, test.limit.quick); }
+if (!GIVEN.length) mine().forEach(function (rel) { test.forScript(rel, function () { one(rel); two(rel); }); });
 else GIVEN.forEach(function (rel) { test.forScript(rel, function () { one(rel); two(rel); }); });

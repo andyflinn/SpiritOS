@@ -2327,7 +2327,7 @@ test.run('in debug mode, set to auto, it never runs testicle\'s own tests, only 
     const general = path.join(run, GENERAL);
     const generalSrc = fs.readFileSync(general, 'utf8');
     if (generalSrc.indexOf(GENERAL_LINE) === -1) return false;
-    fs.writeFileSync(general, generalSrc.replace(GENERAL_LINE, "else GIVEN.forEach(function (rel) { test.forScript(rel, function () { if (/zzLimit\\/bHang\\.js$/.test(rel)) test.run(rel + ': it works on past the run limit', 0.2, function () { return new Promise(function (r) { setTimeout(function () { r(true); }, 240000); }); }, test.limit.long); else { one(rel); two(rel); } }); });"));
+    fs.writeFileSync(general, generalSrc.replace(GENERAL_LINE, "else GIVEN.forEach(function (rel) { test.forScript(rel, function () { if (/zzLimit\\/bHang\\.js$/.test(rel)) test.run('it works on past the run limit', 0.2, function () { return new Promise(function (r) { setTimeout(function () { r(true); }, 240000); }); }, test.limit.long); else { one(rel); two(rel); } }); });"));
     [AOK, BHANG, CLATER].forEach(function (f) { fs.mkdirSync(path.dirname(path.join(run, f)), { recursive: true }); fs.writeFileSync(path.join(run, f), '\'use strict\';\n// ' + path.basename(f) + ', planted for the run limit\n'); });
     const on = path.join(run, 'spirit', 'state', 'testicle');
     fs.mkdirSync(path.join(on, 'data'), { recursive: true });
