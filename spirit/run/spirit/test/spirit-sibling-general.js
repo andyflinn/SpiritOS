@@ -1659,6 +1659,10 @@ function productScripts() {
 const OLD_ELEMENT_PATH = /\bshell\/js\b|\bshell\/node_modules\b|['"]shell['"]\s*,\s*['"]js['"]/;
 // spirit.elements, and ui.elements, the old shell's hand-out of it to an app (api.ui.elements.<name>).
 const OLD_ELEMENT_HOME = /\b(?:spirit|ui)\s*\.\s*elements\b/;
+// The vendored libraries' old place (goal/G43.25), and the suites that name it on purpose: job.js's, which compares the
+// libraries with the commit before their move, and fileSystem's and deskClient's.
+const OLD_NODE_MODULES = /spirit\/run\/node_modules/;
+const NODE_MODULES_ON_PURPOSE = /^spirit\/run\/spirit\/test\/(job|fileSystem)\.(js|md)$|^spirit\/run\/spirit\/app\/deskClient\/test\/deskClient\.(js|md)$/;
 // The files these rules read: what git tracks under spirit/, code, tests and documents, vendored code and this test's own
 // files left out (they name the old homes to find them).
 function elementRuleFiles() {
@@ -1799,6 +1803,23 @@ function every() {
     const all = E.elementFiles || [];
     const hits = [].concat.apply([], all.map(function (f) { return linesMatching(f, OLD_ELEMENT_HOME); }));
     return (all.length > 100 && !hits.length) || hits.length + ' lines do, the first: ' + short(hits.slice(0, 12));
+  }, test.limit.quick);
+  // no run://node_modules (goal/G43.25; moved here from spirit/test/job.js, goal/G47.1). Andy: "can we hide those suckers in
+  // spirit/jobs/ for now? without the damn node_modules container?". Over the whole repository, install/ too.
+  test.run('no tracked file of the repository names spirit/run/node_modules', 0.4, function () {
+    const naming = gitIn(REPO, ['ls-files']).filter(function (f) { return !NODE_MODULES_ON_PURPOSE.test(f) && SELF.indexOf(path.basename(f)) === -1 && f.indexOf('spirit/run/brains/') !== 0 && !/\.(png|jpe?g|gif|ico|woff2?|ttf|zip|db)$/i.test(f) && fs.existsSync(path.join(REPO, f)); })
+      .filter(function (f) { return OLD_NODE_MODULES.test(fs.readFileSync(path.join(REPO, f), 'utf8')); });
+    return !naming.length || naming.length + ' still do: ' + short(naming);
+  }, test.limit.quick);
+  test.run('.gitignore holds no exception for spirit/run/node_modules', 0.4, function () {
+    return !/run\/node_modules/.test(fs.readFileSync(path.join(REPO, '.gitignore'), 'utf8')) || '.gitignore still names it';
+  }, test.limit.quick);
+  // no warning on a grant (goal/G43.27, requirement 7; moved here from spirit/element/search/grant/test/grantsPanel.js,
+  // goal/G47.1). Andy: "compare that to giving a linux user root authority, he then can fuck up the whole system, not our
+  // problem.": no <verb>.warning.txt is left in the repository.
+  test.run('no <verb>.warning.txt is left', 0.4, function () {
+    const warns = gitIn(REPO, ['ls-files']).filter(function (f) { return /\.warning\.txt$/.test(f); });
+    return !warns.length || warns.length + ' are: ' + short(warns);
   }, test.limit.quick);
   // the search elements' pattern (goal/G43.18; moved here from spirit/element/test/search.js, goal/G47.1). Andy: "all
   // "probabilitySearch" elements follow the EXACT SAME PATTERN.", and the box: "Every search element in spirit/element/
@@ -1944,6 +1965,10 @@ function oneFile(P) {
     test.run('it reaches no element through spirit.elements', 0.4, function () {
       const hits = linesMatching(rel, OLD_ELEMENT_HOME);
       return !hits.length || 'it does: ' + short(hits.slice(0, 12));
+    }, test.limit.quick);
+    if (!NODE_MODULES_ON_PURPOSE.test('spirit/run/' + rel)) test.run('it names no spirit/run/node_modules', 0.4, function () {
+      const hits = linesMatching(rel, OLD_NODE_MODULES);
+      return !hits.length || 'it names it: ' + short(hits.slice(0, 12));
     }, test.limit.quick);
     if (/\.(js|html)$/.test(rel)) test.run('it reaches through spirit.element only for elements the tree holds', 0.4, function () {
       const stray = strayElementReaches(rel);

@@ -114,7 +114,7 @@ Andy: *"i just moved them, didn't fix the manifest."*, *"no i want those apps to
 
 ## The noWarning part: spirit/element/search/grant/grantsPanel.js: no warning on a grant
 
-goal/G43.27, requirement 7. Its test is the noWarning part of `./grantsPanel.js`: the tree read as it is, comments stripped.
+goal/G43.27, requirement 7. Its test is `./grantsPanel.js`, "Grant reads no <verb>.warning.txt" and "grantsPanel.js holds no warning reading and no confirm"; that none is left in the tree is `spirit/test/spirit-sibling-general.js`'s (goal/G47.1).
 
 Andy: "compare that to giving a linux user root authority, he then can fuck up the whole system, not our problem."
 

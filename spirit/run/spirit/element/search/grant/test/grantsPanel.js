@@ -498,9 +498,9 @@ test.run('the grant goes out at once', 0.2, function () {
 test.run('grantsPanel.js holds no warning reading and no confirm', 0.2, function () {
   return !/warning\.txt|window\.confirm/.test(fs.readFileSync(path.join(RUN, 'spirit', 'element', 'search', 'grant', 'grantsPanel.js'), 'utf8').replace(/\/\/[^\n]*/g, '')) ? true : 'grantsPanel.js still reads warnings or confirms';
 }, test.limit.quick);
-test.run('spirit/auth/grant.warning.txt is gone', 0.2, function () {
-  return !fs.existsSync(path.join(RUN, 'spirit', 'auth', 'grant.warning.txt')) ? true : 'spirit/auth/grant.warning.txt is still there';
-}, test.limit.quick);
+// That no <verb>.warning.txt is left in the tree, spirit/auth/grant.warning.txt among them, is the general test's,
+// spirit/test/spirit-sibling-general.js (goal/G47.1). The noWarning part once at the end of this file said the same as the
+// two checks above, and is folded into them.
 
 // Grant is a busyButton, waiting until every grant is answered (goal/G41.23)
 // Box: "first users: Ask in the agent's Update model list, and Grant in the grants panel".
@@ -637,36 +637,4 @@ test.run('Grants\' data source moves into grantsPanel: it asks auth.revoke', 0.2
 test.run('grantsPanel holds the auth cache it reads (spirit.data.auth)', 0.2, function () {
   const holds = /\bdata\.auth\b|cacheManager\s*\(\s*['"]auth['"]/.test(panel);
   return holds ? true : 'grantsPanel.js reads no auth cache';
-}, test.limit.quick);
-
-// ── THE NOWARNING PART (once its own file; one test file per script: spirit/test/TEST_SYSTEM.md) ──
-// NO WARNING ON A GRANT (goal/G43.27, requirement 7; spec: ./grantsPanel.md, section "noWarning"). Andy: "compare that to giving a linux
-// user root authority, he then can fuck up the whole system, not our problem.": grantsPanel reads no <verb>.warning.txt, and
-// none is left, spirit/auth/grant.warning.txt among them. The tree read as it is, comments stripped.
-// noWarning: no warning on a grant (goal/G43.27); 7. no warning on a grant
-const { execSync } = require('child_process');
-const REPO = path.resolve(RUN, '..', '..');
-function stripped(text) { return String(text).replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1'); }
-// Line ends aside: a Windows checkout (autocrlf) holds CRLF where git holds LF.
-function readRun(rel) { const f = path.join(RUN, rel); return fs.existsSync(f) ? fs.readFileSync(f, 'utf8').replace(/\r\n/g, '\n') : ''; }
-let tracked = [];
-let gp = '';
-test.run('the world: more than a hundred tracked files on disk are read', 0.2, function () {
-  tracked = execSync('git ls-files', { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(Boolean).filter(function (f) { return fs.existsSync(path.join(REPO, f)); });
-  return tracked.length > 100 ? true : 'only ' + tracked.length + ' tracked files read: nothing judged';
-}, test.limit.quick);
-test.run('with no warning on a grant, spirit/auth/grant.warning.txt is gone', 0.2, function () {
-  return !fs.existsSync(path.join(RUN, 'spirit', 'auth', 'grant.warning.txt')) ? true : 'spirit/auth/grant.warning.txt is still there';
-}, test.limit.quick);
-test.run('the world: grantsPanel.js is read', 0.2, function () {
-  gp = stripped(readRun('spirit/element/search/grant/grantsPanel.js'));
-  return gp.length > 1000 ? true : 'no grantsPanel.js: nothing judged';
-}, test.limit.quick);
-test.run('grantsPanel reads no <verb>.warning.txt', 0.2, function () {
-  if (!gp) return 'no grantsPanel.js read';
-  return !/warning\.txt|\.FS\.loadFile/.test(gp) ? true : 'grantsPanel still reads one';
-}, test.limit.quick);
-test.run('no <verb>.warning.txt is left', 0.2, function () {
-  const warns = tracked.filter(function (f) { return /\.warning\.txt$/.test(f); });
-  return !warns.length ? true : warns.length + ' are: ' + short(warns);
 }, test.limit.quick);

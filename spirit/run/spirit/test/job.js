@@ -779,13 +779,6 @@ const keeps = function (n) {
 };
 test.run('spirit/job/chokidar/ keeps its package.json and licence', 0.2, function () { return keeps('chokidar'); }, test.limit.quick);
 test.run('spirit/job/readdirp/ keeps its package.json and licence', 0.2, function () { return keeps('readdirp'); }, test.limit.quick);
-test.run('spirit/run/node_modules/ is gone from the disk', 0.2, function () {
-  return !fs.existsSync(path.join(RUN, 'node_modules')) ? true : 'spirit/run/node_modules/ is still on the disk';
-}, test.limit.quick);
-test.run('no tracked file is left under spirit/run/node_modules/', 0.2, function () {
-  const stillTracked = VL.tracked.filter(function (f) { return f.indexOf(OLD) === 0; });
-  return !stillTracked.length ? true : stillTracked.length + ' still are: ' + long(stillTracked);
-}, test.limit.quick);
 
 // 2. chokidar finds readdirp by path, the one line changed in the library
 const idxNew = path.join(REPO, NEW, 'chokidar', 'index.js');
@@ -943,19 +936,5 @@ test.run('its json changed back to intrinsic false, its file comes without core 
   return flagged.back === false || 'zzKept.js after intrinsic false again: ' + long(flagged.back);
 }, test.limit.quick);
 
-// 5. no file names spirit/run/node_modules any more
-test.run('no tracked file names spirit/run/node_modules', 0.2, function () {
-  VL.naming = VL.tracked.filter(function (f) { return !SELF.test(f) && f.indexOf('spirit/run/brains/') !== 0 && !/\.(png|jpe?g|gif|ico|woff2?|ttf|zip|db)$/i.test(f); })
-    .filter(function (f) { return /spirit\/run\/node_modules|!\/spirit\/run\/node_modules/.test(fs.readFileSync(path.join(REPO, f), 'utf8')); });
-  return !VL.naming.length ? true : VL.naming.length + ' still do: ' + long(VL.naming);
-}, test.limit.quick);
-test.run('.gitignore holds no exception for spirit/run/node_modules', 0.2, function () {
-  const gi = fs.readFileSync(path.join(REPO, '.gitignore'), 'utf8');
-  return !/run\/node_modules/.test(gi) ? true : '.gitignore still names it';
-}, test.limit.quick);
-const namesNoMore = function (f) {
-  if (!VL.naming) return 'the tree was not read: the test before it failed';
-  return VL.naming.indexOf(f) === -1 && fs.existsSync(path.join(REPO, f)) ? true : f + (fs.existsSync(path.join(REPO, f)) ? ' still names it' : ' is not there to judge');
-};
-test.run('install/microscopic/create.js names spirit/run/node_modules no more', 0.2, function () { return namesNoMore('install/microscopic/create.js'); }, test.limit.quick);
-test.run('install/chat-windows/create.js names spirit/run/node_modules no more', 0.2, function () { return namesNoMore('install/chat-windows/create.js'); }, test.limit.quick);
+// 5. that no file names spirit/run/node_modules, and .gitignore keeps no exception for it, is the general test's,
+// spirit/test/spirit-sibling-general.js (goal/G47.1): a rule of every file, not of job.js.
