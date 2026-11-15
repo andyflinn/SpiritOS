@@ -28,7 +28,7 @@ const crypto = require('crypto');
 const { execFile, spawn } = require('child_process');
 const { DatabaseSync } = require('node:sqlite');
 // Every status line and every result's icon, worded in one place (goal/G47.1; ./words.js).
-const WORDS = require(path.join(__dirname, '..', '..', '..', 'spirit/app/testicle/words.js'));
+const WORDS = spirit.require('spirit/app/testicle/words.js');
 const appServer = spirit.require('spirit/appServer.js');
 const { VENDORED_FOLDERS } = spirit.require('spirit/fileSystem.js');
 const { createProbabilityBucket } = spirit.require('spirit/probabilityBucket.js');
@@ -371,20 +371,31 @@ function nextJob() {
 // runner has nothing left to choose, so a lab node is held only while testicle works.
 let world = null;
 let worldBoot = null;
+// The node and the Chrome are a test tool's, so they come as a process of it, never required (the box: "no production module
+// loads or requires any test file"): spirit/test/headLessChrome.js --world, which prints where they are and holds them until
+// its input closes.
+const WORLD_TOOL = 'spirit/test/headLessChrome.js';
 function handWorld() {
   if (world) return Promise.resolve(world);
   if (!worldBoot) {
-    worldBoot = (async function () {
-      const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
-      const found = H.findChrome();
-      const both = await Promise.all([H.scratchNode({}), found ? H.sharedChrome(found) : Promise.resolve(null)]);
-      const node = both[0], chrome = both[1];
-      const env = {};
-      if (node && node.up) { env.SPIRIT_MOUNT_BASE = node.base; env.SPIRIT_MOUNT_RUN = node.run; }
-      if (chrome && !chrome.error) env.SPIRIT_CHROME_PORT = String(chrome.port);
-      world = { node: node, chrome: chrome, env: env };
-      return world;
-    }()).then(null, function (e) { logError('runner: no node and Chrome to hand out', e); world = { env: {} }; return world; });
+    worldBoot = new Promise(function (resolve) {
+      const kid = spawn(process.execPath, [WORLD_TOOL, '--world'], { cwd: RUN, stdio: ['pipe', 'pipe', 'ignore'], windowsHide: true });
+      let out = '';
+      let said = false;
+      const say = function (env) { if (said) return; said = true; world = { kid: kid, env: env }; resolve(world); };
+      kid.stdout.on('data', function (d) {
+        out += d;
+        const m = /@@WORLD (.*)\r?\n/.exec(out);
+        if (!m) return;
+        let w = null; try { w = JSON.parse(m[1]); } catch (e) { w = null; }
+        const env = {};
+        if (w && w.base) { env.SPIRIT_MOUNT_BASE = w.base; env.SPIRIT_MOUNT_RUN = w.run; }
+        if (w && w.chromePort) env.SPIRIT_CHROME_PORT = w.chromePort;
+        say(env);
+      });
+      kid.on('error', function (e) { logError('runner: no node and Chrome to hand out', e); say({}); });
+      kid.on('exit', function () { if (world && world.kid === kid) { world = null; worldBoot = null; } say({}); });
+    });
   }
   return worldBoot;
 }
@@ -393,8 +404,8 @@ function dropWorld() {
   const w = world;
   world = null;
   worldBoot = null;
-  try { if (w.chrome && w.chrome.close) w.chrome.close(); } catch (e) { logError('runner: closing its Chrome', e); }
-  if (w.node && w.node.release) Promise.resolve(w.node.release()).then(null, function (e) { logError('runner: releasing its node', e); });
+  // Its input closed, it lets its node and its Chrome go and ends.
+  try { if (w.kid) w.kid.stdin.end(); } catch (e) { logError('runner: ending its node and Chrome', e); }
 }
 // PAST THE LIMIT (the box: "A job that runs past 2 minutes is killed, and every test of that suite and script the server
 // knows is failed, tagged with the run's two hashes, so it is not queued again until the script or the suite changes").

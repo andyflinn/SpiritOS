@@ -500,3 +500,29 @@ function pageSpirit(s, loaded) {
 }
 
 module.exports = { sharedChrome: sharedChrome, renewChrome: renewChrome, pageSpirit: pageSpirit, sleep: sleep, until: until, freePort: freePort, appRuns: appRuns, watchRuns: watchRuns, findChrome: findChrome, scratchNode: scratchNode, scratchTree: scratchTree, startNodeOn: startNodeOn, freeTree: freeTree, scratchRelay: scratchRelay, scratchFaceRelay: scratchFaceRelay, chromePage: chromePage, WAIT: WAIT };
+
+// A WORLD TO HAND OUT, AS A PROCESS OF ITS OWN (goal/G47.1, Q10 1; the box: "no production module loads or requires any test
+// file"): `node spirit/test/headLessChrome.js --world` boots one lab node and one Chrome side by side, prints where they are on
+// one line, @@WORLD {"base", "run", "chromePort"}, and holds them until its input closes (or it is ended), then lets them go.
+// testicle starts it as it starts any test file, and hands what it printed to the suite runs it starts.
+if (require.main === module && process.argv.indexOf('--world') !== -1) {
+  (async function () {
+    const found = findChrome();
+    const both = await Promise.all([scratchNode({}), found ? sharedChrome(found) : Promise.resolve(null)]);
+    const node = both[0], chrome = both[1];
+    const out = { base: node && node.up ? node.base : '', run: node && node.up ? node.run : '', chromePort: chrome && !chrome.error ? String(chrome.port) : '' };
+    process.stdout.write('@@WORLD ' + JSON.stringify(out) + '\n');
+    let ended = false;
+    const end = async function () {
+      if (ended) return;
+      ended = true;
+      try { if (chrome && chrome.close) chrome.close(); } catch (e) { /* gone */ }
+      try { if (node && node.release) await node.release(); } catch (e) { /* freed as this process ends */ }
+      process.exit(0);
+    };
+    process.stdin.on('end', end);
+    process.stdin.on('close', end);
+    process.on('SIGTERM', end);
+    process.stdin.resume();
+  }());
+}
