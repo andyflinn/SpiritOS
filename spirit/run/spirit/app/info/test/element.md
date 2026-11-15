@@ -50,13 +50,9 @@ Andy: *"i just moved them, didn't fix the manifest."* (4f01465b: shell/info is s
 - With nothing pressed, the shell shows its tile.
 - Info's tile opens Info: its name and description fields (`data-field` label and description) and its Rotate this node's cipher key button, nothing "could not be loaded", one bar in view, `ℹ️ Info`; its ✕ shows the tiles again.
 
-#### 4. Its test runs from the new place
+#### 4 and 5. The move
 
-- `spirit/app/info/test/element.js` runs with no "Cannot find module" and prints testReport's completion line.
-
-#### 5. Nothing names the old place
-
-- No file of the tree (tracked, or new and not ignored) names `shell/info`; the red files that must name it are left out.
+Done: its test runs from its new place, and `shell/` is gone. Their checks are dropped (goal/G47.1); a require of a file that is not there is `spirit/test/spirit-sibling-general.js`'s.
 
 #### 6. A wrapper of spirit/element/
 

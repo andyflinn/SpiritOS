@@ -73,13 +73,9 @@ Andy: *"i just moved them, didn't fix the manifest."* (4f01465b: shell/info is s
 - With nothing pressed, the shell shows its tile.
 - Grants' tile opens Grants: its Grants and Bundles tabs, the grants panel configured (no "not configured"), one bar in view, `🔒 Grants`.
 
-#### 4. Its test runs from the new place
+#### 4 and 5. The move
 
-- `spirit/app/grants/test/element.js` runs with no "Cannot find module" and prints testReport's completion line.
-
-#### 5. Nothing names the old place
-
-- No file of the tree (tracked, or new and not ignored) names `shell/grants`; the red files that must name it are left out.
+Done: its test runs from its new place, and `shell/` is gone. Their checks are dropped (goal/G47.1); a require of a file that is not there is `spirit/test/spirit-sibling-general.js`'s.
 
 #### 6. A wrapper of spirit/element/
 

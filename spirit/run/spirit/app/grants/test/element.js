@@ -541,8 +541,6 @@ test.run('a press on a row throws nothing', 0.2, function () {
 // to basically be wrappers for spirit/element/ things....", and "box that these apps must mount in the new format of the new
 // shell." The tree read as it is, its own test run, then a real node on a scratch copy of the tree's files and real clicks in
 // a real Chrome on /face.html, on the shell app as boot.js draws it. Neither Andy's node nor an agent's is touched.
-// The wrapper part runs this file again as a child (its box 4); that child (SPIRIT_TEST_OWN_ONLY) runs the tests above only.
-const { spawnSync } = require('child_process');
 function readJson(f) { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch (e) { return null; } }
 function code(f) { try { return fs.readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1'); } catch (e) { return ''; } }
 function same(a, b) { return JSON.stringify(a) === JSON.stringify(b); }
@@ -550,13 +548,6 @@ function same(a, b) { return JSON.stringify(a) === JSON.stringify(b); }
 const NAME = 'grants';
 const WANT = { label: 'Grants', icon: '🔒' };
 const APP_DIR = path.join(RUN, 'spirit', 'app', NAME);
-// The red files that must name the old path to judge it.
-// The wrapper parts live in each app's one test file since the fold (spirit/test/TEST_SYSTEM.md).
-const MINE = ['spirit/run/spirit/app/info/test/element.js', 'spirit/run/spirit/app/info/test/element.md',
-  'spirit/run/spirit/app/grants/test/element.js', 'spirit/run/spirit/app/grants/test/element.md',
-  'spirit/run/spirit/test/coreFiles.js', 'spirit/run/spirit/test/coreFiles.md',
-  // nodeInfo-rotate's part is in the one test file of nodeInfo.js (spirit/test/TEST_SYSTEM.md).
-  'spirit/run/spirit/element/test/nodeInfo.js', 'spirit/run/spirit/element/test/nodeInfo.md'];
 async function wcall(base, verb, args) {
   try {
     const r = await fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) });
@@ -593,7 +584,7 @@ const wwaitFor = function (expr, ms) { return H.until(function () { return R.c.e
 const R_NO_NODE = 'no scratch node for the wrapper: the world failed';
 const R_NO_PAGE = 'no wrapper page: the world failed';
 
-if (!process.env.SPIRIT_TEST_OWN_ONLY) {
+{
   test.after(async function () {
     try { if (R.c && R.c.sock) R.c.sock.close(); } catch (e) { /* gone */ }
     try { if (R.c && R.c.kid) R.c.kid.kill(); } catch (e) { /* gone */ }
@@ -673,39 +664,8 @@ if (!process.env.SPIRIT_TEST_OWN_ONLY) {
     return c0.length > 0 && !/\bactivateApp\b/.test(c0) && !/\bspirit\.shell\b/.test(c0) ? true : (c0.length ? NAME + '.js still calls spirit.shell.activateApp' : 'no ' + NAME + '.js: nothing judged');
   }, test.limit.quick);
 
-  // the box, 4: "info/test/info.js and grants/test/grants.js find the run root at their new depth"
-  const OWN = path.join(APP_DIR, 'test', 'element.js');
-  test.run('the world: its own test is there', 0.2, function () {
-    return fs.existsSync(OWN) || 'no spirit/app/' + NAME + '/test/' + NAME + '.js: nothing judged';
-  }, test.limit.quick);
-  test.run('its own test runs from the new place: testReport.js found, its completion line printed', 0.2, async function () {
-    if (!fs.existsSync(OWN)) return 'no own test: the world failed';
-    // The bundle lines' node and Chrome go first, so the child's own do not run beside them.
-    await closeBundleWorld();
-    // This part lives in that file now: the child runs the file's own checks only (SPIRIT_TEST_OWN_ONLY), as it did when
-    // this part was a file of its own, and does not run this part again.
-    const r = spawnSync(process.execPath, [OWN], { cwd: RUN, encoding: 'utf8', timeout: 240000, env: Object.assign({}, process.env, { LAB_MASTER_PORT: process.env.LAB_MASTER_PORT || '45420', SPIRIT_TEST_OWN_ONLY: '1' }) });
-    const out = String(r.stdout || '') + String(r.stderr || '');
-    const lost = /Cannot find module[^\n]*/.exec(out);
-    return !lost && /Test completed\./.test(out) ? true : (lost ? NAME + '.js: ' + short(lost[0]) : NAME + '.js printed no completion line: ' + short(out.slice(-300)));
-  }, test.limit.slow);
-
-  // the box, 5: "no file names shell/info or shell/grants any more" (shell/grants)
-  test.run('the world: more than five hundred of the tree\'s files are read', 0.2, function () {
-    R.tracked = execSync('git ls-files --cached --others --exclude-standard', { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(Boolean)
-      .filter(function (f) { return MINE.indexOf(f) === -1 && fs.existsSync(path.join(REPO, f)) && fs.statSync(path.join(REPO, f)).isFile(); });
-    return R.tracked.length > 500 || 'only ' + R.tracked.length + ' files read: nothing judged';
-  }, test.limit.quick);
-  test.run('no file names shell/grants', 0.2, function () {
-    if (!R.tracked) return 'no files read: the world failed';
-    const OLD = new RegExp('shell/' + NAME + '(?![\\w-])');
-    const naming = R.tracked.filter(function (f) {
-      let t = '';
-      try { t = fs.readFileSync(path.join(REPO, f), 'utf8'); } catch (e) { return false; }
-      return t.indexOf('\u0000') === -1 && OLD.test(t);
-    });
-    return !naming.length || naming.length + ' files still name it: ' + naming.join(', ');
-  }, test.limit.quick);
+  // Its own test running from its new place, and no file naming its old shell/ folder (the box, 4 and 5): the move is long
+  // done and shell/ is gone; a require of a file that is not there is the general test's (goal/G47.1).
 
   test.run('the world: a scratch node comes up', 0.2, async function () {
     await closeBundleWorld();
