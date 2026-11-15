@@ -330,3 +330,21 @@ test.run('a plain GET does not hand it over', 0.8, async function () {
   const gotText = await got.text();
   return (got.status !== 200 && gotText.indexOf('active') === -1) || 'a plain GET answered ' + got.status + ': ' + short(gotText);
 }, test.limit.quick);
+
+// AN APP THAT IS RUN, NOT MOUNTED, IS NEVER SWITCHED ON (goal/G43.21; Andy: "and the node should know it, too."; moved here from
+// spirit/app/app/test/element.js's nodeRun part, goal/G47.1: it judges this family's app.active). Each app of the tree whose
+// <name>.json says node.run alone, publishData and pushOrigin, refused app.active, and its row stays inactive.
+const RUN_ONLY = ['publishData', 'pushOrigin'];
+async function nodeRefuses(key) {
+  if (noNode()) return noNode();
+  let own = null;
+  try { own = JSON.parse(fs.readFileSync(path.join(RUN, 'spirit', 'app', key, key + '.json'), 'utf8')); } catch (e) { own = null; }
+  if (!own || !own.node || own.node.run !== true || own.node.mount === true) return key + ' says no node.run alone in this tree: nothing judged';
+  const r = await ask(W.node.base, 'app.active', { key: key, active: true });
+  const row = (rows(await ask(W.node.base, 'app.search', { q: '' })) || []).filter(function (i) { return i.key === key; })[0];
+  const now = row ? (parsed(row.label) || {}).active : undefined;
+  return (r.status >= 400 && now !== true) || 'app.active for ' + key + ' answered ' + r.status + ' ' + short(r.text) + ', active now ' + short(now);
+}
+test.run('the node refuses app.active for publishData, and it stays inactive', 0.2, function () { return nodeRefuses(RUN_ONLY[0]); }, test.limit.quick);
+test.run('the node refuses app.active for pushOrigin, and it stays inactive', 0.2, function () { return nodeRefuses(RUN_ONLY[1]); }, test.limit.quick);
+

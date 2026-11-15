@@ -1127,28 +1127,7 @@ test.after(stopAll);
     return (started) ? true : ('no job of pushOrigin after the press: ' + short(await jobsOf()));
   }, test.limit.slow);
 
-  // Andy: "and the node should know it, too." Asked last, since a node that takes it would leave the app active.
-  // Andy: "and the node should know it, too."
-  const nodeRefuses = async function (key) {
-    if (!W2.up) return NO_PAGE;
-    const a = byKey(only, key);
-    if (!a) return key + ' is no app of node.run alone in this tree: nothing judged';
-    const r = await fetch(node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'app.active', args: { key: a.key, active: true } }) });
-    const t = await r.text();
-    const listed = await ask('app.search', { q: '' });
-    const row = ((listed && listed.items) || []).filter(function (i) { return i.key === a.key; })[0];
-    let now;
-    try { now = JSON.parse(row.label).active; } catch (e) { now = undefined; }
-    const held2 = r.status >= 400 && now !== true;
-    const why2 = 'app.active for ' + a.key + ' answered ' + r.status + ' ' + short(t) + ', active now ' + short(now);
-    return held2 ? true : why2;
-  };
-  test.run('the node refuses app.active for publishData, and it stays inactive', 0.2, async function () {
-    return nodeRefuses('publishData');
-  }, test.limit.quick);
-  test.run('the node refuses app.active for pushOrigin, and it stays inactive', 0.2, async function () {
-    return nodeRefuses('pushOrigin');
-  }, test.limit.quick);
+  // That the node refuses app.active for such an app is the app family's: spirit/test/app.js (goal/G47.1).
 }
 
 // ── THE shell PART ───────────────────────────────────────────────────────────────────────────────────────────
