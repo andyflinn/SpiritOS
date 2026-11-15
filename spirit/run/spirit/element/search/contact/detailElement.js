@@ -936,18 +936,11 @@ function ndGovernorFacts(report) {
   if (m && typeof m.posts === 'number') {
     rows.push(['Activity', m.posts + ' posts, ' + (m.bytesPerSec || 0) + ' B/s over ' + (m.seconds || 0) + ' s']);
   }
-  // WHAT THE RELAY HOLDS, IN PARTS (goal/G30.15; Andy: "the number i really need to see is: How many members (with 3
-  // streams) per MegaByte"): its own memory at rest, the streams by kind at what each costs, the RAM still free, and
-  // the members it serves.
+  // OF ITS CAPACITY, ONE FIGURE (goal/G47.1, box v170: "The relay detail shows of its capacity one figure: how many members
+  // it can serve with the RAM it is given. The rows Streams, Members a megabyte, At rest and Free go."; Andy: "How many
+  // members can be served with a relay given so much RAM"): the relay's own members, its allowance in seats.
   var c = report.capacity;
-  if (c) {
-    rows.push(['At rest', c.atRestMB + ' MB']);
-    var s = c.streams || {};
-    rows.push(['Streams', (s.nodes || 0) + ' home nodes, ' + (s.faces || 0) + ' faces, ' + (s.feeds || 0) + ' feeds, ' + c.streamKB + ' KB each']);
-    if (typeof c.freeMB === 'number') rows.push(['Free', c.freeMB + ' MB of ' + c.ramLimitMB + ' MB']);
-    rows.push(['Members a megabyte', c.membersPerMB + ', at ' + c.seatStreams + ' streams each']);
-    if (typeof c.members === 'number') rows.push(['Members served', c.members]);
-  }
+  if (c && typeof c.members === 'number') rows.push(['Members it can serve', c.members + (typeof c.ramLimitMB === 'number' ? ' with ' + c.ramLimitMB + ' MB of RAM' : '')]);
   var lever = report.levers && report.levers.connections1;
   if (lever) {
     // The lever's readOut (lever.js) is {value, floor, ceiling, ...}: the allowance is its value, as relayMonitor

@@ -18,9 +18,11 @@
 //      {posts, waitMs {median, max}, flight {median, max}, retried, refusals} and packets.md; platform.md names the
 //      agent, the commit and the box
 //   3  the test state: testState.json and testState.md, from this node's testicle.db (the current result of each test
-//      its testicle keeps), no suite re-run
-//   4  unless --only packets or --out: commits platform/<platform>/ (the commit check's standing grant takes a commit whose
-//      files all lie there); no summary goes to Desk (goal/G43.22)
+//      its testicle keeps), no suite re-run; it starts with the ten scripts with the most severe reds; generalTests.md
+//      and ownSuites.md beside it
+//   4  the Summary's figures, measured on lab nodes and a lab relay (./measure.js), and README.md (./agentReadme.js)
+//   5  unless --only packets or --out: commits platform/<platform>/ and platform/README.md (the commit check's standing
+//      grant); no summary goes to Desk (goal/G43.22)
 // The platform is this machine's (platformName, below), never an agent's name. The traffic log is read from a copy of
 // <clone>/spirit/run/spirit/state/node.db, read only: the node holds the file open, and no verb reads that log.
 // Exits: 0 done; 1 a step failed (the reason printed); 2 usage.
@@ -117,24 +119,68 @@ function writeTestState(out, agent, commit) {
     reds: reds,
   };
   fs.writeFileSync(path.join(out, 'testState.json'), JSON.stringify(report, null, 2) + '\n');
-  const md = ['# Test state: ' + agent, '',
+  // THE TEN SCRIPTS WITH THE MOST SEVERE REDS FIRST (goal/G47.1, box v170: "testState.md starts with the ten scripts with
+  // the most severe reds, the most severe first, each one line: the script, its most severe red (severity, test and suite)
+  // and its count of reds"; Andy chose scripts over tests: "that's a better spread").
+  const byScript = Object.create(null);
+  reds.forEach(function (r) {
+    const b = byScript[r.script] || (byScript[r.script] = { script: r.script, worst: null, count: 0 });
+    b.count += 1;
+    if (!b.worst || r.severity > b.worst.severity) b.worst = r;
+  });
+  const top = Object.keys(byScript).map(function (k) { return byScript[k]; })
+    .sort(function (a, b) { return b.worst.severity - a.worst.severity || b.count - a.count; }).slice(0, 10);
+  const md = ['# Test state: ' + agent, '']
+    .concat(top.map(function (b) { return '- `' + b.script + '`: ' + b.count + ' reds, the worst `' + b.worst.suite + '` ' + b.worst.title + ' (severity ' + b.worst.severity + ')'; }))
+    .concat(top.length ? [''] : [])
+    .concat([
     '**Written ' + report.measuredAt.slice(0, 10) + ' by publishData at `' + report.commit + '`, from this node\'s testicle.db; no suite was re-run.**', '',
     report.tests + ' tests, ' + report.green + ' green, ' + report.red + ' red.' + (report.note ? ' ' + report.note + '.' : ''), '',
     '| script | suite | tests | green | red | newest |', '|---|---|---|---|---|---|']
     .concat(report.suites.map(function (x) { return '| ' + x.script + ' | ' + x.suite + ' | ' + x.tests + ' | ' + x.green + ' | ' + x.red + ' | ' + x.newestAt + ' |'; }))
     .concat(['', '## Red', ''])
     .concat(reds.length ? reds.map(function (r) { return '- `' + r.script + '` `' + r.suite + '` ' + r.title + ' (severity ' + r.severity + ', ' + r.at + ')'; }) : ['none'])
-    .concat(['']);
+    .concat(['']));
   fs.writeFileSync(path.join(out, 'testState.md'), md.join('\n'));
+  writeSuiteDocs(out, report);
   return report;
 }
 
-// platform/<platform>/README.md: since goal/G33.5 written by agentReadme.js (Machine Description, Summary, Measurements),
-// with summary.json beside it, from the files themselves, so it never goes stale.
-function writeIndex(out, agent) { return spirit.require('spirit/app/publishData/agentReadme.js').write(out, agent); }
+// THE TWO DOCUMENTS OF ## Details BELOW testState.md (goal/G47.1, box v170): "the general tests: each general suite, the
+// number of production files it judges, and its green and red counts", and "below those, the own suites: each production
+// script with its own suite, and that suite's green and red counts". A general suite is one of the sibling or child rules
+// (spirit-sibling-general.js and its kind); every other suite is a script's own.
+const GENERAL_SUITE = /-(child|sibling)-(general|node|browser)\.js$/;
+const SUITE_DOCS = [{ label: 'The general tests', file: 'generalTests.md' }, { label: 'The own suites', file: 'ownSuites.md' }];
+function writeSuiteDocs(out, report) {
+  const general = Object.create(null);
+  const own = [];
+  report.suites.forEach(function (s) {
+    if (GENERAL_SUITE.test(s.suite)) {
+      const g = general[s.suite] || (general[s.suite] = { suite: s.suite, scripts: 0, green: 0, red: 0 });
+      g.scripts += 1; g.green += s.green; g.red += s.red;
+    } else own.push(s);
+  });
+  const gl = Object.keys(general).sort().map(function (k) { const g = general[k]; return '- `' + g.suite + '`: ' + g.scripts + ' production files, ' + g.green + ' green, ' + g.red + ' red'; });
+  fs.writeFileSync(path.join(out, SUITE_DOCS[0].file), ['# The general tests', ''].concat(gl.length ? gl : ['none run yet']).concat(['']).join('\n'));
+  const ol = own.map(function (s) { return '- `' + s.script + '`, its suite `' + s.suite + '`: ' + s.green + ' green, ' + s.red + ' red'; });
+  fs.writeFileSync(path.join(out, SUITE_DOCS[1].file), ['# The own suites', ''].concat(ol.length ? ol : ['none run yet']).concat(['']).join('\n'));
+}
 
-// The files a run writes into its platform folder, and so the only ones it commits.
-const PUBLISHED = ['packets.json', 'packets.md', 'platform.md', 'testState.json', 'testState.md', 'README.md', 'summary.json'];
+// platform/<platform>/README.md, written by agentReadme.js (goal/G47.1, box v170): the title, the measured-on line, the
+// machine, Summary (its figures measure.js's, on lab nodes and a lab relay) and Details, testState.md first.
+const README = spirit.require('spirit/app/publishData/agentReadme.js');
+function writeIndex(out, platform, commit, measured) {
+  const members = (README.summaryOf({ relayAtRestRss: measured.relayAtRestRss }) || {}).members || 0;
+  README.write(out, platform, {
+    at: new Date(), commit: commit,
+    summary: { members: members, nodeAtRestMB: measured.nodeAtRestMB, loop: measured.loop, relayed: measured.relayed },
+    details: [{ label: 'The test state', file: 'testState.md' }].concat(SUITE_DOCS),
+  });
+}
+
+// The files a run writes into its platform folder, and so the only ones it commits, with platform/README.md.
+const PUBLISHED = ['packets.json', 'packets.md', 'platform.md', 'testState.json', 'testState.md', 'generalTests.md', 'ownSuites.md', 'README.md'];
 // windows on Windows; wsl on a Linux whose kernel says Microsoft (WSL); ubuntu on any other Linux; else the platform's own name.
 function platformName() {
   if (process.platform === 'win32') return 'windows';
@@ -206,10 +252,15 @@ async function main() {
     const rep = writeTestState(out, agent, commit);
     say('testState: ' + rep.tests + ' tests, ' + rep.red + ' red');
   } catch (e) { say('testState not written: ' + ((e && e.message) || e)); }
-  writeIndex(out, agent);
+  // 4. THE SUMMARY'S FIGURES, on lab nodes and a lab relay (measure.js), then the README.
+  say('measuring on lab nodes');
+  let measured = null;
+  try { measured = await spirit.require('spirit/app/publishData/measure.js').measure(say); }
+  catch (e) { end(1, 'publishData: the measurements failed: ' + ((e && e.message) || e)); }
+  writeIndex(out, platform, commit, measured);
   say('packets: ' + packets.posts + ' posts, wait ' + packets.waitMs.median + '/' + packets.waitMs.max + ' ms, flight ' + packets.flight.median + '/' + packets.flight.max + ' ms, ' + packets.retried + ' retried');
 
-  // 4. COMMIT AND SAY SO, unless this was only a look.
+  // 5. COMMIT AND SAY SO, unless this was only a look.
   if (packetsOnly || outArg) end(0, 'publishData: written to ' + out);
   // ZERO POSTS IS PUBLISHED TOO (Andy, to Q16, whether a run counting 0 posts should refuse: "publish it anyway. that's
   // what happened."). The figures say what the run met.
@@ -222,7 +273,11 @@ async function main() {
   // grant applies to exactly what is published. The add comes first so a file new to git is known to --only.
   // ONLY THE FILES IT WROTE (goal/G47.1, box v105): platform/<platform>/ also holds Andy's own tools for that machine
   // (platform/README.md), and an edit of his there is never published as "publish:".
-  const wrote = PUBLISHED.filter(function (f) { return fs.existsSync(path.join(out, f)); }).map(function (f) { return rel + '/' + f; });
+  // AND ITS LINE IN platform/README.md (box v170: "on the platform it runs on, it adds that platform's folder and files,
+  // and its line in platform/README.md"): the list written whole from the platform folders there.
+  README.writeList(path.dirname(out));
+  const wrote = PUBLISHED.filter(function (f) { return fs.existsSync(path.join(out, f)); }).map(function (f) { return rel + '/' + f; })
+    .concat([path.posix.join(path.posix.dirname(rel), 'README.md')]);
   git(['add', '--'].concat(wrote), clone);
   const c = git(['commit', '-q', '--only', '-m', 'publish: ' + agent + ' at ' + commit + ' (platform/' + platform + '/, the standing grant of goal/G4.33)', '--'].concat(wrote), clone);
   if (c.status !== 0) end(1, 'publishData: the commit was refused: ' + (c.stderr || c.stdout).trim());

@@ -2,25 +2,25 @@
 require('../../spirit.js');
 
 // spirit/run/spirit/app/publishData/agentReadme.js
-// AN AGENT'S README IN THE MEASUREMENT TREE (goal/G33.5), written by publishData.js into platform/<platform>/. The box, Andy:
-// "The title, the agents name is fine, then MUST come under the first sub-heading, 'Machine Description', a full account
-// of the actual system the measurements were taken on, including OS/platform, total RAM and RAM used at the time the
-// agents README.md was generated, the release and identity of the installed node.js, the number of node servers running
-// on that system at the time of generating the agents README.md etc...", "under the second sub-heading 'Summary', in
-// bullet points. first: bullet, the number of members that can be served with a 512MB allotment of RAM. second bullet,
-// the number of streams that implies with 3 live streams per member, naming what the streams are for. third bullet: how
-// many peers can be remembered with also 512 MB allotted disk-space.", and "Then under a third sub-heading,
-// 'Measurements' comes that little table". "The number of node servers running" means the SpiritOS node processes on
-// that machine, not every node.js process.
+// THE PLATFORM'S README (goal/G47.1, box v170, "#### publishData"), written by publishData.js into platform/<platform>/,
+// and the list of platforms, platform/README.md. In this order, as the box has it:
+//   the title "# Info and Measurements on <platform-name>"
+//   "Measurements were taken on **<Weekday>, <Month> <day-number-in-month>, <four-digit-year>** for repository commit **<commit-id>**"
+//   "## The Machine the Measurements come from", six bullets, each value node.js's system info
+//   "## Summary": the members a 512 MB relay serves, a node at rest, a call on its own machine, a card request through a relay
+//   "## Details": links to documents beside it, testState.md first
+// No raw numbers: only these lines (the box: "no iteration of a measurement is published, only these lines").
 //
-// THE MEMBERS FIGURE IS THE RELAY'S OWN RULE (Andy chose it, box v11): spirit/relay.js's allowanceFor at 512 MB, less the
-// relay's memory at rest as this agent's set measured it (relayAtRestRss), in seats of SEAT_STREAMS streams. The peers
-// figure is 512 MB of disk over the measured bytes of a peer a node can reach (perReachablePeerBytes).
+// THE MEMBERS FIGURE IS THE RELAY'S OWN RULE (box v170: "<number-of-users> computed by the relay's own rule; no memory per
+// stream is measured or shown"): spirit/relay.js's allowanceFor at 512 MB, less the relay's memory at rest as publishData
+// measured it on its lab relay (relayAtRestRss), in seats of SEAT_STREAMS streams.
 //
-//   write(out, agent, machine?)   writes out/README.md and out/summary.json from out/capacity.json and the files there;
-//                                 machine defaults to machineOf(), this machine now
+//   write(out, platform, facts)   writes out/README.md; facts: { at (a Date), commit, machine?, summary }, summary
+//                                 { members, nodeAtRestMB, loop: {median, max}, relayed: {median, max, crypto} }, details
+//                                 [{ label, file }]; machine defaults to machineOf(), this machine now
+//   writeList(platformDir)        writes platformDir/README.md: its title and one link per platform folder holding a README.md
 //   summaryOf(capacity)           { members, ramMB, perMember, streams, peers, diskMB, measuredAt, commit } or null
-//   machineOf()                   the facts of this machine for Machine Description
+//   machineOf()                   the facts of this machine
 
 const fs = require('fs');
 const os = require('os');
@@ -29,12 +29,12 @@ const { spawnSync } = require('child_process');
 
 const RAM_MB = 512;
 const DISK_MB = 512;
-// What each of a member's streams is for (spirit/relay.js, SEAT_STREAMS: "a member with an open face holds its home node's
-// stream, its face's stream and its home node's upload feeding that face").
-const STREAM_NAMES = ['its home node\'s stream', 'its face\'s stream', 'its home node\'s upload feeding that face'];
+// The platforms a folder may be named after (goal/G47.1, box v104: "the platforms will be \"windows\", \"wsl\" and \"ubuntu\"").
+const PLATFORMS = ['windows', 'wsl', 'ubuntu'];
 
 function n(x) { return Number(x || 0).toLocaleString('en-US'); }
-function mb(bytes) { return n(Math.round(Number(bytes || 0) / 1048576)) + ' MB'; }
+function mbOf(bytes) { return n(Math.round(Number(bytes || 0) / 1048576)) + ' MB'; }
+function ms(x) { return String(Math.round(Number(x || 0) * 10) / 10); }
 
 function summaryOf(cap) {
   if (!cap || !(Number(cap.relayAtRestRss) > 0)) return null;
@@ -57,56 +57,53 @@ function spiritNodes() {
   return String(lines || '').split(/\r?\n/).filter(function (l) { return /\bnode(\.exe)?["']?\s/i.test(l) && /spirit[\/\\]server\.js/.test(l); }).length;
 }
 function machineOf() {
+  const cpus = os.cpus();
   return {
-    platform: process.platform, os: os.type() + ' ' + os.release(), arch: process.arch,
+    platform: process.platform, os: os.type() + ' ' + os.release(), type: os.type(), release: os.release(), arch: process.arch,
     totalRamBytes: os.totalmem(), usedRamBytes: os.totalmem() - os.freemem(),
+    cpu: { model: String((cpus[0] && cpus[0].model) || '').trim().replace(/\s+/g, ' '), cores: cpus.length },
     node: { release: String((process.release && process.release.name) || 'node'), version: process.version,
       lts: String((process.release && process.release.lts) || ''), path: process.execPath },
     spiritNodes: spiritNodes(), at: new Date().toISOString(),
   };
 }
 
-function write(out, agent, machine) {
-  const m = machine || machineOf();
-  const read = function (f) { try { return JSON.parse(fs.readFileSync(path.join(out, f), 'utf8')); } catch (e) { return null; } };
-  const cap = read('capacity.json');
-  const s = summaryOf(cap);
-  const when = function (j) { return j ? String(j.measuredAt || j.at || '').slice(0, 10) + ', `' + String(j.commit || '?').slice(0, 8) + '`' : 'not measured yet'; };
-  const row = function (label, file, j) { return '| [' + label + '](' + file + ') | ' + (fs.existsSync(path.join(out, file)) ? when(j) : 'not measured yet') + ' |'; };
-  const studiesDir = path.join(out, 'studies');
-  let studies = [];
-  try { studies = fs.readdirSync(studiesDir).filter(function (d) { return fs.statSync(path.join(studiesDir, d)).isDirectory(); }).sort(); } catch (e) { studies = []; }
+// "<Weekday>, <Month> <day-number-in-month>, <four-digit-year>", the day of the run on this machine.
+function dayOf(at) { return at.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }); }
+
+function write(out, platform, facts) {
+  const f = facts || {};
+  const m = f.machine || machineOf();
+  const s = f.summary || {};
   const lines = [
-    '# ' + agent, '',
-    '## Machine Description', '',
-    '| | |', '|---|---|',
-    '| OS / platform | ' + m.os + ' (' + m.platform + ', ' + m.arch + ') |',
-    '| total RAM | ' + mb(m.totalRamBytes) + ' |',
-    '| RAM used when this was written | ' + mb(m.usedRamBytes) + ' |',
-    '| node.js | ' + m.node.release + ' ' + m.node.version + (m.node.lts ? ' (LTS ' + m.node.lts + ')' : '') + ', `' + m.node.path + '` |',
-    '| SpiritOS node processes running | ' + m.spiritNodes + ' |',
-    '| written | ' + String(m.at).slice(0, 19).replace('T', ' ') + ' UTC |', '',
+    '# Info and Measurements on ' + platform, '',
+    'Measurements were taken on **' + dayOf(f.at || new Date()) + '** for repository commit **' + String(f.commit || 'unknown') + '**', '',
+    '## The Machine the Measurements come from', '',
+    '- **OS/Platform**: ' + m.type + ' (' + m.platform + ')',
+    '- **OS Version**: ' + m.release,
+    '- **Node.js Version**: ' + m.node.version,
+    '- **Total RAM**: ' + mbOf(m.totalRamBytes),
+    '- **CPU**: ' + m.cpu.model + ', ' + m.cpu.cores + ' cores',
+    '- **Architecture**: ' + m.arch, '',
     '## Summary', '',
-  ].concat(s ? [
-    '- **' + n(s.members) + ' members** can be served with a ' + s.ramMB + ' MB allotment of RAM (this relay\'s own rule, ' +
-      'spirit/relay.js, applied to its measured memory at rest).',
-    '- That is **' + n(s.streams) + ' live streams**, ' + s.perMember + ' per member: ' + STREAM_NAMES.join(', ') + '.',
-    '- **' + n(s.peers) + ' peers** can be remembered with ' + s.diskMB + ' MB of disk, each a peer a node can reach.',
-  ] : ['- not measured yet']).concat([
-    '',
-    '## Measurements', '',
-    '| | measured |', '|---|---|',
-    row('the box', 'platform.md', cap || read('packets.json')),
-    row('harness', 'harness.txt', read('harness.json')),
-    row('capacity', 'capacity.md', cap),
-    row('packets', 'packets.md', read('packets.json')),
-    row('test state', 'testState.md', read('testState.json')), '',
-    '## Studies', '',
-  ]).concat(studies.length ? studies.map(function (d) { return '- [' + d + '](studies/' + d + '/)'; }) : ['none yet']).concat(['']);
+    '- A SpiritOS relay given 512 Megabytes of RAM can hold live streams for ' + n(s.members) + ' simultaneously.',
+    '- A SpiritOS node at rest uses ' + n(s.nodeAtRestMB) + ' MB of RAM.',
+    '- A call to a node on its own machine answers in ' + ms(s.loop && s.loop.median) + ' ms, the slowest in ' + ms(s.loop && s.loop.max) + ' ms.',
+    '- A card request through a relay takes ' + ms(s.relayed && s.relayed.median) + ' ms, the slowest ' + ms(s.relayed && s.relayed.max) +
+      ' ms; sealing and signing take ' + ms(s.relayed && s.relayed.crypto) + ' ms of it.', '',
+    '## Details', '',
+  ].concat((f.details || []).map(function (d) { return '- [' + d.label + '](' + d.file + ')'; })).concat(['']);
   fs.writeFileSync(path.join(out, 'README.md'), lines.join('\n'));
-  // THE SUMMARY AS DATA, so the repo README quotes it (spirit/test/publishCapacity.js) without reading markdown.
-  if (s) fs.writeFileSync(path.join(out, 'summary.json'), JSON.stringify(Object.assign({ agent: agent }, s), null, 2) + '\n');
-  return s;
 }
 
-module.exports = { write: write, summaryOf: summaryOf, machineOf: machineOf };
+// THE LIST OF PLATFORMS (box v170: "platform/README.md holds the title \"Measurements exists for the following platforms\"
+// and one bullet per platform folder (windows, wsl, ubuntu), each a link to that folder's README.md, and nothing else"):
+// written whole from the folders there, so a run on one machine keeps the others' lines.
+function writeList(platformDir) {
+  const have = PLATFORMS.filter(function (p) { return fs.existsSync(path.join(platformDir, p, 'README.md')); });
+  const lines = ['# Measurements exists for the following platforms', ''].concat(have.map(function (p) { return '- [' + p + '](' + p + '/README.md)'; })).concat(['']);
+  fs.writeFileSync(path.join(platformDir, 'README.md'), lines.join('\n'));
+  return have;
+}
+
+module.exports = { write: write, writeList: writeList, summaryOf: summaryOf, machineOf: machineOf };
