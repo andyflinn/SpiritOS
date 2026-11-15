@@ -104,14 +104,16 @@ cannot (opencode's shell tool, for one, stops a command after 120 s), Andy runs 
 ## For Andy: making a node for a new agent
 
 Your jobs, the ones the agent reminds you of in *First, once*, step 1. The agent does everything else itself.
-These are the steps run on 2026-11-09, for cw and for Haiku:
+They work the same on Windows, WSL and Ubuntu.
 
-1. Clone beside your checkout: `git clone https://github.com/andyflinn/SpiritOS.git D:/lab/<agent>`.
+0. On a new machine: git, and Node.js 22.13 or newer (`package.json`, `engines`; the node needs `node:sqlite`).
+1. Clone it, beside your checkout on your own machine, anywhere on another: `git clone https://github.com/andyflinn/SpiritOS.git <folder>`.
 2. Start its node on its own port: `cd spirit/run && node spirit/server.js --port <port>`. A start without
    `--port` is refused while your node runs, and it has already written 65432 into its `environment.json`, which
    the ear reads, so start it again with `--port`.
 3. Seat it on your relay, `https://spirit.andyflinn.com`: an invite from you, the Join app, or `--email` on its first
    start (`README.md`). The same works on Linux and WSL.
-4. Grant your desk to its node.
+4. Grant your desk to its node: in your shell's Grants app, its node's key and `desk` (the verb is `auth.grant` with
+   `{key, path: "desk"}`). The agent finds its key with `node.card` on its own door.
 5. Give the agent its port, its clone's folder, and your desk node's public key.
 6. Once it has written in Desk, set its nick in its pane.

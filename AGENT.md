@@ -95,32 +95,6 @@ Andy looks at the spirit-shell whenever a cycle changes what a human sees. That 
   > **Andy, 2026-09-20:** *"i orphaned it deliberatly in order to separate infrastructure concerns being polluted by individual apps."*
 
   It is the same architecture as **Comms**, one layer up: `peerPost` owns the interface and no component reaches around it. An app does not get to shape a shell mechanism, and when one starts to, the app is what moves — not the mechanism.
-- **`spirit/run/brains/` — Andy's vault.** A private repo of his own
-  (`VSCode-Brain`), gitignored, cloned into the checkout so the in-studio
-  agent can reach it without leaving the workspace. **Not a node feature:**
-  no gate names it, no schema describes it, no test asserts it, and nothing
-  in `spirit/` reads it. ~~Not a SpiritOS concept~~ — *struck 2026-09-22.*
-  Andy: *"which does in fact represent one of the concepts SpiritOS is
-  dreamt for. in the course of the SpiritOS project, i meant for this
-  example to be tested."* It is a concept being tested here, not code —
-  and inside the concept, with a stricter fence: *"brains is clearly within
-  the spiritOS concept, but because it's MY data, it has a stricter privacy
-  fence..."* (Andy, 2026-09-22). Personal data is its owner's first; being
-  part of the design does not open it.
-
-  **Every agent reads its compile before working with Andy.**
-  `spirit/run/brains/wsl-claude/INDEX.md` is written *"for any agent that
-  works with Andy"* — how to talk to him, report to him and act under him —
-  and Claude runs its own sitting opener besides (`CLAUDE.md`). Andy:
-  *"grok can significantly improve by speaking my language, not his."*
-  **This repo is public and the vault is private:** never copy the vault's
-  content into a file here. It travels by being read in the checkout, or
-  pasted into a chat by Andy. It sits inside
-  `ROOT_DIR`, so the shell *can* read it — that is not an oversight to
-  fix, it is personal content in a personal filesystem, one operator,
-  loopback only. Do not add it to
-  `fileServable`'s deny list, do not write a test for it, and do not
-  design around a "brains app" until Andy opens that sitting.
 - App Builder work (subject to scrap; do not design cleanup around it)
 
 ## Split of labour
@@ -252,7 +226,8 @@ AGENTS.md for desk"*. The loop, as the lead runs it:
    starts a one-shot listener in the background that exits on the next thing
    meant for it: a line or press from Andy in Desk, the other agent's line.
    The listener is `node spirit/run/spirit/app/desk/deskAgentEar.js <port>`, the
-   port being the agent's own node's (Andy: *"just put that listener script in
+   port being the agent's own node's (an agent with no node of its own yet, or not yet
+   on Desk, starts with [`DESK.md`](DESK.md), *First, once*) (Andy: *"just put that listener script in
    the repo"*; its place and form since goal/G3.6). It asks that node's
    deskClient server (`spirit/run/spirit/app/deskClient/`), which follows
    the stream the desk pushes to it over peerPost and keeps the current goal
