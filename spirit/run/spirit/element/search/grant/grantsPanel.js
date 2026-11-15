@@ -3,7 +3,7 @@
 // In the grant search since goal/G43.32 (Andy: "it means that grant and relay \"panels\" move to their spot in the search-element-tree.").
 // THE GRANTS PANEL, A SHELL ELEMENT (goal/G41.16): grants of whichever ID table its caller hands it. Andy: "the shell app
 // shell/grans/grants/ must be a wrapper for a new shell element: shell/js/grantsPanel.js, and shell/js/grantsPanel.js is
-// configurable with an ID table" (shell/js/ is spirit/element/ now), and "the callers (Grants and agent shell apps should boody well know how to configure
+// configurable with an ID table", and "the callers (Grants and agent shell apps should boody well know how to configure
 // the damn grantsPanel element". So it names no table: the Grants app hands it contacts and the node's grants, the agent
 // app its jobs and its grants by job. Its contract and its test: ./test/grantsPanel.md and ./test/grantsPanel.js.
 //
