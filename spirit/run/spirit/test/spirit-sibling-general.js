@@ -1678,7 +1678,7 @@ function codeLinesMatching(rel, re, bare) {
   try { src = fs.readFileSync(path.join(RUN, rel), 'utf8'); } catch (e) { return []; }
   const hits = [];
   const lines = bare ? src.split('\n').map(function (l) {
-    return l.replace(/'(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"|`(?:[^`\\\n]|\\.)*`/g, "''").replace(/\/\/.*$/, '').replace(/\/(?:[^\/\\\n]|\\.)+\/[gimsuy]*/g, 'RE').replace(/^\s*\*.*$/, '');
+    return l.replace(/'(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"|`(?:[^`\\\n]|\\.)*`/g, "''").replace(/\/\/.*$/, '').replace(/(^|[=(,:\[!&|?{};]\s*|\breturn\s+)\/(?:[^\/\\\n]|\\.)+\/[gimsuy]*/g, '$1RE').replace(/^\s*\*.*$/, '');
   }) : codeOf(src, false).split('\n');
   lines.forEach(function (line, i) { if (re.test(line)) hits.push(rel + ':' + (i + 1)); });
   return hits;
@@ -1688,8 +1688,9 @@ function codeLinesMatching(rel, re, bare) {
 // click"). Read from the code, so a require that only runs on a click is judged too: spirit.require('<path>'), and a list of
 // written paths a require is mapped over (['a.js', 'b.js'].map(... spirit.require ...)). Comments left out.
 function missingRequires(rel) {
-  // Product files: a test asks for a missing path on purpose, to see the refusal.
-  if (!/\.(js|html)$/.test(rel) || /(^|\/)test\//.test(rel)) return [];
+  // Tests too (cw's review: a test that still requires a deleted file is the stale test again). A test asks for a missing
+  // file on purpose by its name: one it plants, zz<Name>, or one that is not there, noSuch<Name>.
+  if (!/\.(js|html)$/.test(rel)) return [];
   let src = '';
   try { src = fs.readFileSync(path.join(RUN, rel), 'utf8'); } catch (e) { return []; }
   const code = codeOf(src, false);
@@ -1706,7 +1707,8 @@ function missingRequires(rel) {
   }
   // A path written run://<path> is judged as <path> (the design: requires start with run://).
   asked.forEach(function (a) { a.p = a.p.replace(/^run:\/\//, ''); });
-  return asked.filter(function (a) { return /^\/?[\w.-]+(\/[\w.-]+)*\.(js|css|json|html)$/.test(a.p) && !fs.existsSync(path.join(RUN, a.p.replace(/^\//, ''))); })
+  const onPurpose = function (p) { return /(^|\/)(zz|noSuch)[A-Za-z0-9]/.test(p); };
+  return asked.filter(function (a) { return /^\/?[\w.-]+(\/[\w.-]+)*\.(js|css|json|html)$/.test(a.p) && !onPurpose(a.p) && !fs.existsSync(path.join(RUN, a.p.replace(/^\//, ''))); })
     .map(function (a) { return rel + ':' + (code.slice(0, a.at).split('\n').length) + ' ' + a.p; });
 }
 // ONE LIST OF VENDORED FOLDERS (goal/G43.25; moved here from spirit/test/fileSystem.js, goal/G47.1, where it was a list of
