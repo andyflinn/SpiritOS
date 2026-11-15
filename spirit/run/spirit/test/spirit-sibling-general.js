@@ -1670,13 +1670,17 @@ const OLD_DATA_READER = /\bspirit\s*\.\s*[a-z]\w*Data\b/;
 const OLD_DATA_MANAGER = new RegExp('clientCache' + 'Manager');
 const OLD_DATA_MODULE = new RegExp('\\bspirit' + 'Data\\b');
 // Each line of a script's code, its comments left out (a comment may quote Andy), that matches re, as <file>:<line>.
-// With bare, the insides of its strings left out too: a test's title or message may name an old home to say it is gone.
+// With bare, each line read alone, its strings and its comment left out: a test's title, message or regular expression may
+// name an old home to say it is gone, and a line read alone is not misled by a quote mark inside a regular expression above it.
 function codeLinesMatching(rel, re, bare) {
   if (!/\.(js|html)$/.test(rel)) return [];
   let src = '';
   try { src = fs.readFileSync(path.join(RUN, rel), 'utf8'); } catch (e) { return []; }
   const hits = [];
-  codeOf(src, !!bare).split('\n').forEach(function (line, i) { if (re.test(line)) hits.push(rel + ':' + (i + 1)); });
+  const lines = bare ? src.split('\n').map(function (l) {
+    return l.replace(/'(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"|`(?:[^`\\\n]|\\.)*`/g, "''").replace(/\/(?:[^\/\\\n]|\\.)+\/[gimsuy]*/g, 'RE').replace(/\/\/.*$/, '').replace(/^\s*\*.*$/, '');
+  }) : codeOf(src, false).split('\n');
+  lines.forEach(function (line, i) { if (re.test(line)) hits.push(rel + ':' + (i + 1)); });
   return hits;
 }
 // EVERY WRITTEN REQUIRE NAMES A FILE THAT EXISTS (goal/G47.1; Andy: "every spirit.require of a written path names a file
@@ -1684,12 +1688,15 @@ function codeLinesMatching(rel, re, bare) {
 // click"). Read from the code, so a require that only runs on a click is judged too: spirit.require('<path>'), and a list of
 // written paths a require is mapped over (['a.js', 'b.js'].map(... spirit.require ...)). Comments left out.
 function missingRequires(rel) {
-  if (!/\.(js|html)$/.test(rel)) return [];
+  // Product files: a test asks for a missing path on purpose, to see the refusal.
+  if (!/\.(js|html)$/.test(rel) || /(^|\/)test\//.test(rel)) return [];
   let src = '';
   try { src = fs.readFileSync(path.join(RUN, rel), 'utf8'); } catch (e) { return []; }
   const code = codeOf(src, false);
   const asked = [];
-  const one = /\bspirit\s*\.\s*require\s*\(\s*(['"])([^'"\n]+)\1/g;
+  // spirit.require, and any short name a file gives its spirit (S.require, sp.require): every <name>.require of a path written
+  // as the tree's, spirit/... or run://spirit/...; node's own require of a relative path is not this rule's.
+  const one = /\b(?:[A-Za-z_$][\w$]*\s*\.\s*)?require\s*\(\s*(['"])((?:run:\/\/|\/)?spirit\/[^'"\n]+)\1/g;
   let m = null;
   while ((m = one.exec(code))) asked.push({ p: m[2], at: m.index });
   const list = /\[((?:\s*['"][^'"\n]+\.(?:js|css|json|html)['"]\s*,?)+)\s*\]/g;
@@ -1697,6 +1704,8 @@ function missingRequires(rel) {
     if (!/\brequire\b/.test(code.slice(m.index + m[0].length, m.index + m[0].length + 200))) continue;
     (m[1].match(/['"][^'"\n]+['"]/g) || []).forEach(function (q) { asked.push({ p: q.slice(1, -1), at: m.index }); });
   }
+  // A path written run://<path> is judged as <path> (the design: requires start with run://).
+  asked.forEach(function (a) { a.p = a.p.replace(/^run:\/\//, ''); });
   return asked.filter(function (a) { return /^\/?[\w.-]+(\/[\w.-]+)*\.(js|css|json|html)$/.test(a.p) && !fs.existsSync(path.join(RUN, a.p.replace(/^\//, ''))); })
     .map(function (a) { return rel + ':' + (code.slice(0, a.at).split('\n').length) + ' ' + a.p; });
 }

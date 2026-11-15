@@ -960,7 +960,7 @@ test.run('on a page, it loads its family\'s data.js', 0.2, function () {
 function listedFails(bad) { return !bad.length || bad.join('; '); }
 
 // The element move's checks (goal/G43.5) judge the tree, not spirit.js: they are the general tests' now, spirit-sibling-general.js
-// (no file names shell/js, none reaches an element through spirit.elements, none through spirit.element for one spirit/element/
+// (no file names the old shell folder of the elements, none reaches an element through spirit.elements, none through spirit.element for one spirit/element/
 // does not define) and spirit-sibling-browser.js (every element module loads on a page, its factory at spirit.element.<its path>).
 // Andy, goal/G47.1: "1, 2 and 3 Belong in spirit/test/spirit.js", "the rest belong in motherfucking spirit-sibling-general/browser/node respectively".
 const { execSync } = require('child_process');
