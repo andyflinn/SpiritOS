@@ -627,9 +627,8 @@ function rotatePart() {
   const fs = require('fs');
   const os = require('os');
   const path = require('path');
-  const { spawn, execSync } = require('child_process');
+  const { spawn } = require('child_process');
   const RUN = path.resolve(__dirname, '..', '..', '..');
-  const REPO = path.resolve(RUN, '..', '..');
   const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
   const { freePort, until, sleep, chromePage, findChrome } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 
@@ -648,12 +647,7 @@ function rotatePart() {
   ];
   const BUTTON = 'Rotate the key';
   const ARMED = 'Rotate the key: press again';
-  const ELEMENT = path.join(RUN, 'spirit', 'element', 'rotateKey.js');
 
-  function treeFiles() {
-    return execSync('git ls-files --cached --others --exclude-standard -- spirit/run', { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 26 })
-      .split('\n').filter(Boolean).filter(function (f) { return fs.existsSync(path.join(REPO, f)) && fs.statSync(path.join(REPO, f)).isFile(); });
-  }
   function scratch() {
     const root = LABH.scratchTree().root;
     return { root: root, run: path.join(root, 'spirit', 'run') };
@@ -674,7 +668,7 @@ function rotatePart() {
   }
   function stop(c) { return new Promise(function (r) { if (!c || c.exitCode !== null) return r(); c.once('exit', function () { r(); }); c.kill(); setTimeout(r, 6000); }); }
 
-  // THE PAGE'S HANDS: what shows in #zzBox (or #zzOwn, the element alone); a hidden layer never counts.
+  // THE PAGE'S HANDS: what shows in #zzBox; a hidden layer never counts.
   const HANDS = '(function () {' +
     'function box() { return document.getElementById(window.__in || "zzBox"); }' +
     'function seen(e) { return !!e && e.getClientRects().length > 0 && getComputedStyle(e).visibility !== "hidden"; }' +
@@ -692,36 +686,11 @@ function rotatePart() {
     '}; return "hands"; }())';
 
   // What the tests make, shared by the tests after them.
-  let core, opening, el, ni, s, N, c, card0, where, spy, made, alone, hasButton, armedAlone, shell, infoOpen, before,
+  let ni, s, N, c, card0, where, spy, shell, infoOpen, before,
     over, bars, layerButton, armed, closed, back, card1;
-  test.run('shell/rotateKey/ is gone', 0.2, function () {
-    // nodeInfo-rotate: the rotate key dialog, an element opened over Info through panel.js (goal/G43.24)
-    // the box, 8: "shell/rotateKey/ goes, its line in coreFiles.js's INTRINSIC list with it, and its test moves"
-    return (!fs.existsSync(path.join(RUN, 'shell', 'rotateKey'))) ? true : 'shell/rotateKey/ is still there';
-  }, test.limit.quick);
-  test.run('no coded INTRINSIC list lists shell/rotateKey: coreFiles.js holds none (goal/G43.30)', 0.2, function () {
-    core = null;
-    try { core = require(path.join(RUN, 'spirit', 'coreFiles.js')); } catch (e) { core = null; }
-    // Since goal/G43.30 there is no coded INTRINSIC list at all, so none can list shell/rotateKey.
-    return (!!core && !('INTRINSIC' in core)) ? true : 'coreFiles.js ' + (core ? 'still answers an INTRINSIC list' : 'did not load');
-  }, test.limit.quick);
-  test.run('its test is in the element\'s test folder: spirit/element/test/rotateKey.js and .md', 0.2, function () {
-    return (fs.existsSync(path.join(RUN, 'spirit', 'element', 'test', 'rotateKey.js')) && fs.existsSync(path.join(RUN, 'spirit', 'element', 'test', 'rotateKey.md'))) ? true : 'no spirit/element/test/rotateKey.js and .md';
-  }, test.limit.quick);
-  test.run('no code opens shell/rotateKey', 0.2, function () {
-    // What runs, its comments out and its tests out: nothing opens the old dialog any more.
-    opening = treeFiles().filter(function (f) { return /\.(js|html)$/.test(f) && f.split('/').indexOf('test') === -1; })
-      .filter(function (f) { return /shell\/rotateKey(?![\w-])/.test(code(path.join(REPO, f))); });
-    return (!opening.length) ? true : 'still opening it: ' + short(opening);
-  }, test.limit.quick);
-  test.run('spirit/element/rotateKey.js is there', 0.2, function () {
-    // the box, 8: "becomes an element, spirit/element/rotateKey.js, mounted the new shell's way (requirement 7)"
-    el = code(ELEMENT);
-    return (el.length > 0) ? true : 'no spirit/element/rotateKey.js';
-  }, test.limit.quick);
-  test.run('rotateKey.js mounts through no spirit.shell.activateApp', 0.2, function () {
-    return (el.length > 0 && !/\bactivateApp\b/.test(el) && !/\bspirit\.shell\b/.test(el)) ? true : el.length ? 'rotateKey.js calls spirit.shell.activateApp' : 'no rotateKey.js: nothing judged';
-  }, test.limit.quick);
+  // The old dialog's folder gone, its INTRINSIC line gone, its test moved, nothing opening it (the box, 8): the move is done
+  // and shell/ is gone, so those checks are dropped (goal/G47.1); that a require names a file that is there is
+  // spirit-sibling-general.js's. rotateKey.js itself, alone, is its own test's: spirit/element/test/rotateKey.js.
   test.run('nodeInfo opens no dialog of the old shell (no callDialog)', 0.2, function () {
     ni = code(path.join(RUN, 'spirit', 'element', 'nodeInfo.js'));
     return (ni.length > 0 && !/\bcallDialog\b/.test(ni)) ? true : ni.length ? 'nodeInfo.js calls callDialog' : 'no spirit/element/nodeInfo.js: nothing judged';
@@ -767,50 +736,13 @@ function rotatePart() {
   const T = function (expr) { return c.evaluate('window.__t.' + expr); };
   const waitFor = function (expr, ms) { return until(function () { return c.evaluate('(function () { with (window.__t) { return !!(' + expr + '); } }())'); }, ms || 8000); };
   const rotations = function () { return c.evaluate('window.__rotations'); };
-  test.run('spirit.element.spirit.element.rotateKey.create(container, opts) answers { destroy() }', 0.2, async function () {
-    if (!N || !N.up) return 'no scratch node: the world failed';
-    if (!where) return 'no Chrome here: the world failed';
-    if (!c || c.error) return 'no Chrome page: the world failed';
-    await c.evaluate(HANDS);
-    // the box, 8: the element alone, "its explanation and its two-press arming button as they are"
-    await c.evaluate('window.__in = "zzOwn"');
-    // goal/G43.32: rotateKey stands at its path, spirit.element.spirit.element.rotateKey; spirit.elements is no more.
-    made = await c.evaluate('(function () { var b = document.createElement("div"); b.id = "zzOwn"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999"; document.body.appendChild(b); var p; try { p = spirit.require("spirit/element/rotateKey.js"); } catch (e) { return "load threw: " + e; } return Promise.resolve(p).then(function () { var E = ((spirit.element || {}).spirit || {}).element; E = E && E.rotateKey; if (!E || typeof E.create !== "function") return "no spirit.element.spirit.element.rotateKey.create"; window.__rk = E.create(b, {}); return window.__rk && typeof window.__rk.destroy === "function" ? "made" : "create answered " + typeof window.__rk; }, function (e) { return "load: " + e; }); }())');
-    return (made === 'made') ? true : 'rotateKey: ' + short(made);
-  }, test.limit.quick);
-  test.run('it draws the explanation as it is', 0.2, async function () {
-    if (!N || !N.up) return 'no scratch node: the world failed';
-    if (!where) return 'no Chrome here: the world failed';
-    if (!c || c.error) return 'no Chrome page: the world failed';
-    alone = made === 'made' && await waitFor('says(' + JSON.stringify(EXPLAINED) + ').length === 0', 6000);
-    return (alone) ? true : made === 'made' ? 'missing: ' + short(await T('says(' + JSON.stringify(EXPLAINED) + ')')) : 'no element: nothing judged';
-  }, test.limit.quick);
-  test.run('it draws its button, Rotate the key', 0.2, async function () {
-    if (!N || !N.up) return 'no scratch node: the world failed';
-    if (!where) return 'no Chrome here: the world failed';
-    if (!c || c.error) return 'no Chrome page: the world failed';
-    hasButton = made === 'made' && await waitFor('buttons().indexOf(' + JSON.stringify(BUTTON) + ') !== -1', 6000);
-    return (hasButton) ? true : made === 'made' ? 'its buttons: ' + short(await T('buttons()')) : 'no element: nothing judged';
-  }, test.limit.quick);
-  test.run('one press arms it: it says Rotate the key: press again', 0.2, async function () {
-    if (!N || !N.up) return 'no scratch node: the world failed';
-    if (!where) return 'no Chrome here: the world failed';
-    if (!c || c.error) return 'no Chrome page: the world failed';
-    if (hasButton) await T('press(' + JSON.stringify(BUTTON) + ')');
-    armedAlone = hasButton && await waitFor('buttons().indexOf(' + JSON.stringify(ARMED) + ') !== -1 && count("button[data-armed]") === 1', 4000);
-    return (armedAlone) ? true : hasButton ? 'after one press: ' + short(await T('buttons()')) : 'no button: nothing judged';
-  }, test.limit.quick);
-  test.run('and one press rotates nothing', 0.2, async function () {
-    if (!N || !N.up) return 'no scratch node: the world failed';
-    if (!where) return 'no Chrome here: the world failed';
-    if (!c || c.error) return 'no Chrome page: the world failed';
-    return (hasButton && (await rotations()) === 0) ? true : hasButton ? 'one press asked node.rotateCipher ' + (await rotations()) + ' times' : 'no button: nothing judged';
-  }, test.limit.quick);
   test.run('the world: the shell draws its tiles', 0.2, async function () {
     if (!N || !N.up) return 'no scratch node: the world failed';
     if (!where) return 'no Chrome here: the world failed';
     if (!c || c.error) return 'no Chrome page: the world failed';
-    await c.evaluate('(function () { try { if (window.__rk) window.__rk.destroy(); } catch (e) { /* judged above */ } var b = document.getElementById("zzOwn"); if (b) b.remove(); window.__in = "zzBox"; return true; }())');
+    // The page's hands (HANDS above), on #zzBox: the dialog is judged over Info, in its layer.
+    await c.evaluate(HANDS);
+    await c.evaluate('window.__in = "zzBox"');
     // the box, 8: "nodeInfo's rotate button opens it as a layer over Info through panel.js ... its ✕ shows Info again"
     shell = await c.evaluate('(function () { var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.require("spirit/app/app/element.js").then(function () { window.__shell = spirit.element.spirit.app.app.element.create(b); return "made"; }, function (e) { return "load: " + e; }); }())');
     return (shell === 'made' && await waitFor('tiles().indexOf("file") !== -1', 10000)) ? true : 'the shell: ' + short(shell) + ', tiles ' + short(await T('tiles()'));

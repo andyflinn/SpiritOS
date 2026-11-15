@@ -98,15 +98,8 @@ Andy, on "Info's rotate button opens the old shell's dialog": *"not good."* *"do
 
 #### The move
 
-- `shell/rotateKey/` is gone; coreFiles.js's INTRINSIC list has no `shell/rotateKey`; no code (comments and tests out) opens `shell/rotateKey`.
-- Its test is in the element's test folder: `spirit/element/test/rotateKey.js` and `.md`.
-- `spirit/element/rotateKey.js` is there and mounts the new shell's way (requirement 7): no `spirit.shell.activateApp`; `spirit.elements.rotateKey.create(container, opts)` answers `{ destroy() }`.
 - nodeInfo opens no dialog of the old shell: no `callDialog` in `spirit/element/nodeInfo.js`.
-
-#### Its explanation and its two-press button, as they are
-
-- The element alone draws the explanation of shell/rotateKey/rotateKey.js at 4f01465b, word for word, and its button, Rotate the key.
-- One press arms it (`data-armed`, *Rotate the key: press again*), and asks no `node.rotateCipher`.
+- The move itself is done (the old folder gone with `shell/`, its test moved): its checks are dropped (goal/G47.1). The element alone, its explanation, its button and its arming, is `./rotateKey.js`'s own test; here it is judged over Info.
 
 #### Over Info, through panel.js
 
