@@ -36,8 +36,6 @@ TextEditor app are gone. It replaces `spirit/element/textView.js`, which is gone
   class `text-view-match`; the first match gets the cursor and is scrolled into view. A `line` wins over the first match.
 - **Drawn once the page shows it**: CodeMirror is refreshed after the turn in which it was made, since a box still
   hidden measures nothing.
-- **It replaces `textView.js`**: `spirit/element/textView.js` is gone, and nothing in the tree loads it or calls
-  `createTextView` (the old shell's element list, its page, and every app that drew with it draw with this element).
 
 ## What its test must try to break
 
@@ -45,7 +43,6 @@ TextEditor app are gone. It replaces `spirit/element/textView.js`, which is gone
 - The library found by reading `index.html`, or not loaded by the element at all.
 - A `.json` file coloured as plain javascript, an unknown extension given a mode.
 - A line asked for that loses to the first match; marks left behind by a second `mark`.
-- `textView.js` or `createTextView` left anywhere in the tree.
 
 ## The CodeMirror library in spirit/element/codeMirror/
 
@@ -53,7 +50,7 @@ goal/G43.5: `spirit/element/codeMirror.js`'s part of the element move. Its test 
 
 ### Requirements
 
-- *"ALL move the fucking library inside run::/spirit/element/codeMirror/"*. CodeMirror's 15 files, licence included, stand there and `shell/node_modules` is gone. On a real page the element draws from there with its sheet and search, and asks no other place.
+- *"ALL move the fucking library inside run::/spirit/element/codeMirror/"*. CodeMirror's 15 files, licence included, stand there (that no file names `shell/node_modules`, the old place, is `spirit/test/spirit-sibling-general.js`'s). On a real page the element draws from there with its sheet and search, and asks no other place.
 - *"all, only access to codeMirror library is through the element!"* The page starts with no `window.CodeMirror`, and no product file but `spirit/element/codeMirror.js` names the library's folder. The element brings the library, its sheets and its search add-ons itself.
 
 The rest of the element move is the elementMove part of `spirit/test/spirit.md`.

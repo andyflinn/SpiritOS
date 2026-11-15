@@ -240,31 +240,13 @@ test.run('shell.css lets CodeMirror in a fill box take the box and scroll inside
   return /\.text-view\.fill\s*>\s*\.CodeMirror\s*\{[^}]*flex:\s*1 1 0[^}]*min-height:\s*0/.test(css) || 'no .text-view.fill > .CodeMirror rule in shell.css';
 }, test.limit.quick);
 
-// It replaces textView.js, which goes.
-test.run('spirit/element/textView.js is gone', 0.2, function () {
-  return !fs.existsSync(path.join(RUN, 'spirit', 'element', 'textView.js')) || 'spirit/element/textView.js is still there';
-}, test.limit.quick);
-test.run('nothing in the tree loads textView.js or calls createTextView', 0.2, function () {
-  const users = [];
-  (function walk(dir) {
-    fs.readdirSync(dir, { withFileTypes: true }).forEach(function (e) {
-      const p = path.join(dir, e.name);
-      if (VENDORED_FOLDERS.holds(p) || e.name === 'state' || e.name === 'test' || e.name.charAt(0) === '.') return;
-      if (e.isDirectory()) return walk(p);
-      if (!/\.(js|html)$/.test(e.name)) return;
-      const text = fs.readFileSync(p, 'utf8');
-      if (/createTextView/.test(text) || /src="\/?spirit\/element\/textView\.js"/.test(text) || /require\(\s*['"]\/?spirit\/element\/textView\.js/.test(text) || /'spirit\/element\/textView\.js'\]/.test(text)) users.push(path.relative(RUN, p));
-    });
-  }(RUN));
-  return users.length === 0 || 'still using it: ' + users.join(', ');
-}, test.limit.slow);
 
 // THE CodeMirror LIBRARY IN spirit/element/codeMirror/, codeMirror.js's OWN FOLDER (goal/G43.5; spec: ./codeMirror.md,
 // "The CodeMirror library"). Andy, live: "ALL move the fucking library inside run::/spirit/element/codeMirror/", and "only
-// access to codeMirror library is through the element!". Its 15 files stand there and shell/node_modules is gone; no
+// access to codeMirror library is through the element!". Its 15 files stand there; no
 // product file but the element names the folder; on a real page the page starts with no CodeMirror, and the element draws
-// from there with its sheet, its marks and its search keys, asking no other place. The rest of the element move is
-// spirit/test/spirit.js, its elementMove part.
+// from there with its sheet, its marks and its search keys, asking no other place. That no file names shell/node_modules,
+// the old place, is spirit/test/spirit-sibling-general.js's (goal/G47.1); textView.js, gone since, is no longer asked after.
 const REPO = path.resolve(RUN, '../..');
 const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 const L = { tracked: [], inRun: [], node: null, page: null, at: {}, cm: {}, fromHere: '' };
@@ -283,9 +265,6 @@ test.run('no product file but the element names the library\'s folder', 0.2, fun
   });
   return !asking.length || 'these name it: ' + longShort(asking);
 }, test.limit.slow);
-test.run('shell/node_modules is gone', 0.2, function () {
-  return (!L.inRun.some(function (f) { return f.indexOf('shell/node_modules/') === 0; }) && !fs.existsSync(path.join(RUN, 'shell/node_modules'))) || 'shell/node_modules still stands';
-}, test.limit.quick);
 test.run('the world: a scratch node, and a Chrome page on it', 0.2, async function () {
   const chrome = H.findChrome();
   if (!chrome) return 'no Chrome on this machine: SPIRIT_CHROME names none, and none is found by its name';

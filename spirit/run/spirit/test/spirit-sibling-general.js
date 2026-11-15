@@ -1657,7 +1657,8 @@ function productScripts() {
 // don't load in contacts"): nothing reaches through spirit.element for an element spirit/element/ does not define. Since
 // goal/G43.32 every element stands at spirit.element.<its path>, so that is a path to a script or folder of the tree.
 const OLD_ELEMENT_PATH = /\bshell\/js\b|\bshell\/node_modules\b|['"]shell['"]\s*,\s*['"]js['"]/;
-const OLD_ELEMENT_HOME = /\bspirit\s*\.\s*elements\b/;
+// spirit.elements, and ui.elements, the old shell's hand-out of it to an app (api.ui.elements.<name>).
+const OLD_ELEMENT_HOME = /\b(?:spirit|ui)\s*\.\s*elements\b/;
 // The files these rules read: what git tracks under spirit/, code, tests and documents, vendored code and this test's own
 // files left out (they name the old homes to find them).
 function elementRuleFiles() {
@@ -1686,7 +1687,7 @@ function linesMatching(rel, re) {
   unquoted(rel, src).split('\n').forEach(function (line, i) { if (re.test(line)) hits.push(rel + ':' + (i + 1)); });
   return hits;
 }
-// Where the code (comments left out) reaches through spirit.element for what the tree does not hold: spirit.element.<keys>
+// Where the code (comments and the insides of strings left out) reaches through spirit.element for what the tree does not hold: spirit.element.<keys>
 // stands for a script <keys>.js or a folder <keys>/ of the run tree, its members after it. No element is named here: the
 // tree answers. spirit.required.<path> is another tree, not judged by this rule.
 function strayElementReaches(rel) {
@@ -1694,7 +1695,7 @@ function strayElementReaches(rel) {
   let src = '';
   try { src = fs.readFileSync(path.join(RUN, rel), 'utf8'); } catch (e) { return []; }
   const stray = [];
-  codeOf(src, false).split('\n').forEach(function (line, i) {
+  codeOf(src, true).split('\n').forEach(function (line, i) {
     const re = /(?<![\w$]\s*\.\s*)(?<![\w$])(?:(?:window|self)\s*\.\s*)?spirit\s*\.\s*element((?:\s*\.\s*[A-Za-z_$][\w$]*)+)/g;
     let m = null;
     while ((m = re.exec(line))) {
@@ -1798,6 +1799,16 @@ function every() {
     const all = E.elementFiles || [];
     const hits = [].concat.apply([], all.map(function (f) { return linesMatching(f, OLD_ELEMENT_HOME); }));
     return (all.length > 100 && !hits.length) || hits.length + ' lines do, the first: ' + short(hits.slice(0, 12));
+  }, test.limit.quick);
+  // the search elements' pattern (goal/G43.18; moved here from spirit/element/test/search.js, goal/G47.1). Andy: "all
+  // "probabilitySearch" elements follow the EXACT SAME PATTERN.", and the box: "Every search element in spirit/element/
+  // becomes spirit/element/search/<name>.js, with its companion folder spirit/element/search/<name>/ holding its list and row
+  // elements, the same pattern for all".
+  test.run('under spirit/element/search/ every name is a word, and every folder sits beside its <name>.js', 0.4, function () {
+    const at = path.join(RUN, 'spirit', 'element', 'search');
+    const top = fs.existsSync(at) ? fs.readdirSync(at, { withFileTypes: true }).filter(function (d) { return d.name !== 'test'; }) : [];
+    const odd = top.filter(function (d) { return d.isDirectory() ? !/^[a-z]+$/.test(d.name) || !fs.existsSync(path.join(at, d.name + '.js')) : !/^[a-z]+\.(js|md)$/.test(d.name); }).map(function (d) { return d.name; });
+    return (top.length > 0 && !odd.length) || (top.length ? 'off the pattern: ' + short(odd) : 'no spirit/element/search/');
   }, test.limit.quick);
   test.run('no code reaches through spirit.element for an element the tree does not hold', 0.4, function () {
     const all = E.elementFiles || [];
