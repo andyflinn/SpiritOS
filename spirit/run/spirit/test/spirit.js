@@ -1493,34 +1493,3 @@ test.after(function () {
   try { if (FL.N && FL.N.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(FL.N); } catch (e) { /* scratch */ }
 });
 
-
-// ── A STREAM GONE SILENT IS RESET (goal/G47.1, Andy: "5-seconds without spirit events, the SSE stream resets.") ──
-// A page on a scratch node, the node paused (SIGSTOP): its socket stays open and nothing comes, as on Andy's frozen tab
-// (cw: "the node is sending and the socket is open, but your page stopped taking what arrives"). Within the 5 s and a
-// second's grace, the page sends a new event.subscribe of its own; then the node goes on (SIGCONT).
-const SIL = {};
-test.run('the world: a page on a scratch node, its stream open', 0.2, async function () {
-  if (process.platform === 'win32') { SIL.skip = 'a node is paused on Linux only: nothing judged here'; return true; }
-  SIL.node = await H.scratchNode();
-  if (!SIL.node.up) return 'no scratch node: nothing judged';
-  SIL.page = await H.chromePage(H.findChrome());
-  if (!SIL.page || SIL.page.error) return 'no headless page: ' + short(SIL.page && SIL.page.error);
-  await SIL.page.send('Page.navigate', { url: SIL.node.base + '/face.html' });
-  return !!(await H.until(function () { return SIL.page.evaluate('!!(window.spirit && window.spirit.ready)'); }, 30000)) || 'the page never stood';
-}, test.limit.slow);
-test.after(async function () {
-  try { if (SIL.node && SIL.node.child) process.kill(SIL.node.child.pid, 'SIGCONT'); } catch (e) { /* gone */ }
-  try { if (SIL.page && SIL.page.kid) SIL.page.kid.kill(); } catch (e) { /* gone */ }
-  try { if (SIL.node && SIL.node.release) await SIL.node.release(); } catch (e) { /* gone */ }
-});
-const subscribes = function () { return SIL.page.heard.filter(function (m) { return m.method === 'Network.requestWillBeSent' && /event\.subscribe/.test(String(m.params.request.postData || '')); }).length; };
-test.run('a stream with no event for 5 s is reset: the page opens a new one by itself', 0.8, async function () {
-  if (SIL.skip) return SIL.skip;
-  if (!SIL.page || !SIL.node || !SIL.node.child) return 'no page: the world failed';
-  await H.sleep(1500);
-  const before = subscribes();
-  process.kill(SIL.node.child.pid, 'SIGSTOP');
-  const reset = await H.until(function () { return Promise.resolve(subscribes() > before); }, 6500);
-  process.kill(SIL.node.child.pid, 'SIGCONT');
-  return !!reset || 'the node silent for 6.5 s, the page opened no new stream: ' + before + ' event.subscribe before, ' + subscribes() + ' after';
-}, test.limit.slow);

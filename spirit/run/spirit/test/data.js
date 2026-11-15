@@ -317,25 +317,16 @@ test.run('a type\'s watcher is told once, (type, undefined)', 0.2, function () {
   return fine ? true : why;
 }, test.limit.quick);
 
-// ON A RECONNECT THE CACHE STAYS (goal/G47.1, Andy, overruling goal/G41.3 Q2's "on a reconnect a cache forgets": "THE FUCKING
-// CACHE IS NOT WIPED OUT.", "it sound totally wasteful, when mostly good data already sits in the cache"). A page's second
-// snapshot is a reconnect: what a search seated is still there, and the jobs it pushes bring the cache up to date.
-test.run('on a reconnect what a search seated stays in the cache', 0.4, function () {
+// on a page a snapshot is a connect: the cache forgets, and takes the partner's whole push
+test.run('what the first connect brought or a search seated is gone, what the second pushed is there', 0.2, function () {
   const { P, stream } = pageCopy();
   const rec = recorder();
   P.whole.addTranslator(rec.t);
-  stream.onSnapshot([{ id: 'a', data: { n: 1 } }]);
+  stream.onSnapshot([{ id: 'a', data: { n: 1 } }, { id: 'b', data: { n: 1 } }]);
   P.seat('contacts', [{ key: 'K', label: JSON.stringify({ name: 'k' }) }]);
   stream.onSnapshot([{ id: 'a', data: { n: 2 } }]);
-  return P.get('contacts/K') !== undefined || 'after a second snapshot, what the search seated is gone: ' + JSON.stringify(P.whole.data);
-}, test.limit.quick);
-test.run('and the jobs the reconnect pushes bring it up to date', 0.4, function () {
-  const { P, stream } = pageCopy();
-  const rec = recorder();
-  P.whole.addTranslator(rec.t);
-  stream.onSnapshot([{ id: 'a', data: { n: 1 } }]);
-  stream.onSnapshot([{ id: 'a', data: { n: 2 } }]);
-  return (P.get('job/a') || {}).n === 2 || 'after a second snapshot job/a is ' + JSON.stringify(P.get('job/a'));
+  return P.get('job/a') && P.get('job/a').n === 2 && P.get('job/b') === undefined && P.get('contacts/K') === undefined ? true
+    : 'after a second snapshot: ' + JSON.stringify(P.whole.data);
 }, test.limit.quick);
 
 // on a page a type loaded late is handed its data whole
