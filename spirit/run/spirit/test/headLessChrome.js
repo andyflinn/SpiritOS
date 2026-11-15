@@ -125,7 +125,7 @@ const LAB = {
     return lab;
   },
 };
-const SYNC_SKIP = ['state', 'app-state', '.git', 'node_modules'];
+const SYNC_SKIP = ['state', 'app-state', '.git'];
 function syncTree(from, to) {
   const walk = function (dir, fn) {
     let names = [];

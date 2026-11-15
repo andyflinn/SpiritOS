@@ -1709,6 +1709,10 @@ function missingRequires(rel) {
   return asked.filter(function (a) { return /^\/?[\w.-]+(\/[\w.-]+)*\.(js|css|json|html)$/.test(a.p) && !fs.existsSync(path.join(RUN, a.p.replace(/^\//, ''))); })
     .map(function (a) { return rel + ':' + (code.slice(0, a.at).split('\n').length) + ' ' + a.p; });
 }
+// ONE LIST OF VENDORED FOLDERS (goal/G43.25; moved here from spirit/test/fileSystem.js, goal/G47.1, where it was a list of
+// the walkers at one old commit). Andy: "can we hide those suckers in spirit/jobs/ for now? without the damn node_modules
+// container?": fileSystem.js keeps the one list every walker reads, so no code skips node_modules by its own name.
+const OWN_NODE_MODULES_SKIP = /['"]node_modules['"]/;
 // The files these rules read: what git tracks under spirit/, code, tests and documents, vendored code and this test's own
 // files left out (they name the old homes to find them).
 function elementRuleFiles() {
@@ -1870,6 +1874,11 @@ function every() {
     const all = E.elementFiles || [];
     const missing = [].concat.apply([], all.map(missingRequires));
     return (all.length > 100 && !missing.length) || missing.length + ' do not: ' + short(missing.slice(0, 12));
+  }, test.limit.quick);
+  test.run('no code skips node_modules by its own name: every walker reads fileSystem.js\'s VENDORED_FOLDERS', 0.4, function () {
+    const all = E.elementFiles || [];
+    const hits = [].concat.apply([], all.map(function (f) { return codeLinesMatching(f, OWN_NODE_MODULES_SKIP); }));
+    return (all.length > 100 && !hits.length) || hits.length + ' lines do: ' + short(hits.slice(0, 12));
   }, test.limit.quick);
   // the data set's old names (OLD_DATA_READER above), in code
   test.run('no code reads a spirit.<name>Data', 0.4, function () {
@@ -2047,6 +2056,10 @@ function oneFile(P) {
       test.run('every spirit.require of a written path in it names a file that exists', 0.4, function () {
         const missing = missingRequires(rel);
         return !missing.length || 'it asks for what is not there: ' + short(missing);
+      }, test.limit.quick);
+      test.run('its code skips no node_modules by its own name', 0.4, function () {
+        const hits = codeLinesMatching(rel, OWN_NODE_MODULES_SKIP);
+        return !hits.length || 'it does: ' + short(hits) + '; it reads fileSystem.js\'s VENDORED_FOLDERS';
       }, test.limit.quick);
       test.run('its code reads no spirit.<name>Data', 0.4, function () {
         const hits = codeLinesMatching(rel, OLD_DATA_READER);

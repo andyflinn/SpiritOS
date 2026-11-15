@@ -169,13 +169,6 @@ test.run('every file a core file loads is core', 0.8, function () {
   const said = Object.keys(byDep).sort().map(function (d) { return d + ' is not core, yet ' + byDep[d].length + ' core file(s) load it: ' + byDep[d].slice(0, 3).join(', '); });
   return !said.length ? true : said.join('; ');
 }, test.limit.quick);
-// SHELL/SHARED IS GONE (goal/G43.30, with all of shell/; Andy: "can we delete run://shell/"): its rule, that it held no
-// core file (goal/G41.30), has nothing left to hold.
-test.run('run://shell/ holds no tracked file', 0.2, function () {
-  if (!D.tracked) return 'no tracked files listed: the world failed';
-  const shellLeft = D.tracked.filter(function (f) { return f.indexOf('spirit/run/shell/') === 0; });
-  return !shellLeft.length ? true : 'run://shell/ still holds ' + shellLeft.length + ': ' + shellLeft.slice(0, 5).join(', ');
-}, test.limit.quick);
 
 // THE INFOGRANTS PART, once coreFiles-infoGrants.js.
 // Once spirit/run/spirit/test/coreFiles-infoGrants.js.

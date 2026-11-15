@@ -1156,7 +1156,7 @@ function interfaces(run, files) {
 }
 function walk(dir, base, out) {
   (fs.existsSync(dir) ? fs.readdirSync(dir, { withFileTypes: true }) : []).forEach(function (e) {
-    if (e.name === 'node_modules' || e.name === 'state' || e.name === '.git' || e.name === 'test') return;
+    if (e.name === 'state' || e.name === '.git' || e.name === 'test') return;
     const p = path.join(dir, e.name);
     if (e.isDirectory()) walk(p, base, out); else out.push(path.relative(base, p).split(path.sep).join('/'));
   });

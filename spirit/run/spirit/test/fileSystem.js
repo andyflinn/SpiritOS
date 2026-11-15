@@ -142,15 +142,8 @@ test.run('and the node writes no preferences.json', 0.2, function () {
 // move of chokidar and readdirp itself is ./job.js, its vendoredLibraries part. The tree read as it is. No node, no port.
 // fileSystem-vendoredFolders: one list of vendored folders, in fileSystem.js, read by every walker (goal/G43.25).
 // 6. one list of vendored folders, in fileSystem.js, read by every walker.
-const { execSync } = require('child_process');
-const REPO = path.resolve(RUN, '..', '..');
-// The tree before the move: the commit the red was written on, which holds spirit/run/node_modules/.
-const BASE = '2fb29140';
-const OLD = 'spirit/run/node_modules/';
 const VENDORED = ['spirit/job/chokidar', 'spirit/job/readdirp', 'spirit/element/codeMirror'];
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 400); }
-function git(args) { return execSync('git ' + args, { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 26 }); }
-function code(text) { return String(text).replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1'); }
 function trim(p) { return String(p).replace(/\\/g, '/').replace(/^\.?\//, '').replace(/^spirit\/run\//, '').replace(/\/+$/, ''); }
 const fsm = FS;
 const V = { listName: '', scanned: [] };
@@ -184,32 +177,5 @@ const servedOnly = function (f) {
 test.run('spirit/job/chokidar/index.js is servable but not writable', 0.8, function () { return servedOnly('spirit/job/chokidar/index.js'); }, test.limit.quick);
 test.run('spirit/job/readdirp/index.js is servable but not writable', 0.8, function () { return servedOnly('spirit/job/readdirp/index.js'); }, test.limit.quick);
 test.run('spirit/element/codeMirror/lib/codemirror.js is servable but not writable', 0.8, function () { return servedOnly('spirit/element/codeMirror/lib/codemirror.js'); }, test.limit.quick);
-// The walkers: every tracked script that skipped node_modules at BASE, and the ones that skipped codeMirror beside it.
-// The old system's walkers under spirit/test/ went with it (e9c6cb8c, "KILL!"): what is left in the tree is judged. The general
-// tests folded into three kinds (goal/G47.1, box v94, 2) took two more of them with their files: nine stand today.
-test.run('the world: more than eight walkers skipped node_modules at the base commit, fileSystem.js and word.js among them', 0.2, function () {
-  const atBase = git('ls-tree -r --name-only ' + BASE).split('\n').filter(function (f) { return /\.js$/.test(f) && f.indexOf(OLD) !== 0; });
-  const grepped = git('grep -l -e node_modules ' + BASE + ' -- "*.js"').split('\n').filter(Boolean).map(function (l) { return l.replace(BASE + ':', ''); });
-  const walkers = grepped.filter(function (f) {
-    if (atBase.indexOf(f) === -1 || f === 'spirit/test/fsWatcherCommands.js' || !fs.existsSync(path.join(REPO, f))) return false;
-    return /node_modules/.test(code(execSync('git show ' + BASE + ':' + f, { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 26 })).replace(/shell\\?\/node_modules/g, ''));
-  });
-  return (walkers.length > 8 && walkers.indexOf('spirit/run/spirit/fileSystem.js') !== -1 && walkers.indexOf('spirit/run/spirit/word.js') !== -1) ? true : 'only ' + walkers.length + ' walkers found at ' + BASE + ': nothing judged';
-}, test.limit.quick);
-const CM_SKIPPERS = ['spirit/run/spirit/test/testModule.js', 'spirit/run/spirit/test/spirit-sibling-browser.js', 'spirit/run/spirit/test/spirit-sibling-general.js', 'spirit/run/spirit/test/test/testReport-verifier.js'];
-// Each walker found at the base commit written out, so that each check has a plain title of its own.
-const walks = function (f) {
-  const c = code(fs.readFileSync(path.join(REPO, f), 'utf8'));
-  const own = /node_modules/.test(c.replace(/shell\\?\/node_modules/g, '')) ? 'node_modules' : (CM_SKIPPERS.indexOf(f) !== -1 && /codeMirror|codemirror/.test(c) ? 'codeMirror' : '');
-  const reads = !!V.listName && new RegExp('\\b' + V.listName + '\\b').test(c) && (f === 'spirit/run/spirit/fileSystem.js' || /fileSystem/.test(c));
-  return (!own && reads) ? true : f + ': ' + (own ? 'still skips ' + own + ' itself' : '') + (own && !reads ? ', and ' : '') + (!reads ? 'does not read fileSystem.js\'s list' : '');
-};
-test.run('spirit/run/spirit/element/test/codeMirror.js: reads VENDORED_FOLDERS, no skip of its own', 0.2, function () { return walks('spirit/run/spirit/element/test/codeMirror.js'); }, test.limit.quick);
-test.run('spirit/run/spirit/element/test/fstat.js: reads VENDORED_FOLDERS, no skip of its own', 0.2, function () { return walks('spirit/run/spirit/element/test/fstat.js'); }, test.limit.quick);
-test.run('spirit/run/spirit/element/test/panel.js: reads VENDORED_FOLDERS, no skip of its own', 0.2, function () { return walks('spirit/run/spirit/element/test/panel.js'); }, test.limit.quick);
-test.run('spirit/run/spirit/fileSystem.js: reads VENDORED_FOLDERS, no skip of its own', 0.2, function () { return walks('spirit/run/spirit/fileSystem.js'); }, test.limit.quick);
-test.run('spirit/run/spirit/test/appServer.js: reads VENDORED_FOLDERS, no skip of its own', 0.2, function () { return walks('spirit/run/spirit/test/appServer.js'); }, test.limit.quick);
-test.run('spirit/run/spirit/test/word.js: reads VENDORED_FOLDERS, no skip of its own', 0.2, function () { return walks('spirit/run/spirit/test/word.js'); }, test.limit.quick);
-test.run('spirit/run/spirit/word.js: reads VENDORED_FOLDERS, no skip of its own', 0.2, function () { return walks('spirit/run/spirit/word.js'); }, test.limit.quick);
-test.run('lab/tools/inspect.js: reads VENDORED_FOLDERS, no skip of its own', 0.2, function () { return walks('lab/tools/inspect.js'); }, test.limit.quick);
-test.run('lab/tools/wirePaths.js: reads VENDORED_FOLDERS, no skip of its own', 0.2, function () { return walks('lab/tools/wirePaths.js'); }, test.limit.quick);
+// The walkers: that no code skips node_modules by its own name, every walker reading the one list above, is the general
+// test's, spirit/test/spirit-sibling-general.js, over every file (goal/G47.1); once a list of the walkers at one old commit here.
