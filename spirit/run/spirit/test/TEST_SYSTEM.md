@@ -18,12 +18,10 @@ IN THE WHOLE MOTHERFUCKING TREE"*.
 
 - **A test has exactly one string: its title.** Its title says what it asserts, and a red title is the whole report of
   what failed. No other string belongs to a test.
-- **A test answers success or failure, and nothing else.** Its body returns `true` (success) or `false` (failure). It
-  returns no text: no reason, no value it saw, no "what went wrong". A test that wants to say more says it in its title.
-- **The runner registers the result with the title alone.** `testReport.js` hands testicle the script, the suite, the
-  title and success or failure; script, suite and title are the testicle row's key. It prints the title and its mark,
-  ✅ or ❌, and nothing beside it: no message, no number. Any text a body still returns is thrown away, unread.
-- **A crash or a hang is a failure under its title**, like any other: the error is not kept.
+- **A test answers success or failure, and THE FUCKING TITLE.** Its body returns `true` (success) or `false` (failure) AND THE MOTHERFUCKING TITLE, since NO other string is allows to exist for a test, AND THE TITLE IS NEEDED AS KEY FOR THE FUCKING testicle row in testicle.db
+- **The runner registers the result with the title alone.**, which it can only get from the MOTHERFUCKING TEST RESPONSE. THE REPORT TO THE TESTICLE SERVER IS: script, suite, title, success or failure and severity,
+  ✅ or ❌, and THE MOTHERFUCKING TITLE.
+- **A crash or a hang is a failure under its MOTHERFUCKING title**
 - **No failure string in any test, anywhere in the tree.** A test written with one is wrong, and is fixed by taking
   the string out, never by keeping it.
 
