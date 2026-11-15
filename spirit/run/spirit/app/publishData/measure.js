@@ -16,7 +16,11 @@
 // The lab is repo://lab/labNodes.js's (goal/G47.3); no production module loads a test file.
 //
 //   measure(say) -> { nodeAtRestMB, relayAtRestRss, loop: {median, max}, relayed: {median, max, crypto} }
+//   rssOf(pid)   -> that process's resident memory in bytes, 0 when there is no such process
+// Its contract and its test: ./test/measure.md and ./test/measure.js.
 
+// The spirit object first, as the global spirit (goal/G40.1).
+require('../../spirit.js');
 const fs = require('fs');
 const net = require('net');
 const path = require('path');
@@ -75,8 +79,7 @@ async function labNode(lab) {
 // A LAB RELAY, its owner the node named, relayServer.js started on a free port until it answers.
 async function labRelay(lab, ownerKey) {
   const got = await lab.handOut('relay');
-  const auth = require(path.join(got.run, 'spirit', 'relayAuth.js'));
-  auth.nameIdentity(got.run, 'relay');
+  const auth = spirit.require('spirit/relayAuth.js');
   auth.writeOwner(got.run, ownerKey);
   const port = await freePort();
   const child = spawn(process.execPath, ['spirit/relayServer.js'], { cwd: got.run, stdio: 'ignore', windowsHide: true, env: Object.assign({}, process.env, { PORT: String(port) }) });
@@ -99,9 +102,9 @@ async function peerAsk(node, to, app, body, packet) {
 
 // SEALING AND SIGNING, TIMED APART: what a card request's two hops seal and sign (the ask and the answer), each the same
 // seal and the same signature as the wire's, on packets of the same size, CRYPTO_ROUNDS times; ms per request.
-function cryptoShare(run, askText, answerText) {
-  const seal = require(path.join(run, 'spirit', 'seal.js'));
-  const auth = require(path.join(run, 'spirit', 'relayAuth.js'));
+function cryptoShare(askText, answerText) {
+  const seal = spirit.require('spirit/seal.js');
+  const auth = spirit.require('spirit/relayAuth.js');
   const a = auth.generateIdentity('a');
   const b = auth.generateIdentity('b');
   const t0 = process.hrtime.bigint();
@@ -116,11 +119,12 @@ function cryptoShare(run, askText, answerText) {
 
 async function measure(say) {
   const tell = typeof say === 'function' ? say : function () {};
+  // The lab lies outside the run tree (repo://lab/), where spirit.require does not reach.
   const lab = require(path.join(REPO, 'lab', 'labNodes.js'));
   const held = [];
   try {
     const a = await labNode(lab); held.push(a);
-    const packet = require(path.join(a.lab.run, 'spirit', 'client', 'packet.js'));
+    const packet = spirit.require('spirit/client/packet.js');
     // 1. A NODE AT REST: its memory 30 s after it started.
     tell('a lab node at rest, ' + AT_REST_MS / 1000 + ' s');
     await sleep(AT_REST_MS);
@@ -160,7 +164,7 @@ async function measure(say) {
       relayedMs.push(Number(process.hrtime.bigint() - t) / 1e6);
       if (!askText) { askText = packet.encode('', { card: true }).text; answerText = JSON.stringify({ v: 1, body: got.body || {} }); }
     }
-    const crypto = cryptoShare(a.lab.run, askText, answerText);
+    const crypto = cryptoShare(askText, answerText);
     return {
       nodeAtRestMB: nodeAtRestMB, relayAtRestRss: relayAtRestRss,
       loop: { median: median(loopMs), max: max(loopMs) },
