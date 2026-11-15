@@ -175,7 +175,7 @@ test.run('they place spirit.element.spirit.app.agent.element.table.model.element
     if (table === 'then') return undefined;
     return function (args) { made.calls.push({ table: table, args: args }); const a = made.answer ? made.answer(table, args) : {}; return a instanceof Error ? Promise.reject(a) : Promise.resolve(a); };
   } });
-  global.window = { spirit: { familyPath: familyPath, get element() { return this.elements; }, elements: nestSearch({
+  const STAND = nestSearch({
     // The providerSelector:dropdown and the busyButton, each tested in its own folder: stand-ins that keep what they were
     // handed, as the Update model list pane's test had them.
     'search': { create: function (host, o) { const s2 = { host: host, o: o, value: '', row: null, refresh: function () {}, destroy: function () { s2.destroyed = true; } }; made.searches.push(s2); return s2; } },
@@ -194,10 +194,9 @@ test.run('they place spirit.element.spirit.app.agent.element.table.model.element
     agentDetail: { search: function (host, o2, more) { const E2 = global.window.spirit.element.spirit.element; const AD2 = ((global.window.spirit.data || {}).agent || {}).data; const s3 = E2.search.create(host, Object.assign({ server: 'agent', verb: o2.table, data: AD2 ? AD2.branch(o2.table) : '' }, more || {})); s3.refresh(); return s3; } },
     agentTable: { create: function (c, o) { made.tables.push({ c: c, o: o }); return { refresh: function () { made.refreshed = true; }, destroy: function () { made.destroyed = true; } }; } },
     agentRow: { create: function (c, o) { made.rows.push({ c: c, o: o }); return { destroy: function () {} }; } },
-  }) } };
+  });
   // goal/G43.32: the stand-ins stand where the page files read them, at spirit.element.<their path>; the shared table
   // element's pieces (once agentDetail) with its create.
-  const STAND = global.window.spirit.elements;
   global.window = { spirit: { familyPath: familyPath, element: { spirit: {
     element: { search: STAND.search, rowForm: STAND.rowForm, busyButton: STAND.busyButton },
     app: { agent: { element: { table: { tableElement: Object.assign({}, STAND.agentDetail, STAND.agentTable), rowElement: STAND.agentRow } } } } } } } };

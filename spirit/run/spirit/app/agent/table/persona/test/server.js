@@ -151,13 +151,13 @@ const detail = { open: function () {}, look: function (t2) { return { icon: 'ðŸŽ
 const box = { innerHTML: '' };
 test.run('they place spirit.element.spirit.app.agent.element.table.persona.elementTable and elementRow', 0.2, function () {
   const made = X.made = { tables: [], rows: [], required: [] };
-  global.window = { spirit: { elements: {
+  const STAND = {
     agentTable: { create: function (c, o) { made.tables.push({ c: c, o: o }); return { refresh: function () { made.refreshed = true; }, destroy: function () { made.destroyed = true; } }; } },
     agentRow: { create: function (c, o) { made.rows.push({ c: c, o: o }); return { destroy: function () {} }; } },
-  } } };
+  };
+  global.window = { spirit: {} };
   global.spirit = global.window.spirit;
   // goal/G43.32: the shared stand-ins stand where the page files read them, at spirit.element.<their path>.
-  const STAND = global.window.spirit.elements; delete global.window.spirit.elements;
   global.window.spirit.element = { spirit: { app: { agent: { element: { table: { tableElement: STAND.agentTable, rowElement: STAND.agentRow } } } } } };
   global.window.spirit.require = function (p) { made.required.push(String(p)); return Promise.resolve(true); };
   // goal/G43.32: the page's spirit.require answers the helper, so each file places itself by installSpiritElement as it

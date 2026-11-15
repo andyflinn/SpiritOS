@@ -262,3 +262,8 @@ What it must try to break: a list rebuilt from its HTML on any change; a row ele
 drew; a hidden row taken out of the page; a new record that redraws its neighbours.
 
 - On a reconnect a search runs once more by itself (box v148): a search on a scratch node's page, the node restarted, asks again with nothing typed, and its new row is drawn beside the one it held.
+
+## One verb filter
+
+goal/G43.18, the box: *"apiVerbSelector.js is the verb dropdown filter: search/api/verb.js, which branch names too"*. `search/api.js` and branch (`search/branch.js` or `search/branch/listElement.js`) load the one `search/api/verb.js` in their code, never a copy of their own.
+

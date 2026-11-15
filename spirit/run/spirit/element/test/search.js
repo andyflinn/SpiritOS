@@ -1047,6 +1047,16 @@ test.run('once loaded, with nothing preloaded, it draws and ranks: typing ze put
   return (!threw && made10 && c10.shown()[0] === 'z') ? true : 'threw ' + JSON.stringify(threw) + ', shown ' + (made10 ? c10.shown() : '');
 }, test.limit.quick);
 
+// ONE VERB FILTER (goal/G43.18; Andy: "WSL, FIX IT, AND DON'T YOU FUCKING DROP TESTS THAT ARE USEFUL!!!!!!!!!!!!!!!"):
+// the box, "apiVerbSelector.js is the verb dropdown filter: search/api/verb.js, which branch names too": api and branch load
+// the one shared verb dropdown, never a copy of their own. Code only, comments left out.
+test.run('api and branch both load the one verb filter, search/api/verb.js', 0.2, function () {
+  const codeOnly = function (rel) { try { return fs.readFileSync(path.join(RUN, rel), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1'); } catch (e) { return ''; } };
+  const users = ['spirit/element/search/api.js', 'spirit/element/search/branch.js', 'spirit/element/search/branch/listElement.js']
+    .filter(function (p) { return /spirit\/element\/search\/api\/verb\.js/.test(codeOnly(p)); });
+  return (users.indexOf('spirit/element/search/api.js') !== -1 && users.some(function (p) { return /branch/.test(p); })) || 'loading it: ' + short(users);
+}, test.limit.quick);
+
 // The parts that were once files of their own (search-bubble.js, search-popup.js, search-tiles.js): one
 // test file per script (spirit/run/spirit/test/TEST_SYSTEM.md), each part a section of it, its tests run after these, in
 // this order. Each registers its tests as it is called, before its first await.

@@ -1663,6 +1663,43 @@ const OLD_ELEMENT_HOME = /\b(?:spirit|ui)\s*\.\s*elements\b/;
 // libraries with the commit before their move, and fileSystem's and deskClient's.
 const OLD_NODE_MODULES = /spirit\/run\/node_modules/;
 const NODE_MODULES_ON_PURPOSE = /^spirit\/run\/spirit\/test\/(job|fileSystem)\.(js|md)$|^spirit\/run\/spirit\/app\/deskClient\/test\/deskClient\.(js|md)$/;
+// The old names of the data set (goal/G43.7; moved here from spirit/test/data.js, goal/G47.1). The box: "we rename it
+// spirit/data.js and it IS the the spirit.data object", "instead of spirit.<name>Data", "ALL "clientCacheManager.js" files
+// will be converted to "data.js" files". The retired names are built from their parts, so this file holds none of them whole.
+const OLD_DATA_READER = /\bspirit\s*\.\s*[a-z]\w*Data\b/;
+const OLD_DATA_MANAGER = new RegExp('clientCache' + 'Manager');
+const OLD_DATA_MODULE = new RegExp('\\bspirit' + 'Data\\b');
+// Each line of a script's code, its comments left out (a comment may quote Andy), that matches re, as <file>:<line>.
+// With bare, the insides of its strings left out too: a test's title or message may name an old home to say it is gone.
+function codeLinesMatching(rel, re, bare) {
+  if (!/\.(js|html)$/.test(rel)) return [];
+  let src = '';
+  try { src = fs.readFileSync(path.join(RUN, rel), 'utf8'); } catch (e) { return []; }
+  const hits = [];
+  codeOf(src, !!bare).split('\n').forEach(function (line, i) { if (re.test(line)) hits.push(rel + ':' + (i + 1)); });
+  return hits;
+}
+// EVERY WRITTEN REQUIRE NAMES A FILE THAT EXISTS (goal/G47.1; Andy: "every spirit.require of a written path names a file
+// that exists", in place of search.js's list of old paths, "a require that runs later, on a click, now goes unseen until you
+// click"). Read from the code, so a require that only runs on a click is judged too: spirit.require('<path>'), and a list of
+// written paths a require is mapped over (['a.js', 'b.js'].map(... spirit.require ...)). Comments left out.
+function missingRequires(rel) {
+  if (!/\.(js|html)$/.test(rel)) return [];
+  let src = '';
+  try { src = fs.readFileSync(path.join(RUN, rel), 'utf8'); } catch (e) { return []; }
+  const code = codeOf(src, false);
+  const asked = [];
+  const one = /\bspirit\s*\.\s*require\s*\(\s*(['"])([^'"\n]+)\1/g;
+  let m = null;
+  while ((m = one.exec(code))) asked.push({ p: m[2], at: m.index });
+  const list = /\[((?:\s*['"][^'"\n]+\.(?:js|css|json|html)['"]\s*,?)+)\s*\]/g;
+  while ((m = list.exec(code))) {
+    if (!/\brequire\b/.test(code.slice(m.index + m[0].length, m.index + m[0].length + 200))) continue;
+    (m[1].match(/['"][^'"\n]+['"]/g) || []).forEach(function (q) { asked.push({ p: q.slice(1, -1), at: m.index }); });
+  }
+  return asked.filter(function (a) { return /^\/?[\w.-]+(\/[\w.-]+)*\.(js|css|json|html)$/.test(a.p) && !fs.existsSync(path.join(RUN, a.p.replace(/^\//, ''))); })
+    .map(function (a) { return rel + ':' + (code.slice(0, a.at).split('\n').length) + ' ' + a.p; });
+}
 // The files these rules read: what git tracks under spirit/, code, tests and documents, vendored code and this test's own
 // files left out (they name the old homes to find them).
 function elementRuleFiles() {
@@ -1678,7 +1715,13 @@ function unquoted(rel, src) {
   const code = codeOf(src, false);
   let comments = '';
   for (let i = 0; i < src.length; i++) comments += (code[i] === src[i] || src[i] === '\n') ? (src[i] === '\n' ? '\n' : ' ') : src[i];
-  const said = comments.replace(/"[^"]*"/g, blank);
+  // Quotes paired within each block of comment lines, so one stray mark elsewhere shifts no pairing.
+  const blocks = [];
+  comments.split('\n').forEach(function (line, i, all) {
+    if (i > 0 && /\S/.test(line) && /\S/.test(all[i - 1])) blocks[blocks.length - 1] += '\n' + line;
+    else blocks.push(line);
+  });
+  const said = blocks.map(function (block) { return block.replace(/"[^"]*"/g, blank); }).join('\n');
   let out = '';
   for (let i = 0; i < src.length; i++) out += said[i] !== ' ' && said[i] !== '\n' ? said[i] : code[i];
   return out;
@@ -1799,9 +1842,9 @@ function every() {
     const hits = [].concat.apply([], all.map(function (f) { return linesMatching(f, OLD_ELEMENT_PATH); }));
     return (all.length > 100 && !hits.length) || hits.length + ' lines name it, the first: ' + short(hits.slice(0, 12));
   }, test.limit.quick);
-  test.run('no code, test or document reaches an element through spirit.elements', 0.4, function () {
+  test.run('no code reaches an element through spirit.elements', 0.4, function () {
     const all = E.elementFiles || [];
-    const hits = [].concat.apply([], all.map(function (f) { return linesMatching(f, OLD_ELEMENT_HOME); }));
+    const hits = [].concat.apply([], all.map(function (f) { return codeLinesMatching(f, OLD_ELEMENT_HOME, true); }));
     return (all.length > 100 && !hits.length) || hits.length + ' lines do, the first: ' + short(hits.slice(0, 12));
   }, test.limit.quick);
   // no run://node_modules (goal/G43.25; moved here from spirit/test/job.js, goal/G47.1). Andy: "can we hide those suckers in
@@ -1813,6 +1856,27 @@ function every() {
   }, test.limit.quick);
   test.run('.gitignore holds no exception for spirit/run/node_modules', 0.4, function () {
     return !/run\/node_modules/.test(fs.readFileSync(path.join(REPO, '.gitignore'), 'utf8')) || '.gitignore still names it';
+  }, test.limit.quick);
+  test.run('every spirit.require of a written path names a file that exists', 0.4, function () {
+    const all = E.elementFiles || [];
+    const missing = [].concat.apply([], all.map(missingRequires));
+    return (all.length > 100 && !missing.length) || missing.length + ' do not: ' + short(missing.slice(0, 12));
+  }, test.limit.quick);
+  // the data set's old names (OLD_DATA_READER above), in code
+  test.run('no code reads a spirit.<name>Data', 0.4, function () {
+    const all = E.elementFiles || [];
+    const hits = [].concat.apply([], all.map(function (f) { return codeLinesMatching(f, OLD_DATA_READER); }));
+    return (all.length > 100 && !hits.length) || hits.length + ' lines do, the first: ' + short(hits.slice(0, 12));
+  }, test.limit.quick);
+  test.run('no code names the old cache manager', 0.4, function () {
+    const all = E.elementFiles || [];
+    const hits = [].concat.apply([], all.map(function (f) { return codeLinesMatching(f, OLD_DATA_MANAGER); }));
+    return (all.length > 100 && !hits.length) || hits.length + ' lines do, the first: ' + short(hits.slice(0, 12));
+  }, test.limit.quick);
+  test.run('no code names the old data module', 0.4, function () {
+    const all = E.elementFiles || [];
+    const hits = [].concat.apply([], all.map(function (f) { return codeLinesMatching(f, OLD_DATA_MODULE); }));
+    return (all.length > 100 && !hits.length) || hits.length + ' lines do, the first: ' + short(hits.slice(0, 12));
   }, test.limit.quick);
   // no warning on a grant (goal/G43.27, requirement 7; moved here from spirit/element/search/grant/test/grantsPanel.js,
   // goal/G47.1). Andy: "compare that to giving a linux user root authority, he then can fuck up the whole system, not our
@@ -1962,14 +2026,28 @@ function oneFile(P) {
       const hits = linesMatching(rel, OLD_ELEMENT_PATH);
       return !hits.length || 'it names it: ' + short(hits.slice(0, 12));
     }, test.limit.quick);
-    test.run('it reaches no element through spirit.elements', 0.4, function () {
-      const hits = linesMatching(rel, OLD_ELEMENT_HOME);
+    test.run('its code reaches no element through spirit.elements', 0.4, function () {
+      const hits = codeLinesMatching(rel, OLD_ELEMENT_HOME, true);
       return !hits.length || 'it does: ' + short(hits.slice(0, 12));
     }, test.limit.quick);
     if (!NODE_MODULES_ON_PURPOSE.test('spirit/run/' + rel)) test.run('it names no spirit/run/node_modules', 0.4, function () {
       const hits = linesMatching(rel, OLD_NODE_MODULES);
       return !hits.length || 'it names it: ' + short(hits.slice(0, 12));
     }, test.limit.quick);
+    if (/\.(js|html)$/.test(rel)) {
+      test.run('every spirit.require of a written path in it names a file that exists', 0.4, function () {
+        const missing = missingRequires(rel);
+        return !missing.length || 'it asks for what is not there: ' + short(missing);
+      }, test.limit.quick);
+      test.run('its code reads no spirit.<name>Data', 0.4, function () {
+        const hits = codeLinesMatching(rel, OLD_DATA_READER);
+        return !hits.length || 'it does: ' + short(hits);
+      }, test.limit.quick);
+      test.run('its code names neither the old cache manager nor the old data module', 0.4, function () {
+        const hits = codeLinesMatching(rel, OLD_DATA_MANAGER).concat(codeLinesMatching(rel, OLD_DATA_MODULE));
+        return !hits.length || 'it does: ' + short(hits);
+      }, test.limit.quick);
+    }
     if (/\.(js|html)$/.test(rel)) test.run('it reaches through spirit.element only for elements the tree holds', 0.4, function () {
       const stray = strayElementReaches(rel);
       return !stray.length || 'it does: ' + short(stray.slice(0, 12));

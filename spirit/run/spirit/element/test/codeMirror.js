@@ -245,8 +245,8 @@ test.run('shell.css lets CodeMirror in a fill box take the box and scroll inside
 // "The CodeMirror library"). Andy, live: "ALL move the fucking library inside run::/spirit/element/codeMirror/", and "only
 // access to codeMirror library is through the element!". Its 15 files stand there; no
 // product file but the element names the folder; on a real page the page starts with no CodeMirror, and the element draws
-// from there with its sheet, its marks and its search keys, asking no other place. That no file names shell/node_modules,
-// the old place, is spirit/test/spirit-sibling-general.js's (goal/G47.1); textView.js, gone since, is no longer asked after.
+// from there with its sheet, its marks and its search keys, asking no other place. That no file names the library's old
+// place is spirit/test/spirit-sibling-general.js's (goal/G47.1); textView.js, gone since, is no longer asked after.
 const REPO = path.resolve(RUN, '../..');
 const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 const L = { tracked: [], inRun: [], node: null, page: null, at: {}, cm: {}, fromHere: '' };

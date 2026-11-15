@@ -324,3 +324,14 @@ Andy, the move's box: *"We are ONLY moving the contents of "run://shell/js/" to 
 
 That every element loads on a page and stands at `spirit.element.<its path>` is `./spirit-sibling-browser.js`'s, over every element script of the tree. The old move's fixed lists of files and names are dropped: they went stale when the files moved again.
 
+
+## Moved from the scripts' own tests (goal/G47.1)
+
+Rules that read every file, once in one script's test, so their red landed on that script. Each is said over the tree, and on a file handed.
+
+- **Every `spirit.require` of a written path names a file that exists.** Andy: *"every spirit.require of a written path names a file that exists"*, in place of search.js's list of old paths: read from the code, so a require that runs only on a click is judged too. `spirit.require('<path>')`, and a list of written paths a require is mapped over.
+- **No code reads a `spirit.<name>Data`, or names the old cache manager or the old data module** (goal/G43.7, from `./data.js`). Comments are not judged.
+- **No tracked file of the repository names `spirit/run/node_modules`, and `.gitignore` keeps no exception for it** (goal/G43.25, from `./job.js`). The suites that compare the libraries with the commit before their move name it on purpose.
+- **No `<verb>.warning.txt` is left** (goal/G43.27, from `spirit/element/search/grant/test/grantsPanel.js`). Andy: *"compare that to giving a linux user root authority, he then can fuck up the whole system, not our problem."*
+- **Under `spirit/element/search/` every name is a word, and every folder sits beside its `<name>.js`** (goal/G43.18, from `spirit/element/test/search.js`). Andy: *"all "probabilitySearch" elements follow the EXACT SAME PATTERN."*
+- `spirit.elements` is judged in code only, string insides left out: a test may name it to say it is gone.

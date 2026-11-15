@@ -616,25 +616,6 @@ const NODE_FAMILIES = ['app', 'auth', 'config', 'contact', 'event', 'fs', 'job',
 // fileServer went with run://process (goal/G43.20), so 18 are left.
 const SERVER_FAMILIES = ['agent', 'backup', 'chat', 'desk', 'deskClient'];
 const FAMILIES = NODE_FAMILIES.concat(SERVER_FAMILIES);
-// A server's branch is its app's folder, spirit/app/<name>/ (goal/G43.20), named as the folder (goal/G43.31: chat, once chatClerver).
-const folderOf = function (name) { return NODE_FAMILIES.indexOf(name) !== -1 ? path.join(RUN, 'spirit', name) : path.join(RUN, 'spirit', 'app', name); };
-// The old spirit.<name>Data: chatData was the chat server's, verifyData the old verifier's.
-const OLD_READER = /(?:\b|\.)(?:agent|app|auth|backup|chat|chatClerver|config|contact|desk|deskClient|events|fileServer|fs|jobs|net|node|owner|peer|relay|verify)Data\b/;
-// A retired name's parts, so this file does not hold it whole.
-const OLD_MANAGER = 'clientCache' + 'Manager';
-const OLD_MODULE = 'spirit' + 'Data';
-
-// Code only: a comment may quote Andy, and his words are never rewritten.
-function familyCode(text) { return String(text).split(/\r?\n/).map(function (l) { return l.replace(/(^|\s)\/\/.*$/, ''); }).join('\n'); }
-
-function walk(dir, out) {
-  fs.readdirSync(dir, { withFileTypes: true }).forEach(function (e) {
-    const at = path.join(dir, e.name);
-    if (VENDORED_FOLDERS.holds(at) || e.name === 'brains' || e.name === 'app-state' || e.name === 'state' || e.name === 'media' || e.name === 'published') return;
-    if (e.isDirectory()) walk(at, out); else out.push(at);
-  });
-  return out;
-}
 const F = {};
 
 // data-families: spirit.data: every family at spirit.data.<name>, through spirit/data.js (goal/G43.7)
@@ -642,61 +623,10 @@ const F = {};
 test.run('spirit/data.js stands', 0.2, function () {
   return fs.existsSync(path.join(RUN, 'spirit', 'data.js')) ? true : 'spirit/data.js is missing';
 }, test.limit.quick);
-test.run('the old module is gone', 0.2, function () {
-  return !fs.existsSync(path.join(RUN, 'spirit', OLD_MODULE + '.js')) ? true : 'spirit/' + OLD_MODULE + '.js still stands';
-}, test.limit.quick);
 
-// the box: "ALL ... files will be converted to "data.js" files"
-// Each family's own (its data.js there, the old file gone, none of it rolled by hand, data and cache in node and on a
-// page) is judged on each branch folder by ./spirit-sibling-general.js (branchRules) (goal/G43.32). Here, that they share one helper.
-// the box: "with the SAME pattern": one helper of spirit.data, called with the family's own name
-function patternRead() {
-  if (F.pattern) return;
-  F.pattern = {};
-  FAMILIES.forEach(function (name) {
-    const file = path.join(folderOf(name), 'data.js');
-    if (!fs.existsSync(file)) return;
-    const text = familyCode(fs.readFileSync(file, 'utf8'));
-    const called = new RegExp('\\.([A-Za-z]+)\\(\\s*[\'"]' + name + '[\'"]').exec(text);
-    if (called) F.pattern[name] = called[1];
-  });
-}
-test.run('all eighteen families call a helper with their own name', 0.2, function () {
-  patternRead();
-  return Object.keys(F.pattern).length === FAMILIES.length ? true : 'these do not: ' + FAMILIES.filter(function (n) { return !F.pattern[n]; }).join(', ');
-}, test.limit.quick);
-test.run('and it is the one helper', 0.2, function () {
-  patternRead();
-  const helpers = Object.keys(F.pattern).map(function (n) { return F.pattern[n]; }).filter(function (h, i, all) { return all.indexOf(h) === i; });
-  return helpers.length === 1 ? true : 'not one helper: ' + short(helpers);
-}, test.limit.quick);
-
-// the box: "instead of spirit.<name>Data": nothing in the tree's code says the old names
-function offendersRead() {
-  if (F.offenders) return;
-  const rel = function (f) { return path.relative(RUN, f); };
-  const offenders = { reader: [], manager: [], module: [] };
-  walk(RUN, []).filter(function (f) { return /\.(js|html)$/.test(f) && f !== __filename; }).forEach(function (f) {
-    const text = familyCode(fs.readFileSync(f, 'utf8'));
-    if (OLD_READER.test(text)) offenders.reader.push(rel(f));
-    if (text.indexOf(OLD_MANAGER) !== -1) offenders.manager.push(rel(f));
-    if (text.indexOf(OLD_MODULE) !== -1) offenders.module.push(rel(f));
-  });
-  F.offenders = offenders;
-}
-const say = function (l) { return l.length + ': ' + l.slice(0, 6).join(', ') + (l.length > 6 ? ', ...' : ''); };
-test.run('no code reads a spirit.<name>Data', 0.2, function () {
-  offendersRead();
-  return !F.offenders.reader.length ? true : 'code that reads a spirit.<name>Data, ' + say(F.offenders.reader);
-}, test.limit.quick);
-test.run('no code names the old cache manager', 0.2, function () {
-  offendersRead();
-  return !F.offenders.manager.length ? true : 'code that names ' + OLD_MANAGER + ', ' + say(F.offenders.manager);
-}, test.limit.quick);
-test.run('no code names the old data module', 0.2, function () {
-  offendersRead();
-  return !F.offenders.module.length ? true : 'code that names ' + OLD_MODULE + ', ' + say(F.offenders.module);
-}, test.limit.quick);
+// Each family's own data.js, made with the one helper under its folder's name, is judged on each branch folder by
+// ./spirit-sibling-general.js (branchRules); that no code says the old names (spirit.<name>Data, the old cache manager, the old
+// module) is its rule of every file too (goal/G47.1). The fixed list of eighteen is left to the page below.
 
 // ── ON A PAGE ───────────────────────────────────────────────────────────────────
 const ask = async function (js) { try { return JSON.parse(await F.page.evaluate(js)); } catch (e) { return { threw: String(e) }; } };
