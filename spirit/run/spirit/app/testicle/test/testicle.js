@@ -2435,10 +2435,13 @@ test.run('in debug mode, set to auto, it never runs testicle\'s own tests, only 
     const r = generalRow(tables(L.DB), BHANG);
     return (!!r && r.outcome === 'red') || 'bHang.js\'s suite row after the kill: ' + short(r);
   }, test.limit.quick);
-  test.run('a suite the run never reached is not failed by the kill: no red test row of cLater.js', 0.8, function () {
+  test.run('a suite the run never reached is not failed by the kill: cLater.js\'s suite row is not red, and none of its test rows', 0.8, function () {
     if (!L.killed) return 'no kill: the world failed';
-    const reds = testRows(tables(L.DB), CLATER).filter(function (r) { return no(r.verified); });
-    return !reds.length || 'cLater.js failed by the kill: ' + short(reds.map(function (r) { return r.test; }));
+    const t = tables(L.DB);
+    const r = generalRow(t, CLATER);
+    const reds = testRows(t, CLATER).filter(function (x) { return no(x.verified); });
+    // Its suite row is there (the run was handed it); red would be the kill's verdict on a suite that never ran.
+    return (!!r && r.outcome !== 'red' && !reds.length) || 'cLater.js after the kill: its suite row ' + short(r) + ', red test rows ' + short(reds.map(function (x) { return x.test; }));
   }, test.limit.quick);
   test.run('and the run is computed again: cLater.js runs in a new run and its suite row turns green', 0.8, async function () {
     if (!L.killed) return 'no kill: the world failed';

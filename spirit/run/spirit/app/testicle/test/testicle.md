@@ -269,4 +269,4 @@ Its world is its own: a scratch copy whose testicle.js has a run limit of 60 s i
 
 - `aOk.js`, reported before the kill: its suite row stays green on the same hash, and each of its test rows still passed.
 - `bHang.js`, the suite running at the kill: red.
-- `cLater.js`, never reached: no test row of it is failed by the kill, and a new run is computed for it, its suite row turning green.
+- `cLater.js`, never reached: its suite row is not red after the kill, no test row of it is failed, and a new run is computed for it, its suite row turning green.
