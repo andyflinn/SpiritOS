@@ -95,10 +95,6 @@ db.exec(
   'CREATE TABLE IF NOT EXISTS asks (id INTEGER PRIMARY KEY AUTOINCREMENT, at TEXT NOT NULL, verb TEXT NOT NULL,' +
   ' ms INTEGER NOT NULL, outcome TEXT NOT NULL, bytes INTEGER NOT NULL, port INTEGER NOT NULL, count INTEGER NOT NULL DEFAULT 1);'
 );
-// A record file written before records had a count (goal/G3.3) gains the column once.
-if (!db.prepare('PRAGMA table_info(asks)').all().some(function (c) { return c.name === 'count'; })) {
-  db.exec('ALTER TABLE asks ADD COLUMN count INTEGER NOT NULL DEFAULT 1');
-}
 // An ask this process was still waiting on when it ended has no one waiting any more.
 db.exec("UPDATE asks SET outcome = 'lost' WHERE outcome = 'pending'");
 const getSetting = db.prepare('SELECT value FROM settings WHERE name = ?');

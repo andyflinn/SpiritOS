@@ -64,9 +64,9 @@ const db = new DatabaseSync(path.join(STATE, 'desk.db'));
 // wait covers what is left (a checkpoint). deskWhileBackup.js holds it.
 db.exec('PRAGMA busy_timeout=5000');
 db.exec('PRAGMA journal_mode=WAL');
-// NO DOCS TABLE (goal/G33.7): seen is one value per item (seen.set), so nothing grows as one document; a docs table
-// an older desk.db still holds is dropped here. The old lines table is dropped by migrate() below (goal/G33.4).
-db.exec('DROP TABLE IF EXISTS docs;');
+// NO TABLE MADE BEFORE IS MENDED: none is renamed, carried over or dropped, and no column is added (Andy, goal/G47.1:
+// "old files or tables should not be mended, THE SHOULD BE FUCKING KILLED AND ELIMINATED FOREVER!"). An old desk.db is
+// deleted by hand, on his word.
 
 // One answer must travel back as one packet (limits.ANSWER_MAX); the
 // wrapper around the lines is small, and this leaves it room.
@@ -373,27 +373,8 @@ function idOf(goal, item) { return 'goal/G' + goal + (item ? '.' + item : ''); }
 //   version an item's Go recorded), the newest row per rule is the rule and the older ones its history; his draft
 //   between versions is one row per rule in `rule_drafts`, which writes no history; a rule's chat lines are rows of
 //   `rule_chat`. A rule's key stays rule/<number> at every verb.
-function tableHas(name, column) {
-  return db.prepare('PRAGMA table_info(' + name + ')').all().some(function (c) { return c.name === column; });
-}
-function tableExists(name) { return !!db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?").get(name); }
-// An old rules table (keyed by the string rule/<n>) is carried over once, its rows and drafts as they were.
-if (tableExists('rules') && tableHas('rules', 'key')) {
-  db.exec('BEGIN');
-  db.exec('ALTER TABLE rules RENAME TO rules_old');
-  db.exec('CREATE TABLE rules (n INTEGER PRIMARY KEY AUTOINCREMENT, rule INTEGER NOT NULL, at TEXT NOT NULL, by TEXT NOT NULL, type TEXT NOT NULL, label TEXT NOT NULL, status TEXT NOT NULL, text TEXT NOT NULL)');
-  db.exec("INSERT INTO rules (n, rule, at, by, type, label, status, text) SELECT n, CAST(substr(key, 6) AS INTEGER), at, by, type, label, status, text FROM rules_old WHERE key LIKE 'rule/%'");
-  db.exec('DROP TABLE rules_old');
-  if (tableExists('rule_drafts') && tableHas('rule_drafts', 'key')) {
-    db.exec('ALTER TABLE rule_drafts RENAME TO rule_drafts_old');
-    db.exec('CREATE TABLE rule_drafts (rule INTEGER PRIMARY KEY, at TEXT NOT NULL, text TEXT NOT NULL)');
-    db.exec("INSERT INTO rule_drafts (rule, at, text) SELECT CAST(substr(key, 6) AS INTEGER), at, text FROM rule_drafts_old WHERE key LIKE 'rule/%'");
-    db.exec('DROP TABLE rule_drafts_old');
-  }
-  db.exec('COMMIT');
-}
 db.exec(
-  'CREATE TABLE IF NOT EXISTS rules (n INTEGER PRIMARY KEY AUTOINCREMENT, rule INTEGER NOT NULL, at TEXT NOT NULL, by TEXT NOT NULL, type TEXT NOT NULL, label TEXT NOT NULL, status TEXT NOT NULL, text TEXT NOT NULL);' +
+  'CREATE TABLE IF NOT EXISTS rules (n INTEGER PRIMARY KEY AUTOINCREMENT, rule INTEGER NOT NULL, at TEXT NOT NULL, by TEXT NOT NULL, type TEXT NOT NULL, label TEXT NOT NULL, status TEXT NOT NULL, text TEXT NOT NULL, autoAttach INTEGER NOT NULL DEFAULT 0);' +
   'CREATE INDEX IF NOT EXISTS rules_rule ON rules (rule);' +
   'CREATE TABLE IF NOT EXISTS rule_drafts (rule INTEGER PRIMARY KEY, at TEXT NOT NULL, text TEXT NOT NULL);' +
   'CREATE TABLE IF NOT EXISTS rule_chat (rule INTEGER NOT NULL, seq INTEGER NOT NULL, at TEXT NOT NULL, by TEXT NOT NULL, creator TEXT NOT NULL, text TEXT NOT NULL, born INTEGER NOT NULL, PRIMARY KEY (rule, seq));' +
@@ -414,16 +395,9 @@ db.exec(
   " profile TEXT NOT NULL DEFAULT '');" +
   'CREATE TABLE IF NOT EXISTS desk_state (k TEXT PRIMARY KEY, v TEXT NOT NULL);'
 );
-// The deleted verifier's name, lower case, built so that no tracked file names it (spirit-sibling-general.js).
-const GONE_VERIFIER = ['desk', 'verify'].join('');
-// NO VERIFIER ON THE DESK (Andy: "the desk also loses the suite-list (useless, since testicle is driven by
-// script changes)", and "No verifier involvement with desk anywhere."): an older desk's suite list and the verifier's
-// values it kept leave it.
-db.exec("DROP TABLE IF EXISTS suites; DELETE FROM desk_state WHERE k IN ('verifyAnswer', 'suitesMigrated');");
 // THE TEST TYPE AND autoAttach (goal/G40.12, box v7, first set 4): "the rules get a new \"test\" type. all rules get a
 // field that indicates \"auto-attach-at-goal-creation-time\"". autoAttach is false until he sets it (Q1, Andy:
-// "autoAttach is false by default.", "rule.version? carries the full rule.").
-if (!tableHas('rules', 'autoAttach')) db.exec('ALTER TABLE rules ADD COLUMN autoAttach INTEGER NOT NULL DEFAULT 0');
+// "autoAttach is false by default.", "rule.version? carries the full rule."). It is in the rules table as it is made.
 const RULE_TYPES = ['ui', 'code', 'design', 'desk', 'test'];
 const RULE_STATUSES = ['proposed', 'active', 'deleted'];
 // A rule as the verbs answer it: key rule/<number>, as before goal/G33.4.
@@ -661,11 +635,6 @@ function loadState() {
     try { d = JSON.parse(row.data) || {}; } catch (e) { d = {}; }
     const gs = d.goalState;
     delete d.goalState;
-    // The verifier's fields an older desk kept on an item go (no verifier involvement with desk anywhere).
-    ['checked', 'verifyRunning', 'verifyHanded', 'verifyState', 'verifyFailures', 'verifyFailuresMore', 'verifyRed'].forEach(function (f) { delete d[f]; });
-    // So does a status it wrote, "waiting for" and its name (Andy, goal/G47.1, of that status in his title bar): the item
-    // is left with no status, never a guessed one. Its name is built (GONE_VERIFIER), so no tracked file names it.
-    if (String(d.status || '').toLowerCase().indexOf(GONE_VERIFIER) !== -1) d.status = '';
     const it = Object.assign(blank(id, '', ''), d);
     NULL_PROTO.forEach(function (f) { it[f] = Object.assign(Object.create(null), d[f] || {}); });
     it.files = Object.create(null); it.claims = Object.create(null); it.chat = []; it.checks = []; it.box = ''; it.version = 0;
@@ -710,109 +679,8 @@ function loadState() {
   return s;
 }
 
-// ── THE MIGRATION, ONCE (goal/G33.4) ──────────────────────────────────
-//
-//   Andy, in the item's box: "Migration: today's database is migrated into the tables once; each id string becomes its
-//   two numbers (goal/G33.4 becomes 33 and 4).", and "Records with no goal or item are dumped at migration: agent.state,
-//   scope.set and the old lines table."
-//
-// The old `records` are walked once, in order, by the same apply every write uses, and what they come to is written into
-// the tables; then records and lines are dropped and the file compacted. goal/G<n> keeps n, and every goal of another
-// area (desk/, apiAuth/) gets the next free number, its items keeping theirs. Only
-// the newest box version is kept. A rule's chat lines (rule.chat records) become rows of rule_chat.
-function migrate() {
-  if (!tableExists('records')) return false;
-  const t0 = Date.now();
-  const s = newState();
-  const item = function (id) { return s.items[id] || null; };
-  const goalOf = function (id) { const it = item(id); return it ? (it.goal ? s.goals[it.id] : s.goals[it.goalId]) : null; };
-  const hasKey = tableHas('records', 'key');
-  const ruleChat = [];
-  let count = 0;
-  for (const r of db.prepare('SELECT n, at, verb, by, ' + (hasKey ? 'key' : "'' AS key") + ', body FROM records ORDER BY n').iterate()) {
-    s.change = r.n;
-    count += 1;
-    let b = {};
-    try { b = JSON.parse(r.body); } catch (e) { continue; }
-    // DUMPED: an agent's word and a scope are about no goal or item.
-    if (r.verb === 'agent.state' || r.verb === 'scope.set') continue;
-    if (r.verb === 'rule.chat') { ruleChat.push({ rule: ruleNumber(b.rule), at: r.at, by: r.by, creator: madeBy(r), text: String(b.text || '') }); continue; }
-    // Writers other than him and the desk itself are agents, and a write is their liveness.
-    if (r.by !== 'andy' && r.by !== 'desk') { s.agentsAt[r.by] = r.at; if (r.key) s.agentKey[r.by] = String(r.key); }
-    try { apply(s, r, b, item, goalOf); } catch (e) { /* a record that no longer fits changes nothing */ }
-  }
-  // DESIGN ON ITEM LEVEL IS NEW (goal/G33.4): an item from before it is governed by its goal's design mode alone.
-  Object.keys(s.items).forEach(function (id) { s.items[id].design = false; });
-  // THE NEW IDS.
-  const map = Object.create(null);
-  let top = 0;
-  Object.keys(s.goals).forEach(function (gid) { const m = /^goal\/G(\d+)$/.exec(gid); if (m) top = Math.max(top, Number(m[1])); });
-  Object.keys(s.goals).forEach(function (gid) {
-    if (/^goal\/G\d+$/.test(gid)) map[gid] = gid;
-    else map[gid] = idOf(++top, 0);
-  });
-  Object.keys(s.goals).forEach(function (gid) {
-    const ng = numbersOf(map[gid])[0];
-    let itop = 0;
-    const tails = [];
-    s.goals[gid].members.forEach(function (id) {
-      const tail = id.indexOf(gid + '.') === 0 ? id.slice(gid.length + 1) : '';
-      if (/^\d+$/.test(tail)) { itop = Math.max(itop, Number(tail)); tails.push([id, Number(tail)]); } else tails.push([id, -1]);
-    });
-    tails.forEach(function (x) { map[x[0]] = idOf(ng, x[1] > 0 ? x[1] : ++itop); });
-  });
-  const re = function (id) { return map[id] || id; };
-  const items = Object.create(null);
-  const goals = Object.create(null);
-  Object.keys(s.goals).forEach(function (gid) {
-    const g = s.goals[gid];
-    goals[re(gid)] = Object.assign({}, g, { id: re(gid), members: g.members.map(re) });
-  });
-  Object.keys(s.items).forEach(function (id) {
-    const it = s.items[id];
-    if (!map[id]) return;   // an item of no goal the desk held: nothing reaches it
-    it.id = re(id);
-    it.goalId = it.goalId ? re(it.goalId) : '';
-    it.blocks = (it.blocks || []).map(re);
-    items[it.id] = it;
-  });
-  s.goals = goals;
-  s.items = items;
-  s.current = s.current ? re(s.current) : '';
-  s.addGrantGoal = s.addGrantGoal ? re(s.addGrantGoal) : '';
-  s.agentWord = Object.create(null);
-  // WRITTEN ONCE, in one transaction, then the old tables go.
-  const r = { n: s.change, at: new Date().toISOString(), verb: 'migrate', by: 'desk', key: '' };
-  db.exec('BEGIN');
-  try {
-    ROWS.clear();
-    Object.keys(s.items).forEach(function (id) { persistItem(s, s.items[id], r, false); });
-    Object.keys(s.agentsAt).concat(Object.keys(s.agentKey)).forEach(function (l) { persistAgent(s, l); });
-    Object.keys(s.profiles).forEach(function (k) { persistProfile(s, k); });
-    persistDeskState(s);
-    const seqs = Object.create(null);
-    ruleChat.forEach(function (c) {
-      if (c.rule < 0) return;
-      seqs[c.rule] = seqs[c.rule] === undefined ? Number(ruleChatNext.get(c.rule).seq) : seqs[c.rule] + 1;
-      addRuleChat.run(c.rule, seqs[c.rule], c.at, c.by, c.creator, c.text, s.change);
-    });
-    db.exec('DROP TABLE records');
-    if (tableExists('lines')) db.exec('DROP TABLE lines');
-    db.exec('COMMIT');
-  } catch (e) {
-    db.exec('ROLLBACK');
-    throw e;
-  }
-  try { db.exec('VACUUM'); } catch (e) { console.error('desk: the migrated file was not compacted: ' + e.message); }
-  console.log('desk: migrated ' + count + ' records into ' + Object.keys(s.items).length + ' items in ' + (Date.now() - t0) + ' ms (goal/G33.4)');
-  return true;
-}
-// THE OLD LINES TABLE ALONE (a file that never held records) goes too.
-if (!tableExists('records') && tableExists('lines')) db.exec('DROP TABLE lines');
-
-// AT START: the migration if an old file is here, then the state read.
+// AT START: the state read.
 function startState() {
-  migrate();
   S = loadState();
 }
 
@@ -2379,7 +2247,7 @@ function writerOf(caller) {
 // streamed to deskClient without any further assistance", and "the desk should answer what it was asked. period.
 // don't get fancy, it always backfires." Every verb answers what it was asked; his lines reach the agent on the stream.
 
-// AT START (goal/G33.4): the state read from its tables (the migration first, once), the database shed to its size; the
+// AT START (goal/G33.4): the state read from its tables, the database shed to its size; the
 // current goal is pushed whole once the desk serves (below).
 startState();
 shed();

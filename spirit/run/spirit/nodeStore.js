@@ -272,11 +272,9 @@ function open(rootDir, opts) {
   `);
   // A RELAY'S OWN ADDRESS IS ON ITS ROW (goal/G47.1, the cycle "the route caching goes", box v69: "A relay's own address
   // stays: it is the address the node connects to, kept on the relay's own row, where the relay list reads it"). url is
-  // '' for every row but a relay's; one url is one relay (relayKeys.accept), found on seen_url. A table made before it
-  // gains the column, empty.
-  if (!db.prepare('PRAGMA table_info(seen)').all().some(function (c) { return c.name === 'url'; })) {
-    db.exec("ALTER TABLE seen ADD COLUMN url TEXT NOT NULL DEFAULT ''");
-  }
+  // '' for every row but a relay's; one url is one relay (relayKeys.accept), found on seen_url.
+  // NO TABLE MADE BEFORE IS MENDED, here or anywhere in this file (Andy, goal/G47.1: "old files or tables should not be
+  // mended, THE SHOULD BE FUCKING KILLED AND ELIMINATED FOREVER!"): no column is added, dropped or renamed.
   db.exec("CREATE INDEX IF NOT EXISTS seen_url ON seen (url) WHERE url <> ''");
   // THE FACE NAME THIS NODE HOLDS ON A RELAY, on that relay's row (Andy, 2026-10-26, goal/G40.11: "keep it, on the
   // relay's row, as the node's own fact, like myLabel"): the node set it itself (relay.face, the relay said yes). In the
@@ -284,11 +282,6 @@ function open(rootDir, opts) {
   // A PARTIAL INDEX PER FLAG, holding only the rows where it is true, and one over the rows with neither keep nor mine,
   // by lastSeen: the line shedding takes. A query uses a partial index only when it repeats its WHERE, which is why
   // the statements below spell those conditions out again.
-  // THE HELD FIELD IS KILLED, in a table made before too (goal/G43.17, Q25; Andy, asked whether G41.30's "no rescue
-  // operations" keeps it: "KILL THE FIELD COMPLETELY."). Its index first, since a column under an index cannot be dropped.
-  if (db.prepare('PRAGMA table_info(seen)').all().some(function (c) { return c.name === 'held'; })) {
-    db.exec('DROP INDEX IF EXISTS seen_held;\nALTER TABLE seen DROP COLUMN held;');
-  }
   db.exec(SEEN_FLAGS.map(function (f) {
     return 'CREATE INDEX IF NOT EXISTS seen_' + f + ' ON seen (lastSeen) WHERE ' + f + ' = 1;';
   }).join('\n') + '\nCREATE INDEX IF NOT EXISTS seen_shed ON seen (lastSeen) WHERE keep = 0 AND mine = 0;');
@@ -301,18 +294,7 @@ function open(rootDir, opts) {
   //
   // A post goes to a relay that names its recipient, else to the first relay held (hub.js chooseRoute); no route ever
   // chose it, and the relay reads no hints since partners went (goal/G22.6). This replaces the ruling "the node must
-  // implicitly learn routes at EVERY opportunity". A node.db made before it loses the table when it is opened.
-  // ITS RELAYS' ADDRESSES MOVE FIRST, ONCE (goal/G47.1; Andy, asked whether to copy them or have every node add its relays
-  // again: "cw, just finish what you're doing first", after his node lost both relay addresses on this drop and Desk went
-  // dark): a relay's own address was its direct route (via empty, at its own key), and it is the one thing in the table a
-  // node cannot do without. It goes onto the relay's row where that row has none; then the table goes.
-  if (db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'seen_routes'").get()) {
-    db.exec(`UPDATE seen SET url = (SELECT r.url FROM seen_routes r WHERE r.publicKey = seen.publicKey AND r.via = ''
-        AND r.at = r.publicKey AND r.url <> '' ORDER BY r.rank ASC, r.told DESC LIMIT 1)
-      WHERE relay = 1 AND url = '' AND EXISTS (SELECT 1 FROM seen_routes r WHERE r.publicKey = seen.publicKey AND r.via = ''
-        AND r.at = r.publicKey AND r.url <> '')`);
-  }
-  db.exec('DROP TABLE IF EXISTS seen_routes');
+  // implicitly learn routes at EVERY opportunity". No table of routes is made.
 
   // ── THE POST QUEUE, SO AN INTENT OUTLIVES THE PROCESS (cycle R16) ───
   //
@@ -734,12 +716,8 @@ function open(rootDir, opts) {
     // The oldest rows, a chunk at a time, for the shedding below.
     // The oldest rows below the one just written: a packet is never shed in the moment it is written.
     shed: db.prepare('DELETE FROM traffic WHERE seq IN (SELECT seq FROM traffic WHERE seq < ? ORDER BY seq LIMIT ?)'),
-    // The highest stamp written. NOT the last seq's: the migration
-    // (transport/R19.5) appends a node's older history after rows it wrote
-    // since, so seq order and time order part there. Read once per process.
+    // The highest stamp written. Read once per process.
     lastAt: db.prepare('SELECT MAX(at) AS at FROM traffic'),
-    maxSeq: db.prepare('SELECT COALESCE(MAX(seq), 0) AS n FROM traffic'),
-    delAbove: db.prepare('DELETE FROM traffic WHERE seq > ?'),
     bytes: db.prepare(`SELECT COALESCE(SUM(pgsize), 0) AS n FROM dbstat
       WHERE name IN (SELECT name FROM sqlite_schema WHERE tbl_name = 'traffic')`),
   };
@@ -809,9 +787,6 @@ function open(rootDir, opts) {
       arrivals: function (since, limit) { return tq.arrivals.all(String(since || ''), Number(limit) || 200).map(trafficRow); },
       untaken: function () { return tq.untaken.all(new Date(Date.now() - BACKLOG_MS).toISOString()).map(trafficRow); },
       lastAt: function () { const r = tq.lastAt.get(); return (r && r.at) || ''; },
-      // For the migration's way back (transport/R19.5).
-      maxSeq: function () { return tq.maxSeq.get().n; },
-      removeAbove: function (seq) { return tq.delAbove.run(Number(seq) || 0).changes; },
       count: function () { return tq.count.get().n; },
       bytes: function () { return tq.bytes.get().n; },
     },

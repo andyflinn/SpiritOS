@@ -191,9 +191,25 @@ function open(rootDir) {
       -- disc. got it." The signed blob, not the keys read out of it, so
       -- the relay cannot falsify the record in the roll: every reader
       -- checks the signature against the key the row is filed under.
-      card        TEXT NOT NULL DEFAULT ''
+      card        TEXT NOT NULL DEFAULT '',
+      -- A MEMBER'S FACE NAME AND EMAIL (goal/G30.1). The name a member asked for under the relay's domain and the
+      -- email it was asked with; empty means none. The name is unique when set, by a partial index, so two members
+      -- with no name do not collide. Both go with the row when a member leaves, which is how the name is freed (Andy,
+      -- 2026-10-19: "when the member leaves the relay"). The relay does not verify the email: the login provider
+      -- does, at the face sign-in, which is not built here.
+      faceName    TEXT NOT NULL DEFAULT '',
+      faceEmail   TEXT NOT NULL DEFAULT '',
+      -- A MEMBER'S VERIFIED EMAIL (goal/G30.1, box v28): written only when a join's code is confirmed, so it is
+      -- verified when set; one per member, not unique across members. Empty means none.
+      email         TEXT NOT NULL DEFAULT '',
+      emailVerified INTEGER NOT NULL DEFAULT 0,
+      -- A MEMBER'S FACE LOGINS (goal/G30.15; Andy: "why would the relay not stash my login on my member-row?"): one
+      -- per device, as JSON [{ hash, until }], the hash of the login cookie and its idle deadline. Never the cookie
+      -- itself, so a copied relay.db logs nobody in. They go with the row when a member leaves.
+      faceLogins  TEXT NOT NULL DEFAULT '[]'
     );
     CREATE INDEX IF NOT EXISTS members_label ON members (labelNorm);
+    CREATE UNIQUE INDEX IF NOT EXISTS members_face ON members (faceName) WHERE faceName <> '';
     CREATE TABLE IF NOT EXISTS invites (
       token     TEXT PRIMARY KEY,
       label     TEXT NOT NULL,
@@ -202,9 +218,6 @@ function open(rootDir) {
     );
     CREATE INDEX IF NOT EXISTS invites_label ON invites (label);
   `);
-
-  // THE partners TABLE AND ITS `last` MIGRATION (cycle R12) STOOD HERE; the
-  // partner roll is gone (goal/G22.6). An old table is not touched.
 
   // ── A ROW DOES NOT KNOW WHO OWNS THE RELAY (2026-09-19) ──────────────
   //
@@ -218,46 +231,8 @@ function open(rootDir) {
   // and `members` has no owner column. A relay.db made by cycle 3, with
   // one, is not altered: the old column is not read (goal/G43.23, the box's
   // item 7; Andy, goal/G41.30: "let's get rid of those "rescue operations"").
-  // The card arrives with cycle 10; a relay.db from before it gains the
-  // column here, empty. An empty card means the relay cannot seal an
-  // answer to that member, which is the flag day working as ruled —
-  // "old nodes MUST update to stay in the game" — and it is a refusal
-  // with a reason rather than a silent plaintext answer.
-  try {
-    const mcols = db.prepare('PRAGMA table_info(members)').all()
-      .map(function (c) { return c.name; });
-    if (mcols.indexOf('card') === -1) {
-      db.exec("ALTER TABLE members ADD COLUMN card TEXT NOT NULL DEFAULT ''");
-    }
-  } catch (e) { /* a brand-new database already has it, from the CREATE above */ }
-
-  // A MEMBER'S FACE NAME AND EMAIL (goal/G30.1). The name a member asked for under the relay's domain and the email
-  // it was asked with; empty means none. The name is unique when set, by a partial index, so two members with no
-  // name do not collide. Both go with the row when a member leaves, which is how the name is freed (Andy,
-  // 2026-10-19: "when the member leaves the relay"). The relay does not verify the email: the login provider
-  // does, at the face sign-in, which is not built here.
-  try {
-    const fcols = db.prepare('PRAGMA table_info(members)').all().map(function (c) { return c.name; });
-    if (fcols.indexOf('faceName') === -1) db.exec("ALTER TABLE members ADD COLUMN faceName TEXT NOT NULL DEFAULT ''");
-    if (fcols.indexOf('faceEmail') === -1) db.exec("ALTER TABLE members ADD COLUMN faceEmail TEXT NOT NULL DEFAULT ''");
-    db.exec("CREATE UNIQUE INDEX IF NOT EXISTS members_face ON members (faceName) WHERE faceName <> ''");
-  } catch (e) { /* a read-only store cannot migrate; it reads what is there */ }
-
-  // A MEMBER'S VERIFIED EMAIL (goal/G30.1, box v28): written only when a join's code is confirmed, so it is verified
-  // when set; one per member, not unique across members. Empty means none.
-  try {
-    const ecols = db.prepare('PRAGMA table_info(members)').all().map(function (c) { return c.name; });
-    if (ecols.indexOf('email') === -1) db.exec("ALTER TABLE members ADD COLUMN email TEXT NOT NULL DEFAULT ''");
-    if (ecols.indexOf('emailVerified') === -1) db.exec('ALTER TABLE members ADD COLUMN emailVerified INTEGER NOT NULL DEFAULT 0');
-  } catch (e) { /* a read-only store cannot migrate; it reads what is there */ }
-
-  // A MEMBER'S FACE LOGINS (goal/G30.15; Andy: "why would the relay not stash my login on my member-row?"): one per
-  // device, as JSON [{ hash, until }], the hash of the login cookie and its idle deadline. Never the cookie itself, so a
-  // copied relay.db logs nobody in. They go with the row when a member leaves.
-  try {
-    const lcols = db.prepare('PRAGMA table_info(members)').all().map(function (c) { return c.name; });
-    if (lcols.indexOf('faceLogins') === -1) db.exec("ALTER TABLE members ADD COLUMN faceLogins TEXT NOT NULL DEFAULT '[]'");
-  } catch (e) { /* a read-only store cannot migrate; it reads what is there */ }
+  // No table made before is mended: no column is added, dropped or renamed (Andy, goal/G47.1: "old files or
+  // tables should not be mended, THE SHOULD BE FUCKING KILLED AND ELIMINATED FOREVER!").
 
   const store = build(rootDir, db, key);
   open_.set(key, store);

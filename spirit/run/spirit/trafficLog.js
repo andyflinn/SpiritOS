@@ -98,11 +98,10 @@ function logPath(rootDir) {
 //
 // Every new row goes into node.db's `traffic` table, which nodeStore.js
 // owns; this file still decides what a row is and is the only one that
-// reads it. A traffic.jsonl still present is READ too and merged in; the
-// migration below (transport/R19.5) imports it into the table when a log
-// is opened and renames it .imported. Nothing writes the file unless
-// node.db cannot be opened at all, and then the log keeps working the old
-// way rather than losing rows.
+// reads it. A traffic.jsonl is written only when node.db cannot be opened
+// at all, and is read beside the table. An old file is never imported
+// (Andy, goal/G47.1: "old files or tables should not be mended, THE SHOULD
+// BE FUCKING KILLED AND ELIMINATED FOREVER!").
 //
 // `create` is false for reads: asking what the log holds must never be
 // what brings a database into existence.
@@ -126,9 +125,7 @@ function readAll(rootDir) {
   if (!tableRows.length) return rows;
   // ORDER BY `at`, ALWAYS. stamp() makes it unique and increasing across
   // both stores, so this is the order rows were written in, even if node.db
-  // once failed to open and some went to the file (wsl-claude), and after the
-  // migration, which appends a node's older history after the rows written
-  // since (transport/R19.5), so seq order is not time order there.
+  // once failed to open and some went to the file (wsl-claude).
   // The sort is stable: a batch of marks sharing one stamp keeps its order.
   return rows.concat(tableRows).sort(function (a, b) {
     var x = String(a && a.at || ''), y = String(b && b.at || '');
@@ -222,56 +219,10 @@ function append(rootDir, row) {
 // `now` is injectable, so the stamp below can be tested without waiting
 // on a real clock. (It was for a retention window; the log keeps
 // everything now.)
-// ── THE MIGRATION (transport/R19.5) ───────────────────────────────────
-//
-//   Andy, 2026-09-28: go on transport/R19.5, the last step of "Moving the node
-//   log into machine-side database". Agreed with wsl-claude: rule 1 (nothing
-//   above trafficLog.js changes) means no new export for the node to call,
-//   so it happens here, the first time a log is opened with the file present.
-//
-// ONE TRANSACTION: every line goes in, in file order, or none does. On any
-// failure the table is as it was and the file stays in charge, read as
-// before, and the next opening tries again. Only after the commit is the
-// file renamed traffic.jsonl.imported: kept byte for byte, never read again.
-// If the rename itself fails, the rows just added are taken out again, so
-// the history is never counted twice.
-function migrate(rootDir) {
-  var file = logPath(rootDir);
-  if (!fs.existsSync(file)) return false;
-  var nodeStore;
-  try {
-    nodeStore = spirit.require('spirit/nodeStore.js');
-    if (!nodeStore.available()) return false;
-  } catch (e) { return false; }
-  var store = nodeStore.open(rootDir);
-  var rows = readFile(rootDir);
-  var before = store.traffic.maxSeq();
-  try {
-    store.transaction(function () { rows.forEach(function (row) { store.traffic.add(row); }); });
-  } catch (e) {
-    return false;
-  }
-  // THE FIRST FREE NAME, never over an earlier one: if node.db ever failed
-  // after the move and the log fell back to a new traffic.jsonl, that file
-  // is imported later as .imported-2, and the original bytes stay where
-  // they are (wsl-claude).
-  var retired = file + '.imported';
-  for (var n = 2; fs.existsSync(retired); n += 1) retired = file + '.imported-' + n;
-  try {
-    fs.renameSync(file, retired);
-  } catch (e) {
-    try { store.transaction(function () { store.traffic.removeAbove(before); }); } catch (e2) { /* the file still answers first */ }
-    return false;
-  }
-  return true;
-}
-
 function createTrafficLog(opts) {
   opts = opts || {};
   var rootDir = opts.rootDir;
   var relayMode = !!opts.relayMode;
-  // A relay keeps no log (the gate in note()), so it has nothing to move.
-  if (rootDir && !relayMode) { try { migrate(rootDir); } catch (e) { /* the file stays in charge */ } }
   var clock = typeof opts.now === 'function' ? opts.now : function () { return Date.now(); };
 
   // ── `at` IS A POSITION, SO IT HAS TO BE UNIQUE AND INCREASING ──────
@@ -613,7 +564,7 @@ function createTrafficLog(opts) {
     if (!want) return null;
     var all = rowsFor(want, readFile(rootDir));
     var marks = takenSet(all);
-    // The latest by time, which after the migration is not the latest by seq.
+    // The latest by time.
     var rows = all.filter(function (row) { return row && !row.mark; }).sort(byTime);
     return rows.length ? foldTaken([rows[rows.length - 1]], marks)[0] : null;
   }

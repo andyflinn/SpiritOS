@@ -28,11 +28,10 @@ fs.mkdirSync(STATE, { recursive: true });
 // THE APP'S DATABASE, AND ITS DATA SET (goal/G41.4): the provider, model, persona and job tables, each with its own
 // folder, table/<name>/, whose server.js makes the table and serves its one verb. Built in this order, since a model
 // names its provider. NO GRANT TABLE (goal/G41.21, box v17: "agent.grant is removed altogether"; a job's grant is its
-// bundle): an agent.db from before keeps no grant table, "its rows in agent.db are dropped", at start.
+// bundle). No table made before is mended or dropped (Andy, goal/G47.1: "old files or tables should not be mended, THE
+// SHOULD BE FUCKING KILLED AND ELIMINATED FOREVER!"); an old agent.db is deleted by hand, on his word.
 const DB_FILE = path.join(STATE, 'agent.db');
 const db = new DatabaseSync(DB_FILE);
-db.exec('CREATE TABLE IF NOT EXISTS meta (name TEXT PRIMARY KEY, value TEXT NOT NULL)');
-db.exec('DROP TABLE IF EXISTS "grant"');
 const TABLES = ['provider', 'model', 'persona', 'job'];
 const tables = {};
 const ctx = { db: db, dbFile: DB_FILE, tables: tables, publish: function (x) { appServer.publish(x); } };

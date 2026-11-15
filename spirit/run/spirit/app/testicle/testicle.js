@@ -52,28 +52,23 @@ const RUN = path.resolve(__dirname, '..', '..', '..');
 const TEST_MODULE = path.join(RUN, 'spirit', 'test', 'testModule.js');
 
 // THE TWO TABLES OF testicle.db (goal/G45.1's box), script and suite. A boolean is 0 or 1; changed is a numeric UTC timestamp.
-// goal/G47.1, the box: "This cycle will also rename the \"file\" table to \"script\"", "The name changes everywhere it
-// means that table", "An existing testicle.db is renamed in place, its rows kept."
+// NO TABLE MADE BEFORE IS MENDED: none is renamed, and no column is added, dropped or renamed (Andy, goal/G47.1: "old
+// files or tables should not be mended, THE SHOULD BE FUCKING KILLED AND ELIMINATED FOREVER!"). An old testicle.db is
+// deleted by hand, on his word.
 const db = new DatabaseSync(path.join(STATE, 'testicle.db'));
 // A WRITE WAITS FOR A READER, never fails on it: a reader of testicle.db (its test, a backup) holding it for a moment made
 // a job's end throw "database is locked", and that suite was never judged.
 db.exec('PRAGMA busy_timeout = 5000');
-const tableThere = function (name) { return !!db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?").get(name); };
-if (tableThere('file') && !tableThere('script')) db.exec('ALTER TABLE file RENAME TO script');
-if (tableThere('suite') && db.prepare('PRAGMA table_info(suite)').all().some(function (c) { return c.name === 'file'; })) db.exec('ALTER TABLE suite RENAME COLUMN file TO script');
-db.exec('CREATE TABLE IF NOT EXISTS script (name TEXT PRIMARY KEY, hash TEXT NOT NULL DEFAULT \'\', deleted INTEGER NOT NULL DEFAULT 0, changed INTEGER NOT NULL)');
+db.exec('CREATE TABLE IF NOT EXISTS script (name TEXT PRIMARY KEY, hash TEXT NOT NULL DEFAULT \'\', deleted INTEGER NOT NULL DEFAULT 0, changed INTEGER NOT NULL, ' +
+  'reClassify INTEGER NOT NULL DEFAULT 1, browserOnly INTEGER NOT NULL DEFAULT 0, nodeOnly INTEGER NOT NULL DEFAULT 0)');
 db.exec('CREATE TABLE IF NOT EXISTS suite (script TEXT NOT NULL, suite TEXT NOT NULL, test INTEGER NOT NULL DEFAULT 0, deleted INTEGER NOT NULL DEFAULT 0, ' +
   'hash TEXT NOT NULL DEFAULT \'\', outcome TEXT NOT NULL DEFAULT \'\', changed INTEGER NOT NULL, PRIMARY KEY (script, suite))');
 // THREE FIELDS ON THE SCRIPT TABLE (goal/G47.1, box v79, 3): reClassify "this script needs re-classification.",
 // browserOnly "this script file is an ui-element and runs in the browser only", nodeOnly "this script file runs on node.js
 // only"; both false, it runs on both, and classification never sets both. "a script seen for the first time starts with
-// reClassify true" (Andy: "yes, of course."), so a table made before gains reClassify true on every row: none was ever
-// classified. "when the server (always) processes file changes, and the hash of the script changes, \"reClassify\" must
-// be set to \"true\". That field can only be reset to false by classification" (out of this cycle: nothing here resets it).
-['reClassify INTEGER NOT NULL DEFAULT 1', 'browserOnly INTEGER NOT NULL DEFAULT 0', 'nodeOnly INTEGER NOT NULL DEFAULT 0'].forEach(function (col) {
-  const name = col.split(' ')[0];
-  if (!db.prepare('PRAGMA table_info(script)').all().some(function (c) { return c.name === name; })) db.exec('ALTER TABLE script ADD COLUMN ' + col);
-});
+// reClassify true" (Andy: "yes, of course."). "when the server (always) processes file changes, and the hash of the
+// script changes, \"reClassify\" must be set to \"true\". That field can only be reset to false by classification".
+// The fields are in the table as it is made, above.
 const Q = {
   script: db.prepare('SELECT * FROM script WHERE name = ?'),
   putScript: db.prepare('INSERT INTO script (name, hash, deleted, changed, reClassify) VALUES (?, ?, 0, ?, 1) ON CONFLICT(name) DO UPDATE SET ' +
@@ -102,11 +97,10 @@ const Q = {
 // verified, then severity from high to low, then flipped" (G45.1): every test search reads the current rows alone.
 db.exec('CREATE TABLE IF NOT EXISTS testicle (script TEXT NOT NULL, suite TEXT NOT NULL, test TEXT NOT NULL, flipped INTEGER NOT NULL, ' +
   'current INTEGER NOT NULL DEFAULT 1, verified INTEGER NOT NULL, tested INTEGER NOT NULL, judged TEXT NOT NULL DEFAULT \'\', ' +
-  'severity REAL NOT NULL DEFAULT 0, PRIMARY KEY (script, suite, test, flipped))');
-db.exec('CREATE INDEX IF NOT EXISTS testicle_current ON testicle (verified, severity DESC, flipped DESC) WHERE current = 1');
+  'severity REAL NOT NULL DEFAULT 0, suiteHash TEXT NOT NULL DEFAULT \'\', PRIMARY KEY (script, suite, test, flipped))');
 // BOTH HASHES ON A TEST ROW (goal/G47.1, the box: "A testicle row carries both hashes it ran against, the script's and the
-// suite's"): judged is the script's, suiteHash the suite's. A table made before it gains the column, empty.
-if (!db.prepare('PRAGMA table_info(testicle)').all().some(function (c) { return c.name === 'suiteHash'; })) db.exec("ALTER TABLE testicle ADD COLUMN suiteHash TEXT NOT NULL DEFAULT ''");
+// suite's"): judged is the script's, suiteHash the suite's.
+db.exec('CREATE INDEX IF NOT EXISTS testicle_current ON testicle (verified, severity DESC, flipped DESC) WHERE current = 1');
 const T = {
   current: db.prepare('SELECT * FROM testicle WHERE script = ? AND suite = ? AND test = ? AND current = 1'),
   add: db.prepare('INSERT INTO testicle (script, suite, test, flipped, current, verified, tested, judged, severity, suiteHash) VALUES (?, ?, ? , ?, 1, ?, ?, ?, ?, ?)'),

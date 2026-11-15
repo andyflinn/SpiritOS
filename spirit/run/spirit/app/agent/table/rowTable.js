@@ -62,19 +62,9 @@ function rowTable(db, def, publish) {
     'sealPrivateKey TEXT NOT NULL, ' + Object.keys(fields).map(function (f) {
       return '"' + f + '" ' + sqlType(fields[f]) + ' NOT NULL DEFAULT ' + (sqlType(fields[f]) === 'INTEGER' ? '0' : "''");
     }).join(', ') + ')');
-  // A TABLE MADE BEFORE A FIELD WAS: the field is added to it, empty, so a node's agent.db takes the new shape at start
-  // (the icon came after the first tables were made).
-  const have = db.prepare('PRAGMA table_info(' + t + ')').all().map(function (c) { return c.name; });
-  Object.keys(fields).forEach(function (f) {
-    if (have.indexOf(f) !== -1) return;
-    db.exec('ALTER TABLE ' + t + ' ADD COLUMN "' + f + '" ' + sqlType(fields[f]) + ' NOT NULL DEFAULT ' + (sqlType(fields[f]) === 'INTEGER' ? '0' : "''"));
-  });
-  // A COLUMN THE TABLE NO LONGER NAMES GOES at start (the description, goal/G41.21): an agent.db from before takes the
-  // new shape.
-  have.forEach(function (c) {
-    if (KEYSET.indexOf(c) !== -1 || fields[c] !== undefined) return;
-    db.exec('ALTER TABLE ' + t + ' DROP COLUMN "' + c + '"');
-  });
+  // A TABLE MADE BEFORE ITS FIELDS CHANGED IS NOT MENDED: no column is added or dropped (Andy, goal/G47.1: "old files or
+  // tables should not be mended, THE SHOULD BE FUCKING KILLED AND ELIMINATED FOREVER!"). An old agent.db is deleted by
+  // hand, on his word, and made new.
   const q = {
     get: db.prepare('SELECT * FROM ' + t + ' WHERE id = ?'),
     all: db.prepare('SELECT * FROM ' + t + ' ORDER BY label, id'),
