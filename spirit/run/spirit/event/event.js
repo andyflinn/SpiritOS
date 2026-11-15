@@ -64,7 +64,9 @@ function createEvents(o) {
       'Cache-Control': 'no-cache',
       'Connection': 'keep-alive',
     });
-    const write = function (kind, data) { res.write('event: ' + kind + '\ndata: ' + JSON.stringify(data) + '\n\n'); };
+    // When it last wrote anything, so the beat below goes only into a quiet second.
+    let wroteAt = Date.now();
+    const write = function (kind, data) { wroteAt = Date.now(); res.write('event: ' + kind + '\ndata: ' + JSON.stringify(data) + '\n\n'); };
 
     write('snapshot', { jobs: o.jobs.listJobs() });
     // THE NODE'S OWN JOBS, EACH KIND OF NEWS ONCE (goal/G43.20): a job of one family carries one kind of news per event, so
@@ -90,7 +92,12 @@ function createEvents(o) {
     const off = subscribe(write, { packets: asServer ? 'witness' : 'take' });
 
     o.pageStreams.add(res);
-    const heartbeat = setInterval(function () { res.write(':\n\n'); }, 20000);
+    // A QUIET NODE IS NEVER TAKEN FOR DEAD (goal/G47.1, box v148: "the node beats each second when it has nothing else to send,
+    // on the page's stream (spirit/event/event.js, every 20 s today)"): a page resets a stream that brought nothing for 5 s, so a
+    // second that wrote nothing ends with a beat, a comment line no reader takes for an event.
+    const BEAT_MS = 1000;
+    // Looked at four times a second, so no quiet gap grows much past the second.
+    const heartbeat = setInterval(function () { if (Date.now() - wroteAt >= BEAT_MS) { wroteAt = Date.now(); res.write(':\n\n'); } }, BEAT_MS / 4);
 
     // Bound to 'error' as well as 'close': a socket that dies without a clean close (a killed browser, a dropped
     // network) never fired 'close', leaving the heartbeat writing to a dead response forever and every listener

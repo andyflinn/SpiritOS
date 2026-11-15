@@ -62,12 +62,15 @@ function createFaceQueue(sink, encode) {
   const outLine = typeof encode === 'function' ? encode : function (line) { return line; };
   let waiting = {};
   let busy = false;
+  // When it last wrote anything, so a beat (below) goes only into a quiet second.
+  let wroteAt = Date.now();
   function anyWaiting() { return Object.keys(waiting).length > 0; }
   function flush() {
     if (busy || !anyWaiting()) return;
     const out = [];
     Object.keys(waiting).map(Number).sort(function (a, b) { return a - b; }).forEach(function (p) { out.push.apply(out, waiting[p]); });
     waiting = {};
+    wroteAt = Date.now();
     if (sink.write(out.join('\n') + '\n') === false) {
       busy = true;
       sink.once('drain', function () { busy = false; flush(); });
@@ -82,8 +85,16 @@ function createFaceQueue(sink, encode) {
     flush();
     return true;
   }
-  return { push: push };
+  // A QUIET NODE IS NEVER TAKEN FOR DEAD ON A FACE (goal/G47.1, box v148: "the node beats each second when it has nothing else to
+  // send ... and on a face's (spirit/faceHome.js, none today)"): a face resets a stream that brought nothing for 5 s, so a second
+  // that wrote nothing ends with one beat line, an event no face takes for news. At stats' place: never ahead of a real event.
+  function beat(ms) {
+    if (busy || anyWaiting() || Date.now() - wroteAt < ms) return false;
+    return push(FACE_PRIORITY.stats, { event: 'beat', data: {} });
+  }
+  return { push: push, beat: beat };
 }
+const FACE_BEAT_MS = 1000;
 
 function createFaceHome(opts) {
   const o = opts || {};
@@ -374,11 +385,15 @@ function createFaceHome(opts) {
     const me = key ? o.identity() : null;
     const encode = key ? function (line) { return JSON.stringify(seal.seal(key, me.publicKey, key, line)); } : null;
     const face = { req: req, queue: createFaceQueue(req, encode) };
+    // Looked at four times a second, so no quiet gap grows much past the second; stopped with the face (close, and the relay's end).
+    // A relay without the star gets no beat either: its stream carries nothing (box v29).
+    face.beating = setInterval(function () { if (faces[url] !== face) { clearInterval(face.beating); return; } if (faceIsOwned(url)) face.queue.beat(FACE_BEAT_MS); }, FACE_BEAT_MS / 4);
+    if (typeof face.beating.unref === 'function') face.beating.unref();
     faces[url] = face;
     if (typeof req.on === 'function') {
       req.on('error', function (e) { say('face: the stream to ' + url + ' failed: ' + e.message); });
       // The relay ending the upload while the face is still open (a refusal, a network drop): said, not retried.
-      req.on('close', function () { if (faces[url] === face) { delete faces[url]; say('face: the stream to ' + url + ' ended'); } });
+      req.on('close', function () { clearInterval(face.beating); if (faces[url] === face) { delete faces[url]; say('face: the stream to ' + url + ' ended'); } });
     }
     // A RELAY WITHOUT THE STAR (goal/G43.18, box v29): the stream stands and carries nothing, not even the file tree, until the
     // star comes (toFaces); a star taken off takes the face itself away.
@@ -412,6 +427,7 @@ function createFaceHome(opts) {
   function close(url) {
     const face = faces[url];
     if (!face) return;
+    clearInterval(face.beating);
     delete faces[url];
     try { face.req.end(); } catch (e) { /* gone */ }
   }

@@ -37,7 +37,7 @@
 //                   every one ends in set, merge or del. A job comes with fromNode, the node that served it, so the
 //                   translator files it under that node. This file knows no type.
 //
-//   forgetAll()        everything kept goes, each type told once (type, undefined): a connect, the partner pushes it whole
+//   forgetAll()        everything kept goes, each type told once (type, undefined), when asked; a reconnect forgets nothing
 //   recordPaths(fn)   the paths fn wrote (set, merge, del), so a stream's row can take what it wrote with it (goal/G41.12)
 //   byteCap(n?)         the byte cap: reads it, or sets it in a process
 //
@@ -162,8 +162,8 @@
     shed(null);
     return capBytes;
   }
-  // EVERYTHING KEPT GOES (goal/G41.3, Q2: on a reconnect a cache forgets, and its partner pushes it whole again): the
-  // branches stay the same objects, emptied; each type that held anything is told once, as ready tells.
+  // EVERYTHING KEPT GOES, ASKED (forgetAll): the branches stay the same objects, emptied; each type that held anything is told
+  // once, as ready tells. No longer on a reconnect (goal/G47.1, box v148: "on a reconnect spirit/data.js forgets nothing").
   function forget() {
     branches().forEach(function (type) {
       var b = branch(type);
@@ -329,11 +329,11 @@
     if (onPage) Array.from(seenJobs.keys()).forEach(function (k) { if (k === String(id) || k.indexOf(String(id) + '\n') === 0) seenJobs.delete(k); });
     if (handing()) each('onDelete', stamped({ id: String(id) }, from));
   }
-  // A SNAPSHOT IS A CONNECT (spirit.event hands one on every open of the stream, the first and each reconnect): what
-  // was kept is forgotten, and the snapshot is the partner's whole push.
+  // A SNAPSHOT IS A CONNECT (spirit.event hands one on every open of the stream, the first and each reconnect). THE CACHE IS
+  // NOT WIPED (goal/G47.1, box v148: "on a reconnect spirit/data.js forgets nothing; the snapshot's jobs are laid over what is
+  // kept, and every app's rows stay"; Andy, overruling goal/G41.3 Q2's "on a reconnect a cache forgets": "THE FUCKING CACHE
+  // IS NOT WIPED OUT."): nothing kept goes, and each job the snapshot brings is laid over it as an update is.
   function onSnapshot(jobs) {
-    forget();
-    seenJobs.clear();
     // Each job alone (goal/G43.18, Q27, Andy: "yes."): forEach hands its index as a second argument, which onJob took for the
     // node that served the job, so a reloaded page filed every job under a node named 0, 1, 2 and saw none of them.
     (jobs || []).forEach(function (job) { onJob(job); });
