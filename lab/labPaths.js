@@ -17,8 +17,7 @@
 //   - A labMaster on any other port is a HARNESS labMaster: it holds no
 //     `work` row (every labMaster's work row points at 65432, and stopping
 //     it kills whatever holds that port — Andy's node, from an agent's
-//     code), and its live-world features are off (CLAUDE.md: no labMaster
-//     against spirit-3).
+//     code).
 //   - Its state, fixtures and lab nodes live in their own folders, keyed
 //     by port, so two labMasters never write each other's files.
 //   - ensureMaster checks a running labMaster serves THIS checkout before
@@ -69,7 +68,7 @@ module.exports = {
   labPort: function (offset) { return PORT_BASE + Number(offset); },
   LAB_PORT_MIN: PORT_BASE,
   LAB_PORT_MAX: PORT_BASE + PORT_SPAN - 1,
-  // A harness labMaster: no work row, no live world, its own folders.
+  // A harness labMaster: no work row, its own folders.
   HARNESS: HARNESS,
   REPO_ROOT: REPO_ROOT,
   STATE_DIR: path.join(os.tmpdir(), 'spiritos-lab-master' + SUFFIX),

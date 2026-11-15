@@ -8,12 +8,7 @@
     table { border-collapse: collapse; width: 100%; }
     th, td { border: 1px solid #ccc; padding: 0.35rem 0.5rem; text-align: left; }
     .row-actions button { margin-right: 0.25rem; }
-    .bulk.live { margin-top: 1rem; padding: 0.75rem; border: 1px solid #c9a227; background: #fffbe9; }
-    .bulk.live small { display: block; margin-top: 0.35rem; }
-    .live-out { margin-top: 0.5rem; font-family: monospace; white-space: pre-wrap; font-size: 0.85rem; }
-    .live-out .bad { color: #a32; }
-    /* Below the table, and able to hold several lines: update-all
-       answers once per node and a one-line box would show only the last. */
+    /* Below the table, and able to hold several lines. */
     #status { margin: 1rem 0 0; min-height: 1.2em; white-space: pre-wrap; font-family: monospace; }
     /* An armed Delete says so in colour as well as words: the label
        changes, and a person scanning a table of eight rows needs to see
@@ -34,50 +29,6 @@
   <div class="bulk">
     <button type="button" id="restart-master">Restart labMaster</button>
     <small>picks up a pulled labMaster; every node keeps running.</small>
-  </div>
-  <div>
-    <label>Name <input id="new-name" placeholder="andy"></label>
-    <label>Type
-      <select id="new-type">
-        <option value="avatar">avatar</option>
-        <option value="relay">relay</option>
-      </select>
-    </label>
-    <label>Port <input id="new-port" type="number" min="65400" max="65429" placeholder="65400"></label>
-    <button type="button" id="create">Create</button>
-  </div>
-  <div class="bulk">
-    <!-- RECYCLE ALL STOOD HERE, and it is the reason this sitting
-         happened: a bulk button that WIPED every node in the lab, next to
-         nothing that merely updated them.
-
-           Andy: "i want all my nodes on labMaster page to only be updated
-           via github, jazz's binding to spirit-3 keeps getting trashed."
-
-         The bulk gesture is now the safe one. Recycle is still there, per
-         row, behind its warning — destroying one node is a thing somebody
-         means; destroying all of them is a thing that happens to them. -->
-    <button type="button" id="update-all">Update all from GitHub</button>
-    <small>
-      every node but the work node, one at a time:
-      <code>git fetch &amp;&amp; git reset --hard origin/master</code>.
-      Keys, relay rows and conversations are untouched — git never had them.
-    </small>
-  </div>
-
-  <!-- THE ONE CONTROL THAT REACHES A REAL BOX, and it says so. Everything
-       else on this page spawns and deletes processes on this machine; this
-       claims a name on a public relay on the internet. It is a button
-       somebody presses, never something that happens on its own. -->
-  <div class="bulk live">
-    <button type="button" id="live-world">Build the spirit-3 world</button>
-    <label>peer <input id="live-peer" value="jazz" size="8"></label>
-    <small>
-      reaches <strong>spirit.andyflinn.com</strong>: mints an owner invite,
-      claims a row for that peer, points both nodes at it, and introduces them.
-      Reads the work node identity and never writes it.
-    </small>
-    <div id="live-out" class="live-out"></div>
   </div>
   <table>
     <thead>
@@ -299,91 +250,6 @@
       api('POST', '/api/restart-master', {}).then(function () {
         setStatus('labMaster restarting: this page reconnects by itself');
       }, function (e) { setStatus('restart failed: ' + e.message); });
-    });
-
-    document.getElementById('live-world').addEventListener('click', function () {
-      var button = this;
-      var out = document.getElementById('live-out');
-      var peer = (document.getElementById('live-peer').value || 'jazz').trim();
-      button.disabled = true;
-      out.textContent = 'building — minting, claiming and restarting takes a few seconds…';
-      api('POST', '/api/live-world', { peer: peer }).then(function (r) {
-        var body = r.body || {};
-        if (r.status !== 200) {
-          out.innerHTML = '<span class="bad">' + (body.error || ('failed with ' + r.status)) + '</span>';
-          return;
-        }
-        var lines = (body.steps || []).map(function (t) { return '  ' + t; });
-        var rep = body.report || {};
-        lines.push('');
-        lines.push('  ' + (rep.reachable ? 'spirit-3 answered' : 'spirit-3 did NOT answer'));
-        if (rep.work) {
-          lines.push('  ' + rep.work.name + ': row ' + (rep.work.onRelay ? 'yes' : 'NO') +
-            ', dials it ' + (rep.work.inRelaysJson ? 'yes' : 'NO') +
-            ', shell bound ' + (rep.work.boundInShell ? 'yes' : 'NO'));
-        }
-        if (rep.peer) {
-          lines.push('  ' + rep.peer.name + ': row ' + (rep.peer.onRelay ? 'yes' : 'NO') +
-            ', running ' + (rep.peer.running ? 'yes' : 'NO') +
-            ', shell bound ' + (rep.peer.boundInShell ? 'yes' : 'NO'));
-        }
-        out.textContent = lines.join('\n');
-        return refresh();
-      }).catch(function (e) {
-        out.innerHTML = '<span class="bad">' + e.message + '</span>';
-      }).then(function () {
-        button.disabled = false;
-      });
-    });
-
-    // One at a time, on purpose: an update stops a process, fetches and
-    // resets its clone and starts it again, and firing a dozen at once would have them
-    // competing over the same lab root — and, now, over the same git
-    // object store. Sequential is also what makes the answers readable —
-    // one line per node, in the order it was done.
-    document.getElementById('update-all').addEventListener('click', function () {
-      var button = this;
-      button.disabled = true;
-      setStatus('updating from GitHub…');
-      api('GET', '/api/nodes').then(function (r) {
-        var all = (r.body && r.body.nodes) || [];
-        // The work node refuses server-side (403, "the work node is your
-        // checkout") — fetching and hard-resetting somebody's working
-        // tree would throw away what they are writing. Skipped here so
-        // the log reports what was done rather than one guaranteed
-        // failure every time.
-        var targets = all.filter(function (n) { return !n.permanent; });
-        if (!targets.length) return ['nothing to update'];
-        var lines = [];
-        return targets.reduce(function (chain, n) {
-          return chain.then(function () {
-            return api('POST', '/api/nodes/' + n.id + '/refresh', {}).then(function (res) {
-              lines.push(n.name + ' (' + n.port + ') → ' + res.status + ' ' +
-                (res.body && res.body.error ? res.body.error : 'ok'));
-              setStatus(lines.join('\n'));
-            });
-          });
-        }, Promise.resolve()).then(function () { return lines; });
-      }).then(function (lines) {
-        setStatus(lines.join('\n'));
-        button.disabled = false;
-        return refresh();
-      }).catch(function (e) {
-        setStatus('update all failed: ' + e.message);
-        button.disabled = false;
-      });
-    });
-
-    document.getElementById('create').addEventListener('click', function () {
-      var body = {
-        name: document.getElementById('new-name').value,
-        type: document.getElementById('new-type').value,
-        port: Number(document.getElementById('new-port').value)
-      };
-      api('POST', '/api/nodes', body).then(function (r) {
-        setStatus(r.status + ' ' + JSON.stringify(r.body));
-        return refresh();
-      });
     });
 
     document.getElementById('tbody').addEventListener('click', function (e) {
