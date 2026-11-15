@@ -1482,42 +1482,86 @@ test.run('no path names process/js, a name of no family\'s included', 0.2, funct
   return (Object.keys(p).length === 4 && !/process\/js/.test(JSON.stringify(p))) || 'paths: ' + shorter(p);
 }, test.limit.quick);
 
-test.after(function () {
-  if (T.node) T.node.close();
-  for (const r of [T.root, T.bare]) { if (r) { try { fs.rmSync(r, { recursive: true, force: true }); } catch (e) { /* scratch */ } } }
-  for (const x of [L, C, M, FF]) {
-    if (x.page && x.page.kid) { try { x.page.kid.kill(); } catch (e) { /* gone */ } }
-    if (x.node && x.node.child) { try { x.node.child.kill(); } catch (e) { /* gone */ } }
-  }
+// The worlds above, freed once: by the last world before it takes a node of its own (the lab holds five, and these hold
+// them all), or at the end, whatever ran.
+// A node is freed by its release (it stops the node and hands its lab node back); killing its child alone keeps the lab
+// node held.
+let earlierFreed = false;
+async function freeEarlierWorlds() {
+  if (earlierFreed) return;
+  earlierFreed = true;
+  for (const x of [L, C, M, FF]) { if (x.page && x.page.kid) { try { x.page.kid.kill(); } catch (e) { /* gone */ } } }
   if (M.page && M.page.profile) { try { fs.rmSync(M.page.profile, { recursive: true, force: true }); } catch (e) { /* left */ } }
-  if (M.node && M.node.root) { try { require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(M.node); } catch (e) { /* left */ } }
   try { if (FL.chrome && FL.chrome.kid) FL.chrome.kid.kill(); } catch (e) { /* gone */ }
   try { if (FL.R) FL.R.stop(); } catch (e) { /* gone */ }
-  try { if (FL.N && FL.N.child) FL.N.child.kill(); } catch (e) { /* gone */ }
-  try { if (FL.N && FL.N.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(FL.N); } catch (e) { /* scratch */ }
+  for (const n of [L.node, C.node, M.node, FF.node, FL.N]) {
+    if (!n) continue;
+    try { if (typeof n.release === 'function') await n.release(); else if (n.child) n.child.kill(); } catch (e) { /* freed as this process ends */ }
+  }
+}
+test.after(async function () {
+  if (T.node) T.node.close();
+  for (const r of [T.root, T.bare]) { if (r) { try { fs.rmSync(r, { recursive: true, force: true }); } catch (e) { /* scratch */ } } }
+  await freeEarlierWorlds();
 });
 
 
 // ── A STREAM GONE SILENT IS RESET (goal/G47.1, box v148: "5 seconds without a spirit event, the stream resets: the page's
 // stream reader stamps the time of every byte that comes in, beats included, and checks each second; after 5 s of nothing
 // it cancels that stream first, so the dead one holds no connection, says the stream is down, and opens a new one at once.") ──
-// A page on a scratch node, the node paused (SIGSTOP): its socket stays open and nothing comes, as on Andy's frozen tab
-// (cw: "the node is sending and the socket is open, but your page stopped taking what arrives"). Within the 5 s and a
-// second's grace, the page sends a new event.subscribe of its own; then the node goes on (SIGCONT).
+// A page on a scratch node, reached through a go-between of this test: once it goes quiet, it stops reading what the node
+// sends, so the page's socket stays open and nothing comes, as on Andy's frozen tab (cw: "the node is sending and the
+// socket is open, but your page stopped taking what arrives"). Within the 5 s and a second's grace, the page sends a new
+// event.subscribe of its own; then the go-between passes bytes on again. A go-between, not a paused node, so the check
+// judges on Windows as on Linux (Andy, goal/G47.1: "so you both FIX the red in spirit.js"; it judged nothing on Windows).
 const SIL = {};
+// A go-between: every request to it is sent on to the node, named as the node's own (a personal node answers only a host,
+// origin and referer of its own address); quiet(true) stops reading what the node answers, on every answer open and to
+// come, so the page's socket stays open and nothing arrives; quiet(false) reads again.
+function goBetween(port) {
+  const answers = [];
+  const own = '127.0.0.1:' + port;
+  let still = false;
+  const server = http.createServer(function (req, res) {
+    const headers = Object.assign({}, req.headers, { host: own });
+    if (headers.origin) headers.origin = 'http://' + own;
+    if (headers.referer) headers.referer = String(headers.referer).replace(/^http:\/\/[^/]+/, 'http://' + own);
+    const out = http.request({ host: '127.0.0.1', port: port, method: req.method, path: req.url, headers: headers }, function (answer) {
+      answers.push(answer);
+      res.writeHead(answer.statusCode, answer.headers);
+      if (still) answer.pause();
+      answer.on('data', function (b) { res.write(b); });
+      answer.on('end', function () { res.end(); });
+      answer.on('error', function () { res.destroy(); });
+    });
+    out.on('error', function () { res.destroy(); });
+    res.on('close', function () { if (!res.writableEnded) out.destroy(); });
+    req.pipe(out);
+  });
+  return new Promise(function (resolve) {
+    server.listen(0, '127.0.0.1', function () {
+      resolve({
+        base: 'http://127.0.0.1:' + server.address().port,
+        quiet: function (on) { still = !!on; answers.forEach(function (a) { if (still) a.pause(); else a.resume(); }); },
+        stop: function () { answers.forEach(function (a) { a.destroy(); }); server.closeAllConnections(); server.close(); },
+      });
+    });
+  });
+}
 test.run('the world: a page on a scratch node, its stream open', 0.2, async function () {
-  if (process.platform === 'win32') { SIL.skip = 'a node is paused on Linux only: nothing judged here'; return true; }
+  await freeEarlierWorlds();
   SIL.node = await H.scratchNode();
   if (!SIL.node.up) return 'no scratch node: nothing judged';
+  SIL.gate = await goBetween(Number(new URL(SIL.node.base).port));
   SIL.page = await H.chromePage(H.findChrome());
   if (!SIL.page || SIL.page.error) return 'no headless page: ' + short(SIL.page && SIL.page.error);
-  await SIL.page.send('Page.navigate', { url: SIL.node.base + '/face.html' });
+  await SIL.page.send('Page.navigate', { url: SIL.gate.base + '/face.html' });
   if (!(await H.until(function () { return SIL.page.evaluate('!!(window.spirit && window.spirit.ready)'); }, 30000))) return 'the page never stood';
   await SIL.page.evaluate('window.zzConn = []; window.spirit.event.subscribe({ onConnection: function (u) { window.zzConn.push(u); } }); true');
   return true;
 }, test.limit.slow);
 test.after(async function () {
-  try { if (SIL.node && SIL.node.child) process.kill(SIL.node.child.pid, 'SIGCONT'); } catch (e) { /* gone */ }
+  try { if (SIL.gate) SIL.gate.stop(); } catch (e) { /* gone */ }
   try { if (SIL.page && SIL.page.kid) SIL.page.kid.kill(); } catch (e) { /* gone */ }
   try { if (SIL.node && SIL.node.release) await SIL.node.release(); } catch (e) { /* gone */ }
 });
@@ -1527,27 +1571,25 @@ const subscribes = function () { return subscribeIds().length; };
 const endedAt = function (id) { let at = -1; SIL.page.heard.forEach(function (m, i) { if ((m.method === 'Network.loadingFinished' || m.method === 'Network.loadingFailed') && m.params.requestId === id && at < 0) at = i; }); return at; };
 const sentAt = function (id) { let at = -1; SIL.page.heard.forEach(function (m, i) { if (m.method === 'Network.requestWillBeSent' && m.params.requestId === id && at < 0) at = i; }); return at; };
 test.run('a stream with no event for 5 s is reset: the page opens a new one by itself', 0.8, async function () {
-  if (SIL.skip) return SIL.skip;
-  if (!SIL.page || !SIL.node || !SIL.node.child) return 'no page: the world failed';
+  if (!SIL.page || !SIL.gate) return 'no page: the world failed';
   await H.sleep(1500);
   const before = subscribes();
+  if (!before) return 'the page took no stream before the quiet: nothing judged';
   SIL.old = subscribeIds()[before - 1];
   SIL.conn = Number(await SIL.page.evaluate('window.zzConn.length'));
-  process.kill(SIL.node.child.pid, 'SIGSTOP');
+  SIL.gate.quiet(true);
   const reset = await H.until(function () { return Promise.resolve(subscribes() > before); }, 6500);
   SIL.fresh = subscribeIds()[before];
   SIL.saidDown = (await SIL.page.evaluate('window.zzConn.slice(' + SIL.conn + ')')) || [];
-  process.kill(SIL.node.child.pid, 'SIGCONT');
+  SIL.gate.quiet(false);
   return !!reset || 'the node silent for 6.5 s, the page opened no new stream: ' + before + ' event.subscribe before, ' + subscribes() + ' after';
 }, test.limit.slow);
 test.run('it cancels the silent stream first: the old one ended before the new one was sent', 0.8, function () {
-  if (SIL.skip) return SIL.skip;
   if (!SIL.old || !SIL.fresh) return 'no new stream: the check before failed';
   const ended = endedAt(SIL.old), sent = sentAt(SIL.fresh);
   return (ended >= 0 && ended < sent) || 'the old stream ' + (ended < 0 ? 'never ended' : 'ended after the new one was sent') + ': it still holds its connection';
 }, test.limit.quick);
 test.run('and it says the stream is down: onConnection false before the new one', 0.8, function () {
-  if (SIL.skip) return SIL.skip;
   if (!SIL.saidDown) return 'no page: the world failed';
   return SIL.saidDown.indexOf(false) !== -1 || 'onConnection said ' + JSON.stringify(SIL.saidDown) + ' while the node was silent';
 }, test.limit.quick);

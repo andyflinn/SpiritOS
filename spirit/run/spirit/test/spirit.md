@@ -349,4 +349,4 @@ falls back to process/js/<name>"*. In a process, `spirit.familyPath` gives a sys
 (fs), an app's `spirit/app/<name>/api.js` (desk, agent), and no path it gives names `process/js`, a name of no family's
 included.
 
-- A stream with no event for 5 s is reset (box v148): the node paused, the page opens a new event.subscribe by itself within 6.5 s; it cancels the silent one first (the old request ended before the new one was sent); and it says the stream is down (onConnection false).
+- A stream with no event for 5 s is reset (box v148): the page reaches the node through a go-between of the test that stops reading what the node sends (the socket open, nothing arriving, on Windows as on Linux), and the page opens a new event.subscribe by itself within 6.5 s; it cancels the silent one first (the old request ended before the new one was sent); and it says the stream is down (onConnection false).
