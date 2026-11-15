@@ -27,6 +27,8 @@ const path = require('path');
 const crypto = require('crypto');
 const { execFile, spawn } = require('child_process');
 const { DatabaseSync } = require('node:sqlite');
+// Every status line and every result's icon, worded in one place (goal/G47.1; ./words.js).
+const WORDS = require(path.join(__dirname, '..', '..', '..', 'spirit/app/testicle/words.js'));
 const appServer = spirit.require('spirit/appServer.js');
 const { VENDORED_FOLDERS } = spirit.require('spirit/fileSystem.js');
 const { createProbabilityBucket } = spirit.require('spirit/probabilityBucket.js');
@@ -319,7 +321,7 @@ function nextJob() {
   // run. The write's end calls for the quiet second again (apply), and the job starts after it.
   if (working || timer || pending.size) { waits(working ? 'a write runs' : timer ? 'a write is due' : pending.size + ' changes pending'); return; }
   const n = chooseJob();
-  if (!n) { waits('nothing chosen'); told(); return; }
+  if (!n) { waits('nothing chosen'); dropWorld(); told(); return; }
   if (n.classify) logError('runner: classifying ' + n.scripts.length + ' scripts (' + (prefs.interactive ? 'interactive' : 'auto') + ')', null);
   // THE TWO HASHES, TAKEN AT THE START (the box: "When a run starts, the server remembers the two hashes as they stand, and
   // until that run ends tags every result of it with them").
@@ -350,10 +352,49 @@ function nextJob() {
     try { nextJob(); } catch (e) { logError('nextJob', e); }
     told();
   };
-  j.kid = spawn(process.execPath, args, { cwd: RUN, stdio: 'ignore', windowsHide: true });
-  j.kid.on('error', end);
-  j.kid.on('exit', end);
+  // EVERY SUITE RUN HANDED ONE NODE AND ONE CHROME (goal/G47.1, Q10: testicle's UI tests "share one node and one Chrome that
+  // testicle hands them"): named to the run in SPIRIT_MOUNT_BASE, SPIRIT_MOUNT_RUN and SPIRIT_CHROME_PORT; a test that asks
+  // for it (headLessChrome's scratchNode({ shared: true }), and every chromePage) takes them in place of booting its own. The
+  // classifier keeps its own. A job stopped or killed before its run has started ends there.
+  const launch = function (extra) {
+    if (done) return;
+    if (j.killed || j.stopped) { end(); return; }
+    j.kid = spawn(process.execPath, args, { cwd: RUN, env: Object.assign({}, process.env, extra || {}), stdio: 'ignore', windowsHide: true });
+    j.kid.on('error', end);
+    j.kid.on('exit', end);
+  };
+  if (j.classify) launch(null);
+  else handWorld().then(function (w) { launch(w.env); }, function () { launch(null); });
   j.timer = setTimeout(function () { killJob(j); }, JOB_LIMIT_MS);
+}
+// THE NODE AND THE CHROME TESTICLE HANDS ITS RUNS: booted at the first suite run, the two side by side, and let go when the
+// runner has nothing left to choose, so a lab node is held only while testicle works.
+let world = null;
+let worldBoot = null;
+function handWorld() {
+  if (world) return Promise.resolve(world);
+  if (!worldBoot) {
+    worldBoot = (async function () {
+      const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+      const found = H.findChrome();
+      const both = await Promise.all([H.scratchNode({}), found ? H.sharedChrome(found) : Promise.resolve(null)]);
+      const node = both[0], chrome = both[1];
+      const env = {};
+      if (node && node.up) { env.SPIRIT_MOUNT_BASE = node.base; env.SPIRIT_MOUNT_RUN = node.run; }
+      if (chrome && !chrome.error) env.SPIRIT_CHROME_PORT = String(chrome.port);
+      world = { node: node, chrome: chrome, env: env };
+      return world;
+    }()).then(null, function (e) { logError('runner: no node and Chrome to hand out', e); world = { env: {} }; return world; });
+  }
+  return worldBoot;
+}
+function dropWorld() {
+  if (!world) return;
+  const w = world;
+  world = null;
+  worldBoot = null;
+  try { if (w.chrome && w.chrome.close) w.chrome.close(); } catch (e) { logError('runner: closing its Chrome', e); }
+  if (w.node && w.node.release) Promise.resolve(w.node.release()).then(null, function (e) { logError('runner: releasing its node', e); });
 }
 // PAST THE LIMIT (the box: "A job that runs past 2 minutes is killed, and every test of that suite and script the server
 // knows is failed, tagged with the run's two hashes, so it is not queued again until the script or the suite changes").
@@ -663,9 +704,10 @@ function busyNow() { return working || !!timer || pending.size > 0 || getting > 
 // when idle): carried on every message beside busy, and told again whenever it changes.
 function doingNow() {
   if (!job) return '';
-  if (job.classify) return 'classifying ' + job.done + ' of ' + job.scripts.length;
-  if (job.batch) return 'running ' + path.posix.basename(job.suite) + ' for ' + (job.scripts.length === 1 ? job.scripts[0] : job.scripts.length + ' scripts');
-  return 'running ' + path.posix.basename(job.suite) + ' for ' + job.script;
+  if (job.classify) return WORDS.classifying(job.done, job.scripts.length);
+  // WHAT IT IS DOING, TEST BY TEST (goal/G47.1, Andy: "running testicle.js for spirit/app/testicle/testicle.js ... Does NOT report
+  // what it's doing!"): each result of the running suite that comes in (testicle.set) is named, worded by ./words.js.
+  return WORDS.running(job.suite, job.batch ? job.scripts : [job.script], job.tested || 0, job.last || null);
 }
 // WHAT RUNS, FOR WHICH SCRIPTS (goal/G47.1, box v134-135: the status box "knows which suite is running and for which scripts,
 // and shows \"<x> of <n> reported: <script> <success|failure>\""): the running suite, its scripts and when it started, carried on every
@@ -968,6 +1010,8 @@ appServer.serve({
       // a browser-only one, refused before any row is made, so neither a test row nor a suite row of it stands.
       if (!fits(script, suite)) throw refused('not-applicable');
       const severity = Math.max(0, Math.min(1, Number(a.severity) || 0));
+      // A result of the running suite is what it is doing now (doingNow), told at once.
+      if (job && !job.classify && job.suite === suite && (job.batch ? job.scripts.indexOf(script) !== -1 : job.script === script)) { job.tested = (job.tested || 0) + 1; job.last = { script: script, test: name, ok: a.verified === true }; told(); }
       const row = Q.script.get(script);
       // A FILE NOT ON DISC TAKES NO RESULT, its row deleted or never made (wsl's red, 3f6832e6: a classifier run begun before
       // two files were removed reported 2 s after, and their rows stood live and red for hours; the box: "A removed file's

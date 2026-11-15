@@ -22,14 +22,15 @@
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26; Andy: "the fucking status box must require the fucking api and make sure the
   // fucking data.js is installed"): the icon element, spirit.data, testicle's interface and testicle's cache manager, its
   // data.js, which the page's one stream feeds. Mounted alone, it gets its data by itself.
-  var parts = Promise.all([S.require('spirit/element/icon.js'), S.require('spirit/data.js'), S.require('spirit/app/testicle/api.js'), S.cacheManager('testicle')]);
+  var parts = Promise.all([S.require('spirit/element/icon.js'), S.require('spirit/data.js'), S.require('spirit/app/testicle/api.js'), S.require('spirit/app/testicle/words.js'), S.cacheManager('testicle')]);
+  // Its words testicle's own (goal/G47.1; ../words.js): every line it shows worded there, none here.
+  function W() { return S.required.spirit.app.testicle.words; }
   parts.catch(function () {});
 
   // The last change, in words: a test row's key ends in its flip, which says nothing to a reader, so it is left off.
   function lastWords(last) {
     if (!last || !last.key) return '';
-    var what = last.table === 'testicle' ? String(last.key).split('|').slice(0, 3).join(' | ') : String(last.key).split('|').join(' | ');
-    return String(last.change || 'updated') + ' ' + last.table + ': ' + what;
+    return W().change(last.table, last.key, last.change);
   }
   function runningOf(m) {
     try { var r = m && m.running ? JSON.parse(m.running) : null; return r && r.suite && Array.isArray(r.scripts) ? r : null; } catch (e) { return null; }
@@ -44,7 +45,7 @@
     });
     if (!done.length) return '';
     var last = done.slice().sort(function (a, c) { return Number(c.changed) - Number(a.changed); })[0];
-    return done.length + ' of ' + run.scripts.length + ' reported: ' + last.script + ' ' + (last.outcome === 'green' ? 'success' : 'failure');
+    return W().reported(done.length, run.scripts.length, last.script, last.outcome === 'green');
   }
 
   function create(container) {
@@ -78,7 +79,11 @@
       icon.title = busy ? 'working' : 'idle';
       var run = runningOf(m);
       if (run) askRun(run);
-      var words = (run && reportedWords(run)) || ((m && typeof m.doing === 'string' && m.doing) ? m.doing : lastWords(m && m.last));
+      // WHAT RUNS FIRST, TEST BY TEST, then how many of its scripts have reported (goal/G47.1, Andy: "Does NOT report what it's
+      // doing!"): the server's doing names the newest result of the running suite; the count of scripts done follows it.
+      var doing = (m && typeof m.doing === 'string' && m.doing) ? m.doing : '';
+      var reported = run ? reportedWords(run) : '';
+      var words = doing ? doing + (reported ? '; ' + reported : '') : reported || lastWords(m && m.last);
       line.textContent = words;
       line.title = words;
     }

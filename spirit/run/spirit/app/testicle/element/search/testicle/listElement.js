@@ -24,7 +24,7 @@
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the list and its row, the two selectors, testicle's interface and its cache manager.
   var parts = Promise.all(['spirit/element/search.js', 'spirit/app/testicle/element/search/testicle/rowElement.js', 'spirit/element/search/file.js',
-    'spirit/app/testicle/element/search/suite.js', 'spirit/app/testicle/api.js'].map(function (p) { return S.require(p); }).concat([S.cacheManager('testicle')]));
+    'spirit/app/testicle/element/search/suite.js', 'spirit/app/testicle/api.js', 'spirit/app/testicle/words.js'].map(function (p) { return S.require(p); }).concat([S.cacheManager('testicle')]));
   // A NODE WITH NO TESTICLE refuses its interface: create says the tests could not be loaded; the refusal is never left unhandled.
   parts.catch(function () {});
 
@@ -126,7 +126,7 @@
           // "the default setting for testicle search should be EQUAL the the RED verb of testicle. ALL scripts, ALL suites,
           // reds only, most SERVERE FIRST DAMMIT.").
           { name: 'result', multi: true, keepOne: true, off: ['green'],
-            choices: [{ value: 'red', icon: '❌', word: 'red' }, { value: 'green', icon: '✅', word: 'green' }],
+            choices: [{ value: 'red', icon: S.required.spirit.app.testicle.words.result(false), word: 'red' }, { value: 'green', icon: S.required.spirit.app.testicle.words.result(true), word: 'green' }],
             test: function (row, off) { var o2 = off || {}; return row && (row.verified ? !o2.green : !o2.red) ? 1 : 0; } },
         ],
         selectors: [

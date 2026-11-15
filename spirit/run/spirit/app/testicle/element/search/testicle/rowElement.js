@@ -18,6 +18,8 @@
   if (window.spirit && typeof window.spirit.cacheManager === 'function') Promise.resolve(window.spirit.cacheManager('testicle')).catch(function () {});
   var S = window.spirit = window.spirit || {};
   S.require('spirit/element/rowElement.js');
+  // A result's icon worded by testicle's words (goal/G47.1; ../../../words.js), loaded as this file runs (rule/26).
+  S.require('spirit/app/testicle/words.js');
 
   function esc(s) { return S.escapeHtml(String(s == null ? '' : s)); }
   function nameOf(p) { var s = String(p == null ? '' : p); return s.slice(s.lastIndexOf('/') + 1); }
@@ -34,7 +36,7 @@
       index: index,
       row: r,
       fields: [
-        { name: 'verified', paint: function (v) { return v.verified ? '✅' : '❌'; } },
+        { name: 'verified', paint: function (v) { return S.required.spirit.app.testicle.words.result(!!v.verified); } },
         { name: 'severity', paint: function (v) { return esc((Number(v.severity) || 0).toFixed(2)); } },
         { name: 'test', paint: function (v) { return esc(v.test); } },
         { name: 'script', paint: function (v) { return fileCell(v.script); } },

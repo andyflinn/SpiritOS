@@ -33,8 +33,9 @@ testicle's face is an element of its own"*, *"element/statusBox.js (the monitor 
 On a real testicle, nothing fed by hand (box v142): a scratch lab node with testicle on, the box mounted alone on a page
 that loaded it by itself; one box with the mode, the busy icon and the line; the mode the node answers (🖖, interactive);
 🚶‍➡️ and what it was doing while testicle classified the tree, as the stream said; 🛌 once idle; two planted scripts with their
-own tests pressed, one holding and one failing, each shown *"1 of 1 reported: <script> <success|failure>"* as testicle
-streams it; the node set to auto and back, 🤖 then 🖖 by itself (box v143, *"subscribe to the data they display"*);
+own tests pressed, one holding and one failing, each shown with *"1 of 1 reported: <script> ✅"* or *❌* in its line as
+testicle streams it (the result an icon since Andy's *"why are the results in status messages not icons?"*, its words
+spirit/app/testicle/words.js); the node set to auto and back, 🤖 then 🖖 by itself (box v143, *"subscribe to the data they display"*);
 overflow hidden, one line, the message ellipsed; destroyed, an empty container.
 
 Not judged by it yet: the last change in words (shown when nothing runs and nothing is being done).

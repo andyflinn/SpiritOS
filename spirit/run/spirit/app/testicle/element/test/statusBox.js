@@ -103,25 +103,28 @@ test.run('the world: zzOk.js and zzBad.js planted with their own tests, and test
   return (await idle(280000)) || 'testicle still busy after the plant';
 }, test.limit.long);
 let fromOk = 0;
-test.run('a press of zzOk\'s own suite: the box says it runs, then "1 of 1 reported: spirit/zzBox/zzOk.js success"', 0.4, async function () {
+// The result an icon (Andy: "why are the results in status messages not icons?"), and the count after the running line
+// while the run still goes (goal/G47.1): a line holding it, not a line of it alone.
+const holds = function (lines, words) { return (lines || []).some(function (l) { return String(l).indexOf(words) !== -1; }); };
+test.run('a press of zzOk\'s own suite: the box says it runs, then "1 of 1 reported: spirit/zzBox/zzOk.js ✅"', 0.4, async function () {
   if (!W.ok) return NOPAGE;
   fromOk = await ev('window.zz.lines.length');
   const r = await ask('testicle.run', { script: OK, suite: OKS });
   if (!r || r.started !== true) return 'the press answered ' + short(r);
-  const ok = await H.until(function () { return ev('window.zz.lines.slice(' + fromOk + ')').then(function (l) { return (l || []).indexOf('1 of 1 reported: ' + OK + ' success') !== -1; }); }, 120000);
+  const ok = await H.until(function () { return ev('window.zz.lines.slice(' + fromOk + ')').then(function (l) { return holds(l, '1 of 1 reported: ' + OK + ' ✅'); }); }, 120000);
   const seen = await ev('window.zz.lines.slice(' + fromOk + ')');
   const ran = (seen || []).some(function (l) { return /^running zzOk\.js for spirit\/zzBox\/zzOk\.js$/.test(l); });
   return (!!ok && ran) || 'lines after the press: ' + short(seen);
 }, test.limit.long);
-test.run('a press of zzBad\'s own suite: the box says "1 of 1 reported: spirit/zzBox/zzBad.js failure", its true outcome', 0.4, async function () {
+test.run('a press of zzBad\'s own suite: the box says "1 of 1 reported: spirit/zzBox/zzBad.js ❌", its true outcome', 0.4, async function () {
   if (!W.ok) return NOPAGE;
   await idle(60000);
   const from = await ev('window.zz.lines.length');
   const r = await ask('testicle.run', { script: BAD, suite: BADS });
   if (!r || r.started !== true) return 'the press answered ' + short(r);
-  const ok = await H.until(function () { return ev('window.zz.lines.slice(' + from + ')').then(function (l) { return (l || []).indexOf('1 of 1 reported: ' + BAD + ' failure') !== -1; }); }, 120000);
+  const ok = await H.until(function () { return ev('window.zz.lines.slice(' + from + ')').then(function (l) { return holds(l, '1 of 1 reported: ' + BAD + ' ❌'); }); }, 120000);
   const seen = await ev('window.zz.lines.slice(' + from + ')');
-  const lied = (seen || []).some(function (l) { return l === '1 of 1 reported: ' + BAD + ' success'; });
+  const lied = holds(seen, '1 of 1 reported: ' + BAD + ' ✅');
   return (!!ok && !lied) || 'lines after the press: ' + short(seen);
 }, test.limit.long);
 test.run('its box keeps what it holds inside: overflow hidden, one line, the message ellipsed', 0.2, async function () {
