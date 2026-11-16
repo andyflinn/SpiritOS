@@ -26,13 +26,22 @@ const BEFORE_S = process.platform === 'win32' ? 10 : 3.7;
 // Every process descended from pid, with its command line (Linux: ps; elsewhere the counts are not judged). The run's own:
 // a node it started is counted, what that node's servers start in their turn is not (the scratch node's testicle classifies
 // at its start, with a node and a Chrome of its own).
+// EVERY PROCESS UNDER pid, on Linux by ps, on Windows by its process table (Win32_Process: ProcessId, ParentProcessId,
+// CommandLine), so the one node and the one Chrome are counted where testicle runs too, never left red for want of a way.
+function processRows() {
+  if (process.platform === 'linux') return execFileSync('ps', ['-eo', 'pid=,ppid=,args='], { encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n');
+  if (process.platform === 'win32') {
+    const out = execFileSync('powershell', ['-NoProfile', '-Command', 'Get-CimInstance Win32_Process | ForEach-Object { "$($_.ProcessId) $($_.ParentProcessId) $($_.CommandLine)" }'], { encoding: 'utf8', maxBuffer: 1 << 26, windowsHide: true });
+    return out.split(/\r?\n/).map(function (l) { return l.split('\\').join('/'); });
+  }
+  return [];
+}
 function descendants(pid) {
-  if (process.platform !== 'linux') return null;
   let rows = [];
-  try { rows = execFileSync('ps', ['-eo', 'pid=,ppid=,args='], { encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n'); } catch (e) { return []; }
+  try { rows = processRows(); } catch (e) { return []; }
   const kids = {};
   const args = {};
-  rows.forEach(function (l) { const m = /^\s*(\d+)\s+(\d+)\s+(.*)$/.exec(l); if (!m) return; (kids[m[2]] = kids[m[2]] || []).push(m[1]); args[m[1]] = m[3]; });
+  rows.forEach(function (l) { const m = /^\s*(\d+)\s+(\d+)\s*(.*)$/.exec(l); if (!m) return; (kids[m[2]] = kids[m[2]] || []).push(m[1]); args[m[1]] = m[3]; });
   const out = [];
   const walk = function (p) { (kids[p] || []).forEach(function (k) { out.push({ pid: k, args: args[k] }); if (!/spirit\/server\.js --port/.test(args[k])) walk(k); }); };
   walk(String(pid));
@@ -101,11 +110,9 @@ test.run('the run ends by itself, within four minutes', 0.4, function () {
   return (!!W.list && !W.hung) || false;
 }, test.limit.quick);
 test.run('the whole run starts one node', 0.4, function () {
-  if (process.platform !== 'linux') return false;
   return W.nodes.size === 1 || false;
 }, test.limit.quick);
 test.run('the whole run starts one Chrome', 0.4, function () {
-  if (process.platform !== 'linux') return false;
   return W.chromes.size === 1 || false;
 }, test.limit.quick);
 // box v144: "only a hung page is reloaded: a main page that does not answer within 1 s is hung; a script's load waits as
