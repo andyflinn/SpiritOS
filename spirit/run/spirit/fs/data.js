@@ -66,8 +66,13 @@
       icons: {
         keep: function (set) {
           var s = set && typeof set === 'object' ? set : {};
+          // FILLED QUIETLY, THEN ONE WORD (goal/G47.1: a set of 659 glyphs, each row told to every watcher, held the page's
+          // thread five seconds, so the icon list's page read as hung): a glyph gone is still told to its watcher, the rows
+          // then go in untold, and the branch's watchers hear once that it is whole, as the file tree does.
           Object.keys(HOME.branch(ICONS)).forEach(function (g) { if (!Object.prototype.hasOwnProperty.call(s, g)) HOME.del(ICONS + '/' + g); });
+          HOME.quietly(ICONS, true);
           Object.keys(s).forEach(function (g) { HOME.set(ICONS + '/' + g, { glyph: g, keywords: Array.isArray(s[g]) ? s[g] : [] }); });
+          HOME.ready(ICONS, true);
         },
         row: function (g) { return g ? HOME.get(ICONS + '/' + g) || null : null; },
         watch: function (g, fn) { return HOME.watch(ICONS + '/' + g, function (whole, v) { if (typeof fn === 'function') fn(v); }); },
