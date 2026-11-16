@@ -430,7 +430,7 @@ function killJob(j) {
   if (job !== j) { logError('killJob: the job had already ended', null); return; }
   j.killed = true;
   // A classifying run killed: its end fails every script it had not classified (jobEnded).
-  if (j.classify) { try { j.kid.kill(); } catch (e) { logError('killJob: the kill', e); } return; }
+  if (j.classify) { if (j.kid) { try { j.kid.kill(); } catch (e) { logError('killJob: the kill', e); } } return; }
   const at = scriptAt(j);
   j.killedAt = at;
   // A script removed while the run went takes no failure either (as testicle.set refuses it, wsl's red 3f6832e6).
@@ -445,7 +445,7 @@ function killJob(j) {
   logError('runner: killed ' + j.suite + (j.batch ? ' (' + j.scripts.length + ' scripts) at ' + (at || 'no script') : ' for ' + j.script) + ' past ' + JOB_LIMIT_MS + ' ms', null);
   // The scripts not yet through, built into a new run from the flags (batchOf), behind what is queued.
   if (j.batch) front.push({ resume: true, script: '', suite: j.suite, title: '' });
-  try { j.kid.kill(); } catch (e) { logError('killJob: the kill', e); }
+  if (j.kid) { try { j.kid.kill(); } catch (e) { logError('killJob: the kill', e); } }
 }
 // WHAT GOES WRONG, SAID ON STDERR AND KEPT NOWHERE (goal/G47.1, Q16; Andy, of testicle.err among the unread logs: "ALL
 // OF THEM. KILL THEM. NOBODY READ THAT SHIT, THEY SHOULD NOT EXIST."): every error the runner meets is said on its
@@ -577,7 +577,8 @@ function stopJob(j, why) {
   j.stopped = true;
   clearTimeout(j.timer);
   logError('runner: stopped ' + (j.classify ? 'classifying' : j.suite + (j.batch ? ' (' + j.scripts.length + ' scripts)' : ' for ' + j.script)) + ': ' + why, null);
-  try { j.kid.kill(); } catch (e) { logError('stopJob: the kill', e); }
+  // A run whose process has not started yet (it waits for its node and Chrome) has none to kill: launch sees it stopped.
+  if (j.kid) { try { j.kid.kill(); } catch (e) { logError('stopJob: the kill', e); } }
   // QUEUED AGAIN, BEHIND WHAT STOPPED IT (box v130), in interactive as in auto: a batch to be assembled fresh from its flags, a
   // single run as it was; a classifying run needs none, its scripts still owe their class.
   if (j.batch) front.push({ resume: true, script: '', suite: j.suite, title: '' });
@@ -852,10 +853,10 @@ function served(row) {
 // A suite row as a search and the stream carry it: its key script|suite, its status "needs running" while it is flagged.
 function suiteServed(r) { return { key: r.script + '|' + r.suite, script: r.script, suite: r.suite, test: !!r.test, status: statusOf(r.test, r.outcome), deleted: !!r.deleted, outcome: r.outcome, changed: Number(r.changed) }; }
 // Test rows, already in the order they are answered in, as one search answer: the bucket keeps that order (a row's seat
-// falls with its place), cut to what one answer holds, more saying it was cut. from, the rows the asker already holds,
-// starts the answer after them: the following answer.
-function mostSevereFirst(all, from) {
-  const rows = from ? all.slice(from) : all;
+// falls with its place), cut to what one answer holds, more saying it was cut.
+// ONE ANSWER, NEVER IN PARTS (Andy: no paging; goal/G47.1, Q17): the most severe first, as many as one answer holds,
+// more saying some were left out; the asker narrows its search to see the rest.
+function mostSevereFirst(rows) {
   const bucket = createProbabilityBucket(Infinity);
   rows.forEach(function (row, i) { bucket.seatFor(1 - i / (rows.length + 1), { key: row.key, label: JSON.stringify(row) }); });
   const out = bucket.serialize(null, SEARCH_ROOM);
@@ -1113,7 +1114,6 @@ appServer.serve({
       if (!a || typeof a !== 'object' || Array.isArray(a) || typeof a.text !== 'string') return false;
       if (a.test !== undefined && (typeof a.script !== 'string' || typeof a.suite !== 'string' || typeof a.test !== 'string' || !a.test)) return false;
       if (a.result !== undefined && a.result !== 'red' && a.result !== 'green') return false;
-      if (a.from !== undefined && !(Number.isInteger(a.from) && a.from >= 0)) return false;
       return Object.keys(a).every(function (k) { return (k === 'text') || k === 'result' || k === 'from' || ((k === 'script' || k === 'suite' || k === 'test') && typeof a[k] === 'string'); });
     },
     // goal/G47.1, the box: "Red, green, the script and the suite go to the server with the words, so the server narrows
@@ -1124,7 +1124,7 @@ appServer.serve({
       const kept = function (row) {
         return (a.result === undefined || row.verified === (a.result === 'green')) && (!words || (Number(probabilityStringObjectMatch(words, row)) || 0) > 0);
       };
-      if (a.test !== undefined) return mostSevereFirst(T.history.all(a.script, a.suite, a.test).map(testServed).filter(kept), a.from);
+      if (a.test !== undefined) return mostSevereFirst(T.history.all(a.script, a.suite, a.test).map(testServed).filter(kept));
       const rows = T.currents.all().filter(function (r) { return (a.script === undefined || r.script === a.script) && (a.suite === undefined || r.suite === a.suite); })
         .map(testServed).filter(kept);
       // WITH WORDS, THE BEST MATCH FIRST (goal/G47.1; testicle.js: "cut and full: of the rows that match, as many as the answer
@@ -1134,7 +1134,7 @@ appServer.serve({
         const score = new Map(rows.map(function (r) { return [r, Number(probabilityStringObjectMatch(words, r)) || 0]; }));
         rows.sort(function (x, y) { return score.get(y) - score.get(x); });
       }
-      return mostSevereFirst(rows, a.from);
+      return mostSevereFirst(rows);
     },
   },
   // goal/G47.1, the box: "The new verb \"red\" is shorthand for: search all failed, current tests, most severe first", "The

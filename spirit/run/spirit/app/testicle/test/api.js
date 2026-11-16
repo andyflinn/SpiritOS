@@ -116,10 +116,10 @@ test.run('testicle.set takes one test only and refuses a list of results', 0.2, 
   if (!W.api) return false;
   return refusedAs('testicle.set', Object.assign({}, SET, { tests: [] })) === 'no-such-argument' || false;
 }, test.limit.quick);
-test.run('testicle.search requires its words and takes script, suite, test, result and from as optional, from as a number', 0.2, function () {
+test.run('testicle.search requires its words, takes script, suite, test and result as optional, and takes no from', 0.2, function () {
   if (!W.api) return false;
-  return (passes('testicle.search', { text: '' }) && passes('testicle.search', { script: 'a', suite: 'b', test: 'c', result: 'red', from: 10, text: '' })
-    && refusedAs('testicle.search', { script: 'a' }) === 'bad-request' && refusedAs('testicle.search', { text: '', from: '10' }) === 'bad-request') || false;
+  return (passes('testicle.search', { text: '' }) && passes('testicle.search', { script: 'a', suite: 'b', test: 'c', result: 'red', text: '' })
+    && refusedAs('testicle.search', { script: 'a' }) === 'bad-request' && refusedAs('testicle.search', { text: '', from: 10 }) === 'no-such-argument') || false;
 }, test.limit.quick);
 // goal/G47.1, box v129-131: {script, suite, success}, a suite's success or failure for one script.
 test.run('suite.success takes script, suite and success as true or false, all required', 0.2, function () {

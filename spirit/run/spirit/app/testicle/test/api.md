@@ -15,7 +15,7 @@ v72). Required as the node reads it; each verb's arguments are judged by `spirit
 - `suite.search { script?, text }`.
 - `testicle.set { script, suite, test, verified, severity }`: one test's result by itself, all required, verified a
   boolean, severity a number; a list of results is refused (goal/G47.1, the test-table cycle: "no bundling").
-- `testicle.search { script?, suite?, test?, result?, from?, text }`, from a number.
+- `testicle.search { script?, suite?, test?, result?, text }`, and no `from`: one answer, never in parts (Andy: no paging).
 - `run { script, suite, testicle? }` (goal/G47.1, the run cycle).
 - `subscribe { family, run?, since? }`, family a non-empty id; `unsubscribe {}` (Andy, goal/G43.32: *"for now, it needs
   to declare them in api.js"*).

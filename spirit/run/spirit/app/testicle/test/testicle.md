@@ -78,8 +78,8 @@ The box, in Andy's words where he gave them:
     *"Most severe first applies to all test searches."*, since *"Every test search answers its failed tests first, then by
     severity"*: theta's two failed tests, 0.9 then 0.3, before its passed one. *"Red, green, the script and the suite go
     to the server with the words, so the server narrows before it cuts an answer"*: result red answers the failed alone,
-    green the passed alone, any other result is refused; *"the page asks for the following answers while the server says
-    there are more"*: from 1 starts the answer after the first row. Cut, the answer with neither holds the failed first.
+    green the passed alone, any other result is refused; No `from`: an answer never comes in parts (Andy: no paging; goal/G47.1,
+    Q17), and one with `from` is refused. Cut, the answer with neither holds the failed first.
   - *"The verb red is testicle.red"*, *"search all failed, current tests, most severe first"*: every failed current test,
     no other, most severe first.
   - The search fix (goal/G47.1, the box: *"Every test search answers its failed tests first, then by severity. Red,
@@ -94,8 +94,7 @@ The box, in Andy's words where he gave them:
     typed words, alone and together; testicle.red; suite.search with and without a script and words; the runner idle.
     A row matches when it is current, of the script, suite and result asked, and each word is in its title, script or
     suite, in any case. Not cut, the answer holds every matching row; cut, it is full (the room of one answer cannot hold
-    one more of its rows) and holds matching rows first, never a row outside the script, suite or result. Page after
-    page with from, each page that says more is full, and the pages hold every matching test once.
+    one more of its rows) and holds matching rows first, never a row outside the script, suite or result.
 - **The preferences** (goal/G47.1, box v79, 2 and 4): kept in `spirit/state/testicle/data/preferences.json`; the one
   preference *"testicle.preferences.interactive (true by default)"*, a missing or unreadable file the default. The verb
   preferences: `{}` answers them all; `{interactive: <bool>}` sets it, writes the file, streams `{testicle: {preferences}}`
@@ -162,7 +161,7 @@ The box, in Andy's words where he gave them:
 - A suite.search answering another file's rows, a suite twice, or a suite without its status.
 - A second row on no flip, a flip without a new row or with its old row lost, a lower severity applied, a search
   answering an old row or another script's or suite's, a passed test before a failed one, an order other than most severe
-  first among each, a result filter answering the other result, a from that does not skip, a red holding a passing test; a cut made before the result,
+  first among each, a result filter answering the other result, a search taking from, a red holding a passing test; a cut made before the result,
   the script, the suite or the words narrowed, so a quiet row beneath louder ones is never answered.
 - Anything later than one second; a busy that never says true while it works, or stays true once idle.
 

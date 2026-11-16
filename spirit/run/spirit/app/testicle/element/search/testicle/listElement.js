@@ -84,18 +84,12 @@
         if (suiteSel.value) a.suite = String(suiteSel.value);
         return a;
       };
+      // One ask, one answer (Andy: no paging): what fits, more saying the search can be narrowed.
       var ask = function (args) {
-        var items = [];
-        var part = function () {
-          return Promise.resolve(S.testicle['testicle.search'](Object.assign({}, args, items.length ? { from: items.length } : {}))).then(function (b) {
-            var got = (b && b.items) || [];
-            data.keep('testicle', rowsOf(b));
-            items = items.concat(got);
-            if (b && b.more && got.length && items.length < HELD_MAX && !gone) return part();
-            return { items: items, more: !!(b && b.more) };
-          });
-        };
-        return part();
+        return Promise.resolve(S.testicle['testicle.search'](Object.assign({}, args))).then(function (b) {
+          data.keep('testicle', rowsOf(b));
+          return { items: (b && b.items) || [], more: !!(b && b.more) };
+        });
       };
       scriptList = S.element.spirit.element.search.file.create(scriptSel, {
         face: 'dropdown', accept: production, flat: true, placeholder: 'all scripts', all: 'all scripts',

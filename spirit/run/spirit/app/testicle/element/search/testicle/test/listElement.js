@@ -338,7 +338,7 @@ test.run('150 more passing tests of beta are set on the node', 0.2, async functi
   }
   return !bad.length || false;
 }, test.limit.long);
-test.run('with green alone and words typed, it asks answer after answer while there are more, and stops at 100 tests', 0.2, async function () {
+test.run('with green alone and words typed, it asks the search with no from, so no answer comes in parts', 0.2, async function () {
   if (!mounted()) return false;
   // Every ask the list makes of testicle.testicle.search, recorded on the page's own interface.
   const hooked = await c.evaluate('(function () { var T = window.spirit.testicle; var f = T && T["testicle.search"]; if (typeof f !== "function") return false; window.__asks = []; T["testicle.search"] = function (a) { window.__asks.push(a); return f.apply(this, arguments); }; return true; }())');
@@ -352,9 +352,8 @@ test.run('with green alone and words typed, it asks answer after answer while th
   let n = -1;
   await until(async function () { const now = ((await c.evaluate('window.__asks')) || []).length; const still = now === n && now > 0; n = now; if (!still) await sleep(1750); return still; }, 30000);
   const asks = ((await c.evaluate('window.__asks')) || []).filter(function (a) { return a && a.text === 'beta passes'; });
-  const froms = asks.map(function (a) { return Number(a.from) || 0; });
-  const last = Math.max.apply(null, froms.concat([0]));
-  return (asks.length > 1 && asks.every(function (a) { return a.result === 'green'; }) && last < 100 && last >= 100 - 20) || false;
+  // One answer, never in parts (Andy: no paging; goal/G47.1, Q17): no ask carries from.
+  return (asks.length > 0 && asks.every(function (a) { return a.result === 'green' && a.from === undefined; })) || false;
 }, test.limit.slow);
 
 test.run('destroy leaves its container empty', 0.2, async function () {

@@ -949,11 +949,6 @@ const fullAnswer = function (body, next) {
   const after = next ? bytes(next) : Math.max.apply(null, its.map(bytes));
   return ROOM - used < after + 1;
 };
-// The first item of the following answer of a testicle.search, the rows already held skipped.
-const nextItem = async function (args, held) {
-  const r = await call(N.base, 'testicle.testicle.search', Object.assign({}, args, { from: held }));
-  return (r.body && r.body.items && r.body.items[0]) || null;
-};
 const wordsIn = function (row, text) {
   const hay = [row.test, row.script, row.suite].map(function (x) { return String(x || '').toLowerCase(); }).join(' ');
   return String(text || '').toLowerCase().split(/\s+/).filter(Boolean).every(function (w) { return hay.indexOf(w) !== -1; });
@@ -1023,37 +1018,7 @@ test.run('testicle.search, in each of its variations, answers every matching tes
   return eachOf(VARIATIONS, async function (v) {
     const a = Object.assign({ text: '' }, v[1]);
     const r = await call(N.base, 'testicle.testicle.search', a);
-    const next = r.body && r.body.more ? await nextItem(a, found(r).length) : null;
-    return judged(r, matchingTests(a), tkey, matchingTests(Object.assign({}, a, { text: '' })), next);
-  });
-}, test.limit.slow);
-// The following answers (from, the rows already held, cw's build): asked page after page, each page that says more is
-// full, and the pages together hold every matching test, each once.
-const PAGED = [
-  ['nothing chosen', {}],
-  ['result green', { result: 'green' }],
-  ['the word "loudly"', { text: 'loudly' }],
-];
-test.run('testicle.search asked page after page, with nothing chosen, result green and the word "loudly", answers each page full while there are more, and every matching test once', 0.2, async function () {
-  if (!loud) return false;
-  return eachOf(PAGED, async function (v) {
-    const a = Object.assign({ text: '' }, v[1]);
-    const want = matchingTests(a);
-    const seen = {};
-    let from = 0, twice = [], pages = 0;
-    for (;;) {
-      const r = await call(N.base, 'testicle.testicle.search', Object.assign({ from: from }, a));
-      if (r.status !== 200 || !r.body || !Array.isArray(r.body.items)) return false;
-      const rows = found(r);
-      pages += 1;
-      rows.forEach(function (x) { if (seen[tkey(x)]) twice.push(tkey(x)); seen[tkey(x)] = true; });
-      if (!r.body.more) break;
-      if (!fullAnswer(r.body, await nextItem(a, from + rows.length))) return false;
-      if (!rows.length || pages > 100) return false;
-      from += rows.length;
-    }
-    const missing = want.filter(function (x) { return !seen[tkey(x)]; });
-    return (!missing.length && !twice.length) || false;
+    return judged(r, matchingTests(a), tkey, matchingTests(Object.assign({}, a, { text: '' })), null);
   });
 }, test.limit.slow);
 test.run('testicle.red answers every failed current test, or a full answer of them', 0.2, async function () {

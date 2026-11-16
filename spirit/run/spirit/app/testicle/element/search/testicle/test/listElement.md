@@ -17,8 +17,8 @@ The world of `../../test/testicle.js`: a scratch node with testicle on, the gene
   chosen narrows the rows and the suite selector to it; with no script, a suite of two scripts is listed once and, chosen,
   shows its tests of both.
 - A row pressed is handed to `pick`; a test set on the node shows with no press.
-- With words typed and green alone, it asks answer after answer while the server says more, with green sent, and stops
-  at 100 tests.
+- With words typed and green alone, it asks the search with green sent and no `from`: one answer, never in parts (Andy:
+  no paging).
 - `destroy` empties its container.
 
 ## What its test must try to break

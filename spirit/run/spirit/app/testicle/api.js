@@ -28,7 +28,7 @@ module.exports = {
     // goal/G47.1: the current test rows, the failed first, then most severe first; script, suite and result (red or green)
     // each optional, the words narrowing them; from, the rows already held, asks the following answer.
     // Given a test with its script and suite, that test's every row, the newest flip first (its history).
-    'testicle.search': { script: 'text?', suite: 'text?', test: 'text?', result: 'text?', from: 'number?', text: 'text' },
+    'testicle.search': { script: 'text?', suite: 'text?', test: 'text?', result: 'text?', text: 'text' },
     // goal/G47.1, G45: every failed current test, most severe first. It takes nothing.
     red: {},
     // goal/G47.1, the run cycle: one suite run for one script, testicle (a test's title) to run up to it; answered at once.
