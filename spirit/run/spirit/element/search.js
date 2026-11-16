@@ -196,9 +196,10 @@
     var open = !dropdown;
     var self = { value: '', row: null };
 
+    // ITS PARTS, FOUND INSIDE ITS OWN CONTAINER ALONE, never by id across the page (search-child-general.js: "an element finds
+    // its parts inside its own container"); the dropdown's popup is a popover, still in its container's tree.
     function el(name) {
-      var inside = typeof container.querySelector === 'function' ? container.querySelector('#' + pre + name) : null;
-      return inside || (typeof document !== 'undefined' && document.getElementById ? document.getElementById(pre + name) : null);
+      return typeof container.querySelector === 'function' ? container.querySelector('#' + pre + name) : null;
     }
     function words() { var t = el('text'); return t ? String(t.value || '').trim() : ''; }
     function cachedRows() { return Object.keys(byKey).map(function (k) { return byKey[k].row; }); }
