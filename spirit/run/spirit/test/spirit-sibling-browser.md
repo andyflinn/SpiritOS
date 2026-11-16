@@ -216,7 +216,10 @@ box is its own check, named by the element's path and the box's id chain."*
   element may change only its busy spinner, its button's disabled state and its fine print; any other change it makes
   is red"*): from a press that sent a write until the node has answered it, the only changes in its box are a busy mark
   (`shell-busy`), a button's `disabled`, `aria-busy` or class, and fine print (`job-manifest-note`, `job-start-error`,
-  `job-refusal`, `fine-print`). A press that sends no write is not judged.
+  `job-refusal`, `fine-print`). A press that sends no write is not judged. A child put into or taken out of a node is
+  judged by itself, so a busy mark put into its button is a busy mark. The watch ends at the node's answer or at the
+  first stream event, whichever comes first. Before each watched press an open dropdown is shut by a press on the page
+  outside every element, so its closing is not counted against the next press.
 - **Its searches match the whole row** (goal/G41.28; Andy, box v15: *"All client side searches will be fixed, too, and
   search the whole row, as cached in spirit.data."*): judged in its code, no app or element but the search element
   itself hands a search a `matched(...)` of its own, a few fields in place of the whole row.

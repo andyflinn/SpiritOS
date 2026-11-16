@@ -210,17 +210,28 @@ const WATCH = String.raw`(function () {
     var t = r.target && r.target.nodeType === 1 ? r.target : r.target && r.target.parentElement;
     if (!t) return true;
     if (r.type === 'attributes' && t.tagName === 'BUTTON' && /^(disabled|aria-busy|class)$/.test(r.attributeName)) return true;
-    var nodes = [t].concat(Array.prototype.slice.call(r.addedNodes || []), Array.prototype.slice.call(r.removedNodes || []));
+    // A CHILD ADDED OR TAKEN IS JUDGED BY ITSELF, not by the node it went into: a busy mark put into a button is a busy mark
+    // (busyButton.js inserts its .shell-busy span into the button it marks, and takes it out after).
+    var moved = Array.prototype.slice.call(r.addedNodes || []).concat(Array.prototype.slice.call(r.removedNodes || []));
+    var nodes = r.type === 'childList' && moved.length ? moved : [t];
     if (nodes.every(function (n) { return n.nodeType === 1 ? (n.classList.contains('shell-busy') || !!n.closest('.shell-busy')) : !!(t.closest && t.closest('.shell-busy')); })) return true;
     return !!(t.closest && t.closest('.job-manifest-note, .job-start-error, .job-refusal, .fine-print'));
   }
   function stop() { if (!watching) return; buf = buf.concat(watching.takeRecords()); watching.disconnect(); watching = null; }
   function opened() { W.out += 1; }
   function closed() { W.out = Math.max(0, W.out - 1); if (!W.out && W.writes.length > w0) stop(); }
+  // THE STREAM ANSWERED (rule/19, the box: "after a press, until the stream answers"): a stream event that comes while a write
+  // is out ends the watch, even before the write's own reply; what the element draws from it is its stream's, not its own.
+  function streamed() { if (watching && W.writes.length > w0) stop(); }
+  var STREAMED = ['onSnapshot', 'onUpdate', 'onDelete', 'onPacket', 'onRelayEvent', 'onContactRename'];
   W.press = function (i) {
     var box = window.spiritMount && window.spiritMount.box;
     var b = box && Array.prototype.slice.call(box.querySelectorAll('button')).filter(function (x) { return x.isConnected && !x.disabled && x.getClientRects().length; })[i];
     if (!b) return false;
+    // AN OPEN DROPDOWN SHUT FIRST, BEFORE THE WATCH (wsl, on the model row's red: "It presses the icon dropdown first, which
+    // opens and stays open. Then it presses Add; that click closes the dropdown, and the close is counted as drawing while the
+    // add is out"): a press on the page outside every element shuts it, as a press elsewhere does (spirit/element/search.js).
+    try { document.body.click(); } catch (e) { /* nothing open */ }
     stop(); buf = []; w0 = W.writes.length;
     watching = new MutationObserver(function (list) { buf = buf.concat(list); });
     watching.observe(box, { subtree: true, childList: true, attributes: true, characterData: true });
@@ -343,7 +354,12 @@ const WATCH = String.raw`(function () {
     [['event', 'subscribe'], ['data', 'watch']].forEach(function (k) {
       var cur = o[k[0]];
       function wrap(v) {
-        if (v && typeof v[k[1]] === 'function' && !v[k[1]].__kept) { var f = kept(k[0] + '.' + k[1], v[k[1]]); f.__kept = true; v[k[1]] = f; }
+        if (v && typeof v[k[1]] === 'function' && !v[k[1]].__kept) {
+          var f = kept(k[0] + '.' + k[1], v[k[1]]);
+          // Each stream handler told first that the stream spoke (streamed, above).
+          if (k[0] === 'event') f = (function (inner) { return function (h) { var hh = {}; Object.keys(h || {}).forEach(function (n) { hh[n] = typeof h[n] === 'function' && STREAMED.indexOf(n) !== -1 ? function () { streamed(); return h[n].apply(this, arguments); } : h[n]; }); return inner.call(this, hh); }; }(f));
+          f.__kept = true; v[k[1]] = f;
+        }
         // A family's view (goal/G41.28), spirit.data.viewAt(node, family): a manager watches through it, so its watch is kept
         // as one on spirit.data, under the whole path it watches.
         // spirit.data names it viewAt (spirit/data.js); a watch through the view is the module's own watch.
