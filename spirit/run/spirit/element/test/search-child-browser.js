@@ -199,7 +199,9 @@ const PAGE = String.raw`(function (name, ROWS, LONG, PANE_W, PANE_H, VIA_LIST, O
     if (!D || typeof D.create !== 'function') { R.noDetail = true; return R; }
     if (!R.data || !R.planted) { R.noDetailRow = true; return R; }
     var rowOf = function (k) { var r = S.data.getPath(R.data + '/' + k); return Object.assign({ key: k }, r || {}); };
-    var optsOf = function (row) { var o = Object.assign({}, row); try { if (typeof row.label === 'string' && /^\s*\{/.test(row.label)) Object.assign(o, JSON.parse(row.label)); } catch (e) { /* kept */ } o.row = row; o.panel = true; return o; };
+    // WHAT THE LIST WAS HANDED, THE DETAIL IS TOO (the grant detail, handed no grants table, draws its not-configured note and
+    // nothing of a grant): OPTIONS first, the row's own fields over them.
+    var optsOf = function (row) { var o = Object.assign({}, OPTIONS[name] || {}, row); try { if (typeof row.label === 'string' && /^\s*\{/.test(row.label)) Object.assign(o, JSON.parse(row.label)); } catch (e) { /* kept */ } o.row = row; o.panel = true; return o; };
     var open = function (k) { return Promise.resolve(window.zzStack.open(k, { label: LONG, fill: function (p) { return D.create(p, optsOf(rowOf(k))); } })); };
     return open('zz-plant-1').then(function (a) {
       return wait(1500).then(function () {
