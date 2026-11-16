@@ -37,11 +37,15 @@ const APP = path.join(RUN, 'spirit', 'app', 'testicle');
 const Z = 'spirit/app/testicle/temp/zzTesticle/';
 // A planted suite's head: the product reporter, from spirit/app/testicle/temp/zzTesticle/test/.
 const SUITE_HEAD = '\'use strict\';\nconst path = require(\'path\');\nconst test = require(path.join(__dirname, \'..\', \'..\', \'..\', \'..\', \'..\', \'test\', \'testReport.js\'));\n';
-// A planted suite that logs: 'start' when it begins, after a wait of ms its tests, 'end' when they are all done.
+// A planted suite that logs: 'start' when it begins, after a wait of ms its tests, 'end' when they are all done. Its start
+// carries its pid, and `alive`: the suites started before it that logged no end and whose process is still there.
 function LOGGED(name, ms, tests) {
   return SUITE_HEAD + "const LOG = path.join(__dirname, '..', '..', '..', '..', '..', '..', '..', '..', 'runlog.txt');\n" +
-    "function log(ev) { require('fs').appendFileSync(LOG, JSON.stringify({ suite: '" + name + "', ev: ev, at: Date.now() }) + '\\n'); }\n" +
-    "log('start');\n" +
+    "function log(ev, more) { require('fs').appendFileSync(LOG, JSON.stringify(Object.assign({ suite: '" + name + "', ev: ev, at: Date.now(), pid: process.pid }, more || {})) + '\\n'); }\n" +
+    "function alive() { let ls = []; try { ls = require('fs').readFileSync(LOG, 'utf8').split('\\n').filter(Boolean).map(function (l) { try { return JSON.parse(l); } catch (e) { return null; } }).filter(Boolean); } catch (e) { return []; }\n" +
+    "  const ended = {}; ls.forEach(function (l) { if (l.ev === 'end' && l.pid) ended[l.pid] = true; });\n" +
+    "  return ls.filter(function (l) { if (l.ev !== 'start' || !l.pid || l.pid === process.pid || ended[l.pid]) return false; try { process.kill(l.pid, 0); return true; } catch (e) { return false; } }).map(function (l) { return l.suite; }); }\n" +
+    "log('start', { alive: alive() });\n" +
     (ms ? "test.run('" + name + " waits a moment before its checks', 0.2, function () { return new Promise(function (r) { setTimeout(function () { r(true); }, " + ms + "); }); }, test.limit.quick);\n" : '') +
     tests.join('\n') + "\ntest.after(function () { log('end'); });\n";
 }
@@ -1418,18 +1422,11 @@ test.run('a suite asked by testicle.run goes to the head of the queue: tau runs 
   return (!!ok && t < o) || false;
 }, test.limit.long);
 // A RUN THE PRESS STOPPED ENDED TOO (goal/G47.1, run.json: the press "stop[s] the run going unless it is that one"): a stopped
-// suite never logs its end, but testicle says when it stopped it, "runner: stopped <suite> ... a press of <suite>", in its
-// testicle.err; the pressed suite starts only once that run's process has exited.
-const stoppedAt = function (name) {
-  let lines = [];
-  try { lines = fs.readFileSync(path.join(s.run, 'spirit', 'state', 'testicle', 'data', 'testicle.err'), 'utf8').split('\n'); } catch (e) { return []; }
-  return lines.filter(function (l) { return l.indexOf('runner: stopped ' + Z + 'test/' + name + '.js ') !== -1; }).map(function (l) { return Date.parse(l.split(' ')[0]); }).filter(function (n) { return n > 0; });
-};
+// suite never logs its end, so tau's start says which runs before it had logged no end and still had a process
+// (LOGGED, `alive`); the pressed suite starts only once that run's process has exited.
 test.run('there is never a second run beside the running one: tau started after every run before it ended', 0.2, function () {
-  const t = (starts('tau')[0] || {}).at;
-  const ended = function (l) { return runlog().some(function (e) { return e.suite === l.suite && e.ev === 'end' && e.at >= l.at && e.at <= t; }) || stoppedAt(l.suite).some(function (at) { return at >= l.at && at <= t; }); };
-  const open = runlog().filter(function (l) { return l.ev === 'start' && l.suite !== 'tau' && l.at < t && !ended(l); });
-  return (!!t && !open.length) || false;
+  const t = starts('tau')[0];
+  return (!!t && Array.isArray(t.alive) && !t.alive.length) || false;
 }, test.limit.quick);
 
 // Rows flagged when the server starts: upsilon.js flagged, the node stopped before the runner reached it, started again.

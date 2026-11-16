@@ -1439,20 +1439,6 @@ catch (e) {
     onFace: function (url, data) { if (faceHome) faceHome.request(url, data); },
     onFaceOpen: function (url, data) { if (faceHome) faceHome.open(url, data && data.key); },
     onFaceClose: function (url) { if (faceHome) faceHome.close(url); },
-    // AND THE MEMBERSHIP HALF, WHICH IS KEPT (R2).
-    //
-    //   Andy: "There is a category of events on the relay that the owner
-    //   should have a log of... They should go to the log."
-    //
-    // Two things happen and the order is the point: it is WRITTEN first
-    // and shown second. `relayEvents.note` above only fans out to open
-    // tabs, which is right for traffic and wrong for this — an owner is
-    // usually not watching when somebody claims a slot, and a record
-    // that depended on a tab being open would be the same nothing this
-    // replaces.
-    //
-    // `dir: 'in'` because it crossed the WAN inward, on the stream this
-    // node holds to a relay it owns.
     // A RELAY'S MEMBER ANNOUNCEMENT: ITS LABEL AND PRESENCE, NO ROUTE (goal/G47.1, box v69: "The relay sends no route
     // event after an exchange. Its announcement of a member stays for what the node still uses of it, the member's
     // label and presence, and the node writes no route from it"). Not logged: nobody addressed it to this node.
@@ -1481,26 +1467,9 @@ catch (e) {
     onOwnerEvent: function (ev) {
       // A RELAY RENAMED: its card says so, read again, and the row follows (goal/G41.32).
       if (ev && ev.kind === 'relay-renamed' && ev.relay && peerRouter) Promise.resolve(peerRouter.relayKey(ev.relay)).catch(function () { /* the next card says it */ });
-      try {
-        trafficLog.note({
-          dir: 'in',
-          kind: 'owner',
-          event: ev && ev.kind,
-          // WHICH POST CAUSED IT, where one did. This is what joins the
-          // request and reply rows this node already wrote to the event
-          // the relay pushed back about them — see relay.ownerEvent.
-          cause: ev && ev.cause,
-          peer: (ev && ev.key) || '',
-          relay: (ev && ev.relay) || '',
-          label: ev && ev.label,
-          invite: ev && ev.invite,
-          why: ev && ev.why,
-          owner: ev && ev.owner,
-          revoked: ev && ev.revoked,
-          invitesRevoked: ev && ev.invitesRevoked,
-          expiresAt: ev && ev.expiresAt,
-        });
-      } catch (e) { /* a witness must not break the stream it watches */ }
+      // NOT WRITTEN DOWN (goal/G47.1, Q16; Andy, of the owner-event rows in the traffic log: "ALL OF THEM. KILL THEM.
+      // NOBODY READ THAT SHIT, THEY SHOULD NOT EXIST."; "OTHERS CAN WRITE APPS TO SUBSCRIBE TO THAT STREAM AND DUMP THE SHIT
+      // INTO THEIR OWN FILE"): the event goes on the stream below and is kept nowhere.
 
       // A new member of a relay this node owns becomes a contact, on the
       // event itself (hub.adoptClaim — it replaced a roster sweep that read
@@ -1725,21 +1694,18 @@ catch (e) {
     'setDescription': { request: { description: '' }, reply: { ok: true, status: 0, description: '' }, handler: function (rq, rs) {
       hub.handleNodeDescription(rq, rs, readJsonBody);
     } },
-    // THE OWNER'S RECORD (trafficLog) has no node verb: none is mounted here.
     // ROTATE THIS NODE'S CIPHER KEY (cycle-10/R13): nodeCard.rotate says
     // what changes and why there is no grace period. Then the new card goes
-    // to every relay at once, and the owner is told in his own record, as
-    // an owner row he can read back. Reached from Info's rotate-key dialog,
-    // behind the shell's two-press button.
+    // to every relay at once; the answer says when and to how many. No row is
+    // written about it (goal/G47.1, Q16: the owner rows went, "NOBODY READ THAT
+    // SHIT"). Reached from Info's rotate-key dialog, behind the shell's
+    // two-press button.
     'rotateCipher': { request: {}, reply: { relays: 0, ok: true, at: 0 }, handler: function (rq, rs) {
       readJsonBody(rq).then(function () {
         const said = spirit.require('spirit/nodeCard.js').rotate(ROOT_DIR);
         let relays = 0;
         if (said.ok) {
           try { relays = peerRouter ? peerRouter.handOverCardEverywhere() : 0; } catch (e) { relays = 0; }
-          try {
-            trafficLog.note({ dir: 'out', kind: 'owner', event: 'cipher-rotated', outcome: 'card ' + said.at });
-          } catch (e) { /* the rotation stands; the record is best effort */ }
         }
         rs.writeHead(said.ok ? 200 : said.status, { 'Content-Type': 'application/json; charset=utf-8' });
         rs.end(JSON.stringify(Object.assign({ relays: relays }, said)));

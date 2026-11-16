@@ -37,21 +37,24 @@ test.run('the module hands out a log maker, and a log answers every reader and w
   if (typeof T.createTrafficLog !== 'function') return false;
   W.root = scratch();
   W.log = T.createTrafficLog({ rootDir: W.root });
-  return ['note', 'read', 'size', 'arrivals', 'untaken', 'ownerEvents', 'byHash', 'taken'].every(function (k) {
+  return ['note', 'read', 'size', 'arrivals', 'untaken', 'byHash', 'taken'].every(function (k) {
     return typeof W.log[k] === 'function';
   }) || false;
+}, test.limit.quick);
+test.run('a log has no reader of owner events', 0.2, function () {
+  return (!!W.log && !('ownerEvents' in W.log)) || false;
 }, test.limit.quick);
 
 // ── no store yet ──
 test.run('a home with no database reads as no history from every reader', 0.4, function () {
   const log = T.createTrafficLog({ rootDir: scratch() });
   return (same(log.read(), []) && log.size() === 0 && same(log.arrivals(), []) && same(log.untaken(), []) &&
-    same(log.ownerEvents(), []) && log.byHash('h') === null && log.taken(['h']) === 0) || false;
+    log.byHash('h') === null && log.taken(['h']) === 0) || false;
 }, test.limit.quick);
 test.run('asking what the log holds never brings a database into existence', 0.4, function () {
   const root = scratch();
   const log = T.createTrafficLog({ rootDir: root });
-  log.read(); log.size(); log.arrivals(); log.untaken(); log.ownerEvents(); log.byHash('h'); log.taken('h');
+  log.read(); log.size(); log.arrivals(); log.untaken(); log.byHash('h'); log.taken('h');
   return !hasDb(root) || false;
 }, test.limit.quick);
 test.run('the first note writes the database, and the row it hands back is read back the same', 0.4, function () {
@@ -85,7 +88,7 @@ test.run('a row names its time, direction, kind, peer, relay, hash and outcome, 
   return (typeof r.at === 'string' && !isNaN(Date.parse(r.at)) && r.dir === 'in' && r.kind === 'reply' && r.peer === '7' &&
     r.relay === 'https://r' && r.hash === '99' && r.outcome === 'delivered' && same(back, r)) || false;
 }, test.limit.quick);
-test.run('a direction that is not in is out, and a kind that is not reply or owner is request', 0.4, function () {
+test.run('a direction that is not in is out, and a kind that is not reply is request', 0.4, function () {
   const log = T.createTrafficLog({ rootDir: scratch() });
   const a = log.note({ dir: 'sideways', kind: 'gossip', hash: 'a' });
   const b = log.note({ hash: 'b' });
@@ -135,22 +138,15 @@ test.run('a payload that is not text is not kept, and the row has no size', 0.4,
     back.every(function (r) { return !('payload' in r) && !('bytes' in r); })) || false;
 }, test.limit.quick);
 
-// ── owner events ──
-test.run('an owner event never keeps a payload, even when one is handed in', 0.8, function () {
+// ── no owner rows ──
+test.run('no row is written with the owner kind, nor with an owner event\'s facts', 0.4, function () {
   const log = T.createTrafficLog({ rootDir: scratch() });
-  const r = log.note({ dir: 'in', kind: 'owner', event: 'claim', payload: 'somebody\'s words' });
-  const back = log.read()[0] || {};
-  return (!('payload' in r) && !('bytes' in r) && !('payload' in back) && !('bytes' in back) && back.kind === 'owner') || false;
-}, test.limit.quick);
-test.run('an owner event keeps its named facts and drops every other field and every empty one', 0.4, function () {
-  const log = T.createTrafficLog({ rootDir: scratch() });
-  const facts = { event: 'claim-refused', label: 'andy', invite: '+4912345', key: 'pk', why: 'bad code', owner: true,
-    revoked: 2, invitesRevoked: 1, expiresAt: '2026-12-01T00:00:00.000Z', cause: 'h-post' };
-  const r = log.note(Object.assign({ dir: 'in', kind: 'owner', relay: 'https://mine', invented: 'x', name: 'Somebody', reason: '' }, facts, { why: '' }));
-  const back = log.read()[0] || {};
-  const want = Object.assign({}, facts); delete want.why;
-  return (Object.keys(want).every(function (k) { return same(r[k], want[k]) && same(back[k], want[k]); }) &&
-    !('why' in r) && !('invented' in r) && !('name' in r) && !('reason' in r) && same(back, r)) || false;
+  const r = log.note({ dir: 'in', kind: 'owner', hash: 'h', event: 'claim', label: 'andy', invite: '+49', key: 'pk', why: 'w',
+    owner: true, revoked: 2, invitesRevoked: 1, expiresAt: '2026-12-01T00:00:00.000Z', cause: 'x' });
+  const back = log.read();
+  const facts = ['event', 'label', 'invite', 'key', 'why', 'owner', 'revoked', 'invitesRevoked', 'expiresAt', 'cause'];
+  return (r.kind === 'request' && back.length === 1 && back[0].kind === 'request' &&
+    facts.every(function (k) { return !(k in r) && !(k in back[0]); })) || false;
 }, test.limit.quick);
 test.run('a packet row does not take an owner event\'s facts', 0.4, function () {
   const log = T.createTrafficLog({ rootDir: scratch() });
@@ -215,7 +211,6 @@ test.run('arrivals are delivered inbound rows only, oldest first: nothing sent, 
   A.log.note({ dir: 'out', hash: 'o1', outcome: 'delivered', payload: 'mine' });
   A.log.note({ dir: 'in', hash: 'i1', outcome: 'ignored', payload: 'x' });
   A.log.note({ dir: 'in', hash: 'i2', outcome: 'refused', payload: 'x' });
-  A.log.note({ dir: 'in', kind: 'owner', event: 'claim' });
   A.rows.push(delivered(A.log, 'd2'));
   A.rows.push(delivered(A.log, 'd3', { kind: 'reply' }));
   return hashes(A.log.arrivals()) === 'd1,d2,d3' || false;
@@ -300,24 +295,12 @@ test.run('untaken leaves out an arrival older than a day', 0.4, function () {
   return (hashes(log.untaken()) === 'new' && hashes(log.arrivals()) === 'old,new') || false;
 }, test.limit.quick);
 
-// ── ownerEvents ──
-test.run('owner events are the owner rows alone, oldest first, after a time and up to a limit', 0.4, function () {
-  const log = T.createTrafficLog({ rootDir: scratch() });
-  const e1 = log.note({ dir: 'in', kind: 'owner', event: 'claim', hash: 'e1' });
-  delivered(log, 'p1');
-  log.note({ dir: 'out', hash: 'p2', outcome: 'sent' });
-  log.note({ dir: 'in', kind: 'owner', event: 'claim-refused', hash: 'e2' });
-  log.note({ dir: 'in', kind: 'owner', event: 'partner-added', hash: 'e3' });
-  return (hashes(log.ownerEvents()) === 'e1,e2,e3' && hashes(log.ownerEvents({ since: e1.at })) === 'e2,e3' &&
-    hashes(log.ownerEvents({ limit: 2 })) === 'e1,e2' && hashes(log.ownerEvents({ limit: 0 })) === 'e1,e2,e3' &&
-    log.ownerEvents().every(function (r) { return r.kind === 'owner'; })) || false;
-}, test.limit.quick);
-test.run('owner events written in one millisecond are none of them lost to a reader asking after the first', 0.4, function () {
+test.run('arrivals written in one millisecond are none of them lost to a reader asking after the first', 0.4, function () {
   const log = T.createTrafficLog({ rootDir: scratch(), now: function () { return Date.parse('2026-11-16T00:00:00.000Z'); } });
-  const a = log.note({ kind: 'owner', event: 'claim', hash: 'a' });
-  log.note({ kind: 'owner', event: 'claim-refused', hash: 'b' });
-  log.note({ kind: 'owner', event: 'partner-added', hash: 'c' });
-  return hashes(log.ownerEvents({ since: a.at })) === 'b,c' || false;
+  const a = delivered(log, 'a');
+  delivered(log, 'b');
+  delivered(log, 'c');
+  return hashes(log.arrivals({ since: a.at })) === 'b,c' || false;
 }, test.limit.quick);
 
 // ── byHash ──

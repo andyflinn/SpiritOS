@@ -21,12 +21,12 @@ An id is two numbers, goal and item (0 for the goal itself), shown as
 |---|---|---|
 | `items (goal, item)` | the item's own fields as JSON; a goal's row (item 0) also its goal's (design, members, special) | `items.search`, `item.get`, and the writes (`goal.add`, `item.add`, `item.rename`, `item.delete`, `press`, …) |
 | `chat (goal, item, seq)` | one chat line, with `at` and `creator` | `item.chat`, `chat.search`, `chat.add` |
-| `box (goal, item, version)` | one version of the item's box | `item.box`, `item.box.search`, `box.write` |
+| `box (goal, item, version)` | the item's newest box, its version still counting (older versions are deleted by the write, goal/G47.1, Q16) | `item.box`, `box.write` |
 | `checks (goal, item, number)` | one Q, G, C or T check | `item.checks`, `item.checks.search`, `check.add`, `check.set` |
 | `files (goal, item, holder, path)` | one file an agent listed, with its grant status | `item.files`, `item.files.search`, `item.files.add`, `item.files.remove` |
 | `claims (goal, item, claimer)` | one agent's claim | `item.claims.search`, `claim` |
 | `agents (agent)` | by key: its label, its last write, its word, Andy's profile of it | `agents.search`, `profile.get`, `profile.set` |
-| `rules`, `rule_drafts`, `rule_chat` | every version of every rule (the newest row per rule is the rule), his draft between versions, a rule's chat | `rules.search`, `rule.get`, `rule.add`, `rule.draft`, `rule.version` |
+| `rules`, `rule_drafts`, `rule_chat` | the newest version of every rule (a new version deletes the older rows, goal/G47.1, Q16), his draft between versions, a rule's chat | `rules.search`, `rule.get`, `rule.add`, `rule.draft`, `rule.version` |
 | `desk_state (k)` | the desk's own few values: the change number, the current goal, the grants | — |
 
 Every row carries its creator. Every write takes the next change number,

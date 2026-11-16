@@ -1759,12 +1759,12 @@ function createRelay(rootDir, deps) {
     if (written && written.ok === false) return written;
     var row = written;
     // A SEAT WAS RESERVED (R2). The first half of the pair a claim notice
-    // completes: an owner reading their log should see a reservation made
+    // completes: an owner watching the stream should see a reservation made
     // and later spent, and by whom.
     //
     // NEVER THE TOKEN. It is the credential, and the one thing on that row
     // the owner already holds by having just made it. A log carrying live
-    // tokens would be a log worth stealing.
+    // tokens would be a stream worth stealing.
     ownerEvent('invite-minted', { invite: row.label, expiresAt: row.expiresAt, cause: cause });
     return {
       ok: true,
@@ -2058,7 +2058,7 @@ function createRelay(rootDir, deps) {
     // it.
     presentNow.broadcast('presence', { key: key, present: false, gone: true });
 
-    // AND THE OWNER'S LOG GETS IT (R2). Somebody leaving the box is the
+    // AND THE OWNER'S STREAM GETS IT (R2). Somebody leaving the box is the
     // same category as somebody joining it, and an owner reviewing how
     // their relay came to hold who it holds needs both halves or the
     // record reads as a list of arrivals.
@@ -2969,7 +2969,7 @@ function createRelay(rootDir, deps) {
       var revokedLabel = String(body.revoke.label || '');
       var gone = invites.revokeInvite(rootDir, revokedLabel);
       invites.sweepExpired(rootDir);
-      // The owner's own act, logged on the owner's own box (R2). Taking a
+      // The owner's own act, told to the owner's own box (R2). Taking a
       // reservation back is a membership decision as much as granting one
       // — and it is the one most worth a record, because it is what an
       // owner does when something has gone wrong.
@@ -3555,7 +3555,7 @@ function createRelay(rootDir, deps) {
   // owner is entitled to keep. Inverted, exactly.
   //
   //   monitorEvent   traffic       opt-in (`monitoring`), live, forgotten
-  //   ownerEvent     membership    always on, and the owner's node LOGS it
+  //   ownerEvent     membership    always on, streamed to the owner's node
   //
   // Always on is the point. The monitor is a screen you open; this is a
   // record you keep, and the owner is usually not watching when somebody
@@ -3564,7 +3564,8 @@ function createRelay(rootDir, deps) {
   //
   // ── THE RELAY STILL KEEPS NOTHING ────────────────────────────────────
   //
-  // It EMITS; the owner's node keeps (trafficLog). No event file here, no
+  // It EMITS; the owner's node keeps nothing of it either (goal/G47.1, Q16: a log nothing reads is not
+  // kept; an app that wants one subscribes to the stream and writes its own). No event file here, no
   // ring, no history — 0006 is untouched, and the durability sits on the
   // owner's own hardware, which is that decision's whole argument.
   //

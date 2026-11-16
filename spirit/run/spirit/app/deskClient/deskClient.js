@@ -1,8 +1,7 @@
 'use strict';
 
 // spirit/run/spirit/app/deskClient/deskClient.js
-// THE DESK CLIENT — goal/G3.3, G3.4, G3.5. A server on an agent's own node: it passes one ask to Andy's desk and counts
-// it, and while its agent waits it reads what changed at the desk and holds what is meant for that agent.
+// THE DESK CLIENT — goal/G3.3, G3.4, G3.5. A server on an agent's own node: it passes one ask to Andy's desk, and while its agent waits it reads what changed at the desk and holds what is meant for that agent.
 //
 //   Andy, 2026-10-02 (goal/G3.1): "i am ready to accept completely alternative design, if it achieves what todays
 //   deskAgentEar does, and statistics are kept somewhere you can access them easily.", then "accepted." to a deskClient
@@ -16,8 +15,11 @@
 //   - Which node is the desk is TOLD, never guessed: nothing in a node's contacts marks one, so the owner sets the
 //     key once (setDesk) and it is kept.
 //   - A node gives a server 12 s (appClient.js DOOR_WAIT_MS), and a busy desk may hold a post longer. So an ask
-//     answers within 10 s: the desk's answer, or no-answer with the id of its record. The wait goes on behind it;
-//     nothing is sent twice unless the agent decides it, and the record says how it ended.
+//     answers within 10 s: the desk's answer, or no-answer. The wait goes on behind it; nothing is sent twice unless
+//     the agent decides it.
+//   - NO RECORD OF ASKS IS KEPT (goal/G47.1, Q16; Andy, of deskClient's ask history among the unread logs: "ALL OF
+//     THEM. KILL THEM. NOBODY READ THAT SHIT, THEY SHOULD NOT EXIST."; "WE DON'T STORE SHIT LIKE THAT IF WE DON'T NEED
+//     IT"): this replaces the statistics of goal/G3.1 and the history.search verb that read them.
 //   - Its state is spirit/state/deskClient/data/deskClient.db (goal/G43.10), named and handed over by the node as --state.
 //   - WHO IT IS, name and key, is what its node hands a server it starts (--node, job.js): no ask and no file.
 //   - IT FOLLOWS THE DESK'S STREAM (goal/G33.4, goal/G33.8): it subscribes, and the desk publishes each changed row to
@@ -25,21 +27,6 @@
 //   - What is meant for its agent is selected and worded as the listener it replaces did (goal/G3.4, 5): Andy's
 //     records but his seen presses, another agent's chat, and the lines Desk keeps from Andy or an agent; never
 //     its own, never the desk's busy replies, never Andy's direct line to the other agent.
-//
-// WHAT A RECORD SAYS: {at, verb, ms, outcome, bytes, port, count} — when, the desk verb, the milliseconds until it
-// ended, how it ended, the bytes of the answer, the port of the node it went through (Andy: "the portnumber you
-// call will be an implicit identification of the relay you used."), and how many asks the record stands for: 1,
-// but for a run of empty polls and for the first run's search for "now", where ms and bytes are their sums.
-// The outcomes:
-//   answered    the desk said yes            refused     the desk said no ({ok: false, code})
-//   pending     still waited for             not-posted  the node could not post it
-//   no-answer   the desk never answered      lost        this process ended while it waited
-//   empty       a poll that brought nothing; a run of them is ONE record (Andy: "empty polls can contribute
-//               statistically and discarded.")
-// THE RECORD IS BOUNDED: the newest historyMax rows are kept, the oldest fall off.
-//
-// NEVER A LIST (Andy: every list is a search). history.search answers what matches best, newest first among equals,
-// cut to fit one answer by the probability bucket, and says so with more.
 
 // The spirit object first, as the global spirit (goal/G40.1).
 require('../../spirit.js');
@@ -64,9 +51,6 @@ if (!STATE) {
 }
 fs.mkdirSync(STATE, { recursive: true });
 
-// Its manifest's args, as the node hands their values over (job.js): the first argument, a JSON object.
-const values = parsed(argv[2], {});
-const HISTORY_MAX = Number(values.historyMax) > 0 ? Math.floor(Number(values.historyMax)) : 1000;
 // Who this agent is: its node's name and key, to tell what is its own from what is meant for it.
 const NODE = parsed(arg('--node'), {});
 const SELF = String(NODE.name || '');
@@ -81,30 +65,17 @@ const ANSWER_ROOM = limits.ANSWER_MAX - 512;
 const LEAVE_BY_MS = 11000;
 const BIG = Number.MAX_SAFE_INTEGER;
 
-// The port of the node this server runs on, as the node itself named it: it goes into every record. The node itself is
-// reached through the one spirit object (goal/G40.6).
-let PORT = 0;
-try { PORT = Number(new URL(String(process.env.SPIRIT_CALLBACK_URL || '')).port) || 0; } catch (e) { PORT = 0; }
-
 const db = new DatabaseSync(path.join(STATE, 'deskClient.db'));
 // In WAL a reader never blocks the writer, so a backup can copy this file while it is written.
 db.exec('PRAGMA busy_timeout=5000');
 db.exec('PRAGMA journal_mode=WAL');
 db.exec(
-  'CREATE TABLE IF NOT EXISTS settings (name TEXT PRIMARY KEY, value TEXT NOT NULL);' +
-  'CREATE TABLE IF NOT EXISTS asks (id INTEGER PRIMARY KEY AUTOINCREMENT, at TEXT NOT NULL, verb TEXT NOT NULL,' +
-  ' ms INTEGER NOT NULL, outcome TEXT NOT NULL, bytes INTEGER NOT NULL, port INTEGER NOT NULL, count INTEGER NOT NULL DEFAULT 1);'
+  // No asks table (goal/G47.1, Q16, above): an old deskClient.db keeps its rows until deleted by hand; nothing reads or
+  // writes them.
+  'CREATE TABLE IF NOT EXISTS settings (name TEXT PRIMARY KEY, value TEXT NOT NULL);'
 );
-// An ask this process was still waiting on when it ended has no one waiting any more.
-db.exec("UPDATE asks SET outcome = 'lost' WHERE outcome = 'pending'");
 const getSetting = db.prepare('SELECT value FROM settings WHERE name = ?');
 const putSetting = db.prepare('INSERT INTO settings (name, value) VALUES (?, ?) ON CONFLICT(name) DO UPDATE SET value = excluded.value');
-const addAsk = db.prepare("INSERT INTO asks (at, verb, ms, outcome, bytes, port, count) VALUES (?, ?, 0, 'pending', 0, ?, 1)");
-const endAsk = db.prepare('UPDATE asks SET ms = ?, outcome = ?, bytes = ? WHERE id = ?');
-const trimAsks = db.prepare('DELETE FROM asks WHERE id NOT IN (SELECT id FROM asks ORDER BY id DESC LIMIT ?)');
-const findAsks = db.prepare(
-  "SELECT id, at, verb, ms, outcome, bytes, port, count FROM asks WHERE (? = '' OR verb LIKE '%' || ? || '%' OR outcome LIKE '%' || ? || '%') ORDER BY id DESC"
-);
 
 function refused(code, extra) { const e = new Error(code); e.refusal = code; if (extra) e.extra = extra; return e; }
 // The agent itself, on its own node's loopback door. Speaking to Andy's desk as this node is the owner's alone.
@@ -121,15 +92,6 @@ function deskKey() {
 function outcomeOf(got) {
   if (got && got.ok === false && (got.code === 'not-posted' || got.code === 'no-answer')) return got.code;
   return got && got.ok === false ? 'refused' : 'answered';
-}
-function bytesOf(got) { return Buffer.byteLength(JSON.stringify(got === undefined ? null : got), 'utf8'); }
-
-// ── THE RECORD ───────────────────────────────────────────────────────
-// A record opened as pending, to be ended. Either way the oldest rows past historyMax go.
-function begin(verb) {
-  const id = Number(addAsk.run(new Date().toISOString(), verb, PORT).lastInsertRowid);
-  trimAsks.run(HISTORY_MAX);
-  return id;
 }
 
 // ONE ASK OF THE DESK, THROUGH ITS FAMILY INTERFACE (goal/G33.4, box v38). Andy: the family interface takes ANY
@@ -148,18 +110,6 @@ function askDesk(to, verb, args) {
       return r.body || { ok: false, code: 'no-answer', error: 'the desk did not answer' };
     });
   }, function () { return { ok: false, code: 'no-answer', error: 'the desk family did not answer' }; });
-}
-// The same ask, with its own record: opened as it leaves, ended by what came back.
-function countedAsk(to, verb, args) {
-  const id = begin(verb);
-  const t0 = Date.now();
-  return {
-    id: id,
-    answer: askDesk(to, verb, args).then(function (got) {
-      endAsk.run(Date.now() - t0, outcomeOf(got), bytesOf(got), id);
-      return got;
-    }),
-  };
 }
 // A promise, or the time running out, whichever is first; the promise itself goes on.
 function within(promise, ms) {
@@ -258,7 +208,7 @@ function keepWhole(facts) {
     const key = verb + ' ' + id;
     if (Array.isArray(whole[part]) || wholeAsked.has(key)) return;
     wholeAsked.add(key);
-    countedAsk(to, verb, { id: id }).answer.then(function (got) {
+    askDesk(to, verb, { id: id }).then(function (got) {
       if (got && typeof got === 'object' && got.ok !== false && globalThis.spirit && ((globalThis.spirit.data || {}).desk || {}).data) globalThis.spirit.data.desk.data.took(verb, { id: id }, got);
     }, function () {}).then(function () { wholeAsked.delete(key); });
   });
@@ -390,7 +340,7 @@ function streamed(row) {
   // wakes nobody, since another agent's take may have landed; the line still comes as NEWS with the next wake.
   let to = '';
   try { to = deskKey(); } catch (e) { return; }
-  countedAsk(to, 'line.take', { id: line.take }).answer.then(function (got) {
+  askDesk(to, 'line.take', { id: line.take }).then(function (got) {
     if (outcomeOf(got) === 'answered') hand();
   }, function () {});
 }
@@ -597,7 +547,7 @@ function unblockedOther() {
 // lines. Said on the change only, never on every wait, and said again next time if it did not land.
 function say(to, word) {
   said = word;
-  return countedAsk(to, 'agent.state', { word: word }).answer.then(function (got) {
+  return askDesk(to, 'agent.state', { word: word }).then(function (got) {
     if (outcomeOf(got) !== 'answered' && said === word) said = '';
   }, function () { if (said === word) said = ''; });
 }
@@ -868,10 +818,9 @@ const server = appServer.serve({
       // ONLY via the desk's push"): the change comes back from the desk like anybody's; nothing is written or dropped here.
       return mayChat(to, a.name, args).then(function (ok) {
         if (!ok) throw refused('not-taken', { why: 'this agent holds neither the item nor a line it took here' });
-        const one = countedAsk(to, a.name, args);
         // An answer that is no object (an unopenable sealed answer resolves empty) is no answer.
-        const answer = one.answer.then(function (got) {
-          if (got === null || typeof got !== 'object' || Array.isArray(got)) throw refused('no-answer', { id: String(one.id) });
+        const answer = askDesk(to, a.name, args).then(function (got) {
+          if (got === null || typeof got !== 'object' || Array.isArray(got)) throw refused('no-answer');
           // A PART READ WHEN NEEDED STAYS (goal/G33.4, box v46: "the box and other parts will come when needed and stay"):
           // into spirit.data through the desk's translator, which the push keeps current from now on.
           if (reading && got.ok !== false && globalThis.spirit && ((globalThis.spirit.data || {}).desk || {}).data) globalThis.spirit.data.desk.data.took(a.name, args, got);
@@ -879,7 +828,7 @@ const server = appServer.serve({
         });
         let timer = null;
         const held = new Promise(function (resolve, reject) {
-          timer = setTimeout(function () { reject(refused('no-answer', { id: String(one.id) })); }, HOLD_MS);
+          timer = setTimeout(function () { reject(refused('no-answer')); }, HOLD_MS);
         });
         return Promise.race([answer, held]).finally(function () { clearTimeout(timer); });
       });
@@ -933,7 +882,7 @@ const server = appServer.serve({
         if (!jobsMaybe) return Promise.resolve('');
         jobsMaybe = false;
         const late = {};
-        const asked = countedAsk(to, 'work.open', {}).answer.then(function (got) {
+        const asked = askDesk(to, 'work.open', {}).then(function (got) {
           const jobs = ((got && got.items) || []).map(function (x) { try { return JSON.parse(x.label); } catch (e) { return null; } }).filter(Boolean);
           if (!jobs.length) return '';
           const j = jobs[0];
@@ -1012,25 +961,7 @@ const server = appServer.serve({
   },
   // No changed verb (goal/G33.7, the approved verb list: "nothing sends it since the push"): the stream's own rows wake
   // a wait.
-  // THE STATISTICS. Each label is one record as JSON; the walk is ours (newest first), the text ranks each record by
-  // its verb and outcome (goal/G29.21, probabilityStringObjectMatch), newest first among equals; the cut and `more`
-  // are the probability bucket's. The record is bounded (historyMax), so every row is weighed.
-  'history.search': {
-    request: { text: '' }, reply: { items: [{ key: '', label: '' }], more: false },
-    handler: function (a) {
-      const text = String(a.text || '').trim();
-      const bucket = createProbabilityBucket(Infinity);
-      for (const r of findAsks.iterate('', '', '')) {
-        // THE ROW AS IT IS SERVED (goal/G41.28; Andy, box v15: "search the whole bloody ROW, as it is served"): every field
-        // the answer carries, not its verb and outcome alone.
-        const served = { at: r.at, verb: r.verb, ms: r.ms, outcome: r.outcome, bytes: r.bytes, port: r.port, count: r.count };
-        const probability = text ? probabilityStringObjectMatch(text, served) : 0;
-        bucket.seatFor(probability, { key: String(r.id), label: JSON.stringify(served) });
-      }
-      const r = bucket.serialize(null, ANSWER_ROOM);
-      return { items: r.items, more: !!r.more };
-    },
-  },
+  // No history.search (goal/G47.1, Q16): no record of asks is kept, so there is none to search.
   // THE CACHE DUMP (goal/G41.11): a fixed file name for it. Owner-only like every verb here: the cache as it stands, saved
   // now, to appServer's cache file of the desk (goal/G41.12), spirit/state/deskClient/cache/<the desk's node id>.json
   // (goal/G43.20: "cache, which is written by spirit/appServer.js was ALWAYS supposed to go into spirit/state/<name>/cache/"), the one the cache is read
@@ -1152,7 +1083,7 @@ function watchCheckout(root) {
         if (skipped) return;
         let to = '';
         try { to = deskKey(); } catch (e) { return; }
-        countedAsk(to, 'item.status', { id: id, word: rel + ' ' + WHAT[event], tone: PRODUCT_TEST.test(rel) ? 'test' : 'code' }).answer.catch(function () {});
+        askDesk(to, 'item.status', { id: id, word: rel + ' ' + WHAT[event], tone: PRODUCT_TEST.test(rel) ? 'test' : 'code' }).catch(function () {});
       });
     }).on('error', function (e) { console.error('deskClient: the checkout watch stopped: ' + ((e && e.message) || e)); });
   } catch (e) { console.error('deskClient: the checkout cannot be watched: ' + ((e && e.message) || e)); }

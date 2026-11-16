@@ -16,7 +16,7 @@ spirit.js's standard (`'?'` optional). The spirit object checks every call again
   left out; kept a boolean.
 - `setDesk { key }`: the key of the node that runs the desk, a peer's public key, required.
 - `signoff` and `clearSignoff`: agent optional.
-- `history.search`: text optional.
+- No `history.search`: deskClient keeps no record of asks (goal/G47.1, Q16).
 - `streamListener { json }`: one row of the desk's stream as JSON text, required.
 
 ## What its test must try to break

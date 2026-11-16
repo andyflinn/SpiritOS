@@ -161,19 +161,11 @@ function createTrafficLog(opts) {
 
   // ── `at` IS A POSITION, SO IT HAS TO BE UNIQUE AND INCREASING ──────
   //
-  // Both readers below say it: "`since` is a POSITION, not a filter on
-  // content" (R13). They implement it as `at > since` against a
+  // The reader below says it: "`since` is a POSITION, not a filter on
+  // content" (R13). It implements it as `at > since` against a
   // millisecond timestamp — and `Date.now()` repeats. Two rows in one
   // millisecond, and a reader who asks for everything after the first
-  // never sees the second:
-  //
-  //   claim@00.000Z  claim-refused@00.000Z  partner-added@00.005Z
-  //   ownerEvents({ since: '…00.000Z' }) -> [partner-added]
-  //   claim-refused is gone, silently
-  //
-  // WHAT THAT COSTS is owner notices, and the losses concentrate exactly
-  // where they hurt: claims arrive in bursts, and `claim-refused` is the
-  // one you wanted to see. Nothing reports a gap, because a position
+  // never sees the second. Nothing reports a gap, because a position
   // cursor cannot tell "nothing happened" from "it was skipped".
   //
   // FOUND AS A FLAKY TEST. ownerLog.js failed roughly one run in five
@@ -251,33 +243,12 @@ function createTrafficLog(opts) {
     var row = {
       at: at,
       dir: entry.dir === 'in' ? 'in' : 'out',
-      // A THIRD KIND, and it widens what this file is about (R2,
-      // design/cycles/2026-09-15-labels-are-not-identities.md).
-      //
-      //   Andy: "There is a category of events on the relay that the
-      //   owner should have a log of... They should go to the log... of
-      //   the owner only."
-      //
       // `request` and `reply` are packets: two halves of one exchange,
-      // joined by a hash, each carrying a payload. `owner` is not a
-      // packet. It is a relay this node OWNS reporting what it did about
-      // its own membership — a claim taken, an attempt refused, a peer
-      // removed, an invite minted or revoked.
-      //
-      // WHAT IT COSTS, stated rather than discovered later: `hash` stops
-      // being universal, and this file's subject widens from ROUTER
-      // TRAFFIC to THINGS THAT HAPPENED TO THIS NODE. That touches
-      // decision 0009. Andy took it knowingly; it is written here so a
-      // later reader does not mistake it for drift.
-      //
-      // WHAT IT DOES NOT COST: a payload. An owner event carries facts —
-      // who, which label, what came of it — and never anybody's words.
-      // The relay refuses to send them (relay.js, ownerEvent) and this
-      // refuses to keep them: `payload` is dropped for this kind below,
-      // so the rule holds even if the far end one day forgets it.
-      kind: entry.kind === 'reply' ? 'reply'
-        : entry.kind === 'owner' ? 'owner'
-          : 'request',
+      // joined by a hash, each carrying a payload. There is no third kind:
+      // the owner-event rows went (goal/G47.1, Q16; Andy: "ALL OF THEM.
+      // KILL THEM. NOBODY READ THAT SHIT, THEY SHOULD NOT EXIST."), and an
+      // owner event goes on the stream and is kept nowhere.
+      kind: entry.kind === 'reply' ? 'reply' : 'request',
       peer: String(entry.peer || ''),
       // WHICH RELAY CARRIED IT, on both directions (Andy) — the one it
       // went out to, or the one it came in from. A node on several
@@ -306,14 +277,7 @@ function createTrafficLog(opts) {
     // The payload, whole and untouched. `bytes` is measured off the
     // string's length rather than by looking inside it — a length is not
     // an interpretation.
-    //
-    // NEVER FOR AN OWNER EVENT, and this is a floor rather than a tidy-up.
-    // A relay reporting its own membership has no business sending
-    // anybody's words, and if it ever did, keeping them here would make
-    // the owner's disk the place everybody else's conversations land —
-    // the ring's exact sin, in the one file that replaced it. Refused on
-    // both sides: relay.js will not send one, and this will not write one.
-    if (row.kind !== 'owner' && typeof entry.payload === 'string') {
+    if (typeof entry.payload === 'string') {
       row.payload = entry.payload;
       // ── A SIZE IN THIS SYSTEM IS BYTES ────────────────────────────────
       //
@@ -339,31 +303,6 @@ function createTrafficLog(opts) {
       // non-ASCII rows differ by the UTF-8 overhead, which is the honest
       // state of a field that was wrong and was fixed.
       row.bytes = Buffer.byteLength(entry.payload, 'utf8');
-    }
-
-    // THE FACTS AN OWNER EVENT CARRIES. Small, named, and closed: a
-    // relay cannot widen this file by inventing a field, because
-    // anything not on this list is dropped on the way in.
-    //
-    // `invite` is the owner's own word for the person — possibly a phone
-    // number (R1) — which is exactly why it is owner-only and never
-    // leaves this machine.
-    // `cause` IS NOT `hash`, AND THE COLUMN NAMES THE DIFFERENCE.
-    //
-    // A request row and its reply row ARE the transaction hash H. An
-    // owner row is a CONSEQUENCE of H — the relay telling this node what
-    // that post did to its membership. Putting it in `hash` would make
-    // three rows claim to be the same transaction; a column of its own
-    // lets a reader join `hash` to `cause` and keeps the relation legible.
-    //
-    // Empty on anything the relay merely witnessed — a stranger's claim
-    // arrives on an HTTP route and no post exists to name. See
-    // relay.ownerEvent.
-    if (row.kind === 'owner') {
-      ['event', 'label', 'invite', 'key', 'why', 'owner', 'revoked',
-        'invitesRevoked', 'expiresAt', 'cause'].forEach(function (k) {
-        if (entry[k] !== undefined && entry[k] !== '') row[k] = entry[k];
-      });
     }
 
     try {
@@ -423,35 +362,6 @@ function createTrafficLog(opts) {
     var rows = [];
     try { rows = tb.untaken(); } catch (e) { rows = []; }
     return rows.sort(byTime);
-  }
-
-  // WHAT THIS NODE'S OWN RELAYS DID ABOUT THEIR MEMBERSHIP, oldest first.
-  //
-  //   Andy: "This then enters the owners log (it should) and it can be
-  //   reviewed."
-  //
-  // A SECOND READ RATHER THAN A FLAG ON THE FIRST, because `arrivals` is
-  // the app-delivery surface: it answers "what did a peer send me that I
-  // agreed to hear", and every row it returns is a packet a page may be
-  // handed. An owner event is neither a packet nor addressed to an app,
-  // and putting it behind the same door would mean every caller of
-  // `arrivals` grew a branch for a shape it never asked for.
-  //
-  // `since` is a POSITION, not a filter on content — same rule as
-  // arrivals, and for the same reason (R13). No filter by kind of event,
-  // for the same reason there is no filter by app: a contained read
-  // surface is the point, and fanning out on what a thing IS is the
-  // reader's job.
-  function ownerEvents(opts) {
-    var o = opts || {};
-    var since = typeof o.since === 'string' ? Date.parse(o.since) : 0;
-    var limit = Number(o.limit) > 0 ? Math.min(Number(o.limit), 500) : 200;
-    var tb = table(rootDir, false);
-    if (!tb) return [];
-    var rows = [];
-    try { rows = tb.owner(sinceIso(since), limit); } catch (e) { rows = []; }
-    rows.sort(byTime);
-    return rows.slice(0, limit);
   }
 
   // The row for one packet, by the hash it is keyed on. What `re` points
@@ -532,9 +442,6 @@ function createTrafficLog(opts) {
     arrivals: arrivals,
     // Every arrival not yet taken, without reading the whole log (goal/G4.31).
     untaken: untaken,
-    // The membership half of the same file — see ownerEvents for why it
-    // is a second read and not a flag on the first.
-    ownerEvents: ownerEvents,
     byHash: byHash,
     taken: taken,
   };

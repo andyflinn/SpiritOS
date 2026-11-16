@@ -251,8 +251,6 @@ function tableSearch(spec) {
     },
   };
 }
-// Every version of an item's box, newest first (the box table keeps them all).
-const boxVersionsOf = { all: function (g, i) { return db.prepare('SELECT version, creator, at, text FROM box WHERE goal = ? AND item = ? ORDER BY version DESC').all(g, i); } };
 // ONE ROW OF A LIST TABLE, ADDED OR REMOVED (goal/G40.3): {id, path}, one path a write. has(it, w, p) says whether the
 // row is there; an add refuses one already there and a remove one not there, naming it. A path never climbs (..).
 function listRowVerb(verb, has, adding) {
@@ -369,10 +367,11 @@ function idOf(goal, item) { return 'goal/G' + goal + (item ? '.' + item : ''); }
 // THE RULES, A TABLE OF THEIR OWN (goal/G5.5), KEYED BY RULE NUMBER (goal/G33.4: "the desk rules by their rule number").
 //   Andy: "rules remain static and apply to all items. ... so rules don't worry about items, items need to worry
 //   about rules.", and on keeping the old texts: "might be a good idea to have a history of legal standards, it's a
-//   form of proof, too." So every version is a row of `rules`, never overwritten, numbered n across all rules (the
-//   version an item's Go recorded), the newest row per rule is the rule and the older ones its history; his draft
-//   between versions is one row per rule in `rule_drafts`, which writes no history; a rule's chat lines are rows of
-//   `rule_chat`. A rule's key stays rule/<number> at every verb.
+//   form of proof, too." NO HISTORY IS KEPT since (goal/G47.1, Q16; Andy, of the old rule versions among the unread
+//   logs: "ALL OF THEM. KILL THEM. NOBODY READ THAT SHIT, THEY SHOULD NOT EXIST."): a version is a row of `rules`,
+//   numbered n across all rules (the version an item's Go recorded, which keeps counting), and writing it deletes the
+//   rule's older rows in the same write, so the one row per rule is the rule. His draft between versions is one row per
+//   rule in `rule_drafts`; a rule's chat lines are rows of `rule_chat`. A rule's key stays rule/<number> at every verb.
 db.exec(
   'CREATE TABLE IF NOT EXISTS rules (n INTEGER PRIMARY KEY AUTOINCREMENT, rule INTEGER NOT NULL, at TEXT NOT NULL, by TEXT NOT NULL, type TEXT NOT NULL, label TEXT NOT NULL, status TEXT NOT NULL, text TEXT NOT NULL, autoAttach INTEGER NOT NULL DEFAULT 0);' +
   'CREATE INDEX IF NOT EXISTS rules_rule ON rules (rule);' +
@@ -404,14 +403,22 @@ const RULE_STATUSES = ['proposed', 'active', 'deleted'];
 function ruleOut(r) { return r ? Object.assign({}, r, { key: 'rule/' + r.rule, autoAttach: r.autoAttach === 1 }) : r; }
 function ruleNumber(key) { const m = /^rule\/(\d+)$/.exec(String(key)); return m ? Number(m[1]) : -1; }
 const addRuleRowAt = db.prepare('INSERT INTO rules (rule, at, by, type, label, status, text, autoAttach) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
-const addRuleRow = { run: function (key, at, by, type, label, status, text, autoAttach) { return addRuleRowAt.run(ruleNumber(key), at, by, type, label, status, text, autoAttach ? 1 : 0); } };
+// The rule's older rows go in the same write as its new one (goal/G47.1, Q16, above): only the newest row is kept.
+const olderRuleRows = db.prepare('DELETE FROM rules WHERE rule = ? AND n < ?');
+const addRuleRow = { run: function (key, at, by, type, label, status, text, autoAttach) {
+  db.exec('BEGIN');
+  try {
+    const r = addRuleRowAt.run(ruleNumber(key), at, by, type, label, status, text, autoAttach ? 1 : 0);
+    olderRuleRows.run(ruleNumber(key), Number(r.lastInsertRowid));
+    db.exec('COMMIT');
+    return r;
+  } catch (e) { db.exec('ROLLBACK'); throw e; }
+} };
 const ruleCount = db.prepare('SELECT COUNT(DISTINCT rule) AS c FROM rules');
 const newestRuleRow = db.prepare('SELECT n, rule, at, by, type, label, status, text, autoAttach FROM rules WHERE rule = ? ORDER BY n DESC LIMIT 1');
 const newestRulesRows = db.prepare('SELECT n, rule, at, by, type, label, status, text, autoAttach FROM rules WHERE n IN (SELECT MAX(n) FROM rules GROUP BY rule) ORDER BY n DESC');
-const ruleRowsOf = db.prepare('SELECT n, rule, at, by, type, label, status, text, autoAttach FROM rules WHERE rule = ? ORDER BY n DESC');
 const newestRule = { get: function (key) { return ruleOut(newestRuleRow.get(ruleNumber(key))); } };
 const newestRules = { all: function () { return newestRulesRows.all().map(ruleOut); } };
-const ruleRows = { all: function (key) { return ruleRowsOf.all(ruleNumber(key)).map(ruleOut); } };
 const getDraftRow = db.prepare('SELECT text FROM rule_drafts WHERE rule = ?');
 const putDraftRow = db.prepare('INSERT INTO rule_drafts (rule, at, text) VALUES (?, ?, ?) ON CONFLICT(rule) DO UPDATE SET at = excluded.at, text = excluded.text');
 const getDraft = { get: function (key) { return getDraftRow.get(ruleNumber(key)); } };
@@ -535,6 +542,10 @@ const UPSERT = {
   chat: db.prepare('INSERT INTO chat (goal, item, seq, at, creator, data, change, born) VALUES (?, ?, ?, ?, ?, ?, ?, ?)' +
     ' ON CONFLICT(goal, item, seq) DO UPDATE SET at = excluded.at, creator = excluded.creator, data = excluded.data, change = excluded.change'),
   box: db.prepare('INSERT OR REPLACE INTO box (goal, item, version, creator, at, text) VALUES (?, ?, ?, ?, ?, ?)'),
+  // ONLY THE NEWEST BOX IS KEPT (goal/G47.1, Q16; Andy, of the old box versions among the unread logs: "ALL OF THEM.
+  // KILL THEM. NOBODY READ THAT SHIT, THEY SHOULD NOT EXIST."): a box written deletes its item's older versions in the
+  // same write. The version number keeps counting: the kept row carries it, and loadState reads it back.
+  olderBoxes: db.prepare('DELETE FROM box WHERE goal = ? AND item = ? AND version < ?'),
   checks: db.prepare('INSERT INTO checks (goal, item, number, pos, creator, data, change) VALUES (?, ?, ?, ?, ?, ?, ?)' +
     ' ON CONFLICT(goal, item, number) DO UPDATE SET pos = excluded.pos, creator = excluded.creator, data = excluded.data, change = excluded.change'),
   files: db.prepare('INSERT INTO files (goal, item, holder, path, pos, creator, core, grant_status, change) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)' +
@@ -560,7 +571,7 @@ function writeRow(k, x, r) {
   const c = x.cols;
   if (x.table === 'items') UPSERT.items.run(k[0], k[1], c[0], c[1], c[2], c[3], r.n);
   else if (x.table === 'chat') UPSERT.chat.run(k[0], k[1], c[0], c[1], c[2], c[3], r.n, r.n);
-  else if (x.table === 'box') UPSERT.box.run(k[0], k[1], c[0], c[1], c[2], c[3]);
+  else if (x.table === 'box') { UPSERT.box.run(k[0], k[1], c[0], c[1], c[2], c[3]); UPSERT.olderBoxes.run(k[0], k[1], c[0]); }
   else if (x.table === 'checks') UPSERT.checks.run(k[0], k[1], c[0], c[1], c[2], c[3], r.n);
   else if (x.table === 'files') UPSERT.files.run(k[0], k[1], c[0], c[1], c[2], c[3], c[4], c[5], r.n);
   else if (x.table === 'claims') UPSERT.claims.run(k[0], k[1], c[0], c[1], c[2], r.n);
@@ -570,7 +581,7 @@ function deleteRow(k, key) {
   const table = parts[0];
   if (table === 'items') DELETE.items.run(k[0], k[1]);
   else if (table === 'chat') DELETE.chat.run(k[0], k[1], Number(parts[1]));
-  else if (table === 'box') { /* a box's versions go only with its item */ }
+  else if (table === 'box') { /* a box goes only with its item */ }
   else if (table === 'checks') DELETE.checks.run(k[0], k[1], parts.slice(1).join('|'));
   else if (table === 'files') DELETE.files.run(k[0], k[1], parts[1], parts.slice(2).join('|'));
   else if (table === 'claims') DELETE.claims.run(k[0], k[1], parts.slice(1).join('|'));
@@ -2322,8 +2333,8 @@ appServer.serve({
       return { checks: checks, checksMore: checks.length < shown.length };
     },
   },
-  // ── EACH TABLE'S SEARCH (goal/G33.7), from tableSearch: an item's checks, files, claims and box versions, and the
-  // agents. Each answers {items: [{key, label}], more}, ranked by text, newest first among equals.
+  // ── EACH TABLE'S SEARCH (goal/G33.7), from tableSearch: an item's checks, files and claims, and the agents (no
+  // box versions: only the newest box is kept, goal/G47.1, Q16). Each answers {items: [{key, label}], more}, ranked by text, newest first among equals.
   'item.checks.search': tableSearch({
     request: { id: '' },
     rows: function (a, st) {
@@ -2341,14 +2352,6 @@ appServer.serve({
       const it = itemFor(st, a);
       return Object.keys(it.claims || {}).map(function (label) { const at = String((it.claimAt && it.claimAt[label]) || ''); return { key: label, label: { by: label, at: at } }; })
         .sort(function (x, y) { return x.label.at < y.label.at ? 1 : x.label.at > y.label.at ? -1 : 0; });
-    },
-  }),
-  'item.box.search': tableSearch({
-    request: { id: '' },
-    rows: function (a, st) {
-      const it = itemFor(st, a);
-      const k = numbersOf(it.id);
-      return boxVersionsOf.all(k[0], k[1]).map(function (r) { return { key: String(r.version), label: { version: r.version, by: String(r.creator), at: String(r.at), text: String(r.text) } }; });
     },
   }),
   'agents.search': tableSearch({

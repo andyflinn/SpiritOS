@@ -20,7 +20,7 @@
 //   node deskAgentEar.js <port>                            wait: ask deskClient.next until lines come, print them, end
 //   node deskAgentEar.js <port> --read <key>               the same wait, naming the key of the wake last read
 //   node deskAgentEar.js <port> <verb> [json]              one read or write of Desk, through deskClient.desk
-//   node deskAgentEar.js <port> deskClient.<verb> [json]   one ask of its own deskClient (setDesk, history.search)
+//   node deskAgentEar.js <port> deskClient.<verb> [json]   one ask of its own deskClient (setDesk, signoff)
 //
 // The port is the agent's OWN node's and has no default: Andy's door is never an agent's. It is checked and printed
 // (in the next: line and the refusals); the asks themselves go to the port spirit/state/environment.json names.
@@ -89,7 +89,7 @@ else if (verb.indexOf('deskClient.') === 0) {
   ask(verb.slice('deskClient.'.length), args).then(function (r) { end(refusedBy(r) ? 1 : 0, JSON.stringify(r.body), refusedBy(r)); });
 } else {
   // ONE ASK OF THE DESK. Its answer is printed as it came, a refusal of the desk's too (exit 1); deskClient's own
-  // refusal (a slow desk: no-answer with the record's id) is the reason. deskClient hands back the desk's answer
+  // refusal (a slow desk: no-answer) is the reason. deskClient hands back the desk's answer
   // itself (goal/G4.19), so a desk refusal arrives as the body: ok false, printed, exit 1.
   ask('desk', { name: verb, json: process.argv[4] || '{}' }).then(function (r) {
     if (r.status !== 200 || !r.body || typeof r.body !== 'object') end(1, 'deskAgentEar: ' + r.status + ' ' + JSON.stringify(r.body), true);

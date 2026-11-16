@@ -42,7 +42,6 @@ module.exports = {
     'item.chat': { id: 'id' },
     'item.checks': { id: 'id' },
     // goal/G33.7: each table's search, one component (desk.js tableSearch), ranked by text, bounded, more.
-    'item.box.search': { id: 'id', text: 'text' },
     'item.checks.search': { id: 'id', text: 'text' },
     'item.claims.search': { id: 'id', text: 'text' },
     'item.files.search': { id: 'id', text: 'text' },

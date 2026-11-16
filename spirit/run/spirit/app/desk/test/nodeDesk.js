@@ -66,6 +66,11 @@ test.run('its api serves no verb of a plugin', 0.2, function () {
   const plug = verbs.filter(function (v) { return /^(stackFrameChecks|vision|fallout)\./.test(v); });
   return (verbs.length > 5 && !plug.length) || false;
 }, test.limit.quick);
+// goal/G47.1, Q16: old box versions are not kept, and their search went with them.
+test.run('its api serves no search of an item\'s box versions', 0.2, function () {
+  const verbs = W.verbs || [];
+  return (verbs.length > 5 && verbs.indexOf('item.box.search') === -1 && verbs.indexOf('item.box') !== -1) || false;
+}, test.limit.quick);
 test.run('a fresh desk holds no goal/G0', 0.2, async function () {
   const verbs = W.verbs || [];
   if (!(verbs.length > 5) || !W.ask) return false;

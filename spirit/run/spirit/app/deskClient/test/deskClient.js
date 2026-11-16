@@ -107,9 +107,9 @@ Module._load = function (request, parent, isMain) {
   if (request === 'chokidar' || /(^|[\\/])chokidar[\\/]index\.js$/.test(request)) return { watch: function () { const w = { on: function (ev, fn) { if (ev === 'all') watchAll = fn; return w; } }; return w; } };
   return realLoad.apply(this, arguments);
 };
-// resubscribeMs 1 is read by nothing: deskClient.js has no such value. It subscribes again after QUIET_MS (10 s) of
-// silence (resubscribeQuiet, goal/G41.12), so the 30 ms silence below never reaches that.
-process.argv = [process.argv[0], FILE, JSON.stringify({ historyMax: 1000, resubscribeMs: 1 }), '--state', STATE,
+// deskClient.js reads no manifest value: it subscribes again after QUIET_MS (10 s) of silence (resubscribeQuiet,
+// goal/G41.12), so the 30 ms silence below never reaches that.
+process.argv = [process.argv[0], FILE, '{}', '--state', STATE,
   '--node', JSON.stringify({ name: SELF, publicKey: SELF_KEY, ownerKey: '' })];
 
 // ── THE STREAM, FED BY HAND ──────────────────────────────────────────
@@ -304,7 +304,7 @@ test.run('a kept item.files answers files and filesMore, and a kept item.checks 
 }, test.limit.quick);
 test.run('a kept read the cache cannot answer is refused not-kept, saying why', 0.2, async function () {
   const kMiss = await kept('item.files', { id: 'goal/G9.99' });
-  V.kNotRead = await kept('history.search', {});
+  V.kNotRead = await kept('chat.add', {});
   return (kMiss && kMiss.ok === false && kMiss.code === 'not-kept' && !!kMiss.why) || false;
 }, test.limit.quick);
 test.run('a verb that is no kept read is refused not-kept too', 0.2, function () {

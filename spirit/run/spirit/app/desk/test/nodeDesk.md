@@ -8,4 +8,6 @@ Andy, the box: *"the apps and plugin system goes."*, *"there will only be goals,
 
 - The plugin folders are gone: `spirit/app/desk/plugins/`, `spirit/app/desk/element/desk/plugins/`, and `shell/stackFrameCheckDetail/`.
 - `nodeDesk.js` mounts no plugin and asks none for a refusal; the desk's api serves no verb of a plugin (`stackFrameChecks.*`, `vision.*`, `fallout.*`).
+- goal/G47.1, Q16 (Andy, of old box versions: *"ALL OF THEM. KILL THEM."*): the desk's api serves `item.box` and no
+  `item.box.search`.
 - Andy (Q5): *"G0 goes, from ui and server, kept in database."*: `nodeDesk.js` names no `goal/G0`, and a fresh desk holds none.

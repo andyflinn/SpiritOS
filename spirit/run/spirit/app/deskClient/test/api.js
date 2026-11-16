@@ -102,9 +102,9 @@ test.run('signoff and clearSignoff take an optional agent', 0.2, function () {
   if (!W.api) return false;
   return (passes('signoff', {}) && passes('signoff', { agent: 'claude-windows' }) && passes('clearSignoff', {}) && passes('clearSignoff', { agent: '' })) || false;
 }, test.limit.quick);
-test.run('history.search takes an optional text, which must be a text when sent', 0.2, function () {
+test.run('there is no history.search: no record of asks is kept', 0.2, function () {
   if (!W.api) return false;
-  return (passes('history.search', {}) && passes('history.search', { text: 'x' }) && refusedAs('history.search', { text: 3 }) === 'bad-request') || false;
+  return !('history.search' in W.verbs) || false;
 }, test.limit.quick);
 test.run('streamListener needs its one row, as JSON text', 0.2, function () {
   if (!W.api) return false;

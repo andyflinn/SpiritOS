@@ -11,6 +11,16 @@ Andy: *"delete the desk dead ui-rule."* The desk attached every active auto-atta
 `spirit/run/shell/` joined its list (goal/G40.13); that folder is gone since G43.30. With an active auto-attach ui rule
 standing, `item.files.add` of a file under `spirit/run/shell/`, by a single path and in a list, attaches no ui rule.
 
+## Requirements (goal/G47.1, Q16): no old versions are kept
+
+Andy, of old rule versions and old box versions among the unread logs: *"ALL OF THEM. KILL THEM. NOBODY READ THAT SHIT,
+THEY SHOULD NOT EXIST."*
+
+- After two writes of an item's box, desk.db's `box` table holds one row of that item, the newest, carrying the version
+  `item.box` answers (the number keeps counting).
+- After two `rule.version` writes of a rule, the `rules` table holds one row of that rule, numbered past the row before;
+  `rule.get` still answers its type, status and autoAttach.
+
 ## Requirements (goal/G41.11)
 
 - **Bundles, for Desk only** (Andy: "agreed to publishing lists, FOR DESK ONLY, this is NOT a general rule"):

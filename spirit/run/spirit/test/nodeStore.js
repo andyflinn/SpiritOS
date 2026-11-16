@@ -259,14 +259,6 @@ test.run('byHash answers the rows of that hash, and none for an empty hash', 0.4
   W.t.traffic.add({ at: '2020-01-01T00:00:03.000Z', hash: '' });
   return (W.t.traffic.byHash('h1').length === 2 && W.t.traffic.byHash('').length === 0 && W.t.traffic.byHash(null).length === 0) || false;
 }, test.limit.quick);
-test.run('owner answers the owner rows after a time, oldest first, at most the limit', 0.4, function () {
-  W.t.traffic.add({ at: '2020-02-01T00:00:03.000Z', kind: 'owner', label: 'c' });
-  W.t.traffic.add({ at: '2020-02-01T00:00:01.000Z', kind: 'owner', label: 'a' });
-  W.t.traffic.add({ at: '2020-02-01T00:00:02.000Z', kind: 'owner', label: 'b' });
-  const all = W.t.traffic.owner('', 10).map(function (r) { return r.label; }).join('');
-  const after = W.t.traffic.owner('2020-02-01T00:00:01.000Z', 1).map(function (r) { return r.label; }).join('');
-  return (all === 'abc' && after === 'b') || false;
-}, test.limit.quick);
 test.run('arrivals answers only delivered rows that came in, after a time, at most the limit', 0.4, function () {
   W.t.traffic.add({ at: '2020-03-01T00:00:01.000Z', dir: 'in', outcome: 'delivered', hash: 'd1' });
   W.t.traffic.add({ at: '2020-03-01T00:00:02.000Z', dir: 'out', outcome: 'delivered', hash: 'd2' });

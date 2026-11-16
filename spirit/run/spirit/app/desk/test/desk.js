@@ -321,6 +321,22 @@ test.run('an active ui rule set to attach itself is written into the desk\'s rul
   if (found.status === 'active' && found.autoAttach === true && found.type === 'ui') uiRule = 'rule/9001';
   return !!uiRule || false;
 }, test.limit.quick);
+// goal/G47.1, Q16 (Andy, of the old rule versions: "ALL OF THEM. KILL THEM."): two new versions of a rule leave one row of
+// it in the table, the newest, its version number past the one before.
+test.run('after two new versions of a rule the desk keeps only its newest row, numbered past the old one', 0.2, async function () {
+  if (!uiRule) return false;
+  const rowsOf = function () {
+    const db = new DatabaseSync(path.join(W.scratch, 'state', 'desk.db'), { readOnly: true });
+    try { return db.prepare('SELECT n FROM rules WHERE rule = 9001').all().map(function (r) { return Number(r.n); }); } finally { db.close(); }
+  };
+  const before = rowsOf();
+  const a = await call('rule.version', { key: uiRule, text: 'A ui rule of the test.', status: 'active' }, ANDY);
+  const b = await call('rule.version', { key: uiRule, text: 'A ui rule of the test.', status: 'active' }, ANDY);
+  const after = rowsOf();
+  const kept = await call('rule.get', { key: uiRule }, ANDY);
+  return (a.key === uiRule && b.key === uiRule && before.length === 1 && after.length === 1 && after[0] > before[0] &&
+    kept.status === 'active' && kept.autoAttach === true && kept.type === 'ui') || false;
+}, test.limit.quick);
 test.run('adding a single file under spirit/run/shell/ to an item attaches no ui rule', 0.2, async function () {
   if (!uiRule) return false;
   await call('item.take', { id: 'goal/G100.5' }, CW);
@@ -456,6 +472,17 @@ test.run('a box write to 80% of one answer lands', 0.2, async function () {
   const red = 'y'.repeat(Math.ceil(W.room * 0.8));
   const big = await call('box.write', { id: 'goal/G100.4', text: red, version: v1 }, ANDY);
   return !!big.change || false;
+}, test.limit.quick);
+// goal/G47.1, Q16 (Andy, of the old box versions: "ALL OF THEM. KILL THEM. NOBODY READ THAT SHIT, THEY SHOULD NOT
+// EXIST."): after two writes of goal/G100.4's box the table holds one row of it, the newest, carrying the version
+// item.box answers.
+test.run('after two box writes the desk keeps only the item\'s newest box, with the version it answers', 0.2, async function () {
+  if (!(W.room > 0)) return false;
+  const v = (await facts('goal/G100.4')).version || 0;
+  const db = new DatabaseSync(path.join(W.scratch, 'state', 'desk.db'), { readOnly: true });
+  let rows = [];
+  try { rows = db.prepare('SELECT version FROM box WHERE goal = 100 AND item = 4').all(); } finally { db.close(); }
+  return (v >= 2 && rows.length === 1 && Number(rows[0].version) === v) || false;
 }, test.limit.quick);
 test.run('after that box write an agent with cap off is refused the box, with the cap as the why', 0.2, async function () {
   if (!(W.room > 0)) return false;

@@ -547,7 +547,6 @@ function open(rootDir, opts) {
     all: db.prepare('SELECT * FROM traffic ORDER BY seq'),
     count: db.prepare('SELECT COUNT(*) AS n FROM traffic'),
     byHash: db.prepare("SELECT * FROM traffic WHERE hash = ? AND hash <> '' ORDER BY seq"),
-    owner: db.prepare("SELECT * FROM traffic WHERE kind = 'owner' AND at > ? ORDER BY at LIMIT ?"),
     arrivals: db.prepare("SELECT * FROM traffic WHERE dir = 'in' AND outcome = 'delivered' AND at > ? ORDER BY at LIMIT ?"),
     // THE ARRIVALS NOT YET TAKEN (goal/G4.31), every one, oldest first: what a stream replays when it opens. Both
     // partial indexes' WHEREs are repeated (traffic_delivered_at for the rows, traffic_hash for each one's mark), so it
@@ -626,7 +625,6 @@ function open(rootDir, opts) {
       all: function () { return tq.all.all().map(trafficRow); },
       // The indexed reads (transport/R19.4). `since` is an ISO time, '' for all.
       byHash: function (hash) { return tq.byHash.all(String(hash || '')).map(trafficRow); },
-      owner: function (since, limit) { return tq.owner.all(String(since || ''), Number(limit) || 200).map(trafficRow); },
       arrivals: function (since, limit) { return tq.arrivals.all(String(since || ''), Number(limit) || 200).map(trafficRow); },
       untaken: function () { return tq.untaken.all(new Date(Date.now() - BACKLOG_MS).toISOString()).map(trafficRow); },
       lastAt: function () { const r = tq.lastAt.get(); return (r && r.at) || ''; },

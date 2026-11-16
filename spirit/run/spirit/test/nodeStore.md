@@ -45,8 +45,8 @@ the module's own functions.
 - `add(row)` answers a seq that only grows; `all()` gives each row back exactly as written: text, numbers, `true` and
   `false` in their own types; a value not of its column's type and a field no column names go to `extra` and come back
   unchanged. A null row is an empty row.
-- `byHash(hash)` the rows with that hash, never for `''`; `owner(since, limit)` the `kind: 'owner'` rows after
-  `since`, oldest first, at most `limit`; `arrivals(since, limit)` the same for `dir: 'in'`, `outcome: 'delivered'`.
+- `byHash(hash)` the rows with that hash, never for `''`; `arrivals(since, limit)` the `dir: 'in'`, `outcome: 'delivered'`
+  rows after `since`, oldest first, at most `limit`. There is no reader of owner rows (goal/G47.1, Q16).
 - `untaken()` is the delivered arrivals of the last day with no `mark: 'taken'` row of the same hash, oldest first.
 - `lastAt()` the newest `at`, `''` when empty; `count()`; `bytes()`.
 - The file never grows past `MAX_DB_BYTES`: past it the oldest log rows go, never the one just written.

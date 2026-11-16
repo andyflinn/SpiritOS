@@ -3,7 +3,7 @@
 // WHAT A CLIENT KNOWS OF THE deskClient FAMILY, IN ITS OWN FOLDER (goal/G41.28). Andy: "WSL, make sure you assert that every
 // family in the api tree HAS a clientCacheManager"; its api.js requires it, and no other file does.
 //
-// IT KEEPS NOTHING, AND NAMES NO BRANCH: cache.dump saves a server's cache to its disk and history.search answers one search for the agent that asked it, in node.
+// IT KEEPS NOTHING, AND NAMES NO BRANCH: cache.dump saves a server's cache to its disk, in node.
 // A verb of this family that comes to answer rows a client reads again names its branch here, and its readers ask
 // spirit.data.deskClient.data for them, as every family's readers do.
 (function family() {

@@ -300,7 +300,7 @@ function batchOf(suite) {
   return { batch: true, script: '', suite: suite, title: '', scripts: mine.map(function (r) { return r.script; }), hashes: hashes };
 }
 // WHY THE RUNNER WAITS, WRITTEN DOWN (goal/G47.1; Andy saw classifying start only when he turned interactive off, and
-// nothing said why): while scripts are owed a class, each time the runner does not start it says why in testicle.err, a
+// nothing said why): while scripts are owed a class, each time the runner does not start it says why on its stderr, a
 // reason said once until it changes.
 let waitedFor = '';
 function waits(why) {
@@ -446,12 +446,11 @@ function killJob(j) {
   if (j.batch) front.push({ resume: true, script: '', suite: j.suite, title: '' });
   try { j.kid.kill(); } catch (e) { logError('killJob: the kill', e); }
 }
-// WHAT GOES WRONG, KEPT WHERE IT CAN BE READ (wsl's verify: "the testicle server's stderr does not reach my node.err"):
-// every error the runner meets is written to testicle.err in its state folder too, and an error nothing caught is written
-// there before the process ends.
+// WHAT GOES WRONG, SAID ON STDERR AND KEPT NOWHERE (goal/G47.1, Q16; Andy, of testicle.err among the unread logs: "ALL
+// OF THEM. KILL THEM. NOBODY READ THAT SHIT, THEY SHOULD NOT EXIST."): every error the runner meets is said on its
+// stderr, and an error nothing caught is said there before the process ends.
 function logError(where, e) {
   const line = new Date().toISOString() + ' ' + where + (e ? ': ' + ((e && e.stack) || e) : '') + '\n';
-  try { fs.appendFileSync(path.join(STATE, 'testicle.err'), line); } catch (x) { /* nowhere to write */ }
   console.error('testicle: ' + line.trim());
 }
 process.on('uncaughtException', function (e) { logError('uncaught', e); process.exit(1); });

@@ -123,8 +123,8 @@ test.run('a desk refusal ends it with exit 1', 0.2, function () {
   return g.code === 1 || false;
 }, test.limit.quick);
 test.run('a verb named under deskClient asks deskClient itself', 0.2, function () {
-  const h = ear(['45441', 'deskClient.history.search', '{"text":""}'], { 'history.search': [{ items: [], more: false }] });
-  return (h.code === 0 && h.asks.length === 1 && h.asks[0].verb === 'history.search') || false;
+  const h = ear(['45441', 'deskClient.signoff', '{}'], { signoff: [{ status: 'signed-off' }] });
+  return (h.code === 0 && h.asks.length === 1 && h.asks[0].verb === 'signoff') || false;
 }, test.limit.quick);
 test.run('a port that is no number gets the usage, with exit 2', 0.2, function () {
   const i = ear(['nope'], {});
