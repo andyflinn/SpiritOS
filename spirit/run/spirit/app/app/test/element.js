@@ -1227,15 +1227,8 @@ test.after(stopAll);
     return (drawn.indexOf(MARK) !== -1 && !second.some(function (n) { return (/^\/spirit\/app\/app\/element\.js(\?|$)/).test(n); }) && !/\bContacts\b/.test(drawn)) ? true : false;
   }, test.limit.quick);
 
-  // Q18, Andy: "join. not the shells job.": zzshell knows nothing of Join, and Join still shows a new node its steps.
-  // the box: "Join shows a new user its steps on its own ... neither boot.js nor any shell decides it"
-  test.run('under a shell that knows nothing of it, Join shows itself', 0.2, async function () {
-    if (!second) return false;
-    const steps = await call(N.base, 'job.list', {});
-    // The scratch node is new: its join steps are open.
-    const joined = drawn.indexOf(MARK) !== -1 && await until(function () { return text().then(function (t) { return (/\bJoin\b/).test(t); }); }, 10000);
-    return (joined) ? true : false;
-  }, test.limit.long);
+  // No Join check under zzshell (goal/G47.1, Q19, Andy: "On a fake shell, which is possible, join (apps) don't need to be
+  // visible, that's the job of the shell, not the app.").
 
   // the box: the two rows of the app detail, "shown only for an app whose <name>.json says shell:true:true"
   const detail = function (key) {
