@@ -195,7 +195,7 @@ function across(rel) {
   const out = [];
   let m;
   ACROSS.lastIndex = 0;
-  while ((m = ACROSS.exec(text))) out.push({ line: text.slice(0, m.index).split('\n').length, call: 'document.' + m[1] });
+  while ((m = ACROSS.exec(text))) out.push(m.index);
   return out;
 }
 function inReach(rel) { return rel === MODULE || (rel.indexOf(BELOW) === 0 && /\.js$/.test(rel) && !/(^|\/)test\//.test(rel)); }

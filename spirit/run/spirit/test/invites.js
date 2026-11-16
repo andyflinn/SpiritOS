@@ -72,7 +72,7 @@ test.run('match refuses, 403: none given, not found, another label, expired', 0.
   if (!ROOT) return false;
   I.add(ROOT, { label: 'late', token: 'expired-token', expiresAt: PAST });
   const got = [I.match(ROOT, '', 'john'), I.match(ROOT, 'no-such', 'john'), I.match(ROOT, 'match-token', 'jane'), I.match(ROOT, 'expired-token', 'late')];
-  const errs = got.map(function (m) { return m.ok === false && m.status === 403 ? m.error : 'ok?'; });
+  const errs = got.map(function (m) { return m.ok === false && m.status === 403 ? m.error : null; });
   return short(errs) === short(['invite required', 'invite not found', 'invite label mismatch', 'invite expired']) || false;
 }, test.limit.quick);
 

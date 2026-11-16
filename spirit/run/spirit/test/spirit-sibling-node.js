@@ -47,7 +47,7 @@ function requireOnNode(run, rel) {
     // answers at once and stands at its place as that answer.
     const iface = /\/api\.js$/.test(rel);
     const probe = 'const path = require("path"); const s = require(path.join(process.cwd(), "spirit", "spirit.js"));' +
-      '(async function () { let at = null, err = "", promise = false; try { at = s.require(' + JSON.stringify(rel) + '); promise = !!(at && typeof at.then === "function"); if (' + iface + ' && promise) at = await at; } catch (e) { err = String(e && e.message || e); }' +
+      '(async function () { let at = null, err = false, promise = false; try { at = s.require(' + JSON.stringify(rel) + '); promise = !!(at && typeof at.then === "function"); if (' + iface + ' && promise) at = await at; } catch (e) { err = !!String(e && e.message || e); }' +
       'const keys = ' + JSON.stringify(placeKeys(rel)) + '; const place = keys.reduce(function (o, k) { return o == null ? undefined : o[k]; }, s.required);' +
       'process.stdout.write("\\n@@" + JSON.stringify({ err: err, promise: ' + iface + ' ? false : promise, placed: ' + iface + ' ? place !== undefined : place !== undefined && place === at }) + "\\n"); process.exit(0); }());';
     const kid = spawn(process.execPath, ['-e', probe], { cwd: run, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true });
@@ -63,7 +63,7 @@ function requireOnNode(run, rel) {
       // A PROGRAM (goal/G47.1, box v95, 1: "A process that ends with nothing caught has loaded, whatever its exit code (an app
       // server that exits at once, \"no --state\", has loaded)"): it ended the process before saying where it stands,
       // nothing thrown; loaded, its place not judged. Still running at the limit: a hang.
-      resolve(r || (hung ? { err: 'it did not finish loading', promise: false, placed: false } : { err: '', program: true, promise: false, placed: false }));
+      resolve(r || (hung ? { err: true, promise: false, placed: false } : { err: false, program: true, promise: false, placed: false }));
     });
   });
 }

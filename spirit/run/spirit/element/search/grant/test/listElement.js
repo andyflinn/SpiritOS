@@ -61,9 +61,9 @@ test.run('it registers spirit.element.spirit.element.search.grant.listElement.cr
 }, test.limit.quick);
 test.run('made with no grants table, it is refused, and draws nothing', 0.2, function () {
   if (noList()) return false;
-  let refused = null;
-  try { E.search.grant.listElement.create({}, {}); } catch (e) { refused = e && e.message; }
-  return refused !== null && lists.length === 0 ? true : false;
+  let refused = false;
+  try { E.search.grant.listElement.create({}, {}); } catch (e) { refused = (e && e.message) !== null; }
+  return refused && lists.length === 0 ? true : false;
 }, test.limit.quick);
 
 // a pane of the table it is handed, a view of that table's branch

@@ -48,15 +48,15 @@ test.run('every verb\'s arguments are a plain object', 0.2, function () {
 }, test.limit.quick);
 test.run('every rule is one of spirit.js\'s standard rules, \'?\' optional', 0.2, function () {
   if (!W.api) return false;
-  const badRule = [];
+  let badRule = 0;
   W.names.forEach(function (v) {
     Object.keys(W.verbs[v] || {}).forEach(function (arg) {
       const raw = String(W.verbs[v][arg]);
       const rule = raw.charAt(raw.length - 1) === '?' ? raw.slice(0, -1) : raw;
-      if (spirit.rules.indexOf(rule) === -1) badRule.push(v + '.' + arg + ': ' + raw);
+      if (spirit.rules.indexOf(rule) === -1) badRule++;
     });
   });
-  return badRule.length === 0 || false;
+  return badRule === 0 || false;
 }, test.limit.quick);
 test.run('DEBUG is appServer\'s, not listed', 0.2, function () {
   if (!W.api) return false;

@@ -23,7 +23,7 @@ const platformFetch = globalThis.fetch;
 globalThis.fetch = function (url, init) {
   if (/^http:\/\/(127\.0\.0\.1|localhost)(:\d+)?\//.test(String(url))) return platformFetch(url, init);
   netFetched.push(String(url));
-  return Promise.reject(new Error('no network in this suite'));
+  return Promise.reject(new Error());
 };
 
 const HOME = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-sendMail-'));

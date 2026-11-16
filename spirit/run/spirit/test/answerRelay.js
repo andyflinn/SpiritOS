@@ -91,7 +91,7 @@ test.run('an unsigned statement, one with its label changed, and one with no key
 }, test.limit.quick);
 test.run('a relay that does not answer (askKey rejects or throws) yields no key, and relayKey never rejects', 0.2, async function () {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-answerrelay-'));
-  const s = answerer(root, { 'https://down.example': function () { return Promise.reject(new Error('ECONNREFUSED')); }, 'https://boom.example': function () { throw new Error('boom'); } });
+  const s = answerer(root, { 'https://down.example': function () { return Promise.reject(new Error()); }, 'https://boom.example': function () { throw new Error(); } });
   let r;
   try { r = [await s.a.relayKey('https://down.example'), await s.a.relayKey('https://boom.example')]; }
   catch (e) { return false; }
@@ -137,7 +137,7 @@ test.run('a refused relay has nothing to seal to by its url either: relaySealKey
 }, test.limit.quick);
 test.run('onKeyChanged is a witness, never a participant: one that throws changes nothing', 0.2, async function () {
   if (!W) return false;
-  const s = answerer(ROOT, { [URL_A]: statement(A2, 'a') }, { onKeyChanged: function () { throw new Error('the panel broke'); } });
+  const s = answerer(ROOT, { [URL_A]: statement(A2, 'a') }, { onKeyChanged: function () { throw new Error(); } });
   let k;
   try { k = await s.a.relayKey(URL_A); } catch (e) { return false; }
   return (k === '' && relayKeys.pinned(ROOT, URL_A) === A.publicKey) || false;

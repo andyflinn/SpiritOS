@@ -61,7 +61,7 @@ async function call(base, verb, args) {
     const r = await fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) });
     const text = await r.text();
     return { status: r.status, text: text, body: parsed(text) };
-  } catch (e) { return { status: 0, text: String(e && e.message), body: null }; }
+  } catch (e) { return { status: 0, text: '', body: null }; }
 }
 async function boot(run) {
   const port = await freePort();
@@ -161,9 +161,9 @@ test.run('it loads alone through spirit.require and mounts with create(container
   if (!c || c.error || !c.evaluate) return false;
   await c.evaluate(HANDS);
   made = await c.evaluate('window.spirit.ready.then(function () { return window.spirit.require("spirit/app/testicle/element/search/testicle/listElement.js"); }).then(function () {' +
-    ' var E = ((((((((window.spirit.element || {}).spirit || {}).app || {}).testicle || {}).element || {}).search || {}).testicle || {}).listElement); if (!E || typeof E.create !== "function") return "no create";' +
+    ' var E = ((((((((window.spirit.element || {}).spirit || {}).app || {}).testicle || {}).element || {}).search || {}).testicle || {}).listElement); if (!E || typeof E.create !== "function") return null;' +
     ' var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:1400px;height:800px;display:flex;"; document.body.appendChild(b);' +
-    ' window.__picked = []; window.__made = E.create(b, { pick: function (row, key) { window.__picked.push(key); } }); return window.__made && typeof window.__made.destroy === "function" ? "made" : "no destroy"; }, function (e) { return "refused: " + (e && e.message || e); })');
+    ' window.__picked = []; window.__made = E.create(b, { pick: function (row, key) { window.__picked.push(key); } }); return window.__made && typeof window.__made.destroy === "function" ? "made" : null; }, function () { return null; })');
   return made === 'made' || false;
 }, test.limit.slow);
 
@@ -334,7 +334,7 @@ test.run('the world: 150 more passing tests of beta are set', 0.2, async functio
   const bad = [];
   for (let i = 1; i <= GREENS; i++) {
     const r = await call(N.base, 'testicle.testicle.set', { script: B, suite: BS, test: 'beta passes, number ' + i, verified: true, severity: 0.5 });
-    if (r.status !== 200) bad.push(r.status + ' ' + r.text);
+    if (r.status !== 200) bad.push(true);
   }
   return !bad.length || false;
 }, test.limit.long);
@@ -359,6 +359,6 @@ test.run('with green alone and words typed, it asks answer after answer while th
 
 test.run('destroy leaves its container empty', 0.2, async function () {
   if (!mounted()) return false;
-  const after = await c.evaluate('(function () { window.__made.destroy(); var b = document.getElementById("zzBox"); return b ? b.innerHTML : "gone"; }())');
+  const after = await c.evaluate('(function () { window.__made.destroy(); var b = document.getElementById("zzBox"); return b ? b.innerHTML : null; }())');
   return after === '' || false;
 }, test.limit.quick);

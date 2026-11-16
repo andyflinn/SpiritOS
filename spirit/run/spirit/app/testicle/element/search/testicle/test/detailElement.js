@@ -54,7 +54,7 @@ async function call(base, verb, args) {
     const r = await fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) });
     const text = await r.text();
     return { status: r.status, text: text, body: parsed(text) };
-  } catch (e) { return { status: 0, text: String(e && e.message), body: null }; }
+  } catch (e) { return { status: 0, text: '', body: null }; }
 }
 async function boot(run) {
   const port = await freePort();
@@ -78,9 +78,9 @@ const view = function (id) {
     ' rows: Array.prototype.map.call(b.querySelectorAll("tbody tr"), function (r) { return { key: r.getAttribute("data-key"), cells: Array.prototype.map.call(r.querySelectorAll("td"), function (td) { return String(td.innerText || "").trim(); }) }; }) }; }())');
 };
 const mount = function (id, opts) {
-  return c.evaluate('(function () { var E = ((((((((window.spirit.element || {}).spirit || {}).app || {}).testicle || {}).element || {}).search || {}).testicle || {}).detailElement); if (!E || typeof E.create !== "function") return "no create";' +
+  return c.evaluate('(function () { var E = ((((((((window.spirit.element || {}).spirit || {}).app || {}).testicle || {}).element || {}).search || {}).testicle || {}).detailElement); if (!E || typeof E.create !== "function") return false;' +
     ' var b = document.createElement("div"); b.id = ' + JSON.stringify(id) + '; document.body.appendChild(b); window[' + JSON.stringify(id) + '] = E.create(b, ' + JSON.stringify(opts) + ');' +
-    ' return window[' + JSON.stringify(id) + '] && typeof window[' + JSON.stringify(id) + '].destroy === "function" ? "made" : "no destroy"; }())');
+    ' return window[' + JSON.stringify(id) + '] && typeof window[' + JSON.stringify(id) + '].destroy === "function" ? "made" : false; }())');
 };
 
 test.after(async function () {
@@ -121,7 +121,7 @@ test.run('the world: the face page has its spirit', 0.2, async function () {
 test.run('it loads alone through spirit.require and mounts with create(container, { script, suite, test }), answering destroy', 0.2, async function () {
   if (!N || !N.up) return false;
   if (!c || c.error || !c.evaluate) return false;
-  const loaded = await c.evaluate('window.spirit.ready.then(function () { return window.spirit.require("spirit/app/testicle/element/search/testicle/detailElement.js"); }).then(function () { return "loaded"; }, function (e) { return "refused: " + (e && e.message || e); })');
+  const loaded = await c.evaluate('window.spirit.ready.then(function () { return window.spirit.require("spirit/app/testicle/element/search/testicle/detailElement.js"); }).then(function () { return "loaded"; }, function () { return false; })');
   if (loaded !== 'loaded') return false;
   made = await mount('zzBox', { script: A, suite: AS, test: FLIPS });
   return made === 'made' || false;
@@ -205,7 +205,7 @@ test.run('a test with no row says so', 0.2, async function () {
 }, test.limit.slow);
 test.run('destroy leaves its container empty', 0.2, async function () {
   if (mounted()) return false;
-  const after = await c.evaluate('(function () { window.zzBox.destroy(); var b = document.getElementById("zzBox"); return b ? b.innerHTML : "gone"; }())');
+  const after = await c.evaluate('(function () { window.zzBox.destroy(); var b = document.getElementById("zzBox"); return b ? b.innerHTML : null; }())');
   return after === '' || false;
 }, test.limit.quick);
 test.run('destroyed, a flip set on the node draws nothing in its container', 0.2, async function () {
@@ -213,6 +213,6 @@ test.run('destroyed, a flip set on the node draws nothing in its container', 0.2
   const r = await call(N.base, 'testicle.testicle.set', { script: A, suite: AS, test: FLIPS, verified: true, severity: 0.3 });
   if (r.status !== 200) return false;
   await sleep(2000);
-  const after = await c.evaluate('(function () { var b = document.getElementById("zzBox"); return b ? b.innerHTML : "gone"; }())');
+  const after = await c.evaluate('(function () { var b = document.getElementById("zzBox"); return b ? b.innerHTML : null; }())');
   return after === '' || false;
 }, test.limit.slow);

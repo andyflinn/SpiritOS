@@ -45,7 +45,7 @@ async function call(base, verb, args) {
     const r = await fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) });
     const text = await r.text();
     return { status: r.status, text: text, body: parsed(text) };
-  } catch (e) { return { status: 0, text: String(e && e.message), body: null }; }
+  } catch (e) { return { status: 0, text: '', body: null }; }
 }
 async function boot(run) {
   const port = await freePort();
@@ -204,7 +204,7 @@ test.run('after app.active false, its tile is still there', 0.2, async function 
 // nothing threw on the page
 test.run('no uncaught error on the page, all the way', 0.2, async function () {
   if (!W.c) return false;
-  const thrown = W.c.heard.filter(function (m) { return m.method === 'Runtime.exceptionThrown'; }).map(function (m) { return (m.params.exceptionDetails.exception && m.params.exceptionDetails.exception.description) || m.params.exceptionDetails.text; });
+  const thrown = W.c.heard.filter(function (m) { return m.method === 'Runtime.exceptionThrown'; });
   await stop(W.N.child);
   return !thrown.length || false;
 }, test.limit.quick);

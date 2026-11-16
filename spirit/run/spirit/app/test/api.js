@@ -22,7 +22,7 @@ const isPlain = function (v) { return v !== null && typeof v === 'object' && !Ar
 const W = { api: null, verbs: {}, names: [], functions: {} };
 const call = function (verb, args) { return spirit.check('app.' + verb, W.verbs[verb], args); };
 const passes = function (verb, args) { return !!W.verbs[verb] && call(verb, args) === null; };
-const refusedAs = function (verb, args) { if (!W.verbs[verb]) return 'no verb ' + verb; const r = call(verb, args); return r ? r.code : ''; };
+const refusedAs = function (verb, args) { if (!W.verbs[verb]) return ''; const r = call(verb, args); return r ? r.code : ''; };
 
 test.run('the world: api.js loads', 0.2, function () {
   try { W.api = require(FILE); } catch (e) { return false; }
@@ -43,11 +43,11 @@ test.run('every rule is one of spirit.js\'s standard, \'?\' optional', 0.2, func
   if (!W.names.length) return false;
   const bad = [];
   W.names.forEach(function (v) {
-    if (!isPlain(W.verbs[v])) { bad.push(v + ': not an object'); return; }
+    if (!isPlain(W.verbs[v])) { bad.push(v); return; }
     Object.keys(W.verbs[v]).forEach(function (arg) {
       const raw = String(W.verbs[v][arg]);
       const rule = raw.charAt(raw.length - 1) === '?' ? raw.slice(0, -1) : raw;
-      if (spirit.rules.indexOf(rule) === -1) bad.push(v + '.' + arg + ': ' + raw);
+      if (spirit.rules.indexOf(rule) === -1) bad.push(v);
     });
   });
   return bad.length === 0 || false;

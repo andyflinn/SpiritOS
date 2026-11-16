@@ -30,7 +30,7 @@ test.run('the world: a scratch node, and a Chrome on its face page', 0.2, async 
 }, test.limit.slow);
 test.run('it loads through spirit.require and is spirit.element.spirit.element.search.app.rowFormAppActive', 0.2, async function () {
   if (!node || !node.up || !chrome || chrome.error) return false;
-  loaded = await chrome.evaluate('spirit.ready.then(function () { return spirit.require("spirit/element/search/app/rowFormAppActive.js"); }).then(function () { return !!(spirit.element.spirit.element.search.app.rowFormAppActive && spirit.element.spirit.element.search.app.rowFormAppActive.create); }, function (e) { return String(e); })');
+  loaded = await chrome.evaluate('spirit.ready.then(function () { return spirit.require("spirit/element/search/app/rowFormAppActive.js"); }).then(function () { return !!(spirit.element.spirit.element.search.app.rowFormAppActive && spirit.element.spirit.element.search.app.rowFormAppActive.create); }, function () { return false; })');
   return loaded === true ? true : false;
 }, test.limit.quick);
 const ask = async function (verb, args) { const r = await fetch(node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) }); return parsed(await r.text()); };

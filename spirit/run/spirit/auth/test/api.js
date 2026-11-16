@@ -69,7 +69,7 @@ function mounted(family) {
 const W = { api: null, verbs: {}, names: [], mounted: null };
 const call = function (verb, args) { return spirit.check('auth.' + verb, W.verbs[verb], args); };
 const passes = function (verb, args) { return !!W.verbs[verb] && call(verb, args) === null; };
-const refusedAs = function (verb, args) { if (!W.verbs[verb]) return 'no verb ' + verb; const r = call(verb, args); return r ? r.code : 'passed'; };
+const refusedAs = function (verb, args) { if (!W.verbs[verb]) return null; const r = call(verb, args); return r ? r.code : null; };
 
 test.run('the world: api.js loads as the node hands it, its text run with module and exports alone', 0.2, function () {
   try {
@@ -97,11 +97,11 @@ test.run('every verb\'s arguments are a plain object, each rule one of spirit.js
   if (!W.names.length) return false;
   const bad = [];
   W.names.forEach(function (v) {
-    if (!isPlain(W.verbs[v])) { bad.push(v + ': not an object'); return; }
+    if (!isPlain(W.verbs[v])) { bad.push(v); return; }
     Object.keys(W.verbs[v]).forEach(function (arg) {
       const raw = String(W.verbs[v][arg]);
       const rule = raw.charAt(raw.length - 1) === '?' ? raw.slice(0, -1) : raw;
-      if (spirit.rules.indexOf(rule) === -1) bad.push(v + '.' + arg + ': ' + raw);
+      if (spirit.rules.indexOf(rule) === -1) bad.push(v);
     });
   });
   return bad.length === 0 || false;

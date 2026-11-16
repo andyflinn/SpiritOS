@@ -55,7 +55,7 @@ function world(o) {
   const opts = o || {};
   const w = { asked: [], fetched: [], shell: [] };
   const fsApi = {
-    stat: function (a) { w.asked.push(['stat', a.path]); return opts.statFails ? Promise.reject(new Error('no')) : Promise.resolve({ size: 2048, mtimeMs: 1.7e12, birthtimeMs: 1.6e12 }); },
+    stat: function (a) { w.asked.push(['stat', a.path]); return opts.statFails ? Promise.reject(new Error()) : Promise.resolve({ size: 2048, mtimeMs: 1.7e12, birthtimeMs: 1.6e12 }); },
     annotations: function (a) { w.asked.push(['annotations', a.path]); return Promise.resolve(opts.annotations || null); },
   };
   const win = {

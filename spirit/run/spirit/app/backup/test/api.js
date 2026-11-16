@@ -18,7 +18,7 @@ const spirit = globalThis.spirit;
 const isPlain = function (v) { return v !== null && typeof v === 'object' && !Array.isArray(v); };
 
 const W = { api: null, verbs: {}, names: [] };
-const refusedAs = function (verb, args) { if (!W.verbs[verb]) return 'no verb ' + verb; const r = spirit.check('backup.' + verb, W.verbs[verb], args); return r ? r.code : ''; };
+const refusedAs = function (verb, args) { if (!W.verbs[verb]) return null; const r = spirit.check('backup.' + verb, W.verbs[verb], args); return r ? r.code : ''; };
 
 test.run('the world: api.js loads', 0.2, function () {
   try { W.api = require(FILE); } catch (e) { return false; }

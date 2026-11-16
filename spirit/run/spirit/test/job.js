@@ -357,7 +357,7 @@ function plantApp(run, name, ms, nodeRun) {
 const RT = {};
 const rask = function (call, args) {
   return fetch(RT.node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: call, args: args || {} }) })
-    .then(function (r) { return r.json().then(function (b) { return { status: r.status, body: b }; }, function () { return { status: r.status, body: null }; }); }, function (e) { return { status: 0, body: String(e) }; });
+    .then(function (r) { return r.json().then(function (b) { return { status: r.status, body: b }; }, function () { return { status: r.status, body: null }; }); }, function () { return { status: 0, body: null }; });
 };
 
 // routes: every job id is a route in the spirit tree, one job per id, and job.create starts only a run app (goal/G43.20)
@@ -492,22 +492,25 @@ test.run('all the crooked ones are refused', 0.8, async function () {
   // A link outside every app folder pointing at the run app's script, and the mount app reached through the run app's folder.
   const link = path.join(run, 'scratchScripts', 'zzLink.js');
   try { fs.symlinkSync(runApp, link); } catch (e) { /* no links here: the case is judged as not made */ }
+  // The mount app through the run app's folder (../), a second script in the run app's folder, an app whose json says
+  // run "true", a string, an app script with no json, a link elsewhere to the run app's script, the run app's script with
+  // a trailing slash, no script at all.
   const crooked = [
-    ['the mount app through the run app\'s folder (../)', [path.join(app('zzRun'), '..', 'zzMount', 'zzMount.js')]],
-    ['a second script in the run app\'s folder', [path.join(app('zzRun'), 'other.js')]],
-    ['an app whose json says run "true", a string', [path.join(app('zzString'), 'zzString.js')]],
-    ['an app script with no json', [path.join(app('zzBare'), 'zzBare.js')]],
-    ['a link elsewhere to the run app\'s script', [link]],
-    ['the run app\'s script with a trailing slash', [runApp + '/']],
-    ['no script at all', []],
+    [path.join(app('zzRun'), '..', 'zzMount', 'zzMount.js')],
+    [path.join(app('zzRun'), 'other.js')],
+    [path.join(app('zzString'), 'zzString.js')],
+    [path.join(app('zzBare'), 'zzBare.js')],
+    [link],
+    [runApp + '/'],
+    [],
   ];
-  const gotIn = [];
+  let gotIn = 0;
   for (const c of crooked) {
-    const r = await rask('job.create', { command: process.execPath, args: c[1] });
-    if (!(r.status >= 400)) gotIn.push(c[0]);
+    const r = await rask('job.create', { command: process.execPath, args: c });
+    if (!(r.status >= 400)) gotIn++;
     if (r.body && r.body.id) await rask('job.cancel', { id: String(r.body.id) });
   }
-  return !gotIn.length ? true : false;
+  return !gotIn ? true : false;
 }, test.limit.quick);
 test.run('the run app\'s script under another command (/bin/sh) is refused', 0.8, async function () {
   const shell = await rask('job.create', { command: '/bin/sh', args: [RT.runApp] });
@@ -550,7 +553,7 @@ const APPS = path.join(REPO, 'spirit', 'run', 'spirit', 'app');
 const SL = { servers: [] };
 const sask = function (call, args) {
   return fetch(SL.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: call, args: args || {} }) })
-    .then(function (r) { return r.json().then(function (b) { return { status: r.status, body: b }; }, function () { return { status: r.status, body: null }; }); }, function (e) { return { status: 0, body: String(e) }; });
+    .then(function (r) { return r.json().then(function (b) { return { status: r.status, body: b }; }, function () { return { status: r.status, body: null }; }); }, function () { return { status: 0, body: null }; });
 };
 const answersApi = function (name) {
   return H.until(function () { return sask('api', { family: name }).then(function (r) { return r.status === 200 && !!r.body && typeof r.body.interface === 'string'; }); }, 30000);
@@ -657,13 +660,13 @@ test.run('no spirit/run/process/ is made', 0.2, function () {
 // THE ATTACKER (rule/27: "tests MUST be "the enemy, the attacker" an try everything conceivable to break the code"): the
 // layout must hold through what a node lives through, and no name may make a folder of the node's state elsewhere.
 const layoutHolds = function () {
-  const bad = [];
+  let bad = 0;
   stateFolders().forEach(function (n) {
-    fs.readdirSync(path.join(SL.state, n)).filter(function (e) { return MAY.indexOf(e) === -1; }).forEach(function (e) { bad.push(n + '/' + e); });
+    bad += fs.readdirSync(path.join(SL.state, n)).filter(function (e) { return MAY.indexOf(e) === -1; }).length;
   });
-  if (fs.existsSync(path.join(SL.run, 'relay-state'))) bad.push('run:/relay-state');
-  if (fs.existsSync(path.join(SL.run, 'process'))) bad.push('run:/process');
-  return !bad.length ? true : false;
+  if (fs.existsSync(path.join(SL.run, 'relay-state'))) bad++;
+  if (fs.existsSync(path.join(SL.run, 'process'))) bad++;
+  return !bad ? true : false;
 };
 // the attacker: an app switched off and on again
 test.run('backup switched off and on: the layout holds, nothing out of place', 0.2, async function () {
@@ -790,7 +793,7 @@ test.run('spirit/job/chokidar/index.js:6 imports from "../readdirp/index.js"', 0
 test.run('no other line of index.js changed', 0.2, function () {
   const now = VL.now || [];
   const was = VL.was || [];
-  const differ = now.length ? was.map(function (l, i) { return l === now[i] ? -1 : i + 1; }).filter(function (i) { return i !== -1; }) : ['no file'];
+  const differ = now.length ? was.map(function (l, i) { return l === now[i] ? -1 : i + 1; }).filter(function (i) { return i !== -1; }) : [];
   return now.length === was.length && differ.length === 1 && differ[0] === 6 ? true : false;
 }, test.limit.quick);
 test.run('index.js names readdirp by name nowhere', 0.2, function () {
@@ -821,7 +824,7 @@ function child(src, dir) {
   fs.mkdirSync(dir, { recursive: true });
   const r = spawnSync(process.execPath, ['-e', src, dir], { cwd: RUN, encoding: 'utf8', timeout: 30000 });
   fs.rmSync(dir, { recursive: true, force: true });
-  return String(r.stdout || '').trim() + (r.stderr ? ' | ' + String(r.stderr).trim().slice(0, 300) : '');
+  return String(r.stdout || '').trim();
 }
 // The node's fs-watcher job (the Files tree and the spirit.fs events): a file made in its folder comes as a createFile.
 test.run('the fs-watcher job hears a file made in its folder (createFile made.txt)', 0.2, function () {
@@ -832,7 +835,7 @@ test.run('the fs-watcher job hears a file made in its folder (createFile made.tx
     "  if (job && u.id === job.id && u.data && u.data.command && u.data.command.op === 'createFile' && u.data.command.path === 'made.txt') { console.log('HEARD'); process.exit(0); } });",
     "job = jobs.startFsWatcherJob(dir);",
     "setTimeout(function () { fs.writeFileSync(path.join(dir, 'made.txt'), 'x'); }, 1500);",
-    "setTimeout(function () { console.log('DEAF'); process.exit(0); }, 12000);",
+    "setTimeout(function () { process.exit(0); }, 12000);",
   ].join('\n'), path.join(RUN, 'vendoredFolders-jobs-test'));
   return /^HEARD/.test(jobsOut) ? true : false;
 }, test.limit.slow);
@@ -844,7 +847,7 @@ test.run('the fs-watcher job hears a file made in its folder (createFile made.tx
 let treeSent = null;
 test.run('the world: the fs-watcher job on the run folder, the tree asked twice, reads of the app jsons counted', 0.2, function () {
   // Not child(): it empties the folder it is given, and this one is the checkout's run folder, only read here.
-  const run = function (src) { const r = spawnSync(process.execPath, ['-e', src, RUN], { cwd: RUN, encoding: 'utf8', timeout: 60000 }); return String(r.stdout || '').trim() + (r.stderr ? ' | ' + String(r.stderr).trim().slice(0, 300) : ''); };
+  const run = function (src) { const r = spawnSync(process.execPath, ['-e', src, RUN], { cwd: RUN, encoding: 'utf8', timeout: 60000 }); return r.stderr ? '' : String(r.stdout || '').trim(); };
   const out = run([
     "const fs = require('fs'), dir = process.argv[1];",
     "const jobs = require(" + JSON.stringify(path.join(RUN, 'spirit', 'job.js')) + ")(1);",
@@ -1025,7 +1028,7 @@ function mountPart() {
       const r = await fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) });
       const text = await r.text();
       return { status: r.status, text: text, body: parsed(text) };
-    } catch (e) { return { status: 0, text: String(e && e.message), body: null }; }
+    } catch (e) { return { status: 0, text: '', body: null }; }
   }
   async function boot(run) {
     const port = await freePort();
@@ -1323,7 +1326,7 @@ function mountPart() {
 
   // a page and a process bind it by its name (the box: "A page changes nothing. It binds a family by its name, and the node
   // finds the folder."; "data.js sits beside <name>.js ... and the lookups follow it")
-  const onPage = function (expr) { return chrome.evaluate('Promise.resolve().then(function () { return ' + expr + '; }).then(function (v) { return JSON.stringify({ v: v }); }, function (e) { return JSON.stringify({ e: String(e && (e.code || e.message) || e) }); })').then(parsed); };
+  const onPage = function (expr) { return chrome.evaluate('Promise.resolve().then(function () { return ' + expr + '; }).then(function (v) { return JSON.stringify({ v: v }); }, function () { return \'{}\'; })').then(parsed); };
   const noPage = function () { return !chrome || !!chrome.error; };
   test.run('the world: Chrome is here and opens the node\'s page', 0.2, async function () {
     if (noNode()) return false;
@@ -1354,7 +1357,7 @@ function mountPart() {
     return (!!same && same.v === NAME) || false;
   }, test.limit.quick);
   const inNode = function (family) {
-    const r = spawnSync(process.execPath, ['-e', "require('./spirit/spirit.js'); spirit.cacheManager(" + JSON.stringify(family) + ").then(function () { console.log('found ' + (global.__appData || '')); process.exit(0); }, function (e) { console.log('not found ' + (e && (e.code || e.message))); process.exit(0); });"], { cwd: s.run, encoding: 'utf8', timeout: 30000 });
+    const r = spawnSync(process.execPath, ['-e', "require('./spirit/spirit.js'); spirit.cacheManager(" + JSON.stringify(family) + ").then(function () { console.log('found ' + (global.__appData || '')); process.exit(0); }, function () { process.exit(0); });"], { cwd: s.run, encoding: 'utf8', timeout: 30000 });
     return String(r.stdout || '').trim();
   };
   test.run('the world: a process finds a tree app\'s data.js', 0.2, function () {

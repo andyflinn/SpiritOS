@@ -246,14 +246,14 @@ test.run('made without its ID table or its grants table, it throws nothing', 0.2
   if (!GP || typeof GP.create !== 'function') return false;
   unset = [];
   [[{}, /ID table/], [{ ids: config(w).ids }, /grants table/], [{ grants: config(w).grants }, /ID table/]].forEach(function (c) {
-    const host = node('x'); let threw = null; let made = null;
-    try { made = GP.create(host, Object.assign({}, c[0])); } catch (e) { threw = e && e.message; }
+    const host = node('x'); let threw = false; let made = null;
+    try { made = GP.create(host, Object.assign({}, c[0])); } catch (e) { threw = (e && e.message) !== null; }
     const said = host.kids.map(function (k) { return String(k.textContent || ''); }).join(' ');
-    unset.push({ threw: threw, said: said, fits: host.kids.length === 1 && /^not configured: /.test(said) && c[1].test(said) && /\bjob-manifest-note\b/.test(host.kids[0].className),
+    unset.push({ threw: threw, fits: host.kids.length === 1 && /^not configured: /.test(said) && c[1].test(said) && /\bjob-manifest-note\b/.test(host.kids[0].className),
       empties: !!made && typeof made.destroy === 'function' && (made.destroy(), host.innerHTML === '') });
   });
   await settle();
-  return unset.every(function (u) { return u.threw === null; }) ? true : false;
+  return unset.every(function (u) { return u.threw === false; }) ? true : false;
 }, test.limit.quick);
 test.run('it says, in one note, "not configured: " and the table it lacks, and draws nothing else', 0.2, function () {
   if (!unset) return false;

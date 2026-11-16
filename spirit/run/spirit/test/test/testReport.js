@@ -15,8 +15,8 @@
 // prints its lines".
 //
 // THE CALL, as this test asks it (goal/G47.2, the shapes the box leaves to the builder, wsl's):
-//   test.run(title, severity, body, limitMs)   one test: body() returns true to pass; false, or a string saying what went
-//                                              wrong, to fail; it may be async. limitMs is its time limit.
+//   test.run(title, severity, body, limitMs)   one test: body() returns true to pass, false to fail; it may be async.
+//                                              limitMs is its time limit.
 //   test.after(fn)                             run once every test has run, whatever they did: stopping what the tests started.
 // The reporter runs the tests in the order they were given, one at a time, prints a line for each, reports each to the
 // node, then prints the completion line and ends the process, its exit code 1 when any test failed.
@@ -43,7 +43,7 @@ const PROBE = [
   "const test = " + REPORTER_FROM(2) + ";",
   "test.run('it passes', 0.2, function () { return true; }, 1000);",
   // goal/G47.2: once a test is reported, a module loading the spirit object later still finds it the global it makes.
-  "test.run('the spirit object stays global after a report', 0.2, function () { require(require('path').join(__dirname, '..', '..', 'spirit', 'spirit.js')); return (!!globalThis.spirit && typeof globalThis.spirit === 'object') || 'no global spirit after a report'; }, 1000);",
+  "test.run('the spirit object stays global after a report', 0.2, function () { require(require('path').join(__dirname, '..', '..', 'spirit', 'spirit.js')); return (!!globalThis.spirit && typeof globalThis.spirit === 'object') || false; }, 1000);",
   "test.run('it fails with what went wrong', 0.2, function () { return 'the count was 3, not 4'; }, 1000);",
   "test.run('it fails with false', 0.2, function () { return false; }, 1000);",
   "test.run('it throws', 0.2, function () { throw new Error('a thrown boom'); }, 1000);",
@@ -63,7 +63,7 @@ const TWICE = [
 const GENERAL = [
   "'use strict';",
   "const test = " + REPORTER_FROM(2) + ";",
-  "test.run('a general rule holds', 0.4, function () { return 'it does not'; }, 1000);",
+  "test.run('a general rule holds', 0.4, function () { return false; }, 1000);",
 ].join('\n');
 
 // A GENERAL TEST JUDGING TWO SCRIPTS (goal/G47.1, box v129, testicle.suite.success): the first passes, the second fails.
@@ -71,7 +71,7 @@ const GENERAL_TWO = [
   "'use strict';",
   "const test = " + REPORTER_FROM(2) + ";",
   "test.forScript('probe/probe.js', function () { test.run('a rule per script', 0.4, function () { return true; }, 1000); });",
-  "test.forScript('probe/twice.js', function () { test.run('a rule per script', 0.4, function () { return 'it does not hold'; }, 1000); });",
+  "test.forScript('probe/twice.js', function () { test.run('a rule per script', 0.4, function () { return false; }, 1000); });",
 ].join('\n');
 
 function scratchTree(port) {

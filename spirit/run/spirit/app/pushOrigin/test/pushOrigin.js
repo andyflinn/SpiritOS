@@ -55,7 +55,6 @@ test.run('the world: a clone with one commit its bare origin does not hold', 0.2
 test.run('run with no argument it ends well', 0.2, function () {
   if (!W.head) return false;
   const r = spawnSync(process.execPath, [W.copy], { cwd: W.tmp, encoding: 'utf8', timeout: 60000 });
-  W.said = String(r.stdout || '') + String(r.stderr || '');
   return r.status === 0 ? true : false;
 }, test.limit.slow);
 test.run('origin now holds the commit of the repo it lives in', 0.2, function () {

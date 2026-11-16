@@ -40,13 +40,13 @@ test.run('the world: the one decoder is there, arrivals.js envelopeOf', 0.2, fun
 // hub.js decodes no packet.
 test.run('hub.js\'s code has no packet.decode, nor any decode of its own', 0.2, function () {
   if (!W.there) return false;
-  const offenders = [];
-  W.c.split('\n').forEach(function (l, i) {
+  let offenders = 0;
+  W.c.split('\n').forEach(function (l) {
     // A TextDecoder's decoder.decode is bytes, not a packet.
     const s = l.replace(/\bdecoder\.decode\(/g, '');
-    if (/\bpacket\.decode\b|\.decode\s*\(|\bdecode\s*\(/.test(s)) offenders.push('hub.js:' + (i + 1) + ' ' + l.trim().slice(0, 100));
+    if (/\bpacket\.decode\b|\.decode\s*\(|\bdecode\s*\(/.test(s)) offenders++;
   });
-  return !offenders.length || false;
+  return !offenders || false;
 }, test.limit.quick);
 
 // THE ROUTE CACHING GOES (goal/G47.1, box v69; Andy: "We can probably shut down the \"route-caching\" crap"): "A post

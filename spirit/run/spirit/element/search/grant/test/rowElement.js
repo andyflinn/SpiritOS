@@ -116,7 +116,7 @@ test.run('it registers spirit.element.spirit.element.search.grant.rowElement.cre
 test.run('made with no grants table, it throws nothing and is a row all the same', 0.2, function () {
   if (noRow()) return false;
   let thrown = null; let bare = null;
-  try { bare = E.search.grant.rowElement.create({ key: 'K1', path: 'fs.search' }); } catch (e) { thrown = e && e.message; }
+  try { bare = E.search.grant.rowElement.create({ key: 'K1', path: 'fs.search' }); } catch (e) { thrown = true; }
   return thrown === null && !!bare ? true : false;
 }, test.limit.quick);
 

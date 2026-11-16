@@ -26,7 +26,7 @@ const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const SOURCE = fs.readFileSync(path.join(RUN, 'spirit', 'spirit.js'), 'utf8');
 const COMPONENT = 'spirit/relayUrl.js';
 const PAGE_COMPONENT = 'spirit/fieldRules.js';   // written for both node and a page, as the face's parts are
-async function refusedWith(promise) { try { await promise; return 'answered'; } catch (e) { return e && e.code; } }
+async function refusedWith(promise) { try { await promise; return null; } catch (e) { return e && e.code; } }
 
 // A family's api.js as the node hands it: two verbs, one dotted, and a name of its own.
 const DEMO = 'module.exports = { verbs: { hello: { name: "text" }, "line.write": { text: "text" } }, names: function (call) { return { hi: function (n) { return call("hello", { name: n }); } }; } };';
@@ -112,7 +112,7 @@ const OBSERVE = `
 const s = require(process.argv[2] + '/spirit/spirit.js');
 const out = {};
 out.facts = s.node;
-async function code(p) { try { await p; return 'answered'; } catch (e) { return e && e.code; } }
+async function code(p) { try { await p; return null; } catch (e) { return e && e.code; } }
 (async function () {
   out.keys = Object.keys(s).sort();
   out.same = require(process.argv[2] + '/spirit/spirit.js') === s && globalThis.spirit === s;
@@ -138,7 +138,7 @@ async function code(p) { try { await p; return 'answered'; } catch (e) { return 
     try { await s.demo.hello({ name: 'slow' }); } catch (e) { out.slow = [e.status, e.message]; }
     out.tree = Object.keys(await s.tree()).sort();
     out.viaRequire = (await s.require(s.familyPath('demo'))) === s.demo;
-    out.outcome = [await s.outcome(s.demo.hello({ name: 'eve' })), await s.outcome(s.demo.hello({ nme: 1 })), await s.outcome(s.demo.hello({ name: 'held' })), await s.outcome(Promise.reject(new Error('gone')))]
+    out.outcome = [await s.outcome(s.demo.hello({ name: 'eve' })), await s.outcome(s.demo.hello({ nme: 1 })), await s.outcome(s.demo.hello({ name: 'held' })), await s.outcome(Promise.reject(new Error()))]
       .map(function (o) { return [o.status, o.body && (o.body.said || o.body.code)]; });
     // This process's job, published by event.publish with its own id, the one path.
     out.publish = s.event.publish({ x: 1 });
@@ -173,7 +173,7 @@ async function code(p) { try { await p; return 'answered'; } catch (e) { return 
     out.peerOwn = typeof both[0].hello === 'function' && typeof both[0].peerOnly === 'undefined';
   }
   process.stdout.write(JSON.stringify(out));
-}()).catch(function (e) { process.stdout.write(JSON.stringify({ threw: String(e && e.stack || e) })); });
+}()).catch(function (e) { process.stdout.write(JSON.stringify({ threw: String(e && e.stack || e) !== '' })); });
 `;
 function observe(root, mode, port) {
   const file = path.join(root, 'observe.js');
@@ -182,10 +182,10 @@ function observe(root, mode, port) {
     const kid = spawn(process.execPath, [file, root, mode || '', String(port || ''), '--node', JSON.stringify({ name: 'nodey', publicKey: 'K1', ownerKey: 'O1' })],
       { cwd: root, env: Object.assign({}, process.env, { SPIRIT_JOB_ID: 'job_7' }) });
     let said = '';
-    let errs = '';
+    let errs = false;
     kid.stdout.on('data', function (c) { said += c; });
-    kid.stderr.on('data', function (c) { errs += c; });
-    kid.on('close', function () { try { resolve(JSON.parse(said)); } catch (e) { resolve({ threw: (said + errs).slice(-400) }); } });
+    kid.stderr.on('data', function (c) { if (String(c) !== '') errs = true; });
+    kid.on('close', function () { try { resolve(JSON.parse(said)); } catch (e) { resolve({ threw: said !== '' || errs }); } });
   });
 }
 
@@ -461,8 +461,8 @@ test.run('spirit.start() asks no api: spirit.ready answers the instance, any fam
     const b = f.url === '/api/spirit' ? JSON.parse(f.body) : null;
     return !!b && b.call === 'api' && !(b.args && b.args.family === 'node');
   });
-  const goneSaid = await Promise.resolve(ps.gone && typeof ps.gone.anything === 'function' ? ps.gone.anything({}) : 'no stand-in')
-    .then(function () { return 'answered'; }, function (e) { return (e && e.code) || 'refused'; });
+  const goneSaid = await Promise.resolve(ps.gone && typeof ps.gone.anything === 'function' ? ps.gone.anything({}) : null)
+    .then(function () { return null; }, function (e) { return (e && e.code) || null; });
   return (started === again && wq.spirit.ready === started && !askedAtStart.length && ps.isBrowser === wq.spirit.isBrowser && !!ps.demo && goneSaid === 'no-interface') || false;
 }, test.limit.quick);
 test.run('on a page with no link: calls go to the page\'s own origin, /api/spirit, as { call, args } (goal/G41.15)', 0.2, async function () {
@@ -525,7 +525,7 @@ test.run('the node serves face.html byte for byte as it is on disk', 0.2, async 
   const served = await new Promise(function (resolve) {
     const chunks = [];
     const res = { writeHead: function () {}, setHeader: function () {}, end: function (b) { if (b) chunks.push(Buffer.from(b)); resolve(Buffer.concat(chunks)); } };
-    try { require(path.join(RUN, 'spirit', 'serveCommon.js')).sendFile(res, path.join(RUN, 'spirit', 'shell', 'face.html')); } catch (e) { resolve(Buffer.from('threw ' + e.message)); }
+    try { require(path.join(RUN, 'spirit', 'serveCommon.js')).sendFile(res, path.join(RUN, 'spirit', 'shell', 'face.html')); } catch (e) { resolve(Buffer.alloc(0)); }
   });
   return served.equals(fs.readFileSync(path.join(RUN, 'spirit', 'shell', 'face.html'))) || false;
 }, test.limit.quick);
@@ -557,7 +557,7 @@ test.run('on the home node\'s page spirit.js gets shell/boot.js alone and runs i
   faceWindow.window = faceWindow;
   vm.runInContext(SOURCE, vm.createContext(faceWindow), { filename: 'spirit.js' });
   let booted = null;
-  try { await faceWindow.spirit.booted; booted = true; } catch (e) { booted = e && e.code; }
+  try { await faceWindow.spirit.booted; booted = true; } catch (e) { booted = false; }
   // goal/G41.3: face/ moved into shell/; goal/G43.18: the files under spirit/shell/, at the addresses they had; the link, which
   // requires the seal, is spirit.js's own (Q22).
   const readRun = function (p) { try { return fs.readFileSync(path.join(RUN, p), 'utf8'); } catch (e) { return null; } };
@@ -798,7 +798,7 @@ test.run('the world: the family the page has not used yet is bound on the page o
   if (!L.fresh) return false;
   const fresh = L.fresh;
   L.before = calls().length;
-  const reach = "Promise.resolve(window.spirit.require('spirit/" + fresh + "/api.js')).then(function () { return !!window.spirit." + fresh + "; }, function (e) { return 'refused ' + (e && e.message); })";
+  const reach = "Promise.resolve(window.spirit.require('spirit/" + fresh + "/api.js')).then(function () { return !!window.spirit." + fresh + "; }, function () { return false; })";
   const first = await L.page.evaluate(reach);
   const second = await L.page.evaluate(reach);
   await H.sleep(1000);
@@ -817,7 +817,7 @@ test.run('on a real page: using the family the page has not used yet for the fir
 // it asks desk itself and draws its list, never "the desk server did not answer".
 test.run('the world: desk, off at load, is switched on from the page (app.active)', 0.2, async function () {
   if (!L.atLoad) return false;
-  L.on = await L.page.evaluate("window.spirit.ready.then(function (s) { return Promise.resolve(s.require(s.familyPath('app'))).then(function () { return s.app.activeApp({ key: 'desk', active: true }); }); }).then(function (r) { return !!(r && r.ok); }, function (e) { return 'refused ' + (e && e.message); })");
+  L.on = await L.page.evaluate("window.spirit.ready.then(function (s) { return Promise.resolve(s.require(s.familyPath('app'))).then(function () { return s.app.activeApp({ key: 'desk', active: true }); }); }).then(function (r) { return !!(r && r.ok); }, function () { return false; })");
   return L.on === true || false;
 }, test.limit.quick);
 test.run('the world: the desk server answers the page once switched on', 0.2, async function () {
@@ -837,9 +837,9 @@ test.run('on a real page: the Desk element opens on the page that loaded before 
   const drawn = await L.page.evaluate("(function () { var d = document.createElement('div'); document.body.appendChild(d);" +
     " return Promise.resolve(window.spirit.require('spirit/app/desk/element.js')).then(function () { window.spirit.element.spirit.app.desk.element.create(d, {});" +
     " return new Promise(function (r) { setTimeout(function () { r(JSON.stringify({ text: d.innerText, nodes: d.querySelectorAll('*').length })); }, 8000); }); }," +
-    " function (e) { return JSON.stringify({ refused: String(e && e.message) }); }); })()");
+    " function () { return JSON.stringify({ refused: true }); }); })()");
   let got = {};
-  try { got = JSON.parse(drawn); } catch (e) { got = { refused: String(drawn) }; }
+  try { got = JSON.parse(drawn); } catch (e) { got = { refused: String(drawn) !== '' }; }
   L.got = got;
   L.deskAsked = L.page.heard.slice(mark).filter(function (m) { return m.method === 'Network.requestWillBeSent' && /\/api\/spirit$/.test(m.params.request.url) && /"call":"desk\.items\.search"/.test(m.params.request.postData || ''); });
   return (!got.refused && got.nodes > 0) || false;
@@ -882,7 +882,7 @@ test.run('spirit.js asks FS.path nowhere', 0.2, function () {
 // family is among them.
 function cAsk(call, args) {
   return fetch(C.node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: call, args: args || {} }) })
-    .then(function (r) { return r.json().then(function (b) { return { status: r.status, body: b }; }, function () { return { status: r.status, body: null }; }); }, function (e) { return { status: 0, body: String(e) }; });
+    .then(function (r) { return r.json().then(function (b) { return { status: r.status, body: b }; }, function () { return { status: r.status, body: null }; }); }, function () { return { status: 0, body: null }; });
 }
 // ── THE PAGE'S STREAM COMES BACK AFTER ITS NODE RESTARTS (goal/G47.1, cleaning; Andy: "AND OF COURSE THE FUCKING SHELL NEVER
 // EVER FUCKING RECONNECTS AFTER A FUCKING RESTART OF THE NODE..."). A face page on a lab node, a subscriber of spirit.event
@@ -925,7 +925,7 @@ test.run('the world: a page asks the cache of five or more families with a data.
   if (page && !page.error) {
     await page.send('Page.navigate', { url: node.base + '/' });
     await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.ready)'); }, 30000);
-    loaded = await page.evaluate("Promise.resolve(window.spirit.ready).then(function (s) { return s.tree(); }).then(function (t) { return Promise.all(Object.keys(t || {}).map(function (n) { return window.spirit.cacheManager(n).then(function () { return [n, 'ok']; }, function (e) { return [n, String((e && e.message) || e)]; }); })); })");
+    loaded = await page.evaluate("Promise.resolve(window.spirit.ready).then(function (s) { return s.tree(); }).then(function (t) { return Promise.all(Object.keys(t || {}).map(function (n) { return window.spirit.cacheManager(n).then(function () { return [n, 'ok']; }, function () { return [n, false]; }); })); })");
   }
   C.judged = (loaded || []).filter(function (r) { return withData(r[0]); });
   if (page && page.kid) page.kid.kill();
@@ -978,7 +978,7 @@ function atFace(relay, method, p, body, sid) {
       let text = ''; r.on('data', function (d) { text += d; });
       r.on('end', function () { resolve({ status: r.statusCode, type: String(r.headers['content-type'] || ''), text: text, cookie: String(r.headers['set-cookie'] || '') }); });
     });
-    q.on('error', function (e) { resolve({ status: 0, text: String(e && e.message) }); });
+    q.on('error', function () { resolve({ status: 0, text: '' }); });
     q.end(b || undefined);
   });
 }
@@ -1101,7 +1101,7 @@ test.run('and none of boot.js, shell.css or face.css came as the relay\'s own fi
 test.run('logged out by spirit.login.logout, the page shows the one field again', 0.2, async function () {
   if (!FL.out) return false;
   const chrome = FL.chrome;
-  await chrome.evaluate('Promise.resolve(window.spirit.login.logout()).then(function () { return true; }, function (e) { return String(e); })');
+  await chrome.evaluate('Promise.resolve(window.spirit.login.logout()).then(function () { return true; }, function () { return false; })');
   await chrome.send('Page.navigate', { url: faceUrl() });
   await until(function () { return chrome.evaluate('!!window.spirit && document.readyState === "complete"'); }, 20000);
   await sleep(3000);
@@ -1190,7 +1190,7 @@ test.run('the world: the page asked contact and relay', 0.2, async function () {
   if (page && !page.error) {
     await page.send('Page.navigate', { url: node.base + '/' });
     await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.ready)'); }, 30000);
-    got = await page.evaluate("Promise.resolve(window.spirit.ready).then(function () { return Promise.all(['contact', 'relay'].map(function (n) { return window.spirit.cacheManager(n).then(function () { return [n, 'ok']; }, function (e) { return [n, String((e && e.message) || e)]; }); })); }).then(function (r) { return { said: r, planted: window.__planted || [] }; })");
+    got = await page.evaluate("Promise.resolve(window.spirit.ready).then(function () { return Promise.all(['contact', 'relay'].map(function (n) { return window.spirit.cacheManager(n).then(function () { return [n, 'ok']; }, function () { return [n, false]; }); })); }).then(function (r) { return { said: r, planted: window.__planted || [] }; })");
   }
   FF.got = got;
   FF.asked = page && page.heard ? page.heard.filter(function (m) { return m.method === 'Network.responseReceived'; }).map(function (m) { return { url: m.params.response.url.replace(node.base, '').replace(/^\//, ''), status: m.params.response.status }; }) : [];

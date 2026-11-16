@@ -102,13 +102,13 @@ test.run('call of a verb nobody answers says no-such-verb', 0.2, async function 
 }, test.limit.quick);
 test.run('call of a handler that throws says handler-failed', 0.2, async function () {
   const t = createVerbTable();
-  t.claim('zz', 'm', { 'zz.boom': function () { throw new Error('boom'); } }, { wire: false });
+  t.claim('zz', 'm', { 'zz.boom': function () { throw new Error(); } }, { wire: false });
   const r = await t.call('zz.boom', {});
   return (r.ok === false && r.status === 500 && r.code === 'handler-failed') || false;
 }, test.limit.quick);
 test.run('call of a handler whose promise fails says handler-failed', 0.2, async function () {
   const t = createVerbTable();
-  t.claim('zz', 'm', { 'zz.late': function () { return Promise.reject(new Error('late')); } }, { wire: false });
+  t.claim('zz', 'm', { 'zz.late': function () { return Promise.reject(new Error()); } }, { wire: false });
   const r = await t.call('zz.late', {});
   return (r.ok === false && r.code === 'handler-failed') || false;
 }, test.limit.quick);

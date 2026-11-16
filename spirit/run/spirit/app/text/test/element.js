@@ -85,7 +85,7 @@ test.run('the world: the face shell has its spirit', 0.2, async function () {
 // the box: "without one they show it"
 test.run('its element\'s create(container) answers { destroy }', 0.2, async function () {
   if (!W.page) return false;
-  const made = await W.c.evaluate('(function () { var b = document.createElement("div"); b.id = "zzBox"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.require("spirit/app/' + NAME + '/element.js").then(function () { var E = ((spirit.element.spirit.app || {})[' + JSON.stringify(NAME) + '] || {}).element; if (!E || typeof E.create !== "function") return "no spirit.element.spirit.app.' + NAME + '.element.create"; window.__m = E.create(b); return window.__m && typeof window.__m.destroy === "function" ? "ok" : "create answered " + typeof window.__m; }, function (e) { return "load: " + e; }); }())');
+  const made = await W.c.evaluate('(function () { var b = document.createElement("div"); b.id = "zzBox"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.require("spirit/app/' + NAME + '/element.js").then(function () { var E = ((spirit.element.spirit.app || {})[' + JSON.stringify(NAME) + '] || {}).element; if (!E || typeof E.create !== "function") return false; window.__m = E.create(b); return window.__m && typeof window.__m.destroy === "function" ? "ok" : false; }, function () { return false; }); }())');
   return made === 'ok' || false;
 }, test.limit.quick);
 // A file picker is the files list as a dropdown (G43.16's box): its field, a button (spirit/element/search.js).
@@ -103,12 +103,12 @@ test.run('the box: the picker sits in a bubble of the kind rowForm uses', 0.2, a
 // The box: "Rows are inline, not boxes: they fold when the width gets smaller."
 test.run('the box: in a narrow pane the row folds, nothing past its edge', 0.2, async function () {
   if (!W.page) return false;
-  const folded = await W.c.evaluate('(function () { var b = document.getElementById("zzBox"); b.style.width = "120px"; return new Promise(function (r) { setTimeout(r, 400); }).then(function () { var row = (document.querySelector("#zzBox button[id$=field]") || {}).closest ? document.querySelector("#zzBox button[id$=field]").closest(".shell-bubble") : null; if (!row) return "no row"; var w = row.getBoundingClientRect(), o = b.getBoundingClientRect(); var out = row.scrollWidth > row.clientWidth + 1 || w.right > o.right + 1; b.style.width = "100%"; return out ? "past the box: " + Math.round(w.right) + " of " + Math.round(o.right) + ", scroll " + row.scrollWidth + " of " + row.clientWidth : "ok"; }); }())');
+  const folded = await W.c.evaluate('(function () { var b = document.getElementById("zzBox"); b.style.width = "120px"; return new Promise(function (r) { setTimeout(r, 400); }).then(function () { var row = (document.querySelector("#zzBox button[id$=field]") || {}).closest ? document.querySelector("#zzBox button[id$=field]").closest(".shell-bubble") : null; if (!row) return false; var w = row.getBoundingClientRect(), o = b.getBoundingClientRect(); var out = row.scrollWidth > row.clientWidth + 1 || w.right > o.right + 1; b.style.width = "100%"; return out ? false : "ok"; }); }())');
   return folded === 'ok' || false;
 }, test.limit.quick);
 test.run('destroy leaves its container empty', 0.2, async function () {
   if (!W.page) return false;
-  const gone = await W.c.evaluate('(function () { if (!window.__m) return "nothing made"; window.__m.destroy(); return document.getElementById("zzBox").innerHTML === "" ? "ok" : "left " + document.getElementById("zzBox").innerHTML.length; }())');
+  const gone = await W.c.evaluate('(function () { if (!window.__m) return false; window.__m.destroy(); return document.getElementById("zzBox").innerHTML === "" ? "ok" : false; }())');
   return gone === 'ok' || false;
 }, test.limit.quick);
 
@@ -136,6 +136,6 @@ test.run('the one bar in view reads its icon and its label, no file picked', 0.2
 test.run('no uncaught error on the page', 0.2, async function () {
   if (!W.c) return false;
   await sleep(300);
-  const thrown = W.c.heard.filter(function (m) { return m.method === 'Runtime.exceptionThrown'; }).map(function (m) { return (m.params.exceptionDetails.exception && m.params.exceptionDetails.exception.description) || m.params.exceptionDetails.text; });
+  const thrown = W.c.heard.filter(function (m) { return m.method === 'Runtime.exceptionThrown'; });
   return !thrown.length || false;
 }, test.limit.quick);

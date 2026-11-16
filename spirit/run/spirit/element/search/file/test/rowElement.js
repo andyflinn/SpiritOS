@@ -236,7 +236,7 @@ test.run('the world: a scratch node with its DEBUG on, and Chrome on the words p
   await page.send('Page.navigate', { url: node.base + '/DEBUG/spirit/element/search/file/test/rowElement-words.html' });
   await H.until(function () { return page.evaluate('typeof window.ready === "function" && !!window.spirit').then(Boolean); }, H.WAIT);
   await page.evaluate('window.ready()');
-  row = async function (p, kind) { try { return JSON.parse(await page.evaluate('window.row(' + JSON.stringify(p) + ', ' + JSON.stringify(kind || 'folder') + ')')); } catch (e) { return { threw: String(e) }; } };
+  row = async function (p, kind) { try { return JSON.parse(await page.evaluate('window.row(' + JSON.stringify(p) + ', ' + JSON.stringify(kind || 'folder') + ')')); } catch (e) { return {}; } };
   return true;
 }, test.limit.slow);
 test.run('spirit/app: reserved, and the spirit object holds spirit.app: light blue', 0.2, async function () {

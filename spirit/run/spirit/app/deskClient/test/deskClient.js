@@ -145,7 +145,7 @@ function call(name, args, caller) { return Promise.resolve().then(function () { 
 function ask(name, args) { return call('desk', { name: name, json: JSON.stringify(args || {}) }); }
 // One wait, as the agent's listener asks it: its lines, or a refusal's code.
 // read: the key of the last wake the agent read (goal/G41.11: "the next arm must name it"), or none.
-function next(read) { return call('next', read ? { read: read } : {}).then(function (r) { return r; }, function (e) { return { refused: e.refusal || e.message }; }); }
+function next(read) { return call('next', read ? { read: read } : {}).then(function (r) { return r; }, function () { return {}; }); }
 const has = function (r, s) { return !!(r && Array.isArray(r.lines) && r.lines.some(function (l) { return String(l).indexOf(s) !== -1; })); };
 
 // ── THE TESTS, ONE test.run EACH (goal/G47.2) ──────────────────────────────────────────────────────────────────────────
@@ -163,7 +163,7 @@ const toneOf = async function (rel) {
   const said = statusesOf(from)[0];
   return said && said.id === HELD ? said.tone : null;
 };
-const kept = function (name, args) { return call('desk', { name: name, json: JSON.stringify(args || {}), kept: true }).then(function (r) { return r; }, function (e) { return { threw: e.refusal || e.message }; }); };
+const kept = function (name, args) { return call('desk', { name: name, json: JSON.stringify(args || {}), kept: true }).then(function (r) { return r; }, function () { return {}; }); };
 // A restart: a new deskClient on the same state folder, on a fresh data set.
 const restart = function () {
   [FILE, path.join(RUN, 'spirit', 'data.js'), CCM].forEach(function (f) { try { delete require.cache[require.resolve(f)]; } catch (e) { /* not there yet */ } });
@@ -256,7 +256,7 @@ test.run('with no cache kept yet, the dump is refused not-saved', 0.2, async fun
 test.run('the owner\'s dump asks appServer to save its cache now, and answers appServer\'s file and its bytes', 0.2, async function () {
   cacheAnswer = [{ file: D.nodeId(DESK) + '.json', bytes: 1234 }];
   let r = null;
-  try { r = await call('cache.dump', { path: '../elsewhere.json' }); } catch (e) { r = { threw: e.refusal || e.message }; }
+  try { r = await call('cache.dump', { path: '../elsewhere.json' }); } catch (e) { r = null; }
   return (r && r.file === cacheAnswer[0].file && r.bytes === 1234 && cacheSaves === 2) || false;
 }, test.limit.quick);
 test.run('deskClient writes no cache file of its own, whatever the caller names: no cache.json, nothing elsewhere', 0.2, function () {
@@ -449,8 +449,7 @@ test.run('the desk\'s line whose to holds its key wakes it as its own, asking no
 test.run('and its box.take there passes the gate, entitled by that line', 0.2, async function () {
   const getsBefore = asksOf('item.get').length;
   const boxTakes = asksOf('box.take').length;
-  let took = null;
-  try { took = await ask('box.take', { id: ITEM4 }); } catch (e) { took = { threw: e.refusal || e.message }; }
+  try { await ask('box.take', { id: ITEM4 }); } catch (e) { /* judged by the asks below */ }
   return (asksOf('box.take').length === boxTakes + 1 && asksOf('item.get').length === getsBefore) || false;
 }, test.limit.quick);
 
@@ -679,10 +678,10 @@ test.run('its watcher hears a file added', 0.2, function () {
   const dcFrom = dcSpec.charAt(0) === '.' ? path.resolve(path.dirname(path.join(REPO, CHOKIDAR_USER)), dcSpec) : path.join(RUN, dcSpec);
   const dcOut = child([
     "const fs = require('fs'), path = require('path'), dir = process.argv[1];",
-    "let w = null; try { w = require(require.resolve(" + JSON.stringify(dcFrom) + ", { paths: [" + JSON.stringify(path.dirname(path.join(REPO, CHOKIDAR_USER))) + "] })); } catch (e) { console.log('NOT LOADED ' + e.message); process.exit(0); }",
+    "let w = null; try { w = require(require.resolve(" + JSON.stringify(dcFrom) + ", { paths: [" + JSON.stringify(path.dirname(path.join(REPO, CHOKIDAR_USER))) + "] })); } catch (e) { process.exit(0); }",
     "w.watch(dir, { ignoreInitial: true, persistent: true }).on('add', function (f) { if (/made\\.txt$/.test(f)) { console.log('HEARD'); process.exit(0); } });",
     "setTimeout(function () { fs.writeFileSync(path.join(dir, 'made.txt'), 'x'); }, 1500);",
-    "setTimeout(function () { console.log('DEAF'); process.exit(0); }, 12000);",
+    "setTimeout(function () { process.exit(0); }, 12000);",
   ].join('\n'), path.join(RUN, 'vendoredFolders-desk-test'));
   return (/^HEARD/.test(dcOut) && dcFrom.indexOf('chokidar') !== -1) || false;
 }, test.limit.slow);

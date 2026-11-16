@@ -654,7 +654,7 @@ function rotatePart() {
       const r = await fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) });
       const text = await r.text();
       return { status: r.status, text: text, body: parsed(text) };
-    } catch (e) { return { status: 0, text: String(e && e.message), body: null }; }
+    } catch (e) { return { status: 0, text: '', body: null }; }
   }
   async function boot(run) {
     const port = await freePort();
@@ -727,7 +727,7 @@ function rotatePart() {
     if (!where) return false;
     if (!c || c.error) return false;
     // NO KEY IS ROTATED: the page's node.rotateCipher records the ask and refuses it.
-    spy = await c.evaluate('window.spirit.ready.then(function () { var S = window.spirit; window.__rotations = 0; if (!S.node || typeof S.node.rotateCipher !== "function") return "no spirit.node.rotateCipher"; S.node.rotateCipher = function () { window.__rotations += 1; return Promise.resolve({ status: 403, body: { ok: false, error: "refused by the test" } }); }; return "spied"; })');
+    spy = await c.evaluate('window.spirit.ready.then(function () { var S = window.spirit; window.__rotations = 0; if (!S.node || typeof S.node.rotateCipher !== "function") return false; S.node.rotateCipher = function () { window.__rotations += 1; return Promise.resolve({ status: 403, body: { ok: false, error: "refused by the test" } }); }; return "spied"; })');
     return (spy === 'spied') ? true : false;
   }, test.limit.quick);
   const T = function (expr) { return c.evaluate('window.__t.' + expr); };
@@ -741,7 +741,7 @@ function rotatePart() {
     await c.evaluate(HANDS);
     await c.evaluate('window.__in = "zzBox"');
     // the box, 8: "nodeInfo's rotate button opens it as a layer over Info through panel.js ... its ✕ shows Info again"
-    shell = await c.evaluate('(function () { var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.require("spirit/app/app/element.js").then(function () { window.__shell = spirit.element.spirit.app.app.element.create(b); return "made"; }, function (e) { return "load: " + e; }); }())');
+    shell = await c.evaluate('(function () { var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.require("spirit/app/app/element.js").then(function () { window.__shell = spirit.element.spirit.app.app.element.create(b); return "made"; }, function () { return false; }); }())');
     return (shell === 'made' && await waitFor('tiles().indexOf("file") !== -1', 10000)) ? true : false;
   }, test.limit.quick);
   test.run('the world: Info opens from its tile, its name field and its rotate button shown', 0.2, async function () {

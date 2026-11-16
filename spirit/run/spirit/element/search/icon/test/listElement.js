@@ -38,7 +38,7 @@ function facePost(relay, p, body) {
       let text = ''; r.on('data', function (d) { text += d; });
       r.on('end', function () { resolve({ status: r.statusCode, text: text, cookie: String(r.headers['set-cookie'] || '') }); });
     });
-    q.on('error', function (e) { resolve({ status: 0, text: String(e && e.message) }); });
+    q.on('error', function () { resolve({ status: 0, text: '' }); });
     q.end(b);
   });
 }
@@ -134,7 +134,7 @@ test.run('the world: a scratch node, a scratch relay and Chrome', 0.2, async fun
     await chrome.send('Page.navigate', { url: url });
     await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
   };
-  made = async function () { return chrome.evaluate(MAKE + '()').catch(function (e) { return String(e && e.message); }); };
+  made = async function () { return chrome.evaluate(MAKE + '()').catch(function () { return null; }); };
   seen = function () { return chrome.evaluate(SEEN).then(parsed); };
   // A word only one icon of the file has, and what the list shows for it.
   const words = {};
@@ -262,7 +262,7 @@ test.run('a face with no star is refused', 0.2, async function () {
   await chrome.send('Network.setCookie', { name: 'spirit_face', value: F.sid, url: FACE, path: '/' });
   await open(FACE);
   await sleep(2000);
-  const refused = await chrome.evaluate('window.spirit.ready.then(function (s) { return s.fs.loadFile(' + JSON.stringify(SET) + '); }).then(function () { return "read"; }, function (e) { return String(e && (e.code || e.message)); })');
+  const refused = await chrome.evaluate('window.spirit.ready.then(function (s) { return s.fs.loadFile(' + JSON.stringify(SET) + '); }).then(function () { return "read"; }, function () { return false; })');
   return refused !== 'read' ? true : false;
 }, test.limit.long);
 test.run('and its list has no rows', 0.2, async function () {

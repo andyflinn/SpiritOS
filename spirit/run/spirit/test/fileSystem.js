@@ -15,7 +15,7 @@ const RUN = path.resolve(__dirname, '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const FS = require(path.join(RUN, 'spirit', 'fileSystem.js'));
 
-function ask(fn, p) { try { return FS[fn](p); } catch (e) { return 'threw ' + (e && e.message); } }
+function ask(fn, p) { try { return FS[fn](p); } catch (e) { return null; } }
 
 // Each closed path, as the gate refuses it today, and the same path in other cases.
 const CLOSED_READ = [

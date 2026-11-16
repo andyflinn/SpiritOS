@@ -1003,7 +1003,7 @@ test.run('detailElement.create(host, { key, relay: true }) draws it', 0.2, async
   await chrome.send('Page.navigate', { url: S.N.base + '/face.html' });
   await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.require)'); }, 20000);
   await sleep(3000);
-  const mounted = await chrome.evaluate('Promise.resolve(window.spirit.require("spirit/element/search/contact/detailElement.js")).then(function () { var E = window.spirit.element.spirit.element.search.contact.detailElement; if (!E || typeof E.create !== "function") return "no create"; var h = document.createElement("div"); h.id = "zzPanel"; document.body.appendChild(h); window.__panel = E.create(h, { key: ' + JSON.stringify(S.key) + ', relay: true }); return "ok"; }, function (e) { return "refused: " + e.message; })');
+  const mounted = await chrome.evaluate('Promise.resolve(window.spirit.require("spirit/element/search/contact/detailElement.js")).then(function () { var E = window.spirit.element.spirit.element.search.contact.detailElement; if (!E || typeof E.create !== "function") return false; var h = document.createElement("div"); h.id = "zzPanel"; document.body.appendChild(h); window.__panel = E.create(h, { key: ' + JSON.stringify(S.key) + ', relay: true }); return "ok"; }, function () { return false; })');
   if (mounted !== 'ok') return false;
   S.chrome = chrome;
   return true;
@@ -1066,7 +1066,7 @@ test.run('opened, it holds the faceForm: its field and its button', 0.2, async f
   if (!S.chrome) return false;
   await S.chrome.evaluate('(function () { var h = ' + faceHead + '; if (h) h.click(); }())');
   await until(function () { return S.chrome.evaluate('!!document.querySelector("#zzPanel .nd-face-form input")'); }, 5000);
-  const drawn = await S.chrome.evaluate('(function () { var f = document.querySelector("#zzPanel .nd-face-form"); return f ? { input: !!f.querySelector("input"), button: !!f.querySelector("button"), text: f.textContent.slice(0, 80) } : null; }())');
+  const drawn = await S.chrome.evaluate('(function () { var f = document.querySelector("#zzPanel .nd-face-form"); return f ? { input: !!f.querySelector("input"), button: !!f.querySelector("button") } : null; }())');
   return (!!drawn && drawn.input && drawn.button) || false;
 }, test.limit.slow);
 test.run('the star off, at home', 0.2, async function () {
@@ -1143,7 +1143,7 @@ test.run('a later change neither throws nor paints', 0.2, async function () {
   if (S.mark === undefined) return false;
   await home(S.N.base, 'peer.post', { to: S.key, text: JSON.stringify({ app: 'relay', body: { relayLabel: { label: 'zzNameThree' } } }) });
   await sleep(1500);
-  const threw = S.chrome.heard.slice(S.mark).filter(function (m) { return m.method === 'Runtime.exceptionThrown'; }).map(function (m) { return m.params.exceptionDetails.text; });
+  const threw = S.chrome.heard.slice(S.mark).filter(function (m) { return m.method === 'Runtime.exceptionThrown'; });
   const now = await panelText();
   return (!threw.length && now.indexOf('zzNameThree') === -1) || false;
 }, test.limit.slow);

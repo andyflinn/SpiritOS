@@ -16,7 +16,7 @@ const REL = 'spirit/app/testicle/element/statusBox.js';
 const W = {};
 const OK = 'spirit/zzBox/zzOk.js', OKS = 'spirit/zzBox/test/zzOk.js', BAD = 'spirit/zzBox/zzBad.js', BADS = 'spirit/zzBox/test/zzBad.js';
 const SUITE_HEAD = "'use strict';\nconst path = require('path');\nconst test = require(path.join(__dirname, '..', '..', 'test', 'testReport.js'));\n";
-const ev = function (expr) { return W.page.evaluate(expr).catch(function (e) { return 'threw: ' + (e && e.message || e); }); };
+const ev = function (expr) { return W.page.evaluate(expr).catch(function () { return null; }); };
 const ask = function (verb, args) {
   return fetch(W.node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) })
     .then(function (r) { return r.json(); }, function () { return null; });
@@ -96,7 +96,7 @@ test.run('the world: zzOk.js and zzBad.js planted with their own tests, and test
   fs.writeFileSync(path.join(run, OK), "'use strict';\n// zzOk\n");
   fs.writeFileSync(path.join(run, BAD), "'use strict';\n// zzBad\n");
   fs.writeFileSync(path.join(run, OKS), SUITE_HEAD + "test.run('zzOk holds', 0.2, function () { return true; }, test.limit.quick);\n");
-  fs.writeFileSync(path.join(run, BADS), SUITE_HEAD + "test.run('zzBad fails', 0.2, function () { return 'it fails, as planted'; }, test.limit.quick);\n");
+  fs.writeFileSync(path.join(run, BADS), SUITE_HEAD + "test.run('zzBad fails', 0.2, function () { return false; }, test.limit.quick);\n");
   await H.until(function () { return ask('testicle.suite.search', { script: OK, text: '' }).then(function (r) { return !!(r && (r.items || []).length); }); }, 60000);
   return (await idle(280000)) || false;
 }, test.limit.long);

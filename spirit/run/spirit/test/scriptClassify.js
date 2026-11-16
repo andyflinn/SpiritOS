@@ -69,7 +69,7 @@ function loadOnNode(run, rel) {
       const m = /\n@@(.*)\n/.exec(out);
       let r = null; try { r = m ? JSON.parse(m[1]) : null; } catch (e) { r = null; }
       if (r) return resolve(r);
-      resolve(hung ? { err: 'it did not finish loading in ' + LOAD_MS + ' ms', hung: true } : { err: '' });
+      resolve(hung ? { err: true, hung: true } : { err: '' });
     });
   });
 }
@@ -120,13 +120,13 @@ async function ownScratch() {
 let W = null;
 async function world() {
   if (W) return W;
-  W = { node: null, page: null, error: '' };
+  W = { node: null, page: null, error: false };
   W.node = await ownScratch();
-  if (!W.node.up) { W.error = 'its scratch node did not come up'; return W; }
+  if (!W.node.up) { W.error = true; return W; }
   const chrome = findChrome();
-  if (!chrome) { W.error = 'no Chrome on this machine'; return W; }
+  if (!chrome) { W.error = true; return W; }
   W.page = await chromePage(chrome);
-  if (!W.page || W.page.error) { W.error = 'no Chrome page: ' + String(W.page && W.page.error); W.page = null; return W; }
+  if (!W.page || W.page.error) { W.error = true; W.page = null; return W; }
   // THE NODE SIDE FOR EVERY SCRIPT AT ONCE, EIGHT PROCESSES AT A TIME (each still a process of its own, each cut at
   // LOAD_MS): a tree's first classifying run takes seconds, not minutes, so testing is not held back by it.
   W.nodeR = Object.create(null);
@@ -148,14 +148,14 @@ function freshPage(w) {
 }
 async function loadOnPage(rel) {
   const w = await world();
-  if (w.error) return { err: w.error, tool: true };
+  if (w.error) return { err: true, tool: true };
   if (!w.page) {
     w.page = await chromePage(findChrome());
-    if (!w.page || w.page.error) { const why = 'no Chrome page: ' + String(w.page && w.page.error); w.page = null; return { err: why, tool: true }; }
+    if (!w.page || w.page.error) { w.page = null; return { err: true, tool: true }; }
   }
   await w.page.send('Page.navigate', { url: w.node.base + '/DEBUG/spirit/test/' + BARE });
   const ready = await until(function () { return w.page.evaluate('!!(window.spirit && typeof window.spirit.require === "function")').then(Boolean); }, WAIT);
-  if (!ready) return { err: 'the scratch node\'s page never got its spirit', tool: true };
+  if (!ready) return { err: true, tool: true };
   const ask = w.page.evaluate('Promise.resolve(window.spirit.start()).then(function () { window.pageErrors = [];' +
     ' return spirit.require(' + JSON.stringify(rel) + '); }).then(function () { return JSON.stringify({ err: (window.pageErrors || []).join("; ") }); },' +
     ' function (e) { return JSON.stringify({ err: String(e && e.message || e) }); })');
@@ -164,8 +164,8 @@ async function loadOnPage(rel) {
   // A HUNG PAGE IS NOT REUSED (goal/G47.1, found on testicle.js's planted zzcHang): a script that never ends holds the page's
   // one thread for good, so every script after it "never got its spirit" and none of them was classified. Its Chrome ends,
   // and the next script gets a Chrome of its own.
-  if (got === null) { freshPage(w); return { err: 'it did not finish loading in ' + LOAD_MS + ' ms', hung: true }; }
-  try { return JSON.parse(got); } catch (e) { return { err: 'the page answered ' + String(got).slice(0, 200) }; }
+  if (got === null) { freshPage(w); return { err: true, hung: true }; }
+  try { return JSON.parse(got); } catch (e) { return { err: true }; }
 }
 
 // THE CLASS FROM THE TWO ANSWERS, or why there is none.
@@ -197,7 +197,7 @@ SCRIPTS.forEach(function (rel) {
       if (neverLoaded(rel)) k = { browserOnly: false, nodeOnly: true };
       else if (fs.existsSync(path.join(RUN, rel))) {
         const w = await world();
-        if (w.error) throw new Error(w.error);
+        if (w.error) throw new Error();
         const node = w.nodeR[rel] || await loadOnNode(path.join(w.node.root, 'spirit', 'run'), rel);
         const page = await loadOnPage(rel);
         k = classOf(node, page);

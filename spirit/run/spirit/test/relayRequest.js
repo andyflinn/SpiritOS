@@ -110,7 +110,7 @@ test.run('relayRequest: plain http to a host not loopback, a bad address, or ano
   const got = await counted(function () {
     return Promise.all([caught(R.relayRequest('http://example.com', 'GET', '/')), caught(R.relayRequest('ftp://127.0.0.1', 'GET', '/')), caught(R.relayRequest('not a url', 'GET', '/'))]);
   });
-  const msgs = got.v.map(function (r) { return r.error ? String(r.error.message) : 'answered'; });
+  const msgs = got.v.map(function (r) { return r.error ? String(r.error.message) : ''; });
   return (got.n === 0 && /must be https/.test(msgs[0]) && /must be https/.test(msgs[1]) && /bad relay url/.test(msgs[2])) || false;
 }, test.limit.quick);
 test.run('relayRequest: no answer at all rejects (nothing listening)', 0.2, async function () {
@@ -207,7 +207,7 @@ test.run('relayUpload: a streamed POST, chunked, octet-stream, Host the target\'
 test.run('relayUpload: an address assertRelayUrl refuses is said on the stream\'s error, and no socket opens', 0.2, async function () {
   const got = await counted(function () {
     const req = R.relayUpload('http://example.com', '/face/upload');
-    return new Promise(function (r) { req.on('error', function (e) { r(String(e && e.message)); }); setTimeout(function () { r('no error said'); }, 1000); });
+    return new Promise(function (r) { req.on('error', function (e) { r(String(e && e.message)); }); setTimeout(function () { r(''); }, 1000); });
   });
   return (got.n === 0 && /must be https/.test(got.v)) || false;
 }, test.limit.quick);

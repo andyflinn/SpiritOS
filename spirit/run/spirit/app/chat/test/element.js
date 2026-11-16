@@ -65,13 +65,13 @@ test.run('it loads through spirit.require and mounts, answering { destroy }', 0.
   if (!page || !X.ready) return false;
   // Every call the page sends, recorded as it leaves: its fetch and its XMLHttpRequest bodies.
   X.made = await page.evaluate('window.spirit.ready.then(function () {' +
-    ' window.sent = []; window.pageErrors = []; window.addEventListener("error", function (e) { window.pageErrors.push(String(e.message)); });' +
+    ' window.sent = []; window.pageErrors = []; window.addEventListener("error", function () { window.pageErrors.push(true); });' +
     ' var f = window.fetch; window.fetch = function (u, o) { try { window.sent.push(String(o && o.body || "")); } catch (e) {} return f.apply(this, arguments); };' +
     ' var x = XMLHttpRequest.prototype.send; XMLHttpRequest.prototype.send = function (b) { try { window.sent.push(String(b || "")); } catch (e) {} return x.apply(this, arguments); };' +
     ' return spirit.require(' + JSON.stringify(PLACE) + '); }).then(function () {' +
-    ' var E = spirit.element && spirit.element.spirit.app.chat.element; if (!E || typeof E.create !== "function") return "spirit.element.spirit.app.chat.element.create is " + typeof (E && E.create);' +
+    ' var E = spirit.element && spirit.element.spirit.app.chat.element; if (!E || typeof E.create !== "function") return false;' +
     ' var c = document.createElement("div"); c.id = "box"; c.style.cssText = "position:fixed;left:0;top:0;width:1200px;height:760px;display:flex;background:#111;z-index:9"; document.body.appendChild(c);' +
-    ' window.made = E.create(c, {}); return window.made && typeof window.made.destroy === "function" ? "made" : "create answered " + typeof window.made; }, function (e) { return String(e && e.message || e); })');
+    ' window.made = E.create(c, {}); return window.made && typeof window.made.destroy === "function" ? "made" : false; }, function () { return false; })');
   return X.made === 'made' ? true : false;
 }, test.limit.quick);
 

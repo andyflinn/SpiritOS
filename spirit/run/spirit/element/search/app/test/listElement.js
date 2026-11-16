@@ -51,7 +51,7 @@ test.run('the world: a scratch node, and Chrome on its face page', 0.2, async fu
 }, test.limit.slow);
 test.run('it loads through spirit.require and is spirit.element.spirit.element.search.app.listElement', 0.2, async function () {
   if (!node || !node.up || !chrome || chrome.error) return false;
-  loaded = await chrome.evaluate('spirit.ready.then(function () { return spirit.require("spirit/element/search/app/listElement.js"); }).then(function () { var L = spirit.element.spirit.element.search.app.listElement; return !!(L && typeof L.create === "function"); }, function (e) { return String(e && e.message || e); })');
+  loaded = await chrome.evaluate('spirit.ready.then(function () { return spirit.require("spirit/element/search/app/listElement.js"); }).then(function () { var L = spirit.element.spirit.element.search.app.listElement; return !!(L && typeof L.create === "function"); }, function () { return false; })');
   return loaded === true || false;
 }, test.limit.slow);
 

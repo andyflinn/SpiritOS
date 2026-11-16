@@ -141,7 +141,7 @@ test.run('a module whose first require is not spirit.js goes red', 0.2, function
         H.bodies += req.url + ' ' + body.toString('utf8') + '\n';
         fetch(H.node.base + req.url, { method: req.method, headers: { 'content-type': req.headers['content-type'] || 'application/json' }, body: req.method === 'GET' || req.method === 'HEAD' ? undefined : body })
           .then(function (r) { return r.arrayBuffer().then(function (b) { res.writeHead(r.status, { 'content-type': r.headers.get('content-type') || 'application/json' }); res.end(Buffer.from(b)); }); })
-          .catch(function (e) { res.writeHead(502); res.end(String(e && e.message)); });
+          .catch(function () { res.writeHead(502); res.end(); });
       });
     });
     await new Promise(function (r) { H.proxy.listen(0, '127.0.0.1', r); });

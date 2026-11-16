@@ -344,12 +344,12 @@ function code(file) {
     .replace(/\/\*[\s\S]*?\*\//g, function (x) { return x.replace(/[^\n]/g, ' '); })
     .replace(/(^|[^:\\'"])\/\/.*$/gm, '$1');
 }
-// The lines of a file's code matching re, as "name:line text".
+// The line numbers of a file's code matching re.
 function hits(file, re) {
   const c = code(file);
   if (c === null) return null;
   const out = [];
-  c.split('\n').forEach(function (l, i) { if (re.test(l)) out.push(path.basename(file) + ':' + (i + 1) + ' ' + l.trim().slice(0, 100)); });
+  c.split('\n').forEach(function (l, i) { if (re.test(l)) out.push(i + 1); });
   return out;
 }
 const HELD_ROW = path.join(RUN, 'spirit', 'element', 'search', 'contact', 'rowElement.js');
@@ -390,7 +390,7 @@ function page(relayServer, p, body) {
       let text = ''; r.on('data', function (d) { text += d; });
       r.on('end', function () { resolve({ status: r.statusCode, text: text, cookie: String(r.headers['set-cookie'] || '') }); });
     });
-    q.on('error', function (e) { resolve({ status: 0, text: String(e && e.message) }); });
+    q.on('error', function () { resolve({ status: 0, text: '' }); });
     q.end(bd);
   });
 }

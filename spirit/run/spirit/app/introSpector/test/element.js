@@ -79,7 +79,7 @@ test.run('the world: a scratch node and a Chrome page on its face', 0.2, async f
 // spirit.element.spirit.app.introSpector.element.create(container, { open }) -> { destroy }
 test.run('it registers spirit.element.spirit.app.introSpector.element, whose create answers { destroy }', 0.2, async function () {
   if (!W.page) return false;
-  const made = await W.chrome.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/app/introSpector/element.js"); }).then(function () { var J = spirit.element && spirit.element.spirit.app.introSpector.element; if (!J || typeof J.create !== "function") return "spirit.element.spirit.app.introSpector.element.create is " + typeof (J && J.create); var c = document.createElement("div"); c.id = "alone"; c.style.cssText = "position:fixed;left:0;top:0;width:900px;height:600px;overflow:auto"; document.body.appendChild(c); window.alone = J.create(c, {}); return window.alone && typeof window.alone.destroy === "function" ? "made" : "create answered " + typeof window.alone; }, function (e) { return String(e && e.message || e); })');
+  const made = await W.chrome.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/app/introSpector/element.js"); }).then(function () { var J = spirit.element && spirit.element.spirit.app.introSpector.element; if (!J || typeof J.create !== "function") return false; var c = document.createElement("div"); c.id = "alone"; c.style.cssText = "position:fixed;left:0;top:0;width:900px;height:600px;overflow:auto"; document.body.appendChild(c); window.alone = J.create(c, {}); return window.alone && typeof window.alone.destroy === "function" ? "made" : false; }, function () { return false; })');
   W.made = made === 'made';
   return W.made || false;
 }, test.limit.quick);
@@ -97,7 +97,7 @@ test.run('destroy empties its container', 0.2, async function () {
 const TILE = 'Array.prototype.filter.call(document.querySelectorAll("#faces .app-icon"), function (t) { return t.offsetParent !== null && String(t.textContent).indexOf("introSpector") !== -1; })[0]';
 test.run('the world: the app selector\'s tiles', 0.2, async function () {
   if (!W.page) return false;
-  const tiles = await W.chrome.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/app/app/element.js"); }).then(function () { var c = document.createElement("div"); c.id = "faces"; c.style.cssText = "position:fixed;left:0;top:0;width:1100px;height:760px;display:flex;flex-direction:column;background:#111;z-index:9"; document.body.appendChild(c); window.fsel = spirit.element.spirit.app.app.element.create(c, { face: "tiles" }); if (window.fsel.parentNode !== c) c.appendChild(window.fsel); return "made"; }, function (e) { return String(e && e.message || e); })');
+  const tiles = await W.chrome.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/app/app/element.js"); }).then(function () { var c = document.createElement("div"); c.id = "faces"; c.style.cssText = "position:fixed;left:0;top:0;width:1100px;height:760px;display:flex;flex-direction:column;background:#111;z-index:9"; document.body.appendChild(c); window.fsel = spirit.element.spirit.app.app.element.create(c, { face: "tiles" }); if (window.fsel.parentNode !== c) c.appendChild(window.fsel); return "made"; }, function () { return false; })');
   W.tiles = tiles === 'made';
   return W.tiles || false;
 }, test.limit.quick);

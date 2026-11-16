@@ -36,8 +36,9 @@ function plantedReq(headers, socketAddress) {
   q.destroy = function () { q.destroyed = true; };
   return q;
 }
+const LATE = {};
 function within(promise, ms) {
-  return Promise.race([promise, new Promise(function (r) { setTimeout(function () { r('__timeout__'); }, ms); })]);
+  return Promise.race([promise, new Promise(function (r) { setTimeout(function () { r(LATE); }, ms); })]);
 }
 // fn with process.exit and console.error planted; answers { code, said }.
 function withExit(fn) {
@@ -148,7 +149,7 @@ test.run('readJsonBody: the body parsed; an empty body is {}; bad JSON rejects',
   const pc = C.readJsonBody(c).then(function () { return 'parsed'; }, function () { return 'rejected'; });
   c.emit('data', Buffer.from('{nope')); c.emit('end');
   const got = await within(Promise.all([pa, pb, pc]), 1000);
-  return (got !== '__timeout__' && got[0].verb === 'x' && JSON.stringify(got[1]) === '{}' && got[2] === 'rejected') || false;
+  return (got !== LATE && got[0].verb === 'x' && JSON.stringify(got[1]) === '{}' && got[2] === 'rejected') || false;
 }, test.limit.quick);
 test.run('readJsonBody: read once, answerable twice: a second caller gets the same promise', 0.2, function () {
   const q = plantedReq({});

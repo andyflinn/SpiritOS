@@ -57,7 +57,7 @@ async function call(base, verb, args) {
     const r = await fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) });
     const text = await r.text();
     return { status: r.status, text: text, body: parsed(text) };
-  } catch (e) { return { status: 0, text: String(e && e.message), body: null }; }
+  } catch (e) { return { status: 0, text: '', body: null }; }
 }
 async function boot(run) {
   const port = await freePort();
@@ -88,10 +88,10 @@ const view = function (id) {
     ' rows: Array.prototype.filter.call(b.querySelectorAll("tr[data-key]"), seen).map(function (r) { return { key: r.getAttribute("data-key"), cells: Array.prototype.map.call(r.querySelectorAll("td"), function (td) { return String(td.innerText || "").trim(); }) }; }) }; }())');
 };
 const mount = function (id, opts) {
-  return c.evaluate('(function () { var E = ((((((((window.spirit.element || {}).spirit || {}).app || {}).testicle || {}).element || {}).search || {}).suite || {}).listElement); if (!E || typeof E.create !== "function") return "no create";' +
+  return c.evaluate('(function () { var E = ((((((((window.spirit.element || {}).spirit || {}).app || {}).testicle || {}).element || {}).search || {}).suite || {}).listElement); if (!E || typeof E.create !== "function") return false;' +
     ' var b = document.createElement("div"); b.id = ' + JSON.stringify(id) + '; b.style.cssText = "width:1200px;height:500px;display:flex;"; document.body.appendChild(b); window.__picked = window.__picked || [];' +
     ' var o = ' + JSON.stringify(opts) + '; o.pick = function (row, key) { window.__picked.push(key); };' +
-    ' window[' + JSON.stringify(id) + '] = E.create(b, o); return window[' + JSON.stringify(id) + '] && typeof window[' + JSON.stringify(id) + '].destroy === "function" ? "made" : "no destroy"; }())');
+    ' window[' + JSON.stringify(id) + '] = E.create(b, o); return window[' + JSON.stringify(id) + '] && typeof window[' + JSON.stringify(id) + '].destroy === "function" ? "made" : false; }())');
 };
 const keysOf = function (v) { return ((v && v.rows) || []).map(function (r) { return r.key; }); };
 
@@ -135,7 +135,7 @@ test.run('the world: the face page has its spirit', 0.2, async function () {
 test.run('it loads alone through spirit.require and mounts with create(container, { script, pick }), answering destroy', 0.2, async function () {
   if (!N || !N.up) return false;
   if (!c || c.error || !c.evaluate) return false;
-  const loaded = await c.evaluate('window.spirit.ready.then(function () { return window.spirit.require("spirit/app/testicle/element/search/suite/listElement.js"); }).then(function () { return "loaded"; }, function (e) { return "refused: " + (e && e.message || e); })');
+  const loaded = await c.evaluate('window.spirit.ready.then(function () { return window.spirit.require("spirit/app/testicle/element/search/suite/listElement.js"); }).then(function () { return "loaded"; }, function () { return false; })');
   if (loaded !== 'loaded') return false;
   made = await mount('zzBox', { script: A });
   return made === 'made' || false;
@@ -252,6 +252,6 @@ test.run('as a dropdown, it shows its placeholder in its field', 0.2, async func
 
 test.run('destroy leaves its container empty', 0.2, async function () {
   if (notMounted()) return false;
-  const after = await c.evaluate('(function () { window.zzBox.destroy(); var b = document.getElementById("zzBox"); return b ? b.innerHTML : "gone"; }())');
+  const after = await c.evaluate('(function () { window.zzBox.destroy(); var b = document.getElementById("zzBox"); return b ? b.innerHTML : null; }())');
   return after === '' || false;
 }, test.limit.quick);

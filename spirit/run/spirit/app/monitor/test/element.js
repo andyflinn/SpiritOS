@@ -34,7 +34,7 @@ const js = function (s) { return W.chrome.evaluate(s); };
 const read = async function () {
   try {
     return JSON.parse(await js('(function () { var c = window.__box; if (!c) return "{}"; var inputs = [].filter.call(c.querySelectorAll("input"), function (i) { return i.getClientRects().length && i.type !== "checkbox"; }); var cells = [].map.call(c.querySelectorAll("tr, [data-row], .row"), function (r) { return r.innerText.replace(/\\s+/g, " ").trim(); }).filter(Boolean); var best = null; c.querySelectorAll("*").forEach(function (e) { if (e.scrollHeight - e.clientHeight > 1 && /auto|scroll/.test(getComputedStyle(e).overflowY) && (!best || e.scrollHeight > best.scrollHeight)) best = e; }); return JSON.stringify({ text: c.innerText, inputs: inputs.length, word: inputs[0] ? inputs[0].value : "", rows: cells, scroll: best ? best.scrollTop : -1, canScroll: !!best }); })()'));
-  } catch (e) { return { threw: String(e) }; }
+  } catch (e) { return {}; }
 };
 const lineOf = function (r, word) { return (r.rows || []).filter(function (l) { return l.indexOf(word) !== -1; })[0] || ''; };
 // A probabilitySearch ranks, it does not filter (goal/G18.5): the row that fits comes first.
@@ -89,7 +89,7 @@ test.run('the world: a scratch node and a Chrome page on its face', 0.2, async f
 }, test.limit.slow);
 test.run('monitor.js loads on a page', 0.2, async function () {
   if (!W.page) return false;
-  const started = await js('window.spirit.ready.then(function () { return window.spirit.cacheManager("job"); }).then(function () { return window.spirit.require("spirit/app/monitor/element.js"); }).then(function () { return "loaded"; }, function (e) { return "ERR " + e; })');
+  const started = await js('window.spirit.ready.then(function () { return window.spirit.cacheManager("job"); }).then(function () { return window.spirit.require("spirit/app/monitor/element.js"); }).then(function () { return "loaded"; }, function () { return null; })');
   return started === 'loaded' || false;
 }, test.limit.quick);
 

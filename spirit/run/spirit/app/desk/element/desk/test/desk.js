@@ -420,7 +420,7 @@ test.run('the page draws no Team chat, no Team tab and no Apps tab', 0.2, async 
 // default, and it MUST show the current goal when the page opens."
 // goal/G43.3: /spirit/app/desk/element/desk/test/desk-opened.html: the page opened, with nothing on the stream
 const F1 = W.f1 = {};
-const read1 = async function (js) { try { return JSON.parse(await F1.page.evaluate(js)); } catch (e) { return { error: String(e) }; } };
+const read1 = async function (js) { try { return JSON.parse(await F1.page.evaluate(js)); } catch (e) { return {}; } };
 const noF1 = function () { return !F1.o; };
 test.run('the world: the List draws its filter buttons', 0.2, async function () {
   if (!(await bootPage(F1, true))) return false;

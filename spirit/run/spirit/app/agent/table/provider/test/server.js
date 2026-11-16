@@ -24,7 +24,7 @@ const EL = path.join(__dirname, '..', '..', '..', 'element', 'table', 'provider'
 // The page's own node, as node.card answers it: a public key in base64, its + and / kept, so the data set names it in
 // base64url (spirit.data.nodeId).
 const HOME_KEY = 'MCowBQYDK2VwAyEA+home/node+key/for+the+page/test0000000=';
-function call(verb, a) { try { return verb.handler(a); } catch (e) { return { refusal: e.refusal || 'threw', why: (e.extra && e.extra.why) || e.message }; } }
+function call(verb, a) { try { return verb.handler(a); } catch (e) { return { refusal: e.refusal || true, why: (e.extra && e.extra.why) || e.message }; } }
 const tick = function () { return new Promise(function (r) { setImmediate(r); }); };
 const settle = async function () { for (let i = 0; i < 10; i++) await tick(); };
 const SECRET = 'sk-provider-test-0123456789';
@@ -164,7 +164,7 @@ test.run('a change that would empty its label or its url is refused, the row kep
 // stand-in on 127.0.0.1 that answers as Anthropic does to x-api-key and as an OpenAI-compatible server does otherwise.
 const A = { server: null, host: '', anth: null, first: null, openaiRow: null, otherModel: null, keep: null, unsloth: null, local: null, keptLocal: '', failed: null };
 const stand = { heard: [], anthropic: [], openai: [], fail: false };
-const ask = async function (a) { try { return await X.t.verb.handler(a); } catch (e) { return { refusal: e.refusal || 'threw', why: (e.extra && e.extra.why) || e.message }; } };
+const ask = async function (a) { try { return await X.t.verb.handler(a); } catch (e) { return { refusal: e.refusal || true, why: (e.extra && e.extra.why) || e.message }; } };
 const modelsOf = function (pid) { return X.db.prepare('SELECT * FROM "model" WHERE providerId = ? ORDER BY label').all(pid); };
 const names = function (pid) { return modelsOf(pid).map(function (m) { return m.label; }); };
 const usable = function (id) { try { return X.db.prepare('SELECT unusable FROM "provider" WHERE id = ?').get(id).unusable; } catch (e) { return null; } };

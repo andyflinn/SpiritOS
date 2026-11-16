@@ -29,11 +29,11 @@ function ask(what, holdMs, plant, from) {
     ' const run = n.run || (n.root ? require("path").join(n.root, "spirit", "run") : "");' +
     (plant ? ' try { require("fs").mkdirSync(require("path").join(run, "spirit", "state"), { recursive: true }); require("fs").writeFileSync(require("path").join(run, "spirit", "state", ' + JSON.stringify(plant) + '), "left by a test"); } catch (e) {}' : '') +
     ' process.stdout.write("\\n@@" + JSON.stringify({ root: n.root || "", run: run, base: n.base || "", up: !!n.up, debug: !!n.debug }) + "\\n");' +
-    ' setTimeout(function () { process.exit(0); }, ' + Number(holdMs || 0) + '); }()).catch(function (e) { process.stdout.write("\\n@@" + JSON.stringify({ error: String(e && e.message || e) }) + "\\n"); process.exit(1); });';
+    ' setTimeout(function () { process.exit(0); }, ' + Number(holdMs || 0) + '); }()).catch(function () { process.stdout.write("\\n@@" + JSON.stringify({ error: true }) + "\\n"); process.exit(1); });';
   const kid = spawn(process.execPath, ['-e', code], { cwd: fromRun, stdio: ['ignore', 'pipe', 'pipe'] });
   let out = '';
   const got = new Promise(function (resolve) {
-    kid.stdout.on('data', function (d) { out += d; const m = /\n@@(.*)\n/.exec(out); if (m) { try { resolve(JSON.parse(m[1])); } catch (e) { resolve({ error: m[1] }); } } });
+    kid.stdout.on('data', function (d) { out += d; const m = /\n@@(.*)\n/.exec(out); if (m) { try { resolve(JSON.parse(m[1])); } catch (e) { resolve({ error: true }); } } });
     kid.on('close', function () { resolve(null); });
   });
   const ended = new Promise(function (r) { kid.on('close', r); });
@@ -125,7 +125,7 @@ function inChild(code, ms) {
   const kid = spawn(process.execPath, ['-e', 'const H = require(' + JSON.stringify(HELPER) + ');' + code], { cwd: RUN, stdio: ['ignore', 'pipe', 'pipe'] });
   let out = '';
   kid.stdout.on('data', function (d) { out += d; });
-  return within(new Promise(function (r) { kid.on('close', function () { const m = /@@(.*)/.exec(out); try { r(m ? JSON.parse(m[1]) : { error: out.slice(-300) }); } catch (e) { r({ error: out.slice(-300) }); } }); }), ms);
+  return within(new Promise(function (r) { kid.on('close', function () { const m = /@@(.*)/.exec(out); try { r(m ? JSON.parse(m[1]) : { error: true }); } catch (e) { r({ error: true }); } }); }), ms);
 }
 const LOCKS = function () { try { return fs.readdirSync(LAB_NODES).filter(function (n) { return /^personal\d+\.lock$/.test(n); }); } catch (e) { return []; } };
 test.run('scratchTree takes one lab node and no more, and a node asked after it is another one', 0.4, async function () {
@@ -155,12 +155,12 @@ test.run('no lab node is left locked once its holders ended', 0.2, async functio
 // test that is killed?" Andy: "anything that leaves 77 useless chromes running must be fixed."). A child opens a page with chromePage, says its Chrome's pid, and ends: by itself, or killed.
 function chromeChild(end) {
   const code = 'const H = require(' + JSON.stringify(HELPER) + ');(async function () { const p = await H.chromePage(H.findChrome());' +
-    ' process.stdout.write("\\n@@" + JSON.stringify({ pid: p.kid && p.kid.pid, error: p.error || "" }) + "\\n");' +
+    ' process.stdout.write("\\n@@" + JSON.stringify({ pid: p.kid && p.kid.pid, error: !!p.error }) + "\\n");' +
     (end === 'exit' ? ' setTimeout(function () { process.exit(0); }, 300);' : ' setInterval(function () {}, 1000);') + ' }());';
   const kid = spawn(process.execPath, ['-e', code], { cwd: RUN, stdio: ['ignore', 'pipe', 'pipe'] });
   let out = '';
   const got = new Promise(function (resolve) {
-    kid.stdout.on('data', function (d) { out += d; const m = /\n@@(.*)\n/.exec(out); if (m) { try { resolve(JSON.parse(m[1])); } catch (e) { resolve({ error: m[1] }); } } });
+    kid.stdout.on('data', function (d) { out += d; const m = /\n@@(.*)\n/.exec(out); if (m) { try { resolve(JSON.parse(m[1])); } catch (e) { resolve({ error: true }); } } });
     kid.on('close', function () { resolve(null); });
   });
   return { got: got, kid: kid, ended: new Promise(function (r) { kid.on('close', r); }) };

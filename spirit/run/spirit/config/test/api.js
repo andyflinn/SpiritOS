@@ -69,7 +69,6 @@ function mounted(family) {
 const W = { api: null, verbs: {}, names: [], mounted: null };
 const call = function (verb, args) { return spirit.check('config.' + verb, W.verbs[verb], args); };
 const passes = function (verb, args) { return !!W.verbs[verb] && call(verb, args) === null; };
-const refusedAs = function (verb, args) { if (!W.verbs[verb]) return 'no verb ' + verb; const r = call(verb, args); return r ? r.code : 'passed'; };
 
 test.run('the world: api.js loads as the node hands it, its text run with module and exports alone', 0.2, function () {
   try {

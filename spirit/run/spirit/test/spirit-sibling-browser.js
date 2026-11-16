@@ -214,7 +214,6 @@ const WATCH = String.raw`(function () {
     if (nodes.every(function (n) { return n.nodeType === 1 ? (n.classList.contains('shell-busy') || !!n.closest('.shell-busy')) : !!(t.closest && t.closest('.shell-busy')); })) return true;
     return !!(t.closest && t.closest('.job-manifest-note, .job-start-error, .job-refusal, .fine-print'));
   }
-  function chain(el) { var box = window.spiritMount && window.spiritMount.box; var parts = []; for (var n = el; n && n !== box && n.tagName; n = n.parentNode) { if (n.id || n === el) parts.unshift(n.tagName.toLowerCase() + (n.id ? '#' + n.id : '')); } return parts.join(' > '); }
   function stop() { if (!watching) return; buf = buf.concat(watching.takeRecords()); watching.disconnect(); watching = null; }
   function opened() { W.out += 1; }
   function closed() { W.out = Math.max(0, W.out - 1); if (!W.out && W.writes.length > w0) stop(); }
@@ -230,7 +229,7 @@ const WATCH = String.raw`(function () {
   };
   W.settle = function () {
     stop();
-    if (W.writes.length > w0) buf.forEach(function (r) { if (!allowed(r)) W.moved.push(r.type + ' ' + chain(r.target.nodeType === 1 ? r.target : r.target.parentElement)); });
+    if (W.writes.length > w0) buf.forEach(function (r) { if (!allowed(r)) W.moved.push(true); });
     buf = [];
     return W.out;
   };
@@ -404,8 +403,10 @@ const ALONE = /(['"`]|>)\s*(?:\p{Extended_Pictographic}[\uFE0F\u200D\u{1F3FB}-\u
 // A glyph alone in a string that is drawn only among words, read by hand: a status or a mark put before a name
 // (Andy: "glyphs are legal in labels and description true").
 const TEXT_ONLY = {
-  'spirit/element/search/contact/detailElement.js': 'its blocked mark is drawn before the person\'s name',
-  'spirit/element/search/contact/listElement.js': 'its filter icons are drawn before their words by the search element\'s chips',
+  // its blocked mark is drawn before the person's name
+  'spirit/element/search/contact/detailElement.js': true,
+  // its filter icons are drawn before their words by the search element's chips
+  'spirit/element/search/contact/listElement.js': true,
 };
 function painters() {
   const tracked = require('child_process').execFileSync('git', ['ls-files', 'shell'], { cwd: RUN, encoding: 'utf8' }).split('\n');
@@ -478,15 +479,16 @@ function codeOf(src, bare) {
   }
   return out;
 }
-// Why a product script breaks the shape, one reason a break; [] when it holds.
+// Whether a product script breaks the shape, one mark a break; [] when it holds.
 function shapeBreaks(rel) {
   const why = [];
   const stem = path.posix.basename(rel, '.js');
-  if (stem.indexOf('.') !== -1) why.push('its name holds a dot of its own (' + path.posix.basename(rel) + '): "just rename the bloody script"');
+  // its name holds a dot of its own: "just rename the bloody script"
+  if (stem.indexOf('.') !== -1) why.push(true);
   let src = '';
-  try { src = fs.readFileSync(path.join(RUN, rel), 'utf8'); } catch (e) { return ['it cannot be read']; }
+  try { src = fs.readFileSync(path.join(RUN, rel), 'utf8'); } catch (e) { return [true]; }
   const code = codeOf(src);
-  if (!/^\s*(['"])use strict\1\s*;/.test(code)) why.push('it does not start with \'use strict\';');
+  if (!/^\s*(['"])use strict\1\s*;/.test(code)) why.push(true);
   if (rel === 'spirit/spirit.js') return why;
   // Every plain require: the first takes spirit.js; any other names one of node's own modules.
   const bare = codeOf(src, true);
@@ -499,10 +501,10 @@ function shapeBreaks(rel) {
     const lit = /^(['"])([^'"]*)\1$/.exec(arg);
     const named = lit ? lit[2] : '';
     const spiritJs = /(^|\/)spirit\.js$/.test(named) || /['"]spirit\.js['"]\s*\)?$/.test(arg);
-    const line = code.slice(0, m.index).split('\n').length;
     if (spiritJs) { first = false; continue; }
     if (!first && lit && (BUILTIN.indexOf(named) !== -1 || BUILTIN.indexOf(named.replace(/^node:/, '')) !== -1)) continue;
-    why.push(first ? 'its first load is not spirit.js: require(' + arg.slice(0, 80) + ') at line ' + line : 'it loads require(' + arg.slice(0, 80) + ') at line ' + line + ', not through spirit.require');
+    // its first load is not spirit.js, or it loads a module not through spirit.require
+    why.push(true);
     first = false;
   }
   return why;
@@ -517,7 +519,7 @@ function shapeBreaks(rel) {
 // THE REQUIRE RULE (goal/G40's box): "a require path that starts with ../ may only add a file name, never descend into a
 // subfolder of an ancestor; any other require path starts with <module>/, the module's own children. A sibling in the
 // module's own folder is legal." A package or a node built-in is not a path; a computed path cannot be read.
-// moduleRules(full) -> { early: '' when it holds, else why; page: true for page code; bad: [require paths breaking the rule] }
+// moduleRules(full) -> { early: false when it holds, else true; page: true for page code; bad: [require paths breaking the rule] }
 function moduleRules(full) {
   const code = fs.readFileSync(full, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"\\])\/\/[^\n]*/g, '$1');
   const requires = [];
@@ -532,17 +534,20 @@ function moduleRules(full) {
   // THE RULE (Andy, 2026-11-13, goal/G47.1 box v73, replacing his api.js exemption of v72: "if a module requires
   // anything, it must require spirit.js first. Other modules are required using spirit.require(), unless they are
   // native node.js modules."). A module that requires nothing holds it.
-  let early = '';
-  if (page || !requires.length) early = '';
+  let early = false;
+  if (page || !requires.length) early = false;
   else if (isSpirit) {
     const sets = code.search(/\broot\.spirit\s*=|\bglobalThis\.spirit\s*=|\bglobal\.spirit\s*=/);
-    if (sets === -1 || (first && sets > first.at)) early = 'it sets the global spirit ' + (sets === -1 ? 'nowhere' : 'only after its first require, ' + JSON.stringify(first.path));
+    // it sets the global spirit nowhere, or only after its first require
+    if (sets === -1 || (first && sets > first.at)) early = true;
   } else if (!(/(^|\/)spirit\.js$/.test(first.path) && path.resolve(path.dirname(full), first.path) === path.join(RUN, 'spirit', 'spirit.js'))) {
-    early = 'it does not require spirit.js first: its first require is ' + JSON.stringify(first.path);
+    // it does not require spirit.js first
+    early = true;
   } else {
     const native = function (p) { return BUILTIN.indexOf(p) !== -1 || BUILTIN.indexOf(p.replace(/^node:/, '')) !== -1; };
     const other = requires.slice(1).filter(function (r) { return !native(r.path) && !/(^|\/)spirit\.js$/.test(r.path); })[0];
-    if (other) early = 'it requires ' + JSON.stringify(other.path) + ', not through spirit.require(): only node\'s own modules are required plainly';
+    // it requires another module plainly, not through spirit.require(): only node's own modules are required plainly
+    if (other) early = true;
   }
   const bad = requires.filter(function (r) {
     const p = r.path;
@@ -576,7 +581,7 @@ function requireOnNode(run, rel) {
     // answers at once and stands at its place as that answer.
     const iface = /\/api\.js$/.test(rel);
     const probe = 'const path = require("path"); const s = require(path.join(process.cwd(), "spirit", "spirit.js"));' +
-      '(async function () { let at = null, err = "", promise = false; try { at = s.require(' + JSON.stringify(rel) + '); promise = !!(at && typeof at.then === "function"); if (' + iface + ' && promise) at = await at; } catch (e) { err = String(e && e.message || e); }' +
+      '(async function () { let at = null, err = false, promise = false; try { at = s.require(' + JSON.stringify(rel) + '); promise = !!(at && typeof at.then === "function"); if (' + iface + ' && promise) at = await at; } catch (e) { err = true; }' +
       'const keys = ' + JSON.stringify(placeKeys(rel)) + '; const place = keys.reduce(function (o, k) { return o == null ? undefined : o[k]; }, s.required);' +
       'process.stdout.write("\\n@@" + JSON.stringify({ err: err, promise: ' + iface + ' ? false : promise, placed: ' + iface + ' ? place !== undefined : place !== undefined && place === at }) + "\\n"); process.exit(0); }());';
     const kid = spawn(process.execPath, ['-e', probe], { cwd: run, stdio: ['ignore', 'pipe', 'pipe'] });
@@ -589,7 +594,7 @@ function requireOnNode(run, rel) {
       clearTimeout(t);
       const m = /\n@@(.*)\n/.exec(out);
       let r = null; try { r = m ? JSON.parse(m[1]) : null; } catch (e) { r = null; }
-      resolve(r || { err: 'it did not finish loading', promise: false, placed: false });
+      resolve(r || { err: true, promise: false, placed: false });
     });
   });
 }
@@ -641,10 +646,10 @@ function every() {
       await page.send('Page.navigate', { url: E.node.base + '/face.html' });
       await until(function () { return page.evaluate('!!(window.spirit && window.spirit.ready)').then(Boolean); }, WAIT);
       const keys = JSON.stringify(placeKeys(f));
-      const got = await page.evaluate('window.spirit.ready.then(function () { window.pageErrors = []; window.addEventListener("error", function (e) { window.pageErrors.push(String(e.message)); }); return spirit.require(' + JSON.stringify(f) + '); })' +
+      const got = await page.evaluate('window.spirit.ready.then(function () { window.pageErrors = []; window.addEventListener("error", function () { window.pageErrors.push(true); }); return spirit.require(' + JSON.stringify(f) + '); })' +
         '.then(function () { var k = ' + keys + '; var at = function (root) { return k.reduce(function (o, x) { return o == null ? undefined : o[x]; }, root); };' +
-        ' var el = at(spirit.element); return JSON.stringify({ err: (window.pageErrors || []).join("; "), placed: at(spirit.required) !== undefined, factory: !!el && typeof el.create === "function" }); },' +
-        ' function (e) { return JSON.stringify({ err: String(e && e.message || e), placed: false, factory: false }); })');
+        ' var el = at(spirit.element); return JSON.stringify({ err: (window.pageErrors || []).length > 0, placed: at(spirit.required) !== undefined, factory: !!el && typeof el.create === "function" }); },' +
+        ' function () { return JSON.stringify({ err: true, placed: false, factory: false }); })');
       let r = null; try { r = JSON.parse(got); } catch (e) { r = { err: true, placed: false, factory: false }; }
       if (r.err) { if (E.elements.indexOf(f) !== -1) E.noFactory.push(f); continue; }
       E.pageLoaded.push(f);
@@ -664,8 +669,7 @@ function every() {
     return (E.elements.length > 0 && !E.noFactory.length) || false;
   }, test.limit.quick);
 
-  // Each page module in a run of its own, so each is recorded under its own module (spirit/test/testReport.js); each page
-  // that is not green named in the answer, by its address.
+  // Each page module in a run of its own, so each is recorded under its own module (spirit/test/testReport.js).
   test.run('its page is green', 0.4, async function () {
     if (!nodeUp()) return false;
     if (!E.files2 || !E.files2.length) return false;
@@ -680,8 +684,7 @@ function every() {
       });
       const greens = Number((/✅:(\d+)/.exec(out) || [])[1] || 0);
       const reds = Number((/❌:(\d+)/.exec(out) || [])[1] || 0);
-      const at = '/' + f.replace(/\.js$/, '') + '/headLessBrowser.html';
-      if (!(reds === 0 && greens > 0)) red.push(at);
+      if (!(reds === 0 && greens > 0)) red.push(true);
     }
     return listed(red);
   }, test.limit.long);
@@ -701,7 +704,7 @@ function every() {
 // it, and every rule after it fails on it, so nothing is skipped in silence.
 const PAGE_MS = 300000;
 async function session() {
-  const P = { stage: 'chrome', fail: false, notes: [] };
+  const P = { stage: 'chrome', fail: false };
   const chrome = findChrome();
   if (!chrome) { P.fail = true; return P; }
   // ITS OWN APP'S SERVER ON TOO (goal/G47.1, cleaning, Andy's testicle's first red: spirit/app/backup/api.js never loaded,
@@ -725,7 +728,6 @@ async function session() {
         .then(function (r) { return r.json(); }).then(function (b) { return !!(b && b.interface); }, function () { return false; });
     }, 30000);
     if (!served) { P.fail = true; return P; }
-    P.notes.push('its app\'s server ' + own + ' answers its interface');
   }
   const page = P.page = await chromePage(chrome);
   drawing = P;
@@ -757,14 +759,14 @@ async function session() {
   }, WAIT);
   await quiet();
   P.report = report;
-  P.thrown = page.heard.filter(function (m) { return m.method === 'Runtime.exceptionThrown'; }).map(function (m) { return (m.params.exceptionDetails.exception && m.params.exceptionDetails.exception.description) || m.params.exceptionDetails.text; });
+  P.thrown = page.heard.filter(function (m) { return m.method === 'Runtime.exceptionThrown'; }).map(function () { return true; });
   // A file asked for and not there is missing; the door's answers (a refusal answers 404 too) and the browser's own
   // favicon ask are not files the page asked for.
   const notFile = function (url) { return /\/api\/|\/favicon\.ico$/.test(String(url || '')); };
   P.errors = page.heard.filter(function (m) { return (m.method === 'Runtime.consoleAPICalled' && m.params.type === 'error') || (m.method === 'Log.entryAdded' && m.params.entry.level === 'error' && !notFile(m.params.entry.url)); })
-    .map(function (m) { return m.params.entry ? m.params.entry.text : (m.params.args || []).map(function (a) { return a.value || a.description; }).join(' '); });
-  P.missing = page.heard.filter(function (m) { return m.method === 'Network.responseReceived' && m.params.response.status >= 400 && !notFile(m.params.response.url); }).map(function (m) { return m.params.response.status + ' ' + m.params.response.url.replace(node.base, ''); })
-    .concat(page.heard.filter(function (m) { return m.method === 'Network.loadingFailed' && !m.params.canceled; }).map(function (m) { return 'failed ' + m.params.errorText; }));
+    .map(function () { return true; });
+  P.missing = page.heard.filter(function (m) { return m.method === 'Network.responseReceived' && m.params.response.status >= 400 && !notFile(m.params.response.url); }).map(function () { return true; })
+    .concat(page.heard.filter(function (m) { return m.method === 'Network.loadingFailed' && !m.params.canceled; }).map(function () { return true; }));
   // NO ELEMENT INSTALLED, KNOWN BY THE PAGE, NOT BY READING ITS CODE (goal/G47.1, box v121: "no code reading: after
   // loading, the page looks at window.spirit.element at the script's own path, where installSpiritElement puts an element
   // with its create (a helper goes to spirit.required)"; "with no element installed these are skipped, never counted
@@ -779,13 +781,12 @@ async function session() {
   // Andy: "wsl, yes.").
   // 1. "its create() box declares a constraint in its computed style: overflow not visible (hidden, clip, auto, scroll);
   //    wrapping and ellipsis only on top of that. overflow visible is red."
-  P.unbounded = JSON.parse(await page.evaluate('JSON.stringify(Array.prototype.map.call(window.spiritMount.box.children, function (el) { var cs = getComputedStyle(el); return { node: el.tagName.toLowerCase() + (el.id ? "#" + el.id : "") + (el.className && typeof el.className === "string" ? "." + el.className.trim().split(/\\s+/).join(".") : ""), x: cs.overflowX, y: cs.overflowY }; }).filter(function (b) { return b.x === "visible" || b.y === "visible"; }))'));
+  P.unbounded = JSON.parse(await page.evaluate('JSON.stringify(Array.prototype.map.call(window.spiritMount.box.children, function (el) { var cs = getComputedStyle(el); return { x: cs.overflowX, y: cs.overflowY }; }).filter(function (b) { return b.x === "visible" || b.y === "visible"; }))'));
   P.boxCount = await page.evaluate('window.spiritMount.box.children.length');
   // 2. "every input in it has a maxlength."
   const INPUTS = 'Array.prototype.filter.call(window.spiritMount.box.querySelectorAll("textarea, input"), function (el) { return el.tagName === "TEXTAREA" || /^(|text|email|search|url|tel|password|number)$/.test(el.type || ""); })';
-  const nameOf = 'function (el) { var box = window.spiritMount.box; var parts = []; for (var n = el; n && n !== box; n = n.parentNode) { if (n.id || n === el) parts.unshift(n.tagName.toLowerCase() + (n.id ? "#" + n.id : "") + (n === el && el.placeholder ? "[" + el.placeholder + "]" : "") + (n === el && el.tagName === "BUTTON" ? "[" + String(el.textContent || el.title || "").trim().slice(0, 30) + "]" : "")); } return parts.join(" > "); }';
   P.inputCount = await page.evaluate(INPUTS + '.length');
-  P.noMax = JSON.parse(await page.evaluate('JSON.stringify(' + INPUTS + '.filter(function (el) { return !(el.maxLength > 0); }).map(' + nameOf + '))'));
+  P.noMax = JSON.parse(await page.evaluate('JSON.stringify(' + INPUTS + '.filter(function (el) { return !(el.maxLength > 0); }).map(function () { return true; }))'));
   // 3. "every input and button in it has a listener on itself or on a node between it and the mounted element's box (read
   //    through Chrome's debugger, DOMDebugger.getEventListeners, no code reading); one on the document or window does not
   //    count. none: red at 0.6."
@@ -795,7 +796,7 @@ async function session() {
   for (let i = 0; i < P.pressableCount; i++) {
     const way = await page.send('Runtime.evaluate', { expression: '(function () { var box = window.spiritMount.box; var el = ' + PRESSABLE + '[' + i + ']; var a = []; for (var n = el; n && n !== box; n = n.parentElement) a.push(n); return a; }())' });
     const arr = way.result && way.result.result && way.result.result.objectId;
-    if (!arr) { P.deaf.push('item ' + i + ': its way up could not be read'); continue; }
+    if (!arr) { P.deaf.push(true); continue; }
     const props = await page.send('Runtime.getProperties', { objectId: arr, ownProperties: true });
     const nodes = ((props.result && props.result.result) || []).filter(function (p) { return /^\d+$/.test(p.name) && p.value && p.value.objectId; });
     let heard = false;
@@ -803,13 +804,13 @@ async function session() {
       const l = await page.send('DOMDebugger.getEventListeners', { objectId: n.value.objectId });
       if (l.result && (l.result.listeners || []).length) { heard = true; break; }
     }
-    if (!heard) P.deaf.push(await page.evaluate('(' + nameOf + ')(' + PRESSABLE + '[' + i + '])'));
+    if (!heard) P.deaf.push(true);
   }
   // 4. "no node of it carries margin, padding or gap in its style attribute, and no <style> block it adds sets them (read
   //    from the page's style sheets)". The bare page's own <style> (html, body) is the page's, not the element's.
   const SPACING = '/(^|;)\\s*(margin|padding|gap|row-gap|column-gap)(-[a-z-]+)?\\s*:/i';
-  P.spacedNodes = JSON.parse(await page.evaluate('JSON.stringify(Array.prototype.filter.call(window.spiritMount.box.querySelectorAll("*"), function (el) { return ' + SPACING + '.test(el.getAttribute("style") || ""); }).map(function (el) { return (' + nameOf + ')(el) + " style=\\"" + el.getAttribute("style").slice(0, 80) + "\\""; }))'));
-  P.spacedRules = JSON.parse(await page.evaluate('JSON.stringify([].concat.apply([], Array.prototype.filter.call(document.styleSheets, function (s) { var o = s.ownerNode; return o && o.tagName === "STYLE" && !/^\\s*html, body \\{ height: 100%; margin: 0; \\}/.test(o.textContent); }).map(function (s) { var out = []; try { Array.prototype.forEach.call(s.cssRules, function (r) { if (r.style && ' + SPACING + '.test(r.style.cssText)) out.push(r.selectorText + " { " + r.style.cssText.slice(0, 80) + " }"); }); } catch (e) { out.push("a style block that cannot be read: " + e.message); } return out; })))'));
+  P.spacedNodes = JSON.parse(await page.evaluate('JSON.stringify(Array.prototype.filter.call(window.spiritMount.box.querySelectorAll("*"), function (el) { return ' + SPACING + '.test(el.getAttribute("style") || ""); }).map(function () { return true; }))'));
+  P.spacedRules = JSON.parse(await page.evaluate('JSON.stringify([].concat.apply([], Array.prototype.filter.call(document.styleSheets, function (s) { var o = s.ownerNode; return o && o.tagName === "STYLE" && !/^\\s*html, body \\{ height: 100%; margin: 0; \\}/.test(o.textContent); }).map(function (s) { var out = []; try { Array.prototype.forEach.call(s.cssRules, function (r) { if (r.style && ' + SPACING + '.test(r.style.cssText)) out.push(true); }); } catch (e) { out.push(true); } return out; })))'));
 
   // EVERY BOX INSIDE IT BOUNDED, TALL AND WIDE (goal/G41.19, box v23; rule/16; Andy: "list-in-a-sized-box
   // (anything-in-a-sized-box) are really a test of the container", "any container that mounts unknown stuff inside it
@@ -851,8 +852,7 @@ async function session() {
     ' while ((n = walk.nextNode())) { var g = n.textContent.match(/\\p{Extended_Pictographic}/gu); if (!g) continue; var el = n.parentElement;' +
     '  if (!el || el.textContent.replace(/[\\p{Extended_Pictographic}\\uFE0F\\u200D\\u{1F3FB}-\\u{1F3FF}\\s]/gu, "") !== "") continue;' +
     '  var inIcon = !!mark && !!el && !!el.closest("." + mark); if (inIcon || !el.getClientRects().length) continue;' +
-    '  var parts = []; for (var e = el; e && e !== box; e = e.parentNode) { if (e.id || e === el) parts.unshift(e.tagName.toLowerCase() + (e.id ? "#" + e.id : "")); }' +
-    '  out.push(g.join("") + " in " + parts.join(" > ")); } return out; }())';
+    '  out.push(true); } return out; }())';
   await page.evaluate('Promise.resolve().then(function () { return spirit.require("spirit/element/icon.js"); }).then(function () { var p = document.createElement("div"); var i = spirit.element.spirit.element.icon.create(p, { glyph: "A" }); window.spiritIconMark = String(i && i.className || "").trim().split(/\\s+/)[0] || ""; }, function () { window.spiritIconMark = ""; })');
   P.iconMark = await page.evaluate('window.spiritIconMark || ""');
   const loose = {};
@@ -869,7 +869,6 @@ async function session() {
     await probe();
     await iconProbe();
   }
-  P.notes.push('pressed ' + count + ' tool and tab buttons; ' + Object.keys(seen).length + ' scrolling boxes');
   P.loose = Object.keys(loose);
   P.spills = await page.evaluate('(function () { var b = window.spiritMount.box; return b.scrollHeight > b.clientHeight + 1 || document.documentElement.scrollWidth > document.documentElement.clientWidth + 1; }())');
 
@@ -891,7 +890,6 @@ async function session() {
     const kept = await page.evaluate('(function () { var el = ' + FIELDS + '[' + i + ']; var n = el ? new TextEncoder().encode(el.value).length : 0; if (el) el.value = ""; return n; }())');
     fields.push({ at: at, kept: kept });
   }
-  P.notes.push(fields.length + ' fields typed past ' + MOST_BYTES + ' bytes');
 
   // EVERY BUTTON PRESSED, AND WHAT A PRESS DOES WATCHED (goal/G41.27): each button it draws is pressed in turn, and what
   // leaves the page, what it listens to and what it draws are judged by the rules that follow.
@@ -912,7 +910,6 @@ async function session() {
   P.usedFamilies = (W.families || []).slice();
   (W.subs || []).forEach(function (x) { if (x.mine && x.kind === 'data.watch' && x.path) { const f = String(x.path).split('/')[1]; if (f && P.usedFamilies.indexOf(f) === -1) P.usedFamilies.push(f); } });
   P.unloaded = JSON.parse(await page.evaluate('JSON.stringify(' + JSON.stringify(P.usedFamilies) + '.filter(function (f) { var r = (window.spirit && window.spirit.required) || {}; var s = r.spirit || {}; return !((s[f] && s[f].api) || (s.app && s.app[f] && s.app[f].api)); }))'));
-  P.notes.push('pressed ' + pressed + ' buttons; ' + W.net.length + ' calls on the wire; ' + W.writes.length + ' writes; ' + W.subs.length + ' subscriptions');
 
   // AND ITS WATCHING REDRAWS IT (goal/G41.28; Andy: "YOUR TEST WILL MAKE SURE THAT THE CACHING AND LISTENING IS DONE TO
   // FUCKING SPEC AS GOOD AS YOU POSSIBLY CAN"): a marked row written into each spirit.data path it watches must change

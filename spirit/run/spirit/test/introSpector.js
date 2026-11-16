@@ -24,7 +24,7 @@ const W = {};
 const post = function (call, args) {
   return fetch(W.N.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: call, args: args }) })
     .then(function (r) { return r.text().then(function (t) { let body = null; try { body = JSON.parse(t); } catch (e) { /* judged as text */ } return { status: r.status, body: body, text: t }; }); },
-      function (e) { return { status: 0, body: null, text: String(e && e.message) }; });
+      function () { return { status: 0, body: null, text: '' }; });
 };
 function noNode() { return !(W.N && W.N.up && W.N.root); }
 

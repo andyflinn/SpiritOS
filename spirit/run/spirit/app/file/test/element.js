@@ -74,7 +74,7 @@ async function call(base, verb, args) {
     const r = await fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) });
     const text = await r.text();
     return { status: r.status, text: text, body: parsed(text) };
-  } catch (e) { return { status: 0, text: String(e && e.message), body: null }; }
+  } catch (e) { return { status: 0, text: '', body: null }; }
 }
 async function boot(run) {
   const port = await freePort();
@@ -115,10 +115,7 @@ const HANDS = '(function () {' +
   '  sized: function (sel, w, h) { var b = box(); b.style.width = w + "px"; b.style.height = h + "px"; return new Promise(function (r) { setTimeout(r, 500); }).then(function () { var e = all(sel)[0], o = b.getBoundingClientRect(); if (!e) return { none: true }; var r = e.getBoundingClientRect(), x = all("button").filter(function (k) { return String(k.textContent).trim() === "✕" && !/clear$/.test(k.id || ""); })[0]; var xr = x ? x.getBoundingClientRect() : null; return { left: r.left - o.left, top: r.top - o.top, right: o.right - r.right, bottom: o.bottom - r.bottom, w: r.width, h: r.height, fit: getComputedStyle(e).objectFit, bar: !!xr && xr.top >= o.top - 1 && xr.bottom <= o.bottom + 1 }; }); },' +
   '  unsized: function () { var b = box(); b.style.width = "100%"; b.style.height = "100%"; return true; },' +
   // A row in a narrow pane: true when nothing of the bubble holding word goes past its edge or the pane's.
-  '  folds: function (word, w) { var b = box(); b.style.width = w + "px"; return new Promise(function (r) { setTimeout(r, 500); }).then(function () { var k = all("button").filter(function (x) { return String(x.textContent).indexOf(word) !== -1; })[0]; var row = k && k.closest(".shell-bubble"); var out = !row ? "no row" : (row.scrollWidth > row.clientWidth + 1 || row.getBoundingClientRect().right > b.getBoundingClientRect().right + 1) ? "past its edge" : "ok"; b.style.width = "100%"; return out; }); },' +
-  // What the list stands at, for a failure line: its words, which "in" is chosen (drawn bold, spirit/element/search.js),
-  // and its first rows as they read.
-  '  state: function () { var i = all("input[id$=text]")[0]; var on = all("button[data-filter=\\"in\\"]").filter(function (b) { return getComputedStyle(b).fontWeight >= 600; }).map(function (b) { return b.getAttribute("data-value"); }); return { words: i ? i.value : null, in: on, first: all("tr[data-key]").slice(0, 4).map(function (t) { return t.getAttribute("data-key") + " | " + String(t.innerText).replace(/\\s+/g, " ").slice(0, 60); }) }; },' +
+  '  folds: function (word, w) { var b = box(); b.style.width = w + "px"; return new Promise(function (r) { setTimeout(r, 500); }).then(function () { var k = all("button").filter(function (x) { return String(x.textContent).indexOf(word) !== -1; })[0]; var row = k && k.closest(".shell-bubble"); var out = !!row && !(row.scrollWidth > row.clientWidth + 1 || row.getBoundingClientRect().right > b.getBoundingClientRect().right + 1); b.style.width = "100%"; return out; }); },' +
   '  order: function (words) { var t = window.__t.text(); return words.map(function (w) { return t.indexOf(w); }); },' +
   '}; return "hands"; }())';
 
@@ -209,7 +206,7 @@ const selector = function (face) {
 // the box: "file.js is an element, spirit.element.spirit.app.file.element.create(container) -> { destroy() }"
 test.run('create(container) draws into it and answers { destroy }, and destroy leaves it empty', 0.2, async function () {
   if (!W.page) return false;
-  const made = await W.c.evaluate('(function () { var b = document.createElement("div"); b.id = "zzOwn"; b.style.cssText = "position:absolute;left:0;top:0;width:50%;height:50%"; document.body.appendChild(b); return spirit.require("spirit/app/file/element.js").then(function () { var E = spirit.element.spirit.app.file.element; if (!E || typeof E.create !== "function") return "no spirit.element.spirit.app.file.element.create"; var m = E.create(b); if (!m || typeof m.destroy !== "function") return "create answered " + typeof m; return new Promise(function (r) { setTimeout(r, 2500); }).then(function () { var full = b.innerHTML.length > 0; m.destroy(); var empty = b.innerHTML === ""; b.remove(); return full && empty ? "ok" : "drew " + full + ", emptied " + empty; }); }, function (e) { return "load: " + e; }); }())');
+  const made = await W.c.evaluate('(function () { var b = document.createElement("div"); b.id = "zzOwn"; b.style.cssText = "position:absolute;left:0;top:0;width:50%;height:50%"; document.body.appendChild(b); return spirit.require("spirit/app/file/element.js").then(function () { var E = spirit.element.spirit.app.file.element; if (!E || typeof E.create !== "function") return false; var m = E.create(b); if (!m || typeof m.destroy !== "function") return false; return new Promise(function (r) { setTimeout(r, 2500); }).then(function () { var full = b.innerHTML.length > 0; m.destroy(); var empty = b.innerHTML === ""; b.remove(); return full && empty ? "ok" : false; }); }, function () { return false; }); }())');
   return made === 'ok' || false;
 }, test.limit.slow);
 
@@ -450,7 +447,7 @@ test.run('Save sits in a bubble of the kind rowForm uses', 0.2, async function (
 test.run('the box: "Rows are inline, not boxes: they fold": in a pane 120px wide nothing of that row goes past its edge', 0.2, async function () {
   if (!W.page) return false;
   const folded = await T('folds("Save", 120)');
-  const r = folded === 'ok' ? true : false;
+  const r = folded === true ? true : false;
   await T('close("notes.txt")');
   await waitFor('rows().length > 0');
   return r;
@@ -496,7 +493,7 @@ test.run('the box (Q9): no Open with in it', 0.2, async function () {
 // nothing threw on the page
 test.run('no uncaught error on the page, all the way', 0.2, async function () {
   if (!W.c) return false;
-  const thrown = W.c.heard.filter(function (m) { return m.method === 'Runtime.exceptionThrown'; }).map(function (m) { return (m.params.exceptionDetails.exception && m.params.exceptionDetails.exception.description) || m.params.exceptionDetails.text; });
+  const thrown = W.c.heard.filter(function (m) { return m.method === 'Runtime.exceptionThrown'; });
   await stop(W.N.child);
   return !thrown.length || false;
 }, test.limit.quick);

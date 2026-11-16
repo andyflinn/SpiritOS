@@ -66,7 +66,7 @@ const PLANT = {
   'spirit/app/testicle/temp/zzTesticle/test/kappa.js': SUITE_HEAD + [
     "test.run('the world: kappa waits a moment', 0.2, function () { return new Promise(function (r) { setTimeout(function () { r(true); }, 3000); }); }, test.limit.quick);",
     "test.run('kappa answers its first', 0.2, function () { return true; }, test.limit.quick);",
-    "test.run('kappa fails its second', 0.2, function () { return 'it fails, as planted'; }, test.limit.quick);",
+    "test.run('kappa fails its second', 0.2, function () { return false; }, test.limit.quick);",
     "test.run('kappa was started with no argument', 0.2, function () { return process.argv.length === 2 || false; }, test.limit.quick);",
   ].join('\n') + '\n',
   'spirit/app/testicle/temp/zzTesticle/lambda.js': '\'use strict\';\n// lambda\n',
@@ -131,7 +131,7 @@ async function call(base, verb, args) {
     const r = await fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) });
     const text = await r.text();
     return { status: r.status, text: text, body: parsed(text) };
-  } catch (e) { return { status: 0, text: String(e && e.message), body: null }; }
+  } catch (e) { return { status: 0, text: '', body: null }; }
 }
 async function boot(run) {
   const port = await freePort();
@@ -160,7 +160,7 @@ function tablesOnce(dbFile) {
     let tests = [];
     try { tests = db.prepare('SELECT * FROM testicle').all(); } catch (e) { tests = null; }
     return { script: file, suite: suite, test: tests };
-  } catch (e) { return { error: String(e && e.message || e), script: [], suite: [], test: null }; }
+  } catch (e) { return { error: true, script: [], suite: [], test: null }; }
   finally { try { if (db) db.close(); } catch (e) { /* closed */ } }
 }
 function scriptRow(t, name) { return t.script.filter(function (r) { return r.name === name; })[0] || null; }
@@ -316,7 +316,7 @@ test.run('the world: testicle.db holds the table script', 0.2, function () {
 // goal/G47.1, the rename cycle, the box: "The testicle test table is renamed \"testicle\": the table in testicle.db, its
 // index, and the branch data.js keeps it under".
 const sqlNames = function (type) {
-  try { const d = new DatabaseSync(DB, { readOnly: true }); const r = d.prepare('SELECT name, tbl_name FROM sqlite_master WHERE type = ?').all(type); d.close(); return r; } catch (e) { return [{ name: 'unreadable: ' + (e && e.message), tbl_name: '' }]; }
+  try { const d = new DatabaseSync(DB, { readOnly: true }); const r = d.prepare('SELECT name, tbl_name FROM sqlite_master WHERE type = ?').all(type); d.close(); return r; } catch (e) { return []; }
 };
 test.run('testicle.db holds the table testicle', 0.2, function () {
   if (!up()) return false;
@@ -357,7 +357,7 @@ test.run('at start a planted script\'s own suite has its suite row', 0.2, functi
 // ── goal/G47.1, box v79, 3: three fields on the script table ──
 // "reClassify, boolean: \"this script needs re-classification.\"", "browserOnly, boolean", "nodeOnly, boolean".
 const scriptColumns = function () {
-  try { const d = new DatabaseSync(DB, { readOnly: true }); const c = d.prepare('PRAGMA table_info(script)').all().map(function (r) { return r.name; }); d.close(); return c; } catch (e) { return ['unreadable: ' + (e && e.message)]; }
+  try { const d = new DatabaseSync(DB, { readOnly: true }); const c = d.prepare('PRAGMA table_info(script)').all().map(function (r) { return r.name; }); d.close(); return c; } catch (e) { return []; }
 };
 test.run('the script table has the columns reClassify, browserOnly and nodeOnly', 0.2, function () {
   if (!up()) return false;
@@ -1004,9 +1004,9 @@ test.run('the world: the runner idle, so the table holds still while every varia
 }, test.limit.long);
 // One test, its answer naming each variation that breaks (titles are fixed words, goal/G47.2).
 const eachOf = async function (list, one) {
-  const bad = [];
-  for (const v of list) { const r = await one(v); if (r !== true) bad.push(v[0] + ': ' + r); }
-  return bad.length === 0 || false;
+  let bad = 0;
+  for (const v of list) { const r = await one(v); if (r !== true) bad++; }
+  return bad === 0 || false;
 };
 test.run('testicle.search, in each of its variations: every matching test, or a full answer of matching tests', 0.2, async function () {
   if (!loud) return false;
@@ -2028,7 +2028,7 @@ test.run('the world: spirit/app/testicle/temp/zzTop/ with a long suite, a suite 
     "test.run('the world: zzLong waits 40 s', 0.2, function () { return new Promise(function (r) { setTimeout(function () { r(true); }, 40000); }); }, test.limit.slow);\n" +
     "test.run('zzLong answers', 0.2, function () { return true; }, test.limit.quick);\ntest.after(function () { log('zzLong', 'end'); });\n");
   put(TREDS, SUITE_HEAD + TOP_LOG + "log('zzRed', 'start');\n" +
-    "test.run('zzRed fails', 0.9, function () { return 'red, as planted'; }, test.limit.quick);\ntest.after(function () { log('zzRed', 'end'); });\n");
+    "test.run('zzRed fails', 0.9, function () { return false; }, test.limit.quick);\ntest.after(function () { log('zzRed', 'end'); });\n");
   put(TCALMS, SUITE_HEAD + TOP_LOG + "log('zzCalm', 'start');\n" +
     "test.run('zzCalm answers', 0.2, function () { return true; }, test.limit.quick);\ntest.after(function () { log('zzCalm', 'end'); });\n");
   const ok = await until(function () { const t = tables(DB); return Promise.resolve(currentOf(t, TRED, TREDS, 'zzRed fails').length > 0 && currentOf(t, TLONG, TLONGS, 'zzLong answers').length > 0 && currentOf(t, TCALM, TCALMS, 'zzCalm answers').length > 0); }, 280000);
@@ -2107,7 +2107,7 @@ let staleWorld = false;
 test.run('the world: spirit/app/testicle/temp/zzStale/ whose own suite reports one test green and one red, run once', 0.2, async function () {
   if (!up()) return false;
   put(SZ, '\'use strict\';\n// zzStale\n');
-  put(SZS, SUITE_HEAD + "test.run('stale one', 0.2, function () { return true; }, test.limit.quick);\ntest.run('stale two', 0.2, function () { return 'red, as planted'; }, test.limit.quick);\n");
+  put(SZS, SUITE_HEAD + "test.run('stale one', 0.2, function () { return true; }, test.limit.quick);\ntest.run('stale two', 0.2, function () { return false; }, test.limit.quick);\n");
   const ok = await until(function () { const t = tables(DB); return Promise.resolve(currentOf(t, SZ, SZS, 'stale one').length > 0 && currentOf(t, SZ, SZS, 'stale two').length > 0); }, 280000);
   await idle(280000);
   staleWorld = !!ok;

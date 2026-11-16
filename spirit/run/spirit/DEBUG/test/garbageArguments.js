@@ -95,7 +95,7 @@ test.run('every argument is given every type JSON.parse makes, and missing, alon
         const mine = x === 'missing' ? !(k in a) : (k in a) && kindOf(a[k]) === x;
         return mine && keys.every(function (o) { return o === k || (o in a && a[o] === REQ[o]); });
       });
-      if (!hit) miss.push(k + ':' + x);
+      if (!hit) miss.push(true);
     });
   });
   return !miss.length || false;
@@ -112,7 +112,7 @@ test.run('pairs, not every combination: any two arguments meet in every pairing 
   const miss = [];
   for (let i = 0; i < keys.length; i++) for (let j = i + 1; j < keys.length; j++) for (const x of KINDS) for (const y of KINDS) {
     if (x === kindOf(REQ[keys[i]]) && y === kindOf(REQ[keys[j]])) continue;
-    if (!seen.has(i + ':' + j + ':' + x + ':' + y)) miss.push(keys[i] + '=' + x + ' with ' + keys[j] + '=' + y);
+    if (!seen.has(i + ':' + j + ':' + x + ':' + y)) miss.push(true);
   }
   return !miss.length || false;
 }, test.limit.quick);

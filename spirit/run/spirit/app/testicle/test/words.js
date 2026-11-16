@@ -20,11 +20,16 @@ const OTHERS = execFileSync('git', ['ls-files', '--', 'spirit/app/testicle'], { 
   .filter(function (f) { return /\.js$/.test(f) && !/(^|\/)test\//.test(f) && !/\/temp\//.test(f) && f !== REL; });
 // What a script builds itself: a result icon, or one of the status phrases.
 const BUILT = [
-  { what: 'a result icon', re: /['"`](✅|❌)['"`]/ },
-  { what: 'the phrase "<x> of <n> reported"', re: /['"`] reported: ['"`]/ },
-  { what: 'the phrase "running <suite> for <script>"', re: /['"`]running ['"`]\s*\+/ },
-  { what: 'the phrase "classifying <n> of <m>"', re: /['"`]classifying ['"`]\s*\+/ },
-  { what: 'the words success and failure', re: /['"`](success|failure)['"`]\s*\)?\s*[;:,)]/ },
+  // a result icon
+  { re: /['"`](✅|❌)['"`]/ },
+  // the phrase "<x> of <n> reported"
+  { re: /['"`] reported: ['"`]/ },
+  // the phrase "running <suite> for <script>"
+  { re: /['"`]running ['"`]\s*\+/ },
+  // the phrase "classifying <n> of <m>"
+  { re: /['"`]classifying ['"`]\s*\+/ },
+  // the words success and failure
+  { re: /['"`](success|failure)['"`]\s*\)?\s*[;:,)]/ },
 ];
 
 test.run('spirit/app/testicle/words.js is there', 0.4, function () {
@@ -37,7 +42,7 @@ test.run('no other script of testicle builds a result icon or a status phrase it
   const bad = [];
   OTHERS.forEach(function (f) {
     const code = codeOf(fs.readFileSync(path.join(RUN, f), 'utf8'));
-    BUILT.forEach(function (b) { if (b.re.test(code)) bad.push(f + ': ' + b.what); });
+    BUILT.forEach(function (b) { if (b.re.test(code)) bad.push(f); });
   });
   return bad.length === 0 || false;
 }, test.limit.quick);

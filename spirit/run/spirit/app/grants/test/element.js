@@ -64,7 +64,7 @@ function world(o) {
   win.spirit = { element: { spirit: { element: page, app: {} } },
     require: function (p) {
       w.required.push(String(p));
-      if (opt.refuse && opt.refuse.indexOf(p) !== -1) return Promise.reject(new Error('not-found ' + p));
+      if (opt.refuse && opt.refuse.indexOf(p) !== -1) return Promise.reject(new Error());
       const put = function () { const n = FILES[p]; if (n) { const at = AT[n] || [n]; at.slice(0, -1).reduce(function (o, k) { return (o[k] = o[k] || {}); }, page)[at[at.length - 1]] = E[n]; } return {}; };
       return opt.held ? opt.held.then(put) : Promise.resolve(put());
     } };
@@ -264,7 +264,7 @@ const home = async function (verb, args) {
     const r = await fetch(B.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) });
     const text = await r.text();
     return { status: r.status, text: text, body: parsed(text) };
-  } catch (e) { return { status: 0, text: String(e && e.message), body: null }; }
+  } catch (e) { return { status: 0, text: '', body: null }; }
 };
 // A real click on the innermost visible thing whose words are these, inside the shell's box (or the selector given).
 const LEAF = 'function leaf(words, within) { var root = document.querySelector(within || "#zzBox"); if (!root) return null; var all = Array.prototype.slice.call(root.querySelectorAll("*")); return all.filter(function (e) { return e.offsetParent !== null && e.textContent.trim() === words && !Array.prototype.some.call(e.children, function (c) { return c.textContent.trim() === words; }); })[0] || null; }';
@@ -328,7 +328,7 @@ test.run('the world: the face page has its spirit', 0.2, async function () {
 // The shell app, as boot.js hands it the page's app area, here in a box of its own over the page.
 test.run('the world: the shell app is drawn', 0.2, async function () {
   if (!B.page) return false;
-  const made = await B.chrome.evaluate('(function () { var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.require("spirit/app/app/element.js").then(function () { window.__shell = spirit.element.spirit.app.app.element.create(b); return "made"; }, function (e) { return "load: " + e; }); }())');
+  const made = await B.chrome.evaluate('(function () { var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.require("spirit/app/app/element.js").then(function () { window.__shell = spirit.element.spirit.app.app.element.create(b); return "made"; }, function () { return false; }); }())');
   B.shell = made === 'made';
   return B.shell || false;
 }, test.limit.quick);
@@ -545,7 +545,7 @@ async function wcall(base, verb, args) {
     const r = await fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) });
     const text = await r.text();
     return { status: r.status, text: text, body: parsed(text) };
-  } catch (e) { return { status: 0, text: String(e && e.message), body: null }; }
+  } catch (e) { return { status: 0, text: '', body: null }; }
 }
 async function wboot(run) {
   const port = await H.freePort();
@@ -637,7 +637,7 @@ const wwaitFor = function (expr, ms) { return H.until(function () { return R.c.e
   test.run('it calls no verb of its own', 0.2, function () {
     if (!R.c0) return false;
     const verbs = [/\.verb\s*\(/, /\bspirit\.outcome\b/, /\bcallDialog\b/, /\bfetch\s*\(/, /\brelay\W{1,4}status\b/, /\bnode\W{1,4}card\b/, /\bauth\W{1,4}(search|grant|revoke)\b/]
-      .filter(function (re) { return re.test(R.c0); }).map(String);
+      .filter(function (re) { return re.test(R.c0); });
     return !verbs.length || false;
   }, test.limit.quick);
   test.run('as a wrapper, it draws no markup of its own', 0.2, function () {
@@ -695,7 +695,7 @@ const wwaitFor = function (expr, ms) { return H.until(function () { return R.c.e
   // the box, 7: "its <name>.js sets spirit.elements.<name> = { create(container, opts) -> { destroy() } }"
   test.run('its element\'s create draws into the container it is given and answers destroy', 0.2, async function () {
     if (!R.page) return false;
-    const made = await R.c.evaluate('(function () { var b = document.createElement("div"); b.id = "zzOwn"; b.style.cssText = "position:absolute;left:0;top:0;width:50%;height:50%"; document.body.appendChild(b); var p; try { p = spirit.require("spirit/app/' + NAME + '/element.js"); } catch (e) { return "load threw: " + e; } return Promise.resolve(p).then(function () { var E = spirit.element.spirit.app[' + JSON.stringify(NAME) + '] && spirit.element.spirit.app[' + JSON.stringify(NAME) + '].element; if (!E || typeof E.create !== "function") return "no spirit.element.spirit.app.' + NAME + '.element.create"; var m = E.create(b, {}); if (!m || typeof m.destroy !== "function") return "create answered " + typeof m; return new Promise(function (r) { setTimeout(r, 2500); }).then(function () { var drew = b.innerHTML.length > 0; m.destroy(); b.remove(); return drew ? "ok" : "it drew nothing"; }); }, function (e) { b.remove(); return "load: " + e; }); }())');
+    const made = await R.c.evaluate('(function () { var b = document.createElement("div"); b.id = "zzOwn"; b.style.cssText = "position:absolute;left:0;top:0;width:50%;height:50%"; document.body.appendChild(b); var p; try { p = spirit.require("spirit/app/' + NAME + '/element.js"); } catch (e) { return false; } return Promise.resolve(p).then(function () { var E = spirit.element.spirit.app[' + JSON.stringify(NAME) + '] && spirit.element.spirit.app[' + JSON.stringify(NAME) + '].element; if (!E || typeof E.create !== "function") return false; var m = E.create(b, {}); if (!m || typeof m.destroy !== "function") return false; return new Promise(function (r) { setTimeout(r, 2500); }).then(function () { var drew = b.innerHTML.length > 0; m.destroy(); b.remove(); return drew ? "ok" : false; }); }, function () { b.remove(); return false; }); }())');
     return made === 'ok' || false;
   }, test.limit.slow);
 
@@ -703,7 +703,7 @@ const wwaitFor = function (expr, ms) { return H.until(function () { return R.c.e
   // The shell app, as boot.js hands it the page's app area, here in a box of its own over the page.
   test.run('the world: the shell draws its tiles, Files among them', 0.2, async function () {
     if (!R.page) return false;
-    const shell = await R.c.evaluate('(function () { var old = document.getElementById("zzBox"); if (old) old.remove(); var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.require("spirit/app/app/element.js").then(function () { window.__shell = spirit.element.spirit.app.app.element.create(b); return "made"; }, function (e) { return "load: " + e; }); }())');
+    const shell = await R.c.evaluate('(function () { var old = document.getElementById("zzBox"); if (old) old.remove(); var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.require("spirit/app/app/element.js").then(function () { window.__shell = spirit.element.spirit.app.app.element.create(b); return "made"; }, function () { return false; }); }())');
     return shell === 'made' && await wwaitFor('tiles().indexOf("file") !== -1', 10000) ? true : false;
   }, test.limit.quick);
   test.run('Grants has its tile, with nothing pressed', 0.2, async function () {

@@ -28,7 +28,7 @@ test.run('the world: a scratch node, and a Chrome on its face page', 0.2, async 
 }, test.limit.slow);
 test.run('it loads through spirit.require and is spirit.element.spirit.element.search.app.rowFormToggle', 0.2, async function () {
   if (!node || !node.up || !chrome || chrome.error) return false;
-  loaded = await chrome.evaluate('spirit.ready.then(function () { return spirit.require("spirit/element/search/app/rowFormToggle.js"); }).then(function () { return !!(spirit.element.spirit.element.search.app.rowFormToggle && spirit.element.spirit.element.search.app.rowFormToggle.create); }, function (e) { return String(e); })');
+  loaded = await chrome.evaluate('spirit.ready.then(function () { return spirit.require("spirit/element/search/app/rowFormToggle.js"); }).then(function () { return !!(spirit.element.spirit.element.search.app.rowFormToggle && spirit.element.spirit.element.search.app.rowFormToggle.create); }, function () { return false; })');
   return loaded === true ? true : false;
 }, test.limit.quick);
 let made, off, on;

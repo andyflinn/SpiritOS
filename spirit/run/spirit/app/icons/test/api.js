@@ -127,16 +127,16 @@ test.run('spirit.icons.icon is a function on a page', 0.2, async function () {
   if (!W.up) return false;
   await W.chrome.send('Page.navigate', { url: W.node.base + '/face.html' });
   await until(function () { return W.chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
-  const bound = await W.chrome.evaluate('window.spirit.ready.then(function (s) { return typeof (s.icons && s.icons[' + JSON.stringify(W.v) + ']); }, function (e) { return "refused: " + String(e && e.message || e); })');
+  const bound = await W.chrome.evaluate('window.spirit.ready.then(function (s) { return typeof (s.icons && s.icons[' + JSON.stringify(W.v) + ']); }, function () { return false; })');
   return bound === 'function' || false;
 }, test.limit.quick);
 test.run('and it answers a search', 0.2, async function () {
   if (!W.up) return false;
-  const answered = await W.chrome.evaluate('window.spirit.ready.then(function (s) { return s.icons[' + JSON.stringify(W.v) + ']({ op: "search", text: "" }); }).then(function (b) { return JSON.stringify({ items: Array.isArray(b && b.items) }); }, function (e) { return "refused: " + String(e && e.message || e); })');
+  const answered = await W.chrome.evaluate('window.spirit.ready.then(function (s) { return s.icons[' + JSON.stringify(W.v) + ']({ op: "search", text: "" }); }).then(function (b) { return JSON.stringify({ items: Array.isArray(b && b.items) }); }, function () { return false; })');
   return answered === '{"items":true}' || false;
 }, test.limit.quick);
 test.run('an argument it does not name is refused on the page too', 0.2, async function () {
   if (!W.up) return false;
-  const pageBad = await W.chrome.evaluate('window.spirit.ready.then(function (s) { return s.icons[' + JSON.stringify(W.v) + ']({ op: "search", zzExtra: 1 }); }).then(function (b) { return "answered " + JSON.stringify(b); }, function (e) { return "refused"; })');
+  const pageBad = await W.chrome.evaluate('window.spirit.ready.then(function (s) { return s.icons[' + JSON.stringify(W.v) + ']({ op: "search", zzExtra: 1 }); }).then(function () { return false; }, function () { return "refused"; })');
   return pageBad === 'refused' || false;
 }, test.limit.quick);

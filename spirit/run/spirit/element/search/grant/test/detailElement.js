@@ -33,7 +33,7 @@ test.run('the world: a scratch node, and Chrome on its face page', 0.2, async fu
   js = function (s) { return chrome.evaluate(s); };
   // The test's own grants table: it keeps what is revoked, and serves no path under zz/.
   mount = function (id, served) {
-    return js('window.spirit.ready.then(function () { return window.spirit.require("spirit/element/search/grant/detailElement.js"); }).then(function () { var E = (((((window.spirit.element || {}).spirit || {}).element || {}).search || {}).grant || {}).detailElement; if (!E || typeof E.create !== "function") return "no create"; var old = document.getElementById("' + id + '"); if (old) old.remove(); var b = document.body.appendChild(document.createElement("div")); b.id = "' + id + '"; window.__revoked = window.__revoked || []; window["__" + "' + id + '"] = E.create(b, { row: { contact: "KEYZZ", name: "Zz Peer", path: "zz/thing" }, grants: { key: "contact", label: "name", revoke: function (k, p) { window.__revoked.push(k + " " + p); return Promise.resolve(true); }, watch: function (fn) { window.__watchers = (window.__watchers || []).concat([fn]); window.__released = window.__released || 0; return function () { window.__released += 1; }; } }, serves: function () { return ' + (served ? 'true' : 'false') + '; } }); return "made"; }, function (e) { return "ERR " + e; })');
+    return js('window.spirit.ready.then(function () { return window.spirit.require("spirit/element/search/grant/detailElement.js"); }).then(function () { var E = (((((window.spirit.element || {}).spirit || {}).element || {}).search || {}).grant || {}).detailElement; if (!E || typeof E.create !== "function") return false; var old = document.getElementById("' + id + '"); if (old) old.remove(); var b = document.body.appendChild(document.createElement("div")); b.id = "' + id + '"; window.__revoked = window.__revoked || []; window["__" + "' + id + '"] = E.create(b, { row: { contact: "KEYZZ", name: "Zz Peer", path: "zz/thing" }, grants: { key: "contact", label: "name", revoke: function (k, p) { window.__revoked.push(k + " " + p); return Promise.resolve(true); }, watch: function (fn) { window.__watchers = (window.__watchers || []).concat([fn]); window.__released = window.__released || 0; return function () { window.__released += 1; }; } }, serves: function () { return ' + (served ? 'true' : 'false') + '; } }); return "made"; }, function () { return false; })');
   };
   text = function (id) { return js('String((document.getElementById("' + id + '") || {}).innerText || "")'); };
   return true;
@@ -111,6 +111,6 @@ test.run('and lets its watch go', 0.2, async function () {
 }, test.limit.slow);
 test.run('with no row and no table it says it is not configured, and throws nothing', 0.2, async function () {
   if (!js) return false;
-  const bare = await js('(function () { var b = document.body.appendChild(document.createElement("div")); try { spirit.element.spirit.element.search.grant.detailElement.create(b, {}); } catch (e) { return "threw " + e; } return String(b.innerText); })()');
-  return /not configured/.test(bare) ? true : false;
+  const bare = await js('(function () { var b = document.body.appendChild(document.createElement("div")); try { spirit.element.spirit.element.search.grant.detailElement.create(b, {}); } catch (e) { return false; } return String(b.innerText); })()');
+  return bare !== false && /not configured/.test(bare) ? true : false;
 }, test.limit.slow);

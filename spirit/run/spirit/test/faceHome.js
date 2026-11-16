@@ -551,12 +551,12 @@ function page(relay, name, p, body, sid) {
     const host = name + '.relay.example';
     const headers = { Host: host, Origin: 'https://' + host, 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(b) };
     if (sid) headers.Cookie = 'spirit_face=' + sid;
-    const t = setTimeout(function () { q.destroy(); resolve({ status: 0, text: 'no answer in 15 s' }); }, 15000);
+    const t = setTimeout(function () { q.destroy(); resolve({ status: 0, text: '' }); }, 15000);
     const q = http.request({ host: '127.0.0.1', port: relay.port, path: p, method: 'POST', headers: headers }, function (r) {
       let text = ''; r.on('data', function (d) { text += d; });
       r.on('end', function () { clearTimeout(t); resolve({ status: r.statusCode, text: text, body: parsed(text), cookie: String(r.headers['set-cookie'] || '') }); });
     });
-    q.on('error', function (e) { clearTimeout(t); resolve({ status: 0, text: String(e && e.message) }); });
+    q.on('error', function () { clearTimeout(t); resolve({ status: 0, text: '' }); });
     q.end(b);
   });
 }
@@ -1006,7 +1006,7 @@ function appsPage(relay, p, body) {
       let text = ''; r.on('data', function (d) { text += d; });
       r.on('end', function () { resolve({ status: r.statusCode, text: text, cookie: String(r.headers['set-cookie'] || '') }); });
     });
-    q.on('error', function (e) { resolve({ status: 0, text: String(e && e.message) }); });
+    q.on('error', function () { resolve({ status: 0, text: '' }); });
     q.end(b);
   });
 }

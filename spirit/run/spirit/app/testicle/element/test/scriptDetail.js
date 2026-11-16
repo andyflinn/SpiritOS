@@ -12,10 +12,10 @@ const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 const REL = 'spirit/app/testicle/element/scriptDetail.js';
 
 const W = {};
-const ev = function (expr) { return W.page.evaluate(expr).catch(function (e) { return 'threw: ' + (e && e.message || e); }); };
+const ev = function (expr) { return W.page.evaluate(expr).catch(function () { return false; }); };
 const HANDS = '(function () { window.zz = {' +
   ' mount: function (id, o) { var b = document.createElement("div"); b.id = id; b.style.cssText = "width:500px;height:300px;display:flex;flex-direction:column"; document.body.appendChild(b);' +
-  '   try { window["m_" + id] = window.spirit.element.spirit.app.testicle.element.scriptDetail.create(b, o); return true; } catch (e) { return "threw: " + (e && e.message || e); } },' +
+  '   try { window["m_" + id] = window.spirit.element.spirit.app.testicle.element.scriptDetail.create(b, o); return true; } catch (e) { return false; } },' +
   ' title: function (id) { var t = document.querySelector("#" + id + " .testicle-title"); return t ? t.textContent : null; },' +
   ' below: function (id) { var t = document.querySelector("#" + id + " .testicle-below"); return t ? String(t.innerText || "").trim() : null; },' +
   ' list: function (id) { var t = document.querySelector("#" + id + " .testicle-below"); return t ? t.querySelectorAll("[id$=\\"list\\"]").length : -1; },' +

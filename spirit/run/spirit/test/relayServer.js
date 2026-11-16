@@ -181,7 +181,7 @@ const BATCH = 20;
 const FACE_DOMAIN = 'relay.example';
 let HOST = '';
 
-// RAW OVER A BARE SOCKET: the request as written, nothing normalised. Answers { status, text } or { hung } or { error }.
+// RAW OVER A BARE SOCKET: the request as written, nothing normalised. Answers { status, text } or { hung } or { error: true }.
 function raw(base, head, body, opts) {
   const u = new URL(base);
   const o = opts || {};
@@ -195,7 +195,7 @@ function raw(base, head, body, opts) {
     s.on('connect', function () { s.write(head); if (body) s.write(body); });
     s.on('data', function (d) { got += d.toString('latin1'); if (/\r\n\r\n/.test(got) && o.keepOpen) { clearTimeout(timer); finish(answer()); } });
     s.on('end', function () { clearTimeout(timer); finish(got ? answer() : { status: 0, text: '' }); });
-    s.on('error', function (e) { clearTimeout(timer); finish(got ? answer() : { error: String(e && e.code || e) }); });
+    s.on('error', function (e) { clearTimeout(timer); finish(got ? answer() : { error: true }); });
   });
 }
 function postHead(p, len, type, host) {

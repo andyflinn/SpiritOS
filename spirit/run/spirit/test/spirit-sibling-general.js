@@ -79,7 +79,7 @@ const TARGETS = asked ? ALL.filter(function (b) { return b.dir === asked; }) : A
 TARGETS.forEach(function (b) {
   b.api = has(b.dir + '/api.js') ? b.dir + '/api.js' : '';
   b.data = has(b.dir + '/data.js') ? b.dir + '/data.js' : '';
-  try { b.mod = b.api ? require(path.join(RUN, b.api)) : null; } catch (e) { b.mod = { threw: e.message }; }
+  try { b.mod = b.api ? require(path.join(RUN, b.api)) : null; } catch (e) { b.mod = { threw: true }; }
   b.verbs = b.mod && b.mod.verbs && typeof b.mod.verbs === 'object' && !Array.isArray(b.mod.verbs) ? b.mod.verbs : null;
   // Its name, as a client asks it: the folder's name (spirit/app/api.js is the branch app).
   b.family = b.name;
@@ -102,7 +102,7 @@ const out = {};
       out[f] = { placed: !!at && typeof at === 'object', verbs: Object.keys(decl).length,
         unbound: Object.keys(decl).filter(function (v) { return !(fam && typeof fam[names[v] || v] === 'function'); }),
         same: s[name] === fam };
-    } catch (e) { out[f] = { threw: String((e && e.message) || e).slice(0, 200) }; }
+    } catch (e) { out[f] = { threw: true }; }
   }
   console.log(JSON.stringify(out));
   process.exit(0);
@@ -171,7 +171,7 @@ if (withApi.length) {
 // search, so no app may take the name of a verb." (goal/G43.6); ./appServer.md: "<name>.json has no kind or
 // operated. The node operates the server."
 function manifestOf(b) {
-  try { return JSON.parse(fs.readFileSync(path.join(RUN, b.dir + '/' + b.name + '.json'), 'utf8')); } catch (e) { return { threw: e.message }; }
+  try { return JSON.parse(fs.readFileSync(path.join(RUN, b.dir + '/' + b.name + '.json'), 'utf8')); } catch (e) { return { threw: true }; }
 }
 if (apps.length) {
   // <branch>: its description
@@ -258,7 +258,7 @@ if (withData.length) {
   test.run('its data.js loads, and exports its cache rules if it has any', 0.4, function () {
     return overAll(withData, function (b) {
       let mod = null;
-      try { mod = require(path.join(RUN, b.data)); } catch (e) { mod = { threw: e.message }; }
+      try { mod = require(path.join(RUN, b.data)); } catch (e) { mod = { threw: true }; }
       return (!!mod && !mod.threw && (mod.cache === undefined || (mod.cache && typeof mod.cache === 'object'))) ? true : false;
     });
   }, test.limit.quick);
@@ -285,7 +285,7 @@ if (withData.length) {
         try { v = o[k]; } catch (e) { return; }
         const here = at ? at + '.' + k : k;
         if (/^watch./.test(k)) others.push(here);
-        if (k === 'watch' && typeof v === 'function') { if (v.length > 2) told.push(here + ' takes ' + v.length); }
+        if (k === 'watch' && typeof v === 'function') { if (v.length > 2) told.push(here); }
         if (v && typeof v === 'object' && !Array.isArray(v)) walk(v, here, depth + 1);
       });
     }(f.data, '', 0));
@@ -338,10 +338,10 @@ function asksFor(fam, verb, decl) {
   keys.forEach(function (k) {
     if (typeof decl[k] !== 'string') return;
     const wrong = Object.assign({}, base); wrong[k] = wrongFor(decl[k]);
-    out.push({ fam: fam, verb: verb, why: k + ' of the wrong type', args: wrong });
-    if (!/\?$/.test(decl[k])) { const miss = Object.assign({}, base); delete miss[k]; out.push({ fam: fam, verb: verb, why: k + ' left out', args: miss }); }
+    out.push({ fam: fam, verb: verb, args: wrong });
+    if (!/\?$/.test(decl[k])) { const miss = Object.assign({}, base); delete miss[k]; out.push({ fam: fam, verb: verb, args: miss }); }
   });
-  out.push({ fam: fam, verb: verb, why: 'an argument it does not name', args: Object.assign({}, base, { zzNoSuchArgument: 1 }) });
+  out.push({ fam: fam, verb: verb, args:Object.assign({}, base, { zzNoSuchArgument: 1 }) });
   return out;
 }
 
@@ -359,7 +359,7 @@ function raw(call, args) {
   const timer = setTimeout(function () { c.abort(); }, ASK_MS);
   return fetch(N.node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: call, args: args || {} }), signal: c.signal })
     .then(function (r) { return r.text().then(function (t) { let body = null; try { body = JSON.parse(t); } catch (e) { body = null; } return { status: r.status, body: body, text: t }; }); },
-      function (e) { return { status: 0, body: null, text: c.signal.aborted ? 'no answer in ' + (ASK_MS / 1000) + ' s' : String(e && e.message) }; })
+      function () { return { status: 0, body: null, text: '' }; })
     .then(function (r) { clearTimeout(timer); return r; });
 }
 function up() { return !!N.node && N.node.up; }
@@ -500,7 +500,7 @@ if (served.length) {
       if (!page || page.error) return false;
       await page.send('Page.navigate', { url: N.node.base + '/' });
       await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.ready)'); }, 30000);
-      N.got = await page.evaluate('Promise.resolve(window.spirit.ready).then(function () { return Promise.all(' + JSON.stringify(found.map(function (b) { return b.family; })) + '.map(function (n) { return window.spirit.cacheManager(n).then(function () { var f = (window.spirit.data || {})[n]; return [n, "ok", !!f && typeof f.data === "object" && typeof f.cache === "object"]; }, function (e) { return [n, String((e && e.message) || e), false]; }); })); })');
+      N.got = await page.evaluate('Promise.resolve(window.spirit.ready).then(function () { return Promise.all(' + JSON.stringify(found.map(function (b) { return b.family; })) + '.map(function (n) { return window.spirit.cacheManager(n).then(function () { var f = (window.spirit.data || {})[n]; return [n, "ok", !!f && typeof f.data === "object" && typeof f.cache === "object"]; }, function () { return [n, "", false]; }); })); })');
       N.heard = page.heard ? page.heard.filter(function (m) { return m.method === 'Network.responseReceived'; }).map(function (m) { return { url: m.params.response.url.replace(N.node.base, '').replace(/^\//, ''), status: m.params.response.status }; }) : [];
       return true;
     }, test.limit.slow);
@@ -732,7 +732,7 @@ function suitesFor(asked, files) {
 
 // ── ITS OWN READING, ON SUITES PLANTED IN MEMORY ────────────────────────────────────────────────────────────────────────
 const PLANTED = [
-  "test.run('the count is one', 0.2, function () { return a === 1 || 'the count is ' + a; }, test.limit.quick);",
+  "test.run('the count is one', 0.2, function () { return a === 1; }, test.limit.quick);",
   "test.run(\"the field is shown\", 0.4, function () { return b; }, test.limit.quick);",
   "test.run(`the row is drawn`, 0.8, async function () { return c; }, test.limit.quick);",
   "test.run('the world: ' + n + ' scripts', 0.2, function () { return true; }, test.limit.quick);",
@@ -1462,8 +1462,10 @@ const ALONE = /(['"`]|>)\s*(?:\p{Extended_Pictographic}[\uFE0F\u200D\u{1F3FB}-\u
 // A glyph alone in a string that is drawn only among words, read by hand: a status or a mark put before a name
 // (Andy: "glyphs are legal in labels and description true").
 const TEXT_ONLY = {
-  'spirit/element/search/contact/detailElement.js': 'its blocked mark is drawn before the person\'s name',
-  'spirit/element/search/contact/listElement.js': 'its filter icons are drawn before their words by the search element\'s chips',
+  // its blocked mark is drawn before the person's name
+  'spirit/element/search/contact/detailElement.js': true,
+  // its filter icons are drawn before their words by the search element's chips
+  'spirit/element/search/contact/listElement.js': true,
 };
 function painters() {
   const tracked = require('child_process').execFileSync('git', ['ls-files', 'shell'], { cwd: RUN, encoding: 'utf8' }).split('\n');
@@ -1643,7 +1645,7 @@ function codeLinesMatching(rel, re, bare) {
   const lines = bare ? src.split('\n').map(function (l) {
     return l.replace(/'(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"|`(?:[^`\\\n]|\\.)*`/g, "''").replace(/\/\/.*$/, '').replace(/(^|[=(,:\[!&|?{};]\s*|\breturn\s+)\/(?:[^\/\\\n]|\\.)+\/[gimsuy]*/g, '$1RE').replace(/^\s*\*.*$/, '');
   }) : codeOf(src, false).split('\n');
-  lines.forEach(function (line, i) { if (re.test(line)) hits.push(rel + ':' + (i + 1)); });
+  lines.forEach(function (line, i) { if (re.test(line)) hits.push(i + 1); });
   return hits;
 }
 // EVERY WRITTEN REQUIRE NAMES A FILE THAT EXISTS (goal/G47.1; Andy: "every spirit.require of a written path names a file
@@ -1671,8 +1673,7 @@ function missingRequires(rel) {
   // A path written run://<path> is judged as <path> (the design: requires start with run://).
   asked.forEach(function (a) { a.p = a.p.replace(/^run:\/\//, ''); });
   const onPurpose = function (p) { return /(^|\/)(zz|noSuch)[A-Za-z0-9]/.test(p); };
-  return asked.filter(function (a) { return /^\/?[\w.-]+(\/[\w.-]+)*\.(js|css|json|html)$/.test(a.p) && !onPurpose(a.p) && !fs.existsSync(path.join(RUN, a.p.replace(/^\//, ''))); })
-    .map(function (a) { return rel + ':' + (code.slice(0, a.at).split('\n').length) + ' ' + a.p; });
+  return asked.filter(function (a) { return /^\/?[\w.-]+(\/[\w.-]+)*\.(js|css|json|html)$/.test(a.p) && !onPurpose(a.p) && !fs.existsSync(path.join(RUN, a.p.replace(/^\//, ''))); });
 }
 // ONE LIST OF VENDORED FOLDERS (goal/G43.25; moved here from spirit/test/fileSystem.js, goal/G47.1, where it was a list of
 // the walkers at one old commit). Andy: "can we hide those suckers in spirit/jobs/ for now? without the damn node_modules
@@ -1709,7 +1710,7 @@ function linesMatching(rel, re) {
   let src = '';
   try { src = fs.readFileSync(path.join(RUN, rel), 'utf8'); } catch (e) { return []; }
   const hits = [];
-  unquoted(rel, src).split('\n').forEach(function (line, i) { if (re.test(line)) hits.push(rel + ':' + (i + 1)); });
+  unquoted(rel, src).split('\n').forEach(function (line, i) { if (re.test(line)) hits.push(i + 1); });
   return hits;
 }
 // Where the code (comments and the insides of strings left out) reaches through spirit.element for what the tree does not hold: spirit.element.<keys>
@@ -1730,7 +1731,7 @@ function strayElementReaches(rel) {
         const at = path.join.apply(path, [RUN].concat(keys.slice(0, n)));
         found = fs.existsSync(at + '.js') || (n === keys.length && fs.existsSync(at) && fs.statSync(at).isDirectory());
       }
-      if (!found) stray.push(rel + ':' + (i + 1) + ' spirit.element.' + keys.join('.'));
+      if (!found) stray.push(i + 1);
     }
   });
   return stray;
@@ -1754,7 +1755,7 @@ function requireOnNode(run, rel) {
     // answers at once and stands at its place as that answer.
     const iface = /\/api\.js$/.test(rel);
     const probe = 'const path = require("path"); const s = require(path.join(process.cwd(), "spirit", "spirit.js"));' +
-      '(async function () { let at = null, err = "", promise = false; try { at = s.require(' + JSON.stringify(rel) + '); promise = !!(at && typeof at.then === "function"); if (' + iface + ' && promise) at = await at; } catch (e) { err = String(e && e.message || e); }' +
+      '(async function () { let at = null, err = false, promise = false; try { at = s.require(' + JSON.stringify(rel) + '); promise = !!(at && typeof at.then === "function"); if (' + iface + ' && promise) at = await at; } catch (e) { err = true; }' +
       'const keys = ' + JSON.stringify(placeKeys(rel)) + '; const place = keys.reduce(function (o, k) { return o == null ? undefined : o[k]; }, s.required);' +
       'process.stdout.write("\\n@@" + JSON.stringify({ err: err, promise: ' + iface + ' ? false : promise, placed: ' + iface + ' ? place !== undefined : place !== undefined && place === at }) + "\\n"); process.exit(0); }());';
     const kid = spawn(process.execPath, ['-e', probe], { cwd: run, stdio: ['ignore', 'pipe', 'pipe'] });
@@ -1766,7 +1767,7 @@ function requireOnNode(run, rel) {
       clearTimeout(t);
       const m = /\n@@(.*)\n/.exec(out);
       let r = null; try { r = m ? JSON.parse(m[1]) : null; } catch (e) { r = null; }
-      resolve(r || { err: 'it did not finish loading', promise: false, placed: false });
+      resolve(r || { err: true, promise: false, placed: false });
     });
   });
 }

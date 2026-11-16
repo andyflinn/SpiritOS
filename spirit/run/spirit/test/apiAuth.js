@@ -18,7 +18,7 @@ const FAMILY = path.join(RUN, 'spirit', 'auth', 'api.js');
 function readJson(file) { try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch (e) { return null; } }
 const isNum = function (k) { return typeof k === 'number' && Number.isInteger(k) && k > 0; };
 // One call, answered or refused, as server.js hands it on.
-async function call(auth, verb, a) { try { return (await auth[verb](a)) || {}; } catch (e) { return { threw: e && e.message, refusal: e && e.refusal }; } }
+async function call(auth, verb, a) { try { return (await auth[verb](a)) || {}; } catch (e) { return { refusal: e && e.refusal }; } }
 const parsed = function (item) { try { return JSON.parse(item.label); } catch (e) { return null; } };
 
 // Every test's names, shared down the sequence: each test assigns what later ones read.

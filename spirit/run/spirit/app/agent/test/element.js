@@ -441,7 +441,7 @@ test.run('with no workBench on the page it loads spirit/element/workBench.js thr
       const r = await fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) });
       const text = await r.text();
       return { status: r.status, text: text, body: parsed(text) };
-    } catch (e) { return { status: 0, text: String(e && e.message), body: null }; }
+    } catch (e) { return { status: 0, text: '', body: null }; }
   }
   function answers(r) { return r.status === 200 && !!r.body && typeof r.body.debug === 'boolean'; }
 
@@ -718,7 +718,7 @@ async function tabOpens(kind, row) {
   }, test.limit.quick);
   test.run('its fields are filled', 0.2, async function () {
     if (STOP) return false;
-    filled = await c.evaluate('(function () { var box = Array.prototype.slice.call(document.querySelectorAll(' + JSON.stringify(CENTRE + ' .tab-content > *') + ')).filter(function (x) { return !x.hidden; })[0]; if (!box) return "no box"; var inputs = Array.prototype.slice.call(box.querySelectorAll("input")); var set = function (word, v) { var i = inputs.filter(function (x) { return x.id.slice(-word.length - 1) === "-" + word.toLowerCase(); })[0]; if (!i) return false; i.value = v; i.dispatchEvent(new Event("input", { bubbles: true })); i.dispatchEvent(new Event("change", { bubbles: true })); return true; }; return set("Label", "zzSaved") && set("URL", "http://192.0.2.2:9/") ? "ok" : "fields: " + box.textContent.slice(0, 200); }())');
+    filled = await c.evaluate('(function () { var box = Array.prototype.slice.call(document.querySelectorAll(' + JSON.stringify(CENTRE + ' .tab-content > *') + ')).filter(function (x) { return !x.hidden; })[0]; if (!box) return false; var inputs = Array.prototype.slice.call(box.querySelectorAll("input")); var set = function (word, v) { var i = inputs.filter(function (x) { return x.id.slice(-word.length - 1) === "-" + word.toLowerCase(); })[0]; if (!i) return false; i.value = v; i.dispatchEvent(new Event("input", { bubbles: true })); i.dispatchEvent(new Event("change", { bubbles: true })); return true; }; return set("Label", "zzSaved") && set("URL", "http://192.0.2.2:9/") ? "ok" : false; }())');
     return (filled === 'ok') ? true : false;
   }, test.limit.quick);
   test.run('saved: its header is the row\'s', 0.2, async function () {
@@ -925,7 +925,7 @@ async function tabOpens(kind, row) {
       // the real data set.
       cacheManager: function (name) {
         const at = ['spirit/' + name + '/data.js', 'spirit/app/' + name + '/data.js'].filter(function (p) { return fs.existsSync(path.join(RUN, p)); })[0];
-        if (!at) return Promise.reject(new Error('the family ' + name + ' has no data.js'));
+        if (!at) return Promise.reject(new Error());
         if (!loaded[at]) { loaded[at] = true; vm.runInContext(fs.readFileSync(path.join(RUN, at), 'utf8'), win, { filename: at }); }
         return Promise.resolve(true);
       },
@@ -946,7 +946,7 @@ async function tabOpens(kind, row) {
   // Every box from a list's own up to the app's that is not a fill box.
   function gaps(host, app) {
     const out = [];
-    for (let n = host; n && n !== app; n = n.parentNode) if (!isFill(n)) out.push((n.tagName || '?').toLowerCase() + (n.id ? '#' + n.id : '') + (n.className ? '.' + n.className : ''));
+    for (let n = host; n && n !== app; n = n.parentNode) if (!isFill(n)) out.push(n);
     return out;
   }
   const under = function (n, app) { for (let p = n; p; p = p.parentNode) if (p === app) return true; return false; };

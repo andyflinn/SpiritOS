@@ -23,7 +23,7 @@ const EL = path.join(__dirname, '..', '..', '..', 'element', 'table', 'model');
 // The page's own node, as node.card answers it: a public key in base64, its + and / kept, so the data set names it in
 // base64url (spirit.data.nodeId).
 const HOME_KEY = 'MCowBQYDK2VwAyEA+home/node+key/for+the+page/test0000000=';
-function call(verb, a) { try { return verb.handler(a); } catch (e) { return { refusal: e.refusal || 'threw', why: (e.extra && e.extra.why) || e.message }; } }
+function call(verb, a) { try { return verb.handler(a); } catch (e) { return { refusal: e.refusal, why: (e.extra && e.extra.why) || e.message }; } }
 const tick = function () { return new Promise(function (r) { setImmediate(r); }); };
 const settle = async function () { for (let i = 0; i < 10; i++) await tick(); };
 const familyPath = require(path.join(RUN, 'spirit', 'spirit.js')).familyPath;

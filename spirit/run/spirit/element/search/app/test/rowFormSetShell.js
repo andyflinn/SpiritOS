@@ -51,7 +51,7 @@ test.run('the world: a scratch node, and a Chrome on its face page', 0.2, async 
 }, test.limit.slow);
 test.run('it loads through spirit.require and is spirit.element.spirit.element.search.app.rowFormSetShell', 0.2, async function () {
   if (!node || !node.up || !chrome || chrome.error) return false;
-  loaded = await chrome.evaluate('spirit.ready.then(function () { return spirit.require("spirit/element/search/app/rowFormSetShell.js"); }).then(function () { window.shellAsks = []; var real = spirit.node.shell; spirit.node.shell = function (a) { window.shellAsks.push(a); return window.refuseShell ? Promise.reject(new Error("refused here")) : real.call(spirit.node, a); }; var E = spirit.element.spirit.element.search.app.rowFormSetShell; return !!(E && typeof E.create === "function"); }, function (e) { return String(e && e.message || e); })');
+  loaded = await chrome.evaluate('spirit.ready.then(function () { return spirit.require("spirit/element/search/app/rowFormSetShell.js"); }).then(function () { window.shellAsks = []; var real = spirit.node.shell; spirit.node.shell = function (a) { window.shellAsks.push(a); return window.refuseShell ? Promise.reject(new Error("refused here")) : real.call(spirit.node, a); }; var E = spirit.element.spirit.element.search.app.rowFormSetShell; return !!(E && typeof E.create === "function"); }, function () { return false; })');
   return loaded === true || false;
 }, test.limit.slow);
 

@@ -27,7 +27,6 @@ const TRANSLATOR = path.join(RUN, 'spirit', 'app', 'desk', 'data.js');
 const CHILD = process.argv[2] === '--child' ? String(process.argv[3] || '') : '';
 const test = CHILD ? null : require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 
-function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 const tick = function (ms) { return new Promise(function (r) { setTimeout(r, ms || 20); }); };
 
 // The publisher's key, base64 as a node key is. It holds a + and a /, as real keys do (goal/G41.28), so only base64url
@@ -50,7 +49,7 @@ function post(verb, args, callerKey) {
       res.on('data', function (c) { chunks.push(c); });
       res.on('end', function () { let b = null; try { b = JSON.parse(Buffer.concat(chunks).toString('utf8')); } catch (e) { b = null; } resolve({ status: res.statusCode, body: b }); });
     });
-    req.on('error', function (e) { resolve({ status: 0, body: { error: e.message } }); });
+    req.on('error', function () { resolve({ status: 0, body: null }); });
     req.end(body);
   });
 }
@@ -61,8 +60,8 @@ function deliver(json) {
   let parsed = null;
   try { parsed = JSON.parse(json); } catch (e) { parsed = null; }
   posts.push(parsed);
-  if (gate.refuse) return Promise.reject(new Error('refused by the test'));
-  const go = function () { return post('streamListener', { json: json }, PUBLISHER).then(function (r) { return r.status === 200 ? r.body : Promise.reject(new Error('refused ' + short(r.body))); }); };
+  if (gate.refuse) return Promise.reject(new Error());
+  const go = function () { return post('streamListener', { json: json }, PUBLISHER).then(function (r) { return r.status === 200 ? r.body : Promise.reject(new Error()); }); };
   if (!gate.held) return go();
   return new Promise(function (resolve, reject) { gate.waiting.push(function () { go().then(resolve, reject); }); });
 }
@@ -95,7 +94,7 @@ const fake = {
     if (!/\/api\.js$/.test(q)) return require(path.join(RUN, q));
     return Promise.resolve({});
   },
-  outcome: function (p) { return Promise.resolve(p).then(function (b) { return { status: 200, body: b }; }, function (e) { return { status: 500, body: { ok: false, error: String(e && e.message || e) } }; }); },
+  outcome: function (p) { return Promise.resolve(p).then(function (b) { return { status: 200, body: b }; }, function () { return { status: 500, body: { ok: false } }; }); },
   event: { publish: function () {}, subscribe: function () {} },
   // A server reports its DEBUG on its job (goal/G43.15); the stand-in node takes the report and keeps nothing.
   job: { report: function () { return Promise.resolve({ ok: true }); } },
@@ -241,7 +240,7 @@ async function child(mode) {
 function runChild(mode, name, fam) {
   const r = spawnSync(process.execPath, [SELF_FILE, '--child', mode, TMP, name, fam || 'desk'], { encoding: 'utf8', timeout: 30000 });
   const line = String(r.stdout || '').split('\n').filter(function (l) { return l.indexOf('RESULT ') === 0; })[0];
-  try { return JSON.parse(line.slice(7)); } catch (e) { return { failed: short(r.stderr || r.stdout || r.error) }; }
+  try { return JSON.parse(line.slice(7)); } catch (e) { return {}; }
 }
 function clearCache(name) { [path.join(RUN, 'spirit', 'state', name)].forEach(function (d) { try { fs.rmSync(d, { recursive: true, force: true }); } catch (e) { /* none */ } }); }
 
@@ -588,7 +587,7 @@ function ownPart() {
   test.run('deskClient: its interface is spirit/app/deskClient/api.js, no family/ is left', 0.2, function () { return moved('deskClient'); }, test.limit.quick);
   // Andy, goal/G41.28: "all, KILL deskAgent!". The server goes, its folder and every file that names it.
   test.run('and no file names the deskAgent server', 0.2, function () {
-    const namers = codeFiles(RUN, []).filter(function (f) { return f !== FILE && f !== SELF_FILE && /['"]deskAgent\/|deskAgent\.js\b/.test(fs.readFileSync(f, 'utf8')); }).map(function (f) { return path.relative(RUN, f); });
+    const namers = codeFiles(RUN, []).filter(function (f) { return f !== FILE && f !== SELF_FILE && /['"]deskAgent\/|deskAgent\.js\b/.test(fs.readFileSync(f, 'utf8')); });
     return namers.length === 0 || false;
   }, test.limit.quick);
   // No file but appServer writes a family path: no <name>.family, no family/api.js, no join onto 'family'. This file
@@ -602,7 +601,7 @@ function ownPart() {
     const writers = codeFiles(RUN, []).filter(function (f) { return f !== FILE && f !== SELF_FILE && f !== SPIRIT_JS; }).filter(function (f) {
       const t = fs.readFileSync(f, 'utf8');
       return FAMILY_PATH_WRITTEN.some(function (re) { return re.test(t); });
-    }).map(function (f) { return path.relative(RUN, f); });
+    });
     return writers.length === 0 || false;
   }, test.limit.quick);
 
@@ -613,7 +612,7 @@ function ownPart() {
     const named = codeFiles(RUN, []).concat(jsonFiles(path.join(RUN, 'spirit', 'app', 'desk'), [])).filter(function (f) { return f !== SELF_FILE; }).filter(function (f) {
       const t = fs.readFileSync(f, 'utf8');
       return /DEPENDENCIES/.test(t) || /\bdependencies\s*:/.test(t) || /opts\.dependencies|withDependencies|checkDependencies/.test(t);
-    }).map(function (f) { return path.relative(RUN, f); });
+    });
     return named.length === 0 || false;
   }, test.limit.quick);
 
@@ -621,7 +620,7 @@ function ownPart() {
   // The box: "spirit/app/desk/deskBundles.json, deskClient/deskClientBundles.json and ... are
   // deleted. Bundles stay what they are, rows in node.db, made and changed through auth.bundle."
   test.run('no app folder holds a <name>Bundles.json', 0.2, function () {
-    const bundleFiles = jsonFiles(path.join(RUN, 'spirit', 'app'), []).filter(function (f) { return /Bundles\.json$/.test(f); }).map(function (f) { return path.relative(RUN, f); });
+    const bundleFiles = jsonFiles(path.join(RUN, 'spirit', 'app'), []).filter(function (f) { return /Bundles\.json$/.test(f); });
     return bundleFiles.length === 0 || false;
   }, test.limit.quick);
 
@@ -883,7 +882,7 @@ function ownPart() {
 }
 
 if (CHILD) {
-  child(CHILD).catch(function (e) { process.stdout.write('RESULT ' + JSON.stringify({ failed: String(e && e.stack || e) }) + '\n'); process.exit(1); });
+  child(CHILD).catch(function () { process.stdout.write('RESULT ' + JSON.stringify({}) + '\n'); process.exit(1); });
 } else {
   // appServer.js: one stream protocol for every server (goal/G41.11, goal/G41.12). Its own checks first, then the parts.
   test.after(function () {

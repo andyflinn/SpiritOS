@@ -36,7 +36,7 @@ test.run('the world: a scratch node, and a Chrome on its face page', 0.2, async 
 }, test.limit.slow);
 test.run('it loads through spirit.require', 0.2, async function () {
   if (!node || !node.up || !chrome || chrome.error) return false;
-  loaded = await chrome.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/element/search/app/rowElement.js"); }).then(function () { var c = document.createElement("div"); c.id = "under-test"; document.body.appendChild(c); return "loaded"; }, function (e) { return String(e && e.message || e); })');
+  loaded = await chrome.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/element/search/app/rowElement.js"); }).then(function () { var c = document.createElement("div"); c.id = "under-test"; document.body.appendChild(c); return "loaded"; }, function () { return false; })');
   return loaded === 'loaded' ? true : false;
 }, test.limit.quick);
 test.run('spirit.element.spirit.element.search.app.rowElement.create(row) makes a row', 0.2, async function () {

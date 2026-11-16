@@ -49,7 +49,7 @@ test.run('the selector is made', 0.2, async function () {
   left = glyphs[0];
   made = await chrome.evaluate(ASKS + '.then(function () {' +
     ' return window.spirit.require("spirit/element/search/icon.js"); }).then(function () { var box = document.body.appendChild(document.createElement("div")); box.style.cssText = "position:fixed;left:0;top:0;width:400px;z-index:99999";' +
-    ' window.__root = window.spirit.element.spirit.element.search.icon.create(box, { exclude: [' + JSON.stringify(left) + '] }); return "made"; })').catch(function (e) { return String(e && e.message); });
+    ' window.__root = window.spirit.element.spirit.element.search.icon.create(box, { exclude: [' + JSON.stringify(left) + '] }); return "made"; })').catch(function () { return null; });
   return made === 'made' ? true : false;
 }, test.limit.slow);
 test.run('it reads the icon set file and no other, through spirit.fs.loadFile', 0.2, async function () {

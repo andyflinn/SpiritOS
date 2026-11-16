@@ -103,7 +103,7 @@ test.run('a row on another app\'s job, spirit.app.desk, is not taken', 0.8, func
 const crooked = function (app) {
   if (!w) return false;
   let threw = false;
-  try { w.job(app); } catch (e) { threw = !!String(e && e.message || e); }
+  try { w.job(app); } catch (e) { threw = true; }
   return !threw && snap() === was ? true : false;
 };
 test.run('a crooked publish of null changes nothing', 0.2, function () { return crooked(null); }, test.limit.quick);

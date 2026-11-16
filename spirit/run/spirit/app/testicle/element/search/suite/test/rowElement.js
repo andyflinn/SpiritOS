@@ -24,7 +24,7 @@ function aCell() {
   const heard = {};
   return { innerHTML: 'old', heard: heard, addEventListener: function (t, fn) { (heard[t] = heard[t] || []).push(fn); } };
 }
-process.on('unhandledRejection', function (e) { unhandled.push(String(e && e.message || e)); });
+process.on('unhandledRejection', function () { unhandled.push(true); });
 
 test.run('the world: the row runs on a bare window', 0.2, async function () {
   if (!fs.existsSync(FILE)) return false;

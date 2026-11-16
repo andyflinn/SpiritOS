@@ -38,7 +38,7 @@ async function call(base, verb, args) {
     const r = await fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) });
     const text = await r.text();
     return { status: r.status, text: text, body: parsed(text) };
-  } catch (e) { return { status: 0, text: String(e && e.message), body: null }; }
+  } catch (e) { return { status: 0, text: '', body: null }; }
 }
 async function boot(run) {
   const port = await freePort();
@@ -158,7 +158,7 @@ test.run('the world: the face shell has its spirit', 0.2, async function () {
 }, test.limit.slow);
 test.run('it loads through spirit.require and is spirit.element.spirit.element.search.app.serverDEBUG', 0.2, async function () {
   if (!c || c.error) return false;
-  loaded = await c.evaluate('spirit.ready.then(function () { return spirit.require("spirit/element/search/app/serverDEBUG.js"); }).then(function () { return !!(spirit.element.spirit.element.search.app.serverDEBUG && spirit.element.spirit.element.search.app.serverDEBUG.create); }, function (e) { return String(e); })');
+  loaded = await c.evaluate('spirit.ready.then(function () { return spirit.require("spirit/element/search/app/serverDEBUG.js"); }).then(function () { return !!(spirit.element.spirit.element.search.app.serverDEBUG && spirit.element.spirit.element.search.app.serverDEBUG.create); }, function () { return false; })');
   return loaded === true ? true : false;
 }, test.limit.quick);
 
@@ -244,6 +244,6 @@ test.run('and the gap between two rows is that 1em, not more', 0.2, function () 
 // nothing threw on the page
 test.run('no uncaught error on the page, all the way', 0.2, function () {
   if (!c || c.error) return false;
-  const thrown = c.heard.filter(function (m) { return m.method === 'Runtime.exceptionThrown'; }).map(function (m) { return (m.params.exceptionDetails.exception && m.params.exceptionDetails.exception.description) || m.params.exceptionDetails.text; });
+  const thrown = c.heard.filter(function (m) { return m.method === 'Runtime.exceptionThrown'; });
   return !thrown.length ? true : false;
 }, test.limit.quick);

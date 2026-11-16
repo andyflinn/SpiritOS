@@ -60,7 +60,7 @@ test.run('join.json has its steps', 0.2, function () {
 }, test.limit.quick);
 test.run('every step names its icon as the glyph itself', 0.2, function () {
   const steps = (MANIFEST() || {}).steps || [];
-  const keyed = steps.filter(function (s) { return !s.icon || KEY.test(s.icon); }).map(function (s) { return s.until + ':' + s.icon; });
+  const keyed = steps.filter(function (s) { return !s.icon || KEY.test(s.icon); });
   return !keyed.length || false;
 }, test.limit.quick);
 test.run('its own icon, identity.icon, is a glyph too', 0.2, function () {

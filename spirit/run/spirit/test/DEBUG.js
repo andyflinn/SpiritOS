@@ -31,8 +31,8 @@ function ask(host, port, p, opts) {
       rs.on('data', function (d) { text += d; });
       rs.on('end', function () { resolve({ status: rs.statusCode, type: String(rs.headers['content-type'] || ''), text: text }); });
     });
-    rq.on('error', function (e) { resolve({ status: 0, type: '', text: String(e && e.message) }); });
-    rq.setTimeout(15000, function () { rq.destroy(new Error('timed out')); });
+    rq.on('error', function () { resolve({ status: 0, type: '', text: '' }); });
+    rq.setTimeout(15000, function () { rq.destroy(new Error()); });
     if (o.body !== undefined) rq.write(o.body);
     rq.end();
   });
@@ -440,8 +440,8 @@ test.run('each entry that breaks the shape is refused with a code: a 4xx, never 
     const b = json(r);
     if (kept(entry)) {
       keptCount += 1;
-      if (!r.status || r.status >= 500 || /handler-failed/.test(r.text)) lone.push({ entry: entry, status: r.status, answer: r.text.slice(0, 80) });
-    } else if (!(r.status >= 400 && r.status < 500 && b && typeof b.code === 'string' && b.code && b.code !== 'handler-failed')) wrong.push({ entry: entry, status: r.status, answer: r.text.slice(0, 80) });
+      if (!r.status || r.status >= 500 || /handler-failed/.test(r.text)) lone.push(entry);
+    } else if (!(r.status >= 400 && r.status < 500 && b && typeof b.code === 'string' && b.code && b.code !== 'handler-failed')) wrong.push(entry);
   }
   return (!wrong.length) ? true : false;
 }, test.limit.slow);

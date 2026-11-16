@@ -83,7 +83,7 @@ async function call(base, verb, args) {
     const r = await fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) });
     const text = await r.text();
     return { status: r.status, text: text, body: parsed(text) };
-  } catch (e) { return { status: 0, text: String(e && e.message), body: null }; }
+  } catch (e) { return { status: 0, text: '', body: null }; }
 }
 async function boot(run) {
   const port = await freePort();
@@ -207,9 +207,9 @@ test.run('it loads through spirit.require and mounts with create(container), ans
   if (!c || c.error || !c.evaluate) return false;
   await c.evaluate(HANDS);
   made = await c.evaluate('window.spirit.ready.then(function () { return window.spirit.require("spirit/app/testicle/element/search/testicle.js"); }).then(function () {' +
-    ' var E = (((((((window.spirit.element || {}).spirit || {}).app || {}).testicle || {}).element || {}).search || {}).testicle); if (!E || typeof E.create !== "function") return "no create";' +
+    ' var E = (((((((window.spirit.element || {}).spirit || {}).app || {}).testicle || {}).element || {}).search || {}).testicle); if (!E || typeof E.create !== "function") return false;' +
     ' var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:1400px;height:800px;display:flex;"; document.body.appendChild(b);' +
-    ' window.__made = E.create(b, {}); return window.__made && typeof window.__made.destroy === "function" ? "made" : "no destroy"; }, function (e) { return "refused: " + (e && e.message || e); })');
+    ' window.__made = E.create(b, {}); return window.__made && typeof window.__made.destroy === "function" ? "made" : false; }, function () { return false; })');
   return made === 'made' || false;
 }, test.limit.slow);
 
@@ -580,7 +580,7 @@ test.run('the world: a fresh page opens the search again, no words and no select
   opened = await c.evaluate('window.spirit.ready.then(function () { return window.spirit.require("spirit/app/testicle/element/search/testicle.js"); }).then(function () {' +
     ' var E = window.spirit.element.spirit.app.testicle.element.search.testicle;' +
     ' var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:1400px;height:800px;display:flex;"; document.body.appendChild(b);' +
-    ' window.__made = E.create(b, {}); return window.__made && typeof window.__made.destroy === "function" ? "made" : "no destroy"; }, function (e) { return "refused: " + (e && e.message || e); })');
+    ' window.__made = E.create(b, {}); return window.__made && typeof window.__made.destroy === "function" ? "made" : false; }, function () { return false; })');
   if (opened !== 'made') return false;
   // Settled: the count of rows the same twice, a second apart.
   let last = -1, now = 0;

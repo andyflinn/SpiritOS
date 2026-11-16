@@ -27,7 +27,7 @@ function asks(run, list) {
   const code = 'const w = require(' + JSON.stringify(path.join(run, 'spirit', 'word.js')) + ');' +
     'Promise.all(' + JSON.stringify(list) + '.map(function (a) { return Promise.resolve(w.check(a[0], a[1])); }))' +
     '.then(function (r) { console.log("ANSWER" + JSON.stringify({ answers: r })); process.exit(0); },' +
-    ' function (e) { console.log("ANSWER" + JSON.stringify({ threw: String(e) })); process.exit(0); });';
+    ' function () { console.log("ANSWER" + JSON.stringify({ threw: true })); process.exit(0); });';
   return answerOf(run, code);
 }
 function answerOf(run, code) {
@@ -39,7 +39,7 @@ function answerOf(run, code) {
 function adds(run, list) {
   const code = 'const w = require(' + JSON.stringify(path.join(run, 'spirit', 'word.js')) + ');' +
     'try { console.log("ANSWER" + JSON.stringify({ answers: ' + JSON.stringify(list) + '.map(function (a) { return w.add(a[0], a[1]); }) })); }' +
-    ' catch (e) { console.log("ANSWER" + JSON.stringify({ threw: String(e) })); }' +
+    ' catch (e) { console.log("ANSWER" + JSON.stringify({ threw: true })); }' +
     ' process.exit(0);';
   return answerOf(run, code);
 }
@@ -368,7 +368,7 @@ test.run('the world: the planted spirit/app/word.json is read, its word found at
     ' var paths = ["spirit.app.zz", "spirit.app.table.zz", "spirit.app.table.rows.zz", "spirit.element.search.zz", "spirit.fs.zz", "spirit.contact.zz", "spirit.data.zz", "spirit.app.desk.element.zz"];' +
     ' var asks = []; for (var n = 0; n < 5; n++) paths.forEach(function (p) { asks.push(spirit.word.check(p, "zzword")); asks.push(spirit.word.check(p, "other")); });' +
     ' return Promise.all(asks); }).then(function (answers) { return new Promise(function (r) { setTimeout(function () { r(answers); }, 1500); }); })' +
-    '.then(function (answers) { return JSON.stringify({ sent: window.sentWord, appSees: answers[0], under: answers[2] }); }, function (e) { return JSON.stringify({ threw: String(e && e.message || e) }); })');
+    '.then(function (answers) { return JSON.stringify({ sent: window.sentWord, appSees: answers[0], under: answers[2] }); }, function () { return JSON.stringify({ threw: true }); })');
   let got = null;
   try { got = JSON.parse(asked); } catch (e) { got = { threw: true }; }
   onPage = got;

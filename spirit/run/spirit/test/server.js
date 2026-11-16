@@ -64,7 +64,7 @@ test.run('the page at "/" has the spirit object', 0.2, async function () {
 }, test.limit.long);
 test.run('and spirit.ready settles, as on face.html', 0.2, async function () {
   if (!W.ready) return false;
-  const settled = await W.page.evaluate('window.spirit.ready.then(function () { return "ready"; }, function (e) { return "refused: " + String(e && e.message || e); })');
+  const settled = await W.page.evaluate('window.spirit.ready.then(function () { return "ready"; }, function () { return false; })');
   return settled === 'ready' || false;
 }, test.limit.quick);
 test.run('it loads face.html\'s own scripts first', 0.2, async function () {
@@ -95,8 +95,6 @@ const BATCH = 20;
 // The node's door takes only a Host naming this machine and its port: set once the scratch node is up.
 let HOST = '127.0.0.1';
 
-function shortG(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 240); }
-
 // THE KINDS (the box: "every argument is filled with every type JSON.parse can make: string, number, boolean, null,
 // object, array", "missing or superfluous arguments"): the six JSON types, missing, extraneous.
 const KINDS = {
@@ -124,18 +122,18 @@ function garbageFor(name, request) {
   const keys = Object.keys(proto);
   const acts = false;
   const out = [];
-  const withOne = function (k, v, why) { const a = Object.assign({}, proto); a[k] = v; out.push({ args: a, why: k + ' ' + why }); };
+  const withOne = function (k, v) { const a = Object.assign({}, proto); a[k] = v; out.push({ args: a }); };
   keys.forEach(function (k) {
     Object.keys(KINDS).forEach(function (kind) {
       if (kind === kindOf(proto[k])) return;
-      withOne(k, KINDS[kind], 'as ' + kind);
+      withOne(k, KINDS[kind]);
     });
-    if (!acts && typeof proto[k] === 'string') STRINGS.forEach(function (s, i) { withOne(k, s, 'as string #' + i + ' (' + s.length + ' chars)'); });
-    if (!acts) { const a = Object.assign({}, proto); delete a[k]; out.push({ args: a, why: k + ' missing' }); }
+    if (!acts && typeof proto[k] === 'string') STRINGS.forEach(function (s) { withOne(k, s); });
+    if (!acts) { const a = Object.assign({}, proto); delete a[k]; out.push({ args: a }); }
   });
-  if (!acts) { const a = Object.assign({}, proto); a.noSuchArgument = 'garbage'; out.push({ args: a, why: 'an extraneous argument' }); }
+  if (!acts) { const a = Object.assign({}, proto); a.noSuchArgument = 'garbage'; out.push({ args: a }); }
   // Arguments that are no object at all break every shape.
-  ['garbage', 12345, null, [1, 2]].forEach(function (v) { out.push({ args: v, why: 'args as ' + kindOf(v) }); });
+  ['garbage', 12345, null, [1, 2]].forEach(function (v) { out.push({ args: v }); });
   return out.concat(pairsFor(proto));
 }
 
@@ -185,11 +183,11 @@ function pairsFor(proto) {
       else if (kind === 'string') a[k] = STRINGS[(r + i) % STRINGS.length];
       else a[k] = KINDS[kind];
     });
-    return { args: a, why: 'pair #' + r + ': ' + keys.map(function (k, i) { return k + '=' + KIND8[row[i]]; }).join(' '), pair: true };
+    return { args: a, pair: true };
   });
 }
 
-// RAW OVER A BARE SOCKET: the request as written, nothing normalised. Answers { status, text } or { hung } or { error }.
+// RAW OVER A BARE SOCKET: the request as written, nothing normalised. Answers { status, text } or { hung } or { error: true }.
 function raw(base, head, body, opts) {
   const u = new URL(base);
   const o = opts || {};
@@ -199,14 +197,14 @@ function raw(base, head, body, opts) {
     const s = net.connect(Number(u.port), u.hostname);
     const finish = function (r) { if (done) return; done = true; s.destroy(); resolve(r); };
     const timer = setTimeout(function () { finish(got ? answer() : { hung: true }); }, o.ms || ASK_MS);
-    // The answer's body, a chunked one's first chunk without its size line, so a failure names what was answered.
+    // The answer's body, a chunked one's first chunk without its size line.
     function answer() { const m = /^HTTP\/1\.[01] (\d{3})/.exec(got); const at = got.indexOf('\r\n\r\n') + 4; let body = got.slice(at, at + 400); if (/\r\ntransfer-encoding:\s*chunked/i.test(got.slice(0, at))) body = body.replace(/^[0-9a-fA-F]+\r\n/, ''); return { status: m ? Number(m[1]) : 0, text: body.slice(0, 300) }; }
     // The socket stays open for the answer: a half-closed one may be dropped before an asynchronous verb answers. The
     // request says Connection: close, so the server ends it once it has answered.
     s.on('connect', function () { s.write(head); if (body) s.write(body); });
     s.on('data', function (d) { got += d.toString('latin1'); if (/\r\n\r\n/.test(got) && o.keepOpen) { clearTimeout(timer); finish(answer()); } });
     s.on('end', function () { clearTimeout(timer); finish(got ? answer() : { status: 0, text: '' }); });
-    s.on('error', function (e) { clearTimeout(timer); finish(got ? answer() : { error: String(e && e.code || e) }); });
+    s.on('error', function (e) { clearTimeout(timer); finish(got ? answer() : { error: true }); });
   });
 }
 function postHead(p, len, type) {
@@ -248,7 +246,7 @@ async function upNode() {
   const missing = SERVERS.filter(function (s) { return !(t && t[s]); });
   return { node: node, base: base, plain: plain, missing: missing };
 }
-const G = { node: null, base: '', plain: null, tree: null, asks: [], RAWS: [], readingAsks: [], actingAsks: [], actingVerbs: [], killer: '', made: [] };
+const G = { node: null, base: '', plain: null, tree: null, asks: [], RAWS: [], readingAsks: [], actingAsks: [], actingVerbs: [], killer: false, made: [] };
 test.run('the world: the garbage\'s scratch node comes up, every app server it turned on named in its api', 0.2, async function () {
   // The node and the page of "/" are let go first.
   letGo(W.node, W.page); W.node = null; W.page = null;
@@ -273,31 +271,31 @@ test.run('the world: the garbage\'s scratch node comes up, every app server it t
   Object.keys(tree).forEach(function (fam) {
     Object.keys(tree[fam] || {}).forEach(function (verb) {
       const name = fam + '.' + verb;
-      garbageFor(name, tree[fam][verb] && tree[fam][verb].request).forEach(function (g) { G.asks.push({ name: name, args: g.args, why: g.why, pair: !!g.pair, acts: acting(name) }); });
+      garbageFor(name, tree[fam][verb] && tree[fam][verb].request).forEach(function (g) { G.asks.push({ name: name, args: g.args, pair: !!g.pair, acts: acting(name) }); });
     });
   });
   // 2) RAW BODIES AT THE NODE'S DOOR (the box, rule 2: "malformed, invalid arguments").
   const BODY_MAX = limits.BODY_MAX;
   const deepJson = '{"call":"node.card","args":' + '['.repeat(5000) + ']'.repeat(5000) + '}';
   const RAWS = G.RAWS = [
-    { why: 'a body that is not JSON', head: null, type: undefined, body: 'not json!' },
-    { why: 'JSON that is not an object', head: null, type: undefined, body: '[1,2,3]' },
-    { why: 'a bare JSON string', head: null, type: undefined, body: '"string"' },
-    { why: 'JSON null', head: null, type: undefined, body: 'null' },
-    { why: 'a body cut off half-way', head: postHead('/api/spirit', 100), body: '{"call":"node.ca', keepOpen: true },
-    { why: 'a body one byte past BODY_MAX', head: postHead('/api/spirit', BODY_MAX + 1), body: '{"call":"node.card","args":{"x":"' + 'x'.repeat(BODY_MAX + 1 - 36) + '"}}' },
-    { why: 'a Content-Length far past what is sent', head: postHead('/api/spirit', 10000000), body: '{}' , keepOpen: true },
-    { why: 'deep nesting, 5000 levels', head: postHead('/api/spirit', Buffer.byteLength(deepJson)), body: deepJson },
-    { why: 'a __proto__ key', head: null, type: undefined, body: '{"call":"node.card","args":{"__proto__":{"admin":1}}}' },
-    { why: 'a constructor key', head: null, type: undefined, body: '{"call":"node.card","args":{"constructor":{"x":1}}}' },
-    { why: 'call as __proto__', head: null, type: undefined, body: '{"call":"__proto__","args":{}}' },
-    { why: 'call as constructor.prototype', head: null, type: undefined, body: '{"call":"constructor.prototype","args":{}}' },
-    { why: 'no Content-Type', head: null, type: null, body: '{"call":"api","args":{}}' },
-    { why: 'Content-Type text/plain', head: null, type: 'text/plain', body: '{"call":"api","args":{}}' },
-    { why: 'Content-Type multipart with no boundary', head: null, type: 'multipart/form-data', body: '{"call":"api","args":{}}' },
-    { why: 'invalid UTF-8 bytes', head: null, type: undefined, body: Buffer.from([0x7b, 0xff, 0xfe, 0xc3, 0x28, 0x7d]) },
-    { why: 'a request line that is not HTTP', head: 'GARBAGE /api/spirit NOPE\r\n\r\n', body: '' },
-    { why: 'a header line with no colon', head: 'POST /api/spirit HTTP/1.1\r\nHost 127.0.0.1\r\nContent-Length: 2\r\n\r\n', body: '{}' },
+    { head: null, type: undefined, body: 'not json!' },
+    { head: null, type: undefined, body: '[1,2,3]' },
+    { head: null, type: undefined, body: '"string"' },
+    { head: null, type: undefined, body: 'null' },
+    { head: postHead('/api/spirit', 100), body: '{"call":"node.ca', keepOpen: true },
+    { head: postHead('/api/spirit', BODY_MAX + 1), body: '{"call":"node.card","args":{"x":"' + 'x'.repeat(BODY_MAX + 1 - 36) + '"}}' },
+    { head: postHead('/api/spirit', 10000000), body: '{}' , keepOpen: true },
+    { head: postHead('/api/spirit', Buffer.byteLength(deepJson)), body: deepJson },
+    { head: null, type: undefined, body: '{"call":"node.card","args":{"__proto__":{"admin":1}}}' },
+    { head: null, type: undefined, body: '{"call":"node.card","args":{"constructor":{"x":1}}}' },
+    { head: null, type: undefined, body: '{"call":"__proto__","args":{}}' },
+    { head: null, type: undefined, body: '{"call":"constructor.prototype","args":{}}' },
+    { head: null, type: null, body: '{"call":"api","args":{}}' },
+    { head: null, type: 'text/plain', body: '{"call":"api","args":{}}' },
+    { head: null, type: 'multipart/form-data', body: '{"call":"api","args":{}}' },
+    { head: null, type: undefined, body: Buffer.from([0x7b, 0xff, 0xfe, 0xc3, 0x28, 0x7d]) },
+    { head: 'GARBAGE /api/spirit NOPE\r\n\r\n', body: '' },
+    { head: 'POST /api/spirit HTTP/1.1\r\nHost 127.0.0.1\r\nContent-Length: 2\r\n\r\n', body: '{}' },
   ];
   // 3) MALFORMED PATHS, GET AND POST (the box, rule 2: "malformed paths").
   const PATHS = ['/..', '/../../../../etc/passwd', '/%2e%2e/%2e%2e/etc/passwd', '/shell/%2f%2f..%2f..%2fetc', 
@@ -306,8 +304,8 @@ test.run('the world: the garbage\'s scratch node comes up, every app server it t
     // A null byte last: it may kill the node, and every path before it is still thrown.
     '/%00', '/index.html%00.js'];
   PATHS.forEach(function (p) {
-    RAWS.push({ why: 'GET ' + shortG(p).slice(0, 60), head: 'GET ' + p + ' HTTP/1.1\r\nHost: ' + HOST + '\r\nConnection: close\r\n\r\n', body: '' });
-    RAWS.push({ why: 'POST ' + shortG(p).slice(0, 60), head: postHead(p, 2), body: '{}' });
+    RAWS.push({ head: 'GET ' + p + ' HTTP/1.1\r\nHost: ' + HOST + '\r\nConnection: close\r\n\r\n', body: '' });
+    RAWS.push({ head: postHead(p, 2), body: '{}' });
   });
   G.actingAsks = G.asks.filter(function (a) { return a.acts; });
   G.readingAsks = G.asks.filter(function (a) { return !a.acts; });
@@ -323,7 +321,7 @@ let thrown = false;
 test.run('the verbs that do not act took all their garbage, pairs included, without crashing or hanging', 0.2, async function () {
   if (!G.tree) return false;
   const broken = {};   // name -> true, when it broke
-  let refused = 0; let answered = 0; const statuses = {}; const sample = {}; const mislabelled = {}; const tookIt = {};
+  let refused = 0; let answered = 0; const statuses = {}; const mislabelled = {}; const tookIt = {};
   const t0 = Date.now();
   for (let i = 0; i < G.readingAsks.length; i += BATCH) {
     const batch = G.readingAsks.slice(i, i + BATCH);
@@ -332,7 +330,7 @@ test.run('the verbs that do not act took all their garbage, pairs included, with
       const a = batch[j];
       const why = broke(r);
       if ((r.status === 502 || r.status === 503) && !why) mislabelled[a.name] = (mislabelled[a.name] || 0) + 1;
-      statuses[r.status || 0] = (statuses[r.status || 0] || 0) + 1; if (!sample[r.status]) sample[r.status] = a.name + ' ' + a.why + ' -> ' + shortG(r.text).slice(0, 120);
+      statuses[r.status || 0] = (statuses[r.status || 0] || 0) + 1;
       if (why) broken[a.name] = true;
       else if (r.status === 200 && !/"ok":false/.test(r.text)) { answered++; const fam = a.name.split('.')[0]; tookIt[fam] = (tookIt[fam] || 0) + 1; } else refused++;
     });
@@ -362,7 +360,7 @@ async function door(ri) {
   let alive = await G.plain();
   if (!alive) { await sleep(500); alive = await G.plain(); }
   if (!alive) why = true;
-  if (node.child && node.child.exitCode !== null && !G.killer) { G.killer = r0.why; why = true; }
+  if (node.child && node.child.exitCode !== null && !G.killer) { G.killer = true; why = true; }
   return !why;
 }
 test.run('a body that is not JSON: answered, and the node still answers', 0.2, function () { return door(0); }, test.limit.slow);

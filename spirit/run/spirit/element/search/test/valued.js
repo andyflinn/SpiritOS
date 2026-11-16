@@ -44,7 +44,7 @@ test.run('the world: a scratch node, and Chrome on its face page', 0.2, async fu
 }, test.limit.slow);
 test.run('it loads on a page', 0.2, async function () {
   if (!js) return false;
-  loaded = await js('window.spirit.ready.then(function () { return window.spirit.require("spirit/element/search/valued.js"); }).then(function () { return "loaded"; }, function (e) { return "ERR " + e; })');
+  loaded = await js('window.spirit.ready.then(function () { return window.spirit.require("spirit/element/search/valued.js"); }).then(function () { return "loaded"; }, function () { return false; })');
   return loaded === 'loaded' ? true : false;
 }, test.limit.slow);
 test.run('spirit.element.spirit.element.search.valued.create, and nothing on spirit.elements', 0.2, async function () {
@@ -74,7 +74,7 @@ test.run('all 60 rows show', 0.2, async function () {
   read = async function () {
     try {
       return JSON.parse(await js('(function () { var c = window.__box; var inputs = [].filter.call(c.querySelectorAll("input"), function (i) { return i.getClientRects().length && i.type !== "checkbox"; }); var rows = [].map.call(c.querySelectorAll("tr, [data-row], .row"), function (r) { return r.innerText.replace(/\\s+/g, " ").trim(); }).filter(function (t) { return /row\\d+/.test(t); }); ' + BEST + ' return JSON.stringify({ text: c.innerText, inputs: inputs.length, word: inputs[0] ? inputs[0].value : "", rows: rows, scroll: best ? best.scrollTop : -1, canScroll: !!best, asks: window.__asks }); })()'));
-    } catch (e) { return { threw: String(e) }; }
+    } catch (e) { return {}; }
   };
   await until(function () { return read().then(function (r) { return (r.rows || []).length > 0; }); }, 8000);
   first = await read();

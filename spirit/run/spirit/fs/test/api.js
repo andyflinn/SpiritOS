@@ -22,7 +22,7 @@ test.run('loadFile, refused by the face\'s gate, rejects with the node\'s own co
 }, test.limit.quick);
 test.run('a file that is not there still answers null', 0.2, async function () {
   let missing = 'unset';
-  try { missing = await names(function () { return Promise.reject(refused(404, 'not-found', 'no such file')); }).loadFile('media/none.txt'); } catch (e) { missing = 'threw ' + e.code; }
+  try { missing = await names(function () { return Promise.reject(refused(404, 'not-found', 'no such file')); }).loadFile('media/none.txt'); } catch (e) { /* a throw leaves it unset */ }
   return missing === null ? true : false;
 }, test.limit.quick);
 test.run('a file that is there answers its text', 0.2, async function () {

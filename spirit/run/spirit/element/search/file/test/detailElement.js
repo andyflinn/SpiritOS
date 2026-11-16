@@ -44,7 +44,7 @@ test.run('the world: a scratch node, and a Chrome on its face page', 0.2, async 
 }, test.limit.slow);
 test.run('it loads on a page, at spirit.element.spirit.element.search.file.detailElement, and makes its detail', 0.2, async function () {
   if (!node || !node.up || !chrome || chrome.error) return false;
-  made = await js('window.spirit.ready.then(function () { return window.spirit.require("spirit/element/search/file/detailElement.js"); }).then(function () { var E = (((((window.spirit.element || {}).spirit || {}).element || {}).search || {}).file || {}).detailElement; if (!E || typeof E.create !== "function") return "no create"; var b = document.body.appendChild(document.createElement("div")); b.id = "zzDetail"; window.__made = E.create(b, { path: ' + JSON.stringify(PATH) + ' }); return "made"; }, function (e) { return "ERR " + e; })');
+  made = await js('window.spirit.ready.then(function () { return window.spirit.require("spirit/element/search/file/detailElement.js"); }).then(function () { var E = (((((window.spirit.element || {}).spirit || {}).element || {}).search || {}).file || {}).detailElement; if (!E || typeof E.create !== "function") return false; var b = document.body.appendChild(document.createElement("div")); b.id = "zzDetail"; window.__made = E.create(b, { path: ' + JSON.stringify(PATH) + ' }); return "made"; }, function () { return false; })');
   return made === 'made' ? true : false;
 }, test.limit.quick);
 // fstat's facts: the MIME type at once, then the size once fs.stat answers.

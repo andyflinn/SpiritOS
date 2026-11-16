@@ -100,7 +100,7 @@ test.run('an unwatched reader hears no more; the others still do', 0.2, function
 }, test.limit.quick);
 test.run('a watcher that throws costs the next one nothing', 0.2, function () {
   afterThrow = 0;
-  const offBad = V.watch('prefs', function () { throw new Error('reader fault'); });
+  const offBad = V.watch('prefs', function () { throw new Error(); });
   const offGood = V.watch('prefs', function () { afterThrow += 1; });
   threw = null;
   try { V.set('prefs/theme', 'dark'); } catch (e) { threw = e; }
@@ -157,7 +157,7 @@ test.run('seat with no items is ignored', 0.2, function () {
 // translate: the types' own translators
 const jobs = []; const renames = [];
 test.run('take and rename survive a throwing translator and a non-object registration', 0.2, function () {
-  D.addTranslator({ onJob: function () { throw new Error('a type\'s fault'); } });
+  D.addTranslator({ onJob: function () { throw new Error(); } });
   D.addTranslator({ onJob: function (job, api) { jobs.push([job, api]); }, onRename: function (d, api) { renames.push([d, api]); } });
   D.addTranslator(null); D.addTranslator('text');
   threw = null;
@@ -701,7 +701,7 @@ test.run('the app rows stand under this page\'s node', 0.2, async function () {
   if (!F.got) return false;
   await H.until(function () { return F.page.evaluate('(function () { var a = (window.spirit.data || {}).app; var c = a && a.cache && a.cache[window.spirit.data.homeNode()]; return !!(c && c.apps && Object.keys(c.apps).length); })()').then(Boolean); }, 8000).catch(function () { return false; });
   F.cached = await ask('(function () { var D = window.spirit.data || {}; var a = D.app || {}; var c = a.cache || {}; var home = typeof D.homeNode === "function" ? D.homeNode() : ""; var r = { home: !!home, apps: Object.keys((c[home] || {}).apps || {}).length };' +
-    ' try { D.viewAt("othernode", "app").set("apps/onlythere", { key: "onlythere" }); } catch (e) { r.threw = String(e); }' +
+    ' try { D.viewAt("othernode", "app").set("apps/onlythere", { key: "onlythere" }); } catch (e) { r.threw = true; }' +
     ' r.there = !!(((c.othernode || {}).apps || {}).onlythere); r.notHome = !((c[home] || {}).apps || {}).onlythere;' +
     ' return JSON.stringify(r); })()');
   return F.cached.home && F.cached.apps > 0 ? true : false;

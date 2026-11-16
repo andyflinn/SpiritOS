@@ -43,11 +43,11 @@ test.run('every rule is one of spirit.js\'s standard, \'?\' optional', 0.2, func
   if (!W.api) return false;
   const badRule = [];
   W.names.forEach(function (v) {
-    if (!isPlain(W.verbs[v])) { badRule.push(v + ': not an object'); return; }
+    if (!isPlain(W.verbs[v])) { badRule.push(v); return; }
     Object.keys(W.verbs[v]).forEach(function (arg) {
       const raw = String(W.verbs[v][arg]);
       const rule = raw.charAt(raw.length - 1) === '?' ? raw.slice(0, -1) : raw;
-      if (spirit.rules.indexOf(rule) === -1) badRule.push(v + '.' + arg + ': ' + raw);
+      if (spirit.rules.indexOf(rule) === -1) badRule.push(v);
     });
   });
   return badRule.length === 0 || false;

@@ -68,7 +68,7 @@ const LONG = 'zzLongValue' + 'W'.repeat(300);
 // What the page does for one search, as one script: mounted, planted, measured, the details opened. Its answer is a report.
 const PAGE = String.raw`(function (name, ROWS, LONG, PANE_W, PANE_H, VIA_LIST, OPTIONS, SHAPES, KEEP, FORCE) {
   var S = window.spirit;
-  var R = { name: name, notes: [] };
+  var R = { name: name };
   function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
   // What is seen of an element: its rect cut by every box above it, up to stop, that clips (overflow other than visible).
   function seen(el, stop) {
@@ -81,15 +81,14 @@ const PAGE = String.raw`(function (name, ROWS, LONG, PANE_W, PANE_H, VIA_LIST, O
     }
     return v;
   }
-  function chain(el, stop) { var parts = []; for (var n = el; n && n !== stop; n = n.parentNode) { if (n.id || n === el) parts.unshift(n.tagName.toLowerCase() + (n.id ? '#' + n.id : '')); } return parts.join(' > '); }
-  // What of box's contents shows past its edge: each element with a rect, seen, against box's own rect.
+  // How many of box's contents show past its edge: each element with a rect, seen, against box's own rect.
   function spills(box) {
-    var b = box.getBoundingClientRect(); var out = [];
+    var b = box.getBoundingClientRect(); var out = 0;
     Array.prototype.forEach.call(box.querySelectorAll('*'), function (el) {
       if (!el.getClientRects().length) return;
       var v = seen(el, box);
       if (v.right <= v.left || v.bottom <= v.top) return;
-      if (v.right > b.right + 1 || v.bottom > b.bottom + 1 || v.left < b.left - 1) out.push(chain(el, box));
+      if (v.right > b.right + 1 || v.bottom > b.bottom + 1 || v.left < b.left - 1) out++;
     });
     return out;
   }
@@ -129,14 +128,14 @@ const PAGE = String.raw`(function (name, ROWS, LONG, PANE_W, PANE_H, VIA_LIST, O
     var stack = S.element.spirit.element.panel.create(pane, under);
     window.zzStack = stack;
     var sel = S.element.spirit.element.search[name];
-    if (!sel || typeof sel.create !== 'function') { R.fail = 'spirit.element.spirit.element.search.' + name + ' has no create'; return R; }
+    if (!sel || typeof sel.create !== 'function') { R.fail = true; return R; }
     // THE LIST IN PANE FACE (cw, checking these reds: "api: its selector is two dropdowns side by side by your ruling
     // (G29.7) and takes no face: pane, so it never draws a list. the test should judge api's listElement in pane face
     // instead"): a search whose selector draws no pane is judged by its own listElement.
     var maker = VIA_LIST[name] && sel.listElement && typeof sel.listElement.create === 'function' ? sel.listElement : sel;
     // Only the searches it makes in its own pane count (the face page makes its own).
     R.made.length = 0;
-    try { window.zzMade = maker.create(under, Object.assign({ face: 'pane', open: stack.open }, OPTIONS[name] || {})); } catch (e) { R.fail = 'its create threw: ' + (e && e.message || e); return R; }
+    try { window.zzMade = maker.create(under, Object.assign({ face: 'pane', open: stack.open }, OPTIONS[name] || {})); } catch (e) { R.fail = true; return R; }
     return wait(1500).then(function () {
       var mine = R.made.filter(function (x) { return x.host && under.contains(x.host); });
       // The search's own, not a filter's search in its selector row (made first by some lists).
@@ -164,7 +163,7 @@ const PAGE = String.raw`(function (name, ROWS, LONG, PANE_W, PANE_H, VIA_LIST, O
       template = template || SHAPES[name] || null;
       R.template = !!template;
       R.planted = [];
-      for (var i = 0; i < ROWS; i++) { var k = 'zz-plant-' + i; R.planted.push(k); try { S.data.setPath(R.data + '/' + k, plant(template, i)); } catch (e) { R.plantError = String(e && e.message || e); } }
+      for (var i = 0; i < ROWS; i++) { var k = 'zz-plant-' + i; R.planted.push(k); try { S.data.setPath(R.data + '/' + k, plant(template, i)); } catch (e) { R.plantError = true; } }
       return wait(1500).then(function () {
         var after = L.getBoundingClientRect();
         var p = pane.getBoundingClientRect();
@@ -181,7 +180,7 @@ const PAGE = String.raw`(function (name, ROWS, LONG, PANE_W, PANE_H, VIA_LIST, O
         L.scrollTop = L.scrollHeight;
         return wait(300).then(function () {
           R.fixedCount = fixed.length;
-          R.moved = fixed.filter(function (el, i) { return Math.abs(el.getBoundingClientRect().top - tops[i]) > 1; }).map(function (el) { return chain(el, list); });
+          R.moved = fixed.filter(function (el, i) { return Math.abs(el.getBoundingClientRect().top - tops[i]) > 1; }).length;
           L.scrollTop = 0;
           // 4: a planted row: what shows past its edge.
           var row = L.querySelector('[data-key="zz-plant-0"]');
@@ -212,7 +211,7 @@ const PAGE = String.raw`(function (name, ROWS, LONG, PANE_W, PANE_H, VIA_LIST, O
         var pr = pane.getBoundingClientRect();
         var tall = Array.prototype.filter.call(pane.querySelectorAll('*'), function (el) { return el.getClientRects().length && el.getBoundingClientRect().bottom > pr.bottom + 1; });
         R.detailTaller = tall.length > 0;
-        R.detailNoScroll = tall.filter(function (el) { for (var n = el.parentElement; n; n = n.parentElement) { if (/auto|scroll/.test(getComputedStyle(n).overflowY) && n.scrollHeight > n.clientHeight + 1) return false; if (n === a.box) break; } return true; }).map(function (el) { return chain(el, pane); }).slice(0, 3);
+        R.detailNoScroll = tall.filter(function (el) { for (var n = el.parentElement; n; n = n.parentElement) { if (/auto|scroll/.test(getComputedStyle(n).overflowY) && n.scrollHeight > n.clientHeight + 1) return false; if (n === a.box) break; } return true; }).length;
         // 6: its title bar, the layer's first part, before and after its scrolling box is scrolled to its end. Made taller
         // than its panel by a part far taller put at the end of what it drew, as the browser general test grows a box.
         var bar = a.box.firstElementChild;
@@ -248,7 +247,7 @@ const PAGE = String.raw`(function (name, ROWS, LONG, PANE_W, PANE_H, VIA_LIST, O
     paneBox.style.cssText = 'position:fixed;left:0;top:0;width:' + PANE_W + 'px;height:' + PANE_H + 'px;display:flex;flex-direction:column;overflow:hidden';
     document.body.appendChild(paneBox);
     var selP = S.element.spirit.element.search[name];
-    try { selP.create(paneBox, Object.assign({}, OPTIONS[name] || {}, { face: 'pane' })); } catch (e) { R.paneError = String(e && e.message || e); }
+    try { selP.create(paneBox, Object.assign({}, OPTIONS[name] || {}, { face: 'pane' })); } catch (e) { R.paneError = true; }
     return wait(1000).then(function () {
       R.selectorPane = Array.prototype.some.call(paneBox.querySelectorAll('[id$="list"]'), function (x) { return !x.closest('[id$="-selectors"]') && x.getClientRects().length > 0; });
       if (paneBox.parentNode) paneBox.parentNode.removeChild(paneBox);
@@ -259,7 +258,7 @@ const PAGE = String.raw`(function (name, ROWS, LONG, PANE_W, PANE_H, VIA_LIST, O
     corner.style.cssText = 'position:fixed;right:4px;bottom:4px';
     document.body.appendChild(corner);
     var sel = S.element.spirit.element.search[name];
-    try { sel.create(corner, Object.assign({}, OPTIONS[name] || {}, { face: 'dropdown' })); } catch (e) { R.dropError = String(e && e.message || e); return R; }
+    try { sel.create(corner, Object.assign({}, OPTIONS[name] || {}, { face: 'dropdown' })); } catch (e) { R.dropError = true; return R; }
     return wait(1000).then(function () {
       var field = corner.querySelector('button[id$="field"]');
       if (!field) { R.noDropdown = true; return R; }
@@ -272,7 +271,7 @@ const PAGE = String.raw`(function (name, ROWS, LONG, PANE_W, PANE_H, VIA_LIST, O
         return R;
       });
     });
-  }).then(function () { delete R.made; return R; }, function (e) { delete R.made; R.fail = (R.fail ? R.fail + '; ' : '') + 'it crashed: ' + String(e && e.stack || e).slice(0, 300); return R; });
+  }).then(function () { delete R.made; return R; }, function () { delete R.made; R.fail = true; return R; });
 })`;
 
 // What each search reported, the page sessions first.
@@ -302,7 +301,7 @@ test.run('the world: each search mounted, planted and opened on a page of its ow
     let got = null;
     try { got = await Promise.race([W.page.evaluate('Promise.resolve(' + PAGE + '(' + JSON.stringify(n) + ',' + ROWS + ',' + JSON.stringify(LONG) + ',' + PANE_W + ',' + PANE_H + ',' + JSON.stringify(VIA_LIST) + ',' + JSON.stringify(OPTIONS) + ',' + JSON.stringify(SHAPES) + ',' + JSON.stringify(KEEP) + ',' + JSON.stringify(FORCE) + ')).then(function (r) { return JSON.stringify(r); })'), sleep(60000).then(function () { return null; })]); } catch (e) { got = null; }
     let r = null; try { r = JSON.parse(got); } catch (e) { r = null; }
-    REPORTS[n] = r || { name: n, fail: 'the page answered nothing within 60 s' };
+    REPORTS[n] = r || { name: n, fail: true };
     if (REPORTS[n].fail) failed.push(n);
   }
   return !failed.length || false;
@@ -324,7 +323,7 @@ function eachSearch(why) {
   if (bad.length) return false;
   return judged.length > 0 || false;
 }
-const listOf = function (r) { return r.noList ? { skip: 'it drew no list' } : r.noData ? { skip: 'its search is made with no spirit.data branch to plant rows in' } : null; };
+const listOf = function (r) { return r.noList ? { skip: true } : r.noData ? { skip: true } : null; };
 const plantedOf = function (r) { return listOf(r) || !r.drawn; };
 
 test.run('1. the list\'s box has a stated size, from its pane, not its rows (rule 16)', 0.4, function () {
@@ -342,27 +341,27 @@ test.run('2. the list scrolls: the box keeps its size, scrollHeight > clientHeig
 test.run('3. scrolling the list, its title and buttons stay at the top', 0.4, function () {
   return eachSearch(function (r) {
     const pre = plantedOf(r); if (pre) return pre;
-    if (!r.fixedCount) return { skip: 'it draws no title button or field outside its list' };
-    return r.moved.length > 0;
+    if (!r.fixedCount) return { skip: true };
+    return r.moved > 0;
   });
 }, test.limit.quick);
 test.run('4. a planted long value in a row wraps or clips, nothing past the row\'s edge', 0.4, function () {
   return eachSearch(function (r) {
     const pre = plantedOf(r); if (pre) return pre;
     if (r.rowSpill === null) return true;
-    return r.rowSpill.length > 0;
+    return r.rowSpill > 0;
   });
 }, test.limit.quick);
 const detailOf = function (r) {
-  if (r.noDetail) return { skip: 'it has no detailElement' };
-  if (r.noDetailRow) return { skip: 'no planted row to open' };
-  if (!r.detailDrew) return { skip: 'its detail drew nothing for a planted row' };
+  if (r.noDetail) return { skip: true };
+  if (r.noDetailRow) return { skip: true };
+  if (!r.detailDrew) return { skip: true };
   return null;
 };
 test.run('5. the detail keeps a planted long value inside its panel, and scrolls when taller', 0.4, function () {
   return eachSearch(function (r) {
     const pre = detailOf(r); if (pre) return pre;
-    return r.detailSpill.length > 0 || (!!r.detailTaller && r.detailNoScroll.length > 0);
+    return r.detailSpill > 0 || (!!r.detailTaller && r.detailNoScroll > 0);
   });
 }, test.limit.quick);
 test.run('6. the detail\'s title bar stays pinned when it scrolls', 0.4, function () {

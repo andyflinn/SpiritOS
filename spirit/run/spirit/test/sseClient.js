@@ -96,19 +96,19 @@ test.run('a fetch that throws is said as unreachable, and asked again', 0.2, asy
 
 // ── the backoff, clingy and capped ──
 test.run('each failed attempt doubles the wait, capped at eight seconds', 0.2, async function () {
-  const said = client([function () { return Promise.reject(new Error('down')); }]);
+  const said = client([function () { return Promise.reject(new Error()); }]);
   for (let i = 0; i < 5; i++) { await settle(); const t = said.timers[i]; if (t) t.fn(); }
   await settle();
   const waits = said.timers.map(function (t) { return t.ms; }).slice(0, 5);
   return JSON.stringify(waits) === JSON.stringify([1000, 2000, 4000, 8000, 8000]) || false;
 }, test.limit.quick);
 test.run('the wait is spread by its randomness, between half and all of it', 0.2, async function () {
-  const said = client([function () { return Promise.reject(new Error('down')); }], { randomImpl: function () { return 0; } });
+  const said = client([function () { return Promise.reject(new Error()); }], { randomImpl: function () { return 0; } });
   await settle();
   return (said.timers[0] || {}).ms === 500 || false;
 }, test.limit.quick);
 test.run('bytes read set the wait back to the first', 0.2, async function () {
-  const said = client([function () { return Promise.reject(new Error('down')); }, streamed(['event: x\ndata: 1\n\n'])]);
+  const said = client([function () { return Promise.reject(new Error()); }, streamed(['event: x\ndata: 1\n\n'])]);
   await settle(); said.timers[0].fn(); await settle();
   const waits = said.timers.map(function (t) { return t.ms; });
   return (waits[0] === 1000 && waits[1] === 1000) || false;
@@ -122,7 +122,7 @@ test.run('silence past its idle wait aborts the stream, which is said and asked 
     const enc = new TextEncoder();
     return Promise.resolve({ ok: true, status: 200, body: new ReadableStream({ start: function (c) {
       c.enqueue(enc.encode('event: x\ndata: 1\n\n'));
-      if (init && init.signal) init.signal.addEventListener('abort', function () { c.error(new Error('aborted')); });
+      if (init && init.signal) init.signal.addEventListener('abort', function () { c.error(new Error()); });
     } }) });
   }, idleTimeoutImpl: function (fn) { idle = fn; return 1; } };
   const said = client([], held);
@@ -133,7 +133,7 @@ test.run('silence past its idle wait aborts the stream, which is said and asked 
   return (said.closes.length === 1 && /read failed|ended/.test(said.closes[0].reason) && said.timers.length === 1) || false;
 }, test.limit.quick);
 test.run('close stops it: a retry already due fetches nothing more', 0.2, async function () {
-  const said = client([function () { return Promise.reject(new Error('down')); }]);
+  const said = client([function () { return Promise.reject(new Error()); }]);
   await settle();
   said.client.close();
   const before = said.fetched.length;

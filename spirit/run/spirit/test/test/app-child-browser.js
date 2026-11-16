@@ -139,7 +139,7 @@ test.run('no fixed sleep in app-child-browser.js', 0.4, function () {
     const lines = fs.readFileSync(path.join(RUN, 'spirit', 'test', n), 'utf8').split('\n');
     lines.forEach(function (l, i) {
       const code = l.replace(/\/\/.*$/, '');
-      if (/\bsleep\s*\(\s*\d/.test(code) || /setTimeout\s*\([^,]*,\s*\d+\s*\)/.test(code)) bad.push(n + ':' + (i + 1));
+      if (/\bsleep\s*\(\s*\d/.test(code) || /setTimeout\s*\([^,]*,\s*\d+\s*\)/.test(code)) bad.push(i + 1);
     });
   });
   return bad.length === 0 || false;

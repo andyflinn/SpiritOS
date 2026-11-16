@@ -44,16 +44,16 @@ test.run('it exports a table of verbs and nothing else: it names no family of it
 test.run('every rule is one of spirit.js\'s standard, \'?\' optional', 0.2, function () {
   if (!W.api) return false;
   if (!W.names.length) return false;
-  const bad = [];
+  let bad = 0;
   W.names.forEach(function (v) {
-    if (!isPlain(W.verbs[v])) { bad.push(v + ': not an object'); return; }
+    if (!isPlain(W.verbs[v])) { bad++; return; }
     Object.keys(W.verbs[v]).forEach(function (arg) {
       const raw = String(W.verbs[v][arg]);
       const rule = raw.charAt(raw.length - 1) === '?' ? raw.slice(0, -1) : raw;
-      if (spirit.rules.indexOf(rule) === -1) bad.push(v + '.' + arg + ': ' + raw);
+      if (spirit.rules.indexOf(rule) === -1) bad++;
     });
   });
-  return bad.length === 0 || false;
+  return bad === 0 || false;
 }, test.limit.quick);
 test.run('its verbs are busy, preferences, script.get, script.classify, suite.search, testicle.set, suite.success, testicle.search, red, run, subscribe and unsubscribe', 0.2, function () {
   if (!W.api) return false;

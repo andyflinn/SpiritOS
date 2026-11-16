@@ -47,7 +47,7 @@ function ask(link) {
   const who = auth.generateIdentity('asker' + n);
   const before = W.R.mails.length;
   let said = null;
-  try { said = W.R.relay.join(who.publicKey, 'asker' + n + '@example.org', link, ''); } catch (e) { said = { ok: false, error: String(e && e.message || e) }; }
+  try { said = W.R.relay.join(who.publicKey, 'asker' + n + '@example.org', link, ''); } catch (e) { said = { ok: false }; }
   return { said: said || {}, mail: W.R.mails.length > before ? W.R.mails[W.R.mails.length - 1] : null };
 }
 test.run('the world: a scratch relay, its mail kept', 0.2, function () {

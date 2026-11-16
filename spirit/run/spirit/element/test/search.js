@@ -948,7 +948,7 @@ test.run('a dropdown starts shut, its list not drawn', 0.2, function () {
   heard0 = docHeard.length;
   L8 = PS.create(c8, { face: 'dropdown', placeholder: 'pick one', all: 'everyone', columns: [{ field: 'name' }],
     rows: function () { return [{ key: 'a', name: 'ann' }, { key: 'b', name: 'bo' }]; }, name: function (row) { return 'N:' + row.name; },
-    details: function () { throw new Error('a dropdown opens no details'); }, pick: function (row, key) { pk8.push([row, key]); } });
+    details: function () { throw new Error(); }, pick: function (row, key) { pk8.push([row, key]); } });
   return (c8.get('popup').hidden === true && c8.get('list').innerHTML === '') ? true : false;
 }, test.limit.quick);
 test.run('the field shows the all words while nothing is chosen', 0.2, function () {
@@ -1042,7 +1042,7 @@ test.run('once loaded, with nothing preloaded, it draws and ranks: typing ze put
     made10 = P2.create(c10, { search: source('srv').search, server: 'srv', verb: 'search', rows: function () { return [{ key: 'b', name: 'bert' }, { key: 'z', name: 'zed' }]; },
       columns: [{ field: 'name', label: 'Name', sort: 'text' }], args: function (t) { return { q: t }; } });
     c10.type('ze');
-  } catch (e) { threw = e && e.message; }
+  } catch (e) { threw = true; }
   return (!threw && made10 && c10.shown()[0] === 'z') ? true : false;
 }, test.limit.quick);
 
@@ -1128,7 +1128,7 @@ async function keptPart() {
       'K.list = spirit.element.spirit.element.search.create(b, { rows: function () { return K.rows; }, columns: [{ field: "name", label: "Name", sort: "text" }, { field: "n", label: "N", sort: "number" }], ' +
       '  filters: [{ name: "kind", multi: true, keepOne: true, choices: [{ value: "red", word: "red" }, { value: "green", word: "green" }], test: function (row, off) { var o = off || {}; return row && !o[row.kind] ? 1 : 0; } }], ' +
       '  selectors: [{ name: "who", element: K.who, test: function (row) { return !K.who.value || row.who === K.who.value ? 1 : 0; } }] }); ' +
-      'return new Promise(function (r) { setTimeout(r, 300); }).then(function () { K.mark(); K.watch(); K.firstTable = K.table(); return K.trs().length === 5 ? "made" : "rows drawn: " + K.trs().length; }); }, function (e) { return String(e); })');
+      'return new Promise(function (r) { setTimeout(r, 300); }).then(function () { K.mark(); K.watch(); K.firstTable = K.table(); return K.trs().length === 5 ? "made" : null; }); }, function () { return null; })');
     return ok() || false;
   }, test.limit.slow);
 
@@ -1467,7 +1467,7 @@ async function popupPart() {
       'spirit.element.spirit.element.search.create(b, { face: "dropdown", rows: function () { return rows; }, columns: [{ field: "name", label: "Name" }], name: function (r) { return r.name; }, pick: function () {} }); ' +
       'window.__z[x[0]] = { box: b, list: b.querySelector("[id$=list]"), field: b.querySelector("[id$=field]") }; }); ' +
       'var cover = document.createElement("div"); cover.id = "zz-cover"; cover.style.cssText = "position:absolute;left:0;top:160px;width:900px;height:200px;background:#333;z-index:20"; document.body.appendChild(cover); ' +
-      'return Object.keys(window.__z).every(function (k) { return !!window.__z[k].list && !!window.__z[k].field; }) ? "made" : "no list or field"; }, function (e) { return String(e); })');
+      'return Object.keys(window.__z).every(function (k) { return !!window.__z[k].list && !!window.__z[k].field; }) ? "made" : null; }, function () { return null; })');
     return (made === 'made') ? true : false;
   }, test.limit.quick);
   const look = function (k) {
@@ -1606,7 +1606,7 @@ async function tilesPart() {
     if (!node || !node.up || !chrome || chrome.error) return false;
     await chrome.send('Page.navigate', { url: node.base + '/face.html' });
     await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
-    loaded = await js('window.spirit.ready.then(function () { return window.spirit.require("spirit/element/search.js"); }).then(function () { return "loaded"; }, function (e) { return "ERR " + e; })');
+    loaded = await js('window.spirit.ready.then(function () { return window.spirit.require("spirit/element/search.js"); }).then(function () { return "loaded"; }, function () { return null; })');
     return (loaded === 'loaded') ? true : false;
   }, test.limit.quick);
   const read = async function () {
@@ -1845,7 +1845,7 @@ async function tilesPart() {
   test.run('it follows the Search button', 0.2, async function () {
     if (!node || !node.up || !chrome || chrome.error) return false;
     // the box: "The toggle sits on the search row, right after the Search button."
-    placed = await js('(function () { var t = window.__t.querySelector(".list-toggle"); if (!t) return "none"; var b = [].filter.call(window.__t.querySelectorAll("button"), function (x) { return x.textContent === "Search"; })[0]; if (!b) return "no Search button"; return t.previousElementSibling === b ? "after" : "elsewhere"; })()');
+    placed = await js('(function () { var t = window.__t.querySelector(".list-toggle"); if (!t) return null; var b = [].filter.call(window.__t.querySelectorAll("button"), function (x) { return x.textContent === "Search"; })[0]; if (!b) return null; return t.previousElementSibling === b ? "after" : null; })()');
     return (placed === 'after') ? true : false;
   }, test.limit.quick);
   const seen = function () { return js('JSON.stringify({ tiles: window.__t.querySelectorAll(".app-icon").length, headers: window.__t.querySelectorAll("th").length, words: ([].filter.call(window.__t.querySelectorAll("input"), function (x) { return x.getClientRects().length && x.type !== "checkbox"; })[0] || {}).value, faces: window.__faces })'); };
@@ -1918,7 +1918,7 @@ async function reconnectPart() {
       'window.__r = { asked: 0 }; var b = document.createElement("div"); b.id = "zz-r"; b.style.cssText = "width:400px;height:300px"; document.body.appendChild(b); ' +
       'window.__r.h = spirit.element.spirit.element.search.create(b, { verb: "zz.search", columns: [{ field: "name", label: "Name" }], name: function (r) { return r.name; }, ' +
       '  search: function () { window.__r.asked += 1; var n = window.__r.asked; return Promise.resolve({ status: 200, body: { items: [{ key: "k" + n, label: JSON.stringify({ name: "answer " + n }) }], more: false } }); } }); ' +
-      'window.__r.h.refresh(); return "made"; }, function (e) { return String(e); })');
+      'window.__r.h.refresh(); return "made"; }, function () { return null; })');
     if (made !== 'made') return false;
     const first = await until(function () { return chrome.evaluate('window.__r.asked >= 1 && document.body.innerText.indexOf("answer 1") !== -1'); }, 10000);
     asked0 = await chrome.evaluate('window.__r.asked');

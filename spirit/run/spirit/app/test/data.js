@@ -72,7 +72,7 @@ test.run('the world: a scratch node and a Chrome page on its face', 0.2, async f
 }, test.limit.slow);
 test.run('the world: the app search and the app detail load', 0.2, async function () {
   if (!W.up) return false;
-  const loaded = await W.chrome.evaluate('window.spirit.ready.then(function () { return Promise.all([spirit.require("spirit/element/search/app.js"), spirit.require("spirit/element/search/app/detailElement.js")]); }).then(function () { return "loaded"; }, function (e) { return String(e && e.message || e); })');
+  const loaded = await W.chrome.evaluate('window.spirit.ready.then(function () { return Promise.all([spirit.require("spirit/element/search/app.js"), spirit.require("spirit/element/search/app/detailElement.js")]); }).then(function () { return "loaded"; }, function () { return false; })');
   W.loaded = loaded === 'loaded';
   return W.loaded || false;
 }, test.limit.quick);

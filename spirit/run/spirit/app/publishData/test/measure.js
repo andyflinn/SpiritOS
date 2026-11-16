@@ -13,7 +13,7 @@ const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const FILE = path.join(__dirname, '..', 'measure.js');
 const LAB_NODES = path.resolve(RUN, '..', '..', 'lab', 'node');
 
-const M = { mod: null, got: null, said: [], threw: '' };
+const M = { mod: null, got: null, said: [], threw: false };
 
 test.run('it exports measure and rssOf', 0.2, function () {
   try { M.mod = require(FILE); } catch (e) { return false; }
@@ -37,7 +37,7 @@ test.run('rssOf: 0 for a process that has ended', 0.2, function () {
 // measure(): once, whole.
 test.run('measure: it answers, on lab nodes and a lab relay', 0.2, async function () {
   if (!M.mod) return false;
-  try { M.got = await M.mod.measure(function (t) { M.said.push(t); }); } catch (e) { M.threw = String(e && e.message || e); }
+  try { M.got = await M.mod.measure(function (t) { M.said.push(t); }); } catch (e) { M.threw = true; }
   return (!!M.got && !M.threw) || false;
 }, test.limit.long);
 test.run('a node at rest: a figure in MB, above 0 and below this machine\'s RAM', 0.2, function () {

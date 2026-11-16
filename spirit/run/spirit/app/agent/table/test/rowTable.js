@@ -19,7 +19,7 @@ const FILE = path.join(__dirname, '..', 'rowTable.js');
 const isKey = function (k) { return typeof k === 'string' && /^MCowBQYDK2VwAyEA[A-Za-z0-9+/]{43}=$/.test(k); };
 // The verb's answer, or its refusal as { refusal, why }.
 function call(verb, a) {
-  try { return verb.handler(a); } catch (e) { return { refusal: e.refusal || 'threw', why: (e.extra && e.extra.why) || e.message }; }
+  try { return verb.handler(a); } catch (e) { return { refusal: e.refusal || true, why: (e.extra && e.extra.why) || e.message }; }
 }
 const SECRET = 'sk-the-test-secret-0123456789';
 

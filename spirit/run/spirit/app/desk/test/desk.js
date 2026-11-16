@@ -79,7 +79,7 @@ function seed(stateDir, sessions) {
 function git(cwd, args) {
   const r = spawnSync('git', ['-c', 'init.defaultBranch=master', '-c', 'user.name=desk test', '-c', 'user.email=desk@test.invalid', '-c', 'commit.gpgsign=false'].concat(args),
     { cwd: cwd, encoding: 'utf8', env: Object.assign({}, process.env, { GIT_TERMINAL_PROMPT: '0' }) });
-  return { status: r.status, out: String(r.stdout || '').trim(), err: String(r.stderr || '').trim() };
+  return { status: r.status, out: String(r.stdout || '').trim() };
 }
 function gitWorld(dir) {
   fs.mkdirSync(dir, { recursive: true });
@@ -511,7 +511,7 @@ test.run('once per push', 0.2, function () {
 // box, and desk will note so in the chat."). This replaces his G9.3 and G21.1 words on a hold. ───────────────────
 // goal/G43.3: the desk never refuses him the box; an agent's update fails, and the chat says so
 const factsB = async function (id) { const r = await W.askB('item.get', { id: id }, ANDY); try { return JSON.parse(r.item); } catch (e) { return {}; } };
-const failsAndSays = async function (id, agent, what) {
+const failsAndSays = async function (id, agent) {
   const askB = W.askB;
   const lines0 = (await deskLines(askB, id)).length;
   const v = (await factsB(id)).version || 0;
@@ -537,7 +537,7 @@ test.run('an agent holds the box: his take is not refused, and the box is his', 
 }, test.limit.quick);
 test.run('after his take over cw: the agent\'s update fails, and the box stays his', 0.2, async function () {
   if (!W.askB) return false;
-  W.faCw = await failsAndSays('goal/G300.1', CW, 'after his take over cw');
+  W.faCw = await failsAndSays('goal/G300.1', CW);
   return W.faCw.failed || false;
 }, test.limit.quick);
 test.run('after his take over cw: and the desk notes it in the chat', 0.2, function () {
@@ -562,7 +562,7 @@ test.run('an agent\'s one-write hold: his take is not refused either', 0.2, asyn
 }, test.limit.quick);
 test.run('after his take over ubi\'s hold: the agent\'s update fails, and the box stays his', 0.2, async function () {
   if (!W.askB) return false;
-  W.faUbi = await failsAndSays('goal/G300.2', UBI, 'after his take over ubi\'s hold');
+  W.faUbi = await failsAndSays('goal/G300.2', UBI);
   return W.faUbi.failed || false;
 }, test.limit.quick);
 test.run('after his take over ubi\'s hold: and the desk notes it in the chat', 0.2, function () {
