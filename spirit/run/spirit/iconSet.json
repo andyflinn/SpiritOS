@@ -1,4 +1,535 @@
 {
+  "🏮": [
+    "red",
+    "paper",
+    "lantern"
+  ],
+  "🔦": [
+    "flashlight"
+  ],
+  "🕯": [
+    "candle"
+  ],
+  "🧮": [
+    "abacus"
+  ],
+  "📀": [
+    "optical",
+    "DVD",
+    "disk"
+  ],
+  "💿": [
+    "optical",
+    "CD",
+    "disk"
+  ],
+  "💾": [
+    "floppy",
+    "disk"
+  ],
+  "💽": [
+    "computer",
+    "disk"
+  ],
+  "🖲": [
+    "trackball"
+  ],
+  "🖱": [
+    "mouse"
+  ],
+  "⌨": [
+    "keyboard"
+  ],
+  "🖨": [
+    "printer"
+  ],
+  "🖥": [
+    "desktop",
+    "computer"
+  ],
+  "🔌": [
+    "electric plug"
+  ],
+  "🪫": [
+    "low",
+    "battery"
+  ],
+  "🪉": [
+    "harp"
+  ],
+  "🪈": [
+    "flute"
+  ],
+  "🪇": [
+    "maracas",
+    "shakers"
+  ],
+  "🪘": [
+    "drum",
+    "djembe"
+  ],
+  "🥁": [
+    "drum"
+  ],
+  "🪕": [
+    "banjo"
+  ],
+  "🎻": [
+    "violin"
+  ],
+  "🎹": [
+    "keyboard"
+  ],
+  "🎸": [
+    "guitar"
+  ],
+  "🪗": [
+    "accordion"
+  ],
+  "🪊": [
+    "trombone"
+  ],
+  "🎺": [
+    "trumpet"
+  ],
+  "🎷": [
+    "saxophone"
+  ],
+  "🫟": [
+    "splatter"
+  ],
+  "™": [
+    "trade",
+    "mark"
+  ],
+  "®": [
+    "registered",
+    "trade",
+    "mark"
+  ],
+  "©": [
+    "copyright"
+  ],
+  "♻": [
+    "recycling",
+    "symbol"
+  ],
+  "⚕": [
+    "medical",
+    "symbol"
+  ],
+  "💲": [
+    "dollar",
+    "sign"
+  ],
+  "💱": [
+    "currency",
+    "exchange"
+  ],
+  "〰": [
+    "wavy",
+    "dash"
+  ],
+  "❕": [
+    "white",
+    "exclamation",
+    "mark"
+  ],
+  "❔": [
+    "white",
+    "question",
+    "mark"
+  ],
+  "⁉": [
+    "exclamation",
+    "question",
+    "mark"
+  ],
+  "‼": [
+    "double",
+    "exclamation",
+    "mark"
+  ],
+  "♾": [
+    "infinity"
+  ],
+  "🟰": [
+    "equal"
+  ],
+  "➗": [
+    "divide",
+    "division"
+  ],
+  "✖": [
+    "multiply"
+  ],
+  "☣": [
+    "biohazard"
+  ],
+  "☢": [
+    "radioactive"
+  ],
+  "📵": [
+    "no",
+    "mobile",
+    "cell",
+    "phones",
+    "prohibited"
+  ],
+  "🚷": [
+    "no",
+    "pedestrians",
+    "walking",
+    "prohibited"
+  ],
+  "🚱": [
+    "no",
+    "drinking",
+    "water"
+  ],
+  "🚯": [
+    "no",
+    "littering",
+    "prohibited"
+  ],
+  "🚭": [
+    "no",
+    "smoking",
+    "prohibited"
+  ],
+  "🚳": [
+    "no",
+    "bicycles",
+    "prohibited"
+  ],
+  "🚫": [
+    "prohibited"
+  ],
+  "⛔": [
+    "no",
+    "entry",
+    "one",
+    "way"
+  ],
+  "🚸": [
+    "children",
+    "crossing"
+  ],
+  "🛅": [
+    "left",
+    "luggage"
+  ],
+  "🛄": [
+    "baggage",
+    "claim"
+  ],
+  "🛂": [
+    "passport",
+    "control",
+    "customs",
+    "zoll",
+    "duane"
+  ],
+  "🚾": [
+    "water",
+    "closet",
+    "WC"
+  ],
+  "🚼": [
+    "baby"
+  ],
+  "🚻": [
+    "restroom",
+    "WC"
+  ],
+  "🚺": [
+    "women’s",
+    "room"
+  ],
+  "🚹": [
+    "men’s",
+    "room"
+  ],
+  "♿": [
+    "wheelchair"
+  ],
+  "🚰": [
+    "potable",
+    "drinking",
+    "water"
+  ],
+  "🚮": [
+    "litter",
+    "trash",
+    "bin"
+  ],
+  "🪪": [
+    "identification",
+    "ID",
+    "card"
+  ],
+  "🪧": [
+    "placard",
+    "sign"
+  ],
+  "🗿": [
+    "moai",
+    "head"
+  ],
+  "🪦": [
+    "headstone"
+  ],
+  "⚰": [
+    "coffin"
+  ],
+  "🚬": [
+    "cigarette"
+  ],
+  "🛒": [
+    "shopping",
+    "cart"
+  ],
+  "🧯": [
+    "fire",
+    "extinguisher"
+  ],
+  "🧽": [
+    "sponge"
+  ],
+  "🪥": [
+    "toothbrush"
+  ],
+  "🫧": [
+    "bubbles"
+  ],
+  "🧼": [
+    "soap"
+  ],
+  "🪣": [
+    "bucket"
+  ],
+  "🧻": [
+    "roll",
+    "toilet",
+    "paper"
+  ],
+  "🧺": [
+    "basket"
+  ],
+  "🧹": [
+    "broom",
+    "sweep"
+  ],
+  "🧷": [
+    "safety",
+    "pin"
+  ],
+  "🧴": [
+    "lotion",
+    "bottle"
+  ],
+  "🪒": [
+    "razor"
+  ],
+  "🪤": [
+    "mouse",
+    "trap"
+  ],
+  "🛁": [
+    "bath",
+    "tub",
+    "shower"
+  ],
+  "🚿": [
+    "shower"
+  ],
+  "🚽": [
+    "toilet",
+    "WC"
+  ],
+  "🪑": [
+    "chair"
+  ],
+  "🛋": [
+    "couch",
+    "lamp"
+  ],
+  "🛏": [
+    "bed"
+  ],
+  "🪟": [
+    "window"
+  ],
+  "🪞": [
+    "mirror"
+  ],
+  "🛗": [
+    "elevator"
+  ],
+  "🚪": [
+    "door"
+  ],
+  "🩻": [
+    "x-ray"
+  ],
+  "🩺": [
+    "stethoscope"
+  ],
+  "🩼": [
+    "crutch"
+  ],
+  "🩹": [
+    "adhesive",
+    "bandage"
+  ],
+  "💊": [
+    "red",
+    "pill"
+  ],
+  "🩸": [
+    "blood",
+    "drop"
+  ],
+  "💉": [
+    "syringe"
+  ],
+  "📡": [
+    "satellite",
+    "antenna"
+  ],
+  "🔭": [
+    "telescope"
+  ],
+  "🔬": [
+    "microscope"
+  ],
+  "🧬": [
+    "DNA",
+    "double",
+    "helix"
+  ],
+  "🧫": [
+    "petri",
+    "dish"
+  ],
+  "🧪": [
+    "test",
+    "tube"
+  ],
+  "⚗": [
+    "alembic",
+    "science"
+  ],
+  "🪏": [
+    "shovel"
+  ],
+  "🪜": [
+    "ladder"
+  ],
+  "🧲": [
+    "magnet"
+  ],
+  "🧰": [
+    "tool",
+    "box"
+  ],
+  "🪝": [
+    "hook"
+  ],
+  "⛓": [
+    "chains"
+  ],
+  "🦯": [
+    "white",
+    "cane",
+    "blind"
+  ],
+  "⚖": [
+    "balance",
+    "scale",
+    "justice"
+  ],
+  "⚙": [
+    "gear"
+  ],
+  "🔩": [
+    "nut",
+    "bolt"
+  ],
+  "🪛": [
+    "screw",
+    "driver"
+  ],
+  "🔧": [
+    "wrench"
+  ],
+  "🪚": [
+    "carpentry",
+    "saw"
+  ],
+  "🏹": [
+    "bow",
+    "arrow"
+  ],
+  "🪃": [
+    "boomerang"
+  ],
+  "🗡": [
+    "dagger",
+    "knife"
+  ],
+  "🛠": [
+    "wrench",
+    "hammer"
+  ],
+  "⚒": [
+    "pick",
+    "hammer"
+  ],
+  "⛏": [
+    "pick"
+  ],
+  "🪓": [
+    "axe"
+  ],
+  "🔨": [
+    "hammer"
+  ],
+  "🗝": [
+    "key",
+    "old"
+  ],
+  "🗑": [
+    "waste",
+    "basket",
+    "trash",
+    "bin"
+  ],
+  "🗄": [
+    "cabinet"
+  ],
+  "🗃": [
+    "card",
+    "file"
+  ],
+  "✂": [
+    "scissors"
+  ],
+  "📐": [
+    "triangular",
+    "ruler"
+  ],
+  "📏": [
+    "straight",
+    "ruler"
+  ],
+  "🖇": [
+    "linked",
+    "paperclips"
+  ],
+  "📎": [
+    "paperclip"
+  ],
   "⬇️": [
     "arrowdown",
     "download"
@@ -41,7 +572,10 @@
     "delivered"
   ],
   "❗": [
-    "refused"
+    "refused",
+    "red",
+    "exclamation",
+    "mark"
   ],
   "⏳": [
     "loading",
@@ -212,13 +746,15 @@
   ],
   "💻": [
     "code",
-    "computer"
+    "computer",
+    "laptop"
   ],
   "🐛": [
     "bug"
   ],
   "💡": [
-    "idea"
+    "idea",
+    "bulb"
   ],
   "🍆": [
     "eggplant"
@@ -344,7 +880,8 @@
     "shield"
   ],
   "⚔️": [
-    "sword"
+    "swords",
+    "crossed"
   ],
   "🔫": [
     "gun"
