@@ -86,7 +86,7 @@ test.run('before the job the tiles draw apps, no run-only one among them', 0.2, 
   await sleep(1000);
   // From here on: every value the cache holds for a run-only app, and every app label a tile ever draws (a MutationObserver).
   const LABELS = JSON.stringify(W.own.map(function (a) { return a.label; }));
-  await chrome.evaluate('(function () { window.seen = {}; window.drawn = []; var want = ' + LABELS + ';' +
+  await chrome.evaluate('(function () { window.seen = {}; window.drawn = []; var want = window.want = ' + LABELS + ';' +
     ' ' + JSON.stringify(only.map(function (a) { return a.key; })) + '.forEach(function (k) { window.seen[k] = []; spirit.data.app.data.watch(k, function (r) { window.seen[k].push(r === undefined ? null : r); }); });' +
     ' function look() { var all = document.querySelectorAll("#tiles *"); for (var i = 0; i < all.length; i++) { var t = String(all[i].innerText || "").trim(); if (!all[i].children.length && want.indexOf(t) !== -1 && window.drawn.indexOf(t) === -1) window.drawn.push(t); } }' +
     ' look(); window.before = window.drawn; window.drawn = []; new MutationObserver(look).observe(document.getElementById("tiles"), { childList: true, subtree: true, characterData: true }); return true; }())');
@@ -99,6 +99,8 @@ test.run('before the job the tiles draw apps, no run-only one among them', 0.2, 
 test.run('a new app.label for agent is taken', 0.2, async function () {
   if (!W.watching) return false;
   W.fresh = W.plain.label + ' ' + process.pid;
+  // The observer looks for the new label too, so a tile that paints it is seen.
+  await W.chrome.evaluate('window.want.push(' + JSON.stringify(W.fresh) + '), true');
   const wrote = await ask('app.label', { key: W.plain.key, label: W.fresh });
   return wrote.status === 200 ? true : false;
 }, test.limit.quick);
@@ -133,10 +135,11 @@ test.run('every row of pushOrigin the app cache held after the job keeps run and
 }, test.limit.quick);
 
 // the box: "a node:run app shows as a tile with Activate"
-test.run('the tiles drew app labels', 0.2, async function () {
+// WHO PAINTS, LISTENS (Andy, G41.32): the tile shows what the stream said, with no search and no redraw.
+test.run('once the apps job has reached the page, agent\'s tile shows its new label', 0.2, async function () {
   if (!W.seen) return false;
   W.drawn = JSON.parse(await W.chrome.evaluate('JSON.stringify(window.drawn)'));
-  return W.drawn.indexOf(W.fresh) !== -1 || W.drawn.length > 0 ? true : false;
+  return W.drawn.indexOf(W.fresh) !== -1;
 }, test.limit.quick);
 test.run('the tiles never drew a tile for Publish Data', 0.2, function () {
   if (!W.drawn) return false;
