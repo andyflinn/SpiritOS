@@ -10,7 +10,8 @@ hands it (goal/G41.16). The grants panel draws it. Its test is `./grant.js`.
 - It names no table and no branch of its own. `spirit.element.search.grant.create(host, { grants, filters, selectors, serves })`: `grants` the
   caller's grants table, as the row element takes it, with `search(text)` beside it, answering `{ items, more }`. Made
   with no grants table, it throws nothing and draws only a note that it is not configured.
-- It draws one probabilitySearch pane into `host`, and fills it as soon as it is drawn.
+- It draws one probabilitySearch pane into `host`, and fills it as soon as it is drawn; given `face: 'dropdown'`, a closed
+  field opening to the same list instead, `placeholder` and `pick` its own (box v123: every search has both).
 - It is a view of the branch its table names (`grants.branch`, a whole `spirit.data` path, goal/G41.28), which the
   table's cache manager keeps: a grant landing there before any row is drawn is in the list.
 - Its search is the table's `search(text)`, the text trimmed, answered as a reply, handed to the probabilitySearch as

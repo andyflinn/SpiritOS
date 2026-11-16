@@ -5,7 +5,7 @@ detail elements."*): the row the job list drew itself before (`spirit/element/jo
 `./rowElement.js`: the browser file run in node on a bare window, the shared row element, the icon element and the
 progress bar stand-ins, so what is judged is what this file says a job is.
 
-`spirit.element.spirit.element.search.job.rowElement.create(job, { latest })`; also `.kindOf(job)` and `.STATUS_ICON`.
+`spirit.element.spirit.element.search.job.rowElement.create(job, { latest })`; also `.kindOf(job)`, `.STATUS_ICON` and `.mark(id)`.
 
 ## Requirements
 
@@ -22,10 +22,13 @@ progress bar stand-ins, so what is judged is what this file says a job is.
   - updated: its time, or nothing.
 - What it paints is escaped.
 - Its rows share one index; `kindOf` and `STATUS_ICON` are what the list's filter and the detail's layer read.
+- `mark(id)` repaints the dot of every row of that job, and of no other: the list marks the job the dot leaves and the one it
+  goes to, since a row repaints only what changed in its own job. No id, nothing.
 
 ## What its test must try to break
 
 - A dot kept on a job after another changed last.
+- A row the dot left that is never repainted, so two rows show it.
 - A bar drawn for a finished job.
 - A field missing or out of order, or a kind named wrongly.
 - Unescaped text in a cell.

@@ -8,6 +8,8 @@
 //
 //   spirit.element.spirit.element.search.job.listElement.create(container, { open }) -> { destroy() }
 //     open   the mounter's panel stack's open (the app selector's); with none, a stack of its own over its page
+//     face   'dropdown' a closed field opening to the same list (box v123: "every search supports both pane and dropdown");
+//            anything else, the pane it always was. placeholder and pick(row, key), the dropdown's, as probabilitySearch's
 //
 // ROWS ONLY (goal/G2.11). Andy, 2026-10-02: "the job monitor shell component. the folded "consoles" need to go into
 // jobsDetails", "the form on top should be gone." A row opens its job's detail (./detailElement.js) OVER JOBS, as contact
@@ -83,10 +85,19 @@
           test: function (job, v) { return !v || v === 'all' || (v === 'failed' ? job.status === 'failed' : kindOf(job) === v) ? 1 : 0; } }],
         element: rowOf,
         details: openJob,
+        face: o.face === 'dropdown' ? 'dropdown' : 'pane',
+        placeholder: o.placeholder || 'choose a job…',
+        pick: function (row, key) { if (typeof o.pick === 'function') o.pick(row, key); },
         empty: '(no jobs)',
       });
       // The dot hops to the job that changed last; the list redraws itself from the branch.
-      off = data.watch(function (id) { if (id) latest = id; });
+      off = data.watch(function (id) {
+        if (!id || id === latest) return;
+        var was = latest;
+        latest = id;
+        J().rowElement.mark(was);
+        J().rowElement.mark(id);
+      });
     }, function () { container.textContent = 'Jobs could not be loaded.'; });
 
     return {

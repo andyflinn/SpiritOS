@@ -12,6 +12,9 @@
 //     opts.selectors the page's selectors, handed to probabilitySearch as they are, drawn in its 🪣 row
 //     opts.serves(path)  handed to each row: a path no server serves today reads deprecated
 //     opts.empty     the words when nothing matches
+//     opts.face      'dropdown' a closed field opening to the same list (box v123: "every search supports both pane and
+//                    dropdown"); anything else, the pane it always was. opts.placeholder and opts.pick(row, key), the dropdown's,
+//                    as probabilitySearch's
 // A VIEW OF ITS TABLE'S BRANCH (Andy: "WHY DOES A GRANT NOT JUST SIMPLY UPDATE AN EXISTING FUCKING ROW?"): the table's
 // search seats its rows there, and the stream keeps them current through the table's family's cache manager (the
 // node's grants: the auth family's, goal/G41.28), so one grant appears or goes and nothing is read again.
@@ -26,6 +29,8 @@
     if (!g || !g.branch || !g.key || !g.label || typeof g.search !== 'function') {
       var note = document.createElement('div');
       note.className = 'job-manifest-note';
+      // Its box keeps its words inside (spirit-sibling-browser.js: overflow not visible).
+      note.style.overflow = 'hidden';
       note.textContent = 'not configured: a grants table is required ({ branch, key, label, search, revoke, stream })';
       host.appendChild(note);
       return { list: null, refresh: function () {}, destroy: function () { host.innerHTML = ''; } };
@@ -43,7 +48,9 @@
       data: String(g.branch),
       server: 'table',
       verb: 'search',
-      face: 'pane',
+      face: o.face === 'dropdown' ? 'dropdown' : 'pane',
+      placeholder: o.placeholder || 'choose a grant…',
+      pick: function (row, key) { if (typeof o.pick === 'function') o.pick(row, key); },
       args: function (text) { return { text: text }; },
       columns: [
         { field: 'name', label: 'Whose', sort: 'text' },

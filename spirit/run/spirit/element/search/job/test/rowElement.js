@@ -19,6 +19,9 @@ const settle = async function () { for (let i = 0; i < 20; i++) await tick(); };
 // What the world and the tests make, for the tests after them.
 let required, specs, indexes, R, s, paint;
 let latest = 'a';
+// The rows the stand-in index holds by key, for mark: each records what it was handed.
+const held = { a: [], b: [] };
+const heldRow = function () { const el = { row: {}, applied: [] }; el.apply = function (c) { el.applied.push(c); Object.assign(el.row, c); }; return el; };
 
 test.run('the row runs on a bare window', 0.2, async function () {
   if (!fs.existsSync(FILE)) return false;
@@ -35,7 +38,7 @@ test.run('the row runs on a bare window', 0.2, async function () {
   vm.runInThisContext(SRC, { filename: FILE });
   await settle();
   // The shared parts, as the page has them once they are loaded: the row element keeps its spec; the bar says its numbers.
-  E().rowElement = { index: function (sub) { indexes.push(sub); return { id: indexes.length }; }, create: function (spec) { specs.push(spec); return { spec: spec }; } };
+  E().rowElement = { index: function (sub) { indexes.push(sub); return { id: indexes.length, forKey: function (k) { return (held[k] || []).slice(); } }; }, create: function (spec) { specs.push(spec); return { spec: spec }; } };
   E().progressBar = function (done, total, text) { return '[bar ' + done + '/' + total + ' ' + text + ']'; };
   R = E().search && E().search.job && E().search.job.rowElement;
   return true;
@@ -111,6 +114,18 @@ test.run('its rows share one index', 0.2, function () {
 test.run('it hands kindOf, a job\'s kind, to the list\'s kind filter', 0.2, function () {
   if (!R || typeof R.create !== 'function') return false;
   return typeof R.kindOf === 'function' && R.kindOf({ kind: 'server' }) === 'server' ? true : false;
+}, test.limit.quick);
+test.run("mark(id) asks every row of that job to repaint its dot, and touches no row of another job", 0.2, function () {
+  if (!R || typeof R.mark !== 'function') return false;
+  held.a = [heldRow(), heldRow()];
+  held.b = [heldRow()];
+  R.mark('a');
+  const once = held.a.every(function (el) { return el.applied.length === 1; }) && !held.b[0].applied.length;
+  R.mark('a');
+  // A second mark changes the row's value again, so its field repaints again.
+  const twice = held.a.every(function (el) { return el.applied.length === 2 && el.applied[0].latest !== el.applied[1].latest; });
+  R.mark('');
+  return once && twice && !held.b[0].applied.length ? true : false;
 }, test.limit.quick);
 test.run('it hands STATUS_ICON, a status\'s glyph, to the detail\'s layer', 0.2, function () {
   if (!R || typeof R.create !== 'function') return false;

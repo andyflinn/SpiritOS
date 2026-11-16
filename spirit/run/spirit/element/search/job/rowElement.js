@@ -7,6 +7,9 @@
 //
 //   spirit.element.spirit.element.search.job.rowElement.create(job, { latest }) -> the row element
 //     latest()   the id of the job that changed last: its row carries the one green dot
+//   spirit.element.spirit.element.search.job.rowElement.mark(id) repaints the dot of every row of that job: the list marks the job
+//     that was last and the one that is now, as the dot hops (a row repaints only what changed in its own job, so the row the dot
+//     leaves would keep it)
 //   .kindOf(job)    node, server or transient
 //   .STATUS_ICON    a status's glyph
 //
@@ -60,6 +63,11 @@
   }
 
   var index = null;
+  // The dot asked again on every row of job id: its field repaints when its own value changes, the row's copy alone.
+  function mark(id) {
+    if (!index || !id) return;
+    index.forKey(String(id)).forEach(function (el) { el.apply({ latest: !el.row.latest }); });
+  }
   function create(row, options) {
     var o = options || {};
     var R = S.element.spirit.element.rowElement;
@@ -86,5 +94,5 @@
   }
 
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/job/rowElement.js', { create: create, kindOf: kindOf, STATUS_ICON: STATUS_ICON }); });
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/job/rowElement.js', { create: create, kindOf: kindOf, STATUS_ICON: STATUS_ICON, mark: mark }); });
 }());

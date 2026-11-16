@@ -10,6 +10,7 @@
 //
 //   spirit.element.spirit.element.search.job.create(container, options) -> root
 //     options.open   the mounter's panel stack's open, where a job's detail opens; with none, the list's own stack
+//     options.face, options.placeholder, options.pick   handed to the list: 'dropdown' a closed field (box v123), else the pane
 //     root.destroy() lets its list go, and takes itself out of its container
 (function () {
   function createJobSelector(options) {
@@ -24,7 +25,7 @@
     // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
     Promise.resolve(window.spirit.require('spirit/element/search/job/listElement.js')).then(function () {
       if (gone) return;
-      made = window.spirit.element.spirit.element.search.job.listElement.create(root, { open: o.open });
+      made = window.spirit.element.spirit.element.search.job.listElement.create(root, { open: o.open, face: o.face, placeholder: o.placeholder, pick: o.pick });
     });
     root.destroy = function () {
       gone = true;

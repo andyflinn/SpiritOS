@@ -126,6 +126,18 @@ test.run('the selectors the page hands it go to the search as they are, for its 
   return o.selectors === selectors ? true : false;
 }, test.limit.quick);
 
+// BOTH FACES (box v123: "every search supports both pane and dropdown; a selector with only one is red").
+test.run("it is a pane unless told otherwise; given face dropdown, a dropdown, its placeholder and its pick handed on", 0.2, async function () {
+  if (!l) return false;
+  const n = lists.length;
+  const picked = [];
+  E.search.grant.listElement.create({}, { grants: AGENT, face: 'dropdown', placeholder: 'which grant?', pick: function (row, key) { picked.push(key); } });
+  await settle();
+  const d = lists[n] && lists[n].o;
+  if (d && typeof d.pick === 'function') d.pick({ job_id: 'J1' }, 'J1 fs.search');
+  return o.face === 'pane' && !!d && d.face === 'dropdown' && d.placeholder === 'which grant?' && picked.length === 1 && picked[0] === 'J1 fs.search' ? true : false;
+}, test.limit.quick);
+
 // an empty list holds its first grant (goal/G41.16), its cache manager's (goal/G41.28)
 // Found by cw live: a list with no rows drawn never heard its first grant. Since goal/G41.28 a table's rows are its
 // family's cache manager's from the page's start: here the real data set and the auth family's manager, a list made
