@@ -1,7 +1,7 @@
 # spirit/nodeStore.js — its own test
 
 The node's machine state on disc: one sqlite file, `spirit/state/node.db` under a node home, holding the one table of
-known IDs (`seen`), the post queue and its backoff, the replay index, the owner's relay record, the node log
+known IDs (`seen`), the post queue and its backoff, the replay index, the node log
 (`traffic`), the API grants and the bundles with their branches. Owed since the rule *"every production script has its
 own test"* (goal/G47.1, box v72). On a scratch folder under the OS temp dir, every row written and read back through
 the module's own functions.
@@ -59,21 +59,6 @@ the module's own functions.
 - `remember` keeps a hash once; `sweep(now)` drops what is older than the window and answers how many; `rebuild(rows)`
   takes `{hash, at}` rows, skips a row with no hash, is safe to run twice, and answers how many it took; `count()`.
 
-### `record`, the owner's relay record (cycle 11)
-
-- `put(relay, report, now)`: one report row a minute per relay, the last in a minute winning; members, connected,
-  allowance, routes and rssMB (memory.rss in MB) pulled out; numbers and booleans kept in `rest`, arrays as their
-  length, `mode` and `version` the only strings kept, every other string field dropped and its name listed in
-  `withheld`.
-- `edge(relay, kind, now, why)`: `open`, `started`, `stopped` as given, any other kind a `close`, never minute-truncated.
-- `series(relay, from, limit)` oldest first, a report as figures with `free` and `outstanding` from its seats, an edge
-  as `{at, was}`; `window(relay, from, to, limit)` the same newest first between two times; `since` the raw rows.
-- `gaps(relay)`: each `started` after the first ends a gap, a `restart` when a `stopped` is right before it, else a
-  `death`.
-- `relays()` each relay once, in order; `lastAt(relay)` its newest report (edges not counted), 0 for none; `count()`.
-- `coarsen(now)`: past `FINE_MS` (90 days) one report a day survives per relay, the day's last; edges never go; the
-  fine window is untouched.
-
 ### `queue` and `backoff`, the post queue (cycle R16)
 
 - `queue.put(row)` answers its seq, the next after the highest when none is given; a second put of the same hash
@@ -98,6 +83,6 @@ A label downgraded by a less sure source; a silent caller marking somebody absen
 away by a put; a non-boolean flag written; a row made for a blank key; a change event for a write that changed nothing;
 a kept or owned row shed; an ignored row shed while an unflagged one is left; true read back as 1; a field lost; an
 untaken packet that was taken, or a day old; the file past its cap, or the packet just written shed; a replayed hash
-read as new; a person's name kept in the record; an edge coarsened; a queue put that resets a row's body; a grant label
+read as new; a queue put that resets a row's body; a grant label
 overwriting the owner's name; a bundle's branches left behind; a transaction's writes kept after a throw; a reopen that
 lost the rows.

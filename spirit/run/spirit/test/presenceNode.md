@@ -13,7 +13,7 @@ and two seated relays; the stream, router, jobs and every hook are planted, and 
   pinned as its stream opens.
 - On open: the relay and this node are present, each a proof `{present, at}` (goal/G2.9); the card is handed over,
   sealed to the relay's key (cycle 10, R20); the book is reconciled once by the relay's own search `*` (goal/G2.8), a
-  named contact green, a named stranger learned not drawn, a refusing relay marking nobody; the open edge recorded;
+  named contact green, a named stranger learned not drawn, a refusing relay marking nobody; the open edge told to `onEdge`;
   the table published as `{ presence }` and nothing else.
 - Broadcasts: the relay broadcasts, the node filters (Andy, 2026-09-19). A contact present is green; a stranger is
   noted as seen (R27) and not drawn; the same word twice is no news; across relays present wins; absent everywhere is
@@ -21,9 +21,9 @@ and two seated relays; the stream, router, jobs and every hook are planted, and 
 - `heard`: green for a relay with a stream, false for one without, a stranger not drawn. `relaysNaming` the relays
   saying present.
 - The stream's other events: request and reply to the router; route, face, face-open, face-close to their hooks;
-  relay-status kept as the latest, recorded, nudged carrying the report (goal/G41.32), paced to one a second;
+  relay-status kept as the latest, nudged carrying the report (goal/G41.32), paced to one a second;
   relay-event and owner-event stamped with their relay. `handOverCardEverywhere` to every open stream, counted.
-- A closed stream stops asserting, its edge recorded; `stop` closes every stream and empties the table. With no
+- A closed stream stops asserting, its close edge told to `onEdge` with its reason; `stop` closes every stream and empties the table. With no
   `knows` every key is kept.
 
 ## What its test must try to break

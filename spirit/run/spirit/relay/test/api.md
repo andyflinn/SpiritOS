@@ -13,7 +13,7 @@ The relay family: the relays this node is a member of, and his relays as a scree
 - Every argument's rule is one of spirit.js's standard rules, `?` optional.
 - **"Every verb the node mounts for this family, each argument with its rule"** (its own header): it declares exactly
   the verbs server.js mounts for the family, and each verb exactly the arguments its handler's `request` carries.
-- `claim`, `partnerCheck`, `get`, `remove`, `add`, `face` and `record` each take what their handler reads, the
+- `claim`, `partnerCheck`, `get`, `remove`, `add` and `face` each take what their handler reads, the
   address an http or https one.
 - **goal/G40.10** (Andy: *"{email, URL, card}"*): `join` takes the relay's address and an email; a `code`, and the
   `link` the relay mails, an address, may be given. `leave` (*"add the leave verb to node"*) names the relay by its

@@ -20,7 +20,6 @@ module.exports = {
     join: { url: 'url', email: 'text', code: 'text?', link: 'url?' },
     // Leaving a relay (goal/G40.10; Andy: "add the leave verb to node"): the seat given up, the relay kept on the list.
     leave: { key: 'text' },
-    record: { relay: 'text', from: 'number?', to: 'number?' },
   },
   // HIS RELAYS AS A SCREEN WANTS THEM (puppets/G2), moved here from the old kernel (goal/G40.8: no kernel on a face).
   // status(name): the relays this node keeps, listed by contact.search (goal/G40.11: relay.search went, a relay is a

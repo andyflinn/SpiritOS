@@ -1824,71 +1824,6 @@ function createHub(rootDir) {
     });
   }
 
-  // ── THE OWNER'S RELAY RECORD, READ (cycle 11's R6) ─────────────────
-  //
-  // `relay.status` above answers what a relay says about itself RIGHT
-  // NOW. This answers what it has said over time, which is the thing
-  // decision 0015 left open: "a monitor draws the current report; the
-  // analysis Andy describes needs a SERIES."
-  //
-  // NOT KEY-GATED, exactly like `relay.status` beside it: this door is
-  // loopback and everything behind it is the owner's own box. Whether it
-  // should ALSO be gated by key is an open question in the cycle document
-  // and is Andy's, not settled here by being built one way.
-  //
-  // `from` and `limit` are the caller's window. The default is a day,
-  // because a monitor drawing a curve wants a day and a caller that wants
-  // a year should say so — an unbounded default is how a read verb turns
-  // into a table dump by accident.
-  function handleRecord(req, res, readJsonBody, deps) {
-    Promise.resolve()
-      .then(function () { return readJsonBody(req); })
-      .catch(function () { return {}; })
-      .then(function (body) {
-        const rootDir = (deps && deps.rootDir) || '';
-        const relay = String((body && body.relay) || '');
-        // ── A WINDOW, NEWEST FIRST, CUT IN BYTES (puppets/G2) ─────────
-        //
-        //   Andy, 2026-09-27: "the verb changes changing list fetches to a
-        //   search(labe) and geKey(key) pair are approved", including:
-        //   relay.record's list of relays folds into relay.search, and its
-        //   series (from + limit) stops paging.
-        //
-        // So a relay must be named (contact.search lists them, relay: yes), and the
-        // question is a window: from, to. The answer is the NEWEST rows in
-        // it that fit one answer, in time order, and `more` says older
-        // rows in the window were left out. The caller narrows the window;
-        // nothing hands out a cursor.
-        const from = Number(body && body.from) || (Date.now() - 24 * 60 * 60 * 1000);
-        const to = Number(body && body.to) || Date.now();
-        if (!relay) return fail(res, 400, 'relay required');
-        let store = null;
-        try { store = require('./spirit.js').require('spirit/nodeStore.js').open(rootDir); }
-        catch (e) { return fail(res, 503, 'no record on this node'); }
-
-        const WINDOW_ROWS = 5000;
-        const newest = store.record.window(relay, from, to, WINDOW_ROWS);
-        const cap = require('./spirit.js').require('spirit/limits.js').PLAINTEXT_MAX;
-        const frame = Buffer.byteLength(JSON.stringify({ ok: true, relay: relay, from: from, to: to, series: [], more: false }), 'utf8');
-        let used = frame;
-        const kept = [];
-        let cut = false;
-        for (let i = 0; i < newest.length; i += 1) {
-          const cost = Buffer.byteLength(JSON.stringify(newest[i]), 'utf8') + (kept.length ? 1 : 0);
-          if (used + cost > cap) { cut = true; break; }
-          used += cost;
-          kept.push(newest[i]);
-        }
-        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-        return res.end(JSON.stringify({
-          ok: true, relay: relay, from: from, to: to,
-          series: kept.reverse(),
-          more: cut || newest.length === WINDOW_ROWS,
-        }));
-      })
-      .catch(function (err) { fail(res, 500, String((err && err.message) || err)); });
-  }
-
   function handleStatus(req, res, readJsonBody, deps) {
     Promise.resolve()
       .then(function () { return readJsonBody(req); })
@@ -2277,7 +2212,6 @@ function createHub(rootDir) {
     joinAtStart: joinAtStart,
     relayGet: relayGet,
     relayFacts: relayFacts,
-    handleRecord: handleRecord,
     handlePartnerCheck: handlePartnerCheck,
     contactSearch: contactSearch,
     contactGet: contactGet,

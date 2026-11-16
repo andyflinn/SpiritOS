@@ -355,79 +355,6 @@ test.run('a rebuild takes the rows with a hash, skips the rest, and is safe to r
   return (a === 2 && b === 2 && c === 0 && W.s.replay.count() === 3 && W.s.replay.seen('rb2', now, now) === 'again') || false;
 }, test.limit.quick);
 
-// ── record ──
-test.run('one report a minute per relay is kept, the last in the minute winning, its figures pulled out', 0.4, function () {
-  W.r = nodeStore.open(home());
-  const m = 60 * 1000;
-  W.r.record.put('wss://r1', { peers: 1, present: 1 }, 10 * m + 5);
-  W.r.record.put('wss://r1', { peers: 4, present: 3, routes: 2, memory: { rss: 3 * 1048576 }, seats: { allowance: 9, free: 5, outstanding: 1 } }, 10 * m + 50000);
-  const rows = W.r.record.since('wss://r1', 0);
-  const r = rows[0] || {};
-  return (rows.length === 1 && r.at === 10 * m && r.kind === 'report' && r.members === 4 && r.connected === 3 &&
-    r.routes === 2 && r.rssMB === 3 && r.allowance === 9) || false;
-}, test.limit.quick);
-// A person's name or key kept in the tier that is never deleted cannot be taken back (cycle 11's R5): 0.8.
-test.run('a report keeps numbers, booleans, mode and version, counts arrays, and drops every other string by name', 0.8, function () {
-  W.r.record.put('wss://r2', { peers: 2, mode: 'open', version: '1.2', owner: 'Andy Flinn', publicKey: 'MCow-a-key', ok: true,
-    invites: ['a', 'b', 'c'], nested: { n: 1, who: 'Bob' } }, 0);
-  const rest = JSON.parse((W.r.record.since('wss://r2', 0)[0] || {}).rest || '{}');
-  const text = JSON.stringify(rest);
-  return (rest.mode === 'open' && rest.version === '1.2' && rest.ok === true && rest.invites === 3 &&
-    JSON.stringify(rest.nested) === '{"n":1}' && rest.withheld.indexOf('owner') !== -1 && rest.withheld.indexOf('publicKey') !== -1 &&
-    text.indexOf('Andy Flinn') === -1 && text.indexOf('MCow-a-key') === -1 && text.indexOf('Bob') === -1 && rest.peers === undefined) || false;
-}, test.limit.quick);
-test.run('an edge is kept at its instant, and an unknown kind is a close', 0.4, function () {
-  W.r.record.edge('wss://r1', 'open', 10 * 60000 + 1, 'up');
-  W.r.record.edge('wss://r1', 'whatever', 10 * 60000 + 2);
-  const rows = W.r.record.since('wss://r1', 0);
-  return (rows.length === 3 && rows[1].kind === 'open' && rows[1].at === 600001 && JSON.parse(rows[1].rest).why === 'up' &&
-    rows[2].kind === 'close' && rows[2].rest === '{}') || false;
-}, test.limit.quick);
-test.run('a series answers figures for a report and a moment with its kind for an edge, oldest first', 0.4, function () {
-  const s = W.r.record.series('wss://r1', 0);
-  const a = s[0] || {};
-  return (s.length === 3 && a.members === 4 && a.free === 5 && a.outstanding === 1 && a.rest === undefined && a.kind === undefined &&
-    JSON.stringify(s[1]) === '{"at":600001,"was":"open"}' && s[2].was === 'close') || false;
-}, test.limit.quick);
-test.run('a window answers the same newest first between two times, at most the limit', 0.4, function () {
-  const all = W.r.record.window('wss://r1', 0, 0).map(function (x) { return x.at; }).join(',');
-  const cut = W.r.record.window('wss://r1', 0, 600001, 1).map(function (x) { return x.at; }).join(',');
-  return (all === '600002,600001,600000' && cut === '600001') || false;
-}, test.limit.quick);
-test.run('a started after a stopped is a restart, a started after anything else a death, the first started no gap', 0.4, function () {
-  const R = 'node-self';
-  W.r.record.edge(R, 'started', 100);
-  W.r.record.put(R, { peers: 1 }, 120000);
-  W.r.record.edge(R, 'stopped', 200000);
-  W.r.record.edge(R, 'started', 300000);
-  W.r.record.put(R, { peers: 1 }, 360000);
-  W.r.record.edge(R, 'started', 500000);
-  const g = W.r.record.gaps(R);
-  return (g.length === 2 && g[0].kind === 'restart' && g[0].from === 200000 && g[0].to === 300000 &&
-    g[1].kind === 'death' && g[1].from === 360000 && g[1].to === 500000) || false;
-}, test.limit.quick);
-test.run('relays answers each relay once, lastAt the newest report and never an edge', 0.4, function () {
-  return (W.r.record.relays().join(',') === 'node-self,wss://r1,wss://r2' && W.r.record.lastAt('wss://r1') === 600000 &&
-    W.r.record.lastAt('nobody') === 0 && W.r.record.count() === 10) || false;
-}, test.limit.quick);
-test.run('coarsening keeps one report a day past the fine window, the day\'s last, every edge, and the fine window whole', 0.8, function () {
-  const c = nodeStore.open(home());
-  const d0 = 10 * DAY;
-  c.record.put('r', { peers: 1 }, d0 + 60000);
-  c.record.put('r', { peers: 2 }, d0 + 120000);
-  c.record.put('r', { peers: 3 }, d0 + 180000);
-  c.record.edge('r', 'open', d0 + 1);
-  c.record.put('r', { peers: 7 }, d0 + DAY + 60000);
-  const now = d0 + c.record.FINE_MS + 3 * DAY;
-  c.record.put('r', { peers: 8 }, now - 60000);
-  c.record.put('r', { peers: 9 }, now - 120000);
-  const gone = c.record.coarsen(now);
-  const rows = c.record.since('r', 0);
-  c.close();
-  const reports = rows.filter(function (x) { return x.kind === 'report'; }).map(function (x) { return x.members; }).join(',');
-  return (c.record.FINE_MS === 90 * DAY && gone === 2 && reports === '3,7,9,8' && rows.filter(function (x) { return x.kind === 'open'; }).length === 1) || false;
-}, test.limit.quick);
-
 // ── queue and backoff ──
 test.run('a queued row with no seq is given the next after the highest, and all answers them in seq order', 0.4, function () {
   W.q = nodeStore.open(home());
@@ -549,6 +476,6 @@ test.run('a transaction whose function throws keeps none of its writes', 0.8, fu
 }, test.limit.quick);
 
 test.after(function () {
-  [W.s, W.sh, W.t, W.r, W.q, W.a].forEach(function (s) { if (s) s.close(); });
+  [W.s, W.sh, W.t, W.q, W.a].forEach(function (s) { if (s) s.close(); });
   try { fs.rmSync(TMP, { recursive: true, force: true }); } catch (e) { /* scratch */ }
 });

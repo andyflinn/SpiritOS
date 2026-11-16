@@ -162,10 +162,6 @@ test.run('leave names the relay by its key alone', 0.2, function () {
   if (!W.api) return false;
   return (passes('leave', { key: 'https://relay.example' }) && refusedAs('leave', {}) === 'bad-request' && refusedAs('leave', { key: 'https://relay.example', url: 'https://relay.example' }) === 'no-such-argument') || false;
 }, test.limit.quick);
-test.run('record names the relay; from and to are numbers it may be given', 0.2, function () {
-  if (!W.api) return false;
-  return (passes('record', { relay: 'https://relay.example' }) && passes('record', { relay: 'https://relay.example', from: 1, to: 2 }) && refusedAs('record', { relay: 'https://relay.example', from: '1' }) === 'bad-request') || false;
-}, test.limit.quick);
 // goal/G40.11: relay.search went, a relay is a row of the one table
 test.run('it has no search: a relay is a row of the one table, contact.search', 0.2, function () {
   if (!W.api) return false;

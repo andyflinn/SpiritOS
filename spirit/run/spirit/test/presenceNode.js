@@ -31,7 +31,7 @@ const STRANGER = 'stranger-key';
 const BOOK = { 'friend-key': true, 'friend2-key': true };
 
 // What the planted world saw.
-const W = { home: null, me: null, p: null, streams: {}, news: [], posts: [], seen: [], requests: [], replies: [], reports: [], edges: [], relayEvents: [], ownerEvents: [], routes: [], faces: [], pins: [], clock: 5000, started: null };
+const W = { home: null, me: null, p: null, streams: {}, news: [], posts: [], seen: [], requests: [], replies: [], edges: [], relayEvents: [], ownerEvents: [], routes: [], faces: [], pins: [], clock: 5000, started: null };
 function plantedRouter() {
   return {
     onRequest: function (url, data) { W.requests.push({ url: url, data: data }); },
@@ -56,8 +56,7 @@ function presence(extra) {
     knows: function (k) { return !!BOOK[k]; },
     noteSeen: function (k, row) { W.seen.push({ key: k, row: row }); },
     pinRelay: function (url) { W.pins.push(url); return Promise.resolve(); },
-    recordReport: function (url, data) { W.reports.push({ url: url, data: data }); },
-    recordEdge: function (url, edge, reason) { W.edges.push([url, edge, reason]); },
+    onEdge: function (url, edge, reason) { W.edges.push([url, edge, reason]); },
     onRelayEvent: function (row) { W.relayEvents.push(row); },
     onOwnerEvent: function (ev) { W.ownerEvents.push(ev); },
     onRoute: function (url, data) { W.routes.push({ url: url, data: data }); },
@@ -140,7 +139,7 @@ test.run('a relay that refuses the search marks nobody and keeps its stream', 0.
   const b = W.p.detail()[URL_B] || {};
   return (!b['friend2-key'] && stream(URL_B).closed === 0) || false;
 }, test.limit.quick);
-test.run('the open edge is recorded', 0.2, function () {
+test.run('the open edge is told to onEdge', 0.2, function () {
   return W.edges.some(function (e) { return e[0] === URL_A && e[1] === 'open'; }) || false;
 }, test.limit.quick);
 test.run('the table goes to the shell as news of spirit.contact, its presence and nothing else', 0.2, function () {
@@ -210,17 +209,17 @@ test.run('a route goes to onRoute; the face\'s request, open and close to their 
   event(URL_A, 'face', { q: 1 }); event(URL_A, 'face-open', { s: 1 }); event(URL_A, 'face-close', {});
   return (W.routes.length === 1 && W.routes[0].data.key === FRIEND && short(W.faces.map(function (f) { return f[0]; })) === short(['face', 'open', 'close'])) || false;
 }, test.limit.quick);
-test.run('a relay-status report is kept as the latest, recorded, and nudged to the page carrying the report', 0.2, function () {
+test.run('a relay-status report is kept as the latest and nudged to the page carrying the report', 0.2, function () {
   if (!W.p) return false;
   event(URL_A, 'relay-status', { members: 3 });
   const nudge = W.relayEvents.filter(function (e) { return e.kind === 'status'; })[0] || {};
-  return (W.p.relayStatus()[URL_A].members === 3 && W.reports.length === 1 && W.reports[0].url === URL_A && nudge.relay === URL_A && nudge.report && nudge.report.members === 3) || false;
+  return (W.p.relayStatus()[URL_A].members === 3 && nudge.relay === URL_A && nudge.report && nudge.report.members === 3) || false;
 }, test.limit.quick);
 test.run('a burst of reports is paced: no second nudge within the second, and the latest is kept', 0.2, function () {
   if (!W.p) return false;
   const before = W.relayEvents.length;
   event(URL_A, 'relay-status', { members: 4 }); event(URL_A, 'relay-status', { members: 5 });
-  return (W.relayEvents.length === before && W.reports.length === 3 && W.p.relayStatus()[URL_A].members === 5) || false;
+  return (W.relayEvents.length === before && W.p.relayStatus()[URL_A].members === 5) || false;
 }, test.limit.quick);
 test.run('a relay-event and an owner-event are handed on, stamped with their relay', 0.2, function () {
   if (!W.p) return false;
@@ -238,7 +237,7 @@ test.run('handOverCardEverywhere hands the card to every open stream at once, an
 }, test.limit.quick);
 
 // ── a stream closes ──
-test.run('a closed stream stops asserting: what only it said is gone, the close edge recorded', 0.2, function () {
+test.run('a closed stream stops asserting: what only it said is gone, the close edge told to onEdge with its reason', 0.2, function () {
   if (!W.p) return false;
   event(URL_A, 'presence', { key: 'friend2-key', present: true });
   stream(URL_A).opts.onClose('ended');

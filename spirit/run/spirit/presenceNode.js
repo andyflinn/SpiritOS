@@ -52,18 +52,9 @@ function createPresence(opts) {
   // (The router this node posts from is `opts.router`, taken below as it always was; the reconcile of goal/G2.8
   // asks a relay its own search through it — the wire this node already uses, nothing new.)
 
-  // ── THE OWNER'S RELAY RECORD (cycle 11's R2) ─────────────────────
-  //
-  // The node process writes it, and no job does: this file already
-  // receives every report, around the clock, on the stream it already
-  // holds. A job would be a second writer on a file the node owns and a
-  // second thing to be running.
-  //
-  // INJECTED, like every other outward reach here. This file has never
-  // known about node.db and does not start now — it is handed two
-  // functions and calls them.
-  const recordReport = typeof opts.recordReport === 'function' ? opts.recordReport : null;
-  const recordEdge = typeof opts.recordEdge === 'function' ? opts.recordEdge : null;
+  // A RELAY STREAM'S OPEN AND CLOSE, told to whoever handed this in (onEdge(url, 'open'|'close', reason)). INJECTED,
+  // like every other outward reach here.
+  const onEdge = typeof opts.onEdge === 'function' ? opts.onEdge : null;
   // Given rather than made here, because a node has ONE of these and the
   // hub needs the same instance to post from — an outbound request and
   // the answer that matches it must meet in the same table.
@@ -493,16 +484,6 @@ function createPresence(opts) {
           statusByRelay[url] = msg.data;
           // The report says what the relay calls its owner: his seat there, noted on this node (relayKeys.ownerSeat).
           try { relayKeys.ownerSeat(rootDir, url, msg.data && msg.data.owner); } catch (e) { /* the next report notes it */ }
-          // KEPT AS WELL AS HELD (cycle 11's R2). The line above is the
-          // latest report, overwritten — what a monitor draws. This is
-          // the series 0015 asked for and nothing kept: "every move, its
-          // reason, its capture time". Written before the pacing below,
-          // because a report that is too soon to redraw a screen for is
-          // still a report worth keeping.
-          if (recordReport) {
-            try { recordReport(url, msg.data); }
-            catch (e) { /* a witness, never a participant */ }
-          }
           // AND THE PAGE IS TOLD (cycle 1). A monitor that redrew only on
           // membership events would sit frozen through a report's change.
           // The nudge carries the latest report itself (nudgeStatus above,
@@ -554,23 +535,17 @@ function createPresence(opts) {
           try { onOwnerEvent(ev); } catch (e) { /* a witness, never a participant */ }
         }
       },
-      // ── THE TWO EDGES, WHICH ARE WHAT MAKE A GAP READABLE ────────
-      //
-      // cycle 11's R3: reports arrive on events and never on a timer, so a
-      // quiet relay and a dead one produce the same silence. These are
-      // the two moments this node knows for certain, and without them a
-      // reader cannot tell a stretch with nothing to say from a stretch
-      // with nobody there.
+      // The stream's open and close, each told to onEdge.
       onOpen: function () {
         seedRelay(url);
         handOverCard(url);
         reconcile(url);
-        if (recordEdge) { try { recordEdge(url, 'open', ''); } catch (e) { /* witness */ } }
+        if (onEdge) { try { onEdge(url, 'open', ''); } catch (e) { /* the stream goes on */ } }
         publish('connected to ' + url);
       },
       onClose: function (reason) {
         forget(url);
-        if (recordEdge) { try { recordEdge(url, 'close', reason); } catch (e) { /* witness */ } }
+        if (onEdge) { try { onEdge(url, 'close', reason); } catch (e) { /* the stream goes on */ } }
         publish('lost ' + url + ': ' + reason);
       },
     });

@@ -611,20 +611,6 @@ define('replayed', {
     'the index can never silently make an old message replayable again. ' +
     'The second is clock skew past the tolerance, not a forgery claim.',
 });
-// ── THE OWNER'S RELAY RECORD (cycle 11's R6) ─────────────────────────
-//
-// The record lives in node.db and a node that cannot open its own store
-// has nothing to answer with. Distinct from an empty record, which is a
-// perfectly good answer meaning "no relay has reported yet" and is a 200
-// with an empty list.
-define('no-record', {
-  status: 503, presence: NONE, retry: 'after', fault: 'node',
-  texts: ['no record on this node'],
-  note: 'This node could not open node.db. Not a statement about any ' +
-    'relay and not an empty history — the difference matters, because an ' +
-    'empty series is a fact about the relays and this is a fact about ' +
-    'the box being asked.',
-});
 define('card-not-yours', {
   status: 400, presence: NONE, retry: 'no', fault: 'caller',
   texts: ['that card is not yours'],
@@ -837,7 +823,7 @@ define('bad-request', {
     'not a lever name', 'partner relay key required', 'partner relay url required',
     'pick a relay url', 'that is the peer’s own key, not their relay’s',
     'that is this relay', 'Invalid JSON body', 'bad body',
-    'publicKey and url required', 'publicKey required', 'that key is this node', 'key required', 'path outside the run folder', 'relay required'],
+    'publicKey and url required', 'publicKey required', 'that key is this node', 'key required', 'path outside the run folder'],
   prefixes: ['policy must be one of:'],
 });
 

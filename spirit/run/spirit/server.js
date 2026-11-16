@@ -1081,11 +1081,6 @@ catch (e) {
   // identity.json holds its public label and it answers `answerSelf`; it
   // has no card and must not grow one by accident.
   // THE IDENTITY is relayAuth.js's, ensured on its first load (goal/G22.5); an old one is never mended there.
-  // THE END OF A DOWNTIME (cycle-11/C3). Andy: "a re-start row documents the
-  // downtime?", "... the end-of-a-downtime". Everything between the last
-  // row and this one reads "this node was not running", not "nothing
-  // happened". Written for every relay the record already knows.
-  markRecord('started');
   try { spirit.require('spirit/serveCommon.js').ensureFirstRun(ROOT_DIR, { kind: 'node' }); }
   catch (e) { /* a caption must never be the reason a node will not boot */ }
 
@@ -1413,25 +1408,9 @@ catch (e) {
         rank: spirit.require('spirit/seenPeers.js').HOST,
       }, what || {}));
     },
-    // ── THE OWNER'S RELAY RECORD (cycle 11's R2) ─────────────────
-    //
-    // presenceNode receives the reports; nodeStore owns node.db; this
-    // file is where they meet, as it is for every other seam. The store
-    // is opened per call rather than held, the same as everywhere else
-    // in this file — it is a cheap handle over a file already open.
-    //
-    // A FAILURE HERE IS SWALLOWED ON PURPOSE. The record is a witness.
-    // A node that could not write its history must still route, and an
-    // owner whose disc filled up would otherwise lose presence itself
-    // rather than the log of it.
-    recordReport: function (url, report) {
-      try { spirit.require('spirit/nodeStore.js').open(ROOT_DIR).record.put(url, report); }
-      catch (e) { /* the record is a witness, never a participant */ }
-    },
-    recordEdge: function (url, kind, why) {
+    // A relay stream opened or closed: what is known of that relay has changed.
+    onEdge: function (url) {
       relayChanged(url);
-      try { spirit.require('spirit/nodeStore.js').open(ROOT_DIR).record.edge(url, kind, null, why); }
-      catch (e) { /* as above */ }
     },
     rootDir: ROOT_DIR,
     jobs: jobs,
@@ -1819,7 +1798,7 @@ catch (e) {
   // WIRE, on the namespace: claim, add, face, join, leave and partnerCheck
   // reach out, and an offline box fails them. (relay.status, which probed every configured
   // relay through ownerBadge.probe, is gone; see relay.get below.) relay.get
-  // and relay.record read what the node holds, under the same flag.
+  // reads what the node holds, under the same flag.
   //
   // What a relay verb is NOT: a way to talk to the relay's owner. That
   // goes through peer.post like anybody else's — the relay names itself
@@ -1864,12 +1843,6 @@ catch (e) {
     // relay.join {url, email, code} (goal/G30.2, confirmed by Andy 2026-10-19): this node joins a relay by its user's
     // email. With an email it asks; with the code from the mailed link it takes the seat.
     'join': { request: { url: '', email: '', code: '', link: '' }, reply: { ok: true, url: '' }, handler: proxyVerb(function (b) { return hub.relayJoin(b, { router: peerRouter, port: Number(port) || spirit.DEFAULT_SPIRIT_PORT, probe: spirit.require('spirit/hub.js').relayKeyAsk(peerRouter) }); }) },
-    // WHAT A RELAY HAS SAID OVER TIME — cycle 11's R6. This reads what was
-    // already written as the reports arrived, so it reaches no network at
-    // all, though the namespace it sits in is marked `wire: true`.
-    'record': { request: { relay: '', from: 0, to: 0 }, reply: { ok: true, relay: '', from: 0, to: 0, series: [{}], more: false }, handler: function (rq, rs) {
-      hub.handleRecord(rq, rs, readJsonBody, { rootDir: ROOT_DIR });
-    } },
   }, { wire: true, by: 'hub.js' });
 
   // ── STAGE 4c — contact (2026-09-15) ────────────────────────────────
@@ -1970,25 +1943,12 @@ catch (e) {
 // The two books differ — a registry keyed by identity, a Set of page
 // responses — and what gets said to them does not, which is why
 // sayGoingAway takes sinks rather than being a method on either.
-// The node's own started/stopped rows, one per relay the record knows.
-// The record is a witness, never a participant, so a failure is swallowed.
-function markRecord(kind) {
-  try {
-    const rec = spirit.require('spirit/nodeStore.js').open(ROOT_DIR).record;
-    rec.relays().forEach(function (url) { rec.edge(url, kind, null, ''); });
-  } catch (e) { /* as recordEdge */ }
-}
 
 {
   let leaving = false;
   const goodbye = function (signal) {
     if (leaving) return;
     leaving = true;
-    // THE START OF A DELIBERATE ONE (cycle-11/C3). Andy: "and the stopped row
-    // can't be guaranteed.", "... but should be part of \"graceful shutdown\"".
-    // A crash writes nothing, and that absence is the signal: a started
-    // with no stopped before it is a death.
-    markRecord('stopped');
     let told = 0;
     // The browser's EventSource honours `retry:` natively, so telling the
     // page costs no client code at all.
