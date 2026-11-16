@@ -326,7 +326,9 @@ const WATCH = String.raw`(function () {
       // A search mounted inside another's host (branch's family filter in its 🪣 row) draws its own rows: they are judged
       // against its own branch, not this one's.
       var inner = (window.spiritSearchHosts || []).filter(function (h, j) { return j !== i && h && h !== host && host.contains(h); });
-      var keys = Array.prototype.filter.call(host.querySelectorAll('[data-key]'), function (el) { return !inner.some(function (h) { return h.contains(el); }); }).map(function (el) { return String(el.getAttribute('data-key')); });
+      // DRAWN MEANS SHOWN: a list hides a row its branch no longer holds where it stands (spirit/element/search.js), so a
+      // row hidden is no row drawn.
+      var keys = Array.prototype.filter.call(host.querySelectorAll('[data-key]'), function (el) { return !inner.some(function (h) { return h.contains(el); }) && el.getClientRects().length > 0; }).map(function (el) { return String(el.getAttribute('data-key')); });
       return { verb: x.verb, data: x.data, drawn: keys.length, outside: keys.filter(function (k) { return !held[k]; }).slice(0, 5) };
     });
   };

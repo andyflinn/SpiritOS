@@ -267,7 +267,7 @@
       if (gone || !form) return;
       // Each box it puts into its container keeps what it holds inside (the general rules: overflow not visible).
       host.innerHTML =
-        '<div style="overflow:hidden">' +
+        '<div style="overflow:clip">' +
           '<div data-grants="line"></div>' +
           '<div data-grants="said" class="' + (saidError ? 'job-refusal' : 'job-manifest-note') + '">' + esc(said) + '</div>' +
         '</div>';

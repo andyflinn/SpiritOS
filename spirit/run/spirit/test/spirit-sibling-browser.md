@@ -228,7 +228,8 @@ box is its own check, named by the element's path and the box's id chain."*
 - **Every search it makes ranks spirit.data** (box v15: *"every probabilitySearch on a page is made with a spirit.data
   branch (its data option), and draws only rows that branch holds. A list fed by its own rows() or by answers alone goes
   red."*): every probabilitySearch the page makes, watched as it is made, has a `data` branch and no `rows()` of its own.
-  And every row a search draws (its `[data-key]` rows on screen, after its tools and buttons are pressed) is a row its
+  And every row a search draws (its `[data-key]` rows shown on screen, after its tools and buttons are pressed; a row the list hides where it stands, as
+  it does a row its branch no longer holds, is no row drawn) is a row its
   branch holds in `spirit.data` (`spirit.data.rowsOf(branch)`): a list that keeps its rows anywhere else draws what the
   branch does not hold.
   **One exception, deferred and still red** (the box: *"the only exception is introspector, deferred for network-scope
