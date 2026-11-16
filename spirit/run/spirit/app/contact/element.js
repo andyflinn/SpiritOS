@@ -66,7 +66,8 @@ function contactCreate(container, options) {
       // THE PAGE IS A FLEX COLUMN, AND THE LIST TAKES WHAT IT LEAVES (goal/G40.13, rule/16; as in Apps and Icons, goal/G40.8:
       // space granted top-down): the page is one fill box, the list box another inside it, and the panels below it keep
       // their own height.
-      '<div class="fill">' +
+      // ITS BOX KEEPS WHAT IT HOLDS INSIDE IT (goal/G47.1, -browser: the box declares overflow not visible); the list scrolls itself.
+      '<div class="fill" style="overflow:hidden">' +
       // THE ONE LIST (goal/G30.19): the book, the shadow and the network, with a filter instead of two folds.
       '<div id="contacts-book" class="fill"></div>' +
       // ADD A RELAY (goal/G30.7; Andy, 2026-10-20: "putting the add-relay into contacts, in a
@@ -89,6 +90,8 @@ function contactCreate(container, options) {
     // a typo costs no round trip.
     // The private label holds to the label rule (goal/G47.1, -browser: every input has a maxlength).
     window.spirit.required.spirit.element.fieldInput.attach(document.getElementById('contacts-relay-label'), 'name');
+    // The address too, a line (fieldRules' LINE_MAX_BYTES): its maxlength and its own listener, so it is never deaf.
+    window.spirit.required.spirit.element.fieldInput.attach(document.getElementById('contacts-relay-url'), 'line');
     document.getElementById('contacts-relay-add').addEventListener('click', function () {
       var out = document.getElementById('contacts-relay-add-out');
       var label = String(document.getElementById('contacts-relay-label').value || '').trim();
