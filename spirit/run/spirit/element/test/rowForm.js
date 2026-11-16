@@ -162,11 +162,18 @@ test.run('nothing stands past the bubble or the container', 0.2, function () {
   if (!m) return false;
   return ((wr.inputs || []).every(function (i) { return i.right <= wr.inner.right + 0.5 && i.left >= wr.inner.left - 0.5; }) && wr.root.right <= wr.container.right + 0.5) ? true : false;
 }, test.limit.quick);
-test.run('a press of the button, unwired, changes nothing in the form', 0.2, function () {
+test.run('with no press given, a press of its button sends nothing and leaves the form as it was once the button settles', 0.2, function () {
   if (!m) return false;
-  // the press is the mounter's
-  // "The mounter drops its form elements into span and wires the button itself (a busyButton or a click)."
   return (one.pressQuiet && wr.pressQuiet) ? true : false;
+}, test.limit.quick);
+// goal/G47.1, Q20; Andy: "mark the button busy from press until the mounter's answer comes".
+test.run('given a press, a press of its button calls it and marks the button busy until its answer comes', 0.4, function () {
+  if (!m) return false;
+  return (m.pressCalled === true && m.busyWhilePress === true && m.stillBusy === true) ? true : false;
+}, test.limit.quick);
+test.run('once the answer of press comes, its button is a plain button again', 0.4, function () {
+  if (!m) return false;
+  return m.plainAfter === true ? true : false;
 }, test.limit.quick);
 test.run('its root carries 1em above it, its own margin', 0.2, async function () {
   if (!m) return false;
