@@ -71,15 +71,23 @@ const call = function (verb, args) { return spirit.check('contact.' + verb, W.ve
 const passes = function (verb, args) { return !!W.verbs[verb] && call(verb, args) === null; };
 const refusedAs = function (verb, args) { if (!W.verbs[verb]) return ''; const r = call(verb, args); return r ? r.code : ''; };
 
-test.run('api.js loads as the node hands it, its text run with module and exports alone', 0.2, function () {
+test.run('api.js loads as spirit.js runs it on a page: its text run with module, exports and spirit.require of the page', 0.2, function () {
   try {
     const m = { exports: {} };
-    new Function('module', 'exports', fs.readFileSync(FILE, 'utf8'))(m, m.exports);
+    // AS SPIRIT.JS RUNS IT ON A PAGE (loadInterface): module and exports, and the page's window.spirit.require, which it asks for
+    // its companion data.js (goal/G47.1; Andy's rule: "every api.js requires it's companion data.js, and is the only script to
+    // require that data.js"). What it asks is kept.
+    W.asked = [];
+    new Function('module', 'exports', 'window', fs.readFileSync(FILE, 'utf8'))(m, m.exports, { spirit: { require: function (p) { W.asked.push(String(p)); return Promise.resolve({}); } } });
     W.api = m.exports;
   } catch (e) { return false; }
   W.verbs = (W.api && W.api.verbs) || {};
   W.names = Object.keys(W.verbs);
   return true;
+}, test.limit.quick);
+test.run('it asks for its companion data.js, spirit/contact/data.js, and for nothing else', 0.2, function () {
+  if (!W.asked) return false;
+  return W.asked.length === 1 && W.asked[0] === 'spirit/contact/data.js' ? true : false;
 }, test.limit.quick);
 test.run('server.js mounts the contact family', 0.2, function () {
   try { W.mounted = mounted('contact'); } catch (e) { return false; }

@@ -1,7 +1,7 @@
 # spirit/job/api.js — its own test
 
 The job family: the node's jobs and the servers it runs. Owed since the rule *"every production script has its own test"* (goal/G47.1, box v72). The file is run as spirit.js runs the text `api {family}` answers (`loadInterface`: its text with
-`module` and `exports` alone), every call checked by spirit.js's own check (`spirit.check`, its rules `spirit.rules`).
+`module` and `exports`, and on a page `window.spirit.require`, which it asks for its companion `spirit/job/data.js` and nothing else: goal/G47.1, Andy's rule *"every api.js requires it's companion data.js, and is the only script to require that data.js"*), every call checked by spirit.js's own check (`spirit.check`, its rules `spirit.rules`).
 `server.js` is read as text only, for the table `loopbackVerbs.mount('job', ...)` mounts.
 
 - It runs with nothing but `module` and `exports`, and exports its table of verbs and nothing else: it names
