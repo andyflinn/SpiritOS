@@ -181,3 +181,31 @@ test.run('load lists another party\'s tree, clears the choice and hides the verb
   await fam.load(function () { return Promise.resolve(OTHER); }); await settle();
   return fam.family === '' && fam.value === '' && verbBox.hidden === true && short(names(fl)) === short(['relay']) ? true : false;
 }, test.limit.quick);
+
+// AND A PANE (box v123: "every search supports both pane and dropdown; a selector with only one is red (today testicle.js,
+// pane only, and api.js, dropdown only)").
+let pane, paneList, paneSeen;
+test.run("given face pane, it draws the family list alone, as a pane filling its box, and no verb half", 0.2, async function () {
+  if (!made || typeof made.create !== 'function') return false;
+  const n = w.lists.length;
+  const host = node('div');
+  pane = made.create(host, { face: 'pane' });
+  paneSeen = [];
+  pane.addEventListener('change', function () { paneSeen.push(pane.value); });
+  await settle();
+  const mine = w.lists.slice(n);
+  paneList = mine[0] || null;
+  return host.kids[0] === pane && mine.length === 1 && paneList.opts.face === 'pane' && / fill( |$)/.test(pane.className) && pane.style.overflow === 'hidden' ? true : false;
+}, test.limit.quick);
+test.run("in the pane, a family pressed is its family and its value, with one change", 0.2, function () {
+  if (!paneList) return false;
+  paneList.opts.pick({ key: 'fs', name: 'fs' }, 'fs');
+  return pane.family === 'fs' && pane.value === 'fs' && paneSeen.length === 1 && paneSeen[0] === 'fs' ? true : false;
+}, test.limit.quick);
+test.run("the pane, destroyed, leaves its box", 0.2, function () {
+  if (!pane) return false;
+  let removed = false;
+  pane.parentNode = { removeChild: function (c) { removed = c === pane; } };
+  pane.destroy();
+  return removed ? true : false;
+}, test.limit.quick);

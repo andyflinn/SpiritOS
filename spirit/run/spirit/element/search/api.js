@@ -40,8 +40,39 @@
   // is chosen), and root.value the PATH a grant takes: 'family' when no single verb is chosen, 'family.verb' when one
   // is, '' with no family. options.all names the family half's first row (unchosen: every family). It fires a bubbling
   // change.
+  //
+  // AND A PANE (box v123: "every search supports both pane and dropdown; a selector with only one is red (today testicle.js,
+  // pane only, and api.js, dropdown only)"): options.face 'pane' is the family list itself, filling the box it is given, a row
+  // pressed opening its family's verbs (the list's detail), so there is no verb half; root.family and root.value are the
+  // family pressed.
+  function createApiPane(options) {
+    var root = document.createElement('div');
+    root.className = 'api-family-selector-face-pane fill' + (options.className ? ' ' + options.className : '');
+    if (root.style) root.style.overflow = 'hidden';
+    root.family = '';
+    root.verb = '';
+    root.value = '';
+    var families = null;
+    var gone = false;
+    parts.then(function () {
+      if (gone) return;
+      families = window.spirit.element.spirit.element.search.api.listElement.create(root, { face: 'pane', tree: options.tree });
+      families.addEventListener('change', function (event) {
+        if (event && typeof event.stopPropagation === 'function') event.stopPropagation();
+        root.family = root.value = families.value || '';
+        root.dispatchEvent(new Event('change', { bubbles: true }));
+      });
+      families.addEventListener('tree', function () { root.tree = families.tree; root.dispatchEvent(new Event('tree', { bubbles: false })); });
+      root.families = families;
+    });
+    root.load = function (fn) { return parts.then(function () { root.family = root.value = ''; return families ? families.load(fn) : null; }); };
+    root.destroy = function () { gone = true; if (root.parentNode) root.parentNode.removeChild(root); if (families) families.destroy(); families = null; };
+    return root;
+  }
+
   function createApiFamilySelector(options) {
     options = options || {};
+    if (options.face === 'pane') return createApiPane(options);
     var root = document.createElement('div');
     root.className = 'api-family-selector' + (options.className ? ' ' + options.className : '');
     // Its box declares its constraint (goal/G47.1, -browser): what it holds stays inside; a dropdown's list is a popover, above it.

@@ -26,6 +26,9 @@ NEEDs the family selector to have any meaning at all."*). Since goal/G43.18 it i
   - All Verbs: `verb` `''`, `value` the family again;
   - another family clears the verb and lists its own verbs.
 - Every change fires one `change`.
+- Given `face: 'pane'` (box v123: every search has both faces), it is the family list alone as a pane, filling the box it is
+  given, a row pressed opening its family's verbs; no verb half. `family` and `value` are the family pressed, with one
+  `change`; destroyed, it leaves its box.
 - `root.load(fn)` lists another party's tree, clears the choice and hides the verb half. Deferred with introSpector and
   still red (the box: *"the only exception is introspector, deferred for network-scope design reasons."*): its red says so.
 
