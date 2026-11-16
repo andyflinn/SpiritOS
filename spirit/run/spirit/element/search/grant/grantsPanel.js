@@ -265,7 +265,7 @@
       if (gone || !form) return;
       host.innerHTML =
         '<div>' +
-          '<div data-grants="line" style="margin-top:1em"></div>' +
+          '<div data-grants="line"></div>' +
           '<div data-grants="said" class="' + (saidError ? 'job-refusal' : 'job-manifest-note') + '">' + esc(said) + '</div>' +
         '</div>';
       host.querySelector('[data-grants="line"]').appendChild(form.root);
