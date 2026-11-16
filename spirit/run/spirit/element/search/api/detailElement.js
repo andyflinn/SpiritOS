@@ -22,9 +22,11 @@
     var tree = o.tree && typeof o.tree === 'object' ? o.tree : null;
     var gone = false;
     var box = document.createElement('div');
-    box.className = 'api-family-detail';
+    box.className = 'api-family-detail fill';
     // Its box declares its constraint (goal/G47.1, -browser): what it holds stays inside; a dropdown's list is a popover, above it.
-    if (box.style) box.style.overflow = 'hidden';
+    // IT SCROLLS ITS OWN BODY, filling its host under the panel's title bar, which stays (Q21, Andy: the panel itself scrolling
+    // is "the wrong spot"); it has no toolbar of its own, so the whole of it scrolls.
+    if (box.style) box.style.overflow = 'auto';
     host.appendChild(box);
     parts.then(function () {
       if (gone) return;

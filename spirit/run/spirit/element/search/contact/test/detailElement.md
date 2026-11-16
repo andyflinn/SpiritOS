@@ -136,6 +136,8 @@ stream, a real Chrome.
 ### What its test must try to break
 
 - A panel that re-reads on a nudge. A panel that stops while hidden. A report on a row, reaching a face with no star.
+- It fills its host and scrolls its own body, so the panel's title bar above it stays (Q21: the panel itself never scrolls); judged by
+  `spirit/element/test/search-child-browser.js`.
 
 ## Box v170: the relay's capacity, one figure (goal/G47.1)
 

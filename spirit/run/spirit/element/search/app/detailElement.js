@@ -25,7 +25,11 @@
     var S = window.spirit;
     var key = String(row.key || '');
     var box = document.createElement('div');
-    box.className = 'app-detail';
+    // IT SCROLLS ITS OWN BODY, filling its host under the panel's title bar, which stays (Q21, Andy: the panel itself scrolling
+    // is "the wrong spot, any content then would have a hard time making its toolbar stick to the top"); it has no toolbar of
+    // its own, so the whole of it scrolls.
+    box.className = 'app-detail fill';
+    if (box.style) box.style.overflow = 'auto';
     var iconBox = document.createElement('div');
     var labelBox = document.createElement('div');
     var activeBox = document.createElement('div');

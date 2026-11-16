@@ -301,7 +301,9 @@ var cdPage = ({
   // showing belongs in open() — see below.
   mount: function (container, layer) {
     cdLayer = layer || {};
-    container.innerHTML = '<div id="cd-body" class="stack"></div>';
+    // IT SCROLLS ITS OWN BODY, filling the panel under its title bar, which stays (Q21, Andy: the panel itself scrolling is
+    // "the wrong spot").
+    container.innerHTML = '<div id="cd-body" class="stack fill" style="overflow:auto"></div>';
 
     // Delegated, because the panel is repainted after every decision and
     // a handler bound to a button would go with it.
@@ -1888,7 +1890,8 @@ var ndPage = ({
   // belongs in open() — see below.
   mount: function (container, layer) {
     ndLayer = layer || {};
-    container.innerHTML = '<div id="nd-body" class="stack"></div>';
+    // IT SCROLLS ITS OWN BODY, as the contact's (Q21).
+    container.innerHTML = '<div id="nd-body" class="stack fill" style="overflow:auto"></div>';
 
     // ── THE RELAY SAYS WHEN, RATHER THAN THIS SCREEN ASKING AGAIN ────
     //
@@ -2112,6 +2115,8 @@ window.spirit.require('spirit/element/installSpiritElement.js').then(function ()
       var note = document.createElement('div');
       note.className = 'job-manifest-note';
       note.textContent = 'not configured: no contact named';
+      // A note, not a body: it keeps its words inside and scrolls nothing (spirit-sibling-browser.js: overflow not visible).
+      if (note.style) note.style.overflow = 'hidden';
       container.appendChild(note);
       return done;
     }

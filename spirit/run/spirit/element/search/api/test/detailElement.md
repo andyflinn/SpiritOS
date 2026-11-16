@@ -18,6 +18,8 @@ the real api tree reader (`spirit/client/apiTreeIndex.js`) beside it.
 - It asks nothing and changes nothing: what it shows is the tree it is handed.
 - What it paints is escaped.
 - `destroy()` takes it out of its host; one destroyed before it drew draws nothing.
+- It fills its host and scrolls its own body, so the panel's title bar above it stays (Q21: the panel itself never scrolls); judged by
+  `spirit/element/test/search-child-browser.js`.
 
 ## What its test must try to break
 

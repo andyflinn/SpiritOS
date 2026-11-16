@@ -12,7 +12,15 @@
   function create(host, opts) {
     var gone = false;
     var path = String((opts && opts.path) || '');
-    parts.then(function () { if (!gone) window.spirit.element.spirit.element.fstat.create(host, { path: path }); });
+    // IT SCROLLS ITS OWN BODY under the panel's title bar, which stays (Q21, Andy: the panel itself scrolling is "the wrong
+    // spot, any content then would have a hard time making its toolbar stick to the top"): fstat's frame, here alone, scrolls;
+    // fstat itself, shared with the viewers, is left as it is.
+    parts.then(function () {
+      if (gone) return;
+      window.spirit.element.spirit.element.fstat.create(host, { path: path });
+      var frame = host.firstElementChild;
+      if (frame && frame.style) frame.style.overflow = 'auto';
+    });
     // Destroy leaves its host empty, as every element.
     return { destroy: function () { gone = true; host.innerHTML = ''; } };
   }
