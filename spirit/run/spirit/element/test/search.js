@@ -1915,14 +1915,17 @@ async function reconnectPart() {
     await chrome.send('Page.navigate', { url: node.base + '/face.html' });
     await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
     made = await chrome.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/element/search.js"); }).then(function () { ' +
-      'window.__r = { asked: 0 }; var b = document.createElement("div"); b.id = "zz-r"; b.style.cssText = "width:400px;height:300px"; document.body.appendChild(b); ' +
+      'window.__r = { asked: 0, up: false }; spirit.event.subscribe({ onConnection: function (u) { if (u) window.__r.up = true; } }); var b = document.createElement("div"); b.id = "zz-r"; b.style.cssText = "width:400px;height:300px"; document.body.appendChild(b); ' +
       'window.__r.h = spirit.element.spirit.element.search.create(b, { verb: "zz.search", columns: [{ field: "name", label: "Name" }], name: function (r) { return r.name; }, ' +
       '  search: function () { window.__r.asked += 1; var n = window.__r.asked; return Promise.resolve({ status: 200, body: { items: [{ key: "k" + n, label: JSON.stringify({ name: "answer " + n }) }], more: false } }); } }); ' +
       'window.__r.h.refresh(); return "made"; }, function () { return null; })');
     if (made !== 'made') return false;
     const first = await until(function () { return chrome.evaluate('window.__r.asked >= 1 && document.body.innerText.indexOf("answer 1") !== -1'); }, 10000);
+    // CONNECTED FIRST (found flaky on the desk node, two runs in three): a face is up once its stream hands it a first line; a node
+    // restarted before that is a page coming up late, not a reconnect, and its search rightly asks nothing again.
+    const linked = await until(function () { return chrome.evaluate('window.__r.up === true'); }, 15000);
     asked0 = await chrome.evaluate('window.__r.asked');
-    return !!first || false;
+    return (!!first && !!linked) || false;
   }, test.limit.slow);
   test.run('when the node restarts under the search and the stream is back, the search asks once more by itself, nothing typed', 0.8, async function () {
     if (made !== 'made') return false;
