@@ -530,9 +530,10 @@ test.run('no uncaught error on the page outside the Agent, up to the Agent switc
   // nothing threw on the page
   // The Agent is the world here, opened with no agent server on the scratch node; what its own table throws is the Agent's, not
   // the panel's (its stack in spirit/app/agent/).
-  thrown = c.heard.slice(0, heardBefore).filter(function (m) { return m.method === 'Runtime.exceptionThrown'; }).map(function (m) { return (m.params.exceptionDetails.exception && m.params.exceptionDetails.exception.description) || m.params.exceptionDetails.text; })
-  .filter(function (t) { return !/^\s+at .*spirit\/app\/agent\//m.test(String(t)); });
-  return (!thrown.length) ? true : false;
+  // A throw's stack, read only to leave out the Agent's own; nothing of it is kept: the count of the others is the answer.
+  thrown = c.heard.slice(0, heardBefore).filter(function (m) { return m.method === 'Runtime.exceptionThrown'; })
+    .filter(function (m) { const d = (m.params.exceptionDetails.exception && m.params.exceptionDetails.exception.description) || m.params.exceptionDetails.text; return !/^\s+at .*spirit\/app\/agent\//m.test(String(d)); }).length;
+  return thrown === 0;
 }, test.limit.quick);
 test.after(async function () {
   if (N) await stop(N.child);

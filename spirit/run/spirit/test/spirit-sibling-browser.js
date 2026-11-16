@@ -822,7 +822,6 @@ async function session() {
   // by this file's path and the box's id chain (Andy: "only if the test is properly named can the problem be diagnosed
   // quickly").
   const PROBE = '(function () { var box = window.spiritMount.box; var out = [];' +
-    ' function chain(el) { var parts = []; for (var n = el; n && n !== box; n = n.parentNode) { if (n.id || n === el) parts.unshift(n.tagName.toLowerCase() + (n.id ? "#" + n.id : "")); } return parts.join(" > "); }' +
     // WHAT IS SEEN, NOT THE BOX (goal/G41.27; Andy: "change the test for codeMirror."): a box is judged by what the
     // boxes above it that clip (overflow other than visible) leave of it on screen. CodeMirror's scroller is 50px
     // larger than its frame on purpose, to hide the browser's own scrollbars, and its frame cuts it off: nothing spills.
@@ -839,7 +838,7 @@ async function session() {
     '  var tall = document.createElement("div"); tall.style.cssText = "height:5000px;width:1px;flex:none";' +
     '  var wide = document.createElement("div"); wide.style.cssText = "width:5000px;min-width:5000px;height:1px;flex:none";' +
     '  var t = grows(el, "height", tall), w = grows(el, "width", wide);' +
-    '  out.push({ box: chain(el), tall: t, wide: w }); }); return out; }())';
+    '  out.push({ tall: t, wide: w }); }); return out; }())';
   // EVERY ICON THROUGH THE ICON ELEMENT (goal/G41.23; Andy, goal/G41.21: "this element will replace icons painting all
   // shell elements and apps."; box v5: "new-face apps will be updated to use the new \"icon\" element."; Q1: "all apps
   // that use icons."): every glyph it draws that is a pictograph (Unicode Extended_Pictographic, as its icons are) and
@@ -884,7 +883,7 @@ async function session() {
   const fields = P.fields = [];
   for (let i = 0; i < fieldCount; i++) {
     const at = await page.evaluate('(function () { var box = window.spiritMount.box; var el = ' + FIELDS + '[' + i + ']; if (!el) return ""; el.focus(); el.value = "";' +
-      ' var parts = []; for (var n = el; n && n !== box; n = n.parentNode) { if (n.id || n === el) parts.unshift(n.tagName.toLowerCase() + (n.id ? "#" + n.id : "") + (n === el && el.placeholder ? "[" + el.placeholder + "]" : "")); } return parts.join(" > "); }())');
+      ' return true; }())');
     if (!at) continue;
     await page.send('Input.insertText', { text: typed });
     const kept = await page.evaluate('(function () { var el = ' + FIELDS + '[' + i + ']; var n = el ? new TextEncoder().encode(el.value).length : 0; if (el) el.value = ""; return n; }())');

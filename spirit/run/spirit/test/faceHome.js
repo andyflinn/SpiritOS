@@ -23,7 +23,6 @@ const seal = require(path.join(RUN, 'spirit', 'seal.js'));
 const { createFaceHome } = require(path.join(RUN, 'spirit', 'faceHome.js'));
 const { scratchNode, scratchFaceRelay, chromePage, findChrome, sleep, until } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 
-function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 220); }
 const settle = async function () { for (let i = 0; i < 10; i++) await new Promise(function (r) { setImmediate(r); }); };
 
 // What the tests made, for the tests after them.

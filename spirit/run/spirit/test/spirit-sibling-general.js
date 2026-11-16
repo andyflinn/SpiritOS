@@ -2083,7 +2083,7 @@ function oneFile(P) {
 // What it judges: given no file, the tree; given a file, that file's code (its page is spirit-sibling-browser.js's).
 if (!arg) every();
 else if (!full) test.run('the world: the file handed is there', 0.2, function () { return false; }, test.limit.quick);
-else oneFile({ fail: '', stage: 'none' });
+else oneFile({});
 }
 
 const PARTS = [generalRules, branchRules, titleRules, noFuckingGarbage, searchRules, testReachRules];

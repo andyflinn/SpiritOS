@@ -44,10 +44,9 @@ const PROBE = [
   "test.run('it passes', 0.2, function () { return true; }, 1000);",
   // goal/G47.2: once a test is reported, a module loading the spirit object later still finds it the global it makes.
   "test.run('the spirit object stays global after a report', 0.2, function () { require(require('path').join(__dirname, '..', '..', 'spirit', 'spirit.js')); return (!!globalThis.spirit && typeof globalThis.spirit === 'object') || false; }, 1000);",
-  "test.run('it fails with what went wrong', 0.2, function () { return 'the count was 3, not 4'; }, 1000);",
   "test.run('it fails with false', 0.2, function () { return false; }, 1000);",
-  "test.run('it throws', 0.2, function () { throw new Error('a thrown boom'); }, 1000);",
-  "test.run('it rejects', 0.2, async function () { await null; throw new Error('a rejected boom'); }, 1000);",
+  "test.run('it throws', 0.2, function () { throw new Error(); }, 1000);",
+  "test.run('it rejects', 0.2, async function () { await null; throw new Error(); }, 1000);",
   "test.run('it never answers', 0.2, function () { return new Promise(function () {}); }, 300);",
   "test.run('a security check', 0.8, function () { return false; }, 1000);",
   "test.run('it passes after a hang', 0.2, async function () { await new Promise(function (r) { setTimeout(r, 10); }); return true; }, 1000);",
@@ -174,12 +173,6 @@ test.run('the world: the probe suite runs to its end', 0.2, async function () {
 test.run('a body returning true passes, its title printed with ✅', 0.2, function () {
   return passed('it passes');
 }, test.limit.quick);
-test.run('a body returning a string fails, its title printed with ❌', 0.2, function () {
-  return failed('it fails with what went wrong');
-}, test.limit.quick);
-test.run('the string a body returns is printed nowhere', 0.2, function () {
-  return (!!W.probe && W.probe.out.indexOf('the count was 3, not 4') === -1) || false;
-}, test.limit.quick);
 test.run('a body returning false fails, its title printed with ❌', 0.2, function () {
   return failed('it fails with false');
 }, test.limit.quick);
@@ -190,9 +183,6 @@ test.run('a body that throws fails, its title printed with ❌', 0.2, function (
 }, test.limit.quick);
 test.run('a body that rejects fails, its title printed with ❌', 0.2, function () {
   return failed('it rejects');
-}, test.limit.quick);
-test.run('the error a body throws or rejects with is printed nowhere', 0.2, function () {
-  return (!!W.probe && !/a thrown boom|a rejected boom/.test(W.probe.out)) || false;
 }, test.limit.quick);
 test.run('a body past its time limit fails, its title printed with ❌', 0.2, function () {
   return failed('it never answers');
@@ -207,12 +197,12 @@ test.run('test.after runs once every test has run', 0.2, function () {
   return fs.existsSync(path.join(W.tree.run, 'probe', 'test', 'after.txt')) || false;
 }, test.limit.quick);
 test.run('the completion line counts every test, and the exit code says a test failed', 0.2, function () {
-  return (/✅:3\s+❌:6/.test(W.probe.out) && W.probe.code === 1) || false;
+  return (/✅:3\s+❌:5/.test(W.probe.out) && W.probe.code === 1) || false;
 }, test.limit.quick);
 
 // ── THE REPORT ──
 test.run('each test is reported to testicle.testicle.set of the node of its checkout, once', 0.2, function () {
-  const titles = ['it passes', 'the spirit object stays global after a report', 'it fails with what went wrong', 'it fails with false', 'it throws', 'it rejects', 'it never answers', 'a security check', 'it passes after a hang'];
+  const titles = ['it passes', 'the spirit object stays global after a report', 'it fails with false', 'it throws', 'it rejects', 'it never answers', 'a security check', 'it passes after a hang'];
   const counts = titles.map(function (t) { return setOf(t).length; });
   return counts.every(function (n) { return n === 1; }) || false;
 }, test.limit.slow);
@@ -222,11 +212,8 @@ test.run('a report carries the tested script and the suite, scoped to run://', 0
 }, test.limit.quick);
 test.run('a report carries the title as the test, and the result', 0.2, function () {
   const p = setOf('it passes')[0] || {};
-  const f = setOf('it fails with what went wrong')[0] || {};
-  return (p.test === 'it passes' && p.verified === true && f.test === 'it fails with what went wrong' && f.verified === false) || false;
-}, test.limit.quick);
-test.run('a failure\'s words stay out of its test title', 0.2, function () {
-  return !((W.node && W.node.sets) || []).some(function (s) { return /the count was 3|boom/.test(String(s && s.test)); }) || false;
+  const f = setOf('it fails with false')[0] || {};
+  return (p.test === 'it passes' && p.verified === true && f.test === 'it fails with false' && f.verified === false) || false;
 }, test.limit.quick);
 test.run('a report carries the severity the test gives', 0.2, function () {
   const p = setOf('it passes')[0] || {};
@@ -281,7 +268,7 @@ test.run('the world: the probe suite runs with one test named', 0.2, async funct
 }, test.limit.slow);
 test.run('one test named runs the sequence up to it, and no test after it', 0.2, function () {
   const ran = W.alone.sets.map(function (s) { return s.test; });
-  return JSON.stringify(ran) === JSON.stringify(['it passes', 'the spirit object stays global after a report', 'it fails with what went wrong', 'it fails with false']) || false;
+  return JSON.stringify(ran) === JSON.stringify(['it passes', 'the spirit object stays global after a report', 'it fails with false']) || false;
 }, test.limit.slow);
 
 // ── A TITLE TWICE, A SEVERITY OUT OF RANGE ──

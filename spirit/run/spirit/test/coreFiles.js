@@ -156,7 +156,7 @@ test.run('it asks more than fifty files loaded by core files', 0.2, function () 
       if (/(^|\/)test\//.test(dep)) return;
       if (!exists(dep)) return; // a missing file is another test's to judge, not this rule's
       asked += 1;
-      if (!depIsCore(dep)) D.loose.push(dep);
+      if (!depIsCore(dep)) D.loose.push(true);
     });
   });
   return asked > 50 ? true : false;

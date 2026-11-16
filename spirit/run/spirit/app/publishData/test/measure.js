@@ -37,7 +37,7 @@ test.run('rssOf: 0 for a process that has ended', 0.2, function () {
 // measure(): once, whole.
 test.run('measure: it answers, on lab nodes and a lab relay', 0.2, async function () {
   if (!M.mod) return false;
-  try { M.got = await M.mod.measure(function (t) { M.said.push(t); }); } catch (e) { M.threw = true; }
+  try { M.got = await M.mod.measure(function () { M.said.push(true); }); } catch (e) { M.threw = true; }
   return (!!M.got && !M.threw) || false;
 }, test.limit.long);
 test.run('a node at rest: a figure in MB, above 0 and below this machine\'s RAM', 0.2, function () {

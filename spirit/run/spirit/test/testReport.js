@@ -40,6 +40,8 @@ const ICON = { SUCCESS: '✅', ERROR: '❌' };
 
 // How long an ended suite waits, at most, for its reports to testicle to land before it exits.
 const RECORD_WAIT_MS = 10000;
+// One printed line of the runner's own: a script's name, or a test's title and its mark. No suite prints (no test.comment).
+function line(text) { console.log(PAD_STARS + PAD_SPACES + text); }
 function titleLine(title) {
   let t = String(title);
   if (t.length > MAX_TITLE_LENGTH) t = t.substring(0, MAX_TITLE_LENGTH - 3) + '...';
@@ -57,14 +59,12 @@ const test = {
   successCount: 0,
   failureCount: 0,
 
-  startTest: function (title) {
+  // The suite's heading: the suite, the second part of every row's key (script, suite, title), and no number.
+  startTest: function (suite) {
     this.counter++; this.successCount = this.failureCount = 0;
     console.log('\n' + STARS);
-    titleLine('#' + this.counter + ' ' + title);
+    titleLine(suite);
     console.log(STARS + '\n');
-  },
-  comment: function (text) {
-    console.log(PAD_STARS + PAD_SPACES + text);
   },
   // The completion line, the one the readers parse, and the exit code saying the same.
   reportSuccessFailureCount: function () {
@@ -236,7 +236,7 @@ async function runAll() {
     if (doing !== null && doing !== script) succeeded(doing);
     // THE SCRIPT, AS A HEADING, where it changes: the script is part of the testicle row's key (script, suite, title), so
     // the lines under it are its tests, each its title and its mark.
-    if (doing !== script) { doing = script; held[script] = true; test.comment(script); }
+    if (doing !== script) { doing = script; held[script] = true; line(script); }
     const once = script + '|' + title;
     // A title said twice, a severity that is no number from 0.0 to 1.0, or no body: a fail at 0.7, as a crash is.
     if (seen[once] || typeof t.severity !== 'number' || !(sev >= 0 && sev <= 1) || typeof t.body !== 'function') t.verdict = { pass: false, crash: true };
@@ -245,8 +245,8 @@ async function runAll() {
     const v = t.verdict || { pass: false };
     const severity = v.crash ? 0.7 : (sev >= 0 && sev <= 1 ? sev : 0.7);
     // Its line: the title and its mark, nothing else.
-    if (v.pass) { test.successCount++; test.comment(title + ' ' + ICON.SUCCESS); }
-    else { test.failureCount++; test.comment(title + ' ' + ICON.ERROR); }
+    if (v.pass) { test.successCount++; line(title + ' ' + ICON.SUCCESS); }
+    else { test.failureCount++; line(title + ' ' + ICON.ERROR); }
     if (!v.pass) held[script] = false;
     reportToTesticle({ script: script, suite: SUITE_FILE, test: title, verified: !!v.pass, severity: severity });
   }

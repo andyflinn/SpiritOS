@@ -443,7 +443,7 @@ test.run('the world: the throwaway node for the verbs that act comes up, every a
 test.run('the verbs that act took the whole garbage, bad strings, missing, extraneous and pairs, without crashing or hanging', 0.2, async function () {
   if (!B || !B.plain) return false;
   const actingAsks = G.actingAsks; const actingVerbs = G.actingVerbs;
-  const broken = {}; const killedBy = []; const fresh = []; let n = 0; const t0 = Date.now();
+  const broken = {}; const fresh = []; let n = 0; const t0 = Date.now();
   for (const name of actingVerbs) {
     const mine = actingAsks.filter(function (a) { return a.name === name; });
     for (let i = 0; i < mine.length; i += BATCH) {
@@ -455,7 +455,6 @@ test.run('the verbs that act took the whole garbage, bad strings, missing, extra
       if (!alive) { await sleep(500); alive = await B.plain(); }
       if (!alive) {
         broken[name] = true;
-        killedBy.push(name);
         try { if (B.node.child) B.node.child.kill(); } catch (e) { /* gone */ }
         B = await upNode(); G.made.push(B.node);
         if (!B.plain) return false;
