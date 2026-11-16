@@ -16,6 +16,9 @@
 // red Qs and checks, blocks, files and grants, rules), the chat in the
 // centre, the right side blank.
 
+// THE INTERFACE IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
+// INTERFACES IT FUCKING NEEDS"; app-child-browser.js): the desk family's api.js, which brings its data.js.
+if (typeof window !== 'undefined' && window.spirit && typeof window.spirit.require === 'function') Promise.resolve(window.spirit.require('spirit/app/desk/api.js')).catch(function () {});
 var ddApi = null;
 var ddId = '';
 var ddFacts = null;          // the item's facts, as the server last said them
