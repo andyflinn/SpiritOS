@@ -78,6 +78,10 @@
         lineWrapping: true,
         mode: mode,
         theme: 'material-darker',
+        // ITS INPUT AN EDITABLE BOX, NOT A HIDDEN TEXTAREA (the general rules: every input it draws has a maxlength): CodeMirror's
+        // own textarea only buffers keystrokes, so a limit on it would cut a paste; contenteditable takes the same input with
+        // no textarea at all.
+        inputStyle: 'contenteditable',
       });
       var marks = [];
       var firstAt = null;   // where the first match stands, put in view again once the page is drawn

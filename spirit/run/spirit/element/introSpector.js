@@ -21,7 +21,7 @@
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26: "every shell element loads its own elements dynamically through the fucking
   // apirit.require functionality"): the family selector, the contacts list as its party, and the reply's codeMirror.
-  var parts = Promise.all(['spirit/element/search/api.js', 'spirit/element/search/contact/listElement.js', 'spirit/element/codeMirror.js']
+  var parts = Promise.all(['spirit/element/search/api.js', 'spirit/element/search/contact/listElement.js', 'spirit/element/codeMirror.js', 'spirit/element/fieldInput.js']
     .map(function (p) { return S.require(p); }));
 
   function esc(s) { return S.escapeHtml(String(s == null ? '' : s)); }
@@ -130,6 +130,15 @@
             (f.type === 'json' ? '</textarea>' : '') + '</label>';
         }).join('') +
         '<button type="button" data-is="call">call</button>';
+      // EVERY FIELD STOPS AT ITS LIMIT (the general rules: every input it draws has a maxlength): a verb's declaration holds
+      // an example, not a rule, so a text or a JSON field takes the longest standard rule, paragraph, through fieldInput; a
+      // number field a number's length.
+      var FI = S.required && S.required.spirit && S.required.spirit.element && S.required.spirit.element.fieldInput;
+      Array.prototype.forEach.call(form.querySelectorAll('[data-is-field]'), function (x) {
+        if (x.type === 'checkbox') return;
+        if (x.type === 'number') { x.maxLength = 32; return; }
+        if (FI && typeof FI.attach === 'function') FI.attach(x, 'paragraph'); else x.maxLength = 2048;
+      });
       part('call').addEventListener('click', function () {
         var texts = {};
         fields.forEach(function (f) {
