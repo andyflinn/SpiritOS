@@ -119,9 +119,9 @@ test.run('the shared element runs on a window of its own, over the real spirit.d
   PE = function () { const e = global.window.spirit.element; e.spirit = e.spirit || {}; e.spirit.element = e.spirit.element || {}; return e.spirit.element; };
   global.window.spirit.require = function (p) {
     w.required.push(String(p));
-    // The agent branch's interface brings its data.js, as the real api.js does: the real spirit.require runs
-    // spirit/app/agent/data.js, from its path.
-    if (p === AGENT) require(path.join(RUN, 'spirit', 'spirit.js')).require('spirit/app/agent/data.js');
+    // The agent branch's interface brings its data.js, as the real api.js does: run once, as the page runs it, into
+    // this page's spirit.data.
+    if (p === AGENT && !w.agentData) { w.agentData = true; load(path.join(RUN, 'spirit', 'app', 'agent', 'data.js')); }
     // The bundle selector (goal/G41.21), tested in its own folder: a stand-in on the page once it is asked for, keeping
     // what it was handed.
     // The are-you-sure button (spirit/element/armingButton.js), tested in its own folder: a stand-in whose first press arms and
