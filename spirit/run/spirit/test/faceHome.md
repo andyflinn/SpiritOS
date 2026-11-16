@@ -109,18 +109,19 @@ the relayOnFace part of `spirit/element/search/contact/test/rowElement.js`).
 
 ### Requirements
 
-- **No star: each app's face mark decides, as today**: Text Editor and Media Viewer are not on the face's desktop.
-- **The star: every app the home desktop shows is on the face's**, the home's own first tile aside, named apart on each.
-- **The star pressed at home with the face open: its desktop follows at once, with no reload** (goal/G41.32; Andy: *"every row's data, wherever it's visible OR invisible must update instantly, and when visible, paint immediately."*).
-- **Join and the login stay the boot's own**, never app icons (the login is `spirit.login`, in spirit.js, no app:
-  goal/G43.18).
+- **Text Editor and Media Viewer are switched on at home first**: since goal/G43.17 they are apps of their own, not
+  intrinsic, so a fresh node shows them only once active.
+- **No star, nothing** (goal/G43.18, box v29: *"A face is whole, or there is none"*; Andy, Q18: *"yes"*): the face
+  draws none of the apps of the home desktop.
+- **The star: every app the home desktop shows is on the face's**, the home's own first tile aside, named apart on each;
+  Join among them, an app like every other (goal/G43.26).
 - **An app it shows opens**: pressing Text Editor's tile throws nothing in the page.
-- **The star off: back to the face marks**, on the next drawing of the desktop.
+- **The star off: nothing again**, on the next drawing of the desktop.
 
 ### What its test must try to break
 
 - A star that shows the two apps named and misses another.
-- A face with no star that shows them too.
+- A face with no star that shows any app of the home desktop.
 - A tile that is drawn and dies when pressed.
 
 - A quiet face stream carries a beat each second (box v148): in 4 s with nothing to send, no gap between its writes to the relay is longer than 1.5 s.

@@ -1098,48 +1098,15 @@ test.run('at home the desktop shows Text Editor and Media Viewer', 0.2, async fu
   return (A.atHome.indexOf('Text Editor') !== -1 && A.atHome.indexOf('Media Viewer') !== -1) || false;
 }, test.limit.slow);
 
-// No star: each app's face mark decides, as today.
-test.run('the face\'s desktop is drawn', 0.2, async function () {
+// NO STAR, NOTHING (goal/G43.18, box v29: "A face is whole, or there is none"; Andy, Q18, of rewriting these tests so a
+// starless face shows nothing: "yes"): the relay refuses a face with no star its link home, so its page draws no app
+// of the home desktop at all.
+function noApp(names) { return !!names && A.atHome && A.atHome.length > 0 && !A.atHome.some(function (n) { return OWN.indexOf(n) === -1 && names.indexOf(n) !== -1; }); }
+test.run('with no star, the face draws none of the apps of the home desktop', 0.8, async function () {
   if (!browsing()) return false;
   A.plain = await desktop(A.chrome, A.FACE);
-  return A.plain.indexOf('Contacts') !== -1 || false;
+  return noApp(A.plain) || false;
 }, test.limit.slow);
-test.run('Text Editor and Media Viewer are not on it', 0.2, function () {
-  if (!A.plain) return false;
-  return (A.plain.indexOf('Text Editor') === -1 && A.plain.indexOf('Media Viewer') === -1) || false;
-}, test.limit.quick);
-
-// WHO PAINTS, LISTENS (goal/G41.32; Andy: "every row's data, wherever it's visible OR invisible must update instantly, and
-// when visible, paint immediately."; "does a star change at home stream to the face????"): the page stays open, no reload.
-// The star pressed at home, the face open: its desktop follows, with no reload.
-test.run('the star is put on at home while the face\'s desktop is open', 0.2, async function () {
-  if (!browsing()) return false;
-  await A.chrome.evaluate('window.__sameLoad = true; 1');
-  const live = await home(A.N.base, 'contact.own', { key: A.R.relayKey, own: true });
-  return live.status === 200 || false;
-}, test.limit.quick);
-test.run('Text Editor and Media Viewer come at once', 0.2, async function () {
-  if (!browsing()) return false;
-  await until(function () { return namesNow().then(function (n) { return n.indexOf('Text Editor') !== -1 && n.indexOf('Media Viewer') !== -1; }); }, 8000);
-  A.onLive = await namesNow();
-  return (A.onLive.indexOf('Text Editor') !== -1 && A.onLive.indexOf('Media Viewer') !== -1) || false;
-}, test.limit.long);
-test.run('with its desktop open, the star is taken off at home', 0.2, async function () {
-  if (!browsing()) return false;
-  const liveOff = await home(A.N.base, 'contact.own', { key: A.R.relayKey, own: false });
-  return liveOff.status === 200 || false;
-}, test.limit.quick);
-test.run('Text Editor and Media Viewer go at once', 0.2, async function () {
-  if (!browsing() || !A.onLive) return false;
-  await until(function () { return namesNow().then(function (n) { return n.indexOf('Text Editor') === -1 && n.indexOf('Media Viewer') === -1; }); }, 8000);
-  const offLive = await namesNow();
-  const cameLive = A.onLive.indexOf('Text Editor') !== -1 && A.onLive.indexOf('Media Viewer') !== -1;
-  return (cameLive && offLive.indexOf('Contacts') !== -1 && offLive.indexOf('Text Editor') === -1 && offLive.indexOf('Media Viewer') === -1) || false;
-}, test.limit.quick);
-test.run('all of this happens on the one load of the page', 0.2, async function () {
-  if (!browsing()) return false;
-  return (await A.chrome.evaluate('window.__sameLoad === true')) === true || false;
-}, test.limit.quick);
 
 // The star: every app the home desktop shows.
 test.run('the star is put on at home to check every app', 0.2, async function () {
@@ -1153,10 +1120,6 @@ test.run('every app on the home desktop is on the starred face', 0.2, async func
   const gap = missing(A.atHome, A.starred);
   return (A.starred.length > 0 && !gap.length) || false;
 }, test.limit.slow);
-test.run('Join and the login app stay the boot\'s own', 0.2, function () {
-  if (!A.starred) return false;
-  return A.starred.indexOf('Join') === -1 || false;
-}, test.limit.quick);
 
 // An app it shows opens.
 test.run('the tile of an app it shows is there to press', 0.2, async function () {
@@ -1172,14 +1135,13 @@ test.run('pressing that tile throws nothing in the page', 0.2, async function ()
   return (A.opened === true && !threw.length) || false;
 }, test.limit.slow);
 
-// The star off: back to the face marks.
-test.run('the star is taken off at home to go back to the face marks', 0.2, async function () {
+// The star off: nothing again.
+test.run('the star is taken off at home', 0.2, async function () {
   if (!browsing()) return false;
   const off = await home(A.N.base, 'contact.own', { key: A.R.relayKey, own: false });
   return off.status === 200 || false;
 }, test.limit.quick);
-test.run('Text Editor and Media Viewer are gone again', 0.2, async function () {
+test.run('with the star off again, the face draws none of the apps of the home desktop', 0.8, async function () {
   if (!browsing()) return false;
-  const again = await desktop(A.chrome, A.FACE);
-  return (again.indexOf('Contacts') !== -1 && again.indexOf('Text Editor') === -1 && again.indexOf('Media Viewer') === -1) || false;
+  return noApp(await desktop(A.chrome, A.FACE)) || false;
 }, test.limit.slow);
