@@ -257,8 +257,11 @@ if (withData.length) {
   }, test.limit.quick);
   // Andy (goal/G47.1): "every api.js requires it's companion data.js, and is the only script to require that data.js".
   const apiAndData = withData.filter(function (b) { return !!b.api; });
+  // The data.js paths its api.js requires by their written path, comments left out (this part's own reader: the one the
+  // tree-wide check uses lives in another part's function and is not in reach here).
+  const requiresData = function (rel) { const out = []; const re = /\brequire\s*\(\s*['"`](spirit\/[^'"`]+\/data\.js)['"`]/g; const c = code(path.join(RUN, rel)); let m; while ((m = re.exec(c))) out.push(m[1]); return out; };
   if (apiAndData.length) test.run('its api.js requires the data.js beside it', 0.4, function () {
-    return overAll(apiAndData, function (b) { return dataRequiresOf(b.api).indexOf(b.data) !== -1; });
+    return overAll(apiAndData, function (b) { return requiresData(b.api).indexOf(b.data) !== -1; });
   }, test.limit.quick);
   test.run('its data.js loads, and exports its cache rules if it has any', 0.4, function () {
     return overAll(withData, function (b) {
