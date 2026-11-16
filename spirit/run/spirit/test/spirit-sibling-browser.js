@@ -834,8 +834,13 @@ async function session() {
   // 4. "no node of it carries margin, padding or gap in its style attribute, and no <style> block it adds sets them (read
   //    from the page's style sheets)". The bare page's own <style> (html, body) is the page's, not the element's.
   const SPACING = '/(^|;)\\s*(margin|padding|gap|row-gap|column-gap)(-[a-z-]+)?\\s*:/i';
-  P.spacedNodes = JSON.parse(await page.evaluate('JSON.stringify(Array.prototype.filter.call(window.spiritMount.box.querySelectorAll("*"), function (el) { return ' + SPACING + '.test(el.getAttribute("style") || ""); }).map(function () { return true; }))'));
-  P.spacedRules = JSON.parse(await page.evaluate('JSON.stringify([].concat.apply([], Array.prototype.filter.call(document.styleSheets, function (s) { var o = s.ownerNode; return o && o.tagName === "STYLE" && !/^\\s*html, body \\{ height: 100%; margin: 0; \\}/.test(o.textContent); }).map(function (s) { var out = []; try { Array.prototype.forEach.call(s.cssRules, function (r) { if (r.style && ' + SPACING + '.test(r.style.cssText)) out.push(true); }); } catch (e) { out.push(true); } return out; })))'));
+  // CODEMIRROR'S OWN NODES ARE THE LIBRARY'S (as its scrollbars are, below, goal/G41.28): it lays out its sizer and the lines
+  // in it with margins and paddings it measures as it draws; no script of ours writes them (box v109: "style issues like
+  // margin, padding and gap do NOT belong in UI scripts"). Every other node, inside the editor or not, is judged.
+  P.spacedNodes = JSON.parse(await page.evaluate('JSON.stringify(Array.prototype.filter.call(window.spiritMount.box.querySelectorAll("*"), function (el) { return !el.closest(".CodeMirror-sizer") && ' + SPACING + '.test(el.getAttribute("style") || ""); }).map(function () { return true; }))'));
+  // CodeMirror's own sheets (spirit/element/codeMirror.js loads the library's css, each a <style> of its own): a rule on its
+  // classes, .CodeMirror and .cm-, is the library's layout, as its nodes are above; any other rule a sheet sets is judged.
+  P.spacedRules = JSON.parse(await page.evaluate('JSON.stringify([].concat.apply([], Array.prototype.filter.call(document.styleSheets, function (s) { var o = s.ownerNode; return o && o.tagName === "STYLE" && !/^\\s*html, body \\{ height: 100%; margin: 0; \\}/.test(o.textContent); }).map(function (s) { var out = []; try { Array.prototype.forEach.call(s.cssRules, function (r) { if (r.style && !/(^|[\s,>+~])\.(CodeMirror|cm-)/.test(r.selectorText || "") && ' + SPACING + '.test(r.style.cssText)) out.push(true); }); } catch (e) { out.push(true); } return out; })))'));
 
   // EVERY BOX INSIDE IT BOUNDED, TALL AND WIDE (goal/G41.19, box v23; rule/16; Andy: "list-in-a-sized-box
   // (anything-in-a-sized-box) are really a test of the container", "any container that mounts unknown stuff inside it

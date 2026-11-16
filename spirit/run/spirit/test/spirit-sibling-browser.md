@@ -128,7 +128,9 @@ cheapest catch-all making sure the container constraints, instead of trying to m
   - every input and button it draws has a listener on itself or on a node between it and its box, read through Chrome's
     debugger (`DOMDebugger.getEventListeners`); one on the document or window does not count. None: red at 0.6;
   - no node of it carries margin, padding or gap in its style attribute, and no `<style>` block it adds sets them, read
-    from the page's style sheets (the bare page's own `html, body` block is the page's);
+    from the page's style sheets (the bare page's own `html, body` block is the page's). CodeMirror's own layout is the
+    library's, not a script of ours: its sizer and the lines in it, and the rules of its sheets on its own classes
+    (`.CodeMirror`, `.cm-`), are passed over; every other node and rule is judged;
   - if it throws when mounted empty, red at 0.8: this enforces rule 26, an element loads its own stuff.
 - Rule 19 (state only via the server) is not enforced here.
 

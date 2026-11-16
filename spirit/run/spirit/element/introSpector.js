@@ -100,11 +100,13 @@
     var fields = [];
     var reply = null;
     var picker = null;
+    // Its spacing is shell.css's (box v109: "style issues like margin, padding and gap do NOT belong in UI scripts"): the line's
+    // .introspector-line, its blocks 1em apart by .stack (rule/2). Its box keeps what it holds inside (-browser: overflow).
     container.innerHTML =
-      '<div class="stat-tile wide">' +
-        '<div data-is="line" style="display:flex;flex-wrap:wrap;align-items:center;gap:1em"></div>' +
-        '<div data-is="form" style="margin-top:1em"></div>' +
-        '<div data-is="reply" style="margin-top:1em"></div>' +
+      '<div class="stat-tile wide stack" style="overflow:hidden">' +
+        '<div data-is="line" class="introspector-line"></div>' +
+        '<div data-is="form"></div>' +
+        '<div data-is="reply"></div>' +
       '</div>';
     function part(n) { return container.querySelector('[data-is="' + n + '"]'); }
 
