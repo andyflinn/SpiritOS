@@ -486,9 +486,10 @@ mark { background: var(--spirit-match); color: inherit; border-radius: 2px; }
 
 /* THE ICON ELEMENT (goal/G41.23; spirit/element/icon.js; Andy: "it centers the glyph, in a square box, the size of which
    follows font-size", "like like text characters, it follows, its container in most attributes"): a square of its own
-   font size, which is its container's times its size; the glyph centred; never shrinking in a row. */
+   font size, which is its container's times its size; the glyph centred; never shrinking in a row. A glyph wider than its
+   square is drawn smaller to fit it (icon.js, Q22: "proportionally scale-to-fit"), so the square keeps what it holds inside. */
 .shell-icon { display: inline-flex; align-items: center; justify-content: center; flex: none; box-sizing: border-box;
-  width: 1em; height: 1em; line-height: 1; overflow: visible; vertical-align: middle; }
+  width: 1em; height: 1em; line-height: 1; overflow: hidden; vertical-align: middle; }
 
 /* THE BUBBLE (goal/G41.27; Andy, box: "they form a bubble with transparent background, and a border with the color of
    the type-face. The bubble is one shared style, the same probabilitySearch's search bubble uses."): the one style, the

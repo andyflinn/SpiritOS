@@ -97,6 +97,24 @@ test.run('the glyph\'s middle is the square\'s middle, within a tenth of its sid
   tol = m.centred.side / 10;
   return (m.centred.dx <= tol && m.centred.dy <= tol) ? true : false;
 }, test.limit.quick);
+test.run("a glyph wider than its square is drawn smaller, inside the square, and still says the glyph", 0.2, function () {
+  if (!m || !m.fit) return false;
+  // Q22, Andy: "how about proportionally scale-to-fit?"
+  return (square({ w: m.fit.side, h: m.fit.side }, 20) && m.fit.ink <= m.fit.side + 0.5 && m.fit.ink > m.fit.side / 2 && m.fit.inside && m.fit.text === 'WWWW') ? true : false;
+}, test.limit.quick);
+test.run("a glyph that fits its square is drawn as it is", 0.2, function () {
+  if (!m || !m.fit) return false;
+  return m.fit.narrowWhole ? true : false;
+}, test.limit.quick);
+test.run("the square keeps what it holds inside", 0.2, function () {
+  if (!m || !m.fit) return false;
+  return m.fit.overflow === 'hidden hidden' ? true : false;
+}, test.limit.quick);
+test.run("its glyphs are measured in one box for the whole page, unseen and off screen", 0.2, function () {
+  if (!m || !m.meters) return false;
+  // Andy: "can the drawing not happen in a hidden (maybe global) screen for measurement?"
+  return (m.meters.length === 1 && m.meters[0].hidden && m.meters[0].off) ? true : false;
+}, test.limit.quick);
 test.run('it follows its container\'s colour like a text character', 0.2, function () {
   if (!m) return false;
   // "no other option than size, like like text characters, it follows, its container in most attributes."

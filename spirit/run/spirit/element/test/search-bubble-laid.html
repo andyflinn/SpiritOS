@@ -31,7 +31,8 @@ window.laid = function () {
         if (face === 'dropdown') { var f = box.querySelector('button'); if (f) f.click(); }
         var all = Array.prototype.slice.call(box.querySelectorAll('*'));
         // Each row's icon: the innermost element showing 🗜 or 🔎, and the control after it on its row.
-        function iconOf(g) { var hits = all.filter(function (el) { return el.textContent.indexOf(g) !== -1; }); return hits.filter(function (el) { return !hits.some(function (k) { return k !== el && el.contains(k); }); })[0] || null; }
+        // The icon element around it, when the glyph is drawn smaller inside it (spirit/element/icon.js, Q22: scaled to fit).
+        function iconOf(g) { var hits = all.filter(function (el) { return el.textContent.indexOf(g) !== -1; }); var x = hits.filter(function (el) { return !hits.some(function (k) { return k !== el && el.contains(k); }); })[0] || null; return x && x.closest ? (x.closest('.shell-icon') || x) : x; }
         var fi = iconOf('🗜'); var si = iconOf('🔎'); var bi = iconOf('🪣');
         var firstFilter = box.querySelector('button[data-filter]');
         var input = box.querySelector('input[type="text"]');

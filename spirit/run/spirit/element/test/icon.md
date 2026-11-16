@@ -23,6 +23,10 @@ It carries a class of its own, by which the shell's other elements are seen to p
 - **The glyph centred**: its middle is the square's middle, within a tenth of the side (the font's own glyph metrics).
 - **The glyph is the glyph**: `🔑` shows `🔑`; no key looked up.
 - **It follows its container like a text character**: its colour is its container's.
+- **Scaled to fit, measured unseen** (Q22; Andy: *"how about proportionally scale-to-fit?"*, *"can the drawing not happen in
+  a hidden (maybe global) screen for measurement?"*, *"cw, yes, build the icon that way."*): a glyph wider than its square
+  is drawn smaller, evenly, inside it, from the first frame; one that fits is drawn as it is. The square keeps what it
+  holds inside (overflow hidden). Glyphs are measured in one box for the whole page, unseen and off screen, each once.
 
 Asked of a real browser, since a square that follows the font size is layout: `./icon-sized.html`, opened at
 `/DEBUG/spirit/element/test/icon-sized.html` on a scratch node with its DEBUG on (`spirit/test/headLessChrome.js`).
@@ -39,4 +43,5 @@ each moves onto it under the item that lists its files.
 - An icon squeezed in a narrow row.
 - A glyph off the middle of its square.
 - A glyph changed, cut or looked up.
+- A wide glyph showing past its square, or a narrow one made smaller; a measuring box per icon, or one that shows.
 - A colour of its own; no class to know it by.

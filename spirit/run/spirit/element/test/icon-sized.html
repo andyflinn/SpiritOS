@@ -41,6 +41,16 @@ window.sized = function () {
     var tight = E.create(row, { glyph: 'A' });
     var more = document.createElement('span'); more.textContent = 'a long label beside it'; row.appendChild(more);
     out.tight = box(tight);
+    // SCALED TO FIT (Q22): a glyph wider than its square, drawn smaller at once, inside it; a narrow one as it is.
+    function ink(el) { var r = document.createRange(); r.selectNodeContents(el); var g = r.getBoundingClientRect(); return { w: Math.round(g.width * 10) / 10, l: g.left, r: g.right }; }
+    var wide = one('font-size:20px', { glyph: 'WWWW' }).i;
+    var wb = wide.getBoundingClientRect(); var wi = ink(wide);
+    var narrow = one('font-size:20px', { glyph: 'A' }).i;
+    out.fit = { side: Math.round(wb.width * 10) / 10, ink: wi.w, inside: wi.l >= wb.left - 0.5 && wi.r <= wb.right + 0.5, text: wide.textContent,
+      narrowWhole: narrow.childElementCount === 0 && narrow.textContent === 'A', overflow: getComputedStyle(wide).overflowX + ' ' + getComputedStyle(wide).overflowY };
+    // ONE MEASURING BOX FOR THE PAGE, unseen, off screen, however many icons.
+    var meters = Array.prototype.filter.call(document.querySelectorAll('[aria-hidden="true"]'), function (n) { return getComputedStyle(n).visibility === 'hidden'; });
+    out.meters = meters.map(function (n) { var r = n.getBoundingClientRect(); return { hidden: getComputedStyle(n).visibility === 'hidden', off: r.right <= 0 }; });
     return JSON.stringify(out);
   });
 };
