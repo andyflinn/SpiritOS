@@ -1131,7 +1131,8 @@ function oneFile(P) {
     test.run('what it watches redraws it, proved in its own test', 0.4, function () {
       const p = OWN_PROOF[ownRel];
       const said = require('child_process').spawnSync(process.execPath, [path.join(RUN, p.test)], { cwd: RUN, encoding: 'utf8', timeout: 120000 }).stdout || '';
-      return said.split('\n').some(function (l) { return /SUCCESS/.test(l) && l.indexOf(p.check) !== -1; }) || false;
+      // Its pass as the report says it: the check's title, then the pass mark (spirit/test/testReport.js, ICON.SUCCESS).
+      return said.split('\n').some(function (l) { return l.indexOf(p.check + ' \u2705') !== -1; }) || false;
     }, test.limit.long);
   }
   else {
