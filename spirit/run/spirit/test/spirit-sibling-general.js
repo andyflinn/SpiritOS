@@ -1657,8 +1657,8 @@ const BY_NAME_LOADER = /\bcacheManager\s*\(/;
 // AN api.js LOADS ITS OWN data.js, AND NOTHING ELSE DOES (goal/G47.1, Andy: "RULE: \"every api.js requires it's companion
 // data.js, and is the only script to require that data.js\"", then "GO!"). A branch's data.js is a data.js with an api.js
 // beside it; spirit/data.js, the data module every data.js loads, is no branch's. Read from the code, comments left out.
-function branchDataFiles() {
-  return (E.elementFiles || []).filter(function (f) { return /(^|\/)data\.js$/.test(f) && !/(^|\/)test\//.test(f) && f !== 'spirit/data.js' && fs.existsSync(path.join(RUN, f.replace(/data\.js$/, 'api.js'))); });
+function branchDataFiles(files) {
+  return (files || []).filter(function (f) { return /(^|\/)data\.js$/.test(f) && !/(^|\/)test\//.test(f) && f !== 'spirit/data.js' && fs.existsSync(path.join(RUN, f.replace(/data\.js$/, 'api.js'))); });
 }
 // The branch data.js paths a file's code requires by its written path.
 function dataRequiresOf(rel) {
@@ -1837,11 +1837,11 @@ function every() {
     return (all.length > 100 && !hits.length) || false;
   }, test.limit.quick);
   test.run('every api.js beside a data.js requires that data.js', 0.4, function () {
-    const data = branchDataFiles();
+    const data = branchDataFiles(E.elementFiles);
     return (data.length > 10 && data.every(function (d) { return dataRequiresOf(d.replace(/data\.js$/, 'api.js')).indexOf(d) !== -1; })) || false;
   }, test.limit.quick);
   test.run('no product file but its api.js requires a branch data.js', 0.4, function () {
-    const data = branchDataFiles();
+    const data = branchDataFiles(E.elementFiles);
     const product = (E.elementFiles || []).filter(function (f) { return /\.(js|html)$/.test(f) && !/(^|\/)test\//.test(f); });
     const strays = product.filter(function (f) { return dataRequiresOf(f).some(function (d) { return data.indexOf(d) !== -1 && f !== d.replace(/data\.js$/, 'api.js'); }); });
     return (data.length > 10 && product.length > 100 && !strays.length) || false;
