@@ -48,7 +48,9 @@ process, its exit code 1 when a test failed.
   *"if a test depends on other tests running first, then the sequence is run up to the specified test"*): `--test
   <title>` runs the tests up to and including it, and none after.
 - A title said a second time in one suite fails the second time; a severity outside 0.0 to 1.0 fails its test.
-- With no node, a suite reports nowhere and still prints its lines.
+- With no node, a suite reports nowhere and still prints its lines. Once the node is found not there at all (its door
+  refuses the connection, or no port is named), the reports after are not sent, so a suite in a checkout with no node
+  ends when its tests do, not ten seconds later; a refusal for any other cause is tried again as above.
 
 ## How it is tried
 

@@ -115,6 +115,12 @@ const reportsLanded = [];
 // ONE AT A TIME, IN ORDER (goal/G47.1, box v129: a general test's success for one script comes before any result of the next):
 // every report waits for the one before it to land, or to give up.
 let reportChain = Promise.resolve();
+// NO NODE, NO REPORTS (a checkout with no node of its own, cw's build copy: every report was refused, tried three times a
+// second apart, and the suite then waited out RECORD_WAIT_MS, ten seconds on every run): once the node is found not there at
+// all, its door refused or no port named, the reports after are not sent. A refusal for any other cause (the testicle
+// family still loading, the first report's race) is tried again, as before.
+let nowhere = false;
+function unreachable(e) { return !!e && (e.code === 'no-node' || (!!e.cause && e.cause.code === 'ECONNREFUSED')); }
 function reportToTesticle(rec, verb) {
   try {
     const own = globalThis.spirit;
@@ -130,12 +136,14 @@ function reportToTesticle(rec, verb) {
     // same result sent twice moves no flip (testicle.set), so a try that landed after all does no harm.
     // A family that failed to load is asked for again on the next try.
     const once = function () {
+      if (nowhere) return Promise.resolve();
       testicle = testicle || real.require(real.familyPath('testicle'));
       return Promise.resolve(testicle).then(function (f) { return f[verb || 'testicle.set'](rec); }, function (e) { testicle = null; throw e; });
     };
     const wait = function () { return new Promise(function (r) { ownTimeout(r, 1000); }); };
     reportChain = reportChain.then(function () {
-      return once().catch(function () { return wait().then(once); }).catch(function () { return wait().then(once); })
+      const again = function (e) { if (unreachable(e)) { nowhere = true; return undefined; } return wait().then(once); };
+      return once().catch(again).catch(again)
         .catch(function () { /* a checkout with no node reports nowhere */ });
     }).then(function () { reportsOut -= 1; });
     reportsLanded.push(reportChain);
