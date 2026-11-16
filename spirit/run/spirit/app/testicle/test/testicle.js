@@ -1281,6 +1281,25 @@ test.run('the script changed, its suite shows "needs running" again', 0.2, async
   const ok = await until(function () { return statusOf(MU, MUS).then(function (x) { st = x; return x === 'needs running'; }); }, 10000);
   return !!ok || false;
 }, test.limit.slow);
+// goal/G47.1, Andy: "if any suite that reaches spirit.js is changed then spirit.js MUST be retested", "AND? WHAT THE FUCK ARE
+// YOU DOING NOTHING FOR???": the general test judges the whole tree, so its answer for a script stands on files that are
+// neither that script nor the suite; spirit.js stayed "still red" after three own tests of other scripts came in
+// (851963cf). A file new in the tree flags again every general test that is red for a script; omega, planted with no
+// 'use strict', is red in the general test.
+let omegaRed = false;
+test.run('a script planted with no \'use strict\' shows "still red" in the general test', 0.2, async function () {
+  if (!up()) return false;
+  fs.writeFileSync(path.join(s.run, Z + 'omega.js'), '// omega, with no use strict, red in the general test\n');
+  await idle(240000);
+  omegaRed = (await statusOf(Z + 'omega.js', GENERAL)) === 'still red';
+  return omegaRed;
+}, test.limit.long);
+test.run('a file added to the tree flags the general test again for a script it judged red', 0.2, async function () {
+  if (!omegaRed) return false;
+  fs.writeFileSync(path.join(s.run, Z + 'omega-new.md'), 'a file new in the tree\n');
+  const ok = await until(function () { return statusOf(Z + 'omega.js', GENERAL).then(function (x) { return x === 'needs running'; }); }, 900);
+  return !!ok || false;
+}, test.limit.long);
 
 // goal/G47.1, the queue cycle, the box: "The flags are the queue: every suite row flagged "needs running" is owed one run,
 // and there is no second list, so nothing is queued twice", "One runner: one suite process at a time, never two. It starts 1
