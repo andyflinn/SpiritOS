@@ -124,14 +124,15 @@ if (window.spirit && typeof window.spirit.require === 'function') Promise.resolv
       editors = {};
       // Each icon picker lets its watches go too (goal/G47.1, -browser: "destroyed, it lets every subscription it made go").
       dropIcons();
-      if (!row) { container.innerHTML = '<div class="fill">' + head() + '<div class="agent-block">' + esc(note || 'Loading…') + '</div></div>'; return; }
+      if (!row) { container.innerHTML = '<div class="fill" style="overflow:auto">' + head() + '<div class="agent-block">' + esc(note || 'Loading…') + '</div></div>'; return; }
       var simple = fields.filter(function (f) { return f.kind !== 'code'; });
       var code = fields.filter(function (f) { return f.kind === 'code'; });
       // THE CODE FIELD TAKES THE FREE HEIGHT (Andy: "the codeMirror pane in details must not be allowed to move the
       // pane-dividers of workBench. it's width must be constrained by the middle workbench pane, it is allowed to take up
       // free vertical space"): a fill box whose CodeMirror takes the height left and scrolls inside it (shell.css
       // .text-view.fill). Its width is the centre's, which the workBench holds (spirit/element/workBench.js).
-      container.innerHTML = '<div class="fill">' + head() +
+      // ITS BOX KEEPS WHAT IT HOLDS INSIDE IT (goal/G47.1, -browser: the box declares overflow not visible): it scrolls when the pane is short.
+      container.innerHTML = '<div class="fill" style="overflow:auto">' + head() +
         simple.map(function (f) {
           var line = fieldLine('<label for="' + pre + f.field + '">' + esc(f.label) + '</label>', cell(f, row[f.field]));
           return f.of && !(narrowCount[f.field] > 0) ? line.replace('<div ', '<div hidden ') : line;
