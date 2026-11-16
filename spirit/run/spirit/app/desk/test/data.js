@@ -172,11 +172,10 @@ test.run('an item of another goal, or one with no row, keeps nothing', 0.2, func
   wt.X.took('item.box', { id: 'goal/G4.4' }, { box: 'no' });
   return (!wt.part('goal/G5.1') && !wt.part('goal/G4.4')) ? true : false;
 }, test.limit.quick);
-test.run('an older page of chat, or files under a folder, is no part and is not kept', 0.2, function () {
+test.run('files under a folder are no part and are not kept', 0.2, function () {
   if (!wt) return false;
-  wt.X.took('item.chat', { id: 'goal/G9.1', before: 'x' }, { chat: [] });
   wt.X.took('item.files', { id: 'goal/G9.1', under: 'spirit/' }, { files: [] });
-  return (wt.part('goal/G9.1').chat.length === 1 && wt.part('goal/G9.1').files.length === 1) ? true : false;
+  return wt.part('goal/G9.1').files.length === 1 ? true : false;
 }, test.limit.quick);
 test.run('with no id, no answer, a box that is not a string, or another verb, nothing is kept and nothing is thrown', 0.2, function () {
   if (!wt) return false;

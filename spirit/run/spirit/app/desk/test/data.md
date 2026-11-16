@@ -37,7 +37,7 @@ parts read so far, `current()` the goal last pushed whole, `change()` the newest
   and knows nothing of bundling (goal/G41.24, Andy: *"i think the translator has no business knowing anything about
   \"bundling\""*, and his decision: *"the three bundle checks go, and the other three assert my G41.12 words."*).
 - **took** keeps a part only for an item that has a row, of the current goal, once a goal was
-  pushed: `item.box` `{box, version}` (version a number), `item.chat` `{chat, chatMore}` (not an older page, `before`),
+  pushed: `item.box` `{box, version}` (version a number), `item.chat` `{chat, chatMore}` (one answer, never in parts),
   `item.checks` `{checks}`, `item.files` `{files, filesMore}` (not files `under` a folder). Anything else keeps
   nothing and throws nothing.
 - **A box or a chat line the stream brings is kept**, read or not (goal/G41.12: the cache keeps everything the server

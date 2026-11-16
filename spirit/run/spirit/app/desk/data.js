@@ -166,7 +166,7 @@
       var g = goalOf(row);
       if (g !== current) return;
       if (verb === 'item.box' && typeof answer.box === 'string') keep(id, { box: answer.box, version: Number(answer.version) || 0 });
-      else if (verb === 'item.chat' && Array.isArray(answer.chat) && !(args && args.before)) keep(id, { chat: answer.chat, chatMore: answer.chatMore === true });
+      else if (verb === 'item.chat' && Array.isArray(answer.chat)) keep(id, { chat: answer.chat, chatMore: answer.chatMore === true });
       else if (verb === 'item.checks' && Array.isArray(answer.checks)) keep(id, { checks: answer.checks });
       else if (verb === 'item.files' && Array.isArray(answer.files) && !(args && args.under)) keep(id, { files: answer.files, filesMore: answer.filesMore === true });
     }
