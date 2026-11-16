@@ -40,12 +40,15 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
     }
     var t = S.element.spirit.element.search.app.rowFormToggle.create(host, { on: false, words: '', press: press });
     t.root.hidden = true;
+    // SHOWN OR HIDDEN ONLY WHEN THAT CHANGES (the -browser test's write watch: hidden set again to what it was is still a change of
+    // the attribute, and it paints on every row change).
+    function shown(on) { if (t.root.hidden === on) t.root.hidden = !on; }
     function paint() {
       if (gone) return;
-      if (!serves || (!job() && asked === null)) { t.root.hidden = true; return; }
+      if (!serves || (!job() && asked === null)) { shown(false); return; }
       var now = on();
       t.set(now, 'turn ' + (now ? 'off' : 'on') + ' DEBUG ' + label());
-      t.root.hidden = false;
+      shown(true);
     }
     Promise.resolve(S.require('spirit/job/api.js')).then(function () {
       if (gone) return;

@@ -222,6 +222,8 @@ const WATCH = String.raw`(function () {
   function closed() { W.out = Math.max(0, W.out - 1); if (!W.out && W.writes.length > w0) stop(); }
   // THE STREAM ANSWERED (rule/19, the box: "after a press, until the stream answers"): a stream event that comes while a write
   // is out ends the watch, even before the write's own reply; what the element draws from it is its stream's, not its own.
+  // So does a search answer seated into spirit.data, "merged into the tree like any event" (spirit/data.js seatRows): what it
+  // brings is the node's word, drawn from spirit.data.
   function streamed() { if (watching && W.writes.length > w0) stop(); }
   var STREAMED = ['onSnapshot', 'onUpdate', 'onDelete', 'onPacket', 'onRelayEvent', 'onContactRename'];
   W.press = function (i) {
@@ -354,6 +356,11 @@ const WATCH = String.raw`(function () {
     [['event', 'subscribe'], ['data', 'watch']].forEach(function (k) {
       var cur = o[k[0]];
       function wrap(v) {
+        if (k[0] === 'data' && v && typeof v.seatRows === 'function' && !v.seatRows.__kept) {
+          var seat = v.seatRows;
+          v.seatRows = function () { streamed(); return seat.apply(this, arguments); };
+          v.seatRows.__kept = true;
+        }
         if (v && typeof v[k[1]] === 'function' && !v[k[1]].__kept) {
           var f = kept(k[0] + '.' + k[1], v[k[1]]);
           // Each stream handler told first that the stream spoke (streamed, above).

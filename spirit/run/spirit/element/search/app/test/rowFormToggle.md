@@ -8,5 +8,5 @@ Andy: *"it acts exactly like the two toggle switches in appSelector:detailElemen
 
 - `spirit.element.spirit.element.search.app.rowFormToggle.create(host, { on, words, press })`, loaded through `spirit.require`, answers `{ root, set, destroy }`.
 - One rowForm with the words it was handed. Off, it shows 🔴 and its button 🟢; on, 🟢 and 🔴, as the detail's switches do.
-- A press calls `press` and changes nothing by itself. `set(on, words)` redraws it with the new state and words, still one form, and a press on the redrawn button calls `press` again.
+- A press calls `press` and changes nothing by itself. `set(on, words)` redraws it with the new state and words, still one form, and a press on the redrawn button calls `press` again; a `set` with the state and words it already shows draws nothing.
 - `destroy` empties its host.

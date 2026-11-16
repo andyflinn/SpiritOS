@@ -28,15 +28,18 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
     }
     var t = S.element.spirit.element.search.app.rowFormToggle.create(host, { on: false, words: '', press: press });
     t.root.hidden = true;
+    // SHOWN OR HIDDEN ONLY WHEN THAT CHANGES (the -browser test's write watch: hidden set again to what it was is still a change of
+    // the attribute, and it paints on every row change).
+    function shown(on) { if (t.root.hidden === on) t.root.hidden = !on; }
     function paint() {
       if (gone) return;
       var r = row();
       // goal/G43.21, Andy: "an app that only has node:run and no node:mount or shell:mount cannot be "activated" show rowForms
       // should knows that.": the node says so on the row, runOnly, and the node refuses it too.
-      if (!r || r.intrinsic === true || r.runOnly === true) { t.root.hidden = true; return; }
+      if (!r || r.intrinsic === true || r.runOnly === true) { shown(false); return; }
       var on = r.active === true;
       t.set(on, [(on ? 'Deactivate' : 'Activate'), r.label].concat(parts.length ? [parts.join(' and ')] : []).join(' '));
-      t.root.hidden = false;
+      shown(true);
     }
     function ask() {
       S.ready.then(function (s) { return s.app.searchApp({ q: '' }); }).then(function (got) {

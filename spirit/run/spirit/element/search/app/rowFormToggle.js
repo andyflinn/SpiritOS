@@ -34,8 +34,13 @@
     return {
       root: root,
       set: function (now, said) {
-        on = now === true;
-        if (said !== undefined) words = String(said == null ? '' : said);
+        var nextOn = now === true;
+        var nextWords = said !== undefined ? String(said == null ? '' : said) : words;
+        // NOTHING CHANGED, NOTHING DRAWN (the -browser test's write watch: its mounter paints again on every row change and
+        // every read of the app's manifest, and a form redrawn whole with the same state counted as drawing while a write was out).
+        if (nextOn === on && nextWords === words) return;
+        on = nextOn;
+        words = nextWords;
         draw();
       },
       destroy: function () { host.innerHTML = ''; },
