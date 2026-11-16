@@ -13,21 +13,20 @@ Asked of a real Chrome on a scratch node's page and on a real face through a rea
 - The list reads `spirit/iconSet.json` through `spirit.fs.loadFile`, and nothing else: no "own, else system". It finds the file's last icon, and not the Icons app's own.
 - The list watches the file's row in the fs family's cache, and the fs tree for it coming back after a reconnect.
 - The rows stay after the stream connects, and after the node is gone and back with the page open, on the one load.
-- A second list on the page has them, and the page has read the file once; after the node is gone and back it is read
-  once more, for both lists (spirit.data forgets on a reconnect, the set with it).
+- A second list on the page has them, and the page has read the file once; after the node is gone and back it is not
+  read again: a reconnect forgets nothing (box v148), so the page keeps the set.
 - A changed file reaches an open page, on the same load; put back, the glyph it added goes.
-- A face with no star is refused, and its list has no rows. Once it has its star, a new list on the same page has the set, and so does a fresh page, through the same read.
+- A face with no star gets nothing (goal/G43.18, box v29; Andy, Q18: *"yes"*): its page reads no set file. Once it has
+  its star, a fresh face page has the set, and the starred faces read the file once.
 
 ## What its test must try to break
 
 - A list still reading the Icons app's file first, or falling back to anything.
 - Rows kept where a connect wipes them: they paint, then go. A wipe depends on timing, so the node is stopped and started with the page open.
-- A list reading once per list, or more than once more on a reconnect.
+- A list reading once per list, or reading again on a reconnect.
 - A changed file the open page does not take; a glyph left after the file dropped it.
 - A wrapper put on a family before it binds (goal/G43.27: a family binds when first called), which the bound family then
   calls as its own verb for ever, freezing the page: the test binds the fs family before it counts its reads.
 
-The real face's part does not finish today, before goal/G43.32 as after: a face with no star asks `fs.loadFile` and is
-never answered, where it should be refused.
 - A refusal kept as an empty set.
 - A reader left on the old path, or the old file left in place.

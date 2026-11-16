@@ -82,7 +82,7 @@ const FINDS = function (word) {
 };
 
 // What the world and the tests make, for the tests after them.
-let tracked = [], set = {}, glyphs = [], PLANTED = '', N, R, chrome, open, made, seen, lastOnly, lastWord, shows, empty, lacks, one, atHome, F, FACE;
+let tracked = [], set = {}, glyphs = [], PLANTED = '', N, R, chrome, open, made, seen, lastOnly, lastWord, shows, lacks, one, atHome, F, FACE;
 
 // the box: "This file: run://spirit/iconSet.json"
 test.run('spirit/iconSet.json is in git', 0.2, function () {
@@ -144,11 +144,6 @@ test.run('a scratch node, a scratch relay and Chrome come up', 0.2, async functi
   shows = async function (word, glyph) {
     await chrome.evaluate(FINDS(word));
     return !!(await until(function () { return chrome.evaluate('window.__box.innerText').then(function (x) { return String(x).indexOf(glyph) !== -1; }); }, 6000));
-  };
-  empty = async function (word) {
-    await chrome.evaluate(FINDS(word));
-    await sleep(800);
-    return chrome.evaluate('window.__box.innerText').then(function (x) { return /No icon matches/.test(String(x)); });
   };
   // A search ranks near matches too, so what must not be there is judged by its glyph.
   lacks = async function (word, glyph) {
@@ -222,11 +217,12 @@ test.run('the rows are still there after the reconnect', 0.2, async function () 
   await sleep(6000);
   return (await shows(lastWord, lastOnly)) ? true : false;
 }, test.limit.long);
-// spirit.data forgets on a reconnect, the set with it; the push sets the file's row again, and the two lists read it once.
-test.run('the file is read once more for the reconnect, once for both lists', 0.2, async function () {
+// A RECONNECT FORGETS NOTHING (goal/G47.1, box v148; Andy: "THE FUCKING CACHE IS NOT WIPED OUT."): the set the page held
+// stays, so the file is not read again.
+test.run('after the reconnect the file is not read again, since the page kept the set', 0.2, async function () {
   if (one !== 'made') return false;
   const asks = (await seen()).asks;
-  return asks.length === 2 ? true : false;
+  return asks.length === 1 ? true : false;
 }, test.limit.slow);
 test.run('all of this happens on the one load of the page', 0.2, async function () {
   if (one !== 'made') return false;
@@ -256,31 +252,24 @@ test.run('a real node has a real face, logged in', 0.2, async function () {
   F = await faceOf(N, R);
   return !!F.sid ? true : false;
 }, test.limit.long);
-test.run('a face with no star is refused', 0.2, async function () {
+// A FACE WITH NO STAR GETS NOTHING (goal/G43.18, box v29: "A face is whole, or there is none"; Andy, Q18: "yes"): its page
+// has no link home, so the set file is not read there; asked, it answers no text within ten seconds.
+test.run('a face with no star reads no set file', 0.8, async function () {
   if (!F || !F.sid) return false;
   FACE = 'http://' + NAME + '.' + DOMAIN + ':' + R.port + '/';
   await chrome.send('Network.setCookie', { name: 'spirit_face', value: F.sid, url: FACE, path: '/' });
   await open(FACE);
   await sleep(2000);
-  const refused = await chrome.evaluate('window.spirit.ready.then(function (s) { return s.fs.loadFile(' + JSON.stringify(SET) + '); }).then(function () { return "read"; }, function () { return false; })');
-  return refused !== 'read' ? true : false;
-}, test.limit.long);
-test.run('the list of a face with no star has no rows', 0.2, async function () {
-  if (!FACE) return false;
-  return (await made()) === 'made' && await empty(lastWord) ? true : false;
+  const got = await chrome.evaluate('Promise.race([window.spirit.ready.then(function (s) { return s.fs.loadFile(' + JSON.stringify(SET) + '); }).then(function (t) { return typeof t === "string" ? "read" : "none"; }, function () { return "none"; }), new Promise(function (r) { setTimeout(function () { r("none"); }, 10000); })])');
+  return got === 'none' ? true : false;
 }, test.limit.slow);
 
-// the box: "A read that is refused is not kept, so a face that gets its star can read it later."
-test.run('the star is put on while the page is open', 0.2, async function () {
+// The star put on at home: a face page opened after it has the set (a starless page has no link to hear a star by).
+test.run('the star is put on at home', 0.2, async function () {
   if (!FACE) return false;
   const star = await home(N.base, 'contact.own', { key: R.relayKey, own: true });
   return star.status === 200 ? true : false;
 }, test.limit.slow);
-test.run('a new list on the same page has the set', 0.2, async function () {
-  if (!FACE) return false;
-  await sleep(2000);
-  return (await made()) === 'made' && await shows(lastWord, lastOnly) ? true : false;
-}, test.limit.long);
 test.run('a fresh starred face has the set too', 0.2, async function () {
   if (!FACE) return false;
   await open(FACE);
