@@ -22,7 +22,9 @@
     options = options || {};
     var isPane = options.face === 'pane';
     var root = document.createElement('div');
-    root.className = 'branch-selector ' + (isPane ? 'branch-selector-face-pane' : 'branch-selector-face-dropdown') +
+    // A PANE FILLS THE BOX IT IS GIVEN, as the contact selector's (rule/16: "a box that states its size: class fill ... inside a
+    // pane that fills its app"), so its list's size is its pane's, not its rows' (search-child-browser.js).
+    root.className = 'branch-selector ' + (isPane ? 'branch-selector-face-pane fill' : 'branch-selector-face-dropdown') +
       (options.className ? ' ' + options.className : '');
     // Its box declares its constraint (goal/G47.1, -browser): what it holds stays inside; a dropdown's list is a popover, above it.
     if (root.style) root.style.overflow = 'hidden';

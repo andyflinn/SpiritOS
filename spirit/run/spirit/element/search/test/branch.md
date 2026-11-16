@@ -13,7 +13,7 @@ selecting branch rows."*
 - It answers its root at once, class `branch-selector`, with nothing chosen: `.value` is `''` and `.row` is `null`.
 - It loads what it uses itself (rule/26): on a bare page it requires `spirit/element/search/branch/listElement.js` and draws
   that list into its root. Nothing of the old shell's list search is in it (goal/G40.8).
-- A dropdown by default; `options.face: 'pane'` is the list itself. `bundle`, `placeholder` and `columns` are handed to
+- A dropdown by default; `options.face: 'pane'` is the list itself, filling the box it is given, so the list's size is its pane's and not its rows' (`spirit/element/test/search-child-browser.js`). `bundle`, `placeholder` and `columns` are handed to
   the list.
 - A pick sets `.value` to the branch's id, a number, and `.row` to the branch `{ id, bundle, family, verb }`, and says
   so with one bubbling `change`. A clear picks nothing.
