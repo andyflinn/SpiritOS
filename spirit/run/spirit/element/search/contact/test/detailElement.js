@@ -1244,7 +1244,6 @@ test.run('taking away a star it does not have changes nothing', 0.2, async funct
   S.person = require(path.join(RUN, 'spirit', 'relayAuth.js')).generateIdentity('zzPuppet').publicKey;
   await home(S.N.base, 'contact.block', { publicKey: S.person });
   const personAns = await home(S.N.base, 'contact.own', { key: S.person, own: true });
-  test.comment('a node that is no relay, contact.own answers ' + personAns.status + ': this rule is about relays alone');
   return pass || false;
 }, test.limit.slow);
 

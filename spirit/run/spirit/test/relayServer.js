@@ -298,8 +298,6 @@ test.run('the world: a scratch relay comes up and hands its garbage list', 0.2, 
   // gets); and by a stranger, as anybody may send it.
   list.forEach(function (e) { G.ASKS.push({ who: 'owner', id: relay.owner, e: e }); });
   list.forEach(function (e) { G.ASKS.push({ who: 'stranger', id: stranger, e: e }); });
-  test.comment('it will make ' + G.ASKS.length + ' signed asks of bad arguments over ' + Object.keys(verbs).length + ' relay verbs (' + Object.keys(verbs).join(', ') + '), ' +
-    list.length + ' as the owner and ' + list.length + ' as a stranger, each batch of ' + BATCH + ' followed by a plain request; and ' + RAWS.length + ' raw requests');
   return true;
 }, test.limit.slow);
 
@@ -322,7 +320,6 @@ test.run('/api/relay/post: the relay verbs took all their garbage without crashi
     if (!(await G.plain())) G.hungAfter.push(i);
   }
   G.thrown = true;
-  test.comment('by status: ' + JSON.stringify(statuses));
   // Each verb that broke named in the answer: the verbs are what the relay's garbage list names, so no title can be
   // written out per verb.
   const bad = Object.keys(G.verbs).filter(function (v) { return broken[v]; });

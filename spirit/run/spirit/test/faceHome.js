@@ -697,7 +697,6 @@ test.run('contact.own at home puts the star on the relay\'s row', 0.2, async fun
 test.run('owner.command from the face reaches the door', 0.2, async function () {
   if (!loggedIn()) return false;
   const o1 = await face(OWNER);
-  test.comment('owner.command, starred, answered ' + o1.status + ' ' + short(o1.text));
   return (o1.status !== 0 && !/not-from-the-face|no-face-here/.test(o1.text)) || false;
 }, test.limit.quick);
 test.run('fs.save from the face writes the file', 0.2, async function () {
@@ -1079,7 +1078,6 @@ test.run('the browser holds the login', 0.2, async function () {
 test.run('at home the desktop shows Text Editor and Media Viewer', 0.2, async function () {
   if (!browsing()) return false;
   A.atHome = await desktop(A.chrome, A.N.base + '/');
-  test.comment('at home: ' + A.atHome.join(', '));
   return (A.atHome.indexOf('Text Editor') !== -1 && A.atHome.indexOf('Media Viewer') !== -1) || false;
 }, test.limit.slow);
 
@@ -1087,7 +1085,6 @@ test.run('at home the desktop shows Text Editor and Media Viewer', 0.2, async fu
 test.run('the face\'s desktop is drawn', 0.2, async function () {
   if (!browsing()) return false;
   A.plain = await desktop(A.chrome, A.FACE);
-  test.comment('no star: ' + A.plain.join(', '));
   return A.plain.indexOf('Contacts') !== -1 || false;
 }, test.limit.slow);
 test.run('Text Editor and Media Viewer are not on it', 0.2, function () {
@@ -1136,7 +1133,6 @@ test.run('for every app: the star on, at home', 0.2, async function () {
 test.run('every app on the home desktop is on the starred face', 0.2, async function () {
   if (!browsing() || !A.atHome) return false;
   A.starred = await desktop(A.chrome, A.FACE);
-  test.comment('starred: ' + A.starred.join(', '));
   const gap = missing(A.atHome, A.starred);
   return (A.starred.length > 0 && !gap.length) || false;
 }, test.limit.slow);

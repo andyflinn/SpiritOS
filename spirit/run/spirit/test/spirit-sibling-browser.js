@@ -381,7 +381,6 @@ const WATCH = String.raw`(function () {
 // a rule that found nothing to judge on this page says so, and counts as neither green nor red. It is judged where it
 // can be: in the code, or on a page that gives it something. So a rule is said (its test.run) only when its page gave it
 // something to judge (goal/G47.2: every test one test.run); the rest are said as comments.
-function unjudged(what) { test.comment('not judged on this page: ' + what); }
 // The scratch node and headless Chrome, shared with any test that opens a page (spirit/test/headLessChrome.js).
 const { sleep, until, findChrome, scratchNode, chromePage } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 
@@ -617,7 +616,6 @@ function every() {
     const reach = require(path.join(RUN, 'spirit', 'test', 'testModule.js')).testsFor('').filter(function (t) { return t.test === 'spirit/test/spirit-sibling-browser.js' && t.file; }).map(function (t) { return t.file; });
     // Every page script in its reach, each judged by its own page (goal/G47.1, box v121: no code reading).
     E.files2 = reach.filter(pageScript);
-    test.comment('every page script in its reach: ' + E.files2.length + ' of ' + reach.length);
     return E.files2.length > 0 || false;
   }, test.limit.quick);
   test.run('the world: a scratch node comes up with its DEBUG on', 0.2, async function () {
@@ -683,7 +681,6 @@ function every() {
       const greens = Number((/✅:(\d+)/.exec(out) || [])[1] || 0);
       const reds = Number((/❌:(\d+)/.exec(out) || [])[1] || 0);
       const at = '/' + f.replace(/\.js$/, '') + '/headLessBrowser.html';
-      test.comment(at + ': ' + reds + ' red, ' + greens + ' green');
       if (!(reds === 0 && greens > 0)) red.push(at);
     }
     return listed(red);
@@ -989,7 +986,6 @@ function oneFile(P) {
   const ownRel = rel, ownFull = full;
   // ON ITS PAGE: what the session drew, each rule said as the old checks were.
   test.run('the world: a scratch node with its DEBUG on, and a Chrome page', 0.2, function () {
-    (P.notes || []).forEach(function (n) { test.comment(n); });
     return !P.fail || false;
   }, test.limit.quick);
   const before = function () { return !!P.fail; };
@@ -1004,7 +1000,6 @@ function oneFile(P) {
     test.run('with no element installed, nothing it runs throws', 0.8, function () { return !noMount() && !P.thrown.length; }, test.limit.quick);
     test.run('with no element installed, every file it asks for is there', 0.4, function () { return !noMount() && !P.missing.length; }, test.limit.quick);
     test.run('with no element installed, it says no error on the console', 0.4, function () { return !noMount() && !P.errors.length; }, test.limit.quick);
-    unjudged('it installs no element at spirit.element.' + ownRel.replace(/\.js$/, '').split('/').join('.') + ': the element rules are skipped');
     pageAfter(P);
     return;
   }
@@ -1022,19 +1017,19 @@ function oneFile(P) {
   // A ROW ELEMENT PUTS NO BOX INTO A CONTAINER (cw: "a row's create takes a row, not a container, and draws into the cells
   // its list hands it"): with nothing put into its container there is no box of its own to judge (Q4); said as a comment,
   // never green. Its list's box is judged with the list.
-  if (mounted && !P.boxCount) unjudged('mounted empty, it puts nothing into the container it is given (a row element): no box of its own');
+  if (mounted && !P.boxCount) {}
   else test.run('mounted empty, the box it puts into its container declares a constraint: overflow not visible', 0.4, function () {
     if (notDrawn()) return false;
     return !P.unbounded.length || false;
   }, test.limit.quick);
-  if (mounted && !P.inputCount) unjudged('mounted empty, it draws no input');
+  if (mounted && !P.inputCount) {}
   else {
     test.run('mounted empty, every input it draws has a maxlength', 0.4, function () {
       if (notDrawn()) return false;
       return !P.noMax.length || false;
     }, test.limit.quick);
   }
-  if (mounted && !P.pressableCount) unjudged('mounted empty, it draws no input and no button');
+  if (mounted && !P.pressableCount) {}
   else {
     test.run('mounted empty, every input and button it draws has a listener on itself or on a node between it and its box', 0.6, function () {
       if (notDrawn()) return false;
@@ -1068,7 +1063,7 @@ function oneFile(P) {
     return P.spills === false || false;
   }, test.limit.quick);
   // <address>: every field it draws stops at its limit
-  if (mounted && !P.fields.length) unjudged('it draws no text field');
+  if (mounted && !P.fields.length) {}
   else {
     test.run('every field it draws stops at its limit, typed past it', 0.4, function () {
       if (notDrawn()) return false;
@@ -1101,8 +1096,8 @@ function oneFile(P) {
   // <address>: what it watches in spirit.data redraws it
   const probed = P.probed || [];
   const seenProbe = probed.filter(function (x) { return !x.hidden; });
-  if (mounted && !probed.length) unjudged('it watches no spirit.data path');
-  else if (mounted && !seenProbe.length) unjudged('it shows nothing on this page, so there is nothing to redraw');
+  if (mounted && !probed.length) {}
+  else if (mounted && !seenProbe.length) {}
   else if (mounted && OWN_PROOF[ownRel] && !seenProbe.some(function (x) { return x.redrew; })) {
     // PROVED IN ITS OWN TEST (Andy, Q24: "Shall deskDetails' own test be the proof that it redraws from the verifier,
     // since the page sweep opens no item?" "yes."): what it watches draws only for an item open, and this page opens
@@ -1120,7 +1115,7 @@ function oneFile(P) {
     }, test.limit.quick);
   }
   // <address>: every interface it needs, it requires itself
-  if (mounted && !(P.usedFamilies || []).length) unjudged('it calls and watches no family');
+  if (mounted && !(P.usedFamilies || []).length) {}
   else {
     test.run('every family it calls or watches, it required that family\'s interface itself', 0.8, function () {
       if (notDrawn()) return false;
@@ -1128,7 +1123,7 @@ function oneFile(P) {
     }, test.limit.quick);
   }
   // <address>: what it changes, it listens for through spirit.data
-  if (mounted && !W.writes.length) unjudged('its presses sent no write (its code is judged for it, above)');
+  if (mounted && !W.writes.length) {}
   else {
     test.run('it sent writes and watches spirit.data paths for them', 0.4, function () {
       if (notDrawn()) return false;
@@ -1140,7 +1135,7 @@ function oneFile(P) {
   // element may change only its busy spinner, its button's disabled state and its fine print; any other change it makes
   // is red"): judged while a write it sent is out, until the node answers it.
   // <address>: while a write is out, it draws nothing of its own
-  if (mounted && !W.writes.length) unjudged('its presses sent no write');
+  if (mounted && !W.writes.length) {}
   else {
     test.run('while its writes were out it changed only busy marks, disabled buttons and fine print', 0.4, function () {
       if (notDrawn()) return false;
@@ -1156,7 +1151,7 @@ function oneFile(P) {
   // design reasons."): the probability search keeps rows of its own for introSpector's selectors over another node, so
   // its own page, mounted bare, still makes one (spirit/element/search.js, spirit/element/introSpector.js,
   // spirit/app/introSpector/element.js); it is not met, so it is not green.
-  if (mounted && !made.length) unjudged('it makes no search');
+  if (mounted && !made.length) {}
   else {
     test.run('its searches are each made with a spirit.data branch, no rows of their own', 0.4, function () {
       if (notDrawn()) return false;
@@ -1168,7 +1163,7 @@ function oneFile(P) {
   // row of its branch in spirit.data. A list that keeps its rows anywhere else draws what the branch does not hold.
   const outside = P.outside || [];
   const drew = outside.reduce(function (n, x) { return n + x.drawn; }, 0);
-  if (mounted && !drew) unjudged('its searches draw no row');
+  if (mounted && !drew) {}
   else {
     test.run('every row its searches draw is a row their spirit.data branch holds', 0.4, function () {
       if (notDrawn()) return false;
@@ -1184,7 +1179,7 @@ function oneFile(P) {
       return P.destroyed === 'empty' || false;
     }, test.limit.quick);
     const mine = (P.after || []).filter(function (x) { return x.mine; });
-    if (mounted && !mine.length) unjudged('it made no subscription');
+    if (mounted && !mine.length) {}
     else {
       test.run('destroyed, it lets every subscription it made go', 0.4, function () {
         if (notDrawn()) return false;

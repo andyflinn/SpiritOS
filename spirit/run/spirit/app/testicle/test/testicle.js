@@ -67,7 +67,7 @@ const PLANT = {
     "test.run('the world: kappa waits a moment', 0.2, function () { return new Promise(function (r) { setTimeout(function () { r(true); }, 3000); }); }, test.limit.quick);",
     "test.run('kappa answers its first', 0.2, function () { return true; }, test.limit.quick);",
     "test.run('kappa fails its second', 0.2, function () { return 'it fails, as planted'; }, test.limit.quick);",
-    "test.run('kappa was started with no argument', 0.2, function () { return process.argv.length === 2 || 'started with ' + process.argv.slice(2).join(' '); }, test.limit.quick);",
+    "test.run('kappa was started with no argument', 0.2, function () { return process.argv.length === 2 || false; }, test.limit.quick);",
   ].join('\n') + '\n',
   'spirit/app/testicle/temp/zzTesticle/lambda.js': '\'use strict\';\n// lambda\n',
   'spirit/app/testicle/temp/zzTesticle/test/lambda.js': SUITE_HEAD + [
@@ -103,7 +103,7 @@ const PLANT = {
   'spirit/app/testicle/temp/zzTesticle/test/phi.js': '\'use strict\';\n// the test of phi\n',
   'spirit/app/testicle/temp/zzTesticle/mu.js': '\'use strict\';\n// mu\n',
   'spirit/app/testicle/temp/zzTesticle/test/mu-child-zzRule.js': SUITE_HEAD + [
-    "test.run('mu holds its rule', 0.2, function () { return process.argv[2] === 'spirit/app/testicle/temp/zzTesticle/mu.js' || 'started with ' + process.argv.slice(2).join(' '); }, test.limit.quick);",
+    "test.run('mu holds its rule', 0.2, function () { return process.argv[2] === 'spirit/app/testicle/temp/zzTesticle/mu.js' || false; }, test.limit.quick);",
   ].join('\n') + '\n',
 };
 // The general test changed in the scratch copy: its entries name every file of its reach.

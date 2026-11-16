@@ -269,7 +269,6 @@ test.run('the world: the garbage\'s scratch node comes up, every app server it t
   // The api answer can be longer than the first 300 bytes kept: ask it whole once.
   tree = G.tree = await fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'api', args: {} }) }).then(function (r) { return r.json(); }).catch(function () { return null; });
   if (!tree || typeof tree !== 'object') { G.tree = null; return false; }
-  test.comment('families: ' + Object.keys(tree).join(', '));
   // 1) EVERY VERB, BAD ARGUMENTS (the box, rule 3 and "bad arguments").
   Object.keys(tree).forEach(function (fam) {
     Object.keys(tree[fam] || {}).forEach(function (verb) {
@@ -313,7 +312,6 @@ test.run('the world: the garbage\'s scratch node comes up, every app server it t
   G.actingAsks = G.asks.filter(function (a) { return a.acts; });
   G.readingAsks = G.asks.filter(function (a) { return !a.acts; });
   G.actingVerbs = G.actingAsks.map(function (a) { return a.name; }).filter(function (n, k, l) { return l.indexOf(n) === k; });
-  test.comment('it will make ' + G.asks.length + ' asks of bad arguments over ' + Object.keys(tree).length + ' families (' + G.asks.filter(function (a) { return a.pair; }).length + ' of them pairs): ' + G.readingAsks.length + ' here, ' + G.actingAsks.length + ' to the ' + G.actingVerbs.length + ' verbs that act, on a throwaway node of their own; and ' + RAWS.length + ' raw requests, each batch of ' + BATCH + ' followed by a plain call');
   const missingServers = SERVERS.filter(function (s) { return !tree[s]; });
   return !missingServers.length || false;
 }, test.limit.long);
@@ -341,11 +339,6 @@ test.run('the verbs that do not act took all their garbage, pairs included, with
     if (!(await G.plain())) hungAfter.push(i);
   }
   thrown = true;
-  test.comment('bad arguments: ' + refused + ' refused, ' + answered + ' answered (a lenient verb may take garbage as a real call), in ' + Math.round((Date.now() - t0) / 1000) + ' s; by status ' + JSON.stringify(statuses));
-  // Not a crash, so not red by the box's words; said, since a bad argument is no outage: 400 would name it.
-  test.comment('garbage answered 200, by family (a lenient check, not a crash): ' + JSON.stringify(tookIt));
-  if (Object.keys(mislabelled).length) test.comment('bad arguments answered 502 or 503 with a reason, not 400: ' + JSON.stringify(mislabelled));
-  Object.keys(sample).forEach(function (st) { test.comment('a ' + st + ': ' + sample[st]); });
   return Object.keys(broken).length === 0;
 }, test.limit.slow);
 test.run('/api/spirit: after every batch the node answered a plain call in time', 0.2, function () {
@@ -474,9 +467,7 @@ test.run('the verbs that act took the whole garbage, bad strings, missing, extra
       }
     }
   }
-  test.comment('verbs that act: ' + n + ' asks over ' + actingVerbs.length + ' verbs in ' + Math.round((Date.now() - t0) / 1000) + ' s, on ' + G.made.length + ' throwaway node(s)');
   // THE RELAY'S DOOR is thrown at by relayGarbage.js now; the comment line below, saying it is owed, is stale.
-  test.comment('the relay\'s door is not thrown at yet: owed, see garbage.md');
   const bad = actingVerbs.filter(function (name) { return broken[name]; });
   const fine = actingVerbs.length - bad.length;
   if (fine <= 0) return false;

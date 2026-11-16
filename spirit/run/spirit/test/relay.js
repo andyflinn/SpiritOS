@@ -178,7 +178,6 @@ test.run('the search thrown is at least 12000 characters, near 3/4 of the payloa
   let len = Math.floor(limits.PAYLOAD_MAX * 3 / 4); let text = sealedAsk(len);
   while (len > 1000 && Buffer.byteLength(text, 'utf8') > limits.PAYLOAD_MAX) { len -= 250; text = sealedAsk(len); }
   LS.len = len; LS.text = text;
-  test.comment('the search: ' + len + ' characters, ' + Buffer.byteLength(text, 'utf8') + ' bytes sealed, over ' + LS.seated + ' connected members (a longer one, as the report\'s 60,000, is refused 413 by the wire)');
   return len >= 12000;
 }, test.limit.quick);
 test.run('the relay takes the search', 0.2, async function () {

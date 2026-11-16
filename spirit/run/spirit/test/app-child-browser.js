@@ -130,8 +130,8 @@ async function world() {
 // test said at once, for its own script (test.forScript), while the run is held open (test.hold).
 function judge(rel) {
   const r = W.reports[rel];
-  if (r && r.none) { test.comment(rel + ': it installs no element, not judged'); return; }
-  if (r && r.owed && !r.owed.length) { test.comment(rel + ': its app holds no api.js and no data.js, nothing owed'); return; }
+  if (r && r.none) return;
+  if (r && r.owed && !r.owed.length) return;
   test.forScript(rel, function () {
     test.run('mounted alone with its app\'s server on, it loaded its own app\'s api.js and data.js', 0.8, function () {
       if (W.fail) return false;

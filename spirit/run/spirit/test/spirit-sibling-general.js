@@ -126,12 +126,10 @@ if (asked) {
   }, test.limit.quick);
 } else {
   test.run('the world: branch folders recognized, an app\'s (desk) and a system one (fs) among them', 0.2, function () {
-    test.comment(TARGETS.length + ' of ' + ALL.length + ' branches: ' + TARGETS.map(function (b) { return b.dir; }).join(', '));
     return (ALL.length >= 20 && ALL.some(function (b) { return b.dir === 'spirit/app/desk'; }) && ALL.some(function (b) { return b.dir === 'spirit/fs'; })) || false;
   }, test.limit.quick);
 }
 TARGETS.forEach(function (b) {
-  test.comment(b.dir + ': a ' + b.kind + ' branch, recognized by ' + (b.kind === 'system' ? 'its api.js and data.js' : 'its manifest, ' + b.name + '.json') + (b.api ? '' : '; it holds no api.js, so it has no interface to judge'));
 });
 
 // ── 1. RECOGNIZED, AND ITS INTERFACE ────────────────────────────────────────────────────────────────────────────────
@@ -220,7 +218,6 @@ if (withData.length) {
     // Its branches, the strings it gives its names to (var ITEMS = 'desk').
     b.owned = []; const re = /\bvar\s+[A-Z][A-Z_]*\s*=\s*'([a-zA-Z]\w*)'\s*;/g; let x;
     while ((x = re.exec(b.src))) if (b.owned.indexOf(x[1]) === -1) b.owned.push(x[1]);
-    test.comment(b.data + ' names the branches ' + b.owned.join(', '));
   });
   const owning = withData.filter(function (b) { return b.owned.length > 0; });
   // Its branches, the strings it gives its names to (var ITEMS = 'desk'), are named by it alone: no other file hands a
@@ -467,7 +464,6 @@ if (served.length) {
   // verb names; each must answer a 4xx with a code, before the handler runs.
   const broken = function (b) { const asks = []; Object.keys(b.verbs).forEach(function (v) { asksFor(b.family, v, b.verbs[v]).forEach(function (a) { asks.push(a); }); }); return asks; };
   const thrownAt = served.filter(function (b) { return broken(b).length > 0; });
-  served.filter(function (b) { return thrownAt.indexOf(b) === -1; }).forEach(function (b) { test.comment(b.dir + ': it declares no verb, so no call to break'); });
   if (thrownAt.length) {
     test.run('/api/spirit: all its broken calls are refused at the door, a 4xx with a code', 0.4, async function () {
       if (!up()) return false;
@@ -914,7 +910,6 @@ function read() {
     files = tracked().filter(function (f) { return f === own + '.js' || f === own + '.md' || f.indexOf(own + '-') === 0; });
   } else files = [handed];
   judged = files.filter(inTestFolder);
-  test.comment(judged.length + ' files in test folders read');
   return judged;
 }
 // every file in a test folder
@@ -946,7 +941,6 @@ if (WHOLE || MODULE) {
     const scripts = WHOLE ? execFileSync('git', ['ls-files', '--', '.'], { cwd: RUN, encoding: 'utf8' }).split('\n').filter(Boolean).filter(isProduction) : [handed];
     if (!scripts.length) return false;
     const missing = scripts.filter(function (rel) { return !exists(ownTestOf(rel)); });
-    test.comment(scripts.length + ' production scripts judged, ' + missing.length + ' without their own test');
     return !missing.length || false;
   }, test.limit.quick);
 }
@@ -1040,7 +1034,6 @@ test.run('the world: there is a module to judge', 0.2, function () {
   if (arg && !full) return false;
   if (full) { reach = [path.relative(RUN, full).split(path.sep).join('/')]; return true; }
   reach = require(path.join(RUN, 'spirit', 'test', 'testModule.js')).testsFor('').filter(function (t) { return t.test === 'spirit/test/spirit-sibling-general.js' && t.file; }).map(function (t) { return t.file; });
-  test.comment('every module in its reach: ' + reach.length);
   return reach.length > 0 || false;
 }, test.limit.quick);
 // <file>: its searches match the whole row.
@@ -1148,7 +1141,6 @@ function read() {
       .filter(function (f) { return production(f) && fs.existsSync(path.join(RUN, f)); });
   }
   judged = files.filter(function (f) { return !excepted(f); });
-  test.comment(judged.length + ' production files read; the exception: DEBUG.js (spirit/DEBUG.js, spirit/DEBUG/)');
   return judged;
 }
 // every production module, its code read
@@ -1447,7 +1439,6 @@ const WATCH = String.raw`(function () {
 // a rule that found nothing to judge on this page says so, and counts as neither green nor red. It is judged where it
 // can be: in the code, or on a page that gives it something. So a rule is said (its test.run) only when its page gave it
 // something to judge (goal/G47.2: every test one test.run); the rest are said as comments.
-function unjudged(what) { test.comment('not judged on this page: ' + what); }
 // The scratch node and headless Chrome, shared with any test that opens a page (spirit/test/headLessChrome.js).
 const { sleep, until, findChrome, scratchNode, chromePage } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 
@@ -1961,8 +1952,6 @@ function every() {
   // Said only when a file paints icons: painters() reads the files git tracks under shell/.
   let painting = [];
   try { painting = painters(); } catch (e) { painting = []; }
-  test.comment(painting.length + ' shell files paint icons: ' + painting.join(', '));
-  test.comment('glyphs among words only, read by hand: ' + Object.keys(TEXT_ONLY).map(function (f) { return f + ' (' + TEXT_ONLY[f] + ')'; }).join('; '));
   if (painting.length) {
     test.run('it paints icons, and loads the icon element or hands them to one that does', 0.4, function () {
       return !painting.some(function (f) {
@@ -2067,7 +2056,7 @@ function oneFile(P) {
     const WRITE = /\bop\s*:\s*['"](add|set|delete|remove|grant|revoke|ask|claim|press)['"]|['"][a-z]\w*(?:\.[a-z]\w*)*\.(?:set[A-Z]\w*|set|add|delete|remove|grant|revoke|join|face|write|press|claim)['"]|\bspirit\.\w+\.(?:set[A-Z]\w*|join|face|grant|revoke)\s*\(|\.relay\.(?:join|face)\s*\(|\.(?:saveFile|grant|revoke)\s*\(\s*\w/;
     const writes = WRITE.exec(own);
     // <address>: what its code changes, it watches in spirit.data
-    if (!writes) unjudged('its code sends no write');
+    if (!writes) {}
     else {
       test.run('it sends writes and watches spirit.data', 0.4, function () {
         return (/\.watch\s*\(/.test(own) || /\bdata\s*:\s*(?:['"][\w.\/-]+['"]|[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)+)/.test(own)) || false;

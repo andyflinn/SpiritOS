@@ -361,7 +361,6 @@ function gateSection() {
   test.run('a request of five, an object among them (id, text, version, on, opts): its own value passes and every garbage one is refused', 0.2, function () { return judge('five, an object among them'); }, test.limit.quick);
   test.run('a request of one nested two deep (id, where): its own value passes and every garbage one is refused', 0.2, function () { return judge('one nested two deep'); }, test.limit.quick);
   test.run('every permutation of the box\'s kinds was thrown at it, more than a thousand asks', 0.2, function () {
-    test.comment('the shared gate was asked ' + asks + ' times, in memory');
     return asks > 1000 || false;
   }, test.limit.quick);
   // A VERB WITH A CHECK OF ITS OWN SKIPS THE GATE (appServer.js route: its own accepts() if it has one, else matches):

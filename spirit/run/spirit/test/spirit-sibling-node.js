@@ -116,7 +116,7 @@ if (!GIVEN.length) {
     if (!fs.existsSync(path.join(RUN, rel))) return false;
     const r = await requireOnNode(E.run, rel);
     if (r.err) return false;
-    if (r.program) { test.comment(rel + ' ends its process when loaded, nothing thrown: a program, loaded; its place is not judged'); return true; }
+    if (r.program) return true;
     if (r.promise) return false;
     return r.placed || false;
   }, test.limit.slow, { script: rel });

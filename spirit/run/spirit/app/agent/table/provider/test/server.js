@@ -548,7 +548,6 @@ test.run('the world: ./server-picker.html draws the provider\'s detail with the 
   const s = await page.evaluate('window.picker(' + JSON.stringify(answers) + ')').catch(function () { return ''; });
   let m = null;
   try { m = JSON.parse(s); } catch (e) { m = null; }
-  if (m) test.comment('the page asked: ' + JSON.stringify(m.asked).slice(0, 900) + '; answers held: ' + JSON.stringify(Object.keys(answers)).slice(0, 600));
   PK.m = m;
   return m ? true : false;
 }, test.limit.slow);

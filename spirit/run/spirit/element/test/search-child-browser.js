@@ -304,7 +304,6 @@ test.run('the world: each search mounted, planted and opened on a page of its ow
     let r = null; try { r = JSON.parse(got); } catch (e) { r = null; }
     REPORTS[n] = r || { name: n, fail: 'the page answered nothing within 60 s' };
     if (REPORTS[n].fail) failed.push(n);
-    test.comment(n + ': ' + short(REPORTS[n]));
   }
   return !failed.length || false;
 }, test.limit.long);
@@ -318,7 +317,7 @@ function eachSearch(why) {
     if (!r) { bad.push(n); return; }
     if (r.fail) { bad.push(n); return; }
     const w = why(r);
-    if (w && typeof w === 'object' && w.skip) { test.comment(n + ': not judged: ' + w.skip); return; }
+    if (w && typeof w === 'object' && w.skip) return;
     judged.push(n);
     if (w) bad.push(n);
   });
