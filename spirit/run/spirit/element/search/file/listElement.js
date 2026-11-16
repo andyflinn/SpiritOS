@@ -118,6 +118,8 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
         return { icon: icon, label: p.slice(p.lastIndexOf('/') + 1) };
       },
       element: function (row, key) { var el = E.spirit.element.search.file.rowElement.create(Object.assign({ path: key }, row, { open: !!opened[key] })); made[key] = el; return el; },
+      // A file deleted on disc is held back from every draw: its row took itself out (./rowElement.js, leave).
+      visible: function (row) { var el = row ? made[row.key || row.path] : null; return !(el && el.row && el.row.gone); },
       score: function (row, values) { return values.in === 'contents' ? (scores[row.key || row.path] || 0) : null; },
       filters: [
         { name: 'in', choices: [{ value: 'names', word: 'names' }, { value: 'contents', word: 'contents' }] },

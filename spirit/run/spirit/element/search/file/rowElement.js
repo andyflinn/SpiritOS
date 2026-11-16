@@ -98,7 +98,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
       off = F.watch(function (p, v) {
         if (!p) return;
         idx.forKey(p).forEach(function (el) {
-          if (!v) el.apply({ gone: true });
+          if (!v) { el.apply({ gone: true }); el.leave(); }
           else el.apply({ kind: v.kind, size: v.size, modified: v.modified, core: v.core === true, gone: false });
         });
       });
@@ -166,6 +166,17 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
     else if (window.spirit.require) Promise.resolve(window.spirit.require('spirit/word.js')).then(listen, function () { /* no colours */ });
     var destroy = el.destroy;
     el.destroy = function () { live = false; if (offWords) offWords(); return destroy.apply(el, arguments); };
+    // A FILE DELETED ON DISC TAKES ITS ROW OUT OF THE LIST (goal/G47.1; Andy: "why would the file row not listen to a file
+    // delete???", "go, fix the fucking file row."): the line its cells stand in leaves the list at once, with no search and no
+    // redraw; its list holds a gone row back from every later draw (./listElement.js, visible).
+    var cells = null;
+    var mount = el.mount;
+    el.mount = function (h) { cells = h || null; return mount.apply(el, arguments); };
+    el.leave = function () {
+      var td = cells ? cells[Object.keys(cells)[0]] : null;
+      var line = td && typeof td.closest === 'function' ? td.closest('[data-key]') : null;
+      if (line && line.parentNode) line.parentNode.removeChild(line);
+    };
     return el;
   }
 
