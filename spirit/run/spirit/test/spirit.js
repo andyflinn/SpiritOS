@@ -743,9 +743,15 @@ test.run('on a real page, the page never asks for the whole api, an api call wit
   const whole = L.atLoad.filter(function (c) { return c.call === 'api' && !(c.args && c.args.family); });
   return !whole.length || false;
 }, test.limit.quick);
-test.run('on a real page, no family\'s api is asked that the page never calls', 0.2, function () {
+test.run('on a real page, no family\'s api is asked that the page neither calls nor reads the data of', 0.2, function () {
   if (!L.atLoad) return false;
-  const unused = Array.from(new Set(L.asked)).filter(function (f) { return !L.used.has(f); });
+  // A FAMILY WHOSE DATA THE PAGE LOADED IS USED (goal/G47.1, Andy's rule: "every api.js requires it's companion data.js, and is
+  // the only script to require that data.js"): requiring a branch's api.js is how a page gets that branch's data, so a family
+  // whose data.js the page fetched was asked for it.
+  const fetched = L.page.heard.filter(function (m) { return m.method === 'Network.requestWillBeSent' && m.params.request.method === 'GET'; })
+    .map(function (m) { return m.params.request.url.replace(L.node.base, '').replace(/^\//, '').replace(/[?#].*$/, ''); });
+  const readData = function (f) { return fetched.indexOf('spirit/' + f + '/data.js') !== -1 || fetched.indexOf('spirit/app/' + f + '/data.js') !== -1; };
+  const unused = Array.from(new Set(L.asked)).filter(function (f) { return !L.used.has(f) && !readData(f); });
   return !unused.length || false;
 }, test.limit.quick);
 // NO FILE IT DOES NOT NEED YET (Andy: "all, spirit.js still seems to be loading all sorts of shit that it doesn't need
