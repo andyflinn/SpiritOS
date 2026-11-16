@@ -255,6 +255,11 @@ if (withData.length) {
   test.run('its data.js makes the branch its folder is named', 0.4, function () {
     return overAll(withData, function (b) { return b.made === b.name; });
   }, test.limit.quick);
+  // Andy (goal/G47.1): "every api.js requires it's companion data.js, and is the only script to require that data.js".
+  const apiAndData = withData.filter(function (b) { return !!b.api; });
+  if (apiAndData.length) test.run('its api.js requires the data.js beside it', 0.4, function () {
+    return overAll(apiAndData, function (b) { return dataRequiresOf(b.api).indexOf(b.data) !== -1; });
+  }, test.limit.quick);
   test.run('its data.js loads, and exports its cache rules if it has any', 0.4, function () {
     return overAll(withData, function (b) {
       let mod = null;
@@ -1684,6 +1689,23 @@ const OWN_NODE_MODULES_SKIP = /['"]node_modules['"]/;
 // is required by it, as api.js is; nothing asks for one by the branch's name and has it looked up. The name-taking loader is
 // spirit.cacheManager, so a call or a definition of it in product code is the sign.
 const BY_NAME_LOADER = /\bcacheManager\s*\(/;
+// AN api.js LOADS ITS OWN data.js, AND NOTHING ELSE DOES (goal/G47.1, Andy: "RULE: \"every api.js requires it's companion
+// data.js, and is the only script to require that data.js\"", then "GO!"). A branch's data.js is a data.js with an api.js
+// beside it; spirit/data.js, the data module every data.js loads, is no branch's. Read from the code, comments left out.
+function branchDataFiles() {
+  return (E.elementFiles || []).filter(function (f) { return /(^|\/)data\.js$/.test(f) && !/(^|\/)test\//.test(f) && f !== 'spirit/data.js' && fs.existsSync(path.join(RUN, f.replace(/data\.js$/, 'api.js'))); });
+}
+// The branch data.js paths a file's code requires by its written path.
+function dataRequiresOf(rel) {
+  let src = '';
+  try { src = fs.readFileSync(path.join(RUN, rel), 'utf8'); } catch (e) { return []; }
+  const out = [];
+  const re = /\brequire\s*\(\s*['"`](spirit\/[^'"`]+\/data\.js)['"`]/g;
+  const code = codeOf(src, false);
+  let m;
+  while ((m = re.exec(code))) out.push(m[1]);
+  return out;
+}
 // The files these rules read: what git tracks under spirit/, code, tests and documents, vendored code and this test's own
 // files left out (they name the old homes to find them).
 function elementRuleFiles() {
@@ -1848,6 +1870,16 @@ function every() {
     const all = E.elementFiles || [];
     const hits = [].concat.apply([], all.map(function (f) { return codeLinesMatching(f, OWN_NODE_MODULES_SKIP); }));
     return (all.length > 100 && !hits.length) || false;
+  }, test.limit.quick);
+  test.run('every api.js beside a data.js requires that data.js', 0.4, function () {
+    const data = branchDataFiles();
+    return (data.length > 10 && data.every(function (d) { return dataRequiresOf(d.replace(/data\.js$/, 'api.js')).indexOf(d) !== -1; })) || false;
+  }, test.limit.quick);
+  test.run('no product file but its api.js requires a branch data.js', 0.4, function () {
+    const data = branchDataFiles();
+    const product = (E.elementFiles || []).filter(function (f) { return /\.(js|html)$/.test(f) && !/(^|\/)test\//.test(f); });
+    const strays = product.filter(function (f) { return dataRequiresOf(f).some(function (d) { return data.indexOf(d) !== -1 && f !== d.replace(/data\.js$/, 'api.js'); }); });
+    return (data.length > 10 && product.length > 100 && !strays.length) || false;
   }, test.limit.quick);
   test.run('no product file loads a branch file by the branch name: each is required by its full path', 0.4, function () {
     const product = (E.elementFiles || []).filter(function (f) { return /\.(js|html)$/.test(f) && !/(^|\/)test\//.test(f); });
@@ -2018,6 +2050,14 @@ function oneFile(P) {
       }, test.limit.quick);
       if (!/(^|\/)test\//.test(rel)) test.run('it loads no branch file by the branch name, only by its full path', 0.4, function () {
         return !codeLinesMatching(rel, BY_NAME_LOADER).length;
+      }, test.limit.quick);
+      // Its own data.js, when it is an api.js with one beside it; no branch's data.js otherwise.
+      const ownData = /(^|\/)api\.js$/.test(rel) ? rel.replace(/api\.js$/, 'data.js') : '';
+      if (ownData && fs.existsSync(path.join(RUN, ownData))) test.run('it is an api.js and requires the data.js beside it', 0.4, function () {
+        return dataRequiresOf(rel).indexOf(ownData) !== -1;
+      }, test.limit.quick);
+      if (!/(^|\/)test\//.test(rel)) test.run('it requires no branch data.js but its own, as an api.js', 0.4, function () {
+        return dataRequiresOf(rel).every(function (d) { return d === ownData; });
       }, test.limit.quick);
     }
     if (/\.(js|html)$/.test(rel)) test.run('it reaches through spirit.element only for elements the tree holds', 0.4, function () {
