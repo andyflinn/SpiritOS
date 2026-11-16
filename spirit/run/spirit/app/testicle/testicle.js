@@ -80,6 +80,7 @@ const Q = {
   goneSuitesOfScript: db.prepare('UPDATE suite SET deleted = 1, changed = ? WHERE script = ? AND deleted = 0'),
   goneRowsOfSuite: db.prepare('UPDATE suite SET deleted = 1, changed = ? WHERE suite = ? AND deleted = 0'),
   suitesOfScript: db.prepare('SELECT * FROM suite WHERE script = ? ORDER BY suite'),
+  redRows: db.prepare("SELECT script, suite FROM suite WHERE deleted = 0 AND test = 0 AND outcome = 'red'"),
   // EVERY SUITE, EACH ONCE (goal/G47.1, the box: "The testicle search can search by a suite alone"): flagged if any of its
   // rows is, deleted only when all of them are.
   everySuite: db.prepare("SELECT suite, MAX(test) AS test, MIN(deleted) AS deleted, MAX(changed) AS changed, CASE WHEN SUM(outcome = 'red') > 0 THEN 'red' WHEN SUM(outcome = 'green') = COUNT(*) THEN 'green' ELSE '' END AS outcome FROM suite GROUP BY suite ORDER BY suite"),
@@ -649,10 +650,18 @@ function apply(changed, P) {
     // (classifierRow then only judges it). Never run as a suite (chooseJob).
     if (there(CLASSIFY)) { touched(rel, CLASSIFY); Q.putSuite.run(rel, CLASSIFY, hash(CLASSIFY), now); }
   };
+  // A FILE ADDED TO THE TREE OR TAKEN FROM IT (goal/G47.1; Andy, of a general test's red that stood after its cause was
+  // fixed in three other files: "AND? WHAT THE FUCK ARE YOU DOING NOTHING FOR???"): a general test judges the whole tree
+  // too ("every production script has its own test"), and files that answer under each script it is handed. So when the
+  // tree's files change, every general test's red row runs again; a changed file's contents run its own rows as before.
+  let shaped = false;
   db.exec('BEGIN');
   try {
     changed.forEach(function (rel) {
+      // A file that is no script, added or taken away (the watcher passes no other event of it): only the tree changed.
+      if (!/\.js$/.test(rel)) { shaped = true; return; }
       if (isSuite(rel)) {
+        if (!there(rel) || !Q.rowsOfSuite.all(rel).length) shaped = true;
         if (!there(rel)) {
           Q.rowsOfSuite.all(rel).forEach(function (r) { touched(r.script, r.suite); });
           Q.goneRowsOfSuite.run(now, rel);
@@ -692,11 +701,14 @@ function apply(changed, P) {
         concerned.forEach(function (file) { if (!Q.script.get(file)) scriptUp(file); if (suiteChanged(file, rel)) suiteUp(file, rel); });
         return;
       }
+      const known = Q.script.get(rel);
+      if (!there(rel) || !known || known.deleted) shaped = true;
       if (!there(rel)) { before('script|' + rel, function () { return Q.script.get(rel); }); Q.goneScript.run(rel, now); files.add(rel); Q.suitesOfScript.all(rel).forEach(function (r) { touched(r.script, r.suite); }); Q.goneSuitesOfScript.run(now, rel); return; }
       const row = Q.script.get(rel);
       if (row && !row.deleted && row.hash === hash(rel)) return; // the same bytes: nothing changed
       scriptUp(rel);
     });
+    if (shaped) Q.redRows.all().forEach(function (r) { if (isGeneral(r.suite) && there(r.script) && there(r.suite)) suiteUp(r.script, r.suite); });
     db.exec('COMMIT');
   } catch (e) {
     db.exec('ROLLBACK');
@@ -784,9 +796,12 @@ const watcher = spirit.require('spirit/job/chokidar/index.js').watch(RUN, { igno
 watcher.on('all', function (event, full) {
   if (['add', 'change', 'unlink'].indexOf(event) === -1 || !full) return;
   const rel = posix(path.relative(RUN, full));
-  if (!rel || rel.indexOf('..') === 0 || !/\.js$/.test(rel)) return;
+  if (!rel || rel.indexOf('..') === 0) return;
+  // Any other file counts only by being added or taken away: the tree changed, so the general tests' reds run again (apply).
+  const script = /\.js$/.test(rel);
+  if (!script && event === 'change') return;
   pending.add(rel);
-  try { topFix(rel); } catch (e) { logError('topFix ' + rel, e); }
+  if (script) { try { topFix(rel); } catch (e) { logError('topFix ' + rel, e); } }
   kick();
   // The runner waits for a quiet second after the last change (the box: "a new event pushes the start back").
   soon();
