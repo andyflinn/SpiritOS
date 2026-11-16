@@ -16,7 +16,7 @@ const tick = function () { return new Promise(function (r) { setImmediate(r); })
 const settle = async function () { for (let i = 0; i < 20; i++) await tick(); };
 
 function element(tag) {
-  const n = { tag: tag, className: '', children: [], parentNode: null,
+  const n = { tag: tag, className: '', style: {}, children: [], parentNode: null,
     appendChild: function (c) { n.children.push(c); c.parentNode = n; return c; },
     removeChild: function (c) { n.children = n.children.filter(function (x) { return x !== c; }); c.parentNode = null; return c; } };
   return n;

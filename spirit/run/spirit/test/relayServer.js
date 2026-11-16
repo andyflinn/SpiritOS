@@ -629,6 +629,10 @@ const cardAsk = function (relay) {
   return { A: A, who: who, body: { from: who.publicKey, to: '', text: text, sig: A.sign(who.privateKey, A.postMessage(who.publicKey, '', text)) } };
 };
 test.run('two scratch relays come up, and a signed card ask is posted to one as it is and to the other with hints beside it', 0.2, async function () {
+  // THE PARTS BEFORE LET THEIR RELAYS GO FIRST: the lab holds two relays (lab/labNodes.js), and the gate's and the bad-asks'
+  // parts are done with theirs.
+  if (G.relay && typeof G.relay.release === 'function') { try { await G.relay.release(); } catch (e) { /* gone */ } }
+  if (BA.R) { try { BA.R.stop(); } catch (e) { /* gone */ } BA.R = null; }
   HN.R = await scratchRelay({});
   HN.R2 = await scratchRelay({});
   if (!HN.R.up || !HN.R2.up) return false;
