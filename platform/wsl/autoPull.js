@@ -73,7 +73,7 @@ if (require.main === module) {
   };
   const ear = path.join(__dirname, '..', '..', 'spirit', 'run', 'spirit', 'app', 'desk', 'deskAgentEar.js');
   const say = function (text) {
-    execFileSync(process.execPath, [ear, String(port), 'chat.add', JSON.stringify({ id: item, text: 'wsl: ' + text })], { stdio: 'ignore' });
+    execFileSync(process.execPath, [ear, String(port), 'chat.add', JSON.stringify({ id: item, text: text })], { stdio: 'ignore' });
     return Promise.resolve(true);
   };
   const tick = function () {
