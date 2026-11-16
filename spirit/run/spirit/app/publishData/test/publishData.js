@@ -91,7 +91,9 @@ test.run('publishData posts nothing to the desk', 0.2, function () {
 // its deskClient family answers profile.get with the agent's name and logs every ask. No harness step runs (it went
 // with the old harness). No node, no port, no real remote.
 const { DatabaseSync } = require('node:sqlite');
-const TMP = path.join(RUN, 'test', '_tmp_publishData');
+// Its scratch folder is outside the tree (Andy: "an empty folder keeps showing up in my run:// folder"): under run/test
+// the cleanup took the scratch folder and left run/test behind, empty.
+const TMP = path.join(os.tmpdir(), 'publishData-' + process.pid);
 const PRELOAD = path.join(TMP, 'spiritStub.js');
 const LOG = path.join(TMP, 'asks.jsonl');
 const ORIGIN = path.join(TMP, 'origin.git');
