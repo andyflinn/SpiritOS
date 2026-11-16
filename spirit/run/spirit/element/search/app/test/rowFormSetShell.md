@@ -10,7 +10,9 @@ from the scratch node's `spirit/state/shell.json`.
 - *"shown only for an app whose <name>.json says shell:true:true"*: no row for an app that may not be a shell.
 - At home `[🏡] "Home shell" ... [Set]`, on its face `[😋] "Face shell" ... [Set]`, one row each.
 - Beside the dropdown, the shell the node names now, by its label, asked of `node.shell({ at })`.
-- *"Both dropdowns list only the apps whose <name>.json says shell:true:true"*.
+- *"Both dropdowns list only the apps whose <name>.json says shell:true:true"*, the Shell app itself (spirit/app/app/) left
+  out (goal/G43.18, Q28; Andy: *"no, the shell icon is now properly missing :)"*). The tree has no other shell, so the
+  test plants one, zzshell, on its scratch node, to be listed and picked.
 - Set with nothing chosen asks nothing and says *"Choose a shell first."*; a pick is held until Set; Set is an arming
   button, its first press asks nothing, its second `node.shell({ at, name })`, and the node keeps it; a refusal is said in
   the row (*"Not set: ..."*).

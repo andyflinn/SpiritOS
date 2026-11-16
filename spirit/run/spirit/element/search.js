@@ -474,10 +474,13 @@
       if (tiles) {
         var t = how.tileOf(w);
         var tileWas = entry.painted;
-        if (!tileWas || tileWas.row !== rowNow || tileWas.words !== typed || tileWas.rank !== w.rank) {
-          n.title = how.tileTip(w.row);
+        // REPAINTED WHEN WHAT IT SHOWS CHANGED: its icon, label and tip as they now read, not the row object, which a row's
+        // element changes in place (so a label renamed on the stream was never painted).
+        var tip = how.tileTip(w.row);
+        if (!tileWas || tileWas.icon !== t.icon || tileWas.label !== t.label || tileWas.tip !== tip || tileWas.words !== typed || tileWas.rank !== w.rank) {
+          n.title = tip;
           n.innerHTML = '<span class="icon">' + iconHtml(t.icon) + '</span>' + how.tileBar(w) + '<span class="label">' + mark(t.label) + '</span>';
-          entry.painted = { row: rowNow, words: typed, rank: w.rank };
+          entry.painted = { row: rowNow, icon: t.icon, label: t.label, tip: tip, words: typed, rank: w.rank };
         }
         return;
       }

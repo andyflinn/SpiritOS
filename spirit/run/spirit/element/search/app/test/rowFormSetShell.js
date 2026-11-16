@@ -17,10 +17,24 @@ const { scratchNode, chromePage, findChrome, until, sleep } = require(path.join(
 
 const APPS = path.join(RUN, 'spirit', 'app');
 const own = function (n) { try { return JSON.parse(fs.readFileSync(path.join(APPS, n, n + '.json'), 'utf8')); } catch (e) { return null; } };
-const SHELLS = fs.readdirSync(APPS).filter(function (n) { const j = own(n); return !!(j && j.shell && j.shell.true === true); }).sort();
+// A SHELL PLANTED ON THE SCRATCH NODE, BESIDE THE TREE'S: the Shell app itself (spirit/app/app/) leaves itself out of the
+// dropdowns (goal/G43.18, Q28; Andy: "no, the shell icon is now properly missing :)"), and it is the tree's only shell, so
+// one more is planted to be listed and picked.
+const PLANTED = 'zzshell';
+const PLANTED_JSON = { identity: { label: 'Zz Shell', icon: '🧪' }, shell: { true: true, mount: true, tile: true } };
+const TREE_SHELLS = fs.readdirSync(APPS).filter(function (n) { const j = own(n); return !!(j && j.shell && j.shell.true === true); });
+const SHELLS = TREE_SHELLS.filter(function (n) { return n !== 'app'; }).concat([PLANTED]).sort();
 const NOSHELL = fs.readdirSync(APPS).filter(function (n) { const j = own(n); return !!j && !(j.shell && j.shell.true === true); })[0];
-const SHELL = SHELLS[0];
-const LABEL = SHELL ? String((own(SHELL).identity || {}).label || SHELL) : '';
+const SHELL = PLANTED;
+const LABEL = PLANTED_JSON.identity.label;
+// The shell a fresh node names: the Shell app's own label.
+const NOW_LABEL = String(((own('app') || {}).identity || {}).label || 'app');
+function plant(run) {
+  const at = path.join(run, 'spirit', 'app', PLANTED);
+  fs.mkdirSync(at, { recursive: true });
+  fs.writeFileSync(path.join(at, PLANTED + '.json'), JSON.stringify(PLANTED_JSON));
+  fs.writeFileSync(path.join(at, 'element.js'), '(function () {}());' + String.fromCharCode(10));
+}
 
 // One test.run per test (goal/G47.2). What the world and the tests make, for the tests after them.
 let node, chrome, loaded;
@@ -39,11 +53,11 @@ test.after(function () {
   try { if (node && node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* scratch */ }
 });
 
-test.run('the tree has an app that may be a shell, and one that may not', 0.2, function () {
-  return (!!SHELL && !!NOSHELL) || false;
+test.run('the tree has the Shell app, which may be a shell, and an app that may not', 0.2, function () {
+  return (TREE_SHELLS.indexOf('app') !== -1 && !!NOSHELL) || false;
 }, test.limit.quick);
 test.run('a scratch node comes up with a Chrome on its face page', 0.2, async function () {
-  node = await scratchNode();
+  node = await scratchNode({ before: plant });
   chrome = await chromePage(findChrome());
   if (!node.up || chrome.error) return false;
   await chrome.send('Page.navigate', { url: node.base + '/face.html' });
@@ -84,7 +98,7 @@ test.run('for a shell on its face, rowFormSetShell draws one row with 😋, "Fac
 // "Beside the dropdown, the shell the node names now (node.shell({ at })), by its label"
 test.run('beside the dropdown stands the shell the node names now, by its label, asked of node.shell with at', 0.2, async function () {
   if (loaded !== true) return false;
-  const ok = await until(function () { return view('home').then(function (v) { return v.text.indexOf('Home shell ' + LABEL) !== -1; }); }, 10000);
+  const ok = await until(function () { return view('home').then(function (v) { return v.text.indexOf('Home shell ' + NOW_LABEL) !== -1; }); }, 10000);
   const asks = await chrome.evaluate('JSON.stringify(window.shellAsks)');
   return (!!ok && JSON.parse(asks).some(function (a) { return a.at === 'home' && !a.name; })) || false;
 }, test.limit.slow);

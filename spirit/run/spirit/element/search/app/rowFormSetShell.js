@@ -55,7 +55,9 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/app/a
       form.span.appendChild(document.createTextNode(' '));
       var listHost = document.createElement('span');
       form.span.appendChild(listHost);
-      list = E.spirit.element.search.app.create(listHost, { face: 'dropdown', shells: true, pick: function (r, k) { picked = k || ''; } });
+      // THE SHELL APP LEAVES ITSELF OUT (goal/G43.18, Q28; Andy: "no, the shell icon is now properly missing :)"): the shells
+      // listed are the other apps whose <name>.json says shell:true:true, never spirit/app/app/, the Shell itself.
+      list = E.spirit.element.search.app.create(listHost, { face: 'dropdown', shells: true, visible: function (r) { return !!r && r.key !== 'app'; }, pick: function (r, k) { picked = k || ''; } });
       said = document.createElement('div');
       said.className = 'job-manifest-note';
       host.appendChild(said);
