@@ -22,7 +22,9 @@ PAGE_FILES). spirit.js loads it on a face page. It boots only itself, the stream
 ## What it loads
 
 - Only what it runs itself: the paths of components in its code are spirit.js's own libraries, the sheets (`shell.css`,
-  `shell/face.css` last) and the file tree's row element (goal/G41.19). No other spirit/element element. The navigation
+  `shell/face.css` last), the file tree's row element (goal/G41.19), and a family's interface, `spirit/<family>/api.js`,
+  which brings its data (goal/G47.1, Andy's rule: every api.js requires its companion data.js): the job family's, for the
+  jobs it streams. No other spirit/element element. The navigation
   wrapper is gone (goal/G43.30): nothing opens as a page any more.
 - Join is an app (goal/G43.26): boot does not load it.
 - boot, the seal, the sheet, the icon and the Join app (`spirit/app/join/`) whole are core.
