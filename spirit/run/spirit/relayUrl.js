@@ -16,7 +16,8 @@ require('./spirit.js');
 // where there are no hops.
 
 function isLoopbackHost(hostname) {
-  var h = String(hostname || '').toLowerCase();
+  // An IPv6 address keeps its brackets in a URL's hostname (new URL('http://[::1]/').hostname is '[::1]'): they are read off.
+  var h = String(hostname || '').toLowerCase().replace(/^\[(.*)\]$/, '$1');
   return h === 'localhost' || h === '127.0.0.1' || h === '::1';
 }
 

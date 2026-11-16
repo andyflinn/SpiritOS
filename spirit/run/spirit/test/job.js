@@ -597,7 +597,8 @@ test.run('backup says node.mount true, starts, and answers its api', 0.2, functi
 test.run('chat says node.mount true, starts, and answers its api', 0.2, function () { return mounts('chat'); }, test.limit.quick);
 test.run('desk says node.mount true, starts, and answers its api', 0.2, function () { return mounts('desk'); }, test.limit.quick);
 test.run('deskClient says node.mount true, starts, and answers its api', 0.2, function () { return mounts('deskClient'); }, test.limit.quick);
-const JUDGED = ['agent', 'backup', 'chat', 'desk', 'deskClient'];
+test.run('testicle says node.mount true, starts, and answers its api', 0.2, function () { return mounts('testicle'); }, test.limit.quick);
+const JUDGED = ['agent', 'backup', 'chat', 'desk', 'deskClient', 'testicle'];
 test.run('every app that says node.mount true has a line of its own in this test', 0.2, async function () {
   const unjudged = SL.servers.filter(function (n) { return JUDGED.indexOf(n) === -1; });
   await H.sleep(3000);
