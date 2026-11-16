@@ -17,10 +17,10 @@
 (function family() {
   var FILES = 'files';
   var ICONS = 'icons';
-  var D = typeof window !== 'undefined' ? window.spirit.data : require('../spirit.js').require('spirit/data.js');
+  var D = typeof require === 'function' ? require('../spirit.js').require('spirit/data.js') : window.spirit.data;
   // THE DATA SET IT FILES INTO, REQUIRED BY ITSELF (goal/G47.1, box v182: "It is loaded by that path with spirit.require,
   // data.js exactly as api.js"): on a page that has not loaded spirit/data.js yet, this file loads it and runs again.
-  if (!D) { window.spirit.require('spirit/data.js').then(family); return; }
+  if (!D) { window.spirit.require('spirit/data.js').then(function () { if (window.spirit.data) family(); }); return; }
   D.makeFamily('fs', function () {
     // The fs family's view of the home node (a page's own); a stream's job is filed under the node that sent it.
     var HOME = D.viewAt(null, 'fs');

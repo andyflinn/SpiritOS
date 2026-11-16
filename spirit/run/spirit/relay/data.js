@@ -12,10 +12,10 @@
 // The node publishes no relay.get answer, so it translates nothing: spirit.relay.status keeps each one it got (keep).
 (function family() {
   var ROWS = 'relayRows';
-  var D = typeof window !== 'undefined' ? window.spirit.data : require('../spirit.js').require('spirit/data.js');
+  var D = typeof require === 'function' ? require('../spirit.js').require('spirit/data.js') : window.spirit.data;
   // THE DATA SET IT FILES INTO, REQUIRED BY ITSELF (goal/G47.1, box v182: "It is loaded by that path with spirit.require,
   // data.js exactly as api.js"): on a page that has not loaded spirit/data.js yet, this file loads it and runs again.
-  if (!D) { window.spirit.require('spirit/data.js').then(family); return; }
+  if (!D) { window.spirit.require('spirit/data.js').then(function () { if (window.spirit.data) family(); }); return; }
   D.makeFamily('relay', function () {
     var HOME = D.viewAt(null, 'relay');
     // THE READS AND THE ONE WRITE:
