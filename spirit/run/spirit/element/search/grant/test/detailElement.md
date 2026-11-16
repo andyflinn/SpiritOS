@@ -19,7 +19,9 @@ table of the test's own, so nothing of a node is revoked.
   it below the bubble.
 - Who paints, listens (Andy, G41.32): it follows its own row through its table's `watch`, keyed `<id>\n<path>`; a new
   label repaints it, another grant's does not, and its grant gone, revoked anywhere, it says so. `destroy()` lets the watch go.
-- With no row or no table it says it is not configured, and throws nothing.
+- It fills its host and scrolls its own body, so the panel's title bar above it stays (Q21: the panel itself never scrolls);
+  judged by `spirit/element/test/search-child-browser.js`.
+- With no row or no table it says it is not configured, and throws nothing; that note keeps its words inside.
 - `destroy()` leaves its host empty.
 
 ## What its test must try to break

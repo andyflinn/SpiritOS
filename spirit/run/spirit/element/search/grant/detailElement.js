@@ -20,9 +20,16 @@
     var r = o.row || {};
     var gone = false;
     var box = document.createElement('div');
+    // IT SCROLLS ITS OWN BODY, filling the panel under the panel's title bar, which stays (Q21, Andy: the panel itself scrolling
+    // is "the wrong spot, any content then would have a hard time making its toolbar stick to the top"): a grant has no toolbar
+    // of its own, so the whole of it scrolls.
+    box.className = 'fill';
+    if (box.style) box.style.overflow = 'auto';
     host.appendChild(box);
     if (!g || !g.key || !g.label || typeof g.revoke !== 'function' || !o.row) {
       box.className = 'job-manifest-note';
+      // A note, not a body: it keeps its words inside and scrolls nothing.
+      if (box.style) box.style.overflow = 'hidden';
       box.textContent = 'not configured: a grant row and its grants table are required ({ row, grants: { key, label, revoke } })';
       return { destroy: function () { host.innerHTML = ''; } };
     }
