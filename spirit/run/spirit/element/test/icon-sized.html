@@ -48,9 +48,15 @@ window.sized = function () {
     var narrow = one('font-size:20px', { glyph: 'A' }).i;
     out.fit = { side: Math.round(wb.width * 10) / 10, ink: wi.w, inside: wi.l >= wb.left - 0.5 && wi.r <= wb.right + 0.5, text: wide.textContent,
       narrowWhole: narrow.childElementCount === 0 && narrow.textContent === 'A', overflow: getComputedStyle(wide).overflowX + ' ' + getComputedStyle(wide).overflowY };
-    // ONE MEASURING BOX FOR THE PAGE, unseen, off screen, however many icons.
-    var meters = Array.prototype.filter.call(document.querySelectorAll('[aria-hidden="true"]'), function (n) { return getComputedStyle(n).visibility === 'hidden'; });
-    out.meters = meters.map(function (n) { var r = n.getBoundingClientRect(); return { hidden: getComputedStyle(n).visibility === 'hidden', off: r.right <= 0 }; });
+    // MEASURED UNSEEN, NOTHING PUT IN THE PAGE: the page's elements, before and after 800 icons of 800 glyphs it has not
+    // seen, besides the icons and their hosts; and the time those 800 took (the icon list draws some 800).
+    var before = document.querySelectorAll('*').length;
+    var many = host('font-size:20px');
+    var t0 = performance.now();
+    for (var i = 0; i < 800; i++) E.create(many, { glyph: String.fromCodePoint(0x1F300 + i) });
+    out.manyMs = Math.round(performance.now() - t0);
+    var made = many.querySelectorAll('*').length + 1;
+    out.strays = document.querySelectorAll('*').length - before - made;
     return JSON.stringify(out);
   });
 };

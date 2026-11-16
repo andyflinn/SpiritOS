@@ -15,28 +15,40 @@
 // SCALED TO FIT, MEASURED UNSEEN (goal/G47.1, Q22; Andy: "how about proportionally scale-to-fit?", "can the drawing not happen
 // in a hidden (maybe global) screen for measurement?", then "cw, yes, build the icon that way."): a glyph wider than its
 // square is drawn smaller, evenly, so the square holds it whole and keeps what it holds inside (shell.css: overflow hidden).
-// Each glyph is measured once, in one hidden box for the whole page, before it is shown, and the answer kept.
+// Each glyph is measured once, on one canvas never in the page, before it is shown, and the answer kept.
 (function () {
   var E = (window.spirit = window.spirit || {}).element = window.spirit.element || {};
-  // THE ONE MEASURING BOX: off screen, unseen, the glyph in it at 100 px, its width against the 100 px of its square.
+  // THE ONE MEASURING SCREEN: a canvas never put in the page, the glyph measured on it at 100 px in the page's font, its
+  // width against the 100 px of its square. A canvas measures text without laying out the page; a hidden box in the page
+  // made the page lay itself out again for every new glyph, and the icon list, some 800 glyphs, hung its page (the -browser
+  // test killed it past its second).
   var REF = 100;
   var fits = Object.create(null);
-  var meter = null;
+  var pen = null;
+  var font = '';
+  // ONE EMOJI STANDS FOR EVERY EMOJI: an emoji font draws each about as wide as the next, and a canvas finding the font for each
+  // new one took a millisecond, 800 of them most of a second. A glyph that is one emoji (with its joiners, its variation
+  // selector and its skin tone) takes the measure of one, made once; any other glyph is measured itself.
+  var PICTO = /\p{Extended_Pictographic}/gu;
+  function oneEmoji(glyph) {
+    var n = (glyph.match(PICTO) || []).length - (glyph.match(/\u200D/g) || []).length;
+    return n === 1 && glyph.replace(/[\p{Extended_Pictographic}\uFE0F\u200D\u{1F3FB}-\u{1F3FF}]/gu, '') === '';
+  }
   function fitOf(glyph) {
     if (!glyph) return 1;
+    if (oneEmoji(glyph)) glyph = '\u{1F600}';
     if (fits[glyph] !== undefined) return fits[glyph];
     var doc = typeof document !== 'undefined' ? document : null;
-    var root = doc && (doc.body || doc.documentElement);
-    if (!root || typeof root.appendChild !== 'function') return 1;
-    if (!meter || !meter.isConnected) {
-      meter = doc.createElement('span');
-      if (!meter.style) return 1;
-      meter.setAttribute('aria-hidden', 'true');
-      meter.style.cssText = 'position:fixed;left:-10000px;top:0;visibility:hidden;white-space:nowrap;line-height:1;font-size:' + REF + 'px';
-      root.appendChild(meter);
+    if (!pen) {
+      var c = doc && typeof doc.createElement === 'function' ? doc.createElement('canvas') : null;
+      pen = c && typeof c.getContext === 'function' ? c.getContext('2d') : null;
+      if (!pen) return 1;
+      var body = doc.body || doc.documentElement;
+      var family = body && typeof getComputedStyle === 'function' ? getComputedStyle(body).fontFamily : '';
+      font = REF + 'px ' + (family || 'sans-serif');
     }
-    meter.textContent = glyph;
-    var w = typeof meter.getBoundingClientRect === 'function' ? meter.getBoundingClientRect().width : 0;
+    pen.font = font;
+    var w = pen.measureText(glyph).width;
     var f = w > REF ? REF / w : 1;
     fits[glyph] = f;
     return f;

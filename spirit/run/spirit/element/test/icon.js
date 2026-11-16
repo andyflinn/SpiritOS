@@ -110,10 +110,15 @@ test.run("the square keeps what it holds inside", 0.2, function () {
   if (!m || !m.fit) return false;
   return m.fit.overflow === 'hidden hidden' ? true : false;
 }, test.limit.quick);
-test.run("its glyphs are measured in one box for the whole page, unseen and off screen", 0.2, function () {
-  if (!m || !m.meters) return false;
+test.run("its glyphs are measured unseen: nothing of the measuring is put in the page", 0.2, function () {
+  if (!m || m.strays === undefined) return false;
   // Andy: "can the drawing not happen in a hidden (maybe global) screen for measurement?"
-  return (m.meters.length === 1 && m.meters[0].hidden && m.meters[0].off) ? true : false;
+  return m.strays === 0 ? true : false;
+}, test.limit.quick);
+test.run("800 icons of 800 glyphs it had not seen are drawn in under 300 ms, so a list of them never stalls its page", 0.2, function () {
+  if (!m || m.manyMs === undefined) return false;
+  // The icon list draws some 800; measured in a hidden box in the page, every new glyph laid the page out again, and its page hung.
+  return m.manyMs < 300 ? true : false;
 }, test.limit.quick);
 test.run('it follows its container\'s colour like a text character', 0.2, function () {
   if (!m) return false;
