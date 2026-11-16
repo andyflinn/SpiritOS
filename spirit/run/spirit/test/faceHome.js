@@ -201,7 +201,8 @@ test.run('a quiet face stream carries a beat each second: no gap of more than 1.
 
 // Every verb the families declare, from their own declarations.
 const allFamilies = function () {
-  const dirs = function (d) { return fs.readdirSync(path.join(RUN, d), { withFileTypes: true }).filter(function (e) { return e.isDirectory(); }).map(function (e) { return e.name; }); };
+  // A test folder is no family: spirit/app/test/api.js is the app family's own test, not a branch.
+  const dirs = function (d) { return fs.readdirSync(path.join(RUN, d), { withFileTypes: true }).filter(function (e) { return e.isDirectory() && e.name !== 'test'; }).map(function (e) { return e.name; }); };
   return dirs('spirit').filter(function (n) { return fs.existsSync(path.join(RUN, 'spirit', n, 'api.js')); })
     .concat(dirs('spirit/app').filter(function (n) { return fs.existsSync(path.join(RUN, 'spirit', 'app', n, 'api.js')) && !fs.existsSync(path.join(RUN, 'spirit', n, 'api.js')); }));
 };
@@ -603,6 +604,13 @@ const starRefused = function (a) { return a.status >= 400 && a.status < 500; };
 
 // The star part's world, in S; its relays, node and marks are stopped and removed by test.after.
 const S = { relays: [] };
+// A RELAY LET GO ONCE ITS PART IS DONE: the lab holds two relays (lab/labNodes.js), and this file uses five in turn, so each
+// part's relay is stopped, and freed to the lab, before the next part takes one; the cleanup then stops only those left.
+function letGo(r) {
+  if (!r) return;
+  try { r.stop(); } catch (e) { /* gone */ }
+  S.relays = S.relays.filter(function (x) { return x !== r; });
+}
 const NOBODY = 'MCowBQYDK2VwAyEA' + 'zzStarNobodyzzStarNobodyzzStarNobodyzzStarNob'.slice(0, 43) + '=';
 const OWNER = { call: 'owner.command', args: { to: NOBODY, command: 'zzNothing' } };
 const SAVED = 'spirit/app/zzStar/saved.txt';
@@ -919,6 +927,7 @@ test.run('on the real stream, the node holds no face on that relay any more', 0.
 // answers no text today, so the node cannot read it (a fault of its own, reported, not this rule's).
 test.run('a relay whose owner mark is this node\'s key is joined and a face is set on it', 0.2, async function () {
   if (!S.me) return false;
+  letGo(S.R); letGo(S.S);
   const O = S.O = await scratchFaceRelay({ members: [] });
   S.relays.push(O);
   let ok2 = !!O.up && await join(S.N, O) && await setFace(S.N, O, 'mine');
@@ -951,6 +960,7 @@ test.run('owner.command from that face is refused, because the relay\'s word ope
 // A RELAY WHERE THIS NODE SET NO FACE gets nothing, whatever it does.
 test.run('a third relay is joined and no face is asked for', 0.2, async function () {
   if (!S.me) return false;
+  letGo(S.O);
   const D = S.D = await scratchFaceRelay({ members: [] });
   S.relays.push(D);
   S.ok3 = !!D.up && await join(S.N, D);
@@ -1057,9 +1067,17 @@ test.after(function () {
 
 // faceHome-starApps: a star shows every app on the face (goal/G41.33, Q9).
 test.run('a real node has a real face, logged in', 0.2, async function () {
+  letGo(S.D);
   A.N = await scratchNode();
   A.R = await scratchFaceRelay({ members: [], faceDomain: DOMAIN });
   if (!A.N.up || !A.R.up) return false;
+  // TEXT EDITOR AND MEDIA VIEWER SWITCHED ON AT HOME, as an owner would: since goal/G43.17 they are apps of their own, not
+  // intrinsic, so a fresh node shows them only once they are active.
+  const on = async function (key) {
+    const r = await fetch(A.N.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'app.active', args: { key: key, active: true } }) }).then(function (x) { return x.status; }, function () { return 0; });
+    return r === 200;
+  };
+  if (!(await on('text')) || !(await on('media'))) return false;
   A.F = await faceOf(A.N, A.R);
   return !!A.F.sid || false;
 }, test.limit.long);
