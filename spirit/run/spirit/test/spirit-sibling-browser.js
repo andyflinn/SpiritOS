@@ -152,9 +152,11 @@ function kindOf(file) {
 }
 // A PAGE SCRIPT IT JUDGES (goal/G47.1, box v121: "it judges the scripts scriptClassify says load in a page"; testicle hands it
 // only those): known by its path alone, no code read; whether it installs an element the bare page says (session).
+// installSpiritElement.js among them: it runs on a page too and installs no element, so it is judged as such a script is
+// (box v121), not refused; testicle hands it this suite, as a script both node and page run.
 function pageScript(file) {
   const f = String(file || '');
-  return /^spirit\/.+\.js$/.test(f) && !/(^|\/)test\//.test(f) && f !== 'spirit/element/installSpiritElement.js';
+  return /^spirit\/.+\.js$/.test(f) && !/(^|\/)test\//.test(f);
 }
 const WAIT = 20000;
 // THE SERVERS ITS PAGES STAND ON, TURNED ON (goal/G41.28): the agent tables' pages draw the agent family's cache, which
