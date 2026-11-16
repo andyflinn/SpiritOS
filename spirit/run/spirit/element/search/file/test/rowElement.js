@@ -182,11 +182,24 @@ test.run('when its path in data.files changes, the row repaints its size', 0.2, 
   await settle();
   return el.row.size === 4096 && hosts.size.innerHTML === '4 KB' ? true : false;
 }, test.limit.quick);
-test.run('when its path is gone from data.files, the row is marked gone', 0.2, async function () {
-  if (!el || !hosts) return false;
-  D.takeJob(cmd({ op: 'deleteFile', path: 'web/page<1>.html' }));
+// goal/G47.1, Andy: "the file row does listen and DOES use the api, AND it fails to remove itself", then "all, go, fix
+// the fucking file row.": a file deleted takes its row out of the list, with no search and no redraw. The row is mounted
+// as the list mounts it (spirit/element/search.js rowNode): a cell per field, in one <tr>, in the list's body.
+test.run('when its file is deleted, the row takes itself out of the list, with no search and no redraw', 0.2, async function () {
+  if (noRow()) return false;
+  D.takeJob(cmd({ op: 'createFile', path: 'web/gone.txt', size: 1 }));
+  const body = { kids: [], removeChild: function (c) { const i = body.kids.indexOf(c); if (i !== -1) body.kids.splice(i, 1); c.parentNode = null; return c; } };
+  const tr = { tagName: 'TR', parentNode: body, getAttribute: function (a) { return a === 'data-key' ? 'web/gone.txt' : null; },
+    remove: function () { if (tr.parentNode) tr.parentNode.removeChild(tr); } };
+  body.kids.push(tr);
+  const td = function (field) { return { tagName: 'TD', innerHTML: '', parentNode: tr, getAttribute: function (a) { return a === 'data-field' ? field : null; },
+    closest: function (s) { return /tr/i.test(s) ? tr : null; } }; };
+  const row = E.search.file.rowElement.create({ path: 'web/gone.txt' });
+  row.mount({ name: td('name'), size: td('size'), changed: td('changed') });
+  if (body.kids.indexOf(tr) === -1) return false;
+  D.takeJob(cmd({ op: 'deleteFile', path: 'web/gone.txt' }));
   await settle();
-  return el.row.gone === true && /❌/.test(hosts.name.innerHTML) ? true : false;
+  return body.kids.indexOf(tr) === -1 && tr.parentNode == null ? true : false;
 }, test.limit.quick);
 
 // its actions ask, and paint nothing
