@@ -1679,6 +1679,11 @@ function missingRequires(rel) {
 // the walkers at one old commit). Andy: "can we hide those suckers in spirit/jobs/ for now? without the damn node_modules
 // container?": fileSystem.js keeps the one list every walker reads, so no code skips node_modules by its own name.
 const OWN_NODE_MODULES_SKIP = /['"]node_modules['"]/;
+// A BRANCH FILE IS LOADED BY ITS PATH (goal/G47.1, box v182; Andy: "AND WHY THE FUCK WOULD YOU LOAD data.js differently from
+// the way you load api.js?????", "... OR ANY OTHER standard branch fucking file"): every branch file sits at a known path and
+// is required by it, as api.js is; nothing asks for one by the branch's name and has it looked up. The name-taking loader is
+// spirit.cacheManager, so a call or a definition of it in product code is the sign.
+const BY_NAME_LOADER = /\bcacheManager\s*\(/;
 // The files these rules read: what git tracks under spirit/, code, tests and documents, vendored code and this test's own
 // files left out (they name the old homes to find them).
 function elementRuleFiles() {
@@ -1844,6 +1849,11 @@ function every() {
     const hits = [].concat.apply([], all.map(function (f) { return codeLinesMatching(f, OWN_NODE_MODULES_SKIP); }));
     return (all.length > 100 && !hits.length) || false;
   }, test.limit.quick);
+  test.run('no product file loads a branch file by the branch name: each is required by its full path', 0.4, function () {
+    const product = (E.elementFiles || []).filter(function (f) { return /\.(js|html)$/.test(f) && !/(^|\/)test\//.test(f); });
+    const hits = [].concat.apply([], product.map(function (f) { return codeLinesMatching(f, BY_NAME_LOADER); }));
+    return (product.length > 100 && !hits.length) || false;
+  }, test.limit.quick);
   // no warning on a grant (goal/G43.27, requirement 7; moved here from spirit/element/search/grant/test/grantsPanel.js,
   // goal/G47.1). Andy: "compare that to giving a linux user root authority, he then can fuck up the whole system, not our
   // problem.": no <verb>.warning.txt is left in the repository.
@@ -2005,6 +2015,9 @@ function oneFile(P) {
       test.run('its code skips no node_modules by its own name', 0.4, function () {
         const hits = codeLinesMatching(rel, OWN_NODE_MODULES_SKIP);
         return !hits.length || false;
+      }, test.limit.quick);
+      if (!/(^|\/)test\//.test(rel)) test.run('it loads no branch file by the branch name, only by its full path', 0.4, function () {
+        return !codeLinesMatching(rel, BY_NAME_LOADER).length;
       }, test.limit.quick);
     }
     if (/\.(js|html)$/.test(rel)) test.run('it reaches through spirit.element only for elements the tree holds', 0.4, function () {
