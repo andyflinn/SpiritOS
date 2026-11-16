@@ -55,10 +55,13 @@ test.run('search takes one optional search string, q, and no filters', 0.2, func
 }, test.limit.quick);
 
 // A PLUGIN'S DESCRIPTION (Andy, box: "containing identity:icon and identity:label").
-// That server.json names both is a rule of every app branch, judged in ./spirit-sibling-general.js (branchRules) (goal/G43.32).
-const SERVER = path.join(FOLDER, 'server');
+// That <name>.json names both is a rule of every app branch, judged in ./spirit-sibling-general.js (branchRules) (goal/G43.32).
+// THE APP JUDGED HERE IS THE TEXT EDITOR: the dummy server app these checks were written on is gone (25a95142, "delete dummy
+// app"); the text editor is not intrinsic (goal/G43.17), so it starts off and takes a label of the node's, and it mounts no
+// server on the node.
+const SERVER = path.join(FOLDER, 'text');
 let identity = null;
-try { identity = JSON.parse(fs.readFileSync(path.join(SERVER, 'server.json'), 'utf8')).identity; } catch (e) { identity = null; }
+try { identity = JSON.parse(fs.readFileSync(path.join(SERVER, 'text.json'), 'utf8')).identity; } catch (e) { identity = null; }
 const label = identity && typeof identity.label === 'string' ? identity.label : '';
 const icon = identity && typeof identity.icon === 'string' ? identity.icon : '';
 
@@ -105,10 +108,10 @@ test.run('each row is a key and a label', 0.2, function () {
   const items = W.items;
   return (!!items && items.every(function (i) { return typeof i.key === 'string' && i.key && typeof i.label === 'string'; })) || false;
 }, test.limit.quick);
-test.run('an empty search finds server by its label', 0.2, function () {
+test.run('an empty search finds the text editor by its label', 0.2, function () {
   return (!!label && holds(W.items, label)) || false;
 }, test.limit.quick);
-test.run('server\'s row carries its icon', 0.2, function () {
+test.run('the text editor\'s row carries its icon', 0.2, function () {
   return (!!icon && holds(W.items, icon)) || false;
 }, test.limit.quick);
 test.run('searching its label finds it', 0.2, async function () {
@@ -174,11 +177,11 @@ test.run('the verb has its file, active.json', 0.2, function () {
 test.run('app.search stays "just a search string"', 0.2, function () {
   return Object.keys(V.search || {}).join() === 'q' || false;
 }, test.limit.quick);
-// The box: "The user sets active, so Monitor and server start off".
+// The box: "The user sets active, so Monitor and server start off" (the server app is gone; the text editor stands for it).
 // Monitor is intrinsic since Andy's 7f6ebbbe ("intrinsic flag"), so always on: the Agent, intrinsic false, is the app switched here.
 test.run('neither is active before a press', 0.2, function () {
   if (noNode()) return false;
-  return (activeIn('agent') !== true && activeIn('server') !== true) || false;
+  return (activeIn('agent') !== true && activeIn('text') !== true) || false;
 }, test.limit.quick);
 test.run('no row but an intrinsic app\'s says active before a press', 0.2, async function () {
   if (noNode()) return false;
@@ -205,10 +208,10 @@ test.run('after the first activate node.json holds label, icon and active, nothi
 }, test.limit.quick);
 test.run('a label the node chose first stays, and the rest is copied', 0.2, async function () {
   if (noNode()) return false;
-  await ask(W.node.base, 'app.label', { key: 'server', label: 'Chosen First' });
-  await ask(W.node.base, 'app.active', { key: 'server', active: true });
-  const chosen = stateRead('server');
-  await ask(W.node.base, 'app.active', { key: 'server', active: false });
+  await ask(W.node.base, 'app.label', { key: 'text', label: 'Chosen First' });
+  await ask(W.node.base, 'app.active', { key: 'text', active: true });
+  const chosen = stateRead('text');
+  await ask(W.node.base, 'app.active', { key: 'text', active: false });
   return (chosen.label === 'Chosen First' && typeof chosen.icon === 'string' && chosen.icon !== '' && chosen.active === true) || false;
 }, test.limit.quick);
 test.run('active false lands in node.json too', 0.2, async function () {
