@@ -48,6 +48,8 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/auth/
     var add = form.button;
     var said = document.createElement('div');
     said.className = 'job-manifest-note';
+    // Each note keeps its words inside (spirit-sibling-browser.js: overflow not visible).
+    if (said.style) said.style.overflow = 'hidden';
     box.appendChild(said);
     // THE BUNDLE'S BRANCHES, filling the rest (shell.css fill).
     var branches = E.spirit.element.search.branch.create(box, { bundle: o.bundle, face: 'pane', columns: ['family', 'verb', 'delete'] });
@@ -79,6 +81,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/auth/
     del.span.textContent = 'Delete ' + String(o.label || '') + ' bundle and branches';
     var delSaid = document.createElement('div');
     delSaid.className = 'job-manifest-note';
+    if (delSaid.style) delSaid.style.overflow = 'hidden';
     box.appendChild(delSaid);
     E.spirit.element.armingButton.attach(del.button, { label: 'Delete', run: function () {
       delSaid.textContent = '';

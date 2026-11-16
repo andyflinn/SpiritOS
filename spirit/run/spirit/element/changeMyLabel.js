@@ -32,7 +32,8 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/node/
     // element...."): ✏️, the word Name and the input in its span, Save its button; the bytes left and what Save did stand
     // below the bubble.
     host.innerHTML =
-      '<div class="stack"><div data-label="form"></div>' +
+      // Its box keeps what it holds inside (spirit-sibling-browser.js: overflow not visible).
+      '<div class="stack" style="overflow:hidden"><div data-label="form"></div>' +
       '<div data-label="left" class="job-manifest-note"></div>' +
       '<div data-label="said" class="job-start-error"></div></div>';
     var form = E.spirit.element.rowForm.create(host.querySelector('[data-label="form"]'), { icon: '✏️', button: 'Save' });

@@ -31,7 +31,8 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/node/
     // A ROWFORM (goal/G41.27; Andy: "changeMyDescription:\n\n[✏️][Description-input][Save]"): ✏️, the input alone in its
     // span, Save its button; the bytes left and what Save did stand below the bubble.
     host.innerHTML =
-      '<div class="stack"><div data-description="form"></div>' +
+      // Its box keeps what it holds inside (spirit-sibling-browser.js: overflow not visible).
+      '<div class="stack" style="overflow:hidden"><div data-description="form"></div>' +
       '<div data-description="left" class="job-manifest-note"></div>' +
       '<div data-description="said" class="job-start-error"></div></div>';
     var form = E.spirit.element.rowForm.create(host.querySelector('[data-description="form"]'), { icon: '✏️', button: 'Save' });

@@ -89,7 +89,8 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
     // The tree's indent and its hidden path are shell.css's (.files-tree, goal/G47.1, box v109), only where there is a tree.
     host.innerHTML =
       // The list search's box takes all of this one (goal/G40.8: space granted top-down).
-      '<div class="' + (flat ? 'fill' : 'files-tree fill') + '"></div>';
+      // Its box keeps what it holds inside (spirit-sibling-browser.js: overflow not visible).
+      '<div class="' + (flat ? 'fill' : 'files-tree fill') + '" style="overflow:hidden"></div>';
     var inner = host.lastChild;
     list = E.spirit.element.search.create(inner, {
       // Its own data source (goal/G43.24): the search asks it, and is handed no api.
