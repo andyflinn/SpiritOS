@@ -95,7 +95,8 @@
     // ITS CONTAINER BOUNDS IT, WHATEVER THE CONTAINER IS (goal/G41.22; Andy: "workBench if, contained, needs to be
     // restreicted by its container, be that the shell app itself or another container"): a fill in a column, and its
     // container's whole height in any other box, so nothing in it grows the page.
-    container.innerHTML = '<div class="fill" style="flex-direction:row;min-width:0;height:100%;max-height:100%;box-sizing:border-box">' +
+    // Its box keeps what it holds inside (spirit-sibling-browser.js: the box it puts into its container declares a constraint, overflow not visible).
+    container.innerHTML = '<div class="fill" style="flex-direction:row;min-width:0;height:100%;max-height:100%;box-sizing:border-box;overflow:hidden">' +
       (sides.left.length ? strip('left') + pane('left') + border('left') : '') +
       '<div id="' + pre + 'center" class="fill wb-pad" style="overflow:auto;min-width:0;' + PAD + '"></div>' +
       (sides.right.length ? border('right') + pane('right') + strip('right') : '') + '</div>';

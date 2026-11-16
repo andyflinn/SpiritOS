@@ -77,6 +77,8 @@
     button.textContent = String(o.label == null ? '' : o.label);
     if (o.title) button.title = String(o.title);
     if (o.className) button.className = String(o.className);
+    // Its box keeps what it holds inside (spirit-sibling-browser.js: the box it puts into its container declares a constraint, overflow not visible).
+    if (button.style) button.style.overflow = 'hidden';
     container.appendChild(button);
     return attach(button, o);
   }

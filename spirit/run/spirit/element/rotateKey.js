@@ -29,6 +29,8 @@
     container.innerHTML = '';
     var body = document.createElement('div');
     body.className = 'stack';
+    // Its box keeps what it holds inside (spirit-sibling-browser.js: the box it puts into its container declares a constraint, overflow not visible).
+    body.style.overflow = 'hidden';
     container.appendChild(body);
 
     function draw() {

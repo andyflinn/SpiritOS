@@ -15,6 +15,8 @@
 (function () {
   function createAppHeader() {
     var div = document.createElement('div');
+    // Its box keeps what it holds inside (spirit-sibling-browser.js: the box it puts into its container declares a constraint, overflow not visible).
+    div.style.overflow = 'hidden';
     div.style.position = 'sticky';
     div.style.top = '0px';
     div.style.zIndex = '2';

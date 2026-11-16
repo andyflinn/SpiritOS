@@ -44,6 +44,8 @@ if (window.spirit && typeof window.spirit.require === 'function' && typeof windo
     container.innerHTML = '';
     var box = document.createElement('div');
     box.className = 'fill';
+    // Its box keeps what it holds inside (spirit-sibling-browser.js: the box it puts into its container declares a constraint, overflow not visible).
+    box.style.overflow = 'hidden';
     var page = document.createElement('div');
     page.className = 'stack';
     page.innerHTML =

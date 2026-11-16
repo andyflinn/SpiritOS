@@ -47,6 +47,8 @@
     b.textContent = o.label == null ? '' : String(o.label);
     if (o.title) b.title = String(o.title);
     if (o.className) b.className = String(o.className);
+    // Its box keeps what it holds inside (spirit-sibling-browser.js: the box it puts into its container declares a constraint, overflow not visible).
+    if (b.style) b.style.overflow = 'hidden';
     container.appendChild(b);
     return attach(b, o);
   }

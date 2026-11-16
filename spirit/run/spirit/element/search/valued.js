@@ -26,6 +26,8 @@
     var list = null;
     var root = document.createElement('div');
     root.className = 'fill';
+    // Its box keeps what it holds inside (spirit-sibling-browser.js: the box it puts into its container declares a constraint, overflow not visible).
+    root.style.overflow = 'hidden';
     container.appendChild(root);
     parts.then(function () {
       if (gone) return;
