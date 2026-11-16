@@ -58,12 +58,15 @@
     options = options || {};
     var isPane = options.face === 'pane';
     var root = document.createElement('div');
-    root.className = 'app-server-selector' + (options.className ? ' ' + options.className : '');
+    // A PANE FILLS THE BOX IT IS GIVEN, its list in a fill box of its own (rule/16), so the list's size is its pane's and not its
+    // rows' (search-child-browser.js); a dropdown stands inline.
+    root.className = 'app-server-selector' + (isPane ? ' fill' : '') + (options.className ? ' ' + options.className : '');
     // Its box declares its constraint (goal/G47.1, -browser): what it holds stays inside; a dropdown's list is a popover, above it.
     if (root.style) root.style.overflow = 'hidden';
     // An input control stands inline, never a block of its own (goal/G29.7: server and verb side by side); a pane is a block.
-    root.style.display = isPane ? 'block' : 'inline-block';
-    var host = document.createElement('span');
+    if (!isPane) root.style.display = 'inline-block';
+    var host = document.createElement(isPane ? 'div' : 'span');
+    if (isPane) host.className = 'fill';
     root.appendChild(host);
     var detailBox = null;
     var detail = null;
