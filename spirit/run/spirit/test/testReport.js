@@ -251,7 +251,8 @@ async function runAll() {
     reportToTesticle({ script: script, suite: SUITE_FILE, test: title, verified: !!v.pass, severity: severity });
   }
   if (doing !== null) succeeded(doing);
-  for (const fn of afters) { try { await fn(); } catch (e) { test.comment('test.after threw: ' + (e && e.message || e)); } }
+  // A cleanup that throws is no test and has no title: nothing of it is printed or reported.
+  for (const fn of afters) { try { await fn(); } catch (e) { /* a cleanup, not a test */ } }
   test.reportSuccessFailureCount();
   await Promise.race([Promise.all(reportsLanded), new Promise(function (r) { ownTimeout(r, RECORD_WAIT_MS); })]);
   process.exit(test.failureCount > 0 ? 1 : 0);
