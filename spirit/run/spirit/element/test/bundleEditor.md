@@ -17,7 +17,8 @@ opens. So the editor names no description and no api-branch selector.
 - It registers `spirit.element.bundleEditor.create(container, opts)`, which answers `{ destroy }`. Drawn, it asks the
   node nothing.
 - At the top, one row, a rowForm (goal/G41.27; Andy: *"bundleEditor:\n[➕] [label] [Add]"*): it loads
-  `spirit/element/rowForm.js` itself and makes one rowForm in its box, its icon ➕ and its button Add; its span holds the label
+  `spirit/element/rowForm.js` itself and makes one rowForm in its own box (a `fill` box put into its container, overflow
+  hidden, as the general rules ask of the box an element puts into its container), its icon ➕ and its button Add; its span holds the label
   input, a `fieldInput` held to the label's rule, and nothing else; the rowForm's button is the only Add; the word
   `new` at its start is gone.
 - Add (Andy: *"the [add-Button] refused an empty or invalid label"*):
@@ -29,7 +30,7 @@ opens. So the editor names no description and no api-branch selector.
     bundle it asked for is there, the input is emptied for the next and the add is said. Another bundle arriving
     leaves the label as it is. It asks its pane to search nothing again: the pane is a view of that branch;
   - refused, the node's words are said in the panel and the label stays in the input.
-- Below it, filling the space left (a `fill` box, shell.css): the bundleSelector, `spirit.element.search.bundle.create(its box, …)` (the shell's element
+- Below it, filling the space left (a `fill` box, shell.css): the bundleSelector, `spirit.element.search.bundle.create(its own box, …)` (the shell's element
   shape, goal/G41.19), a pane, columns `label` and `owner` (goal/G41.25: the owner *"right after the bundles label"*), its labels shown only (goal/G41.26: *"the Label should now just be an output"*; no `editable`). What a row does is the row element's
   (`spirit/element/search/bundle/rowElement.js`).
 - `destroy()` empties its box, lets its watch on `spirit.data.auth.data.bundles` go and lets its bundle pane go.

@@ -15,6 +15,8 @@ const FILE = path.join(__dirname, '..', 'tabContainer.js');
 
 // ── the stubs ──────────────────────────────────────────────────────────────────────────────────────────────────────
 function node(id) {
+  const heard = {};
+  let listeners = 0;
   const n = { id: id || '', hidden: false, hiddenAttr: false, style: {}, innerHTML: '', children: [], className: '',
     appendChild: function (c) { n.children.push(c); c.parent = n; return c; },
     removeChild: function (c) { n.children.splice(n.children.indexOf(c), 1); c.parent = null; c.removed = true; return c; },
@@ -22,7 +24,13 @@ function node(id) {
     setAttribute: function (k, v) { if (k === 'hidden') n.hidden = true; n['attr_' + k] = String(v); },
     removeAttribute: function (k) { if (k === 'hidden') { n.hidden = false; n.hiddenAttr = false; } delete n['attr_' + k]; },
     getAttribute: function (k) { return n['attr_' + k] == null ? null : n['attr_' + k]; },
-    addEventListener: function () {}, removeEventListener: function () {},
+    // Its own listeners, kept: tabContainer listens on its own box (one of these), not on the container it is handed.
+    addEventListener: function (type, fn) { (heard[type] = heard[type] || []).push(fn); listeners += 1; },
+    removeEventListener: function (type, fn) { const l = heard[type] || []; const i = l.indexOf(fn); if (i !== -1) { l.splice(i, 1); listeners -= 1; } },
+    listenerCount: function () { return listeners; },
+    heardTypes: function () { return Object.keys(heard).filter(function (t) { return heard[t].length; }); },
+    perType: function () { return Object.keys(heard).every(function (t) { return heard[t].length <= 1; }); },
+    fire: function (type, e) { (heard[type] || []).slice().forEach(function (fn) { fn(e); }); },
     querySelector: function () { return null; }, closest: function () { return null; } };
   return n;
 }
@@ -153,22 +161,22 @@ test.run('select with a name that is no tab changes nothing', 0.2, function () {
   tc.select('nosuch');
   return (tc.selected() === 'one') ? true : false;
 }, test.limit.quick);
-test.run('it listens on its container, one listener per event type', 0.2, function () {
-  // its listeners: on its container, a click selects
-  return (c1.perType() && c1.heardTypes().indexOf('click') !== -1) ? true : false;
+test.run('it listens on its own box, not on its container, one listener per event type', 0.2, function () {
+  const box = c1.part('box');
+  return (!!box && box.perType() && box.heardTypes().indexOf('click') !== -1 && c1.listenerCount() === 0) ? true : false;
 }, test.limit.quick);
 test.run('a click on a tab button selects that tab', 0.2, function () {
-  c1.fire('click', clickOn('three'));
+  c1.part('box').fire('click', clickOn('three'));
   return (tc.selected() === 'three') ? true : false;
 }, test.limit.quick);
 test.run('destroy empties the container and drops its listeners', 0.2, function () {
   // destroy
   tc.destroy();
-  return (c1.innerHTML === '' && c1.listenerCount() === 0) ? true : false;
+  return (c1.innerHTML === '' && c1.part('box').listenerCount() === 0 && c1.listenerCount() === 0) ? true : false;
 }, test.limit.quick);
 test.run('a click or a select after destroy does nothing and throws nothing', 0.2, function () {
   threw = null;
-  try { c1.fire('click', clickOn('one')); tc.select('two'); } catch (e) { threw = e; }
+  try { c1.part('box').fire('click', clickOn('one')); tc.select('two'); } catch (e) { threw = e; }
   return (!threw) ? true : false;
 }, test.limit.quick);
 test.run('destroy destroys what every mounted tab answered', 0.2, function () {
@@ -301,7 +309,7 @@ test.run('adding a tab that is there makes no second tab and no second mount', 0
 test.run('a press on its close button takes the tab away', 0.2, function () {
   tc6.add(tab6('two', true));
   // A press on the close button closes that tab and selects nothing else by itself.
-  press = function (name) { c6.fire('click', { target: { closest: function (sel) { return /data-tab-close/.test(sel) ? { getAttribute: function (k) { return k === 'data-tab-close' ? name : null; } } : null; } } }); };
+  press = function (name) { c6.part('box').fire('click', { target: { closest: function (sel) { return /data-tab-close/.test(sel) ? { getAttribute: function (k) { return k === 'data-tab-close' ? name : null; } } : null; } } }); };
   tc6.select('two');
   press('one');
   return (rowOf().indexOf('data-tab-close="one"') === -1 && rowOf().indexOf('ONE') === -1) ? true : false;

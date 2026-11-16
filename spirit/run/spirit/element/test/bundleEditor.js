@@ -144,13 +144,15 @@ test.run('Add refuses an empty label, or one the label\'s rule refuses, and asks
   await settle();
   return (asked.length === 0) ? true : false;
 }, test.limit.quick);
-test.run('the bundle editor creates a bundleSelector in its box as a pane with the columns label and owner, its labels only shown, never edited', 0.2, function () {
+test.run('the bundle editor creates a bundleSelector in its own bounded box inside its container, as a pane with the columns label and owner, its labels only shown, never edited', 0.2, function () {
   // below it, filling the rest: the bundles, as a pane
   // Andy, goal/G41.32: "the bundleSelector:pane looses both the 'Edit' button and the 'Delete' Button." A row pressed
   // opens its branchEditor tab (the row element's, tested in its own folder).
   sel = sels[0];
   // goal/G41.25, box: "the bundleSelector's list will gain a new column \"owner\", displayed right after the bundles label."
-  return (!!sel && sel.container === box && all(box).indexOf(sel) !== -1 && sel.o.face === 'pane' && JSON.stringify(sel.o.columns) === '["label","owner"]' && !sel.o.editable) ? true : false;
+  // In its own box, which keeps what it holds inside (the general rules: the box an element puts into its container declares
+  // a constraint, overflow not visible).
+  return (!!sel && all(box).indexOf(sel.container) !== -1 && !!sel.container.style && sel.container.style.overflow === 'hidden' && all(box).indexOf(sel) !== -1 && sel.o.face === 'pane' && JSON.stringify(sel.o.columns) === '["label","owner"]' && !sel.o.editable) ? true : false;
 }, test.limit.quick);
 test.run('the bundleSelector sits in a box that fills the space left, by shell.css fill', 0.2, function () {
   return (!!sel && (/\bfill\b/.test(sel.className || '') || holds(box, 'fill'))) ? true : false;

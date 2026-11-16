@@ -97,6 +97,7 @@
       var note = document.createElement('div');
       note.className = 'job-manifest-note';
       note.textContent = 'not configured: ' + missing;
+      note.style.overflow = 'hidden';
       host.appendChild(note);
       return { destroy: function () { host.innerHTML = ''; } };
     }
@@ -253,6 +254,7 @@
 
     var listHost = document.createElement('div');
     listHost.className = 'fill';
+    listHost.style.overflow = 'hidden';
     function say(text, isError) {
       said = String(text || '');
       saidError = !!isError;
@@ -263,8 +265,9 @@
     // the search input???"): the heading, the form and the filters take their own height.
     function paint() {
       if (gone || !form) return;
+      // Each box it puts into its container keeps what it holds inside (the general rules: overflow not visible).
       host.innerHTML =
-        '<div>' +
+        '<div style="overflow:hidden">' +
           '<div data-grants="line"></div>' +
           '<div data-grants="said" class="' + (saidError ? 'job-refusal' : 'job-manifest-note') + '">' + esc(said) + '</div>' +
         '</div>';

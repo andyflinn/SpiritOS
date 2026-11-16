@@ -20,7 +20,9 @@
 // of of darker green than already is on the page"): the class tab-content, its look in shell.css.
 //
 // SPACE IS GRANTED TOP-DOWN (rule/16): the root and the content area take the shell's fill class, so the content gets
-// the height the row leaves; the container is never sized here. One listener, on the container.
+// the height the row leaves; the container is never sized here. One listener, on its own box, which keeps what it holds inside
+// (overflow hidden): the general rules (spirit-sibling-browser.js) have an element listen on itself, not on the container it is
+// handed, and its box declare a constraint.
 (function () {
   var made = 0;
   function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
@@ -43,7 +45,7 @@
           (t.closable ? '<span class="tab-close" role="button" aria-label="close" data-tab-close="' + esc(t.name) + '">✕</span>' : '') + '</button>';
       }).join(' ');
     }
-    container.innerHTML = '<div class="fill"><div id="' + pre + 'tabs" class="tc-tabs" style="display:flex;flex-wrap:wrap">' + rowHtml() + '</div>' +
+    container.innerHTML = '<div id="' + pre + 'box" class="fill" style="overflow:hidden"><div id="' + pre + 'tabs" class="tc-tabs" style="display:flex;flex-wrap:wrap">' + rowHtml() + '</div>' +
       '<div id="' + pre + 'content" class="tab-content fill"></div></div>';
     function part(name) { return container.querySelector('#' + pre + name); }
 
@@ -109,7 +111,8 @@
       var b = e && e.target && e.target.closest ? e.target.closest('[data-tab]') : null;
       if (b) select(b.getAttribute('data-tab'));
     }
-    container.addEventListener('click', onClick);
+    var box = part('box');
+    box.addEventListener('click', onClick);
     if (current) select(current);
 
     return {
@@ -120,7 +123,7 @@
       rename: rename,
       destroy: function () {
         gone = true;
-        container.removeEventListener('click', onClick);
+        box.removeEventListener('click', onClick);
         // What each tab's mount answered destroyed, as close does (rule/8: what it made, its destroy lets go).
         Object.keys(mounted).forEach(function (k) {
           var made = mounted[k];

@@ -37,9 +37,15 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/auth/
       if (gone) return;
       var E = window.spirit.element;
       box.innerHTML = '';
+      // ITS OWN BOX, WHICH KEEPS WHAT IT HOLDS INSIDE (the general rules: the box an element puts into its container declares a
+      // constraint, overflow not visible): the form, the line and the bundles go into it, not loose into the container.
+      var own = document.createElement('div');
+      own.className = 'fill';
+      own.style.overflow = 'hidden';
+      box.appendChild(own);
       // AT THE TOP, A ROWFORM (goal/G41.27; Andy: "bundleEditor:\n[➕] [label] [Add]"): ➕, the label input in its span,
       // Add its button. What Add did is said below it.
-      var form = E.spirit.element.rowForm.create(box, { icon: '➕', button: 'Add' });
+      var form = E.spirit.element.rowForm.create(own, { icon: '➕', button: 'Add' });
       form.root.className += ' bundle-editor-add';
       var input = document.createElement('input');
       input.type = 'text';
@@ -49,9 +55,9 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/auth/
       var add = form.button;
       var said = document.createElement('div');
       said.className = 'job-manifest-note';
-      box.appendChild(said);
+      own.appendChild(said);
       // FILLING THE REST: the bundles, a pane whose labels are shown only.
-      bundles = E.spirit.element.search.bundle.create(box, { face: 'pane', columns: ['label', 'owner'], tabs: o.tabs, tabLabel: o.tabLabel });
+      bundles = E.spirit.element.search.bundle.create(own, { face: 'pane', columns: ['label', 'owner'], tabs: o.tabs, tabLabel: o.tabLabel });
       bundles.className += ' fill';
 
       function say(text) { said.textContent = String(text || ''); }
