@@ -15,7 +15,7 @@
 (function () {
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
-  var parts = Promise.all([S.require('spirit/element/search/file.js'), S.require('spirit/element/search/file/detailElement.js'), S.require('spirit/element/fstat.js'), S.require('spirit/element/panel.js'), S.cacheManager('app')]);
+  var parts = Promise.all([S.require('spirit/element/search/file.js'), S.require('spirit/element/search/file/detailElement.js'), S.require('spirit/element/fstat.js'), S.require('spirit/element/panel.js'), S.require('spirit/app/api.js')]);
   var OPENERS = { code: 'text', image: 'media', audio: 'media', video: 'media' };
 
   function create(container, opts) {

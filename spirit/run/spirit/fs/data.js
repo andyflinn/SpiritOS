@@ -3,7 +3,7 @@
 // WHAT A CLIENT KNOWS OF A NODE'S FILES, IN THE fs FAMILY'S OWN FOLDER (goal/G41.28). Andy: "We're not done until every
 // family of the API tree as a clientCacheManager, and clients can use that to organize their spirit.data", and the box:
 // "the clientCacheManager stores the in-RAM cache EXACTLY the same in spirit.data, in the browser AND in an appServer
-// running in client mode." A page loads it through spirit.cacheManager('fs'); it runs the translator into that page's
+// running in client mode." A page loads it through its api.js (spirit/fs/api.js), the one file that requires it; it runs the translator into that page's
 // spirit.data, under the node that served the tree.
 //
 // THE BRANCH IS THIS FILE'S, AND ONLY THIS FILE NAMES IT: every reader (the files rows and list, the Apps, the Icons, the
@@ -14,10 +14,13 @@
 // The tree comes as updates of one job, the spirit.fs job's: a connecting page is handed the tree as create commands, then
 // treeComplete: the branch fills quietly and its watchers hear one word at the end; after that each change is told by
 // path (goal/G30.18, moved here from the files row element). Every event ends in set or del; it asks nothing.
-(function () {
+(function family() {
   var FILES = 'files';
   var ICONS = 'icons';
   var D = typeof window !== 'undefined' ? window.spirit.data : require('../spirit.js').require('spirit/data.js');
+  // THE DATA SET IT FILES INTO, REQUIRED BY ITSELF (goal/G47.1, box v182: "It is loaded by that path with spirit.require,
+  // data.js exactly as api.js"): on a page that has not loaded spirit/data.js yet, this file loads it and runs again.
+  if (!D) { window.spirit.require('spirit/data.js').then(family); return; }
   D.makeFamily('fs', function () {
     // The fs family's view of the home node (a page's own); a stream's job is filed under the node that sent it.
     var HOME = D.viewAt(null, 'fs');

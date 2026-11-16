@@ -1,15 +1,15 @@
 # spirit/element/search/file/listElement.js
 
 `spirit/run/spirit/element/search/file/listElement.js` is the files list, drawn by its selector `../file.js` since goal/G43.32 (goal/G30.20): the node's files on the standard list tool,
-each row a file row element (`spirit/element/search/file/rowElement.js`), the list a view of the node's file tree, the branch the fs family's cache manager keeps (`spirit.data.fs.data.branch`,
+each row a file row element (`spirit/element/search/file/rowElement.js`), the list a view of the node's file tree, the branch the fs family's data.js keeps (`spirit.data.fs.data.branch`,
 `<node>/fs/files` in `spirit.data`, goal/G41.28). The Files app draws it as a pane, an app picking a file as a
 dropdown. Its test is `./file.js`.
 
 ## Requirements
 
 - It loads what it uses itself (rule/26): `spirit/element/search/file/rowElement.js`, `spirit/element/search.js` and
-  `spirit/element/fstat.js`, and the fs family's cache manager (`spirit.cacheManager('fs')`), and no data script (goal/G41.16): the file tree's stream is
-  that manager's.
+  `spirit/element/fstat.js`, and the fs family's interface (`spirit.require('spirit/fs/api.js')`), and no data script (goal/G41.16; goal/G47.1: only an
+  api.js requires its companion data.js): the file tree's stream is the fs data.js's, which that api.js brings.
 - It registers `spirit.element.search.file.create(host, opts)`, drawing one probabilitySearch into a `fill` box of its host.
 - It is a view of the file tree (`spirit.data.fs.data.branch`), in path order (`sort('name', 'asc')`), filled as it is drawn. Its columns are `name`,
   `size` and `changed`; each row a file row element of its path; a picked file is shown by its path, and reaches

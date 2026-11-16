@@ -5,7 +5,7 @@
 // browser file runs in node on a BARE window (rule/26): nothing is on the page until the row requires it. The shared
 // row element is put there real; the arming button is a stand-in that records what it was handed. The node's auth
 // family is the spirit object's, each call recorded. The page's data set is real, and so is the auth family's
-// data.js (goal/G41.28), loaded as a page's spirit.cacheManager('auth') loads it, the page's node known as
+// data.js (goal/G41.28), brought by the auth family's api.js as the element requires it, the page's node known as
 // spirit.start makes it known (spirit.node.key, then data.homeNode).
 
 const fs = require('fs');
@@ -31,7 +31,7 @@ function cell() {
 }
 
 // One test.run per test (goal/G47.2). What the world and the tests make, for the tests after them.
-let asked, required, armed, managers, DATA, V, E, A, el, cells, allCells, del, live, lh;
+let asked, required, loaded, armed, DATA, V, E, A, el, cells, allCells, del, live, lh;
 const hasA = function () { return !!(A && A.branches && typeof A.branches.row === 'function'); };
 const hasRow = function () { return hasA() && !!(E.search && E.search.branch && E.search.branch.rowElement && typeof E.search.branch.rowElement.create === 'function'); };
 
@@ -57,20 +57,20 @@ test.run('the branch row runs on a bare window, with the page\'s data set and th
   const NODE_KEY = 'nOdE+key/one==';
   global.window.spirit.node = { key: NODE_KEY };
   DATA.homeNode(NODE_KEY);
-  // spirit.cacheManager(name), as a page's: the family's manager loaded once, attaching itself to the data set.
-  managers = [];
-  global.window.spirit.cacheManager = function (name) {
-    managers.push(String(name));
-    vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'data.js'), 'utf8'), { filename: name + '/data.js' });
-    return Promise.resolve(true);
-  };
-  // The direct writes below are the auth family's own view of the home node, as its manager files them.
+  // A branch's api.js brings its companion data.js, as the real api.js does (goal/G47.1: "every api.js requires it's
+  // companion data.js"): the stand-in runs that data.js once, attaching itself to the data set. A data.js asked for
+  // directly is only recorded.
+  const ran = {};
+  const dataScript = function (p) { const b = (/^(spirit\/(?:app\/)?[^/]+)\/api\.js$/.exec(p) || [])[1]; const f = b ? path.join(RUN, b, 'data.js') : ''; if (f && !ran[f] && fs.existsSync(f)) { ran[f] = true; vm.runInThisContext(fs.readFileSync(f, 'utf8'), { filename: f }); } };
+  // The direct writes below are the auth family's own view of the home node, as its data.js files them.
   V = DATA.viewAt(null, 'auth');
-  global.window.spirit.require = function (p) { required.push(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.element.spirit = global.window.spirit.element.spirit || {}).element = global.window.spirit.element.spirit.element || {})); } return Promise.resolve(true); };
+  global.window.spirit.require = function (p) { required.push(String(p)); dataScript(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.element.spirit = global.window.spirit.element.spirit || {}).element = global.window.spirit.element.spirit.element || {})); } return Promise.resolve(true); };
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
   E = ((global.window.spirit.element || {}).spirit || {}).element || {};
   A = ((global.window.spirit.data || {}).auth || {}).data;
+  // What the file required as it ran, kept apart from what the runner asks of the page later.
+  loaded = required.slice();
   return true;
 }, test.limit.quick);
 
@@ -79,9 +79,9 @@ test.run('it requires the shared row element and the arming button through spiri
   if (!required) return false;
   return ['spirit/element/rowElement.js', 'spirit/element/armingButton.js'].every(function (p) { return required.indexOf(p) !== -1; }) ? true : false;
 }, test.limit.quick);
-test.run('it loads the auth family\'s cache manager, which puts the auth family\'s data on the page', 0.2, function () {
-  if (!managers) return false;
-  return managers.indexOf('auth') !== -1 && hasA() ? true : false;
+test.run('it requires the auth family\'s interface, spirit/auth/api.js, and no data.js, and the auth data it brings is on the page', 0.2, function () {
+  if (!loaded) return false;
+  return loaded.indexOf('spirit/auth/api.js') !== -1 && !loaded.some(function (p) { return /data\.js$/.test(p); }) && hasA() ? true : false;
 }, test.limit.quick);
 test.run('it registers spirit.element.spirit.element.search.branch.rowElement.create', 0.2, function () {
   if (!hasA()) return false;
@@ -151,10 +151,10 @@ test.run('another branch\'s row changes nothing here', 0.2, async function () {
 // the type's own element takes the node's branch rows from the stream (goal/G41.14)
 // The row element is the data type's code (G30.18: "rowElements carry the listeners and painters a subject needs
 // for real-time updates"); it is loaded with every list of its kind, and since goal/G41.28 the rows are taken by the
-// auth family's cache manager it loads. Andy: "DOESN'T THAT SHIT BELONG INSIDE THE MOTHERFUCKING element??????", "i ruled a LONG time AGO THAT FUCKING ELEMENTS
+// auth family's data.js, which the api.js it requires brings. Andy: "DOESN'T THAT SHIT BELONG INSIDE THE MOTHERFUCKING element??????", "i ruled a LONG time AGO THAT FUCKING ELEMENTS
 // carry THEIR FUCKING DESCRIPTIONS". The node publishes each changed row of its two bundle tables on one permanent job
 // of type bundles, as the shadow job does each contact row: { table, row }, and { table, row: { id }, gone: true }.
-test.run('a branch row published lands in the auth family\'s branches by its id, through the family\'s cache manager the row element loads', 0.2, function () {
+test.run('a branch row published lands in the auth family\'s branches by its id, through the family\'s data.js its api.js brings', 0.2, function () {
   if (!hasA()) return false;
   DATA.takeJob({ id: 'spirit.auth', data: { table: 'branch', row: { id: 3, bundle: 7, family: 'desk', verb: 'chat.add' } } });
   return JSON.stringify(A.branches.row({ id: 3, bundle: 7, family: 'desk', verb: 'chat.add' }.id)) === JSON.stringify({ id: 3, bundle: 7, family: 'desk', verb: 'chat.add' }) ? true : false;

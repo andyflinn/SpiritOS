@@ -12,7 +12,7 @@
   window.spirit.require('spirit/element/rowForm.js');
   window.spirit.require('spirit/element/icon.js');
   window.spirit.require('spirit/element/search/icon/listElement.js');
-  window.spirit.cacheManager('app');
+  window.spirit.require('spirit/app/api.js');
 
   function create(host, options) {
     var S = window.spirit;

@@ -162,17 +162,27 @@ test.run('the two element files place spirit.element.spirit.app.agent.element.ta
   global.spirit = global.window.spirit;
   // goal/G43.32: the shared stand-ins stand where the page files read them, at spirit.element.<their path>.
   global.window.spirit.element = { spirit: { app: { agent: { element: { table: { tableElement: STAND.agentTable, rowElement: STAND.agentRow } } } } } };
-  global.window.spirit.require = function (p) { made.required.push(String(p)); return Promise.resolve(true); };
+  // A branch's api.js, required by its path, brings its companion data.js, as the real api.js does (goal/G47.1: "every
+  // api.js requires it's companion data.js"): the stand-in runs that data.js from disk, once. A data.js asked for
+  // directly is only recorded.
+  const ran = {};
+  global.window.spirit.require = function (p) {
+    made.required.push(String(p));
+    const data = (/^(spirit\/(?:app\/)?[^/]+)\/api\.js$/.exec(String(p)) || [])[1];
+    if (data && !ran[data] && fs.existsSync(path.join(RUN, data, 'data.js'))) { ran[data] = true; vm.runInThisContext(fs.readFileSync(path.join(RUN, data, 'data.js'), 'utf8'), { filename: path.join(RUN, data, 'data.js') }); }
+    return Promise.resolve(true);
+  };
   // goal/G43.32: the page's spirit.require answers the helper, so each file places itself by installSpiritElement as it
   // runs (spirit/test/headLessChrome.js pageSpirit).
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(global.window.spirit);
   // The page's one data set (spirit/data.js), which spirit.js brings with the client: the stream lands there, under
   // the node that served it (goal/G41.28), the page's own once node.card has answered, kept as spirit.node.key. A family's
-  // cache manager is found by spirit.cacheManager(name), the real one, which in node reads it from its own disk.
+  // data.js comes with its api.js, the stand-in above running it from disk.
   vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });
   global.window.spirit.node = { key: HOME_KEY };
   global.window.spirit.data.homeNode(HOME_KEY);
-  global.window.spirit.cacheManager = require(path.join(RUN, 'spirit', 'spirit.js')).cacheManager;
+  // What the page files require is what is asked from here on.
+  made.from = made.required.length;
   ['elementTable.js', 'elementRow.js'].forEach(function (f) { vm.runInThisContext(fs.readFileSync(path.join(EL, f), 'utf8'), { filename: path.join(EL, f) }); });
   const T = global.window.spirit.element.spirit.app.agent.element.table.job || {};
   X.E = { jobTable: T.elementTable, jobRow: T.elementRow };
@@ -222,7 +232,7 @@ test.run('its fields are the label, the loop flag, the job, then the bundle by t
     ['bundle', 'bundle', ''], ['provider', 'pick', 'provider'], ['persona', 'pick', 'persona']]) ? true : false;
 }, test.limit.quick);
 
-// ── elementRow.js loads the agent family's cache manager, which takes the job table's rows from the stream (goal/G41.16, G41.28) ──
+// ── elementRow.js requires the agent family's api.js, whose data.js takes the job table's rows from the stream (goal/G41.16, G41.28) ──
 // Andy: "get rid of thos FUCKING data.js scripts, DIDN't WE INSIST on the PROPER way to do this shit?": what the stream
 // means for this table, spirit/app/agent/table/data.js until G41.16, is the agent family's data.js's
 // (spirit/app/agent/data.js, goal/G41.28), loaded with the row element; it files the rows under the
@@ -230,10 +240,10 @@ test.run('its fields are the label, the loop flag, the job, then the bundle by t
 const job = function (agent, module) { return { id: 'job-agent', module: module || 'spirit.app.agent', data: {}, app: { agent: agent } }; };
 test.run('its page files require no data script', 0.2, function () {
   if (!X.made) return false;
-  return !X.made.required.some(function (p) { return (/data\.js$/).test(p); }) ? true : false;
+  return !X.made.required.slice(X.made.from).some(function (p) { return (/data\.js$/).test(p); }) ? true : false;
 }, test.limit.quick);
-test.run('the agent family\'s cache manager is loaded, and its branch for job is the home node\'s <node>/agent/job', 0.2, function () {
-  if (!X.made) return false;
+test.run('its page files require the agent family\'s interface, spirit/app/agent/api.js, whose data.js makes the job branch the home node\'s <node>/agent/job', 0.2, function () {
+  if (!X.made || X.made.required.slice(X.made.from).indexOf('spirit/app/agent/api.js') === -1) return false;
   const DATA = global.window.spirit.data;
   const AD = X.AD = ((global.window.spirit.data || {}).agent || {}).data;
   X.BRANCH = DATA.nodeId(HOME_KEY) + '/agent/job';

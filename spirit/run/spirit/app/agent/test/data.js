@@ -7,7 +7,7 @@
 // id -> the row, under the node that served it; the rows the server publishes merged in (goal/G41.16), and the reads the
 // tables' lists and editors ask. It runs as a page runs it: in a window of its own beside the real spirit.data
 // (spirit/data.js), which it writes into; the rows are handed in as the stream hands them, jobs of module spirit.app.agent.
-// In node it is asked through spirit.cacheManager. One test.run per test (goal/G47.2).
+// In node it comes with the family's api.js, spirit.require('spirit/app/agent/api.js'). One test.run per test (goal/G47.2).
 
 const fs = require('fs');
 const path = require('path');
@@ -159,11 +159,11 @@ test.run('a table\'s watch with no id and no function watches nothing and answer
   return typeof r === 'function' || false;
 }, test.limit.quick);
 
-// ── in node, found by the family's name ──
-test.run('in node, spirit.cacheManager(\'agent\') loads it, and it stands at spirit.data.agent.data', 0.2, async function () {
+// ── in node, brought by its api.js (goal/G47.1: "every api.js requires it's companion data.js") ──
+test.run('in node, requiring the agent family\'s interface, spirit/app/agent/api.js, brings its data.js, which stands at spirit.data.agent.data', 0.2, async function () {
   require(path.join(RUN, 'spirit', 'spirit.js'));
   const s = globalThis.spirit;
-  try { await s.cacheManager('agent'); } catch (e) { return false; }
+  try { await Promise.resolve(s.require('spirit/app/agent/api.js')); } catch (e) { return false; }
   const A = s.data && s.data.agent && s.data.agent.data;
   return (!!A && typeof A.row === 'function' && typeof A.branch === 'function') || false;
 }, test.limit.quick);

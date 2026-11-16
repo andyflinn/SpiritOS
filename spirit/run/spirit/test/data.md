@@ -11,7 +11,7 @@ node.js Process like DeskClient uses the Exact same code as the browser for the 
 is the appServer serializes the cache to disk."*
 
 What every branch's `data.js` must be (there, its branches named by it alone, no disk, its contract, its watch, served
-and found by its name) is judged on each branch folder by `./spirit-sibling-general.js (branchRules)` (goal/G43.32, Q6, Q7). Here,
+and brought by its api.js) is judged on each branch folder by `./spirit-sibling-general.js (branchRules)` (goal/G43.32, Q6, Q7). Here,
 what judges no branch. The numbers are those of the requirements before they moved.
 
 ### Requirements
@@ -26,8 +26,6 @@ what judges no branch. The numbers are those of the requirements before they mov
    alone, its key in base64url (Q5 of goal/G43.7: *"yes."*).
 4. **The one difference is the disk**: appServer writes each sender's cache to its own file; no other module writes a
    cache file of its own.
-6. **Found by introspection**: `spirit.js` knows where a family's `data.js` lives, so a page finds it by the family's
-   name alone.
 7. **No other way** (Andy, the box: *"anything not using the new spiritData.js and it's buddies clientCacheManager.js
    must do so in this item. no exceptions."*, and *"any notion that there is an alternative approach must disappear
    from all documentation and all comments and all code and tests in the entire repo."*):
@@ -78,6 +76,9 @@ node, the reads moved.
 
 - `spirit/data.js` stands.
 - Each family's own `data.js` (there, made with the one helper under its folder's name, rolling nothing by hand, the old file gone) is judged on each branch folder by `./spirit-sibling-general.js`, its branch rules. That no code reads a `spirit.<name>Data`, or names the old cache manager or the old module, is that file's rule of every file (goal/G47.1). Andy's words in a comment are not judged.
+- On a page, each family's data comes with its interface (goal/G47.1: *"every api.js requires it's companion data.js,
+  and is the only script to require that data.js"*): the page requires `spirit/app/api.js` for `app`,
+  `spirit/<name>/api.js` for a node family, `spirit/app/<name>/api.js` for an app's, and each `spirit.data.<name>` stands.
 - On a page, the first level of `spirit` holds no `<name>Data`.
 - *"spirit.data.<name>.data"* and *"spirit.data.<name>.cache"* stand for each family, under its own name (Q1), so `spirit.data.chat` and `spirit.data.desk`. All 18 are judged in node (fileServer went with run://process, goal/G43.20), and on a page all but `agent`, `chat` and `deskClient`, which a scratch node does not offer to a page.
 - *"this object has only helper functions and object <name> for every application"*: nothing else is on `spirit.data`, so the shared tree `spirit.data.data` is gone.

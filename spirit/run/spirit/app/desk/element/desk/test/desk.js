@@ -219,16 +219,18 @@ function deskWorld(goal, items) {
     console: { log: function () {}, error: function () {}, warn: function () {} }, localStorage: { getItem: function () { return null; }, setItem: function () {} },
     location: { hash: '' }, addEventListener: function () {} };
   win.window = win;
-  const REAL = ['spirit/data.js', 'spirit/app/desk/data.js', 'spirit/app/backup/data.js'];
+  // The page's caches are the desk and backup families' data.js, over the one spirit.data (goal/G41.28): each comes with
+  // its family's api.js, as the real api.js requires its companion data.js (goal/G47.1), and runs as it is, so the List is
+  // a search of what the cache holds; anything else is answered and not run.
+  const REAL = { 'spirit/data.js': 'spirit/data.js', 'spirit/app/desk/api.js': 'spirit/app/desk/data.js', 'spirit/app/backup/api.js': 'spirit/app/backup/data.js' };
   const ran = {};
   let listOpts = null;
   win.spirit = { escapeHtml: api.escapeHtml,
-    // The page's caches are the desk and backup families' data.js, over the one spirit.data (goal/G41.28): both run as
-    // they are, so the List is a search of what the cache holds; anything else is answered and not run.
     require: function (p) {
       const rel = String(p).replace(/^\/+/, '');
       required.push(rel);
-      if (REAL.indexOf(rel) !== -1 && !ran[rel]) { ran[rel] = true; vm.runInContext(fs.readFileSync(path.join(RUN, rel), 'utf8'), win, { filename: rel }); }
+      const run = Object.prototype.hasOwnProperty.call(REAL, rel) ? REAL[rel] : '';
+      if (run && !ran[run]) { ran[run] = true; vm.runInContext(fs.readFileSync(path.join(RUN, run), 'utf8'), win, { filename: run }); }
       return Promise.resolve({});
     },
     // goal/G43.32: the parts stand where the page reads them, at spirit.element.<their path>.
@@ -236,12 +238,11 @@ function deskWorld(goal, items) {
       'search': { create: function (host, o) { listOpts = o; return { refresh: function () {}, destroy: function () {}, redraw: function () {}, value: '' }; } } }) } },
     // THE PAGE GETS WHAT IT NEEDS ITSELF (goal/G43.27, requirement 23): no api is handed to it. A family's verb is asked
     // through spirit.ready (every desk.<verb> reaches the recorder), its answer through outcome, and the desk's publishes
-    // through its family's cache manager, the real spirit/app/desk/data.js.
+    // through its family's data.js, the real spirit/app/desk/data.js, which comes with its api.js.
     ready: Promise.resolve(new Proxy({}, { get: function (t, fam) {
       return new Proxy({}, { get: function (t2, rest) { return function (args) { return api.verb(String(fam) + '.' + String(rest), args); }; } });
     } })),
-    outcome: function (p) { return p; },
-    cacheManager: function (name) { return win.spirit.require('spirit/app/' + name + '/data.js'); } };
+    outcome: function (p) { return p; } };
   // A page's spirit (spirit/test/headLessChrome.js pageSpirit): spirit.required, and the helper answered, so each element
   // places itself by installSpiritElement as it runs.
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(win.spirit);

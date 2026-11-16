@@ -13,7 +13,7 @@ its wrapper part (below).
   `spirit/app/file/element.js` is: it sets `spirit.element.spirit.app.info.element = { create(container, { open }) -> { destroy() } }`. No
   `spirit.shell.activateApp`.
 - **A wrapper**: it loads `spirit/element/nodeInfo.js` through `spirit.require` (rule/26), and only that. It asks nothing
-  itself (no verb, no api, no cache manager, no relay, no card) and draws no markup of its own.
+  itself (no verb, no api, no data.js, no relay, no card) and draws no markup of its own.
 - `create(container, opts)` empties the container and, once nodeInfo is loaded, makes
   `spirit.element.spirit.element.nodeInfo.create(container, { open })`, handing on `opts.open`, the stack its mounter opens layers in,
   and nothing else; made with no opts, nodeInfo gets no `open` and keeps its own stack.
@@ -56,7 +56,7 @@ Done: its test runs from its new place, and `shell/` is gone. Their checks are d
 
 #### 6. A wrapper of spirit/element/
 
-- `info.js` loads only `spirit/element/` scripts, through `spirit.require`; asks no cacheManager; calls no verb (`.verb(`, `spirit.outcome`, `callDialog`, `fetch`, relay.status, node.card, auth.search/grant/revoke); draws no markup of its own.
+- `info.js` loads only `spirit/element/` scripts, through `spirit.require`; requires no data.js; calls no verb (`.verb(`, `spirit.outcome`, `callDialog`, `fetch`, relay.status, node.card, auth.search/grant/revoke); draws no markup of its own.
 - Info's own parts move into `spirit/element/nodeInfo.js` (Q2: *"nodeInfo is fine."*): info.js loads it. (What nodeInfo asks and draws is `spirit/element/test/nodeInfo.js`, its parts section.)
 
 #### 7. The new shell's way

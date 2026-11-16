@@ -5,8 +5,8 @@
 // production script has its own test" (goal/G47.1, box v72).
 // What a client knows of the backup (goal/G41.28): the backup server's status, kept as status.get answered it, under the
 // node that served it; its one branch named by this file alone. It runs as a page runs it: in a window of its own beside
-// the real spirit.data (spirit/data.js), which it writes into. In node it is asked as appServer asks it, through
-// spirit.cacheManager. One test.run per test (goal/G47.2).
+// the real spirit.data (spirit/data.js), which it writes into. In node it comes with its branch's interface,
+// spirit/app/backup/api.js, the one script that requires it. One test.run per test (goal/G47.2).
 
 const fs = require('fs');
 const path = require('path');
@@ -97,11 +97,11 @@ test.run('it translates nothing: a job of the backup on the stream writes nothin
   return (w.B.status() === null && Object.keys(kept).length === 0) || false;
 }, test.limit.quick);
 
-// ── in node, as appServer asks for it ──
-test.run('in node, spirit.cacheManager loads it by the name backup, and it stands at spirit.data.backup.data', 0.2, async function () {
+// ── in node, brought by its branch's interface, the one script that requires it ──
+test.run('in node, requiring the interface spirit/app/backup/api.js brings it, and it stands at spirit.data.backup.data', 0.2, async function () {
   require(path.join(RUN, 'spirit', 'spirit.js'));
   const s = globalThis.spirit;
-  try { await s.cacheManager('backup'); } catch (e) { return false; }
+  try { await Promise.resolve(s.require('spirit/app/backup/api.js')); } catch (e) { return false; }
   const B = s.data && s.data.backup && s.data.backup.data;
   return (!!B && typeof B.status === 'function' && typeof B.keep === 'function') || false;
 }, test.limit.quick);

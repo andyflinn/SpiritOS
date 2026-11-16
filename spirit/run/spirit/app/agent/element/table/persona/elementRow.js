@@ -11,7 +11,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/app/a
   // Its table's rows are the agent family's cache (goal/G41.28): the family's own data.js
   // (spirit/app/agent/data.js) translates them into the table's branch; it is loaded here, with
   // this element.
-  window.spirit.cacheManager('agent');
+  window.spirit.require('spirit/app/agent/api.js');
   var FIELDS = [{ field: 'label', label: 'Label', kind: 'name' }, { field: 'persona', label: 'Persona, given with every prompt', kind: 'code' },
     // goal/G41.21, box v19: the persona's bundle, by the bundle selector as the job's (Andy: "and where the fuck is my bundle
     // field in persona-table and the fucking picker for a bundle with the persona?").

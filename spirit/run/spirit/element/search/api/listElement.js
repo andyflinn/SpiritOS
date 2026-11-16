@@ -27,7 +27,7 @@
   // the reader of the api tree, and the node family's cache manager, the keeper of the api tree (goal/G41.28).
   var parts = Promise.all([window.spirit.require('spirit/element/search.js'), window.spirit.require('spirit/element/search/api/rowElement.js'),
     window.spirit.require('spirit/element/search/api/detailElement.js'), window.spirit.require('spirit/client/apiTreeIndex.js'),
-    window.spirit.cacheManager('node')]);
+    window.spirit.require('spirit/node/api.js')]);
 
   // THE NODE'S API TREE IN spirit.data (goal/G41.28; Andy, Q7: "Shall the app-server selector keep the node's api tree in an
   // apiTree branch of spirit.data, read again when a server job changes, and the family, verb and app-server selectors

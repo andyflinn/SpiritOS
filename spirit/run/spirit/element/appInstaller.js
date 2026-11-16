@@ -40,7 +40,7 @@
       var b = host.querySelector('button');
       if (b) b.addEventListener('click', press);
     }
-    Promise.resolve(sp().cacheManager('app')).then(function () {
+    Promise.resolve(sp().require('spirit/app/api.js')).then(function () {
       if (gone) return;
       render();
       var A = reads();

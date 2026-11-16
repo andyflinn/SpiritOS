@@ -55,11 +55,14 @@ function world(answer) {
         if (c && typeof c.appendChild === 'function') c.appendChild(f.root);
         w.forms.push(f); return f;
       } } } } },
-      require: function (p) { w.required.push(String(p)); return Promise.resolve(true); },
-      // A family's cache (goal/G41.28): the family's own manager, run on this window over the real data set.
-      cacheManager: function (name) {
-        w.managers = (w.managers || []).concat(name);
-        vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'data.js'), 'utf8'), win, { filename: name + '/data.js' });
+      // A family's cache (goal/G41.28): a branch's api.js brings its companion data.js, as the real api.js does
+      // (goal/G47.1: "every api.js requires it's companion data.js"); the stand-in runs that data.js on this window over
+      // the real data set. A data.js asked for directly is only recorded.
+      require: function (p) {
+        w.required.push(String(p));
+        const b = (/^(spirit\/(?:app\/)?[^/]+)\/api\.js$/.exec(String(p)) || [])[1];
+        const f = b ? path.join(RUN, b, 'data.js') : '';
+        if (f && fs.existsSync(f)) vm.runInContext(fs.readFileSync(f, 'utf8'), win, { filename: f });
         return Promise.resolve(true);
       } },
     document: { createElement: function (t) { return node('<' + t + '>'); }, createTextNode: function (t) { const x = node('#text'); x.textContent = String(t); return x; } },
@@ -189,10 +192,10 @@ test.run('the field then shows the name the node stored', 0.2, function () {
 test.run('after Save it says saved', 0.2, function () {
   return (/saved/.test(said.textContent)) ? true : false;
 }, test.limit.quick);
-test.run('it loads the node manager, and the name the node stored is kept in the node family\'s card', 0.2, function () {
+test.run('it requires the node family\'s interface, spirit/node/api.js, and no data.js, and the name the node stored is kept in the node family\'s card', 0.2, function () {
   // what it changes, it listens for: the node card in the node family's cache (goal/G41.28)
   N = ((w.win.spirit.data || {}).node || {}).data;
-  return ((w.managers || []).indexOf('node') !== -1 && !!N && !!N.card.get() && N.card.get().name === 'Bob') ? true : false;
+  return (w.required.indexOf('spirit/node/api.js') !== -1 && !w.required.some(function (p) { return /data\.js$/.test(p); }) && !!N && !!N.card.get() && N.card.get().name === 'Bob') ? true : false;
 }, test.limit.quick);
 test.run('a name changed in the card, from elsewhere, redraws the field', 0.2, async function () {
   N.card.keep({ name: 'Eve' });

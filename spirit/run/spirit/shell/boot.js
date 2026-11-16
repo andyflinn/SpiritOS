@@ -257,7 +257,7 @@
     // there; then what boot.js draws with, each required by it: the file tree's row element and the jobs family's cache
     // manager (goal/G41.28).
     var parts = function () {
-      return loadParts().then(function () { return Promise.all([window.spirit.require('spirit/element/search/file/rowElement.js'), window.spirit.cacheManager('job')]); })
+      return loadParts().then(function () { return Promise.all([window.spirit.require('spirit/element/search/file/rowElement.js'), window.spirit.require('spirit/job/api.js')]); })
         .then(null, function () { /* a part missing is said by what needs it */ });
     };
     return Promise.resolve(window.spirit.start()).then(parts, parts).then(function () {

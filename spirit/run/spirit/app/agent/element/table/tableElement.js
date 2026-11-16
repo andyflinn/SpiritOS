@@ -44,7 +44,7 @@
 // ITS OWN APP'S api.js AND data.js, LOADED AS IT RUNS (goal/G47.1, the box: an element under spirit/app/ "is red unless it
 // loaded its own app's api.js and data.js").
 if (window.spirit && typeof window.spirit.require === 'function') Promise.resolve(window.spirit.require('spirit/app/agent/api.js')).catch(function () {});
-if (window.spirit && typeof window.spirit.cacheManager === 'function') Promise.resolve(window.spirit.cacheManager('agent')).catch(function () {});
+if (window.spirit && typeof window.spirit.require === 'function') Promise.resolve(window.spirit.require('spirit/app/agent/api.js')).catch(function () {});
 (function () {
   var AGENT = spirit.familyPath('agent');
   var made = 0;
@@ -64,7 +64,7 @@ if (window.spirit && typeof window.spirit.cacheManager === 'function') Promise.r
   // data.js keeps it (spirit.data.agent.data), loaded with this element, as part of its tree. A page where it could
   // not be loaded (the agent server not running on its node, so the family is not there) is refused, never drawn
   // without its branch.
-  spirit.cacheManager('agent');
+  spirit.require('spirit/app/agent/api.js');
   function branchOf(table) {
     if (!((window.spirit.data || {}).agent || {}).data) throw new Error('the agent family\'s cache manager is not on this page: the agent server does not run on this node');
     return window.spirit.data.agent.data.branch(table);

@@ -6,6 +6,10 @@
 // the request shapes: an argument a handler cannot do without is required, and each carries the tightest rule every
 // value the handler takes still passes. The server checks everything again. A verb added to the server is added here,
 // in the same commit.
+// ITS COMPANION data.js, REQUIRED HERE AND NOWHERE ELSE (goal/G47.1; Andy's rule: "every api.js requires it's companion
+// data.js, and is the only script to require that data.js"): whoever requires this branch has its data with it, on a page
+// (spirit.js runs this file there, with no require of its own, and waits for what it asks) and in node.
+if (typeof require === 'function') require('../../spirit.js').require('spirit/app/backup/data.js'); else window.spirit.require('spirit/app/backup/data.js');
 module.exports = {
   verbs: {
     // The last check, copy and error; it takes nothing.

@@ -18,7 +18,7 @@
   // data they display", and spirit/test/app-child-browser.js for every element under spirit/app/; rule/26): icons's api.js and its
   // cache manager, data.js, which the page's one stream feeds; mounted alone, on a page nothing else loaded them on, it has them.
   if (window.spirit && typeof window.spirit.require === 'function') Promise.resolve(window.spirit.require('spirit/app/icons/api.js')).catch(function () {});
-  if (window.spirit && typeof window.spirit.cacheManager === 'function') Promise.resolve(window.spirit.cacheManager('icons')).catch(function () {});
+  if (window.spirit && typeof window.spirit.require === 'function') Promise.resolve(window.spirit.require('spirit/app/icons/api.js')).catch(function () {});
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
   var parts = Promise.all(['spirit/element/search.js', 'spirit/element/search/icon/rowElement.js', 'spirit/element/rowForm.js',

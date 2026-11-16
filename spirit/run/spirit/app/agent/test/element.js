@@ -111,12 +111,14 @@ function world() {
 function load(w) {
   // goal/G43.32: the parts stand where the app reads them, at spirit.element.<their path>.
   global.window = { spirit: { element: { spirit: { element: { workBench: w.workBench, tabContainer: w.tabContainer, search: { app: {} } }, app: { agent: {} } } }, fs: w.fs, escapeHtml: function (s) { return String(s); }, familyPath: familyPath, isBrowser: function () { return true; },
-    require: function (p) { w.required.push(String(p)); return Promise.resolve(p === AGENT_FAMILY ? w.family : true); },
-    // A family's cache (goal/G41.28): the family's own manager, run on this window over the real data set.
-    cacheManager: function (name) {
-      w.managers = (w.managers || []).concat(name);
-      vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'data.js'), 'utf8'), { filename: name + '/data.js' });
-      return Promise.resolve(true);
+    // A branch's api.js: its real companion data.js run on this window over the real data set, as the real api.js
+    // requires it (goal/G47.1).
+    require: function (p) {
+      w.required.push(String(p));
+      const m = /^spirit\/(.+)\/api\.js$/.exec(String(p));
+      const companion = m ? 'spirit/' + m[1] + '/data.js' : '';
+      if (companion && fs.existsSync(path.join(RUN, companion))) vm.runInThisContext(fs.readFileSync(path.join(RUN, companion), 'utf8'), { filename: companion });
+      return Promise.resolve(p === AGENT_FAMILY ? w.family : true);
     } } };
   global.window.spirit.ready = Promise.resolve(Object.assign(Object.create(global.window.spirit), { agent: w.family }));
   global.spirit = global.window.spirit;
@@ -915,19 +917,16 @@ async function tabOpens(kind, row) {
         'search.app.changeAppLabel': { create: function (c) { c.appendChild(document.createElement('span')); return { destroy: function () {} }; } },
         'search.app.serverDEBUG': { create: function (c) { c.appendChild(document.createElement('span')); return { destroy: function () {} }; } },
       }) } },
+      // A branch's api.js, a node branch's or an app's: its real companion data.js is run on this page once, over the real
+      // data set, as the real api.js requires it (goal/G47.1).
       require: function (p) {
         const rel = String(p).replace(/^\/+/, '');
+        const m = /^spirit\/(.+)\/api\.js$/.exec(rel);
+        const companion = m ? 'spirit/' + m[1] + '/data.js' : '';
+        if (companion && !loaded[companion] && fs.existsSync(path.join(RUN, companion))) { loaded[companion] = true; vm.runInContext(fs.readFileSync(path.join(RUN, companion), 'utf8'), win, { filename: companion }); }
         if (rel === familyPath('agent')) return Promise.resolve(family);
         if (REAL.indexOf(rel) !== -1 && !loaded[rel]) { loaded[rel] = true; vm.runInContext(fs.readFileSync(path.join(RUN, rel), 'utf8'), win, { filename: rel }); }
         return Promise.resolve({});
-      },
-      // A family's cache (goal/G41.28): the family's own manager, a node family's or its server's, run on this page over
-      // the real data set.
-      cacheManager: function (name) {
-        const at = ['spirit/' + name + '/data.js', 'spirit/app/' + name + '/data.js'].filter(function (p) { return fs.existsSync(path.join(RUN, p)); })[0];
-        if (!at) return Promise.reject(new Error());
-        if (!loaded[at]) { loaded[at] = true; vm.runInContext(fs.readFileSync(path.join(RUN, at), 'utf8'), win, { filename: at }); }
-        return Promise.resolve(true);
       },
     };
     win.spirit.ready = Promise.resolve(win.spirit);

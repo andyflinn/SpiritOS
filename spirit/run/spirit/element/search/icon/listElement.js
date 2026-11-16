@@ -32,7 +32,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
   var SET = 'spirit/iconSet.json';
 
   // The fs family's cache, where the set is kept and the file followed.
-  var cache = window.spirit.cacheManager('fs');
+  var cache = window.spirit.require('spirit/fs/api.js');
   function F() { return ((window.spirit.data || {}).fs || {}).data || null; }
 
   // A read that is refused keeps nothing, so a face that gets its star can read it later. Lists read together read once.

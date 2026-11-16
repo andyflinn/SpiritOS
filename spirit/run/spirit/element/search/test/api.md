@@ -13,7 +13,9 @@ NEEDs the family selector to have any meaning at all."*). Since goal/G43.18 it i
   gets a container and appends itself"*).
 - Nothing of `shellCreateListSearch` (goal/G40.8).
 - It is built from its two halves: the family dropdown, the app-server selector in the same file, and the verb selector,
-  `spirit/element/search/api/verb.js`, which it loads itself (rule/26). Two probabilitySearch dropdowns.
+  `spirit/element/search/api/verb.js`, which it loads itself (rule/26). Two probabilitySearch dropdowns. Its halves
+  require the node family's interface, `spirit/node/api.js`, which brings the api tree's data.js, and no data script
+  themselves (goal/G47.1: only an api.js requires its companion data.js).
 - Its families are the tree's; one that did not answer is left out. `options.all` is what the family half reads
   unchosen.
 - Its root carries `family`, `verb` and `value`:

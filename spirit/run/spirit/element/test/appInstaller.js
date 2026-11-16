@@ -36,16 +36,18 @@ function host() {
 }
 const onOf = function (h) { return !!h.button && /data-on="true"/.test(h.button.attrs); };
 
-// A world: the app rows the cache holds, what was asked of the node, the cache's watchers, the managers loaded.
+// A world: the app rows the cache holds, what was asked of the node, the cache's watchers, the paths required.
 function world(rows) {
-  const w = { rows: rows, asked: [], watchers: {}, released: 0, managers: [], fsAsked: 0 };
+  const w = { rows: rows, asked: [], watchers: {}, released: 0, required: [], fsAsked: 0 };
   const fsApi = {
     getAnnotations: function () { w.fsAsked += 1; return Promise.resolve({}); },
     annotate: function () { w.fsAsked += 1; return Promise.resolve({ ok: true }); },
   };
   const win = { spirit: {
     ready: Promise.resolve({ fs: fsApi, app: { activeApp: function (a) { w.asked.push(JSON.parse(JSON.stringify(a))); return Promise.resolve({ ok: true }); } } }), fs: fsApi,
-    cacheManager: function (name) { w.managers.push(name); return Promise.resolve(true); },
+    // The one loader, a recorder: every path it is asked for; what the app branch's api.js loads, its data.js, stands
+    // below as spirit.data.app.
+    require: function (p) { w.required.push(String(p)); return Promise.resolve(true); },
     data: { app: { data: {
       rows: function () { return w.rows; },
       watch: function (key, fn) { (w.watchers[key] = w.watchers[key] || []).push(fn); return function () { w.released += 1; w.watchers[key] = w.watchers[key].filter(function (x) { return x !== fn; }); }; },
@@ -69,14 +71,14 @@ test.run('it registers spirit.element.spirit.element.appInstaller.create', 0.2, 
   w0 = world({});
   return (w0.E.appInstaller && typeof w0.E.appInstaller.create === 'function') ? true : false;
 }, test.limit.quick);
-test.run('it loads the app family\'s cache', 0.2, async function () {
+test.run('it requires the app branch\'s interface, spirit/app/api.js, and no data script', 0.2, async function () {
   // an app in spirit/app: on while its row says active, by the app family's cache (goal/G43.9)
   PATH = 'spirit/app/zz/zz.js';
   w = world({ zz: { key: 'zz', active: false } });
   h = host();
   inst = w.E.appInstaller.create(h, { path: PATH });
   await settle();
-  return (w.managers.indexOf('app') !== -1) ? true : false;
+  return (w.required.indexOf('spirit/app/api.js') !== -1 && !w.required.some(function (p) { return /data\.js$/.test(p); })) ? true : false;
 }, test.limit.quick);
 test.run('with its app\'s row inactive, the button says Activate and is off', 0.2, function () {
   return (h.button && h.button.text === 'Activate' && !onOf(h)) ? true : false;

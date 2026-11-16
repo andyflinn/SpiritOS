@@ -445,7 +445,6 @@ test.run('on a page the cache has no cap', 0.2, function () {
 //   3. the same rows make the same cache: the desk's data.js and the data set, run in node as appServer
 //      runs them and in a page's window as a page runs them, are fed the same rows and end with the same spirit.data.desk.cache;
 //   4. the one difference is the disk: appServer writes the cache to disk, and no other module does;
-//   6. spirit.js knows where a family's manager lives;
 //   7. nothing keeps node rows but spirit.data, and no file names another way.
 const fs = require('fs');
 const vm = require('vm');
@@ -591,13 +590,8 @@ test.run('no file in the repo names a replaced way, neither running uncached nor
   return !naming.length ? true : false;
 }, test.limit.quick);
 
-// ── 6. FOUND BY INTROSPECTION: the shell finds a family's manager by the folder shape (goal/G43.27) ──
-test.run('spirit.js knows where a family\'s data.js lives, so a page finds it by the family\'s name', 0.2, function () {
-  cachesRead();
-  return !!/['"]data\.js['"]/.test(C.spiritJs) ? true : false;
-}, test.limit.quick);
-// That the node serves each family's manager, and a page asking by the name gets it, is a rule of every branch, judged
-// on each branch folder in ./spirit-sibling-general.js (branchRules) (goal/G43.32).
+// That the node serves each family's data.js, and a page requiring the family's api.js gets it, is a rule of every
+// branch, judged on each branch folder in ./spirit-sibling-general.js (branchRules) (goal/G43.32, goal/G47.1).
 
 // THE FAMILIES PART, once data-families.js.
 // Once spirit/run/spirit/test/data-families.js.
@@ -612,6 +606,10 @@ const NODE_FAMILIES = ['app', 'auth', 'config', 'contact', 'event', 'fs', 'job',
 // fileServer went with run://process (goal/G43.20), so 18 are left.
 const SERVER_FAMILIES = ['agent', 'backup', 'chat', 'desk', 'deskClient'];
 const FAMILIES = NODE_FAMILIES.concat(SERVER_FAMILIES);
+// Each family's interface, as a page requires it; its api.js brings its data.js (goal/G47.1: "every api.js requires it's
+// companion data.js, and is the only script to require that data.js"): the app family's spirit/app/api.js, a node
+// family's spirit/<name>/api.js, an app's spirit/app/<name>/api.js.
+const API_PATHS = FAMILIES.map(function (n) { return n === 'app' ? 'spirit/app/api.js' : NODE_FAMILIES.indexOf(n) !== -1 ? 'spirit/' + n + '/api.js' : 'spirit/app/' + n + '/api.js'; });
 const F = {};
 
 // data-families: spirit.data: every family at spirit.data.<name>, through spirit/data.js (goal/G43.7)
@@ -635,8 +633,8 @@ test.run('a scratch node\'s page in Chrome answers what spirit.data holds', 0.2,
   await H.until(function () { return F.page.evaluate('!!(window.spirit && window.spirit.ready)').then(Boolean); }, H.WAIT);
   await F.page.evaluate('window.spirit.ready.then(function () { return true; })').catch(function () { return false; });
   await H.sleep(2500);
-  const got = await ask('(function () { var S = window.spirit; var names = ' + JSON.stringify(FAMILIES) + ';' +
-    ' return Promise.all(names.map(function (n) { return Promise.resolve(S.cacheManager(n)).then(null, function () { return null; }); })).then(function () {' +
+  const got = await ask('(function () { var S = window.spirit; var names = ' + JSON.stringify(FAMILIES) + '; var paths = ' + JSON.stringify(API_PATHS) + ';' +
+    ' return Promise.all(paths.map(function (p) { return Promise.resolve(S.require(p)).then(null, function () { return null; }); })).then(function () {' +
     ' var D = S.data || {}; var out = { first: Object.keys(S), keys: {}, families: {} };' +
     ' Object.keys(D).forEach(function (k) { out.keys[k] = typeof D[k]; });' +
     ' names.forEach(function (n) { var f = D[n]; out.families[n] = { data: f && typeof f.data, cache: f && typeof f.cache }; });' +

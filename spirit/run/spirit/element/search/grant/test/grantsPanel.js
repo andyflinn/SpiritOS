@@ -11,7 +11,7 @@
 // handed: the families stand as spirit.js binds them, each verb a function answering its body or throwing its refusal,
 // and every family's FS verbs under FS; the auth family on spirit.ready, a server's family through
 // spirit.require(spirit.familyPath(name)). Then the table it offers by name, grantsPanel.nodeGrants (moved here from the
-// Grants app), over the real auth family's cache manager.
+// Grants app), over the real auth branch's data.js, which its api.js requires.
 // This is the one test file of its script (spirit/test/TEST_SYSTEM.md): the authSource and noWarning parts, once files of
 // their own, are sections at its end, run after the checks above and counted with them. One test.run per test (goal/G47.2).
 
@@ -90,7 +90,7 @@ function family(w, name, verbs) {
 }
 
 function world() {
-  const w = { required: [], calls: [], bundles: [], ids: [], families: [], grantLists: [], grantAnswer: null, branchesOf: {}, treeAsked: 0, tree: null, busy: [], rowForms: [], grantWatchers: [], warnings: {}, confirms: [], confirmAnswer: true, managers: [] };
+  const w = { required: [], calls: [], bundles: [], ids: [], families: [], grantLists: [], grantAnswer: null, branchesOf: {}, treeAsked: 0, tree: null, busy: [], rowForms: [], grantWatchers: [], warnings: {}, confirms: [], confirmAnswer: true, ran: {} };
   const E = nestSearch({
     // The shell's element shape (goal/G41.19): create(container, options) appends the control and answers it.
     'search.bundle': { create: function (c, opts) { const b = node('bundle'); b.container = c; b.opts = opts; b.value = ''; b.row = null; w.bundles.push(b); c.appendChild(b); return b; } },
@@ -135,20 +135,18 @@ function world() {
         w.required.push(String(p));
         const server = Object.keys(servers).filter(function (k) { return familyPath(k) === p; })[0];
         if (server) return Promise.resolve(servers[server]);
+        // A branch's api.js: its real companion data.js run once on this window over the real data set, as the real api.js
+        // requires it (goal/G47.1), so the server jobs the test hands spirit.data reach the panel as the page's would, and
+        // the auth tables' grants reach nodeGrants.
+        const m = /^spirit\/(.+)\/api\.js$/.exec(String(p));
+        const companion = m ? 'spirit/' + m[1] + '/data.js' : '';
+        if (companion && !w.ran[companion] && fs.existsSync(path.join(RUN, companion))) { w.ran[companion] = true; vm.runInContext(fs.readFileSync(path.join(RUN, companion), 'utf8'), win, { filename: companion }); }
         // goal/G43.32: what the panel draws with stands where an element now finds it, spirit.element.spirit.element.
         (FILES[p] || []).forEach(function (k) { const at = ((page.spirit = page.spirit || {}).element = page.spirit.element || {}); at[k] = E[k]; });
         return Promise.resolve(true);
       },
       familyPath: familyPath,
       tree: function () { w.treeAsked += 1; return Promise.resolve(w.tree || TREE); },
-      // A family's cache (goal/G41.28): the family's own manager, run on this window over the real data set, so the
-      // server jobs the test hands spirit.data reach the panel as the page's would, and the auth tables' grants reach
-      // nodeGrants.
-      cacheManager: function (name) {
-        w.managers.push(String(name));
-        vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'data.js'), 'utf8'), win, { filename: name + '/data.js' });
-        return Promise.resolve(true);
-      },
       // The spirit object's outcome as spirit.js has it: a call's answer as { status, body }, 0 when nothing answered.
       outcome: function (c) { return Promise.resolve(c).then(function (body) { return { status: 200, body: body }; }, function (e) { return { status: (e && e.status) || 0, body: (e && e.body) || null }; }); },
       escapeHtml: function (s) { return String(s).replace(/</g, '&lt;'); } },
@@ -232,9 +230,9 @@ test.run('it asks its verbs through the spirit object, with no api.verb and no a
   if (!code) return false;
   return !/\.verb\s*\(|\bapi\.(verb|escapeHtml)\b/.test(code) ? true : false;
 }, test.limit.quick);
-test.run('it loads the jobs family\'s cache manager and the auth family\'s, with its parts', 0.2, function () {
+test.run('it requires the job and auth branches\' interfaces, spirit/job/api.js and spirit/auth/api.js, with its parts', 0.2, function () {
   if (!w) return false;
-  return w.managers.indexOf('job') !== -1 && w.managers.indexOf('auth') !== -1 ? true : false;
+  return w.required.indexOf('spirit/job/api.js') !== -1 && w.required.indexOf('spirit/auth/api.js') !== -1 ? true : false;
 }, test.limit.quick);
 test.run('it registers spirit.element.spirit.element.search.grant.grantsPanel.create', 0.2, function () {
   if (!w) return false;
@@ -630,6 +628,6 @@ test.run('Grants\' data source has moved into grantsPanel, which asks auth.revok
   return /\bauth\W{1,4}revoke\b/.test(panel) ? true : false;
 }, test.limit.quick);
 test.run('grantsPanel holds the auth cache it reads, spirit.data.auth', 0.2, function () {
-  const holds = /\bdata\.auth\b|cacheManager\s*\(\s*['"]auth['"]/.test(panel);
+  const holds = /\bdata\.auth\b|require\s*\(\s*['"]spirit\/auth\/api\.js['"]/.test(panel);
   return holds ? true : false;
 }, test.limit.quick);

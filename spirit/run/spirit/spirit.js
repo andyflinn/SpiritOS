@@ -192,11 +192,15 @@
   function text(bytes) {
     return new TextDecoder().decode(bytes);
   }
-  // A family's interface, the text api {family} answered, run as a module: its module.exports is the definition.
+  // A family's interface, the text api {family} answered, run as a module: its module.exports is the definition. What it
+  // requires as it runs is its tree, as a page script's is (requireOne): its companion data.js (goal/G47.1; Andy's rule:
+  // "every api.js requires it's companion data.js, and is the only script to require that data.js"). It answers once those have; one that fails leaves the interface standing.
   function loadInterface(source, name) {
     var m = { exports: {} };
-    new Function('module', 'exports', String(source) + '\n//# sourceURL=spirit-interface/' + name + '/api.js')(m, m.exports);
-    return m.exports;
+    var outer = collecting;
+    var tree = collecting = [];
+    try { new Function('module', 'exports', String(source) + '\n//# sourceURL=spirit-interface/' + name + '/api.js')(m, m.exports); } finally { collecting = outer; }
+    return Promise.all(tree.map(function (p) { return Promise.resolve(p).then(null, function () {}); })).then(function () { return m.exports; });
   }
 
 
@@ -400,76 +404,6 @@
     }
     return 'spirit/' + n + '/api.js';
   }
-  // A FAMILY'S data.js, FOUND BY ITS NAME (goal/G41.28; Andy: "the shell can introspect to find and download their
-  // clientCacheManagers."): data.js in the family's own folder, a node family's (spirit/<name>/) or an app's
-  // (spirit/app/<name>/, asked last, in node). cacheManager(name) loads it once through the one loader, the data set first;
-  // it stands at spirit.data.<name>. A family with none answers not-found.
-  function managerPaths(name) {
-    var n = String(name || '');
-    return ['spirit/' + n + '/data.js', 'spirit/app/' + n + '/data.js'];
-  }
-  // ON A PAGE, FOUND BY THE FOLDER SHAPE AND LOADED BY A GET (goal/G43.27, requirement 6; Andy: "spirit.js can be fixed,
-  // no? it knows the difference between an app and a system branch?"): an app's data.js is spirit/app/<name>/data.js when the app holds an api.js, a
-  // node family's spirit/<name>/data.js, and the page tells an app by the node's app list it holds (spirit.data.app, the
-  // app family's own manager, spirit/app/data.js). No family folder is asked. The one loader GETs that path, so a manager of
-  // any size travels, on loopback and through the face alike. In node, its own disk.
-  // Asked as a file runs, it is part of that file's tree: the file's require answers once it has, and a family with
-  // none fails no tree.
-  var MANAGER = 'data.js';
-  var managers = Object.create(null);
-  // THE NODE'S APPS, ASKED ONCE AND THEN FOLLOWED (goal/G43.27; Andy: "do it."): asked with app.search (the function
-  // spirit.app.searchApp, spirit/app/api.js; each item's label is its row, spirit/app.js rowOf), so nothing waits for the
-  // stream, which a page opens only once it is up. From then on the app family's cache, fed by the node's streamed apps job,
-  // is followed: a new app with an api.js reaches the finder with no reload. An answer with no app in it is asked again.
-  var appsAsked = null;
-  function appRows() {
-    if (!appsAsked) {
-      appsAsked = Promise.resolve(self.ready).then(function (s) {
-        return s && s.app && typeof s.app.searchApp === 'function' ? s.app.searchApp({ q: '' }) : null;
-      }).then(function (b) {
-        var rows = {};
-        ((b && b.items) || []).forEach(function (i) {
-          var r = null;
-          try { r = JSON.parse(i.label); } catch (e) { r = null; }
-          if (r && r.key) rows[r.key] = r;
-        });
-        if (!Object.keys(rows).length) appsAsked = null;
-        return rows;
-      }, function () { appsAsked = null; return {}; });
-      // The streamed list, loaded beside the ask and never waited for.
-      cacheManager('app').then(null, function () { /* the asked rows stand */ });
-    }
-    return appsAsked.then(function (asked) {
-      var A = self.data && self.data.app && self.data.app.data;
-      var live = A ? A.rows() : null;
-      return live && Object.keys(live).length ? live : asked;
-    });
-  }
-  function cacheManager(name) {
-    var n = String(name || '');
-    if (!/^[A-Za-z]\w*$/.test(n)) return Promise.reject(refusal('not-found', 'no family ' + name));
-    if (!managers[n]) {
-      if (isNode()) {
-        var at = managerPaths(n).filter(function (p) { return require('fs').existsSync(require('path').join(RUN_ROOT, p)); })[0];
-        // A manager is still asked for as a promise; the node's require answers it at once (goal/G43.32).
-        managers[n] = at ? new Promise(function (resolve) { resolve(requireOne(at)); }) : Promise.reject(refusal('not-found', 'the family ' + n + ' has no ' + MANAGER));
-      } else {
-        // ANDY'S RULES FOR THE FINDER (goal/G43.27): "less path elements get priority", "the target needs an api.js", and
-        // "duplicate <name>/api.js raise a red" (the tree's test). So spirit/<name>/ is the place, and spirit/app/<name>/ only
-        // for an app whose row says it holds an api.js (spirit/app.js, api): contact, a face beside the contact family, has
-        // none and leaves the name to spirit/contact/ (wsl found it at verify).
-        managers[n] = (n === 'app' ? Promise.resolve('spirit/app/' + MANAGER) : appRows().then(function (rows) {
-          var row = rows && Object.prototype.hasOwnProperty.call(rows, n) ? rows[n] : null;
-          return row && row.api === true ? 'spirit/app/' + n + '/' + MANAGER : 'spirit/' + n + '/' + MANAGER;
-        })).then(function (p) {
-          return requireOne('spirit/data.js').then(function () { return requireOne(p); });
-        });
-      }
-      managers[n].then(null, function () { /* asked again next time */ delete managers[n]; });
-    }
-    if (collecting) collecting.push(managers[n].then(null, function () {}));
-    return managers[n];
-  }
   function interfaceName(p) {
     // An app's family sits at the top of its folder, spirit/app/<name>/api.js (goal/G43.27).
     var m = /^spirit\/app\/([^/]+)\/api\.js$/.exec(p) || /^spirit\/([^/]+)\/api\.js$/.exec(p);
@@ -548,7 +482,14 @@
     }
     if (fam && key) return bindPeer(key, fam, how);
     // On a page the api.js the node handed over stands at its place once its branch is bound.
-    if (fam) return bindOwn(fam).then(function (m) { if (interfaceDefs[fam]) placeAt(required, p, interfaceDefs[fam]); return m; });
+    // Asked while a file runs, it is part of that file's tree, its companion data.js with it (goal/G47.1, Andy's rule: "every
+    // api.js requires it's companion data.js"): the file's require answers once the branch is bound; a branch that cannot be
+    // bound fails no tree.
+    if (fam) {
+      var bindsTo = bindOwn(fam).then(function (m) { if (interfaceDefs[fam]) placeAt(required, p, interfaceDefs[fam]); return m; });
+      if (collecting) collecting.push(bindsTo.then(null, function () {}));
+      return bindsTo;
+    }
     if (isNode()) {
       if (Object.prototype.hasOwnProperty.call(nodeOnce, p)) return nodeOnce[p];
       var file = require('path').join(RUN_ROOT, p);
@@ -626,7 +567,6 @@
   self.tree = tree;
   self.require = requireOne;
   self.familyPath = familyPath;
-  self.cacheManager = cacheManager;
 
   self.MIME_TYPES = MIME_TYPES;
   self.VERSION = VERSION;

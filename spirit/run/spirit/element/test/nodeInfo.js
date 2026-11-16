@@ -126,16 +126,14 @@ function world(o) {
   S.require = function (p) {
     w.required.push(String(p));
     if (opt.refuse && opt.refuse.indexOf(p) !== -1) return Promise.reject(new Error('not-found ' + p));
+    // A family's cache (goal/G41.28): a branch's interface brings its data.js, as the real api.js does; it runs once on
+    // this window over the real data set, from its path.
+    const fam = /^spirit\/([^/]+)\/api\.js$/.exec(String(p));
+    if (fam && !(S.data[fam[1]] && S.data[fam[1]].data)) vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', fam[1], 'data.js'), 'utf8'), win, { filename: 'spirit/' + fam[1] + '/data.js' });
     (FILES[p] || []).forEach(function (k) { els[k] = E[k]; });
     if (p === 'spirit/element/panel.js') els.panel = panel;
     if (p === 'spirit/element/rotateKey.js') els.rotateKey = rotateKey;
     return Promise.resolve({});
-  };
-  // A family's cache (goal/G41.28): the family's own manager, run on this window over the real data set.
-  S.cacheManager = function (name) {
-    w.managers = (w.managers || []).concat(String(name));
-    vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'data.js'), 'utf8'), win, { filename: name + '/data.js' });
-    return Promise.resolve(true);
   };
   // goal/G43.32: nodeInfo.js places itself by installSpiritElement; the recorder hands that helper to the page stand-in
   // (spirit/test/headLessChrome.js pageSpirit).
@@ -189,7 +187,8 @@ test.run('it uses neither spirit.shell.activateApp nor a dialog of the old shell
 }, test.limit.quick);
 test.run('it asks through the spirit object\'s families, never through an api, an api verb or peerPost', 0.2, function () {
   // Andy: "every fucking element gets the interfaces it needs": the spirit object's families, no api handed.
-  return (!/\bapi\s*\.|\.verb\s*\(|\bpeerPost\b/.test(CODE)) ? true : false;
+  // A branch's interface asked by its path (spirit/node/api.js) is the spirit object's family, no api object.
+  return (!/\bapi\s*\.(?!js\b)|\.verb\s*\(|\bpeerPost\b/.test(CODE)) ? true : false;
 }, test.limit.quick);
 test.run('nothing in it ticks, because it sets no timer', 0.2, function () {
   // Nothing ticks (the file's own rule): nothing here changes without this element asking.
@@ -252,9 +251,9 @@ test.run('it asks spirit.node.card once, with an empty object', 0.2, function ()
   card = w.calls.filter(function (c) { return c.name === 'node.card'; });
   return (card.length === 1 && JSON.stringify(card[0].args) === '{}') ? true : false;
 }, test.limit.quick);
-test.run('it loads the node manager, and keeps node.card\'s answer in spirit.data.node.data\'s card, which each field draws itself from', 0.2, function () {
+test.run('it requires the node interface spirit/node/api.js and no data.js, and keeps node.card\'s answer in spirit.data.node.data\'s card, which each field draws itself from', 0.2, function () {
   N = ((w.S.data || {}).node || {}).data;
-  return ((w.managers || []).indexOf('node') !== -1 && !!N && !!N.card.get() && N.card.get().name === 'Andy' && N.card.get().description === 'a node') ? true : false;
+  return (w.required.indexOf('spirit/node/api.js') !== -1 && !w.required.some(function (p) { return /data\.js$/.test(p); }) && !!N && !!N.card.get() && N.card.get().name === 'Andy' && N.card.get().description === 'a node') ? true : false;
 }, test.limit.quick);
 test.run('a card read says nothing', 0.2, function () {
   return (w.slot(host, 'said').textContent === '') ? true : false;
@@ -523,13 +522,12 @@ function formsPart() {
     S.require = function (p) {
       if (/installSpiritElement\.js$/.test(p)) return pageRequire(p);
       if (real[p]) { vm.runInContext(fs.readFileSync(path.join(RUN, p), 'utf8'), win, { filename: p }); delete real[p]; }
+      // A branch's interface brings its data.js, as the real api.js does: run once on this window from its path.
+      const fam = /^spirit\/([^/]+)\/api\.js$/.exec(String(p));
+      if (fam && !(S.data[fam[1]] && S.data[fam[1]].data)) vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', fam[1], 'data.js'), 'utf8'), win, { filename: 'spirit/' + fam[1] + '/data.js' });
       if (p === 'spirit/element/panel.js') at.panel = { create: function () { return { open: function () { return Promise.resolve({}); }, destroy: function () {} }; } };
       if (p === 'spirit/element/rotateKey.js') at.rotateKey = { create: function () { return { destroy: function () {} }; } };
       return Promise.resolve({});
-    };
-    S.cacheManager = function (name) {
-      if (!(S.data[name] && S.data[name].data)) vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'data.js'), 'utf8'), win, { filename: name + '/data.js' });
-      return Promise.resolve(true);
     };
     vm.runInContext(fs.readFileSync(path.join(EL, 'nodeInfo.js'), 'utf8'), win, { filename: 'nodeInfo.js' });
     const host = node('<div>');

@@ -4,7 +4,11 @@ The relay family: the relays this node is a member of, and his relays as a scree
 `module` and `exports` alone), every call checked by spirit.js's own check (`spirit.check`, its rules `spirit.rules`).
 `server.js` is read as text only, for the table `loopbackVerbs.mount('relay', ...)` mounts.
 
-- It runs with nothing but `module` and `exports`, and exports its table of verbs and its `names` and nothing else: it names
+- It runs with nothing but `module` and `exports` beside a page's window (planted while it runs).
+- As it loads on a page it requires its companion `spirit/relay/data.js` through `window.spirit.require`, and nothing
+  else (goal/G47.1, Andy: *"every api.js requires it's companion data.js, and is the only script to require that
+  data.js"*).
+- It exports its table of verbs and its `names` and nothing else: it names
   no family of its own (goal/G32.3: the node maps it).
 - Every argument's rule is one of spirit.js's standard rules, `?` optional.
 - **"Every verb the node mounts for this family, each argument with its rule"** (its own header): it declares exactly
@@ -18,7 +22,7 @@ The relay family: the relays this node is a member of, and his relays as a scree
 - **`names(call).status(name)`**, with a planted spirit object as the global: it lists the relays with
   `contact.search({ q: '*', relay: 'yes', keep: 'yes' })`, asked of the one spirit object (Andy: every module *"reaches
   everything through it"*); gets each relay listed by its key through the family's own call and asks it nothing else;
-  hands each answer to the relay family's cache manager to keep (goal/G41.28); answers `{ status: 200, text, body }`,
+  requires the relay family's data script, `spirit/relay/data.js`, and hands each answer to it to keep (goal/G41.28); answers `{ status: 200, text, body }`,
   `body` `{ name, rows, ownedUrls, claimedUrls, mustPick, relayStatus, more }`: rows the relays got (a refused or
   not-ok get left out), the owned urls, the owned and claimed ones, each report by key, `more` as the search said,
   and `mustPick` only when more than one is owned. A refused search answers its own status and body; a search that
@@ -29,5 +33,5 @@ The relay family: the relays this node is a member of, and his relays as a scree
 - A verb mounted and not declared, or declared and not mounted; an argument the handler reads left out, or one it never
   reads added.
 - A rule that is no standard rule, so every call of the verb is refused.
-- A `require` or a global the node's `loadInterface` does not hand it.
+- A `require` or a global the node's `loadInterface` does not hand it, beyond the page's own window.
 - `status` asking its own family for the search; a refused get breaking the list; `mustPick` true with one owned.

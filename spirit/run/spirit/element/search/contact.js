@@ -49,7 +49,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/conta
     }
     // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the one contact list, and what that list draws with, before it draws it.
     Promise.all(['spirit/element/search/contact/listElement.js', 'spirit/element/search.js', 'spirit/element/rowElement.js',
-      'spirit/element/search/contact/rowElement.js'].map(function (p) { return window.spirit.require(p); }).concat([window.spirit.cacheManager('contact')])).then(function () {
+      'spirit/element/search/contact/rowElement.js'].map(function (p) { return window.spirit.require(p); }).concat([window.spirit.require('spirit/contact/api.js')])).then(function () {
       if (gone) return;
       made = window.spirit.element.spirit.element.search.contact.listElement.create(root, {
         face: isPane ? 'pane' : 'dropdown',

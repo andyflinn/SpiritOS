@@ -7,8 +7,9 @@ was handed. The same world as the other tables' `elementRow` tests.
 
 - Before it runs there is no `spirit.element.spirit.app.agent.element.table.model.elementRow`; once it has, it stands
   there with `create`.
-- As it loads it asks for the agent family's cache manager, `spirit.cacheManager('agent')` (goal/G41.28: its table's
-  rows are the agent family's cache).
+- As it loads it requires the agent family's interface, `spirit.require('spirit/app/agent/api.js')`, which brings
+  the family's data.js with it (goal/G41.28: its table's rows are the agent family's cache); it requires no data.js
+  itself, since only an api.js requires its data.js (goal/G47.1).
 - `create(container, id, added, detail)` loads `../rowElement.js` itself (rule/26) and makes the row element in that
   container, told its table, `model`, the id, `added` true only when it is `true`, and the title row's look,
   `detail.look('model')` (null with no detail pane).

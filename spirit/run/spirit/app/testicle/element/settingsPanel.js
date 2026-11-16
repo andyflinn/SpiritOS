@@ -45,7 +45,7 @@
             if (!gone) said.textContent = String((e && e.message) || e || 'preferences failed');
           });
         } });
-      return Promise.resolve(S.cacheManager('testicle')).then(function () {
+      return Promise.resolve(S.require('spirit/app/testicle/api.js')).then(function () {
         if (gone) return;
         var P = S.data.testicle.data.preferences;
         draw(P.get());

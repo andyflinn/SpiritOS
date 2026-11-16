@@ -86,7 +86,7 @@ test.run('it requires spirit/element/nodeInfo.js, and only that', 0.2, function 
 }, test.limit.quick);
 test.run('it asks nothing itself: no verb, no api, no cache, no relay, no card', 0.2, function () {
   if (!SRC) return false;
-  return !/\.verb\s*\(|\bapi\b|\boutcome\b|\bcacheManager\b|\brelay\b|\bnode\.card\b|\bcallDialog\b|\bfetch\s*\(/.test(CODE) || false;
+  return !/\.verb\s*\(|\bapi\b|\boutcome\b|['"][^'"\n]*data\.js['"]|\brelay\b|\bnode\.card\b|\bcallDialog\b|\bfetch\s*\(/.test(CODE) || false;
 }, test.limit.quick);
 test.run('it draws no markup of its own', 0.2, function () {
   if (!SRC) return false;
@@ -273,9 +273,9 @@ const waitFor = function (expr, ms) { return H.until(function () { return R.c.ev
     const strays = named.filter(function (s) { return !/^spirit\/element\/[^]+\.js$/.test(s); });
     return asks > 0 && named.length > 0 && !strays.length ? true : false;
   }, test.limit.quick);
-  test.run('it loads no data family of its own and asks no cacheManager', 0.2, function () {
+  test.run('it loads no data family of its own, requiring no data.js', 0.2, function () {
     if (!R.c0) return false;
-    return !/\bcacheManager\s*\(/.test(R.c0) || false;
+    return !/['"][^'"\n]*data\.js['"]/.test(R.c0) || false;
   }, test.limit.quick);
   test.run('it calls no verb of its own', 0.2, function () {
     if (!R.c0) return false;

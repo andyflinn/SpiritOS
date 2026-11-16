@@ -22,7 +22,8 @@ judged in its rotate part (once `./nodeInfo-rotate.js`), the sections below.
   form and the rotate row.
 - **Its two fields are the two elements** (goal/G41.6): changeMyLabel in the name slot, changeMyDescription in the
   description slot, each made with its container alone (no api handed); each holds its own rule, check and save.
-- **The card**: it loads the node family's cache manager (`spirit.cacheManager('node')`), asks `spirit.node.card({})`
+- **The card**: it requires the node branch's interface (`spirit.require('spirit/node/api.js')`, which brings its data.js; no data.js
+  itself), asks `spirit.node.card({})`
   once and keeps the answer in `spirit.data.node.data.card` (goal/G41.28), from which each field draws itself. A refusal
   is said in the node's words and nothing is kept; no answer is said as *node.card did not answer*.
 - **No key is shown** (goal/G40.10; Andy: *"remove ANY indication of keys from all user interfaces"*): neither the

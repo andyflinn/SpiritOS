@@ -40,7 +40,7 @@ The box: *"Delete ..., and get rid of ... junk in desk"*, *"desk's face loses th
 user gets to actually press done. No verifier involvement with desk anywhere."*
 
 - **Done in a row is a plain press**: no warning mark, no arming; one press sends `press done` on that row.
-- **No Verifier tab**: the page draws no Verifier tab or pane, and loads nothing of a verifier (no cache manager of
+- **No Verifier tab**: the page draws no Verifier tab or pane, and loads nothing of a verifier (no data.js of
   one, no run status).
 
 ## What its test must try to break (no verifier in desk)

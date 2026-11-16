@@ -26,9 +26,9 @@ listElement.js and a rowElement.js script to fit within the probabilitySearch fr
   repaints; another bundle's row changes nothing.
 - No Edit and no Delete (goal/G41.32): a row pressed is the selector's, Delete is the branchEditor's.
 
-- The node's bundle rows are taken from the stream by the auth family's cache manager
-  (`spirit/run/spirit/auth/data.js`, goal/G41.28), which the row element loads itself
-  (`spirit.cacheManager('auth')`; G41.14 until then, its own translation), into `spirit.data.auth.data.bundles`: the node publishes each changed row of its two
+- The node's bundle rows are taken from the stream by the auth family's data.js
+  (`spirit/run/spirit/auth/data.js`, goal/G41.28), which comes with the auth family's interface the row element requires itself
+  (`spirit.require('spirit/auth/api.js')`, goal/G47.1: only an api.js requires its data.js; G41.14 until then, its own translation), into `spirit.data.auth.data.bundles`: the node publishes each changed row of its two
   bundle tables on one permanent job of type `bundles`, `{ table, row }`, and `{ table, row: { id }, gone: true }`. A row
   published is kept by its id, published again replaces it, gone takes it out; the other table's rows, another job's, and
   a row with no id write nothing. It requires no data script.

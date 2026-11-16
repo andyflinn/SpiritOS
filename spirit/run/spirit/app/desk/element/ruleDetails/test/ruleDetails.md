@@ -18,8 +18,8 @@ shell element armingButton (`spirit/element/armingButton.js`); the dialog keeps 
 - **Nothing hand-rolled is left**: no `data-armed`, no call to `armUntilElsewhere`, no `rdArmed`, no `armedButton`
   helper, no armed class.
 - **The rule and its chat are the desk family's cache** (goal/G41.28; Andy: *"EVERY FUCKING ELEMENT is verified to make
-  sure when it changes shit it listens to fucking update via the spirit object"*): it loads the desk manager
-  (`spirit.cacheManager('desk')`), keeps `rule.get`'s answer in `spirit.data.desk.data.rules` and `item.chat`'s under the rule
+  sure when it changes shit it listens to fucking update via the spirit object"*): it requires the desk family's interface
+  (`spirit.require('spirit/app/desk/api.js')`), which brings its data.js, and requires no data.js itself; it keeps `rule.get`'s answer in `spirit.data.desk.data.rules` and `item.chat`'s under the rule
   in its parts, and draws from `rules.watch` and `parts.watch`. It has no listener of its own on the desk's publishes.
 - **A rule row changed in the cache repaints it**; the textbox keeps his typing, and is refilled only by the row that
   comes back after his Version (`rule.version`, the textbox as it stands), never by a draft come back. Version asks

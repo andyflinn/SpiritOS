@@ -78,7 +78,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/node/
       input.value = String(card.description == null ? '' : card.description);
       count();
     }
-    root.spirit.cacheManager('node').then(function () {
+    root.spirit.require('spirit/node/api.js').then(function () {
       if (gone) return;
       stop = root.spirit.data.node.data.card.watch(show);
       show(root.spirit.data.node.data.card.get());

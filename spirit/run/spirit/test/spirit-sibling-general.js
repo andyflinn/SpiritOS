@@ -358,7 +358,7 @@ const switched = served.filter(function (b) {
   const manifest = manifestOf(b);
   return !(manifest && manifest.identity && manifest.identity.intrinsic === true);
 });
-const N = { node: null, tree: null, page: null, got: null, heard: [] };
+const N = { node: null, tree: null };
 function raw(call, args) {
   const c = new AbortController();
   const timer = setTimeout(function () { c.abort(); }, ASK_MS);
@@ -493,48 +493,11 @@ if (served.length) {
     }, test.limit.slow);
   }
 
-  // FOUND BY ITS NAME, ON A PAGE (goal/G43.27; Andy: "less path elements get priority, - the target needs an api.js"):
-  // a page asks for the branch by its name alone, spirit.cacheManager, and gets its own data.js, and no data.js that
-  // is not there.
+  // EACH data.js FETCHED BY ITS PATH (goal/G47.1, box v182: "It is loaded by that path with spirit.require, data.js exactly
+  // as api.js"; a -general test opens no browser).
   const found = served.filter(function (b) { return b.data; });
   if (found.length) {
-    test.run('a page on the scratch node asks for each branch by its name', 0.2, async function () {
-      if (!up()) return false;
-      // The node's other checks are done; the page asks last.
-      const page = N.page = await H.chromePage(H.findChrome());
-      if (!page || page.error) return false;
-      await page.send('Page.navigate', { url: N.node.base + '/' });
-      await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.ready)'); }, 30000);
-      N.got = await page.evaluate('Promise.resolve(window.spirit.ready).then(function () { return Promise.all(' + JSON.stringify(found.map(function (b) { return b.family; })) + '.map(function (n) { return window.spirit.cacheManager(n).then(function () { var f = (window.spirit.data || {})[n]; return [n, "ok", !!f && typeof f.data === "object" && typeof f.cache === "object"]; }, function () { return [n, "", false]; }); })); })');
-      N.heard = page.heard ? page.heard.filter(function (m) { return m.method === 'Network.responseReceived'; }).map(function (m) { return { url: m.params.response.url.replace(N.node.base, '').replace(/^\//, ''), status: m.params.response.status }; }) : [];
-      return true;
-    }, test.limit.slow);
-    const said = function () { const o = {}; (N.got || []).forEach(function (r) { o[r[0]] = r[1]; }); return o; };
-    const both = function () { const o = {}; (N.got || []).forEach(function (r) { o[r[0]] = r[2]; }); return o; };
-    // <branch>: found by its name
-    test.run('a page asking for its branch by its name gets its data.js', 0.4, function () {
-      if (!N.got) return false;
-      const s_ = said();
-      return overAll(found, function (b) {
-        const fetched = N.heard.some(function (a) { return a.url === b.data && a.status === 200; });
-        return (s_[b.family] === 'ok' && fetched) ? true : false;
-      });
-    }, test.limit.quick);
-    test.run('no data.js of its branch was asked that is not there (no 404)', 0.4, function () {
-      if (!N.got) return false;
-      return overAll(found, function (b) {
-        const missed = N.heard.filter(function (a) { return /(^|\/)data\.js$/.test(a.url) && a.status === 404 && a.url.split('/').slice(-2, -1)[0] === b.family; });
-        return !missed.length;
-      });
-    }, test.limit.quick);
-    // The box (goal/G43.7): "spirit.data.<name>.data" and "spirit.data.<name>.cache", on the page as in node.
-    test.run('on the page, spirit.data under its branch has data and cache', 0.4, function () {
-      if (!N.got) return false;
-      const b_ = both();
-      return overAll(found, function (b) { return b_[b.family] === true; });
-    }, test.limit.quick);
-    // The node serves each one as a script that calls spirit.data.makeFamily (was data-caches.js, 6: "the shell can
-    // introspect to find and download their clientCacheManagers.").
+    // The node serves each one, at its path, as a script that calls spirit.data.makeFamily.
     test.run('the shell downloads its data.js', 0.4, async function () {
       if (!up()) return false;
       let ok = true;
@@ -548,7 +511,6 @@ if (served.length) {
 }
 
 test.after(async function () {
-  if (N.page && N.page.kid) try { N.page.kid.kill(); } catch (e) { /* gone */ }
   // A handed node is the run's: let go, never stopped and its tree never freed.
   if (N.node && N.node.shared) { try { await N.node.release(); } catch (e) { /* the run's */ } }
   else if (N.node) {

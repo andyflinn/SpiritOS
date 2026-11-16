@@ -4,7 +4,7 @@
 // The tests of spirit/element/search/contact/rowElement.js, and of no other module: one contact as a row element (spec:
 // ./rowElement.md). The browser file runs in node on a window of its own, over the shared rowElement.js and the
 // faceless layer it reads, with the contact family's data.js (goal/G41.28) loaded as a page's
-// spirit.cacheManager('contact') loads it, the page's node known as spirit.start makes it known (spirit.node.key, then
+// spirit.require('spirit/contact/api.js') brings it, the page's node known as spirit.start makes it known (spirit.node.key, then
 // data.homeNode); the node behind spirit.ready is a recorder. After it, the parts once files of their own: noHeld (the
 // row offers no heldActions, its code read) and relayOnFace (a relay's row opens the relay on a real face, in a real
 // Chrome). The one test file of contact/rowElement.js.
@@ -24,7 +24,7 @@ function load(file) { vm.runInThisContext(fs.readFileSync(file, 'utf8'), { filen
 const asked = [];
 const layers = [];
 const required = [];
-const managers = [];
+let loaded = null;
 function verb(name) { return function (body) { asked.push({ verb: name, body: body }); return Promise.resolve({ ok: name }); }; }
 // The mounter's panel stack's open (spirit/element/panel.js): it records the layer asked for and fills a pane at once.
 function openLayer(key, spec) { layers.push({ key: key, label: spec.label }); return Promise.resolve(spec.fill({})).then(function () { return { hide: function () {}, set: function () {}, shown: function () { return true; } }; }); }
@@ -50,23 +50,26 @@ test.run('the contact row runs on a window of its own, with the data set and the
   // goal/G43.32: the helper an element places itself with comes from the page stand-in (headLessChrome.js pageSpirit).
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
   const pageRequire = window.spirit.require;
-  window.spirit.require = function (p) { required.push(p); return /installSpiritElement\.js$/.test(p) ? pageRequire(p) : Promise.resolve({}); };
+  // The contact branch's interface brings its data.js, as the real api.js does: run once from its path, attaching itself
+  // to the data set.
+  let contactData = false;
+  window.spirit.require = function (p) {
+    required.push(p);
+    if (p === 'spirit/contact/api.js') { if (!contactData) { contactData = true; load(path.join(JS, '..', '..', 'spirit', 'contact', 'data.js')); } return Promise.resolve(true); }
+    return /installSpiritElement\.js$/.test(p) ? pageRequire(p) : Promise.resolve({});
+  };
   load(path.join(JS, '..', '..', 'spirit', 'data.js'));
   // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.start asks node.card, keeps the key and hands it to the data set.
   const NODE_KEY = 'nOdE+key/one==';
   window.spirit.node = { key: NODE_KEY };
   window.spirit.data.homeNode(NODE_KEY);
-  // spirit.cacheManager(name), as a page's: the family's manager loaded once, attaching itself to the data set.
-  window.spirit.cacheManager = function (name) {
-    managers.push(String(name));
-    load(path.join(JS, '..', '..', 'spirit', String(name), 'data.js'));
-    return Promise.resolve(true);
-  };
   load(path.join(JS, 'rowElement.js'));
   load(path.join(JS, 'search', 'contact', 'rowElement.js'));
   C = window.spirit.element.spirit.element.search.contact.rowElement;
   D = window.spirit.data;
   CD = ((window.spirit.data || {}).contact || {}).data;
+  // What the row asked as it loaded; the runner's own asks after this test are not the row's.
+  loaded = required.slice();
   // The direct writes below are the contact family's own view of the home node, as its manager files them.
   V = D.viewAt(null, 'contact');
   return true;
@@ -98,8 +101,8 @@ test.run('a row carrying publicKey instead of key is keyed by it', 0.2, function
   const byPublic = C.create({ publicKey: 'K9', keep: true });
   return byPublic.key === 'K9' ? true : false;
 }, test.limit.quick);
-test.run('the row loads the contact family\'s cache manager, which puts the contact family\'s data in spirit.data on the page', 0.2, function () {
-  return managers.indexOf('contact') !== -1 && CD && typeof CD.contact === 'function' ? true : false;
+test.run('the row requires the contact interface spirit/contact/api.js, which puts the contact family\'s data in spirit.data on the page', 0.2, function () {
+  return required.indexOf('spirit/contact/api.js') !== -1 && CD && typeof CD.contact === 'function' ? true : false;
 }, test.limit.quick);
 
 // the actions ask the node, and paint nothing
@@ -258,11 +261,12 @@ test.run('a row not in the book and a relay expand to nothing, asking nothing', 
 // ── WHAT THE STREAM MEANS FOR CONTACTS, IN THE TYPE'S OWN ELEMENT (goal/G41.16; Andy: "get rid of thos FUCKING data.js
 // scripts, DIDN't WE INSIST on the PROPER way to do this shit?"). The contacts' translation, spirit/element/search/contact/data.js
 // until then, was the row element's (G30.18: "rowElements carry the listeners and painters a subject needs for real-time
-// updates"), and is since goal/G41.28 the contact family's cache manager's, which the row element loads: no data script required.
+// updates"), and is since goal/G41.28 the contact family's cache manager's (spirit/contact/data.js), which only its api.js
+// requires: the row element requires no data script.
 // the type's own element takes the contacts' stream: no data script
-test.run('the contact row element requires no data script', 0.2, function () {
-  if (!C) return false;
-  return !required.some(function (p) { return /data\.js$/.test(p); }) ? true : false;
+test.run('as it loads, the contact row element requires no data script', 0.2, function () {
+  if (!C || !loaded) return false;
+  return !loaded.some(function (p) { return /data\.js$/.test(p); }) ? true : false;
 }, test.limit.quick);
 const row = function (k) { return CD.contact(k); };
 // relay-presence sets present, by key

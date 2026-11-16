@@ -32,7 +32,7 @@
   // jobs family's interface, spirit/job/api.js, whose cancel and delete its buttons call (Andy, goal/G47.1: "JUST BECAUSE api
   // branches are intrinsic doesn't fucking mean the browser has interfaces for them already loaded, EVERY FUCKING ELEMENT
   // REQUIRES THE FUCKING INTERFACES IT FUCKING NEEDS").
-  var parts = Promise.all([S.require('spirit/element/codeMirror.js'), S.cacheManager('job'), S.require('spirit/job/api.js')]);
+  var parts = Promise.all([S.require('spirit/element/codeMirror.js'), S.require('spirit/job/api.js'), S.require('spirit/job/api.js')]);
 
   function esc(s) { return S.escapeHtml(String(s == null ? '' : s)); }
 

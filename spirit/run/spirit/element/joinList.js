@@ -133,7 +133,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
     Promise.resolve(S.ready).then(function (s) { return s.fs.loadFile(STEPS); }).then(function (text) {
       try { steps = (JSON.parse(text) || {}).steps || []; } catch (e) { steps = []; }
     }, function () { steps = []; }).then(function () { return parts; }).then(function () {
-      return S.cacheManager('job');
+      return S.require('spirit/job/api.js');
     }).then(function () {
       if (gone) return;
       var J = ((S.data || {}).job || {}).data;

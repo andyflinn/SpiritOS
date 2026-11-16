@@ -7,7 +7,8 @@
 // a branch under the node that served it, the rows the server publishes merged in, every suite made once from its rows,
 // and the monitor's one row. It runs as a page runs it: in a window of its own beside the real spirit.data
 // (spirit/data.js), which it writes into; the rows are handed in as the stream hands them, jobs of module
-// spirit.app.testicle. In node it is asked through spirit.cacheManager. One test.run per test (goal/G47.2).
+// spirit.app.testicle. In node it is loaded by its api.js, spirit/app/testicle/api.js, the one script that requires it.
+// One test.run per test (goal/G47.2).
 
 const fs = require('fs');
 const path = require('path');
@@ -200,11 +201,11 @@ test.run('a row from another node is kept under that node', 0.2, function () {
   return (!!r && at('script', 'spirit/far.js') === undefined) || false;
 }, test.limit.quick);
 
-// ── in node, found by the family's name ──
-test.run('in node, spirit.cacheManager loads it by the name testicle, and it stands at spirit.data.testicle.data', 0.2, async function () {
+// ── in node, loaded by its api.js, the one script that requires it (goal/G47.1) ──
+test.run('in node, requiring spirit/app/testicle/api.js loads it, and it stands at spirit.data.testicle.data', 0.2, async function () {
   require(path.join(RUN, 'spirit', 'spirit.js'));
   const s = globalThis.spirit;
-  try { await s.cacheManager('testicle'); } catch (e) { return false; }
+  try { require(path.join(RUN, 'spirit', 'app', 'testicle', 'api.js')); } catch (e) { return false; }
   const T = s.data && s.data.testicle && s.data.testicle.data;
   return (!!T && typeof T.keep === 'function' && !!T.monitor) || false;
 }, test.limit.quick);

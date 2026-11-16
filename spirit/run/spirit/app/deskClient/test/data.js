@@ -5,8 +5,8 @@
 // "every production script has its own test" (goal/G47.1, box v72).
 // What a client knows of the deskClient family (goal/G41.28): nothing yet. Andy: "WSL, make sure you assert that every
 // family in the api tree HAS a clientCacheManager"; so it stands, keeps nothing and names no branch. It runs as a page runs
-// it: in a window of its own beside the real spirit.data (spirit/data.js). In node it is asked through
-// spirit.cacheManager. One test.run per test (goal/G47.2).
+// it: in a window of its own beside the real spirit.data (spirit/data.js). In node it is loaded by its api.js,
+// spirit/app/deskClient/api.js, the one script that requires it. One test.run per test (goal/G47.2).
 
 const fs = require('fs');
 const path = require('path');
@@ -51,11 +51,11 @@ test.run('a job of deskClient on the stream writes nothing, because the family t
   return (Object.keys(kept).length === 0 && Object.keys(W.F.cache).length === 0) || false;
 }, test.limit.quick);
 
-// ── in node, found by the family's name ──
-test.run('in node, spirit.cacheManager(\'deskClient\') finds it, and the family stands at spirit.data.deskClient', 0.2, async function () {
+// ── in node, loaded by its api.js, the one script that requires it (goal/G47.1) ──
+test.run('in node, requiring spirit/app/deskClient/api.js loads it, and the family stands at spirit.data.deskClient', 0.2, async function () {
   require(path.join(RUN, 'spirit', 'spirit.js'));
   const s = globalThis.spirit;
-  try { await s.cacheManager('deskClient'); } catch (e) { return false; }
+  try { require(path.join(RUN, 'spirit', 'app', 'deskClient', 'api.js')); } catch (e) { return false; }
   const F = s.data && s.data.deskClient;
   return (!!F && !!F.data && Object.keys(F.data).length === 0) || false;
 }, test.limit.quick);

@@ -24,12 +24,10 @@ const at = function (place) { return String(place).split('.').reduce(function (o
 
 // ── the world: a window of its own, the row element a stand-in ──
 // W.made: each row element made, { container, o, destroyed }. W.held: while set, the row element's file has not loaded yet.
-const W = { required: [], managers: [], made: [], held: null };
+const W = { required: [], made: [], held: null };
 function world() {
   global.window = { spirit: { elements: {}, get element() { return this.elements; }, set element(v) { this.elements = v; }, familyPath: familyPath, isBrowser: function () { return false; } } };
   global.spirit = global.window.spirit;
-  // A family's cache manager, asked by name (spirit.cacheManager, goal/G41.28): each ask kept.
-  global.window.spirit.cacheManager = function (name) { W.managers.push(String(name)); return Promise.resolve({}); };
   const helper = require(path.join(RUN, 'spirit', 'element', 'installSpiritElement.js'));
   // The tables' row element, as its own file places itself: by the one helper, at spirit.element.<its path>.
   helper(global.window.spirit, ROW, { create: function (container, o) { const m = { container: container, o: o, destroyed: false, destroy: function () { m.destroyed = true; } }; W.made.push(m); return m; } });
@@ -59,15 +57,18 @@ test.run('before it runs, the page has no provider row element', 0.2, function (
 }, test.limit.quick);
 test.run('it places spirit.element.spirit.app.agent.element.table.provider.elementRow, with create', 0.2, async function () {
   if (!W.up) return false;
+  // What the element requires is what is asked from here on: the runner's own requires before it are not the element's.
+  W.from = W.required.length;
   load(FILE);
   await settle();
   E.row = at('spirit.app.agent.element.table.provider.elementRow');
   return (!!E.row && typeof E.row.create === 'function') || false;
 }, test.limit.quick);
 // "Its table's rows are the agent family's cache (goal/G41.28) ... it is loaded here, with this element."
-test.run('as it loads, it asks spirit.cacheManager for the agent family\'s cache manager', 0.2, function () {
+test.run('as it loads, it requires the agent family\'s interface, spirit/app/agent/api.js, and no data.js', 0.2, function () {
   if (!W.up) return false;
-  return W.managers.indexOf('agent') !== -1 || false;
+  const own = W.required.slice(W.from || 0);
+  return (own.indexOf('spirit/app/agent/api.js') !== -1 && !own.some(function (p) { return /data\.js$/.test(p); })) || false;
 }, test.limit.quick);
 
 // ── create(container, id, added, detail): the row element, handed the provider table's fields ──

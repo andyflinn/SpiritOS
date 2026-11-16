@@ -7,16 +7,16 @@ dropdown, with its filter. Its test is `./listElement.js`.
 Andy, box: *"the branchSelector element will use the standard apiFamilySelector and apiVerbSelector elements as pickers
 for family and verb search filters, if no valid family is selected, the verb selector is invisible, set to \"(ALL)\"."*,
 and since: *"apiFamiliySelector.js will use apiVerbSelector as part of itself"*: the family selector carries the verb.
-Since goal/G41.14 it is a view of the node's branches (since goal/G41.28 the auth family's cache manager's,
-`spirit.data.auth.data.branches.branch`), kept current by the node's stream, which the auth family's cache manager takes in (no data script, Andy: *"NO FUCKING DATA SCRIPT"*, *"THAT FUCKING ELEMENTS carry THEIR FUCKING DESCRIPTIONS"*), so every
+Since goal/G41.14 it is a view of the node's branches (since goal/G41.28 the auth family's data.js's,
+`spirit.data.auth.data.branches.branch`), kept current by the node's stream, which the auth family's data.js takes in (no data script required by the list, Andy: *"NO FUCKING DATA SCRIPT"*, *"THAT FUCKING ELEMENTS carry THEIR FUCKING DESCRIPTIONS"*), so every
 list of branches on a page shows the same rows (Andy: *"EVERY FUCKING element MUST FUCKING LISTING to anything that changes
 their data set"*).
 
 ## Requirements
 
 - It loads what it uses itself (rule/26): `spirit/element/search.js`, `spirit/element/search/branch/rowElement.js`,
-  `spirit/element/search/api.js` and `spirit/element/search/api/verb.js`, and the auth family's cache manager
-  (`spirit.cacheManager('auth')`).
+  `spirit/element/search/api.js` and `spirit/element/search/api/verb.js`, and the auth family's interface, `spirit/auth/api.js`, which brings its data.js; it requires no
+  data script itself (goal/G47.1: only an api.js requires its companion data.js).
 - It registers `spirit.element.search.branch.listElement.create(host, opts)`, answering `{ list, refresh(), destroy() }`.
 - It makes one family selector, `spirit.element.search.api.create(…)` (the shell's element shape, goal/G41.19), and hands it
   to its one probabilitySearch in `host` as a selector, for the search's 🪣 row, with a name and a test narrowing by

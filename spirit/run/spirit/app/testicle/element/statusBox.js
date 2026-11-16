@@ -22,7 +22,7 @@
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26; Andy: "the fucking status box must require the fucking api and make sure the
   // fucking data.js is installed"): the icon element, spirit.data, testicle's interface and testicle's cache manager, its
   // data.js, which the page's one stream feeds. Mounted alone, it gets its data by itself.
-  var parts = Promise.all([S.require('spirit/element/icon.js'), S.require('spirit/data.js'), S.require('spirit/app/testicle/api.js'), S.require('spirit/app/testicle/words.js'), S.cacheManager('testicle')]);
+  var parts = Promise.all([S.require('spirit/element/icon.js'), S.require('spirit/data.js'), S.require('spirit/app/testicle/api.js'), S.require('spirit/app/testicle/words.js'), S.require('spirit/app/testicle/api.js')]);
   // Its words testicle's own (goal/G47.1; ../words.js): every line it shows worded there, none here.
   function W() { return S.required.spirit.app.testicle.words; }
   parts.catch(function () {});

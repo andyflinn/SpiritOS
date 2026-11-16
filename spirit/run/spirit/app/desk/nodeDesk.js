@@ -3261,7 +3261,7 @@ function pressCheck(a) {
 // current goal pushed whole again"; after this desk's own start every client is one that was away from it.
 if (S.current) setImmediate(function () { pushGoalWhole(S.current); });
 // The node's grants: read each time the stream comes up, a restart of the node included, and followed from then on.
-Promise.resolve(spirit.cacheManager('auth')).then(function () {
+Promise.resolve(spirit.require('spirit/auth/api.js')).then(function () {
   spirit.data.auth.data.grants.watch(grantChanged);
   spirit.data.followStream({ onConnection: function (up) { if (up) readGrants(); } });
 }).catch(function (e) { console.error('desk: the grants cannot be followed: ' + ((e && e.message) || e)); });

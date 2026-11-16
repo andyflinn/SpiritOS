@@ -79,7 +79,7 @@ Done: its test runs from its new place, and `shell/` is gone. Their checks are d
 
 #### 6. A wrapper of spirit/element/
 
-- `grants.js` loads only `spirit/element/` scripts, through `spirit.require`; asks no cacheManager; calls no verb (`.verb(`, `spirit.outcome`, `callDialog`, `fetch`, relay.status, node.card, auth.search/grant/revoke); draws no markup of its own.
+- `grants.js` loads only `spirit/element/` scripts, through `spirit.require`; names no `data.js` script (no data family of its own); calls no verb (`.verb(`, `spirit.outcome`, `callDialog`, `fetch`, relay.status, node.card, auth.search/grant/revoke); draws no markup of its own.
 - (Grants' data source, in grantsPanel, is the authSource part of `spirit/element/search/grant/test/grantsPanel.js`.)
 
 #### 7. The new shell's way

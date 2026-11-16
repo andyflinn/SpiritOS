@@ -11,6 +11,10 @@
 // desk.js serves (goal/G40.12, his alone), are not listed here, so the spirit object has no checked call for them; nor
 // is the optional autoAttach that desk.js's rule.add and rule.version take, so a call through the spirit object that
 // sends it is refused before it leaves.
+// ITS COMPANION data.js, REQUIRED HERE AND NOWHERE ELSE (goal/G47.1; Andy's rule: "every api.js requires it's companion
+// data.js, and is the only script to require that data.js"): whoever requires this branch has its data with it, on a page
+// (spirit.js runs this file there, with no require of its own, and waits for what it asks) and in node.
+if (typeof require === 'function') require('../../spirit.js').require('spirit/app/desk/data.js'); else window.spirit.require('spirit/app/desk/data.js');
 module.exports = {
   verbs: {
     // Only listening or working; the server refuses any other word.

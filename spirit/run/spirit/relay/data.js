@@ -2,7 +2,7 @@
 // spirit/run/spirit/relay/data.js
 // WHAT A CLIENT KNOWS OF ITS NODE'S RELAYS, IN THE relay FAMILY'S OWN FOLDER (goal/G41.28). Andy: "anything not using the
 // new spiritData.js and it's buddies clientCacheManager.js must do so in this item. no exceptions." A page or process
-// loads it through spirit.cacheManager('relay'); it keeps what relay.get answered in that client's spirit.data, under
+// loads it through its api.js (spirit/relay/api.js), the one file that requires it; it keeps what relay.get answered in that client's spirit.data, under
 // the node that served it.
 //
 // THE BRANCH IS THIS FILE'S, AND ONLY THIS FILE NAMES IT: every reader asks spirit.data.relay.data (below), never a branch by
@@ -10,9 +10,12 @@
 // what relay.get adds to it.
 //   relayRows   the relay's key (its url) -> { relay, report } as relay.get last answered them
 // The node publishes no relay.get answer, so it translates nothing: spirit.relay.status keeps each one it got (keep).
-(function () {
+(function family() {
   var ROWS = 'relayRows';
   var D = typeof window !== 'undefined' ? window.spirit.data : require('../spirit.js').require('spirit/data.js');
+  // THE DATA SET IT FILES INTO, REQUIRED BY ITSELF (goal/G47.1, box v182: "It is loaded by that path with spirit.require,
+  // data.js exactly as api.js"): on a page that has not loaded spirit/data.js yet, this file loads it and runs again.
+  if (!D) { window.spirit.require('spirit/data.js').then(family); return; }
   D.makeFamily('relay', function () {
     var HOME = D.viewAt(null, 'relay');
     // THE READS AND THE ONE WRITE:

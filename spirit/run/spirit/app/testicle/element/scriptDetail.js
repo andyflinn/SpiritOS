@@ -19,7 +19,7 @@
   // display"; box v140; rule 26): testicle's api.js and its cache manager, data.js, which the page's one stream feeds; mounted
   // alone, on a page nothing else loaded them on, it has them.
   if (window.spirit && typeof window.spirit.require === 'function') Promise.resolve(window.spirit.require('spirit/app/testicle/api.js')).catch(function () {});
-  if (window.spirit && typeof window.spirit.cacheManager === 'function') Promise.resolve(window.spirit.cacheManager('testicle')).catch(function () {});
+  if (window.spirit && typeof window.spirit.require === 'function') Promise.resolve(window.spirit.require('spirit/app/testicle/api.js')).catch(function () {});
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the suite search and testicle's interface.
   var parts = Promise.all(['spirit/app/testicle/element/search/suite.js', 'spirit/app/testicle/api.js'].map(function (p) { return S.require(p); }));
@@ -45,7 +45,7 @@
         if (gone || !F) return;
         ownLine.textContent = F.ready() && !F.file(own) ? own : '';
       };
-      Promise.resolve(S.cacheManager('fs')).then(function () {
+      Promise.resolve(S.require('spirit/fs/api.js')).then(function () {
         if (gone) return;
         drawOwn();
         release = S.data.fs.data.watch(function (p) { if (!p || p === own) drawOwn(); });

@@ -185,7 +185,7 @@ test.run('elementTable.js and elementRow.js place the agent app\'s model list an
     busyButton: { attach: function (button, opts) { const a = { button: button, opts: opts || {}, answers: [] }; made.busy.push(a); button.addEventListener('click', function () { if (typeof a.opts.run === 'function') a.answers.push(a.opts.run()); }); return button; } },
     // The agent tables' shared search (../../tableElement.js, agentDetail.search), the providerSelector it makes: a
     // stand-in that hands the search element what the real one does (rule/29): its data the table's branch, as the agent
-    // family's cache manager names it (spirit.data.agent.data.branch, goal/G41.28).
+    // branch's data.js names it (spirit.data.agent.data.branch, goal/G41.28).
     agentDetail: { search: function (host, o2, more) { const E2 = global.window.spirit.element.spirit.element; const AD2 = ((global.window.spirit.data || {}).agent || {}).data; const s3 = E2.search.create(host, Object.assign({ server: 'agent', verb: o2.table, data: AD2 ? AD2.branch(o2.table) : '' }, more || {})); s3.refresh(); return s3; } },
     agentTable: { create: function (c, o) { made.tables.push({ c: c, o: o }); return { refresh: function () { made.refreshed = true; }, destroy: function () { made.destroyed = true; } }; } },
     agentRow: { create: function (c, o) { made.rows.push({ c: c, o: o }); return { destroy: function () {} }; } },
@@ -196,17 +196,25 @@ test.run('elementTable.js and elementRow.js place the agent app\'s model list an
     element: { search: STAND.search, rowForm: STAND.rowForm, busyButton: STAND.busyButton },
     app: { agent: { element: { table: { tableElement: Object.assign({}, STAND.agentDetail, STAND.agentTable), rowElement: STAND.agentRow } } } } } } } };
   global.spirit = global.window.spirit;
-  global.window.spirit.require = function (p) { made.required.push(String(p)); return Promise.resolve(p === AGENT ? made.family : true); };
+  // The page's one loader: asked for a branch's api.js, it runs that branch's real data.js once, as the real api.js
+  // requires its companion data.js; the data set (spirit/data.js) is run below.
+  const ran = {};
+  global.window.spirit.require = function (p) {
+    made.required.push(String(p));
+    const m = /^spirit\/(.+)\/api\.js$/.exec(String(p));
+    const companion = m ? 'spirit/' + m[1] + '/data.js' : '';
+    if (companion && !ran[companion] && fs.existsSync(path.join(RUN, companion))) { ran[companion] = true; vm.runInThisContext(fs.readFileSync(path.join(RUN, companion), 'utf8'), { filename: path.join(RUN, companion) }); }
+    return Promise.resolve(p === AGENT ? made.family : true);
+  };
   // The page's spirit.require answers the helper, so each file places itself by installSpiritElement as it runs
   // (spirit/test/headLessChrome.js pageSpirit).
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(global.window.spirit);
   // The page's one data set (spirit/data.js), which spirit.js brings with the client: the stream lands there, under
-  // the node that served it (goal/G41.28), the page's own once node.card has answered, kept as spirit.node.key. A family's
-  // cache manager is found by spirit.cacheManager(name), the real one, which in node reads it from its own disk.
+  // the node that served it (goal/G41.28), the page's own once node.card has answered, kept as spirit.node.key. A branch's
+  // data.js is loaded by its api.js, through the stand-in above.
   vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });
   global.window.spirit.node = { key: HOME_KEY };
   global.window.spirit.data.homeNode(HOME_KEY);
-  global.window.spirit.cacheManager = require(path.join(RUN, 'spirit', 'spirit.js')).cacheManager;
   ['elementTable.js', 'elementRow.js'].forEach(function (f) { vm.runInThisContext(fs.readFileSync(path.join(EL, f), 'utf8'), { filename: path.join(EL, f) }); });
   const T = global.window.spirit.element.spirit.app.agent.element.table.model || {};
   X.E = { modelTable: T.elementTable, modelRow: T.elementRow };
@@ -356,18 +364,18 @@ test.run('the provider is picked from a search of the provider table', 0.2, func
   return provField && provField.pick === 'provider' ? true : false;
 }, test.limit.quick);
 
-// ── elementRow.js loads the agent family's cache manager, which takes the model table's rows from the stream (goal/G41.16, G41.28) ──
+// ── elementRow.js requires the agent branch's api.js, whose data.js takes the model table's rows from the stream (goal/G41.16, G41.28) ──
 // Andy: "get rid of thos FUCKING data.js scripts, DIDN't WE INSIST on the PROPER way to do this shit?": what the stream
 // means for this table, spirit/app/agent/table/data.js until G41.16, is the agent family's data.js's
-// (spirit/app/agent/data.js, goal/G41.28), loaded with the row element; it files the rows under the
+// (spirit/app/agent/data.js, goal/G41.28), which only its api.js requires (goal/G47.1); it files the rows under the
 // node that served them, and is read through spirit.data.agent.data.
 const job = function (agent, module) { return { id: 'job-agent', module: module || 'spirit.app.agent', data: {}, app: { agent: agent } }; };
 test.run('its page files require no data script', 0.2, function () {
   if (!X.made) return false;
   return !X.made.required.some(function (p) { return (/data\.js$/).test(p); }) ? true : false;
 }, test.limit.quick);
-test.run('the agent family\'s cache manager is loaded, and its model branch is the home node\'s agent/model branch', 0.2, function () {
-  if (!X.made) return false;
+test.run('the page files require spirit/app/agent/api.js, and its model branch is the home node\'s agent/model branch', 0.2, function () {
+  if (!X.made || X.made.required.indexOf('spirit/app/agent/api.js') === -1) return false;
   const DATA = global.window.spirit.data;
   const AD = X.AD = ((global.window.spirit.data || {}).agent || {}).data;
   X.BRANCH = DATA.nodeId(HOME_KEY) + '/agent/model';

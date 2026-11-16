@@ -10,7 +10,7 @@
 (function () {
   window.spirit.require('spirit/element/rowForm.js');
   window.spirit.require('spirit/element/fieldInput.js');
-  window.spirit.cacheManager('app');
+  window.spirit.require('spirit/app/api.js');
 
   function create(host, options) {
     var S = window.spirit;

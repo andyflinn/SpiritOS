@@ -52,8 +52,8 @@ function world(join) {
       fs: { loadFile: function () { return Promise.resolve(fs.readFileSync(STEPS, 'utf8')); } },
       relay: { status: function () { return Promise.resolve({ body: { rows: [] } }); } },
     }),
-    cacheManager: function () { return Promise.resolve(); },
-    // The parts it draws with: joinSteps the real one, run in this window; the forms and the icon are not judged here.
+    // The parts it draws with: joinSteps the real one, run in this window; the forms and the icon are not judged here, nor
+    // the job branch's api.js, whose data.js's reads stand above as spirit.data.job.data.
     require: function (p) {
       if (p === 'spirit/element/joinSteps.js') vm.runInContext(fs.readFileSync(path.join(RUN, p), 'utf8'), win, { filename: p });
       return Promise.resolve({});

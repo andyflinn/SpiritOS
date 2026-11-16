@@ -15,7 +15,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/job/a
 (function () {
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
-  var parts = Promise.all([S.require('spirit/element/search/valued.js'), S.cacheManager('job')]);
+  var parts = Promise.all([S.require('spirit/element/search/valued.js'), S.require('spirit/job/api.js')]);
   var COLUMNS = [
     { field: 'group', label: 'Group', sort: 'text' },
     { field: 'name', label: 'Name', sort: 'text' },

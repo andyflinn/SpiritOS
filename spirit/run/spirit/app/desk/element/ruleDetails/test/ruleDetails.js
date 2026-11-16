@@ -8,7 +8,7 @@
 // pressed once on the real page with nothing happening. The browser file runs in node
 // on a window of its own: the app's api records every verb; armingButton is a stub that keeps every button made or
 // attached with what it was handed, so each two-press button's run is driven here as its second press would. The page's
-// one data set and the desk family's cache manager are the real ones (spirit/run/spirit/data.js, spirit/app/desk/data.js).
+// one data set and the desk family's data.js, brought by its api.js, are the real ones (spirit/run/spirit/data.js, spirit/app/desk/data.js).
 
 const FILE = require('path').join(__dirname, '..', 'ruleDetails.js');
 const fs = require('fs');
@@ -80,15 +80,16 @@ function world(answer) {
   win.window = win;
   // goal/G43.32: the arming button stands where ruleDetails.js reads it, spirit.element.spirit.element.armingButton.
   win.spirit = { element: { spirit: { element: { armingButton: stub }, app: {} } },
-    require: function (p) { w.required.push(String(p).replace(/^\/+/, '')); return Promise.resolve({}); },
-    // A family's cache (goal/G41.28): the family's own manager, run on this window over the real data set.
-    cacheManager: function (name) {
-      w.managers = (w.managers || []).concat(name);
-      // An app's manager sits in its own folder, spirit/app/<name>/ (goal/G43.27), a server's too (goal/G43.20); a node
-      // family's in spirit/<name>/.
-      const app = path.join(RUN, 'spirit', 'app', String(name), 'data.js');
-      vm.runInContext(fs.readFileSync(fs.existsSync(app) ? app : path.join(RUN, 'spirit', String(name), 'data.js'), 'utf8'), win, { filename: name + '/data.js' });
-      return Promise.resolve(true);
+    // A branch's api.js brings its companion data.js, as the real api.js does (goal/G47.1: "every api.js requires it's
+    // companion data.js"): the stand-in runs that data.js on this window over the real data set. A data.js asked for
+    // directly is only recorded.
+    require: function (p) {
+      const at = String(p).replace(/^\/+/, '');
+      w.required.push(at);
+      const branch = (/^(spirit\/(?:app\/)?[^/]+)\/api\.js$/.exec(at) || [])[1];
+      const data = branch ? path.join(RUN, branch, 'data.js') : '';
+      if (data && fs.existsSync(data)) vm.runInContext(fs.readFileSync(data, 'utf8'), win, { filename: data });
+      return Promise.resolve({});
     } };
   vm.createContext(win);
   // The page's one data set, its node known (goal/G41.28, Q10), as spirit.start leaves it before any app runs.
@@ -195,14 +196,14 @@ test.run('only Activate and Delete arm', 0.2, function () {
 // Andy: "EVERY FUCKING ELEMENT is verified to make sure when it changes shit it listens to fucking update via the
 // spirit object" (goal/G41.28).
 // the rule and its chat are the desk family's cache, and it draws from its watches (goal/G41.28)
-test.run('it loads the desk family\'s cache manager, spirit.data.desk.data', 0.2, async function () {
+test.run('it requires the desk family\'s interface, spirit/app/desk/api.js, and no data.js, and the desk data it brings stands at spirit.data.desk.data', 0.2, async function () {
   if (noE()) return false;
   // A dialog of its own, opened anew: no version pending from the runs above.
   W.v = world(answer);
   await W.v.make(node('container'), { key: 'rule/7', via: W.v.api });
   await settle();
   W.K = ((W.v.win.spirit.data || {}).desk || {}).data;
-  return ((W.v.managers || []).indexOf('desk') !== -1 && !!W.K) || false;
+  return (W.v.required.indexOf('spirit/app/desk/api.js') !== -1 && !W.v.required.some(function (p) { return /data\.js$/.test(p); }) && !!W.K) || false;
 }, test.limit.quick);
 test.run('the answer of rule.get is kept in spirit.data.desk.data', 0.2, function () {
   if (noK()) return false;

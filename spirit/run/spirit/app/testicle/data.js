@@ -1,7 +1,7 @@
 'use strict';
 // spirit/run/spirit/app/testicle/data.js
 // WHAT A CLIENT KNOWS OF TESTICLE'S SERVER, IN THE testicle FAMILY'S OWN FOLDER (goal/G41.28, goal/G47.1). A page loads it
-// through spirit.cacheManager('testicle'); it runs the translator into that page's spirit.data, under the node that served
+// through its api.js (spirit/app/testicle/api.js), the one file that requires it; it runs the translator into that page's spirit.data, under the node that served
 // the rows.
 //
 // THE BRANCHES ARE THIS FILE'S, AND ONLY THIS FILE NAMES THEM: every reader (the suite search, testicle's face) asks
@@ -15,7 +15,7 @@
 // course, publishes changes." The server publishes each row it writes, its job's app { testicle: { table, row } }
 // (testicle.js), as the agent's tables publish theirs: the row is merged into its table's branch, so a list that is a view
 // of the branch follows it. What a search answers is kept the same way (keep).
-(function () {
+(function family() {
   var TABLES = ['script', 'suite', 'testicle'];
   // The monitor's one row, in its own branch (spirit.data keeps rows as branch/key): what the stream last said of busy and
   // of the last change.
@@ -23,6 +23,9 @@
   // The preferences, one row of their own: what the preferences verb answered last, or the stream told since.
   var PREFERENCES = 'preferences/now';
   var D = typeof window !== 'undefined' ? window.spirit.data : require('../../spirit.js').require('spirit/data.js');
+  // THE DATA SET IT FILES INTO, REQUIRED BY ITSELF (goal/G47.1, box v182: "It is loaded by that path with spirit.require,
+  // data.js exactly as api.js"): on a page that has not loaded spirit/data.js yet, this file loads it and runs again.
+  if (!D) { window.spirit.require('spirit/data.js').then(family); return; }
   D.makeFamily('testicle', function () {
     var HOME = D.viewAt(null, 'testicle');
     // A TEST ROW KEPT WITH ITS FILE NAMES, scriptName and suiteName, the last part of each path: the testicle search shows and

@@ -31,7 +31,7 @@ function node(tag) {
 function within(root, x) { if (root === x) return true; return (root.kids || []).some(function (k) { return within(k, x); }); }
 
 // One test.run per test (goal/G47.2). What the world and the tests make, for the tests after them.
-let asked, required, lists, families, managers, E, host, made, l, o, fam, sel;
+let asked, required, loaded, lists, families, E, host, made, l, o, fam, sel;
 const listed = function () { return E && E.search && E.search.branch && E.search.branch.listElement && typeof E.search.branch.listElement.create === 'function'; };
 
 test.run('the list runs on a bare window, with the page\'s data set real', 0.2, async function () {
@@ -46,8 +46,8 @@ test.run('the list runs on a bare window, with the page\'s data set real', 0.2, 
       const l = { host: host, o: o, refreshes: 0, destroyed: false, refresh: function () { l.refreshes += 1; }, redraw: function () {}, destroy: function () { l.destroyed = true; } };
       lists.push(l); return l;
     } }); },
-    // The real row element loads the auth family's cache manager as it runs (goal/G41.28); its stand-in does the same.
-    'spirit/element/search/branch/rowElement.js': function (E) { global.window.spirit.cacheManager('auth'); require(path.join(RUN, 'spirit', 'element', 'installSpiritElement.js'))(global.window.spirit, 'spirit/element/search/branch/rowElement.js', { create: function (row) { return { kind: 'branch', row: row }; } }); },
+    // The real row element requires the auth family's api.js as it runs (goal/G41.28, G47.1); its stand-in does the same.
+    'spirit/element/search/branch/rowElement.js': function (E) { global.window.spirit.require('spirit/auth/api.js'); require(path.join(RUN, 'spirit', 'element', 'installSpiritElement.js'))(global.window.spirit, 'spirit/element/search/branch/rowElement.js', { create: function (row) { return { kind: 'branch', row: row }; } }); },
     // The shell's element shape (goal/G41.19): create(container, options) appends the control and answers it.
     'spirit/element/search/api.js': function (E) { (E.search = E.search || {}).api = { create: function (c, o) { const f = node('family'); f.o = o || {}; f.container = c; f.family = ''; f.verb = ''; families.push(f); c.appendChild(f); return f; } }; },
   };
@@ -64,24 +64,31 @@ test.run('the list runs on a bare window, with the page\'s data set real', 0.2, 
   const NODE_KEY = 'nOdE+key/one==';
   global.window.spirit.node = { key: NODE_KEY };
   DATA.homeNode(NODE_KEY);
-  // spirit.cacheManager(name), as a page's: the family's manager loaded once, attaching itself to the data set.
-  managers = [];
-  global.window.spirit.cacheManager = function (name) {
-    managers.push(String(name));
-    vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'data.js'), 'utf8'), { filename: name + '/data.js' });
-    return Promise.resolve(true);
-  };
-  global.window.spirit.require = function (p) { required.push(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.element.spirit = global.window.spirit.element.spirit || {}).element = global.window.spirit.element.spirit.element || {})); } return Promise.resolve(true); };
+  // The auth family's api.js requires its companion data.js, as the real one does: the real file run once, attaching
+  // itself to the data set.
+  let ran = false;
+  global.window.spirit.require = function (p) { required.push(String(p)); if (p === 'spirit/auth/api.js' && !ran) { ran = true; vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'auth', 'data.js'), 'utf8'), { filename: 'spirit/auth/data.js' }); } if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.element.spirit = global.window.spirit.element.spirit || {}).element = global.window.spirit.element.spirit.element || {})); } return Promise.resolve(true); };
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
   E = ((global.window.spirit.element || {}).spirit || {}).element || {};
+  // What was asked as it loaded, kept apart from what this process asks later (the runner's own reports go through the
+  // same window.spirit.require).
+  loaded = required.slice();
   return true;
 }, test.limit.quick);
 
 // it loads what it uses itself (rule/26)
-test.run('it requires the search element, its row element and the family selector through spirit.require, and no data script', 0.2, function () {
+test.run('it requires the search element, its row element and the family selector through spirit.require', 0.2, function () {
   if (!required) return false;
-  return ['spirit/element/search.js', 'spirit/element/search/branch/rowElement.js', 'spirit/element/search/api.js'].every(function (p) { return required.indexOf(p) !== -1; }) && !required.some(function (p) { return /data\.js$/.test(p); }) ? true : false;
+  return ['spirit/element/search.js', 'spirit/element/search/branch/rowElement.js', 'spirit/element/search/api.js'].every(function (p) { return required.indexOf(p) !== -1; }) ? true : false;
+}, test.limit.quick);
+test.run('it requires the auth family\'s interface, spirit/auth/api.js', 0.2, function () {
+  if (!loaded) return false;
+  return loaded.indexOf('spirit/auth/api.js') !== -1 || false;
+}, test.limit.quick);
+test.run('as it loads, it requires no data script, as only an api.js requires its data.js', 0.2, function () {
+  if (!loaded) return false;
+  return !loaded.some(function (p) { return /data\.js$/.test(p); }) ? true : false;
 }, test.limit.quick);
 test.run('it registers spirit.element.spirit.element.search.branch.listElement.create', 0.2, function () {
   if (!E) return false;
@@ -103,7 +110,7 @@ test.run('it fills as soon as it is drawn', 0.2, function () {
   return l.refreshes >= 1 ? true : false;
 }, test.limit.quick);
 // goal/G41.14: a view of the node's branches, kept current by the node's stream, so every branch list on a page agrees;
-// goal/G41.28: the branch the auth family's cache manager keeps.
+// goal/G41.28: the branch the auth family's data.js keeps.
 test.run('it is a view of the auth family\'s branches as kept in the spirit object\'s cache', 0.2, function () {
   if (!l) return false;
   const B = ((global.window.spirit.data || {}).auth || {}).data && global.window.spirit.data.auth.data.branches;

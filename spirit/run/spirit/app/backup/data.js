@@ -8,10 +8,13 @@
 // (below), never a branch by name.
 //   backupStatus   'now' -> the status as status.get last answered it { lastCheck, lastCopy, ... }
 // The server publishes no row of its own, so it translates nothing: a reader keeps what its status.get answered (keep).
-(function () {
+(function family() {
   var STATUS = 'backupStatus';
   var NOW = 'now';
   var D = typeof window !== 'undefined' ? window.spirit.data : require('../../spirit.js').require('spirit/data.js');
+  // THE DATA SET IT FILES INTO, REQUIRED BY ITSELF (goal/G47.1, box v182: "It is loaded by that path with spirit.require,
+  // data.js exactly as api.js"): on a page that has not loaded spirit/data.js yet, this file loads it and runs again.
+  if (!D) { window.spirit.require('spirit/data.js').then(family); return; }
   D.makeFamily('backup', function () {
     var HOME = D.viewAt(null, 'backup');
     // THE READS AND THE ONE WRITE:

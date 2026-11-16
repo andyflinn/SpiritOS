@@ -2,7 +2,7 @@
 // spirit/run/spirit/app/chat/data.js
 // WHAT A CLIENT KNOWS OF THE CHATS, IN THE chat BRANCH'S OWN FOLDER (goal/G41.28; the branch is chat since goal/G43.31). Andy: "anything not using the
 // new spiritData.js and it's buddies clientCacheManager.js must do so in this item. no exceptions." A page loads it
-// through spirit.cacheManager('chat'); it keeps the chats' lines in that page's spirit.data, under the node that
+// through its api.js (spirit/app/chat/api.js), the one file that requires it; it keeps the chats' lines in that page's spirit.data, under the node that
 // served them.
 //
 // THE BRANCH IS THIS FILE'S, AND ONLY THIS FILE NAMES IT: every reader (Chatter's window and its search) asks
@@ -11,7 +11,7 @@
 //   chats   peer -> that chat's row as chats.search answers it { at, sent, seq, unanswered }
 // Every line the server publishes ({ line }, goal/G4.2: each kept line, written or received, and each change of a
 // written line's mark) is kept as it came; a reader seats the lines a read or a search answered (keep). It asks nothing.
-(function () {
+(function family() {
   var LINES = 'lines';
   var CHATS = 'chats';
   function keyOf(peer, sent, seq) { return String(peer) + '\n' + Number(sent) + ':' + Number(seq); }
@@ -20,6 +20,9 @@
       receivedAt: String(l.receivedAt || ''), re: l.re || { writer: '', seq: 0 }, refused: String(l.refused || '') };
   }
   var D = typeof window !== 'undefined' ? window.spirit.data : require('../../spirit.js').require('spirit/data.js');
+  // THE DATA SET IT FILES INTO, REQUIRED BY ITSELF (goal/G47.1, box v182: "It is loaded by that path with spirit.require,
+  // data.js exactly as api.js"): on a page that has not loaded spirit/data.js yet, this file loads it and runs again.
+  if (!D) { window.spirit.require('spirit/data.js').then(family); return; }
   D.makeFamily('chat', function () {
     var HOME = D.viewAt(null, 'chat');
     function put(V, peer, l) {

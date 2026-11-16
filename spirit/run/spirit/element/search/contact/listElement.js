@@ -48,7 +48,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/conta
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree...."): its tree, through spirit.require.
   if (window.spirit.require) ['spirit/element/search/contact/rowElement.js', 'spirit/element/search.js', 'spirit/element/rowElement.js'].forEach(function (p) { window.spirit.require(p); });
   // The contacts it is a view of are the contact family's cache (goal/G41.28), its manager loaded with it.
-  window.spirit.cacheManager('contact');
+  window.spirit.require('spirit/contact/api.js');
   // ICONS AS THEMSELVES (goal/G30.21): the glyph is written, never a key into a table.
   // A row with that flag: mine, blocked, or relay.
   function is(kind) {

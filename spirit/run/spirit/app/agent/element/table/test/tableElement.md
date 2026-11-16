@@ -19,7 +19,7 @@ the table)"*.
   - `fieldLine(label, input)`: the label at its own width, 1em, then the input to the pane's right edge (*"with only the
     1em between the inputs label and the input itself"*).
   - `search(host, o, more)`: the one table search, for lists and pickers alike.
-  - `branchOf(table)` is the home node's `<node>/agent/<table>`, as the agent family's cache manager names it
+  - `branchOf(table)` is the home node's `<node>/agent/<table>`, as the agent family's data.js names it
     (`spirit.data.agent.data.branch`, goal/G41.28). With no agent family's cache on the page (its server not running on the
     node) it refuses and says why: no list is drawn without its branch.
   - `whyOf(refusal)` is the server's own reason (its `extra.why`), else the refusal's words, else `refused`.
@@ -45,9 +45,9 @@ the table)"*.
   - Unconfigured (no `table`), it says it is not configured and throws nothing; its `destroy` empties the box
     (goal/G41.19).
 
-- It requires no data script (goal/G41.16): the agent family's cache manager
-  (`spirit/app/agent/data.js`, goal/G41.28), asked for by the element as it runs, takes the tables'
-  rows from the stream into `<node>/agent/<table>`.
+- It requires the agent family's interface, `spirit/app/agent/api.js`, and no data script (goal/G41.16; goal/G47.1:
+  only an api.js requires its companion data.js): that api.js brings `spirit/app/agent/data.js` (goal/G41.28), which
+  takes the tables' rows from the stream into `<node>/agent/<table>`.
 
 ### Add (goal/G41.21, box v23)
 

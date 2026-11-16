@@ -127,8 +127,8 @@ Andy, the box: *"anything not using the new spiritData.js and it's buddies clien
 item. no exceptions."*
 
 - Every list pane the app drew is a view of its table in the agent family's cache: it is handed that table's branch,
-  `spirit.data.agent.data.branch(table)`. The page runs the real data set, its node known, and the families' own managers
-  (`spirit.cacheManager(name)`).
+  `spirit.data.agent.data.branch(table)`. The page runs the real data set, its node known, and each branch's data.js,
+  which only its api.js requires (`spirit.require('spirit/app/agent/api.js')`, goal/G47.1).
 
 ### What its test must try to break
 

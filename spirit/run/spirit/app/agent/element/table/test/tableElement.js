@@ -94,12 +94,12 @@ test.run('the shared element runs on a window of its own, over the real spirit.d
   load(path.join(RUN, 'spirit', 'data.js'));
   D = global.window.spirit.data;
   // THE WINDOW AS THE PAGE NOW STARTS (goal/G41.28): the data set knows its home node, the page's own, from node.card,
-  // kept as spirit.node.key; a family's cache manager is found by spirit.cacheManager(name), the real one, which in node
-  // reads it from its own disk. The agent family's (spirit/app/agent/data.js) keeps the tables'
+  // kept as spirit.node.key; the agent family's api.js, asked of the stand-in require below, brings its companion data.js
+  // with it, the real file run once from disk, as the real api.js does. That data.js (spirit/app/agent/data.js) keeps the tables'
   // branches, <node>/agent/<table>, and answers them through spirit.data.agent.data.
   global.window.spirit.node = { key: HOME_KEY };
   D.homeNode(HOME_KEY);
-  global.window.spirit.cacheManager = require(path.join(RUN, 'spirit', 'spirit.js')).cacheManager;
+  const ran = {};
   BRANCH = function (table) { return D.nodeId(HOME_KEY) + '/agent/' + table; };
   // The node's bundles (auth.bundle, the one dictionary of bundles): get answers a bundle the node has, refuses one it
   // has not; each ask kept.
@@ -113,6 +113,8 @@ test.run('the shared element runs on a window of its own, over the real spirit.d
   const PE = function () { const e = global.window.spirit.element; e.spirit = e.spirit || {}; e.spirit.element = e.spirit.element || {}; return e.spirit.element; };
   global.window.spirit.require = function (p) {
     w.required.push(String(p));
+    // The agent family's api.js requires its companion data.js, as the real one does: the real file, run once.
+    if (p === AGENT && !ran[p]) { ran[p] = true; load(path.join(RUN, 'spirit', 'app', 'agent', 'data.js')); }
     // The bundle selector (goal/G41.21), tested in its own folder: a stand-in on the page once it is asked for, keeping
     // what it was handed.
     // The are-you-sure button (spirit/element/armingButton.js), tested in its own folder: a stand-in whose first press arms and
@@ -142,11 +144,14 @@ test.run('the shared element runs on a window of its own, over the real spirit.d
   // The shell's element shape (goal/G41.19): create(container, options) appends the dropdown and answers it.
   PE().search.icon = { create: function (c, opts) { const sel = { value: (opts && opts.value) || '', opts: opts, container: c }; w.icons.push(sel); c.appendChild(sel); return sel; } };
   load(FILE);
-  // The element asks for the agent family's cache manager as it runs; the page has it once the element's tree has loaded.
+  // The element requires the agent family's api.js as it runs, and with it its data.js, once the element's tree has loaded.
   await settle();
   AT = (((((global.window.spirit.element.spirit || {}).app || {}).agent || {}).element || {}).table || {});
   E.agentTable = AT.tableElement;
   AD = AT.tableElement || {};
+  // What it asked as it loaded, kept apart from what this process asks later (the runner's own reports to testicle go
+  // through the same window.spirit.require).
+  w.loaded = w.required.slice();
   return true;
 }, test.limit.quick);
 // One file, one element (goal/G41.28; the general test: a file registers one element): the row's editor is
@@ -161,11 +166,16 @@ test.run('beside create it places titleRow, fieldLine, stretch, search, branchOf
   return ['titleRow', 'fieldLine', 'search', 'branchOf', 'whyOf'].every(function (k) { return typeof AD[k] === 'function'; }) && typeof AD.stretch === 'string'
     ? true : false;
 }, test.limit.quick);
-// goal/G41.16, Andy: "get rid of thos FUCKING data.js scripts": the shared element requires no data script; the agent
-// family's data.js (spirit/app/agent/data.js, goal/G41.28) takes the rows from the stream, asked for by cacheManager.
-test.run('it requires no data script, as each table\'s row element takes its own rows from the stream', 0.2, function () {
-  if (!w) return false;
-  return !w.required.some(function (p) { return (/data\.js$/).test(p); }) ? true : false;
+// goal/G41.16, Andy: "get rid of thos FUCKING data.js scripts"; goal/G47.1, Andy: "every api.js requires it's companion
+// data.js, and is the only script to require that data.js": the element requires the agent family's api.js, whose
+// data.js (spirit/app/agent/data.js) takes the rows from the stream.
+test.run('as it loads, it requires the agent family\'s interface, spirit/app/agent/api.js', 0.2, function () {
+  if (!w || !w.loaded) return false;
+  return w.loaded.indexOf('spirit/app/agent/api.js') !== -1 || false;
+}, test.limit.quick);
+test.run('as it loads, it requires no data script, as only an api.js requires its data.js', 0.2, function () {
+  if (!w || !w.loaded) return false;
+  return !w.loaded.some(function (p) { return (/data\.js$/).test(p); }) ? true : false;
 }, test.limit.quick);
 
 // ── the shared pieces ──

@@ -18,7 +18,7 @@
   var parts = Promise.all([window.spirit.require ? window.spirit.require('spirit/element/search.js') : null,
     window.spirit.require ? window.spirit.require('spirit/element/search/api/listElement.js') : null,
     window.spirit.require ? window.spirit.require('spirit/client/apiTreeIndex.js') : null,
-    window.spirit.cacheManager('node')]);
+    window.spirit.require('spirit/node/api.js')]);
 
   function createApiVerbSelector(options) {
     options = options || {};

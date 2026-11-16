@@ -51,7 +51,7 @@ var chIconPart = window.spirit && typeof window.spirit.require === 'function'
 // chat's cache manager; none is left to another part having loaded it first.
 var chInterfaces = window.spirit && typeof window.spirit.require === 'function'
   ? Promise.all(['spirit/app/chat/api.js', 'spirit/node/api.js', 'spirit/contact/api.js'].map(function (p) { return Promise.resolve(window.spirit.require(p)).catch(function () {}); })
-    .concat([typeof window.spirit.cacheManager === 'function' ? Promise.resolve(window.spirit.cacheManager('chat')).catch(function () {}) : null]))
+    .concat([typeof window.spirit.require === 'function' ? Promise.resolve(window.spirit.require('spirit/app/chat/api.js')).catch(function () {}) : null]))
   : Promise.resolve();
 
 // THE LINES ARE THE chat BRANCH'S CACHE (goal/G41.28; Andy: "anything not using the new spiritData.js and it's
@@ -570,7 +570,7 @@ function chMount(container) {
         actions: [],
       });
     }
-    Promise.all([spirit.require('spirit/element/search.js'), spirit.require('spirit/element/rowElement.js'), spirit.cacheManager('chat')]).then(function () {
+    Promise.all([spirit.require('spirit/element/search.js'), spirit.require('spirit/element/rowElement.js'), spirit.require('spirit/app/chat/api.js')]).then(function () {
       var C = chData();
       if (!C) return;
       chSearch = window.spirit.element.spirit.element.search.create(chEl('ch-search'), {
@@ -656,7 +656,7 @@ function chMount(container) {
     // contact list (goal/G43.32), whose rows paint each contact's dot from the contact family's cache themselves.
 
     // The lines as the chat branch's cache keeps them: placed in the open chat as they change, an arrival read.
-    Promise.resolve(spirit.cacheManager('chat')).then(function () {
+    Promise.resolve(spirit.require('spirit/app/chat/api.js')).then(function () {
       var C = chData();
       if (!C) return;
       chKeep(C.watch(function (peer, line) { if (peer && peer === chPeer) chUpsert(line); }));
@@ -665,7 +665,7 @@ function chMount(container) {
     // THE STREAM BACK AFTER A DROP (Andy: "this should work without a hickup"): spirit.data forgets what it kept on a
     // reconnect, and the chat branch's cache says so (forgot), so the chats and the open chat are asked again. The element
     // takes no stream of its own (only spirit.data does).
-    Promise.resolve(spirit.cacheManager('chat')).then(function () {
+    Promise.resolve(spirit.require('spirit/app/chat/api.js')).then(function () {
       var C = chData();
       if (C && typeof C.forgot === 'function') chKeep(C.forgot(function () { if (chPane) chPane.refresh(); chMarkChats(); if (chPeer) chOpen(chPeer); }));
     }, function () { /* nothing kept, nothing forgotten */ });

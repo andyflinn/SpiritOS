@@ -27,7 +27,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/auth/
   // A NODE'S BRANCHES ARE THE auth FAMILY'S CACHE (goal/G41.28): what a branch row on the stream means, and its branch,
   // are the family's own data.js's (spirit/auth/data.js), which this element loads itself
   // (rule/26), as part of its tree; a row reads spirit.data.auth.data.branches.
-  var authReady = Promise.resolve(window.spirit.cacheManager('auth')).then(function () { return window.spirit.data.auth.data.branches; });
+  var authReady = Promise.resolve(window.spirit.require('spirit/auth/api.js')).then(function () { return window.spirit.data.auth.data.branches; });
   // THE KIND'S INDEX: one watch on the branches for every branch row on the page, each change to the rows of that key;
   // its release answered to the index, which lets it go with the kind's last row.
   var branches = null;

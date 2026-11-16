@@ -5,7 +5,7 @@
 // create hands the search element, a row's button and a pressed row (spec: ./listElement.md).
 // The browser file runs in node on a window of its own; probabilitySearch is a recorder in its place, so this tests the
 // list and not the search under it; the rows are the real contact row element (search/contact/rowElement.js), over the real data set
-// and the contact family's data.js (goal/G41.28), loaded as a page's spirit.cacheManager('contact') loads it,
+// and the contact family's data.js (goal/G41.28), loaded by its api.js as a page's spirit.require('spirit/contact/api.js') loads it,
 // the page's node known as spirit.start makes it known (spirit.node.key, then data.homeNode).
 
 const fs = require('fs');
@@ -21,12 +21,12 @@ const tick = function () { return new Promise(function (r) { setTimeout(r, 0); }
 const asked = [];
 const required = [];
 const subscribers = [];
-const managers = [];
 const clicks = [];
 const said = [];
 const added = [];
 let searchAnswer = { items: [{ key: 'K1' }], more: true };
 let made = null;
+let atLoad = null;
 let L = null, F = null, dataSubscribed = 0, pane = null, o = null, CD = null, el = null, r0 = 0, mo = null, to = null, tg = null, trow = null;
 
 test.run('the contacts list runs on a window of its own, with its row element and the data set real', 0.2, function () {
@@ -76,7 +76,16 @@ test.run('the contacts list runs on a window of its own, with its row element an
   // packet.js above takes the real spirit.js, whose require is the node's; the page stand-in goes back on top of it.
   require(path.join(__dirname, '..', '..', '..', '..', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
   const pageRequire = window.spirit.require;
-  window.spirit.require = function (p) { required.push(p); return /installSpiritElement\.js$/.test(p) ? pageRequire(p) : Promise.resolve({}); };
+  // A branch's api.js (spirit.require('spirit/contact/api.js')): its real companion data.js runs once, attaching itself to
+  // the data set loaded below, as the real api.js requires it (goal/G47.1).
+  const ran = {};
+  window.spirit.require = function (p) {
+    required.push(p);
+    const m = /^spirit\/(.+)\/api\.js$/.exec(String(p));
+    const companion = m ? 'spirit/' + m[1] + '/data.js' : '';
+    if (companion && !ran[companion] && fs.existsSync(path.join(JS, '..', '..', companion))) { ran[companion] = true; load(path.join(JS, '..', '..', companion)); }
+    return /installSpiritElement\.js$/.test(p) ? pageRequire(p) : Promise.resolve({});
+  };
   // The page's stream, a recorder: who subscribes to it (goal/G41.28: no client but spirit.data takes it itself).
   window.spirit.event = { subscribe: function (h) { subscribers.push(h); return function () {}; } };
   load(path.join(JS, '..', '..', 'spirit', 'data.js'));
@@ -84,26 +93,24 @@ test.run('the contacts list runs on a window of its own, with its row element an
   const NODE_KEY = 'nOdE+key/one==';
   window.spirit.node = { key: NODE_KEY };
   window.spirit.data.homeNode(NODE_KEY);
-  // spirit.cacheManager(name), as a page's: the family's manager loaded once, attaching itself to the data set.
-  window.spirit.cacheManager = function (name) {
-    managers.push(String(name));
-    load(path.join(JS, '..', '..', 'spirit', String(name), 'data.js'));
-    return Promise.resolve(true);
-  };
   load(path.join(JS, 'rowElement.js'));
   load(path.join(JS, 'search', 'contact', 'rowElement.js'));
   dataSubscribed = subscribers.length;
   load(path.join(JS, 'search', 'contact', 'listElement.js'));
+  // What the list and its parts required as they loaded, before the suite's own report to testicle requires anything.
+  atLoad = required.slice();
   L = window.spirit.element.spirit.element.search.contact.listElement;
   F = {}; L.filters.forEach(function (f) { F[f.name] = f; });
   return true;
 }, test.limit.quick);
 
 // it loads what it uses
-// goal/G41.16: no data script; what the stream means for contacts is the contact family's manager's (goal/G41.28).
+// goal/G41.16: no data script; what the stream means for contacts is the contact branch's data.js's (goal/G41.28), which
+// only its api.js requires (goal/G47.1).
 test.run('when it loads, it requires its row and the search element through spirit.require, and no data script', 0.2, function () {
   const own = ['spirit/element/search/contact/rowElement.js', 'spirit/element/search.js'];
-  return own.every(function (p) { return required.indexOf(p) !== -1; }) && !required.some(function (p) { return /data\.js$/.test(p); }) ? true : false;
+  if (!atLoad) return false;
+  return own.every(function (p) { return atLoad.indexOf(p) !== -1; }) && !atLoad.some(function (p) { return /data\.js$/.test(p); }) ? true : false;
 }, test.limit.quick);
 
 // the show filter: all, then each kind the list holds
@@ -147,7 +154,7 @@ test.run('the list is a view of the contact family\'s contacts in spirit.data.co
   pane = L.create(host, { open: openLayer, say: function (t) { said.push(t); }, onAdded: function (r) { added.push(r); } });
   o = made.opts;
   CD = ((window.spirit.data || {}).contact || {}).data;
-  return managers.indexOf('contact') !== -1 && CD && typeof CD.branch === 'string' && CD.branch !== '' && o.data === CD.branch && Array.isArray(o.filters) && o.filters.length === L.filters.length && L.filters.every(function (f, i) { return o.filters[i] === f; }) && o.columns.map(function (c) { return c.field; }).join(',') === 'presence,status,label,add'
+  return required.indexOf('spirit/contact/api.js') !== -1 && CD && typeof CD.branch === 'string' && CD.branch !== '' && o.data === CD.branch && Array.isArray(o.filters) && o.filters.length === L.filters.length && L.filters.every(function (f, i) { return o.filters[i] === f; }) && o.columns.map(function (c) { return c.field; }).join(',') === 'presence,status,label,add'
     ? true : false;
 }, test.limit.quick);
 test.run('it fills as soon as it is drawn: one refresh at create', 0.2, function () {

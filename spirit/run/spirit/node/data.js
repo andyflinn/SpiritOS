@@ -2,7 +2,7 @@
 // spirit/run/spirit/node/data.js
 // WHAT A CLIENT KNOWS OF A NODE ITSELF, IN THE node FAMILY'S OWN FOLDER (goal/G41.28). Andy: "We're not done until every
 // family of the API tree as a clientCacheManager, and clients can use that to organize their spirit.data". A page loads
-// it through spirit.cacheManager('node'); it keeps what the node said of itself in that page's spirit.data, under the
+// it through its api.js (spirit/node/api.js), the one file that requires it; it keeps what the node said of itself in that page's spirit.data, under the
 // node.
 //
 // THE BRANCHES ARE THIS FILE'S, AND ONLY THIS FILE NAMES THEM: every reader (the app-server, family and verb selectors)
@@ -14,11 +14,14 @@
 // (spirit.tree) and hands it here; read again, the tree replaces both branches whole. This file asks nothing.
 //   nodeCard   'self' -> { name, description }, what the node says of itself, as node.card answered it and each save
 //              (node.setName, node.setDescription) stored it; Info keeps both here and draws its fields from it
-(function () {
+(function family() {
   var TREE = 'apiTree';
   var VERBS = 'apiVerbs';
   var CARD = 'nodeCard';
   var D = typeof window !== 'undefined' ? window.spirit.data : require('../spirit.js').require('spirit/data.js');
+  // THE DATA SET IT FILES INTO, REQUIRED BY ITSELF (goal/G47.1, box v182: "It is loaded by that path with spirit.require,
+  // data.js exactly as api.js"): on a page that has not loaded spirit/data.js yet, this file loads it and runs again.
+  if (!D) { window.spirit.require('spirit/data.js').then(family); return; }
   D.makeFamily('node', function () {
     var HOME = D.viewAt(null, 'node');
     // THE READS AND THE ONE WRITE:

@@ -24,7 +24,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/auth/
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.require.
   var parts = Promise.all(['spirit/element/search/api.js', 'spirit/element/search/branch.js', 'spirit/element/rowForm.js'].map(function (p) {
     return window.spirit.require ? window.spirit.require(p) : null;
-  }).concat([window.spirit.require ? window.spirit.require('spirit/element/armingButton.js') : null, window.spirit.cacheManager('auth')]));
+  }).concat([window.spirit.require ? window.spirit.require('spirit/element/armingButton.js') : null, window.spirit.require('spirit/auth/api.js')]));
 
   function mount(box, o) {
     var E = window.spirit.element;

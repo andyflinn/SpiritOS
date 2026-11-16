@@ -3,8 +3,8 @@
 // spirit/run/spirit/element/search/file/test/rowElement.js
 // The tests of spirit/element/search/file/rowElement.js, and of no other module (spec: ./rowElement.md; goal/G30.18, goal/G41.16).
 // The browser file runs in node on a BARE window (rule/26): nothing is on the page until the row requires it. The shared
-// row element and the page's data set are real, and so is the fs family's data.js (goal/G41.28), loaded as a
-// page's spirit.cacheManager('fs') loads it, the page's node known as spirit.start makes it known (spirit.node.key, then
+// row element and the page's data set are real, and so is the fs family's data.js (goal/G41.28), brought by the fs
+// family's api.js the row requires, the page's node known as spirit.start makes it known (spirit.node.key, then
 // data.homeNode); the node's fs family is the spirit object's, each call recorded.
 
 const fs = require('fs');
@@ -17,7 +17,7 @@ const FILE = path.join(RUN, 'spirit', 'element', 'search', 'file', 'rowElement.j
 const settle = async function () { for (let i = 0; i < 20; i++) await new Promise(function (r) { setImmediate(r); }); };
 
 // One test.run per test (goal/G47.2). What the world and the tests make, for the tests after them.
-let asked, required, D, managers, E, F, el, hosts, page, node, put, del, row;
+let asked, required, loaded, D, E, F, el, hosts, page, node, put, del, row;
 const cmd = function (c) { return { id: 'spirit.fs', data: { command: c } }; };
 const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 function cellsOf(x) { const c = {}; (x.cells() || []).forEach(function (k) { c[k.name] = k.html; }); return c; }
@@ -36,8 +36,9 @@ test.run('the row runs on a bare window, with the page\'s real data set', 0.2, a
   const STANDS = { 'spirit/element/rowElement.js': function () { vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'element', 'rowElement.js'), 'utf8'), { filename: 'rowElement.js' }); },
     // What says a file's kind (goal/G43.17), the real one, should the row ask it.
     'spirit/element/fstat.js': function () { const f = path.join(RUN, 'spirit', 'element', 'fstat.js'); if (fs.existsSync(f)) vm.runInThisContext(fs.readFileSync(f, 'utf8'), { filename: 'fstat.js' }); } };
-  global.window = { spirit: { escapeHtml: function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }, formatBytes: function (n) { return n + ' Bytes'; },
-    ready: Promise.resolve({ fs: fsFamily }), fs: fsFamily, element: {},
+  // escapeHtml and formatBytes are the spirit object's own: spirit.js fills this object with them as the element helper
+  // loads it, as on a page.
+  global.window = { spirit: { ready: Promise.resolve({ fs: fsFamily }), fs: fsFamily, element: {},
     // The page's table of types, as spirit.js puts it on the spirit object.
     MIME_TYPES: { '.html': 'text/html; charset=utf-8', '.txt': 'text/plain; charset=utf-8', '.png': 'image/png', '.mp4': 'video/mp4', '.mp3': 'audio/mpeg' } } };
   global.spirit = global.window.spirit;
@@ -49,29 +50,29 @@ test.run('the row runs on a bare window, with the page\'s real data set', 0.2, a
   const NODE_KEY = 'nOdE+key/one==';
   global.window.spirit.node = { key: NODE_KEY };
   D.homeNode(NODE_KEY);
-  // spirit.cacheManager(name), as a page's: the family's manager loaded once, attaching itself to the data set.
-  managers = [];
-  global.window.spirit.cacheManager = function (name) {
-    managers.push(String(name));
-    vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'data.js'), 'utf8'), { filename: name + '/data.js' });
-    return Promise.resolve(true);
-  };
-  global.window.spirit.require = function (p) { required.push(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](); } return Promise.resolve(true); };
+  // A branch's api.js brings its companion data.js, as the real api.js does (goal/G47.1: "every api.js requires it's
+  // companion data.js"): the stand-in runs that data.js once, attaching itself to the data set. A data.js asked for
+  // directly is only recorded.
+  const ran = {};
+  const dataScript = function (p) { const b = (/^(spirit\/(?:app\/)?[^/]+)\/api\.js$/.exec(p) || [])[1]; const f = b ? path.join(RUN, b, 'data.js') : ''; if (f && !ran[f] && fs.existsSync(f)) { ran[f] = true; vm.runInThisContext(fs.readFileSync(f, 'utf8'), { filename: f }); } };
+  global.window.spirit.require = function (p) { required.push(String(p)); dataScript(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](); } return Promise.resolve(true); };
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
   E = ((global.window.spirit.element || {}).spirit || {}).element || {};
   F = ((global.window.spirit.data || {}).fs || {}).data;
+  // What the file required as it ran, kept apart from what the runner asks of the page later.
+  loaded = required.slice();
   return true;
 }, test.limit.quick);
 
 // it loads what it uses itself (rule/26)
 test.run('it requires the shared row element, and no data script', 0.2, function () {
-  if (!required) return false;
-  return required.indexOf('spirit/element/rowElement.js') !== -1 && !required.some(function (p) { return /data\.js$/.test(p); }) ? true : false;
+  if (!loaded) return false;
+  return loaded.indexOf('spirit/element/rowElement.js') !== -1 && !loaded.some(function (p) { return /data\.js$/.test(p); }) ? true : false;
 }, test.limit.quick);
-test.run('it loads the fs family\'s cache manager, which puts the fs family\'s data on the page', 0.2, function () {
-  if (!managers) return false;
-  return managers.indexOf('fs') !== -1 && F && typeof F.file === 'function' ? true : false;
+test.run('it requires the fs family\'s interface, spirit/fs/api.js, whose data.js puts the fs family\'s data on the page', 0.2, function () {
+  if (!loaded) return false;
+  return loaded.indexOf('spirit/fs/api.js') !== -1 && F && typeof F.file === 'function' ? true : false;
 }, test.limit.quick);
 test.run('it registers its create on spirit.element at its own path', 0.2, function () {
   if (!F || typeof F.file !== 'function') return false;
@@ -81,7 +82,7 @@ test.run('it registers its create on spirit.element at its own path', 0.2, funct
 // what the fs-watcher's stream means for data.files, in the type's own element (goal/G41.16)
 // Andy: "get rid of thos FUCKING data.js scripts, DIDN't WE INSIST on the PROPER way to do this shit?": the file tree's
 // translation, spirit/element/search/file/data.js until G41.16, was this element's (G30.18), and is since goal/G41.28 the
-// fs family's cache manager's, which it loads.
+// fs family's data.js's, which the fs api.js it requires brings.
 test.run('before the tree is whole, data.files is not ready', 0.2, function () {
   if (noRow()) return false;
   return F.ready() !== true ? true : false;
@@ -145,12 +146,12 @@ test.run('its fields are name, size and changed', 0.2, function () {
 test.run('the name cell shows a text file\'s icon 📜, where it lives, and its name, escaped', 0.2, function () {
   if (!el) return false;
   const cells = cellsOf(el);
-  return /📜/.test(cells.name) && /page&lt;1>\.html/.test(cells.name) && /web\//.test(cells.name) && !/<1>/.test(cells.name) ? true : false;
+  return /📜/.test(cells.name) && /page&lt;1&gt;\.html/.test(cells.name) && /web\//.test(cells.name) && !/<1>/.test(cells.name) ? true : false;
 }, test.limit.quick);
 test.run('its size is shown through formatBytes, and its time to the minute', 0.2, function () {
   if (!el) return false;
   const cells = cellsOf(el);
-  return cells.size === '2048 Bytes' && cells.changed === '2030-01-02 03:04' ? true : false;
+  return cells.size === '2 KB' && cells.size === global.window.spirit.formatBytes(2048) && cells.changed === '2030-01-02 03:04' ? true : false;
 }, test.limit.quick);
 test.run('a folder shows its icon and no size', 0.2, function () {
   if (noRow()) return false;
@@ -179,7 +180,7 @@ test.run('when its path in data.files changes, the row repaints its size', 0.2, 
   el.mount(hosts);
   D.takeJob(cmd({ op: 'changeFile', path: 'web/page<1>.html', size: 4096, modified: '2030-01-02T03:04:00Z', core: false }));
   await settle();
-  return el.row.size === 4096 && hosts.size.innerHTML === '4096 Bytes' ? true : false;
+  return el.row.size === 4096 && hosts.size.innerHTML === '4 KB' ? true : false;
 }, test.limit.quick);
 test.run('when its path is gone from data.files, the row is marked gone', 0.2, async function () {
   if (!el || !hosts) return false;
@@ -236,6 +237,10 @@ test.run('a scratch node comes up with its DEBUG on, and Chrome opens the words 
   await page.send('Page.navigate', { url: node.base + '/DEBUG/spirit/element/search/file/test/rowElement-words.html' });
   await H.until(function () { return page.evaluate('typeof window.ready === "function" && !!window.spirit').then(Boolean); }, H.WAIT);
   await page.evaluate('window.ready()');
+  // The families these rows are coloured by are on the page the normal way: spirit.app and spirit.contact, each by
+  // requiring its api.js (which brings its data.js). This page requires nothing else, and a family no file required is
+  // not on the spirit object.
+  await page.evaluate('Promise.all([window.spirit.require("spirit/app/api.js"), window.spirit.require("spirit/contact/api.js")]).then(function () { return true; }, function () { return false; })');
   row = async function (p, kind) { try { return JSON.parse(await page.evaluate('window.row(' + JSON.stringify(p) + ', ' + JSON.stringify(kind || 'folder') + ')')); } catch (e) { return {}; } };
   return true;
 }, test.limit.slow);

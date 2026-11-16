@@ -41,7 +41,15 @@ function world() {
     // goal/G43.32: an element stands at spirit.element.<its path>, its parts there too.
     spirit: { element: { spirit: { element: E } }, escapeHtml: function (s) { return String(s); },
       ready: Promise.resolve({ tree: function () { return Promise.resolve(TREE); } }),
-      require: function (p) { w.required.push(String(p)); return Promise.resolve(true); } },
+      // A branch's api.js, as a page's: its real companion data.js run on this window, attaching itself to the data set, as
+      // the real api.js requires it (goal/G47.1); the api tree is the node branch's (spirit.data.node.data).
+      require: function (p) {
+        w.required.push(String(p));
+        const m = /^spirit\/(.+)\/api\.js$/.exec(String(p));
+        const companion = m ? 'spirit/' + m[1] + '/data.js' : '';
+        if (companion && fs.existsSync(path.join(RUN, companion))) vm.runInContext(fs.readFileSync(path.join(RUN, companion), 'utf8'), win, { filename: companion });
+        return Promise.resolve(true);
+      } },
     document: { createElement: function (t) { return node(t); } },
     Event: function (type) { this.type = type; },
     setTimeout: setTimeout, Promise: Promise, JSON: JSON, Object: Object,
@@ -57,14 +65,6 @@ function world() {
   // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.start asks node.card, keeps the key and hands it to the data set.
   win.spirit.node = { key: 'nOdE+key/one==' };
   pageData.homeNode('nOdE+key/one==');
-  // spirit.cacheManager(name), as a page's: the family's manager loaded once, attaching itself to the data set; the api
-  // tree is the node family's (spirit.data.node.data).
-  w.managers = [];
-  win.spirit.cacheManager = function (name) {
-    w.managers.push(String(name));
-    vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'data.js'), 'utf8'), win, { filename: name + '/data.js' });
-    return Promise.resolve(true);
-  };
   vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'client', 'apiTreeIndex.js'), 'utf8'), win, { filename: 'apiTreeIndex.js' });
   vm.runInContext(SERVER_SRC, win, { filename: SERVER_FILE });
   w.E = win.spirit.element.spirit.element;

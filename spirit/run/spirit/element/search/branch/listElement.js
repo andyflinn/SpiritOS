@@ -21,7 +21,7 @@
   // (goal/G43.18, the box: "apiVerbSelector.js is the verb dropdown filter: search/api/verb.js, which branch names too").
   var parts = Promise.all(['spirit/element/search.js', 'spirit/element/search/branch/rowElement.js', 'spirit/element/search/api.js', 'spirit/element/search/api/verb.js'].map(function (p) {
     return window.spirit.require ? window.spirit.require(p) : null;
-  }).concat([window.spirit.cacheManager('auth')]));
+  }).concat([window.spirit.require('spirit/auth/api.js')]));
   var COLUMNS = {
     family: { field: 'family', label: 'Family', sort: 'text' },
     verb: { field: 'verb', label: 'Verb', sort: 'text' },

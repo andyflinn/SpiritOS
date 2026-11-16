@@ -6,14 +6,14 @@ dropdown. Its test is `./listElement.js`.
 
 Andy, box: *"bundleSelector.js and bundleSelector/ folder, featuring a pane mode and a dropdown mode for displaying and
 selecting bundle rows."* Since goal/G41.14 it is a view of the node's bundles (since goal/G41.28 the auth family's cache manager's,
-`spirit.data.auth.data.bundles.branch`), kept current by the node's stream, which the auth family's cache manager takes in (no data script, Andy: *"NO FUCKING DATA SCRIPT"*, *"THAT FUCKING ELEMENTS carry THEIR FUCKING DESCRIPTIONS"*), so every
+`spirit.data.auth.data.bundles.branch`), kept current by the node's stream, which the auth family's cache manager takes in (no data script of its own, Andy: *"NO FUCKING DATA SCRIPT"*, *"THAT FUCKING ELEMENTS carry THEIR FUCKING DESCRIPTIONS"*), so every
 list of bundles on a page shows the same rows (Andy: *"EVERY FUCKING element MUST FUCKING LISTING to anything that changes
 their data set"*).
 
 ## Requirements
 
 - It loads what it uses itself (rule/26): `spirit/element/search.js` and `spirit/element/search/bundle/rowElement.js`,
-  and the auth family's cache manager (`spirit.cacheManager('auth')`).
+  and the auth branch's interface (`spirit/auth/api.js`), which brings its data.js; no data script itself.
 - It registers `spirit.element.search.bundle.listElement.create(host, opts)`, answering `{ list, refresh(), destroy() }`.
 - It draws one probabilitySearch into `host`, and fills it as soon as it is drawn.
 - `opts.face`, `opts.placeholder`, `opts.all` and `opts.pick(row, key)` are handed on, as probabilitySearch's.

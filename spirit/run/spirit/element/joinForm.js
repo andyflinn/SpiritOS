@@ -141,7 +141,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/conta
       draw(box);
     }
     var left = false;
-    Promise.resolve(window.spirit.cacheManager('contact')).then(function () {
+    Promise.resolve(window.spirit.require('spirit/contact/api.js')).then(function () {
       if (!left && ((window.spirit.data || {}).contact || {}).data) stop = window.spirit.data.contact.data.watch(take);
     });
     box._spJoinStop = function () { left = true; if (typeof stop === 'function') stop(); stop = null; };

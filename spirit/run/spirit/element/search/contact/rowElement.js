@@ -31,7 +31,7 @@
   // the family's own data.js's (spirit/contact/data.js), which this element loads itself
   // (rule/26), as part of its tree; a row reads spirit.data.contact.data.
   function contactReads() { return (window.spirit && ((window.spirit.data || {}).contact || {}).data) || null; }
-  var contactReady = Promise.resolve(window.spirit.cacheManager('contact')).then(function () { return contactReads(); });
+  var contactReady = Promise.resolve(window.spirit.require('spirit/contact/api.js')).then(function () { return contactReads(); });
 
   // ICONS AS THEMSELVES (goal/G30.21): the glyph is written, never a key into a table.
   function esc(s) {

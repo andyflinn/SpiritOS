@@ -9,7 +9,7 @@
 // goal/G41.28 (spirit/element/search/grant/grantsPanel.js, which spirit/app/grants/element.js mounts: the branch the auth family's cache manager keeps, spirit.data.auth.data.grants.branch,
 // and its watch), and a second table shaped as the agent's grants by job were, its branch a whole spirit.data path
 // (node/family/branch) and its watch that branch's. The auth family's data.js is loaded as a
-// page's spirit.cacheManager('auth') loads it, as the Grants app asks it, the page's node known as spirit.start makes it
+// page's spirit.require('spirit/auth/api.js') brings it, as the Grants app asks it, the page's node known as spirit.start makes it
 // known (spirit.node.key, then data.homeNode).
 
 const fs = require('fs');
@@ -49,7 +49,7 @@ const AGENT = grantsTable({ get branch() { return global.window.spirit.data.view
   watch: function (fn) { const v = global.window.spirit.data.viewAt(null, 'agent'); return v.watch('grant', function (whole, row) { fn(v.row(whole, 'grant'), row); }); } });
 
 // One test.run per test (goal/G47.2). What the world and the tests make, for the tests after them.
-let SRC, required, armed, DATA, managers, A, V, E;
+let SRC, required, loaded, armed, DATA, A, V, E;
 function noRow() { if (!A || !A.grants) return true; if (!E.search.grant.rowElement || typeof E.search.grant.rowElement.create !== 'function') return true; return false; }
 
 test.run('the grant row runs on a bare window, with the page\'s data set real', 0.2, async function () {
@@ -72,26 +72,22 @@ test.run('the grant row runs on a bare window, with the page\'s data set real', 
   const NODE_KEY = 'nOdE+key/one==';
   global.window.spirit.node = { key: NODE_KEY };
   DATA.homeNode(NODE_KEY);
-  // spirit.cacheManager(name), as a page's: the family's manager loaded once, attaching itself to the data set; the
-  // Grants app asks the auth family's as it loads (spirit/element/search/grant/grantsPanel.js).
-  managers = [];
-  global.window.spirit.cacheManager = function (name) {
-    managers.push(String(name));
-    vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'data.js'), 'utf8'), { filename: name + '/data.js' });
-    return Promise.resolve(true);
-  };
-  await global.window.spirit.cacheManager('auth');
+  // The auth family's data.js, run from its path as the auth interface brings it: the Grants app requires
+  // spirit/auth/api.js as it loads (spirit/element/search/grant/grantsPanel.js), and that api.js requires its data.js.
+  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'auth', 'data.js'), 'utf8'), { filename: 'spirit/auth/data.js' });
   A = ((global.window.spirit.data || {}).auth || {}).data;
   // The direct writes below are the auth family's own view of the home node, as its manager files them.
   V = DATA.viewAt(null, 'auth');
   global.window.spirit.require = function (p) { required.push(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.element.spirit = global.window.spirit.element.spirit || {}).element = global.window.spirit.element.spirit.element || {})); } return Promise.resolve(true); };
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
+  // What the row asked as it loaded; the runner's own asks after this test are not the row's.
+  loaded = required.slice();
   E = ((global.window.spirit.element || {}).spirit || {}).element || {};
   return true;
 }, test.limit.quick);
 
-test.run('the auth family\'s cache manager is on the page, and each table names a branch of its own', 0.2, function () {
+test.run('the auth family\'s data is on the page, and each table names a branch of its own', 0.2, function () {
   if (!DATA) return false;
   return !!A && !!A.grants && typeof A.grants.row === 'function' && typeof NODE.branch === 'string' && NODE.branch !== '' && typeof AGENT.branch === 'string' && AGENT.branch !== '' && NODE.branch !== AGENT.branch ? true
     : false;
@@ -100,7 +96,8 @@ test.run('the auth family\'s cache manager is on the page, and each table names 
 // it loads what it uses itself (rule/26), and knows no grants table
 test.run('the grant row requires the shared row element and the arming button, and no data script', 0.2, function () {
   if (!A || !A.grants) return false;
-  return ['spirit/element/rowElement.js', 'spirit/element/armingButton.js'].every(function (p) { return required.indexOf(p) !== -1; }) && !required.some(function (p) { return /data\.js$/.test(p); }) ? true : false;
+  if (!loaded) return false;
+  return ['spirit/element/rowElement.js', 'spirit/element/armingButton.js'].every(function (p) { return loaded.indexOf(p) !== -1; }) && !loaded.some(function (p) { return /data\.js$/.test(p); }) ? true : false;
 }, test.limit.quick);
 test.run('the grant row names no table: no auth verb, no agent grant, and no stream job of its own', 0.2, function () {
   if (!A || !A.grants) return false;

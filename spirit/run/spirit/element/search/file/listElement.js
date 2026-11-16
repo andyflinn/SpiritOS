@@ -30,7 +30,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree...."): its tree, through spirit.require.
   if (window.spirit.require) ['spirit/element/search/file/rowElement.js', 'spirit/element/search.js', 'spirit/element/fstat.js'].forEach(function (p) { window.spirit.require(p); });
   // The tree it is a view of is the fs family's cache (goal/G41.28), its manager loaded with it.
-  window.spirit.cacheManager('fs');
+  window.spirit.require('spirit/fs/api.js');
   function fsReads() { return (window.spirit && ((window.spirit.data || {}).fs || {}).data) || null; }
 
   function accepted(accept, row) {

@@ -2,7 +2,7 @@
 // spirit/run/spirit/contact/data.js
 // WHAT A CLIENT KNOWS OF A NODE'S CONTACTS, IN THE contact FAMILY'S OWN FOLDER (goal/G41.28). Andy: "We're not done until
 // every family of the API tree as a clientCacheManager, and clients can use that to organize their spirit.data". A page
-// loads it through spirit.cacheManager('contact'); it runs the translator into that page's spirit.data, under the node
+// loads it through its api.js (spirit/contact/api.js), the one file that requires it; it runs the translator into that page's spirit.data, under the node
 // that served the rows.
 //
 // THE BRANCH IS THIS FILE'S, AND ONLY THIS FILE NAMES IT: every reader (the contacts rows and list, the contact
@@ -13,9 +13,12 @@
 // sets each key's present (a key the table drops goes back to not known), the peer-search job seats each row the network
 // found, a contact rename sets its name, the shadow job sets each row of the one table as it changed. Every event ends in
 // set, merge, del or seat; it asks nothing.
-(function () {
+(function family() {
   var CONTACTS = 'contacts';
   var D = typeof window !== 'undefined' ? window.spirit.data : require('../spirit.js').require('spirit/data.js');
+  // THE DATA SET IT FILES INTO, REQUIRED BY ITSELF (goal/G47.1, box v182: "It is loaded by that path with spirit.require,
+  // data.js exactly as api.js"): on a page that has not loaded spirit/data.js yet, this file loads it and runs again.
+  if (!D) { window.spirit.require('spirit/data.js').then(family); return; }
   D.makeFamily('contact', function () {
     var HOME = D.viewAt(null, 'contact');
     var told = Object.create(null);   // keys the presence table has spoken of, by node

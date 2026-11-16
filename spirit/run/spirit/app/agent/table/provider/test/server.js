@@ -386,17 +386,23 @@ test.run('the provider\'s elementTable and elementRow are placed on spirit.eleme
   global.spirit = global.window.spirit;
   // goal/G43.32: the shared stand-ins stand where the page files read them, at spirit.element.<their path>.
   global.window.spirit.element = { spirit: { app: { agent: { element: { table: { tableElement: STAND.agentTable, rowElement: STAND.agentRow } } } } } };
-  global.window.spirit.require = function (p) { made.required.push(String(p)); return Promise.resolve(true); };
+  // The agent family's api.js requires its companion data.js, as the real one does: the real file, run once; anything
+  // else is a stand-in.
+  const ran = {};
+  global.window.spirit.require = function (p) {
+    made.required.push(String(p));
+    if (p === 'spirit/app/agent/api.js' && !ran[p]) { ran[p] = true; vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'app', 'agent', 'data.js'), 'utf8'), { filename: 'spirit/app/agent/data.js' }); }
+    return Promise.resolve(true);
+  };
   // goal/G43.32: the page's spirit.require answers the helper, so each file places itself by installSpiritElement as it
   // runs (spirit/test/headLessChrome.js pageSpirit).
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(global.window.spirit);
   // The page's one data set (spirit/data.js), which spirit.js brings with the client: the stream lands there, under
-  // the node that served it (goal/G41.28), the page's own once node.card has answered, kept as spirit.node.key. A family's
-  // cache manager is found by spirit.cacheManager(name), the real one, which in node reads it from its own disk.
+  // the node that served it (goal/G41.28), the page's own once node.card has answered, kept as spirit.node.key. A branch's
+  // data.js comes with its api.js, and the stand-in require above runs the real file for it.
   vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });
   global.window.spirit.node = { key: HOME_KEY };
   global.window.spirit.data.homeNode(HOME_KEY);
-  global.window.spirit.cacheManager = require(path.join(RUN, 'spirit', 'spirit.js')).cacheManager;
   ['elementTable.js', 'elementRow.js'].forEach(function (f) { vm.runInThisContext(fs.readFileSync(path.join(EL, f), 'utf8'), { filename: path.join(EL, f) }); });
   const T = global.window.spirit.element.spirit.app.agent.element.table.provider || {};
   P.E = { providerTable: T.elementTable, providerRow: T.elementRow };
@@ -447,17 +453,21 @@ test.run('its fields are the label, the url, the API key as a secret, and last t
     ? true : false;
 }, test.limit.quick);
 
-// ── elementRow.js loads the agent family's cache manager, which takes the provider table's rows from the stream (goal/G41.16, G41.28) ──
+// ── elementRow.js requires the agent family's api.js, whose data.js takes the provider table's rows from the stream (goal/G41.16, G41.28) ──
 // Andy: "get rid of thos FUCKING data.js scripts, DIDN't WE INSIST on the PROPER way to do this shit?": what the stream
 // means for this table, spirit/app/agent/table/data.js until G41.16, is the agent family's data.js's
 // (spirit/app/agent/data.js, goal/G41.28), loaded with the row element; it files the rows under the
 // node that served them, and is read through spirit.data.agent.data.
 const job = function (agent, module) { return { id: 'job-agent', module: module || 'spirit.app.agent', data: {}, app: { agent: agent } }; };
-test.run('its page files require no data script', 0.2, function () {
+test.run('its page files require the agent family\'s interface, spirit/app/agent/api.js', 0.2, function () {
+  if (!P.made) return false;
+  return P.made.required.indexOf('spirit/app/agent/api.js') !== -1 || false;
+}, test.limit.quick);
+test.run('its page files require no data script, as only an api.js requires its data.js', 0.2, function () {
   if (!P.made) return false;
   return !P.made.required.some(function (p) { return (/data\.js$/).test(p); }) ? true : false;
 }, test.limit.quick);
-test.run('the agent family\'s cache manager is loaded, and its provider branch is the home node\'s agent/provider path', 0.2, function () {
+test.run('the agent family\'s data.js is loaded with its api.js, and its provider branch is the home node\'s agent/provider path', 0.2, function () {
   if (!P.made) return false;
   const DATA = global.window.spirit.data;
   const AD = P.AD = ((global.window.spirit.data || {}).agent || {}).data;

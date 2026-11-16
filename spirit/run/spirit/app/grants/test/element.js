@@ -131,7 +131,7 @@ test.run('it requires nothing else', 0.2, function () {
 // (GR_GRANTS). It moves into grantsPanel."
 test.run('it asks nothing itself: no verb, no api, no auth verb, no cache of its own', 0.2, function () {
   if (!SRC) return false;
-  return !/\.verb\s*\(|\bapi\b|\bauth\.|\bcacheManager\b|\bspirit\.data\b|\boutcome\b|\bfetch\s*\(/.test(CODE) || false;
+  return !/\.verb\s*\(|\bapi\b|\bauth\.|\bdata\.js\b|\bspirit\.data\b|\boutcome\b|\bfetch\s*\(/.test(CODE) || false;
 }, test.limit.quick);
 test.run('it draws nothing itself: no markup, no list, no selector of its own', 0.2, function () {
   if (!SRC) return false;
@@ -630,9 +630,9 @@ const wwaitFor = function (expr, ms) { return H.until(function () { return R.c.e
     const strays = named.filter(function (s) { return !/^spirit\/element\/[^]+\.js$/.test(s); });
     return asks > 0 && named.length > 0 && !strays.length ? true : false;
   }, test.limit.quick);
-  test.run('it loads no data family of its own and asks no cacheManager', 0.2, function () {
+  test.run('it loads no data family of its own: it names no data.js script', 0.2, function () {
     if (!R.c0) return false;
-    return !/\bcacheManager\s*\(/.test(R.c0) || false;
+    return !/\bdata\.js\b/.test(R.c0) || false;
   }, test.limit.quick);
   test.run('it calls no verb of its own', 0.2, function () {
     if (!R.c0) return false;

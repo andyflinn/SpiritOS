@@ -74,7 +74,6 @@ const W = { required: [], tables: [], rows: [], forms: [], busy: [], drops: [], 
 function world() {
   global.window = { spirit: { elements: {}, get element() { return this.elements; }, set element(v) { this.elements = v; }, familyPath: familyPath, isBrowser: function () { return false; } } };
   global.spirit = global.window.spirit;
-  global.window.spirit.cacheManager = function () { return Promise.resolve({}); };
   const helper = require(path.join(RUN, 'spirit', 'element', 'installSpiritElement.js'));
   // As their own files place themselves: by the one helper, at spirit.element.<their path>.
   helper(global.window.spirit, SHARED, {

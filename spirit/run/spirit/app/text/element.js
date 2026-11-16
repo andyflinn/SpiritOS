@@ -23,7 +23,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26). fstat for reading a file only.
   var parts = Promise.all([S.require('spirit/element/fstat.js'), S.require('spirit/element/rowForm.js'), S.require('spirit/element/search/file.js'),
-    S.require('spirit/element/codeMirror.js'), S.cacheManager('fs')]);
+    S.require('spirit/element/codeMirror.js'), S.require('spirit/fs/api.js')]);
 
   function create(container, opts) {
     var o = opts || {};

@@ -24,9 +24,10 @@ for the model, for the agent-app), and a codeMirror-field for the job-descriptio
   - Its fields are the label, the loop flag as a checkbox, the job in a CodeMirror editor, then the bundle, the provider
     and the persona (goal/G41.21, below).
 
-- **elementRow.js loads the agent family's cache manager, which takes the job table's rows from the stream** (goal/G41.16;
-  Andy: *"get rid of thos FUCKING data.js scripts"*; goal/G41.28): its page files require no data script; the row element
-  asks `spirit.cacheManager('agent')`, and `spirit.data.agent.data.branch('job')` is the home node's `<node>/agent/job`; a row
+- **elementRow.js requires the agent family's api.js, whose data.js takes the job table's rows from the stream** (goal/G41.16;
+  Andy: *"get rid of thos FUCKING data.js scripts"*; goal/G41.28): its page files require no data script; they require
+  the agent family's interface, `spirit.require('spirit/app/agent/api.js')`, which brings its data.js (goal/G47.1:
+  *"every api.js requires it's companion data.js"*), and `spirit.data.agent.data.branch('job')` is the home node's `<node>/agent/job`; a row
   of the agent stream (`{ agent: { table: 'job', row } }`, module `spirit.app.agent`) lands at `<node>/agent/job/<id>`,
   read through `spirit.data.agent.data.row`, and the branch's watcher hears it; a changed row is merged; one
   removed, by its id, is gone; another table's rows, another module's, and a row with no id write nothing.

@@ -21,7 +21,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/auth/
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.require.
   if (window.spirit.require) ['spirit/element/search.js', 'spirit/element/search/bundle/rowElement.js'].forEach(function (p) { window.spirit.require(p); });
   // And the auth family's cache manager, whose bundles branch the list is a view of (goal/G41.28).
-  window.spirit.cacheManager('auth');
+  window.spirit.require('spirit/auth/api.js');
   var COLUMNS = {
     label: { field: 'label', label: 'Bundle', sort: 'text' },
     owner: { field: 'owner', label: 'Owner', sort: 'text' },

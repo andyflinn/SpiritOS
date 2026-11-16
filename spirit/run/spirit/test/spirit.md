@@ -280,18 +280,16 @@ spirit.js itself and set as `spirit.link` and `window.spirit.transport`; `spirit
 through a `window.spirit.transport` once set, and that on the home node's own page spirit.js gets `shell/boot.js`
 alone and `spirit.booted` answers (sections 6 and 6b); a login and the sealed link themselves are not run.
 
-## A page finds data.js by the folder shape (the cache manager)
+## spirit.js asks FS.path nowhere
 
-goal/G43.27, requirement 6. Its test is a section of `./spirit.js`: spirit.js read as it is, comments stripped, and a real
-page (headless Chrome) of a scratch node with the agent app switched on, never a live one.
+goal/G43.27, requirement 6. Its test is a section of `./spirit.js`: spirit.js read as it is, comments stripped.
 
-Andy: "spirit.js can be fixed, no? it knows the difference between an app and a system branch?"
+A branch file is loaded by its path with `spirit.require`, `data.js` exactly as `api.js` (goal/G47.1, box v182): spirit.js
+holds no finder that looks a branch up by its name, and every caller names the file's full path.
 
 ### Requirements
 
-- **6. A page finds `data.js` by the folder shape.** spirit.js's cacheManager asks no `FS.path`, and spirit.js asks
-  `FS.path` nowhere. On a real page of a scratch node, every family the node names whose data.js is in the tree is loaded
-  by `spirit.cacheManager`, contact among them (an app and a system family share that name).
+- **6.** spirit.js asks `FS.path` nowhere.
 
 ## The relay login
 
@@ -307,21 +305,19 @@ Andy's box: *"The relay serves a logged-out face one plain page, the one-field f
 - Logged in, the face draws the home node's shell (Contacts on its list), and none of `boot.js`, `shell.css` or `face.css` came as the relay's own file.
 - After `spirit.login.logout()`, the page shows the one field again, and the relay holds the login no more.
 
-## How a family is found by its name
+## A family's api.js, and no name twice
 
 goal/G43.27, a section of `spirit/run/spirit/test/spirit.js`.
 
-Andy: "make sure there's a test for the module searching for api's that makes sure those rules are followed - less path elements get priority, - the target needs an api.js - and duplicate <name>/api.js raise a red.", and "spirit/app/contact/ does NOT have an api.js".
+Andy: "duplicate <name>/api.js raise a red.", and "spirit/app/contact/ does NOT have an api.js".
 
-The tree is read as it is. The finding is judged on a real page (headless Chrome) of a scratch node. Folders that break the rules are planted into the scratch node's copy, never into the tree.
+The tree is read as it is. A second api.js is planted into a scratch node's copy, never into the tree. A branch file is loaded by its path (box v182), so no page looks a family up by its name.
 
 ### Requirements
 
 - **3. A second `<name>/api.js` is seen.** A family interface is any of `spirit/<name>/api.js`, `spirit/app/<name>/api.js` and `process/js/<name>/[family/]api.js`. A second relay/api.js planted into the scratch copy is seen as a duplicate. That no branch's name has two in the tree is judged on each branch folder by `./spirit-sibling-general.js (branchRules)` (goal/G43.32).
-- **2. The target needs an api.js.** A `spirit/app/contact/data.js` planted beside no api.js never runs, and contact loads `spirit/contact/data.js`.
-- **1. The fewest path elements win.** A planted `spirit/app/relay/` with its own api.js and data.js loses to `spirit/relay/`, whose data.js is the one loaded.
-- An app's family found where its api.js is, and a page getting each branch's own `data.js`, are judged on each branch folder by `./spirit-sibling-general.js (branchRules)` (goal/G43.32).
-- **No data.js is asked that is not there (no 404).**
+- `spirit/app/contact/` is an app folder with no api.js; ten or more family names have an api.js in the tree, contact and relay among them.
+- An app's family found where its api.js is is judged on each branch folder by `./spirit-sibling-general.js (branchRules)` (goal/G43.32).
 
 ### goal/G43.20: a family's path in a process
 

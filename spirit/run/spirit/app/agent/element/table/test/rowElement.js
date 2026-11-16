@@ -98,12 +98,12 @@ test.run('the shared element runs on a window of its own, over the real spirit.d
   load(path.join(RUN, 'spirit', 'data.js'));
   D = global.window.spirit.data;
   // THE WINDOW AS THE PAGE NOW STARTS (goal/G41.28): the data set knows its home node, the page's own, from node.card,
-  // kept as spirit.node.key; a family's cache manager is found by spirit.cacheManager(name), the real one, which in node
-  // reads it from its own disk. The agent family's (spirit/app/agent/data.js) keeps the tables'
-  // branches, <node>/agent/<table>, and answers them through spirit.data.agent.data.
+  // kept as spirit.node.key; the row element requires the agent branch's interface (spirit/app/agent/api.js), which brings
+  // its data.js; the stand-in require below runs that data.js through the real one, which in node reads it from its own
+  // disk. The agent family's data.js (spirit/app/agent/data.js) keeps the tables' branches, <node>/agent/<table>, and answers them through
+  // spirit.data.agent.data.
   global.window.spirit.node = { key: HOME_KEY };
   D.homeNode(HOME_KEY);
-  global.window.spirit.cacheManager = require(path.join(RUN, 'spirit', 'spirit.js')).cacheManager;
   // A row's whole path in its table's branch, as the agent family's cache manager names it.
   rowPath = function (table, id) { return global.window.spirit.data.agent.data.branch(table) + '/' + id; };
   BRANCH = function (table) { return D.nodeId(HOME_KEY) + '/agent/' + table; };
@@ -119,6 +119,9 @@ test.run('the shared element runs on a window of its own, over the real spirit.d
   PE = function () { const e = global.window.spirit.element; e.spirit = e.spirit || {}; e.spirit.element = e.spirit.element || {}; return e.spirit.element; };
   global.window.spirit.require = function (p) {
     w.required.push(String(p));
+    // The agent branch's interface brings its data.js, as the real api.js does: the real spirit.require runs
+    // spirit/app/agent/data.js, from its path.
+    if (p === AGENT) require(path.join(RUN, 'spirit', 'spirit.js')).require('spirit/app/agent/data.js');
     // The bundle selector (goal/G41.21), tested in its own folder: a stand-in on the page once it is asked for, keeping
     // what it was handed.
     // The are-you-sure button (spirit/element/armingButton.js), tested in its own folder: a stand-in whose first press arms and

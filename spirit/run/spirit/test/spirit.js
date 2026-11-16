@@ -264,11 +264,9 @@ test.run('the source sets the global before its first require', 0.2, function ()
 test.run('nothing in spirit.js but isNode() and isBrowser() asks where it runs', 0.2, function () {
   return !/typeof (window|module|process|require|TextDecoder|Buffer)/.test(code.replace(/function isNode\(\)[^\n]*\n|function isBrowser\(\)[^\n]*\n/g, '')) || false;
 }, test.limit.quick);
-// data: the cache, spirit.data (goal/G41.3); familyPath: the one family path function (goal/G41.12); cacheManager: a
-// family's data.js, found by the folder shape and loaded (goal/G43.27) (goal/G41.28, Andy: "the shell can introspect to find and
-// download their clientCacheManagers"); readStream: the one reader of every stream a page has (goal/G47.1, the box, "Reload
+// data: the cache, spirit.data (goal/G41.3); familyPath: the one family path function (goal/G41.12); readStream: the one reader of every stream a page has (goal/G47.1, the box, "Reload
 // Problems with the face": "one place only manages the stream ... spirit.js").
-const MEMBERS = ['DEFAULT_SPIRIT_PORT', 'MIME_TYPES', 'VERSION', 'cacheManager', 'check', 'data', 'debug', 'error', 'escapeHtml', 'event', 'familyPath', 'formatBytes', 'isBrowser', 'isLoopback', 'isNode', 'job', 'node', 'outcome', 'peerPost', 'readStream', 'require', 'rules', 'tree'];
+const MEMBERS = ['DEFAULT_SPIRIT_PORT', 'MIME_TYPES', 'VERSION', 'check', 'data', 'debug', 'error', 'escapeHtml', 'event', 'familyPath', 'formatBytes', 'isBrowser', 'isLoopback', 'isNode', 'job', 'node', 'outcome', 'peerPost', 'readStream', 'require', 'rules', 'tree'];
 test.run('in node the instance holds exactly its members, and the families it binds', 0.2, function () {
   return JSON.stringify(Object.keys(s).filter(function (k) { return typeof s[k] !== 'object' || ['MIME_TYPES', 'data', 'event', 'job', 'node'].indexOf(k) !== -1 || Array.isArray(s[k]); }).sort()) === JSON.stringify(MEMBERS) || false;
 }, test.limit.quick);
@@ -855,35 +853,17 @@ test.run('on a real page, the Desk list draws and never says "the desk server di
 
 // The sections below, each folded in from a file of its own, run in order after the checks above.
 
-// ── THE CACHE MANAGER PART ──
-// A PAGE FINDS A FAMILY'S data.js BY THE FOLDER SHAPE, NEVER BY FS.path (goal/G43.27, requirement 6; spec:
-// ./spirit.md, its section): spirit.js's cacheManager. Andy: "spirit.js can be fixed, no? it knows the difference between an
-// app and a system branch?". spirit.js read as it is, comments stripped, and a real page (headless Chrome) of a scratch node
-// (headLessChrome.scratchNode), never a live one.
+// ── spirit.js ASKS FS.path NOWHERE (goal/G43.27, requirement 6) ──
+// spirit.js read as it is, comments stripped.
 function codeOf(text) { return String(text).replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1'); }
 // Line ends aside: a Windows checkout (autocrlf) holds CRLF where git holds LF.
 function read(rel) { const f = path.join(RUN, rel); return fs.existsSync(f) ? fs.readFileSync(f, 'utf8').replace(/\r\n/g, '\n') : ''; }
-// cacheManager: a page finds a family's data.js by the folder shape, never by FS.path (goal/G43.27)
-// 6. a page finds a family's data.js by the folder shape, never by FS.path
 const C = {};
-test.run('spirit.js and its cacheManager are read', 0.2, function () {
-  C.sj = codeOf(read('spirit/spirit.js'));
-  return (C.sj.length > 1000 && /function cacheManager/.test(C.sj)) || false;
-}, test.limit.quick);
-test.run('cacheManager asks no FS.path, on a page or in node', 0.2, function () {
-  const cm = ((C.sj || '').match(/function cacheManager[\s\S]*?\n  }\n/) || [''])[0];
-  return (!!cm && !/FS\.path|\.FS\b/.test(cm)) || false;
-}, test.limit.quick);
 test.run('spirit.js asks FS.path nowhere', 0.2, function () {
-  return !/\.FS\.path\s*\(|FS\.path\b/.test(C.sj || '') || false;
+  C.sj = codeOf(read('spirit/spirit.js'));
+  return (C.sj.length > 1000 && !/\.FS\.path\s*\(|FS\.path\b/.test(C.sj)) || false;
 }, test.limit.quick);
-// ON A REAL PAGE: every family the node names whose data.js is in the tree is loaded by spirit.cacheManager, an app's and a
-// system family's alike, also where an app has a system family's name (contact). The agent app is switched on, so its
-// family is among them.
-function cAsk(call, args) {
-  return fetch(C.node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: call, args: args || {} }) })
-    .then(function (r) { return r.json().then(function (b) { return { status: r.status, body: b }; }, function () { return { status: r.status, body: null }; }); }, function () { return { status: 0, body: null }; });
-}
+
 // ── THE PAGE'S STREAM COMES BACK AFTER ITS NODE RESTARTS (goal/G47.1, cleaning; Andy: "AND OF COURSE THE FUCKING SHELL NEVER
 // EVER FUCKING RECONNECTS AFTER A FUCKING RESTART OF THE NODE..."). A face page on a lab node, a subscriber of spirit.event
 // counting what the page's one stream hands it; the node restarted on the same port. The stream must come back by itself.
@@ -905,40 +885,6 @@ test.run('after its node restarts on the same port, the page\'s stream comes bac
   const back = await H.until(function () { return L.page.evaluate('(window.zzHeard || 0) > ' + RC.before); }, 60000);
   return !!back || false;
 }, test.limit.slow);
-test.run('a scratch node is up', 0.2, async function () {
-  // The page of section 9 and its node are let go first.
-  if (L.page && L.page.kid) L.page.kid.kill();
-  if (L.node && L.node.child) L.node.child.kill();
-  C.node = await H.scratchNode();
-  return !!C.node.up || false;
-}, test.limit.slow);
-function withData(n) { return ['spirit/' + n + '/data.js', 'spirit/app/' + n + '/data.js'].some(function (p) { return fs.existsSync(path.join(RUN, p)); }); }
-test.run('a page asks the cache of five or more families with a data.js, contact among them', 0.2, async function () {
-  const node = C.node;
-  if (node && node.up) {
-    await cAsk('app.active', { key: 'agent', active: true });
-    await H.until(function () { return cAsk('api', { family: 'agent' }).then(function (a) { return a.status === 200; }); }, 30000);
-  }
-  const chrome = H.findChrome();
-  const page = C.page = chrome && node && node.up ? await H.chromePage(chrome) : null;
-  let loaded = null;
-  if (page && !page.error) {
-    await page.send('Page.navigate', { url: node.base + '/' });
-    await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.ready)'); }, 30000);
-    loaded = await page.evaluate("Promise.resolve(window.spirit.ready).then(function (s) { return s.tree(); }).then(function (t) { return Promise.all(Object.keys(t || {}).map(function (n) { return window.spirit.cacheManager(n).then(function () { return [n, 'ok']; }, function () { return [n, false]; }); })); })");
-  }
-  C.judged = (loaded || []).filter(function (r) { return withData(r[0]); });
-  if (page && page.kid) page.kid.kill();
-  if (node && node.child) node.child.kill();
-  return (C.judged.length >= 5 && C.judged.some(function (r) { return r[0] === 'contact'; })) || false;
-}, test.limit.slow);
-// The families come from the page's own tree, known only as it runs: each that does not load is named in the answer.
-// spirit.cacheManager("<family>") on a page
-test.run('on a page, spirit.cacheManager of a family loads that family\'s data.js', 0.2, function () {
-  if (!C.judged || !C.judged.length) return false;
-  return listedFails(C.judged.filter(function (r) { return r[1] !== 'ok'; }));
-}, test.limit.quick);
-function listedFails(bad) { return !bad.length; }
 
 // The element move's checks (goal/G43.5) judge the tree, not spirit.js: they are the general tests' now, spirit-sibling-general.js
 // (no file names the old shell folder of the elements, none reaches an element through spirit.elements, none through spirit.element for one spirit/element/
@@ -1018,6 +964,9 @@ const sleep = H.sleep;
 // "shell/login/ and its login.json go": gone since; a check of a fixed path gone from the tree is a migration's, dropped (goal/G47.1).
 const FL = {};
 test.run('a real node has a real face on a starred relay, logged in', 0.2, async function () {
+  // The page of section 9 and its node are let go first.
+  if (L.page && L.page.kid) L.page.kid.kill();
+  if (L.node && L.node.child) L.node.child.kill();
   FL.N = await H.scratchNode();
   FL.R = await scratchFaceRelay({ members: [], faceDomain: DOMAIN });
   if (!FL.N.up || !FL.R.up) return false;
@@ -1116,11 +1065,9 @@ test.run('after the logout the relay holds the login no more', 0.8, async functi
 }, test.limit.quick);
 
 // ── THE FAMILY FINDER PART ──
-// HOW A FAMILY IS FOUND BY ITS NAME (goal/G43.27; spec: ./spirit.md, its section). Andy: "make sure there's a test for the module
-// searching for api's that makes sure those rules are followed - less path elements get priority, - the target needs an
-// api.js - and duplicate <name>/api.js raise a red.", and "spirit/app/contact/ does NOT have an api.js". The tree read as
-// it is; the finding judged on a real page (headless Chrome) of a scratch node, folders planted into its copy that break
-// each rule. Never a live node.
+// A FAMILY'S api.js, AND NO NAME TWICE (goal/G43.27; spec: ./spirit.md, its section). Andy: "duplicate <name>/api.js raise a
+// red.", and "spirit/app/contact/ does NOT have an api.js". The tree read as it is; a second api.js planted into a scratch
+// node's copy is seen. A branch file is loaded by its path (box v182), so no page looks a family up by its name.
 // Every family interface under a run folder, by its name: <name>/api.js where a family lives (spirit/<name>/,
 // spirit/app/<name>/, process/js/<name>/ and its family/ folder).
 function interfaces(run, files) {
@@ -1141,7 +1088,7 @@ function walk(dir, base, out) {
   return out;
 }
 
-// familyFinder: a family found by its name: the fewest path elements, an api.js there, no name twice (goal/G43.27)
+// familyFinder: an api.js where a family is, no name twice (goal/G43.27)
 // the world
 const FF = {};
 test.run('ten or more family names have an api.js in the tree, contact and relay among them', 0.2, function () {
@@ -1153,9 +1100,8 @@ test.run('ten or more family names have an api.js in the tree, contact and relay
 test.run('spirit/app/contact/ is an app folder with no api.js', 0.2, function () {
   return (fs.existsSync(path.join(RUN, 'spirit', 'app', 'contact')) && !fs.existsSync(path.join(RUN, 'spirit', 'app', 'contact', 'api.js'))) || false;
 }, test.limit.quick);
-// That no branch's name has a second api.js in the tree is judged on each branch folder, as are an app's family found
-// where its api.js is and a page getting each branch's own data.js (./spirit-sibling-general.js (branchRules), goal/G43.32). Here,
-// the finder itself, on folders planted to break each rule.
+// That no branch's name has a second api.js in the tree is judged on each branch folder, as is an app's family found where
+// its api.js is (./spirit-sibling-general.js (branchRules), goal/G43.32). Here, a duplicate planted on purpose is seen.
 
 // A scratch node, then folders planted into its copy that break each rule.
 test.run('a scratch node is up, on its own copy of the tree', 0.2, async function () {
@@ -1167,52 +1113,16 @@ test.run('a scratch node is up, on its own copy of the tree', 0.2, async functio
   if (!(node.up && node.root)) return false;
   const sRun = FF.sRun = path.join(node.root, 'spirit', 'run');
   const plant = function (rel, text) { const f = path.join(sRun, rel); fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, text); };
-  const MARK = function (where) { return '(window.__planted = window.__planted || []).push(' + JSON.stringify(where) + ');\n'; };
-  // Rule 2: a folder of the name without api.js is never the target (spirit/app/contact/ has a data.js, no api.js).
-  plant('spirit/app/contact/data.js', MARK('spirit/app/contact'));
-  // Rule 1: the same name with an api.js one level deeper loses to spirit/relay/ (and is a duplicate, rule 3).
+  // Rule 3: the same name with an api.js one level deeper is a duplicate.
   plant('spirit/app/relay/api.js', 'module.exports = { verbs: {} };\n');
-  plant('spirit/app/relay/data.js', MARK('spirit/app/relay'));
   return true;
 }, test.limit.slow);
 // 3. a duplicate is seen
 test.run('the check sees the planted second relay/api.js, with both spirit/relay/ and spirit/app/relay/ there', 0.2, function () {
   if (!FF.sRun) return false;
   const planted = interfaces(FF.sRun, walk(FF.sRun, FF.sRun, []));
+  if (FF.node && FF.node.child) FF.node.child.kill();
   return (!!planted.relay && planted.relay.length === 2) || false;
-}, test.limit.quick);
-// 1, 2. a page finds each family where the rules say
-test.run('the page asked contact and relay', 0.2, async function () {
-  if (!FF.sRun) return false;
-  const node = FF.node;
-  const page = FF.page = await H.chromePage(H.findChrome());
-  let got = null;
-  if (page && !page.error) {
-    await page.send('Page.navigate', { url: node.base + '/' });
-    await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.ready)'); }, 30000);
-    got = await page.evaluate("Promise.resolve(window.spirit.ready).then(function () { return Promise.all(['contact', 'relay'].map(function (n) { return window.spirit.cacheManager(n).then(function () { return [n, 'ok']; }, function () { return [n, false]; }); })); }).then(function (r) { return { said: r, planted: window.__planted || [] }; })");
-  }
-  FF.got = got;
-  FF.asked = page && page.heard ? page.heard.filter(function (m) { return m.method === 'Network.responseReceived'; }).map(function (m) { return { url: m.params.response.url.replace(node.base, '').replace(/^\//, ''), status: m.params.response.status }; }) : [];
-  FF.said = {}; ((got && got.said) || []).forEach(function (r) { FF.said[r[0]] = r[1]; });
-  FF.ran = (got && got.planted) || [];
-  if (page && page.kid) page.kid.kill();
-  if (node.child) node.child.kill();
-  return !!got || false;
-}, test.limit.slow);
-function fetched(p) { return (FF.asked || []).some(function (a) { return a.url === p && a.status === 200; }); }
-test.run('contact is spirit/contact/, because spirit/app/contact/ has no api.js, and its data.js never runs', 0.2, function () {
-  if (!FF.got) return false;
-  return (FF.said.contact === 'ok' && fetched('spirit/contact/data.js') && FF.ran.indexOf('spirit/app/contact') === -1) || false;
-}, test.limit.quick);
-test.run('relay is spirit/relay/, the path with fewer elements, over spirit/app/relay/', 0.2, function () {
-  if (!FF.got) return false;
-  return (FF.said.relay === 'ok' && fetched('spirit/relay/data.js') && FF.ran.indexOf('spirit/app/relay') === -1) || false;
-}, test.limit.quick);
-test.run('no data.js was asked that is not there, so no 404 came', 0.2, function () {
-  if (!FF.got) return false;
-  const missed = FF.asked.filter(function (a) { return /(^|\/)data\.js$/.test(a.url) && a.status === 404; });
-  return !missed.length || false;
 }, test.limit.quick);
 
 // goal/G43.20, its box: "a family is found as spirit/<name>/api.js or spirit/app/<name>/api.js, a job is named by its

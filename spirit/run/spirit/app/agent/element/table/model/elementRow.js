@@ -7,12 +7,12 @@
 // ITS OWN APP'S api.js AND data.js, LOADED AS IT RUNS (goal/G47.1, the box: an element under spirit/app/ "is red unless it
 // loaded its own app's api.js and data.js").
 if (window.spirit && typeof window.spirit.require === 'function') Promise.resolve(window.spirit.require('spirit/app/agent/api.js')).catch(function () {});
-if (window.spirit && typeof window.spirit.cacheManager === 'function') Promise.resolve(window.spirit.cacheManager('agent')).catch(function () {});
+if (window.spirit && typeof window.spirit.require === 'function') Promise.resolve(window.spirit.require('spirit/app/agent/api.js')).catch(function () {});
 (function () {
   // Its table's rows are the agent family's cache (goal/G41.28): the family's own data.js
   // (spirit/app/agent/data.js) translates them into the table's branch; it is loaded here, with
   // this element.
-  window.spirit.cacheManager('agent');
+  window.spirit.require('spirit/app/agent/api.js');
   // goal/G41.21: every field shown only. The label is the model name as the provider gives it (Andy: "the label hold the
   // model name as provided by the provider, and is output only in the models UI"); the capabilities ("model details,
   // capabilites, is output only").

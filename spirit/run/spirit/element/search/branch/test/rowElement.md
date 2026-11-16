@@ -19,9 +19,9 @@ and *"A branch row with an empty verb shows as \"(ALL)\", as the filter does."*
 - Mounted, its Delete is an `armingButton`: the first press asks nothing, the second asks
   `auth.branch { op: 'delete', id }`.
 
-- The node's branch rows are taken from the stream by the auth family's cache manager
-  (`spirit/run/spirit/auth/data.js`, goal/G41.28), which the row element loads itself
-  (`spirit.cacheManager('auth')`; G41.14 until then, its own translation), into `spirit.data.auth.data.branches`: the node publishes each changed row of its two
+- The node's branch rows are taken from the stream by the auth family's data.js
+  (`spirit/run/spirit/auth/data.js`, goal/G41.28), which the auth family's interface brings; the row element requires
+  that interface itself (`spirit.require('spirit/auth/api.js')`) and no data.js (G41.14 until then, its own translation), into `spirit.data.auth.data.branches`: the node publishes each changed row of its two
   bundle tables on one permanent job of type `bundles`, `{ table, row }`, and `{ table, row: { id }, gone: true }`. A row
   published is kept by its id, published again replaces it, gone takes it out; the other table's rows, another job's, and
   a row with no id write nothing. It requires no data script.

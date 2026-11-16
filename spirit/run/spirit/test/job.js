@@ -987,13 +987,15 @@ function mountPart() {
       '}',
     ].join('\n') + '\n');
     fs.writeFileSync(path.join(dir, 'helper.js'), "require('fs').writeFileSync(process.argv[2], 'ran');\n");
-    fs.writeFileSync(path.join(dir, 'api.js'), INTERFACE + '\nmodule.exports = { verbs: { ping: {} } };\n');
+    // Its api.js requires its companion data.js, the one script that does (goal/G47.1), on a page and in node.
+    fs.writeFileSync(path.join(dir, 'api.js'), INTERFACE + "\nif (typeof window !== 'undefined') window.spirit.require('spirit/app/" + name + "/data.js'); else require('../../spirit.js').require('spirit/app/" + name + "/data.js');\nmodule.exports = { verbs: { ping: {} } };\n");
     fs.writeFileSync(path.join(dir, 'note.txt'), NOTE);
     fs.writeFileSync(path.join(dir, OLD_FOLDER, 'api.js'), '// the decoy\nmodule.exports = { verbs: { decoy: {} } };\n');
     fs.writeFileSync(path.join(dir, OLD_FOLDER, 'note.txt'), 'the decoy');
     fs.writeFileSync(path.join(dir, 'data.js'), [
-      '(function () {',
+      '(function family() {',
       "  var D = typeof window !== 'undefined' ? window.spirit.data : require('../../data.js');",
+      "  if (!D) { window.spirit.require('spirit/data.js').then(family); return; }",
       "  D.makeFamily('" + name + "');",
       "  (typeof window !== 'undefined' ? window : global).__appData = '" + name + "';",
       '}());',
@@ -1324,8 +1326,10 @@ function mountPart() {
     return (refused(activeHelper) && !fs.existsSync(ranHelper)) || false;
   }, test.limit.slow);
 
-  // a page and a process bind it by its name (the box: "A page changes nothing. It binds a family by its name, and the node
-  // finds the folder."; "data.js sits beside <name>.js ... and the lookups follow it")
+  // a page binds it by its name, and its api.js loads its data.js, on a page and in a process (the box: "A page changes
+  // nothing. It binds a family by its name, and the node finds the folder."; "data.js sits beside <name>.js ... and the
+  // lookups follow it"; goal/G47.1: "every api.js requires it's companion data.js, and is the only script to require that
+  // data.js")
   const onPage = function (expr) { return chrome.evaluate('Promise.resolve().then(function () { return ' + expr + '; }).then(function (v) { return JSON.stringify({ v: v }); }, function () { return \'{}\'; })').then(parsed); };
   const noPage = function () { return !chrome || !!chrome.error; };
   test.run('Chrome is here and opens the node\'s page', 0.2, async function () {
@@ -1346,9 +1350,9 @@ function mountPart() {
     const pinged = await onPage("spirit.ready.then(function () { return spirit.require(spirit.familyPath('" + NAME + "')); }).then(function (f) { return f.ping({}); })");
     return (!!pinged && !!pinged.v && Number(pinged.v.pid) > 0) || false;
   }, test.limit.quick);
-  test.run('a page finds its data.js beside <name>.js', 0.2, async function () {
+  test.run('on a page, binding the family by its api.js loads and runs the data.js beside <name>.js', 0.2, async function () {
     if (noPage()) return false;
-    const managed = await onPage("spirit.cacheManager('" + NAME + "').then(function () { return window.__appData; })");
+    const managed = await onPage("spirit.ready.then(function () { return spirit.require(spirit.familyPath('" + NAME + "')); }).then(function () { return window.__appData; })");
     return (!!managed && managed.v === NAME) || false;
   }, test.limit.quick);
   test.run('the one <name>.js also runs on a page, one file on the page and as the server', 0.2, async function () {
@@ -1356,19 +1360,20 @@ function mountPart() {
     const same = await onPage("spirit.require('spirit/app/" + NAME + '/' + NAME + ".js').then(function () { return window.__appOnPage; })");
     return (!!same && same.v === NAME) || false;
   }, test.limit.quick);
+  // A process requires the family's api.js alone, and says whether its data.js then stands at spirit.data.<family>, and
+  // what the planted data.js marked.
   const inNode = function (family) {
-    const r = spawnSync(process.execPath, ['-e', "require('./spirit/spirit.js'); spirit.cacheManager(" + JSON.stringify(family) + ").then(function () { console.log('found ' + (global.__appData || '')); process.exit(0); }, function () { process.exit(0); });"], { cwd: s.run, encoding: 'utf8', timeout: 30000 });
-    return String(r.stdout || '').trim();
+    const r = spawnSync(process.execPath, ['-e', "require('./spirit/spirit.js'); require(" + JSON.stringify('./spirit/app/' + family + '/api.js') + "); console.log(JSON.stringify({ stands: !!(global.spirit.data && global.spirit.data[" + JSON.stringify(family) + "]), mark: global.__appData || '' }));"], { cwd: s.run, encoding: 'utf8', timeout: 30000 });
+    return parsed(String(r.stdout || '').trim()) || {};
   };
-  test.run('a process finds a tree app\'s data.js', 0.2, function () {
+  test.run('in a process, requiring a tree app\'s api.js loads its data.js', 0.2, function () {
     if (!s) return false;
-    const found = inNode('deskClient');
-    return /^found/.test(found) || false;
+    return inNode('deskClient').stands === true || false;
   }, test.limit.quick);
-  test.run('a process finds the new family\'s data.js', 0.2, function () {
+  test.run('in a process, requiring the new family\'s api.js loads and runs its data.js', 0.2, function () {
     if (!s) return false;
     const found = inNode(NAME);
-    return found === 'found ' + NAME || false;
+    return (found.stands === true && found.mark === NAME) || false;
   }, test.limit.quick);
 
   // the box: "turning "active" will NOT take the row out of the list"; and off stops it

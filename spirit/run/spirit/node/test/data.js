@@ -6,7 +6,8 @@
 // What a client knows of a node itself (goal/G41.28): its api tree and verbs as the selectors read them (Andy, Q7: "yes."), and its card.
 // It runs as it does: in a window of its own beside the real spirit.data (spirit/data.js), which it writes into, the
 // stream's events handed in as spirit.data hands them (takeJob, takeRename), each from the node that served it. In node
-// it is found as a page finds it, by the family's name (spirit.cacheManager). The reads alone are read, never a branch.
+// it is loaded as every client loads it, by requiring its branch's api.js, the one script that requires it. The reads
+// alone are read, never a branch.
 
 const fs = require('fs');
 const path = require('path');
@@ -57,11 +58,11 @@ function pageWorld() {
 // What the tests make, each in order, read by the tests after it.
 let w = null;
 
-test.run('in node, found by the family\'s name through spirit.cacheManager, it stands at spirit.data.node.data', 0.2, async function () {
+test.run('in node, requiring its branch\'s api.js, spirit/node/api.js, puts it at spirit.data.node.data', 0.2, async function () {
   require(path.join(RUN, 'spirit', 'spirit.js'));
   const S = globalThis.spirit;
   let threw = null;
-  try { await S.cacheManager('node'); } catch (e) { threw = e; }
+  try { await Promise.resolve(S.require('spirit/node/api.js')); } catch (e) { threw = e; }
   const X = S.data && S.data['node'] && S.data['node'].data;
   return (!threw && !!X && typeof X === 'object') || false;
 }, test.limit.quick);

@@ -114,7 +114,7 @@
   // other word.json and that one at most once"), and asked again only once the stream-fed row differs: nothing is watched
   // for it.
   function rowOf(rel) {
-    return Promise.resolve(window.spirit.cacheManager('fs')).then(function () {
+    return Promise.resolve(window.spirit.require('spirit/fs/api.js')).then(function () {
       var F = window.spirit.data && window.spirit.data.fs && window.spirit.data.fs.data;
       if (!F) return null;
       if (F.ready()) return F.file(rel);
@@ -141,7 +141,7 @@
   }
   function watch() {
     var turn = ++watching;
-    Promise.resolve(window.spirit.cacheManager('fs')).then(function () {
+    Promise.resolve(window.spirit.require('spirit/fs/api.js')).then(function () {
       if (turn !== watching || !told.length) return;
       unwatch = window.spirit.data.fs.data.watch(function (p) {
         if (!/(^|\/)word\.json$/.test(String(p || ''))) return;

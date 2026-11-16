@@ -2,7 +2,7 @@
 // spirit/run/spirit/auth/data.js
 // WHAT A CLIENT KNOWS OF A NODE'S BUNDLES, BRANCHES AND GRANTS, IN THE auth FAMILY'S OWN FOLDER (goal/G41.28). Andy:
 // "We're not done until every family of the API tree as a clientCacheManager, and clients can use that to organize their
-// spirit.data". A page loads it through spirit.cacheManager('auth'); it runs the translator into that page's spirit.data,
+// spirit.data". A page loads it through its api.js (spirit/auth/api.js), the one file that requires it; it runs the translator into that page's spirit.data,
 // under the node that served the rows.
 //
 // THE BRANCHES ARE THIS FILE'S, AND ONLY THIS FILE NAMES THEM: every reader (the bundle, branch and grant rows and lists,
@@ -13,12 +13,15 @@
 // The rows come on the node's own job spirit.auth (spirit/server.js, goal/G43.20), each changed row of the three tables with its
 // table's name, gone when it is removed (goal/G41.14; moved here from the three row elements). Every event ends in set
 // or del; it asks nothing.
-(function () {
+(function family() {
   var BUNDLES = 'bundles';
   var BRANCHES = 'branches';
   var GRANTS = 'grants';
   function grantKey(key, path) { return String(key) + '\n' + String(path); }
   var D = typeof window !== 'undefined' ? window.spirit.data : require('../spirit.js').require('spirit/data.js');
+  // THE DATA SET IT FILES INTO, REQUIRED BY ITSELF (goal/G47.1, box v182: "It is loaded by that path with spirit.require,
+  // data.js exactly as api.js"): on a page that has not loaded spirit/data.js yet, this file loads it and runs again.
+  if (!D) { window.spirit.require('spirit/data.js').then(family); return; }
   D.makeFamily('auth', function () {
     var HOME = D.viewAt(null, 'auth');
     D.addTranslator({

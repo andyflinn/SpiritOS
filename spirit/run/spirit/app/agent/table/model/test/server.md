@@ -48,9 +48,9 @@ model-name and capabilities)"*. goal/G41.18 fills it from the providers: the pro
   - It builds on `agentRow` with the model table's look.
   - Its fields are the label, the provider and the capabilities, all shown only (goal/G41.21, below).
 
-- **elementRow.js loads the agent family's cache manager, which takes the model table's rows from the stream** (goal/G41.16;
-  Andy: *"get rid of thos FUCKING data.js scripts"*; goal/G41.28): its page files require no data script; the row element
-  asks `spirit.cacheManager('agent')`, and `spirit.data.agent.data.branch('model')` is the home node's `<node>/agent/model`; a row
+- **elementRow.js requires the agent branch's api.js, whose data.js takes the model table's rows from the stream** (goal/G41.16;
+  Andy: *"get rid of thos FUCKING data.js scripts"*; goal/G41.28): its page files require no data script; they require
+  `spirit/app/agent/api.js`, which alone requires `spirit/app/agent/data.js` (goal/G47.1), and `spirit.data.agent.data.branch('model')` is the home node's `<node>/agent/model`; a row
   of the agent stream (`{ agent: { table: 'model', row } }`, module `spirit.app.agent`) lands at `<node>/agent/model/<id>`,
   read through `spirit.data.agent.data.row`, and the branch's watcher hears it; a changed row is merged; one
   removed, by its id, is gone; another table's rows, another module's, and a row with no id write nothing.

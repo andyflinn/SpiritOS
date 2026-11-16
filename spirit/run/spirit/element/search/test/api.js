@@ -7,8 +7,8 @@
 // the verb selector NEEDs the family selector to have any meaning at all."). The browser file runs in node on a BARE
 // window (rule/26): its two halves, the family list search/api/listElement.js and the verb half search/api/verb.js, are put there real once required;
 // probabilitySearch is a stand-in that keeps every list it was asked to make; the node's api tree is the spirit
-// object's answer, kept by the node family's data.js (goal/G41.28), loaded as a page's
-// spirit.cacheManager('node') loads it, the page's node known as spirit.start makes it known (spirit.node.key, then
+// object's answer, kept by the node family's data.js (goal/G41.28), loaded with the node family's api.js, as a page's
+// spirit.require('spirit/node/api.js') loads it, the page's node known as spirit.start makes it known (spirit.node.key, then
 // data.homeNode). One test.run per test (goal/G47.2).
 
 const fs = require('fs');
@@ -56,7 +56,10 @@ function world() {
     setTimeout: setTimeout, Promise: Promise, JSON: JSON, Object: Object,
     console: { log: function () {}, error: function () {} },
   };
-  win.spirit.require = function (p) { w.required.push(String(p)); if (STANDS[p] && !w['done' + p]) { w['done' + p] = true; STANDS[p](win); } return Promise.resolve(true); };
+  // The node family's api.js requires its companion data.js, as the real one does: the real file run once, attaching
+  // itself to the data set; the api tree is the node family's (spirit.data.node.data).
+  let ran = false;
+  win.spirit.require = function (p) { w.required.push(String(p)); if (p === 'spirit/node/api.js' && !ran) { ran = true; vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'node', 'data.js'), 'utf8'), win, { filename: 'spirit/node/data.js' }); } if (STANDS[p] && !w['done' + p]) { w['done' + p] = true; STANDS[p](win); } return Promise.resolve(true); };
   win.window = win;
   // The page's installSpiritElement, as spirit.js hands it (spirit/test/headLessChrome.js pageSpirit).
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(win.spirit);
@@ -68,14 +71,6 @@ function world() {
   // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.start asks node.card, keeps the key and hands it to the data set.
   win.spirit.node = { key: 'nOdE+key/one==' };
   pageData.homeNode('nOdE+key/one==');
-  // spirit.cacheManager(name), as a page's: the family's manager loaded once, attaching itself to the data set; the api
-  // tree is the node family's (spirit.data.node.data).
-  w.managers = [];
-  win.spirit.cacheManager = function (name) {
-    w.managers.push(String(name));
-    vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'data.js'), 'utf8'), win, { filename: name + '/data.js' });
-    return Promise.resolve(true);
-  };
   vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'client', 'apiTreeIndex.js'), 'utf8'), win, { filename: 'apiTreeIndex.js' });
   vm.runInContext(fs.readFileSync(FILE, 'utf8'), win, { filename: FILE });
   w.E = win.spirit.element.spirit.element;
@@ -115,6 +110,11 @@ test.run('it registers apiFamilySelector with a create, and createApiFamilySelec
 test.run('it loads its two halves itself, the family list search/api/listElement.js and the verb selector', 0.2, function () {
   if (!made || typeof made.create !== 'function') return false;
   return w.required.indexOf('spirit/element/search/api/listElement.js') !== -1 && w.required.indexOf('spirit/element/search/api/verb.js') !== -1 ? true : false;
+}, test.limit.quick);
+// goal/G47.1, Andy: "every api.js requires it's companion data.js, and is the only script to require that data.js".
+test.run('its halves require the node family\'s interface, spirit/node/api.js, and no data script', 0.2, function () {
+  if (!made || typeof made.create !== 'function') return false;
+  return w.required.indexOf('spirit/node/api.js') !== -1 && !w.required.some(function (p) { return /data\.js$/.test(p); }) ? true : false;
 }, test.limit.quick);
 
 // the family, then its verb, side by side

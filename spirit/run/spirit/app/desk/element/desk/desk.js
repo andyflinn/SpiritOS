@@ -25,7 +25,7 @@
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
 if (window.spirit && typeof window.spirit.require === 'function') ['spirit/app/backup/api.js'].forEach(function (p) { Promise.resolve(window.spirit.require(p)).catch(function () {}); });
 if (window.spirit && typeof window.spirit.require === 'function') Promise.resolve(window.spirit.require('spirit/app/desk/api.js')).catch(function () {});
-if (window.spirit && typeof window.spirit.cacheManager === 'function') Promise.resolve(window.spirit.cacheManager('desk')).catch(function () {});
+if (window.spirit && typeof window.spirit.require === 'function') Promise.resolve(window.spirit.require('spirit/app/desk/api.js')).catch(function () {});
 // Its fields' limits, fieldInput's (rule/26: what it draws with, it loads itself), in its tree so it is in before create.
 if (window.spirit && typeof window.spirit.require === 'function') Promise.resolve(window.spirit.require('spirit/element/fieldInput.js')).catch(function () {});
 var deskOpts = {};
@@ -49,7 +49,7 @@ function deskHear(fn) {
   var S = window.spirit;
   deskHeard.push(fn);
   if (!deskHearing) {
-    deskHearing = Promise.resolve(S.cacheManager('desk')).then(function () {
+    deskHearing = Promise.resolve(S.require('spirit/app/desk/api.js')).then(function () {
       S.data.addTranslator({
         onJob: function (job) {
           if (!(job && job.module === 'spirit.app.desk' && job.app && typeof job.app === 'object')) return;

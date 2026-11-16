@@ -5,7 +5,7 @@
 // The browser file runs in node on a BARE window (rule/26): nothing is on the page until the list requires it. Then the
 // search element is a recorder in its place, so this tests the list and not the search under it; the row element and
 // the file viewer are stand-ins; the page's data set is real, and so is the fs family's data.js (goal/G41.28),
-// loaded as a page's spirit.cacheManager('fs') loads it, the page's node known as spirit.start makes it known
+// loaded with the fs family's api.js, as a page's spirit.require('spirit/fs/api.js') loads it, the page's node known as spirit.start makes it known
 // (spirit.node.key, then data.homeNode). The node's fs family is the spirit object's.
 
 const fs = require('fs');
@@ -26,7 +26,7 @@ function hostNode() {
 }
 
 // One test.run per test (goal/G47.2). What the world and the tests make, for the tests after them.
-let required, lists, asked, D, managers, E, F, picked, host, list, l, o, tree, flatHost, fl, fo;
+let required, loaded, lists, asked, D, E, F, picked, host, list, l, o, tree, flatHost, fl, fo;
 // A row shows when every filter of the list lets it through, drawn or not (spirit/element/search.js).
 function shows(opts, row) { return (opts.filters || []).every(function (f) { return typeof f.test !== 'function' || !!f.test(row); }); }
 function drawn(opts) { return (opts.filters || []).filter(function (f) { return typeof f.when !== 'function' || f.when() !== false; }).map(function (f) { return f.name; }); }
@@ -56,18 +56,17 @@ test.run('the file list runs on a bare window, with the page\'s data set real', 
   const NODE_KEY = 'nOdE+key/one==';
   global.window.spirit.node = { key: NODE_KEY };
   D.homeNode(NODE_KEY);
-  // spirit.cacheManager(name), as a page's: the family's manager loaded once, attaching itself to the data set.
-  managers = [];
-  global.window.spirit.cacheManager = function (name) {
-    managers.push(String(name));
-    vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'data.js'), 'utf8'), { filename: name + '/data.js' });
-    return Promise.resolve(true);
-  };
-  global.window.spirit.require = function (p) { required.push(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.element.spirit = global.window.spirit.element.spirit || {}).element = global.window.spirit.element.spirit.element || {})); } return Promise.resolve(true); };
+  // The fs family's api.js requires its companion data.js, as the real one does: the real file run once, attaching
+  // itself to the data set.
+  let ran = false;
+  global.window.spirit.require = function (p) { required.push(String(p)); if (p === 'spirit/fs/api.js' && !ran) { ran = true; vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'fs', 'data.js'), 'utf8'), { filename: 'spirit/fs/data.js' }); } if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.element.spirit = global.window.spirit.element.spirit || {}).element = global.window.spirit.element.spirit.element || {})); } return Promise.resolve(true); };
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
   E = ((global.window.spirit.element || {}).spirit || {}).element || {};
   F = ((global.window.spirit.data || {}).fs || {}).data;
+  // What was asked as it loaded, kept apart from what this process asks later (the runner's own reports go through the
+  // same window.spirit.require).
+  loaded = required.slice();
   return true;
 }, test.limit.quick);
 
@@ -76,14 +75,15 @@ test.run('it requires its row element, the search element and the file viewer', 
   if (!required) return false;
   return ['spirit/element/search/file/rowElement.js', 'spirit/element/search.js', 'spirit/element/fstat.js'].every(function (p) { return required.indexOf(p) !== -1; }) ? true : false;
 }, test.limit.quick);
-// goal/G41.16, Andy: "get rid of thos FUCKING data.js scripts": what the stream means for the file tree is the fs family's cache manager's (goal/G41.28).
-test.run('it requires no data script, because the file tree\'s stream is its row element\'s', 0.2, function () {
-  if (!required) return false;
-  return !required.some(function (p) { return /data\.js$/.test(p); }) ? true : false;
+// goal/G41.16, Andy: "get rid of thos FUCKING data.js scripts": what the stream means for the file tree is the fs family's
+// data.js's (goal/G41.28), which only the fs api.js requires (goal/G47.1).
+test.run('as it loads, it requires no data script, as only an api.js requires its data.js', 0.2, function () {
+  if (!loaded) return false;
+  return !loaded.some(function (p) { return /data\.js$/.test(p); }) ? true : false;
 }, test.limit.quick);
-test.run('it loads the fs family\'s cache manager, which puts the fs family\'s data on the page', 0.2, function () {
-  if (!managers) return false;
-  return managers.indexOf('fs') !== -1 && F && typeof F.file === 'function' ? true : false;
+test.run('it requires the fs family\'s interface, spirit/fs/api.js, which puts the fs family\'s data on the page', 0.2, function () {
+  if (!loaded) return false;
+  return loaded.indexOf('spirit/fs/api.js') !== -1 && F && typeof F.file === 'function' ? true : false;
 }, test.limit.quick);
 test.run('it registers spirit.element.spirit.element.search.file.listElement.create', 0.2, function () {
   if (!F || typeof F.file !== 'function') return false;

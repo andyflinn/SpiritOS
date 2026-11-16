@@ -1903,7 +1903,7 @@ var ndPage = ({
     // ITS ROW, FROM THE ONE TABLE (goal/G40.11), THE CONTACT FAMILY'S CACHE (goal/G41.28): painted as it changes, with no
     // further read (goal/G41.32). Another relay's row is kept for the removal rule, and paints nothing. Its presence is
     // the dot's, so presence alone repaints nothing. The two forms in it watch the same rows themselves.
-    ndStops.push(Promise.resolve(spirit.cacheManager('contact')).then(function () {
+    ndStops.push(Promise.resolve(spirit.require('spirit/contact/api.js')).then(function () {
       if (ndGone || !((window.spirit.data || {}).contact || {}).data) return function () {};
       return window.spirit.data.contact.data.watch(ndHearRow);
     }));

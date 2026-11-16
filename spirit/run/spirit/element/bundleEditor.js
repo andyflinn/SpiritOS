@@ -19,7 +19,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/auth/
   // bundles it adds to (goal/G41.28).
   var parts = Promise.all(['spirit/element/fieldInput.js', 'spirit/element/search/bundle.js', 'spirit/element/rowForm.js'].map(function (p) {
     return window.spirit.require ? window.spirit.require(p) : null;
-  }).concat([window.spirit.cacheManager('auth')]));
+  }).concat([window.spirit.require('spirit/auth/api.js')]));
   // The label's rule, the one definition both sides use (spirit/fieldRules.js).
   function labelOf(text) {
     var R = window.spirit.fieldRules || {};

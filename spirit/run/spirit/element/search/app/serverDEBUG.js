@@ -13,8 +13,8 @@
 if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/api.js','spirit/app/api.js','spirit/job/api.js'].forEach(function (p) { Promise.resolve(window.spirit.require(p)).catch(function () {}); });
 (function () {
   window.spirit.require('spirit/element/search/app/rowFormToggle.js');
-  window.spirit.cacheManager('app');
-  window.spirit.cacheManager('job');
+  window.spirit.require('spirit/app/api.js');
+  window.spirit.require('spirit/job/api.js');
 
   var LIVE = { running: true, pending: true };
 
@@ -47,7 +47,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
       t.set(now, 'turn ' + (now ? 'off' : 'on') + ' DEBUG ' + label());
       t.root.hidden = false;
     }
-    Promise.resolve(S.cacheManager('job')).then(function () {
+    Promise.resolve(S.require('spirit/job/api.js')).then(function () {
       if (gone) return;
       offJobs = S.data.job.data.watch(function (id, j) { if (j && j.module === module) asked = null; paint(); });
       paint();

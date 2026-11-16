@@ -12,7 +12,8 @@ opens. So the editor names no description and no api-branch selector.
   branches, and sees the others read-only"*, which overturns mounting it for an app server, goal/G41.25).
 
 - It loads what it uses itself (rule/26): `spirit/element/fieldInput.js` and `spirit/element/search/bundle.js`, and the auth
-  family's cache manager (`spirit.cacheManager('auth')`, goal/G41.28), whose bundles it adds to.
+  branch's interface (`spirit.require('spirit/auth/api.js')`, which brings its data.js; goal/G41.28), whose bundles it
+  adds to; it requires no data.js itself.
 - It registers `spirit.element.bundleEditor.create(container, opts)`, which answers `{ destroy }`. Drawn, it asks the
   node nothing.
 - At the top, one row, a rowForm (goal/G41.27; Andy: *"bundleEditor:\n[➕] [label] [Add]"*): it loads

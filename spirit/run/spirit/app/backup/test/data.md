@@ -4,7 +4,7 @@ What a client knows of the backup (goal/G41.28; Andy: *"anything not using the n
 clientCacheManager.js must do so in this item. no exceptions."*): the backup server's status as `status.get` last
 answered it, kept in the page's `spirit.data` under the node that served it. Owed since the rule *"every production
 script has its own test"* (goal/G47.1, box v72). It runs in a window of its own beside the real `spirit/data.js`; in
-node it is asked through `spirit.cacheManager('backup')`.
+node it comes with its branch's interface, `spirit/app/backup/api.js`, the one script that requires it.
 
 - It stands at `spirit.data.backup.data`, with `keep`, `status`, `watch` and `branch`.
 - `status()` is null before anything is kept.
@@ -14,7 +14,7 @@ node it is asked through `spirit.cacheManager('backup')`.
 - `watch(fn)` is told the status on every change, null when it goes; it answers its release, after which it is told
   nothing.
 - It translates nothing: a backup job on the stream writes nothing (*"The server publishes no row of its own"*).
-- In node, `spirit.cacheManager('backup')` loads it and it stands at `spirit.data.backup.data`.
+- In node, requiring `spirit/app/backup/api.js` brings it, and it stands at `spirit.data.backup.data`.
 
 ## What its test must try to break
 

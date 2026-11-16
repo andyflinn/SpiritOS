@@ -6,7 +6,8 @@
 // What a client knows of the peer family (goal/G41.28): nothing, the row an acquire files being the contact family's.
 // It runs as it does: in a window of its own beside the real spirit.data (spirit/data.js), which it writes into, the
 // stream's events handed in as spirit.data hands them (takeJob, takeRename), each from the node that served it. In node
-// it is found as a page finds it, by the family's name (spirit.cacheManager). The reads alone are read, never a branch.
+// it is loaded by its api.js (spirit/peer/api.js), the one script that requires it. The reads alone are read, never a
+// branch.
 
 const fs = require('fs');
 const path = require('path');
@@ -57,11 +58,11 @@ function pageWorld() {
 // What the tests make, each in order, read by the tests after it.
 let w = null;
 
-test.run('in node, found by spirit.cacheManager under the family\'s name, it stands at spirit.data.peer.data', 0.2, async function () {
+test.run('in node, loaded by requiring its api.js, spirit/peer/api.js, it stands at spirit.data.peer.data', 0.2, async function () {
   require(path.join(RUN, 'spirit', 'spirit.js'));
   const S = globalThis.spirit;
   let threw = null;
-  try { await S.cacheManager('peer'); } catch (e) { threw = e; }
+  try { require(path.join(RUN, 'spirit', 'peer', 'api.js')); } catch (e) { threw = e; }
   const X = S.data && S.data['peer'] && S.data['peer'].data;
   return (!threw && !!X && typeof X === 'object') || false;
 }, test.limit.quick);

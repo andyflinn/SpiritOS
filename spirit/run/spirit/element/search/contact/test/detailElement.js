@@ -260,7 +260,15 @@ function relayWorld(rows, relayStatus) {
     event: { subscribe: function (h) { (w.streams = w.streams || []).push(h); return function () {}; } },
     // The node's stream through the data set (goal/G43.5): what a translator keeps of a relay's events, as the page's.
     data: { addTranslator: function (t) { const h = { onRelayEvent: t.onRelay }; (w.streams = w.streams || []).push(h); return function () { w.streams.splice(w.streams.indexOf(h), 1); }; } },
-    require: function (p) { w.required.push(String(p).replace(/^\/+/, '')); return Promise.resolve({}); },
+    // The contact family's cache (goal/G41.28): the contact api.js brings its data.js, as the real one does (goal/G47.1:
+    // "every api.js requires it's companion data.js"); here that data stands in as spirit.data.contact.data, whose rows
+    // the page watches. A data.js asked for directly is only recorded.
+    require: function (p) {
+      const at = String(p).replace(/^\/+/, '');
+      w.required.push(at);
+      if (at === 'spirit/contact/api.js') ((win.spirit.data = win.spirit.data || {}).contact = {}).data = { watch: function (h) { (w.watches = w.watches || []).push(h); return function () {}; } };
+      return Promise.resolve({});
+    },
     ready: Promise.resolve(families),
     packet: P,
     // spirit.peerPost as spirit.js has it on a page (goal/G43.24): the body in its packet envelope, posted through the
@@ -276,8 +284,6 @@ function relayWorld(rows, relayStatus) {
         return got;
       });
     },
-    // The contact family's cache (goal/G41.28): its manager loads, and the page watches spirit.data.contact.data's rows.
-    cacheManager: function (name) { w.managers = (w.managers || []).concat(name); ((win.spirit.data = win.spirit.data || {}).contact = {}).data = { watch: function (h) { (w.watches = w.watches || []).push(h); return function () {}; } }; return Promise.resolve(true); },
     // goal/G43.32: the armingButton stands where an element now finds it, spirit.element.spirit.element.
     element: { spirit: { element: {
       armingButton: {
@@ -542,8 +548,9 @@ test.run('On a face, a person\'s detail draws no star button', 0.2, async functi
 
 // WHAT IT NEEDS, IT REQUIRES ITSELF (goal/G43.24; Andy: "anybody can mount any element without knowing what it actually
 // needs...."): it asks the node through the spirit object, is handed no api, and draws with its key alone.
+// An api handed in is what is forbidden (goal/G43.24); a branch's api.js required by its path is how it reaches a family.
 test.run('its code names no api', 0.2, function () {
-  return !/\bapi\b/.test(CODE) || false;
+  return !/\bapi\b(?!\.js)/.test(CODE) || false;
 }, test.limit.quick);
 test.run('A person\'s detail sends its title to the layer it is drawn in', 0.2, function () {
   if (!P.opened) return false;
@@ -811,7 +818,7 @@ test.run('On a face, a relay\'s detail draws no star button', 0.2, async functio
 // WHAT IT NEEDS, IT REQUIRES ITSELF (goal/G43.24; Andy: "anybody can mount any element without knowing what it actually
 // needs...."): the node's verbs and its posts to the relay go through the spirit object; it is handed no api.
 test.run('For a relay, the detail\'s code names no api', 0.2, function () {
-  return (!/\bapi\b/.test(CODE) && !/ndApi/.test(CODE)) || false;
+  return (!/\bapi\b(?!\.js)/.test(CODE) && !/ndApi/.test(CODE)) || false;
 }, test.limit.quick);
 test.run('The detail posts to a relay through the spirit object, which puts the post in its envelope, and encodes no packet of its own', 0.2, function () {
   const panelCode = fs.readFileSync(path.join(RUN, 'spirit', 'element', 'search', 'contact', 'detailElement.js'), 'utf8').replace(/\/\/.*$/gm, '');

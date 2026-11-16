@@ -14,7 +14,7 @@ the list a stand-in that keeps what it was handed.
 - It places itself at `spirit.element.spirit.element.search.contact`, with a create.
 - It makes no list of its own: no probabilitySearch, nothing of the old shell's list search (goal/G40.8).
 - `create(container, options)` appends its root to its container and answers it; on a bare page it requires the contact
-  list and the contact family's cache, then draws the list into its root.
+  list and the contact family's interface (`spirit/contact/api.js`, which brings its data.js), and no data.js, then draws the list into its root.
 - The dropdown (the default) is the list in its dropdown face, `options.placeholder` and `options.all` handed on; the pane
   (`face: 'pane'`) is the same list in its pane face, filling its box.
 - An ID table is handed on whole: `options.table`, `key`, `label` and `data`.

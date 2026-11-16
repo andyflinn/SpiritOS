@@ -15,7 +15,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/app/a
   var E = (window.spirit = window.spirit || {}).element = window.spirit.element || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.require.
   ['spirit/element/rowElement.js', 'spirit/element/icon.js', 'spirit/element/search/app/rowFormAppActive.js'].forEach(function (p) { window.spirit.require(p); });
-  var appReady = Promise.resolve(window.spirit.cacheManager('app')).then(function () { return ((window.spirit.data || {}).app || {}).data; });
+  var appReady = Promise.resolve(window.spirit.require('spirit/app/api.js')).then(function () { return ((window.spirit.data || {}).app || {}).data; });
 
   var apps = null;
   function dispatch(idx) {

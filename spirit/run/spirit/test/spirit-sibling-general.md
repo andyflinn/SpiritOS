@@ -103,8 +103,8 @@ A scratch node; an app branch switched on first (`app.active`), as its server mu
   process, decided 9): from its declaration, a raw call over http breaks each verb's arguments three ways, an argument of
   the wrong type, a required one left out, one the verb does not name; each answers a 4xx with a `code`, never a 2xx, a
   5xx, a handler failed, or no answer within 8 s. A branch that declares no verb has no call to break, and says so.
-- **Found by its name, on a page**: a page asking `spirit.cacheManager(<name>)` gets its own `data.js`, and asks no
-  `data.js` of that name that is not there (no 404); **the node serves it as a script that calls `makeFamily`**.
+- **Its `data.js` served at its path** (box v182: a branch file is loaded by its path, `data.js` exactly as `api.js`):
+  **the node serves it as a script that calls `makeFamily`**. No page is opened: a -general test runs no browser.
 
 ### What its test must try to break
 
@@ -116,7 +116,7 @@ A scratch node; an app branch switched on first (`app.active`), as its server mu
   disk or in browser storage; a manager without the contract; a watch of another name, or told its branch.
 - A branch the node does not serve, serves from another file, serves with a verb more or less, or with an FS set.
 - A handler reached by a call its own declaration refuses.
-- A page that cannot find a branch's manager by its name; a manager the node does not serve.
+- A manager the node does not serve at its path.
 
 ## titleRules (was spirit-sibling-titleRules.js)
 

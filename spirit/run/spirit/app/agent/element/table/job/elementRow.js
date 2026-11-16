@@ -11,7 +11,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/app/a
   // Its table's rows are the agent family's cache (goal/G41.28): the family's own data.js
   // (spirit/app/agent/data.js) translates them into the table's branch; it is loaded here, with
   // this element.
-  window.spirit.cacheManager('agent');
+  window.spirit.require('spirit/app/agent/api.js');
   var FIELDS = [{ field: 'label', label: 'Label', kind: 'name' }, { field: 'loop', label: 'Loop (the agent app runs it again)', kind: 'bool' }, { field: 'job', label: 'Job, which may come with a prompt', kind: 'code' },
     // goal/G41.21, box v17: the bundle "with a bundleSelector in dropdown mode" (kind bundle), "That bundle is the job's
     // grant"; the provider and the persona each by a pick field of its table.

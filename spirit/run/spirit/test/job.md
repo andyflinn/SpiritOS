@@ -174,7 +174,8 @@ Andy: *"JUST loading functional server and associating the <name> as "familiy" n
 #### Pages and processes
 
 - A page binds the family by its name, and its verb answers.
-- `data.js` beside `<name>.js` is found on a page, in a process, and for a client's cache: what a client kept of a sender in the new family comes back at its start, as it does for a node family (contact).
+- `data.js` beside `<name>.js` is loaded and run by its api.js, the one script that requires it (goal/G47.1), on a page
+  (binding the family) and in a process (requiring the api.js; a tree app's, deskClient's, too), and found for a client's cache: what a client kept of a sender in the new family comes back at its start, as it does for a node family (contact).
 - The one `<name>.js` also runs on a page.
 
 #### The start rule (goal/G43.20: "jobs.create starts only an app's own script, spirit/app/<name>/<name>.js, of an app whose <name>.json says node run true")

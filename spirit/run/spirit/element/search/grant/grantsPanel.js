@@ -32,7 +32,7 @@
   // (below) reads.
   var parts = Promise.all(['spirit/element/search/contact.js', 'spirit/element/search/bundle.js', 'spirit/element/search/api.js',
     'spirit/element/search/grant.js', 'spirit/element/busyButton.js', 'spirit/element/rowForm.js', 'spirit/client/apiTreeIndex.js'].map(function (p) { return window.spirit.require ? window.spirit.require(p) : null; })
-    .concat([window.spirit.cacheManager ? window.spirit.cacheManager('job') : null, window.spirit.cacheManager ? window.spirit.cacheManager('auth') : null]));
+    .concat([window.spirit.require('spirit/job/api.js'), window.spirit.require('spirit/auth/api.js')]));
 
   // A VERB OF THE NODE, THROUGH THE SPIRIT OBJECT (goal/G43.24): family.verb called on that family as spirit.ready holds it,
   // or as spirit.require binds a server's family, answering { status, body } as a list reads it.

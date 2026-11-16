@@ -359,7 +359,7 @@ test.run('the planted spirit/app/word.json is read, and its word is found at spi
   fs.writeFileSync(path.join(W.node.root, 'spirit', 'run', 'spirit', 'app', 'word.json'), JSON.stringify({ zzword: true }));
   await page.send('Page.navigate', { url: W.node.base + '/' });
   await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.ready)').then(Boolean); }, H.WAIT);
-  const asked = await page.evaluate('window.spirit.ready.then(function () { return spirit.cacheManager("fs"); }).then(function () {' +
+  const asked = await page.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/fs/api.js"); }).then(function () {' +
     ' return new Promise(function (r) { setTimeout(r, 3000); }); }).then(function () {' +
     ' window.sentWord = []; var keep = function (b) { try { var s = String(b || ""); if (/word\\.json/.test(s)) window.sentWord.push(s); } catch (e) {} };' +
     ' var f = window.fetch; window.fetch = function (u, o) { keep(String(u) + " " + (o && o.body || "")); return f.apply(this, arguments); };' +

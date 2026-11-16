@@ -34,7 +34,7 @@ function text(root) { return all(root).map(function (k) { return String(k.textCo
 function holds(root, cls) { return all(root).some(function (k) { return new RegExp('\\b' + cls + '\\b').test(k.className || ''); }); }
 
 // What the tests make, shared by the tests after them.
-let SRC, asked, required, sels, forms, answer, auth, STANDS, managers, watches, arrive, E, box, made, input, add, rf,
+let SRC, asked, required, loaded, sels, forms, answer, auth, STANDS, watches, arrive, E, box, made, input, add, rf,
   sel, r0, w0;
 test.run('the bundle editor names no api-branch selector and no description: a bundle is a label, and its branches are the branch editor\'s', 0.2, function () {
   SRC = fs.readFileSync(FILE, 'utf8').replace(/\/\/.*$/gm, '');
@@ -70,30 +70,34 @@ test.run('the bundle editor requires the field input and the bundle selector thr
   vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });
   global.window.spirit.node = { key: 'KEY+BUNDLE/EDITOR==' };
   global.window.spirit.data.homeNode(global.window.spirit.node.key);
-  // A family's cache: the family's own manager, run on this window; the watches on its bundles table counted, and their
-  // releases.
-  managers = [];
+  // A family's cache: the auth branch's interface brings its data.js, as the real api.js does, run once on this window
+  // from its path; the watches on its bundles table counted, and their releases.
   watches = { made: 0, released: 0 };
-  global.window.spirit.cacheManager = function (name) {
-    managers.push(String(name));
-    vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'data.js'), 'utf8'), { filename: name + '/data.js' });
+  let authData = false;
+  const family = function () {
+    if (authData) return;
+    authData = true;
+    vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'auth', 'data.js'), 'utf8'), { filename: 'spirit/auth/data.js' });
     const T = ((global.window.spirit.data || {}).auth || {}).data && global.window.spirit.data.auth.data.bundles;
     if (T && !T.counted) {
       const own = T.watch; T.counted = true;
       T.watch = function (fn) { watches.made += 1; const stop = own(fn); return function () { watches.released += 1; return stop(); }; };
     }
-    return Promise.resolve(true);
   };
-  arrive = function (id, label) { global.window.spirit.data.takeJob({ id: 'bundles', type: 'bundles', data: { table: 'bundle', row: { id: id, label: label, owner: 'node' } } }); };
-  global.window.spirit.require = function (p) { required.push(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.element.spirit = global.window.spirit.element.spirit || {}).element = global.window.spirit.element.spirit.element || {})); } return Promise.resolve(true); };
+  // A bundle row on the node's own job spirit.auth, as the auth family's data.js takes it (goal/G43.20).
+  arrive = function (id, label) { global.window.spirit.data.takeJob({ id: 'spirit.auth', data: { table: 'bundle', row: { id: id, label: label, owner: 'node' } } }); };
+  global.window.spirit.require = function (p) { required.push(String(p)); if (p === 'spirit/auth/api.js') family(); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.element.spirit = global.window.spirit.element.spirit || {}).element = global.window.spirit.element.spirit.element || {})); } return Promise.resolve(true); };
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
+  // What the editor asked as it loaded; the runner's own asks after this test are not the editor's.
+  loaded = required.slice();
   E = ((global.window.spirit.element || {}).spirit || {}).element || {};
   // it loads what it uses itself (rule/26)
   return (['spirit/element/fieldInput.js', 'spirit/element/search/bundle.js'].every(function (p) { return required.indexOf(p) !== -1; })) ? true : false;
 }, test.limit.quick);
-test.run('the bundle editor loads the auth family\'s cache manager, whose bundles it adds to', 0.2, function () {
-  return (managers.indexOf('auth') !== -1) ? true : false;
+test.run('the bundle editor requires the auth interface spirit/auth/api.js and no data.js, and the auth bundles it adds to stand on the page', 0.2, function () {
+  if (!loaded) return false;
+  return (loaded.indexOf('spirit/auth/api.js') !== -1 && !loaded.some(function (p) { return /data\.js$/.test(p); }) && !!(((global.window.spirit.data || {}).auth || {}).data)) ? true : false;
 }, test.limit.quick);
 test.run('the bundle editor registers spirit.element.spirit.element.bundleEditor.create', 0.2, function () {
   return (E.bundleEditor && typeof E.bundleEditor.create === 'function') ? true : false;

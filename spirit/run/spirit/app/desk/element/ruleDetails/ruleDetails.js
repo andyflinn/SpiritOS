@@ -20,7 +20,7 @@
 // data they display", and spirit/test/app-child-browser.js for every element under spirit/app/; rule/26): desk's api.js and its
 // cache manager, data.js, which the page's one stream feeds; mounted alone, on a page nothing else loaded them on, it has them.
 if (window.spirit && typeof window.spirit.require === 'function') Promise.resolve(window.spirit.require('spirit/app/desk/api.js')).catch(function () {});
-if (window.spirit && typeof window.spirit.cacheManager === 'function') Promise.resolve(window.spirit.cacheManager('desk')).catch(function () {});
+if (window.spirit && typeof window.spirit.require === 'function') Promise.resolve(window.spirit.require('spirit/app/desk/api.js')).catch(function () {});
 var rdApi = null;
 var rdKey = '';
 var rdRule = null;           // the rule as the server last said it
@@ -32,7 +32,7 @@ var rdNote = '';
 // (spirit/element/armingButton.js), which the dialog loads itself; each arms, says so, and disarms itself on a click elsewhere.
 var rdParts = Promise.resolve(typeof spirit !== 'undefined' && spirit.require ? spirit.require('spirit/element/armingButton.js') : null);
 // And the desk family's cache manager, which keeps the rule and its chat (spirit.data.desk.data).
-var rdData = spirit.cacheManager('desk');
+var rdData = spirit.require('spirit/app/desk/api.js');
 
 function rdEsc(s) { return rdApi.escapeHtml(String(s == null ? '' : s)); }
 

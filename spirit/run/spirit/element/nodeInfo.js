@@ -113,7 +113,7 @@ if (window.spirit && typeof window.spirit.require === 'function' && typeof windo
       rotate.button.addEventListener('click', function () { openRotate(); });
       // THE CARD IS THE NODE FAMILY'S CACHE (goal/G41.28): node.card's answer is kept in spirit.data.node.data, and each of
       // the two fields draws itself from it.
-      return S.cacheManager('node').then(function () {
+      return S.require('spirit/node/api.js').then(function () {
         return S.outcome(Promise.resolve(S.ready).then(function (s) { return s.node.card({}); }));
       }).then(function (r) {
         if (gone) return;

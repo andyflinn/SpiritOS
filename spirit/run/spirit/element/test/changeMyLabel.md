@@ -22,7 +22,8 @@ this node may.
 - **Save is refused while the rule says no** (`fieldRules.problem`), and the field says why; nothing goes on the wire.
 - **Save asks the node**, `node.setName` with the field as typed, through the spirit object itself, no api handed (goal/G43.24), and then shows what the node stored (rule/19), says
   saved, and keeps the stored name in the node card. Enter in the field saves as Save does.
-- **What it changes, it listens for** (goal/G41.28): it loads the node family's cache (`spirit.cacheManager('node')`)
+- **What it changes, it listens for** (goal/G41.28): it requires the node family's interface (`spirit.require('spirit/node/api.js')`), which brings its data.js, and no
+  data.js itself,
   and draws the field from `spirit.data.node.data.card.watch`; a name changed in the card from elsewhere redraws the field.
 - A refusal from the node is said beside the field; the field keeps what was typed.
 

@@ -14,7 +14,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/app/a
 (function () {
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.require.
   ['spirit/element/search.js', 'spirit/element/search/app/rowElement.js'].forEach(function (p) { window.spirit.require(p); });
-  window.spirit.cacheManager('app');
+  window.spirit.require('spirit/app/api.js');
 
   function create(host, opts) {
     var o = opts || {};

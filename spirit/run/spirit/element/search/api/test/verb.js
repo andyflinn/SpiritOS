@@ -51,11 +51,12 @@ test.run('it adds apiVerbSelector with a create to window.spirit.element, and cr
     redraw: function () { l.redrawn += 1; }, refresh: function () {}, destroy: function () {} }; w.lists.push(l); return l; } }); };
   win = {
     spirit: { escapeHtml: function (s) { return String(s); }, element: {},
-      require: function (p) { w.required.push(String(p)); if (p === 'spirit/element/search.js' && !w.stood) { w.stood = true; STAND(((win.spirit.element.spirit = win.spirit.element.spirit || {}).element = win.spirit.element.spirit.element || {})); } return Promise.resolve(true); },
-      // A family's cache (goal/G41.28): the family's own manager, run on this window over the real data set.
-      cacheManager: function (name) {
-        w.managers = (w.managers || []).concat(name);
-        vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'data.js'), 'utf8'), win, { filename: name + '/data.js' });
+      require: function (p) {
+        w.required.push(String(p));
+        if (p === 'spirit/element/search.js' && !w.stood) { w.stood = true; STAND(((win.spirit.element.spirit = win.spirit.element.spirit || {}).element = win.spirit.element.spirit.element || {})); }
+        // A family's cache (goal/G41.28): the node branch's interface brings its data.js, as the real api.js does; it runs
+        // on this window over the real data set, from its path.
+        if (p === 'spirit/node/api.js') vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'node', 'data.js'), 'utf8'), win, { filename: 'spirit/node/data.js' });
         return Promise.resolve(true);
       } },
     document: { createElement: function (t) { return node(t); } },
@@ -137,13 +138,13 @@ test.run('show with no server hides it and clears the choice', 0.2, function () 
 
 // this node's own verbs are the node family's cache (goal/G41.28; Andy, Q7: "the family, verb and app-server selectors
 // draw from it")
-test.run('it loads the node manager, and its list is a view of the node family\'s verbs, with no rows of its own', 0.2, async function () {
+test.run('it requires the node branch\'s interface spirit/node/api.js and no data.js, and its list is a view of the node family\'s verbs, with no rows of its own', 0.2, async function () {
   if (!made || typeof made.create !== 'function') return false;
   mine = made.create(node('div'), {});
   await settle();
   m = w.lists[w.lists.length - 1];
   N = ((win.spirit.data || {}).node || {}).data;
-  return (w.managers || []).indexOf('node') !== -1 && !!N && m.opts.data === N.verbsBranch && m.opts.rows === undefined ? true : false;
+  return w.required.indexOf('spirit/node/api.js') !== -1 && !w.required.some(function (p) { return /data\.js$/.test(p); }) && !!N && m.opts.data === N.verbsBranch && m.opts.rows === undefined ? true : false;
 }, test.limit.quick);
 test.run('show, given the tree and a server, narrows the kept verbs to that family\'s and never DEBUG', 0.2, function () {
   if (!N || !m) return false;

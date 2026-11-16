@@ -27,7 +27,7 @@
   // cache manager.
   var parts = Promise.all(['spirit/element/search.js', 'spirit/element/search/job/rowElement.js', 'spirit/element/panel.js',
     'spirit/element/search/job/detailElement.js']
-    .map(function (p) { return S.require(p); }).concat([S.cacheManager('job')]));
+    .map(function (p) { return S.require(p); }).concat([S.require('spirit/job/api.js')]));
 
   function J() { return S.element.spirit.element.search.job; }
 

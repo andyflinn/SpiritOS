@@ -20,7 +20,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/app/a
   window.spirit.require('spirit/element/rowForm.js');
   window.spirit.require('spirit/element/armingButton.js');
   window.spirit.require('spirit/element/search/app.js');
-  window.spirit.cacheManager('app');
+  window.spirit.require('spirit/app/api.js');
 
   var LOOK = { home: { icon: '🏡', words: 'Home shell' }, face: { icon: '😋', words: 'Face shell' } };
 

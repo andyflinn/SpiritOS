@@ -1,7 +1,7 @@
 # spirit/element/search/contact/listElement.js
 
 The contacts list, a drop-in shell element: a pane in Contacts and Join, a dropdown in grants and introSpector. It is
-a view of the node's contacts, the branch the contact family's cache manager keeps (`spirit.data.contact.data.branch`,
+a view of the node's contacts, the branch the contact branch's data.js keeps (`spirit.data.contact.data.branch`,
 goal/G41.28), drawn by `probabilitySearch`, each row a contact row element (`spirit/element/search/contact/rowElement.js`).
 
 ## API
@@ -39,7 +39,7 @@ the probabilitySearch's own data source (`options.search`), and what it asks a p
   fields a row's ID and label are in. A table's rows are plain rows of their label, kind `id`: no contact filters, one
   column, nothing to open. Naming the contacts' own table is naming none.
 - **It loads what it uses** (goal/G41.3): loading, it requires `spirit/element/search/contact/rowElement.js` and `spirit/element/search.js`
-  through `spirit.require`, and the contact family's cache manager (`spirit.cacheManager('contact')`), and no data script (goal/G41.16): what the stream means for contacts is the contact family's manager's.
+  through `spirit.require`, and the contact branch's interface (`spirit.require('spirit/contact/api.js')`), and no data script (goal/G41.16): what the stream means for contacts is the contact branch's data.js's, which only its api.js requires (goal/G47.1).
 
 ## What its test must try to break
 

@@ -13,7 +13,7 @@
 if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/api.js','spirit/app/api.js'].forEach(function (p) { Promise.resolve(window.spirit.require(p)).catch(function () {}); });
 (function () {
   window.spirit.require('spirit/element/search/app/rowFormToggle.js');
-  window.spirit.cacheManager('app');
+  window.spirit.require('spirit/app/api.js');
 
   function create(host, options) {
     var S = window.spirit;

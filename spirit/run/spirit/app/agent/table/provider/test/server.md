@@ -60,9 +60,10 @@ which will never reach the browser or any place outside of the agent process exc
   - It builds on `agentRow` with the row's id, added, and the provider table's look.
   - Its fields are the label (name), the url, the API key as a secret, and the Model pick (goal/G41.21, below).
 
-- **elementRow.js loads the agent family's cache manager, which takes the provider table's rows from the stream** (goal/G41.16;
-  Andy: *"get rid of thos FUCKING data.js scripts"*; goal/G41.28): its page files require no data script; the row element
-  asks `spirit.cacheManager('agent')`, and `spirit.data.agent.data.branch('provider')` is the home node's `<node>/agent/provider`; a row
+- **elementRow.js requires the agent family's api.js, whose data.js takes the provider table's rows from the stream**
+  (goal/G41.16; Andy: *"get rid of thos FUCKING data.js scripts"*; goal/G41.28; goal/G47.1: only an api.js requires its
+  companion data.js): its page files require no data script; the row element requires
+  `spirit.require('spirit/app/agent/api.js')`, which brings `spirit/app/agent/data.js`, and `spirit.data.agent.data.branch('provider')` is the home node's `<node>/agent/provider`; a row
   of the agent stream (`{ agent: { table: 'provider', row } }`, module `spirit.app.agent`) lands at `<node>/agent/provider/<id>`,
   read through `spirit.data.agent.data.row`, and the branch's watcher hears it; a changed row is merged; one
   removed, by its id, is gone; another table's rows, another module's, and a row with no id write nothing.
@@ -85,7 +86,7 @@ providers, two models of one and one of the other; `./server-picker.html`, opene
 (`spirit/test/headLessChrome.js`), draws that provider's detail with the real row element, the real shared table element and
 the real dropdown, the agent server a stand-in answering what the real tables answered for each call. The page starts as
 the Agent app's does (`spirit.start()`: the data set, its home node from `node.card`), and 
-`spirit.cacheManager('agent')` loads the family's real `data.js` (goal/G41.28).
+the family's `api.js`, required by the row element, loads its real `data.js` (goal/G41.28, goal/G47.1).
 
 - The provider's detail shows its Model field, the provider having models.
 - Pressed, it opens its dropdown.

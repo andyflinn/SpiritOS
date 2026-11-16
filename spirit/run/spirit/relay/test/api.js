@@ -71,15 +71,26 @@ const call = function (verb, args) { return spirit.check('relay.' + verb, W.verb
 const passes = function (verb, args) { return !!W.verbs[verb] && call(verb, args) === null; };
 const refusedAs = function (verb, args) { if (!W.verbs[verb]) return null; const r = call(verb, args); return r ? r.code : null; };
 
-test.run('api.js loads as the node hands it, its text run with module and exports alone', 0.2, function () {
+// On a page the text runs with module and exports alone, beside the page's window, whose spirit.require it asks for its
+// companion data.js; a planted window stands for the page's while it runs, each path asked kept.
+test.run('api.js loads as the node hands it, its text run with module and exports alone on a page', 0.2, function () {
+  const had = Object.prototype.hasOwnProperty.call(globalThis, 'window');
+  const was = globalThis.window;
+  W.asked = [];
+  globalThis.window = { spirit: { require: function (p) { W.asked.push(String(p)); return Promise.resolve({}); } } };
   try {
     const m = { exports: {} };
     new Function('module', 'exports', fs.readFileSync(FILE, 'utf8'))(m, m.exports);
     W.api = m.exports;
-  } catch (e) { return false; }
+  } catch (e) { return false; } finally { if (had) globalThis.window = was; else delete globalThis.window; }
   W.verbs = (W.api && W.api.verbs) || {};
   W.names = Object.keys(W.verbs);
   return true;
+}, test.limit.quick);
+// Andy (goal/G47.1): "every api.js requires it's companion data.js, and is the only script to require that data.js".
+test.run('as it loads on a page, it requires its companion spirit/relay/data.js and nothing else', 0.2, function () {
+  if (!W.api || !W.asked) return false;
+  return JSON.stringify(W.asked) === JSON.stringify(['spirit/relay/data.js']) || false;
 }, test.limit.quick);
 test.run('server.js mounts the relay family', 0.2, function () {
   try { W.mounted = mounted('relay'); } catch (e) { return false; }
@@ -163,12 +174,12 @@ test.run('it has no search: a relay is a row of the one table, contact.search', 
 
 // ── names: status(name), his relays as a screen wants them (puppets/G2) ──
 // A planted spirit object stands as the global while status runs (it asks the one spirit object, never its own family,
-// for the search): its contact.search, its cacheManager and the relay family's keep are recorded.
+// for the search): its contact.search, the paths its require is asked and the relay family's keep are recorded.
 function plant(search) {
-  const P = { asked: [], kept: [], manager: [], calls: [] };
+  const P = { asked: [], kept: [], required: [], calls: [] };
   P.spirit = {
     contact: { search: function (a) { P.asked.push(a); return typeof search === 'function' ? search() : Promise.resolve(search); } },
-    cacheManager: function (n) { P.manager.push(n); return Promise.resolve({}); },
+    require: function (p) { P.required.push(p); return Promise.resolve({}); },
     data: { relay: { data: { keep: function (got) { P.kept.push(got); } } } },
   };
   return P;
@@ -211,10 +222,10 @@ test.run('status then gets each relay listed by its key, through the family\'s o
   const keys = S.P.calls.map(function (c) { return c[1] && c[1].key; });
   return (verbs.every(function (v) { return v === 'get'; }) && JSON.stringify(keys) === JSON.stringify([A, B, C, 'https://d.relay.example'])) || false;
 }, test.limit.quick);
-// goal/G41.28: each relay got is kept by the family's own cache manager, spirit.data.relay.data
-test.run('each relay got is handed to the relay family\'s cache manager to keep', 0.2, function () {
+// goal/G41.28: each relay got is kept by the family's own data script, spirit/relay/data.js, at spirit.data.relay.data
+test.run('it requires spirit/relay/data.js, and each relay got is handed to the relay family\'s data to keep', 0.2, function () {
   if (!S.out) return false;
-  return (S.P.manager.indexOf('relay') !== -1 && S.P.kept.indexOf(GETS[A]) !== -1 && S.P.kept.indexOf(GETS[B]) !== -1) || false;
+  return (S.P.required.indexOf('spirit/relay/data.js') !== -1 && S.P.kept.indexOf(GETS[A]) !== -1 && S.P.kept.indexOf(GETS[B]) !== -1) || false;
 }, test.limit.quick);
 test.run('it answers status 200, the body as its text, under the name it was given', 0.2, function () {
   if (!S.out) return false;

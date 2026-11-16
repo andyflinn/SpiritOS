@@ -6,7 +6,7 @@
 // What a client knows of a node's contacts, people and relays in one table (goal/G41.28, goal/G40.11), from the node's job spirit.contact (goal/G43.20).
 // It runs as it does: in a window of its own beside the real spirit.data (spirit/data.js), which it writes into, the
 // stream's events handed in as spirit.data hands them (takeJob, takeRename), each from the node that served it. In node
-// it is found as a page finds it, by the family's name (spirit.cacheManager). The reads alone are read, never a branch.
+// it comes with the family's api.js (spirit.require('spirit/contact/api.js')), the one script that requires it. The reads alone are read, never a branch.
 
 const fs = require('fs');
 const path = require('path');
@@ -57,11 +57,11 @@ function pageWorld() {
 // What the tests make, each in order, read by the tests after it.
 let w = null;
 
-test.run('in node, found by the family\'s name (spirit.cacheManager), it stands at spirit.data.contact.data', 0.2, async function () {
+test.run('in node, requiring the contact family\'s interface, spirit/contact/api.js, brings its data.js, which stands at spirit.data.contact.data', 0.2, async function () {
   require(path.join(RUN, 'spirit', 'spirit.js'));
   const S = globalThis.spirit;
   let threw = null;
-  try { await S.cacheManager('contact'); } catch (e) { threw = e; }
+  try { await Promise.resolve(S.require('spirit/contact/api.js')); } catch (e) { threw = e; }
   const X = S.data && S.data['contact'] && S.data['contact'].data;
   return (!threw && !!X && typeof X === 'object') || false;
 }, test.limit.quick);

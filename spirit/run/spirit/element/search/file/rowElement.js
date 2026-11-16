@@ -27,7 +27,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
   // it fills; a row reads spirit.data.fs.data.
   function fsReads() { return (window.spirit && ((window.spirit.data || {}).fs || {}).data) || null; }
   // Asked as this file runs, so it is part of this file's tree: whoever requires this element has the manager with it.
-  var fsReady = Promise.resolve(window.spirit.cacheManager('fs')).then(function () { return fsReads(); });
+  var fsReady = Promise.resolve(window.spirit.require('spirit/fs/api.js')).then(function () { return fsReads(); });
 
   // ICONS AS THEMSELVES (goal/G30.21): the glyph is written, never a key into a table.
   function esc(s) {

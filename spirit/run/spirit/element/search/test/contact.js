@@ -27,7 +27,7 @@ function element(tag) {
 }
 
 // One test.run per test (goal/G47.2). What the world and the tests make, for the tests after them.
-let code, lists, required, managers, made, box, drop, d, changes, pane, p, statuses;
+let code, lists, required, atLoad, loaded, made, box, drop, d, changes, pane, p, statuses;
 let hold = null;
 
 test.run('the picker runs on a bare window', 0.2, async function () {
@@ -36,7 +36,6 @@ test.run('the picker runs on a bare window', 0.2, async function () {
   code = SRC.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
   lists = [];
   required = [];
-  managers = [];
   const STANDS = {
     'spirit/element/search/contact/listElement.js': function () { require(path.join(RUN, 'spirit', 'element', 'installSpiritElement.js'))(global.window.spirit, 'spirit/element/search/contact/listElement.js', { create: function (host, o) {
       const l = { host: host, o: o, refreshed: 0, marks: [], destroyed: 0 };
@@ -49,7 +48,6 @@ test.run('the picker runs on a bare window', 0.2, async function () {
   global.window = { spirit: { escapeHtml: function (s) { return String(s); }, ready: Promise.resolve({}), element: {} } };
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
   global.spirit = global.window.spirit;
-  global.window.spirit.cacheManager = function (n) { managers.push(String(n)); return Promise.resolve(true); };
   global.window.spirit.require = function (p) {
     required.push(String(p));
     if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](); }
@@ -59,6 +57,7 @@ test.run('the picker runs on a bare window', 0.2, async function () {
   await settle();
   const E = ((global.window.spirit.element || {}).spirit || {}).element || {};
   made = E.search && E.search.contact;
+  atLoad = required.slice();
   return true;
 }, test.limit.quick);
 // goal/G40.8: the old shell's list search is forbidden on the face; goal/G43.32: no list of its own either.
@@ -76,14 +75,17 @@ test.run('it places itself at spirit.element.spirit.element.search.contact, with
 test.run('create appends its root to the container it is given and answers that root', 0.2, async function () {
   if (!made || typeof made.create !== 'function') return false;
   box = element('div');
+  const from = required.length;
   drop = made.create(box, { placeholder: 'choose an ID…', all: 'every ID', table: 'loopback://api/agent/job', key: 'id', label: 'title', data: 'b/branch' });
   await settle();
   d = lists[0];
+  // What the picker required as it ran and as it drew, kept apart from what the runner asks of the page between tests.
+  loaded = atLoad.concat(required.slice(from));
   return box.children.length === 1 && box.children[0] === drop ? true : false;
 }, test.limit.quick);
-test.run('on a bare page it requires the one contact list and the contact family\'s cache, then draws it', 0.2, function () {
-  if (!required) return false;
-  return required.indexOf('spirit/element/search/contact/listElement.js') !== -1 && managers.indexOf('contact') !== -1 ? true : false;
+test.run('on a bare page it requires the one contact list and the contact family\'s interface, spirit/contact/api.js, and no data.js, then draws it', 0.2, function () {
+  if (!loaded) return false;
+  return loaded.indexOf('spirit/element/search/contact/listElement.js') !== -1 && loaded.indexOf('spirit/contact/api.js') !== -1 && !loaded.some(function (p) { return /data\.js$/.test(p); }) ? true : false;
 }, test.limit.quick);
 test.run('the dropdown is the list in its dropdown face, drawn into its root with its words handed on', 0.2, function () {
   if (!box) return false;

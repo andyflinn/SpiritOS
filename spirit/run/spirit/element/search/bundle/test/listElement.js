@@ -18,7 +18,7 @@ const settle = async function () { for (let i = 0; i < 20; i++) await tick(); };
 
 // One test.run per test (goal/G47.2). What the world and the tests make, for the tests after them.
 // An element that counts on what it did not load throws inside a promise: the reporter fails the test it ran in.
-let asked, required, lists, rows, managers, DATA, V, E, made, l, o, got, p, fo, LIST;
+let asked, required, loaded, lists, rows, DATA, V, E, made, l, o, got, p, fo, LIST;
 let answer = { items: [{ key: '7', label: JSON.stringify({ id: 7, label: 'Reader' }) }], more: true };
 const picked = [];
 const listed = function () { return !!(E && E.search && E.search.bundle && E.search.bundle.listElement && typeof E.search.bundle.listElement.create === 'function'); };
@@ -35,8 +35,8 @@ test.run('the bundle list runs on a bare window with the page\'s real data set',
       const l = { host: host, o: o, refreshes: 0, destroyed: false, refresh: function () { l.refreshes += 1; }, redraw: function () {}, destroy: function () { l.destroyed = true; } };
       lists.push(l); return l;
     } }); },
-    // The real row element loads the auth family's cache manager as it runs (goal/G41.28); its stand-in does the same.
-    'spirit/element/search/bundle/rowElement.js': function (E) { global.window.spirit.cacheManager('auth'); require(path.join(RUN, 'spirit', 'element', 'installSpiritElement.js'))(global.window.spirit, 'spirit/element/search/bundle/rowElement.js', { create: function (row, opts) { const r = { kind: 'bundle', row: row, opts: opts || {} }; rows.push(r); return r; } }); },
+    // The real row element requires the auth branch's interface as it runs (goal/G41.28); its stand-in does the same.
+    'spirit/element/search/bundle/rowElement.js': function (E) { global.window.spirit.require('spirit/auth/api.js'); require(path.join(RUN, 'spirit', 'element', 'installSpiritElement.js'))(global.window.spirit, 'spirit/element/search/bundle/rowElement.js', { create: function (row, opts) { const r = { kind: 'bundle', row: row, opts: opts || {} }; rows.push(r); return r; } }); },
   };
   global.window = { spirit: { escapeHtml: function (s) { return String(s); }, ready: Promise.resolve({ auth: auth }), auth: auth, element: {} } };
   // goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
@@ -49,27 +49,25 @@ test.run('the bundle list runs on a bare window with the page\'s real data set',
   const NODE_KEY = 'nOdE+key/one==';
   global.window.spirit.node = { key: NODE_KEY };
   DATA.homeNode(NODE_KEY);
-  // spirit.cacheManager(name), as a page's: the family's manager loaded once, attaching itself to the data set.
-  managers = [];
-  global.window.spirit.cacheManager = function (name) {
-    managers.push(String(name));
-    vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'data.js'), 'utf8'), { filename: name + '/data.js' });
-    return Promise.resolve(true);
-  };
   // The direct writes below are the auth family's own view of the home node, as its manager files them.
   V = DATA.viewAt(null, 'auth');
   global.document = { createElement: function () { return {}; } };
-  global.window.spirit.require = function (p) { required.push(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.element.spirit = global.window.spirit.element.spirit || {}).element = global.window.spirit.element.spirit.element || {})); } return Promise.resolve(true); };
+  // The auth branch's interface brings its data.js, as the real api.js does: run once from its path, attaching itself to
+  // the data set.
+  let authData = false;
+  global.window.spirit.require = function (p) { required.push(String(p)); if (p === 'spirit/auth/api.js' && !authData) { authData = true; vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'auth', 'data.js'), 'utf8'), { filename: 'spirit/auth/data.js' }); } if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.element.spirit = global.window.spirit.element.spirit || {}).element = global.window.spirit.element.spirit.element || {})); } return Promise.resolve(true); };
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
+  // What the list asked as it loaded; the runner's own asks after this test are not the list's.
+  loaded = required.slice();
   E = ((global.window.spirit.element || {}).spirit || {}).element || {};
   return true;
 }, test.limit.quick);
 
 // it loads what it uses itself (rule/26)
-test.run('it requires the search element and its row element through spirit.require, and no data script', 0.2, function () {
-  if (!required) return false;
-  return ['spirit/element/search.js', 'spirit/element/search/bundle/rowElement.js'].every(function (p) { return required.indexOf(p) !== -1; }) && !required.some(function (p) { return /data\.js$/.test(p); }) ? true : false;
+test.run('it requires the search element, its row element and the auth interface spirit/auth/api.js through spirit.require, and no data script', 0.2, function () {
+  if (!loaded) return false;
+  return ['spirit/element/search.js', 'spirit/element/search/bundle/rowElement.js', 'spirit/auth/api.js'].every(function (p) { return loaded.indexOf(p) !== -1; }) && !loaded.some(function (p) { return /data\.js$/.test(p); }) ? true : false;
 }, test.limit.quick);
 test.run('it registers spirit.element.spirit.element.search.bundle.listElement.create', 0.2, function () {
   if (!E) return false;

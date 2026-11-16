@@ -55,11 +55,11 @@ function world(answer) {
         if (c && typeof c.appendChild === 'function') c.appendChild(f.root);
         w.forms.push(f); return f;
       } } } } },
-      require: function (p) { w.required.push(String(p)); return Promise.resolve(true); },
-      // A family's cache (goal/G41.28): the family's own manager, run on this window over the real data set.
-      cacheManager: function (name) {
-        w.managers = (w.managers || []).concat(name);
-        vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'data.js'), 'utf8'), win, { filename: name + '/data.js' });
+      // Each path kept; the node family's api.js requires its companion data.js (goal/G41.28, G47.1), as the real one
+      // does: the real file, run once on this window over the real data set.
+      require: function (p) {
+        w.required.push(String(p));
+        if (p === 'spirit/node/api.js' && !w.ran) { w.ran = true; vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'node', 'data.js'), 'utf8'), win, { filename: 'spirit/node/data.js' }); }
         return Promise.resolve(true);
       } },
     document: { createElement: function (t) { return node('<' + t + '>'); }, createTextNode: function (t) { const x = node('#text'); x.textContent = String(t); return x; } },
@@ -185,10 +185,13 @@ test.run('the field then shows the description the node stored', 0.2, function (
 test.run('after the save it says saved', 0.2, function () {
   return (/saved/.test(said.textContent)) ? true : false;
 }, test.limit.quick);
-test.run('it loads the node manager, and the description the node stored is kept in the card of the node family\'s data', 0.2, function () {
+test.run('it requires the node family\'s interface, spirit/node/api.js, and the description the node stored is kept in the card of the node family\'s data', 0.2, function () {
   // what it changes, it listens for: the node card in the node family's cache (goal/G41.28)
   N = ((w.win.spirit.data || {}).node || {}).data;
-  return ((w.managers || []).indexOf('node') !== -1 && !!N && !!N.card.get() && N.card.get().description === 'Bob') ? true : false;
+  return (w.required.indexOf('spirit/node/api.js') !== -1 && !!N && !!N.card.get() && N.card.get().description === 'Bob') ? true : false;
+}, test.limit.quick);
+test.run('it requires no data script, as only an api.js requires its data.js', 0.2, function () {
+  return !w.required.some(function (p) { return /data\.js$/.test(p); }) ? true : false;
 }, test.limit.quick);
 test.run('a description changed in the card, from elsewhere, redraws the field', 0.2, async function () {
   N.card.keep({ description: 'Eve' });
