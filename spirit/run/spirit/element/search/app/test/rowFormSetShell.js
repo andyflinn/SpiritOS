@@ -39,29 +39,29 @@ test.after(function () {
   try { if (node && node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* scratch */ }
 });
 
-test.run('the world: the tree has an app that may be a shell, and one that may not', 0.2, function () {
+test.run('the tree has an app that may be a shell, and one that may not', 0.2, function () {
   return (!!SHELL && !!NOSHELL) || false;
 }, test.limit.quick);
-test.run('the world: a scratch node, and a Chrome on its face page', 0.2, async function () {
+test.run('a scratch node comes up with a Chrome on its face page', 0.2, async function () {
   node = await scratchNode();
   chrome = await chromePage(findChrome());
   if (!node.up || chrome.error) return false;
   await chrome.send('Page.navigate', { url: node.base + '/face.html' });
   return (await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000)) || false;
 }, test.limit.slow);
-test.run('it loads through spirit.require and is spirit.element.spirit.element.search.app.rowFormSetShell', 0.2, async function () {
+test.run('rowFormSetShell loads through spirit.require and is spirit.element.spirit.element.search.app.rowFormSetShell', 0.2, async function () {
   if (!node || !node.up || !chrome || chrome.error) return false;
   loaded = await chrome.evaluate('spirit.ready.then(function () { return spirit.require("spirit/element/search/app/rowFormSetShell.js"); }).then(function () { window.shellAsks = []; var real = spirit.node.shell; spirit.node.shell = function (a) { window.shellAsks.push(a); return window.refuseShell ? Promise.reject(new Error("refused here")) : real.call(spirit.node, a); }; var E = spirit.element.spirit.element.search.app.rowFormSetShell; return !!(E && typeof E.create === "function"); }, function () { return false; })');
   return loaded === true || false;
 }, test.limit.slow);
 
 // "shown only for an app whose <name>.json says shell:true:true"
-test.run('create(host, { key, at }) answers { destroy }', 0.2, async function () {
+test.run('create, handed a host with key and at, answers an object with destroy', 0.2, async function () {
   if (loaded !== true) return false;
   const made = [await make('no', NOSHELL, 'home'), await make('home', SHELL, 'home'), await make('face', SHELL, 'face')];
   return JSON.stringify(made) === '[true,true,true]' || false;
 }, test.limit.slow);
-test.run('for an app that may not be a shell it draws no row', 0.2, async function () {
+test.run('for an app that may not be a shell, rowFormSetShell draws no row', 0.2, async function () {
   if (loaded !== true) return false;
   await until(function () { return view('home').then(function (v) { return v.forms === 1; }); }, 10000);
   await sleep(500);
@@ -69,27 +69,27 @@ test.run('for an app that may not be a shell it draws no row', 0.2, async functi
   return (v.forms === 0 && v.text === '') || false;
 }, test.limit.slow);
 // rowForm: [🏡] "Home shell" app:search:dropdown [armingButton-'Set']
-test.run('for a shell at home: one row, 🏡 "Home shell", and Set', 0.2, async function () {
+test.run('for a shell at home, rowFormSetShell draws one row with 🏡, "Home shell" and Set', 0.2, async function () {
   if (loaded !== true) return false;
   const v = await view('home');
   return (v.forms === 1 && /🏡/.test(v.text) && /Home shell/.test(v.text) && v.set === 'Set') || false;
 }, test.limit.quick);
 // rowForm: [😋] "Face shell" app:search:dropdown [armingButton-'Set']
-test.run('for a shell on its face: one row, 😋 "Face shell", and Set', 0.2, async function () {
+test.run('for a shell on its face, rowFormSetShell draws one row with 😋, "Face shell" and Set', 0.2, async function () {
   if (loaded !== true) return false;
   await until(function () { return view('face').then(function (v) { return v.forms === 1; }); }, 10000);
   const v = await view('face');
   return (v.forms === 1 && /😋/.test(v.text) && /Face shell/.test(v.text) && v.set === 'Set') || false;
 }, test.limit.slow);
 // "Beside the dropdown, the shell the node names now (node.shell({ at })), by its label"
-test.run('beside the dropdown, the shell the node names now, by its label, asked of node.shell({ at })', 0.2, async function () {
+test.run('beside the dropdown stands the shell the node names now, by its label, asked of node.shell with at', 0.2, async function () {
   if (loaded !== true) return false;
   const ok = await until(function () { return view('home').then(function (v) { return v.text.indexOf('Home shell ' + LABEL) !== -1; }); }, 10000);
   const asks = await chrome.evaluate('JSON.stringify(window.shellAsks)');
   return (!!ok && JSON.parse(asks).some(function (a) { return a.at === 'home' && !a.name; })) || false;
 }, test.limit.slow);
 // "Both dropdowns list only the apps whose <name>.json says shell:true:true"
-test.run('its dropdown lists only the apps that may be a shell', 0.2, async function () {
+test.run('the dropdown lists only the apps that may be a shell', 0.2, async function () {
   if (loaded !== true) return false;
   await openList('face');
   const ok = await until(function () { return listed('face').then(function (k) { return JSON.stringify(k) === JSON.stringify(SHELLS); }); }, 10000);
@@ -112,7 +112,7 @@ test.run('a pick is held until Set: choosing asks the node nothing', 0.2, async 
   return (!sets.length && !(kept() || {}).face) || false;
 }, test.limit.slow);
 // "Set, an armingButton, whose second press asks the node, node.shell({ at, name })"
-test.run('Set\'s first press asks nothing; its second asks node.shell({ at, name }), and the node keeps it', 0.2, async function () {
+test.run('the first press of Set asks nothing, the second asks node.shell with at and name, and the node keeps it', 0.2, async function () {
   if (loaded !== true) return false;
   await pressSet('face'); await sleep(300);
   const first = JSON.parse(await chrome.evaluate('JSON.stringify(window.shellAsks)')).filter(function (a) { return a.name; }).length;

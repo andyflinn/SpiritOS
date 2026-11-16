@@ -38,7 +38,7 @@ try { git(os.tmpdir(), ['rev-parse', '--git-dir']); inRepo = true; } catch (e) {
 
 // ── git first ──
 let R = null;
-test.run('the world: a checkout with one commit', 0.2, function () {
+test.run('a checkout with one commit is made', 0.2, function () {
   R = repository();
   return !!git(R.repo, ['rev-parse', 'HEAD']) || false;
 }, test.limit.quick);
@@ -48,14 +48,14 @@ test.run('in a checkout, resolve answers the commit HEAD is at, from git, with i
   const want = git(R.repo, ['rev-parse', '--short', 'HEAD']);
   return (s.source === 'git' && s.commit === want && s.at === git(R.repo, ['log', '-1', '--format=%cI']) && s.dirty === false) || false;
 }, test.limit.quick);
-test.run('a tracked file edited and not committed is dirty: a bare sha there would be a confident lie', 0.2, function () {
+test.run('a tracked file edited and not committed is dirty, since a bare sha there would be a confident lie', 0.2, function () {
   if (!R) return false;
   put(path.join(R.run, 'spirit', 'a.js'), 'edited\n');
   const s = S.resolve(R.run);
   git(R.repo, ['checkout', '--', '.']);
   return (s.dirty === true && s.source === 'git') || false;
 }, test.limit.quick);
-test.run('git first: a checkout that also holds a build.json answers from git', 0.2, function () {
+test.run('git comes first, so a checkout that also holds a build.json answers from git', 0.2, function () {
   if (!R) return false;
   put(path.join(R.run, S.STAMP_FILE), JSON.stringify({ commit: 'from-the-file' }));
   const s = S.resolve(R.run);
@@ -84,7 +84,7 @@ test.run('write with no stamp says "unknown" rather than guessing', 0.2, functio
   const f = JSON.parse(fs.readFileSync(path.join(run, S.STAMP_FILE), 'utf8'));
   return (f.commit === 'unknown' && f.dirty === false && f.at === '' && f.untracked === 0) || false;
 }, test.limit.quick);
-test.run('write is best effort: a folder that cannot be written answers false and does not throw', 0.2, function () {
+test.run('write is best effort, so a folder that cannot be written answers false and does not throw', 0.2, function () {
   let r;
   try { r = S.write(path.join(bareTree(), 'no', 'such', 'folder'), { commit: 'x' }); } catch (e) { return false; }
   return r === false || false;
@@ -96,20 +96,20 @@ test.run('fromFile answers null for no build.json, a broken one, and one with no
   const got = [S.fromFile(a), S.fromFile(b), S.fromFile(c)];
   return got.every(function (x) { return x === null; }) || false;
 }, test.limit.quick);
-test.run('no repository and no build.json: said plainly, commit "unknown", source "none"', 0.2, function () {
+test.run('with no repository and no build.json it says so plainly, with commit "unknown" and source "none"', 0.2, function () {
   if (inRepo) return false;
   const s = S.resolve(bareTree());
   return (s.commit === 'unknown' && s.source === 'none' && s.dirty === false && s.at === '') || false;
 }, test.limit.quick);
 
 // ── what a copy would leave behind ──
-test.run('missingFromCopy names a new file under spirit/ that git does not list: new files do not travel', 0.2, function () {
+test.run('missingFromCopy names a new file under spirit/ that git does not list, since new files do not travel', 0.2, function () {
   if (!R) return false;
   put(path.join(R.repo, 'spirit', 'run', 'spirit', 'new.js'), 'new\n');
   const m = S.missingFromCopy(R.repo);
   return (m.length === 1 && m[0] === 'spirit/run/spirit/new.js') || false;
 }, test.limit.quick);
-test.run('git add is enough: an added file is no longer missing, with no commit', 0.2, function () {
+test.run('git add is enough, so an added file is no longer missing, with no commit', 0.2, function () {
   if (!R) return false;
   git(R.repo, ['add', '--', 'spirit/run/spirit/new.js']);
   const m = S.missingFromCopy(R.repo);
@@ -122,7 +122,7 @@ test.run('a new file under spirit/test, or outside spirit/, is not counted', 0.2
   const m = S.missingFromCopy(R.repo);
   return m.length === 0 || false;
 }, test.limit.quick);
-test.run('missingFromCopy outside a repository says nothing: an empty list, no throw', 0.2, function () {
+test.run('missingFromCopy outside a repository says nothing, answering an empty list and throwing nothing', 0.2, function () {
   if (inRepo) return false;
   let m;
   try { m = S.missingFromCopy(path.dirname(path.dirname(bareTree()))); } catch (e) { return false; }

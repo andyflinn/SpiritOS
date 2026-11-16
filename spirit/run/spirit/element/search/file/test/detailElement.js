@@ -35,7 +35,7 @@ test.run('spirit/element/search/file/detailElement.js is there', 0.2, function (
 test.run('it draws with fstat, which it loads itself', 0.2, function () {
   return /spirit\/element\/fstat\.js/.test(code) && /fstat\.create\(/.test(code) ? true : false;
 }, test.limit.quick);
-test.run('the world: a scratch node, and a Chrome on its face page', 0.2, async function () {
+test.run('a scratch node comes up with a Chrome on its face page', 0.2, async function () {
   node = await scratchNode();
   chrome = await chromePage(findChrome());
   if (!node.up || chrome.error) return false;

@@ -189,7 +189,7 @@ function tell(row) {
 
 SCRIPTS.forEach(function (rel) {
   // "its severity is 0.8", written as the number it is (titleRules wants a severity as a number in the call).
-  test.run('classifyable', 0.8, async function () {
+  test.run('it loads, so it can be classified', 0.8, async function () {
     let k = null;
     // "its severity is 0.8": the classifier failing in itself (a throw, no scratch node) fails the script at 0.8 too, as
     // a failure said, never as the reporter's crash at 0.7.

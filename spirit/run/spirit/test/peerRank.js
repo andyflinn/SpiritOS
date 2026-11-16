@@ -18,16 +18,16 @@ const ROWS = [{ publicLabel: 'zebra' }, { publicLabel: 'andy flinn' }, { publicL
 function many(n) { const out = []; for (let i = 0; i < n; i += 1) out.push({ publicLabel: 'peer ' + i }); return out; }
 
 // ── anyone ──
-test.run('no words, or *, is anyone: every row, in the order given', 0.2, function () {
+test.run('no words, or *, means anyone, so every row comes in the order given', 0.2, function () {
   const a = labels(P.rank(ROWS, '')), b = labels(P.rank(ROWS, '*'));
   const want = ['zebra', 'andy flinn', 'bob', 'andy'];
   return (short(a) === short(want) && short(b) === short(want)) || false;
 }, test.limit.quick);
-test.run('one relay answers 32 rows at most (SLOTS), and says more when one was turned away', 0.2, function () {
+test.run('one relay answers 32 rows at most, and says more when one was turned away', 0.2, function () {
   const r = P.rank(many(40), '');
   return (P.SLOTS === 32 && r.rows.length === 32 && r.more === true && r.rows[0].publicLabel === 'peer 0') || false;
 }, test.limit.quick);
-test.run('slots given caps the list; a list that fits says no more', 0.2, function () {
+test.run('a number of slots given caps the list, and a list that fits says no more', 0.2, function () {
   const r = P.rank(ROWS, '*', 2), all = P.rank(ROWS, '*', 4);
   return (short(labels(r)) === short(['zebra', 'andy flinn']) && r.more === true && all.rows.length === 4 && all.more === false) || false;
 }, test.limit.quick);
@@ -41,7 +41,7 @@ test.run('the best match comes first: the row that is the words, before one that
   const got = labels(P.rank(ROWS, 'andy'));
   return (got[0] === 'andy' && got.indexOf('andy flinn') > 0) || false;
 }, test.limit.quick);
-test.run('the whole row as it is served is matched, not its label alone (goal/G41.28)', 0.2, function () {
+test.run('the whole row as it is served is matched, not its label alone', 0.2, function () {
   const got = labels(P.rank(ROWS, 'andytown'));
   return got.indexOf('bob') !== -1 || false;
 }, test.limit.quick);

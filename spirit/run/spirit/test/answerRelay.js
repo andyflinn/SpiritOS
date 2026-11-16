@@ -41,7 +41,7 @@ const B = auth.generateIdentity('relay-b');
 // ── first use: the key, pinned ──
 let W = null;
 let got = null;
-test.run('the world: a relay never met answers its signed key statement', 0.2, async function () {
+test.run('a relay never met before answers its signed key statement', 0.2, async function () {
   W = answerer(ROOT, { [URL_A]: statement(A, 'a'), [URL_B]: statement(B, 'b') });
   got = await W.a.relayKey(URL_A);
   return W.asked.length === 1 || false;
@@ -89,7 +89,7 @@ test.run('an unsigned statement, one with its label changed, and one with no key
   const r = [await s.a.relayKey('https://u.example'), await s.a.relayKey('https://l.example'), await s.a.relayKey('https://n.example')];
   return r.every(function (x) { return x === ''; }) || false;
 }, test.limit.quick);
-test.run('a relay that does not answer (askKey rejects or throws) yields no key, and relayKey never rejects', 0.2, async function () {
+test.run('a relay that does not answer, its key ask rejecting or throwing, yields no key, and relayKey never rejects', 0.2, async function () {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-answerrelay-'));
   const s = answerer(root, { 'https://down.example': function () { return Promise.reject(new Error()); }, 'https://boom.example': function () { throw new Error(); } });
   let r;
@@ -113,7 +113,7 @@ test.run('a relay answering with another key than the pin is refused: no key', 0
   rk = await R.a.relayKey(URL_A);
   return rk === '' || false;
 }, test.limit.quick);
-test.run('the refusal is said out loud: onKeyChanged(url, the pinned key, the key answered)', 0.2, function () {
+test.run('the refusal is said out loud: onKeyChanged is told the url, the pinned key and the key answered', 0.2, function () {
   if (!R) return false;
   const c = R.changed[0] || {};
   return (R.changed.length === 1 && c.url === URL_A && c.was === A.publicKey && c.now === A2.publicKey) || false;

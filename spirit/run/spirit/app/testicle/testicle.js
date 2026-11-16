@@ -221,7 +221,9 @@ function soon() {
 // failed. That row prevents it from being tested in any other way: the runner starts no other suite for a script whose
 // classifyable row is red. No flag on the script row."
 const CLASSIFY = 'spirit/test/scriptClassify.js';
-const CLASSIFYABLE = 'classifyable';
+// The classifier's one test title (spirit/test/scriptClassify.js), a plain sentence (goal/G47.1, Andy: "THE TITLE HAS TO BE
+// COMPREHENSIBLE FUCKING ENGLISH").
+const CLASSIFYABLE = 'it loads, so it can be classified';
 // "its severity is 0.8": what a run that never classified a script fails it with.
 const CLASSIFY_SEVERITY = 0.8;
 const toClassify = db.prepare('SELECT name, hash FROM script WHERE reClassify = 1 AND deleted = 0 ORDER BY name');

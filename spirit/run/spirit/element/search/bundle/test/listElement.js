@@ -23,7 +23,7 @@ let answer = { items: [{ key: '7', label: JSON.stringify({ id: 7, label: 'Reader
 const picked = [];
 const listed = function () { return !!(E && E.search && E.search.bundle && E.search.bundle.listElement && typeof E.search.bundle.listElement.create === 'function'); };
 
-test.run('the world: the list runs on a bare window, the page\'s data set real', 0.2, async function () {
+test.run('the bundle list runs on a bare window with the page\'s real data set', 0.2, async function () {
   if (!fs.existsSync(FILE)) return false;
   asked = [];
   required = [];
@@ -67,7 +67,7 @@ test.run('the world: the list runs on a bare window, the page\'s data set real',
 }, test.limit.quick);
 
 // it loads what it uses itself (rule/26)
-test.run('it requires the search element and its row element through spirit.require, and no data script (Andy: "NO FUCKING DATA SCRIPT")', 0.2, function () {
+test.run('it requires the search element and its row element through spirit.require, and no data script', 0.2, function () {
   if (!required) return false;
   return ['spirit/element/search.js', 'spirit/element/search/bundle/rowElement.js'].every(function (p) { return required.indexOf(p) !== -1; }) && !required.some(function (p) { return /data\.js$/.test(p); }) ? true : false;
 }, test.limit.quick);
@@ -86,7 +86,7 @@ test.run('it draws one probabilitySearch into the host it is given', 0.2, async 
   if (l) o = l.o;
   return !!l && l.host === host ? true : false;
 }, test.limit.quick);
-test.run('face, placeholder and all are handed on, pane or dropdown as asked', 0.2, function () {
+test.run('its face, its placeholder and the rest of its options are handed on, pane or dropdown as asked', 0.2, function () {
   if (!l) return false;
   return o.face === 'dropdown' && o.placeholder === 'choose a bundle…' && o.all === 'no bundle' ? true : false;
 }, test.limit.quick);
@@ -95,24 +95,24 @@ test.run('a pick reaches opts.pick', 0.2, function () {
   o.pick({ id: 7 }, '7');
   return picked.length === 1 && picked[0] === '7' ? true : false;
 }, test.limit.quick);
-test.run('it fills as soon as it is drawn: one refresh at create', 0.2, function () {
+test.run('it fills as soon as it is drawn, with one refresh at create', 0.2, function () {
   if (!l) return false;
   return l.refreshes === 1 ? true : false;
 }, test.limit.quick);
 // goal/G41.14, Andy: "EVERY FUCKING element MUST FUCKING LISTING to anything that changes their data set": the list is a
 // view of the node's bundles (goal/G41.28: the branch the auth family's cache manager keeps), so a bundle added anywhere
 // on the page shows in every bundle list (probabilitySearch's data).
-test.run('it is a view of the auth family\'s bundles (spirit.data.auth.data.bundles.branch), the spirit object\'s cache, which the node\'s stream keeps current', 0.2, function () {
+test.run('it is a view of the auth family\'s bundles at spirit.data.auth.data.bundles.branch, the spirit object\'s cache, which the node\'s stream keeps current', 0.2, function () {
   if (!l) return false;
   const B = ((global.window.spirit.data || {}).auth || {}).data && global.window.spirit.data.auth.data.bundles;
   return !!B && typeof B.branch === 'string' && B.branch !== '' && o.data === B.branch ? true : false;
 }, test.limit.quick);
-test.run('its search asks auth.bundle { op: search, text } through the spirit object, the text trimmed', 0.2, async function () {
+test.run('its search asks auth.bundle to search the trimmed text, through the spirit object', 0.2, async function () {
   if (!l) return false;
   got = await o.search(o.args('  rea ', {}));
   return o.server === 'auth' && o.verb === 'bundle' && asked.length === 1 && asked[0].op === 'search' && asked[0].text === 'rea' ? true : false;
 }, test.limit.quick);
-test.run('and answers as a reply: { items, more }', 0.2, function () {
+test.run('its search answers as a reply, with items and more', 0.2, function () {
   if (!l) return false;
   return got && got.status === 200 && got.body && got.body.ok === true && got.body.items.length === 1 && got.body.more === true ? true : false;
 }, test.limit.quick);
@@ -136,7 +136,7 @@ test.run('made for no app server, its search names no owner: every bundle', 0.2,
 }, test.limit.quick);
 // THE WHOLE ROW (goal/G41.28; Andy, box v15: "All client side searches will be fixed, too, and search the whole row, as
 // cached in spirit.data."): the list hands its search no matched() of its own.
-test.run('it hands its search no matched(): the whole row is matched (goal/G41.28)', 0.2, function () {
+test.run('it hands its search no matched function, so the whole row is matched', 0.2, function () {
   if (!l) return false;
   return typeof o.matched !== 'function' ? true : false;
 }, test.limit.quick);
@@ -176,7 +176,7 @@ test.run('no row edits its label: an editable asked for is handed to no row', 0.
 // Andy, box: "if the bundleSelector is not configured for an appServer, the bundleSelector will show/search ALL/ANY
 // bundles", and "if the bundleSelector IS configured for an appServer, then it will only list bundles \"owned\" by that
 // Appserver".
-test.run('its search asks auth.bundle { op: search, text, owner: family }, the text trimmed', 0.2, async function () {
+test.run('made for an app server, its search asks auth.bundle to search the trimmed text with that server\'s family as the owner', 0.2, async function () {
   if (!listed()) return false;
   E.search.bundle.listElement.create({}, { face: 'dropdown', family: 'agent' });
   await settle();
@@ -219,7 +219,7 @@ test.run('made for no app server, it offers every bundle, whoever owns it', 0.2,
 }, test.limit.quick);
 
 // refresh and destroy are the search element's
-test.run('refresh and destroy reach the search element; .list is it', 0.2, function () {
+test.run('refresh and destroy reach the search element, and its list property is that element', 0.2, function () {
   if (!l) return false;
   const r0 = l.refreshes;
   made.refresh(); made.destroy();

@@ -24,7 +24,7 @@ test.after(function () {
 test.run('spirit/element/search/grant/detailElement.js is there', 0.2, function () {
   return fs.existsSync(path.join(__dirname, '..', 'detailElement.js')) ? true : false;
 }, test.limit.quick);
-test.run('the world: a scratch node, and Chrome on its face page', 0.2, async function () {
+test.run('a scratch node comes up, and Chrome opens its face page', 0.2, async function () {
   node = await scratchNode();
   chrome = await chromePage(findChrome());
   if (!node.up || chrome.error) return false;
@@ -38,7 +38,7 @@ test.run('the world: a scratch node, and Chrome on its face page', 0.2, async fu
   text = function (id) { return js('String((document.getElementById("' + id + '") || {}).innerText || "")'); };
   return true;
 }, test.limit.slow);
-test.run('it loads on a page, at spirit.element.spirit.element.search.grant.detailElement, and makes its detail', 0.2, async function () {
+test.run('it loads on a page, at its path on spirit.element, and makes its detail', 0.2, async function () {
   if (!js) return false;
   return (await mount('zzOne', true)) === 'made' ? true : false;
 }, test.limit.slow);
@@ -52,7 +52,7 @@ test.run('a path a server serves is not marked deprecated', 0.2, function () {
   if (one === undefined) return false;
   return !/deprecated/.test(one) ? true : false;
 }, test.limit.quick);
-test.run('the world: a second detail, on a path no server serves', 0.2, async function () {
+test.run('a second detail is made, on a path no server serves', 0.2, async function () {
   if (!js) return false;
   return (await mount('zzTwo', false)) === 'made' ? true : false;
 }, test.limit.slow);
@@ -64,7 +64,7 @@ test.run('a path no server serves today is marked deprecated', 0.2, async functi
 }, test.limit.slow);
 
 // its Revoke, an armingButton: "a armingButton [Revoke], which must revoke/delete that grant"
-test.run('the world: it has a Revoke button', 0.2, async function () {
+test.run('it has a Revoke button', 0.2, async function () {
   if (!js) return false;
   press = function () { return js('(function () { var b = Array.prototype.slice.call(document.getElementById("zzOne").querySelectorAll("button")).filter(function (x) { return /Revoke/.test(x.textContent); })[0]; if (!b) return false; b.click(); return true; })()'); };
   return (await press()) ? true : false;
@@ -79,7 +79,7 @@ test.run('the second press revokes that grant, by its ID and its path', 0.2, asy
   await press();
   return (await until(function () { return js('window.__revoked.join("|")').then(function (v) { return v === 'KEYZZ zz/thing'; }); }, 5000)) ? true : false;
 }, test.limit.slow);
-test.run('and says so below the bubble', 0.2, async function () {
+test.run('the detail says below the bubble that the grant is revoked', 0.2, async function () {
   if (!js) return false;
   return (await until(function () { return text('zzOne').then(function (t) { return /revoked/.test(t); }); }, 5000)) ? true : false;
 }, test.limit.slow);
@@ -104,7 +104,7 @@ test.run('destroy leaves its host empty', 0.2, async function () {
   const after = await js('(function () { window.__zzOne.destroy(); return document.getElementById("zzOne").children.length; })()');
   return after === 0 ? true : false;
 }, test.limit.slow);
-test.run('and lets its watch go', 0.2, async function () {
+test.run('destroy lets its watch go', 0.2, async function () {
   if (!js) return false;
   const released = await js('window.__released');
   return released === 1 ? true : false;

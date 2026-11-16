@@ -20,7 +20,7 @@ const settle = async function () { for (let i = 0; i < 20; i++) await tick(); };
 let required, specs, indexes, R, s, paint;
 let latest = 'a';
 
-test.run('the world: the row runs on a bare window', 0.2, async function () {
+test.run('the row runs on a bare window', 0.2, async function () {
   if (!fs.existsSync(FILE)) return false;
   const SRC = fs.readFileSync(FILE, 'utf8');
   required = [];
@@ -44,20 +44,20 @@ test.run('it places itself at spirit.element.spirit.element.search.job.rowElemen
   if (!required) return false;
   return R && typeof R.create === 'function' ? true : false;
 }, test.limit.quick);
-test.run('it loads what it draws with: the shared row element, the icon element, the progress bar', 0.2, function () {
+test.run('it loads what it draws with, the shared row element, the icon element and the progress bar', 0.2, function () {
   if (!R || typeof R.create !== 'function') return false;
   return ['spirit/element/rowElement.js', 'spirit/element/icon.js', 'spirit/element/progressBar.js'].every(function (p) { return required.indexOf(p) !== -1; }) ? true : false;
 }, test.limit.quick);
 
 // a job, its cells
-test.run('a row of kind job, keyed by the job\'s id, with no actions: a press opens its detail', 0.2, function () {
+test.run('create makes a row of kind job, keyed by the job\'s id, with no actions, since a press opens its detail', 0.2, function () {
   if (!R || typeof R.create !== 'function') return false;
   R.create({ id: 'a', status: 'running', kind: 'server', module: 'spirit.app.x', updatedAt: Date.UTC(2030, 0, 1), app: { job: { state: 'progress', done: 2, total: 4, text: 'half' } } }, { latest: function () { return latest; } });
   s = specs[0];
   paint = function (name, j) { const f = s.fields.filter(function (x) { return x.name === name; })[0]; return f ? f.paint(j) : null; };
   return s && s.kind === 'job' && s.key === 'a' && Array.isArray(s.actions) && !s.actions.length ? true : false;
 }, test.limit.quick);
-test.run('its fields: latest, status, name, kind, progress, updated', 0.2, function () {
+test.run('its fields are latest, status, name, kind, progress and updated', 0.2, function () {
   if (!s) return false;
   return JSON.stringify(s.fields.map(function (f) { return f.name; })) === JSON.stringify(['latest', 'status', 'name', 'kind', 'progress', 'updated']) ? true : false;
 }, test.limit.quick);
@@ -65,12 +65,12 @@ test.run('the job that changed last carries the one green dot', 0.2, function ()
   if (!s) return false;
   return /●/.test(paint('latest', s.row)) ? true : false;
 }, test.limit.quick);
-test.run('and loses it once another job changed last: the dot follows latest(), read when painted', 0.2, function () {
+test.run('a job loses the green dot once another job changed last, since the dot follows latest, read when painted', 0.2, function () {
   if (!s) return false;
   latest = 'b';
   return paint('latest', s.row) === '' ? true : false;
 }, test.limit.quick);
-test.run('its status, with its glyph', 0.2, function () {
+test.run('it shows its status with its glyph', 0.2, function () {
   if (!s) return false;
   return /running/.test(paint('status', s.row)) && /🏃/.test(paint('status', s.row)) ? true : false;
 }, test.limit.quick);
@@ -78,7 +78,7 @@ test.run('its name is its module, else its id', 0.2, function () {
   if (!s) return false;
   return paint('name', s.row) === 'spirit.app.x' && paint('name', { id: 'z' }) === 'z' ? true : false;
 }, test.limit.quick);
-test.run('its kind: the node\'s own jobs node, appServers server, a run transient', 0.2, function () {
+test.run('its kind shows the node\'s own jobs as node, appServers as server, and a run as transient', 0.2, function () {
   if (!s) return false;
   return paint('kind', { kind: 'permanent' }) === 'node' && paint('kind', { kind: 'server' }) === 'server' && paint('kind', { kind: 'process' }) === 'transient' ? true
     : false;
@@ -108,11 +108,11 @@ test.run('its rows share one index', 0.2, function () {
   R.create({ id: 'c' });
   return indexes.length === 1 && specs[1].index === specs[0].index ? true : false;
 }, test.limit.quick);
-test.run('kindOf(job) for the list\'s kind filter', 0.2, function () {
+test.run('it hands kindOf, a job\'s kind, to the list\'s kind filter', 0.2, function () {
   if (!R || typeof R.create !== 'function') return false;
   return typeof R.kindOf === 'function' && R.kindOf({ kind: 'server' }) === 'server' ? true : false;
 }, test.limit.quick);
-test.run('STATUS_ICON, a status\'s glyph, for the detail\'s layer', 0.2, function () {
+test.run('it hands STATUS_ICON, a status\'s glyph, to the detail\'s layer', 0.2, function () {
   if (!R || typeof R.create !== 'function') return false;
   return R.STATUS_ICON && R.STATUS_ICON.failed === '❌' ? true : false;
 }, test.limit.quick);

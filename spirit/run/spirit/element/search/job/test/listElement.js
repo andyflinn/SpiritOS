@@ -37,7 +37,7 @@ test.after(function () {
   try { if (node && node.child) node.child.kill(); } catch (e) { /* gone */ }
   try { if (node && node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* scratch */ }
 });
-test.run('the world: a scratch node of its own, two planted apps, and Chrome', 0.2, async function () {
+test.run('a scratch node of its own comes up with two planted apps, and Chrome opens', 0.2, async function () {
   node = await scratchNode();
   chrome = await chromePage(findChrome());
   if (!node.up || chrome.error || !node.root) return false;
@@ -49,12 +49,12 @@ test.run('the world: a scratch node of its own, two planted apps, and Chrome', 0
   };
   return true;
 }, test.limit.slow);
-test.run('the world: zzFail started', 0.2, async function () {
+test.run('zzFail is started', 0.2, async function () {
   if (!call) return false;
   const failed = await call('job.create', { command: 'node', args: ['spirit/app/zzFail/zzFail.js'] });
   return failed.status >= 200 && failed.status < 300 ? true : false;
 }, test.limit.slow);
-test.run('it loads through spirit.require and mounts with spirit.element.spirit.element.search.job.listElement.create(container, { open })', 0.2, async function () {
+test.run('it loads through spirit.require and mounts with spirit.element.spirit.element.search.job.listElement.create, given a container and open', 0.2, async function () {
   if (!call) return false;
   await until(function () { return call('job.get', { key: 'spirit.app.zzFail' }).then(function (j) { return !!(j.body && j.body.job && j.body.job.status === 'failed'); }); }, 15000);
   await chrome.send('Page.navigate', { url: node.base + '/face.html' });
@@ -107,7 +107,7 @@ test.run('a failed job shows ❌ failed', 0.2, async function () {
 }, test.limit.slow);
 
 // the kind filter: all, node, servers, transient, failed ("the last filter in the jobs search should be failed")
-test.run('its choices, in order: all, node, servers, transient, failed', 0.2, async function () {
+test.run('its kind filter offers, in order, all, node, servers, transient and failed', 0.2, async function () {
   if (made !== 'made') return false;
   const words = await chrome.evaluate('Array.prototype.map.call(document.querySelectorAll("#box button"), function (b) { return String(b.textContent).trim(); })');
   const want = ['all', 'node', 'servers', 'transient', 'failed'];
@@ -131,7 +131,7 @@ test.run('all lists them all again', 0.2, async function () {
 }, test.limit.slow);
 
 // "one green dot hops between rows, always showing the most recent update"
-test.run('the world: zzSleep started', 0.2, async function () {
+test.run('zzSleep is started', 0.2, async function () {
   if (!call) return false;
   const started = await call('job.create', { command: 'node', args: ['spirit/app/zzSleep/zzSleep.js'] });
   return started.status >= 200 && started.status < 300 ? true : false;
@@ -178,7 +178,7 @@ test.run('destroy empties its container', 0.2, async function () {
   const empty = await chrome.evaluate('(function () { window.made.destroy(); return document.getElementById("box").children.length === 0; }())');
   return empty === true ? true : false;
 }, test.limit.slow);
-test.run('and the page threw nothing', 0.2, async function () {
+test.run('the page threw nothing', 0.2, async function () {
   if (made !== 'made') return false;
   const errors = JSON.parse(await chrome.evaluate('JSON.stringify(window.pageErrors)'));
   return errors.length === 0 ? true : false;

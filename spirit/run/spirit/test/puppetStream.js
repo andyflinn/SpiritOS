@@ -47,7 +47,7 @@ test.run('a changed app object of an app\'s job is posted to the owner, at the r
   return (t.posts.length === 1 && p.relay === 'https://relay.example' && p.to === OWNER && p.sent.type === 'published' &&
     short(p.sent.body) === short({ module: 'spirit.app.chat', app: { unread: 2 } })) || false;
 }, test.limit.quick);
-test.run('every app server\'s objects, always: two apps both posted, no verb or subscription asked', 0.2, async function () {
+test.run('every app server\'s objects are always posted, so two apps are both posted with no verb or subscription asked', 0.2, async function () {
   const t = stream();
   t.s.onJob(job('spirit.app.chat', { a: 1 })); await settle();
   t.s.onJob(job('spirit.app.desk', { b: 1 })); await settle();
@@ -55,20 +55,20 @@ test.run('every app server\'s objects, always: two apps both posted, no verb or 
 }, test.limit.quick);
 
 // ── what is not posted ──
-test.run('the same object again (a job-updated for a log line) is not posted', 0.2, async function () {
+test.run('the same object again, as a job update for a log line brings it, is not posted', 0.2, async function () {
   const t = stream();
   t.s.onJob(job('spirit.app.chat', { a: 1 })); await settle();
   t.s.onJob(job('spirit.app.chat', { a: 1 })); await settle();
   t.s.onJob(job('spirit.app.chat', { a: 2 })); await settle();
   return short(sent(t)) === short(['spirit.app.chat={"a":1}', 'spirit.app.chat={"a":2}']) || false;
 }, test.limit.quick);
-test.run('a job with no app object (none, an array, a string) is not posted', 0.2, async function () {
+test.run('a job with no app object, or with an array or a string in its place, is not posted', 0.2, async function () {
   const t = stream();
   [undefined, null, [1], 'text', 5].forEach(function (a) { t.s.onJob(job('spirit.app.chat', a)); });
   await settle();
   return t.posts.length === 0 || false;
 }, test.limit.quick);
-test.run('anything that is no app\'s (spirit.app.<name>) is not posted', 0.2, async function () {
+test.run('anything that is not an app\'s module, spirit.app.<name>, is not posted', 0.2, async function () {
   const t = stream();
   ['spirit.contact', 'spirit.app', 'spirit.app.chat.sub', 'other.app.chat', '', null].forEach(function (m) { t.s.onJob(job(m, { a: 1 })); });
   t.s.onJob(null);
@@ -83,7 +83,7 @@ test.run('nothing is posted from a node that is not a puppet', 0.2, async functi
 }, test.limit.quick);
 
 // ── only while the master is reachable ──
-test.run('unreachable: no post, no log line, nothing queued; the next change tries the route again', 0.2, async function () {
+test.run('while the owner is unreachable there is no post, no log line and nothing queued, and the next change tries the route again', 0.2, async function () {
   const t = stream({ reachable: false });
   t.s.onJob(job('spirit.app.chat', { a: 1 }));
   t.s.onJob(job('spirit.app.desk', { b: 1 }));

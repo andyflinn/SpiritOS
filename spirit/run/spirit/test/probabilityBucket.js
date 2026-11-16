@@ -28,7 +28,7 @@ test.run('an equal probability is seated behind those already in', 0.2, function
   b.seatFor(0.5, { n: 'first' }); b.seatFor(0.5, { n: 'second' }); b.seatFor(0.5, { n: 'third' });
   return short(names(b)) === short(['first', 'second', 'third']) || false;
 }, test.limit.quick);
-test.run('the bucket fills with objects of probability 0 until higher ones push them out (Andy, 2026-10-12)', 0.2, function () {
+test.run('the bucket fills with objects of probability 0 until higher ones push them out', 0.2, function () {
   const b = B.createProbabilityBucket(2);
   const seated = [b.seatFor(0, { n: 'z1' }), b.seatFor(0, { n: 'z2' })];
   const pushed = b.seatFor(0.4, { n: 'hi' });
@@ -70,7 +70,7 @@ test.run('serialize runs each object through map', 0.2, function () {
   const s = b.serialize(function (o) { return o.n; });
   return short(s.items) === short(['a', 'b']) || false;
 }, test.limit.quick);
-test.run('bytes is the UTF-8 byte length of the items as JSON, never their character count (Andy, 2026-10-10)', 0.2, function () {
+test.run('bytes is the UTF-8 byte length of the items as JSON, never their character count', 0.2, function () {
   const b = B.createProbabilityBucket(5);
   b.seatFor(0.9, 'üüü');
   const s = b.serialize();
@@ -89,7 +89,7 @@ test.run('the ceiling is in bytes: multibyte text is cut where its bytes overrun
   const s = b.serialize(null, 16);
   return (short(s.items) === short(['ééééé']) && s.truncated === true) || false;
 }, test.limit.quick);
-test.run('maxBytes left out or 0 is unbounded (goal/G27.14, Andy: "0 means unbounded")', 0.2, function () {
+test.run('maxBytes left out or 0 is unbounded', 0.2, function () {
   const b = B.createProbabilityBucket(Infinity);
   for (let i = 0; i < 200; i += 1) b.seatFor(i / 200, 'item ' + i + ' ' + 'x'.repeat(100));
   const s = [b.serialize(), b.serialize(null, 0)];
@@ -139,7 +139,7 @@ test.run('sort with no function changes nothing', 0.2, function () {
 test.run('the module answers createProbabilityBucket alone', 0.2, function () {
   return short(Object.keys(B)) === short(['createProbabilityBucket']) || false;
 }, test.limit.quick);
-test.run('in a page alike (goal/G27.14): loaded as a plain script, it is found on window.spirit.probability, and its names stay its own', 0.2, function () {
+test.run('in a page too, loaded as a plain script, it is found on window.spirit.probability, and its names stay its own', 0.2, function () {
   const win = { spirit: { probability: { other: 1 } } };
   const ctx = { window: win };
   vm.runInNewContext(fs.readFileSync(path.join(RUN, 'spirit', 'probabilityBucket.js'), 'utf8'), ctx);

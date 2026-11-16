@@ -26,7 +26,7 @@ test.after(function () {
   try { if (node && node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* scratch */ }
 });
 
-test.run('the world: a scratch node, and a Chrome on its face page', 0.2, async function () {
+test.run('a scratch node comes up with a Chrome on its face page', 0.2, async function () {
   if (!fs.existsSync(FILE)) return false;
   node = await scratchNode();
   chrome = await chromePage(findChrome());
@@ -39,7 +39,7 @@ test.run('it loads through spirit.require', 0.2, async function () {
   loaded = await chrome.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/element/search/app/rowElement.js"); }).then(function () { var c = document.createElement("div"); c.id = "under-test"; document.body.appendChild(c); return "loaded"; }, function () { return false; })');
   return loaded === 'loaded' ? true : false;
 }, test.limit.quick);
-test.run('spirit.element.spirit.element.search.app.rowElement.create(row) makes a row', 0.2, async function () {
+test.run('its create makes a row element from the row it is given', 0.2, async function () {
   if (!node || !node.up || !chrome || chrome.error) return false;
   made = await chrome.evaluate('(function () { window.row = spirit.element.spirit.element.search.app.rowElement.create(' + R + '); var c = document.getElementById("under-test"); var hosts = {}; window.row.cells().forEach(function (x) { var s = document.createElement("span"); c.appendChild(s); hosts[x.name] = s; }); window.row.mount(hosts); return true; }())');
   return made === true ? true : false;

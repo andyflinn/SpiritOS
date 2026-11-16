@@ -24,7 +24,7 @@ test.after(function () {
   try { if (node && node.root) require(require('path').join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* scratch */ }
 });
 
-test.run('the world: a scratch node, and a Chrome on its face page', 0.2, async function () {
+test.run('a scratch node comes up with a Chrome on its face page', 0.2, async function () {
   node = await scratchNode();
   chrome = await chromePage(findChrome());
   if (!node.up || chrome.error) return false;
@@ -36,18 +36,18 @@ test.run('it loads through spirit.require and is spirit.element.spirit.element.s
   loaded = await chrome.evaluate('spirit.ready.then(function () { return spirit.require("spirit/element/search/app/changeAppIcon.js"); }).then(function () { return !!(spirit.element.spirit.element.search.app.changeAppIcon && spirit.element.spirit.element.search.app.changeAppIcon.create); }, function () { return false; })');
   return loaded === true ? true : false;
 }, test.limit.quick);
-test.run('create(host, { key }) answers { destroy }', 0.2, async function () {
+test.run('create, given a host and an app\'s key, answers an object with a destroy', 0.2, async function () {
   if (loaded !== true) return false;
   made = await chrome.evaluate('(function () { var b = document.createElement("div"); b.id = "i"; document.body.appendChild(b); window.__i = spirit.element.spirit.element.search.app.changeAppIcon.create(b, { key: "agent" }); return !!window.__i && typeof window.__i.destroy === "function"; }())');
   return made === true ? true : false;
 }, test.limit.quick);
 
 // one rowForm: [✏️] "Icon" [the app's icon] [iconSelector:dropdown] [Change], as the detail draws it
-test.run('a rowForm showing the app\'s icon, 🤖', 0.2, async function () {
+test.run('it draws a rowForm showing the app\'s icon, 🤖', 0.2, async function () {
   if (made !== true) return false;
   return (await until(function () { return seen().then(function (v) { return v.forms >= 1 && v.text.indexOf('🤖') !== -1; }); }, 10000)) ? true : false;
 }, test.limit.quick);
-test.run('with ✏️, the word Icon, the icon dropdown and a Change button', 0.2, async function () {
+test.run('the rowForm has ✏️, the word Icon, the icon dropdown and a Change button', 0.2, async function () {
   if (made !== true) return false;
   v0 = await seen();
   return /✏/.test(v0.text) && /Icon/.test(v0.text) && v0.last === 'Change' && /choose an icon/.test(v0.text) ? true : false;
@@ -62,7 +62,7 @@ test.run('the app\'s icon stays 🤖', 0.2, async function () {
 }, test.limit.slow);
 
 // the box: "writing through the app family's iconApp": a glyph picked, then Change
-test.run('the world: the dropdown opens on the icon set', 0.2, async function () {
+test.run('the dropdown opens on the icon set', 0.2, async function () {
   if (made !== true) return false;
   // The dropdown's own field opens it; a row of the set picks its glyph.
   await chrome.evaluate('(function () { var f = Array.prototype.filter.call(document.querySelectorAll("#i *"), function (e) { return /choose an icon/.test(e.textContent || "") && !e.children.length; })[0]; if (f) f.click(); return !!f; }())');

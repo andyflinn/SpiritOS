@@ -57,7 +57,7 @@ function pageWorld() {
 // What the tests make, each in order, read by the tests after it.
 let w = null;
 
-test.run('in node, found by the family\'s name (spirit.cacheManager), it stands at spirit.data.relay.data', 0.2, async function () {
+test.run('in node, spirit.cacheManager finds it by the family\'s name, and it stands at spirit.data.relay.data', 0.2, async function () {
   require(path.join(RUN, 'spirit', 'spirit.js'));
   const S = globalThis.spirit;
   let threw = null;
@@ -65,14 +65,14 @@ test.run('in node, found by the family\'s name (spirit.cacheManager), it stands 
   const X = S.data && S.data['relay'] && S.data['relay'].data;
   return (!threw && !!X && typeof X === 'object') || false;
 }, test.limit.quick);
-test.run('the world: run beside spirit.data, it makes its family there', 0.2, function () {
+test.run('run beside spirit.data, it makes its family there', 0.2, function () {
   try { w = world(); } catch (e) { w = null; return false; }
   return (!!w.X && typeof w.X === 'object') || false;
 }, test.limit.quick);
 
 
 // A process knows its node by the rows it took; here, as a page knows it from node.card, it is told.
-test.run('the world: its home node is known', 0.2, function () {
+test.run('its home node is known', 0.2, function () {
   if (!w) return false;
   return w.D.homeNode(SENDER) === w.D.nodeId(SENDER) || false;
 }, test.limit.quick);
@@ -102,7 +102,7 @@ test.run('a refusal, or an answer with no key or no relay, keeps nothing', 0.2, 
   w.X.keep(null);
   return (w.X.relay(C) === null && w.X.report(C) === null) || false;
 }, test.limit.quick);
-test.run('relay() and report() of no key answer null', 0.2, function () {
+test.run('relay and report asked for no key answer null', 0.2, function () {
   if (!w) return false;
   return (w.X.relay('') === null && w.X.report(undefined) === null) || false;
 }, test.limit.quick);
@@ -111,7 +111,7 @@ test.run('a relay got again replaces what was kept', 0.2, function () {
   w.X.keep({ ok: true, key: A, relay: { url: A, owned: false } });
   return (same(w.X.relay(A), { url: A, owned: false }) && w.X.report(A) === null) || false;
 }, test.limit.quick);
-test.run('watch(fn) hears the relay\'s key and what was kept, and nothing once released', 0.2, function () {
+test.run('a watch hears the relay\'s key and what was kept, and nothing once released', 0.2, function () {
   if (!w) return false;
   const heard = [];
   const off = w.X.watch(function (key, kept) { heard.push([key, kept && kept.relay && kept.relay.url]); });

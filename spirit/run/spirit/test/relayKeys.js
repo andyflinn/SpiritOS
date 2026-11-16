@@ -33,7 +33,7 @@ test.run('it notes the seat the relay says this node holds', 0.2, function () {
   return !!W.a.seated || false;
 }, test.limit.quick);
 // A relay that could set the star by its own report would be trusted on its own word: 0.8.
-test.run('and sets no star: a report is the relay\'s own word, and any relay can say it', 0.8, function () {
+test.run('the report sets no star, because a report is the relay\'s own word and any relay can say it', 0.8, function () {
   if (!W.a) return false;
   return !W.a.mine || false;
 }, test.limit.quick);
@@ -47,7 +47,7 @@ test.run('a report takes no star away either', 0.2, function () {
   W.b = nodeStore.open(W.home).seen.get(KEY_B) || {};
   return !!W.b.mine || false;
 }, test.limit.quick);
-test.run('and still notes the seat', 0.2, function () {
+test.run('a report on a starred row still notes the seat', 0.2, function () {
   if (!W.b) return false;
   return !!W.b.seated || false;
 }, test.limit.quick);

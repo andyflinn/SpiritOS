@@ -36,7 +36,7 @@ test.run('with no value given, the value is the floor; worseAt other than floor 
   const g = L.make('requestTimeout1', { floor: 5, ceiling: 9, worseAt: 'middle' });
   return (g.value === 5 && g.worseAt === null && L.make('a1', { floor: 0, ceiling: 1, worseAt: 'ceiling' }).worseAt === 'ceiling') || false;
 }, test.limit.quick);
-test.run('make refuses, never corrects: a label off the lever rule (Andy: "meaning001 (meaning and iteration)")', 0.2, function () {
+test.run('make refuses a label off the lever rule and never corrects it (Andy: "meaning001 (meaning and iteration)")', 0.2, function () {
   const got = ['connections', 'connections01', 'conn_1', ''].map(function (l) { return throws(function () { L.make(l, { floor: 0, ceiling: 1 }); }); });
   return got.every(function (m) { return /bad label/.test(m); }) || false;
 }, test.limit.quick);

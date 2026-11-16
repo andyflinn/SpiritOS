@@ -28,18 +28,18 @@ function radius() { return W.radius || (W.radius = testsFor(MODULE)); }
 function all() { return W.all || (W.all = testsFor('')); }
 
 // the world
-test.run('the world: spirit/test/ holds the general tests of spirit.js, of the three kinds and no other', 0.2, function () {
+test.run('spirit/test/ holds the general tests of spirit.js, of the three kinds and no other', 0.2, function () {
   return GENERAL.join() === KINDS.join() || false;
 }, test.limit.quick);
-test.run('the world: spirit.js, the module they are named after, is spirit/spirit.js, and none is at the run root', 0.2, function () {
+test.run('spirit.js, the module they are named after, is spirit/spirit.js, and none is at the run root', 0.2, function () {
   return (fs.existsSync(path.join(RUN, 'spirit', 'spirit.js')) && !fs.existsSync(path.join(RUN, 'spirit.js'))) || false;
 }, test.limit.quick);
-test.run('the world: spirit/apiDoor.js is a product module with its own test, so it is opted in', 0.2, function () {
+test.run('spirit/apiDoor.js is a product module with its own test, so it is opted in', 0.2, function () {
   return (fs.existsSync(path.join(RUN, MODULE)) && fs.existsSync(path.join(RUN, 'spirit', 'test', 'apiDoor.js'))) || false;
 }, test.limit.quick);
 
 // a module's blast radius
-test.run('the world: its blast radius holds its own test', 0.2, function () {
+test.run('the blast radius of spirit/apiDoor.js holds its own test', 0.2, function () {
   return radius().some(function (e) { return e.test === 'spirit/test/apiDoor.js'; }) || false;
 }, test.limit.quick);
 // Each general rule test written out, so that each check has a plain title of its own.
@@ -56,7 +56,7 @@ test.run('spirit/test/spirit-sibling-browser.js judges spirit/apiDoor.js on its 
 // testsFor reads ./test/<name>.js for a script, and never a ./test/<name>-<what>.js. Judged on a planted tree of its own.
 // one test file per script: no <name>-<what>.js is read
 const ONE = { zz: null, part: null };
-test.run('the world: a script\'s one test file runs with it, and with the scripts below it', 0.2, function () {
+test.run('a script\'s one test file runs with it, and with the scripts below it', 0.2, function () {
   const planted = fs.mkdtempSync(path.join(require('os').tmpdir(), 'spirit-onefile-'));
   try {
     const put = function (rel, text) { const f = path.join(planted, rel); fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, text || '\n'); };
@@ -67,7 +67,7 @@ test.run('the world: a script\'s one test file runs with it, and with the script
   const zz = ONE.zz; const part = ONE.part;
   return (zz.indexOf('spirit/test/zz.js') !== -1 && part.indexOf('spirit/zz/test/part.js') !== -1 && part.indexOf('spirit/test/zz.js') !== -1) || false;
 }, test.limit.quick);
-test.run('no <name>-<what>.js is read, on its own script or below it', 0.2, function () {
+test.run('no test file named after a script with a dash and more is read, on its own script or below it', 0.2, function () {
   if (!ONE.zz || !ONE.part) return false;
   const zz = ONE.zz; const part = ONE.part;
   return (zz.indexOf('spirit/test/zz-extra.js') === -1 && part.indexOf('spirit/test/zz-extra.js') === -1 && part.indexOf('spirit/zz/test/part-more.js') === -1) || false;
@@ -77,7 +77,7 @@ test.run('no <name>-<what>.js is read, on its own script or below it', 0.2, func
 // module in its reach, with its own test or without one. Judged on a planted tree of its own.
 // a general test judges a module with no test of its own
 const OPT = { whole: null, lone: null };
-test.run('the world: a general test judges a module with its own test', 0.2, function () {
+test.run('on the whole list a general test judges a module with its own test', 0.2, function () {
   const planted = fs.mkdtempSync(path.join(require('os').tmpdir(), 'spirit-optin-'));
   try {
     const put = function (rel) { const f = path.join(planted, rel); fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, '\n'); };
@@ -97,7 +97,7 @@ test.run('on the blast radius of a module with no test of its own the general te
 }, test.limit.quick);
 
 // the whole list
-test.run('the world: the whole list names entries', 0.2, function () {
+test.run('the whole list names entries', 0.2, function () {
   return all().length > 0 || false;
 }, test.limit.quick);
 function onWhole(g) {
@@ -129,17 +129,17 @@ test.run('spirit/test/scriptClassify.js, the classifier, is listed as no test an
 // THE TOOLS OF spirit/test/ (goal/G43.32, Q2): tools, not tests, and judged as no module; their own tests are listed.
 // spirit/test/'s tools are not tests
 const TOOLS = ['spirit/test/testReport.js', 'spirit/test/testModule.js', 'spirit/test/headLessChrome.js'];
-test.run('the world: the three tools are in spirit/test/', 0.2, function () {
+test.run('the three tools are in spirit/test/', 0.2, function () {
   return TOOLS.every(function (t) { return fs.existsSync(path.join(RUN, t)); }) || false;
 }, test.limit.quick);
 test.run('none of the three tools, testReport.js, testModule.js and headLessChrome.js, is listed as a test', 0.2, function () {
   const asTest = all().filter(function (e) { return TOOLS.indexOf(e.test) !== -1; });
   return (all().length > 0 && !asTest.length) || false;
 }, test.limit.quick);
-test.run('and none is handed to a general test as a module', 0.2, function () {
+test.run('none of the three tools is handed to a general test as a module', 0.2, function () {
   const asModule = all().filter(function (e) { return TOOLS.indexOf(e.file) !== -1; });
   return (all().length > 0 && !asModule.length) || false;
 }, test.limit.quick);
-test.run('their own tests in spirit/test/test/ are listed', 0.2, function () {
+test.run('the own tests of the tools in spirit/test/test/ are listed', 0.2, function () {
   return (all().some(function (e) { return e.test === 'spirit/test/test/testModule.js'; }) && all().some(function (e) { return e.test === 'spirit/test/test/testReport.js'; })) || false;
 }, test.limit.quick);

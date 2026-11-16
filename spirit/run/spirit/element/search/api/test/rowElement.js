@@ -17,7 +17,7 @@ const settle = async function () { for (let i = 0; i < 20; i++) await tick(); };
 // One test.run per test (goal/G47.2). What the world and the tests make, for the tests after them.
 let required, specs, indexes = 0, R, a, b;
 
-test.run('the world: the row runs on a bare window, the shared row element a stand-in', 0.2, async function () {
+test.run('the row runs on a bare window, with a stand-in for the shared row element', 0.2, async function () {
   if (!fs.existsSync(FILE)) return false;
   required = [];
   specs = [];
@@ -32,7 +32,7 @@ test.run('the world: the row runs on a bare window, the shared row element a sta
   R = E.search && E.search.api && E.search.api.rowElement;
   return true;
 }, test.limit.quick);
-test.run('it places itself at spirit.element.spirit.element.search.api.rowElement, with a create', 0.2, function () {
+test.run('it places itself on spirit.element at its path, with a create', 0.2, function () {
   return R && typeof R.create === 'function' ? true : false;
 }, test.limit.quick);
 test.run('it loads the shared row element itself', 0.2, function () {
@@ -41,7 +41,7 @@ test.run('it loads the shared row element itself', 0.2, function () {
 }, test.limit.quick);
 
 // a family, its row
-test.run('a row of kind family, keyed and named by the family, with no actions', 0.2, function () {
+test.run('it makes a row of kind family, keyed and named by the family, with no actions', 0.2, function () {
   if (!R || typeof R.create !== 'function') return false;
   R.create({ name: 'fs' });
   R.create({ key: '<x>' });

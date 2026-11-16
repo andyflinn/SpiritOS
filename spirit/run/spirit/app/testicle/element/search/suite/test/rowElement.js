@@ -26,7 +26,7 @@ function aCell() {
 }
 process.on('unhandledRejection', function () { unhandled.push(true); });
 
-test.run('the world: the row runs on a bare window', 0.2, async function () {
+test.run('the row runs on a bare window', 0.2, async function () {
   if (!fs.existsSync(FILE)) return false;
   required = []; specs = []; indexes = []; buttons = []; runs = [];
   global.window = { spirit: { escapeHtml: function (x) { return String(x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }, element: {} } };
@@ -56,7 +56,7 @@ test.run('it places itself at spirit.element.spirit.app.testicle.element.search.
   if (!required) return false;
   return (R && typeof R.create === 'function') || false;
 }, test.limit.quick);
-test.run('it loads what it draws with: the shared row element, the busy button, testicle\'s interface', 0.2, function () {
+test.run('it loads what it draws with, the shared row element, the busy button and testicle\'s interface', 0.2, function () {
   if (!required) return false;
   return ['spirit/element/rowElement.js', 'spirit/element/busyButton.js', 'spirit/app/testicle/api.js'].every(function (p) { return required.indexOf(p) !== -1; }) || false;
 }, test.limit.quick);
@@ -68,7 +68,7 @@ test.run('create makes a row of kind suite, keyed by the row\'s key, with no act
   return (s && s.kind === 'suite' && s.key === ROW.key && Array.isArray(s.actions) && !s.actions.length) || false;
 }, test.limit.quick);
 // the run cycle: "The 🏃‍♂️ column is on every row of the script detail tab, the first column"
-test.run('its fields: the 🏃‍♂️ first, then the suite\'s filename, then its status', 0.2, function () {
+test.run('its fields are the 🏃‍♂️ first, then the suite\'s filename, then its status', 0.2, function () {
   if (!s) return false;
   const names = s.fields.map(function (f) { return f.name; });
   return JSON.stringify(names) === JSON.stringify(['run', 'suite', 'status']) || false;
@@ -78,19 +78,19 @@ test.run('the suite cell is the suite, escaped', 0.2, function () {
   return paint('suite', { suite: 'spirit/zz/test/<a>.js' }) === 'spirit/zz/test/&lt;a&gt;.js' || false;
 }, test.limit.quick);
 // the box: "the filename AND its status \"needs running\", which will be shown as red in the UI"; "green" shown green
-test.run('the status "needs running" and "still red" are shown red, "green" green', 0.2, function () {
+test.run('the statuses "needs running" and "still red" are shown red, and "green" is shown green', 0.2, function () {
   if (!s) return false;
   const red = [paint('status', { status: 'needs running' }), paint('status', { status: 'still red' })];
   const green = paint('status', { status: 'green' });
   return (red.every(function (h) { return /color:#c00/.test(h); }) && /color:#080/.test(green) && /needs running/.test(red[0]) && /still red/.test(red[1]) && />green</.test(green)) || false;
 }, test.limit.quick);
-test.run('no status, nothing drawn', 0.2, function () {
+test.run('a row with no status draws nothing in the status cell', 0.2, function () {
   if (!s) return false;
   return paint('status', { status: '' }) === '' || false;
 }, test.limit.quick);
 
 // "each row's button running its own suite", "The button is the busy button exactly as it is"
-test.run('mounted, its 🏃‍♂️ cell holds a busy button, labelled 🏃‍♂️', 0.2, async function () {
+test.run('once mounted, its 🏃‍♂️ cell holds a busy button labelled 🏃‍♂️', 0.2, async function () {
   if (!el || typeof el.mount !== 'function') return false;
   cell = aCell();
   el.mount({ run: cell });
@@ -98,7 +98,7 @@ test.run('mounted, its 🏃‍♂️ cell holds a busy button, labelled 🏃‍�
   const b = buttons[0];
   return (buttons.length === 1 && b.cell === cell && b.o.label === '🏃‍♂️' && typeof b.o.run === 'function' && cell.innerHTML === '') || false;
 }, test.limit.quick);
-test.run('a press runs the row\'s own suite for its own script: testicle.run { script, suite }', 0.2, async function () {
+test.run('a press runs the row\'s own suite for its own script through testicle.run, naming the script and the suite', 0.2, async function () {
   if (!buttons || !buttons.length) return false;
   await buttons[0].o.run();
   return (runs.length === 1 && runs[0].script === ROW.script && runs[0].suite === ROW.suite) || false;
@@ -110,7 +110,7 @@ test.run('a press on the button is its own, never the row\'s pick', 0.2, functio
   (cell.heard.click || []).forEach(function (fn) { fn(e); });
   return stopped || false;
 }, test.limit.quick);
-test.run('drawn again, the row makes its button anew in the new cell, and only one', 0.2, async function () {
+test.run('drawn again, the row makes its button anew in the new cell, and makes only one', 0.2, async function () {
   if (!el) return false;
   const before = buttons.length;
   const c1 = aCell(), c2 = aCell();

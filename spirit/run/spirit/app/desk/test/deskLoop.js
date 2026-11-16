@@ -86,7 +86,7 @@ const W = {};
 test.after(function () { restore(); });
 
 // its usage
-test.run('no port, no command, or a port that is no number: exit 2 with its usage', 0.2, function () {
+test.run('with no port, no command, or a port that is no number, it exits 2 with its usage', 0.2, function () {
   const u1 = childProcess.spawnSync(process.execPath, [FILE], { encoding: 'utf8', windowsHide: true, timeout: 30000 });
   const u2 = childProcess.spawnSync(process.execPath, [FILE, PORT], { encoding: 'utf8', windowsHide: true, timeout: 30000 });
   const u3 = childProcess.spawnSync(process.execPath, [FILE, 'abc', COMMAND], { encoding: 'utf8', windowsHide: true, timeout: 30000 });
@@ -94,7 +94,7 @@ test.run('no port, no command, or a port that is no number: exit 2 with its usag
   return ([u1, u2, u3].every(function (u) { return u.status === 2 && String(u.stderr).trim() === USAGE; })) ? true : false;
 }, test.limit.quick);
 
-test.run('the world: deskLoop.js loads and runs the script of its programs', 0.2, async function () {
+test.run('deskLoop.js loads and runs the script of its programs', 0.2, async function () {
   script.listens.push({ out: 'deskAgentEar: unblocked', code: 1 }, { out: '', code: 0 }, { out: [mine1, others[0], others[1], mine2, others[2], others[3], others[4], others[5], others[6], mine3, mine4].join('\n') + '\n', code: 0 },
     { out: mine1 + '\n', code: 0 });
   script.nicks.push('{"ok":true,"nick":"Gemma"}', '{"ok":true,"nick":""}');
@@ -126,7 +126,7 @@ test.run('each listen is deskAgentEar.js <port>, run by this node.js', 0.2, func
   const L = W.L, N = W.N, M = W.M, P = W.P;
   return (L.length >= 5 && L.every(function (s) { return s.argv[0] === EAR && s.argv[1] === PORT; })) ? true : false;
 }, test.limit.quick);
-test.run('its stdout read, its stderr to ours, no window', 0.2, function () {
+test.run('each listen\'s stdout is read and its stderr goes to ours, with no window', 0.2, function () {
   if (!W.L) return false;
   const L = W.L, N = W.N, M = W.M, P = W.P;
   return (L.every(function (s) { return s.opts && s.opts.stdio && s.opts.stdio[0] === 'ignore' && s.opts.stdio[1] === 'pipe' && s.opts.stdio[2] === 'inherit' && s.opts.windowsHide === true; })) ? true : false;
@@ -141,7 +141,7 @@ test.run('a listen that printed nothing is waited out too', 0.2, function () {
   const L = W.L, N = W.N, M = W.M, P = W.P;
   return (said.some(function (s) { return s === 'deskLoop: the listener ended 0; listening again in 10 s'; })) ? true : false;
 }, test.limit.quick);
-test.run('each time lines come, the nick is read from the desk: profile.get {agent: \'\'}, through deskAgentEar', 0.2, function () {
+test.run('each time lines come, the nick is read from the desk with a profile.get for the agent \'\', through deskAgentEar', 0.2, function () {
   if (!W.L) return false;
   const L = W.L, N = W.N, M = W.M, P = W.P;
   return (N.length === 2 && N[0].argv.slice(1).join(' ') === PORT + ' profile.get {"agent":""}') ? true : false;
@@ -149,7 +149,7 @@ test.run('each time lines come, the nick is read from the desk: profile.get {age
 
 
 // only his lines for its nick are handed over, one at a time
-test.run('four of the lines are its: his chat.add starting "<nick>:", the nick read case-blind', 0.2, function () {
+test.run('four of the lines are its own, his chat.add lines starting "<nick>:", with the nick read case-blind', 0.2, function () {
   if (!W.L) return false;
   const L = W.L, N = W.N, M = W.M, P = W.P;
   return (M.length === 4) ? true : false;
@@ -159,12 +159,12 @@ test.run('the command runs with its args plus one more', 0.2, function () {
   const L = W.L, N = W.N, M = W.M, P = W.P;
   return (M.length >= 1 && M[0].argv.slice(0, ARGS.length).join(' ') === ARGS.join(' ') && M[0].argv.length === ARGS.length + 1) ? true : false;
 }, test.limit.quick);
-test.run('that one: deskLoopManual.md, a blank line, and the line as deskAgentEar printed it', 0.2, function () {
+test.run('the one more argument is deskLoopManual.md, a blank line, and the line as deskAgentEar printed it', 0.2, function () {
   if (!W.L) return false;
   const L = W.L, N = W.N, M = W.M, P = W.P;
   return (M.length >= 1 && last(M[0]) === MANUAL + '\n\n' + mine1) ? true : false;
 }, test.limit.quick);
-test.run('another agent\'s line, a box write, a line for another nick, one with no id or no json: none handed over', 0.2, function () {
+test.run('none of another agent\'s line, a box write, a line for another nick, or one with no id or no json is handed over', 0.2, function () {
   if (!W.L) return false;
   const L = W.L, N = W.N, M = W.M, P = W.P;
   return (M.map(last).every(function (a) { return [mine1, mine2, mine3, mine4].some(function (m) { return a.slice(-m.length) === m; }); })) ? true : false;
@@ -182,12 +182,12 @@ test.run('three answers are posted (one run gave none)', 0.2, function () {
   const L = W.L, N = W.N, M = W.M, P = W.P;
   return (P.length === 3) ? true : false;
 }, test.limit.quick);
-test.run('the stop step\'s text, after the leaked reasoning (<channel|>), trimmed, under the line\'s item', 0.2, function () {
+test.run('the answer posted is the stop step\'s text after the leaked reasoning (<channel|>), trimmed, under the line\'s item', 0.2, function () {
   if (!W.L) return false;
   const L = W.L, N = W.N, M = W.M, P = W.P;
   return (P.length >= 1 && P[0].argv[2] === 'chat.add' && body(P[0]).id === 'goal/G1.2' && body(P[0]).text === 'Red is the failing test.') ? true : false;
 }, test.limit.quick);
-test.run('with no stop, the last step\'s text', 0.2, function () {
+test.run('with no stop step, the answer posted is the last step\'s text', 0.2, function () {
   if (!W.L) return false;
   const L = W.L, N = W.N, M = W.M, P = W.P;
   return (P.length >= 2 && body(P[1]).id === 'goal/G1.4' && body(P[1]).text === 'last step') ? true : false;
@@ -207,7 +207,7 @@ test.run('its window sees each event as it comes: a tool by its input, a text by
   const L = W.L, N = W.N, M = W.M, P = W.P;
   return (said.some(function (s) { return s === '  [bash] {"command":"ls"}'; }) && said.some(function (s) { return s === '  thinking aloud'; })) ? true : false;
 }, test.limit.quick);
-test.run('and Desk sees none of it', 0.2, function () {
+test.run('Desk sees none of those events', 0.2, function () {
   if (!W.L) return false;
   const L = W.L, N = W.N, M = W.M, P = W.P;
   return (P.every(function (s) { return body(s).text.indexOf('thinking aloud') === -1 && body(s).text.indexOf('my reasoning') === -1; })) ? true : false;
@@ -292,7 +292,7 @@ function tookBefore(i) {
 }
 
 // readTake: deskLoop re-arms the ear with --read <key> and takes the line before it posts (goal/G43.23 item 11)
-test.run('the world: the loop listened three times (two wakes, then a third listen under way)', 0.2, async function () {
+test.run('the loop listened three times, two wakes and then a third listen under way', 0.2, async function () {
   // The part above is done with: console.error and setTimeout as they were, then this part's own stand-ins.
   restore();
   readTakeWorld();
@@ -311,7 +311,7 @@ test.run('the world: the loop listened three times (two wakes, then a third list
   const L = RT.L, said = RT.said;
   return (L.length === 3) ? true : false;
 }, test.limit.quick);
-test.run('the world: both lines were handed over and both answers posted, so the take before each is judged', 0.2, function () {
+test.run('both lines were handed over and both answers posted, so the take before each can be judged', 0.2, function () {
   if (!RT.L) return false;
   const L = RT.L, P = RT.P, said = RT.said, of = RT.of;
   return (of('model').length === 2 && P.length === 2) ? true : false;
@@ -322,7 +322,7 @@ test.run('after a wake whose next names K1, it listens as deskAgentEar.js <port>
   const L = RT.L, P = RT.P, said = RT.said, of = RT.of;
   return (L.length >= 2 && L[1].argv.join(' ') === [EAR, PORT, '--read', 'K1'].join(' ')) ? true : false;
 }, test.limit.quick);
-test.run('and after the next wake, --read K2: always the key last handed', 0.2, function () {
+test.run('after the next wake it listens with --read K2, always the key last handed', 0.2, function () {
   if (!RT.L) return false;
   const L = RT.L, P = RT.P, said = RT.said, of = RT.of;
   return (L.length >= 3 && L[2].argv.join(' ') === [EAR, PORT, '--read', 'K2'].join(' ')) ? true : false;

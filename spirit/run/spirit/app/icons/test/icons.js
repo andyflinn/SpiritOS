@@ -66,13 +66,13 @@ test.run('spirit/app/icons/data.js is there', 0.2, function () { return fs.exist
 test.run('spirit/app/icons/icons.js is there', 0.2, function () { return fs.existsSync(path.join(APP, 'icons.js')) || false; }, test.limit.quick);
 test.run('spirit/app/icons/nodeIcons.js is there', 0.2, function () { return fs.existsSync(path.join(APP, 'nodeIcons.js')) || false; }, test.limit.quick);
 test.run('spirit/app/icons/element.js is there', 0.2, function () { return fs.existsSync(path.join(APP, 'element.js')) || false; }, test.limit.quick);
-test.run('api.js at the app\'s top, no api/ folder (Q5)', 0.2, function () { return !fs.existsSync(path.join(APP, 'api')) || false; }, test.limit.quick);
-test.run('the box, 1: "icons.json keeps node mount false and shell mount true"', 0.2, function () {
+test.run('api.js sits at the app\'s top, with no api/ folder', 0.2, function () { return !fs.existsSync(path.join(APP, 'api')) || false; }, test.limit.quick);
+test.run('icons.json keeps node mount false and shell mount true', 0.2, function () {
   const own = json(path.join(APP, 'icons.json')) || {};
   return !(own.node && own.node.mount === true) && !!(own.shell && own.shell.mount === true) ? true : false;
 }, test.limit.quick);
 // goal/G43.32: by spirit.require and its run-root path, as every script loads the tree.
-test.run('the box, 7: icons.js, run in node, spirit.requires spirit/app/icons/nodeIcons.js', 0.2, function () {
+test.run('icons.js, run in node, loads spirit/app/icons/nodeIcons.js through spirit.require', 0.2, function () {
   const main = code(read(path.join(APP, 'icons.js')) || '');
   return (/\.require\(\s*['"]spirit\/app\/icons\/nodeIcons\.js['"]\s*\)/).test(main) || false;
 }, test.limit.quick);
@@ -82,7 +82,7 @@ test.run('icons.js mounts no longer through spirit.shell.activateApp', 0.2, func
   const ic = pageCode('icons.js');
   return ic !== '' && !/activateApp/.test(ic) ? true : false;
 }, test.limit.quick);
-test.run('the box: "the page writes no file of its own": icons.js calls no fs save or delete', 0.2, function () {
+test.run('icons.js calls no fs save or delete, so the page writes no file of its own', 0.2, function () {
   const ic = pageCode('icons.js');
   return ic !== '' && !writes.test(ic) ? true : false;
 }, test.limit.quick);
@@ -90,17 +90,17 @@ test.run('element.js mounts no longer through spirit.shell.activateApp', 0.2, fu
   const el = pageCode('element.js');
   return el !== '' && !/activateApp/.test(el) ? true : false;
 }, test.limit.quick);
-test.run('the box: "the page writes no file of its own": element.js calls no fs save or delete', 0.2, function () {
+test.run('element.js calls no fs save or delete, so the page writes no file of its own', 0.2, function () {
   const el = pageCode('element.js');
   return el !== '' && !writes.test(el) ? true : false;
 }, test.limit.quick);
-test.run('the world: api.js names its verbs', 0.2, function () {
+test.run('api.js names its verbs', 0.2, function () {
   try { W.verbs = Object.keys(require(path.join(APP, 'api.js')).verbs || {}); } catch (e) { W.verbs = []; }
   return W.verbs.length >= 1 || false;
 }, test.limit.quick);
 
 // Desk switched on beside it: a permanent server, so the process list is shown to find a running app script.
-test.run('the world: a scratch node with Icons and Desk switched on, its disc its own, and a Chrome page', 0.2, async function () {
+test.run('a scratch node with its own disc comes up with Icons and Desk switched on, and a Chrome page opens', 0.2, async function () {
   W.node = await scratchNode({ servers: ['icons', 'desk'] });
   W.chrome = await chromePage(findChrome());
   if (!W.node.up || W.chrome.error) return false;
@@ -110,7 +110,7 @@ test.run('the world: a scratch node with Icons and Desk switched on, its disc it
   W.up = true;
   return true;
 }, test.limit.slow);
-test.run('the world: seven glyphs the system set does not hold', 0.2, function () {
+test.run('seven glyphs the system set does not hold are found', 0.2, function () {
   if (!W.up) return false;
   const system = json(path.join(W.node.root, 'spirit', 'run', 'spirit', 'iconSet.json')) || {};
   // GLYPHS THE SYSTEM SET DOES NOT HOLD (cw found it: the set starts as the system set, so a glyph of it is a duplicate,
@@ -134,7 +134,7 @@ const ask = async function (call, args) {
 const none = function () { return iconsProcesses(W.node.root).length === 0; };
 
 // the box, 1: "icons has no running process"; 8: the api tree asks it, and its run ends
-test.run('the world: the process list finds the permanent desk.js running, once', 0.2, async function () {
+test.run('the process list finds the permanent desk.js running, once', 0.2, async function () {
   if (!W.ready) return false;
   return await until(function () { return Promise.resolve(iconsProcesses(W.node.root, 'desk').length === 1); }, 15000) ? true : false;
 }, test.limit.quick);
@@ -149,17 +149,17 @@ test.run('the api tree holds the icons branch, answered from icons.js', 0.2, asy
   return tree.status === 200 && !!W.branch ? true : false;
 }, test.limit.quick);
 // Its one verb, icon, written out so that its check has a plain title.
-test.run('its branch names icon', 0.2, function () {
+test.run('the icons branch names the verb icon', 0.2, function () {
   if (!W.ready) return false;
   return JSON.stringify(W.branch || '').indexOf('icon') !== -1 || false;
 }, test.limit.quick);
-test.run('and once the tree is answered no icons.js runs', 0.2, async function () {
+test.run('once the tree is answered, no icons.js runs', 0.2, async function () {
   if (!W.ready) return false;
   return await until(function () { return Promise.resolve(none()); }, 3000) ? true : false;
 }, test.limit.quick);
 
 // the box, 10: "The node keeps one job for the app, module spirit.app.icons, open while the app is switched on"
-test.run('spirit.app.icons is a job, open', 0.2, async function () {
+test.run('spirit.app.icons is an open job', 0.2, async function () {
   if (!W.ready) return false;
   const job = await ask('job.get', { key: 'spirit.app.icons' });
   const j0 = (job.body && job.body.job) || null;
@@ -181,7 +181,7 @@ const ADD = '(function () { var l = ' + LAYER + '; if (!l) return null; return A
 // What the face itself does (its add row, the duplicate, a second page) is browserIcons.js's test; what the table holds,
 // nodeIcons.js's. Here: the app's tile opens the face, and an Add through it is one run of icons.js, ended.
 const add = function (page, glyph, words) { return page.evaluate('(function () { var g = ' + field('glyph') + ', k = ' + field('keywords') + ', b = ' + ADD + '; if (!g || !k || !b) return false; g.value = ' + JSON.stringify(glyph) + '; g.dispatchEvent(new Event("input", { bubbles: true })); k.value = ' + JSON.stringify(words) + '; k.dispatchEvent(new Event("input", { bubbles: true })); b.click(); return true; }())'); };
-test.run('the world: the Icons tile is there and pressed', 0.2, async function () {
+test.run('the Icons tile is there and is pressed', 0.2, async function () {
   if (!W.ready) return false;
   await W.chrome.send('Page.navigate', { url: W.node.base + '/face.html' });
   await until(function () { return W.chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
@@ -189,7 +189,7 @@ test.run('the world: the Icons tile is there and pressed', 0.2, async function (
   W.opened = opened === true;
   return W.opened || false;
 }, test.limit.quick);
-test.run('its tile opens its face: an icon to paste, its keywords, comma separated, and Add', 0.2, async function () {
+test.run('the Icons tile opens its face, with an icon to paste, its keywords, comma separated, and Add', 0.2, async function () {
   if (!W.opened) return false;
   W.drew = !!(await until(function () { return W.chrome.evaluate('!!' + field('glyph') + ' && !!' + field('keywords') + ' && !!' + ADD); }, 10000));
   return W.drew || false;
@@ -202,7 +202,7 @@ test.run('an Add writes the new glyph into spirit/state/icons/data/iconSet.json'
   const wrote = await until(function () { return Promise.resolve(((json(W.SET) || {})[W.G1] || []).join(',') === 'flamingo,bird'); }, 10000);
   return wrote ? true : false;
 }, test.limit.quick);
-test.run('and its run ended: no icons.js runs', 0.2, async function () {
+test.run('after the Add, its run has ended and no icons.js runs', 0.2, async function () {
   if (!W.drew) return false;
   return await until(function () { return Promise.resolve(none()); }, 3000) ? true : false;
 }, test.limit.quick);
@@ -217,7 +217,7 @@ test.run('after the runs it is the same job, spirit.app.icons, still open', 0.2,
 
 // the attacker: five Adds at once, a page writing the table itself
 // The box, 9: "one run per app at a time: calls to the same one-shot app wait their turn, so two saves never write iconSet.json at once."
-test.run('five Adds at once: all five are in the set, none lost to another\'s write', 0.2, async function () {
+test.run('after five Adds at once, all five are in the set, none lost to another\'s write', 0.2, async function () {
   if (!W.drew) return false;
   const five = W.REST.slice(0, 5);
   const watching = watchRuns(W.node.root, 'icons', { base: W.node.base });
@@ -228,16 +228,16 @@ test.run('five Adds at once: all five are in the set, none lost to another\'s wr
   const s5 = W.s5 = json(W.SET);
   return allFive ? true : false;
 }, test.limit.slow);
-test.run('and what was there stays, the file whole JSON', 0.2, function () {
+test.run('the glyphs added before the five stay, and the file is whole JSON', 0.2, function () {
   if (!W.watched) return false;
   return !!W.s5 && W.G1 in W.s5 && W.G2 in W.s5 ? true : false;
 }, test.limit.quick);
-test.run('the world: runs of icons.js were seen while they were answered', 0.2, function () {
+test.run('runs of icons.js were seen while they were answered', 0.2, function () {
   if (!W.watched) return false;
   const w = W.watched;
   return w.seen >= 1 || w.pids >= 2 ? true : false;
 }, test.limit.quick);
-test.run('never two runs of icons.js at once (the box, 9)', 0.2, function () {
+test.run('two runs of icons.js never happen at once', 0.2, function () {
   if (!W.watched) return false;
   return W.watched.most <= 1 || false;
 }, test.limit.quick);
@@ -249,7 +249,7 @@ test.run('a page writing spirit/state/icons/data/iconSet.json itself is refused,
 }, test.limit.slow);
 
 // the box, 4: "Switched off, its row goes, and a call to it answers app-not-served"
-test.run('the world: Icons switched off', 0.2, async function () {
+test.run('Icons is switched off', 0.2, async function () {
   if (!W.ready) return false;
   const off = await ask('app.active', { key: 'icons', active: false });
   W.off = off.status === 200;
@@ -261,27 +261,27 @@ test.run('switched off, icons.icon answers app-not-served', 0.2, async function 
   const asked = W.verbs.length ? await ask('icons.' + W.verbs[0], {}) : { text: '' };
   return /app-not-served/.test(asked.text) || false;
 }, test.limit.slow);
-test.run('the api tree holds no icons branch', 0.2, async function () {
+test.run('switched off, the api tree holds no icons branch', 0.2, async function () {
   if (!W.ready) return false;
   const tOff = await ask('api', {});
   return tOff.status === 200 && !(tOff.body && tOff.body.icons) ? true : false;
 }, test.limit.quick);
-test.run('its job is no longer open', 0.2, async function () {
+test.run('switched off, the spirit.app.icons job is no longer open', 0.2, async function () {
   if (!W.ready) return false;
   const jOff = await ask('job.get', { key: 'spirit.app.icons' });
   const jo = (jOff.body && jOff.body.job) || null;
   return !jo || /end|exit|stop|cancel|off/i.test(String(jo.status || '')) ? true : false;
 }, test.limit.quick);
-test.run('and nothing runs icons.js', 0.2, function () {
+test.run('switched off, nothing runs icons.js', 0.2, function () {
   if (!W.ready) return false;
   return none() || false;
 }, test.limit.quick);
-test.run('the world: Icons switched on again', 0.2, async function () {
+test.run('Icons is switched on again', 0.2, async function () {
   if (!W.ready) return false;
   const on = await ask('app.active', { key: 'icons', active: true });
   return on.status === 200 || false;
 }, test.limit.quick);
-test.run('switched on again, its branch is back, no restart of the node', 0.2, async function () {
+test.run('switched on again, the icons branch is back with no restart of the node', 0.2, async function () {
   if (!W.ready) return false;
   const back = await until(function () { return ask('api', {}).then(function (t) { return t.status === 200 && !!(t.body && t.body.icons); }); }, 10000);
   return back ? true : false;

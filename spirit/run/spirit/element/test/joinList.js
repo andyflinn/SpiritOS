@@ -71,7 +71,7 @@ let steps, w, c, made, first, second, late, lc;
 test.run('spirit/element/joinList.js is there', 0.2, function () {
   return (!!SRC) ? true : false;
 }, test.limit.quick);
-test.run('the world: join.json has its steps', 0.2, function () {
+test.run('join.json has its steps', 0.2, function () {
   steps = [];
   try { steps = JSON.parse(fs.readFileSync(STEPS, 'utf8')).steps || []; } catch (e) { steps = []; }
   return (steps.length > 1) ? true : false;
@@ -86,12 +86,12 @@ test.run('until the job is read it says it waits for the node', 0.2, function ()
   made = w.L.create(c, {});
   return (/Waiting for this node/.test(c.innerHTML)) ? true : false;
 }, test.limit.quick);
-test.run('each step drawn with its name and its icon as join.json gives it', 0.2, async function () {
+test.run('each step is drawn with its name and its icon as join.json gives it', 0.2, async function () {
   await settle();
   first = c.host.innerHTML;
   return (steps.every(function (s) { return first.indexOf(s.icon) !== -1 && first.indexOf(s.name) !== -1; })) ? true : false;
 }, test.limit.quick);
-test.run('nothing done: every step marked ⬜', 0.2, function () {
+test.run('with nothing done, every step is marked ⬜', 0.2, function () {
   return (first.indexOf('⬜') !== -1 && first.indexOf('☑️') === -1) ? true : false;
 }, test.limit.quick);
 test.run('it watches the jobs family\'s cache once', 0.2, function () {

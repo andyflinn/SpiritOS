@@ -20,7 +20,7 @@ const settle = async function () { for (let i = 0; i < 20; i++) await new Promis
 let required, specs, indexes, R, E, s, paint;
 const KEYWORDS = ['smile', 'happy <face>'];
 
-test.run('the world: the row runs on a bare window', 0.2, async function () {
+test.run('the icon row element runs on a bare window', 0.2, async function () {
   if (!fs.existsSync(FILE)) return false;
   required = []; specs = []; indexes = [];
   global.document = { createElement: function () { return { innerHTML: '' }; } };
@@ -53,12 +53,12 @@ test.run('create makes a row of kind icon, keyed by its glyph, with no actions',
   paint = function (name, v) { const f = s.fields.filter(function (x) { return x.name === name; })[0]; return f ? f.paint(v) : null; };
   return (s && s.kind === 'icon' && s.key === '🙂' && Array.isArray(s.actions) && !s.actions.length) || false;
 }, test.limit.quick);
-test.run('its fields: the glyph and the keywords it is found by', 0.2, function () {
+test.run('its fields are the glyph and the keywords it is found by', 0.2, function () {
   if (!s) return false;
   const names = s.fields.map(function (f) { return f.name; });
   return (JSON.stringify(names) === JSON.stringify(['glyph', 'keywords']) && s.row.glyph === '🙂' && JSON.stringify(s.row.keywords) === JSON.stringify(KEYWORDS)) || false;
 }, test.limit.quick);
-test.run('a row keyed but with no glyph takes its key as the glyph; no keywords is none', 0.2, function () {
+test.run('a row keyed but with no glyph takes its key as the glyph, and a row with no keywords has none', 0.2, function () {
   if (!R || typeof R.create !== 'function') return false;
   R.create({ key: '⭐' });
   const k = specs[specs.length - 1];

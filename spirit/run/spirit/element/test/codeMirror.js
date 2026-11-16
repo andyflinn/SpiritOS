@@ -112,7 +112,7 @@ test.run('it requires CodeMirror\'s lib/codemirror.js through spirit.require', 0
   await settle();
   return S.w.required.indexOf(CM + 'lib/codemirror.js') !== -1 || false;
 }, test.limit.quick);
-test.run('and the mode file of the path\'s syntax (a .md file: mode/markdown/markdown.js)', 0.2, function () {
+test.run('it requires the mode file of the path\'s syntax, mode/markdown/markdown.js for a .md file', 0.2, function () {
   return (asked(S.w).indexOf(CM + 'mode/markdown/markdown.js') !== -1 && S.w.required.indexOf(CM + 'mode/markdown/markdown.js') !== -1) || false;
 }, test.limit.quick);
 test.run('its stylesheet lib/codemirror.css is put on the page', 0.2, function () {
@@ -140,7 +140,7 @@ test.run('typing into a read view changes nothing', 0.2, function () {
   r.type('changed');
   return (S.read && S.read.value() === 'alpha beta\ngamma beta') || false;
 }, test.limit.quick);
-test.run('line numbers and wrapping on, the theme material-darker', 0.2, function () {
+test.run('a read view has line numbers and wrapping on, and the theme material-darker', 0.2, function () {
   const r = S.w && S.w.made[0];
   return (!!r && r.cfg.lineNumbers === true && r.cfg.lineWrapping === true && r.cfg.theme === 'material-darker') || false;
 }, test.limit.quick);
@@ -159,7 +159,7 @@ test.run('the first match gets the cursor', 0.2, function () {
   const r = S.w && S.w.made[0];
   return (!!r && !!r.cursor && r.cursor.line === 0 && r.cursor.ch === 6) || false;
 }, test.limit.quick);
-test.run('and is scrolled into view', 0.2, function () {
+test.run('the first match is scrolled into view', 0.2, function () {
   const r = S.w && S.w.made[0];
   return (!!r && r.scrolled.some(function (p) { return p.line === 0 && p.ch === 6; })) || false;
 }, test.limit.quick);
@@ -167,7 +167,7 @@ test.run('CodeMirror is refreshed after the turn it was made in (a hidden box me
   const r = S.w && S.w.made[0];
   return (!!r && r.refreshed > 0) || false;
 }, test.limit.quick);
-test.run('mark(words) marks again, the old marks cleared, and answers how many', 0.2, function () {
+test.run('mark, handed new words, marks again with the old marks cleared, and answers how many it marked', 0.2, function () {
   const r = S.w && S.w.made[0];
   if (!r || !S.read) return false;
   const n = S.read.mark('gamma');
@@ -194,13 +194,13 @@ test.run('an edit view is an editable CodeMirror', 0.2, async function () {
   const e3 = S.w.made[2];
   return (!!S.edit && S.edit.mode === 'edit' && !!e3 && e3.cfg.readOnly !== true) || false;
 }, test.limit.quick);
-test.run('value() answers the text as typed', 0.2, function () {
+test.run('an edit view\'s value answers the text as typed', 0.2, function () {
   const e3 = S.w && S.w.made[2];
   if (!e3 || !S.edit) return false;
   e3.type('{"a":2}');
   return S.edit.value() === '{"a":2}' || false;
 }, test.limit.quick);
-test.run('a .json file is javascript with json: true', 0.2, function () {
+test.run('a .json file is coloured as javascript with its json flag set', 0.2, function () {
   const e3 = S.w && S.w.made[2];
   return (!!e3 && !!e3.cfg.mode && e3.cfg.mode.name === 'javascript' && e3.cfg.mode.json === true) || false;
 }, test.limit.quick);
@@ -208,14 +208,14 @@ test.run('the view hands its CodeMirror as cm', 0.2, function () {
   const e3 = S.w && S.w.made[2];
   return (!!S.edit && !!e3 && S.edit.cm === e3) || false;
 }, test.limit.quick);
-test.run('no mode is read, and no text is the empty string', 0.2, async function () {
+test.run('a view given no mode is a read view, and one given no text shows the empty string', 0.2, async function () {
   if (!S.E) return false;
   S.bare = await S.E.create({ id: 'host-4' }, { path: 'y.js' });
   await settle();
   const b = S.w.made[3];
   return (!!S.bare && S.bare.mode === 'read' && !!b && b.cfg.readOnly === true && b.cfg.value === '') || false;
 }, test.limit.quick);
-test.run('a .js file is javascript, its mode file required', 0.2, function () {
+test.run('a .js file is coloured as javascript, and its mode file is required', 0.2, function () {
   const b = S.w && S.w.made[3];
   return (!!b && b.cfg.mode === 'javascript' && S.w.required.indexOf(CM + 'mode/javascript/javascript.js') !== -1) || false;
 }, test.limit.quick);
@@ -250,7 +250,7 @@ const REPO = path.resolve(RUN, '../..');
 const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 const L = { tracked: [], inRun: [], node: null, page: null, at: {}, cm: {}, fromHere: '' };
 
-test.run('its 15 files, licence included, stand in spirit/element/codeMirror/', 0.2, function () {
+test.run('the library\'s 15 files, licence included, stand in spirit/element/codeMirror/', 0.2, function () {
   L.tracked = require('child_process').execSync('git ls-files', { cwd: REPO, encoding: 'utf8' }).split('\n').filter(Boolean);
   L.inRun = L.tracked.filter(function (f) { return f.indexOf('spirit/run/') === 0; }).map(function (f) { return f.slice('spirit/run/'.length); });
   const lib = L.inRun.filter(function (f) { return f.indexOf('spirit/element/codeMirror/') === 0; });
@@ -263,7 +263,7 @@ test.run('no product file but the element names the library\'s folder', 0.2, fun
   });
   return !asking.length || false;
 }, test.limit.slow);
-test.run('the world: a scratch node, and a Chrome page on it', 0.2, async function () {
+test.run('a scratch node comes up with a Chrome page on it', 0.2, async function () {
   const chrome = H.findChrome();
   if (!chrome) return false;
   L.node = await H.scratchNode();
@@ -275,19 +275,19 @@ test.run('the world: a scratch node, and a Chrome page on it', 0.2, async functi
   await H.sleep(2500);
   return !!ready || false;
 }, test.limit.long);
-test.run('the page starts with no CodeMirror on it: "only access to codeMirror library is through the element!"', 0.2, async function () {
+test.run('the page starts with no CodeMirror on it, since the only access to the library is through the element', 0.2, async function () {
   if (!L.page || L.page.error) return false;
   try { L.at = JSON.parse(await L.page.evaluate('JSON.stringify({ library: typeof window.CodeMirror })')); } catch (e) { L.at = {}; }
   return L.at.library === 'undefined' || false;
 }, test.limit.slow);
-test.run('the element draws from there, its sheet, its marks and its search keys with it', 0.2, async function () {
+test.run('the element draws from that folder, with its sheet, its marks and its search keys', 0.2, async function () {
   if (!L.page || L.page.error) return false;
   await L.page.evaluate('Promise.resolve(window.spirit.require("spirit/element/codeMirror.js")).then(function () { return true; }, function () { return false; })');
   try { L.cm = JSON.parse(await L.page.evaluate('(function () { var d = document.body.appendChild(document.createElement("div")); return window.spirit.element.spirit.element.codeMirror.create(d, { mode: "edit", text: "one needle", words: "needle" }).then(function () { return JSON.stringify({ drawn: !!d.querySelector(".CodeMirror"), marks: d.querySelectorAll(".text-view-match").length, cssLoaded: getComputedStyle(d.querySelector(".CodeMirror")).position === "relative", search: !!(window.CodeMirror.commands && window.CodeMirror.commands.find) }); }); })()')); } catch (e) { L.cm = {}; }
   L.fromHere = await L.page.evaluate('performance.getEntriesByType("resource").map(function (r) { return r.name; }).filter(function (u) { return /codemirror/i.test(u); }).join(" ")').catch(function () { return ''; });
   return (L.cm.drawn === true && L.cm.marks === 1 && L.cm.cssLoaded === true && L.cm.search === true) || false;
 }, test.limit.slow);
-test.run('and the page asked the new place only', 0.2, function () {
+test.run('the page asked the library\'s new place only', 0.2, function () {
   return (/spirit\/element\/codeMirror\/lib\/codemirror\.js/.test(L.fromHere) && !/shell\/node_modules/.test(L.fromHere)) || false;
 }, test.limit.quick);
 

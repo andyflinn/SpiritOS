@@ -34,7 +34,7 @@ function hostsFor(el) { const h = {}; el.fields.forEach(function (f) { h[f] = { 
 let C = null, D = null, CD = null, V = null;
 let kept, stranger, relay, blocked, ha, hb, ho, found, hf, labelField, gets = null, m = 0;
 
-test.run('the world: the contact row runs on a window of its own, the data set and the contact family\'s data real', 0.2, function () {
+test.run('the contact row runs on a window of its own, with the data set and the contact family\'s data real', 0.2, function () {
   global.window = { spirit: {} };
   // goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
@@ -73,7 +73,7 @@ test.run('the world: the contact row runs on a window of its own, the data set a
 }, test.limit.quick);
 
 // what a row offers depends on what it is
-test.run('a kept or blocked row: open, block, unblock, remove', 0.2, function () {
+test.run('a kept or blocked row offers open, block, unblock and remove', 0.2, function () {
   if (!C) return false;
   kept = C.create({ key: 'K1', name: 'anna', keep: true }, { open: openLayer });
   stranger = C.create({ key: 'K2', publicLabel: 'bob' }, { open: openLayer });
@@ -81,15 +81,15 @@ test.run('a kept or blocked row: open, block, unblock, remove', 0.2, function ()
   blocked = C.create({ key: 'K3', blocked: true });
   return names(kept) === 'open,block,unblock,remove' && names(blocked) === 'open,block,unblock,remove' ? true : false;
 }, test.limit.quick);
-test.run('a row not in the book: add, and only add', 0.2, function () {
+test.run('a row not in the book offers add, and only add', 0.2, function () {
   if (!stranger) return false;
   return names(stranger) === 'add' ? true : false;
 }, test.limit.quick);
-test.run('a relay: open, even when kept', 0.2, function () {
+test.run('a relay row offers open only, even when kept', 0.2, function () {
   if (!relay) return false;
   return names(relay) === 'open' ? true : false;
 }, test.limit.quick);
-test.run('kind contact, keyed by the public key, fields presence, status, label, add, and the caller\'s mark (goal/G43.32)', 0.2, function () {
+test.run('a row is of kind contact, keyed by the public key, with the fields presence, status, label, add and the caller\'s mark', 0.2, function () {
   if (!kept) return false;
   return kept.kind === 'contact' && kept.key === 'K1' && kept.fields.join(',') === 'presence,status,label,add,mark' ? true : false;
 }, test.limit.quick);
@@ -98,7 +98,7 @@ test.run('a row carrying publicKey instead of key is keyed by it', 0.2, function
   const byPublic = C.create({ publicKey: 'K9', keep: true });
   return byPublic.key === 'K9' ? true : false;
 }, test.limit.quick);
-test.run('the row loads the contact family\'s cache manager, which puts ((spirit.data || {}).contact || {}).data on the page', 0.2, function () {
+test.run('the row loads the contact family\'s cache manager, which puts the contact family\'s data in spirit.data on the page', 0.2, function () {
   return managers.indexOf('contact') !== -1 && CD && typeof CD.contact === 'function' ? true : false;
 }, test.limit.quick);
 
@@ -118,14 +118,14 @@ test.run('block, unblock, remove ask contact.block, contact.unblock, contact.for
 let opens = null;
 // GOAL/G43.32 (Andy: "the contact list already knows the difference between contact types. so should the detail panel."): one
 // detail opens for both, told what the row is; it draws a relay's panel or a person's.
-test.run('open: the one contact detail, by key, told a person from a relay (goal/G43.32)', 0.2, async function () {
+test.run('open asks for the one contact detail by key, told whether it is a person or a relay', 0.2, async function () {
   if (!kept) return false;
   await kept.act('open'); await relay.act('open');
   opens = asked.splice(-2);
   return opens[0].verb === 'contactDetails' && opens[0].body.key === 'K1' && opens[0].body.relay === false && opens[1].verb === 'contactDetails' && opens[1].body.key === 'R1' && opens[1].body.relay === true ? true : false;
 }, test.limit.quick);
 // GOAL/G43.18: as a panel over the list, through the mounter's open; handed the layer, no api (goal/G43.24).
-test.run('each opens as a layer of the mounter\'s panel stack, handed that layer\'s close and title and no api (goal/G43.24)', 0.2, function () {
+test.run('each opens as a layer of the mounter\'s panel stack, handed that layer\'s close and title and no api', 0.2, function () {
   if (!opens) return false;
   return layers.length === 2 && layers[0].key === 'contact/contact/K1' && layers[1].key === 'contact/relay/R1' && opens.every(function (o) { return !('api' in o.body) && o.body.layer && typeof o.body.layer.close === 'function' && typeof o.body.layer.setTitle === 'function'; })
     ? true : false;
@@ -147,12 +147,12 @@ test.run('an action the row does not offer asks nothing', 0.2, async function ()
 }, test.limit.quick);
 
 // the cells
-test.run('presence: 🟢 present, 🔴 absent, ⚪ not known', 0.2, function () {
+test.run('presence shows 🟢 when present, 🔴 when absent and ⚪ when not known', 0.2, function () {
   if (!kept) return false;
   return cell(kept, 'presence').indexOf('⚪') !== -1 && cell(C.create({ key: 'K4', keep: true, present: true }), 'presence').indexOf('🟢') !== -1
     && cell(C.create({ key: 'K5', keep: true, present: false }), 'presence').indexOf('🔴') !== -1 ? true : false;
 }, test.limit.quick);
-test.run('status: blocked ❌ over mine ⭐, a plain kept row and a row not in the book blank', 0.2, function () {
+test.run('the status shows blocked ❌ over mine ⭐, and is blank on a plain kept row and on a row not in the book', 0.2, function () {
   if (!kept) return false;
   const statuses = { blocked: cell(blocked, 'status'), stranger: cell(stranger, 'status'), mine: cell(C.create({ key: 'K7', mine: true }), 'status'), kept: cell(kept, 'status') };
   return statuses.blocked === '❌' && statuses.stranger === '' && statuses.mine === '⭐' && statuses.kept === '' ? true : false;
@@ -162,7 +162,7 @@ test.run('the label is the name, escaped', 0.2, function () {
   const l = cell(C.create({ key: 'K8', keep: true, name: '<b>x</b>' }), 'label');
   return l === '&lt;b&gt;x&lt;/b&gt;' ? true : false;
 }, test.limit.quick);
-test.run('the Add button only on a row not in the book and not a relay', 0.2, function () {
+test.run('the Add button shows only on a row that is not in the book and not a relay', 0.2, function () {
   if (!kept) return false;
   return cell(stranger, 'add').indexOf('data-action="add"') !== -1 && cell(kept, 'add') === '' && cell(C.create({ key: 'R2', relay: true }), 'add') === '' ? true : false;
 }, test.limit.quick);
@@ -205,7 +205,7 @@ test.run('a row the owner adds loses its Add, and offers open, block, unblock, r
   V.merge('contacts/K14', { keep: true });
   return beforeAdd === 'add|true' && hf.add.innerHTML === '' && names(found) === 'open,block,unblock,remove' ? true : false;
 }, test.limit.quick);
-test.run('and its new actions ask the node', 0.2, async function () {
+test.run('the new actions of a row the owner adds ask the node', 0.2, async function () {
   if (!found) return false;
   await found.act('block');
   const blockAfterAdd = asked.pop();
@@ -242,7 +242,7 @@ test.run('a good name is normalized and asked of contact.label', 0.2, async func
 }, test.limit.quick);
 
 // expandInfo asks contact.get once, for a row in the book
-test.run('contact.get by key, once, the answer kept', 0.2, async function () {
+test.run('contact.get is asked by key, once, and the answer is kept', 0.2, async function () {
   if (!kept) return false;
   m = asked.length;
   await kept.expandInfo(); await kept.expandInfo();
@@ -354,7 +354,7 @@ function hits(file, re) {
 }
 const HELD_ROW = path.join(RUN, 'spirit', 'element', 'search', 'contact', 'rowElement.js');
 // The world: the file is there and its code, comments left out, still holds a line that is surely code.
-test.run('the world: the file is read, and its code, comments left out, still holds a line of code', 0.2, function () {
+test.run('the file is read, and its code with comments left out still holds a line of code', 0.2, function () {
   const c = code(HELD_ROW);
   const anchor = /rowElement\.create\(/;
   return c !== null && anchor.test(c) ? true : false;
@@ -434,7 +434,7 @@ test.after(function () {
   try { if (RF.N && RF.N.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(RF.N); } catch (e) { /* scratch */ }
 });
 // rowElement-relayOnFace: a relay's row in Contacts opens the relay on a face, whichever came first (goal/G41.32)
-test.run('the world: a scratch node and a scratch face relay come up', 0.2, async function () {
+test.run('a scratch node and a scratch face relay come up', 0.2, async function () {
   RF.N = await scratchNode();
   RF.R = await scratchFaceRelay({ members: [], faceDomain: DOMAIN });
   return RF.N.up && RF.R.up ? true : false;
@@ -455,7 +455,7 @@ test.run('the browser holds the login', 0.2, async function () {
   return set.result && set.result.success ? true : false;
 }, test.limit.quick);
 // The face's desktop is drawn, so Contacts is there to press.
-test.run('the world: the face\'s desktop is drawn, Contacts on it', 0.2, async function () {
+test.run('the face\'s desktop is drawn with Contacts on it', 0.2, async function () {
   if (!RF.chrome || RF.chrome.error || !RF.FACE) return false;
   const plain = await desktop(RF.chrome, RF.FACE);
   return plain.indexOf('Contacts') !== -1 ? true : false;
@@ -473,13 +473,13 @@ test.run('Contacts opens, and the relay\'s row is pressed', 0.2, async function 
   const pressedRow = await press('scratch');
   return pressedApp === true && pressedRow === true ? true : false;
 }, test.limit.slow);
-test.run('its panel opens, with its folds', 0.2, async function () {
+test.run('the relay\'s panel opens with its folds', 0.2, async function () {
   if (!RF.chrome || RF.chrome.error || !RF.FACE) return false;
   await until(function () { return RF.chrome.evaluate('document.querySelectorAll(".nd-fold").length > 0'); }, 8000);
   RF.relayOpened = await RF.chrome.evaluate('JSON.stringify({ folds: document.querySelectorAll(".nd-fold").length, person: /Public Handle/.test(document.body.innerText) })').then(JSON.parse);
   return RF.relayOpened.folds > 0 ? true : false;
 }, test.limit.long);
-test.run('and not the person\'s page', 0.2, function () {
+test.run('the relay\'s panel is not the person\'s page', 0.2, function () {
   if (!RF.relayOpened) return false;
   return RF.relayOpened.person === false ? true : false;
 }, test.limit.quick);

@@ -20,7 +20,7 @@ const settle = async function () { for (let i = 0; i < 20; i++) await new Promis
 // What the world made, for the tests after it.
 const W = { required: [], made: [], ANSWER: { list: {}, refresh: function () {}, destroy: function () {} } };
 
-test.run('the world: the selector runs on a window of its own', 0.2, async function () {
+test.run('the selector runs on a window of its own', 0.2, async function () {
   if (!fs.existsSync(FILE)) return false;
   global.window = { spirit: { element: {}, require: function (p) {
     W.required.push(String(p));
@@ -42,7 +42,7 @@ test.run('as it runs it requires its own list first', 0.2, function () {
   if (!W.ran) return false;
   return W.required[0] === LIST ? true : false;
 }, test.limit.quick);
-test.run('it places spirit.element.spirit.element.search.file.create, by its path', 0.2, function () {
+test.run('it places its create on spirit.element, by its path', 0.2, function () {
   if (!W.ran) return false;
   const S = (((((global.window.spirit.element || {}).spirit || {}).element || {}).search || {}).file);
   W.S = S;
@@ -56,7 +56,7 @@ test.run('create draws its list in the box it is handed, with the options as the
   W.called = true;
   return W.made.length === 1 && W.made[0].host === host && W.made[0].opts === opts ? true : false;
 }, test.limit.quick);
-test.run('and answers what its list answers', 0.2, function () {
+test.run('create answers what its list answers', 0.2, function () {
   if (!W.called) return false;
   return W.got === W.ANSWER ? true : false;
 }, test.limit.quick);

@@ -388,21 +388,21 @@ const paintedClass = function (id, want) {
   });
   return painted.indexOf(want) !== -1 || false;
 };
-test.run('End design mode: no inline background, which would beat the armed red', 0.2, async function () {
+test.run('End design mode has no inline background, which would beat the armed red', 0.2, async function () {
   W.css = fs.readFileSync(path.join(RUN, 'spirit', 'shell', 'shell.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
   W.wd = deskWorld(Object.assign({}, goal, { design: true }), []);
   await W.wd.mount();
   return noInline('desk-end-design');
 }, test.limit.quick);
-test.run('End design mode: its colour comes from a class shell.css paints only while unarmed (.desk-design-end:not([data-armed]))', 0.2, function () {
+test.run('End design mode takes its colour from the class desk-design-end, which shell.css paints only while the button is unarmed', 0.2, function () {
   if (!W.wd) return false;
   return paintedClass('desk-end-design', 'desk-design-end');
 }, test.limit.quick);
-test.run('Start design mode: no inline background, which would beat the armed red', 0.2, function () {
+test.run('Start design mode has no inline background, which would beat the armed red', 0.2, function () {
   if (!W.wd) return false;
   return noInline('desk-start-design');
 }, test.limit.quick);
-test.run('Start design mode: its colour comes from a class shell.css paints only while unarmed (.desk-design-start:not([data-armed]))', 0.2, function () {
+test.run('Start design mode takes its colour from the class desk-design-start, which shell.css paints only while the button is unarmed', 0.2, function () {
   if (!W.wd) return false;
   return paintedClass('desk-start-design', 'desk-design-start');
 }, test.limit.quick);
@@ -422,7 +422,7 @@ test.run('the page draws no Team chat, no Team tab and no Apps tab', 0.2, async 
 const F1 = W.f1 = {};
 const read1 = async function (js) { try { return JSON.parse(await F1.page.evaluate(js)); } catch (e) { return {}; } };
 const noF1 = function () { return !F1.o; };
-test.run('the world: the List draws its filter buttons', 0.2, async function () {
+test.run('the List draws its filter buttons', 0.2, async function () {
   if (!(await bootPage(F1, true))) return false;
   const page = F1.page;
   await page.send('Page.navigate', { url: F1.node.base + '/DEBUG/spirit/app/desk/element/desk/test/desk-opened.html' });
@@ -433,26 +433,26 @@ test.run('the world: the List draws its filter buttons', 0.2, async function () 
 }, test.limit.slow);
 test.run('[Current Goal Only] is the only filter on by default', 0.2, function () { if (noF1()) return false; const o = F1.o; return (o.current === true && o.goals === false && o.closed === false) || false; }, test.limit.quick);
 test.run('the first search asks for the current goal alone', 0.2, function () { if (noF1()) return false; const o = F1.o; return (!!o.args && o.args.currentGoalOnly === true && o.args.goalsOnly === false && o.args.includeClosed === false) || false; }, test.limit.quick);
-test.run('and the page shows the current goal and its item when it opens', 0.2, function () { if (noF1()) return false; const o = F1.o; return (o.currentGoal === true && o.openItem === true) || false; }, test.limit.quick);
-test.run('[Goals Only] pressed: [Current Goal Only] goes off', 0.2, async function () {
+test.run('the page shows the current goal and its item when it opens', 0.2, function () { if (noF1()) return false; const o = F1.o; return (o.currentGoal === true && o.openItem === true) || false; }, test.limit.quick);
+test.run('pressing [Goals Only] turns [Current Goal Only] off', 0.2, async function () {
   if (noF1()) return false;
   const g = F1.g = await read1('window.press("goalsOnly")');
   return (g.goals === true && g.current === false) || false;
 }, test.limit.slow);
-test.run('and the search asks for goals, every goal', 0.2, function () { const g = F1.g; if (!g) return false; return (!!g.args && g.args.goalsOnly === true && g.args.currentGoalOnly === false) || false; }, test.limit.quick);
-test.run('and the List shows the goals, no item', 0.2, function () { const g = F1.g; if (!g) return false; return (g.currentGoal === true && g.olderGoal === true && g.olderItem === false && g.openItem === false) || false; }, test.limit.quick);
-test.run('[Current Goal Only] pressed: [Goals Only] goes off', 0.2, async function () {
+test.run('with [Goals Only] on, the search asks for every goal', 0.2, function () { const g = F1.g; if (!g) return false; return (!!g.args && g.args.goalsOnly === true && g.args.currentGoalOnly === false) || false; }, test.limit.quick);
+test.run('with [Goals Only] on, the List shows the goals and no item', 0.2, function () { const g = F1.g; if (!g) return false; return (g.currentGoal === true && g.olderGoal === true && g.olderItem === false && g.openItem === false) || false; }, test.limit.quick);
+test.run('pressing [Current Goal Only] turns [Goals Only] off', 0.2, async function () {
   if (noF1()) return false;
   const c = F1.c = await read1('window.press("current")');
   return (c.current === true && c.goals === false) || false;
 }, test.limit.slow);
-test.run('and the List shows the current goal alone', 0.2, function () { const c = F1.c; if (!c) return false; return (c.openItem === true && c.olderGoal === false && c.olderItem === false) || false; }, test.limit.quick);
-test.run('pressed again: both are off', 0.2, async function () {
+test.run('with [Current Goal Only] on, the List shows the current goal alone', 0.2, function () { const c = F1.c; if (!c) return false; return (c.openItem === true && c.olderGoal === false && c.olderItem === false) || false; }, test.limit.quick);
+test.run('pressing [Current Goal Only] again turns both filters off', 0.2, async function () {
   if (noF1()) return false;
   const off = F1.off = await read1('window.press("current")');
   return (off.current === false && off.goals === false) || false;
 }, test.limit.slow);
-test.run('and the List shows every goal\'s items', 0.2, function () {
+test.run('with both filters off, the List shows every goal\'s items', 0.2, function () {
   stop(F1);
   const off = F1.off;
   if (!off) return false;
@@ -468,7 +468,7 @@ const F2 = W.f2 = {};
 const noF2 = function () { return !F2.ready; };
 const open2 = function (title) { return F2.page.evaluate("(function () { var all = Array.prototype.slice.call(document.querySelectorAll('#zzDesk *')).filter(function (x) { return x.textContent.indexOf(" + JSON.stringify(title) + ") !== -1 && !x.closest('.app-container'); }); if (!all.length) return false; all[all.length - 1].click(); return true; })()"); };
 const shown2 = function () { return F2.page.evaluate("(function () { var all = Array.prototype.slice.call(document.querySelectorAll('#zzDesk .app-container')); var b = all.filter(function (x) { return x.style.display !== 'none'; }).pop(); var body = b && b.querySelector('#dd-body'); return JSON.stringify({ layers: all.length, drawn: !!body && body.children.length > 0, text: b ? b.textContent : '' }); })()").then(JSON.parse); };
-test.run('the world: a goal and two items on the scratch desk', 0.2, async function () {
+test.run('a goal and two items are put on the scratch desk', 0.2, async function () {
   if (!(await bootPage(F2, false))) return false;
   const page = F2.page;
   await page.send('Page.navigate', { url: F2.node.base + '/face.html' });
@@ -483,7 +483,7 @@ test.run('the world: a goal and two items on the scratch desk', 0.2, async funct
   F2.ready = !!g.id && !!F2.one.id && !!F2.two.id;
   return F2.ready || false;
 }, test.limit.long);
-test.run('the world: the first item\'s row is in the List', 0.2, async function () {
+test.run('the first item\'s row is in the List', 0.2, async function () {
   if (noF2()) return false;
   const page = F2.page;
   await page.evaluate(MOUNT_DESK);
@@ -496,7 +496,7 @@ test.run('the first item opens with its details', 0.2, async function () {
   const first = await shown2();
   return (first.drawn && first.text.indexOf(F2.one.id) !== -1) || false;
 }, test.limit.quick);
-test.run('the world: the second item\'s row is in the List', 0.2, async function () {
+test.run('the second item\'s row is in the List', 0.2, async function () {
   if (noF2()) return false;
   await F2.page.evaluate("(function () { var b = Array.prototype.slice.call(document.querySelectorAll('#zzDesk .app-container')).filter(function (x) { return x.style.display !== 'none'; }).pop(); b.querySelector('.app-container-close').click(); return true; })()");
   return (await open2('Second opened item')) || false;
@@ -522,7 +522,7 @@ const F3 = W.f3 = {};
 const noF3 = function () { return !F3.ready; };
 const CLOSES = "Array.prototype.filter.call(document.querySelectorAll('#zzDesk [data-press=\"close\"]'), function (b) { return b.getClientRects().length && !b.closest('.app-container'); })";
 const state3 = async function () { const r = await F3.call('desk.item.get', { id: F3.it.id }); let i = r.item; if (typeof i === 'string') { try { i = JSON.parse(i); } catch (e) { i = null; } } return i || {}; };
-test.run('the world: a goal and its item, done, on the scratch desk', 0.2, async function () {
+test.run('a goal and its item, pressed done, are put on the scratch desk', 0.2, async function () {
   if (!(await bootPage(F3, false))) return false;
   const page = F3.page;
   await page.send('Page.navigate', { url: F3.node.base + '/face.html' });
@@ -538,7 +538,7 @@ test.run('the world: a goal and its item, done, on the scratch desk', 0.2, async
   F3.ready = !!g.id && !!it.id && before.status === 'done';
   return F3.ready || false;
 }, test.limit.long);
-test.run('the world: the List draws the done item\'s Close', 0.2, async function () {
+test.run('the List draws the done item\'s Close', 0.2, async function () {
   if (noF3()) return false;
   const page = F3.page;
   await page.evaluate(MOUNT_DESK);
@@ -546,7 +546,7 @@ test.run('the world: the List draws the done item\'s Close', 0.2, async function
   if (drawn) F3.drawn = true;
   return drawn || false;
 }, test.limit.quick);
-test.run('each Close in the List pressed once: the item is still done, nothing closed', 0.2, async function () {
+test.run('after each Close in the List is pressed once, the item is still done and nothing is closed', 0.2, async function () {
   if (!F3.drawn) return false;
   const page = F3.page;
   const n = F3.n = await page.evaluate(CLOSES + '.length');
@@ -555,7 +555,7 @@ test.run('each Close in the List pressed once: the item is still done, nothing c
   const after = await state3();
   return after.status === 'done' || false;
 }, test.limit.slow);
-test.run('and each Close in the List stands armed, waiting for the second press', 0.2, async function () {
+test.run('each Close in the List then stands armed, waiting for the second press', 0.2, async function () {
   if (!F3.drawn) return false;
   const armed = JSON.parse(await F3.page.evaluate('JSON.stringify(' + CLOSES + '.map(function (b) { return b.hasAttribute("data-armed"); }))'));
   stop(F3);

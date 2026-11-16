@@ -55,18 +55,18 @@ let inNode, CACHE, DESK_API, w, wb, wt, threw, wn, ws, chat, checks, wf, files, 
 test.run('spirit/app/desk/data.js is there', 0.2, function () {
   return (fs.existsSync(FILE)) ? true : false;
 }, test.limit.quick);
-test.run('in node, as an appServer that subscribes requires it, it answers cache { keep, shed, answer }', 0.2, function () {
+test.run('in node, required by an appServer that subscribes, it answers a cache with keep, shed and answer', 0.2, function () {
   inNode = (function () { try { return require(FILE); } catch (e) { return {}; } }());
   CACHE = inNode && inNode.cache;
   return (!!CACHE && ['keep', 'shed', 'answer'].every(function (f) { return typeof CACHE[f] === 'function'; })) ? true : false;
 }, test.limit.quick);
-test.run('and the desk family\'s api.js holds its verbs alone, no cache', 0.2, function () {
+test.run('the desk family\'s api.js holds its verbs alone, with no cache', 0.2, function () {
   DESK_API = (function () { try { return require(path.join(RUN, 'spirit', 'app', 'desk', 'api.js')); } catch (e) { return {}; } }());
   return (!('cache' in DESK_API)) ? true : false;
 }, test.limit.quick);
 
 // Its translator is tested below, run as the page and the subscribing appServer run it; without the file there is none.
-test.run('with spirit.data it answers ((spirit.data || {}).desk || {}).data { published, took }', 0.2, function () {
+test.run('with spirit.data it answers the desk family\'s data with published and took', 0.2, function () {
   if (!fs.existsSync(FILE)) return false;
   // it registers on spirit.data
   w = world();
@@ -79,12 +79,12 @@ test.run('goal.whole keeps the item\'s facts and makes its goal the current one'
   w.job(whole(it('goal/G9.1', 'goal/G9')));
   return (w.item('goal/G9.1') && w.item('goal/G9.1').title === 'goal/G9.1' && w.current() === 'goal/G9') ? true : false;
 }, test.limit.quick);
-test.run('an item as a JSON string is read; a goal (goal \'\') is its own goal', 0.2, function () {
+test.run('an item as a JSON string is read, and a goal, whose goal field is empty, is its own goal', 0.2, function () {
   if (!w) return false;
   w.job({ verb: 'goal.whole', item: JSON.stringify(it('goal/G9', '')) });
   return (w.item('goal/G9') && w.current() === 'goal/G9') ? true : false;
 }, test.limit.quick);
-test.run('facts with no id, broken JSON, a non-object: nothing kept', 0.2, function () {
+test.run('facts with no id, broken JSON or a non-object keep nothing', 0.2, function () {
   if (!w) return false;
   w.job({ verb: 'goal.whole', item: { title: 'no id' } }); w.job({ verb: 'goal.whole', item: '{broken' }); w.job(null); w.job('text');
   return (w.ids().length === 2) ? true : false;
@@ -98,7 +98,7 @@ test.run('a row that is not goal.whole is kept and drops nothing', 0.2, function
 // another goal pushed whole: it is current, and nothing kept of others goes (goal/G41.12)
 // Andy, goal/G41.12, box v15: "The cache keeps everything the server sends, every goal, no filtering on the client
 // side"; goal/G41.24, his decision: "the three bundle checks go, and the other three assert my G41.12 words."
-test.run('it is current, and goal/G9\'s rows and parts stay, and so does another goal\'s row: every goal is kept', 0.2, function () {
+test.run('another goal pushed whole is current, while the rows and parts of the goal before it and another goal\'s row all stay, as every goal is kept', 0.2, function () {
   if (!w) return false;
   w.X.took('item.box', { id: 'goal/G9.1' }, { box: 'the box', version: 3 });
   w.job(whole(it('goal/G8.1', 'goal/G8')));
@@ -148,14 +148,14 @@ test.run('a single row is taken as it comes', 0.2, function () {
 }, test.limit.quick);
 
 // took: a part read for an item of the current goal is kept
-test.run('item.box: { box, version } as a number', 0.2, function () {
+test.run('item.box is kept as the box and its version, as a number', 0.2, function () {
   wt = world();
   wt.job(whole(it('goal/G9.1', 'goal/G9')));
   wt.job({ verb: 'item.row', item: it('goal/G5.1', 'goal/G5') });
   wt.X.took('item.box', { id: 'goal/G9.1' }, { box: 'B', version: '4' });
   return (wt.part('goal/G9.1').box === 'B' && wt.part('goal/G9.1').version === 4) ? true : false;
 }, test.limit.quick);
-test.run('item.chat: { chat, chatMore }, beside what was kept', 0.2, function () {
+test.run('item.chat is kept as chat and chatMore, beside what was kept', 0.2, function () {
   if (!wt) return false;
   wt.X.took('item.chat', { id: 'goal/G9.1' }, { chat: [{ by: 'a', at: '1', text: 't' }], chatMore: true });
   return (wt.part('goal/G9.1').chat.length === 1 && wt.part('goal/G9.1').chatMore === true && wt.part('goal/G9.1').box === 'B') ? true : false;
@@ -172,13 +172,13 @@ test.run('an item of another goal, or one with no row, keeps nothing', 0.2, func
   wt.X.took('item.box', { id: 'goal/G4.4' }, { box: 'no' });
   return (!wt.part('goal/G5.1') && !wt.part('goal/G4.4')) ? true : false;
 }, test.limit.quick);
-test.run('an older page of chat, or files under a folder, is no part: not kept', 0.2, function () {
+test.run('an older page of chat, or files under a folder, is no part and is not kept', 0.2, function () {
   if (!wt) return false;
   wt.X.took('item.chat', { id: 'goal/G9.1', before: 'x' }, { chat: [] });
   wt.X.took('item.files', { id: 'goal/G9.1', under: 'spirit/' }, { files: [] });
   return (wt.part('goal/G9.1').chat.length === 1 && wt.part('goal/G9.1').files.length === 1) ? true : false;
 }, test.limit.quick);
-test.run('no id, no answer, a box not a string, another verb: nothing kept, nothing thrown', 0.2, function () {
+test.run('with no id, no answer, a box that is not a string, or another verb, nothing is kept and nothing is thrown', 0.2, function () {
   if (!wt) return false;
   threw = null;
   try { wt.X.took('item.box', {}, { box: 'x' }); wt.X.took('item.box', { id: 'goal/G9.1' }, null); wt.X.took('item.box', { id: 'goal/G9.1' }, { box: 5 }); wt.X.took('item.what', { id: 'goal/G9.1' }, { a: 1 }); } catch (e) { threw = e; }
@@ -200,7 +200,7 @@ test.run('a box the stream brings is kept though the item was never read', 0.2, 
   // goal/G41.12: "The cache keeps everything the server sends": a box the stream brings is kept, read or not.
   return (!!ws.part('goal/G9.1') && ws.part('goal/G9.1').box === 'never read') ? true : false;
 }, test.limit.quick);
-test.run('and so is a chat line', 0.2, function () {
+test.run('a chat line the stream brings is kept too, though the item was never read', 0.2, function () {
   if (!ws) return false;
   ws.job({ table: 'chat', id: 'goal/G9.2', row: { by: 'a', at: '1', text: 'unread line' } });
   return (!!ws.part('goal/G9.2') && Array.isArray(ws.part('goal/G9.2').chat) && ws.part('goal/G9.2').chat.some(function (l) { return l && l.text === 'unread line'; })) ? true : false;
@@ -221,7 +221,7 @@ test.run('a box row replaces the box read, with its version', 0.2, function () {
 }, test.limit.quick);
 
 // side rows: chat lines join, a take replaces
-test.run('a new line joins; the same line (by, at, text) replaces; a removed or row-less one changes nothing', 0.2, function () {
+test.run('a new chat line joins, the same line by its by, at and text replaces, and a removed or row-less one changes nothing', 0.2, function () {
   if (!ws) return false;
   ws.X.took('item.chat', { id: 'goal/G9.1' }, { chat: [{ by: 'a', at: '1', text: 't', taken: false }] });
   ws.job({ table: 'chat', id: 'goal/G9.1', row: { by: 'b', at: '2', text: 'u' } });
@@ -242,7 +242,7 @@ test.run('a new check joins, a decided one replaces in place, an answered one go
   checks = ws.part('goal/G9.1').checks;
   return (JSON.stringify(checks.map(function (c) { return c.number + ':' + c.state; })) === '["1:decided","3:open"]') ? true : false;
 }, test.limit.quick);
-test.run('a cleared one goes, and a removed one by its number (at)', 0.2, function () {
+test.run('a cleared check goes, and so does a removed one, by its number at', 0.2, function () {
   if (!ws) return false;
   ws.job({ table: 'checks', id: 'goal/G9.1', row: { number: '3', state: 'cleared' } });
   ws.job({ table: 'checks', id: 'goal/G9.1', removed: true, at: '1' });
@@ -251,14 +251,14 @@ test.run('a cleared one goes, and a removed one by its number (at)', 0.2, functi
 }, test.limit.quick);
 
 // side rows: files, one agent's path each, core first, and the late mark (goal/G41.11)
-test.run('a file added late keeps its mark: late: true', 0.2, function () {
+test.run('a file added late keeps its late mark set to true', 0.2, function () {
   wf = world();
   wf.job(whole(it('goal/G9.1', 'goal/G9')));
   wf.X.took('item.files', { id: 'goal/G9.1' }, { files: [], filesMore: false });
   wf.job({ table: 'files', id: 'goal/G9.1', row: { path: 'x.js', by: 'cw', core: false, grant: '', late: true } });
   return (JSON.stringify(wf.part('goal/G9.1').files) === JSON.stringify([{ path: 'x.js', by: 'cw', core: false, grant: '', late: true }])) ? true : false;
 }, test.limit.quick);
-test.run('a row without late: true gets no late key; core only when true; nothing else carried', 0.2, function () {
+test.run('a file row without late true gets no late key, gets core only when true, and carries nothing else', 0.2, function () {
   if (!wf) return false;
   wf.job({ table: 'files', id: 'goal/G9.1', row: { path: 'b.js', by: 'cw', core: 'yes', grant: 'g1', late: 'yes', extra: 1 } });
   wf.job({ table: 'files', id: 'goal/G9.1', row: { path: 'a.js', by: 'wsl', core: true, grant: '' } });
@@ -266,7 +266,7 @@ test.run('a row without late: true gets no late key; core only when true; nothin
   b = files.filter(function (f) { return f.path === 'b.js'; })[0];
   return (b && !('late' in b) && b.core === false && b.grant === 'g1' && !('extra' in b)) ? true : false;
 }, test.limit.quick);
-test.run('core files first, then by path; filesMore false', 0.2, function () {
+test.run('the files are listed core files first, then by path, with filesMore false', 0.2, function () {
   if (!wf) return false;
   return (JSON.stringify(files.map(function (f) { return f.path; })) === '["a.js","b.js","x.js"]' && wf.part('goal/G9.1').filesMore === false) ? true : false;
 }, test.limit.quick);
@@ -282,7 +282,7 @@ test.run('another agent\'s same path is its own entry', 0.2, function () {
   wf.job({ table: 'files', id: 'goal/G9.1', row: { path: 'x.js', by: 'wsl', core: false } });
   return (wf.part('goal/G9.1').files.filter(function (f) { return f.path === 'x.js'; }).length === 2) ? true : false;
 }, test.limit.quick);
-test.run('a removed file goes by holder|path, the other agent\'s stays', 0.2, function () {
+test.run('a removed file goes by its holder and path, and the other agent\'s stays', 0.2, function () {
   if (!wf) return false;
   wf.job({ table: 'files', id: 'goal/G9.1', removed: true, at: 'cw|x.js' });
   files = wf.part('goal/G9.1').files;

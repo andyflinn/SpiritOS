@@ -29,7 +29,7 @@ const W = {};
 // the node port comes from the node that starts it
 // A node that starts a job hands it SPIRIT_CALLBACK_URL, its own address (job.js); Run hands no argument. It is run from
 // a folder that is no git clone, so past its arguments it stops at once, before it asks any node anything.
-test.run('run with no argument it does not stop at its usage', 0.2, async function () {
+test.run('run with no argument, publishData does not stop at its usage', 0.2, async function () {
   if (!fs.existsSync(FILE)) return false;
   const port = await freePort();
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-publishdata-'));
@@ -40,7 +40,7 @@ test.run('run with no argument it does not stop at its usage', 0.2, async functi
     return (r.status !== 2 && !/usage:/.test(W.said)) ? true : false;
   } finally { try { fs.rmSync(tmp, { recursive: true, force: true }); } catch (e) { /* scratch */ } }
 }, test.limit.quick);
-test.run('it goes on past its arguments, to its first step', 0.2, function () {
+test.run('run with no argument, publishData goes on past its arguments to its first step', 0.2, function () {
   if (typeof W.said !== 'string') return false;
   return (/not in a git clone/.test(W.said)) ? true : false;
 }, test.limit.quick);
@@ -51,14 +51,14 @@ let line, at, want, readme, client;
 // THE TEST STATE FROM TESTICLE (Andy, the cycle that deletes the desk's verifier: "publish Data uses testicle data."): it
 // reads testicle's testicle.db where testicle keeps it, its state spirit/state/testicle/data/, worked out from its own line.
 const TESTICLE_DB = path.join(RUN, 'spirit', 'state', 'testicle', 'data', 'testicle.db');
-test.run('it reads testicle\'s testicle.db where testicle keeps it, its state spirit/state/testicle/data/', 0.2, function () {
+test.run('publishData reads testicle\'s testicle.db where testicle keeps it, in its state folder spirit/state/testicle/data/', 0.2, function () {
   const lines = code(FILE).split('\n').filter(function (l) { return /const\s+\w+\s*=\s*path\.join\(__dirname[^;]*testicle\.db/.test(l); });
   line = (/=\s*([^;]+);/.exec(lines[0] || '') || [])[1];
   at = '';
   try { at = line ? new Function('path', '__dirname', 'return ' + line)(path, HERE) : ''; } catch (e) { at = ''; }
   return (path.resolve(String(at)) === TESTICLE_DB && !/verify\.db/.test(code(FILE))) ? true : false;
 }, test.limit.quick);
-test.run('agentReadme.js stands beside it and loads', 0.2, function () {
+test.run('agentReadme.js stands beside publishData.js and loads', 0.2, function () {
   readme = null;
   try { readme = require(path.join(HERE, 'agentReadme.js')); } catch (e) { readme = null; }
   return (!!readme && typeof readme.write === 'function') ? true : false;
@@ -182,7 +182,7 @@ const WR = {};
 test.after(function () { try { fs.rmSync(TMP, { recursive: true, force: true }); } catch (e) { /* scratch */ } });
 
 // run: one measurement run per agent
-test.run('the world: a scratch clone with a bare origin beside it and a traffic log', 0.2, function () {
+test.run('a scratch clone is made with a bare origin beside it and a traffic log', 0.2, function () {
   // The deskClient's family as the one family path function names it (goal/G41.12).
   WR.FAMILY = require(SPIRIT).familyPath('deskClient');
   setup();
@@ -194,45 +194,45 @@ test.run('the world: a scratch clone with a bare origin beside it and a traffic 
 let u, nogit, noname, nolog, OUT, headBefore, r, pg, p, pmd, plat, ts, tsmd, readmeMd, origDb, rowsNow, before, w, head, files, post;
 
 // its usage, and what it needs
-test.run('no port, given or handed by its node: exit 2, its usage, nothing asked', 0.2, function () {
+test.run('with no port given or handed by its node, publishData exits 2 with its usage and asks nothing', 0.2, function () {
   if (!WR.ready) return false;
   u = publish(CLONE, []);
   return (u.status === 2 && /^usage: node publishData.js \[<port of the agent's own node>\]/.test(u.err) && u.asks.length === 0) ? true : false;
 }, test.limit.quick);
-test.run('run outside a git clone: exit 1, saying so, nothing asked', 0.2, function () {
+test.run('run outside a git clone, publishData exits 1 saying so and asks nothing', 0.2, function () {
   if (!WR.ready) return false;
   nogit = publish(os.tmpdir(), ['45440', '--only', 'packets', '--out', path.join(TMP, 'x')]);
   return (nogit.status === 1 && nogit.err === 'publishData: not in a git clone' && nogit.asks.length === 0) ? true : false;
 }, test.limit.quick);
-test.run('an agent with no name at the desk: exit 1, saying so', 0.2, function () {
+test.run('for an agent with no name at the desk, publishData exits 1 saying so', 0.2, function () {
   if (!WR.ready) return false;
   noname = publish(CLONE, ['45440', '--only', 'packets', '--out', path.join(TMP, 'x')], '');
   return (noname.status === 1 && /^publishData: this agent has no name at the desk yet/.test(noname.err)) ? true : false;
 }, test.limit.quick);
-test.run('a clone with no traffic log: exit 1, naming where it looked', 0.2, function () {
+test.run('in a clone with no traffic log, publishData exits 1 naming where it looked', 0.2, function () {
   if (!WR.ready) return false;
   nolog = publish(BARE_CLONE, ['45440', '--only', 'packets', '--out', path.join(TMP, 'y'), '--asks', '1']);
   return (nolog.status === 1 && nolog.err.indexOf('publishData: no traffic log at ' + path.join(BARE_CLONE, 'spirit', 'run', 'spirit', 'state', 'node.db')) === 0) ? true : false;
 }, test.limit.slow);
 
 // --only packets --out: N read-only desk asks, timed by the node's own traffic log
-test.run('it exits 0: written to <out>', 0.2, function () {
+test.run('run with --only packets and --out, publishData exits 0 saying it wrote to the out folder', 0.2, function () {
   if (!WR.ready) return false;
   OUT = path.join(TMP, 'look');
   headBefore = git(CLONE, ['rev-parse', 'HEAD']).out;
   r = publish(CLONE, ['45440', '--only', 'packets', '--out', OUT, '--asks', '3']);
   return (r.status === 0 && r.out.split('\n').pop() === 'publishData: written to ' + OUT) ? true : false;
 }, test.limit.long);
-test.run('its agent is the name in its profile, its commit the tree it runs from', 0.2, function () {
+test.run('publishData names its agent by the name in its profile, and its commit by the tree it runs from', 0.2, function () {
   if (!WR.ready) return false;
   return (r.out.indexOf('publishData: agent ' + AGENT + ', commit ' + WR.COMMIT + ', into ' + OUT) !== -1) ? true : false;
 }, test.limit.quick);
-test.run('one profile.get for its name, then 3 more, read-only, and nothing else asked', 0.2, function () {
+test.run('publishData asks one profile.get for its name, then 3 more read-only, and asks nothing else', 0.2, function () {
   if (!WR.ready) return false;
   pg = r.asks.filter(function (a) { return a.args.name === 'profile.get'; });
   return (pg.length === 4 && pg.every(function (a) { return a.args.json === '{"agent":""}'; }) && r.asks.length === 4) ? true : false;
 }, test.limit.quick);
-test.run('every ask through its deskClient\'s family, on the spirit object', 0.2, function () {
+test.run('every ask goes through its deskClient\'s family, on the spirit object', 0.2, function () {
   if (!WR.ready) return false;
   return (r.required.every(function (a) { return a.require === WR.FAMILY; })) ? true : false;
 }, test.limit.quick);
@@ -242,27 +242,27 @@ test.run('packets.json names the agent, the commit, the asks and when', 0.2, fun
   try { p = JSON.parse(fs.readFileSync(path.join(OUT, 'packets.json'), 'utf8')); } catch (e) { p = null; }
   return (p && p.agent === AGENT && p.commit === WR.COMMIT && p.asks === 3 && !isNaN(Date.parse(p.measuredAt))) ? true : false;
 }, test.limit.quick);
-test.run('posts: the closing rows since it began (replies in, and requests out refused or unanswered)', 0.2, function () {
+test.run('packets.json counts as posts the closing rows since it began: replies in, and requests out refused or unanswered', 0.2, function () {
   if (!WR.ready) return false;
   return (p && p.posts === 4) ? true : false;
 }, test.limit.quick);
-test.run('queue wait: median and worst of the rows that carry waitMs', 0.2, function () {
+test.run('packets.json gives the queue wait as the median and worst of the rows that carry waitMs', 0.2, function () {
   if (!WR.ready) return false;
   return (p && p.waitMs.median === 10 && p.waitMs.max === 20) ? true : false;
 }, test.limit.quick);
-test.run('flight: each row\'s ms less its wait', 0.2, function () {
+test.run('packets.json gives each row\'s flight as its ms less its wait', 0.2, function () {
   if (!WR.ready) return false;
   return (p && p.flight.median === 30 && p.flight.max === 35) ? true : false;
 }, test.limit.quick);
-test.run('retried: the rows that took more than one attempt', 0.2, function () {
+test.run('packets.json counts as retried the rows that took more than one attempt', 0.2, function () {
   if (!WR.ready) return false;
   return (p && p.retried === 1) ? true : false;
 }, test.limit.quick);
-test.run('refusals counted by code, else by outcome', 0.2, function () {
+test.run('packets.json counts refusals by code, else by outcome', 0.2, function () {
   if (!WR.ready) return false;
   return (p && JSON.stringify(p.refusals) === JSON.stringify({ 'not-granted': 1, 'no-answer': 1 })) ? true : false;
 }, test.limit.quick);
-test.run('packets.md says the same', 0.2, function () {
+test.run('packets.md says the same as packets.json', 0.2, function () {
   if (!WR.ready) return false;
   pmd = fs.existsSync(path.join(OUT, 'packets.md')) ? fs.readFileSync(path.join(OUT, 'packets.md'), 'utf8') : '';
   return (pmd.indexOf('# Packets: ' + AGENT) === 0 && pmd.indexOf('| queue wait (ms) | 10 | 20 |') !== -1 && pmd.indexOf('| flight (ms) | 30 | 35 |') !== -1 && pmd.indexOf('4 posts, 1 needed more than one try, refusals: {"not-granted":1,"no-answer":1}.') !== -1) ? true : false;
@@ -272,13 +272,13 @@ test.run('platform.md names the agent, the commit and the box', 0.2, function ()
   plat = fs.existsSync(path.join(OUT, 'platform.md')) ? fs.readFileSync(path.join(OUT, 'platform.md'), 'utf8') : '';
   return (plat.indexOf('# ' + AGENT) === 0 && plat.indexOf('| agent | ' + AGENT + ' |') !== -1 && plat.indexOf('`' + WR.COMMIT + '`') !== -1 && plat.indexOf('| node | ' + process.version + ' |') !== -1) ? true : false;
 }, test.limit.quick);
-test.run('testState.json: testicle\'s current tests, read only, no suite run', 0.2, function () {
+test.run('testState.json holds testicle\'s current tests, read only, with no suite run', 0.2, function () {
   if (!WR.ready) return false;
   ts = null;
   try { ts = JSON.parse(fs.readFileSync(path.join(OUT, 'testState.json'), 'utf8')); } catch (e) { ts = null; }
   return (ts && ts.agent === AGENT && ts.commit === WR.COMMIT && ts.tests === ts.green + ts.red && Array.isArray(ts.suites) && Array.isArray(ts.reds) && ts.reds.length === ts.red && /no suite was run/.test(ts.from) && /testicle/.test(ts.from) && !/verify/i.test(ts.from)) ? true : false;
 }, test.limit.quick);
-test.run('its counts are testicle\'s current rows: every current test, the failed ones its reds, each with its script and suite', 0.2, function () {
+test.run('the counts in testState.json are testicle\'s current rows: every current test, the failed ones its reds, each with its script and suite', 0.2, function () {
   if (!ts) return false;
   if (!fs.existsSync(TESTICLE_DB)) return false;
   const { DatabaseSync } = require('node:sqlite');
@@ -288,7 +288,7 @@ test.run('its counts are testicle\'s current rows: every current test, the faile
   const named = (ts.reds || []).every(function (x) { return !!x.script && !!x.suite && !!(x.test || x.title); });
   return (ts.tests === all && ts.red === red && named) ? true : false;
 }, test.limit.quick);
-test.run('testState.md: the suites\' table and the reds', 0.2, function () {
+test.run('testState.md holds the suites\' table and the reds', 0.2, function () {
   if (!WR.ready) return false;
   tsmd = fs.existsSync(path.join(OUT, 'testState.md')) ? fs.readFileSync(path.join(OUT, 'testState.md'), 'utf8') : '';
   return (tsmd.indexOf('# Test state: ' + AGENT) === 0 && tsmd.indexOf('| suite | tests | green | red | newest |') !== -1 && tsmd.indexOf('## Red') !== -1) ? true : false;
@@ -307,7 +307,7 @@ const bulletsUnder = function (heading) {
   return out;
 };
 const numberIn = function (x) { return Number(String(x).replace(/,/g, '')); };
-test.run('the README is written beside them, its title "# Info and Measurements on <platform-name>"', 0.2, function () {
+test.run('the README is written beside them, titled "# Info and Measurements on <platform-name>"', 0.2, function () {
   if (!WR.ready) return false;
   readmeMd = fs.existsSync(path.join(OUT, 'README.md')) ? fs.readFileSync(path.join(OUT, 'README.md'), 'utf8') : '';
   RL = readmeMd.split('\n').map(function (l) { return l.trim(); }).filter(Boolean);
@@ -315,19 +315,19 @@ test.run('the README is written beside them, its title "# Info and Measurements 
 }, test.limit.quick);
 // The box: "one short paragraph: \"Measurements were taken on **<Weekday>, <Month> <day-number-in-month>, <four-digit-year>**
 // for repository commit **<commit-id>**\"". The day is the run's, here or in UTC.
-test.run('then: Measurements were taken on **<Weekday>, <Month> <day>, <year>** for repository commit **<commit-id>**', 0.2, function () {
+test.run('the README\'s next line says Measurements were taken on **<Weekday>, <Month> <day>, <year>** for repository commit **<commit-id>**', 0.2, function () {
   if (!RL.length) return false;
   const day = function (utc) { return new Date().toLocaleDateString('en-US', Object.assign({ weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }, utc ? { timeZone: 'UTC' } : {})); };
   const want = [day(false), day(true)].map(function (d) { return 'Measurements were taken on **' + d + '** for repository commit **' + WR.COMMIT + '**'; });
   return want.indexOf(RL[1]) !== -1 || false;
 }, test.limit.quick);
-test.run('then the heading "## The Machine the Measurements come from"', 0.2, function () {
+test.run('the README\'s line after that is the heading "## The Machine the Measurements come from"', 0.2, function () {
   if (!RL.length) return false;
   return RL[2] === '## The Machine the Measurements come from' || false;
 }, test.limit.quick);
 // The six bullets, each "- **<label>**: <value>", the values node.js's system info on this machine.
 let MACH = null;
-test.run('under it six bullets: OS/Platform, OS Version, Node.js Version, Total RAM, CPU, Architecture, in that order', 0.2, function () {
+test.run('under the machine heading come six bullets: OS/Platform, OS Version, Node.js Version, Total RAM, CPU, Architecture, in that order', 0.2, function () {
   if (!RL.length) return false;
   const b = bulletsUnder('## The Machine the Measurements come from') || [];
   const labels = ['OS/Platform', 'OS Version', 'Node.js Version', 'Total RAM', 'CPU', 'Architecture'];
@@ -369,37 +369,37 @@ test.run('Architecture is node.js\'s (x64, arm64)', 0.2, function () {
 }, test.limit.quick);
 // "## Summary", its four lines in the box's order, and nothing else: "no raw numbers".
 let SUM = null;
-test.run('then "## Summary", after the machine, with four bullets', 0.2, function () {
+test.run('the README\'s "## Summary" comes after the machine, with four bullets', 0.2, function () {
   if (!RL.length) return false;
   SUM = bulletsUnder('## Summary');
   return (!!SUM && RL.indexOf('## Summary') > RL.indexOf('## The Machine the Measurements come from') && SUM.length === 4) || false;
 }, test.limit.quick);
 // "computed by the relay's own rule": no more than the relay allows in 512 MB with nothing of it at rest, in seats.
-test.run('first: "A SpiritOS relay given 512 Megabytes of RAM can hold live streams for <number-of-users> simultaneously."', 0.2, function () {
+test.run('the first Summary bullet is "A SpiritOS relay given 512 Megabytes of RAM can hold live streams for <number-of-users> simultaneously."', 0.2, function () {
   if (!SUM) return false;
   const m = /^- A SpiritOS relay given 512 Megabytes of RAM can hold live streams for ([\d,]+) simultaneously\.$/.exec(SUM[0] || '');
   const relay = require(path.join(RUN, 'spirit', 'relay.js'));
   const most = Math.floor(relay.allowanceFor(512, 0) / relay.SEAT_STREAMS);
   return (!!m && numberIn(m[1]) > 0 && numberIn(m[1]) <= most) || false;
 }, test.limit.quick);
-test.run('second: "A SpiritOS node at rest uses <MB> MB of RAM."', 0.2, function () {
+test.run('the second Summary bullet is "A SpiritOS node at rest uses <MB> MB of RAM."', 0.2, function () {
   if (!SUM) return false;
   const m = /^- A SpiritOS node at rest uses ([\d.,]+) MB of RAM\.$/.exec(SUM[1] || '');
   return (!!m && numberIn(m[1]) > 0 && numberIn(m[1]) < os.totalmem() / 1048576) || false;
 }, test.limit.quick);
-test.run('third: "A call to a node on its own machine answers in <ms> ms, the slowest in <ms> ms."', 0.2, function () {
+test.run('the third Summary bullet is "A call to a node on its own machine answers in <ms> ms, the slowest in <ms> ms."', 0.2, function () {
   if (!SUM) return false;
   const m = /^- A call to a node on its own machine answers in ([\d.]+) ms, the slowest in ([\d.]+) ms\.$/.exec(SUM[2] || '');
   return (!!m && Number(m[1]) > 0 && Number(m[1]) <= Number(m[2])) || false;
 }, test.limit.quick);
-test.run('fourth: "A card request through a relay takes <ms> ms, the slowest <ms> ms; sealing and signing take <ms> ms of it."', 0.2, function () {
+test.run('the fourth Summary bullet is "A card request through a relay takes <ms> ms, the slowest <ms> ms; sealing and signing take <ms> ms of it."', 0.2, function () {
   if (!SUM) return false;
   const m = /^- A card request through a relay takes ([\d.]+) ms, the slowest ([\d.]+) ms; sealing and signing take ([\d.]+) ms of it\.$/.exec(SUM[3] || '');
   return (!!m && Number(m[1]) > 0 && Number(m[1]) <= Number(m[2]) && Number(m[3]) > 0 && Number(m[3]) <= Number(m[1])) || false;
 }, test.limit.quick);
 // "no raw numbers: no iteration of a measurement is published, only these lines": no file it wrote holds a list of 100
 // numbers or more.
-test.run('no raw numbers: no file it wrote holds the iterations of a measurement', 0.2, function () {
+test.run('no file publishData wrote holds the raw iterations of a measurement', 0.2, function () {
   if (!WR.ready) return false;
   const long = function (v) { return Array.isArray(v) ? (v.length >= 100 && v.every(function (x) { return typeof x === 'number'; })) || v.some(long) : (!!v && typeof v === 'object' && Object.keys(v).some(function (k) { return long(v[k]); })); };
   const json = fs.existsSync(OUT) ? fs.readdirSync(OUT).filter(function (f) { return /\.json$/.test(f); }) : [];
@@ -409,7 +409,7 @@ test.run('no raw numbers: no file it wrote holds the iterations of a measurement
 // "## Details", its bullets links to documents beside the README: first testState.md, the general tests, below those the own
 // suites.
 let LINKS = null;
-test.run('then "## Details", after Summary, its bullets links to documents beside the README, the first testState.md', 0.2, function () {
+test.run('the README\'s "## Details" comes after Summary, its bullets links to documents beside the README, the first testState.md', 0.2, function () {
   if (!RL.length) return false;
   const b = bulletsUnder('## Details');
   LINKS = (b || []).map(function (l) { return (/^- .*\]\(([^)]+)\)/.exec(l) || [])[1] || ''; });
@@ -422,12 +422,12 @@ const linkedDoc = function (f) { try { return fs.readFileSync(path.join(OUT, f),
 const firstDocWith = function (pick) { for (let i = 1; i < (LINKS || []).length; i++) if (linkedDoc(LINKS[i]).some(pick)) return i; return -1; };
 const generalLine = function (l) { return GENERAL_SUITE.test(l) && (l.match(/\b\d+\b/g) || []).length >= 3; };
 const ownLine = function (l) { return /\/test\/[\w.-]+\.js\b/.test(l) && !GENERAL_SUITE.test(l) && (l.match(/\b\d+\b/g) || []).length >= 2; };
-test.run('a document of the general tests: each general suite, the number of production files it judges, and its green and red counts', 0.2, function () {
+test.run('one linked document lists the general tests: each general suite, the number of production files it judges, and its green and red counts', 0.2, function () {
   if (!LINKS) return false;
   const i = firstDocWith(generalLine);
   return i > 0 || false;
 }, test.limit.quick);
-test.run('below it, a document of the own suites: each production script with its own suite, and its green and red counts', 0.2, function () {
+test.run('below the general tests, a linked document lists the own suites: each production script with its own suite, and its green and red counts', 0.2, function () {
   if (!LINKS) return false;
   const g = firstDocWith(generalLine);
   const o = firstDocWith(ownLine);
@@ -451,7 +451,7 @@ test.run('testState.md starts with the ten scripts with the most severe reds, th
   const distinct = new Set(listed.map(function (b) { return b.script; })).size === listed.length;
   return (ordered && highest && distinct) || false;
 }, test.limit.quick);
-test.run('each line: the script, its most severe red (severity, test and suite) and its count of reds', 0.2, function () {
+test.run('each of those top lines of testState.md names the script, its most severe red (severity, test and suite) and its count of reds', 0.2, function () {
   if (!ts || !tsmd) return false;
   const by = {};
   (ts.reds || []).forEach(function (x) { const b = by[x.script] || (by[x.script] = { script: x.script, max: -1, count: 0, reds: [] }); b.count += 1; b.reds.push(x); if (Number(x.severity) > b.max) b.max = Number(x.severity); });
@@ -467,11 +467,11 @@ test.run('each line: the script, its most severe red (severity, test and suite) 
   });
   return !bad.length || false;
 }, test.limit.quick);
-test.run('--only packets runs no harness', 0.2, function () {
+test.run('run with --only packets, publishData runs no harness', 0.2, function () {
   if (!WR.ready) return false;
   return (r.out.indexOf('measurePlatform') === -1 && r.out.indexOf('harness and capacity') === -1) ? true : false;
 }, test.limit.quick);
-test.run('and with --out nothing is committed and nothing posted', 0.2, function () {
+test.run('run with --out, publishData commits nothing and posts nothing', 0.2, function () {
   if (!WR.ready) return false;
   return (git(CLONE, ['rev-parse', 'HEAD']).out === headBefore && r.asks.every(function (a) { return a.args.name !== 'chat.add'; })) ? true : false;
 }, test.limit.quick);
@@ -489,7 +489,7 @@ test.run('the node\'s own traffic log is read from a copy, untouched', 0.2, func
 const OTHER = ['windows', 'wsl', 'ubuntu'].filter(function (x) { return x !== PLATFORM; })[0];
 // the whole run: harness in a worktree, then its one folder committed, pushed and said
 // A traffic log that counts nothing this time: zero posts is published too.
-test.run('it exits 0: published platform/<platform>/', 0.2, function () {
+test.run('the whole run exits 0 saying it published platform/<platform>/', 0.2, function () {
   if (!WR.ready) return false;
   fs.rmSync(path.join(CLONE, 'spirit', 'run', 'spirit', 'state'), { recursive: true, force: true });
   trafficLog(CLONE, [ROWS[6]]);
@@ -514,57 +514,57 @@ test.run('it exits 0: published platform/<platform>/', 0.2, function () {
   return (w.status === 0 && w.out.split('\n').pop() === 'publishData: published platform/' + PLATFORM + '/') ? true : false;
 }, test.limit.long);
 // NO HARNESS STEP: it went with the old harness (Andy's commit "KILL!", e9c6cb8c, removed spirit/test/measurePlatform.js).
-test.run('no harness step: nothing runs measurePlatform', 0.2, function () {
+test.run('the whole run has no harness step, so nothing runs measurePlatform', 0.2, function () {
   if (!WR.ready) return false;
   return (w.out.indexOf('measurePlatform') === -1 && w.out.indexOf('harness and capacity') === -1) ? true : false;
 }, test.limit.quick);
-test.run('and no worktree is left', 0.2, function () {
+test.run('the whole run leaves no worktree behind', 0.2, function () {
   if (!WR.ready) return false;
   return (git(CLONE, ['worktree', 'list', '--porcelain']).out.split('\n').filter(function (l) { return /^worktree /.test(l); }).length === 1) ? true : false;
 }, test.limit.quick);
-test.run('zero posts is published, and said aloud', 0.2, function () {
+test.run('a count of zero posts is published, and said aloud', 0.2, function () {
   if (!WR.ready) return false;
   return (w.out.indexOf('the desk asks counted 0 posts; published as measured') !== -1) ? true : false;
 }, test.limit.quick);
-test.run('one commit on its clone', 0.2, function () {
+test.run('the whole run makes one commit on its clone', 0.2, function () {
   if (!WR.ready) return false;
   head = git(CLONE, ['rev-parse', 'HEAD']).out;
   return (head !== before && git(CLONE, ['rev-parse', head + '^']).out === before) ? true : false;
 }, test.limit.quick);
-test.run('under the standing grant\'s message', 0.2, function () {
+test.run('the commit carries the standing grant\'s message', 0.2, function () {
   if (!WR.ready) return false;
   return (git(CLONE, ['log', '-1', '--format=%s', head]).out.indexOf('platform/' + PLATFORM + '/') !== -1) ? true : false;
 }, test.limit.quick);
 // Box v170: "on the platform it runs on, it adds that platform's folder and files, and its line in platform/README.md".
-test.run('its files all lie in platform/<platform>/, but for platform/README.md, none in a folder named after the agent', 0.2, function () {
+test.run('the commit\'s files all lie in platform/<platform>/, but for platform/README.md, and none in a folder named after the agent', 0.2, function () {
   if (!WR.ready) return false;
   files = git(CLONE, ['diff-tree', '--no-commit-id', '--name-only', '-r', head]).out.split('\n').filter(Boolean);
   return (files.length > 0 && files.every(function (f) { return f.indexOf('platform/' + PLATFORM + '/') === 0 || f === 'platform/README.md'; })) ? true : false;
 }, test.limit.quick);
-test.run('packets, platform and README among them', 0.2, function () {
+test.run('the commit\'s files include packets, platform and README', 0.2, function () {
   if (!WR.ready) return false;
   return (['packets.json', 'packets.md', 'platform.md', 'README.md'].every(function (f) { return files.indexOf('platform/' + PLATFORM + '/' + f) !== -1; })) ? true : false;
 }, test.limit.quick);
 // BOX v170: "platform/README.md holds the title \"Measurements exists for the following platforms\" and one bullet per
 // platform folder (windows, wsl, ubuntu), each a link to that folder's README.md, and nothing else."
 let PR = null;
-test.run('platform/README.md is committed with them', 0.2, function () {
+test.run('platform/README.md is committed with the platform\'s files', 0.2, function () {
   if (!WR.ready) return false;
   PR = fs.existsSync(path.join(CLONE, 'platform', 'README.md')) ? fs.readFileSync(path.join(CLONE, 'platform', 'README.md'), 'utf8').split('\n').map(function (l) { return l.trim(); }).filter(Boolean) : null;
   return (files.indexOf('platform/README.md') !== -1 && !!PR) || false;
 }, test.limit.quick);
-test.run('its title: "Measurements exists for the following platforms"', 0.2, function () {
+test.run('platform/README.md is titled "Measurements exists for the following platforms"', 0.2, function () {
   if (!PR) return false;
   return /^(#+\s*)?Measurements exists for the following platforms$/.test(PR[0] || '') || false;
 }, test.limit.quick);
-test.run('then one bullet per platform folder, this one and the other, each a link to that folder\'s README.md, and nothing else', 0.2, function () {
+test.run('platform/README.md then holds one bullet per platform folder, this one and the other, each a link to that folder\'s README.md, and nothing else', 0.2, function () {
   if (!PR) return false;
   const rest = PR.slice(1);
   const named = rest.map(function (l) { const m = /^- \[(windows|wsl|ubuntu)\]\((windows|wsl|ubuntu)\/README\.md\)$/.exec(l); return m && m[1] === m[2] ? m[1] : null; });
   const want = [PLATFORM, OTHER].sort();
   return (named.every(Boolean) && JSON.stringify(named.slice().sort()) === JSON.stringify(want)) || false;
 }, test.limit.quick);
-test.run('only the files it wrote: his tool in the platform folder is not committed, his edit still there', 0.2, function () {
+test.run('only the files publishData wrote are committed: his tool in the platform folder is not, and his edit is still there', 0.2, function () {
   if (!WR.ready) return false;
   const edited = fs.readFileSync(path.join(CLONE, 'platform', PLATFORM, 'his-tool.txt'), 'utf8');
   return (files.indexOf('platform/' + PLATFORM + '/his-tool.txt') === -1 && /his edit/.test(edited)) ? true : false;
@@ -573,14 +573,14 @@ test.run('what he had staged stays staged, and uncommitted', 0.2, function () {
   if (!WR.ready) return false;
   return (git(CLONE, ['diff', '--cached', '--name-only']).out === 'his-staged.txt') ? true : false;
 }, test.limit.quick);
-test.run('pushed: the origin is at its commit', 0.2, function () {
+test.run('the commit is pushed, so the origin is at it', 0.2, function () {
   if (!WR.ready) return false;
   return (git(ORIGIN, ['rev-parse', 'refs/heads/master']).out === head) ? true : false;
 }, test.limit.quick);
 // ALWAYS AND RELIABLY (Andy, box v104: "make sure it works, commits and pushes always and reliably so."): the origin moved on
 // meanwhile, another clone's commit pushed to it; published again, it still commits, on top of that commit, and pushes.
 let moved = '', w2 = null;
-test.run('the world: another clone pushes a commit of its own to the origin', 0.2, function () {
+test.run('another clone pushes a commit of its own to the origin', 0.2, function () {
   if (!WR.ready) return false;
   git(BARE_CLONE, ['pull', '-q', 'origin', 'master']);
   fs.writeFileSync(path.join(BARE_CLONE, 'someone-else.txt'), 'pushed meanwhile\n');
@@ -590,12 +590,12 @@ test.run('the world: another clone pushes a commit of its own to the origin', 0.
   moved = git(ORIGIN, ['rev-parse', 'refs/heads/master']).out;
   return (!!moved && moved !== head) || false;
 }, test.limit.slow);
-test.run('published again, it exits 0 though the origin moved on', 0.2, function () {
+test.run('published again, publishData exits 0 though the origin moved on', 0.2, function () {
   if (!moved) return false;
   w2 = publish(CLONE, ['45440', '--asks', '1']);
   return (w2.status === 0) ? true : false;
 }, test.limit.long);
-test.run('and the origin holds its new commit on top of the other clone\'s', 0.2, function () {
+test.run('the origin then holds the new commit on top of the other clone\'s', 0.2, function () {
   if (!w2) return false;
   const top = git(ORIGIN, ['rev-parse', 'refs/heads/master']).out;
   const ancestor = git(ORIGIN, ['merge-base', '--is-ancestor', moved, top]).status === 0;
@@ -603,7 +603,7 @@ test.run('and the origin holds its new commit on top of the other clone\'s', 0.2
 }, test.limit.quick);
 
 // goal/G43.22, Andy: "publishData summary is no longer needed, i only check on github.": nothing is posted to the desk.
-test.run('no summary line posted to Desk', 0.2, function () {
+test.run('no summary line is posted to Desk', 0.2, function () {
   if (!WR.ready) return false;
   post = w.asks.filter(function (a) { return a.args.name === 'chat.add'; });
   return (w.asks.length > 0 && post.length === 0) ? true : false;

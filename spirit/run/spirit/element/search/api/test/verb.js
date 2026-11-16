@@ -36,7 +36,7 @@ const rows = function () { return (l && typeof l.opts.rows === 'function' ? l.op
 test.run('spirit/element/search/api/verb.js exists', 0.2, function () {
   return fs.existsSync(FILE) || false;
 }, test.limit.quick);
-test.run('it names no shellCreateListSearch (goal/G40.8)', 0.2, function () {
+test.run('it names no shellCreateListSearch', 0.2, function () {
   SRC = fs.readFileSync(FILE, 'utf8');
   return !/shellCreateListSearch/.test(SRC) || false;
 }, test.limit.quick);
@@ -82,12 +82,12 @@ test.run('it adds apiVerbSelector with a create to window.spirit.element, and cr
   made = E.search && E.search.api && E.search.api.verb;
   return made && typeof made.create === 'function' && !('createApiVerbSelector' in E) ? true : false;
 }, test.limit.quick);
-test.run('it loads probabilitySearch itself (goal/G41.3)', 0.2, function () {
+test.run('it loads probabilitySearch itself', 0.2, function () {
   if (!made || typeof made.create !== 'function') return false;
   return w.required.indexOf('spirit/element/search.js') !== -1 ? true : false;
 }, test.limit.quick);
 // Box v23: "every element gets a container and appends itself".
-test.run('create(container, options) appends the control to its container and answers it', 0.2, function () {
+test.run('create appends the control to its container and answers it', 0.2, function () {
   if (!made || typeof made.create !== 'function') return false;
   box = node('div');
   verbs = made.create(box, { own: false });
@@ -113,7 +113,7 @@ test.run('with no server it is hidden and lists nothing', 0.2, function () {
   if (!l) return false;
   return verbs.hidden === true && rows().length === 0 ? true : false;
 }, test.limit.quick);
-test.run('show(tree, server) lists that server\'s verbs, DEBUG never', 0.2, function () {
+test.run('show, given the tree and a server, lists that server\'s verbs and never DEBUG', 0.2, function () {
   if (!l) return false;
   verbs.show(TREE, 'fs');
   return verbs.hidden === false && short(rows()) === short(['loadFile', 'search']) ? true : false;
@@ -137,7 +137,7 @@ test.run('show with no server hides it and clears the choice', 0.2, function () 
 
 // this node's own verbs are the node family's cache (goal/G41.28; Andy, Q7: "the family, verb and app-server selectors
 // draw from it")
-test.run('it loads the node manager, and its list is a view of ((spirit.data || {}).node || {}).data\'s verbs, no rows of its own', 0.2, async function () {
+test.run('it loads the node manager, and its list is a view of the node family\'s verbs, with no rows of its own', 0.2, async function () {
   if (!made || typeof made.create !== 'function') return false;
   mine = made.create(node('div'), {});
   await settle();
@@ -145,7 +145,7 @@ test.run('it loads the node manager, and its list is a view of ((spirit.data || 
   N = ((win.spirit.data || {}).node || {}).data;
   return (w.managers || []).indexOf('node') !== -1 && !!N && m.opts.data === N.verbsBranch && m.opts.rows === undefined ? true : false;
 }, test.limit.quick);
-test.run('show(tree, server) narrows the kept verbs to that family\'s, DEBUG never', 0.2, function () {
+test.run('show, given the tree and a server, narrows the kept verbs to that family\'s and never DEBUG', 0.2, function () {
   if (!N || !m) return false;
   N.keepTree(TREE, win.spirit.apiTreeIndex);
   mine.show(TREE, 'fs');

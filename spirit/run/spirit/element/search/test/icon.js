@@ -25,7 +25,7 @@ test.after(function () {
   try { if (chrome && chrome.profile) fs.rmSync(chrome.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
   try { if (N && N.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(N); } catch (e) { /* left */ }
 });
-test.run('the world: a scratch node, and Chrome on its face page', 0.2, async function () {
+test.run('a scratch node comes up, with Chrome on its face page', 0.2, async function () {
   set = parsed(fs.readFileSync(path.join(RUN, SET), 'utf8')) || {};
   glyphs = Object.keys(set);
   const where = findChrome();
@@ -44,7 +44,7 @@ test.run('the world: a scratch node, and Chrome on its face page', 0.2, async fu
   };
   return true;
 }, test.limit.slow);
-test.run('the selector is made', 0.2, async function () {
+test.run('the icon selector is made on the page', 0.2, async function () {
   if (!rows) return false;
   left = glyphs[0];
   made = await chrome.evaluate(ASKS + '.then(function () {' +
@@ -67,7 +67,7 @@ test.run('it offers every icon of that file', 0.2, function () {
   const missing = want.filter(function (g) { return offered.indexOf(g) === -1; });
   return missing.length === 0 ? true : false;
 }, test.limit.quick);
-test.run('and nothing else', 0.2, function () {
+test.run('it offers nothing but the icons of that file', 0.2, function () {
   if (!offered || !want) return false;
   return offered.length === want.length ? true : false;
 }, test.limit.quick);
@@ -76,7 +76,7 @@ test.run('an excluded glyph stays off it', 0.2, function () {
   return offered.indexOf(left) === -1 ? true : false;
 }, test.limit.quick);
 // ONE LIST (goal/G43.32): no rows of its own, its popup the icons list's dropdown.
-test.run('it draws no list of its own: its popup is the icons list\'s dropdown', 0.2, async function () {
+test.run('it draws no list of its own, because its popup is the icons list\'s dropdown', 0.2, async function () {
   if (made !== 'made') return false;
   const own = await chrome.evaluate('window.__root.querySelectorAll(".icon-selector-row, .icon-selector-list").length');
   return own === 0 ? true : false;
@@ -91,7 +91,7 @@ test.run('a pick makes its value that glyph, with one bubbling change', 0.2, asy
 
 // The box: "A page reads the file once". A fresh page, the list and the selector made at the same moment, the set not yet there.
 // the box: "A page reads the file once"
-test.run('a selector and two lists made together read it once', 0.2, async function () {
+test.run('a selector and two lists made together read the icon set file once', 0.2, async function () {
   if (!rows) return false;
   await chrome.send('Page.navigate', { url: N.base + '/face.html' });
   await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
@@ -102,7 +102,7 @@ test.run('a selector and two lists made together read it once', 0.2, async funct
   const once = (parsed(await chrome.evaluate('JSON.stringify(window.__asks)')) || []).filter(function (p) { return /iconSet\.json$/.test(p); });
   return once.length === 1 ? true : false;
 }, test.limit.long);
-test.run('and the selector has all of it', 0.2, async function () {
+test.run('the selector made together with the lists has every icon of the file', 0.2, async function () {
   if (!rows) return false;
   const n = (await rows()).length;
   return n === glyphs.length ? true : false;

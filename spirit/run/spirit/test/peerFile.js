@@ -21,15 +21,15 @@ test.run('a key\'s name is its bytes in lowercase hex: letters a-f and digits on
   const n = P.nameFromKey(K1);
   return (n === Buffer.from(K1, 'utf8').toString('hex') && /^[0-9a-f]+$/.test(n)) || false;
 }, test.limit.quick);
-test.run('injective: two keys sharing a prefix, or differing only in case, name two files, case folded (NTFS)', 0.2, function () {
+test.run('the name is injective: two keys sharing a prefix, or differing only in case, name two files, even with case folded as on NTFS', 0.2, function () {
   const a = P.nameFromKey(K1).toLowerCase(), b = P.nameFromKey(K2).toLowerCase();
   return (a !== b && P.fileName(K1).toLowerCase() !== P.fileName(K2).toLowerCase()) || false;
 }, test.limit.quick);
-test.run('the whole key is in the name: no tail, prefix or hash (a 44-char key, an 88-char name)', 0.2, function () {
+test.run('the whole key is in the name, with no tail, prefix or hash: a 44-char key gets an 88-char name', 0.2, function () {
   const k = 'MCowBQYDK2VwAyEAabcdefghijklmnopqrstuvwxyz012=';
   return P.nameFromKey(k).length === 2 * k.length || false;
 }, test.limit.quick);
-test.run('reversible: the key comes back from its name, and from the name upper-cased', 0.2, function () {
+test.run('the name is reversible: the key comes back from its name, and from the name upper-cased', 0.2, function () {
   const n = P.nameFromKey(K1);
   return (P.keyFromName(n) === K1 && P.keyFromName(n.toUpperCase()) === K1) || false;
 }, test.limit.quick);
@@ -57,7 +57,7 @@ test.run('the file name is peerfile-<name>.json, the prefix the one .gitignore l
   const f = P.fileName(K1);
   return (P.PREFIX === 'peerfile-' && f === 'peerfile-' + P.nameFromKey(K1) + '.json') || false;
 }, test.limit.quick);
-test.run('one path segment: no separator, no dot but the extension\'s', 0.2, function () {
+test.run('the file name is one path segment: no separator, and no dot but the extension\'s', 0.2, function () {
   const f = P.fileName('../../etc/passwd');
   return (f.indexOf('/') === -1 && f.indexOf('\\') === -1 && f.split('.').length === 2) || false;
 }, test.limit.quick);

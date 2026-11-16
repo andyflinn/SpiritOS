@@ -22,7 +22,7 @@ function router(opts) {
 const sent = function () { return true; };
 
 // ── open: register, then deliver ──
-test.run('open files the route, then delivers: 202 with the hash and the time granted', 0.2, function () {
+test.run('open files the route, then delivers, and answers 202 with the hash and the time granted', 0.2, function () {
   const r = router();
   let filedAtDelivery = null;
   const a = r.open('h1', 'alice', 'bob', function () { filedAtDelivery = r.has('h1'); return true; });
@@ -43,7 +43,7 @@ test.run('an unknown requester class is refused, 500, never taken as a member', 
   const a = r.open('h1', 'alice', 'bob', sent, null, 'relay');
   return (a.ok === false && a.status === 500 && /unknown requester class/.test(a.error) && r.size() === 0) || false;
 }, test.limit.quick);
-test.run('a delivery that fails, by false or by throwing, leaves no route: 502', 0.2, function () {
+test.run('a delivery that fails, by false or by throwing, answers 502 and leaves no route', 0.2, function () {
   const r = router();
   const a = r.open('h1', 'alice', 'bob', function () { return false; });
   const b = r.open('h2', 'alice', 'bob', function () { throw new Error('socket gone'); });
@@ -58,7 +58,7 @@ test.run('a hash already in flight answers 409, inFlight, and delivers nothing',
 }, test.limit.quick);
 
 // ── the caps ──
-test.run('one in flight per requester by default: a second is 429, too many in flight', 0.2, function () {
+test.run('by default one is in flight per requester, and a second is refused 429, too many in flight', 0.2, function () {
   const r = router();
   r.open('h1', 'alice', 'bob', sent);
   const a = r.open('h2', 'alice', 'carol', sent);
@@ -109,7 +109,7 @@ test.run('no time left is refused, tooLittleTime; a null time is the default', 0
   const none = r.open('h2', 'a', 'b', sent, null, { kind: R.MEMBER, ttlMs: null });
   return (zero.status === 503 && zero.tooLittleTime === true && none.grantedMs === R.DEFAULT_TTL_MS) || false;
 }, test.limit.quick);
-test.run('a route expires at its own granted time: gone to has, size and the caps', 0.2, function () {
+test.run('a route expires at its own granted time, and is then gone to has, size and the caps', 0.2, function () {
   const r = router();
   r.open('h1', 'alice', 'bob', sent, null, { kind: R.MEMBER, ttlMs: 1000 });
   r.clock.t += 999;
@@ -120,7 +120,7 @@ test.run('a route expires at its own granted time: gone to has, size and the cap
 }, test.limit.quick);
 
 // ── answer, cancel, release ──
-test.run('the target answers: 200, the requester, the target and what was carried; the route is gone', 0.2, function () {
+test.run('the target\'s answer gets 200, the requester, the target and what was carried, and the route is gone', 0.2, function () {
   const r = router();
   const carry = function () {};
   r.open('h1', 'alice', 'bob', sent, carry);

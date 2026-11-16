@@ -53,23 +53,23 @@ const HOME = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-serveCommon-'));
 process.on('exit', function () { try { fs.rmSync(HOME, { recursive: true, force: true }); } catch (e) { /* gone */ } });
 
 // ── the command line ──
-test.run('portFromArgs: --port <n> and --port=<n> give the number, nothing gives null', 0.2, function () {
+test.run('portFromArgs gives the number of --port <n> and of --port=<n>, and null when no port is given', 0.2, function () {
   const got = [C.portFromArgs(['--port', '4123']), C.portFromArgs(['x', '--port=4124']), C.portFromArgs(['x']), C.portFromArgs(['--port'])];
   return (got[0] === 4123 && got[1] === 4124 && got[2] === null && got[3] === null) || false;
 }, test.limit.quick);
-test.run('emailFromArgs: --email <a> and --email=<a> give the address trimmed, nothing gives an empty string (goal/G30.2)', 0.2, function () {
+test.run('emailFromArgs gives the address of --email <a> and of --email=<a> trimmed, and an empty string when no address is given', 0.2, function () {
   const got = [C.emailFromArgs(['--email', ' a@b.c ']), C.emailFromArgs(['--email=d@e.f ']), C.emailFromArgs([])];
   return (got[0] === 'a@b.c' && got[1] === 'd@e.f' && got[2] === '') || false;
 }, test.limit.quick);
 
 // ── the start refused, loudly ──
-test.run('verifyStartupCwd refuses to start, exit 1 and a sentence, from a folder that is not spirit/run', 0.2, function () {
+test.run('verifyStartupCwd refuses to start from a folder that is not spirit/run, with exit 1 and a sentence', 0.2, function () {
   const was = process.cwd();
   let got = null;
   try { process.chdir(HOME); got = withExit(function () { C.verifyStartupCwd('spirit/server.js'); }); } finally { process.chdir(was); }
   return (got.code === 1 && /Refusing to start/.test(got.said) && /spirit\/server\.js/.test(got.said)) || false;
 }, test.limit.quick);
-test.run('verifyStartupCwd lets a start from spirit/run go on, with the folders it names (goal/G16.9: a relay needs only spirit/)', 0.2, function () {
+test.run('verifyStartupCwd lets a start from spirit/run go on with the folders it names, and a relay needs only spirit/', 0.2, function () {
   const was = process.cwd();
   let got = null;
   try { process.chdir(RUN); got = withExit(function () { C.verifyStartupCwd('spirit/relayServer.js'); C.verifyStartupCwd('spirit/server.js', ['spirit']); }); } finally { process.chdir(was); }
@@ -81,7 +81,7 @@ test.run('verifyStartupCwd refuses a folder the entry point names that is not th
   try { process.chdir(RUN); got = withExit(function () { C.verifyStartupCwd('spirit/server.js', ['spirit', 'no-such-folder-here']); }); } finally { process.chdir(was); }
   return (got.code === 1 && /no-such-folder-here/.test(got.said)) || false;
 }, test.limit.quick);
-test.run('refuseListenError: a port in use stops the process, exit 1, naming the port and the next one to try', 0.2, function () {
+test.run('refuseListenError stops the process on a port in use with exit 1, naming the port and the next one to try', 0.2, function () {
   const server = new EventEmitter();
   C.refuseListenError(server, 4500, 'spirit/server.js');
   const got = withExit(function () { server.emit('error', Object.assign(new Error('in use'), { code: 'EADDRINUSE' })); });
@@ -98,7 +98,7 @@ test.run('sendFile answers 200, the file, and its type by extension', 0.2, async
   await within(r.ended, 2000);
   return (r.status === 200 && String(r.body) === 'body{}' && /text\/css/.test(r.headers['Content-Type'])) || false;
 }, test.limit.quick);
-test.run('sendFile: no such file is 404, and a path with a NUL in it is 404, never a crash (goal/G41.30)', 0.2, async function () {
+test.run('sendFile answers 404 for a file that is not there and for a path with a NUL in it, and never crashes', 0.2, async function () {
   const a = plantedRes();
   const b = plantedRes();
   C.sendFile(a, path.join(HOME, 'none.html'));
@@ -108,7 +108,7 @@ test.run('sendFile: no such file is 404, and a path with a NUL in it is 404, nev
 }, test.limit.quick);
 
 // ── readBody: bytes copied, bytes counted (goal/G16.6) ──
-test.run('readBody: a character split across two chunks arrives whole, never as U+FFFD', 0.2, async function () {
+test.run('readBody delivers a character split across two chunks whole, never as U+FFFD', 0.2, async function () {
   const s = new EventEmitter();
   const bytes = Buffer.from('ab\u{1F47B}cd', 'utf8');
   const p = C.readBody(s);
@@ -118,7 +118,7 @@ test.run('readBody: a character split across two chunks arrives whole, never as 
   const got = await within(p, 1000);
   return got === 'ab\u{1F47B}cd' || false;
 }, test.limit.quick);
-test.run('readBody: past max it refuses at once, 413 body-too-large, and destroys the stream so the rest stops arriving', 0.2, async function () {
+test.run('readBody refuses a body past its max at once with 413 body-too-large, and destroys the stream so the rest stops arriving', 0.2, async function () {
   const s = new EventEmitter();
   let destroyed = false;
   s.destroy = function () { destroyed = true; };
@@ -127,7 +127,7 @@ test.run('readBody: past max it refuses at once, 413 body-too-large, and destroy
   const err = await within(p.then(function () { return null; }, function (e) { return e; }), 1000);
   return (err && err.statusCode === 413 && err.code === 'body-too-large' && err.bytes === 7 && err.max === 5 && destroyed) || false;
 }, test.limit.quick);
-test.run('readBody: a caller names its own refusal, and onBytes hears the running total', 0.2, async function () {
+test.run('a caller of readBody names its own refusal, and its onBytes hears the running total', 0.2, async function () {
   const s = new EventEmitter();
   const heard = [];
   const p = C.readBody(s, { max: 3, code: 'relay-answer-too-large', message: 'the answer is too large', onBytes: function (n) { heard.push(n); } });
@@ -138,7 +138,7 @@ test.run('readBody: a caller names its own refusal, and onBytes hears the runnin
 }, test.limit.quick);
 
 // ── readJsonBody, bodyBytes, useBody ──
-test.run('readJsonBody: the body parsed; an empty body is {}; bad JSON rejects', 0.2, async function () {
+test.run('readJsonBody answers the body parsed, answers an empty object for an empty body, and rejects bad JSON', 0.2, async function () {
   const a = plantedReq({});
   const pa = C.readJsonBody(a);
   a.emit('data', Buffer.from('{"verb":"x"}')); a.emit('end');
@@ -151,16 +151,16 @@ test.run('readJsonBody: the body parsed; an empty body is {}; bad JSON rejects',
   const got = await within(Promise.all([pa, pb, pc]), 1000);
   return (got !== LATE && got[0].verb === 'x' && JSON.stringify(got[1]) === '{}' && got[2] === 'rejected') || false;
 }, test.limit.quick);
-test.run('readJsonBody: read once, answerable twice: a second caller gets the same promise', 0.2, function () {
+test.run('readJsonBody reads a body once, and a second caller gets the same promise', 0.2, function () {
   const q = plantedReq({});
   return C.readJsonBody(q) === C.readJsonBody(q) || false;
 }, test.limit.quick);
-test.run('readJsonBody: a declared Content-Length past BODY_MAX is refused before a byte is read, 413, the socket destroyed', 0.2, async function () {
+test.run('readJsonBody refuses a declared Content-Length past BODY_MAX with 413 before a byte is read, and destroys the socket', 0.2, async function () {
   const q = plantedReq({ 'content-length': String(limits.BODY_MAX + 1) });
   const err = await within(C.readJsonBody(q).then(function () { return null; }, function (e) { return e; }), 1000);
   return (err && err.statusCode === 413 && q.destroyed) || false;
 }, test.limit.quick);
-test.run('readJsonBody: a body with no Content-Length that runs past its max is refused by the running total, 413, and bodyBytes says how much was read', 0.2, async function () {
+test.run('readJsonBody refuses a body with no Content-Length that runs past its max by the running total with 413, and bodyBytes says how much was read', 0.2, async function () {
   const q = plantedReq({});
   const p = C.readJsonBody(q, { max: 10 }).then(function () { return null; }, function (e) { return e; });
   q.emit('data', Buffer.from('{"a":"0123456789"}'));
@@ -170,7 +170,7 @@ test.run('readJsonBody: a body with no Content-Length that runs past its max is 
 test.run('bodyBytes is 0 before any byte is read', 0.2, function () {
   return C.bodyBytes(plantedReq({})) === 0 || false;
 }, test.limit.quick);
-test.run('useBody: what the door sets is the body every later reader gets (goal/G41.15)', 0.2, async function () {
+test.run('the body the door sets with useBody is the body every later reader gets', 0.2, async function () {
   const q = plantedReq({});
   C.useBody(q, { call: 'x', n: 1 });
   const got = await within(C.readJsonBody(q), 1000);
@@ -178,30 +178,30 @@ test.run('useBody: what the door sets is the body every later reader gets (goal/
 }, test.limit.quick);
 
 // ── refusals ──
-test.run('refuseTooBig: a declared length past BODY_MAX is answered 413 and true; within it nothing is answered', 0.2, function () {
+test.run('refuseTooBig answers a declared length past BODY_MAX with 413 and returns true, and answers nothing for a length within it', 0.2, function () {
   const big = plantedRes();
   const yes = C.refuseTooBig({ headers: { 'content-length': String(limits.BODY_MAX + 1) } }, big);
   const small = plantedRes();
   const no = C.refuseTooBig({ headers: { 'content-length': '10' } }, small);
   return (yes === true && big.status === 413 && no === false && small.status === null) || false;
 }, test.limit.quick);
-test.run('nodeRefusal: one answer for every failure, "not now" with its code; the status varies, the string never', 0.2, function () {
+test.run('nodeRefusal gives one answer for every failure, "not now" with its code, and only the status varies, never the string', 0.2, function () {
   const a = plantedRes();
   const b = plantedRes();
   C.nodeRefusal(a);
   C.nodeRefusal(b, 429);
   return (a.status === 403 && b.status === 429 && a.body === b.body && JSON.parse(a.body).error === 'not now' && JSON.parse(a.body).code === 'node-not-now') || false;
 }, test.limit.quick);
-test.run('parseRequestPath: a good path answers url and the decoded pathname', 0.2, function () {
+test.run('parseRequestPath answers a good path with its url and its decoded pathname', 0.2, function () {
   const r = plantedRes();
   const got = C.parseRequestPath({ url: '/a%20b?x=1', headers: { host: 'localhost:1' } }, r);
   return (got && got.pathname === '/a b' && got.url.searchParams.get('x') === '1' && r.status === null) || false;
 }, test.limit.quick);
-test.run('parseRequestPath: a malformed escape, and a NUL in the path, are answered 400 and null, never a dead process (goal/G41.30)', 0.2, function () {
+test.run('parseRequestPath answers a malformed escape and a NUL in the path with 400 and null, never with a dead process', 0.2, function () {
   const got = ['/%zz', '/%', '/%00'].map(function (u) { const r = plantedRes(); const p = C.parseRequestPath({ url: u, headers: {} }, r); return [p, r.status]; });
   return got.every(function (g) { return g[0] === null && g[1] === 400; }) || false;
 }, test.limit.quick);
-test.run('answerClientErrors: a request Node cannot parse is answered 400 in order, the rest read and dropped; a reset is only destroyed (goal/G41.30)', 0.2, function () {
+test.run('answerClientErrors answers a request Node cannot parse with 400 in order and reads and drops the rest, and only destroys a reset', 0.2, function () {
   const server = new EventEmitter();
   C.answerClientErrors(server);
   function sock() { const s = new EventEmitter(); s.destroyed = false; s.resumed = false; s.written = ''; s.resume = function () { s.resumed = true; }; s.end = function (t) { s.written += t; }; s.destroy = function () { s.destroyed = true; }; return s; }
@@ -213,15 +213,15 @@ test.run('answerClientErrors: a request Node cannot parse is answered 400 in ord
 }, test.limit.quick);
 
 // ── clientKeyFor (goal/G22.7) ──
-test.run('clientKeyFor: from the loopback, the last X-Forwarded-For entry, the one Caddy appended', 0.2, function () {
+test.run('from the loopback, clientKeyFor is the last X-Forwarded-For entry, the one Caddy appended', 0.2, function () {
   const got = C.clientKeyFor({ socket: { remoteAddress: '127.0.0.1' }, headers: { 'x-forwarded-for': '6.6.6.6, 198.51.100.7' } });
   return got === '198.51.100.7' || false;
 }, test.limit.quick);
-test.run('clientKeyFor: from anywhere else, the socket address, whatever header it carries', 0.2, function () {
+test.run('from anywhere else, clientKeyFor is the socket address, whatever header it carries', 0.2, function () {
   const got = C.clientKeyFor({ socket: { remoteAddress: '203.0.113.5' }, headers: { 'x-forwarded-for': '198.51.100.7' } });
   return got === '203.0.113.5' || false;
 }, test.limit.quick);
-test.run('clientKeyFor: from the loopback with no header, the socket address; ::1 and ::ffff:127.x count as the loopback', 0.2, function () {
+test.run('from the loopback with no header, clientKeyFor is the socket address, and ::1 and ::ffff:127.x count as the loopback', 0.2, function () {
   const got = [C.clientKeyFor({ socket: { remoteAddress: '::1' }, headers: {} }), C.clientKeyFor({ socket: { remoteAddress: '::ffff:127.0.0.2' }, headers: { 'x-forwarded-for': '198.51.100.8' } })];
   return (got[0] === '::1' && got[1] === '198.51.100.8') || false;
 }, test.limit.quick);
@@ -236,15 +236,15 @@ test.run('sendVersion answers the version, the commit and since when it started,
 }, test.limit.quick);
 
 // ── first-run defaults (goal/G30.7) ──
-test.run('firstDescription: "this <kind> described for the first time <date> <time> UTC", to the second', 0.2, function () {
+test.run('firstDescription reads "this <kind> described for the first time <date> <time> UTC", to the second', 0.2, function () {
   const got = C.firstDescription('relay', new Date('2026-09-17T14:23:07.123Z'));
   return got === 'this relay described for the first time 2026-09-17 14:23:07 UTC' || false;
 }, test.limit.quick);
-test.run('ensureFirstRun: no identity, nothing written and null', 0.2, function () {
+test.run('with no identity, ensureFirstRun writes nothing and answers null', 0.2, function () {
   const home = fs.mkdtempSync(path.join(HOME, 'none-'));
   return C.ensureFirstRun(home, { kind: 'node' }) === null || false;
 }, test.limit.quick);
-test.run('ensureFirstRun: a blank description gets the first one; a typed one is never overwritten by a restart', 0.2, function () {
+test.run('ensureFirstRun gives a blank description the first one, and a restart never overwrites a typed one', 0.2, function () {
   const auth = spirit.require('spirit/relayAuth.js');
   const home = fs.mkdtempSync(path.join(HOME, 'node-'));
   auth.saveIdentity(home, auth.generateIdentity('a node'));
@@ -254,7 +254,7 @@ test.run('ensureFirstRun: a blank description gets the first one; a typed one is
   const again = C.ensureFirstRun(home, { kind: 'node', now: new Date() });
   return (first && first.description === 'this node described for the first time 2026-11-13 09:00:00 UTC' && again && again.description === 'my own words') || false;
 }, test.limit.quick);
-test.run('ensureFirstRun: a relay named nothing or "relay" is named "relay" and its machine\'s name; a name of its own stays (rule/13)', 0.2, function () {
+test.run('ensureFirstRun names a relay named nothing or "relay" as "relay" and its machine\'s name, and a name of its own stays', 0.2, function () {
   const auth = spirit.require('spirit/relayAuth.js');
   const home = fs.mkdtempSync(path.join(HOME, 'relay-'));
   auth.saveIdentity(home, auth.generateIdentity('relay'));
@@ -274,11 +274,11 @@ test.run('writeEnvironment writes the port to spirit/state/environment.json, mak
 }, test.limit.quick);
 
 // ── the pages' files (goal/G43.18) ──
-test.run('pageFile: the browser\'s addresses are served from their files under spirit/; the ghost favicon on the loopback (Q26)', 0.2, function () {
+test.run('pageFile serves the browser\'s addresses from their files under spirit/, and the favicon from the ghost on the loopback', 0.2, function () {
   const got = [C.pageFile('face.html'), C.pageFile('/spirit.js'), C.pageFile('favicon.svg'), C.pageFile('shell/boot.js')];
   return (got[0] === 'spirit/shell/face.html' && got[1] === 'spirit/spirit.js' && got[2] === 'spirit/shell/ghost.svg' && got[3] === 'spirit/shell/boot.js') || false;
 }, test.limit.quick);
-test.run('pageFile: any other address is itself, its leading slash left off', 0.2, function () {
+test.run('pageFile leaves any other address as it is, with its leading slash left off', 0.2, function () {
   const got = [C.pageFile('/spirit/app/desk/desk.html'), C.pageFile('toString')];
   return (got[0] === 'spirit/app/desk/desk.html' && got[1] === 'toString') || false;
 }, test.limit.quick);

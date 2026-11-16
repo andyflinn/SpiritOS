@@ -12,40 +12,40 @@ const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const core = require(path.join(RUN, 'spirit', 'coreFiles.js'));
 
 // What was core before goal/G41.29.
-test.run('core: spirit/run/spirit/shell/face.html (the face\'s boot)', 0.2, function () { return (core.isCore('spirit/run/spirit/shell/face.html') === true) ? true : false; }, test.limit.quick);
-test.run('core: spirit/run/spirit/shell/boot.js (the face\'s boot)', 0.2, function () { return (core.isCore('spirit/run/spirit/shell/boot.js') === true) ? true : false; }, test.limit.quick);
-test.run('core: spirit/run/spirit/shell/seal.js (the face\'s boot)', 0.2, function () { return (core.isCore('spirit/run/spirit/shell/seal.js') === true) ? true : false; }, test.limit.quick);
-test.run('core: spirit/run/spirit/shell/face.css (the face\'s boot)', 0.2, function () { return (core.isCore('spirit/run/spirit/shell/face.css') === true) ? true : false; }, test.limit.quick);
-test.run('core: spirit/run/spirit/shell/favicon.svg (the face\'s boot)', 0.2, function () { return (core.isCore('spirit/run/spirit/shell/favicon.svg') === true) ? true : false; }, test.limit.quick);
-test.run('core: spirit/run/spirit/app/join/element.js (join, whole, an intrinsic app since goal/G43.26 moved it to spirit/app/join/ (the login app went, goal/G43.18))', 0.2, function () { return (core.isCore('spirit/run/spirit/app/join/element.js') === true) ? true : false; }, test.limit.quick);
-test.run('core: spirit/run/spirit/app/join/join.json (join, whole, an intrinsic app since goal/G43.26 moved it to spirit/app/join/ (the login app went, goal/G43.18))', 0.2, function () { return (core.isCore('spirit/run/spirit/app/join/join.json') === true) ? true : false; }, test.limit.quick);
-test.run('not core: spirit/run/spirit/app/desk/element/desk/desk.json (a manifest is never core)', 0.2, function () { return (core.isCore('spirit/run/spirit/app/desk/element/desk/desk.json') === false) ? true : false; }, test.limit.quick);
-test.run('core: spirit/run/spirit/relay.js (the core folders, the test tools in spirit/test/ among them (goal/G43.32))', 0.2, function () { return (core.isCore('spirit/run/spirit/relay.js') === true) ? true : false; }, test.limit.quick);
-test.run('core: spirit/run/spirit/test/relayServer.js (the core folders, the test tools in spirit/test/ among them (goal/G43.32))', 0.2, function () { return (core.isCore('spirit/run/spirit/test/relayServer.js') === true) ? true : false; }, test.limit.quick);
-test.run('core: spirit/run/spirit/element/search/contact.js (the core folders, the test tools in spirit/test/ among them (goal/G43.32))', 0.2, function () { return (core.isCore('spirit/run/spirit/element/search/contact.js') === true) ? true : false; }, test.limit.quick);
-test.run('core: spirit/run/spirit/test/testReport.js (the core folders, the test tools in spirit/test/ among them (goal/G43.32))', 0.2, function () { return (core.isCore('spirit/run/spirit/test/testReport.js') === true) ? true : false; }, test.limit.quick);
+test.run('spirit/run/spirit/shell/face.html is core, as part of the face\'s boot', 0.2, function () { return (core.isCore('spirit/run/spirit/shell/face.html') === true) ? true : false; }, test.limit.quick);
+test.run('spirit/run/spirit/shell/boot.js is core, as part of the face\'s boot', 0.2, function () { return (core.isCore('spirit/run/spirit/shell/boot.js') === true) ? true : false; }, test.limit.quick);
+test.run('spirit/run/spirit/shell/seal.js is core, as part of the face\'s boot', 0.2, function () { return (core.isCore('spirit/run/spirit/shell/seal.js') === true) ? true : false; }, test.limit.quick);
+test.run('spirit/run/spirit/shell/face.css is core, as part of the face\'s boot', 0.2, function () { return (core.isCore('spirit/run/spirit/shell/face.css') === true) ? true : false; }, test.limit.quick);
+test.run('spirit/run/spirit/shell/favicon.svg is core, as part of the face\'s boot', 0.2, function () { return (core.isCore('spirit/run/spirit/shell/favicon.svg') === true) ? true : false; }, test.limit.quick);
+test.run('spirit/run/spirit/app/join/element.js is core, because join is an intrinsic app in spirit/app/join/ and is core whole', 0.2, function () { return (core.isCore('spirit/run/spirit/app/join/element.js') === true) ? true : false; }, test.limit.quick);
+test.run('spirit/run/spirit/app/join/join.json is core, because join is an intrinsic app in spirit/app/join/ and is core whole', 0.2, function () { return (core.isCore('spirit/run/spirit/app/join/join.json') === true) ? true : false; }, test.limit.quick);
+test.run('spirit/run/spirit/app/desk/element/desk/desk.json is not core, because a manifest is never core', 0.2, function () { return (core.isCore('spirit/run/spirit/app/desk/element/desk/desk.json') === false) ? true : false; }, test.limit.quick);
+test.run('spirit/run/spirit/relay.js is core, as a file of the core folders', 0.2, function () { return (core.isCore('spirit/run/spirit/relay.js') === true) ? true : false; }, test.limit.quick);
+test.run('spirit/run/spirit/test/relayServer.js is core, as a test tool in spirit/test/, one of the core folders', 0.2, function () { return (core.isCore('spirit/run/spirit/test/relayServer.js') === true) ? true : false; }, test.limit.quick);
+test.run('spirit/run/spirit/element/search/contact.js is core, as a file of the core folders', 0.2, function () { return (core.isCore('spirit/run/spirit/element/search/contact.js') === true) ? true : false; }, test.limit.quick);
+test.run('spirit/run/spirit/test/testReport.js is core, as a test tool in spirit/test/, one of the core folders', 0.2, function () { return (core.isCore('spirit/run/spirit/test/testReport.js') === true) ? true : false; }, test.limit.quick);
 // goal/G41.30, the review's H5: what the page loads on every boot.
-test.run('core: spirit/run/spirit/element/codeMirror/lib/codemirror.js (loaded on every boot)', 0.2, function () { return (core.isCore('spirit/run/spirit/element/codeMirror/lib/codemirror.js') === true) ? true : false; }, test.limit.quick);
-test.run('core: spirit/run/spirit/element/codeMirror/lib/codemirror.css (loaded on every boot)', 0.2, function () { return (core.isCore('spirit/run/spirit/element/codeMirror/lib/codemirror.css') === true) ? true : false; }, test.limit.quick);
-test.run('core: spirit/run/spirit/element/progressBar.js (loaded on every boot)', 0.2, function () { return (core.isCore('spirit/run/spirit/element/progressBar.js') === true) ? true : false; }, test.limit.quick);
-test.run('core: spirit/run/spirit/spirit.js (the frame, in spirit/ since goal/G43.18)', 0.2, function () { return (core.isCore('spirit/run/spirit/spirit.js') === true) ? true : false; }, test.limit.quick);
-test.run('core: spirit/run/spirit/shell/elements.css (the frame, in spirit/ since goal/G43.18)', 0.2, function () { return (core.isCore('spirit/run/spirit/shell/elements.css') === true) ? true : false; }, test.limit.quick);
-test.run('core: spirit/run/spirit/shell/tokens.css (the frame, in spirit/ since goal/G43.18)', 0.2, function () { return (core.isCore('spirit/run/spirit/shell/tokens.css') === true) ? true : false; }, test.limit.quick);
-test.run('core: spirit/run/spirit/shell/shell.css (the frame, in spirit/ since goal/G43.18)', 0.2, function () { return (core.isCore('spirit/run/spirit/shell/shell.css') === true) ? true : false; }, test.limit.quick);
-test.run('core: spirit/run/spirit/shell/ghost.svg (the frame, in spirit/ since goal/G43.18)', 0.2, function () { return (core.isCore('spirit/run/spirit/shell/ghost.svg') === true) ? true : false; }, test.limit.quick);
-test.run('core: spirit/run/spirit/app/grants/element.js (an intrinsic app\'s code)', 0.2, function () { return (core.isCore('spirit/run/spirit/app/grants/element.js') === true) ? true : false; }, test.limit.quick);
-test.run('not core: spirit/run/spirit/app/desk/element/desk/desk.js (an app not intrinsic)', 0.2, function () { return (core.isCore('spirit/run/spirit/app/desk/element/desk/desk.js') === false) ? true : false; }, test.limit.quick);
+test.run('spirit/run/spirit/element/codeMirror/lib/codemirror.js is core, because it is loaded on every boot', 0.2, function () { return (core.isCore('spirit/run/spirit/element/codeMirror/lib/codemirror.js') === true) ? true : false; }, test.limit.quick);
+test.run('spirit/run/spirit/element/codeMirror/lib/codemirror.css is core, because it is loaded on every boot', 0.2, function () { return (core.isCore('spirit/run/spirit/element/codeMirror/lib/codemirror.css') === true) ? true : false; }, test.limit.quick);
+test.run('spirit/run/spirit/element/progressBar.js is core, because it is loaded on every boot', 0.2, function () { return (core.isCore('spirit/run/spirit/element/progressBar.js') === true) ? true : false; }, test.limit.quick);
+test.run('spirit/run/spirit/spirit.js is core, as part of the frame in spirit/', 0.2, function () { return (core.isCore('spirit/run/spirit/spirit.js') === true) ? true : false; }, test.limit.quick);
+test.run('spirit/run/spirit/shell/elements.css is core, as part of the frame in spirit/', 0.2, function () { return (core.isCore('spirit/run/spirit/shell/elements.css') === true) ? true : false; }, test.limit.quick);
+test.run('spirit/run/spirit/shell/tokens.css is core, as part of the frame in spirit/', 0.2, function () { return (core.isCore('spirit/run/spirit/shell/tokens.css') === true) ? true : false; }, test.limit.quick);
+test.run('spirit/run/spirit/shell/shell.css is core, as part of the frame in spirit/', 0.2, function () { return (core.isCore('spirit/run/spirit/shell/shell.css') === true) ? true : false; }, test.limit.quick);
+test.run('spirit/run/spirit/shell/ghost.svg is core, as part of the frame in spirit/', 0.2, function () { return (core.isCore('spirit/run/spirit/shell/ghost.svg') === true) ? true : false; }, test.limit.quick);
+test.run('spirit/run/spirit/app/grants/element.js is core, as an intrinsic app\'s code', 0.2, function () { return (core.isCore('spirit/run/spirit/app/grants/element.js') === true) ? true : false; }, test.limit.quick);
+test.run('spirit/run/spirit/app/desk/element/desk/desk.js is not core, because its app is not intrinsic', 0.2, function () { return (core.isCore('spirit/run/spirit/app/desk/element/desk/desk.js') === false) ? true : false; }, test.limit.quick);
 // goal/G43.30: THE CODED LIST WENT WITH shell/ (Andy: "can we delete run://shell/"): coreFiles answers no list and no intrinsic().
 test.run('coreFiles.js holds no coded intrinsic list any more', 0.2, function () { return (!('INTRINSIC' in core) && !('intrinsic' in core)) ? true : false; }, test.limit.quick);
 
 // goal/G41.29: a core file's companion test files are core.
-test.run('core: spirit/run/spirit/shell/test/boot.js (the boot\'s companions)', 0.2, function () { return (core.isCore('spirit/run/spirit/shell/test/boot.js') === true) ? true : false; }, test.limit.quick);
-test.run('core: spirit/run/spirit/shell/test/boot.md (the boot\'s companions)', 0.2, function () { return (core.isCore('spirit/run/spirit/shell/test/boot.md') === true) ? true : false; }, test.limit.quick);
-test.run('core: spirit/run/spirit/shell/test/seal.js (the boot\'s companions)', 0.2, function () { return (core.isCore('spirit/run/spirit/shell/test/seal.js') === true) ? true : false; }, test.limit.quick);
-test.run('core: spirit/run/spirit/shell/test/seal.md (the boot\'s companions)', 0.2, function () { return (core.isCore('spirit/run/spirit/shell/test/seal.md') === true) ? true : false; }, test.limit.quick);
-test.run('core: spirit/run/spirit/app/grants/test/element.md (an intrinsic app\'s companions)', 0.2, function () { return (core.isCore('spirit/run/spirit/app/grants/test/element.md') === true) ? true : false; }, test.limit.quick);
-test.run('not core: spirit/run/spirit/app/desk/element/desk/test/desk.js (a test named after no core file)', 0.2, function () { return (core.isCore('spirit/run/spirit/app/desk/element/desk/test/desk.js') === false) ? true : false; }, test.limit.quick);
-test.run('not core: spirit/run/spirit/app/desk/element/desk/test/desk.md (a test named after no core file)', 0.2, function () { return (core.isCore('spirit/run/spirit/app/desk/element/desk/test/desk.md') === false) ? true : false; }, test.limit.quick);
+test.run('spirit/run/spirit/shell/test/boot.js is core, as a companion of the boot', 0.2, function () { return (core.isCore('spirit/run/spirit/shell/test/boot.js') === true) ? true : false; }, test.limit.quick);
+test.run('spirit/run/spirit/shell/test/boot.md is core, as a companion of the boot', 0.2, function () { return (core.isCore('spirit/run/spirit/shell/test/boot.md') === true) ? true : false; }, test.limit.quick);
+test.run('spirit/run/spirit/shell/test/seal.js is core, as a companion of the boot', 0.2, function () { return (core.isCore('spirit/run/spirit/shell/test/seal.js') === true) ? true : false; }, test.limit.quick);
+test.run('spirit/run/spirit/shell/test/seal.md is core, as a companion of the boot', 0.2, function () { return (core.isCore('spirit/run/spirit/shell/test/seal.md') === true) ? true : false; }, test.limit.quick);
+test.run('spirit/run/spirit/app/grants/test/element.md is core, as a companion of an intrinsic app', 0.2, function () { return (core.isCore('spirit/run/spirit/app/grants/test/element.md') === true) ? true : false; }, test.limit.quick);
+test.run('spirit/run/spirit/app/desk/element/desk/test/desk.js is not core, because it is a test named after no core file', 0.2, function () { return (core.isCore('spirit/run/spirit/app/desk/element/desk/test/desk.js') === false) ? true : false; }, test.limit.quick);
+test.run('spirit/run/spirit/app/desk/element/desk/test/desk.md is not core, because it is a test named after no core file', 0.2, function () { return (core.isCore('spirit/run/spirit/app/desk/element/desk/test/desk.md') === false) ? true : false; }, test.limit.quick);
 
 
 // goal/G43.14: <name>.json says whether an app of spirit/app/ is intrinsic.
@@ -54,7 +54,7 @@ const os = require('os');
 const fsx = require('fs');
 const at = function (name, f) { return 'spirit/run/spirit/app/' + name + '/' + f; };
 const is = function (p) { return core.isCore(p, W.root); };
-test.run('the world: a tree of this test\'s own is planted, with apps saying intrinsic true, false and nothing', 0.2, function () {
+test.run('a tree of this test\'s own is planted, with apps saying intrinsic true, intrinsic false and nothing', 0.2, function () {
   W.root = fsx.mkdtempSync(path.join(os.tmpdir(), 'spirit-core-'));
   const plant = function (name, identity) {
     const dir = path.join(W.root, 'spirit', 'run', 'spirit', 'app', name);
@@ -71,23 +71,23 @@ test.run('the world: a tree of this test\'s own is planted, with apps saying int
   return true;
 }, test.limit.quick);
 test.after(function () { try { if (W.root) fsx.rmSync(W.root, { recursive: true, force: true }); } catch (e) { /* scratch */ } });
-test.run('core: spirit/run/spirit/app/always/always.json, whatever it says', 0.2, function () { return (is('spirit/run/spirit/app/always/always.json') === true) ? true : false; }, test.limit.quick);
-test.run('core: spirit/run/spirit/app/free/free.json, whatever it says', 0.2, function () { return (is('spirit/run/spirit/app/free/free.json') === true) ? true : false; }, test.limit.quick);
-test.run('core while intrinsic true: spirit/run/spirit/app/always/always.js', 0.2, function () { return (is('spirit/run/spirit/app/always/always.js') === true) ? true : false; }, test.limit.quick);
-test.run('core while intrinsic true: spirit/run/spirit/app/always/style.css', 0.2, function () { return (is('spirit/run/spirit/app/always/style.css') === true) ? true : false; }, test.limit.quick);
-test.run('core while intrinsic true: spirit/run/spirit/app/always/page.html', 0.2, function () { return (is('spirit/run/spirit/app/always/page.html') === true) ? true : false; }, test.limit.quick);
-test.run('not core with intrinsic false: spirit/run/spirit/app/free/free.js', 0.2, function () { return (is('spirit/run/spirit/app/free/free.js') === false) ? true : false; }, test.limit.quick);
-test.run('not core with intrinsic false: spirit/run/spirit/app/free/style.css', 0.2, function () { return (is('spirit/run/spirit/app/free/style.css') === false) ? true : false; }, test.limit.quick);
-test.run('not core with intrinsic false: spirit/run/spirit/app/free/page.html', 0.2, function () { return (is('spirit/run/spirit/app/free/page.html') === false) ? true : false; }, test.limit.quick);
-test.run('not core with intrinsic false: spirit/run/spirit/app/free/data.json', 0.2, function () { return (is('spirit/run/spirit/app/free/data.json') === false) ? true : false; }, test.limit.quick);
-test.run('not core with intrinsic false: spirit/run/spirit/app/free/test/free.js', 0.2, function () { return (is('spirit/run/spirit/app/free/test/free.js') === false) ? true : false; }, test.limit.quick);
-test.run('core with no intrinsic in its json (Q2): spirit/run/spirit/app/plain/plain.js', 0.2, function () { return (is('spirit/run/spirit/app/plain/plain.js') === true) ? true : false; }, test.limit.quick);
-test.run('core with no intrinsic in its json (Q2): spirit/run/spirit/app/plain/style.css', 0.2, function () { return (is('spirit/run/spirit/app/plain/style.css') === true) ? true : false; }, test.limit.quick);
-test.run('core with no intrinsic in its json (Q2): spirit/run/spirit/app/plain/page.html', 0.2, function () { return (is('spirit/run/spirit/app/plain/page.html') === true) ? true : false; }, test.limit.quick);
-test.run('core in a folder with no <name>.json, as appSelector/ and test/ are (Q2): spirit/run/spirit/app/bare/bare.js', 0.2, function () { return (is('spirit/run/spirit/app/bare/bare.js') === true) ? true : false; }, test.limit.quick);
-test.run('core in a folder with no <name>.json, as appSelector/ and test/ are (Q2): spirit/run/spirit/app/bare/test/bare.js', 0.2, function () { return (is('spirit/run/spirit/app/bare/test/bare.js') === true) ? true : false; }, test.limit.quick);
+test.run('spirit/run/spirit/app/always/always.json is core, whatever it says', 0.2, function () { return (is('spirit/run/spirit/app/always/always.json') === true) ? true : false; }, test.limit.quick);
+test.run('spirit/run/spirit/app/free/free.json is core, whatever it says', 0.2, function () { return (is('spirit/run/spirit/app/free/free.json') === true) ? true : false; }, test.limit.quick);
+test.run('spirit/run/spirit/app/always/always.js is core while its app says intrinsic true', 0.2, function () { return (is('spirit/run/spirit/app/always/always.js') === true) ? true : false; }, test.limit.quick);
+test.run('spirit/run/spirit/app/always/style.css is core while its app says intrinsic true', 0.2, function () { return (is('spirit/run/spirit/app/always/style.css') === true) ? true : false; }, test.limit.quick);
+test.run('spirit/run/spirit/app/always/page.html is core while its app says intrinsic true', 0.2, function () { return (is('spirit/run/spirit/app/always/page.html') === true) ? true : false; }, test.limit.quick);
+test.run('spirit/run/spirit/app/free/free.js is not core while its app says intrinsic false', 0.2, function () { return (is('spirit/run/spirit/app/free/free.js') === false) ? true : false; }, test.limit.quick);
+test.run('spirit/run/spirit/app/free/style.css is not core while its app says intrinsic false', 0.2, function () { return (is('spirit/run/spirit/app/free/style.css') === false) ? true : false; }, test.limit.quick);
+test.run('spirit/run/spirit/app/free/page.html is not core while its app says intrinsic false', 0.2, function () { return (is('spirit/run/spirit/app/free/page.html') === false) ? true : false; }, test.limit.quick);
+test.run('spirit/run/spirit/app/free/data.json is not core while its app says intrinsic false', 0.2, function () { return (is('spirit/run/spirit/app/free/data.json') === false) ? true : false; }, test.limit.quick);
+test.run('spirit/run/spirit/app/free/test/free.js is not core while its app says intrinsic false', 0.2, function () { return (is('spirit/run/spirit/app/free/test/free.js') === false) ? true : false; }, test.limit.quick);
+test.run('spirit/run/spirit/app/plain/plain.js is core while its app\'s json says nothing of intrinsic', 0.2, function () { return (is('spirit/run/spirit/app/plain/plain.js') === true) ? true : false; }, test.limit.quick);
+test.run('spirit/run/spirit/app/plain/style.css is core while its app\'s json says nothing of intrinsic', 0.2, function () { return (is('spirit/run/spirit/app/plain/style.css') === true) ? true : false; }, test.limit.quick);
+test.run('spirit/run/spirit/app/plain/page.html is core while its app\'s json says nothing of intrinsic', 0.2, function () { return (is('spirit/run/spirit/app/plain/page.html') === true) ? true : false; }, test.limit.quick);
+test.run('spirit/run/spirit/app/bare/bare.js is core, in a folder with no <name>.json as appSelector/ and test/ are', 0.2, function () { return (is('spirit/run/spirit/app/bare/bare.js') === true) ? true : false; }, test.limit.quick);
+test.run('spirit/run/spirit/app/bare/test/bare.js is core, in a folder with no <name>.json as appSelector/ and test/ are', 0.2, function () { return (is('spirit/run/spirit/app/bare/test/bare.js') === true) ? true : false; }, test.limit.quick);
 // The json, rewritten on disc, is what counts: no copy kept from before.
-test.run('the json is read as it is on disc: turned true, the code is core', 0.2, function () {
+test.run('the json is read as it is on disc, so once it is turned to intrinsic true the code is core', 0.2, function () {
   fsx.writeFileSync(path.join(W.root, 'spirit', 'run', 'spirit', 'app', 'free', 'free.json'), JSON.stringify({ identity: { intrinsic: true } }));
   return is(at('free', 'free.js')) === true ? true : false;
 }, test.limit.quick);
@@ -174,12 +174,12 @@ test.run('every file a core file loads is core', 0.8, function () {
 // wrappers for spirit/element/ things....". coreFiles.js loaded as it is.
 // The box, 2: "both are intrinsic by their own <name>.json, as spirit/app apps say it".
 const G = {};
-test.run('the world: coreFiles.js answers appIntrinsic', 0.2, function () {
+test.run('coreFiles.js answers appIntrinsic', 0.2, function () {
   try { G.core = require(path.join(RUN, 'spirit', 'coreFiles.js')); } catch (e) { G.core = null; }
   return (!!G.core && typeof G.core.appIntrinsic === 'function') ? true : false;
 }, test.limit.quick);
 // No coded list names them: since goal/G43.30 there is none at all.
-test.run('no coded INTRINSIC list names shell/info or shell/grants: there is none (goal/G43.30)', 0.2, function () {
+test.run('no coded INTRINSIC list names shell/info or shell/grants, because there is none', 0.2, function () {
   if (!G.core) return false;
   return !('INTRINSIC' in G.core) ? true : false;
 }, test.limit.quick);

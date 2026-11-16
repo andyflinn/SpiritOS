@@ -164,7 +164,7 @@ test.run('without words or sort the rows come in arrival order', 0.2, function (
 test.run('each answer carries key, row, entry and the filter product as rank', 0.2, function () {
   return (r[0].row === E[1].row && r[0].entry === E[1] && r[0].rank === 1) ? true : false;
 }, test.limit.quick);
-test.run('no entries and no state give []', 0.2, function () {
+test.run('no entries and no state give an empty list', 0.2, function () {
   return (PS.order(null).length === 0 && PS.order([], null).length === 0) ? true : false;
 }, test.limit.quick);
 test.run('a gone entry is dropped', 0.2, function () {
@@ -219,7 +219,7 @@ test.run('a score answer replaces the match, clamped to 1', 0.2, function () {
 test.run('a negative score is clamped to 0, and a null score falls back to the match', 0.2, function () {
   return (r.filter(function (x) { return x.key === 'z'; })[0].rank === 0 && r.filter(function (x) { return x.key === 'b1'; })[0].rank > 0) ? true : false;
 }, test.limit.quick);
-test.run('a matched(row) a list hands is not used: the whole row is matched', 0.2, function () {
+test.run('a matched function a list hands is not used, and the whole row is matched', 0.2, function () {
   // THE WHOLE ROW, ALWAYS (goal/G41.28; Andy, box v15: "All client side searches will be fixed, too, and search the whole
   // row, as cached in spirit.data."): what a list shows, or a matched() it hands, narrows nothing.
   r = PS.order(W, { words: 'qu', matched: function (row) { return { other: row.name === 'zed' ? 'quiz' : 'nothing' }; } });
@@ -230,7 +230,7 @@ test.run('with columns the whole row is matched, its fields not shown too', 0.2,
   r = PS.order(C, { words: 'secret', columns: [{ field: 'label' }] });
   return (r[0].key === 'x' && r[0].rank > 0 && r[1].rank === 0) ? true : false;
 }, test.limit.quick);
-test.run('a column\'s value is read from its from', 0.2, function () {
+test.run('a column\'s value is read from the field its from option names', 0.2, function () {
   r = PS.order(C, { words: 'secret', columns: [{ field: 'label', from: 'hidden' }] });
   return (r[0].key === 'x' && r[0].rank > 0) ? true : false;
 }, test.limit.quick);
@@ -239,7 +239,7 @@ test.run('without columns the row itself is matched', 0.2, function () {
   return (r[0].key === 'x' && r[0].rank > 0) ? true : false;
 }, test.limit.quick);
 const sorted = function (field, direction) { return keys(PS.order(S, { columns: cols, sort: { field: field, direction: direction } })); };
-test.run('text sorts ignoring case, equal ones in arrival order', 0.2, function () {
+test.run('a text sort ignores case and keeps equal ones in arrival order', 0.2, function () {
   // order: a column sort
   S = [{ key: 'k1', row: { t: 'beta', n: '10', d: '2026-01-02', p: 'docs-old' }, at: 0 },
     { key: 'k2', row: { t: 'Alpha', n: '9', d: 'garbage', p: 'docs/z.txt' }, at: 1 },
@@ -249,29 +249,29 @@ test.run('text sorts ignoring case, equal ones in arrival order', 0.2, function 
     { field: 'shown', from: 't', sort: 'text' }];
   return (sorted('t', 'asc') === 'k2,k4,k1,k3') ? true : false;
 }, test.limit.quick);
-test.run('desc reverses, equal ones still in arrival order', 0.2, function () {
+test.run('a descending sort reverses the order, equal ones still in arrival order', 0.2, function () {
   return (sorted('t', 'desc') === 'k3,k1,k2,k4') ? true : false;
 }, test.limit.quick);
-test.run('number sorts by value, a non-number reading 0', 0.2, function () {
+test.run('a number sort orders by value, a non-number reading as 0', 0.2, function () {
   return (sorted('n', 'asc') === 'k3,k2,k4,k1') ? true : false;
 }, test.limit.quick);
-test.run('date sorts by Date.parse, an unreadable date first', 0.2, function () {
+test.run('a date sort orders by the parsed date, an unreadable date first', 0.2, function () {
   return (sorted('d', 'asc') === 'k2,k3,k1,k4') ? true : false;
 }, test.limit.quick);
-test.run('path sorts folder by folder: a folder\'s contents before its next sibling', 0.2, function () {
+test.run('a path sort orders folder by folder, a folder\'s contents before its next sibling', 0.2, function () {
   return (sorted('p', 'asc') === 'k3,k4,k2,k1') ? true : false;
 }, test.limit.quick);
 test.run('a column without sort, or no column, keeps arrival order', 0.2, function () {
   return (sorted('u', 'asc') === 'k1,k2,k3,k4' && sorted('nosuch', 'asc') === 'k1,k2,k3,k4') ? true : false;
 }, test.limit.quick);
-test.run('a sort reads the column\'s from', 0.2, function () {
+test.run('a sort reads the field the column\'s from option names', 0.2, function () {
   return (sorted('shown', 'asc') === 'k2,k4,k1,k3') ? true : false;
 }, test.limit.quick);
 test.run('with words the ranking wins over a sort', 0.2, function () {
   r = PS.order(S, { words: 'gamma', columns: cols, sort: { field: 't', direction: 'asc' } });
   return (r[0].key === 'k3' && r[0].rank > 0) ? true : false;
 }, test.limit.quick);
-test.run('every place a word stands, partial and any case, in order', 0.2, function () {
+test.run('the marks cover every place a word stands, partial and in any case, in order', 0.2, function () {
   // matchRanges: the one marking rule
   M = window.spirit.matchRanges;
   return (JSON.stringify(M('Anna and ANNE', 'an')) === '[[0,2],[5,7],[9,11]]') ? true : false;
@@ -282,7 +282,7 @@ test.run('every word is marked', 0.2, function () {
 test.run('a word\'s regex characters are literal', 0.2, function () {
   return (JSON.stringify(M('a.b axb', '.')) === '[[1,2]]' && JSON.stringify(M('f(x)', '(x')) === '[[1,3]]') ? true : false;
 }, test.limit.quick);
-test.run('no words, or no text, gives []', 0.2, function () {
+test.run('no words, or no text, give no marks', 0.2, function () {
   return (M('anything', '').length === 0 && M('anything', '   ').length === 0 && M(null, 'a').length === 0) ? true : false;
 }, test.limit.quick);
 // ── create: the list on a page ──────────────────────────────────────────────────────────────────────────────────────
@@ -303,7 +303,7 @@ test.run('the pane draws its field, its search and clear buttons and its list', 
     args: function (text, values) { return { q: text, v: values }; }, pick: function (row, key) { picks.push([row, key]); }, empty: 'No one.' });
   return (c1.get('text') && c1.get('list') && c1.get('search') && c1.get('clear')) ? true : false;
 }, test.limit.quick);
-test.run('with rows() it draws at once, in the page\'s order', 0.2, function () {
+test.run('given a rows function it draws at once, in the page\'s order', 0.2, function () {
   return (c1.shown().join() === 'b,z,q') ? true : false;
 }, test.limit.quick);
 test.run('a header with sort is a trigger, one without is not; the label is shown', 0.2, function () {
@@ -313,7 +313,7 @@ test.run('a header with sort is a trigger, one without is not; the label is show
 test.run('drawing asks nobody', 0.2, function () {
   return (A.calls.length === 0) ? true : false;
 }, test.limit.quick);
-test.run('typing re-ranks at once, nothing cut', 0.2, function () {
+test.run('typing re-ranks the rows at once and cuts none', 0.2, function () {
   // create: typing ranks the cache and asks
   c1.type('be');
   return (c1.shown()[0] === 'b' && c1.shown().length === 3) ? true : false;
@@ -324,10 +324,10 @@ test.run('the matched letters are marked', 0.2, function () {
 test.run('while the field holds words no header is a sort trigger', 0.2, function () {
   return (!/data-sort=/.test(c1.get('list').innerHTML)) ? true : false;
 }, test.limit.quick);
-test.run('the server is asked server.verb with args(words, values)', 0.2, function () {
+test.run('the server is asked its verb with the arguments made from the words and the filter values', 0.2, function () {
   return (A.calls.length === 1 && A.calls[0].name === 'srv.search' && A.calls[0].args.q === 'be' && typeof A.calls[0].args.v === 'object') ? true : false;
 }, test.limit.quick);
-test.run('words() is the field\'s text', 0.2, function () {
+test.run('the words function answers the field\'s text', 0.2, function () {
   return (L.words() === 'be') ? true : false;
 }, test.limit.quick);
 test.run('typing while a search is out sends nothing more', 0.2, async function () {
@@ -382,7 +382,7 @@ test.run('with the field empty every row is back, the page\'s and the server\'s'
   // just bring back the most recent rows of an object table, search only becomes sortable against user input".
   return (c1.shown().slice().sort().join() === 'b,n,q,z') ? true : false;
 }, test.limit.quick);
-test.run('a header press sorts ascending by its column (no size reads 0)', 0.2, function () {
+test.run('a header press sorts ascending by its column, a row with no size reading as 0', 0.2, function () {
   c1.fire('click', { target: headTarget('size') });
   return (c1.shown().join() === 'n,b,q,z' && /▲/.test(c1.get('list').innerHTML)) ? true : false;
 }, test.limit.quick);
@@ -390,11 +390,11 @@ test.run('a second press reverses it', 0.2, function () {
   c1.fire('click', { target: headTarget('size') });
   return (c1.shown().join() === 'z,q,b,n' && /▼/.test(c1.get('list').innerHTML)) ? true : false;
 }, test.limit.quick);
-test.run('sort(field, direction) sorts the same way (bert, quill, quinn, zed)', 0.2, function () {
+test.run('sorting by a field and a direction in code sorts the same way, bert, quill, quinn, zed', 0.2, function () {
   L.sort('name', 'asc');
   return (c1.shown().join() === 'b,n,q,z' && /▲/.test(c1.get('list').innerHTML)) ? true : false;
 }, test.limit.quick);
-test.run('sort() clears the sort', 0.2, function () {
+test.run('sorting with no field clears the sort', 0.2, function () {
   L.sort();
   return (c1.shown().join() === cleared && !/[▲▼]/.test(c1.get('list').innerHTML)) ? true : false;
 }, test.limit.quick);
@@ -415,7 +415,7 @@ test.run('a row the page brings back stands again', 0.2, function () {
   L.redraw();
   return (c1.shown().indexOf('q') !== -1) ? true : false;
 }, test.limit.quick);
-test.run('a row press picks it: pick(row, key), value and row set', 0.2, function () {
+test.run('a row press picks the row: pick is handed the row and its key, and the value and row are set', 0.2, function () {
   // create: picking, details and fold
   c1.fire('click', { target: rowTarget('z') });
   return (picks.length === 1 && picks[0][1] === 'z' && picks[0][0].name === 'zed' && L.value === 'z' && L.row.name === 'zed') ? true : false;
@@ -431,7 +431,7 @@ test.run('a press on no known row picks nothing', 0.2, function () {
   c1.fire('click', { target: rowTarget('nosuch') });
   return (picks.length === 1) ? true : false;
 }, test.limit.quick);
-test.run('Home goes to the first row, the key taken', 0.2, function () {
+test.run('Home goes to the first row and the key press is taken', 0.2, function () {
   // create: the keys move the current row
   pick0 = picks.length;
   order0 = c1.shown();
@@ -481,7 +481,7 @@ test.run('a held-down Enter does not press again', 0.2, async function () {
   c1.fire('keydown', ek);
   return (picks.length === pick0 + 1) ? true : false;
 }, test.limit.quick);
-test.run('ask(verb, args) asks server.verb and answers the body', 0.2, async function () {
+test.run('ask sends a verb and its arguments to the server and answers the body', 0.2, async function () {
   // create: ask lends the wire
   A.answer = { status: 200, body: { ok: true, n: 7 } };
   lent = await L.ask('count', { a: 1 });
@@ -493,7 +493,7 @@ test.run('a failed answer rejects with its error', 0.2, async function () {
   try { await L.ask('count'); } catch (err) { why = err.message; }
   return (why === 'refused') ? true : false;
 }, test.limit.quick);
-test.run('no body rejects too', 0.2, async function () {
+test.run('an answer with no body makes ask reject too', 0.2, async function () {
   A.answer = { status: 404, body: null };
   why = null;
   try { await L.ask('count'); } catch (err) { why = err.message; }
@@ -509,17 +509,17 @@ test.run('a lent call waits while a search is out', 0.2, async function () {
   lentLater = L.ask('later');
   return (A.calls.length === n0 + 1) ? true : false;
 }, test.limit.quick);
-test.run('then it goes', 0.2, async function () {
+test.run('the lent call goes once the search returns', 0.2, async function () {
   A.release();
   await tick();
   await tick();
   return (A.calls.length === n0 + 2 && A.calls[n0 + 1].name === 'srv.later') ? true : false;
 }, test.limit.quick);
-test.run('and it answers its own answer', 0.2, async function () {
+test.run('the lent call answers its own answer', 0.2, async function () {
   A.release({ status: 200, body: { ok: true, done: 1 } });
   return ((await lentLater).done === 1) ? true : false;
 }, test.limit.quick);
-test.run('it listens through options.published', 0.2, async function () {
+test.run('it listens for publishes through its published option', 0.2, async function () {
   A.held = false;
   // create: published re-asks; destroy stops everything
   await tick();
@@ -580,10 +580,10 @@ test.run('typing asks srv.search on the family spirit.ready holds', 0.2, async f
   await tick();
   return (asked.length === 1 && asked[0].name === 'srv.search' && asked[0].args.text === 'ro') ? true : false;
 }, test.limit.quick);
-test.run('and its answer joins the list', 0.2, function () {
+test.run('the answer of the family spirit.ready holds joins the list', 0.2, function () {
   return (cs.shown().indexOf('r1') !== -1) ? true : false;
 }, test.limit.quick);
-test.run('ask(verb, args) goes the same way', 0.2, async function () {
+test.run('ask goes the same way, through the family spirit.ready holds', 0.2, async function () {
   return ((await Ls.ask('count', { a: 1 })).n === 3 && asked[asked.length - 1].name === 'srv.count') ? true : false;
 }, test.limit.quick);
 test.run('a refused call rejects ask with the node\'s words', 0.2, async function () {
@@ -592,7 +592,7 @@ test.run('a refused call rejects ask with the node\'s words', 0.2, async functio
   try { await Ls.ask('count'); } catch (err) { refused = err.message; }
   return (refused === 'not yours') ? true : false;
 }, test.limit.quick);
-test.run('a family not on spirit.ready is bound through spirit.require(spirit.familyPath(name))', 0.2, async function () {
+test.run('a family not on spirit.ready is bound by requiring its family path through the spirit object', 0.2, async function () {
   refuse = null;
   Ls.destroy();
   co = container();
@@ -634,7 +634,7 @@ test.run('with nothing to show it shows its empty words', 0.2, function () {
   PS.create(c2, { rows: function () { return []; }, empty: 'No one.' });
   return (/No one\./.test(c2.get('list').innerHTML)) ? true : false;
 }, test.limit.quick);
-test.run('with no rows() and no data it draws nothing at once', 0.2, function () {
+test.run('with no rows function and no data it draws nothing at once', 0.2, function () {
   c3 = container();
   L3 = PS.create(c3, {});
   return (c3.get('list').innerHTML === '') ? true : false;
@@ -662,7 +662,7 @@ test.run('a toggle press flips it on, re-ranks and asks', 0.2, function () {
   c4.fire('click', { target: filterTarget('mine', 'toggle') });
   return (c4.shown().join() === 'a' && A4.calls.length === 1) ? true : false;
 }, test.limit.quick);
-test.run('pressed again it flips off', 0.2, function () {
+test.run('a toggle pressed again flips off', 0.2, function () {
   c4.fire('click', { target: filterTarget('mine', 'toggle') });
   return (c4.shown().join() === 'a,b') ? true : false;
 }, test.limit.quick);
@@ -670,7 +670,7 @@ test.run('a multi choice pressed goes off', 0.2, function () {
   c4.fire('click', { target: filterTarget('kind', 'x') });
   return (c4.shown().join() === 'b') ? true : false;
 }, test.limit.quick);
-test.run('pressed again it is back on', 0.2, function () {
+test.run('a multi choice pressed again is back on', 0.2, function () {
   c4.fire('click', { target: filterTarget('kind', 'x') });
   return (c4.shown().join() === 'a,b') ? true : false;
 }, test.limit.quick);
@@ -689,14 +689,14 @@ test.run('a keepOne multi choice pressed goes off while another is still on', 0.
   c4k.fire('click', { target: filterTarget('kind', 'x') });
   return (c4k.shown().join() === 'b') ? true : false;
 }, test.limit.quick);
-test.run('the last keepOne choice still on, pressed, stays on', 0.2, function () {
+test.run('the last keepOne choice still on stays on when pressed', 0.2, function () {
   if (!c4k) return false;
   c4k.fire('click', { target: filterTarget('kind', 'y') });
   return (c4k.shown().join() === 'b') ? true : false;
 }, test.limit.quick);
 const seen = function (h) { return String(h).replace(/<[^>]*>/g, '').replace(/&[a-z]+;/g, '').replace(/\s+/g, ''); };
 const upToInput = function (c) { const h = c.innerHTML; const at = h.indexOf('id="' + c.pre() + 'text"'); return at === -1 ? null : seen(h.slice(0, h.lastIndexOf('<', at))); };
-test.run('with filters: 🗜 starts the filter row, its words follow, and 🔎 starts the search row', 0.2, async function () {
+test.run('with filters, 🗜 starts the filter row, the filters\' words follow, and 🔎 starts the search row', 0.2, async function () {
   await tick();
   await tick();
   // create: the filter row starts with 🗜, the search row with 🔎 (goal/G41.26)
@@ -707,17 +707,17 @@ test.run('with filters: 🗜 starts the filter row, its words follow, and 🔎 s
   u4 = upToInput(c4);
   return (u4 === '🗜' + fWords + '🔎') ? true : false;
 }, test.limit.quick);
-test.run('and a press that redraws the filters keeps their 🗜', 0.2, function () {
+test.run('a press that redraws the filters keeps their 🗜', 0.2, function () {
   before4 = c4.innerHTML.slice(0, c4.innerHTML.indexOf('id="' + c4.pre() + 'filters"'));
   return (/^🗜/.test(seen(c4.get('filters').innerHTML)) || /🗜/.test(seen(before4))) ? true : false;
 }, test.limit.quick);
-test.run('with no filters there is no filter row and no 🗜: 🔎 starts the search row', 0.2, function () {
+test.run('with no filters there is no filter row and no 🗜, and 🔎 starts the search row', 0.2, function () {
   c4b = container();
   PS.create(c4b, { rows: function () { return [{ key: 'a', name: 'a' }]; }, columns: [{ field: 'name' }] });
   u4b = upToInput(c4b);
   return (u4b === '🔎') ? true : false;
 }, test.limit.quick);
-test.run('and in a dropdown\'s pane alike', 0.2, function () {
+test.run('in a dropdown\'s pane 🗜 starts the filter row and 🔎 the search row alike', 0.2, function () {
   c4c = container();
   PS.create(c4c, { face: 'dropdown', placeholder: 'pick one', rows: function () { return [{ key: 'a', name: 'a' }]; }, columns: [{ field: 'name' }],
     filters: [{ name: 'mine', toggle: true, word: 'Mine', test: function () { return 1; } }] });
@@ -737,7 +737,7 @@ const bubbleOf = function (c) {
   }
   return best;
 };
-test.run('with filters: the filters and the search row stand in one bubble, transparent, its border the type-face\'s colour', 0.2, function () {
+test.run('with filters, the filters and the search row stand in one transparent bubble whose border is the type-face\'s colour', 0.2, function () {
   // create: the filter row and the search row in one bubble (goal/G41.26)
   // Andy, on G41.26: "the filer row and search-input row must be set in a transparent bubble, with a border that has the
   // same color as the type-face", "NO! the filtel row and the search-input row int eh SAME bubble", and
@@ -754,13 +754,13 @@ test.run('with filters: the filters and the search row stand in one bubble, tran
   stF = bF ? ((/style="([^"]*)"/.exec(bF.open) || [])[1] || '') + ';' + clsF.map(function (k) { const h = new RegExp('\\.' + k.replace(/-/g, '\\-') + '\\s*\\{([^}]*)\\}').exec(SHELL_CSS); return h ? h[1] : ''; }).join(';') : '';
   return (!!bF && /border(-color)?\s*:[^;]*currentColor/.test(stF) && /background(-color)?\s*:\s*transparent/.test(stF) && /border-radius\s*:/.test(stF)) ? true : false;
 }, test.limit.quick);
-test.run('with filters: the list stands outside the bubble', 0.2, function () {
+test.run('with filters, the list stands outside the bubble', 0.2, function () {
   return (!!bF && bF.part.indexOf('id="' + preF + 'list"') === -1) ? true : false;
 }, test.limit.quick);
-test.run('with filters: its search row is 🔎, the input, then the search button', 0.2, function () {
+test.run('with filters, the search row is 🔎, the input, then the search button', 0.2, function () {
   return (!!bF && bF.part.indexOf('id="' + preF + 'text"') < bF.part.indexOf('id="' + preF + 'search"')) ? true : false;
 }, test.limit.quick);
-test.run('with none: the filters and the search row stand in one bubble, transparent, its border the type-face\'s colour', 0.2, function () {
+test.run('with no filters, the filters and the search row stand in one transparent bubble whose border is the type-face\'s colour', 0.2, function () {
   // with none
   bN = bubbleOf(c4b);
   preN = c4b.pre();
@@ -768,13 +768,13 @@ test.run('with none: the filters and the search row stand in one bubble, transpa
   stN = bN ? ((/style="([^"]*)"/.exec(bN.open) || [])[1] || '') + ';' + clsN.map(function (k) { const h = new RegExp('\\.' + k.replace(/-/g, '\\-') + '\\s*\\{([^}]*)\\}').exec(SHELL_CSS); return h ? h[1] : ''; }).join(';') : '';
   return (!!bN && /border(-color)?\s*:[^;]*currentColor/.test(stN) && /background(-color)?\s*:\s*transparent/.test(stN) && /border-radius\s*:/.test(stN)) ? true : false;
 }, test.limit.quick);
-test.run('with none: the list stands outside the bubble', 0.2, function () {
+test.run('with no filters, the list stands outside the bubble', 0.2, function () {
   return (!!bN && bN.part.indexOf('id="' + preN + 'list"') === -1) ? true : false;
 }, test.limit.quick);
-test.run('with none: its search row is 🔎, the input, then the search button', 0.2, function () {
+test.run('with no filters, the search row is 🔎, the input, then the search button', 0.2, function () {
   return (!!bN && bN.part.indexOf('id="' + preN + 'text"') < bN.part.indexOf('id="' + preN + 'search"')) ? true : false;
 }, test.limit.quick);
-test.run('in a dropdown\'s pane: the filters and the search row stand in one bubble, transparent, its border the type-face\'s colour', 0.2, function () {
+test.run('in a dropdown\'s pane, the filters and the search row stand in one transparent bubble whose border is the type-face\'s colour', 0.2, function () {
   // in a dropdown's pane
   bD = bubbleOf(c4c);
   preD = c4c.pre();
@@ -782,10 +782,10 @@ test.run('in a dropdown\'s pane: the filters and the search row stand in one bub
   stD = bD ? ((/style="([^"]*)"/.exec(bD.open) || [])[1] || '') + ';' + clsD.map(function (k) { const h = new RegExp('\\.' + k.replace(/-/g, '\\-') + '\\s*\\{([^}]*)\\}').exec(SHELL_CSS); return h ? h[1] : ''; }).join(';') : '';
   return (!!bD && /border(-color)?\s*:[^;]*currentColor/.test(stD) && /background(-color)?\s*:\s*transparent/.test(stD) && /border-radius\s*:/.test(stD)) ? true : false;
 }, test.limit.quick);
-test.run('in a dropdown\'s pane: the list stands outside the bubble', 0.2, function () {
+test.run('in a dropdown\'s pane, the list stands outside the bubble', 0.2, function () {
   return (!!bD && bD.part.indexOf('id="' + preD + 'list"') === -1) ? true : false;
 }, test.limit.quick);
-test.run('in a dropdown\'s pane: its search row is 🔎, the input, then the search button', 0.2, function () {
+test.run('in a dropdown\'s pane, the search row is 🔎, the input, then the search button', 0.2, function () {
   return (!!bD && bD.part.indexOf('id="' + preD + 'text"') < bD.part.indexOf('id="' + preD + 'search"')) ? true : false;
 }, test.limit.quick);
 test.run('with no filters there is no filter row in the bubble', 0.2, function () {
@@ -820,21 +820,21 @@ test.run('each selector it is handed is mounted in the search', 0.2, async funct
   // Each mounted in a box of the search's own markup (a slot each, or one row: the search's choice).
   return (!!hostOf(s1) && !!hostOf(s2) && at(hostOf(s1)) !== -1 && at(hostOf(s2)) !== -1) ? true : false;
 }, test.limit.quick);
-test.run('in the order they are handed', 0.2, function () {
+test.run('the selectors are mounted in the order they are handed', 0.2, function () {
   return (at(hostOf(s1)) !== -1 && (hostOf(s1) === hostOf(s2) ? (c11.nodes[hostOf(s1)].kids || []).indexOf(s1) < (c11.nodes[hostOf(s1)].kids || []).indexOf(s2) : at(hostOf(s1)) < at(hostOf(s2)))) ? true : false;
 }, test.limit.quick);
 test.run('the 🪣 row stands in the bubble', 0.2, function () {
   b11 = bubbleOf(c11);
   return (!!b11 && b11.part.indexOf('id="' + hostOf(s1) + '"') !== -1 && b11.part.indexOf('id="' + hostOf(s2) + '"') !== -1) ? true : false;
 }, test.limit.quick);
-test.run('on top of the bubble: the 🪣 row, then the 🗜 row, then the 🔎 row', 0.2, function () {
+test.run('the bubble holds the 🪣 row on top, then the 🗜 row, then the 🔎 row', 0.2, function () {
   return (at(hostOf(s1)) !== -1 && at(hostOf(s2)) < at(p11 + 'filters') && at(hostOf(s1)) < at(p11 + 'filters') && at(p11 + 'filters') < at(p11 + 'text')) ? true : false;
 }, test.limit.quick);
-test.run('its row starts with 🪣, before its selectors', 0.2, function () {
+test.run('the selector row starts with 🪣, before its selectors', 0.2, function () {
   u11 = upToInput(c11);
   return (u11 === '🪣🗜Mine🔎') ? true : false;
 }, test.limit.quick);
-test.run('no selector picked: every row', 0.2, function () {
+test.run('with no selector picked every row shows', 0.2, function () {
   return (c11.shown().join() === 'a,b') ? true : false;
 }, test.limit.quick);
 test.run('a selector\'s change redraws the list, its test narrowing it', 0.2, function () {
@@ -843,7 +843,7 @@ test.run('a selector\'s change redraws the list, its test narrowing it', 0.2, fu
   s1.fire('change');
   return (c11.shown().join() === 'b') ? true : false;
 }, test.limit.quick);
-test.run('and narrows the rows already fetched, asking nothing', 0.2, function () {
+test.run('a selector\'s change narrows the rows already fetched and asks nothing', 0.2, function () {
   return (A11.calls.length === asked11) ? true : false;
 }, test.limit.quick);
 test.run('every selector\'s test counts', 0.2, function () {
@@ -851,7 +851,7 @@ test.run('every selector\'s test counts', 0.2, function () {
   s2.fire('change');
   return (c11.shown().join() === '') ? true : false;
 }, test.limit.quick);
-test.run('and a selector cleared lets its rows back', 0.2, function () {
+test.run('a selector cleared lets its rows back', 0.2, function () {
   s1.value = '';
   s1.fire('change');
   return (c11.shown().join() === 'a') ? true : false;
@@ -859,7 +859,7 @@ test.run('and a selector cleared lets its rows back', 0.2, function () {
 test.run('with no selectors there is no 🪣 row', 0.2, function () {
   return (!/🪣/.test(seen(c4.innerHTML)) && !/🪣/.test(seen(c4b.innerHTML))) ? true : false;
 }, test.limit.quick);
-test.run('a dropdown\'s pane alike: 🪣 and its selector, no filter row, then 🔎', 0.2, async function () {
+test.run('a dropdown\'s pane alike shows 🪣 and its selector, no filter row, then 🔎', 0.2, async function () {
   c12 = container();
   s3 = selEl();
   PS.create(c12, { face: 'dropdown', placeholder: 'pick', columns: [{ field: 'name' }], rows: function () { return [{ key: 'a', name: 'a' }]; },
@@ -868,7 +868,7 @@ test.run('a dropdown\'s pane alike: 🪣 and its selector, no filter row, then �
   u12 = upToInput(c12);
   return (!!hostOf(s3) && u12 !== null && /^[^🪣🔎]*🪣🔎$/u.test(u12)) ? true : false;
 }, test.limit.quick);
-test.run('a press fold claims opens nothing and picks nothing, the row current', 0.2, function () {
+test.run('a press that fold claims opens nothing and picks nothing, and the row becomes current', 0.2, function () {
   // create: details in a pane, and fold
   c5 = container();
   det = [];
@@ -879,7 +879,7 @@ test.run('a press fold claims opens nothing and picks nothing, the row current',
   c5.fire('click', { target: rowTarget('a') });
   return (det.length === 0 && pk5.length === 0 && c5.current() === 'a') ? true : false;
 }, test.limit.quick);
-test.run('with details a press opens details(row, key, el) and picks nothing', 0.2, function () {
+test.run('with a details option a press opens the row\'s details and picks nothing', 0.2, function () {
   folding = false;
   c5.fire('click', { target: rowTarget('a') });
   return (det.length === 1 && det[0][1] === 'a' && det[0][0].name === 'a' && det[0][2] === null && pk5.length === 0) ? true : false;
@@ -957,14 +957,14 @@ test.run('the field shows the all words while nothing is chosen', 0.2, function 
 test.run('it listens for a press elsewhere', 0.2, function () {
   return (docHeard.length === heard0 + 1) ? true : false;
 }, test.limit.quick);
-test.run('a press on the field opens it, drawn, the search focused', 0.2, function () {
+test.run('a press on the field opens the dropdown, its list drawn and its search focused', 0.2, function () {
   c8.fire('click', { target: c8.get('field') });
   return (c8.get('popup').hidden === false && c8.shown().join() === 'a,b' && c8.get('text').focused === 1) ? true : false;
 }, test.limit.quick);
-test.run('all adds a None button', 0.2, function () {
+test.run('the all option adds a None button', 0.2, function () {
   return (/id="[^"]*none"/.test(c8.get('list').innerHTML)) ? true : false;
 }, test.limit.quick);
-test.run('a press picks the row, details never asked', 0.2, function () {
+test.run('a press picks the row and never asks for its details', 0.2, function () {
   c8.fire('click', { target: rowTarget('b') });
   return (pk8.length === 1 && pk8[0][1] === 'b' && L8.value === 'b') ? true : false;
 }, test.limit.quick);
@@ -1001,7 +1001,7 @@ test.run('destroy stops listening for a press elsewhere', 0.2, function () {
   L8.destroy();
   return (docHeard.length === heard0 && docRemoved === 1) ? true : false;
 }, test.limit.quick);
-test.run('without all the field shows the placeholder', 0.2, function () {
+test.run('without the all option the field shows the placeholder', 0.2, function () {
   c9 = container();
   PS.create(c9, { face: 'dropdown', placeholder: 'pick one' });
   return (/pick one/.test(c9.get('field').innerHTML)) ? true : false;
@@ -1108,7 +1108,7 @@ async function keptPart() {
     { key: 'd', name: 'dan', who: 'x', kind: 'red', n: 3 }, { key: 'e', name: 'eve', who: 'y', kind: 'green', n: 2 }, { key: 'f', name: 'fay', who: 'x', kind: 'red', n: 1 }];
   const FIVE_KEYS = FIVE.map(function (r) { return r.key; });
 
-  test.run('the world: a scratch node and a Chrome page for the kept rows', 0.2, async function () {
+  test.run('a scratch node and a Chrome page come up for the kept rows', 0.2, async function () {
     await freeWorlds();
     node = await scratchNode();
     // Its free registered once it holds a node, so the next world's freeWorlds lets this one go.
@@ -1116,7 +1116,7 @@ async function keptPart() {
     chrome = await chromePage(findChrome());
     return (node.up && !chrome.error) ? true : false;
   }, test.limit.slow);
-  test.run('the world: a list of five rows, with a filter, a selector, two sortable columns and a search field; each row marked', 0.2, async function () {
+  test.run('a list of five rows is drawn with a filter, a selector, two sortable columns and a search field, and each row is marked', 0.2, async function () {
     if (!node || !node.up || !chrome || chrome.error) return false;
     await chrome.send('Page.navigate', { url: node.base + '/face.html' });
     await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
@@ -1133,7 +1133,7 @@ async function keptPart() {
   }, test.limit.slow);
 
   // the box: "a sort or new words move them"
-  test.run('a sort moves the rows: sorted by name, the same five row elements, in the order of their names', 0.2, async function () {
+  test.run('a sort by name moves the same five row elements into the order of their names', 0.2, async function () {
     if (!ok()) return false;
     if (!(await ev('return K.sort("name");'))) return false;
     await sleep(300);
@@ -1142,7 +1142,7 @@ async function keptPart() {
     const order = shown.slice().sort(function (x, y) { return FIVE_KEYS.indexOf(x) - FIVE_KEYS.indexOf(y); });
     return (!notSame.length && shown.length === 5 && (JSON.stringify(shown) === JSON.stringify(order) || JSON.stringify(shown) === JSON.stringify(order.slice().reverse()))) || false;
   }, test.limit.slow);
-  test.run('a sort the other way moves them back: the same five row elements, reversed', 0.2, async function () {
+  test.run('a sort the other way moves the same five row elements back, reversed', 0.2, async function () {
     if (!ok()) return false;
     const before = await ev('return K.shown();');
     await ev('return K.sort("name");');
@@ -1151,33 +1151,33 @@ async function keptPart() {
     const notSame = await ev('return K.same(' + JSON.stringify(FIVE_KEYS) + ');');
     return (!notSame.length && JSON.stringify(shown) === JSON.stringify(before.slice().reverse())) || false;
   }, test.limit.slow);
-  test.run('the world: sorted by name, a to f', 0.2, async function () {
+  test.run('the rows are sorted by name, a to f', 0.2, async function () {
     if (!ok()) return false;
     for (let i = 0; i < 2; i++) { const s = await ev('return K.shown();'); if (s[0] === 'a') return true; await ev('return K.sort("name");'); await sleep(300); }
     return false;
   }, test.limit.slow);
 
   // the box: "a new record adds its one row at its place"
-  test.run('a new record adds its one row: the five row elements already drawn stay the same', 0.2, async function () {
+  test.run('a new record adds its one row, and the five row elements already drawn stay the same', 0.2, async function () {
     if (!ok()) return false;
     await ev('K.rows = K.rows.concat([{ key: "c", name: "cat", who: "y", kind: "green", n: 9 }]); K.list.redraw(); return true;');
     await sleep(300);
     const notSame = await ev('return K.same(' + JSON.stringify(FIVE_KEYS) + ');');
     return !notSame.length || false;
   }, test.limit.slow);
-  test.run('the new record\'s row shows at its place: cat between bob and dan', 0.2, async function () {
+  test.run('the new record\'s row shows at its place, cat between bob and dan', 0.2, async function () {
     if (!ok()) return false;
     const shown = await ev('return K.shown();');
     return JSON.stringify(shown) === JSON.stringify(['a', 'b', 'c', 'd', 'e', 'f']) || false;
   }, test.limit.quick);
-  test.run('the world: the new row marked', 0.2, async function () {
+  test.run('the new row is marked', 0.2, async function () {
     if (!ok()) return false;
     await ev('K.mark(); return true;');
     return true;
   }, test.limit.quick);
 
   // the box: "a changed record repaints its own row"
-  test.run('a changed record repaints its own row: its new text, the same element', 0.2, async function () {
+  test.run('a changed record repaints its own row with its new text, in the same element', 0.2, async function () {
     if (!ok()) return false;
     await ev('K.rows = K.rows.map(function (r) { return r.key === "d" ? Object.assign({}, r, { n: 33 }) : r; }); K.list.redraw(); return true;');
     await sleep(300);
@@ -1192,19 +1192,19 @@ async function keptPart() {
   }, test.limit.quick);
 
   // the box: "a filter or a selector hides and shows rows"
-  test.run('a filter hides rows: green off, the green rows hidden, the red ones show', 0.2, async function () {
+  test.run('with the green filter choice off, the green rows are hidden and the red ones show', 0.2, async function () {
     if (!ok()) return false;
     if (!(await ev('return K.press("green");'))) return false;
     await sleep(300);
     const shown = await ev('return K.shown();');
     return JSON.stringify(shown) === JSON.stringify(['a', 'd', 'f']) || false;
   }, test.limit.slow);
-  test.run('a filter hides rows, it does not take them out: the six row elements are the same, the hidden ones still in the page', 0.2, async function () {
+  test.run('a filter hides rows without taking them out, so the six row elements are the same and the hidden ones are still in the page', 0.2, async function () {
     if (!ok()) return false;
     const notSame = await ev('return K.same(["a", "b", "c", "d", "e", "f"]);');
     return !notSame.length || false;
   }, test.limit.quick);
-  test.run('the filter turned back, the same row elements show again, in their place', 0.2, async function () {
+  test.run('with the filter turned back, the same row elements show again in their place', 0.2, async function () {
     if (!ok()) return false;
     await ev('return K.press("green");');
     await sleep(300);
@@ -1212,7 +1212,7 @@ async function keptPart() {
     const notSame = await ev('return K.same(["a", "b", "c", "d", "e", "f"]);');
     return (JSON.stringify(shown) === JSON.stringify(['a', 'b', 'c', 'd', 'e', 'f']) && !notSame.length) || false;
   }, test.limit.slow);
-  test.run('a selector hides rows: y chosen, only y\'s rows show, every row element the same', 0.2, async function () {
+  test.run('with y chosen in the selector, only y\'s rows show and every row element is the same', 0.2, async function () {
     if (!ok()) return false;
     await ev('K.pickWho("y"); return true;');
     await sleep(300);
@@ -1220,7 +1220,7 @@ async function keptPart() {
     const notSame = await ev('return K.same(["a", "b", "c", "d", "e", "f"]);');
     return (JSON.stringify(shown) === JSON.stringify(['b', 'c', 'e']) && !notSame.length) || false;
   }, test.limit.slow);
-  test.run('the selector unselected, every row shows again, the same row elements', 0.2, async function () {
+  test.run('with the selector unselected, every row shows again in the same row elements', 0.2, async function () {
     if (!ok()) return false;
     await ev('K.pickWho(""); return true;');
     await sleep(300);
@@ -1230,7 +1230,7 @@ async function keptPart() {
   }, test.limit.slow);
 
   // the box: "a sort or new words move them"
-  test.run('new words move the rows: "eve" typed, eve\'s row shows first, the same element', 0.2, async function () {
+  test.run('typing "eve" moves eve\'s row first, the same element', 0.2, async function () {
     if (!ok()) return false;
     if (!(await ev('return K.type("eve");'))) return false;
     await sleep(600);
@@ -1243,7 +1243,7 @@ async function keptPart() {
     const notSame = await ev('return K.same(K.shown());');
     return !notSame.length || false;
   }, test.limit.quick);
-  test.run('the words cleared, the rows move back to their order, the same elements', 0.2, async function () {
+  test.run('with the words cleared, the same row elements move back to their order', 0.2, async function () {
     if (!ok()) return false;
     await ev('return K.type("");');
     await sleep(600);
@@ -1253,7 +1253,7 @@ async function keptPart() {
   }, test.limit.slow);
 
   // the box: "never redraws its list"
-  test.run('in all of this the list never redrew: its table is the one first drawn', 0.2, async function () {
+  test.run('in all of this the list never redrew, its table being the one first drawn', 0.2, async function () {
     if (!ok()) return false;
     return (await ev('return K.table() === K.firstTable && !!K.firstTable && K.firstTable.isConnected;')) || false;
   }, test.limit.quick);
@@ -1291,12 +1291,12 @@ async function bubblePart() {
   const ADDRESS = '/DEBUG/spirit/element/test/search-bubble-laid.html';
   // What the tests make, shared by the tests after them.
   let chrome, node, page, s, m, rPane, rDrop;
-  test.run('the world: Chrome is on this machine', 0.2, function () {
+  test.run('Chrome is on this machine', 0.2, function () {
     // search-bubble: probabilitySearch.js in a browser: the bubble's rows aligned
     chrome = H.findChrome();
     return (!!chrome) ? true : false;
   }, test.limit.quick);
-  test.run('the world: a scratch node comes up with its DEBUG on', 0.2, async function () {
+  test.run('a scratch node comes up with its DEBUG on', 0.2, async function () {
     if (!chrome) return false;
     await freeWorlds();
     node = await H.scratchNode();
@@ -1305,13 +1305,13 @@ async function bubblePart() {
     page = null;
     return (node.up && node.debug) ? true : false;
   }, test.limit.slow);
-  test.run('the world: a Chrome page opens on it', 0.2, async function () {
+  test.run('a Chrome page opens on the scratch node', 0.2, async function () {
     if (!chrome) return false;
     if (!node || !node.up || !node.debug) return false;
     page = await H.chromePage(chrome);
     return (!page.error) ? true : false;
   }, test.limit.quick);
-  test.run('the world: the page lays out a pane and a dropdown', 0.2, async function () {
+  test.run('the page lays out a pane and a dropdown', 0.2, async function () {
     if (!chrome) return false;
     if (!node || !node.up || !node.debug) return false;
     if (!page || page.error) return false;
@@ -1322,7 +1322,7 @@ async function bubblePart() {
     try { m = JSON.parse(s); } catch (e) { m = null; }
     return (!!m && !!m.made) ? true : false;
   }, test.limit.slow);
-  test.run('its 🗜 and 🔎 are the icon element (spirit/element/icon.js)', 0.2, function () {
+  test.run('in a pane the 🗜 and the 🔎 are the icon element of spirit/element/icon.js', 0.2, function () {
     if (!chrome) return false;
     if (!node || !node.up || !node.debug) return false;
     if (!page || page.error) return false;
@@ -1333,7 +1333,7 @@ async function bubblePart() {
     rPane = m.pane || {};
     return (/\bshell-icon\b/.test(rPane.filterIconClass) && /\bshell-icon\b/.test(rPane.searchIconClass)) ? true : false;
   }, test.limit.quick);
-  test.run('each icon is a square of its font size, whatever its glyph', 0.2, function () {
+  test.run('in a pane each icon is a square of its font size, whatever its glyph', 0.2, function () {
     if (!chrome) return false;
     if (!node || !node.up || !node.debug) return false;
     if (!page || page.error) return false;
@@ -1342,14 +1342,14 @@ async function bubblePart() {
     // bare glyph is 20px wide at 16px, where a browser on another machine draws each glyph its own width.
     return (!!rPane.filterIcon && !!rPane.searchIcon && same(rPane.filterIcon.w, rPane.filterIconSize) && same(rPane.searchIcon.w, rPane.searchIconSize)) ? true : false;
   }, test.limit.quick);
-  test.run('the two icons are as wide and stand one under the other', 0.2, function () {
+  test.run('in a pane the two icons are as wide and stand one under the other', 0.2, function () {
     if (!chrome) return false;
     if (!node || !node.up || !node.debug) return false;
     if (!page || page.error) return false;
     if (!m || !m.made) return false;
     return (!!rPane.filterIcon && !!rPane.searchIcon && same(rPane.filterIcon.w, rPane.searchIcon.w) && same(rPane.filterIcon.left, rPane.searchIcon.left)) ? true : false;
   }, test.limit.quick);
-  test.run('its 🪣 is the icon element too, a square of its font size, over the 🗜', 0.2, function () {
+  test.run('in a pane the 🪣 is the icon element too, a square of its font size, over the 🗜', 0.2, function () {
     if (!chrome) return false;
     if (!node || !node.up || !node.debug) return false;
     if (!page || page.error) return false;
@@ -1357,21 +1357,21 @@ async function bubblePart() {
     // And the 🪣 row of selectors on top (goal/G41.26: "the selectorRow must start with a\n🪣icon").
     return (/\bshell-icon\b/.test(rPane.bucketIconClass) && !!rPane.bucketIcon && same(rPane.bucketIcon.w, rPane.bucketIconSize) && !!rPane.filterIcon && same(rPane.bucketIcon.left, rPane.filterIcon.left)) ? true : false;
   }, test.limit.quick);
-  test.run('the first selector starts where the search input does', 0.2, function () {
+  test.run('in a pane the first selector starts where the search input does', 0.2, function () {
     if (!chrome) return false;
     if (!node || !node.up || !node.debug) return false;
     if (!page || page.error) return false;
     if (!m || !m.made) return false;
     return (!!rPane.firstSelector && !!rPane.input && same(rPane.firstSelector.left, rPane.input.left)) ? true : false;
   }, test.limit.quick);
-  test.run('each row\'s first control starts at the same place: the first filter over the search input', 0.2, function () {
+  test.run('in a pane each row\'s first control starts at the same place, the first filter over the search input', 0.2, function () {
     if (!chrome) return false;
     if (!node || !node.up || !node.debug) return false;
     if (!page || page.error) return false;
     if (!m || !m.made) return false;
     return (!!rPane.firstFilter && !!rPane.input && same(rPane.firstFilter.left, rPane.input.left)) ? true : false;
   }, test.limit.quick);
-  test.run('a dropdown: its 🗜 and 🔎 are the icon element (spirit/element/icon.js)', 0.2, function () {
+  test.run('in a dropdown the 🗜 and the 🔎 are the icon element of spirit/element/icon.js', 0.2, function () {
     if (!chrome) return false;
     if (!node || !node.up || !node.debug) return false;
     if (!page || page.error) return false;
@@ -1380,7 +1380,7 @@ async function bubblePart() {
     rDrop = m.dropdown || {};
     return (/\bshell-icon\b/.test(rDrop.filterIconClass) && /\bshell-icon\b/.test(rDrop.searchIconClass)) ? true : false;
   }, test.limit.quick);
-  test.run('a dropdown: each icon is a square of its font size, whatever its glyph', 0.2, function () {
+  test.run('in a dropdown each icon is a square of its font size, whatever its glyph', 0.2, function () {
     if (!chrome) return false;
     if (!node || !node.up || !node.debug) return false;
     if (!page || page.error) return false;
@@ -1389,14 +1389,14 @@ async function bubblePart() {
     // bare glyph is 20px wide at 16px, where a browser on another machine draws each glyph its own width.
     return (!!rDrop.filterIcon && !!rDrop.searchIcon && same(rDrop.filterIcon.w, rDrop.filterIconSize) && same(rDrop.searchIcon.w, rDrop.searchIconSize)) ? true : false;
   }, test.limit.quick);
-  test.run('a dropdown: the two icons are as wide and stand one under the other', 0.2, function () {
+  test.run('in a dropdown the two icons are as wide and stand one under the other', 0.2, function () {
     if (!chrome) return false;
     if (!node || !node.up || !node.debug) return false;
     if (!page || page.error) return false;
     if (!m || !m.made) return false;
     return (!!rDrop.filterIcon && !!rDrop.searchIcon && same(rDrop.filterIcon.w, rDrop.searchIcon.w) && same(rDrop.filterIcon.left, rDrop.searchIcon.left)) ? true : false;
   }, test.limit.quick);
-  test.run('a dropdown: its 🪣 is the icon element too, a square of its font size, over the 🗜', 0.2, function () {
+  test.run('in a dropdown the 🪣 is the icon element too, a square of its font size, over the 🗜', 0.2, function () {
     if (!chrome) return false;
     if (!node || !node.up || !node.debug) return false;
     if (!page || page.error) return false;
@@ -1404,14 +1404,14 @@ async function bubblePart() {
     // And the 🪣 row of selectors on top (goal/G41.26: "the selectorRow must start with a\n🪣icon").
     return (/\bshell-icon\b/.test(rDrop.bucketIconClass) && !!rDrop.bucketIcon && same(rDrop.bucketIcon.w, rDrop.bucketIconSize) && !!rDrop.filterIcon && same(rDrop.bucketIcon.left, rDrop.filterIcon.left)) ? true : false;
   }, test.limit.quick);
-  test.run('a dropdown: the first selector starts where the search input does', 0.2, function () {
+  test.run('in a dropdown the first selector starts where the search input does', 0.2, function () {
     if (!chrome) return false;
     if (!node || !node.up || !node.debug) return false;
     if (!page || page.error) return false;
     if (!m || !m.made) return false;
     return (!!rDrop.firstSelector && !!rDrop.input && same(rDrop.firstSelector.left, rDrop.input.left)) ? true : false;
   }, test.limit.quick);
-  test.run('a dropdown: each row\'s first control starts at the same place: the first filter over the search input', 0.2, function () {
+  test.run('in a dropdown each row\'s first control starts at the same place, the first filter over the search input', 0.2, function () {
     if (!chrome) return false;
     if (!node || !node.up || !node.debug) return false;
     if (!page || page.error) return false;
@@ -1446,7 +1446,7 @@ async function popupPart() {
 
   // What the tests make, shared by the tests after them.
   let node, chrome, made, a0, a1, b1, a2, l1;
-  test.run('the world: a scratch node and a Chrome page for the dropdowns', 0.2, async function () {
+  test.run('a scratch node and a Chrome page come up for the dropdowns', 0.2, async function () {
     // search-popup: a search dropdown's list floats above everything, one at a time (goal/G43.18)
     await freeWorlds();
     node = await scratchNode();
@@ -1455,7 +1455,7 @@ async function popupPart() {
     chrome = await chromePage(findChrome());
     return (node.up && !chrome.error) ? true : false;
   }, test.limit.slow);
-  test.run('the world: three search dropdowns of 40 rows, each in a 48 px box that cuts off its overflow, and a block drawn over the space below the first two', 0.2, async function () {
+  test.run('three search dropdowns of 40 rows are drawn, each in a 48 px box that cuts off its overflow, with a block drawn over the space below the first two', 0.2, async function () {
     if (!node || !node.up || !chrome || chrome.error) return false;
     await chrome.send('Page.navigate', { url: node.base + '/face.html' });
     await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
@@ -1483,7 +1483,7 @@ async function popupPart() {
     await chrome.send('Input.dispatchKeyEvent', { type: 'keyUp', key: k, code: k, windowsVirtualKeyCode: code });
     await sleep(400);
   };
-  test.run('the world: pressed, the first dropdown\'s list opens', 0.2, async function () {
+  test.run('pressing the first dropdown opens its list', 0.2, async function () {
     if (!node || !node.up || !chrome || chrome.error) return false;
     if (made !== 'made') return false;
     await sleep(800);
@@ -1494,22 +1494,22 @@ async function popupPart() {
     a1 = await look('a');
     return (a1.open) ? true : false;
   }, test.limit.slow);
-  test.run('its field stays where it was, in its box', 0.2, function () {
+  test.run('the first dropdown\'s field stays where it was, in its box', 0.2, function () {
     if (!node || !node.up || !chrome || chrome.error) return false;
     if (made !== 'made') return false;
     return (a1.fieldInBox && a1.field[0] === a0.field[0] && a1.field[1] === a0.field[1]) ? true : false;
   }, test.limit.quick);
-  test.run('"floats it\'s contents above all windows": the list reaches past its box, over the block drawn on top, and is what is seen there', 0.2, function () {
+  test.run('the open list floats above all windows: it reaches past its box, over the block drawn on top, and is what is seen there', 0.2, function () {
     if (!node || !node.up || !chrome || chrome.error) return false;
     if (made !== 'made') return false;
     return (a1.open && a1.below && a1.seen) ? true : false;
   }, test.limit.quick);
-  test.run('"only bound by the window size but not neccessarily filling it"', 0.2, function () {
+  test.run('the open list is bound by the window size but does not fill the window', 0.2, function () {
     if (!node || !node.up || !chrome || chrome.error) return false;
     if (made !== 'made') return false;
     return (a1.open && a1.inWindow && !a1.fills) ? true : false;
   }, test.limit.quick);
-  test.run('the second dropdown pressed: its list opens, seen', 0.2, async function () {
+  test.run('pressing the second dropdown opens its list, and it is seen', 0.2, async function () {
     if (!node || !node.up || !chrome || chrome.error) return false;
     if (made !== 'made') return false;
     // Andy: "only one in the whole browser window can be active"
@@ -1518,18 +1518,18 @@ async function popupPart() {
     a2 = await look('a');
     return (b1.open && b1.seen) ? true : false;
   }, test.limit.quick);
-  test.run('and the first one\'s list is closed', 0.2, function () {
+  test.run('the first dropdown\'s list is then closed', 0.2, function () {
     if (!node || !node.up || !chrome || chrome.error) return false;
     if (made !== 'made') return false;
     return (b1.open && !a2.open) ? true : false;
   }, test.limit.quick);
-  test.run('Escape closes it', 0.2, async function () {
+  test.run('Escape closes the open list', 0.2, async function () {
     if (!node || !node.up || !chrome || chrome.error) return false;
     if (made !== 'made') return false;
     await key('Escape', 27);
     return (!(await look('b')).open) ? true : false;
   }, test.limit.quick);
-  test.run('a press outside closes it', 0.2, async function () {
+  test.run('a press outside closes the open list', 0.2, async function () {
     if (!node || !node.up || !chrome || chrome.error) return false;
     if (made !== 'made') return false;
     await press('a');
@@ -1580,20 +1580,20 @@ async function tilesPart() {
     return (typeof match.measureObject === 'function') ? true : false;
   }, test.limit.quick);
   const at = function (s) { return table.filter(function (r) { return r.objectString === s; })[0] || {}; };
-  test.run('a value carries its path: label', 0.2, function () {
+  test.run('the scan gives a top-level value its path, label', 0.2, function () {
     table = match.measureObject({ label: 'Nest', stats: { cpu: 12 }, files: [{ name: 'a.txt' }] });
     return (at('Nest').path === 'label') ? true : false;
   }, test.limit.quick);
-  test.run('a nested one: stats.cpu', 0.2, function () {
+  test.run('the scan gives a nested value its path, stats.cpu', 0.2, function () {
     return (at('12').path === 'stats.cpu') ? true : false;
   }, test.limit.quick);
-  test.run('one in an array: files[0].name', 0.2, function () {
+  test.run('the scan gives a value in an array its path, files[0].name', 0.2, function () {
     return (at('a.txt').path === 'files[0].name') ? true : false;
   }, test.limit.quick);
-  test.run('the match still scores with it', 0.2, function () {
+  test.run('the object match still scores with the scan', 0.2, function () {
     return (match.probabilityStringObjectMatch('Nest', { label: 'Nest' }) > 0) ? true : false;
   }, test.limit.quick);
-  test.run('the world: a scratch node and a Chrome page for the tiles', 0.2, async function () {
+  test.run('a scratch node and a Chrome page come up for the tiles', 0.2, async function () {
     await freeWorlds();
     node = await scratchNode();
     // Its free registered once it holds a node, so the next world's freeWorlds lets this one go.
@@ -1602,7 +1602,7 @@ async function tilesPart() {
     return (node.up && !chrome.error) ? true : false;
   }, test.limit.slow);
   const js = function (s) { return chrome.evaluate(s); };
-  test.run('the world: it loads', 0.2, async function () {
+  test.run('the search element loads on the page', 0.2, async function () {
     if (!node || !node.up || !chrome || chrome.error) return false;
     await chrome.send('Page.navigate', { url: node.base + '/face.html' });
     await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
@@ -1613,7 +1613,7 @@ async function tilesPart() {
     return JSON.parse(await js('(function () { var c = window.__box; var tiles = [].map.call(c.querySelectorAll(".app-icon"), function (t) { var r = t.getBoundingClientRect(); var bar = t.querySelector(".list-rank"); var fill = bar ? (bar.querySelector("div div") || bar.firstElementChild) : null; var img = [].filter.call(t.querySelectorAll("*"), function (e) { return !e.children.length && /[\\u{1F000}-\\u{1FAFF}\\u{2600}-\\u{27BF}]/u.test(e.textContent); })[0]; var lab = [].filter.call(t.querySelectorAll("*"), function (e) { return !e.children.length && /^(Alpha|Nest|Gamma)$/.test(e.textContent.trim()); })[0]; var rect = function (e) { if (!e) return null; var b = e.getBoundingClientRect(); return { t: Math.round(b.top - r.top), b: Math.round(b.bottom - r.top), l: Math.round(b.left - r.left), r: Math.round(b.right - r.left), w: Math.round(b.width), h: Math.round(b.height) }; }; return { text: t.innerText.replace(/\\s+/g, " ").trim(), w: Math.round(r.width), h: Math.round(r.height), img: rect(img), lab: rect(lab), hasBar: !!bar, bar: rect(bar), fill: rect(fill), colour: fill ? getComputedStyle(fill).borderTopColor : "", number: bar ? bar.getAttribute("title") : "", title: t.getAttribute("title") }; }); var inputs = [].filter.call(c.querySelectorAll("input"), function (i) { return i.getClientRects().length && i.type !== "checkbox"; }); return JSON.stringify({ tiles: tiles, inputs: inputs.length, headers: c.querySelectorAll("th").length, sorts: c.querySelectorAll("[data-sort]").length, tables: c.querySelectorAll("table").length }); })()'));
   };
   const type = async function (w) { await js('(function () { var i = [].filter.call(window.__box.querySelectorAll("input"), function (x) { return x.getClientRects().length && x.type !== "checkbox"; })[0]; i.value = ' + JSON.stringify(w) + '; i.dispatchEvent(new Event("input", { bubbles: true })); return true; })()'); await sleep(500); };
-  test.run('one tile per row', 0.2, async function () {
+  test.run('the tiles face draws one tile per row', 0.2, async function () {
     if (!node || !node.up || !chrome || chrome.error) return false;
     await js('(function () { var d = document.body.appendChild(document.createElement("div")); d.className = "fill"; d.style.cssText = "position:fixed;left:0;top:0;width:800px;height:500px;display:flex;flex-direction:column;background:#111"; window.__box = d; window.__picked = []; window.__rows = [{ key: "alpha", label: "Alpha", icon: "🅰️" }, { key: "nest", label: "Nest", icon: "🧩", stats: { cpu: 12 }, files: [{ name: "a.txt" }] }, { key: "gamma", label: "Gamma", icon: "🍀" }]; window.__made = window.spirit.element.spirit.element.search.create(d, { face: "tiles", rows: function () { return window.__rows; }, columns: [{ field: "label", label: "Label" }], pick: function (row, key) { window.__picked.push(key); } }); if (window.__made.refresh) window.__made.refresh(); return true; })()');
     await until(function () { return js('window.__box.querySelectorAll(".app-icon").length > 0'); }, 3000);
@@ -1625,17 +1625,17 @@ async function tilesPart() {
   // EVERY FUCKING TILE IS CENTERED ON IT'S OWN FUCKING ROW!"). Three tiles in an 800 px box: side by side on one line,
   // left to right, each standing apart from the next.
   let tilesAt = null;
-  test.run('the world: where each tile stands in the 800 px box', 0.2, async function () {
+  test.run('where each tile stands in the 800 px box is read', 0.2, async function () {
     if (!node || !node.up || !chrome || chrome.error) return false;
     tilesAt = JSON.parse(await js('JSON.stringify([].map.call(window.__box.querySelectorAll(".app-icon"), function (t) { var r = t.getBoundingClientRect(); return { top: Math.round(r.top), left: Math.round(r.left), w: Math.round(r.width), h: Math.round(r.height) }; }))'));
     return (Array.isArray(tilesAt) && tilesAt.length === 3) || false;
   }, test.limit.quick);
-  test.run('the tiles stand in a grid: three in an 800 px box share one line', 0.2, function () {
+  test.run('the tiles stand in a grid, three in an 800 px box sharing one line', 0.2, function () {
     if (!tilesAt) return false;
     const tops = tilesAt.map(function (p) { return p.top; });
     return (Math.max.apply(null, tops) - Math.min.apply(null, tops) <= 1) || false;
   }, test.limit.quick);
-  test.run('on that line they stand left to right, apart', 0.2, function () {
+  test.run('on that line the tiles stand left to right, apart', 0.2, function () {
     if (!tilesAt) return false;
     const ok = tilesAt.every(function (p, i) { return i === 0 || p.left >= tilesAt[i - 1].left + tilesAt[i - 1].w; });
     return ok || false;
@@ -1649,7 +1649,7 @@ async function tilesPart() {
       ' var scrolls = [].some.call([d].concat([].slice.call(d.querySelectorAll("*"))), function (e) { var o = getComputedStyle(e).overflowY; return (o === "auto" || o === "scroll") && e.scrollHeight > e.clientHeight + 1; }); var out = { boxBottom: Math.round(box.bottom), lowest: lowest, scrolls: scrolls }; made.destroy(); d.remove(); return JSON.stringify(out); }); })()'));
   };
   let inTiles = null, inList = null;
-  test.run('the world: forty rows in a 400 by 240 px box, as tiles and as a list', 0.2, async function () {
+  test.run('forty rows are drawn in a 400 by 240 px box, as tiles and as a list', 0.2, async function () {
     if (!node || !node.up || !chrome || chrome.error) return false;
     try { inTiles = await contained('tiles'); inList = await contained('pane'); } catch (e) { return false; }
     return (!!inTiles && !!inList) || false;
@@ -1670,7 +1670,7 @@ async function tilesPart() {
     if (!inList) return false;
     return inList.scrolls === true || false;
   }, test.limit.quick);
-  test.run('no table, no column headers, no sort trigger', 0.2, function () {
+  test.run('the tiles face draws no table, no column headers and no sort trigger', 0.2, function () {
     if (!node || !node.up || !chrome || chrome.error) return false;
     return (plain.headers === 0 && plain.sorts === 0 && plain.tables === 0) ? true : false;
   }, test.limit.quick);
@@ -1686,23 +1686,23 @@ async function tilesPart() {
     const oneRow = ts.length === 3 && ts.every(function (t) { return t.top === ts[0].top; }) && ts[1].left > ts[0].left && ts[2].left > ts[1].left;
     return oneRow || false;
   }, test.limit.quick);
-  test.run('and still side by side once words were typed and cleared', 0.2, async function () {
+  test.run('the tiles still stand side by side once words were typed and cleared', 0.2, async function () {
     if (!node || !node.up || !chrome || chrome.error) return false;
     await type('ga');
     await type('');
     const ts = await sideBySide();
     return (ts.length === 3 && ts.every(function (t) { return t.top === ts[0].top; })) || false;
   }, test.limit.slow);
-  test.run('one search field', 0.2, function () {
+  test.run('the tiles face has one search field', 0.2, function () {
     if (!node || !node.up || !chrome || chrome.error) return false;
     return (plain.inputs === 1) ? true : false;
   }, test.limit.quick);
-  test.run('"A tile: its image, the relevance, its label": image above label', 0.2, function () {
+  test.run('a tile shows its image above its label', 0.2, function () {
     if (!node || !node.up || !chrome || chrome.error) return false;
     nest = plain.tiles.filter(function (t) { return /Nest/.test(t.text); })[0] || {};
     return (!!nest.img && !!nest.lab && nest.img.b <= nest.lab.t + 1) ? true : false;
   }, test.limit.quick);
-  test.run('no words: no bar shows', 0.2, function () {
+  test.run('with no words no bar shows', 0.2, function () {
     if (!node || !node.up || !chrome || chrome.error) return false;
     // "With no search words there is no bar. Its space stays, so the tiles do not jump."
     return (plain.tiles.every(function (t) { return !t.hasBar || !t.fill || t.fill.w === 0; })) ? true : false;
@@ -1724,43 +1724,43 @@ async function tilesPart() {
     best = searching.tiles[0];
     return (best.hasBar && !!best.bar && !!best.img && !!best.lab && best.bar.t >= best.img.b - 1 && best.bar.b <= best.lab.t + 1) ? true : false;
   }, test.limit.quick);
-  test.run('horizontal', 0.2, function () {
+  test.run('the bar is horizontal', 0.2, function () {
     if (!node || !node.up || !chrome || chrome.error) return false;
     return (best.hasBar && !!best.fill && best.fill.w > best.fill.h) ? true : false;
   }, test.limit.quick);
-  test.run('centered in the tile', 0.2, function () {
+  test.run('the bar is centered in the tile', 0.2, function () {
     if (!node || !node.up || !chrome || chrome.error) return false;
     return (best.hasBar && !!best.bar && Math.abs((best.bar.l + best.bar.r) / 2 - best.w / 2) <= 2) ? true : false;
   }, test.limit.quick);
-  test.run('the same number as a list: its rank against the best row\'s', 0.2, function () {
+  test.run('the bar shows the same number as a list\'s, its rank against the best row\'s', 0.2, function () {
     if (!node || !node.up || !chrome || chrome.error) return false;
     return (best.number === '1.00') ? true : false;
   }, test.limit.quick);
-  test.run('the same colour as a list\'s bar', 0.2, async function () {
+  test.run('the bar has the same colour as a list\'s bar', 0.2, async function () {
     if (!node || !node.up || !chrome || chrome.error) return false;
     expected = await js('getComputedStyle(document.documentElement).getPropertyValue("--spirit-match")');
     probe = await js('(function () { var d = document.body.appendChild(document.createElement("div")); d.style.borderTop = "1px solid var(--spirit-match, rgba(130,180,240,0.55))"; var c = getComputedStyle(d).borderTopColor; d.remove(); return c; })()');
     return (best.colour === probe) ? true : false;
   }, test.limit.quick);
-  test.run('all three tiles stay', 0.2, async function () {
+  test.run('all three tiles stay while words are typed', 0.2, async function () {
     if (!node || !node.up || !chrome || chrome.error) return false;
     // "A tile the words miss stays, last, with an empty bar. Nothing is cut."
     await type('Nest');
     missed = searching.tiles.slice(1);
     return (searching.tiles.length === 3) ? true : false;
   }, test.limit.quick);
-  test.run('words nothing fits: the tiles stay, every bar empty', 0.2, async function () {
+  test.run('with words nothing fits, the tiles stay and every bar is empty', 0.2, async function () {
     if (!node || !node.up || !chrome || chrome.error) return false;
     await type('qqqqzzzzxxxx');
     none = await read();
     return (none.tiles.length === 3 && none.tiles.every(function (t) { return t.hasBar && (!t.fill || t.fill.w === 0); })) ? true : false;
   }, test.limit.quick);
-  test.run('the world: two others behind the best', 0.2, function () {
+  test.run('two other tiles stand behind the best', 0.2, function () {
     if (!node || !node.up || !chrome || chrome.error) return false;
     return (missed.length === 2) ? true : false;
   }, test.limit.quick);
   const press = async function (key) { await js('(function () { var at = document.activeElement || document.body; at.dispatchEvent(new KeyboardEvent("keydown", { key: ' + JSON.stringify(key) + ', bubbles: true, cancelable: true })); return true; })()'); await sleep(120); };
-  test.run('Right, Right, Left, Enter picks one tile', 0.2, async function () {
+  test.run('pressing Right, Right, Left and Enter picks one tile', 0.2, async function () {
     if (!node || !node.up || !chrome || chrome.error) return false;
     await type('');
     // "arrow keys also go left and right": Enter picks where they went
@@ -1774,14 +1774,14 @@ async function tilesPart() {
     picked1 = JSON.parse(await js('JSON.stringify(window.__picked)'));
     return (picked1.length === 1) ? true : false;
   }, test.limit.slow);
-  test.run('a further Right, Enter picks the next one', 0.2, async function () {
+  test.run('a further Right and Enter picks the next tile', 0.2, async function () {
     if (!node || !node.up || !chrome || chrome.error) return false;
     await press('ArrowRight');
     await press('Enter');
     picked2 = JSON.parse(await js('JSON.stringify(window.__picked)'));
     return (picked2.length === 2 && picked2[0] !== picked2[1]) ? true : false;
   }, test.limit.quick);
-  test.run('pressing Gamma picks gamma', 0.2, async function () {
+  test.run('pressing the Gamma tile picks gamma', 0.2, async function () {
     if (!node || !node.up || !chrome || chrome.error) return false;
     // "A press opens": a pressed tile is the list's pick
     await js('window.__picked.length = 0; [].filter.call(window.__box.querySelectorAll(".app-icon"), function (t) { return /Gamma/.test(t.innerText); })[0].click(); true');
@@ -1791,18 +1791,18 @@ async function tilesPart() {
   const tip = async function (label) {
     return js('(function () { var t = [].filter.call(window.__box.querySelectorAll(".app-icon"), function (x) { return x.innerText.indexOf(' + JSON.stringify(label) + ') !== -1; })[0]; t.dispatchEvent(new MouseEvent("mouseover", { bubbles: true })); t.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true })); var own = t.getAttribute("title") || ""; var pop = [].map.call(document.querySelectorAll("[role=tooltip]"), function (e) { return e.innerText; }).join("\\n"); return own || pop; })()');
   };
-  test.run('its row, one above the other', 0.2, async function () {
+  test.run('a tile\'s tooltip shows its row\'s contents, one above the other', 0.2, async function () {
     if (!node || !node.up || !chrome || chrome.error) return false;
     // "The tooltip shows the contents of the row, one above the other", "If the object is nested, it shows the js object path", "It drops the icon row"
     tipNest = String(await tip('Nest'));
     lines = tipNest.split('\n').map(function (l) { return l.trim(); });
     return (lines.indexOf('key: nest') !== -1 && lines.indexOf('label: Nest') !== -1) ? true : false;
   }, test.limit.quick);
-  test.run('nested: stats.cpu: 12, files[0].name: a.txt', 0.2, function () {
+  test.run('the tooltip shows a nested value by its path, as stats.cpu: 12 and files[0].name: a.txt', 0.2, function () {
     if (!node || !node.up || !chrome || chrome.error) return false;
     return (lines.indexOf('stats.cpu: 12') !== -1 && lines.indexOf('files[0].name: a.txt') !== -1) ? true : false;
   }, test.limit.quick);
-  test.run('no icon row', 0.2, function () {
+  test.run('the tooltip drops the icon row', 0.2, function () {
     if (!node || !node.up || !chrome || chrome.error) return false;
     return (!/icon/.test(tipNest)) ? true : false;
   }, test.limit.quick);
@@ -1842,7 +1842,7 @@ async function tilesPart() {
     await make({ face: 'pane', toggle: true });
     return (await toggles() === 1) ? true : false;
   }, test.limit.quick);
-  test.run('it follows the Search button', 0.2, async function () {
+  test.run('the toggle follows the Search button', 0.2, async function () {
     if (!node || !node.up || !chrome || chrome.error) return false;
     // the box: "The toggle sits on the search row, right after the Search button."
     placed = await js('(function () { var t = window.__t.querySelector(".list-toggle"); if (!t) return null; var b = [].filter.call(window.__t.querySelectorAll("button"), function (x) { return x.textContent === "Search"; })[0]; if (!b) return null; return t.previousElementSibling === b ? "after" : null; })()');
@@ -1850,21 +1850,21 @@ async function tilesPart() {
   }, test.limit.quick);
   const seen = function () { return js('JSON.stringify({ tiles: window.__t.querySelectorAll(".app-icon").length, headers: window.__t.querySelectorAll("th").length, words: ([].filter.call(window.__t.querySelectorAll("input"), function (x) { return x.getClientRects().length && x.type !== "checkbox"; })[0] || {}).value, faces: window.__faces })'); };
   const click = function () { return js('(function () { var t = window.__t.querySelector(".list-toggle"); if (t) t.click(); return !!t; })()'); };
-  test.run('it starts as a pane', 0.2, async function () {
+  test.run('a list with the toggle starts as a pane', 0.2, async function () {
     if (!node || !node.up || !chrome || chrome.error) return false;
     // the box: "The face can change while the list lives, keeping the search words."
     await js('(function () { var i = [].filter.call(window.__t.querySelectorAll("input"), function (x) { return x.getClientRects().length && x.type !== "checkbox"; })[0]; if (!i) return false; i.value = "Nest"; i.dispatchEvent(new Event("input", { bubbles: true })); return true; })()');
     asPane = JSON.parse(await seen());
     return (asPane.tiles === 0 && asPane.headers > 0) ? true : false;
   }, test.limit.quick);
-  test.run('a press draws tiles, one per row', 0.2, async function () {
+  test.run('a press on the toggle draws tiles, one per row', 0.2, async function () {
     if (!node || !node.up || !chrome || chrome.error) return false;
     await click();
     await until(function () { return js('window.__t.querySelectorAll(".app-icon").length > 0'); }, 3000);
     asTiles = JSON.parse(await seen());
     return (asTiles.tiles === 3 && asTiles.headers === 0) ? true : false;
   }, test.limit.quick);
-  test.run('the search words stay', 0.2, function () {
+  test.run('the search words stay when the face changes', 0.2, function () {
     if (!node || !node.up || !chrome || chrome.error) return false;
     return (asTiles.words === 'Nest') ? true : false;
   }, test.limit.quick);
@@ -1872,12 +1872,12 @@ async function tilesPart() {
     if (!node || !node.up || !chrome || chrome.error) return false;
     return (await toggles() === 1) ? true : false;
   }, test.limit.quick);
-  test.run('the owner hears tiles', 0.2, function () {
+  test.run('the owner is told the new face is tiles', 0.2, function () {
     if (!node || !node.up || !chrome || chrome.error) return false;
     // the box: "It tells its owner the new face."
     return (JSON.stringify(asTiles.faces) === '["tiles"]') ? true : false;
   }, test.limit.quick);
-  test.run('a second press goes back, words kept, the owner told', 0.2, async function () {
+  test.run('a second press on the toggle goes back to the pane, the words kept and the owner told', 0.2, async function () {
     if (!node || !node.up || !chrome || chrome.error) return false;
     await click();
     await until(function () { return js('window.__t.querySelectorAll("th").length > 0'); }, 3000);
@@ -1905,7 +1905,7 @@ async function tilesPart() {
 async function reconnectPart() {
   const { scratchNode, chromePage, findChrome, until, sleep } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
   let node, chrome, made, asked0 = 0;
-  test.run('the world: a search on a scratch node\'s face page, asking through its own search, refreshed as its mounter does, its first answer drawn', 0.2, async function () {
+  test.run('a search on a scratch node\'s face page, asking through its own search and refreshed as its mounter does, draws its first answer', 0.2, async function () {
     await freeWorlds();
     node = await scratchNode();
     // Its free registered once it holds a node, so the next world's freeWorlds lets this one go.
@@ -1924,14 +1924,14 @@ async function reconnectPart() {
     asked0 = await chrome.evaluate('window.__r.asked');
     return !!first || false;
   }, test.limit.slow);
-  test.run('the node restarted under it: once the stream is back, the search asks once more by itself, nothing typed', 0.8, async function () {
+  test.run('when the node restarts under the search and the stream is back, the search asks once more by itself, nothing typed', 0.8, async function () {
     if (made !== 'made') return false;
     await node.restart();
     if (!node.up) return false;
     const again = await until(function () { return chrome.evaluate('window.__r.asked > ' + asked0); }, 15000);
     return !!again || false;
   }, test.limit.slow);
-  test.run('and its new answer is merged: the row it held and the row it brought are both drawn', 0.8, async function () {
+  test.run('the new answer is merged, so the row the search held and the row it brought are both drawn', 0.8, async function () {
     if (made !== 'made') return false;
     const text = String(await chrome.evaluate('document.body.innerText'));
     return (text.indexOf('answer 1') !== -1 && text.indexOf('answer 2') !== -1) || false;

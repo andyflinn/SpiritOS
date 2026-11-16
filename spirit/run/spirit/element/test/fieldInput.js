@@ -33,7 +33,7 @@ function input(value) {
   return el;
 }
 
-test.run('the world: it runs on a window of its own', 0.2, function () {
+test.run('fieldInput runs on a window of its own', 0.2, function () {
   const win = { TextEncoder: TextEncoder, Array: Array, JSON: JSON, String: String, Infinity: Infinity,
     document: { createElement: function () { made += 1; return {}; } } };
   win.window = win;

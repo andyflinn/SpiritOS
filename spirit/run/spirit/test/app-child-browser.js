@@ -87,7 +87,7 @@ async function world() {
     if (W.chrome.error) { W.fail = true; return; }
     process.env.SPIRIT_CHROME_PORT = String(W.chrome.port);
   }
-  test.run('the world: scripts under spirit/app/ to judge, a scratch node with their apps\' servers on, and a Chrome page', 0.2, function () { return true; }, test.limit.quick);
+  test.run('there are scripts under spirit/app/ to judge, a scratch node with their apps\' servers on, and a Chrome page', 0.2, function () { return true; }, test.limit.quick);
   W.worldSaid = true;
   const closePage = function () { try { if (W.page && W.page.sock) W.page.sock.close(); } catch (e) { /* gone */ } try { if (W.page && W.page.kid) W.page.kid.kill(); } catch (e) { /* gone */ } try { if (W.page && W.page.profile) fs.rmSync(W.page.profile, { recursive: true, force: true }); } catch (e) { /* scratch */ } W.page = null; };
   for (const rel of TARGETS) {
@@ -145,7 +145,7 @@ function judge(rel) {
 
 test.hold();
 world().then(null, function () { W.fail = true; }).then(function () {
-  if (!W.worldSaid) test.run('the world: scripts under spirit/app/ to judge, a scratch node with their apps\' servers on, and a Chrome page', 0.2, function () {
+  if (!W.worldSaid) test.run('there are scripts under spirit/app/ to judge, a scratch node with their apps\' servers on, and a Chrome page', 0.2, function () {
     return !W.fail || false;
   }, test.limit.quick);
   // A script the world never reached, after it failed, is said too, red for that reason.

@@ -26,22 +26,22 @@ const refusedAs = function (verb, args) { if (!W.verbs[verb]) return null; const
 const VERBS = ['busy', 'preferences', 'script.get', 'script.classify', 'suite.search', 'testicle.set', 'suite.success', 'testicle.search', 'red', 'run', 'subscribe', 'unsubscribe'];
 const SET = { script: 'spirit/seal.js', suite: 'spirit/test/seal.js', test: 'a title', verified: true, severity: 0.2 };
 
-test.run('the world: api.js loads', 0.2, function () {
+test.run('testicle\'s api.js loads', 0.2, function () {
   try { W.api = require(FILE); } catch (e) { return false; }
   W.verbs = W.api.verbs || {};
   W.names = Object.keys(W.verbs);
   return true;
 }, test.limit.quick);
-test.run('spirit.familyPath(\'testicle\') finds it here', 0.2, function () {
+test.run('spirit.familyPath of testicle finds api.js here', 0.2, function () {
   return path.join(RUN, spirit.familyPath('testicle')) === FILE || false;
 }, test.limit.quick);
 
 // ── its shape ──
-test.run('it exports a table of verbs and nothing else: it names no family of its own', 0.2, function () {
+test.run('api.js exports a table of verbs and nothing else: it names no family of its own', 0.2, function () {
   if (!W.api) return false;
   return (Object.keys(W.api).join() === 'verbs' && isPlain(W.verbs)) || false;
 }, test.limit.quick);
-test.run('every rule is one of spirit.js\'s standard, \'?\' optional', 0.2, function () {
+test.run('every rule is one of spirit.js\'s standard rules, a trailing question mark making it optional', 0.2, function () {
   if (!W.api) return false;
   if (!W.names.length) return false;
   let bad = 0;
@@ -55,7 +55,7 @@ test.run('every rule is one of spirit.js\'s standard, \'?\' optional', 0.2, func
   });
   return bad === 0 || false;
 }, test.limit.quick);
-test.run('its verbs are busy, preferences, script.get, script.classify, suite.search, testicle.set, suite.success, testicle.search, red, run, subscribe and unsubscribe', 0.2, function () {
+test.run('the verbs of api.js are busy, preferences, script.get, script.classify, suite.search, testicle.set, suite.success, testicle.search, red, run, subscribe and unsubscribe', 0.2, function () {
   if (!W.api) return false;
   return W.names.slice().sort().join() === VERBS.slice().sort().join() || false;
 }, test.limit.quick);
@@ -73,7 +73,7 @@ test.run('each verb is a handler of testicle.js, or of appServer\'s streamPublis
   });
   return unserved.length === 0 || false;
 }, test.limit.quick);
-test.run('and testicle.js serves no verb it does not list', 0.2, function () {
+test.run('testicle.js serves no verb that api.js does not list', 0.2, function () {
   if (!W.api) return false;
   const own = fs.readFileSync(path.join(RUN, 'spirit', 'app', 'testicle', 'testicle.js'), 'utf8');
   const served = []; const re = /\n {2}'?([a-zA-Z.]+)'?:\s*\{\s*\n\s*request:/g; let m;
@@ -97,7 +97,7 @@ test.run('red takes nothing', 0.2, function () {
   if (!W.api) return false;
   return (passes('red', {}) && refusedAs('red', { script: 'x' }) === 'no-such-argument') || false;
 }, test.limit.quick);
-test.run('script.get takes name, a text, required', 0.2, function () {
+test.run('script.get takes a name, which is a text and required', 0.2, function () {
   if (!W.api) return false;
   return (passes('script.get', { name: 'spirit/seal.js' }) && refusedAs('script.get', {}) === 'bad-request' && refusedAs('script.get', { name: 1 }) === 'bad-request') || false;
 }, test.limit.quick);
@@ -106,23 +106,23 @@ test.run('suite.search takes its words, required, and a script, optional', 0.2, 
   return (passes('suite.search', { text: '' }) && passes('suite.search', { script: 'spirit/seal.js', text: '' }) && refusedAs('suite.search', { script: 'spirit/seal.js' }) === 'bad-request') || false;
 }, test.limit.quick);
 // goal/G47.1, the test-table cycle: one test's result, by itself (no bundling).
-test.run('testicle.set takes one test\'s result: script, suite, test, verified a true or false, severity a number, all required', 0.2, function () {
+test.run('testicle.set takes one test\'s result, with script, suite, test, verified as true or false and severity as a number, all required', 0.2, function () {
   if (!W.api) return false;
   const without = Object.keys(SET).filter(function (k) { const a = Object.assign({}, SET); delete a[k]; return refusedAs('testicle.set', a) !== 'bad-request'; });
   return (passes('testicle.set', SET) && without.length === 0 && refusedAs('testicle.set', Object.assign({}, SET, { verified: 'yes' })) === 'bad-request'
     && refusedAs('testicle.set', Object.assign({}, SET, { severity: '0.2' })) === 'bad-request') || false;
 }, test.limit.quick);
-test.run('and testicle.set takes one test only: a list of results is refused', 0.2, function () {
+test.run('testicle.set takes one test only and refuses a list of results', 0.2, function () {
   if (!W.api) return false;
   return refusedAs('testicle.set', Object.assign({}, SET, { tests: [] })) === 'no-such-argument' || false;
 }, test.limit.quick);
-test.run('testicle.search takes its words, required; script, suite, test, result and from optional, from a number', 0.2, function () {
+test.run('testicle.search requires its words and takes script, suite, test, result and from as optional, from as a number', 0.2, function () {
   if (!W.api) return false;
   return (passes('testicle.search', { text: '' }) && passes('testicle.search', { script: 'a', suite: 'b', test: 'c', result: 'red', from: 10, text: '' })
     && refusedAs('testicle.search', { script: 'a' }) === 'bad-request' && refusedAs('testicle.search', { text: '', from: '10' }) === 'bad-request') || false;
 }, test.limit.quick);
 // goal/G47.1, box v129-131: {script, suite, success}, a suite's success or failure for one script.
-test.run('suite.success takes script, suite and success a true or false, all required', 0.2, function () {
+test.run('suite.success takes script, suite and success as true or false, all required', 0.2, function () {
   if (!W.api) return false;
   const ok = { script: 'spirit/seal.js', suite: 'spirit/test/seal.js', success: true };
   const without = Object.keys(ok).filter(function (k) { const a = Object.assign({}, ok); delete a[k]; return refusedAs('suite.success', a) !== 'bad-request'; });
@@ -134,7 +134,7 @@ test.run('run takes a script and a suite, required, and a test\'s title, optiona
   return (passes('run', { script: 'spirit/seal.js', suite: 'spirit/test/seal.js' }) && passes('run', { script: 'spirit/seal.js', suite: 'spirit/test/seal.js', testicle: 'a title' })
     && refusedAs('run', { script: 'spirit/seal.js' }) === 'bad-request') || false;
 }, test.limit.quick);
-test.run('subscribe takes the family, a non-empty id, and run and since optional; unsubscribe takes nothing', 0.2, function () {
+test.run('subscribe takes the family, a non-empty id, and optional run and since, and unsubscribe takes nothing', 0.2, function () {
   if (!W.api) return false;
   return (passes('subscribe', { family: 'testicle' }) && passes('subscribe', { family: 'testicle', run: 'r', since: 3 }) && refusedAs('subscribe', { family: '' }) === 'bad-request'
     && passes('unsubscribe', {}) && refusedAs('unsubscribe', { family: 'testicle' }) === 'no-such-argument') || false;

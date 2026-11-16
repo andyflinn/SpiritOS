@@ -57,7 +57,7 @@ function pageWorld() {
 // What the tests make, each in order, read by the tests after it.
 let w = null;
 
-test.run('in node, found by the family\'s name (spirit.cacheManager), it stands at spirit.data.auth.data', 0.2, async function () {
+test.run('in node, the auth data, found by the family\'s name through spirit.cacheManager, stands at spirit.data.auth.data', 0.2, async function () {
   require(path.join(RUN, 'spirit', 'spirit.js'));
   const S = globalThis.spirit;
   let threw = null;
@@ -65,7 +65,7 @@ test.run('in node, found by the family\'s name (spirit.cacheManager), it stands 
   const X = S.data && S.data['auth'] && S.data['auth'].data;
   return (!threw && !!X && typeof X === 'object') || false;
 }, test.limit.quick);
-test.run('the world: run beside spirit.data, it makes its family there', 0.2, function () {
+test.run('run beside spirit.data, the auth data makes its family there', 0.2, function () {
   try { w = world(); } catch (e) { w = null; return false; }
   return (!!w.X && typeof w.X === 'object') || false;
 }, test.limit.quick);
@@ -74,7 +74,7 @@ const K = 'MCowBQYDK2VwAyEA' + 'authDataTest'.padEnd(43, 'A') + '=';
 const row = function (table, r, gone) { return { id: 'spirit.auth', data: gone ? { table: table, row: r, gone: true } : { table: table, row: r } }; };
 
 // a row of each of the three tables, kept by its id
-test.run('a bundle row is kept by its id, its owner as the node said it', 0.2, function () {
+test.run('a bundle row is kept by its id, with its owner as the node said it', 0.2, function () {
   if (!w) return false;
   w.job(row('bundle', { id: '4', label: 'friends', owner: 'node', extra: 1 }));
   return same(w.X.bundles.row(4), { id: 4, label: 'friends', owner: 'node' }) || false;
@@ -86,7 +86,7 @@ test.run('a bundle row that names no owner keeps none', 0.2, function () {
   const r = w.X.bundles.row(5);
   return (!!r && !('owner' in r) && r.label === 'work') || false;
 }, test.limit.quick);
-test.run('a branch row is kept by its id: its bundle, family and verb', 0.2, function () {
+test.run('a branch row is kept by its id, with its bundle, family and verb', 0.2, function () {
   if (!w) return false;
   w.job(row('branch', { id: '7', bundle: '4', family: 'fs', verb: 'load', extra: 1 }));
   return same(w.X.branches.row(7), { id: 7, bundle: 4, family: 'fs', verb: 'load' }) || false;
@@ -97,7 +97,7 @@ test.run('a grant row is kept whole, by its key and its path', 0.2, function () 
   w.job(row('grant', g));
   return (w.X.grantKey(K, 'spirit/fs') === K + '\n' + 'spirit/fs' && same(w.X.grants.row(w.X.grantKey(K, 'spirit/fs')), g)) || false;
 }, test.limit.quick);
-test.run('rows() answers every row of its table kept', 0.2, function () {
+test.run('rows answers every kept row of its table', 0.2, function () {
   if (!w) return false;
   return (same(Object.keys(w.X.bundles.rows()).sort(), ['4', '5']) && same(Object.keys(w.X.branches.rows()), ['7']) && Object.keys(w.X.grants.rows()).length === 1) || false;
 }, test.limit.quick);
@@ -108,11 +108,11 @@ test.run('a row with no id, or a job of another id, keeps nothing', 0.2, functio
   w.job(row('grant', { key: K }));
   return (Object.keys(w.X.bundles.rows()).length === 2 && w.X.bundles.row(99) === null && Object.keys(w.X.grants.rows()).length === 1) || false;
 }, test.limit.quick);
-test.run('row() of no id answers null', 0.2, function () {
+test.run('row of no id answers null', 0.2, function () {
   if (!w) return false;
   return (w.X.bundles.row('') === null && w.X.branches.row(null) === null && w.X.grants.row(undefined) === null && w.X.bundles.row(42) === null) || false;
 }, test.limit.quick);
-test.run('watch(fn) hears each change by the row\'s id, and nothing once released', 0.2, function () {
+test.run('a function handed to watch hears each change by the row\'s id, and nothing once released', 0.2, function () {
   if (!w) return false;
   const heard = [];
   const off = w.X.bundles.watch(function (id, r) { heard.push([id, r && r.label]); });

@@ -158,13 +158,13 @@ const markIn = function (out, title) {
 const passed = function (title) { return !!W.probe && markIn(W.probe.out, title) === '✅'; };
 const failed = function (title) { return !!W.probe && markIn(W.probe.out, title) === '❌'; };
 
-test.run('the world: a fake node and a scratch tree with planted suites stand up', 0.2, async function () {
+test.run('a fake node and a scratch tree with planted suites stand up', 0.2, async function () {
   W.node = await fakeNode();
   W.tree = scratchTree(W.node.port);
   return fs.existsSync(path.join(W.tree.run, 'probe', 'test', 'probe.js')) && W.node.port > 0 || false;
 }, test.limit.slow);
 
-test.run('the world: the probe suite runs to its end', 0.2, async function () {
+test.run('the probe suite runs to its end', 0.2, async function () {
   W.probe = await runSuite(W.tree.run, 'probe/test/probe.js');
   return /Test completed\./.test(W.probe.out) || false;
 }, test.limit.slow);
@@ -226,7 +226,7 @@ test.run('a crash and a hang are reported at 0.7', 0.2, function () {
 }, test.limit.quick);
 
 // ── A GENERAL TEST ──
-test.run('the world: a general test runs with the file it judges', 0.2, async function () {
+test.run('a general test runs with the file it judges', 0.2, async function () {
   W.general = await runSuite(W.tree.run, 'spirit/test/spirit-sibling-zzProbeRules.js', ['probe/probe.js']);
   return /Test completed\./.test(W.general.out) || false;
 }, test.limit.slow);
@@ -243,7 +243,7 @@ test.run('a suite reports its success or failure for its script once, through te
   const got = successOf('probe/test/probe.js');
   return (got.length === 1 && got[0].script === 'probe/probe.js' && got[0].success === false) || false;
 }, test.limit.quick);
-test.run('the world: a general test judging two scripts runs, handed both', 0.2, async function () {
+test.run('a general test judging two scripts runs, handed both', 0.2, async function () {
   W.two = await runSuite(W.tree.run, 'spirit/test/spirit-sibling-zzProbeTwo.js', ['probe/probe.js', 'probe/twice.js']);
   return /Test completed\./.test(W.two.out) || false;
 }, test.limit.slow);
@@ -252,7 +252,7 @@ test.run('a general test reports success once per script: the one that held true
   const a = got.filter(function (x) { return x.script === 'probe/probe.js'; }), b = got.filter(function (x) { return x.script === 'probe/twice.js'; });
   return (a.length === 1 && a[0].success === true && b.length === 1 && b[0].success === false) || false;
 }, test.limit.quick);
-test.run('at the time it knows: the first script\'s success comes before any result of the second script', 0.4, function () {
+test.run('a general test reports the first script\'s success at the time it knows, before any result of the second script', 0.4, function () {
   const o = ((W.node && W.node.order) || []).filter(function (x) { return x.args && x.args.suite === 'spirit/test/spirit-sibling-zzProbeTwo.js'; });
   const first = o.findIndex(function (x) { return x.verb === 'success' && x.args.script === 'probe/probe.js'; });
   const second = o.findIndex(function (x) { return x.verb === 'set' && x.args.script === 'probe/twice.js'; });
@@ -260,7 +260,7 @@ test.run('at the time it knows: the first script\'s success comes before any res
 }, test.limit.quick);
 
 // ── ONE TEST ALONE ──
-test.run('the world: the probe suite runs with one test named', 0.2, async function () {
+test.run('the probe suite runs with one test named', 0.2, async function () {
   const before = W.node.sets.length;
   W.alone = await runSuite(W.tree.run, 'probe/test/probe.js', ['--test', 'it fails with false']);
   W.alone.sets = W.node.sets.slice(before);
@@ -272,7 +272,7 @@ test.run('one test named runs the sequence up to it, and no test after it', 0.2,
 }, test.limit.slow);
 
 // ── A TITLE TWICE, A SEVERITY OUT OF RANGE ──
-test.run('the world: a suite saying a title twice runs', 0.2, async function () {
+test.run('a suite that says a title twice runs', 0.2, async function () {
   W.twice = await runSuite(W.tree.run, 'probe/test/twice.js');
   return /Test completed\./.test(W.twice.out) || false;
 }, test.limit.slow);
@@ -285,7 +285,7 @@ test.run('a severity outside 0.0 to 1.0 fails its test', 0.2, function () {
 }, test.limit.quick);
 
 // ── NO NODE ──
-test.run('the world: a checkout with no node runs the probe suite', 0.2, async function () {
+test.run('a checkout with no node runs the probe suite', 0.2, async function () {
   W.quietTree = scratchTree(0);
   W.quiet = await runSuite(W.quietTree.run, 'probe/test/probe.js');
   return true;

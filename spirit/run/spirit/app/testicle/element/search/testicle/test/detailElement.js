@@ -92,7 +92,7 @@ test.after(async function () {
 test.run('spirit/app/testicle/element/search/testicle/detailElement.js is there', 0.2, function () {
   return fs.existsSync(MODULE) || false;
 }, test.limit.quick);
-test.run('the world: a scratch node comes up, testicle on', 0.2, async function () {
+test.run('a scratch node comes up with testicle on', 0.2, async function () {
   s = scratch();
   N = await boot(s.run); live.push(N.child);
   if (!N.up) return false;
@@ -100,7 +100,7 @@ test.run('the world: a scratch node comes up, testicle on', 0.2, async function 
   N.up = !!(await until(function () { return call(N.base, 'testicle.busy').then(function (r) { return r.status === 200; }); }, 30000));
   return N.up || false;
 }, test.limit.long);
-test.run('the world: the test flips three times, passing, failing, passing, and another test of its suite is set', 0.2, async function () {
+test.run('the test flips three times, passing, failing and passing, and another test of its suite is set', 0.2, async function () {
   if (!N || !N.up) return false;
   const out = [];
   for (const v of [true, false, true]) { out.push(await call(N.base, 'testicle.testicle.set', { script: A, suite: AS, test: FLIPS, verified: v, severity: 0.3 })); await sleep(1100); }
@@ -109,7 +109,7 @@ test.run('the world: the test flips three times, passing, failing, passing, and 
   out.slice(0, 3).forEach(function (r) { if (r.body && r.body.key) keys.push(r.body.key); });
   return (planted && keys.length === 3 && new Set(keys).size === 3) || false;
 }, test.limit.slow);
-test.run('the world: the face page has its spirit', 0.2, async function () {
+test.run('the face page has its spirit', 0.2, async function () {
   if (!N || !N.up) return false;
   const where = findChrome();
   if (!where) return false;
@@ -118,7 +118,7 @@ test.run('the world: the face page has its spirit', 0.2, async function () {
   await c.send('Page.navigate', { url: N.base + '/face.html' });
   return !!(await until(function () { return c.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000)) || false;
 }, test.limit.long);
-test.run('it loads alone through spirit.require and mounts with create(container, { script, suite, test }), answering destroy', 0.2, async function () {
+test.run('the detail loads alone through spirit.require and mounts with create, given a container, a script, a suite and a test, answering destroy', 0.2, async function () {
   if (!N || !N.up) return false;
   if (!c || c.error || !c.evaluate) return false;
   const loaded = await c.evaluate('window.spirit.ready.then(function () { return window.spirit.require("spirit/app/testicle/element/search/testicle/detailElement.js"); }).then(function () { return "loaded"; }, function () { return false; })');
@@ -128,19 +128,19 @@ test.run('it loads alone through spirit.require and mounts with create(container
 }, test.limit.slow);
 
 // the box: "The title line is the test's title in full"
-test.run('its title line is the test\'s title in full', 0.2, async function () {
+test.run('the detail\'s title line is the test\'s title in full', 0.2, async function () {
   if (mounted()) return false;
   const v = await view('zzBox');
   return (!!v && v.title === FLIPS) || false;
 }, test.limit.quick);
-test.run('its columns: Flipped, then the test row\'s Result, Severity, Title, Script, Suite', 0.2, async function () {
+test.run('the detail\'s columns are Flipped, then the test row\'s Result, Severity, Title, Script and Suite', 0.2, async function () {
   if (mounted()) return false;
   const v = await view('zzBox');
   return (!!v && JSON.stringify(v.heads) === JSON.stringify(['Flipped', 'Result', 'Severity', 'Title', 'Script', 'Suite'])) || false;
 }, test.limit.quick);
 // the box: "given a valid test title ... it answers every row matching that script, suite and title, current or not, newest
 // first. A test's history in its detail comes from that, no new verb."
-test.run('below it every row of the test, current or not, the newest flip first', 0.2, async function () {
+test.run('below the title, every row of the test shows, current or not, the newest flip first', 0.2, async function () {
   if (mounted()) return false;
   const want = keys.slice().reverse();
   const ok = await until(function () { return view('zzBox').then(function (v) { return !!v && JSON.stringify(v.rows.map(function (r) { return r.key; })) === JSON.stringify(want); }); }, 10000);
@@ -151,7 +151,7 @@ test.run('no row of another test of the same suite shows', 0.2, async function (
   const v = await view('zzBox');
   return (!!v && v.rows.length > 0 && !v.rows.some(function (r) { return r.cells.indexOf(OTHER) !== -1; })) || false;
 }, test.limit.quick);
-test.run('each row is drawn by the test row: its result as an icon, its severity, title and file names', 0.2, async function () {
+test.run('each row is drawn by the test row, with its result as an icon, its severity, title and file names', 0.2, async function () {
   if (mounted()) return false;
   const v = await view('zzBox');
   const tail = (v && v.rows || []).map(function (r) { return r.cells.slice(1).join(' | '); });
@@ -176,17 +176,17 @@ test.run('a flip set on the node shows at the top with no press', 0.2, async fun
 // and runs it first, as a top-10 fix does; the detail shows its full script and suite path" (Andy: "the testicle detail
 // doesn't show the full script name"; "give me a run button on the testicle detail"). What the press does on the server is
 // testicle's own test's; here, that it asks testicle.run for this script and suite.
-test.run('it shows its full script path and its full suite path', 0.4, async function () {
+test.run('the detail shows its full script path and its full suite path', 0.4, async function () {
   if (mounted()) return false;
   const text = await c.evaluate('String((document.getElementById("zzBox") || {}).innerText || "")');
   return (text.indexOf(A) !== -1 && text.indexOf(AS) !== -1) || false;
 }, test.limit.quick);
-test.run('it has a 🏃 run button for its script and suite', 0.4, async function () {
+test.run('the detail has a 🏃 run button for its script and suite', 0.4, async function () {
   if (mounted()) return false;
   const n = await c.evaluate('Array.prototype.filter.call(document.getElementById("zzBox").querySelectorAll("button"), function (b) { return /🏃/.test(b.textContent || ""); }).length');
   return n === 1 || false;
 }, test.limit.quick);
-test.run('a press of its 🏃 asks testicle.run for its script and suite', 0.4, async function () {
+test.run('a press of the detail\'s 🏃 asks testicle.run for its script and suite', 0.4, async function () {
   if (mounted()) return false;
   await c.evaluate('(function () { window.zzAsked = []; var f = window.fetch; window.fetch = function (u, o) { try { window.zzAsked.push(String(o && o.body || "")); } catch (e) {} return f.apply(this, arguments); };' +
     ' var s = XMLHttpRequest.prototype.send; XMLHttpRequest.prototype.send = function (b) { try { window.zzAsked.push(String(b || "")); } catch (e) {} return s.apply(this, arguments); };' +
@@ -208,7 +208,7 @@ test.run('destroy leaves its container empty', 0.2, async function () {
   const after = await c.evaluate('(function () { window.zzBox.destroy(); var b = document.getElementById("zzBox"); return b ? b.innerHTML : null; }())');
   return after === '' || false;
 }, test.limit.quick);
-test.run('destroyed, a flip set on the node draws nothing in its container', 0.2, async function () {
+test.run('once the detail is destroyed, a flip set on the node draws nothing in its container', 0.2, async function () {
   if (mounted()) return false;
   const r = await call(N.base, 'testicle.testicle.set', { script: A, suite: AS, test: FLIPS, verified: true, severity: 0.3 });
   if (r.status !== 200) return false;

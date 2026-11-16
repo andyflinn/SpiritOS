@@ -42,7 +42,7 @@ function answer(re, from, body) { return { fromKey: from, envelope: { app: '', r
 
 // ── the command sent ──
 let A = null, A_GOT = null;
-test.run('the world: one command sent to a puppet, and its answer', 0.2, async function () {
+test.run('one command is sent to a puppet, and its answer comes back', 0.2, async function () {
   A = door();
   const p = A.door.send(PUPPET, 'fs.search', { q: 'x' });
   await settle();

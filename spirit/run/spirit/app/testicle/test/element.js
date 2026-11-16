@@ -40,7 +40,7 @@ const PLANT = {
   // goal/G47.1, the cycle "run a suite from the script tab": iota's own test really runs, waiting a moment, then two tests.
   'spirit/zzTesticle/iota.js': '\'use strict\';\n// iota\n',
   'spirit/zzTesticle/test/iota.js': '\'use strict\';\nconst path = require(\'path\');\nconst test = require(path.join(__dirname, \'..\', \'..\', \'test\', \'testReport.js\'));\n' + [
-    "test.run('the world: iota waits a moment', 0.2, function () { return new Promise(function (r) { setTimeout(function () { r(true); }, 3000); }); }, test.limit.quick);",
+    "test.run('iota waits a moment before it answers', 0.2, function () { return new Promise(function (r) { setTimeout(function () { r(true); }, 3000); }); }, test.limit.quick);",
     "test.run('iota answers when its suite is run', 0.2, function () { return true; }, test.limit.quick);",
   ].join('\n') + '\n',
 };
@@ -158,7 +158,7 @@ test.after(async function () {
 });
 
 // the box: "A face-only app is its manifest and its element.js, as contact and starter are"
-test.run('spirit/app/testicle/testicle.json is there, and JSON', 0.2, function () {
+test.run('spirit/app/testicle/testicle.json is there and is JSON', 0.2, function () {
   own = readJson(path.join(APP, 'testicle.json'));
   id = (own && own.identity) || {};
   return !!own || false;
@@ -171,13 +171,13 @@ test.run('it names an icon and a label', 0.2, function () {
 test.run('it is not intrinsic, for now', 0.2, function () {
   return id.intrinsic === false || false;
 }, test.limit.quick);
-test.run('it has a face: shell.mount true', 0.2, function () {
+test.run('it has a face, its shell.mount being true', 0.2, function () {
   return (!!own && !!own.shell && own.shell.mount === true) || false;
 }, test.limit.quick);
 // goal/G47.1, the server cycle: "The server mounts beside the face (testicle.json: node.mount true)", "The testicle
 // server will serve one first verb, \"busy\"", and the verbs cycle: testicle.script.get and testicle.suite.search, each
 // with its json description (Andy's rule 6). The server's own checks are ./testicle.js.
-test.run('a server beside the face: node.mount true', 0.2, function () {
+test.run('it has a server beside the face, its node.mount being true', 0.2, function () {
   return (!!own && !!own.node && own.node.mount === true) || false;
 }, test.limit.quick);
 test.run('its folder holds its manifest, its face, its server, its api.js and data.js, and a json description of each verb, busy, preferences, script.get, script.classify, suite.search, suite.success, testicle.set, testicle.search, red, run, subscribe and unsubscribe, its element/ folder and its test/ folder, nothing else', 0.2, function () {
@@ -206,7 +206,7 @@ test.run('its mount names element.js', 0.2, function () {
   return (!!own && !!own.mount && own.mount['element.js'] === true) || false;
 }, test.limit.quick);
 // The box: "spirit/app/test/ stays the app branch's test folder".
-test.run('spirit/app/test/ stays the app branch\'s test folder, no app', 0.2, function () {
+test.run('spirit/app/test/ stays the app branch\'s test folder and is no app', 0.2, function () {
   return (fs.existsSync(path.join(RUN, 'spirit', 'app', 'test')) && !fs.existsSync(path.join(RUN, 'spirit', 'app', 'test', 'test.json'))) || false;
 }, test.limit.quick);
 
@@ -233,13 +233,13 @@ test.run('it draws the file list with flat on', 0.2, function () {
   return (/\bflat\s*:\s*true\b/).test(src) || false;
 }, test.limit.quick);
 
-test.run('the world: a scratch node comes up', 0.2, async function () {
+test.run('a scratch node comes up for this suite', 0.2, async function () {
   s = scratch();
   N = await boot(s.run); live.push(N.child);
   return N.up || false;
 }, test.limit.long);
 // Chrome, opened on the node's face page: its failures are this test's.
-test.run('the world: the face page has its spirit', 0.2, async function () {
+test.run('the node\'s face page opens in Chrome and has its spirit', 0.2, async function () {
   if (!N || !N.up) return false;
   const where = findChrome();
   if (!where) return false;
@@ -269,7 +269,7 @@ test.run('once the face is mounted, each part stands at spirit.element.spirit.ap
 }, test.limit.slow);
 
 // the box: "a workBench with one 📁 icon"
-test.run('the world: the workBench\'s left strip is drawn', 0.2, async function () {
+test.run('the workBench\'s left strip is drawn', 0.2, async function () {
   if (!face()) return false;
   return !!(await waitFor('icons("left") && icons("left").length > 0')) || false;
 }, test.limit.slow);
@@ -308,7 +308,7 @@ test.run('its tab shows the testicle search, spirit/app/testicle/element/search/
 
 // goal/G47.1, the box: "With flat on: no folder rows, never the indented tree; with an empty field every file the app
 // accepts is listed, each with its path; typing narrows it."
-test.run('the world: with the field empty the list draws rows', 0.2, async function () {
+test.run('with the field empty the list draws rows', 0.2, async function () {
   if (!face()) return false;
   return !!(await waitFor('rows().length > 0', 15000)) || false;
 }, test.limit.slow);
@@ -331,7 +331,7 @@ test.run('with the field empty each row shows its path', 0.2, async function () 
 }, test.limit.quick);
 
 // the box: "its file viewer showing production *.js files only"
-test.run('the world: a planted production script is found by its word', 0.2, async function () {
+test.run('a planted production script is found by its word', 0.2, async function () {
   if (!face()) return false;
   await T('type("zzTesticle")');
   return !!(await waitFor('rows().indexOf("' + SHOWN[0] + '") !== -1', 15000)) || false;
@@ -359,12 +359,12 @@ test.run('every file it lists is a .js outside any test/ folder', 0.2, function 
 // the suite search for that file", "The UI must listen to changes on all tables it interacts with, and the server, of
 // course, publishes changes", "the suite search is spirit/app/testicle/element/search/suite.js and its folder".
 // the box: "A new tab is opened and activated in the center pane's tabContainer: the file detail"
-test.run('the world: shown.js is concerned by its own test and by general tests', 0.2, function () {
+test.run('shown.js is concerned by its own test and by general tests', 0.2, function () {
   if (!N || !N.up) return false;
   want1 = concerning(s.run, F1);
   return (want1.indexOf('spirit/zzTesticle/test/shown.js') !== -1 && want1.length > 1) || false;
 }, test.limit.quick);
-test.run('the world: a production file in the left pane is clicked', 0.2, async function () {
+test.run('a production file in the left pane is clicked', 0.2, async function () {
   if (!face()) return false;
   return !!(await T('click(' + JSON.stringify(F1) + ')')) || false;
 }, test.limit.quick);
@@ -389,7 +389,7 @@ test.run('the detail\'s title row is the full file name', 0.2, async function ()
   if (!face()) return false;
   return !!(await waitFor('shown() && shown().first === ' + JSON.stringify(F1), 10000)) || false;
 }, test.limit.slow);
-test.run('the world: below the title the suite search draws rows', 0.2, async function () {
+test.run('below the title the suite search draws rows', 0.2, async function () {
   if (!face()) return false;
   return !!(await waitFor('shown() && shown().rows.length >= ' + want1.length, 15000)) || false;
 }, test.limit.slow);
@@ -399,11 +399,11 @@ test.run('below the title it lists every suite that concerns the file', 0.2, asy
   const lacking = want1.filter(function (w) { return !named(d1.rows, w); });
   return !lacking.length || false;
 }, test.limit.quick);
-test.run('and no other: each suite once', 0.2, function () {
+test.run('it lists no other suite, and each suite only once', 0.2, function () {
   return d1.rows.length === want1.length || false;
 }, test.limit.quick);
 // shown.js was never changed: its rows exist only if the click's script.get made them. Asked by suite.search, which makes none.
-test.run('the click made the script\'s rows: script.get ran for it', 0.2, async function () {
+test.run('the click made the script\'s rows, so script.get ran for it', 0.2, async function () {
   if (!N || !N.up) return false;
   const rowsMade = await call(N.base, 'testicle.suite.search', { script: F1, text: '' });
   return (rowsMade.status === 200 && rowsMade.body && Array.isArray(rowsMade.body.items) && rowsMade.body.items.length === want1.length) || false;
@@ -459,16 +459,16 @@ test.run('a script with its own test shows no red name under its title line', 0.
 }, test.limit.slow);
 
 // the box: "The UI must listen to changes on all tables it interacts with"
-test.run('the world: eta.js\'s detail lists its suites', 0.2, async function () {
+test.run('eta.js\'s detail lists its suites', 0.2, async function () {
   if (!face()) return false;
   return (await T('click(' + JSON.stringify(F3) + ')') && !!(await waitFor('shown() && shown().first === ' + JSON.stringify(F3) + ' && shown().rows.length > 0', 15000))) || false;
 }, test.limit.slow);
-test.run('the world: before its own test is written, eta.js lists none', 0.2, async function () {
+test.run('before its own test is written, eta.js does not list it', 0.2, async function () {
   if (!face()) return false;
   etaBefore = await T('shown()');
   return (!!etaBefore && etaBefore.first === F3 && !named(etaBefore.rows, etaOwn)) || false;
 }, test.limit.quick);
-test.run('the world: before its own test is written, eta.js shows that test\'s name in red', 0.2, async function () {
+test.run('before its own test is written, eta.js shows that test\'s name in red', 0.2, async function () {
   if (!face()) return false;
   return !!(await waitFor('underTitle() && underTitle().text === ' + JSON.stringify(etaOwn) + ' && underTitle().red', 5000)) || false;
 }, test.limit.slow);
@@ -492,18 +492,18 @@ test.run('a suite removed from disc shows so in the open detail by itself: the d
   const live = function (r) { return (r.key === etaOwn || r.key === F3 + '|' + etaOwn || String(r.text).indexOf(etaOwn) !== -1) && !/deleted/i.test(String(r.text)); };
   return !!(await until(function () { return T('shown()').then(function (d) { return !!d && d.first === F3 && d.rows.length > 0 && !d.rows.some(live); }); }, 10000)) || false;
 }, test.limit.slow);
-test.run('the world: eta\'s own test is written again', 0.2, async function () {
+test.run('eta\'s own test, written again, is listed again', 0.2, async function () {
   if (!face()) return false;
   fs.writeFileSync(path.join(s.run, etaOwn), '\'use strict\';\n// the test of eta, again\n');
   return !!(await until(function () { return T('shown()').then(function (d) { return !!d && d.rows.some(function (r) { return r.key === etaOwn || r.key === F3 + '|' + etaOwn || String(r.text).indexOf(etaOwn) !== -1; }); }); }, 10000)) || false;
 }, test.limit.slow);
 
 // the box: "The tab opens first ... or the error script.get gives"
-test.run('the world: gone.js is listed in the left pane', 0.2, async function () {
+test.run('gone.js is listed in the left pane', 0.2, async function () {
   if (!face()) return false;
   return ((await T('rows()')) || []).indexOf(F4) !== -1 || false;
 }, test.limit.quick);
-test.run('the world: gone.js, removed, is still there to click', 0.2, async function () {
+test.run('gone.js, once removed, is still there to click', 0.2, async function () {
   if (!face()) return false;
   fs.rmSync(path.join(s.run, F4));
   clicked = await T('click(' + JSON.stringify(F4) + ')');
@@ -517,7 +517,7 @@ test.run('below the title line it shows the error script.get gives: no such file
   if (!face()) return false;
   return !!(await waitFor('shown() && shown().first === ' + JSON.stringify(F4) + ' && /no such file/.test(shown().text)', 10000)) || false;
 }, test.limit.slow);
-test.run('and no suite search', 0.2, async function () {
+test.run('the removed script\'s tab shows no suite search', 0.2, async function () {
   if (!face()) return false;
   goneShown = await T('shown()');
   return (!!goneShown && goneShown.first === F4 && goneShown.rows.length === 0) || false;
@@ -542,7 +542,7 @@ const pageTests = function () {
 };
 const etaRows = function (all) { return (all || []).filter(function (e) { return e.row && e.row.script === F3 && e.row.suite === etaOwn && e.row.test === ETA_TEST; }); };
 let flipSet = null, kept = null;
-test.run('the world: a test of eta.js is set passing, then failing: a flip', 0.2, async function () {
+test.run('a test of eta.js is set passing, then failing, which is a flip', 0.2, async function () {
   if (!face()) return false;
   const one = await call(N.base, 'testicle.testicle.set', { script: F3, suite: etaOwn, test: ETA_TEST, verified: true, severity: 0.2 });
   await sleep(20);
@@ -574,7 +574,7 @@ test.run('the flipped test keeps both its rows, the replaced one and the current
 // goal/G47.1, the cycle "the testicle search", the box: "The testicle detail is a history of flips, and opens in a closable
 // tab when a test row is clicked". eta's test was set passing, then failing: its history is two rows, the failing one newest.
 let histKeys = [];
-test.run('the world: the testicle search\'s tab is shown again, and lists eta\'s test', 0.2, async function () {
+test.run('the testicle search\'s tab is shown again, and it lists eta\'s test', 0.2, async function () {
   if (!face()) return false;
   const first = ((await T('tabs()')) || [])[0] || {};
   if (!first.name || !(await T('selectTab(' + JSON.stringify(first.name) + ')'))) return false;
@@ -610,7 +610,7 @@ const iotaOwn = 'spirit/zzTesticle/test/iota.js';
 // 🛌 idle (sleeping), 🚶‍➡️ working, as the server streams it ... then the last change: a row added, deleted or updated in
 // any of its three tables", "The row has a constant height, and the message is ellipsed, never wrapped", "busy is streamed by
 // the server ... the page never asks testicle.busy". Its icons are recorded from here, so iota's run below is seen.
-test.run('above the workbench, a monitor row, its first a busy icon, 🛌 or 🚶‍➡️', 0.2, async function () {
+test.run('a monitor row stands above the workbench, a busy icon in it, 🛌 or 🚶‍➡️', 0.2, async function () {
   if (!face()) return false;
   const ok = await waitFor('monitor() && monitor().benchTop !== null && monitor().bottom <= monitor().benchTop + 0.5', 10000);
   return !!ok || false;
@@ -627,7 +627,7 @@ test.run('the face never asks testicle.busy: the icon is what the server streams
   const asks = files.filter(function (f) { return /testicle\s*(\.\s*busy\b|\[\s*['"]busy['"]\s*\])/.test(code(path.join(RUN, f))); });
   return !asks.length || false;
 }, test.limit.quick);
-test.run('the world: the monitor\'s icons are recorded from here', 0.2, async function () {
+test.run('the monitor\'s icons are recorded from here on', 0.2, async function () {
   if (!face()) return false;
   return (await T('recordIcons()')) === true || false;
 }, test.limit.quick);
@@ -635,7 +635,7 @@ test.run('the world: the monitor\'s icons are recorded from here', 0.2, async fu
 // THE FIRST START CLASSIFIES THE TREE (goal/G47.1, box v95, 5 and box v94, 1: at start every script of the scratch tree gets
 // its row, and classifying comes before any run; Andy: "if the initial run takes long ... who gives a fuck!"): the press below
 // waits for that, so the world waits for testicle to go idle first.
-test.run('the world: testicle has brought its tables up to date and classified the tree, and is idle', 0.2, async function () {
+test.run('testicle has brought its tables up to date, classified the tree and is idle', 0.2, async function () {
   if (!face()) return false;
   const idle = await until(function () { return call(N.base, 'testicle.busy', {}).then(function (r) { return r.status === 200 && r.body === false; }); }, 280000);
   return !!idle || false;
@@ -643,7 +643,7 @@ test.run('the world: testicle has brought its tables up to date and classified t
 let iotaRows = [], iotaKey = '', searchBefore = 0;
 // The rows the shown tab draws, by key.
 const searchRows = function () { return T('shown()').then(function (d) { return ((d && d.rows) || []).map(function (r) { return r.key; }); }); };
-test.run('the world: iota.js\'s tab is opened, its suites listed', 0.2, async function () {
+test.run('iota.js\'s tab is opened and lists its suites', 0.2, async function () {
   if (!face()) return false;
   const had = await call(N.base, 'testicle.testicle.search', { script: F5, text: '' });
   // iota's own suite's tests alone: its classifier row (spirit/test/scriptClassify.js, classifyable) is there from the start
@@ -680,7 +680,7 @@ test.run('before any test of the suite reports, the suite running alone shows �
   const ok = await waitFor('monitor() && monitor().icon === "🚶‍➡️"', 2000);
   return !!ok || false;
 }, test.limit.slow);
-test.run('the suite runs: the permanent testicle search tab shows iota\'s tests by itself', 0.2, async function () {
+test.run('while the suite runs, the permanent testicle search tab shows iota\'s tests by itself', 0.2, async function () {
   if (!face()) return false;
   const first = ((await T('tabs()')) || [])[0] || {};
   if (!first.name || !(await T('selectTab(' + JSON.stringify(first.name) + ')'))) return false;
@@ -707,7 +707,7 @@ test.run('once the server is back to listening, the monitor shows 🛌', 0.2, as
 const LASTFILE = 'spirit/zzTesticle/zzMonitorLast.js';
 const LONGFILE = 'spirit/zzTesticle/zzMonitor' + 'Long'.repeat(60) + '.js';
 let monitorBefore = null, monitorLong = null;
-test.run('after the icon, the message is the last change: a new script\'s row', 0.2, async function () {
+test.run('after the icon, the message shows the last change, a new script\'s row', 0.2, async function () {
   if (!face()) return false;
   fs.writeFileSync(path.join(s.run, LASTFILE), '\'use strict\';\n// a new script, for the monitor\n');
   const ok = await waitFor('monitor() && monitor().message.indexOf("zzMonitorLast.js") !== -1', 15000);
@@ -751,7 +751,7 @@ const TOGGLE = '(function () { var l = window.__t.left(); if (!l) return { none:
 const PRESS = '(function () { var l = window.__t.left(); var b = l ? Array.prototype.slice.call(l.querySelectorAll("button")).filter(function (x) { return /🟢|🔴/.test(String(x.innerText || x.textContent || "")); })[0] : null; if (!b) return false; b.click(); return true; }())';
 const prefsNow = async function () { const r = await call(N.base, 'testicle.preferences', {}); const b = r && r.body; return (b && typeof b.preferences === 'object' && b.preferences) || b || {}; };
 let gear = false;
-test.run('the world: ⚙ on the left strip is pressed', 0.2, async function () {
+test.run('⚙ on the left strip is pressed', 0.2, async function () {
   if (!face()) return false;
   gear = !!(await c.evaluate(GEAR));
   return gear || false;
@@ -784,12 +784,12 @@ test.run('one press of the toggle sends it at once: the node\'s preference inter
   const ok = await until(function () { return prefsNow().then(function (p) { return p.interactive === false; }); }, 5000);
   return !!ok || false;
 }, test.limit.slow);
-test.run('the stream sets the switch: the toggle off, 🔴', 0.2, async function () {
+test.run('the stream sets the switch, the toggle drawn off, 🔴', 0.2, async function () {
   if (!pressed) return false;
   const ok = await until(function () { return c.evaluate(TOGGLE).then(function (t) { return !!t && t.state === '🔴'; }); }, 10000);
   return !!ok || false;
 }, test.limit.slow);
-test.run('and the monitor row\'s first icon follows: 🤖 auto', 0.2, async function () {
+test.run('the monitor row\'s first icon follows the switch to 🤖 auto', 0.2, async function () {
   if (!pressed) return false;
   return !!(await waitFor('monitor() && monitor().mode === "🤖"', 10000)) || false;
 }, test.limit.slow);
@@ -805,7 +805,7 @@ test.run('a set by the verb elsewhere is followed: interactive true shows the to
 // "running <suite>" while it tests: "cw, do that", "wsl, test that this is how it's done.") ──
 const ZM = 'spirit/zzTesticle/zzMonitorRun.js', ZMS = 'spirit/zzTesticle/test/zzMonitorRun.js';
 let msgsAt = false;
-test.run('the world: the monitor row\'s messages recorded, and the classifier changed, so every script is classified again', 0.2, async function () {
+test.run('the monitor row\'s messages are recorded, and the classifier is changed so every script is classified again', 0.2, async function () {
   if (!face()) return false;
   msgsAt = (await T('recordMessages()')) === true;
   fs.appendFileSync(path.join(s.run, 'spirit', 'test', 'scriptClassify.js'), '// the classifier, changed, for the status bar\n');
@@ -822,7 +822,7 @@ test.run('while it classifies, the status bar says "classifying N of M", N count
 test.run('while it runs a suite, the status bar says "running <suite> for <script>"', 0.2, async function () {
   if (!msgsAt) return false;
   fs.mkdirSync(path.join(s.run, 'spirit', 'zzTesticle', 'test'), { recursive: true });
-  fs.writeFileSync(path.join(s.run, ZMS), "'use strict';\nconst path = require('path');\nconst test = require(path.join(__dirname, '..', '..', 'test', 'testReport.js'));\ntest.run('the world: zzMonitorRun waits', 0.2, function () { return new Promise(function (r) { setTimeout(function () { r(true); }, 3000); }); }, test.limit.quick);\n");
+  fs.writeFileSync(path.join(s.run, ZMS), "'use strict';\nconst path = require('path');\nconst test = require(path.join(__dirname, '..', '..', 'test', 'testReport.js'));\ntest.run('zzMonitorRun waits a moment', 0.2, function () { return new Promise(function (r) { setTimeout(function () { r(true); }, 3000); }); }, test.limit.quick);\n");
   fs.writeFileSync(path.join(s.run, ZM), "'use strict';\n// zzMonitorRun\n");
   await until(function () { return call(N.base, 'testicle.suite.search', { script: ZM, text: '' }).then(function (r) { return !!(r.body && (r.body.items || []).length); }); }, 240000);
   await call(N.base, 'testicle.run', { script: ZM, suite: ZMS });

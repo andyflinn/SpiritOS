@@ -27,15 +27,15 @@ const interactive = function (r) { const p = r && (r.preferences || r); return p
 test.run('spirit/app/testicle/element/settingsPanel.js exists', 0.2, function () {
   return fs.existsSync(path.join(RUN, REL)) || false;
 }, test.limit.quick);
-test.run('the world: Chrome is on this machine', 0.2, function () {
+test.run('Chrome is on this machine', 0.2, function () {
   W.chrome = H.findChrome();
   return !!W.chrome || false;
 }, test.limit.quick);
-test.run('the world: a scratch node comes up with its DEBUG on and testicle on', 0.2, async function () {
+test.run('a scratch node comes up with its DEBUG on and testicle on', 0.2, async function () {
   W.node = await H.scratchNode({ servers: ['testicle'] });
   return (W.node.up && W.node.debug) || false;
 }, test.limit.slow);
-test.run('the world: a page loads the element by itself, and the panel is mounted', 0.2, async function () {
+test.run('a page loads the element by itself, and the panel is mounted', 0.2, async function () {
   if (!W.chrome || !W.node || !W.node.up) return false;
   W.page = await H.chromePage(W.chrome);
   if (W.page.error) return false;
@@ -56,12 +56,12 @@ test.run('its title is "⚙ Configuration"', 0.2, async function () {
   const t = await ev('window.zz.text()');
   return /^⚙ Configuration/.test(String(t)) || false;
 }, test.limit.quick);
-test.run('its switch shows the node\'s preference: interactive at the start', 0.4, async function () {
+test.run('its switch shows the node\'s preference, interactive at the start', 0.4, async function () {
   if (!W.ok) return false;
   const ok = await H.until(function () { return ev('window.zz.text()').then(function (t) { return /interactive/.test(String(t)); }); }, H.WAIT);
   return !!ok || false;
 }, test.limit.slow);
-test.run('a press sends the other mode: the node is auto, and the switch follows the stream', 0.4, async function () {
+test.run('a press sends the other mode, so the node is auto and the switch follows the stream', 0.4, async function () {
   if (!W.ok) return false;
   if (!(await ev('window.zz.press()'))) return false;
   const node = await H.until(function () { return ask('testicle.preferences', {}).then(function (r) { return interactive(r) === false; }); }, H.WAIT);
@@ -74,12 +74,12 @@ test.run('a second press sends interactive back', 0.4, async function () {
   const node = await H.until(function () { return ask('testicle.preferences', {}).then(function (r) { return interactive(r) === true; }); }, H.WAIT);
   return !!node || false;
 }, test.limit.slow);
-test.run('its box keeps what it holds inside: overflow not visible', 0.2, async function () {
+test.run('its box keeps what it holds inside, its overflow not visible', 0.2, async function () {
   if (!W.ok) return false;
   const o = await ev('getComputedStyle(document.querySelector("#zzP .testicle-config")).overflowY');
   return (o && o !== 'visible') || false;
 }, test.limit.quick);
-test.run('destroyed, its container is empty', 0.2, async function () {
+test.run('once the panel is destroyed, its container is empty', 0.2, async function () {
   if (!W.ok) return false;
   const r = await ev('(function () { window.m_zzP.destroy(); return document.getElementById("zzP").innerHTML; }())');
   return r === '' || false;

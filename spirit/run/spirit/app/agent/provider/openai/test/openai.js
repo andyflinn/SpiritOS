@@ -36,14 +36,14 @@ const X = { plugin: null, s: null, base: '', one: null, h: { headers: {} }, deni
 test.after(function () { if (X.s && X.s.server.listening) return new Promise(function (r) { X.s.server.close(r); }); });
 
 // ── its file ──
-test.run('it is a plugin: models(provider) -> the provider\'s model list', 0.2, function () {
+test.run('it is a plugin whose models, given a provider, answers the provider\'s model list', 0.2, function () {
   if (!fs.existsSync(FILE)) return false;
   try { X.plugin = require(FILE); } catch (e) { return false; }
   return X.plugin && typeof X.plugin.models === 'function' ? true : false;
 }, test.limit.quick);
 
 // ── it asks GET <url>/models, with the key as a bearer ──
-test.run('one GET of /v1/models for a provider at <host>/v1', 0.2, async function () {
+test.run('it makes one GET of /v1/models for a provider at <host>/v1', 0.2, async function () {
   if (!X.plugin || typeof X.plugin.models !== 'function') return false;
   const s = X.s = await standIn();
   X.base = 'http://127.0.0.1:' + s.port + '/v1';
@@ -58,7 +58,7 @@ test.run('the API key goes as Authorization: Bearer <key>', 0.2, function () {
   if (!X.s) return false;
   return X.h.headers.authorization === 'Bearer ' + KEY ? true : false;
 }, test.limit.quick);
-test.run('it answers each model as { modelName, label }, both the model\'s id, in the provider\'s order', 0.2, function () {
+test.run('it answers each model with a modelName and a label, both the model\'s id, in the provider\'s order', 0.2, function () {
   if (!X.s) return false;
   return X.one.got && JSON.stringify(X.one.got) === JSON.stringify([{ modelName: 'gpt-a', label: 'gpt-a' }, { modelName: 'gpt-b', label: 'gpt-b' }]) ? true : false;
 }, test.limit.quick);
@@ -86,7 +86,7 @@ test.run('a provider answering 401 is refused', 0.2, async function () {
   return X.denied.threw !== undefined ? true : false;
 }, test.limit.quick);
 // A refusal carrying the key would leak the secret to whoever reads the error.
-test.run('and the refusal does not carry the key, even when the provider echoes it', 0.8, function () {
+test.run('the refusal does not carry the key, even when the provider echoes it', 0.8, function () {
   if (!X.denied) return false;
   return X.denied.threw !== undefined && X.denied.threw.indexOf(KEY) === -1 ? true : false;
 }, test.limit.quick);
@@ -100,7 +100,7 @@ test.run('an answer with no data list is refused', 0.2, async function () {
   X.s.answer = function () { return { status: 200, body: { object: 'list' } }; };
   return (await list(X.plugin.models, { url: X.base, apiKey: KEY })).threw !== undefined ? true : false;
 }, test.limit.quick);
-test.run('an empty list is an answer, the empty list', 0.2, async function () {
+test.run('an empty list is an answer, and the answer is the empty list', 0.2, async function () {
   if (!X.s) return false;
   X.s.answer = function () { return { status: 200, body: { object: 'list', data: [] } }; };
   const empty = await list(X.plugin.models, { url: X.base, apiKey: KEY });

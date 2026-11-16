@@ -97,13 +97,13 @@ test.run('a key the file holds beyond the two figures does not pass through (max
 }, test.limit.quick);
 
 // ── asked, fileText ──
-test.run('asked: what the file says, not what the box allowed: a boot clamp is never written back', 0.2, function () {
+test.run('asked answers what the file says, not what the box allowed, so a boot clamp is never written back', 0.2, function () {
   const r = C.parse('{ "ramLimitMB": 4000, "discLimitMB": 64 }', BOX, { atBoot: true });
   const a = C.asked(r.config);
   const plain = C.asked({ ramLimitMB: 100, discLimitMB: 64 });
   return (a.ramLimitMB === 4000 && a.discLimitMB === 64 && plain.ramLimitMB === 100 && plain.discLimitMB === 64) || false;
 }, test.limit.quick);
-test.run('fileText: the two figures, two-space JSON, a trailing newline, and nothing else', 0.2, function () {
+test.run('fileText writes the two figures as two-space JSON with a trailing newline, and nothing else', 0.2, function () {
   const t = C.fileText({ ramLimitMB: 128, discLimitMB: 64, source: 'file', overflow: { ramAsked: 1 } });
   return t === '{\n  "ramLimitMB": 128,\n  "discLimitMB": 64\n}\n' || false;
 }, test.limit.quick);

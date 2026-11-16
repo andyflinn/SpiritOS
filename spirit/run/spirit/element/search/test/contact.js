@@ -30,7 +30,7 @@ function element(tag) {
 let code, lists, required, managers, made, box, drop, d, changes, pane, p, statuses;
 let hold = null;
 
-test.run('the world: the picker runs on a bare window', 0.2, async function () {
+test.run('the picker runs on a bare window', 0.2, async function () {
   if (!fs.existsSync(FILE)) return false;
   const SRC = fs.readFileSync(FILE, 'utf8');
   code = SRC.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
@@ -62,7 +62,7 @@ test.run('the world: the picker runs on a bare window', 0.2, async function () {
   return true;
 }, test.limit.quick);
 // goal/G40.8: the old shell's list search is forbidden on the face; goal/G43.32: no list of its own either.
-test.run('it makes no list of its own: no probabilitySearch, nothing of the old shell\'s list search', 0.2, function () {
+test.run('it makes no list of its own, neither a probabilitySearch nor anything of the old shell\'s list search', 0.2, function () {
   if (!code) return false;
   const own = /shellCreateListSearch|listSearch\.js/.test(code) || /\.element\.search\.create\(/.test(code);
   return !own ? true : false;
@@ -73,7 +73,7 @@ test.run('it places itself at spirit.element.spirit.element.search.contact, with
 }, test.limit.quick);
 
 // one list, drawn in its dropdown and in its pane (Andy: "all, any search-unit has ONE list shared by popup and list modes.")
-test.run('create(container, options) appends its root to its container and answers it', 0.2, async function () {
+test.run('create appends its root to the container it is given and answers that root', 0.2, async function () {
   if (!made || typeof made.create !== 'function') return false;
   box = element('div');
   drop = made.create(box, { placeholder: 'choose an ID…', all: 'every ID', table: 'loopback://api/agent/job', key: 'id', label: 'title', data: 'b/branch' });
@@ -85,15 +85,15 @@ test.run('on a bare page it requires the one contact list and the contact family
   if (!required) return false;
   return required.indexOf('spirit/element/search/contact/listElement.js') !== -1 && managers.indexOf('contact') !== -1 ? true : false;
 }, test.limit.quick);
-test.run('the dropdown is the list in its dropdown face, drawn into its root, its words handed on', 0.2, function () {
+test.run('the dropdown is the list in its dropdown face, drawn into its root with its words handed on', 0.2, function () {
   if (!box) return false;
   return !!d && d.host === drop && d.o.face === 'dropdown' && d.o.placeholder === 'choose an ID…' && d.o.all === 'every ID' ? true : false;
 }, test.limit.quick);
-test.run('an ID table (goal/G41.13) is handed on whole: table, key, label, data', 0.2, function () {
+test.run('an ID table is handed on whole, with its table, key, label and data', 0.2, function () {
   if (!box) return false;
   return !!d && d.o.table === 'loopback://api/agent/job' && d.o.key === 'id' && d.o.label === 'title' && d.o.data === 'b/branch' ? true : false;
 }, test.limit.quick);
-test.run('nothing chosen at first: value \'\', row null', 0.2, function () {
+test.run('at first nothing is chosen, so the value is empty and the row is null', 0.2, function () {
   if (!box) return false;
   return drop.value === '' && drop.row === null && /\bcontact-selector-face-dropdown\b/.test(drop.className) ? true : false;
 }, test.limit.quick);
@@ -104,14 +104,14 @@ test.run('a pick sets value to the key and row to the row, with one bubbling cha
   d.o.pick({ name: 'Night job' }, 'KJ');
   return drop.value === 'KJ' && drop.row && drop.row.name === 'Night job' && changes.length === 1 && changes[0].bubbles === true ? true : false;
 }, test.limit.quick);
-test.run('None picked clears them', 0.2, function () {
+test.run('picking None clears the value and the row', 0.2, function () {
   if (!d) return false;
   d.o.pick(null);
   return drop.value === '' && drop.row === null ? true : false;
 }, test.limit.quick);
 
 const hid = { name: 'offered' };
-test.run('the pane is the same list in its pane face, filling its box', 0.2, async function () {
+test.run('the pane is the same list in its pane face, and it fills its box', 0.2, async function () {
   if (!made || typeof made.create !== 'function') return false;
   statuses = [{ status: 'none' }, { status: 'waiting', glyph: '⌛' }];
   pane = made.create(element('div'), { face: 'pane', filters: [hid], statuses: statuses });
@@ -123,11 +123,11 @@ test.run('the caller\'s hidden filters and statuses are handed on (Chat\'s offer
   if (!p) return false;
   return p.o.filters[0] === hid && p.o.statuses === statuses ? true : false;
 }, test.limit.quick);
-test.run('a pane\'s press picks: it hands the list no details, so the list opens nothing itself', 0.2, function () {
+test.run('a press in a pane picks, because it hands the list no details and the list opens nothing itself', 0.2, function () {
   if (!p) return false;
   return p.o.details === null ? true : false;
 }, test.limit.quick);
-test.run('unless its caller opens something itself: options.details is handed on', 0.2, async function () {
+test.run('a caller that opens something itself has its details function handed on to the list', 0.2, async function () {
   if (!made || typeof made.create !== 'function') return false;
   const opened = [];
   made.create(element('div'), { face: 'pane', details: function (row) { opened.push(row); } });
@@ -136,7 +136,7 @@ test.run('unless its caller opens something itself: options.details is handed on
 }, test.limit.quick);
 
 // refresh and mark go to the list
-test.run('refresh() asks the list again; mark(key, status) is the list\'s mark', 0.2, function () {
+test.run('refresh asks the list again, and mark is the list\'s own mark', 0.2, function () {
   if (!p) return false;
   pane.refresh();
   pane.mark('K1', 'waiting');

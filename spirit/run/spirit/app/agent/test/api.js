@@ -25,11 +25,11 @@ const VERBS = ['provider', 'model', 'persona', 'job'];
 const X = { tracked: null, verbs: [] };
 
 // ── the world ──
-test.run('the world: before the move, the agent\'s api.js one folder down declares provider, model, persona and job', 0.2, function () {
+test.run('before the move, the agent\'s api.js one folder down declared provider, model, persona and job', 0.2, function () {
   const was = execSync('git show ' + BASE + ':spirit/run/spirit/app/agent/api/api.js', { cwd: REPO, encoding: 'utf8' });
   return VERBS.every(function (v) { return new RegExp('\\n\\s+' + v + ':').test(was); }) ? true : false;
 }, test.limit.quick);
-test.run('the world: the tracked files on disk are read', 0.2, function () {
+test.run('the tracked files on disk are read', 0.2, function () {
   X.tracked = execSync('git ls-files', { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(Boolean).filter(function (f) { return fs.existsSync(path.join(REPO, f)); });
   return X.tracked.length > 100 ? true : false;
 }, test.limit.quick);
@@ -55,7 +55,7 @@ test.run('no app keeps an ./api/ folder', 0.2, function () {
 }, test.limit.quick);
 
 // ── 3. one <verb>.json for each of the agent's verbs, as spirit/job/ has ──
-test.run('the world: spirit/job/get.json is the shape', 0.2, function () {
+test.run('spirit/job/get.json is there to serve as the shape', 0.2, function () {
   return fs.existsSync(path.join(RUN, 'spirit', 'job', 'get.json')) ? true : false;
 }, test.limit.quick);
 // One check per verb, each its own plain title (goal/G45.6).

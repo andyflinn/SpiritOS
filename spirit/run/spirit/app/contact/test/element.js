@@ -90,7 +90,7 @@ test.run('no code names shell/contacts', 0.2, function () {
   return !oldApp.length || false;
 }, test.limit.quick);
 const OWN = function () { return readJson(path.join(APP, 'contact.json')) || {}; };
-test.run('its icon is 🤩 (Andy: "icon for new contact app: 🤩")', 0.2, function () {
+test.run('its icon is 🤩', 0.2, function () {
   const id = OWN().identity || {};
   return id.icon === '🤩' || false;
 }, test.limit.quick);
@@ -98,7 +98,7 @@ test.run('its label is Contacts, as the old app\'s name', 0.2, function () {
   const id = OWN().identity || {};
   return id.label === 'Contacts' || false;
 }, test.limit.quick);
-test.run('it is intrinsic (the box: "Contacts is always on today, so it is always on in spirit/app too")', 0.2, function () {
+test.run('it is intrinsic, always on as Contacts was before', 0.2, function () {
   const id = OWN().identity || {};
   return id.intrinsic === true || false;
 }, test.limit.quick);
@@ -108,7 +108,7 @@ test.run('it mounts on the shell and has no server', 0.2, function () {
 }, test.limit.quick);
 
 
-test.run('the world: a scratch node comes up', 0.2, async function () {
+test.run('a scratch node comes up for this suite', 0.2, async function () {
   W.s = scratch();
   const N = await boot(W.s.run); W.live.push(N.child);
   W.N = N;
@@ -116,25 +116,25 @@ test.run('the world: a scratch node comes up', 0.2, async function () {
 }, test.limit.slow);
 
 // the box: "A contact row no longer carries unansweredInbound, inboundPerDay or outboundPerDay"
-test.run('the world: the node knows a contact', 0.2, async function () {
+test.run('the scratch node knows a contact', 0.2, async function () {
   if (!W.N || !W.N.up) return false;
   const found = await call(W.N.base, 'contact.search', { q: '' });
   W.items = (found.body && found.body.items) || [];
   W.relay = W.items.map(function (i) { return Object.assign({ key: i.key }, parsed(i.label) || {}); }).filter(function (r) { return r.name; })[0] || {};
   return W.items.length > 0 || false;
 }, test.limit.quick);
-test.run('no row of contact.search carries them', 0.2, function () {
+test.run('no row of contact.search carries unansweredInbound, inboundPerDay or outboundPerDay', 0.2, function () {
   if (!W.items) return false;
   return W.items.every(function (i) { const r = parsed(i.label) || {}; return COUNTERS.every(function (k) { return !(k in r); }); }) || false;
 }, test.limit.quick);
-test.run('nor does contact.get', 0.2, async function () {
+test.run('contact.get carries none of those counters either', 0.2, async function () {
   if (!W.N || !W.N.up) return false;
   const got = await call(W.N.base, 'contact.get', { key: (W.relay || {}).key });
   const person = (got.body && (got.body.person || got.body)) || {};
   return got.status === 200 && COUNTERS.every(function (k) { return !(k in person); }) ? true : false;
 }, test.limit.quick);
 
-test.run('the world: a Chrome page', 0.2, async function () {
+test.run('a Chrome page opens', 0.2, async function () {
   if (!W.N || !W.N.up) return false;
   const where = findChrome();
   if (!where) return false;
@@ -152,7 +152,7 @@ const shows = function (words) { return until(function () { return shown().then(
 const press = function (words) {
   return W.c.evaluate('(function () { var box = document.getElementById("zzBox"); var all = Array.prototype.slice.call(box.querySelectorAll("*")).filter(function (e) { return e.offsetParent !== null && String(e.innerText || "").trim().indexOf(' + JSON.stringify(words) + ') !== -1 && !Array.prototype.some.call(e.children, function (k) { return String(k.innerText || "").indexOf(' + JSON.stringify(words) + ') !== -1; }); }); if (!all.length) return false; all[0].click(); return true; }())');
 };
-test.run('the world: the face shell has its spirit', 0.2, async function () {
+test.run('the face shell has its spirit', 0.2, async function () {
   if (!W.c) return false;
   await W.c.send('Page.navigate', { url: W.N.base + '/face.html' });
   W.page = !!(await until(function () { return W.c.evaluate('!!(window.spirit && window.spirit.ready && window.spirit.event)'); }, 20000));
@@ -173,7 +173,7 @@ test.run('its tile opens the app, and the contact the node knows is listed', 0.2
   await press('Contacts');
   return await shows(relay.name || 'noderoutes') ? true : false;
 }, test.limit.quick);
-test.run('the box: "a contact\'s detail no longer shows them"', 0.2, async function () {
+test.run('a contact\'s detail no longer shows the inbound and outbound counters', 0.2, async function () {
   if (!W.page) return false;
   await press((W.relay || {}).name || 'noderoutes');
   await sleep(1500);
@@ -193,7 +193,7 @@ test.run('its detail shows no Activate and no Deactivate', 0.2, async function (
 }, test.limit.slow);
 
 // the box: "app.active does not switch it off"
-test.run('after app.active false, its tile is still there', 0.2, async function () {
+test.run('after app.active switches it off, its tile is still there', 0.2, async function () {
   if (!W.page) return false;
   await call(W.N.base, 'app.active', { key: 'contact', active: false });
   await selector('tiles');

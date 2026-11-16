@@ -48,7 +48,7 @@ test.run('with a rootDir it opens nodeStore there', 0.2, function () {
 
 // ── note and get ──
 const W = { s: null };
-test.run('the world: a store on a scratch home, a planted clock', 0.2, function () {
+test.run('a store opens on a scratch home with a planted clock', 0.2, function () {
   W.s = P.createSeenPeers({ store: freshStore(), now: tick });
   return !!W.s || false;
 }, test.limit.quick);
@@ -66,12 +66,12 @@ test.run('a miss is null, never an empty shape', 0.2, function () {
   if (!W.s) return false;
   return (W.s.get(BOB) === null && W.s.get('') === null) || false;
 }, test.limit.quick);
-test.run('keyed by peer: noted a thousand times, one row', 0.2, function () {
+test.run('rows are keyed by peer, so a peer noted a thousand times has one row', 0.2, function () {
   if (!W.s) return false;
   for (let i = 0; i < 50; i += 1) W.s.note(ALICE, { rank: P.ARRIVED });
   return W.s.size() === 1 || false;
 }, test.limit.quick);
-test.run('no route is kept: a row carries no route, via or road (goal/G47.1)', 0.2, function () {
+test.run('no route is kept, so a row carries no route, via or road', 0.2, function () {
   if (!W.s) return false;
   W.s.note(ALICE, { rank: P.ARRIVED, route: 'https://relay.example', via: 'x' });
   const r = W.s.get(ALICE) || {};
@@ -80,7 +80,7 @@ test.run('no route is kept: a row carries no route, via or road (goal/G47.1)', 0
 }, test.limit.quick);
 
 // ── greedy, rank first ──
-test.run('greedy: a label learned is not blanked by a later note that has none, and seen still moves', 0.2, function () {
+test.run('a label learned is not blanked by a later note that has none, and seen still moves', 0.2, function () {
   if (!W.s) return false;
   W.s.note(BOB, { label: 'Bob', rank: P.PROVED });
   const before = W.s.get(BOB).seen;
@@ -88,7 +88,7 @@ test.run('greedy: a label learned is not blanked by a later note that has none, 
   const r = W.s.get(BOB);
   return (r.label === 'Bob' && r.seen > before) || false;
 }, test.limit.quick);
-test.run('rank first: a worse-ranked label arriving later does not overwrite a better one (cycle R29)', 0.2, function () {
+test.run('a worse-ranked label arriving later does not overwrite a better one', 0.2, function () {
   if (!W.s) return false;
   W.s.note(ALICE, { label: 'Alice (said by a partner)', rank: P.HEARSAY });
   const r = W.s.get(ALICE);
@@ -107,12 +107,12 @@ test.run('a note that names no rank is HEARSAY: it loses to a proved label and w
   s.note(BOB, { label: 'unstated' });
   return (s.get(ALICE).label === 'proved' && s.get(BOB).label === 'unstated' && s.get(BOB).labelRank === P.HEARSAY) || false;
 }, test.limit.quick);
-test.run('the ranks, lower wins: HOST 1, PROVED 2, ARRIVED 3, HEARSAY 4', 0.2, function () {
+test.run('the ranks are HOST 1, PROVED 2, ARRIVED 3 and HEARSAY 4, and the lower wins', 0.2, function () {
   return (P.HOST === 1 && P.PROVED === 2 && P.ARRIVED === 3 && P.HEARSAY === 4) || false;
 }, test.limit.quick);
 
 // ── seen, presence, relay ──
-test.run('a caller holding the moment the word was said passes it as seen, and that is stamped (goal/G2.9)', 0.2, function () {
+test.run('a caller holding the moment the word was said passes it as seen, and that is stamped', 0.2, function () {
   const s = P.createSeenPeers({ store: freshStore(), now: tick });
   s.note(ALICE, { seen: 777 });
   return s.get(ALICE).seen === 777 || false;
@@ -141,7 +141,7 @@ test.run('set writes a row\'s flags, the row made when there is none, and answer
   const r = s.set(BOB, { keep: true, myLabel: 'my Bob' });
   return (!!r && r.keep === true && r.myLabel === 'my Bob' && s.get(BOB).keep === true) || false;
 }, test.limit.quick);
-test.run('listed is the kept and the owned rows only: a peer merely seen is not listed (goal/G40.11)', 0.2, function () {
+test.run('listed is the kept and the owned rows only, so a peer merely seen is not listed', 0.2, function () {
   const s = P.createSeenPeers({ store: freshStore(), now: tick });
   s.note(ALICE, { label: 'seen only' });
   s.set(BOB, { keep: true });
@@ -169,7 +169,7 @@ test.run('the default bound is twenty megabytes, Andy\'s anchor: "say 20 MBytes 
   const s = P.createSeenPeers({ store: freshStore() });
   return (P.MAX_BYTES === 20 * 1024 * 1024 && s.maxBytes === P.MAX_BYTES) || false;
 }, test.limit.quick);
-test.run('no age limit: a row a year old is not forgotten while there is room (0021)', 0.2, function () {
+test.run('there is no age limit, so a row a year old is not forgotten while there is room', 0.2, function () {
   let t = 0;
   const s = P.createSeenPeers({ store: freshStore(), now: function () { return t; } });
   t = 1;
@@ -181,7 +181,7 @@ test.run('no age limit: a row a year old is not forgotten while there is room (0
 
 // One store filled with rows: kept, ignored (the oldest of all) and plain. The bound is then set under what they take.
 const F = { store: null, bytes: 0, kept: [], ignored: [], plain: [] };
-test.run('the world: a store of 600 rows with long labels, 20 kept, 40 ignored as the oldest, the rest plain', 0.2, function () {
+test.run('a store holds 600 rows with long labels, 20 kept, 40 ignored as the oldest, and the rest plain', 0.2, function () {
   F.store = freshStore();
   let t = 0;
   const s = P.createSeenPeers({ store: F.store, now: function () { t += 1; return t; } });
@@ -209,7 +209,7 @@ test.run('a note sheds too: the bound holds after a write, not only when asked t
   s.note('MCowNEWONE', { label: 'n' });
   return F.store.seen.bytes() <= s.maxBytes || false;
 }, test.limit.quick);
-test.run('roomToAdd: full means the cap is spent on kept rows alone; a kept row needs no room, a new one is refused', 0.2, function () {
+test.run('roomToAdd counts the store full when the cap is spent on kept rows alone, and then a kept row needs no room while a new one is refused', 0.2, function () {
   if (!F.store) return false;
   const s = P.createSeenPeers({ store: F.store, maxBytes: 1 });
   const forNew = s.roomToAdd('MCowSTRANGER');
@@ -217,7 +217,7 @@ test.run('roomToAdd: full means the cap is spent on kept rows alone; a kept row 
   const keptLeft = F.kept.filter(function (k) { return s.get(k) !== null; }).length;
   return (forNew === false && forKept === true && keptLeft === 20 && s.size() === 20) || false;
 }, test.limit.quick);
-test.run('roomToAdd: with room under the bound, yes', 0.2, function () {
+test.run('roomToAdd answers yes when there is room under the bound', 0.2, function () {
   const s = P.createSeenPeers({ store: freshStore(), now: tick });
   s.note(ALICE, {});
   return s.roomToAdd(BOB) === true || false;

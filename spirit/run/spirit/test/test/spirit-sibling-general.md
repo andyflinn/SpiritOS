@@ -43,5 +43,5 @@ goal/G47.1. Andy: *"are the tests not ordered in the general test so that all te
 
 The rule is run on `spirit/app/backup/api.js` and `spirit/app/chat/api.js`, handed a node as testicle hands one (`SPIRIT_MOUNT_BASE`, `SPIRIT_MOUNT_RUN`): an address in front of a real scratch node that counts what reaches it.
 
-- Each script's node world comes up.
-- Each uses the node it is handed: calls naming backup and calls naming chat both reach it. Red on the rule before f558fe34 (nothing reached it), and on a mutant that hands only the first script the node (backup only).
+- The scratch node of each script's run comes up.
+- Each script uses the node it is handed, so calls naming backup and calls naming chat both reach it. Red on the rule before f558fe34 (nothing reached it), and on a mutant that hands only the first script the node (backup only).

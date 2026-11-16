@@ -71,7 +71,7 @@ const call = function (verb, args) { return spirit.check('auth.' + verb, W.verbs
 const passes = function (verb, args) { return !!W.verbs[verb] && call(verb, args) === null; };
 const refusedAs = function (verb, args) { if (!W.verbs[verb]) return null; const r = call(verb, args); return r ? r.code : null; };
 
-test.run('the world: api.js loads as the node hands it, its text run with module and exports alone', 0.2, function () {
+test.run('api.js loads as the node hands it, its text run with module and exports alone', 0.2, function () {
   try {
     const m = { exports: {} };
     new Function('module', 'exports', fs.readFileSync(FILE, 'utf8'))(m, m.exports);
@@ -81,17 +81,17 @@ test.run('the world: api.js loads as the node hands it, its text run with module
   W.names = Object.keys(W.verbs);
   return true;
 }, test.limit.quick);
-test.run('the world: server.js mounts the auth family', 0.2, function () {
+test.run('server.js mounts the auth family', 0.2, function () {
   try { W.mounted = mounted('auth'); } catch (e) { return false; }
   return !!W.mounted || false;
 }, test.limit.quick);
 
 // its shape: verbs, each argument with its rule, no family name of its own (goal/G32.3: the node maps it)
-test.run('it exports its table of verbs and nothing else: it names no family of its own', 0.2, function () {
+test.run('it exports its table of verbs and nothing else, so it names no family of its own', 0.2, function () {
   if (!W.api) return false;
   return Object.keys(W.api).join() === 'verbs' || false;
 }, test.limit.quick);
-test.run('every verb\'s arguments are a plain object, each rule one of spirit.js\'s standard rules, \'?\' optional', 0.2, function () {
+test.run('every verb\'s arguments are a plain object whose rules are each one of spirit.js\'s standard rules, a trailing question mark making it optional', 0.2, function () {
   if (!W.api) return false;
   if (!isPlain(W.verbs)) return false;
   if (!W.names.length) return false;
@@ -141,7 +141,7 @@ test.run('search\'s text is optional', 0.2, function () {
   return (passes('search', {}) && passes('search', { text: 'bob' })) || false;
 }, test.limit.quick);
 // goal/G41.14: one flat verb per table, op one of add, set, delete, get and search; the node checks the rest per op
-test.run('bundle and branch are one verb per table, its op needed, the rest left to the node per op', 0.2, function () {
+test.run('bundle and branch are one verb per table that needs its op and leaves the rest to the node per op', 0.2, function () {
   if (!W.api) return false;
   const ops = ['add', 'set', 'delete', 'get', 'search'];
   const ok = ops.every(function (op) { return passes('bundle', { op: op }) && passes('branch', { op: op }); });
@@ -153,7 +153,7 @@ test.run('a bundle and a branch are named by a number', 0.2, function () {
   return (passes('bundle', { op: 'get', id: 3 }) && refusedAs('bundle', { op: 'get', id: '3' }) === 'bad-request' && passes('branch', { op: 'add', bundle: 3, family: 'fs', verb: 'load' }) && refusedAs('branch', { op: 'add', bundle: '3' }) === 'bad-request') || false;
 }, test.limit.quick);
 // goal/G41.25: "changes to the auth.bundle verb for the addition of the \"owner\" field are approved by andy"
-test.run('bundle takes an owner, any text: one that is not valid the node reads as node', 0.2, function () {
+test.run('bundle takes an owner of any text, and the node reads one that is not valid as node', 0.2, function () {
   if (!W.api) return false;
   return (passes('bundle', { op: 'add', label: 'friends', owner: 'no such owner' }) && passes('bundle', { op: 'search', owner: '' }) && refusedAs('bundle', { op: 'add', owner: 7 }) === 'bad-request') || false;
 }, test.limit.quick);

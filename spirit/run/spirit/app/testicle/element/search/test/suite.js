@@ -99,7 +99,7 @@ test.after(async function () {
 test.run('spirit/app/testicle/element/search/suite.js is there', 0.2, function () {
   return fs.existsSync(MODULE) || false;
 }, test.limit.quick);
-test.run('the world: a scratch node comes up, testicle on', 0.2, async function () {
+test.run('a scratch node comes up with testicle on', 0.2, async function () {
   s = scratch();
   N = await boot(s.run); live.push(N.child);
   if (!N.up) return false;
@@ -107,7 +107,7 @@ test.run('the world: a scratch node comes up, testicle on', 0.2, async function 
   N.up = !!(await until(function () { return call(N.base, 'testicle.busy').then(function (r) { return r.status === 200; }); }, 30000));
   return N.up || false;
 }, test.limit.long);
-test.run('the world: tests of alpha and beta are set, each in its own suite', 0.2, async function () {
+test.run('tests of alpha and beta are set, each in its own suite', 0.2, async function () {
   if (!N || !N.up) return false;
   const out = [];
   for (const a of [{ script: A, suite: AS }, { script: B, suite: BS }]) {
@@ -116,7 +116,7 @@ test.run('the world: tests of alpha and beta are set, each in its own suite', 0.
   planted = out.every(function (r) { return r.status === 200; });
   return planted || false;
 }, test.limit.slow);
-test.run('the world: the face page has its spirit', 0.2, async function () {
+test.run('the face page has its spirit', 0.2, async function () {
   if (!N || !N.up) return false;
   const where = findChrome();
   if (!where) return false;
@@ -125,7 +125,7 @@ test.run('the world: the face page has its spirit', 0.2, async function () {
   await c.send('Page.navigate', { url: N.base + '/face.html' });
   return !!(await until(function () { return c.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000)) || false;
 }, test.limit.long);
-test.run('it loads alone through spirit.require and mounts with create(container, { script, pick }), answering destroy', 0.2, async function () {
+test.run('it loads alone through spirit.require and mounts with create, handed a container, a script and a pick, answering destroy', 0.2, async function () {
   if (!N || !N.up) return false;
   if (!c || c.error || !c.evaluate) return false;
   const loaded = await c.evaluate('window.spirit.ready.then(function () { return window.spirit.require("spirit/app/testicle/element/search/suite.js"); }).then(function () { return "loaded"; }, function () { return false; })');

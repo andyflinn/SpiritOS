@@ -29,7 +29,7 @@ const relay = { kind: 'relay', api: function () { return TREE; } };
 // What the world makes, for the tests after it.
 let N = null, L = null, Rl = null, put = [], ping = [];
 
-test.run('the world: make is asked for the planted node\'s family, spirit/app/thing/thing, and for the same as a relay', 0.2, async function () {
+test.run('make is asked for the planted node\'s family, spirit/app/thing/thing, and for the same as a relay', 0.2, async function () {
   N = await G.make({ module: 'spirit/app/thing/thing', ext: 'json', server: node });
   const R = await G.make({ module: 'spirit/app/thing/thing', ext: 'json', server: relay });
   try { L = JSON.parse(N.body); } catch (e) { L = null; }
@@ -41,7 +41,7 @@ test.run('the world: make is asked for the planted node\'s family, spirit/app/th
 }, test.limit.quick);
 
 // make: what it answers
-test.run('make answers JSON, typed application/json; charset=utf-8', 0.2, function () {
+test.run('make answers JSON, typed as application/json with charset utf-8', 0.2, function () {
   if (!N) return false;
   return (N.type === 'application/json; charset=utf-8' && Array.isArray(L)) || false;
 }, test.limit.quick);
@@ -54,14 +54,14 @@ test.run('make answers null for a server that says nothing about itself', 0.2, a
   const b = await G.make({ module: 'spirit/app/thing/thing', ext: 'json' });
   return (a === null && b === null) || false;
 }, test.limit.quick);
-test.run('the family is the module\'s name: a module of another name, with no verbs of its own in the tree, gets null', 0.2, async function () {
+test.run('the family is the module\'s name, so a module of another name, with no verbs of its own in the tree, gets null', 0.2, async function () {
   const got = await G.make({ module: 'spirit/app/thing/other', ext: 'json', server: node });
   const none = await G.make({ module: 'spirit/app/x/thing', ext: 'json', server: { kind: 'node', api: function () { return { thing: {} }; } } });
   return (got === null && none === null) || false;
 }, test.limit.quick);
 
 // the door as it is: on a node { call, args }, on a relay { body: { <verb>: args } }
-test.run('on a node each entry is { call: \'<family>.<verb>\', args }', 0.2, function () {
+test.run('on a node each entry is a call naming <family>.<verb>, with its args', 0.2, function () {
   if (!L) return false;
   const bad = L.filter(function (e) { return !/^thing\.(put|ping)$/.test(e.call) || !('args' in e); });
   return !bad.length || false;
@@ -71,7 +71,7 @@ test.run('on a node each verb also gets a call naming two verbs at once', 0.2, f
   const two = L.filter(function (e) { return e.also; }).map(function (e) { return e.call + '+' + e.also; }).sort();
   return JSON.stringify(two) === JSON.stringify(['thing.ping+thing.ping', 'thing.put+thing.put']) || false;
 }, test.limit.quick);
-test.run('on a relay each entry is its ask, { body: { <verb>: args } }, and none names two verbs', 0.2, function () {
+test.run('on a relay each entry is its ask, a body holding the verb and its args, and none names two verbs', 0.2, function () {
   if (!Array.isArray(Rl)) return false;
   const bad = Rl.filter(function (e) { return !e.body || Object.keys(e).length !== 1 || Object.keys(e.body).length !== 1 || ['put', 'ping'].indexOf(Object.keys(e.body)[0]) === -1; });
   return (Rl.length > 0 && !bad.length && Rl.length === L.length - 2) || false;
@@ -83,7 +83,7 @@ test.run('a verb that takes nothing is sent a string, a number, an array and an 
   const want = JSON.stringify(['garbage', 12345, [1, 2, 3], { noSuchArgumentFromDEBUG: 1 }]);
   return JSON.stringify(ping) === want || false;
 }, test.limit.quick);
-test.run('every argument is given every type JSON.parse makes, and missing, alone with the others as declared', 0.2, function () {
+test.run('every argument is given every type JSON.parse makes, and is left out, each alone with the others as declared', 0.2, function () {
   if (!L) return false;
   const keys = Object.keys(REQ);
   const miss = [];
@@ -100,7 +100,7 @@ test.run('every argument is given every type JSON.parse makes, and missing, alon
   });
   return !miss.length || false;
 }, test.limit.quick);
-test.run('pairs, not every combination: any two arguments meet in every pairing of their kinds, but both as declared', 0.2, function () {
+test.run('the entries are pairs, not every combination, so any two arguments meet in every pairing of their kinds but both as declared', 0.2, function () {
   if (!L) return false;
   const keys = Object.keys(REQ);
   const seen = new Set();
@@ -120,12 +120,12 @@ test.run('pairs are fewer than every combination', 0.2, function () {
   if (!L) return false;
   return put.length < Math.pow(KINDS.length, Object.keys(REQ).length) || false;
 }, test.limit.quick);
-test.run('every argument as declared and one the verb does not declare: the extraneous entry is there', 0.2, function () {
+test.run('there is an extraneous entry with every argument as declared and one the verb does not declare', 0.2, function () {
   if (!L) return false;
   const hit = put.some(function (a) { return a && Object.keys(a).length === 4 && a[EXTRA] === 1 && Object.keys(REQ).every(function (k) { return a[k] === REQ[k]; }); });
   return hit || false;
 }, test.limit.quick);
-test.run('deep nesting: an entry with every argument nested 64 deep', 0.2, function () {
+test.run('there is an entry with every argument nested 64 deep', 0.2, function () {
   if (!L) return false;
   const depth = function (v) { let n = 0; while (v && typeof v === 'object' && 'x' in v) { v = v.x; n++; } return n; };
   const hit = put.some(function (a) { return a && Object.keys(REQ).every(function (k) { return depth(a[k]) === 64; }); });
@@ -137,21 +137,21 @@ test.run('a string argument comes in the sizes 0, 1, 100 and 3/4 of the payload'
   const miss = sizes.filter(function (n) { return !put.some(function (a) { return a && a.name === 'x'.repeat(n); }); });
   return !miss.length || false;
 }, test.limit.quick);
-test.run('a string argument comes with every bad character: a NUL, a lone surrogate, control characters, a quote and a backslash, a path piece', 0.2, function () {
+test.run('a string argument comes with every bad character, namely a NUL, a lone surrogate, control characters, a quote, a backslash and a path piece', 0.2, function () {
   if (!L) return false;
   const miss = BADS.filter(function (re) { return !put.some(function (a) { return a && typeof a.name === 'string' && re.test(a.name); }); });
   return !miss.length || false;
 }, test.limit.quick);
 
 // goal/G41.30, Andy: "fill this gap, in this item": the bad strings pass the gate and reach the handler
-test.run('the bad strings and the long one go alone: every other argument as declared, nothing added', 0.2, function () {
+test.run('the bad strings and the long one go alone, with every other argument as declared and nothing added', 0.2, function () {
   if (!L) return false;
   const alone = function (a) { return !!a && typeof a === 'object' && !Array.isArray(a) && !(EXTRA in a) && Object.keys(a).length === 3 && a.count === REQ.count && a.on === REQ.on; };
   const bad = BADS.filter(function (re) { return !put.some(function (a) { return alone(a) && typeof a.name === 'string' && re.test(a.name); }); });
   const long = put.some(function (a) { return alone(a) && typeof a.name === 'string' && a.name.length > 1000; });
   return (!bad.length && long) || false;
 }, test.limit.quick);
-test.run('every other entry breaks the shape: an argument of a wrong kind, left out, or one the verb does not declare', 0.2, function () {
+test.run('every other entry breaks the shape with an argument of a wrong kind, an argument left out, or one the verb does not declare', 0.2, function () {
   if (!L) return false;
   const keys = Object.keys(REQ);
   const passes = put.filter(function (a) {

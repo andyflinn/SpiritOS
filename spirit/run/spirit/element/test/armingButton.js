@@ -89,13 +89,13 @@ test.run('a first press runs nothing', 0.2, async function () {
   await settle();
   return (ran.length === 0) ? true : false;
 }, test.limit.quick);
-test.run('it is armed: data-armed, and it says Revoke? Press again', 0.2, function () {
+test.run('it is armed, marked data-armed, and it says Revoke? Press again', 0.2, function () {
   return (isArmed(b) && b.textContent === 'Revoke? Press again') ? true : false;
 }, test.limit.quick);
-test.run('and listens for a click elsewhere on the document, itself', 0.2, function () {
+test.run('armed, it listens itself for a click elsewhere on the document', 0.2, function () {
   return (docClicks.length === 1) ? true : false;
 }, test.limit.quick);
-test.run('armed() says so', 0.2, function () {
+test.run('its armed function says it is armed', 0.2, function () {
   return (typeof b.armed === 'function' && b.armed() === true) ? true : false;
 }, test.limit.quick);
 test.run('the second press runs it once', 0.2, async function () {
@@ -104,7 +104,7 @@ test.run('the second press runs it once', 0.2, async function () {
   await settle();
   return (ran.length === 1) ? true : false;
 }, test.limit.quick);
-test.run('and it is back to its label', 0.2, function () {
+test.run('after running it is back to its label', 0.2, function () {
   return (!isArmed(b) && b.textContent === 'Revoke') ? true : false;
 }, test.limit.quick);
 test.run('disarmed, it no longer listens on the document', 0.2, function () {
@@ -115,12 +115,12 @@ test.run('the next press arms again from scratch, running nothing', 0.2, async f
   await settle();
   return (ran.length === 1 && isArmed(b)) ? true : false;
 }, test.limit.quick);
-test.run('a click anywhere else puts it back: no data-armed, its label, nothing run', 0.2, function () {
+test.run('a click anywhere else puts it back, with no data-armed, its label shown and nothing run', 0.2, function () {
   // a click elsewhere puts it back (its own document listener)
   elsewhere();
   return (!isArmed(b) && b.textContent === 'Revoke' && b.armed() === false && ran.length === 1) ? true : false;
 }, test.limit.quick);
-test.run('and it lets go of the document', 0.2, function () {
+test.run('put back by a click elsewhere, it lets go of the document', 0.2, function () {
   return (docClicks.length === 0) ? true : false;
 }, test.limit.quick);
 test.run('a disarm called twice is harmless', 0.2, function () {
@@ -133,7 +133,7 @@ test.run('after a disarm the next press arms again, running nothing', 0.2, async
   await settle();
   return (ran.length === 1 && isArmed(b)) ? true : false;
 }, test.limit.quick);
-test.run('disarm() puts it back from the app\'s side', 0.2, function () {
+test.run('calling disarm puts it back from the app\'s side', 0.2, function () {
   b.disarm();
   return (!isArmed(b)) ? true : false;
 }, test.limit.quick);
@@ -151,7 +151,7 @@ test.run('arming one disarms the other', 0.2, async function () {
   await settle();
   return (isArmed(two) && !isArmed(one) && one.textContent === 'Block') ? true : false;
 }, test.limit.quick);
-test.run('so the first, pressed again, arms anew and runs nothing', 0.2, async function () {
+test.run('the first one, pressed again, arms anew and runs nothing', 0.2, async function () {
   one.press();
   await settle();
   return (ran2.length === 0) ? true : false;
@@ -169,12 +169,12 @@ test.run('attach answers the button it was handed', 0.2, function () {
   same = typeof E.attach === 'function' ? E.attach(drawn, { run: function () { ran4.push('delete'); } }) : null;
   return (same === drawn) ? true : false;
 }, test.limit.quick);
-test.run('its first press arms it, its own text the label', 0.2, async function () {
+test.run('an attached button\'s first press arms it, its own text kept as the label', 0.2, async function () {
   drawn.press();
   await settle();
   return (isArmed(drawn) && drawn.textContent === 'Delete? Press again' && ran4.length === 0) ? true : false;
 }, test.limit.quick);
-test.run('its second press runs it, and it says Delete again', 0.2, async function () {
+test.run('an attached button\'s second press runs it, and it says Delete again', 0.2, async function () {
   drawn.press();
   await settle();
   return (!isArmed(drawn) && drawn.textContent === 'Delete' && ran4.length === 1) ? true : false;
@@ -187,7 +187,7 @@ test.run('an attached button and a made one are one loaded at a time too', 0.2, 
   await settle();
   return (!isArmed(drawn) && isArmed(other)) ? true : false;
 }, test.limit.quick);
-test.run('its code names no api: no hook is handed to it', 0.2, function () {
+test.run('its code names no api, as no hook is handed to it', 0.2, function () {
   other.disarm();
   // WHAT IT NEEDS, IT REQUIRES ITSELF (goal/G43.24; Andy: "anybody can mount any element without knowing what it actually
   // needs...."): mounted with its container alone it arms, disarms on a click elsewhere and runs; it reads no api.
@@ -195,18 +195,18 @@ test.run('its code names no api: no hook is handed to it', 0.2, function () {
   SRC = fs.readFileSync(FILE, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1');
   return (!/\bapi\b/.test(SRC)) ? true : false;
 }, test.limit.quick);
-test.run('it arms, running nothing', 0.2, async function () {
+test.run('mounted with its container alone, it arms, running nothing', 0.2, async function () {
   ran3 = [];
   bare = E.create(element('div'), { label: 'Close', run: function () { ran3.push('close'); } });
   bare.press();
   await settle();
   return (isArmed(bare) && ran3.length === 0) ? true : false;
 }, test.limit.quick);
-test.run('a click elsewhere disarms it', 0.2, function () {
+test.run('mounted with its container alone, a click elsewhere disarms it', 0.2, function () {
   elsewhere();
   return (!isArmed(bare) && ran3.length === 0) ? true : false;
 }, test.limit.quick);
-test.run('and two presses run it', 0.2, async function () {
+test.run('mounted with its container alone, two presses run it once', 0.2, async function () {
   bare.press();
   await settle();
   bare.press();

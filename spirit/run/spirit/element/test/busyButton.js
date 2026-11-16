@@ -25,15 +25,15 @@ test.run('spirit/element/busyButton.js exists', 0.2, function () {
   return (fs.existsSync(FILE)) ? true : false;
 }, test.limit.quick);
 // The page: pressed, held, answered
-test.run('the world: Chrome is on this machine', 0.2, function () {
+test.run('Chrome is on this machine', 0.2, function () {
   W.chrome = H.findChrome();
   return !!W.chrome || false;
 }, test.limit.quick);
-test.run('the world: a scratch node comes up with its DEBUG on', 0.2, async function () {
+test.run('a scratch node comes up with its DEBUG on', 0.2, async function () {
   W.node = await H.scratchNode();
   return (W.node.up && W.node.debug) || false;
 }, test.limit.slow);
-test.run('the world: the page presses its buttons', 0.2, async function () {
+test.run('the page presses its buttons', 0.2, async function () {
   if (!W.chrome || !W.node || !W.node.up) return false;
   W.page = await H.chromePage(W.chrome);
   if (W.page.error) return false;
@@ -49,7 +49,7 @@ test.after(function () {
   try { if (W.page && W.page.profile) fs.rmSync(W.page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
   try { if (W.node && W.node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(W.node); } catch (e) { /* left */ }
 });
-test.run('it adds busyButton.create(container, options) and busyButton.attach to window.spirit.element', 0.2, function () {
+test.run('it adds busyButton with its create and its attach to window.spirit.element', 0.2, function () {
   if (!m) return false;
   return (m.made) ? true : false;
 }, test.limit.quick);
@@ -84,7 +84,7 @@ test.run('the icon turns, by a keyframes rule of shell.css, the one sheet', 0.2,
   if (!m) return false;
   return (m.waiting.animation !== 'none' && m.waiting.shellSheet === true) ? true : false;
 }, test.limit.quick);
-test.run('and the element adds no sheet and no style of its own', 0.2, function () {
+test.run('the element adds no sheet and no style of its own', 0.2, function () {
   if (!m) return false;
   return (m.sheets.after === m.sheets.before && m.sheets.stylesAfter === m.sheets.stylesBefore) ? true : false;
 }, test.limit.quick);
@@ -94,16 +94,16 @@ test.run('pressed again while it waits, by a click and by a dispatched event: no
   // Andy, goal/G41.23: "busyButton: while it waits, does a second press do nothing, so no request is sent twice?" "yes."
   return (m.secondPress === 1) ? true : false;
 }, test.limit.quick);
-test.run('the answer come: enabled, no icon, its label', 0.2, function () {
+test.run('once the answer has come it is enabled, with no icon and its label', 0.2, function () {
   if (!m) return false;
   // answered, it is a plain button again
   return (plain(m.answered, 'Ask')) ? true : false;
 }, test.limit.quick);
-test.run('and the next press runs it again', 0.2, function () {
+test.run('the next press after the answer runs the request again', 0.2, function () {
   if (!m) return false;
   return (m.again === 2) ? true : false;
 }, test.limit.quick);
-test.run('a refusal (the promise rejects) makes it plain again too', 0.2, function () {
+test.run('a refusal, the promise rejecting, makes it plain again too', 0.2, function () {
   if (!m) return false;
   return (busy(m.refusedWaiting, 'Grant') && plain(m.refused, 'Grant')) ? true : false;
 }, test.limit.quick);
@@ -124,7 +124,7 @@ test.run('attach answers the button it was handed', 0.2, function () {
   // attach: a button already in the page
   return (m.attach.same) ? true : false;
 }, test.limit.quick);
-test.run('pressed it waits as a made one does, its own text the label, then is plain again', 0.2, function () {
+test.run('an attached button, pressed, waits as a made one does, its own text the label, then is plain again', 0.2, function () {
   if (!m) return false;
   return (busy(m.attach.waiting, 'Reload') && plain(m.attach.answered, 'Reload')) ? true : false;
 }, test.limit.quick);

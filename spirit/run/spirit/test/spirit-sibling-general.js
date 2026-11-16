@@ -121,11 +121,11 @@ const withData = TARGETS.filter(function (b) { return !!b.data; });
 
 // the branches
 if (asked) {
-  test.run('the world: the folder handed is a branch folder', 0.2, function () {
+  test.run('the folder handed is a branch folder', 0.2, function () {
     return TARGETS.length > 0;
   }, test.limit.quick);
 } else {
-  test.run('the world: branch folders recognized, an app\'s (desk) and a system one (fs) among them', 0.2, function () {
+  test.run('the branch folders are recognized, an app\'s (desk) and a system one (fs) among them', 0.2, function () {
     return (ALL.length >= 20 && ALL.some(function (b) { return b.dir === 'spirit/app/desk'; }) && ALL.some(function (b) { return b.dir === 'spirit/fs'; })) || false;
   }, test.limit.quick);
 }
@@ -379,13 +379,13 @@ if (served.length) {
   // requiring a scratch node can use the same one?"): handed a list, every part runs once a script, so a node of its own
   // would boot once a branch; the node testicle hands its run (shared: true, as -browser.js takes it) serves them all. Run
   // by hand, with none handed, it gets one of its own.
-  test.run('the world: a scratch node comes up', 0.2, async function () {
+  test.run('a scratch node comes up for this suite', 0.2, async function () {
     if (!N.node) N.node = await H.scratchNode({ shared: true });
     return N.node.up || false;
   }, test.limit.slow);
   // An app's branch is served once its server runs (the owner's app.active); the node's own are served by the node.
   if (switched.length) {
-    test.run('the world: its app is switched on', 0.2, async function () {
+    test.run('its app is switched on', 0.2, async function () {
       if (!up()) return false;
       let ok = true;
       for (const b of switched) {
@@ -465,7 +465,7 @@ if (served.length) {
   const broken = function (b) { const asks = []; Object.keys(b.verbs).forEach(function (v) { asksFor(b.family, v, b.verbs[v]).forEach(function (a) { asks.push(a); }); }); return asks; };
   const thrownAt = served.filter(function (b) { return broken(b).length > 0; });
   if (thrownAt.length) {
-    test.run('/api/spirit: all its broken calls are refused at the door, a 4xx with a code', 0.4, async function () {
+    test.run('every broken call to its branch on /api/spirit is refused at the door with a 4xx and a code', 0.4, async function () {
       if (!up()) return false;
       let ok = true;
       for (const b of thrownAt) {
@@ -493,7 +493,7 @@ if (served.length) {
   // is not there.
   const found = served.filter(function (b) { return b.data; });
   if (found.length) {
-    test.run('the world: a page on the scratch node asks for each branch by its name', 0.2, async function () {
+    test.run('a page on the scratch node asks for each branch by its name', 0.2, async function () {
       if (!up()) return false;
       // The node's other checks are done; the page asks last.
       const page = N.page = await H.chromePage(H.findChrome());
@@ -780,7 +780,7 @@ test.run('a helper ok of its own, test.check, test.fail and reportSuccessFailure
 const asked = ARGS[0] ? String(ARGS[0]).replace(/\\/g, '/').replace(/^\.\//, '').replace(/^spirit\/run\//, '') : '';
 const SUITES = suitesFor(asked, tree());
 const results = SUITES.map(function (f) { let src = ''; try { src = fs.readFileSync(path.join(RUN, f), 'utf8'); } catch (e) { src = ''; } return { file: f, r: judge(src) }; });
-test.run('the world: there are suites to judge', 0.2, function () {
+test.run('there are suites to judge', 0.2, function () {
   return SUITES.length > 0 || false;
 }, test.limit.quick);
 test.run('every suite says its tests through test.run', 0.2, function () {
@@ -1030,7 +1030,7 @@ function judge(file) {
 
 // The modules it judges: the one handed, or every module testModule.js gives it.
 let reach = null;
-test.run('the world: there is a module to judge', 0.2, function () {
+test.run('there is a module to judge', 0.2, function () {
   if (arg && !full) return false;
   if (full) { reach = [path.relative(RUN, full).split(path.sep).join('/')]; return true; }
   reach = require(path.join(RUN, 'spirit', 'test', 'testModule.js')).testsFor('').filter(function (t) { return t.test === 'spirit/test/spirit-sibling-general.js' && t.file; }).map(function (t) { return t.file; });
@@ -1786,7 +1786,7 @@ function placedByHand() {
 function every() {
   // no module of spirit/run/ mentions spirit/run/process/
   const E = {};
-  test.run('the world: the modules are read', 0.2, function () {
+  test.run('the modules are read', 0.2, function () {
     E.tracked = require('child_process').execFileSync('git', ['ls-files'], { cwd: RUN, encoding: 'utf8' }).split('\n').filter(function (f) { return /\.(js|html|json)$/.test(f) && !/(^|\/)test\//.test(f); });
     return E.tracked.length > 0 || false;
   }, test.limit.quick);
@@ -1810,7 +1810,7 @@ function every() {
     return !old.length || false;
   }, test.limit.quick);
   // the element move: no file names an element's old homes, none reaches through spirit.element for what the tree lacks
-  test.run('the world: the files are read for the elements\' old homes, tests and documents included', 0.2, function () {
+  test.run('the files are read for the elements\' old homes, tests and documents included', 0.2, function () {
     E.elementFiles = elementRuleFiles();
     return E.elementFiles.length > 100 || false;
   }, test.limit.quick);
@@ -1877,7 +1877,7 @@ function every() {
     return !missing.length || false;
   }, test.limit.quick);
   // nothing under spirit/run/ names run://test/
-  test.run('the world: the files are read, tests and documents included', 0.2, function () {
+  test.run('the files are read, tests and documents included', 0.2, function () {
     E.files = gitIn(RUN, ['ls-files']).filter(function (f) {
       return /\.(js|md|html|json)$/.test(f) && !VENDORED_FOLDERS.holds(f) && SELF.indexOf(path.basename(f)) === -1 && fs.existsSync(path.join(RUN, f));
     });
@@ -1889,7 +1889,7 @@ function every() {
     return (files.length > 0 && !naming.length) || false;
   }, test.limit.quick);
   // run://spirit/test/'s tools are not tests
-  test.run('the world: testModule.js lists tests', 0.2, function () {
+  test.run('testModule.js lists tests', 0.2, function () {
     const moduleAt = [path.join(RUN, 'spirit', 'test', 'testModule.js'), path.join(RUN, 'test', 'testModule.js')].filter(function (p) { return fs.existsSync(p); })[0];
     E.listed = moduleAt ? require(moduleAt).testsFor('').map(function (t) { return t.test; }) : [];
     return E.listed.length > 0 || false;
@@ -1922,7 +1922,7 @@ function every() {
   }, test.limit.quick);
 
   // every product script: use strict, spirit first, the tree only through spirit.require
-  test.run('the world: the product scripts are read (tests and vendored code left out)', 0.2, function () {
+  test.run('the product scripts are read, tests and vendored code left out', 0.2, function () {
     E.scripts = productScripts();
     return E.scripts.length > 100 || false;
   }, test.limit.quick);
@@ -1933,7 +1933,7 @@ function every() {
   }, test.limit.quick);
 
   // every product script: spirit.js required first, every require path a child, a sibling or an ancestor's file
-  test.run('the world: the product scripts are read for the module rules', 0.2, function () {
+  test.run('the product scripts are read for the module rules', 0.2, function () {
     const all = productScripts();
     E.ruled = all.map(function (f) { return { f: f, r: moduleRules(path.join(RUN, f)) }; });
     return all.length > 100 || false;
@@ -2082,7 +2082,7 @@ function oneFile(P) {
 
 // What it judges: given no file, the tree; given a file, that file's code (its page is spirit-sibling-browser.js's).
 if (!arg) every();
-else if (!full) test.run('the world: the file handed is there', 0.2, function () { return false; }, test.limit.quick);
+else if (!full) test.run('the file handed is there', 0.2, function () { return false; }, test.limit.quick);
 else oneFile({});
 }
 

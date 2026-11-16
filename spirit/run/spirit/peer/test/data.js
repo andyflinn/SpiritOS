@@ -57,7 +57,7 @@ function pageWorld() {
 // What the tests make, each in order, read by the tests after it.
 let w = null;
 
-test.run('in node, found by the family\'s name (spirit.cacheManager), it stands at spirit.data.peer.data', 0.2, async function () {
+test.run('in node, found by spirit.cacheManager under the family\'s name, it stands at spirit.data.peer.data', 0.2, async function () {
   require(path.join(RUN, 'spirit', 'spirit.js'));
   const S = globalThis.spirit;
   let threw = null;
@@ -65,7 +65,7 @@ test.run('in node, found by the family\'s name (spirit.cacheManager), it stands 
   const X = S.data && S.data['peer'] && S.data['peer'].data;
   return (!threw && !!X && typeof X === 'object') || false;
 }, test.limit.quick);
-test.run('the world: run beside spirit.data, it makes its family there', 0.2, function () {
+test.run('run beside spirit.data, it makes its family there', 0.2, function () {
   try { w = world(); } catch (e) { w = null; return false; }
   return (!!w.X && typeof w.X === 'object') || false;
 }, test.limit.quick);
@@ -75,7 +75,7 @@ test.run('it has no reads yet', 0.2, function () {
   if (!w) return false;
   return Object.keys(w.X).length === 0 || false;
 }, test.limit.quick);
-test.run('it translates nothing: it adds no translator to spirit.data', 0.2, function () {
+test.run('it translates nothing, so it adds no translator to spirit.data', 0.2, function () {
   if (!w) return false;
   return w.translators.length === 0 || false;
 }, test.limit.quick);

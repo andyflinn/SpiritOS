@@ -71,7 +71,7 @@ const call = function (verb, args) { return spirit.check('event.' + verb, W.verb
 const passes = function (verb, args) { return !!W.verbs[verb] && call(verb, args) === null; };
 const refusedAs = function (verb, args) { if (!W.verbs[verb]) return ''; const r = call(verb, args); return r ? r.code : ''; };
 
-test.run('the world: api.js loads as the node hands it, its text run with module and exports alone', 0.2, function () {
+test.run('api.js loads as the node hands it, its text run with module and exports alone', 0.2, function () {
   try {
     const m = { exports: {} };
     new Function('module', 'exports', fs.readFileSync(FILE, 'utf8'))(m, m.exports);
@@ -81,7 +81,7 @@ test.run('the world: api.js loads as the node hands it, its text run with module
   W.names = Object.keys(W.verbs);
   return true;
 }, test.limit.quick);
-test.run('the world: server.js mounts the event family', 0.2, function () {
+test.run('server.js mounts the event family', 0.2, function () {
   try { W.mounted = mounted('event'); } catch (e) { return false; }
   return !!W.mounted || false;
 }, test.limit.quick);
@@ -91,7 +91,7 @@ test.run('it exports its table of verbs and nothing else: it names no family of 
   if (!W.api) return false;
   return Object.keys(W.api).join() === 'verbs' || false;
 }, test.limit.quick);
-test.run('every verb\'s arguments are a plain object, each rule one of spirit.js\'s standard rules, \'?\' optional', 0.2, function () {
+test.run('every verb\'s arguments are a plain object, each rule one of spirit.js\'s standard rules, a question mark marking it optional', 0.2, function () {
   if (!W.api) return false;
   if (!isPlain(W.verbs)) return false;
   if (!W.names.length) return false;
@@ -134,7 +134,7 @@ test.run('subscribe takes nothing', 0.2, function () {
   if (!W.api) return false;
   return (passes('subscribe', {}) && refusedAs('subscribe', { since: 1 }) === 'no-such-argument') || false;
 }, test.limit.quick);
-test.run('publish needs the job\'s id; status, data, logMessage and app may be left out', 0.2, function () {
+test.run('publish needs the job\'s id, while status, data, logMessage and app may be left out', 0.2, function () {
   if (!W.api) return false;
   return (refusedAs('publish', {}) === 'bad-request' && refusedAs('publish', { id: '' }) === 'bad-request' && passes('publish', { id: 'my.job' }) && passes('publish', { id: 'my.job', status: 'running', data: { n: 1 }, logMessage: 'up', app: { rows: [] } })) || false;
 }, test.limit.quick);

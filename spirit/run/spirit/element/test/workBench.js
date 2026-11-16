@@ -71,7 +71,7 @@ const hiddenNow = function (n) { return !!n && (n.hidden === true || n.hiddenAtt
 // What the tests make, shared by the tests after them.
 let loadError, W, mounted, tool, c1, wb, ids, want, at, prefixes, c1b, tagOf, boxA, left, c2, mountsA, boxB, c3, told,
   wb3, w0, settled, r0, threw;
-test.run('it loads on window.spirit.element.spirit.element.workBench with create', 0.2, function () {
+test.run('it loads onto window.spirit.element at its own path, with a create', 0.2, function () {
   global.window = { spirit: { element: {} } };
   // goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
   require(path.join(__dirname, '..', '..', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
@@ -114,10 +114,10 @@ test.run('each side pane is a fill box', 0.2, function () {
   tagOf = function (c, name) { const m = new RegExp('<[^>]*\\bid="[^"]*' + name + '"[^>]*>').exec(c.innerHTML); return m ? m[0] : ''; };
   return (/class="[^"]*\bfill\b/.test(tagOf(c1, 'pane-left')) && /class="[^"]*\bfill\b/.test(tagOf(c1, 'pane-right'))) ? true : false;
 }, test.limit.quick);
-test.run('and so is the centre', 0.2, function () {
+test.run('the centre pane is a fill box', 0.2, function () {
   return (/class="[^"]*\bfill\b/.test(tagOf(c1, 'center'))) ? true : false;
 }, test.limit.quick);
-test.run('and so is each icon strip', 0.2, function () {
+test.run('each icon strip is a fill box', 0.2, function () {
   // Andy: "fix workBench for all 3 panes AND the icon strips"; "ALL lists, otherwise my took bars at the top of a container
   // keep scrolling away....". A strip of many tools scrolls inside its own height, never the app's.
   return (/class="[^"]*\bfill\b/.test(tagOf(c1, 'strip-left')) && /class="[^"]*\bfill\b/.test(tagOf(c1, 'strip-right'))) ? true : false;
@@ -221,7 +221,7 @@ test.run('dragging the left border to the right widens the left pane by the dist
   docFire('pointermove', { clientX: 350, preventDefault: function () {} });
   return (wb.width('left') === w0 + 50) ? true : false;
 }, test.limit.quick);
-test.run('never below 120 pixels', 0.2, function () {
+test.run('dragging the left border never makes the left pane narrower than 120 pixels', 0.2, function () {
   docFire('pointermove', { clientX: 300 - w0 - 500, preventDefault: function () {} });
   return (wb.width('left') === 120) ? true : false;
 }, test.limit.quick);
@@ -263,15 +263,15 @@ const scrolls = function (m) { return Object.keys(m.panes).length === 3 && !loos
 // button, id DEFINITELY NOT square"): in the shell's app area too, whose sheet gives its buttons a height of their own.
 const square = function (m) { return (m.buttons || []).length === 2 && !(m.buttons || []).filter(function (b) { return Math.abs(b[0] - b[1]) > 1; }).length; };
 // workBench-contained.html: kept to its container
-test.run('the world: Chrome is on this machine', 0.2, function () {
+test.run('Chrome is on this machine', 0.2, function () {
   CH.chrome = H.findChrome();
   return !!CH.chrome || false;
 }, test.limit.quick);
-test.run('the world: a scratch node comes up with its DEBUG on', 0.2, async function () {
+test.run('a scratch node comes up with its DEBUG on', 0.2, async function () {
   CH.node = await H.scratchNode();
   return (CH.node.up && CH.node.debug) || false;
 }, test.limit.slow);
-test.run('the world: the page measures a workBench in each container', 0.2, async function () {
+test.run('the page measures a workBench in each container', 0.2, async function () {
   if (!CH.chrome || !CH.node || !CH.node.up) return false;
   CH.page = await H.chromePage(CH.chrome);
   if (CH.page.error) return false;
@@ -285,47 +285,47 @@ test.run('the world: the page measures a workBench in each container', 0.2, asyn
   }
   return !nothing.length || false;
 }, test.limit.slow);
-test.run('a box of 300 pixels, a plain block: the workBench stays inside it, and nothing outside scrolls', 0.2, function () {
+test.run('in a plain block box of 300 pixels the workBench stays inside the box, and nothing outside scrolls', 0.2, function () {
   const m = CH.m.block;
   if (!m) return false;
   return kept(m) || false;
 }, test.limit.quick);
-test.run('a box of 300 pixels, a plain block: the left pane, the right pane and the centre each scroll inside it', 0.2, function () {
+test.run('in a plain block box of 300 pixels the left pane, the right pane and the centre each scroll inside themselves', 0.2, function () {
   const m = CH.m.block;
   if (!m) return false;
   return scrolls(m) || false;
 }, test.limit.quick);
-test.run('a box of 300 pixels, a plain block: each strip button is a square', 0.2, function () {
+test.run('in a plain block box of 300 pixels each strip button is a square', 0.2, function () {
   const m = CH.m.block;
   if (!m) return false;
   return square(m) || false;
 }, test.limit.quick);
-test.run('a box of 300 pixels, a flex column: the workBench stays inside it, and nothing outside scrolls', 0.2, function () {
+test.run('in a flex column box of 300 pixels the workBench stays inside the box, and nothing outside scrolls', 0.2, function () {
   const m = CH.m.flex;
   if (!m) return false;
   return kept(m) || false;
 }, test.limit.quick);
-test.run('a box of 300 pixels, a flex column: the left pane, the right pane and the centre each scroll inside it', 0.2, function () {
+test.run('in a flex column box of 300 pixels the left pane, the right pane and the centre each scroll inside themselves', 0.2, function () {
   const m = CH.m.flex;
   if (!m) return false;
   return scrolls(m) || false;
 }, test.limit.quick);
-test.run('a box of 300 pixels, a flex column: each strip button is a square', 0.2, function () {
+test.run('in a flex column box of 300 pixels each strip button is a square', 0.2, function () {
   const m = CH.m.flex;
   if (!m) return false;
   return square(m) || false;
 }, test.limit.quick);
-test.run('the shell\'s app area, as the home page draws it: the workBench stays inside it, and nothing outside scrolls', 0.2, function () {
+test.run('in the shell\'s app area, as the home page draws it, the workBench stays inside the area, and nothing outside scrolls', 0.2, function () {
   const m = CH.m.app;
   if (!m) return false;
   return kept(m) || false;
 }, test.limit.quick);
-test.run('the shell\'s app area, as the home page draws it: the left pane, the right pane and the centre each scroll inside it', 0.2, function () {
+test.run('in the shell\'s app area, as the home page draws it, the left pane, the right pane and the centre each scroll inside themselves', 0.2, function () {
   const m = CH.m.app;
   if (!m) return false;
   return scrolls(m) || false;
 }, test.limit.quick);
-test.run('the shell\'s app area, as the home page draws it: each strip button is a square', 0.2, function () {
+test.run('in the shell\'s app area, as the home page draws it, each strip button is a square', 0.2, function () {
   const m = CH.m.app;
   if (!m) return false;
   return square(m) || false;
@@ -333,7 +333,7 @@ test.run('the shell\'s app area, as the home page draws it: each strip button is
 // THE STRIP (goal/G41.23; Andy, goal/G41.21: "this element will replace icons painting all shell elements and apps.",
 // and "the workBench will provide space for a possible vertical scrollbar, in the icons, strip."): one tool, and 40
 // that scroll down a box of 300 pixels.
-test.run('the world: the page measures the icon strip, one tool and forty', 0.2, async function () {
+test.run('the page measures the icon strip with one tool and with forty', 0.2, async function () {
   if (!CH.page || CH.page.error) return false;
   const strip = async function (n) { try { return JSON.parse(await CH.page.evaluate('window.strip(' + n + ')')); } catch (e) { return null; } };
   CH.one = await strip(1);
@@ -352,7 +352,7 @@ test.run('with its scrollbar showing, no icon is pushed sideways: nothing scroll
   if (!CH.one || !CH.many) return false;
   return (!CH.many.sideways && CH.many.outside === 0) ? true : false;
 }, test.limit.quick);
-test.run('the room is kept with no scrollbar too: the strip as wide, its buttons where they were and as wide', 0.2, function () {
+test.run('with no scrollbar the room is kept too: the strip is as wide, and its buttons are where they were and as wide', 0.2, function () {
   if (!CH.one || !CH.many) return false;
   return (CH.one.width === CH.many.width && CH.one.firstLeft === CH.many.firstLeft && CH.one.firstWidth === CH.many.firstWidth) ? true : false;
 }, test.limit.quick);

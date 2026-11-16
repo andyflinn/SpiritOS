@@ -122,7 +122,7 @@ test.after(async function () {
 test.run('spirit/app/testicle/element/search/testicle/listElement.js is there', 0.2, function () {
   return fs.existsSync(MODULE) || false;
 }, test.limit.quick);
-test.run('the world: a scratch node comes up, testicle on', 0.2, async function () {
+test.run('a scratch node comes up for this suite with testicle on', 0.2, async function () {
   s = scratch();
   N = await boot(s.run); live.push(N.child);
   if (!N.up) return false;
@@ -130,7 +130,7 @@ test.run('the world: a scratch node comes up, testicle on', 0.2, async function 
   N.up = !!(await until(function () { return call(N.base, 'testicle.busy').then(function (r) { return r.status === 200; }); }, 30000));
   return N.up || false;
 }, test.limit.long);
-test.run('the world: tests of the planted scripts are set on it, alpha\'s flip twice', 0.2, async function () {
+test.run('tests of the planted scripts are set on the node, alpha\'s flipping test set twice', 0.2, async function () {
   if (!N || !N.up) return false;
   GEN = s.gen;
   if (!GEN) return false;
@@ -146,7 +146,7 @@ test.run('the world: tests of the planted scripts are set on it, alpha\'s flip t
   [PASSES, FAILS, 'replaced', FLIPS].forEach(function (t, i) { if (out[i].body && out[i].body.key) current[t] = out[i].body; });
   return planted || false;
 }, test.limit.slow);
-test.run('the world: the face page has its spirit', 0.2, async function () {
+test.run('the face page opens in Chrome with its spirit ready', 0.2, async function () {
   if (!N || !N.up) return false;
   const where = findChrome();
   if (!where) return false;
@@ -182,7 +182,7 @@ test.run('opened, it shows the reds of every script, the most severe first, and 
   const down = sev.every(function (v, i) { return i === 0 || Number(sev[i - 1]) >= Number(v); });
   return (!!ok && icons.every(function (v) { return v === '❌'; }) && down && titles[0] === FAILS) || false;
 }, test.limit.slow);
-test.run('the world: green pressed, both filters on', 0.2, async function () {
+test.run('pressing green turns both filters on', 0.2, async function () {
   if (!mounted()) return false;
   await T('press("green")');
   const ok = await waitFor('filter("green").on && filter("red").on', 5000);
@@ -200,7 +200,7 @@ test.run('it lists each test once, by its current row alone', 0.2, async functio
 
 // the box: "The columns, in this order: the result first, as an icon, ❌ for a failure, ✅ for a success; severity second;
 // the title third; then the script name (no path), then the suite name (no path)", "The list is sortable by all its columns"
-test.run('its five columns, in order: result, severity, title, script, suite, every one a sort trigger', 0.2, async function () {
+test.run('it has five columns in the order result, severity, title, script and suite, every one a sort trigger', 0.2, async function () {
   if (!mounted()) return false;
   const heads = (await T('heads()')) || [];
   const fields = heads.map(function (h) { return h.sort; });
@@ -228,7 +228,7 @@ test.run('with red off, a press on green leaves it on: both off is refused', 0.2
   const green = await T('filter("green")');
   return (!!green && green.on) || false;
 }, test.limit.slow);
-test.run('the world: both filters on again', 0.2, async function () {
+test.run('pressing red again turns both filters on again', 0.2, async function () {
   if (!mounted()) return false;
   await T('press("red")');
   await sleep(300);
@@ -264,7 +264,7 @@ test.run('with a script chosen, the suite selector lists that script\'s suites a
   const keys = (await T('selRows(1)')) || [];
   return (keys.indexOf(A + '|' + AS) !== -1 && keys.indexOf(A + '|' + GEN) !== -1 && !keys.some(function (k) { return String(k).indexOf(BS) !== -1; })) || false;
 }, test.limit.slow);
-test.run('the script unselected again, every script\'s tests show', 0.2, async function () {
+test.run('with the script unselected again, every script\'s tests show', 0.2, async function () {
   if (!mounted()) return false;
   await T('openSel(1)');
   await T('openSel(0)');
@@ -290,7 +290,7 @@ test.run('with no script chosen, a suite chosen shows that suite\'s tests of eve
   }, 10000);
   return !!ok || false;
 }, test.limit.slow);
-test.run('the world: the suite unselected, every suite shows', 0.2, async function () {
+test.run('with the suite unselected again, every suite shows', 0.2, async function () {
   if (!mounted()) return false;
   await T('openSel(1)');
   if (!(await T('noneSel(1)'))) return false;
@@ -329,7 +329,7 @@ test.run('a test flipped on the node while the list is open shows once, by its n
 }, test.limit.slow);
 
 // "answer after answer while it says more, up to 100 tests"
-test.run('the world: 150 more passing tests of beta are set', 0.2, async function () {
+test.run('150 more passing tests of beta are set on the node', 0.2, async function () {
   if (!mounted()) return false;
   const bad = [];
   for (let i = 1; i <= GREENS; i++) {

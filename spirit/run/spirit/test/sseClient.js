@@ -43,7 +43,7 @@ function client(answers, extra) {
 
 // ── a stream read and parsed ──
 let A = null;
-test.run('the world: a stream of two events, a heartbeat between them, then its end', 0.2, async function () {
+test.run('a stream is fetched that sends two events with a heartbeat between them, then ends', 0.2, async function () {
   A = client([streamed([':hb\n\n', 'event: route\ndata: {"key":"k1"}\n\n', ':\n\n', 'event: note\ndata: line one\ndata: line two\n\n'])]);
   await settle();
   return A.fetched.length >= 1 || false;

@@ -26,24 +26,24 @@ function sealedBytes(text) { return bytes(JSON.stringify(text)); }
 test.run('VERSION is 1 and an id is 16 bytes', 0.2, function () {
   return (P.VERSION === 1 && P.ID_BYTES === 16) || false;
 }, test.limit.quick);
-test.run('MAX_TEXT is the bound it enforces, asked of limits.js: SEALED_MAX, never restated', 0.2, function () {
+test.run('the text bound it exports, MAX_TEXT, is the bound it enforces, asked of limits.js as SEALED_MAX and never restated', 0.2, function () {
   return (typeof limits.SEALED_MAX === 'number' && P.MAX_TEXT === limits.SEALED_MAX) || false;
 }, test.limit.quick);
 
 // ── randomId ──
-test.run('randomId: 128 bits from a secure source, as 32 hex characters, each its own', 0.2, function () {
+test.run('randomId gives 128 bits from a secure source as 32 hex characters, each id its own', 0.2, function () {
   const ids = [P.randomId(), P.randomId(), P.randomId()];
   const hex = ids.every(function (x) { return /^[0-9a-f]{32}$/.test(x); });
   return (hex && ids[0] !== ids[1] && ids[1] !== ids[2]) || false;
 }, test.limit.quick);
-test.run('randomId with the test seam: a predictable 32-character string', 0.2, function () {
+test.run('randomId with the test seam gives a predictable 32-character string', 0.2, function () {
   const a = P.randomId(function () { return 0.5; });
   const b = P.randomId(function () { return 0.5; });
   return (a === b && a.length === 32) || false;
 }, test.limit.quick);
 
 // ── encode ──
-test.run('encode wraps a body as the text { app, v, id, body }, exactly', 0.2, function () {
+test.run('encode wraps a body as a text holding exactly app, v, id and body', 0.2, function () {
   const r = P.encode('relay-chat', 'hello', { id: 'ID1' });
   return (r.ok === true && r.text === '{"app":"relay-chat","v":1,"id":"ID1","body":"hello"}' && r.envelope.body === 'hello') || false;
 }, test.limit.quick);
@@ -71,7 +71,7 @@ test.run('encode refuses a missing body, and a body with a cycle in it', 0.2, fu
 // JSON.stringify drops a function body without a word; answered ok, its text would have no body, which isEnvelope says
 // is no envelope (it would arrive as a legacy chat line). The code's own comment names
 // the refusal: "A body with a cycle in it, or something JSON cannot express" is "body is not serialisable".
-test.run('encode refuses a body JSON cannot express (a function): never a text its own isEnvelope rejects', 0.2, function () {
+test.run('encode refuses a body JSON cannot express, such as a function, so it never makes a text its own isEnvelope rejects', 0.2, function () {
   const r = P.encode('chat', function () {});
   return (r.ok === false && r.error === 'body is not serialisable') || false;
 }, test.limit.quick);
@@ -89,13 +89,13 @@ test.run('the refusal says the byte figures: "packet too long: <n> sealed bytes 
   const n = sealedBytes(JSON.stringify({ app: 'chat', v: 1, id: 'I', body: 'a'.repeat(P.MAX_TEXT) }));
   return (r.ok === false && r.error === 'packet too long: ' + n + ' sealed bytes of ' + P.MAX_TEXT && r.length === n && r.limit === P.MAX_TEXT) || false;
 }, test.limit.quick);
-test.run('measured in bytes, not characters: CJK the same length as an ASCII body that fits is refused', 0.2, function () {
+test.run('the limit is measured in bytes, not characters, so a CJK body the same length as an ASCII body that fits is refused', 0.2, function () {
   const chars = Math.floor(P.MAX_TEXT / 2);
   const ascii = P.encode('chat', 'a'.repeat(chars), { id: 'I' });
   const cjk = P.encode('chat', '漢'.repeat(chars), { id: 'I' });
   return (ascii.ok === true && cjk.ok === false && /sealed bytes/.test(cjk.error)) || false;
 }, test.limit.quick);
-test.run('measured as the node escapes it: newlines and quotes count twice', 0.2, function () {
+test.run('the limit is measured as the node escapes the text, so newlines and quotes count twice', 0.2, function () {
   const chars = Math.floor(P.MAX_TEXT * 0.7);
   const plain = P.encode('chat', 'a'.repeat(chars), { id: 'I' });
   const lines = P.encode('chat', '\n'.repeat(chars), { id: 'I' });
@@ -103,15 +103,15 @@ test.run('measured as the node escapes it: newlines and quotes count twice', 0.2
 }, test.limit.quick);
 
 // ── isEnvelope ──
-test.run('isEnvelope: our text is one, with or without an app', 0.2, function () {
+test.run('isEnvelope accepts our text, with or without an app', 0.2, function () {
   return (P.isEnvelope(P.encode('chat', 'x').text) === true && P.isEnvelope(P.encode('', { a: 1 }).text) === true) || false;
 }, test.limit.quick);
-test.run('isEnvelope: a chat line, a number, an array, JSON of another version, and half a packet are not', 0.2, function () {
+test.run('isEnvelope rejects a chat line, a number, an array, JSON of another version and half a packet', 0.2, function () {
   const no = ['hello', 42, null, '[1,2]', '{"app":"chat","v":2,"id":"I","body":"x"}', '{"app":"chat","v":1,"id":"I"}', '{"app":"chat","v":1', '{"hand":"typed"}'];
   const got = no.map(P.isEnvelope);
   return got.every(function (x) { return x === false; }) || false;
 }, test.limit.quick);
-test.run('isEnvelope: an app that is named must be a non-empty string', 0.2, function () {
+test.run('isEnvelope requires an app that is named to be a non-empty string', 0.2, function () {
   const got = [P.isEnvelope('{"app":"","v":1,"id":"I","body":"x"}'), P.isEnvelope('{"app":7,"v":1,"id":"I","body":"x"}')];
   return got.every(function (x) { return x === false; }) || false;
 }, test.limit.quick);
@@ -121,7 +121,7 @@ test.run('decode reads an envelope: app, v, id, re and body', 0.2, function () {
   const d = P.decode(P.encode('chat', { t: 'hi' }, { id: 'I', re: 'h' }).text);
   return (d.legacy === false && d.app === 'chat' && d.v === 1 && d.id === 'I' && d.re === 'h' && short(d.body) === short({ t: 'hi' })) || false;
 }, test.limit.quick);
-test.run('decode: a packet that regards nothing has re \'\', and one for a box has app null', 0.2, function () {
+test.run('decode gives a packet that regards nothing an empty re, and one for a box a null app', 0.2, function () {
   const d = P.decode(P.encode('', 'x', { id: 'I' }).text);
   return (d.re === '' && d.app === null) || false;
 }, test.limit.quick);
@@ -138,7 +138,7 @@ test.run('decorate keeps every field the message had and adds packet beside them
   const d = P.decorate(m);
   return (d.from === 'k1' && d.to === 'k2' && d.text === text && d.sentAt === 5 && short(d.packet) === short({ legacy: false, app: 'chat', id: 'I', re: 'h', body: 'hi' }) && !m.packet) || false;
 }, test.limit.quick);
-test.run('decorate of a plain chat line: packet legacy, no app, no id, the line as its body', 0.2, function () {
+test.run('decorate marks a plain chat line as a legacy packet, with no app, no id and the line as its body', 0.2, function () {
   const d = P.decorate({ from: 'k', text: 'hi there' });
   return short(d.packet) === short({ legacy: true, app: null, id: null, re: '', body: 'hi there' }) || false;
 }, test.limit.quick);

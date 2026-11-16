@@ -20,7 +20,7 @@ const FUTURE = '2099-01-01T00:00:00.000Z';
 const PAST = '2001-01-01T00:00:00.000Z';
 let ROOT = null;
 
-test.run('the world: a scratch relay root, an invite added on it is listed', 0.2, function () {
+test.run('an invite added on a scratch relay root is listed', 0.2, function () {
   ROOT = fs.mkdtempSync(path.join(os.tmpdir(), 'nr-invites-'));
   try { I.add(ROOT, { label: 'world', token: 'world-token', expiresAt: FUTURE }); } catch (e) { ROOT = null; return false; }
   const all = I.load(ROOT);
@@ -29,11 +29,11 @@ test.run('the world: a scratch relay root, an invite added on it is listed', 0.2
 }, test.limit.quick);
 
 // ── normalizeDays, normalizeToken: one rule for what is signed and what is stored ──
-test.run('normalizeDays: whole days, 1 to 15; nothing, zero or junk is 7', 0.2, function () {
+test.run('normalizeDays keeps whole days from 1 to 15 and makes nothing, zero or junk 7', 0.2, function () {
   const got = [undefined, 0, -3, 'x', 1, 3.9, 15, 99].map(I.normalizeDays);
   return short(got) === short([7, 7, 7, 7, 1, 3, 15, 15]) || false;
 }, test.limit.quick);
-test.run('normalizeToken trims; nothing is empty', 0.2, function () {
+test.run('normalizeToken trims a token and makes nothing empty', 0.2, function () {
   const got = ['  dog  ', null, undefined, 42].map(I.normalizeToken);
   return short(got) === short(['dog', '', '', '42']) || false;
 }, test.limit.quick);
@@ -53,7 +53,7 @@ test.run('add stores the row it answers: the token trimmed, the label trimmed, t
   const kept = I.load(ROOT).filter(function (r) { return r.token === 'spoken'; })[0];
   return (row.token === 'spoken' && row.label === 'saint' && row.invitedBy === 'andy' && !!kept && kept.label === 'saint') || false;
 }, test.limit.quick);
-test.run('add with no token mints one; with no expiry it lives the normalized days', 0.2, function () {
+test.run('add with no token mints one, and with no expiry the invite lives the normalized days', 0.2, function () {
   if (!ROOT) return false;
   const t0 = Date.now();
   const row = I.add(ROOT, { label: 'minted', days: 99 });
@@ -62,13 +62,13 @@ test.run('add with no token mints one; with no expiry it lives the normalized da
 }, test.limit.quick);
 
 // ── match ──
-test.run('match: the token and its label answer ok and the invite', 0.2, function () {
+test.run('match of the token and its label answers ok and the invite', 0.2, function () {
   if (!ROOT) return false;
   I.add(ROOT, { label: 'john', token: 'match-token', expiresAt: FUTURE });
   const m = I.match(ROOT, ' match-token ', ' john ');
   return (m.ok === true && m.invite && m.invite.label === 'john') || false;
 }, test.limit.quick);
-test.run('match refuses, 403: none given, not found, another label, expired', 0.2, function () {
+test.run('match refuses with 403 a token not given, not found, under another label, or expired', 0.2, function () {
   if (!ROOT) return false;
   I.add(ROOT, { label: 'late', token: 'expired-token', expiresAt: PAST });
   const got = [I.match(ROOT, '', 'john'), I.match(ROOT, 'no-such', 'john'), I.match(ROOT, 'match-token', 'jane'), I.match(ROOT, 'expired-token', 'late')];

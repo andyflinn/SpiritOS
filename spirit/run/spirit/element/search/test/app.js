@@ -26,7 +26,7 @@ test.after(function () {
   try { if (node && node.child) node.child.kill(); } catch (e) { /* gone */ }
   try { if (node && node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* scratch */ }
 });
-test.run('the world: a scratch node, and Chrome on its face page', 0.2, async function () {
+test.run('a scratch node comes up with Chrome on its face page', 0.2, async function () {
   if (!fs.existsSync(FILE)) return false;
   node = await scratchNode();
   chrome = await chromePage(findChrome());
@@ -41,7 +41,7 @@ test.run('it loads through spirit.require', 0.2, async function () {
   loaded = await chrome.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/element/search/app.js"); }).then(function () { var c = document.createElement("div"); c.id = "under-test"; document.body.appendChild(c); return "loaded"; }, function () { return false; })');
   return loaded === 'loaded' ? true : false;
 }, test.limit.slow);
-test.run('spirit.element.spirit.element.search.app.create(host, opts) makes a list', 0.2, async function () {
+test.run('its create makes a list in the host it is given', 0.2, async function () {
   if (!text) return false;
   const made = await chrome.evaluate('(function () { window.asked = []; var real = spirit.app.searchApp; spirit.app.searchApp = function (a) { window.asked.push(a); return real.call(spirit.app, a); }; window.picks = []; window.list = spirit.element.spirit.element.search.app.create(document.getElementById("under-test"), { face: "pane", pick: function (row) { window.picks.push(row); } }); return true; }())');
   return made === true ? true : false;
@@ -91,7 +91,7 @@ test.run('the tree has an app that runs on the node, and apps that do not', 0.2,
   return MOUNT && own.length > mounted.length ? true : false;
 }, test.limit.quick);
 let plainB, serversB;
-test.run('without servers: true it shows no filter', 0.2, async function () {
+test.run('without the servers option it shows no filter', 0.2, async function () {
   if (!text) return false;
   if (!MOUNT) return false;
   // The labels a list draws: the leaves that show whose text is an app's label (a row the list hides stays in the page,
@@ -107,7 +107,7 @@ test.run('without servers: true it shows no filter', 0.2, async function () {
   press = function () { return chrome.evaluate('(function () { var b = document.getElementById("servers").querySelector("button[data-filter]"); if (!b) return false; b.click(); return true; }())'); };
   return plainB === 0 ? true : false;
 }, test.limit.slow);
-test.run('with servers: true it shows the one filter', 0.2, function () {
+test.run('with the servers option set to true it shows the one filter', 0.2, function () {
   if (serversB === undefined) return false;
   return serversB === 1 ? true : false;
 }, test.limit.quick);
@@ -124,7 +124,7 @@ test.run('its filter can be pressed', 0.2, async function () {
   if (!press) return false;
   return (await press()) === true ? true : false;
 }, test.limit.slow);
-test.run('pressed, it draws the active apps that run on the node, and no other app', 0.2, async function () {
+test.run('with the filter pressed, it draws the active apps that run on the node, and no other app', 0.2, async function () {
   if (!press) return false;
   want = await wantOn();
   const on1 = await until(function () { return drawnIn('servers').then(function (d) { return JSON.stringify(d) === JSON.stringify(want); }); }, 8000);
@@ -136,7 +136,7 @@ test.run('the list without the filter still draws every app', 0.2, async functio
   return plainNow.length > want.length ? true : false;
 }, test.limit.slow);
 // "and active": switched off, it leaves the filter's list.
-test.run('switched off, the app leaves it', 0.2, async function () {
+test.run('once switched off, the app leaves the filtered list', 0.2, async function () {
   if (!press) return false;
   await ask('app.active', { key: MOUNT.key, active: false });
   await until(function () { return activeOf(MOUNT.key).then(function (a) { return a === false; }); }, 10000);
@@ -145,7 +145,7 @@ test.run('switched off, the app leaves it', 0.2, async function () {
   const off1 = await until(function () { return drawnIn('servers').then(function (d) { return d.indexOf(MOUNT.label) === -1 && JSON.stringify(d) === JSON.stringify(want); }); }, 8000);
   return off1 ? true : false;
 }, test.limit.long);
-test.run('pressed again, every app is back', 0.2, async function () {
+test.run('with the filter pressed again, every app is back', 0.2, async function () {
   if (!press || !plainNow) return false;
   return (await press()) === true && await until(function () { return drawnIn('servers').then(function (d) { return d.length === plainNow.length; }); }, 8000) ? true : false;
 }, test.limit.slow);

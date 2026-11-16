@@ -24,15 +24,15 @@ test.run('spirit/element/icon.js exists', 0.2, function () {
   return (fs.existsSync(FILE)) ? true : false;
 }, test.limit.quick);
 // The page: icons in containers of several font sizes
-test.run('the world: Chrome is on this machine', 0.2, function () {
+test.run('Chrome is on this machine', 0.2, function () {
   W.chrome = H.findChrome();
   return !!W.chrome || false;
 }, test.limit.quick);
-test.run('the world: a scratch node comes up with its DEBUG on', 0.2, async function () {
+test.run('a scratch node comes up with its DEBUG on', 0.2, async function () {
   W.node = await H.scratchNode();
   return (W.node.up && W.node.debug) || false;
 }, test.limit.slow);
-test.run('the world: the page sizes its icons', 0.2, async function () {
+test.run('the page sizes its icons', 0.2, async function () {
   if (!W.chrome || !W.node || !W.node.up) return false;
   W.page = await H.chromePage(W.chrome);
   if (W.page.error) return false;
@@ -48,7 +48,7 @@ test.after(function () {
   try { if (W.page && W.page.profile) fs.rmSync(W.page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
   try { if (W.node && W.node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(W.node); } catch (e) { /* left */ }
 });
-test.run('it adds icon.create(container, options) to window.spirit.element', 0.2, function () {
+test.run('it adds icon, with a create taking a container and options, to window.spirit.element', 0.2, function () {
   if (!m) return false;
   return (m.made) ? true : false;
 }, test.limit.quick);
@@ -67,26 +67,26 @@ test.run('it carries a class of its own', 0.2, function () {
   // The class it carries is how the shell's other elements are seen to paint through it (workBench's test).
   return (m.base.className.trim() !== '') ? true : false;
 }, test.limit.quick);
-test.run('in 20 pixel type, no size given: a square of 20', 0.2, function () {
+test.run('in 20 pixel type with no size given, it is a square of 20', 0.2, function () {
   if (!m) return false;
   // a square, its side the font size times size
   // "a square box, the size of which follows font-size, it's size option should vary from that base-line, be a
   // multiplier of it."
   return (square(m.base.size, 20)) ? true : false;
 }, test.limit.quick);
-test.run('size 2: a square of 40', 0.2, function () {
+test.run('with size 2 it is a square of 40', 0.2, function () {
   if (!m) return false;
   return (square(m.twice, 40)) ? true : false;
 }, test.limit.quick);
-test.run('size 0.5: a square of 10', 0.2, function () {
+test.run('with size 0.5 it is a square of 10', 0.2, function () {
   if (!m) return false;
   return (square(m.half, 10)) ? true : false;
 }, test.limit.quick);
-test.run('in 10 pixel type: a square of 10, the size it inherits', 0.2, function () {
+test.run('in 10 pixel type it is a square of 10, the size it inherits', 0.2, function () {
   if (!m) return false;
   return (square(m.small, 10)) ? true : false;
 }, test.limit.quick);
-test.run('in a row of 5 pixels beside a long label it never shrinks: still 20', 0.2, function () {
+test.run('in a row of 5 pixels beside a long label it never shrinks, and stays 20', 0.2, function () {
   if (!m) return false;
   return (square(m.tight, 20)) ? true : false;
 }, test.limit.quick);
@@ -97,7 +97,7 @@ test.run('the glyph\'s middle is the square\'s middle, within a tenth of its sid
   tol = m.centred.side / 10;
   return (m.centred.dx <= tol && m.centred.dy <= tol) ? true : false;
 }, test.limit.quick);
-test.run('it follows its container like a text character: its colour', 0.2, function () {
+test.run('it follows its container\'s colour like a text character', 0.2, function () {
   if (!m) return false;
   // "no other option than size, like like text characters, it follows, its container in most attributes."
   return (m.base.color === 'rgb(200, 0, 0)') ? true : false;

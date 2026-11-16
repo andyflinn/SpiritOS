@@ -36,7 +36,7 @@ function world() {
 // data.js: what a page knows of the icon set, following the one job spirit.app.icons (goal/G43.19).
 // One test.run per test (goal/G47.2). What the world made, for the tests after it.
 let w = null;
-test.run('the world: spirit.data.icons.data answers rows, row and watch', 0.2, function () {
+test.run('the icons family\'s data answers rows, row and watch', 0.2, function () {
   if (!fs.existsSync(FILE)) return false;
   const made = world();
   if (!made.I) return false;
@@ -51,11 +51,11 @@ test.run('an added row is there, its glyph and keywords', 0.2, function () {
   const r1 = w.I.row('🌀');
   return !!r1 && r1.glyph === '🌀' && JSON.stringify(r1.keywords) === '["cyclone","spin"]' ? true : false;
 }, test.limit.quick);
-test.run('and among rows()', 0.2, function () {
+test.run('an added row is among the rows', 0.2, function () {
   if (!w) return false;
   return Object.keys(w.I.rows() || {}).indexOf('🌀') !== -1 || false;
 }, test.limit.quick);
-test.run('a changed row replaces it', 0.2, function () {
+test.run('a changed row replaces the one before', 0.2, function () {
   if (!w) return false;
   w.job({ icons: { row: { glyph: '🌀', keywords: ['storm'] } } });
   return JSON.stringify((w.I.row('🌀') || {}).keywords) === '["storm"]' || false;
@@ -70,12 +70,12 @@ test.run('it hears a new row by its glyph', 0.2, function () {
   w.job({ icons: { row: { glyph: '🌁', keywords: ['fog'] } } });
   return heard.some(function (h) { return h[0] === '🌁' && JSON.stringify(h[1]) === '["fog"]'; }) || false;
 }, test.limit.quick);
-test.run('{ icons: { glyph, removed: true } } takes the row away', 0.2, function () {
+test.run('a publish of a glyph marked removed takes the row away', 0.2, function () {
   if (!w) return false;
   w.job({ icons: { glyph: '🌁', removed: true } });
   return w.I.row('🌁') === null || false;
 }, test.limit.quick);
-test.run('and the watch hears it gone', 0.2, function () {
+test.run('the watch hears the removed row gone', 0.2, function () {
   if (!w) return false;
   return heard.some(function (h) { return h[0] === '🌁' && h[1] === undefined; }) || false;
 }, test.limit.quick);
@@ -83,7 +83,7 @@ test.run('a watch answers its release', 0.2, function () {
   if (!w) return false;
   return typeof off === 'function' || false;
 }, test.limit.quick);
-test.run('released, it hears nothing more', 0.2, function () {
+test.run('a released watch hears nothing more', 0.2, function () {
   if (!w) return false;
   if (typeof off === 'function') off();
   const before = heard.length;

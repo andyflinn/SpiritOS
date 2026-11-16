@@ -34,12 +34,12 @@ function planted(answer) {
 }
 
 // ── settings ──
-test.run('create refuses, null, with a setting missing: no url, an url that is not https, no domain, no key', 0.2, function () {
+test.run('create refuses with null when a setting is missing, whether no url, an url that is not https, no domain or no key', 0.2, function () {
   const bad = [{}, null, Object.assign({}, SETTINGS, { url: '' }), Object.assign({}, SETTINGS, { url: 'http://mail.example.invalid' }), Object.assign({}, SETTINGS, { domain: ' ' }), Object.assign({}, SETTINGS, { key: '' })];
   const made = bad.map(function (s) { return G.create(s, planted({ ok: true }).fetch); });
   return made.every(function (x) { return x === null; }) || false;
 }, test.limit.quick);
-test.run('create answers { send } over good settings', 0.2, function () {
+test.run('create answers an object with a send over good settings', 0.2, function () {
   const s = G.create(SETTINGS, planted({ ok: true }).fetch);
   return (!!s && typeof s.send === 'function') || false;
 }, test.limit.quick);
@@ -47,28 +47,28 @@ test.run('create answers { send } over good settings', 0.2, function () {
 // ── one post per mail ──
 let A = null;
 let R = null;
-test.run('the world: one mail sent on a planted fetch that answers ok', 0.2, async function () {
+test.run('one mail is sent on a planted fetch that answers ok', 0.2, async function () {
   A = planted(Promise.resolve({ ok: true, status: 200 }));
   R = await G.create(SETTINGS, A.fetch).send({ to: 'friend@example.org', subject: 'your code', text: 'it is 1234' });
   return A.asked.length === 1 || false;
 }, test.limit.quick);
-test.run('it posts to <url>/v3/<domain>/messages, the url\'s trailing slash and the domain\'s case gone', 0.2, function () {
+test.run('it posts to <url>/v3/<domain>/messages, with the url\'s trailing slash and the domain\'s case gone', 0.2, function () {
   if (!A) return false;
   const a = A.asked[0];
   return (a.url === 'https://mail.example.invalid/v3/relay.example/messages' && a.init.method === 'POST') || false;
 }, test.limit.quick);
-test.run('HTTP basic, user api and the key', 0.2, function () {
+test.run('it authorizes with HTTP basic, the user api and the key', 0.2, function () {
   if (!A) return false;
   const auth = A.asked[0].init.headers.Authorization;
   return auth === 'Basic ' + Buffer.from('api:' + KEY).toString('base64') || false;
 }, test.limit.quick);
-test.run('the fields as a form: from postmaster@<domain>, to, subject and text', 0.2, function () {
+test.run('it sends the fields as a form, from postmaster@<domain>, to, subject and text', 0.2, function () {
   if (!A) return false;
   const init = A.asked[0].init;
   const f = new URLSearchParams(init.body);
   return (init.headers['Content-Type'] === 'application/x-www-form-urlencoded' && f.get('from') === 'postmaster@relay.example' && f.get('to') === 'friend@example.org' && f.get('subject') === 'your code' && f.get('text') === 'it is 1234') || false;
 }, test.limit.quick);
-test.run('a mail the service took answers { ok: true }', 0.2, function () {
+test.run('a mail the service took answers ok true', 0.2, function () {
   if (!A) return false;
   return (R && R.ok === true) || false;
 }, test.limit.quick);
@@ -80,7 +80,7 @@ test.run('a mail with no fields still posts, each field an empty string', 0.2, a
 }, test.limit.quick);
 
 // ── refused, and the key never in an answer ──
-test.run('a refusal by the service: ok false, its status, "the mail service refused the mail"', 0.2, async function () {
+test.run('a refusal by the service answers ok false, its status, and "the mail service refused the mail"', 0.2, async function () {
   const r = await G.create(SETTINGS, planted(Promise.resolve({ ok: false, status: 401 })).fetch).send({ to: 'a@b.c' });
   return (r && r.ok === false && r.status === 401 && r.error === 'the mail service refused the mail') || false;
 }, test.limit.quick);
@@ -88,13 +88,13 @@ test.run('a refusal with no status is 502', 0.2, async function () {
   const r = await G.create(SETTINGS, planted(Promise.resolve(null)).fetch).send({ to: 'a@b.c' });
   return (r && r.ok === false && r.status === 502) || false;
 }, test.limit.quick);
-test.run('no answer from the service: ok false, 502, "the mail service did not answer", never a throw', 0.2, async function () {
+test.run('no answer from the service answers ok false, 502 and "the mail service did not answer", never a throw', 0.2, async function () {
   const p = planted(function () { return Promise.reject(new Error('ECONNREFUSED ' + KEY)); });
   let r = null;
   try { r = await G.create(SETTINGS, p.fetch).send({ to: 'a@b.c' }); } catch (e) { return false; }
   return (r && r.ok === false && r.status === 502 && r.error === 'the mail service did not answer') || false;
 }, test.limit.quick);
-test.run('the key is in no answer: not on the sender, not in a success, a refusal or a failure', 0.2, async function () {
+test.run('the key is in no answer, neither on the sender nor in a success, a refusal or a failure', 0.2, async function () {
   const s = G.create(SETTINGS, planted(Promise.resolve({ ok: true })).fetch);
   const answers = [
     s,

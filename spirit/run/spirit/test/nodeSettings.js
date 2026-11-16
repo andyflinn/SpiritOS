@@ -28,7 +28,7 @@ test.run('the file is spirit/state/node.json under the home', 0.2, function () {
 test.run('the shipped default is Andy\'s 20 MB, and the floor 1 MB', 0.2, function () {
   return (S.DEFAULT_CACHE_MAX_MB === 20 && S.MIN_CACHE_MAX_MB === 1) || false;
 }, test.limit.quick);
-test.run('no node.json: the defaults, no problem, and no file grown saying so', 0.2, function () {
+test.run('with no node.json it takes the defaults, with no problem and no file grown saying so', 0.2, function () {
   const h = home();
   const s = S.load(h);
   return (s.cacheMaxMB === 20 && s.problems.length === 0 && !fs.existsSync(S.filePath(h))) || false;
@@ -42,19 +42,19 @@ test.run('a number below the floor is raised to it, and said', 0.2, function () 
   const s = S.load(home('{ "cacheMaxMB": 0.01 }'));
   return (s.cacheMaxMB === 1 && s.problems.length === 1 && /below the floor/.test(s.problems[0])) || false;
 }, test.limit.quick);
-test.run('zero, a negative or no number: the default, and said', 0.2, function () {
+test.run('zero, a negative or no number gives the default, and it is said', 0.2, function () {
   const got = ['0', '-5', '"lots"'].map(function (v) { return S.load(home('{ "cacheMaxMB": ' + v + ' }')); });
   return got.every(function (s) { return s.cacheMaxMB === 20 && s.problems.length === 1 && /positive number/.test(s.problems[0]); }) || false;
 }, test.limit.quick);
-test.run('a node.json that is not JSON: the defaults, and said', 0.2, function () {
+test.run('a node.json that is not JSON gives the defaults, and it is said', 0.2, function () {
   const s = S.load(home('{ cacheMaxMB: 7'));
   return (s.cacheMaxMB === 20 && s.problems.length === 1 && /not valid JSON/.test(s.problems[0])) || false;
 }, test.limit.quick);
-test.run('a field it does not read (searchMemoryRows, gone with goal/G40.11) is no problem', 0.2, function () {
+test.run('a field it does not read, such as the gone searchMemoryRows, is no problem', 0.2, function () {
   const s = S.load(home('{ "searchMemoryRows": 500, "cacheMaxMB": 3 }'));
   return (s.cacheMaxMB === 3 && s.problems.length === 0) || false;
 }, test.limit.quick);
-test.run('read once per home: a change to node.json after the first read is not seen', 0.2, function () {
+test.run('node.json is read once per home, so a change to it after the first read is not seen', 0.2, function () {
   const h = home('{ "cacheMaxMB": 4 }');
   S.load(h);
   fs.writeFileSync(S.filePath(h), '{ "cacheMaxMB": 9 }');
@@ -64,7 +64,7 @@ test.run('two homes in one process do not see each other\'s settings', 0.2, func
   const a = home('{ "cacheMaxMB": 2 }'), b = home('{ "cacheMaxMB": 5 }');
   return (S.load(a).cacheMaxMB === 2 && S.load(b).cacheMaxMB === 5) || false;
 }, test.limit.quick);
-test.run('the node never writes node.json: the owner\'s text is left byte for byte', 0.2, function () {
+test.run('the node never writes node.json, so the owner\'s text is left byte for byte', 0.2, function () {
   const text = '{ "cacheMaxMB": 0.5 }\n';
   const h = home(text);
   S.load(h); S.cacheMaxBytes(h);

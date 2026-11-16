@@ -26,7 +26,7 @@ const dataSet = function (map) { return { get: function (p) { return map[p]; } }
 
 const C = {};
 
-test.run('the world: rules({ items, parts, state }) answers keep, shed and answer', 0.2, function () {
+test.run('rules, handed the names of items, parts and state, answers keep, shed and answer', 0.2, function () {
   let rules = null;
   try { rules = require(FILE); } catch (e) { return false; }
   if (typeof rules !== 'function') return false;
@@ -40,12 +40,12 @@ test.run('keep places the row last', 0.2, function () {
   const out = C.keep([facts(1, 1), facts(1, 2)], chat(1, 1, 't1'));
   return (out.length === 3 && out[2].table === 'chat') || false;
 }, test.limit.quick);
-test.run('an item\'s facts again take the old facts of that item out', 0.2, function () {
+test.run('an item\'s facts kept again take the old facts of that item out', 0.2, function () {
   if (!C.keep) return false;
   const out = C.keep([facts(1, 1, { v: 'old' }), facts(1, 2)], facts(1, 1, { v: 'new' }));
   return (out.length === 2 && out[0].item.id === 'goal/G1.2' && out[1].v === 'new') || false;
 }, test.limit.quick);
-test.run('a chat line again, the same time and author, takes the old one out; another line stays beside it', 0.2, function () {
+test.run('a chat line kept again, with the same time and author, takes the old one out, and another line stays beside it', 0.2, function () {
   if (!C.keep) return false;
   const out = C.keep(C.keep([chat(1, 1, 't1', 'wsl', 'first')], chat(1, 1, 't2', 'wsl', 'second')), chat(1, 1, 't1', 'wsl', 'first, edited'));
   return (out.length === 2 && out[0].row.text === 'second' && out[1].row.text === 'first, edited') || false;
@@ -63,12 +63,12 @@ test.run('a check is kept by its number, a file by its author and path', 0.2, fu
   const files = out.length === 2 && out[0].row.by === 'cw' && out[1].row.n === 2;
   return (checks && files) || false;
 }, test.limit.quick);
-test.run('a rule again takes the old rule out', 0.2, function () {
+test.run('a rule kept again takes the old rule out', 0.2, function () {
   if (!C.keep) return false;
   const out = C.keep([rule('r1', 'old'), rule('r2')], rule('r1', 'new'));
   return (out.length === 2 && out[0].rule === 'r2' && out[1].text === 'new') || false;
 }, test.limit.quick);
-test.run('a row of a part it does not know takes nothing out', 0.2, function () {
+test.run('a row of a part keep does not know takes nothing out', 0.2, function () {
   if (!C.keep) return false;
   const out = C.keep([side('weird', 1, 1, { a: 1 })], side('weird', 1, 1, { a: 1 }));
   return out.length === 2 || false;
@@ -78,13 +78,13 @@ test.run('a row of a part it does not know takes nothing out', 0.2, function () 
 // "FIRST YOU shed the longest untouched goal, lock, stock and barrel / when there is only one goal, then you shed the
 // longest untouched item, LOCK, stock and barrel, / when there is only one goal with one item you shed the oldest chat
 // line." Rows of no goal (the rules) are never shed. Here a row's size is one: the limit counts rows.
-test.run('within its limit it sheds nothing', 0.2, function () {
+test.run('within its limit shed sheds nothing', 0.2, function () {
   if (!C.shed) return false;
   const rows = [facts(1, 1), facts(2, 1), rule('r')];
   const out = C.shed(rows, 3, count);
   return (out.length === 3 && out !== rows) || false;
 }, test.limit.quick);
-test.run('past it, with two goals or more, it sheds the longest untouched goal whole, lock, stock and barrel', 0.2, function () {
+test.run('past its limit, with two goals or more, shed sheds the longest untouched goal whole, lock, stock and barrel', 0.2, function () {
   if (!C.shed) return false;
   // Goal 1 was touched last by its chat line at index 3; goal 2 at index 4: goal 1 is the longest untouched.
   const rows = [facts(1, 0), facts(1, 1), facts(2, 1), chat(1, 1, 't1'), chat(2, 1, 't2'), rule('r')];
@@ -98,26 +98,26 @@ test.run('the touched one stays: a goal touched last is kept over an older one',
   const out = C.shed(rows, 2, count);
   return (out.length === 2 && out.every(function (r) { return (r.goal || r.key.goal) === 1; })) || false;
 }, test.limit.quick);
-test.run('with one goal, it sheds the longest untouched item whole; the goal\'s own row stays', 0.2, function () {
+test.run('with one goal, shed sheds the longest untouched item whole, and the goal\'s own row stays', 0.2, function () {
   if (!C.shed) return false;
   const rows = [facts(1, 0), facts(1, 1), facts(1, 2), chat(1, 1, 't1'), chat(1, 2, 't2')];
   const out = C.shed(rows, 3, count);
   return (out.length === 3 && !out.some(function (r) { return (r.item === 1) || (r.key && r.key.item === 1); }) && out.some(function (r) { return r.key && r.key.item === 0; }))
     || false;
 }, test.limit.quick);
-test.run('with one goal of one item, it sheds the oldest chat line', 0.2, function () {
+test.run('with one goal of one item, shed sheds the oldest chat line', 0.2, function () {
   if (!C.shed) return false;
   const rows = [facts(1, 1), chat(1, 1, 't1', 'wsl', 'oldest'), chat(1, 1, 't2', 'wsl', 'newer'), chat(1, 1, 't3', 'wsl', 'newest')];
   const out = C.shed(rows, 3, count);
   return (out.length === 3 && out.filter(function (r) { return r.table === 'chat'; }).map(function (r) { return r.row.text; }).join() === 'newer,newest') || false;
 }, test.limit.quick);
-test.run('the rules are never shed, and with nothing of a goal left to shed it stops', 0.2, function () {
+test.run('the rules are never shed, and with nothing of a goal left to shed, shed stops', 0.2, function () {
   if (!C.shed) return false;
   const rows = [rule('r1'), rule('r2'), facts(1, 1), chat(1, 1, 't1')];
   const out = C.shed(rows, 0, count);
   return (out.length === 3 && out.filter(function (r) { return r.rule; }).length === 2) || false;
 }, test.limit.quick);
-test.run('it sheds by the size it is handed: the cache file\'s bytes', 0.2, function () {
+test.run('shed sheds by the size it is handed, the cache file\'s bytes', 0.2, function () {
   if (!C.shed) return false;
   const rows = [facts(1, 1, { pad: 'x'.repeat(400) }), facts(2, 1)];
   const bytes = function (r) { return Buffer.byteLength(JSON.stringify(r), 'utf8'); };
@@ -136,14 +136,14 @@ test.run('item.get answers from the facts: the item as JSON, its version and the
   const a = C.answer('item.get', { id: ID }, held(null), 10000);
   return (!!a && JSON.parse(a.item).title === 't' && a.version === 4 && a.change === 17) || false;
 }, test.limit.quick);
-test.run('null when the cache does not hold it, so the desk is asked: no facts, facts with no version, no parts', 0.2, function () {
+test.run('answer gives null when the cache does not hold the item, so the desk is asked: no facts, facts with no version, or no parts', 0.2, function () {
   if (!C.answer) return false;
   const none = C.answer('item.get', { id: 'goal/G9.9' }, held({ box: 'b' }), 10000);
   const noVersion = C.answer('item.get', { id: ID }, held({ box: 'b' }, { id: ID }), 10000);
   const noParts = C.answer('item.box', { id: ID }, held(null), 10000);
   return (none === null && noVersion === null && noParts === null) || false;
 }, test.limit.quick);
-test.run('item.box answers the box and its version; item.checks the checks', 0.2, function () {
+test.run('item.box answers the box and its version, and item.checks answers the checks', 0.2, function () {
   if (!C.answer) return false;
   const box = C.answer('item.box', { id: ID }, held({ box: 'the box', version: 3, checks: [{ number: 1 }] }), 10000);
   const checks = C.answer('item.checks', { id: ID }, held({ box: 'the box', version: 3, checks: [{ number: 1 }] }), 10000);
@@ -156,7 +156,7 @@ test.run('item.chat answers the newest lines that fit its room, oldest first, ch
   const a = C.answer('item.chat', { id: ID }, held({ chat: lines }), room);
   return (!!a && a.chat.map(function (l) { return l.at; }).join() === 't4,t5' && a.chatMore === true) || false;
 }, test.limit.quick);
-test.run('all lines fitting, chatMore is false, unless the stream brought only the newest (chatMore kept)', 0.2, function () {
+test.run('with all lines fitting, chatMore is false, unless the stream brought only the newest and chatMore is kept', 0.2, function () {
   if (!C.answer) return false;
   const lines = [{ at: 't1', by: 'a', text: 'x' }];
   const all = C.answer('item.chat', { id: ID }, held({ chat: lines }), 10000);
@@ -177,7 +177,7 @@ test.run('a file list kept only in part is not answered: the desk is asked', 0.2
   const a = C.answer('item.files', { id: ID }, held({ files: [{ by: 'wsl', path: 'a' }], filesMore: true }), 10000);
   return a === null || false;
 }, test.limit.quick);
-test.run('a verb it does not keep is not answered', 0.2, function () {
+test.run('a verb the cache does not keep is not answered', 0.2, function () {
   if (!C.answer) return false;
   const a = C.answer('item.history', { id: ID }, held({ box: 'b', chat: [], checks: [] }), 10000);
   return a === null || false;

@@ -185,7 +185,7 @@ const NIGHT = { job_id: 'J1', path: 'fs.search', job: 'Night' };
 const DAY = { job_id: 'J2', path: 'gone.verb', job: 'Day' };
 const said = function () { return box.innerHTML.replace(/<[^>]*>/g, ' '); };
 
-test.run('the world: the panel runs on a bare window', 0.2, async function () {
+test.run('the grants panel runs on a bare window', 0.2, async function () {
   if (!SRC) return false;
   code = SRC.replace(/\/\/.*$/gm, '');
   w = world();
@@ -214,7 +214,7 @@ test.run('it requires spirit/element/search/grant.js', 0.2, function () {
   if (!w) return false;
   return w.required.indexOf('spirit/element/search/grant.js') !== -1 ? true : false;
 }, test.limit.quick);
-test.run('and no data script', 0.2, function () {
+test.run('it requires no data script', 0.2, function () {
   if (!w) return false;
   return !w.required.some(function (p) { return /data\.js$/.test(p); }) ? true : false;
 }, test.limit.quick);
@@ -222,13 +222,13 @@ test.run('and no data script', 0.2, function () {
 // dictionary both kinds of grant are made from, so a bundle's branches are the panel's to read.
 // The panel itself, create(): the node's grants table beside it (nodeGrants, below) is one its caller picks by name.
 // goal/G43.32: create() runs up to where the script places itself, as it ran up to E.grantsPanel = before.
-test.run('the panel names no grants table and no ID table: no auth grant verb, not nodeGrants, no agent verb, no loopback location, no branch (goal/G41.16)', 0.2, function () {
+test.run('the panel names no grants table and no ID table: no auth grant verb, not nodeGrants, no agent verb, no loopback location and no branch', 0.2, function () {
   if (!code) return false;
   const made = code.slice(code.indexOf('function create('), code.indexOf("window.spirit.require('spirit/element/installSpiritElement.js')"));
   return made.length > 0 && !/auth\.(grant|revoke|search)\b|nodeGrants|data\.auth|agent\.|loopback:\/\/|contact\.search|job_id|'grants'|"grants"/.test(made) ? true : false;
 }, test.limit.quick);
 // Andy: "every fucking element gets the interfaces it needs".
-test.run('it asks its verbs through the spirit object: no api.verb, no api.escapeHtml (goal/G43.24)', 0.2, function () {
+test.run('it asks its verbs through the spirit object, with no api.verb and no api.escapeHtml', 0.2, function () {
   if (!code) return false;
   return !/\.verb\s*\(|\bapi\.(verb|escapeHtml)\b/.test(code) ? true : false;
 }, test.limit.quick);
@@ -260,7 +260,7 @@ test.run('it says, in one note, "not configured: " and the table it lacks, and d
   return unset.every(function (u) { return u.fits; }) && w.grantLists.length === 0 && w.bundles.length === 0 && w.ids.length === 0 && w.families.length === 0 ? true
     : false;
 }, test.limit.quick);
-test.run('and its destroy empties the host', 0.2, function () {
+test.run('the unconfigured panel\'s destroy empties the host', 0.2, function () {
   if (!unset) return false;
   return unset.every(function (u) { return u.empties; }) ? true : false;
 }, test.limit.quick);
@@ -270,7 +270,7 @@ test.run('and its destroy empties the host', 0.2, function () {
 // rowForm",
 // "spirit.element.spirit.element.rowForm.create(container, { icon, button }) -> { root, span, button }", "The mounter drops
 // its form elements into span and wires the button itself (a busyButton or a click)."
-test.run('one bundle selector, two ID selectors (the form\'s and the filter), one family selector', 0.2, async function () {
+test.run('it makes one bundle selector, two ID selectors, the form\'s and the filter, and one family selector', 0.2, async function () {
   if (!GP || typeof GP.create !== 'function') return false;
   box = node('panel');
   cfg = config(w);
@@ -284,7 +284,7 @@ test.run('one bundle selector, two ID selectors (the form\'s and the filter), on
   formId = w.ids.filter(function (c) { return c !== filterId; })[0];
   return w.bundles.length === 1 && w.ids.length === 2 && w.families.length === 1 ? true : false;
 }, test.limit.quick);
-test.run('each made with a container of its own, <name>.create(container, options)', 0.2, function () {
+test.run('each selector is made with a container of its own, by its create with that container and options', 0.2, function () {
   if (!box) return false;
   const parts = w.bundles.concat(w.ids, w.families);
   return parts.every(function (x) { return x.container && x.container.kids.indexOf(x) !== -1; }) ? true : false;
@@ -293,7 +293,7 @@ test.run('both ID selectors search the ID table it was handed: its location, key
   if (!box) return false;
   return w.ids.every(function (c) { return c.opts.table === cfg.ids.table && c.opts.key === cfg.ids.key && c.opts.label === cfg.ids.label; }) ? true : false;
 }, test.limit.quick);
-test.run('it loads the rowForm itself (rule/26)', 0.2, function () {
+test.run('it loads the rowForm itself', 0.2, function () {
   if (!w) return false;
   return w.required.indexOf('spirit/element/rowForm.js') !== -1 ? true : false;
 }, test.limit.quick);
@@ -311,7 +311,7 @@ test.run('the word "grant" at its start is gone, âž• in its place, and it draws 
   const text = box.innerHTML.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ');
   return !/\bgrant\b/i.test(text) && !/<button[^>]*>\s*Grant\s*<\/button>/.test(box.innerHTML) ? true : false;
 }, test.limit.quick);
-test.run('the rowForm\'s button is the Grant, a busyButton (goal/G41.23)', 0.2, function () {
+test.run('the rowForm\'s button is the Grant, a busyButton', 0.2, function () {
   if (!box) return false;
   return !!rf && w.busy.some(function (a) { return a.button === rf.button; }) ? true : false;
 }, test.limit.quick);
@@ -351,7 +351,7 @@ test.run('it hands the grant list its selectors: the ID filter, then the family 
 }, test.limit.quick);
 
 // the selectors narrow it, by the grants table's own key field
-test.run('nothing chosen: every grant passes', 0.2, function () {
+test.run('with nothing chosen, every grant passes', 0.2, function () {
   if (!gl) return false;
   return pass(NIGHT) && pass(DAY) ? true : false;
 }, test.limit.quick);
@@ -386,7 +386,7 @@ test.run('the tree is read through spirit.tree(), and the list told what it serv
   return w.treeAsked >= 1 && typeof gl.opts.serves === 'function' && gl.opts.serves('fs.search') === true && gl.opts.serves('gone.verb') === false ? true
     : false;
 }, test.limit.quick);
-test.run('a server job changed: the tree is read again, and the grant it now serves is no longer deprecated', 0.2, async function () {
+test.run('when a server job changes, the tree is read again, and the grant it now serves is no longer deprecated', 0.2, async function () {
   if (!gl) return false;
   if (typeof gl.opts.serves !== 'function') return false;
   D = w.win.spirit.data;
@@ -406,7 +406,7 @@ test.run('deprecated is a plain toggle of the search, its button drawn in the ðŸ
   return !!dep && dep.toggle === true && (typeof dep.when !== 'function' || dep.when([]) !== false) && dep.test(DAY, undefined) === 0 && dep.test(NIGHT, undefined) === 1 ? true
     : false;
 }, test.limit.quick);
-test.run('its toggle on, the deprecated grants are listed', 0.2, function () {
+test.run('with its toggle on, the deprecated grants are listed', 0.2, function () {
   return dep && dep.test(DAY, true) === 1 ? true : false;
 }, test.limit.quick);
 
@@ -420,7 +420,7 @@ test.run('with no bundle or no ID chosen, Grant asks nothing', 0.2, async functi
   press(); await settle();
   return !w.calls.slice(at0).some(function (c) { return c.name === 'grants.grant'; }) ? true : false;
 }, test.limit.quick);
-test.run('Grant reads the chosen bundle\'s branches: auth.branch { op: search, bundle }', 0.2, async function () {
+test.run('Grant reads the chosen bundle\'s branches by asking auth.branch to search that bundle', 0.2, async function () {
   if (!press) return false;
   if (!formId || !w.bundles[0]) return false;
   w.bundles[0].value = 7; w.bundles[0].row = { id: 7, label: 'Reader' };
@@ -432,7 +432,7 @@ test.run('Grant reads the chosen bundle\'s branches: auth.branch { op: search, b
   const read = w.calls.slice(at0).filter(function (c) { return c.name === 'auth.branch'; })[0];
   return read && read.args.op === 'search' && read.args.bundle === 7 ? true : false;
 }, test.limit.quick);
-test.run('and grants each through the grants table it was handed, grant(id, path): family.verb, or the family alone for (ALL)', 0.2, function () {
+test.run('Grant grants each branch through the grants table it was handed, by id and path, the path being family.verb, or the family alone for (ALL)', 0.2, function () {
   if (!press) return false;
   const grants = w.calls.slice(at0).filter(function (c) { return c.name === 'grants.grant'; });
   return grants.length === 3 && grants.every(function (c) { return c.args.id === 'J3'; }) && JSON.stringify(grants.map(function (c) { return c.args.path; }).sort()) === '["desk","fs.search","jobs.list"]' ? true
@@ -446,7 +446,7 @@ test.run('a path the ID holds already is counted done, never said as a refusal',
   if (!press) return false;
   return !/already-granted|already granted|not granted|refused/i.test(said()) ? true : false;
 }, test.limit.quick);
-test.run('and reads no grant again (rule/19)', 0.2, function () {
+test.run('Grant reads no grant again', 0.2, function () {
   if (!press) return false;
   return !w.calls.slice(at0).some(function (c) { return c.name === 'grants.search'; }) ? true : false;
 }, test.limit.quick);
@@ -499,7 +499,7 @@ test.run('grantsPanel.js holds no warning reading and no confirm', 0.2, function
 
 // Grant is a busyButton, waiting until every grant is answered (goal/G41.23)
 // Box: "first users: Ask in the agent's Update model list, and Grant in the grants panel".
-test.run('it loads the busyButton itself (rule/26)', 0.2, function () {
+test.run('it loads the busyButton itself', 0.2, function () {
   if (!w) return false;
   return w.required.indexOf('spirit/element/busyButton.js') !== -1 ? true : false;
 }, test.limit.quick);
@@ -527,7 +527,7 @@ test.run('a press grants, and the request it hands the button is still waiting w
   return asked === 1 && !!gReq && typeof gReq.then === 'function' && !gSettled ? true
     : false;
 }, test.limit.quick);
-test.run('and it settles once every grant is answered, so the button is plain again', 0.2, async function () {
+test.run('the request settles once every grant is answered, so the button is plain again', 0.2, async function () {
   if (!gbusy) return false;
   w.grantAnswer = null;
   for (let i = 0; i < 5 && letGo; i++) { const go = letGo; letGo = null; go({ ok: true }); await settle(); }
@@ -537,24 +537,24 @@ test.run('and it settles once every grant is answered, so the button is plain ag
 // grantsPanel.nodeGrants: the node's own grants table, one a caller picks by name (goal/G43.24)
 // goal/G43.24: "Still its own: the panel's data source, auth.search and auth.grant / auth.revoke over the auth cache
 // (GR_GRANTS). It moves into grantsPanel."
-test.run('grantsPanel.nodeGrants: its branch the auth family\'s cache (spirit.data.auth.data.grants.branch), keyed key, labelled label', 0.2, function () {
+test.run('the branch of grantsPanel.nodeGrants is the auth family\'s cache at spirit.data.auth.data.grants.branch, keyed by key and labelled by label', 0.2, function () {
   if (!GP) return false;
   g = GP.nodeGrants;
   A = ((w.win.spirit.data || {}).auth || {}).data;
   return !!g && !!A && g.branch === A.grants.branch && g.key === 'key' && g.label === 'label' ? true : false;
 }, test.limit.quick);
-test.run('with search, grant, revoke and watch, and no stream of its own', 0.2, function () {
+test.run('grantsPanel.nodeGrants has search, grant, revoke and watch, and no stream of its own', 0.2, function () {
   if (!g || !A) return false;
   return ['search', 'grant', 'revoke', 'watch'].every(function (f) { return typeof g[f] === 'function'; }) && !('stream' in g) ? true : false;
 }, test.limit.quick);
-test.run('the panel takes it as a grants table: configured with it, it says nothing is missing', 0.2, async function () {
+test.run('the panel takes nodeGrants as a grants table, and configured with it says nothing is missing', 0.2, async function () {
   if (!g || !A) return false;
   const panelOk = node('ok');
   GP.create(panelOk, { ids: { table: 'loopback://api/contact/search' }, grants: g });
   await settle();
   return !/not configured/.test(panelOk.kids.map(function (k) { return k.textContent; }).join(' ')) ? true : false;
 }, test.limit.quick);
-test.run('search(text) asks spirit\'s auth.search { text } and answers its { items, more }', 0.2, async function () {
+test.run('the search of nodeGrants asks spirit\'s auth.search with the text and answers its items and more', 0.2, async function () {
   if (!g || !A) return false;
   const at = w.calls.length;
   found = await g.search('bo');
@@ -571,19 +571,19 @@ test.run('a row it cannot read is handed on as it came', 0.2, function () {
   if (!found || !Array.isArray(found.items)) return false;
   return found.items[1] && found.items[1].label === 'not json' ? true : false;
 }, test.limit.quick);
-test.run('grant(id, path) asks auth.grant { key, path } and answers { ok: true }', 0.2, async function () {
+test.run('the grant of nodeGrants asks auth.grant with the key and the path and answers ok true', 0.2, async function () {
   if (!g || !A) return false;
   const at = w.calls.length;
   const madeG = await g.grant('K3', 'jobs.list');
   const gr = w.calls.slice(at)[0];
   return gr && gr.name === 'auth.grant' && gr.args.key === 'K3' && gr.args.path === 'jobs.list' && madeG && madeG.ok === true ? true : false;
 }, test.limit.quick);
-test.run('a refusal answers { ok: false, code, error }, in the node\'s words', 0.2, async function () {
+test.run('a refused grant answers ok false with its code and error, in the node\'s words', 0.2, async function () {
   if (!g || !A) return false;
   const already = await g.grant('K3', 'fs.search');
   return already && already.ok === false && already.code === 'already-granted' && already.error === 'already granted' ? true : false;
 }, test.limit.quick);
-test.run('revoke(id, path) asks auth.revoke { key, path } and answers { ok: true }', 0.2, async function () {
+test.run('the revoke of nodeGrants asks auth.revoke with the key and the path and answers ok true', 0.2, async function () {
   if (!g || !A) return false;
   const at = w.calls.length;
   const rvd = await g.revoke('K3', 'jobs.list');
@@ -592,7 +592,7 @@ test.run('revoke(id, path) asks auth.revoke { key, path } and answers { ok: true
 }, test.limit.quick);
 // WHO ASKS FOR A CHANGE LISTENS FOR IT (goal/G41.27, G41.28): a grant the node's auth job hands comes back through watch.
 let heard, off;
-test.run('watch(fn): a grant kept in spirit.data.auth is heard as <key>\\n<path> with its row, and once revoked with none', 0.2, function () {
+test.run('the watch of nodeGrants hears a grant kept in spirit.data.auth as <key>\\n<path> with its row, and once revoked with none', 0.2, function () {
   if (!g || !A) return false;
   D = w.win.spirit.data;
   heard = [];
@@ -616,20 +616,20 @@ test.run('its release ends the watch', 0.2, function () {
 // authSource: Grants' data source is grantsPanel's (goal/G43.24); the box, 6: Grants' data source "moves into grantsPanel"
 function codeOf(f) { try { return fs.readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1'); } catch (e) { return ''; } }
 let panel = '';
-test.run('the world: spirit/element/search/grant/grantsPanel.js is there', 0.2, function () {
+test.run('spirit/element/search/grant/grantsPanel.js is there', 0.2, function () {
   panel = codeOf(path.join(RUN, 'spirit', 'element', 'search', 'grant', 'grantsPanel.js'));
   return panel.length > 0 ? true : false;
 }, test.limit.quick);
-test.run('Grants\' data source moves into grantsPanel: it asks auth.search', 0.2, function () {
+test.run('Grants\' data source has moved into grantsPanel, which asks auth.search', 0.2, function () {
   return /\bauth\W{1,4}search\b/.test(panel) ? true : false;
 }, test.limit.quick);
-test.run('Grants\' data source moves into grantsPanel: it asks auth.grant', 0.2, function () {
+test.run('Grants\' data source has moved into grantsPanel, which asks auth.grant', 0.2, function () {
   return /\bauth\W{1,4}grant\b/.test(panel) ? true : false;
 }, test.limit.quick);
-test.run('Grants\' data source moves into grantsPanel: it asks auth.revoke', 0.2, function () {
+test.run('Grants\' data source has moved into grantsPanel, which asks auth.revoke', 0.2, function () {
   return /\bauth\W{1,4}revoke\b/.test(panel) ? true : false;
 }, test.limit.quick);
-test.run('grantsPanel holds the auth cache it reads (spirit.data.auth)', 0.2, function () {
+test.run('grantsPanel holds the auth cache it reads, spirit.data.auth', 0.2, function () {
   const holds = /\bdata\.auth\b|cacheManager\s*\(\s*['"]auth['"]/.test(panel);
   return holds ? true : false;
 }, test.limit.quick);

@@ -24,7 +24,7 @@ const call = function (verb, args) { return spirit.check('app.' + verb, W.verbs[
 const passes = function (verb, args) { return !!W.verbs[verb] && call(verb, args) === null; };
 const refusedAs = function (verb, args) { if (!W.verbs[verb]) return ''; const r = call(verb, args); return r ? r.code : ''; };
 
-test.run('the world: api.js loads', 0.2, function () {
+test.run('the app family\'s api.js loads', 0.2, function () {
   try { W.api = require(FILE); } catch (e) { return false; }
   W.verbs = W.api.verbs || {};
   W.names = Object.keys(W.verbs);
@@ -38,7 +38,7 @@ test.run('it exports its verbs and their functions, and nothing else: it names n
   if (!W.api) return false;
   return Object.keys(W.api).sort().join() === 'functions,verbs' || false;
 }, test.limit.quick);
-test.run('every rule is one of spirit.js\'s standard, \'?\' optional', 0.2, function () {
+test.run('every argument rule is one of spirit.js\'s standard rules, a trailing question mark making it optional', 0.2, function () {
   if (!W.api) return false;
   if (!W.names.length) return false;
   const bad = [];
@@ -57,7 +57,7 @@ test.run('its verbs are search, active, label and icon', 0.2, function () {
   return W.names.slice().sort().join() === 'active,icon,label,search' || false;
 }, test.limit.quick);
 // "A verb added to the family is added here, in the same commit": the node mounts what this file lists, and no more.
-test.run('each verb is one the node mounts for the app family, with the same arguments (server.js)', 0.2, function () {
+test.run('each verb is one the node mounts for the app family in server.js, with the same arguments', 0.2, function () {
   if (!W.api) return false;
   const src = fs.readFileSync(path.join(RUN, 'spirit', 'server.js'), 'utf8');
   const at = src.indexOf('loopbackVerbs.mount(\'app\'');
@@ -73,7 +73,7 @@ test.run('each verb is one the node mounts for the app family, with the same arg
 
 // ── each verb's arguments ──
 // Andy, box: "it's minimum, no filters, just a search string."
-test.run('search takes a search string, optional, and nothing else: no filters', 0.2, function () {
+test.run('search takes an optional search string and nothing else, so no filters', 0.2, function () {
   if (!W.api) return false;
   return (passes('search', {}) && passes('search', { q: 'desk' }) && refusedAs('search', { q: 1 }) === 'bad-request'
     && refusedAs('search', { q: '', active: true }) === 'no-such-argument') || false;

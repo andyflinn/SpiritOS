@@ -68,13 +68,13 @@ test.run('spirit/app/info/element.js is there', 0.2, function () {
 }, test.limit.quick);
 
 // mounted the new shell's way (goal/G43.24, requirement 7)
-test.run('it sets spirit.element.spirit.app.info.element = { create }', 0.2, function () {
+test.run('it sets spirit.element.spirit.app.info.element to an object with create', 0.2, function () {
   if (!SRC) return false;
   U.w = world();
   U.I = U.w.els.info;
   return !!U.I && typeof U.I.create === 'function' ? true : false;
 }, test.limit.quick);
-test.run('no spirit.shell.activateApp, the old shell\'s way', 0.2, function () {
+test.run('it uses no spirit.shell.activateApp, the old shell\'s way', 0.2, function () {
   if (!SRC) return false;
   return !/\bactivateApp\b|\bspirit\.shell\b/.test(CODE) || false;
 }, test.limit.quick);
@@ -94,7 +94,7 @@ test.run('it draws no markup of its own', 0.2, function () {
 }, test.limit.quick);
 
 // create(container, { open }): nodeInfo mounted into the container, handed the mounter's stack
-test.run('create answers { destroy() }', 0.2, function () {
+test.run('create answers an object with a destroy function', 0.2, function () {
   if (!U.I || typeof U.I.create !== 'function') return false;
   U.box = node('<container>');
   U.box.innerHTML = '<p>left over</p>';
@@ -112,7 +112,7 @@ test.run('it makes nodeInfo in its container', 0.2, function () {
   if (!U.box) return false;
   return U.w.made.length === 1 && U.w.made[0].host === U.box ? true : false;
 }, test.limit.quick);
-test.run('handed { open }, the stack its mounter opens layers in, and nothing else', 0.2, function () {
+test.run('nodeInfo is handed open, the stack its mounter opens layers in, and nothing else', 0.2, function () {
   if (!U.box) return false;
   const made = U.w.made[0];
   return made && made.opts && made.opts.open === U.open && Object.keys(made.opts).join() === 'open' ? true : false;
@@ -132,7 +132,7 @@ test.run('destroy destroys nodeInfo and empties its container', 0.2, function ()
   U.m.destroy();
   return U.w.destroyed === 1 && U.box.innerHTML === '' ? true : false;
 }, test.limit.quick);
-test.run('the world: made while nodeInfo is still loading', 0.2, function () {
+test.run('the element can be made while nodeInfo is still loading', 0.2, function () {
   if (!SRC) return false;
   U.late = world({ held: new Promise(function (r) { U.letGo = r; }) });
   U.box3 = node('<container>');
@@ -146,7 +146,7 @@ test.run('destroyed before nodeInfo loads, nothing is made', 0.2, async function
 }, test.limit.quick);
 
 // nodeInfo refused
-test.run('it says Info could not be loaded.', 0.2, async function () {
+test.run('when nodeInfo is refused it says Info could not be loaded.', 0.2, async function () {
   if (!SRC) return false;
   const no = world({ refuse: true });
   const box4 = node('<container>');
@@ -227,27 +227,27 @@ const waitFor = function (expr, ms) { return H.until(function () { return R.c.ev
 
   // wrapper: Info in spirit/app/, a wrapper mounted the new shell's way (goal/G43.24)
   // the box, 1: "each app has its <name>.json in the spirit/app form, as icons.json and file.json have it"
-  test.run('the world: file.json, the form, has identity, mount, shell and node', 0.2, function () {
+  test.run('file.json, the form, has identity, mount, shell and node', 0.2, function () {
     R.fileJson = readJson(path.join(RUN, 'spirit', 'app', 'file', 'file.json')) || {};
     return same(Object.keys(R.fileJson).sort(), ['identity', 'mount', 'node', 'shell']) || false;
   }, test.limit.quick);
-  test.run('the world: spirit/app/info/info.json is there and reads', 0.2, function () {
+  test.run('spirit/app/info/info.json is there and reads', 0.2, function () {
     R.j = readJson(path.join(APP_DIR, NAME + '.json'));
     return !!R.j || false;
   }, test.limit.quick);
-  test.run('info.json: its identity is the icon ℹ️, the label Info, and intrinsic true', 0.2, function () {
+  test.run('the identity in info.json is the icon ℹ️, the label Info, and intrinsic true', 0.2, function () {
     if (!R.j) return false;
     return same(R.j.identity, { icon: WANT.icon, label: WANT.label, intrinsic: true }) || false;
   }, test.limit.quick);
-  test.run('info.json: it mounts element.js', 0.2, function () {
+  test.run('info.json mounts element.js', 0.2, function () {
     if (!R.j) return false;
     return same(R.j.mount, { 'element.js': true }) || false;
   }, test.limit.quick);
-  test.run('info.json: in the shell it mounts and has a tile, and is no shell itself', 0.2, function () {
+  test.run('info.json says that in the shell it mounts and has a tile, and is no shell itself', 0.2, function () {
     if (!R.j) return false;
     return same(R.j.shell, { true: false, mount: true, tile: true }) || false;
   }, test.limit.quick);
-  test.run('info.json: the node mounts no server for it', 0.2, function () {
+  test.run('info.json says the node mounts no server for it', 0.2, function () {
     if (!R.j) return false;
     return same(R.j.node, { mount: false }) || false;
   }, test.limit.quick);
@@ -255,13 +255,13 @@ const waitFor = function (expr, ms) { return H.until(function () { return R.c.ev
     if (!R.j) return false;
     return same(Object.keys(R.j).sort(), Object.keys(R.fileJson).sort()) || false;
   }, test.limit.quick);
-  test.run('Q1, the old description sentence: "it goes.", and info.json holds none', 0.2, function () {
+  test.run('the old description sentence goes, and info.json holds none', 0.2, function () {
     if (!R.j) return false;
     return JSON.stringify(R.j).indexOf('"description"') === -1 || false;
   }, test.limit.quick);
 
   // the box, 6: "each app's <name>.js only loads spirit/element/ parts (spirit.require) and mounts them into its container"
-  test.run('the world: its element.js is there', 0.2, function () {
+  test.run('its element.js is there', 0.2, function () {
     R.c0 = code(path.join(APP_DIR, 'element.js'));
     return R.c0.length > 0 || false;
   }, test.limit.quick);
@@ -273,7 +273,7 @@ const waitFor = function (expr, ms) { return H.until(function () { return R.c.ev
     const strays = named.filter(function (s) { return !/^spirit\/element\/[^]+\.js$/.test(s); });
     return asks > 0 && named.length > 0 && !strays.length ? true : false;
   }, test.limit.quick);
-  test.run('it loads no data family of its own (no cacheManager)', 0.2, function () {
+  test.run('it loads no data family of its own and asks no cacheManager', 0.2, function () {
     if (!R.c0) return false;
     return !/\bcacheManager\s*\(/.test(R.c0) || false;
   }, test.limit.quick);
@@ -303,14 +303,14 @@ const waitFor = function (expr, ms) { return H.until(function () { return R.c.ev
   // Its own test running from its new place, and no file naming its old shell/ folder (the box, 4 and 5): the move is long
   // done and shell/ is gone; a require of a file that is not there is the general test's (goal/G47.1).
 
-  test.run('the world: a scratch node comes up', 0.2, async function () {
+  test.run('a scratch node comes up', 0.2, async function () {
     R.s = scratch();
     R.N = await boot(R.s.run);
     return R.N.up || false;
   }, test.limit.slow);
 
   // the box, 2: intrinsic "as spirit/app apps say it": the node says so
-  test.run('the world: the node lists Files, intrinsic', 0.2, async function () {
+  test.run('the node lists Files as intrinsic', 0.2, async function () {
     if (!R.N || !R.N.up) return false;
     const listed = await call(R.N.base, 'app.search', { q: '' });
     R.rows = {};
@@ -322,7 +322,7 @@ const waitFor = function (expr, ms) { return H.until(function () { return R.c.ev
     return !!R.rows[NAME] && R.rows[NAME].intrinsic === true && R.rows[NAME].active === true ? true : false;
   }, test.limit.quick);
 
-  test.run('the world: a Chrome page', 0.2, async function () {
+  test.run('a Chrome page opens', 0.2, async function () {
     if (!R.N || !R.N.up) return false;
     const where = H.findChrome();
     if (!where) return false;
@@ -331,7 +331,7 @@ const waitFor = function (expr, ms) { return H.until(function () { return R.c.ev
     R.c = c;
     return true;
   }, test.limit.quick);
-  test.run('the world: the face page has its spirit', 0.2, async function () {
+  test.run('the face page has its spirit', 0.2, async function () {
     if (!R.c) return false;
     await R.c.send('Page.navigate', { url: R.N.base + '/face.html' });
     R.page = !!(await H.until(function () { return R.c.evaluate('!!(window.spirit && window.spirit.ready && window.spirit.event)'); }, 20000));
@@ -348,7 +348,7 @@ const waitFor = function (expr, ms) { return H.until(function () { return R.c.ev
 
   // the box, 3: "both show in the shell as before: a tile each, and each opens as it did"
   // The shell app, as boot.js hands it the page's app area, here in a box of its own over the page.
-  test.run('the world: the shell draws its tiles, Files among them', 0.2, async function () {
+  test.run('the shell draws its tiles, Files among them', 0.2, async function () {
     if (!R.page) return false;
     const shell = await R.c.evaluate('(function () { var old = document.getElementById("zzBox"); if (old) old.remove(); var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.require("spirit/app/app/element.js").then(function () { window.__shell = spirit.element.spirit.app.app.element.create(b); return "made"; }, function () { return false; }); }())');
     return shell === 'made' && await waitFor('tiles().indexOf("file") !== -1', 10000) ? true : false;
@@ -359,7 +359,7 @@ const waitFor = function (expr, ms) { return H.until(function () { return R.c.ev
   }, test.limit.quick);
 
   // Info opens as it did: its name and description fields, and the rotate button.
-  test.run('Info\'s tile opens Info: its name and its description field', 0.2, async function () {
+  test.run('Info\'s tile opens Info with its name and its description field', 0.2, async function () {
     if (!R.page) return false;
     const infoPressed = await T('tile("info")');
     R.infoOpen = !!(infoPressed && await waitFor('count("[data-field=label]") === 1 && count("[data-field=description]") === 1', 10000));
@@ -369,7 +369,7 @@ const waitFor = function (expr, ms) { return H.until(function () { return R.c.ev
     if (!R.infoOpen) return false;
     return await waitFor('buttons().some(function (b) { return /^Rotate this node.s cipher key$/.test(b); })', 6000) ? true : false;
   }, test.limit.quick);
-  test.run('over the tiles one bar in view, ℹ️ Info', 0.2, async function () {
+  test.run('over the tiles one bar is in view, ℹ️ Info', 0.2, async function () {
     if (!R.infoOpen) return false;
     const infoBars = await T('bars()');
     return infoBars.length === 1 && infoBars[0] === WANT.icon + ' Info' ? true : false;
@@ -378,7 +378,7 @@ const waitFor = function (expr, ms) { return H.until(function () { return R.c.ev
     if (!R.infoOpen) return false;
     return !/could not be loaded/i.test(await T('text()')) || false;
   }, test.limit.quick);
-  test.run('the world: Info\'s ✕ shows the tiles again', 0.2, async function () {
+  test.run('Info\'s ✕ shows the tiles again', 0.2, async function () {
     if (!R.infoOpen) return false;
     await T('close("Info")');
     return await waitFor('tiles().indexOf("info") !== -1', 6000) ? true : false;

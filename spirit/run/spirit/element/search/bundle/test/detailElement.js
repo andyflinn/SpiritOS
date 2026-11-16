@@ -37,7 +37,7 @@ let answer = function (a) { return Promise.resolve({ id: 11 }); };
 const D = function () { return (E && E.search && E.search.bundle && E.search.bundle.detailElement) || null; };
 const hasD = function () { return !!(D() && typeof D().create === 'function'); };
 
-test.run('the world: the editor runs on a bare window, its parts stand-ins', 0.2, async function () {
+test.run('the editor runs on a bare window, with stand-ins for its parts', 0.2, async function () {
   if (!fs.existsSync(FILE)) return false;
   asked = [];
   required = [];
@@ -82,14 +82,14 @@ test.run('it requires the family selector and the branch selector through spirit
   if (!required) return false;
   return ['spirit/element/search/api.js', 'spirit/element/search/branch.js'].every(function (p) { return required.indexOf(p) !== -1; }) ? true : false;
 }, test.limit.quick);
-test.run('it registers spirit.element.spirit.element.search.bundle.detailElement.create, and no page of its own (goal/G41.32)', 0.2, function () {
+test.run('it registers spirit.element.spirit.element.search.bundle.detailElement.create, and no page of its own', 0.2, function () {
   if (!E) return false;
   return hasD() && D().open === undefined ? true : false;
 }, test.limit.quick);
 
 // always on one bundle
 // Andy, box: "the branchEditor page is always configured with a bundle key".
-test.run('its list is branchSelector.create(the page, a pane on that bundle, columns family, verb, delete)', 0.2, async function () {
+test.run('its list is a branch selector made in the page as a pane on that bundle, with the columns family, verb and delete', 0.2, async function () {
   if (!hasD()) return false;
   box = node('box');
   D().create(box, { bundle: 7, label: 'Reader', gone: function () { closed += 1; } });
@@ -103,7 +103,7 @@ test.run('its list is branchSelector.create(the page, a pane on that bundle, col
 // there that only displays when a family is selected... !\n[➕] [choose a family… ▾] [All Verbs ▾] [Add]". And
 // "apiFamiliySelector.js will use apiVerbSelector as part of itself": the two dropdowns are its two halves, the verb's
 // hiding until a family is chosen the family selector's own (its test).
-test.run('it loads the rowForm itself (rule/26)', 0.2, function () {
+test.run('it loads the rowForm itself', 0.2, function () {
   if (!box) return false;
   fam = families[0];
   add = all(box).filter(function (k) { return k.tag === 'button' && /^\s*Add\s*$/.test(k.textContent || ''); })[0];
@@ -114,16 +114,16 @@ test.run('its add form is one rowForm in the page, its icon ➕ and its button A
   rf = forms[0];
   return forms.filter(function (f) { return f.opts.icon === '➕'; }).length === 1 && rf.opts.icon === '➕' && rf.opts.button === 'Add' && all(box).indexOf(rf.root) !== -1 ? true : false;
 }, test.limit.quick);
-test.run('its span holds the one family selector, choose a family…, its verb half with it, and nothing else', 0.2, function () {
+test.run('its span holds only the one family selector, which says choose a family… and carries its verb half', 0.2, function () {
   if (!box) return false;
   const inSpan = !!rf && !!fam && rf.span.kids.length === 1 && (rf.span.kids[0] === fam || (rf.span.kids[0].kids || []).indexOf(fam) !== -1 && rf.span.kids[0].kids.length === 1);
   return families.length === 1 && inSpan && fam.o.all === 'choose a family…' ? true : false;
 }, test.limit.quick);
-test.run('its Add is the rowForm\'s button, the only Add', 0.2, function () {
+test.run('its Add is the rowForm\'s button, and it is the only Add', 0.2, function () {
   if (!box) return false;
   return !!rf && !!add && add === rf.button && all(box).filter(function (k) { return k.tag === 'button' && /^\s*Add\s*$/.test(k.textContent || ''); }).length === 1 ? true : false;
 }, test.limit.quick);
-test.run('the word "new" at its start is gone, ➕ in its place', 0.2, function () {
+test.run('the word "new" at its start is gone, and ➕ stands in its place', 0.2, function () {
   if (!fam || !add) return false;
   return !/\bnew\b/.test(text(box)) ? true : false;
 }, test.limit.quick);
@@ -134,7 +134,7 @@ test.run('Add with no family asks nothing', 0.2, async function () {
   return asked.length === 0 ? true : false;
 }, test.limit.quick);
 let r0;
-test.run('Add with the verb left at All Verbs asks auth.branch { op: add, bundle, family, verb: \'\' }', 0.2, async function () {
+test.run('Add with the verb left at All Verbs asks auth.branch to add the family to the bundle with an empty verb', 0.2, async function () {
   if (!fam || !add) return false;
   fam.family = 'desk'; fam.value = 'desk'; fam.dispatchEvent(new Event('change', { bubbles: true }));
   await settle();
@@ -162,7 +162,7 @@ test.run('a refused add is said in the page, in the node\'s words', 0.2, functio
 
 // goal/G41.32: its Delete row at the bottom, and hearing its deletion
 // Andy: "i need the branchEditor to have a rowForm at the bottom: [❌] \"Delete <bundle-name> bundle and branches \" [Delete (armingButton)]."
-test.run('a second rowForm below the list: ❌, the words, Delete', 0.2, function () {
+test.run('a second rowForm below the list holds ❌, the words Delete Reader bundle and branches, and a Delete button', 0.2, function () {
   if (!box) return false;
   dr = forms[1];
   return !!dr && dr.opts.icon === '❌' && dr.opts.button === 'Delete' && dr.span.textContent === 'Delete Reader bundle and branches' && box.kids.indexOf(dr.root) > box.kids.indexOf(bs) ? true : false;
@@ -172,33 +172,33 @@ test.run('its Delete is an armingButton', 0.2, function () {
   del = armed.filter(function (a) { return dr && a.button === dr.button; })[0];
   return !!del && typeof del.o.run === 'function' ? true : false;
 }, test.limit.quick);
-test.run('its second press asks auth.bundle { op: delete, id }', 0.2, async function () {
+test.run('the second press on Delete asks auth.bundle to delete the bundle by its id', 0.2, async function () {
   if (!box) return false;
   if (del) { await del.o.run(); await settle(); }
   return asked.filter(function (a) { return a.op === 'delete' && a.id === 7; }).length === 1 ? true : false;
 }, test.limit.quick);
-test.run('and it waits to hear it: the answer closes nothing', 0.2, function () {
+test.run('the editor waits to hear the deletion, so the delete\'s answer closes nothing', 0.2, function () {
   if (!box) return false;
   return closed === 0 ? true : false;
 }, test.limit.quick);
-test.run('another bundle gone changes nothing', 0.2, function () {
+test.run('another bundle being deleted changes nothing', 0.2, function () {
   if (!box) return false;
   bundleWatches.forEach(function (fn) { fn('8', undefined); });
   return closed === 0 ? true : false;
 }, test.limit.quick);
-test.run('its own row changed is not its deletion', 0.2, function () {
+test.run('a change to its own bundle\'s row is not taken as its deletion', 0.2, function () {
   if (!box) return false;
   bundleWatches.forEach(function (fn) { fn('8', { id: 8, label: 'x' }); fn('7', { id: 7, label: 'Reader' }); });
   return closed === 0 ? true : false;
 }, test.limit.quick);
-test.run('its deletion heard, it says gone, for the tab to close', 0.2, function () {
+test.run('once it hears its bundle deleted, it says gone for the tab to close', 0.2, function () {
   if (!box) return false;
   bundleWatches.forEach(function (fn) { fn('7', undefined); });
   return closed === 1 ? true : false;
 }, test.limit.quick);
 
 // goal/G41.32: a bundle not the node's is shown only
-test.run('no form, and its branches with no Delete', 0.2, async function () {
+test.run('a bundle that is not the node\'s gets no form, and its branches are listed with no Delete', 0.2, async function () {
   if (!hasD()) return false;
   const ro = node('box');
   const formsBefore = forms.length;
@@ -211,7 +211,7 @@ test.run('no form, and its branches with no Delete', 0.2, async function () {
 // the shell's element shape: create(container, options) (goal/G41.19)
 // Box v23: "every element gets a container and appends itself".
 let made;
-test.run('create(container, { bundle }) draws the editor into that container', 0.2, async function () {
+test.run('create, given a container and a bundle, draws the editor into that container', 0.2, async function () {
   if (!hasD()) return false;
   const host = node('host');
   made = D().create(host, { bundle: 9 });
@@ -219,6 +219,6 @@ test.run('create(container, { bundle }) draws the editor into that container', 0
   const last = branchSels[branchSels.length - 1];
   return !!last && last.o.bundle === 9 && all(host).indexOf(last) !== -1 && all(host).indexOf(families[families.length - 1]) !== -1 ? true : false;
 }, test.limit.quick);
-test.run('and answers a handle with destroy', 0.2, function () {
+test.run('create answers a handle with a destroy', 0.2, function () {
   return !!made && typeof made.destroy === 'function' ? true : false;
 }, test.limit.quick);

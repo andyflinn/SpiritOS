@@ -21,7 +21,7 @@ let required, specs, indexes, R, s, paint;
 const ROW = { key: 'spirit/zz/alpha.js|spirit/zz/test/alpha.js|alpha answers <every> question, in full|1700000000000', script: 'spirit/zz/alpha.js',
   suite: 'spirit/zz/test/alpha.js', test: 'alpha answers <every> question, in full', verified: true, severity: 0, current: true };
 
-test.run('the world: the row runs on a bare window', 0.2, async function () {
+test.run('the testicle row element runs on a bare window', 0.2, async function () {
   if (!fs.existsSync(FILE)) return false;
   required = []; specs = []; indexes = [];
   global.window = { spirit: { escapeHtml: function (x) { return String(x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }, element: {} } };
@@ -66,7 +66,7 @@ test.run('rows share one index', 0.2, function () {
 }, test.limit.quick);
 // the box: "The columns, in this order: the result first, as an icon, ❌ for a failure, ✅ for a success; severity second;
 // the title third; then the script name (no path), then the suite name (no path)"
-test.run('its columns in order: result, severity, title, script, suite', 0.2, function () {
+test.run('its columns are, in order, the result, the severity, the title, the script and the suite', 0.2, function () {
   if (!s) return false;
   const names = s.fields.map(function (f) { return f.name; });
   return JSON.stringify(names) === JSON.stringify(['verified', 'severity', 'test', 'script', 'suite']) || false;

@@ -65,7 +65,7 @@ test.run('in node, found by the family\'s name (spirit.cacheManager), it stands 
   const X = S.data && S.data['config'] && S.data['config'].data;
   return (!threw && !!X && typeof X === 'object') || false;
 }, test.limit.quick);
-test.run('the world: run beside spirit.data, it makes its family there', 0.2, function () {
+test.run('run beside spirit.data, it makes its family there', 0.2, function () {
   try { w = world(); } catch (e) { w = null; return false; }
   return (!!w.X && typeof w.X === 'object') || false;
 }, test.limit.quick);
@@ -75,7 +75,7 @@ test.run('it has no reads yet', 0.2, function () {
   if (!w) return false;
   return Object.keys(w.X).length === 0 || false;
 }, test.limit.quick);
-test.run('it translates nothing: it adds no translator to spirit.data', 0.2, function () {
+test.run('it translates nothing, since it adds no translator to spirit.data', 0.2, function () {
   if (!w) return false;
   return w.translators.length === 0 || false;
 }, test.limit.quick);

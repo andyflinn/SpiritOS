@@ -57,7 +57,7 @@ function pageWorld() {
 // What the tests make, each in order, read by the tests after it.
 let w = null;
 
-test.run('in node, found by the family\'s name (spirit.cacheManager), it stands at spirit.data.node.data', 0.2, async function () {
+test.run('in node, found by the family\'s name through spirit.cacheManager, it stands at spirit.data.node.data', 0.2, async function () {
   require(path.join(RUN, 'spirit', 'spirit.js'));
   const S = globalThis.spirit;
   let threw = null;
@@ -65,14 +65,14 @@ test.run('in node, found by the family\'s name (spirit.cacheManager), it stands 
   const X = S.data && S.data['node'] && S.data['node'].data;
   return (!threw && !!X && typeof X === 'object') || false;
 }, test.limit.quick);
-test.run('the world: run beside spirit.data, it makes its family there', 0.2, function () {
+test.run('run beside spirit.data, it makes its family there', 0.2, function () {
   try { w = world(); } catch (e) { w = null; return false; }
   return (!!w.X && typeof w.X === 'object') || false;
 }, test.limit.quick);
 
 
 // A process knows its node by the rows it took; here, as a page knows it from node.card, it is told.
-test.run('the world: its home node is known', 0.2, function () {
+test.run('its home node is known', 0.2, function () {
   if (!w) return false;
   return w.D.homeNode(SENDER) === w.D.nodeId(SENDER) || false;
 }, test.limit.quick);
@@ -97,7 +97,7 @@ test.run('an answer that is not ok, or no object, keeps nothing', 0.2, function 
   w.X.card.keep(null);
   return same(w.X.card.get(), { name: 'Andy', description: 'his new box' }) || false;
 }, test.limit.quick);
-test.run('card.watch(fn) hears the card on every change, and nothing once released', 0.2, function () {
+test.run('a function given to card.watch hears the card on every change, and nothing once released', 0.2, function () {
   if (!w) return false;
   const heard = [];
   const off = w.X.card.watch(function (c) { heard.push(c && c.name); });

@@ -28,7 +28,7 @@ let n = 0;
 const job = function (app, module, from) { W.D.takeJob({ id: 'j' + (++n), module: module || 'spirit.app.agent', data: {}, app: app }, from || HOME_KEY); };
 const at = function (table, id, from) { return W.D.getPath(W.D.nodeId(from || HOME_KEY) + '/agent/' + table + '/' + id); };
 
-test.run('the world: in a window, beside the real spirit.data, it stands at spirit.data.agent.data', 0.2, function () {
+test.run('loaded in a window beside the real spirit.data, the agent family\'s cache stands at spirit.data.agent.data', 0.2, function () {
   const win = { JSON: JSON, Object: Object, Array: Array, String: String, Number: Number, Map: Map, Math: Math, unescape: unescape, encodeURIComponent: encodeURIComponent };
   win.window = win;
   // A page's window: the data set knows it is on a page, so its home is the page's node, whatever node a row came from.
@@ -49,13 +49,13 @@ test.run('its tables are job, model, persona and provider', 0.2, function () {
 }, test.limit.quick);
 
 // ── the translator: the rows the server publishes (goal/G41.16) ──
-test.run('a row published, { agent: { table, row } }, is merged into its table\'s branch under the node that served it', 0.2, function () {
+test.run('a row published with its table is merged into its table\'s branch under the node that served it', 0.2, function () {
   if (!W.A) return false;
   job({ agent: { table: 'provider', row: { id: 'P1', label: 'Unsloth', url: 'http://x' } } });
   const r = at('provider', 'P1');
   return (!!r && r.label === 'Unsloth' && r.url === 'http://x') || false;
 }, test.limit.quick);
-test.run('merged, not replaced: a row published again keeps the fields it did not carry', 0.2, function () {
+test.run('a row published again is merged, not replaced, and keeps the fields it did not carry', 0.2, function () {
   if (!W.A) return false;
   job({ agent: { table: 'provider', row: { id: 'P1', label: 'Unsloth Studio' } } });
   const r = at('provider', 'P1');
@@ -68,7 +68,7 @@ test.run('each of the four tables has its branch: a job, a model and a persona a
   job({ agent: { table: 'persona', row: { id: 'R1', label: 'critic' } } });
   return (at('job', 'J1') && at('model', 'M1') && at('persona', 'R1')) ? true : false;
 }, test.limit.quick);
-test.run('a row gone, { agent: { table, id, removed } }, is taken out of its branch', 0.2, function () {
+test.run('a row published as removed, by its table and id, is taken out of its branch', 0.2, function () {
   if (!W.A) return false;
   job({ agent: { table: 'persona', id: 'R1', removed: true } });
   return at('persona', 'R1') === undefined || false;
@@ -97,21 +97,21 @@ test.run('a row from another node is kept under that node, not the page\'s', 0.2
 }, test.limit.quick);
 
 // ── the reads ──
-test.run('branch(table) is the table\'s whole path, <node>/agent/<table>', 0.2, function () {
+test.run('the branch of a table is the table\'s whole path, <node>/agent/<table>', 0.2, function () {
   if (!W.A) return false;
   const wrong = TABLES.filter(function (t) { return W.A.branch(t) !== W.D.nodeId(HOME_KEY) + '/agent/' + t; });
   return wrong.length === 0 || false;
 }, test.limit.quick);
-test.run('branch of a table the agent server has not is \'\'', 0.2, function () {
+test.run('the branch of a table the agent server does not have is the empty string', 0.2, function () {
   if (!W.A) return false;
   return W.A.branch('bundle') === '' || false;
 }, test.limit.quick);
-test.run('row(table, id) answers the row', 0.2, function () {
+test.run('row, given a table and an id, answers the row', 0.2, function () {
   if (!W.A) return false;
   const r = W.A.row('provider', 'P1');
   return (!!r && r.label === 'Unsloth Studio') || false;
 }, test.limit.quick);
-test.run('and null for a row not kept, no id, or a table it has not', 0.2, function () {
+test.run('row answers null for a row not kept, for no id, and for a table it does not have', 0.2, function () {
   if (!W.A) return false;
   return (W.A.row('provider', 'NOPE') === null && W.A.row('provider', '') === null && W.A.row('bundle', 'P1') === null) || false;
 }, test.limit.quick);
@@ -121,7 +121,7 @@ test.run('each table is its own object with a watch, the branch implied by the o
   const bad = TABLES.filter(function (t) { return !W.A[t] || typeof W.A[t].watch !== 'function'; });
   return bad.length === 0 || false;
 }, test.limit.quick);
-test.run('<table>.watch(fn) is told fn(id, row) on every change of that table, and of no other', 0.2, function () {
+test.run('a table\'s watch with a function is told the id and the row on every change of that table, and of no other', 0.2, function () {
   if (!W.A || !W.A.model) return false;
   const heard = [];
   const release = W.A.model.watch(function (id, row) { heard.push([id, row && row.label]); });
@@ -130,13 +130,13 @@ test.run('<table>.watch(fn) is told fn(id, row) on every change of that table, a
   W.releaseAll = release; W.heardAll = heard;
   return (heard.length === 1 && heard[0][0] === 'M2' && heard[0][1] === 'llama') || false;
 }, test.limit.quick);
-test.run('and answers its release: released, it is told nothing more', 0.2, function () {
+test.run('a table\'s watch answers its release, and once released it is told nothing more', 0.2, function () {
   if (typeof W.releaseAll !== 'function') return false;
   W.releaseAll();
   job({ agent: { table: 'model', row: { id: 'M3', label: 'after' } } });
   return W.heardAll.length === 1 || false;
 }, test.limit.quick);
-test.run('<table>.watch(id, fn) is told fn(row) each time that row is written, and undefined once it is gone', 0.2, function () {
+test.run('a table\'s watch with an id and a function is told the row each time that row is written, and undefined once it is gone', 0.2, function () {
   if (!W.A || !W.A.provider) return false;
   const heard = [];
   W.releaseOne = W.A.provider.watch('P1', function (row) { heard.push(row === undefined ? 'gone' : row.label); });
@@ -152,7 +152,7 @@ test.run('a row\'s watch answers its release too', 0.2, function () {
   job({ agent: { table: 'provider', row: { id: 'P1', label: 'back' } } });
   return W.heardOne.length === 2 || false;
 }, test.limit.quick);
-test.run('<table>.watch with no id and no fn watches nothing and answers a release that throws nothing', 0.2, function () {
+test.run('a table\'s watch with no id and no function watches nothing and answers a release that throws nothing', 0.2, function () {
   if (!W.A || !W.A.job) return false;
   const r = W.A.job.watch('');
   try { r(); } catch (e) { return false; }

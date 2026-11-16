@@ -42,7 +42,7 @@ test.run('desk.js knows no team chat goal, goal/G0', 0.2, function () {
 }, test.limit.quick);
 
 // A desk server of the tree, on a scratch state folder: what its api serves, and what a fresh one holds.
-test.run('the world: a scratch desk answers api with its verbs, item.get among them', 0.2, async function () {
+test.run('a scratch desk answers api with its verbs, item.get among them', 0.2, async function () {
   // A unix socket's path is short (108 bytes): a long temp folder would leave the desk unable to listen.
   const scratch = W.scratch = fs.mkdtempSync(path.join(process.platform === 'win32' ? os.tmpdir() : '/tmp', 'spn-'));
   const state = path.join(scratch, 'state');

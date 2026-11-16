@@ -57,36 +57,36 @@ async function home() { return call(W.N.base, 'node.shell', { at: 'home' }); }
 // the tree
 // "spirit/app/shell/, an app that wraps the app search (spirit/element/search/app.js) as the shell"; since goal/G43.32 the app
 // app, spirit/app/app/ (the box: "app.json is shell.json, renamed (shell true:true). The node's default shell ... "app"").
-test.run('spirit/app/app/app.json is there and says shell:true:true', 0.2, function () {
+test.run('the app app\'s app.json is there and says its shell is true', 0.2, function () {
   const own = readJson(path.join(RUN, 'spirit', 'app', 'app', 'app.json'));
   return (!!own && !!own.shell && own.shell.true === true) || false;
 }, test.limit.quick);
-test.run('spirit/app/app/element.js loads the app search', 0.2, function () {
+test.run('the app app\'s element.js loads the app search', 0.2, function () {
   const code = fs.existsSync(path.join(RUN, 'spirit', 'app', 'app', 'element.js')) ? fs.readFileSync(path.join(RUN, 'spirit', 'app', 'app', 'element.js'), 'utf8').replace(/\/\/.*$/gm, '') : '';
   return /spirit\/element\/search\/app\.js/.test(code) || false;
 }, test.limit.quick);
 // "the Allow row of the app detail and its element, spirit/app/appSelector/rowFormAppShell.js, are deleted, and with them the
 // verb app.shell" (Q10)
-test.run('rowFormAppShell.js is gone', 0.2, function () {
+test.run('the app selector\'s rowFormAppShell.js is gone', 0.2, function () {
   return !fs.existsSync(path.join(RUN, 'spirit', 'app', 'appSelector', 'rowFormAppShell.js')) || false;
 }, test.limit.quick);
 test.run('the app family has no verb shell', 0.2, function () {
   const appApi = require(path.join(RUN, 'spirit', 'app', 'api.js'));
   return (!('shell' in appApi.verbs) && !('shell' in (appApi.functions || {}))) || false;
 }, test.limit.quick);
-test.run('the node family has shell { at, name? }', 0.2, function () {
+test.run('the node family has a verb shell taking at and an optional name', 0.2, function () {
   const v = require(path.join(RUN, 'spirit', 'node', 'api.js')).verbs.shell;
   return (!!v && Object.keys(v).sort().join() === 'at,name' && !/\?/.test(v.at) && /\?$/.test(v.name)) || false;
 }, test.limit.quick);
 
-test.run('the world: a scratch node comes up', 0.2, async function () {
+test.run('a scratch node comes up for this suite', 0.2, async function () {
   W.s = scratch();
   W.N = await boot(W.s.run);
   return W.N.up || false;
 }, test.limit.slow);
 
 // Q12: "a node with no shell chosen, no spirit/state/shell.json, uses the shell app for home and face"
-test.run('the world: no spirit/state/shell.json', 0.2, function () {
+test.run('the scratch node has no shell.json in its state folder', 0.2, function () {
   if (!W.s) return false;
   return !fs.existsSync(FILE()) || false;
 }, test.limit.quick);
@@ -110,45 +110,45 @@ async function stays(name) {
   const now = await home();
   return nameOf(now) === 'app' || false;
 }
-test.run('a name that is no app is refused, with the reason', 0.2, async function () {
+test.run('a name that is no app is refused with the reason', 0.2, async function () {
   if (!W.N || !W.N.up) return false;
   return refusedWithReason('zzNoSuchApp');
 }, test.limit.quick);
-test.run('and after the name that is no app, the home shell stays app', 0.2, async function () {
+test.run('after the name that is no app, the home shell stays app', 0.2, async function () {
   if (!W.N || !W.N.up) return false;
   return stays('zzNoSuchApp');
 }, test.limit.quick);
-test.run('an app whose contact.json says shell.true false is refused, with the reason', 0.2, async function () {
+test.run('the contact app, whose contact.json says its shell is not true, is refused with the reason', 0.2, async function () {
   if (!W.N || !W.N.up) return false;
   return refusedWithReason('contact');
 }, test.limit.quick);
-test.run('and after the app that says shell.true false, the home shell stays app', 0.2, async function () {
+test.run('after the app whose shell is not true, the home shell stays app', 0.2, async function () {
   if (!W.N || !W.N.up) return false;
   return stays('contact');
 }, test.limit.quick);
-test.run('at other than home or face is refused', 0.2, async function () {
+test.run('a shell asked at a place other than home or face is refused', 0.2, async function () {
   if (!W.N || !W.N.up) return false;
   const at = await call(W.N.base, 'node.shell', { at: 'desk', name: 'zzshell' });
   return refused(at) || false;
 }, test.limit.quick);
 
 // "node.shell({ at, name }) sets it and answers { name }", "Kept in a file of its own, spirit/state/shell.json"
-test.run('setting the home shell to zzshell answers { name: "zzshell" }', 0.2, async function () {
+test.run('setting the home shell to zzshell answers with the name zzshell', 0.2, async function () {
   if (!W.N || !W.N.up) return false;
   const set = await call(W.N.base, 'node.shell', { at: 'home', name: 'zzshell' });
   return (set.status === 200 && nameOf(set) === 'zzshell') || false;
 }, test.limit.quick);
-test.run('asked again, home answers zzshell', 0.2, async function () {
+test.run('asked again, the home shell answers zzshell', 0.2, async function () {
   if (!W.N || !W.N.up) return false;
   const a = await home();
   return nameOf(a) === 'zzshell' || false;
 }, test.limit.quick);
-test.run('and face is its own: still app', 0.2, async function () {
+test.run('the face shell is its own and still answers app', 0.2, async function () {
   if (!W.N || !W.N.up) return false;
   const a = await call(W.N.base, 'node.shell', { at: 'face' });
   return nameOf(a) === 'app' || false;
 }, test.limit.quick);
-test.run('spirit/state/shell.json holds it', 0.2, function () {
+test.run('the shell.json in the state folder holds zzshell', 0.2, function () {
   if (!W.s) return false;
   const kept = fs.existsSync(FILE()) ? fs.readFileSync(FILE(), 'utf8') : '';
   return /zzshell/.test(kept) || false;
@@ -166,7 +166,7 @@ test.run('started again, the node still names zzshell at home', 0.2, async funct
 }, test.limit.slow);
 
 // Q10: app.shell goes, "and the shell field it writes into node.json"
-test.run('app.shell is no verb', 0.2, async function () {
+test.run('app.shell is not a verb the node answers', 0.2, async function () {
   if (!W.N || !W.N.up) return false;
   const old = await call(W.N.base, 'app.shell', { key: 'agent', shell: true });
   return old.status >= 400 || false;

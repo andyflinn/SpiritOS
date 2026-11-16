@@ -21,14 +21,14 @@ test.after(function () {
   try { if (node && node.root) require(require('path').join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* scratch */ }
 });
 
-test.run('the world: a scratch node, and a Chrome on its face page', 0.2, async function () {
+test.run('a scratch node comes up, and Chrome opens its face page', 0.2, async function () {
   node = await scratchNode();
   chrome = await chromePage(findChrome());
   if (!node.up || chrome.error) return false;
   await chrome.send('Page.navigate', { url: node.base + '/face.html' });
   return (await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000)) ? true : false;
 }, test.limit.slow);
-test.run('it loads through spirit.require and is spirit.element.spirit.element.search.app.rowFormAppActive', 0.2, async function () {
+test.run('it loads through spirit.require and is placed on spirit.element at its path', 0.2, async function () {
   if (!node || !node.up || !chrome || chrome.error) return false;
   loaded = await chrome.evaluate('spirit.ready.then(function () { return spirit.require("spirit/element/search/app/rowFormAppActive.js"); }).then(function () { return !!(spirit.element.spirit.element.search.app.rowFormAppActive && spirit.element.spirit.element.search.app.rowFormAppActive.create); }, function () { return false; })');
   return loaded === true ? true : false;
@@ -42,7 +42,7 @@ const rows = function () { return chrome.evaluate('(function () { var out = {}; 
 let madeContact, listed, r;
 
 // the box: "hidden when the app is intrinsic"
-test.run('create(host, { key }) answers { destroy }', 0.2, async function () {
+test.run('create, handed a host and a key, answers an object with destroy', 0.2, async function () {
   if (loaded !== true) return false;
   madeContact = await make('contact');
   return madeContact === true || false;
@@ -65,23 +65,23 @@ test.run('pressed, the Agent is active', 0.2, async function () {
   await chrome.evaluate('document.querySelector("#a-agent button").click(); 1');
   return (await until(function () { return activeOf('agent').then(function (a) { return a === true; }); }, 10000)) ? true : false;
 }, test.limit.quick);
-test.run('and it says Deactivate', 0.2, async function () {
+test.run('once the Agent is active it says Deactivate', 0.2, async function () {
   if (loaded !== true) return false;
   return (await until(function () { return view('agent').then(function (v) { return /Deactivate/.test(v.text); }); }, 10000)) ? true : false;
 }, test.limit.quick);
-test.run('pressed again, it is not', 0.2, async function () {
+test.run('pressed again, the Agent is no longer active', 0.2, async function () {
   if (loaded !== true) return false;
   await chrome.evaluate('document.querySelector("#a-agent button").click(); 1');
   return (await until(function () { return activeOf('agent').then(function (a) { return a === false; }); }, 10000)) ? true : false;
 }, test.limit.quick);
 
 // the box: "The appSelector's detail and its rows use them": no Activate on an intrinsic app's row
-test.run('the world: the appSelector\'s pane is made', 0.2, async function () {
+test.run('the appSelector\'s pane is made', 0.2, async function () {
   if (!node || !node.up || !chrome || chrome.error) return false;
   listed = await chrome.evaluate('spirit.require("spirit/app/app/element.js").then(function () { var b = document.createElement("div"); b.id = "pane"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999"; document.body.appendChild(b); window.__sel = spirit.element.spirit.app.app.element.create(b, { face: "pane" }); return true; })');
   return listed === true ? true : false;
 }, test.limit.quick);
-test.run('the world: the pane lists Contacts and the Agent', 0.2, async function () {
+test.run('the pane lists Contacts and the Agent', 0.2, async function () {
   if (listed !== true) return false;
   const there = await until(function () { return rows().then(function (r) { return !!r.Contacts && !!r.Agent; }); }, 10000);
   r = await rows();

@@ -36,12 +36,12 @@ const icon = async function (args) {
 };
 const items = function (r) { return ((r.body && r.body.items) || []).map(function (i) { try { return JSON.parse(i.label); } catch (e) { return null; } }); };
 
-test.run('the world: a scratch node of its own with Icons switched on', 0.2, async function () {
+test.run('a scratch node of its own comes up with Icons switched on', 0.2, async function () {
   W.node = await scratchNode({ servers: ['icons'] });
   W.up = !!(W.node.up && W.node.root);
   return W.up || false;
 }, test.limit.slow);
-test.run('the world: the system set, and twelve glyphs it does not hold', 0.2, function () {
+test.run('the system set is read, and twelve glyphs it does not hold are found', 0.2, function () {
   if (!W.up) return false;
   const run = path.join(W.node.root, 'spirit', 'run');
   W.SET = path.join(run, 'spirit', 'state', 'icons', 'data', 'iconSet.json');
@@ -57,7 +57,7 @@ test.run('the world: the system set, and twelve glyphs it does not hold', 0.2, f
   W.glyphs = fresh.length >= 12 && !!W.sys;
   return W.glyphs || false;
 }, test.limit.quick);
-test.run('the world: icons.icon answers', 0.2, async function () {
+test.run('icons.icon answers', 0.2, async function () {
   if (!W.glyphs) return false;
   W.ready = !!(await until(function () { return icon({ op: 'search', text: '' }).then(function (r) { return r.status === 200; }); }, 20000));
   return W.ready || false;
@@ -70,7 +70,7 @@ test.run('with no own set, search answers the system set, its first glyph among 
   const shown = items(all).map(function (r) { return r && r.glyph; });
   return all.status === 200 && shown.indexOf(W.sys) !== -1 ? true : false;
 }, test.limit.quick);
-test.run('each item\'s label is a row, { glyph, keywords }', 0.2, function () {
+test.run('each item\'s label is a row holding a glyph and its keywords', 0.2, function () {
   if (!W.all) return false;
   const all = W.all;
   return items(all).every(function (r) { return r && typeof r.glyph === 'string' && Array.isArray(r.keywords); }) || false;
@@ -92,7 +92,7 @@ test.run('search by a keyword of the first system glyph finds that glyph', 0.2, 
   const byWord = await icon({ op: 'search', text: String(kw || '') });
   return !!kw && items(byWord).some(function (r) { return r && r.glyph === W.sys; }) ? true : false;
 }, test.limit.quick);
-test.run('and none of these wrote spirit/state/icons/data/iconSet.json', 0.2, function () {
+test.run('none of these reads wrote spirit/state/icons/data/iconSet.json', 0.2, function () {
   if (!W.ready) return false;
   return !fs.existsSync(W.SET) || false;
 }, test.limit.quick);
@@ -108,7 +108,7 @@ test.run('the set holds the new glyph with its keywords', 0.2, function () {
   if (!W.s1) return false;
   return JSON.stringify(W.s1[W.fresh[0]]) === '["first","one"]' || false;
 }, test.limit.quick);
-test.run('on top', 0.2, function () {
+test.run('the new glyph is first in the set', 0.2, function () {
   if (!W.s1) return false;
   return Object.keys(W.s1)[0] === W.fresh[0] || false;
 }, test.limit.quick);
@@ -121,7 +121,7 @@ test.run('spirit/iconSet.json is not written', 0.2, function () {
   if (!W.ready) return false;
   return read(W.SYSTEM) === W.systemText || false;
 }, test.limit.quick);
-test.run('and no half-written file is left beside it', 0.2, function () {
+test.run('no half-written file is left beside the set', 0.2, function () {
   if (!W.ready) return false;
   return !fs.existsSync(W.SET + '.tmp') || false;
 }, test.limit.quick);
@@ -140,7 +140,7 @@ test.run('a system icon spelled with or without its invisible selector is the sa
   const d2 = await icon({ op: 'add', glyph: withSel, keywords: ['spelled'] });
   return d2.body && d2.body.added === false ? true : false;
 }, test.limit.quick);
-test.run('and the set is not written', 0.2, function () {
+test.run('a duplicate add does not write the set', 0.2, function () {
   if (!W.ready) return false;
   return read(W.SET) === W.t1 || false;
 }, test.limit.quick);
@@ -175,7 +175,7 @@ test.run('a system icon is deleted from the own set; the system set keeps it', 0
 }, test.limit.quick);
 
 // the box, 9: "two saves never write iconSet.json at once": eight adds at once
-test.run('each of the eight answers added', 0.2, async function () {
+test.run('each of eight adds sent at once answers added', 0.2, async function () {
   if (!W.ready) return false;
   const eight = W.eight = W.fresh.slice(1, 9);
   const answers = await Promise.all(eight.map(function (g, i) { return icon({ op: 'add', glyph: g, keywords: ['at', 'once' + i] }); }));
@@ -187,14 +187,14 @@ test.run('all eight are in the set, none lost to another\'s write', 0.2, functio
   const s8 = W.s8;
   return !!s8 && W.eight.every(function (g) { return g in s8; }) ? true : false;
 }, test.limit.quick);
-test.run('and the rest of the set stands, the file whole JSON', 0.2, function () {
+test.run('the rest of the set stands, and the file is whole JSON', 0.2, function () {
   if (!W.eight) return false;
   const s8 = W.s8;
   return !!s8 && Object.keys(W.system).filter(function (g) { return g !== W.sys; }).every(function (g) { return g in s8; }) ? true : false;
 }, test.limit.quick);
 
 // the box, 10: the change is published on the job spirit.app.icons before the answer
-test.run('the world: the job spirit.app.icons is there', 0.2, async function () {
+test.run('the job spirit.app.icons is there', 0.2, async function () {
   if (!W.ready) return false;
   const job = await fetch(W.node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'job.get', args: { key: 'spirit.app.icons' } }) }).then(function (r) { return r.json(); }, function () { return null; });
   W.j = (job && job.job) || null;
@@ -216,18 +216,18 @@ const refusedCall = async function (a) {
   return r.status >= 400 && r.status < 500 ? true : false;
 };
 const F = function (i) { return (W.fresh || [])[i]; };
-test.run('refused: no op', 0.2, function () { return refusedCall({}); }, test.limit.quick);
-test.run('refused: an op it does not know, drop', 0.2, function () { return refusedCall({ op: 'drop', glyph: F(12) || 'x' }); }, test.limit.quick);
-test.run('refused: an add with no glyph', 0.2, function () { return refusedCall({ op: 'add' }); }, test.limit.quick);
-test.run('refused: an add with an empty glyph', 0.2, function () { return refusedCall({ op: 'add', glyph: '' }); }, test.limit.quick);
-test.run('refused: an add with a glyph of spaces', 0.2, function () { return refusedCall({ op: 'add', glyph: '   ' }); }, test.limit.quick);
-test.run('refused: an add with a glyph that is a number', 0.2, function () { return refusedCall({ op: 'add', glyph: 5 }); }, test.limit.quick);
-test.run('refused: an add with keywords that are no list', 0.2, function () { return refusedCall({ op: 'add', glyph: F(11), keywords: 'not a list' }); }, test.limit.quick);
-test.run('refused: an add with keywords that are numbers', 0.2, function () { return refusedCall({ op: 'add', glyph: F(11), keywords: [1, 2] }); }, test.limit.quick);
-test.run('refused: an add with an argument it does not name', 0.2, function () { return refusedCall({ op: 'add', glyph: F(11), extra: true }); }, test.limit.quick);
-test.run('refused: a delete with no glyph', 0.2, function () { return refusedCall({ op: 'delete' }); }, test.limit.quick);
-test.run('refused: a set with no glyph', 0.2, function () { return refusedCall({ op: 'set', keywords: ['x'] }); }, test.limit.quick);
-test.run('and the set is as it was', 0.2, async function () {
+test.run('a call with no op is refused', 0.2, function () { return refusedCall({}); }, test.limit.quick);
+test.run('a call with an op it does not know, drop, is refused', 0.2, function () { return refusedCall({ op: 'drop', glyph: F(12) || 'x' }); }, test.limit.quick);
+test.run('an add with no glyph is refused', 0.2, function () { return refusedCall({ op: 'add' }); }, test.limit.quick);
+test.run('an add with an empty glyph is refused', 0.2, function () { return refusedCall({ op: 'add', glyph: '' }); }, test.limit.quick);
+test.run('an add with a glyph of spaces is refused', 0.2, function () { return refusedCall({ op: 'add', glyph: '   ' }); }, test.limit.quick);
+test.run('an add with a glyph that is a number is refused', 0.2, function () { return refusedCall({ op: 'add', glyph: 5 }); }, test.limit.quick);
+test.run('an add with keywords that are no list is refused', 0.2, function () { return refusedCall({ op: 'add', glyph: F(11), keywords: 'not a list' }); }, test.limit.quick);
+test.run('an add with keywords that are numbers is refused', 0.2, function () { return refusedCall({ op: 'add', glyph: F(11), keywords: [1, 2] }); }, test.limit.quick);
+test.run('an add with an argument it does not name is refused', 0.2, function () { return refusedCall({ op: 'add', glyph: F(11), extra: true }); }, test.limit.quick);
+test.run('a delete with no glyph is refused', 0.2, function () { return refusedCall({ op: 'delete' }); }, test.limit.quick);
+test.run('a set with no glyph is refused', 0.2, function () { return refusedCall({ op: 'set', keywords: ['x'] }); }, test.limit.quick);
+test.run('after the refused calls the set is as it was', 0.2, async function () {
   if (!W.ready) return false;
   await sleep(300);
   return read(W.SET) === W.t4 || false;
@@ -242,7 +242,7 @@ test.run('a search of 4000 icons answers some, and more', 0.2, async function ()
   const cut = W.cut = await icon({ op: 'search', text: '' });
   return cut.status === 200 && cut.body && cut.body.more === true && items(cut).length > 0 && items(cut).length < 4000 ? true : false;
 }, test.limit.quick);
-test.run('it fits in one answer', 0.2, function () {
+test.run('the answer to the search of 4000 icons fits within one answer\'s size limit', 0.2, function () {
   if (!W.cut) return false;
   return Buffer.byteLength(W.cut.text) <= limits.ANSWER_MAX || false;
 }, test.limit.quick);

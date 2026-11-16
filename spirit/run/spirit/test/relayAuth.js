@@ -22,7 +22,7 @@ const AUTH = path.join(RUN, 'spirit', 'relayAuth.js');
 let root = '', seen = null;
 test.after(function () { try { if (root) fs.rmSync(root, { recursive: true, force: true }); } catch (e) { /* scratch */ } });
 
-test.run('the world: a scratch node identity, asked fifty times, saved anew, asked again; every read of identity.json counted', 0.2, function () {
+test.run('a scratch node identity is asked fifty times, saved anew and asked again, with every read of identity.json counted', 0.2, function () {
   root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-relayAuth-'));
   fs.mkdirSync(path.join(root, 'spirit', 'state'), { recursive: true });
   const src = [

@@ -15,11 +15,11 @@ const U = require(path.join(RUN, 'spirit', 'relayUrl.js'));
 // What assertRelayUrl answers: the URL's href, or 'throws: <message>'.
 function asked(url) { try { return U.assertRelayUrl(url).href; } catch (e) { return 'throws: ' + e.message; } }
 
-test.run('isLoopbackHost: localhost, 127.0.0.1 and ::1, in any case, are loopback', 0.2, function () {
+test.run('isLoopbackHost takes localhost, 127.0.0.1 and ::1, in any case, as loopback', 0.2, function () {
   const got = ['localhost', 'LOCALHOST', '127.0.0.1', '::1'].map(U.isLoopbackHost);
   return got.every(function (x) { return x === true; }) || false;
 }, test.limit.quick);
-test.run('isLoopbackHost: any other host, an empty one and none are not', 0.2, function () {
+test.run('isLoopbackHost takes any other host, an empty one and none as not loopback', 0.2, function () {
   const got = ['spirit.andyflinn.com', '127.0.0.2', '10.0.0.1', 'localhost.example', '', null, undefined].map(U.isLoopbackHost);
   return got.every(function (x) { return x === false; }) || false;
 }, test.limit.quick);
@@ -31,7 +31,7 @@ test.run('http to loopback is taken, for lab relays', 0.2, function () {
   const got = ['http://localhost:45420/', 'http://127.0.0.1:45420/', 'http://[::1]:45420/'].map(asked);
   return got.every(function (x) { return x.indexOf('throws') !== 0; }) || false;
 }, test.limit.quick);
-test.run('http to any other host is refused: a public relay must be https', 0.2, function () {
+test.run('http to any other host is refused, since a public relay must be https', 0.2, function () {
   const got = ['http://noderoutes.net/', 'http://10.0.0.1:45420/', 'http://localhost.example/'].map(asked);
   return got.every(function (x) { return /^throws: relay url must be https/.test(x); }) || false;
 }, test.limit.quick);

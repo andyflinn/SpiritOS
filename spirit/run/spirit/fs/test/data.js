@@ -65,7 +65,7 @@ test.run('in node, found by the family\'s name (spirit.cacheManager), it stands 
   const X = S.data && S.data['fs'] && S.data['fs'].data;
   return (!threw && !!X && typeof X === 'object') || false;
 }, test.limit.quick);
-test.run('the world: run beside spirit.data, it makes its family there', 0.2, function () {
+test.run('run beside spirit.data, it makes its family there', 0.2, function () {
   try { w = world(); } catch (e) { w = null; return false; }
   return (!!w.X && typeof w.X === 'object') || false;
 }, test.limit.quick);
@@ -74,7 +74,7 @@ const cmd = function (c) { return { id: 'spirit.fs', data: { command: c } }; };
 const W = { quiet: [] };
 
 // goal/G30.18: a connecting page is handed the tree as create commands, then treeComplete
-test.run('the world: a tree handed over, a folder and two files in it, a watcher listening', 0.2, function () {
+test.run('a tree is handed over, a folder and two files in it, with a watcher listening', 0.2, function () {
   if (!w) return false;
   W.ready0 = w.X.ready();
   W.off = w.X.watch(function (p, r) { W.quiet.push([p, r ? r.kind : r]); });
@@ -89,7 +89,7 @@ test.run('the tree fills quietly, and its watchers hear one word at the end', 0.
   if (!w) return false;
   return (W.before.length === 0 && same(W.quiet, [['', undefined]])) || false;
 }, test.limit.quick);
-test.run('ready() is true once the whole tree has come, never before', 0.2, function () {
+test.run('ready is true once the whole tree has come, never before', 0.2, function () {
   if (!w) return false;
   return (W.ready0 === false && w.X.ready() === true) || false;
 }, test.limit.quick);
@@ -113,7 +113,7 @@ test.run('a file changed keeps its kind', 0.2, function () {
   w.job(cmd({ op: 'changeFile', path: 'media', size: 0, modified: 400 }));
   return w.X.file('media').kind === 'folder' || false;
 }, test.limit.quick);
-test.run('watch(path, fn) hears that one file alone, and nothing once released', 0.2, function () {
+test.run('a watch of a path hears that one file alone, and nothing once released', 0.2, function () {
   if (!w) return false;
   const heard = [];
   const off = w.X.watch('c.txt', function (r) { heard.push(r ? r.size : r); });

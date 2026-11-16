@@ -70,7 +70,7 @@ const cases = [
   ['a word an object inherits is no reserved word', 'spirit.app', 'constructor', null],
 ].concat(HARD.map(function (w) { return ['hard-coded: ' + w, 'spirit', w, w]; }));
 
-test.run('the world: word.js runs from a scratch copy of the run tree, word.json files planted, and answers the checks', 0.2, function () {
+test.run('word.js runs from a scratch copy of the run tree with word.json files planted, and answers the checks', 0.2, function () {
   W.scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-word-'));
   W.run = path.join(W.scratch, 'run');
   const SKIP = ['relay-state', 'app-state', 'media', 'published', 'brains', 'test'];
@@ -93,25 +93,25 @@ function checked(i) {
   const c = cases[i]; const a = W.got.answers[i];
   return a === c[3] || false;
 }
-test.run('the box\'s example: the file at the path itself: checking Item at spirit.app.table.add answers item', 0.2, function () { return checked(0); }, test.limit.quick);
-test.run('one level up: checking THING at spirit.app.table.add answers thing', 0.2, function () { return checked(1); }, test.limit.quick);
-test.run('two levels up: checking aCtIvAtE at spirit.app.table.add answers activate', 0.2, function () { return checked(2); }, test.limit.quick);
-test.run('a level with no word.json of its own still looks up: checking thing at spirit.app.table.none answers thing', 0.2, function () { return checked(3); }, test.limit.quick);
-test.run('a hard-coded word, from any path, lower-cased: checking Identity at spirit.app.table.add answers identity', 0.2, function () { return checked(4); }, test.limit.quick);
-test.run('a hard-coded word, at the root: checking JOB at spirit answers job', 0.2, function () { return checked(5); }, test.limit.quick);
-test.run('a word lower down is not seen from above: checking thing at spirit.app answers null', 0.2, function () { return checked(6); }, test.limit.quick);
-test.run('a word in another branch is not seen: checking sibling at spirit.app.table.add answers null', 0.2, function () { return checked(7); }, test.limit.quick);
-test.run('a word no level holds: checking nothing at spirit.app.table.add answers null', 0.2, function () { return checked(8); }, test.limit.quick);
-test.run('not a word: a digit: checking app1 at spirit.app answers null', 0.2, function () { return checked(9); }, test.limit.quick);
-test.run('not a word: empty: checking an empty word at spirit.app answers null', 0.2, function () { return checked(10); }, test.limit.quick);
-test.run('a word an object inherits is no reserved word: checking constructor at spirit.app answers null', 0.2, function () { return checked(11); }, test.limit.quick);
-test.run('hard-coded: spirit: checking spirit at spirit answers spirit', 0.2, function () { return checked(12); }, test.limit.quick);
-test.run('hard-coded: app: checking app at spirit answers app', 0.2, function () { return checked(13); }, test.limit.quick);
-test.run('hard-coded: element: checking element at spirit answers element', 0.2, function () { return checked(14); }, test.limit.quick);
-test.run('hard-coded: identity: checking identity at spirit answers identity', 0.2, function () { return checked(15); }, test.limit.quick);
-test.run('hard-coded: job: checking job at spirit answers job', 0.2, function () { return checked(16); }, test.limit.quick);
-test.run('hard-coded: data: checking data at spirit answers data', 0.2, function () { return checked(17); }, test.limit.quick);
-test.run('hard-coded: search: checking search at spirit answers search', 0.2, function () { return checked(18); }, test.limit.quick);
+test.run('checking Item at spirit.app.table.add answers item, from the word.json at the path itself', 0.2, function () { return checked(0); }, test.limit.quick);
+test.run('checking THING at spirit.app.table.add answers thing, from one level up', 0.2, function () { return checked(1); }, test.limit.quick);
+test.run('checking aCtIvAtE at spirit.app.table.add answers activate, from two levels up', 0.2, function () { return checked(2); }, test.limit.quick);
+test.run('checking thing at spirit.app.table.none answers thing, as a level with no word.json of its own still looks up', 0.2, function () { return checked(3); }, test.limit.quick);
+test.run('checking Identity at spirit.app.table.add answers identity, a hard-coded word lower-cased from any path', 0.2, function () { return checked(4); }, test.limit.quick);
+test.run('checking JOB at spirit answers job, a hard-coded word at the root', 0.2, function () { return checked(5); }, test.limit.quick);
+test.run('checking thing at spirit.app answers null, as a word lower down is not seen from above', 0.2, function () { return checked(6); }, test.limit.quick);
+test.run('checking sibling at spirit.app.table.add answers null, as a word in another branch is not seen', 0.2, function () { return checked(7); }, test.limit.quick);
+test.run('checking nothing at spirit.app.table.add answers null, as no level holds that word', 0.2, function () { return checked(8); }, test.limit.quick);
+test.run('checking app1 at spirit.app answers null, as a digit makes it no word', 0.2, function () { return checked(9); }, test.limit.quick);
+test.run('checking an empty word at spirit.app answers null, as empty is no word', 0.2, function () { return checked(10); }, test.limit.quick);
+test.run('checking constructor at spirit.app answers null, as a word an object inherits is no reserved word', 0.2, function () { return checked(11); }, test.limit.quick);
+test.run('checking the hard-coded word spirit at spirit answers spirit', 0.2, function () { return checked(12); }, test.limit.quick);
+test.run('checking the hard-coded word app at spirit answers app', 0.2, function () { return checked(13); }, test.limit.quick);
+test.run('checking the hard-coded word element at spirit answers element', 0.2, function () { return checked(14); }, test.limit.quick);
+test.run('checking the hard-coded word identity at spirit answers identity', 0.2, function () { return checked(15); }, test.limit.quick);
+test.run('checking the hard-coded word job at spirit answers job', 0.2, function () { return checked(16); }, test.limit.quick);
+test.run('checking the hard-coded word data at spirit answers data', 0.2, function () { return checked(17); }, test.limit.quick);
+test.run('checking the hard-coded word search at spirit answers search', 0.2, function () { return checked(18); }, test.limit.quick);
 
 // a change to a word.json is seen by the next check
 test.run('a word written to the file answers', 0.2, function () {
@@ -141,12 +141,12 @@ function added(key, i, want) {
 function firstOf(key, list, want) { const g = addGroup(key, list); return g === true ? added(key, 0, want) : g; }
 
 // add: the box's example, "add('spirit.app', 'activate') would add the 'activate' to run://spirit/app/word.json"
-test.run('a new word: adding activate at spirit.app answers true', 0.2, function () {
+test.run('adding the new word activate at spirit.app answers true', 0.2, function () {
   if (!W.run) return false;
   plant('app', ['later']);
   return firstOf('example', [['spirit.app', 'activate'], ['spirit.app', 'activate']], true);
 }, test.limit.quick);
-test.run('"a boolean \'false\' if the word already exists": adding activate at spirit.app answers false', 0.2, function () {
+test.run('adding activate at spirit.app again answers false, as the word already exists', 0.2, function () {
   return added('example', 1, false);
 }, test.limit.quick);
 test.run('the word stands in spirit/app/word.json with the value true', 0.2, function () {
@@ -165,35 +165,35 @@ test.run('check finds the added word at its level', 0.2, function () {
   seen = asks(W.run, [['spirit.app', 'activate'], ['spirit.app.table.add', 'activate'], ['spirit.contact', 'activate']]);
   return (Array.isArray(seen.answers) && seen.answers[0] === 'activate') || false;
 }, test.limit.quick);
-test.run('and below it (the box: "for that level and below")', 0.2, function () {
+test.run('check finds the added word below its level too', 0.2, function () {
   return (!!seen && Array.isArray(seen.answers) && seen.answers[1] === 'activate') || false;
 }, test.limit.quick);
-test.run('and not in another branch', 0.2, function () {
+test.run('check does not find the added word in another branch', 0.2, function () {
   return (!!seen && Array.isArray(seen.answers) && seen.answers[2] === null) || false;
 }, test.limit.quick);
 
 let before = null;
 // add refuses what is no word: "'word' is a string containing only characters from 'a' to 'z'"
-test.run('a digit: adding app1 at spirit.app answers false', 0.2, function () {
+test.run('adding app1, which holds a digit, at spirit.app answers false', 0.2, function () {
   if (!W.run) return false;
   before = JSON.stringify([wordsIn('app'), wordsIn('app/table'), wordsIn('app/table/add')]);
   return firstOf('noWord', [['spirit.app', 'app1'], ['spirit.app', ''], ['spirit.app', 'a b'], ['spirit.app', 'new-word']], false);
 }, test.limit.quick);
-test.run('empty: adding an empty word at spirit.app answers false', 0.2, function () { return added('noWord', 1, false); }, test.limit.quick);
-test.run('a space: adding a b at spirit.app answers false', 0.2, function () { return added('noWord', 2, false); }, test.limit.quick);
-test.run('a dash: adding new-word at spirit.app answers false', 0.2, function () { return added('noWord', 3, false); }, test.limit.quick);
+test.run('adding an empty word at spirit.app answers false', 0.2, function () { return added('noWord', 1, false); }, test.limit.quick);
+test.run('adding "a b", which holds a space, at spirit.app answers false', 0.2, function () { return added('noWord', 2, false); }, test.limit.quick);
+test.run('adding new-word, which holds a dash, at spirit.app answers false', 0.2, function () { return added('noWord', 3, false); }, test.limit.quick);
 // add refuses what check finds: "no words can be added that already exists toward the root of the tree"
-test.run('a hard-coded word, in any case: adding IdEnTiTy at spirit.app.table answers false', 0.2, function () {
+test.run('adding IdEnTiTy, a hard-coded word in any case, at spirit.app.table answers false', 0.2, function () {
   return firstOf('rootward', [['spirit.app.table', 'IdEnTiTy'], ['spirit.app.table.add', 'THING'], ['spirit.app.table.add', 'later']], false);
 }, test.limit.quick);
-test.run('a word one level toward the root: adding THING at spirit.app.table.add answers false', 0.2, function () { return added('rootward', 1, false); }, test.limit.quick);
-test.run('a word two levels toward the root: adding later at spirit.app.table.add answers false', 0.2, function () { return added('rootward', 2, false); }, test.limit.quick);
+test.run('adding THING at spirit.app.table.add answers false, as the word stands one level toward the root', 0.2, function () { return added('rootward', 1, false); }, test.limit.quick);
+test.run('adding later at spirit.app.table.add answers false, as the word stands two levels toward the root', 0.2, function () { return added('rootward', 2, false); }, test.limit.quick);
 // Andy's yes to cw's Q4, "If a level below already holds the word, should add refuse it, rather than let the word test go red?"
 // add refuses a word a level below holds (Q4)
-test.run('one level below: adding thing at spirit.app answers false', 0.2, function () {
+test.run('adding thing at spirit.app answers false, as the word stands one level below', 0.2, function () {
   return firstOf('below', [['spirit.app', 'thing'], ['spirit.app', 'item']], false);
 }, test.limit.quick);
-test.run('two levels below: adding item at spirit.app answers false', 0.2, function () { return added('below', 1, false); }, test.limit.quick);
+test.run('adding item at spirit.app answers false, as the word stands two levels below', 0.2, function () { return added('below', 1, false); }, test.limit.quick);
 test.run('a refused add writes nothing', 0.2, function () {
   if (!W.run || before === null) return false;
   const now = JSON.stringify([wordsIn('app'), wordsIn('app/table'), wordsIn('app/table/add')]);
@@ -201,27 +201,27 @@ test.run('a refused add writes nothing', 0.2, function () {
 }, test.limit.quick);
 
 // add writes what no level on its path holds
-test.run('a word in another branch does not stop it: adding sibling at spirit.app answers true', 0.2, function () {
+test.run('adding sibling at spirit.app answers true, as a word in another branch does not stop it', 0.2, function () {
   // cw, on the object's own keys: "constructor" is a to z.
   return firstOf('writes', [['spirit.app', 'sibling'], ['spirit.app', 'constructor'], ['spirit.fs', 'fresh']], true);
 }, test.limit.quick);
-test.run('a word an object inherits is a word like any other: adding constructor at spirit.app answers true', 0.2, function () { return added('writes', 1, true); }, test.limit.quick);
-test.run('a level with no word.json yet gets one: adding fresh at spirit.fs answers true', 0.2, function () { return added('writes', 2, true); }, test.limit.quick);
+test.run('adding constructor at spirit.app answers true, as a word an object inherits is a word like any other', 0.2, function () { return added('writes', 1, true); }, test.limit.quick);
+test.run('adding fresh at spirit.fs answers true, and the level with no word.json yet gets one', 0.2, function () { return added('writes', 2, true); }, test.limit.quick);
 // Andy, on Q8: "wince fucking when does add() add a MOTHERFUCKING FOLDER?" With no folder there is no level to write to.
 // add makes no folder
-test.run('a level with no folder: adding made at spirit.nosuch.level answers false', 0.2, function () {
+test.run('adding made at spirit.nosuch.level, a level with no folder, answers false', 0.2, function () {
   return firstOf('noFolder', [['spirit.nosuch.level', 'made']], false);
 }, test.limit.quick);
-test.run('and spirit/nosuch stays absent', 0.2, function () {
+test.run('spirit/nosuch stays absent after that add', 0.2, function () {
   if (!W.run) return false;
   return !fs.existsSync(path.join(W.run, 'spirit', 'nosuch')) || false;
 }, test.limit.quick);
 // 'path.in.words', and "'word' is a string containing only characters from 'a' to 'z'": a capital is no level.
 // add takes no capitals in its path
-test.run('a capital in the path: adding word at spirit.Capital answers false', 0.2, function () {
+test.run('adding word at spirit.Capital, a path with a capital, answers false', 0.2, function () {
   return firstOf('capital', [['spirit.Capital', 'word']], false);
 }, test.limit.quick);
-test.run('and makes no folder of it', 0.2, function () {
+test.run('adding at spirit.Capital makes no folder of it', 0.2, function () {
   if (!W.run) return false;
   return !fs.existsSync(path.join(W.run, 'spirit', 'Capital')) || false;
 }, test.limit.quick);
@@ -235,7 +235,7 @@ test.run('the new spirit/fs/word.json holds that word and nothing else', 0.2, fu
   return JSON.stringify(wordsIn('fs')) === '{"fresh":true}' || false;
 }, test.limit.quick);
 // Q5, "Should add work from a page too, the way check does?", Andy: "no." word.js's page half, run on a bare window.
-test.run('on a page spirit.word has check and no add (Q5)', 0.2, function () {
+test.run('on a page spirit.word has check and no add', 0.2, function () {
   const bare = { window: { spirit: {} } };
   require('vm').runInNewContext(fs.readFileSync(path.join(RUN, 'spirit', 'word.js'), 'utf8'), bare);
   const onPage = bare.window.spirit.word || {};
@@ -247,7 +247,7 @@ test.run('add of a word in capitals answers a boolean', 0.2, function () {
   const mixed = adds(W.run, [['spirit.contact', 'MiXeD']]);
   return (Array.isArray(mixed.answers) && typeof mixed.answers[0] === 'boolean') || false;
 }, test.limit.quick);
-test.run('and no key but a to z lands in the file', 0.2, function () {
+test.run('no key but a to z lands in the word file', 0.2, function () {
   if (!W.run) return false;
   return Object.keys(wordsIn('contact') || {}).every(function (k) { return /^[a-z]+$/.test(k); }) || false;
 }, test.limit.quick);
@@ -318,7 +318,7 @@ test.run('no folder or file below takes a word reserved above it', 0.2, function
 
 // Each reserved word as a home: a folder or a file at its place, and the browser's spirit object holding it.
 // the tree: each hard-coded word has its folder or file, and the browser's spirit object has it, both or neither is no answer
-test.run('the world: a browser at a scratch node asks the spirit object what it holds', 0.2, async function () {
+test.run('a browser at a scratch node asks the spirit object what it holds', 0.2, async function () {
   const chrome = H.findChrome();
   W.node = await H.scratchNode();
   W.page = chrome && W.node.up ? await H.chromePage(chrome) : null;
@@ -338,12 +338,12 @@ function stands(w) {
   const inObject = W.held[w] === 'object' || W.held[w] === 'function';
   return (onDisk && inObject) || false;
 }
-test.run('app: spirit/app and spirit.app both stand', 0.2, function () { return stands('app'); }, test.limit.quick);
-test.run('element: spirit/element and spirit.element both stand', 0.2, function () { return stands('element'); }, test.limit.quick);
-test.run('identity: spirit/identity and spirit.identity both stand', 0.2, function () { return stands('identity'); }, test.limit.quick);
-test.run('job: spirit/job and spirit.job both stand', 0.2, function () { return stands('job'); }, test.limit.quick);
-test.run('data: spirit/data and spirit.data both stand', 0.2, function () { return stands('data'); }, test.limit.quick);
-test.run('search: spirit/search and spirit.search both stand', 0.2, function () { return stands('search'); }, test.limit.quick);
+test.run('spirit/app and spirit.app both stand', 0.2, function () { return stands('app'); }, test.limit.quick);
+test.run('spirit/element and spirit.element both stand', 0.2, function () { return stands('element'); }, test.limit.quick);
+test.run('spirit/identity and spirit.identity both stand', 0.2, function () { return stands('identity'); }, test.limit.quick);
+test.run('spirit/job and spirit.job both stand', 0.2, function () { return stands('job'); }, test.limit.quick);
+test.run('spirit/data and spirit.data both stand', 0.2, function () { return stands('data'); }, test.limit.quick);
+test.run('spirit/search and spirit.search both stand', 0.2, function () { return stands('search'); }, test.limit.quick);
 
 // NO ASK FOR A word.json THE PAGE KNOWS IS NOT THERE (goal/G43.32). cw, measured on Andy's node: opening Files
 // made 1821 requests, 1818 of them 404, all fs.load of a word.json (spirit/app/word.json alone 712 times). Andy:
@@ -353,7 +353,7 @@ test.run('search: spirit/search and spirit.search both stand', 0.2, function () 
 // checks along many paths, every call the page sends recorded as it leaves.
 // on a page: no word.json asked that the file list does not hold, each one held asked once
 let onPage = null;
-test.run('the world: the planted spirit/app/word.json is read, its word found at spirit.app and below', 0.2, async function () {
+test.run('the planted spirit/app/word.json is read, and its word is found at spirit.app and below', 0.2, async function () {
   if (!W.page || W.page.error) return false;
   const page = W.page;
   fs.writeFileSync(path.join(W.node.root, 'spirit', 'run', 'spirit', 'app', 'word.json'), JSON.stringify({ zzword: true }));
@@ -379,7 +379,7 @@ test.run('of 80 checks along 8 paths, none asks for a word.json the file list do
   const other = sentWord().filter(function (b) { return !/spirit\/app\/word\.json/.test(b); });
   return (!!onPage && !onPage.threw && !other.length) || false;
 }, test.limit.quick);
-test.run('and the one it holds, spirit/app/word.json, is asked once at most', 0.2, function () {
+test.run('the one word.json the file list holds, spirit/app/word.json, is asked once at most', 0.2, function () {
   const once = sentWord().filter(function (b) { return /spirit\/app\/word\.json/.test(b); });
   return (!!onPage && !onPage.threw && once.length <= 1) || false;
 }, test.limit.quick);

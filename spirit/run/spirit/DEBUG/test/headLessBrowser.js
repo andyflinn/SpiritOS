@@ -39,13 +39,13 @@ async function mountIn(page, place) {
 // What the world makes, for the tests after it.
 let page = null, el = null, app = null, none = null;
 
-test.run('the world: make answers the page of spirit/element/zzThing', 0.2, async function () {
+test.run('make answers the page of spirit/element/zzThing', 0.2, async function () {
   page = await B.make({ module: 'spirit/element/zzThing', ext: 'html' });
   return (!!page && typeof page.body === 'string') || false;
 }, test.limit.quick);
 
 // make
-test.run('make answers HTML, typed text/html; charset=utf-8', 0.2, function () {
+test.run('make answers HTML, typed as text/html with charset utf-8', 0.2, function () {
   if (!page) return false;
   return (page.type === 'text/html; charset=utf-8' && /^<!doctype html>/.test(page.body)) || false;
 }, test.limit.quick);
@@ -55,7 +55,7 @@ test.run('make answers null for an address that is not .html', 0.2, async functi
 }, test.limit.quick);
 
 // Andy: "the response will be the most minimal web page, NO COMMENTS, NOTHING with a script tag <script src="/spirit.js">"
-test.run('the page has a script tag <script src="/spirit.js"> and one inline script, nothing more', 0.2, function () {
+test.run('the page has a script tag loading /spirit.js and one inline script, and nothing more', 0.2, function () {
   if (!page) return false;
   const tags = page.body.match(/<script[^>]*>/g) || [];
   return JSON.stringify(tags) === JSON.stringify(['<script src="/spirit.js">', '<script>']) || false;
@@ -65,7 +65,7 @@ test.run('the page has no comments', 0.2, function () {
   const inline = (/<script>\n([\s\S]*?)\n<\/script>/.exec(page.body) || [])[1] || '';
   return (!/<!--/.test(page.body) && !/(^|[^:"\\])\/\/|\/\*/.test(inline)) || false;
 }, test.limit.quick);
-test.run('/shell.css is linked, the box is #mount-box, the title is the module\'s name', 0.2, function () {
+test.run('the page links /shell.css, its box is mount-box, and its title is the module\'s name', 0.2, function () {
   if (!page) return false;
   const b = page.body;
   return (/<link rel="stylesheet" href="\/shell.css"/.test(b) && /<div id="mount-box" class="fill"><\/div>/.test(b) && /<title>zzThing<\/title>/.test(b)) || false;
@@ -76,7 +76,7 @@ test.run('/spirit.js comes before the inline script', 0.2, function () {
 }, test.limit.quick);
 
 // an element (goal/G43.32): spirit.element.<its path>.create(box), no options
-test.run('the world: an element placed at its path is mounted', 0.2, async function () {
+test.run('an element placed at its path is mounted', 0.2, async function () {
   if (!page) return false;
   el = await mountIn(page.body, function (sp, calls) {
     sp.element.spirit = { element: { zzThing: { create: function () { calls.created.push(Array.prototype.slice.call(arguments)); return { destroy: function () { calls.destroyed += 1; } }; } } } };
@@ -87,7 +87,7 @@ test.run('the module is loaded through spirit.require, after spirit.start, alone
   if (!el || !el.report) return false;
   return (el.calls.started === 1 && JSON.stringify(el.calls.required) === JSON.stringify(['spirit/element/zzThing.js'])) || false;
 }, test.limit.quick);
-test.run('an element is created with the box alone, no options', 0.2, function () {
+test.run('an element is created with the box alone and no options', 0.2, function () {
   if (!el || !el.report) return false;
   return (el.calls.created.length === 1 && el.calls.created[0].length === 1 && el.calls.created[0][0] === el.box) || false;
 }, test.limit.quick);
@@ -100,7 +100,7 @@ test.run('window.spiritMount says mounted, holds the box, and its destroy is the
 }, test.limit.quick);
 
 // an app: activateApp, mounted into the box with an api as the face gives one
-test.run('the world: an app that calls spirit.shell.activateApp is mounted', 0.2, async function () {
+test.run('an app that calls spirit.shell.activateApp is mounted', 0.2, async function () {
   if (!page) return false;
   app = await mountIn(page.body, function (sp, calls) {
     sp.shell.activateApp({ mount: function (box, api) { calls.mounted.push({ box: box, api: api }); }, render: function () { calls.rendered += 1; } });

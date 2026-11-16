@@ -35,14 +35,14 @@ test.run('its element file is there', 0.2, function () {
   X.src = code(FILE);
   return X.src !== '' ? true : false;
 }, test.limit.quick);
-test.run('it mounts through no old shell: no activateApp, no spirit.shell', 0.2, function () {
+test.run('it mounts through no old shell, naming neither activateApp nor spirit.shell', 0.2, function () {
   return X.src !== '' && !/activateApp|spirit\.shell\b/.test(X.src) ? true : false;
 }, test.limit.quick);
-test.run('and names no chatClerver: its server is the branch chat', 0.2, function () {
+test.run('it names no chatClerver, since its server is the branch chat', 0.2, function () {
   return X.src !== '' && !/\bchatClerver\b/.test(X.src) ? true : false;
 }, test.limit.quick);
 
-test.run('the world: a scratch node with chat switched on, its face page in Chrome', 0.2, async function () {
+test.run('a scratch node comes up with chat switched on and its face page open in Chrome', 0.2, async function () {
   const chrome = H.findChrome();
   if (!chrome) return false;
   const node = X.node = await H.scratchNode();
@@ -60,7 +60,7 @@ test.run('the world: a scratch node with chat switched on, its face page in Chro
 }, test.limit.slow);
 
 // ── spirit.element.spirit.app.chat.element.create(container, { open }) -> { destroy }, mounted alone ──
-test.run('it loads through spirit.require and mounts, answering { destroy }', 0.2, async function () {
+test.run('it loads through spirit.require and mounts, answering an object with a destroy', 0.2, async function () {
   const page = X.page;
   if (!page || !X.ready) return false;
   // Every call the page sends, recorded as it leaves: its fetch and its XMLHttpRequest bodies.
@@ -82,7 +82,7 @@ test.run('the chat\'s input says Enter sends, Shift+Enter a new line', 0.2, asyn
   return await H.until(function () { return page.evaluate('!!Array.prototype.find.call(document.querySelectorAll("#box textarea"), function (t) { return /Enter sends, Shift\\+Enter a new line/.test(t.getAttribute("placeholder") || ""); })'); }, 10000)
     ? true : false;
 }, test.limit.quick);
-test.run('and its contacts pane, the contact search', 0.2, async function () {
+test.run('it draws its contacts pane, the contact search', 0.2, async function () {
   const page = X.page;
   if (X.made !== 'made') return false;
   return await H.until(function () { return page.evaluate('!!(spirit.element && spirit.element.spirit.element.search && spirit.element.spirit.element.search.contact) && document.querySelectorAll("#box *").length > 10'); }, 10000)
@@ -96,7 +96,7 @@ test.run('at mount it asks chat.chats.search', 0.2, async function () {
   return await H.until(function () { return page.evaluate('window.sent.some(function (b) { return /"chat\\.chats\\.search"/.test(b); })'); }, 10000)
     ? true : false;
 }, test.limit.quick);
-test.run('and never chatClerver.<verb>', 0.2, async function () {
+test.run('it never asks a verb of chatClerver', 0.2, async function () {
   const page = X.page;
   if (X.made !== 'made') return false;
   return await page.evaluate('!window.sent.some(function (b) { return /chatClerver/.test(b); })')
@@ -115,7 +115,7 @@ test.run('destroy empties its container', 0.2, async function () {
   return await page.evaluate('(function () { window.made.destroy(); return document.getElementById("box").children.length === 0; }())')
     ? true : false;
 }, test.limit.quick);
-test.run('and the page threw nothing', 0.2, async function () {
+test.run('the page threw nothing', 0.2, async function () {
   const page = X.page;
   if (X.made !== 'made') return false;
   const errs = JSON.parse(await page.evaluate('JSON.stringify(window.pageErrors)'));

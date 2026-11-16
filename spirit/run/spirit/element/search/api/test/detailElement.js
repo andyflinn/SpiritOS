@@ -25,7 +25,7 @@ const TREE = { fs: { search: { request: { q: '' } }, loadFile: { request: { path
 // One test.run per test (goal/G47.2). What the world and the tests make, for the tests after them.
 let required, asked, D, host, made, html, none, odd;
 
-test.run('the world: the detail runs on a bare window, the real api tree reader beside it', 0.2, async function () {
+test.run('the detail runs on a bare window, the real api tree reader beside it', 0.2, async function () {
   if (!fs.existsSync(FILE)) return false;
   required = [];
   asked = [];
@@ -60,11 +60,11 @@ test.run('it lists each verb the family serves, as its path, sorted', 0.2, async
   html = box ? box.innerHTML : '';
   return !!box && /fs\.loadFile/.test(html) && /fs\.search/.test(html) && html.indexOf('fs.loadFile') < html.indexOf('fs.search') ? true : false;
 }, test.limit.quick);
-test.run('each with the fields its request takes', 0.2, function () {
+test.run('each verb is listed with the fields its request takes', 0.2, function () {
   if (html === undefined) return false;
   return /\{ q \}/.test(html) && /\{ path \}/.test(html) ? true : false;
 }, test.limit.quick);
-test.run('the owner\'s DEBUG is not shown: no verb offered', 0.2, function () {
+test.run('the owner\'s DEBUG is not shown, as no verb is offered', 0.2, function () {
   if (html === undefined) return false;
   return !/DEBUG/.test(html) ? true : false;
 }, test.limit.quick);
@@ -94,7 +94,7 @@ test.run('destroy takes it out of its host', 0.2, function () {
   made.destroy();
   return host.children.length === 0 ? true : false;
 }, test.limit.quick);
-test.run('one destroyed before it drew draws nothing', 0.2, async function () {
+test.run('a detail destroyed before it drew draws nothing', 0.2, async function () {
   if (!D || typeof D.create !== 'function') return false;
   const late = node('div');
   const gone = D.create(late, { family: 'fs', tree: TREE });

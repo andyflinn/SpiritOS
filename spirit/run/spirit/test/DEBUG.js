@@ -292,7 +292,7 @@ test.run('five arguments: every pair of their kinds meets in at least one entry'
   return (pairs3 === true) ? true : false;
 }, test.limit.quick);
 
-test.run('and the garbage stays small: under 200 entries for five arguments, not every combination', 0.2, async function () {
+test.run('the garbage stays small, under 200 entries for five arguments rather than every combination', 0.2, async function () {
   return (args5.length > 0 && args5.length < 200) ? true : false;
 }, test.limit.quick);
 
@@ -330,7 +330,7 @@ test.run('serveCommon.js requires DEBUG.js', 0.2, async function () {
   return (loaded.split('\n').some(function (f) { return path.resolve(f) === path.join(RUN, 'spirit', 'DEBUG.js'); })) ? true : false;
 }, test.limit.quick);
 
-test.run('the world: the scratch node comes up', 0.2, async function () {
+test.run('the scratch node comes up', 0.2, async function () {
   copy = scratchCopy();
   node = await startNode(copy.run);
   return (node.up) ? true : false;
@@ -345,7 +345,7 @@ test.run('on the node, DEBUG off, its DEBUG address answers as an address of no 
   return (off.status === none.status && off.text === none.text) ? true : false;
 }, test.limit.quick);
 
-test.run('and so does a garbage address', 0.8, async function () {
+test.run('on the node, DEBUG off, its garbage address answers as an address of no route too', 0.8, async function () {
   if (!node || !node.up) return false;
   offData = await ask('127.0.0.1', N, GARBAGE);
   return (offData.status === none.status) ? true : false;
@@ -358,30 +358,30 @@ test.run('the scratch node\'s DEBUG is switched on, by node.debug', 0.2, async f
 }, test.limit.quick);
 
 // PAGE, the node, DEBUG on.
-test.run('the node: the page is answered, 200, as HTML', 0.2, async function () {
+test.run('the node answers the DEBUG page with 200, as HTML', 0.2, async function () {
   if (!node || !node.up) return false;
   pageR = await ask('127.0.0.1', N, PAGE);
   return (pageR.status === 200 && /text\/html/.test(pageR.type)) ? true : false;
 }, test.limit.quick);
 
-test.run('the node: the page has no comments', 0.2, async function () {
+test.run('the node\'s DEBUG page has no comments', 0.2, async function () {
   if (!node || !node.up) return false;
   return (pageR.status === 200 && pageR.text.indexOf('<!--') === -1) ? true : false;
 }, test.limit.quick);
 
-test.run('the node: one script tag loads a file, and it loads /spirit.js', 0.2, async function () {
+test.run('on the node\'s DEBUG page one script tag loads a file, and it loads /spirit.js', 0.2, async function () {
   if (!node || !node.up) return false;
   pageTags = pageR.text.match(/<script\b[^>]*>/gi) || [];
   pageLoading = pageTags.filter(function (t) { return /\bsrc\s*=/.test(t); });
   return (pageR.status === 200 && pageLoading.length === 1 && /src\s*=\s*["']\/spirit\.js["']/.test(pageLoading[0])) ? true : false;
 }, test.limit.quick);
 
-test.run('the node: /spirit.js comes before any other script', 0.2, async function () {
+test.run('on the node\'s DEBUG page /spirit.js comes before any other script', 0.2, async function () {
   if (!node || !node.up) return false;
   return (pageR.status === 200 && pageTags.length && /src\s*=\s*["']\/spirit\.js["']/.test(pageTags[0])) ? true : false;
 }, test.limit.quick);
 
-test.run('the node: it names the module it mounts, spirit/element/workBench', 0.2, async function () {
+test.run('the node\'s DEBUG page names the module it mounts, spirit/element/workBench', 0.2, async function () {
   if (!node || !node.up) return false;
   return (pageR.status === 200 && pageR.text.indexOf('spirit/element/workBench') !== -1) ? true : false;
 }, test.limit.quick);
@@ -389,13 +389,13 @@ test.run('the node: it names the module it mounts, spirit/element/workBench', 0.
 // GARBAGE, the node, DEBUG on.
 // testicle'S VERBS COME FROM ITS OWN SERVER (goal/G43.32, requirement 9: appServer loads the app's api.js), so its
 // garbage is asked once the node's api names them, not while its server is still starting.
-test.run('the world: the node\'s api names the testicle server\'s verbs', 0.2, async function () {
+test.run('the node\'s api names the testicle server\'s verbs', 0.2, async function () {
   if (!node || !node.up) return false;
   upNow = await until(function () { return call(N, 'api').then(function (r) { const t = json(r) || {}; return Object.keys(t.testicle || {}).length > 1; }); }, 30000);
   return (upNow) ? true : false;
 }, test.limit.quick);
 
-test.run('the garbage is answered, 200, a JSON list', 0.2, async function () {
+test.run('the garbage address is answered with 200 and a JSON list', 0.2, async function () {
   if (!node || !node.up) return false;
   g = await ask('127.0.0.1', N, GARBAGE);
   list = json(g);
@@ -451,13 +451,13 @@ test.run('each lone bad string, the shape kept, is answered by its handler: neve
   return (keptCount > 0 && !lone.length) ? true : false;
 }, test.limit.quick);
 
-test.run('and the node still answers its api afterwards', 0.2, async function () {
+test.run('the node still answers its api after the garbage', 0.2, async function () {
   if (!node || !node.up) return false;
   still = await call(N, 'api');
   return (still.status === 200) ? true : false;
 }, test.limit.quick);
 
-test.run('refused: no such module under spirit/run', 0.8, async function () {
+test.run('a module that does not exist under spirit/run is refused', 0.8, async function () {
   if (!node || !node.up) return false;
   refused = async function (p, headers) {
     const r = await ask('127.0.0.1', N, p, { headers: headers });
@@ -467,25 +467,25 @@ test.run('refused: no such module under spirit/run', 0.8, async function () {
   return (rd.fine) ? true : false;
 }, test.limit.quick);
 
-test.run('refused: a ".." in the address', 0.8, async function () {
+test.run('an address holding ".." is refused', 0.8, async function () {
   if (!node || !node.up) return false;
   rd = await refused('/DEBUG/spirit/element/../js/workBench/headLessBrowser.html', {});
   return (rd.fine) ? true : false;
 }, test.limit.quick);
 
-test.run('refused: no such generator script, and no such file', 0.8, async function () {
+test.run('a generator script that does not exist, and a file that does not exist, are refused', 0.8, async function () {
   if (!node || !node.up) return false;
   rd = await refused('/DEBUG/spirit/element/workBench/noSuchGenerator.html', {});
   return (rd.fine) ? true : false;
 }, test.limit.quick);
 
-test.run('refused: a request carrying X-Forwarded-For', 0.8, async function () {
+test.run('a request carrying X-Forwarded-For is refused', 0.8, async function () {
   if (!node || !node.up) return false;
   rd = await refused(PAGE, { 'X-Forwarded-For': '203.0.113.9' });
   return (rd.fine) ? true : false;
 }, test.limit.quick);
 
-test.run('refused: a request carrying Forwarded', 0.8, async function () {
+test.run('a request carrying Forwarded is refused', 0.8, async function () {
   if (!node || !node.up) return false;
   rd = await refused(PAGE, { 'Forwarded': 'for=203.0.113.9' });
   return (rd.fine) ? true : false;
@@ -503,25 +503,25 @@ test.run('a file inside a test/ folder is served as it is', 0.2, async function 
   return (served.status === 200 && served.text === own) ? true : false;
 }, test.limit.quick);
 
-test.run('refused: a file outside a test/ folder (the element\'s own script)', 0.8, async function () {
+test.run('a file outside a test/ folder, the element\'s own script, is refused', 0.8, async function () {
   if (!node || !node.up) return false;
   rd = await refused('/DEBUG/spirit/element/workBench.js', {});
   return (rd.fine) ? true : false;
 }, test.limit.quick);
 
-test.run('refused: a server script', 0.8, async function () {
+test.run('a server script is refused', 0.8, async function () {
   if (!node || !node.up) return false;
   rd = await refused('/DEBUG/spirit/serveCommon.js', {});
   return (rd.fine) ? true : false;
 }, test.limit.quick);
 
-test.run('refused: no such file in a test/ folder', 0.8, async function () {
+test.run('a file that does not exist in a test/ folder is refused', 0.8, async function () {
   if (!node || !node.up) return false;
   rd = await refused('/DEBUG/spirit/element/test/noSuchPage.html', {});
   return (rd.fine) ? true : false;
 }, test.limit.quick);
 
-test.run('refused: a test file asked with X-Forwarded-For', 0.8, async function () {
+test.run('a test file asked with X-Forwarded-For is refused', 0.8, async function () {
   if (!node || !node.up) return false;
   rd = await refused('/DEBUG/' + PAGE_FILE, { 'X-Forwarded-For': '203.0.113.9' });
   return (rd.fine) ? true : false;
@@ -549,7 +549,7 @@ test.run('/spirit/DEBUG/garbageArguments.js cannot be fetched', 0.8, async funct
   return (uf.fine) ? true : false;
 }, test.limit.quick);
 
-test.run('the world: the scratch relay comes up, DEBUG off', 0.2, async function () {
+test.run('the scratch relay comes up with DEBUG off', 0.2, async function () {
   await stop(node); node = null;
   // A RELAY SERVES NO APP (goal/G43.18, box v29: the login is spirit.login, no app, and a relay serves a face spirit.js and the
   // seal alone), so its DEBUG answers are judged on its own api's garbage.
@@ -565,7 +565,7 @@ test.run('on the relay, DEBUG off, its DEBUG address answers as an address of no
   return (rOff.status === rNone.status && rOff.text === rNone.text) ? true : false;
 }, test.limit.quick);
 
-test.run('the world: the scratch relay comes up, DEBUG on', 0.2, async function () {
+test.run('the scratch relay comes up with DEBUG on', 0.2, async function () {
   await stop(relay); relay = null;
   relay = await startRelay(copy.run, true);
   return (relay.up) ? true : false;
@@ -582,13 +582,13 @@ test.run('the relay answers its own api\'s garbage, a JSON list', 0.2, async fun
 }, test.limit.quick);
 
 // loginPage, a relay, DEBUG on: refused.
-test.run('refused: a request Caddy would pass on, carrying X-Forwarded-For', 0.8, async function () {
+test.run('a request Caddy would pass on, carrying X-Forwarded-For, is refused', 0.8, async function () {
   if (!relay || !relay.up) return false;
   fwd = await ask('127.0.0.1', R, loginPage, { headers: { 'X-Forwarded-For': '203.0.113.9' } });
   return (fwd.status >= 400 && fwd.status < 500) ? true : false;
 }, test.limit.quick);
 
-test.run('refused: a request not from loopback', 0.8, async function () {
+test.run('a request not from loopback is refused', 0.8, async function () {
   if (!relay || !relay.up) return false;
   outside = outsideAddress();
   far = outside ? await ask(outside, R, loginPage) : null;

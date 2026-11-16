@@ -26,15 +26,15 @@ let one, wr, shared, css, rule, ps, tops, t1, t2, sp;
 test.run('spirit/element/rowForm.js exists', 0.2, function () {
   return (fs.existsSync(FILE)) ? true : false;
 }, test.limit.quick);
-test.run('the world: Chrome is on this machine', 0.2, function () {
+test.run('Chrome is on this machine', 0.2, function () {
   W.chrome = H.findChrome();
   return !!W.chrome || false;
 }, test.limit.quick);
-test.run('the world: a scratch node comes up with its DEBUG on', 0.2, async function () {
+test.run('a scratch node comes up with its DEBUG on', 0.2, async function () {
   W.node = await H.scratchNode();
   return (W.node.up && W.node.debug) || false;
 }, test.limit.slow);
-test.run('the world: the page lays out its forms', 0.2, async function () {
+test.run('the page lays out its forms', 0.2, async function () {
   if (!W.chrome || !W.node || !W.node.up) return false;
   W.page = await H.chromePage(W.chrome);
   if (W.page.error) return false;
@@ -50,24 +50,24 @@ test.after(function () {
   try { if (W.page && W.page.profile) fs.rmSync(W.page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
   try { if (W.node && W.node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(W.node); } catch (e) { /* left */ }
 });
-test.run('it adds rowForm.create(container, { icon, button }) to window.spirit.element', 0.2, function () {
+test.run('it adds rowForm.create, taking a container, an icon and a button, to window.spirit.element', 0.2, function () {
   if (!m) return false;
   // Andy, box: "spirit.element.spirit.element.rowForm.create(container, { icon, button }) -> { root, span, button }: icon is the glyph, button the button's words."
   return (m.made) ? true : false;
 }, test.limit.quick);
-test.run('create answers { root, span, button }, the root drawn into the container it is given', 0.2, function () {
+test.run('create answers its root, span and button, the root drawn into the container it is given', 0.2, function () {
   if (!m) return false;
   one = m.one || {};
   wr = m.wrapped || {};
   return (one.answered && one.appended) ? true : false;
 }, test.limit.quick);
-test.run('in 600px: it spans its container, edge to edge', 0.2, function () {
+test.run('in a container 600px wide it spans the container edge to edge', 0.2, function () {
   if (!m) return false;
   // a block the full width of its container
   // "one row forms show as blocks taking up the full width of their container"
   return (near(one.root.left, one.container.left) && near(one.root.right, one.container.right)) ? true : false;
 }, test.limit.quick);
-test.run('in 260px: it spans its container, edge to edge', 0.2, function () {
+test.run('in a container 260px wide it spans the container edge to edge', 0.2, function () {
   if (!m) return false;
   return (near(wr.root.left, wr.container.left) && near(wr.root.right, wr.container.right)) ? true : false;
 }, test.limit.quick);
@@ -81,7 +81,7 @@ test.run('its border, all round, is the colour of its type-face', 0.2, function 
   if (!m) return false;
   return (one.border.every(function (c) { return c === one.color; }) && one.borderWidth.every(function (w) { return parseFloat(w) > 0; })) ? true : false;
 }, test.limit.quick);
-test.run('and rounded, a bubble', 0.2, function () {
+test.run('its border is rounded, a bubble', 0.2, function () {
   if (!m) return false;
   return (parseFloat(one.radius) > 0) ? true : false;
 }, test.limit.quick);
@@ -93,7 +93,7 @@ test.run('its bubble and the search bubble of probabilitySearch carry one class,
   rule = shared.map(function (k) { const r = new RegExp('\\.' + k.replace(/[-]/g, '\\-') + '\\s*\\{([^}]*)\\}'); const h = r.exec(css); return h ? h[1] : ''; }).filter(function (b) { return /currentColor/i.test(b) && /transparent/i.test(b); })[0];
   return (!!rule) ? true : false;
 }, test.limit.quick);
-test.run('and probabilitySearch keeps no copy of the bubble\'s style of its own', 0.2, function () {
+test.run('probabilitySearch keeps no copy of the bubble\'s style of its own', 0.2, function () {
   if (!m) return false;
   // SEARCH names spirit/element/probabilitySearch.js, gone since goal/G43.18 (the search is spirit/element/search.js): this
   // check reads nothing and passes whatever the search writes.
@@ -103,39 +103,39 @@ test.run('and probabilitySearch keeps no copy of the bubble\'s style of its own'
   ps = fs.existsSync(SEARCH) ? fs.readFileSync(SEARCH, 'utf8').replace(/\/\/.*$/gm, '') : '';
   return (!/background\s*:\s*transparent/i.test(ps)) ? true : false;
 }, test.limit.quick);
-test.run('in one row: its first element is the icon element, the glyph it was given', 0.2, function () {
+test.run('in one row, its first element is the icon element showing the glyph it was given', 0.2, function () {
   if (!m) return false;
   // its icon first, at the (top-) left
   // "the first element is always an icon shell-element, and takes the (top-) left position in the one-row form"
   return (/\bshell-icon\b/.test(one.iconClass) && one.iconText === '🧾') ? true : false;
 }, test.limit.quick);
-test.run('in one row: the icon at the top left inside the bubble', 0.2, function () {
+test.run('in one row, the icon stands at the top left inside the bubble', 0.2, function () {
   if (!m) return false;
   return (!!one.icon && near(one.icon.left, one.inner.left) && near(one.icon.top, one.inner.top, 4)) ? true : false;
 }, test.limit.quick);
-test.run('wrapped: its first element is the icon element, the glyph it was given', 0.2, function () {
+test.run('wrapped, its first element is the icon element showing the glyph it was given', 0.2, function () {
   if (!m) return false;
   return (/\bshell-icon\b/.test(wr.iconClass) && wr.iconText === '🧾') ? true : false;
 }, test.limit.quick);
-test.run('wrapped: the icon at the top left inside the bubble', 0.2, function () {
+test.run('wrapped, the icon stands at the top left inside the bubble', 0.2, function () {
   if (!m) return false;
   return (!!wr.icon && near(wr.icon.left, wr.inner.left) && near(wr.icon.top, wr.inner.top, 4)) ? true : false;
 }, test.limit.quick);
-test.run('in one row: its last element is a button with the words it was given', 0.2, function () {
+test.run('in one row, its last element is a button with the words it was given', 0.2, function () {
   if (!m) return false;
   // its button last, at the (bottom-) right
   // "the last element is always a button that is positioned at the (bottom-) right for the form."
   return (one.last && one.buttonTag === 'BUTTON' && one.buttonText === 'Grant') ? true : false;
 }, test.limit.quick);
-test.run('in one row: the button at the bottom right inside the bubble', 0.2, function () {
+test.run('in one row, the button stands at the bottom right inside the bubble', 0.2, function () {
   if (!m) return false;
   return (!!one.button && near(one.button.right, one.inner.right) && near(one.button.bottom, one.inner.bottom, 4)) ? true : false;
 }, test.limit.quick);
-test.run('wrapped: its last element is a button with the words it was given', 0.2, function () {
+test.run('wrapped, its last element is a button with the words it was given', 0.2, function () {
   if (!m) return false;
   return (wr.last && wr.buttonTag === 'BUTTON' && wr.buttonText === 'Grant') ? true : false;
 }, test.limit.quick);
-test.run('wrapped: the button at the bottom right inside the bubble', 0.2, function () {
+test.run('wrapped, the button stands at the bottom right inside the bubble', 0.2, function () {
   if (!m) return false;
   return (!!wr.button && near(wr.button.right, wr.inner.right) && near(wr.button.bottom, wr.inner.bottom, 4)) ? true : false;
 }, test.limit.quick);
@@ -176,11 +176,11 @@ test.run('its root carries 1em above it, its own margin', 0.2, async function ()
   sp = await W.page.evaluate('(function () { var c = document.createElement("div"); c.style.cssText = "width:400px;padding:0;border:0"; document.body.appendChild(c); var top = document.createElement("div"); top.style.height = "10px"; c.appendChild(top); var a = window.spirit.element.spirit.element.rowForm.create(c, { icon: "", button: "a" }); var b = window.spirit.element.spirit.element.rowForm.create(c, { icon: "", button: "b" }); var em = parseFloat(getComputedStyle(c).fontSize); var gap = function () { return b.root.getBoundingClientRect().top - a.root.getBoundingClientRect().bottom; }; var shown = { margin: parseFloat(getComputedStyle(a.root).marginTop), gap: gap(), height: c.getBoundingClientRect().height }; a.root.hidden = true; var gone = { height: c.getBoundingClientRect().height, bTop: b.root.getBoundingClientRect().top - top.getBoundingClientRect().bottom }; return JSON.stringify({ em: em, shown: shown, gone: gone, aHeight: shown.height }); }())').then(JSON.parse).catch(function () { return null; });
   return (!!sp && near(sp.shown.margin, sp.em)) ? true : false;
 }, test.limit.quick);
-test.run('so two forms one under the other stand 1em apart', 0.2, function () {
+test.run('two forms one under the other stand 1em apart', 0.2, function () {
   if (!m) return false;
   return (!!sp && near(sp.shown.gap, sp.em)) ? true : false;
 }, test.limit.quick);
-test.run('hidden, a form takes its 1em with it: the next one stands 1em below what is above', 0.2, function () {
+test.run('a hidden form takes its 1em with it, so the next one stands 1em below what is above', 0.2, function () {
   if (!m) return false;
   return (!!sp && near(sp.gone.bTop, sp.em) && sp.gone.height < sp.shown.height - sp.em) ? true : false;
 }, test.limit.quick);

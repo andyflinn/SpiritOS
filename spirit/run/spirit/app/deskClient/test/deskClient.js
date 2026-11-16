@@ -201,7 +201,7 @@ test.run('it serves its verbs and follows the desk\'s stream', 0.2, async functi
 
 // goal/G43.3: a product test modified shows as a test, in red; a production file as code. Andy: "when product tests are
 // modified, they should show up as red file-status in desk. product tests are the test folders under spirit/run/."
-test.run('the world: the client watches its checkout', 0.2, async function () {
+test.run('the client watches its checkout', 0.2, async function () {
   await waitAsk(function () { return !!watchAll; }, 5000);
   return !!watchAll || false;
 }, test.limit.slow);
@@ -223,7 +223,7 @@ test.run('the general test testModule.js has the tone test', 0.2, async function
   const tone = await toneOf(rel);
   return tone === 'test' || false;
 }, test.limit.slow);
-test.run('a production file under spirit/run/: tone code', 0.2, async function () {
+test.run('a production file under spirit/run/ has the tone code', 0.2, async function () {
   if (!watchAll) return false;
   const prod = await toneOf('spirit/run/spirit/app/desk/element/desk/desk.js');
   return prod === 'code' || false;
@@ -278,7 +278,7 @@ test.run('item.files of a current-goal item is answered from the cache, the desk
   V.checks = await ask('item.checks', { id: ITEM });
   return (asksOf('item.files').length === filesAsked && files && Array.isArray(files.files) && files.files.some(function (f) { return f.path === 'spirit/run/a.js'; })) || false;
 }, test.limit.quick);
-test.run('item.checks the same', 0.2, function () {
+test.run('item.checks of a current-goal item is answered from the cache too, the desk not asked', 0.2, function () {
   const checks = V.checks;
   return (asksOf('item.checks').length === V.checksAsked && checks && Array.isArray(checks.checks) && checks.checks.some(function (c) { return c.number === 'G1'; })) || false;
 }, test.limit.quick);
@@ -298,7 +298,7 @@ test.run('a kept item.get answers the item\'s facts, with current (the current g
   try { kItem = JSON.parse((kGet && kGet.item) || '{}'); } catch (e) { kItem = {}; }
   return (kItem.id === ITEM && kGet.current === GOAL && kGet.self === SELF) || false;
 }, test.limit.quick);
-test.run('a kept item.files answers {files, filesMore}, a kept item.checks {checks}', 0.2, function () {
+test.run('a kept item.files answers files and filesMore, and a kept item.checks answers checks', 0.2, function () {
   const kFiles = V.kFiles, kChecks = V.kChecks;
   return (kFiles && Array.isArray(kFiles.files) && kFiles.filesMore === false && kChecks && Array.isArray(kChecks.checks)) || false;
 }, test.limit.quick);
@@ -307,7 +307,7 @@ test.run('a kept read the cache cannot answer is refused not-kept, saying why', 
   V.kNotRead = await kept('history.search', {});
   return (kMiss && kMiss.ok === false && kMiss.code === 'not-kept' && !!kMiss.why) || false;
 }, test.limit.quick);
-test.run('and so is a verb that is no kept read', 0.2, function () {
+test.run('a verb that is no kept read is refused not-kept too', 0.2, function () {
   const kNotRead = V.kNotRead;
   return (kNotRead && kNotRead.ok === false && kNotRead.code === 'not-kept') || false;
 }, test.limit.quick);
@@ -334,7 +334,7 @@ test.run('a file the desk adds later is in the kept list', 0.2, async function (
 }, test.limit.quick);
 
 // A grant wakes every agent that placed a G, and the holder of the phase.
-test.run('a G placed by another agent, granted on the item whose phase this agent holds, wakes it as its own (DESK)', 0.2, async function () {
+test.run('a G placed by another agent, granted on the item whose phase this agent holds, wakes it as its own DESK line', 0.2, async function () {
   // This agent holds the red of the item; another agent placed G1. His grant of G1 is news this agent must act on.
   await push({ verb: 'phase.take', goal: 9, item: factsOf({ phase: 'red', red: SELF, phaseWith: SELF, with: SELF, withKey: SELF_KEY, version: 2 }) });
   await settle();
@@ -397,7 +397,7 @@ test.run('the line meant for it is handed over', 0.2, async function () {
   V.lastWait = r;
   return got.some(function (l) { return l.indexOf('the trigger') !== -1; }) || false;
 }, test.limit.quick);
-test.run('more than one answer holds: the first says more', 0.2, function () {
+test.run('when the lines take more than one answer, the first says more', 0.2, function () {
   return V.firstMore === true || false;
 }, test.limit.quick);
 test.run('every one of the 250 lines that came while it was busy is handed over, over as many waits as it takes: none dropped by a cap, none cut and lost', 0.2, async function () {
@@ -446,7 +446,7 @@ test.run('the desk\'s line whose to holds its key wakes it as its own, asking no
   const c1 = V.c1 = await next(b1.key);
   return (has(c1, 'DESK desk chat.add') && has(c1, 'the cap is offered') && asksOf('line.take').length === takesBefore) || false;
 }, test.limit.quick);
-test.run('and its box.take there passes the gate, entitled by that line', 0.2, async function () {
+test.run('the agent\'s box.take on that item passes the gate, entitled by that line', 0.2, async function () {
   const getsBefore = asksOf('item.get').length;
   const boxTakes = asksOf('box.take').length;
   try { await ask('box.take', { id: ITEM4 }); } catch (e) { /* judged by the asks below */ }
@@ -541,7 +541,7 @@ test.run('an item the push leaves out stays kept, beside the ones it carries', 0
   await settle();
   return (!!DD().item(ITEM7) && !!DD().item(ITEM) && !!DD().item(ITEM4)) || false;
 }, test.limit.quick);
-test.run('and another goal\'s items stay kept', 0.2, function () {
+test.run('another goal\'s items stay kept beside the pushed ones', 0.2, function () {
   return !!DD().item(OTHER_GOAL_ITEM) || false;
 }, test.limit.quick);
 test.run('the push makes its goal current; the change heard and a kept file list are never swept', 0.2, function () {
@@ -637,7 +637,7 @@ test.run('the next wake hands, once each, the wake handed but never read and the
   const wAfter = V.wAfter = await next(read);
   return (count(wAfter, 'handed, never read') === 1 && count(wAfter, 'came while it was down') === 1) || false;
 }, test.limit.quick);
-test.run('and nothing it already read comes back', 0.2, function () {
+test.run('nothing the agent already read comes back in the next wake', 0.2, function () {
   const wAfter = V.wAfter;
   return (!!wAfter && Array.isArray(wAfter.lines) && wAfter.lines.length > 0 && !has(wAfter, 'wake D') && !has(wAfter, 'wake A')) || false;
 }, test.limit.quick);

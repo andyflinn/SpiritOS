@@ -45,7 +45,7 @@ const noActivate = async function (key, label) {
   return n === 0;
 };
 
-test.run('the world: publishData and pushOrigin are only run; agent mounts and may be activated', 0.2, function () {
+test.run('publishData and pushOrigin are only run, and agent mounts and may be activated', 0.2, function () {
   // The tree's apps, from each <name>.json: which are only run (node.run, neither node.mount nor shell.mount), which mount in the shell.
   const own = W.own = fs.readdirSync(APPS).filter(function (n) { return fs.existsSync(path.join(APPS, n, n + '.json')); }).map(function (n) {
     let j = {};
@@ -60,7 +60,7 @@ test.run('the world: publishData and pushOrigin are only run; agent mounts and m
   W.apps = W.only.length >= 1 && !!W.plain;
   return W.apps || false;
 }, test.limit.quick);
-test.run('the world: a scratch node and a Chrome page on its face', 0.2, async function () {
+test.run('a scratch node comes up with a Chrome page on its face', 0.2, async function () {
   if (!W.apps) return false;
   W.node = await scratchNode();
   W.chrome = await chromePage(findChrome());
@@ -70,13 +70,13 @@ test.run('the world: a scratch node and a Chrome page on its face', 0.2, async f
   W.up = true;
   return true;
 }, test.limit.slow);
-test.run('the world: the app search and the app detail load', 0.2, async function () {
+test.run('the app search and the app detail load', 0.2, async function () {
   if (!W.up) return false;
   const loaded = await W.chrome.evaluate('window.spirit.ready.then(function () { return Promise.all([spirit.require("spirit/element/search/app.js"), spirit.require("spirit/element/search/app/detailElement.js")]); }).then(function () { return "loaded"; }, function () { return false; })');
   W.loaded = loaded === 'loaded';
   return W.loaded || false;
 }, test.limit.quick);
-test.run('the world: before the job the tiles draw apps, no run-only one among them', 0.2, async function () {
+test.run('before the job the tiles draw apps, no run-only one among them', 0.2, async function () {
   if (!W.loaded) return false;
   const chrome = W.chrome, only = W.only, plain = W.plain;
   // The app list in tiles mode, drawn, so the cache holds every row app.search answered, and kept on the page while the job comes.
@@ -96,13 +96,13 @@ test.run('the world: before the job the tiles draw apps, no run-only one among t
 }, test.limit.slow);
 
 // the world: the node's apps job replaces the rows the page holds
-test.run('the world: app.label for agent is taken', 0.2, async function () {
+test.run('a new app.label for agent is taken', 0.2, async function () {
   if (!W.watching) return false;
   W.fresh = W.plain.label + ' ' + process.pid;
   const wrote = await ask('app.label', { key: W.plain.key, label: W.fresh });
   return wrote.status === 200 ? true : false;
 }, test.limit.quick);
-test.run('the world: the apps job reached the page, agent\'s held row now says its new label', 0.2, async function () {
+test.run('the apps job reached the page, and agent\'s held row now says its new label', 0.2, async function () {
   if (!W.fresh) return false;
   const plain = W.plain, fresh = W.fresh;
   const replaced = await until(function () { return held().then(function (r) { return !!r[plain.key] && r[plain.key].label === fresh; }); }, 10000);
@@ -113,7 +113,7 @@ test.run('the world: the apps job reached the page, agent\'s held row now says i
 }, test.limit.slow);
 
 // the box: "app/data.js drops run and runOnly"
-test.run('the world: the apps job wrote publishData\'s row', 0.2, function () {
+test.run('the apps job wrote publishData\'s row', 0.2, function () {
   if (!W.seen) return false;
   return rowsOf('publishData').values.length > 0 || false;
 }, test.limit.quick);
@@ -122,7 +122,7 @@ test.run('every row of publishData the app cache held after the job keeps run an
   const ro = rowsOf('publishData');
   return ro.values.length > 0 && !ro.lost.length ? true : false;
 }, test.limit.quick);
-test.run('the world: the apps job wrote pushOrigin\'s row', 0.2, function () {
+test.run('the apps job wrote pushOrigin\'s row', 0.2, function () {
   if (!W.seen) return false;
   return rowsOf('pushOrigin').values.length > 0 || false;
 }, test.limit.quick);
@@ -133,7 +133,7 @@ test.run('every row of pushOrigin the app cache held after the job keeps run and
 }, test.limit.quick);
 
 // the box: "a node:run app shows as a tile with Activate"
-test.run('the world: the tiles drew app labels', 0.2, async function () {
+test.run('the tiles drew app labels', 0.2, async function () {
   if (!W.seen) return false;
   W.drawn = JSON.parse(await W.chrome.evaluate('JSON.stringify(window.drawn)'));
   return W.drawn.indexOf(W.fresh) !== -1 || W.drawn.length > 0 ? true : false;
@@ -146,7 +146,7 @@ test.run('the tiles never drew a tile for Push Origin', 0.2, function () {
   if (!W.drawn) return false;
   return W.drawn.indexOf('Push Origin') === -1 || false;
 }, test.limit.quick);
-test.run('the world: with no list on the page a second apps job reached it', 0.2, async function () {
+test.run('with no list on the page, a second apps job reached it', 0.2, async function () {
   if (!W.seen) return false;
   const plain = W.plain;
   await W.chrome.evaluate('(function () { window.tiles.destroy(); var c = document.getElementById("tiles"); if (c) c.remove(); return true; }())');
@@ -168,7 +168,7 @@ test.run('pushOrigin\'s row in the app cache, as the apps job left it, keeps run
   const r = W.after['pushOrigin'] || {};
   return r.run === true && r.runOnly === true ? true : false;
 }, test.limit.quick);
-test.run('the world: agent\'s detail shows Activate', 0.2, async function () {
+test.run('agent\'s detail shows Activate', 0.2, async function () {
   if (!W.after) return false;
   await detailOf(W.plain.key, W.fresher);
   return await until(function () { return activateUnder('document.getElementById("detail")').then(function (n) { return n > 0; }); }, 6000) ? true : false;

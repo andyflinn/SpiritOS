@@ -62,26 +62,26 @@ test.run('it registers spirit.element.spirit.element.contactLabel with a create,
   made = window.spirit.element.spirit.element.contactLabel;
   return (made && typeof made.create === 'function' && !('createContactLabel' in window.spirit.element)) ? true : false;
 }, test.limit.quick);
-test.run('create(container, options) appends the label to its container and answers it', 0.2, function () {
+test.run('create appends the label to the container it is given and answers it', 0.2, function () {
   box = node('div');
   boxed = made.create(box, { key: 'KA', caption: 'Anna' });
   return (box.children.length === 1 && box.children[0] === boxed && boxed.parentNode === box) ? true : false;
 }, test.limit.quick);
-test.run('a span, contact-label, -editable in mode 2, the caller\'s class added', 0.2, function () {
+test.run('the label is a span of class contact-label, with contact-label-editable when editable and the caller\'s class added', 0.2, function () {
   plain = make({ key: 'KA', caption: 'Anna', className: 'x' });
   edit = make({ key: 'KA', caption: 'Anna', editable: true });
   return (plain.tagName === 'span' && plain.className === 'contact-label x' && edit.className === 'contact-label contact-label-editable') ? true : false;
 }, test.limit.quick);
-test.run('a text span showing the caption given, and an error span', 0.2, function () {
+test.run('the label holds a text span showing the caption given, and an error span', 0.2, function () {
   return (plain.children[0].className === 'contact-label-text' && plain.children[1].className === 'contact-label-error' && textOf(plain) === 'Anna') ? true : false;
 }, test.limit.quick);
-test.run('blank while unanswered, never the key', 0.2, function () {
+test.run('a label given no caption is blank while unanswered, never the key', 0.2, function () {
   // given no caption it asks the book, once per key, blank until it answers
   b1 = make({ key: 'KB' });
   b2 = make({ key: 'KB' });
   return (textOf(b1) === '' && textOf(b2) === '') ? true : false;
 }, test.limit.quick);
-test.run('the book\'s caption, contact.get asked once for two labels', 0.2, async function () {
+test.run('both labels show the book\'s caption, with contact.get asked once for the two', 0.2, async function () {
   await tick();
   return (textOf(b1) === 'Bert' && textOf(b2) === 'Bert' && gets('KB') === 1) ? true : false;
 }, test.limit.quick);
@@ -127,7 +127,7 @@ test.run('a label that left the page stops listening; one never placed keeps lis
   rename({ key: 'KP', caption: 'P3' });
   return (textOf(placed) === 'P2' && textOf(waiting) === 'P3') ? true : false;
 }, test.limit.quick);
-test.run('the left label\'s listener is off document', 0.2, function () {
+test.run('the listener of the label that left the page is off the document', 0.2, function () {
   listening = (doc.listeners['contact.rename'] || []).length;
   rename({ key: 'KP', caption: 'P4' });
   return ((doc.listeners['contact.rename'] || []).length === listening && textOf(placed) === 'P2') ? true : false;
@@ -145,7 +145,7 @@ test.run('a second click opens no second input', 0.2, function () {
   edit.fire('click');
   return (edit.children.filter(function (c) { return c.tagName === 'input'; }).length === 1) ? true : false;
 }, test.limit.quick);
-test.run('Escape closes it, the text back', 0.2, function () {
+test.run('Escape closes the input and the text comes back', 0.2, function () {
   input.fire('keydown', { key: 'Escape' });
   return (!inputOf(edit) && edit.children[0].hidden === false) ? true : false;
 }, test.limit.quick);
@@ -180,7 +180,7 @@ test.run('a good name is trimmed and asked of contact.label by the key', 0.2, as
   lab = asked[asked.length - 1];
   return (lab.verb === 'contact.label' && lab.body.publicKey === 'KA' && lab.body.myLabel === 'Ann') ? true : false;
 }, test.limit.quick);
-test.run('the caption the node answers is drawn and known, the input closed, the error cleared', 0.2, function () {
+test.run('the caption the node answers is drawn and known, the input is closed and the error is cleared', 0.2, function () {
   return (textOf(edit) === 'Annie' && !inputOf(edit) && whyOf(edit) === '' && textOf(make({ key: 'KA' })) === 'Annie') ? true : false;
 }, test.limit.quick);
 test.run('an answer with no caption draws the name typed', 0.2, async function () {

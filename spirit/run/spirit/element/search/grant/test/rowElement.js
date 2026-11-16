@@ -52,7 +52,7 @@ const AGENT = grantsTable({ get branch() { return global.window.spirit.data.view
 let SRC, required, armed, DATA, managers, A, V, E;
 function noRow() { if (!A || !A.grants) return true; if (!E.search.grant.rowElement || typeof E.search.grant.rowElement.create !== 'function') return true; return false; }
 
-test.run('the world: the row runs on a bare window, the page\'s data set real', 0.2, async function () {
+test.run('the grant row runs on a bare window, with the page\'s data set real', 0.2, async function () {
   if (!fs.existsSync(FILE)) return false;
   SRC = fs.readFileSync(FILE, 'utf8').replace(/\/\/.*$/gm, '');
   required = [];
@@ -98,22 +98,22 @@ test.run('the auth family\'s cache manager is on the page, and each table names 
 }, test.limit.quick);
 
 // it loads what it uses itself (rule/26), and knows no grants table
-test.run('it requires the shared row element and the arming button, and no data script', 0.2, function () {
+test.run('the grant row requires the shared row element and the arming button, and no data script', 0.2, function () {
   if (!A || !A.grants) return false;
   return ['spirit/element/rowElement.js', 'spirit/element/armingButton.js'].every(function (p) { return required.indexOf(p) !== -1; }) && !required.some(function (p) { return /data\.js$/.test(p); }) ? true : false;
 }, test.limit.quick);
-test.run('it names no table: no auth verb, no agent grant, no stream job of its own (goal/G41.16)', 0.2, function () {
+test.run('the grant row names no table: no auth verb, no agent grant, and no stream job of its own', 0.2, function () {
   if (!A || !A.grants) return false;
   const names = /auth\.|agent\.grant|'bundles'|"bundles"|job_id/.test(SRC);
   return !names ? true : false;
 }, test.limit.quick);
-test.run('it registers spirit.element.spirit.element.search.grant.rowElement.create', 0.2, function () {
+test.run('the grant row registers spirit.element.spirit.element.search.grant.rowElement.create', 0.2, function () {
   if (!A || !A.grants) return false;
   return E.search.grant.rowElement && typeof E.search.grant.rowElement.create === 'function' ? true : false;
 }, test.limit.quick);
 // UNCONFIGURED, IT THROWS NOTHING (goal/G41.19, box v23: "throws nothing even when unconfigured"): made with no grants
 // table it is a row of nothing, and never falls back to one.
-test.run('made with no grants table, it throws nothing and is a row all the same', 0.2, function () {
+test.run('made with no grants table, the grant row throws nothing and is a row all the same', 0.2, function () {
   if (noRow()) return false;
   let thrown = null; let bare = null;
   try { bare = E.search.grant.rowElement.create({ key: 'K1', path: 'fs.search' }); } catch (e) { thrown = true; }
@@ -151,7 +151,7 @@ test.run('a node grant is a row of kind grant, keyed by its id and its path, the
   if (noRow()) return false;
   return keyedOf(TABLES.node);
 }, test.limit.quick);
-test.run('its fields are name, path and revoke: Revoke the rightmost', 0.2, function () {
+test.run('the fields of a node grant are name, path and revoke, with Revoke the rightmost', 0.2, function () {
   if (!made[TABLES.node.name]) return false;
   return fieldsOf(TABLES.node);
 }, test.limit.quick);
@@ -159,11 +159,11 @@ test.run('a node grant shows whose grant it is, read from the label field, and i
   if (!made[TABLES.node.name]) return false;
   return drawnOf(TABLES.node);
 }, test.limit.quick);
-test.run('mounted, its Revoke is an armingButton, and nothing is revoked yet', 0.2, function () {
+test.run('a node grant mounted has an armingButton as its Revoke, and nothing is revoked yet', 0.2, function () {
   if (!made[TABLES.node.name]) return false;
   return mountOf(TABLES.node);
 }, test.limit.quick);
-test.run('its second press revokes through the table it was handed: revoke(id, path)', 0.2, async function () {
+test.run('the second press of a node grant\'s Revoke revokes its id and path through the table it was handed', 0.2, async function () {
   if (!made[TABLES.node.name]) return false;
   return revokeOf(TABLES.node);
 }, test.limit.quick);
@@ -172,7 +172,7 @@ test.run('an agent grant is a row of kind grant, keyed by its id and its path, t
   if (noRow()) return false;
   return keyedOf(TABLES.agent);
 }, test.limit.quick);
-test.run('its fields are name, path and revoke: Revoke the rightmost, of the agent\'s grants by job', 0.2, function () {
+test.run('the fields of an agent grant are name, path and revoke, with Revoke the rightmost', 0.2, function () {
   if (!made[TABLES.agent.name]) return false;
   return fieldsOf(TABLES.agent);
 }, test.limit.quick);
@@ -180,11 +180,11 @@ test.run('an agent grant shows whose grant it is, read from the job field, and i
   if (!made[TABLES.agent.name]) return false;
   return drawnOf(TABLES.agent);
 }, test.limit.quick);
-test.run('mounted, its Revoke is an armingButton, and nothing is revoked yet, of the agent\'s grants by job', 0.2, function () {
+test.run('an agent grant mounted has an armingButton as its Revoke, and nothing is revoked yet', 0.2, function () {
   if (!made[TABLES.agent.name]) return false;
   return mountOf(TABLES.agent);
 }, test.limit.quick);
-test.run('its second press revokes through the table it was handed: revoke(id, path), of the agent\'s grants by job', 0.2, async function () {
+test.run('the second press of an agent grant\'s Revoke revokes its id and path through the table it was handed', 0.2, async function () {
   if (!made[TABLES.agent.name]) return false;
   return revokeOf(TABLES.agent);
 }, test.limit.quick);
@@ -192,7 +192,7 @@ test.run('its second press revokes through the table it was handed: revoke(id, p
 // it translates no stream: a table's rows are its cache manager's (goal/G41.28)
 // Andy, the box: "anything not using the new spiritData.js and it's buddies clientCacheManager.js must do so in this
 // item. no exceptions."
-test.run('its code registers no translator and takes no stream', 0.2, function () {
+test.run('the grant row\'s code registers no translator and takes no stream', 0.2, function () {
   if (!SRC) return false;
   const takes = /\.translate\s*\(|onJob|\bstream\b|event\.subscribe/.test(SRC);
   return !takes ? true : false;
@@ -206,7 +206,7 @@ test.run('a table with no watch is no table: the row has no Revoke', 0.2, functi
 
 // it repaints from its table's watch
 let live;
-test.run('its row in its branch changed: the row repaints whose grant it is', 0.2, async function () {
+test.run('when its row in its branch changes, the grant row repaints whose grant it is', 0.2, async function () {
   if (noRow()) return false;
   live = E.search.grant.rowElement.create({ key: 'K2', path: 'fs.search', label: 'Ann' }, { grants: NODE });
   const lh = { name: cell(), path: cell(), revoke: cell() };

@@ -36,7 +36,7 @@ test.run('a key may hold slashes: everything after the first / is the key', 0.2,
   V.set('files/a/b.txt', { size: 3 });
   return V.get('files/a/b.txt').size === 3 && T().files['a/b.txt'].size === 3 ? true : false;
 }, test.limit.quick);
-test.run('the path\'s watcher is told (path, value)', 0.2, function () {
+test.run('the path\'s watcher is told the path and the value', 0.2, function () {
   return byPath.calls.length === 1 && byPath.calls[0][0] === W('files/a/b.txt') && byPath.calls[0][1].size === 3 ? true : false;
 }, test.limit.quick);
 test.run('the type\'s watcher is told of any key of it', 0.2, function () {
@@ -78,11 +78,11 @@ test.run('every merge tells the watchers once', 0.2, function () {
 }, test.limit.quick);
 
 // del: the other write
-test.run('del removes the key', 0.2, function () {
+test.run('a delete removes the key', 0.2, function () {
   V.del('contacts/K2');
   return !('K2' in T().contacts) ? true : false;
 }, test.limit.quick);
-test.run('del tells the watchers with undefined', 0.2, function () {
+test.run('a delete tells the watchers with no value', 0.2, function () {
   last = other.calls[other.calls.length - 1];
   return other.calls.length === 5 && last[0] === W('contacts/K2') && last[1] === undefined && last.length === 2 ? true
     : false;
@@ -123,7 +123,7 @@ test.run('a non-function watch answers a harmless unwatch', 0.2, function () {
 }, test.limit.quick);
 
 // rows: the branch as a list
-test.run('one row per key, the key added', 0.2, function () {
+test.run('a branch\'s rows are one row per key, each with its key added', 0.2, function () {
   rs = V.rows('contacts');
   return rs.length === 1 && rs[0].key === 'K1' && rs[0].name === 'anna' ? true : false;
 }, test.limit.quick);
@@ -131,7 +131,7 @@ test.run('a row is a copy: writing it leaves the tree alone', 0.2, function () {
   rs[0].name = 'scribbled';
   return V.get('contacts/K1').name === 'anna' ? true : false;
 }, test.limit.quick);
-test.run('an empty or unknown branch gives []', 0.2, function () {
+test.run('an empty or unknown branch gives an empty list of rows', 0.2, function () {
   return Array.isArray(V.rows('empty')) && V.rows('empty').length === 0 ? true : false;
 }, test.limit.quick);
 
@@ -170,10 +170,10 @@ test.run('take and rename survive a throwing translator and a non-object registr
   return !threw ? true : false;
 }, test.limit.quick);
 // Every job is handed over, data or none (goal/G41.28: the jobs family's manager keeps them whole); null is not a job.
-test.run('take calls onJob(job, api) for every job, data or none, and not for null', 0.2, function () {
+test.run('every job taken is handed to the translators with the api, with data or without, and null is not', 0.2, function () {
   return jobs.length === 2 && jobs[0][0].type === 'x' && jobs[1][0].type === 'nodata' && jobs[0][1] === D ? true : false;
 }, test.limit.quick);
-test.run('rename calls onRename(d, api), only when d.key is set', 0.2, function () {
+test.run('a rename is handed to the translators with the api only when it names a key', 0.2, function () {
   return renames.length === 1 && renames[0][0].key === 'K1' && renames[0][1] === D ? true : false;
 }, test.limit.quick);
 
@@ -194,15 +194,15 @@ test.run('another type still tells while one is quiet', 0.2, function () {
 test.run('a branch is not ready until said', 0.2, function () {
   return V.ready('tree') === false ? true : false;
 }, test.limit.quick);
-test.run('ready(type, true) sets the flag', 0.2, function () {
+test.run('marking a branch ready sets its ready flag', 0.2, function () {
   V.ready('tree', true);
   return V.ready('tree') === true ? true : false;
 }, test.limit.quick);
-test.run('ready tells the type\'s watchers once, with (type, undefined)', 0.2, function () {
+test.run('marking a branch ready tells the type\'s watchers once, with the type and no value', 0.2, function () {
   return tree.calls.length === 1 && tree.calls[0][0] === W('tree') && tree.calls[0][1] === undefined && treeKey.calls.length === 0 ? true
     : false;
 }, test.limit.quick);
-test.run('ready ends the quiet: the next write tells', 0.2, function () {
+test.run('marking a branch ready ends its quiet, so the next write tells the watchers', 0.2, function () {
   V.set('tree/z', 2);
   const fine = tree.calls.length === 2 && tree.calls[1][0] === W('tree/z');
   tree.off(); treeKey.off(); others.off(); byType.off(); other.off();
@@ -249,14 +249,14 @@ test.run('with no text every row comes back at 0', 0.2, function () {
   return blank.items.length === 4 && blank.items.every(function (i) { return i.probability === 0; }) ? true
     : false;
 }, test.limit.quick);
-test.run('branches limits the search to the branches named, by their whole paths', 0.2, function () {
+test.run('a search given a list of branches looks only in the branches named, by their whole paths', 0.2, function () {
   const only = D.searchAll({ text: 'anna', branches: [W('files')] });
   return only.items.length === 1 && only.items[0].key === W('files/x/anna.txt') ? true : false;
 }, test.limit.quick);
 test.run('an empty branches list searches nothing', 0.2, function () {
   return D.searchAll({ text: 'anna', branches: [] }).items.length === 0 ? true : false;
 }, test.limit.quick);
-test.run('a small room keeps the best that fit and says more', 0.2, function () {
+test.run('a small room keeps the best rows that fit and says there are more', 0.2, function () {
   env = Buffer.byteLength(JSON.stringify({ items: [], more: false }));
   one = Buffer.byteLength(JSON.stringify([r.items[0]]));
   tight = D.searchAll({ text: 'anna', room: env + one + 5 });
@@ -265,7 +265,7 @@ test.run('a small room keeps the best that fit and says more', 0.2, function () 
 test.run('the whole answer fits the room, in bytes', 0.2, function () {
   return Buffer.byteLength(JSON.stringify(tight)) <= env + one + 5 ? true : false;
 }, test.limit.quick);
-test.run('a row too big for the room alone is left out and said by more', 0.2, function () {
+test.run('a row too big for the room on its own is left out, and the answer says there are more', 0.2, function () {
   const tiny = D.searchAll({ text: 'anna', room: 30 });
   return tiny.items.length === 0 && tiny.more === true ? true : false;
 }, test.limit.quick);
@@ -309,7 +309,7 @@ test.run('every branch is empty and no type is ready', 0.2, function () {
   return branches.length > 0 && branches.every(function (b) { return !Object.keys(b).length; }) && V.ready('files') === false ? true
     : false;
 }, test.limit.quick);
-test.run('a type\'s watcher is told once, (type, undefined)', 0.2, function () {
+test.run('after a forget a type\'s watcher is told once, with the type and no value', 0.2, function () {
   const fine = forgot.calls.length === 1 && forgot.calls[0][0] === W('files') && forgot.calls[0][1] === undefined;
   forgot.off();
   return fine ? true : false;
@@ -327,7 +327,7 @@ test.run('on a reconnect what a search seated stays in the cache', 0.4, function
   stream.onSnapshot([{ id: 'a', data: { n: 2 } }]);
   return P.get('contacts/K') !== undefined || false;
 }, test.limit.quick);
-test.run('and the jobs the reconnect pushes bring it up to date', 0.4, function () {
+test.run('the jobs a reconnect pushes bring the cache up to date', 0.4, function () {
   const { P, stream } = pageCopy();
   const rec = recorder();
   P.whole.addTranslator(rec.t);
@@ -338,7 +338,7 @@ test.run('and the jobs the reconnect pushes bring it up to date', 0.4, function 
 
 // on a page a type loaded late is handed its data whole
 const LATE = {};
-test.run('its translator is handed every job as it now stands, each once', 0.2, function () {
+test.run('a translator added late on a page is handed every job as it now stands, each once', 0.2, function () {
   const { P, stream } = pageCopy();
   LATE.P = P;
   stream.onSnapshot([{ id: 'a', data: { n: 1 } }]);
@@ -350,11 +350,11 @@ test.run('its translator is handed every job as it now stands, each once', 0.2, 
   const ids = LATE.r.got.jobs.map(function (j) { return j.id + ':' + j.data.n; }).sort().join(',');
   return ids === 'a:2,c:1' ? true : false;
 }, test.limit.quick);
-test.run('and the renames heard', 0.2, function () {
+test.run('a translator added late on a page is handed the renames heard before it came', 0.2, function () {
   if (!LATE.r) return false;
   return LATE.r.got.renames.length === 1 && LATE.r.got.renames[0].label === 'kay' ? true : false;
 }, test.limit.quick);
-test.run('so its branch is whole at once', 0.2, function () {
+test.run('a translator added late on a page has its branch whole at once', 0.2, function () {
   if (!LATE.P) return false;
   return (LATE.P.get('job/a') || {}).n === 2 && (LATE.P.get('job/c') || {}).n === 1 ? true : false;
 }, test.limit.quick);
@@ -379,7 +379,7 @@ test.run('a late loader of the files is handed the whole tree: every file the st
   return (['spirit', 'spirit/a.js', 'spirit/b.js', 'spirit/c.js'].every(function (f) { return paths.indexOf(f) !== -1; }) && new Set(paths).size === paths.length && a.length === 1 && a[0].size === 99)
     || false;
 }, test.limit.quick);
-test.run('and the tree whole after them: treeComplete is handed once, after every file', 0.4, function () {
+test.run('a late loader of the files is told once that the tree is complete, after every file', 0.4, function () {
   if (!TREE.r) return false;
   const fs = TREE.r.got.jobs.filter(function (j) { return j.id === 'spirit.fs'; });
   const at = fs.map(function (j) { return !!(j.data && j.data.treeComplete); });
@@ -427,7 +427,7 @@ test.run('a row written again is newest again', 0.2, function () {
   D.byteCap(CAP.was);
   return fine ? true : false;
 }, test.limit.quick);
-test.run('on a page there is no cap (box v17)', 0.2, function () {
+test.run('on a page the cache has no cap', 0.2, function () {
   const { P } = pageCopy();
   return typeof P.whole.byteCap === 'function' && P.whole.byteCap() === Infinity ? true : false;
 }, test.limit.quick);
@@ -541,7 +541,7 @@ test.run('in a page, as a page runs it, the rows land in spirit.data.desk.cache'
   C.page = inPage();
   return !C.page.threw && Object.keys(C.page).length > 0 ? true : false;
 }, test.limit.quick);
-test.run('its top level is the serving node alone, its key in base64url (Q5)', 0.2, function () {
+test.run('the cache\'s top level is the serving node alone, its key in base64url', 0.2, function () {
   const node = C.node || { threw: true };
   return !node.threw && JSON.stringify(Object.keys(node)) === JSON.stringify([SERVER_ID]) && node[SERVER_ID] && typeof node[SERVER_ID] === 'object' ? true
     : false;
@@ -581,7 +581,7 @@ test.run('no client takes the node\'s stream itself: spirit/data.js takes it for
 // entire repo." The ways replaced, by name: the data set's old places, the desk's old translator file, the two-level
 // branches the desk kept before the tree was by node, and a page or client that runs "uncached", without them. Andy's vault is no documentation of the
 // repo's code; this file and its spec name them to find them.
-test.run('no file in the repo names a replaced way: running uncached, the two-level desk branches', 0.2, function () {
+test.run('no file in the repo names a replaced way, neither running uncached nor the two-level desk branches', 0.2, function () {
   const REPO = path.join(RUN, '..', '..');
   const OLD = [/\buncached\b/i, /['"]deskItems?\//, /['"]deskState\//, /\bD\.data\.(files|contacts|desk)\b/];
   const every = require('child_process').execFileSync('git', ['ls-files'], { cwd: REPO, encoding: 'utf8' }).split('\n').filter(function (f) {
@@ -616,7 +616,7 @@ const F = {};
 
 // data-families: spirit.data: every family at spirit.data.<name>, through spirit/data.js (goal/G43.7)
 // the box: "we rename it spirit/data.js"
-test.run('spirit/data.js stands', 0.2, function () {
+test.run('the file spirit/data.js exists', 0.2, function () {
   return fs.existsSync(path.join(RUN, 'spirit', 'data.js')) ? true : false;
 }, test.limit.quick);
 
@@ -626,7 +626,7 @@ test.run('spirit/data.js stands', 0.2, function () {
 
 // ── ON A PAGE ───────────────────────────────────────────────────────────────────
 const ask = async function (js) { try { return JSON.parse(await F.page.evaluate(js)); } catch (e) { return { threw: true }; } };
-test.run('the world: a scratch node\'s page in Chrome answers what spirit.data holds', 0.2, async function () {
+test.run('a scratch node\'s page in Chrome answers what spirit.data holds', 0.2, async function () {
   const chrome = H.findChrome();
   F.node = await H.scratchNode();
   F.page = chrome && F.node.up ? await H.chromePage(chrome) : null;
@@ -653,7 +653,7 @@ test.after(function () {
 });
 
 // the box: "de-clutter": the first level of spirit holds no <name>Data
-test.run('none is left', 0.2, function () {
+test.run('the first level of spirit holds no name ending in Data', 0.2, function () {
   if (!F.got) return false;
   const left = F.got.first.filter(function (k) { return /Data$/.test(k); });
   return !left.length ? true : false;
@@ -664,7 +664,7 @@ test.run('spirit.data has its helper functions', 0.2, function () {
   if (!F.got) return false;
   return Object.keys(F.got.keys).some(function (k) { return F.got.keys[k] === 'function'; }) ? true : false;
 }, test.limit.quick);
-test.run('and nothing else but the families', 0.2, function () {
+test.run('spirit.data holds nothing but its helper functions and the families', 0.2, function () {
   if (!F.got) return false;
   const stray = Object.keys(F.got.keys).filter(function (k) { return F.got.keys[k] !== 'function' && FAMILIES.indexOf(k) === -1; });
   return !stray.length ? true : false;
@@ -680,7 +680,7 @@ test.run('every helper has a capital, so none is a word', 0.2, function () {
 // Andy: "the helpes must not be words there either, this goes for all spirit.app contained objects."
 // spirit.app: no helper is a word, on it or on an app it holds
 // goal/G43.32, the box: "Monitor too: its createApp becomes its element.js, and appSelector's createApp path goes."
-test.run('the world: spirit.app holds keys, and no app with a createApp (monitor\'s is its element.js)', 0.2, async function () {
+test.run('spirit.app holds keys, and no app in it has a createApp, monitor\'s being its element.js', 0.2, async function () {
   if (!F.got) return false;
   F.onApp = await ask('(function () { var S = window.spirit; return Promise.all(["spirit/app/monitor/element.js"].map(function (p) { return Promise.resolve(S.require(p)).then(null, function () { return null; }); })).then(function () {' +
     ' var out = { keys: Object.keys(S.app || {}), words: [] };' +
@@ -691,7 +691,7 @@ test.run('the world: spirit.app holds keys, and no app with a createApp (monitor
   const onApp = F.onApp;
   return Array.isArray(onApp.apps) && !onApp.apps.length && Array.isArray(onApp.keys) && onApp.keys.length > 0 ? true : false;
 }, test.limit.quick);
-test.run('and no helper there is a word', 0.2, function () {
+test.run('no helper on spirit.app or on an app it holds is a word', 0.2, function () {
   const onApp = F.onApp || {};
   return Array.isArray(onApp.words) && !onApp.words.length ? true : false;
 }, test.limit.quick);
@@ -710,7 +710,7 @@ test.run('a row of another node stands under that node', 0.2, function () {
   const cached = F.cached || {};
   return cached.there === true ? true : false;
 }, test.limit.quick);
-test.run('and not under this page\'s', 0.2, function () {
+test.run('a row of another node does not stand under this page\'s node', 0.2, function () {
   const cached = F.cached || {};
   return cached.notHome === true ? true : false;
 }, test.limit.quick);
@@ -722,7 +722,7 @@ test.run('spirit.data.app.data reads the app rows', 0.2, async function () {
   const reads = F.reads;
   return reads.rows === 'function' && reads.watch === 'function' && reads.count > 0 ? true : false;
 }, test.limit.quick);
-test.run('spirit.data.fs.data.watch stands, which word.js follows', 0.2, function () {
+test.run('the files family\'s data on spirit.data has a watch, which word.js follows', 0.2, function () {
   const reads = F.reads || {};
   return reads.fsWatch === 'function' ? true : false;
 }, test.limit.quick);

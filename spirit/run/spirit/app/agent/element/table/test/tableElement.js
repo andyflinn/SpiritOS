@@ -86,7 +86,7 @@ let BRANCH = null;
 const E = {};
 
 // ── its file ──
-test.run('the world: the shared element runs on a window of its own, over the real spirit.data', 0.2, async function () {
+test.run('the shared element runs on a window of its own, over the real spirit.data', 0.2, async function () {
   if (!fs.existsSync(FILE)) return false;
   w = world();
   global.window = { spirit: { get element() { return this.elements; }, elements: {}, familyPath: familyPath, isBrowser: function () { return false; } } };
@@ -152,38 +152,38 @@ test.run('the world: the shared element runs on a window of its own, over the re
 // One file, one element (goal/G41.28; the general test: a file registers one element): the row's editor is
 // ./rowElement.js's. goal/G43.32: it stands at its path, spirit.element.spirit.app.agent.element.table.tableElement, its shared
 // pieces (once an element of their own, agentDetail) with its create.
-test.run('it places spirit.element.spirit.app.agent.element.table.tableElement, with create, and no other element: the row\'s editor is rowElement.js\'s', 0.2, function () {
+test.run('it places spirit.element.spirit.app.agent.element.table.tableElement with create and no other element, as the row\'s editor is rowElement.js\'s', 0.2, function () {
   if (!AT) return false;
   return AT.tableElement && typeof AT.tableElement.create === 'function' && !AT.rowElement ? true : false;
 }, test.limit.quick);
-test.run('and with it { titleRow, fieldLine, stretch, search, branchOf, whyOf }, every pane\'s look in one place', 0.2, function () {
+test.run('beside create it places titleRow, fieldLine, stretch, search, branchOf and whyOf, every pane\'s look in one place', 0.2, function () {
   if (!AT) return false;
   return ['titleRow', 'fieldLine', 'search', 'branchOf', 'whyOf'].every(function (k) { return typeof AD[k] === 'function'; }) && typeof AD.stretch === 'string'
     ? true : false;
 }, test.limit.quick);
 // goal/G41.16, Andy: "get rid of thos FUCKING data.js scripts": the shared element requires no data script; the agent
 // family's data.js (spirit/app/agent/data.js, goal/G41.28) takes the rows from the stream, asked for by cacheManager.
-test.run('it requires no data script: each table\'s row element takes its own rows from the stream (goal/G41.16)', 0.2, function () {
+test.run('it requires no data script, as each table\'s row element takes its own rows from the stream', 0.2, function () {
   if (!w) return false;
   return !w.required.some(function (p) { return (/data\.js$/).test(p); }) ? true : false;
 }, test.limit.quick);
 
 // ── the shared pieces ──
-test.run('titleRow(look, words): the agent-title row, its icon, then the words, each in a part of its own', 0.2, function () {
+test.run('titleRow draws the agent-title row, its icon and then the words, each in a part of its own', 0.2, function () {
   if (!E.agentTable || !AD.titleRow) return false;
   const tr = AD.titleRow({ icon: '🏢' }, ['Add', 'Provider']);
   return (/class="agent-title"/).test(tr) && tr.indexOf('🏢') !== -1 && /<b>Add<\/b>/.test(tr) && /<span>Provider<\/span>/.test(tr) ? true : false;
 }, test.limit.quick);
-test.run('set as a title, bigger and semibold (Andy: "a bit more title-like a bit bigger")', 0.2, function () {
+test.run('titleRow sets its words as a title, bigger and semibold (Andy: "a bit more title-like a bit bigger")', 0.2, function () {
   if (!E.agentTable || !AD.titleRow) return false;
   const tr = AD.titleRow({ icon: '🏢' }, ['Add', 'Provider']);
   return (/font-size:1\.3em/).test(tr) && /font-weight:600/.test(tr) ? true : false;
 }, test.limit.quick);
-test.run('and escapes what it shows', 0.2, function () {
+test.run('titleRow escapes what it shows', 0.2, function () {
   if (!E.agentTable || !AD.titleRow) return false;
   return AD.titleRow({ icon: '<x>' }, ['a&b']).indexOf('<x>') === -1 ? true : false;
 }, test.limit.quick);
-test.run('fieldLine(label, input): the label, 1em, then the input to the right edge', 0.2, function () {
+test.run('fieldLine draws the label, a 1em gap, then the input to the right edge', 0.2, function () {
   if (!E.agentTable || !AD.titleRow) return false;
   const fl = AD.fieldLine('L', '<input>');
   // The 1em is shell.css's .agent-line (box v109: spacing lives in shell.css, never in an element's style attribute).
@@ -191,7 +191,7 @@ test.run('fieldLine(label, input): the label, 1em, then the input to the right e
   const rule = (/\.agent-line\s*\{([^}]*)\}/.exec(css) || [])[1] || '';
   return (/display:flex/).test(fl) && /class="agent-line"/.test(fl) && !/gap:/.test(fl) && /gap:\s*1em/.test(rule) && /flex:1 1 0/.test(fl) ? true : false;
 }, test.limit.quick);
-test.run('branchOf(table) is the home node\'s <node>/agent/<table>, as ((spirit.data || {}).agent || {}).data names it (goal/G41.28)', 0.2, function () {
+test.run('branchOf a table is the home node\'s <node>/agent/<table>, as the agent family\'s cache names it', 0.2, function () {
   if (!E.agentTable || !AD.titleRow) return false;
   return AD.branchOf('job') === BRANCH('job') ? true : false;
 }, test.limit.quick);
@@ -209,19 +209,19 @@ test.run('with no agent family\'s cache on the page, branchOf refuses and says w
 
 // ── unconfigured, the table says so and throws nothing (goal/G41.19) ──
 const U = { bare: null, made: null };
-test.run('agentTable.create(box, {}) throws nothing and says it is not configured', 0.2, function () {
+test.run('agentTable.create with empty options throws nothing and says it is not configured', 0.2, function () {
   if (!E.agentTable || !AD.titleRow) return false;
   U.bare = box('bare');
   let threw = null;
   try { U.made = E.agentTable.create(U.bare, {}); } catch (e) { threw = e; }
   return !threw && !!U.made && /not configured/.test(U.bare.textContent) ? true : false;
 }, test.limit.quick);
-test.run('and its destroy leaves the box empty', 0.2, function () {
+test.run('the unconfigured table\'s destroy leaves the box empty', 0.2, function () {
   if (!U.made || typeof U.made.destroy !== 'function') return false;
   U.made.destroy();
   return U.bare.innerHTML === '' ? true : false;
 }, test.limit.quick);
-test.run('whyOf(refusal) is the server\'s own reason, else the refusal\'s words, else refused', 0.2, function () {
+test.run('whyOf a refusal is the server\'s own reason, else the refusal\'s words, else refused', 0.2, function () {
   if (!E.agentTable || !AD.titleRow) return false;
   return AD.whyOf(refused('job takes no argument verb')) === 'job takes no argument verb' && AD.whyOf(new Error('bad')) === 'bad' && AD.whyOf(null) === 'refused'
     ? true : false;
@@ -254,7 +254,7 @@ test.run('it searches the agent server\'s provider verb, seated in the branch <n
   if (!T.list) return false;
   return T.list.o.server === 'agent' && T.list.o.verb === 'provider' && T.list.o.data === BRANCH('provider') ? true : false;
 }, test.limit.quick);
-test.run('its search asks { op: search, text }', 0.2, function () {
+test.run('its search asks for op search with the text', 0.2, function () {
   if (!T.list) return false;
   return JSON.stringify(T.list.o.args('ab')) === JSON.stringify({ op: 'search', text: 'ab' }) ? true : false;
 }, test.limit.quick);
@@ -268,7 +268,7 @@ test.run('a row\'s name is its icon and its label, as a picker shows it', 0.2, f
 }, test.limit.quick);
 
 // ── a row picked opens its editor in the detail pane ──
-test.run('pick opens row(box, key, false, row) in the detail pane', 0.2, function () {
+test.run('picking a row opens it in the detail pane by its key, not added, with its row', 0.2, function () {
   if (!T.list) return false;
   T.list.o.pick({ id: 'KP', label: 'One' }, 'KP');
   const rows = T.rows;
@@ -295,7 +295,7 @@ test.run('it opens an editor with no row of its own, in Add mode', 0.2, function
 }, test.limit.quick);
 
 // ── a table may make its own Add ──
-test.run('given add(open), Add calls it and asks the server nothing', 0.2, async function () {
+test.run('given an add function, Add calls it and asks the server nothing', 0.2, async function () {
   if (!T.list) return false;
   w.calls.length = 0;
   const own = [];
@@ -337,7 +337,7 @@ test.run('a table that hands none keeps icon and label', 0.2, function () {
 }, test.limit.quick);
 
 // ── a table may have no Add (goal/G41.18) ──
-test.run('given add false, no Add is drawn; its buttons and title row are', 0.2, async function () {
+test.run('given add false, no Add is drawn, but its buttons and title row are', 0.2, async function () {
   if (!T.list) return false;
   w.calls.length = 0;
   const left4 = box('left4');

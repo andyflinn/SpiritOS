@@ -65,7 +65,7 @@ test.run('in node, found by the family\'s name (spirit.cacheManager), it stands 
   const X = S.data && S.data['contact'] && S.data['contact'].data;
   return (!threw && !!X && typeof X === 'object') || false;
 }, test.limit.quick);
-test.run('the world: run beside spirit.data, it makes its family there', 0.2, function () {
+test.run('run beside spirit.data, it makes its family there', 0.2, function () {
   try { w = world(); } catch (e) { w = null; return false; }
   return (!!w.X && typeof w.X === 'object') || false;
 }, test.limit.quick);
@@ -117,11 +117,11 @@ test.run('a job of another id keeps nothing', 0.2, function () {
   w.job({ id: 'spirit.fs', data: { row: { publicKey: K4, keep: true } } });
   return w.X.contact(K4) === null || false;
 }, test.limit.quick);
-test.run('contacts() answers every contact kept, contact() of no key null', 0.2, function () {
+test.run('contacts answers every contact kept, and contact of no key answers null', 0.2, function () {
   if (!w) return false;
   return (same(Object.keys(w.X.contacts()).sort(), [K1, K2, K3].sort()) && w.X.contact('') === null) || false;
 }, test.limit.quick);
-test.run('watch(fn) hears each change by the contact\'s key, undefined once gone, and nothing once released', 0.2, function () {
+test.run('watch hears each change by the contact\'s key, undefined once gone, and nothing once released', 0.2, function () {
   if (!w) return false;
   const heard = [];
   const off = w.X.watch(function (key, r) { heard.push([key, r ? r.myLabel : r]); });

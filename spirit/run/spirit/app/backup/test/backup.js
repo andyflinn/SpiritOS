@@ -51,7 +51,7 @@ test.after(async function () {
   try { fs.rmSync(W.scratch, { recursive: true, force: true }); } catch (e) { /* scratch */ }
 });
 
-test.run('the world: spirit/state/ holds node.db with its row, desk/data/marker.json, and config.json naming a spiritHome', 0.2, function () {
+test.run('spirit/state/ holds node.db with its row, desk/data/marker.json, and config.json naming a spiritHome', 0.2, function () {
   const state = W.state;
   fs.mkdirSync(W.own, { recursive: true });
   fs.mkdirSync(path.join(state, 'desk', 'data'), { recursive: true });
@@ -65,7 +65,7 @@ test.run('the world: spirit/state/ holds node.db with its row, desk/data/marker.
     ? true : false;
 }, test.limit.quick);
 
-test.run('the world: the backup server ran once and said so', 0.2, async function () {
+test.run('the backup server ran once and said so', 0.2, async function () {
   // A named pipe on Windows, as the node names its servers' (appClient.js); a socket file elsewhere.
   const pipe = process.platform === 'win32' ? '\\\\.\\pipe\\spirit-backupCopies-' + process.pid : path.join(W.scratch, 'b.sock');
   const node = JSON.stringify({ name: 'scratch', publicKey: 'scratch-public-key-' + process.pid });

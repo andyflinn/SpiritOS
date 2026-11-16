@@ -106,7 +106,7 @@ const detail = { look: function (t) { return { icon: '🧠', name: t }; } };
 const E = {};
 const ask = function () { const b = W.busy[W.busy.length - 1]; return b && b.o && typeof b.o.run === 'function' ? b.o.run() : false; };
 
-test.run('the world: the file runs on a window of its own, its parts stand-ins placed as the page places them', 0.2, function () {
+test.run('the file runs on a window of its own, with stand-ins for its parts placed as the page places them', 0.2, function () {
   if (!fs.existsSync(FILE)) return false;
   world();
   W.up = true;
@@ -125,7 +125,7 @@ test.run('it places spirit.element.spirit.app.agent.element.table.model.elementT
 }, test.limit.quick);
 
 // ── create(container, detail) ──
-test.run('create(container, detail) makes the tables\' shared element in its list', 0.2, async function () {
+test.run('create, handed a container and the detail pane, makes the tables\' shared element in its list', 0.2, async function () {
   if (!E.table) return false;
   E.box = node('div', { id: 'box' });
   E.made = E.table.create(E.box, detail);
@@ -134,7 +134,7 @@ test.run('create(container, detail) makes the tables\' shared element in its lis
   return (!!E.t && E.t.container !== E.box && !!E.box.querySelector('#' + E.t.container.id) && /list$/.test(E.t.container.id)) || false;
 }, test.limit.quick);
 // "WHAT IT USES, IT LOADS ITSELF (rule/26): the shared element, its row, the search, the busyButton and the rowForm."
-test.run('it loads what it uses itself: the shared element, its row editor, the search, the busyButton and the rowForm (rule/26)', 0.2, function () {
+test.run('it loads what it uses itself: the shared element, its row editor, the search, the busyButton and the rowForm', 0.2, function () {
   if (!W.up) return false;
   const missing = [SHARED, ROW].concat(PARTS).filter(function (p) { return W.required.indexOf(p) === -1; });
   return missing.length === 0 || false;
@@ -144,17 +144,17 @@ test.run('the shared element is told its table, model, and the page\'s detail pa
   return (E.t.o.table === 'model' && E.t.o.detail === detail) || false;
 }, test.limit.quick);
 // Andy, on G41.18: "get RID of [Add a Model] button in the left panes model mode. NOT required."
-test.run('it has no Add: a model comes from its provider\'s list (goal/G41.18)', 0.2, function () {
+test.run('it has no Add, since a model comes from its provider\'s list', 0.2, function () {
   if (!E.t) return false;
   return E.t.o.add === false || false;
 }, test.limit.quick);
 // goal/G41.18, box v17: the list shows "[icon] \"model-name\"", the provider's icon the server sends with the row.
-test.run('its list shows [icon] "model-name": the provider\'s icon the server sends with the row, then the model, sorted as text', 0.2, function () {
+test.run('its list shows the provider\'s icon the server sends with the row, then the model\'s name, sorted as text', 0.2, function () {
   if (!E.t) return false;
   const c = E.t.o.columns || [];
   return (c.length === 2 && c[0].field === 'icon' && c[0].from === 'providerIcon' && c[1].field === 'label' && c[1].label === 'Model' && c[1].sort === 'text') || false;
 }, test.limit.quick);
-test.run('a row picked opens in the model row editor: row(box, id, added) makes elementRow.create(box, id, added, detail) and answers it', 0.2, function () {
+test.run('a row picked opens in the model row editor, whose row maker hands its box, id and added to elementRow\'s create with the detail pane and answers what it makes', 0.2, function () {
   if (!E.t) return false;
   if (typeof E.t.o.row !== 'function') return false;
   const b = { id: 'detail-box' };
@@ -164,20 +164,20 @@ test.run('a row picked opens in the model row editor: row(box, id, added) makes 
 }, test.limit.quick);
 
 // ── the Ask form (goal/G41.26, goal/G41.27; Andy: "agent: left panel. \n\n[❓] [Pick a provider ▾] [Ask]") ──
-test.run('the Ask form is a rowForm: ❓, its button Ask', 0.2, function () {
+test.run('the Ask form is a rowForm with the icon ❓ and the button Ask', 0.2, function () {
   if (!E.t) return false;
   const f = W.forms[W.forms.length - 1];
   E.f = f;
   return (!!f && f.o.icon === '❓' && f.o.button === 'Ask' && /form$/.test(f.container.id)) || false;
 }, test.limit.quick);
-test.run('in its span, the providerSelector in dropdown mode: the provider table\'s search, "Pick a provider"', 0.2, function () {
+test.run('its span holds the providerSelector in dropdown mode, the provider table\'s search, saying "Pick a provider"', 0.2, function () {
   if (!E.f) return false;
   const d = W.drops[W.drops.length - 1];
   E.d = d;
   return (!!d && d.host === E.f.span && d.o.table === 'provider' && d.face.face === 'dropdown' && d.face.placeholder === 'Pick a provider') || false;
 }, test.limit.quick);
 // Andy, on G41.26: "the title row \"🧠Models\" must come before the \"from [🛖 Unsloth Studio ▾] [Ask] row."
-test.run('the title row comes first: the form, then its note, moved in under the shared table\'s title', 0.2, function () {
+test.run('the title row comes first, then the form and its note, moved in under the shared table\'s title', 0.2, function () {
   if (!E.f) return false;
   const kids = E.t.container.children.map(function (c) { return c.id ? c.id.replace(/^mt\d+-/, '') : c.className; });
   return JSON.stringify(kids) === JSON.stringify(['agent-title', 'form', 'said', 'agent-list']) || false;
@@ -195,7 +195,7 @@ test.run('with no provider picked, Ask asks nothing', 0.2, function () {
   return (r === null && W.asks.length === 0) || false;
 }, test.limit.quick);
 // Andy, box: "the [Ask] button will no longer spit out a list, and simply update the agent.model table".
-test.run('with one picked, Ask asks the provider table: provider { op: ask, id }, which updates the model table', 0.2, async function () {
+test.run('with one picked, Ask asks the provider table for an ask of that provider, which updates the model table', 0.2, async function () {
   if (!E.d) return false;
   E.d.value = 'P1';
   W.answer = { items: [{ id: 'x' }] };
@@ -213,7 +213,7 @@ test.run('a refusal is said on one line, the provider\'s reason, as the shared e
   const note = E.box.querySelector('#' + E.t.container.id.replace(/list$/, 'said'));
   return (!!note && note.textContent === 'the reason: the provider is down') || false;
 }, test.limit.quick);
-test.run('and the next Ask clears it', 0.2, async function () {
+test.run('the next Ask clears the refusal', 0.2, async function () {
   const note = E.t && E.box.querySelector('#' + E.t.container.id.replace(/list$/, 'said'));
   if (!note) return false;
   W.answer = {};
@@ -244,7 +244,7 @@ test.run('a refusal after its destroy says nothing', 0.2, async function () {
   await ask(); await settle();
   return note.textContent === '' || false;
 }, test.limit.quick);
-test.run('each table it makes has ids of its own: a second one names no part the first does', 0.2, async function () {
+test.run('each table it makes has ids of its own, so a second one names no part the first does', 0.2, async function () {
   if (!E.table || !E.t) return false;
   const b2 = node('div', { id: 'box2' });
   E.table.create(b2, detail);

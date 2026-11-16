@@ -30,10 +30,10 @@ const A = home('alpha');
 const OWNER = auth.generateIdentity('boss').publicKey;
 
 // ── asks ──
-test.run('asks: a system packet { card: true } is a card ask', 0.2, function () {
+test.run('asks reads a system packet whose body says card true as a card ask', 0.2, function () {
   return C.asks(JSON.stringify({ v: 1, body: { card: true } })) === true || false;
 }, test.limit.quick);
-test.run('asks: an app\'s packet, another question, a chat line and bad JSON are not', 0.2, function () {
+test.run('asks reads an app\'s packet, another question, a chat line and bad JSON as no card ask', 0.2, function () {
   const got = [JSON.stringify({ v: 1, app: 'chat', body: { card: true } }), JSON.stringify({ v: 1, body: { describe: true } }), 'hello', '{nope'].map(C.asks);
   return got.every(function (x) { return x === false; }) || false;
 }, test.limit.quick);
@@ -57,7 +57,7 @@ test.run('verify refuses a card with any field changed in flight: name, descript
   });
   return got.every(function (x) { return x === null; }) || false;
 }, test.limit.quick);
-test.run('verify refuses a card from before the flag days: no owner field, or no counter', 0.2, function () {
+test.run('verify refuses a card from before the flag days, with no owner field or no counter', 0.2, function () {
   const b = bodyOf(CARD);
   const noOwner = Object.assign({}, b); delete noOwner.owner;
   const noAt = Object.assign({}, b); delete noAt.at;
@@ -75,7 +75,7 @@ test.run('cardFrom signs an identity in hand; with no private key it answers emp
 }, test.limit.quick);
 
 // ── the counter: it advances on change, not on publication ──
-test.run('describe twice with nothing changed: the same counter (a reconnect burns none)', 0.2, function () {
+test.run('describe twice with nothing changed keeps the same counter, so a reconnect burns none', 0.2, function () {
   const a = bodyOf(C.describe(A)).at; const b = bodyOf(C.describe(A)).at;
   return a === b || false;
 }, test.limit.quick);
@@ -85,7 +85,7 @@ test.run('a changed description moves the counter up', 0.2, function () {
   const after = bodyOf(C.describe(A));
   return (after.at === before + 1 && after.description === 'a node of mine') || false;
 }, test.limit.quick);
-test.run('an owner named in owner.json rides on the card, signed, and moves the counter (goal/G19.8)', 0.2, function () {
+test.run('an owner named in owner.json rides on the card, signed, and moves the counter', 0.2, function () {
   const before = bodyOf(C.describe(A)).at;
   auth.writeOwner(A, OWNER);
   const card = C.describe(A);
@@ -122,7 +122,7 @@ test.run('setDescription answers what was stored; empty clears it; too long is r
 }, test.limit.quick);
 
 // ── rotate (Andy: "rotation is a crisis.measure") ──
-test.run('rotate: a new seal key, the old private key discarded, the identity key kept, the card strictly newer', 0.2, function () {
+test.run('rotate makes a new seal key, discards the old private key, keeps the identity key and makes the card strictly newer', 0.2, function () {
   const R = home('rotor');
   const before = auth.loadIdentity(R);
   const r = C.rotate(R);
@@ -130,7 +130,7 @@ test.run('rotate: a new seal key, the old private key discarded, the identity ke
   const f = C.verify(C.describe(R));
   return (r.ok === true && r.at >= 2 && after.sealPublicKey !== before.sealPublicKey && after.sealPrivateKey !== before.sealPrivateKey && after.publicKey === before.publicKey && !!f && f.sealKey === after.sealPublicKey && f.at === r.at) || false;
 }, test.limit.quick);
-test.run('rotate after a card was published: the rotated card\'s counter is above it', 0.2, function () {
+test.run('after a card was published, the rotated card\'s counter is above it', 0.2, function () {
   const R = home('rotor2');
   const was = bodyOf(C.describe(R)).at;
   const r = C.rotate(R);

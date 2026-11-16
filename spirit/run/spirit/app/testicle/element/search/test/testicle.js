@@ -159,12 +159,12 @@ test.run('its script selector is the file search, spirit/element/search/file.js,
   return /['"]spirit\/element\/search\/file\.js['"]/.test(src) || false;
 }, test.limit.quick);
 
-test.run('the world: a scratch node comes up, testicle on', 0.2, async function () {
+test.run('a scratch node comes up with testicle on', 0.2, async function () {
   s = scratch();
   N = await boot(s.run); live.push(N.child);
   return N.up || false;
 }, test.limit.long);
-test.run('the world: tests of the planted scripts are set on it', 0.2, async function () {
+test.run('tests of the planted scripts are set on the node', 0.2, async function () {
   if (!N || !N.up) return false;
   GEN = s.gen;
   if (!GEN) return false;
@@ -181,7 +181,7 @@ test.run('the world: tests of the planted scripts are set on it', 0.2, async fun
   return planted || false;
 }, test.limit.slow);
 let gammaPlanted = false;
-test.run('the world: gamma\'s 30 failed tests are set on it, before the page opens', 0.2, async function () {
+test.run('gamma\'s 30 failed tests are set on the node before the page opens', 0.2, async function () {
   if (!N || !N.up) return false;
   let bad = 0;
   for (let i = 1; i <= GAMMA_REDS; i++) {
@@ -191,7 +191,7 @@ test.run('the world: gamma\'s 30 failed tests are set on it, before the page ope
   gammaPlanted = !bad;
   return gammaPlanted || false;
 }, test.limit.slow);
-test.run('the world: the face page has its spirit', 0.2, async function () {
+test.run('the face page has its spirit', 0.2, async function () {
   if (!N || !N.up) return false;
   const where = findChrome();
   if (!where) return false;
@@ -217,26 +217,26 @@ test.run('it loads through spirit.require and mounts with create(container), ans
 // first" (Andy: "the default setting for testicle search should be EQUAL the the RED verb of testicle."); and earlier
 // (Andy: "the empty search string with no script or suite selected should already fill up with more that 20 reds when i
 // open the app!"). gamma's 30 reds are more than one answer holds.
-test.run('opened, red is on and green is off', 0.2, async function () {
+test.run('when opened, red is on and green is off', 0.2, async function () {
   if (mounted()) return false;
   await waitFor('filter("red") && filter("green")', 10000);
   const red = await T('filter("red")'), green = await T('filter("green")');
   return (!!red && !!green && red.on && !green.on) || false;
 }, test.limit.slow);
-test.run('opened, it shows more than 20 reds: every one of gamma\'s 30', 0.2, async function () {
+test.run('when opened, it shows more than 20 reds, every one of gamma\'s 30', 0.2, async function () {
   if (mounted()) return false;
   if (!gammaPlanted) return false;
   const ok = await waitFor('keys().filter(function (k) { return k.indexOf("' + Z2 + '") === 0; }).length >= ' + GAMMA_REDS, 15000);
   return !!ok || false;
 }, test.limit.slow);
-test.run('opened, it shows reds only, the most severe first', 0.2, async function () {
+test.run('when opened, it shows reds only, the most severe first', 0.2, async function () {
   if (mounted()) return false;
   const sev = await columnNow(1);
   const icons = await columnNow(0);
   const down = sev.every(function (v, i) { return i === 0 || Number(sev[i - 1]) >= Number(v); });
   return (icons.length > 0 && icons.every(function (v) { return v === '❌'; }) && down) || false;
 }, test.limit.quick);
-test.run('the world: green pressed, both filters on', 0.2, async function () {
+test.run('green is pressed, and both filters are on', 0.2, async function () {
   if (mounted()) return false;
   await T('press("green")');
   const ok = await waitFor('filter("green").on && filter("red").on', 5000);
@@ -244,7 +244,7 @@ test.run('the world: green pressed, both filters on', 0.2, async function () {
 }, test.limit.slow);
 
 // the box: "the current rows shown"
-test.run('the world: the list draws the planted tests', 0.2, async function () {
+test.run('the list draws the planted tests', 0.2, async function () {
   if (mounted()) return false;
   return !!(await waitFor('keys().filter(function (k) { return k.indexOf("' + Z + '") === 0; }).length >= 3', 15000)) || false;
 }, test.limit.slow);
@@ -254,7 +254,7 @@ test.run('it lists each test once, by its current row alone', 0.2, async functio
   const want = [current[LONG], current[FAILS], current[FLIPS]].map(function (r) { return r && r.key; }).sort();
   return JSON.stringify(keys.slice().sort()) === JSON.stringify(want) || false;
 }, test.limit.quick);
-test.run('the world: each planted row\'s cells are read', 0.2, async function () {
+test.run('the cells of each planted row can be read', 0.2, async function () {
   if (mounted()) return false;
   drawn = ((await T('cells()')) || []).filter(function (r) { return String(r.key).indexOf(Z) === 0; });
   byTitle = {};
@@ -414,7 +414,7 @@ test.run('with red off, a press on red leaves it on: both off is refused', 0.2, 
   const red = await T('filter("red")');
   return (!!red && red.on) || false;
 }, test.limit.slow);
-test.run('the world: both filters on again', 0.2, async function () {
+test.run('both filters are on again', 0.2, async function () {
   if (mounted()) return false;
   await T('press("green")');
   await sleep(300);
@@ -467,14 +467,14 @@ test.run('a suite chosen narrows the rows to that suite\'s tests', 0.2, async fu
   const ok = await until(function () { return columnNow(4).then(function (l) { return l.length > 0 && l.every(function (v) { return v === base(GEN); }); }); }, 5000);
   return !!ok || false;
 }, test.limit.slow);
-test.run('the suite unselected again, every suite of the script shows', 0.2, async function () {
+test.run('with the suite unselected again, every suite of the script shows', 0.2, async function () {
   if (mounted()) return false;
   await T('openSel(1)');
   if (!(await T('noneSel(1)'))) return false;
   const ok = await until(function () { return columnNow(4).then(function (l) { return l.indexOf(base(AS)) !== -1 && l.indexOf(base(GEN)) !== -1; }); }, 5000);
   return !!ok || false;
 }, test.limit.slow);
-test.run('the script unselected again, every script\'s tests show', 0.2, async function () {
+test.run('with the script unselected again, every script\'s tests show', 0.2, async function () {
   if (mounted()) return false;
   await T('openSel(0)');
   if (!(await T('noneSel(0)'))) return false;
@@ -516,7 +516,7 @@ test.run('a suite chosen with no script shows that suite\'s tests of every scrip
   }, 10000);
   return !!ok || false;
 }, test.limit.slow);
-test.run('the suite unselected with no script, every script\'s tests show again', 0.2, async function () {
+test.run('with the suite unselected and no script chosen, every script\'s tests show again', 0.2, async function () {
   if (mounted()) return false;
   await T('openSel(1)');
   if (!(await T('noneSel(1)'))) return false;
@@ -562,7 +562,7 @@ let many = false, opened = '';
 const results = function () { return plantedCells().then(function (rows) { return rows.map(function (r) { return (r.cells[0] || {}).text; }); }); };
 const titles = function () { return plantedCells().then(function (rows) { return rows.map(titleOf); }); };
 const reopened = function () { return !N || !N.up || !many || opened !== 'made'; };
-test.run('the world: 110 passing tests of beta at severity 1, 25 failing tests of alpha at 0.3, alpha\'s quiet pass at 0', 0.2, async function () {
+test.run('the node holds 110 passing tests of beta at severity 1, 25 failing tests of alpha at 0.3, and alpha\'s quiet pass at 0', 0.2, async function () {
   if (!N || !N.up) return false;
   const out = [];
   for (let i = 0; i < 110; i++) out.push(await call(N.base, 'testicle.testicle.set', { script: B, suite: BS, test: LOUDB(i), verified: true, severity: 1 }));
@@ -571,7 +571,7 @@ test.run('the world: 110 passing tests of beta at severity 1, 25 failing tests o
   many = out.every(function (r) { return r.status === 200; });
   return many || false;
 }, test.limit.long);
-test.run('the world: a fresh page opens the search again, no words and no selector', 0.2, async function () {
+test.run('a fresh page opens the search again with no words and no selector', 0.2, async function () {
   if (!many) return false;
   if (!c || c.error || !c.evaluate) return false;
   await c.send('Page.navigate', { url: N.base + '/face.html' });
@@ -590,18 +590,18 @@ test.run('the world: a fresh page opens the search again, no words and no select
 // goal/G47.1, the box: "The testicle search's default equals testicle.red: all scripts, all suites, reds only, most severe
 // first". Opened, the 57 reds alone; then green pressed, both on, for the checks of the following answers.
 const severities = function () { return plantedCells().then(function (rows) { return rows.map(function (r) { return Number((r.cells[1] || {}).text); }); }); };
-test.run('opened with no words and no selector, more than 20 reds show: every one of the 57, and no success', 0.2, async function () {
+test.run('when opened with no words and no selector, more than 20 reds show, every one of the 57, and no success', 0.2, async function () {
   if (reopened()) return false;
   const got = (await results()) || [];
   const n = got.filter(function (v) { return v === '❌'; }).length;
   return (n === REDS && got.length === REDS) || false;
 }, test.limit.quick);
-test.run('opened, the reds show the most severe first', 0.2, async function () {
+test.run('when opened, the reds show the most severe first', 0.2, async function () {
   if (reopened()) return false;
   const sev = (await severities()) || [];
   return (sev.length > 0 && sev.every(function (v, i) { return i === 0 || sev[i - 1] >= v; })) || false;
 }, test.limit.quick);
-test.run('the world: green pressed on the fresh page, both filters on', 0.2, async function () {
+test.run('green is pressed on the fresh page, and both filters are on', 0.2, async function () {
   if (reopened()) return false;
   await T('press("green")');
   const ok = await waitFor('filter("green").on && filter("red").on', 5000);
@@ -610,18 +610,18 @@ test.run('the world: green pressed on the fresh page, both filters on', 0.2, asy
   for (let i = 0; i < 30; i++) { now = ((await results()) || []).length; if (now === last && now > REDS) break; last = now; await sleep(1000); }
   return now > REDS || false;
 }, test.limit.long);
-test.run('both on, the reds show first', 0.2, async function () {
+test.run('with both filters on, the reds show first', 0.2, async function () {
   if (reopened()) return false;
   const got = (await results()) || [];
   const firstPass = got.indexOf('✅');
   return (got[0] === '❌' && (firstPass === -1 || got.slice(firstPass).indexOf('❌') === -1)) || false;
 }, test.limit.quick);
-test.run('both on, the page asks for the following answers while there are more: with 171 tests, 100 show', 0.2, async function () {
+test.run('with both filters on, the page asks for the following answers while there are more, so 100 of the 171 tests show', 0.2, async function () {
   if (reopened()) return false;
   const n = ((await results()) || []).length;
   return n === 100 || false;
 }, test.limit.quick);
-test.run('both on, the quiet pass at severity 0 is not among the 100: it waits for a narrower ask', 0.2, async function () {
+test.run('with both filters on, the quiet pass at severity 0 is not among the 100 and waits for a narrower ask', 0.2, async function () {
   if (reopened()) return false;
   const t = (await titles()) || [];
   return t.indexOf(QUOKKA) === -1 || false;
@@ -640,7 +640,7 @@ test.run('with red off and green on, 100 successes show and no failure', 0.2, as
   const ok = await until(function () { return results().then(function (l) { return l.length === 100 && l.every(function (v) { return v === '✅'; }); }); }, 15000);
   return !!ok || false;
 }, test.limit.slow);
-test.run('a script chosen asks the server again: alpha chosen, green alone, its quiet pass shows', 0.2, async function () {
+test.run('choosing a script asks the server again, so with alpha chosen and green alone, alpha\'s quiet pass shows', 0.2, async function () {
   if (reopened()) return false;
   await T('openSel(0)');
   await T('typeSel(0, "zzTsearch")');
@@ -650,7 +650,7 @@ test.run('a script chosen asks the server again: alpha chosen, green alone, its 
   const shown = await columnNow(3);
   return (!!ok && shown.every(function (v) { return v === base(A); })) || false;
 }, test.limit.slow);
-test.run('the script unselected and alpha\'s own suite chosen, green alone, its quiet pass shows', 0.2, async function () {
+test.run('with the script unselected, alpha\'s own suite chosen and green alone, alpha\'s quiet pass shows', 0.2, async function () {
   if (reopened()) return false;
   await T('openSel(0)');
   if (!(await T('noneSel(0)'))) return false;
@@ -664,7 +664,7 @@ test.run('the script unselected and alpha\'s own suite chosen, green alone, its 
   const shown = await columnNow(4);
   return (!!ok && shown.every(function (v) { return v === base(AS); })) || false;
 }, test.limit.slow);
-test.run('the world: the suite unselected, red and green both on', 0.2, async function () {
+test.run('the suite is unselected, and red and green are both on', 0.2, async function () {
   if (reopened()) return false;
   await T('openSel(1)');
   if (!(await T('noneSel(1)'))) return false;
@@ -685,7 +685,7 @@ test.run('typed words show the tests they find: "fails" shows failures', 0.2, as
   const ok = await until(function () { return titles().then(function (t) { return t.some(function (x) { return /fails/.test(x); }); }); }, 15000);
   return !!ok || false;
 }, test.limit.slow);
-test.run('the words cleared, the reds show first again', 0.2, async function () {
+test.run('with the words cleared, the reds show first again', 0.2, async function () {
   if (reopened()) return false;
   await T('typeMain("")');
   const ok = await until(function () { return results().then(function (l) { return l.length === 100 && l.filter(function (v) { return v === '❌'; }).length === REDS && l[0] === '❌'; }); }, 15000);

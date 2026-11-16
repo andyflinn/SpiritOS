@@ -19,56 +19,56 @@ test.after(function () {
   try { if (node && node.root) require(require('path').join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* scratch */ }
 });
 
-test.run('the world: a scratch node, and a Chrome on its face page', 0.2, async function () {
+test.run('a scratch node comes up with a Chrome on its face page', 0.2, async function () {
   node = await scratchNode();
   chrome = await chromePage(findChrome());
   if (!node.up || chrome.error) return false;
   await chrome.send('Page.navigate', { url: node.base + '/face.html' });
   return (await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000)) ? true : false;
 }, test.limit.slow);
-test.run('it loads through spirit.require and is spirit.element.spirit.element.search.app.rowFormToggle', 0.2, async function () {
+test.run('rowFormToggle loads through spirit.require and is spirit.element.spirit.element.search.app.rowFormToggle', 0.2, async function () {
   if (!node || !node.up || !chrome || chrome.error) return false;
   loaded = await chrome.evaluate('spirit.ready.then(function () { return spirit.require("spirit/element/search/app/rowFormToggle.js"); }).then(function () { return !!(spirit.element.spirit.element.search.app.rowFormToggle && spirit.element.spirit.element.search.app.rowFormToggle.create); }, function () { return false; })');
   return loaded === true ? true : false;
 }, test.limit.quick);
 let made, off, on;
 const seen = function () { return chrome.evaluate('(function () { var b = document.getElementById("t"); var btn = b.querySelector("button"); return { text: String(b.innerText || "").replace(/\\s+/g, " ").trim(), button: btn ? String(btn.textContent || "").trim() : null, forms: b.querySelectorAll(".shell-row-form").length }; }())'); };
-test.run('create(host, { on, words, press }) answers { root, set, destroy }', 0.2, async function () {
+test.run('create, handed a host with on, words and press, answers a toggle with root, set and destroy', 0.2, async function () {
   if (loaded !== true) return false;
   made = await chrome.evaluate('(function () { var b = document.createElement("div"); b.id = "t"; document.body.appendChild(b); window.__pressed = 0; window.__t = spirit.element.spirit.element.search.app.rowFormToggle.create(b, { on: false, words: "Allow zz as shell", press: function () { window.__pressed += 1; } }); return !!window.__t && !!window.__t.root && typeof window.__t.set === "function" && typeof window.__t.destroy === "function"; }())');
   return made === true ? true : false;
 }, test.limit.quick);
 
 // the box: "it acts exactly like the two toggle switches": the state as 🟢 or 🔴, the button the other
-test.run('one rowForm, with the words it was handed', 0.2, async function () {
+test.run('the toggle draws one rowForm with the words it was handed', 0.2, async function () {
   if (made !== true) return false;
   off = await seen();
   return off.forms === 1 && off.text.indexOf('Allow zz as shell') !== -1 ? true : false;
 }, test.limit.quick);
-test.run('off: it shows 🔴, its button 🟢', 0.2, function () {
+test.run('when off, the toggle shows 🔴 and its button shows 🟢', 0.2, function () {
   if (!off) return false;
   return off.text.indexOf('🔴') !== -1 && off.button === '🟢' ? true : false;
 }, test.limit.quick);
 
 // a press asks; the state changes only when it is handed one
-test.run('a press calls press, once', 0.2, async function () {
+test.run('a press on the button calls press once', 0.2, async function () {
   if (made !== true) return false;
   await chrome.evaluate('document.querySelector("#t button").click(); 1');
   const n = await chrome.evaluate('window.__pressed');
   return n === 1 ? true : false;
 }, test.limit.quick);
-test.run('and it still shows off: the click is no state', 0.2, async function () {
+test.run('after the press the toggle still shows off, because the click is no state', 0.2, async function () {
   if (made !== true) return false;
   const still = await seen();
   return still.button === '🟢' && still.text.indexOf('🔴') !== -1 ? true : false;
 }, test.limit.quick);
-test.run('set(true, words): it shows 🟢, its button 🔴, and the new words', 0.2, async function () {
+test.run('set with true and new words makes the toggle show 🟢, its button 🔴, and the new words', 0.2, async function () {
   if (made !== true) return false;
   await chrome.evaluate('window.__t.set(true, "Don\'t allow zz as shell"); 1');
   on = await seen();
   return on.text.indexOf('🟢') !== -1 && on.button === '🔴' && on.text.indexOf("Don't allow zz as shell") !== -1 ? true : false;
 }, test.limit.quick);
-test.run('still one rowForm', 0.2, function () {
+test.run('the redrawn toggle is still one rowForm', 0.2, function () {
   if (!on) return false;
   return on.forms === 1 ? true : false;
 }, test.limit.quick);

@@ -23,15 +23,15 @@ function code(file) {
 
 // The world.
 const W = {};
-test.run('the world: spirit/hub.js is there', 0.2, function () {
+test.run('spirit/hub.js is there', 0.2, function () {
   W.there = fs.existsSync(HUB);
   W.c = W.there ? code(HUB) : '';
   return W.there || false;
 }, test.limit.quick);
-test.run('the world: hub.js\'s code, comments left out, still encodes packets (packet.encode), so the read sees code', 0.2, function () {
+test.run('hub.js\'s code, with its comments left out, still encodes packets with packet.encode, so the read sees code', 0.2, function () {
   return !!/\bpacket\.encode\(/.test(W.c || '') || false;
 }, test.limit.quick);
-test.run('the world: the one decoder is there, arrivals.js envelopeOf', 0.2, function () {
+test.run('the one decoder, arrivals.js envelopeOf, is there', 0.2, function () {
   let envelopeOf = null;
   try { envelopeOf = require(path.join(RUN, 'spirit', 'arrivals.js')).envelopeOf; } catch (e) { envelopeOf = null; }
   return typeof envelopeOf === 'function' || false;
@@ -54,7 +54,7 @@ test.run('hub.js\'s code has no packet.decode, nor any decode of its own', 0.2, 
 // (planted in node.db while the store still takes one), named by no relay, goes to the first relay held, with no hints.
 const PEER_KEY = 'MCowBQYDK2VwAyEAROUTEROUTEROUTEROUTEROUTEROUTEROUTEROUTEROU=';
 let chosen = null;
-test.run('the world: a scratch node that once heard a route for a peer; chooseRoute asked for that peer, one relay held', 0.2, function () {
+test.run('on a scratch node that once heard a route for a peer, chooseRoute asked for that peer with one relay held sends the post to that relay', 0.2, function () {
   const os = require('os');
   W.routeHome = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-hub-route-'));
   fs.mkdirSync(path.join(W.routeHome, 'spirit', 'state'), { recursive: true });

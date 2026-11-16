@@ -47,7 +47,7 @@ const E = {};
 const plain = function (fields) { return (fields || []).map(function (f) { const o = { field: f.field, kind: f.kind }; if (f.pick) o.pick = f.pick; if (f.of) o.of = f.of; return o; }); };
 const fieldOf = function (name) { const m = E.m; return m && m.o && Array.isArray(m.o.fields) ? m.o.fields.filter(function (f) { return f.field === name; })[0] || null : null; };
 
-test.run('the world: the file runs on a window of its own, the row element a stand-in placed as the page places it', 0.2, function () {
+test.run('the file runs on a window of its own, with a stand-in for the row element placed as the page places it', 0.2, function () {
   if (!fs.existsSync(FILE)) return false;
   world();
   W.up = true;
@@ -65,13 +65,13 @@ test.run('it places spirit.element.spirit.app.agent.element.table.job.elementRow
   return (!!E.row && typeof E.row.create === 'function') || false;
 }, test.limit.quick);
 // "Its table's rows are the agent family's cache (goal/G41.28) ... it is loaded here, with this element."
-test.run('as it loads, it asks for the agent family\'s cache manager, spirit.cacheManager(\'agent\')', 0.2, function () {
+test.run('as it loads, it asks spirit.cacheManager for the agent family\'s cache manager', 0.2, function () {
   if (!W.up) return false;
   return W.managers.indexOf('agent') !== -1 || false;
 }, test.limit.quick);
 
 // ── create(container, id, added, detail): the row element, handed the job table's fields ──
-test.run('create(container, id, true, detail) makes the tables\' row element in that container', 0.2, async function () {
+test.run('create, given a container, an id, added as true and a detail pane, makes the tables\' row element in that container', 0.2, async function () {
   if (!E.row) return false;
   E.box = { id: 'box' };
   E.made = E.row.create(E.box, 'ID1', true, detail);
@@ -79,7 +79,7 @@ test.run('create(container, id, true, detail) makes the tables\' row element in 
   E.m = W.made[W.made.length - 1];
   return (!!E.m && E.m.container === E.box) || false;
 }, test.limit.quick);
-test.run('it loads the row element itself, spirit/app/agent/element/table/rowElement.js (rule/26)', 0.2, function () {
+test.run('it loads the row element itself, spirit/app/agent/element/table/rowElement.js', 0.2, function () {
   if (!W.up) return false;
   return W.required.indexOf(ROW) !== -1 || false;
 }, test.limit.quick);
@@ -100,7 +100,7 @@ test.run('its fields are the job table\'s: label, loop, job, bundle, provider, p
   return JSON.stringify(plain(E.m.o.fields)) === JSON.stringify([{'field': 'label', 'kind': 'name'}, {'field': 'loop', 'kind': 'bool'}, {'field': 'job', 'kind': 'code'}, {'field': 'bundle', 'kind': 'bundle'}, {'field': 'provider', 'kind': 'pick', 'pick': 'provider'}, {'field': 'persona', 'kind': 'pick', 'pick': 'persona'}]) || false;
 }, test.limit.quick);
 // goal/G41.21, box v17: the bundle "with a bundleSelector in dropdown mode" (kind bundle), "That bundle is the job's grant".
-test.run('its bundle, the job\'s grant, is chosen by the bundle selector (kind bundle; goal/G41.21, box v17)', 0.2, function () {
+test.run('its bundle, the job\'s grant, is chosen by the bundle selector, a field of kind bundle', 0.2, function () {
   if (!E.m) return false;
   const f = fieldOf('bundle');
   return (!!f && f.kind === 'bundle') || false;
@@ -111,7 +111,7 @@ test.run('its provider and its persona are each a pick field of its own table', 
   const p = fieldOf('provider'); const r = fieldOf('persona');
   return (!!p && p.kind === 'pick' && p.pick === 'provider' && !!r && r.kind === 'pick' && r.pick === 'persona') || false;
 }, test.limit.quick);
-test.run('its mandatory fields are icon, label, as its server names them (goal/G41.21: "# mandatory fields (server AND ui)")', 0.2, function () {
+test.run('its mandatory fields are icon and label, as its server names them', 0.2, function () {
   if (!E.m) return false;
   return JSON.stringify(E.m.o.required) === JSON.stringify(["icon", "label"]) || false;
 }, test.limit.quick);
@@ -120,7 +120,7 @@ test.run('its destroy destroys the row element it made', 0.2, function () {
   E.made.destroy();
   return E.m.destroyed === true || false;
 }, test.limit.quick);
-test.run('anything but added === true is told as false; no detail pane, no look', 0.2, async function () {
+test.run('an added that is anything but exactly true is told as false, and with no detail pane there is no look', 0.2, async function () {
   if (!E.row) return false;
   E.row.create({ id: 'box2' }, 'ID2', 'yes');
   await settle();

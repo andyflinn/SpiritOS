@@ -23,7 +23,7 @@ const call = function (verb, args) { return spirit.check(verb, W.verbs[verb], ar
 const passes = function (verb, args) { return call(verb, args) === null; };
 const refusedAs = function (verb, args) { const r = call(verb, args); return r ? r.code : ''; };
 
-test.run('the world: api.js loads', 0.2, function () {
+test.run('api.js loads', 0.2, function () {
   W.api = require(FILE);
   W.verbs = W.api.verbs || {};
   W.names = Object.keys(W.verbs);
@@ -39,7 +39,7 @@ test.run('it exports nothing but verbs: it names no family of its own', 0.2, fun
   if (!W.api) return false;
   return Object.keys(W.api).join() === 'verbs' || false;
 }, test.limit.quick);
-test.run('every rule is one of spirit.js\'s standard, \'?\' optional', 0.2, function () {
+test.run('every rule is one of spirit.js\'s standard rules, a trailing question mark making it optional', 0.2, function () {
   if (!W.api) return false;
   const badRule = [];
   W.names.forEach(function (v) {
@@ -54,7 +54,7 @@ test.run('every rule is one of spirit.js\'s standard, \'?\' optional', 0.2, func
 }, test.limit.quick);
 
 // every verb it lists is one the server serves
-test.run('each is a handler of deskClient.js, or appServer\'s streamListener (deskClient follows the desk\'s stream)', 0.2, function () {
+test.run('each verb is a handler of deskClient.js, or appServer\'s streamListener, since deskClient follows the desk\'s stream', 0.2, function () {
   if (!W.api) return false;
   const source = ['spirit/app/deskClient/deskClient.js', 'spirit/appServer.js'].map(function (f) { return fs.readFileSync(path.join(RUN, f), 'utf8'); }).join('\n');
   const esc = function (s) { return s.replace(/[.$]/g, '\\$&'); };
@@ -66,11 +66,11 @@ test.run('deskClient serves with a stream, so appServer adds its streamListener'
 }, test.limit.quick);
 
 // each verb's arguments, as the handlers take them
-test.run('next: read optional, the key of the wake the agent last read, a text', 0.2, function () {
+test.run('next takes an optional read, the key of the wake the agent last read, as text', 0.2, function () {
   if (!W.api) return false;
   return (passes('next', {}) && passes('next', { read: 'w-1' }) && refusedAs('next', { read: 1 }) === 'bad-request') || false;
 }, test.limit.quick);
-test.run('and next refuses anything else', 0.2, function () {
+test.run('next refuses any argument but read', 0.2, function () {
   if (!W.api) return false;
   return refusedAs('next', { wait: 1 }) === 'no-such-argument' || false;
 }, test.limit.quick);
@@ -78,11 +78,11 @@ test.run('cache.dump takes no path: it is refused before it leaves', 0.2, functi
   if (!W.api) return false;
   return (passes('cache.dump', {}) && refusedAs('cache.dump', { path: '../x.json' }) === 'no-such-argument') || false;
 }, test.limit.quick);
-test.run('desk: kept optional, true or false', 0.2, function () {
+test.run('desk takes an optional kept, true or false', 0.2, function () {
   if (!W.api) return false;
   return (passes('desk', { name: 'item.get', json: '{}', kept: true }) && refusedAs('desk', { name: 'item.get', kept: 'yes' }) === 'bad-request') || false;
 }, test.limit.quick);
-test.run('desk: the desk verb by name, its json optional (\'{}\' when left out)', 0.2, function () {
+test.run('desk takes the desk verb by name, with its json optional and {} when left out', 0.2, function () {
   if (!W.api) return false;
   return (passes('desk', { name: 'item.get', json: '{"id":"goal/G1.1"}' }) && passes('desk', { name: 'work.open' })) || false;
 }, test.limit.quick);
@@ -90,7 +90,7 @@ test.run('a desk ask with no verb named is refused', 0.2, function () {
   if (!W.api) return false;
   return (refusedAs('desk', { name: '' }) === 'bad-request' && refusedAs('desk', { json: '{}' }) === 'bad-request') || false;
 }, test.limit.quick);
-test.run('its json is a JSON text, not an object', 0.2, function () {
+test.run('the json of a desk ask is a JSON text, not an object', 0.2, function () {
   if (!W.api) return false;
   return refusedAs('desk', { name: 'item.get', json: { id: 'x' } }) === 'bad-request' || false;
 }, test.limit.quick);
@@ -98,11 +98,11 @@ test.run('setDesk takes the desk node\'s key, a peer\'s public key, and needs it
   if (!W.api) return false;
   return (passes('setDesk', { key: KEY }) && refusedAs('setDesk', { key: 'not-a-key' }) === 'bad-request' && refusedAs('setDesk', {}) === 'bad-request') || false;
 }, test.limit.quick);
-test.run('signoff and clearSignoff: agent optional', 0.2, function () {
+test.run('signoff and clearSignoff take an optional agent', 0.2, function () {
   if (!W.api) return false;
   return (passes('signoff', {}) && passes('signoff', { agent: 'claude-windows' }) && passes('clearSignoff', {}) && passes('clearSignoff', { agent: '' })) || false;
 }, test.limit.quick);
-test.run('history.search: text optional, a text when sent', 0.2, function () {
+test.run('history.search takes an optional text, which must be a text when sent', 0.2, function () {
   if (!W.api) return false;
   return (passes('history.search', {}) && passes('history.search', { text: 'x' }) && refusedAs('history.search', { text: 3 }) === 'bad-request') || false;
 }, test.limit.quick);

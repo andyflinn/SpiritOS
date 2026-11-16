@@ -78,48 +78,48 @@ test.run('it loads the app family\'s cache', 0.2, async function () {
   await settle();
   return (w.managers.indexOf('app') !== -1) ? true : false;
 }, test.limit.quick);
-test.run('its row inactive: Activate, off', 0.2, function () {
+test.run('with its app\'s row inactive, the button says Activate and is off', 0.2, function () {
   return (h.button && h.button.text === 'Activate' && !onOf(h)) ? true : false;
 }, test.limit.quick);
-test.run('a press asks the node, spirit.app.activeApp { key, active: true }', 0.2, async function () {
+test.run('a press asks the node through spirit.app.activeApp to make the app with its key active', 0.2, async function () {
   e1 = h.button.click();
   await settle();
   return (w.asked.length === 1 && w.asked[0].key === 'zz' && w.asked[0].active === true) ? true : false;
 }, test.limit.quick);
-test.run('the click stays its own: it does not reach the row around it', 0.2, function () {
+test.run('the click stays its own and does not reach the row around it', 0.2, function () {
   return (e1.stopped) ? true : false;
 }, test.limit.quick);
-test.run('until the stream says so, it stays off: it draws the cache, not the click', 0.2, function () {
+test.run('until the stream says so it stays off, because it draws the cache, not the click', 0.2, function () {
   return (!onOf(h) && h.button.text === 'Activate') ? true : false;
 }, test.limit.quick);
-test.run('its row active in the cache: Deactivate, on', 0.2, async function () {
+test.run('with its app\'s row active in the cache, the button says Deactivate and is on', 0.2, async function () {
   w.put('zz', { key: 'zz', active: true });
   await settle();
   return (onOf(h) && h.button.text === 'Deactivate') ? true : false;
 }, test.limit.quick);
-test.run('pressed again it asks active false', 0.2, async function () {
+test.run('pressed again, it asks for the app to be made inactive', 0.2, async function () {
   h.button.click();
   await settle();
   return (w.asked.length === 2 && w.asked[1].active === false) ? true : false;
 }, test.limit.quick);
-test.run('its row inactive again: Activate, off', 0.2, async function () {
+test.run('with its app\'s row inactive again, the button says Activate and is off again', 0.2, async function () {
   w.put('zz', { key: 'zz', active: false });
   await settle();
   return (!onOf(h) && h.button.text === 'Activate') ? true : false;
 }, test.limit.quick);
-test.run('it reads and writes no face part (goal/G43.20)', 0.2, function () {
+test.run('it reads and writes no face part', 0.2, function () {
   return (w.fsAsked === 0) ? true : false;
 }, test.limit.quick);
 test.run('destroy ends its watch', 0.2, function () {
   inst.destroy();
   return (w.released === 1) ? true : false;
 }, test.limit.quick);
-test.run('and nothing is drawn after it', 0.2, async function () {
+test.run('nothing is drawn after destroy', 0.2, async function () {
   w.put('zz', { key: 'zz', active: true });
   await settle();
   return (!onOf(h)) ? true : false;
 }, test.limit.quick);
-test.run('its row says intrinsic: no button and no note', 0.2, async function () {
+test.run('an app whose row says intrinsic gets no button and no note', 0.2, async function () {
   // an intrinsic app gets no button (goal/G43.15)
   wi = world({ core: { key: 'core', active: true, intrinsic: true } });
   hi = host();

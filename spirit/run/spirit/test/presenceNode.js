@@ -81,7 +81,7 @@ test.run('streamUrl is the relay\'s stream door with the key in its query, a tra
 }, test.limit.quick);
 
 // ── the world ──
-test.run('the world: a scratch node with an identity, seated on two relays, started', 0.2, async function () {
+test.run('a scratch node with an identity, seated on two relays, is started', 0.2, async function () {
   W.home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-presencenode-'));
   auth.saveIdentity(W.home, auth.generateIdentity('presencenode-test'));
   W.me = auth.loadIdentity(W.home);
@@ -94,7 +94,7 @@ test.run('start opens one stream to each seated relay, at its stream door, under
   if (!W.started) return false;
   return (!!stream(URL_A) && !!stream(URL_B) && Object.keys(W.streams).length === 2) || false;
 }, test.limit.quick);
-test.run('start owns the spirit.contact job (goal/G43.20)', 0.2, function () {
+test.run('start owns the spirit.contact job', 0.2, function () {
   if (!W.started) return false;
   return W.p.jobId() === 'spirit.contact' || false;
 }, test.limit.quick);
@@ -112,22 +112,22 @@ test.run('the relay\'s key is pinned as its stream opens', 0.2, function () {
 }, test.limit.quick);
 
 // ── a stream opens ──
-test.run('the world: both streams open', 0.2, async function () {
+test.run('both streams open', 0.2, async function () {
   if (!W.started) return false;
   stream(URL_A).opts.onOpen(); stream(URL_B).opts.onOpen();
   await settle();
   return W.news.length > 0 || false;
 }, test.limit.quick);
-test.run('on open, the relay itself and this node are present, each a proof {present, at} (goal/G2.9)', 0.2, function () {
+test.run('on open, the relay itself and this node are present, each a proof that says it is present and when', 0.2, function () {
   if (!W.p) return false;
   const d = W.p.detail()[URL_A] || {};
   return (short(d[KEY_RA]) === short({ present: true, at: 5000 }) && short(d[W.me.publicKey]) === short({ present: true, at: 5000 })) || false;
 }, test.limit.quick);
-test.run('on open, the node hands the relay its card, sealed to the relay\'s key (cycle 10, R20)', 0.2, function () {
+test.run('on open, the node hands the relay its card, sealed to the relay\'s key', 0.2, function () {
   const cards = W.posts.filter(function (x) { return x.packet.app === 'relay' && x.packet.body && x.packet.body.card; });
   return (cards.length === 2 && cards.some(function (x) { return x.url === URL_A && x.key === KEY_RA; })) || false;
 }, test.limit.quick);
-test.run('on open, the book is reconciled once with the relay\'s own search (goal/G2.8): the contact it names is green', 0.2, function () {
+test.run('on open, the book is reconciled once with the relay\'s own search, and the contact it names is green', 0.2, function () {
   const asks = W.posts.filter(function (x) { return x.packet.body && x.packet.body.search; });
   return (asks.length === 2 && asks[0].packet.body.search.q === '*' && dot('friend2-key') === 'green') || false;
 }, test.limit.quick);
@@ -143,7 +143,7 @@ test.run('a relay that refuses the search marks nobody and keeps its stream', 0.
 test.run('the open edge is recorded', 0.2, function () {
   return W.edges.some(function (e) { return e[0] === URL_A && e[1] === 'open'; }) || false;
 }, test.limit.quick);
-test.run('the table goes to the shell as news of spirit.contact, { presence } and nothing else', 0.2, function () {
+test.run('the table goes to the shell as news of spirit.contact, its presence and nothing else', 0.2, function () {
   const n = W.news[W.news.length - 1] || {};
   return (n.id === 'spirit.contact' && n.kind === 'presence' && short(Object.keys(n.data || {})) === '["presence"]' && !!n.data.presence[KEY_RA]) || false;
 }, test.limit.quick);
@@ -155,7 +155,7 @@ test.run('a present broadcast for a contact makes it green', 0.2, function () {
   event(URL_A, 'presence', { key: FRIEND, present: true });
   return dot(FRIEND) === 'green' || false;
 }, test.limit.quick);
-test.run('a broadcast for a stranger is seen (R27) but not drawn', 0.2, function () {
+test.run('a broadcast for a stranger is seen but not drawn', 0.2, function () {
   if (!W.p) return false;
   const before = W.seen.length;
   event(URL_A, 'presence', { key: 'other-stranger', present: true });
@@ -186,13 +186,13 @@ test.run('gone is not absent: the key leaves, and named nowhere it is white', 0.
 }, test.limit.quick);
 
 // ── heard: a relay just carried this key ──
-test.run('heard: a relay with a stream marks a contact green and answers true', 0.2, function () {
+test.run('heard, for a relay with a stream, marks a contact green and answers true', 0.2, function () {
   if (!W.p) return false;
   W.clock = 7000;
   const ok = W.p.heard(URL_B, FRIEND);
   return (ok === true && dot(FRIEND) === 'green' && W.p.detail()[URL_B][FRIEND].at === 7000) || false;
 }, test.limit.quick);
-test.run('heard: a relay with no stream answers false; a stranger is not drawn', 0.2, function () {
+test.run('heard, for a relay with no stream, answers false, and a stranger it hears of is not drawn', 0.2, function () {
   if (!W.p) return false;
   const got = [W.p.heard('https://nowhere.example', FRIEND), W.p.heard(URL_B, 'yet-another'), W.p.heard(URL_B, '')];
   return (short(got) === short([false, true, false]) && dot('yet-another') === 'white') || false;
@@ -204,13 +204,13 @@ test.run('a request goes to the router with its relay, a reply to the router', 0
   event(URL_A, 'request', { hash: 'h1' }); event(URL_A, 'reply', { hash: 'h2' });
   return (W.requests.length === 1 && W.requests[0].url === URL_A && W.requests[0].data.hash === 'h1' && W.replies.length === 1 && W.replies[0].hash === 'h2') || false;
 }, test.limit.quick);
-test.run('a route goes to onRoute; the face\'s request, open and close to their hooks (goal/G30.13)', 0.2, function () {
+test.run('a route goes to onRoute; the face\'s request, open and close to their hooks', 0.2, function () {
   if (!W.p) return false;
   event(URL_A, 'route', { key: FRIEND, at: URL_A });
   event(URL_A, 'face', { q: 1 }); event(URL_A, 'face-open', { s: 1 }); event(URL_A, 'face-close', {});
   return (W.routes.length === 1 && W.routes[0].data.key === FRIEND && short(W.faces.map(function (f) { return f[0]; })) === short(['face', 'open', 'close'])) || false;
 }, test.limit.quick);
-test.run('a relay-status report is kept as the latest, recorded, and nudged to the page carrying the report (goal/G41.32)', 0.2, function () {
+test.run('a relay-status report is kept as the latest, recorded, and nudged to the page carrying the report', 0.2, function () {
   if (!W.p) return false;
   event(URL_A, 'relay-status', { members: 3 });
   const nudge = W.relayEvents.filter(function (e) { return e.kind === 'status'; })[0] || {};
@@ -251,7 +251,7 @@ test.run('stop closes every stream and empties the table', 0.2, function () {
 }, test.limit.quick);
 
 // ── no filter given ──
-test.run('with no knows, every key is kept (the in-process suites)', 0.2, async function () {
+test.run('with no knows, every key is kept, as the in-process suites need', 0.2, async function () {
   if (!W.home) return false;
   W.streams = {};
   const p = presence({ knows: undefined });
@@ -262,7 +262,7 @@ test.run('with no knows, every key is kept (the in-process suites)', 0.2, async 
   p.stop();
   return ok || false;
 }, test.limit.quick);
-test.run('start with nothing to ask opens nothing and answers []', 0.2, async function () {
+test.run('start with nothing to ask opens nothing and answers an empty list', 0.2, async function () {
   if (!W.home) return false;
   W.streams = {};
   const got = await presence().start();

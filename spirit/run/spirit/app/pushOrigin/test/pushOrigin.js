@@ -20,7 +20,7 @@ const FILE = path.join(RUN, 'spirit', 'app', 'pushOrigin', 'pushOrigin.js');
 const W = {};
 test.after(function () { if (W.tmp) { try { fs.rmSync(W.tmp, { recursive: true, force: true }); } catch (e) { /* scratch */ } } });
 
-test.run('the world: a clone with one commit its bare origin does not hold', 0.2, function () {
+test.run('a clone is made with one commit its bare origin does not hold', 0.2, function () {
   if (!fs.existsSync(FILE)) return false;
   const tmp = W.tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-pushorigin-'));
   const origin = W.origin = path.join(tmp, 'origin.git');
@@ -128,7 +128,7 @@ test.run('a rebase already in progress is refused, saying so, and is still in pr
 }, test.limit.slow);
 // goal/G5.1, pushOrigin.js: "if the rebase hits a clash ... The clone is left exactly as it was (same HEAD, unsaved edits
 // back in place, untracked files kept), and origin is unchanged."
-test.run('a clash with origin: ok false, the clone as it was, its unsaved edit and untracked file back, origin unchanged', 0.4, async function () {
+test.run('a clash with origin answers ok false, leaves the clone as it was with its unsaved edit and untracked file back, and leaves origin unchanged', 0.4, async function () {
   const p = lib(); if (!p) return false;
   const w = world();
   w.commit(w.other, 'shared.txt', 'line one, theirs\n', 'theirs'); git(['push', '-q', 'origin', 'master'], w.other);
@@ -163,7 +163,7 @@ test.run('behind origin with no clash it pushes: origin holds both commits, and 
 }, test.limit.slow);
 // goal/G19.6, the box: "pushOrigin puts back exactly its own stash, or says it could not", and pushOrigin.js: "a stash
 // somebody else made meanwhile stays where it is". The meanwhile is a pre-push hook in the clone that stashes an edit.
-test.run('it puts back only its own stash: a stash somebody made meanwhile stays in the list, untouched', 0.4, async function () {
+test.run('it puts back only its own stash, and a stash somebody made meanwhile stays in the list untouched', 0.4, async function () {
   const p = lib(); if (!p) return false;
   const w = world();
   w.commit(w.clone, 'mine.txt', 'mine\n', 'mine');

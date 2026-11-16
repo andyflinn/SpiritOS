@@ -21,7 +21,7 @@ const STEPS = MANIFEST.concat(FACE);
 const facts = function (o) { return Object.assign({ seated: false, relayUrl: '', contact: false, face: '', faceUrl: '', opened: false }, o || {}); };
 const nameOf = function (s) { return s ? s.name : null; };
 
-test.run('the world: it runs on a window of its own and places itself at spirit.required.spirit.element.joinSteps', 0.2, function () {
+test.run('it runs on a window of its own and places itself at spirit.required.spirit.element.joinSteps', 0.2, function () {
   const win = { Array: Array, JSON: JSON, String: String };
   win.window = win;
   win.spirit = { required: {} };
@@ -44,12 +44,12 @@ test.run('fromJob of no job answers every fact false or empty', 0.2, function ()
 }, test.limit.quick);
 
 // done: "The node keeps no email since goal/G40.11 (box v24), so a seat is what step 1 ends on."
-test.run('step 1 (until email) is done by a seat, the node keeping no email', 0.2, function () {
+test.run('the first step, which lasts until email, is done by a seat, because the node keeps no email', 0.2, function () {
   if (!J) return false;
   const one = MANIFEST[0];
   return (one.until === 'email' && J.done(one, facts({ seated: true })) === true && J.done(one, facts()) === false) || false;
 }, test.limit.quick);
-test.run('each step is done by its own fact: contact, face, opened', 0.2, function () {
+test.run('each of the steps until contact, face and opened is done by its own fact', 0.2, function () {
   if (!J) return false;
   const bad = [['contact', { contact: true }], ['face', { face: 'f' }], ['opened', { opened: true }]].filter(function (p) {
     const s = { until: p[0] };
@@ -67,12 +67,12 @@ test.run('current answers the first step not done', 0.2, function () {
   if (!J) return false;
   return nameOf(J.current(STEPS, facts())) === 'Join' || false;
 }, test.limit.quick);
-test.run('Find someone is optional: never the open step, and it never blocks the steps after it', 0.2, function () {
+test.run('Find someone is optional, is never the open step, and never blocks the steps after it', 0.2, function () {
   if (!J) return false;
   const now = J.current(STEPS, facts({ seated: true }));
   return (MANIFEST[1].optional === true && nameOf(now) === 'Your face') || false;
 }, test.limit.quick);
-test.run('current answers null once every step that counts is done, Find someone left undone', 0.2, function () {
+test.run('current answers null once every step that counts is done, even with Find someone left undone', 0.2, function () {
   if (!J) return false;
   const now = J.current(STEPS, facts({ seated: true, face: 'f', opened: true }));
   return now === null || false;
@@ -93,12 +93,12 @@ test.run('linkRelay answers the url of the relay the link names by its key', 0.2
   if (!J) return false;
   return J.linkRelay('named', ITEMS) === 'https://named.example' || false;
 }, test.limit.quick);
-test.run('linkRelay answers \'\' for a key no relay is listed under, never the first one listed', 0.2, function () {
+test.run('linkRelay answers an empty url for a key no relay is listed under, never the first one listed', 0.2, function () {
   if (!J) return false;
   const got = [J.linkRelay('nobody', ITEMS), J.linkRelay('', ITEMS), J.linkRelay('named', null)];
   return JSON.stringify(got) === JSON.stringify(['', '', '']) || false;
 }, test.limit.quick);
-test.run('linkRelay answers \'\' for a row that is no relay, or whose label is not JSON', 0.2, function () {
+test.run('linkRelay answers an empty url for a row that is no relay, or whose label is not JSON', 0.2, function () {
   if (!J) return false;
   const got = [J.linkRelay('person', ITEMS), J.linkRelay('broken', ITEMS)];
   return JSON.stringify(got) === JSON.stringify(['', '']) || false;

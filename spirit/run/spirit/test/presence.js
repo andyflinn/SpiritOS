@@ -100,7 +100,7 @@ test.run('a reconnect needs no room, and the owner (always) is admitted whatever
   const owner = r.connect('owner', sink(), true);
   return (again.ok && owner.ok && r.present().length === 2) || false;
 }, test.limit.quick);
-test.run('streams held outside the book count against the same allowance (goal/G30.12)', 0.2, function () {
+test.run('streams held outside the book count against the same allowance', 0.2, function () {
   const { r } = planted({ allowed: 2, others: function () { return 1; } });
   r.connect('alice', sink());
   const c = r.connect('bob', sink());

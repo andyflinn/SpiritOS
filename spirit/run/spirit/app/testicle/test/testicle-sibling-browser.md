@@ -11,4 +11,4 @@ Two tests a script: *it holds no NUL byte, so a page can load it as text*, and *
 run handed two names both; given none, every product script under `spirit/app/testicle/` (not its `test/` or `temp/`).
 
 It is there for testicle's debug mode (`./testicle.md`): in it, the general tests testicle sees are this one and its two
-siblings, beside the planted worlds' own. Its own test is `./testicle.js` (*"testicle-sibling-browser.js, handed both, names both"*).
+siblings, beside the planted worlds' own. Its own test is `./testicle.js` (*"testicle-sibling-browser.js, handed both broken scripts, names both"*).

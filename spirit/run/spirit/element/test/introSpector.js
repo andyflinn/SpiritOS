@@ -22,11 +22,11 @@ let node = null;
 let chrome = null;
 // What the tests make, shared by the tests after them.
 let made, text, html, reply, SEL, tree, pick, keys, labels, jsonCase, empty;
-test.run('the world: a scratch node comes up', 0.2, async function () {
+test.run('a scratch node comes up for this suite', 0.2, async function () {
   node = await scratchNode();
   return !!node.up || false;
 }, test.limit.slow);
-test.run('the world: a Chrome page opens', 0.2, async function () {
+test.run('a Chrome page opens', 0.2, async function () {
   chrome = await chromePage(findChrome());
   return !chrome.error || false;
 }, test.limit.quick);
@@ -36,7 +36,7 @@ test.after(function () {
   try { if (node && node.child) node.child.kill(); } catch (e) { /* gone */ }
   try { if (node && node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* scratch */ }
 });
-test.run('it loads through spirit.require and mounts with spirit.element.spirit.element.introSpector.create(container)', 0.2, async function () {
+test.run('it loads through spirit.require and mounts with the create of spirit.element.spirit.element.introSpector, handed a container', 0.2, async function () {
   if (!node || !node.up || !chrome || chrome.error) return false;
   await chrome.send('Page.navigate', { url: node.base + '/face.html' });
   await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
@@ -64,12 +64,12 @@ test.run('the reply is a CodeMirror view', 0.2, async function () {
   if (!node || !node.up || !chrome || chrome.error) return false;
   return (await until(function () { return reply().then(function (r) { return r !== null; }); }, 10000)) ? true : false;
 }, test.limit.quick);
-test.run('self\'s tree is this node\'s, job.search in it', 0.2, async function () {
+test.run('self\'s tree is this node\'s, with job.search in it', 0.2, async function () {
   if (!node || !node.up || !chrome || chrome.error) return false;
   tree = JSON.parse(await chrome.evaluate('(function () { var s = ' + SEL + '; return JSON.stringify((s && (s.tree || (s.families && s.families.tree))) || null); }())') || 'null');
   return (!!tree && !!tree.job && !!tree.job.search) ? true : false;
 }, test.limit.quick);
-test.run('a family chosen, the form says choose a verb', 0.2, async function () {
+test.run('once a family is chosen, the form says choose a verb', 0.2, async function () {
   if (!node || !node.up || !chrome || chrome.error) return false;
   pick = function (family, verb) {
       return chrome.evaluate('(function () { var s = ' + SEL + '; s.families.value = ' + JSON.stringify(family) + '; s.families.dispatchEvent(new Event("change", { bubbles: true })); ' + (verb ? 's.verbs.value = ' + JSON.stringify(verb) + '; s.verbs.dispatchEvent(new Event("change", { bubbles: true })); ' : '') + 'return s.value; }())');
@@ -78,13 +78,13 @@ test.run('a family chosen, the form says choose a verb', 0.2, async function () 
   await pick('job');
   return (await until(function () { return text().then(function (t) { return /choose a verb/.test(t); }); }, 5000)) ? true : false;
 }, test.limit.quick);
-test.run('job.search chosen: a call button', 0.2, async function () {
+test.run('once job.search is chosen, the form shows a call button', 0.2, async function () {
   if (!node || !node.up || !chrome || chrome.error) return false;
   await pick('job', 'search');
   keys = Object.keys(tree.job.search.request || {});
   return (await until(function () { return chrome.evaluate('Array.prototype.some.call(document.querySelectorAll("#box button"), function (b) { return String(b.textContent).trim() === "call"; })'); }, 5000)) ? true : false;
 }, test.limit.quick);
-test.run('a field for its key q', 0.2, async function () {
+test.run('the form shows a field for job.search\'s key q', 0.2, async function () {
   if (!node || !node.up || !chrome || chrome.error) return false;
   labels = await text();
   // job.search's one request key, q, written out so that its check has a plain title.
@@ -95,11 +95,11 @@ test.run('call asks job.search of self and shows its reply, the jobs\' items', 0
   await chrome.evaluate('(function () { var b = Array.prototype.filter.call(document.querySelectorAll("#box button"), function (x) { return String(x.textContent).trim() === "call"; })[0]; b.click(); return true; }())');
   return (await until(function () { return reply().then(function (r) { return /"items"/.test(String(r)); }); }, 10000)) ? true : false;
 }, test.limit.quick);
-test.run('written out as JSON.stringify(answer, null, 2)', 0.2, async function () {
+test.run('the reply is written out as JSON indented by two spaces', 0.2, async function () {
   if (!node || !node.up || !chrome || chrome.error) return false;
   return (/\n\s+"/.test(String(await reply()))) ? true : false;
 }, test.limit.quick);
-test.run('the world: a verb with a JSON field', 0.2, function () {
+test.run('this node has a verb with a JSON field', 0.2, function () {
   if (!node || !node.up || !chrome || chrome.error) return false;
   // the attacker: JSON that does not parse is refused with the field's name
   // A verb of this node whose request holds an object, an array or null: a JSON field.
@@ -128,7 +128,7 @@ test.run('destroy empties its container', 0.2, async function () {
   empty = await chrome.evaluate('(function () { window.made.destroy(); return document.getElementById("box").children.length === 0; }())');
   return (empty === true) ? true : false;
 }, test.limit.quick);
-test.run('and the page threw nothing', 0.2, async function () {
+test.run('the page threw nothing', 0.2, async function () {
   if (!node || !node.up || !chrome || chrome.error) return false;
   return (JSON.parse(await chrome.evaluate('JSON.stringify(window.pageErrors)')).length === 0) ? true : false;
 }, test.limit.quick);

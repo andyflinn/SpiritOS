@@ -41,7 +41,7 @@ test.after(function () {
   try { if (node && node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* scratch */ }
 });
 
-test.run('the world: a scratch node, and Chrome on its face page', 0.2, async function () {
+test.run('a scratch node comes up, with Chrome on its face page', 0.2, async function () {
   if (!fs.existsSync(FILE)) return false;
   node = await scratchNode();
   chrome = await chromePage(findChrome());
@@ -56,7 +56,7 @@ test.run('it loads through spirit.require and is spirit.element.spirit.element.s
 }, test.limit.slow);
 
 // create(host, opts) -> { list, refresh(), destroy() }
-test.run('create(host, opts) answers { list, refresh, destroy }', 0.2, async function () {
+test.run('create, given a host and options, answers an object holding list, refresh and destroy', 0.2, async function () {
   if (loaded !== true) return false;
   await chrome.evaluate('(function () { window.asked = []; var real = spirit.app.searchApp; spirit.app.searchApp = function (a) { window.asked.push(a); return real.call(spirit.app, a); }; window.picks = []; return true; }())');
   made = await make('pane', '{ face: "pane", pick: function (row, key) { window.picks.push({ row: row, key: key }); } }');

@@ -50,7 +50,7 @@ function world() {
 const detail = { look: function (t) { return { icon: '•', name: t }; } };
 const E = {};
 
-test.run('the world: the file runs on a window of its own, the shared element and the row editor stand-ins placed as the page places them', 0.2, function () {
+test.run('the file runs on a window of its own, with stand-ins for the shared element and the row editor placed as the page places them', 0.2, function () {
   if (!fs.existsSync(FILE)) return false;
   world();
   W.up = true;
@@ -60,21 +60,21 @@ test.run('before it runs, the page has no job table element', 0.2, function () {
   if (!W.up) return false;
   return at('spirit.app.agent.element.table.job.elementTable') === undefined || false;
 }, test.limit.quick);
-test.run('it places spirit.element.spirit.app.agent.element.table.job.elementTable, with create', 0.2, async function () {
+test.run('it places the job table\'s elementTable on spirit.element by its path, with create', 0.2, async function () {
   if (!W.up) return false;
   load(FILE);
   await settle();
   E.table = at('spirit.app.agent.element.table.job.elementTable');
   return (!!E.table && typeof E.table.create === 'function') || false;
 }, test.limit.quick);
-test.run('and the row editor keeps its own place beside it, spirit.element.spirit.app.agent.element.table.job.elementRow', 0.2, function () {
+test.run('the job row editor, elementRow, keeps its own place beside the elementTable', 0.2, function () {
   if (!E.table) return false;
   const r = at('spirit.app.agent.element.table.job.elementRow');
   return (!!r && typeof r.create === 'function') || false;
 }, test.limit.quick);
 
 // ── create(container, detail): the shared table, for the job table ──
-test.run('create(container, detail) makes the tables\' shared element in that container', 0.2, async function () {
+test.run('create, handed a container and a detail pane, makes the tables\' shared element in that container', 0.2, async function () {
   if (!E.table) return false;
   E.box = { id: 'box' };
   E.made = E.table.create(E.box, detail);
@@ -82,7 +82,7 @@ test.run('create(container, detail) makes the tables\' shared element in that co
   E.t = W.tables[W.tables.length - 1];
   return (!!E.t && E.t.container === E.box) || false;
 }, test.limit.quick);
-test.run('it loads the shared element and its own row editor itself (rule/26)', 0.2, function () {
+test.run('it loads the shared element and its own row editor itself', 0.2, function () {
   if (!W.up) return false;
   return (W.required.indexOf(SHARED) !== -1 && W.required.indexOf(ROW) !== -1) || false;
 }, test.limit.quick);
@@ -90,7 +90,7 @@ test.run('the shared element is told its table, job, and the page\'s detail pane
   if (!E.t) return false;
   return (E.t.o.table === 'job' && E.t.o.detail === detail) || false;
 }, test.limit.quick);
-test.run('a row picked opens in the job row editor: row(box, id, added) makes elementRow.create(box, id, added, detail) and answers it', 0.2, function () {
+test.run('a row picked opens in the job row editor: the row asked for is made by the row editor\'s create, in its box, with its id, added and the detail pane, and answered', 0.2, function () {
   if (!E.t) return false;
   if (typeof E.t.o.row !== 'function') return false;
   const b = { id: 'detail-box' };

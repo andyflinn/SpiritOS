@@ -31,7 +31,7 @@ let required, lists, asked, D, managers, E, F, picked, host, list, l, o, tree, f
 function shows(opts, row) { return (opts.filters || []).every(function (f) { return typeof f.test !== 'function' || !!f.test(row); }); }
 function drawn(opts) { return (opts.filters || []).filter(function (f) { return typeof f.when !== 'function' || f.when() !== false; }).map(function (f) { return f.name; }); }
 
-test.run('the world: the list runs on a bare window, the page\'s data set real', 0.2, async function () {
+test.run('the file list runs on a bare window, with the page\'s data set real', 0.2, async function () {
   if (!fs.existsSync(FILE)) return false;
   required = [];
   lists = [];
@@ -77,11 +77,11 @@ test.run('it requires its row element, the search element and the file viewer', 
   return ['spirit/element/search/file/rowElement.js', 'spirit/element/search.js', 'spirit/element/fstat.js'].every(function (p) { return required.indexOf(p) !== -1; }) ? true : false;
 }, test.limit.quick);
 // goal/G41.16, Andy: "get rid of thos FUCKING data.js scripts": what the stream means for the file tree is the fs family's cache manager's (goal/G41.28).
-test.run('and no data script: the file tree\'s stream is its row element\'s', 0.2, function () {
+test.run('it requires no data script, because the file tree\'s stream is its row element\'s', 0.2, function () {
   if (!required) return false;
   return !required.some(function (p) { return /data\.js$/.test(p); }) ? true : false;
 }, test.limit.quick);
-test.run('it loads the fs family\'s cache manager, which puts ((spirit.data || {}).fs || {}).data on the page', 0.2, function () {
+test.run('it loads the fs family\'s cache manager, which puts the fs family\'s data on the page', 0.2, function () {
   if (!managers) return false;
   return managers.indexOf('fs') !== -1 && F && typeof F.file === 'function' ? true : false;
 }, test.limit.quick);
@@ -102,7 +102,7 @@ test.run('it draws one probabilitySearch into a fill box of its host', 0.2, asyn
   if (l) o = l.o;
   return !!l && l.host === host.inner && /files-tree/.test(host.innerHTML) && /fill/.test(host.innerHTML) ? true : false;
 }, test.limit.quick);
-test.run('it is a view of the fs family\'s file tree (spirit.data.fs.data.branch), in path order, filled as it is drawn', 0.2, function () {
+test.run('it is a view of the fs family\'s file tree in spirit.data.fs.data.branch, in path order, filled as it is drawn', 0.2, function () {
   if (!l) return false;
   return typeof F.branch === 'string' && F.branch !== '' && o.data === F.branch && l.refreshes === 1 && JSON.stringify(l.sorted) === '["name","asc"]' ? true : false;
 }, test.limit.quick);
@@ -132,7 +132,7 @@ test.run('a search of names asks the node nothing: the mirror answers it', 0.2, 
   const none = await o.search(o.args('a', { in: 'names' }), 'search');
   return asked.length === 0 && none.body && none.body.items.length === 0 ? true : false;
 }, test.limit.quick);
-test.run('a search by contents asks fs.search { q, contents: yes }', 0.2, async function () {
+test.run('a search by contents asks fs.search with the words as q and contents set to yes', 0.2, async function () {
   if (!l) return false;
   D.takeJob({ id: 'spirit.fs', data: { command: { op: 'createFile', path: 'docs/a.md', size: 5, modified: '2030-01-01T00:00:00Z' } } });
   found = await o.search(o.args('hello', { in: 'contents' }), 'search');
@@ -144,7 +144,7 @@ test.run('each find carries its facts from the file tree and its matched line; a
   let first = null; try { first = JSON.parse(items[0].label); } catch (e) { first = null; }
   return first && first.path === 'docs/a.md' && first.size === 5 && first.line === 3 && items[1] && JSON.parse(items[1].label).kind === 'folder' && items[1].key === 'docs' ? true : false;
 }, test.limit.quick);
-test.run('by contents a file ranks by the node\'s score; by names the list ranks', 0.2, function () {
+test.run('searched by contents a file ranks by the node\'s score, and searched by names the list ranks it', 0.2, function () {
   if (!l) return false;
   return o.score({ path: 'docs/a.md' }, { in: 'contents' }) === 0.9 && o.score({ path: 'docs/a.md' }, { in: 'names' }) === null ? true : false;
 }, test.limit.quick);
@@ -155,7 +155,7 @@ test.run('the tree filter is drawn as no button', 0.2, function () {
   tree = (o.filters || []).filter(function (f) { return f.name === 'tree'; })[0];
   return !!tree && tree.when() === false ? true : false;
 }, test.limit.quick);
-test.run('no words: a folder shows, what is inside a folded one does not', 0.2, function () {
+test.run('with no words typed a folder shows, and what is inside a folded one does not', 0.2, function () {
   if (!tree) return false;
   return tree.test({ path: 'docs', kind: 'folder' }) === 1 && tree.test({ path: 'docs/a.md', kind: 'file' }) === 0 ? true : false;
 }, test.limit.quick);
@@ -187,7 +187,7 @@ test.run('a list made with flat on draws its own search', 0.2, async function ()
   if (last && last !== l) { fl = last; fo = fl.o; }
   return good ? true : false;
 }, test.limit.quick);
-test.run('flat draws no button: its drawn filters are those of the default list', 0.2, function () {
+test.run('flat draws no button, so its drawn filters are those of the default list', 0.2, function () {
   if (!fl) return false;
   return JSON.stringify(drawn(fo)) === JSON.stringify(drawn(o)) ? true : false;
 }, test.limit.quick);

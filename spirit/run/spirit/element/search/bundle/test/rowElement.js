@@ -58,7 +58,7 @@ const cellsOf = function (r) { const out = {}; (r.cells() || []).forEach(functio
 // What the cell shows as text: its markup, and the text of what it holds that is no input.
 const labelText = function () { return String(hosts.label.innerHTML || '') + hosts.label.kids.filter(function (k) { return !/input|textarea/i.test(k.tag || ''); }).map(function (k) { return String(k.textContent || ''); }).join(''); };
 
-test.run('the world: the row runs on a bare window, the page\'s data set and the auth family\'s data real', 0.2, async function () {
+test.run('the row runs on a bare window, with the page\'s data set and the auth family\'s data real', 0.2, async function () {
   if (!fs.existsSync(FILE)) return false;
   asked = [];
   required = [];
@@ -106,11 +106,11 @@ test.run('the world: the row runs on a bare window, the page\'s data set and the
 
 // it loads what it uses itself (rule/26)
 // goal/G41.26: the label is shown only, so no field input is used, and none is asked of it.
-test.run('it requires the shared row element through spirit.require, and no arming button: Delete is the branchEditor\'s (goal/G41.32)', 0.2, function () {
+test.run('it requires the shared row element through spirit.require, and no arming button, because Delete is the branchEditor\'s', 0.2, function () {
   if (!required) return false;
   return required.indexOf('spirit/element/rowElement.js') !== -1 && required.indexOf('spirit/element/armingButton.js') === -1 ? true : false;
 }, test.limit.quick);
-test.run('it loads the auth family\'s cache manager, which puts ((spirit.data || {}).auth || {}).data on the page', 0.2, function () {
+test.run('it loads the auth family\'s cache manager, which puts the auth family\'s data on the page', 0.2, function () {
   if (!managers) return false;
   return managers.indexOf('auth') !== -1 && hasA() ? true : false;
 }, test.limit.quick);
@@ -132,12 +132,12 @@ test.run('its fields are label and owner, in that order', 0.2, function () {
   cells = cellsOf(el);
   return JSON.stringify(Object.keys(cells)) === '["label","owner"]' ? true : false;
 }, test.limit.quick);
-test.run('the owner is shown as the bundle names it, never an input: it never changes after the add', 0.2, function () {
+test.run('the owner is shown as the bundle names it and never as an input, since it never changes after the add', 0.2, function () {
   if (!hasRow()) return false;
   const owCells = cellsOf(E.search.bundle.rowElement.create({ id: 9, label: 'Agent tools', owner: 'agent' }));
   return /\bagent\b/.test(owCells.owner || '') && !/<input/.test(owCells.owner || '') ? true : false;
 }, test.limit.quick);
-test.run('and drawn escaped', 0.2, function () {
+test.run('the owner is drawn escaped', 0.2, function () {
   if (!hasRow()) return false;
   const oddCells = cellsOf(E.search.bundle.rowElement.create({ id: 10, label: 'x', owner: 'a<b' }));
   return /a&lt;b/.test(oddCells.owner || '') && !/a<b/.test(oddCells.owner || '') ? true : false;
@@ -151,7 +151,7 @@ test.run('the label is drawn escaped', 0.2, function () {
 // Andy, box: "bundleSelector:pane mode the Label should now just be an output, field: A bundles label is determined
 // when it's added, and cannot be modified. This will protect family owned bundles from having their label mutilated."
 // Mounted, with the old editable option or without it, the label cell shows the label and holds no input.
-test.run('mounted, its label cell holds no input, editable or not', 0.2, async function () {
+test.run('once mounted, its label cell holds no input, whether it was made editable or not', 0.2, async function () {
   if (!hasRow()) return false;
   ed = E.search.bundle.rowElement.create({ id: 7, label: 'Read <files>' }, { editable: true });
   hosts = { label: cell(), owner: cell() };
@@ -159,17 +159,17 @@ test.run('mounted, its label cell holds no input, editable or not', 0.2, async f
   await settle();
   return !hosts.label.querySelector('input') && !hosts.label.kids.some(function (k) { return /input|textarea/i.test(k.tag || ''); }) ? true : false;
 }, test.limit.quick);
-test.run('it shows the label, escaped', 0.2, function () {
+test.run('the mounted row shows the label escaped', 0.2, function () {
   if (!ed) return false;
   return (/Read &lt;files>|Read <files>/).test(labelText()) && !/<files>/.test(String(hosts.label.innerHTML || '')) ? true : false;
 }, test.limit.quick);
-test.run('and asks the node no set, ever', 0.2, function () {
+test.run('the mounted row never asks the node for a set', 0.2, function () {
   if (!ed) return false;
   return asked.every(function (a) { return a.op !== 'set'; }) ? true : false;
 }, test.limit.quick);
 // rule/19: a ui only draws what the server's stream says; goal/G41.14, Andy: "EVERY FUCKING element MUST FUCKING
 // LISTING to anything that changes their data set". The row repaints from the auth family's bundles.
-test.run('the bundle\'s row in the bundles changed, the row repaints its label', 0.2, async function () {
+test.run('when the bundle\'s row in the bundles changes, the row repaints its label', 0.2, async function () {
   if (!ed) return false;
   V.set('bundles/7', { id: 7, label: 'Mover' });
   await settle();
@@ -188,7 +188,7 @@ test.run('another bundle\'s row changes nothing here', 0.2, async function () {
 // auth family's cache manager it loads. Andy: "DOESN'T THAT SHIT BELONG INSIDE THE MOTHERFUCKING element??????", "i ruled a LONG time AGO THAT FUCKING ELEMENTS
 // carry THEIR FUCKING DESCRIPTIONS". The node publishes each changed row of its two bundle tables on one permanent job
 // of type bundles, as the shadow job does each contact row: { table, row }, and { table, row: { id }, gone: true }.
-test.run('a bundle row published lands in the auth family\'s bundles by its id, through the family\'s cache manager the row element loads (goal/G41.28)', 0.2, function () {
+test.run('a bundle row published lands in the auth family\'s bundles by its id, through the family\'s cache manager the row element loads', 0.2, function () {
   if (!hasA()) return false;
   DATA.takeJob({ id: 'spirit.auth', data: { table: 'bundle', row: { id: 7, label: 'Reader' } } });
   return JSON.stringify(A.bundles.row({ id: 7, label: 'Reader' }.id)) === JSON.stringify({ id: 7, label: 'Reader' }) ? true : false;
@@ -199,12 +199,12 @@ test.run('a row published again replaces the one kept', 0.2, function () {
   const again = A.bundles.row({ id: 7, label: 'Reader' }.id);
   return again && again.label === 'Lister' ? true : false;
 }, test.limit.quick);
-test.run('a row published gone is taken out', 0.2, function () {
+test.run('a row published as gone is taken out', 0.2, function () {
   if (!hasA()) return false;
   DATA.takeJob({ id: 'spirit.auth', data: { table: 'bundle', row: { id: { id: 7, label: 'Reader' }.id }, gone: true } });
   return A.bundles.row({ id: 7, label: 'Reader' }.id) === null ? true : false;
 }, test.limit.quick);
-test.run('the other table\'s rows, another job\'s, and a row with no id write nothing in the bundles', 0.2, function () {
+test.run('rows of the other table, rows of another job and a row with no id write nothing in the bundles', 0.2, function () {
   if (!hasA()) return false;
   const before = JSON.stringify(A.bundles.rows());
   DATA.takeJob({ id: 'spirit.auth', data: { table: 'branch', row: { id: 99, label: 'x', bundle: 1, family: 'f', verb: '' } } });

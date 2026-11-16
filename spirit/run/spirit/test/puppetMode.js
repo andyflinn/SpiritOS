@@ -51,20 +51,20 @@ function arrive(envelope, from) { return { from: from === undefined ? OWNER.publ
 function switchOpts(ownerKey) { return { ownerKey: ownerKey === undefined ? OWNER.publicKey : ownerKey, selfKey: SELF.publicKey, auth: auth }; }
 
 // ── puppetIn: whose puppet this node is ──
-test.run('puppetIn: owner.json naming another key makes this node its puppet', 0.2, function () {
+test.run('an owner.json naming another key makes this node that key\'s puppet', 0.2, function () {
   const home = scratch(JSON.stringify({ owner: OWNER.publicKey }));
   const got = P.puppetIn(home)();
   return (got.puppet === true && got.owner === OWNER.publicKey) || false;
 }, test.limit.quick);
-test.run('puppetIn: owner.json naming this node\'s own key is no puppet ("pupped is the fate of having an owner that is not the self")', 0.2, function () {
+test.run('an owner.json naming this node\'s own key does not make it a puppet', 0.2, function () {
   const got = P.puppetIn(scratch(JSON.stringify({ owner: SELF.publicKey })))();
   return (got.puppet === false && got.owner === '') || false;
 }, test.limit.quick);
-test.run('puppetIn: no owner.json is no puppet', 0.2, function () {
+test.run('a node with no owner.json is not a puppet', 0.2, function () {
   const got = P.puppetIn(scratch())();
   return (got.puppet === false && got.owner === '') || false;
 }, test.limit.quick);
-test.run('puppetIn: read on every call, so an owner edit is seen at once', 0.2, function () {
+test.run('puppetIn reads owner.json on every call, so an edit of the owner is seen at once', 0.2, function () {
   const home = scratch(JSON.stringify({ owner: OWNER.publicKey }));
   const read = P.puppetIn(home);
   const first = read();
@@ -72,14 +72,14 @@ test.run('puppetIn: read on every call, so an owner edit is seen at once', 0.2, 
   const second = read();
   return (first.owner === OWNER.publicKey && second.owner === SIBLING.publicKey) || false;
 }, test.limit.quick);
-test.run('puppetIn: a broken owner.json names no owner, said once in the log, not on every call', 0.2, function () {
+test.run('a broken owner.json names no owner, and this is said once in the log, not on every call', 0.2, function () {
   const said = [];
   const home = scratch('{"owner": "not a key"}');
   const read = P.puppetIn(home, function (line) { said.push(line); });
   const got = [read(), read(), read()];
   return (got.every(function (g) { return g.puppet === false; }) && said.length === 1 && /no owner commands/.test(said[0])) || false;
 }, test.limit.quick);
-test.run('puppetIn: broken, fixed, then broken again is said again', 0.2, function () {
+test.run('an owner.json broken, fixed and then broken again is said in the log again', 0.2, function () {
   const said = [];
   const home = scratch('garbage');
   const read = P.puppetIn(home, function (line) { said.push(line); });
@@ -88,46 +88,46 @@ test.run('puppetIn: broken, fixed, then broken again is said again', 0.2, functi
 }, test.limit.quick);
 
 // ── ownerCommandIn: the switch (puppets/G5) ──
-test.run('ownerCommandIn: a command the owner signed for this puppet gives the verb and body to run', 0.2, function () {
+test.run('a command the owner signed for this puppet gives the verb and body to run', 0.2, function () {
   const got = P.ownerCommandIn(arrive(command('job.list', { all: true })), switchOpts());
   return (got.ok === true && got.verb === 'job.list' && short(got.body) === short({ all: true })) || false;
 }, test.limit.quick);
-test.run('ownerCommandIn: a command with no body runs with {}', 0.2, function () {
+test.run('an owner\'s command with no body runs with an empty body', 0.2, function () {
   const got = P.ownerCommandIn(arrive(command('node.card')), switchOpts());
   return (got.ok === true && got.verb === 'node.card' && short(got.body) === '{}') || false;
 }, test.limit.quick);
-test.run('ownerCommandIn: not a puppet takes no command at all, even a well-signed one: 403 not a puppet', 0.2, function () {
+test.run('a node that is not a puppet takes no command at all, even a well-signed one, and answers 403 not a puppet', 0.2, function () {
   const got = P.ownerCommandIn(arrive(command('job.list')), switchOpts(''));
   return (got.ok === false && got.status === 403 && got.error === 'not a puppet') || false;
 }, test.limit.quick);
-test.run('ownerCommandIn: from any key but the owner\'s, or from nobody: 403 not the owner', 0.2, function () {
+test.run('a command from any key but the owner\'s, or from nobody, is refused 403 not the owner', 0.2, function () {
   const got = [P.ownerCommandIn(arrive(command('job.list'), STRANGER.publicKey), switchOpts()), P.ownerCommandIn(arrive(command('job.list'), ''), switchOpts())];
   return got.every(function (g) { return g.ok === false && g.status === 403 && g.error === 'not the owner'; }) || false;
 }, test.limit.quick);
-test.run('ownerCommandIn: an envelope addressed to an app, or no envelope (a chat line), is not a command: 400', 0.2, function () {
+test.run('an envelope addressed to an app, or a chat line with no envelope, is not a command and is answered 400', 0.2, function () {
   const toApp = Object.assign(command('job.list'), { app: 'chat' });
   const got = [P.ownerCommandIn(arrive(toApp), switchOpts()), P.ownerCommandIn(arrive(null), switchOpts())];
   return got.every(function (g) { return g.ok === false && g.status === 400 && g.error === 'not a command'; }) || false;
 }, test.limit.quick);
-test.run('ownerCommandIn: a sibling puppet posting with the owner\'s key but signing itself is refused: 403 bad command signature', 0.2, function () {
+test.run('a sibling puppet posting with the owner\'s key but signing itself is refused 403 bad command signature', 0.2, function () {
   const got = P.ownerCommandIn(arrive(command('job.list', {}, { signer: SIBLING })), switchOpts());
   return (got.ok === false && got.status === 403 && got.error === 'bad command signature') || false;
 }, test.limit.quick);
-test.run('ownerCommandIn: absent and wrong signature are one refusal', 0.2, function () {
+test.run('an absent signature and a wrong signature get one and the same refusal', 0.2, function () {
   const got = [P.ownerCommandIn(arrive(command('job.list', {}, { sig: '' })), switchOpts()), P.ownerCommandIn(arrive(command('job.list', {}, { sig: 'AAAA' })), switchOpts())];
   return (short(got[0]) === short(got[1]) && got[0].error === 'bad command signature' && got[0].status === 403) || false;
 }, test.limit.quick);
-test.run('ownerCommandIn: a command signed for a sibling does not verify here', 0.2, function () {
+test.run('a command signed for a sibling does not verify here', 0.2, function () {
   const got = P.ownerCommandIn(arrive(command('job.list', {}, { to: SIBLING.publicKey })), switchOpts());
   return (got.ok === false && got.error === 'bad command signature') || false;
 }, test.limit.quick);
-test.run('ownerCommandIn: the signature cannot be lifted onto another envelope', 0.2, function () {
+test.run('a command\'s signature cannot be lifted onto another envelope', 0.2, function () {
   const env = command('job.list', {}, { id: 'env-1' });
   env.id = 'env-2';
   const got = P.ownerCommandIn(arrive(env), switchOpts());
   return (got.ok === false && got.error === 'bad command signature') || false;
 }, test.limit.quick);
-test.run('ownerCommandIn: a signed cmd that is no JSON, or names no verb, is not a command: 400', 0.2, function () {
+test.run('a signed command that is no JSON, or names no verb, is not a command and is answered 400', 0.2, function () {
   const got = [P.ownerCommandIn(arrive(command(null, null, { cmd: '{not json' })), switchOpts()), P.ownerCommandIn(arrive(command(null, null, { cmd: JSON.stringify({ body: {} }) })), switchOpts())];
   return got.every(function (g) { return g.ok === false && g.status === 400 && g.error === 'not a command'; }) || false;
 }, test.limit.quick);
@@ -149,7 +149,7 @@ function door(o) {
 }
 function message(envelope, from) { return { hash: 'h4sh0123456789', relay: 'https://relay.example', fromKey: from === undefined ? OWNER.publicKey : from, envelope: envelope }; }
 
-test.run('puppetDoor: the owner\'s signed command runs through the node\'s verbs, and the answer goes back to him as re = the command\'s hash', 0.2, async function () {
+test.run('at the puppet door the owner\'s signed command runs through the node\'s verbs, and the answer goes back to him with the command\'s hash as re', 0.2, async function () {
   const d = door();
   d.door(message(command('job.list', { all: true })));
   await settle();
@@ -158,13 +158,13 @@ test.run('puppetDoor: the owner\'s signed command runs through the node\'s verbs
     d.posts.length === 1 && post.relay === 'https://relay.example' && post.to === OWNER.publicKey && post.sent.re === 'h4sh0123456789' &&
     post.sent.answer.verb === 'job.list' && post.sent.answer.status === 200) || false;
 }, test.limit.quick);
-test.run('puppetDoor: not a puppet is silent, as a non-puppet must behave', 0.2, async function () {
+test.run('the puppet door of a node that is not a puppet is silent, as a non-puppet must behave', 0.2, async function () {
   const d = door({ puppet: function () { return { puppet: false, owner: '' }; } });
   d.door(message(command('job.list')));
   await settle();
   return (d.calls.length === 0 && d.posts.length === 0) || false;
 }, test.limit.quick);
-test.run('puppetDoor: a stranger, or a chat line from the owner, is silent: never told this is a puppet', 0.2, async function () {
+test.run('the puppet door is silent to a stranger and to a chat line from the owner, and never tells them this is a puppet', 0.2, async function () {
   const d = door();
   d.door(message(command('job.list'), STRANGER.publicKey));
   d.door(message(null));
@@ -172,14 +172,14 @@ test.run('puppetDoor: a stranger, or a chat line from the owner, is silent: neve
   await settle();
   return (d.calls.length === 0 && d.posts.length === 0) || false;
 }, test.limit.quick);
-test.run('puppetDoor: from the owner but failing the switch is refused to him, and nothing runs', 0.2, async function () {
+test.run('a command from the owner that fails the switch is refused to him at the puppet door, and nothing runs', 0.2, async function () {
   const d = door();
   d.door(message(command('job.list', {}, { signer: SIBLING })));
   await settle();
   const a = (d.posts[0] || { sent: {} }).sent.answer || {};
   return (d.calls.length === 0 && d.posts.length === 1 && a.status === 403 && a.error === 'bad command signature') || false;
 }, test.limit.quick);
-test.run('puppetDoor: an answer too large for a packet is said by name, never dropped: 413 answer-too-large, the verb and the size', 0.2, async function () {
+test.run('an answer too large for a packet is said by name at the puppet door, never dropped, as 413 answer-too-large with the verb and the size', 0.2, async function () {
   const d = door({ encode: function (type, answer, extra) { return answer && answer.code !== 'answer-too-large' ? null : { text: JSON.stringify({ answer: answer, re: extra.re }) }; } });
   d.door(message(command('job.list')));
   await settle();

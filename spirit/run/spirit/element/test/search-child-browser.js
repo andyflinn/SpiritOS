@@ -282,7 +282,7 @@ test.after(async function () {
   if (W.node && !W.node.shared) { try { W.node.child.kill(); } catch (e) { /* gone */ } await sleep(300); try { require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(W.node); } catch (e) { /* scratch */ } }
 });
 const W = {};
-test.run('the world: searches to judge, a scratch node and a Chrome page', 0.2, async function () {
+test.run('there are searches to judge, a scratch node and a Chrome page', 0.2, async function () {
   if (!TARGETS.length) { world = true; return false; }
   const chrome = findChrome();
   if (!chrome) { world = true; return false; }
@@ -292,7 +292,7 @@ test.run('the world: searches to judge, a scratch node and a Chrome page', 0.2, 
   if (W.page.error) { world = true; return false; }
   return true;
 }, test.limit.slow);
-test.run('the world: each search mounted, planted and opened on a page of its own', 0.2, async function () {
+test.run('each search is mounted, planted and opened on a page of its own', 0.2, async function () {
   if (world) return false;
   const failed = [];
   for (const n of TARGETS) {
@@ -326,26 +326,26 @@ function eachSearch(why) {
 const listOf = function (r) { return r.noList ? { skip: true } : r.noData ? { skip: true } : null; };
 const plantedOf = function (r) { return listOf(r) || !r.drawn; };
 
-test.run('1. the list\'s box has a stated size, from its pane, not its rows (rule 16)', 0.4, function () {
+test.run('the list\'s box has a stated size, from its pane and not from its rows', 0.4, function () {
   return eachSearch(function (r) {
     const pre = plantedOf(r); if (pre) return pre;
     return Math.abs(r.listAfter.h - r.listBefore.h) > 1 || r.listAfter.bottom > r.pane.bottom + 1;
   });
 }, test.limit.quick);
-test.run('2. the list scrolls: the box keeps its size, scrollHeight > clientHeight', 0.4, function () {
+test.run('the list scrolls: its box keeps its size and its scrollHeight is greater than its clientHeight', 0.4, function () {
   return eachSearch(function (r) {
     const pre = plantedOf(r); if (pre) return pre;
     return Math.abs(r.listAfter.h - r.listBefore.h) > 1 || !(r.scrolls.sh > r.scrolls.ch) || !/auto|scroll/.test(r.scrolls.y);
   });
 }, test.limit.quick);
-test.run('3. scrolling the list, its title and buttons stay at the top', 0.4, function () {
+test.run('when the list is scrolled, its title and buttons stay at the top', 0.4, function () {
   return eachSearch(function (r) {
     const pre = plantedOf(r); if (pre) return pre;
     if (!r.fixedCount) return { skip: true };
     return r.moved > 0;
   });
 }, test.limit.quick);
-test.run('4. a planted long value in a row wraps or clips, nothing past the row\'s edge', 0.4, function () {
+test.run('a planted long value in a row wraps or clips, and nothing shows past the row\'s edge', 0.4, function () {
   return eachSearch(function (r) {
     const pre = plantedOf(r); if (pre) return pre;
     if (r.rowSpill === null) return true;
@@ -358,20 +358,20 @@ const detailOf = function (r) {
   if (!r.detailDrew) return { skip: true };
   return null;
 };
-test.run('5. the detail keeps a planted long value inside its panel, and scrolls when taller', 0.4, function () {
+test.run('the detail keeps a planted long value inside its panel, and scrolls when taller', 0.4, function () {
   return eachSearch(function (r) {
     const pre = detailOf(r); if (pre) return pre;
     return r.detailSpill > 0 || (!!r.detailTaller && r.detailNoScroll > 0);
   });
 }, test.limit.quick);
-test.run('6. the detail\'s title bar stays pinned when it scrolls', 0.4, function () {
+test.run('the detail\'s title bar stays pinned when it scrolls', 0.4, function () {
   return eachSearch(function (r) {
     const pre = detailOf(r); if (pre) return pre;
     if (!r.detailScrolls) return true;
     return !!r.barMoved;
   });
 }, test.limit.quick);
-test.run('7. the selector\'s dropdown stays inside the window, opened near the right and bottom edges', 0.4, function () {
+test.run('the selector\'s dropdown stays inside the window when opened near the right and bottom edges', 0.4, function () {
   return eachSearch(function (r) {
     if (r.dropError) return true;
     if (r.noDropdown) return true;
@@ -382,13 +382,13 @@ test.run('7. the selector\'s dropdown stays inside the window, opened near the r
 }, test.limit.quick);
 // Box v123: "every search supports both pane and dropdown; a selector with only one is red (today testicle.js, pane only,
 // and api.js, dropdown only)". Andy: "any search must support both pane AND dropdown". The dropdown is 7's.
-test.run('9. the selector, given face pane, draws its own list in the pane', 0.4, function () {
+test.run('the selector, given the pane face, draws its own list in the pane', 0.4, function () {
   return eachSearch(function (r) {
     if (r.paneError) return true;
     return !r.selectorPane;
   });
 }, test.limit.quick);
-test.run('8. two details open, one closed: the other still draws in its own panel (G43.19, in a page)', 0.4, function () {
+test.run('with two details open and one closed, the other still draws in its own panel in a page', 0.4, function () {
   return eachSearch(function (r) {
     const pre = detailOf(r); if (pre) return pre;
     return !r.secondDrew || !!r.firstTouched;

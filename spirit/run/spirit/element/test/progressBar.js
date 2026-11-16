@@ -21,7 +21,7 @@ let P = null;
 const tagOf = function (html) { return (/<progress[^>]*>/.exec(html) || [''])[0]; };
 const wordsOf = function (html) { return ((/<span class="job-manifest-note">([^<]*)<\/span>/.exec(html)) || [null, null])[1]; };
 
-test.run('the world: it runs on a window of its own and places itself at spirit.element.spirit.element.progressBar', 0.2, async function () {
+test.run('it runs on a window of its own and places itself at spirit.element.spirit.element.progressBar', 0.2, async function () {
   const win = { Math: Math, Number: Number, String: String, Promise: Promise };
   win.window = win;
   win.spirit = { element: {} };
@@ -34,7 +34,7 @@ test.run('the world: it runs on a window of its own and places itself at spirit.
 }, test.limit.quick);
 
 // the box: "progressBar: one shared shell element drawn from (done, total, text)"
-test.run('done of total: a progress tag with max the total and value the done, the words done/total and the text', 0.2, function () {
+test.run('done of total draws a progress tag with max the total and value the done, the words done/total and the text', 0.2, function () {
   if (!P) return false;
   const h = P(3, 10, 'files');
   return (/max="10"/.test(tagOf(h)) && /value="3"/.test(tagOf(h)) && wordsOf(h) === '3/10 files' && /^<span class="progress-bar">/.test(h)) || false;
@@ -49,7 +49,7 @@ test.run('total 0 shows indeterminate: a progress tag with no value, and the tex
   const h = P(5, 0, 'waiting');
   return (!/value=/.test(tagOf(h)) && !/max=/.test(tagOf(h)) && tagOf(h) !== '' && wordsOf(h) === 'waiting') || false;
 }, test.limit.quick);
-test.run('total 0 and no text: the bar alone, no words', 0.2, function () {
+test.run('total 0 and no text shows the bar alone, with no words', 0.2, function () {
   if (!P) return false;
   const h = P(0, 0);
   return (tagOf(h) !== '' && wordsOf(h) === null) || false;

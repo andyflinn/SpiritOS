@@ -20,7 +20,7 @@ const HOME_KEY = 'Ab+c/DeF0123456789abcdefghijklmnopqrstuvwxy=';
 
 const W = {};
 
-test.run('the world: in a window, beside the real spirit.data, it stands at spirit.data.deskClient', 0.2, function () {
+test.run('loaded in a window beside the real spirit.data, the deskClient family stands at spirit.data.deskClient', 0.2, function () {
   const win = { JSON: JSON, Object: Object, Array: Array, String: String, Number: Number, Map: Map, Math: Math, unescape: unescape, encodeURIComponent: encodeURIComponent };
   win.window = win;
   win.spirit = {};
@@ -44,7 +44,7 @@ test.run('it keeps nothing: its cache is empty', 0.2, function () {
   if (!W.F) return false;
   return Object.keys(W.F.cache || {}).length === 0 || false;
 }, test.limit.quick);
-test.run('and a job of deskClient on the stream writes nothing: it translates nothing', 0.2, function () {
+test.run('a job of deskClient on the stream writes nothing, because the family translates nothing', 0.2, function () {
   if (!W.F) return false;
   W.D.takeJob({ id: 'j1', module: 'spirit.app.deskClient', data: {}, app: { deskClient: { table: 'history', row: { id: 'r1' } } } }, HOME_KEY);
   const kept = W.D.branchAt(W.D.nodeId(HOME_KEY) + '/deskClient');

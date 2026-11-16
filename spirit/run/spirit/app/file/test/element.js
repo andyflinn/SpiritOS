@@ -159,7 +159,7 @@ test.run('it mounts on the shell, as a tile', 0.2, function () {
   const own = OWN();
   return !!own.shell && own.shell.mount === true && own.shell.tile === true ? true : false;
 }, test.limit.quick);
-test.run('no server: node.mount false', 0.2, function () {
+test.run('it has no server: its node mount is false and it has no api folder', 0.2, function () {
   const own = OWN();
   return !!own.node && own.node.mount === false && !fs.existsSync(path.join(RUN, 'spirit', 'app', 'file', 'api')) ? true : false;
 }, test.limit.quick);
@@ -175,13 +175,13 @@ test.run('file.js draws with the shared list, spirit/element/search/file.js, whi
     ? true : false;
 }, test.limit.quick);
 
-test.run('the world: a scratch node comes up', 0.2, async function () {
+test.run('a scratch node comes up for this suite', 0.2, async function () {
   W.s = scratch();
   const N = await boot(W.s.run); W.live.push(N.child);
   W.N = N;
   return N.up || false;
 }, test.limit.slow);
-test.run('the world: a Chrome page', 0.2, async function () {
+test.run('a Chrome page opens for this suite', 0.2, async function () {
   if (!W.N || !W.N.up) return false;
   const where = findChrome();
   if (!where) return false;
@@ -189,7 +189,7 @@ test.run('the world: a Chrome page', 0.2, async function () {
   if (W.c.error) { W.c = null; return false; }
   return true;
 }, test.limit.quick);
-test.run('the world: the face shell has its spirit', 0.2, async function () {
+test.run('the face shell opens in that page with its spirit ready', 0.2, async function () {
   if (!W.c) return false;
   await W.c.send('Page.navigate', { url: W.N.base + '/face.html' });
   W.page = !!(await until(function () { return W.c.evaluate('!!(window.spirit && window.spirit.ready && window.spirit.event)'); }, 20000));
@@ -221,11 +221,11 @@ test.run('its tile opens the list of files, the planted folder in it', 0.2, asyn
   await W.c.evaluate('(function () { var t = Array.prototype.slice.call(document.querySelectorAll("#zzBox .app-icon")).filter(function (e) { return String(e.innerText).indexOf("Files") !== -1; })[0]; if (t) t.click(); return !!t; }())');
   return await waitFor('rows().indexOf("zzFiles") !== -1', 10000) ? true : false;
 }, test.limit.quick);
-test.run('it covers all of the tiles: one bar in view, 📁 Files', 0.2, async function () {
+test.run('Files covers all of the tiles, with one bar in view reading 📁 Files', 0.2, async function () {
   if (!W.page) return false;
   return barIs(await T('bars()'), '📁 Files') || false;
 }, test.limit.quick);
-test.run('the box: "No title line in file": Files is named once, in its bar', 0.2, async function () {
+test.run('Files has no title line and is named only once, in its bar', 0.2, async function () {
   if (!W.page) return false;
   return times(await T('text()'), /\bFiles\b/g) === 1 || false;
 }, test.limit.quick);
@@ -271,7 +271,7 @@ test.run('a folder\'s press opens nothing over the list', 0.2, async function ()
 }, test.limit.quick);
 
 // the box: "A file's icon is by its kind, in the pane and the tiles alike"
-test.run('in the pane: text 📜, video 📹, image 🌇, audio 🔊, a folder 📁, any other file ❔', 0.2, async function () {
+test.run('in the pane a text file shows 📜, a video 📹, an image 🌇, an audio file 🔊, a folder 📁 and any other file ❔', 0.2, async function () {
   if (!W.page) return false;
   const paneIcons = W.paneIcons = {};
   for (const k of Object.keys(ICON)) paneIcons[k] = String(await T('rowText(' + JSON.stringify(k) + ')'));
@@ -294,14 +294,14 @@ test.run('the toggle turns the rows into tiles', 0.2, async function () {
   if (!W.page) return false;
   return W.toggled && await waitFor('tiles().indexOf("zzFiles/notes.txt") !== -1') ? true : false;
 }, test.limit.quick);
-test.run('in the tiles the same icons', 0.2, async function () {
+test.run('the tiles show the same icons as the pane', 0.2, async function () {
   if (!W.page) return false;
   const tileIcons = {};
   for (const k of Object.keys(ICON)) tileIcons[k] = String(await T('rowText(' + JSON.stringify(k) + ')'));
   const tileWrong = Object.keys(ICON).filter(function (k) { return tileIcons[k].indexOf(ICON[k]) === -1; });
   return !tileWrong.length || false;
 }, test.limit.quick);
-test.run('and back to the pane', 0.2, async function () {
+test.run('the toggle turns the tiles back into the pane', 0.2, async function () {
   if (!W.page) return false;
   return W.toggled && await T('toggle()') && await waitFor('rows().indexOf("zzFiles/notes.txt") !== -1 && tiles().length === 0') ? true : false;
 }, test.limit.quick);
@@ -338,7 +338,7 @@ test.run('what is marked is the word searched', 0.2, async function () {
   if (!W.page) return false;
   return (await T('marked()')).length > 0 && (await T('marked()')).every(function (m) { return /zzquokka/i.test(m); }) ? true : false;
 }, test.limit.quick);
-test.run('it covers all of Files: one bar in view, ✏️ Text Editor: notes.txt', 0.2, async function () {
+test.run('the opened text covers all of Files, with one bar in view reading ✏️ Text Editor: notes.txt', 0.2, async function () {
   if (!W.page) return false;
   return barIs(await T('bars()'), '✏️ Text Editor: notes.txt') || false;
 }, test.limit.quick);
@@ -347,7 +347,7 @@ test.run('the list is out of view while the file is over it', 0.2, async functio
   W.overList = barIs(await T('bars()'), /notes\.txt$/);
   return W.overList && (await T('rows()')).length === 0 ? true : false;
 }, test.limit.quick);
-test.run('the box: "show their whole selves with it, the file picker too, also when launched from file"', 0.2, async function () {
+test.run('the opened text shows its whole self, the file picker too, also when launched from Files', 0.2, async function () {
   if (!W.page) return false;
   return W.overList && (await T('pickers()')) === 1 ? true : false;
 }, test.limit.quick);
@@ -387,21 +387,21 @@ async function mediaApart(name) {
   await waitFor('rows().length > 0');
   return apart ? true : false;
 }
-test.run('pic.png opens in media, as img', 0.2, function () { return mediaOpens('zzFiles/pic.png', 'img'); }, test.limit.quick);
-test.run('its one bar: 🌇 Media Viewer: pic.png, the file\'s own icon (Q15)', 0.2, function () { return mediaBar('pic.png', '🌇'); }, test.limit.quick);
-test.run('pic.png: its whole self, the file picker too, and no text', 0.2, function () { return mediaWhole('pic.png'); }, test.limit.quick);
-test.run('pic.png: separate from fstat: its name only in the bar, no facts', 0.2, function () { return mediaApart('pic.png'); }, test.limit.quick);
-test.run('clip.mp4 opens in media, as video', 0.2, function () { return mediaOpens('zzFiles/clip.mp4', 'video'); }, test.limit.quick);
-test.run('its one bar: 📹 Media Viewer: clip.mp4, the file\'s own icon (Q15)', 0.2, function () { return mediaBar('clip.mp4', '📹'); }, test.limit.quick);
-test.run('clip.mp4: its whole self, the file picker too, and no text', 0.2, function () { return mediaWhole('clip.mp4'); }, test.limit.quick);
-test.run('clip.mp4: separate from fstat: its name only in the bar, no facts', 0.2, function () { return mediaApart('clip.mp4'); }, test.limit.quick);
-test.run('song.mp3 opens in media, as audio', 0.2, function () { return mediaOpens('zzFiles/song.mp3', 'audio'); }, test.limit.quick);
-test.run('its one bar: 🔊 Media Viewer: song.mp3, the file\'s own icon (Q15)', 0.2, function () { return mediaBar('song.mp3', '🔊'); }, test.limit.quick);
-test.run('song.mp3: its whole self, the file picker too, and no text', 0.2, function () { return mediaWhole('song.mp3'); }, test.limit.quick);
-test.run('song.mp3: separate from fstat: its name only in the bar, no facts', 0.2, function () { return mediaApart('song.mp3'); }, test.limit.quick);
+test.run('pic.png opens in the media viewer, as an img', 0.2, function () { return mediaOpens('zzFiles/pic.png', 'img'); }, test.limit.quick);
+test.run('pic.png has one bar, 🌇 Media Viewer: pic.png, with the file\'s own icon', 0.2, function () { return mediaBar('pic.png', '🌇'); }, test.limit.quick);
+test.run('pic.png shows its whole self, the file picker too, and no text', 0.2, function () { return mediaWhole('pic.png'); }, test.limit.quick);
+test.run('pic.png is shown apart from fstat, its name only in the bar and no facts', 0.2, function () { return mediaApart('pic.png'); }, test.limit.quick);
+test.run('clip.mp4 opens in the media viewer, as a video', 0.2, function () { return mediaOpens('zzFiles/clip.mp4', 'video'); }, test.limit.quick);
+test.run('clip.mp4 has one bar, 📹 Media Viewer: clip.mp4, with the file\'s own icon', 0.2, function () { return mediaBar('clip.mp4', '📹'); }, test.limit.quick);
+test.run('clip.mp4 shows its whole self, the file picker too, and no text', 0.2, function () { return mediaWhole('clip.mp4'); }, test.limit.quick);
+test.run('clip.mp4 is shown apart from fstat, its name only in the bar and no facts', 0.2, function () { return mediaApart('clip.mp4'); }, test.limit.quick);
+test.run('song.mp3 opens in the media viewer, as an audio', 0.2, function () { return mediaOpens('zzFiles/song.mp3', 'audio'); }, test.limit.quick);
+test.run('song.mp3 has one bar, 🔊 Media Viewer: song.mp3, with the file\'s own icon', 0.2, function () { return mediaBar('song.mp3', '🔊'); }, test.limit.quick);
+test.run('song.mp3 shows its whole self, the file picker too, and no text', 0.2, function () { return mediaWhole('song.mp3'); }, test.limit.quick);
+test.run('song.mp3 is shown apart from fstat, its name only in the bar and no facts', 0.2, function () { return mediaApart('song.mp3'); }, test.limit.quick);
 
 // the box: "A picture or video is constrained as list boxes are: it fills the room it is given, never wider or taller"
-test.run('the world: the 2400 by 1600 picture is drawn', 0.2, async function () {
+test.run('the 2400 by 1600 picture pic.png is opened and drawn', 0.2, async function () {
   if (!W.page) return false;
   await T('press("zzFiles/pic.png")');
   W.drawn = await until(function () { return W.c.evaluate('(function () { var i = document.querySelector("#zzBox img"); return !!i && i.complete && i.naturalWidth === 2400; }())'); }, 10000);
@@ -435,7 +435,7 @@ test.run('notes.txt opens in text, no media', 0.2, async function () {
   await T('press("zzFiles/notes.txt")');
   return await waitFor('count(".CodeMirror") > 0', 10000) && (await T('count("img, video, audio")')) === 0 ? true : false;
 }, test.limit.quick);
-test.run('its name only in the bar, no title line, no facts', 0.2, async function () {
+test.run('notes.txt is named only in the bar, with no title line and no facts', 0.2, async function () {
   if (!W.page) return false;
   const textLayer = String(await T('text()'));
   return times(textLayer, /notes\.txt/g) === 1 && textLayer.indexOf('MIME type') === -1 ? true : false;
@@ -444,7 +444,7 @@ test.run('Save sits in a bubble of the kind rowForm uses', 0.2, async function (
   if (!W.page) return false;
   return (await T('inBubble("Save")')) === true || false;
 }, test.limit.quick);
-test.run('the box: "Rows are inline, not boxes: they fold": in a pane 120px wide nothing of that row goes past its edge', 0.2, async function () {
+test.run('the Save row is inline and folds: in a pane 120px wide nothing of it goes past its edge', 0.2, async function () {
   if (!W.page) return false;
   const folded = await T('folds("Save", 120)');
   const r = folded === true ? true : false;
@@ -460,30 +460,30 @@ test.run('blob.zzq opens in fstat, its facts shown', 0.2, async function () {
   W.facts = await waitFor('text().indexOf("MIME type") !== -1', 10000);
   return W.facts ? true : false;
 }, test.limit.quick);
-test.run('under one bar in view, ending in its name', 0.2, async function () {
+test.run('blob.zzq is shown under one bar in view, ending in its name', 0.2, async function () {
   if (!W.page) return false;
   return W.facts && barIs(await T('bars()'), /blob\.zzq$/) ? true : false;
 }, test.limit.quick);
-test.run('fstat alone: no text and no media', 0.2, async function () {
+test.run('blob.zzq shows in fstat alone, with no text and no media', 0.2, async function () {
   if (!W.page) return false;
   return W.facts && (await T('count(".CodeMirror, img, video, audio")')) === 0 ? true : false;
 }, test.limit.quick);
-test.run('no name line: blob.zzq is named once, in the bar', 0.2, async function () {
+test.run('fstat has no name line: blob.zzq is named once, in the bar', 0.2, async function () {
   if (!W.page) return false;
   return W.facts && times(await T('text()'), /blob\.zzq/g) === 1 ? true : false;
 }, test.limit.quick);
-test.run('top down: MIME type, size, changed, created', 0.2, async function () {
+test.run('the facts read top down as MIME type, size, changed and created', 0.2, async function () {
   if (!W.page) return false;
   await waitFor('text().indexOf("Created") !== -1', 10000);
   const fstatText = W.fstatText = String(await T('text()'));
   const order = ['MIME type', 'Size', 'Changed', 'Created'].map(function (w) { return fstatText.indexOf(w); });
   return order.every(function (n, i) { return n !== -1 && (!i || n > order[i - 1]); }) ? true : false;
 }, test.limit.quick);
-test.run('and no annotations (goal/G43.20; Andy: "ANNOTATIONS WILL BE NODE ONLY.")', 0.2, function () {
+test.run('fstat shows no annotations', 0.2, function () {
   if (W.fstatText === undefined) return false;
   return W.fstatText.indexOf('More Information') === -1 || false;
 }, test.limit.quick);
-test.run('the box (Q9): no Open with in it', 0.2, async function () {
+test.run('fstat has no Open with in it', 0.2, async function () {
   if (W.fstatText === undefined) return false;
   const r = W.facts && !/Open with/i.test(W.fstatText) ? true : false;
   await T('close("blob.zzq")');
@@ -491,7 +491,7 @@ test.run('the box (Q9): no Open with in it', 0.2, async function () {
 }, test.limit.quick);
 
 // nothing threw on the page
-test.run('no uncaught error on the page, all the way', 0.2, async function () {
+test.run('the page throws no uncaught error, all the way through', 0.2, async function () {
   if (!W.c) return false;
   const thrown = W.c.heard.filter(function (m) { return m.method === 'Runtime.exceptionThrown'; });
   await stop(W.N.child);

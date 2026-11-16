@@ -138,7 +138,7 @@ test.run('select shows that tab, mounted into its own box', 0.2, function () {
 test.run('only the selected tab\'s box shows; the others are hidden', 0.2, function () {
   return (hiddenNow(boxOne) && !hiddenNow(boxTwo)) ? true : false;
 }, test.limit.quick);
-test.run('the marks follow the selection', 0.2, function () {
+test.run('the aria-selected marks follow the selection', 0.2, function () {
   // The row as it is now: drawn again on its own (its node's markup), or with the whole container. A browser reflects either
   // in the container's markup; this stub does not, so the row's own node is read when it was drawn on its own.
   rowNow = function (c) { const r = c.part('tabs'); return r && r.innerHTML ? r.innerHTML : c.innerHTML; };
@@ -191,7 +191,7 @@ test.run('the content area takes the classes tab-content and fill', 0.2, functio
   cls = (/class="([^"]*)"/.exec(contentTag) || [])[1] || '';
   return (/\btab-content\b/.test(cls) && /\bfill\b/.test(cls)) ? true : false;
 }, test.limit.quick);
-test.run('and carries no look of its own inline: the sheet gives it', 0.2, function () {
+test.run('the content area carries no look of its own inline, because the sheet gives it', 0.2, function () {
   return (!/style="[^"]*(padding|background|overflow)/.test(contentTag)) ? true : false;
 }, test.limit.quick);
 test.run('each tab\'s box takes fill, so what a tab holds gets the height left', 0.2, function () {
@@ -206,19 +206,19 @@ test.run('shell.css pads .tab-content 0.5em, the standard', 0.2, function () {
   rule = (/\.tab-content\s*\{([^}]*)\}/.exec(sheet) || [])[1] || '';
   return (/padding:\s*0\.5em/.test(rule)) ? true : false;
 }, test.limit.quick);
-test.run('and holds it to the height left: min-height 0, scrolling inside itself', 0.2, function () {
+test.run('shell.css holds .tab-content to the height left, with min-height 0 and scrolling inside itself', 0.2, function () {
   return (/min-height:\s*0/.test(rule) && /overflow:\s*auto/.test(rule)) ? true : false;
 }, test.limit.quick);
-test.run('a bubble: rounded, its background the shell\'s --shell-well', 0.2, function () {
+test.run('shell.css draws .tab-content as a rounded bubble with the shell\'s --shell-well as its background', 0.2, function () {
   return (/border-radius:/.test(rule) && /background:\s*var\(--shell-well\)/.test(rule)) ? true : false;
 }, test.limit.quick);
-test.run('--shell-well is set in shell.css and face.css, darker than each one\'s --shell-pane: on the face a darker green than the page has', 0.2, function () {
+test.run('--shell-well is set in shell.css and face.css darker than each one\'s --shell-pane, so on the face it is a darker green than the page has', 0.2, function () {
   hexOf = function (css, name) { const m = new RegExp(name + ':\\s*(#[0-9a-fA-F]{6})').exec(css); return m ? m[1] : null; };
   light = function (hex) { const n = parseInt(hex.slice(1), 16); return 0.2126 * (n >> 16 & 255) + 0.7152 * (n >> 8 & 255) + 0.0722 * (n & 255); };
   greens = [['shell.css', sheet], ['face.css', face]].map(function (p) { return { file: p[0], well: hexOf(p[1], '--shell-well'), pane: hexOf(p[1], '--shell-pane') }; });
   return (greens.every(function (g) { return g.well && g.pane && light(g.well) < light(g.pane); })) ? true : false;
 }, test.limit.quick);
-test.run('and on the face it is a green', 0.2, function () {
+test.run('on the face --shell-well is a green', 0.2, function () {
   fw = greens[1].well;
   return (fw && (parseInt(fw.slice(3, 5), 16) > parseInt(fw.slice(1, 3), 16)) && (parseInt(fw.slice(3, 5), 16) > parseInt(fw.slice(5, 7), 16))) ? true : false;
 }, test.limit.quick);
@@ -233,7 +233,7 @@ test.run('each tab is a button of the class tab-button', 0.2, function () {
   buttons = (c5.innerHTML.match(/<button\b[^>]*>/g) || []);
   return (buttons.length === 2 && buttons.every(function (b) { return (/class="[^"]*\btab-button\b/).test(b); })) ? true : false;
 }, test.limit.quick);
-test.run('with no colour or corners of its own inline: the sheet gives them', 0.2, function () {
+test.run('a tab button has no colour or corners of its own inline, because the sheet gives them', 0.2, function () {
   return (buttons.every(function (b) { return !/style="[^"]*(background|radius)/.test(b); })) ? true : false;
 }, test.limit.quick);
 test.run('shell.css squares a tab button\'s bottom corners', 0.2, function () {
@@ -248,18 +248,18 @@ test.run('the selected tab\'s background is the content pane\'s dark, var(--shel
   off = tabRules.filter(function (r) { return /aria-selected="true"/.test(r.sel) && /background:\s*var\(--shell-well\)/.test(r.body); })[0];
   return (!!off) ? true : false;
 }, test.limit.quick);
-test.run('and it outweighs #app-content button, so it holds inside an app', 0.2, function () {
+test.run('the selected tab\'s background rule outweighs #app-content button, so it holds inside an app', 0.2, function () {
   // A tab inside an app is a button under #app-content, whose own rule paints every button (shell.css); the tab's rules
   // must win there, or the page shows no change at all.
   appButton = rules.filter(function (r) { return r.sel === '#app-content button' && /background/.test(r.body); })[0];
   return (off && (!appButton || weight(off.sel) > weight(appButton.sel) || /!important/.test(off.body))) ? true : false;
 }, test.limit.quick);
-test.run('the square corners outweigh it too', 0.2, function () {
+test.run('the square corners rule outweighs #app-content button too', 0.2, function () {
   squared = tabRules.filter(function (r) { return /border-bottom-left-radius:\s*0/.test(r.body); })[0];
   appRadius = rules.filter(function (r) { return r.sel === '#app-content button' && /border-radius/.test(r.body); })[0];
   return (squared && (!appRadius || weight(squared.sel) > weight(appRadius.sel) || /!important/.test(squared.body))) ? true : false;
 }, test.limit.quick);
-test.run('the others keep the brighter colour every button has: no rule repaints them', 0.2, function () {
+test.run('the other tabs keep the brighter colour every button has, because no rule repaints them', 0.2, function () {
   return (!tabRules.some(function (r) { return /aria-selected="false"/.test(r.sel) && /background/.test(r.body); })) ? true : false;
 }, test.limit.quick);
 test.run('a container answers add and close', 0.2, function () {
@@ -283,7 +283,7 @@ test.run('a closable tab has its close button', 0.2, function () {
   row = rowOf();
   return (row.indexOf('data-tab-close="one"') !== -1) ? true : false;
 }, test.limit.quick);
-test.run('to the right of its label', 0.2, function () {
+test.run('the close button stands to the right of its tab\'s label', 0.2, function () {
   return (row.indexOf('ONE') !== -1 && row.indexOf('ONE') < row.indexOf('data-tab-close="one"')) ? true : false;
 }, test.limit.quick);
 test.run('a tab not added closable has none', 0.2, function () {
@@ -295,7 +295,7 @@ test.run('adding a tab that is there makes it the active tab', 0.2, function () 
   tc6.add(tab6('one', true));
   return (tc6.selected() === 'one') ? true : false;
 }, test.limit.quick);
-test.run('with no second tab, and no second mount', 0.2, function () {
+test.run('adding a tab that is there makes no second tab and no second mount', 0.2, function () {
   return ((rowOf().match(/data-tab-close="one"/g) || []).length === 1 && made6.length === mounts) ? true : false;
 }, test.limit.quick);
 test.run('a press on its close button takes the tab away', 0.2, function () {
@@ -306,14 +306,14 @@ test.run('a press on its close button takes the tab away', 0.2, function () {
   press('one');
   return (rowOf().indexOf('data-tab-close="one"') === -1 && rowOf().indexOf('ONE') === -1) ? true : false;
 }, test.limit.quick);
-test.run('and the tab shown stays shown when another one closes', 0.2, function () {
+test.run('the tab shown stays shown when another one closes', 0.2, function () {
   return (tc6.selected() === 'two') ? true : false;
 }, test.limit.quick);
-test.run('the selected tab closed: a neighbour is selected', 0.2, function () {
+test.run('when the selected tab is closed, a neighbour is selected', 0.2, function () {
   tc6.close('two');
   return (rowOf().indexOf('TWO') === -1 && tc6.selected() === 'fixed') ? true : false;
 }, test.limit.quick);
-test.run('its box leaves the page', 0.2, function () {
+test.run('a closed tab\'s box leaves the page', 0.2, function () {
   content = c6.part('content');
   return (content && !content.children.some(function (b) { return b.tag === 'two' && !b.parent; }) && content.children.filter(function (b) { return !b.removed && b.parent === content && (b.tag === 'two' || b.tag === 'one'); }).length === 0) ? true : false;
 }, test.limit.quick);

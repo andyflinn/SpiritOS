@@ -87,7 +87,7 @@ const changes = [];
 test.run('listElement.js names no shellCreateListSearch', 0.2, function () {
   return !/shellCreateListSearch/.test(SERVER_SRC) || false;
 }, test.limit.quick);
-test.run('it loads probabilitySearch itself (goal/G41.3)', 0.2, function () {
+test.run('it loads probabilitySearch itself', 0.2, function () {
   w = world();
   return w.required.indexOf('spirit/element/search.js') !== -1 ? true : false;
 }, test.limit.quick);
@@ -99,7 +99,7 @@ test.run('it places itself at spirit.element.spirit.element.search.api.listEleme
   return made && typeof made.create === 'function' && !('createAppServerSelector' in w.E) ? true : false;
 }, test.limit.quick);
 // Box v23: "every element gets a container and appends itself".
-test.run('create(container, options) appends the control to its container and answers it', 0.2, function () {
+test.run('create appends the control to the container it is given and answers it', 0.2, function () {
   if (!made || typeof made.create !== 'function') return false;
   box = node('div');
   servers = made.create(box, { all: 'all servers' });
@@ -125,13 +125,13 @@ test.run('a pick sets its value and fires change', 0.2, function () {
   sl.opts.pick({ key: 'fs', name: 'fs' }, 'fs');
   return servers.value === 'fs' && changes[changes.length - 1] === 'fs' ? true : false;
 }, test.limit.quick);
-test.run('None clears it', 0.2, function () {
+test.run('picking None clears its value', 0.2, function () {
   if (!sl) return false;
   sl.opts.pick(null, '');
   return servers.value === '' ? true : false;
 }, test.limit.quick);
 // introSpector's deferral, the box: "the only exception is introspector, deferred for network-scope design reasons."
-test.run('load(fn) lists another party\'s families', 0.2, async function () {
+test.run('load lists another party\'s families', 0.2, async function () {
   if (!sl) return false;
   await servers.load(function () { return Promise.resolve(OTHER); }); await settle();
   return short(names(sl)) === short(['relay']) ? true : false;

@@ -17,20 +17,20 @@ const W = {};
 let m = null;
 // What the tests make, shared by the tests after them.
 let code, rPane, rFixed, of, n;
-test.run('it loads the rowForm itself (rule/26)', 0.2, function () {
+test.run('it loads the rowForm itself', 0.2, function () {
   code = fs.readFileSync(path.join(__dirname, '..', 'faceForm.js'), 'utf8').replace(/\/\/.*$/gm, '');
   // The page loads the rowForm first, to keep what it makes; the form must still ask for it itself (rule/26).
   return (/spirit\.require\(\s*['"]spirit\/element\/rowForm\.js['"]/.test(code)) ? true : false;
 }, test.limit.quick);
-test.run('the world: Chrome is on this machine', 0.2, function () {
+test.run('Chrome is on this machine', 0.2, function () {
   W.chrome = H.findChrome();
   return !!W.chrome || false;
 }, test.limit.quick);
-test.run('the world: a scratch node comes up with its DEBUG on', 0.2, async function () {
+test.run('a scratch node comes up with its DEBUG on', 0.2, async function () {
   W.node = await H.scratchNode();
   return (W.node.up && W.node.debug) || false;
 }, test.limit.slow);
-test.run('the world: the page lays out its forms', 0.2, async function () {
+test.run('the page lays out its forms', 0.2, async function () {
   if (!W.chrome || !W.node || !W.node.up) return false;
   W.page = await H.chromePage(W.chrome);
   if (W.page.error) return false;
@@ -46,7 +46,7 @@ test.after(function () {
   try { if (W.page && W.page.profile) fs.rmSync(W.page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
   try { if (W.node && W.node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(W.node); } catch (e) { /* left */ }
 });
-test.run('one rowForm, its icon ❓ and its button Ask', 0.2, function () {
+test.run('it draws one rowForm, with its icon ❓ and its button Ask', 0.2, function () {
   if (!m) return false;
   // Andy, on G41.27: "faceForm:\n\n[❓] [Relay▾][Face-name-input][Ask-button]".
   // its relays to pick
@@ -77,7 +77,7 @@ test.run('its Ask is the rowForm\'s button, the only one', 0.2, function () {
   if (!m) return false;
   return (rPane.forms === 1 && rPane.others === 0) ? true : false;
 }, test.limit.quick);
-test.run('fixed to its one relay: one rowForm, its icon ❓ and its button Ask', 0.2, function () {
+test.run('fixed to its one relay, it draws one rowForm, with its icon ❓ and its button Ask', 0.2, function () {
   if (!m) return false;
   // fixed to its one relay
   rFixed = m.fixed || {};
@@ -107,7 +107,7 @@ test.run('fixed to its one relay: its Ask is the rowForm\'s button, the only one
   if (!m) return false;
   return (rFixed.forms === 1 && rFixed.others === 0) ? true : false;
 }, test.limit.quick);
-test.run('offers: a seated relay with the star can be offered', 0.2, function () {
+test.run('offers says a seated relay with the star can be offered', 0.2, function () {
   if (!m) return false;
   // goal/G43.18: a face only on a starred relay
   // Box v29: "At home, faceForm offers a face only on a starred relay (today it offers only relays not starred, G41.32: that
@@ -115,7 +115,7 @@ test.run('offers: a seated relay with the star can be offered', 0.2, function ()
   of = m.offers || {};
   return (of.starred === true) ? true : false;
 }, test.limit.quick);
-test.run('offers: a seated relay without the star cannot', 0.2, function () {
+test.run('offers says a seated relay without the star cannot be offered', 0.2, function () {
   if (!m) return false;
   return (of.unstarred === false) ? true : false;
 }, test.limit.quick);

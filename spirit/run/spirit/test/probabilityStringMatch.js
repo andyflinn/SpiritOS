@@ -27,11 +27,11 @@ test.run('A exactly equal to B gives 1.0', 0.2, function () {
   const got = [p('relay', 'relay'), p('Relay Box', 'Relay Box'), p('*?', '*?'), p('', '')];
   return got.every(function (x) { return x === 1; }) || false;
 }, test.limit.quick);
-test.run('an empty string against a non-empty one gives 0 (Andy, 2026-10-12)', 0.2, function () {
+test.run('an empty string against a non-empty one gives 0', 0.2, function () {
   const got = [p('', 'x'), p('x', ''), p('', 'relay server')];
   return got.every(function (x) { return x === 0; }) || false;
 }, test.limit.quick);
-test.run('no matter which one is the search string: A and B swapped give the same probability', 0.2, function () {
+test.run('A and B swapped give the same probability, no matter which one is the search string', 0.2, function () {
   const pairs = [['relay', 'relay server'], ['desk', 'desk server'], ['alpha beta', 'beta alpha gamma'], ['reLay', 'Relay box'], ['café', 'my cafe']];
   const bad = pairs.filter(function (x) { return p(x[0], x[1]) !== p(x[1], x[0]); });
   return bad.length === 0 || false;
@@ -47,22 +47,22 @@ test.run('strings that share nothing give 0', 0.2, function () {
 }, test.limit.quick);
 
 // ── how good a match is ──
-test.run('starts with beats found somewhere', 0.2, function () {
+test.run('a text that starts with the search string beats one that has it somewhere later', 0.2, function () {
   const a = p('relay', 'relay server');
   const b = p('relay', 'my relay ser');
   return (a > b && b > 0) || false;
 }, test.limit.quick);
-test.run('found whole beats only some of the words found', 0.2, function () {
+test.run('a search string found whole beats one of which only some of the words are found', 0.2, function () {
   const a = p('relay zz', 'my relay zz box');
   const b = p('relay zz', 'the relay box q');
   return (a > b && b > 0) || false;
 }, test.limit.quick);
-test.run('the closer the lengths, the higher: a word in a short text beats it in a long one', 0.2, function () {
+test.run('the closer the lengths, the higher the match, so a word in a short text beats it in a long one', 0.2, function () {
   const a = p('relay', 'relay box');
   const b = p('relay', 'relay box with a very long label after it');
   return (a > b && b > 0) || false;
 }, test.limit.quick);
-test.run('no wildcards: * and ? are characters like any other', 0.2, function () {
+test.run('there are no wildcards, so * and ? are characters like any other', 0.2, function () {
   const got = [p('*', 'abc'), p('a*', 'abc'), p('a?', 'abc'), p('*', 'a*c'), p('a?', 'xa?')];
   return (got[0] === 0 && got[1] === 0 && got[2] === 0 && got[3] > 0 && got[4] > 0) || false;
 }, test.limit.quick);
@@ -72,24 +72,24 @@ test.run('accents fold both ways: ü matches u and é matches e', 0.2, function 
 }, test.limit.quick);
 
 // ── goal/G29.1: distance counts, and more than order ──
-test.run('words side by side beat the same words far apart (proximity)', 0.2, function () {
+test.run('words side by side beat the same words far apart', 0.2, function () {
   const a = p('alpha beta', 'alpha beta gamma');
   const b = p('alpha beta', 'alpha x x x x x x x x x x beta');
   return a > b || false;
 }, test.limit.quick);
-test.run('words in the order typed beat the same words swapped (sequence)', 0.2, function () {
+test.run('words in the order typed beat the same words swapped', 0.2, function () {
   const a = p('one two', 'one two x');
   const b = p('one two', 'two one x');
   return a > b || false;
 }, test.limit.quick);
-test.run('distance weighs more than order: adjacent and swapped beats in order with a word between, the labels the same length', 0.2, function () {
+test.run('distance weighs more than order, so words adjacent and swapped beat words in order with a word between, in labels of the same length', 0.2, function () {
   const a = p('alpha beta', 'beta alpha zz');
   const b = p('alpha beta', 'alpha zz beta');
   return a > b || false;
 }, test.limit.quick);
 
 // ── goal/G29.1: case counts, by a hair ──
-test.run('case counts: "Relay" matches "Relay box" better than "relay" does, and "relay" better than "reLay"', 0.2, function () {
+test.run('case counts, so "Relay" matches "Relay box" better than "relay" does, and "relay" better than "reLay"', 0.2, function () {
   const got = [p('Relay', 'Relay box'), p('relay', 'Relay box'), p('reLay', 'Relay box')];
   return (got[0] > got[1] && got[1] > got[2]) || false;
 }, test.limit.quick);
@@ -118,7 +118,7 @@ test.run('a whole word beats a part of one', 0.2, function () {
 test.run('the module answers probabilityStringMatch alone', 0.2, function () {
   return short(Object.keys(M)) === short(['probabilityStringMatch']) || false;
 }, test.limit.quick);
-test.run('in a page alike (goal/G27.14): loaded as a plain script, it is found on window.spirit.probability, and its names stay its own', 0.2, function () {
+test.run('loaded in a page as a plain script, it is found on window.spirit.probability, and it keeps its names to itself', 0.2, function () {
   const win = { spirit: { probability: { other: 1 } } };
   const ctx = { window: win };
   vm.runInNewContext(fs.readFileSync(path.join(RUN, 'spirit', 'probabilityStringMatch.js'), 'utf8'), ctx);

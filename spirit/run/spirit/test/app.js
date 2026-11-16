@@ -43,7 +43,7 @@ test.run('spirit/app/data.js is there, as in every core family', 0.2, function (
 test.run('spirit/app/search.json is there, as in every core family', 0.2, function () { return fs.existsSync(path.join(FOLDER, 'search.json')) || false; }, test.limit.quick);
 
 // THE ONE VERB (Andy, box: "the first verb of the app api is app.search", "no filters, just a search string").
-test.run('search, active, icon and label are the family\'s verbs (app.shell went, goal/G43.18, Q10)', 0.2, function () {
+test.run('search, active, icon and label are the family\'s verbs, and app.shell is gone', 0.2, function () {
   let api = null;
   try { api = require(path.join(FOLDER, 'api.js')); } catch (e) { api = null; }
   const verbs = W.verbs = api && api.verbs;
@@ -72,7 +72,7 @@ test.run('the same question refuses contact.own, so it can refuse', 0.8, functio
   return faceRefuses({ call: 'contact.own', args: {} }) !== '' || false;
 }, test.limit.quick);
 
-test.run('the world: the scratch node comes up', 0.2, async function () {
+test.run('the scratch node comes up', 0.2, async function () {
   W.node = await scratchNode();
   return W.node.up || false;
 }, test.limit.slow);
@@ -171,7 +171,7 @@ test.run('api.js names the verb with key and active', 0.2, function () {
 test.run('the verb has its file, active.json', 0.2, function () {
   return fs.existsSync(path.join(RUN, 'spirit', 'app', 'active.json')) || false;
 }, test.limit.quick);
-test.run('the box: app.search stays "just a search string"', 0.2, function () {
+test.run('app.search stays "just a search string"', 0.2, function () {
   return Object.keys(V.search || {}).join() === 'q' || false;
 }, test.limit.quick);
 // The box: "The user sets active, so Monitor and server start off".
@@ -180,7 +180,7 @@ test.run('neither is active before a press', 0.2, function () {
   if (noNode()) return false;
   return (activeIn('agent') !== true && activeIn('server') !== true) || false;
 }, test.limit.quick);
-test.run('and no row but an intrinsic app\'s says active', 0.2, async function () {
+test.run('no row but an intrinsic app\'s says active before a press', 0.2, async function () {
   if (noNode()) return false;
   const before = rows(await ask(W.node.base, 'app.search', {})) || [];
   const lit = before.filter(function (i) { return (parsed(i.label) || {}).active === true && !intrinsicApp(i.key); }).map(function (i) { return i.key; });
@@ -193,13 +193,13 @@ test.run('active true lands in spirit/state/agent/node.json', 0.2, async functio
   return (on.status === 200 && activeIn('agent') === true) || false;
 }, test.limit.quick);
 // Andy: "on first activate, spirit/state/<name>/node.json should be initialized with the values from spirit/app/<name>/<name>.json", and on Q7: "it just holds active (boolean), icon (glyph), label(string) and shell (boolean),"
-test.run('the first activate copies label and icon from <name>.json (shell no more, goal/G43.18)', 0.2, function () {
+test.run('the first activate copies label and icon from <name>.json, and no shell', 0.2, function () {
   if (noNode()) return false;
   const firstState = W.firstState = stateRead('agent');
   const agentJson = JSON.parse(fs.readFileSync(scratchApp('agent', 'agent.json'), 'utf8'));
   return (firstState.label === agentJson.identity.label && firstState.icon === agentJson.identity.icon) || false;
 }, test.limit.quick);
-test.run('and it holds those and active, nothing else', 0.2, function () {
+test.run('after the first activate node.json holds label, icon and active, nothing else', 0.2, function () {
   if (!W.firstState) return false;
   return Object.keys(W.firstState).sort().join() === 'active,icon,label' || false;
 }, test.limit.quick);
@@ -211,7 +211,7 @@ test.run('a label the node chose first stays, and the rest is copied', 0.2, asyn
   await ask(W.node.base, 'app.active', { key: 'server', active: false });
   return (chosen.label === 'Chosen First' && typeof chosen.icon === 'string' && chosen.icon !== '' && chosen.active === true) || false;
 }, test.limit.quick);
-test.run('active false lands there too', 0.2, async function () {
+test.run('active false lands in node.json too', 0.2, async function () {
   if (noNode()) return false;
   const off = await ask(W.node.base, 'app.active', { key: 'agent', active: false });
   const verdict = (off.status === 200 && activeIn('agent') === false) || false;
@@ -221,7 +221,7 @@ test.run('active false lands there too', 0.2, async function () {
 // ── intrinsic (goal/G43.14) ──
 // The box: "intrinsic true: the app is always active", "app.active does not switch it off".
 const rowFor = async function (k) { const got = rows(await ask(W.node.base, 'app.search', { q: '' })) || []; const r = got.filter(function (i) { return i.key === k; })[0]; return r ? parsed(r.label) : null; };
-test.run('the world: contact.json says intrinsic true', 0.2, function () {
+test.run('contact.json says intrinsic true', 0.2, function () {
   if (noNode()) return false;
   return intrinsicApp('contact') || false;
 }, test.limit.quick);
@@ -245,7 +245,7 @@ test.run('app.active on an intrinsic app is refused, by name', 0.2, async functi
   const refused = await ask(W.node.base, 'app.active', { key: 'contact', active: false });
   return (refused.status !== 200 && !!refused.body && typeof refused.body.code === 'string' && refused.body.code !== '') || false;
 }, test.limit.quick);
-test.run('and nothing is written for it', 0.2, function () {
+test.run('the refused app.active writes nothing for the intrinsic app', 0.2, function () {
   if (noNode()) return false;
   return activeIn('contact') === undefined || false;
 }, test.limit.quick);
@@ -261,14 +261,14 @@ const refuses = async function (bad) {
   const r = await ask(W.node.base, 'app.active', { key: bad, active: true });
   return r.status !== 200 || false;
 };
-test.run('refused: nosuchapp, no app', 0.2, function () { return refuses('nosuchapp'); }, test.limit.quick);
-test.run('refused: ../evil, a path up', 0.8, function () { return refuses('../evil'); }, test.limit.quick);
-test.run('refused: .., the folder above', 0.8, function () { return refuses('..'); }, test.limit.quick);
-test.run('refused: appSelector, no app', 0.2, function () { return refuses('appSelector'); }, test.limit.quick);
-test.run('refused: test, a test folder', 0.2, function () { return refuses('test'); }, test.limit.quick);
-test.run('refused: monitor/../../evil, a path out', 0.8, function () { return refuses('monitor/../../evil'); }, test.limit.quick);
-test.run('refused: an empty key', 0.2, function () { return refuses(''); }, test.limit.quick);
-test.run('and none of them wrote anything', 0.8, function () {
+test.run('app.active refuses nosuchapp, no app', 0.2, function () { return refuses('nosuchapp'); }, test.limit.quick);
+test.run('app.active refuses ../evil, a path up', 0.8, function () { return refuses('../evil'); }, test.limit.quick);
+test.run('app.active refuses .., the folder above', 0.8, function () { return refuses('..'); }, test.limit.quick);
+test.run('app.active refuses appSelector, no app', 0.2, function () { return refuses('appSelector'); }, test.limit.quick);
+test.run('app.active refuses test, a test folder', 0.2, function () { return refuses('test'); }, test.limit.quick);
+test.run('app.active refuses monitor/../../evil, a path out', 0.8, function () { return refuses('monitor/../../evil'); }, test.limit.quick);
+test.run('app.active refuses an empty key', 0.2, function () { return refuses(''); }, test.limit.quick);
+test.run('none of the refused keys wrote anything', 0.8, function () {
   if (noNode()) return false;
   const root = W.node.root;
   return (!fs.existsSync(path.join(root, 'spirit', 'run', 'spirit', 'state', 'nosuchapp')) && !fs.existsSync(path.join(root, 'spirit', 'run', 'spirit', 'evil')) && !fs.existsSync(path.join(root, 'spirit', 'run', 'evil'))) || false;
@@ -283,7 +283,7 @@ test.run('app.label writes node.json', 0.2, async function () {
   const named = await ask(W.node.base, 'app.label', { key: 'agent', label: 'Renamed Here' });
   return (named.status === 200 && stateRead('agent').label === 'Renamed Here') || false;
 }, test.limit.quick);
-test.run('and keeps what else it holds', 0.2, function () {
+test.run('app.label keeps what else node.json holds', 0.2, function () {
   if (noNode()) return false;
   return stateRead('agent').active === true || false;
 }, test.limit.quick);
@@ -300,10 +300,10 @@ test.run('app.icon writes node.json', 0.2, async function () {
   return (iconed.status === 200 && stateRead('agent').icon === '🧪') || false;
 }, test.limit.quick);
 // app.shell went (goal/G43.18, Q10): whether an app may be a shell is its <name>.json's alone; spirit/test/nodeShell.js.
-test.run('the app family has no verb shell (goal/G43.18, Q10)', 0.2, function () {
+test.run('the app family has no verb shell', 0.2, function () {
   return !V.shell || false;
 }, test.limit.quick);
-test.run('neither writes <name>.json', 0.2, function () {
+test.run('neither app.label nor app.icon writes <name>.json', 0.2, function () {
   if (W.sidecarBefore === undefined) return false;
   return fs.readFileSync(scratchApp('agent', 'agent.json'), 'utf8') === W.sidecarBefore || false;
 }, test.limit.quick);

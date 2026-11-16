@@ -81,14 +81,14 @@ test.after(async function () {
   try { if (s) LABH.freeTree(s); } catch (e) { /* a door still closing; the temp folder keeps it */ }
 });
 
-test.run('the world: a scratch node comes up', 0.2, async function () {
+test.run('a scratch node comes up', 0.2, async function () {
   s = scratch();
   N = await boot(s.run); live.push(N.child);
   return N.up || false;
 }, test.limit.slow);
 
 // the box: a server app, activated, runs (the world for what follows)
-test.run('the world: activated, the server answers', 0.2, async function () {
+test.run('once its app is activated, the server answers', 0.2, async function () {
   if (!nodeUp()) return false;
   await call(N.base, 'app.active', { key: NAME, active: true });
   const up = await until(function () { return call(N.base, NAME + '.pid').then(function (r) { return r.status === 200 && r.body && r.body.pid > 0; }); }, 30000);
@@ -96,19 +96,19 @@ test.run('the world: activated, the server answers', 0.2, async function () {
 }, test.limit.quick);
 
 // the box: "DEBUG puts its state on the server's own job, in the job's data, at start and on every change"
-test.run('switched on, its job\'s data says debug true', 0.2, async function () {
+test.run('with DEBUG switched on, the server\'s job data says debug true', 0.2, async function () {
   if (!nodeUp()) return false;
   await call(N.base, NAME + '.DEBUG', { on: true });
   const j1 = await jobOf(N.base, 'spirit.app.' + NAME);
   return !!j1 && j1.data && j1.data.debug === true ? true : false;
 }, test.limit.quick);
-test.run('and its job\'s data says debug false', 0.2, async function () {
+test.run('with DEBUG switched off, the server\'s job data says debug false', 0.2, async function () {
   if (!nodeUp()) return false;
   await call(N.base, NAME + '.DEBUG', { on: false });
   const j2 = await jobOf(N.base, 'spirit.app.' + NAME);
   return !!j2 && j2.data && j2.data.debug === false ? true : false;
 }, test.limit.quick);
-test.run('the job\'s data keeps it past the server\'s next call', 0.2, async function () {
+test.run('the job\'s data keeps debug false past the server\'s next call', 0.2, async function () {
   if (!nodeUp()) return false;
   await call(N.base, NAME + '.pid', {});
   await sleep(500);
@@ -117,12 +117,12 @@ test.run('the job\'s data keeps it past the server\'s next call', 0.2, async fun
 }, test.limit.quick);
 
 // Q2: "i think we should persist it, always": the node keeps it in spirit/state/<name>/node.json and hands it over at start
-test.run('switched on, node.json says debug true', 0.2, async function () {
+test.run('with DEBUG switched on, node.json says debug true', 0.2, async function () {
   if (!nodeUp()) return false;
   await call(N.base, NAME + '.DEBUG', { on: true });
   return (await until(function () { return Promise.resolve(nodeJson().debug === true); }, 8000)) ? true : false;
 }, test.limit.quick);
-test.run('the world: killed, the server comes back', 0.2, async function () {
+test.run('the server, killed, comes back', 0.2, async function () {
   if (!nodeUp()) return false;
   pid = Number(((await call(N.base, NAME + '.pid', {})).body || {}).pid);
   if (!(pid > 0)) return false;
@@ -130,11 +130,11 @@ test.run('the world: killed, the server comes back', 0.2, async function () {
   await until(function () { return Promise.resolve(!alive(pid)); }, 5000);
   return (await until(function () { return call(N.base, NAME + '.pid', {}).then(function (r) { return r.status === 200 && r.body && r.body.pid > 0 && r.body.pid !== pid; }); }, 30000)) ? true : false;
 }, test.limit.slow);
-test.run('and it starts with DEBUG on, as kept', 0.2, async function () {
+test.run('the server comes back with DEBUG on, as kept', 0.2, async function () {
   if (!nodeUp()) return false;
   return (((await call(N.base, NAME + '.DEBUG', {})).body) || {}).debug === true ? true : false;
 }, test.limit.quick);
-test.run('and after the node restarts too', 0.2, async function () {
+test.run('the server starts with DEBUG on after the node restarts too', 0.2, async function () {
   if (!nodeUp()) return false;
   await stop(N.child);
   N = await boot(s.run); live.push(N.child);
@@ -142,13 +142,13 @@ test.run('and after the node restarts too', 0.2, async function () {
   await until(function () { return call(N.base, NAME + '.pid').then(function (r) { return r.status === 200; }); }, 30000);
   return (((await call(N.base, NAME + '.DEBUG', {})).body) || {}).debug === true ? true : false;
 }, test.limit.slow);
-test.run('switched off, node.json says debug false', 0.2, async function () {
+test.run('with DEBUG switched off, node.json says debug false', 0.2, async function () {
   if (!nodeUp()) return false;
   await call(N.base, NAME + '.DEBUG', { on: false });
   return (await until(function () { return Promise.resolve(nodeJson().debug === false); }, 8000)) ? true : false;
 }, test.limit.quick);
 
-test.run('the world: the face shell has its spirit', 0.2, async function () {
+test.run('a Chrome page opens the face shell, and it has its spirit', 0.2, async function () {
   if (!nodeUp()) return false;
   const where = findChrome();
   if (!where) return false;
@@ -156,14 +156,14 @@ test.run('the world: the face shell has its spirit', 0.2, async function () {
   if (c.error) return false;
   return (await open()) ? true : false;
 }, test.limit.slow);
-test.run('it loads through spirit.require and is spirit.element.spirit.element.search.app.serverDEBUG', 0.2, async function () {
+test.run('serverDEBUG.js loads through spirit.require and puts its create on spirit.element', 0.2, async function () {
   if (!c || c.error) return false;
   loaded = await c.evaluate('spirit.ready.then(function () { return spirit.require("spirit/element/search/app/serverDEBUG.js"); }).then(function () { return !!(spirit.element.spirit.element.search.app.serverDEBUG && spirit.element.spirit.element.search.app.serverDEBUG.create); }, function () { return false; })');
   return loaded === true ? true : false;
 }, test.limit.quick);
 
 // the box: "when the app is NOT mountable by the node (node.mount==false) it hides itself"
-test.run('for Contacts, which has no server, it shows nothing and takes no space', 0.2, async function () {
+test.run('for Contacts, which has no server, the DEBUG row shows nothing and takes no space', 0.2, async function () {
   if (loaded !== true) return false;
   await make('contact');
   await sleep(2000);
@@ -171,7 +171,7 @@ test.run('for Contacts, which has no server, it shows nothing and takes no space
 }, test.limit.slow);
 
 // the box: "hides while its server is not running"
-test.run('for Zz Debug, its server switched off, it shows nothing', 0.2, async function () {
+test.run('for Zz Debug with its server switched off, the DEBUG row shows nothing', 0.2, async function () {
   if (loaded !== true) return false;
   await call(N.base, 'app.active', { key: NAME, active: false });
   await until(function () { return jobOf(N.base, 'spirit.app.' + NAME).then(function (j) { return !j; }); }, 15000);
@@ -179,44 +179,44 @@ test.run('for Zz Debug, its server switched off, it shows nothing', 0.2, async f
   await sleep(2000);
   return hidden(await view(NAME)) ? true : false;
 }, test.limit.slow);
-test.run('the world: activated again, the server answers', 0.2, async function () {
+test.run('once its app is activated again, the server answers', 0.2, async function () {
   if (!nodeUp()) return false;
   await call(N.base, 'app.active', { key: NAME, active: true });
   return (await until(function () { return call(N.base, NAME + '.pid').then(function (r) { return r.status === 200; }); }, 30000)) ? true : false;
 }, test.limit.quick);
 // the box: "when the app is a server (node.mount==true), configured text: "turn on|off DEBUG <app-label>""
-test.run('running, with DEBUG off, it says turn on DEBUG Zz Debug', 0.2, async function () {
+test.run('with the server running and DEBUG off, the row says turn on DEBUG Zz Debug', 0.2, async function () {
   if (loaded !== true) return false;
   return (await until(function () { return view(NAME).then(function (v) { return !!v && /turn on DEBUG/i.test(v.text) && v.text.indexOf(LABEL) !== -1; }); }, 10000)) ? true : false;
 }, test.limit.quick);
-test.run('with one button to press', 0.2, async function () {
+test.run('the row has one button to press', 0.2, async function () {
   if (loaded !== true) return false;
   v0 = await view(NAME);
   return !!v0 && v0.buttons === 1 ? true : false;
 }, test.limit.quick);
 
 // the box: "it will use the OWNER-ONLYE VERB DEBUG in the appServer to do that."
-test.run('pressed, the server\'s DEBUG {} says true', 0.2, async function () {
+test.run('once the button is pressed, the server\'s DEBUG verb says true', 0.2, async function () {
   if (loaded !== true) return false;
   await pressIn(NAME);
   return (await until(function () { return call(N.base, NAME + '.DEBUG', {}).then(function (r) { return !!r.body && r.body.debug === true; }); }, 8000)) ? true : false;
 }, test.limit.quick);
-test.run('and it says turn off DEBUG Zz Debug', 0.2, async function () {
+test.run('the row then says turn off DEBUG Zz Debug', 0.2, async function () {
   if (loaded !== true) return false;
   return (await until(function () { return view(NAME).then(function (v) { return !!v && /turn off DEBUG/i.test(v.text); }); }, 8000)) ? true : false;
 }, test.limit.quick);
-test.run('switched off elsewhere, the page follows with no reload: turn on DEBUG again', 0.2, async function () {
+test.run('with DEBUG switched off elsewhere, the page follows with no reload and says turn on DEBUG again', 0.2, async function () {
   if (loaded !== true) return false;
   await call(N.base, NAME + '.DEBUG', { on: false });
   return (await until(function () { return view(NAME).then(function (v) { return !!v && /turn on DEBUG/i.test(v.text); }); }, 8000)) ? true : false;
 }, test.limit.quick);
 
 // the box: "It sits in the appSelector's detail, under the Activate row"
-test.run('the world: the page opens again', 0.2, async function () {
+test.run('the page opens again', 0.2, async function () {
   if (!c || c.error) return false;
   return (await open()) ? true : false;
 }, test.limit.quick);
-test.run('the world: the detail of Zz Debug is made', 0.2, async function () {
+test.run('the detail of Zz Debug is made', 0.2, async function () {
   if (!c || c.error) return false;
   detail = await c.evaluate('spirit.ready.then(function () { return spirit.require("spirit/element/search/app/detailElement.js"); }).then(function () { var b = document.createElement("div"); b.id = "zzDetail"; document.body.appendChild(b); window.__d = spirit.element.spirit.element.search.app.detailElement.create(b, { row: { key: ' + JSON.stringify(NAME) + ', label: ' + JSON.stringify(LABEL) + ', icon: "🐛" }, panel: true }); return true; })');
   return detail === true ? true : false;
@@ -231,18 +231,18 @@ test.run('the DEBUG row comes right after the Deactivate row', 0.2, async functi
 }, test.limit.quick);
 
 // the box: "A rowForm carries its own 1em above it, so when it is hidden its space goes with it"
-test.run('every row of the detail carries 1em above it, its own', 0.2, async function () {
+test.run('every row of the detail carries its own 1em above it', 0.2, async function () {
   if (detail !== true) return false;
   gaps = await c.evaluate('(function () { var b = document.getElementById("zzDetail"); var rows = Array.prototype.slice.call(b.querySelectorAll(".shell-row-form")).filter(function (r) { return r.getBoundingClientRect().height > 0; }); var em = parseFloat(getComputedStyle(b).fontSize); var out = []; for (var i = 1; i < rows.length; i++) out.push(Math.round(rows[i].getBoundingClientRect().top - rows[i - 1].getBoundingClientRect().bottom)); return { em: Math.round(em), gaps: out, margins: rows.map(function (r) { return Math.round(parseFloat(getComputedStyle(r).marginTop)); }) }; }())');
   return !!gaps && gaps.margins.length > 1 && gaps.margins.every(function (m) { return m === gaps.em; }) ? true : false;
 }, test.limit.quick);
-test.run('and the gap between two rows is that 1em, not more', 0.2, function () {
+test.run('the gap between two rows of the detail is that 1em, not more', 0.2, function () {
   if (!gaps) return false;
   return gaps.gaps.length > 0 && gaps.gaps.every(function (g) { return Math.abs(g - gaps.em) <= 1; }) ? true : false;
 }, test.limit.quick);
 
 // nothing threw on the page
-test.run('no uncaught error on the page, all the way', 0.2, function () {
+test.run('no uncaught error was thrown on the page during the whole suite', 0.2, function () {
   if (!c || c.error) return false;
   const thrown = c.heard.filter(function (m) { return m.method === 'Runtime.exceptionThrown'; });
   return !thrown.length ? true : false;

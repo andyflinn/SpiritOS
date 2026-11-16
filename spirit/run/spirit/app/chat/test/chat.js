@@ -38,25 +38,25 @@ test.run('spirit/app/chat/chat.json is there', 0.2, function () {
 test.run('its icon is 💬', 0.2, function () { return X.id.icon === '💬' ? true : false; }, test.limit.quick);
 test.run('its label is Chat', 0.2, function () { return X.id.label === 'Chat' ? true : false; }, test.limit.quick);
 test.run('it is not intrinsic', 0.2, function () { return !!X.own && X.id.intrinsic !== true ? true : false; }, test.limit.quick);
-test.run('shell mount true, with a tile', 0.2, function () {
+test.run('its shell mount is true, with a tile', 0.2, function () {
   const own = X.own;
   return own && own.shell && own.shell.mount === true && own.shell.tile === true ? true : false;
 }, test.limit.quick);
-test.run('node mount true: the server runs on the node', 0.2, function () {
+test.run('its node mount is true, so the server runs on the node', 0.2, function () {
   const own = X.own;
   return own && own.node && own.node.mount === true ? true : false;
 }, test.limit.quick);
 
 // Since goal/G43.32 a page loads the main element, element.js, itself (rule 4), and chat.js is the node's alone.
 // ── chat.js: the node's script; element.js: the page's (goal/G43.32, rule 4) ──
-test.run('it names nodeChat.js, for the node', 0.2, function () {
+test.run('chat.js names nodeChat.js, for the node', 0.2, function () {
   X.src = code(path.join(APP, 'chat.js'));
   return (/nodeChat\.js/).test(X.src) ? true : false;
 }, test.limit.quick);
-test.run('and element.js stands beside it, for a page, which chat.js does not load', 0.2, function () {
+test.run('element.js stands beside chat.js for a page, and chat.js does not load it', 0.2, function () {
   return fs.existsSync(path.join(APP, 'element.js')) && !/element\.js/.test(X.src) ? true : false;
 }, test.limit.quick);
-test.run('and draws nothing itself', 0.2, function () {
+test.run('chat.js draws nothing itself', 0.2, function () {
   return X.src !== '' && !/innerHTML|activateApp/.test(X.src) ? true : false;
 }, test.limit.quick);
 
@@ -92,7 +92,7 @@ if (process.platform === 'linux') {
 }
 
 // ── its tile opens it, as a user opens it ──
-test.run('the world: the app selector\'s tiles', 0.2, async function () {
+test.run('the app selector\'s tiles are drawn on a page', 0.2, async function () {
   if (!X.call) return false;
   const chrome = H.findChrome();
   if (!chrome) return false;
@@ -115,14 +115,14 @@ test.run('its tile shows 💬', 0.2, async function () {
   return await page.evaluate('(function () { var t = ' + X.TILE + '; return !!t && t.textContent.indexOf("💬") !== -1; }())')
     ? true : false;
 }, test.limit.quick);
-test.run('its tile opens it: the chat, its input there', 0.2, async function () {
+test.run('its tile opens the chat, with its input there', 0.2, async function () {
   const page = X.page;
   if (!page || !X.TILE) return false;
   await page.evaluate('(function () { var t = ' + X.TILE + '; if (t) t.click(); return !!t; }())');
   return await H.until(function () { return page.evaluate('(function () { var l = Array.prototype.filter.call(document.querySelectorAll("#faces .app-container"), function (c) { return c.offsetParent !== null; }).pop(); return !!l && Array.prototype.some.call(l.querySelectorAll("textarea"), function (t) { return /Enter sends/.test(t.getAttribute("placeholder") || ""); }); }())'); }, 15000)
     ? true : false;
 }, test.limit.quick);
-test.run('and the page threw nothing', 0.2, async function () {
+test.run('the page threw nothing', 0.2, async function () {
   const page = X.page;
   if (!page || !X.TILE) return false;
   const errs = JSON.parse(await page.evaluate('JSON.stringify(window.pageErrors || [])'));

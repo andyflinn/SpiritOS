@@ -35,7 +35,7 @@ const BUILT = [
 test.run('spirit/app/testicle/words.js is there', 0.4, function () {
   return fs.existsSync(path.join(RUN, REL)) || false;
 }, test.limit.quick);
-test.run('the world: testicle\'s other scripts, read as text', 0.2, function () {
+test.run('testicle\'s other scripts are read as text', 0.2, function () {
   return OTHERS.length > 3 || false;
 }, test.limit.quick);
 test.run('no other script of testicle builds a result icon or a status phrase itself', 0.8, function () {

@@ -24,7 +24,7 @@ test.after(function () {
   try { if (node && node.root) require(require('path').join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* scratch */ }
 });
 
-test.run('the world: a scratch node, and a Chrome on its face page', 0.2, async function () {
+test.run('a scratch node comes up, with a Chrome on its face page', 0.2, async function () {
   node = await scratchNode();
   chrome = await chromePage(findChrome());
   if (!node.up || chrome.error) return false;
@@ -36,18 +36,18 @@ test.run('it loads through spirit.require and is spirit.element.spirit.element.s
   loaded = await chrome.evaluate('spirit.ready.then(function () { return spirit.require("spirit/element/search/app/changeAppLabel.js"); }).then(function () { return !!(spirit.element.spirit.element.search.app.changeAppLabel && spirit.element.spirit.element.search.app.changeAppLabel.create); }, function () { return false; })');
   return loaded === true ? true : false;
 }, test.limit.quick);
-test.run('create(host, { key }) answers { destroy }', 0.2, async function () {
+test.run('create, given a host and an app\'s key, answers an object with destroy', 0.2, async function () {
   if (loaded !== true) return false;
   made = await chrome.evaluate('(function () { var b = document.createElement("div"); b.id = "l"; document.body.appendChild(b); window.__l = spirit.element.spirit.element.search.app.changeAppLabel.create(b, { key: "agent" }); return !!window.__l && typeof window.__l.destroy === "function"; }())');
   return made === true ? true : false;
 }, test.limit.quick);
 
 // one rowForm: [✏️] "Label" [its label in a box] [Change], as the detail draws it
-test.run('one rowForm, its box holding the app\'s label, Agent', 0.2, async function () {
+test.run('it draws one row form, whose box holds the app\'s label, Agent', 0.2, async function () {
   if (made !== true) return false;
   return (await until(function () { return seen().then(function (v) { return v.forms === 1 && v.input === 'Agent'; }); }, 10000)) ? true : false;
 }, test.limit.quick);
-test.run('with ✏️, the word Label, and a Change button', 0.2, async function () {
+test.run('the row form shows ✏️, the word Label, and a Change button', 0.2, async function () {
   if (made !== true) return false;
   const v0 = await seen();
   return /✏/.test(v0.text) && /Label/.test(v0.text) && v0.button === 'Change' ? true : false;

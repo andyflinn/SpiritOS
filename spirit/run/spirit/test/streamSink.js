@@ -29,13 +29,13 @@ const a = createStreamSink(A, { backlogMax: 100 });
 test.run('a sink made writes no head until its first write', 0.2, function () {
   return A.heads.length === 0 || false;
 }, test.limit.quick);
-test.run('its first write writes the head: 200, an event stream, not cached, kept alive', 0.2, function () {
+test.run('the sink\'s first write writes the head, status 200 for an event stream that is not cached and kept alive', 0.2, function () {
   a.write('event: hello\n\n');
   const h = A.heads[0] || {};
   const hd = h.headers || {};
   return (A.heads.length === 1 && h.status === 200 && hd['Content-Type'] === 'text/event-stream' && hd['Cache-Control'] === 'no-cache' && hd['Connection'] === 'keep-alive') || false;
 }, test.limit.quick);
-test.run('and the chunk itself', 0.2, function () {
+test.run('the sink\'s first write also writes the chunk itself', 0.2, function () {
   return (A.chunks.length === 1 && A.chunks[0] === 'event: hello\n\n') || false;
 }, test.limit.quick);
 test.run('a second write writes no second head', 0.2, function () {
@@ -45,7 +45,7 @@ test.run('a second write writes no second head', 0.2, function () {
 test.run('a reader that reads is not stalled', 0.2, function () {
   return (a.stalled() === false && A.destroyed === 0) || false;
 }, test.limit.quick);
-test.run('close ends the response', 0.2, function () {
+test.run('closing the sink ends the response', 0.2, function () {
   a.close();
   return A.ended === 1 || false;
 }, test.limit.quick);
@@ -55,20 +55,20 @@ const B = res();
 const told = [];
 const b = createStreamSink(B, { backlogMax: 100, onStall: function (n) { told.push(n); } });
 let thrown = null, toldAtOnce = -1;
-test.run('the world: a write leaves 150 bytes unread behind it, past a cap of 100', 0.2, function () {
+test.run('a write is made that leaves 150 bytes unread behind it, past a cap of 100', 0.2, function () {
   b.write('event: one\n\n');
   B.writableLength = 150;
   try { b.write('event: two\n\n'); } catch (e) { thrown = e; }
   toldAtOnce = told.length;
   return true;
 }, test.limit.quick);
-test.run('that write throws: the packet that tipped it is not delivered', 0.2, function () {
+test.run('the write past the cap throws, so the packet that tipped it is not delivered', 0.2, function () {
   return (!!thrown && /stream cut/.test(String(thrown.message))) || false;
 }, test.limit.quick);
-test.run('the response is destroyed, cut loose with no goodbye written', 0.2, function () {
+test.run('past the cap the response is destroyed, cut loose with no goodbye written', 0.2, function () {
   return (B.destroyed === 1 && B.chunks.length === 2 && !/disconnect|goodbye/i.test(B.chunks.join(''))) || false;
 }, test.limit.quick);
-test.run('stalled says so', 0.2, function () {
+test.run('a sink cut past its cap says it is stalled', 0.2, function () {
   return b.stalled() === true || false;
 }, test.limit.quick);
 test.run('onStall is not called inside the write', 0.2, function () {
@@ -79,14 +79,14 @@ test.run('onStall is called once, on the next turn, with the backlog that trippe
   await tick();
   return (told.length === 1 && told[0] === 150) || false;
 }, test.limit.quick);
-test.run('a cut sink takes nothing more: a later write throws and writes nothing', 0.2, function () {
+test.run('a cut sink takes nothing more, so a later write throws and writes nothing', 0.2, function () {
   let again = null;
   try { b.write('event: three\n\n'); } catch (e) { again = e; }
   return (!!again && B.chunks.length === 2) || false;
 }, test.limit.quick);
 
 // THE CAP BY DEFAULT: limits.STREAM_BACKLOG_MAX
-test.run('with no cap given, the cap is limits.STREAM_BACKLOG_MAX', 0.2, function () {
+test.run('with no cap given, the cap is the stream backlog maximum set in limits.js', 0.2, function () {
   const limits = require(path.join(RUN, 'spirit', 'limits.js'));
   const max = limits.STREAM_BACKLOG_MAX;
   if (!(max > 0)) return false;

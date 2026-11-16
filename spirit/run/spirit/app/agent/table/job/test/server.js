@@ -36,7 +36,7 @@ test.run('it has server.js, and elementTable.js and elementRow.js in the app\'s 
 }, test.limit.quick);
 
 // ── server.js: the table in agent.db ──
-test.run('server.js(ctx) answers the table, its verb and has', 0.2, function () {
+test.run('server.js, given its context, answers the table, its verb and has', 0.2, function () {
   if (!fs.existsSync(path.join(DIR, 'server.js'))) return false;
   X.scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-job-'));
   const db = X.db = new DatabaseSync(path.join(X.scratch, 'agent.db'));
@@ -63,7 +63,7 @@ test.run('the job table has a job column', 0.2, function () { return has('job');
 test.run('the job table has a bundle column', 0.2, function () { return has('bundle'); }, test.limit.quick);
 test.run('the job table has a provider column', 0.2, function () { return has('provider'); }, test.limit.quick);
 test.run('the job table has a persona column', 0.2, function () { return has('persona'); }, test.limit.quick);
-test.run('and nothing else', 0.2, function () { return X.cols.length === 11 ? true : false; }, test.limit.quick);
+test.run('the job table has no other column', 0.2, function () { return X.cols.length === 11 ? true : false; }, test.limit.quick);
 
 // ── server.js: a job, its loop flag and its text ──
 const TEXT = 'Read the news.\nSay what changed.';
@@ -152,7 +152,7 @@ test.run('a search answers the id, the icon and the label of a row, nothing else
 // ── the page: elementTable.js and elementRow.js ──
 const detail = { open: function () {}, look: function (t2) { return { icon: '📋', name: 'Job', title: 'Jobs', table: t2 }; } };
 const box = { innerHTML: '' };
-test.run('they place spirit.element.spirit.app.agent.element.table.job.elementTable and elementRow', 0.2, function () {
+test.run('the two element files place spirit.element.spirit.app.agent.element.table.job.elementTable and elementRow', 0.2, function () {
   const made = X.made = { tables: [], rows: [], required: [] };
   const STAND = {
     agentTable: { create: function (c, o) { made.tables.push({ c: c, o: o }); return { refresh: function () { made.refreshed = true; }, destroy: function () { made.destroyed = true; } }; } },
@@ -232,7 +232,7 @@ test.run('its page files require no data script', 0.2, function () {
   if (!X.made) return false;
   return !X.made.required.some(function (p) { return (/data\.js$/).test(p); }) ? true : false;
 }, test.limit.quick);
-test.run('the agent family\'s cache manager is loaded: spirit.data.agent.data.branch(\'job\') is the home node\'s <node>/agent/job', 0.2, function () {
+test.run('the agent family\'s cache manager is loaded, and its branch for job is the home node\'s <node>/agent/job', 0.2, function () {
   if (!X.made) return false;
   const DATA = global.window.spirit.data;
   const AD = X.AD = ((global.window.spirit.data || {}).agent || {}).data;

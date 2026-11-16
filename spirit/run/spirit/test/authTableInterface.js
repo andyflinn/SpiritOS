@@ -18,7 +18,7 @@ const FILE = path.join(__dirname, '..', 'authTableInterface.js');
 // What the tests share: the module, its scratch folder and the table opened on it.
 const W = {};
 
-test.run('it exports open(dbFile, table, keyColumn)', 0.2, function () {
+test.run('it exports open, taking a database file, a table and a key column', 0.2, function () {
   try { W.A = require(FILE); } catch (e) { W.A = null; }
   const A = W.A;
   if (!(!!A && typeof A.open === 'function')) return false;
@@ -26,14 +26,14 @@ test.run('it exports open(dbFile, table, keyColumn)', 0.2, function () {
   W.file = path.join(W.dir, 'agent.db');
   return true;
 }, test.limit.quick);
-test.run('open answers { has, paths, grant, revoke, all, knownPath }', 0.2, function () {
+test.run('open answers has, paths, grant, revoke, all and knownPath', 0.2, function () {
   if (!W.file) return false;
   const t = W.A.open(W.file, 'grant', 'job_id');
   if (!(!!t && ['has', 'paths', 'grant', 'revoke', 'all', 'knownPath'].every(function (k) { return typeof t[k] === 'function'; }))) return false;
   W.t = t;
   return true;
 }, test.limit.quick);
-test.run('it makes the table in that file, keyed (keyColumn, path) as node\'s grants are', 0.2, function () {
+test.run('it makes the table in that file, keyed by the key column and the path as node\'s grants are', 0.2, function () {
   if (!W.t) return false;
   const db = new DatabaseSync(W.file, { readOnly: true });
   const cols = db.prepare('PRAGMA table_info("grant")').all();
@@ -50,7 +50,7 @@ test.run('has answers true for a grant given, false for any other', 0.8, functio
   t.grant('JOB-2', 'desk.item.get');
   return (t.has('JOB-1', 'desk.chat.add') === true && t.has('JOB-1', 'desk.box.write') === false && t.has('JOB-3', 'desk.chat.add') === false) || false;
 }, test.limit.quick);
-test.run('paths(key) answers that key\'s paths, each once', 0.2, function () {
+test.run('paths answers a key\'s paths, each once', 0.2, function () {
   if (!W.t) return false;
   return JSON.stringify((W.t.paths('JOB-1') || []).slice().sort()) === '["desk.chat.add","desk.item.get"]' || false;
 }, test.limit.quick);
@@ -74,7 +74,7 @@ test.run('opened again on the same file, the grants are there', 0.2, function ()
   const again = W.A.open(W.file, 'grant', 'job_id');
   return again.has('JOB-1', 'desk.item.get') === true || false;
 }, test.limit.quick);
-test.run('configured as node\'s (grants, peer_id) it is node\'s shape exactly', 0.2, function () {
+test.run('configured as node\'s grants table keyed by peer_id, it is node\'s shape exactly', 0.2, function () {
   if (!W.dir) return false;
   const other = W.A.open(path.join(W.dir, 'node.db'), 'grants', 'peer_id');
   other.grant('MCowPEER', 'desk');

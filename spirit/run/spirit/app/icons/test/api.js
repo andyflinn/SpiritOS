@@ -35,7 +35,7 @@ const call = async function (name, args) {
 };
 const lastRun = async function () { const j = await call('job.get', { key: 'spirit.app.icons' }); return j.body && j.body.job && j.body.job.data ? String(j.body.job.data.pid || '') : ''; };
 
-test.run('it names its verbs', 0.2, function () {
+test.run('the icons api.js names its verbs', 0.2, function () {
   if (!fs.existsSync(FILE)) return false;
   let api = null;
   try { api = require(FILE); } catch (e) { api = null; }
@@ -51,12 +51,12 @@ test.run('each argument of the icon verb carries a rule', 0.2, function () {
   const bad = Object.keys(rules).filter(function (a) { return typeof rules[a] !== 'string' || !/^[a-z]+\??$/i.test(rules[a]); });
   return !bad.length || false;
 }, test.limit.quick);
-test.run('it handles nothing: it requires no code (the box, 7)', 0.2, function () {
+test.run('the icons api.js handles nothing: it requires no code', 0.2, function () {
   if (!fs.existsSync(FILE)) return false;
   return !/require\s*\(/.test(fs.readFileSync(FILE, 'utf8').replace(/\/\/.*$/gm, '')) || false;
 }, test.limit.quick);
 
-test.run('the world: a scratch node with Icons switched on, and a Chrome page', 0.2, async function () {
+test.run('a scratch node comes up with Icons switched on, and a Chrome page opens', 0.2, async function () {
   if (!W.verbs || !W.verbs.length) return false;
   W.node = await scratchNode({ servers: ['icons'] });
   W.chrome = await chromePage(findChrome());
@@ -65,7 +65,7 @@ test.run('the world: a scratch node with Icons switched on, and a Chrome page', 
 }, test.limit.slow);
 
 // the node finds it at the app's top: api {family: icons} answers this file
-test.run('api {family: icons} answers spirit/app/icons/api.js, word for word', 0.2, async function () {
+test.run('the api verb asked for the icons family answers spirit/app/icons/api.js, word for word', 0.2, async function () {
   if (!W.up) return false;
   const fam = await call('api', { family: 'icons' });
   return fam.status === 200 && fam.body && fam.body.interface === fs.readFileSync(FILE, 'utf8') ? true : false;
@@ -75,7 +75,7 @@ test.run('api {family: icons} answers spirit/app/icons/api.js, word for word', 0
 // as spirit/appServer.js in front of icons.js, never in the node. Andy: "isolation, we don't want the NODE to run the
 // validation", "for one-shot servers, appClient launches appServer with the argument "spirit/app/<name>/name.js"".
 // goal/G43.32, decided 9: a call that breaks it is refused by a run of the app, appServer.js in front of it, not by the node
-test.run('the world: a call it allows starts a run, and the job names a new pid each time', 0.2, async function () {
+test.run('a call the icons api allows starts a run, and the job names a new pid each time', 0.2, async function () {
   if (!W.up) return false;
   const r0 = await call('icons.' + W.v, { op: 'search', text: '' });
   await sleep(300);
@@ -96,31 +96,31 @@ const crooked = async function (name, args) {
   return W.last;
 };
 const byRun = function () { return !W.up ? false : !W.last ? false : W.last.byRun || false; };
-test.run('a verb it does not name is refused', 0.2, async function () {
+test.run('a verb the icons api does not name is refused', 0.2, async function () {
   const c = await crooked('icons.zzNoSuchVerb', {});
   return !c ? false : c.refused || false;
 }, test.limit.slow);
-test.run('a verb it does not name: refused by a run of the app, not by the node', 0.2, byRun, test.limit.quick);
-test.run('an argument it does not name is refused', 0.2, async function () {
+test.run('a verb the icons api does not name is refused by a run of the app, not by the node', 0.2, byRun, test.limit.quick);
+test.run('an argument the icons api does not name is refused', 0.2, async function () {
   const c = await crooked('icons.' + W.v, { op: 'search', zzExtra: 1 });
   return !c ? false : c.refused || false;
 }, test.limit.quick);
-test.run('an argument it does not name: refused by a run of the app, not by the node', 0.2, byRun, test.limit.quick);
+test.run('an argument the icons api does not name is refused by a run of the app, not by the node', 0.2, byRun, test.limit.quick);
 test.run('a glyph that is no text is refused', 0.2, async function () {
   const c = await crooked('icons.' + W.v, { op: 'add', glyph: 5 });
   return !c ? false : c.refused || false;
 }, test.limit.quick);
-test.run('a glyph that is no text: refused by a run of the app, not by the node', 0.2, byRun, test.limit.quick);
-test.run('keywords that are no list is refused', 0.2, async function () {
+test.run('a glyph that is no text is refused by a run of the app, not by the node', 0.2, byRun, test.limit.quick);
+test.run('keywords that are no list are refused', 0.2, async function () {
   const c = await crooked('icons.' + W.v, { op: 'add', glyph: 'x', keywords: 'not a list' });
   return !c ? false : c.refused || false;
 }, test.limit.quick);
-test.run('keywords that are no list: refused by a run of the app, not by the node', 0.2, byRun, test.limit.quick);
+test.run('keywords that are no list are refused by a run of the app, not by the node', 0.2, byRun, test.limit.quick);
 test.run('an op that is no id is refused', 0.2, async function () {
   const c = await crooked('icons.' + W.v, { op: { nested: true } });
   return !c ? false : c.refused || false;
 }, test.limit.quick);
-test.run('an op that is no id: refused by a run of the app, not by the node', 0.2, byRun, test.limit.quick);
+test.run('an op that is no id is refused by a run of the app, not by the node', 0.2, byRun, test.limit.quick);
 
 // "a page binds by" it: spirit.icons.<verb> on a page
 test.run('spirit.icons.icon is a function on a page', 0.2, async function () {
@@ -130,12 +130,12 @@ test.run('spirit.icons.icon is a function on a page', 0.2, async function () {
   const bound = await W.chrome.evaluate('window.spirit.ready.then(function (s) { return typeof (s.icons && s.icons[' + JSON.stringify(W.v) + ']); }, function () { return false; })');
   return bound === 'function' || false;
 }, test.limit.quick);
-test.run('and it answers a search', 0.2, async function () {
+test.run('spirit.icons.icon on a page answers a search', 0.2, async function () {
   if (!W.up) return false;
   const answered = await W.chrome.evaluate('window.spirit.ready.then(function (s) { return s.icons[' + JSON.stringify(W.v) + ']({ op: "search", text: "" }); }).then(function (b) { return JSON.stringify({ items: Array.isArray(b && b.items) }); }, function () { return false; })');
   return answered === '{"items":true}' || false;
 }, test.limit.quick);
-test.run('an argument it does not name is refused on the page too', 0.2, async function () {
+test.run('an argument the icons api does not name is refused on the page too', 0.2, async function () {
   if (!W.up) return false;
   const pageBad = await W.chrome.evaluate('window.spirit.ready.then(function (s) { return s.icons[' + JSON.stringify(W.v) + ']({ op: "search", zzExtra: 1 }); }).then(function () { return false; }, function () { return "refused"; })');
   return pageBad === 'refused' || false;

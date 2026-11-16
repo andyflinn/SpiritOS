@@ -17,15 +17,15 @@ const W = {};
 let m = null;
 // What the tests make, shared by the tests after them.
 let code, rJoin, rChange, rFixed, f;
-test.run('the world: Chrome is on this machine', 0.2, function () {
+test.run('Chrome is on this machine', 0.2, function () {
   W.chrome = H.findChrome();
   return !!W.chrome || false;
 }, test.limit.quick);
-test.run('the world: a scratch node comes up with its DEBUG on', 0.2, async function () {
+test.run('a scratch node comes up with its DEBUG on', 0.2, async function () {
   W.node = await H.scratchNode();
   return (W.node.up && W.node.debug) || false;
 }, test.limit.slow);
-test.run('the world: the page lays out its forms', 0.2, async function () {
+test.run('the page lays out its forms', 0.2, async function () {
   if (!W.chrome || !W.node || !W.node.up) return false;
   W.page = await H.chromePage(W.chrome);
   if (W.page.error) return false;
@@ -41,7 +41,7 @@ test.after(function () {
   try { if (W.page && W.page.profile) fs.rmSync(W.page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
   try { if (W.node && W.node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(W.node); } catch (e) { /* left */ }
 });
-test.run('it loads the rowForm itself (rule/26)', 0.2, function () {
+test.run('it loads the rowForm itself', 0.2, function () {
   if (!m) return false;
   // Andy, on G41.27: "joinForm? it has several modes:\n\nsuggestions?", then "wsl, agreed." to wsl's: Join (no seat)
   // [➕] [relay ▾] [email] [Join]; Change (seated) [✏️] [relay ▾] [email] [Change]; fixed (relay details) the same,
@@ -51,73 +51,73 @@ test.run('it loads the rowForm itself (rule/26)', 0.2, function () {
   code = fs.readFileSync(path.join(__dirname, '..', 'joinForm.js'), 'utf8').replace(/\/\/.*$/gm, '');
   return (/spirit\.require\(\s*['"]spirit\/element\/rowForm\.js['"]/.test(code)) ? true : false;
 }, test.limit.quick);
-test.run('with no seat: one rowForm, its icon ➕ and its button Join', 0.2, function () {
+test.run('with no seat it draws one rowForm, with the icon ➕ and the button Join', 0.2, function () {
   if (!m) return false;
   // Join, no seat
   rJoin = m.join || {};
   return (rJoin.forms === 1 && rJoin.icon === '➕' && rJoin.button === 'Join') ? true : false;
 }, test.limit.quick);
-test.run('its span holds the relay dropdown, then the email input, and nothing else', 0.2, function () {
+test.run('with no seat, its span holds the relay dropdown, then the email input, and nothing else', 0.2, function () {
   if (!m) return false;
   return ((rJoin.span || []).length === 2 && rJoin.span[0].tag === 'SELECT' && rJoin.span[1].tag === 'INPUT' && rJoin.span[1].type === 'email') ? true : false;
 }, test.limit.quick);
-test.run('the words Relay and Your email are gone from the bubble', 0.2, function () {
+test.run('with no seat, the words Relay and Your email are gone from the bubble', 0.2, function () {
   if (!m) return false;
   return (rJoin.forms === 1 && !/\bRelay\b|Your email|Email address/.test(rJoin.bubbleWords || '')) ? true : false;
 }, test.limit.quick);
-test.run('with no seat: its title, Join a relay, stands above the bubble', 0.2, function () {
+test.run('with no seat, its title Join a relay stands above the bubble', 0.2, function () {
   if (!m) return false;
   return (rJoin.title === 'Join a relay' && rJoin.titleAbove) ? true : false;
 }, test.limit.quick);
-test.run('with no seat: its Join is the rowForm\'s button, the only one', 0.2, function () {
+test.run('with no seat, its Join is the rowForm\'s button and the only one', 0.2, function () {
   if (!m) return false;
   return (rJoin.adds === 0) ? true : false;
 }, test.limit.quick);
-test.run('with a seat: one rowForm, its icon ✏️ and its button Change', 0.2, function () {
+test.run('with a seat it draws one rowForm, with the icon ✏️ and the button Change', 0.2, function () {
   if (!m) return false;
   // Change, a seat (another relay picked)
   rChange = m.change || {};
   return (rChange.forms === 1 && rChange.icon === '✏️' && rChange.button === 'Change') ? true : false;
 }, test.limit.quick);
-test.run('with a seat: its span holds the relay dropdown, then the email input, and nothing else', 0.2, function () {
+test.run('with a seat, its span holds the relay dropdown, then the email input, and nothing else', 0.2, function () {
   if (!m) return false;
   return ((rChange.span || []).length === 2 && rChange.span[0].tag === 'SELECT' && rChange.span[1].tag === 'INPUT' && rChange.span[1].type === 'email') ? true : false;
 }, test.limit.quick);
-test.run('with a seat: the words Relay and Your email are gone from the bubble', 0.2, function () {
+test.run('with a seat, the words Relay and Your email are gone from the bubble', 0.2, function () {
   if (!m) return false;
   return (rChange.forms === 1 && !/\bRelay\b|Your email|Email address/.test(rChange.bubbleWords || '')) ? true : false;
 }, test.limit.quick);
-test.run('with a seat: its title, Change email address, stands above the bubble', 0.2, function () {
+test.run('with a seat, its title Change email address stands above the bubble', 0.2, function () {
   if (!m) return false;
   return (rChange.title === 'Change email address' && rChange.titleAbove) ? true : false;
 }, test.limit.quick);
-test.run('with a seat: its Change is the rowForm\'s button, the only one', 0.2, function () {
+test.run('with a seat, its Change is the rowForm\'s button and the only one', 0.2, function () {
   if (!m) return false;
   return (rChange.adds === 0) ? true : false;
 }, test.limit.quick);
-test.run('fixed to its one relay: one rowForm, its icon ✏️ and its button Change', 0.2, function () {
+test.run('fixed to its one relay, it draws one rowForm, with the icon ✏️ and the button Change', 0.2, function () {
   if (!m) return false;
   // fixed to its one relay
   rFixed = m.fixed || {};
   return (rFixed.forms === 1 && rFixed.icon === '✏️' && rFixed.button === 'Change') ? true : false;
 }, test.limit.quick);
-test.run('fixed to its one relay: its span holds the relay dropdown, then the email input, and nothing else', 0.2, function () {
+test.run('fixed to its one relay, its span holds the relay dropdown, then the email input, and nothing else', 0.2, function () {
   if (!m) return false;
   return ((rFixed.span || []).length === 2 && rFixed.span[0].tag === 'SELECT' && rFixed.span[1].tag === 'INPUT' && rFixed.span[1].type === 'email') ? true : false;
 }, test.limit.quick);
-test.run('fixed to its one relay: the words Relay and Your email are gone from the bubble', 0.2, function () {
+test.run('fixed to its one relay, the words Relay and Your email are gone from the bubble', 0.2, function () {
   if (!m) return false;
   return (rFixed.forms === 1 && !/\bRelay\b|Your email|Email address/.test(rFixed.bubbleWords || '')) ? true : false;
 }, test.limit.quick);
-test.run('fixed to its one relay: its title, Change email address, stands above the bubble', 0.2, function () {
+test.run('fixed to its one relay, its title Change email address stands above the bubble', 0.2, function () {
   if (!m) return false;
   return (rFixed.title === 'Change email address' && rFixed.titleAbove) ? true : false;
 }, test.limit.quick);
-test.run('fixed to its one relay: its Change is the rowForm\'s button, the only one', 0.2, function () {
+test.run('fixed to its one relay, its Change is the rowForm\'s button and the only one', 0.2, function () {
   if (!m) return false;
   return (rFixed.adds === 0) ? true : false;
 }, test.limit.quick);
-test.run('fixed: the dropdown holds its one relay and is fixed', 0.2, function () {
+test.run('when fixed, the dropdown holds its one relay and cannot be changed', 0.2, function () {
   if (!m) return false;
   f = (m.fixed && m.fixed.span) || [];
   return (f[0] && f[0].disabled && JSON.stringify(f[0].options) === '["wss://b.example"]') ? true : false;

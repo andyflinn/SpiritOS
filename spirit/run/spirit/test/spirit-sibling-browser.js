@@ -104,8 +104,8 @@ async function batch() {
       if (d.P && d.P.page) { try { if (d.P.page.sock) d.P.page.sock.close(); } catch (e) { /* gone */ } try { if (d.P.page.kid) d.P.page.kid.kill(); } catch (e) { /* gone */ } }
       useScript(d.full || d.rel);
       test.forScript(d.rel, function () {
-        if (!d.full) test.run('the world: the file handed is there', 0.2, function () { return false; }, test.limit.quick);
-        else if (!d.P) test.run('the world: the file handed is a page script of the tree', 0.2, function () { return false; }, test.limit.quick);
+        if (!d.full) test.run('the file it was handed is there', 0.2, function () { return false; }, test.limit.quick);
+        else if (!d.P) test.run('the file it was handed is a page script of the tree', 0.2, function () { return false; }, test.limit.quick);
         else oneFile(d.P);
       });
     }
@@ -617,24 +617,24 @@ function every() {
   const E = {};
 
   // The page modules in its reach, and the one scratch node they are judged on.
-  test.run('the world: testModule.js gives it files to judge', 0.2, function () {
+  test.run('testModule.js gives it files to judge', 0.2, function () {
     const reach = require(path.join(RUN, 'spirit', 'test', 'testModule.js')).testsFor('').filter(function (t) { return t.test === 'spirit/test/spirit-sibling-browser.js' && t.file; }).map(function (t) { return t.file; });
     // Every page script in its reach, each judged by its own page (goal/G47.1, box v121: no code reading).
     E.files2 = reach.filter(pageScript);
     return E.files2.length > 0 || false;
   }, test.limit.quick);
-  test.run('the world: a scratch node comes up with its DEBUG on', 0.2, async function () {
+  test.run('a scratch node comes up with its DEBUG on', 0.2, async function () {
     E.node = await scratchNode(Object.assign({ shared: true }, SERVERS));
     return (E.node.up && E.node.debug) || false;
   }, test.limit.slow);
   const nodeUp = function () { return !!E.node && E.node.up && E.node.debug; };
 
   // every product script, placed in spirit.required where it is required
-  test.run('the world: the product scripts, each required alone on the node and on a page', 0.2, function () {
+  test.run('there are product scripts to require, each alone, on the node and on a page', 0.2, function () {
     E.req = productScripts().filter(function (f) { return f !== 'spirit/spirit.js'; });
     return E.req.length > 100 || false;
   }, test.limit.quick);
-  test.run('the world: some of them load on a page', 0.2, async function () {
+  test.run('some of the product scripts load on a page', 0.2, async function () {
     if (!nodeUp()) return false;
     const chrome = findChrome();
     if (!chrome) return false;
@@ -660,11 +660,11 @@ function every() {
     try { if (page.profile) fs.rmSync(page.profile, { recursive: true, force: true }); } catch (e) { /* scratch */ }
     return E.pageLoaded.length > 0 || false;
   }, test.limit.long);
-  test.run('on a page: all that load stand at spirit.required.<path>', 0.4, function () {
+  test.run('every product script that loads on a page stands in spirit.required under its own path', 0.4, function () {
     if (!E.pageLoaded) return false;
     return (E.pageLoaded.length > 0 && !E.pageBad.length) || false;
   }, test.limit.quick);
-  test.run('every element script has its factory at spirit.element.<its path>, by its own installSpiritElement', 0.4, function () {
+  test.run('every element script puts its factory in spirit.element under its own path, through its own installSpiritElement', 0.4, function () {
     if (!E.pageLoaded) return false;
     return (E.elements.length > 0 && !E.noFactory.length) || false;
   }, test.limit.quick);
@@ -981,7 +981,7 @@ function oneFile(P) {
   // Its own script, kept: in a batch, rel, full and ADDRESS move on to the next script before its checks run.
   const ownRel = rel, ownFull = full;
   // ON ITS PAGE: what the session drew, each rule said as the old checks were.
-  test.run('the world: a scratch node with its DEBUG on, and a Chrome page', 0.2, function () {
+  test.run('a scratch node with its DEBUG on and a Chrome page are ready', 0.2, function () {
     return !P.fail || false;
   }, test.limit.quick);
   const before = function () { return !!P.fail; };
@@ -1001,12 +1001,12 @@ function oneFile(P) {
   }
   const ownCode = fs.readFileSync(ownFull, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1');
   // "if it throws when mounted empty, red at 0.8; this enforces rule 26 (an element loads its own stuff)" (box v121).
-  test.run('it mounts by itself on a bare page: spirit.js, then this file alone', 0.8, function () {
+  test.run('it mounts by itself on a bare page that loads spirit.js and then this file alone', 0.8, function () {
     return !noMount() && !!P.report && P.report.state === 'mounted';
   }, test.limit.quick);
   test.run('nothing it runs throws', 0.8, function () { return !noMount() && !P.thrown.length; }, test.limit.quick);
   test.run('every file it asks for is there', 0.4, function () { return !noMount() && !P.missing.length; }, test.limit.quick);
-  test.run('and it says no error on the console', 0.4, function () { return !noMount() && !P.errors.length; }, test.limit.quick);
+  test.run('it says no error on the console', 0.4, function () { return !noMount() && !P.errors.length; }, test.limit.quick);
   const mounted = P.stage === 'done';
   const notDrawn = function () { return noMount() || !mounted; };
   // MOUNTED EMPTY (goal/G47.1, box v121): the four element rules, judged as drawn before any press.
@@ -1207,7 +1207,7 @@ function pageAfter(P) {
 if (GIVEN.length > 1) batch();
 else if (!arg) every();
 else if (!full) {
-  test.run('the world: the file handed is there', 0.2, function () { return false; }, test.limit.quick);
+  test.run('the file it was handed is there', 0.2, function () { return false; }, test.limit.quick);
 } else if (!pageScript(rel)) {
-  test.run('the world: the file handed is a page script of the tree', 0.2, function () { return false; }, test.limit.quick);
+  test.run('the file it was handed is a page script of the tree', 0.2, function () { return false; }, test.limit.quick);
 } else bounded(session()).then(oneFile);

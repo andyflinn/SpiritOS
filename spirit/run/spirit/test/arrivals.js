@@ -31,7 +31,7 @@ const F = path.join(RUN, 'spirit', 'arrivals.js');
 
 // The traffic log's admitted mark: arrivals.
 // The world: the file is there and its code, comments left out, still holds a line that is surely code.
-test.run('the world: the file is read, and its code, comments left out, still holds a line of code', 0.2, function () {
+test.run('the file is read, and its code, comments left out, still holds a line of code', 0.2, function () {
   const c = code(F);
   if (c === null) return false;
   return /module\.exports/.test(c) || false;

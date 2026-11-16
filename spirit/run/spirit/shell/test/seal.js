@@ -23,7 +23,7 @@ const W = {};
 test.run('face/seal.js is gone', 0.2, function () {
   return !fs.existsSync(path.join(RUN, 'face', 'seal.js')) || false;
 }, test.limit.quick);
-test.run('it loads on spirit.seal with supported, newKey, seal and open', 0.2, function () {
+test.run('the browser seal loads on spirit.seal with supported, newKey, seal and open', 0.2, function () {
   if (!fs.existsSync(FILE)) return false;
   const win = { crypto: globalThis.crypto, TextEncoder: TextEncoder, TextDecoder: TextDecoder, btoa: btoa, atob: atob, Uint8Array: Uint8Array, Promise: Promise, JSON: JSON, Buffer: Buffer };
   win.window = win;
@@ -32,7 +32,7 @@ test.run('it loads on spirit.seal with supported, newKey, seal and open', 0.2, f
   W.S = S;
   return S && ['supported', 'newKey', 'seal', 'open'].every(function (f) { return typeof S[f] === 'function'; }) ? true : false;
 }, test.limit.quick);
-test.run('supported() is true where WebCrypto has X25519', 0.2, async function () {
+test.run('the browser seal says it is supported where WebCrypto has X25519', 0.2, async function () {
   if (!W.S) return false;
   return await W.S.supported() === true || false;
 }, test.limit.quick);
@@ -59,7 +59,7 @@ test.run('what the node\'s seal seals to the page\'s key, the page opens', 0.2, 
 }, test.limit.quick);
 
 // it opens nothing it should not
-test.run('a different pair (from and to swapped) opens nothing', 0.8, async function () {
+test.run('a different pair, with from and to swapped, opens nothing', 0.8, async function () {
   if (!W.back) return false;
   const wrongPair = await W.S.open(W.mine.privateKey, W.mine.publicKey, TO, FROM, W.back);
   return wrongPair === null ? true : false;

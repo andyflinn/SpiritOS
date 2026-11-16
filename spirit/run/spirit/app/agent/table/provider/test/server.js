@@ -41,7 +41,7 @@ test.run('it has server.js, and elementTable.js and elementRow.js in the app\'s 
 }, test.limit.quick);
 
 // ── server.js: the table in agent.db ──
-test.run('server.js(ctx) answers the table, its verb and has', 0.2, function () {
+test.run('server.js, handed its context, answers the table, its verb and its has', 0.2, function () {
   if (!fs.existsSync(path.join(DIR, 'server.js'))) return false;
   X.scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-provider-'));
   const db = X.db = new DatabaseSync(path.join(X.scratch, 'agent.db'));
@@ -65,7 +65,7 @@ test.run('the provider table has an url column', 0.2, function () { return has('
 test.run('the provider table has an apiKey column', 0.2, function () { return has('apiKey'); }, test.limit.quick);
 test.run('the provider table has an unusable column', 0.2, function () { return has('unusable'); }, test.limit.quick);
 test.run('the provider table has a model column', 0.2, function () { return has('model'); }, test.limit.quick);
-test.run('and nothing else', 0.2, function () { return X.cols.length === 10 ? true : false; }, test.limit.quick);
+test.run('the provider table has no column but these ten', 0.2, function () { return X.cols.length === 10 ? true : false; }, test.limit.quick);
 
 // ── server.js: the API key never leaves the agent process ──
 test.run('the API key is kept on the row', 0.2, function () {
@@ -99,7 +99,7 @@ test.run('a new row with a url already in the table is refused, and nothing is a
   const n0 = count();
   return call(X.t.verb, { op: 'add', icon: '🏢', label: 'Again', url: 'https://api.anthropic.com' }).refusal === 'bad-request' && count() === n0 ? true : false;
 }, test.limit.quick);
-test.run('and so is the same url with a trailing slash', 0.2, function () {
+test.run('a new row with the same url and a trailing slash is refused too', 0.2, function () {
   if (!X.added || !X.added.id) return false;
   const n0 = count();
   return call(X.t.verb, { op: 'add', icon: '🏢', label: 'Slash', url: 'https://api.anthropic.com/' }).refusal === 'bad-request' && count() === n0 ? true : false;
@@ -197,7 +197,7 @@ test.run('a row labelled Anthropic asks through the Anthropic plugin, with its k
   A.first = await ask({ op: 'ask', id: A.anth.id });
   return stand.heard.length >= 1 && stand.heard[0].headers['x-api-key'] === SECRET ? true : false;
 }, test.limit.quick);
-test.run('it answers the provider\'s list, { models: [{ modelName, label }], updated: true }', 0.2, function () {
+test.run('ask answers the provider\'s list of models, each with its model name and its label, and says it updated', 0.2, function () {
   const first = A.first;
   if (!first) return false;
   return first && Array.isArray(first.models) && JSON.stringify(first.models) === JSON.stringify([{ modelName: 'claude-a', label: 'Claude A' }, { modelName: 'claude-b', label: 'Claude B' }]) && first.updated === true
@@ -209,7 +209,7 @@ test.run('each model not yet in the table is added, for that provider, its label
   const mA = modelsOf(A.anth.id);
   return JSON.stringify(names(A.anth.id)) === '["claude-a","claude-b"]' && mA.every(function (m) { return !('modelName' in m); }) ? true : false;
 }, test.limit.quick);
-test.run('and each new model row is published, so the lists follow', 0.2, function () {
+test.run('each new model row is published, so the lists follow', 0.2, function () {
   if (!A.first) return false;
   const published = X.published;
   return published.filter(function (p) { return p.agent && p.agent.table === 'model' && p.agent.row; }).length === 2 ? true : false;
@@ -252,7 +252,7 @@ test.run('another provider\'s models are not touched', 0.2, function () {
 }, test.limit.quick);
 
 // ── an empty list changes nothing ──
-test.run('a provider answering no models: { models: [], updated: false }, and the model table is as it was', 0.2, async function () {
+test.run('a provider answering no models gets an empty list of models, not updated, and the model table is as it was', 0.2, async function () {
   if (!A.anth || !A.anth.id) return false;
   stand.anthropic = [];
   const before = JSON.stringify(modelsOf(A.anth.id));
@@ -262,7 +262,7 @@ test.run('a provider answering no models: { models: [], updated: false }, and th
 }, test.limit.quick);
 
 // ── no plugin for the label: the OpenAI plugin; it failing flags the row unusable ──
-test.run('a row no plugin matches (Unsloth) asks as the OpenAI plugin does, GET <url>/models', 0.2, async function () {
+test.run('a row no plugin matches, Unsloth, asks as the OpenAI plugin does, a GET of the models path under its url', 0.2, async function () {
   if (!A.server) return false;
   // One url, one row: the OpenAI row of the last part goes, so the Unsloth row may take the stand-in's /v1.
   if (A.openaiRow) call(X.t.verb, { op: 'delete', id: A.openaiRow.id });
@@ -272,7 +272,7 @@ test.run('a row no plugin matches (Unsloth) asks as the OpenAI plugin does, GET 
   A.local = await ask({ op: 'ask', id: A.unsloth.id });
   return stand.heard.length === 1 && !stand.heard[0].headers['x-api-key'] && new URL(stand.heard[0].url, 'http://x').pathname === '/v1/models' ? true : false;
 }, test.limit.quick);
-test.run('and its models are added', 0.2, function () {
+test.run('the models of a row no plugin matches are added', 0.2, function () {
   if (!A.unsloth) return false;
   return A.local && A.local.updated === true && JSON.stringify(names(A.unsloth.id)) === '["llama-local","qwen-local"]' ? true : false;
 }, test.limit.quick);
@@ -284,7 +284,7 @@ test.run('a provider that fails, once asked, is refused', 0.2, async function ()
   A.failed = await ask({ op: 'ask', id: A.unsloth.id });
   return A.failed && A.failed.refusal !== undefined && stand.heard.length === 1 ? true : false;
 }, test.limit.quick);
-test.run('and the provider row is flagged unusable, kept on the row and shown', 0.2, function () {
+test.run('the provider row that failed is flagged unusable, the flag kept on the row and shown', 0.2, function () {
   if (!A.unsloth) return false;
   return usable(A.unsloth.id) === 1 && call(X.t.verb, { op: 'get', id: A.unsloth.id }).unusable === true ? true : false;
 }, test.limit.quick);
@@ -357,7 +357,7 @@ test.run('a set of a new url with no new key clears the key', 0.8, function () {
   if (!K.row) return false;
   return !keyOf(K.row) ? true : false;
 }, test.limit.quick);
-test.run('and an ask then sends the new url no old key', 0.8, async function () {
+test.run('an ask after that set sends the new url and no old key', 0.8, async function () {
   if (!K.peers) return false;
   await ask({ op: 'ask', id: K.row });
   await new Promise(function (r) { K.peers.close(r); });
@@ -376,7 +376,7 @@ test.run('a set of a url and a new key keeps the new key', 0.2, function () {
 const P = { made: null, E: {}, list: null, o: null, r: null, AD: null, BRANCH: '' };
 const detail = { open: function () {}, look: function (t2) { return { icon: '🏢', name: 'Provider', title: 'Model providers', table: t2 }; } };
 const box = { innerHTML: '' };
-test.run('they place spirit.element.spirit.app.agent.element.table.provider.elementTable and elementRow', 0.2, function () {
+test.run('the provider\'s elementTable and elementRow are placed on spirit.element by their path', 0.2, function () {
   const made = P.made = { tables: [], rows: [], required: [] };
   const STAND = {
     agentTable: { create: function (c, o) { made.tables.push({ c: c, o: o }); return { refresh: function () { made.refreshed = true; }, destroy: function () { made.destroyed = true; } }; } },
@@ -430,7 +430,7 @@ test.run('a row it opens is a providerRow, built on agentRow, in the box it is h
   return made.rows.length === 1 && made.rows[0].c === into && r.table === 'provider' && !('api' in r) && r.id === 'KP' && r.added === true ? true : false;
 }, test.limit.quick);
 // goal/G41.21: "# mandatory fields (server AND ui)": the row hands the shared editor its table's mandatory fields.
-test.run('it hands the editor the provider table\'s mandatory fields, [icon, label, url]', 0.2, function () {
+test.run('it hands the editor the provider table\'s mandatory fields: the icon, the label and the url', 0.2, function () {
   const r = P.r;
   return r && JSON.stringify(r.required) === JSON.stringify(['icon', 'label', 'url']) ? true : false;
 }, test.limit.quick);
@@ -457,14 +457,14 @@ test.run('its page files require no data script', 0.2, function () {
   if (!P.made) return false;
   return !P.made.required.some(function (p) { return (/data\.js$/).test(p); }) ? true : false;
 }, test.limit.quick);
-test.run('the agent family\'s cache manager is loaded: spirit.data.agent.data.branch(\'provider\') is the home node\'s <node>/agent/provider', 0.2, function () {
+test.run('the agent family\'s cache manager is loaded, and its provider branch is the home node\'s agent/provider path', 0.2, function () {
   if (!P.made) return false;
   const DATA = global.window.spirit.data;
   const AD = P.AD = ((global.window.spirit.data || {}).agent || {}).data;
   P.BRANCH = DATA.nodeId(HOME_KEY) + '/agent/provider';
   return !!AD && typeof AD.branch === 'function' && AD.branch('provider') === P.BRANCH ? true : false;
 }, test.limit.quick);
-test.run('a provider row on the stream lands at <node>/agent/provider/<id>, and the branch\'s watcher hears it', 0.2, function () {
+test.run('a provider row on the stream lands under the node\'s agent/provider path at its id, and the branch\'s watcher hears it', 0.2, function () {
   if (!P.AD) return false;
   const DATA = global.window.spirit.data, AD = P.AD, BRANCH = P.BRANCH;
   const heard = [];
@@ -513,7 +513,7 @@ test.after(function () {
   try { if (node && node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* left */ }
   try { if (PK.pdir) fs.rmSync(PK.pdir, { recursive: true, force: true }); } catch (e) { /* left */ }
 });
-test.run('the world: ./server-picker.html draws the provider\'s detail with the real elements in Chrome, on a scratch node with its DEBUG on', 0.2, async function () {
+test.run('the page server-picker.html draws the provider\'s detail with the real elements in Chrome, on a scratch node with its DEBUG on', 0.2, async function () {
   PK.pdir = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-provider-picker-'));
   // The servers check their arguments through the one spirit object's rules, as in the agent process; the page section
   // above put a stand-in in its place.

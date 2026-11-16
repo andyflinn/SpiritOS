@@ -71,7 +71,7 @@ const call = function (verb, args) { return spirit.check('relay.' + verb, W.verb
 const passes = function (verb, args) { return !!W.verbs[verb] && call(verb, args) === null; };
 const refusedAs = function (verb, args) { if (!W.verbs[verb]) return null; const r = call(verb, args); return r ? r.code : null; };
 
-test.run('the world: api.js loads as the node hands it, its text run with module and exports alone', 0.2, function () {
+test.run('api.js loads as the node hands it, its text run with module and exports alone', 0.2, function () {
   try {
     const m = { exports: {} };
     new Function('module', 'exports', fs.readFileSync(FILE, 'utf8'))(m, m.exports);
@@ -81,7 +81,7 @@ test.run('the world: api.js loads as the node hands it, its text run with module
   W.names = Object.keys(W.verbs);
   return true;
 }, test.limit.quick);
-test.run('the world: server.js mounts the relay family', 0.2, function () {
+test.run('server.js mounts the relay family', 0.2, function () {
   try { W.mounted = mounted('relay'); } catch (e) { return false; }
   return !!W.mounted || false;
 }, test.limit.quick);
@@ -194,7 +194,7 @@ GETS[B] = { ok: true, key: B, relay: { url: B, claimed: true } };
 GETS[C] = new Error('refused');
 const S = {};
 
-test.run('the world: status of four relays listed, one owned, one claimed, one whose get is refused, one not ok', 0.2, async function () {
+test.run('status is asked with four relays listed: one owned, one claimed, one whose get is refused and one not ok', 0.2, async function () {
   if (!W.api || typeof W.api.names !== 'function') return false;
   const P = S.P = plant({ ok: true, items: [{ key: A }, { key: B }, { key: C }, { key: 'https://d.relay.example' }], more: true });
   const gets = Object.assign({}, GETS); gets['https://d.relay.example'] = { ok: false, error: 'gone' };
@@ -205,7 +205,7 @@ test.run('status lists the relays with contact.search, relay and keep yes, asked
   if (!S.out) return false;
   return JSON.stringify(S.P.asked) === JSON.stringify([{ q: '*', relay: 'yes', keep: 'yes' }]) || false;
 }, test.limit.quick);
-test.run('then gets each relay listed by its key, through the family\'s own call, and asks it nothing else', 0.2, function () {
+test.run('status then gets each relay listed by its key, through the family\'s own call, and asks it nothing else', 0.2, function () {
   if (!S.out) return false;
   const verbs = S.P.calls.map(function (c) { return c[0]; });
   const keys = S.P.calls.map(function (c) { return c[1] && c[1].key; });
@@ -224,20 +224,20 @@ test.run('its rows are the relays got, a refused or not-ok get left out', 0.2, f
   if (!S.out) return false;
   return JSON.stringify(S.out.body.rows) === JSON.stringify([GETS[A].relay, GETS[B].relay]) || false;
 }, test.limit.quick);
-test.run('ownedUrls are the owned ones, claimedUrls the owned and the claimed', 0.2, function () {
+test.run('ownedUrls are the owned relays, and claimedUrls the owned and the claimed ones', 0.2, function () {
   if (!S.out) return false;
   return (JSON.stringify(S.out.body.ownedUrls) === JSON.stringify([A]) && JSON.stringify(S.out.body.claimedUrls) === JSON.stringify([A, B])) || false;
 }, test.limit.quick);
-test.run('relayStatus holds each report by its relay\'s key, more says the search had more', 0.2, function () {
+test.run('relayStatus holds each report by its relay\'s key, and more says the search had more', 0.2, function () {
   if (!S.out) return false;
   return (JSON.stringify(S.out.body.relayStatus) === JSON.stringify({ 'https://a.relay.example': { up: true } }) && S.out.body.more === true) || false;
 }, test.limit.quick);
 // "One fact about this node, never a row: it owns more than one relay and has to pick which one it is known by"
-test.run('one relay owned: there is nothing to pick', 0.2, function () {
+test.run('with one relay owned there is nothing to pick', 0.2, function () {
   if (!S.out) return false;
   return S.out.body.mustPick === false || false;
 }, test.limit.quick);
-test.run('two owned: it must pick which one it is known by', 0.2, async function () {
+test.run('with two relays owned it must pick which one it is known by', 0.2, async function () {
   if (!W.api || typeof W.api.names !== 'function') return false;
   const gets = {}; gets[A] = GETS[A]; gets[B] = { ok: true, key: B, relay: { url: B, owned: true } };
   const out = await status(plant({ ok: true, items: [{ key: A }, { key: B }] }), gets, 'andy');

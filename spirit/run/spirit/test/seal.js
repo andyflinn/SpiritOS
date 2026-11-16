@@ -84,13 +84,13 @@ test.run('seal refuses, null, with no recipient key, a bad one, or no sender or 
 }, test.limit.quick);
 
 // ── isSealed ──
-test.run('isSealed: a seal, as an object or its JSON, is sealed', 0.2, function () {
+test.run('isSealed says a seal, as an object or as its JSON, is sealed', 0.2, function () {
   return (S.isSealed(W) === true && S.isSealed(JSON.stringify(W)) === true) || false;
 }, test.limit.quick);
-test.run('isSealed: a plain text, a card-like object, a seal missing a part, and bad JSON are not', 0.2, function () {
+test.run('isSealed says a plain text, a card-like object, a seal missing a part, and bad JSON are not sealed', 0.2, function () {
   const got = ['hello', { card: 1 }, { sealed: 1, e: W.e, n: W.n }, { sealed: 2, e: W.e, n: W.n, c: W.c }, '{x', null].map(S.isSealed);
   return got.every(function (x) { return x === false; }) || false;
 }, test.limit.quick);
-test.run('LABEL names the construction and its version', 0.2, function () {
+test.run('the seal\'s label names the construction and its version', 0.2, function () {
   return S.LABEL === 'spirit-seal-v1' || false;
 }, test.limit.quick);

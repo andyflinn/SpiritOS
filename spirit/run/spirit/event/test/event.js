@@ -72,7 +72,7 @@ test.after(function () {
   global.clearInterval = realClear;
 });
 
-test.run('the world: a server with event.subscribe on it', 0.2, async function () {
+test.run('a server with event.subscribe on it listens', 0.2, async function () {
   const w = world();
   await new Promise(function (r) { w.server.listen(0, '127.0.0.1', r); });
   W.w = w;
@@ -83,7 +83,7 @@ test.run('the world: a server with event.subscribe on it', 0.2, async function (
 // A QUIET NODE IS NEVER TAKEN FOR DEAD (goal/G47.1, box v148: "the node beats each second when it has nothing else to send, on
 // the page's stream (spirit/event/event.js, every 20 s today)"). One stream open on a node with nothing to send, its bytes timed
 // as they come for 4 s: no gap between two of them is longer than 1.5 s.
-test.run('a quiet stream hears a beat each second: no gap of more than 1.5 s in 4 s', 0.8, async function () {
+test.run('a quiet stream hears a beat each second, with no gap of more than 1.5 s in 4 s', 0.8, async function () {
   if (!W.port) return false;
   const times = [];
   const t0 = Date.now();
@@ -105,7 +105,7 @@ test.run('a quiet stream hears a beat each second: no gap of more than 1.5 s in 
   return worst <= 1500 || false;
 }, test.limit.slow);
 // an open stream holds its heartbeat and its listeners, and hears every event
-test.run('one stream open: one heartbeat, one listener on the jobs', 0.2, async function () {
+test.run('with one stream open, there is one heartbeat and one listener on the jobs', 0.2, async function () {
   if (!W.port) return false;
   const w = W.w;
   W.live = await open(W.port);
@@ -114,7 +114,7 @@ test.run('one stream open: one heartbeat, one listener on the jobs', 0.2, async 
   return openHeld.timers === 1 && openHeld.jobUpdated === 1 && openHeld.pageStreams === 1 ? true
     : false;
 }, test.limit.quick);
-test.run('it hears a job change', 0.2, async function () {
+test.run('the open stream hears a job change', 0.2, async function () {
   if (!W.live) return false;
   W.w.jobs.events.emit('job-updated', { id: 'one' });
   const heardIt = await until(function () { return W.live.heard.join('').indexOf('"id":"one"') !== -1; }, 2000);
@@ -122,7 +122,7 @@ test.run('it hears a job change', 0.2, async function () {
 }, test.limit.quick);
 
 // closed by its client, as a process closes it when its reply has come
-test.run('closed: no heartbeat is left, and no listener on any source', 0.2, async function () {
+test.run('once its client closes the stream, no heartbeat is left, and no listener on any source', 0.2, async function () {
   if (!W.live) return false;
   W.live.req.destroy();
   const gone = await until(function () { return same(W.w.held(), nothingHeld); }, 3000);
@@ -130,13 +130,13 @@ test.run('closed: no heartbeat is left, and no listener on any source', 0.2, asy
 }, test.limit.quick);
 
 // a server's stream the same (X-Spirit-Reader: server, every peerPost opens one)
-test.run('open, it witnesses the packets', 0.2, async function () {
+test.run('a server\'s stream, while open, witnesses the packets', 0.2, async function () {
   if (!W.port) return false;
   W.reader = await open(W.port, { 'x-spirit-reader': 'server' });
   await until(function () { return W.w.held().packets === 1; }, 2000);
   return W.w.held().packets === 1 || false;
 }, test.limit.quick);
-test.run('closed: nothing is left', 0.2, async function () {
+test.run('once a server\'s stream is closed, nothing is left', 0.2, async function () {
   if (!W.reader) return false;
   W.reader.res.destroy();
   const readerGone = await until(function () { return same(W.w.held(), nothingHeld); }, 3000);
@@ -144,7 +144,7 @@ test.run('closed: nothing is left', 0.2, async function () {
 }, test.limit.quick);
 
 // twenty opened and closed, nothing grows
-test.run('after twenty, no heartbeat and no listener is left', 0.2, async function () {
+test.run('after twenty streams are opened and closed, no heartbeat and no listener is left', 0.2, async function () {
   if (!W.port) return false;
   for (let i = 0; i < 20; i++) { const s = await open(W.port, { 'x-spirit-reader': 'server' }); s.req.destroy(); }
   const flat = await until(function () { return same(W.w.held(), nothingHeld); }, 5000);
@@ -152,7 +152,7 @@ test.run('after twenty, no heartbeat and no listener is left', 0.2, async functi
 }, test.limit.quick);
 
 // one closing leaves the other open
-test.run('the other keeps its heartbeat and goes on hearing', 0.2, async function () {
+test.run('when one of two streams closes, the other keeps its heartbeat and goes on hearing', 0.2, async function () {
   if (!W.port) return false;
   const w = W.w;
   const a = await open(W.port); const b = await open(W.port);

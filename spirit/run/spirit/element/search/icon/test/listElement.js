@@ -89,14 +89,14 @@ test.run('spirit/iconSet.json is in git', 0.2, function () {
   tracked = execSync('git ls-files -- spirit/run/' + SET, { cwd: REPO, encoding: 'utf8' }).split('\n').filter(Boolean);
   return tracked.indexOf('spirit/run/' + SET) !== -1 ? true : false;
 }, test.limit.quick);
-test.run('and it is a set: each glyph with its keywords', 0.2, function () {
+test.run('spirit/iconSet.json is a set of glyphs, each with its keywords', 0.2, function () {
   set = parsed(source(SET)) || {};
   glyphs = Object.keys(set);
   return glyphs.length > 0 && glyphs.every(function (g) { return Array.isArray(set[g]); }) ? true : false;
 }, test.limit.quick);
 
 // A glyph the set does not have, for the Icons app's own file below.
-test.run('the world: a glyph the set does not have', 0.2, function () {
+test.run('there is a glyph the set does not have', 0.2, function () {
   for (let c = 0x1F980; c < 0x1FB00 && !PLANTED; c++) { const g = String.fromCodePoint(c); if (!glyphs.includes(g)) PLANTED = g; }
   return !!PLANTED ? true : false;
 }, test.limit.quick);
@@ -105,7 +105,7 @@ test.run('the world: a glyph the set does not have', 0.2, function () {
 test.run('the list does not name the Icons app\'s file', 0.2, function () {
   return source('spirit/element/search/icon/listElement.js').indexOf(OWN) === -1 ? true : false;
 }, test.limit.quick);
-test.run('nor does the row element, comment included', 0.2, function () {
+test.run('the row element does not name the Icons app\'s file either, comments included', 0.2, function () {
   return source('spirit/element/search/icon/rowElement.js').indexOf(OWN) === -1 ? true : false;
 }, test.limit.quick);
 
@@ -116,7 +116,7 @@ test.after(async function () {
   try { if (chrome && chrome.profile) fs.rmSync(chrome.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
   try { if (N && N.root) LABH.freeTree(N); } catch (e) { /* left */ }
 });
-test.run('the world: a scratch node, a scratch relay and Chrome', 0.2, async function () {
+test.run('a scratch node, a scratch relay and Chrome come up', 0.2, async function () {
   const where = findChrome();
   if (!where) return false;
   if (!PLANTED || !glyphs.length) return false;
@@ -170,7 +170,7 @@ test.run('it finds the file\'s last icon by its word', 0.2, async function () {
   if (one !== 'made') return false;
   return (await shows(lastWord, lastOnly)) ? true : false;
 }, test.limit.long);
-test.run('and not the Icons app\'s own file', 0.2, async function () {
+test.run('it does not find the glyph of the Icons app\'s own file', 0.2, async function () {
   if (one !== 'made') return false;
   return (await lacks('planted', PLANTED)) ? true : false;
 }, test.limit.slow);
@@ -202,12 +202,12 @@ test.run('a second list on the page has them too', 0.2, async function () {
   const two = await made();
   return two === 'made' && await shows(lastWord, lastOnly) ? true : false;
 }, test.limit.slow);
-test.run('and the file was read once', 0.2, async function () {
+test.run('the file was read once for both lists', 0.2, async function () {
   if (one !== 'made') return false;
   const asks = (await seen()).asks;
   return asks.length === 1 ? true : false;
 }, test.limit.slow);
-test.run('the world: the node gone and back, the page open', 0.2, async function () {
+test.run('the node goes away and comes back while the page stays open', 0.2, async function () {
   if (one !== 'made') return false;
   const port = Number(new URL(N.base).port);
   N.child.kill();
@@ -223,27 +223,27 @@ test.run('the rows are still there after the reconnect', 0.2, async function () 
   return (await shows(lastWord, lastOnly)) ? true : false;
 }, test.limit.long);
 // spirit.data forgets on a reconnect, the set with it; the push sets the file's row again, and the two lists read it once.
-test.run('read once more for the reconnect, once for both lists', 0.2, async function () {
+test.run('the file is read once more for the reconnect, once for both lists', 0.2, async function () {
   if (one !== 'made') return false;
   const asks = (await seen()).asks;
   return asks.length === 2 ? true : false;
 }, test.limit.slow);
-test.run('all on the one load of the page', 0.2, async function () {
+test.run('all of this happens on the one load of the page', 0.2, async function () {
   if (one !== 'made') return false;
   return (await chrome.evaluate('window.__sameLoad === true')) === true ? true : false;
 }, test.limit.slow);
 
 // a changed file reaches the open page
-test.run('the open page has the changed file, no reload', 0.2, async function () {
+test.run('the open page has the changed file with no reload', 0.2, async function () {
   if (one !== 'made') return false;
   fs.writeFileSync(path.join(N.root, 'spirit', 'run', SET), JSON.stringify(Object.assign({}, set, { [PLANTED]: ['committedword'] })));
   return (await shows('committedword', PLANTED)) ? true : false;
 }, test.limit.long);
-test.run('on the same load of the page', 0.2, async function () {
+test.run('the changed file arrives on the same load of the page', 0.2, async function () {
   if (one !== 'made') return false;
   return (await chrome.evaluate('window.__sameLoad === true')) === true ? true : false;
 }, test.limit.slow);
-test.run('and the file put back, it has it no more', 0.2, async function () {
+test.run('with the file put back, the page has the planted glyph no more', 0.2, async function () {
   if (one !== 'made') return false;
   fs.writeFileSync(path.join(N.root, 'spirit', 'run', SET), JSON.stringify(set));
   await chrome.evaluate(FINDS('committedword'));
@@ -265,13 +265,13 @@ test.run('a face with no star is refused', 0.2, async function () {
   const refused = await chrome.evaluate('window.spirit.ready.then(function (s) { return s.fs.loadFile(' + JSON.stringify(SET) + '); }).then(function () { return "read"; }, function () { return false; })');
   return refused !== 'read' ? true : false;
 }, test.limit.long);
-test.run('and its list has no rows', 0.2, async function () {
+test.run('the list of a face with no star has no rows', 0.2, async function () {
   if (!FACE) return false;
   return (await made()) === 'made' && await empty(lastWord) ? true : false;
 }, test.limit.slow);
 
 // the box: "A read that is refused is not kept, so a face that gets its star can read it later."
-test.run('the star on, the page open', 0.2, async function () {
+test.run('the star is put on while the page is open', 0.2, async function () {
   if (!FACE) return false;
   const star = await home(N.base, 'contact.own', { key: R.relayKey, own: true });
   return star.status === 200 ? true : false;
@@ -281,13 +281,13 @@ test.run('a new list on the same page has the set', 0.2, async function () {
   await sleep(2000);
   return (await made()) === 'made' && await shows(lastWord, lastOnly) ? true : false;
 }, test.limit.long);
-test.run('and a fresh starred face has it', 0.2, async function () {
+test.run('a fresh starred face has the set too', 0.2, async function () {
   if (!FACE) return false;
   await open(FACE);
   await sleep(2000);
   return (await made()) === 'made' && await shows(lastWord, lastOnly) ? true : false;
 }, test.limit.long);
-test.run('through the one read', 0.2, async function () {
+test.run('the starred faces get the set through one read of the file', 0.2, async function () {
   if (!FACE) return false;
   const asks = (await seen()).asks;
   return JSON.stringify(asks) === JSON.stringify([SET]) ? true : false;

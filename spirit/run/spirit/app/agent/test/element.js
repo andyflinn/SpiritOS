@@ -147,14 +147,14 @@ test.run('its manifest has the new shape: it mounts on the node and on the shell
 
 // ── it mounts one workBench into a box of the whole app area ──
 // The box: "spirit.element.spirit.app.agent.element.create(container) answers { destroy() }", "Its activateApp goes". This window has no shell, so a call to it throws.
-test.run('it is an element: spirit.element.spirit.app.agent.element has create', 0.2, function () {
+test.run('the app loads as an element that has a create function', 0.2, function () {
   if (!fs.existsSync(FILE)) return false;
   X.w = world();
   let loadError = null;
   try { X.def = load(X.w); } catch (e) { loadError = e; }
   return !loadError && X.def && typeof X.def.create === 'function' ? true : false;
 }, test.limit.quick);
-test.run('create answers { destroy() }', 0.2, async function () {
+test.run('create answers an object with a destroy function', 0.2, async function () {
   if (!X.def || typeof X.def.create !== 'function') return false;
   X.app = box('app');
   X.made0 = X.def.create(X.app);
@@ -195,10 +195,10 @@ test.run('every left tool has an icon of its own', 0.2, function () {
   const L = X.L;
   return new Set(L.map(function (t) { return t && t.icon; })).size === L.length ? true : false;
 }, test.limit.quick);
-test.run('the app names no grants panel and no grant table any more (goal/G41.21)', 0.2, function () {
+test.run('the app names no grants panel and no grant table any more', 0.2, function () {
   return !/grantsPanel|table\/grant\b|agent\.grant/.test(fs.readFileSync(FILE, 'utf8').replace(/\/\/.*$/gm, '')) ? true : false;
 }, test.limit.quick);
-test.run('and one more left tool: 💬, titled Select Persona (goal/G41.26)', 0.2, function () {
+test.run('the left strip has one more tool, 💬, titled Select Persona', 0.2, function () {
   if (!X.wb) return false;
   const CHAT_TOOL = X.CHAT_TOOL;
   return CHAT_TOOL.length === 1 && CHAT_TOOL[0].icon === '💬' && CHAT_TOOL[0].title === 'Select Persona' ? true : false;
@@ -206,7 +206,7 @@ test.run('and one more left tool: 💬, titled Select Persona (goal/G41.26)', 0.
 
 // ── each table's tool mounts that table's own element ──
 const CODE = fs.readFileSync(FILE, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1');
-test.run('it makes no api for its tables: each list asks agent.<table> through the spirit object itself (goal/G43.24)', 0.2, function () {
+test.run('it makes no api for its tables: each list asks agent.<table> through the spirit object itself', 0.2, function () {
   if (X.R.length !== 2) return false;
   return !/\bapi\b/.test(CODE) ? true : false;
 }, test.limit.quick);
@@ -235,28 +235,28 @@ test.run('the provider tool requires its own elementTable.js into a fill box', 0
   MT.provider = await mountTable('provider');
   return MT.provider.required ? true : false;
 }, test.limit.quick);
-test.run('and creates the provider table once in that box, with its detail pane and no api', 0.2, function () { if (!MT.provider) return false; return MT.provider.created ? true : false; }, test.limit.quick);
+test.run('the provider tool creates the provider table once in its fill box, with its detail pane and no api', 0.2, function () { if (!MT.provider) return false; return MT.provider.created ? true : false; }, test.limit.quick);
 test.run('the detail pane\'s look of a provider is its tool\'s icon and title, and its one name', 0.2, function () { if (!MT.provider) return false; return MT.provider.looks ? true : false; }, test.limit.quick);
 test.run('the model tool requires its own elementTable.js into a fill box', 0.2, async function () {
   if (X.R.length !== 2) return false;
   MT.model = await mountTable('model');
   return MT.model.required ? true : false;
 }, test.limit.quick);
-test.run('and creates the model table once in that box, with its detail pane and no api', 0.2, function () { if (!MT.model) return false; return MT.model.created ? true : false; }, test.limit.quick);
+test.run('the model tool creates the model table once in its fill box, with its detail pane and no api', 0.2, function () { if (!MT.model) return false; return MT.model.created ? true : false; }, test.limit.quick);
 test.run('the detail pane\'s look of a model is its tool\'s icon and title, and its one name', 0.2, function () { if (!MT.model) return false; return MT.model.looks ? true : false; }, test.limit.quick);
 test.run('the persona tool requires its own elementTable.js into a fill box', 0.2, async function () {
   if (X.R.length !== 2) return false;
   MT.persona = await mountTable('persona');
   return MT.persona.required ? true : false;
 }, test.limit.quick);
-test.run('and creates the persona table once in that box, with its detail pane and no api', 0.2, function () { if (!MT.persona) return false; return MT.persona.created ? true : false; }, test.limit.quick);
+test.run('the persona tool creates the persona table once in its fill box, with its detail pane and no api', 0.2, function () { if (!MT.persona) return false; return MT.persona.created ? true : false; }, test.limit.quick);
 test.run('the detail pane\'s look of a persona is its tool\'s icon and title, and its one name', 0.2, function () { if (!MT.persona) return false; return MT.persona.looks ? true : false; }, test.limit.quick);
 test.run('the job tool requires its own elementTable.js into a fill box', 0.2, async function () {
   if (X.R.length !== 2) return false;
   MT.job = await mountTable('job');
   return MT.job.required ? true : false;
 }, test.limit.quick);
-test.run('and creates the job table once in that box, with its detail pane and no api', 0.2, function () { if (!MT.job) return false; return MT.job.created ? true : false; }, test.limit.quick);
+test.run('the job tool creates the job table once in its fill box, with its detail pane and no api', 0.2, function () { if (!MT.job) return false; return MT.job.created ? true : false; }, test.limit.quick);
 test.run('the detail pane\'s look of a job is its tool\'s icon and title, and its one name', 0.2, function () { if (!MT.job) return false; return MT.job.looks ? true : false; }, test.limit.quick);
 
 // ── 💬 Select Persona: a personaSelector:pane, a persona picked opens its chat in the centre (goal/G41.26) ──
@@ -266,7 +266,7 @@ test.run('the detail pane\'s look of a job is its tool\'s icon and title, and it
 // (spirit/app/agent/element/table/tableElement.js, agentDetail.search); the chat pane is spirit/app/agent/element/chatPane.js, tested in
 // its own file.
 const C = { sels: [], chats: [], prevDetail: null, cb: null, asked: [], sel: null };
-test.run('its mount loads the agent tables\' element itself (rule/26)', 0.2, async function () {
+test.run('the Select Persona tool\'s mount loads the agent tables\' element itself', 0.2, async function () {
   if (X.R.length !== 2) return false;
   if (X.CHAT_TOOL.length !== 1) return false;
   const w = X.w;
@@ -287,13 +287,13 @@ test.run('its panel is titled 💬 Select Persona', 0.2, function () {
   if (!cb) return false;
   return (/class="agent-title"/).test(cb.innerHTML) && cb.innerHTML.indexOf('💬') !== -1 && /Select Persona/.test(cb.innerHTML) ? true : false;
 }, test.limit.quick);
-test.run('below the title, only a personaSelector:pane: the persona table\'s search in pane mode, handed no api', 0.2, function () {
+test.run('below the title the panel holds only a persona selector in pane mode, the persona table\'s search, handed no api', 0.2, function () {
   if (!C.cb) return false;
   const sels = C.sels, sel = C.sel;
   return sels.length === 1 && sel.o && sel.o.table === 'persona' && !('api' in sel.o) && sel.more.face === 'pane' && typeof sel.more.pick === 'function'
     ? true : false;
 }, test.limit.quick);
-test.run('in a box of its own, not over the title, with no Add', 0.2, function () {
+test.run('the persona selector stands in a box of its own, not over the title, with no Add', 0.2, function () {
   if (!C.cb) return false;
   const sel = C.sel, cb = C.cb;
   return !!sel && !!sel.host && sel.host !== cb && !/Add a persona/.test(cb.innerHTML) ? true : false;
@@ -311,14 +311,14 @@ test.run('the centre holds the tabContainer', 0.2, function () {
   const w = X.w;
   return w.tabsInto === X.wb.center ? true : false;
 }, test.limit.quick);
-test.run('and opens the chat pane in a tab of the workBench\'s centre, for that persona', 0.2, function () {
+test.run('a persona picked opens the chat pane in a tab of the workBench\'s centre, for that persona', 0.2, function () {
   if (!C.sel || typeof C.sel.more.pick !== 'function') return false;
   const chats = C.chats;
   const tab = X.w.tabs.filter(function (t) { return t.name === 'chat/KA'; })[0];
   return chats.length === 1 && !!tab && chats[0].into === tab.box && chats[0].opts.persona && chats[0].opts.persona.id === 'KA' && chats[0].opts.persona.label === 'Ada <the reviewer>'
     ? true : false;
 }, test.limit.quick);
-test.run('another persona picked opens its own chat in a tab beside the first (goal/G41.31)', 0.2, async function () {
+test.run('another persona picked opens its own chat in a tab beside the first', 0.2, async function () {
   if (!C.sel || typeof C.sel.more.pick !== 'function') return false;
   const chats = C.chats;
   C.sel.more.pick({ id: 'KB', label: 'Bea' }, 'KB'); await settle();
@@ -342,7 +342,7 @@ test.run('its mount requires spirit/element/bundleEditor.js', 0.2, async functio
   delete global.window.spirit.element.spirit.element.bundleEditor;
   return BE.asked.indexOf('spirit/element/bundleEditor.js') !== -1 ? true : false;
 }, test.limit.quick);
-test.run('and makes the bundle editor in the box it is handed, handed no api', 0.2, function () {
+test.run('the bundle tool makes the bundle editor in the box it is handed, handed no api', 0.2, function () {
   if (!BE.bb) return false;
   const editors = BE.editors;
   return editors.length === 1 && editors[0].into === BE.bb && !('api' in editors[0].cfg) ? true : false;
@@ -354,7 +354,7 @@ test.run('the app\'s code names no showDebug, no relay-state and no title of the
   if (X.R.length !== 2) return false;
   return !/showDebug/.test(source) && !/relay-state/.test(source) && !/setScreenTitle/.test(source) ? true : false;
 }, test.limit.quick);
-test.run('and no activateApp', 0.2, function () {
+test.run('the app\'s code names no activateApp', 0.2, function () {
   if (X.R.length !== 2) return false;
   return !/activateApp/.test(source) ? true : false;
 }, test.limit.quick);
@@ -385,7 +385,7 @@ test.run('its mount loads spirit/element/search/app/serverDEBUG.js through spiri
   delete global.window.spirit.element.spirit.element.search.app.changeAppLabel;
   return w.required.indexOf('spirit/element/search/app/serverDEBUG.js') !== -1 ? true : false;
 }, test.limit.quick);
-test.run('and makes serverDEBUG for the agent', 0.2, function () {
+test.run('the server tool makes serverDEBUG for the agent', 0.2, function () {
   if (!SD.rb) return false;
   return SD.debugs.length === 1 && SD.debugs[0].o.key === 'agent' ? true : false;
 }, test.limit.quick);
@@ -393,7 +393,7 @@ test.run('it draws no checkbox of its own', 0.2, function () {
   if (!SD.rb) return false;
   return SD.rb.inputs.length === 0 ? true : false;
 }, test.limit.quick);
-test.run('and calls no debug verb of the agent\'s', 0.2, function () {
+test.run('the server tool calls no debug verb of the agent\'s', 0.2, function () {
   if (!SD.rb) return false;
   return X.w.calls.length === SD.callsBefore ? true : false;
 }, test.limit.quick);
@@ -406,7 +406,7 @@ test.run('its mount loads changeAppIcon.js and changeAppLabel.js', 0.2, function
   const w = X.w;
   return ['spirit/element/search/app/changeAppIcon.js', 'spirit/element/search/app/changeAppLabel.js'].every(function (p) { return w.required.indexOf(p) !== -1; }) ? true : false;
 }, test.limit.quick);
-test.run('and makes the icon, then the label, for the agent, above serverDEBUG', 0.2, function () {
+test.run('the server tool makes the icon, then the label, for the agent, above serverDEBUG', 0.2, function () {
   if (!SD.rb) return false;
   return JSON.stringify(SD.made) === JSON.stringify(['changeAppIcon:agent', 'changeAppLabel:agent', 'serverDEBUG']) ? true : false;
 }, test.limit.quick);
@@ -492,7 +492,7 @@ test.run('with no workBench on the page it loads spirit/element/workBench.js thr
     await until(function () { return home('agent.provider', { op: 'add', icon: ICON.provider, label: 'zzProvider', url: 'http://192.0.2.1:9/' }).then(function (a) { P = a; return a.status === 200 && !!(a.body && a.body.id); }); }, 20000);
     return (!!(P && P.body && P.body.id)) ? true : false;
   }, test.limit.slow);
-  test.run('and a model, a persona and a job', 0.2, async function () {
+  test.run('a model, a persona and a job are added', 0.2, async function () {
     if (STOP) return false;
     if (!(P && P.body && P.body.id)) { STOP = true; return false; }
     M = await home('agent.model', { op: 'add', icon: ICON.model, label: 'zzModel', providerId: P.body.id });
@@ -500,7 +500,7 @@ test.run('with no workBench on the page it loads spirit/element/workBench.js thr
     J = await home('agent.job', { op: 'add', icon: ICON.job, label: 'zzJob', job: 'zz', bundle: 'zz', provider: P.body.id, persona: Pe.body && Pe.body.id });
     return (M.status === 200 && Pe.status === 200 && J.status === 200) ? true : false;
   }, test.limit.quick);
-  test.run('and a bundle of the node\'s', 0.2, async function () {
+  test.run('a bundle of the node\'s is added', 0.2, async function () {
     if (STOP) return false;
     B = await home('auth.bundle', { op: 'add', label: 'zzNodeBundle' });
     return (B.status === 200) ? true : false;
@@ -523,7 +523,7 @@ test.run('with no workBench on the page it loads spirit/element/workBench.js thr
     return (appOpen) ? true : false;
   }, test.limit.slow);
   // ── a tabContainer stands in the centre, from the start ──
-  test.run('with nothing opened, it is there', 0.2, async function () {
+  test.run('with nothing opened, a tabContainer stands in the centre', 0.2, async function () {
     if (STOP) return false;
     if (!appOpen) { STOP = true; return false; }
     CENTRE = '[id$="center"]';
@@ -537,7 +537,7 @@ test.run('with no workBench on the page it loads spirit/element/workBench.js thr
 
     return (await c.evaluate('!!document.querySelector(' + JSON.stringify(CENTRE + ' .tab-content') + ')')) ? true : false;
   }, test.limit.quick);
-  test.run('with no tabs yet', 0.2, async function () {
+  test.run('the tabContainer has no tabs yet', 0.2, async function () {
     if (STOP) return false;
     return ((await tabs()).length === 0) ? true : false;
   }, test.limit.quick);
@@ -630,12 +630,12 @@ async function tabOpens(kind, row) {
     chat = await tabOf(chatWords);
     return (chat.length === 1 && chat[0].on) ? true : false;
   }, test.limit.quick);
-  test.run('and the persona\'s own tab is still there', 0.2, async function () {
+  test.run('the persona\'s own tab is still there beside its chat', 0.2, async function () {
     if (STOP) return false;
     return ((await tabOf(ICON.persona + ' zzPersona')).length === 1) ? true : false;
   }, test.limit.quick);
   // ── a bundle's tab: its name; not the node's: in brackets and italic ──
-  test.run('a node\'s bundle: "zzNodeBundle" alone', 0.2, async function () {
+  test.run('a node\'s bundle opens a tab reading its name, "zzNodeBundle", alone', 0.2, async function () {
     if (STOP) return false;
 
     await tool('bundles');
@@ -643,7 +643,7 @@ async function tabOpens(kind, row) {
     await waitTab('zzNodeBundle');
     return ((await tabOf('zzNodeBundle')).length === 1) ? true : false;
   }, test.limit.quick);
-  test.run('in plain print', 0.2, async function () {
+  test.run('the node\'s bundle tab is in plain print, not italic', 0.2, async function () {
     if (STOP) return false;
     styleOf = function (words) { return c.evaluate('(function () { var b = Array.prototype.slice.call(document.querySelectorAll(' + JSON.stringify(CENTRE + ' .tab-button') + ')).filter(function (x) { return x.textContent.indexOf(' + JSON.stringify(words) + ') !== -1; })[0]; if (!b) return null; var all = [b].concat(Array.prototype.slice.call(b.querySelectorAll("*"))); return all.some(function (e) { return e.textContent.indexOf(' + JSON.stringify(words) + ') !== -1 && getComputedStyle(e).fontStyle === "italic"; }); }())'); };
     return ((await styleOf('zzNodeBundle')) === false) ? true : false;
@@ -657,7 +657,7 @@ async function tabOpens(kind, row) {
     return ((await tabOf(ICON.model + ' zzModelTwo')).length === 1 && (await tabOf(ICON.model + ' zzModel')).length === 0) ? true : false;
   }, test.limit.quick);
   // ── the close button takes a tab away, and the row stays ──
-  test.run('its tab is gone', 0.2, async function () {
+  test.run('the close button takes the model\'s tab away', 0.2, async function () {
     if (STOP) return false;
 
     closed = await c.evaluate('(function () { var b = Array.prototype.slice.call(document.querySelectorAll(' + JSON.stringify(CENTRE + ' .tab-button') + ')).filter(function (x) { return x.textContent.indexOf("zzModelTwo") !== -1; })[0]; var k = b && b.querySelector("[data-tab-close]"); if (!k) return false; k.click(); return true; }())');
@@ -669,7 +669,7 @@ async function tabOpens(kind, row) {
     return ((await home('agent.model', { op: 'get', id: M.body.id })).status === 200) ? true : false;
   }, test.limit.quick);
   // ── a closed tab listens no more ──
-  test.run("opened again, the listeners of the tab and of its editor, one each", 0.2, async function () {
+  test.run('a tab opened again has one listener for the tab and one for its editor', 0.2, async function () {
     if (STOP) return false;
 
     await c.evaluate('window.__rowPath = ' + JSON.stringify('/' + Pe.body.id) + '; window.__live = 0; 1');
@@ -686,7 +686,7 @@ async function tabOpens(kind, row) {
     // Two, each once: the tab follows its row, and the row's own editor (agentRow) watches the same path to repaint itself.
     return (hadPersona && opened === 2) ? true : false;
   }, test.limit.quick);
-  test.run('closed, none', 0.2, async function () {
+  test.run('a closed tab leaves no listener', 0.2, async function () {
     if (STOP) return false;
     return (afterClose === 0) ? true : false;
   }, test.limit.quick);
@@ -699,7 +699,7 @@ async function tabOpens(kind, row) {
     await until(function () { return tabOf(ICON.job + ' zzJob').then(function (t) { return !t.length; }); }, 5000);
     return (hadJob && (await tabOf(ICON.job + ' zzJob')).length === 0) ? true : false;
   }, test.limit.quick);
-  test.run('the bundle\'s too', 0.2, async function () {
+  test.run('the bundle\'s tab closes itself too when its bundle is deleted', 0.2, async function () {
     if (STOP) return false;
     hadBundle = (await tabOf('zzNodeBundle')).length === 1;
     await home('auth.bundle', { op: 'delete', id: B.body.id });
@@ -721,14 +721,14 @@ async function tabOpens(kind, row) {
     filled = await c.evaluate('(function () { var box = Array.prototype.slice.call(document.querySelectorAll(' + JSON.stringify(CENTRE + ' .tab-content > *') + ')).filter(function (x) { return !x.hidden; })[0]; if (!box) return false; var inputs = Array.prototype.slice.call(box.querySelectorAll("input")); var set = function (word, v) { var i = inputs.filter(function (x) { return x.id.slice(-word.length - 1) === "-" + word.toLowerCase(); })[0]; if (!i) return false; i.value = v; i.dispatchEvent(new Event("input", { bubbles: true })); i.dispatchEvent(new Event("change", { bubbles: true })); return true; }; return set("Label", "zzSaved") && set("URL", "http://192.0.2.2:9/") ? "ok" : false; }())');
     return (filled === 'ok') ? true : false;
   }, test.limit.quick);
-  test.run('saved: its header is the row\'s', 0.2, async function () {
+  test.run('once saved, the new tab\'s header is the row\'s', 0.2, async function () {
     if (STOP) return false;
     await press('Add new Provider');
     await until(function () { return tabs().then(function (ts) { return ts.some(function (t) { return t.text.indexOf('zzSaved') !== -1; }); }); }, 6000);
     saved = (await tabs()).filter(function (t) { return t.text.indexOf('zzSaved') !== -1; });
     return (saved.length === 1 && saved[0].on) ? true : false;
   }, test.limit.quick);
-  test.run('and "new provider*" is gone', 0.2, async function () {
+  test.run('the "new provider*" tab is gone', 0.2, async function () {
     if (STOP) return false;
     return ((await tabOf('new provider*')).length === 0) ? true : false;
   }, test.limit.quick);
@@ -975,7 +975,7 @@ async function paneFills(t) {
 }
   let READY = null;
   // The app mounted once, its tools then shown one at a time; what it throws where nothing catches it lands on this test.
-  test.run('the world: the app on a small page, the real workBench and table elements in it', 0.2, function () {
+  test.run('the app mounts on a small page, with the real workBench and table elements in it', 0.2, function () {
     if (STOP) return false;
     if (!fs.existsSync(FILE)) { STOP = true; return false; }
     READY = (async function () {
@@ -1044,7 +1044,7 @@ async function paneFills(t) {
     if (STOP) return false;
     return (mo.title !== -1 && mo.from !== -1 && mo.title < mo.from) ? true : false;
   }, test.limit.quick);
-  test.run('and the model list after it', 0.2, async function () {
+  test.run('the model list comes after the Ask row', 0.2, async function () {
     if (STOP) return false;
     return (mo.from !== -1 && mo.list !== -1 && mo.from < mo.list) ? true : false;
   }, test.limit.quick);
@@ -1057,7 +1057,7 @@ async function paneFills(t) {
     return (all.length >= 4 && !bad.length) ? true : false;
   }, test.limit.quick);
   // ── each list pane is a view of its table in the agent family's cache (goal/G41.28) ──
-  test.run('every list pane is handed its table\'s branch, spirit.data.agent.data.branch(table)', 0.2, async function () {
+  test.run('every list pane is handed its table\'s branch of the agent family\'s cache', 0.2, async function () {
     if (STOP) return false;
 
     AD = ((w.win.spirit.data || {}).agent || {}).data;

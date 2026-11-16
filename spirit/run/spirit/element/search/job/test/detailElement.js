@@ -26,7 +26,7 @@ test.after(function () {
   try { if (node && node.child) node.child.kill(); } catch (e) { /* gone */ }
   try { if (node && node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* scratch */ }
 });
-test.run('the world: a scratch node of its own, two planted apps, and Chrome on its face page', 0.2, async function () {
+test.run('a scratch node of its own comes up with two planted apps, and Chrome opens its face page', 0.2, async function () {
   node = await scratchNode();
   chrome = await chromePage(findChrome());
   if (!node.up || chrome.error || !node.root) return false;
@@ -49,7 +49,7 @@ test.run('the world: a scratch node of its own, two planted apps, and Chrome on 
   await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
   return true;
 }, test.limit.slow);
-test.run('it loads through spirit.require: spirit.element.spirit.element.search.job.detailElement.create(host, { id, close })', 0.2, async function () {
+test.run('it loads through spirit.require as spirit.element.spirit.element.search.job.detailElement, whose create takes a host, an id and close', 0.2, async function () {
   if (!call) return false;
   loaded = await chrome.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/element/search/job/detailElement.js"); }).then(function () { window.pageErrors = []; window.addEventListener("error", function () { window.pageErrors.push(1); }); window.closes = []; var J = spirit.element.spirit.element.search.job.detailElement; return J && typeof J.create === "function" ? "loaded" : ""; }, function () { return ""; })');
   mount = function (id) { return chrome.evaluate('(function () { if (window.made) window.made.destroy(); var old = document.getElementById("box"); if (old) old.remove(); var c = document.createElement("div"); c.id = "box"; c.style.cssText = "position:fixed;left:0;top:0;width:1000px;height:760px;display:flex;flex-direction:column;background:#111;z-index:9"; document.body.appendChild(c); window.made = spirit.element.spirit.element.search.job.detailElement.create(c, { id: ' + JSON.stringify(id) + ', close: function (w) { window.closes.push(w === undefined ? null : w); } }); return true; }())'); };
@@ -83,14 +83,14 @@ test.run('it shows its Updated fact', 0.2, function () {
   if (t1 === undefined) return false;
   return t1.indexOf('Updated') !== -1 ? true : false;
 }, test.limit.quick);
-test.run('no Cancel and no Delete for it', 0.2, async function () {
+test.run('spirit.fs offers no Cancel and no Delete', 0.2, async function () {
   if (t1 === undefined) return false;
   const b1 = await buttons();
   return b1.indexOf('Cancel') === -1 && b1.indexOf('Delete') === -1 ? true : false;
 }, test.limit.slow);
 
 // "A live monitor of what the job publishes": an event of spirit.fs, and the Extract box
-test.run('its events box', 0.2, function () {
+test.run('it shows its events box', 0.2, function () {
   if (t1 === undefined) return false;
   return /Events/.test(t1) ? true : false;
 }, test.limit.quick);
@@ -98,7 +98,7 @@ test.run('its events box', 0.2, function () {
 // fs.save refuses a file at the run folder's top. Judged by a line naming the file, never by the count: the window is
 // full at 256 from the boot scan, so a new line pushes one off the top.
 const touched = 'zzTouched/zz-touched-' + Date.now() + '.txt';
-test.run('the world: a file saved through fs.save', 0.2, async function () {
+test.run('a file is saved through fs.save', 0.2, async function () {
   if (!call) return false;
   const saved = await call('fs.save', { path: touched, content: 'a change for spirit.fs to report\n' });
   return saved.status >= 200 && saved.status < 300 ? true : false;
@@ -108,7 +108,7 @@ test.run('a file change on the node shows as a new event line, no reload', 0.2, 
   heard = await until(function () { return chrome.evaluate('Array.prototype.some.call(document.querySelectorAll("#box [data-event]"), function (l) { return String(l.textContent).indexOf(' + JSON.stringify(path.basename(touched)) + ') !== -1; })'); }, 15000);
   return heard ? true : false;
 }, test.limit.slow);
-test.run('a click puts it into the Extract box, written out as JSON.stringify(object, null, 2)', 0.2, async function () {
+test.run('a click puts the event line into the Extract box, written out as JSON indented by two spaces', 0.2, async function () {
   if (!heard) return false;
   await chrome.evaluate('(function () { var l = document.querySelectorAll("#box [data-event]"); l[l.length - 1].click(); return true; }())');
   const pretty = await until(function () { return chrome.evaluate('(function () { var cm = document.querySelector("#box .CodeMirror"); var v = cm && cm.CodeMirror ? cm.CodeMirror.getValue() : ""; return v.indexOf("\\n") !== -1 && /^\\s*[{\\[]/.test(v); }())'); }, 5000);
@@ -116,12 +116,12 @@ test.run('a click puts it into the Extract box, written out as JSON.stringify(ob
 }, test.limit.slow);
 
 // a running process: Cancel; the node then removes it (G29.16), and the screen stays and says so
-test.run('the world: zzSleep started', 0.2, async function () {
+test.run('zzSleep is started', 0.2, async function () {
   if (!call) return false;
   const started = await call('job.create', { command: 'node', args: ['spirit/app/zzSleep/zzSleep.js'] });
   return started.status >= 200 && started.status < 300 ? true : false;
 }, test.limit.slow);
-test.run('running, it offers Cancel and no Delete', 0.2, async function () {
+test.run('a running job offers Cancel and no Delete', 0.2, async function () {
   if (loaded !== 'loaded') return false;
   await until(function () { return jobOf('spirit.app.zzSleep').then(function (j) { return !!j && j.status === 'running'; }); }, 10000);
   await mount('spirit.app.zzSleep');
@@ -133,7 +133,7 @@ test.run('Cancel ends the job on the node, which then removes it', 0.2, async fu
   await press('Cancel');
   return (await until(function () { return jobOf('spirit.app.zzSleep').then(function (j) { return !j; }); }, 10000)) ? true : false;
 }, test.limit.slow);
-test.run('and the screen stays and says it is no longer listed, no reload', 0.2, async function () {
+test.run('after Cancel the screen stays and says the job is no longer listed, with no reload', 0.2, async function () {
   if (loaded !== 'loaded') return false;
   return (await until(function () { return text().then(function (t) { return /no longer listed/i.test(t); }); }, 10000)) ? true : false;
 }, test.limit.slow);
@@ -143,16 +143,16 @@ test.run('Cancel does not close the screen', 0.2, async function () {
 }, test.limit.slow);
 
 // a failed process stays (G29.16): Delete and no Cancel; Delete, and the screen goes with the job
-test.run('the world: zzFail started', 0.2, async function () {
+test.run('zzFail is started', 0.2, async function () {
   if (!call) return false;
   const failed = await call('job.create', { command: 'node', args: ['spirit/app/zzFail/zzFail.js'] });
   return failed.status >= 200 && failed.status < 300 ? true : false;
 }, test.limit.slow);
-test.run('the world: zzFail failed and stays listed', 0.2, async function () {
+test.run('zzFail fails and stays listed', 0.2, async function () {
   if (!call) return false;
   return (await until(function () { return jobOf('spirit.app.zzFail').then(function (j) { return !!j && j.status === 'failed'; }); }, 10000)) ? true : false;
 }, test.limit.slow);
-test.run('terminal, it offers Delete and no Cancel', 0.2, async function () {
+test.run('a job that has ended offers Delete and no Cancel', 0.2, async function () {
   if (loaded !== 'loaded') return false;
   await mount('spirit.app.zzFail');
   return (await until(function () { return buttons().then(function (b) { return b.indexOf('Delete') !== -1 && b.indexOf('Cancel') === -1; }); }, 10000)) ? true : false;
@@ -162,7 +162,7 @@ test.run('Delete deletes the job on the node', 0.2, async function () {
   await press('Delete');
   return (await until(function () { return jobOf('spirit.app.zzFail').then(function (j) { return !j; }); }, 10000)) ? true : false;
 }, test.limit.slow);
-test.run('and the screen goes with it: close is called', 0.2, async function () {
+test.run('after Delete the screen goes with the job, as close is called', 0.2, async function () {
   if (loaded !== 'loaded') return false;
   return (await until(function () { return chrome.evaluate('window.closes.length >= 1'); }, 5000)) ? true : false;
 }, test.limit.slow);
@@ -173,7 +173,7 @@ test.run('a job not there says it is no longer listed', 0.2, async function () {
   await mount('spirit.app.zzNeverThere');
   return (await until(function () { return text().then(function (t) { return /no longer listed/i.test(t); }); }, 8000)) ? true : false;
 }, test.limit.slow);
-test.run('with no button', 0.2, async function () {
+test.run('a job not there shows no button', 0.2, async function () {
   if (loaded !== 'loaded') return false;
   const b3 = await buttons();
   return b3.indexOf('Cancel') === -1 && b3.indexOf('Delete') === -1 ? true : false;
@@ -185,7 +185,7 @@ test.run('destroy empties its host', 0.2, async function () {
   const empty = await chrome.evaluate('(function () { window.made.destroy(); window.made = null; return document.getElementById("box").children.length === 0; }())');
   return empty === true ? true : false;
 }, test.limit.slow);
-test.run('and the page threw nothing', 0.2, async function () {
+test.run('the page threw nothing', 0.2, async function () {
   if (loaded !== 'loaded') return false;
   const errors = JSON.parse(await chrome.evaluate('JSON.stringify(window.pageErrors)'));
   return errors.length === 0 ? true : false;

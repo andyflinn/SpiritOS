@@ -28,7 +28,7 @@ const post = function (call, args) {
 };
 function noNode() { return !(W.N && W.N.up && W.N.root); }
 
-test.run('the world: a scratch node comes up on a copy of its own', 0.2, async function () {
+test.run('a scratch node comes up on a copy of the tree of its own', 0.2, async function () {
   W.N = await scratchNode({ servers: ['desk'] });
   if (!(W.N.up && !!W.N.root)) return false;
   W.run = path.join(W.N.root, 'spirit', 'run');
@@ -42,7 +42,7 @@ test.after(async function () {
 });
 
 // goal/G43.20: no branch carries an FS set.
-test.run('no branch of the node\'s tree holds an FS. verb', 0.2, async function () {
+test.run('no branch of the node\'s tree holds a file system verb', 0.2, async function () {
   if (noNode()) return false;
   const tree = (await post('api', {})).body || {};
   const withFs = Object.keys(tree).filter(function (fam) { return tree[fam] && Object.keys(tree[fam]).some(function (v) { return /^FS\./.test(v); }); });
@@ -64,9 +64,9 @@ async function refused(c) {
   if (after !== was) { try { fs.writeFileSync(disk, was); } catch (e) { /* scratch */ } }
   return kept || false;
 }
-test.run('the world: the contact api file is there', 0.2, function () { return there(CORE[0]); }, test.limit.quick);
-test.run('contact.FS.saveFile and FS.deleteFile on the contact api file are refused, the file unchanged', 0.8, function () { return refused(CORE[0]); }, test.limit.quick);
-test.run('the world: the app api file is there', 0.2, function () { return there(CORE[1]); }, test.limit.quick);
-test.run('app.FS.saveFile and FS.deleteFile on the app api file are refused, the file unchanged', 0.8, function () { return refused(CORE[1]); }, test.limit.quick);
-test.run('the world: desk.json is there', 0.2, function () { return there(CORE[2]); }, test.limit.quick);
-test.run('desk.FS.saveFile and FS.deleteFile on desk.json are refused, the file unchanged', 0.8, function () { return refused(CORE[2]); }, test.limit.quick);
+test.run('the contact api file is there on the scratch node', 0.2, function () { return there(CORE[0]); }, test.limit.quick);
+test.run('saving and deleting the contact api file through the contact family are refused, and the file is unchanged', 0.8, function () { return refused(CORE[0]); }, test.limit.quick);
+test.run('the app api file is there on the scratch node', 0.2, function () { return there(CORE[1]); }, test.limit.quick);
+test.run('saving and deleting the app api file through the app family are refused, and the file is unchanged', 0.8, function () { return refused(CORE[1]); }, test.limit.quick);
+test.run('desk.json is there on the scratch node', 0.2, function () { return there(CORE[2]); }, test.limit.quick);
+test.run('saving and deleting desk.json through the desk family are refused, and the file is unchanged', 0.8, function () { return refused(CORE[2]); }, test.limit.quick);

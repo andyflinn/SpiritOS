@@ -57,7 +57,7 @@ function lineOf(arg, check) {
 
 test.after(function () { try { if (root) fs.rmSync(root, { recursive: true, force: true }); } catch (e) { /* scratch */ } });
 
-test.run('the world: a scratch tree of the tracked files, the planted scripts with them, in a git index of its own', 0.2, function () {
+test.run('a scratch tree is made of the tracked files and the planted scripts, in a git index of its own', 0.2, function () {
   root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-garbage-'));
   execSync('git ls-files -- spirit/run', { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(Boolean)
     .filter(function (f) { return fs.existsSync(path.join(REPO, f)); })
@@ -129,7 +129,7 @@ test.run('a module whose first require is not spirit.js goes red', 0.2, function
     try { if (H.node && H.node.child) H.node.child.kill(); } catch (e) { /* gone */ }
     try { if (H.node && typeof H.node.release === 'function') await H.node.release(); } catch (e) { /* freed as this process ends */ }
   });
-  test.run('the world: a scratch node, and an address in front of it that counts what reaches it', 0.2, async function () {
+  test.run('a scratch node comes up with an address in front of it that counts what reaches it', 0.2, async function () {
     H.node = await LABH.scratchNode();
     if (!H.node.up) return false;
     H.proxy = http.createServer(function (req, res) {
@@ -148,7 +148,7 @@ test.run('a module whose first require is not spirit.js goes red', 0.2, function
     H.base = 'http://127.0.0.1:' + H.proxy.address().port;
     return true;
   }, test.limit.slow);
-  test.run('the world: the rule run on two scripts in two branches, handed that node as testicle hands one', 0.2, async function () {
+  test.run('the rule is run on two scripts in two branches, handed that node as testicle hands one', 0.2, async function () {
     if (!H.base) return false;
     const env = Object.assign({}, process.env, { SPIRIT_MOUNT_BASE: H.base, SPIRIT_MOUNT_RUN: H.node.run });
     H.out = await new Promise(function (resolve) {
@@ -161,13 +161,13 @@ test.run('a module whose first require is not spirit.js goes red', 0.2, function
     });
     return /Test completed/.test(H.out) || false;
   }, test.limit.long);
-  test.run('each script\'s node world comes up', 0.4, function () {
-    const up = H.out.split('\n').filter(function (l) { return /the world: a scratch node comes up ✅\s*$/.test(l); }).length;
+  test.run('the scratch node of each script\'s run comes up', 0.4, function () {
+    const up = H.out.split('\n').filter(function (l) { return /a scratch node comes up for this suite ✅\s*$/.test(l); }).length;
     return up === SCRIPTS.length || false;
   }, test.limit.quick);
   // Each script's own: a run where the first used the handed node and the second booted its own would still have reached it
   // (cw's review), so each branch must be named in what reached it, backup's calls and chat's.
-  test.run('and each uses the node it is handed: calls naming backup and calls naming chat both reach it', 0.8, function () {
+  test.run('each script uses the node it is handed, so calls naming backup and calls naming chat both reach it', 0.8, function () {
     const named = ['backup', 'chat'].filter(function (b) { return new RegExp('"' + b + '[".]').test(H.bodies); });
     return named.length === 2 || false;
   }, test.limit.quick);

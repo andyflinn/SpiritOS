@@ -28,7 +28,7 @@ function element(tag) {
 // An element that counts on what it did not load throws inside a promise: the reporter fails the test it ran in.
 let SRC, code, lists, required, E, made, box, root, list;
 
-test.run('the world: the selector runs on a bare window', 0.2, async function () {
+test.run('the branch selector runs on a bare window', 0.2, async function () {
   if (!fs.existsSync(FILE)) return false;
   SRC = fs.readFileSync(FILE, 'utf8');
   code = SRC.replace(/\/\/.*$/gm, '');
@@ -59,7 +59,7 @@ test.run('the world: the selector runs on a bare window', 0.2, async function ()
   return true;
 }, test.limit.quick);
 // goal/G40.8: the old shell's list search is forbidden on the face.
-test.run('it names nothing of the old shell\'s list search (goal/G40.8)', 0.2, function () {
+test.run('it names nothing of the old shell\'s list search', 0.2, function () {
   if (!code) return false;
   const names = /shellCreateListSearch|listSearch\.js/.test(code);
   return !names ? true : false;
@@ -71,7 +71,7 @@ test.run('it registers spirit.element.spirit.element.search.branch with a create
 
 // a thin selector over its own list (rule/26; the contactSelector's pattern)
 // Box v23: "every element gets a container and appends itself".
-test.run('create(container, options) appends its root to its container and answers it', 0.2, async function () {
+test.run('create appends its root to the container it is given and answers that root', 0.2, async function () {
   if (!made || typeof made.create !== 'function') return false;
   box = element('div');
   root = made.create(box, { bundle: 7, placeholder: 'choose a branch…' });
@@ -83,15 +83,15 @@ test.run('on a bare page it requires its list, spirit/element/search/branch/list
   if (!required) return false;
   return required.indexOf('spirit/element/search/branch/listElement.js') !== -1 ? true : false;
 }, test.limit.quick);
-test.run('it answers its root at once, class branch-selector, nothing chosen: value \'\', row null', 0.2, function () {
+test.run('it answers its root at once, of class branch-selector, with nothing chosen, an empty value and no row', 0.2, function () {
   if (!box) return false;
   return root && root.value === '' && root.row === null && /\bbranch-selector\b/.test(root.className) ? true : false;
 }, test.limit.quick);
-test.run('its list is drawn into its root, a dropdown by default, its bundle and placeholder handed on', 0.2, function () {
+test.run('its list is drawn into its root, a dropdown by default, with its bundle and placeholder handed on', 0.2, function () {
   if (!box) return false;
   return list && list.host === root && list.o.face === 'dropdown' && list.o.placeholder === 'choose a branch…' && list.o.bundle === 7 ? true : false;
 }, test.limit.quick);
-test.run('face pane is the list itself; columns are handed to it', 0.2, async function () {
+test.run('as a pane the selector is the list itself, and columns are handed to it', 0.2, async function () {
   if (!list) return false;
   made.create(element('div'), { bundle: 7, face: 'pane', columns: ['family', 'verb', 'delete'] }); await settle();
   const pane = lists[1] && lists[1].o;
@@ -99,22 +99,22 @@ test.run('face pane is the list itself; columns are handed to it', 0.2, async fu
 }, test.limit.quick);
 
 // a pick
-test.run('a pick sets .value to the branch\'s id, a number, and .row to the branch', 0.2, function () {
+test.run('a pick sets the selector\'s value to the branch\'s id, a number, and its row to the branch', 0.2, function () {
   if (!list) return false;
   list.o.pick({ id: 3, bundle: 7, family: 'desk', verb: '' }, '3');
   return root.value === 3 && root.row && root.row.id === 3 && root.row.bundle === 7 && root.row.family === 'desk' && root.row.verb === '' ? true : false;
 }, test.limit.quick);
-test.run('and says so with one bubbling change', 0.2, function () {
+test.run('a pick is said with one bubbling change', 0.2, function () {
   if (!list) return false;
   const e = root.events[root.events.length - 1];
   return e && e.type === 'change' && e.bubbles === true ? true : false;
 }, test.limit.quick);
-test.run('a clear picks nothing: value \'\' again', 0.2, function () {
+test.run('a clear picks nothing, and the value is empty again', 0.2, function () {
   if (!list) return false;
   list.o.pick(null, '');
   return root.value === '' && root.row === null ? true : false;
 }, test.limit.quick);
-test.run('refresh() asks again', 0.2, function () {
+test.run('a refresh asks the list again', 0.2, function () {
   if (!list) return false;
   const before = list.refreshed;
   root.refresh();

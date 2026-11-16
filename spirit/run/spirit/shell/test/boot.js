@@ -39,11 +39,11 @@ test.run('nothing of them is left at the run root or in shell/', 0.2, function (
   const leftBehind = ['face.html', 'index.html', 'shell.css', 'favicon.svg', 'spirit.js', 'shell/boot.js', 'shell/seal.js', 'shell/face.css', 'shell/favicon.svg', 'shell/tokens.css', 'shell/elements.css'].filter(function (p) { return fs.existsSync(path.join(RUN, p)); });
   return !leftBehind.length || false;
 }, test.limit.quick);
-test.run('the addresses stay: /face.html, /spirit.js, /shell/boot.js and /favicon.svg are served from their new files (Q25)', 0.2, function () {
+test.run('the addresses stay: /face.html, /spirit.js, /shell/boot.js and /favicon.svg are served from their new files', 0.2, function () {
   return pages.pageFile('face.html') === 'spirit/shell/face.html' && pages.pageFile('spirit.js') === 'spirit/spirit.js' && pages.pageFile('shell/boot.js') === 'spirit/shell/boot.js' && pages.pageFile('favicon.svg') === 'spirit/shell/ghost.svg' ? true : false;
 }, test.limit.quick);
 // goal/G43.18, box v29: "The login is spirit.login, in spirit.js, no app ... shell/login/ and its login.json go."
-test.run('shell/login/ is gone: the login is spirit.login (goal/G43.18)', 0.2, function () {
+test.run('shell/login/ is gone: the login is spirit.login', 0.2, function () {
   return !fs.existsSync(path.join(RUN, 'shell', 'login')) || false;
 }, test.limit.quick);
 test.run('spirit.js loads shell/boot.js on a face page', 0.2, function () {
@@ -78,7 +78,7 @@ test.run('it reads no component but its own: spirit\'s libraries, the sheets and
 }, test.limit.quick);
 // JOIN IS AN APP (goal/G43.26; Andy: "the join icon sits next to all other icons on a shell (SO IT's A FCUKING APP, LIKE IT
 // ALWAYS WAS)"): spirit/app/join/, a tile beside the others; boot does not load it.
-test.run('boot does not load Join: it is an app of spirit/app/join/ (goal/G43.26)', 0.2, function () {
+test.run('boot does not load Join: it is an app of spirit/app/join/', 0.2, function () {
   const boot = code('spirit/shell/boot.js');
   if (!boot) return false;
   return !(/join\/join\.js/).test(boot) || false;
@@ -98,7 +98,7 @@ test.run('boot, the seal, the sheet, the icon and the Join app whole are core', 
 // GOAL/G43.18, BOX V29, "The shell": "boot.js does the link home and the face stream only, then loads the shell the node
 // names, spirit/app/<name>"; Q22: the link is spirit.js's; Q23: no desktop of boot's own; Q18: Join shows itself.
 // the shell the node names, and no desktop of its own (goal/G43.18)
-test.run('boot asks node.shell and loads spirit/app/<name>/element.js, the shell\'s main element (goal/G43.32, rule 4)', 0.2, function () {
+test.run('boot asks node.shell and loads spirit/app/<name>/element.js, the shell\'s main element', 0.2, function () {
   const boot = code('spirit/shell/boot.js');
   if (!boot) return false;
   return (/node\.shell\(\{ at: at \}\)/).test(boot) && (/'spirit\/app\/' \+ name \+ '\/element\.js'/).test(boot) ? true : false;

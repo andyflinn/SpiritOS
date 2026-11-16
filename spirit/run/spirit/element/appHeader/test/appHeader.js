@@ -16,15 +16,15 @@ const ADDRESS = '/DEBUG/spirit/element/appHeader/test/appHeader-pinned.html';
 const W = {};
 
 // appHeader-pinned.html: a row of buttons over 3000 pixels of content.
-test.run('the world: Chrome is on this machine', 0.2, function () {
+test.run('Chrome is on this machine', 0.2, function () {
   W.chrome = H.findChrome();
   return !!W.chrome || false;
 }, test.limit.quick);
-test.run('the world: a scratch node comes up with its DEBUG on', 0.2, async function () {
+test.run('a scratch node comes up with its DEBUG on', 0.2, async function () {
   W.node = await H.scratchNode();
   return (W.node.up && W.node.debug) || false;
 }, test.limit.slow);
-test.run('the world: the page measures its header', 0.2, async function () {
+test.run('the page measures its header', 0.2, async function () {
   if (!W.chrome || !W.node || !W.node.up) return false;
   W.page = await H.chromePage(W.chrome);
   if (W.page.error) return false;
@@ -41,13 +41,13 @@ test.run('the header sits at the top of its app\'s pane, right under the title b
   if (!m) return false;
   return (m.paneTop >= m.titleBar && Math.abs(m.head.top - m.paneTop) <= 1) || false;
 }, test.limit.quick);
-test.run('nothing under it is overlapped: the content starts below the header', 0.2, function () {
+test.run('the header overlaps nothing under it: the content starts below the header', 0.2, function () {
   const m = W.m;
   if (!m) return false;
   return m.content >= m.head.bottom - 1 || false;
 }, test.limit.quick);
 // IT STICKS: the pane scrolled, the header is where it was.
-test.run('the pane scrolled, the header stays at its top', 0.2, function () {
+test.run('when the pane is scrolled, the header stays at its top', 0.2, function () {
   const m = W.m;
   if (!m) return false;
   return (m.scrolled > 0 && Math.abs(m.headAfterScroll - m.paneTop) <= 1) || false;

@@ -86,7 +86,7 @@ const HANDS = '(function () {' +
 // What the tests make, shared by the tests after them.
 let pushing, s, live, c, heardBefore, N, where, bars, marks, detail, agent, off, loaded, planted, found, people,
   relay, contact, D, planted2, listBar, a, b, thrown;
-test.run('spirit/element/panel.js is there (Q12)', 0.2, function () {
+test.run('spirit/element/panel.js is there', 0.2, function () {
   // the box: "That is one generic panel element, used by the appSelector and file; neither draws it with a <div> of its own (Q3)"
   return (fs.existsSync(PANEL)) ? true : false;
 }, test.limit.quick);
@@ -113,7 +113,7 @@ test.run('no app or element under spirit/ calls navigation.push', 0.2, function 
   pushing = codeNaming(/navigation\.push\s*\(/).filter(function (f) { return f.split(path.sep)[0] === 'spirit'; });
   return (!pushing.length) ? true : false;
 }, test.limit.quick);
-test.run('the world: a scratch node comes up', 0.2, async function () {
+test.run('a scratch node comes up', 0.2, async function () {
   s = scratch();
   live = [];
   c = null;
@@ -122,12 +122,12 @@ test.run('the world: a scratch node comes up', 0.2, async function () {
   live.push(N.child);
   return (N.up) ? true : false;
 }, test.limit.slow);
-test.run('the world: Chrome is here', 0.2, function () {
+test.run('Chrome is here', 0.2, function () {
   if (!N || !N.up) return false;
   where = findChrome();
   return (!!where) ? true : false;
 }, test.limit.quick);
-test.run('the world: a Chrome page opens', 0.2, async function () {
+test.run('a Chrome page opens', 0.2, async function () {
   if (!N || !N.up) return false;
   if (!where) return false;
   c = await chromePage(where);
@@ -140,7 +140,7 @@ const open = async function () {
   await c.evaluate(HANDS);
   return up;
 };
-test.run('the world: the face shell has its spirit', 0.2, async function () {
+test.run('the face shell has its spirit', 0.2, async function () {
   if (!N || !N.up) return false;
   if (!where) return false;
   if (!c || c.error) return false;
@@ -152,7 +152,7 @@ const waitFor = function (expr, ms) { return until(function () { return c.evalua
 const selector = function (face) {
   return c.evaluate('(function () { if (window.__sel) window.__sel.destroy(); var old = document.getElementById("zzBox"); if (old) old.remove(); var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.require("spirit/app/app/element.js").then(function () { window.__sel = spirit.element.spirit.app.app.element.create(b, { face: ' + JSON.stringify(face) + ' }); return "made"; }); }())');
 };
-test.run('the world: the tiles show Files', 0.2, async function () {
+test.run('the tiles show Files', 0.2, async function () {
   if (!N || !N.up) return false;
   if (!where) return false;
   if (!c || c.error) return false;
@@ -161,20 +161,20 @@ test.run('the world: the tiles show Files', 0.2, async function () {
   await selector('tiles');
   return (await waitFor('tiles().indexOf("file") !== -1', 10000)) ? true : false;
 }, test.limit.quick);
-test.run('the world: Files opens', 0.2, async function () {
+test.run('Files opens', 0.2, async function () {
   if (!N || !N.up) return false;
   if (!where) return false;
   if (!c || c.error) return false;
   await T('press("file")');
   return (await waitFor('rows().indexOf("zzFiles") !== -1', 10000)) ? true : false;
 }, test.limit.quick);
-test.run('Files opens over the tiles under one bar: its icon, its label, ✕', 0.2, async function () {
+test.run('Files opens over the tiles under one bar, with its icon, its label and ✕', 0.2, async function () {
   if (!N || !N.up) return false;
   if (!where) return false;
   if (!c || c.error) return false;
   return (short(await T('bars()')) === short(['📁 Files'])) ? true : false;
 }, test.limit.quick);
-test.run('the tiles are out of view under it', 0.2, async function () {
+test.run('the tiles are out of view under Files', 0.2, async function () {
   if (!N || !N.up) return false;
   if (!where) return false;
   if (!c || c.error) return false;
@@ -190,20 +190,20 @@ test.run('a file opens over Files, in the same pane', 0.2, async function () {
   await T('press("zzFiles/notes.txt")');
   return (await waitFor('bars().length === 1 && /notes\\.txt$/.test(bars()[0])', 10000)) ? true : false;
 }, test.limit.quick);
-test.run('the box: "over ALL of the one that mounts it, its title bar too": one bar in view, an icon, ending in notes.txt', 0.2, async function () {
+test.run('the file opens over all of Files, its title bar too: one bar is in view, with an icon, ending in notes.txt', 0.2, async function () {
   if (!N || !N.up) return false;
   if (!where) return false;
   if (!c || c.error) return false;
   bars = await T('bars()');
   return (bars.length === 1 && /^\S+ .*notes\.txt$/.test(bars[0])) ? true : false;
 }, test.limit.quick);
-test.run('the list is out of view under it', 0.2, async function () {
+test.run('the list of Files is out of view under the file', 0.2, async function () {
   if (!N || !N.up) return false;
   if (!where) return false;
   if (!c || c.error) return false;
   return ((await T('bars()')).length === 1 && (await T('rows()')).length === 0) ? true : false;
 }, test.limit.quick);
-test.run('its ✕ shows Files again, under its one bar', 0.2, async function () {
+test.run('the file\'s ✕ shows Files again, under its one bar', 0.2, async function () {
   if (!N || !N.up) return false;
   if (!where) return false;
   if (!c || c.error) return false;
@@ -219,7 +219,7 @@ test.run('the closed layer is still on the page, out of view', 0.2, async functi
   if (!c || c.error) return false;
   return (marks > 0 && (await T('marked("notes")')) > 0 && (await T('markedShown("notes")')) === 0) ? true : false;
 }, test.limit.quick);
-test.run('reopening it shows what was there: the same layer, not a new one', 0.2, async function () {
+test.run('reopening the file shows what was there: the same layer, not a new one', 0.2, async function () {
   if (!N || !N.up) return false;
   if (!where) return false;
   if (!c || c.error) return false;
@@ -241,14 +241,14 @@ test.run('Files\' ✕ goes one more, to the tiles', 0.2, async function () {
   await T('close("Files")');
   return (await waitFor('bars().length === 0 && tiles().indexOf("file") !== -1')) ? true : false;
 }, test.limit.quick);
-test.run('the Files tile opens it again', 0.2, async function () {
+test.run('the Files tile opens Files again', 0.2, async function () {
   if (!N || !N.up) return false;
   if (!where) return false;
   if (!c || c.error) return false;
   await T('press("file")');
   return (await waitFor('rows().indexOf("zzFiles") !== -1', 10000)) ? true : false;
 }, test.limit.quick);
-test.run('reopened in the same session it shows what was there: its words kept', 0.2, async function () {
+test.run('Files reopened in the same session shows what was there, with its words kept', 0.2, async function () {
   if (!N || !N.up) return false;
   if (!where) return false;
   if (!c || c.error) return false;
@@ -270,7 +270,7 @@ test.run('after a reload Files opens with no words', 0.2, async function () {
   await T('press("file")');
   return (await waitFor('rows().indexOf("zzFiles") !== -1', 10000) && (await T('words()')) === '') ? true : false;
 }, test.limit.quick);
-test.run('the world: the pane lists the Agent', 0.2, async function () {
+test.run('the pane lists the Agent', 0.2, async function () {
   if (!N || !N.up) return false;
   if (!where) return false;
   if (!c || c.error) return false;
@@ -286,7 +286,7 @@ test.run('the Agent\'s detail opens under one bar', 0.2, async function () {
   await T('press("agent")');
   return (await waitFor('bars().length === 1', 10000)) ? true : false;
 }, test.limit.quick);
-test.run('its ✕ hides the detail: still on the page, out of view', 0.2, async function () {
+test.run('the Agent\'s ✕ hides the detail, which stays on the page, out of view', 0.2, async function () {
   if (!N || !N.up) return false;
   if (!where) return false;
   if (!c || c.error) return false;
@@ -295,14 +295,14 @@ test.run('its ✕ hides the detail: still on the page, out of view', 0.2, async 
   await T('close("Agent")');
   return (await waitFor('bars().length === 0 && rows().indexOf("agent") !== -1') && detail > 0 && (await T('marked("detail")')) > 0) ? true : false;
 }, test.limit.slow);
-test.run('pressed again, the same detail shows', 0.2, async function () {
+test.run('when the Agent is pressed again, the same detail shows', 0.2, async function () {
   if (!N || !N.up) return false;
   if (!where) return false;
   if (!c || c.error) return false;
   await T('press("agent")');
   return (await waitFor('markedShown("detail") > 0', 10000)) ? true : false;
 }, test.limit.quick);
-test.run('the world: the Agent, active, has its tile', 0.2, async function () {
+test.run('the Agent, made active, has its tile', 0.2, async function () {
   if (!N || !N.up) return false;
   if (!where) return false;
   if (!c || c.error) return false;
@@ -311,7 +311,7 @@ test.run('the world: the Agent, active, has its tile', 0.2, async function () {
   await selector('tiles');
   return (await waitFor('tiles().indexOf("agent") !== -1', 15000)) ? true : false;
 }, test.limit.quick);
-test.run('the world: its tile opens the Agent', 0.2, async function () {
+test.run('the Agent\'s tile opens the Agent', 0.2, async function () {
   if (!N || !N.up) return false;
   if (!where) return false;
   if (!c || c.error) return false;
@@ -319,7 +319,7 @@ test.run('the world: its tile opens the Agent', 0.2, async function () {
   await T('press("agent")');
   return (await waitFor('bars().length === 1', 15000)) ? true : false;
 }, test.limit.quick);
-test.run('the world: app.active switches the Agent off', 0.2, async function () {
+test.run('app.active switches the Agent off', 0.2, async function () {
   if (!N || !N.up) return false;
   if (!where) return false;
   if (!c || c.error) return false;
@@ -330,25 +330,25 @@ test.run('the world: app.active switches the Agent off', 0.2, async function () 
   off = await call(N.base, 'app.active', { key: 'agent', active: false });
   return (off.status === 200) ? true : false;
 }, test.limit.slow);
-test.run('its open layer leaves the view', 0.2, async function () {
+test.run('the Agent\'s open layer leaves the view', 0.2, async function () {
   if (!N || !N.up) return false;
   if (!where) return false;
   if (!c || c.error) return false;
   return (await waitFor('markedShown("agent") === 0', 10000)) ? true : false;
 }, test.limit.quick);
-test.run('and stays on the page, loaded', 0.2, async function () {
+test.run('the Agent\'s layer stays on the page, loaded', 0.2, async function () {
   if (!N || !N.up) return false;
   if (!where) return false;
   if (!c || c.error) return false;
   return (agent > 0 && (await T('marked("agent")')) > 0) ? true : false;
 }, test.limit.quick);
-test.run('its tile is gone, so it cannot be reopened', 0.2, async function () {
+test.run('the Agent\'s tile is gone, so it cannot be reopened', 0.2, async function () {
   if (!N || !N.up) return false;
   if (!where) return false;
   if (!c || c.error) return false;
   return ((await T('tiles()')).indexOf('agent') === -1) ? true : false;
 }, test.limit.quick);
-test.run('after the shell boots again none of it is loaded', 0.2, async function () {
+test.run('after the shell boots again none of the Agent is loaded', 0.2, async function () {
   if (!N || !N.up) return false;
   if (!where) return false;
   if (!c || c.error) return false;
@@ -360,7 +360,7 @@ test.run('after the shell boots again none of it is loaded', 0.2, async function
   return (Array.isArray(loaded) && !loaded.length && (await c.evaluate('!(window.spirit.app && window.spirit.app.agent) && !(window.spirit.element && window.spirit.element.spirit && window.spirit.element.spirit.app && window.spirit.element.spirit.app.agent)'))) ? true : false;
 }, test.limit.slow);
 const zzKey = require('crypto').generateKeyPairSync('ed25519').publicKey.export({ type: 'spki', format: 'der' }).toString('base64');
-test.run('the world: a person is in the book', 0.2, async function () {
+test.run('a person is in the book', 0.2, async function () {
   if (!N || !N.up) return false;
   if (!where) return false;
   if (!c || c.error) return false;
@@ -387,7 +387,7 @@ const detailsOf = async function (who) {
   d.back = await waitFor('bars().length === 1 && bars()[0] === ' + JSON.stringify(contacts) + ' && rows().indexOf(' + JSON.stringify(who.key) + ') !== -1', 10000);
   return d;
 };
-test.run('the world: the node knows a relay', 0.2, async function () {
+test.run('the node knows a relay', 0.2, async function () {
   if (!N || !N.up) return false;
   if (!where) return false;
   if (!c || c.error) return false;
@@ -398,14 +398,14 @@ test.run('the world: the node knows a relay', 0.2, async function () {
   contact = people.filter(function (p) { return p.relay !== true; })[0];
   return (!!relay) ? true : false;
 }, test.limit.quick);
-test.run('the world: the node knows a contact', 0.2, function () {
+test.run('the node knows a contact', 0.2, function () {
   if (!N || !N.up) return false;
   if (!where) return false;
   if (!c || c.error) return false;
   return (!!contact) ? true : false;
 }, test.limit.quick);
 D = {};
-test.run('the world: Contacts opens and lists the relay', 0.2, async function () {
+test.run('Contacts opens and lists the relay', 0.2, async function () {
   if (!relay) return false;
   D.relay = await detailsOf(relay);
   return D.relay.listed || false;
@@ -414,19 +414,19 @@ test.run('the relay\'s details open over Contacts under one bar of their own', 0
   if (!D.relay) return false;
   return D.relay.over || false;
 }, test.limit.quick);
-test.run('the list is out of view under them', 0.2, function () {
+test.run('the list is out of view under the relay\'s details', 0.2, function () {
   if (!D.relay) return false;
   return D.relay.rows.indexOf(relay.key) === -1 || false;
 }, test.limit.quick);
-test.run('no page is pushed on the navigation', 0.2, function () {
+test.run('opening the relay\'s details pushes no page on the navigation', 0.2, function () {
   if (!D.relay) return false;
   return D.relay.depthNow === D.relay.depth || false;
 }, test.limit.quick);
-test.run('their ✕ shows Contacts again, one step back', 0.2, function () {
+test.run('the ✕ of the relay\'s details shows Contacts again, one step back', 0.2, function () {
   if (!D.relay) return false;
   return D.relay.back || false;
 }, test.limit.quick);
-test.run('the world: Contacts opens and lists the contact', 0.2, async function () {
+test.run('Contacts opens and lists the contact', 0.2, async function () {
   if (!contact) return false;
   D.contact = await detailsOf(contact);
   return D.contact.listed || false;
@@ -435,20 +435,20 @@ test.run('the contact\'s details open over Contacts under one bar of their own',
   if (!D.contact) return false;
   return D.contact.over || false;
 }, test.limit.quick);
-test.run('the contact: the list is out of view under them', 0.2, function () {
+test.run('the list is out of view under the contact\'s details', 0.2, function () {
   if (!D.contact) return false;
   return D.contact.rows.indexOf(contact.key) === -1 || false;
 }, test.limit.quick);
-test.run('the contact: no page is pushed on the navigation', 0.2, function () {
+test.run('opening the contact\'s details pushes no page on the navigation', 0.2, function () {
   if (!D.contact) return false;
   return D.contact.depthNow === D.contact.depth || false;
 }, test.limit.quick);
-test.run('the contact: their ✕ shows Contacts again, one step back', 0.2, function () {
+test.run('the ✕ of the contact\'s details shows Contacts again, one step back', 0.2, function () {
   if (!D.contact) return false;
   return D.contact.back || false;
 }, test.limit.quick);
 const zzKey2 = require('crypto').generateKeyPairSync('ed25519').publicKey.export({ type: 'spki', format: 'der' }).toString('base64');
-test.run('the world: a second person is in the book', 0.2, async function () {
+test.run('a second person is in the book', 0.2, async function () {
   if (!N || !N.up) return false;
   if (!where) return false;
   if (!c || c.error) return false;
@@ -458,7 +458,7 @@ test.run('the world: a second person is in the book', 0.2, async function () {
   planted2 = await call(N.base, 'contact.block', { publicKey: zzKey2, publicLabel: 'zzPersonTwo' });
   return (planted2.status === 200) ? true : false;
 }, test.limit.quick);
-test.run('the world: Contacts lists both', 0.2, async function () {
+test.run('Contacts lists both people', 0.2, async function () {
   if (!N || !N.up) return false;
   if (!where) return false;
   if (!c || c.error) return false;
@@ -477,7 +477,7 @@ return up ? T('markLayer(' + JSON.stringify(mark) + ')') : 0;
 const closeOne = async function () { const b = (await T('bars()'))[0]; await T('close(' + JSON.stringify(String(b || '').slice(-12)) + ')'); return waitFor('bars()[0] === ' + JSON.stringify(listBar), 10000); };
 const inView = function () { return c.evaluate('String((document.getElementById("zzBox") || {}).innerText || "")'); };
 const showsOwn = function (handle) { return inView().then(function (t) { return /Public Handle/.test(t) && /Unblock/.test(t) && new RegExp('Public Handle\\s*' + handle + '(?![A-Za-z])').test(t); }); };
-test.run('the world: the first person\'s details open', 0.2, async function () {
+test.run('the first person\'s details open', 0.2, async function () {
   if (!N || !N.up) return false;
   if (!where) return false;
   if (!c || c.error) return false;
@@ -488,13 +488,13 @@ test.run('the world: the first person\'s details open', 0.2, async function () {
   a = await openOne(zzKey, 'rowA');
   return (a > 0) ? true : false;
 }, test.limit.slow);
-test.run('the first person\'s panel shows their data: Public Handle zzPerson, Unblock', 0.2, async function () {
+test.run('the first person\'s panel shows their data, Public Handle zzPerson and Unblock', 0.2, async function () {
   if (!N || !N.up) return false;
   if (!where) return false;
   if (!c || c.error) return false;
   return (await until(function () { return showsOwn('zzPerson'); }, 8000)) ? true : false;
 }, test.limit.quick);
-test.run('the second person\'s panel shows their own data: Public Handle zzPersonTwo, Unblock', 0.2, async function () {
+test.run('the second person\'s panel shows their own data, Public Handle zzPersonTwo and Unblock', 0.2, async function () {
   if (!N || !N.up) return false;
   if (!where) return false;
   if (!c || c.error) return false;
@@ -502,19 +502,19 @@ test.run('the second person\'s panel shows their own data: Public Handle zzPerso
   b = await openOne(zzKey2, 'rowB');
   return (await until(function () { return showsOwn('zzPersonTwo'); }, 8000)) ? true : false;
 }, test.limit.slow);
-test.run('the second person\'s details are a panel of their own: new, and the first\'s out of view', 0.2, async function () {
+test.run('the second person\'s details are a new panel of their own, with the first\'s out of view', 0.2, async function () {
   if (!N || !N.up) return false;
   if (!where) return false;
   if (!c || c.error) return false;
   return (b > 0 && (await T('markedShown("rowA")')) === 0) ? true : false;
 }, test.limit.quick);
-test.run('and the first person\'s panel is kept, not drawn over', 0.2, async function () {
+test.run('the first person\'s panel is kept, not drawn over', 0.2, async function () {
   if (!N || !N.up) return false;
   if (!where) return false;
   if (!c || c.error) return false;
   return ((await T('marked("rowA")')) > 0) ? true : false;
 }, test.limit.quick);
-test.run('the first person pressed again: their own panel shows, as it was left, with their data', 0.2, async function () {
+test.run('when the first person is pressed again, their own panel shows as it was left, with their data', 0.2, async function () {
   if (!N || !N.up) return false;
   if (!where) return false;
   if (!c || c.error) return false;
@@ -522,7 +522,7 @@ test.run('the first person pressed again: their own panel shows, as it was left,
   await T('openRow(' + JSON.stringify(zzKey) + ')');
   return (await waitFor('markedShown("rowA") > 0 && markedShown("rowB") === 0', 10000) && await showsOwn('zzPerson')) ? true : false;
 }, test.limit.quick);
-test.run('no uncaught error on the page outside the Agent, up to the Agent switched off', 0.2, async function () {
+test.run('no uncaught error is thrown on the page outside the Agent, up to the Agent being switched off', 0.2, async function () {
   if (!N || !N.up) return false;
   if (!where) return false;
   if (!c || c.error) return false;

@@ -41,7 +41,7 @@ const lineOf = function (r, word) { return (r.rows || []).filter(function (l) { 
 const uptimeRow = function (r) { return (r.rows || []).filter(function (l) { return /group|name value/i.test(l) === false; })[0] || ''; };
 
 // monitor.json: "icon 🦻, label "Monitor", mount monitor.js, shell mount and tile true, node mount false." Since goal/G43.32 it mounts element.js (rule 4)
-test.run('icon 🦻, label Monitor', 0.2, function () {
+test.run('its icon is 🦻 and its label is Monitor', 0.2, function () {
   const m = readJson();
   return m.identity && m.identity.icon === '🦻' && m.identity.label === 'Monitor' ? true : false;
 }, test.limit.quick);
@@ -49,11 +49,11 @@ test.run('it mounts element.js', 0.2, function () {
   const m = readJson();
   return m.mount && m.mount['element.js'] === true ? true : false;
 }, test.limit.quick);
-test.run('shell mount and tile are true', 0.2, function () {
+test.run('its shell mount and its tile are true', 0.2, function () {
   const m = readJson();
   return m.shell && m.shell.mount === true && m.shell.tile === true ? true : false;
 }, test.limit.quick);
-test.run('node mount is false', 0.2, function () {
+test.run('its node mount is false', 0.2, function () {
   const m = readJson();
   return m.node && m.node.mount === false ? true : false;
 }, test.limit.quick);
@@ -79,7 +79,7 @@ test.run('it loads and uses the valued element', 0.2, function () {
   return code && /spirit\.element\.search.valued|element\.search.valued/.test(code) && /spirit\/element\/search\/valued\.js/.test(code) ? true : false;
 }, test.limit.quick);
 
-test.run('the world: a scratch node and a Chrome page on its face', 0.2, async function () {
+test.run('a scratch node comes up with a Chrome page on its face', 0.2, async function () {
   W.node = await scratchNode();
   W.chrome = await chromePage(findChrome());
   if (!W.chrome || W.chrome.error) return false;
@@ -95,7 +95,7 @@ test.run('monitor.js loads on a page', 0.2, async function () {
 
 // goal/G43.32, the box: "Monitor too: its createApp becomes its element.js, and appSelector's createApp path goes."
 // the box (goal/G43.32): "its createApp becomes its element.js": spirit.element.spirit.app.monitor.element.create(container) -> { destroy() }
-test.run('spirit.element.spirit.app.monitor.element.create is there', 0.2, async function () {
+test.run('the page has spirit.element.spirit.app.monitor.element.create', 0.2, async function () {
   if (!W.page) return false;
   const home = await js('(function () { var a = ((window.spirit.element || {}).spirit || {}).app || {}; return JSON.stringify({ create: typeof ((a.monitor || {}).element || {}).create, createApp: typeof ((window.spirit.app || {}).monitor || {}).createApp, old: typeof (window.spirit.elements || {}).monitor }); })()');
   let h = {}; try { h = JSON.parse(home); } catch (e) { h = {}; }
@@ -103,7 +103,7 @@ test.run('spirit.element.spirit.app.monitor.element.create is there', 0.2, async
   W.create = h.create === 'function';
   return W.create || false;
 }, test.limit.quick);
-test.run('and no spirit.app.monitor.createApp, nor anything on spirit.elements', 0.2, function () {
+test.run('the page has no spirit.app.monitor.createApp, nor any monitor on spirit.elements', 0.2, function () {
   if (!W.h) return false;
   return W.h.createApp === 'undefined' && W.h.old === 'undefined' ? true : false;
 }, test.limit.quick);
@@ -128,19 +128,19 @@ test.run('the stream\'s reading brings its 11 numbers and four groups of counts'
   const absent = NUMBERS.concat(GROUPS).filter(function (n) { return String(shown.text).indexOf(n) === -1; });
   return came && !absent.length ? true : false;
 }, test.limit.slow);
-test.run('and it no longer says waiting', 0.2, function () {
+test.run('once the numbers are in, it no longer says waiting', 0.2, function () {
   if (!W.shown) return false;
   return !/waiting/i.test(String(W.shown.text)) || false;
 }, test.limit.quick);
-test.run('"Jobs by status replaces Active jobs"', 0.2, function () {
+test.run('Jobs by status replaces Active jobs, which is no longer shown', 0.2, function () {
   if (!W.shown) return false;
   return String(W.shown.text).indexOf('Active jobs') === -1 || false;
 }, test.limit.quick);
-test.run('one search field', 0.2, function () {
+test.run('the monitor shows one search field', 0.2, function () {
   if (!W.shown) return false;
   return W.shown.inputs === 1 || false;
 }, test.limit.quick);
-test.run('a count is a row of its own: group, name and value', 0.2, async function () {
+test.run('a count is a row of its own, with its group, name and value', 0.2, async function () {
   if (!W.made) return false;
   const data = W.data = JSON.parse(await js('JSON.stringify(window.spirit.data.job.data.find(function (j) { return j && j.id === "spirit"; }).data.stats)'));
   const method = Object.keys((data.requests || {}).byMethod || {})[0];
@@ -151,7 +151,7 @@ test.run('a number is a row of its own', 0.2, function () {
   if (!W.live) return false;
   return !!lineOf(W.live, 'Memory (RSS)') || false;
 }, test.limit.quick);
-test.run('the world: the page formats bytes', 0.2, async function () {
+test.run('the page formats bytes', 0.2, async function () {
   if (!W.data) return false;
   const rss = await js('window.spirit.formatBytes(' + Number(W.data.memory.rss) + ')');
   return typeof rss === 'string' && rss.length > 0 ? true : false;
@@ -164,7 +164,7 @@ test.run('a new reading changes the number on screen, with nothing asked', 0.2, 
   const moved = await until(function () { return read().then(function (r) { return lineOf(r, 'Uptime') && lineOf(r, 'Uptime') !== uptime; }); }, 20000);
   return moved ? true : false;
 }, test.limit.slow);
-test.run('the world: the list scrolls in its box', 0.2, async function () {
+test.run('the list scrolls in its box', 0.2, async function () {
   if (!W.made) return false;
   await js('(function () { var c = window.__box; var best = null; c.querySelectorAll("*").forEach(function (e) { if (e.scrollHeight - e.clientHeight > 1 && /auto|scroll/.test(getComputedStyle(e).overflowY) && (!best || e.scrollHeight > best.scrollHeight)) best = e; }); if (best) best.scrollTop = 40; return true; })()');
   const scrolled = W.scrolled = await read();
@@ -177,7 +177,7 @@ test.run('a repaint keeps the scroll', 0.2, async function () {
   const after = await read();
   return again && after.scroll === 40 ? true : false;
 }, test.limit.slow);
-test.run('words put the row that fits first, under the one search field', 0.2, async function () {
+test.run('words typed in the one search field put the row that fits first', 0.2, async function () {
   if (!W.made) return false;
   await js('(function () { var i = [].filter.call(window.__box.querySelectorAll("input"), function (x) { return x.getClientRects().length && x.type !== "checkbox"; })[0]; if (i) { i.value = "Uptime"; i.dispatchEvent(new Event("input", { bubbles: true })); } return true; })()');
   await sleep(500);
@@ -200,7 +200,7 @@ test.run('destroy leaves its container empty', 0.2, async function () {
   W.destroyed = true;
   return c.before > 0 && c.after === 0 ? true : false;
 }, test.limit.quick);
-test.run('and a later reading paints nothing', 0.2, async function () {
+test.run('after destroy, a later reading paints nothing', 0.2, async function () {
   if (!W.destroyed) return false;
   const quiet = await read();
   await sleep(6000);

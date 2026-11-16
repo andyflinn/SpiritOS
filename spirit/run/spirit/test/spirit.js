@@ -242,17 +242,17 @@ const code = SOURCE.replace(/\/\/[^\n]*/g, function (c) { return ' '.repeat(c.le
 
 // ── 1. WHERE IT RUNS, THE ONE INSTANCE, THE GLOBAL FIRST ─────────────
 // 1. spirit.js alone tells node from a page; one instance, the global first
-test.run('in node: isNode() true, isBrowser() false', 0.2, function () {
+test.run('in node, isNode() answers true and isBrowser() false', 0.2, function () {
   return (s.isNode() === true && s.isBrowser() === false) || false;
 }, test.limit.quick);
-test.run('in node: require answers the one instance, the global spirit, every time', 0.2, function () {
+test.run('in node, require answers the one instance, the global spirit, every time', 0.2, function () {
   return (globalThis.spirit === s && require(path.join(RUN, 'spirit', 'spirit.js')) === s) || false;
 }, test.limit.quick);
 test.run('a global spirit already there is the one it fills, not replaced', 0.2, function () {
   const kept = spawnSync(process.execPath, ['-e', 'globalThis.spirit = { mark: 1 }; const s = require(process.argv[1]); console.log(String(s === globalThis.spirit && s.mark === 1 && typeof s.require === "function"));', path.join(RUN, 'spirit', 'spirit.js')], { encoding: 'utf8' });
   return String(kept.stdout).trim() === 'true' || false;
 }, test.limit.quick);
-test.run('on a page: window.spirit at once, isBrowser() true, isNode() false', 0.2, function () {
+test.run('on a page, window.spirit is there at once, isBrowser() answers true and isNode() false', 0.2, function () {
   const w = T.w = page();
   return (!!w.spirit && w.spirit.isBrowser() === true && w.spirit.isNode() === false) || false;
 }, test.limit.quick);
@@ -272,7 +272,7 @@ const MEMBERS = ['DEFAULT_SPIRIT_PORT', 'MIME_TYPES', 'VERSION', 'cacheManager',
 test.run('in node the instance holds exactly its members, and the families it binds', 0.2, function () {
   return JSON.stringify(Object.keys(s).filter(function (k) { return typeof s[k] !== 'object' || ['MIME_TYPES', 'data', 'event', 'job', 'node'].indexOf(k) !== -1 || Array.isArray(s[k]); }).sort()) === JSON.stringify(MEMBERS) || false;
 }, test.limit.quick);
-test.run('no factory, no transport and no second object handed out, in node or on a page', 0.2, function () {
+test.run('no factory, no transport and no second object is handed out, in node or on a page', 0.2, function () {
   if (!T.w || !T.w.spirit) return false;
   const factories = ['createSpirit', 'assemble', 'forNode', 'forPeer', 'nodeTransport', 'pageTransport', 'peerTransport', 'loadInterface', 'spiritObject', 'call', 'port'];
   const left = factories.filter(function (k) { return k in s || k in T.w.spirit; });
@@ -298,7 +298,7 @@ test.run('spirit.js hands out no spirit.core; spirit.MIME_TYPES is its own table
 test.run('spirit.VERSION is 0.0.1 and spirit.DEFAULT_SPIRIT_PORT 65432', 0.2, function () {
   return (s.VERSION === '0.0.1' && s.DEFAULT_SPIRIT_PORT === 65432) || false;
 }, test.limit.quick);
-test.run('spirit.debug: off at start, set by a boolean and answering the state, anything else only reads it', 0.2, function () {
+test.run('spirit.debug is off at start, is set by a boolean and answers the state, and anything else only reads it', 0.2, function () {
   const dbg = [s.debug(), s.debug(true), s.debug(), s.debug('yes'), s.debug(false), s.debug()];
   return JSON.stringify(dbg) === JSON.stringify([false, true, true, true, false, false]) || false;
 }, test.limit.quick);
@@ -309,8 +309,8 @@ function helpers(where, o) {
   const e = o.error('boom');
   return (!!e && !!e.error && e.error.string === 'boom' && o.formatBytes(0) === '0 Bytes' && o.formatBytes(1024) === '1 KB' && o.formatBytes(1536) === '1.5 KB' && o.escapeHtml('&<>"\'') === '&amp;&lt;&gt;&quot;&#39;') || false;
 }
-test.run('in node: error, formatBytes and escapeHtml answer as specified', 0.2, function () { return helpers('node', s); }, test.limit.quick);
-test.run('on a page: error, formatBytes and escapeHtml answer as specified', 0.2, function () { return T.w && T.w.spirit ? helpers('page', T.w.spirit) : false; }, test.limit.quick);
+test.run('in node, error, formatBytes and escapeHtml answer as specified', 0.2, function () { return helpers('node', s); }, test.limit.quick);
+test.run('on a page, error, formatBytes and escapeHtml answer as specified', 0.2, function () { return T.w && T.w.spirit ? helpers('page', T.w.spirit) : false; }, test.limit.quick);
 
 // ── 4. THE CHECK ─────────────────────────────────────────────────────
 // 4. check: every argument against its verb's declaration, every rule
@@ -339,7 +339,7 @@ test.run('an argument it does not name is no-such-argument; a missing one bad-re
 
 // ── 5. IN NODE: ITS NODE, ITS FAMILIES, ITS PEERS ────────────────────
 // 5. in node: its node is 127.0.0.1 at the port of its run root's environment.json; it binds families on itself
-test.run('the world: the instance of a scratch run root that names a fake node answers what it saw', 0.2, async function () {
+test.run('the instance of a scratch run root that names a fake node answers what it saw', 0.2, async function () {
   T.node = await fakeNode();
   T.root = scratchRoot(T.node.port);
   T.bare = scratchRoot(0);
@@ -360,11 +360,11 @@ test.run('spirit.require of the demo interface binds it on the one instance as s
   return (!!o.two && o.two[0] === 'hello bert' && o.two[1] === 'hello carl' && !!o.bound && node.asked.filter(function (b) { return b.call === 'api' && b.args && b.args.family === 'demo'; }).length === 0) || false;
 }, test.limit.quick);
 // goal/G43.32, decided 8: "spirit.require of a branch's api.js places the api.js at spirit.required.spirit.<branch-path>.api and binds its verbs on spirit.<branch>.<verb>".
-test.run('in node: the api.js required also stands at spirit.required.spirit.demo.api, the verbs bound on spirit.demo', 0.2, function () {
+test.run('in node, the api.js required also stands at spirit.required.spirit.demo.api, the verbs bound on spirit.demo', 0.2, function () {
   const o = O(); if (!o) return false;
   return (!!o.bound && !!o.apiPlaced) || false;
 }, test.limit.quick);
-test.run('a bound family has its own names, a dotted verb in camel case too (line.write as lineWrite), and no FS set (goal/G43.20)', 0.2, function () {
+test.run('a bound family has its own names, a dotted verb in camel case too (line.write as lineWrite), and no FS set', 0.2, function () {
   const o = O(); if (!o) return false;
   return (o.hi === 'hello dave' && o.dotted === 't' && o.fs === true) || false;
 }, test.limit.quick);
@@ -384,17 +384,17 @@ test.run('spirit.require(spirit.familyPath(\'demo\')) answers the same member, s
   const o = O(); if (!o) return false;
   return !!o.viaRequire || false;
 }, test.limit.quick);
-test.run('spirit.outcome: 200 and the body; 400 for a call the check refused; the node\'s own status; 0 when nothing answered', 0.2, function () {
+test.run('spirit.outcome answers 200 and the body, 400 for a call the check refused, the node\'s own status, and 0 when nothing answered', 0.2, function () {
   const o = O(); if (!o) return false;
   const oc = o.outcome || [];
   return (!!oc[0] && oc[0][0] === 200 && oc[0][1] === 'hello eve' && oc[1][0] === 400 && oc[1][1] === 'no-such-argument' && oc[2][0] === 409 && oc[3][0] === 0) || false;
 }, test.limit.quick);
-test.run('spirit.node: its port from environment.json, and the name, key and owner the node handed it as --node', 0.2, function () {
+test.run('spirit.node holds its port from environment.json, and the name, key and owner the node handed it as --node', 0.2, function () {
   const o = O(); if (!o) return false;
   const f = o.facts || {};
   return (f.port === T.node.port && f.name === 'nodey' && f.key === 'K1' && f.ownerKey === 'O1') || false;
 }, test.limit.quick);
-test.run('spirit.event.publish and spirit.job start, progress and end publish by event.publish with the job\'s own id, the one path (no job.update, no spirit.job.publish); one over the payload cap is said as dropped; a second start while one is open refuses job-open', 0.2, function () {
+test.run('spirit.event.publish and spirit.job start, progress and end publish by event.publish with the job\'s own id, the one path, with no job.update and no spirit.job.publish; one over the payload cap is said as dropped, and a second start while one is open refuses job-open', 0.2, function () {
   const o = O(); if (!o) return false;
   const node = T.node;
   const updates = node.asked.filter(function (b) { return b.call === 'event.publish'; }).map(function (b) { return b.args; });
@@ -404,7 +404,7 @@ test.run('spirit.event.publish and spirit.job start, progress and end publish by
       && dropped.length === 1 && dropped[0].app.dropped.max > 0 && JSON.stringify(states) === JSON.stringify(['start', 'progress', 'end']) && o.startAgain === 'job-open'
       && o.noJobsPublish === true && !node.asked.some(function (b) { return b.call === 'job.update'; })) || false;
 }, test.limit.quick);
-test.run('spirit.event.subscribe: the node\'s events family as a stream, said up, then the snapshot, then each update, until unsubscribed', 0.2, function () {
+test.run('spirit.event.subscribe hears the node\'s events family as a stream, said up, then the snapshot, then each update, until unsubscribed', 0.2, function () {
   const o = O(); if (!o) return false;
   return JSON.stringify(o.heard) === JSON.stringify(['up:true', 'snapshot:j1', 'update:j1:done']) || false;
 }, test.limit.quick);
@@ -414,13 +414,13 @@ test.run('in a process, every event.subscribe says it is a server, so it takes n
   const subscribes = T.node.asked.filter(function (b) { return b.call === 'event.subscribe'; });
   return (subscribes.length > 0 && subscribes.every(function (b) { return b.reader === 'server'; })) || false;
 }, test.limit.quick);
-test.run('spirit.peerPost: one post of peer.post, the answer read off the node\'s events (event.subscribe) as a server, as it always worked', 0.2, function () {
+test.run('spirit.peerPost makes one post of peer.post and reads the answer off the node\'s events, through event.subscribe as a server, as it always worked', 0.2, function () {
   const o = O(); if (!o) return false;
   const node = T.node;
   const viaStream = node.streams.some(function (st) { return st.reader === 'server'; });
   return (!!o.peerAnswer && o.peerAnswer.said === 'answered by peerKey9' && viaStream && node.asked.some(function (b) { return b.call === 'peer.post' && b.args && b.args.to === 'peerKey9'; })) || false;
 }, test.limit.quick);
-test.run('spirit.require(path, key, how): the peer\'s family, its calls through spirit.peerPost with how, one for two callers at once, and not its own node\'s spirit.demo', 0.2, function () {
+test.run('spirit.require with a path, a key and how answers the peer\'s family, its calls going through spirit.peerPost with how, one for two callers at once, and not its own node\'s spirit.demo', 0.2, function () {
   const o = O(); if (!o) return false;
   return (!!o.peer && o.peer[0] === true && o.peer[2] === 'hello from peerKey1' && o.peer[3] === true && o.peerHow === 777) || false;
 }, test.limit.quick);
@@ -439,7 +439,7 @@ test.run('the peer\'s family has the verbs of its own copy, hello, and none the 
   const o = O(); if (!o) return false;
   return o.peerOwn === true || false;
 }, test.limit.quick);
-test.run('with no port in its environment.json: require of an interface and tree refuse no-node; no default port is guessed, and none is placed on the instance', 0.2, async function () {
+test.run('with no port in its environment.json, require of an interface and tree refuse no-node, no default port is guessed, and none is placed on the instance', 0.2, async function () {
   if (!T.bare) return false;
   const n = await observe(T.bare, 'none');
   return (n.require === 'no-node' && n.tree === 'no-node' && n.noPort === true) || false;
@@ -452,7 +452,7 @@ test.run('with no port in its environment.json: require of an interface and tree
 // stands there and binds when first called; one with no interface is refused no-interface when called.
 // The one family start calls is node, for node.card (goal/G41.28, Q10: "yes."): its api is asked as it is called. Never the
 // whole api, and no other family's.
-test.run('spirit.start() asks no api: spirit.ready answers the instance, any family named on it stands there and binds when first called; a call to one with no interface is refused no-interface', 0.2, async function () {
+test.run('spirit.start() asks no api, spirit.ready answers the instance, any family named on it stands there and binds when first called, and a call to one with no interface is refused no-interface', 0.2, async function () {
   const wq = T.wq = page();
   const started = wq.spirit.start();
   const again = wq.spirit.start();
@@ -465,14 +465,14 @@ test.run('spirit.start() asks no api: spirit.ready answers the instance, any fam
     .then(function () { return null; }, function (e) { return (e && e.code) || null; });
   return (started === again && wq.spirit.ready === started && !askedAtStart.length && ps.isBrowser === wq.spirit.isBrowser && !!ps.demo && goneSaid === 'no-interface') || false;
 }, test.limit.quick);
-test.run('on a page with no link: calls go to the page\'s own origin, /api/spirit, as { call, args } (goal/G41.15)', 0.2, async function () {
+test.run('on a page with no link, calls go to the page\'s own origin, /api/spirit, as a call with its args', 0.2, async function () {
   if (!T.ps) return false;
   const wq = T.wq;
   const pc = await T.ps.demo.hello({ name: 'hal' });
   const toDoor = wq.fetched.filter(function (f) { return f.url === '/api/spirit'; });
   return (pc.said === 'hello hal' && toDoor.length > 0 && isCall(JSON.parse(toDoor[toDoor.length - 1].body)) && JSON.parse(toDoor[toDoor.length - 1].body).call === 'demo.hello') || false;
 }, test.limit.quick);
-test.run('on a page with window.spirit.transport set: every call goes through that link, nothing fetched', 0.2, async function () {
+test.run('on a page with window.spirit.transport set, every call goes through that link and nothing is fetched', 0.2, async function () {
   if (!T.ps) return false;
   const wq = T.wq;
   const linked = [];
@@ -482,7 +482,7 @@ test.run('on a page with window.spirit.transport set: every call goes through th
   return (viaLink.said === 'via link' && linked[0] === 'demo.hello' && wq.fetched.length === before) || false;
 }, test.limit.quick);
 // A face's events come down its link: spirit.event.subscribe hands the handlers to the link's events, fetching nothing.
-test.run('on a face: spirit.event.subscribe hands its handlers to the link\'s events, and its unsubscribe is the link\'s; nothing fetched', 0.2, function () {
+test.run('on a face, spirit.event.subscribe hands its handlers to the link\'s events, its unsubscribe is the link\'s, and nothing is fetched', 0.2, function () {
   if (!T.ps || !T.wq.spirit.transport) return false;
   const wq = T.wq;
   const handed = [];
@@ -501,7 +501,7 @@ test.run('on a page the one instance is window.spirit, and nothing else is made'
 
 // ── 6a. LOOPBACK OR NOT ──────────────────────────────────────────────
 // 6a. in a browser, loopback or not: its home node, or a face through a relay
-test.run('isLoopback(): true on 127.0.0.1, localhost and [::1], false on any other host, and false in node', 0.2, function () {
+test.run('isLoopback() answers true on 127.0.0.1, localhost and [::1], false on any other host, and false in node', 0.2, function () {
   const at = function (host) {
     const w2 = { location: { hostname: host }, TextDecoder: TextDecoder, console: console, Promise: Promise, URL: URL };
     w2.window = w2;
@@ -529,7 +529,7 @@ test.run('the node serves face.html byte for byte as it is on disk', 0.2, async 
   });
   return served.equals(fs.readFileSync(path.join(RUN, 'spirit', 'shell', 'face.html'))) || false;
 }, test.limit.quick);
-test.run('no server pastes spirit.js into a page: serveCommon.inlineSpirit is gone, from the node and the relay', 0.2, function () {
+test.run('no server pastes spirit.js into a page, and serveCommon.inlineSpirit is gone from the node and the relay', 0.2, function () {
   const serverSrc = fs.readFileSync(path.join(RUN, 'spirit', 'serveCommon.js'), 'utf8') + fs.readFileSync(path.join(RUN, 'spirit', 'relayServer.js'), 'utf8');
   return !/inlineSpirit/.test(serverSrc) || false;
 }, test.limit.quick);
@@ -568,18 +568,18 @@ test.run('on the home node\'s page spirit.js gets shell/boot.js alone and runs i
 
 // ── 7. THE ONE LOADER, THE SAME IN NODE AND ON A PAGE ────────────────
 // 7. spirit.require(path, key): the one loader, the same in node and on a page
-test.run('in node: a component by its run-root path answers its module.exports', 0.2, async function () {
+test.run('in node, a component by its run-root path answers its module.exports', 0.2, async function () {
   const inNode = await s.require(COMPONENT);
   return inNode === require(path.join(RUN, COMPONENT)) || false;
 }, test.limit.quick);
-test.run('in node: a component that is not there refuses', 0.2, async function () {
+test.run('in node, a component that is not there refuses', 0.2, async function () {
   const missing = await refusedWith(s.require('spirit/noSuchComponent.js'));
   return (!!missing && missing !== 'answered') || false;
 }, test.limit.quick);
 // ON A PAGE A FILE RUNS AS A PLAIN SCRIPT (goal/G41.7; Andy: "script IS what codeMirror Is, use the require interfaces
 // that exists in spirit.js or boot.js, NOTHING HAND-ROLLED"): no module box, so a file written for both takes its page
 // branch and puts itself on the page, as every shell element does; a stylesheet is put on as a style.
-test.run('on a page: spirit/fieldRules.js runs as a plain script, puts itself on window.spirit, and the require answers an empty object', 0.2, async function () {
+test.run('on a page, spirit/fieldRules.js runs as a plain script, puts itself on window.spirit, and the require answers an empty object', 0.2, async function () {
   if (!T.wq) return false;
   const wq = T.wq;
   const onPage = await wq.spirit.require(PAGE_COMPONENT);
@@ -587,29 +587,29 @@ test.run('on a page: spirit/fieldRules.js runs as a plain script, puts itself on
 }, test.limit.quick);
 // A CodeMirror mode file, written for both node and a page: given no module box it finds CodeMirror on the page (here
 // a stand-in, the library itself needs a real browser) and defines its mode on it.
-test.run('on a page: a CodeMirror mode file, required, runs as the page script it is, finds CodeMirror and defines its mode', 0.2, async function () {
+test.run('on a page, a CodeMirror mode file, required, runs as the page script it is, finds CodeMirror and defines its mode', 0.2, async function () {
   const boxed = page();
   const defined = [];
   boxed.CodeMirror = { defineMode: function (name) { defined.push(name); }, defineMIME: function () {}, registerHelper: function () {}, resolveMode: function () { return {}; } };
   await boxed.spirit.require('spirit/element/codeMirror/mode/css/css.js');
   return (defined.indexOf('css') !== -1 && !boxed.scriptError) || false;
 }, test.limit.quick);
-test.run('on a page: a stylesheet required is put on the page as a style', 0.2, async function () {
+test.run('on a page, a stylesheet required is put on the page as a style', 0.2, async function () {
   if (!T.wq) return false;
   const wq = T.wq;
   const sheet = await wq.spirit.require('spirit/element/codeMirror/lib/codemirror.css');
   return (!!sheet && wq.styles.length === 1 && /\.CodeMirror/.test(wq.styles[0])) || false;
 }, test.limit.quick);
-test.run('on a page: a component that is not there refuses not-found', 0.2, async function () {
+test.run('on a page, a component that is not there refuses not-found', 0.2, async function () {
   if (!T.wq) return false;
   return (await refusedWith(T.wq.spirit.require('spirit/noSuchComponent.js'))) === 'not-found' || false;
 }, test.limit.quick);
-test.run('on a page: an interface answers its member on window.spirit', 0.2, async function () {
+test.run('on a page, an interface answers its member on window.spirit', 0.2, async function () {
   if (!T.wq) return false;
   const pf = await T.wq.spirit.require(T.wq.spirit.familyPath('demo'));
   return pf === T.wq.spirit.demo || false;
 }, test.limit.quick);
-test.run('on a page: with a key, the peer\'s family through the home node\'s peer.post, not its own node\'s', 0.2, async function () {
+test.run('on a page, a require with a key answers the peer\'s family through the home node\'s peer.post, not its own node\'s', 0.2, async function () {
   if (!T.wq) return false;
   const wq = T.wq;
   const pp = await wq.spirit.require(wq.spirit.familyPath('demo'), 'peerKey2');
@@ -622,14 +622,14 @@ test.run('on a page: with a key, the peer\'s family through the home node\'s pee
 // already loaded". A path required twice is fetched and run once, every caller getting the same answer; a script the
 // boot already loaded counts as required.
 // 7a. spirit.require de-dupes: a path is fetched and run once, a script the boot loaded counts as required
-test.run('on a page: spirit/fieldRules.js required three times, two at once, is fetched once, and every caller gets the same answer', 0.2, async function () {
+test.run('on a page, spirit/fieldRules.js required three times, two at once, is fetched once, and every caller gets the same answer', 0.2, async function () {
   const fetchesOf = function (w, p) { return w.fetched.filter(function (f) { return String(f.url).replace(/^\/+/, '') === p; }).length; };
   const dq = page();
   const twice = await Promise.all([dq.spirit.require(PAGE_COMPONENT), dq.spirit.require(PAGE_COMPONENT)]);
   const third = await dq.spirit.require(PAGE_COMPONENT);
   return (fetchesOf(dq, PAGE_COMPONENT) === 1 && twice[0] === twice[1] && twice[1] === third && !!twice[0]) || false;
 }, test.limit.quick);
-test.run('on a face: requiring shell/boot.js after the boot loaded it runs nothing again, and answers', 0.2, async function () {
+test.run('on a face, requiring shell/boot.js after the boot loaded it runs nothing again, and answers', 0.2, async function () {
   if (!T.faceWindow) return false;
   let bootAgain = null;
   const beforeBoot = T.injected.length;
@@ -646,33 +646,33 @@ test.run('on a face: requiring shell/boot.js after the boot loaded it runs nothi
 // 7c. spirit.required.<path>, and on the node spirit.require answers the module at once
 function placeOf(sp, p) { return String(p).replace(/\.js$/, '').split('/').reduce(function (o, k) { return o == null ? undefined : o[k]; }, sp && sp.required); }
 const real = require(path.join(RUN, COMPONENT));
-test.run('on the node: spirit.require of spirit/relayUrl.js answers its module.exports at once, not a promise', 0.2, function () {
+test.run('on the node, spirit.require of spirit/relayUrl.js answers its module.exports at once, not a promise', 0.2, function () {
   const atOnce = s.require(COMPONENT);
   return atOnce === real || false;
 }, test.limit.quick);
-test.run('on the node: asked again, the same module at once', 0.2, function () {
+test.run('on the node, spirit/relayUrl.js asked again answers the same module at once', 0.2, function () {
   return s.require(COMPONENT) === real || false;
 }, test.limit.quick);
-test.run('on the node: it stands at spirit.required.spirit.relayUrl', 0.2, function () {
+test.run('on the node, spirit/relayUrl.js stands at spirit.required.spirit.relayUrl', 0.2, function () {
   return placeOf(s, COMPONENT) === real || false;
 }, test.limit.quick);
 // A FILE AND ITS FOLDER BOTH STAND (goal/G43.32): spirit/app.js takes spirit.required.spirit.app, a first level spirit.js
 // makes ahead, and keeps spirit/app/api.js placed under it; the verifier's general rules found it standing nowhere.
-test.run('on the node: spirit/app.js stands at spirit.required.spirit.app, and spirit/app/api.js under it', 0.2, function () {
+test.run('on the node, spirit/app.js stands at spirit.required.spirit.app, and spirit/app/api.js under it', 0.2, function () {
   const appJs = s.require('spirit/app.js');
   return (placeOf(s, 'spirit/app.js') === appJs && placeOf(s, 'spirit/app/api.js') === require(path.join(RUN, 'spirit/app/api.js'))) || false;
 }, test.limit.quick);
-test.run('on the node: an interface is still bound by asking a node, a promise', 0.2, function () {
+test.run('on the node, an interface is still bound by asking a node, as a promise', 0.2, function () {
   const iface = s.require(s.familyPath('demo'));
   if (iface && typeof iface.then === 'function') { iface.then(null, function () {}); return true; }
   return false;
 }, test.limit.quick);
-test.run('on a page: once spirit/fieldRules.js is required it stands at spirit.required.spirit.fieldRules', 0.2, async function () {
+test.run('on a page, once spirit/fieldRules.js is required it stands at spirit.required.spirit.fieldRules', 0.2, async function () {
   const rq = T.rq = page();
   await rq.spirit.require(PAGE_COMPONENT);
   return !!placeOf(rq.spirit, PAGE_COMPONENT) || false;
 }, test.limit.quick);
-test.run('on a page: a script never required has no place in spirit.required', 0.2, function () {
+test.run('on a page, a script never required has no place in spirit.required', 0.2, function () {
   if (!T.rq) return false;
   const rq = T.rq;
   return (!!rq.spirit.required && typeof rq.spirit.required === 'object' && !placeOf(rq.spirit, 'spirit/noSuchComponent.js')) || false;
@@ -683,25 +683,25 @@ test.run('on a page: a script never required has no place in spirit.required', 0
 // cache is spirit/data.js (spirit.data); spirit.js loads it when its client part starts, page and process alike.
 // 7b. spirit.js loads the cache itself, on a page and in a process
 function isCache(d) { return !!d && typeof d.getPath === 'function' && typeof d.setPath === 'function' && typeof d.addTranslator === 'function'; }
-test.run('on a page: once spirit.js has started, spirit.data is the cache, nothing else loading it', 0.2, async function () {
+test.run('on a page, once spirit.js has started, spirit.data is the cache, with nothing else loading it', 0.2, async function () {
   const cq = T.cq = page();
   try { await cq.spirit.start(); } catch (e) { /* the cache is the question here */ }
   return isCache(cq.spirit.data) || false;
 }, test.limit.quick);
 // goal/G41.16, Andy: "get rid of thos FUCKING data.js scripts": the file tree's meaning is the files row element's, which
 // loads with a files element (rule/26); spirit.js loads the cache and no data script.
-test.run('on a page spirit.js loads no data script with the cache: no spirit/element/search/file/data.js (goal/G41.16)', 0.2, function () {
+test.run('on a page spirit.js loads no data script with the cache, and so no spirit/element/search/file/data.js', 0.2, function () {
   if (!T.cq) return false;
   const cq = T.cq;
   return !/data\.js/.test(JSON.stringify(cq.fetched).replace(/data\.js/g, '')) || false;
 }, test.limit.quick);
 // goal/G41.19, Andy: no preloading elements: the cache alone; an element comes with whoever draws with it.
-test.run('on a page spirit.js loads the cache and no element: no files row element with it (goal/G41.19)', 0.2, function () {
+test.run('on a page spirit.js loads the cache and no element, and so no files row element with it', 0.2, function () {
   if (!T.cq) return false;
   const preloaded = T.cq.fetched.map(function (f) { return String(f.url) + ' ' + String(f.body || ''); }).filter(function (u) { return !/data\.js/.test(u) && /shell\//.test(u); });
   return !preloaded.length || false;
 }, test.limit.quick);
-test.run('in a process: require(spirit.js) gives spirit.data, the cache', 0.2, function () {
+test.run('in a process, requiring spirit.js gives spirit.data, the cache', 0.2, function () {
   const inProcess = spawnSync(process.execPath, ['-e', "const s = require(process.argv[1]); const d = s.data; process.stdout.write(String(!!d && typeof d.getPath === 'function' && typeof d.setPath === 'function' && typeof d.addTranslator === 'function'));", path.join(RUN, 'spirit', 'spirit.js')], { encoding: 'utf8', timeout: 20000 });
   return inProcess.stdout === 'true' || false;
 }, test.limit.quick);
@@ -722,13 +722,13 @@ function calls() {
   return L.page.heard.filter(function (m) { return m.method === 'Network.requestWillBeSent' && /\/api\/spirit$/.test(m.params.request.url) && m.params.request.postData; })
     .map(function (m) { try { return JSON.parse(m.params.request.postData); } catch (e) { return null; } }).filter(Boolean);
 }
-test.run('the world: a scratch node and a headless page on it', 0.2, async function () {
+test.run('a scratch node comes up with a headless page on it', 0.2, async function () {
   L.node = await H.scratchNode();
   L.page = L.node.up ? await H.chromePage(H.findChrome()) : null;
   if (!L.node.up || !L.page || L.page.error) { L.page = null; return false; }
   return true;
 }, test.limit.slow);
-test.run('the world: the page called verbs as it loaded', 0.2, async function () {
+test.run('the page called verbs as it loaded', 0.2, async function () {
   if (!L.page) return false;
   // The home page as a user opens it, then a while for it to settle.
   await L.page.send('Page.navigate', { url: L.node.base + '/face.html' });
@@ -740,19 +740,19 @@ test.run('the world: the page called verbs as it loaded', 0.2, async function ()
   L.asked = L.atLoad.filter(function (c) { return c.call === 'api' && c.args && c.args.family; }).map(function (c) { return String(c.args.family); });
   return L.verbCalls.length > 0 || false;
 }, test.limit.slow);
-test.run('on a real page: the page never asks for the whole api (api with no family)', 0.2, function () {
+test.run('on a real page, the page never asks for the whole api, an api call with no family', 0.2, function () {
   if (!L.atLoad) return false;
   const whole = L.atLoad.filter(function (c) { return c.call === 'api' && !(c.args && c.args.family); });
   return !whole.length || false;
 }, test.limit.quick);
-test.run('on a real page: no family\'s api is asked that the page never calls', 0.2, function () {
+test.run('on a real page, no family\'s api is asked that the page never calls', 0.2, function () {
   if (!L.atLoad) return false;
   const unused = Array.from(new Set(L.asked)).filter(function (f) { return !L.used.has(f); });
   return !unused.length || false;
 }, test.limit.quick);
 // NO FILE IT DOES NOT NEED YET (Andy: "all, spirit.js still seems to be loading all sorts of shit that it doesn't need
 // yet.", and "wsl, why didn't you make sure of this?"). Every file the page fetched as it loaded, with what asked for it.
-test.run('the world: the page fetched more than two scripts as it loaded', 0.2, function () {
+test.run('the page fetched more than two scripts as it loaded', 0.2, function () {
   if (!L.atLoad) return false;
   L.gets = L.page.heard.filter(function (m) { return m.method === 'Network.requestWillBeSent' && m.params.request.method === 'GET'; }).map(function (m) {
     const frames = (m.params.initiator && m.params.initiator.stack && m.params.initiator.stack.callFrames) || [];
@@ -761,7 +761,7 @@ test.run('the world: the page fetched more than two scripts as it loaded', 0.2, 
   L.scripts = L.gets.filter(function (g) { return /\.js$/.test(g.file); });
   return L.scripts.length > 2 || false;
 }, test.limit.quick);
-test.run('on a real page: no file is fetched twice as the page loads', 0.2, function () {
+test.run('on a real page, no file is fetched twice as the page loads', 0.2, function () {
   if (!L.gets) return false;
   const counted = {};
   L.gets.forEach(function (g) { counted[g.file] = (counted[g.file] || 0) + 1; });
@@ -770,18 +770,18 @@ test.run('on a real page: no file is fetched twice as the page loads', 0.2, func
 }, test.limit.quick);
 // A script comes when something requires it: spirit.require (spirit.js) loads it, never a list fetched up front.
 // face.html asks for spirit.js, spirit.js for the shell's boot.js; every other script is spirit.require's.
-test.run('on a real page: every script is loaded by spirit.require when something requires it, none from a list up front', 0.2, function () {
+test.run('on a real page, every script is loaded by spirit.require when something requires it, and none from a list up front', 0.2, function () {
   if (!L.scripts) return false;
   const listed = L.scripts.filter(function (g) { return g.file !== 'spirit.js' && g.file !== 'shell/boot.js' && g.by !== 'spirit.js'; });
   return !listed.length || false;
 }, test.limit.quick);
 // A dialog's parts come when it opens: the home page opens no app's detail, so none of its files is fetched.
-test.run('on a real page: no detail is open, and none of an app detail\'s files is fetched', 0.2, function () {
+test.run('on a real page, no detail is open, and none of an app detail\'s files is fetched', 0.2, function () {
   if (!L.gets) return false;
   const detail = L.gets.filter(function (g) { return /^spirit\/element\/search\/app\/detailElement\.js$|^spirit\/element\/appInstaller\.js$|^spirit\/element\/search\/app\/(serverDEBUG|changeAppIcon|changeAppLabel|rowFormSetShell)\.js$/.test(g.file); });
   return !detail.length || false;
 }, test.limit.quick);
-test.run('on a real page: no family\'s api is asked twice', 0.2, function () {
+test.run('on a real page, no family\'s api is asked twice', 0.2, function () {
   if (!L.atLoad) return false;
   const twice = Array.from(new Set(L.asked)).filter(function (f) { return L.asked.filter(function (x) { return x === f; }).length > 1; });
   return !twice.length || false;
@@ -789,12 +789,12 @@ test.run('on a real page: no family\'s api is asked twice', 0.2, function () {
 // A node family the page has not touched yet, called now through the spirit object: its api is asked once, at
 // first use, and not again on the second call. Which family that is, the page decides as it loads (event, net, peer,
 // owner or config, the first it has not used): its name is in the answer, never the title.
-test.run('the world: one of event, net, peer, owner and config is a family the page has not used yet', 0.2, function () {
+test.run('one of event, net, peer, owner and config is a family the page has not used yet', 0.2, function () {
   if (!L.atLoad) return false;
   L.fresh = ['event', 'net', 'peer', 'owner', 'config'].filter(function (f) { return !L.used.has(f) && L.asked.indexOf(f) === -1; })[0] || '';
   return !!L.fresh || false;
 }, test.limit.quick);
-test.run('the world: the family the page has not used yet is bound on the page once it is required', 0.2, async function () {
+test.run('the family the page has not used yet is bound on the page once it is required', 0.2, async function () {
   if (!L.fresh) return false;
   const fresh = L.fresh;
   L.before = calls().length;
@@ -805,7 +805,7 @@ test.run('the world: the family the page has not used yet is bound on the page o
   L.reached = true;
   return (first === true && second === true) || false;
 }, test.limit.slow);
-test.run('on a real page: using the family the page has not used yet for the first time asks its api once, and using it again asks nothing', 0.2, function () {
+test.run('on a real page, using the family the page has not used yet for the first time asks its api once, and using it again asks nothing', 0.2, function () {
   if (!L.reached) return false;
   const later = calls().slice(L.before).filter(function (c) { return c.call === 'api' && c.args && c.args.family === L.fresh; });
   return later.length === 1 || false;
@@ -815,12 +815,12 @@ test.run('on a real page: using the family the page has not used yet for the fir
 // the elements will trigger the necessary calls?", and "wsl, make sure your reds assert that as well!"). desk, off when
 // the page loaded, is switched on from the page; once its server answers, the Desk element is opened on that same page:
 // it asks desk itself and draws its list, never "the desk server did not answer".
-test.run('the world: desk, off at load, is switched on from the page (app.active)', 0.2, async function () {
+test.run('desk, off at load, is switched on from the page with app.active', 0.2, async function () {
   if (!L.atLoad) return false;
   L.on = await L.page.evaluate("window.spirit.ready.then(function (s) { return Promise.resolve(s.require(s.familyPath('app'))).then(function () { return s.app.activeApp({ key: 'desk', active: true }); }); }).then(function (r) { return !!(r && r.ok); }, function () { return false; })");
   return L.on === true || false;
 }, test.limit.quick);
-test.run('the world: the desk server answers the page once switched on', 0.2, async function () {
+test.run('the desk server answers the page once switched on', 0.2, async function () {
   let up = '';
   if (L.on === true) {
     await H.until(async function () {
@@ -831,7 +831,7 @@ test.run('the world: the desk server answers the page once switched on', 0.2, as
   L.up = up;
   return up === '200' || false;
 }, test.limit.long);
-test.run('on a real page: the Desk element opens on the page that loaded before desk was on', 0.2, async function () {
+test.run('on a real page, the Desk element opens on the page that loaded before desk was on', 0.2, async function () {
   if (L.up !== '200') return false;
   const mark = L.page.heard.length;
   const drawn = await L.page.evaluate("(function () { var d = document.createElement('div'); document.body.appendChild(d);" +
@@ -844,11 +844,11 @@ test.run('on a real page: the Desk element opens on the page that loaded before 
   L.deskAsked = L.page.heard.slice(mark).filter(function (m) { return m.method === 'Network.requestWillBeSent' && /\/api\/spirit$/.test(m.params.request.url) && /"call":"desk\.items\.search"/.test(m.params.request.postData || ''); });
   return (!got.refused && got.nodes > 0) || false;
 }, test.limit.long);
-test.run('on a real page: the Desk element asks desk itself (desk.items.search), no reload', 0.2, function () {
+test.run('on a real page, the Desk element asks desk itself with desk.items.search, and no reload', 0.2, function () {
   if (!L.got) return false;
   return L.deskAsked.length > 0 || false;
 }, test.limit.quick);
-test.run('on a real page: the Desk list draws, never "the desk server did not answer"', 0.2, function () {
+test.run('on a real page, the Desk list draws and never says "the desk server did not answer"', 0.2, function () {
   if (!L.got) return false;
   return (!L.got.refused && !/did not answer/.test(String(L.got.text))) || false;
 }, test.limit.quick);
@@ -866,7 +866,7 @@ function read(rel) { const f = path.join(RUN, rel); return fs.existsSync(f) ? fs
 // cacheManager: a page finds a family's data.js by the folder shape, never by FS.path (goal/G43.27)
 // 6. a page finds a family's data.js by the folder shape, never by FS.path
 const C = {};
-test.run('the world: spirit.js and its cacheManager are read', 0.2, function () {
+test.run('spirit.js and its cacheManager are read', 0.2, function () {
   C.sj = codeOf(read('spirit/spirit.js'));
   return (C.sj.length > 1000 && /function cacheManager/.test(C.sj)) || false;
 }, test.limit.quick);
@@ -890,7 +890,7 @@ function cAsk(call, args) {
 // On the file's own lab node and page (L, part 9 above): a test file holds lab nodes for its whole run, so asking another
 // would wait for one of its own; the restart is the last thing done to L.node.
 const RC = { before: 0 };
-test.run('the world: a face page, its stream handing a subscriber the node\'s snapshot', 0.2, async function () {
+test.run('a face page opens, its stream handing a subscriber the node\'s snapshot', 0.2, async function () {
   if (!L.page || !L.node || !L.node.up) return false;
   await L.page.send('Page.navigate', { url: L.node.base + '/face.html' });
   await H.until(function () { return L.page.evaluate('!!(window.spirit && window.spirit.ready)'); }, 30000);
@@ -905,7 +905,7 @@ test.run('after its node restarts on the same port, the page\'s stream comes bac
   const back = await H.until(function () { return L.page.evaluate('(window.zzHeard || 0) > ' + RC.before); }, 60000);
   return !!back || false;
 }, test.limit.slow);
-test.run('the world: a scratch node is up', 0.2, async function () {
+test.run('a scratch node is up', 0.2, async function () {
   // The page of section 9 and its node are let go first.
   if (L.page && L.page.kid) L.page.kid.kill();
   if (L.node && L.node.child) L.node.child.kill();
@@ -913,7 +913,7 @@ test.run('the world: a scratch node is up', 0.2, async function () {
   return !!C.node.up || false;
 }, test.limit.slow);
 function withData(n) { return ['spirit/' + n + '/data.js', 'spirit/app/' + n + '/data.js'].some(function (p) { return fs.existsSync(path.join(RUN, p)); }); }
-test.run('the world: a page asks the cache of five or more families with a data.js, contact among them', 0.2, async function () {
+test.run('a page asks the cache of five or more families with a data.js, contact among them', 0.2, async function () {
   const node = C.node;
   if (node && node.up) {
     await cAsk('app.active', { key: 'agent', active: true });
@@ -934,7 +934,7 @@ test.run('the world: a page asks the cache of five or more families with a data.
 }, test.limit.slow);
 // The families come from the page's own tree, known only as it runs: each that does not load is named in the answer.
 // spirit.cacheManager("<family>") on a page
-test.run('on a page, it loads its family\'s data.js', 0.2, function () {
+test.run('on a page, spirit.cacheManager of a family loads that family\'s data.js', 0.2, function () {
   if (!C.judged || !C.judged.length) return false;
   return listedFails(C.judged.filter(function (r) { return r[1] !== 'ok'; }));
 }, test.limit.quick);
@@ -1017,7 +1017,7 @@ const sleep = H.sleep;
 // faceLogin: the relay login, a plain page, and the shell from the home node (goal/G43.18)
 // "shell/login/ and its login.json go": gone since; a check of a fixed path gone from the tree is a migration's, dropped (goal/G47.1).
 const FL = {};
-test.run('the world: a real node has a real face on a starred relay, logged in', 0.2, async function () {
+test.run('a real node has a real face on a starred relay, logged in', 0.2, async function () {
   FL.N = await H.scratchNode();
   FL.R = await scratchFaceRelay({ members: [], faceDomain: DOMAIN });
   if (!FL.N.up || !FL.R.up) return false;
@@ -1077,7 +1077,7 @@ test.run('logged out, it loads nothing but spirit.js and seal.js', 0.2, function
 }, test.limit.quick);
 
 // logged in: the shell comes from the home node, over the link
-test.run('the world: the browser holds the login', 0.2, async function () {
+test.run('the browser holds the login', 0.2, async function () {
   if (!FL.out) return false;
   const set = await FL.chrome.send('Network.setCookie', { name: 'spirit_face', value: FL.F.sid, url: faceUrl(), path: '/' });
   FL.cookie = !!(set.result && set.result.success);
@@ -1091,7 +1091,7 @@ test.run('logged in, the face draws the home node\'s shell', 0.2, async function
   FL.inn = parsed(await chrome.evaluate(SEEN)) || {};
   return !!FL.drew || false;
 }, test.limit.long);
-test.run('and none of boot.js, shell.css or face.css came as the relay\'s own file', 0.2, function () {
+test.run('logged in, none of boot.js, shell.css or face.css came as the relay\'s own file', 0.2, function () {
   if (!FL.inn) return false;
   const plainGets = (FL.inn.loaded || []).filter(function (n) { return /^\/shell\/(boot\.js|face\.css)|^\/shell\.css/.test(n); });
   return (!!FL.drew && !plainGets.length) || false;
@@ -1109,7 +1109,7 @@ test.run('logged out by spirit.login.logout, the page shows the one field again'
   FL.loggedOut = true;
   return (after.fields === 1 && after.shell === false) || false;
 }, test.limit.slow);
-test.run('and the relay holds the login no more', 0.8, async function () {
+test.run('after the logout the relay holds the login no more', 0.8, async function () {
   if (!FL.loggedOut) return false;
   const st = await atFace(FL.R, 'POST', '/face/api', { call: 'state', args: {} }, FL.F.sid);
   return (st.status === 200 && !/"loggedIn":\s*true/.test(st.text)) || false;
@@ -1144,13 +1144,13 @@ function walk(dir, base, out) {
 // familyFinder: a family found by its name: the fewest path elements, an api.js there, no name twice (goal/G43.27)
 // the world
 const FF = {};
-test.run('the world: ten or more family names with an api.js in the tree, contact and relay among them', 0.2, function () {
+test.run('ten or more family names have an api.js in the tree, contact and relay among them', 0.2, function () {
   const files = execSync('git ls-files -- spirit/run', { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(Boolean)
     .filter(function (f) { return fs.existsSync(path.join(REPO, f)); }).map(function (f) { return f.slice('spirit/run/'.length); });
   const by = interfaces(RUN, files);
   return (Object.keys(by).length >= 10 && !!by.contact && !!by.relay) || false;
 }, test.limit.quick);
-test.run('the world: spirit/app/contact/ is an app folder with no api.js (Andy: "spirit/app/contact/ does NOT have an api.js")', 0.2, function () {
+test.run('spirit/app/contact/ is an app folder with no api.js', 0.2, function () {
   return (fs.existsSync(path.join(RUN, 'spirit', 'app', 'contact')) && !fs.existsSync(path.join(RUN, 'spirit', 'app', 'contact', 'api.js'))) || false;
 }, test.limit.quick);
 // That no branch's name has a second api.js in the tree is judged on each branch folder, as are an app's family found
@@ -1158,7 +1158,7 @@ test.run('the world: spirit/app/contact/ is an app folder with no api.js (Andy: 
 // the finder itself, on folders planted to break each rule.
 
 // A scratch node, then folders planted into its copy that break each rule.
-test.run('the world: a scratch node is up, on its own copy of the tree', 0.2, async function () {
+test.run('a scratch node is up, on its own copy of the tree', 0.2, async function () {
   // The face of the part above is let go first.
   try { if (FL.chrome && FL.chrome.kid) FL.chrome.kid.kill(); } catch (e) { /* gone */ }
   try { if (FL.R) FL.R.stop(); } catch (e) { /* gone */ }
@@ -1176,13 +1176,13 @@ test.run('the world: a scratch node is up, on its own copy of the tree', 0.2, as
   return true;
 }, test.limit.slow);
 // 3. a duplicate is seen
-test.run('the check sees the planted second relay/api.js (spirit/relay/ and spirit/app/relay/)', 0.2, function () {
+test.run('the check sees the planted second relay/api.js, with both spirit/relay/ and spirit/app/relay/ there', 0.2, function () {
   if (!FF.sRun) return false;
   const planted = interfaces(FF.sRun, walk(FF.sRun, FF.sRun, []));
   return (!!planted.relay && planted.relay.length === 2) || false;
 }, test.limit.quick);
 // 1, 2. a page finds each family where the rules say
-test.run('the world: the page asked contact and relay', 0.2, async function () {
+test.run('the page asked contact and relay', 0.2, async function () {
   if (!FF.sRun) return false;
   const node = FF.node;
   const page = FF.page = await H.chromePage(H.findChrome());
@@ -1201,15 +1201,15 @@ test.run('the world: the page asked contact and relay', 0.2, async function () {
   return !!got || false;
 }, test.limit.slow);
 function fetched(p) { return (FF.asked || []).some(function (a) { return a.url === p && a.status === 200; }); }
-test.run('2. contact is spirit/contact/: spirit/app/contact/ has no api.js, and its data.js never runs', 0.2, function () {
+test.run('contact is spirit/contact/, because spirit/app/contact/ has no api.js, and its data.js never runs', 0.2, function () {
   if (!FF.got) return false;
   return (FF.said.contact === 'ok' && fetched('spirit/contact/data.js') && FF.ran.indexOf('spirit/app/contact') === -1) || false;
 }, test.limit.quick);
-test.run('1. relay is spirit/relay/, the fewer path elements, over spirit/app/relay/', 0.2, function () {
+test.run('relay is spirit/relay/, the path with fewer elements, over spirit/app/relay/', 0.2, function () {
   if (!FF.got) return false;
   return (FF.said.relay === 'ok' && fetched('spirit/relay/data.js') && FF.ran.indexOf('spirit/app/relay') === -1) || false;
 }, test.limit.quick);
-test.run('no data.js was asked that is not there (no 404)', 0.2, function () {
+test.run('no data.js was asked that is not there, so no 404 came', 0.2, function () {
   if (!FF.got) return false;
   const missed = FF.asked.filter(function (a) { return /(^|\/)data\.js$/.test(a.url) && a.status === 404; });
   return !missed.length || false;
@@ -1227,10 +1227,10 @@ function familyPaths() {
     { cwd: RUN, encoding: 'utf8' }).stdout || '{}');
   return paths;
 }
-test.run('a system family\'s path is spirit/<name>/api.js: fs is spirit/fs/api.js', 0.2, function () {
+test.run('a system family\'s path is spirit/<name>/api.js, so fs is spirit/fs/api.js', 0.2, function () {
   return familyPaths().fs === 'spirit/fs/api.js' || false;
 }, test.limit.quick);
-test.run('an app\'s path is spirit/app/<name>/api.js: desk and agent', 0.2, function () {
+test.run('an app\'s path is spirit/app/<name>/api.js, as for desk and agent', 0.2, function () {
   const p = familyPaths();
   return (p.desk === 'spirit/app/desk/api.js' && p.agent === 'spirit/app/agent/api.js') || false;
 }, test.limit.quick);
@@ -1304,7 +1304,7 @@ function goBetween(port) {
     });
   });
 }
-test.run('the world: a page on a scratch node, its stream open', 0.2, async function () {
+test.run('a page on a scratch node has its stream open', 0.2, async function () {
   await freeEarlierWorlds();
   SIL.node = await H.scratchNode();
   if (!SIL.node.up) return false;
@@ -1326,7 +1326,7 @@ const subscribes = function () { return subscribeIds().length; };
 // When a request of the page ended, by its id: finished or failed (a cancelled read fails it), in the order Chrome said them.
 const endedAt = function (id) { let at = -1; SIL.page.heard.forEach(function (m, i) { if ((m.method === 'Network.loadingFinished' || m.method === 'Network.loadingFailed') && m.params.requestId === id && at < 0) at = i; }); return at; };
 const sentAt = function (id) { let at = -1; SIL.page.heard.forEach(function (m, i) { if (m.method === 'Network.requestWillBeSent' && m.params.requestId === id && at < 0) at = i; }); return at; };
-test.run('a stream with no event for 5 s is reset: the page opens a new one by itself', 0.8, async function () {
+test.run('a stream with no event for 5 s is reset, and the page opens a new one by itself', 0.8, async function () {
   if (!SIL.page || !SIL.gate) return false;
   await H.sleep(1500);
   const before = subscribes();
@@ -1340,12 +1340,12 @@ test.run('a stream with no event for 5 s is reset: the page opens a new one by i
   SIL.gate.quiet(false);
   return !!reset || false;
 }, test.limit.slow);
-test.run('it cancels the silent stream first: the old one ended before the new one was sent', 0.8, function () {
+test.run('the page cancels the silent stream first, so the old one ended before the new one was sent', 0.8, function () {
   if (!SIL.old || !SIL.fresh) return false;
   const ended = endedAt(SIL.old), sent = sentAt(SIL.fresh);
   return (ended >= 0 && ended < sent) || false;
 }, test.limit.quick);
-test.run('and it says the stream is down: onConnection false before the new one', 0.8, function () {
+test.run('the page says the stream is down, onConnection false, before the new one', 0.8, function () {
   if (!SIL.saidDown) return false;
   return SIL.saidDown.indexOf(false) !== -1 || false;
 }, test.limit.quick);

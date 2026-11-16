@@ -7,7 +7,7 @@ goal/G47.1, box v144, *"this cycle, first: the browser tests on one page"*. Its 
 - The run ends by itself, within four minutes, the hung script among its scripts.
 - The whole run starts one node (box: *"run on one node and one Chrome for the whole run"*).
 - The whole run starts one Chrome.
-- Every element after the hung script is judged: its results stand in testicle from this run (box: *"only a hung page is reloaded"*).
+- Every element after the hung script is judged, its results standing in testicle from this run (box: *"only a hung page is reloaded"*).
 - The hung script is judged red.
 - The first element's result stands in testicle while the run still goes (box: *"every result reaches testicle the moment the page knows it"*).
 - The run takes at least 80% less than the time measured before, 3.7 s a script on Linux, 10 s on Windows, measured on spirit-sibling-browser.js (box: *"the target: at least 80% less test time"*).

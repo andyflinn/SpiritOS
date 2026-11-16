@@ -28,7 +28,7 @@ const job = function (app, module, from) { W.D.takeJob({ id: 'j' + (++n), module
 const at = function (table, key, from) { return W.D.getPath(W.D.nodeId(from || HOME_KEY) + '/testicle/' + table + '/' + key); };
 const suiteRow = function (script, suite, more) { return Object.assign({ key: script + '|' + suite, script: script, suite: suite, test: false, status: 'green', deleted: false, outcome: 'green', changed: 1 }, more || {}); };
 
-test.run('the world: in a window, beside the real spirit.data, it stands at spirit.data.testicle.data', 0.2, function () {
+test.run('in a window, beside the real spirit.data, it stands at spirit.data.testicle.data', 0.2, function () {
   const win = { JSON: JSON, Object: Object, Array: Array, String: String, Number: Number, Map: Map, Math: Math, Date: Date, unescape: unescape, encodeURIComponent: encodeURIComponent };
   win.window = win;
   // A page's window: the data set knows it is on a page, so its home is the page's node, whatever node a row came from.
@@ -47,12 +47,12 @@ test.run('its tables are script, suite and testicle', 0.2, function () {
   if (!W.T) return false;
   return JSON.stringify(W.T.tables) === JSON.stringify(TABLES) || false;
 }, test.limit.quick);
-test.run('branch(table) is the table\'s whole path, <node>/testicle/<table>; \'\' for any other', 0.2, function () {
+test.run('the branch of a table is the table\'s whole path, <node>/testicle/<table>, and the empty string for any other', 0.2, function () {
   if (!W.T) return false;
   const wrong = TABLES.filter(function (t) { return W.T.branch(t) !== W.D.nodeId(HOME_KEY) + '/testicle/' + t; });
   return (wrong.length === 0 && W.T.branch('monitor') === '') || false;
 }, test.limit.quick);
-test.run('before the stream has said anything, monitor.get() is {}', 0.2, function () {
+test.run('before the stream has said anything, the monitor\'s get answers an empty object', 0.2, function () {
   if (!W.T || !W.T.monitor) return false;
   return JSON.stringify(W.T.monitor.get()) === '{}' || false;
 }, test.limit.quick);
@@ -106,19 +106,19 @@ test.run('every suite\'s row is green when all its rows are green', 0.2, functio
   const r = at('suite', '|spirit/test/seal.js');
   return (!!r && r.outcome === 'green' && r.status === 'green' && r.test === false) || false;
 }, test.limit.quick);
-test.run('red, and still red, when any of its rows is red', 0.2, function () {
+test.run('a suite\'s own row is red, and still red, when any of its rows is red', 0.2, function () {
   if (!W.T) return false;
   job({ testicle: { table: 'suite', row: suiteRow('spirit/other.js', 'spirit/test/seal.js', { outcome: 'red', status: 'still red', changed: 9 }) } });
   const r = at('suite', '|spirit/test/seal.js');
   return (!!r && r.outcome === 'red' && r.status === 'still red' && r.changed === 9) || false;
 }, test.limit.quick);
-test.run('needs running if any of its rows is flagged', 0.2, function () {
+test.run('a suite\'s own row needs running if any of its rows is flagged', 0.2, function () {
   if (!W.T) return false;
   job({ testicle: { table: 'suite', row: suiteRow('spirit/seal.js', 'spirit/test/seal.js', { test: true }) } });
   const r = at('suite', '|spirit/test/seal.js');
   return (!!r && r.test === true && r.status === 'needs running') || false;
 }, test.limit.quick);
-test.run('deleted only when all its rows are', 0.2, function () {
+test.run('a suite\'s own row is deleted only when all its rows are', 0.2, function () {
   if (!W.T) return false;
   job({ testicle: { table: 'suite', row: suiteRow('spirit/seal.js', 'spirit/test/seal.js', { deleted: true }) } });
   const one = at('suite', '|spirit/test/seal.js').deleted;
@@ -147,7 +147,7 @@ test.run('a change not named is \'updated\'', 0.2, function () {
   job({ testicle: { table: 'script', row: { name: 'spirit/seal.js', changed: 7 } } });
   return (W.T.monitor.get().last || {}).change === 'updated' || false;
 }, test.limit.quick);
-test.run('monitor.watch(fn) is told the monitor on every change, and answers its release', 0.2, function () {
+test.run('a watch on the monitor is told the monitor on every change, and answers its release', 0.2, function () {
   if (!W.T) return false;
   const heard = [];
   const release = W.T.monitor.watch(function (m) { heard.push(m.busy); });
@@ -158,7 +158,7 @@ test.run('monitor.watch(fn) is told the monitor on every change, and answers its
 }, test.limit.quick);
 
 // ── the reads and the writes ──
-test.run('keep(table, rows) merges what a verb answered into that table\'s branch, a test row with its names', 0.2, function () {
+test.run('keep merges the rows a verb answered into that table\'s branch, a test row with its names', 0.2, function () {
   if (!W.T) return false;
   W.T.keep('suite', [suiteRow('spirit/kept.js', 'spirit/test/kept.js')]);
   W.T.keep('testicle', [{ key: 'k|1', script: 'spirit/a/kept.js', suite: 'spirit/a/test/kept.js', test: 't' }]);
@@ -173,7 +173,7 @@ test.run('keep of a table it has not, or of rows that are no list, writes nothin
   W.T.keep('script', [null, { hash: 'no name' }]);
   return JSON.stringify(W.D.branchAt(W.D.nodeId(HOME_KEY) + '/testicle')) === before || false;
 }, test.limit.quick);
-test.run('suite.watch(fn) is told fn(key, row) on every change of the suite table, and of no other', 0.2, function () {
+test.run('a watch on the suite table is told the key and the row on every change of that table, and of no other', 0.2, function () {
   if (!W.T || !W.T.suite) return false;
   const heard = [];
   const release = W.T.suite.watch(function (key, row) { heard.push(key); });
@@ -201,7 +201,7 @@ test.run('a row from another node is kept under that node', 0.2, function () {
 }, test.limit.quick);
 
 // ── in node, found by the family's name ──
-test.run('in node, spirit.cacheManager(\'testicle\') loads it, and it stands at spirit.data.testicle.data', 0.2, async function () {
+test.run('in node, spirit.cacheManager loads it by the name testicle, and it stands at spirit.data.testicle.data', 0.2, async function () {
   require(path.join(RUN, 'spirit', 'spirit.js'));
   const s = globalThis.spirit;
   try { await s.cacheManager('testicle'); } catch (e) { return false; }

@@ -25,7 +25,7 @@ const parsed = function (item) { try { return JSON.parse(item.label); } catch (e
 let family, verbs, b, r, bj, createApiAuth, root, tree, auth, reader, desk, got, renamed, all, row, hit, whole, one, noVerb, g, keysOf, ofDesk, ofFiles, ofVerb, every, db, colsOf, names, idx, tables, del, left, gone, PEER, kept, told, tb, tr, tr2, n, toldG, GPEER, plain, asked, mine, mdb, afterSet, badIn, kdb, kept2, odb, wrote, outGet, outItem, owned, ofNode, every2, bootRoot, probeDir, bootTree, boot, ownedBy, settleBoot, a1, all1, records, heldMade, hdb, aU, heldRow, first, countOf, twice, other, twoCase, reborn, hb, addB, setB, delB, nb, nbr, nset, ndel, fsRoot, fsTree, fsAuth, fsBundle, keptId, addedloadFile, addedpath, addedsaveFile, moved, again;
 
 // The two verbs, declared.
-test.run('spirit/auth/api.js declares bundle { op, id, label, text, owner }: a numeric id, a label, an owner left out at will, nothing more', 0.2, async function () {
+test.run('spirit/auth/api.js declares the bundle verb with an op, a numeric id, a label, a search text and an owner that may be left out, and nothing more', 0.2, async function () {
   family = require(FAMILY);
   verbs = (family && family.verbs) || {};
   // Andy, box: "The interfaces to those two tables are TWO verbs under the auth family, auth.bundle and auth.branch,
@@ -36,7 +36,7 @@ test.run('spirit/auth/api.js declares bundle { op, id, label, text, owner }: a n
   return (b && b.op === 'id' && b.id === 'number?' && b.label === 'name?' && b.text === 'text?' && typeof b.owner === 'string' && /\?$/.test(b.owner) && Object.keys(b).length === 5) ? true : false;
 }, test.limit.quick);
 
-test.run('and branch { op, id, bundle, family, verb, text }, flat as the agent tables\' verbs', 0.2, async function () {
+test.run('spirit/auth/api.js declares the branch verb with an op, an id, a bundle, a family, a verb and a search text, flat as the agent tables\' verbs', 0.2, async function () {
   r = verbs.branch;
   return (r && r.op === 'id' && r.id === 'number?' && r.bundle === 'number?' && r.family === 'text?' && r.verb === 'text?' && r.text === 'text?' && Object.keys(r).length === 6) ? true : false;
 }, test.limit.quick);
@@ -49,12 +49,12 @@ test.run('spirit/auth/branch.json describes the verb and its request', 0.2, asyn
   return (!!(function (d) { return d && typeof d.description === 'string' && d.description && d.request && 'op' in d.request; }(readJson(path.join(RUN, 'spirit', 'auth', 'branch.json'))))) ? true : false;
 }, test.limit.quick);
 
-test.run('spirit/auth/bundle.json names the owner in its request and its description, and offers no op set {...} (goal/G41.26; its words may say set is refused)', 0.2, async function () {
+test.run('spirit/auth/bundle.json names the owner in its request and its description, and its description offers no set op, though it may say a set is refused', 0.2, async function () {
   bj = readJson(path.join(RUN, 'spirit', 'auth', 'bundle.json'));
   return (bj && bj.request && 'owner' in bj.request && /owner/.test(String(bj.description || '')) && !/\bset \{/.test(String(bj.description || ''))) ? true : false;
 }, test.limit.quick);
 
-test.run('createApiAuth answers bundle(a) and branch(a) beside grant and revoke', 0.2, async function () {
+test.run('createApiAuth answers a bundle function and a branch function beside grant and revoke', 0.2, async function () {
   createApiAuth = require(FILE).createApiAuth;
   root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-apiAuth-'));
   // goal/G41.25: agent is an app server of the tree, so a bundle it owns names a server the node has.
@@ -64,13 +64,13 @@ test.run('createApiAuth answers bundle(a) and branch(a) beside grant and revoke'
 }, test.limit.quick);
 
 // A bundle: a hidden number and a label.
-test.run('add {label} answers { id }, a number the node gives it', 0.2, async function () {
+test.run('a bundle add with a label answers an id, a number the node gives it', 0.2, async function () {
   if (!auth) return false;
   reader = await call(auth, 'bundle', { op: 'add', label: 'Reader' });
   return (isNum(reader.id)) ? true : false;
 }, test.limit.quick);
 
-test.run('each add a number of its own', 0.2, async function () {
+test.run('each bundle add gets a number of its own', 0.2, async function () {
   if (!auth) return false;
   desk = await call(auth, 'bundle', { op: 'add', label: 'Deskhand' });
   return (isNum(desk.id) && desk.id !== reader.id) ? true : false;
@@ -81,7 +81,7 @@ test.run('a label that is empty, or none, is refused bad-request', 0.2, async fu
   return ((await call(auth, 'bundle', { op: 'add', label: '' })).refusal === 'bad-request' && (await call(auth, 'bundle', { op: 'add' })).refusal === 'bad-request') ? true : false;
 }, test.limit.quick);
 
-test.run('get {id} answers { id, label, owner }, no description, no paths', 0.2, async function () {
+test.run('a bundle get by id answers its id, label and owner, with no description and no paths', 0.2, async function () {
   if (!auth) return false;
   got = await call(auth, 'bundle', { op: 'get', id: reader.id });
   return (got.id === reader.id && got.label === 'Reader' && got.owner === 'node' && Object.keys(got).length === 3) ? true : false;
@@ -95,13 +95,13 @@ test.run('there is no set op: a set is refused bad-request and the label stays w
   return (renamed.refusal === 'bad-request' && (await call(auth, 'bundle', { op: 'get', id: reader.id })).label === 'Reader') ? true : false;
 }, test.limit.quick);
 
-test.run('search with no words answers { items, more }, every bundle', 0.2, async function () {
+test.run('a bundle search with no words answers every bundle, as items and a more flag', 0.2, async function () {
   if (!auth) return false;
   all = await call(auth, 'bundle', { op: 'search', text: '' });
   return (Array.isArray(all.items) && typeof all.more === 'boolean' && all.items.length === 2) ? true : false;
 }, test.limit.quick);
 
-test.run('each item keyed by the bundle\'s id, its label the bundle as get shows it, its owner with it', 0.2, async function () {
+test.run('each item of a bundle search is keyed by the bundle\'s id, and its label is the bundle as get shows it, its owner with it', 0.2, async function () {
   if (!auth) return false;
   row = all.items && parsed(all.items.filter(function (i) { return String(i.key) === String(reader.id); })[0] || {});
   return (row && row.id === reader.id && row.label === 'Reader' && row.owner === 'node') ? true : false;
@@ -114,7 +114,7 @@ test.run('a search of words ranks the bundle that has them first', 0.2, async fu
 }, test.limit.quick);
 
 // A branch: a bundle, a family of the tree, a verb of it or all.
-test.run('add {bundle, family, verb} answers { id }, a number', 0.2, async function () {
+test.run('a branch add naming a bundle, a family and a verb answers an id, a number', 0.2, async function () {
   if (!auth) return false;
   whole = await call(auth, 'branch', { op: 'add', bundle: reader.id, family: 'files', verb: '' });
   return (isNum(whole.id)) ? true : false;
@@ -132,7 +132,7 @@ test.run('a verb left out is the empty verb, all of the family', 0.2, async func
   return (isNum(noVerb.id) && (await call(auth, 'branch', { op: 'get', id: noVerb.id })).verb === '') ? true : false;
 }, test.limit.quick);
 
-test.run('get {id} answers { id, bundle, family, verb }', 0.2, async function () {
+test.run('a branch get by id answers its id, bundle, family and verb, and nothing more', 0.2, async function () {
   if (!auth) return false;
   g = await call(auth, 'branch', { op: 'get', id: one.id });
   return (g.id === one.id && g.bundle === desk.id && g.family === 'desk' && g.verb === 'chat.add' && Object.keys(g).length === 4) ? true : false;
@@ -143,7 +143,7 @@ test.run('get {id} answers { id, bundle, family, verb }', 0.2, async function ()
 // the nodes API tree", "family and verb fields MUST be validated against the nodes API tree when a row is added or
 // changed, and refused if the values are not valid", and "two branch rows referencing the same bundle row MUST NOT
 // ... contain the same family AND verb values".
-test.run('a bundle that is not there is refused no-such-bundle', 0.2, async function () {
+test.run('a branch add naming a bundle that is not there is refused no-such-bundle', 0.2, async function () {
   if (!auth) return false;
   return ((await call(auth, 'branch', { op: 'add', bundle: 99999, family: 'files', verb: '' })).refusal === 'no-such-bundle') ? true : false;
 }, test.limit.quick);
@@ -178,7 +178,7 @@ test.run('a set is checked against the tree as an add is', 0.2, async function (
   return ((await call(auth, 'branch', { op: 'set', id: one.id, verb: 'write' })).refusal === 'no-such-verb') ? true : false;
 }, test.limit.quick);
 
-test.run('and a set that would make a duplicate is refused already-in-bundle', 0.2, async function () {
+test.run('a branch set that would make a duplicate is refused already-in-bundle', 0.2, async function () {
   if (!auth) return false;
   return ((await call(auth, 'branch', { op: 'set', id: one.id, family: 'files', verb: '' })).refusal === 'already-in-bundle') ? true : false;
 }, test.limit.quick);
@@ -194,33 +194,33 @@ test.run('get or delete of a branch that is not there is refused no-such-branch'
   return ((await call(auth, 'branch', { op: 'get', id: 99999 })).refusal === 'no-such-branch' && (await call(auth, 'branch', { op: 'delete', id: 99999 })).refusal === 'no-such-branch') ? true : false;
 }, test.limit.quick);
 
-test.run('a bundle that is not there is refused no-such-bundle; an op neither verb knows, bad-request', 0.2, async function () {
+test.run('a bundle get of a bundle that is not there is refused no-such-bundle, and an op neither verb knows is refused bad-request', 0.2, async function () {
   if (!auth) return false;
   return ((await call(auth, 'bundle', { op: 'get', id: 99999 })).refusal === 'no-such-bundle' && (await call(auth, 'bundle', { op: 'fly' })).refusal === 'bad-request' && (await call(auth, 'branch', { op: 'fly' })).refusal === 'bad-request') ? true : false;
 }, test.limit.quick);
 
 // The branch search filters by bundle, family and verb.
 // Andy, box: "the auth.branch search needs \"bundle\", \"family\" and \"verb\" filters."
-test.run('bundle narrows to that bundle\'s branches', 0.2, async function () {
+test.run('a branch search filtered by bundle narrows to that bundle\'s branches', 0.2, async function () {
   if (!auth) return false;
   keysOf = async function (a) { const s = await call(auth, 'branch', Object.assign({ op: 'search', text: '' }, a)); return (s.items || []).map(function (i) { return parsed(i); }); };
   ofDesk = await keysOf({ bundle: desk.id });
   return (ofDesk.length === 2 && ofDesk.every(function (x) { return x && x.bundle === desk.id; })) ? true : false;
 }, test.limit.quick);
 
-test.run('family narrows to that family', 0.2, async function () {
+test.run('a branch search filtered by family narrows to that family', 0.2, async function () {
   if (!auth) return false;
   ofFiles = await keysOf({ family: 'files' });
   return (ofFiles.length === 2 && ofFiles.every(function (x) { return x.family === 'files'; })) ? true : false;
 }, test.limit.quick);
 
-test.run('verb narrows to that verb', 0.2, async function () {
+test.run('a branch search filtered by verb narrows to that verb', 0.2, async function () {
   if (!auth) return false;
   ofVerb = await keysOf({ family: 'desk', verb: 'chat.add' });
   return (ofVerb.length === 1 && ofVerb[0].bundle === reader.id) ? true : false;
 }, test.limit.quick);
 
-test.run('no filter, or an empty one, is every branch, each item its branch as get shows it', 0.2, async function () {
+test.run('a branch search with no filter, or an empty one, answers every branch, each item its branch as get shows it', 0.2, async function () {
   if (!auth) return false;
   every = await keysOf({});
   return (every.length === 4 && every.every(function (x) { return x && isNum(x.id) && 'verb' in x; })) ? true : false;
@@ -232,7 +232,7 @@ test.run('an empty family or verb filter narrows nothing', 0.2, async function (
 }, test.limit.quick);
 
 // The two tables in node.db, and the old ones gone.
-test.run('node.db has bundle (id, an integer key; label; owner)', 0.2, async function () {
+test.run('node.db has a bundle table of an id that is an integer key, a label and an owner', 0.2, async function () {
   if (!auth) return false;
   db = new DatabaseSync(path.join(root, 'spirit', 'state', 'node.db'));
   colsOf = function (t) { try { return db.prepare('PRAGMA table_info(' + JSON.stringify(t) + ')').all(); } catch (e) { return []; } };
@@ -240,12 +240,12 @@ test.run('node.db has bundle (id, an integer key; label; owner)', 0.2, async fun
   return (JSON.stringify(names(colsOf('bundle'))) === '["id*","label","owner"]' && /INT/i.test((colsOf('bundle').filter(function (c) { return c.name === 'id'; })[0] || {}).type || '')) ? true : false;
 }, test.limit.quick);
 
-test.run('and branch (id, the key; bundle, family, verb)', 0.2, async function () {
+test.run('node.db has a branch table of an id that is the key, a bundle, a family and a verb', 0.2, async function () {
   if (!auth) return false;
   return (JSON.stringify(names(colsOf('branch'))) === '["bundle","family","id*","verb"]') ? true : false;
 }, test.limit.quick);
 
-test.run('branch.bundle is indexed', 0.2, async function () {
+test.run('the bundle column of the branch table is indexed', 0.2, async function () {
   if (!auth) return false;
   idx = (function () { try { return db.prepare('PRAGMA index_list("branch")').all().map(function (i) { return db.prepare('PRAGMA index_info(' + JSON.stringify(i.name) + ')').all().map(function (c) { return c.name; }); }); } catch (e) { return []; } }());
   return (idx.some(function (cols) { return cols[0] === 'bundle'; })) ? true : false;
@@ -258,13 +258,13 @@ test.run('the old bundles and bundle_paths tables are made no more', 0.2, async 
 }, test.limit.quick);
 
 // Deleting a bundle deletes its branches.
-test.run('delete {id} removes the bundle and answers { id }', 0.2, async function () {
+test.run('a bundle delete by id removes the bundle and answers its id', 0.2, async function () {
   if (!auth) return false;
   del = await call(auth, 'bundle', { op: 'delete', id: desk.id });
   return (del.id === desk.id && (await call(auth, 'bundle', { op: 'get', id: desk.id })).refusal === 'no-such-bundle') ? true : false;
 }, test.limit.quick);
 
-test.run('and every branch that names it', 0.2, async function () {
+test.run('a bundle delete also removes every branch that names the bundle', 0.2, async function () {
   if (!auth) return false;
   left = db.prepare('SELECT COUNT(*) AS n FROM branch WHERE bundle = ?').get(desk.id).n;
   return (left === 0 && (await keysOf({ bundle: desk.id })).length === 0 && (await call(auth, 'branch', { op: 'get', id: noVerb.id })).refusal === 'no-such-branch') ? true : false;
@@ -275,7 +275,7 @@ test.run('another bundle\'s branches stay', 0.2, async function () {
   return ((await keysOf({ bundle: reader.id })).length === 2) ? true : false;
 }, test.limit.quick);
 
-test.run('branch delete {id} removes that branch alone', 0.2, async function () {
+test.run('a branch delete by id removes that branch alone', 0.2, async function () {
   if (!auth) return false;
   gone = await call(auth, 'branch', { op: 'delete', id: whole.id });
   return (gone.id === whole.id && (await keysOf({ bundle: reader.id })).length === 1) ? true : false;
@@ -300,12 +300,12 @@ test.run('a grant made from a bundle stays when the bundle goes', 0.2, async fun
 // The node publishes each changed row on one permanent job, as it does each contact row (server.js, the shadow job);
 // apiAuth tells it: onChange(fn), fn({ table, row }) for a row added or set, fn({ table, row: { id }, gone: true }) for
 // one deleted, a bundle's branches each told gone with it.
-test.run('createApiAuth answers onChange(fn), what the node publishes from', 0.2, async function () {
+test.run('createApiAuth answers an onChange function, which the node publishes from', 0.2, async function () {
   if (!auth) return false;
   return (typeof auth.onChange === 'function') ? true : false;
 }, test.limit.quick);
 
-test.run('a bundle added is told { table: bundle, row }, the row as get shows it, its owner with it', 0.2, async function () {
+test.run('a bundle added is told with the bundle table and its row as get shows it, its owner with it', 0.2, async function () {
   if (!auth) return false;
   told = [];
   auth.onChange(function (c) { told.push(JSON.parse(JSON.stringify(c))); });
@@ -313,13 +313,13 @@ test.run('a bundle added is told { table: bundle, row }, the row as get shows it
   return (told.length === 1 && told[0].table === 'bundle' && told[0].row.id === tb.id && told[0].row.label === 'Told' && told[0].row.owner === 'node' && !told[0].gone) ? true : false;
 }, test.limit.quick);
 
-test.run('a refused set tells nothing (goal/G41.26: there is no set op)', 0.2, async function () {
+test.run('a refused bundle set tells nothing, since there is no set op', 0.2, async function () {
   if (!auth) return false;
   await call(auth, 'bundle', { op: 'set', id: tb.id, label: 'Told again' });
   return (told.length === 1) ? true : false;
 }, test.limit.quick);
 
-test.run('a branch added is told { table: branch, row }', 0.2, async function () {
+test.run('a branch added is told with the branch table and its row', 0.2, async function () {
   if (!auth) return false;
   tr = await call(auth, 'branch', { op: 'add', bundle: tb.id, family: 'files', verb: 'read' });
   return (told.length === 2 && told[1].table === 'branch' && told[1].row.id === tr.id && told[1].row.bundle === tb.id && told[1].row.family === 'files' && told[1].row.verb === 'read') ? true : false;
@@ -352,7 +352,7 @@ test.run('a refused add tells nothing', 0.2, async function () {
 // Andy, goal/G41.14: "SO THE MOTHERFUCKING GRANS TABLE DOES NOT BUPLISH EITHER????", "FIX THEN NOW!!!". A grant row is
 // { key, path, label }, one per peer and path, told { table: grant, row } when made and { table, row: { key, path },
 // gone: true } when revoked.
-test.run('a grant made is told { table: grant, row: { key, path, label } }', 0.2, async function () {
+test.run('a grant made is told with the grant table and a row of its key, path and label', 0.2, async function () {
   if (!auth) return false;
   toldG = [];
   auth.onChange(function (c) { if (c && c.table === 'grant') toldG.push(JSON.parse(JSON.stringify(c))); });
@@ -423,7 +423,7 @@ test.run('an add whose owner is not valid (empty, not a text, not a name) is own
 }, test.limit.quick);
 
 // Incoming means kept: the table itself holds "node" for each, not the invalid owner read out as "node".
-test.run('and the table keeps "node" for it, never the owner it was given', 0.2, async function () {
+test.run('for an add whose owner is not valid the table keeps "node", never the owner it was given', 0.2, async function () {
   if (!auth) return false;
   kdb = new DatabaseSync(path.join(root, 'spirit', 'state', 'node.db'), { readOnly: true });
   kept2 = badIn.map(function (x) { try { const r = kdb.prepare('SELECT owner FROM bundle WHERE id = ?').get(x[2]); return r && r.owner; } catch (e) { return null; } });
@@ -446,19 +446,19 @@ test.run('a kept row whose owner is not valid is answered "node", by get and by 
 // Goal/G41.25: the search narrowed to one owner.
 // Andy, box: "if the bundleSelector IS configured for an appServer, then it will only list bundles \"owned\" by that
 // Appserver"; the selector asks the node for them, as every narrowed list does (cw, agreed in the item's chat).
-test.run('search {text, owner} answers that owner\'s bundles alone', 0.2, async function () {
+test.run('a bundle search naming an owner answers that owner\'s bundles alone', 0.2, async function () {
   if (!auth) return false;
   owned = ((await call(auth, 'bundle', { op: 'search', text: '', owner: 'agent' })).items || []).map(parsed);
   return (owned.length === 1 && owned[0] && owned[0].id === mine.id && owned[0].owner === 'agent') ? true : false;
 }, test.limit.quick);
 
-test.run('owner "node" answers the node\'s bundles alone, a row read as "node" among them', 0.2, async function () {
+test.run('a bundle search for the owner "node" answers the node\'s bundles alone, a row read as "node" among them', 0.2, async function () {
   if (!auth) return false;
   ofNode = ((await call(auth, 'bundle', { op: 'search', text: '', owner: 'node' })).items || []).map(parsed);
   return (ofNode.length > 1 && ofNode.every(function (x) { return x && x.owner === 'node'; })) ? true : false;
 }, test.limit.quick);
 
-test.run('no owner is every bundle, whoever owns it', 0.2, async function () {
+test.run('a bundle search naming no owner answers every bundle, whoever owns it', 0.2, async function () {
   if (!auth) return false;
   every2 = ((await call(auth, 'bundle', { op: 'search', text: '' })).items || []).map(parsed);
   return (every2.some(function (x) { return x && x.owner === 'agent'; }) && every2.some(function (x) { return x && x.owner === 'node'; })) ? true : false;
@@ -488,7 +488,7 @@ test.run('a <name>Bundles.json in an app folder makes no bundle at boot', 0.2, a
   return (!all1.some(function (x) { return x && (x.owner === 'probe' || x.label === 'Probe agent'); })) ? true : false;
 }, test.limit.slow);
 
-test.run('and no bundles.json record is written anywhere', 0.2, async function () {
+test.run('a boot writes no bundles.json record anywhere', 0.2, async function () {
   if (!auth) return false;
   records = [];
   (function walk(d) { (fs.existsSync(d) ? fs.readdirSync(d, { withFileTypes: true }) : []).forEach(function (e) { const p = path.join(d, e.name); if (e.isDirectory()) walk(p); else if (e.name === 'bundles.json') records.push(path.relative(bootRoot, p)); }); }(bootRoot));
@@ -525,7 +525,7 @@ test.run('the same label again, by the same owner, is refused', 0.2, async funct
   return (!!twice.refusal && !isNum(twice.id)) ? true : false;
 }, test.limit.quick);
 
-test.run('and no second row is made', 0.2, async function () {
+test.run('a refused duplicate label makes no second row', 0.2, async function () {
   if (!auth) return false;
   return ((await countOf('Twice')) === 1) ? true : false;
 }, test.limit.quick);
@@ -562,25 +562,25 @@ test.run('deleting a server\'s bundle is refused, and it stays', 0.8, async func
   return (!!del.refusal && (await call(aU, 'bundle', { op: 'get', id: heldRow.id })).id === heldRow.id) ? true : false;
 }, test.limit.quick);
 
-test.run('adding a branch to it is refused', 0.8, async function () {
+test.run('adding a branch to a server\'s bundle is refused', 0.8, async function () {
   if (!auth) return false;
   addB = await call(aU, 'branch', { op: 'add', bundle: heldRow.id, family: 'desk', verb: 'chat.add' });
   return (!!addB.refusal && !isNum(addB.id)) ? true : false;
 }, test.limit.quick);
 
-test.run('changing its branch is refused', 0.8, async function () {
+test.run('changing the branch of a server\'s bundle is refused', 0.8, async function () {
   if (!auth) return false;
   setB = await call(aU, 'branch', { op: 'set', id: hb.id, family: 'files', verb: 'list' });
   return (!!setB.refusal) ? true : false;
 }, test.limit.quick);
 
-test.run('deleting its branch is refused, and it stays', 0.8, async function () {
+test.run('deleting the branch of a server\'s bundle is refused, and the branch stays', 0.8, async function () {
   if (!auth) return false;
   delB = await call(aU, 'branch', { op: 'delete', id: hb.id });
   return (!!delB.refusal && (await call(aU, 'branch', { op: 'get', id: hb.id })).id === hb.id) ? true : false;
 }, test.limit.quick);
 
-test.run('it is still read: get answers it', 0.2, async function () {
+test.run('a server\'s bundle can still be read: get answers it', 0.2, async function () {
   if (!auth) return false;
   return ((await call(aU, 'bundle', { op: 'get', id: heldRow.id })).owner === 'zzHeld') ? true : false;
 }, test.limit.quick);
@@ -592,19 +592,19 @@ test.run('on a node-owned bundle a branch is added', 0.2, async function () {
   return (isNum(nbr.id)) ? true : false;
 }, test.limit.quick);
 
-test.run('changed', 0.2, async function () {
+test.run('on a node-owned bundle a branch is changed', 0.2, async function () {
   if (!auth) return false;
   nset = await call(aU, 'branch', { op: 'set', id: nbr.id, verb: 'list' });
   return (!nset.refusal) ? true : false;
 }, test.limit.quick);
 
-test.run('and the bundle deleted', 0.2, async function () {
+test.run('a node-owned bundle is deleted', 0.2, async function () {
   if (!auth) return false;
   ndel = await call(aU, 'bundle', { op: 'delete', id: nb.id });
   return (!ndel.refusal) ? true : false;
 }, test.limit.quick);
 
-test.run('the world: a verb the family serves makes a branch', 0.2, async function () {
+test.run('on a scratch node with no FS verb, a branch naming a verb the family serves is made', 0.2, async function () {
   if (!auth) return false;
   try { fs.rmSync(bootRoot, { recursive: true, force: true }); } catch (e) { /* the scratch folder is the system's to clear */ }
   // Goal/G43.20: no branch carries an FS set, so none is granted.
@@ -619,25 +619,25 @@ test.run('the world: a verb the family serves makes a branch', 0.2, async functi
   return (isNum(keptId)) ? true : false;
 }, test.limit.quick);
 
-test.run('auth.branch add of desk.FS.loadFile is refused: no branch serves it', 0.8, async function () {
+test.run('adding a branch for desk.FS.loadFile is refused, since no branch serves it', 0.8, async function () {
   if (!auth) return false;
   addedloadFile = await call(fsAuth, 'branch', { op: 'add', bundle: fsBundle.id, family: 'desk', verb: 'FS.loadFile' });
   return (!!addedloadFile.refusal && !isNum(addedloadFile.id)) ? true : false;
 }, test.limit.quick);
 
-test.run('auth.branch add of desk.FS.path is refused: no branch serves it', 0.8, async function () {
+test.run('adding a branch for desk.FS.path is refused, since no branch serves it', 0.8, async function () {
   if (!auth) return false;
   addedpath = await call(fsAuth, 'branch', { op: 'add', bundle: fsBundle.id, family: 'desk', verb: 'FS.path' });
   return (!!addedpath.refusal && !isNum(addedpath.id)) ? true : false;
 }, test.limit.quick);
 
-test.run('auth.branch add of desk.FS.saveFile is refused: no branch serves it', 0.8, async function () {
+test.run('adding a branch for desk.FS.saveFile is refused, since no branch serves it', 0.8, async function () {
   if (!auth) return false;
   addedsaveFile = await call(fsAuth, 'branch', { op: 'add', bundle: fsBundle.id, family: 'desk', verb: 'FS.saveFile' });
   return (!!addedsaveFile.refusal && !isNum(addedsaveFile.id)) ? true : false;
 }, test.limit.quick);
 
-test.run('auth.branch set onto desk.FS.loadFile is refused, the branch kept', 0.8, async function () {
+test.run('setting a branch onto desk.FS.loadFile is refused, and the branch is kept', 0.8, async function () {
   if (!auth) return false;
   moved = await call(fsAuth, 'branch', { op: 'set', id: keptId, verb: 'FS.loadFile' });
   return (!!moved.refusal && (await call(fsAuth, 'branch', { op: 'get', id: keptId })).verb === 'chat.add') ? true : false;

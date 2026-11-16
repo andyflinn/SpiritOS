@@ -36,7 +36,7 @@ test.run('it has server.js, and elementTable.js and elementRow.js in the app\'s 
 }, test.limit.quick);
 
 // ── server.js: the table in agent.db ──
-test.run('server.js(ctx) answers the table, its verb and has', 0.2, function () {
+test.run('server.js, given its context, answers the table with its verb and its has function', 0.2, function () {
   if (!fs.existsSync(path.join(DIR, 'server.js'))) return false;
   X.scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-persona-'));
   const db = X.db = new DatabaseSync(path.join(X.scratch, 'agent.db'));
@@ -62,16 +62,16 @@ test.run('the persona table has a label column', 0.2, function () { return has('
 test.run('the persona table has a persona column', 0.2, function () { return has('persona'); }, test.limit.quick);
 test.run('the persona table has a bundle column', 0.2, function () { return has('bundle'); }, test.limit.quick);
 test.run('the persona table has a provider column', 0.2, function () { return has('provider'); }, test.limit.quick);
-test.run('and nothing else', 0.2, function () { return X.cols.length === 9 ? true : false; }, test.limit.quick);
+test.run('the persona table has no other column', 0.2, function () { return X.cols.length === 9 ? true : false; }, test.limit.quick);
 const B = { pid: '' };
-test.run('a persona keeps its bundle, its text as it was', 0.2, function () {
+test.run('a persona keeps its bundle, with its text as it was', 0.2, function () {
   if (!X.t) return false;
   B.pid = call(X.t.verb, { op: 'add', icon: '🎭', label: 'With a bundle', persona: 'p' }).id;
   call(X.t.verb, { op: 'set', id: B.pid, bundle: '7' });
   const got = call(X.t.verb, { op: 'get', id: B.pid });
   return got && String(got.bundle) === '7' && got.persona === 'p' ? true : false;
 }, test.limit.quick);
-test.run('a persona keeps its provider, its bundle and text as they were (goal/G41.26)', 0.2, function () {
+test.run('a persona keeps its provider, with its bundle and text as they were', 0.2, function () {
   if (!B.pid) return false;
   // A provider's id is a public key, as every row's is; the persona keeps it as the job keeps its own.
   const P = require('crypto').generateKeyPairSync('ed25519').publicKey.export({ type: 'spki', format: 'der' }).toString('base64');
@@ -94,7 +94,7 @@ test.run('a set of its label keeps its text', 0.2, function () {
   call(X.t.verb, { op: 'set', id: X.added.id, label: 'Renamed' });
   return call(X.t.verb, { op: 'get', id: X.added.id }).persona === TEXT ? true : false;
 }, test.limit.quick);
-test.run('a persona deleted takes no grants: grants are a job\'s', 0.2, function () {
+test.run('a persona deleted takes no grants with it, because grants are a job\'s', 0.2, function () {
   if (!X.added || !X.added.id) return false;
   const dropped = X.dropped;
   return dropped.length === 0 && (call(X.t.verb, { op: 'delete', id: X.added.id }).id === X.added.id) && dropped.length === 0 ? true : false;
@@ -116,12 +116,12 @@ test.run('each refusal names the field missing', 0.2, function () {
   if (!V.noIcon) return false;
   return (/icon/i).test(String(V.noIcon.why)) && /label/i.test(String(V.noLabel.why)) ? true : false;
 }, test.limit.quick);
-test.run('with its icon and its label, it is added', 0.2, function () {
+test.run('a persona with its icon and its label is added', 0.2, function () {
   if (!X.t) return false;
   V.whole = call(X.t.verb, { op: 'add', icon: '🎭', label: 'Whole' });
   return V.whole.id && rowsNow() === V.before + 1 ? true : false;
 }, test.limit.quick);
-test.run('a change that would empty its label is refused, the row kept', 0.2, function () {
+test.run('a change that would empty its label is refused, and the row is kept', 0.2, function () {
   if (!V.whole || !V.whole.id) return false;
   const emptied = call(X.t.verb, { op: 'set', id: V.whole.id, label: '' });
   const verdict = emptied.refusal && call(X.t.verb, { op: 'get', id: V.whole.id }).label === 'Whole' ? true : false;
@@ -145,7 +145,7 @@ test.run('a search answers the id, the icon and the label of a row, nothing else
 // ── the page: elementTable.js and elementRow.js ──
 const detail = { open: function () {}, look: function (t2) { return { icon: '🎭', name: 'Persona', title: 'Personas', table: t2 }; } };
 const box = { innerHTML: '' };
-test.run('they place spirit.element.spirit.app.agent.element.table.persona.elementTable and elementRow', 0.2, function () {
+test.run('the page files place spirit.element.spirit.app.agent.element.table.persona.elementTable and elementRow', 0.2, function () {
   const made = X.made = { tables: [], rows: [], required: [] };
   const STAND = {
     agentTable: { create: function (c, o) { made.tables.push({ c: c, o: o }); return { refresh: function () { made.refreshed = true; }, destroy: function () { made.destroyed = true; } }; } },
@@ -189,7 +189,7 @@ test.run('its refresh and destroy are the shared element\'s', 0.2, function () {
   X.list.refresh(); X.list.destroy();
   return X.made.refreshed && X.made.destroyed ? true : false;
 }, test.limit.quick);
-test.run('a row it opens is a personaRow, built on agentRow, in the box it is handed, with its id and added, no api', 0.2, async function () {
+test.run('a row it opens is a personaRow, built on agentRow, in the box it is handed, with its id and its added flag and no api', 0.2, async function () {
   if (!X.o) return false;
   const made = X.made;
   const into = { innerHTML: '' };
@@ -199,7 +199,7 @@ test.run('a row it opens is a personaRow, built on agentRow, in the box it is ha
   return made.rows.length === 1 && made.rows[0].c === into && r.table === 'persona' && !('api' in r) && r.id === 'K1' && r.added === false ? true : false;
 }, test.limit.quick);
 // goal/G41.21: "# mandatory fields (server AND ui)": the row hands the shared editor its table's mandatory fields.
-test.run('it hands the editor the persona table\'s mandatory fields, [icon, label]', 0.2, function () {
+test.run('it hands the editor the persona table\'s mandatory fields, icon and label', 0.2, function () {
   const r = X.r;
   return r && JSON.stringify(r.required) === JSON.stringify(['icon', 'label']) ? true : false;
 }, test.limit.quick);
@@ -210,7 +210,7 @@ test.run('its title row has the persona table\'s look', 0.2, function () {
 // goal/G41.21: the bundle by the bundle selector in dropdown mode (kind bundle), as the job's.
 // goal/G41.26: the provider by the providerSelector in dropdown mode, the same field the job's detail has
 // (../../job/elementRow.js: { field: 'provider', kind: 'pick', pick: 'provider' }).
-test.run('its fields are the label, the persona in a CodeMirror editor, its bundle by the bundle selector, and its provider by the providerSelector:dropdown, as the job\'s', 0.2, function () {
+test.run('its fields are the label, the persona in a CodeMirror editor, its bundle by the bundle selector, and its provider by the provider selector as a dropdown, as the job\'s are', 0.2, function () {
   const r = X.r;
   return r && JSON.stringify(r.fields.map(function (f) { return [f.field, f.kind, f.pick || '']; })) === JSON.stringify([['label', 'name', ''], ['persona', 'code', ''], ['bundle', 'bundle', ''], ['provider', 'pick', 'provider']])
     ? true : false;
@@ -230,7 +230,7 @@ test.run('its page files require no data script', 0.2, function () {
   if (!X.made) return false;
   return !X.made.required.some(function (p) { return (/data\.js$/).test(p); }) ? true : false;
 }, test.limit.quick);
-test.run('the agent family\'s cache manager is loaded: spirit.data.agent.data.branch(\'persona\') is the home node\'s <node>/agent/persona', 0.2, function () {
+test.run('the agent family\'s cache manager is loaded, and its branch of the persona table is the home node\'s <node>/agent/persona', 0.2, function () {
   if (!X.made) return false;
   const DATA = global.window.spirit.data;
   const AD = X.AD = ((global.window.spirit.data || {}).agent || {}).data;
@@ -246,7 +246,7 @@ test.run('a persona row on the stream lands at <node>/agent/persona/<id>, and th
   off();
   return AD.row('persona', 'KT') && AD.row('persona', 'KT').label === 'First' && heard.indexOf(BRANCH + '/KT') !== -1 ? true : false;
 }, test.limit.quick);
-test.run('a changed row is merged: what it names changes, what it does not stays', 0.2, function () {
+test.run('a changed row is merged, so what it names changes and what it does not name stays', 0.2, function () {
   if (!X.AD) return false;
   const DATA = global.window.spirit.data, AD = X.AD;
   DATA.takeJob(job({ table: 'persona', row: { id: 'KT', label: 'Renamed' } }));
@@ -258,7 +258,7 @@ test.run('a row removed, by its id, is gone', 0.2, function () {
   DATA.takeJob(job({ table: 'persona', id: 'KT', removed: true }));
   return !AD.row('persona', 'KT') && !('KT' in DATA.branchAt(X.BRANCH)) ? true : false;
 }, test.limit.quick);
-test.run('another table\'s rows, another module\'s, and a row with no id write nothing here', 0.2, function () {
+test.run('another table\'s rows, another module\'s rows and a row with no id write nothing here', 0.2, function () {
   if (!X.AD) return false;
   const DATA = global.window.spirit.data;
   const before = JSON.stringify(DATA.branchAt(X.BRANCH));

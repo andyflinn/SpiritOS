@@ -43,12 +43,12 @@ const line = function (peer, sent, seq, at, text) { return { peer: peer, sent: s
 const X = { w: null, told: [], off: null };
 
 // ── the branch is chat: spirit.data.chat ──
-test.run('it makes spirit.data.chat, its reads on .data', 0.2, function () {
+test.run('it makes the chat family in spirit.data, its reads on its data', 0.2, function () {
   X.w = world();
   const w = X.w;
   return !!w.C && typeof w.C.lines === 'function' ? true : false;
 }, test.limit.quick);
-test.run('and no spirit.data.chatClerver', 0.2, function () {
+test.run('it makes no chatClerver family in spirit.data', 0.2, function () {
   if (!X.w) return false;
   return !(X.w.D && X.w.D.chatClerver) ? true : false;
 }, test.limit.quick);
@@ -63,7 +63,7 @@ test.run('both lines are kept under the peer, oldest first', 0.2, function () {
   const kept = w.C.lines(PEER);
   return kept.length === 2 && kept[0].text === 'zz one' && kept[1].text === 'zz an answer' ? true : false;
 }, test.limit.quick);
-test.run('line(peer, sent, seq) finds one', 0.2, function () {
+test.run('line finds one kept line by its peer, sent and seq', 0.2, function () {
   const w = X.w;
   if (!w || !w.C) return false;
   return !!w.C.line(PEER, 0, 1) && w.C.line(PEER, 0, 1).text === 'zz an answer' ? true : false;
@@ -93,7 +93,7 @@ test.run('a line in another job\'s publish is never kept as a chat line', 0.2, f
   w.job(line(PEER, 1, 9, '2026-11-09T11:00:00.000Z', 'zz not chat'), 'spirit.app.desk');
   return !w.C.line(PEER, 1, 9) ? true : false;
 }, test.limit.quick);
-test.run('nor one under the old name spirit.app.chatClerver', 0.2, function () {
+test.run('a line under the old name spirit.app.chatClerver is never kept either', 0.2, function () {
   const w = X.w;
   if (!w || !w.C) return false;
   w.job(line(PEER, 1, 9, '2026-11-09T11:00:00.000Z', 'zz old name'), 'spirit.app.chatClerver');

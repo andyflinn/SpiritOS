@@ -23,7 +23,7 @@ const R1 = 'https://relay-one.example';
 const R2 = 'https://relay-two.example';
 
 // ── the numbers decided ──
-test.run('one request in flight per relay, the relay\'s own per-member cap (decision 0016)', 0.2, function () {
+test.run('one request is in flight per relay, the relay\'s own per-member cap', 0.2, function () {
   return (Q.IN_FLIGHT_PER_RELAY === 1 && planted().q.perRelay === 1) || false;
 }, test.limit.quick);
 test.run('the queue holds 4 MB, background yielding at a quarter of it', 0.2, function () {
@@ -100,7 +100,7 @@ test.run('a timeout\'s wait never passes the cap', 0.2, function () {
   for (let i = 0; i < 4; i += 1) { q.started(a); q.silent(a); waits.push(q.backoffFor(R1, 'a')); }
   return short(waits) === short([2000, 4000, 5000, 5000]) || false;
 }, test.limit.quick);
-test.run('busy grows 250, 500, 1000, 2000 ms and no further (goal/G4.30, Andy: "agreed.")', 0.2, function () {
+test.run('the wait after busy grows 250, 500, 1000, 2000 ms and no further', 0.2, function () {
   const { q } = planted();
   const a = q.add({ relayUrl: R1, toKey: 'a' });
   const waits = [];

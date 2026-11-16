@@ -73,7 +73,7 @@ test.run('it has server.js, and elementTable.js and elementRow.js in the app\'s 
 }, test.limit.quick);
 
 // ── server.js: the table in agent.db ──
-test.run('server.js(ctx) answers the table, its verb and has', 0.2, function () {
+test.run('server.js, handed a context, answers the model table with its verb and its has function', 0.2, function () {
   if (!fs.existsSync(path.join(DIR, 'server.js'))) return false;
   X.scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-model-'));
   const db = X.db = new DatabaseSync(path.join(X.scratch, 'agent.db'));
@@ -94,7 +94,7 @@ test.run('the model table has an icon column', 0.2, function () { return has('ic
 test.run('the model table has a label column', 0.2, function () { return has('label'); }, test.limit.quick);
 test.run('the model table has a providerId column', 0.2, function () { return has('providerId'); }, test.limit.quick);
 test.run('the model table has a capabilities column', 0.2, function () { return has('capabilities'); }, test.limit.quick);
-test.run('and nothing else: no model name column, the label holds it', 0.2, function () {
+test.run('the model table has no other column, and no model name column, as the label holds the model name', 0.2, function () {
   return X.cols.length === 8 ? true : false;
 }, test.limit.quick);
 
@@ -107,7 +107,7 @@ test.run('a model is added with its provider\'s id, its label the model name as 
   const got = X.got;
   return got && got.providerId === X.provider.id && got.label === 'claude-opus-5-5' ? true : false;
 }, test.limit.quick);
-test.run('its capabilities are a list', 0.2, function () {
+test.run('an added model\'s capabilities are a list', 0.2, function () {
   const got = X.got;
   return got && JSON.stringify(got.capabilities) === '["text","tools"]' ? true : false;
 }, test.limit.quick);
@@ -117,7 +117,7 @@ test.run('a model naming a provider that is not there is refused, saying so', 0.
   const noProvider = call(X.t.verb, { op: 'add', label: 'Lost', providerId: X.gone });
   return noProvider.refusal === 'bad-request' && /no provider/.test(noProvider.why) ? true : false;
 }, test.limit.quick);
-test.run('and so is a set to one, the provider kept', 0.2, function () {
+test.run('a set naming a provider that is not there is refused too, and the model keeps its provider', 0.2, function () {
   if (!X.added || !X.added.id) return false;
   return call(X.t.verb, { op: 'set', id: X.added.id, providerId: X.gone }).refusal === 'bad-request' && call(X.t.verb, { op: 'get', id: X.added.id }).providerId === X.provider.id ? true : false;
 }, test.limit.quick);
@@ -132,7 +132,7 @@ test.run('a model\'s get carries providerIcon, the icon of its provider row', 0.
   const shownGet = call(X.t.verb, { op: 'get', id: X.added.id });
   return shownGet && shownGet.providerIcon === '🅰' ? true : false;
 }, test.limit.quick);
-test.run('and so does each row a search finds', 0.2, function () {
+test.run('each row a search finds carries its provider\'s icon too', 0.2, function () {
   if (!X.t) return false;
   try { X.found = JSON.parse((call(X.t.verb, { op: 'search', text: 'opus' }).items || [])[0].label); } catch (e) { X.found = null; }
   return X.found && X.found.providerIcon === '🅰' ? true : false;
@@ -143,7 +143,7 @@ test.run('a search answers the id and what the model list shows, the label (the 
   const found = X.found;
   return found && JSON.stringify(Object.keys(found).sort()) === '["id","label","providerIcon"]' ? true : false;
 }, test.limit.quick);
-test.run('and each model row the server publishes', 0.2, function () {
+test.run('each model row the server publishes carries its provider\'s icon', 0.2, function () {
   if (!X.provider) return false;
   X.published.length = 0;
   call(X.t.verb, { op: 'add', label: 'claude-sonnet-5-5', providerId: X.provider.id });
@@ -155,7 +155,7 @@ test.run('a model with no provider has an empty providerIcon', 0.2, function () 
   const bare = call(X.t.verb, { op: 'add', label: 'Bare' });
   return bare.id && call(X.t.verb, { op: 'get', id: bare.id }).providerIcon === '' ? true : false;
 }, test.limit.quick);
-test.run('it is shown, not kept: the model table has no providerIcon column', 0.2, function () {
+test.run('the provider\'s icon is shown, not kept: the model table has no providerIcon column', 0.2, function () {
   if (!X.db) return false;
   const cols2 = X.db.prepare('PRAGMA table_info("model")').all().map(function (c) { return c.name; });
   return cols2.indexOf('providerIcon') === -1 ? true : false;
@@ -164,7 +164,7 @@ test.run('it is shown, not kept: the model table has no providerIcon column', 0.
 // ── the page: elementTable.js and elementRow.js ──
 const opened = [];
 const detail = { open: function (make) { opened.push(make); }, look: function (t2) { return { icon: '🧠', name: 'Model', title: 'Models', table: t2 }; } };
-test.run('they place spirit.element.spirit.app.agent.element.table.model.elementTable and elementRow', 0.2, function () {
+test.run('elementTable.js and elementRow.js place the agent app\'s model list and model row elements on spirit.element', 0.2, function () {
   const made = X.made = { tables: [], rows: [], required: [], searches: [], busy: [], calls: [], answer: null, forms: [] };
   made.family = new Proxy({}, { get: function (o, table) {
     if (table === 'then') return undefined;
@@ -220,14 +220,14 @@ test.run('elementTable.js requires the shared element and its own row element', 
   const made = X.made;
   return made.required.indexOf('spirit/app/agent/element/table/tableElement.js') !== -1 && made.required.indexOf('spirit/app/agent/element/table/model/elementRow.js') !== -1 ? true : false;
 }, test.limit.quick);
-test.run('it builds on agentTable, in its box, for the model table, with the detail pane and no api, and no Add (Andy, on G41.18: "get RID of [Add a Model] button ... NOT required")', 0.2, function () {
+test.run('the model list builds on agentTable, in its box, for the model table, with the detail pane, no api and no Add button', 0.2, function () {
   if (!X.list) return false;
   const made = X.made;
   const o = X.o = made.tables[0] && made.tables[0].o;
   return made.tables.length === 1 && !!made.tables[0].c && o.table === 'model' && !('api' in o) && o.detail === detail && o.add === false ? true : false;
 }, test.limit.quick);
 // goal/G41.18, box v17: the list shows "[icon] \"model-name\"", the provider's icon.
-test.run('its list shows each model by its provider\'s icon and its label, the model name (goal/G41.18, G41.21)', 0.2, function () {
+test.run('the model list shows each model by its provider\'s icon and its label, the model name', 0.2, function () {
   const o = X.o;
   const shownBy = ((o && o.columns) || []).map(function (c) { return c.from || c.field; });
   return JSON.stringify(shownBy) === '["providerIcon","label"]' ? true : false;
@@ -242,15 +242,15 @@ test.run('the list is handed no provider models button', 0.2, function () {
   const o = X.o;
   return !((o && o.buttons) || []).some(function (b2) { return b2 && b2.label === 'provider models'; }) ? true : false;
 }, test.limit.quick);
-test.run('the Update model list pane is gone: model/updatePanel.js and its test', 0.2, function () {
+test.run('the Update model list pane is gone: model/updatePanel.js and its test no longer exist', 0.2, function () {
   return !fs.existsSync(path.join(DIR, 'updatePanel.js')) && !fs.existsSync(path.join(__dirname, 'updatePanel.js')) && !fs.existsSync(path.join(__dirname, 'updatePanel.md'))
     ? true : false;
 }, test.limit.quick);
-test.run('and nothing loads it', 0.2, function () {
+test.run('nothing loads the Update model list pane', 0.2, function () {
   if (!X.made) return false;
   return X.made.required.indexOf('spirit/app/agent/table/model/updatePanel.js') === -1 && !X.E.modelUpdate ? true : false;
 }, test.limit.quick);
-test.run('it loads what the form uses itself (rule/26): the search element, the busyButton and the rowForm', 0.2, function () {
+test.run('the model list loads what its Ask form uses itself: the search element, the busyButton and the rowForm', 0.2, function () {
   if (!X.made) return false;
   const made = X.made;
   return made.required.indexOf('spirit/element/search.js') !== -1 && made.required.indexOf('spirit/element/busyButton.js') !== -1 && made.required.indexOf('spirit/element/rowForm.js') !== -1 ? true : false;
@@ -265,7 +265,7 @@ test.run('the Ask form is one rowForm, its icon ❓ and its button Ask', 0.2, fu
   X.askBtn = rf ? rf.button : the(X.pane, 'ask');
   return made.forms.length === 1 && rf.opts.icon === '❓' && rf.opts.button === 'Ask' ? true : false;
 }, test.limit.quick);
-test.run('its span holds the providerSelector:dropdown, Pick a provider, and nothing else', 0.2, function () {
+test.run('the Ask form\'s span holds the providerSelector:dropdown, showing Pick a provider, and nothing else', 0.2, function () {
   if (!X.made) return false;
   const rf = X.rf, drop = X.drop;
   const inSpan = !!rf && !!drop && (drop.host === rf.span || rf.span.children.indexOf(drop.host) !== -1) && rf.span.children.length <= 1;
@@ -289,7 +289,7 @@ test.run('Ask with no provider chosen asks nothing', 0.2, async function () {
   X.askBtn.click(); await settle();
   return !X.made.calls.some(function (c) { return c.args && c.args.op === 'ask'; }) ? true : false;
 }, test.limit.quick);
-test.run('Ask calls provider { op: ask, id } through the agent\'s interface, the provider chosen', 0.2, async function () {
+test.run('Ask asks the provider table for the chosen provider\'s models through the agent\'s interface, by its id', 0.2, async function () {
   if (!X.askBtn || !X.drop) return false;
   const made = X.made;
   X.drop.value = 'KP';
@@ -298,12 +298,12 @@ test.run('Ask calls provider { op: ask, id } through the agent\'s interface, the
   X.askBtn.click(); await settle();
   return made.calls.length === 1 && made.calls[0].table === 'provider' && JSON.stringify(made.calls[0].args) === JSON.stringify({ op: 'ask', id: 'KP' }) ? true : false;
 }, test.limit.quick);
-test.run('and spits out no list: the model table it updated is the list below', 0.2, function () {
+test.run('Ask spits out no list: the model table it updated is the list below', 0.2, function () {
   if (!X.askBtn || !X.drop) return false;
   const after = shown(X.pane);
   return after.indexOf('claude-alpha') === -1 && after.indexOf('claude-beta') === -1 && after.indexOf('model list updated') === -1 ? true : false;
 }, test.limit.quick);
-test.run('its Ask is a busyButton, the ask its request (goal/G41.23)', 0.2, function () {
+test.run('the Ask button is a busyButton, and the ask is its request', 0.2, function () {
   if (!X.askBtn || !X.drop) return false;
   const ab = X.ab = X.made.busy.filter(function (x) { return x.button === X.askBtn; }).pop();
   return !!ab && typeof ab.opts.run === 'function' ? true : false;
@@ -319,13 +319,13 @@ test.run('the request it hands the button waits while the provider has not answe
   await settle();
   return !W8.settled ? true : false;
 }, test.limit.quick);
-test.run('and settles once it answers', 0.2, async function () {
+test.run('the request the Ask button is handed settles once the provider answers', 0.2, async function () {
   if (!X.ab) return false;
   if (W8.letGo) W8.letGo({ models: [], updated: false });
   await settle();
   return W8.settled ? true : false;
 }, test.limit.quick);
-test.run('its refresh and destroy are the shared element\'s', 0.2, function () {
+test.run('the model list\'s refresh and destroy are the shared element\'s', 0.2, function () {
   if (!X.list) return false;
   X.list.refresh(); X.list.destroy();
   return X.made.refreshed && X.made.destroyed ? true : false;
@@ -366,7 +366,7 @@ test.run('its page files require no data script', 0.2, function () {
   if (!X.made) return false;
   return !X.made.required.some(function (p) { return (/data\.js$/).test(p); }) ? true : false;
 }, test.limit.quick);
-test.run('the agent family\'s cache manager is loaded: spirit.data.agent.data.branch(\'model\') is the home node\'s <node>/agent/model', 0.2, function () {
+test.run('the agent family\'s cache manager is loaded, and its model branch is the home node\'s agent/model branch', 0.2, function () {
   if (!X.made) return false;
   const DATA = global.window.spirit.data;
   const AD = X.AD = ((global.window.spirit.data || {}).agent || {}).data;

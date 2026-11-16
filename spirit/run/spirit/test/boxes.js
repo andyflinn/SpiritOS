@@ -29,31 +29,31 @@ let clock = 1000;
 const V = B.createBoxes({ rootDir: ROOT, now: function () { return clock; } });
 
 // ── only his servers are believed ──
-test.run('SERVERS names the owner\'s list of his server keys: servers.json', 0.2, function () {
+test.run('the owner\'s list of his server keys is named servers.json', 0.2, function () {
   return B.SERVERS === 'servers.json' || false;
 }, test.limit.quick);
-test.run('the world: two of his servers report the same box, a third another box', 0.2, function () {
+test.run('two of his servers report the same box and a third reports another box', 0.2, function () {
   V.onArrival(report('srv-1', { boxLabel: 'hetzner-1', fingerprint: 'fp-A', allottedMB: 600, boxTotalMB: 1000 }));
   clock = 2000;
   V.onArrival(report('srv-2', { boxLabel: 'hetzner-1', fingerprint: 'fp-A', allottedMB: 500, boxTotalMB: 1000 }));
   V.onArrival(report('srv-3', { boxLabel: 'ovh', fingerprint: 'fp-B', allottedMB: 200, boxTotalMB: 200 }));
   return V.list().length === 2 || false;
 }, test.limit.quick);
-test.run('one row per box: the servers sharing a fingerprint are matched up, each with its allotment and when it reported', 0.2, function () {
+test.run('there is one row per box, the servers sharing a fingerprint matched up, each with its allotment and when it reported', 0.2, function () {
   const a = rowOf(V.list(), 'fp-A');
   if (!a) return false;
   const s = a.servers.map(function (x) { return x.key + ':' + x.allottedMB + '@' + x.at; }).sort();
   return (a.boxLabel === 'hetzner-1' && short(s) === short(['srv-1:600@1000', 'srv-2:500@2000'])) || false;
 }, test.limit.quick);
-test.run('the node sums: what the box\'s servers were allotted, against what the box reports it has', 0.2, function () {
+test.run('the node sums what the box\'s servers were allotted, against what the box reports it has', 0.2, function () {
   const a = rowOf(V.list(), 'fp-A');
   return (!!a && a.allottedMB === 1100 && a.boxTotalMB === 1000) || false;
 }, test.limit.quick);
-test.run('over-committed is a warning: allotted above the box\'s total', 0.2, function () {
+test.run('a box allotted above its total carries the over-committed warning', 0.2, function () {
   const a = rowOf(V.list(), 'fp-A');
   return (!!a && a.warning === true) || false;
 }, test.limit.quick);
-test.run('equal is not over: a box allotted exactly what it has carries no warning', 0.2, function () {
+test.run('a box allotted exactly what it has is not over, and carries no warning', 0.2, function () {
   const b = rowOf(V.list(), 'fp-B');
   return (!!b && b.allottedMB === 200 && b.boxTotalMB === 200 && b.warning === false) || false;
 }, test.limit.quick);
@@ -114,7 +114,7 @@ test.run('servers.json is read when he looks: a server taken off his list leaves
   const after = v.list()[0] || {};
   return (before === true && after.allottedMB === 900 && after.warning === false && after.servers.length === 1) || false;
 }, test.limit.quick);
-test.run('in memory, by design: a new view starts empty, and nothing is written beside servers.json', 0.2, function () {
+test.run('the view is kept in memory by design, so a new view starts empty and nothing is written beside servers.json', 0.2, function () {
   const again = B.createBoxes({ rootDir: ROOT });
   const files = fs.readdirSync(path.join(ROOT, 'spirit', 'state'));
   return (again.list().length === 0 && short(files) === short([B.SERVERS])) || false;

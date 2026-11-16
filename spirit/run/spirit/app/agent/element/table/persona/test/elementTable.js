@@ -50,7 +50,7 @@ function world() {
 const detail = { look: function (t) { return { icon: '•', name: t }; } };
 const E = {};
 
-test.run('the world: the file runs on a window of its own, the shared element and the row editor stand-ins placed as the page places them', 0.2, function () {
+test.run('the file runs on a window of its own, with stand-ins for the shared element and the row editor placed as the page places them', 0.2, function () {
   if (!fs.existsSync(FILE)) return false;
   world();
   W.up = true;
@@ -67,14 +67,14 @@ test.run('it places spirit.element.spirit.app.agent.element.table.persona.elemen
   E.table = at('spirit.app.agent.element.table.persona.elementTable');
   return (!!E.table && typeof E.table.create === 'function') || false;
 }, test.limit.quick);
-test.run('and the row editor keeps its own place beside it, spirit.element.spirit.app.agent.element.table.persona.elementRow', 0.2, function () {
+test.run('the row editor keeps its own place beside it, at spirit.element.spirit.app.agent.element.table.persona.elementRow', 0.2, function () {
   if (!E.table) return false;
   const r = at('spirit.app.agent.element.table.persona.elementRow');
   return (!!r && typeof r.create === 'function') || false;
 }, test.limit.quick);
 
 // ── create(container, detail): the shared table, for the persona table ──
-test.run('create(container, detail) makes the tables\' shared element in that container', 0.2, async function () {
+test.run('create, given a container and the detail pane, makes the tables\' shared element in that container', 0.2, async function () {
   if (!E.table) return false;
   E.box = { id: 'box' };
   E.made = E.table.create(E.box, detail);
@@ -82,7 +82,7 @@ test.run('create(container, detail) makes the tables\' shared element in that co
   E.t = W.tables[W.tables.length - 1];
   return (!!E.t && E.t.container === E.box) || false;
 }, test.limit.quick);
-test.run('it loads the shared element and its own row editor itself (rule/26)', 0.2, function () {
+test.run('it loads the shared element and its own row editor itself', 0.2, function () {
   if (!W.up) return false;
   return (W.required.indexOf(SHARED) !== -1 && W.required.indexOf(ROW) !== -1) || false;
 }, test.limit.quick);
@@ -90,7 +90,7 @@ test.run('the shared element is told its table, persona, and the page\'s detail 
   if (!E.t) return false;
   return (E.t.o.table === 'persona' && E.t.o.detail === detail) || false;
 }, test.limit.quick);
-test.run('a row picked opens in the persona row editor: row(box, id, added) makes elementRow.create(box, id, added, detail) and answers it', 0.2, function () {
+test.run('a row picked opens in the persona row editor, which elementRow.create makes with the row\'s box, id and added flag and the detail pane, and that editor is answered', 0.2, function () {
   if (!E.t) return false;
   if (typeof E.t.o.row !== 'function') return false;
   const b = { id: 'detail-box' };
@@ -108,7 +108,7 @@ test.run('its destroy destroys the shared table', 0.2, function () {
   E.made.destroy();
   return E.t.destroyed === true || false;
 }, test.limit.quick);
-test.run('before its parts have loaded, refresh throws nothing; destroyed then, it makes no table', 0.2, async function () {
+test.run('before its parts have loaded, refresh throws nothing, and destroyed then it makes no table', 0.2, async function () {
   if (!E.table) return false;
   let open = null;
   W.held = { promise: new Promise(function (r) { open = r; }) };

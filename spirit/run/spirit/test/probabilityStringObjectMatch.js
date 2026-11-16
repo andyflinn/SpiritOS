@@ -35,40 +35,40 @@ test.run('an object that holds no string gives 0', 0.2, function () {
 }, test.limit.quick);
 
 // ── 2. measure the object ──
-test.run('measureObject: every key and every string value, in the order met; keys are included, "this is supposed to be dumb"', 0.2, function () {
+test.run('measureObject takes every key and every string value, in the order met, keys included, as "this is supposed to be dumb"', 0.2, function () {
   return short(strings(O.measureObject({ name: 'Andy', city: 'Basel' }))) === short(['name', 'Andy', 'city', 'Basel']) || false;
 }, test.limit.quick);
-test.run('measureObject: empty strings stay out of the table, as values and as keys', 0.2, function () {
+test.run('measureObject keeps empty strings out of the table, as values and as keys', 0.2, function () {
   const t = strings(O.measureObject({ a: '', '': 'x' }));
   return (t.indexOf('') === -1 && short(t) === short(['a', 'x'])) || false;
 }, test.limit.quick);
-test.run('measureObject: nested objects are searched for strings', 0.2, function () {
+test.run('measureObject searches nested objects for strings', 0.2, function () {
   const t = strings(O.measureObject({ stats: { cpu: 'hot' } }));
   return short(t) === short(['stats', 'cpu', 'hot']) || false;
 }, test.limit.quick);
-test.run('measureObject: numbers go in as text (goal/G41.28)', 0.2, function () {
+test.run('measureObject puts numbers in as text', 0.2, function () {
   const t = strings(O.measureObject({ n: 12345, f: 0.5 }));
   return short(t) === short(['n', '12345', 'f', '0.5']) || false;
 }, test.limit.quick);
-test.run('measureObject: a key whose value is true is evaluated, one whose value is false is not (goal/G41.28)', 0.2, function () {
+test.run('measureObject evaluates a key whose value is true, and not one whose value is false', 0.2, function () {
   const t = O.measureObject({ online: true, away: false });
   return (short(strings(t)) === short(['online']) && t[0].flag === true && t[0].isKey === true) || false;
 }, test.limit.quick);
-test.run('measureObject: arrays are scanned, every element a value of its own (goal/G41.28)', 0.2, function () {
+test.run('measureObject scans arrays, every element a value of its own', 0.2, function () {
   const t = strings(O.measureObject({ tags: ['red', 7, { b: 'c' }, ['deep']] }));
   return short(t) === short(['tags', 'red', '7', 'b', 'c', 'deep']) || false;
 }, test.limit.quick);
-test.run('measureObject: a cycle is measured once, and the scan ends', 0.2, function () {
+test.run('measureObject measures a cycle once, and the scan ends', 0.2, function () {
   const o = { a: 'x' }; o.self = o; const arr = ['y']; arr.push(arr); o.list = arr;
   const t = strings(O.measureObject(o));
   return short(t) === short(['a', 'x', 'self', 'list', 'y']) || false;
 }, test.limit.quick);
-test.run('measureObject: each string with its JS object path, stats.cpu and files[0].name (goal/G43.6)', 0.2, function () {
+test.run('measureObject gives each string its JS object path, such as stats.cpu and files[0].name', 0.2, function () {
   const t = O.measureObject({ stats: { cpu: 'hot' }, files: [{ name: 'a.txt' }] });
   const paths = t.map(function (r) { return r.objectString + '@' + r.path; });
   return short(paths) === short(['stats@stats', 'cpu@stats.cpu', 'hot@stats.cpu', 'files@files', 'name@files[0].name', 'a.txt@files[0].name']) || false;
 }, test.limit.quick);
-test.run('measureObject: a key\'s own row says isKey; a value\'s row does not', 0.2, function () {
+test.run('in measureObject a key\'s own row says isKey, and a value\'s row does not', 0.2, function () {
   const t = O.measureObject({ name: 'Andy' });
   return (t[0].isKey === true && t[0].flag === false && !t[1].isKey) || false;
 }, test.limit.quick);
@@ -81,7 +81,7 @@ test.run('the weights add up to 1: a string every row of the object matches exac
 test.run('one string alone weighs 1.0', 0.2, function () {
   return near(p('andy', { andy: true }), 1) || false;
 }, test.limit.quick);
-test.run('a string of length L weighs (S - L) / S / (n - 1): "andy" beside "qq" weighs 1/3, beside "qqqqqq" 3/5', 0.2, function () {
+test.run('a string weighs the total length less its own, over the total length, over one less than the number of strings: "andy" beside "qq" weighs 1/3, beside "qqqqqq" 3/5', 0.2, function () {
   const got = [p('andy', { qq: 'andy' }), p('andy', { qqqqqq: 'andy' })];
   return (near(got[0], 1 / 3) && near(got[1], 3 / 5)) || false;
 }, test.limit.quick);
@@ -110,7 +110,7 @@ test.run('a key whose value is false is never matched', 0.2, function () {
 }, test.limit.quick);
 
 // ── in a page ──
-test.run('in a page, it is found on window.spirit.probability, and the string match is read there when called, not as the file loads (goal/G41.18)', 0.2, function () {
+test.run('in a page, it is found on window.spirit.probability, and the string match is read there when called, not as the file loads', 0.2, function () {
   const win = {};
   vm.runInNewContext(fs.readFileSync(FILE, 'utf8'), { window: win });
   const P = win.spirit && win.spirit.probability;

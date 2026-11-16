@@ -28,7 +28,7 @@ function cardOf(id, owner, at) {
 const W = {};
 
 // A signed card naming this node as its owner.
-test.run('the card is kept', 0.2, function () {
+test.run('a signed card naming this node as its owner is kept', 0.2, function () {
   W.home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-contacts-'));
   fs.mkdirSync(path.join(W.home, 'spirit', 'state'), { recursive: true });
   // This node, as its identity file holds it (relayAuth.loadIdentity reads it from here).
@@ -41,12 +41,12 @@ test.run('the card is kept', 0.2, function () {
   W.row = W.seen.get(W.puppet.publicKey) || {};
   return (said.ok === true && !!W.row.card) || false;
 }, test.limit.quick);
-test.run('and sets no star: anyone can sign a card naming this node', 0.8, function () {
+test.run('a card naming this node as its owner sets no star, because anyone can sign such a card', 0.8, function () {
   if (!W.row) return false;
   return !W.row.mine || false;
 }, test.limit.quick);
 // A card naming another owner.
-test.run('takes no star away: only the button does', 0.8, function () {
+test.run('a card naming another owner takes no star away, because only the button does that', 0.8, function () {
   if (!W.seen) return false;
   const seen = W.seen;
   seen.set(W.puppet.publicKey, { mine: true });
@@ -65,7 +65,7 @@ const call = async function (name, args) {
 const mine = async function () { const g = await call('contact.search', { q: '', mine: 'yes' }); return ((g.body && g.body.items) || []).some(function (i) { return i.key === W.KEY; }); };
 const refused = function (r) { return r.status >= 400 && r.status < 500 && !!(r.body && r.body.code) && r.body.code !== 'no-such-verb' && r.body.code !== 'no-such-family'; };
 function noNode() { return !(W.node && W.node.up); }
-test.run('the world: the scratch node comes up', 0.2, async function () {
+test.run('the scratch node comes up', 0.2, async function () {
   W.node = await scratchNode();
   return W.node.up || false;
 }, test.limit.slow);
@@ -86,16 +86,16 @@ test.run('a new row has no star', 0.2, async function () {
   if (noNode()) return false;
   return await mine() === false || false;
 }, test.limit.quick);
-test.run('contact.own {key, own: true} is answered', 0.2, async function () {
+test.run('contact.own with a key and own set to true is answered', 0.2, async function () {
   if (noNode()) return false;
   const on = await call('contact.own', { key: W.KEY, own: true });
   return (on.status >= 200 && on.status < 300) || false;
 }, test.limit.quick);
-test.run('and puts the star on', 0.2, async function () {
+test.run('contact.own with own set to true puts the star on', 0.2, async function () {
   if (noNode()) return false;
   return await mine() === true || false;
 }, test.limit.quick);
-test.run('contact.own {key, own: false} takes it away', 0.2, async function () {
+test.run('contact.own with own set to false takes the star away', 0.2, async function () {
   if (noNode()) return false;
   const off = await call('contact.own', { key: W.KEY, own: false });
   return (off.status >= 200 && off.status < 300 && await mine() === false) || false;

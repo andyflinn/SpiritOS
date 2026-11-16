@@ -20,7 +20,7 @@ const settle = async function () { for (let i = 0; i < 20; i++) await new Promis
 let SRC, required, lists, rows, E, made, l, o, AGENT, filters, selectors, serves, searched;
 function noList() { return !E || !E.search.grant || !E.search.grant.listElement || typeof E.search.grant.listElement.create !== 'function'; }
 
-test.run('the world: the list runs on a bare window', 0.2, async function () {
+test.run('the grant list runs on a bare window', 0.2, async function () {
   if (!fs.existsSync(FILE)) return false;
   SRC = fs.readFileSync(FILE, 'utf8').replace(/\/\/.*$/gm, '');
   required = [];
@@ -50,7 +50,7 @@ test.run('it requires the search element and its row element, and no data script
   if (!required) return false;
   return ['spirit/element/search.js', 'spirit/element/search/grant/rowElement.js'].every(function (p) { return required.indexOf(p) !== -1; }) && !required.some(function (p) { return /data\.js$/.test(p); }) ? true : false;
 }, test.limit.quick);
-test.run('it names no table and no branch of its own: no auth verb, no agent grant, no data.grants (goal/G41.16)', 0.2, function () {
+test.run('it names no table and no branch of its own: no auth verb, no agent grant and no data.grants', 0.2, function () {
   if (!SRC) return false;
   const names = /auth\.|agent\.grant|job_id|'grants'|"grants"/.test(SRC);
   return !names ? true : false;
@@ -86,22 +86,22 @@ test.run('it draws one probabilitySearch into its host, and fills it as soon as 
   if (l) o = l.o;
   return !!l && l.host === host && l.refreshes === 1 ? true : false;
 }, test.limit.quick);
-test.run('it is a view of the branch its table names: here nOdE-key_one/agent/grant', 0.2, function () {
+test.run('it is a view of the branch its table names, here nOdE-key_one/agent/grant', 0.2, function () {
   if (!l) return false;
   return o.data === 'nOdE-key_one/agent/grant' ? true : false;
 }, test.limit.quick);
 // WHAT IT NEEDS, IT REQUIRES ITSELF (goal/G43.24): its own data source is the search's options.search, never an api.
-test.run('it hands its search a data source of its own (options.search), no api', 0.2, function () {
+test.run('it hands its search a data source of its own as options.search, and no api', 0.2, function () {
   if (!l) return false;
   return o.api === undefined && typeof o.search === 'function' ? true : false;
 }, test.limit.quick);
-test.run('its search is the table\'s search(text), the text trimmed, answered as a reply', 0.2, async function () {
+test.run('its search asks the table\'s search with the text trimmed, and answers as a reply', 0.2, async function () {
   if (!l) return false;
   if (typeof o.search !== 'function') return false;
   const got = await o.search(o.args(' ni ', {}), o.verb);
   return searched.length === 1 && searched[0] === 'ni' && got && got.status === 200 && got.body && got.body.items.length === 1 ? true : false;
 }, test.limit.quick);
-test.run('its columns are whose, the path and Revoke, Revoke the rightmost', 0.2, function () {
+test.run('its columns are whose it is, the path and Revoke, with Revoke the rightmost', 0.2, function () {
   if (!l) return false;
   const cols = (o.columns || []).map(function (c) { return c.field; });
   return JSON.stringify(cols) === '["name","path","revoke"]' ? true : false;
@@ -113,7 +113,7 @@ test.run('each row is a grantElement, handed the same table and what the tree se
 }, test.limit.quick);
 // THE WHOLE ROW (goal/G41.28; Andy, box v15: "All client side searches will be fixed, too, and search the whole row, as
 // cached in spirit.data."): the list hands its search no matched() of its own.
-test.run('it hands its search no matched(): the whole row is matched (goal/G41.28)', 0.2, function () {
+test.run('it hands its search no matched function, so the whole row is matched', 0.2, function () {
   if (!l) return false;
   return typeof o.matched !== 'function' ? true : false;
 }, test.limit.quick);
@@ -121,7 +121,7 @@ test.run('the filters the page hands it are its own', 0.2, function () {
   if (!l) return false;
   return o.filters === filters ? true : false;
 }, test.limit.quick);
-test.run('and the selectors it hands it go to the search as they are, for its 🪣 row (goal/G41.26)', 0.2, function () {
+test.run('the selectors the page hands it go to the search as they are, for its 🪣 row', 0.2, function () {
   if (!l) return false;
   return o.selectors === selectors ? true : false;
 }, test.limit.quick);
@@ -152,7 +152,7 @@ test.run('a list made with no row drawn is a view of the branch its first grant 
 }, test.limit.quick);
 
 // refresh and destroy are the search element's
-test.run('refresh and destroy reach the search element; .list is it', 0.2, function () {
+test.run('refresh and destroy reach the search element, and its list property is that element', 0.2, function () {
   if (!l) return false;
   const r0 = l.refreshes;
   made.refresh(); made.destroy();

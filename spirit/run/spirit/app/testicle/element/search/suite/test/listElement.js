@@ -104,7 +104,7 @@ test.after(async function () {
 test.run('spirit/app/testicle/element/search/suite/listElement.js is there', 0.2, function () {
   return fs.existsSync(MODULE) || false;
 }, test.limit.quick);
-test.run('the world: a scratch node comes up, testicle on', 0.2, async function () {
+test.run('a scratch node comes up with testicle on', 0.2, async function () {
   s = scratch();
   N = await boot(s.run); live.push(N.child);
   if (!N.up) return false;
@@ -112,7 +112,7 @@ test.run('the world: a scratch node comes up, testicle on', 0.2, async function 
   N.up = !!(await until(function () { return call(N.base, 'testicle.busy').then(function (r) { return r.status === 200; }); }, 30000));
   return N.up || false;
 }, test.limit.long);
-test.run('the world: tests of alpha and beta are set, each in its own suite and in one general suite', 0.2, async function () {
+test.run('tests of alpha and beta are set, each in its own suite and in one general suite', 0.2, async function () {
   if (!N || !N.up) return false;
   GEN = s.gen;
   if (!GEN) return false;
@@ -123,7 +123,7 @@ test.run('the world: tests of alpha and beta are set, each in its own suite and 
   planted = out.every(function (r) { return r.status === 200; });
   return planted || false;
 }, test.limit.slow);
-test.run('the world: the face page has its spirit', 0.2, async function () {
+test.run('the face page has its spirit', 0.2, async function () {
   if (!N || !N.up) return false;
   const where = findChrome();
   if (!where) return false;
@@ -132,7 +132,7 @@ test.run('the world: the face page has its spirit', 0.2, async function () {
   await c.send('Page.navigate', { url: N.base + '/face.html' });
   return !!(await until(function () { return c.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000)) || false;
 }, test.limit.long);
-test.run('it loads alone through spirit.require and mounts with create(container, { script, pick }), answering destroy', 0.2, async function () {
+test.run('it loads alone through spirit.require and mounts with create, handed a container, a script and a pick, answering destroy', 0.2, async function () {
   if (!N || !N.up) return false;
   if (!c || c.error || !c.evaluate) return false;
   const loaded = await c.evaluate('window.spirit.ready.then(function () { return window.spirit.require("spirit/app/testicle/element/search/suite/listElement.js"); }).then(function () { return "loaded"; }, function () { return false; })');
@@ -154,13 +154,13 @@ test.run('it lists no suite row of another script', 0.2, async function () {
   const k = keysOf(await view('zzBox'));
   return (k.length > 0 && k.every(function (x) { return x.indexOf(A + '|') === 0; })) || false;
 }, test.limit.quick);
-test.run('each suite once', 0.2, async function () {
+test.run('it lists each suite once', 0.2, async function () {
   if (notMounted()) return false;
   const k = keysOf(await view('zzBox'));
   return (k.length > 0 && new Set(k).size === k.length) || false;
 }, test.limit.quick);
 // goal/G47.1, the run cycle: "the 🏃‍♂️ column first, no sort"
-test.run('its columns: 🏃‍♂️ first with no sort, then Suite and Status, each a sort trigger', 0.2, async function () {
+test.run('its columns are 🏃‍♂️ first with no sort, then Suite and Status, each a sort trigger', 0.2, async function () {
   if (notMounted()) return false;
   const h = ((await view('zzBox')) || {}).heads || [];
   return (h.length === 3 && h[0].text === '🏃‍♂️' && !h[0].sort && /^Suite\b/.test(h[1].text) && h[1].sort === 'suite' && h[2].text === 'Status' && h[2].sort === 'status') || false;
@@ -225,14 +225,14 @@ test.run('a suite row written for the script shows by itself', 0.2, async functi
 // box v143: "all of testicle's elements must subscribe to the data they display": a row already drawn follows its suite
 // row as the server rewrites it, with no press and no new mount.
 const statusIn = function (id, key) { return view(id).then(function (v) { const r = ((v && v.rows) || []).filter(function (x) { return x.key === key; })[0]; return r ? r.cells[2] : null; }); };
-test.run('a drawn row follows its suite row: a success reported for it, the row shows "green" by itself', 0.4, async function () {
+test.run('a drawn row follows its suite row: when a success is reported for it, the row shows "green" by itself', 0.4, async function () {
   if (notMounted()) return false;
   const r = await call(N.base, 'testicle.suite.success', { script: C, suite: CS, success: true });
   if (r.status !== 200) return false;
   const ok = await until(function () { return statusIn('zzGamma', C + '|' + CS).then(function (t) { return t === 'green'; }); }, 10000);
   return !!ok || false;
 }, test.limit.slow);
-test.run('and a failure reported after it, the same row shows "still red" by itself', 0.4, async function () {
+test.run('when a failure is reported after that success, the same row shows "still red" by itself', 0.4, async function () {
   if (notMounted()) return false;
   const r = await call(N.base, 'testicle.suite.success', { script: C, suite: CS, success: false });
   if (r.status !== 200) return false;

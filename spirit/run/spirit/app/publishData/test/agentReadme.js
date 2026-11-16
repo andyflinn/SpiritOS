@@ -39,7 +39,7 @@ test.run('the streams are the members times the streams of a seat, in 512 MB of 
   if (!R) return false;
   return (s && s.streams === s.members * relay.SEAT_STREAMS && s.perMember === relay.SEAT_STREAMS && s.ramMB === 512) ? true : false;
 }, test.limit.quick);
-test.run('peers: 512 MB of disk over the measured bytes of a peer', 0.2, function () {
+test.run('the peers are 512 MB of disk over the measured bytes of a peer', 0.2, function () {
   if (!R) return false;
   return (s && s.peers === Math.floor(512 * MB / 2048) && s.diskMB === 512) ? true : false;
 }, test.limit.quick);
@@ -60,7 +60,7 @@ test.run('no capacity, or no memory at rest measured, is null', 0.2, function ()
   if (!R) return false;
   return (R.summaryOf(null) === null && R.summaryOf({}) === null && R.summaryOf({ relayAtRestRss: 0 }) === null && R.summaryOf({ relayAtRestRss: 'x' }) === null) ? true : false;
 }, test.limit.quick);
-test.run('when and commit left out are \'\'', 0.2, function () {
+test.run('when and commit, left out, are empty strings', 0.2, function () {
   if (!R) return false;
   noWhen = R.summaryOf({ relayAtRestRss: 10 * MB });
   return (noWhen && noWhen.measuredAt === '' && noWhen.commit === '') ? true : false;
@@ -69,26 +69,26 @@ test.run('when and commit left out are \'\'', 0.2, function () {
 // write's README is judged where publishData writes it, in ./publishData.js (goal/G47.1, box v170: the platform's README,
 // its title, the machine, Summary and Details in that order); its old layout (the agent's name, Machine Description,
 // Measurements, Studies) went with that box.
-test.run('its platform, arch and OS are this process\'s', 0.2, function () {
+test.run('the machine\'s platform, arch and OS are this process\'s', 0.2, function () {
   if (!R) return false;
   fs.rmSync(TMP, { recursive: true, force: true });
   // machineOf: this machine now
   m = R.machineOf();
   return (m.platform === process.platform && m.arch === process.arch && m.os === os.type() + ' ' + os.release()) ? true : false;
 }, test.limit.quick);
-test.run('total RAM, and RAM used within it', 0.2, function () {
+test.run('the machine carries its total RAM, and the RAM used within it', 0.2, function () {
   if (!R) return false;
   return (m.totalRamBytes === os.totalmem() && m.usedRamBytes > 0 && m.usedRamBytes <= m.totalRamBytes) ? true : false;
 }, test.limit.quick);
-test.run('node.js by its version and its path', 0.2, function () {
+test.run('the machine names node.js by its version and its path', 0.2, function () {
   if (!R) return false;
   return (m.node.version === process.version && m.node.path === process.execPath) ? true : false;
 }, test.limit.quick);
-test.run('a count of SpiritOS node processes', 0.2, function () {
+test.run('the machine carries a count of SpiritOS node processes', 0.2, function () {
   if (!R) return false;
   return (Number.isInteger(m.spiritNodes) && m.spiritNodes >= 0) ? true : false;
 }, test.limit.quick);
-test.run('and when it was asked', 0.2, function () {
+test.run('the machine carries when it was asked', 0.2, function () {
   if (!R) return false;
   return (!isNaN(Date.parse(m.at)) && Math.abs(Date.now() - Date.parse(m.at)) < 60000) ? true : false;
 }, test.limit.quick);

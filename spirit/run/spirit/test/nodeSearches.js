@@ -54,7 +54,7 @@ test.run('job.search with no words, or *, is every job in the listing\'s order, 
   const want = [{ key: 'spirit.fs', label: 'spirit.fs (running)' }, { key: 'natter.relay', label: 'natter.relay (idle)' }, { key: 'desk.loop', label: 'desk.loop (running)' }];
   return (a.ok && short(a.items) === short(want) && short(b.items) === short(want) && a.more === false) || false;
 }, test.limit.quick);
-test.run('job.search ranks the words over the whole job as it is served (goal/G41.28): the match first', 0.2, function () {
+test.run('job.search ranks the words over the whole job as it is served, the match first', 0.2, function () {
   const got = keys(N.jobsSearch({ q: 'zanzibar' }));
   return got[0] === 'natter.relay' || false;
 }, test.limit.quick);
@@ -67,7 +67,7 @@ test.run('job.search is cut by bytes, never by rows: what does not fit says more
 }, test.limit.quick);
 
 // ── job.get ──
-test.run('job.get answers one job, without its internals (a leading _)', 0.2, function () {
+test.run('job.get answers one job, without its internals whose names start with an underscore', 0.2, function () {
   const r = N.jobsGet({ key: 'natter.relay' }), fsJob = N.jobsGet({ key: 'spirit.fs' });
   return (r.ok && r.key === 'natter.relay' && r.job.data.note === 'zanzibar' && fsJob.ok && !('_timer' in fsJob.job)) || false;
 }, test.limit.quick);
@@ -75,7 +75,7 @@ test.run('the file watcher carries no file list, but says how many entries it wa
   const j = N.jobsGet({ key: 'spirit.fs' }).job || {};
   return (j.data && j.data.fileCount === TREE.length && j.data.roots === 1 && !('files' in j.data)) || false;
 }, test.limit.quick);
-test.run('job.get: no key is 400 key required, an unknown one 404 job not found', 0.2, function () {
+test.run('job.get with no key answers 400 key required, and with an unknown key 404 job not found', 0.2, function () {
   const a = N.jobsGet({}), b = N.jobsGet({ key: 'no.such' });
   return (a.status === 400 && a.error === 'key required' && b.status === 404 && b.error === 'job not found') || false;
 }, test.limit.quick);
@@ -95,7 +95,7 @@ test.run('fs.search by words ranks the entries, best first, and leaves out an en
   const two = keys(searches(JOBS, tree).fsSearch({ q: 'quokka.txt' }));
   return (keys(r)[0] === 'app/quokka.txt' && short(two) === short(['app/quokka.txt'])) || false;
 }, test.limit.quick);
-test.run('fs.search\'s words are a person\'s, not a pattern: * and ? match nothing special (goal/G29.8)', 0.2, function () {
+test.run('fs.search\'s words are a person\'s, not a pattern: * and ? match nothing special', 0.2, function () {
   const got = keys(N.fsSearch({ q: '*.png' }));
   return got[0] === 'app/picture.png' || false;
 }, test.limit.quick);
@@ -108,7 +108,7 @@ test.run('fs.search is cut by bytes: a tree too big for one answer says more', 0
 
 // ── fs.search inside the text files (goal/G29.11) ──
 const C = N.fsSearch({ q: 'quokka', contents: 'yes' });
-test.run('with contents: yes, files are ranked by their contents alone, never by their names', 0.2, function () {
+test.run('with contents set to yes, files are ranked by their contents alone, never by their names', 0.2, function () {
   const got = keys(C);
   return (got.indexOf('app/notes.txt') !== -1 && got.indexOf('app/quokka.txt') === -1) || false;
 }, test.limit.quick);
@@ -116,7 +116,7 @@ test.run('only text files are read: a png is not, javascript is', 0.2, function 
   const got = keys(C);
   return (got.indexOf('app/picture.png') === -1 && got.indexOf('app/code.js') !== -1) || false;
 }, test.limit.quick);
-test.run('a file above 1 MB is never read (found by name only)', 0.2, function () {
+test.run('a file above 1 MB is never read, and is found by name only', 0.2, function () {
   return keys(C).indexOf('app/big.txt') === -1 || false;
 }, test.limit.quick);
 test.run('each file answers its path, its score and its first matched line', 0.2, function () {
@@ -125,11 +125,11 @@ test.run('each file answers its path, its score and its first matched line', 0.2
   try { l = JSON.parse(row.label); } catch (e) { l = null; }
   return (!!l && l.path === 'app/notes.txt' && l.line === 2 && l.score > 0 && l.score < 1) || false;
 }, test.limit.quick);
-test.run('more matched lines score higher: m / (m + 10), never the file\'s length', 0.2, function () {
+test.run('more matched lines score higher, by m / (m + 10) for m matched lines, never by the file\'s length', 0.2, function () {
   const sc = {};
   (C.items || []).forEach(function (i) { sc[i.key] = JSON.parse(i.label).score; });
   return (sc['app/notes.txt'] > sc['app/code.js'] && keys(C)[0] === 'app/notes.txt') || false;
 }, test.limit.quick);
-test.run('contents: yes with no words is the tree by name, never every file read', 0.2, function () {
+test.run('contents set to yes with no words answers the tree by name, never every file read', 0.2, function () {
   return keys(N.fsSearch({ q: '', contents: 'yes' })).length === TREE.length || false;
 }, test.limit.quick);

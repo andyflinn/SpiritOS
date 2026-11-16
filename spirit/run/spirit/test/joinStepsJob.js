@@ -31,19 +31,19 @@ const URL_ = 'https://relay.example';
 const RELAY_KEY = 'relay-key-' + process.pid;
 const W = { root: null, jobs: null, made: null, me: '' };
 
-test.run('the world: a scratch node root with an identity of its own, and nothing else', 0.2, function () {
+test.run('a scratch node root is made with an identity of its own and nothing else', 0.2, function () {
   W.root = fs.mkdtempSync(path.join(os.tmpdir(), 'nr-join-'));
   try { auth.saveIdentity(W.root, auth.generateIdentity('joiner')); W.me = auth.loadIdentity(W.root).publicKey; } catch (e) { W.root = null; return false; }
   return !!W.me || (W.root = null, false);
 }, test.limit.quick);
 
 // ── facts ──
-test.run('facts on a node with nothing: not seated, no relay, no contact, no face; no email field', 0.2, function () {
+test.run('the facts of a node with nothing say it is not seated and has no relay, no contact and no face, and they carry no email field', 0.2, function () {
   if (!W.root) return false;
   const f = J.facts(W.root);
   return short(f) === short({ seated: false, relayUrl: '', contact: false, face: '', faceUrl: '' }) || false;
 }, test.limit.quick);
-test.run('create publishes those facts at once, as news of spirit, kind join, { join } and nothing else', 0.2, function () {
+test.run('create publishes those facts at once, as news of spirit of the kind join, carrying the join facts and nothing else', 0.2, function () {
   if (!W.root) return false;
   W.jobs = plantedJobs();
   W.made = J.create(W.root, W.jobs);
@@ -55,7 +55,7 @@ test.run('refresh with nothing changed publishes nothing and answers false', 0.2
   const did = W.made.refresh('nothing');
   return (did === false && W.jobs.said.length === 1) || false;
 }, test.limit.quick);
-test.run('a relay listed and not seated: its url is the relay, still not seated', 0.2, function () {
+test.run('with a relay listed and no seat, the facts name the relay\'s url and the node is still not seated', 0.2, function () {
   if (!W.root) return false;
   ownerBadge.addRelay(W.root, URL_, 'example', RELAY_KEY);
   const f = J.facts(W.root);
@@ -67,20 +67,20 @@ test.run('refresh after a change publishes once and answers true', 0.2, function
   const last = W.jobs.said[W.jobs.said.length - 1] || {};
   return (did === true && W.jobs.said.length === 2 && last.kind === 'join' && last.data.join.relayUrl === URL_) || false;
 }, test.limit.quick);
-test.run('a seat held there: seated', 0.2, function () {
+test.run('with a seat held on that relay, the node is seated', 0.2, function () {
   if (!W.root) return false;
   relayKeys.accept(W.root, URL_, RELAY_KEY);
   relayKeys.seat(W.root, URL_);
   const f = J.facts(W.root);
   return (f.seated === true && f.relayUrl === URL_ && f.face === '') || false;
 }, test.limit.quick);
-test.run('a face kept on that relay: the face name, and https://<face>.<relay host>', 0.2, function () {
+test.run('with a face kept on that relay, the facts carry the face name and its url, https://<face>.<relay host>', 0.2, function () {
   if (!W.root) return false;
   relayKeys.keepFace(W.root, URL_, 'andy');
   const f = J.facts(W.root);
   return (f.face === 'andy' && f.faceUrl === 'https://andy.relay.example') || false;
 }, test.limit.quick);
-test.run('contact: the relay and the node itself kept are no contact; anyone else kept is', 0.2, function () {
+test.run('the relay and the node itself, when kept, do not count as a contact, but anyone else kept does', 0.2, function () {
   if (!W.root) return false;
   contacts.acquire(W.root, { publicKey: RELAY_KEY });
   contacts.acquire(W.root, { publicKey: W.me });
@@ -93,7 +93,7 @@ test.run('the made job\'s facts() reads the records now, as facts(rootDir) does'
   if (!W.made) return false;
   return short(W.made.facts()) === short(J.facts(W.root)) || false;
 }, test.limit.quick);
-test.run('facts never throw: a root with no records answers the empty facts', 0.2, function () {
+test.run('facts never throw, and a root with no records answers the empty facts', 0.2, function () {
   let f;
   try { f = J.facts(path.join(os.tmpdir(), 'nr-join-none-' + process.pid)); } catch (e) { return false; }
   return (f.seated === false && f.contact === false && f.relayUrl === '') || false;

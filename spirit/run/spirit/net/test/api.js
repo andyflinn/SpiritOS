@@ -71,7 +71,7 @@ const call = function (verb, args) { return spirit.check('net.' + verb, W.verbs[
 const passes = function (verb, args) { return !!W.verbs[verb] && call(verb, args) === null; };
 const refusedAs = function (verb, args) { if (!W.verbs[verb]) return null; const r = call(verb, args); return r ? r.code : null; };
 
-test.run('the world: api.js loads as the node hands it, its text run with module and exports alone', 0.2, function () {
+test.run('api.js loads as the node hands it, its text run with module and exports alone', 0.2, function () {
   try {
     const m = { exports: {} };
     new Function('module', 'exports', fs.readFileSync(FILE, 'utf8'))(m, m.exports);
@@ -81,7 +81,7 @@ test.run('the world: api.js loads as the node hands it, its text run with module
   W.names = Object.keys(W.verbs);
   return true;
 }, test.limit.quick);
-test.run('the world: server.js mounts the net family', 0.2, function () {
+test.run('server.js mounts the net family', 0.2, function () {
   try { W.mounted = mounted('net'); } catch (e) { return false; }
   return !!W.mounted || false;
 }, test.limit.quick);

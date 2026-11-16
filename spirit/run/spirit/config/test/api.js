@@ -70,7 +70,7 @@ const W = { api: null, verbs: {}, names: [], mounted: null };
 const call = function (verb, args) { return spirit.check('config.' + verb, W.verbs[verb], args); };
 const passes = function (verb, args) { return !!W.verbs[verb] && call(verb, args) === null; };
 
-test.run('the world: api.js loads as the node hands it, its text run with module and exports alone', 0.2, function () {
+test.run('api.js loads as the node hands it, its text run with module and exports alone', 0.2, function () {
   try {
     const m = { exports: {} };
     new Function('module', 'exports', fs.readFileSync(FILE, 'utf8'))(m, m.exports);
@@ -80,7 +80,7 @@ test.run('the world: api.js loads as the node hands it, its text run with module
   W.names = Object.keys(W.verbs);
   return true;
 }, test.limit.quick);
-test.run('the world: server.js mounts the config family', 0.2, function () {
+test.run('server.js mounts the config family', 0.2, function () {
   try { W.mounted = mounted('config'); } catch (e) { return false; }
   return !!W.mounted || false;
 }, test.limit.quick);
@@ -96,7 +96,7 @@ test.run('it declares no verb: the family is kept empty for later use', 0.2, fun
   if (!W.api) return false;
   return (isPlain(W.verbs) && W.names.length === 0) || false;
 }, test.limit.quick);
-test.run('and the node mounts none for it', 0.2, function () {
+test.run('the node mounts no verb for the config family', 0.2, function () {
   if (!W.mounted) return false;
   return Object.keys(W.mounted).length === 0 || false;
 }, test.limit.quick);

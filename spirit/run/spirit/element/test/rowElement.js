@@ -137,7 +137,7 @@ test.run('act runs the named action with the element and ctx, and answers its an
   r1 = await d.act('add', { by: 'me' });
   return (r1 === 'added' && seen[0] === d && seen[1].by === 'me') ? true : false;
 }, test.limit.quick);
-test.run('a missing ctx arrives as {}', 0.2, async function () {
+test.run('a missing ctx arrives as an empty object', 0.2, async function () {
   await d.act('add');
   return (seen[1] && typeof seen[1] === 'object' && Object.keys(seen[1]).length === 0) ? true : false;
 }, test.limit.quick);
@@ -160,7 +160,7 @@ test.run('expand is called once however often expandInfo is', 0.2, async functio
   v = await x1;
   return (asked === 1) ? true : false;
 }, test.limit.quick);
-test.run('every call answers the same kept promise', 0.2, function () {
+test.run('every call of expandInfo answers the same kept promise', 0.2, function () {
   return (x1 === x2 && v.long === 'e!') ? true : false;
 }, test.limit.quick);
 test.run('with no expand the answer is null', 0.2, async function () {
@@ -186,11 +186,11 @@ test.run('forKey gives every element of a subject, in order', 0.2, function () {
   forG = idx.forKey('g');
   return (forG.length === 2 && forG[0] === g1 && forG[1] === g2) ? true : false;
 }, test.limit.quick);
-test.run('forKey answers a copy: changing it changes nothing', 0.2, function () {
+test.run('forKey answers a copy, so changing it changes nothing', 0.2, function () {
   forG.length = 0;
   return (idx.forKey('g').length === 2) ? true : false;
 }, test.limit.quick);
-test.run('an unknown key gives []', 0.2, function () {
+test.run('forKey of an unknown key gives an empty list', 0.2, function () {
   return (Array.isArray(idx.forKey('zz')) && idx.forKey('zz').length === 0) ? true : false;
 }, test.limit.quick);
 test.run('keys lists the subjects registered', 0.2, function () {

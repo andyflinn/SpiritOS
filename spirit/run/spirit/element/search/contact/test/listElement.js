@@ -29,7 +29,7 @@ let searchAnswer = { items: [{ key: 'K1' }], more: true };
 let made = null;
 let L = null, F = null, dataSubscribed = 0, pane = null, o = null, CD = null, el = null, r0 = 0, mo = null, to = null, tg = null, trow = null;
 
-test.run('the world: the contacts list runs on a window of its own, its row element and the data set real', 0.2, function () {
+test.run('the contacts list runs on a window of its own, with its row element and the data set real', 0.2, function () {
   global.window = { spirit: {} };
   // goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
   require(path.join(__dirname, '..', '..', '..', '..', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
@@ -101,14 +101,14 @@ test.run('the world: the contacts list runs on a window of its own, its row elem
 
 // it loads what it uses
 // goal/G41.16: no data script; what the stream means for contacts is the contact family's manager's (goal/G41.28).
-test.run('loading, it requires its row and the search element through spirit.require, and no data script', 0.2, function () {
+test.run('when it loads, it requires its row and the search element through spirit.require, and no data script', 0.2, function () {
   const own = ['spirit/element/search/contact/rowElement.js', 'spirit/element/search.js'];
   return own.every(function (p) { return required.indexOf(p) !== -1; }) && !required.some(function (p) { return /data\.js$/.test(p); }) ? true : false;
 }, test.limit.quick);
 
 // the show filter: all, then each kind the list holds
 const values = function (rows) { return F.show.choices(rows).map(function (c) { return c.value; }).join(','); };
-test.run('only all over plain kept rows; mine, blocked, relays in that order when there are any', 0.2, function () {
+test.run('the show filter offers only all over plain kept rows, and mine, blocked and relay after it in that order when there are such rows', 0.2, function () {
   if (!F) return false;
   return values([{ keep: true }]) === 'all' && values([{ mine: true }, { blocked: true }, { relay: true }]) === 'all,mine,blocked,relay' ? true : false;
 }, test.limit.quick);
@@ -116,7 +116,7 @@ test.run('its buttons show only when there is a kind to choose', 0.2, function (
   if (!F) return false;
   return F.show.when([{ keep: true }]) === false && F.show.when([{ relay: true }]) === true ? true : false;
 }, test.limit.quick);
-test.run('all lets every row through; a kind only rows whose flag is exactly true', 0.2, function () {
+test.run('all lets every row through, and a kind lets through only the rows whose flag is exactly true', 0.2, function () {
   if (!F) return false;
   return F.show.test({ keep: true }, 'all') === 1 && F.show.test({ keep: true }, '') === 1 && F.show.test({ mine: true }, 'mine') === 1
     && F.show.test({ keep: true }, 'mine') === 0 && F.show.test({ mine: 'yes' }, 'mine') === 0 ? true : false;
@@ -132,13 +132,13 @@ test.run('a row that is kept, a relay or blocked shows with network off', 0.2, f
   if (!F) return false;
   return F.network.test(keptRow, false) === 1 && F.network.test(relayRow, false) === 1 && F.network.test({ blocked: true }, false) === 1 ? true : false;
 }, test.limit.quick);
-test.run('named, never a button: a row with a name or a relay, never a bare presence', 0.2, function () {
+test.run('the named filter is never a button, and it lets through a row with a name or a relay, never a bare presence', 0.2, function () {
   if (!F) return false;
   return F.named.when() === false && F.named.test({ name: 'a' }) === 1 && F.named.test({ relay: true }) === 1 && F.named.test({ present: true }) === 0 && F.named.test(null) === 0 ? true : false;
 }, test.limit.quick);
 
 // create hands the search element the one table
-test.run('a view of the contact family\'s contacts (spirit.data.contact.data.branch), the list\'s filters, columns presence, status, label, add', 0.2, function () {
+test.run('the list is a view of the contact family\'s contacts in spirit.data.contact.data.branch, with the list\'s filters and the columns presence, status, label and add', 0.2, function () {
   if (!L) return false;
   const host = { isConnected: true, addEventListener: function (t, fn) { if (t === 'click') clicks.push(fn); } };
   // The mounter's panel stack's open (goal/G43.18), filling its pane at once.
@@ -173,7 +173,7 @@ test.run('each row is a contactElement, keyed by the row\'s key', 0.2, function 
 }, test.limit.quick);
 // THE WHOLE ROW (goal/G41.28; Andy, box v15: "All client side searches will be fixed, too, and search the whole row"):
 // the list hands its search no matched() of its own.
-test.run('it hands its search no matched(): the whole row is matched (goal/G41.28)', 0.2, function () {
+test.run('it hands its search no matched function of its own, so the whole row is matched', 0.2, function () {
   if (!o) return false;
   return typeof o.matched !== 'function' ? true : false;
 }, test.limit.quick);
@@ -232,21 +232,21 @@ test.run('a click on no button, or on a row the list did not make, does nothing'
 // what the picker alone did: hidden filters, marks, a press that picks
 const hid = { name: 'offered', when: function () { return false; }, test: function () { return 1; } };
 let marked = null;
-test.run('a caller\'s hidden filters (opts.filters) come after its own (Andy: "Why can\'t chatter insert a hidden filter when it draws contacts?")', 0.2, function () {
+test.run('the hidden filters a caller hands in opts.filters come after the list\'s own', 0.2, function () {
   if (!L) return false;
   marked = L.create({ isConnected: true, addEventListener: function () {} }, { filters: [hid], statuses: [{ status: 'none' }, { status: 'waiting', glyph: '⌛' }], details: null });
   mo = made.opts;
   return mo.filters.length === L.filters.length + 1 && mo.filters[mo.filters.length - 1] === hid ? true : false;
 }, test.limit.quick);
-test.run('statuses give it a mark column, last', 0.2, function () {
+test.run('given statuses, the list has a mark column as its last column', 0.2, function () {
   if (!mo) return false;
   return mo.columns.map(function (c) { return c.field; }).join(',') === 'presence,status,label,add,mark' ? true : false;
 }, test.limit.quick);
-test.run('details: null, and a pane\'s press picks instead of opening the row (Chat\'s peers pane)', 0.2, function () {
+test.run('with details set to null, a press in the pane picks the row instead of opening it, as in Chat\'s peers pane', 0.2, function () {
   if (!mo) return false;
   return mo.details === undefined ? true : false;
 }, test.limit.quick);
-test.run('mark(key, status) gives that row its glyph from statuses, the first the default (none: no glyph)', 0.2, function () {
+test.run('marking a row with a status gives it that status\'s glyph, and the first status, the default none, gives no glyph', 0.2, function () {
   if (!mo) return false;
   const me = mo.element({ keep: true, name: 'mo' }, 'K5');
   const markOf = function () { const c = me.cells().filter(function (x) { return x.name === 'mark'; })[0]; return c ? c.html : null; };
@@ -271,7 +271,7 @@ test.run('a table names its family and verb, has no contact filters, nothing to 
   return to.server === 'agent' && to.verb === 'job' && to.filters.length === 0 && to.details === undefined && to.columns.map(function (c) { return c.field; }).join(',') === 'label'
     ? true : false;
 }, test.limit.quick);
-test.run('a table of the agent tables\' norm is asked { op: search, text } through the spirit object, at that family and verb', 0.2, async function () {
+test.run('a table of the agent tables\' norm is asked a search with the text trimmed, through the spirit object, at that family and verb', 0.2, async function () {
   if (!to) return false;
   tg = await to.search({ text: ' night ' });
   trow = tg.body.items[0] ? JSON.parse(tg.body.items[0].label) : null;

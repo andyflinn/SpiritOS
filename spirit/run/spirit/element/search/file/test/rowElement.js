@@ -24,7 +24,7 @@ function cellsOf(x) { const c = {}; (x.cells() || []).forEach(function (k) { c[k
 // True when there is no file tree on the page or no row element registered.
 function noRow() { return !F || typeof F.file !== 'function' || !E.search.file.rowElement || typeof E.search.file.rowElement.create !== 'function'; }
 
-test.run('the world: the row runs on a bare window, the page\'s data set real', 0.2, async function () {
+test.run('the row runs on a bare window, with the page\'s real data set', 0.2, async function () {
   if (!fs.existsSync(FILE)) return false;
   asked = [];
   required = [];
@@ -69,11 +69,11 @@ test.run('it requires the shared row element, and no data script', 0.2, function
   if (!required) return false;
   return required.indexOf('spirit/element/rowElement.js') !== -1 && !required.some(function (p) { return /data\.js$/.test(p); }) ? true : false;
 }, test.limit.quick);
-test.run('it loads the fs family\'s cache manager, which puts ((spirit.data || {}).fs || {}).data on the page', 0.2, function () {
+test.run('it loads the fs family\'s cache manager, which puts the fs family\'s data on the page', 0.2, function () {
   if (!managers) return false;
   return managers.indexOf('fs') !== -1 && F && typeof F.file === 'function' ? true : false;
 }, test.limit.quick);
-test.run('it registers spirit.element.spirit.element.search.file.rowElement.create', 0.2, function () {
+test.run('it registers its create on spirit.element at its own path', 0.2, function () {
   if (!F || typeof F.file !== 'function') return false;
   return E.search.file.rowElement && typeof E.search.file.rowElement.create === 'function' ? true : false;
 }, test.limit.quick);
@@ -102,7 +102,7 @@ test.run('the node\'s word that a file is core is kept', 0.2, function () {
   if (noRow()) return false;
   return F.file('docs/core.js') && F.file('docs/core.js').core === true ? true : false;
 }, test.limit.quick);
-test.run('treeComplete: data.files is ready', 0.2, function () {
+test.run('after treeComplete, data.files is ready', 0.2, function () {
   if (noRow()) return false;
   D.takeJob({ id: 'spirit.fs', data: { treeComplete: true } });
   return F.ready() === true ? true : false;
@@ -132,7 +132,7 @@ test.run('another job\'s command, or a command with no path, writes nothing', 0.
 }, test.limit.quick);
 
 // one file or folder as a row
-test.run('a row element of kind file, keyed by its path, its facts from data.files', 0.2, function () {
+test.run('it makes a row element of kind file, keyed by its path, with its facts from data.files', 0.2, function () {
   if (noRow()) return false;
   D.takeJob(cmd({ op: 'createFile', path: 'web/page<1>.html', size: 2048, modified: '2030-01-02T03:04:00Z', core: false }));
   el = E.search.file.rowElement.create({ path: 'web/page<1>.html' });
@@ -142,38 +142,38 @@ test.run('its fields are name, size and changed', 0.2, function () {
   if (!el) return false;
   return JSON.stringify(Object.keys(cellsOf(el))) === '["name","size","changed"]' ? true : false;
 }, test.limit.quick);
-test.run('the name cell: a text file\'s icon 📜 (goal/G43.17), where it lives, and its name, escaped', 0.2, function () {
+test.run('the name cell shows a text file\'s icon 📜, where it lives, and its name, escaped', 0.2, function () {
   if (!el) return false;
   const cells = cellsOf(el);
   return /📜/.test(cells.name) && /page&lt;1>\.html/.test(cells.name) && /web\//.test(cells.name) && !/<1>/.test(cells.name) ? true : false;
 }, test.limit.quick);
-test.run('its size through formatBytes, its time to the minute', 0.2, function () {
+test.run('its size is shown through formatBytes, and its time to the minute', 0.2, function () {
   if (!el) return false;
   const cells = cellsOf(el);
   return cells.size === '2048 Bytes' && cells.changed === '2030-01-02 03:04' ? true : false;
 }, test.limit.quick);
-test.run('a folder: its icon, and no size', 0.2, function () {
+test.run('a folder shows its icon and no size', 0.2, function () {
   if (noRow()) return false;
   const fc = cellsOf(E.search.file.rowElement.create({ path: 'web', kind: 'folder' }));
   return /📁/.test(fc.name) && fc.size === '' ? true : false;
 }, test.limit.quick);
 // goal/G43.17, the box: "text 📜, video 📹, image 🌇, audio 🔊; a folder 📁 shut and 📂 open; any other file, of unknown kind, ❔, in
 // place of today's 📄; a file gone stays ❌".
-test.run('a file\'s icon by its kind: text 📜, image 🌇, video 📹, audio 🔊, any other ❔, none 📄', 0.2, async function () {
+test.run('a file\'s icon follows its kind: text 📜, image 🌇, video 📹, audio 🔊, any other ❔, none 📄', 0.2, async function () {
   if (noRow()) return false;
   await settle();
   const KINDS = { 'web/a.txt': '📜', 'web/a.png': '🌇', 'web/a.mp4': '📹', 'web/a.mp3': '🔊', 'web/a.zzq': '❔' };
   const wrong = Object.keys(KINDS).filter(function (p) { const k = cellsOf(E.search.file.rowElement.create({ path: p })); return k.name.indexOf(KINDS[p]) === -1 || /📄/.test(k.name); });
   return !wrong.length ? true : false;
 }, test.limit.quick);
-test.run('a core file\'s name in yellow, said core: write-protected', 0.2, function () {
+test.run('a core file\'s name is yellow and said to be core, write-protected', 0.2, function () {
   if (noRow()) return false;
   const cc = cellsOf(E.search.file.rowElement.create({ path: 'spirit/spirit.js', core: true }));
   return /spirit-core/.test(cc.name) && /core: write-protected/.test(cc.name) ? true : false;
 }, test.limit.quick);
 
 // it repaints from data.files
-test.run('its path in data.files changed, the row repaints its size', 0.2, async function () {
+test.run('when its path in data.files changes, the row repaints its size', 0.2, async function () {
   if (!el) return false;
   hosts = { name: { innerHTML: '' }, size: { innerHTML: '' }, changed: { innerHTML: '' } };
   el.mount(hosts);
@@ -181,7 +181,7 @@ test.run('its path in data.files changed, the row repaints its size', 0.2, async
   await settle();
   return el.row.size === 4096 && hosts.size.innerHTML === '4096 Bytes' ? true : false;
 }, test.limit.quick);
-test.run('its path gone from data.files, the row is marked gone', 0.2, async function () {
+test.run('when its path is gone from data.files, the row is marked gone', 0.2, async function () {
   if (!el || !hosts) return false;
   D.takeJob(cmd({ op: 'deleteFile', path: 'web/page<1>.html' }));
   await settle();
@@ -195,7 +195,7 @@ test.run('open hands its path to the viewer the page gave', 0.2, async function 
   await el.act('open', { open: function (p) { opened.push(p); } });
   return opened.length === 1 && opened[0] === 'web/page<1>.html' ? true : false;
 }, test.limit.quick);
-test.run('with no viewer, the text launcher', 0.2, async function () {
+test.run('with no viewer, open hands its path to the text launcher', 0.2, async function () {
   if (!el) return false;
   const launched = [];
   await el.act('open', { launchApp: function (app, a) { launched.push([app, a]); } });
@@ -206,7 +206,7 @@ test.run('remove asks fs.delete { path } through the spirit object', 0.2, async 
   await el.act('remove', {});
   return asked.some(function (c) { return c.verb === 'fs.delete' && c.args.path === 'web/page<1>.html'; }) ? true : false;
 }, test.limit.quick);
-test.run('expandInfo asks fs.stat, and no annotations (goal/G43.20: the node\'s only)', 0.2, async function () {
+test.run('expandInfo asks fs.stat, and no annotations, which are the node\'s only', 0.2, async function () {
   if (!el) return false;
   const info = await el.expandInfo();
   return info && info.stat && !('annotations' in info) && asked.some(function (c) { return c.verb === 'fs.stat'; }) && !asked.some(function (c) { return c.verb === 'fs.annotations'; }) ? true : false;
@@ -224,7 +224,7 @@ test.after(function () {
   try { if (page && page.profile) fs.rmSync(page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
   try { if (node && node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* left */ }
 });
-test.run('the world: a scratch node with its DEBUG on, and Chrome on the words page', 0.2, async function () {
+test.run('a scratch node comes up with its DEBUG on, and Chrome opens the words page', 0.2, async function () {
   const chrome = H.findChrome();
   if (!chrome) return false;
   node = await H.scratchNode();
@@ -239,49 +239,49 @@ test.run('the world: a scratch node with its DEBUG on, and Chrome on the words p
   row = async function (p, kind) { try { return JSON.parse(await page.evaluate('window.row(' + JSON.stringify(p) + ', ' + JSON.stringify(kind || 'folder') + ')')); } catch (e) { return {}; } };
   return true;
 }, test.limit.slow);
-test.run('spirit/app: reserved, and the spirit object holds spirit.app: light blue', 0.2, async function () {
+test.run('spirit/app, reserved and held by the spirit object as spirit.app, is light blue', 0.2, async function () {
   if (!row) return false;
   const app = await row('spirit/app');
   return app.app === 'lightblue' ? true : false;
 }, test.limit.slow);
-test.run('its path element spirit: always the colour of a word that holds, light blue', 0.2, async function () {
+test.run('its path element spirit always has the colour of a word that holds, light blue', 0.2, async function () {
   if (!row) return false;
   const app = await row('spirit/app');
   return app.spirit === 'lightblue' ? true : false;
 }, test.limit.slow);
-test.run('spirit/element: light blue', 0.2, async function () {
+test.run('spirit/element is light blue', 0.2, async function () {
   if (!row) return false;
   const element = await row('spirit/element');
   return element.element === 'lightblue' ? true : false;
 }, test.limit.slow);
 // Andy's commit d278c3e6, "identity": contact is no hard-coded word now.
-test.run('spirit/contact: a word (word.js), and the page holds spirit.contact: light blue', 0.2, async function () {
+test.run('spirit/contact, a word by its word.js that the page holds as spirit.contact, is light blue', 0.2, async function () {
   if (!row) return false;
   const contact = await row('spirit/contact');
   return contact.contact === 'lightblue' ? true : false;
 }, test.limit.slow);
-test.run('a file inside: its path elements carry the colours too, the file api.js, a word with no spirit.app.api, light purple', 0.2, async function () {
+test.run('a file inside carries the colours on its path elements too, and the file api.js, a word with no spirit.app.api, is light purple', 0.2, async function () {
   if (!row) return false;
   const inside = await row('spirit/app/api.js', 'file');
   return inside.app === 'lightblue' && inside.spirit === 'lightblue' && inside['api.js'] === 'lightpurple' ? true : false;
 }, test.limit.slow);
 // A folder no word names stays plain (goal/G43.32: spirit/jobs, plain before, is spirit/job, one of word.js's words, below).
-test.run('spirit/client: not reserved: no colour', 0.2, async function () {
+test.run('spirit/client is not reserved and has no colour', 0.2, async function () {
   if (!row) return false;
   const plain = await row('spirit/client');
   return plain.client === 'none' ? true : false;
 }, test.limit.slow);
-test.run('spirit/hub.js: not reserved: no colour', 0.2, async function () {
+test.run('spirit/hub.js is not reserved and has no colour', 0.2, async function () {
   if (!row) return false;
   const hub = await row('spirit/hub.js', 'file');
   return hub['hub.js'] === 'none' ? true : false;
 }, test.limit.slow);
-test.run('outside spirit/ no word holds: shell/app has no colour', 0.2, async function () {
+test.run('outside spirit/ no word holds, so shell/app has no colour', 0.2, async function () {
   if (!row) return false;
   const elsewhere = await row('shell/app', 'folder');
   return elsewhere.app === 'none' ? true : false;
 }, test.limit.slow);
-test.run('spirit/job: reserved, a folder, and no spirit.job: light purple, where red was', 0.2, async function () {
+test.run('spirit/job, a reserved folder with no spirit.job, is light purple where red was', 0.2, async function () {
   if (!row) return false;
   put('spirit/job/keep.txt', 'a folder for the word job');
   const job = await row('spirit/job');
@@ -290,25 +290,25 @@ test.run('spirit/job: reserved, a folder, and no spirit.job: light purple, where
 }, test.limit.slow);
 
 // goal/G43.4: "the colors will follow word.json changes live."
-test.run('the folder spirit/app/thing, no word: no colour', 0.2, async function () {
+test.run('the folder spirit/app/thing, no word, has no colour', 0.2, async function () {
   if (!row) return false;
   put('spirit/app/thing/keep.txt', 'a folder');
   const before = await row('spirit/app/thing');
   return before.thing === 'none' ? true : false;
 }, test.limit.slow);
-test.run('word.json gains the word: the same row goes light purple, with no reload: no spirit.app.thing', 0.2, async function () {
+test.run('when word.json gains the word, the same row goes light purple with no reload, there being no spirit.app.thing', 0.2, async function () {
   if (!row) return false;
   put('spirit/app/word.json', JSON.stringify({ thing: true }));
   const red = await row('spirit/app/thing');
   return red.thing === 'lightpurple' ? true : false;
 }, test.limit.slow);
-test.run('with spirit.app.thing on the object: light blue', 0.2, async function () {
+test.run('with spirit.app.thing on the object, the row is light blue', 0.2, async function () {
   if (!row) return false;
   await page.evaluate('window.setObject(true); window.fresh("spirit/app/thing")');
   const blue = await row('spirit/app/thing');
   return blue.thing === 'lightblue' ? true : false;
 }, test.limit.slow);
-test.run('word.json gone: the row loses its colour, with no reload', 0.2, async function () {
+test.run('when word.json is gone, the row loses its colour with no reload', 0.2, async function () {
   if (!row) return false;
   await page.evaluate('window.setObject(false)');
   del('spirit/app/word.json');

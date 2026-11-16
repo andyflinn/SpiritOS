@@ -36,11 +36,11 @@ function holds(root, cls) { return all(root).some(function (k) { return new RegE
 // What the tests make, shared by the tests after them.
 let SRC, asked, required, sels, forms, answer, auth, STANDS, managers, watches, arrive, E, box, made, input, add, rf,
   sel, r0, w0;
-test.run('it names no api-branch selector and no description: a bundle is a label, its branches the branch editor\'s', 0.2, function () {
+test.run('the bundle editor names no api-branch selector and no description: a bundle is a label, and its branches are the branch editor\'s', 0.2, function () {
   SRC = fs.readFileSync(FILE, 'utf8').replace(/\/\/.*$/gm, '');
   return (!/apiBranchSelector|createApiBranchSelector|description/.test(SRC)) ? true : false;
 }, test.limit.quick);
-test.run('it requires the field input and the bundle selector through spirit.require', 0.2, async function () {
+test.run('the bundle editor requires the field input and the bundle selector through spirit.require', 0.2, async function () {
   asked = [];
   required = [];
   sels = [];
@@ -92,13 +92,13 @@ test.run('it requires the field input and the bundle selector through spirit.req
   // it loads what it uses itself (rule/26)
   return (['spirit/element/fieldInput.js', 'spirit/element/search/bundle.js'].every(function (p) { return required.indexOf(p) !== -1; })) ? true : false;
 }, test.limit.quick);
-test.run('it loads the auth family\'s cache manager, whose bundles it adds to (goal/G41.28)', 0.2, function () {
+test.run('the bundle editor loads the auth family\'s cache manager, whose bundles it adds to', 0.2, function () {
   return (managers.indexOf('auth') !== -1) ? true : false;
 }, test.limit.quick);
-test.run('it registers spirit.element.spirit.element.bundleEditor.create', 0.2, function () {
+test.run('the bundle editor registers spirit.element.spirit.element.bundleEditor.create', 0.2, function () {
   return (E.bundleEditor && typeof E.bundleEditor.create === 'function') ? true : false;
 }, test.limit.quick);
-test.run('it draws a label input and an Add button', 0.2, async function () {
+test.run('the bundle editor draws a label input and an Add button', 0.2, async function () {
   // at the top: new [label] [Add]
   // Andy, box: "the [add-Button] refused an empty or invalid label"; the form itself is goal/G41.27's rowForm (below).
   box = node('box');
@@ -108,30 +108,30 @@ test.run('it draws a label input and an Add button', 0.2, async function () {
   add = all(box).filter(function (k) { return k.tag === 'button' && /^\s*Add\s*$/.test(k.textContent || ''); })[0];
   return (!!input && !!add) ? true : false;
 }, test.limit.quick);
-test.run('it loads the rowForm itself (rule/26)', 0.2, function () {
+test.run('the bundle editor loads the rowForm itself', 0.2, function () {
   // Andy, on G41.27: "bundleEditor:\n[➕] [label] [Add]". The box: "spirit.element.spirit.element.rowForm.create(container, { icon, button }) -> { root, span, button }", "The mounter drops its form elements into span and wires the button itself".
   return (required.indexOf('spirit/element/rowForm.js') !== -1) ? true : false;
 }, test.limit.quick);
-test.run('its add form is one rowForm in its box, its icon ➕ and its button Add', 0.2, function () {
+test.run('the add form is one rowForm in the editor\'s box, with ➕ as its icon and Add as its button', 0.2, function () {
   rf = forms[0];
   return (forms.length === 1 && rf.opts.icon === '➕' && rf.opts.button === 'Add' && all(box).indexOf(rf.root) !== -1) ? true : false;
 }, test.limit.quick);
-test.run('its span holds the label input, and nothing else', 0.2, function () {
+test.run('the rowForm\'s span holds the label input, and nothing else', 0.2, function () {
   return (!!rf && rf.span.kids.length === 1 && rf.span.kids[0] === input) ? true : false;
 }, test.limit.quick);
-test.run('its Add is the rowForm\'s button, the only Add', 0.2, function () {
+test.run('the Add is the rowForm\'s button, and the only Add', 0.2, function () {
   return (!!rf && add === rf.button && all(box).filter(function (k) { return k.tag === 'button' && /^\s*Add\s*$/.test(k.textContent || ''); }).length === 1) ? true : false;
 }, test.limit.quick);
-test.run('the word "new" at its start is gone, ➕ in its place', 0.2, function () {
+test.run('the word "new" at the start of the form is gone, with ➕ in its place', 0.2, function () {
   return (!/\bnew\b/.test(text(box))) ? true : false;
 }, test.limit.quick);
 test.run('the input is a fieldInput, held to the label\'s rule', 0.2, function () {
   return (!!input.heard.beforeinput) ? true : false;
 }, test.limit.quick);
-test.run('drawn, it asks the node nothing', 0.2, function () {
+test.run('once drawn, the bundle editor asks the node nothing', 0.2, function () {
   return (asked.length === 0) ? true : false;
 }, test.limit.quick);
-test.run('Add refuses an empty label, or one the label\'s rule refuses: nothing asked', 0.2, async function () {
+test.run('Add refuses an empty label, or one the label\'s rule refuses, and asks nothing', 0.2, async function () {
   add.dispatchEvent({ type: 'click' });
   input.value = '   ';
   add.dispatchEvent({ type: 'click' });
@@ -140,7 +140,7 @@ test.run('Add refuses an empty label, or one the label\'s rule refuses: nothing 
   await settle();
   return (asked.length === 0) ? true : false;
 }, test.limit.quick);
-test.run('bundleSelector.create(its box, a pane, columns label, owner), its labels shown only (goal/G41.26: "the Label should now just be an output")', 0.2, function () {
+test.run('the bundle editor creates a bundleSelector in its box as a pane with the columns label and owner, its labels only shown, never edited', 0.2, function () {
   // below it, filling the rest: the bundles, as a pane
   // Andy, goal/G41.32: "the bundleSelector:pane looses both the 'Edit' button and the 'Delete' Button." A row pressed
   // opens its branchEditor tab (the row element's, tested in its own folder).
@@ -148,10 +148,10 @@ test.run('bundleSelector.create(its box, a pane, columns label, owner), its labe
   // goal/G41.25, box: "the bundleSelector's list will gain a new column \"owner\", displayed right after the bundles label."
   return (!!sel && sel.container === box && all(box).indexOf(sel) !== -1 && sel.o.face === 'pane' && JSON.stringify(sel.o.columns) === '["label","owner"]' && !sel.o.editable) ? true : false;
 }, test.limit.quick);
-test.run('in a box that fills the space left (shell.css fill)', 0.2, function () {
+test.run('the bundleSelector sits in a box that fills the space left, by shell.css fill', 0.2, function () {
   return (!!sel && (/\bfill\b/.test(sel.className || '') || holds(box, 'fill'))) ? true : false;
 }, test.limit.quick);
-test.run('a valid label asks auth.bundle { op: add, label }, the label as the rule writes it (goal/G41.32: a user makes node-owned bundles alone)', 0.2, async function () {
+test.run('a valid label asks auth.bundle to add that label, as the rule writes it and with no owner, since a user makes node-owned bundles alone', 0.2, async function () {
   // Add
   input.value = '  Reader ';
   r0 = sel.refreshed;
@@ -161,7 +161,7 @@ test.run('a valid label asks auth.bundle { op: add, label }, the label as the ru
   // read-only": the add names no owner.
   return (asked.length === 1 && asked[0].op === 'add' && asked[0].label === 'Reader' && Object.keys(asked[0]).length === 2) ? true : false;
 }, test.limit.quick);
-test.run('answered, before the bundle is in the auth family\'s cache, the label stays and nothing is said added', 0.2, function () {
+test.run('once answered, but before the bundle is in the auth family\'s cache, the label stays and nothing is said added', 0.2, function () {
   // goal/G41.28 (Andy: "EVERY FUCKING ELEMENT is verified to make sure when it changes shit it listens to fucking update
   // via the spirit object"): what it adds, it listens for, in spirit.data.auth.data.bundles.
   return (input.value === '  Reader ' && !/\badded\b/.test(text(box))) ? true : false;
@@ -176,7 +176,7 @@ test.run('once the bundle it asked for is in spirit.data.auth.data.bundles, the 
   await settle();
   return (input.value === '' && /\badded\b/.test(text(box))) ? true : false;
 }, test.limit.quick);
-test.run('it asks its pane to search nothing again: the pane is a view of that branch', 0.2, function () {
+test.run('the bundle editor asks its pane to search nothing again: the pane is a view of that branch', 0.2, function () {
   return (sel.refreshed === r0) ? true : false;
 }, test.limit.quick);
 test.run('a refused add is said in the panel, in the node\'s words, and the label stays to be mended', 0.2, async function () {
@@ -186,7 +186,7 @@ test.run('a refused add is said in the panel, in the node\'s words, and the labe
   await settle();
   return (/label refused|bad-request/.test(text(box)) && input.value === 'Writer') ? true : false;
 }, test.limit.quick);
-test.run('create answers { destroy }', 0.2, function () {
+test.run('create answers an object with destroy', 0.2, function () {
   // destroy
   return (made && typeof made.destroy === 'function') ? true : false;
 }, test.limit.quick);

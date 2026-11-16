@@ -34,7 +34,7 @@ const STATUS = { lastCheck: '2026-11-13T09:00:00.000Z', lastCopy: '2026-11-13T08
 
 const W = {};
 
-test.run('the world: in a window, beside the real spirit.data, it stands at spirit.data.backup.data', 0.2, function () {
+test.run('in a window, beside the real spirit.data, it stands at spirit.data.backup.data', 0.2, function () {
   try { Object.assign(W, world()); } catch (e) { return false; }
   return !!W.B || false;
 }, test.limit.quick);
@@ -42,7 +42,7 @@ test.run('its reads are keep, status, watch and branch', 0.2, function () {
   if (!W.B) return false;
   return (['keep', 'status', 'watch'].every(function (f) { return typeof W.B[f] === 'function'; }) && typeof W.B.branch === 'string') || false;
 }, test.limit.quick);
-test.run('before anything is kept, status() is null', 0.2, function () {
+test.run('before anything is kept, status answers null', 0.2, function () {
   if (!W.B) return false;
   return W.B.status() === null || false;
 }, test.limit.quick);
@@ -51,7 +51,7 @@ test.run('its branch is <node>/backup/backupStatus, under the node that served i
   if (!W.B) return false;
   return W.B.branch === W.D.nodeId(HOME_KEY) + '/backup/backupStatus' || false;
 }, test.limit.quick);
-test.run('keep(status) keeps what status.get answered, and status() answers it', 0.2, function () {
+test.run('keep keeps what status.get answered, and status answers it', 0.2, function () {
   if (!W.B) return false;
   W.B.keep(Object.assign({}, STATUS));
   const s = W.B.status();
@@ -62,7 +62,7 @@ test.run('it is kept at <branch>/now, in the data set', 0.2, function () {
   const s = W.D.getPath(W.B.branch + '/now');
   return (!!s && s.lastCheck === STATUS.lastCheck) || false;
 }, test.limit.quick);
-test.run('watch(fn) is told the status on every change', 0.2, function () {
+test.run('a watch is told the status on every change', 0.2, function () {
   if (!W.B) return false;
   const heard = [];
   W.release = W.B.watch(function (s) { heard.push(s); });
@@ -70,7 +70,7 @@ test.run('watch(fn) is told the status on every change', 0.2, function () {
   W.B.keep(Object.assign({}, STATUS, { lastError: 'disk full' }));
   return (heard.length === 1 && heard[0] && heard[0].lastError === 'disk full') || false;
 }, test.limit.quick);
-test.run('a refusal kept lets the status go: status() is null, and the watch is told null', 0.2, function () {
+test.run('a refusal kept lets the status go: status answers null, and the watch is told null', 0.2, function () {
   if (!W.heard) return false;
   W.B.keep({ ok: false, error: 'refused' });
   return (W.B.status() === null && W.heard.length === 2 && W.heard[1] === null) || false;
@@ -81,7 +81,7 @@ test.run('nothing kept lets it go too', 0.2, function () {
   W.B.keep(null);
   return W.B.status() === null || false;
 }, test.limit.quick);
-test.run('watch answers its release: released, it is told nothing more', 0.2, function () {
+test.run('a watch answers its release, and once released it is told nothing more', 0.2, function () {
   if (typeof W.release !== 'function') return false;
   const n = W.heard.length;
   W.release();
@@ -98,7 +98,7 @@ test.run('it translates nothing: a job of the backup on the stream writes nothin
 }, test.limit.quick);
 
 // ── in node, as appServer asks for it ──
-test.run('in node, spirit.cacheManager(\'backup\') loads it, and it stands at spirit.data.backup.data', 0.2, async function () {
+test.run('in node, spirit.cacheManager loads it by the name backup, and it stands at spirit.data.backup.data', 0.2, async function () {
   require(path.join(RUN, 'spirit', 'spirit.js'));
   const s = globalThis.spirit;
   try { await s.cacheManager('backup'); } catch (e) { return false; }

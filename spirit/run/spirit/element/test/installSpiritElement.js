@@ -24,7 +24,7 @@ test.run('the helper\'s file is there', 0.2, function () {
   // the helper, resident in spirit.required
   return (fs.existsSync(FILE)) ? true : false;
 }, test.limit.quick);
-test.run('spirit.require answers the helper at once, a function', 0.2, function () {
+test.run('spirit.require answers the helper at once, and it is a function', 0.2, function () {
   s = require(path.join(RUN, 'spirit', 'spirit.js'));
   install = null;
   try { install = s.require(PLACE); } catch (e) { install = e; }
@@ -39,7 +39,7 @@ test.run('spirit/element/zzIcon.js\'s factory stands at spirit.element.spirit.el
   back = install(s, 'spirit/element/zzIcon.js', icon);
   return (at(s.element, ['spirit', 'element', 'zzIcon']) === icon) ? true : false;
 }, test.limit.quick);
-test.run('and the helper answers the factory it placed', 0.2, function () {
+test.run('the helper answers the factory it placed', 0.2, function () {
   return (back === icon) ? true : false;
 }, test.limit.quick);
 test.run('an app\'s element.js stands at spirit.element.spirit.app.zzApp.element', 0.2, function () {
@@ -47,7 +47,7 @@ test.run('an app\'s element.js stands at spirit.element.spirit.app.zzApp.element
   install(s, 'spirit/app/zzApp/element.js', app);
   return (at(s.element, ['spirit', 'app', 'zzApp', 'element']) === app) ? true : false;
 }, test.limit.quick);
-test.run('zzSearch.js and zzSearch/zzFile.js both stand, the folder\'s placed first', 0.2, function () {
+test.run('zzSearch.js and zzSearch/zzFile.js both stand when the one in the folder is placed first', 0.2, function () {
   // no name-space collision
   outer = { create: function () {} };
   inner = { create: function () {} };
@@ -55,13 +55,13 @@ test.run('zzSearch.js and zzSearch/zzFile.js both stand, the folder\'s placed fi
   install(s, 'spirit/element/zzSearch.js', outer);
   return (at(s.element, ['spirit', 'element', 'zzSearch']) === outer && at(s.element, ['spirit', 'element', 'zzSearch', 'zzFile']) === inner) ? true : false;
 }, test.limit.quick);
-test.run('zzList.js and zzList/zzRow.js both stand, the file\'s placed first', 0.2, function () {
+test.run('zzList.js and zzList/zzRow.js both stand when the file beside the folder is placed first', 0.2, function () {
   outer2 = { create: function () {} };
   inner2 = { create: function () {} };
   install(s, 'spirit/element/zzList.js', outer2);
   install(s, 'spirit/element/zzList/zzRow.js', inner2);
   return (at(s.element, ['spirit', 'element', 'zzList']) === outer2 && at(s.element, ['spirit', 'element', 'zzList', 'zzRow']) === inner2) ? true : false;
 }, test.limit.quick);
-test.run('and what stood before still stands', 0.2, function () {
+test.run('the factory placed before them still stands', 0.2, function () {
   return (at(s.element, ['spirit', 'element', 'zzIcon']) === icon) ? true : false;
 }, test.limit.quick);

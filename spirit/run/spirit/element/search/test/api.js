@@ -97,10 +97,10 @@ let w, made, box, fam, seen, vl, fl, verbBox;
 test.run('spirit/element/search/api.js is there', 0.2, function () {
   return fs.existsSync(FILE) ? true : false;
 }, test.limit.quick);
-test.run('spirit/element/apiBranchSelector.js is not: the rename leaves no copy', 0.2, function () {
+test.run('spirit/element/apiBranchSelector.js is gone, so the rename leaves no copy', 0.2, function () {
   return !fs.existsSync(OLD) ? true : false;
 }, test.limit.quick);
-test.run('it names no shellCreateListSearch (goal/G40.8)', 0.2, function () {
+test.run('it names no shellCreateListSearch', 0.2, function () {
   if (!fs.existsSync(FILE)) return false;
   const names = /shellCreateListSearch/.test(fs.readFileSync(FILE, 'utf8').replace(/\/\/.*$/gm, ''));
   return !names ? true : false;
@@ -112,14 +112,14 @@ test.run('it registers apiFamilySelector with a create, and createApiFamilySelec
   made = w.E.search.api;
   return made && typeof made.create === 'function' && !('createApiFamilySelector' in w.E) && !('createApiBranchSelector' in w.E) ? true : false;
 }, test.limit.quick);
-test.run('it loads its two halves itself (rule/26): the family list, search/api/listElement.js, and the verb selector', 0.2, function () {
+test.run('it loads its two halves itself, the family list search/api/listElement.js and the verb selector', 0.2, function () {
   if (!made || typeof made.create !== 'function') return false;
   return w.required.indexOf('spirit/element/search/api/listElement.js') !== -1 && w.required.indexOf('spirit/element/search/api/verb.js') !== -1 ? true : false;
 }, test.limit.quick);
 
 // the family, then its verb, side by side
 // Box v23: "every element gets a container and appends itself".
-test.run('create(container, options) appends the control to its container and answers it', 0.2, function () {
+test.run('create appends the control to the container it is given and answers it', 0.2, function () {
   if (!made || typeof made.create !== 'function') return false;
   box = node('div');
   fam = made.create(box, { all: 'every family' });
@@ -132,14 +132,14 @@ test.run('it draws two probabilitySearch dropdowns', 0.2, async function () {
   await settle();
   return w.lists.length === 2 && w.lists.every(function (l) { return l.opts.face === 'dropdown'; }) ? true : false;
 }, test.limit.quick);
-test.run('the world: a family half and a verb half', 0.2, function () {
+test.run('it has a family half and a verb half', 0.2, function () {
   if (!fam) return false;
   vl = w.lists.filter(function (l) { return l.opts.all === 'All Verbs'; })[0];
   fl = w.lists.filter(function (l) { return l !== vl; })[0];
   if (vl) verbBox = vl.host;
   return w.lists.length >= 2 && vl && fl ? true : false;
 }, test.limit.quick);
-test.run('options.all is what the family half reads unchosen', 0.2, function () {
+test.run('the option all is what the family half reads when nothing is chosen', 0.2, function () {
   if (!vl || !fl) return false;
   return fl.opts.all === 'every family' ? true : false;
 }, test.limit.quick);
@@ -147,25 +147,25 @@ test.run('its families are the tree\'s, one that did not answer left out', 0.2, 
   if (!vl || !fl) return false;
   return short(names(fl)) === short(['fs', 'jobs']) ? true : false;
 }, test.limit.quick);
-test.run('nothing chosen: the verb half hidden; family, verb and value \'\'', 0.2, function () {
+test.run('with nothing chosen, the verb half is hidden and family, verb and value are empty', 0.2, function () {
   if (!vl || !fl) return false;
   return verbBox.hidden === true && fam.family === '' && fam.verb === '' && fam.value === '' ? true : false;
 }, test.limit.quick);
-test.run('a family pick: family is it, value the family alone, one change', 0.2, function () {
+test.run('a family pick sets family to it and value to the family alone, with one change', 0.2, function () {
   if (!vl || !fl) return false;
   fl.opts.pick({ key: 'fs', name: 'fs' }, 'fs');
   return fam.family === 'fs' && fam.verb === '' && fam.value === 'fs' && seen[seen.length - 1] === 'fs' ? true : false;
 }, test.limit.quick);
-test.run('and the verb half shows its verbs, DEBUG never offered', 0.2, function () {
+test.run('after a family pick the verb half shows its verbs, and DEBUG is never offered', 0.2, function () {
   if (!vl || !fl) return false;
   return verbBox.hidden === false && short(names(vl)) === short(['loadFile', 'search']) ? true : false;
 }, test.limit.quick);
-test.run('a verb pick: verb is it, value family.verb', 0.2, function () {
+test.run('a verb pick sets verb to it and value to family.verb', 0.2, function () {
   if (!vl || !fl) return false;
   vl.opts.pick({ key: 'search', name: 'search' }, 'search');
   return fam.verb === 'search' && fam.value === 'fs.search' ? true : false;
 }, test.limit.quick);
-test.run('All Verbs: the empty verb, value the family again', 0.2, function () {
+test.run('All Verbs picks the empty verb, and value is the family again', 0.2, function () {
   if (!vl || !fl) return false;
   vl.opts.pick(null, '');
   return fam.verb === '' && fam.value === 'fs' ? true : false;

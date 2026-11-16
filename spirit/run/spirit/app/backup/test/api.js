@@ -20,13 +20,13 @@ const isPlain = function (v) { return v !== null && typeof v === 'object' && !Ar
 const W = { api: null, verbs: {}, names: [] };
 const refusedAs = function (verb, args) { if (!W.verbs[verb]) return null; const r = spirit.check('backup.' + verb, W.verbs[verb], args); return r ? r.code : ''; };
 
-test.run('the world: api.js loads', 0.2, function () {
+test.run('the backup family\'s api.js loads', 0.2, function () {
   try { W.api = require(FILE); } catch (e) { return false; }
   W.verbs = W.api.verbs || {};
   W.names = Object.keys(W.verbs);
   return true;
 }, test.limit.quick);
-test.run('spirit.familyPath(\'backup\') finds it here', 0.2, function () {
+test.run('the spirit object\'s family path for backup finds this api.js', 0.2, function () {
   return path.join(RUN, spirit.familyPath('backup')) === FILE || false;
 }, test.limit.quick);
 // "The node answers this text to api {family} without the server hearing of it, and maps it to its name: it names no family of its own."
@@ -50,7 +50,7 @@ test.run('each verb it lists is a handler of backup.js, and backup.js serves no 
   return served.length > 0 && served.slice().sort().join() === W.names.slice().sort().join() ? true : false;
 }, test.limit.quick);
 // "The last check, copy and error; it takes nothing."
-test.run('status.get takes nothing: {} passes, any argument is refused before it leaves', 0.2, function () {
+test.run('status.get takes nothing, so an empty call passes and any argument is refused before it leaves', 0.2, function () {
   if (!W.api) return false;
   return (refusedAs('status.get', {}) === '' && refusedAs('status.get', { since: 1 }) === 'no-such-argument') || false;
 }, test.limit.quick);

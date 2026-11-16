@@ -65,7 +65,7 @@ test.run('in node, found by the family\'s name (spirit.cacheManager), it stands 
   const X = S.data && S.data['job'] && S.data['job'].data;
   return (!threw && !!X && typeof X === 'object') || false;
 }, test.limit.quick);
-test.run('the world: run beside spirit.data, it makes its family there', 0.2, function () {
+test.run('run beside spirit.data, it makes its family there', 0.2, function () {
   try { w = world(); } catch (e) { w = null; return false; }
   return (!!w.X && typeof w.X === 'object') || false;
 }, test.limit.quick);
@@ -79,7 +79,7 @@ test.run('every job is kept as it came, without the node it came from', 0.2, fun
   const j = w.X.job('j1');
   return (!!j && j.status === 'running' && j.kind === 'transient' && !('fromNode' in j)) || false;
 }, test.limit.quick);
-test.run('its event is its app object, kept once until it differs', 0.2, function () {
+test.run('a job\'s event is its app object, kept once until it differs', 0.2, function () {
   if (!w) return false;
   w.job({ id: 'j1', kind: 'transient', status: 'running', app: { n: 1 }, updatedAt: 2 });
   w.job({ id: 'j1', kind: 'transient', status: 'running', app: { n: 2 }, updatedAt: 3 });
@@ -103,7 +103,7 @@ test.run('a job of the node\'s own keeps the newest of each kind of news on its 
   const d = (w.X.job('spirit') || {}).data;
   return same(d, { stats: { up: 3 }, join: { step: 2 } }) || false;
 }, test.limit.quick);
-test.run('and its event is its data, each time it changes', 0.2, function () {
+test.run('the event of a job of the node\'s own is its data, each time it changes', 0.2, function () {
   if (!w) return false;
   const e = w.X.events('spirit');
   return (e.length === 3 && e[1].json === JSON.stringify({ join: { step: 2 } })) || false;
@@ -121,22 +121,22 @@ test.run('the events kept are the last eventWindow, the oldest falling off the t
   const e = w.X.events('j2');
   return (e.length === n && e[0].json === JSON.stringify({ i: 5 }) && e[n - 1].json === JSON.stringify({ i: n + 4 })) || false;
 }, test.limit.quick);
-test.run('a job with no id keeps nothing; job() and events() of no id answer null and none', 0.2, function () {
+test.run('a job with no id keeps nothing, and job and events asked of no id answer null and none', 0.2, function () {
   if (!w) return false;
   const before = Object.keys(w.X.jobs()).length;
   w.job({ status: 'running', app: { x: 1 } });
   return (Object.keys(w.X.jobs()).length === before && w.X.job('') === null && same(w.X.events(''), []) && same(w.X.events('nope'), [])) || false;
 }, test.limit.quick);
-test.run('jobs() answers every job kept, by its id', 0.2, function () {
+test.run('jobs answers every job kept, by its id', 0.2, function () {
   if (!w) return false;
   return same(Object.keys(w.X.jobs()).sort(), ['j1', 'j2', 'spirit', 'spirit.fs']) || false;
 }, test.limit.quick);
-test.run('find(test) answers the first job test is true of, or null', 0.2, function () {
+test.run('find answers the first job its test is true of, or null', 0.2, function () {
   if (!w) return false;
   const f = w.X.find(function (j) { return j.status === 'done'; });
   return (!!f && f.id === 'j1' && w.X.find(function () { return false; }) === null && w.X.find('not a function') === null) || false;
 }, test.limit.quick);
-test.run('watch(fn) hears each job by its id, and nothing once released', 0.2, function () {
+test.run('watch, handed a function alone, hears each job by its id, and nothing once released', 0.2, function () {
   if (!w) return false;
   const heard = [];
   const off = w.X.watch(function (id, j) { heard.push([id, j && j.status]); });
@@ -146,7 +146,7 @@ test.run('watch(fn) hears each job by its id, and nothing once released', 0.2, f
   return same(heard, [['j3', 'queued']]) || false;
 }, test.limit.quick);
 // goal/G43.32, Andy: "that's a decision: a BRANCHE's what is called \"watch\""
-test.run('watch(id, fn) hears that one job each time it is written, and nothing once released', 0.2, function () {
+test.run('watch, handed an id and a function, hears that one job each time it is written, and nothing once released', 0.2, function () {
   if (!w) return false;
   const heard = [];
   const off = w.X.watch('j3', function (j) { heard.push(j && j.status); });

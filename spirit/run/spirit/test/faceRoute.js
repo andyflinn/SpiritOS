@@ -26,39 +26,39 @@ function signed(by, ownerKey, name, to, until, face) {
 function cache(clock) { return F.createRouteCache({ ownerKey: OWNER.publicKey, verify: auth.verify, now: function () { return clock.t; } }); }
 
 // ── nameOf ──
-test.run('nameOf: the one label under the face domain is the name asked for', 0.2, function () {
+test.run('nameOf answers the one label under the face domain as the name asked for', 0.2, function () {
   return F.nameOf('join.face.spirit.x', 'face.spirit.x') === 'join' || false;
 }, test.limit.quick);
-test.run('nameOf: case, a port and a trailing dot do not change the name', 0.2, function () {
+test.run('in nameOf, case, a port and a trailing dot do not change the name', 0.2, function () {
   const got = [F.nameOf('Join.Face.Spirit.X:443', 'face.spirit.x'), F.nameOf('join.face.spirit.x.', 'FACE.spirit.x.')];
   return got.every(function (x) { return x === 'join'; }) || false;
 }, test.limit.quick);
-test.run('nameOf: one label only, so two labels are no name (a wildcard certificate covers one)', 0.2, function () {
+test.run('nameOf takes one label only, so two labels are no name (a wildcard certificate covers one)', 0.2, function () {
   return F.nameOf('a.b.face.spirit.x', 'face.spirit.x') === null || false;
 }, test.limit.quick);
-test.run('nameOf: the bare face domain, another domain, a lookalike suffix, and no host or domain are no name', 0.2, function () {
+test.run('nameOf finds no name in the bare face domain, another domain, a lookalike suffix, or no host or domain', 0.2, function () {
   const got = [F.nameOf('face.spirit.x', 'face.spirit.x'), F.nameOf('join.other.x', 'face.spirit.x'), F.nameOf('joinface.spirit.x', 'face.spirit.x'), F.nameOf('', 'face.spirit.x'), F.nameOf('join.face.spirit.x', '')];
   return got.every(function (x) { return x === null; }) || false;
 }, test.limit.quick);
-test.run('nameOf: a label the host parser would refuse is no name', 0.2, function () {
+test.run('nameOf finds no name in a label the host parser would refuse', 0.2, function () {
   return F.nameOf('bad_name.face.spirit.x', 'face.spirit.x') === null || false;
 }, test.limit.quick);
 
 // ── faceLabel (goal/G30.1) ──
-test.run('faceLabel: andy and Andy are one name, lowercased and trimmed', 0.2, function () {
+test.run('faceLabel makes andy and Andy one name, lowercased and trimmed', 0.2, function () {
   return (F.faceLabel('Andy') === 'andy' && F.faceLabel(' andy ') === 'andy') || false;
 }, test.limit.quick);
-test.run('faceLabel: a single DNS label of a-z, 0-9 and hyphen, at most 63', 0.2, function () {
+test.run('faceLabel accepts a single DNS label of a-z, 0-9 and hyphen, at most 63 characters long', 0.2, function () {
   const ok = [F.faceLabel('a'), F.faceLabel('my-face-2'), F.faceLabel('a'.repeat(63))];
   return (ok[0] === 'a' && ok[1] === 'my-face-2' && ok[2] === 'a'.repeat(63)) || false;
 }, test.limit.quick);
-test.run('faceLabel: 64 characters, a hyphen at either end, a dot, an underscore, a space, or nothing is null', 0.2, function () {
+test.run('faceLabel answers null for 64 characters, a hyphen at either end, a dot, an underscore, a space, or nothing', 0.2, function () {
   const no = ['a'.repeat(64), '-andy', 'andy-', 'an.dy', 'an_dy', 'an dy', '', null, undefined].map(F.faceLabel);
   return no.every(function (x) { return x === null; }) || false;
 }, test.limit.quick);
 
 // ── how long a route is kept ──
-test.run('a route is kept an hour, a "no such route" a minute', 0.2, function () {
+test.run('a route is kept an hour, and a "no such route" a minute', 0.2, function () {
   return (F.ROUTE_MS === 3600000 && F.NONE_MS === 60000) || false;
 }, test.limit.quick);
 
@@ -68,7 +68,7 @@ test.run('an answer from any key but the owner\'s is not taken', 0.2, function (
   const r = c.take({ route: 'owner', name: 'join', to: 'k' }, OTHER.publicKey, 'h1', 'h1');
   return (r === false && c.lookup('join') === null) || false;
 }, test.limit.quick);
-test.run('an answer to another question (re not the hash asked), or with no question, is not taken', 0.2, function () {
+test.run('an answer to another question, whose re is not the hash asked, or with no question, is not taken', 0.2, function () {
   const c = cache({ t: 0 });
   const r = [c.take({ route: 'owner', name: 'join', to: 'k' }, OWNER.publicKey, 'h2', 'h1'), c.take({ route: 'owner', name: 'join', to: 'k' }, OWNER.publicKey, '', '')];
   return (r[0] === false && r[1] === false && c.lookup('join') === null) || false;
@@ -79,7 +79,7 @@ test.run('a cache with no owner key takes nothing', 0.2, function () {
 }, test.limit.quick);
 
 // ── the answers ──
-test.run('"none" is kept a minute, then asked again', 0.2, function () {
+test.run('a "none" answer is kept a minute, then asked again', 0.2, function () {
   const clock = { t: 1000 };
   const c = cache(clock);
   const r = c.take({ route: 'none', name: 'ghost' }, OWNER.publicKey, 'h', 'h');
@@ -87,7 +87,7 @@ test.run('"none" is kept a minute, then asked again', 0.2, function () {
   clock.t += 60 * 1000;
   return (r === true && short(at) === short({ none: true }) && c.lookup('ghost') === null) || false;
 }, test.limit.quick);
-test.run('"mine" is kept an hour', 0.2, function () {
+test.run('a "mine" answer is kept an hour', 0.2, function () {
   const clock = { t: 1000 };
   const c = cache(clock);
   c.take({ route: 'mine', name: 'me' }, OWNER.publicKey, 'h', 'h');
@@ -96,7 +96,7 @@ test.run('"mine" is kept an hour', 0.2, function () {
   clock.t += 1;
   return (short(still) === short({ mine: true }) && c.lookup('me') === null) || false;
 }, test.limit.quick);
-test.run('"owner": the key of the name\'s owner, taken on the owner\'s word, kept an hour', 0.2, function () {
+test.run('an "owner" answer, the key of the name\'s owner, is taken on the owner\'s word and kept an hour', 0.2, function () {
   const clock = { t: 0 };
   const c = cache(clock);
   const ans = { route: 'owner', name: 'join', to: 'slot-owner-key' };
@@ -105,11 +105,11 @@ test.run('"owner": the key of the name\'s owner, taken on the owner\'s word, kep
   clock.t = F.ROUTE_MS;
   return (r === true && !!l && l.to === 'slot-owner-key' && l.route === ans && c.lookup('join') === null) || false;
 }, test.limit.quick);
-test.run('"owner" with no key to go to is not taken', 0.2, function () {
+test.run('an "owner" answer with no key to go to is not taken', 0.2, function () {
   const c = cache({ t: 0 });
   return c.take({ route: 'owner', name: 'join' }, OWNER.publicKey, 'h', 'h') === false || false;
 }, test.limit.quick);
-test.run('a signed route ("to") the owner signed is taken, and looked up with the route itself', 0.2, function () {
+test.run('a signed "to" route that the owner signed is taken, and looked up with the route itself', 0.2, function () {
   const c = cache({ t: 0 });
   const ans = signed(OWNER, OWNER.publicKey, 'join', 'slot-key', 30 * 60 * 1000, 'face-key');
   const r = c.take(ans, OWNER.publicKey, 'h', 'h');

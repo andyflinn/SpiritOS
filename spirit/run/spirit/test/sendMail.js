@@ -44,10 +44,10 @@ function planted() {
 }
 
 // ── no driver named, no mail ──
-test.run('no mail.json: no sender, null', 0.2, function () {
+test.run('with no mail.json there is no sender: null', 0.2, function () {
   return M.createSender(home(undefined)) === null || false;
 }, test.limit.quick);
-test.run('a mail.json that is not JSON, or not an object: null', 0.2, function () {
+test.run('a mail.json that is not JSON, or not an object, gives no sender: null', 0.2, function () {
   const got = [M.createSender(home('{not json')), M.createSender(home('"mailgun"')), M.createSender(home('null'))];
   return got.every(function (x) { return x === null; }) || false;
 }, test.limit.quick);
@@ -64,14 +64,14 @@ test.run('the driver name must be a plain word: a path, a dot, a slash or an upp
   const made = names.filter(function (d) { return M.createSender(home(Object.assign({}, MAILGUN, { driver: d })), { fetch: planted().fetch }) !== null; });
   return made.length === 0 || false;
 }, test.limit.quick);
-test.run('settings the driver will not take give no sender (mailgun with no key)', 0.2, function () {
+test.run('settings the driver will not take, such as mailgun with no key, give no sender', 0.2, function () {
   return M.createSender(home(Object.assign({}, MAILGUN, { key: '' })), { fetch: planted().fetch }) === null || false;
 }, test.limit.quick);
 
 // ── a driver named, a sender ──
 let S = null;
 let P = null;
-test.run('the world: a mail.json naming mailgun gives { driver: "mailgun", send }', 0.2, function () {
+test.run('a mail.json naming mailgun gives a sender of the driver mailgun, with its send', 0.2, function () {
   P = planted();
   S = M.createSender(home(MAILGUN), { fetch: P.fetch });
   return (!!S && S.driver === 'mailgun' && typeof S.send === 'function') || false;

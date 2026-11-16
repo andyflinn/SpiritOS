@@ -25,7 +25,7 @@ function element(tag) {
 // One test.run per test (goal/G47.2). What the world and the tests make, for the tests after them.
 let lists, required, made, box, open, root, list;
 
-test.run('the world: the selector runs on a bare window', 0.2, async function () {
+test.run('the selector runs on a bare window', 0.2, async function () {
   if (!fs.existsSync(FILE)) return false;
   const SRC = fs.readFileSync(FILE, 'utf8');
   lists = [];
@@ -57,7 +57,7 @@ test.run('it places itself at spirit.element.spirit.element.search.job, with a c
 }, test.limit.quick);
 
 // a thin selector over its own list (rule/26; the bundle selector's pattern)
-test.run('create(container, options) appends its root to its container and answers it', 0.2, async function () {
+test.run('create appends its root to its container and answers it', 0.2, async function () {
   if (!made || typeof made.create !== 'function') return false;
   box = element('div');
   open = function () {};

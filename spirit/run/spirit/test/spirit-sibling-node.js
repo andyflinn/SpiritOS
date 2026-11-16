@@ -74,7 +74,7 @@ const E = { run: '', root: '' };
 // family through the node, so the copy is a scratch node's tree, the apps of the scripts handed turned on (every app, handed
 // none), its environment naming that node's port, as on a VM that runs one.
 const { scratchNode } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
-test.run('the world: a copy of the tree to require the scripts in', 0.2, async function () {
+test.run('a copy of the tree with a node of its own is made to require the scripts in', 0.2, async function () {
   const apps = (GIVEN.length ? GIVEN : execFileSync('git', ['ls-files', '--', 'spirit/app'], { cwd: RUN, encoding: 'utf8' }).split('\n'))
     .map(function (f) { return (/^spirit\/app\/([^/]+)\//.exec(f) || [])[1]; }).filter(function (a, i, all) { return a && all.indexOf(a) === i; });
   E.node = await scratchNode({ servers: apps });
@@ -89,11 +89,11 @@ test.run('the world: a copy of the tree to require the scripts in', 0.2, async f
 
 if (!GIVEN.length) {
   // every product script, placed in spirit.required where it is required
-  test.run('the world: the product scripts, each required alone on the node and on a page', 0.2, function () {
+  test.run('more than a hundred product scripts are found, each to be required alone on the node and on a page', 0.2, function () {
     E.req = productScripts();
     return E.req.length > 100 || false;
   }, test.limit.quick);
-  test.run('the world: some of them load on the node', 0.2, async function () {
+  test.run('some of the product scripts load on the node', 0.2, async function () {
     if (!E.run || !E.req) return false;
     E.nodeLoaded = []; E.nodeBad = [];
     for (const f of E.req) {
@@ -105,13 +105,13 @@ if (!GIVEN.length) {
     }
     return E.nodeLoaded.length > 0 || false;
   }, test.limit.long);
-  test.run('on the node: all that load answer at once and stand at spirit.required.<path>', 0.4, function () {
+  test.run('on the node, every script that loads answers at once and stands at spirit.required.<path>', 0.4, function () {
     if (!E.nodeLoaded) return false;
     return (E.nodeLoaded.length > 0 && !E.nodeBad.length) || false;
   }, test.limit.quick);
 } else GIVEN.forEach(function (rel) {
   // Each script given judged in this one run, its result reported for that script (opts.script), so a failure says which.
-  test.run('on the node: it loads, answers at once and stands at spirit.required.<path>', 0.4, async function () {
+  test.run('on the node, the script loads, answers at once and stands at spirit.required.<path>', 0.4, async function () {
     if (!E.run) return false;
     if (!fs.existsSync(path.join(RUN, rel))) return false;
     const r = await requireOnNode(E.run, rel);

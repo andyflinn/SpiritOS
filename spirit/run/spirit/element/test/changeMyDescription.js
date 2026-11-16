@@ -107,7 +107,7 @@ test.run('it adds changeMyDescription.create to window.spirit.element', 0.2, fun
   w = world(stored);
   return (!!w.E.changeMyDescription && typeof w.E.changeMyDescription.create === 'function') ? true : false;
 }, test.limit.quick);
-test.run('it loads fieldInput itself (goal/G41.3)', 0.2, function () {
+test.run('it loads fieldInput itself', 0.2, function () {
   return (w.required.indexOf('spirit/element/fieldInput.js') !== -1) ? true : false;
 }, test.limit.quick);
 test.run('its input is marked data-field="description"', 0.2, async function () {
@@ -123,7 +123,7 @@ test.run('its input is marked data-field="description"', 0.2, async function () 
   said = host.querySelector('[data-description="said"]');
   return (!!input) ? true : false;
 }, test.limit.quick);
-test.run('it loads the rowForm itself (rule/26)', 0.2, function () {
+test.run('it loads the rowForm itself', 0.2, function () {
   // its form, a rowForm: ✏️ [Description-input] [Save] (goal/G41.27)
   // Andy, on G41.27: "changeMyDescription:\n\n[✏️][Description-input][Save]". The box: "spirit.element.spirit.element.rowForm.create(container, { icon, button }) -> { root, span, button }", "The mounter drops its form elements into span and wires the
   // button itself", and "a line saying what a press did (a refusal, a result) is the mounter's, below the bubble, not in it."
@@ -149,7 +149,7 @@ test.run('it has its Save, its bytes left and its message', 0.2, function () {
 test.run('the input is held at its byte limit by fieldInput, the description rule', 0.2, function () {
   return (w.attached.some(function (a) { return a.input === input && a.rule === 'description'; })) ? true : false;
 }, test.limit.quick);
-test.run('set(value) puts the stored description in the field', 0.2, function () {
+test.run('set puts the stored description it is handed in the field', 0.2, function () {
   // it shows what the node holds, and the bytes left
   el.set('Andy');
   return (input.value === 'Andy') ? true : false;
@@ -182,10 +182,10 @@ test.run('Save asks node.setDescription with the field as typed', 0.2, async fun
 test.run('the field then shows the description the node stored', 0.2, function () {
   return (input.value === 'Bob') ? true : false;
 }, test.limit.quick);
-test.run('and it says saved', 0.2, function () {
+test.run('after the save it says saved', 0.2, function () {
   return (/saved/.test(said.textContent)) ? true : false;
 }, test.limit.quick);
-test.run('it loads the node manager, and the description the node stored is kept in ((spirit.data || {}).node || {}).data\'s card', 0.2, function () {
+test.run('it loads the node manager, and the description the node stored is kept in the card of the node family\'s data', 0.2, function () {
   // what it changes, it listens for: the node card in the node family's cache (goal/G41.28)
   N = ((w.win.spirit.data || {}).node || {}).data;
   return ((w.managers || []).indexOf('node') !== -1 && !!N && !!N.card.get() && N.card.get().description === 'Bob') ? true : false;

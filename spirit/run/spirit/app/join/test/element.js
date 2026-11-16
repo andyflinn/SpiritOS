@@ -63,41 +63,41 @@ test.run('every step names its icon as the glyph itself', 0.2, function () {
   const keyed = steps.filter(function (s) { return !s.icon || KEY.test(s.icon); });
   return !keyed.length || false;
 }, test.limit.quick);
-test.run('its own icon, identity.icon, is a glyph too', 0.2, function () {
+test.run('the app\'s own icon, identity.icon, is a glyph too', 0.2, function () {
   const manifest = MANIFEST();
   const own = manifest && manifest.identity && manifest.identity.icon;
   return !!own && !KEY.test(own) ? true : false;
 }, test.limit.quick);
 
 // mounted the new shell's way, a wrapper that loads joinList and nothing of its own
-test.run('it sets spirit.element.spirit.app.join.element = { create }', 0.2, function () {
+test.run('element.js sets spirit.element.spirit.app.join.element to an object with create', 0.2, function () {
   if (!SRC) return false;
   W.w = world();
   return !!W.w.J && typeof W.w.J.create === 'function' ? true : false;
 }, test.limit.quick);
-test.run('no spirit.shell.activateApp, the old shell\'s way', 0.2, function () {
+test.run('element.js does not use spirit.shell.activateApp, the old shell\'s way', 0.2, function () {
   return !(/\bactivateApp\b|\bspirit\.shell\b/).test(CODE) || false;
 }, test.limit.quick);
-test.run('it requires spirit/element/joinList.js, and only that', 0.2, function () {
+test.run('element.js requires spirit/element/joinList.js, and only that', 0.2, function () {
   if (!W.w || !W.w.J) return false;
   return JSON.stringify(W.w.required) === '["spirit/element/joinList.js"]' || false;
 }, test.limit.quick);
-test.run('it names no icon table', 0.2, function () {
+test.run('element.js names no icon table', 0.2, function () {
   return !(/iconIndex|\bICON\b/).test(CODE) || false;
 }, test.limit.quick);
 
 // create(container): joinList made in the container
-test.run('create answers { destroy() }', 0.2, function () {
+test.run('create answers an object with destroy', 0.2, function () {
   if (!W.w || !W.w.J) return false;
   W.box = container();
   W.m = W.w.J.create(W.box, {});
   return !!W.m && typeof W.m.destroy === 'function' ? true : false;
 }, test.limit.quick);
-test.run('it empties its container', 0.2, function () {
+test.run('create empties its container', 0.2, function () {
   if (!W.box) return false;
   return W.box.innerHTML === '' || false;
 }, test.limit.quick);
-test.run('it makes joinList in its container', 0.2, async function () {
+test.run('create makes joinList in its container', 0.2, async function () {
   if (!W.box) return false;
   await settle();
   return W.w.made.length === 1 && W.w.made[0].host === W.box ? true : false;
@@ -109,7 +109,7 @@ test.run('destroy destroys joinList and empties its container', 0.2, function ()
   W.m.destroy();
   return W.w.destroyed === 1 && W.box.innerHTML === '' ? true : false;
 }, test.limit.quick);
-test.run('destroyed before joinList loads, nothing is made', 0.2, async function () {
+test.run('when destroyed before joinList loads, nothing is made', 0.2, async function () {
   if (!SRC) return false;
   let letGo = null;
   const late = world({ held: new Promise(function (r) { letGo = r; }) });
@@ -121,7 +121,7 @@ test.run('destroyed before joinList loads, nothing is made', 0.2, async function
 }, test.limit.quick);
 
 // joinList refused
-test.run('it says Join could not be loaded.', 0.2, async function () {
+test.run('when joinList is refused, it says Join could not be loaded.', 0.2, async function () {
   if (!SRC) return false;
   const no = world({ refuse: true });
   if (!no.J) return false;

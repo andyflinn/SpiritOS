@@ -350,16 +350,16 @@ const S = { others: [] };
 const CODE = SRC.replace(/\/\/.*$/gm, '');
 
 // nothing hand-rolled is left
-test.run('no armed flags of its own (cdBlockArmed, cdForgetArmed)', 0.2, function () {
+test.run('The contact detail keeps no armed flag of its own for Block or Forget', 0.2, function () {
   return !/cdBlockArmed|cdForgetArmed/.test(SRC) || false;
 }, test.limit.quick);
-test.run('no data-armed in its code', 0.2, function () {
+test.run('The contact detail marks no button as armed with a data attribute of its own', 0.2, function () {
   return !/data-armed/.test(CODE) || false;
 }, test.limit.quick);
-test.run('no armUntilElsewhere of its own', 0.2, function () {
+test.run('The contact detail has no code of its own to disarm a button on a click elsewhere', 0.2, function () {
   return !/armUntilElsewhere/.test(CODE) || false;
 }, test.limit.quick);
-test.run('no armed class', 0.2, function () {
+test.run('The contact detail puts no armed class on a button itself', 0.2, function () {
   return (!/classList\.(add|toggle)\(\s*['"]armed['"]/.test(CODE) && !/class="[^"]*\barmed\b/.test(CODE)) || false;
 }, test.limit.quick);
 
@@ -369,17 +369,17 @@ const PERSON_RELAYS = [
   { url: 'https://mine.example', owned: true, roll: { relayKey: 'RK1' } },
   { url: 'https://other.example', owned: false, claimed: true, roll: { relayKey: 'RK2' } },
 ];
-test.run('it requires spirit/element/armingButton.js through spirit.require', 0.2, function () {
+test.run('The contact detail loads the arming button element itself through the spirit object', 0.2, function () {
   P.w = personWorld({ key: KEY, publicLabel: 'bob', myLabel: '', blocked: false }, PERSON_RELAYS);
   return P.w.required.indexOf('spirit/element/armingButton.js') !== -1 || false;
 }, test.limit.quick);
-test.run('it is window.spirit.element.spirit.element.search.contact.detailElement, made by create; no open of its own: it opens as a panel (goal/G43.18)', 0.2, function () {
+test.run('The contact detail is an element made by create, with no open of its own, so it opens as a panel', 0.2, function () {
   if (!P.w) return false;
   const E = P.w.win.spirit.element.spirit.element.search.contact.detailElement;
   if (E && typeof E.create === 'function') P.E = E;
   return (!!E && typeof E.create === 'function' && E.open === undefined) || false;
 }, test.limit.quick);
-test.run('it reads the row by contact.get', 0.2, async function () {
+test.run('The contact detail asks the node for the person\'s row when it opens', 0.2, async function () {
   if (!P.E) return false;
   P.w.open(KEY);
   await settle();
@@ -388,12 +388,12 @@ test.run('it reads the row by contact.get', 0.2, async function () {
 }, test.limit.quick);
 
 // Block is an arming button
-test.run('Block is made by armingButton', 0.2, function () {
+test.run('The Block button is made by the arming button element', 0.2, function () {
   if (!P.opened) return false;
   P.block = armingFor(P.w, 'Block');
   return !!P.block || false;
 }, test.limit.quick);
-test.run('armed, it says Block — press again', 0.2, function () {
+test.run('The armed Block button says "Block — press again"', 0.2, function () {
   if (!P.block) return false;
   return P.block.opts.armedLabel === 'Block — press again' || false;
 }, test.limit.quick);
@@ -405,7 +405,7 @@ test.run('the button stands in the page', 0.2, function () {
   if (!P.block) return false;
   return inPage(P.w, P.block.button) || false;
 }, test.limit.quick);
-test.run('its run asks contact.block for the row on screen', 0.2, async function () {
+test.run('Pressing the armed Block button asks the node to block the row on screen', 0.2, async function () {
   if (!P.block) return false;
   const before = P.w.calls.length;
   if (typeof P.block.opts.run === 'function') await P.block.opts.run();
@@ -418,12 +418,12 @@ test.run('its run asks contact.block for the row on screen', 0.2, async function
 // i own", not at all. not the same scope of decision." The world still has a relay this node owns (RK1), so a seat it would
 // give up is there to be given up, and is not.
 // Forget is an arming button, and only deletes the row: Andy, "it does NOT mean: "eject them from relays i own""
-test.run('Forget is made by armingButton', 0.2, function () {
+test.run('The Forget button is made by the arming button element', 0.2, function () {
   if (!P.opened) return false;
   P.forget = armingFor(P.w, 'Forget');
   return !!P.forget || false;
 }, test.limit.quick);
-test.run('armed, it says nothing of seats or relays', 0.2, function () {
+test.run('The armed Forget button says nothing of seats or relays', 0.2, function () {
   if (!P.forget) return false;
   return !/seat|relay/i.test(String(P.forget.opts.armedLabel || '')) || false;
 }, test.limit.quick);
@@ -443,11 +443,11 @@ test.run('its run posts nothing to any relay, the one this node owns included: n
   const posts = P.w.posts.slice(postsBefore);
   return !posts.length || false;
 }, test.limit.quick);
-test.run('it asks contact.forget for the row', 0.2, function () {
+test.run('Pressing the armed Forget button asks the node to forget the row', 0.2, function () {
   if (!P.forgetRan) return false;
   return (!!P.forgot && P.forgot.body.publicKey === KEY) || false;
 }, test.limit.quick);
-test.run('and the page closes', 0.2, function () {
+test.run('The page closes once the row is forgotten', 0.2, function () {
   if (!P.forgetRan) return false;
   return P.w.closed === 1 || false;
 }, test.limit.quick);
@@ -464,7 +464,7 @@ test.run('two presses on the drawn Block block nobody without the element', 0.2,
 }, test.limit.quick);
 
 // a blocked row offers Unblock, and Forget still arms
-test.run('no Block, but Unblock, a plain button', 0.2, async function () {
+test.run('A blocked row offers a plain Unblock button and no Block button', 0.2, async function () {
   P.w3 = personWorld({ key: 'K3', publicLabel: 'dora', blocked: true }, []);
   P.w3.open('K3');
   await settle();
@@ -480,7 +480,7 @@ test.run('Forget is an arming button here too', 0.2, function () {
 // panel has it, at home; the face does not show it).
 // goal/G43.14, Andy: "KILL those fields in shadow-roll, KILL the functionality, KILL it!": a row that still carried them shows none.
 // the box: "a contact's detail no longer shows them"
-test.run('the world: the detail of carol is drawn, with its facts', 0.2, async function () {
+test.run('The detail of a person named carol is drawn with her facts', 0.2, async function () {
   const wc = personWorld({ key: 'KC', publicLabel: 'carol', myLabel: '', blocked: false, unansweredInbound: 7, inboundPerDay: 3.5, outboundPerDay: 1.25 }, []);
   wc.open('KC');
   await settle();
@@ -492,14 +492,14 @@ test.run('it shows no unanswered inbound, no inbound rate and no outbound rate',
   if (P.carol === undefined) return false;
   return !/Unanswered inbound|Inbound rate|Outbound rate/.test(P.carol) || false;
 }, test.limit.quick);
-test.run('and none of their numbers', 0.2, function () {
+test.run('The person\'s detail shows none of the inbound or outbound rate numbers', 0.2, function () {
   if (P.carol === undefined) return false;
   return (P.carol.indexOf('3.5') === -1 && P.carol.indexOf('1.25') === -1) || false;
 }, test.limit.quick);
 
 // the star: an arming button, its risk said beside it
 const personStarOf = function (x) { const b = x.document.getElementById('cd-own'); return b ? x.armings.filter(function (a) { return a.button === b; }).pop() || null : null; };
-test.run('a node\'s panel draws #cd-own, an arming button', 0.2, async function () {
+test.run('A node\'s detail draws its star button as an arming button', 0.2, async function () {
   P.w5 = personWorld({ key: 'K5', publicLabel: 'a node', mine: false }, []);
   P.w5.open('K5');
   await settle();
@@ -517,13 +517,13 @@ test.run('a press on the button alone sends nothing: the arming button holds it'
   if (drawn5) { drawn5.click(); await settle(); }
   return (!!drawn5 && !P.w5.calls.slice(b5).some(function (c) { return c.name === 'contact.own'; })) || false;
 }, test.limit.quick);
-test.run('its second press sends contact.own {key, own: true}', 0.2, async function () {
+test.run('The second press on a node\'s star button asks the node to put the star on that contact', 0.2, async function () {
   if (!P.w5) return false;
   if (P.s5) { await P.s5.opts.run(); await settle(); }
   const sent5 = P.w5.calls.filter(function (c) { return c.name === 'contact.own'; }).pop();
   return (!!sent5 && sent5.body.key === 'K5' && sent5.body.own === true) || false;
 }, test.limit.quick);
-test.run('on a starred row the same button takes the star away: contact.own {key, own: false}', 0.2, async function () {
+test.run('On a starred person\'s row the same star button asks the node to take the star away', 0.2, async function () {
   const w6 = personWorld({ key: 'K6', publicLabel: 'a puppet', mine: true }, []);
   w6.open('K6');
   await settle();
@@ -532,7 +532,7 @@ test.run('on a starred row the same button takes the star away: contact.own {key
   const sent6 = w6.calls.filter(function (c) { return c.name === 'contact.own'; }).pop();
   return (!!sent6 && sent6.body.key === 'K6' && sent6.body.own === false) || false;
 }, test.limit.quick);
-test.run('on a face (window.spirit.transport) no button is drawn', 0.2, async function () {
+test.run('On a face, a person\'s detail draws no star button', 0.2, async function () {
   const w7 = personWorld({ key: 'K7', publicLabel: 'a node', mine: false }, []);
   w7.win.spirit.transport = { ask: function () {} };
   w7.open('K7');
@@ -545,7 +545,7 @@ test.run('on a face (window.spirit.transport) no button is drawn', 0.2, async fu
 test.run('its code names no api', 0.2, function () {
   return !/\bapi\b/.test(CODE) || false;
 }, test.limit.quick);
-test.run('its title goes to the layer it is drawn in (options.layer.setTitle)', 0.2, function () {
+test.run('A person\'s detail sends its title to the layer it is drawn in', 0.2, function () {
   if (!P.opened) return false;
   return (typeof P.w.title === 'string' && P.w.title.indexOf('bob') !== -1) || false;
 }, test.limit.quick);
@@ -571,7 +571,7 @@ test.run('a verb the node refuses says its status and words', 0.2, async functio
 // relayPanel.js drew, in this file now: the relay part below (once ./detailElement-relay.js) judges them), and asks nothing of a
 // person's details.
 // it knows the contact's type: a relay's details for a relay
-test.run('it loads no relayPanel.js: a relay\'s details are its own', 0.2, function () {
+test.run('The contact detail does not load the old relay panel, as it draws a relay\'s details itself', 0.2, function () {
   if (!P.w) return false;
   return !P.w.required.some(function (p) { return /relayPanel\.js$/.test(p); }) || false;
 }, test.limit.quick);
@@ -581,22 +581,22 @@ test.run('it loads no relayPanel.js: a relay\'s details are its own', 0.2, funct
 // ./detailElement.md, its relay section; goal/G41.9, G43.32): its are-you-sure buttons are armingButtons.
 
 // nothing hand-rolled is left
-test.run('for a relay: no data-armed in its code', 0.2, function () {
+test.run('For a relay, the detail marks no button as armed with a data attribute of its own', 0.2, function () {
   return !/data-armed/.test(CODE) || false;
 }, test.limit.quick);
-test.run('for a relay: no armUntilElsewhere of its own', 0.2, function () {
+test.run('For a relay, the detail has no code of its own to disarm a button on a click elsewhere', 0.2, function () {
   return !/armUntilElsewhere/.test(CODE) || false;
 }, test.limit.quick);
-test.run('for a relay: no armed class', 0.2, function () {
+test.run('For a relay, the detail puts no armed class on a button itself', 0.2, function () {
   return !/classList\.(add|toggle)\(\s*['"]armed['"]/.test(CODE) || false;
 }, test.limit.quick);
 
 // it loads armingButton itself (goal/G41.3)
-test.run('for a relay: it requires spirit/element/armingButton.js through spirit.require', 0.2, function () {
+test.run('For a relay, the detail loads the arming button element itself through the spirit object', 0.2, function () {
   L.w = relayWorld(OWNED, OWNED_SAID);
   return L.w.required.indexOf('spirit/element/armingButton.js') !== -1 || false;
 }, test.limit.quick);
-test.run('it is window.spirit.element.spirit.element.search.contact.detailElement, made by create, a relay told relay: true; no open of its own: it opens as a panel (goal/G43.18)', 0.2, function () {
+test.run('For a relay, the detail is the same element made by create, told it is a relay, with no open of its own, so it opens as a panel', 0.2, function () {
   if (!L.w) return false;
   const E = L.w.win.spirit.element.spirit.element.search.contact.detailElement;
   if (E && typeof E.create === 'function') L.E = E;
@@ -604,7 +604,7 @@ test.run('it is window.spirit.element.spirit.element.search.contact.detailElemen
 }, test.limit.quick);
 
 // Restart, in Memory and disc, is an arming button
-test.run('Restart is made by armingButton', 0.2, async function () {
+test.run('The relay\'s Restart button is made by the arming button element', 0.2, async function () {
   if (!L.E) return false;
   L.w.open('RK');
   await settle();
@@ -614,7 +614,7 @@ test.run('Restart is made by armingButton', 0.2, async function () {
   L.restart = armingFor(L.w, 'Restart');
   return !!L.restart || false;
 }, test.limit.quick);
-test.run('armed, it says Restart? Every stream drops', 0.2, function () {
+test.run('The armed Restart button says "Restart? Every stream drops"', 0.2, function () {
   if (!L.restart) return false;
   return L.restart.opts.armedLabel === 'Restart? Every stream drops' || false;
 }, test.limit.quick);
@@ -622,7 +622,7 @@ test.run('Restart is handed no api, and is in the page', 0.2, function () {
   if (!L.restart) return false;
   return (!('api' in L.restart.opts) && inPage(L.w, L.restart.button)) || false;
 }, test.limit.quick);
-test.run('its run posts the relay config { restart: true } and nothing else', 0.2, async function () {
+test.run('Pressing the armed Restart button posts a restart to the relay\'s config and nothing else', 0.2, async function () {
   if (!L.restart) return false;
   const before = L.w.posts.length;
   if (typeof L.restart.opts.run === 'function') await L.restart.opts.run();
@@ -632,14 +632,14 @@ test.run('its run posts the relay config { restart: true } and nothing else', 0.
 }, test.limit.quick);
 
 // Revoke, on each invite, is an arming button
-test.run('an invite\'s Revoke is made by armingButton', 0.2, async function () {
+test.run('An invite\'s Revoke button is made by the arming button element', 0.2, async function () {
   if (!L.opened) return false;
   if (!L.w.document.querySelector('[data-fold="invite"]')) await press(L.w, '.nd-group-fold');
   await press(L.w, '[data-fold="invite"]');
   L.revoke = armingFor(L.w, 'Revoke');
   return !!L.revoke || false;
 }, test.limit.quick);
-test.run('armed, it names the invite: Revoke saint?', 0.2, function () {
+test.run('The armed Revoke button names the invite, saying "Revoke saint?"', 0.2, function () {
   if (!L.revoke) return false;
   return L.revoke.opts.armedLabel === 'Revoke saint?' || false;
 }, test.limit.quick);
@@ -647,7 +647,7 @@ test.run('Revoke is handed no api, and is in the page', 0.2, function () {
   if (!L.revoke) return false;
   return (!('api' in L.revoke.opts) && inPage(L.w, L.revoke.button)) || false;
 }, test.limit.quick);
-test.run('its run posts the relay revoke { label: saint }', 0.2, async function () {
+test.run('Pressing the armed Revoke button posts to the relay a revoke of the invite named saint', 0.2, async function () {
   if (!L.revoke) return false;
   const before = L.w.posts.length;
   if (typeof L.revoke.opts.run === 'function') await L.revoke.opts.run();
@@ -657,13 +657,13 @@ test.run('its run posts the relay revoke { label: saint }', 0.2, async function 
 }, test.limit.quick);
 
 // Remove is an arming button, with the reset it lacked
-test.run('Remove is made by armingButton', 0.2, async function () {
+test.run('The relay\'s Remove button is made by the arming button element', 0.2, async function () {
   if (!L.opened) return false;
   await press(L.w, '[data-fold="remove"]');
   L.remove = armingFor(L.w, 'Remove this relay');
   return !!L.remove || false;
 }, test.limit.quick);
-test.run('armed, it says Press again to remove', 0.2, function () {
+test.run('The armed Remove button says "Press again to remove"', 0.2, function () {
   if (!L.remove) return false;
   return L.remove.opts.armedLabel === 'Press again to remove' || false;
 }, test.limit.quick);
@@ -671,7 +671,7 @@ test.run('Remove is handed no api: the button hears a click elsewhere itself', 0
   if (!L.remove) return false;
   return (!('api' in L.remove.opts) && inPage(L.w, L.remove.button)) || false;
 }, test.limit.quick);
-test.run('its run asks relay.remove for this relay', 0.2, async function () {
+test.run('Pressing the armed Remove button asks the node to remove this relay', 0.2, async function () {
   if (!L.remove) return false;
   const before = L.w.calls.length;
   if (typeof L.remove.opts.run === 'function') await L.remove.opts.run();
@@ -680,7 +680,7 @@ test.run('its run asks relay.remove for this relay', 0.2, async function () {
   const asked = L.w.calls.slice(before).filter(function (c) { return c.name === 'relay.remove'; })[0];
   return (!!asked && asked.body.key === OWNED_URL) || false;
 }, test.limit.quick);
-test.run('and the page closes once the node says ok', 0.2, function () {
+test.run('The page closes once the node says the relay is removed', 0.2, function () {
   if (!L.removeRan) return false;
   return L.w.closed === 1 || false;
 }, test.limit.quick);
@@ -698,7 +698,7 @@ test.run('two presses on the drawn Remove remove nothing without the element', 0
 }, test.limit.quick);
 
 // Leave, on a relay this node holds a seat on, is an arming button with the reset it lacked
-test.run('Leave is made by armingButton', 0.2, async function () {
+test.run('The relay\'s Leave button is made by the arming button element', 0.2, async function () {
   L.w3 = relayWorld(SEATED, {});
   L.w3.open('RK2');
   await settle();
@@ -706,7 +706,7 @@ test.run('Leave is made by armingButton', 0.2, async function () {
   L.leave = armingFor(L.w3, 'Leave this relay');
   return !!L.leave || false;
 }, test.limit.quick);
-test.run('armed, it says Press again to leave', 0.2, function () {
+test.run('The armed Leave button says "Press again to leave"', 0.2, function () {
   if (!L.leave) return false;
   return L.leave.opts.armedLabel === 'Press again to leave' || false;
 }, test.limit.quick);
@@ -714,7 +714,7 @@ test.run('Leave is handed no api: the button hears a click elsewhere itself', 0.
   if (!L.leave) return false;
   return (!('api' in L.leave.opts) && inPage(L.w3, L.leave.button)) || false;
 }, test.limit.quick);
-test.run('its run asks relay.leave for this relay', 0.2, async function () {
+test.run('Pressing the armed Leave button asks the node to leave this relay', 0.2, async function () {
   if (!L.leave) return false;
   const before = L.w3.calls.length;
   if (typeof L.leave.opts.run === 'function') await L.leave.opts.run();
@@ -741,7 +741,7 @@ test.run('two presses on the drawn Leave leave nothing without the element', 0.2
 const relayStarOf = function (x) { const b = x.document.querySelector('.nd-own'); return b ? x.armings.filter(function (a) { return a.button === b; }).pop() || null : null; };
 const MEMBER = [{ key: 'RK2', url: SEAT_URL, label: 'seat', status: 200, owned: false, claimed: true, claimedLabel: 'andy', mine: false, ownerLabel: 'Olga', roll: { relayKey: 'RK2', relayLabel: 'Seat' } }];
 const CLAIMS = [{ key: 'RK', url: OWNED_URL, label: 'mine', status: 200, owned: true, claimed: true, claimedLabel: 'andy', mine: false, ownerLabel: 'andy', roll: { relayKey: 'RK', relayLabel: 'Mine' } }];
-test.run('a relay\'s panel draws .nd-own, an arming button', 0.2, async function () {
+test.run('A relay\'s detail draws its star button as an arming button', 0.2, async function () {
   L.w5 = relayWorld(MEMBER, {});
   L.w5.open('RK2');
   await settle();
@@ -753,7 +753,7 @@ test.run('a relay that does not claim this node names who must be trusted, "says
   if (!L.w5) return false;
   return /says it is owned by Olga/.test(pageText(L.w5)) || false;
 }, test.limit.quick);
-test.run('and says that person and anyone holding the relay can run programs and change files on this machine', 0.2, function () {
+test.run('The star of a relay that does not claim this node says its owner and anyone holding the relay can run programs and change files on this machine', 0.2, function () {
   if (!L.w5) return false;
   const t = pageText(L.w5);
   return (/run programs/.test(t) && /change files/.test(t) && /anyone holding/.test(t)) || false;
@@ -769,7 +769,7 @@ test.run('a press on the button alone sends nothing', 0.2, async function () {
   if (drawn5) { drawn5.click(); await settle(); }
   return (!!drawn5 && !L.w5.calls.slice(b5).some(function (c) { return c.name === 'contact.own'; })) || false;
 }, test.limit.quick);
-test.run('its second press sends contact.own {key: the relay\'s key, own: true}', 0.2, async function () {
+test.run('The second press on a relay\'s star button asks the node to put the star on that relay', 0.2, async function () {
   if (!L.w5) return false;
   if (L.s5) { await L.s5.opts.run(); await settle(); }
   const sent5 = L.w5.calls.filter(function (c) { return c.name === 'contact.own'; }).pop();
@@ -782,11 +782,11 @@ test.run('a relay claiming this node says: "If you DID install this relay on a V
   await press(L.w6, '[data-fold="star"]');
   return /If you DID install this relay on a VPS and you DID set its DNS records/.test(pageText(L.w6)) || false;
 }, test.limit.quick);
-test.run('and that otherwise it is lying', 0.2, function () {
+test.run('The star of a relay claiming this node says that otherwise the relay is lying', 0.2, function () {
   if (!L.w6) return false;
   return /lying/.test(pageText(L.w6)) || false;
 }, test.limit.quick);
-test.run('with the same button', 0.2, function () {
+test.run('A relay claiming this node is starred with the same star button', 0.2, function () {
   if (!L.w6) return false;
   return !!relayStarOf(L.w6) || false;
 }, test.limit.quick);
@@ -800,7 +800,7 @@ test.run('on a starred relay the same button takes the star away', 0.2, async fu
   const sent7 = w7.calls.filter(function (c) { return c.name === 'contact.own'; }).pop();
   return (!!sent7 && sent7.body.key === 'RK' && sent7.body.own === false) || false;
 }, test.limit.quick);
-test.run('for a relay, on a face (window.spirit.transport) no button is drawn', 0.2, async function () {
+test.run('On a face, a relay\'s detail draws no star button', 0.2, async function () {
   const w8 = relayWorld(MEMBER, {});
   w8.win.spirit.transport = { ask: function () {} };
   w8.open('RK2');
@@ -810,20 +810,20 @@ test.run('for a relay, on a face (window.spirit.transport) no button is drawn', 
 
 // WHAT IT NEEDS, IT REQUIRES ITSELF (goal/G43.24; Andy: "anybody can mount any element without knowing what it actually
 // needs...."): the node's verbs and its posts to the relay go through the spirit object; it is handed no api.
-test.run('for a relay: its code names no api', 0.2, function () {
+test.run('For a relay, the detail\'s code names no api', 0.2, function () {
   return (!/\bapi\b/.test(CODE) && !/ndApi/.test(CODE)) || false;
 }, test.limit.quick);
-test.run('a post to the relay goes through spirit.peerPost, which puts it in its envelope; the panel encodes no packet of its own', 0.2, function () {
+test.run('The detail posts to a relay through the spirit object, which puts the post in its envelope, and encodes no packet of its own', 0.2, function () {
   const panelCode = fs.readFileSync(path.join(RUN, 'spirit', 'element', 'search', 'contact', 'detailElement.js'), 'utf8').replace(/\/\/.*$/gm, '');
   const viaPeerPost = /spirit\.peerPost\(/.test(panelCode);
   const ownEncode = /packet\.encode\(/.test(panelCode);
   return (viaPeerPost && !ownEncode) || false;
 }, test.limit.quick);
-test.run('each post to the relay is a packet for it through peer.post, in its envelope', 0.2, function () {
+test.run('Each post to the relay goes through the node as a packet for that relay, in its envelope', 0.2, function () {
   if (!L.opened) return false;
   return (L.w.posts.length > 0 && L.w.posts.every(function (p) { return p.app === 'relay' && p.key === 'RK'; })) || false;
 }, test.limit.quick);
-test.run('for a relay: its title goes to the layer it is drawn in (options.layer.setTitle)', 0.2, function () {
+test.run('A relay\'s detail sends its title to the layer it is drawn in', 0.2, function () {
   if (!L.opened) return false;
   return (typeof L.w.title === 'string' && /^Relay Details/.test(L.w.title)) || false;
 }, test.limit.quick);
@@ -832,7 +832,7 @@ test.run('for a relay: its title goes to the layer it is drawn in (options.layer
 // types. so should the detail panel."): not told, the contact family's cache says what the row is.
 // it knows the contact's type, from the contact family's cache when not told
 const held = function (wx, relay) { (wx.win.spirit.data = wx.win.spirit.data || {}).contact = { data: { contact: function (k) { return { key: k, relay: relay }; }, watch: function () { return function () {}; } } }; };
-test.run('a relay\'s row in the cache: it draws the relay\'s details, and asks nothing a person\'s ask (contact.get)', 0.2, async function () {
+test.run('Holding a relay\'s row in the cache, the detail draws the relay\'s details and does not ask for a person\'s row', 0.2, async function () {
   const wr = relayWorld(OWNED, OWNED_SAID);
   held(wr, true);
   const boxR = wr.document.createElement('div'); wr.document.body.appendChild(boxR);
@@ -840,7 +840,7 @@ test.run('a relay\'s row in the cache: it draws the relay\'s details, and asks n
   await settle();
   return (/nd-/.test(boxR.innerHTML) && !wr.calls.some(function (c) { return c.name === 'contact.get'; })) || false;
 }, test.limit.quick);
-test.run('a person\'s row: it draws a person\'s details, reading the person (contact.get)', 0.2, async function () {
+test.run('Holding a person\'s row in the cache, the detail draws a person\'s details by asking the node for the person\'s row', 0.2, async function () {
   const wp = relayWorld(OWNED, OWNED_SAID);
   held(wp, false);
   const boxP = wp.document.createElement('div'); wp.document.body.appendChild(boxP);
@@ -855,7 +855,7 @@ test.run('a person\'s row: it draws a person\'s details, reading the person (con
 // from the file and run alone on a report that holds every part of its capacity.
 const CAP_REPORT = { capacity: { atRestMB: 40, streams: { nodes: 2, faces: 1, feeds: 1 }, streamKB: 60, freeMB: 400, ramLimitMB: 512, membersPerMB: 5, seatStreams: 3, members: 2717 } };
 const CAP = { rows: null };
-test.run('the world: the facts it draws of a relay\'s report, its capacity whole', 0.2, function () {
+test.run('The facts the detail draws of a relay\'s report are made from a report holding its whole capacity', 0.2, function () {
   const at = SRC.indexOf('function ndGovernorFacts(');
   if (at === -1) return false;
   let depth = 0, end = -1;
@@ -863,13 +863,13 @@ test.run('the world: the facts it draws of a relay\'s report, its capacity whole
   try { CAP.rows = vm.runInNewContext('(' + SRC.slice(at, end) + ')', {})(JSON.parse(JSON.stringify(CAP_REPORT))); } catch (e) { return false; }
   return (Array.isArray(CAP.rows) && CAP.rows.length > 0) || false;
 }, test.limit.quick);
-test.run('no row Streams, Members a megabyte, At rest or Free', 0.2, function () {
+test.run('A relay\'s facts have no row for Streams, Members a megabyte, At rest or Free', 0.2, function () {
   if (!CAP.rows) return false;
   const gone = ['Streams', 'Members a megabyte', 'At rest', 'Free'];
   const left = CAP.rows.filter(function (r) { return gone.indexOf(r[0]) !== -1; }).map(function (r) { return r[0]; });
   return !left.length || false;
 }, test.limit.quick);
-test.run('of its capacity one figure: the members it can serve with the RAM it is given', 0.2, function () {
+test.run('Of its capacity a relay\'s facts show one figure, the members it can serve with the RAM it is given', 0.2, function () {
   if (!CAP.rows) return false;
   const c = CAP_REPORT.capacity;
   const told = [c.atRestMB, c.streamKB, c.freeMB, c.ramLimitMB, c.membersPerMB, c.members].map(String);
@@ -918,14 +918,14 @@ test.run('the relay mails a join code', 0.2, async function () {
   S.code = joinCode(S.R);
   return !!S.code || false;
 }, test.limit.slow);
-test.run('claimed is on the row', 0.2, async function () {
+test.run('Once the join code is given, the relay\'s row says it is claimed', 0.2, async function () {
   if (!S.code) return false;
   await home(S.N.base, 'relay.join', { url: S.R.base, email: MAIL, code: S.code });
   await until(function () { const r = last(S.key); return !!r && r.claimed === true && r.status === 200; }, 10000);
   S.seated = last(S.key) || {};
   return S.seated.claimed === true || false;
 }, test.limit.slow);
-test.run('status is on the row, the stream held', 0.2, function () {
+test.run('The relay\'s row carries status 200 while the stream is held', 0.2, function () {
   if (!S.seated) return false;
   return S.seated.status === 200 || false;
 }, test.limit.quick);
@@ -937,7 +937,7 @@ test.run('the roll is on the row', 0.2, function () {
   if (!S.seated) return false;
   return (!!S.seated.roll && S.seated.roll.relayKey === S.key) || false;
 }, test.limit.quick);
-test.run('owned is on the row: false, no report has come', 0.2, function () {
+test.run('The relay\'s row says it is not owned while no report has come', 0.2, function () {
   if (!S.seated) return false;
   return S.seated.owned === false || false;
 }, test.limit.quick);
@@ -953,13 +953,13 @@ test.run('while it was gone the row said status 0', 0.2, function () {
   if (!S.back) return false;
   return rowsOf(S.key).some(function (r) { return r.status === 0; }) || false;
 }, test.limit.quick);
-test.run('back: status 200 and owned true, on the row', 0.2, async function () {
+test.run('Once the relay is back, its row says status 200 and owned', 0.2, async function () {
   if (!S.back) return false;
   await until(function () { const r = last(S.key); return !!r && r.owned === true && r.status === 200; }, 20000);
   S.ownedRow = last(S.key) || {};
   return (S.ownedRow.status === 200 && S.ownedRow.owned === true) || false;
 }, test.limit.slow);
-test.run('and the roll names this node its owner', 0.2, function () {
+test.run('Once the relay is back, its roll names this node its owner', 0.2, function () {
   if (!S.ownedRow) return false;
   return (!!S.ownedRow.roll && S.ownedRow.roll.ownerKey === S.me) || false;
 }, test.limit.quick);
@@ -991,7 +991,7 @@ test.run('the row says the new label', 0.2, async function () {
 }, test.limit.quick);
 
 // a relay's detail: the contact detail, configured with its row
-test.run('detailElement.create(host, { key, relay: true }) draws it', 0.2, async function () {
+test.run('In Chrome the contact detail is mounted for the relay\'s key, told it is a relay', 0.2, async function () {
   if (!S.up) return false;
   const where = findChrome();
   if (!where) return false;
@@ -1022,11 +1022,11 @@ test.run('its heading stands among the others', 0.2, async function () {
   S.star = await S.chrome.evaluate('(function () { var all = ' + FOLDS + '; var s = all.filter(function (h) { return h.textContent.indexOf("Star this relay") !== -1; })[0]; var o = all.filter(function (h) { return h !== s; })[0]; if (!s || !o) return { star: !!s, other: !!o }; return { star: true, other: true, sameHeading: s.className === o.className && s.tagName === o.tagName, sameTile: s.parentElement.className.split(" ").slice(0, 2).join(" ") === o.parentElement.className.split(" ").slice(0, 2).join(" "), mark: !!s.querySelector(".nd-fold-mark"), details: !!document.querySelector("#zzPanel details"), buttonWhileShut: !!document.querySelector("#zzPanel .nd-own") }; }())');
   return (!!S.star && S.star.star && S.star.other) || false;
 }, test.limit.quick);
-test.run('with the same heading, tile and fold mark', 0.2, function () {
+test.run('The star\'s fold has the same heading, tile and fold mark as the other folds', 0.2, function () {
   if (!S.chrome) return false;
   return (!!S.star && S.star.sameHeading && S.star.sameTile && S.star.mark) || false;
 }, test.limit.quick);
-test.run('and no fold of its own', 0.2, function () {
+test.run('The star\'s fold uses no fold element of its own', 0.2, function () {
   if (!S.chrome) return false;
   return (!!S.star && S.star.details === false) || false;
 }, test.limit.quick);
@@ -1047,34 +1047,34 @@ test.run('pressed, it opens and holds its button', 0.2, async function () {
 // these checks asserted until goal/G47.1 (Q12, Andy: "fix it."). The relay here is a member's, with no star at first.
 const faceHead = 'Array.prototype.slice.call(document.querySelectorAll("#zzPanel .nd-fold")).filter(function (h) { return h.textContent.indexOf("A face name") !== -1; })[0]';
 const hasFaceHead = function () { return S.chrome.evaluate('!!(' + faceHead + ')'); };
-test.run('with no star, no "A face name" fold', 0.2, async function () {
+test.run('With no star, the relay\'s detail has no "A face name" fold', 0.2, async function () {
   if (!S.chrome) return false;
   await sleep(1000);
   return !(await hasFaceHead()) || false;
 }, test.limit.slow);
-test.run('the star on, at home', 0.2, async function () {
+test.run('The home node puts the star on the relay', 0.2, async function () {
   if (!S.up) return false;
   const sOn = await home(S.N.base, 'contact.own', { key: S.key, own: true });
   return sOn.status === 200 || false;
 }, test.limit.quick);
-test.run('starred: the fold comes, with no reload', 0.2, async function () {
+test.run('Once the relay is starred, the "A face name" fold comes with no reload', 0.2, async function () {
   if (!S.chrome) return false;
   await until(hasFaceHead, 5000);
   return (await hasFaceHead()) || false;
 }, test.limit.slow);
-test.run('opened, it holds the faceForm: its field and its button', 0.2, async function () {
+test.run('Opened, the "A face name" fold holds the face form\'s field and its button', 0.2, async function () {
   if (!S.chrome) return false;
   await S.chrome.evaluate('(function () { var h = ' + faceHead + '; if (h) h.click(); }())');
   await until(function () { return S.chrome.evaluate('!!document.querySelector("#zzPanel .nd-face-form input")'); }, 5000);
   const drawn = await S.chrome.evaluate('(function () { var f = document.querySelector("#zzPanel .nd-face-form"); return f ? { input: !!f.querySelector("input"), button: !!f.querySelector("button") } : null; }())');
   return (!!drawn && drawn.input && drawn.button) || false;
 }, test.limit.slow);
-test.run('the star off, at home', 0.2, async function () {
+test.run('The home node takes the star off the relay', 0.2, async function () {
   if (!S.up) return false;
   const sOff = await home(S.N.base, 'contact.own', { key: S.key, own: false });
   return sOff.status === 200 || false;
 }, test.limit.quick);
-test.run('and the fold is gone again', 0.2, async function () {
+test.run('With the star off, the "A face name" fold is gone again', 0.2, async function () {
   if (!S.chrome) return false;
   await until(function () { return hasFaceHead().then(function (h) { return !h; }); }, 5000);
   return !(await hasFaceHead()) || false;
@@ -1084,18 +1084,18 @@ test.run('and the fold is gone again', 0.2, async function () {
 const asks = function () { return S.chrome.heard.filter(function (m) { return m.method === 'Network.requestWillBeSent' && /"call":"relay\.(status|get)"/.test(String((m.params.request || {}).postData || '')); }).length; };
 const NEW1 = 'zzNameOne';
 const NEW2 = 'zzNameTwo';
-test.run('shown: the new label is painted', 0.2, async function () {
+test.run('While shown, the relay\'s detail paints a new label', 0.2, async function () {
   if (!S.chrome) return false;
   S.asked = asks();
   await home(S.N.base, 'peer.post', { to: S.key, text: JSON.stringify({ app: 'relay', body: { relayLabel: { label: NEW1 } } }) });
   await until(function () { return panelText().then(function (t) { return t.indexOf(NEW1) !== -1; }); }, 8000);
   return (await panelText()).indexOf(NEW1) !== -1 || false;
 }, test.limit.slow);
-test.run('and no relay.status or relay.get was asked for it', 0.2, function () {
+test.run('The detail asked the node for no relay status or relay details to paint the new label', 0.2, function () {
   if (S.asked === undefined) return false;
   return asks() === S.asked || false;
 }, test.limit.quick);
-test.run('hidden: the new label is painted all the same', 0.2, async function () {
+test.run('While hidden, the relay\'s detail paints a new label all the same', 0.2, async function () {
   if (!S.chrome) return false;
   await S.chrome.evaluate('document.getElementById("zzPanel").style.display = "none"; 1');
   await home(S.N.base, 'peer.post', { to: S.key, text: JSON.stringify({ app: 'relay', body: { relayLabel: { label: NEW2 } } }) });
@@ -1125,7 +1125,7 @@ test.run('the other relay\'s row, seated and not owned, is on the stream', 0.2, 
   const otherRow = last(Other.relayKey) || {};
   return (otherRow.claimed === true && otherRow.owned === false) || false;
 }, test.limit.slow);
-test.run('and nothing of it reaches this panel', 0.2, async function () {
+test.run('Nothing of the other relay\'s row reaches this relay\'s detail', 0.2, async function () {
   if (S.before === undefined) return false;
   await sleep(1000);
   const now = await panelText();
@@ -1153,7 +1153,7 @@ test.run('a later change neither throws nor paints', 0.2, async function () {
 // no relays that satisfy the requirement, don't display the form at all" and, of following the rows with no read,
 // "agreed.". Turned to v29's rule in goal/G47.1 (Q12, Andy: "fix it."). This node sits on two relays here.
 // the face form: its check, as a function
-test.run('faceForm.offers(relays) is there', 0.2, async function () {
+test.run('The face form has a function saying whether it has relays to offer', 0.2, async function () {
   if (!S.chrome) return false;
   await S.chrome.send('Page.navigate', { url: S.N.base + '/face.html' });
   await until(function () { return S.chrome.evaluate('!!(window.spirit && window.spirit.require)'); }, 20000);
@@ -1161,11 +1161,11 @@ test.run('faceForm.offers(relays) is there', 0.2, async function () {
   S.check = await S.chrome.evaluate('Promise.resolve(window.spirit.require("spirit/element/faceForm.js")).then(function () { var F = window.spirit.element.spirit.element.faceForm; if (!F || typeof F.offers !== "function") return null; var u = "http://x"; return { member: F.offers([{ url: u, claimed: true, mine: false }]), owner: F.offers([{ url: u, owned: true, mine: false }]), starred: F.offers([{ url: u, claimed: true, mine: true }]), stranger: F.offers([{ url: u, claimed: false, owned: false, mine: false }]), none: F.offers([]), one: F.offers([{ url: u, claimed: true, mine: true }, { url: "http://y", claimed: true, mine: false }]) }; })');
   return !!S.check || false;
 }, test.limit.slow);
-test.run('true for a starred relay, alone or beside one with no star', 0.2, function () {
+test.run('The face form offers a starred relay, alone or beside one with no star', 0.2, function () {
   if (!S.check) return false;
   return (S.check.starred === true && S.check.one === true) || false;
 }, test.limit.quick);
-test.run('false for a relay with no star, a member\'s or an owner\'s, for one it holds no seat on, and for none', 0.2, function () {
+test.run('The face form offers nothing for a relay with no star, whether a member\'s or an owner\'s, for one it holds no seat on, and for no relays at all', 0.2, function () {
   if (!S.check) return false;
   return (S.check.member === false && S.check.owner === false && S.check.stranger === false && S.check.none === false) || false;
 }, test.limit.quick);
@@ -1175,14 +1175,14 @@ const options = function () { return S.chrome.evaluate('JSON.stringify(Array.pro
 const tileShown = function () { return S.chrome.evaluate('(function () { var b = document.querySelector("[data-info=\\"face\\"]"); return !!b && b.offsetParent !== null && !!b.querySelector(".sp-face-relay"); }())'); };
 const emptyTile = function () { return S.chrome.evaluate('(function () { var b = document.querySelector("[data-info=\\"face\\"]"); return !!b && b.offsetParent !== null; }())'); };
 const infoReads = function () { return S.chrome.heard.filter(function (m) { return m.method === 'Network.requestWillBeSent' && /"call":"(relay\.(status|get)|contact\.search)"/.test(String((m.params.request || {}).postData || '')); }).length; };
-test.run('neither starred: no form, and no empty tile left in Info', 0.2, async function () {
+test.run('With neither relay starred, Info shows no face form and leaves no empty tile', 0.2, async function () {
   if (!S.chrome) return false;
   if (!S.Other) return false;
   await S.chrome.evaluate('(function () { var e = Array.prototype.slice.call(document.querySelectorAll("*")).filter(function (x) { return x.offsetParent !== null && !x.children.length && x.textContent.trim() === "Info"; })[0]; if (e) e.click(); }())');
   await sleep(3000);
   return (!(await tileShown()) && !(await emptyTile())) || false;
 }, test.limit.long);
-test.run('one starred, no reload: the form comes, offering that relay alone', 0.2, async function () {
+test.run('With one relay starred, the face form comes with no reload and offers that relay alone', 0.2, async function () {
   if (!S.chrome) return false;
   if (!S.Other) return false;
   S.readsBefore = infoReads();
@@ -1191,11 +1191,11 @@ test.run('one starred, no reload: the form comes, offering that relay alone', 0.
   const one = await options();
   return ((await tileShown()) && one.indexOf(S.R.base) !== -1 && one.indexOf(S.Other.base) === -1) || false;
 }, test.limit.slow);
-test.run('and the form followed the row, reading nothing', 0.2, function () {
+test.run('The face form followed the row without reading anything', 0.2, function () {
   if (S.readsBefore === undefined) return false;
   return infoReads() === S.readsBefore || false;
 }, test.limit.quick);
-test.run('both starred: it offers both', 0.2, async function () {
+test.run('With both relays starred, the face form offers both', 0.2, async function () {
   if (!S.chrome) return false;
   if (!S.Other) return false;
   await home(S.N.base, 'contact.own', { key: S.Other.relayKey, own: true });
@@ -1203,7 +1203,7 @@ test.run('both starred: it offers both', 0.2, async function () {
   const both = await options();
   return (both.indexOf(S.R.base) !== -1 && both.indexOf(S.Other.base) !== -1) || false;
 }, test.limit.slow);
-test.run('one star off: it is gone from the dropdown, the other stays', 0.2, async function () {
+test.run('With one star taken off, that relay is gone from the dropdown and the other stays', 0.2, async function () {
   if (!S.chrome) return false;
   if (!S.Other) return false;
   await home(S.N.base, 'contact.own', { key: S.Other.relayKey, own: false });
@@ -1225,14 +1225,14 @@ test.run('a third relay comes up', 0.2, async function () {
   S.others.push(S.Far);
   return !!S.Far.up || false;
 }, test.limit.slow);
-test.run('listed, no seat: contact.own is refused at home, with a code', 0.2, async function () {
+test.run('The home node refuses with a code to star a relay that is listed but holds no seat', 0.2, async function () {
   if (!S.Far) return false;
   await home(S.N.base, 'relay.add', { url: S.Far.base, label: 'zzFar' });
   await until(function () { return rowsOf(S.Far.relayKey).length > 0; }, 8000);
   const farNo = await home(S.N.base, 'contact.own', { key: S.Far.relayKey, own: true });
   return (farNo.status >= 400 && farNo.status < 500 && !!(farNo.body && farNo.body.code)) || false;
 }, test.limit.quick);
-test.run('and no star lands', 0.2, async function () {
+test.run('No star lands on the relay with no seat', 0.2, async function () {
   if (!S.Far) return false;
   return !(await starred(S.Far.relayKey)) || false;
 }, test.limit.quick);
@@ -1256,14 +1256,14 @@ test.run('the panel draws for it', 0.2, async function () {
   S.farStar = await S.chrome.evaluate('Array.prototype.slice.call(document.querySelectorAll("#zzFar .nd-fold")).filter(function (h) { return h.textContent.indexOf("Star this relay") !== -1; }).length');
   return (farPanel === 'ok' && await S.chrome.evaluate('document.querySelectorAll("#zzFar .nd-fold").length > 0')) || false;
 }, test.limit.quick);
-test.run('with no star fold', 0.2, function () {
+test.run('The detail of a relay with no seat has no star fold', 0.2, function () {
   if (S.farStar === undefined) return false;
   return S.farStar === 0 || false;
 }, test.limit.quick);
 
 // a member can star it; leaving takes the star away
 // Leaving: read from his ruling, and Q21 asks him outright (ubi: "a relay you have left keeps its star"); if he says no, these two checks go.
-test.run('joined: the star goes on', 0.2, async function () {
+test.run('Once this node has joined the relay, the star goes on', 0.2, async function () {
   if (!S.Far) return false;
   await home(S.N.base, 'relay.join', { url: S.Far.base, email: MAIL });
   await until(function () { return S.Far.mailed.length > 0; }, 5000);
@@ -1280,12 +1280,12 @@ test.run('it leaves the relay: its row holds no seat', 0.2, async function () {
   await until(function () { const r = last(S.Far.relayKey); return !!r && r.claimed === false; }, 8000);
   return ((last(S.Far.relayKey) || {}).claimed) === false || false;
 }, test.limit.long);
-test.run('and the star is gone with the seat', 0.2, async function () {
+test.run('Leaving the relay takes the star away with the seat', 0.2, async function () {
   if (!S.Far) return false;
   await until(function () { return starred(S.Far.relayKey).then(function (x) { return !x; }); }, 5000);
   return !(await starred(S.Far.relayKey)) || false;
 }, test.limit.quick);
-test.run('and cannot be put back', 0.2, async function () {
+test.run('The star cannot be put back on a relay this node has left', 0.2, async function () {
   if (!S.Far) return false;
   const notAgain = await home(S.N.base, 'contact.own', { key: S.Far.relayKey, own: true });
   return (notAgain.status >= 400 && notAgain.status < 500) || false;
@@ -1299,7 +1299,7 @@ test.run('a relay naming this node its owner comes up', 0.2, async function () {
   S.others.push(S.Own);
   return !!S.Own.up || false;
 }, test.limit.slow);
-test.run('its report has come: owned', 0.2, async function () {
+test.run('Once the owned relay\'s report has come, its row says it is owned', 0.2, async function () {
   if (!S.Own) return false;
   const Own = S.Own;
   await home(S.N.base, 'relay.add', { url: Own.base, label: 'zzOwned' });
@@ -1311,7 +1311,7 @@ test.run('its report has come: owned', 0.2, async function () {
   const ownedRow2 = last(Own.relayKey) || {};
   return ownedRow2.owned === true || false;
 }, test.limit.slow);
-test.run('owned: the star goes on', 0.2, async function () {
+test.run('On a relay this node owns, the star goes on', 0.2, async function () {
   if (!S.Own) return false;
   const ownYes = await home(S.N.base, 'contact.own', { key: S.Own.relayKey, own: true });
   return (ownYes.status === 200 && await starred(S.Own.relayKey)) || false;
@@ -1341,7 +1341,7 @@ test.run('a person is listed too', 0.2, async function () {
   S.personLook = await styleOf('zzPersonRow');
   return !!S.personLook || false;
 }, test.limit.quick);
-test.run('and a person\'s label is not', 0.2, function () {
+test.run('A person\'s label in the contact list is not bold and italic', 0.2, function () {
   if (!S.listed) return false;
   return (!!S.personLook && !(S.personLook.weight >= 700 && S.personLook.style === 'italic')) || false;
 }, test.limit.quick);

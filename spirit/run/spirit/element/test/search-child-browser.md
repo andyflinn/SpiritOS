@@ -23,20 +23,21 @@ view of, and 60 rows are planted there, each a copy of a row the branch holds (o
 field of it, and of its label json, a long value with no place to break. The detail is the search's detailElement, created
 in a panel layer as the apps open one, its options the planted row's fields with `row` and `panel` beside them.
 
-1. the list's box has a stated size, from its pane, not its rows (rule 16): with the rows planted, its height is what it
+1. the list's box has a stated size, from its pane and not from its rows (rule 16): with the rows planted, its height is what it
    was, and it ends inside its pane.
-2. the list scrolls: the box keeps its size, scrollHeight > clientHeight, and its overflow-y is auto or scroll.
-3. scrolling the list, its title and buttons stay at the top: every button and field of the list's host outside the list
+2. the list scrolls: its box keeps its size and its scrollHeight is greater than its clientHeight, and its overflow-y
+   is auto or scroll.
+3. when the list is scrolled, its title and buttons stay at the top: every button and field of the list's host outside the list
    keeps its top when the list is scrolled to its end.
-4. a planted long value in a row wraps or clips, nothing past the row's edge: nothing of a planted row is seen past it.
+4. a planted long value in a row wraps or clips, and nothing shows past the row's edge: nothing of a planted row is seen past it.
 5. the detail keeps a planted long value inside its panel, and scrolls when taller: nothing of it is seen past its
    layer's pane, and what reaches below the pane is inside a box that scrolls.
 6. the detail's title bar stays pinned when it scrolls: made far taller than its panel (a 5000 px part at the end of what
    it drew, as the browser general test grows a box), something in its layer scrolls, and scrolled to its end, the
    layer's title bar keeps its top.
-7. the selector's dropdown stays inside the window, opened near the right and bottom edges: created with
+7. the selector's dropdown stays inside the window when opened near the right and bottom edges: created with
    `{ face: 'dropdown' }` 4 px from the window's right and bottom, its field pressed, its popup lies inside the window.
-8. two details open, one closed: the other still draws in its own panel (G43.19, in a page; `listRowsOwnTheirPanel` in
+8. with two details open and one closed, the other still draws in its own panel in a page (G43.19; `listRowsOwnTheirPanel` in
    `search-child-general.md`): a planted row's detail opened and closed, another's opened, the second draws in its own
    pane and the closed one's pane is left as it was.
 

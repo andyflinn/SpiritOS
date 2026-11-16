@@ -58,7 +58,7 @@ test.run('scratchNode hands out a lab node: its tree lies under repo://lab/node/
   if (!W.first || W.first === 'waiting' || W.first.error) return false;
   return under(W.first.root, LAB_NODES) || false;
 }, test.limit.long);
-test.run('and no copy of the tree is made for it in the temp folder', 0.4, function () {
+test.run('no copy of the tree is made for the lab node in the temp folder', 0.4, function () {
   if (!W.first || W.first.error) return false;
   return W.copies === 0 || false;
 }, test.limit.quick);
@@ -187,7 +187,7 @@ test.run('a test that is killed leaves no Chrome of its own running', 0.4, funct
 // handed node with its tree, so a world can plant files there, the servers it asks for answering there, and a page of the
 // handed Chrome.
 const HANDED = {};
-test.run('the world: a node and a Chrome to hand on', 0.2, async function () {
+test.run('a node and a Chrome are ready to hand on', 0.2, async function () {
   const H = require(HELPER);
   HANDED.node = await H.scratchNode();
   if (!HANDED.node.up) return false;

@@ -22,24 +22,24 @@ function said(url) {
   try { s = fence.isThisMachine(h); } catch (e) { s = null; }
   return { said: s };
 }
-test.run('refused: loopback', 0.8, function () { const c = said('http://127.0.0.1:1/'); return c.said === true || false; }, test.limit.quick);
-test.run('refused: any 127.x address', 0.8, function () { const c = said('http://127.9.9.9:1/'); return c.said === true || false; }, test.limit.quick);
-test.run('refused: the any address', 0.8, function () { const c = said('http://0.0.0.0:1/'); return c.said === true || false; }, test.limit.quick);
-test.run('refused: localhost', 0.8, function () { const c = said('http://localhost:1/'); return c.said === true || false; }, test.limit.quick);
-test.run('refused: a name under .localhost', 0.8, function () { const c = said('http://a.localhost:1/'); return c.said === true || false; }, test.limit.quick);
-test.run('refused: IPv6 loopback', 0.8, function () { const c = said('http://[::1]:1/'); return c.said === true || false; }, test.limit.quick);
-test.run('refused: IPv6 loopback written in full', 0.8, function () { const c = said('http://[0:0:0:0:0:0:0:1]:1/'); return c.said === true || false; }, test.limit.quick);
-test.run('refused: the IPv6 any address', 0.8, function () { const c = said('http://[::]:1/'); return c.said === true || false; }, test.limit.quick);
+test.run('the loopback address is refused', 0.8, function () { const c = said('http://127.0.0.1:1/'); return c.said === true || false; }, test.limit.quick);
+test.run('any 127.x address is refused', 0.8, function () { const c = said('http://127.9.9.9:1/'); return c.said === true || false; }, test.limit.quick);
+test.run('the any address is refused', 0.8, function () { const c = said('http://0.0.0.0:1/'); return c.said === true || false; }, test.limit.quick);
+test.run('localhost is refused', 0.8, function () { const c = said('http://localhost:1/'); return c.said === true || false; }, test.limit.quick);
+test.run('a name under .localhost is refused', 0.8, function () { const c = said('http://a.localhost:1/'); return c.said === true || false; }, test.limit.quick);
+test.run('the IPv6 loopback address is refused', 0.8, function () { const c = said('http://[::1]:1/'); return c.said === true || false; }, test.limit.quick);
+test.run('the IPv6 loopback address written in full is refused', 0.8, function () { const c = said('http://[0:0:0:0:0:0:0:1]:1/'); return c.said === true || false; }, test.limit.quick);
+test.run('the IPv6 any address is refused', 0.8, function () { const c = said('http://[::]:1/'); return c.said === true || false; }, test.limit.quick);
 // The reported failure (goal/G41.30, Andy, 2026-11-02: "isThisMachine('::ffff:7f00:1') is false, and new URL rewrites
 // [::ffff:127.0.0.1] to that form, so an IPv4-mapped literal passes the gate").
-test.run('refused: IPv4-mapped loopback, which new URL writes as ::ffff:7f00:1', 0.8, function () { const c = said('http://[::ffff:127.0.0.1]:1/'); return c.said === true || false; }, test.limit.quick);
-test.run('refused: IPv4-mapped loopback written in full', 0.8, function () { const c = said('http://[0:0:0:0:0:ffff:127.0.0.1]:1/'); return c.said === true || false; }, test.limit.quick);
-test.run('refused: IPv4-mapped loopback in hex', 0.8, function () { const c = said('http://[::ffff:7f00:1]:1/'); return c.said === true || false; }, test.limit.quick);
-test.run('refused: IPv4-compatible loopback, which new URL writes as ::7f00:1', 0.8, function () { const c = said('http://[::127.0.0.1]:1/'); return c.said === true || false; }, test.limit.quick);
-test.run('refused: IPv4-mapped any address', 0.8, function () { const c = said('http://[::ffff:0.0.0.0]:1/'); return c.said === true || false; }, test.limit.quick);
+test.run('an IPv4-mapped loopback address, which new URL writes as ::ffff:7f00:1, is refused', 0.8, function () { const c = said('http://[::ffff:127.0.0.1]:1/'); return c.said === true || false; }, test.limit.quick);
+test.run('an IPv4-mapped loopback address written in full is refused', 0.8, function () { const c = said('http://[0:0:0:0:0:ffff:127.0.0.1]:1/'); return c.said === true || false; }, test.limit.quick);
+test.run('an IPv4-mapped loopback address written in hex is refused', 0.8, function () { const c = said('http://[::ffff:7f00:1]:1/'); return c.said === true || false; }, test.limit.quick);
+test.run('an IPv4-compatible loopback address, which new URL writes as ::7f00:1, is refused', 0.8, function () { const c = said('http://[::127.0.0.1]:1/'); return c.said === true || false; }, test.limit.quick);
+test.run('the IPv4-mapped any address is refused', 0.8, function () { const c = said('http://[::ffff:0.0.0.0]:1/'); return c.said === true || false; }, test.limit.quick);
 
 // Another machine stays reachable.
-test.run('let through: an address on the internet', 0.2, function () { const c = said('http://93.184.216.34:1/'); return c.said === false || false; }, test.limit.quick);
-test.run('let through: a name, checked at connect by netFence.lookup', 0.2, function () { const c = said('http://example.com:1/'); return c.said === false || false; }, test.limit.quick);
-test.run('let through: an IPv6 address on the internet', 0.2, function () { const c = said('http://[2606:2800:220:1:248:1893:25c8:1946]:1/'); return c.said === false || false; }, test.limit.quick);
-test.run('let through: an IPv4-mapped address of another machine', 0.2, function () { const c = said('http://[::ffff:93.184.216.34]:1/'); return c.said === false || false; }, test.limit.quick);
+test.run('an address on the internet is let through', 0.2, function () { const c = said('http://93.184.216.34:1/'); return c.said === false || false; }, test.limit.quick);
+test.run('a name is let through, to be checked at connect by netFence.lookup', 0.2, function () { const c = said('http://example.com:1/'); return c.said === false || false; }, test.limit.quick);
+test.run('an IPv6 address on the internet is let through', 0.2, function () { const c = said('http://[2606:2800:220:1:248:1893:25c8:1946]:1/'); return c.said === false || false; }, test.limit.quick);
+test.run('an IPv4-mapped address of another machine is let through', 0.2, function () { const c = said('http://[::ffff:93.184.216.34]:1/'); return c.said === false || false; }, test.limit.quick);

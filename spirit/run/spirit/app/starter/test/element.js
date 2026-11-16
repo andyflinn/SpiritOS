@@ -66,13 +66,13 @@ function world(card, hold) {
 const W = {};
 
 // 1. one element
-test.run('spirit.element.spirit.app.starter.element.create is there', 0.2, function () {
+test.run('the starter element\'s create is on spirit.element at its path', 0.2, function () {
   W.w = world({ name: 'probe-node', description: 'a node for the test' });
   const E = ((((W.w.win.spirit.element || {}).spirit || {}).app || {}).starter || {}).element;
   W.E = E;
   return !!E && typeof E.create === 'function' ? true : false;
 }, test.limit.quick);
-test.run('create answers { destroy }', 0.2, function () {
+test.run('create answers an object with destroy', 0.2, function () {
   if (!W.E || typeof W.E.create !== 'function') return false;
   W.box = node('<div>');
   const made = W.made = W.E.create(W.box, {});
@@ -129,20 +129,20 @@ test.run('an answer after destroy draws nothing', 0.2, async function () {
 
 // 6. its starter.json is the app shape
 function manifest() { try { return JSON.parse(fs.readFileSync(MANIFEST, 'utf8')); } catch (e) { return null; } }
-test.run('identity: label Starter, not intrinsic', 0.2, function () {
+test.run('its identity has the label Starter and is not intrinsic', 0.2, function () {
   const m = manifest();
   const i = (m && m.identity) || {};
   return i.label === 'Starter' && i.intrinsic === false ? true : false;
 }, test.limit.quick);
-test.run('mount names element.js', 0.2, function () {
+test.run('its mount names element.js', 0.2, function () {
   const m = manifest();
   return !!(m && m.mount && m.mount['element.js'] === true) || false;
 }, test.limit.quick);
-test.run('a shell mount and a tile', 0.2, function () {
+test.run('it has a shell mount and a tile', 0.2, function () {
   const m = manifest();
   return !!(m && m.shell && m.shell.mount === true && m.shell.tile === true) || false;
 }, test.limit.quick);
-test.run('no node mount: the node starts nothing for it', 0.2, function () {
+test.run('it has no node mount: the node starts nothing for it', 0.2, function () {
   const m = manifest();
   return !!(m && m.node && m.node.mount === false) || false;
 }, test.limit.quick);

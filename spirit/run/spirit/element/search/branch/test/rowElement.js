@@ -35,7 +35,7 @@ let asked, required, armed, managers, DATA, V, E, A, el, cells, allCells, del, l
 const hasA = function () { return !!(A && A.branches && typeof A.branches.row === 'function'); };
 const hasRow = function () { return hasA() && !!(E.search && E.search.branch && E.search.branch.rowElement && typeof E.search.branch.rowElement.create === 'function'); };
 
-test.run('the world: the row runs on a bare window, the page\'s data set and the auth family\'s data real', 0.2, async function () {
+test.run('the branch row runs on a bare window, with the page\'s data set and the auth family\'s data real', 0.2, async function () {
   if (!fs.existsSync(FILE)) return false;
   asked = [];
   required = [];
@@ -79,7 +79,7 @@ test.run('it requires the shared row element and the arming button through spiri
   if (!required) return false;
   return ['spirit/element/rowElement.js', 'spirit/element/armingButton.js'].every(function (p) { return required.indexOf(p) !== -1; }) ? true : false;
 }, test.limit.quick);
-test.run('it loads the auth family\'s cache manager, which puts ((spirit.data || {}).auth || {}).data on the page', 0.2, function () {
+test.run('it loads the auth family\'s cache manager, which puts the auth family\'s data on the page', 0.2, function () {
   if (!managers) return false;
   return managers.indexOf('auth') !== -1 && hasA() ? true : false;
 }, test.limit.quick);
@@ -90,7 +90,7 @@ test.run('it registers spirit.element.spirit.element.search.branch.rowElement.cr
 
 // a branch row: Family, Verb, Delete
 // Andy, box: "branchSelector:pane, with table columns as follows: 1. Family (duh?) 2. Verb 3. armingButton 'Delete'".
-test.run('it is a row element of kind branch, keyed by the branch\'s id, its bundle with it', 0.2, function () {
+test.run('it is a row element of kind branch, keyed by the branch\'s id, with its bundle in the row', 0.2, function () {
   if (!hasRow()) return false;
   el = E.search.branch.rowElement.create({ id: 3, bundle: 7, family: 'de<sk>', verb: 'chat<add>' });
   return el.kind === 'branch' && el.key === '3' && el.row.bundle === 7 && el.row.family === 'de<sk>' ? true : false;
@@ -117,14 +117,14 @@ test.run('delete is a button naming its action', 0.2, function () {
 }, test.limit.quick);
 
 // Delete asks are-you-sure
-test.run('mounted, its Delete is an armingButton, and nothing is asked yet', 0.2, function () {
+test.run('once mounted, its Delete is an arming button, and nothing is asked yet', 0.2, function () {
   if (!el) return false;
   const hosts = { family: cell(), verb: cell(), delete: cell() };
   el.mount(hosts);
   del = armed.filter(function (a) { return a.button && a.button.action === 'delete'; })[0];
   return !!del && typeof del.o.run === 'function' && asked.length === 0 ? true : false;
 }, test.limit.quick);
-test.run('its second press asks auth.branch { op: delete, id }', 0.2, async function () {
+test.run('the second press of Delete asks auth.branch to delete the branch by its id', 0.2, async function () {
   if (!el) return false;
   if (del) { await del.o.run(); await settle(); }
   return asked.length === 1 && asked[0].op === 'delete' && asked[0].id === 3 ? true : false;
@@ -132,7 +132,7 @@ test.run('its second press asks auth.branch { op: delete, id }', 0.2, async func
 
 // it repaints from the auth family's branches (goal/G41.14, G41.28)
 // Andy: "EVERY FUCKING element MUST FUCKING LISTING to anything that changes their data set".
-test.run('its row in the branches changed, the row repaints: the verb now (ALL)', 0.2, async function () {
+test.run('when its row in the branches changes, the row repaints and its verb now shows (ALL)', 0.2, async function () {
   if (!hasRow()) return false;
   live = E.search.branch.rowElement.create({ id: 5, bundle: 7, family: 'files', verb: 'read' });
   lh = { family: cell(), verb: cell(), delete: cell() };
@@ -154,7 +154,7 @@ test.run('another branch\'s row changes nothing here', 0.2, async function () {
 // auth family's cache manager it loads. Andy: "DOESN'T THAT SHIT BELONG INSIDE THE MOTHERFUCKING element??????", "i ruled a LONG time AGO THAT FUCKING ELEMENTS
 // carry THEIR FUCKING DESCRIPTIONS". The node publishes each changed row of its two bundle tables on one permanent job
 // of type bundles, as the shadow job does each contact row: { table, row }, and { table, row: { id }, gone: true }.
-test.run('a branch row published lands in the auth family\'s branches by its id, through the family\'s cache manager the row element loads (goal/G41.28)', 0.2, function () {
+test.run('a branch row published lands in the auth family\'s branches by its id, through the family\'s cache manager the row element loads', 0.2, function () {
   if (!hasA()) return false;
   DATA.takeJob({ id: 'spirit.auth', data: { table: 'branch', row: { id: 3, bundle: 7, family: 'desk', verb: 'chat.add' } } });
   return JSON.stringify(A.branches.row({ id: 3, bundle: 7, family: 'desk', verb: 'chat.add' }.id)) === JSON.stringify({ id: 3, bundle: 7, family: 'desk', verb: 'chat.add' }) ? true : false;
@@ -170,7 +170,7 @@ test.run('a row published gone is taken out', 0.2, function () {
   DATA.takeJob({ id: 'spirit.auth', data: { table: 'branch', row: { id: { id: 3, bundle: 7, family: 'desk', verb: 'chat.add' }.id }, gone: true } });
   return A.branches.row({ id: 3, bundle: 7, family: 'desk', verb: 'chat.add' }.id) === null ? true : false;
 }, test.limit.quick);
-test.run('the other table\'s rows, another job\'s, and a row with no id write nothing in the branches', 0.2, function () {
+test.run('the other table\'s rows, another job\'s rows and a row with no id write nothing in the branches', 0.2, function () {
   if (!hasA()) return false;
   const before = JSON.stringify(A.branches.rows());
   DATA.takeJob({ id: 'spirit.auth', data: { table: 'bundle', row: { id: 99, label: 'x', bundle: 1, family: 'f', verb: '' } } });

@@ -61,7 +61,7 @@ test.run('an uncatalogued sentence is unknown, says nothing about presence, and 
   const e = E.classify(418, 'a sentence nobody catalogued');
   return (!!e && e.code === 'unknown' && e.presence === null && e.status === 418 && e.text === 'a sentence nobody catalogued') || false;
 }, test.limit.quick);
-test.run('UNKNOWN itself claims nothing: presence null, no retry', 0.2, function () {
+test.run('UNKNOWN itself claims nothing: its presence is null and it asks no retry', 0.2, function () {
   return (E.UNKNOWN.code === 'unknown' && E.UNKNOWN.presence === null && E.UNKNOWN.retry === 'no') || false;
 }, test.limit.quick);
 
@@ -77,7 +77,7 @@ test.run('classifyAnswer of a refusal reads its status, its error and its marker
 
 // ── define: a process declaring its own refusals ──
 let defined = null;
-test.run('the world: in a process of its own, a refusal defined, then defined again', 0.2, function () {
+test.run('in a process of its own, a refusal is defined, then defined again', 0.2, function () {
   const src = [
     'const E = require(' + JSON.stringify(FILE) + ');',
     'const before = E.all().length, top = Math.max.apply(null, E.all().map(function (e) { return e.id; }));',

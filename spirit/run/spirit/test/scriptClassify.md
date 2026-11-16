@@ -35,7 +35,7 @@ and this file.
 - *"a load that is not complete in 3 seconds counts as crash/hang: not classifyable"*, on either side.
 - *"classify hard-codes server.js and relayServer.js as node-only"*: `spirit/server.js` and `spirit/relayServer.js` are
   never loaded.
-- One test per script, titled `classifyable`, severity 0.8 (*"its severity is 0.8"*), reported for that script (testReport's
+- One test per script, titled `it loads, so it can be classified`, severity 0.8 (*"its severity is 0.8"*), reported for that script (testReport's
   `opts.script`). Classified, it tells the node's testicle by `testicle.script.classify {script, browserOnly, nodeOnly}`
   and passes; not classifyable, it fails, saying what each load answered. A refusal of the verb fails it too.
 - *"the classify failing: not classifyable. No Chrome: tough luck"*: no scratch node, or no Chrome, fails every script of

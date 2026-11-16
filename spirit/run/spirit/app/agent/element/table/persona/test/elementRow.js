@@ -47,7 +47,7 @@ const E = {};
 const plain = function (fields) { return (fields || []).map(function (f) { const o = { field: f.field, kind: f.kind }; if (f.pick) o.pick = f.pick; if (f.of) o.of = f.of; return o; }); };
 const fieldOf = function (name) { const m = E.m; return m && m.o && Array.isArray(m.o.fields) ? m.o.fields.filter(function (f) { return f.field === name; })[0] || null : null; };
 
-test.run('the world: the file runs on a window of its own, the row element a stand-in placed as the page places it', 0.2, function () {
+test.run('the file runs on a window of its own, with a stand-in for the row element placed as the page places it', 0.2, function () {
   if (!fs.existsSync(FILE)) return false;
   world();
   W.up = true;
@@ -71,7 +71,7 @@ test.run('as it loads, it asks for the agent family\'s cache manager, spirit.cac
 }, test.limit.quick);
 
 // ── create(container, id, added, detail): the row element, handed the persona table's fields ──
-test.run('create(container, id, true, detail) makes the tables\' row element in that container', 0.2, async function () {
+test.run('create, given a container, an id, added as true and the detail pane, makes the tables\' row element in that container', 0.2, async function () {
   if (!E.row) return false;
   E.box = { id: 'box' };
   E.made = E.row.create(E.box, 'ID1', true, detail);
@@ -79,7 +79,7 @@ test.run('create(container, id, true, detail) makes the tables\' row element in 
   E.m = W.made[W.made.length - 1];
   return (!!E.m && E.m.container === E.box) || false;
 }, test.limit.quick);
-test.run('it loads the row element itself, spirit/app/agent/element/table/rowElement.js (rule/26)', 0.2, function () {
+test.run('it loads the row element itself, spirit/app/agent/element/table/rowElement.js', 0.2, function () {
   if (!W.up) return false;
   return W.required.indexOf(ROW) !== -1 || false;
 }, test.limit.quick);
@@ -87,7 +87,7 @@ test.run('the row element is told its table, persona, and the row\'s id', 0.2, f
   if (!E.m) return false;
   return (E.m.o.table === 'persona' && E.m.o.id === 'ID1') || false;
 }, test.limit.quick);
-test.run('added, the row just made by Add, is told as true', 0.2, function () {
+test.run('a row just made by Add is told to the row element as added, true', 0.2, function () {
   if (!E.m) return false;
   return E.m.o.added === true || false;
 }, test.limit.quick);
@@ -95,23 +95,23 @@ test.run('the title row\'s look is the detail pane\'s look of the persona table'
   if (!E.m) return false;
   return (looks.indexOf('persona') !== -1 && !!E.m.o.look && E.m.o.look.name === 'the persona look') || false;
 }, test.limit.quick);
-test.run('its fields are the persona table\'s: label, persona, bundle, provider', 0.2, function () {
+test.run('its fields are the persona table\'s label, persona, bundle and provider', 0.2, function () {
   if (!E.m) return false;
   return JSON.stringify(plain(E.m.o.fields)) === JSON.stringify([{'field': 'label', 'kind': 'name'}, {'field': 'persona', 'kind': 'code'}, {'field': 'bundle', 'kind': 'bundle'}, {'field': 'provider', 'kind': 'pick', 'pick': 'provider'}]) || false;
 }, test.limit.quick);
 // goal/G41.21, box v19, Andy: "and where the fuck is my bundle field in persona-table and the fucking picker for a bundle with the persona?"
-test.run('its bundle is chosen by the bundle selector, as the job\'s (goal/G41.21, box v19)', 0.2, function () {
+test.run('its bundle is chosen by the bundle selector, as the job\'s is', 0.2, function () {
   if (!E.m) return false;
   const f = fieldOf('bundle');
   return (!!f && f.kind === 'bundle') || false;
 }, test.limit.quick);
 // goal/G41.26, Andy, box: "it's detail provides the same provider-FUCKING-Selector in drop down mode, that the job detail panel provides for the agent.job.provider".
-test.run('its provider is the same provider pick the job\'s detail has (goal/G41.26)', 0.2, function () {
+test.run('its provider is chosen by the same provider pick the job\'s detail has', 0.2, function () {
   if (!E.m) return false;
   const f = fieldOf('provider');
   return (!!f && f.kind === 'pick' && f.pick === 'provider') || false;
 }, test.limit.quick);
-test.run('its mandatory fields are icon, label, as its server names them (goal/G41.21: "# mandatory fields (server AND ui)")', 0.2, function () {
+test.run('its mandatory fields are icon and label, as its server names them', 0.2, function () {
   if (!E.m) return false;
   return JSON.stringify(E.m.o.required) === JSON.stringify(["icon", "label"]) || false;
 }, test.limit.quick);
@@ -120,7 +120,7 @@ test.run('its destroy destroys the row element it made', 0.2, function () {
   E.made.destroy();
   return E.m.destroyed === true || false;
 }, test.limit.quick);
-test.run('anything but added === true is told as false; no detail pane, no look', 0.2, async function () {
+test.run('an added flag that is anything but true is told as false, and with no detail pane there is no look', 0.2, async function () {
   if (!E.row) return false;
   E.row.create({ id: 'box2' }, 'ID2', 'yes');
   await settle();

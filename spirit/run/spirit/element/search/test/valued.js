@@ -23,7 +23,7 @@ test.run('spirit/element/search/valued.js is there', 0.2, function () {
 test.run('it reaches no old code', 0.2, function () {
   return code && !/\.elements\b|spirit\.shell/.test(code) ? true : false;
 }, test.limit.quick);
-test.run('it is a probabilitySearch (spirit/element/search.js since goal/G43.18)', 0.2, function () {
+test.run('it is a probabilitySearch, built on spirit/element/search.js', 0.2, function () {
   return code && /spirit\/element\/search\.js|element\.search\.create/.test(code) ? true : false;
 }, test.limit.quick);
 
@@ -33,7 +33,7 @@ test.after(function () {
   try { if (chrome && chrome.profile) fs.rmSync(chrome.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
   try { if (node && node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* left */ }
 });
-test.run('the world: a scratch node, and Chrome on its face page', 0.2, async function () {
+test.run('a scratch node comes up with Chrome on its face page', 0.2, async function () {
   node = await scratchNode();
   chrome = await chromePage(findChrome());
   if (!node.up || chrome.error) return false;
@@ -47,7 +47,7 @@ test.run('it loads on a page', 0.2, async function () {
   loaded = await js('window.spirit.ready.then(function () { return window.spirit.require("spirit/element/search/valued.js"); }).then(function () { return "loaded"; }, function () { return false; })');
   return loaded === 'loaded' ? true : false;
 }, test.limit.slow);
-test.run('spirit.element.spirit.element.search.valued.create, and nothing on spirit.elements', 0.2, async function () {
+test.run('it places its create at spirit.element.spirit.element.search.valued.create, and nothing on spirit.elements', 0.2, async function () {
   if (!js) return false;
   const homes = await js('JSON.stringify({ now: typeof (((((window.spirit.element || {}).spirit || {}).element || {}).search || {}).valued || {}).create, old: typeof (window.spirit.elements || {}).valued })');
   try { h = JSON.parse(homes); } catch (e) { h = {}; }
@@ -55,7 +55,7 @@ test.run('spirit.element.spirit.element.search.valued.create, and nothing on spi
 }, test.limit.slow);
 // THE FACE SETTLES FIRST (cw traced it): the face page's own app selector is still loading its app cache as the page comes
 // up, and those calls are the page's, not valued's. Counting starts once the page has asked nothing new for two seconds.
-test.run('the world: the face page has settled before valued is mounted', 0.2, async function () {
+test.run('the face page has settled before valued is mounted', 0.2, async function () {
   if (h.now !== 'function') return false;
   let seen = -1, still = 0;
   const settled = await until(async function () {
@@ -84,12 +84,12 @@ test.run('a row shows its columns', 0.2, function () {
   if (!first) return false;
   return (first.rows || []).some(function (l) { return /Even/.test(l) && /row0/.test(l); }) ? true : false;
 }, test.limit.quick);
-test.run('one search field', 0.2, function () {
+test.run('it draws one search field', 0.2, function () {
   if (!first) return false;
   return first.inputs === 1 ? true : false;
 }, test.limit.quick);
 // rule/16: its list scrolls inside the box it is given
-test.run('more rows than fit: a part of it scrolls, in the box', 0.2, function () {
+test.run('with more rows than fit, a part of it scrolls inside the box', 0.2, function () {
   if (!first) return false;
   return first.canScroll === true ? true : false;
 }, test.limit.quick);
@@ -102,7 +102,7 @@ test.run('redraw shows the changed value', 0.2, async function () {
   redrawn = await read();
   return (redrawn.rows || []).some(function (l) { return /row0 /.test(l + ' ') && /changed0/.test(l); }) ? true : false;
 }, test.limit.slow);
-test.run('and keeps the scroll', 0.2, function () {
+test.run('redraw keeps the scroll', 0.2, function () {
   if (!redrawn) return false;
   return redrawn.scroll === 60 ? true : false;
 }, test.limit.quick);
@@ -135,7 +135,7 @@ test.run('after a search too, redraw keeps the scroll', 0.2, async function () {
   const searchedScroll = await read();
   return searchedScroll.scroll === 70 ? true : false;
 }, test.limit.slow);
-test.run('and it asked the node nothing', 0.2, function () {
+test.run('searching and redrawing asked the node nothing', 0.2, function () {
   if (!keeps) return false;
   return Array.isArray(keeps.asks) && !keeps.asks.length ? true : false;
 }, test.limit.quick);

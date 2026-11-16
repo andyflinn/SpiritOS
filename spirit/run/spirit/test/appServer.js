@@ -359,7 +359,7 @@ function gateSection() {
   test.run('a request of four, an array among them (id, tags, on, n): its own value passes and every garbage one is refused', 0.2, function () { return judge('four, an array among them'); }, test.limit.quick);
   test.run('a request of five, an object among them (id, text, version, on, opts): its own value passes and every garbage one is refused', 0.2, function () { return judge('five, an object among them'); }, test.limit.quick);
   test.run('a request of one nested two deep (id, where): its own value passes and every garbage one is refused', 0.2, function () { return judge('one nested two deep'); }, test.limit.quick);
-  test.run('every permutation of the box\'s kinds was thrown at it, more than a thousand asks', 0.2, function () {
+  test.run('every permutation of the listed argument kinds was thrown at it, in more than a thousand asks', 0.2, function () {
     return asks > 1000 || false;
   }, test.limit.quick);
   // A VERB WITH A CHECK OF ITS OWN SKIPS THE GATE (appServer.js route: its own accepts() if it has one, else matches):
@@ -407,7 +407,7 @@ function agentsFilePart() {
 
   // appServer-agentsFile: the agent's AGENTS.md through spirit.fs.loadFile at its path (goal/G43.27), 8.
   let block = '';
-  test.run('the world: appServer.js\'s AGENTS paragraph is read', 0.2, function () {
+  test.run('appServer.js\'s AGENTS paragraph is read', 0.2, function () {
     putBackTheRealSpirit();
     const as = read('spirit/appServer.js');
     block = (as.match(/AGENTS: AN APP'S RULES FOR AGENTS[\s\S]*?\n\n/) || [''])[0];
@@ -468,7 +468,7 @@ function stateCachePart() {
     return { seen: readJson(seen), saved: readJson(saved) };
   };
   const noTree = function () { return !id; };
-  test.run('the world: the sender\'s file name is its node id', 0.2, function () {
+  test.run('the sender\'s file name is its node id', 0.2, function () {
     putBackTheRealSpirit();
     ({ until, sleep } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')));
     root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-state-cache-'));
@@ -505,7 +505,7 @@ function stateCachePart() {
     inCache = await startWith(cache);
     return (!!inCache.seen && inCache.seen.kept === cache) || false;
   }, test.limit.slow);
-  test.run('and its cache.dump writes it there again, spirit/state/follower/cache/<id>.json', 0.2, function () {
+  test.run('its cache.dump writes the cache there again, as spirit/state/follower/cache/<id>.json', 0.2, function () {
     if (!inCache) return false;
     const wrote = Array.isArray(inCache.saved) ? inCache.saved.map(function (f) { return f.file; }) : [];
     return (wrote.indexOf(id + '.json') !== -1 && fs.existsSync(path.join(cache, id + '.json'))) || false;
@@ -536,7 +536,7 @@ function stateCachePart() {
   };
   const OTHER = 'MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=';
   // the attacker: a file named for one sender, holding another's key
-  test.run('it is not read: a file is read only under its own sender\'s name', 0.8, async function () {
+  test.run('a cache file named for one sender but holding another\'s key is not read, because a file is read only under its own sender\'s name', 0.8, async function () {
     if (noTree()) return false;
     const swapped = await spoiled(function () { fs.writeFileSync(path.join(cache, id + '.json'), JSON.stringify({ key: OTHER, family: FAMILY, run: 'r', n: 1, rows: [{ kept: 'swapped' }] })); });
     return (swapped.up && !swapped.seen) || false;
@@ -548,17 +548,17 @@ function stateCachePart() {
     return (half.up && !half.seen) || false;
   }, test.limit.slow);
   // the attacker: a cache file that is no JSON, and one that is JSON of the wrong shape
-  test.run('a broken file: the server still starts, reads nothing back, and saves', 0.2, async function () {
+  test.run('with a broken cache file the server still starts, reads nothing back, and saves', 0.2, async function () {
     if (noTree()) return false;
     const broken = await spoiled(function () { fs.writeFileSync(path.join(cache, id + '.json'), '{"key": "' + SENDER + '", "rows": [ {"kept": '); });
     return (broken.up && !broken.seen && Array.isArray(broken.saved)) || false;
   }, test.limit.slow);
-  test.run('rows that are no list: nothing read back, and the server saves on', 0.2, async function () {
+  test.run('with cached rows that are no list, nothing is read back and the server saves on', 0.2, async function () {
     if (noTree()) return false;
     const shape = await spoiled(function () { fs.writeFileSync(path.join(cache, id + '.json'), JSON.stringify({ key: SENDER, family: FAMILY, run: 7, n: -3, rows: 'not a list' })); });
     return (shape.up && !shape.seen && Array.isArray(shape.saved)) || false;
   }, test.limit.slow);
-  test.run('and after all of it spirit/state/follower/ holds nothing beside cache/ (and its socket)', 0.2, function () {
+  test.run('after all of it spirit/state/follower/ holds nothing beside cache/ and its socket', 0.2, function () {
     if (noTree()) return false;
     const strays = fs.existsSync(state) ? fs.readdirSync(state).filter(function (f) { return ['cache', 'data', 'node.json', 'door.sock'].indexOf(f) === -1; }) : [];
     return !strays.length || false;
@@ -572,7 +572,7 @@ function ownPart() {
     const A0 = require(FILE);
     return typeof A0.familyPath === 'function' || false;
   }, test.limit.quick);
-  test.run('familyPath(name) of an app is spirit/app/<name>/api.js (goal/G43.20)', 0.2, function () {
+  test.run('the familyPath of an app named <name> is spirit/app/<name>/api.js', 0.2, function () {
     const A0 = require(FILE);
     const fp = typeof A0.familyPath === 'function' ? A0.familyPath('testicle') : null;
     return fp === 'spirit/app/testicle/api.js' || false;
@@ -583,10 +583,10 @@ function ownPart() {
     const app = path.join(RUN, 'spirit', 'app', n);
     return (fs.existsSync(path.join(app, 'api.js')) && !fs.existsSync(path.join(app, 'family'))) || false;
   };
-  test.run('backup: its interface is spirit/app/backup/api.js, no family/ is left', 0.2, function () { return moved('backup'); }, test.limit.quick);
-  test.run('deskClient: its interface is spirit/app/deskClient/api.js, no family/ is left', 0.2, function () { return moved('deskClient'); }, test.limit.quick);
+  test.run('the interface of backup is spirit/app/backup/api.js, and no family/ folder is left', 0.2, function () { return moved('backup'); }, test.limit.quick);
+  test.run('the interface of deskClient is spirit/app/deskClient/api.js, and no family/ folder is left', 0.2, function () { return moved('deskClient'); }, test.limit.quick);
   // Andy, goal/G41.28: "all, KILL deskAgent!". The server goes, its folder and every file that names it.
-  test.run('and no file names the deskAgent server', 0.2, function () {
+  test.run('no file names the deskAgent server', 0.2, function () {
     const namers = codeFiles(RUN, []).filter(function (f) { return f !== FILE && f !== SELF_FILE && /['"]deskAgent\/|deskAgent\.js\b/.test(fs.readFileSync(f, 'utf8')); });
     return namers.length === 0 || false;
   }, test.limit.quick);
@@ -639,10 +639,10 @@ function ownPart() {
   const O = { A: null, s: null, D: null };
   const has = function (n) { return hasIn(O.D, n); };
   const noServer = function () { return !O.D || !O.s || typeof O.s.subscribe !== 'function'; };
-  test.run('the world: the desk\'s translator, spirit/app/desk/data.js, is there', 0.2, function () {
+  test.run('the desk\'s translator, spirit/app/desk/data.js, is there', 0.2, function () {
     return fs.existsSync(TRANSLATOR) || false;
   }, test.limit.quick);
-  test.run('it serves, keeps a data set and has its client half (subscribe)', 0.2, async function () {
+  test.run('the app server serves, keeps a data set and has its client half, subscribe', 0.2, async function () {
     const { A, s, D } = start({}, { logMax: 5 });
     O.A = A; O.s = s; O.D = D;
     await tick(100);
@@ -658,11 +658,11 @@ function ownPart() {
     return (first === true && asked.some(function (a) { return a.verb === 'subscribe' && a.key === PUBLISHER; }) && asked.some(function (a) { return a.verb === 'auth.grant'; }))
       || false;
   }, test.limit.quick);
-  test.run('the bootstrap lands in the cache: both items', 0.2, function () {
+  test.run('the bootstrap lands in the cache with both items', 0.2, function () {
     if (noServer()) return false;
     return (has(1) && has(2)) || false;
   }, test.limit.quick);
-  test.run('every delivery is a bundle: one JSON array of rows in one peerPost', 0.2, function () {
+  test.run('every delivery is a bundle, one JSON array of rows in one peerPost', 0.2, function () {
     return (posts.length > 0 && posts.every(Array.isArray)) || false;
   }, test.limit.quick);
 
@@ -709,7 +709,7 @@ function ownPart() {
     if (noServer()) return false;
     return (again === true && has(32) && !has(33)) || false;
   }, test.limit.quick);
-  test.run('the sender\'s log answers it: no bootstrap, and the cache is not replaced', 0.2, function () {
+  test.run('the sender\'s log answers the subscribe again, with no bootstrap, and the cache is not replaced', 0.2, function () {
     if (noServer()) return false;
     return (bootstraps === before && has(2)) || false;
   }, test.limit.quick);
@@ -723,7 +723,7 @@ function ownPart() {
   // drops from the cache, unless the api.js from the server says so", and the box: "a goal pushed whole takes
   // precedence, and the client's place in the stream moves to that push".
   // older than the bounded log: a full push takes precedence and drops nothing (goal/G41.15)
-  test.run('nine rows missed past a log of five: the sender pushes in full', 0.2, async function () {
+  test.run('with nine rows missed past a log of five, the sender pushes in full', 0.2, async function () {
     if (noServer()) return false;
     before = bootstraps;
     gate.refuse = true;
@@ -737,12 +737,12 @@ function ownPart() {
     await tick(600);
     return bootstraps === before + 1 || false;
   }, test.limit.slow);
-  test.run('the push takes precedence: a row it carries replaces the one kept', 0.2, function () {
+  test.run('the push takes precedence, so a row it carries replaces the one kept', 0.2, function () {
     if (noServer()) return false;
     const one1 = itemOf('goal/G9.1');
     return (!!one1 && one1.title === 'item 1, pushed') || false;
   }, test.limit.quick);
-  test.run('and drops nothing it does not carry: items the push leaves out stay kept', 0.2, function () {
+  test.run('the push drops nothing it does not carry, so items the push leaves out stay kept', 0.2, function () {
     if (noServer()) return false;
     return (has(2) && has(30)) || false;
   }, test.limit.quick);
@@ -752,7 +752,7 @@ function ownPart() {
   }, test.limit.quick);
   // The read-pointer: the push landed, so the client stands at the push's number; a subscribe again is answered from
   // the log, with no second push and nothing from before it.
-  test.run('its place in the stream moved to the push: subscribed again, it is handed nothing older and pushed nothing again', 0.2, async function () {
+  test.run('its place in the stream moved to the push, so subscribed again it is handed nothing older and pushed nothing again', 0.2, async function () {
     if (noServer()) return false;
     const pushedAt = bootstraps;
     const subsBefore = asked.filter(function (a) { return a.verb === 'subscribe'; }).length;
@@ -771,7 +771,7 @@ function ownPart() {
   // held deliveries 4 to 7 s, and a 3 s race dropped a live client every time).
   // a late answer is no drop: a delivery is a plain peerPost (goal/G41.22)
   const L = { subs: 0, boots: 0, posts: 0 };
-  test.run('held 4 s, past the old 3 s, the rows still land: none is dropped', 0.2, async function () {
+  test.run('rows held 4 s, past the old 3 s, still land and none is dropped', 0.2, async function () {
     if (noServer()) return false;
     L.subs = asked.filter(function (a) { return a.verb === 'subscribe'; }).length;
     L.boots = bootstraps;
@@ -791,7 +791,7 @@ function ownPart() {
     const sentLate = posts.slice(L.posts).filter(Array.isArray);
     return (sentLate.length === 2 && sentLate[1].length === 2) || false;
   }, test.limit.quick);
-  test.run('the subscriber was never dropped: the next row comes with no subscribe again and no push', 0.2, async function () {
+  test.run('the subscriber was never dropped, so the next row comes with no subscribe again and no push', 0.2, async function () {
     if (noServer()) return false;
     O.A.publish(row(item(63)));
     await tick(300);
@@ -811,17 +811,17 @@ function ownPart() {
     C.one = runChild('first', 'cacheProbe');
     return (C.one.subscribed === true && !!C.one.one && !!C.one.two) || false;
   }, test.limit.quick);
-  test.run('it saves the cache as spirit/state/<client>/<sender key>.json (goal/G41.28, box v19)', 0.2, function () {
+  test.run('it saves the cache as spirit/state/<client>/<sender key>.json', 0.2, function () {
     const file = cacheFile('cacheProbe');
     let text = '';
     try { text = fs.readFileSync(file, 'utf8'); } catch (e) { text = ''; }
     return text.indexOf('item 2') !== -1 || false;
   }, test.limit.quick);
-  test.run('its spirit.data holds the cache under the sender\'s key, and nothing beside it at the top (box v19)', 0.2, function () {
+  test.run('its spirit.data holds the cache under the sender\'s key, and nothing beside it at the top', 0.2, function () {
     const one = C.one || {};
     return (!!one.byNode && one.byNode.length === 1 && !!one.top && one.top.length === 1) || false;
   }, test.limit.quick);
-  test.run('and under the sender\'s key, the family: <key>.desk', 0.2, function () {
+  test.run('under the sender\'s key its spirit.data holds the family, as <key>.desk', 0.2, function () {
     const one = C.one || {};
     return (Array.isArray(one.family) && one.family.indexOf('desk') !== -1) || false;
   }, test.limit.quick);
@@ -829,7 +829,7 @@ function ownPart() {
     C.two = runChild('restart', 'cacheProbe');
     return (!!C.two.readOne && !!C.two.readTwo) || false;
   }, test.limit.slow);
-  test.run('a sender of a new run pushes in full: its rows take precedence, and a kept row it does not carry stays (goal/G41.15)', 0.2, function () {
+  test.run('a sender of a new run pushes in full, its rows take precedence, and a kept row it does not carry stays', 0.2, function () {
     const two = C.two || {};
     return (two.subscribed === true && two.title === 'item 1, renamed' && !!two.two) || false;
   }, test.limit.quick);
@@ -855,24 +855,24 @@ function ownPart() {
     try { size = fs.statSync(cacheFile('cacheLimit')).size; } catch (e) { size = -1; }
     return (size > 0 && size <= 3500) || false;
   }, test.limit.slow);
-  test.run('past the limit the goal untouched longest goes whole, the other is kept whole (Andy, Q2)', 0.2, function () {
+  test.run('past the limit the goal untouched longest goes whole, and the other is kept whole', 0.2, function () {
     const full = C.full || {};
     return (Array.isArray(full.g9) && full.g9.length === 0 && Array.isArray(full.g10) && full.g10.length === 10) || false;
   }, test.limit.quick);
   // One goal: the item untouched longest goes, its chat with it; the newest stay (Andy, Q2).
-  test.run('one goal past the limit: the items untouched longest go whole, the newest stay, the goal stays', 0.2, function () {
+  test.run('with one goal past the limit, the items untouched longest go whole, the newest stay, and the goal stays', 0.2, function () {
     clearCache('cacheItems');
     C.items = runChild('items', 'cacheItems');
     const kept = Array.isArray(C.items.items) ? C.items.items : [];
     const prefixGone = kept.length > 0 && kept.length < 10 && kept.every(function (n, i) { return n === 10 - kept.length + 1 + i; });
     return (!!C.items.goal && prefixGone) || false;
   }, test.limit.slow);
-  test.run('an item shed goes lock, stock and barrel: its chat with it', 0.2, function () {
+  test.run('an item shed goes lock, stock and barrel, its chat with it', 0.2, function () {
     const items = C.items || {};
     const kept = Array.isArray(items.items) ? items.items : [];
     return (kept.indexOf(1) === -1 && Array.isArray(items.chat) && items.chat.length === 0) || false;
   }, test.limit.quick);
-  test.run('one goal with one item past the limit: the oldest chat lines go, the item and the newest lines stay', 0.2, function () {
+  test.run('with one goal and one item past the limit, the oldest chat lines go, and the item and the newest lines stay', 0.2, function () {
     clearCache('cacheChat');
     const chat = runChild('chat', 'cacheChat');
     const lines = Array.isArray(chat.chat) ? chat.chat : [];

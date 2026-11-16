@@ -31,7 +31,7 @@ function hits(file, re) {
 // the traffic log's admitted mark: peerPost
 const f = path.join(RUN, 'spirit', 'peerPost.js');
 // The world: the file is there and its code, comments left out, still holds a line that is surely code.
-test.run('the world: the file is read, and its code, comments left out, still holds a line of code', 0.2, function () {
+test.run('peerPost.js is read, and its code, comments left out, still holds a line of code', 0.2, function () {
   const c = code(f);
   return (c !== null && /module\.exports/.test(c)) || false;
 }, test.limit.quick);
@@ -46,7 +46,7 @@ test.run('peerPost.js\'s code names no admitted mark', 0.2, function () {
 // A peerPost on a scratch identity, its request a hand that keeps the body it is given (no relay, no port), sealing off
 // so the post goes as handed (opts.sealsPosts false); post() handed hints as a caller of before would hand them.
 let posted = null;
-test.run('the world: a post handed hints, the body that leaves for the relay kept', 0.2, async function () {
+test.run('a post is handed hints, and the body that leaves for the relay is kept', 0.2, async function () {
   const auth = require(path.join(RUN, 'spirit', 'relayAuth.js'));
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-peerpost-hints-'));
   try {

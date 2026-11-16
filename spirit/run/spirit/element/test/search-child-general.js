@@ -74,7 +74,7 @@ function eachSearch(broken) {
 }
 
 // The searches.
-test.run('the world: eight or more searches, valued exempt', 0.2, function () {
+test.run('there are eight or more searches, the values search not counted', 0.2, function () {
   return NAMES.length >= 8 || false;
 }, test.limit.quick);
 test.run('the job branch has its search, spirit/element/search/job.js', 0.4, function () {
@@ -85,35 +85,35 @@ test.run('the job list and its detail no longer stand in spirit/element/', 0.4, 
   return !astray.length || false;
 }, test.limit.quick);
 // Each search: SEARCH/<n>.js, its selector, and SEARCH/<n>/ holding its listElement, rowElement and detailElement.
-test.run('its selector is an element placed by its path', 0.4, function () {
+test.run('each search\'s selector is an element placed by its path', 0.4, function () {
   return eachSearch(function (n) { const sel = SEARCH + '/' + n + '.js'; return !(isFile(sel) && placesItself(sel)); });
 }, test.limit.quick);
-test.run('its listElement is placed by its path', 0.4, function () {
+test.run('each search\'s listElement is placed by its path', 0.4, function () {
   return eachSearch(function (n) { const f = SEARCH + '/' + n + '/listElement.js'; return !(isFile(f) && placesItself(f)); });
 }, test.limit.quick);
-test.run('its rowElement is placed by its path', 0.4, function () {
+test.run('each search\'s rowElement is placed by its path', 0.4, function () {
   return eachSearch(function (n) { const f = SEARCH + '/' + n + '/rowElement.js'; return !(isFile(f) && placesItself(f)); });
 }, test.limit.quick);
 // Only where there is a search to judge by it: a detail where one opens, none where none does.
 if (TARGETS.some(function (n) { return NO_DETAIL.indexOf(n) === -1; })) {
-  test.run('its detailElement is placed by its path', 0.4, function () {
+  test.run('each search that opens a detail has its detailElement placed by its path', 0.4, function () {
     return eachSearch(function (n) { const f = SEARCH + '/' + n + '/detailElement.js'; return !(NO_DETAIL.indexOf(n) !== -1 || (isFile(f) && placesItself(f))); });
   }, test.limit.quick);
 }
 if (TARGETS.some(function (n) { return NO_DETAIL.indexOf(n) !== -1; })) {
-  test.run('it has no detail, since none is ever opened', 0.4, function () {
+  test.run('a search whose detail is never opened has no detailElement', 0.4, function () {
     return eachSearch(function (n) { const f = SEARCH + '/' + n + '/detailElement.js'; return !(NO_DETAIL.indexOf(n) === -1 || !isFile(f)); });
   }, test.limit.quick);
 }
 // ONE LIST, SHARED BY POPUP AND LIST MODES (Andy: "all, any search-unit has ONE list shared by popup and list modes."): the
 // selector requires its listElement and draws it, and makes no list of its own: no probabilitySearch, no rows.
-test.run('its selector draws its own listElement.js', 0.4, function () {
+test.run('each search\'s selector draws its own listElement.js', 0.4, function () {
   return eachSearch(function (n) {
     const sel = SEARCH + '/' + n + '.js'; const dir = SEARCH + '/' + n; const c = code(sel);
     return !(new RegExp("['\"]" + dir.replace(/\//g, '\\/') + "\\/listElement\\.js['\"]").test(c) && new RegExp('\\.search\\.' + n + '\\.listElement\\.create\\(').test(c));
   });
 }, test.limit.quick);
-test.run('and its selector makes no list of its own', 0.4, function () {
+test.run('each search\'s selector makes no list of its own', 0.4, function () {
   return eachSearch(function (n) {
     const sel = SEARCH + '/' + n + '.js';
     return /\.element\.search\.create\(|createElement\(['"](button|tr|li)['"]\)/.test(code(sel));
@@ -135,7 +135,7 @@ test.run('the grants panel stands in the grant search, placed by its path', 0.4,
 }, test.limit.quick);
 // One detail for every kind of contact: a relay's blocks are drawn by the contact detail, and the row opens nothing else.
 const RELAY = SEARCH + '/contact/relayPanel.js';
-test.run('no second contact detail: the relay panel is gone into the contact detail', 0.4, function () {
+test.run('there is no second contact detail: the relay panel is gone into the contact detail', 0.4, function () {
   return !isFile(RELAY) || false;
 }, test.limit.quick);
 test.run('a contact row opens the contact detail alone, whatever the contact is', 0.4, function () {
@@ -210,11 +210,11 @@ if (arg) {
 // Every module of search.js and below, its code read.
 const judged = files.filter(function (f) { return inReach(f) && fs.existsSync(path.join(RUN, f)); });
 if (arg) {
-  test.run('the world: the module asked is search.js or a module below it', 0.2, function () {
+  test.run('the module asked is search.js or a module below it', 0.2, function () {
     return judged.length === 1 || false;
   }, test.limit.quick);
 } else {
-  test.run('the world: more than ten modules read', 0.2, function () {
+  test.run('more than ten modules are read', 0.2, function () {
     return judged.length > 10 || false;
   }, test.limit.quick);
 }
