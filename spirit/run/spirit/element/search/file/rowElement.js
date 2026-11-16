@@ -174,7 +174,8 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
     el.mount = function (h) { cells = h || null; return mount.apply(el, arguments); };
     el.leave = function () {
       var td = cells ? cells[Object.keys(cells)[0]] : null;
-      var line = td && typeof td.closest === 'function' ? td.closest('[data-key]') : null;
+      // A row has cells only in the table, where its line is the <tr> the list made (spirit/element/search.js rowNode).
+      var line = td && typeof td.closest === 'function' ? td.closest('tr') : null;
       if (line && line.parentNode) line.parentNode.removeChild(line);
     };
     return el;
