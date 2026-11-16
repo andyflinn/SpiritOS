@@ -766,12 +766,18 @@ test.run('a result neither red nor green is refused', 0.2, async function () {
   const r = await call(N.base, 'testicle.testicle.search', { result: 'blue', text: '' });
   return r.status === 400 || false;
 }, test.limit.quick);
-// the box: "the page asks for the following answers while the server says there are more".
-test.run('from starts the answer after the rows already held', 0.2, async function () {
+// goal/G47.1, Andy: "MAKE SURE THE MOTHERFUCKING TESTING ASSERTS NO FUCKING PAGING, AND THAT THAT SHIT IS GOOD AND GONE!":
+// a search is one answer of the newest that fit, never a list handed out in parts.
+test.run('testicle.search declares no from, in its interface or its verb file: it answers in one part only', 0.2, function () {
+  const api = fs.readFileSync(path.join(RUN, 'spirit', 'app', 'testicle', 'api.js'), 'utf8');
+  const verb = JSON.parse(fs.readFileSync(path.join(RUN, 'spirit', 'app', 'testicle', 'testicle.search.json'), 'utf8'));
+  const line = (/'testicle\.search'\s*:\s*\{[^}]*\}/.exec(api) || [''])[0];
+  return line !== '' && !/\bfrom\s*:/.test(line) && !Object.prototype.hasOwnProperty.call(verb.request || {}, 'from') ? true : false;
+}, test.limit.quick);
+test.run('testicle.search asked with a from is refused', 0.2, async function () {
   if (!up()) return false;
-  const r = found(await call(N.base, 'testicle.testicle.search', { script: TH, suite: THS, from: 1, text: '' }));
-  const got = r.map(function (x) { return (yes(x.verified) ? 'green ' : 'red ') + Number(x.severity); });
-  return JSON.stringify(got) === JSON.stringify(['red 0.3', 'green 0.6']) || false;
+  const r = await call(N.base, 'testicle.testicle.search', { script: TH, suite: THS, from: 1, text: '' });
+  return r.status === 400 || false;
 }, test.limit.quick);
 test.run('with no script, testicle.search searches that suite\'s tests for any script', 0.2, async function () {
   if (!up()) return false;
