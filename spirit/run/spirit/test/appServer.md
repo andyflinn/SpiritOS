@@ -72,7 +72,7 @@ stream"); Desk and deskClient move onto it.
 
 ### What goes (goal/G41.12)
 
-- The desk's own `bundled()`; deskClient's own `cache.json`.
+- The desk's own `bundled()`; deskClient's own `cache.json`. Judged in desk's and deskClient's own tests, not here (goal/G47.4): this test judges the app server. Likewise the desk folder's part of "no DEPENDENCIES"; here, no product code file names it (a test may, to look for it).
 
 ### Kept from goal/G41.11
 

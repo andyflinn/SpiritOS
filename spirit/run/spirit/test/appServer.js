@@ -609,9 +609,11 @@ function ownPart() {
 
   // goal/G41.24: DEPENDENCIES is gone
   // Andy, box: "DEPENDENCIES will be killed, eradicated, from all code where it appears, and from the desk folder
-  // itself." No code file names the verb or hands serve() a dependencies list; this file names it to look for it.
-  test.run('no code file, and nothing in the desk folder, names DEPENDENCIES or hands serve() a dependencies list', 0.2, function () {
-    const named = codeFiles(RUN, []).concat(jsonFiles(path.join(RUN, 'spirit', 'app', 'desk'), [])).filter(function (f) { return f !== SELF_FILE; }).filter(function (f) {
+  // itself." No code file names the verb or hands serve() a dependencies list; this file names it to look for it. The desk
+  // folder's own part is desk's own test's (goal/G47.4, wsl at 2b6b8b30).
+  test.run('no code file names DEPENDENCIES or hands serve() a dependencies list', 0.2, function () {
+    // A test may name it to look for it, as this one and the desk's own do; product code may not.
+    const named = codeFiles(RUN, []).filter(function (f) { return f !== SELF_FILE && !/[\\/]test[\\/]/.test(f); }).filter(function (f) {
       const t = fs.readFileSync(f, 'utf8');
       return /DEPENDENCIES/.test(t) || /\bdependencies\s*:/.test(t) || /opts\.dependencies|withDependencies|checkDependencies/.test(t);
     });
@@ -626,24 +628,14 @@ function ownPart() {
     return bundleFiles.length === 0 || false;
   }, test.limit.quick);
 
-  // what goes (box v15)
-  test.run('the desk has no bundled() of its own', 0.2, function () {
-    const deskJs = fs.readFileSync(path.join(RUN, 'spirit', 'app', 'desk', 'nodeDesk.js'), 'utf8');
-    return !/function\s+bundled\s*\(/.test(deskJs) || false;
-  }, test.limit.quick);
-  test.run('deskClient keeps no cache.json of its own', 0.2, function () {
-    const clientJs = fs.readFileSync(path.join(RUN, 'spirit', 'app', 'deskClient', 'deskClient.js'), 'utf8');
-    return !/cache\.json/.test(clientJs) || false;
-  }, test.limit.quick);
+  // What went (box v15), the desk's bundled() and deskClient's own cache.json, is judged in those apps' own tests (goal/G47.4,
+  // wsl at 2b6b8b30), not here.
 
   // ── one process: a client following its own publisher ──────────────────────────────────────────────────────────
   // goal/G41.24: the desk's translator is its family's data.js; the stream checks below follow it.
   const O = { A: null, s: null, D: null };
   const has = function (n) { return hasIn(O.D, n); };
   const noServer = function () { return !O.D || !O.s || typeof O.s.subscribe !== 'function'; };
-  test.run('the desk\'s translator, spirit/app/desk/data.js, is there', 0.2, function () {
-    return fs.existsSync(TRANSLATOR) || false;
-  }, test.limit.quick);
   test.run('the app server serves, keeps a data set and has its client half, subscribe', 0.2, async function () {
     const { A, s, D } = start({}, { logMax: 5 });
     O.A = A; O.s = s; O.D = D;
