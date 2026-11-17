@@ -37,6 +37,13 @@ Moved here from `spirit/test/spirit.js` (goal/G47.1; Andy: *"11. is spirit-sibli
 - Handed `spirit/spirit.js`, the rule "it sets the global spirit before its first require" is green.
 - Handed `late.js`, "it requires spirit.js first" is red, and its answer names the first require, `"fs"`.
 
+## What it changes, it listens for, through a child on a branch
+
+goal/G47.1. wsl, of the model table: *"the list it mounts ... is what shows the result, so it does listen, through its child"*; cw: *"A child it mounts on a branch counts as its listening"*. In the same scratch tree, three planted elements in `spirit/zzListen/`: `child.js`, which loads the search element and makes its search on a branch worked out from the name it is handed (`data: branchOf(o.table)`); `writer.js`, which writes, requires `child.js` and hands it a branch by name (`table: 'zz'`); and `deaf.js`, which writes and has no watch, no search and no child.
+
+- Handed `writer.js`, "it sends writes and watches spirit.data" is green. Red on the rule before (it read only the element's own code).
+- Handed `deaf.js`, the same check is red.
+
 ## The branch part uses the node its run is handed
 
 goal/G47.1. Andy: *"are the tests not ordered in the general test so that all tests requiring a scratch node can use the same one?"*, then *"fix it, with red and code"*. Handed a list, the rule runs every part once a script; its branch part booted a node of its own for each.

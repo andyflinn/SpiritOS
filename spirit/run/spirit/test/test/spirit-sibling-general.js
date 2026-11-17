@@ -37,6 +37,16 @@ PLANT[VENDORED] = '\'use strict\';\n// a vendored script, no test of its own\n';
 // spirit-sibling-general"). Planted inside the tree, where the general test judges.
 const LATE = 'spirit/zzGarbage/late.js';
 PLANT[LATE] = '\'use strict\';\nconst fs = require(\'fs\');\nrequire(\'../spirit.js\');\n';
+// WHAT IT CHANGES, IT LISTENS FOR, THROUGH A CHILD ON A BRANCH (goal/G47.1; wsl, of the model table: "the list it mounts ... is
+// what shows the result, so it does listen, through its child"; cw: "A child it mounts on a branch counts as its listening"):
+// an element that writes and mounts a child it requires, handed a branch by name, the child searching that branch; and one
+// that writes and listens to nothing. Planted in a folder of their own, so the five above stay the garbage folder's.
+const LISTENS = 'spirit/zzListen/writer.js';
+const DEAF = 'spirit/zzListen/deaf.js';
+const WRITES = 'it sends writes and watches spirit.data';
+PLANT['spirit/zzListen/child.js'] = '\'use strict\';\nwindow.spirit.require(\'spirit/element/search.js\');\nfunction branchOf(n) { return \'zz/\' + n; }\nvar made = function (o) { return { data: branchOf(o.table) }; };\nwindow.spirit.required.spirit.element.installSpiritElement(window.spirit, \'spirit/zzListen/child.js\', { create: made });\n';
+PLANT[LISTENS] = '\'use strict\';\nwindow.spirit.require(\'spirit/zzListen/child.js\');\nvar ask = { op: \'set\', table: \'zz\' };\nwindow.spirit.required.spirit.element.installSpiritElement(window.spirit, \'spirit/zzListen/writer.js\', { create: function () { return ask; } });\n';
+PLANT[DEAF] = '\'use strict\';\nvar ask = { op: \'set\', id: \'zz\' };\nwindow.spirit.required.spirit.element.installSpiritElement(window.spirit, \'spirit/zzListen/deaf.js\', { create: function () { return ask; } });\n';
 
 let root = null, run = null;
 // The rule run in the scratch tree, handed arg or nothing: its check as printed (spirit/test/testReport.js prints each test
@@ -112,6 +122,17 @@ test.run('a module whose first require is not spirit.js goes red', 0.2, function
   if (!run) return false;
   const l = lineOf(LATE, 'it requires spirit.js first');
   return (!!l && l.red && l.script.indexOf(LATE) !== -1) || false;
+}, test.limit.slow);
+
+test.run('an element that writes and mounts a child on a branch, the child searching it, listens: the check is green', 0.2, function () {
+  if (!run) return false;
+  const l = lineOf(LISTENS, WRITES);
+  return (!!l && !l.red) || false;
+}, test.limit.slow);
+test.run('an element that writes and listens to nothing, no watch, no search, no child on a branch: the check is red', 0.2, function () {
+  if (!run) return false;
+  const l = lineOf(DEAF, WRITES);
+  return (!!l && l.red) || false;
 }, test.limit.slow);
 
 // THE BRANCH PART USES THE NODE ITS RUN IS HANDED (goal/G47.1; Andy: "are the tests not ordered in the general test so that all

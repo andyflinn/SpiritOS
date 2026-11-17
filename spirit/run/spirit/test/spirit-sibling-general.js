@@ -2077,8 +2077,24 @@ function oneFile(P) {
     // <address>: what its code changes, it watches in spirit.data
     if (!writes) {}
     else {
+      // OR THROUGH A CHILD IT MOUNTS ON A BRANCH (goal/G47.1; wsl, of the model table: "the list it mounts (the shared agent
+      // table, data: the model branch) is what shows the result, so it does listen, through its child"; cw: "A child it mounts
+      // on a branch counts as its listening"): an element it requires whose own code makes a search on a spirit.data branch,
+      // handed the branch's name (table: or branch:, a word). No watch of its own is added to pass.
+      const ON_BRANCH = /\bdata\s*:\s*(?:['"][\w.\/-]+['"]|[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)+)/;
+      const child = function () {
+        if (!/\b(?:table|branch)\s*:\s*['"][\w.-]+['"]/.test(own)) return false;
+        const asked = own.match(/require\(\s*['"](spirit\/[^'"]+\.js)['"]/g) || [];
+        return asked.some(function (r) {
+          const p = /['"]([^'"]+)['"]/.exec(r)[1];
+          let c = ''; try { c = fs.readFileSync(path.join(RUN, p), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1'); } catch (e) { return false; }
+          // The child's branch may be worked out from the name it is handed (data: branchOf(o.table)): any data: option, in a
+          // child that loads the search element.
+          return /spirit\/element\/search\.js/.test(c) && /\bdata\s*:\s*[\w$'"]/.test(c);
+        });
+      };
       test.run('it sends writes and watches spirit.data', 0.4, function () {
-        return (/\.watch\s*\(/.test(own) || /\bdata\s*:\s*(?:['"][\w.\/-]+['"]|[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)+)/.test(own)) || false;
+        return (/\.watch\s*\(/.test(own) || ON_BRANCH.test(own) || child()) || false;
       }, test.limit.quick);
     }
   }
