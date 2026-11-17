@@ -105,6 +105,14 @@ const PLANT = {
   'spirit/app/testicle/temp/zzTesticle/test/sigma.js': SUITE_HEAD + "setInterval(function () {}, 1000);\ntest.run('sigma hangs', 0.2, function () { return new Promise(function () {}); }, test.limit.quick);\n",
   'spirit/app/testicle/temp/zzTesticle/phi.js': '\'use strict\';\n// phi, its suite never run\n',
   'spirit/app/testicle/temp/zzTesticle/test/phi.js': '\'use strict\';\n// the test of phi\n',
+  // litter's own suite leaves a folder in the run folder and reports green (goal/G47.1, the box, no pollution: "The run folder
+  // holds spirit and nothing else. Guard: after each suite, testicle finds nothing new in the run folder; red on the suite
+  // that made it").
+  'spirit/app/testicle/temp/zzTesticle/litter.js': '\'use strict\';\n// litter\n',
+  'spirit/app/testicle/temp/zzTesticle/test/litter.js': SUITE_HEAD + [
+    "require('fs').mkdirSync(path.join(__dirname, '..', '..', '..', '..', '..', '..', 'zzLitter'), { recursive: true });",
+    "test.run('litter answers', 0.2, function () { return true; }, test.limit.quick);",
+  ].join('\n') + '\n',
   'spirit/app/testicle/temp/zzTesticle/mu.js': '\'use strict\';\n// mu\n',
   'spirit/app/testicle/temp/zzTesticle/test/mu-child-zzRule.js': SUITE_HEAD + [
     "test.run('mu holds its rule', 0.2, function () { return process.argv[2] === 'spirit/app/testicle/temp/zzTesticle/mu.js' || false; }, test.limit.quick);",
@@ -1217,6 +1225,27 @@ test.run('a general test is started with the script as its argument, and reports
   const m = rowOf(MU, MUS, 'mu holds its rule');
   return (!!m && yes(m.verified)) || false;
 }, test.limit.slow);
+
+// THE RUN FOLDER HOLDS SPIRIT AND NOTHING ELSE (goal/G47.1, the box, no pollution: "Guard: after each suite, testicle finds
+// nothing new in the run folder; red on the suite that made it"; Andy: "name-space pollution is 0.7"): litter's suite leaves
+// zzLitter in the run folder and reports green; testicle sets its test "it leaves nothing new in the run folder" red, 0.7.
+// lambda's suite, run above, left nothing: the same test of it is green.
+const LITTER = 'it leaves nothing new in the run folder';
+const LI = Z + 'litter.js';
+const LIS = Z + 'test/litter.js';
+test.run('a suite that leaves a folder in the run folder is red on "it leaves nothing new in the run folder", at 0.7', 0.4, async function () {
+  if (!up()) return false;
+  const r = await call(N.base, 'testicle.run', { script: LI, suite: LIS });
+  if (r.status !== 200) return false;
+  await until(function () { return Promise.resolve(!!rowOf(LI, LIS, LITTER)); }, 150000);
+  const x = rowOf(LI, LIS, LITTER);
+  return (!!x && no(x.verified) && Number(x.severity) === 0.7) || false;
+}, test.limit.long);
+test.run('a suite that leaves nothing in the run folder is green on it', 0.4, function () {
+  if (!up()) return false;
+  const x = rowOf(LA, LAS, LITTER);
+  return (!!x && yes(x.verified)) || false;
+}, test.limit.quick);
 
 // goal/G47.1, the box (v57): a suite's status, the server's alone, from its own table: "needs running" when it never ran
 // (Andy: "it shows "needs running" when it never ran"), "still red" when it ran with a failed test for the script, "green" when

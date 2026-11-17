@@ -357,6 +357,8 @@ function nextJob() {
   const launch = function (extra) {
     if (done) return;
     if (j.killed || j.stopped) { end(); return; }
+    // What the run folder holds before the run (judgeLitter).
+    if (!j.classify) j.runNames = runNames();
     j.kid = spawn(process.execPath, args, { cwd: RUN, env: Object.assign({}, process.env, extra || {}), stdio: 'ignore', windowsHide: true });
     j.kid.on('error', end);
     j.kid.on('exit', end);
@@ -529,6 +531,22 @@ function classifyEnded(j) {
     }
     if (classified.run(now, name, j.hashes[name]).changes) tell('script', served(Q.script.get(name)), 'updated');
   });
+}
+// THE RUN FOLDER HOLDS SPIRIT AND NOTHING ELSE (goal/G47.1, the box, no pollution: "The run folder holds spirit and nothing
+// else. Guard: after each suite, testicle finds nothing new in the run folder; red on the suite that made it"; Andy:
+// "name-space pollution is 0.7"). Its names are taken when a run starts; each time the run says a script is through
+// (suite.success), what is new there since is that script's and that suite's: its test LITTER red, else green. The names
+// are taken again then, so the next script of a general run is not blamed for the same folder.
+const LITTER = 'it leaves nothing new in the run folder';
+const LITTER_SEVERITY = 0.7;
+function runNames() { try { return fs.readdirSync(RUN).sort(); } catch (e) { return []; } }
+function judgeLitter(j, script, scriptHash) {
+  if (!j || j.classify || !j.runNames) return;
+  const now = runNames();
+  const fresh = now.filter(function (n) { return j.runNames.indexOf(n) === -1; });
+  j.runNames = now;
+  try { setResult(script, j.suite, LITTER, !fresh.length, LITTER_SEVERITY, scriptHash, j.suiteHash); }
+  catch (e) { logError('judgeLitter ' + script + ' ' + j.suite, e); }
 }
 // ONE TEST'S RESULT WRITTEN (testicle.set's, and a killed job's failures): no flip, the current row tested again; a flip, the
 // current row retired and a new one made (goal/G47.1, the test-table cycle), each tagged with the two hashes. On a flip the
@@ -1035,6 +1053,8 @@ appServer.serve({
       if (!Q.suiteRow.get(script, suite)) throw refused('no-such-file');
       // Said by the run going: a kill of it leaves this script as it reported (killJob).
       if (ran && job && job.suite === suite && job.reported) job.reported[script] = true;
+      // What the run left in the run folder, judged for this script (judgeLitter).
+      if (ran && job && job.suite === suite) judgeLitter(job, script, ran);
       judgeSuite.run(a.success ? 'green' : 'red', Date.now(), script, suite);
       tell('suite', suiteServed(Q.suiteRow.get(script, suite)), 'updated');
       return {};

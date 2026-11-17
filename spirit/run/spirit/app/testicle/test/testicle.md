@@ -264,3 +264,7 @@ Its world is its own: a scratch copy whose testicle.js has a run limit of 60 s i
 - `aOk.js`, reported before the kill: its suite row stays green on the same hash, and each of its test rows still passed.
 - `bHang.js`, the suite running at the kill: red.
 - `cLater.js`, never reached: its suite row is not red after the kill, no test row of it is failed, and a new run is computed for it, its suite row turning green.
+
+## The run folder holds spirit and nothing else (goal/G47.1, the box, no pollution)
+
+Andy: *"name-space pollution is 0.7"*; the box: *"Guard: after each suite, testicle finds nothing new in the run folder; red on the suite that made it"*; Andy: *"on your own NODE, you obviously OWN the run:// folder"*, so what is there already is never judged. The run folder's names are taken when a run starts; each time the run says a script is through (`suite.success`), what is new there since is that script's and that suite's: its test *"it leaves nothing new in the run folder"* is red at 0.7, else green. The names are taken again then, so the next script of a general run is not blamed for the same folder. A classifying run is not judged. Its test plants litter, whose own suite leaves a folder in the run folder and reports green: red there; lambda's suite, which leaves nothing: green.
