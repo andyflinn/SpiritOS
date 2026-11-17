@@ -89,12 +89,13 @@
       // ITS OWN STACK when the mounter hands none, over its page (as contact.js).
       if (typeof o.open !== 'function') stack = S.element.spirit.element.panel.create(container, container.firstElementChild);
       // THE ADD ROW IS A ROWFORM (goal/G41.27; Andy: "icons app:\n[➕] [an icon:paste] [keywords, comma separated][Add]").
-      var form = E.spirit.element.rowForm.create(part('form'), { icon: '➕', button: 'Add' });
+      // ITS PRESS IS ROWFORM'S (goal/G47.1, Q20; Andy: "mark the button busy from press until the mounter's answer comes"):
+      // add is handed as press, so Add is busy until the node answers; a listener of its own met a disabled button.
+      var form = E.spirit.element.rowForm.create(part('form'), { icon: '➕', button: 'Add', press: add });
       form.span.innerHTML =
         '<input type="text" data-icons="new-glyph" placeholder="an icon (paste it)" style="width:8em">' +
         '<input type="text" data-icons="new-keywords" placeholder="keywords, comma separated" style="flex:1">';
       form.button.setAttribute('data-icons', 'add');
-      form.button.addEventListener('click', add);
       // The keywords to the description rule, the glyph to the glyph rule (goal/G41.27; Andy: "icon text follows description
       // rules.", "glyph field rule: max 1 char/glyph, 8-bytes maximum.").
       window.spirit.required.spirit.element.fieldInput.attach(part('new-keywords') || container.querySelector('[data-icons="new-keywords"]'), 'description');
@@ -126,7 +127,8 @@
       var kw = words((container.querySelector('[data-icons="new-keywords"]') || {}).value);
       if (!glyph) { say('paste an icon first'); return; }
       if (!S.required.spirit.element.fieldInput.fits(kw.join(', '), 'description')) { say('too many keywords'); return; }
-      icon({ op: 'add', glyph: glyph, keywords: kw }).then(function (r) {
+      // Its answer is rowForm's to wait for (the button busy until then).
+      return icon({ op: 'add', glyph: glyph, keywords: kw }).then(function (r) {
         if (gone) return;
         // A DUPLICATE IS REFUSED (Andy: "the icon app allowed me to add a duplicate icon.... that shouldn't work"), AND IT OPENS
         // THAT ICON (goal/G40.5; Andy: "if add icon cannot add because the icon already exists, the open the edit dialog for

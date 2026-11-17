@@ -221,7 +221,9 @@ test.run('after five Adds at once, all five are in the set, none lost to another
   if (!W.drew) return false;
   const five = W.REST.slice(0, 5);
   const watching = watchRuns(W.node.root, 'icons', { base: W.node.base });
-  await W.chrome.evaluate('(function () { var g = ' + field('glyph') + ', k = ' + field('keywords') + ', b = ' + ADD + '; ' + JSON.stringify(five) + '.forEach(function (x, i) { g.value = x; g.dispatchEvent(new Event("input", { bubbles: true })); k.value = "five" + i; k.dispatchEvent(new Event("input", { bubbles: true })); b.click(); }); return true; }())');
+  // Five calls from the page at once, through spirit: Add itself is busy until its answer (goal/G47.1, Q20), so five presses
+  // in a row would be one; the box's "calls" are what must wait their turn.
+  await W.chrome.evaluate('window.spirit.ready.then(function (s) { ' + JSON.stringify(five) + '.forEach(function (x, i) { s.icons.icon({ op: "add", glyph: x, keywords: ["five" + i] }); }); return true; })');
   const allFive = await until(function () { const s = json(W.SET) || {}; return Promise.resolve(five.every(function (x) { return x in s; })); }, 12000);
   await sleep(1000);
   W.watched = await watching.stop();

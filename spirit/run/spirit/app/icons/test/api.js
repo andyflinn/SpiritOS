@@ -51,9 +51,14 @@ test.run('each argument of the icon verb carries a rule', 0.2, function () {
   const bad = Object.keys(rules).filter(function (a) { return typeof rules[a] !== 'string' || !/^[a-z]+\??$/i.test(rules[a]); });
   return !bad.length || false;
 }, test.limit.quick);
-test.run('the icons api.js handles nothing: it requires no code', 0.2, function () {
+// goal/G47.1, Andy: "every api.js requires it's companion data.js, and is the only script to require that data.js": the one
+// path it asks for, in node and on a page, is spirit/app/icons/data.js (spirit.js itself, its door in node, aside).
+test.run('the icons api.js handles nothing: it requires only its companion data.js', 0.2, function () {
   if (!fs.existsSync(FILE)) return false;
-  return !/require\s*\(/.test(fs.readFileSync(FILE, 'utf8').replace(/\/\/.*$/gm, '')) || false;
+  const code = fs.readFileSync(FILE, 'utf8').replace(/\/\/.*$/gm, '');
+  const asked = (code.match(/require\s*\(\s*['"][^'"]+['"]\s*\)/g) || []).map(function (r) { return /['"]([^'"]+)['"]/.exec(r)[1]; })
+    .filter(function (p) { return !/(^|\/)spirit\.js$/.test(p); });
+  return asked.length > 0 && asked.every(function (p) { return p === 'spirit/app/icons/data.js'; }) || false;
 }, test.limit.quick);
 
 test.run('a scratch node comes up with Icons switched on, and a Chrome page opens', 0.2, async function () {

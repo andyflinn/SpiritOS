@@ -8,7 +8,7 @@ A scratch node with Icons switched on, raw calls and a real Chrome on its face p
 
 ## Requirements
 
-- It names its verbs, each argument with a rule; it requires no code.
+- It names its verbs, each argument with a rule; it requires only its companion `spirit/app/icons/data.js` (goal/G47.1).
 - `api {family: icons}` answers this file, word for word.
 - A call it allows starts a run; a page binds `spirit.icons.<verb>` by it, which answers a search, and refuses an argument it does not name.
 
