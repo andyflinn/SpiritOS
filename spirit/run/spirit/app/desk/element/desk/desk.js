@@ -23,6 +23,9 @@
 // cache manager, data.js, which the page's one stream feeds; mounted alone, on a page nothing else loaded them on, it has them.
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
+// IT PUTS NO NAME ON THE WINDOW (goal/G47.1; Andy: "a test \"does NOT pullute the windows namespace\" NOW!!!!"): the whole
+// file runs inside one function, so its names stay its own; what it shares is its element, on the spirit object.
+(function () {
 if (window.spirit && typeof window.spirit.require === 'function') ['spirit/app/backup/api.js'].forEach(function (p) { Promise.resolve(window.spirit.require(p)).catch(function () {}); });
 if (window.spirit && typeof window.spirit.require === 'function') Promise.resolve(window.spirit.require('spirit/app/desk/api.js')).catch(function () {});
 // Its fields' limits, fieldInput's (rule/26: what it draws with, it loads itself), in its tree so it is in before create.
@@ -1181,3 +1184,4 @@ window.spirit.require('spirit/element/installSpiritElement.js').then(function ()
       container.innerHTML = '';
     } };
 } }); });
+}());

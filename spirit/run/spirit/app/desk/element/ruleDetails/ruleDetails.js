@@ -19,6 +19,9 @@
 // ITS APP'S INTERFACE AND DATA, IT LOADS ITSELF (goal/G47.1, box v142: "all of testicle's elements must subscribe to the
 // data they display", and spirit/test/app-child-browser.js for every element under spirit/app/; rule/26): desk's api.js and its
 // cache manager, data.js, which the page's one stream feeds; mounted alone, on a page nothing else loaded them on, it has them.
+// IT PUTS NO NAME ON THE WINDOW (goal/G47.1; Andy: "a test \"does NOT pullute the windows namespace\" NOW!!!!"): the whole
+// file runs inside one function, so its names stay its own; what it shares is its element, on the spirit object.
+(function () {
 if (window.spirit && typeof window.spirit.require === 'function') Promise.resolve(window.spirit.require('spirit/app/desk/api.js')).catch(function () {});
 if (window.spirit && typeof window.spirit.require === 'function') Promise.resolve(window.spirit.require('spirit/app/desk/api.js')).catch(function () {});
 var rdApi = null;
@@ -286,3 +289,4 @@ window.spirit.require('spirit/element/installSpiritElement.js').then(function ()
     return { destroy: function () { container.innerHTML = ''; } };
   });
 } }); });
+}());

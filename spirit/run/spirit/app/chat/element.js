@@ -23,6 +23,9 @@
 //   line; older lines by before on a scroll to the top, no paging; plain or speech bubbles, chosen in the title bar
 //   and kept for the open of the page only (goal/G43.31, Q1: "drop them, we'll find a better, more general way soon. oos.").
 
+// IT PUTS NO NAME ON THE WINDOW (goal/G47.1; Andy: "a test \"does NOT pullute the windows namespace\" NOW!!!!"): the whole
+// file runs inside one function, so its names stay its own; what it shares is its element, on the spirit object.
+(function () {
 var chRoot = null;        // the app's root element, its look a class on it
 var chPane = null;        // the peer pane (contactSelector, face pane)
 var chPeer = '';          // the key of the chat shown
@@ -676,3 +679,4 @@ function chMount(container) {
 }
 
 window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/chat/element.js', { create: chCreate }); });
+}());

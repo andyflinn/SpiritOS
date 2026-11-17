@@ -18,6 +18,9 @@
 
 // THE INTERFACE IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"; app-child-browser.js): the desk family's api.js, which brings its data.js.
+// IT PUTS NO NAME ON THE WINDOW (goal/G47.1; Andy: "a test \"does NOT pullute the windows namespace\" NOW!!!!"): the whole
+// file runs inside one function, so its names stay its own; what it shares is its element, on the spirit object.
+(function () {
 if (typeof window !== 'undefined' && window.spirit && typeof window.spirit.require === 'function') Promise.resolve(window.spirit.require('spirit/app/desk/api.js')).catch(function () {});
 var ddApi = null;
 var ddId = '';
@@ -1070,3 +1073,4 @@ window.spirit.require('spirit/element/installSpiritElement.js').then(function ()
   if (o.via && o.id) ddApp.open(o);
   return { destroy: function () { container.innerHTML = ''; } };
 } }); });
+}());

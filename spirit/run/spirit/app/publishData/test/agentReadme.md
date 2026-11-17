@@ -26,3 +26,5 @@ little table". The members figure is the relay's own rule (Andy chose it, box v1
 
 - A members figure that is not the relay's rule, or peers divided by zero.
 - A summary made from a capacity with no memory at rest.
+
+- Its scratch folder lies outside the run folder (the system temp folder), so no `run://test/` is made (Andy: *"the product only has one name in run:// and that is "spirit""*).

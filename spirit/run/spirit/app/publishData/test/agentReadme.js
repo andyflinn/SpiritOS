@@ -12,7 +12,7 @@ const path = require('path');
 const RUN = path.resolve(__dirname, '../../../..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const FILE = path.join(__dirname, '..', 'agentReadme.js');
-const TMP = path.join(RUN, 'test', '_tmp_agentReadme');
+const TMP = path.join(os.tmpdir(), 'agentReadme-' + process.pid);
 const relay = require(path.join(RUN, 'spirit', 'relay.js'));
 
 const MB = 1048576;
@@ -22,6 +22,12 @@ const CAP = { relayAtRestRss: 100 * MB, perReachablePeerBytes: 2048, measuredAt:
 // What the tests below make, each in order, read by the tests after it.
 test.after(function () { try { fs.rmSync(TMP, { recursive: true, force: true }); } catch (e) { /* scratch */ } });
 let R, s, allowance, less, noWhen, m;
+// ITS SCRATCH FOLDER IS OUTSIDE THE TREE (goal/G47.1; Andy: "an unknown script keeps re-creating the folder: run://test/ is
+// remains empty, but this conflicts with the rule that the product only has one name in run:// and that is \"spirit\""):
+// it was run://test/_tmp_agentReadme, and its cleanup left run://test/ behind.
+test.run('its scratch folder lies outside the run folder, so no run://test/ is made', 0.2, function () {
+  return /^\.\.([\\/]|$)/.test(path.relative(RUN, TMP)) || false;
+}, test.limit.quick);
 test.run('it exports write, summaryOf and machineOf', 0.2, function () {
   R = null;
   try { R = require(FILE); } catch (e) { return false; }
