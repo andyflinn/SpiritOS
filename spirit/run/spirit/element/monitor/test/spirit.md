@@ -12,4 +12,5 @@ Andy: *"one container, subscribed to "spirit" that draws a few pretty tiles with
 - Six tiles, hard-coded, in this order, each an icon, a value and its name: `Memory` (resident memory), `CPU`, `Uptime`, `Event loop delay` (its p99), `Connections`, `Jobs running` (the node's jobs whose status is running).
 - Nothing else of the reading is shown: no heap, no event loop mean or max, no files or folders, no requests, no lists of counts.
 - Each new reading of the spirit job writes the values, with nothing asked; the tiles stay the same tiles.
+- Any change written into the spirit job's row redraws the six values at once, even with its stats unchanged (`spirit-sibling-browser.js`: *"a change written into what it watches redraws it"*).
 - `destroy` empties its container, and a later reading paints nothing.

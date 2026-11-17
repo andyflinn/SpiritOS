@@ -108,6 +108,14 @@ test.run('a new reading changes the uptime on screen, with nothing asked, and th
   return moved && same ? true : false;
 }, test.limit.slow);
 
+// spirit-sibling-browser.js: "a change written into what it watches redraws it": the spirit job's row written again, its
+// stats as they were, and the tiles are written within a second, not only when a new reading comes.
+test.run('a change written into the spirit job\'s row redraws the tiles at once, its stats unchanged', 0.2, async function () {
+  if (!W.shown) return false;
+  const said = await js('(function () { var D = window.spirit.data; var at = D.homeNode() + "/job/jobs/spirit"; var before = D.getPath(at); if (!before) return Promise.resolve("no row"); var n = 0; var mo = new MutationObserver(function (l) { n += l.length; }); mo.observe(window.__box, { subtree: true, childList: true, characterData: true }); D.setPath(at, Object.assign({}, before, { label: "zzprobe" })); return new Promise(function (r) { setTimeout(r, 300); }).then(function () { mo.disconnect(); D.setPath(at, before); return n > 0 ? "redrew" : "still"; }); })()');
+  return said === 'redrew' || false;
+}, test.limit.quick);
+
 // { destroy() }
 test.run('destroy leaves its container empty', 0.2, async function () {
   if (!W.made) return false;

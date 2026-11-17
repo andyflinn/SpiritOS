@@ -71,10 +71,9 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/job/a
       var d = reading();
       if (!d) return;
       if (!values) build();
-      TILES.forEach(function (t, i) {
-        var v = t.value(d);
-        if (values[i].textContent !== v) values[i].textContent = v;
-      });
+      // EVERY CHANGE OF THE ROW REDRAWS THE SIX (spirit-sibling-browser.js: "a change written into what it watches redraws
+      // it"), a value that stayed the same written again: six text nodes, each reading.
+      TILES.forEach(function (t, i) { values[i].textContent = t.value(d); });
     }
     parts.then(function () {
       if (gone) return;
