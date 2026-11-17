@@ -21,10 +21,18 @@ test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/word'), { 
 const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fileSystem.js')).VENDORED_FOLDERS;
 
-// The box: "word.js will have hardcoded intitialized set of keys", "(this may change)". When it does, so does this line.
-// DISCREPANCY WITH ANDY's RULES: it has changed and this line has not: word.js hard-codes spirit, api, app, contact, data, element, job, node, state,
-// search, stream and test (Andy's commit 85fb4db6 added stream); identity is no longer among them.
-const HARD = ['spirit', 'app', 'element', 'identity', 'job', 'data', 'search'];
+// THE HARD-CODED WORDS, READ FROM word.js ITSELF, NEVER A COPY HERE (Andy, 2026-11-17, of a copy twelve days behind it:
+// "WHY WOULD A TEST HARD-CODE reserved words?", "IT's like hardcoded apps! IDIOTIC!"). The box: "word.js will have hardcoded
+// intitialized set of keys", "(this may change)": the list that fills its HARD, as it stands in the file, so a word Andy adds
+// or takes out is judged the day he does.
+const HARD = (function () {
+  const src = fs.readFileSync(path.join(RUN, 'spirit', 'word.js'), 'utf8');
+  const m = /\[([^\]]*)\]\s*\.forEach\(\s*function\s*\(\s*w\s*\)\s*\{\s*HARD\[w\]\s*=\s*true;?\s*\}\s*\)/.exec(src);
+  return m ? (m[1].match(/'([a-z]+)'/g) || []).map(function (s) { return s.slice(1, -1); }) : [];
+}());
+// A hard-coded word below the root, for the cases that ask one from any path; and one in mixed case.
+const A_HARD = HARD.filter(function (w) { return w !== 'spirit'; })[0] || '';
+function mixed(w) { return w.split('').map(function (c, i) { return i % 2 ? c : c.toUpperCase(); }).join(''); }
 
 
 // What word.js answers in a tree: each ask run in one child, whose word.js finds its word.json files by its own place.
@@ -64,8 +72,8 @@ const cases = [
   ['one level up', 'spirit.app.table.add', 'THING', 'thing'],
   ['two levels up', 'spirit.app.table.add', 'aCtIvAtE', 'activate'],
   ['a level with no word.json of its own still looks up', 'spirit.app.table.none', 'thing', 'thing'],
-  ['a hard-coded word, from any path, lower-cased', 'spirit.app.table.add', 'Identity', 'identity'],
-  ['a hard-coded word, at the root', 'spirit', 'JOB', 'job'],
+  ['a hard-coded word, from any path, lower-cased', 'spirit.app.table.add', mixed(A_HARD), A_HARD],
+  ['a hard-coded word, at the root', 'spirit', A_HARD.toUpperCase(), A_HARD],
   ['a word lower down is not seen from above', 'spirit.app', 'thing', null],
   ['a word in another branch is not seen', 'spirit.app.table.add', 'sibling', null],
   ['a word no level holds', 'spirit.app.table.add', 'nothing', null],
@@ -75,6 +83,10 @@ const cases = [
   ['a word an object inherits is no reserved word', 'spirit.app', 'constructor', null],
 ].concat(HARD.map(function (w) { return ['hard-coded: ' + w, 'spirit', w, w]; }));
 
+// Read, not copied: nothing found in word.js would judge no word and pass, so it is red.
+test.run('the hard-coded words are read from word.js itself, spirit among them', 0.2, function () {
+  return (HARD.indexOf('spirit') !== -1 && !!A_HARD) || false;
+}, test.limit.quick);
 test.run('word.js runs from a scratch copy of the run tree with word.json files planted, and answers the checks', 0.2, function () {
   W.scratch = ownTemp('spirit-word-');
   W.run = path.join(W.scratch, 'run');
@@ -102,21 +114,18 @@ test.run('checking Item at spirit.app.table.add answers item, from the word.json
 test.run('checking THING at spirit.app.table.add answers thing, from one level up', 0.2, function () { return checked(1); }, test.limit.quick);
 test.run('checking aCtIvAtE at spirit.app.table.add answers activate, from two levels up', 0.2, function () { return checked(2); }, test.limit.quick);
 test.run('checking thing at spirit.app.table.none answers thing, as a level with no word.json of its own still looks up', 0.2, function () { return checked(3); }, test.limit.quick);
-test.run('checking Identity at spirit.app.table.add answers identity, a hard-coded word lower-cased from any path', 0.2, function () { return checked(4); }, test.limit.quick);
-test.run('checking JOB at spirit answers job, a hard-coded word at the root', 0.2, function () { return checked(5); }, test.limit.quick);
+test.run('checking ' + mixed(A_HARD) + ' at spirit.app.table.add answers ' + A_HARD + ', a hard-coded word lower-cased from any path', 0.2, function () { return checked(4); }, test.limit.quick);
+test.run('checking ' + A_HARD.toUpperCase() + ' at spirit answers ' + A_HARD + ', a hard-coded word at the root', 0.2, function () { return checked(5); }, test.limit.quick);
 test.run('checking thing at spirit.app answers null, as a word lower down is not seen from above', 0.2, function () { return checked(6); }, test.limit.quick);
 test.run('checking sibling at spirit.app.table.add answers null, as a word in another branch is not seen', 0.2, function () { return checked(7); }, test.limit.quick);
 test.run('checking nothing at spirit.app.table.add answers null, as no level holds that word', 0.2, function () { return checked(8); }, test.limit.quick);
 test.run('checking app1 at spirit.app answers null, as a digit makes it no word', 0.2, function () { return checked(9); }, test.limit.quick);
 test.run('checking an empty word at spirit.app answers null, as empty is no word', 0.2, function () { return checked(10); }, test.limit.quick);
 test.run('checking constructor at spirit.app answers null, as a word an object inherits is no reserved word', 0.2, function () { return checked(11); }, test.limit.quick);
-test.run('checking the hard-coded word spirit at spirit answers spirit', 0.2, function () { return checked(12); }, test.limit.quick);
-test.run('checking the hard-coded word app at spirit answers app', 0.2, function () { return checked(13); }, test.limit.quick);
-test.run('checking the hard-coded word element at spirit answers element', 0.2, function () { return checked(14); }, test.limit.quick);
-test.run('checking the hard-coded word identity at spirit answers identity', 0.2, function () { return checked(15); }, test.limit.quick);
-test.run('checking the hard-coded word job at spirit answers job', 0.2, function () { return checked(16); }, test.limit.quick);
-test.run('checking the hard-coded word data at spirit answers data', 0.2, function () { return checked(17); }, test.limit.quick);
-test.run('checking the hard-coded word search at spirit answers search', 0.2, function () { return checked(18); }, test.limit.quick);
+// Each hard-coded word word.js holds, its own check under its own title.
+HARD.forEach(function (w, k) {
+  test.run('checking the hard-coded word ' + w + ' at spirit answers ' + w, 0.2, function () { return checked(12 + k); }, test.limit.quick);
+});
 
 // a change to a word.json is seen by the next check
 test.run('a word written to the file answers', 0.2, function () {
@@ -188,8 +197,8 @@ test.run('adding an empty word at spirit.app answers false', 0.2, function () { 
 test.run('adding "a b", which holds a space, at spirit.app answers false', 0.2, function () { return added('noWord', 2, false); }, test.limit.quick);
 test.run('adding new-word, which holds a dash, at spirit.app answers false', 0.2, function () { return added('noWord', 3, false); }, test.limit.quick);
 // add refuses what check finds: "no words can be added that already exists toward the root of the tree"
-test.run('adding IdEnTiTy, a hard-coded word in any case, at spirit.app.table answers false', 0.2, function () {
-  return firstOf('rootward', [['spirit.app.table', 'IdEnTiTy'], ['spirit.app.table.add', 'THING'], ['spirit.app.table.add', 'later']], false);
+test.run('adding ' + mixed(A_HARD) + ', a hard-coded word in any case, at spirit.app.table answers false', 0.2, function () {
+  return firstOf('rootward', [['spirit.app.table', mixed(A_HARD)], ['spirit.app.table.add', 'THING'], ['spirit.app.table.add', 'later']], false);
 }, test.limit.quick);
 test.run('adding THING at spirit.app.table.add answers false, as the word stands one level toward the root', 0.2, function () { return added('rootward', 1, false); }, test.limit.quick);
 test.run('adding later at spirit.app.table.add answers false, as the word stands two levels toward the root', 0.2, function () { return added('rootward', 2, false); }, test.limit.quick);
@@ -343,12 +352,10 @@ function stands(w) {
   const inObject = W.held[w] === 'object' || W.held[w] === 'function';
   return (onDisk && inObject) || false;
 }
-test.run('spirit/app and spirit.app both stand', 0.2, function () { return stands('app'); }, test.limit.quick);
-test.run('spirit/element and spirit.element both stand', 0.2, function () { return stands('element'); }, test.limit.quick);
-test.run('spirit/identity and spirit.identity both stand', 0.2, function () { return stands('identity'); }, test.limit.quick);
-test.run('spirit/job and spirit.job both stand', 0.2, function () { return stands('job'); }, test.limit.quick);
-test.run('spirit/data and spirit.data both stand', 0.2, function () { return stands('data'); }, test.limit.quick);
-test.run('spirit/search and spirit.search both stand', 0.2, function () { return stands('search'); }, test.limit.quick);
+// Every hard-coded word word.js holds but spirit itself, as the tests above ran them.
+HARD.filter(function (w) { return w !== 'spirit'; }).forEach(function (w) {
+  test.run('spirit/' + w + ' and spirit.' + w + ' both stand', 0.2, function () { return stands(w); }, test.limit.quick);
+});
 
 // NO ASK FOR A word.json THE PAGE KNOWS IS NOT THERE (goal/G43.32). cw, measured on Andy's node: opening Files
 // made 1821 requests, 1818 of them 404, all fs.load of a word.json (spirit/app/word.json alone 712 times). Andy:

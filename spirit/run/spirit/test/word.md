@@ -6,7 +6,7 @@ Andy, box: *"i will track nameSpace claims."*
 
 ## Requirements
 
-- A word is a string of `a` to `z`. word.js hard-codes twelve: `spirit`, `api`, `app`, `contact`, `data`, `element`, `job`, `node`, `state`, `search`, `stream`, `test`, *"(this may change)"*. When they change, so does `HARD` in the test. It has not yet: the test's `HARD` still names the earlier seven, `spirit`, `app`, `data`, `element`, `identity`, `job`, `search`, so it expects `identity` to be hard-coded, which word.js no longer holds, and asks none of the five new words.
+- A word is a string of `a` to `z`. word.js hard-codes a set of words, *"(this may change)"*. The test reads that set from word.js itself and keeps no copy of it (Andy, 2026-11-17: *"WHY WOULD A TEST HARD-CODE reserved words?"*, *"IT's like hardcoded apps! IDIOTIC!"*): every word Andy adds or takes out is judged the day he does. The set read is red when it is empty or lacks `spirit`.
 - `check('path.in.words', 'word')` compares case-insensitively and answers the lower-case word, else null. It looks at the `word.json` of each level on its path below the root, and at the hard-coded words. It reads no `run://spirit/word.json`. It sees nothing lower down and nothing in another branch.
 - A word an object inherits, like `constructor`, is not reserved. A missing `word.json` counts as empty. A `word.json` is an object of word to `true`.
 - A changed `word.json` is seen by the next `check`.
@@ -32,4 +32,4 @@ Andy, box: *"i will track nameSpace claims."*
 
 ## Red by design
 
-This suite does not go fully green while a word has no home. It was written to fail on exactly `job`, because the node has `jobs`, and `identity`, which has no folder and no object yet, and no other. Since word.js's list changed (above) and the test's did not, that is no longer the whole of its red: `identity` is also red in the check cases, and the tree checks still judge only the test's seven.
+This suite does not go fully green while a word has no home. Since it reads word.js's whole set, every hard-coded word without both a folder or file at the root and an object on the browser's spirit object is red, and so is the rule that nothing below takes a word reserved above it wherever a reserved word (row, detail, tile, test and more) names a file or folder lower in the tree.
