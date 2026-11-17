@@ -70,8 +70,16 @@ window.laid = function () {
       var line = Array.prototype.slice.call(b1.querySelectorAll('*')).filter(function (el) { return !el.children.length && /email/i.test(el.textContent) && (!live || !live.f.root.contains(el)) && el !== b1.querySelector('.sp-join-title'); })[0] || null;
       out.said = line ? line.textContent : '';
       out.saidBelow = !!line && !!live && (live.f.root.compareDocumentPosition(line) & 4) !== 0;
-      J.mount(b2, { relays: RELAYS, fixed: 'wss://b.example' });
-      return wait(200);
+      // A press with an email asks the relay (goal/G47.1, Q20; Andy: "mark the button busy from press until the mounter's
+      // answer comes"): read once the press itself is done, while the relay is still asked.
+      var mail = b1.querySelector('.sp-join-email');
+      if (mail) mail.value = 'zz@example.com';
+      if (live) live.f.button.click();
+      return wait(0).then(function () {
+        out.asking = live ? { disabled: !!live.f.button.disabled, mark: !!live.f.button.querySelector('.shell-busy') } : null;
+        J.mount(b2, { relays: RELAYS, fixed: 'wss://b.example' });
+        return wait(200);
+      });
     }).then(function () {
       out.fixed = seen(b2);
       return JSON.stringify(out);

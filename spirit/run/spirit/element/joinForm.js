@@ -62,7 +62,12 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/conta
     box.innerHTML = '<div class="label sp-join-title">' + escape(w.title) + '</div>' +
       '<div class="sp-join-form"></div>' +
       '<div class="job-manifest-note sp-join-out"></div>';
-    var f = window.spirit.element.spirit.element.rowForm.create(box.querySelector('.sp-join-form'), { icon: w.icon, button: w.button });
+    // ITS PRESS IS THE ROWFORM'S TO HEAR (goal/G47.1, Q20; Andy: "mark the button busy from press until the mounter's answer
+    // comes"): handed as press, the mount's go, so Join or Change is busy until the relay answers.
+    var f = window.spirit.element.spirit.element.rowForm.create(box.querySelector('.sp-join-form'), { icon: w.icon, button: w.button, press: function () {
+      var go = box._spJoin && box._spJoin.press;
+      return typeof go === 'function' ? go() : null;
+    } });
     f.button.className = 'sp-join-go';
     f.span.innerHTML =
       '<select class="sp-join-relay"' + (o.fixed ? ' disabled' : '') + '>' +
@@ -115,7 +120,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/conta
   function mount(box, opts) {
     if (!box) return;
     var o = opts || {};
-    box._spJoin = { relays: Array.isArray(o.relays) ? o.relays : [], pick: o.pick, fixed: o.fixed, picked: '' };
+    box._spJoin = { relays: Array.isArray(o.relays) ? o.relays : [], pick: o.pick, fixed: o.fixed, picked: '', press: go };
     draw(box);
     if (box._spJoinBound) return;
     box._spJoinBound = true;
@@ -152,13 +157,11 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/conta
       var held = rules().clip(f.value, rules().EMAIL_MAX_BYTES);
       if (held !== f.value) f.value = held;
     });
-    function go(button) {
+    function go() {
       var field = box.querySelector('.sp-join-email');
       var out = box.querySelector('.sp-join-out');
-      button.disabled = true;
-      send({ url: relayUrl(), email: field ? field.value : '' }).then(function (r) {
+      return send({ url: relayUrl(), email: field ? field.value : '' }).then(function (r) {
         if (out) { out.className = 'job-manifest-note sp-join-out ' + (r.ok ? 'is-token' : 'is-error'); out.textContent = r.text; }
-        button.disabled = false;
       });
     }
     box.addEventListener('change', function (e) {
@@ -168,14 +171,10 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/conta
       if (field) field.value = field.defaultValue;
       draw(box);
     });
-    box.addEventListener('click', function (e) {
-      var button = e.target && e.target.closest && e.target.closest('.sp-join-go');
-      if (button) go(button);
-    });
     box.addEventListener('keydown', function (e) {
       if (e.key !== 'Enter' || !e.target || !e.target.classList || !e.target.classList.contains('sp-join-email')) return;
       var button = box.querySelector('.sp-join-go');
-      if (button) { e.preventDefault(); go(button); }
+      if (button) { e.preventDefault(); button.click(); }
     });
   }
 

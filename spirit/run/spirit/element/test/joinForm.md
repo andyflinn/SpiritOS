@@ -30,6 +30,7 @@ Asked of a real browser, the real rowForm composed: `./joinForm-laid.html`, open
 - **Change**, Beta picked in the dropdown: the same, now ✏️ and Change, the title Change email address.
 - **Fixed** to Beta: ✏️ and Change; the dropdown holds Beta alone and is fixed.
 - **A press**, the email empty: the line saying why stands below the bubble, not in it.
+- **A press with an email** asks the relay through the rowForm's `press` (goal/G47.1, Q20; Andy: *"mark the button busy from press until the mounter's answer comes"*): the button stays busy, disabled with its turning mark, while the relay is asked. Enter in the email presses the button.
 
 ## What its test must try to break
 

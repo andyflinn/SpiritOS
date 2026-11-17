@@ -27,6 +27,7 @@ Asked of a real browser, the real rowForm composed: `./faceForm-laid.html`, open
 - **With no relay this node is seated on and has starred, it draws nothing** (Andy: *"doesn't show up if the user has zero verified
   emails anywhere"*); this was asked of the old markup in `spirit/test/spiritInUse.js` until goal/G41.27.
 - **A press with no face name** says so on a line below the bubble, not in it.
+- **A press with a face name** asks the relay through the rowForm's `press` (goal/G47.1, Q20; Andy: *"mark the button busy from press until the mounter's answer comes"*): Ask stays busy, disabled with its turning mark, while the relay is asked. Enter in the name presses Ask.
 
 ## What its test must try to break
 

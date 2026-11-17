@@ -126,6 +126,12 @@ test.run('with no relay this node is seated on and starred, it draws nothing: Al
   n = m.none || {};
   return (n.forms === 0 && n.text === '' && n.kids === 0) ? true : false;
 }, test.limit.quick);
+// goal/G47.1, Q20, Andy: "mark the button busy from press until the mounter's answer comes": Ask is the rowForm's press, read
+// once the press itself is done, while the relay is still asked.
+test.run('pressed with a face name, Ask stays busy while the relay is asked: disabled, with its turning mark', 0.2, function () {
+  if (!m || !m.asking) return false;
+  return (m.asking.disabled === true && m.asking.mark === true) ? true : false;
+}, test.limit.quick);
 test.run('pressed with no face name, it says so on a line below the bubble, not in it', 0.2, function () {
   if (!m) return false;
   // a press, and the line below the bubble

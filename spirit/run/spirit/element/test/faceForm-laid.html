@@ -69,6 +69,14 @@ window.laid = function () {
       var line = leaves.filter(function (el) { return /a face name is needed/.test(el.textContent); })[0] || null;
       out.said = line ? line.textContent : '';
       out.saidBelow = !!line && !!s2.f && !s2.f.f.root.contains(line) && (s2.f.f.root.compareDocumentPosition(line) & 4) !== 0;
+      // A press with a face name asks the relay (goal/G47.1, Q20; Andy: "mark the button busy from press until the mounter's
+      // answer comes"): read once the press itself is done, while the relay is still asked.
+      if (s2.f) { var nm2 = s2.f.f.span.querySelector('input'); if (nm2) nm2.value = 'zzface'; s2.f.f.button.click(); }
+      return wait(0).then(function () {
+        var bt = s2.f ? s2.f.f.button : null;
+        out.asking = bt ? { disabled: !!bt.disabled, mark: !!bt.querySelector('.shell-busy') } : null;
+      });
+    }).then(function () {
       var b2 = box();
       F.mount(b2, { relays: RELAYS, fixed: 'wss://c.example' });
       return wait(200).then(function () {

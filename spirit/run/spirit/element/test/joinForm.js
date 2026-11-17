@@ -122,6 +122,12 @@ test.run('when fixed, the dropdown holds its one relay and cannot be changed', 0
   f = (m.fixed && m.fixed.span) || [];
   return (f[0] && f[0].disabled && JSON.stringify(f[0].options) === '["wss://b.example"]') ? true : false;
 }, test.limit.quick);
+// goal/G47.1, Q20, Andy: "mark the button busy from press until the mounter's answer comes": its press is the rowForm's, read
+// once the press itself is done, while the relay is still asked.
+test.run('pressed with an email, its button stays busy while the relay is asked: disabled, with its turning mark', 0.2, function () {
+  if (!m || !m.asking) return false;
+  return (m.asking.disabled === true && m.asking.mark === true) ? true : false;
+}, test.limit.quick);
 test.run('pressed with no email, it says why on a line below the bubble, not in it', 0.2, function () {
   if (!m) return false;
   // a press, and the line below the bubble

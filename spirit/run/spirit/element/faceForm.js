@@ -59,7 +59,12 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/conta
       '<div class="sp-face-form"></div>' +
       '<div class="job-manifest-note sp-face-now">' + escape(holds(picked)) + '</div>' +
       '<div class="job-start-error sp-face-out"></div>';
-    var f = window.spirit.element.spirit.element.rowForm.create(box.querySelector('.sp-face-form'), { icon: '❓', button: 'Ask' });
+    // ITS ASK IS THE ROWFORM'S TO HEAR (goal/G47.1, Q20; Andy: "mark the button busy from press until the mounter's answer
+    // comes"): handed as press, the mount's save, so Ask is busy until the relay answers.
+    var f = window.spirit.element.spirit.element.rowForm.create(box.querySelector('.sp-face-form'), { icon: '❓', button: 'Ask', press: function () {
+      var go = box._spFace && box._spFace.press;
+      return typeof go === 'function' ? go() : null;
+    } });
     f.button.className = 'sp-face-go';
     f.button.disabled = !picked;
     f.span.innerHTML =
@@ -76,7 +81,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/conta
     var o = opts || {};
     var was = box.querySelector && box.querySelector('.sp-face-relay');
     var typed = box.querySelector && box.querySelector('.sp-face-name');
-    box._spFace = { relays: Array.isArray(o.relays) ? o.relays : [], fixed: o.fixed, reload: o.reload, none: o.none };
+    box._spFace = { relays: Array.isArray(o.relays) ? o.relays : [], fixed: o.fixed, reload: o.reload, none: o.none, press: save };
     function draw(picked, name) {
       var now = box._spFace;
       form(box, now.relays, { fixed: now.fixed, picked: picked, name: name, none: now.none });
@@ -156,11 +161,8 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/conta
       box._faceSaid = null;
       draw(e.target.value, null);
     });
-    box.addEventListener('click', function (e) {
-      if (e.target && e.target.closest && e.target.closest('.sp-face-go')) save();
-    });
     box.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter' && e.target && e.target.classList && e.target.classList.contains('sp-face-name')) { e.preventDefault(); save(); }
+      if (e.key === 'Enter' && e.target && e.target.classList && e.target.classList.contains('sp-face-name')) { e.preventDefault(); var go = box.querySelector('.sp-face-go'); if (go) go.click(); else save(); }
     });
   }
 
