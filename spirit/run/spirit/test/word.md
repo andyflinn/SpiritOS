@@ -27,9 +27,9 @@ Andy, box: *"i will track nameSpace claims."*
 
 - The same word defined twice along a path is red.
 - A folder or file below the root named after a word reserved above it is red (*"a word 'abc' reservers any 'abc.js' or 'abc/' or 'abc.anything'"*). A file that borrows from the word is no second definition, Q11: *"the word is defined ONCE, at the \"largest\" scope"*. Only `data` can show it today: its `data.js` calls `makeFamily`. A `data.js` that does not stays red.
-- A hard-coded word without its folder or file at `spirit/`, or without its object on the browser's spirit object, is red. Andy answered cw's Q2 that this red holds the item, and his box says *"the red generated from this will point us toward the next steps in restructuring the namespace. live with it."*
+- A hard-coded word needs no folder at `spirit/` and no object on the spirit object (Andy, Q34: *"no."*, superseding his answer to cw's Q2).
 - `spirit` is exempt: *"in tests it is exempt from discrepancy rules."*
 
 ## Red by design
 
-This suite does not go fully green while a word has no home. Since it reads word.js's whole set, every hard-coded word without both a folder or file at the root and an object on the browser's spirit object is red, and so is the rule that nothing below takes a word reserved above it wherever a reserved word (row, detail, tile, test and more) names a file or folder lower in the tree.
+A reserved word needs no home of its own (Andy, Q34: *"no. the word system is more about what <word>.js and <word>/ are reserved specifically in app and branch folders"*): no check asks spirit/<word> or spirit.<word>. What stays red: the rule that nothing below takes a word reserved above it, wherever a hard-coded word (api, element, row, detail and more) names a file or folder lower in the tree, which is the use Andy describes for them; it waits on his word.

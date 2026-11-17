@@ -330,9 +330,10 @@ test.run('no folder or file below takes a word reserved above it', 0.2, function
   return !taken.length || false;
 }, test.limit.quick);
 
-// Each reserved word as a home: a folder or a file at its place, and the browser's spirit object holding it.
-// the tree: each hard-coded word has its folder or file, and the browser's spirit object has it, both or neither is no answer
-test.run('a browser at a scratch node asks the spirit object what it holds', 0.2, async function () {
+// NO HOME ASKED OF A RESERVED WORD (Andy, Q34, "Must every reserved word in word.js have a folder spirit/<word> and a place
+// spirit.<word>?": "no. the word system is more about what <word>.js and <word>/ are reserved specifically in app and branch
+// folders"). The page the asks below use.
+test.run('a browser opens the page of a scratch node, for the asks below', 0.2, async function () {
   const chrome = H.findChrome();
   W.node = await H.scratchNode();
   W.page = chrome && W.node.up ? await H.chromePage(chrome) : null;
@@ -342,20 +343,8 @@ test.run('a browser at a scratch node asks the spirit object what it holds', 0.2
   await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.ready)').then(Boolean); }, H.WAIT);
   await page.evaluate('window.spirit.ready.then(function () { return true; })').catch(function () { return false; });
   await H.sleep(2500);
-  try { W.held = JSON.parse(await page.evaluate('JSON.stringify(' + JSON.stringify(HARD) + '.reduce(function (o, k) { o[k] = typeof window.spirit[k]; return o; }, {}))')); } catch (e) { W.held = {}; }
   return true;
 }, test.limit.slow);
-// Each hard-coded word written out, so that each check has a plain title of its own.
-function stands(w) {
-  if (!W.held) return false;
-  const onDisk = tree().some(function (e) { return path.dirname(e.rel) === '.' && stem(e.name) === w; });
-  const inObject = W.held[w] === 'object' || W.held[w] === 'function';
-  return (onDisk && inObject) || false;
-}
-// Every hard-coded word word.js holds but spirit itself, as the tests above ran them.
-HARD.filter(function (w) { return w !== 'spirit'; }).forEach(function (w) {
-  test.run('spirit/' + w + ' and spirit.' + w + ' both stand', 0.2, function () { return stands(w); }, test.limit.quick);
-});
 
 // NO ASK FOR A word.json THE PAGE KNOWS IS NOT THERE (goal/G43.32). cw, measured on Andy's node: opening Files
 // made 1821 requests, 1818 of them 404, all fs.load of a word.json (spirit/app/word.json alone 712 times). Andy:
