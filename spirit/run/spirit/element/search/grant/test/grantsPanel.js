@@ -68,7 +68,8 @@ function config(w) {
   return {
     ids: { table: 'loopback://api/agent/job', key: 'id', label: 'label' },
     grants: { branch: 'agent.grant', key: 'job_id', label: 'job',
-      search: function (text) { w.calls.push({ name: 'grants.search', args: text }); return Promise.resolve({ items: [], more: false }); },
+      // Its rows as a grants table answers them (goal/G47.4): { key, label } with the row as JSON in label, every one at once.
+      search: function (text) { w.calls.push({ name: 'grants.search', args: text }); return Promise.resolve({ items: w.grantRows.map(function (r) { return { key: r.job_id + '\n' + r.path, label: JSON.stringify(r) }; }), more: false }); },
       grant: function (id, p) { w.calls.push({ name: 'grants.grant', args: { id: id, path: p } }); return Promise.resolve(w.grantAnswer ? w.grantAnswer(id, p) : { ok: true }); },
       revoke: function (id, p) { w.calls.push({ name: 'grants.revoke', args: { id: id, path: p } }); return Promise.resolve({ ok: true }); },
       // Its own watch, as the auth cache manager hands it (goal/G41.28): fn(id + newline + path, row), answering its release.
@@ -90,7 +91,7 @@ function family(w, name, verbs) {
 }
 
 function world() {
-  const w = { required: [], calls: [], bundles: [], ids: [], families: [], grantLists: [], grantAnswer: null, branchesOf: {}, treeAsked: 0, tree: null, busy: [], rowForms: [], grantWatchers: [], warnings: {}, confirms: [], confirmAnswer: true, ran: {} };
+  const w = { required: [], calls: [], bundles: [], ids: [], families: [], grantLists: [], grantAnswer: null, branchesOf: {}, treeAsked: 0, tree: null, busy: [], arming: [], grantRows: [], rowForms: [], grantWatchers: [], warnings: {}, confirms: [], confirmAnswer: true, ran: {} };
   const E = nestSearch({
     // The shell's element shape (goal/G41.19): create(container, options) appends the control and answers it.
     'search.bundle': { create: function (c, opts) { const b = node('bundle'); b.container = c; b.opts = opts; b.value = ''; b.row = null; w.bundles.push(b); c.appendChild(b); return b; } },
@@ -114,6 +115,18 @@ function world() {
       f.button.addEventListener('click', function () { if (typeof f.opts.press === 'function') f.answers.push(f.opts.press()); });
       return f;
     } },
+    // The arming button (goal/G41.9), tested in its own folder: a stand-in that keeps the button and its options; the first
+    // press arms it, the second disarms it and runs, keeping what run answers.
+    armingButton: { attach: function (button, opts) {
+      const a = { button: button, opts: opts || {}, armed: false, answers: [] };
+      w.arming.push(a);
+      button.addEventListener('click', function () {
+        if (!a.armed) { a.armed = true; return; }
+        a.armed = false;
+        if (typeof a.opts.run === 'function') a.answers.push(a.opts.run());
+      });
+      return button;
+    } },
     'search.grant': { create: function (host, opts) { const l = { host: host, opts: opts || {}, redrawn: 0, list: { redraw: function () { l.redrawn += 1; } } }; w.grantLists.push(l); return l; } },
   });
   // The auth family, the node's own (spirit.ready holds it): its bundles' branches, the one dictionary both kinds of grant
@@ -129,7 +142,8 @@ function world() {
   const families = { fs: family(w, 'fs', { search: function () { return { status: 200, body: {} }; } }) };
   const servers = { jobs: family(w, 'jobs', { list: function () { return { status: 200, body: {} }; } }) };
   const FILES = { 'spirit/element/search/bundle.js': ['search'], 'spirit/element/search/contact.js': ['search'],
-    'spirit/element/search/api.js': ['search'], 'spirit/element/search/grant.js': ['search'], 'spirit/element/busyButton.js': ['busyButton'], 'spirit/element/rowForm.js': ['rowForm'] };
+    'spirit/element/search/api.js': ['search'], 'spirit/element/search/grant.js': ['search'], 'spirit/element/busyButton.js': ['busyButton'], 'spirit/element/rowForm.js': ['rowForm'],
+    'spirit/element/armingButton.js': ['armingButton'] };
   const page = {};
   const familyPath = function (name) { return 'spirit/app/' + String(name || '') + '/api.js'; };
   const win = {
@@ -279,7 +293,8 @@ test.run('it makes one bundle selector, two ID selectors, the form\'s and the fi
   cfg = config(w);
   GP.create(box, Object.assign({}, cfg));
   await settle();
-  rf = w.rowForms[0];
+  // The grant form is the ➕ one: the panel makes a second rowForm, ❌ Delete all Grants you see (goal/G47.4).
+  rf = w.rowForms.filter(function (f) { return f.opts.icon === '➕'; })[0];
   // Where a selector stands in the form's span: itself, or the slot it was made in.
   inSpan = function (el) { if (!rf) return -1; return rf.span.kids.findIndex(function (k) { return k === el || k === el.container || (k.kids || []).indexOf(el) !== -1; }); };
   // The filter's ID selector says every ID when none is chosen; the form's has no such choice.
@@ -302,7 +317,7 @@ test.run('it loads the rowForm itself', 0.2, function () {
 }, test.limit.quick);
 test.run('its grant form is one rowForm, its icon ➕ and its button Grant', 0.2, function () {
   if (!box) return false;
-  return w.rowForms.length === 1 && rf.opts.icon === '➕' && rf.opts.button === 'Grant' ? true : false;
+  return w.rowForms.filter(function (f) { return f.opts.icon === '➕'; }).length === 1 && !!rf && rf.opts.button === 'Grant' ? true : false;
 }, test.limit.quick);
 test.run('its span holds the ID selector, then the bundle selector, and nothing else', 0.2, function () {
   if (!box) return false;
@@ -411,6 +426,131 @@ test.run('deprecated is a plain toggle of the search, its button drawn in the �
 }, test.limit.quick);
 test.run('with its toggle on, the deprecated grants are listed', 0.2, function () {
   return dep && dep.test(DAY, true) === 1 ? true : false;
+}, test.limit.quick);
+
+// the grants app, goal/G47.4 (box): "the dropdown filters are include ID (contact), branch (not fucking family) and verb (if a
+// branch is selected)", "for any dropdown the default is (unselected==ALL)", "the search therefore must find any user that
+// has grants for any branch/verb combination", "every row still has a revoke button.", "sticky, at the bottom, a rowForm:
+// ❌ \"Delete all Grants you see\" [Delete-armingButton]". Andy, on its chat: "the more i modify the search, the more records
+// will be cached i'll be able to zero in on things i can delete.. if i delete the first few of your grants invisible ones
+// will become visible, right now i cant even fucking find ANYTHING." The verb half showing only once a branch is chosen is
+// the api selector's, tested in its own folder.
+test.run('its branch filter says every branch when none is chosen, and never family', 0.2, function () {
+  const fam = w && w.families[0];
+  if (!fam) return false;
+  const words = Object.keys(fam.opts || {}).map(function (k) { return fam.opts[k]; }).filter(function (v) { return typeof v === 'string'; });
+  return /\bevery branch\b/i.test(String(fam.opts.all || '')) && !words.some(function (v) { return /family/i.test(v); }) ? true : false;
+}, test.limit.quick);
+// The search must find any user (box): a filter chosen asks the grants table's search again, so what comes is cached and
+// the exact filter picks from it.
+let searched;
+test.run('choosing an ID asks the grants table\'s search again, with that ID in its text', 0.2, async function () {
+  if (!filterId) return false;
+  const at = w.calls.length;
+  filterId.value = 'J7'; filterId.fire('change', { target: filterId });
+  await settle();
+  searched = w.calls.slice(at).filter(function (c) { return c.name === 'grants.search'; });
+  filterId.value = ''; filterId.fire('change', { target: filterId });
+  await settle();
+  return searched.some(function (c) { return String(c.args).indexOf('J7') !== -1; }) ? true : false;
+}, test.limit.quick);
+test.run('choosing a branch asks the grants table\'s search again, with that branch in its text', 0.2, async function () {
+  const fam = w && w.families[0];
+  if (!fam) return false;
+  const at = w.calls.length;
+  fam.family = 'desk'; fam.verb = ''; fam.value = 'desk'; fam.fire('change', { target: fam });
+  await settle();
+  const s = w.calls.slice(at).filter(function (c) { return c.name === 'grants.search'; });
+  fam.family = ''; fam.value = ''; fam.fire('change', { target: fam });
+  await settle();
+  return s.some(function (c) { return String(c.args).indexOf('desk') !== -1; }) ? true : false;
+}, test.limit.quick);
+test.run('choosing a verb asks the grants table\'s search again, with its branch and that verb in its text', 0.2, async function () {
+  const fam = w && w.families[0];
+  if (!fam) return false;
+  const at = w.calls.length;
+  fam.family = 'desk'; fam.verb = 'chat'; fam.value = 'desk.chat'; fam.fire('change', { target: fam });
+  await settle();
+  const s = w.calls.slice(at).filter(function (c) { return c.name === 'grants.search'; });
+  fam.family = ''; fam.verb = ''; fam.value = ''; fam.fire('change', { target: fam });
+  await settle();
+  return s.some(function (c) { const t = String(c.args); return t.indexOf('desk') !== -1 && t.indexOf('chat') !== -1; }) ? true : false;
+}, test.limit.quick);
+
+// ❌ "Delete all Grants you see" [Delete-armingButton], sticky at the bottom
+let del, delArm, delAt;
+const ROWS = [{ job_id: 'J1', path: 'fs.search', job: 'Night' }, { job_id: 'J1', path: 'jobs.list', job: 'Night' },
+  { job_id: 'J2', path: 'fs.loadFile', job: 'Day' }, { job_id: 'J2', path: 'gone.verb', job: 'Day' }];
+const revoked = function () { return w.calls.slice(delAt).filter(function (c) { return c.name === 'grants.revoke'; }).map(function (c) { return c.args.id + ' ' + c.args.path; }).sort(); };
+const textOf = function (n) { return n ? String(n.textContent || '') + ' ' + String(n.innerHTML || '') + ' ' + (n.kids || []).map(textOf).join(' ') : ''; };
+test.run('it makes a second rowForm, its icon ❌', 0.2, function () {
+  if (!w) return false;
+  del = w.rowForms.filter(function (f) { return f.opts.icon === '❌'; })[0];
+  return !!del ? true : false;
+}, test.limit.quick);
+test.run('its words are "Delete all Grants you see"', 0.2, function () {
+  if (!del) return false;
+  return textOf(del.span).indexOf('Delete all Grants you see') !== -1 ? true : false;
+}, test.limit.quick);
+test.run('its button says Delete', 0.2, function () {
+  if (!del) return false;
+  return del.opts.button === 'Delete' ? true : false;
+}, test.limit.quick);
+test.run('it loads the arming button itself', 0.2, function () {
+  if (!w) return false;
+  return w.required.indexOf('spirit/element/armingButton.js') !== -1 ? true : false;
+}, test.limit.quick);
+test.run('its Delete is an arming button, and no press of the rowForm', 0.2, function () {
+  if (!del) return false;
+  delArm = w.arming.filter(function (a) { return a.button === del.button; })[0];
+  return !!delArm && typeof delArm.opts.run === 'function' && typeof del.opts.press !== 'function' ? true : false;
+}, test.limit.quick);
+test.run('it stands at the bottom, below the grant list', 0.2, function () {
+  if (!del || !gl) return false;
+  const at = function (n) { return box.kids.lastIndexOf(n); };
+  const delAtBox = Math.max(at(del.root), at(del.container));
+  return delAtBox !== -1 && delAtBox === box.kids.length - 1 && at(gl.host) !== -1 && at(gl.host) < delAtBox ? true : false;
+}, test.limit.quick);
+test.run('the first press arms it and revokes nothing', 0.2, async function () {
+  if (!delArm) return false;
+  w.grantRows = ROWS;
+  filterId.value = 'J1'; filterId.fire('change', { target: filterId });
+  await settle();
+  delAt = w.calls.length;
+  del.button.fire('click', { target: del.button });
+  await settle();
+  return delArm.armed === true && revoked().length === 0 ? true : false;
+}, test.limit.quick);
+test.run('the second press revokes, through the grants table, each grant the ID filter lets through, and no other', 0.2, async function () {
+  if (!delArm || !delArm.armed) return false;
+  del.button.fire('click', { target: del.button });
+  await settle();
+  const r = JSON.stringify(revoked()) === JSON.stringify(['J1 fs.search', 'J1 jobs.list']);
+  filterId.value = ''; filterId.fire('change', { target: filterId });
+  await settle();
+  return r ? true : false;
+}, test.limit.quick);
+test.run('a branch chosen, it revokes only that branch\'s grants', 0.2, async function () {
+  if (!delArm) return false;
+  const fam = w.families[0];
+  fam.family = 'fs'; fam.verb = ''; fam.value = 'fs'; fam.fire('change', { target: fam });
+  await settle();
+  delAt = w.calls.length;
+  del.button.fire('click', { target: del.button }); del.button.fire('click', { target: del.button });
+  await settle();
+  const r = JSON.stringify(revoked()) === JSON.stringify(['J1 fs.search', 'J2 fs.loadFile']);
+  fam.family = ''; fam.value = ''; fam.fire('change', { target: fam });
+  await settle();
+  return r ? true : false;
+}, test.limit.quick);
+test.run('with nothing chosen, it revokes every grant shown, and none deprecated while deprecated is off', 0.2, async function () {
+  if (!delArm) return false;
+  delAt = w.calls.length;
+  del.button.fire('click', { target: del.button }); del.button.fire('click', { target: del.button });
+  await settle();
+  const r = JSON.stringify(revoked()) === JSON.stringify(['J1 fs.search', 'J1 jobs.list', 'J2 fs.loadFile']);
+  w.grantRows = [];
+  return r ? true : false;
 }, test.limit.quick);
 
 // Grant: the bundle's branches, through the grants table it was handed

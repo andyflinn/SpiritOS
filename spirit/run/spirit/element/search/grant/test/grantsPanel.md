@@ -91,6 +91,24 @@ what it answers.
 - A press grants, and the request it hands the button waits while a grant is not answered; it settles once every
   grant of the bundle is answered, so the button is plain again.
 
+### The grants app's filters and Delete all (goal/G47.4)
+
+Box: *"the dropdown filters are include ID (contact), branch (not fucking family) and verb (if a branch is selected)"*,
+*"for any dropdown the default is (unselected==ALL)"*, *"the search therefore must find any user that has grants for any
+branch/verb combination"*, *"every row still has a revoke button."*, *"sticky, at the bottom, a rowForm: ❌ \"Delete all
+Grants you see\" [Delete-armingButton]"*. Andy, on its chat: *"the more i modify the search, the more records will be
+cached i'll be able to zero in on things i can delete.. if i delete the first few of your grants invisible ones will become
+visible"*. So the answer stays one packet, and each filter asks the node again. The verb half showing only once a branch
+is chosen is the api selector's, tested in its own folder.
+
+- Its branch filter says *every branch* when none is chosen, and none of its words says family.
+- Choosing an ID, a branch, or a branch and verb asks the grants table's search again, with what was chosen in its text.
+- A second rowForm, its icon ❌, its words *Delete all Grants you see*, its button Delete, an arming button (loaded by
+  the panel itself), with no `press` of the rowForm; it stands last in the panel, below the grant list.
+- Its first press arms it and revokes nothing; the second revokes, through the grants table, each grant the filters let
+  through: only the chosen ID's, only the chosen branch's, or with nothing chosen every grant shown, and none deprecated
+  while deprecated is off.
+
 ## What its test must try to break
 
 - A grants table, ID table, verb or branch named in the panel itself; a panel made without its configuration that
