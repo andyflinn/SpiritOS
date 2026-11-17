@@ -2114,6 +2114,24 @@ function oneFile(P) {
       return !/\b(?:list|row|detail)Element\b/.test(src) || false;
     }, test.limit.quick);
   }
+  // THE SEARCH BRANCH (goal/G47.4, box v9: "spirit/search/ is a branch whose js api is two searches and nothing else: string,
+  // at spirit/search/string, and object, at spirit/search/object"; the two probability match files at the root go, and
+  // "nothing names the old files after the move"; the bucket becomes the helper spirit/listLimiter.js). No file keeps an old name, and no code names an old file: strings kept, so a require
+  // path counts; comments left out. The functions keep their names (cw, under the item: "The functions keep their names,
+  // only the files move"), so a call of one is no old file. The old names are built from their parts, so this check's own
+  // titles do not name them in code.
+  const OLD_SEARCH = ['StringMatch', 'StringObjectMatch', 'Bucket'].map(function (w) { return 'probability' + w; });
+  const OLD_SEARCH_RE = new RegExp('\\b(?:' + OLD_SEARCH.join('|') + ')\\.js\\b');
+  if (/^spirit\/.+\.js$/.test(rel) && !VENDORED_FOLDERS.holds(rel)) {
+    test.run('its file is not one of the old search files: no ' + OLD_SEARCH.map(function (n) { return n + '.js'; }).join(', '), 0.4, function () {
+      return OLD_SEARCH.indexOf(path.basename(rel, '.js')) === -1 || false;
+    }, test.limit.quick);
+    test.run('its code names none of the old search files: ' + OLD_SEARCH.map(function (n) { return n + '.js'; }).join(', '), 0.4, function () {
+      let src = '';
+      try { src = codeOf(fs.readFileSync(full, 'utf8'), false); } catch (e) { return false; }
+      return !OLD_SEARCH_RE.test(src) || false;
+    }, test.limit.quick);
+  }
   // <address>: every require path is a child, a sibling or an ancestor's file
   test.run('none of its require paths breaks the rule', 0.4, function () {
     return !moduleRules(full).bad.length;
