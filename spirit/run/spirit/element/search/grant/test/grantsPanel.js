@@ -72,7 +72,12 @@ function config(w) {
       // w.searchCap set, it answers that many at most and says more, as one packet does.
       search: function (text) {
         w.calls.push({ name: 'grants.search', args: text });
-        const all = w.grantRows.map(function (r) { return { key: r.job_id + '\n' + r.path, label: JSON.stringify(r) }; });
+        // Best first, as the node's search ranks by the text (cw): a row holding more of its words comes first, ties as
+        // the table holds them.
+        const words = String(text || '').split(/[^\w]+/).filter(Boolean);
+        const score = function (r) { const s = r.job_id + ' ' + r.path + ' ' + r.job; return words.filter(function (x) { return s.indexOf(x) !== -1; }).length; };
+        const ranked = w.grantRows.map(function (r, i) { return { r: r, i: i, s: score(r) }; }).sort(function (a, b) { return b.s - a.s || a.i - b.i; });
+        const all = ranked.map(function (x) { return { key: x.r.job_id + '\n' + x.r.path, label: JSON.stringify(x.r) }; });
         const items = w.searchCap ? all.slice(0, w.searchCap) : all;
         return Promise.resolve({ items: items, more: items.length < all.length });
       },

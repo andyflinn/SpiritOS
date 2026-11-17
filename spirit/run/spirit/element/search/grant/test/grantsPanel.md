@@ -108,7 +108,8 @@ The verb half showing only once a branch is chosen is the api selector's, tested
 - A second rowForm, its icon ❌, its span an ID selector of the handed ID table then an api selector, its button Delete,
   an arming button (loaded by the panel itself), with no `press` of the rowForm; it stands last, below the grant list.
 - Its first press arms it and revokes nothing. The second revokes, through the grants table, exactly the grants the row's
-  choice names, even when the table answers two rows at a time and says more (a revoked grant gone from it): a contact
+  choice names, even when the table answers two rows at a time and says more, best first by the words of the text as the
+node ranks them (a revoked grant gone from it): a contact
   alone, all of that contact's; with a branch, that branch's; with a verb too, that one; the list's filters change nothing.
 
 ## What its test must try to break
