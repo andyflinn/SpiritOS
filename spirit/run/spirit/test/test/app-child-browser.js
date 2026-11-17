@@ -18,7 +18,7 @@ const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 
 const ELEMENTS = ['spirit/app/testicle/element/statusBox.js', 'spirit/app/testicle/element/settingsPanel.js', 'spirit/app/testicle/element/scriptDetail.js',
-  'spirit/app/testicle/element/search/suite/listElement.js', 'spirit/app/testicle/element/search/suite/rowElement.js', 'spirit/app/testicle/element/search/testicle/rowElement.js'];
+  'spirit/app/testicle/element/search/suite/list.js', 'spirit/app/testicle/element/search/suite/row.js', 'spirit/app/testicle/element/search/testicle/row.js'];
 const HANG = 'spirit/app/testicle/zzBrowserHang.js';
 // box v144: "measured before: spirit-sibling-browser.js ~10 s a script on cw's Windows ..., 3.7 s on wsl"; "the target: at
 // least 80% less test time" (the before measured on spirit-sibling-browser.js, the same shape).

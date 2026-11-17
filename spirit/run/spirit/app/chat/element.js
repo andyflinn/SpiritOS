@@ -560,7 +560,7 @@ function chMount(container) {
     // hurt"), each by its time.
     var chSearchRows = null;
     function chSearchRow(row) {
-      var R = window.spirit.element.spirit.element.rowElement;
+      var R = window.spirit.element.spirit.element.row;
       var l = row || {};
       chSearchRows = chSearchRows || R.index(function () {});
       return R.create({
@@ -573,7 +573,7 @@ function chMount(container) {
         actions: [],
       });
     }
-    Promise.all([spirit.require('spirit/element/search.js'), spirit.require('spirit/element/rowElement.js'), spirit.require('spirit/app/chat/api.js')]).then(function () {
+    Promise.all([spirit.require('spirit/element/search.js'), spirit.require('spirit/element/row.js'), spirit.require('spirit/app/chat/api.js')]).then(function () {
       var C = chData();
       if (!C) return;
       chSearch = window.spirit.element.spirit.element.search.create(chEl('ch-search'), {

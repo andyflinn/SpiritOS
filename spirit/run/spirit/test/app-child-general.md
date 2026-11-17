@@ -24,7 +24,7 @@ same will happen for \"events\", which will be renamed \"event\""*.
 - `spirit/app/app/app.json` says `shell.true` true.
 - `spirit/app/app/element.js` is its element (today's app selector).
 - `spirit/app/shell/`, `spirit/app/appSelector.js` and `spirit/app/appSelector/` are gone.
-- The app branch is intrinsic: changeAppIcon, changeAppLabel, detailElement, rowFormAppActive, rowFormSetShell,
+- The app branch is intrinsic: changeAppIcon, changeAppLabel, detail, rowFormAppActive, rowFormSetShell,
   rowFormToggle and serverDEBUG stand in `spirit/element/search/app/`.
 - The node's default shell is `app` (`spirit/nodeShell.js`).
 

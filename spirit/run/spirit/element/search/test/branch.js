@@ -4,7 +4,7 @@
 // The tests of spirit/element/search/branch.js, and of no other module (spec: ./branch.md; goal/G41.14). The browser
 // file runs in node on a BARE window (rule/26: "every shell element loads its own elements dynamically through the ...
 // spirit.require functionality"): no element is on the page until the selector requires it. Its list,
-// search/branch/listElement.js, is a stand-in that keeps what it was handed; it is tested in its own folder.
+// search/branch/list.js, is a stand-in that keeps what it was handed; it is tested in its own folder.
 
 const fs = require('fs');
 const path = require('path');
@@ -35,7 +35,7 @@ test.run('the branch selector runs on a bare window', 0.2, async function () {
   lists = [];
   required = [];
   const STANDS = {
-    'spirit/element/search/branch/listElement.js': function (E) { require(path.join(RUN, 'spirit', 'element', 'installSpiritElement.js'))(global.window.spirit, 'spirit/element/search/branch/listElement.js', { create: function (host, o) {
+    'spirit/element/search/branch/list.js': function (E) { require(path.join(RUN, 'spirit', 'element', 'installSpiritElement.js'))(global.window.spirit, 'spirit/element/search/branch/list.js', { create: function (host, o) {
       const l = { host: host, o: o, refreshed: 0, refresh: function () { l.refreshed += 1; }, destroy: function () {} };
       lists.push(l); return { list: l, refresh: l.refresh, destroy: l.destroy };
     } }); },
@@ -79,9 +79,9 @@ test.run('create appends its root to the container it is given and answers that 
   list = lists[0];
   return box.children.length === 1 && box.children[0] === root ? true : false;
 }, test.limit.quick);
-test.run('on a bare page it requires its list, spirit/element/search/branch/listElement.js', 0.2, function () {
+test.run('on a bare page it requires its list, spirit/element/search/branch/list.js', 0.2, function () {
   if (!required) return false;
-  return required.indexOf('spirit/element/search/branch/listElement.js') !== -1 ? true : false;
+  return required.indexOf('spirit/element/search/branch/list.js') !== -1 ? true : false;
 }, test.limit.quick);
 test.run('it answers its root at once, of class branch-selector, with nothing chosen, an empty value and no row', 0.2, function () {
   if (!box) return false;

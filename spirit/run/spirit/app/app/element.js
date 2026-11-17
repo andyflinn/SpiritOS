@@ -104,11 +104,11 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/app/a
       }, look);
     }
     // AN APP'S DETAIL COMES WHEN ONE OPENS (goal/G43.27; Andy: "make sure that spirit.js does NOT load all that shit!!!!!!!!!"):
-    // detailElement.js and what it draws with are required then, once, and not as the list loads.
-    function detailReady() { return window.spirit.require('spirit/element/search/app/detailElement.js'); }
+    // detail.js and what it draws with are required then, once, and not as the list loads.
+    function detailReady() { return window.spirit.require('spirit/element/search/app/detail.js'); }
     function panel(row) {
       open('detail', row, function (pane, closed) {
-        return detailReady().then(function () { return closed() ? null : window.spirit.element.spirit.element.search.app.detailElement.create(pane, { row: row, panel: true }); });
+        return detailReady().then(function () { return closed() ? null : window.spirit.element.spirit.element.search.app.detail.create(pane, { row: row, panel: true }); });
       });
     }
     function clearDetail() { if (detail) detail.destroy(); detail = null; }
@@ -124,7 +124,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/app/a
       detailReady().then(function () {
         if (gone || root.row !== asked) return;
         clearDetail();
-        detail = window.spirit.element.spirit.element.search.app.detailElement.create(detailBox, { row: row });
+        detail = window.spirit.element.spirit.element.search.app.detail.create(detailBox, { row: row });
       });
     }
     function onFace(now) {

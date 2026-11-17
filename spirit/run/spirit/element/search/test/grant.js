@@ -2,9 +2,9 @@
 
 // spirit/run/spirit/element/search/test/grant.js
 // The tests of spirit/element/search/grant.js, the grant selector, and of no other module (spec: ./grant.md; goal/G43.32). The box:
-// "every branch's search is search/<branch>.js, the selector, and its folder holds listElement.js, rowElement.js and
-// detailElement.js". The browser file runs in node on a window of its own: its list, ./grant/listElement.js, is a recorder in
-// its place, so this tests the selector and not the list (the list's own test is ../grant/test/listElement.js).
+// "every branch's search is search/<branch>.js, the selector, and its folder holds list.js, row.js and
+// detail.js". The browser file runs in node on a window of its own: its list, ./grant/list.js, is a recorder in
+// its place, so this tests the selector and not the list (the list's own test is ../grant/test/list.js).
 // One test.run per test (goal/G47.2).
 
 const fs = require('fs');
@@ -13,7 +13,7 @@ const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const FILE = path.join(RUN, 'spirit', 'element', 'search', 'grant.js');
-const LIST = 'spirit/element/search/grant/listElement.js';
+const LIST = 'spirit/element/search/grant/list.js';
 
 const settle = async function () { for (let i = 0; i < 20; i++) await new Promise(function (r) { setImmediate(r); }); };
 

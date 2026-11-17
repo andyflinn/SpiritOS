@@ -1051,7 +1051,7 @@ test.run('once loaded, with nothing preloaded, it draws and ranks: typing ze put
 // the one shared verb dropdown, never a copy of their own. Code only, comments left out.
 test.run('api and branch both load the one verb filter, search/api/verb.js', 0.2, function () {
   const codeOnly = function (rel) { try { return fs.readFileSync(path.join(RUN, rel), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1'); } catch (e) { return ''; } };
-  const users = ['spirit/element/search/api.js', 'spirit/element/search/branch.js', 'spirit/element/search/branch/listElement.js']
+  const users = ['spirit/element/search/api.js', 'spirit/element/search/branch.js', 'spirit/element/search/branch/list.js']
     .filter(function (p) { return /spirit\/element\/search\/api\/verb\.js/.test(codeOnly(p)); });
   return (users.indexOf('spirit/element/search/api.js') !== -1 && users.some(function (p) { return /branch/.test(p); })) || false;
 }, test.limit.quick);

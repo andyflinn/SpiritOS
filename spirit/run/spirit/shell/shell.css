@@ -1158,7 +1158,7 @@ details.stat-tile > summary {
 .ps-rank-centre { margin: 0 auto; }
 .ps-none { margin-top: 0.5em; }
 .ps-tiles { gap: 16px; }
-/* spirit/element/search/file/listElement.js: the tree's indent and its hidden path. */
+/* spirit/element/search/file/list.js: the tree's indent and its hidden path. */
 .files-tree .file-depth { display: inline-block; padding-left: calc(var(--depth) * 2em); }
 .files-tree .path-dir { display: none; }
 /* spirit/app/chat/element.js: its panes, the title, the lines, a quote and a line's meta (goal/G47.1, box v109, as above). */

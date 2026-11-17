@@ -1,7 +1,7 @@
 # spirit/element/search/branch.js
 
 `spirit/run/spirit/element/search/branch.js` is the branch selector (goal/G41.14): a thin selector over its own list,
-`spirit/element/search/branch/listElement.js`, as `spirit/element/search/bundle.js` is over the bundles. Its test is `./branch.js`.
+`spirit/element/search/branch/list.js`, as `spirit/element/search/bundle.js` is over the bundles. Its test is `./branch.js`.
 
 Andy, box: *"branchSelector.js and branchSelector/ folder, featuring a pane mode and a dropdown mode for displaying and
 selecting branch rows."*
@@ -11,7 +11,7 @@ selecting branch rows."*
 - It registers `spirit.element.search.branch.create(container, options)`, and `createBranchSelector` no more. Its root is
   appended to the container and answered (box v23: *"every element gets a container and appends itself"*).
 - It answers its root at once, class `branch-selector`, with nothing chosen: `.value` is `''` and `.row` is `null`.
-- It loads what it uses itself (rule/26): on a bare page it requires `spirit/element/search/branch/listElement.js` and draws
+- It loads what it uses itself (rule/26): on a bare page it requires `spirit/element/search/branch/list.js` and draws
   that list into its root. Nothing of the old shell's list search is in it (goal/G40.8).
 - A dropdown by default; `options.face: 'pane'` is the list itself, filling the box it is given, so the list's size is its pane's and not its rows' (`spirit/element/test/search-child-browser.js`). `bundle`, `placeholder` and `columns` are handed to
   the list.

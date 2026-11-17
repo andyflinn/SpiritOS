@@ -1425,17 +1425,17 @@ const { sleep, until, findChrome, scratchNode, chromePage } = require(path.join(
 // its own check, named by its path. painters() reads only the files git tracks under shell/, so the spirit/ entries of
 // FROM_DATA and TEXT_ONLY are never read, and shell/boot.js (now spirit/shell/boot.js, goal/G43.18), shell/apps/apps.js
 // and shell/icons/icons.js are no longer in the tree.
-const FROM_DATA = ['shell/boot.js', 'shell/apps/apps.js', 'shell/icons/icons.js', 'spirit/app/contact/element.js', 'spirit/element/search/icon/listElement.js',
-  'spirit/element/search/icon/rowElement.js', 'spirit/element/search/icon.js', 'spirit/element/workBench.js'];
+const FROM_DATA = ['shell/boot.js', 'shell/apps/apps.js', 'shell/icons/icons.js', 'spirit/app/contact/element.js', 'spirit/element/search/icon/list.js',
+  'spirit/element/search/icon/row.js', 'spirit/element/search/icon.js', 'spirit/element/workBench.js'];
 // A pictograph, its variation selectors and joiners with it, alone in quotes or alone between > and <.
 const ALONE = /(['"`]|>)\s*(?:\p{Extended_Pictographic}[\uFE0F\u200D\u{1F3FB}-\u{1F3FF}]*)+\s*(['"`]|<)/u;
 // A glyph alone in a string that is drawn only among words, read by hand: a status or a mark put before a name
 // (Andy: "glyphs are legal in labels and description true").
 const TEXT_ONLY = {
   // its blocked mark is drawn before the person's name
-  'spirit/element/search/contact/detailElement.js': true,
+  'spirit/element/search/contact/detail.js': true,
   // its filter icons are drawn before their words by the search element's chips
-  'spirit/element/search/contact/listElement.js': true,
+  'spirit/element/search/contact/list.js': true,
 };
 function painters() {
   const tracked = require('child_process').execFileSync('git', ['ls-files', 'shell'], { cwd: RUN, encoding: 'utf8' }).split('\n');
@@ -2098,8 +2098,8 @@ function oneFile(P) {
     }, test.limit.quick);
   }
   // A SEARCH'S PARTS ARE NAMED BY THEIR WORD (goal/G47.4, the box: "A search's parts are named by their word: list.js, row.js
-  // and detail.js, in place of listElement.js, rowElement.js and detailElement.js"; "The guard first: the general test is red
-  // on any file named listElement.js, rowElement.js or detailElement.js, and on any code that still names them"). Its name
+  // and detail.js, in place of list.js, row.js and detail.js"; "The guard first: the general test is red
+  // on any file named list.js, row.js or detail.js, and on any code that still names them"). Its name
   // read from its path; its code with its strings kept, so a require path or a place on the spirit object counts, and its
   // comments left out.
   // The old names are built from their parts, so this check's own titles do not name them in code.

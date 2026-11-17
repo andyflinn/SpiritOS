@@ -265,7 +265,7 @@ drew; a hidden row taken out of the page; a new record that redraws its neighbou
 
 ## One verb filter
 
-goal/G43.18, the box: *"apiVerbSelector.js is the verb dropdown filter: search/api/verb.js, which branch names too"*. `search/api.js` and branch (`search/branch.js` or `search/branch/listElement.js`) load the one `search/api/verb.js` in their code, never a copy of their own.
+goal/G43.18, the box: *"apiVerbSelector.js is the verb dropdown filter: search/api/verb.js, which branch names too"*. `search/api.js` and branch (`search/branch.js` or `search/branch/list.js`) load the one `search/api/verb.js` in their code, never a copy of their own.
 
 
 ## Tile mode is a search's own (goal/G47.4)

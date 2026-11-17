@@ -34,7 +34,7 @@
   if (window.spirit && typeof window.spirit.require === 'function') Promise.resolve(window.spirit.require('spirit/app/testicle/api.js')).catch(function () {});
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the workBench and the file list.
   var parts = Promise.all(['spirit/element/workBench.js', 'spirit/element/search/app/rowFormToggle.js', 'spirit/element/search/file.js', 'spirit/element/tabContainer.js',
-    'spirit/app/testicle/element/search/suite.js', 'spirit/app/testicle/element/search/testicle.js', 'spirit/app/testicle/element/search/testicle/detailElement.js',
+    'spirit/app/testicle/element/search/suite.js', 'spirit/app/testicle/element/search/testicle.js', 'spirit/app/testicle/element/search/testicle/detail.js',
     'spirit/app/testicle/api.js',
     // ITS OWN PARTS, EACH AN ELEMENT (goal/G47.1, box v134-135: "element.js keeps only the face: it mounts those elements and the
     // searches, nothing drawn of its own").
@@ -90,7 +90,7 @@
       var name = row.script + '|' + row.suite + '|' + row.test;
       tabs.add({ name: name, label: String(row.test || ''), closable: true, mount: function (box) {
         box.className = 'fill';
-        return window.spirit.element.spirit.app.testicle.element.search.testicle.detailElement.create(box, { script: row.script, suite: row.suite, test: row.test });
+        return window.spirit.element.spirit.app.testicle.element.search.testicle.detail.create(box, { script: row.script, suite: row.suite, test: row.test });
       } });
     }
     return {

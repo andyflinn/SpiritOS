@@ -1,7 +1,7 @@
 # tableElement.js
 
 `spirit/run/spirit/app/agent/element/table/tableElement.js` is what the tables' elements share, in the page (goal/G41.4). Each
-table's `elementTable.js` and the row editor (`../rowElement.js`) build on it. Its test is
+table's `elementTable.js` and the row editor (`../row.js`) build on it. Its test is
 `./tableElement.js`.
 
 Andy, box v22: *"elementTable.js (an face-shell compatible interface to the table for browsers, with search-list using the probablility-group of elements in shell/js/)"* and *"elementRow.js (a panel element, to maintain and edit one row of
@@ -10,8 +10,8 @@ the table)"*.
 ## Requirements
 
 - It registers `spirit.element.spirit.app.agent.element.table.tableElement` and the shared `spirit.element.spirit.app.agent.element.table.tableElement`, and no other element: one file,
-  one element (goal/G41.28). The row's editor, `agentRow`, is `./rowElement.js`'s, which builds on `agentDetail`, and
-  is tested in its own suite (`./rowElement.md`).
+  one element (goal/G41.28). The row's editor, `agentRow`, is `./row.js`'s, which builds on `agentDetail`, and
+  is tested in its own suite (`./row.md`).
 - **Every pane's look is in one place** (Andy: *"is it possible to organize the code so that my changes so far are only
   done in one place?"*). `agentDetail` holds:
   - `titleRow(look, words)`: the `agent-title` row, the icon, then the words, each in a part of its own. It is set as a

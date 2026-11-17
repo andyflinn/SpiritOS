@@ -2,9 +2,9 @@
 
 // spirit/run/spirit/element/search/test/file.js
 // The tests of spirit/element/search/file.js, the file selector, and of no other module (spec: ./file.md; goal/G43.32). The box:
-// "every branch's search is search/<branch>.js, the selector, and its folder holds listElement.js, rowElement.js and
-// detailElement.js". The browser file runs in node on a window of its own: its list, ./file/listElement.js, is a recorder in
-// its place, so this tests the selector and not the list (the list's own test is ../file/test/listElement.js).
+// "every branch's search is search/<branch>.js, the selector, and its folder holds list.js, row.js and
+// detail.js". The browser file runs in node on a window of its own: its list, ./file/list.js, is a recorder in
+// its place, so this tests the selector and not the list (the list's own test is ../file/test/list.js).
 // One test.run per test (goal/G47.2).
 
 const fs = require('fs');
@@ -13,7 +13,7 @@ const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const FILE = path.join(RUN, 'spirit', 'element', 'search', 'file.js');
-const LIST = 'spirit/element/search/file/listElement.js';
+const LIST = 'spirit/element/search/file/list.js';
 
 const settle = async function () { for (let i = 0; i < 20; i++) await new Promise(function (r) { setImmediate(r); }); };
 

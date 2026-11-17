@@ -484,7 +484,7 @@ test.run('the first person\'s details open', 0.2, async function () {
   listBar = (await T('bars()'))[0];
   // One row's details: what it draws is marked, then closed.
   // Andy: "the first detail shows the right data, the second row i open always shows nothing.... THAT's the problem.": each
-  // panel shows its own row, read from what is in view: its Public Handle fact (detailElement.js) and, blocked, Unblock.
+  // panel shows its own row, read from what is in view: its Public Handle fact (detail.js) and, blocked, Unblock.
   a = await openOne(zzKey, 'rowA');
   return (a > 0) ? true : false;
 }, test.limit.slow);

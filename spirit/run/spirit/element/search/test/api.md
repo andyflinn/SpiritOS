@@ -3,7 +3,7 @@
 The family selector (goal/G41.14): a family of an api tree, and a verb of it, side by side. It was `apiBranchSelector.js`,
 renamed (Andy: *"apiBranchSelector.js will be RENAMED apiFamilySelector.js, which is the proper name for it."*), its
 verb half kept (Andy: *"apiFamiliySelector.js will use apiVerbSelector as part of itself, because the verb selector
-NEEDs the family selector to have any meaning at all."*). Since goal/G43.18 it is in `spirit/element/search/api.js`; since goal/G43.32 the api search's selector, its family half the family list, `search/api/listElement.js`, and its verb half `search/api/verb.js`. Its test is `./api.js`.
+NEEDs the family selector to have any meaning at all."*). Since goal/G43.18 it is in `spirit/element/search/api.js`; since goal/G43.32 the api search's selector, its family half the family list, `search/api/list.js`, and its verb half `search/api/verb.js`. Its test is `./api.js`.
 
 ## Requirements
 

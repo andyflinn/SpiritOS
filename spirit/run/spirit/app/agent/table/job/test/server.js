@@ -166,7 +166,7 @@ test.run('the two element files place spirit.element.spirit.app.agent.element.ta
   global.window = { spirit: {} };
   global.spirit = global.window.spirit;
   // goal/G43.32: the shared stand-ins stand where the page files read them, at spirit.element.<their path>.
-  global.window.spirit.element = { spirit: { app: { agent: { element: { table: { tableElement: STAND.agentTable, rowElement: STAND.agentRow } } } } } };
+  global.window.spirit.element = { spirit: { app: { agent: { element: { table: { tableElement: STAND.agentTable, row: STAND.agentRow } } } } } };
   // A branch's api.js, required by its path, brings its companion data.js, as the real api.js does (goal/G47.1: "every
   // api.js requires it's companion data.js"): the stand-in runs that data.js from disk, once. A data.js asked for
   // directly is only recorded.

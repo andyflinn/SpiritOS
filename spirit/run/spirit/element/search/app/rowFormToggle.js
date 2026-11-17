@@ -1,7 +1,7 @@
 'use strict';
 // spirit/run/spirit/element/search/app/rowFormToggle.js
 // ONE ON/OFF SWITCH, A rowForm (goal/G43.15). Andy, box: "it acts exactly like the two toggle switches in
-// appSelector:detailElement", "it is configurable with a description of what is being toggled." Its contract and its test:
+// appSelector:detail", "it is configurable with a description of what is being toggled." Its contract and its test:
 // ./test/rowFormToggle.md and ./test/rowFormToggle.js.
 //
 //   spirit.element.spirit.element.search.app.rowFormToggle.create(host, { on, words, press }) -> { root, set(on, words), destroy() }

@@ -218,7 +218,7 @@ test.run('the page opens again', 0.2, async function () {
 }, test.limit.quick);
 test.run('the detail of Zz Debug is made', 0.2, async function () {
   if (!c || c.error) return false;
-  detail = await c.evaluate('spirit.ready.then(function () { return spirit.require("spirit/element/search/app/detailElement.js"); }).then(function () { var b = document.createElement("div"); b.id = "zzDetail"; document.body.appendChild(b); window.__d = spirit.element.spirit.element.search.app.detailElement.create(b, { row: { key: ' + JSON.stringify(NAME) + ', label: ' + JSON.stringify(LABEL) + ', icon: "🐛" }, panel: true }); return true; })');
+  detail = await c.evaluate('spirit.ready.then(function () { return spirit.require("spirit/element/search/app/detail.js"); }).then(function () { var b = document.createElement("div"); b.id = "zzDetail"; document.body.appendChild(b); window.__d = spirit.element.spirit.element.search.app.detail.create(b, { row: { key: ' + JSON.stringify(NAME) + ', label: ' + JSON.stringify(LABEL) + ', icon: "🐛" }, panel: true }); return true; })');
   return detail === true ? true : false;
 }, test.limit.quick);
 test.run('the detail loads changeAppIcon.js and changeAppLabel.js', 0.2, async function () {

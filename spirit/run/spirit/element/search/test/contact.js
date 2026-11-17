@@ -3,7 +3,7 @@
 // spirit/run/spirit/element/search/test/contact.js
 // The tests of spirit/element/search/contact.js, and of no other module (spec: ./contact.md; goal/G41.13, G43.32). The browser
 // file runs in node on a BARE window (rule/26): nothing is on the page until the picker requires it. Its list, the one
-// contact list (search/contact/listElement.js), is a stand-in that keeps what it was handed; what that list does (the
+// contact list (search/contact/list.js), is a stand-in that keeps what it was handed; what that list does (the
 // contacts, any ID table, filters, marks) is tested in its own folder.
 
 const fs = require('fs');
@@ -37,7 +37,7 @@ test.run('the picker runs on a bare window', 0.2, async function () {
   lists = [];
   required = [];
   const STANDS = {
-    'spirit/element/search/contact/listElement.js': function () { require(path.join(RUN, 'spirit', 'element', 'installSpiritElement.js'))(global.window.spirit, 'spirit/element/search/contact/listElement.js', { create: function (host, o) {
+    'spirit/element/search/contact/list.js': function () { require(path.join(RUN, 'spirit', 'element', 'installSpiritElement.js'))(global.window.spirit, 'spirit/element/search/contact/list.js', { create: function (host, o) {
       const l = { host: host, o: o, refreshed: 0, marks: [], destroyed: 0 };
       lists.push(l);
       return { list: {}, refresh: function () { l.refreshed += 1; }, mark: function (k, s) { l.marks.push([k, s]); }, destroy: function () { l.destroyed += 1; } };
@@ -85,7 +85,7 @@ test.run('create appends its root to the container it is given and answers that 
 }, test.limit.quick);
 test.run('on a bare page it requires the one contact list and the contact family\'s interface, spirit/contact/api.js, and no data.js, then draws it', 0.2, function () {
   if (!loaded) return false;
-  return loaded.indexOf('spirit/element/search/contact/listElement.js') !== -1 && loaded.indexOf('spirit/contact/api.js') !== -1 && !loaded.some(function (p) { return /data\.js$/.test(p); }) ? true : false;
+  return loaded.indexOf('spirit/element/search/contact/list.js') !== -1 && loaded.indexOf('spirit/contact/api.js') !== -1 && !loaded.some(function (p) { return /data\.js$/.test(p); }) ? true : false;
 }, test.limit.quick);
 test.run('the dropdown is the list in its dropdown face, drawn into its root with its words handed on', 0.2, function () {
   if (!box) return false;

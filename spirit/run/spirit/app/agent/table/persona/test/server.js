@@ -159,7 +159,7 @@ test.run('the page files place spirit.element.spirit.app.agent.element.table.per
   global.window = { spirit: {} };
   global.spirit = global.window.spirit;
   // goal/G43.32: the shared stand-ins stand where the page files read them, at spirit.element.<their path>.
-  global.window.spirit.element = { spirit: { app: { agent: { element: { table: { tableElement: STAND.agentTable, rowElement: STAND.agentRow } } } } } };
+  global.window.spirit.element = { spirit: { app: { agent: { element: { table: { tableElement: STAND.agentTable, row: STAND.agentRow } } } } } };
   // The agent branch's interface brings its data.js, as the real api.js does: given spirit/app/agent/api.js, its data.js
   // runs once, as the page runs it, into this page's spirit.data.
   global.window.spirit.require = function (p) {

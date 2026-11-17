@@ -787,7 +787,7 @@ test.run('on a real page, every script is loaded by spirit.require when somethin
 // A dialog's parts come when it opens: the home page opens no app's detail, so none of its files is fetched.
 test.run('on a real page, no detail is open, and none of an app detail\'s files is fetched', 0.2, function () {
   if (!L.gets) return false;
-  const detail = L.gets.filter(function (g) { return /^spirit\/element\/search\/app\/detailElement\.js$|^spirit\/element\/appInstaller\.js$|^spirit\/element\/search\/app\/(serverDEBUG|changeAppIcon|changeAppLabel|rowFormSetShell)\.js$/.test(g.file); });
+  const detail = L.gets.filter(function (g) { return /^spirit\/element\/search\/app\/detail\.js$|^spirit\/element\/appInstaller\.js$|^spirit\/element\/search\/app\/(serverDEBUG|changeAppIcon|changeAppLabel|rowFormSetShell)\.js$/.test(g.file); });
   return !detail.length || false;
 }, test.limit.quick);
 test.run('on a real page, no family\'s api is asked twice', 0.2, function () {

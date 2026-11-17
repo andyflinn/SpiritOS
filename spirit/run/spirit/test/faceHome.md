@@ -105,7 +105,7 @@ Once `./faceHome-starApps.js`, now a section of `./faceHome.js`. goal/G41.33, Q9
 face mark stay yours to set?"*: *"yes. for now."* A real Chrome reads the desktop, at home and on a real face. What a face is
 handed, by its relay's star, is `spirit/faceHome.js`'s, so it is judged beside it (goal/G43.28; moved from
 `shell/test/navigationWrapper-faceStarApps.js`; its relay row section is
-the relayOnFace part of `spirit/element/search/contact/test/rowElement.js`).
+the relayOnFace part of `spirit/element/search/contact/test/row.js`).
 
 ### Requirements
 

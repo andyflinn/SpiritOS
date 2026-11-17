@@ -3,7 +3,7 @@
 // spirit/run/spirit/element/search/test/icon.js
 // What the icon selector offers (spec: ./icon.md; goal/G43.11). Andy: "run://spirit/iconSet.json IS the system set now."
 // The box: "So the icon selector reads it too". Since goal/G43.32 it is a thin selector over its list (Andy: "any search-unit
-// has ONE list shared by popup and list modes."): its dropdown is icon/listElement.js's. A real Chrome on a scratch node's
+// has ONE list shared by popup and list modes."): its dropdown is icon/list.js's. A real Chrome on a scratch node's
 // page, the selector made and opened there.
 
 const fs = require('fs');
@@ -96,8 +96,8 @@ test.run('a selector and two lists made together read the icon set file once', 0
   await chrome.send('Page.navigate', { url: N.base + '/face.html' });
   await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
   await chrome.evaluate(ASKS + '.then(function () {' +
-    ' return Promise.all([window.spirit.require("spirit/element/search/icon.js"), window.spirit.require("spirit/element/search/icon/listElement.js")]); }).then(function () { var box = document.body.appendChild(document.createElement("div"));' +
-    ' window.__root = window.spirit.element.spirit.element.search.icon.create(box, {}); window.spirit.element.spirit.element.search.icon.listElement.create(document.body.appendChild(document.createElement("div")), { face: "pane" }); window.spirit.element.spirit.element.search.icon.listElement.create(document.body.appendChild(document.createElement("div")), { face: "pane" }); return 1; })');
+    ' return Promise.all([window.spirit.require("spirit/element/search/icon.js"), window.spirit.require("spirit/element/search/icon/list.js")]); }).then(function () { var box = document.body.appendChild(document.createElement("div"));' +
+    ' window.__root = window.spirit.element.spirit.element.search.icon.create(box, {}); window.spirit.element.spirit.element.search.icon.list.create(document.body.appendChild(document.createElement("div")), { face: "pane" }); window.spirit.element.spirit.element.search.icon.list.create(document.body.appendChild(document.createElement("div")), { face: "pane" }); return 1; })');
   await until(function () { return rows().then(function (r) { return r.length > 0; }); }, 8000);
   const once = (parsed(await chrome.evaluate('JSON.stringify(window.__asks)')) || []).filter(function (p) { return /iconSet\.json$/.test(p); });
   return once.length === 1 ? true : false;

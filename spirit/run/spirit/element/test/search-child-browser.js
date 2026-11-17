@@ -2,7 +2,7 @@
 // spirit/run/spirit/element/test/search-child-browser.js [<script> ...]
 // THE -browser GENERAL TEST BESIDE spirit/element/search.js (goal/G47.1, box v121, its section
 // "spirit/element/test/search-child-browser.js": "new, the page twin of search-child-general.js: every search (selector,
-// listElement, rowElement, detailElement) mounted in a page on a scratch node, more rows than fit"). Its contract:
+// list, row, detail) mounted in a page on a scratch node, more rows than fit"). Its contract:
 // ./search-child-browser.md. A -child- test beside search.js (../../test/TEST_SYSTEM.md): it judges search.js and search/ and
 // below. Given scripts, the searches they are of; given none, or search.js itself, every search.
 //
@@ -10,7 +10,7 @@
 // mounted in a pane of a stated size; the probabilitySearch it makes is watched (spirit.element.spirit.element.search.create,
 // as spirit/test/spirit-sibling-browser.js's WATCH does) to learn the spirit.data branch it is a view of, and more rows than
 // fit are planted in that branch, each a copy of a row the branch holds (or the plain fields alone), its text a long value
-// with no place to break. The detail is mounted by the search's detailElement in a panel layer (spirit/element/panel.js), as
+// with no place to break. The detail is mounted by the search's detail in a panel layer (spirit/element/panel.js), as
 // the apps open one. EACH CHECK ONE TEST, OVER EVERY SEARCH JUDGED (goal/G47.2): its answer names each search breaking it; a
 // search a check has nothing to judge in is a comment, never a green; a check no search could be judged by is red.
 require('../../spirit.js');
@@ -50,7 +50,7 @@ const ROWS = 60;
 // (testicle, grants), and the scratch node does not run testicle. the world should give a script and turn testicle on").
 const SERVERS = { servers: ['testicle', 'grants'] };
 const OPTIONS = { suite: { script: 'spirit/spirit.js' } };
-// Judged by its listElement, its selector drawing no pane (api: two dropdowns side by side, Andy's G29.7).
+// Judged by its list, its selector drawing no pane (api: two dropdowns side by side, Andy's G29.7).
 const VIA_LIST = { api: true };
 // A ROW'S SHAPE WHERE THE SCRATCH NODE HOLDS NONE TO COPY (its branches and suite rows are empty on a fresh node): the fields
 // each row element reads, every text one of them the long value when planted.
@@ -108,8 +108,8 @@ const PAGE = String.raw`(function (name, ROWS, LONG, PANE_W, PANE_H, VIA_LIST, O
     var made = R.made = [];
     var f = S.element.spirit.element.search; var real = f.create;
     f.create = function (host, o) { var x = o || {}; made.push({ data: typeof x.data === 'string' ? x.data : '', host: host }); return real.apply(this, arguments); };
-    return S.require('spirit/element/search/' + name + '.js').then(function () { return VIA_LIST[name] ? S.require('spirit/element/search/' + name + '/listElement.js') : null; })
-      // THE GRANT LIST NEEDS ITS TABLE (spirit/element/search/grant/listElement.js: "opts.grants the grants table, required"):
+    return S.require('spirit/element/search/' + name + '.js').then(function () { return VIA_LIST[name] ? S.require('spirit/element/search/' + name + '/list.js') : null; })
+      // THE GRANT LIST NEEDS ITS TABLE (spirit/element/search/grant/list.js: "opts.grants the grants table, required"):
       // the node's own, as the Grants app hands it (grantsPanel.nodeGrants).
       .then(function () { return name === 'grant' ? S.require('spirit/element/search/grant/grantsPanel.js').then(function () { OPTIONS.grant = { grants: S.element.spirit.element.search.grant.grantsPanel.nodeGrants }; }) : null; });
   }).then(function () {
@@ -128,9 +128,9 @@ const PAGE = String.raw`(function (name, ROWS, LONG, PANE_W, PANE_H, VIA_LIST, O
     var sel = S.element.spirit.element.search[name];
     if (!sel || typeof sel.create !== 'function') { R.fail = true; return R; }
     // THE LIST IN PANE FACE (cw, checking these reds: "api: its selector is two dropdowns side by side by your ruling
-    // (G29.7) and takes no face: pane, so it never draws a list. the test should judge api's listElement in pane face
-    // instead"): a search whose selector draws no pane is judged by its own listElement.
-    var maker = VIA_LIST[name] && sel.listElement && typeof sel.listElement.create === 'function' ? sel.listElement : sel;
+    // (G29.7) and takes no face: pane, so it never draws a list. the test should judge api's list in pane face
+    // instead"): a search whose selector draws no pane is judged by its own list.
+    var maker = VIA_LIST[name] && sel.list && typeof sel.list.create === 'function' ? sel.list : sel;
     // Only the searches it makes in its own pane count (the face page makes its own).
     R.made.length = 0;
     try { window.zzMade = maker.create(under, Object.assign({ face: 'pane', open: stack.open }, OPTIONS[name] || {})); } catch (e) { R.fail = true; return R; }
@@ -190,10 +190,10 @@ const PAGE = String.raw`(function (name, ROWS, LONG, PANE_W, PANE_H, VIA_LIST, O
       });
     });
   }).then(function () {
-    // 5, 6, 8: the detail, by the search's detailElement, in a panel layer as the apps open one.
-    return S.require('spirit/element/search/' + name + '/detailElement.js').then(function () { return true; }, function () { return false; });
+    // 5, 6, 8: the detail, by the search's detail, in a panel layer as the apps open one.
+    return S.require('spirit/element/search/' + name + '/detail.js').then(function () { return true; }, function () { return false; });
   }).then(function (has) {
-    var D = has && S.element.spirit.element.search[name] && S.element.spirit.element.search[name].detailElement;
+    var D = has && S.element.spirit.element.search[name] && S.element.spirit.element.search[name].detail;
     if (!D || typeof D.create !== 'function') { R.noDetail = true; return R; }
     if (!R.data || !R.planted) { R.noDetailRow = true; return R; }
     var rowOf = function (k) { var r = S.data.getPath(R.data + '/' + k); return Object.assign({ key: k }, r || {}); };

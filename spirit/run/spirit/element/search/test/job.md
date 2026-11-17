@@ -10,7 +10,7 @@ what it was handed; the list is judged in its own folder (`../job/test/`).
 
 - It places itself at `spirit.element.spirit.element.search.job`, with a create.
 - `create(container, options)` appends its root to its container and answers it.
-- It requires its own list, `spirit/element/search/job/listElement.js`, and draws it into its root, handing on the
+- It requires its own list, `spirit/element/search/job/list.js`, and draws it into its root, handing on the
   mounter's `open`, where a job's detail opens.
 - `root.destroy()` lets its list go and takes the root out of its container; a selector destroyed before its list is
   here draws none.

@@ -685,7 +685,7 @@ function deskAddGoal() {
 // The element in its pane face (spirit/element/search.js): the search box, the filters in the row above it, its
 // one call on the wire. IT IS A VIEW OF THE DESK'S BRANCH OF spirit.data (goal/G41.28), the cache manager's (its data
 // option, deskKept().branch), which every publish keeps current; items.search's answers to the words are seated in it. Each row is a row element
-// (spirit/element/rowElement.js) painting the List's cells (deskRowCellParts); a publish redraws the list, and a row's element
+// (spirit/element/row.js) painting the List's cells (deskRowCellParts); a publish redraws the list, and a row's element
 // repaints the cells that changed. A press in a row is the page's (data-press), a press on the row opens it.
 //
 // THE TOGGLES (goal/G9.2, goal/G4.20 point 1): Current Goal Only, on when Desk opens (a multi filter: on until pressed
@@ -695,8 +695,8 @@ var deskList = null;
 var deskListIndex = null;
 function deskListElement(row, key) {
   var E = window.spirit.element;
-  deskListIndex = deskListIndex || E.spirit.element.rowElement.index(function () { /* a publish redraws the list; each element applies its row */ });
-  var el = E.spirit.element.rowElement.create({
+  deskListIndex = deskListIndex || E.spirit.element.row.index(function () { /* a publish redraws the list; each element applies its row */ });
+  var el = E.spirit.element.row.create({
     kind: 'deskRow', key: key, index: deskListIndex, row: row,
     fields: DESK_LIST_FIELDS.map(function (name, i) { return { name: name, paint: function (r) { return deskRowCellParts(r)[i] || ''; } }; }),
   });
@@ -885,7 +885,7 @@ function deskRulesSearch() {
         var v = values || {};
         return { text: text, types: kept(DESK_RULE_TYPES, v.type), statuses: kept(DESK_RULE_STATUSES, v.status) };
       },
-      // A RULE ROW IS A ROW ELEMENT (spirit/element/rowElement.js, the element's own element(row, key)): it paints its status as
+      // A RULE ROW IS A ROW ELEMENT (spirit/element/row.js, the element's own element(row, key)): it paints its status as
       // its icon, as the Rules list always drew it (proposed ICON.EDIT, active ICON.LOCK, deleted ICON.DEAD), and its key.
       columns: [{ field: 'status', label: '', sort: 'text' }, { field: 'label', label: 'Label', sort: 'text' },
         { field: 'type', label: 'Type', sort: 'text' }, { field: 'key', label: 'Key' }],
@@ -905,8 +905,8 @@ function deskRulesSearch() {
 var deskRuleIndex = null;
 function deskRuleElement(row, key) {
   var E = window.spirit.element;
-  deskRuleIndex = deskRuleIndex || E.spirit.element.rowElement.index(function () { /* the list asks again on a rule's publish */ });
-  return E.spirit.element.rowElement.create({
+  deskRuleIndex = deskRuleIndex || E.spirit.element.row.index(function () { /* the list asks again on a rule's publish */ });
+  return E.spirit.element.row.create({
     kind: 'rule', key: key, index: deskRuleIndex,
     row: { status: String((row && row.status) || ''), label: String((row && row.label) || ''), type: String((row && row.type) || ''), key: String(key) },
     fields: [
@@ -917,8 +917,8 @@ function deskRuleElement(row, key) {
     ],
   });
 }
-// probabilitySearch.js and the rowElement it draws rule rows with, through the one loader (it loads each once).
-var DESK_ROW_ELEMENT = '/spirit/element/rowElement.js';
+// probabilitySearch.js and the row it draws rule rows with, through the one loader (it loads each once).
+var DESK_ROW_ELEMENT = '/spirit/element/row.js';
 function deskLoadSearch(done) {
   Promise.all([deskNeed(DESK_ROW_ELEMENT), deskNeed(DESK_SEARCH)]).then(function () { done(); }, function () { /* no search on this page */ });
 }

@@ -1,12 +1,12 @@
 'use strict';
 // spirit/run/spirit/app/testicle/element/search/testicle.js
-// THE TESTICLE SEARCH, A THIN ELEMENT OVER ITS OWN LIST, ./testicle/listElement.js, WHICH IT LOADS ITSELF (rule/26), as
-// ./suite.js is over suite/listElement.js. Its folder holds listElement.js, rowElement.js and detailElement.js (goal/G43.32:
-// "every branch's search is search/<branch>.js, the selector, and its folder holds listElement.js, rowElement.js and
-// detailElement.js").
+// THE TESTICLE SEARCH, A THIN ELEMENT OVER ITS OWN LIST, ./testicle/list.js, WHICH IT LOADS ITSELF (rule/26), as
+// ./suite.js is over suite/list.js. Its folder holds list.js, row.js and detail.js (goal/G43.32:
+// "every branch's search is search/<branch>.js, the selector, and its folder holds list.js, row.js and
+// detail.js").
 //
 // goal/G47.1, the search cycle, the box: "The UI gets its first non-closable tab in the workbench centre pane: the testicle
-// search, spirit/app/testicle/element/search/testicle.js, with its companion folder holding its rowElement and detailElement."
+// search, spirit/app/testicle/element/search/testicle.js, with its companion folder holding its row and detail."
 //
 //   spirit.element.spirit.app.testicle.element.search.testicle.create(container, { pick }) -> { destroy() }
 //     pick   called with (row, key) when a test row is clicked: testicle's face opens its detail in a closable tab
@@ -26,9 +26,9 @@
     var made = null;
     var gone = false;
     // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
-    Promise.resolve(window.spirit.require('spirit/app/testicle/element/search/testicle/listElement.js')).then(function () {
+    Promise.resolve(window.spirit.require('spirit/app/testicle/element/search/testicle/list.js')).then(function () {
       if (gone) return;
-      made = window.spirit.element.spirit.app.testicle.element.search.testicle.listElement.create(root, { pick: o.pick });
+      made = window.spirit.element.spirit.app.testicle.element.search.testicle.list.create(root, { pick: o.pick });
     });
     root.destroy = function () {
       gone = true;

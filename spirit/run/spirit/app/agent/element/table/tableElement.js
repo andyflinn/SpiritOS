@@ -14,8 +14,8 @@
 //     { icon, name, title }. Andy, on G41.4:
 //     "make the detail-panel take over the middle pane of the workBench UI please", so the agent page hands its
 //     workBench's centre.
-//   spirit.element.spirit.app.agent.element.table.rowElement.create(container, { table, id, added, look, fields, required }) -> { destroy }, an element
-//   of its own (./rowElement.js), which builds on agentDetail, below:
+//   spirit.element.spirit.app.agent.element.table.row.create(container, { table, id, added, look, fields, required }) -> { destroy }, an element
+//   of its own (./row.js), which builds on agentDetail, below:
 //     one row's fields as inputs, each saved as it changes (no Save), and Delete, under a title row; added says the row was
 //     just made by Add; fields
 //     [{ field, label, kind }], the row's icon always the first before them (ICON_FIELD), kind one of
@@ -133,7 +133,7 @@ if (window.spirit && typeof window.spirit.require === 'function') Promise.resolv
     s.refresh();
     return s;
   }
-  // What the tables' lists and editors share, the row's editor (./rowElement.js) among them.
+  // What the tables' lists and editors share, the row's editor (./row.js) among them.
   // The tables' shared parts, placed with the table at this file's path (goal/G43.32: one file, one place; below).
   var parts = { titleRow: titleRow, fieldLine: fieldLine, stretch: STRETCH, search: search, branchOf: branchOf, whyOf: whyOf,
     esc: esc, call: call, needs: needs, nameOf: nameOf, columnsOf: columnsOf };

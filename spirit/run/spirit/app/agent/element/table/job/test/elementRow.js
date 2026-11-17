@@ -4,7 +4,7 @@
 // The tests of spirit/app/agent/element/table/job/elementRow.js, and of no other module (spec: ./elementRow.md). Its own
 // test, owed since the rule "every production script has its own test" (goal/G47.1, box v72).
 // One job row in the page (goal/G41.4): the fields the job table names, handed to the tables' row element
-// (../rowElement.js, tested in its own folder). The browser file runs in node on a window of its own; the row element is a
+// (../row.js, tested in its own folder). The browser file runs in node on a window of its own; the row element is a
 // stand-in placed by the real installSpiritElement as its own file places it, keeping what it was handed. The same world
 // as the other tables' elementRow tests. One test.run per test (goal/G47.2).
 
@@ -15,7 +15,7 @@ const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..', '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const familyPath = require(path.join(RUN, 'spirit', 'spirit.js')).familyPath;
 const FILE = path.join(__dirname, '..', 'elementRow.js');
-const ROW = 'spirit/app/agent/element/table/rowElement.js';
+const ROW = 'spirit/app/agent/element/table/row.js';
 
 function load(file) { vm.runInThisContext(fs.readFileSync(file, 'utf8'), { filename: file }); }
 const tick = function () { return new Promise(function (r) { setImmediate(r); }); };
@@ -80,7 +80,7 @@ test.run('create, given a container, an id, added as true and a detail pane, mak
   E.m = W.made[W.made.length - 1];
   return (!!E.m && E.m.container === E.box) || false;
 }, test.limit.quick);
-test.run('it loads the row element itself, spirit/app/agent/element/table/rowElement.js', 0.2, function () {
+test.run('it loads the row element itself, spirit/app/agent/element/table/row.js', 0.2, function () {
   if (!W.up) return false;
   return W.required.indexOf(ROW) !== -1 || false;
 }, test.limit.quick);

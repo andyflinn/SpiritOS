@@ -228,7 +228,7 @@ then and none on the next. A check that finds nothing to judge is red.
 doesn't need yet."*, *"wsl, I SAID, make sure that spirit.js does NOT load all that shit!!!!!!!!!"*). Every file the page
 fetches as it loads, with what asked for it: no file is fetched twice; every script but `spirit.js` and the shell's
 `boot.js` is loaded by `spirit.require` when something requires it, none from a list fetched up front; and the home
-page opens no app's detail, so none of the detail's files (`appSelector/detailElement.js`, `appInstaller.js`,
+page opens no app's detail, so none of the detail's files (`appSelector/detail.js`, `appInstaller.js`,
 `serverDEBUG.js`, `changeAppIcon.js`, `changeAppLabel.js`, `rowFormSetShell.js`) is fetched.
 
 **An app switched on after the page loaded works, no reload** (goal/G43.27, Q1; Andy: *"shouldn't it work without

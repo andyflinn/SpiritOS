@@ -6,7 +6,7 @@
 //   so one file per element, each adding itself to window.spirit.element,
 //   which the shell hands to apps at mount as api.ui.element.
 //
-// A THIN SELECTOR OVER THE ONE CONTACT LIST, spirit/element/search/contact/listElement.js, WHICH IT LOADS ITSELF (rule/26),
+// A THIN SELECTOR OVER THE ONE CONTACT LIST, spirit/element/search/contact/list.js, WHICH IT LOADS ITSELF (rule/26),
 // in its dropdown and in its pane (goal/G43.32; Andy: "contact: there should be only 1 list, i didn't even know there where
 // two....", "all, any search-unit has ONE list shared by popup and list modes."). Until then it drew a list of its own; what
 // that list alone did (any ID table, the caller's hidden filters, a mark column) the contact list does now. Its contract and
@@ -48,10 +48,10 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/conta
       root.dispatchEvent(new Event('change', { bubbles: true }));
     }
     // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the one contact list, and what that list draws with, before it draws it.
-    Promise.all(['spirit/element/search/contact/listElement.js', 'spirit/element/search.js', 'spirit/element/rowElement.js',
-      'spirit/element/search/contact/rowElement.js'].map(function (p) { return window.spirit.require(p); }).concat([window.spirit.require('spirit/contact/api.js')])).then(function () {
+    Promise.all(['spirit/element/search/contact/list.js', 'spirit/element/search.js', 'spirit/element/row.js',
+      'spirit/element/search/contact/row.js'].map(function (p) { return window.spirit.require(p); }).concat([window.spirit.require('spirit/contact/api.js')])).then(function () {
       if (gone) return;
-      made = window.spirit.element.spirit.element.search.contact.listElement.create(root, {
+      made = window.spirit.element.spirit.element.search.contact.list.create(root, {
         face: isPane ? 'pane' : 'dropdown',
         placeholder: isPane ? '' : (o.placeholder || 'choose a contact…'),
         all: isPane ? undefined : o.all,

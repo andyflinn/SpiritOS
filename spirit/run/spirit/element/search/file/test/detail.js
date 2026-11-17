@@ -1,0 +1,60 @@
+'use strict';
+
+// spirit/run/spirit/element/search/file/test/detail.js
+// The tests of spirit/element/search/file/detail.js, and of no other module (spec: ./detail.md; goal/G43.32).
+// The box: "every branch's search is search/<branch>.js, the selector, and its folder holds list.js, row.js and
+// detail.js". A real Chrome on a scratch node's face page, the detail mounted by itself on a file of the tree; neither
+// Andy's node nor an agent's is touched.
+
+const fs = require('fs');
+const path = require('path');
+const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..');
+const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+const { scratchNode, chromePage, findChrome, until } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+
+// A file every tree holds, of a known size.
+const PATH = 'spirit/spirit.js';
+
+// One test.run per test (goal/G47.2). What the world and the tests make, for the tests after them.
+let code, node, chrome, made;
+const SRC = path.join(__dirname, '..', 'detail.js');
+const js = function (s) { return chrome.evaluate(s); };
+const text = function () { return js('String((document.getElementById("zzDetail") || {}).innerText || "")'); };
+
+test.after(function () {
+  try { if (chrome && chrome.kid) chrome.kid.kill(); } catch (e) { /* gone */ }
+  try { if (node && node.child) node.child.kill(); } catch (e) { /* gone */ }
+  try { if (chrome && chrome.profile) fs.rmSync(chrome.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
+  try { if (node && node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* left */ }
+});
+
+test.run('spirit/element/search/file/detail.js is there', 0.2, function () {
+  code = fs.existsSync(SRC) ? fs.readFileSync(SRC, 'utf8').replace(/\/\/[^\n]*/g, '') : '';
+  return !!code || false;
+}, test.limit.quick);
+test.run('it draws with fstat, which it loads itself', 0.2, function () {
+  return /spirit\/element\/fstat\.js/.test(code) && /fstat\.create\(/.test(code) ? true : false;
+}, test.limit.quick);
+test.run('a scratch node comes up with a Chrome on its face page', 0.2, async function () {
+  node = await scratchNode();
+  chrome = await chromePage(findChrome());
+  if (!node.up || chrome.error) return false;
+  await chrome.send('Page.navigate', { url: node.base + '/face.html' });
+  return (await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000)) ? true : false;
+}, test.limit.slow);
+test.run('it loads on a page, at spirit.element.spirit.element.search.file.detail, and makes its detail', 0.2, async function () {
+  if (!node || !node.up || !chrome || chrome.error) return false;
+  made = await js('window.spirit.ready.then(function () { return window.spirit.require("spirit/element/search/file/detail.js"); }).then(function () { var E = (((((window.spirit.element || {}).spirit || {}).element || {}).search || {}).file || {}).detail; if (!E || typeof E.create !== "function") return false; var b = document.body.appendChild(document.createElement("div")); b.id = "zzDetail"; window.__made = E.create(b, { path: ' + JSON.stringify(PATH) + ' }); return "made"; }, function () { return false; })');
+  return made === 'made' ? true : false;
+}, test.limit.quick);
+// fstat's facts: the MIME type at once, then the size once fs.stat answers.
+test.run('it shows the file\'s info: its MIME type and its size', 0.2, async function () {
+  if (made !== 'made') return false;
+  const shown = await until(function () { return text().then(function (t) { return /javascript/i.test(t) && /\d/.test(t); }); }, 10000);
+  return shown ? true : false;
+}, test.limit.quick);
+test.run('destroy leaves its host empty', 0.2, async function () {
+  if (made !== 'made') return false;
+  const after = await js('(function () { window.__made.destroy(); return document.getElementById("zzDetail").children.length; })()');
+  return after === 0 ? true : false;
+}, test.limit.quick);

@@ -879,7 +879,7 @@ async function tabOpens(kind, row) {
   // The real files the app and its elements load, run on the page when they are required; anything else is answered and
   // not run.
   const REAL = [
-    'spirit/data.js', 'spirit/element/workBench.js', 'spirit/element/tabContainer.js', 'spirit/app/agent/element/table/tableElement.js', 'spirit/app/agent/element/table/rowElement.js',
+    'spirit/data.js', 'spirit/element/workBench.js', 'spirit/element/tabContainer.js', 'spirit/app/agent/element/table/tableElement.js', 'spirit/app/agent/element/table/row.js',
     'spirit/app/agent/element/table/provider/elementTable.js', 'spirit/app/agent/element/table/provider/elementRow.js',
     'spirit/app/agent/element/table/model/elementTable.js', 'spirit/app/agent/element/table/model/elementRow.js', 'spirit/element/busyButton.js',
     // The one-row form and the icon it draws with (goal/G41.27): the model table's Ask form is one.

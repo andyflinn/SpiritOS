@@ -4,9 +4,9 @@
 // and their folders, contain list, row an detail elements.", "all the others should adhere to the directory structure, as
 // implied by MANY design decisions."). Its contract and its test: ./test/job.md and ./test/job.js.
 //
-// A THIN SELECTOR OVER ITS OWN LIST, spirit/element/search/job/listElement.js, WHICH IT LOADS ITSELF (rule/26), as the
-// bundle selector is over its list. The list draws the node's jobs from spirit.data, each row ./job/rowElement.js, and a
-// press opens ./job/detailElement.js over it.
+// A THIN SELECTOR OVER ITS OWN LIST, spirit/element/search/job/list.js, WHICH IT LOADS ITSELF (rule/26), as the
+// bundle selector is over its list. The list draws the node's jobs from spirit.data, each row ./job/row.js, and a
+// press opens ./job/detail.js over it.
 //
 //   spirit.element.spirit.element.search.job.create(container, options) -> root
 //     options.open   the mounter's panel stack's open, where a job's detail opens; with none, the list's own stack
@@ -23,9 +23,9 @@
     var made = null;
     var gone = false;
     // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
-    Promise.resolve(window.spirit.require('spirit/element/search/job/listElement.js')).then(function () {
+    Promise.resolve(window.spirit.require('spirit/element/search/job/list.js')).then(function () {
       if (gone) return;
-      made = window.spirit.element.spirit.element.search.job.listElement.create(root, { open: o.open, face: o.face, placeholder: o.placeholder, pick: o.pick });
+      made = window.spirit.element.spirit.element.search.job.list.create(root, { open: o.open, face: o.face, placeholder: o.placeholder, pick: o.pick });
     });
     root.destroy = function () {
       gone = true;

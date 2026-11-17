@@ -390,7 +390,7 @@ test.run('the provider\'s elementTable and elementRow are placed on spirit.eleme
   global.window = { spirit: {} };
   global.spirit = global.window.spirit;
   // goal/G43.32: the shared stand-ins stand where the page files read them, at spirit.element.<their path>.
-  global.window.spirit.element = { spirit: { app: { agent: { element: { table: { tableElement: STAND.agentTable, rowElement: STAND.agentRow } } } } } };
+  global.window.spirit.element = { spirit: { app: { agent: { element: { table: { tableElement: STAND.agentTable, row: STAND.agentRow } } } } } };
   // The agent family's api.js requires its companion data.js, as the real one does: the real file, run once; anything
   // else is a stand-in.
   const ran = {};

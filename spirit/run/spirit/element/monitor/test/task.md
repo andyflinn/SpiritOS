@@ -18,7 +18,7 @@ Its test is `./task.js`: a real Chrome on a scratch node's face page, with three
 - Delete takes the failed job away, and the row offers Run again.
 - Destroyed, it leaves its container empty.
 
-Which of Cancel or Delete a job offers is the job row element's `actionOf` (spirit/element/search/job/rowElement.js), the rule the jobs detail uses too (wsl: *"task.js should take that rule from there, not write a second one"*).
+Which of Cancel or Delete a job offers is the job row element's `actionOf` (spirit/element/search/job/row.js), the rule the jobs detail uses too (wsl: *"task.js should take that rule from there, not write a second one"*).
 
 ## What would make it red
 

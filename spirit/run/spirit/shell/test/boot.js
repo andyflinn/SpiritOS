@@ -71,7 +71,7 @@ test.run('it reads no component but its own: spirit\'s libraries, the sheets and
     return p === 'shell.css' || p === 'shell/face.css' || /^spirit\/[\w.-]+\.js$/.test(p) || /^spirit\/client\/[\w.-]+\.js$/.test(p) ||
       p === 'spirit/element/joinSteps.js' ||
       // goal/G41.19: the file tree's row element, which spirit.js does not load.
-      p === 'spirit/element/search/file/rowElement.js' ||
+      p === 'spirit/element/search/file/row.js' ||
       // A FAMILY'S INTERFACE, which brings its data with it (goal/G47.1; Andy's rule: "every api.js requires it's companion
       // data.js, and is the only script to require that data.js"): boot reads the jobs it streams from the job family's.
       /^spirit\/[\w-]+\/api\.js$/.test(p);

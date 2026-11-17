@@ -202,7 +202,7 @@ test.run('elementTable.js and elementRow.js place the agent app\'s model list an
   // element's pieces (once agentDetail) with its create.
   global.window = { spirit: { familyPath: familyPath, element: { spirit: {
     element: { search: STAND.search, rowForm: STAND.rowForm, busyButton: STAND.busyButton },
-    app: { agent: { element: { table: { tableElement: Object.assign({}, STAND.agentDetail, STAND.agentTable), rowElement: STAND.agentRow } } } } } } } };
+    app: { agent: { element: { table: { tableElement: Object.assign({}, STAND.agentDetail, STAND.agentTable), row: STAND.agentRow } } } } } } } };
   global.spirit = global.window.spirit;
   // The page's one loader: asked for a branch's api.js, it runs that branch's real data.js once, as the real api.js
   // requires its companion data.js; the data set (spirit/data.js) is run below.

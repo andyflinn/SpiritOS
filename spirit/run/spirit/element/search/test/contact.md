@@ -1,7 +1,7 @@
 # spirit/element/search/contact.js, the contact picker
 
 The peer picker apps build their screens with: Chat's peers pane, the grants panel's ID selectors. Since goal/G43.32 it is a
-thin selector over the one contact list, `search/contact/listElement.js` (Andy: *"contact: there should be only 1 list, i
+thin selector over the one contact list, `search/contact/list.js` (Andy: *"contact: there should be only 1 list, i
 didn't even know there where two...."*, *"all, any search-unit has ONE list shared by popup and list modes."*); until then
 it drew a list of its own. What that list alone did (any ID table, goal/G41.13; the caller's hidden filters; a mark column)
 the contact list does now, tested in its folder. Its test is `./contact.js`: the browser file run in node on a bare window,

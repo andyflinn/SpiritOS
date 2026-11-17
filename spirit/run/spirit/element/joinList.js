@@ -23,7 +23,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
   var STEPS = 'spirit/app/join/join.json';
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
   var parts = Promise.all(['spirit/element/joinSteps.js', 'spirit/element/joinForm.js',
-    'spirit/element/search/contact/listElement.js', 'spirit/element/icon.js'].map(function (p) { return S.require(p); }));
+    'spirit/element/search/contact/list.js', 'spirit/element/icon.js'].map(function (p) { return S.require(p); }));
   // ICONS ARE GLYPHS (goal/G41.1): a step names its own in join.json, and the marks are written here; no icon table.
   var DONE = '☑️';
   var OPEN = '⬜';
@@ -118,7 +118,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
         return;
       }
       // FIND SOMEONE: the same one list Contacts draws (goal/G30.19). The node republishes its join news once the contact is in.
-      var list = E.spirit.element.search && E.spirit.element.search.contact && E.spirit.element.search.contact.listElement;
+      var list = E.spirit.element.search && E.spirit.element.search.contact && E.spirit.element.search.contact.list;
       if (step.until === 'contact' && list) {
         box.innerHTML = '<div class="join-find-list"></div><div class="job-manifest-note join-find-said"></div>';
         made.push(list.create(box.querySelector('.join-find-list'), {

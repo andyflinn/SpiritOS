@@ -662,7 +662,7 @@ test.run('every suite row of the script detail has a 🏃‍♂️ button in its
   return (cells.length > 0 && !bad.length) || false;
 }, test.limit.quick);
 test.run('the 🏃‍♂️ is the busy button, spirit/element/busyButton.js, which the suite list loads', 0.2, function () {
-  const files = ['spirit/app/testicle/element/search/suite.js', 'spirit/app/testicle/element/search/suite/listElement.js', 'spirit/app/testicle/element/search/suite/rowElement.js', 'spirit/app/testicle/element.js'];
+  const files = ['spirit/app/testicle/element/search/suite.js', 'spirit/app/testicle/element/search/suite/list.js', 'spirit/app/testicle/element/search/suite/row.js', 'spirit/app/testicle/element.js'];
   return files.some(function (f) { return /['"]spirit\/element\/busyButton\.js['"]/.test(code(path.join(RUN, f))); }) || false;
 }, test.limit.quick);
 test.run('a press on iota\'s own suite\'s 🏃‍♂️ is answered at once: the button is no longer busy while the suite still runs', 0.2, async function () {

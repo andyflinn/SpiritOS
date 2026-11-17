@@ -12,7 +12,7 @@
 // the app detail's other rows hide themselves. The icon and the name are that manifest's identity.
 // THE LINE: the name, and while its job runs, the text the app last published of its progress, {job: {state, name, done,
 // total, text}} as its job's app object, the convention the job row's progress bar reads (goal/G29.14,
-// spirit/element/search/job/rowElement.js), else "running"; once ended, its status.
+// spirit/element/search/job/row.js), else "running"; once ended, its status.
 // THE BUTTON: Run while the app has no job; else Cancel or Delete, decided by the jobs detail's rule, the job row element's
 // actionOf (wsl: "the Jobs detail already decides Cancel against Delete from a job's state, so task.js should take that rule
 // from there, not write a second one"). A press is the rowForm's, so the button is busy until the node answers; a refusal is
@@ -21,7 +21,7 @@
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the row form, the jobs family's interface (which loads its cache), and the
   // job row element that holds the Cancel or Delete rule.
-  var parts = Promise.all(['spirit/element/rowForm.js', 'spirit/job/api.js', 'spirit/element/search/job/rowElement.js'].map(function (p) { return S.require(p); }));
+  var parts = Promise.all(['spirit/element/rowForm.js', 'spirit/job/api.js', 'spirit/element/search/job/row.js'].map(function (p) { return S.require(p); }));
   var WORD = { run: 'Run', cancel: 'Cancel', 'delete': 'Delete' };
   var PREFIX = 'spirit.app.';
 
@@ -40,7 +40,7 @@
 
     function cache() { return S.data && S.data.job && S.data.job.data ? S.data.job.data : null; }
     function job() { var J = cache(); return J && typeof J.job === 'function' ? J.job(id) : null; }
-    function actionOf(j) { return j ? S.element.spirit.element.search.job.rowElement.actionOf(j) : 'run'; }
+    function actionOf(j) { return j ? S.element.spirit.element.search.job.row.actionOf(j) : 'run'; }
     function messageOf(j) {
       if (!j) return '';
       var a = actionOf(j);

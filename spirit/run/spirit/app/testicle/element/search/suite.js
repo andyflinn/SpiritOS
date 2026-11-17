@@ -1,12 +1,12 @@
 'use strict';
 // spirit/run/spirit/app/testicle/element/search/suite.js
-// THE SUITE SELECTOR, A THIN ELEMENT OVER ITS OWN LIST, ./suite/listElement.js, WHICH IT LOADS ITSELF (rule/26), as ./job.js is
-// over job/listElement.js. testicle's (goal/G47.1, the UI cycle, the box: "Since testicle is intrinsic, its elements go into
+// THE SUITE SELECTOR, A THIN ELEMENT OVER ITS OWN LIST, ./suite/list.js, WHICH IT LOADS ITSELF (rule/26), as ./job.js is
+// over job/list.js. testicle's (goal/G47.1, the UI cycle, the box: "Since testicle is intrinsic, its elements go into
 // spirit/element/ in the standard way: the suite search is spirit/app/testicle/element/search/suite.js and its folder").
 //
 //   spirit.element.spirit.app.testicle.element.search.suite.create(container, { script, face, placeholder, all, pick }) -> { destroy() }
 //     script   the production script whose suites it lists, scoped to run://
-//     face, placeholder, all, pick   handed to its list as they are (./suite/listElement.js)
+//     face, placeholder, all, pick   handed to its list as they are (./suite/list.js)
 (function () {
   // ITS APP'S INTERFACE AND DATA, IT LOADS ITSELF (goal/G47.1, box v142: "all of testicle's elements must subscribe to the data they
   // display"; box v140; rule 26): testicle's api.js and its cache manager, data.js, which the page's one stream feeds; mounted
@@ -23,9 +23,9 @@
     var made = null;
     var gone = false;
     // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
-    Promise.resolve(window.spirit.require('spirit/app/testicle/element/search/suite/listElement.js')).then(function () {
+    Promise.resolve(window.spirit.require('spirit/app/testicle/element/search/suite/list.js')).then(function () {
       if (gone) return;
-      made = window.spirit.element.spirit.app.testicle.element.search.suite.listElement.create(root, { script: o.script, face: o.face, placeholder: o.placeholder, all: o.all, pick: o.pick });
+      made = window.spirit.element.spirit.app.testicle.element.search.suite.list.create(root, { script: o.script, face: o.face, placeholder: o.placeholder, all: o.all, pick: o.pick });
     });
     root.destroy = function () {
       gone = true;

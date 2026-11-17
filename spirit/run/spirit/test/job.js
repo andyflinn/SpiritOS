@@ -117,7 +117,7 @@ test.run('an app\'s own spirit/app/<name>/<name>.js, its json saying node run tr
   await sleep(WAIT_MS);
   return inc.status === 201 && fs.existsSync(mark('run')) ? true : false;
 }, test.limit.slow);
-// A PAGE SENDS PLAIN node (the app detail's run, spirit/element/search/app/detailElement.js:68): job.js reads it as this
+// A PAGE SENDS PLAIN node (the app detail's run, spirit/element/search/app/detail.js:68): job.js reads it as this
 // node's own executable. The run before has ended, so the id is free again.
 test.run('plain node with a node run app starts, as Run sends it', 0.2, async function () {
   const plainNode = await call({ command: 'node', args: ['spirit/app/zzRun/zzRun.js'] });

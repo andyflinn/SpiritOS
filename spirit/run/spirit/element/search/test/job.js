@@ -3,7 +3,7 @@
 // spirit/run/spirit/element/search/test/job.js
 // The tests of spirit/element/search/job.js, and of no other module (spec: ./job.md; goal/G43.32). The browser file runs
 // in node on a BARE window (rule/26): no element is on the page until the selector requires it. Its list,
-// search/job/listElement.js, is a stand-in that keeps what it was handed; it is tested in its own folder.
+// search/job/list.js, is a stand-in that keeps what it was handed; it is tested in its own folder.
 
 const fs = require('fs');
 const path = require('path');
@@ -31,7 +31,7 @@ test.run('the selector runs on a bare window', 0.2, async function () {
   lists = [];
   required = [];
   const STANDS = {
-    'spirit/element/search/job/listElement.js': function () { require(path.join(RUN, 'spirit', 'element', 'installSpiritElement.js'))(global.window.spirit, 'spirit/element/search/job/listElement.js', { create: function (host, o) {
+    'spirit/element/search/job/list.js': function () { require(path.join(RUN, 'spirit', 'element', 'installSpiritElement.js'))(global.window.spirit, 'spirit/element/search/job/list.js', { create: function (host, o) {
       const l = { host: host, o: o, destroyed: 0 };
       lists.push(l); return { destroy: function () { l.destroyed += 1; } };
     } }); },
@@ -66,9 +66,9 @@ test.run('create appends its root to its container and answers it', 0.2, async f
   list = lists[0];
   return box.children.length === 1 && box.children[0] === root ? true : false;
 }, test.limit.quick);
-test.run('on a bare page it requires its list, spirit/element/search/job/listElement.js', 0.2, function () {
+test.run('on a bare page it requires its list, spirit/element/search/job/list.js', 0.2, function () {
   if (!required) return false;
-  return required.indexOf('spirit/element/search/job/listElement.js') !== -1 ? true : false;
+  return required.indexOf('spirit/element/search/job/list.js') !== -1 ? true : false;
 }, test.limit.quick);
 test.run('its list is drawn into its root, the mounter\'s open handed on, where a job\'s detail opens', 0.2, function () {
   if (!box) return false;

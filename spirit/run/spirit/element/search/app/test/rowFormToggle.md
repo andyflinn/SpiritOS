@@ -2,7 +2,7 @@
 
 A rowForm that toggles (goal/G43.15). Its test is `./rowFormToggle.js`, in a real Chrome on a scratch node's face page.
 
-Andy: *"it acts exactly like the two toggle switches in appSelector:detailElement."*, *"it is configurable with a description of what is being toggled."*
+Andy: *"it acts exactly like the two toggle switches in appSelector:detail."*, *"it is configurable with a description of what is being toggled."*
 
 ## Requirements
 

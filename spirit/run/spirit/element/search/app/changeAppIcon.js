@@ -11,7 +11,7 @@
 (function () {
   window.spirit.require('spirit/element/rowForm.js');
   window.spirit.require('spirit/element/icon.js');
-  window.spirit.require('spirit/element/search/icon/listElement.js');
+  window.spirit.require('spirit/element/search/icon/list.js');
   window.spirit.require('spirit/app/api.js');
 
   function create(host, options) {
@@ -35,7 +35,7 @@
     form.span.appendChild(shown);
     var listHost = document.createElement('span');
     form.span.appendChild(listHost);
-    var list = E.spirit.element.search.icon.listElement.create(listHost, { face: 'dropdown', pick: function (r, glyph) { picked = glyph || ''; } });
+    var list = E.spirit.element.search.icon.list.create(listHost, { face: 'dropdown', pick: function (r, glyph) { picked = glyph || ''; } });
     function paint() {
       if (gone) return;
       var r = row();

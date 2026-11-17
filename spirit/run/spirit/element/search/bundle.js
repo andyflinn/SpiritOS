@@ -5,9 +5,9 @@
 // bundle rows", "these shell elements must follow the design pattern of the contactSelector"). Its contract and its
 // test: ./test/bundle.md and ./test/bundle.js.
 //
-// A THIN SELECTOR OVER ITS OWN LIST, spirit/element/search/bundle/listElement.js, WHICH IT LOADS ITSELF (rule/26: "every
+// A THIN SELECTOR OVER ITS OWN LIST, spirit/element/search/bundle/list.js, WHICH IT LOADS ITSELF (rule/26: "every
 // shell element loads its own elements dynamically through the fucking apirit.require functionality"). The list draws
-// the node's bundles (auth.bundle search) and each row (bundle/rowElement.js).
+// the node's bundles (auth.bundle search) and each row (bundle/row.js).
 //
 //   spirit.element.spirit.element.search.bundle.create(container, options) -> root
 //     root.value   the chosen bundle's id, a number, '' while none is
@@ -15,7 +15,7 @@
 //     one bubbling `change` on a pick; refresh() asks again
 //     options.face       'pane' is the list itself; the default is the dropdown
 //     options.columns    the list's fields, of label and owner
-//     options.tabs       in a pane, the tabContainer a row pressed opens its branchEditor (./bundle/detailElement.js) in (goal/G41.32; Andy: "when some
+//     options.tabs       in a pane, the tabContainer a row pressed opens its branchEditor (./bundle/detail.js) in (goal/G41.32; Andy: "when some
 //                        clicks on a (selects) a bundle row, a new closable tab opens in the tabContainer configured in the
 //                        bundleSelector:pane"; "if a bundle already has an branchEditor-tab in the configured tabContainer,
 //                        that tab will become the active tab"). None configured, a press opens nothing
@@ -47,19 +47,19 @@
     function openTab(row) {
       var tabs = options.tabs;
       var name = 'bundle-' + Number(row.id);
-      window.spirit.require('spirit/element/search/bundle/detailElement.js').then(function () {
+      window.spirit.require('spirit/element/search/bundle/detail.js').then(function () {
         var said = typeof options.tabLabel === 'function' ? options.tabLabel(row) : String(row.label || '');
         var header = said && typeof said === 'object' ? said : { label: String(said || '') };
         tabs.add({ name: name, label: String(header.label || ''), italic: header.italic === true, closable: true, mount: function (box) {
-          return window.spirit.element.spirit.element.search.bundle.detailElement.create(box, { bundle: Number(row.id), label: String(row.label || ''), owner: String(row.owner || 'node'), gone: function () { tabs.close(name); } });
+          return window.spirit.element.spirit.element.search.bundle.detail.create(box, { bundle: Number(row.id), label: String(row.label || ''), owner: String(row.owner || 'node'), gone: function () { tabs.close(name); } });
         } });
       });
     }
     // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
     var gone = false;
-    Promise.resolve(window.spirit.require ? window.spirit.require('spirit/element/search/bundle/listElement.js') : null).then(function () {
+    Promise.resolve(window.spirit.require ? window.spirit.require('spirit/element/search/bundle/list.js') : null).then(function () {
       if (gone) return;
-      made = window.spirit.element.spirit.element.search.bundle.listElement.create(root, {
+      made = window.spirit.element.spirit.element.search.bundle.list.create(root, {
         face: isPane ? 'pane' : 'dropdown',
         placeholder: isPane ? '' : (options.placeholder || 'choose a bundle…'),
         all: isPane ? undefined : options.all,

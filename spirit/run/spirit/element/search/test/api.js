@@ -5,7 +5,7 @@
 // apiBranchSelector.js, renamed (Andy: "apiBranchSelector.js will be RENAMED apiFamilySelector.js, which is the proper
 // name for it"), its verb half kept (Andy: "apiFamiliySelector.js will use apiVerbSelector as part of itself, because
 // the verb selector NEEDs the family selector to have any meaning at all."). The browser file runs in node on a BARE
-// window (rule/26): its two halves, the family list search/api/listElement.js and the verb half search/api/verb.js, are put there real once required;
+// window (rule/26): its two halves, the family list search/api/list.js and the verb half search/api/verb.js, are put there real once required;
 // probabilitySearch is a stand-in that keeps every list it was asked to make; the node's api tree is the spirit
 // object's answer, kept by the node family's data.js (goal/G41.28), loaded with the node family's api.js, as a page's
 // spirit.require('spirit/node/api.js') loads it, the page's node known as spirit.start makes it known (spirit.node.key, then
@@ -43,8 +43,8 @@ function world() {
   const STANDS = {
     'spirit/element/search.js': function (win) { const at = win.spirit.element.spirit.element; at.search = Object.assign(at.search || {}, { create: function (host, opts) { const l = { host: host, opts: opts, redrawn: 0, value: '', row: null,
       redraw: function () { l.redrawn += 1; }, refresh: function () {}, destroy: function () {} }; w.lists.push(l); return l; } }); },
-    // Its two halves (goal/G43.32): the family list, search/api/listElement.js, and the verb half, search/api/verb.js.
-    'spirit/element/search/api/listElement.js': real('search/api/listElement.js'),
+    // Its two halves (goal/G43.32): the family list, search/api/list.js, and the verb half, search/api/verb.js.
+    'spirit/element/search/api/list.js': real('search/api/list.js'),
     'spirit/element/search/api/verb.js': real('search/api/verb.js'),
   };
   const win = {
@@ -107,9 +107,9 @@ test.run('it registers apiFamilySelector with a create, and createApiFamilySelec
   made = w.E.search.api;
   return made && typeof made.create === 'function' && !('createApiFamilySelector' in w.E) && !('createApiBranchSelector' in w.E) ? true : false;
 }, test.limit.quick);
-test.run('it loads its two halves itself, the family list search/api/listElement.js and the verb selector', 0.2, function () {
+test.run('it loads its two halves itself, the family list search/api/list.js and the verb selector', 0.2, function () {
   if (!made || typeof made.create !== 'function') return false;
-  return w.required.indexOf('spirit/element/search/api/listElement.js') !== -1 && w.required.indexOf('spirit/element/search/api/verb.js') !== -1 ? true : false;
+  return w.required.indexOf('spirit/element/search/api/list.js') !== -1 && w.required.indexOf('spirit/element/search/api/verb.js') !== -1 ? true : false;
 }, test.limit.quick);
 // goal/G47.1, Andy: "every api.js requires it's companion data.js, and is the only script to require that data.js".
 test.run('its halves require the node family\'s interface, spirit/node/api.js, and no data script', 0.2, function () {

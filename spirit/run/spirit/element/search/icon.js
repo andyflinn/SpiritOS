@@ -1,10 +1,10 @@
 'use strict';
 // spirit/run/spirit/element/search/icon.js
-// THE ICON SELECTOR, A THIN ELEMENT OVER ITS OWN LIST, spirit/element/search/icon/listElement.js, WHICH IT LOADS ITSELF
+// THE ICON SELECTOR, A THIN ELEMENT OVER ITS OWN LIST, spirit/element/search/icon/list.js, WHICH IT LOADS ITSELF
 // (rule/26). Andy, goal/G43.32: "any search-unit has ONE list shared by popup and list modes." It was a dropdown of its own,
 // drawing rows of its own from the list's glyph set; now the field and its popup are that list's dropdown, the same rows the
 // Icons app's pane shows. The box: "every branch's search is search/<branch>.js, the selector, and its folder holds
-// listElement.js, rowElement.js and detailElement.js". Its test: ./test/icon.js.
+// list.js, row.js and detail.js". Its test: ./test/icon.js.
 //
 //   spirit.element.spirit.element.search.icon.create(container, options) -> root
 //     root.value     the glyph chosen, the value it was made with until one is (goal/G41.1: a glyph, never a key)
@@ -15,7 +15,7 @@
 //     options.face     'pane' or the default 'dropdown'; options.placeholder, options.all, options.empty as the list's
 (function () {
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): its list, as this file runs, so a caller's require waits for it.
-  window.spirit.require('spirit/element/search/icon/listElement.js');
+  window.spirit.require('spirit/element/search/icon/list.js');
   function create(container, options) {
     var o = options || {};
     var exclude = Array.isArray(o.exclude) ? o.exclude.map(String) : [];
@@ -26,7 +26,7 @@
     root.value = String(o.value || '');
     root.row = null;
     container.appendChild(root);
-    var list = window.spirit.element.spirit.element.search.icon.listElement.create(root, {
+    var list = window.spirit.element.spirit.element.search.icon.list.create(root, {
       face: o.face === 'pane' ? 'pane' : 'dropdown',
       // The glyph it holds shows in the closed field until a pick names another.
       placeholder: root.value || o.placeholder,

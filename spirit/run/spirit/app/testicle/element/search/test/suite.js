@@ -3,7 +3,7 @@
 // spirit/run/spirit/element/search/test/suite.js
 // The tests of spirit/app/testicle/element/search/suite.js, and of no other module (spec: ./suite.md). Its own test, owed since the rule
 // "every production script has its own test" (goal/G47.1, box v72). The suite selector: a thin element over its own list,
-// ./suite/listElement.js, which it loads itself.
+// ./suite/list.js, which it loads itself.
 //
 // The world of ./testicle.js, as it is: a real node on a scratch copy of the tracked files, testicle turned on there, the
 // general suites stubbed, tests of planted scripts set through testicle.testicle.set (which makes their script and suite
@@ -140,10 +140,10 @@ test.run('create appends its own root to the container and answers it', 0.2, asy
   const v = await view('zzBox');
   return (!!v && v.children === 1 && v.isRoot && /\bsuite-selector\b/.test(v.className)) || false;
 }, test.limit.quick);
-// "A THIN ELEMENT OVER ITS OWN LIST, ./suite/listElement.js, WHICH IT LOADS ITSELF (rule/26)"
-test.run('it loads its own list, spirit/app/testicle/element/search/suite/listElement.js', 0.2, async function () {
+// "A THIN ELEMENT OVER ITS OWN LIST, ./suite/list.js, WHICH IT LOADS ITSELF (rule/26)"
+test.run('it loads its own list, spirit/app/testicle/element/search/suite/list.js', 0.2, async function () {
   if (notMounted()) return false;
-  const ok = await until(function () { return c.evaluate('!!(((((((((window.spirit.element || {}).spirit || {}).app || {}).testicle || {}).element || {}).search || {}).suite || {}).listElement || {}).create)'); }, 10000);
+  const ok = await until(function () { return c.evaluate('!!(((((((((window.spirit.element || {}).spirit || {}).app || {}).testicle || {}).element || {}).search || {}).suite || {}).list || {}).create)'); }, 10000);
   return !!ok || false;
 }, test.limit.slow);
 test.run('its list in its root shows the suites of the script it is given, and of no other', 0.2, async function () {

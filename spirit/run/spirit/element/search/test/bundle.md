@@ -1,7 +1,7 @@
 # spirit/element/search/bundle.js
 
 `spirit/run/spirit/element/search/bundle.js` is the bundle selector (goal/G41.14): a thin selector over its own list,
-`spirit/element/search/bundle/listElement.js`, as `spirit/element/search/contact.js` is over the contacts. Its test is `./bundle.js`.
+`spirit/element/search/bundle/list.js`, as `spirit/element/search/contact.js` is over the contacts. Its test is `./bundle.js`.
 
 Andy, box: *"bundleSelector.js and bundleSelector/ folder, featuring a pane mode and a dropdown mode for displaying and
 selecting bundle rows."*
@@ -11,7 +11,7 @@ selecting bundle rows."*
 - It registers `spirit.element.search.bundle.create(container, options)`, and `createBundleSelector` no more. Its root is
   appended to the container and answered (box v23: *"every element gets a container and appends itself"*).
 - It answers its root at once, class `bundle-selector`, with nothing chosen: `.value` is `''` and `.row` is `null`.
-- It loads what it uses itself (rule/26): on a bare page it requires `spirit/element/search/bundle/listElement.js` and draws
+- It loads what it uses itself (rule/26): on a bare page it requires `spirit/element/search/bundle/list.js` and draws
   that list into its root. Nothing of the old shell's list search is in it (goal/G40.8).
 - A dropdown by default; `options.face: 'pane'` is the list itself, filling the box it is given, so the list's size is its pane's and not its rows' (`spirit/element/test/search-child-browser.js`). `placeholder` and `columns` are handed
   to the list; `editable` is no option (goal/G41.26: the label is shown only).

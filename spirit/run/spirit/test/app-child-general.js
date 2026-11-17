@@ -107,8 +107,8 @@ function appApp() {
     const gone = ['spirit/app/shell', 'spirit/app/appSelector', 'spirit/app/appSelector.js'].filter(function (p) { return isDir(p) || isFile(p) || TREE.some(function (f) { return f.indexOf(p + '/') === 0; }); });
     return !gone.length ? true : false;
   }, test.limit.quick);
-  test.run('the app branch is intrinsic, its parts changeAppIcon, changeAppLabel, detailElement, rowFormAppActive, rowFormSetShell, rowFormToggle and serverDEBUG standing in spirit/element/search/app/', 0.4, function () {
-    const parts = ['changeAppIcon', 'changeAppLabel', 'detailElement', 'rowFormAppActive', 'rowFormSetShell', 'rowFormToggle', 'serverDEBUG'];
+  test.run('the app branch is intrinsic, its parts changeAppIcon, changeAppLabel, detail, rowFormAppActive, rowFormSetShell, rowFormToggle and serverDEBUG standing in spirit/element/search/app/', 0.4, function () {
+    const parts = ['changeAppIcon', 'changeAppLabel', 'detail', 'rowFormAppActive', 'rowFormSetShell', 'rowFormToggle', 'serverDEBUG'];
     const missing = parts.filter(function (p) { return !isFile('spirit/element/search/app/' + p + '.js'); });
     return !missing.length ? true : false;
   }, test.limit.quick);

@@ -34,7 +34,7 @@ opens. So the editor names no description and no api-branch selector.
     comes"*): the press settles only once the node has answered, so Add is busy until then.
 - Below it, filling the space left (a `fill` box, shell.css): the bundleSelector, `spirit.element.search.bundle.create(its own box, …)` (the shell's element
   shape, goal/G41.19), a pane, columns `label` and `owner` (goal/G41.25: the owner *"right after the bundles label"*), its labels shown only (goal/G41.26: *"the Label should now just be an output"*; no `editable`). What a row does is the row element's
-  (`spirit/element/search/bundle/rowElement.js`).
+  (`spirit/element/search/bundle/row.js`).
 - `destroy()` empties its box, lets its watch on `spirit.data.auth.data.bundles` go and lets its bundle pane go.
 
 ## What its test must try to break

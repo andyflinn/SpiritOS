@@ -158,7 +158,7 @@ async function appsPhase(chrome) {
   const P = W.page;
   P.send('Page.navigate', { url: W.node.base + '/face.html' });
   if (!(await until(function () { return P.evaluate('!!(window.spirit && window.spirit.ready)'); }, LOAD_LIMIT_MS))) { W.appsFail = true; return; }
-  const parts = await P.evaluate('window.spirit.ready.then(function () { return Promise.all(["spirit/app/app/element.js", "spirit/element/search/app.js", "spirit/element/search/app/detailElement.js"].map(function (p) { return spirit.require(p); })); }).then(function () { return "loaded"; }, function () { return "no"; })');
+  const parts = await P.evaluate('window.spirit.ready.then(function () { return Promise.all(["spirit/app/app/element.js", "spirit/element/search/app.js", "spirit/element/search/app/detail.js"].map(function (p) { return spirit.require(p); })); }).then(function () { return "loaded"; }, function () { return "no"; })');
   if (parts !== 'loaded') { W.appsFail = true; return; }
   const want = apps.map(function (a) { return Object.assign({ key: a }, declared(a)); });
   const labels = JSON.stringify(want.map(function (a) { return a.label; }));
@@ -196,7 +196,7 @@ async function appsPhase(chrome) {
   W.detail = {};
   for (const a of want.filter(function (x) { return x.run; })) {
     await box('zz-detail');
-    await P.evaluate('(function () { window.zzDetail = spirit.element.spirit.element.search.app.detailElement.create(document.getElementById("zz-detail"), { row: ' + JSON.stringify({ key: a.key, label: a.label, icon: a.icon }) + ', panel: true }); return true; }())');
+    await P.evaluate('(function () { window.zzDetail = spirit.element.spirit.element.search.app.detail.create(document.getElementById("zz-detail"), { row: ' + JSON.stringify({ key: a.key, label: a.label, icon: a.icon }) + ', panel: true }); return true; }())');
     const RUN_BTN = 'Array.prototype.filter.call(document.querySelectorAll("#zz-detail button"), function (b) { return /\\bRun\\b/.test(String(b.textContent || "")); })[0]';
     const hasRun = !!(await until(function () { return P.evaluate('!!(' + RUN_BTN + ')'); }, SETTLE_LIMIT_MS * 3));
     const activates = await P.evaluate('Array.prototype.filter.call(document.querySelectorAll("#zz-detail *"), function (e) { return !e.children.length && /^\\s*(de)?activate\\b/i.test(String(e.textContent || "")) && e.offsetParent !== null; }).length');

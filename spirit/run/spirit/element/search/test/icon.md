@@ -5,7 +5,7 @@ What the icon selector offers (goal/G43.11). Its test is `./icon.js`.
 Andy: *"run://spirit/iconSet.json IS the system set now."* The box: *"So the icon selector reads it too"*, and *"A page reads the file once"*.
 
 Since goal/G43.32 it is a thin selector over its list (Andy: *"any search-unit has ONE list shared by popup and list modes."*):
-its field and popup are `icon/listElement.js`'s dropdown. Asked of a real Chrome on a scratch node's page: the selector made there and opened.
+its field and popup are `icon/list.js`'s dropdown. Asked of a real Chrome on a scratch node's page: the selector made there and opened.
 
 ## Requirements
 

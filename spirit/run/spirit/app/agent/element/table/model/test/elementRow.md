@@ -1,6 +1,6 @@
 # spirit/app/agent/element/table/model/elementRow.js — its own test
 
-One model row in the page (goal/G41.4): its fields, handed to the tables' row element (`../rowElement.js`, tested in its
+One model row in the page (goal/G41.4): its fields, handed to the tables' row element (`../row.js`, tested in its
 own folder), which edits them, saves each as it changes and deletes the row. Owed since the rule *"every production script has its own test"* (goal/G47.1, box v72). It runs in node on a window of its
 own; the row element is a stand-in placed by the real `installSpiritElement` as its own file places it, keeping what it
 was handed. The same world as the other tables' `elementRow` tests.
@@ -10,7 +10,7 @@ was handed. The same world as the other tables' `elementRow` tests.
 - As it loads it requires the agent family's interface, `spirit.require('spirit/app/agent/api.js')`, which brings
   the family's data.js with it (goal/G41.28: its table's rows are the agent family's cache); it requires no data.js
   itself, since only an api.js requires its data.js (goal/G47.1).
-- `create(container, id, added, detail)` loads `../rowElement.js` itself (rule/26) and makes the row element in that
+- `create(container, id, added, detail)` loads `../row.js` itself (rule/26) and makes the row element in that
   container, told its table, `model`, the id, `added` true only when it is `true`, and the title row's look,
   `detail.look('model')` (null with no detail pane).
 - Its fields are `label`, `providerId` (shown by the provider table's row), `capabilities`, every one output only.

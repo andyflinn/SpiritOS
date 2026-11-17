@@ -10,9 +10,9 @@ itself, every search.
 
 ## Requirements (goal/G47.1, box v121)
 
-The box: *"new, the page twin of search-child-general.js: every search (selector, listElement, rowElement, detailElement)
+The box: *"new, the page twin of search-child-general.js: every search (selector, list, row, detail)
 mounted in a page on a scratch node, more rows than fit"*. One test per check, over every search judged (goal/G47.2): its
-answer names each search breaking it. A search a check has nothing to judge in (no list drawn, no detailElement, a detail
+answer names each search breaking it. A search a check has nothing to judge in (no list drawn, no detail, a detail
 that draws nothing for a planted row) is said as a comment, never counted green; a check no search could be judged by is
 red.
 
@@ -20,7 +20,7 @@ How each search is mounted: a scratch node (the tracked files) and a headless Ch
 search. The selector is created with `{ face: 'pane', open }` in a pane of a stated size (640 by 420, class fill), over a
 panel stack (`spirit/element/panel.js`). The probabilitySearch it makes is watched to learn the spirit.data branch it is a
 view of, and 60 rows are planted there, each a copy of a row the branch holds (or the plain text fields alone), every text
-field of it, and of its label json, a long value with no place to break. The detail is the search's detailElement, created
+field of it, and of its label json, a long value with no place to break. The detail is the search's detail, created
 in a panel layer as the apps open one, its options the planted row's fields with `row` and `panel` beside them.
 
 1. the list's box has a stated size, from its pane and not from its rows (rule 16): with the rows planted, its height is what it
@@ -49,7 +49,7 @@ Found when cw checked the first reds (goal/G47.1): most were the test's, not the
 
 - The scratch node runs the testicle and grants servers; suite is given a script (`spirit/spirit.js`); grant is given the
   node's own grants table, `grantsPanel.nodeGrants`, as the Grants app hands it.
-- api is judged by its `listElement` in pane face: its selector is two dropdowns side by side (Andy, G29.7).
+- api is judged by its `list` in pane face: its selector is two dropdowns side by side (Andy, G29.7).
 - The list judged is the search's own, never a filter's search in its `probsearch-N-selectors` row.
 - A planted row copies the server's first row once it has come (up to 8 s), or a shape of the fields its row element reads
   where the node holds none (branch, suite, testicle). The fields a list filters by stay as they must be: suite's script is
@@ -59,4 +59,4 @@ Found when cw checked the first reds (goal/G47.1): most were the test's, not the
 - Box v123: *"every search supports both pane and dropdown; a selector with only one is red"* (Andy: *"any search must
   support both pane AND dropdown, it costs virtually nothing and is a good investment in future integration."*). 9: the
   selector itself, mounted alone in a sized box and given `face: 'pane'`, draws its own list there; its dropdown is 7's.
-  api is still judged by its listElement for 1 to 6, so its list is measured while its selector is red on 9.
+  api is still judged by its list for 1 to 6, so its list is measured while its selector is red on 9.

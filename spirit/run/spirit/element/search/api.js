@@ -12,18 +12,18 @@
 //
 // It keeps its verb half (goal/G41.14; Andy: "apiFamiliySelector.js will use apiVerbSelector as part of itself,
 // because the verb selector NEEDs the family selector to have any meaning at all."). Built from its two halves
-// (goal/G41.5): the family dropdown, ./api/listElement.js, and the verb dropdown, search/api/verb.js, which it
+// (goal/G41.5): the family dropdown, ./api/list.js, and the verb dropdown, search/api/verb.js, which it
 // loads itself. It only puts them side by side and joins their choices into one path.
 //
 // THE API SEARCH, ITS SELECTOR (goal/G43.32; Andy: "uniformity, in the search elements and their folders, contain list,
-// row an detail elements."): its folder holds the family list (./api/listElement.js, the app-server selector, which stood
-// in this file), its row (./api/rowElement.js) and its detail (./api/detailElement.js), and the verb half (./api/verb.js).
+// row an detail elements."): its folder holds the family list (./api/list.js, the app-server selector, which stood
+// in this file), its row (./api/row.js) and its detail (./api/detail.js), and the verb half (./api/verb.js).
 // Its contract and its test: ./test/api.md and ./test/api.js.
 
 (function () {
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree...."): its two halves, the family list and
   // the verb half, its filter.
-  var parts = Promise.all(['spirit/element/search/api/listElement.js', 'spirit/element/search/api/verb.js'].map(function (p) {
+  var parts = Promise.all(['spirit/element/search/api/list.js', 'spirit/element/search/api/verb.js'].map(function (p) {
     return window.spirit.require ? window.spirit.require(p) : null;
   }));
 
@@ -56,7 +56,7 @@
     var gone = false;
     parts.then(function () {
       if (gone) return;
-      families = window.spirit.element.spirit.element.search.api.listElement.create(root, { face: 'pane', tree: options.tree });
+      families = window.spirit.element.spirit.element.search.api.list.create(root, { face: 'pane', tree: options.tree });
       families.addEventListener('change', function (event) {
         if (event && typeof event.stopPropagation === 'function') event.stopPropagation();
         root.family = root.value = families.value || '';
@@ -95,7 +95,7 @@
     function quiet(event) { if (event && typeof event.stopPropagation === 'function') event.stopPropagation(); }
     var made = parts.then(function () {
       var E = window.spirit.element;
-      families = E.spirit.element.search.api.listElement.create(root, { placeholder: options.familyPlaceholder, all: options.all, tree: options.tree });
+      families = E.spirit.element.search.api.list.create(root, { placeholder: options.familyPlaceholder, all: options.all, tree: options.tree });
       verbs = E.spirit.element.search.api.verb.create(root, { own: typeof options.tree !== 'function' });
       families.addEventListener('change', function (event) {
         quiet(event);

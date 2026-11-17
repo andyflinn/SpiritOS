@@ -21,7 +21,7 @@
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26: "every shell element loads its own elements dynamically through the fucking
   // apirit.require functionality"): the family selector, the contacts list as its party, and the reply's codeMirror.
-  var parts = Promise.all(['spirit/element/search/api.js', 'spirit/element/search/contact/listElement.js', 'spirit/element/codeMirror.js', 'spirit/element/fieldInput.js']
+  var parts = Promise.all(['spirit/element/search/api.js', 'spirit/element/search/contact/list.js', 'spirit/element/codeMirror.js', 'spirit/element/fieldInput.js']
     .map(function (p) { return S.require(p); }));
 
   function esc(s) { return S.escapeHtml(String(s == null ? '' : s)); }
@@ -162,9 +162,9 @@
       var hold = document.createElement('span');
       line.appendChild(hold);
       var branch = S.element.spirit.element.search.api.create(line, { familyPlaceholder: 'choose a family…', tree: function () { return treeOf(party); } });
-      // THE PARTY: the contacts list as a dropdown (goal/G30.20, spirit/element/search/contact/listElement.js), the book and
+      // THE PARTY: the contacts list as a dropdown (goal/G30.20, spirit/element/search/contact/list.js), the book and
       // this node's relays; no pick is self, this node.
-      picker = S.element.spirit.element.search.contact.listElement.create(hold, {
+      picker = S.element.spirit.element.search.contact.list.create(hold, {
         face: 'dropdown',
         placeholder: 'self (this node)',
         all: 'self (this node)',

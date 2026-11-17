@@ -5,7 +5,7 @@
 //
 //   spirit.element.spirit.app.contact.element.create(container, { open }) -> { destroy() }; open, the mounter's panel stack's (goal/G43.18)
 //
-// What it draws: the one contact list (spirit/element/search/contact/listElement.js, below), which does its own asking
+// What it draws: the one contact list (spirit/element/search/contact/list.js, below), which does its own asking
 // and whose rows open a person's or a relay's details, and the Add a relay fold, whose one call is relay.add. Nothing
 // else here calls the node.
 
@@ -20,7 +20,7 @@ var contactsEscapeHtml = spirit.escapeHtml;
 // NO CHOICE ABOUT STRANGERS (goal/G43.17): the node ignores them always, and keeps their id only in its log. Andy: "so NO,
 // we don't need a "held" "status"".
 
-// ONE SEARCH IN TWO TIERS (goal/G30.19): the book, the shadow and the network in one list, spirit/element/search/contact/listElement.js,
+// ONE SEARCH IN TWO TIERS (goal/G30.19): the book, the shadow and the network in one list, spirit/element/search/contact/list.js,
 // which Join draws too. Its rows are contactElements and keep themselves current; this app paints no presence. The
 // book's contactSelector pane and the Find someone on the network fold (peerFind) stood here and are deleted.
 var contactsList = null;
@@ -54,7 +54,7 @@ function contactsRefresh() {
 // through spirit.require, the list bringing its own. goal/G41.23: its rows' marks are icons (Andy: "this element will
 // replace icons painting all shell elements and apps."), so the icon element comes with the list.
 // And the panel stack, for a contact's or a relay's details when the mounter hands none (goal/G43.18).
-var contactsParts = Promise.all([spirit.require('spirit/element/search/contact/listElement.js'), spirit.require('spirit/element/icon.js'), spirit.require('spirit/element/panel.js'), spirit.require('spirit/element/fieldInput.js')]);
+var contactsParts = Promise.all([spirit.require('spirit/element/search/contact/list.js'), spirit.require('spirit/element/icon.js'), spirit.require('spirit/element/panel.js'), spirit.require('spirit/element/fieldInput.js')]);
 
 function contactCreate(container, options) {
     var gone = false;
@@ -113,13 +113,13 @@ function contactCreate(container, options) {
       }, function (e) { out.textContent = 'not added: ' + ((e && e.message) || 'no answer'); });
     });
 
-    // THE ONE LIST (goal/G30.19). A row opens the one contact detail (search/contact/detailElement.js), a person's or a relay's (goal/G43.32), by its
+    // THE ONE LIST (goal/G30.19). A row opens the one contact detail (search/contact/detail.js), a person's or a relay's (goal/G43.32), by its
     // row element's open, in the stack above.
     var book = document.getElementById('contacts-book');
     contactsParts.then(function () {
       if (gone) return;
       if (typeof o.open !== 'function') stack = window.spirit.element.spirit.element.panel.create(container, container.firstElementChild);
-      contactsList = window.spirit.element.spirit.element.search.contact.listElement.create(book, {
+      contactsList = window.spirit.element.spirit.element.search.contact.list.create(book, {
         open: openOver,
         say: contactsStatus,
         empty: 'Nobody matches: the network is searched as you type.',

@@ -4,10 +4,10 @@
 // and branchSelector/ folder, featuring a pane mode and a dropdown mode for displaying and selecting branch rows"). Its
 // contract and its test: ./test/branch.md and ./test/branch.js.
 //
-// A THIN SELECTOR OVER ITS OWN LIST, spirit/element/search/branch/listElement.js, WHICH IT LOADS ITSELF (rule/26: "every
+// A THIN SELECTOR OVER ITS OWN LIST, spirit/element/search/branch/list.js, WHICH IT LOADS ITSELF (rule/26: "every
 // shell element loads its own elements dynamically through the fucking apirit.require functionality"). The list draws
 // the family selector as its filter, the bundle's branches (auth.branch search) and each row
-// (branch/rowElement.js).
+// (branch/row.js).
 //
 //   spirit.element.spirit.element.search.branch.create(container, options) -> root
 //     root.value   the chosen branch's id, a number, '' while none is
@@ -39,9 +39,9 @@
       root.dispatchEvent(new Event('change', { bubbles: true }));
     }
     // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
-    Promise.resolve(window.spirit.require ? window.spirit.require('spirit/element/search/branch/listElement.js') : null).then(function () {
+    Promise.resolve(window.spirit.require ? window.spirit.require('spirit/element/search/branch/list.js') : null).then(function () {
       if (gone) return;
-      made = window.spirit.element.spirit.element.search.branch.listElement.create(root, {
+      made = window.spirit.element.spirit.element.search.branch.list.create(root, {
         bundle: options.bundle,
         face: isPane ? 'pane' : 'dropdown',
         placeholder: isPane ? '' : (options.placeholder || 'choose a branch…'),

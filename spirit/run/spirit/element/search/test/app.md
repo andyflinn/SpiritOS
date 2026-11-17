@@ -1,6 +1,6 @@
 # spirit/element/search/app.js
 
-The app list (goal/G43.2), as `spirit/element/search/bundle/listElement.js` is the bundle list: the probabilitySearch the selector draws. Its test is `./app.js`.
+The app list (goal/G43.2), as `spirit/element/search/bundle/list.js` is the bundle list: the probabilitySearch the selector draws. Its test is `./app.js`.
 
     spirit.element.search.app.create(host, opts) -> { list, refresh(), destroy() }; opts.face, opts.pick(row, key), opts.servers, opts.shells
 

@@ -3,7 +3,7 @@
 // ONE SHELL ELEMENT: the verb dropdown, the verbs of one family of an api tree (goal/G41.5).
 //
 //   Andy, 2026-10-27: "the Dropdowns for family and verb MUST be new or updated shell elements for those data types.
-//   including test folders." The family half is the family list (./listElement.js, the app-server selector until
+//   including test folders." The family half is the family list (./list.js, the app-server selector until
 //   goal/G43.32); this is the verb half, and the family selector (spirit/element/search/api.js) holds the two side by side.
 //
 // spirit.element.spirit.element.search.api.verb.create(container, options) -> root, the control: root.value is the chosen verb, '' for its first option, All
@@ -13,10 +13,10 @@
 // clients."); with no server it hides, lists nothing and clears the choice.
 (function () {
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree....").
-  // The family list too, the reader of the api tree (./listElement.js, goal/G43.32; it stood in ../api.js, which requires
+  // The family list too, the reader of the api tree (./list.js, goal/G43.32; it stood in ../api.js, which requires
   // this file), and with it the node family's cache manager, the keeper of the verbs it draws from (goal/G41.28).
   var parts = Promise.all([window.spirit.require ? window.spirit.require('spirit/element/search.js') : null,
-    window.spirit.require ? window.spirit.require('spirit/element/search/api/listElement.js') : null,
+    window.spirit.require ? window.spirit.require('spirit/element/search/api/list.js') : null,
     window.spirit.require ? window.spirit.require('spirit/client/apiTreeIndex.js') : null,
     window.spirit.require('spirit/node/api.js')]);
 

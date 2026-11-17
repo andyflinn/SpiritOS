@@ -25,11 +25,11 @@ decisions."*
   from `spirit/element/` (the box: *"The job search is made from spirit/element/job.js and jobDetail.js."*).
 - For each search `<name>`:
   - `search/<name>.js` is the selector, an element placing a create through installSpiritElement by its own path.
-  - `search/<name>/listElement.js`, `rowElement.js` and `detailElement.js` are there, each an element placed by its path.
+  - `search/<name>/list.js`, `row.js` and `detail.js` are there, each an element placed by its path.
     Branch and icon have no detail: none is ever opened (Andy: *"branch and icon: if no details are ever openened, there
     needs to be now detail panel."*).
     Nor has suite, testicle's suite search: a suite row opens nothing in the file detail (goal/G47.1, the UI cycle).
-  - The selector requires its own `listElement.js` and draws it (`search.<name>.listElement.create`), in its dropdown and in
+  - The selector requires its own `list.js` and draws it (`search.<name>.list.create`), in its dropdown and in
     its pane, and makes no list of its own: no probabilitySearch, no rows (Andy: *"all, any search-unit has ONE list shared
     by popup and list modes."*).
 
@@ -39,7 +39,7 @@ decisions."*
     `panel.js`, the generic stack, is no list's;
   - the grants panel is `search/grant/grantsPanel.js`, placed by its path;
   - one detail for every kind of contact (*"the contact list already knows the difference between contact types. so should
-    the detail panel."*): `search/contact/relayPanel.js` is gone into `contact/detailElement.js`, and a contact row opens
+    the detail panel."*): `search/contact/relayPanel.js` is gone into `contact/detail.js`, and a contact row opens
     the contact detail alone.
 
 ### What its test must try to break

@@ -56,7 +56,7 @@ const TARGETS = askedName && askedName !== 'test' ? NAMES.filter(function (n) { 
 
 // An element: it places a create through installSpiritElement, by its own path.
 function placesItself(rel) { const c = code(rel); return /\binstallSpiritElement\s*\(/.test(c) && /\bcreate\b/.test(c) && c.indexOf("'" + rel + "'") !== -1; }
-const PARTS = ['listElement', 'rowElement', 'detailElement'];
+const PARTS = ['list', 'row', 'detail'];
 // NO DETAIL WHERE NONE OPENS (Andy: "branch and icon: if no details are ever openened, there needs to be now detail panel.").
 // suite: a suite row in testicle's file detail opens nothing (goal/G47.1, the UI cycle), so by the same words it has none.
 const NO_DETAIL = ['branch', 'icon', 'suite'];
@@ -81,33 +81,33 @@ test.run('the job list and its detail no longer stand in spirit/element/', 0.4, 
   const astray = ['spirit/element/job.js', 'spirit/element/jobDetail.js'].filter(isFile);
   return !astray.length || false;
 }, test.limit.quick);
-// Each search: SEARCH/<n>.js, its selector, and SEARCH/<n>/ holding its listElement, rowElement and detailElement.
+// Each search: SEARCH/<n>.js, its selector, and SEARCH/<n>/ holding its list, row and detail.
 test.run('each search\'s selector is an element placed by its path', 0.4, function () {
   return eachSearch(function (n) { const sel = SEARCH + '/' + n + '.js'; return !(isFile(sel) && placesItself(sel)); });
 }, test.limit.quick);
-test.run('each search\'s listElement is placed by its path', 0.4, function () {
-  return eachSearch(function (n) { const f = SEARCH + '/' + n + '/listElement.js'; return !(isFile(f) && placesItself(f)); });
+test.run('each search\'s list is placed by its path', 0.4, function () {
+  return eachSearch(function (n) { const f = SEARCH + '/' + n + '/list.js'; return !(isFile(f) && placesItself(f)); });
 }, test.limit.quick);
-test.run('each search\'s rowElement is placed by its path', 0.4, function () {
-  return eachSearch(function (n) { const f = SEARCH + '/' + n + '/rowElement.js'; return !(isFile(f) && placesItself(f)); });
+test.run('each search\'s row is placed by its path', 0.4, function () {
+  return eachSearch(function (n) { const f = SEARCH + '/' + n + '/row.js'; return !(isFile(f) && placesItself(f)); });
 }, test.limit.quick);
 // Only where there is a search to judge by it: a detail where one opens, none where none does.
 if (TARGETS.some(function (n) { return NO_DETAIL.indexOf(n) === -1; })) {
-  test.run('each search that opens a detail has its detailElement placed by its path', 0.4, function () {
-    return eachSearch(function (n) { const f = SEARCH + '/' + n + '/detailElement.js'; return !(NO_DETAIL.indexOf(n) !== -1 || (isFile(f) && placesItself(f))); });
+  test.run('each search that opens a detail has its detail placed by its path', 0.4, function () {
+    return eachSearch(function (n) { const f = SEARCH + '/' + n + '/detail.js'; return !(NO_DETAIL.indexOf(n) !== -1 || (isFile(f) && placesItself(f))); });
   }, test.limit.quick);
 }
 if (TARGETS.some(function (n) { return NO_DETAIL.indexOf(n) !== -1; })) {
-  test.run('a search whose detail is never opened has no detailElement', 0.4, function () {
-    return eachSearch(function (n) { const f = SEARCH + '/' + n + '/detailElement.js'; return !(NO_DETAIL.indexOf(n) === -1 || !isFile(f)); });
+  test.run('a search whose detail is never opened has no detail', 0.4, function () {
+    return eachSearch(function (n) { const f = SEARCH + '/' + n + '/detail.js'; return !(NO_DETAIL.indexOf(n) === -1 || !isFile(f)); });
   }, test.limit.quick);
 }
 // ONE LIST, SHARED BY POPUP AND LIST MODES (Andy: "all, any search-unit has ONE list shared by popup and list modes."): the
-// selector requires its listElement and draws it, and makes no list of its own: no probabilitySearch, no rows.
-test.run('each search\'s selector draws its own listElement.js', 0.4, function () {
+// selector requires its list and draws it, and makes no list of its own: no probabilitySearch, no rows.
+test.run('each search\'s selector draws its own list.js', 0.4, function () {
   return eachSearch(function (n) {
     const sel = SEARCH + '/' + n + '.js'; const dir = SEARCH + '/' + n; const c = code(sel);
-    return !(new RegExp("['\"]" + dir.replace(/\//g, '\\/') + "\\/listElement\\.js['\"]").test(c) && new RegExp('\\.search\\.' + n + '\\.listElement\\.create\\(').test(c));
+    return !(new RegExp("['\"]" + dir.replace(/\//g, '\\/') + "\\/list\\.js['\"]").test(c) && new RegExp('\\.search\\.' + n + '\\.list\\.create\\(').test(c));
   });
 }, test.limit.quick);
 test.run('each search\'s selector makes no list of its own', 0.4, function () {
@@ -136,7 +136,7 @@ test.run('there is no second contact detail: the relay panel is gone into the co
   return !isFile(RELAY) || false;
 }, test.limit.quick);
 test.run('a contact row opens the contact detail alone, whatever the contact is', 0.4, function () {
-  return (!/relayPanel/.test(code(SEARCH + '/contact/rowElement.js')) && /contact\/detailElement\.js/.test(code(SEARCH + '/contact/rowElement.js'))) ||
+  return (!/relayPanel/.test(code(SEARCH + '/contact/row.js')) && /contact\/detail\.js/.test(code(SEARCH + '/contact/row.js'))) ||
     false;
 }, test.limit.quick);
 }

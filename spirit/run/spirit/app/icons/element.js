@@ -21,7 +21,7 @@
   if (window.spirit && typeof window.spirit.require === 'function') Promise.resolve(window.spirit.require('spirit/app/icons/api.js')).catch(function () {});
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
-  var parts = Promise.all(['spirit/element/search.js', 'spirit/element/search/icon/rowElement.js', 'spirit/element/rowForm.js',
+  var parts = Promise.all(['spirit/element/search.js', 'spirit/element/search/icon/row.js', 'spirit/element/rowForm.js',
     // Its own cache manager by its own path, beside it: asked by name, a page whose app list has not yet reached icons (or
     // holds it switched off) looks for spirit/icons/data.js, which is no file (wsl's verify, the general rules' page).
     'spirit/element/fieldInput.js', 'spirit/element/icon.js', 'spirit/element/panel.js', 'spirit/element/armingButton.js', 'spirit/app/icons/data.js'].map(function (p) { return S.require(p); }));
@@ -115,7 +115,7 @@
         args: function (text) { return { text: text }; },
         name: function (row) { return String(row.glyph || '') + ' ' + String((row.keywords || [])[0] || ''); },
         columns: [{ field: 'glyph', label: '' }, { field: 'keywords', label: 'Keywords' }],
-        element: function (row, key) { return E.spirit.element.search.icon.rowElement.create(Object.assign({ glyph: key }, row)); },
+        element: function (row, key) { return E.spirit.element.search.icon.row.create(Object.assign({ glyph: key }, row)); },
         details: function (row, key) { openIcon(String(key || (row && row.glyph) || '')); },
         empty: 'No icon matches.',
       });

@@ -1,7 +1,7 @@
 'use strict';
 // spirit/run/spirit/app/agent/element/table/persona/elementRow.js
 // ONE PERSONA ROW IN THE PAGE (goal/G41.4): its fields to maintain and edit, each saved as it changes (no Save), and Delete, drawn from the server's
-// answer and its stream only (rule/19). Built on the tables' row element (../rowElement.js).
+// answer and its stream only (rule/19). Built on the tables' row element (../row.js).
 //   spirit.element.spirit.app.agent.element.table.persona.elementRow.create(container, id, added, detail) -> { destroy }   added: just made by Add; detail: the
 //   page's detail pane, whose look(table) gives the title row its icon and name
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
@@ -23,9 +23,9 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/app/a
     create: function (container, id, added, detail) {
       var made = null;
       var gone = false;
-      Promise.resolve(spirit.require('spirit/app/agent/element/table/rowElement.js')).then(function () {
+      Promise.resolve(spirit.require('spirit/app/agent/element/table/row.js')).then(function () {
         if (gone) return;
-        made = window.spirit.element.spirit.app.agent.element.table.rowElement.create(container, {
+        made = window.spirit.element.spirit.app.agent.element.table.row.create(container, {
           table: 'persona', id: id, added: added === true, look: detail && detail.look ? detail.look('persona') : null, fields: FIELDS,
           // Its mandatory fields, as its server names them (goal/G41.21: "# mandatory fields (server AND ui)").
           required: ['icon', 'label'],

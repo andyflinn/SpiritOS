@@ -2,7 +2,7 @@
 
 // spirit/run/spirit/element/search/app/test/rowFormToggle.js
 // The tests of spirit/element/search/app/rowFormToggle.js, and of no other module (spec: ./rowFormToggle.md; goal/G43.15). Andy: "it
-// acts exactly like the two toggle switches in appSelector:detailElement", "it is configurable with a description of what is being
+// acts exactly like the two toggle switches in appSelector:detail", "it is configurable with a description of what is being
 // toggled." A real Chrome on a scratch node's face page; neither Andy's node nor an agent's is touched.
 
 const path = require('path');

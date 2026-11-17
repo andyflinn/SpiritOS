@@ -3,7 +3,7 @@
 // spirit/run/spirit/element/search/test/testicle.js
 // The tests of spirit/app/testicle/element/search/testicle.js, the testicle search, and of the parts in its folder, and of no other module
 // (spec: ./testicle.md; goal/G47.1, the cycle "the testicle search"). The box: "the testicle search,
-// spirit/app/testicle/element/search/testicle.js, with its companion folder holding its rowElement and detailElement", "a script selector,
+// spirit/app/testicle/element/search/testicle.js, with its companion folder holding its row and detail", "a script selector,
 // unselected (all) the default", "a suite selector, unselected (all) the default", "two filters, red and green; at least one
 // of the two is selected at all times", "The test row also shows its severity, two decimal places, even for 0 and 1", "The
 // list is sortable by all its columns", "The script selector: the file search as a dropdown, production scripts only", "with
@@ -145,13 +145,13 @@ test.after(async function () {
   try { if (s) LABH.freeTree(s); } catch (e) { /* scratch */ }
 });
 
-// the box: "spirit/app/testicle/element/search/testicle.js, with its companion folder holding its rowElement and detailElement"
+// the box: "spirit/app/testicle/element/search/testicle.js, with its companion folder holding its row and detail"
 test.run('spirit/app/testicle/element/search/testicle.js is there', 0.2, function () {
   return fs.existsSync(MODULE) || false;
 }, test.limit.quick);
-test.run('its folder spirit/app/testicle/element/search/testicle/ holds its rowElement.js and its detailElement.js', 0.2, function () {
+test.run('its folder spirit/app/testicle/element/search/testicle/ holds its row.js and its detail.js', 0.2, function () {
   const held = fs.existsSync(FOLDER) ? fs.readdirSync(FOLDER) : [];
-  return (held.indexOf('rowElement.js') !== -1 && held.indexOf('detailElement.js') !== -1) || false;
+  return (held.indexOf('row.js') !== -1 && held.indexOf('detail.js') !== -1) || false;
 }, test.limit.quick);
 // the box: "The script selector: the file search as a dropdown"
 test.run('its script selector is the file search, spirit/element/search/file.js, which it loads', 0.2, function () {
