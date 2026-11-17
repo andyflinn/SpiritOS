@@ -112,6 +112,28 @@ test.run('destroy leaves its container empty', 0.2, async function () {
   return gone === 'ok' || false;
 }, test.limit.quick);
 
+// SAVE IS BUSY UNTIL THE NODE ANSWERS (goal/G47.1, Q20; Andy: "mark the button busy from press until the mounter's answer
+// comes"): mounted with a file, its save held unanswered, the Save button is disabled in the instant after the press, and
+// plain again once the answer comes.
+test.run('mounted with a file, it shows that file loaded', 0.2, async function () {
+  if (!W.page) return false;
+  await W.c.evaluate('(function () { var b = document.getElementById("zzBox"); return spirit.require("spirit/app/' + NAME + '/element.js").then(function () { window.__m = spirit.element.spirit.app[' + JSON.stringify(NAME) + '].element.create(b, { path: "spirit/app/text/text.json" }); return "made"; }); }())');
+  W.loaded = !!(await until(function () { return W.c.evaluate('(document.querySelector("#zzBox [data-text=status]") || {}).textContent === "loaded"'); }, 15000));
+  return W.loaded || false;
+}, test.limit.quick);
+test.run('Save is busy in the instant after its press, while the node has not answered', 0.2, async function () {
+  if (!W.loaded) return false;
+  W.busy = await W.c.evaluate('(function () { var F = window.spirit.fs; window.__real = F.saveFile; F.saveFile = function () { return new Promise(function (r) { window.__answer = function () { r({ ok: true }); }; }); }; var b = document.querySelector("#zzBox [data-text=save]"); b.click(); return b.disabled === true; }())');
+  return W.busy === true || false;
+}, test.limit.quick);
+test.run('Save is plain again once the answer has come', 0.2, async function () {
+  if (W.busy !== true) return false;
+  await W.c.evaluate('(function () { if (window.__answer) window.__answer(); window.spirit.fs.saveFile = window.__real; return true; }())');
+  const plain = await until(function () { return W.c.evaluate('(document.querySelector("#zzBox [data-text=save]") || {}).disabled === false'); }, 5000);
+  await W.c.evaluate('(function () { if (window.__m) window.__m.destroy(); return true; }())');
+  return !!plain || false;
+}, test.limit.quick);
+
 // the box: its title bar, ✏️ "Text Editor:" + file-name, and its own icon while no file is picked
 test.run('app.active switches the app on', 0.2, async function () {
   if (!W.N || !W.N.up) return false;

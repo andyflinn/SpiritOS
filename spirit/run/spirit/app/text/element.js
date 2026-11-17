@@ -44,7 +44,9 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
       if (gone) return;
       var E = S.element;
       // The row's icon is the editor's, until Andy names another.
-      var row = E.spirit.element.rowForm.create(box, { icon: '✏️', button: 'Save' });
+      // Its press is set below, once the file it saves is known.
+      var press = null;
+      var row = E.spirit.element.rowForm.create(box, { icon: '✏️', button: 'Save', press: function () { return press ? press() : null; } });
       var status = document.createElement('div');
       status.className = 'job-manifest-note';
       status.setAttribute('data-text', 'status');
@@ -85,13 +87,15 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
         });
       }
 
-      row.button.addEventListener('click', function () {
-        if (!shown || !shown.view) return;
+      // SAVE IS ROWFORM'S PRESS (goal/G47.1, Q20; Andy: "mark the button busy from press until the mounter's answer comes"):
+      // the save's answer is handed back, so the rowForm's busy button waits on it; a click listener of its own was never busy.
+      press = function () {
+        if (!shown || !shown.view) return null;
         status.textContent = 'saving…';
         saving = true;
-        Promise.resolve(S.fs.saveFile(shown.path, shown.view.value())).then(function (r) { if (r && r.ok === false) { saving = false; status.textContent = 'save failed: ' + (r.reason || 'refused'); } },
+        return Promise.resolve(S.fs.saveFile(shown.path, shown.view.value())).then(function (r) { if (r && r.ok === false) { saving = false; status.textContent = 'save failed: ' + (r.reason || 'refused'); } },
           function (e) { saving = false; status.textContent = 'save failed: ' + ((e && e.message) || e); });
-      });
+      };
 
       // THE PICKER in the row, the files list as a dropdown showing only text. Its field names no file: the title bar does.
       // ALWAYS WHOLE (Andy: "i changed my mind. please show the full media viewer or text editor (including the file picker) even when
