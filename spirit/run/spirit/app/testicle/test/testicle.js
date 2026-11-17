@@ -113,6 +113,14 @@ const PLANT = {
     "require('fs').mkdirSync(path.join(__dirname, '..', '..', '..', '..', '..', '..', 'zzLitter'), { recursive: true });",
     "test.run('litter answers', 0.2, function () { return true; }, test.limit.quick);",
   ].join('\n') + '\n',
+  // stray's own suite takes a temp folder from the helper and leaves it there (goal/G47.1, the box, no pollution: "A temp
+  // folder is cleaned by its owner: ... a test's in its own after. Guard: after each suite, testicle finds its temp folder
+  // gone; red if not").
+  'spirit/app/testicle/temp/zzTesticle/stray.js': '\'use strict\';\n// stray\n',
+  'spirit/app/testicle/temp/zzTesticle/test/stray.js': SUITE_HEAD + [
+    "require(path.join(__dirname, '..', '..', '..', '..', '..', 'tempFolder.js'))('spirit/app/testicle/temp/zzTesticle/test/stray/kept');",
+    "test.run('stray answers', 0.2, function () { return true; }, test.limit.quick);",
+  ].join('\n') + '\n',
   'spirit/app/testicle/temp/zzTesticle/mu.js': '\'use strict\';\n// mu\n',
   'spirit/app/testicle/temp/zzTesticle/test/mu-child-zzRule.js': SUITE_HEAD + [
     "test.run('mu holds its rule', 0.2, function () { return process.argv[2] === 'spirit/app/testicle/temp/zzTesticle/mu.js' || false; }, test.limit.quick);",
@@ -1244,6 +1252,25 @@ test.run('a suite that leaves a folder in the run folder is red on "it leaves no
 test.run('a suite that leaves nothing in the run folder is green on it', 0.4, function () {
   if (!up()) return false;
   const x = rowOf(LA, LAS, LITTER);
+  return (!!x && yes(x.verified)) || false;
+}, test.limit.quick);
+// A TEST'S TEMP FOLDER IS GONE AFTER IT (goal/G47.1, the box, no pollution: "A temp folder is cleaned by its owner: ... a
+// test's in its own after. Guard: after each suite, testicle finds its temp folder gone; red if not"): stray's suite leaves
+// its folder under its route; testicle sets its test "it leaves no temp folder behind" red, 0.7. lambda's leaves none: green.
+const STRAY_TEST = 'it leaves no temp folder behind';
+const ST = Z + 'stray.js';
+const STS = Z + 'test/stray.js';
+test.run('a suite that leaves its temp folder behind is red on "it leaves no temp folder behind", at 0.7', 0.4, async function () {
+  if (!up()) return false;
+  const r = await call(N.base, 'testicle.run', { script: ST, suite: STS });
+  if (r.status !== 200) return false;
+  await until(function () { return Promise.resolve(!!rowOf(ST, STS, STRAY_TEST)); }, 150000);
+  const x = rowOf(ST, STS, STRAY_TEST);
+  return (!!x && no(x.verified) && Number(x.severity) === 0.7) || false;
+}, test.limit.long);
+test.run('a suite that leaves no temp folder is green on it', 0.4, function () {
+  if (!up()) return false;
+  const x = rowOf(LA, LAS, STRAY_TEST);
   return (!!x && yes(x.verified)) || false;
 }, test.limit.quick);
 

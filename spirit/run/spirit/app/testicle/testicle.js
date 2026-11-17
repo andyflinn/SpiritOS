@@ -344,6 +344,8 @@ function nextJob() {
     done = true;
     clearTimeout(j.timer);
     if (job === j) job = null;
+    // Its temp folder judged once the run has ended (judgeStray), before the run is judged whole.
+    judgeStray(j);
     try { jobEnded(j); } catch (e) { logError('jobEnded ' + j.script + ' ' + j.suite, e); }
     // The next job at once, before busy is told: busy goes false only when nothing is left to run, never between two jobs
     // (the box: "whenever it goes back to listening for events it sets busy false").
@@ -547,6 +549,22 @@ function judgeLitter(j, script, scriptHash) {
   j.runNames = now;
   try { setResult(script, j.suite, LITTER, !fresh.length, LITTER_SEVERITY, scriptHash, j.suiteHash); }
   catch (e) { logError('judgeLitter ' + script + ' ' + j.suite, e); }
+}
+// A TEST'S TEMP FOLDER IS GONE AFTER IT (goal/G47.1, the box, no pollution: "A temp folder is cleaned by its owner: ... a
+// test's in its own after. Guard: after each suite, testicle finds its temp folder gone; red if not"; Q31, Andy: the tests
+// take their temp folders from spirit/tempFolder.js). A suite's folder is the helper's for its route, the suite's path
+// without .js, on this node. When a run of one script's suite has ended, after hooks and all, that folder still there is
+// red for that script and suite: STRAY. A general suite's run over many scripts is not judged: its one folder is the
+// suite's, and blaming each script it judged for it would be wrong.
+const STRAY = 'it leaves no temp folder behind';
+const STRAY_SEVERITY = 0.7;
+function judgeStray(j) {
+  if (!j || j.classify || j.batch || j.stopped || !j.script || !/\.js$/.test(j.suite)) return;
+  let left = false;
+  try { left = fs.existsSync(spirit.require('spirit/tempFolder.js').path(j.suite.replace(/\.js$/, ''))); }
+  catch (e) { logError('judgeStray ' + j.script + ' ' + j.suite, e); return; }
+  try { setResult(j.script, j.suite, STRAY, !left, STRAY_SEVERITY, j.scriptHash, j.suiteHash); }
+  catch (e) { logError('judgeStray ' + j.script + ' ' + j.suite, e); }
 }
 // ONE TEST'S RESULT WRITTEN (testicle.set's, and a killed job's failures): no flip, the current row tested again; a flip, the
 // current row retired and a new one made (goal/G47.1, the test-table cycle), each tagged with the two hashes. On a flip the
