@@ -1,4 +1,8 @@
 'use strict';
+// ITS NAMES STAY ITS OWN (goal/G47.1; Andy: "is there any motherfucking reason that this fucking shit cannot be fucking
+// contained in the motherfucking spirit objects"): a page loads this file through a script tag, so the whole of it runs
+// inside one function, and what it hands out goes onto the spirit object or module.exports, never the window.
+(function () {
 // spirit/run/spirit/element/search/contact/detailElement.js
 // One row of the contacts, as its own panel, opened over the list that
 // mounted it (search/contact/rowElement.js, openDetails): it shows that
@@ -2135,3 +2139,4 @@ window.spirit.require('spirit/element/installSpiritElement.js').then(function ()
   // NO open OF ITS OWN (goal/G43.18): it opens as a panel over what mounted its list (search/contact/rowElement.js, openDetails),
   // never as a page on the navigation.
 }); });
+}());

@@ -1,4 +1,8 @@
 'use strict';
+// ITS NAMES STAY ITS OWN (goal/G47.1; Andy: "is there any motherfucking reason that this fucking shit cannot be fucking
+// contained in the motherfucking spirit objects"): a page loads this file through a script tag, so the whole of it runs
+// inside one function, and what it hands out goes onto the spirit object or module.exports, never the window.
+(function () {
 if (typeof require === 'function') require('./spirit.js'); // node only: a page has the global spirit already, and no require
 
 // One peer, one file, named by the peer's WHOLE public key.
@@ -125,3 +129,4 @@ if (typeof process !== 'undefined' && process.versions && process.versions.node)
     keyFromFileName: peerFileKeyFromFileName,
   };
 }
+}());

@@ -1,4 +1,8 @@
 'use strict';
+// ITS NAMES STAY ITS OWN (goal/G47.1; Andy: "is there any motherfucking reason that this fucking shit cannot be fucking
+// contained in the motherfucking spirit objects"): a page loads this file through a script tag, so the whole of it runs
+// inside one function, and what it hands out goes onto the spirit object or module.exports, never the window.
+(function () {
 
 // One door for every app.
 //
@@ -382,3 +386,4 @@ if (typeof process !== 'undefined' && process.versions && process.versions.node)
 
 if ((typeof process !== 'undefined' && process.versions && process.versions.node) || limits) definePacket();
 else window.spirit.require('spirit/limits.js').then(function () { limits = window.spirit.limits; definePacket(); });
+}());

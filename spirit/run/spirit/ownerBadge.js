@@ -1,4 +1,8 @@
 'use strict';
+// ITS NAMES STAY ITS OWN (goal/G47.1; Andy: "is there any motherfucking reason that this fucking shit cannot be fucking
+// contained in the motherfucking spirit objects"): a page loads this file through a script tag, so the whole of it runs
+// inside one function, and what it hands out goes onto the spirit object or module.exports, never the window.
+(function () {
 
 // The owner badge, and the relay list's rules: for each URL in this node's
 // relay list, does the relay's card name this node's key as its owner
@@ -476,3 +480,4 @@ if (isNode) {
     isPublicRelay: isPublicRelay,
   };
 }
+}());
