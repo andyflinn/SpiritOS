@@ -48,12 +48,21 @@ PLANT['spirit/zzListen/child.js'] = '\'use strict\';\nwindow.spirit.require(\'sp
 PLANT[LISTENS] = '\'use strict\';\nwindow.spirit.require(\'spirit/zzListen/child.js\');\nvar ask = { op: \'set\', table: \'zz\' };\nwindow.spirit.required.spirit.element.installSpiritElement(window.spirit, \'spirit/zzListen/writer.js\', { create: function () { return ask; } });\n';
 PLANT[DEAF] = '\'use strict\';\nvar ask = { op: \'set\', id: \'zz\' };\nwindow.spirit.required.spirit.element.installSpiritElement(window.spirit, \'spirit/zzListen/deaf.js\', { create: function () { return ask; } });\n';
 
+// NOTHING ON THE NODE'S GLOBAL OBJECT OR ON process BUT spirit (goal/G47.1; Andy: "no developer will want to use a system that
+// pollutes global name-spaces.", "go on this"): a node script that assigns a name onto global, and one that hands out its
+// value through module.exports alone.
+const LEAKY = 'spirit/zzGlobal/leaky.js';
+const CLEAN = 'spirit/zzGlobal/clean.js';
+const GLOBALS = 'loaded in a node, it adds nothing to the global object or to process but spirit';
+PLANT[LEAKY] = ["'use strict';", "require('../spirit.js');", 'global.zzLeaked = 1;', 'module.exports = {};', ''].join('\n');
+PLANT[CLEAN] = ["'use strict';", "require('../spirit.js');", 'const zzKept = 1;', 'module.exports = { zzKept: zzKept };', ''].join('\n');
+
 let root = null, run = null;
 // The rule run in the scratch tree, handed arg or nothing: its check as printed (spirit/test/testReport.js prints each test
 // as its title and its mark, under its script's heading), { red, script }, or null when the check printed nothing.
-function lineOf(arg, check) {
+function lineOf(arg, check, env) {
   let out = '';
-  try { out = execFileSync(process.execPath, [path.join(run, 'spirit', 'test', 'spirit-sibling-general.js')].concat(arg ? [arg] : []), { cwd: run, encoding: 'utf8', maxBuffer: 1 << 26, stdio: ['ignore', 'pipe', 'pipe'] }); } catch (e) { out = String((e && e.stdout) || ''); }
+  try { out = execFileSync(process.execPath, [path.join(run, 'spirit', 'test', 'spirit-sibling-general.js')].concat(arg ? [arg] : []), { cwd: run, encoding: 'utf8', maxBuffer: 1 << 26, stdio: ['ignore', 'pipe', 'pipe'], env: Object.assign({}, process.env, env || {}) }); } catch (e) { out = String((e && e.stdout) || ''); }
   let script = '';
   let found = null;
   out.split('\n').forEach(function (l) {
@@ -133,6 +142,17 @@ test.run('an element that writes and listens to nothing, no watch, no search, no
   if (!run) return false;
   const l = lineOf(DEAF, WRITES);
   return (!!l && l.red) || false;
+}, test.limit.slow);
+// Loaded in the scratch tree itself, handed to the rule as testicle hands its run (SPIRIT_MOUNT_RUN).
+test.run('a node script that assigns a name onto global is red on the global object check', 0.4, function () {
+  if (!run) return false;
+  const l = lineOf(LEAKY, GLOBALS, { SPIRIT_MOUNT_BASE: 'http://127.0.0.1:9', SPIRIT_MOUNT_RUN: run });
+  return (!!l && l.red && l.script.indexOf(LEAKY) !== -1) || false;
+}, test.limit.slow);
+test.run('a node script that hands out its value through module.exports alone is green on the global object check', 0.4, function () {
+  if (!run) return false;
+  const l = lineOf(CLEAN, GLOBALS, { SPIRIT_MOUNT_BASE: 'http://127.0.0.1:9', SPIRIT_MOUNT_RUN: run });
+  return (!!l && !l.red) || false;
 }, test.limit.slow);
 
 // THE BRANCH PART USES THE NODE ITS RUN IS HANDED (goal/G47.1; Andy: "are the tests not ordered in the general test so that all

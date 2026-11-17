@@ -1741,27 +1741,53 @@ function strayElementReaches(rel) {
 function placeKeys(rel) { return rel.replace(/\.js$/, '').split('/'); }
 // The helper itself defines installSpiritElement and places nothing: it is required, no element.
 function isElementScript(rel) { return rel !== 'spirit/element/installSpiritElement.js' && /\binstallSpiritElement\s*\(/.test(codeOf(fs.readFileSync(path.join(RUN, rel), 'utf8'), true)); }
-function requireOnNode(run, rel) {
-  return new Promise(function (resolve) {
-    // A branch's api.js (decided 8) binds the branch, so it is waited on and judged by its place alone; every other script
-    // answers at once and stands at its place as that answer.
-    const iface = /\/api\.js$/.test(rel);
-    const probe = 'const path = require("path"); const s = require(path.join(process.cwd(), "spirit", "spirit.js"));' +
-      '(async function () { let at = null, err = false, promise = false; try { at = s.require(' + JSON.stringify(rel) + '); promise = !!(at && typeof at.then === "function"); if (' + iface + ' && promise) at = await at; } catch (e) { err = true; }' +
-      'const keys = ' + JSON.stringify(placeKeys(rel)) + '; const place = keys.reduce(function (o, k) { return o == null ? undefined : o[k]; }, s.required);' +
-      'process.stdout.write("\\n@@" + JSON.stringify({ err: err, promise: ' + iface + ' ? false : promise, placed: ' + iface + ' ? place !== undefined : place !== undefined && place === at }) + "\\n"); process.exit(0); }());';
-    const kid = spawn(process.execPath, ['-e', probe], { cwd: run, stdio: ['ignore', 'pipe', 'pipe'] });
-    let out = '';
-    kid.stdout.on('data', function (d) { out += d; });
-    kid.stderr.on('data', function (d) { out += d; });
-    const t = setTimeout(function () { kid.kill('SIGKILL'); }, 20000);
-    kid.on('close', function () {
-      clearTimeout(t);
-      const m = /\n@@(.*)\n/.exec(out);
-      let r = null; try { r = m ? JSON.parse(m[1]) : null; } catch (e) { r = null; }
-      resolve(r || { err: true, promise: false, placed: false });
-    });
-  });
+// NOTHING ON THE NODE'S GLOBAL OBJECT OR ON process BUT spirit (goal/G47.1; Andy: "no developer will want to use a system
+// that pollutes global name-spaces.", "go on this"; judged in oneFile below). It took the place of requireOnNode, which
+// nothing called. Never loaded, as the classifier never loads them (spirit/test/scriptClassify.js): the node and the relay
+// themselves.
+const NODE_NEVER_LOADED = ['spirit/server.js', 'spirit/relayServer.js'];
+// The scratch run a script is loaded in: the one testicle hands (SPIRIT_MOUNT_RUN), else a tree of lab's with no node on it,
+// taken for this one load and freed right after (handed a list, the rule runs this part once a script, so a tree kept here
+// would be one more lab node each script, and the lab's six are gone by the seventh). The script as judged, the working copy,
+// is put there first.
+const NG_LAB = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+// Told from the exit handler, so a script that ends its process while it loads (a server handed no state) is judged on what
+// it added before it ended; written synchronously, as an exit handler must.
+const NODE_GLOBALS_PROBE = 'const path = require("path"); const fs = require("fs"); const g0 = Object.getOwnPropertyNames(globalThis), p0 = Object.getOwnPropertyNames(process); let err = "";' +
+  'process.on("exit", function () { try { fs.writeSync(1, "\\n@@" + JSON.stringify({ err: err, g: Object.getOwnPropertyNames(globalThis).filter(function (k) { return g0.indexOf(k) === -1; }),' +
+  ' p: Object.getOwnPropertyNames(process).filter(function (k) { return p0.indexOf(k) === -1; }) }) + "\\n"); } catch (e) { /* gone */ } });' +
+  'try { const s = require(path.join(process.cwd(), "spirit", "spirit.js")); s.require(process.argv[1]); } catch (e) { err = String(e && e.message || e); }' +
+  'process.exit(0);';
+// { err, leaks }: leaks the names this script's own code put on globalThis (global) or process; null when it could not be
+// loaded at all.
+async function nodeGlobalsOf(rel, full) {
+  const n = await NG_LAB.scratchNode({ shared: true, start: false });
+  try { return nodeGlobalsIn((n && n.run) || '', rel, full); } finally { if (n && !n.shared) { try { NG_LAB.freeTree(n); } catch (e) { /* freed when this process ends */ } } }
+}
+function nodeGlobalsIn(run, rel, full) {
+  const NG = { run: run };
+  if (!NG.run) return null;
+  const there = path.join(NG.run, rel);
+  try {
+    const mine = fs.readFileSync(full);
+    let had = null; try { had = fs.readFileSync(there); } catch (e) { had = null; }
+    if (!had || !had.equals(mine)) { fs.mkdirSync(path.dirname(there), { recursive: true }); fs.writeFileSync(there, mine); }
+  } catch (e) { return null; }
+  const ran = require('child_process').spawnSync(process.execPath, ['-e', NODE_GLOBALS_PROBE, rel], { cwd: NG.run, encoding: 'utf8', timeout: 20000, windowsHide: true });
+  const m = /\n@@(.*)\n/.exec(String(ran.stdout || ''));
+  let r = null; try { r = m ? JSON.parse(m[1]) : null; } catch (e) { r = null; }
+  if (!r) return null;
+  let src = '';
+  try { src = fs.readFileSync(full, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1'); } catch (e) { src = ''; }
+  const esc = function (n) { return n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); };
+  const assigns = function (on, n) {
+    const e = esc(n);
+    return new RegExp('(^|[^.\\w$])(' + on + ')\\s*(\\.\\s*' + e + '(?![\\w$])|\\[\\s*[\'"]' + e + '[\'"]\\s*\\])\\s*=(?!=)').test(src) ||
+      new RegExp('defineProperty\\s*\\(\\s*(' + on + ')\\s*,\\s*[\'"]' + e + '[\'"]').test(src);
+  };
+  const leaks = (r.g || []).filter(function (n) { return n !== 'spirit' && assigns('global|globalThis', n); }).map(function (n) { return 'globalThis.' + n; })
+    .concat((r.p || []).filter(function (n) { return assigns('process', n); }).map(function (n) { return 'process.' + n; }));
+  return { err: r.err, leaks: leaks };
 }
 // THE ONE HELPER (goal/G43.32; Andy: "this can be done with ONE single helper function
 // spirit/element/installSpiritElement(spirit,elementPath)"): no element script puts itself on spirit.element or
@@ -2043,6 +2069,18 @@ function oneFile(P) {
   if (mr.page) test.run('it is page code: node never loads it', 0.4, function () { return moduleRules(full).page || false; }, test.limit.quick);
   else if (mr.spirit) test.run('it sets the global spirit before its first require', 0.4, function () { return !moduleRules(full).early; }, test.limit.quick);
   else test.run('it requires spirit.js first', 0.4, function () { return !moduleRules(full).early; }, test.limit.quick);
+  // NOTHING ON THE NODE'S GLOBAL OBJECT OR ON process BUT spirit (goal/G47.1; Andy: "the same rule MUST apply to both the
+  // window object for isBrowser and what is it on node? the process object?", "no developer will want to use a system that
+  // pollutes global name-spaces.", "go on this"). The page's side is spirit-sibling-browser.js's. In a node every file has
+  // its own scope, so only an assignment onto globalThis (global) or process leaks: the script is loaded alone, in a node of
+  // its own, in a scratch run (the one testicle hands, else one of lab's), and what the global object and process hold after
+  // that they did not before spirit.js is the script's when its own code assigns that name; spirit is the one name allowed.
+  if (!mr.page && /^spirit\/.+\.js$/.test(rel) && !/(^|\/)test\//.test(rel) && NODE_NEVER_LOADED.indexOf(rel) === -1 && !VENDORED_FOLDERS.holds(rel)) {
+    test.run('loaded in a node, it adds nothing to the global object or to process but spirit', 0.7, async function () {
+      const g = await nodeGlobalsOf(rel, full);
+      return !!g && Array.isArray(g.leaks) && !g.leaks.length || false;
+    }, test.limit.slow);
+  }
   // <address>: every require path is a child, a sibling or an ancestor's file
   test.run('none of its require paths breaks the rule', 0.4, function () {
     return !moduleRules(full).bad.length;

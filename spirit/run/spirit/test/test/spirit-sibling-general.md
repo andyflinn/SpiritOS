@@ -52,3 +52,11 @@ The rule is run on `spirit/app/backup/api.js` and `spirit/app/chat/api.js`, hand
 
 - The scratch node of each script's run comes up.
 - Each script uses the node it is handed, so calls naming backup and calls naming chat both reach it. Red on the rule before f558fe34 (nothing reached it), and on a mutant that hands only the first script the node (backup only).
+
+## Nothing on the global object or on process but spirit
+
+goal/G47.1; Andy: *"no developer will want to use a system that pollutes global name-spaces."*, *"go on this"*. In the same scratch tree, two planted node scripts in `spirit/zzGlobal/`: `leaky.js`, which assigns `global.zzLeaked`, and `clean.js`, which hands out its value through `module.exports` alone. The rule is handed the scratch tree as its run, as testicle hands one (`SPIRIT_MOUNT_RUN`).
+
+- Handed `leaky.js`, "loaded in a node, it adds nothing to the global object or to process but spirit" is red, under that script.
+- Handed `clean.js`, the same check is green.
+- Both red on the rule before, which had no such check.

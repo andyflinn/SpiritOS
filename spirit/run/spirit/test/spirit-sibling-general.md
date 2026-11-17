@@ -301,7 +301,10 @@ Given no file, the tree's rules: no module names spirit/run/process; elements pl
 none reading spirit.elements; run://test/ moved into run://spirit/test/ and named nowhere; testModule.js listing no tool as
 a test; .gitignore covering run:// but run://spirit/; every product script holding the shape, taking spirit.js first,
 its require paths within the rule; every file that paints icons loading the icon element. Given a file, its code: no
-spirit/run/process named; the shape; spirit.js first (or page code, or spirit.js itself); its require paths; for an
+spirit/run/process named; the shape; spirit.js first (or page code, or spirit.js itself); loaded alone in a node (a product script that is no page code, the node and the relay
+themselves never loaded), nothing on the global object or on process but spirit, a new name there counted against the
+script when its own code assigns it (goal/G47.1; Andy: *"no developer will want to use a system that pollutes global
+name-spaces."*; severity 0.7, Andy: *"name-space pollution is 0.7"*; the page side is spirit-sibling-browser.md's); its require paths; for an
 element, no matched() of its own, its writes watched in spirit.data (a watch of its own, a search on a branch, or a child element it requires that searches a branch,
 handed the branch by name), no api taken from what it is handed. Its full
 contract, page parts included, is in `spirit-sibling-browser.md`.
