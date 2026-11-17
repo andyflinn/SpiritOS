@@ -108,7 +108,11 @@ function world() {
     // one does, its root appended to the container it is given.
     rowForm: { create: function (c, opts) {
       const f = { container: c, opts: opts || {}, root: node('<div>'), span: node('<span>'), button: node('<button>') };
-      f.root.appendChild(f.span); f.root.appendChild(f.button); c.appendChild(f.root); w.rowForms.push(f); return f;
+      f.root.appendChild(f.span); f.root.appendChild(f.button); c.appendChild(f.root); w.rowForms.push(f);
+      // A press calls press, the mounter's request, and keeps what it answers, as the real one's busyButton waits on it.
+      f.answers = [];
+      f.button.addEventListener('click', function () { if (typeof f.opts.press === 'function') f.answers.push(f.opts.press()); });
+      return f;
     } },
     'search.grant': { create: function (host, opts) { const l = { host: host, opts: opts || {}, redrawn: 0, list: { redraw: function () { l.redrawn += 1; } } }; w.grantLists.push(l); return l; } },
   });
@@ -267,7 +271,8 @@ test.run('the unconfigured panel\'s destroy empties the host', 0.2, function () 
 // Andy, on G41.27: "grantsPanel:\n\n➕ [choose an ID… ▾][choose a bundle… ▾][Grant]". The box: "new shell element:
 // rowForm",
 // "spirit.element.spirit.element.rowForm.create(container, { icon, button }) -> { root, span, button }", "The mounter drops
-// its form elements into span and wires the button itself (a busyButton or a click)."
+// its form elements into span and wires the button itself (a busyButton or a click)." Since goal/G47.1 (Q20) it hands the
+// rowForm its request as press.
 test.run('it makes one bundle selector, two ID selectors, the form\'s and the filter, and one family selector', 0.2, async function () {
   if (!GP || typeof GP.create !== 'function') return false;
   box = node('panel');
@@ -309,9 +314,9 @@ test.run('the word "grant" at its start is gone, ➕ in its place, and it draws 
   const text = box.innerHTML.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ');
   return !/\bgrant\b/i.test(text) && !/<button[^>]*>\s*Grant\s*<\/button>/.test(box.innerHTML) ? true : false;
 }, test.limit.quick);
-test.run('the rowForm\'s button is the Grant, a busyButton', 0.2, function () {
+test.run('the rowForm\'s button is the Grant, the grant its press', 0.2, function () {
   if (!box) return false;
-  return !!rf && w.busy.some(function (a) { return a.button === rf.button; }) ? true : false;
+  return !!rf && typeof rf.opts.press === 'function' ? true : false;
 }, test.limit.quick);
 
 // its selectors go into the search's 🪣 row: no filter line of its own (goal/G41.26)
@@ -495,19 +500,21 @@ test.run('grantsPanel.js holds no warning reading and no confirm', 0.2, function
 // spirit/test/spirit-sibling-general.js (goal/G47.1). The noWarning part once at the end of this file said the same as the
 // two checks above, and is folded into them.
 
-// Grant is a busyButton, waiting until every grant is answered (goal/G41.23)
-// Box: "first users: Ask in the agent's Update model list, and Grant in the grants panel".
-test.run('it loads the busyButton itself', 0.2, function () {
+// Grant waits, busy, until every grant is answered (goal/G41.23; box: "first users: Ask in the agent's Update model list, and
+// Grant in the grants panel"). Since goal/G47.1 (Q20; Andy: "mark the button busy from press until the mounter's answer
+// comes") the grant is the rowForm's press, and the rowForm's own busyButton waits on it: a second one attached to the same
+// button was cleared by the first at once.
+test.run('it attaches no busyButton of its own: the rowForm\'s waits on its press', 0.2, function () {
   if (!w) return false;
-  return w.required.indexOf('spirit/element/busyButton.js') !== -1 ? true : false;
+  return w.busy.length === 0 ? true : false;
 }, test.limit.quick);
 // The panel may draw its form again when it says something: its Grant button is found again.
 // Since goal/G41.27 it is the rowForm's button.
-test.run('its Grant button is made a busyButton, the grant its request', 0.2, function () {
+test.run('its Grant is handed to the rowForm as press, the grant its request', 0.2, function () {
   if (!box) return false;
   gb = rf ? rf.button : null;
-  gbusy = w.busy.filter(function (a) { return a.button === gb; }).pop() || null;
-  return !!gbusy && typeof gbusy.opts.run === 'function' ? true : false;
+  gbusy = rf && typeof rf.opts.press === 'function' ? rf : null;
+  return !!gbusy ? true : false;
 }, test.limit.quick);
 let letGo = null;
 test.run('a press grants, and the request it hands the button is still waiting while the grant is not answered', 0.2, async function () {

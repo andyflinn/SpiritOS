@@ -31,7 +31,7 @@
   // And the jobs family's cache manager, the servers' jobs it follows (goal/G41.28), and the auth family's, which nodeGrants
   // (below) reads.
   var parts = Promise.all(['spirit/element/search/contact.js', 'spirit/element/search/bundle.js', 'spirit/element/search/api.js',
-    'spirit/element/search/grant.js', 'spirit/element/busyButton.js', 'spirit/element/rowForm.js', 'spirit/client/apiTreeIndex.js'].map(function (p) { return window.spirit.require ? window.spirit.require(p) : null; })
+    'spirit/element/search/grant.js', 'spirit/element/rowForm.js', 'spirit/client/apiTreeIndex.js'].map(function (p) { return window.spirit.require ? window.spirit.require(p) : null; })
     .concat([window.spirit.require('spirit/job/api.js'), window.spirit.require('spirit/auth/api.js')]));
 
   // A VERB OF THE NODE, THROUGH THE SPIRIT OBJECT (goal/G43.24): family.verb called on that family as spirit.ready holds it,
@@ -290,13 +290,13 @@
       // THE GRANT FORM IS A ROWFORM (goal/G41.27; Andy: "grantsPanel:\n\n➕ [choose an ID… ▾][choose a bundle… ▾][Grant]"):
       // ➕, the ID and the bundle selector in its span, Grant its button; made once, paint putting it back. What a press
       // did is said below it, not in it.
-      form = P.spirit.element.rowForm.create(slot(), { icon: '➕', button: 'Grant' });
+      // GRANT WAITS AS A BUSY BUTTON (goal/G41.23; Andy, goal/G41.18: "for all buttons that wait for potentially long
+      // requests"): greyed and turning until every grant of the bundle is answered. ITS PRESS IS THE ROWFORM'S TO HEAR (goal/G47.1,
+      // Q20; Andy: "mark the button busy from press until the mounter's answer comes"): handed as press, the rowForm's own
+      // busyButton waits on it; a second busyButton on the same button was cleared by the first at once.
+      form = P.spirit.element.rowForm.create(slot(), { icon: '➕', button: 'Grant', press: function () { return grantBundle(); } });
       form.span.appendChild(idSel);
       form.span.appendChild(bundleSel);
-      // GRANT WAITS AS A BUSY BUTTON (goal/G41.23; Andy, goal/G41.18: "for all buttons that wait for potentially long
-      // requests"): greyed and turning until every grant of the bundle is answered.
-      if (P.spirit.element.busyButton) P.spirit.element.busyButton.attach(form.button, { run: grantBundle });
-      else form.button.addEventListener('click', function () { grantBundle(); });
       paint();
       watchGrants();
       // The servers followed first, so the jobs the page already holds are taken as the tree about to be read.

@@ -29,8 +29,7 @@ nothing else drawn; its `destroy()` empties the host. It never falls back to one
 ## Requirements
 
 - It loads what it uses itself (rule/26): `spirit/element/search/contact.js`, `spirit/element/search/bundle.js`,
-  `spirit/element/search/api.js`, `spirit/element/search/grant.js`, `spirit/element/busyButton.js` and
-  `spirit/element/rowForm.js`, and the job and auth branches' interfaces (`spirit.require('spirit/job/api.js')`,
+  `spirit/element/search/api.js`, `spirit/element/search/grant.js` and `spirit/element/rowForm.js`, and the job and auth branches' interfaces (`spirit.require('spirit/job/api.js')`,
   `spirit.require('spirit/auth/api.js')`, the second for nodeGrants), each of which alone requires its data.js
   (goal/G47.1); no data script.
 - The panel (`create`) names no grants table and no ID table: no auth grant verb, not nodeGrants, no agent verb, no
@@ -41,7 +40,7 @@ nothing else drawn; its `destroy()` empties the host. It never falls back to one
 - **The grant form, a rowForm** (goal/G41.27; Andy: *"grantsPanel:\n\n➕ [choose an ID… ▾][choose a bundle… ▾][Grant]"*):
   it loads `spirit/element/rowForm.js` itself and makes one rowForm, its icon ➕ and its button Grant; its span holds the ID
   selector then the bundle selector, nothing else; the word "grant" at its start is gone, and it draws no Grant button
-  of its own; the rowForm's button is the Grant, a busyButton. Both ID selectors (the form's and the filter) search the
+  of its own; the rowForm's button is the Grant, the grant its `press`. Both ID selectors (the form's and the filter) search the
   ID table it was handed: its location, key and label.
 - **Its selectors in the search's 🪣 row** (goal/G41.26; Andy: *"any searchSelector in our system must go into the probabilitySearch's selectorRow, so that the user-can see, which elements belong to the search."*): it draws no filter line of its own and no
   deprecated button; it hands the grant list `selectors`, the ID filter then the family selector, each with a name and
@@ -79,14 +78,16 @@ caller picks this one by name, `grants: grantsPanel.nodeGrants`, and the panel t
 - `watch(fn)`: a grant the auth family's manager keeps is heard as `<key>\n<path>` with its row, and once revoked with
   none; its release ends it.
 
-### Grant is a busyButton (goal/G41.23)
+### Grant waits, busy (goal/G41.23, goal/G47.1)
 
 Box: *"first users: Ask in the agent's Update model list, and Grant in the grants panel"* (the Update model list is now
-the agent's model table, `spirit/app/agent/element/table/model/elementTable.js`). The busyButton is tested in
-its own folder (`./busyButton.md`); here a stand-in keeps what it is handed.
+the agent's model table, `spirit/app/agent/element/table/model/elementTable.js`). Since goal/G47.1 (Q20; Andy: *"mark the
+button busy from press until the mounter's answer comes"*) the grant is handed to the rowForm as `press`, and the rowForm's
+own busyButton waits on it; the rowForm is tested in its own folder, and here a stand-in calls `press` on a press and keeps
+what it answers.
 
-- The panel loads `spirit/element/busyButton.js` itself (rule/26).
-- Its Grant button, as drawn now, is attached as a busyButton, the grant its request (`run`).
+- It attaches no busyButton of its own: a second one on the same button was cleared by the rowForm's at once.
+- Its Grant is handed to the rowForm as `press`, the grant its request.
 - A press grants, and the request it hands the button waits while a grant is not answered; it settles once every
   grant of the bundle is answered, so the button is plain again.
 
@@ -99,7 +100,7 @@ its own folder (`./busyButton.md`); here a stand-in keeps what it is handed.
 - A filter that narrows by a key field the grants table did not name, or does not redraw the list.
 - A deprecated mark that does not follow a server starting or ending, or its filter on at first, or hidden from the search.
 - A grant made past the grants table it was handed, or of anything but the bundle's branches.
-- A Grant button that is no busyButton, or one whose request answers before the grants do.
+- A Grant not handed to the rowForm as its press, a busyButton of its own on it, or a press that answers before the grants do.
 - A verb asked through an api instead of the spirit object.
 - nodeGrants asking anything but the node's auth verbs, losing a refusal, or a watch that goes on after its release.
 
