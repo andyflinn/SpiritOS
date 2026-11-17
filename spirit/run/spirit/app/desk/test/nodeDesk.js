@@ -17,7 +17,6 @@ const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const tempFolder = require(path.join(RUN, 'spirit', 'tempFolder.js'));
 let tempAsked = 0;
 function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/app/desk/test/nodeDesk/' + name + tempAsked); }
-test.after(function () { try { require('fs').rmSync(tempFolder.path('spirit/app/desk/test/nodeDesk'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 const appClient = require(path.join(RUN, 'spirit', 'appClient.js'));
 
 function code(f) { try { return fs.readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1').replace(/<!--[\s\S]*?-->/g, ''); } catch (e) { return ''; } }
@@ -124,5 +123,7 @@ test.run('a fresh desk holds no goal/G0', 0.2, async function () {
 test.after(async function () {
   try { if (W.kid) W.kid.kill(); } catch (e) { /* gone */ }
   await new Promise(function (r) { setTimeout(r, 300); });
-  try { if (W.scratch) fs.rmSync(W.scratch, { recursive: true, force: true }); } catch (e) { /* scratch */ }
+  // The suite's whole temp folder, once the desk it started is gone: removed before the kill, the desk's open database
+  // kept it on Windows, and an empty folder was left ("it leaves no temp folder behind", 2026-11-17, on Andy's node).
+  try { fs.rmSync(tempFolder.path('spirit/app/desk/test/nodeDesk'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ }
 });

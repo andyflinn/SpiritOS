@@ -18,7 +18,19 @@ const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const tempFolder = require(path.join(RUN, 'spirit', 'tempFolder.js'));
 let tempAsked = 0;
 function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/app/deskClient/test/deskClient/' + name + tempAsked); }
-test.after(function () { try { require('fs').rmSync(tempFolder.path('spirit/app/deskClient/test/deskClient'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
+// deskClient runs in this process and keeps its database open in its state folder; Windows deletes no open file, so the
+// folder stayed and testicle turned the suite red ("it leaves no temp folder behind", 2026-11-17, on Andy's node). Every
+// database it opens is recorded here and closed before the folder goes.
+const OPEN_DBS = [];
+{
+  const sqlite = require('node:sqlite');
+  const RealDb = sqlite.DatabaseSync;
+  sqlite.DatabaseSync = class extends RealDb { constructor() { super(...arguments); OPEN_DBS.push(this); } };
+}
+test.after(function () {
+  OPEN_DBS.forEach(function (d) { try { d.close(); } catch (e) { /* closed */ } });
+  try { require('fs').rmSync(tempFolder.path('spirit/app/deskClient/test/deskClient'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ }
+});
 const FILE = path.join(__dirname, '..', 'deskClient.js');
 // The family paths, as the one function names them (goal/G41.12).
 const familyPath = require(path.join(RUN, 'spirit', 'spirit.js')).familyPath;
